@@ -17,6 +17,7 @@ import { resolveRemoteAttachment } from '../modules/messaging';
 import { useLocalAttachment } from '../lib/localAttachmentCache';
 import type { Attachment } from './MessengerBubble.helpers';
 
+/** Renders a single message attachment (image, video, audio, or file) by its type. */
 export function AttachmentView({ att, fullUrl, fg, dark }: {
   att: Attachment; fullUrl: string; fg: string; dark: boolean;
 }): React.ReactElement {

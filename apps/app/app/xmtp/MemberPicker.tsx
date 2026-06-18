@@ -46,6 +46,7 @@ export interface MemberPickerState {
   selectedAddresses: Set<string>;
 }
 
+/** Hook managing the member-picker entry field and staged member list. */
 export function useMemberPicker(): MemberPickerState {
   const [entry, setEntry] = useState('');
   const [members, setMembers] = useState<Member[]>([]);
@@ -104,6 +105,7 @@ export function useMemberPicker(): MemberPickerState {
   };
 }
 
+/** UI for searching, adding and removing members when composing a group. */
 export function MemberPicker({ state, dark, exclude = [] }: {
   state: MemberPickerState;
   dark: boolean;

@@ -32,6 +32,7 @@ import { ProfileHoldings } from './ProfileScreen.holdings';
 
 export type ProfileScreenVariant = 'tab' | 'route';
 
+/** Renders a user's profile, either as a tab or a standalone route. */
 export function ProfileScreen({ address, variant, panRef }: {
   address: string;
   variant: ProfileScreenVariant;

@@ -19,6 +19,7 @@ const kindIcon = (kind: string): HeroIconName => (
   kind === 'image' ? 'photo' : kind === 'audio' ? 'microphone' : 'paperClip'
 );
 
+/** Renders the banner above the composer showing the message being replied to. */
 export function ReplyBanner({
   dark, sub, sender, onClear, onPress,
 }: {
@@ -63,6 +64,7 @@ export function ReplyBanner({
   );
 }
 
+/** Renders the @-mention autocomplete popup of matching members above the composer. */
 export function MentionPopup({
   dark, head, sub, matches, onPick,
 }: {
@@ -100,6 +102,7 @@ export function MentionPopup({
   );
 }
 
+/** Renders the row of staged (pending) attachment chips with remove buttons. */
 export function PendingRow({
   fg, sub, chipBg, pending, onRemove,
 }: {
@@ -144,6 +147,7 @@ export function PendingRow({
   );
 }
 
+/** Renders the active voice-recording bar with waveform levels, elapsed time, and slide-to-cancel. */
 export function RecordingBar({
   head, sub, levels, recordSecs, slideX, slideThresholdPx,
 }: {

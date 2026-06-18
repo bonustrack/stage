@@ -17,6 +17,7 @@ export interface GroupUpdatedContent {
   metadataFieldChanges?: FieldChange[];
 }
 
+/** Summarise a group_updated system message as one readable line (renames, image/description edits, members added or removed). */
 export function humanizeGroupUpdated(g: GroupUpdatedContent): string {
   const parts: string[] = [];
   const fields = g.metadataFieldsChanged ?? g.metadataFieldChanges ?? [];

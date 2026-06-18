@@ -5,6 +5,7 @@
 import { ref } from 'vue';
 import { xmtpSendAttachment } from './xmtpSend';
 
+/** Hook for staging a composer image attachment as a pending preview and flushing it on send. */
 export function useComposerAttach(getLine: () => string, onError: (m: string) => void) {
   const pending = ref<{ file: File; url: string } | null>(null);
 

@@ -57,6 +57,7 @@ function Session({ inst, busy, onRevoke, c }: {
   );
 }
 
+/** Renders the messenger sessions screen listing the account's active sessions. */
 export function MessengerSessions(): React.ReactElement {
   const { text: fg, border } = usePalette();
   const c = { fg, sub: fg, border, rowBg: border };

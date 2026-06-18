@@ -15,6 +15,7 @@ import { AppModal } from './AppModal';
 import { usePalette, useBlockRadius } from '../lib/theme';
 import { type Palette } from './MessengerComposer.helpers';
 
+/** Renders the bottom sheet for composing and sending a poll. */
 export function PollSheet({
   open, onClose, palette, dark, question, setQuestion, header, setHeader,
   options, setOptions, multi, setMulti, onSend,
@@ -99,6 +100,7 @@ export function PollSheet({
   );
 }
 
+/** Renders the bottom sheet for composing and sending a signature request. */
 export function SignatureSheet({
   open, onClose, palette, dark, kind, setKind, desc, setDesc,
   message, setMessage, json, setJson, onSend,
@@ -175,6 +177,7 @@ export function SignatureSheet({
   );
 }
 
+/** Renders the bottom sheet for composing and sending a payment request. */
 export function PaymentSheet({
   open, onClose, palette, dark, to, setTo, amount, setAmount, note, setNote, onSend,
 }: {

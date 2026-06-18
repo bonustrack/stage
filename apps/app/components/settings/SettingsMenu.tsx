@@ -40,6 +40,7 @@ const ROWS: { href: Href; label: string; icon: HeroIconName }[] = [
   { href: '/settings/about', label: 'About', icon: 'questionMarkCircle' },
 ];
 
+/** Renders the top-level settings menu listing each settings section. */
 export function SettingsMenu(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';

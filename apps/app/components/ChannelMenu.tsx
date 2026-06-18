@@ -62,6 +62,7 @@ export interface ChannelMenuProps {
   onSearch?: () => void;
 }
 
+/** Renders the shared per-conversation action sheet (mark read, pin, archive, leave, navigate). */
 export function ChannelMenu({
   convId, isGroup, peerAddress, isUnread, isPinned, isArchived,
   visible, onClose, context = 'list', onAfterLeave, onAfterArchive, onSearch,

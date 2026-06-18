@@ -71,6 +71,7 @@ export interface ShieldFlowFormProps {
   onFooter?: (s: FooterState) => void;
 }
 
+/** Renders the shield or send body depending on the active flow mode. */
 export function ShieldFlowForm(props: ShieldFlowFormProps): React.ReactElement {
   return props.mode === 'shield' ? <ShieldBody {...props} /> : <SendBody {...props} />;
 }

@@ -12,6 +12,7 @@ import { Box, Row, Col } from '../layout';
 import { Icon } from '@metro-labs/kit/icon';
 import { Title } from '@metro-labs/kit/title';
 
+/** Renders the header bar for a system design section page. */
 export function SystemHeader({ title, fg, head, border, right }: {
   title: string; dark: boolean; fg: string; head: string; border: string;
   right?: React.ReactNode;

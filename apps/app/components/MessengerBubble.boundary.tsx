@@ -25,15 +25,18 @@ interface State { failed: boolean }
 export class BubbleErrorBoundary extends Component<Props, State> {
   state: State = { failed: false };
 
+  /** Flags the boundary as failed when a child bubble throws during render. */
   static getDerivedStateFromError(): State {
     return { failed: true };
   }
 
+  /** Logs the caught render error without rethrowing so the feed stays alive. */
   componentDidCatch(error: unknown): void {
     // Log so a recurring bad message is diagnosable, but never rethrow.
     console.warn('MessengerBubble render failed; rendered fallback', error);
   }
 
+  /** Renders the children, or an inline fallback line when a bubble has failed. */
   render(): ReactNode {
     if (this.state.failed) {
       return (

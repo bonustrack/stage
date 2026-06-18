@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { xmtpReact } from '../../modules/messaging';
 
+/** Provides reaction state and the handler for sending reactions on a conversation. */
 export function useReactionsLayer(
   activeLine: string,
   reactions: Map<string, Map<string, number>>,

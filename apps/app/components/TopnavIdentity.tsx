@@ -18,6 +18,7 @@ import { getActiveAccount } from '../lib/accounts';
 import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
 import { shortAddress } from '../modules/messaging';
 
+/** Top-nav identity slot rendering the user's avatar and name as a menu trigger. */
 export function TopnavIdentity(): React.ReactElement {
   const { link: head, border } = usePalette();
   const [menuOpen, setMenuOpen] = useState(false);

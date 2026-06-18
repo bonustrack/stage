@@ -19,6 +19,7 @@ import type { ComposerActionsArgs } from './MessengerComposer.types';
 
 const mintLocalId = (): string => `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
+/** Builds and optimistically sends a signature-request message from the composer state. */
 export async function sendSignatureRequest(a: ComposerActionsArgs): Promise<void> {
   const description = a.sigDesc.trim();
   let content: SignatureRequestContent;
@@ -57,6 +58,7 @@ export async function sendSignatureRequest(a: ComposerActionsArgs): Promise<void
   finally { a.onSent?.(localId, sendErr, sentId); }
 }
 
+/** Builds and optimistically sends a poll message from the composer state. */
 export async function sendPoll(a: ComposerActionsArgs): Promise<void> {
   const question = a.pollQuestion.trim();
   const options = a.pollOptions.map(o => o.trim()).filter(Boolean);
@@ -83,6 +85,7 @@ export async function sendPoll(a: ComposerActionsArgs): Promise<void> {
   finally { a.onSent?.(localId, sendErr, sentId); }
 }
 
+/** Builds and optimistically sends a transaction/payment-request message from the composer state. */
 export async function sendTxRequest(a: ComposerActionsArgs): Promise<void> {
   const to = a.txTo.trim();
   const amount = a.txAmount.trim();

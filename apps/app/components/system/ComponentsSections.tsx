@@ -58,6 +58,7 @@ const SAMPLE_TOKEN: AssetRow = {
   logoUrl: 'https://cdn.stamp.fyi/avatar/eth:0x0000000000000000000000000000000000000000?s=64',
 };
 
+/** Renders the gallery sections showcasing UI components. */
 export function ComponentsSections({ dark, head, sub, border }: GalleryPalette): React.ReactElement {
   const { bg } = usePalette();
   const sec = { head, sub, border };

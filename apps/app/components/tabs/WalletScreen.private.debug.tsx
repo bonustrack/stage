@@ -44,6 +44,7 @@ function DebugRow({ label, value, sub, head }: {
   );
 }
 
+/** Debug panel exposing Railgun private-balance internals for diagnostics. */
 export function RailgunDebugPanel({ head, sub, border }: {
   head: string; sub: string; border: string;
 }): React.ReactElement {

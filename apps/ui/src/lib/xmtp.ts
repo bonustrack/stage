@@ -109,6 +109,7 @@ export async function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promis
   finally { buildingClient = null; }
 }
 
+/** Return the already-built XMTP client if one exists, else null. */
 export function getCachedXmtpClient(): XmtpClient | null { return cachedClient; }
 
 /** Format a metro-style line URI for an XMTP conversation. */
@@ -134,6 +135,7 @@ export { peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap } 
 /** URI prefix used for inbound XMTP "from" addresses. Mirrors the mobile app. */
 export const XMTP_USER_PREFIX = 'metro://xmtp/user/';
 
+/** Extract the conversation id from a metro XMTP line URI, or null when it doesn't match. */
 export function convIdOfLine(line: string): string | null {
   const m = line.match(/^metro:\/\/xmtp\/([^/]+)$/);
   return m ? m[1] : null;

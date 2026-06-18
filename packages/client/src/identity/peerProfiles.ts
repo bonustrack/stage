@@ -99,6 +99,7 @@ export function isPeerResolved(address?: string | null): boolean {
   return !!address && store.has(address.toLowerCase());
 }
 
+/** Return the cached ENS display name for an address, or undefined when none. */
 export function getPeerName(address?: string | null): string | undefined {
   if (!address) return undefined;
   const n = store.get(address.toLowerCase())?.name;

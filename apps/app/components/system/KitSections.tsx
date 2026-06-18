@@ -32,6 +32,7 @@ const SAMPLE_ICONS = ['cog', 'bell', 'wallet', 'chat', 'user', 'check'] as const
 const LIST_ROWS = ['Display', 'Messenger', 'Notifications', 'Security'];
 const SAMPLE_IMAGE = 'https://cdn.stamp.fyi/avatar/eth:0x2539f6dd5e4ab2c3a30c2b9a0a8a8a8a8a8a79d5?s=160';
 
+/** Renders the gallery sections showcasing Kit components. */
 export function KitSections({ dark, head, sub, border }: GalleryPalette): React.ReactElement {
   const sec = { head, sub, border };
   return (

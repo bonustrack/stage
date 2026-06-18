@@ -15,6 +15,7 @@ import { DANGER, usePalette } from '../../lib/theme';
 
 interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }
 
+/** One member row: avatar, name/address, owner/admin badge, and a remove button. */
 export function MemberRow({
   item, isSelf, isRemovingThis, role, name, dark, p, onPress, onRemove,
 }: {
@@ -74,6 +75,7 @@ export function MemberRow({
   );
 }
 
+/** Modal for adding a group member by Ethereum address. */
 export function AddMemberModal({
   visible, onClose, addDraft, setAddDraft, adding, onAdd, dark, p,
 }: {
@@ -116,6 +118,7 @@ export function AddMemberModal({
   );
 }
 
+/** Group overflow modal: surfaces the leave-group action. */
 export function OverflowModal({
   visible, onClose, leaving, onLeave,
 }: {

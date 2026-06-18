@@ -12,6 +12,7 @@ import { ImageViewer } from './ImageViewer';
  *  not Image — Kit Image's style prop is ImageStyle). */
 const ABSOLUTE_FILL: ImageStyle = { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 };
 
+/** Renders an image message attachment with a tap-to-open fullscreen viewer. */
 export function MessengerImageAttachment({ uri, dark = true }: {
   uri: string; dark?: boolean;
 }): React.ReactElement {

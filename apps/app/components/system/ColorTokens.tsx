@@ -117,6 +117,7 @@ function SeedChoice<T extends string | number>({ name, options, value, onSelect,
   );
 }
 
+/** Renders the palette color tokens for the current theme. */
 export function ColorTokens({ p }: { p: GalleryPalette }): React.ReactElement {
   const palette = usePalette();
   const scheme = useEffectiveColorScheme();

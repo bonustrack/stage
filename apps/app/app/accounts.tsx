@@ -15,6 +15,7 @@ import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { Icon } from '@metro-labs/kit/icon';
 import { AccountsManager } from '../components/AccountsManager';
 
+/** Screen for viewing and switching between the user's saved accounts. */
 export default function Accounts(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';

@@ -5,6 +5,7 @@
  *  etc. resolve, the URL stays correct, and the bottom tab-bar highlight is
  *  router-driven. It renders nothing (the pager overlays the scene). */
 
+/** Empty Messenger route stub kept so expo-router resolves the index tab. */
 export default function TabRoutePlaceholder(): null {
   return null;
 }

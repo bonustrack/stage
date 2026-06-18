@@ -23,6 +23,7 @@ import { THEME_OPTIONS } from '../tabs/SettingsScreen.parts';
 import { SystemHeader } from '../system/SystemHeader';
 import { ColorTokens } from '../system/ColorTokens';
 
+/** Renders the display settings screen for theme preference and custom colors. */
 export function DisplaySettings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const pref = useThemePreference();

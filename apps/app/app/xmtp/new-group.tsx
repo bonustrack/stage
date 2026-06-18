@@ -37,6 +37,7 @@ import { MemberPicker, useMemberPicker } from './MemberPicker';
  *  asset uri used only for the preview. */
 interface PickedImage { uri: string; mime: string; name: string }
 
+/** Screen for creating a new XMTP group with name, image and members. */
 export default function NewGroup(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';

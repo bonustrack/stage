@@ -42,6 +42,7 @@ interface Props {
   onSent?: (localId: string, error?: string, sentId?: string) => void;
 }
 
+/** Renders the conversation message composer (input, attachments, mentions, replies, and send flows). */
 export function MessengerComposer({
   dark, xmtpLine, mentionCandidates, replyingTo, autoFocusNonce, onClearReply, onJumpToReply, onOptimistic, onSent,
 }: Props): React.ReactElement {

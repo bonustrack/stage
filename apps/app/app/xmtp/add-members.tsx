@@ -27,6 +27,7 @@ import { Box, Row, Col } from '../../components/layout';
 import { useConvMeta } from '../../modules/messaging';
 import { MemberPicker, useMemberPicker } from './MemberPicker';
 
+/** Screen for adding new members to an existing XMTP group conversation. */
 export default function AddMembers(): React.ReactElement {
   const router = useRouter();
   const { convId } = useLocalSearchParams<{ convId: string }>();

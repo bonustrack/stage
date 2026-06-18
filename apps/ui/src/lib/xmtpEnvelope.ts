@@ -33,6 +33,7 @@ export function reactionsByMessage(events: HistoryEntry[]): Map<string, Map<stri
   return out;
 }
 
+/** True when a history entry is a reaction rather than a standalone message. */
 export function isReactionEntry(e: HistoryEntry): boolean {
   return Boolean((e.payload as { reactTo?: string } | undefined)?.reactTo);
 }

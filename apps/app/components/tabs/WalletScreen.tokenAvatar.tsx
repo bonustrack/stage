@@ -14,6 +14,7 @@ import { Image } from '@metro-labs/kit/image';
 import { Box } from '../layout';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO } from './WalletScreen.assets';
 
+/** Circular token avatar with the token logo and a network badge. */
 export function TokenAvatar({ logoUrl, chainId, bg, border, badge }: {
   /** stamp.fyi token logo URL; empty string renders just the border circle. */
   logoUrl: string;

@@ -69,6 +69,7 @@ async function toLocalUri(uri: string): Promise<string> {
   return downloaded.uri;
 }
 
+/** Renders a full-screen image viewer modal with close and save-to-camera-roll actions. */
 export function ImageViewer({ uri, visible, onClose }: {
   /** Image source — http(s)://, file://, or data:…;base64,… */
   uri: string;

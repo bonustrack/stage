@@ -27,6 +27,7 @@ import { useVotesLayer } from './useVotesLayer';
 import { useTxSignLayer } from './useTxSignLayer';
 import { useOutboundLayer } from './useOutboundLayer';
 
+/** Provides the aggregated state (feed, votes, reactions, outbound) for a conversation. */
 export function useConversationState(convId: string | undefined, focus: string | undefined) {
   const activeLine = lineOfConv(convId ?? '');
   const autoFocusNonce = useMemo(() => (focus ? Date.now() : undefined), [focus]);

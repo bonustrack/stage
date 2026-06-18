@@ -29,6 +29,7 @@ export function convIdFromTopic(topic: string | undefined): string | null {
  *  every row is uniform height regardless of labels. */
 export const CHANNEL_ROW_HEIGHT = 77;
 
+/** Formats a message timestamp for display in the channel list. */
 export function fmtTs(ts: number | null): string {
   if (!ts) return '';
   const d = new Date(ts);

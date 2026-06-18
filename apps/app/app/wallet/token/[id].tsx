@@ -41,6 +41,7 @@ function parseRow(raw: string | undefined): AssetRow | null {
   }
 }
 
+/** Screen showing detail and activity for a single token in the wallet. */
 export default function TokenDetail(): React.ReactElement {
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string; row?: string }>();

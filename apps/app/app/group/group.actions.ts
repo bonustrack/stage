@@ -14,6 +14,7 @@ import {
   updateGroupDescription, updateGroupName,
 } from './group.helpers';
 
+/** Hook wiring the editable group name/description state to mutation actions. */
 export function useGroupActions(line: string, invalidateConvMeta: () => void): {
   name: string | null; setName: (n: string | null) => void;
   draft: string; setDraft: (s: string) => void;

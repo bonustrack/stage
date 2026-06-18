@@ -51,6 +51,7 @@ export function highlightSegments(text: string, query: string): React.ReactNode 
   ));
 }
 
+/** Renders a string with every case-insensitive occurrence of the query highlighted. */
 export function HighlightText({ text, query, fg }: {
   text: string;
   query: string;

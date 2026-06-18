@@ -12,6 +12,7 @@ import { DANGER, useEffectiveColorScheme, usePalette } from '../lib/theme';
 
 interface Pal { head: string; sub: string; border: string; sheetBg: string; }
 
+/** Bottom sheet with switch/export/remove actions for a single account. */
 export function ManageSheet({ manageRec, activeId, onClose, onSwitch, onExport, onRemove, p }: {
   manageRec: AccountRecord | null; activeId: string | null; onClose: () => void;
   onSwitch: (id: string) => void; onExport: (id: string) => void;
@@ -41,6 +42,7 @@ export function ManageSheet({ manageRec, activeId, onClose, onSwitch, onExport, 
   );
 }
 
+/** Bottom sheet that reveals and copies an account's exported private key. */
 export function ExportSheet({ revealPk, onClose, dark, p }: {
   revealPk: string | null; onClose: () => void; dark: boolean; p: Pal;
 }): React.ReactElement {

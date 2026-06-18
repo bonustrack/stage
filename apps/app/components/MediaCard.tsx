@@ -16,6 +16,7 @@ interface Props {
   children: React.ReactNode;
 }
 
+/** Renders a rounded, bordered frame wrapping a shared media attachment. */
 export function MediaCard({ onPress, width, children }: Props): React.ReactElement {
   const border = usePalette().border; // #282a2d / #e4e4e5
   const bg = border;

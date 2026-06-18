@@ -35,6 +35,7 @@ interface EditorProps {
   onCancelRec: () => void; onStopRec: () => void; onSend: () => void;
 }
 
+/** Renders the composer's text input row with attach, quick-action, and send/record buttons. */
 export function ComposerEditor(p: EditorProps): React.ReactElement {
   const { dark, fg, head, bg, sub, chipBg, recording } = p;
   const { primary } = usePalette();
@@ -164,6 +165,7 @@ export function buildAttachActions(a: {
   ];
 }
 
+/** Renders the attachment action menu (photo, file, location, poll, sign, payment). */
 export function AttachMenu({
   head, inputBg, chipBg, actions, onClose,
 }: {

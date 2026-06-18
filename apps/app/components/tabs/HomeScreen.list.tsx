@@ -54,6 +54,7 @@ interface ChannelsListProps {
   getRowLayout: (d: ArrayLike<RowT> | null | undefined, index: number) => { length: number; offset: number; index: number };
 }
 
+/** Renders the home screen's scrollable list of channels with search and label filters. */
 export function ChannelsList({
   panRef, router, sortedRows, requestCount, barLabels, enabledLabels, onToggleLabel,
   unreadOnly, onToggleUnread, onClearAll,

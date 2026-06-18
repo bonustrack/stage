@@ -21,6 +21,7 @@ import { base } from 'viem/chains';
 import { getActiveAccount, getActiveViemAccount } from '../../lib/accounts';
 import { kernelClientForRecord } from '../../lib/zerodev';
 
+/** Provides transaction-signing state and handlers for the conversation. */
 export function useTxSignLayer(activeLine: string) {
   /** Message ids whose signature is currently being produced — drives the
    *  Sign-button spinner. */

@@ -13,6 +13,7 @@ import { usePeerProfiles, getPeerName, isPeerResolved } from '../lib/peerProfile
 import { usePalette, useBlockRadius } from '../lib/theme';
 import { openDmWithAddress, shortAddress } from '../modules/messaging';
 
+/** Renders an inline card for a DM-by-address link that opens the local DM with the peer on tap. */
 export function DmPeerCard({ address }: { address: string }): React.ReactElement {
   usePeerProfiles([address]);
   const { border } = usePalette();

@@ -30,6 +30,7 @@ export interface ChannelRow {
   [key: string]: unknown;
 }
 
+/** Summarise a conversation into a channels-list row (preview, timestamp, unread count, members). */
 export async function summarizeConv(
   conv: Conversation, selfInboxId: string,
 ): Promise<ChannelRow> {

@@ -28,6 +28,7 @@ import {
 } from '../../lib/zerodev';
 import type { Address, Hex } from 'viem';
 
+/** Screen for setting up or approving smart-account social recovery. */
 export default function WalletRecovery(): React.ReactElement {
   const router = useRouter();
   const params = useLocalSearchParams<{ mode?: string; line?: string; wallet?: string; newOwner?: string }>();

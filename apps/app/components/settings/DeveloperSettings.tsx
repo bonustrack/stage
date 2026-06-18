@@ -22,6 +22,7 @@ import {
 import { resetForOnboarding } from '../../lib/wallet';
 import { resetEverything } from '../../lib/resetEverything';
 
+/** Renders the developer settings screen with reset and debugging actions. */
 export function DeveloperSettings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head, border, danger } = usePalette();

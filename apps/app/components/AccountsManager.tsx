@@ -16,6 +16,7 @@ import { ManageSheet, ExportSheet } from './AccountsManager.sheets';
 import { usePalette } from '../lib/theme';
 import { usePeerProfiles } from '../lib/peerProfiles';
 
+/** Settings section for listing, switching, adding, and removing the device's accounts. */
 export function AccountsManager({ dark, flat = false, onSwitched }: { dark: boolean; flat?: boolean; onSwitched?: () => void }): React.ReactElement {
   const tokens = usePalette();
   const head = tokens.link; // #ffffff / #000000

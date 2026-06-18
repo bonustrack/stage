@@ -31,6 +31,7 @@ import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { ChannelRow } from '../../components/ChannelRow';
 import { Col, Row } from '../../components/layout';
 
+/** Screen listing the user's archived conversations. */
 export default function Archived(): React.ReactElement {
   const router = useRouter();
   const { text: fg, link: head, border } = usePalette();

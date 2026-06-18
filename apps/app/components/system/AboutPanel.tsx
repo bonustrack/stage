@@ -49,6 +49,7 @@ function AboutRow({ label, value, mono, border, href, head }: AboutRowProps): Re
   );
 }
 
+/** Renders the About panel showing app version and build metadata. */
 export function AboutPanel({ dark, head, sub, border, rowBg }: {
   dark: boolean; head: string; sub: string; border: string; rowBg: string;
 }): React.ReactElement {

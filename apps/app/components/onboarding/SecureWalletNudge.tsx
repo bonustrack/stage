@@ -29,6 +29,7 @@ import { revealRecoveryPhrase } from '../../lib/zerodev';
 import { useEnablePasskey } from '../../lib/useEnablePasskey';
 import { isWalletBackedUp, setWalletBackedUp } from '../../lib/walletBackup';
 
+/** Renders a prompt urging the user to back up their wallet, or nothing once it is secured. */
 export function SecureWalletNudge(): React.ReactElement | null {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';

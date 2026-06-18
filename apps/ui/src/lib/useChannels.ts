@@ -35,6 +35,7 @@ export interface ChannelsState {
   openDocs: () => void;
 }
 
+/** Hook providing the Channels tab state: cached rows, search, live stream, and row context menu. */
 export function useChannels(): ChannelsState {
   const router = useRouter();
   /** Embedded (iframed) = widget. Hides the search topnav + drops the Ask

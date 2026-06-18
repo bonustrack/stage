@@ -23,6 +23,7 @@ import { PublicSendBody } from './send.public.body';
 import { ShieldFlowForm } from './send.shield';
 import { TokenSelector, useSelectedBalance, useTopToken, type TokenChoice } from './TokenSelector';
 
+/** Screen for sending tokens, supporting public and private transfers. */
 export default function WalletSend(): React.ReactElement {
   const router = useRouter();
   const params = useLocalSearchParams<{ to?: string; symbol?: string; chainId?: string; private?: string }>();

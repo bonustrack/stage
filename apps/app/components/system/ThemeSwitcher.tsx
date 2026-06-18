@@ -12,6 +12,7 @@ import { Button } from '@metro-labs/kit/button';
 import { setThemePreference, useThemePreference } from '../../lib/theme';
 import { THEME_OPTIONS } from '../tabs/SettingsScreen.parts';
 
+/** Renders controls for switching the app's theme preference. */
 export function ThemeSwitcher({ dark, head }: {
   dark: boolean; head: string; sub: string; border: string; rowBg: string;
 }): React.ReactElement {

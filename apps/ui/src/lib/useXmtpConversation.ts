@@ -43,6 +43,7 @@ export interface XmtpConversation {
   onActionCopyLink: () => void;
 }
 
+/** Hook providing XMTP conversation-view state: feed, header metadata, optimistic bubbles, and bubble actions. */
 export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConversation {
   const route = useRoute();
   const router = useRouter();

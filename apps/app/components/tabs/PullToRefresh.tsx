@@ -40,6 +40,7 @@ export interface PullHandlers {
   scrollEventThrottle: number;
 }
 
+/** Provides pan handlers and an animated indicator for pull-to-refresh gestures. */
 export function usePullToRefresh(
   refreshing: boolean,
   onRefresh: () => void,

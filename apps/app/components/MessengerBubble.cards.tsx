@@ -29,6 +29,7 @@ import { txActionLabel, isTransferRequest } from './MessengerBubble.txwording';
 // summary (a phishing request could otherwise mislabel a Permit2 as a benign
 // "Sign in"). `consentAllowed === false` disables the Sign action for an
 // unaccepted (stranger) conversation.
+/** Renders an in-chat signature-request card with a trusted summary and a Sign action. */
 export function SigRequestCard({ req, dark, sub, signing, onSign, consentAllowed }: {
   req: SigRequest; dark: boolean; sub: string; signing?: boolean;
   onSign?: () => void;

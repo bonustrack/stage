@@ -23,6 +23,7 @@ import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { useProposals } from './Proposals.hook';
 import { ProposalCard } from './Proposals.card';
 
+/** Screen that lists governance proposals as cards. */
 export function ProposalsScreen(): React.ReactElement {
   const pal = usePalette();
   const dark = useEffectiveColorScheme() === 'dark';

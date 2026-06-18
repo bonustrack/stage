@@ -23,6 +23,7 @@ import { Icon } from '@metro-labs/kit/icon';
 import { flash } from '../../lib/toast';
 import { ReceiveModeToggle, type ReceiveMode } from '../../components/wallet/ReceiveModeToggle';
 
+/** Screen for receiving funds, showing the wallet address and QR code. */
 export default function WalletReceive(): React.ReactElement {
   const router = useRouter();
   const { text: fg, link: head, border } = usePalette();

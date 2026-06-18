@@ -12,12 +12,14 @@ import { getCachedXmtpClient, convOfLine, lineOfConv } from './xmtp';
  *  bigint — we coerce on read/write). Persisted under `unread.lastRead.<id>`
  *  in localStorage so unread counts survive a reload. */
 const LAST_READ_PREFIX = 'unread.lastRead.';
+/** Read a conversation's persisted last-read timestamp in sentAtNs units. */
 export function getLastReadNs(convId: string): number {
   const raw = localStorage.getItem(LAST_READ_PREFIX + convId);
   if (!raw) return 0;
   const n = Number(raw);
   return Number.isFinite(n) ? n : 0;
 }
+/** Persist a conversation's last-read timestamp in sentAtNs units to localStorage. */
 export function setLastReadNs(convId: string, ns: number): void {
   try { localStorage.setItem(LAST_READ_PREFIX + convId, String(ns)); }
   catch { /* quota / private-mode — best effort */ }

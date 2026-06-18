@@ -47,6 +47,7 @@ function getExistingPeers(): { address: string; convId: string }[] {
 
 interface Colors { fg: string; head: string; sub: string; border: string }
 
+/** Renders contact search results on the home screen, or nothing when the query is empty. */
 export function HomeContactResults(
   { query, c, noChannels }: { query: string; c: Colors; noChannels: boolean },
 ): React.ReactElement | null {

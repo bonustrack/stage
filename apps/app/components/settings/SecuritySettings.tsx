@@ -11,6 +11,7 @@ import { AccountSecuritySection } from '../tabs/SettingsScreen.account';
 import { SystemHeader } from '../system/SystemHeader';
 import { SecureWalletNudge } from '../onboarding/SecureWalletNudge';
 
+/** Renders the security settings screen including the wallet backup nudge. */
 export function SecuritySettings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head, border } = usePalette();

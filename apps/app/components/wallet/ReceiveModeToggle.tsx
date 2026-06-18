@@ -11,6 +11,7 @@ import { usePalette } from '../../lib/theme';
 
 export type ReceiveMode = 'public' | 'private';
 
+/** Toggle for switching the receive screen between public and private modes. */
 export function ReceiveModeToggle({ mode, onChange, privateReady }: {
   mode: ReceiveMode;
   onChange: (m: ReceiveMode) => void;

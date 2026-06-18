@@ -60,6 +60,7 @@ function LabelChip({ label, busy, onRemove, p }: {
   );
 }
 
+/** Group labels section: lists the group's label chips and lets members add or remove them. */
 export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React.ReactElement {
   const { fg, sub, border, inputBg } = p;
   const [labels, setLabels] = useState<string[]>([]);

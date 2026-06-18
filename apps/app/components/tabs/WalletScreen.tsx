@@ -29,6 +29,7 @@ import { ActivityView } from './WalletScreen.activity';
 import { useWalletBalances } from './WalletScreen.balances';
 import { useWalletFocused } from './useWalletFocused';
 
+/** Wallet tab screen showing balances, tokens, and activity. */
 export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const router = useRouter();
   const { link: head, text: sub, bg, border } = usePalette();

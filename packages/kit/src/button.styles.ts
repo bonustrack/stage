@@ -171,6 +171,7 @@ export function variantColors(variant: ButtonVariant, dark: boolean): VariantCol
   return resolveColors(color, cv, dark);
 }
 
+/** Build the text style for a button label at a given size and color. */
 export function textLabelStyle(spec: SizeSpec, color: string): TextStyle {
   return {
     color,

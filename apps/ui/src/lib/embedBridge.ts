@@ -2,10 +2,12 @@
  *  host page of inbound messages so it can badge its launcher button. No-op
  *  on the standalone metro.box site. */
 
+/** True when the messenger is running inside an iframe (the embed widget). */
 export function runningInIframe(): boolean {
   return typeof window !== 'undefined' && window.self !== window.top;
 }
 
+/** Notify the host page of the current unread count so it can badge its launcher. */
 export function postUnreadToParent(count: number): void {
   if (count > 0 && runningInIframe()) {
     window.parent.postMessage({ type: 'metro:inbound', count }, '*');

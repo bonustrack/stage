@@ -66,6 +66,7 @@ function hueStops(): string[] {
   return Array.from({ length: 24 }, (_, i) => hsvToHex((i / 23) * 360, 1, 1));
 }
 
+/** Renders an HSV color picker for selecting a theme color. */
 export function ColorPicker({ value, onChange, p }: {
   value: string; onChange: (hex: string) => void; p: GalleryPalette;
 }): React.ReactElement {

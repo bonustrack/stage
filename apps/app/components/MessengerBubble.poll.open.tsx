@@ -11,6 +11,7 @@ import { Button } from '@metro-labs/kit/button';
 import { Row, Box } from './layout';
 import { usePalette, useBlockRadius, withAlpha } from '../lib/theme';
 
+/** Renders the free-text answer input and submitted-answers list for an open poll question. */
 export function OpenAnswerBlock({ qi, sub, dark, answers, mine, onSubmit }: {
   qi: number; sub: string; dark: boolean;
   answers?: Map<string, { text: string; ts: string }>;

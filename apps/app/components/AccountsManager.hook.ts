@@ -16,6 +16,7 @@ import {
 import { createSmartAccount, enablePasskeyForRecord, passkeysAvailable } from '../lib/zerodev';
 import { reloadApp } from './AccountsManager.helpers';
 
+/** Hook providing the accounts list, active id, and switch/add/remove/export handlers for AccountsManager. */
 export function useAccountsManager(onSwitched?: () => void): {
   accounts: AccountRecord[]; activeId: string | null; busy: boolean;
   expanded: boolean; setExpanded: (fn: (e: boolean) => boolean) => void;

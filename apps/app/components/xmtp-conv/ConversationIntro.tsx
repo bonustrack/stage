@@ -40,6 +40,7 @@ function IntroLabelChips({ labels, fg }: {
   );
 }
 
+/** Header that introduces a conversation's peer or group details. */
 export function ConversationIntro({
   isGroup, peerAddr, groupName, groupImage, groupDescription, groupLabels,
   convId, head, sub, fg, border, rowBg, onPressPeer,

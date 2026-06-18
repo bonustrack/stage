@@ -13,6 +13,7 @@ import { TabsPager } from '../../components/SwipeTabs';
 import { HoistedTopnav } from '../../components/tabs/HoistedTopnav';
 import { useTotalUnread } from '../../lib/useTotalUnread';
 
+/** Bottom tab navigator hosting the Messenger, Contacts and Wallet pager scenes. */
 export default function TabsLayout(): React.ReactElement {
   const pathname = usePathname();
   /** Total unread across all non-archived convs - drives the badge on the

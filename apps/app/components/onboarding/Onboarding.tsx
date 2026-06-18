@@ -46,6 +46,7 @@ export interface OnboardingProps {
   onDone: () => void;
 }
 
+/** Renders the first-run onboarding flow that introduces the app and creates the wallet. */
 export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const pal = usePalette();

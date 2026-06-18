@@ -28,8 +28,11 @@ export interface InboxEthStore {
 export class InboxEthCache implements InboxEthStore {
   private readonly map = new Map<string, string>();
 
+  /** Return the cached ETH address for an inbox id, or undefined when unknown. */
   get(inboxId: string): string | undefined { return this.map.get(inboxId); }
+  /** Cache the ETH address resolved for an inbox id. */
   set(inboxId: string, eth: string): void { this.map.set(inboxId, eth); }
+  /** True when an inbox id's ETH address is already cached. */
   has(inboxId: string): boolean { return this.map.has(inboxId); }
   /** Wipe everything — call on account switch (the cache is keyed to one inbox's
    *  view, but identities are global; clearing is the safe default). */

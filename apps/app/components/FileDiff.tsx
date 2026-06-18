@@ -41,6 +41,7 @@ function gutter(n: number | null): string {
   return n === null ? '' : String(n);
 }
 
+/** Renders one collapsible per-file diff section with colored patch lines and a line-number gutter. */
 export function FileDiff({ file, p, dark }: {
   file: DiffFile; p: Palette; dark: boolean;
 }): React.ReactElement {

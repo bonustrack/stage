@@ -10,6 +10,7 @@ import type { HistoryEntry } from '../../lib/types';
 import type { FlatList } from 'react-native-gesture-handler';
 import { hasAttachments, isReaction } from './feed-helpers';
 
+/** Provides outbound feed state such as the jump-to-latest indicator. */
 export function useOutboundLayer(
   events: HistoryEntry[],
   myUri: string,

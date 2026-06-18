@@ -30,6 +30,7 @@ function cacheKey(address: string): string {
   return PROFILE_CACHE_PREFIX + address.toLowerCase();
 }
 
+/** Read a cached Snapshot profile for an address from localStorage, or null when absent. */
 export function loadCachedProfile(address: string): SnapshotProfile | null {
   if (!address) return null;
   try {

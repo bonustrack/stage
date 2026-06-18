@@ -24,6 +24,7 @@ const STORAGE_KEY = 'metro.channels.cache.v1';
 export const cachedRows: Ref<CachedRow[] | null> = ref<CachedRow[] | null>(null);
 let hydrated = false;
 
+/** Lazily load the persisted channel rows from localStorage into the shared ref. */
 export function hydrateCachedRows(): CachedRow[] | null {
   if (hydrated) return cachedRows.value;
   hydrated = true;
@@ -36,6 +37,7 @@ export function hydrateCachedRows(): CachedRow[] | null {
   return cachedRows.value;
 }
 
+/** Update the shared channel rows and persist them to localStorage. */
 export function setCachedRows(next: CachedRow[] | null): void {
   cachedRows.value = next;
   try {

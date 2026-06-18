@@ -51,6 +51,7 @@ interface Props {
   onPress?: (fullUri: string | null) => void;
 }
 
+/** Renders a user or group avatar from a custom image, stamp.fyi identicon, or placeholder circle. */
 export function Avatar({
   address, imageUri, size = 'md', cacheBuster, square, style, onPress,
 }: Props): React.ReactElement {

@@ -32,6 +32,7 @@ import { TOPNAV_HEIGHT } from '../../components/Topnav';
 import { useConversationState } from '../../components/xmtp-conv/useConversationState';
 import { RequestActionBar } from '../../components/RequestActionBar';
 
+/** Full-screen XMTP conversation thread with message composer and swipe-back. */
 export default function XmtpConversation(): React.ReactElement {
   const router = useRouter();
   /** FULL-SCREEN swipe-back coexists with the bubble's swipe-to-reply by

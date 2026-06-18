@@ -37,6 +37,7 @@ export interface ConversationSearchProps {
   router: { push: (h: { pathname: '/user/[address]'; params: { address: string } }) => void };
 }
 
+/** In-conversation search bar that filters and highlights matching messages. */
 export function ConversationSearch({
   line, query, sub, bg, c, dark, router,
 }: ConversationSearchProps): React.ReactElement {

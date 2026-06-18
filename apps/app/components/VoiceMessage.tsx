@@ -32,6 +32,7 @@ function fmt(ms: number | undefined): string {
   return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 }
 
+/** Audio message bubble with play/pause controls for the given URI. */
 export function VoiceMessage({ uri }: Props): React.ReactElement {
   const soundRef = useRef<Audio.Sound | null>(null);
   const [playing, setPlaying] = useState(false);

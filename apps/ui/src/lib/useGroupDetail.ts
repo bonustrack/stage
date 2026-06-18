@@ -34,6 +34,7 @@ export interface GroupDetail {
   onPickImage: (file: File) => Promise<void>;
 }
 
+/** Hook providing group detail state and mutations (name, description, avatar, members). */
 export function useGroupDetail(): GroupDetail {
   const route = useRoute();
   const router = useRouter();

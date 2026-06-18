@@ -40,6 +40,7 @@ import { usePalette, withAlpha } from '../lib/theme';
 
 type PayPhase = 'idle' | 'paying' | 'paid' | 'failed';
 
+/** Card that renders an x402 payment challenge and drives the pay flow. */
 export function X402Card({ challenge, dark }: {
   challenge: X402Challenge; dark?: boolean;
 }): React.ReactElement | null {

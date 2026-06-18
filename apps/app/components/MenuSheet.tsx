@@ -24,6 +24,7 @@ import { loadAccounts, getActiveAccountId, type AccountRecord } from '../lib/acc
 import { drawerAccountRows, DrawerHeader, DrawerRow } from './LeftDrawer.parts';
 import { useDrawerAccountActions } from './LeftDrawer.accounts';
 
+/** Renders the account/navigation bottom sheet with the active account, account switcher, and nav rows. */
 export function MenuSheet({ visible, onClose }: {
   visible: boolean;
   onClose: () => void;

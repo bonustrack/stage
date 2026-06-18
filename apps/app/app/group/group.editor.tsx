@@ -84,6 +84,7 @@ export function GroupProfileHeader({ imageUrl, channelId, uploadingImage, insetT
   );
 }
 
+/** Inline editor for a group's name with save/cancel controls. */
 export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, saving, onSave, dark, p }: {
   name: string | null; draft: string; setDraft: (s: string) => void;
   editing: boolean; setEditing: (b: boolean) => void; saving: boolean; onSave: () => void;
@@ -121,6 +122,7 @@ export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, sa
   );
 }
 
+/** Inline editor for a group's description with save/cancel controls. */
 export function GroupDescriptionEditor({ description, descriptionDraft, setDescriptionDraft, editing, setEditing, saving, onSave, dark, p }: {
   description: string; descriptionDraft: string; setDescriptionDraft: (s: string) => void;
   editing: boolean; setEditing: (b: boolean) => void; saving: boolean; onSave: () => void;

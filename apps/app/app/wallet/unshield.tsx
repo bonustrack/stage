@@ -22,6 +22,7 @@ import { TokenSelector, useSelectedBalance } from './TokenSelector';
 type Phase = 'idle' | 'proving' | 'broadcasting' | 'done' | 'error';
 const NET_LABEL: Record<number, string> = { 1: 'Ethereum', 11155111: 'Sepolia' };
 
+/** Screen for unshielding tokens from a private balance back to public. */
 export default function WalletUnshield(): React.ReactElement {
   const router = useRouter();
   const params = useLocalSearchParams<{ symbol?: string; chainId?: string }>();

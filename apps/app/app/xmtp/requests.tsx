@@ -33,6 +33,7 @@ import { Spinner } from '../../components/Spinner';
  *  which owns the SDK access + summarise logic, unchanged). */
 type ReqRow = ConversationRequestView;
 
+/** Screen listing pending conversation requests awaiting accept or decline. */
 export default function Requests(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';

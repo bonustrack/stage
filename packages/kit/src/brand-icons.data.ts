@@ -13,6 +13,7 @@ export const BRAND_ICON_DATA = {
 
 export type BrandIconName = keyof typeof BRAND_ICON_DATA;
 
+/** Return the SVG path data for a named brand icon. */
 export function brandIconPath(name: BrandIconName): string {
   return BRAND_ICON_DATA[name];
 }

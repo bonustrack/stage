@@ -24,6 +24,7 @@ export interface ChannelStreamHandles {
   refresh: () => Promise<void>;
 }
 
+/** Start the live channels-list pipeline (new convs, inbound messages, periodic resync) and return its stop/refresh handles. */
 export async function startChannelStream(client: XmtpClient): Promise<ChannelStreamHandles> {
   const selfInboxId = client.inboxId ?? '';
 

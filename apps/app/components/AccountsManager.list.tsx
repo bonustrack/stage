@@ -10,6 +10,7 @@ import { Icon } from '@metro-labs/kit/icon';
 import { type AccountRecord } from '../lib/accounts';
 import { AccountRow } from './AccountsManager.parts';
 
+/** Renders the Accounts section card (active account, other accounts, and the Add-account row). */
 export function AccountList({
   flat, accounts, activeId, activeRec, otherAccounts, expanded, setExpanded,
   head, sub, border, rowBg, onSwitch, setManageId, onAdd,

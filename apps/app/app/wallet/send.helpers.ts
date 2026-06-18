@@ -13,6 +13,7 @@ export const multicall3Abi = [{
   outputs: [{ name: 'b', type: 'uint256' }],
 }] as const;
 
+/** Returns true when the string looks like an ENS name (e.g. `foo.eth`). */
 export function looksLikeEns(s: string): boolean {
   return /^[a-z0-9-]+(\.[a-z0-9-]+)+\.eth$|^[a-z0-9-]+\.eth$/i.test(s.trim());
 }

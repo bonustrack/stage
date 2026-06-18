@@ -294,6 +294,7 @@ function useProbeActions(deps: ProbeDeps): ProbeActions {
 
 /* ── Probe component ────────────────────────────────────────────────────── */
 
+/** Probe that pings the private bridge and renders its reachability status. */
 export function BridgePingProbe({ sub, border }: {
   sub: string; border: string;
 }): React.ReactElement {

@@ -20,6 +20,7 @@ import type { useConversationState } from './useConversationState';
 type ConvState = ReturnType<typeof useConversationState>;
 type Bubble = ConvState['allBubbles'][number];
 
+/** Provides the render function for a single conversation feed item. */
 export function useFeedRenderItem(
   c: ConvState,
   dark: boolean,

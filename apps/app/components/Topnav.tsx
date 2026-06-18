@@ -22,6 +22,7 @@ import { usePalette } from '../lib/theme';
  *  fixed-height border-box of exactly this value (+ any top inset). */
 export const TOPNAV_HEIGHT = 52;
 
+/** Top navigation bar with configurable left and right slots. */
 export function Topnav({ left, right }: {
   /** Left slot — defaults to the shared identity (avatar + name → Menu). */
   left?: React.ReactNode;

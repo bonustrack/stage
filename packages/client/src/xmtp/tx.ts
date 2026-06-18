@@ -106,6 +106,7 @@ export function walletSendCallsPreviewText(c: WalletSendCallsContent): string {
   const desc = c.calls?.[0]?.metadata?.description;
   return desc ? `Payment request: ${desc}` : 'Payment request';
 }
+/** One-line channels-list preview for a TransactionReference receipt. */
 export function transactionReferencePreviewText(): string {
   return 'Transaction';
 }

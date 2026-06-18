@@ -14,6 +14,7 @@ import { TopnavIdentity } from './TopnavIdentity';
 
 export type ProfileColors = Palette;
 
+/** Hook that returns the active palette colors used across profile screen parts. */
 export function useProfileColors(): ProfileColors {
   return usePalette();
 }

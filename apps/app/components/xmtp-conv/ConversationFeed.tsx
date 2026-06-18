@@ -10,6 +10,7 @@ import type { useConversationState } from './useConversationState';
 
 type ConvState = ReturnType<typeof useConversationState>;
 
+/** Scrollable message feed for a conversation. */
 export function ConversationFeed({
   c, convId, dark, head, sub, fg, border, rowBg, insets, router, searchSlot,
 }: {

@@ -15,6 +15,7 @@ export interface SearchResolution {
   address: string | null;
 }
 
+/** Hook that resolves a search query domain to a profile and exposes navigation to it. */
 export function useSearchResolution(query: Ref<string>, router: Router): {
   searchResolution: Ref<SearchResolution>;
   openSearchedProfile: () => void;

@@ -25,6 +25,7 @@ import { loadPushEnabled, setPushEnabled, subscribePushPref, isPushEnabledSync }
 import { getOrCreateXmtpClient } from '../../modules/messaging';
 import { registerPushWithDaemon, unregisterPushFromDaemon } from '../../lib/push';
 
+/** Renders the notifications settings screen for managing push registration. */
 export function NotificationsSettings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head, border } = usePalette();

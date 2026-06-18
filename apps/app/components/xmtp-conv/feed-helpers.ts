@@ -84,6 +84,7 @@ export function ownReactionsByMessage(events: HistoryEntry[], myUri: string, pol
   return out;
 }
 
+/** Returns whether a history entry is a reaction rather than a message. */
 export function isReaction(e: HistoryEntry): boolean {
   const p = e.payload as { reactTo?: string } | undefined;
   return Boolean(p?.reactTo);

@@ -25,6 +25,7 @@ import { GroupLabelsSection } from './group.labels';
 import { GroupGithubSection } from './group.github';
 import { useGroupActions } from './group.actions';
 
+/** Group detail screen for editing a conversation's name, description and members. */
 export default function GroupDetail(): React.ReactElement {
   const router = useRouter();
   const insets = useSafeAreaInsets();

@@ -88,6 +88,7 @@ export function signatureRequestPreviewText(c: SignatureRequestContent): string 
   const desc = c?.description?.trim();
   return desc ? `Signature request: ${desc}` : 'Signature request';
 }
+/** One-line channels-list preview for a SignatureReference receipt. */
 export function signatureReferencePreviewText(): string {
   return 'Signature';
 }

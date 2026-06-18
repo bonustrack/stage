@@ -18,6 +18,7 @@ import type { ComposerActionsArgs } from './MessengerComposer.types';
 
 export type { ComposerActionsArgs } from './MessengerComposer.types';
 
+/** Hook providing the composer's imperative action handlers (attachments, pickers, poll/signature/payment, send). */
 export function useComposerActions(a: ComposerActionsArgs) {
   const upload = async (uri: string, mime: string, name?: string): Promise<void> => {
     a.setUploading(true);

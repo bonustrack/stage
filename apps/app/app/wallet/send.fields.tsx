@@ -22,6 +22,7 @@ interface Palette {
   fg: string; head: string; sub: string; border: string; inputBg: string;
 }
 
+/** Recipient address/ENS input field for the send flow. */
 export function RecipientField(props: {
   pal: Palette;
   to: string;
@@ -79,6 +80,7 @@ export function RecipientField(props: {
   );
 }
 
+/** Amount input field with Max and fiat-conversion helpers for the send flow. */
 export function AmountField(props: {
   pal: Palette;
   dark: boolean;
@@ -174,6 +176,7 @@ const PUBLIC_SEND_CHAIN = 1;
 
 type TxState = 'idle' | 'submitting' | 'pending' | 'confirmed';
 
+/** Header row for the send screen with a back control. */
 export function SendHeader(props: {
   fg: string; head: string; border: string; onBack: () => void;
 }): React.ReactElement {
@@ -188,6 +191,7 @@ export function SendHeader(props: {
   );
 }
 
+/** Submit button reflecting the current send transaction state. */
 export function SubmitButton(props: {
   dark: boolean; busy: boolean; canSubmit: boolean; txState: TxState; onSubmit: () => void;
 }): React.ReactElement {
@@ -211,6 +215,7 @@ export function SubmitButton(props: {
   );
 }
 
+/** Inline status display for a send transaction's progress, hash or error. */
 export function TxStatus(props: {
   sub: string; txState: TxState; txHash: Hex | null; txErr: string | null;
 }): React.ReactElement {

@@ -6,6 +6,7 @@
 import { useEffect, useState } from 'react';
 import { getCachedRows, subscribeCachedRows } from '../../modules/messaging';
 
+/** Provides a cached group metadata string, refreshing it from storage on change. */
 export function useCachedGroupString(
   convId: string | undefined,
   activeLine: string,

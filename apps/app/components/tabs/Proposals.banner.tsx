@@ -14,6 +14,7 @@ import { Row } from '../layout';
 import { usePalette } from '../../lib/theme';
 import { useProposalCount } from './Proposals.hook';
 
+/** Banner that surfaces the active proposal count and links to the proposals screen. */
 export function ProposalsBanner(): React.ReactElement | null {
   const router = useRouter();
   const pal = usePalette();

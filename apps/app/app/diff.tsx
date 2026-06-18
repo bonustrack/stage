@@ -26,6 +26,7 @@ import Markdown from 'react-native-markdown-display';
 import { mdParser } from '../lib/mdParser';
 import { diffMarkdownStyles } from '../lib/diffMarkdownStyles';
 
+/** Screen rendering a markdown diff view of pending changes. */
 export default function Diff(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
