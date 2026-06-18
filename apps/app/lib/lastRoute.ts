@@ -11,7 +11,7 @@
  *  NO HOME FLASH (the gate): the previous version waited ~150ms and then
  *  async-read the saved route + pushed, so `(tabs)/index` (Home) mounted and
  *  COMMITTED a frame before the redirect landed - a visible flash. We now mirror
- *  the onboarding idiom (lib/onboardingSeen): the root layout holds its boot
+ *  the onboarding idiom (the account gate): the root layout holds its boot
  *  spinner until `useRestoreGate().ready` (the one-time AsyncStorage read has
  *  resolved). The Stack - and therefore Home - is never mounted until the
  *  restore decision is known, so the FIRST committed frame is the channel.
