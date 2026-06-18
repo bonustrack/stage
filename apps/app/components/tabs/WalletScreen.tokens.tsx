@@ -12,6 +12,7 @@
  *  (including the always-seeded fixed private set) are filtered out so the wallet
  *  page lists only tokens the user actually holds. */
 
+import { useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { Col } from '../layout';
 import { TokenRow } from './WalletScreen.parts';
@@ -31,14 +32,25 @@ export function TokensList({
   bg: string;
 }): React.ReactElement {
   const router = useRouter();
+  // Merge public + shielded rows, drop zero-balance, then rank by USD value
+  // DESC. Memoized on the row arrays so this O(n log n) filter/map/sort chain
+  // only re-runs when the underlying data changes — not on every parent
+  // re-render (frequent: Railgun snapshot updates, balance refetches, tab
+  // switches). `.sort` stays stable (V8/Hermes) so equal-value ordering is
+  // preserved, matching the documented behavior exactly.
+  const sortedRows = useMemo(
+    () => [...rows, ...privateRows]
+      .filter(r => Number(r.balance) > 0)
+      .map(r => ({ r, usdValue: (r.priceUsd ?? 0) * Number(r.balance) }))
+      .sort((a, b) => b.usdValue - a.usdValue)
+      .map(({ r }) => r),
+    [rows, privateRows],
+  );
   return (
     <Col margin={{ x: 16 }}>
       <PendingShieldRows pending={pending} pal={{ head, sub, border }} />
-      {[...rows, ...privateRows]
-        .filter(r => Number(r.balance) > 0)
-        .map(r => ({ r, usdValue: (r.priceUsd ?? 0) * Number(r.balance) }))
-        .sort((a, b) => b.usdValue - a.usdValue)
-        .map(({ r }) => {
+      {sortedRows
+        .map(r => {
           const id = `${r.isPrivate ? 'priv' : 'pub'}:${r.chainId}:${r.symbol}`;
           return (
             <TokenRow
