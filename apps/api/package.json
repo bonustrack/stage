@@ -8,6 +8,7 @@
     "lint": "eslint src/"
   },
   "devDependencies": {
+    "@stage-labs/config": "workspace:*",
     "eslint": "^10.3.0",
     "typescript-eslint": "^8.59.2"
   }

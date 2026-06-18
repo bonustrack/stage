@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "_comment": "@stage-labs/config — shared TypeScript options for the React Native app (apps/app), layered ON TOP of expo/tsconfig.base. The consumer extends BOTH (array extends, this one last so it wins): [\"expo/tsconfig.base\", \"@stage-labs/config/tsconfig/react-native.json\"]. Package-specific `paths`/`include` stay in the consumer. Relocation only — no behaviour change.",
+  "compilerOptions": {
+    "strict": true,
+    "types": ["react", "react-native"],
+    "moduleResolution": "bundler"
+  }
+}

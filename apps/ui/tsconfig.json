@@ -1,9 +1,6 @@
 {
-  "extends": "@vue/tsconfig/tsconfig.dom.json",
+  "extends": ["@vue/tsconfig/tsconfig.dom.json", "@stage-labs/config/tsconfig/vue.json"],
   "compilerOptions": {
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
     "types": ["vite/client"],
     "baseUrl": ".",
     "paths": {

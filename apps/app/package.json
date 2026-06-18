@@ -79,6 +79,7 @@
     "viem": "^2.51.0"
   },
   "devDependencies": {
+    "@stage-labs/config": "workspace:*",
     "@types/react": "~19.1.0",
     "babel-preset-expo": "~54.0.10",
     "eslint": "^10.3.0",

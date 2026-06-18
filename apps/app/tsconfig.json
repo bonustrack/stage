@@ -1,9 +1,6 @@
 {
-  "extends": "expo/tsconfig.base",
+  "extends": ["expo/tsconfig.base", "@stage-labs/config/tsconfig/react-native.json"],
   "compilerOptions": {
-    "strict": true,
-    "types": ["react", "react-native"],
-    "moduleResolution": "bundler",
     "baseUrl": ".",
     "paths": {
       "react-native": ["./node_modules/react-native"],

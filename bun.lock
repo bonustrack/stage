@@ -14,6 +14,7 @@
       "name": "api",
       "version": "0.1.0",
       "devDependencies": {
+        "@stage-labs/config": "workspace:*",
         "eslint": "^10.3.0",
         "typescript-eslint": "^8.59.2",
       },
@@ -87,6 +88,7 @@
         "viem": "^2.51.0",
       },
       "devDependencies": {
+        "@stage-labs/config": "workspace:*",
         "@types/react": "~19.1.0",
         "babel-preset-expo": "~54.0.10",
         "eslint": "^10.3.0",
@@ -108,6 +110,7 @@
         "vue-router": "^4.5.0",
       },
       "devDependencies": {
+        "@stage-labs/config": "workspace:*",
         "@types/markdown-it": "^14.1.2",
         "@vitejs/plugin-vue": "^5.2.1",
         "@vue/tsconfig": "^0.7.0",
@@ -133,16 +136,26 @@
         "zod": "^3.25.76",
       },
       "devDependencies": {
+        "@stage-labs/config": "workspace:*",
         "@types/bun": "^1.2.0",
         "eslint": "^10.3.0",
         "typescript": "~5.9.2",
         "typescript-eslint": "^8.59.2",
       },
     },
+    "packages/config": {
+      "name": "@stage-labs/config",
+      "version": "0.1.0",
+      "peerDependencies": {
+        "eslint": "*",
+        "typescript-eslint": "*",
+      },
+    },
     "packages/kit": {
       "name": "@metro-labs/kit",
       "version": "0.1.0",
       "devDependencies": {
+        "@stage-labs/config": "workspace:*",
         "@types/react": "~19.1.0",
         "eslint": "^10.3.0",
         "typescript": "~5.9.2",
@@ -952,6 +965,8 @@
     "@sinonjs/fake-timers": ["@sinonjs/fake-timers@10.3.0", "", { "dependencies": { "@sinonjs/commons": "^3.0.0" } }, "sha512-V4BG07kuYSUkTCSBHG8G8TNhM+F19jXFWnQtzj+we8DrkpSBCee9Z3Ms8yiGer/dlmhe35/Xdgyo3/0rQKg7YA=="],
 
     "@stage-labs/client": ["@stage-labs/client@workspace:packages/client"],
+
+    "@stage-labs/config": ["@stage-labs/config@workspace:packages/config"],
 
     "@szmarczak/http-timer": ["@szmarczak/http-timer@5.0.1", "", { "dependencies": { "defer-to-connect": "^2.0.1" } }, "sha512-+PmQX0PiAYPMeVYe237LJAYvOMYW1j2rH5YROyS3b4CTVJum34HfRvKvAzozHAQG0TnHNdUfY9nCeUyRAs//cw=="],
 

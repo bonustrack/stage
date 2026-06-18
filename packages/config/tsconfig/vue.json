@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "_comment": "@stage-labs/config — shared TypeScript options for the Vue app (apps/ui), layered ON TOP of @vue/tsconfig/tsconfig.dom.json. The consumer extends BOTH (array extends, this one last so it wins): [\"@vue/tsconfig/tsconfig.dom.json\", \"@stage-labs/config/tsconfig/vue.json\"]. Package-specific `types`/`baseUrl`/`paths`/`include` stay in the consumer. Relocation only — no behaviour change.",
+  "compilerOptions": {
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  }
+}
