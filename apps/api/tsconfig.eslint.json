@@ -1,0 +1,5 @@
+{
+  "_comment": "Lint-only TS project: extends the app tsconfig so the type-aware ESLint projectService resolves src through one explicit project (symmetric with the other workspaces).",
+  "extends": "./tsconfig.json",
+  "include": ["src/**/*.ts"]
+}

@@ -111,7 +111,7 @@ export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, sa
           <SaveButton saving={saving} disabled={saving || !draft.trim()} onSave={onSave} dark={dark}/>
         </Row>
       ) : (
-        <Pressable onPress={() => setEditing(true)} hitSlop={6} style={{ marginTop: 6, alignItems: 'flex-start' }}>
+        <Pressable onPress={() => { setEditing(true); }} hitSlop={6} style={{ marginTop: 6, alignItems: 'flex-start' }}>
           <Text weight="semibold" size="5xl" color={head} style={{ textAlign: 'left' }}>
             {name && name.trim() ? name : 'Untitled group'}
           </Text>
@@ -151,7 +151,7 @@ export function GroupDescriptionEditor({ description, descriptionDraft, setDescr
           <SaveButton saving={saving} disabled={saving} onSave={onSave} dark={dark}/>
         </Row>
       ) : (
-        <Pressable onPress={() => setEditing(true)} hitSlop={6} style={{ marginTop: 6 }}>
+        <Pressable onPress={() => { setEditing(true); }} hitSlop={6} style={{ marginTop: 6 }}>
           <Text size="md" color={description.trim() ? fg : sub}>
             {description.trim() || 'Tap to add a description'}
           </Text>

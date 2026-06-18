@@ -78,7 +78,7 @@ export function loadOverrides(): void {
       if (seedRaw != null) {
         const parsed = JSON.parse(seedRaw) as Partial<ThemeSeeds>;
         if (parsed && typeof parsed === 'object' && parsed.light && parsed.dark) {
-          cache = { ...defaultSeeds(), ...parsed } as ThemeSeeds;
+          cache = { ...defaultSeeds(), ...parsed };
           changed = true;
         }
       }

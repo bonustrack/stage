@@ -17,8 +17,26 @@
 // gated behind an opt-out flag and, by default, deferred via dynamic import that
 // resolves the optional peer deps; if they are absent the Vue block is simply
 // omitted.
-import { ignores as baseIgnores, recommended, strictTsBlock } from "./base.js";
+import { fileURLToPath } from "node:url";
+import tseslint from "typescript-eslint";
+import { ignores as baseIgnores, recommended, strictTsBlock, typeCheckedLanguageOptions } from "./base.js";
 import { reactNative, kitEslint } from "./react-native.js";
+
+/** The monorepo root (two levels up from packages/config/eslint/): the dir that
+ *  holds the workspace tsconfigs the type-aware `projectService` resolves. */
+const ROOT_DIR = fileURLToPath(new URL("../../../", import.meta.url));
+
+/** A flat-config block that turns ON type-aware linting for every TS/TSX file in
+ *  a workspace, so the `strict-type-checked` rules spread from `recommended`
+ *  have type information. `project` is the workspace's `tsconfig.eslint.json`
+ *  (relative to ROOT_DIR) — it includes src + tests + config files so EVERY
+ *  lintable file resolves to a real project. `ROOT_DIR` anchors the lookup. */
+function typeAwareBlock(dir, project, extraFiles = []) {
+  return {
+    files: [`${dir}/**/*.{ts,tsx}`, ...extraFiles],
+    languageOptions: typeCheckedLanguageOptions(ROOT_DIR, project),
+  };
+}
 
 /** Join a workspace dir prefix onto a single glob, leaving negations (`!`) and
  *  already-absolute/`**`-anchored globs handled correctly. */
@@ -67,14 +85,25 @@ export async function monorepo({ vue = true } = {}) {
     // Repo-wide ignores: never descend into build output or deps anywhere.
     { ignores: ["**/node_modules/**", "**/dist/**", "**/.expo/**", "**/.vite/**", "packages/config/**"] },
 
-    // apps/app + packages/kit — React Native / Kit presets.
+    // apps/app + packages/kit — React Native / Kit presets. The type-aware block
+    // points each workspace at its lint tsconfig (src + tests + config) so the
+    // strict-type-checked rules (spread inside the presets) have type info for
+    // every lintable file.
+    typeAwareBlock("apps/app", "apps/app/tsconfig.eslint.json"),
     ...scopePreset("apps/app", reactNative()),
+    typeAwareBlock("packages/kit", "packages/kit/tsconfig.eslint.json"),
     ...scopePreset("packages/kit", kitEslint()),
 
-    // Pure-TypeScript packages/apps — base preset (recommended + strict TS).
-    ...scopePreset("apps/api", [baseIgnores(), ...recommended, strictTsBlock()]),
-    ...scopePreset("apps/proxy", [baseIgnores(), ...recommended, strictTsBlock()]),
-    ...scopePreset("packages/client", [baseIgnores(), ...recommended, strictTsBlock()]),
+    // Pure-TypeScript packages/apps — base preset (type-checked recommended +
+    // strict TS escape-hatch bans). The workspace-wide typeAwareBlock supplies
+    // the project; strictTsBlock re-states it for its own src/** block.
+    typeAwareBlock("apps/api", "apps/api/tsconfig.eslint.json"),
+    ...scopePreset("apps/api", [baseIgnores(), ...recommended, strictTsBlock({ tsconfigRootDir: ROOT_DIR, project: "apps/api/tsconfig.eslint.json" })]),
+    typeAwareBlock("apps/proxy", "apps/proxy/tsconfig.eslint.json"),
+    ...scopePreset("apps/proxy", [baseIgnores(), ...recommended, strictTsBlock({ tsconfigRootDir: ROOT_DIR, project: "apps/proxy/tsconfig.eslint.json" })]),
+    typeAwareBlock("packages/client", "packages/client/tsconfig.eslint.json"),
+    ...scopePreset("packages/client", [baseIgnores(), ...recommended, strictTsBlock({ tsconfigRootDir: ROOT_DIR, project: "packages/client/tsconfig.eslint.json" })]),
+
   ];
 
   if (vue) {
@@ -85,8 +114,25 @@ export async function monorepo({ vue = true } = {}) {
       import("vue-eslint-parser").then((m) => m.default ?? m),
       import("eslint-plugin-vue").then((m) => m.default ?? m),
     ]);
-    config.push(...scopePreset("apps/ui", vuePreset({ vueParser, vuePlugin })));
+    // Type-aware block for apps/ui's pure-TS sources (the .vue block carries its
+    // own vue-eslint-parser languageOptions, so only .ts/.tsx need this).
+    config.push(typeAwareBlock("apps/ui", "apps/ui/tsconfig.eslint.json"));
+    config.push(...scopePreset("apps/ui", vuePreset({ vueParser, vuePlugin, rootDir: ROOT_DIR, project: "apps/ui/tsconfig.eslint.json" })));
   }
+
+  // TYPE-aware rules OFF for files that are NOT part of any app tsconfig and run
+  // in the Node build toolchain, not the app:
+  //   - all `.js/.jsx/.cjs/.mjs` (metro.config.js, expo config plugins, postcss
+  //     config, embed.js, …) — JS, never type-checked here;
+  //   - workspace-root `*.config.{ts,mts,cts}` (vite/tailwind configs).
+  // The syntactic strong-typing bans (no-explicit-any, ban-ts-comment,
+  // no-non-null-assertion) STILL apply. Standard typescript-eslint mechanism,
+  // not a per-file dodge of app code. Pushed LAST so these blocks win over every
+  // workspace's type-aware block (including the lazily-pushed Vue blocks).
+  config.push(
+    { files: ["**/*.{js,jsx,cjs,mjs}"], ...tseslint.configs.disableTypeChecked },
+    { files: ["**/*.config.{ts,mts,cts}"], ...tseslint.configs.disableTypeChecked },
+  );
 
   return config;
 }

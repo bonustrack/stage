@@ -148,7 +148,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
               tintBg={pal.primary} tintFg={pal.bg}
               label="Create new wallet"
               disabled={busy}
-              onPress={() => toPasskey({ kind: 'create' })}
+              onPress={() => { toPasskey({ kind: 'create' }); }}
             />
             <Button
               dark={dark} variant="secondary" size="lg" fullWidth

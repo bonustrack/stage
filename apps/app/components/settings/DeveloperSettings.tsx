@@ -33,7 +33,7 @@ export function DeveloperSettings(): React.ReactElement {
 
   useEffect(() => {
     void loadDebugConsole().then(setEnabled);
-    return subscribeDebugConsole(() => setEnabled(isDebugConsoleEnabled()));
+    return subscribeDebugConsole(() => { setEnabled(isDebugConsoleEnabled()); });
   }, []);
 
   const [resetting, setResetting] = useState(false);
@@ -56,8 +56,8 @@ export function DeveloperSettings(): React.ReactElement {
           onPress: () => {
             setResetting(true);
             void resetForOnboarding()
-              .catch(() => Alert.alert('Reset failed', 'Could not clear account state.'))
-              .finally(() => setResetting(false));
+              .catch(() => { Alert.alert('Reset failed', 'Could not clear account state.'); })
+              .finally(() => { setResetting(false); });
           },
         },
       ],

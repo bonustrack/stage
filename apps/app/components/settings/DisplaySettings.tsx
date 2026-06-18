@@ -65,7 +65,7 @@ export function DisplaySettings(): React.ReactElement {
               <ListViewItem
                 key="custom"
                 dark={dark}
-                onPress={() => setCustomTheme(true)}
+                onPress={() => { setCustomTheme(true); }}
                 style={{ paddingHorizontal: 14, paddingVertical: 14 }}
 >
                 <Icon name="colorSwatch" size={22} color={head}/>

@@ -77,10 +77,10 @@ export default function GroupDetail(): React.ReactElement {
     <Col surface="surface" flex={1}>
       {/* Floating topnav over the cover banner — mirrors ProfileScreen `route`. */}
       <Row height={44 + insets.top} padding={{ x: 14, top: insets.top }} align="center" justify="between" style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2 }}>
-        <Pressable onPress={() => router.back()} hitSlop={10} style={{ padding: 6 }}>
+        <Pressable onPress={() => { router.back(); }} hitSlop={10} style={{ padding: 6 }}>
           <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
-        <Pressable onPress={() => setOverflowOpen(true)} hitSlop={10} style={{ padding: 6 }}>
+        <Pressable onPress={() => { setOverflowOpen(true); }} hitSlop={10} style={{ padding: 6 }}>
           <Icon name="dotsHorizontal" size={22} color={fg}/>
         </Pressable>
       </Row>
@@ -138,28 +138,28 @@ export default function GroupDetail(): React.ReactElement {
             name={memberNames[item]}
             dark={dark}
             p={pal}
-            onPress={() => router.push({ pathname: '/user/[address]', params: { address: item } })}
-            onRemove={() => removeMember(item)}
+            onPress={() => { router.push({ pathname: '/user/[address]', params: { address: item } }); }}
+            onRemove={() => { removeMember(item); }}
 />
         )}
 />
 
       <AddMemberModal
         visible={addOpen}
-        onClose={() => setAddOpen(false)}
+        onClose={() => { setAddOpen(false); }}
         addDraft={addDraft} setAddDraft={setAddDraft} adding={adding}
-        onAdd={() => { void addMember(() => setAddOpen(false)); }}
+        onAdd={() => { void addMember(() => { setAddOpen(false); }); }}
         dark={dark} p={pal}
 />
       <OverflowModal
         visible={overflowOpen}
-        onClose={() => setOverflowOpen(false)}
-        leaving={leaving} onLeave={() => leaveGroup(() => setOverflowOpen(false))}
+        onClose={() => { setOverflowOpen(false); }}
+        leaving={leaving} onLeave={() => { leaveGroup(() => { setOverflowOpen(false); }); }}
 />
       <ImageViewer
         uri={imageUrl ? avatarRenderUrl('', imageUrl, 1024) : ''}
         visible={viewerOpen}
-        onClose={() => setViewerOpen(false)}
+        onClose={() => { setViewerOpen(false); }}
 />
     </Col>
   );

@@ -12,7 +12,7 @@ const props = defineProps<{
   /** Members who aren't admins can't change the image — show it, no picker. */
   readonly?: boolean;
 }>();
-const emit = defineEmits<{ (e: 'pick', file: File): void }>();
+const emit = defineEmits<(e: 'pick', file: File) => void>();
 
 const input = ref<HTMLInputElement | null>(null);
 

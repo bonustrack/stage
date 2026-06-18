@@ -22,7 +22,7 @@
  *  types) so any valid typed-data structure round-trips through JSON unchanged. */
 export interface Eip712TypedData {
   domain: Record<string, unknown>;
-  types: Record<string, Array<{ name: string; type: string }>>;
+  types: Record<string, { name: string; type: string }[]>;
   primaryType: string;
   message: Record<string, unknown>;
 }

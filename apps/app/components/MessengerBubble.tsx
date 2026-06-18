@@ -138,7 +138,7 @@ function MessengerBubbleBase({
     if (ok) runOnJS(onDoubleTap)();
   }), [onDoubleTap]);
   const longPress = useMemo(() => Gesture.LongPress().minDuration(300)
-    .onStart(() => runOnJS(openMenu)()),
+    .onStart(() => { runOnJS(openMenu)(); }),
     [openMenu]);
   /** Pan owns horizontal swipe-to-reply; the long-press and double-tap are mutually
    *  exclusive with each other, and race against the pan (pan only arms on a clear
@@ -233,7 +233,7 @@ function MessengerBubbleBase({
           dark={dark}
           sub={sub}
           onPick={e => { onReact?.(e); setPickerOpen(false); }}
-          onClose={() => setPickerOpen(false)}
+          onClose={() => { setPickerOpen(false); }}
 />
       ) : null}
       </Col>

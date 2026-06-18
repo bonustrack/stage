@@ -136,7 +136,7 @@ async function fetch4byteSig(selector: string): Promise<string | null> {
     const res = await fetch(`${FOURBYTE_BASE}?hex_signature=${selector}`);
     if (res.ok) {
       const json = (await res.json()) as {
-        results?: Array<{ id: number; text_signature: string }>;
+        results?: { id: number; text_signature: string }[];
       };
       const best = (json.results ?? []).sort((a, b) => a.id - b.id)[0];
       if (best?.text_signature) {

@@ -131,7 +131,7 @@ export async function installGuardians(
     kernelVersion: KERNEL_VERSION,
     index: BigInt(rec.hdIndex),
   });
-  const kernelClient = makeKernelClient(account as Parameters<typeof makeKernelClient>[0], publicClient);
+  const kernelClient = makeKernelClient(account, publicClient);
 
   // A no-op self-call userOp materializes the plugin install (enable data is
   // carried in the userOp's validator enable, sponsored by the paymaster).
@@ -180,10 +180,10 @@ export async function cancelRecovery(rec: AccountRecord, newOwner: Address, nonc
   const owner = await smartOwnerSigner(rec.hdIndex);
   const publicClient = makePublicClient();
   const account = await createEcdsaKernel(publicClient, owner, rec.hdIndex);
-  const kernelClient = makeKernelClient(account as Parameters<typeof makeKernelClient>[0], publicClient);
+  const kernelClient = makeKernelClient(account, publicClient);
 
   const callData = recoveryCallData(newOwner);
-  const hash = callDataAndNonceHash(account.address as Address, callData, nonce);
+  const hash = callDataAndNonceHash(account.address, callData, nonce);
   const validatorAddress = getWeightedValidatorAddress(ENTRY_POINT, KERNEL_VERSION);
   const userOpHash = await kernelClient.sendUserOperation({
     callData: await account.encodeCalls([{
@@ -209,7 +209,7 @@ export async function updateGuardians(
   const owner = await smartOwnerSigner(rec.hdIndex);
   const publicClient = makePublicClient();
   const account = await createEcdsaKernel(publicClient, owner, rec.hdIndex);
-  const kernelClient = makeKernelClient(account as Parameters<typeof makeKernelClient>[0], publicClient);
+  const kernelClient = makeKernelClient(account, publicClient);
 
   const call = getUpdateConfigCall(ENTRY_POINT, KERNEL_VERSION, {
     threshold: cfg.threshold,

@@ -25,7 +25,7 @@ export function Pressable(props: KitPressableProps): React.ReactElement {
   if (pressedOpacity === undefined) {
     return (
       <RNPressable style={style} {...rest}>
-        {children as PressableProps['children']}
+        {children}
       </RNPressable>
     );
   }
@@ -35,11 +35,11 @@ export function Pressable(props: KitPressableProps): React.ReactElement {
       style={(state) => {
         const dim: ViewStyle = { opacity: state.pressed ? pressedOpacity : 1 };
         const base = typeof style === 'function' ? style(state) : style;
-        return base ? ([dim, base].flat() as ViewStyle[]) : dim;
+        return base ? ([dim, base].flat()) : dim;
       }}
       {...rest}
     >
-      {children as PressableProps['children']}
+      {children}
     </RNPressable>
   );
 }

@@ -14,7 +14,7 @@ export function useLastAttachment(): string | undefined {
   const [label, setLabel] = useState<string | undefined>(getLastAttachment);
   useEffect(() => {
     loadLastAttachment();
-    const sync = (): void => setLabel(getLastAttachment());
+    const sync = (): void => { setLabel(getLastAttachment()); };
     sync();
     return subscribeLastAttachment(sync);
   }, []);
@@ -57,12 +57,12 @@ export function useComposerFocus(
       inputRef.current?.blur();
       inputRef.current?.focus();
     });
-    return () => cancelAnimationFrame(raf);
+    return () => { cancelAnimationFrame(raf); };
   }, [replyTargetId, replyNonce]);
   useEffect(() => {
     if (!autoFocusNonce) return;
     const t = setTimeout(() => inputRef.current?.focus(), 0);
-    return () => clearTimeout(t);
+    return () => { clearTimeout(t); };
   }, [autoFocusNonce]);
   /** On background, blur the input ONLY if the keyboard was already closed.
    *  The bug: a focused-but-keyboard-closed input gets its IME re-raised by

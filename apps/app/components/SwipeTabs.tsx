@@ -56,7 +56,7 @@ export function TabsPager(): React.ReactElement {
    *  direction gate (`activeOffsetX` arms it, `failOffsetY` kills it) deterministically
    *  decides who drives — horizontal → Pan switches tabs (even when the drag starts
    *  over the list / after scroll momentum), vertical → the scrollable scrolls. */
-  const panRef = useRef<GestureType | undefined>(undefined) as SimultaneousRefs;
+  const panRef = useRef<GestureType | undefined>(undefined);
 
   /** `tx` = strip translateX. Settled position is `-index*W`. */
   const tx = useSharedValue(-routeIndex * width);

@@ -30,11 +30,11 @@ export async function fetchBalanceAndPrice(): Promise<{
   const pub = publicClientFor(1);
   const [bal, prices] = await Promise.all([
     pub.readContract({ address: MULTICALL3, abi: multicall3Abi, functionName: 'getEthBalance', args: [addr] }),
-    getSimplePrices(['ethereum']).catch(() => ({} as Record<string, { usd: number }>)),
+    getSimplePrices(['ethereum']).catch(() => ({})),
   ]);
-  const p = prices['ethereum']?.usd;
+  const p = prices.ethereum?.usd;
   return {
-    ethBalance: formatEther(bal as bigint),
+    ethBalance: formatEther(bal),
     ethPriceUsd: typeof p === 'number' ? p : null,
   };
 }

@@ -127,7 +127,7 @@ export function HomeContactResults(
           avatarAddress={resolved.address}
           square={false}
           subtitle="Start chat"
-          onPress={() => open(resolved.address)}
+          onPress={() => { open(resolved.address); }}
         />
       ) : null}
       {filtered.map(p => (
@@ -137,7 +137,7 @@ export function HomeContactResults(
           avatarAddress={p.address}
           square={false}
           subtitle={getPeerName(p.address) ? shortAddress(p.address) : null}
-          onPress={() => open(p.address, p.convId)}
+          onPress={() => { open(p.address, p.convId); }}
         />
       ))}
     </Box>

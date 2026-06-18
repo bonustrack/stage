@@ -74,7 +74,7 @@ async function fetchLinkPreview(url: string): Promise<LinkPreviewResult | null> 
 export function useLinkPreview(url: string | null): LinkPreviewResult | null {
   const { data } = useQuery({
     queryKey: ['linkPreview', url ?? ''],
-    queryFn: () => fetchLinkPreview(url as string),
+    queryFn: () => fetchLinkPreview(url!),
     enabled: !!url,
     staleTime: 60 * 60_000,
     gcTime: 24 * 60 * 60_000,

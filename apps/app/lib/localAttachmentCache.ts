@@ -40,7 +40,7 @@ function emit(): void { for (const l of listeners) l(); }
 /** Remember the local URIs for a freshly-sent message, keyed by its REAL XMTP
  *  message id (the id `conv.send()` resolved with — identical to the stream
  *  echo's id). Empty/falsey uris are skipped — only on-disk locals are useful. */
-export function rememberLocalAttachments(messageId: string, uris: ReadonlyArray<string | undefined>): void {
+export function rememberLocalAttachments(messageId: string, uris: readonly (string | undefined)[]): void {
   const locals = uris.map(u => u ?? '');
   if (locals.every(u => u === '')) return;
   byMessageId.set(messageId, [...locals]);

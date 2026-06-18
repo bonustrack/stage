@@ -51,8 +51,8 @@ export function ReactionsRow({
         return onReact ? (
           <Pressable
             key={emoji}
-            onPress={() => onReact(emoji)}
-            onLongPress={() => onReact(emoji)}
+            onPress={() => { onReact(emoji); }}
+            onLongPress={() => { onReact(emoji); }}
             delayLongPress={300}
             hitSlop={6}
             style={pillStyle}
@@ -85,7 +85,7 @@ export function ReactionPicker({ dark, sub, onPick, onClose }: {
       alignSelf: 'flex-start',
     }}>
       {REACT_PRESETS.map(e => (
-        <Pressable key={e} onPress={() => onPick(e)}>
+        <Pressable key={e} onPress={() => { onPick(e); }}>
           <Text size="5xl">{e}</Text>
         </Pressable>
       ))}

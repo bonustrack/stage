@@ -112,7 +112,7 @@ export function useWalletBalances(privAccountId: string | null, focused: boolean
         const next = await Promise.race([
           fetchAssetRows(address),
           new Promise<never>((_, rej) =>
-            (spinnerTimer.current = setTimeout(() => rej(new Error('refresh timeout')), 8000))),
+            (spinnerTimer.current = setTimeout(() => { rej(new Error('refresh timeout')); }, 8000))),
         ]);
         if (!mounted.current) return;
         setRows(next);

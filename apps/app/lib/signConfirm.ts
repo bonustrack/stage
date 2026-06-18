@@ -63,7 +63,7 @@ export interface SignConfirmSummary {
   primaryType?: string;
   /** Decoded top-level message fields (name -> compact value), so the user always
    *  sees the actual content being signed, not just a label. Capped for display. */
-  fields?: Array<{ name: string; value: string }>;
+  fields?: { name: string; value: string }[];
   /** For a `personal` request: the literal message text being signed. */
   message?: string;
 }

@@ -38,7 +38,7 @@ function HoldingsTabs({ tab, setTab, head, sub, border }: {
         return (
           <Pressable
             key={t}
-            onPress={() => setTab(t)}
+            onPress={() => { setTab(t); }}
             style={{
               paddingVertical: 10,
               marginBottom: -1,

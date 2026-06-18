@@ -92,7 +92,7 @@ async function createWithTimeout(
   let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<never>((_, reject) => {
     timer = setTimeout(
-      () => reject(new Error(CREATE_TIMEOUT_MESSAGE)),
+      () => { reject(new Error(CREATE_TIMEOUT_MESSAGE)); },
       CREATE_TIMEOUT_MS,
     );
   });

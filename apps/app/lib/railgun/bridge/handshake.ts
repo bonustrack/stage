@@ -117,7 +117,7 @@ export function startReadinessHandshake(deps: HandshakeDeps): Handshake {
 
   /** Boot event landed (initial emit OR the re-emit our 'hello' triggers).
    *  Resolves readiness; first signal wins. Idempotent via succeed's guard. */
-  const markReady = (): void => succeed('boot event');
+  const markReady = (): void => { succeed('boot event'); };
 
   state = 'starting';
   timer = setTimeout(fail, READY_TIMEOUT_MS);

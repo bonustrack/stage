@@ -132,7 +132,7 @@ export function BubbleContent({
           const body = unescapeBody(entry.text);
           return (
             <Box style={{ alignSelf: 'stretch' }}>
-              {highlight && highlight.trim()
+              {highlight?.trim()
                 ? <HighlightText text={body} query={highlight} fg={fg} />
                 : selectable
                   ? <Text size="3xl" selectable color={fg} style={{ lineHeight: 23 }}>{body}</Text>

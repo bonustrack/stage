@@ -43,7 +43,7 @@ export function AvatarView(props: AvatarViewProps): React.ReactElement {
     backgroundColor: placeholderColor,
   };
 
-  if (src && src.trim()) {
+  if (src?.trim()) {
     return <Image src={src} alt={alt} style={[baseStyle, style] as ImageStyle[]} />;
   }
   return <View style={[baseStyle, style]} />;

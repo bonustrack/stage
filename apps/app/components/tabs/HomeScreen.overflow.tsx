@@ -37,30 +37,30 @@ interface HomeOverflowMenuProps {
 export function HomeOverflowMenu({ color, onArchived, onNewGroup, onProfile, onSettings }: HomeOverflowMenuProps): React.ReactElement {
   const [open, setOpen] = useState(false);
   const dark = useEffectiveColorScheme() === 'dark';
-  const close = (): void => setOpen(false);
+  const close = (): void => { setOpen(false); };
   const run = (fn: () => void): void => { close(); fn(); };
-  const onCopyAddress = (): void => run(() => {
+  const onCopyAddress = (): void => { run(() => {
     void getActiveAccount().then(acct => {
       if (!acct?.address) return;
       void Clipboard.setStringAsync(acct.address);
       flash('Address copied');
     });
-  });
+  }); };
 
   return (
     <>
-      <Pressable onPress={() => setOpen(true)} hitSlop={8}>
+      <Pressable onPress={() => { setOpen(true); }} hitSlop={8}>
         <Icon name="dotsVertical" size={24} color={color} />
       </Pressable>
       <AppModal visible={open} onClose={close}>
         {/* Cancel AppModal's 16px ScrollView padding so the list spans edge-to-edge
             and the row content inset (ROW_INSET 16) matches the Settings page. */}
         <ListView dark={dark} style={{ marginHorizontal: -16 }}>
-          <OverflowRow icon="plus" label="New group" color={color} dark={dark} onPress={() => run(onNewGroup)} />
-          <OverflowRow icon="archive" label="Archived" color={color} dark={dark} onPress={() => run(onArchived)} />
+          <OverflowRow icon="plus" label="New group" color={color} dark={dark} onPress={() => { run(onNewGroup); }} />
+          <OverflowRow icon="archive" label="Archived" color={color} dark={dark} onPress={() => { run(onArchived); }} />
           <OverflowRow icon="copy" label="Copy address" color={color} dark={dark} onPress={onCopyAddress} />
-          <OverflowRow icon="user" label="Profile" color={color} dark={dark} onPress={() => run(onProfile)} />
-          <OverflowRow icon="cog" label="Settings" color={color} dark={dark} onPress={() => run(onSettings)} />
+          <OverflowRow icon="user" label="Profile" color={color} dark={dark} onPress={() => { run(onProfile); }} />
+          <OverflowRow icon="cog" label="Settings" color={color} dark={dark} onPress={() => { run(onSettings); }} />
         </ListView>
       </AppModal>
     </>

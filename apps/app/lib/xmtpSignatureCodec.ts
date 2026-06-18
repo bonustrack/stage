@@ -33,7 +33,7 @@ export class SignatureRequestCodec implements JSContentCodec<SignatureRequestCon
 
   /** Encode a signature request as JSON-bytes content with its plain-text fallback. */
   encode(content: SignatureRequestContent): EncodedContent {
-    return encodeJsonContent(this.contentType, content, signatureRequestFallbackText(content)) as EncodedContent;
+    return encodeJsonContent(this.contentType, content, signatureRequestFallbackText(content));
   }
 
   /** Decode and schema-validate the untrusted signature-request wire body. */
@@ -63,7 +63,7 @@ export class SignatureReferenceCodec implements JSContentCodec<SignatureReferenc
 
   /** Encode a signature receipt as JSON-bytes content with its plain-text fallback. */
   encode(content: SignatureReferenceContent): EncodedContent {
-    return encodeJsonContent(this.contentType, content, signatureReferenceFallbackText(content)) as EncodedContent;
+    return encodeJsonContent(this.contentType, content, signatureReferenceFallbackText(content));
   }
 
   /** Decode and schema-validate the signature-reference wire body. */

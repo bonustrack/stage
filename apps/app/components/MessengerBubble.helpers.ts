@@ -145,7 +145,7 @@ export function pollOf(entry: HistoryEntry): Poll | undefined {
 export interface SigRequest {
   id?: string;
   kind?: 'eip712' | 'personal';
-  eip712?: { domain?: Record<string, unknown>; types?: Record<string, Array<{ name: string; type: string }>>; primaryType?: string; message?: Record<string, unknown> };
+  eip712?: { domain?: Record<string, unknown>; types?: Record<string, { name: string; type: string }[]>; primaryType?: string; message?: Record<string, unknown> };
   message?: string;
   description?: string;
 }
@@ -189,7 +189,7 @@ export interface TxRequest {
   version?: string;
   chainId?: string;
   from?: string;
-  calls: Array<{ to?: string; data?: string; value?: string; metadata?: { description?: string; currency?: string; amount?: number; toAddress?: string } }>;
+  calls: { to?: string; data?: string; value?: string; metadata?: { description?: string; currency?: string; amount?: number; toAddress?: string } }[];
 }
 export interface TxReceipt {
   networkId: number | string;

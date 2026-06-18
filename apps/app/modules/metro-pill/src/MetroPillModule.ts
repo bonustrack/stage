@@ -7,9 +7,9 @@ import { NativeModule, requireNativeModule } from 'expo-modules-core';
  *  build; the JS layer no longer declares or calls them.) */
 /** Event map for the native module's `addListener`. `onXmtpPush` carries the
  *  contentless push's routing metadata so JS can target the resync. */
-type MetroPillEvents = {
+interface MetroPillEvents {
   onXmtpPush: (e: { line?: string | null; convId?: string | null; messageId?: string | null }) => void;
-};
+}
 
 declare class MetroPillModule extends NativeModule<MetroPillEvents> {
   /** Report the conversation the user is currently viewing (bare convId) so the

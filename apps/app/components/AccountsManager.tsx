@@ -52,13 +52,13 @@ export function AccountsManager({ dark, flat = false, onSwitched }: { dark: bool
 
       <ManageSheet
         manageRec={m.manageRec} activeId={m.activeId}
-        onClose={() => m.setManageId(null)}
+        onClose={() => { m.setManageId(null); }}
         onSwitch={(id) => void m.onSwitch(id)}
         onExport={(id) => void m.onExport(id)}
         onRemove={m.onRemove}
         p={pal}
       />
-      <ExportSheet revealPk={m.revealPk} onClose={() => m.setRevealPk(null)} dark={dark} p={pal} />
+      <ExportSheet revealPk={m.revealPk} onClose={() => { m.setRevealPk(null); }} dark={dark} p={pal} />
     </Box>
   );
 }

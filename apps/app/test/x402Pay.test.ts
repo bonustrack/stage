@@ -64,9 +64,9 @@ describe('buildTypedData', () => {
       verifyingContract: FIXTURE_ACCEPT.asset,
     });
     // bigint-coerced message fields
-    expect((td.message as Record<string, unknown>).value).toBe(BigInt(10000));
-    expect((td.message as Record<string, unknown>).validAfter).toBe(BigInt(0));
-    expect((td.message as Record<string, unknown>).nonce).toBe(NONCE);
+    expect((td.message).value).toBe(BigInt(10000));
+    expect((td.message).validAfter).toBe(BigInt(0));
+    expect((td.message).nonce).toBe(NONCE);
   });
 
   test('falls back to USD Coin / version 2 when extra is missing', () => {

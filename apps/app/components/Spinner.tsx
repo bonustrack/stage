@@ -18,7 +18,7 @@ export function Spinner({ size = 24, color = '#000000' }: { size?: number; color
       }),
     );
     anim.start();
-    return () => anim.stop();
+    return () => { anim.stop(); };
   }, [spin]);
 
   const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });

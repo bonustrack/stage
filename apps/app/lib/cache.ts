@@ -195,7 +195,7 @@ export class MemoryStore<K, V> {
     let ls = this.keyed.get(key);
     if (!ls) { ls = new Set(); this.keyed.set(key, ls); }
     ls.add(l);
-    return () => { ls!.delete(l); };
+    return () => { ls.delete(l); };
   }
 
   /** Wipe everything (e.g. on account switch) + notify all keyed listeners. */

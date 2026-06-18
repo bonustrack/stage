@@ -62,7 +62,7 @@ describe('passkey sign callback contract', () => {
         // Capture exactly how the SDK calls our on-device callback.
         signMessageCallback: async (...args: unknown[]) => {
           calls.push(args);
-          return '0x' as `0x${string}`;
+          return '0x';
         },
       },
       entryPoint: ENTRY_POINT,
@@ -85,7 +85,7 @@ describe('passkey sign callback contract', () => {
     expect(chainId).toBe(base.id);
     // arg 3: allowCredentials scoped to our stored authenticator id.
     expect(Array.isArray(allowCredentials)).toBe(true);
-    expect((allowCredentials as Array<{ id: string; type: string }>)[0]).toEqual({
+    expect((allowCredentials as { id: string; type: string }[])[0]).toEqual({
       id: STORED.authenticatorId,
       type: 'public-key',
     });

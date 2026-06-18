@@ -35,13 +35,13 @@ export function useHomeFilters(): {
   clearAllFilters: () => void;
 } {
   const [enabledLabels, setEnabledLabels] = useState<Set<string>>(new Set());
-  const toggleLabel = (label: string): void => setEnabledLabels(prev => {
+  const toggleLabel = (label: string): void => { setEnabledLabels(prev => {
     const next = new Set(prev), key = label.toLowerCase();
     if (next.has(key)) next.delete(key); else next.add(key);
     return next;
-  });
+  }); };
   const [unreadOnly, setUnreadOnly] = useState<boolean>(false);
-  const toggleUnread = (): void => setUnreadOnly(v => !v);
+  const toggleUnread = (): void => { setUnreadOnly(v => !v); };
   const clearAllFilters = (): void => { setEnabledLabels(new Set()); setUnreadOnly(false); };
   return { enabledLabels, toggleLabel, unreadOnly, toggleUnread, clearAllFilters };
 }
@@ -209,7 +209,7 @@ export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggle
       keyboardShouldPersistTaps="handled"
       scrollEventThrottle={16}
       onScroll={onScroll}
-      onContentSizeChange={(w) => onMeasure(w, layoutWRef.current)}
+      onContentSizeChange={(w) => { onMeasure(w, layoutWRef.current); }}
       onLayout={(e) => { layoutWRef.current = e.nativeEvent.layout.width; }}
       /** flexGrow:0 + alignSelf:stretch keep the bar hugging its single chip
        *  row; without them the horizontal ScrollView stretches to fill the column
@@ -224,7 +224,7 @@ export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggle
           key={label.toLowerCase()}
           label={label}
           selected={enabled.has(label.toLowerCase())}
-          onPress={() => onToggle(label)}
+          onPress={() => { onToggle(label); }}
           link={link}
           fg={fg}
           bg={bg}

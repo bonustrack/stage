@@ -52,7 +52,7 @@ interface ProxyResult {
   body?: string;
   additions?: number;
   deletions?: number;
-  files?: Array<Record<string, unknown>>;
+  files?: Record<string, unknown>[];
   error?: string;
 }
 
@@ -111,7 +111,7 @@ async function resolvePrNumber(ref: GithubRef): Promise<number | null> {
   const url = `${GH}/repos/${ref.owner}/${ref.repo}/issues/${ref.number}/timeline?per_page=100`;
   const res = await fetch(url, { headers: { ...HEADERS, Accept: 'application/vnd.github.mockingbird-preview+json' } });
   if (!res.ok) return null;
-  const events = (await res.json()) as Array<Record<string, unknown>>;
+  const events = (await res.json()) as Record<string, unknown>[];
   let found: number | null = null;
   for (const e of events) {
     const src = e.source as { issue?: { number?: number; pull_request?: unknown } } | undefined;
@@ -140,7 +140,7 @@ async function fetchDirect(ref: GithubRef): Promise<GithubDiff> {
     ? ((await metaRes.json()) as { title?: string; body?: string; additions?: number; deletions?: number })
     : {};
   const files = filesRes.ok
-    ? ((await filesRes.json()) as Array<Record<string, unknown>>).map(toDiffFile)
+    ? ((await filesRes.json()) as Record<string, unknown>[]).map(toDiffFile)
     : [];
   const summed = totalsOf(files);
   return {
@@ -162,7 +162,7 @@ export function useGithubDiff(ref: GithubRef | null): {
 } {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['githubDiff', ref?.url ?? ''],
-    queryFn: () => fetchGithubDiff(ref as GithubRef),
+    queryFn: () => fetchGithubDiff(ref!),
     enabled: !!ref,
     staleTime: 10 * 60_000,
     gcTime: 60 * 60_000,

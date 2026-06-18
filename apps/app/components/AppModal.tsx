@@ -42,7 +42,7 @@ export function AppModal({
         style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}
       >
         <Pressable
-          onPress={e => e.stopPropagation()}
+          onPress={e => { e.stopPropagation(); }}
           style={{
             backgroundColor: sheetBg,
             borderTopLeftRadius: sheetRadius,

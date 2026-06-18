@@ -85,7 +85,7 @@ export function MenuSheet({ visible, onClose }: {
         {drawerAccountRows({ accounts, activeId, onSwitch, c: { head, sub, border }, dark })}
         {actions.rows}
         <DrawerRow rowKey="profile" icon="user" label="Profile" head={head} sub={sub} border={border} dark={dark} onPress={goProfile}/>
-        <DrawerRow rowKey="settings" icon="cog" label="Settings" head={head} sub={sub} border={border} dark={dark} onPress={() => go('/settings')}/>
+        <DrawerRow rowKey="settings" icon="cog" label="Settings" head={head} sub={sub} border={border} dark={dark} onPress={() => { go('/settings'); }}/>
       </ListView>
       {actions.modal}
     </AppModal>

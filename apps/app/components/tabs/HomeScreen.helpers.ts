@@ -9,9 +9,7 @@ import type { ConversationView } from '../../modules/messaging';
  *  domain type owned by `modules/messaging`; `Row` is that view plus an index
  *  signature so it stays a structural superset of `CachedRow` and can be passed
  *  straight through `setCachedRows` without casting. */
-export type Row = ConversationView & {
-  [key: string]: unknown;
-};
+export type Row = ConversationView & Record<string, unknown>;
 
 /** Extract the conversation id from an XMTP MLS topic. Stream `DecodedMessage`s
  *  only expose `topic` (`/xmtp/mls/1/g-<hexId>/proto`), not `conversationId`, so

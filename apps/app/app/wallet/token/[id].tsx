@@ -53,7 +53,7 @@ export default function TokenDetail(): React.ReactElement {
   if (!r) {
     return (
       <Col surface="surface" flex={1}>
-        <Header head={head} border={border} onBack={() => router.back()} title="Token"/>
+        <Header head={head} border={border} onBack={() => { router.back(); }} title="Token"/>
         <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center">
           <Text size="md" color={sub}>Token not found</Text>
         </Col>
@@ -71,7 +71,7 @@ export default function TokenDetail(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <Header head={head} border={border} onBack={() => router.back()} title={r.name}/>
+      <Header head={head} border={border} onBack={() => { router.back(); }} title={r.name}/>
 
       {/* Token identity card — large logo with network badge, name + symbol,
           balance and its USD value. Mirrors the list row's data, scaled up.
@@ -118,28 +118,28 @@ export default function TokenDetail(): React.ReactElement {
             {/* Shielded holding → unified Send page, pre-selected to this
                 shielded token (private → another 0zk). */}
             <Btn icon="send" label="Send" head={head} border={border} dark={dark}
-              onPress={() => router.push({
+              onPress={() => { router.push({
                 pathname: '/wallet/send',
                 params: { symbol: symbol ?? r.symbol, chainId: String(r.chainId), private: '1' },
-              })}/>
+              }); }}/>
             {/* Shielded holding → Unshield (private → public, back to own EOA). */}
             <Btn icon="eye" label="Unshield" head={head} border={border} dark={dark}
-              onPress={() => router.push({
+              onPress={() => { router.push({
                 pathname: '/wallet/unshield',
                 params: { symbol: symbol ?? r.symbol, chainId: String(r.chainId) },
-              })}/>
+              }); }}/>
           </>
         ) : (
           <>
             {/* Public holding → public Send. */}
             <Btn icon="send" label="Send" head={head} border={border} dark={dark}
-              onPress={() => router.push({ pathname: '/wallet/send', params: sendParams })}/>
+              onPress={() => { router.push({ pathname: '/wallet/send', params: sendParams }); }}/>
             {/* Public holding → Shield (public → own 0zk). */}
             <Btn icon="eyeOff" label="Shield" head={head} border={border} dark={dark}
-              onPress={() => router.push({
+              onPress={() => { router.push({
                 pathname: '/wallet/shield',
                 params: { symbol: symbol ?? r.symbol, chainId: String(r.chainId) },
-              })}/>
+              }); }}/>
           </>
         )}
       </Row>

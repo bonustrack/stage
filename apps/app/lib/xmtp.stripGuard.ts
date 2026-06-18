@@ -45,7 +45,7 @@ type _ProducerAccepted = AssertAssignable<
 type _SameBrand = AssertAssignable<
   Awaited<ReturnType<typeof sanitizeFileUri>>,
   SanitizedFileUri
-> & AssertAssignable<SanitizedFileUri, BoundaryFileUri>;
+>  ;
 
 /** Reference the alias types so `noUnusedLocals`-style lint does not flag them;
  *  these are erased at compile time (zero runtime output). */

@@ -35,7 +35,7 @@ export function chainFor(chainId: number): Chain {
     name: 'Chain ' + chainId,
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     rpcUrls: { default: { http: [rpc] }, public: { http: [rpc] } },
-  } as Chain;
+  };
 }
 
 /** A viem public client for `chainId`, using the brovider RPC. Falls back to a

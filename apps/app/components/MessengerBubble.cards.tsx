@@ -222,7 +222,7 @@ export function TxRequestCard({ req, dark, sub, paying, onPay, consentAllowed }:
           {showDecodedBlock ? (
             <DecodedCallBlock decoded={decoded} pending={decoding} target={call?.to} sub={sub} selector={decoded?.selector}/>
           ) : null}
-          {sendsNativeWithCall ? <TxNativeValueRow eth={eth as string} chainId={chainNum} /> : null}
+          {sendsNativeWithCall ? <TxNativeValueRow eth={eth} chainId={chainNum} /> : null}
           {recipient ? <TxToRow address={recipient} /> : null}
           <Text size="xs" color={sub}>On {VIEM_CHAINS[chainNum]?.name ?? `chain ${chainNum}`}</Text>
         </Col>
@@ -256,7 +256,7 @@ function TxToRow({ address }: { address: string }): React.ReactElement {
   const display = getPeerName(address) ?? shortAddress(address);
   return (
     <Pressable
-      onPress={() => router.push({ pathname: '/user/[address]', params: { address } })}>
+      onPress={() => { router.push({ pathname: '/user/[address]', params: { address } }); }}>
       <Row align="center" gap={6}>
         <Text role="secondary" size="xs">To</Text>
         <Avatar address={address} size={16} />

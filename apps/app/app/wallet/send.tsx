@@ -36,7 +36,7 @@ export default function WalletSend(): React.ReactElement {
   const hasParamToken = typeof params.symbol === 'string' && params.symbol.length > 0;
   const initial = useMemo<TokenChoice>(() => {
     const isPrivate = params.private === '1' || params.private === 'true';
-    const symbol = hasParamToken ? (params.symbol as string) : 'ETH';
+    const symbol = hasParamToken ? (params.symbol!) : 'ETH';
     const chainId = typeof params.chainId === 'string' && Number.isFinite(Number(params.chainId))
       ? Number(params.chainId) : isPrivate ? 11155111 : 1;
     return { symbol, chainId, isPrivate };
@@ -70,7 +70,7 @@ export default function WalletSend(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <SendHeader fg={fg} head={head} border={border} onBack={() => router.back()}/>
+      <SendHeader fg={fg} head={head} border={border} onBack={() => { router.back(); }}/>
 
       <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ padding: 16, gap: 16 }}>
@@ -86,7 +86,7 @@ export default function WalletSend(): React.ReactElement {
       </ScrollView>
 
       {footer ? (
-        <WalletFooter border={border} dark={dark} onCancel={() => router.back()}
+        <WalletFooter border={border} dark={dark} onCancel={() => { router.back(); }}
           submitLabel={footer.submitLabel} onSubmit={footerSubmit}
           submitDisabled={footer.submitDisabled} submitLoading={footer.submitLoading}/>
       ) : null}

@@ -72,7 +72,7 @@ function applyBuild(id: number, q: QueuedRequest[]): void {
 function rebuild(rows: CachedRow[] | null, clearSkips: boolean): void {
   if (clearSkips) skipped.clear();
   const id = ++buildId;
-  void buildProposalQueue(rows ?? []).then(q => applyBuild(id, q));
+  void buildProposalQueue(rows ?? []).then(q => { applyBuild(id, q); });
 }
 
 /** Debounced rebuild used by the cache subscription so a burst of cache writes
@@ -88,7 +88,7 @@ function ensureWired(): void {
   if (wired) return;
   wired = true;
   rebuild(getCachedRows(), false);
-  subscribeCachedRows(rows => scheduleRebuild(rows));
+  subscribeCachedRows(rows => { scheduleRebuild(rows); });
 }
 
 export const proposalsStore = {

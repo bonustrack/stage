@@ -83,7 +83,7 @@ export function ConversationIntro({
   if (!peerAddr) return null;
   return (
     <Pressable
-      onPress={() => onPressPeer(peerAddr)}
+      onPress={() => { onPressPeer(peerAddr); }}
       style={{ alignItems: 'flex-start', paddingVertical: 24, paddingHorizontal: 12 }}
     >
       <Avatar address={peerAddr} size="lg" style={{ backgroundColor: border }} />

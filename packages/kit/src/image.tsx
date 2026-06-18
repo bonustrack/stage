@@ -116,7 +116,7 @@ export function Image(props: ImageProps): React.ReactElement {
     base.borderColor = '#e4e4e5';
   }
 
-  const flattened = style ? ([base, style].flat() as ImageStyle[]) : base;
+  const flattened = style ? ([base, style].flat()) : base;
 
   return (
     <RNImage

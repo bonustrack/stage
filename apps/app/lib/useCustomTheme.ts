@@ -15,7 +15,7 @@ export function useCustomTheme(): boolean {
   useEffect(() => {
     loadOverrides();
     setOn(isCustomTheme());
-    const unsub = subscribeOverrides(() => setOn(isCustomTheme()));
+    const unsub = subscribeOverrides(() => { setOn(isCustomTheme()); });
     return unsub;
   }, []);
   return on;

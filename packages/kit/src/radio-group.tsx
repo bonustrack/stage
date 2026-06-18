@@ -98,7 +98,7 @@ export function RadioGroup(props: RadioGroupProps): React.ReactElement {
             accessibilityState={{ selected: isSel, disabled: optDisabled }}
             accessibilityLabel={opt.label}
             disabled={optDisabled}
-            onPress={() => pick(opt.value)}
+            onPress={() => { pick(opt.value); }}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 10, opacity: optDisabled ? 0.5 : 1 }}
           >
             <View style={outer}>

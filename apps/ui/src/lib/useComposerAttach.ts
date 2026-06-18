@@ -46,7 +46,7 @@ export function useComposerAttach(getLine: () => string, onError: (m: string) =>
         const comma = r.indexOf(',');
         resolve(comma === -1 ? r : r.slice(comma + 1));
       };
-      reader.onerror = (): void => reject(reader.error ?? new Error('FileReader failed'));
+      reader.onerror = (): void => { reject(reader.error ?? new Error('FileReader failed')); };
       reader.readAsDataURL(staged.file);
     });
     try {

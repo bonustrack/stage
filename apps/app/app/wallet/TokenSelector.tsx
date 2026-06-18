@@ -125,7 +125,7 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
     <Box gap={6}>
       <Text size="xs" color={sub}>{label}</Text>
       <Pressable
-        onPress={() => setOpen(true)}
+        onPress={() => { setOpen(true); }}
         style={({ pressed }) => ({
           flexDirection: 'row', alignItems: 'center', gap: 10,
           backgroundColor: border, borderRadius: 12,
@@ -159,7 +159,7 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
         <Icon name="chevronDown" size={18} color={fg}/>
       </Pressable>
 
-      <AppModal visible={open} onClose={() => setOpen(false)}>
+      <AppModal visible={open} onClose={() => { setOpen(false); }}>
         <Text weight="semibold" size="xl" color={head} style={{ marginBottom: 8 }}>
           Select token
         </Text>

@@ -83,12 +83,12 @@ export function ChannelsList({
     () => (
       <>
         {/* Search opens the full-width search field over the topnav. */}
-        <Pressable onPress={() => setSearchOpen(true)} hitSlop={8}>
+        <Pressable onPress={() => { setSearchOpen(true); }} hitSlop={8}>
           <Icon name="search" size={24} color={head}/>
         </Pressable>
         {/* Message requests: inbox icon + count badge (pending 'unknown' consent
          *  convs). Badge hidden when 0; tap opens the requests list. */}
-        <Pressable onPress={() => router.push('/xmtp/requests')} hitSlop={8} style={{ position: 'relative' }}>
+        <Pressable onPress={() => { router.push('/xmtp/requests'); }} hitSlop={8} style={{ position: 'relative' }}>
           <Icon name="inbox" size={24} color={head}/>
           {requestCount> 0 ? (
             <Box minWidth={16} height={16} padding={{ x: 5 }}
@@ -107,8 +107,8 @@ export function ChannelsList({
         {/* Overflow (3-dot) menu: Archived + New-group + Profile + Settings. */}
         <HomeOverflowMenu
           color={head}
-          onArchived={() => router.push('/xmtp/archived')}
-          onNewGroup={() => router.push('/xmtp/new-group')}
+          onArchived={() => { router.push('/xmtp/archived'); }}
+          onNewGroup={() => { router.push('/xmtp/new-group'); }}
           onProfile={() => {
             // Own-profile tab was removed → view yourself via the shared peer
             // profile route (/user/[address]) for the active account.
@@ -116,7 +116,7 @@ export function ChannelsList({
               if (acct?.address) router.push(`/user/${acct.address}`);
             });
           }}
-          onSettings={() => router.push('/settings')}
+          onSettings={() => { router.push('/settings'); }}
 />
       </>
     ),

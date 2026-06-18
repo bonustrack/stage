@@ -15,7 +15,7 @@ import { cachedRows, setCachedRows, applyConsentToRows } from './channelsCache';
 import { summarizeConv, type ChannelRow } from './channelsSummarize';
 import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 
-type StreamHandle = { end: () => Promise<unknown> };
+interface StreamHandle { end: () => Promise<unknown> }
 
 export interface ChannelStreamHandles {
   stop: () => Promise<void>;

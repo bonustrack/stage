@@ -124,7 +124,7 @@ export function ChannelMenu({
             label="Search"
             color={head}
             dark={dark}
-            onPress={() => runSearch(onSearch)}
+            onPress={() => { runSearch(onSearch); }}
           />
         ) : null}
 
@@ -134,7 +134,7 @@ export function ChannelMenu({
             label="Add members"
             color={head}
             dark={dark}
-            onPress={() => run(() => router.push({ pathname: '/xmtp/add-members', params: { convId } }))}
+            onPress={() => { run(() => { router.push({ pathname: '/xmtp/add-members', params: { convId } }); }); }}
           />
         ) : null}
 
@@ -143,7 +143,7 @@ export function ChannelMenu({
           label={isUnread ? 'Mark as read' : 'Mark as unread'}
           color={head}
           dark={dark}
-          onPress={() => run(() => { void (isUnread ? markConvRead(convId) : markConvUnread(convId)); })}
+          onPress={() => { run(() => { void (isUnread ? markConvRead(convId) : markConvUnread(convId)); }); }}
         />
 
         <MenuRow
@@ -151,7 +151,7 @@ export function ChannelMenu({
           label={isPinned ? 'Unpin' : 'Pin'}
           color={head}
           dark={dark}
-          onPress={() => run(() => { void togglePin(convId); })}
+          onPress={() => { run(() => { void togglePin(convId); }); }}
         />
 
         {isGroup ? (
@@ -160,7 +160,7 @@ export function ChannelMenu({
             label="Group info"
             color={head}
             dark={dark}
-            onPress={() => run(() => router.push({ pathname: '/group/[convId]', params: { convId } }))}
+            onPress={() => { run(() => { router.push({ pathname: '/group/[convId]', params: { convId } }); }); }}
           />
         ) : peerAddress ? (
           <MenuRow
@@ -168,7 +168,7 @@ export function ChannelMenu({
             label="Profile"
             color={head}
             dark={dark}
-            onPress={() => run(() => router.push({ pathname: '/user/[address]', params: { address: peerAddress } }))}
+            onPress={() => { run(() => { router.push({ pathname: '/user/[address]', params: { address: peerAddress } }); }); }}
           />
         ) : null}
 
@@ -181,11 +181,11 @@ export function ChannelMenu({
           label={isArchived ? 'Unarchive' : 'Archive'}
           color={danger}
           dark={dark}
-          onPress={() => run(() => {
+          onPress={() => { run(() => {
             void toggleArchived(convId);
             onAfterArchive?.(!isArchived);
             if (!isArchived && context === 'view') router.replace('/');
-          })}
+          }); }}
         />
 
         {isGroup ? (

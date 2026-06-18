@@ -37,8 +37,8 @@ export function NotificationsSettings(): React.ReactElement {
 
   useEffect(() => {
     void loadPushEnabled().then(setEnabled);
-    void Notifications.getPermissionsAsync().then(p => setPerm(p.status)).catch(() => undefined);
-    return subscribePushPref(() => setEnabled(isPushEnabledSync()));
+    void Notifications.getPermissionsAsync().then(p => { setPerm(p.status); }).catch(() => undefined);
+    return subscribePushPref(() => { setEnabled(isPushEnabledSync()); });
   }, []);
 
   const onToggle = (next: boolean): void => {

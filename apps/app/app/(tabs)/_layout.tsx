@@ -78,7 +78,7 @@ export default function TabsLayout(): React.ReactElement {
             ['index', 'chatBubble'],
             ['contacts', 'users'],
             ['wallet', 'wallet'],
-          ] as const satisfies ReadonlyArray<readonly [string, HeroIconName]>
+          ] as const satisfies readonly (readonly [string, HeroIconName])[]
         ).map(([name, icon]) => (
           <Tabs.Screen
             key={name}

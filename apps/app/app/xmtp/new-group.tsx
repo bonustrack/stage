@@ -91,7 +91,7 @@ export default function NewGroup(): React.ReactElement {
     <Col surface="surface" flex={1}>
       {/* Header — back button + title, consistent with other pushed screens. */}
       <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
+        <Pressable onPress={() => { router.back(); }} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
         <Title size="sm" color={head}>

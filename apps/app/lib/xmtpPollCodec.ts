@@ -24,7 +24,7 @@ export class PollCodec implements JSContentCodec<PollContent> {
 
   /** Encode a poll as JSON-bytes content with its plain-text fallback. */
   encode(content: PollContent): EncodedContent {
-    return encodeJsonContent(this.contentType, content, pollFallbackText(content)) as EncodedContent;
+    return encodeJsonContent(this.contentType, content, pollFallbackText(content));
   }
 
   /** Decode the JSON wire body back into a poll. */

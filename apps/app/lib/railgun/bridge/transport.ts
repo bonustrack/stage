@@ -144,7 +144,7 @@ export function bridgeListen(
 ): () => void {
   const ch = channel();
   if (!ch) return () => undefined;
-  const handler = (...args: unknown[]): void => cb(args[0]);
+  const handler = (...args: unknown[]): void => { cb(args[0]); };
   ch.addListener(event, handler);
   return () => ch.removeListener?.(event, handler);
 }

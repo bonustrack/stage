@@ -90,7 +90,7 @@ let reachedTarget = false;
 function isRestorable(path: string): boolean {
   if (!path || path === '/') return false;
   if (path === '/accounts') return false;
-  if (/^\/\(tabs\)/.test(path)) return false;
+  if (path.startsWith("/(tabs)")) return false;
   const TAB_ROOTS = ['/wallet', '/settings'];
   if (TAB_ROOTS.includes(path)) return false;
   return true;
@@ -227,11 +227,11 @@ export function useRestoreGate(): RestoreGate {
     // Find the card stack that holds `(tabs)`: it's either the root state itself
     // or its nested `state` (expo-router wraps everything under a `__root`).
     const stackHasTabs = (s?: { routes?: { name: string; state?: unknown }[] }): boolean =>
-      Array.isArray(s?.routes) && s!.routes.some((r) => r.name === '(tabs)');
+      Array.isArray(s?.routes) && s.routes.some((r) => r.name === '(tabs)');
     const rootHasTabs =
       stackHasTabs(navState) ||
       (Array.isArray(navState?.routes) &&
-        navState!.routes.some((r: { state?: { routes?: { name: string }[] } }) => stackHasTabs(r.state)));
+        navState.routes.some((r: { state?: { routes?: { name: string }[] } }) => stackHasTabs(r.state)));
     if (!rootHasTabs) return;
     // Claim the restore for this process BEFORE the async push so a concurrent
     // remount's effect can't also pass the guard and double-push.
@@ -239,9 +239,9 @@ export function useRestoreGate(): RestoreGate {
     // One frame of slack so the committed `(tabs)` card has painted before the
     // push enters the stack on top of it.
     const raf = requestAnimationFrame(() => {
-      router.push(saved as Parameters<typeof router.push>[0]);
+      router.push(saved);
     });
-    return () => cancelAnimationFrame(raf);
+    return () => { cancelAnimationFrame(raf); };
   }, [ready, navState]);
 
   // Keep the saved route current — but NEVER re-persist the route we just

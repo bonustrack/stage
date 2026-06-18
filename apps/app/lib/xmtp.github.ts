@@ -27,7 +27,7 @@ export function normalizeGithubUrl(raw: string): string {
 
 /** Pull the github link out of a parsed blob (string or undefined). */
 function readGithub(blob: Record<string, unknown>): string | undefined {
-  const raw = blob['github'];
+  const raw = blob.github;
   return typeof raw === 'string' && raw.trim() ? raw.trim() : undefined;
 }
 
@@ -67,8 +67,8 @@ export async function setGithubLink(line: string, url: string): Promise<string |
   await group.sync?.();
   const existing = parseBlob(await group.appData!());
   const blob: Record<string, unknown> = { ...existing, v: 1, labels: readLabels(existing) };
-  if (clean) blob['github'] = clean;
-  else delete blob['github'];
+  if (clean) blob.github = clean;
+  else delete blob.github;
   try {
     await group.updateAppData!(JSON.stringify(blob));
   } catch (e) {

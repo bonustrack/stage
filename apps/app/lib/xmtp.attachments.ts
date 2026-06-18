@@ -25,11 +25,11 @@ export { swarmToHttp } from './xmtp.swarm';
  *  through the strip gate without a deliberate, reviewable `as SanitizedFileUri`
  *  cast. Behaviour is identical to calling `client.encryptAttachment` directly -
  *  this wrapper is purely a type fence. */
-type AttachmentEncryptor = {
+interface AttachmentEncryptor {
   encryptAttachment: (file: {
     fileUri: string; mimeType?: string; filename?: string;
   }) => Promise<EncryptedLocalAttachment>;
-};
+}
 /** Type-fenced wrapper over `client.encryptAttachment` requiring a sanitized file URI. */
 export async function encryptSanitizedAttachment(
   client: AttachmentEncryptor,
@@ -137,7 +137,7 @@ export async function fileUriToBase64(uri: string): Promise<string> {
       const comma = result.indexOf(',');
       resolve(comma === -1 ? result : result.slice(comma + 1));
     };
-    reader.onerror = (): void => reject(reader.error ?? new Error('FileReader failed'));
+    reader.onerror = (): void => { reject(reader.error ?? new Error('FileReader failed')); };
     reader.readAsDataURL(blob);
   });
 }

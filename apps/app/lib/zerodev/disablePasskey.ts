@@ -84,7 +84,7 @@ export async function swapRootToEcdsa(
       return { ok: false, message: 'Passkey validator unavailable; cannot authorize the revert.' };
     }
     const kernelClient = makeKernelClient(
-      passkeyAccount as Parameters<typeof makeKernelClient>[0],
+      passkeyAccount,
       publicClient,
     );
 

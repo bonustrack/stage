@@ -25,7 +25,7 @@ export function makePublicClient(): PublicClient {
   // `base` is an OP-stack chain whose formatters make viem infer a chain-specific
   // client type; widen to the plain `Chain` so the result matches the declared
   // `PublicClient` return (avoids a spurious cross-viem-copy TS2719 under turbo).
-  return createPublicClient({ chain: base as Chain, transport: http(rpc) });
+  return createPublicClient({ chain: base, transport: http(rpc) });
 }
 
 /** Whether a Kernel address has on-chain bytecode (i.e. the account is deployed,

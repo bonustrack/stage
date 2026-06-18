@@ -69,11 +69,11 @@ export async function sendNativeOrToken(params: SendParams): Promise<Hex> {
       chain,
       to: token.address,
       data: encodeFunctionData({
-        abi: erc20Abi, functionName: 'transfer', args: [to as Hex, value],
+        abi: erc20Abi, functionName: 'transfer', args: [to, value],
       }),
     });
   }
-  return client.sendTransaction({ chain, to: to as Hex, value });
+  return client.sendTransaction({ chain, to: to, value });
 }
 
 /** Broadcast a raw EIP-5792 call verbatim — `{to, data, value}` as carried by a
@@ -102,6 +102,6 @@ export async function sendCall(call: RawCall): Promise<Hex> {
   if (!chain) throw new Error(`Unsupported chain ${chainId}`);
   const client = createWalletClient({ account: local, chain, transport: rpcTransport(chainId) });
   return client.sendTransaction({
-    chain, to: to as Hex, value, ...(data ? { data: data as Hex } : {}),
+    chain, to: to, value, ...(data ? { data: data as Hex } : {}),
   });
 }

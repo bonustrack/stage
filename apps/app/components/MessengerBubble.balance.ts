@@ -79,11 +79,11 @@ async function readOnchain(
   }
 
   if (!isAddress(token!)) return null;
-  const t = token as Hex;
+  const t = token;
   // Balance is required; decimals/symbol are best-effort (some tokens omit them).
   const raw = await pub.readContract({
     address: t, abi: erc20Abi, functionName: 'balanceOf', args: [addr],
-  }) as bigint;
+  });
   let decimals = 18;
   let symbol = 'tokens';
   try {
@@ -125,7 +125,7 @@ export function usePayerBalance(
         const key = `${cid}:${(token ?? 'native').toLowerCase()}:${addr.toLowerCase()}`;
         let meta = cache.get(key);
         if (!meta) {
-          meta = readOnchain(cid, token, addr as Hex).catch(() => null);
+          meta = readOnchain(cid, token, addr).catch(() => null);
           cache.set(key, meta);
         }
         const onchain = await meta;

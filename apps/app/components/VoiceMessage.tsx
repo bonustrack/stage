@@ -95,8 +95,8 @@ export function VoiceMessage({ uri }: Props): React.ReactElement {
       </Pressable>
       <Pressable
         style={{ flex: 1, height: TRACK_H, justifyContent: 'center' }}
-        onLayout={(ev) => setBarWidth(ev.nativeEvent.layout.width)}
-        onPress={(ev) => seekTo(ev.nativeEvent.locationX)}
+        onLayout={(ev) => { setBarWidth(ev.nativeEvent.layout.width); }}
+        onPress={(ev) => { seekTo(ev.nativeEvent.locationX); }}
 >
         <Row height={TRACK_H} align="center" gap={2}>
           {bars.map((h, i) => {

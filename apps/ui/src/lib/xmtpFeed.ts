@@ -76,7 +76,7 @@ export function useXmtpFeed(line: Ref<string | null>, enabled: Ref<boolean>): Xm
     /** Seed instantly from cache so re-opening a channel skips the spinner. */
     const seeded = line.value ? feedCache.get(line.value) : undefined;
     events.value = seeded ? [...seeded] : [];
-    status.value = seeded && seeded.length ? 'open' : 'loading';
+    status.value = seeded?.length ? 'open' : 'loading';
     try {
       const client = await getOrCreateXmtpClient('production');
       if (cancelled || activeLine !== line.value) return;
@@ -96,7 +96,7 @@ export function useXmtpFeed(line: Ref<string | null>, enabled: Ref<boolean>): Xm
               }
             },
           });
-          streamCloser = stream as unknown as { return?: () => Promise<unknown> };
+          streamCloser = stream;
         }
       } catch { /* stream init failed — poll backstop keeps the feed fresh */ }
       onVisibility = (): void => { if (document.visibilityState === 'visible') void refresh(); };

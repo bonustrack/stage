@@ -43,7 +43,7 @@ export function drawerAccountRows({ accounts, activeId, onSwitch, c, dark }: {
   onSwitch: (id: string) => void; c: DrawerColors; dark: boolean;
 }): React.ReactElement[] {
   return accounts.map((a) => (
-    <ListViewItem key={a.id} dark={dark} onPress={() => onSwitch(a.id)}>
+    <ListViewItem key={a.id} dark={dark} onPress={() => { onSwitch(a.id); }}>
       <Avatar address={a.address} size={30} style={{ backgroundColor: c.border }}/>
       <Col minWidth={0} flex={1}>
         <Text weight="semibold" size="md" numberOfLines={1} color={c.head}>

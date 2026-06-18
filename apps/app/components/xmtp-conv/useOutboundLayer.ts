@@ -139,7 +139,7 @@ export function useOutboundLayer(
     const idx = allBubbles.findIndex(b => b.id === messageId);
     setJumpHighlightId(messageId);
     if (jumpClearTimer.current) clearTimeout(jumpClearTimer.current);
-    jumpClearTimer.current = setTimeout(() => setJumpHighlightId(null), 1800);
+    jumpClearTimer.current = setTimeout(() => { setJumpHighlightId(null); }, 1800);
     if (idx < 0) return;
     try {
       listRef.current?.scrollToIndex({ index: idx, animated: false, viewPosition: 0.5 });
@@ -162,7 +162,7 @@ export function useOutboundLayer(
       text: text || undefined,
       ...(replyTo ? { replyTo } : {}),
       ...(payload ? { payload } : attachments.length ? { payload: { attachments } } : {}),
-    } as HistoryEntry, ...prev]);
+    }, ...prev]);
     /** Always remount so the user lands on their own bubble — `maintainVisibleContentPosition`
      *  anchors the previously-visible content and the new entry falls below the viewport. */
     setListEpoch(e => e + 1);

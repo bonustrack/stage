@@ -31,7 +31,7 @@ export default function WalletUnshield(): React.ReactElement {
   const pal = useFormPal();
 
   const [eoa, setEoa] = useState<string | null>(null);
-  useEffect(() => { void getActiveAccount().then(a => setEoa(a?.address ?? null)); }, []);
+  useEffect(() => { void getActiveAccount().then(a => { setEoa(a?.address ?? null); }); }, []);
 
   const initialSymbol = params.symbol === 'USDC' ? 'USDC' : 'ETH';
   const initialChainId = typeof params.chainId === 'string' && Number.isFinite(Number(params.chainId))
@@ -62,9 +62,9 @@ export default function WalletUnshield(): React.ReactElement {
   };
 
   return (
-    <ActionPage title="Unshield token" head={head} bg={bg} border={border} onBack={() => router.back()}
+    <ActionPage title="Unshield token" head={head} bg={bg} border={border} onBack={() => { router.back(); }}
       footer={
-        <WalletFooter border={border} dark={dark} onCancel={() => router.back()}
+        <WalletFooter border={border} dark={dark} onCancel={() => { router.back(); }}
           submitDisabled={!canSubmit} submitLoading={busy} onSubmit={onSubmit}
           submitLabel={phase === 'proving' ? 'Proving…' : phase === 'broadcasting' ? 'Broadcasting…'
             : phase === 'done' ? 'Unshielded ✓' : 'Unshield'} />

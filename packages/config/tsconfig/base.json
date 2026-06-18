@@ -1,12 +1,11 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "_comment": "@stage-labs/config — shared TypeScript base for the pure-TS packages (packages/client, packages/kit). These are the exact compilerOptions both inlined; the per-package tsconfig keeps its own lib/jsx/paths/include deltas. Relocation only — no behaviour change.",
+  "_comment": "@stage-labs/config — shared TypeScript base for the pure-TS packages (packages/client, packages/kit, apps/api, apps/proxy). The full `strict` family is enabled (and spelled out explicitly so the strict bar is auditable in one place), plus noUncheckedIndexedAccess + noImplicitOverride. Every workspace tsconfig extends this (directly or layered) so strictness is uniform across the monorepo.",
   "compilerOptions": {
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "lib": ["ESNext", "DOM"],
-    "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
@@ -15,6 +14,19 @@
     "noImplicitReturns": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "useUnknownInCatchVariables": true,
+
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true
   }
 }

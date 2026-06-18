@@ -53,7 +53,7 @@ function cleanLabel(raw: string): string {
 
 /** Parse appData into a record, tolerating empty / malformed input. */
 export function parseBlob(appData: string): Record<string, unknown> {
-  if (!appData || !appData.trim()) return {};
+  if (!appData?.trim()) return {};
   try {
     const parsed: unknown = JSON.parse(appData);
     return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
@@ -66,7 +66,7 @@ export function parseBlob(appData: string): Record<string, unknown> {
 
 /** Pull a clean, deduped, capped label array out of a parsed blob. */
 export function readLabels(blob: Record<string, unknown>): string[] {
-  const raw = blob['labels'];
+  const raw = blob.labels;
   if (!Array.isArray(raw)) return [];
   const out: string[] = [];
   const seen = new Set<string>();

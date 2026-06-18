@@ -30,7 +30,7 @@ export function SimulationBlock({ sim, pending, sub, chainId }: {
   if (sim.success === 'unknown') {
     return <SimNote text="Could not simulate this transaction" sub={sub} bg={pal.border} />;
   }
-  const fail = sim.success === false;
+  const fail = !sim.success;
   const { in: incoming, out } = sim.assetChanges;
   const noChange = incoming.length === 0 && out.length === 0;
   // FAIL gets the red danger frame (loud); SUCCESS a calm success-tinted box.

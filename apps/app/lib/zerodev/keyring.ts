@@ -252,7 +252,7 @@ export async function smartOwnerSigner(hdIndex: number): Promise<HDAccount> {
  *  legacy scwXmtp===false path). Signs in place; returns the hex signature. */
 export async function signOwnerMessage(hdIndex: number, message: string): Promise<Hex> {
   const owner = await ownerFor(hdIndex);
-  return owner.signMessage({ message }) as Promise<Hex>;
+  return owner.signMessage({ message });
 }
 
 // ===========================================================================

@@ -35,7 +35,7 @@ export function ManageSheet({ manageRec, activeId, onClose, onSwitch, onExport, 
           <SheetRow label="Export private key" desc="Reveal + copy this account's key" head={p.head} sub={p.sub} dark={dark} onPress={() => { const id = manageRec.id; onClose(); onExport(id); }} />
         ) : null}
         {manageRec ? (
-          <SheetRow label="Remove account" desc="Delete from this device" danger head={p.head} sub={p.sub} dark={dark} onPress={() => onRemove(manageRec)} />
+          <SheetRow label="Remove account" desc="Delete from this device" danger head={p.head} sub={p.sub} dark={dark} onPress={() => { onRemove(manageRec); }} />
         ) : null}
       </ListView>
     </SheetModal>

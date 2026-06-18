@@ -68,7 +68,7 @@ export function useFeedRenderItem(
       dark={dark}
       myUri={myUri}
       senderEthAddress={senderEthOf(item.from)}
-      onAvatarPress={(addr) => router.push({ pathname: '/user/[address]', params: { address: addr } })}
+      onAvatarPress={(addr) => { router.push({ pathname: '/user/[address]', params: { address: addr } }); }}
       unread={false}
       pending={item.id.startsWith('tmp_') && !confirmedIds.has(item.id)}
       replyTarget={replyingTo?.id === item.id || jumpHighlightId === item.id}
@@ -77,31 +77,31 @@ export function useFeedRenderItem(
       pendingRemovals={optimisticRemovals.get(item.id)}
       ownEmojis={ownReactions.get(item.id)}
       replyPreview={item.replyTo ? previewOf(eventsById.get(item.replyTo) ?? item) : undefined}
-      onReplyPreviewPress={item.replyTo ? () => jumpToMessage(item.replyTo as string) : undefined}
+      onReplyPreviewPress={item.replyTo ? () => { jumpToMessage(item.replyTo!); } : undefined}
       votes={displayVotes.get(item.id)}
       ownVotes={displayOwnVotes.get(item.id)}
-      onVote={(qIdx, idx, action) => onVote(item.id, qIdx, idx, action)}
+      onVote={(qIdx, idx, action) => { onVote(item.id, qIdx, idx, action); }}
       openAnswers={displayOpenAnswers.get(item.id)}
-      onOpenAnswer={(qIdx, text) => onOpenAnswer(item.id, qIdx, text)}
+      onOpenAnswer={(qIdx, text) => { onOpenAnswer(item.id, qIdx, text); }}
       signing={signingIds.has(item.id)}
       consentAllowed={consentAllowed}
       onSign={(() => {
         const req = (item.payload as { signatureRequest?: SignatureRequestContent } | undefined)?.signatureRequest;
         if (!req || item.from === myUri) return undefined;
-        return () => onSign(item.id, req);
+        return () => { onSign(item.id, req); };
       })()}
       paying={payingIds.has(item.id)}
       onPay={(() => {
         const wsc = (item.payload as { walletSendCalls?: WalletSendCallsContent } | undefined)?.walletSendCalls;
         if (!wsc || item.from === myUri) return undefined;
-        return () => onPay(item.id, wsc);
+        return () => { onPay(item.id, wsc); };
       })()}
-      onReact={(emoji) => onReact(item.id, emoji)}
-      onReply={() => setReplyTarget(item.id, previewOf(item), senderEthOf(item.from))}
+      onReact={(emoji) => { onReact(item.id, emoji); }}
+      onReply={() => { setReplyTarget(item.id, previewOf(item), senderEthOf(item.from)); }}
       onOpenMenu={(anchor) => { setMenuAnchor(anchor); setMenuFor(item); }}
-      onCloseMenu={() => setMenuFor(null)}
+      onCloseMenu={() => { setMenuFor(null); }}
       selectable={selectedForCopy === item.id}
-      onAnswer={(label) => onAnswer(item.id, label)}
+      onAnswer={(label) => { onAnswer(item.id, label); }}
       highlight={highlight}
     />
     </BubbleErrorBoundary>

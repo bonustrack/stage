@@ -107,7 +107,7 @@ export function SecureWalletNudge(): React.ReactElement | null {
                   onPress={passkey.run}/>
               ) : null}
               <Button dark={dark} variant="secondary" size="md" fullWidth
-                label="Add guardians" onPress={() => router.push('/wallet/recovery')}/>
+                label="Add guardians" onPress={() => { router.push('/wallet/recovery'); }}/>
               <Button dark={dark} variant="ghost" size="md" fullWidth
                 label="Not now" onPress={dismiss}/>
             </Col>
@@ -126,7 +126,7 @@ export function SecureWalletNudge(): React.ReactElement | null {
             </Box>
             <Row gap={8}>
               <Button dark={dark} variant="ghost" size="md" fullWidth style={{ flex: 1 }}
-                label="Hide" onPress={() => setPhrase(null)}/>
+                label="Hide" onPress={() => { setPhrase(null); }}/>
               <Button dark={dark} variant="primary" size="md" fullWidth style={{ flex: 1 }}
                 tintBg={pal.primary} tintFg={pal.bg}
                 label="I saved it" onPress={confirm}/>

@@ -29,7 +29,7 @@ import {
 } from '@metro-labs/kit/tokens';
 
 /** The 4 editable seed colors in display order. `key` is the SeedColorKey. */
-const SEED_ROWS: ReadonlyArray<readonly [label: string, key: SeedColorKey]> = [
+const SEED_ROWS: readonly (readonly [label: string, key: SeedColorKey])[] = [
   ['surface-background', 'background'],
   ['surface-foreground', 'foreground'],
   ['accent', 'accent'],
@@ -66,7 +66,7 @@ function SeedSwatch({ name, seedKey, value, scheme, p }: {
           value={shown}
           onChangeText={(t) => { setDraft(t); if (isHex(t)) setSeedColor(scheme, seedKey, t); }}
           dark={p.dark}
-          inputProps={{ onBlur: () => setDraft(null), autoCapitalize: 'none', autoCorrect: false }}
+          inputProps={{ onBlur: () => { setDraft(null); }, autoCapitalize: 'none', autoCorrect: false }}
           placeholder="#rrggbb" placeholderTextColor={p.sub}
           style={{
             marginTop: 2, paddingVertical: 2, paddingHorizontal: 0, minHeight: 0,
@@ -107,7 +107,7 @@ function SeedChoice<T extends string | number>({ name, options, value, onSelect,
             key={String(opt)}
             variant={opt === value ? 'primary' : 'secondary'}
             size="sm" dark={p.dark}
-            onPress={() => onSelect(opt)}
+            onPress={() => { onSelect(opt); }}
             label={String(opt)}
             accessibilityLabel={`Set ${name} to ${String(opt)}`}
 />
@@ -135,7 +135,7 @@ export function ColorTokens({ p }: { p: GalleryPalette }): React.ReactElement {
         </Text>
         <Button
           variant="secondary" size="sm" dark={p.dark}
-          onPress={() => resetOverrides()}
+          onPress={() => { resetOverrides(); }}
           label="Reset" accessibilityLabel="Reset theme seed to defaults"
 />
       </Row>
@@ -152,7 +152,7 @@ export function ColorTokens({ p }: { p: GalleryPalette }): React.ReactElement {
           {([
             ['bg', palette.bg], ['border', palette.border], ['text', palette.text],
             ['sub', palette.sub], ['link', palette.link], ['inputBg', palette.inputBg],
-          ] as ReadonlyArray<readonly [string, string]>).map(([k, c]) => (
+          ] as readonly (readonly [string, string])[]).map(([k, c]) => (
             <Col key={k} align="center" gap={2}>
               <Box width={32} height={32} background={c} style={{ borderRadius: 8, borderWidth: 1, borderColor: p.border }}/>
               <Text size="3xs" color={p.sub}>{k}</Text>

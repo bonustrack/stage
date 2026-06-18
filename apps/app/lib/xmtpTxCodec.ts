@@ -33,7 +33,7 @@ export class WalletSendCallsCodec implements JSContentCodec<WalletSendCallsConte
 
   /** Encode a payment request as JSON-bytes content with its plain-text fallback. */
   encode(content: WalletSendCallsContent): EncodedContent {
-    return encodeJsonContent(this.contentType, content, walletSendCallsFallbackText(content)) as EncodedContent;
+    return encodeJsonContent(this.contentType, content, walletSendCallsFallbackText(content));
   }
 
   /** Decode and schema-validate the untrusted payment-request wire body. */
@@ -62,7 +62,7 @@ export class TransactionReferenceCodec implements JSContentCodec<TransactionRefe
 
   /** Encode a transaction receipt as JSON-bytes content with its plain-text fallback. */
   encode(content: TransactionReferenceContent): EncodedContent {
-    return encodeJsonContent(this.contentType, content, transactionReferenceFallbackText(content)) as EncodedContent;
+    return encodeJsonContent(this.contentType, content, transactionReferenceFallbackText(content));
   }
 
   /** Decode and schema-validate the transaction-reference wire body. */

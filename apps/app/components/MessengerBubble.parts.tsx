@@ -26,7 +26,7 @@ function MentionLink({ address, dark }: { address: string; dark: boolean }): Rea
   const linkColor = dark ? '#7aa2ff' : '#2f6feb';
   return (
     <Text weight="semibold"
-      onPress={() => router.push({ pathname: '/user/[address]', params: { address } })} color={linkColor}
+      onPress={() => { router.push({ pathname: '/user/[address]', params: { address } }); }} color={linkColor}
       suppressHighlighting>
       @{display}
     </Text>
@@ -106,7 +106,7 @@ export function QuestionView({ question, dark, sub, onAnswer }: {
         return (
           <Pressable
             key={`${i}-${opt.label}`}
-            onPress={() => toggle(opt.label)}
+            onPress={() => { toggle(opt.label); }}
             style={({ pressed }) => ({
               paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12,
               backgroundColor: isOn
@@ -133,7 +133,7 @@ export function QuestionView({ question, dark, sub, onAnswer }: {
       })}
       {allowOther && !otherOpen ? (
         <Pressable
-          onPress={() => setOtherOpen(true)}
+          onPress={() => { setOtherOpen(true); }}
           style={({ pressed }) => ({
             paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12,
             backgroundColor: pressed

@@ -199,7 +199,7 @@ export function useTxSignLayer(activeLine: string) {
            *  ERC-20 this broadcasts the encoded `transfer(...)` to the token
            *  contract; for a native send it's a value-only tx. */
           txHash = await sendCall({
-            to: call.to as string, data: call.data, value: call.value, chainId,
+            to: call.to!, data: call.data, value: call.value, chainId,
           });
         }
         /** Receipt metadata is built from the VERIFIED summary (decoded from the

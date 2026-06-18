@@ -36,7 +36,7 @@
     "./date-picker": "./src/date-picker.tsx",
     "./form": "./src/form.tsx",
     "./box": "./src/box.tsx",
-    "./avatar-view": "./src/avatar.tsx",
+    "./avatar-view": "./src/avatar.view.tsx",
     "./markdown": "./src/markdown.tsx",
     "./table": "./src/table.tsx",
     "./scroll": "./src/scroll.tsx",

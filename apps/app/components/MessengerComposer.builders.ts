@@ -39,7 +39,7 @@ export async function sendSignatureRequest(a: ComposerActionsArgs): Promise<void
       id: mintSignatureRequestId(), kind: 'eip712',
       eip712: {
         domain: (td.domain ?? {}) as Record<string, unknown>,
-        types: td.types as Record<string, Array<{ name: string; type: string }>>,
+        types: td.types as Record<string, { name: string; type: string }[]>,
         primaryType: td.primaryType as string,
         message: td.message as Record<string, unknown>,
       },

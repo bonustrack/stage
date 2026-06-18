@@ -297,11 +297,11 @@ function MessageRequestCard({ request, onAdvance }: {
 
         <Row gap={10} margin={{ top: 16 }} style={{ alignSelf: 'stretch' }}>
           <Box flex={1}>
-            <Button block variant="danger" size="md" dark={dark} onPress={() => act(false)} label="Block"
+            <Button block variant="danger" size="md" dark={dark} onPress={() => { act(false); }} label="Block"
               tintBg={pal.danger} tintFg={pal.bg}/>
           </Box>
           <Box flex={1}>
-            <Button block variant="primary" size="md" dark={dark} onPress={() => act(true)} label="Accept"
+            <Button block variant="primary" size="md" dark={dark} onPress={() => { act(true); }} label="Accept"
               tintBg={pal.link} tintFg={pal.bg}/>
           </Box>
         </Row>

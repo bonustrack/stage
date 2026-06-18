@@ -20,7 +20,7 @@ export function useCachedGroupString(
   };
   const [value, setValue] = useState<string | undefined>(() => cached(convId));
   useEffect(() => {
-    const apply = (): void => setValue(cached(convId));
+    const apply = (): void => { setValue(cached(convId)); };
     apply();
     const unsub = subscribeCachedRows(apply);
     let cancelled = false;

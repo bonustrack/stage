@@ -31,7 +31,7 @@ export function MessengerImageAttachment({ uri, dark = true }: {
   }, [uri]);
   return (
     <>
-      <MediaCard dark={dark} onPress={() => setOpen(true)} width={220}>
+      <MediaCard dark={dark} onPress={() => { setOpen(true); }} width={220}>
         {prevUri && prevUri !== uri ? (
           <Image src={prevUri} style={ABSOLUTE_FILL} fit="cover" />
         ) : null}
@@ -43,7 +43,7 @@ export function MessengerImageAttachment({ uri, dark = true }: {
           onLoad={() => { loadedUri.current = uri; if (prevUri) setPrevUri(null); }}
         />
       </MediaCard>
-      <ImageViewer uri={uri} visible={open} onClose={() => setOpen(false)} />
+      <ImageViewer uri={uri} visible={open} onClose={() => { setOpen(false); }} />
     </>
   );
 }

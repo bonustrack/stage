@@ -20,7 +20,7 @@ import type { Row as RowT } from './HomeScreen.helpers';
 import { fmtTs } from './HomeScreen.helpers';
 import { DANGER } from '../../lib/theme';
 
-type RowMenu = { convId: string; title: string; isUnread: boolean; isGroup: boolean; peerAddress: string | null };
+interface RowMenu { convId: string; title: string; isUnread: boolean; isGroup: boolean; peerAddress: string | null }
 
 /** #6: hoisted renderItem so its identity is stable across stream ticks (only
  *  re-created when a resolution version changes), letting memoised ChannelRow
@@ -81,8 +81,8 @@ export function useChannelRowRenderer(
         onLabelPress={isGroup ? requestLabelFilter : undefined}
         /** Warm the feed cache the instant the row is touched (before the push
          *  animation finishes) so the conversation screen opens from cache. */
-        onPressIn={() => prefetchFeed(lineOfConv(item.convId))}
-        onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } })}
+        onPressIn={() => { prefetchFeed(lineOfConv(item.convId)); }}
+        onPress={() => { router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } }); }}
         onLongPress={() => {
           /** Tiny haptic-style buzz when the long-press opens the row menu.
            *  RN core Vibration (no native dep / rebuild needed); ~10ms = a subtle tap. */

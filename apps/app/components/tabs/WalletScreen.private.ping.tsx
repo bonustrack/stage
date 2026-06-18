@@ -74,7 +74,7 @@ function PingLog({ lines, sub, head, border }: {
     <Col margin={{ top: 4 }} gap={2}>
       <Row margin={{ top: 2, bottom: 2 }} justify="end">
         <Pressable
-          onPress={() => copyAll(lines)}
+          onPress={() => { copyAll(lines); }}
           hitSlop={8}
           accessibilityLabel="Copy scan logs"
           style={{
@@ -322,7 +322,7 @@ export function BridgePingProbe({ sub, border }: {
       const ms = runStart.current ? Date.now() - runStart.current : 0;
       append({ ms, line });
     });
-    return () => setBridgeStatusListener(null);
+    return () => { setBridgeStatusListener(null); };
   }, [append]);
 
   // Stream the engine's live scan diagnostics ('event:scanDebug') into the
@@ -332,7 +332,7 @@ export function BridgePingProbe({ sub, border }: {
     if (!isBridgeAvailable()) return undefined;
     return bridgeListen('event:scanDebug', (p) => {
       const e = p as { t?: number; chain?: number; msg?: string } | undefined;
-      if (!e || !e.msg) return;
+      if (!e?.msg) return;
       const ms = runStart.current ? Date.now() - runStart.current : 0;
       append({ ms, line: `scan[${e.chain ?? '?'}] ${e.msg}` });
     });

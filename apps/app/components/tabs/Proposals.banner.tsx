@@ -24,7 +24,7 @@ export function ProposalsBanner(): React.ReactElement | null {
   if (count <= 0) return null;
 
   return (
-    <Pressable onPress={() => router.push('/proposals')}>
+    <Pressable onPress={() => { router.push('/proposals'); }}>
       <Row
         surface="surface"
         align="center"

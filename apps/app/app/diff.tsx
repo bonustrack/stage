@@ -59,7 +59,7 @@ export default function Diff(): React.ReactElement {
   return (
     <Col surface="surface" flex={1}>
       <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: p.border }}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
+        <Pressable onPress={() => { router.back(); }} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={p.text}/>
         </Pressable>
         <Title size="sm" style={{ flex: 1 }} numberOfLines={1}>
@@ -93,7 +93,7 @@ export default function Diff(): React.ReactElement {
             ) : null}
             <Text color={p.text} style={{ opacity: 0.7 }}>This link points to an issue with no linked pull request yet.</Text>
           </Box>
-        ) : diff && diff.files.length === 0 ? (
+        ) : diff?.files.length === 0 ? (
           <Text color={p.text} style={{ opacity: 0.7, paddingHorizontal: 12 }}>No file changes in this pull request.</Text>
         ) : (
           <>

@@ -53,7 +53,7 @@ export function useBubbleActions(deps: BubbleActionsDeps): BubbleActions {
       text: payload.text,
       pending: true,
       ...(payload.replyTo ? { replyTo: payload.replyTo } : {}),
-    } as HistoryEntry];
+    }];
   }
 
   /** Send resolved: flip the optimistic bubble from pending (gray) to normal.

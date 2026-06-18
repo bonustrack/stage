@@ -98,14 +98,14 @@ export function buildTypedData(
     types: TRANSFER_WITH_AUTHORIZATION_TYPES,
     primaryType: 'TransferWithAuthorization',
     message: {
-      from: authorization.from as Hex,
-      to: authorization.to as Hex,
+      from: authorization.from,
+      to: authorization.to,
       value: BigInt(authorization.value),
       validAfter: BigInt(authorization.validAfter),
       validBefore: BigInt(authorization.validBefore),
-      nonce: authorization.nonce as Hex,
+      nonce: authorization.nonce,
     },
-  } as TypedDataDefinition;
+  };
 }
 
 /** base64-encode a UTF-8 string. RN has global `btoa`; fall back to Buffer so

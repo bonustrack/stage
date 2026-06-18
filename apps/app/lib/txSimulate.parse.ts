@@ -57,13 +57,13 @@ export function humanizeRevert(raw: string): string {
  *  failures read cleanly. */
 export function decodeRevert(returnData?: string, errMsg?: string): string | undefined {
   const d = returnData && returnData !== '0x' ? returnData : undefined;
-  if (d && d.startsWith('0x08c379a0')) {
+  if (d?.startsWith('0x08c379a0')) {
     try {
       const [msg] = decodeAbiParameters([{ type: 'string' }], ('0x' + d.slice(10)) as Hex);
       if (msg) return humanizeRevert(String(msg));
     } catch { /* fall through */ }
   }
-  if (d && d.startsWith('0x4e487b71')) return 'Execution panic (assert/overflow)';
+  if (d?.startsWith('0x4e487b71')) return 'Execution panic (assert/overflow)';
   if (errMsg) return humanizeRevert(errMsg);
   return undefined;
 }
@@ -72,7 +72,7 @@ export function decodeRevert(returnData?: string, errMsg?: string): string | und
  *  + 18-decimal fallback when unknown. Registry-only by design (no extra RPC). */
 function tokenMeta(addr: string, chainId: number): { symbol: string; decimals: number } {
   const lc = addr.toLowerCase();
-  const hit = ASSETS.find(a => a.chainId === chainId && a.address && a.address.toLowerCase() === lc);
+  const hit = ASSETS.find(a => a.chainId === chainId && a.address?.toLowerCase() === lc);
   if (hit) return { symbol: hit.symbol, decimals: hit.decimals };
   return { symbol: `${addr.slice(0, 6)}…${addr.slice(-4)}`, decimals: 18 };
 }

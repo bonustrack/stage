@@ -42,5 +42,5 @@ export interface EtherscanResponse {
 /** Validate a raw Etherscan response body. Throws (with a logged reason) when
  *  the envelope itself is malformed. */
 export function parseEtherscanResponse(data: unknown): EtherscanResponse {
-  return parseOrThrow('api.etherscan', responseSchema, data) as EtherscanResponse;
+  return parseOrThrow('api.etherscan', responseSchema, data);
 }

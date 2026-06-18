@@ -35,7 +35,7 @@ export { EMPTY_CONV_META, fetchConvMeta, fetchGroupRoles };
 export function useConvMeta(convId?: string | null): ConvMeta {
   const { data } = useQuery({
     queryKey: messagingKeys.convMeta(convId),
-    queryFn: () => fetchConvMeta(convId as string),
+    queryFn: () => fetchConvMeta(convId!),
     enabled: !!convId,
     staleTime: 5 * 60_000,
   });

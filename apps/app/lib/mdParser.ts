@@ -19,7 +19,7 @@ export const mdParser = MarkdownIt({ typographer: false, linkify: true, breaks: 
  *  http(s)/mailto autolinking is untouched. */
 const DEEP_LINK_RULE = {
   validate(text: string, pos: number): number {
-    const m = text.slice(pos).match(/^\/\/[^\s]+/);
+    const m = /^\/\/[^\s]+/.exec(text.slice(pos));
     return m ? m[0].length : 0;
   },
 };

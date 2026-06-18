@@ -77,7 +77,7 @@ export async function deployAndSwapToPasskey(
     const owner = await smartOwnerSigner(hdIndex);
     const ecdsaAccount = await createEcdsaKernel(publicClient, owner, hdIndex);
     const kernelClient = makeKernelClient(
-      ecdsaAccount as Parameters<typeof makeKernelClient>[0],
+      ecdsaAccount,
       publicClient,
     );
     const passkeyValidator = await passkeyValidatorFromStored(publicClient, stored);

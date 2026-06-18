@@ -14,7 +14,7 @@
 // The shared custom-rule definitions (theme-native, keyring guard) are exported
 // individually too, in case a future RN package needs them.
 import tseslint from "typescript-eslint";
-import { MAX_LINES, REQUIRE_EXPORTED_JSDOC, jsdocPlugin } from "./base.js";
+import { MAX_LINES, REQUIRE_EXPORTED_JSDOC, jsdocPlugin, recommended, NO_ESCAPE_HATCHES } from "./base.js";
 
 /* ============================================================================
  * Custom inline rule: theme-native role/surface hint (WARNING).
@@ -130,7 +130,7 @@ export function reactNative() {
     // it is excluded from the Metro bundle (see metro.config.js) and built into
     // the native binary separately, so the app's TS/RN lint rules don't apply.
     { ignores: ["node_modules/**", ".expo/**", "dist/**", "nodejs-assets/**"] },
-    ...tseslint.configs.recommended,
+    ...recommended,
     {
       files: ["app/**/*.{ts,tsx}", "components/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}", "modules/**/*.{ts,tsx}"],
       plugins: { metro: { rules: { ...metroThemeNative.rules, ...keyringGuardRule } }, jsdoc: jsdocPlugin },
@@ -143,9 +143,10 @@ export function reactNative() {
         // KEYRING GUARD (ERROR): only lib/zerodev/keyring may import the private-key /
         // mnemonic primitives + storage-key constants. A bypass fails the build.
         "metro/no-keyring-bypass": "error",
-        // Strong typing: ban `any`. Use `unknown` + narrowing, real interfaces,
-        // generics, or library types instead.
-        "@typescript-eslint/no-explicit-any": "error",
+        // Strong typing: ban `any` + the type-system escape hatches (ts-comment,
+        // non-null `!`). Use `unknown` + narrowing, real interfaces, generics,
+        // or library types instead.
+        ...NO_ESCAPE_HATCHES,
         // Typography: three ERRORs keep text sizing on the named Kit scale and
         // the font family inside the Kit content components.
         // (1) No raw numeric `fontSize` anywhere - use a named step
@@ -404,14 +405,15 @@ export function kitEslint() {
     // Generated files are not linted. heroicons.data.ts is the tool-generated
     // Heroicons v1 outline catalogue (data, not hand-written logic).
     { ignores: ["node_modules/**", "dist/**", "src/heroicons.data.ts"] },
-    ...tseslint.configs.recommended,
+    ...recommended,
     {
       files: ["src/**/*.{ts,tsx}"],
       plugins: { jsdoc: jsdocPlugin },
       rules: {
-        // Strong typing: ban `any`. Use `unknown` + narrowing, real interfaces,
-        // generics, or library types instead.
-        "@typescript-eslint/no-explicit-any": "error",
+        // Strong typing: ban `any` + the type-system escape hatches (ts-comment,
+        // non-null `!`). Use `unknown` + narrowing, real interfaces, generics,
+        // or library types instead.
+        ...NO_ESCAPE_HATCHES,
         // Every exported function/method needs a leading JSDoc description.
         "jsdoc/require-jsdoc": REQUIRE_EXPORTED_JSDOC,
         // `error`: cap hand-written files at 400 lines. Split rather than cross it.

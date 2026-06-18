@@ -42,7 +42,7 @@ export interface SetStore {
 
 /** Build a `Set<string>` store persisted as a JSON string array under `key`. */
 export function createSetStore(key: string): SetStore {
-  let cache: Set<string> = new Set();
+  let cache = new Set<string>();
   const { listeners, notify } = makeListeners();
   const hydration = hydrateOnce(async (): Promise<Set<string>> => {
     try {

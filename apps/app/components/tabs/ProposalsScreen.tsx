@@ -37,7 +37,7 @@ export function ProposalsScreen(): React.ReactElement {
     <Col flex={1} surface="surface">
       {/* Topnav: back + title, mirroring the Menu / Accounts / Search pages. */}
       <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
+        <Pressable onPress={() => { router.back(); }} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={head}/>
         </Pressable>
         <Title size="sm">

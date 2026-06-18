@@ -93,7 +93,7 @@ async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<
     try {
       const built = await Promise.race<Client | null>([
         Client.build(new PublicIdentity(rec.address, 'ETHEREUM'), opts),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), 20_000)),
+        new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 20_000)),
       ]);
       if (built) {
         setCachedXmtpClient(built);

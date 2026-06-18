@@ -22,7 +22,7 @@ export function AccountList({
   onSwitch: (id: string) => void; setManageId: (id: string) => void; onAdd: () => void;
 }): React.ReactElement {
   const manageTrailing = (id: string): React.ReactElement => (
-    <Pressable hitSlop={10} onPress={() => setManageId(id)}>
+    <Pressable hitSlop={10} onPress={() => { setManageId(id); }}>
       <Text weight="semibold" size="4xl" color={sub} style={{ paddingHorizontal: 4 }}>⋯</Text>
     </Pressable>
   );
@@ -60,8 +60,8 @@ export function AccountList({
                 <AccountRow
                   rec={a}
                   topBorder={i > 0}
-                  onPress={() => onSwitch(a.id)}
-                  onLongPress={() => setManageId(a.id)}
+                  onPress={() => { onSwitch(a.id); }}
+                  onLongPress={() => { setManageId(a.id); }}
                   head={head} sub={sub} border={border}
                   trailing={
                     a.id === activeId
@@ -79,8 +79,8 @@ export function AccountList({
             <AccountRow
               rec={activeRec}
               topBorder={false}
-              onPress={() => setExpanded(e => !e)}
-              onLongPress={() => setManageId(activeRec.id)}
+              onPress={() => { setExpanded(e => !e); }}
+              onLongPress={() => { setManageId(activeRec.id); }}
               head={head} sub={sub} border={border}
               trailing={<Icon name={expanded ? 'chevronUp' : 'chevronDown'} size={20} color={sub} />}
 />
@@ -100,8 +100,8 @@ export function AccountList({
                 key={a.id}
                 rec={a}
                 topBorder
-                onPress={() => onSwitch(a.id)}
-                onLongPress={() => setManageId(a.id)}
+                onPress={() => { onSwitch(a.id); }}
+                onLongPress={() => { setManageId(a.id); }}
                 head={head} sub={sub} border={border}
                 trailing={manageTrailing(a.id)}
 />

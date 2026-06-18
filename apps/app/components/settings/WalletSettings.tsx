@@ -220,7 +220,7 @@ export function WalletSettings(): React.ReactElement {
                     ) : null}
                     <ListViewItem
                       dark={dark}
-                      onPress={() => router.push('/wallet/recovery')}
+                      onPress={() => { router.push('/wallet/recovery'); }}
                       style={{ paddingHorizontal: 14, paddingVertical: 14 }}
                     >
                       <Icon name="userGroup" size={22} color={c.head} />

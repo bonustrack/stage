@@ -47,7 +47,7 @@ export async function getShieldSigner(cfg: RailgunNetworkConfig): Promise<Shield
 export async function deriveShieldPrivateKey(signer: ShieldSigner): Promise<string> {
   const message = await shieldPrivateKeyMessage();
   const signature = await signer.walletClient.signMessage({ account: signer.account, message });
-  return keccak256(signature as Hex);
+  return keccak256(signature);
 }
 
 /** Resolve the Railgun network config for a chainId (defaults to Sepolia). */

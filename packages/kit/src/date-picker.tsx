@@ -193,20 +193,20 @@ export function DatePicker(props: DatePickerProps): React.ReactElement {
         <Icon name="calendar" size={16} color={colors.placeholder} />
       </Pressable>
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => { setOpen(false); }}>
         <Pressable
           style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 24 }}
-          onPress={() => setOpen(false)}
+          onPress={() => { setOpen(false); }}
         >
           <Pressable style={{ backgroundColor: sheetBg, borderRadius: 16, padding: 16 }} onPress={() => {}}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-              <Pressable accessibilityRole="button" accessibilityLabel="Previous month" onPress={() => shiftMonth(-1)} hitSlop={8}>
+              <Pressable accessibilityRole="button" accessibilityLabel="Previous month" onPress={() => { shiftMonth(-1); }} hitSlop={8}>
                 <Icon name="chevronLeft" size={20} color={head} />
               </Pressable>
               <RNText style={{ flex: 1, textAlign: 'center', color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>
                 {MONTHS[month]} {year}
               </RNText>
-              <Pressable accessibilityRole="button" accessibilityLabel="Next month" onPress={() => shiftMonth(1)} hitSlop={8}>
+              <Pressable accessibilityRole="button" accessibilityLabel="Next month" onPress={() => { shiftMonth(1); }} hitSlop={8}>
                 <Icon name="chevronRight" size={20} color={head} />
               </Pressable>
             </View>
@@ -231,7 +231,7 @@ export function DatePicker(props: DatePickerProps): React.ReactElement {
                     accessibilityLabel={toISO(d)}
                     accessibilityState={{ selected: isSel, disabled: !enabled }}
                     disabled={!enabled}
-                    onPress={() => pick(d)}
+                    onPress={() => { pick(d); }}
                     style={{ width: `${100 / 7}%`, height: 40, alignItems: 'center', justifyContent: 'center' }}
                   >
                     <View

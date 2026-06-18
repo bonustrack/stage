@@ -15,5 +15,5 @@ import { mapDecodedToEnvelope, type DecodedMessageView } from '@stage-labs/clien
  *  pure mapper; the native message is passed straight through (it satisfies
  *  `DecodedMessageView`). */
 export function envelopeOfXmtpMessage(msg: DecodedMessage, line: string): HistoryEntry {
-  return mapDecodedToEnvelope(msg as unknown as DecodedMessageView, line);
+  return mapDecodedToEnvelope(msg, line);
 }

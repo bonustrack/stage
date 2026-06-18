@@ -186,7 +186,7 @@ export function assertDefaultLossless(): void {
   for (const scheme of ['dark', 'light'] as const) {
     const got = derivePalette(DEFAULT_SEED[scheme], scheme);
     const want = LEGACY[scheme];
-    for (const k of Object.keys(want) as Array<keyof DerivedPalette>) {
+    for (const k of Object.keys(want) as (keyof DerivedPalette)[]) {
       if (got[k].toLowerCase() !== want[k].toLowerCase()) {
         throw new Error(`theme-derive default not lossless: ${scheme}.${k} ${got[k]} != ${want[k]}`);
       }

@@ -40,7 +40,7 @@ export function useThemeSeeds(): import('./colorOverrides').ThemeSeeds {
   useEffect(() => {
     loadOverrides();
     setS(getSeeds());
-    const unsub = subscribeOverrides(() => setS(getSeeds()));
+    const unsub = subscribeOverrides(() => { setS(getSeeds()); });
     return unsub;
   }, []);
   return s;
@@ -90,7 +90,7 @@ export function useThemePreference(): ThemePreference {
   const [pref, setPref] = useState<ThemePreference>(cached);
   useEffect(() => {
     void ensureLoaded();
-    const fn = (p: ThemePreference): void => setPref(p);
+    const fn = (p: ThemePreference): void => { setPref(p); };
     listeners.add(fn);
     return (): void => { listeners.delete(fn); };
   }, []);
@@ -126,7 +126,7 @@ function useOverridesVersion(): number {
   useEffect(() => {
     loadOverrides();
     loadRadius();
-    const bump = (): void => setV((n) => n + 1);
+    const bump = (): void => { setV((n) => n + 1); };
     // Radius edits also push into the kit Button default here so every palette
     // consumer (i.e. every screen) repaints its buttons with the new radius.
     const unsubColors = subscribeOverrides(bump);
@@ -168,7 +168,7 @@ export function useRadius(): number {
  *  (e.g. the poll result bar / selected-row fill) that must track `link`. */
 export function withAlpha(color: string, alpha: number): string {
   const a = Math.max(0, Math.min(1, alpha));
-  const hex = color.trim().match(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/);
+  const hex = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.exec(color.trim());
   if (hex) {
     let h = hex[1];
     if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
@@ -177,7 +177,7 @@ export function withAlpha(color: string, alpha: number): string {
     const b = parseInt(h.slice(4, 6), 16);
     return `rgba(${r}, ${g}, ${b}, ${a})`;
   }
-  const rgb = color.trim().match(/^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/);
+  const rgb = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/.exec(color.trim());
   if (rgb) return `rgba(${rgb[1]}, ${rgb[2]}, ${rgb[3]}, ${a})`;
   return color;
 }
@@ -188,7 +188,7 @@ export function useBlockRadius(): number {
   useEffect(() => {
     loadRadius();
     setR(getBlockRadius());
-    const unsub = subscribeRadius(() => setR(getBlockRadius()));
+    const unsub = subscribeRadius(() => { setR(getBlockRadius()); });
     return unsub;
   }, []);
   return r;

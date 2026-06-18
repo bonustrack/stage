@@ -24,7 +24,7 @@ export function GithubNavButton({ url, color }: { url: string; color: string }):
   const router = useRouter();
   return (
     <Pressable
-      onPress={() => router.push({ pathname: '/diff', params: { url } })}
+      onPress={() => { router.push({ pathname: '/diff', params: { url } }); }}
       hitSlop={8}
       style={{ paddingHorizontal: 6, justifyContent: 'center' }}
 >
@@ -140,7 +140,7 @@ export function BubbleActionMenu({
             {expanded ? (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingRight: 4 }}>
                 {[...REACT_PRESETS, ...MORE_EMOJIS].map(e => (
-                  <Pressable key={e} onPress={() => reactAndClose(e)} hitSlop={4}>
+                  <Pressable key={e} onPress={() => { reactAndClose(e); }} hitSlop={4}>
                     <Text size="5xl">{e}</Text>
                   </Pressable>
                 ))}
@@ -148,12 +148,12 @@ export function BubbleActionMenu({
             ) : (
               <>
                 {REACT_PRESETS.map(e => (
-                  <Pressable key={e} onPress={() => reactAndClose(e)} hitSlop={4} style={{ paddingHorizontal: 2 }}>
+                  <Pressable key={e} onPress={() => { reactAndClose(e); }} hitSlop={4} style={{ paddingHorizontal: 2 }}>
                     <Text size="5xl">{e}</Text>
                   </Pressable>
                 ))}
                 <Pressable
-                  onPress={() => setExpanded(true)}
+                  onPress={() => { setExpanded(true); }}
                   hitSlop={6}
                   style={{
                     width: 30, height: 30, borderRadius: 999, marginLeft: 2,

@@ -112,7 +112,7 @@ export default function WalletRecovery(): React.ReactElement {
       const signer = await smartOwnerSigner(active.hdIndex);
       const signature = await signRecoveryApproval(
         signer, params.wallet as Address, params.newOwner as Address, 0n,
-      ) as Hex;
+      );
       await sendRecoveryApproval(params.line, {
         wallet: params.wallet, newOwner: params.newOwner,
         guardian: signer.address.toLowerCase(), signature,
@@ -128,7 +128,7 @@ export default function WalletRecovery(): React.ReactElement {
 
   if (mode === 'approve') {
     return (
-      <ActionPage title="Approve recovery" head={head} bg={bg} border={border} onBack={() => router.back()}>
+      <ActionPage title="Approve recovery" head={head} bg={bg} border={border} onBack={() => { router.back(); }}>
         <ApprovalCard pal={pal} dark={dark}
           wallet={params.wallet ?? ''} newOwner={params.newOwner ?? ''}
           onApprove={onApprove} approving={approving} approved={approved}/>
@@ -138,14 +138,14 @@ export default function WalletRecovery(): React.ReactElement {
 
   if (!zerodevConfigured()) {
     return (
-      <ActionPage title="Recovery" head={head} bg={bg} border={border} onBack={() => router.back()}>
+      <ActionPage title="Recovery" head={head} bg={bg} border={border} onBack={() => { router.back(); }}>
         <Text size="sm" color={pal.sub}>Smart wallet is not configured on this build.</Text>
       </ActionPage>
     );
   }
   if (!rec) {
     return (
-      <ActionPage title="Recovery" head={head} bg={bg} border={border} onBack={() => router.back()}>
+      <ActionPage title="Recovery" head={head} bg={bg} border={border} onBack={() => { router.back(); }}>
         <Text size="sm" color={pal.sub}>Create a smart wallet first to set up guardian recovery.</Text>
       </ActionPage>
     );
@@ -153,9 +153,9 @@ export default function WalletRecovery(): React.ReactElement {
 
   const pendingNewOwner = params.newOwner;
   return (
-    <ActionPage title="Recovery" head={head} bg={bg} border={border} onBack={() => router.back()}
+    <ActionPage title="Recovery" head={head} bg={bg} border={border} onBack={() => { router.back(); }}
       footer={(
-        <WalletFooter border={border} dark={dark} onCancel={() => router.back()}
+        <WalletFooter border={border} dark={dark} onCancel={() => { router.back(); }}
           submitLabel={(rec.guardians ?? []).length ? 'Update guardians' : 'Save guardians'}
           onSubmit={() => void onSave()}
           submitDisabled={guardians.length === 0 || busy} submitLoading={busy}/>

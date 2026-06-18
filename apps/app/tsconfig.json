@@ -8,5 +8,5 @@
       "react-native-markdown-display": ["./node_modules/react-native-markdown-display"]
     }
   },
-  "include": ["app/**/*.ts", "app/**/*.tsx", "components/**/*.ts", "components/**/*.tsx", "lib/**/*.ts"]
+  "include": ["app/**/*.ts", "app/**/*.tsx", "components/**/*.ts", "components/**/*.tsx", "lib/**/*.ts", "lib/**/*.tsx", "modules/**/*.ts", "modules/**/*.tsx"]
 }

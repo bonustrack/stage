@@ -12,7 +12,7 @@ import {
 } from './assets';
 import { publicClientFor } from './client';
 
-type Price = { usd: number; usd_24h_change?: number };
+interface Price { usd: number; usd_24h_change?: number }
 
 /** Build a token-logo URL for `(chainId, contract)` at a display size. The app
  *  supplies kit's stampTokenUrl; a default identicon-less stub keeps the SDK
@@ -46,7 +46,7 @@ export async function fetchAssetRows(
       ? { address: MULTICALL3, abi: multicall3Abi, functionName: 'getEthBalance' as const, args: [addr as Hex] }
       : { address: a.address, abi: erc20Abi, functionName: 'balanceOf' as const, args: [addr as Hex] });
     const results = await pub.multicall({ contracts: calls });
-    balancesByChain.set(cid, results.map(r => (r.status === 'success' ? r.result as bigint : 0n)));
+    balancesByChain.set(cid, results.map(r => (r.status === 'success' ? r.result : 0n)));
   }));
 
   /** Prices: simple-price once for ETH (same price on every chain), plus the
@@ -54,10 +54,10 @@ export async function fetchAssetRows(
   const platforms = [...new Set(ASSETS.filter(a => a.cgPlatform).map(a => a.cgPlatform!))];
   const cgIds = [...new Set(ASSETS.filter(a => a.cgId).map(a => a.cgId!))];
   const [simplePrices, ...platformPriceList] = await Promise.all([
-    getSimplePrices(cgIds, coingeckoKey).catch(() => ({} as Record<string, Price>)),
+    getSimplePrices(cgIds, coingeckoKey).catch(() => ({})),
     ...platforms.map(p =>
       getErc20UsdPrices(p, ASSETS.filter(a => a.cgPlatform === p).map(a => (a.priceAddress ?? a.address!).toLowerCase()), coingeckoKey)
-        .catch(() => ({} as Record<string, Price>))),
+        .catch(() => ({}))),
   ]);
   const tokenPricesByPlatform = new Map<string, Record<string, Price>>(
     platforms.map((p, i) => [p, platformPriceList[i]!]),

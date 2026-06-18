@@ -81,7 +81,7 @@ export function MentionPopup({
       {matches.map((c, i) => (
         <Pressable
           key={c.address}
-          onPress={() => onPick(c)}
+          onPress={() => { onPick(c); }}
           style={({ pressed }) => ({
             flexDirection: 'row', alignItems: 'center', gap: 10,
             paddingHorizontal: 12, paddingVertical: 8,
@@ -118,7 +118,7 @@ export function PendingRow({
             <Box>
               <Image src={a.url} size={72} radius={8} fit="cover"/>
               <Pressable
-                onPress={() => onRemove(i)}
+                onPress={() => { onRemove(i); }}
                 hitSlop={6}
                 style={{
                   position: 'absolute', top: -4, right: -4,
@@ -137,7 +137,7 @@ export function PendingRow({
           <Row padding={{ x: 8, y: 4 }} key={a.id} align="center" gap={6} radius="lg" background={chipBg}>
             <Icon name={kindIcon(a.kind)} size={14} color={fg}/>
             <Text size="2xs" color={fg} style={{ maxWidth: 140 }} numberOfLines={1}>{a.name ?? a.id}</Text>
-            <Pressable onPress={() => onRemove(i)} hitSlop={6}>
+            <Pressable onPress={() => { onRemove(i); }} hitSlop={6}>
               <Icon name="x" size={14} color={sub}/>
             </Pressable>
           </Row>

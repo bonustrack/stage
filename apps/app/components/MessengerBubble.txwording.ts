@@ -25,7 +25,7 @@ export function isTransferRequest(
   decoded: DecodedCall | null, isErc20Transfer: boolean,
 ): boolean {
   if (isErc20Transfer) return true;          // metadata.toAddress => transfer(token)
-  if (!decoded || !decoded.decoded) return true; // no calldata => native transfer
+  if (!decoded?.decoded) return true; // no calldata => native transfer
   const fn = (decoded.functionName ?? '').toLowerCase();
   return TRANSFER_FNS.has(fn);
 }

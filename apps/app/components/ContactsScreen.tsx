@@ -51,7 +51,7 @@ export function ContactsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): 
         avatarAddress={item.address}
         square={false}
         subtitle={hasName ? shortAddress(item.address) : null}
-        onPress={() => open(item.address)}
+        onPress={() => { open(item.address); }}
       />
     );
   }, [open]);

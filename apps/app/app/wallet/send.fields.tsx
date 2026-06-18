@@ -51,7 +51,7 @@ export function RecipientField(props: {
             minHeight: 0, borderWidth: 0,
           }}
 />
-        <ContactsButton color={fg} border={border} onPress={() => setPicking(true)}/>
+        <ContactsButton color={fg} border={border} onPress={() => { setPicking(true); }}/>
       </Row>
 
       {/* Once a valid recipient is resolved, show them as a user row
@@ -72,8 +72,8 @@ export function RecipientField(props: {
 
       <ContactsModal
         visible={picking}
-        onClose={() => setPicking(false)}
-        onPick={(addr) => props.setTo(addr)}
+        onClose={() => { setPicking(false); }}
+        onPick={(addr) => { props.setTo(addr); }}
         pal={rowPal}
 />
     </Box>

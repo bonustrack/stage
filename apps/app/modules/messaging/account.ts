@@ -19,7 +19,7 @@ import {
 export const AccountManager = {
   switch: (id: string, env?: XmtpEnv): Promise<Client> => switchToAccount(id, env),
   remove: (id: string): Promise<void> => deleteAccount(id),
-  bumpEpoch: (): void => bumpAccountEpoch(),
+  bumpEpoch: (): void => { bumpAccountEpoch(); },
   getEpoch: (): number => getAccountEpoch(),
 } as const;
 

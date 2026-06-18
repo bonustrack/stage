@@ -115,7 +115,7 @@ export function MessengerComposer({
   const attachActions = buildAttachActions({
     pickImage: actions.pickImage, takePhoto: actions.takePhoto,
     pickFile: actions.pickFile, pickLocation: actions.pickLocation,
-    openPoll: () => setPollOpen(true), openSig: () => setSigOpen(true), openTx: () => actions.openTx(),
+    openPoll: () => { setPollOpen(true); }, openSig: () => { setSigOpen(true); }, openTx: () => { actions.openTx(); },
   });
   /** Last-used type's icon → quick-access button left of "+"; hidden until first use. */
   const lastLabel = useLastAttachment();
@@ -127,7 +127,7 @@ export function MessengerComposer({
       {replyingTo ? (
         <ReplyBanner
           dark={dark} sub={sub} sender={replyingTo.sender} onClear={onClearReply}
-          onPress={onJumpToReply ? () => onJumpToReply(replyingTo.id) : undefined}
+          onPress={onJumpToReply ? () => { onJumpToReply(replyingTo.id); } : undefined}
 />
       ) : null}
       {/** @-mention popup — Discord-style, stacked above the composer. */}
@@ -137,7 +137,7 @@ export function MessengerComposer({
       {pending.length> 0 ? (
         <PendingRow
           fg={fg} sub={sub} chipBg={chipBg} pending={pending}
-          onRemove={(i) => setPending(prev => prev.filter((_, j) => j !== i))}
+          onRemove={(i) => { setPending(prev => prev.filter((_, j) => j !== i)); }}
 />
       ) : null}
       {uploading || err ? (
@@ -165,12 +165,12 @@ export function MessengerComposer({
       {attachMenuOpen ? (
         <AttachMenu
           head={head} inputBg={inputBg} chipBg={chipBg}
-          onClose={() => setAttachMenuOpen(() => false)}
+          onClose={() => { setAttachMenuOpen(() => false); }}
           actions={attachActions}
 />
       ) : null}
       <PollSheet
-        open={pollOpen} onClose={() => setPollOpen(false)} palette={palette} dark={dark}
+        open={pollOpen} onClose={() => { setPollOpen(false); }} palette={palette} dark={dark}
         question={pollQuestion} setQuestion={setPollQuestion}
         header={pollHeader} setHeader={setPollHeader}
         options={pollOptions} setOptions={setPollOptions}
@@ -178,7 +178,7 @@ export function MessengerComposer({
         onSend={() => void actions.sendPoll()}
 />
       <SignatureSheet
-        open={sigOpen} onClose={() => setSigOpen(false)} palette={palette} dark={dark}
+        open={sigOpen} onClose={() => { setSigOpen(false); }} palette={palette} dark={dark}
         kind={sigKind} setKind={setSigKind}
         desc={sigDesc} setDesc={setSigDesc}
         message={sigMessage} setMessage={setSigMessage}
@@ -186,7 +186,7 @@ export function MessengerComposer({
         onSend={() => void actions.sendSignatureRequest()}
 />
       <PaymentSheet
-        open={txOpen} onClose={() => setTxOpen(false)} palette={palette} dark={dark}
+        open={txOpen} onClose={() => { setTxOpen(false); }} palette={palette} dark={dark}
         to={txTo} setTo={setTxTo}
         amount={txAmount} setAmount={setTxAmount}
         note={txNote} setNote={setTxNote}

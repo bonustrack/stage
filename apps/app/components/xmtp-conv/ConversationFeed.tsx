@@ -56,7 +56,7 @@ export function ConversationFeed({
       fg={fg}
       border={border}
       rowBg={rowBg}
-      onPressPeer={(address) => router.push({ pathname: '/user/[address]', params: { address } })}
+      onPressPeer={(address) => { router.push({ pathname: '/user/[address]', params: { address } }); }}
     />
   );
 
@@ -143,7 +143,7 @@ export function ConversationFeed({
       ListEmptyComponent={
         status !== 'open'
           ? <Box padding={32} align="center"><Spinner size={28} color={head} /></Box>
-          : hasMore === false
+          : !hasMore
             ? intro
             : <Box padding={32} align="center"><Spinner size={28} color={head} /></Box>
       }
@@ -159,7 +159,7 @@ export function ConversationFeed({
               <Spinner size={20} color={sub} />
             </Box>
           ) : null}
-          {hasMore === false ? intro : null}
+          {!hasMore ? intro : null}
         </>
       }
       keyboardShouldPersistTaps="handled"

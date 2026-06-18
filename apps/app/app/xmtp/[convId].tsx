@@ -112,13 +112,13 @@ export default function XmtpConversation(): React.ReactElement {
    *  bar. A rare incoming request may briefly show the composer before the bar
    *  appears, an acceptable tradeoff to never flash the common case. */
   const [requestPending, setRequestPending] = useState(false);
-  const onRequestPending = useCallback((pending: boolean) => setRequestPending(pending), []);
+  const onRequestPending = useCallback((pending: boolean) => { setRequestPending(pending); }, []);
 
   /** Reactive archived flag so the overflow menu shows Unarchive immediately
    *  (the store loads async; a bare sync read can miss the first paint). */
   const [archived, setArchived] = useState(convId ? isArchived(convId) : false);
   useEffect(() => {
-    const sync = (): void => setArchived(convId ? isArchived(convId) : false);
+    const sync = (): void => { setArchived(convId ? isArchived(convId) : false); };
     void loadArchivedIds().then(sync);
     return subscribeArchived(sync);
   }, [convId]);
@@ -194,7 +194,7 @@ export default function XmtpConversation(): React.ReactElement {
       ) : (
       <Row height={TOPNAV_HEIGHT + insets.top} surface="toolbar" padding={{ top: insets.top }} align="stretch" style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2, borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable
-          onPress={() => router.replace('/')}
+          onPress={() => { router.replace('/'); }}
           style={{ paddingLeft: 14, paddingRight: 8, justifyContent: 'center' }}
 >
           <Icon name="arrowLeft" size={22} color={fg}/>
@@ -218,7 +218,7 @@ export default function XmtpConversation(): React.ReactElement {
          *   in the overflow menu now). */}
         {isGroup && github ? <GithubNavButton url={github} color={fg} /> : null}
         <Pressable
-          onPress={() => setOverflowOpen(true)}
+          onPress={() => { setOverflowOpen(true); }}
           hitSlop={8}
           style={{ paddingHorizontal: 14, justifyContent: 'center' }}
 >
@@ -256,7 +256,7 @@ export default function XmtpConversation(): React.ReactElement {
           mentionCandidates={mentionCandidates}
           replyingTo={replyingTo ?? undefined}
           autoFocusNonce={autoFocusNonce}
-          onClearReply={() => setReplyingTo(null)}
+          onClearReply={() => { setReplyingTo(null); }}
           onJumpToReply={jumpToMessage}
           onOptimistic={onOptimistic}
           onSent={onSent}
@@ -280,16 +280,16 @@ export default function XmtpConversation(): React.ReactElement {
         isUnread={(getCachedRows()?.find(r => r.convId === convId)?.unreadCount ?? 0) > 0}
         isPinned={convId ? isPinned(convId) : false}
         isArchived={archived}
-        onClose={() => setOverflowOpen(false)}
+        onClose={() => { setOverflowOpen(false); }}
         context="view"
         onSearch={() => { setSearchQuery(''); setSearchOpen(true); }}
-        onAfterLeave={result => flash(result === 'left' ? 'Left group' : 'Group hidden')}
+        onAfterLeave={result => { flash(result === 'left' ? 'Left group' : 'Group hidden'); }}
 />
       <BubbleActionMenu
         target={menuFor}
         anchor={menuAnchor}
         dark={dark}
-        onClose={() => setMenuFor(null)}
+        onClose={() => { setMenuFor(null); }}
         onReact={emoji => { if (menuFor) onReact(menuFor.id, emoji); setMenuFor(null); }}
         onReply={() => {
           if (menuFor) setReplyTarget(menuFor.id, previewOf(menuFor), senderEthOf(menuFor.from));

@@ -64,7 +64,7 @@ export function ConversationSearch({
         () => scanEpoch.current !== epoch,
       ).finally(() => { if (scanEpoch.current === epoch) setScanning(false); });
     }, 220);
-    return () => clearTimeout(t);
+    return () => { clearTimeout(t); };
   }, [q, line]);
 
   useEffect(() => () => { scanEpoch.current += 1; }, []);

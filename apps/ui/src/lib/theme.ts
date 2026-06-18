@@ -44,7 +44,7 @@ export function useThemePreference(): Ref<ThemePreference> {
 }
 
 const systemDark = ref(typeof window !== 'undefined'
-  && window.matchMedia?.('(prefers-color-scheme: dark)').matches === true);
+  && window.matchMedia?.('(prefers-color-scheme: dark)').matches);
 
 if (typeof window !== 'undefined' && window.matchMedia) {
   const mq = window.matchMedia('(prefers-color-scheme: dark)');

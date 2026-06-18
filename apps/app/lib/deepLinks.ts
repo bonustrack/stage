@@ -121,7 +121,7 @@ function navigateToUrl(url: string): boolean {
   if (!target) return false;
   // `router.push` is overloaded; the discriminated union above keeps each
   // pathname paired with the params its route declares.
-  router.push(target as Parameters<typeof router.push>[0]);
+  router.push(target);
   return true;
 }
 

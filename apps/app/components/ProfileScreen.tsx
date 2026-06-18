@@ -78,7 +78,7 @@ export function ProfileScreen({ address, variant, panRef }: {
     <Col flex={1} surface="surface">
       <ProfileHeader
         variant={variant} insetTop={insets.top} c={c}
-        onBack={() => router.back()}
+        onBack={() => { router.back(); }}
       />
 
       <ScrollView simultaneousHandlers={panRef} style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 32 }}>
@@ -110,7 +110,7 @@ export function ProfileScreen({ address, variant, panRef }: {
           </Text>
           {addr ? (
             <Pressable
-              onPress={() => copy(addr, 'Address')}
+              onPress={() => { copy(addr, 'Address'); }}
               hitSlop={8}
               style={{ marginTop: 2 }}
 >
@@ -125,7 +125,7 @@ export function ProfileScreen({ address, variant, panRef }: {
             <ProfileActions
               dark={dark} opening={openingDm} c={c}
               onMessage={() => { void onMessage(); }}
-              onSend={() => router.push({ pathname: '/wallet/send', params: { to: addr } })}
+              onSend={() => { router.push({ pathname: '/wallet/send', params: { to: addr } }); }}
 />
           ) : null}
         </Box>
@@ -139,7 +139,7 @@ export function ProfileScreen({ address, variant, panRef }: {
         {addr ? <ProfileHoldings address={addr} /> : null}
       </ScrollView>
 
-      <ImageViewer uri={viewerUri ?? ''} visible={viewerUri !== null} onClose={() => setViewerUri(null)}/>
+      <ImageViewer uri={viewerUri ?? ''} visible={viewerUri !== null} onClose={() => { setViewerUri(null); }}/>
     </Col>
   );
 }

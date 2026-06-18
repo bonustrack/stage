@@ -25,7 +25,7 @@ const pending = new Set<string>();
 const listeners = new Set<() => void>();
 
 function notify(): void {
-  listeners.forEach(l => l());
+  listeners.forEach(l => { l(); });
 }
 
 /** stamp.fyi `lookup_addresses` rejects (HTTP 500) when asked for more than ~50
@@ -86,7 +86,7 @@ async function fetchBatch(addrs: string[]): Promise<void> {
 /** Queue any not-yet-known addresses for a batched fetch. Safe to call often. */
 export function ensurePeerProfiles(addresses: (string | null | undefined)[]): void {
   const todo = [
-    ...new Set(addresses.filter(Boolean).map(a => (a as string).toLowerCase())),
+    ...new Set(addresses.filter(Boolean).map(a => (a!).toLowerCase())),
   ].filter(a => !store.has(a) && !pending.has(a));
   if (!todo.length) return;
   todo.forEach(a => pending.add(a));
@@ -103,7 +103,7 @@ export function isPeerResolved(address?: string | null): boolean {
 export function getPeerName(address?: string | null): string | undefined {
   if (!address) return undefined;
   const n = store.get(address.toLowerCase())?.name;
-  return n && n.trim() ? n.trim() : undefined;
+  return n?.trim() ? n.trim() : undefined;
 }
 
 /** Subscribe to cache changes. Returns an unsubscribe fn. The host's React hook

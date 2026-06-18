@@ -64,8 +64,8 @@ export function SettingsMenu(): React.ReactElement {
           onPress: () => {
             setResetting(true);
             void resetForOnboarding()
-              .catch(() => Alert.alert('Reset failed', 'Could not clear account state.'))
-              .finally(() => setResetting(false));
+              .catch(() => { Alert.alert('Reset failed', 'Could not clear account state.'); })
+              .finally(() => { setResetting(false); });
           },
         },
       ],
@@ -98,7 +98,7 @@ export function SettingsMenu(): React.ReactElement {
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <ListView dark={dark}>
           {ROWS.map((row) => (
-            <ListViewItem key={row.href} dark={dark} onPress={() => router.push(row.href)}>
+            <ListViewItem key={row.href} dark={dark} onPress={() => { router.push(row.href); }}>
               <Icon name={row.icon} size={22} color={head}/>
               <Col flex={1}>
                 <Text size="xl" color={head}>{row.label}</Text>

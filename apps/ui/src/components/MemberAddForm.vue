@@ -6,7 +6,7 @@
 import { Row } from './layout';
 
 const props = defineProps<{ adding: boolean }>();
-const emit = defineEmits<{ (e: 'add', address: string): void }>();
+const emit = defineEmits<(e: 'add', address: string) => void>();
 
 const draft = ref('');
 const valid = computed(() => /^0x[0-9a-fA-F]{40}$/.test(draft.value.trim()));

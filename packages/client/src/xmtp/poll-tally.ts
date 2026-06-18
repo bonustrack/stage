@@ -73,7 +73,7 @@ export function openAnswersByPoll(
   for (const e of events) {
     if (e.reference !== pollMessageId || e.schema !== 'custom') continue;
     const k = parseOpenVote(e.content);
-    if (!k || k.q !== questionIndex) continue;
+    if (k?.q !== questionIndex) continue;
     const cur = latest.get(e.voter);
     if (!cur || cur.ts < e.ts) latest.set(e.voter, { ts: e.ts, removed: !!e.removed, text: k.text });
   }
@@ -118,7 +118,7 @@ export function votesByPoll(
   const optOf = (e: VoteEvent): number | null => {
     if (e.reference !== pollMessageId || e.schema !== 'custom') return null;
     const k = parseVoteKey(e.content);
-    return k && k.q === questionIndex ? k.o : null;
+    return k?.q === questionIndex ? k.o : null;
   };
   if (multiSelect) {
     // latest add/remove state per (voter, optionIndex)

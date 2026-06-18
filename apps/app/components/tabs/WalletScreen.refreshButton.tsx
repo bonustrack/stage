@@ -36,7 +36,7 @@ export function RefreshButton({
       }),
     );
     loop.start();
-    return () => loop.stop();
+    return () => { loop.stop(); };
   }, [refreshing, spin]);
 
   const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });

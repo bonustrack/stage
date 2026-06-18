@@ -48,7 +48,7 @@ export const walletSendCallsSchema: ZodType<WalletSendCallsContent> = z.object({
   chainId: z.string().max(64),
   from: z.string().max(256),
   calls: z.array(callSchema).min(1).max(MAX_CALLS),
-}) as unknown as ZodType<WalletSendCallsContent>;
+});
 
 const txMetadataSchema = z.object({
   transactionType: z.string().max(256).optional(),
@@ -68,4 +68,4 @@ export const transactionReferenceSchema: ZodType<TransactionReferenceContent> = 
   networkId: z.union([z.number(), z.string().max(64)]),
   reference: z.string().min(1).max(MAX_STR),
   metadata: txMetadataSchema.optional(),
-}) as unknown as ZodType<TransactionReferenceContent>;
+});

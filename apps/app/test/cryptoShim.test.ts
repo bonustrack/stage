@@ -57,11 +57,11 @@ describe('cryptoShim CSPRNG invariant', () => {
     }
     expect(SRC).toMatch(/throw new Error/);
     // No crypto at all -> throw (refuse to mint weak keys).
-    expect(() => assertSecureRandom({})).toThrow();
-    expect(() => assertSecureRandom({ crypto: {} })).toThrow();
+    expect(() => { assertSecureRandom({}); }).toThrow();
+    expect(() => { assertSecureRandom({ crypto: {} }); }).toThrow();
     // Real CSPRNG present -> ok.
     expect(() =>
-      assertSecureRandom({ crypto: { getRandomValues: () => {} } }),
+      { assertSecureRandom({ crypto: { getRandomValues: () => {} } }); },
     ).not.toThrow();
   });
 });

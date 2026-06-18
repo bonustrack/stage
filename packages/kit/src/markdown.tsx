@@ -77,7 +77,7 @@ export function Markdown(props: MarkdownProps): React.ReactElement {
 
   const styles = useMemo(() => {
     const base = markdownStyles(fg, link, dark);
-    if (style) base.body = { ...(base.body as object), ...style };
+    if (style) base.body = { ...(base.body!), ...style };
     return base;
   }, [fg, link, dark, style]);
 

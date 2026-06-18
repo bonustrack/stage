@@ -88,7 +88,7 @@ export function RemoteAttachmentResolver({ att, fg, sub, dark, msgId, index }: {
   if (failed) {
     return (
       <Pressable
-        onPress={() => setAttempt(a => a + 1)}
+        onPress={() => { setAttempt(a => a + 1); }}
         style={{
           flexDirection: 'row', alignItems: 'center', gap: 8,
           paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8,

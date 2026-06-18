@@ -39,7 +39,7 @@ export function ContactSuggestions({
           return (
             <Pressable
               key={c.address}
-              onPress={() => onToggle(c)}
+              onPress={() => { onToggle(c); }}
               style={({ pressed }) => ({
                 flexDirection: 'row', alignItems: 'center', gap: 10,
                 borderRadius: 12, paddingHorizontal: 8, paddingVertical: 8,

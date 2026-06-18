@@ -24,7 +24,7 @@ let loaded = false;
  *  resolved, so a second caller saw an empty `drafts` map mid-read. */
 let loading: Promise<void> | null = null;
 const listeners = new Set<() => void>();
-const notify = (): void => { listeners.forEach(l => l()); };
+const notify = (): void => { listeners.forEach(l => { l(); }); };
 
 /** Hydrate drafts from disk once; concurrent callers await the same read. */
 export async function loadDrafts(): Promise<void> {
@@ -98,7 +98,7 @@ export function useDraftsVersion(): number {
   const [version, bump] = useReducer((x: number) => x + 1, 0);
   useEffect(() => {
     void loadDrafts();
-    const fn = (): void => bump();
+    const fn = (): void => { bump(); };
     listeners.add(fn);
     return () => { listeners.delete(fn); };
   }, []);

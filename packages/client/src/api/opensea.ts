@@ -64,7 +64,7 @@ export async function getNfts(
   // Promise.all (in getNftsAcrossChains) pending forever -> the NFT grid spinner
   // spins indefinitely. Abort after 10s and degrade to [] like a non-200.
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 10000);
+  const timer = setTimeout(() => { ctrl.abort(); }, 10000);
   let res: Response;
   try {
     res = await fetch(url, {

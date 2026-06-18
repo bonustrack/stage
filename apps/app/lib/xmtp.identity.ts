@@ -21,7 +21,7 @@ function inboxEthFetcher(
   return async (ids) => {
     const states = await client.inboxStates(
       true,
-      ids as Parameters<typeof client.inboxStates>[1],
+      ids,
     );
     const out: Record<string, string> = {};
     for (let i = 0; i < ids.length; i++) {

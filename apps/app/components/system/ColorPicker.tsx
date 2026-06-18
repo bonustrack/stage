@@ -99,13 +99,13 @@ export function ColorPicker({ value, onChange, p }: {
 
       <Label text="Hue" p={p}/>
       <Track colors={hueStops()} thumb={hsv.h / 360} p={p}
-        onFraction={(f) => apply(f * 360, hsv.s, hsv.v)}/>
+        onFraction={(f) => { apply(f * 360, hsv.s, hsv.v); }}/>
       <Label text="Saturation" p={p}/>
       <Track colors={satStops} thumb={hsv.s} p={p}
-        onFraction={(f) => apply(hsv.h, f, hsv.v)}/>
+        onFraction={(f) => { apply(hsv.h, f, hsv.v); }}/>
       <Label text="Value" p={p}/>
       <Track colors={valStops} thumb={hsv.v} p={p}
-        onFraction={(f) => apply(hsv.h, hsv.s, f)}/>
+        onFraction={(f) => { apply(hsv.h, hsv.s, f); }}/>
 
       <Label text="Hex" p={p}/>
       <Input
