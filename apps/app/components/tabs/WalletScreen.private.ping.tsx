@@ -38,10 +38,10 @@ import {
   getBalances,
   isBridgeAvailable,
   pingBridge,
-  sdkListMethods,
   setBridgeStatusListener,
   walletInfo,
 } from '../../lib/railgun/bridge';
+import { sdkListMethods } from '../../lib/railgun/bridge/sdk';
 import { deriveRailgunKeyMaterial } from '../../lib/railgun/deriveKeys';
 
 /* ── Status log ─────────────────────────────────────────────────────────── */

@@ -14,6 +14,16 @@ const madgeConfig = {
   fileExtensions: ["ts", "tsx"],
   // Generated / vendored trees are never part of the dependency-cycle analysis.
   excludeRegExp: ["node_modules", "/dist/", "\\.d\\.ts$"],
+  // Lazy `await import()` calls are a legitimate, intentional way to break a
+  // runtime cycle (the dependency is only pulled in on demand, so there is no
+  // eager circular module-init). Don't count them as static cycle edges —
+  // mirrors the repo-root .madgerc the madge CLI reads. Genuine static
+  // `import ...` cycles are still reported and still fail the build.
+  detectiveOptions: {
+    ts: { skipAsyncImports: true },
+    tsx: { skipAsyncImports: true },
+    es6: { skipAsyncImports: true },
+  },
 };
 
 export { madgeConfig };

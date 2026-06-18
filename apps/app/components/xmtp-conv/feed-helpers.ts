@@ -6,7 +6,7 @@ import {
   openAnswersByPoll as tallyOpenAnswers,
   normalizeQuestions, type VoteEvent, type PollContent, type PollQuestion,
 } from '@stage-labs/client/xmtp/poll';
-import { stripMentionMarkup, attachmentEmojiPreview } from '@stage-labs/client/xmtp/humanize';
+import { humanizeMentions, attachmentEmojiPreview } from '@stage-labs/client/xmtp/humanize';
 import type { HistoryEntry } from '../../lib/types';
 
 /** Whether an entry carries attachments — used to dedup an optimistic
@@ -174,7 +174,7 @@ export function openAnswersByMessage(
 
 /** Short text/attachment preview of an entry — used for reply slabs + cache rows. */
 export function previewOf(e: HistoryEntry): string {
-  return (e.text ? stripMentionMarkup(e.text).slice(0, 80) : '')
+  return (e.text ? humanizeMentions(e.text).slice(0, 80) : '')
     || (() => {
       const a = (e.payload as { attachments?: { mime?: string; name?: string }[] } | undefined)?.attachments?.[0];
       return attachmentEmojiPreview(a?.mime, a?.name);

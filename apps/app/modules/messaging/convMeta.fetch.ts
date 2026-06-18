@@ -7,10 +7,15 @@
  *  screen now reads this for those shared fields and fetches ONLY its extra
  *  admin-roles map separately. */
 
+// Import the helpers from their defining submodules rather than the `lib/xmtp`
+// barrel: the barrel pulls in the whole xmtp graph (incl. xmtp.feed →
+// feedQuery → queries → here), forming a static import cycle. The submodules
+// are leaf-ish, so this keeps the dependency acyclic.
+import { lineOfConv } from '../../lib/xmtp.types';
+import { convOfLine } from '../../lib/xmtp.client';
 import {
-  lineOfConv, convOfLine, peerEthAddressOfDm,
-  groupMemberEthAddresses, memberInboxToAddressMap,
-} from '../../lib/xmtp';
+  peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
+} from '../../lib/xmtp.identity';
 
 export interface ConvMeta {
   peerAddr: string | null;

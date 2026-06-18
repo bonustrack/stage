@@ -8,7 +8,7 @@
 
 import { z } from 'zod';
 import { parseOrThrow } from '../validate';
-import type { EtherscanTx } from './etherscan';
+import type { EtherscanTx } from './etherscan.types';
 
 /** A single txlist row. All numeric fields arrive as decimal strings; optional
  *  fields are kept loose since the caller defaults them. */

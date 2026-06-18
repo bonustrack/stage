@@ -8,7 +8,7 @@
 
 import { z } from 'zod';
 import { parseOrNull } from '../validate';
-import type { ApiNft } from './opensea';
+import type { ApiNft } from './opensea.types';
 
 const nftSchema = z.object({
   identifier: z.string().default(''),

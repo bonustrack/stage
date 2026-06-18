@@ -46,7 +46,8 @@
   "peerDependencies": {
     "react": "*",
     "react-native": "*",
-    "react-native-svg": "*"
+    "react-native-svg": "*",
+    "react-native-markdown-display": "*"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

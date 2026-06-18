@@ -12,20 +12,36 @@
 //   export default config;
 
 /** The shared knip configuration for the monorepo (bun workspaces). */
-export const knipConfig = {
+const knipConfig = {
   $schema: "https://unpkg.com/knip@6/schema.json",
   workspaces: {
+    // Repo root: CI/preview scripts under scripts/ are invoked from shell
+    // scripts and GitHub Actions YAML (which knip can't parse), so list them as
+    // entrypoints. `generate-manifest.mjs` is run by
+    // scripts/pr-preview/publish-selfhosted.sh; `eas-deeplink.mjs` from the
+    // pr-preview/main-preview workflows.
+    ".": {
+      entry: ["scripts/**/*.{mjs,js,sh}"],
+      project: ["scripts/**/*.{mjs,js}"],
+    },
     "apps/app": {
       entry: [
         "app/**/*.{ts,tsx}",
+        "app.config.js",
         "babel.config.js",
         "modules/**/*.{ts,tsx}",
         "plugins/**/*.{js,ts}",
         "scripts/**/*.js",
         "scripts/**/*.mjs",
-        "nodejs-assets/**/*.js",
       ],
       project: ["app/**", "components/**", "lib/**", "modules/**"],
+      // nodejs-assets/nodejs-project is a SEPARATE embedded Node package
+      // (metro-railgun-node-host) with its own package.json; it is excluded from
+      // the Metro bundle (apps/app/metro.config.js resolver.blockList) and built
+      // into the native binary. Its deps (graphql, leveldown-nodejs-mobile,
+      // rn-bridge, @railgun-privacy/native-prover) are declared there, not in
+      // apps/app, so it must not be scanned as part of this workspace.
+      ignore: ["nodejs-assets/**"],
       ignoreDependencies: [
         "buffer",
         "crypto-browserify",
@@ -35,6 +51,12 @@ export const knipConfig = {
         "readable-stream",
         "stream-browserify",
         "babel-preset-expo",
+        // Build/config-time only deps knip can't trace to a runtime import:
+        // resolved from the native side or referenced by `require.resolve` /
+        // JSDoc `@type` imports in config + plugin files.
+        "expo-system-ui",
+        "@railgun-privacy/native-prover",
+        "node-gyp-build-mobile",
       ],
     },
     "apps/api": {
