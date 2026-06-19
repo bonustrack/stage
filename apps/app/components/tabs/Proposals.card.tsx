@@ -224,6 +224,7 @@ function ConversationRequestCard({ proposal, onAdvance }: {
 }
 
 /** Message-request card: a compact channel preview with Accept / Block (reusing the requests-list consent handlers) + Open. Channel-level, no conversation mount; acting advances to the next item. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
 function MessageRequestCard({ request, onAdvance }: {
   request: QueuedRequest; onAdvance: () => void;
 }): React.ReactElement {

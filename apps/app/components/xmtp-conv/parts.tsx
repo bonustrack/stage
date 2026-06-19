@@ -65,7 +65,7 @@ const MORE_EMOJIS = ['❤️', '😂', '😮', '😢', '🎉', '🤯', '🥳', '
  *  bottom edge. Tapping a strip emoji reacts + closes; the chevron reveals more
  *  emojis; any action or an outside tap dismisses.
  */
-// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
+// eslint-disable-next-line max-lines-per-function, complexity -- TODO(chaitu): refactor to satisfy function-size limits + refactor (complexity 13)
 export function BubbleActionMenu({
   target, anchor, dark, onClose, onReact, onReply, onCopy, onSelect, onShareLink,
 }: {

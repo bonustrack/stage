@@ -15,6 +15,7 @@ import { DANGER, usePalette } from '../../lib/theme';
 interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }
 
 /** One member row: avatar, name/address, owner/admin badge, and a remove button. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 13)
 export function MemberRow({
   item, isSelf, isRemovingThis, role, name, dark, p, onPress, onRemove,
 }: {

@@ -13,6 +13,7 @@ import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 import type { HistoryEntry } from './types';
 
 /** Per-message reaction counts derived from the latest emit-or-removal of each (msgId, emoji, sender) triplet. The same emoji from the same sender replaces its previous state — XMTP reactions are a CRDT, not an append log. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 13)
 export function reactionsByMessage(events: HistoryEntry[]): Map<string, Map<string, number>> {
   const latest = new Map<string, { ts: string; removed: boolean }>();
   for (const e of events) {

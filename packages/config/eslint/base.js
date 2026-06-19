@@ -166,12 +166,12 @@ export const COMMENT_RULES = {
 export const MAX_LINES_PER_FUNCTION = ["error", { max: 100, skipBlankLines: true, skipComments: true, IIFEs: true }];
 
 /** The `complexity` value used everywhere: cap a function's cyclomatic
- *  complexity at 15 (a sane default). Split branchy logic into smaller,
+ *  complexity at 10 (a sane default). Split branchy logic into smaller,
  *  separately-testable functions rather than crossing it. */
-export const COMPLEXITY = ["error", 15];
+export const COMPLEXITY = ["error", 10];
 
 /** The shared function-size rule set spread into every preset (alongside
- *  COMMENT_RULES): cap each function at 100 lines and cyclomatic complexity 15. */
+ *  COMMENT_RULES): cap each function at 100 lines and cyclomatic complexity 10. */
 export const FUNCTION_SIZE_RULES = {
   "max-lines-per-function": MAX_LINES_PER_FUNCTION,
   complexity: COMPLEXITY,
@@ -283,7 +283,7 @@ export function strictTsBlock({ files = ["src/**/*.{ts,tsx}"], tsconfigRootDir, 
       // on every file (capped at 3 lines), `/** */` blocks only.
       ...COMMENT_RULES,
       // Function size: cap each function at 100 lines (skipping blanks/comments)
-      // and cyclomatic complexity at 15. Extract helpers rather than crossing.
+      // and cyclomatic complexity at 10. Extract helpers rather than crossing.
       ...FUNCTION_SIZE_RULES,
     },
   };

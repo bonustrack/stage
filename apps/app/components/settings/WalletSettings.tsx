@@ -95,7 +95,7 @@ function SectionLabel({ children, c }: { children: string; c: C }): React.ReactE
 }
 
 /** Renders the wallet settings screen for managing the account's wallet. */
-// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
+// eslint-disable-next-line max-lines-per-function, complexity -- TODO(chaitu): refactor to satisfy function-size limits + refactor (complexity 15)
 export function WalletSettings(): React.ReactElement {
   const epoch = useActiveAccount();
   const router = useRouter();

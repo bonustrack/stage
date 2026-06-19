@@ -18,7 +18,7 @@ import {
 import type { Address } from 'viem';
 
 /** Screen for setting up or approving smart-account social recovery. */
-// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
+// eslint-disable-next-line max-lines-per-function, complexity -- TODO(chaitu): refactor to satisfy function-size limits + refactor (complexity 13)
 export default function WalletRecovery(): React.ReactElement {
   const router = useRouter();
   const params = useLocalSearchParams<{ mode?: string; line?: string; wallet?: string; newOwner?: string }>();

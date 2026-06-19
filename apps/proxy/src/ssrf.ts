@@ -50,6 +50,7 @@ function isPrivateV4(ip: string): boolean {
 }
 
 /** Whether Private V6. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 13)
 function isPrivateV6(ip: string): boolean {
   const x = ip.toLowerCase().replace(/^\[|\]$/g, '');
   if (x === '::1' || x === '::') return true; // loopback / unspecified

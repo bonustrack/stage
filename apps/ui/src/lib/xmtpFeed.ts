@@ -68,6 +68,7 @@ export function useXmtpFeed(line: Ref<string | null>, enabled: Ref<boolean>): Xm
   };
 
   /** Start helper. */
+  // eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 15)
   const start = async (): Promise<void> => {
     if (!enabled.value || !line.value) { status.value = 'idle'; return; }
     activeLine = line.value;

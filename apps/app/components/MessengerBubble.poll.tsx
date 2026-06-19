@@ -18,6 +18,7 @@ type PollOwn = Map<number, Set<number>>;
 type OpenByQ = Map<number, Map<string, { text: string; ts: string }>>;
 
 /** One question block: header chip, option list with counts + result bars + a checkmark on the local user's selected options. Open questions append a free-text input below the options (or stand alone with no options). */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 13)
 function PollQuestionBlock({ q, qi, sub, dark, votes, own, onVote, openAnswers, mine, onOpenAnswer }: {
   q: PollQuestion; qi: number; sub: string; dark: boolean;
   votes?: Map<number, Set<string>>;
@@ -44,6 +45,7 @@ function PollQuestionBlock({ q, qi, sub, dark, votes, own, onVote, openAnswers, 
           {q.header}{multi ? ' · multi-select' : ''}{q.open ? ' · open' : ''}
         </Text>
       ) : null}
+      {/* eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 13) */}
       {options.map((opt, i) => {
         const count = votes?.get(i)?.size ?? 0;
         const isOn = own?.has(i) ?? false;

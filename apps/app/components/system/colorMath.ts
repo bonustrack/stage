@@ -28,6 +28,7 @@ export function hsvToHex(h: number, s: number, v: number): string {
 }
 
 /** `#rrggbb` (or `#rgb`) -> HSV. Falls back to black on bad input. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 11)
 export function hexToHsv(hex: string): { h: number; s: number; v: number } {
   const t = hex.trim();
   const six = /^#?([0-9a-f]{6})$/i.exec(t);

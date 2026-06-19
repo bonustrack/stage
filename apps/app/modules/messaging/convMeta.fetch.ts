@@ -31,6 +31,7 @@ export const EMPTY_CONV_META: ConvMeta = {
 };
 
 /** Resolve a conversation's shared metadata (peer/group name, image, members) by line id. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
 export async function fetchConvMeta(convId: string): Promise<ConvMeta> {
   const conv = await convOfLine(lineOfConv(convId));
   if (!conv) return EMPTY_CONV_META;

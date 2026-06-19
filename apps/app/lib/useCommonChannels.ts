@@ -66,6 +66,7 @@ async function resolveCommonChannels(peerAddress: string): Promise<CommonChannel
   const groups = rows.filter((r): r is CachedRow & { peerAddress: null } =>
     r.peerAddress == null && !archived.has(r.convId));
   /** #7: walk all candidate groups' member sets IN PARALLEL (was serial). */
+  // eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
   const resolved = await Promise.all(groups.map(async (row) => {
     try {
       const members = await memberSetOf(row.convId);

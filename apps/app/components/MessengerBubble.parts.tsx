@@ -72,7 +72,7 @@ export function MentionBody({ text, fg, dark, selectable }: { text: string; fg: 
  *  An implicit "Other…" affordance (default on) lets the user type a free-text
  *  answer instead of (or alongside, in multi mode) the listed options.
  */
-// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
+// eslint-disable-next-line max-lines-per-function, complexity -- TODO(chaitu): refactor to satisfy function-size limits + refactor (complexity 15)
 export function QuestionView({ question, dark, sub, onAnswer }: {
   question: Question; dark: boolean; sub: string; onAnswer: (label: string) => void;
 }): React.ReactElement {

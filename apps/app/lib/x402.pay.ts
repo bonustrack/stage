@@ -22,6 +22,7 @@ export interface X402PayResult {
  *  Only `scheme === 'exact'` is supported; callers gate on that + network/asset
  *  support before invoking. Throws on no wallet / sign failure / network error.
  */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 11)
 export async function payX402Exact(args: {
   resource: string;
   accept: X402Accept;

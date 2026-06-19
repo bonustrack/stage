@@ -62,6 +62,7 @@ type PushClient = Pick<Client, 'inboxId' | 'publicIdentity' | 'conversations'>;
  *   - the same (account, token) was registered within REGISTER_TTL_MS,
  *   - sending the control DM fails (best-effort; foreground notifs still work).
  */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 13)
 export async function registerPushWithDaemon(client: PushClient): Promise<void> {
   try {
     const platform = platformTag();

@@ -56,6 +56,7 @@ function selectorOf(data?: string): string | undefined {
 }
 
 /** Derive the confirm summary from the ACTUAL call bytes. `nativeSymbol` is the chain's native coin symbol (default ETH) used for value-only sends. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 15)
 export function deriveConfirmSummary(
   call: CallLike,
   nativeSymbol = 'ETH',

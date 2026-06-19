@@ -99,6 +99,7 @@ export function normaliseAccept(a: RawAccept): X402Accept | null {
  *  `endpoint` is the fallback endpoint to record when the object doesn't already
  *  carry one (the proxy's own envelope embeds `endpoint`).
  */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
 export function parseX402Challenge(
   obj: unknown,
   endpoint: string,

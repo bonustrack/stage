@@ -63,6 +63,7 @@ function json(body: unknown, status = 200, extra: Record<string, string> = {}): 
 }
 
 /** Handle the Preview. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
 async function handlePreview(request: Request, ctx: ExecutionContext): Promise<Response> {
   if (!hasClientHeader(request)) return json({ error: 'forbidden' }, 403);
   if (rateLimited(clientIp(request))) return json({ error: 'rate limited' }, 429);
@@ -105,6 +106,7 @@ async function handlePreview(request: Request, ctx: ExecutionContext): Promise<R
 }
 
 /** Handle the Img. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
 async function handleImg(request: Request, ctx: ExecutionContext): Promise<Response> {
   // NOTE: /img intentionally does NOT require the x-stage-client header. React
   // Native's <Image> can't attach custom headers to its GETs (flaky on Android),

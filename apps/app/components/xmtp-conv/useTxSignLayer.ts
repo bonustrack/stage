@@ -45,6 +45,7 @@ export function useTxSignLayer(activeLine: string) {
     /** Do Sign. */
     const doSign = (): void => {
     setSigningIds(prev => new Set(prev).add(requestId));
+    // eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 13)
     void (async () => {
       try {
         /**
@@ -145,6 +146,7 @@ export function useTxSignLayer(activeLine: string) {
    *  posts a TransactionReference back into the SAME conversation so the request
    *  card flips to a receipt for everyone.
    */
+  // eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
   const onPay = useCallback((requestId: string, wsc: WalletSendCallsContent) => {
     const call = wsc.calls?.[0];
     if (!call?.to) { flash('Malformed payment request'); return; }

@@ -87,6 +87,7 @@ function fieldOf(message: Record<string, unknown> | undefined, keys: string[]): 
 }
 
 /** Derive the signature confirm summary from the typed-data STRUCTURE. For a `personal` request there's no structure to decode, so it's a low-risk plain-message sign. Never consults `description`. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
 export function deriveSignSummary(req: SignatureRequestContent): SignConfirmSummary {
   if (req.kind !== 'eip712' || !req.eip712) {
     return { highRisk: false, kindLabel: 'message', message: req.message };

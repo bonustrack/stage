@@ -58,6 +58,7 @@ async function fetchFollowing(
 }
 
 /** Read a response body, enforcing the size cap. Returns null if it exceeds the cap (so the caller can fall back / reject rather than buffer unbounded). */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
 async function readImageCapped(res: Response): Promise<ArrayBuffer | null> {
   const declared = Number(res.headers.get('content-length') ?? '');
   if (Number.isFinite(declared) && declared > MAX_IMG_BYTES) return null;

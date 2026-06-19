@@ -61,6 +61,7 @@ function palette(dark: boolean): { surface: string; border: string; sub: string 
 }
 
 /** ChatKit-style RN card. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 14)
 export function Card(props: CardProps): React.ReactElement {
   const {
     children,

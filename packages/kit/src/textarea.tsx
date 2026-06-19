@@ -66,6 +66,7 @@ export interface TextareaProps {
 }
 
 /** ChatKit-style RN multi-line input. Forwards a ref to the underlying RN TextInput so call sites can focus/blur it. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 15)
 export const Textarea = forwardRef<TextInput, TextareaProps>(function Textarea(props, ref) {
   const {
     name,

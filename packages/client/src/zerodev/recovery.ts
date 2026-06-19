@@ -108,6 +108,7 @@ export function encodeRecoveryMessage(msg: RecoveryMessage): string {
 }
 
 /** Parse a recovery control message from an XMTP text line, or null if the line is ordinary chat. Defensive: never throws on malformed input. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 13)
 export function parseRecoveryMessage(text: string): RecoveryMessage | null {
   if (!text?.startsWith(REQUEST_PREFIX)) return null;
   try {

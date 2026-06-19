@@ -6,6 +6,7 @@ import { previewLinkOf } from './previewLinkDetect';
 import { metroConvIdOf, metroDmPeerOf } from '@stage-labs/client/xmtp/line';
 
 /** True when `token` is a plain http(s) link with no more-specific card. The checks mirror cardLinks.ts `classify` precedence so a URL is never rendered as both a special card and a generic preview. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 11)
 export function isGenericLink(token: string): boolean {
   if (!/^https?:\/\//i.test(token)) return false; // only web links (not metro://)
   if (metroDmPeerOf(token)) return false;

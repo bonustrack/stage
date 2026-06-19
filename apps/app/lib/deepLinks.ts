@@ -22,6 +22,7 @@ type ParsedRoute =
  *  Handles `metro://xmtp/x`, `https://metro.box/#/xmtp/x?m=y`,
  *  `https://metro.box/xmtp/x`, and bare `xmtp/x`.
  */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 11)
 function extractRoute(url: string): { segments: string[]; query: URLSearchParams } {
   let work = url.trim();
 

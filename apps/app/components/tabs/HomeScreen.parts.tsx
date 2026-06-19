@@ -37,6 +37,7 @@ export function useChannelRowRenderer(
 ): ({ item }: { item: RowT }) => React.ReactElement {
   const { channelProfilesVersion, draftsVersion, pinned, query } = deps;
   /** Versions drive re-creation so name/avatar/pin/draft resolutions repaint. (deps intentionally partial — react-hooks/exhaustive-deps not enabled.) */
+  // eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 15)
   return useCallback(({ item }: { item: RowT }): React.ReactElement => {
     const displayTitle = item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title;
     /** Self prefix resolves our own stamp name (lastSenderAddress is set for self too); falls back to "You" only until the profile lands. */

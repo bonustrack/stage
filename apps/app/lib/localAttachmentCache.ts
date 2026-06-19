@@ -67,6 +67,7 @@ function getLocalAttachment(messageId: string, index: number): string | undefine
  *  copy error) it returns the original URI so the caller is never worse off. The
  *  copy is cheap (already-on-disk bytes) and the dest lives until app restart.
  */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
 export function stashLocalAttachment(srcUri: string): string {
   if (!srcUri.startsWith('file://')) return srcUri;
   try {

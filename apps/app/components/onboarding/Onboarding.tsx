@@ -30,7 +30,7 @@ export interface OnboardingProps {
 }
 
 /** Renders the first-run onboarding flow that introduces the app and creates the wallet. */
-// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
+// eslint-disable-next-line max-lines-per-function, complexity -- TODO(chaitu): refactor to satisfy function-size limits + refactor (complexity 13)
 export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const pal = usePalette();

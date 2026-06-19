@@ -131,6 +131,7 @@ function ShieldBody({ pal, dark, zkAddress, initialSymbol, initialChainId, onFoo
 }
 
 /** Shielded send (private → private) body - token/balance from the parent page, free 0zk recipient input, local stage state. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 14)
 function SendBody({ pal, dark, symbol = 'ETH', chainId = 1, balance = null, onFooter }: ShieldFlowFormProps): React.ReactElement {
   const { head, sub, inputBg } = pal;
   const [to, setTo] = useState('');

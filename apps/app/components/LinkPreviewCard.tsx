@@ -16,6 +16,7 @@ import { X402Card } from './X402Card';
 import { usePalette, useBlockRadius } from '../lib/theme';
 
 /** Renders a generic OpenGraph preview card for a plain link, or nothing while loading or on failure. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 11)
 export function LinkPreviewCard({ url, dark }: {
   /** `dark` is forwarded to the x402 payment card (Pay-style button tinting); the OG preview path takes colors from the live palette tokens (same convention as GitHubLinkCard / PreviewLinkCard). */
   url: string; dark?: boolean;

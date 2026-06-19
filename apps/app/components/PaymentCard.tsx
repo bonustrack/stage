@@ -34,6 +34,7 @@ export interface PaymentAction {
 }
 
 /** Renders a payment summary card showing the token, amount, balance, and action. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 14)
 export function PaymentCard({
   dark, logoUrl, chainNum, description, badge, amountLabel,
   detail, balance, action, footer,

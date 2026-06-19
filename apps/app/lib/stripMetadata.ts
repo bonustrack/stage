@@ -225,6 +225,7 @@ export function stripMetadataBytes(input: Uint8Array): StripResult {
 }
 
 /** Whether a given MIME / filename names a raster image format we can strip. Lets the send path skip reading bytes for files we know we cannot sanitise. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
 export function isStrippableImage(mimeType: string | undefined, filename: string | undefined): boolean {
   const m = (mimeType ?? '').toLowerCase();
   if (m === 'image/jpeg' || m === 'image/jpg' || m === 'image/png' || m === 'image/webp') return true;

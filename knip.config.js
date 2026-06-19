@@ -1,5 +1,3 @@
-// Root knip config — the shared preset lives in @stage-labs/config/knip so the
-// per-workspace entry/project globs stay centralised. Run via `bun run knip`.
-import config from "@stage-labs/config/knip";
-
-export default config;
+// Root knip config — re-exports the shared preset from @stage-labs/config/knip
+// so the per-workspace entry/project globs stay centralised. Run via `bun run knip`.
+export { default } from "@stage-labs/config/knip";

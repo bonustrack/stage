@@ -78,6 +78,7 @@ export interface InputProps {
 }
 
 /** ChatKit-style RN single-line input. Forwards a ref to the underlying RN TextInput so call sites can focus/blur it. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 11)
 export const Input = forwardRef<TextInput, InputProps>(function Input(props, ref) {
   const {
     name,

@@ -45,6 +45,7 @@ function reloadSlice(line: string, msgs: HistoryEntry[]): void {
  *  preview is ahead of the open feed), bust + reload the slice from the local
  *  store. Best-effort + idempotent; safe to call repeatedly.
  */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 11)
 export async function reconcileOnOpen(line: string): Promise<void> {
   try {
     const conv = await convOfLine(line);

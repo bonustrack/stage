@@ -63,6 +63,7 @@ async function readJsonCapped(res: Response): Promise<unknown> {
 }
 
 /** Fetch `rawUrl` safely and return its HTML + final (post-redirect) URL, an {@link X402Challenge} on an x402 402 challenge, or null when there's nothing previewable. Throws {@link SsrfError} if any URL in the chain is unsafe. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 11)
 export async function fetchPage(rawUrl: string): Promise<FetchResult | X402Challenge | null> {
   let current = assertPublicUrl(rawUrl).toString();
 

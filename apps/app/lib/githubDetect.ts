@@ -26,6 +26,7 @@ const RESERVED = new Set([
 ]);
 
 /** Detect the first github.com repo/PR/issue link in `text`, or null. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 11)
 export function githubLinkOf(text?: string | null): GithubRef | null {
   if (!text) return null;
   const m = RE.exec(text);

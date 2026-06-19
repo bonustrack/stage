@@ -66,6 +66,7 @@ export async function startChannelStream(client: XmtpClient): Promise<ChannelStr
   });
 
   stopMsgStream = await client.conversations.streamAllMessages({
+    // eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 11)
     onValue: (msg) => {
       if (!msg) return;
       const preview = previewOfXmtpContent(msg.content, msg.contentType?.typeId);

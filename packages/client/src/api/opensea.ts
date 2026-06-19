@@ -88,6 +88,7 @@ export async function getNfts(
 
   return nfts
     .filter(a => SUPPORTED_ABIS.includes(a.token_standard))
+    // eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
     .map(a => {
       const tokenId = a.identifier;
       const baseName = a.name ?? '';

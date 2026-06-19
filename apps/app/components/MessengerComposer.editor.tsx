@@ -34,6 +34,7 @@ interface EditorProps {
 }
 
 /** Renders the composer's text input row with attach, quick-action, and send/record buttons. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 14)
 export function ComposerEditor(p: EditorProps): React.ReactElement {
   const { dark, fg, head, bg, sub, chipBg, recording } = p;
   const { primary } = usePalette();

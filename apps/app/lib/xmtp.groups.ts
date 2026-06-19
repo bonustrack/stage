@@ -21,6 +21,7 @@ import { lineOfConv, type XmtpConsent } from './xmtp.types';
  *  address has never registered on XMTP; we surface that as a clear message so
  *  the screen can tell the user which address isn't reachable.
  */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 11)
 export async function createGroup(
   addresses: string[],
   name?: string,

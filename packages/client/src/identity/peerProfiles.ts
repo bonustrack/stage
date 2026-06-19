@@ -45,6 +45,7 @@ const STAMP_LOOKUP_CHUNK = 50;
  *  caller can leave those addresses unresolved and retry, rather than caching a
  *  false "no name" that would hide a real ENS forever.
  */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 11)
 async function lookupNamesChunk(addrs: string[]): Promise<Record<string, string> | null> {
   try {
     const res = await fetch(STAMP_URL, {

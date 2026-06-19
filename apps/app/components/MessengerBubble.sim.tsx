@@ -13,6 +13,7 @@ import { NATIVE_TOKEN_SENTINEL } from '@stage-labs/client/wallet/assets';
 import { useUsdValue } from '../lib/txPrices';
 
 /** Renders the pre-sign transaction simulation result (success/fail badge and predicted asset movements). */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 11)
 export function SimulationBlock({ sim, pending, sub, chainId }: {
   sim: SimulateResult | null; pending: boolean; sub: string; chainId: number;
 }): React.ReactElement | null {

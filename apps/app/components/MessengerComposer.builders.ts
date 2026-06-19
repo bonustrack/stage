@@ -20,6 +20,7 @@ import type { ComposerActionsArgs } from './MessengerComposer.types';
 const mintLocalId = (): string => `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
 /** Builds and optimistically sends a signature-request message from the composer state. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 15)
 export async function sendSignatureRequest(a: ComposerActionsArgs): Promise<void> {
   const description = a.sigDesc.trim();
   let content: SignatureRequestContent;

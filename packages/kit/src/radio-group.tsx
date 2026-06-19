@@ -40,6 +40,7 @@ export interface RadioGroupProps {
 }
 
 /** ChatKit-style RN radio group. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
 export function RadioGroup(props: RadioGroupProps): React.ReactElement {
   const {
     name,

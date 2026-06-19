@@ -130,6 +130,7 @@ const ALIGN_MAP: Record<TextAlign, TextStyle['textAlign']> = {
 };
 
 /** OpenAI ChatKit-API RN text. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 15)
 export function Text(props: TextProps): React.ReactElement {
   const {
     value,

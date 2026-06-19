@@ -98,6 +98,7 @@ const DIR_ICON: Record<ActivityRow['direction'], HeroIconName> = {
 };
 
 /** A single transaction row — 4-corner layout matching TokenRow: a circular direction icon, the action title over counterparty + time, and the signed ETH value over the tx status. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 15)
 function TxRow({ r, head, sub, border, bg }: {
   r: ActivityRow; head: string; sub: string; border: string; bg: string;
 }): React.ReactElement {

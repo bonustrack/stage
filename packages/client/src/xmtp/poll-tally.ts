@@ -64,6 +64,7 @@ export function parseOpenVote(content: string): { q: number; text: string } | nu
 }
 
 /** Latest free-text answer per voter for one (poll, question). A `removed` event (or empty text) clears the voter's answer. Returns voterUri -> {text, ts}. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
 export function openAnswersByPoll(
   events: VoteEvent[],
   pollMessageId: string,

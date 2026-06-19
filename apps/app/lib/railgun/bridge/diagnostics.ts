@@ -26,6 +26,7 @@ export function status(line: string): void {
 }
 
 /** Compact, throw-safe stringify of a channel payload for the status log. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 13)
 export function fmtPayload(payload: unknown): string {
   if (payload === undefined) return '';
   try {

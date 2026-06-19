@@ -137,6 +137,7 @@ export function makeMsgStreamHandler({ isCancelled, setRows, refresh, refreshReq
       let needsRefresh = false;
       /** Captured from the matched row so the foreground rich-notification path (below, outside setRows) has the conversation context without a second lookup. Null until a row matches. */
       let notify: NotifyCtx | null = null;
+      // eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
       setRows(prev => {
         if (!prev) return prev;
         const idx = msgConvId ? prev.findIndex(r => r.convId === msgConvId) : -1;
@@ -187,6 +188,7 @@ export function makeMsgStreamHandler({ isCancelled, setRows, refresh, refreshReq
  *  when we already notified this message id (de-dupe). DMs title with the peer
  *  (name / short addr); groups title with the group + prefix the sender.
  */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
 function maybeNotify(
   n: NotifyCtx | null, convId: string | null, msgId: string | undefined, preview: string,
 ): void {

@@ -70,6 +70,7 @@ export const EXT_MIME: Record<string, string> = {
  *  via `fetch().blob()` + `File.write` so the native side gets a path it can
  *  read.
  */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 11)
 export async function materializeFileUri(src: string): Promise<string> {
   if (src.startsWith('file://')) return src;
   /** Bare absolute path (no scheme) — just prefix it. */
@@ -104,6 +105,7 @@ export async function materializeFileUri(src: string): Promise<string> {
  *  metadata-leak vector we can strip in pure JS (video/doc/HEIC) - the brand
  *  asserts "this uri has been through the strip gate", not "bytes were removed".
  */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 14)
 export async function sanitizeFileUri(
   uri: string, mimeType: string | undefined, filename: string | undefined,
 ): Promise<SanitizedFileUri> {

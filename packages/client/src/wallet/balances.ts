@@ -74,6 +74,7 @@ export async function fetchAssetRows(
     platforms.map((p, i) => [p, platformPriceList[i] ?? {}]),
   );
 
+  // eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 13)
   return ASSETS.map(a => {
     const idx = ASSETS.filter(x => x.chainId === a.chainId).indexOf(a);
     const raw = balancesByChain.get(a.chainId)?.[idx] ?? 0n;

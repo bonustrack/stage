@@ -99,6 +99,7 @@ export function x402AmountNumber(accept: X402Accept): number | undefined {
 }
 
 /** Sanitise an attacker-controlled token-name hint (`extra.name`) before it goes in a user-facing label: strip control + bidi/RTL-override chars (which can visually reorder the amount line into a spoof) and clamp the length. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 13)
 export function sanitizeTokenName(name: string): string {
   let out = "";
   for (const ch of name) {

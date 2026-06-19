@@ -17,6 +17,7 @@ type Phase = 'idle' | 'proving' | 'broadcasting' | 'done' | 'error';
 const NET_LABEL: Record<number, string> = { 1: 'Ethereum', 11155111: 'Sepolia' };
 
 /** Screen for unshielding tokens from a private balance back to public. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 13)
 export default function WalletUnshield(): React.ReactElement {
   const router = useRouter();
   const params = useLocalSearchParams<{ symbol?: string; chainId?: string }>();

@@ -88,6 +88,7 @@ function PrivateBadge({ sub }: { sub: string }): React.ReactElement {
 }
 
 /** A single asset row — 4-corner layout with token avatar + network badge. Tappable: `onPress` navigates to the token detail screen (wired by the caller). Wrapped in a Pressable with a subtle pressed-opacity. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 11)
 export const TokenRow = memo(function TokenRow({ r, head, sub, border, bg, onPress }: { r: AssetRow; onPress?: () => void } & Omit<Palette, 'card'>): React.ReactElement {
   const valueUsd = r.priceUsd === null ? null : r.priceUsd * Number(r.balance);
   /** Up/down colour for the 24h change pill — green for non-negative, red for negative. Uses the same tones as Snapshot UI's treasury. */

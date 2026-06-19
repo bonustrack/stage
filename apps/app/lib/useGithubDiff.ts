@@ -63,6 +63,7 @@ async function fetchBody(owner: string, repo: string, kind: 'pull' | 'issue', n:
 }
 
 /** Primary path: one authenticated round trip through the daemon proxy. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
 async function fetchViaProxy(ref: GithubRef): Promise<GithubDiff> {
   const qs = new URLSearchParams({
     owner: ref.owner, repo: ref.repo, kind: ref.kind, number: String(ref.number ?? 0),
@@ -88,6 +89,7 @@ async function fetchViaProxy(ref: GithubRef): Promise<GithubDiff> {
 }
 
 /** Resolve the PR number for an issue link via the issue timeline. Only used by the direct-GitHub fallback; the proxy does this server-side. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 11)
 async function resolvePrNumber(ref: GithubRef): Promise<number | null> {
   if (ref.kind === 'pull' && ref.number) return ref.number;
   if (ref.kind !== 'issue' || !ref.number) return null;

@@ -35,6 +35,7 @@ function isPollVote(
 }
 
 /** Reaction events decorate their target msg — fold them into per-message, per-emoji counts rather than rendering as standalone bubbles. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 14)
 export function reactionsByMessage(events: HistoryEntry[], pollOptionCounts: Map<string, number>): Map<string, Map<string, number>> {
   const latest = new Map<string, { ts: string; removed: boolean }>();
   for (const e of events) {
@@ -59,6 +60,7 @@ export function reactionsByMessage(events: HistoryEntry[], pollOptionCounts: Map
 }
 
 /** Emojis the local user currently has on each message (latest add not undone by a later removal). Drives un-react: tapping an emoji you already own toggles it off. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 14)
 export function ownReactionsByMessage(events: HistoryEntry[], myUri: string, pollOptionCounts: Map<string, number>): Map<string, Set<string>> {
   const latest = new Map<string, { ts: string; removed: boolean }>();
   for (const e of events) {

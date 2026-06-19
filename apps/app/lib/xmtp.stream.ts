@@ -149,6 +149,7 @@ function rearmGlobalStream(): void {
 /** Subscribe the one native fan-out for every conversation on this inbox. Maps each message to its metro line and routes it into the matching feedCache slice + channels-list subscribers. Re-armed via `onClose` on native drop. */
 async function startStream(client: Awaited<ReturnType<typeof getOrCreateXmtpClient>>): Promise<void> {
   await client.conversations.streamAllMessages(
+    // eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 15)
     (msg): Promise<void> => {
       if (!msg) return Promise.resolve();
       /** Mark a live delivery so a push arriving right after is treated as redundant (see onXmtpPush's STREAM_FRESH_MS skip). */

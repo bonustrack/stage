@@ -38,6 +38,7 @@ interface Props {
 }
 
 /** Renders a user or group avatar from a custom image, stamp.fyi identicon, or placeholder circle. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
 export function Avatar({
   address, imageUri, size = 'md', cacheBuster, square, style, onPress,
 }: Props): React.ReactElement {

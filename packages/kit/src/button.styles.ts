@@ -104,6 +104,7 @@ function accent(
 }
 
 /** Resolve a colour set from the canonical ChatKit `color` + `variant` model. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 13)
 export function resolveColors(
   color: ButtonColor,
   variant: ButtonControlVariant,

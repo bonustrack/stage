@@ -86,6 +86,7 @@ export function resolveUrl(href: string | undefined, base: string): string | und
 }
 
 /** Extract preview metadata from raw HTML. `finalUrl` is the post-redirect URL, used both as the canonical `url` and to resolve relative image/favicon refs. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
 export function parseMeta(html: string, finalUrl: string): PreviewMeta {
   // Only scan the head region for speed/safety; fall back to whole doc if no
   // </head> (some pages stream the title late).

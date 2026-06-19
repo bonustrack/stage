@@ -99,6 +99,7 @@ export function useComposerActions(a: ComposerActionsArgs) {
   };
 
   /** Send helper. */
+  // eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 15)
   const send = async (): Promise<void> => {
     const body = a.text.trim();
     if (!body && a.pending.length === 0) return;

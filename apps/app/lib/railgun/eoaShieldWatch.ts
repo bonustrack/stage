@@ -42,6 +42,7 @@ function hasLiveShield(accountId: string, chainId: number): boolean {
 }
 
 /** Poll the EOA for an in-flight shield to the Railgun proxy on one chain. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
 async function pollOnce(accountId: string, eoa: Hex, chainId: number): Promise<void> {
   if (hasLiveShield(accountId, chainId)) return;
   const chain = VIEM_CHAINS[chainId];
