@@ -40,6 +40,35 @@ void test('rejects other private IPv6', () => {
   assert.equal(isPrivateIp('fd00::1'), true);
 });
 
+void test('rejects non-dotted-quad numeric IPv4 encodings (SSRF bypass)', () => {
+  // All of these resolve to 127.0.0.1 / private ranges but slip past a
+  // dotted-quad-only guard. new URL() accepts each as a host.
+  const bypasses = [
+    'http://2130706433/', // decimal 127.0.0.1
+    'http://0x7f000001/', // hex 127.0.0.1
+    'http://0177.0.0.1/', // octal-leading 127.0.0.1
+    'http://127.1/', // short form 127.0.0.1
+    'http://0/', // 0.0.0.0
+    'http://0xa9fea9fe/', // hex 169.254.169.254 (cloud metadata)
+    'http://2852039166/', // decimal 169.254.169.254
+    'http://0xc0.0xa8.0x00.0x01/', // hex-per-octet 192.168.0.1
+    'http://017700000001/', // single octal 127.0.0.1
+  ];
+  for (const u of bypasses) {
+    assert.throws(() => assertPublicUrl(u), SsrfError, u);
+  }
+});
+
+void test('isPrivateIp flags numeric IPv4 literals', () => {
+  assert.equal(isPrivateIp('2130706433'), true); // 127.0.0.1
+  assert.equal(isPrivateIp('0x7f000001'), true);
+  assert.equal(isPrivateIp('127.1'), true);
+  assert.equal(isPrivateIp('0xa9fea9fe'), true); // 169.254.169.254
+  // Real hostnames must NOT be misclassified as numeric IPs.
+  assert.equal(isPrivateIp('example.com'), false);
+  assert.equal(isPrivateIp('a.b.c.d'), false);
+});
+
 void test('allows a normal public URL', () => {
   const u = assertPublicUrl('https://example.com/page?a=1');
   assert.equal(u.hostname, 'example.com');

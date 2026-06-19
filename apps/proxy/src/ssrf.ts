@@ -25,10 +25,50 @@ function isIPv4(s: string): boolean {
   return p.length === 4 && p.every(o => /^\d+$/.test(o) && Number(o) <= 255);
 }
 
-/** True if `ip` (v4 or v6 literal) is in a private / loopback / link-local / reserved range. A defence-in-depth check on top of the platform's refusal to route to private addresses. */
+/** Parse any IPv4 literal encoding (decimal `2130706433`, hex `0x7f000001`, octal `0177.0.0.1`, short `127.1`/`0`) into canonical dotted-quad, or null if not numeric IPv4. Closes the SSRF bypass where a dotted-quad-only guard waves `http://2130706433/` (== 127.0.0.1) through. */
+export function canonicalizeNumericIPv4(s: string): string | null {
+  // Each of the 1-4 parts may be decimal/hex/octal; a short address packs the
+  // final part into the remaining low-order bytes (inet_aton semantics, which
+  // the platform resolver follows). We canonicalise ourselves rather than trust
+  // the URL parser, because that normalisation is runtime-dependent.
+  const parts = s.split('.');
+  if (parts.length < 1 || parts.length > 4) return null;
+  const nums: number[] = [];
+  for (const part of parts) {
+    let n: number;
+    if (/^0x[0-9a-f]+$/i.test(part)) n = parseInt(part, 16); // hex (incl. 0x0)
+    else if (/^0[0-7]+$/.test(part)) n = parseInt(part, 8); // octal
+    else if (/^[0-9]+$/.test(part)) n = parseInt(part, 10); // decimal (incl. 0)
+    else return null; // not a numeric octet (e.g. a hostname label)
+    if (!Number.isSafeInteger(n) || n < 0) return null;
+    nums.push(n);
+  }
+  // inet_aton: each leading part is one octet; the final part absorbs all the
+  // remaining low-order bytes.
+  const last = nums[nums.length - 1];
+  if (last === undefined) return null;
+  const head = nums.slice(0, -1);
+  if (head.some(o => o > 0xff)) return null;
+  const lastMax = 256 ** (4 - head.length);
+  if (last >= lastMax) return null;
+  const octets = [...head];
+  for (let i = head.length; i < 4; i++) {
+    const shift = (3 - i) * 8;
+    octets.push((last >> shift) & 0xff);
+  }
+  return octets.join('.');
+}
+
+/** True if `ip` (v4 or v6 literal) is in a private / loopback / link-local / reserved range. Defence-in-depth on top of the platform's refusal to route to private addresses. */
 export function isPrivateIp(host: string): boolean {
   if (isIPv4(host)) return isPrivateV4(host);
   if (host.includes(':')) return isPrivateV6(host);
+  // Non-dotted-quad numeric encodings (decimal/hex/octal/short). Any host that
+  // parses as a numeric IPv4 literal but is NOT plain dotted-quad is treated as
+  // private/untrusted: there is no legitimate reason to fetch e.g.
+  // `http://2130706433/`, and the safe public form (`8.8.8.8`) is caught by the
+  // dotted-quad branch above with its real range check.
+  if (canonicalizeNumericIPv4(host) !== null) return true;
   return false;
 }
 
