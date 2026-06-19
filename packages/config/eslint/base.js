@@ -1,8 +1,8 @@
 // @stage-labs/config — base ESLint flat-config preset.
 //
 // This centralises the rules that were previously duplicated, byte-for-byte,
-// across the pure-TypeScript packages/apps (packages/client, apps/api,
-// apps/proxy) and that the react-native / vue presets build on. It changes NO
+// across the pure-TypeScript packages/apps (packages/client, apps/proxy) and
+// that the react-native / vue presets build on. It changes NO
 // behaviour: it only relocates the exact same flat-config blocks.
 //
 // Consumers compose the exported pieces with `tseslint.config(...)`, e.g.:
@@ -20,18 +20,30 @@ import jsdoc from "eslint-plugin-jsdoc";
  *  counting blank lines and comments. Split a file rather than crossing it. */
 export const MAX_LINES = ["error", { max: 400, skipBlankLines: false, skipComments: false }];
 
-// REQUIRE_EXPORTED_JSDOC — every EXPORTED function needs a leading
-// JSDoc/description comment. Uses eslint-plugin-jsdoc's `require-jsdoc`, scoped
-// to exported declarations: named exported `function`s + exported class methods
-// (via `require`), and exported arrow/function-expression consts + exported
-// default function/arrow (via `contexts`). `publicOnly` restricts it to things
-// reachable through an `export`. Only a non-empty description is required —
-// `require` does NOT force @param/@returns tags, so a single `/** … */` line
-// satisfies the rule. Trivial accessors/constructors stay exempt.
-export const REQUIRE_EXPORTED_JSDOC = [
+// REQUIRE_JSDOC — EVERY function needs a leading JSDoc/description comment, not
+// just exported ones. Uses eslint-plugin-jsdoc's `require-jsdoc` with
+// `publicOnly: false`, so the rule fires regardless of whether a function is
+// reachable through an `export`:
+//   - every named `function` declaration (top-level or nested);
+//   - every class method;
+//   - every arrow-function / function-expression bound to a name via a
+//     `const`/`let`/`var` declarator (the "named function" shape), exported or
+//     not, at module scope or nested.
+// Bare anonymous callbacks passed inline as call/JSX arguments (e.g.
+// `arr.map(x => x + 1)`, `tabBarIcon: ({color}) => <Icon/>`) are intentionally
+// NOT required to carry JSDoc — a doc comment can't be placed on them cleanly
+// and they are implementation detail of their enclosing (already-documented)
+// function. That is why `FunctionExpression`/`ArrowFunctionExpression` stay off
+// under `require` (which would flag those inline forms) and are instead matched
+// via `contexts` only when bound to a declarator.
+// Only a non-empty description is required — `require` does NOT force
+// @param/@returns tags, so a single `/** … */` line satisfies the rule.
+// Trivial accessors/constructors stay exempt (checkConstructors/checkGetters/
+// checkSetters all false).
+export const REQUIRE_JSDOC = [
   "error",
   {
-    publicOnly: true,
+    publicOnly: false,
     enableFixer: false,
     checkConstructors: false,
     checkGetters: false,
@@ -45,17 +57,105 @@ export const REQUIRE_EXPORTED_JSDOC = [
       MethodDefinition: true,
     },
     contexts: [
-      "ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > ArrowFunctionExpression",
-      "ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > FunctionExpression",
-      "ExportDefaultDeclaration > ArrowFunctionExpression",
-      "ExportDefaultDeclaration > FunctionExpression",
+      "VariableDeclaration > VariableDeclarator > ArrowFunctionExpression",
+      "VariableDeclaration > VariableDeclarator > FunctionExpression",
     ],
   },
 ];
 
+// JSDOC_ONE_LINE — every FUNCTION comment must stay on a single line.
+// `jsdoc/multiline-blocks` with `noMultilineBlocks: true` prohibits multi-line
+// JSDoc blocks; `allowMultipleTags: false` means a tagged block (e.g. the
+// `@file` header) is NOT treated as a prohibited multiline block, so this rule
+// applies ONLY to the tagless one-sentence comments we put on functions while
+// leaving the (tagged) file-overview header free to span up to 3 lines.
+// `noFinalLineText`/`noSingleLineBlocks: false` keep `/** … */` on one line the
+// canonical, accepted shape. Net effect: a 2-line function JSDoc fails; a
+// 1-line `/** sentence. */` passes.
+export const JSDOC_ONE_LINE = [
+  "error",
+  {
+    noMultilineBlocks: true,
+    allowMultipleTags: false,
+    noSingleLineBlocks: false,
+    minimumLengthForMultiline: 250,
+  },
+];
+
+// REQUIRE_FILE_OVERVIEW — every file must open with a `@file` JSDoc block
+// (`/** @file … */`). `mustExist` makes a missing header an error;
+// `initialCommentsOnly` requires it at the very top; `preventDuplicates` bans a
+// second `@file`. Paired with FILE_HEADER_MAX_LINES (below) to cap the header
+// at 3 content lines, and exempted from JSDOC_ONE_LINE because it carries the
+// `@file` tag.
+export const REQUIRE_FILE_OVERVIEW = [
+  "error",
+  { tags: { file: { initialCommentsOnly: true, mustExist: true, preventDuplicates: true } } },
+];
+
+/** Count the non-empty content lines of a block-comment value (the text between
+ *  the `/*` and `*\/`, with the leading `*` of each line stripped), so the
+ *  `/**` and `*\/` delimiter lines and blank lines do not count toward the cap. */
+function countCommentContentLines(value) {
+  return value
+    .split("\n")
+    .map((line) => line.replace(/^\s*\*?/, "").trim())
+    .filter((line) => line.length > 0).length;
+}
+
+// FILE_HEADER_MAX_LINES_PLUGIN — a tiny local plugin whose single rule caps the
+// `@file` header at 3 lines of actual content (the `@file` line plus up to two
+// more), since no stock jsdoc rule limits a tagged block's length. It scans
+// every `/** … */` block that contains an `@file` tag and reports when its
+// content-line count exceeds `max` (default 3). Registered under the `stage`
+// namespace so consumers reference it as `stage/file-header-max-lines`.
+export const FILE_HEADER_MAX_LINES_PLUGIN = {
+  rules: {
+    "file-header-max-lines": {
+      meta: {
+        type: "layout",
+        docs: { description: "Limit the `@file` JSDoc header to a maximum number of content lines." },
+        schema: [{ type: "object", properties: { max: { type: "integer", minimum: 1 } }, additionalProperties: false }],
+        messages: { tooLong: "File-overview JSDoc header must be at most {{max}} content lines (found {{found}})." },
+      },
+      create(context) {
+        const max = context.options[0]?.max ?? 3;
+        const sourceCode = context.sourceCode ?? context.getSourceCode();
+        return {
+          Program() {
+            for (const comment of sourceCode.getAllComments()) {
+              if (comment.type !== "Block" || !comment.value.startsWith("*")) continue;
+              if (!/@file\b/.test(comment.value)) continue;
+              const found = countCommentContentLines(comment.value);
+              if (found > max) {
+                context.report({ node: comment, messageId: "tooLong", data: { max: String(max), found: String(found) } });
+              }
+            }
+          },
+        };
+      },
+    },
+  },
+};
+
 /** The eslint-plugin-jsdoc plugin object, re-exported so the react-native and
  *  vue presets register the same instance in their own flat-config blocks. */
 export const jsdocPlugin = jsdoc;
+
+/** The plugin map every comment-enforcing block must register: the jsdoc plugin
+ *  plus the local `stage` plugin that owns the file-header line-cap rule. */
+export const commentPlugins = { jsdoc, stage: FILE_HEADER_MAX_LINES_PLUGIN };
+
+/** The full comment-convention rule set shared by every preset: require a JSDoc
+ *  comment on every function, force function comments onto one line, require a
+ *  `@file` header, cap that header at 3 lines, and reject malformed blocks. */
+export const COMMENT_RULES = {
+  "jsdoc/require-jsdoc": REQUIRE_JSDOC,
+  "jsdoc/multiline-blocks": JSDOC_ONE_LINE,
+  "jsdoc/require-file-overview": REQUIRE_FILE_OVERVIEW,
+  "jsdoc/no-bad-blocks": "error",
+  "stage/file-header-max-lines": ["error", { max: 3 }],
+};
 
 /** typescript-eslint's `strict-type-checked` + `stylistic-type-checked` flat
  *  configs. These are the TYPE-AWARE presets: they need type information, which
@@ -142,16 +242,16 @@ export function ignores(extra = []) {
   return { ignores: ["node_modules/**", "dist/**", ...extra] };
 }
 
-/** The shared "strict TS" block applied to `src/**` in packages/client,
- *  apps/api and apps/proxy: turn on type-aware linting, ban the escape hatches
- *  (`any` / ts-comment / non-null `!`), cap file length, and require exported
- *  JSDoc. `tsconfigRootDir` anchors the projectService tsconfig lookup at the
+/** The shared "strict TS" block applied to `src/**` in packages/client and
+ *  apps/proxy: turn on type-aware linting, ban the escape hatches
+ *  (`any` / ts-comment / non-null `!`), cap file length, and require a JSDoc
+ *  comment on every function. `tsconfigRootDir` anchors the projectService tsconfig lookup at the
  *  repo root. Override `files` for packages whose sources live elsewhere. */
 export function strictTsBlock({ files = ["src/**/*.{ts,tsx}"], tsconfigRootDir, project } = {}) {
   return {
     files,
     languageOptions: typeCheckedLanguageOptions(tsconfigRootDir, project),
-    plugins: { jsdoc },
+    plugins: commentPlugins,
     rules: {
       // Strong typing: ban `any` + the type-system escape hatches (ts-comment,
       // non-null `!`). Use `unknown` + narrowing, real interfaces, generics, or
@@ -159,8 +259,9 @@ export function strictTsBlock({ files = ["src/**/*.{ts,tsx}"], tsconfigRootDir, 
       ...NO_ESCAPE_HATCHES,
       // `error`: cap files at 400 lines. Split a file rather than crossing it.
       "max-lines": MAX_LINES,
-      // Every exported function/method needs a leading JSDoc description.
-      "jsdoc/require-jsdoc": REQUIRE_EXPORTED_JSDOC,
+      // Comment conventions: 1 JSDoc per function, 1 line each, `@file` header
+      // on every file (capped at 3 lines), `/** */` blocks only.
+      ...COMMENT_RULES,
     },
   };
 }

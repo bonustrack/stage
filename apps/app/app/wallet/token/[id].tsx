@@ -1,17 +1,8 @@
-/** Wallet → Token detail screen.
- *
- *  Reached by tapping a token row on the Wallet page. The full AssetRow is
- *  passed through the route params as JSON (`?row=…`) so this page renders the
- *  exact same balance/price/logo the list showed — no refetch, instant paint.
- *
- *  Shows the token (logo + network badge, name, symbol, balance + $ value) and
- *  TWO big rounded primary buttons reusing the Wallet page's action-button
- *  style (`Btn` from WalletScreen.parts):
- *  Public holding:  Send → /wallet/send,  Shield → /wallet/shield.
- *  Shielded holding: Send → /wallet/send (unified page, pre-selected to the
- *                    shielded token via ?private=1 → private 0zk transfer),
- *                    Unshield → /wallet/unshield.
- *  Pre-fill is via query params (symbol/chainId) read by each page. */
+/**
+ * @file Wallet token-detail screen showing one token's balance/price/logo
+ * (passed in via route params, no refetch) with Send/Shield or Send/Unshield
+ * action buttons that route to the matching wallet pages with pre-fill params.
+ */
 
 import { Pressable } from '@metro-labs/kit/pressable';
 
@@ -28,8 +19,7 @@ import { withStampDisplayPx } from '@metro-labs/kit/avatar';
 
 const NETWORK_LABEL: Record<number, string> = { 1: 'Ethereum', 11155111: 'Sepolia' };
 
-/** Parse the serialized AssetRow param. Returns null when missing/malformed so
- *  the screen can render a graceful fallback instead of crashing. */
+/** Parse the serialized AssetRow param. Returns null when missing/malformed so the screen can render a graceful fallback instead of crashing. */
 function parseRow(raw: string | undefined): AssetRow | null {
   if (typeof raw !== 'string') return null;
   try {

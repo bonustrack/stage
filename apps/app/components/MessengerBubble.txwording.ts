@@ -1,26 +1,15 @@
-/** Tx-request card wording: pick the action verb + success phrasing based on
- *  whether the request is a plain value/token TRANSFER or a generic CONTRACT
- *  CALL, so a contract interaction never reads as "Pay" / "Payment sent".
- *
- *  The signal is the decoded call (txDecode.useDecodedCall):
- *   - no decoded call (plain native ETH transfer, no calldata)            -> transfer
- *   - a decoded function whose name is a known token transfer (transfer/  -> transfer
- *     transferFrom/send/safeTransferFrom/pay)
- *   - any other decoded function (post, approve, swap, mint, …)           -> contract call
- *
- *  Transfers keep "Pay" / "Payment sent"; contract calls use a humanized verb
- *  derived from the function name (fallback "Confirm") + "Transaction sent". */
+/**
+ * @file Tx-request card wording: chooses transfer-vs-contract-call action verbs and success phrasing for a payment/tx request bubble.
+ */
 
 import type { DecodedCall } from '../lib/txDecode';
 
-/** Function names that ARE a value/token movement (treated as a transfer, not a
- *  generic contract call) — keep the friendly payment wording for these. */
+/** Function names that ARE a value/token movement (treated as a transfer, not a generic contract call) — keep the friendly payment wording for these. */
 const TRANSFER_FNS = new Set([
   'transfer', 'transferfrom', 'send', 'safetransferfrom', 'pay',
 ]);
 
-/** True when the request moves value/tokens (plain native transfer, an ERC-20
- *  `transfer`, or no decoded call at all) rather than calling a contract fn. */
+/** True when the request moves value/tokens (plain native transfer, an ERC-20 `transfer`, or no decoded call at all) rather than calling a contract fn. */
 export function isTransferRequest(
   decoded: DecodedCall | null, isErc20Transfer: boolean,
 ): boolean {
@@ -30,10 +19,12 @@ export function isTransferRequest(
   return TRANSFER_FNS.has(fn);
 }
 
-/** Humanize a decoded function name into a button action, e.g.
+/**
+ * Humanize a decoded function name into a button action, e.g.
  *   post -> "Post message", approve -> "Approve", setApprovalForAll -> "Set
  *   approval for all", swapExactTokensForETH -> "Swap exact tokens for ETH".
- *  Falls back to "Confirm" when there's no decoded name. */
+ *  Falls back to "Confirm" when there's no decoded name.
+ */
 export function humanizeAction(decoded: DecodedCall | null): string {
   const fn = decoded?.functionName;
   if (!fn) return 'Confirm';
@@ -68,8 +59,7 @@ export function humanizeAction(decoded: DecodedCall | null): string {
   return words.join(' ');
 }
 
-/** The request-card primary button label. Transfers -> "Pay"; contract calls ->
- *  the humanized action (e.g. "Post message", fallback "Confirm"). */
+/** The request-card primary button label. Transfers -> "Pay"; contract calls -> the humanized action (e.g. "Post message", fallback "Confirm"). */
 export function txActionLabel(
   decoded: DecodedCall | null, isErc20Transfer: boolean,
 ): string {

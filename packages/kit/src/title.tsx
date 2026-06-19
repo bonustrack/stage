@@ -1,10 +1,6 @@
-/** Title - ChatKit-styled headings for the Metro mobile client. THEME-NATIVE:
- *  resolves its colour from the Kit theme provider, so callers pass no colour.
- *
- *  A real RN component (imports `react-native` directly) living alongside
- *  Button/Text. Renders screen / section titles in Calibre-Semibold at the head
- *  colour (palette `link`, === today's #ffffff/#000000 head hexes), stepped
- *  clearly above the chat body size (level 1 = 30, level 2 = 24, level 3 = 21). */
+/**
+ * @file Title — a theme-native RN heading component that renders screen/section titles in Calibre-Semibold at the head colour, with three size levels (30/24/21) above the chat body size.
+ */
 
 import { Text as RNText, type TextProps as RNTextProps, type TextStyle } from 'react-native';
 import { resolveColorToken, type ColorToken } from './tokens';
@@ -18,8 +14,7 @@ export interface TitleProps extends Omit<RNTextProps, 'style'> {
   level?: TitleLevel;
   /** Alias for level: lg->1, md->2, sm->3. `level` wins if both given. */
   size?: TitleSizeToken;
-  /** Override colour (escape hatch). A semantic ColorToken name resolves
-   *  scheme-aware; any other string is a raw colour. Wins over the head colour. */
+  /** Override colour (escape hatch). A semantic ColorToken name resolves scheme-aware; any other string is a raw colour. Wins over the head colour. */
   color?: ColorToken | (string & {});
   style?: TextStyle | TextStyle[];
 }

@@ -1,5 +1,7 @@
-/** Outbound XMTP send helpers — text, reaction, reply, inline attachment. Split out
- *  of `xmtp.ts` so each file stays under the lint cap. */
+/**
+ * @file Outbound XMTP send helpers for text, reaction, reply, and inline attachment messages.
+ */
+/** Outbound XMTP send helpers — text, reaction, reply, inline attachment. Split out of `xmtp.ts` so each file stays under the lint cap. */
 
 import {
   ReactionAction, ReactionSchema, encodeText,
@@ -9,6 +11,7 @@ import {
   convOfLine, getCachedXmtpClient, getOrCreateXmtpClient,
 } from './xmtp';
 
+/** Base64 To Bytes. */
 function base64ToBytes(b64: string): Uint8Array {
   const bin = atob(b64);
   const out = new Uint8Array(bin.length);

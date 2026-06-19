@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "_comment": "@stage-labs/config — shared TypeScript base for the pure-TS packages (packages/client, packages/kit, apps/api, apps/proxy). The full `strict` family is enabled (and spelled out explicitly so the strict bar is auditable in one place), plus noUncheckedIndexedAccess + noImplicitOverride. Every workspace tsconfig extends this (directly or layered) so strictness is uniform across the monorepo.",
+  "_comment": "@stage-labs/config — shared TypeScript base for the pure-TS packages (packages/client, packages/kit, apps/proxy). The full `strict` family is enabled (and spelled out explicitly so the strict bar is auditable in one place), plus noUncheckedIndexedAccess + noImplicitOverride. Every workspace tsconfig extends this (directly or layered) so strictness is uniform across the monorepo.",
   "compilerOptions": {
     "target": "ESNext",
     "module": "ESNext",

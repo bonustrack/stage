@@ -1,7 +1,6 @@
-/** Divider - a ChatKit-styled separator line. Mirrors ChatKit's `Divider`
- *  widget; deviation: `dark` boolean (kit is hook-free). A border-token hairline
- *  with symmetric vertical `spacing`; `flush` spans edge-to-edge via a negative
- *  margin escape from a 16px-padded container. `size` overrides thickness. */
+/**
+ * @file Divider — a hook-free ChatKit-styled border-token hairline separator with symmetric vertical `spacing`, an edge-to-edge `flush` mode, and a `size` thickness override.
+ */
 
 import { View, type ViewStyle } from 'react-native';
 
@@ -12,8 +11,7 @@ export interface DividerProps {
   color?: string;
   /** ChatKit: size. Line thickness in px. Default 1 (hairline). */
   size?: number;
-  /** ChatKit: flush. Ignore the container's horizontal padding (full-bleed).
-   *  Pass the container's horizontal padding so the line escapes it. Default 0. */
+  /** ChatKit: flush. Ignore the container's horizontal padding (full-bleed). Pass the container's horizontal padding so the line escapes it. Default 0. */
   flush?: number | boolean;
   /** Effective color scheme. Pass useEffectiveColorScheme() === 'dark'. */
   dark: boolean;
@@ -21,6 +19,7 @@ export interface DividerProps {
   style?: ViewStyle;
 }
 
+/** Border Color. */
 function borderColor(dark: boolean): string {
   return dark ? '#282a2d' : '#e4e4e5';
 }

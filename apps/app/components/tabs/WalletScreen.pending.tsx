@@ -1,12 +1,8 @@
-/** Greyed "pending shield • arriving" placeholder row(s) for the Tokens tab.
- *
- *  Surfaces an in-flight shield (one the user kicked off, OR one detected on the
- *  EOA's mempool/nonce — see usePendingShieldWatch) while it's still being mined
- *  or scanned into the shielded balance. Once the note lands the row disappears
- *  and the real Private-badged balance row reflects the new amount.
- *
- *  Styled to match TokenRow but muted: dimmed text, a small spinner in place of
- *  the avatar, and an "arriving" sub-line. Tapping does nothing (no detail yet). */
+/**
+ * @file PendingShieldRows — greyed "pending shield · arriving" placeholder rows at the
+ *  top of the Tokens tab, surfacing an in-flight shield until the note lands and the
+ *  real Private-badged balance row reflects it. Styled like TokenRow but muted/non-tappable.
+ */
 import { Text } from '@metro-labs/kit/text';
 
 import { Col, Row, Box } from '../layout';
@@ -15,6 +11,7 @@ import type { PendingAction } from '../../lib/railgun/types';
 
 interface Pal { head: string; sub: string; border: string }
 
+/** Phase Label. */
 const phaseLabel = (p: PendingAction['phase']): string => {
   switch (p) {
     case 'proving': return 'submitting…';
@@ -49,8 +46,7 @@ function PendingShieldRow({ p, pal }: { p: PendingAction; pal: Pal }): React.Rea
   );
 }
 
-/** Render the muted placeholder rows for every in-flight shield. Returns null
- *  when none. Sits at the TOP of the Tokens list so it's the first thing seen. */
+/** Render the muted placeholder rows for every in-flight shield. Returns null when none. Sits at the TOP of the Tokens list so it's the first thing seen. */
 export function PendingShieldRows({ pending, pal }: {
   pending: PendingAction[]; pal: Pal;
 }): React.ReactElement | null {

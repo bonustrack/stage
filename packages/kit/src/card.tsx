@@ -1,8 +1,6 @@
-/** Card - a ChatKit-styled bordered surface for the Metro mobile client.
- *  Mirrors ChatKit's `Card` widget; deviations: `dark` boolean (kit is
- *  hook-free) and local `onPress` in place of ChatKit's server `onClickAction`.
- *  `collapsed` hides the body (status + actions only); `asForm` is a passthrough
- *  hint that does not change RN layout. */
+/**
+ * @file Card — a hook-free ChatKit-styled bordered surface for the Metro mobile client, with a local `onPress` and a `collapsed` mode that hides the body.
+ */
 
 import { type ReactNode } from 'react';
 import { Pressable, View, Text as RNText, type ViewStyle } from 'react-native';
@@ -56,6 +54,7 @@ const STATUS_SIZE: Record<CardSize, number> = {
   lg: FONT_SIZE.sm,
 };
 
+/** Palette helper. */
 function palette(dark: boolean): { surface: string; border: string; sub: string } {
   const p = schemePalette(dark);
   return { surface: p.surface, border: p.border, sub: p.sub };

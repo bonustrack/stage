@@ -1,7 +1,7 @@
-/** Settings → Experimental menu - a System-page-style list (same Kit ListView
- *  style as the main Settings menu) housing the not-yet-stable surfaces: the Kit
- *  theme/component gallery, the app Components gallery, and the Developer
- *  diagnostics console. Reached via /settings → "Experimental" row. */
+/**
+ * @file Settings -> Experimental menu listing the not-yet-stable surfaces: the
+ *  Kit gallery, the app Components gallery, and the Developer diagnostics console.
+ */
 
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 

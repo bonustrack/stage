@@ -1,8 +1,8 @@
-/** AppModal — the single reusable bottom-sheet modal for the app. Borderless
- *  sheet anchored to the bottom with rounded top corners, a dim tap-to-close
- *  backdrop, an optional title row with a close X, and a scrollable content
- *  area. Respects the bottom safe-area inset so content clears the Android
- *  global navigation bar (the reported overlap bug). */
+/**
+ * @file AppModal, the app's single reusable bottom-sheet modal: a bottom-anchored
+ * sheet with rounded top corners, dim tap-to-close backdrop, optional title row,
+ * scrollable content, and bottom safe-area handling.
+ */
 
 import type { ReactNode } from 'react';
 import { Modal } from 'react-native';

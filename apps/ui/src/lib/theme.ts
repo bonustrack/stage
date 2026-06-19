@@ -1,7 +1,6 @@
-/** App-wide theme preference: 'light' | 'dark' | 'system'.
- *  Persisted in localStorage under `app.theme`. A module-level pub/sub keeps
- *  every mounted component in sync the moment the user toggles the choice on
- *  the Settings screen — same model as apps/app/lib/theme.ts. */
+/**
+ * @file Reactive, localStorage-persisted app theme preference ('light' | 'dark' | 'system') with a module-level pub/sub to keep components in sync.
+ */
 
 import { ref, onUnmounted, type Ref } from 'vue';
 import {
@@ -11,6 +10,7 @@ import {
 
 export type { ThemePreference };
 
+/** Get the Initial. */
 function loadInitial(): ThemePreference {
   try {
     const v = localStorage.getItem(STORAGE_KEY);
@@ -22,6 +22,7 @@ function loadInitial(): ThemePreference {
 let cached: ThemePreference = loadInitial();
 const listeners = new Set<(p: ThemePreference) => void>();
 
+/** Emit helper. */
 function emit(p: ThemePreference): void {
   cached = p;
   for (const l of listeners) l(p);
@@ -37,6 +38,7 @@ export function setThemePreference(p: ThemePreference): void {
 /** Reactive ref reflecting the current preference. Auto-unsubscribes on unmount. */
 export function useThemePreference(): Ref<ThemePreference> {
   const r = ref<ThemePreference>(cached);
+  /** Fn helper. */
   const fn = (p: ThemePreference): void => { r.value = p; };
   listeners.add(fn);
   onUnmounted(() => { listeners.delete(fn); });
@@ -48,14 +50,13 @@ const systemDark = ref(typeof window !== 'undefined'
 
 if (typeof window !== 'undefined' && window.matchMedia) {
   const mq = window.matchMedia('(prefers-color-scheme: dark)');
-  /** Older Safari uses `addListener`; modern browsers ignore the deprecated alias.
-   *  `addEventListener('change', …)` is the wide-compat path. */
+  /** Older Safari uses `addListener`; modern browsers ignore the deprecated alias. `addEventListener('change', …)` is the wide-compat path. */
   mq.addEventListener('change', e => { systemDark.value = e.matches; });
 }
 
-/** Sync the `<html>` element's `dark` class with the effective scheme. Called once
- *  at app boot (see main.ts) so Tailwind's `dark:` variants flip live. */
+/** Sync the `<html>` element's `dark` class with the effective scheme. Called once at app boot (see main.ts) so Tailwind's `dark:` variants flip live. */
 export function installThemeClassEffect(): void {
+  /** Update helper. */
   const update = (): void => {
     if (typeof document === 'undefined') return;
     const effective: 'light' | 'dark' = cached === 'system'

@@ -1,18 +1,9 @@
-/** Turn a thrown signing / userOp / RPC error into a SHORT, SPECIFIC message
- *  for the in-chat toast.
- *
- *  Why this exists: viem and the ZeroDev bundler/paymaster wrap the real reason
- *  inside a `BaseError` chain. The OUTER error's `.message` is almost always the
- *  generic "RPC Request failed." — useless to the user. The actual cause (e.g.
- *  "AA33 reverted: paymaster policy", "AA21 didn't pay prefund", "insufficient
- *  funds", a paymaster sponsorship rejection) lives in the inner error's
- *  `details` / `shortMessage` / `metaMessages`, or further down the `cause`
- *  chain. We walk that chain and surface the most specific human string we find,
- *  falling back to a clear generic instead of crashing or showing the opaque
- *  outer message. This NEVER throws. */
+/**
+ * @file Turns a thrown signing / userOp / RPC error into a SHORT, SPECIFIC in-chat toast message by walking the viem/ZeroDev `BaseError` cause chain (details / shortMessage / metaMessages) for the real reason instead of the generic outer "RPC Request failed.".
+ *  Falls back to a clear generic instead of the opaque outer message; NEVER throws.
+ */
 
-/** Fields viem's `BaseError` adds on top of `Error`. Optional + read
- *  defensively — the thrown value may be any shape. */
+/** Fields viem's `BaseError` adds on top of `Error`. Optional + read defensively — the thrown value may be any shape. */
 interface ViemErrorLike {
   shortMessage?: unknown;
   details?: unknown;
@@ -22,6 +13,7 @@ interface ViemErrorLike {
   name?: unknown;
 }
 
+/** Str helper. */
 function str(v: unknown): string | undefined {
   return typeof v === 'string' && v.trim() ? v.trim() : undefined;
 }
@@ -50,8 +42,7 @@ function humanize(s: string): string {
   return s;
 }
 
-/** Walk the error + its `cause` chain, collecting the most specific strings.
- *  Bounded depth so a self-referential cause can't loop. */
+/** Walk the error + its `cause` chain, collecting the most specific strings. Bounded depth so a self-referential cause can't loop. */
 function collect(err: unknown, depth = 0): string | undefined {
   if (!err || depth > 6) return undefined;
   if (typeof err === 'string') return str(err);
@@ -71,8 +62,7 @@ function collect(err: unknown, depth = 0): string | undefined {
   return candidate ?? msg;
 }
 
-/** Public: best-effort short message for a toast. `fallback` is used when we
- *  can't extract anything meaningful. Never throws. */
+/** Public: best-effort short message for a toast. `fallback` is used when we can't extract anything meaningful. Never throws. */
 export function txErrorMessage(err: unknown, fallback: string): string {
   try {
     const raw = collect(err) ?? fallback;

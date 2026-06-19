@@ -1,13 +1,6 @@
-/** Scroll - a thin Kit wrapper over RN `ScrollView`. Not a ChatKit widget
- *  node (ChatKit's chat shell owns its own scroll surface); this is the Kit
- *  escape hatch from objective 2 of the port plan so the app's ~24 raw
- *  `ScrollView` call sites import one Kit primitive instead of `react-native`
- *  directly. Keeping the renderer here means the ScrollView-vs-gesture-handler
- *  swap (or future virtualisation) is a one-file change.
- *
- *  Full `ScrollViewProps` passthrough, plus two ergonomic shorthands matching
- *  the Box/Row/Col spacing convention: `padding` (contentContainerStyle
- *  padding) and `gap` (contentContainerStyle gap). Numbers = px. */
+/**
+ * @file Scroll — a thin Kit wrapper over RN `ScrollView` with full props passthrough plus `padding`/`gap` contentContainerStyle shorthands (numbers = px), so call sites depend on one Kit primitive.
+ */
 
 import { ScrollView, type ScrollViewProps, type ViewStyle } from 'react-native';
 

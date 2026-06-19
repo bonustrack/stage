@@ -1,24 +1,6 @@
-/** Server-side x402 settlement replay for the link-preview Worker.
- *
- *  The x402 app worker (which owns X402Card.tsx + lib/x402.ts) builds a signed
- *  `X-PAYMENT` header client-side, then needs the resource re-fetched WITH that
- *  header so the upstream verifies + settles the payment and returns the paid
- *  content. It can't do that fetch from the device behind our IP-privacy posture,
- *  so it POSTs here and we replay the GET at the edge behind the same SSRF guards.
- *
- *  POST /x402-settle  { url, paymentHeader }  ->  { status, ok, body? }
- *
- *  We only forward the single `X-PAYMENT` header (plus our UA); no device headers
- *  leak upstream. The response body is trimmed to a small cap so a hostile/large
- *  upstream can't be used to exfiltrate or amplify. SSRF guards + manual redirect
- *  revalidation mirror fetchPage/fetchImage.
- *
- *  SECURITY: the signed `X-PAYMENT` header is a bearer authorization for ONE
- *  resource. A hostile/compromised endpoint could 30x-redirect to an attacker
- *  origin to harvest that header and replay the authorization. So we send the
- *  header on the FIRST hop only and on same-origin redirects; on any
- *  cross-origin redirect we drop `X-PAYMENT` (the upstream still gets followed
- *  for the body echo, but never re-presented the bearer auth). */
+/**
+ * @file Replays a GET with the caller's signed X-PAYMENT header at the edge to settle an x402 payment, behind the SSRF guards and dropping the bearer on cross-origin redirects.
+ */
 
 import { assertPublicUrl, SsrfError } from './ssrf.ts';
 
@@ -69,9 +51,7 @@ async function readTrimmed(res: Response): Promise<string> {
   return new TextDecoder('utf-8').decode(out).slice(0, MAX_BODY_BYTES);
 }
 
-/** Replay a GET to `url` with the caller's `X-PAYMENT` header, behind the SSRF
- *  guards (re-validated on every redirect hop). Throws {@link SsrfError} on an
- *  unsafe URL/redirect. Returns the upstream status + a trimmed body echo. */
+/** Replay a GET to `url` with the caller's `X-PAYMENT` header, behind the SSRF guards (re-validated on every redirect hop). Throws {@link SsrfError} on an unsafe URL/redirect. Returns the upstream status + a trimmed body echo. */
 export async function settleX402(req: SettleRequest): Promise<SettleResult> {
   let current = assertPublicUrl(req.url).toString();
   const initialOrigin = new URL(current).origin;

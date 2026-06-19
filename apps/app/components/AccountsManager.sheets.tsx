@@ -1,5 +1,7 @@
-/** AccountsManager bottom sheets — per-account manage + export-reveal. Extracted
- *  for lint line-budget. Rendering identical. */
+/**
+ * @file AccountsManager bottom sheets: the per-account manage sheet
+ * (switch/export/remove) and the private-key export-reveal sheet.
+ */
 
 import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';

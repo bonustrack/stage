@@ -1,6 +1,7 @@
-/** Bubble action handlers (react / reply / copy / optimistic send) for the XMTP
- *  conversation view. Extracted from `useXmtpConversation` so each file stays
- *  under the lint cap. */
+/**
+ * @file Composable of message-bubble action handlers (react, reply, copy, optimistic send) for the conversation view.
+ */
+/** Bubble action handlers (react / reply / copy / optimistic send) for the XMTP conversation view. Extracted from `useXmtpConversation` so each file stays under the lint cap. */
 
 import type { ComputedRef, Ref } from 'vue';
 import { xmtpReact } from './xmtpSend';
@@ -30,18 +31,21 @@ export interface BubbleActions {
 export function useBubbleActions(deps: BubbleActionsDeps): BubbleActions {
   const { convId, line, myUri, actionTarget, replyingTo, optimistic } = deps;
 
+  /** Preview Of. */
   function previewOf(e: HistoryEntry): string {
     if (e.text) return e.text.slice(0, 80);
     const att = (e.payload as { attachments?: { kind: string }[] } | undefined)?.attachments?.[0]?.kind;
     return `[${att ?? 'attachment'}]`;
   }
 
+  /** Handle the React. */
   function onReact(messageId: string, emoji: string): void {
     if (!line.value) return;
     void xmtpReact(line.value, messageId, emoji).catch(() => undefined);
     actionTarget.value = null;
   }
 
+  /** Handle the Optimistic. */
   function onOptimistic(payload: { localId: string; text: string; replyTo?: string }): void {
     optimistic.value = [...optimistic.value, {
       id: payload.localId,
@@ -56,13 +60,12 @@ export function useBubbleActions(deps: BubbleActionsDeps): BubbleActions {
     }];
   }
 
-  /** Send resolved: flip the optimistic bubble from pending (gray) to normal.
-   *  It stays until the live stream echo arrives, at which point the dedup in
-   *  allBubbles drops it — so there's no flicker/gap. */
+  /** Send resolved: flip the optimistic bubble from pending (gray) to normal. It stays until the live stream echo arrives, at which point the dedup in allBubbles drops it — so there's no flicker/gap. */
   function onSent(localId: string): void {
     optimistic.value = optimistic.value.map(o => (o.id === localId ? { ...o, pending: false } : o));
   }
 
+  /** Handle the Action Reply. */
   function onActionReply(): void {
     if (actionTarget.value) replyingTo.value = { id: actionTarget.value.id, preview: previewOf(actionTarget.value) };
     actionTarget.value = null;
@@ -73,6 +76,7 @@ export function useBubbleActions(deps: BubbleActionsDeps): BubbleActions {
     replyingTo.value = { id: entry.id, preview: previewOf(entry) };
   }
 
+  /** Handle the Action Copy. */
   function onActionCopy(): void {
     const t = actionTarget.value?.text;
     if (t && navigator.clipboard) void navigator.clipboard.writeText(t);

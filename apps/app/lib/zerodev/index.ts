@@ -1,10 +1,6 @@
-/** ZeroDev smart-account wallet — host module barrel (phase 1).
- *
- *  See docs/zerodev-wallet-spec.md. Phase 1 = mnemonic + HD-derived owner +
- *  Kernel account creation (ECDSA always; passkey gated behind a new APK) +
- *  the opt-in SCW XMTP identity cutover. Phase 2 = lazy-deploy + weighted
- *  guardian recovery (native timelock + veto, recovery over XMTP). Session keys
- *  / agent provisioning are parked (future). */
+/**
+ * @file Barrel for the ZeroDev smart-account wallet module, re-exporting only the symbols consumed via the `lib/zerodev` path (keyring, account creation, kernel rebuild, passkey enable/disable, and guardian recovery).
+ */
 
 // This barrel re-exports ONLY the symbols consumed via the `lib/zerodev` path.
 // Many submodule exports are imported directly from their source module (or via

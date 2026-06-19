@@ -1,9 +1,4 @@
-/** In-app PR diff viewer - opened by tapping a channel topnav's GitHub icon.
- *  Receives the channel's linked GitHub URL (`url` param), parses it to an
- *  owner/repo + PR (or issue -> linked PR) ref, fetches the per-file diff from
- *  the GitHub REST API and renders it GitHub-style via FileDiff. A link icon in
- *  the top-right of the topnav opens the PR on GitHub. Issues with no linked PR
- *  show a graceful message. All text uses the Calibre font family. */
+/** @file In-app GitHub PR diff viewer that parses a channel's linked GitHub URL, fetches the per-file diff, and renders it GitHub-style. */
 
 import { ActivityIndicator, Linking } from 'react-native';
 
@@ -34,11 +29,13 @@ export default function Diff(): React.ReactElement {
   const insets = useSafeAreaInsets();
   const { url } = useLocalSearchParams<{ url?: string }>();
 
-  /** Disable the app's full-width swipe-back (the JS card stack's interactive
+  /**
+   * Disable the app's full-width swipe-back (the JS card stack's interactive
    *  horizontal pan, armed from anywhere via gestureResponseDistance:9999 in
    *  _layout). On this page it captured vertical pans and starved the diff
    *  ScrollView, so the page wouldn't scroll. The header back arrow still pops
-   *  the route, so losing the gesture here is fine. */
+   *  the route, so losing the gesture here is fine.
+   */
   const navigation = useNavigation();
   useLayoutEffect(() => {
     navigation.setOptions({ gestureEnabled: false });

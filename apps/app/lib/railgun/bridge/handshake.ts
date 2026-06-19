@@ -1,4 +1,7 @@
-/** Event-driven readiness handshake for the nodejs-mobile bridge.
+/** @file Event-driven readiness gate for the nodejs-mobile bridge that resolves on either the host boot event or a single deterministic 'hello' reply, with one timeout instead of a polling retry loop. */
+
+/*
+ * Event-driven readiness handshake for the nodejs-mobile bridge.
  *
  *  THE BOOT RACE: the nodejs-mobile channel does NOT buffer. A request posted
  *  before main.js registers its 'rg:request' listener is silently dropped, and
@@ -20,7 +23,8 @@
  *       shows a real error instead of a silent per-call hang.
  *
  *  STATE MACHINE: idle -> starting -> ready | failed. Terminal states are sticky
- *  (settled guard); every transition flows through one place. */
+ *  (settled guard); every transition flows through one place.
+ */
 import type { NodejsChannel } from './nodejsMobile';
 import { fmtPayload, status } from './diagnostics';
 
@@ -42,23 +46,23 @@ export interface HandshakeDeps {
 /** Explicit lifecycle of the readiness gate. */
 type HandshakeState = 'idle' | 'starting' | 'ready' | 'failed';
 
-/** Single deadline for the whole gate. The host boots + registers its listener
- *  in well under this; exceeding it means the native runtime never came up. */
+/** Single deadline for the whole gate. The host boots + registers its listener in well under this; exceeding it means the native runtime never came up. */
 const READY_TIMEOUT_MS = 12_000;
 
 export interface Handshake {
   promise: Promise<void>;
   /** Current lifecycle state (for diagnostics). */
   state: () => HandshakeState;
-  /** The boot event fired: resolve readiness (or, if a 'hello' is still in
-   *  flight, this just wins the race). Idempotent. */
+  /** The boot event fired: resolve readiness (or, if a 'hello' is still in flight, this just wins the race). Idempotent. */
   markReady: () => void;
 }
 
-/** Start the event-driven readiness gate. The caller MUST have attached the boot
+/**
+ * Start the event-driven readiness gate. The caller MUST have attached the boot
  *  event + reply listeners already, and MUST call mod.start immediately after
  *  this returns (so the single 'hello' we post lands once the host is live, or
- *  is harmlessly dropped and re-sent on the boot event). */
+ *  is harmlessly dropped and re-sent on the boot event).
+ */
 export function startReadinessHandshake(deps: HandshakeDeps): Handshake {
   const { channel, requestEvent, nextId, onReply, offReply } = deps;
   let state: HandshakeState = 'idle';
@@ -72,11 +76,13 @@ export function startReadinessHandshake(deps: HandshakeDeps): Handshake {
     rejectReady = rej;
   });
 
+  /** Clear Hello. */
   const clearHello = (): void => {
     if (helloId != null) offReply(helloId);
     helloId = null;
   };
 
+  /** Succeed helper. */
   const succeed = (reason: string): void => {
     if (state === 'ready' || state === 'failed') return;
     state = 'ready';
@@ -87,6 +93,7 @@ export function startReadinessHandshake(deps: HandshakeDeps): Handshake {
     resolveReady();
   };
 
+  /** Fail helper. */
   const fail = (): void => {
     if (state === 'ready' || state === 'failed') return;
     state = 'failed';
@@ -97,11 +104,13 @@ export function startReadinessHandshake(deps: HandshakeDeps): Handshake {
     rejectReady(new Error('Railgun bridge: node host did not start'));
   };
 
-  /** Post a single deterministic 'hello'. Its reply proves the host channel +
+  /**
+   * Post a single deterministic 'hello'. Its reply proves the host channel +
    *  rg:request listener are live → readiness. Posted directly so it bypasses
    *  the ready gate it exists to satisfy. The host also re-emits its boot event
    *  on receiving 'hello', so this doubles as request-ready-on-attach: if the
-   *  original boot event was missed, the reply (or the re-emit) still resolves. */
+   *  original boot event was missed, the reply (or the re-emit) still resolves.
+   */
   const sendHello = (): void => {
     if (state !== 'starting') return;
     const id = nextId();
@@ -115,8 +124,7 @@ export function startReadinessHandshake(deps: HandshakeDeps): Handshake {
     channel.post(requestEvent, envelope);
   };
 
-  /** Boot event landed (initial emit OR the re-emit our 'hello' triggers).
-   *  Resolves readiness; first signal wins. Idempotent via succeed's guard. */
+  /** Boot event landed (initial emit OR the re-emit our 'hello' triggers). Resolves readiness; first signal wins. Idempotent via succeed's guard. */
   const markReady = (): void => { succeed('boot event'); };
 
   state = 'starting';

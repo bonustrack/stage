@@ -1,15 +1,8 @@
-/** SimulationBlock — the pre-sign dry-run view for a tx-request card.
- *
- *  Renders the result of eth_simulateV1 (lib/txSimulate) BEFORE the passkey: a
- *  SUCCESS/FAIL badge plus the actual asset movement (You send / You receive)
- *  derived from the simulation's transfer trace. This is the "what will actually
- *  happen" view, paired with DecodedCallBlock's "what function is called"
- *  (decode = intent; simulate = effect). While the sim is in flight it shows
- *  "Simulating…"; on RPC error a calm "could not simulate" note (never blocks
- *  signing). A predicted REVERT is surfaced loudly (red) so the user is warned,
- *  but they are not hard-blocked from proceeding.
- *
- *  Split out of MessengerBubble.cards.tsx to keep that file under the 400-line cap. */
+/**
+ * @file SimulationBlock — pre-sign eth_simulateV1 dry-run view for a tx-request card,
+ *  showing a SUCCESS/FAIL badge and predicted asset movement (warning loudly on a
+ *  predicted revert) without ever hard-blocking signing.
+ */
 
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
@@ -65,8 +58,7 @@ function SimNote({ text, sub, bg }: { text: string; sub: string; bg: string }): 
   );
 }
 
-/** One asset line: a labelled signed amount + symbol, with a `~$X` USD suffix
- *  when the token has a known price (amount only otherwise — never a fake $). */
+/** One asset line: a labelled signed amount + symbol, with a `~$X` USD suffix when the token has a known price (amount only otherwise — never a fake $). */
 function AssetMoveRow({ move, sign, color, label, sub, chainId }: {
   move: AssetMove; sign: '+' | '-'; color: string; label: string; sub: string; chainId: number;
 }): React.ReactElement {

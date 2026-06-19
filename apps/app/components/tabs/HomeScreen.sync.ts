@@ -1,6 +1,8 @@
-/** HomeScreen network/sync effect — the XMTP boot, full refresh, conv/message/
- *  consent streams, AppState resume, extracted from HomeScreen.tsx (phase-2
- *  lint, behaviour identical). */
+/**
+ * @file HomeScreen.sync — the useChannelsSync effect: XMTP boot, full refresh, the
+ *  conversation/message/consent streams and AppState resume for the channels
+ *  list, extracted from HomeScreen.tsx.
+ */
 
 import { useEffect, type Dispatch, type MutableRefObject, type SetStateAction } from 'react';
 import { AppState } from 'react-native';
@@ -26,20 +28,21 @@ interface SyncArgs {
   refreshFromNetworkRef: MutableRefObject<(() => Promise<void>) | null>;
 }
 
-/** Drives the entire channels-list lifecycle; re-runs when `accountEpoch`
- *  changes (in-place account switch). Mirrors the original inline effect. */
+/** Drives the entire channels-list lifecycle; re-runs when `accountEpoch` changes (in-place account switch). Mirrors the original inline effect. */
 export function useChannelsSync({
   accountEpoch, rows, setRowsState, setRows, setError, setRequestCount, refreshFromNetworkRef,
 }: SyncArgs): void {
   useEffect(() => {
-    /** Clear any error captured by a PREVIOUS run before re-initialising. The
+    /**
+     * Clear any error captured by a PREVIOUS run before re-initialising. The
      *  channels tab mounts under the onboarding overlay, so the very first run
      *  fires BEFORE the account exists and getOrCreateXmtpClient throws
      *  NoAccountError. Once onboarding creates the account it bumps the epoch and
      *  this effect re-runs against the now-warm client — but without this reset
      *  the stale boot-time error stuck on screen, surfacing the "No account —
      *  onboarding not completed yet." HomeError with a Reset button on a freshly
-     *  onboarded user (Less's report). */
+     *  onboarded user (Less's report).
+     */
     setError('');
     let cancelled = false;
     let cancelConvStream: (() => void) | null = null;
@@ -47,10 +50,7 @@ export function useChannelsSync({
     let cancelConsentStream: (() => void) | null = null;
     let appStateSub: { remove: () => void } | null = null;
 
-    /** Hydrate the persisted cache first — if we have rows from a previous
-     *  session, render them immediately so the user sees the channels list
-     *  before XMTP finishes initialising. The network refresh below then
-     *  reconciles any changes. */
+    /** Hydrate the persisted cache first — if we have rows from a previous session, render them immediately so the user sees the channels list before XMTP finishes initialising. The network refresh below then reconciles any changes. */
     void hydrateCachedRows().then(cached => {
       if (cancelled) return;
       if (cached && Array.isArray(cached) && cached.length > 0 && !rows) {
@@ -58,9 +58,7 @@ export function useChannelsSync({
       }
     });
 
-    /** Outer init timeout — if XMTP boot+sync hasn't finished in 30s AND we
-     *  have no cached rows to render, surface an error + recovery UI instead
-     *  of leaving the user staring at a spinner. Skipped when cache is warm. */
+    /** Outer init timeout — if XMTP boot+sync hasn't finished in 30s AND we have no cached rows to render, surface an error + recovery UI instead of leaving the user staring at a spinner. Skipped when cache is warm. */
     const initTimer = setTimeout(() => {
       if (cancelled || (rows && rows.length > 0)) return;
       setError('XMTP failed to initialise (timed out). Tap Reset below to wipe the local identity and start fresh.');
@@ -71,8 +69,7 @@ export function useChannelsSync({
         const client = await getOrCreateXmtpClient('production');
         const selfInboxId = client.inboxId;
 
-        /** Recount pending message requests ('unknown' consent). Cheap — only
-         *  reads the local conv list (synced separately by listRequestConvs). */
+        /** Recount pending message requests ('unknown' consent). Cheap — only reads the local conv list (synced separately by listRequestConvs). */
         const refreshRequestCount = async (): Promise<void> => {
           try {
             const reqs = await listRequestConvs();
@@ -80,30 +77,30 @@ export function useChannelsSync({
           } catch { /* swallow */ }
         };
 
-        /** Timestamp of the last completed full refresh. The live message/conv
+        /**
+         * Timestamp of the last completed full refresh. The live message/conv
          *  streams + the miss-coalescer already keep the list current with
          *  incremental deltas, so a full re-summarise (syncAllConversations +
          *  list + per-conv members()/primeInboxEthCache + summarize) on EVERY
-         *  AppState resume is largely redundant and expensive. We coalesce it. */
+         *  AppState resume is largely redundant and expensive. We coalesce it.
+         */
         let lastRefreshAt = 0;
         const REFRESH_THROTTLE_MS = 30_000;
 
-        /** Reusable refresh that any event-driven trigger (app-open sync,
-         *  AppState resume, pull-to-refresh, push, unknown-conv stream hit) can
-         *  call to re-sync + re-summarise the full list. */
+        /** Reusable refresh that any event-driven trigger (app-open sync, AppState resume, pull-to-refresh, push, unknown-conv stream hit) can call to re-sync + re-summarise the full list. */
         const refresh = async (): Promise<void> => {
           if (cancelled) return;
           try {
             await client.conversations.syncAllConversations(['allowed', 'unknown']);
-            /** Main inbox = only ACCEPTED convs ('allowed'). The 'unknown'
-             *  convs are pending message requests, surfaced separately via the
-             *  Requests entry (count refreshed alongside). */
+            /** Main inbox = only ACCEPTED convs ('allowed'). The 'unknown' convs are pending message requests, surfaced separately via the Requests entry (count refreshed alongside). */
             const convs = await client.conversations.list(undefined, undefined, ['allowed']);
             void refreshRequestCount();
-            /** #3 BATCH inbox resolution: collect every member inbox id across all
+            /**
+             * #3 BATCH inbox resolution: collect every member inbox id across all
              *  convs in parallel, then resolve the uncached ones in ONE
              *  inboxStates(true, [...]) call so per-row summarise hits the cache
-             *  (kills the per-row N+1 GetIdentityUpdates that caused the outage). */
+             *  (kills the per-row N+1 GetIdentityUpdates that caused the outage).
+             */
             try {
               const memberLists = await Promise.all(convs.map(c =>
                 (c as unknown as { members: () => Promise<{ inboxId: string }[]> })
@@ -120,10 +117,12 @@ export function useChannelsSync({
           } catch { /* swallow — event-driven triggers re-run refresh */ }
         };
 
-        /** Throttled refresh for the noisy resume/consent triggers: skip the full
+        /**
+         * Throttled refresh for the noisy resume/consent triggers: skip the full
          *  re-summarise if one ran within the last ~30s, since the live streams +
          *  miss-coalescer already cover the deltas. Bounded triggers (cold start,
-         *  pull-to-refresh) call `refresh` directly and bypass this. */
+         *  pull-to-refresh) call `refresh` directly and bypass this.
+         */
         const refreshThrottled = async (): Promise<void> => {
           if (cancelled) return;
           if (Date.now() - lastRefreshAt < REFRESH_THROTTLE_MS) return;
@@ -133,18 +132,14 @@ export function useChannelsSync({
 
         await refresh();
 
-        /** Subscribe to newly-created conversations so groups + DMs created
-         *  while the tab is mounted show up without a manual refresh. */
+        /** Subscribe to newly-created conversations so groups + DMs created while the tab is mounted show up without a manual refresh. */
         try {
-          /** RN xmtp types `stream` as `Promise<void>`, but at runtime it resolves
-           *  to an unsubscribe function — capture it through an unknown-returning
-           *  view of the method so we can stash the canceller. */
+          /** RN xmtp types `stream` as `Promise<void>`, but at runtime it resolves to an unsubscribe function — capture it through an unknown-returning view of the method so we can stash the canceller. */
           const streamFn = client.conversations.stream.bind(client.conversations) as
             (cb: (conv: Conversation | null) => Promise<void>) => Promise<unknown>;
           const streamResult: unknown = await streamFn(async (conv) => {
             if (cancelled || !conv) return;
-            /** A streamed conv we haven't accepted yet ('unknown') is a message
-             *  request — surface it in the Requests count, not the inbox. */
+            /** A streamed conv we haven't accepted yet ('unknown') is a message request — surface it in the Requests count, not the inbox. */
             const cs = await (conv as unknown as { consentState: () => Promise<string> })
               .consentState().catch(() => 'allowed');
             if (cs !== 'allowed') { void refreshRequestCount(); return; }
@@ -159,13 +154,15 @@ export function useChannelsSync({
             : null;
         } catch { /* stream init failed — AppState resume re-runs refresh */ }
 
-        /** Subscribe to every new message across all convs so the per-row
+        /**
+         * Subscribe to every new message across all convs so the per-row
          *  lastTs + lastPreview reflect activity in real time.
          *  #1 ONE STREAM: subscribe to the single module-level
          *  streamAllMessages fan-out in lib/xmtp instead of starting our own
          *  (every inbound used to be decoded twice — here + the conv-view feed).
          *  The reducer that turns a message into a row update lives in
-         *  HomeScreen.stream.ts. */
+         *  HomeScreen.stream.ts.
+         */
         try {
           cancelMsgStream = subscribeAllMessages(makeMsgStreamHandler({
             isCancelled: () => cancelled,
@@ -175,14 +172,11 @@ export function useChannelsSync({
           }));
         } catch { /* message stream init failed — preview will lag */ }
 
-        /** Pull synced preferences from the network on init. Read/unread is now
-         *  per-device (lastReadNs), so there's no consent stream to subscribe to. */
+        /** Pull synced preferences from the network on init. Read/unread is now per-device (lastReadNs), so there's no consent stream to subscribe to. */
         await syncPreferences();
         await syncConsent();
 
-        /** Live-reconcile when a conv is accepted/blocked (here or on another
-         *  device): re-pull consent, then re-summarise the inbox + recount
-         *  requests so an accepted request appears + the badge drops. */
+        /** Live-reconcile when a conv is accepted/blocked (here or on another device): re-pull consent, then re-summarise the inbox + recount requests so an accepted request appears + the badge drops. */
         try {
           cancelConsentStream = streamConvConsent(() => {
             void (async (): Promise<void> => {
@@ -193,8 +187,7 @@ export function useChannelsSync({
           });
         } catch { /* stream init failed — AppState resume re-runs refresh */ }
 
-        /** Foreground resume — the native streams often die while the app is
-         *  backgrounded; re-sync on every active transition. */
+        /** Foreground resume — the native streams often die while the app is backgrounded; re-sync on every active transition. */
         appStateSub = AppState.addEventListener('change', (state) => {
           if (state === 'active') {
             void syncPreferences(); void syncConsent();
@@ -204,12 +197,14 @@ export function useChannelsSync({
           }
         });
       } catch (e) {
-        /** NoAccountError is NOT a failure: it just means this effect ran under
+        /**
+         * NoAccountError is NOT a failure: it just means this effect ran under
          *  the onboarding overlay before the account was created. Swallow it and
          *  wait for the account-epoch bump (onboarding's bringMessagingOnline)
          *  to re-run this effect against the warm client. Surfacing it would show
          *  the scary "onboarding not completed" Reset screen to a user who just
-         *  finished onboarding. */
+         *  finished onboarding.
+         */
         if (cancelled || e instanceof NoAccountError) { clearTimeout(initTimer); return; }
         if (!rows || rows.length === 0) setError((e as Error).message);
       }
@@ -224,7 +219,6 @@ export function useChannelsSync({
       if (cancelConsentStream) try { cancelConsentStream(); } catch { /* ignore */ }
       if (appStateSub) try { appStateSub.remove(); } catch { /* ignore */ }
     };
-    /** Re-runs only on account switch (deps intentionally partial —
-     *  react-hooks/exhaustive-deps not enabled). */
+    /** Re-runs only on account switch (deps intentionally partial — react-hooks/exhaustive-deps not enabled). */
   }, [accountEpoch]);
 }

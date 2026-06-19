@@ -1,15 +1,8 @@
-/** Archived conversations - convs the user hid from the main inbox via the
- *  channel menu's Archive action. Archive state is DEVICE-LOCAL (lib/archived.ts):
- *  XMTP consent only has allowed/denied/unknown, and `denied` already means
- *  "blocked" - reusing it for archive would conflate archive with block, so we
- *  keep a separate reversible local set. (Cross-device sync would need a
- *  dedicated archive flag later.)
- *
- *  Rows reuse the channels-list cache (channelsCache) filtered to the archived
- *  set, so titles/avatars/previews are already resolved. Each row is the shared
- *  ChannelRow (identical to the inbox); tapping it opens the conversation, where
- *  the overflow menu offers Unarchive. The list + the channels tab reconcile
- *  live via subscribeArchived. */
+/**
+ * @file Archived-conversations screen listing convs the user hid from the inbox
+ * via the channel menu, using the device-local archive set (lib/archived.ts)
+ * and reusing the channels-list cache and shared ChannelRow.
+ */
 
 import { useCallback, useEffect, useState } from 'react';
 

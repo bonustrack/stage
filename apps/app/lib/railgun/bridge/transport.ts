@@ -1,4 +1,6 @@
-/** RN-side RAILGUN bridge TRANSPORT core. Typed RPC over the in-process
+/** @file RN-side RAILGUN bridge transport core: typed `rawCall`/`bridgeCall` RPC primitives over the in-process nodejs-mobile channel, kept in a leaf module to break the index→sdk→index cycle. */
+/**
+ * RN-side RAILGUN bridge TRANSPORT core. Typed RPC over the in-process
  *  nodejs-mobile channel (each call gets a monotonic id the Node side echoes on
  *  the reply).
  *
@@ -12,7 +14,8 @@
  *  Available() false, calls reject friendly, nothing throws on import, bundler
  *  never resolves the native module. SECURITY: encryptionKey + mnemonic derived
  *  on RN (deriveKeys.ts), passed over the in-process channel only (no network);
- *  the EOA private key NEVER leaves RN (txs signed on RN, populated tx passed in). */
+ *  the EOA private key NEVER leaves RN (txs signed on RN, populated tx passed in).
+ */
 import { isNodejsMobilePresent, loadNodejsMobile, type NodejsChannel } from './nodejsMobile';
 import type { BridgeCall, BridgeEvent } from './protocol';
 import { attachRawProbe, fmtPayload, status } from './diagnostics';
@@ -29,15 +32,13 @@ const REPLY_EVENT = 'rg:reply';
 const READY_EVENT = 'event:message';
 /** handshake 'hello' reply resolvers by id; checked before pending (bypass gate). */
 const readinessResolvers = new Map<number, () => void>();
-/** Tight so a genuine failure surfaces fast (the ready gate removes the old need
- *  for 120s of dropped-first-request headroom). */
+/** Tight so a genuine failure surfaces fast (the ready gate removes the old need for 120s of dropped-first-request headroom). */
 const CALL_TIMEOUT_MS = 15_000;
 export const ENGINE_INIT_TIMEOUT_MS = 90_000; // RPC providers + native prover
 
 let started = false;
 let nextId = 1;
-/** Resolves once the host is ready (boot event OR hello reply), rejects on the
- *  handshake timeout; rawCall gates posts on it. */
+/** Resolves once the host is ready (boot event OR hello reply), rejects on the handshake timeout; rawCall gates posts on it. */
 let readyPromise: Promise<void> | null = null;
 const pending = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void; timer: ReturnType<typeof setTimeout> }>();
 
@@ -46,12 +47,12 @@ export function isBridgeAvailable(): boolean {
   return isNodejsMobilePresent();
 }
 
+/** Channel helper. */
 function channel(): NodejsChannel | null {
   return loadNodejsMobile()?.channel ?? null;
 }
 
-/** Boot the Node process + wire listeners. Idempotent (started guard); no-op
- *  false when absent. Safe per wallet open. */
+/** Boot the Node process + wire listeners. Idempotent (started guard); no-op false when absent. Safe per wallet open. */
 function startBridge(): boolean {
   if (started) return true;
   const mod = loadNodejsMobile();
@@ -144,6 +145,7 @@ export function bridgeListen(
 ): () => void {
   const ch = channel();
   if (!ch) return () => undefined;
+  /** Handler helper. */
   const handler = (...args: unknown[]): void => { cb(args[0]); };
   ch.addListener(event, handler);
   return () => ch.removeListener?.(event, handler);

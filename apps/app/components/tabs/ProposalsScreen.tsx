@@ -1,15 +1,7 @@
-/** Proposals screen - works through pending polls across all non-archived chats,
- *  oldest-first, one at a time.
- *
- *  A "pending proposal" is a channel whose LATEST message is a poll (see
- *  Proposals.queue). The screen shows ONE proposal card at a time
- *  (Proposals.card) with vote/skip/open + a composer; acting on it advances to
- *  the next. When the queue is exhausted it shows a minimal empty state.
- *
- *  Opened as a pushed/stacked route from the Home banner (app/proposals.tsx), so
- *  it owns a back-header topnav matching the other pushed pages (Menu / Accounts
- *  / Search). The pending count + queue come from the shared proposalsStore via
- *  useProposals, so this screen and the Home banner stay in sync. */
+/**
+ * @file Proposals screen that works through pending poll proposals oldest-first, one card at a time, across all non-archived chats.
+ *  Opened as a pushed route from the Home banner; pending count + queue come from the shared proposalsStore via useProposals.
+ */
 
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Icon } from '@metro-labs/kit/icon';

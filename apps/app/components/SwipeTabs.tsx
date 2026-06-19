@@ -1,30 +1,8 @@
-/** Horizontal pager for the three first-level `(tabs)` pages
- *  (Channels → Contacts → Wallet).
- *
- *  TRUE finger-follow paging: all three tab bodies are mounted ONCE, side-by-side
- *  in a row of width `3 × screenWidth`. A reanimated shared value `tx` holds the
- *  strip's translateX = `-index*W + drag`, so during a horizontal drag the
- *  neighbour page slides in tracking the finger (like swipe-back). On release the
- *  strip springs to the nearest page; if the page changed we tell expo-router via
- *  `router.navigate`, which keeps the URL correct and the bottom tab-bar highlight
- *  in sync (the `Tabs` navigator stays the source of truth for routing).
- *
- *  Index ↔ tab-bar ↔ router sync:
- *   - The CURRENT index is derived from the focused route (`usePathname`), so a
- *     deep link to `/wallet` or a tab-bar tap lands the pager on the right page
- *     (we animate `tx` to it).
- *   - On a swipe settle we fire `router.navigate` to the new tab → the URL and the
- *     bottom tab-bar active highlight update.
- *
- *  Gesture discrimination mirrors swipe-to-reply: the Pan only ARMS on a clearly
- *  horizontal drag (`activeOffsetX([-15,15])`) and FAILS the moment the finger
- *  moves vertically (`failOffsetY([-12,12])`) — so the Home FlatList and the
- *  Wallet/Settings ScrollViews keep scrolling vertically. Edges rubber-band (no
- *  wrap). Scoped to `(tabs)` only (mounted from `(tabs)/_layout.tsx`), so the
- *  native-stack swipe-back and the chat swipe-to-reply are untouched.
- *
- *  Pure JS (reanimated + gesture-handler, both already installed) → no new native
- *  module; hot-reloads in the existing dev client. */
+/**
+ * @file Finger-follow horizontal pager for the three first-level (tabs) pages
+ *  (Channels/Contacts/Wallet), mounting all bodies side-by-side and syncing the
+ *  settled page back to expo-router so the URL and bottom tab-bar stay in sync.
+ */
 
 import { useEffect, useRef } from 'react';
 import { useWindowDimensions } from 'react-native';
@@ -41,8 +19,7 @@ import {
   indexOfPathname,
 } from './SwipeTabs.config';
 
-/** Single pager host. Rendered once from `(tabs)/_layout.tsx` as the scene for
- *  every tab route; the route files themselves are empty placeholders. */
+/** Single pager host. Rendered once from `(tabs)/_layout.tsx` as the scene for every tab route; the route files themselves are empty placeholders. */
 export function TabsPager(): React.ReactElement {
   const router = useRouter();
   const pathname = usePathname();
@@ -50,37 +27,37 @@ export function TabsPager(): React.ReactElement {
 
   const routeIndex = indexOfPathname(pathname);
 
-  /** Stable ref to the pager Pan, handed down to every page so its primary
+  /**
+   * Stable ref to the pager Pan, handed down to every page so its primary
    *  scrollable declares a SIMULTANEOUS relation with this Pan. With the relation
    *  explicit, RNGH stops heuristically arbitrating the two: the Pan's own
    *  direction gate (`activeOffsetX` arms it, `failOffsetY` kills it) deterministically
    *  decides who drives — horizontal → Pan switches tabs (even when the drag starts
-   *  over the list / after scroll momentum), vertical → the scrollable scrolls. */
+   *  over the list / after scroll momentum), vertical → the scrollable scrolls.
+   */
   const panRef = useRef<GestureType | undefined>(undefined);
 
   /** `tx` = strip translateX. Settled position is `-index*W`. */
   const tx = useSharedValue(-routeIndex * width);
-  /** Index the pager is currently resting on (drives gesture clamping + the
-   *  navigate on settle). Kept on the UI thread as a shared value, and is the
-   *  SINGLE SOURCE OF TRUTH for `tx` during + after a swipe. */
+  /** Index the pager is currently resting on (drives gesture clamping + the navigate on settle). Kept on the UI thread as a shared value, and is the SINGLE SOURCE OF TRUTH for `tx` during + after a swipe. */
   const index = useSharedValue(routeIndex);
-  /** Set by the gesture when IT initiated the route change, so the pathname
+  /**
+   * Set by the gesture when IT initiated the route change, so the pathname
    *  re-sync effect below knows the strip is already where it should be and
    *  must NOT re-anchor `tx` (which would kill the in-flight settle spring and
-   *  make the next swipe feel like it "needs multiple tries"). */
+   *  make the next swipe feel like it "needs multiple tries").
+   */
   const gestureDrivenTo = useSharedValue<number | null>(null);
-  /** Last width we anchored to — only re-anchor on a genuine width change
-   *  (rotation), never on a bare pathname update. */
+  /** Last width we anchored to — only re-anchor on a genuine width change (rotation), never on a bare pathname update. */
   const lastWidth = useSharedValue(width);
 
+  /** Navigate helper. */
   const navigate = (i: number): void => {
     const name = TAB_ORDER[i];
     if (name) router.navigate(TAB_HREF[name]);
   };
 
-  /** Keep the pager in sync when the route changes from OUTSIDE a swipe —
-   *  tab-bar tap or a deep link. Animate the strip to the new page. Crucially
-   *  this must be a no-op when the gesture itself drove the change. */
+  /** Keep the pager in sync when the route changes from OUTSIDE a swipe — tab-bar tap or a deep link. Animate the strip to the new page. Crucially this must be a no-op when the gesture itself drove the change. */
   useEffect(() => {
     const widthChanged = lastWidth.value !== width;
     lastWidth.value = width;
@@ -105,22 +82,16 @@ export function TabsPager(): React.ReactElement {
   }, [routeIndex, width]);
 
   const pan = Gesture.Pan()
-    /** Give the Pan a ref so each page's scrollable can name it in
-     *  `simultaneousHandlers` — the explicit relation that removes the
-     *  non-deterministic race with the inner scroll. */
+    /** Give the Pan a ref so each page's scrollable can name it in `simultaneousHandlers` — the explicit relation that removes the non-deterministic race with the inner scroll. */
     .withRef(panRef)
-    /** Arm only on a clearly-horizontal drag; vertical-first wins → scroll.
-     *  Lower X threshold than the Y fail-band so a horizontal-first flick arms
-     *  reliably on the FIRST try, while any vertical intent still scrolls. */
+    /** Arm only on a clearly-horizontal drag; vertical-first wins → scroll. Lower X threshold than the Y fail-band so a horizontal-first flick arms reliably on the FIRST try, while any vertical intent still scrolls. */
     .activeOffsetX([-10, 10])
     .failOffsetY([-14, 14])
     .onUpdate((e) => {
       'worklet';
       const base = -index.value * width;
       let drag = e.translationX;
-      /** HARD-LOCK the leading edge: on the first tab (Home) a rightward drag has
-       *  nowhere to go, so clamp it to zero — no rubber-band, no overscroll, the
-       *  strip cannot move right of the first page even slightly. */
+      /** HARD-LOCK the leading edge: on the first tab (Home) a rightward drag has nowhere to go, so clamp it to zero — no rubber-band, no overscroll, the strip cannot move right of the first page even slightly. */
       if (index.value === 0 && drag > 0) drag = 0;
       /** Rubber-band only at the trailing edge (no page after the last). */
       else if (index.value === TAB_ORDER.length - 1 && drag < 0) drag *= 0.25;

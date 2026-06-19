@@ -1,5 +1,4 @@
-/** Group-detail sub-components — member row + add-member / overflow modals.
- *  Extracted from group/[convId] for lint line-budget. Rendering identical. */
+/** @file Group-detail sub-components: the member row plus the add-member and overflow modals. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
 import { fontSize } from '@metro-labs/kit/tokens';

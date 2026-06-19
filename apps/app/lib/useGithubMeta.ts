@@ -1,8 +1,7 @@
-/** TanStack Query hook fetching public GitHub metadata for a repo / PR / issue
- *  link so a message bubble can render a preview card. Uses the unauthenticated
- *  GitHub REST API (60 req/hr/IP) — so results are cached HARD (long staleTime +
- *  no refetch) keyed on the URL. On any failure (404 private, 403 rate-limit,
- *  network) the queryFn returns null and the caller renders no card. */
+/**
+ * @file TanStack Query hook fetching public GitHub metadata for a repo/PR/issue link so a message bubble can render a preview card.
+ *  Uses the unauthenticated REST API with hard URL-keyed caching, returning null on any failure so the caller renders no card.
+ */
 
 import { useQuery } from '@tanstack/react-query';
 import type { GithubRef } from './githubDetect';
@@ -23,6 +22,7 @@ export interface GithubMeta {
   deletions?: number;
 }
 
+/** Get the Github Meta. */
 async function fetchGithubMeta(ref: GithubRef): Promise<GithubMeta | null> {
   const base = `https://api.github.com/repos/${ref.owner}/${ref.repo}`;
   const path = ref.kind === 'pull'

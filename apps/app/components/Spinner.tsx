@@ -1,6 +1,7 @@
-/** Loading spinner mirroring @snapshot-labs/tune's UiLoading (the sx-monorepo
- *  spinner) so the mobile app matches the web: a rotating comet — a
- *  gradient-stroked circle + a solid leading arc. */
+/**
+ * @file Animated circular loading spinner (a rotating gradient-stroked comet)
+ *  that mirrors @snapshot-labs/tune's UiLoading so the app matches the web.
+ */
 
 import { useEffect, useRef } from 'react';
 import { Animated, Easing } from 'react-native';

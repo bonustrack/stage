@@ -1,5 +1,7 @@
-/** Channels-tab state: cached rows, search, live stream, row context menu.
- *  Extracted from `pages/Channels.vue` so the SFC stays under the lint cap. */
+/**
+ * @file Composable backing the Channels tab: cached rows, search, live streaming, and the row context menu.
+ */
+/** Channels-tab state: cached rows, search, live stream, row context menu. Extracted from `pages/Channels.vue` so the SFC stays under the lint cap. */
 
 import { ref, computed, watchEffect, onMounted, onUnmounted, type ComputedRef, type Ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -38,8 +40,7 @@ export interface ChannelsState {
 /** Hook providing the Channels tab state: cached rows, search, live stream, and row context menu. */
 export function useChannels(): ChannelsState {
   const router = useRouter();
-  /** Embedded (iframed) = widget. Hides the search topnav + drops the Ask
-   *  pill to the very bottom (no tab-bar gap to reserve). */
+  /** Embedded (iframed) = widget. Hides the search topnav + drops the Ask pill to the very bottom (no tab-bar gap to reserve). */
   const embedded = runningInIframe();
   const rows = ref<Row[] | null>(hydrateCachedRows() as Row[] | null);
   const error = ref<string>('');
@@ -48,10 +49,10 @@ export function useChannels(): ChannelsState {
   const refreshing = ref(false);
   const { searchResolution, openSearchedProfile } = useSearchResolution(query, router);
 
-  /** Sync rows ref with the shared cache so other surfaces (markConvRead in
-   *  XmtpConversation) propagate changes here without a refetch. */
+  /** Sync rows ref with the shared cache so other surfaces (markConvRead in XmtpConversation) propagate changes here without a refetch. */
   watchEffect(() => { rows.value = cachedRows.value as Row[] | null; });
 
+  /** Handle the Ask Press. */
   async function onAskPress(): Promise<void> {
     if (creatingAsk.value) return;
     creatingAsk.value = true;
@@ -77,6 +78,7 @@ export function useChannels(): ChannelsState {
 
   let stream: ChannelStreamHandles | null = null;
 
+  /** Refresh From Network. */
   async function refreshFromNetwork(): Promise<void> {
     if (refreshing.value || !stream) return;
     refreshing.value = true;
@@ -94,11 +96,12 @@ export function useChannels(): ChannelsState {
 
   onUnmounted(() => { void stream?.stop(); stream = null; });
 
+  /** Open helper. */
   function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
 
-  /** Per-row context menu (right-click on web) with the Mark read/unread toggle.
-   *  Positioned at the cursor; dismissed on outside click / scroll / Escape. */
+  /** Per-row context menu (right-click on web) with the Mark read/unread toggle. Positioned at the cursor; dismissed on outside click / scroll / Escape. */
   const rowMenu = ref<RowMenu | null>(null);
+  /** Open Row Menu. */
   function openRowMenu(r: Row, ev: MouseEvent): void {
     /** Clamp X so the ~200px menu never spills off the right edge. */
     const maxX = (typeof window !== 'undefined' ? window.innerWidth : 9999) - 200;
@@ -110,7 +113,9 @@ export function useChannels(): ChannelsState {
       y: ev.clientY,
     };
   }
+  /** Close Row Menu. */
   function closeRowMenu(): void { rowMenu.value = null; }
+  /** Toggle Row Unread. */
   function toggleRowUnread(): void {
     const m = rowMenu.value;
     if (!m) return;
@@ -119,10 +124,9 @@ export function useChannels(): ChannelsState {
     else markConvUnread(m.convId);
   }
 
-  /** Embedded widget opens on the Intercom-style "Ask a question" home; the
-   *  standalone site goes straight to the channel list (mobile-app UX) and uses
-   *  the app's bottom TabBar (Channels/Contacts/Profile/Settings) for nav. */
+  /** Embedded widget opens on the Intercom-style "Ask a question" home; the standalone site goes straight to the channel list (mobile-app UX) and uses the app's bottom TabBar (Channels/Contacts/Profile/Settings) for nav. */
   const view = ref<'home' | 'messages'>(embedded ? 'home' : 'messages');
+  /** Open Docs. */
   function openDocs(): void { window.open('https://docs.snapshot.box', '_blank', 'noopener,noreferrer'); }
   const cardClass = 'w-full max-w-sm flex items-center gap-3 px-4 py-4 rounded-2xl text-left '
     + 'border border-metro-border-light dark:border-metro-border-dark '

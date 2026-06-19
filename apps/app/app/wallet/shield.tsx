@@ -1,9 +1,8 @@
-/** Wallet → Shield token (public → private).
- *
- *  Deposits a PUBLIC token into the user's OWN 0zk shielded balance. Recipient
- *  is ALWAYS the user's own 0zk address (locked). Token/network pre-selected via
- *  query params from the token detail page's Shield button. Runs the existing
- *  shieldToPrivate() flow — this page is just the focused shell around ShieldForm. */
+/**
+ * @file Wallet shield-token screen depositing a public token into the user's
+ * own 0zk shielded balance via shieldToPrivate; a focused shell around
+ * ShieldFlowForm with the recipient locked to the user's own 0zk address.
+ */
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';

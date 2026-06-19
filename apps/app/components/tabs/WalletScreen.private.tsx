@@ -1,13 +1,6 @@
-/** Private (Railgun-shielded) tab for the Wallet - ADDRESS + ACTIONS only.
- *
- *  The shielded token BALANCES are not rendered here anymore; they're merged
- *  into the Tokens tab's flat list (public + Private-badged rows). This view
- *  shows the cached 0zk address (copyable, paints instantly), the live
- *  pending-proof chips for in-flight shield/send/unshield actions, and the DEV
- *  bridge ping probe. It still mounts usePrivateWallet(autoStart:true) so the
- *  engine inits + scans on open - that populates the shared snapshot the Tokens
- *  tab reads. On a build with neither the native prover nor the Node bridge it
- *  shows a friendly "coming soon" rather than erroring. */
+/**
+ * @file Private (Railgun-shielded) Wallet tab view rendering the cached 0zk address, live pending-proof chips, and the dev bridge probe, while booting usePrivateWallet so the shared snapshot the Tokens tab reads gets populated.
+ */
 import { Pressable } from '@metro-labs/kit/pressable';
 
 import * as Clipboard from 'expo-clipboard';
@@ -21,6 +14,7 @@ import { useDebugConsole } from '../../lib/railgun/debugConsole';
 import { BridgePingProbe } from './WalletScreen.private.ping';
 import { RailgunDebugPanel } from './WalletScreen.private.debug';
 
+/** Short0zk helper. */
 const short0zk = (a: string): string => (a.length> 14 ? `${a.slice(0, 8)}…${a.slice(-4)}` : a);
 
 /** Wallet view showing the user's private (Railgun) balances and actions. */

@@ -1,4 +1,6 @@
-/** PRIVATE SEND orchestration — move funds from the user's OWN 0zk shielded
+/** @file Private SEND orchestration: composes the bridge primitives (gas estimate, Groth16 transfer proof, populate) plus a viem EOA sign/broadcast to move funds 0zk->0zk, reporting via the pending-action store. */
+/**
+ * PRIVATE SEND orchestration — move funds from the user's OWN 0zk shielded
  *  balance to ANOTHER 0zk address (private→private). Pure RN composition over the
  *  bridge primitives + a viem sign/broadcast with the in-app EOA key (the EOA
  *  self-broadcasts + pays gas; the recipient receives shielded).
@@ -13,7 +15,8 @@
  *  errors flow through the pending-action store (cache.ts) so the Send page chip
  *  reflects proving → broadcasting → confirmed/failed. The private key is never
  *  logged. Sepolia-first. Mirrors unshield.ts — the only differences are the
- *  recipient is a 0zk address (required) and the transfer primitives. */
+ *  recipient is a 0zk address (required) and the transfer primitives.
+ */
 import { parseUnits, type Hex } from 'viem';
 import { getActiveAccountId } from '../accounts';
 import { engineInit, walletInfo } from './bridge';
@@ -45,6 +48,7 @@ export interface SendResult {
   recipient: string;
 }
 
+/** Token Meta. */
 function tokenMeta(chainId: number, symbol: string): TokenMeta {
   const net = chainId === 1 ? 'mainnet' : 'sepolia';
   const meta = RAILGUN_TOKENS[net].find(t => t.symbol === symbol);
@@ -52,9 +56,7 @@ function tokenMeta(chainId: number, symbol: string): TokenMeta {
   return meta;
 }
 
-/** Run the full private transfer. Resolves with the broadcast tx hash; the
- *  pending chip is driven through `proving` (estimate + Groth16) →
- *  `broadcasting` → `confirmed`/`failed`. The optimistic delta is NEGATIVE. */
+/** Run the full private transfer. Resolves with the broadcast tx hash; the pending chip is driven through `proving` (estimate + Groth16) → `broadcasting` → `confirmed`/`failed`. The optimistic delta is NEGATIVE. */
 export async function sendShielded(params: SendParams): Promise<SendResult> {
   const accountId = await getActiveAccountId();
   if (!accountId) throw new Error('No active account');

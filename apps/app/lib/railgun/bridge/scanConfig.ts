@@ -1,4 +1,6 @@
-/** Runtime scan + RPC configuration passed from RN into the embedded engine at
+/** @file RN-owned runtime scan + RPC config (per-chain enable, RPC endpoints, batch sizing, stall timeout) handed to the embedded RAILGUN engine at engineInit. */
+/**
+ * Runtime scan + RPC configuration passed from RN into the embedded engine at
  *  engineInit time (Phase 1).
  *
  *  These values used to be HARDCODED inside nodejs-assets/nodejs-project/engine.js
@@ -10,7 +12,8 @@
  *  IMPORTANT: changing these does NOT need an APK rebuild as long as engine.js
  *  (which reads them) is already in the installed binary - the values travel over
  *  the in-process channel at init. The DEFAULTS below intentionally mirror the
- *  current engine.js constants 1:1 so Phase 1 ships with identical behavior. */
+ *  current engine.js constants 1:1 so Phase 1 ships with identical behavior.
+ */
 import type { RailgunNet } from './protocol';
 
 /** Per-chain scan policy. `enabled` gates BOTH provider load and scanning. */
@@ -22,8 +25,7 @@ interface ChainScanConfig {
   rpcUrls: string[];
 }
 
-/** Full runtime scan config handed to engineInit. All optional on the wire; the
- *  engine applies its baked-in defaults per missing field. */
+/** Full runtime scan config handed to engineInit. All optional on the wire; the engine applies its baked-in defaults per missing field. */
 export interface ScanConfig {
   chains: ChainScanConfig[];
   /** ethers batchMaxCount. 1 = disable JSON-RPC batching (reliable on testnets). */
@@ -38,8 +40,7 @@ export interface ScanConfig {
   heartbeatIntervalMs: number;
 }
 
-/** dRPC Sepolia (PRIMARY, reliable eth_getLogs) + public fallbacks. Mirrors
- *  engine.js RPC.sepolia and apps/app/lib/railgun/networks.ts. */
+/** dRPC Sepolia (PRIMARY, reliable eth_getLogs) + public fallbacks. Mirrors engine.js RPC.sepolia and apps/app/lib/railgun/networks.ts. */
 const SEPOLIA_RPCS = [
   'https://lb.drpc.org/ogrpc?network=sepolia&dkey=AqrKBDkAZkycokrrHI5M--EgA5HAYAQR8ZoW7sA_udJz',
   'https://ethereum-sepolia-rpc.publicnode.com',
@@ -48,9 +49,7 @@ const SEPOLIA_RPCS = [
 
 const MAINNET_RPCS = ['https://ethereum-rpc.publicnode.com', 'https://eth.drpc.org'];
 
-/** Canonical default config. Sepolia ONLY is scan-enabled (mainnet's getLogs
- *  failures grab the global rescan lock and wedge Sepolia at 50% - see engine.js
- *  SCAN_CHAIN_IDS doc). Identical to the pre-Phase-1 hardcoded behavior. */
+/** Canonical default config. Sepolia ONLY is scan-enabled (mainnet's getLogs failures grab the global rescan lock and wedge Sepolia at 50% - see engine.js SCAN_CHAIN_IDS doc). Identical to the pre-Phase-1 hardcoded behavior. */
 export const DEFAULT_SCAN_CONFIG: ScanConfig = {
   chains: [
     { net: 'mainnet', chainId: 1, enabled: false, rpcUrls: MAINNET_RPCS },

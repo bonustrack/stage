@@ -1,16 +1,7 @@
-/** Railgun private-wallet API — the surface the UI calls.
- *
- *  INSTANT-feel contract (unchanged):
- *    - getCachedSnapshot(): synchronous warm disk copy → zero-spinner open.
- *    - refreshSnapshot(): background refresh; derives the REAL 0zk address from
- *      the active account + pulls shielded balances, writing through the cache.
- *    - runAction(): optimistic — records the pending delta IMMEDIATELY, then
- *      proves + broadcasts in the background via the real SDK, moving the action
- *      through proving → broadcasting → confirmed/failed.
- *
- *  Real engine/wallet/tx work is delegated to the SDK modules (sdkEngine /
- *  sdkWallet / sdkTx); when the native prover isn't in this build these resolve
- *  to safe empty/unavailable states (see native.ts). */
+/**
+ * @file Railgun private-wallet API — the surface the UI calls, with an instant-feel contract (synchronous cached snapshot, background refresh, and optimistic runAction proving → broadcasting → confirmed/failed).
+ *  Real engine/wallet/tx work is delegated to the SDK modules; when the native prover isn't in this build they resolve to safe empty/unavailable states.
+ */
 import { isRailgunAvailable } from './native';
 import { isBridgeAvailable } from './bridge';
 import { bridgeRefreshSnapshot } from './bridgeWallet';
@@ -31,14 +22,16 @@ export async function openPrivateWallet(accountId: string): Promise<PrivateSnaps
   return warm;
 }
 
-/** Background refresh: resolve the real 0zk address + shielded balances and
+/**
+ * Background refresh: resolve the real 0zk address + shielded balances and
  *  persist them so the tab shows the user's actual private wallet. Never throws.
  *
  *  PREFERRED PATH (device): the embedded Node host — the RAILGUN engine only
  *  inits there, so it's the source of truth for both the 0zk address and the
  *  shielded balances (bridgeRefreshSnapshot). FALLBACK: the Hermes direct-SDK
  *  path, which can derive the 0zk address but can't init the engine on-device,
- *  so it's address-only and preserves any cached balances. */
+ *  so it's address-only and preserves any cached balances.
+ */
 export async function refreshSnapshot(accountId: string): Promise<void> {
   const prev = getCachedSnapshot(accountId);
   try {

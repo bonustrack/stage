@@ -1,4 +1,8 @@
-/** Boundary validation helper. Every external/untrusted payload (XMTP codec
+/**
+ * @file Boundary validation helpers (parseOrThrow/parseOrNull) that log zod schema drift instead of silently mis-typing payloads.
+ */
+/**
+ * Boundary validation helper. Every external/untrusted payload (XMTP codec
  *  wire bodies, REST API responses) crosses into our typed world through here so
  *  a schema drift is LOGGED, never silently swallowed into a wrong-but-typed
  *  value via an `as`-cast.
@@ -10,7 +14,8 @@
  *                        returns [] on a bad page). Logs and returns null so the
  *                        drift is visible in logs instead of disappearing.
  *
- *  ZERO @xmtp / react-native / expo imports - pure zod + console. */
+ *  ZERO @xmtp / react-native / expo imports - pure zod + console.
+ */
 
 import type { ZodType } from 'zod';
 
@@ -26,8 +31,7 @@ function summarize(error: unknown): string {
     .join('; ');
 }
 
-/** Validate `data` against `schema`. On failure: log a structured warning and
- *  rethrow, so the caller's existing throw-path fires but the cause is visible. */
+/** Validate `data` against `schema`. On failure: log a structured warning and rethrow, so the caller's existing throw-path fires but the cause is visible. */
 export function parseOrThrow<T>(where: BoundaryName, schema: ZodType<T>, data: unknown): T {
   const r = schema.safeParse(data);
   if (r.success) return r.data;
@@ -35,9 +39,7 @@ export function parseOrThrow<T>(where: BoundaryName, schema: ZodType<T>, data: u
   throw new Error(`[boundary:${where}] invalid payload: ${summarize(r.error)}`);
 }
 
-/** Validate `data` against `schema`. On failure: log a structured warning and
- *  return null, so a graceful-degradation caller can fall back WITHOUT the drift
- *  vanishing silently (the whole point of this layer). */
+/** Validate `data` against `schema`. On failure: log a structured warning and return null, so a graceful-degradation caller can fall back WITHOUT the drift vanishing silently (the whole point of this layer). */
 export function parseOrNull<T>(where: BoundaryName, schema: ZodType<T>, data: unknown): T | null {
   const r = schema.safeParse(data);
   if (r.success) return r.data;

@@ -1,3 +1,4 @@
+/** @file Sanctioned single re-export point for raw React Native View/Text/TextInput, the one location where the import ban on raw RN primitives is intentionally turned off. */
 // Sanctioned raw-React-Native re-exports.
 //
 // The lint rules ban importing the raw RN primitives (View / Text / TextInput)

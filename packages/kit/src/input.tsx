@@ -1,13 +1,6 @@
-/** Input - a ChatKit-styled single-line text field. Mirrors ChatKit's `Input`
- *  widget. Faithful prop names: `name`, `defaultValue`, `placeholder`,
- *  `variant` ('soft' | 'outline'), `size` (ControlSize), `pill`, `disabled`,
- *  `inputType`, `autoFocus`, `autoSelect`, `required`, `pattern`. Deviations
- *  (kit is interactive RN, not server-streamed): ChatKit form controls are
- *  uncontrolled and submitted via a server action; here we also accept a
- *  controlled `value` + `onChangeText`/`onSubmit` callbacks so the app can drive
- *  the field. `dark` boolean keeps the kit hook-free. Wraps RN `TextInput` so
- *  every text-field call site can migrate behind one primitive. `inputType` maps
- *  onto RN keyboardType + secureTextEntry. */
+/**
+ * @file Input — a hook-free ChatKit-styled single-line text field wrapping RN `TextInput` with controlled `value`/`onChangeText` support and `inputType` mapped onto keyboardType + secureTextEntry.
+ */
 
 import { forwardRef, useState } from 'react';
 import {
@@ -77,16 +70,14 @@ export interface InputProps {
   placeholderTextColor?: string;
   /** Escape-hatch style merged last onto the box (accepts text + view style). */
   style?: StyleProp<TextStyle>;
-  /** Extra RN TextInput props (refs, returnKeyType, selection, etc.). Its
-   *  onFocus/onBlur are chained after the kit focus tracking. */
+  /** Extra RN TextInput props (refs, returnKeyType, selection, etc.). Its onFocus/onBlur are chained after the kit focus tracking. */
   inputProps?: Omit<
     TextInputProps,
     'value' | 'defaultValue' | 'onChangeText' | 'style' | 'placeholder' | 'editable'
   >;
 }
 
-/** ChatKit-style RN single-line input. Forwards a ref to the underlying
- *  RN TextInput so call sites can focus/blur it. */
+/** ChatKit-style RN single-line input. Forwards a ref to the underlying RN TextInput so call sites can focus/blur it. */
 export const Input = forwardRef<TextInput, InputProps>(function Input(props, ref) {
   const {
     name,

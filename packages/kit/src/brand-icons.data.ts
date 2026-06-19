@@ -1,8 +1,6 @@
-/** Filled brand glyphs (social networks) - these are FILLED 24×24 paths, unlike
- *  the stroke-only Heroicons in heroicons.data.ts. Rendered with fill=currentColor
- *  and no stroke (see the BrandIcon renderer). Keep this set tiny: only the socials
- *  the profile screen links out to. Sourced from each brand's official mark,
- *  re-pathed to a 0 0 24 24 viewBox. */
+/**
+ * @file Generated filled brand-glyph (social network) icon path catalogue — FILLED 24x24 paths sourced from official marks (tool output, not hand-edited).
+ */
 
 const BRAND_ICON_DATA = {
   // X (formerly Twitter) - official wordmark glyph.

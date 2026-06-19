@@ -1,9 +1,8 @@
-/** App-wide theme switcher for the System screen. The app already has a real
- *  theme-preference store (lib/theme.ts: setThemePreference + a module-level
- *  pub/sub that every usePalette/useEffectiveColorScheme consumer subscribes to),
- *  so flipping a value here re-themes the WHOLE app instantly — no new store
- *  needed. Renders System / Light / Dark as a segmented pill, reusing the same
- *  option data as the Settings screen. */
+/**
+ * @file ThemeSwitcher — app-wide theme switcher rendered as a System/Light/Dark
+ *  segmented pill that writes lib/theme's setThemePreference, re-theming the
+ *  whole app instantly via its pub/sub.
+ */
 
 import { Box, Row } from '../layout';
 import { Icon } from '@metro-labs/kit/icon';

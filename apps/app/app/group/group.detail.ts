@@ -1,10 +1,4 @@
-/** Group-detail data wiring, extracted from group/[convId] for the 200-line cap.
- *
- *  Stage-1 cache unification: the shared fields (name / image / description /
- *  members) come from the deduped convMeta Query - the old loadGroupDetail
- *  Promise.all is gone. This hook seeds the editable group-actions state from
- *  that query, then fetches the group's ONLY extra (admin roles) + Snapshot
- *  member names. */
+/** @file useGroupDetail hook resolving a group conversation's member names and admin roles from deduped convMeta. */
 
 import { useEffect, useMemo, useState } from 'react';
 import { useConvMeta, fetchGroupRoles } from '../../modules/messaging';
@@ -60,11 +54,10 @@ export function useGroupDetail(
     return (): void => { cancelled = true; };
   }, [convId, inboxToAddr]);
 
-  /** Member display names from stamp.fyi / ENS (read-only identity; pure
-   *  enrichment - rows fall back to the short address). Recomputes whenever the
-   *  shared stamp cache resolves. */
+  /** Member display names from stamp.fyi / ENS (read-only identity; pure enrichment - rows fall back to the short address). Recomputes whenever the shared stamp cache resolves. */
   useEffect(() => {
     if (sortedMembers.length === 0) return;
+    /** Recompute helper. */
     const recompute = (): void => {
       const next: Names = {};
       for (const m of sortedMembers) next[m] = getPeerName(m) ?? null;

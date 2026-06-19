@@ -1,11 +1,6 @@
-/** Safe server-side page fetch for the link-preview Worker.
- *
- *  Wraps the runtime fetch with: a hard timeout (AbortSignal.timeout), a manual
- *  redirect loop that re-runs the SSRF host/IP guard on every hop (so a public
- *  URL can't 302 to an internal host), a max-redirect cap, a max-body-size cap
- *  (we only need the <head>, so we stop reading early), a desktop-ish
- *  User-Agent, and credential stripping. HTML-only: non-HTML, non-402 responses
- *  return null. Identical contract to the Node service's fetchPage. */
+/**
+ * @file Edge-side HTML page fetcher for the link-preview Worker: SSRF-guarded, timeout- and size-capped fetch that also detects x402 402 payment challenges.
+ */
 
 import { assertPublicUrl, SsrfError } from './ssrf.ts';
 import { challengeFrom402, type X402Challenge } from './x402.ts';
@@ -18,6 +13,7 @@ const UA = 'Mozilla/5.0 (compatible; MetroLinkPreview/1.0; +https://metro.box)';
 
 export interface FetchResult { html: string; finalUrl: string }
 
+/** Concat helper. */
 function concat(chunks: Uint8Array[]): Uint8Array {
   const len = chunks.reduce((n, c) => n + c.length, 0);
   const out = new Uint8Array(len);
@@ -26,8 +22,7 @@ function concat(chunks: Uint8Array[]): Uint8Array {
   return out;
 }
 
-/** Read a response body up to MAX_BYTES, decoding as UTF-8, aborting the stream
- *  once enough bytes for the head are in hand. */
+/** Read a response body up to MAX_BYTES, decoding as UTF-8, aborting the stream once enough bytes for the head are in hand. */
 async function readCapped(res: Response): Promise<string> {
   const reader = res.body?.getReader() as ReadableStreamDefaultReader<Uint8Array> | undefined;
   if (!reader) return await res.text();
@@ -45,8 +40,7 @@ async function readCapped(res: Response): Promise<string> {
   return new TextDecoder('utf-8').decode(concat(chunks));
 }
 
-/** A small capped JSON body read for x402 challenge bodies. Returns the parsed
- *  value or null on bad/oversized/non-JSON. */
+/** A small capped JSON body read for x402 challenge bodies. Returns the parsed value or null on bad/oversized/non-JSON. */
 async function readJsonCapped(res: Response): Promise<unknown> {
   try {
     const reader = res.body?.getReader() as ReadableStreamDefaultReader<Uint8Array> | undefined;
@@ -68,9 +62,7 @@ async function readJsonCapped(res: Response): Promise<unknown> {
   }
 }
 
-/** Fetch `rawUrl` safely and return its HTML + final (post-redirect) URL, an
- *  {@link X402Challenge} on an x402 402 challenge, or null when there's nothing
- *  previewable. Throws {@link SsrfError} if any URL in the chain is unsafe. */
+/** Fetch `rawUrl` safely and return its HTML + final (post-redirect) URL, an {@link X402Challenge} on an x402 402 challenge, or null when there's nothing previewable. Throws {@link SsrfError} if any URL in the chain is unsafe. */
 export async function fetchPage(rawUrl: string): Promise<FetchResult | X402Challenge | null> {
   let current = assertPublicUrl(rawUrl).toString();
 

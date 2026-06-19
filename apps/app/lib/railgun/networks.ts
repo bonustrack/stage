@@ -1,4 +1,6 @@
-/** Network registry for the Railgun SDK layer. Maps our two supported chains to
+/** @file Network registry mapping the supported chains to the Railgun SDK NetworkName and >=2 getLogs-capable RPC endpoints per net (brovider excluded) for the engine's merkletree scan. */
+/**
+ * Network registry for the Railgun SDK layer. Maps our two supported chains to
  *  the SDK's NetworkName + the RPC endpoints the engine polls.
  *
  *  IMPORTANT — do NOT use brovider (rpc.brovider.xyz) here. brovider is a
@@ -14,7 +16,8 @@
  *  empirically verified to serve eth_getLogs over the Railgun proxy address:
  *    - ethereum-sepolia-rpc.publicnode.com  (getLogs OK, 50k-block range cap)
  *    - sepolia.drpc.org                     (getLogs OK, 10k-block range cap)
- *  The engine chunks its scan well under both caps. Sepolia is the test default. */
+ *  The engine chunks its scan well under both caps. Sepolia is the test default.
+ */
 
 import { NetworkName } from '@railgun-community/shared-models';
 

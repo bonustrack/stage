@@ -1,4 +1,8 @@
-/** Metro in-chat signature content types - shared between the RN app, web
+/**
+ * @file Metro custom in-chat signature-request and signature-reference content types (wire shapes, ids, fallback text).
+ */
+/**
+ * Metro in-chat signature content types - shared between the RN app, web
  *  client, and daemon. Pure TS: wire shapes, content-type id constants, and
  *  plain-text fallback builders.
  *
@@ -11,15 +15,14 @@
  *
  *  Two-message handshake like the tx pair: a SignatureRequest (EIP-712
  *  typed-data or personal_sign string), then a SignatureReference receipt posted
- *  back into the SAME conv once signed. */
+ *  back into the SAME conv once signed.
+ */
 
 // ---------------------------------------------------------------------------
 // SignatureRequest — `metro.box/signatureRequest:1.0`
 // ---------------------------------------------------------------------------
 
-/** A standard EIP-712 typed-data payload — exactly the `eth_signTypedData_v4`
- *  argument shape (domain / types / primaryType / message). Kept loose (record
- *  types) so any valid typed-data structure round-trips through JSON unchanged. */
+/** A standard EIP-712 typed-data payload — exactly the `eth_signTypedData_v4` argument shape (domain / types / primaryType / message). Kept loose (record types) so any valid typed-data structure round-trips through JSON unchanged. */
 export interface Eip712TypedData {
   domain: Record<string, unknown>;
   types: Record<string, { name: string; type: string }[]>;
@@ -28,8 +31,7 @@ export interface Eip712TypedData {
 }
 
 export interface SignatureRequestContent {
-  /** Stable id minted at creation; the SignatureReference points back at it so
-   *  the request and its signature thread together across edits/resends. */
+  /** Stable id minted at creation; the SignatureReference points back at it so the request and its signature thread together across edits/resends. */
   id: string;
   /** `eip712` => sign typed data; `personal` => personal_sign a UTF-8 string. */
   kind: 'eip712' | 'personal';
@@ -71,8 +73,7 @@ export function mintSignatureRequestId(): string {
   return `sig_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
-/** Plain-text fallback for a SignatureRequest (vanilla XMTP clients show this
- *  instead of a blank bubble). */
+/** Plain-text fallback for a SignatureRequest (vanilla XMTP clients show this instead of a blank bubble). */
 export function signatureRequestFallbackText(c: SignatureRequestContent): string {
   const desc = c?.description?.trim();
   return desc ? `[Signature request] ${desc}` : '[Signature request]';

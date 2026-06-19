@@ -1,11 +1,15 @@
-/** On-screen lifecycle diagnostics for the nodejs-mobile bridge.
+/** @file On-screen lifecycle diagnostics for the nodejs-mobile bridge: a single status-line sink plus a raw catch-all probe that surfaces every channel event by name when adb logcat is unavailable. */
+
+/*
+ * On-screen lifecycle diagnostics for the nodejs-mobile bridge.
  *
  *  We can't get adb logcat on-device, so the bridge emits one formatted status
  *  line at each lifecycle point (start invoked, node booted, request sent,
  *  reply, timeout, error) plus a raw catch-all that surfaces ANY channel event
  *  under ANY name ("rx event: <name>"). The probe UI (WalletScreen.private.ping)
  *  registers a sink via setBridgeStatusListener and renders the ordered log so a
- *  stall is visible in a single screenshot. */
+ *  stall is visible in a single screenshot.
+ */
 import type { NodejsChannel } from './nodejsMobile';
 
 /** Optional sink the probe UI registers; null clears it. */
@@ -47,9 +51,7 @@ export function fmtPayload(payload: unknown): string {
 
 let rawProbeAttached = false;
 
-/** Listen on every event name the boot signal might arrive under and emit "rx
- *  event: <name>" so an unexpected name is visible. 'message' is the legacy
- *  nodejs-mobile default channel event. Idempotent across startBridge calls. */
+/** Listen on every event name the boot signal might arrive under and emit "rx event: <name>" so an unexpected name is visible. 'message' is the legacy nodejs-mobile default channel event. Idempotent across startBridge calls. */
 export function attachRawProbe(ch: NodejsChannel, names: readonly string[]): void {
   if (rawProbeAttached) return;
   rawProbeAttached = true;

@@ -1,15 +1,6 @@
-/** In-conversation full-text search over the LOCAL XMTP message history.
- *
- *  v1 scope: text content only (no attachments/reactions), current conversation
- *  only, no persistent index. We page through the conversation's local MLS db
- *  (`conv.messages` with a `beforeNs` cursor, same plumbing feedQuery uses for
- *  scroll-up) in chunks and filter on a case-insensitive substring match.
- *
- *  PERF (per the perf investigation): this is LOCAL ONLY - it never triggers an
- *  inbox-wide sync (`syncInboxOnce`). We scan a capped number of pages, yield to
- *  the event loop between pages so the UI stays responsive, and stream partial
- *  results to the caller via an `onResults` callback so matches appear
- *  progressively. The scan is abortable via the returned cancel handle. */
+/**
+ * @file In-conversation full-text search over the LOCAL XMTP message history only (no inbox-wide sync): pages the conversation's local MLS db in capped chunks, filters on a case-insensitive substring, and streams abortable partial results via an onResults callback.
+ */
 
 import type { HistoryEntry } from '../../lib/types';
 import { isMetroControlBody } from '../../lib/push';
@@ -20,17 +11,14 @@ import { PAGE_SIZE } from '../../lib/xmtp.stream';
 /** A single search hit: the matched local message envelope. */
 export type SearchHit = HistoryEntry;
 
-/** Hard caps so a huge thread can't scan forever / blow memory. ~25 pages of
- *  PAGE_SIZE messages is plenty for v1; we surface the cap to the UI so it can
- *  note "showing first N / scan stopped early". */
+/** Hard caps so a huge thread can't scan forever / blow memory. ~25 pages of PAGE_SIZE messages is plenty for v1; we surface the cap to the UI so it can note "showing first N / scan stopped early". */
 export const SEARCH_MAX_PAGES = 25;
 export const SEARCH_MAX_RESULTS = 50;
 
 export interface SearchScanResult {
   /** Matches found, newest-first. Capped at SEARCH_MAX_RESULTS. */
   hits: SearchHit[];
-  /** True if the scan hit a cap (pages or results) before exhausting history,
-   *  so the UI can hint that older matches may exist. */
+  /** True if the scan hit a cap (pages or results) before exhausting history, so the UI can hint that older matches may exist. */
   truncated: boolean;
 }
 
@@ -46,13 +34,15 @@ function yieldToEventLoop(): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, 0));
 }
 
-/** Scan the local history of `line` for `query`, off the critical path.
+/**
+ * Scan the local history of `line` for `query`, off the critical path.
  *
  *  Pages oldest-ward from the newest message using a `beforeNs` cursor (the same
  *  cursor math as feedQuery.loadFeedOlderPage), filters by substring, and
  *  invokes `onResults` with the growing hit list after each page so the UI can
  *  render progressively. Resolves with the final result when the scan ends
- *  (history exhausted, a cap reached, or aborted). Never throws. */
+ *  (history exhausted, a cap reached, or aborted). Never throws.
+ */
 export async function searchLocalHistory(
   line: string,
   query: string,

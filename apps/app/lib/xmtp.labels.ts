@@ -1,16 +1,12 @@
-/** Group LABELS — small free-form tags stored in the XMTP group's synced
- *  `appData` slot (a single string, MLS-encrypted E2E to all members). All
- *  members of an all-members group may edit. Labels are group metadata, kept
- *  separate from any per-token UI badges.
- *
- *  appData holds ONE JSON object. We own the `labels` key but MERGE on write so
- *  any other keys another feature may add are preserved. Versioned schema with
- *  tolerant parsing: empty / old / malformed appData → `{ labels: [] }`. */
+/**
+ * @file Group labels: read/write small free-form tags in the XMTP group's synced `appData` slot,
+ *  owning the `labels` key but merging on write so other features' keys survive (versioned schema
+ *  with tolerant parsing; all members may edit, E2E MLS-encrypted to the group).
+ */
 
 import { convOfLine } from './xmtp';
 
-/** Versioned shape we persist. Other keys may coexist in the same object.
- *  `github` is an optional linked GitHub issue/PR URL (Linear-style). */
+/** Versioned shape we persist. Other keys may coexist in the same object. `github` is an optional linked GitHub issue/PR URL (Linear-style). */
 interface LabelsBlob {
   v: 1;
   labels: string[];
@@ -23,8 +19,7 @@ export const MAX_LABELS = 16;
 /** Max character length of a single label after cleaning. */
 export const MAX_LABEL_LEN = 24;
 
-/** Thrown when updateAppData is rejected by group permissions. The UI surfaces
- *  `.message` inline. Shouldn't happen for all-members groups. */
+/** Thrown when updateAppData is rejected by group permissions. The UI surfaces `.message` inline. Shouldn't happen for all-members groups. */
 export class LabelPermissionError extends Error {
   /** Build the label-permission error with its fixed message and name. */
   constructor() {
@@ -90,8 +85,7 @@ export function readLabels(blob: Record<string, unknown>): string[] {
   return out;
 }
 
-/** Read the group's current labels. Syncs first for the latest committed state.
- *  Returns [] for DMs, missing groups, or any read error. */
+/** Read the group's current labels. Syncs first for the latest committed state. Returns [] for DMs, missing groups, or any read error. */
 export async function getGroupLabels(line: string): Promise<string[]> {
   const conv = await convOfLine(line);
   const group = asGroup(conv);
@@ -105,12 +99,14 @@ export async function getGroupLabels(line: string): Promise<string[]> {
   }
 }
 
-/** Read the labels off an ALREADY-LOADED group conversation WITHOUT forcing a
+/**
+ * Read the labels off an ALREADY-LOADED group conversation WITHOUT forcing a
  *  fresh `sync()`. The channels list calls `conv.sync()` once per row in
  *  `summarize()`; this piggybacks on that synced state to read `appData()` with
  *  no extra network round-trip — so rendering label chips on every card never
  *  triggers a per-row sync (which would jank/rate-limit the list). Returns []
- *  for DMs, non-groups, or any read error. */
+ *  for DMs, non-groups, or any read error.
+ */
 export async function labelsOfSyncedGroup(conv: unknown): Promise<string[]> {
   const group = asGroup(conv);
   if (!group) return [];
@@ -121,9 +117,7 @@ export async function labelsOfSyncedGroup(conv: unknown): Promise<string[]> {
   }
 }
 
-/** Read → mutate → write, merging into the existing appData object so we never
- *  clobber other keys. Returns the resulting label list. Throws
- *  LabelPermissionError when the write is permission-denied. */
+/** Read → mutate → write, merging into the existing appData object so we never clobber other keys. Returns the resulting label list. Throws LabelPermissionError when the write is permission-denied. */
 async function mutate(line: string, fn: (labels: string[]) => string[]): Promise<string[]> {
   const conv = await convOfLine(line);
   const group = asGroup(conv);
@@ -144,8 +138,7 @@ async function mutate(line: string, fn: (labels: string[]) => string[]): Promise
   return next;
 }
 
-/** Add a label (trimmed, deduped case-insensitively, capped). No-op when the
- *  cleaned label is empty, already present, or the cap is reached. */
+/** Add a label (trimmed, deduped case-insensitively, capped). No-op when the cleaned label is empty, already present, or the cap is reached. */
 export async function addGroupLabel(line: string, label: string): Promise<string[]> {
   const clean = cleanLabel(label);
   return mutate(line, (labels) => {

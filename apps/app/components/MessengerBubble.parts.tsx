@@ -1,5 +1,7 @@
-/** Sub-row components for MessengerBubble — @mention chips/body + question view.
- *  Extracted to keep the bubble file under the phase-2 lint cap. */
+/**
+ * @file Sub-row components for MessengerBubble — @mention chips, mention body, and
+ *  the question view — extracted to keep the bubble file under the lint cap.
+ */
 
 import { useState } from 'react';
 import { fontSize } from '@metro-labs/kit/tokens';
@@ -14,11 +16,13 @@ import { MENTION_RE } from './MessengerBubble.helpers';
 import type { Question } from './MessengerBubble.helpers';
 import { usePalette } from '../lib/theme';
 
-/** One tappable `@username` chip resolved from an address. Lives as its own
+/**
+ * One tappable `@username` chip resolved from an address. Lives as its own
  *  component so the `usePeerProfiles` hook is called exactly once per mention
  *  (never inside a loop in the parent) — the shared stamp cache dedupes the
  *  ENS lookup across every chip pointing at the same address. Falls back to the
- *  short address while the name resolves or when there's no ENS name. */
+ *  short address while the name resolves or when there's no ENS name.
+ */
 function MentionLink({ address, dark }: { address: string; dark: boolean }): React.ReactElement {
   const router = useRouter();
   usePeerProfiles([address]);
@@ -33,12 +37,14 @@ function MentionLink({ address, dark }: { address: string; dark: boolean }): Rea
   );
 }
 
-/** Body text with clickable `@0x<address>` mentions. Splits the raw text into
+/**
+ * Body text with clickable `@0x<address>` mentions. Splits the raw text into
  *  alternating plain-text runs and mention runs, rendering plain runs with the
  *  bubble's existing markdown body typography (color/size/font) and each mention
  *  as a nested `<MentionLink>`. No-mention messages take a fast path upstream
  *  (the caller renders <Markdown> directly), so this only runs when at least one
- *  address mention is present (markdown isn't applied to those messages). */
+ *  address mention is present (markdown isn't applied to those messages).
+ */
 export function MentionBody({ text, fg, dark, selectable }: { text: string; fg: string; dark: boolean; selectable?: boolean }): React.ReactElement {
   const runs: React.ReactNode[] = [];
   let last = 0;
@@ -60,10 +66,12 @@ export function MentionBody({ text, fg, dark, selectable }: { text: string; fg: 
   );
 }
 
-/** Question view — single-select fires onAnswer instantly; multi-select toggles
+/**
+ * Question view — single-select fires onAnswer instantly; multi-select toggles
  *  options locally and submits the joined labels as one message on tap of "Submit".
  *  An implicit "Other…" affordance (default on) lets the user type a free-text
- *  answer instead of (or alongside, in multi mode) the listed options. */
+ *  answer instead of (or alongside, in multi mode) the listed options.
+ */
 export function QuestionView({ question, dark, sub, onAnswer }: {
   question: Question; dark: boolean; sub: string; onAnswer: (label: string) => void;
 }): React.ReactElement {
@@ -73,6 +81,7 @@ export function QuestionView({ question, dark, sub, onAnswer }: {
   const fg = usePalette().text; // #9f9fa3 / #57606a
   const multi = question.multiSelect === true;
   const allowOther = question.allowOther !== false;
+  /** Toggle helper. */
   const toggle = (label: string): void => {
     if (!multi) { onAnswer(label); return; }
     setSelected(prev => {
@@ -81,6 +90,7 @@ export function QuestionView({ question, dark, sub, onAnswer }: {
       return next;
     });
   };
+  /** Submit helper. */
   const submit = (): void => {
     /** Preserve the user's option order so the answer reads naturally. */
     const chosen = question.options.filter(o => selected.has(o.label)).map(o => o.label);

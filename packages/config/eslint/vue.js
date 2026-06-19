@@ -7,7 +7,7 @@
 // vue-eslint-parser and eslint-plugin-vue are the consumer's own deps and are
 // passed in, so this package never pins those versions.
 import tseslint from "typescript-eslint";
-import { MAX_LINES, REQUIRE_EXPORTED_JSDOC, jsdocPlugin, recommended, NO_ESCAPE_HATCHES } from "./base.js";
+import { MAX_LINES, REQUIRE_JSDOC, jsdocPlugin, recommended, NO_ESCAPE_HATCHES, commentPlugins, COMMENT_RULES } from "./base.js";
 
 /**
  * Build the Vue flat-config array.
@@ -37,13 +37,14 @@ export function vue({ vueParser, vuePlugin, rootDir, project }) {
     ...recommended,
     {
       files: ["src/**/*.{ts,tsx}"],
-      plugins: { jsdoc: jsdocPlugin },
+      plugins: commentPlugins,
       rules: {
         // Strong typing: ban `any` + the type-system escape hatches.
         ...NO_ESCAPE_HATCHES,
         "max-lines": MAX_LINES,
-        // Every exported function/method needs a leading JSDoc description.
-        "jsdoc/require-jsdoc": REQUIRE_EXPORTED_JSDOC,
+        // Comment conventions: 1 JSDoc per function, 1 line each, `@file` header
+        // on every file (capped at 3 lines), `/** */` blocks only.
+        ...COMMENT_RULES,
       },
     },
     {

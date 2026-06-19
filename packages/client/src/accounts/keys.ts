@@ -1,9 +1,14 @@
-/** Pure private-key normalization + derivation rules for the account registry.
+/**
+ * @file Private-key normalization plus mnemonic/HD owner-key derivation for the multi-account registry (viem-only, no storage).
+ */
+/**
+ * Pure private-key normalization + derivation rules for the account registry.
  *  No storage, no platform deps — viem only. Key STORAGE stays in the host
  *  behind the injected SecureStorage interface (see ./registry).
  *
  *  Moved out of apps/app's accounts.keys for the Stage SDK; the app re-exports
- *  these so call sites stay stable. */
+ *  these so call sites stay stable.
+ */
 
 import { mnemonicToAccount, privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
 import { bytesToHex, type Hex } from 'viem';
@@ -14,8 +19,7 @@ export const PK_PREFIX = 'wallet.pk.';
 export const LEGACY_PK_KEY = 'wallet.privateKey';
 export const LEGACY_DB_DIR = 'xmtp';
 
-/** Accept a private key with or without the `0x` prefix and any case; return a
- *  normalized lowercase `0x…` 32-byte hex, or throw if it isn't 64 hex chars. */
+/** Accept a private key with or without the `0x` prefix and any case; return a normalized lowercase `0x…` 32-byte hex, or throw if it isn't 64 hex chars. */
 export function normalizePk(input: string): Hex {
   let pk = input.trim();
   if (pk.startsWith('0X')) pk = '0x' + pk.slice(2);
@@ -27,10 +31,12 @@ export function normalizePk(input: string): Hex {
   return pk as Hex;
 }
 
-/** Derive the raw private key from a BIP-39 mnemonic (default m/44'/60'/0'/0/0,
+/**
+ * Derive the raw private key from a BIP-39 mnemonic (default m/44'/60'/0'/0/0,
  *  the standard first Ethereum account). Throws if the phrase is not valid
  *  BIP-39. We extract the key so the account is stored + signed identically to
- *  a pasted private key (no special-case HD signer to maintain). */
+ *  a pasted private key (no special-case HD signer to maintain).
+ */
 export function privateKeyFromMnemonic(input: string): Hex {
   const phrase = input.trim().replace(/\s+/g, ' ').toLowerCase();
   const words = phrase.split(' ');
@@ -57,9 +63,7 @@ export function accountIdFromPk(pk: Hex): string {
   return privateKeyToAccount(pk).address.toLowerCase();
 }
 
-/** True only for the legacy local-EOA records ('generated'/'privateKey') that
- *  hold a raw key in the keyring. A `smart` account signs through its Kernel and
- *  has no exportable private key; 'walletconnect' is keyless too. */
+/** True only for the legacy local-EOA records ('generated'/'privateKey') that hold a raw key in the keyring. A `smart` account signs through its Kernel and has no exportable private key; 'walletconnect' is keyless too. */
 export function canExportPrivateKey(rec: AccountRecord): boolean {
   return rec.type === 'generated' || rec.type === 'privateKey';
 }

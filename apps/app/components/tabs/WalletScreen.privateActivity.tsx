@@ -1,21 +1,6 @@
-/** Private (shielded 0zk) fund-movement section of the Activity tab.
- *
- *  Renders the wallet's private money trail - shields (funds entering the
- *  shielded balance), unshields (funds leaving back to a public address), and
- *  0zk->0zk transfers (private receives + sends) - above the public Etherscan
- *  list. Data comes from lib/railgun/history (fetchPrivateActivity), the SAME
- *  embedded-bridge read path that feeds shielded balances, so it is pure JS /
- *  hot-reloadable.
- *
- *  The section header is ALWAYS visible once the bridge is present, even with
- *  zero rows: it shows a loading line while the engine scans, then either the
- *  rows or a "No private activity yet" empty state. It renders nothing only when
- *  the bridge is absent (web / non-Railgun build).
- *
- *  Visually mirrors the public TxRow (circular direction icon, title over meta,
- *  signed amount) but every row carries a "Private" badge so the shielded nature
- *  is unmistakable, plus a per-kind label (Shield / Unshield / Sent / Received
- *  privately). */
+/**
+ * @file Private (shielded 0zk) fund-movement section of the Activity tab, fetching and rendering shield/unshield/0zk-transfer rows with a "Private" badge above the public Etherscan list.
+ */
 
 import { useEffect, useState } from 'react';
 
@@ -28,18 +13,14 @@ import {
   type PrivateActivityRow,
 } from '../../lib/railgun/history';
 
-/** The shield-check glyph the app already uses to mark Railgun-shielded tokens
- *  (see WalletScreen.parts PrivateBadge). Overlaid on each activity row's token
- *  avatar so a private/Railgun tx is unmistakable. */
+/** The shield-check glyph the app already uses to mark Railgun-shielded tokens (see WalletScreen.parts PrivateBadge). Overlaid on each activity row's token avatar so a private/Railgun tx is unmistakable. */
 const SHIELD_ICON: HeroIconName = 'shieldCheck';
 
 type Status = 'loading' | 'ready';
 
 const PRIVATE_GREEN = '#22c55e';
 
-/** Fetch + render the private fund-movement rows. Once the bridge is present the
- *  header always renders, with a loading line, the rows, or an empty state - so
- *  the section is discoverable even before / without any private history. */
+/** Fetch + render the private fund-movement rows. Once the bridge is present the header always renders, with a loading line, the rows, or an empty state - so the section is discoverable even before / without any private history. */
 export function PrivateActivitySection({ head, sub, border, bg }: {
   head: string; sub: string; border: string; bg: string;
 }): React.ReactElement | null {
@@ -92,17 +73,14 @@ export function PrivateActivitySection({ head, sub, border, bg }: {
   );
 }
 
-/** Per-kind row label. Shields are always inbound, unshields always outbound;
- *  transfers carry their own direction. */
+/** Per-kind row label. Shields are always inbound, unshields always outbound; transfers carry their own direction. */
 function rowTitle(r: PrivateActivityRow): string {
   if (r.kind === 'shield') return 'Shielded';
   if (r.kind === 'unshield') return 'Unshielded';
   return r.direction === 'in' ? 'Received privately' : 'Sent privately';
 }
 
-/** A single private-movement row. Layout matches the public TxRow: a circular
- *  direction icon, a title over the chain + time meta, and the signed amount
- *  with a "Private" tag. */
+/** A single private-movement row. Layout matches the public TxRow: a circular direction icon, a title over the chain + time meta, and the signed amount with a "Private" tag. */
 function PrivateTxRow({ r, head, sub, border, bg }: {
   r: PrivateActivityRow; head: string; sub: string; border: string; bg: string;
 }): React.ReactElement {
@@ -152,8 +130,7 @@ function PrivateTxRow({ r, head, sub, border, bg }: {
   );
 }
 
-/** Compact relative time: "3h", "2d", or a date for older transfers. Mirrors
- *  the public Activity row's relTime so both sections read identically. */
+/** Compact relative time: "3h", "2d", or a date for older transfers. Mirrors the public Activity row's relTime so both sections read identically. */
 function relTime(ts: number): string {
   const s = Math.max(0, Math.floor(Date.now() / 1000 - ts));
   if (s < 60) return 'now';

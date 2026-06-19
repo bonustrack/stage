@@ -1,17 +1,8 @@
-/** WalletSendCallsCodec + TransactionReferenceCodec — the RN
- *  @xmtp/react-native-sdk JS content codecs for the official XMTP transaction
- *  content types `xmtp.org/walletSendCalls:1.0` and
- *  `xmtp.org/transactionReference:1.0`.
- *
- *  Pure JS (no native module): both bodies are just `JSON.stringify(content)`
- *  encoded as UTF-8 bytes inside an `EncodedContent`, so registering them in
- *  `XMTP_CODECS` needs NO dev-client rebuild. We can't reuse the npm
- *  `@xmtp/content-type-wallet-send-calls` / `-transaction-reference` packages:
- *  they target the Node SDK's `ContentCodec`/`EncodedContent` shape, which is
- *  incompatible with the RN SDK's `JSContentCodec` interface (mirrors why
- *  PollCodec is hand-rolled). `fallback` carries the plain-text rendering so
- *  vanilla XMTP clients (and any client missing this codec) show a readable
- *  string instead of a blank/error bubble. */
+/**
+ * @file WalletSendCallsCodec and TransactionReferenceCodec, the hand-rolled pure-JS
+ *  @xmtp/react-native-sdk content codecs for the official `xmtp.org/walletSendCalls:1.0` and
+ *  `transactionReference:1.0` types (the npm packages target the incompatible Node SDK shape).
+ */
 
 import type {
   JSContentCodec, ContentTypeId, EncodedContent,
@@ -38,9 +29,7 @@ export class WalletSendCallsCodec implements JSContentCodec<WalletSendCallsConte
 
   /** Decode and schema-validate the untrusted payment-request wire body. */
   decode(encoded: EncodedContent): WalletSendCallsContent {
-    /** SECURITY: validate the untrusted wire body so a malformed / hostile
-     *  payment request throws here (rendered unsupported) instead of reaching the
-     *  pay path as a wrong-but-typed object. */
+    /** SECURITY: validate the untrusted wire body so a malformed / hostile payment request throws here (rendered unsupported) instead of reaching the pay path as a wrong-but-typed object. */
     return decodeJsonContent<WalletSendCallsContent>(
       encoded.content, walletSendCallsSchema, 'xmtp.walletSendCalls',
     );

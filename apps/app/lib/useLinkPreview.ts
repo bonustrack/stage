@@ -1,11 +1,7 @@
-/** TanStack Query hook fetching OpenGraph-ish metadata for a plain http(s) link
- *  via the Metro link-preview proxy (an iframely-style service; see
- *  apps/proxy). The proxy does the server-side fetch/parse + SSRF guarding,
- *  so the client just GETs `/preview?url=…` and renders the JSON card.
- *
- *  Results are cached HARD (long staleTime, no background refetch) keyed on the
- *  url. On any failure (proxy unreachable, blocked url, no metadata) the queryFn
- *  returns null and the caller renders NO card — never a broken/empty one. */
+/**
+ * @file TanStack Query hook fetching OpenGraph-ish metadata for a plain http(s) link via the Metro link-preview proxy (which handles the server-side fetch/parse + SSRF guarding).
+ *  Results are hard-cached keyed on the url, and any failure resolves to null so the caller renders no card rather than a broken one.
+ */
 
 import { useQuery } from '@tanstack/react-query';
 import { parseX402Challenge, type X402Accept, type X402Challenge } from '@stage-labs/client/x402';
@@ -14,8 +10,7 @@ import { parseX402Challenge, type X402Accept, type X402Challenge } from '@stage-
 // keep working; the single source of truth lives in @stage-labs/client/x402.
 export type { X402Accept, X402Challenge };
 
-/** Base url of the link-preview proxy. Overridable via env so a dev build can
- *  point at a local instance; defaults to the production tunnel host. */
+/** Base url of the link-preview proxy. Overridable via env so a dev build can point at a local instance; defaults to the production tunnel host. */
 const LINK_PREVIEW_BASE_ENV: unknown = process.env.EXPO_PUBLIC_LINKPROXY_URL;
 export const LINK_PREVIEW_BASE =
   typeof LINK_PREVIEW_BASE_ENV === 'string' && LINK_PREVIEW_BASE_ENV !== ''
@@ -29,8 +24,7 @@ interface LinkPreview {
   image?: string;
   siteName?: string;
   favicon?: string;
-  /** Original (un-proxied) image/favicon URLs, kept for debugging / fallback.
-   *  The app renders `image`/`favicon` (Worker /img proxy URLs), never these. */
+  /** Original (un-proxied) image/favicon URLs, kept for debugging / fallback. The app renders `image`/`favicon` (Worker /img proxy URLs), never these. */
   imageOrigin?: string;
   faviconOrigin?: string;
 }
@@ -43,6 +37,7 @@ export function isX402(r: LinkPreviewResult | null): r is X402Challenge {
   return !!r && 'kind' in r && r.kind === 'x402';
 }
 
+/** Get the Link Preview. */
 async function fetchLinkPreview(url: string): Promise<LinkPreviewResult | null> {
   try {
     const res = await fetch(`${LINK_PREVIEW_BASE}/preview?url=${encodeURIComponent(url)}`, {

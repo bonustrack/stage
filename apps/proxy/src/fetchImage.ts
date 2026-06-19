@@ -1,21 +1,6 @@
-/** Safe server-side image fetch + optional resize for the link-preview Worker.
- *
- *  The app must NEVER load og:image / favicon assets directly from origin sites:
- *  that leaks the reader's IP (and User-Agent, cookies-less but still a beacon)
- *  to every linked host. So /preview rewrites every image/favicon field to a
- *  Worker /img URL and this module does the fetch at the edge instead.
- *
- *  Hardening mirrors fetchPage.ts: assertPublicUrl + per-redirect-hop SSRF
- *  revalidation, http(s) only, credential stripping, a hard timeout, and a body
- *  size cap. The content-type must be image/*. Upstream headers are stripped -
- *  we only forward a sanitised content-type.
- *
- *  Resize: we attempt Cloudflare Image Resizing via `fetch(url,{cf:{image:..}})`.
- *  That feature requires the zone to be on a plan with Image Resizing enabled
- *  (Pro+ / Images). On a plan WITHOUT it, the `cf.image` directive is ignored
- *  and the request passes through UNRESIZED (Cloudflare documents this graceful
- *  passthrough). So we never depend on it: if the resize attempt errors, or the
- *  result is missing/oversized, we fall back to the plain (capped) original. */
+/**
+ * @file Edge-side image fetcher for the link-preview Worker: SSRF-guarded fetch with optional Cloudflare Image Resizing, credential stripping, and a size cap.
+ */
 
 import { assertPublicUrl, SsrfError } from './ssrf.ts';
 
@@ -47,8 +32,7 @@ const REQ_HEADERS = {
   Accept: 'image/avif,image/webp,image/png,image/jpeg,image/*;q=0.8,*/*;q=0.5',
 };
 
-/** Follow redirects manually, re-running the SSRF guard on every hop, and return
- *  the final safe URL + the terminal Response (not yet body-read). */
+/** Follow redirects manually, re-running the SSRF guard on every hop, and return the final safe URL + the terminal Response (not yet body-read). */
 async function fetchFollowing(
   startUrl: string,
   cf?: RequestInit['cf'],
@@ -73,8 +57,7 @@ async function fetchFollowing(
   throw new SsrfError('too many redirects');
 }
 
-/** Read a response body, enforcing the size cap. Returns null if it exceeds the
- *  cap (so the caller can fall back / reject rather than buffer unbounded). */
+/** Read a response body, enforcing the size cap. Returns null if it exceeds the cap (so the caller can fall back / reject rather than buffer unbounded). */
 async function readImageCapped(res: Response): Promise<ArrayBuffer | null> {
   const declared = Number(res.headers.get('content-length') ?? '');
   if (Number.isFinite(declared) && declared > MAX_IMG_BYTES) return null;
@@ -100,14 +83,13 @@ async function readImageCapped(res: Response): Promise<ArrayBuffer | null> {
   return out.buffer;
 }
 
+/** Image Content Type. */
 function imageContentType(res: Response): string | null {
   const ct = (res.headers.get('content-type') ?? '').split(';')[0]?.trim().toLowerCase() ?? '';
   return ct.startsWith('image/') ? ct : null;
 }
 
-/** Fetch `rawUrl` as an image, optionally resized to `width` px wide. Throws
- *  {@link SsrfError} on an unsafe URL/redirect; returns null when the upstream
- *  isn't a valid image, errors, or exceeds the size cap. */
+/** Fetch `rawUrl` as an image, optionally resized to `width` px wide. Throws {@link SsrfError} on an unsafe URL/redirect; returns null when the upstream isn't a valid image, errors, or exceeds the size cap. */
 export async function fetchImage(rawUrl: string, width?: number): Promise<ImageResult | null> {
   const w = width ?? DEFAULT_WIDTH;
 

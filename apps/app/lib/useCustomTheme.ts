@@ -1,8 +1,6 @@
-/** Reactive hook for the Custom-theme flag (lib/colorOverrides). Re-renders the
- *  caller whenever the user enables/disables Custom in Settings -> Display, or
- *  the flag loads from storage. Display uses it to mark Custom as selected and
- *  to reveal the color-token editor; usePalette gates the saved overrides on it.
- *  Split out of lib/theme.ts to keep that module under the line cap. */
+/**
+ * @file Reactive hook for the Custom-theme flag (lib/colorOverrides), re-rendering whenever the user toggles Custom in Settings -> Display or the flag loads from storage.
+ */
 
 import { useEffect, useState } from 'react';
 import {

@@ -1,4 +1,8 @@
-/** Framework-agnostic XMTP content-type DESCRIPTORS + JSON wire codec body
+/**
+ * @file Framework-agnostic XMTP content-type descriptors and JSON wire codec body helpers for the Metro custom content types.
+ */
+/**
+ * Framework-agnostic XMTP content-type DESCRIPTORS + JSON wire codec body
  *  helpers for the Metro custom content types.
  *
  *  The RN app registers JSContentCodecs (which `implements` the
@@ -11,14 +15,13 @@
  *
  *  ZERO @xmtp / react-native / expo imports. Uses only standard globals
  *  (TextEncoder / TextDecoder) so the byte round-trip is platform-neutral; the
- *  RN app's Buffer polyfill is no longer needed for these bodies. */
+ *  RN app's Buffer polyfill is no longer needed for these bodies.
+ */
 
 import type { ZodType } from 'zod';
 import { parseOrThrow, type BoundaryName } from '../validate';
 
-/** A content-type descriptor — structurally the RN SDK's `ContentTypeId`, but
- *  declared here so the package never imports the native type. The app's codec
- *  classes assign one of these to their `contentType` field. */
+/** A content-type descriptor — structurally the RN SDK's `ContentTypeId`, but declared here so the package never imports the native type. The app's codec classes assign one of these to their `contentType` field. */
 export interface XmtpContentTypeId {
   authorityId: string;
   typeId: string;
@@ -47,9 +50,7 @@ export const TRANSACTION_REFERENCE_CONTENT_TYPE: XmtpContentTypeId = {
   authorityId: 'xmtp.org', typeId: 'transactionReference', versionMajor: 1, versionMinor: 0,
 };
 
-/** The platform-neutral subset of the RN SDK's `EncodedContent` that every
- *  Metro JSON codec produces. The app casts this to the native EncodedContent
- *  (structurally identical) inside its codec classes. */
+/** The platform-neutral subset of the RN SDK's `EncodedContent` that every Metro JSON codec produces. The app casts this to the native EncodedContent (structurally identical) inside its codec classes. */
 export interface EncodedJsonContent {
   type: XmtpContentTypeId;
   parameters: Record<string, string>;
@@ -57,10 +58,12 @@ export interface EncodedJsonContent {
   content: Uint8Array;
 }
 
-/** Encode any JSON-serializable Metro content into an EncodedContent body:
+/**
+ * Encode any JSON-serializable Metro content into an EncodedContent body:
  *  `JSON.stringify` -> UTF-8 bytes. `fallback` carries the plain-text rendering
  *  so vanilla XMTP clients (and any client missing the codec) show a readable
- *  string instead of a blank/error bubble. */
+ *  string instead of a blank/error bubble.
+ */
 export function encodeJsonContent(
   type: XmtpContentTypeId,
   content: unknown,
@@ -74,13 +77,15 @@ export function encodeJsonContent(
   };
 }
 
-/** Decode a JSON-bodied EncodedContent back into its content shape. Accepts the
+/**
+ * Decode a JSON-bodied EncodedContent back into its content shape. Accepts the
  *  bytes off the EncodedContent (`encoded.content`).
  *
  *  When a `schema` is supplied the decoded body is validated at this boundary:
  *  a malformed / drifted wire body throws loudly (with a logged reason) instead
  *  of being `as`-cast into a wrong-but-typed value. Without a schema it keeps
- *  the legacy `as`-cast behaviour so existing callers are unaffected. */
+ *  the legacy `as`-cast behaviour so existing callers are unaffected.
+ */
 export function decodeJsonContent<T>(
   bytes: Uint8Array,
   schema?: ZodType<T>,

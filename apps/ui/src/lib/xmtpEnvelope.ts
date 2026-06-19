@@ -1,5 +1,7 @@
-/** Decoded XMTP message → HistoryEntry envelope + reaction aggregation. Split out
- *  of `xmtpFeed.ts` so each file stays under the lint cap; re-exported from there. */
+/**
+ * @file Maps decoded XMTP messages to HistoryEntry envelopes and aggregates per-message reaction counts.
+ */
+/** Decoded XMTP message → HistoryEntry envelope + reaction aggregation. Split out of `xmtpFeed.ts` so each file stays under the lint cap; re-exported from there. */
 
 import {
   ReactionAction,
@@ -10,9 +12,7 @@ import { XMTP_USER_PREFIX } from './xmtp';
 import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 import type { HistoryEntry } from './types';
 
-/** Per-message reaction counts derived from the latest emit-or-removal of each
- *  (msgId, emoji, sender) triplet. The same emoji from the same sender replaces its
- *  previous state — XMTP reactions are a CRDT, not an append log. */
+/** Per-message reaction counts derived from the latest emit-or-removal of each (msgId, emoji, sender) triplet. The same emoji from the same sender replaces its previous state — XMTP reactions are a CRDT, not an append log. */
 export function reactionsByMessage(events: HistoryEntry[]): Map<string, Map<string, number>> {
   const latest = new Map<string, { ts: string; removed: boolean }>();
   for (const e of events) {
@@ -39,14 +39,14 @@ export function isReactionEntry(e: HistoryEntry): boolean {
   return Boolean((e.payload as { reactTo?: string } | undefined)?.reactTo);
 }
 
+/** Bytes To Base64. */
 function bytesToBase64(bytes: Uint8Array): string {
   let s = '';
   for (const b of bytes) s += String.fromCharCode(b);
   return btoa(s);
 }
 
-/** Convert a decoded XMTP message into the shared `HistoryEntry` envelope so the
- *  bubble renderer doesn't need to know which transport it came from. */
+/** Convert a decoded XMTP message into the shared `HistoryEntry` envelope so the bubble renderer doesn't need to know which transport it came from. */
 export function envelopeOfXmtpMessage(msg: DecodedMessage, line: string): HistoryEntry {
   const base: HistoryEntry = {
     id: msg.id,
@@ -73,8 +73,7 @@ export function envelopeOfXmtpMessage(msg: DecodedMessage, line: string): Histor
     };
   }
   if (typeId === 'reply' && decoded && typeof decoded === 'object') {
-    /** browser-sdk enriches replies — `content` is the inner decoded payload plus a
-     *  `referenceId` pointing back at the target message id. */
+    /** browser-sdk enriches replies — `content` is the inner decoded payload plus a `referenceId` pointing back at the target message id. */
     const r = decoded as { referenceId: string; content: unknown };
     const innerText = typeof r.content === 'string' ? r.content : undefined;
     return {

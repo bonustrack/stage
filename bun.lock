@@ -15,15 +15,6 @@
         "vue-eslint-parser": "^9.4.3",
       },
     },
-    "apps/api": {
-      "name": "api",
-      "version": "0.1.0",
-      "devDependencies": {
-        "@stage-labs/config": "workspace:*",
-        "@types/bun": "^1.2.0",
-        "typescript": "~5.9.2",
-      },
-    },
     "apps/app": {
       "name": "app",
       "version": "0.1.0",
@@ -1288,8 +1279,6 @@
     "any-promise": ["any-promise@1.3.0", "", {}, "sha512-7UvmKalWRt1wgjL1RrGxoSJW/0QZFIegpeGvZG9kjp8vrRu55XTHbwnqq2GpXm9uLbcuhxm3IqX9OB4MZR1b2A=="],
 
     "anymatch": ["anymatch@3.1.3", "", { "dependencies": { "normalize-path": "^3.0.0", "picomatch": "^2.0.4" } }, "sha512-KMReFUr0B4t+D+OBkjR3KYqvocp2XaSzO55UcB6mgQMd3KbcE+mWTyvVV7D/zsdEbNnV6acZUutkiHQXvTr1Rw=="],
-
-    "api": ["api@workspace:apps/api"],
 
     "app": ["app@workspace:apps/app"],
 

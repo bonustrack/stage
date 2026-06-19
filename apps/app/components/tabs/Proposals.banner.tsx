@@ -1,10 +1,8 @@
-/** Home proposals banner - a minimal strip under the topnav (above the label
- *  bar) showing the number of pending polls; tapping opens the /proposals page.
- *
- *  Hidden when there are zero pending proposals OR all have been skipped this
- *  session (the count comes from the shared proposalsStore, which already filters
- *  session-skipped ids). The count read is cheap (useProposalCount only
- *  re-renders when the number changes) so it's safe on Home's frequent renders. */
+/**
+ * @file Proposals.banner — the Home strip under the topnav showing the pending-
+ *  poll count and linking to /proposals; hidden when the count (from the shared
+ *  proposalsStore, session-skips filtered) is zero.
+ */
 
 import { useRouter } from 'expo-router';
 import { Pressable } from '@metro-labs/kit/pressable';

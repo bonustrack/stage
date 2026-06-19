@@ -1,13 +1,11 @@
-/** Group detail view — opened by tapping the conversation header title. Lists
- *  members, shows the inline-editable group name, labels + GitHub link. */
+/** @file Group detail screen for editing a conversation's name, description, image, members, labels and linked GitHub URL. */
 
 import { useEffect, useState } from 'react';
 
 import { useQueryClient } from '@tanstack/react-query';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
-/** RNGH gesture-aware FlatList so vertical scroll composes with the native-stack
- *  edge swipe-back under GestureDetectorProvider (see xmtp/[convId] for rationale). */
+/** RNGH gesture-aware FlatList so vertical scroll composes with the native-stack edge swipe-back under GestureDetectorProvider (see xmtp/[convId] for rationale). */
 import { FlatList } from 'react-native-gesture-handler';
 import { Row, Col } from '../../components/layout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -37,9 +35,7 @@ export default function GroupDetail(): React.ReactElement {
   const { convId } = useLocalSearchParams<{ convId: string }>();
   const line = lineOfConv(convId ?? '');
   const queryClient = useQueryClient();
-  /** Invalidate cached conv metadata so the chat-view topnav (and this screen,
-   *  which also reads useConvMeta) picks up rename / new image / description
-   *  without a reload. Keyed via the shared messaging key factory. */
+  /** Invalidate cached conv metadata so the chat-view topnav (and this screen, which also reads useConvMeta) picks up rename / new image / description without a reload. Keyed via the shared messaging key factory. */
   const invalidateConvMeta = (): void => {
     if (convId) void queryClient.invalidateQueries({ queryKey: messagingKeys.convMeta(convId) });
   };
@@ -54,8 +50,7 @@ export default function GroupDetail(): React.ReactElement {
     leaving, leaveGroup,
   } = a;
 
-  /** Shared metadata seeding (convMeta query, deduped) + group-only roles/names,
-   *  extracted to a hook for the line cap. */
+  /** Shared metadata seeding (convMeta query, deduped) + group-only roles/names, extracted to a hook for the line cap. */
   const { memberNames, memberRoles } = useGroupDetail(convId, a);
   const [addOpen, setAddOpen] = useState(false);
   /** Lower-cased local wallet address — suppresses the remove button on self. */

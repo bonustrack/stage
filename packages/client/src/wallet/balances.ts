@@ -1,9 +1,14 @@
-/** Wallet token-balance fetch — Multicall3 per chain + CoinGecko prices, shaped
+/**
+ * @file Wallet token-balance fetcher combining Multicall3 reads with CoinGecko prices into ready-to-render asset rows.
+ */
+/**
+ * Wallet token-balance fetch — Multicall3 per chain + CoinGecko prices, shaped
  *  into ready-to-render AssetRow[]. Framework-agnostic (viem + fetch only).
  *
  *  Moved out of apps/app's WalletScreen.data for the Stage SDK. The token-logo
  *  URL is INJECTED (the app passes kit's stampTokenUrl) so packages/client stays
- *  free of any @metro-labs/kit dependency. */
+ *  free of any @metro-labs/kit dependency.
+ */
 
 import { formatEther, formatUnits, type Hex } from 'viem';
 import { getErc20UsdPrices, getSimplePrices } from '../api/coingecko';
@@ -14,9 +19,7 @@ import { publicClientFor } from './client';
 
 interface Price { usd: number; usd_24h_change?: number }
 
-/** Build a token-logo URL for `(chainId, contract)` at a display size. The app
- *  supplies kit's stampTokenUrl; a default identicon-less stub keeps the SDK
- *  usable without it. */
+/** Build a token-logo URL for `(chainId, contract)` at a display size. The app supplies kit's stampTokenUrl; a default identicon-less stub keeps the SDK usable without it. */
 export type TokenLogoResolver = (chainId: number, contract: string, displayPx: number) => string;
 
 export interface FetchAssetRowsOptions {
@@ -26,17 +29,14 @@ export interface FetchAssetRowsOptions {
   coingeckoKey?: string;
 }
 
-/** Fetch every asset's on-chain balance + USD price for `addr` and return the
- *  ready-to-render AssetRow[]. */
+/** Fetch every asset's on-chain balance + USD price for `addr` and return the ready-to-render AssetRow[]. */
 export async function fetchAssetRows(
   addr: string,
   opts: FetchAssetRowsOptions,
 ): Promise<AssetRow[]> {
   const { tokenLogo, coingeckoKey } = opts;
 
-  /** Balances: one Multicall3 round-trip PER chain (brovider is multichain — the
-   *  path segment is the chainId). Each chain batches the native ETH balance via
-   *  getEthBalance + every ERC-20's balanceOf, run in parallel. */
+  /** Balances: one Multicall3 round-trip PER chain (brovider is multichain — the path segment is the chainId). Each chain batches the native ETH balance via getEthBalance + every ERC-20's balanceOf, run in parallel. */
   const chainIds = [...new Set(ASSETS.map(a => a.chainId))];
   const balancesByChain = new Map<number, bigint[]>();
   await Promise.all(chainIds.map(async cid => {
@@ -49,8 +49,7 @@ export async function fetchAssetRows(
     balancesByChain.set(cid, results.map(r => (r.status === 'success' ? r.result : 0n)));
   }));
 
-  /** Prices: simple-price once for ETH (same price on every chain), plus the
-   *  contract endpoint per CoinGecko platform for the ERC-20s. */
+  /** Prices: simple-price once for ETH (same price on every chain), plus the contract endpoint per CoinGecko platform for the ERC-20s. */
   const emptyPrices = (): Record<string, Price> => ({});
   const platforms = [
     ...new Set(

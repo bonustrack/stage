@@ -1,36 +1,6 @@
-/** Guardian social recovery for the ZeroDev smart account (phase 2).
- *
- *  ZeroDev-native, NO Rhinestone, NO backend / signature-storage service. The
- *  flow (spec §(d) + review items 2 & 3):
- *    1. The owner installs a weighted-ECDSA GUARDIAN validator + the recovery
- *       ACTION on the Kernel (guardians = weight 1 each, threshold = M, native
- *       on-chain `delay` timelock).
- *    2. On a lost device the user re-derives / generates a NEW owner and sends a
- *       recovery REQUEST to the guardians over XMTP (./recovery.comms).
- *    3. Each guardian signs the rotation OFFCHAIN (EIP-712 Approve over the
- *       rotation's callDataAndNonceHash — gasless, no ETH) and posts the signature
- *       back into the recovery conversation.
- *    4. The initiator concatenates the guardian signatures into ONE sponsored
- *       doRecovery userOp. The on-chain `delay` opens a timelock window.
- *    5. TIMELOCK: the rotation does not take effect until the window elapses. The
- *       owner gets an XMTP push and can CANCEL with their passkey/owner key via
- *       the validator's native `veto`. After the window with no veto, the new
- *       owner is the `sudo` validator and the wallet is restored at the SAME
- *       address (the XMTP inbox survives — stable SCW address).
- *
- *  TIMELOCK = NATIVE: the WeightedECDSAValidator carries a uint48 `_delay` in its
- *  enable data and enforces validAfter on-chain; `veto` is the native owner-cancel
- *  primitive. We do NOT add a JS guard — we read/drive the native module. The
- *  PendingRotation record (@stage-labs/client/zerodev/recovery) is only a UI
- *  mirror of the on-chain `proposalStatus`.
- *
- *  REGULAR-SLOT CAVEAT (spec §(h)/(y) item 2): the guardian validator + recovery
- *  action occupy the Kernel's recovery action selector (doRecovery), installed via
- *  getRecoveryAction. The later agent session-key permission validator wants its
- *  OWN action/permissionId (Kernel v3.1 supports per-permissionId validators), so
- *  installing recovery against the dedicated recovery selector here does NOT
- *  preclude session keys. Full guardian + agent + passkey coexistence is UNVERIFIED
- *  without on-device testing — see the phase-3 TODO at the bottom. */
+/**
+ * @file Guardian social recovery for the ZeroDev smart account (phase 2): installs a weighted-ECDSA guardian validator + recovery action with a native on-chain timelock, gathers offchain EIP-712 guardian approvals over XMTP into one sponsored doRecovery userOp, and supports native owner veto before the rotation takes effect.
+ */
 
 import '../cryptoShim';
 import { encodeFunctionData, keccak256, encodeAbiParameters, parseAbiParameters, type Address, type Hex, type PublicClient } from 'viem';
@@ -61,18 +31,18 @@ const DO_RECOVERY_ABI = [{
   outputs: [],
 }] as const;
 
-/** Minimal WeightedECDSAValidator fragments the SDK does not expose helpers for
- *  (owner-cancel + pending-state reads). veto = native owner-cancel; proposalStatus
- *  = the on-chain pending state we mirror into PendingRotation. */
+/** Minimal WeightedECDSAValidator fragments the SDK does not expose helpers for (owner-cancel + pending-state reads). veto = native owner-cancel; proposalStatus = the on-chain pending state we mirror into PendingRotation. */
 const WEIGHTED_ABI = [
   { type: 'function', name: 'veto', stateMutability: 'nonpayable', inputs: [{ name: '_callDataAndNonceHash', type: 'bytes32' }], outputs: [] },
   { type: 'function', name: 'proposalStatus', stateMutability: 'view', inputs: [{ name: 'callDataAndNonceHash', type: 'bytes32' }, { name: 'kernel', type: 'address' }], outputs: [{ name: 'status', type: 'uint8' }, { name: 'validAfter', type: 'uint48' }] },
 ] as const;
 
-/** The recovery callData = a single doRecovery call rotating the ECDSA `sudo`
+/**
+ * The recovery callData = a single doRecovery call rotating the ECDSA `sudo`
  *  validator to `newOwner`. The validator's enable data for an ECDSA owner is
  *  simply the 20-byte owner address. Both the install and the approval sign over
- *  the keccak of (sender, callData, nonce); see callDataAndNonceHash below. */
+ *  the keccak of (sender, callData, nonce); see callDataAndNonceHash below.
+ */
 export function recoveryCallData(newOwner: Address): Hex {
   return encodeFunctionData({
     abi: DO_RECOVERY_ABI,
@@ -81,16 +51,17 @@ export function recoveryCallData(newOwner: Address): Hex {
   });
 }
 
-/** The hash guardians sign offchain (EIP-712 Approve domain handled by the
+/**
+ * The hash guardians sign offchain (EIP-712 Approve domain handled by the
  *  validator's signUserOperation). keccak256(abi.encode(sender, callData, nonce))
  *  — matches the validator's internal callDataAndNonceHash so a recomputed pending
- *  proposal can be looked up via proposalStatus / vetoed. */
+ *  proposal can be looked up via proposalStatus / vetoed.
+ */
 export function callDataAndNonceHash(sender: Address, callData: Hex, nonce: bigint): Hex {
   return keccak256(encodeAbiParameters(parseAbiParameters('address, bytes, uint256'), [sender, callData, nonce]));
 }
 
-/** Build the guardian weighted validator from a config. Reused by install +
- *  doRecovery (the validator's signUserOperation concatenates guardian sigs). */
+/** Build the guardian weighted validator from a config. Reused by install + doRecovery (the validator's signUserOperation concatenates guardian sigs). */
 async function buildGuardianValidator(publicClient: PublicClient, cfg: WeightedConfig, signers: { address: Address }[] = []) {
   return createWeightedECDSAValidator(publicClient, {
     config: { threshold: cfg.threshold, signers: cfg.signers.map(s => ({ address: s.address as Address, weight: s.weight })), delay: cfg.delay },
@@ -103,10 +74,12 @@ async function buildGuardianValidator(publicClient: PublicClient, cfg: WeightedC
   });
 }
 
-/** INSTALL recovery: add the guardian weighted validator + recovery action onto
+/**
+ * INSTALL recovery: add the guardian weighted validator + recovery action onto
  *  the owner's Kernel via one sponsored userOp. The owner (current sudo) signs.
  *  Persists guardians + threshold on the record (display only). Native `delay` =
- *  the timelock window. */
+ *  the timelock window.
+ */
 export async function installGuardians(
   rec: AccountRecord,
   guardians: string[],
@@ -149,11 +122,13 @@ export async function installGuardians(
   return hash;
 }
 
-/** GUARDIAN side: sign the rotation OFFCHAIN (gasless). Produces the EIP-712
+/**
+ * GUARDIAN side: sign the rotation OFFCHAIN (gasless). Produces the EIP-712
  *  Approve signature over the recovery callDataAndNonceHash for the target wallet
  *  + newOwner, posted back into the recovery conversation (./recovery.comms).
  *  The guardian's signer is their own derived owner (their smart account's HD
- *  owner) — they spend no ETH; the signature is concatenated by the initiator. */
+ *  owner) — they spend no ETH; the signature is concatenated by the initiator.
+ */
 export async function signRecoveryApproval(
   guardianSigner: HDAccount,
   wallet: Address,
@@ -172,9 +147,7 @@ export async function signRecoveryApproval(
   });
 }
 
-/** OWNER CANCEL (native veto): during the timelock window the owner cancels a
- *  pending rotation with their passkey/owner key. One sponsored userOp calling
- *  the validator's `veto`. The owner's current Kernel client signs it. */
+/** OWNER CANCEL (native veto): during the timelock window the owner cancels a pending rotation with their passkey/owner key. One sponsored userOp calling the validator's `veto`. The owner's current Kernel client signs it. */
 export async function cancelRecovery(rec: AccountRecord, newOwner: Address, nonce: bigint): Promise<string> {
   if (rec.type !== 'smart' || rec.hdIndex == null) throw new Error('Not a smart account.');
   const owner = await smartOwnerSigner(rec.hdIndex);
@@ -195,9 +168,7 @@ export async function cancelRecovery(rec: AccountRecord, newOwner: Address, nonc
   return userOpHash;
 }
 
-/** RECONFIGURE guardians/threshold/delay (owner, native renew via the SDK helper).
- *  One sponsored userOp; the owner's current Kernel client signs it. Used by the
- *  guardian-setup screen to add/remove guardians or change M after install. */
+/** RECONFIGURE guardians/threshold/delay (owner, native renew via the SDK helper). One sponsored userOp; the owner's current Kernel client signs it. Used by the guardian-setup screen to add/remove guardians or change M after install. */
 export async function updateGuardians(
   rec: AccountRecord,
   guardians: string[],

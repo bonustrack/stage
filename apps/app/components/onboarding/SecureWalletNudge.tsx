@@ -1,20 +1,6 @@
-/** "Secure your wallet" nudge — SKIPPABLE post-onboarding backup prompt.
- *
- *  Onboarding deliberately does NOT show the recovery phrase (Less's locked
- *  decision: defer backup). This card is where the user can, later and at their
- *  own pace, actually secure the wallet:
- *    - Back up recovery phrase  -> reveal the phrase (device auth) + a confirm
- *      step, then mark it backed up so the nudge stops showing.
- *    - Add guardians            -> route to the existing /wallet/recovery screen.
- *
- *  It is never forced: a "Dismiss" action hides it (persisted) without backing
- *  up. It only renders for a `smart` account that has not been backed up or
- *  dismissed yet, so it self-hides once handled. Lives at the top of Settings ->
- *  Security (see SecuritySettings).
- *
- *  Reveal/confirm UI is intentionally minimal (no screenshots-block etc. — that
- *  can come later); the phrase comes from the keyring's revealRecoveryPhrase()
- *  which prompts device auth (the only guarded path that returns the mnemonic). */
+/**
+ * @file SecureWalletNudge: the skippable post-onboarding "secure your wallet" card (reveal/confirm recovery phrase or add guardians).
+ */
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
@@ -79,6 +65,7 @@ export function SecureWalletNudge(): React.ReactElement | null {
     })();
   };
 
+  /** Dismiss helper. */
   const dismiss = (): void => {
     void (async () => { await setWalletBackedUp(true); setShow(false); })();
   };

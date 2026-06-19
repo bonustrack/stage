@@ -1,10 +1,8 @@
-/** Local EOA helpers backing Snapshot's EIP-712 profile signing. The actual key
- *  storage + multi-account registry lives in lib/accounts.ts; this module is a
- *  thin compatibility layer that resolves the *active* account's viem signer
- *  (minting one on first use) so callers don't have to know about the registry. */
+/**
+ * @file Local EOA compatibility layer backing Snapshot's EIP-712 profile signing — resolves the active account's viem signer (minting one on first use) over the lib/accounts registry, plus the dev full-wallet reset.
+ */
 
-/** Side-effect import — installs the crypto.getRandomValues polyfill before any
- *  viem import (see lib/cryptoShim.ts). */
+/** Side-effect import — installs the crypto.getRandomValues polyfill before any viem import (see lib/cryptoShim.ts). */
 import './cryptoShim';
 import { clearAllAccounts } from './accounts';
 import { resetXmtpClient } from './xmtp.client';
@@ -12,13 +10,13 @@ import { clearMnemonic } from './zerodev/keyring';
 import { setWalletBackedUp } from './walletBackup';
 import { bumpAccountEpoch } from './accountEpoch';
 
-/** Wipe every account (keys + registry). Caller is responsible for also
- *  resetting downstream identities (XMTP dbs) keyed off these addresses. */
+/** Wipe every account (keys + registry). Caller is responsible for also resetting downstream identities (XMTP dbs) keyed off these addresses. */
 export async function resetAccount(): Promise<void> {
   await clearAllAccounts();
 }
 
-/** Dev "reset accounts" - full local wallet/account wipe that re-triggers
+/**
+ * Dev "reset accounts" - full local wallet/account wipe that re-triggers
  *  onboarding (the useAccountGate sees an empty registry after the epoch bump).
  *
  *  Clears, in order:
@@ -32,7 +30,8 @@ export async function resetAccount(): Promise<void> {
  *  WHAT IT WIPES: all local account/wallet state + XMTP sqlite stores for every
  *  account on THIS device. It does not touch remote XMTP network identity beyond
  *  dropping the local stores; a fresh onboarding mints a brand-new wallet, so the
- *  signer selection resets (expected for a fresh-onboarding test). */
+ *  signer selection resets (expected for a fresh-onboarding test).
+ */
 export async function resetForOnboarding(): Promise<void> {
   await resetXmtpClient();
   await clearMnemonic();

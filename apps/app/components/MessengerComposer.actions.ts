@@ -1,7 +1,6 @@
-/** Composer action handlers (attachment staging, pickers, poll/signature/
- *  payment/send) extracted from MessengerComposer.tsx for the lint line-budget.
- *  Voice recording lives in MessengerComposer.voice.ts. Behavior is identical —
- *  this hook owns the imperative pieces and reads/writes parent state via setters. */
+/**
+ * @file useComposerActions hook: the MessengerComposer's imperative action handlers (attachment staging, pickers, poll/signature/payment, send).
+ */
 
 import { Alert } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
@@ -20,6 +19,7 @@ export type { ComposerActionsArgs } from './MessengerComposer.types';
 
 /** Hook providing the composer's imperative action handlers (attachments, pickers, poll/signature/payment, send). */
 export function useComposerActions(a: ComposerActionsArgs) {
+  /** Upload helper. */
   const upload = async (uri: string, mime: string, name?: string): Promise<void> => {
     a.setUploading(true);
     try {
@@ -41,6 +41,7 @@ export function useComposerActions(a: ComposerActionsArgs) {
     setRecordSecs: a.setRecordSecs, setLevels: a.setLevels,
   });
 
+  /** Pick Image. */
   const pickImage = async (): Promise<void> => {
     const r = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images', 'videos'], quality: 0.5, allowsMultipleSelection: true, selectionLimit: 10,
@@ -65,6 +66,7 @@ export function useComposerActions(a: ComposerActionsArgs) {
     await upload(asset.uri, asset.mimeType ?? 'image/jpeg', asset.fileName ?? undefined);
   };
 
+  /** Pick File. */
   const pickFile = async (): Promise<void> => {
     const r = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true });
     if (r.canceled) return;
@@ -74,9 +76,7 @@ export function useComposerActions(a: ComposerActionsArgs) {
     await upload(asset.uri, asset.mimeType ?? 'application/octet-stream', asset.name);
   };
 
-  /** Share current location as an OpenStreetMap URL text message. Privacy-minded
-   *  default: OSM doesn't profile the recipient the way a maps.google.com link
-   *  does on tap / link-preview probe. */
+  /** Share current location as an OpenStreetMap URL text message. Privacy-minded default: OSM doesn't profile the recipient the way a maps.google.com link does on tap / link-preview probe. */
   const pickLocation = async (): Promise<void> => {
     a.setErr(null);
     const perm = await Location.requestForegroundPermissionsAsync();
@@ -97,35 +97,37 @@ export function useComposerActions(a: ComposerActionsArgs) {
     a.setTxOpen(true);
   };
 
+  /** Send helper. */
   const send = async (): Promise<void> => {
     const body = a.text.trim();
     if (!body && a.pending.length === 0) return;
-    /** Snapshot the raw input so a failed send can restore it (see the catch
-     *  below). We clear the composer optimistically before any await, so without
-     *  this the message bytes would be gone if the network send throws. */
+    /** Snapshot the raw input so a failed send can restore it (see the catch below). We clear the composer optimistically before any await, so without this the message bytes would be gone if the network send throws. */
     const originalText = a.text;
     const originalPending = a.pending;
-    /** Copy each picked local image/video/file into a STABLE app-cache path up
+    /**
+     * Copy each picked local image/video/file into a STABLE app-cache path up
      *  front (synchronous, cheap on-disk copy). The picker's temp URI can be
      *  evicted while the send is in flight, which would blank the dimmed pending
      *  thumbnail; the stable path is pinned for the app session. Both the
      *  optimistic bubble AND the post-confirm `RemoteAttachmentResolver` then
      *  source these exact bytes, so the local image stays painted (no reload,
      *  no blank frame) across the optimistic→echo handoff. Audio rides a
-     *  separate inline path and isn't displayed as a thumbnail, so leave it. */
+     *  separate inline path and isn't displayed as a thumbnail, so leave it.
+     */
     const sendingAttachments = a.pending.map((at) =>
       at.kind === 'audio' ? at : { ...at, url: stashLocalAttachment(at.url) });
     const sendingReplyTo = a.replyingTo?.id;
-    /** Split this submission into the SEPARATE XMTP messages it produces (text,
+    /**
+     * Split this submission into the SEPARATE XMTP messages it produces (text,
      *  then the bundled attachment message, then each audio clip) so the
      *  optimistic preview mirrors the final bubbles 1:1 — same count + order,
      *  each confirmed independently by its own real id. The attachment step,
      *  once sent, maps its real msg id → local URIs so the live bubble paints
-     *  the stashed bytes instantly (no download gap) across the echo handoff. */
+     *  the stashed bytes instantly (no download gap) across the echo handoff.
+     */
     const steps = planSendSteps(a.xmtpLine, body, sendingAttachments, sendingReplyTo);
 
-    /** Emit each optimistic entry up-front, in send order — only the first
-     *  carries the replyTo so the quoted preview attaches to the text bubble. */
+    /** Emit each optimistic entry up-front, in send order — only the first carries the replyTo so the quoted preview attaches to the text bubble. */
     steps.forEach((s, i) => a.onOptimistic?.({
       localId: s.localId, text: s.text, attachments: s.attachments,
       replyTo: i === 0 ? sendingReplyTo : undefined,
@@ -133,21 +135,25 @@ export function useComposerActions(a: ComposerActionsArgs) {
     a.setText(''); a.setPending([]); a.onClearReply?.();
     a.setSending(true); a.setErr(null);
 
-    /** Send sequentially (preserves on-wire order = display order). Confirm each
+    /**
+     * Send sequentially (preserves on-wire order = display order). Confirm each
      *  entry by its own real id; on failure, drop the remaining unsent entries.
      *  The whole loop is wrapped in try/finally so `sending` is ALWAYS reset -
      *  if any callback (onOptimistic/onSent/remember…) throws, the button would
-     *  otherwise stay disabled forever and wedge the composer. */
+     *  otherwise stay disabled forever and wedge the composer.
+     */
     let sendErr: string | undefined;
     try {
       for (const s of steps) {
         if (sendErr) { a.onSent?.(s.localId, sendErr); continue; }
         try {
           const id = await s.run();
-          /** Map the real msg id → the step's local image/video/file URIs so the
+          /**
+           * Map the real msg id → the step's local image/video/file URIs so the
            *  live bubble paints the stashed bytes instantly when the optimistic
            *  entry is replaced by the still-downloading remote attachment. Audio
-           *  rides an inline path with no thumbnail, so skip it. */
+           *  rides an inline path with no thumbnail, so skip it.
+           */
           const localUris = s.attachments.filter((at) => at.kind !== 'audio').map((at) => at.url);
           if (localUris.length > 0) rememberLocalAttachments(id, localUris);
           a.onSent?.(s.localId, undefined, id);
@@ -160,10 +166,12 @@ export function useComposerActions(a: ComposerActionsArgs) {
     } finally {
       a.setSending(false);
     }
-    /** Send failed: the optimistic bubble is dropped downstream, so put the
+    /**
+     * Send failed: the optimistic bubble is dropped downstream, so put the
      *  original text + attachments back in the composer (only if the user hasn't
      *  already typed something new) so the message isn't silently lost. The send
-     *  button reappears (content present) and the user can retry. */
+     *  button reappears (content present) and the user can retry.
+     */
     if (sendErr && a.text.trim().length === 0 && a.pending.length === 0) {
       a.setText(originalText);
       a.setPending(originalPending);

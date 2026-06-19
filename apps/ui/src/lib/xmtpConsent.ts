@@ -1,5 +1,7 @@
-/** Cross-device read/unread markers + per-conv last-read tracking. Split out of
- *  `xmtp.ts` so each file stays under the lint cap; re-exported from there. */
+/**
+ * @file XMTP consent-state read/unread markers and per-conversation last-read timestamp tracking.
+ */
+/** Cross-device read/unread markers + per-conv last-read tracking. Split out of `xmtp.ts` so each file stays under the lint cap; re-exported from there. */
 
 import {
   ConsentState,
@@ -8,9 +10,7 @@ import {
 } from '@xmtp/browser-sdk';
 import { getCachedXmtpClient, convOfLine, lineOfConv } from './xmtp';
 
-/** Per-conv "last read at" timestamp in XMTP `sentAtNs` units (number, not
- *  bigint — we coerce on read/write). Persisted under `unread.lastRead.<id>`
- *  in localStorage so unread counts survive a reload. */
+/** Per-conv "last read at" timestamp in XMTP `sentAtNs` units (number, not bigint — we coerce on read/write). Persisted under `unread.lastRead.<id>` in localStorage so unread counts survive a reload. */
 const LAST_READ_PREFIX = 'unread.lastRead.';
 /** Read a conversation's persisted last-read timestamp in sentAtNs units. */
 export function getLastReadNs(convId: string): number {
@@ -25,7 +25,8 @@ export function setLastReadNs(convId: string, ns: number): void {
   catch { /* quota / private-mode — best effort */ }
 }
 
-/** Cross-device read/unread marker — synced across the inbox's installations via
+/**
+ * Cross-device read/unread marker — synced across the inbox's installations via
  *  XMTP's per-conversation consent state. See the matching block in
  *  apps/app/lib/xmtp.ts for the full rationale: XMTP V3 has no arbitrary synced
  *  KV store, so we repurpose the consent `allowed`↔`unknown` axis as a synced
@@ -33,7 +34,8 @@ export function setLastReadNs(convId: string, ns: number): void {
  *    - `allowed` → read
  *    - `unknown` → unread
  *  The numeric unread *count* stays per-device (lastReadNs); the binary
- *  read/unread state propagates cross-device. */
+ *  read/unread state propagates cross-device.
+ */
 
 /** Map an XMTP `ConsentState` enum to its string form used across the UI. */
 function consentStateToString(s: ConsentState): 'allowed' | 'denied' | 'unknown' {
@@ -50,8 +52,7 @@ export async function getConvConsent(convId: string): Promise<'allowed' | 'denie
   } catch { return 'unknown'; }
 }
 
-/** Mark a conversation read across devices: consent → Allowed (synced) + bump
- *  the local lastReadNs so the per-device count clears too. */
+/** Mark a conversation read across devices: consent → Allowed (synced) + bump the local lastReadNs so the per-device count clears too. */
 export async function markConvReadSynced(convId: string): Promise<void> {
   setLastReadNs(convId, Date.now() * 1_000_000);
   try {
@@ -62,8 +63,7 @@ export async function markConvReadSynced(convId: string): Promise<void> {
   } catch { /* best-effort — local lastReadNs still cleared the badge */ }
 }
 
-/** Mark a conversation unread across devices: consent → Unknown (synced) +
- *  rewind the local lastReadNs so this device shows the badge immediately. */
+/** Mark a conversation unread across devices: consent → Unknown (synced) + rewind the local lastReadNs so this device shows the badge immediately. */
 export async function markConvUnreadSynced(convId: string): Promise<void> {
   setLastReadNs(convId, 0);
   try {
@@ -74,15 +74,13 @@ export async function markConvUnreadSynced(convId: string): Promise<void> {
   } catch { /* best-effort */ }
 }
 
-/** Pull synced preference/consent updates from the network into the local DB.
- *  Call on mount / tab-visible so consent changes from another device land. */
+/** Pull synced preference/consent updates from the network into the local DB. Call on mount / tab-visible so consent changes from another device land. */
 export async function syncPreferences(): Promise<void> {
   try { await getCachedXmtpClient()?.preferences.sync(); }
   catch { /* best-effort */ }
 }
 
-/** Subscribe to cross-device consent changes. Fires `(convId, state)` for every
- *  conversation-scoped consent update. Returns a stop fn. */
+/** Subscribe to cross-device consent changes. Fires `(convId, state)` for every conversation-scoped consent update. Returns a stop fn. */
 export async function streamConvConsent(
   onChange: (convId: string, state: 'allowed' | 'denied' | 'unknown') => void,
 ): Promise<() => Promise<void>> {

@@ -1,18 +1,6 @@
-/** PaymentCard — shared presentational payment bubble used by BOTH the in-chat
- *  payment request (TxRequestCard) and the x402 payment-endpoint card
- *  (X402Card). They were near-identical: token avatar + description, a big
- *  amount, a recipient-or-endpoint line, a balance line, and a full-width
- *  primary action. This component owns that layout + the balance row; the two
- *  callers stay thin wrappers that pass their own distinguishing badge/eyebrow,
- *  their own action handler (walletSendCalls/sendCall vs EIP-3009 sign +
- *  /x402-settle), and a fallback action.
- *
- *  Purely presentational: no payment logic lives here. The balance is fetched
- *  with usePayerBalance from the (chainId, token, symbol, amount) the caller
- *  passes, and ALWAYS renders a row when there's an amount + known asset on a
- *  known chain — a subtle placeholder while it loads, danger-tinted when the
- *  held balance is below the requested amount — so the card never looks broken
- *  by silently hiding the line. */
+/**
+ * @file PaymentCard: the shared presentational payment bubble (token avatar, amount, recipient, balance row, primary action) used by both TxRequestCard and X402Card.
+ */
 
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
@@ -22,10 +10,12 @@ import { TokenAvatar } from './tabs/WalletScreen.tokenAvatar';
 import { usePayerBalance, type PayerBalance } from './MessengerBubble.balance';
 import { usePalette, useBlockRadius, withAlpha } from '../lib/theme';
 
-/** Args for the balance line. When `show` is false the row is omitted entirely
+/**
+ * Args for the balance line. When `show` is false the row is omitted entirely
  *  (no amount / unknown asset / unknown chain — there's nothing meaningful to
  *  show). When true, the row always renders: a placeholder while loading, the
- *  resolved balance otherwise. */
+ *  resolved balance otherwise.
+ */
 export interface PaymentBalanceArgs {
   show: boolean;
   chainId: string | number | undefined;
@@ -57,18 +47,18 @@ export function PaymentCard({
   badge?: React.ReactElement;
   /** Big amount line (e.g. "0.01 USDC"). Omitted when undefined. */
   amountLabel?: string;
-  /** Recipient ("To …") / endpoint line(s). The caller renders these so each
-   *  card keeps its own recipient-vs-endpoint presentation. */
+  /** Recipient ("To …") / endpoint line(s). The caller renders these so each card keeps its own recipient-vs-endpoint presentation. */
   detail?: React.ReactNode;
   /** Balance line config (always shown when `show`). */
   balance: PaymentBalanceArgs;
-  /** Full-width primary action. Either a static action or a function of the
+  /**
+   * Full-width primary action. Either a static action or a function of the
    *  resolved balance (so the action label/disabled can depend on whether the
    *  payer can afford it — used by the x402 card). Omit / return undefined to
-   *  render the card with no button (read-only pending-requests list). */
+   *  render the card with no button (read-only pending-requests list).
+   */
   action?: PaymentAction | ((bal: PayerBalance | null) => PaymentAction | undefined);
-  /** Replaces the action button when there is none (e.g. a consent-gated note
-   *  telling the user to accept the conversation before paying). */
+  /** Replaces the action button when there is none (e.g. a consent-gated note telling the user to accept the conversation before paying). */
   footer?: React.ReactNode;
 }): React.ReactElement {
   const pal = usePalette();

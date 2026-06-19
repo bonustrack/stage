@@ -1,5 +1,6 @@
-/** Shared composer types — leaf imported by both MessengerComposer.actions.ts
- *  and MessengerComposer.builders.ts to avoid a module cycle between them. */
+/**
+ * @file Shared MessengerComposer types (ComposerActionsArgs) — a leaf module imported by composer actions and builders to avoid a cycle.
+ */
 
 import type { Attachment } from './MessengerComposer.helpers';
 

@@ -1,15 +1,8 @@
-/** Public-balance load + pull-to-refresh state for the Wallet tab. Extracted
- *  from WalletScreen for the lint line-budget. Owns the connected address, the
- *  fetched AssetRow[], the error string, and the pull-to-refresh spinner.
- *
- *  Pull-to-refresh kicks off BOTH the public balance fetch and (when a private
- *  account is known) a fresh Railgun shielded-snapshot scan. The RefreshControl
- *  spinner is tied to the public fetch in a try/finally and capped by an 8s
- *  race, so it is dismissed by a real completion (sync with the native Android
- *  controlled spinner) and can NEVER linger — even if the fetch throws or the
- *  Railgun engine scan hangs (that scan is detached, the spinner never waits on
- *  it). Rows update reactively: refreshSnapshot pushes into the cache store which
- *  the usePrivateWallet subscription picks up. */
+/**
+ * @file useWalletBalances hook — public-balance load + pull-to-refresh state for the
+ *  Wallet tab (connected address, fetched AssetRow[], error, spinner). Refresh also
+ *  kicks a detached Railgun shielded-snapshot scan; the spinner is 8s-race-capped so it never lingers.
+ */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getActiveAccount } from '../../lib/accounts';
@@ -26,13 +19,17 @@ export interface WalletBalances {
   onRefresh: () => void;
 }
 
-/** @param privAccountId  the active Railgun account id (from usePrivateWallet),
+/**
+ * @param privAccountId  the active Railgun account id (from usePrivateWallet),
  *  or null when not yet known — its shielded snapshot is refreshed alongside
- *  the public balances on pull-to-refresh. */
-/** @param focused  whether the Wallet tab has ever been focused (latched). The
+ *  the public balances on pull-to-refresh.
+ */
+/**
+ * @param focused  whether the Wallet tab has ever been focused (latched). The
  *  public multicall + CoinGecko fetch is skipped until first focus so it doesn't
  *  burst at every cold start behind Home (same gate as the Railgun engine boot
- *  in WalletScreen). */
+ *  in WalletScreen).
+ */
 export function useWalletBalances(privAccountId: string | null, focused: boolean): WalletBalances {
   const [address, setAddress] = useState<string>('');
   const [rows, setRows] = useState<AssetRow[] | null>(null);
@@ -41,9 +38,7 @@ export function useWalletBalances(privAccountId: string | null, focused: boolean
   const mounted = useRef(true);
   const spinnerTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  /** Re-derive on account switch (switchToAccount bumps this epoch). The address
-   *  + balances were captured once on mount, so without this the Wallet tab kept
-   *  showing the PREVIOUS account after a switch. */
+  /** Re-derive on account switch (switchToAccount bumps this epoch). The address + balances were captured once on mount, so without this the Wallet tab kept showing the PREVIOUS account after a switch. */
   const accountEpoch = useActiveAccount();
 
   useEffect(() => {
@@ -60,10 +55,7 @@ export function useWalletBalances(privAccountId: string | null, focused: boolean
     let cancelled = false;
     void (async (): Promise<void> => {
       try {
-        /** Derive the EOA address straight from the active account record (NOT the
-         *  XMTP client): the local wallet is decoupled from XMTP, switchToAccount
-         *  repoints the active id before the inbox rebuilds, and this never hangs
-         *  on a slow/failed Client.create. */
+        /** Derive the EOA address straight from the active account record (NOT the XMTP client): the local wallet is decoupled from XMTP, switchToAccount repoints the active id before the inbox rebuilds, and this never hangs on a slow/failed Client.create. */
         const rec = await getActiveAccount();
         const addr = rec?.address ?? '';
         if (cancelled) return;
@@ -86,25 +78,22 @@ export function useWalletBalances(privAccountId: string | null, focused: boolean
   const onRefresh = useCallback((): void => {
     if (!address) return;
     setRefreshing(true);
-    /** Absolute backstop, fully independent of the fetch/race below: clear the
-     *  visible spinner within 9s no matter what. The pure-JS pull-to-refresh
-     *  overlay is bound to `refreshing`, but this guarantees the JS state never
-     *  lingers even if the fetch wedges. */
+    /** Absolute backstop, fully independent of the fetch/race below: clear the visible spinner within 9s no matter what. The pure-JS pull-to-refresh overlay is bound to `refreshing`, but this guarantees the JS state never lingers even if the fetch wedges. */
     const hardStop = setTimeout(() => { if (mounted.current) setRefreshing(false); }, 9000);
 
-    /** Always-resolving dismiss: the spinner is tied to the public fetch (the
+    /**
+     * Always-resolving dismiss: the spinner is tied to the public fetch (the
      *  only fast, bounded call) AND a hard 8s safety cap that races it, so the
      *  spinner is dismissed by whichever lands first. The dismiss runs in a
-     *  `finally`, so a thrown/rejected fetch can never strand the spinner. */
+     *  `finally`, so a thrown/rejected fetch can never strand the spinner.
+     */
     const stop = (): void => {
       clearTimeout(hardStop);
       if (spinnerTimer.current) { clearTimeout(spinnerTimer.current); spinnerTimer.current = null; }
       if (mounted.current) setRefreshing(false);
     };
 
-    /** Fire the Railgun shielded re-scan in the BACKGROUND (it can take many
-     *  seconds and pushes its result into the cache store the UI subscribes to)
-     *  so it never holds the spinner hostage. */
+    /** Fire the Railgun shielded re-scan in the BACKGROUND (it can take many seconds and pushes its result into the cache store the UI subscribes to) so it never holds the spinner hostage. */
     if (privAccountId) void refreshSnapshot(privAccountId).catch(() => {/* noop */});
 
     void (async (): Promise<void> => {

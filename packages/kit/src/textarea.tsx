@@ -1,10 +1,6 @@
-/** Textarea - a ChatKit-styled multi-line text field. Mirrors ChatKit's
- *  `Textarea` widget. Faithful prop names: `name`, `defaultValue`,
- *  `placeholder`, `variant`, `size`, `disabled`, `rows`, `maxRows`,
- *  `autoResize`, `autoFocus`, `autoSelect`, `required`, `pattern`. Same kit
- *  deviations as Input: a controlled `value` + `onChangeText` callback (RN
- *  substitute for ChatKit's onChangeAction) and a `dark` boolean. `rows`/`maxRows`
- *  bound the height; `autoResize` lets it grow with content up to `maxRows`. */
+/**
+ * @file Textarea — a hook-free ChatKit-styled multi-line text field (controlled `value` + `onChangeText`) where `rows`/`maxRows` bound the height and `autoResize` grows it with content.
+ */
 
 import { forwardRef, useState } from 'react';
 import { TextInput, type TextInputProps, type StyleProp, type TextStyle } from 'react-native';
@@ -62,16 +58,14 @@ export interface TextareaProps {
   placeholderTextColor?: string;
   /** Escape-hatch style merged last onto the box (accepts text + view style). */
   style?: StyleProp<TextStyle>;
-  /** Extra RN TextInput props. Its onFocus/onBlur/onContentSizeChange are
-   *  chained after the kit handlers. */
+  /** Extra RN TextInput props. Its onFocus/onBlur/onContentSizeChange are chained after the kit handlers. */
   inputProps?: Omit<
     TextInputProps,
     'value' | 'defaultValue' | 'onChangeText' | 'style' | 'placeholder' | 'editable' | 'multiline'
   >;
 }
 
-/** ChatKit-style RN multi-line input. Forwards a ref to the underlying
- *  RN TextInput so call sites can focus/blur it. */
+/** ChatKit-style RN multi-line input. Forwards a ref to the underlying RN TextInput so call sites can focus/blur it. */
 export const Textarea = forwardRef<TextInput, TextareaProps>(function Textarea(props, ref) {
   const {
     name,

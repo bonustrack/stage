@@ -1,4 +1,7 @@
-/** Persisted numeric design tokens: two corner radii.
+/** @file Device-local persisted override store for the two corner-radius design tokens (button pill + block container), with synchronous getters and pub/sub for the Kit editor and theme. */
+
+/*
+ * Persisted numeric design tokens: two corner radii.
  *
  *  - `button` (button-border-radius) — px applied to every non-circular button.
  *    Default BUTTON_RADIUS_DEFAULT (999 = fully-rounded pill, the original look).
@@ -10,7 +13,8 @@
  *  pub/sub) but holds two numbers. The Kit editor edits them; theme.ts reads
  *  them reactively (useRadius / useBlockRadius) and wires the button value into
  *  the kit Button via setDefaultButtonRadius. Device-only. The app renders
- *  identically until the user edits a token. */
+ *  identically until the user edits a token.
+ */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -25,16 +29,18 @@ function clamp(n: number, def: number): number {
   if (!Number.isFinite(n)) return def;
   return Math.max(RADIUS_MIN, Math.min(RADIUS_MAX, Math.round(n)));
 }
+/** Clamp Radius. */
 function clampRadius(n: number): number { return clamp(n, BUTTON_RADIUS_DEFAULT); }
+/** Clamp Block Radius. */
 function clampBlockRadius(n: number): number { return clamp(n, BLOCK_RADIUS_DEFAULT); }
 
-/** In-memory mirrors so the hooks can read synchronously after the one-time
- *  load, and edits repaint instantly. `null` = no override → use the default. */
+/** In-memory mirrors so the hooks can read synchronously after the one-time load, and edits repaint instantly. `null` = no override → use the default. */
 let buttonCache: number | null = null;
 let blockCache: number | null = null;
 let loaded = false;
 const listeners = new Set<() => void>();
 
+/** Emit helper. */
 function emit(): void { for (const l of listeners) l(); }
 
 /** Kick off the one-time load from storage; notify subscribers when it lands. */

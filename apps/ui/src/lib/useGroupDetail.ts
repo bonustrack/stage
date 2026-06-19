@@ -1,5 +1,7 @@
-/** Group detail state + mutations (name/description/avatar/members). Extracted
- *  from `pages/GroupDetail.vue` so the SFC stays under the lint cap. */
+/**
+ * @file Composable for the Group Detail screen: group state plus name/description/avatar/member mutations.
+ */
+/** Group detail state + mutations (name/description/avatar/members). Extracted from `pages/GroupDetail.vue` so the SFC stays under the lint cap. */
 
 import { ref, computed, watchEffect, type ComputedRef, type Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -54,8 +56,7 @@ export function useGroupDetail(): GroupDetail {
   const description = ref<string>('');
   const savingDescription = ref(false);
 
-  /** Only group admins/owners can edit metadata + manage members (enforced by the
-   *  group's admin-only policy); hide those affordances from plain members. */
+  /** Only group admins/owners can edit metadata + manage members (enforced by the group's admin-only policy); hide those affordances from plain members. */
   const selfIsAdmin = computed(() => {
     const self = selfAddress.value.toLowerCase();
     for (const [addr, role] of Object.entries(memberRoles.value)) {
@@ -66,6 +67,7 @@ export function useGroupDetail(): GroupDetail {
 
   watchEffect(() => { void runGroupDetailEffect(); });
 
+  /** Run Group Detail Effect. */
   async function runGroupDetailEffect(): Promise<void> {
     if (!convId.value) return;
     const c = getCachedXmtpClient();
@@ -89,8 +91,7 @@ export function useGroupDetail(): GroupDetail {
     const addrMap = await memberInboxToAddressMap(conv);
     const addrs = Object.values(addrMap).sort((a, b) => a.localeCompare(b));
     members.value = addrs;
-    /** Role per member: super-admin → Owner, admin → Admin, else Member.
-     *  superAdmins/admins are inbox ids, matched against the inbox→address map. */
+    /** Role per member: super-admin → Owner, admin → Admin, else Member. superAdmins/admins are inbox ids, matched against the inbox→address map. */
     try {
       const superSet = new Set((group.superAdmins ?? []).map(s => s.toLowerCase()));
       const adminSet = new Set((group.admins?.() ?? []).map(a => a.toLowerCase()));
@@ -101,8 +102,7 @@ export function useGroupDetail(): GroupDetail {
       }
       memberRoles.value = roles;
     } catch { /* roles are best-effort */ }
-    /** Enrich with Snapshot profile names — pure best-effort, rows fall back
-     *  to short addresses when the lookup misses. */
+    /** Enrich with Snapshot profile names — pure best-effort, rows fall back to short addresses when the lookup misses. */
     const profiles = await Promise.all(
       addrs.map(a => readProfile(a).catch(() => null as SnapshotProfile | null)),
     );
@@ -116,6 +116,7 @@ export function useGroupDetail(): GroupDetail {
     memberNames.value = next;
   }
 
+  /** Handle the Save Name. */
   async function onSaveName(next: string): Promise<void> {
     if (!next || saving.value) return;
     saving.value = true;
@@ -131,6 +132,7 @@ export function useGroupDetail(): GroupDetail {
     } finally { saving.value = false; }
   }
 
+  /** Handle the Save Description. */
   async function onSaveDescription(next: string): Promise<void> {
     if (savingDescription.value) return;
     savingDescription.value = true;
@@ -148,6 +150,7 @@ export function useGroupDetail(): GroupDetail {
   }
 
   type MemberOp = 'addMembersByIdentifiers' | 'removeMembersByIdentifiers';
+  /** Mutate Members. */
   async function mutateMembers(op: MemberOp, addr: string, errLabel: string): Promise<void> {
     errorMsg.value = '';
     try {
@@ -162,6 +165,7 @@ export function useGroupDetail(): GroupDetail {
     } catch (e) { errorMsg.value = `${errLabel}: ${(e as Error).message}`; }
   }
 
+  /** Handle the Add Member. */
   async function onAddMember(addr: string): Promise<void> {
     if (adding.value) return;
     adding.value = true;
@@ -169,6 +173,7 @@ export function useGroupDetail(): GroupDetail {
     finally { adding.value = false; }
   }
 
+  /** Remove Member. */
   async function removeMember(addr: string): Promise<void> {
     if (!confirm(`Remove ${shortAddress(addr)} from this group?`)) return;
     removing.value = addr.toLowerCase();
@@ -176,8 +181,10 @@ export function useGroupDetail(): GroupDetail {
     finally { removing.value = null; }
   }
 
+  /** Open Member. */
   function openMember(addr: string): void { void router.push(`/user/${addr}`); }
 
+  /** Handle the Pick Image. */
   async function onPickImage(file: File): Promise<void> {
     if (uploadingImage.value) return;
     uploadingImage.value = true;

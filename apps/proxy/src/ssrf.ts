@@ -1,14 +1,6 @@
-/** SSRF guard for the link-preview Worker.
- *
- *  Unlike the Node service this Worker does NOT (and cannot) resolve DNS: the
- *  Cloudflare Workers runtime refuses to connect to private / loopback /
- *  link-local / RFC1918 addresses from `fetch()` by design, so DNS-rebinding to
- *  an internal IP is already neutralised at the platform layer. We therefore
- *  keep only the host-allowlist guard here: reject non-http(s) schemes, literal
- *  private IPs (cheap, catches obvious probes), and our own internal Metro/Stage
- *  surface (which is reachable from inside Cloudflare's network and so must be
- *  blocked explicitly). The literal-IP and host checks are re-run on every
- *  redirect hop by the caller. */
+/**
+ * @file SSRF guard for the link-preview Worker: rejects non-http(s) schemes, private/loopback/link-local IP literals, and internal Metro/Stage hosts on every redirect hop.
+ */
 
 /** Hostnames we never fetch (internal Metro/Stage surface + cloud metadata). */
 const BLOCKED_HOST_SUFFIXES = [
@@ -27,20 +19,20 @@ const BLOCKED_HOSTS = new Set([
   'metadata.google.internal',
 ]);
 
+/** Whether I Pv4. */
 function isIPv4(s: string): boolean {
   const p = s.split('.');
   return p.length === 4 && p.every(o => /^\d+$/.test(o) && Number(o) <= 255);
 }
 
-/** True if `ip` (v4 or v6 literal) is in a private / loopback / link-local /
- *  reserved range. A defence-in-depth check on top of the platform's refusal to
- *  route to private addresses. */
+/** True if `ip` (v4 or v6 literal) is in a private / loopback / link-local / reserved range. A defence-in-depth check on top of the platform's refusal to route to private addresses. */
 export function isPrivateIp(host: string): boolean {
   if (isIPv4(host)) return isPrivateV4(host);
   if (host.includes(':')) return isPrivateV6(host);
   return false;
 }
 
+/** Whether Private V4. */
 function isPrivateV4(ip: string): boolean {
   const parts = ip.split('.').map(Number);
   const a = parts[0] ?? NaN;
@@ -56,6 +48,7 @@ function isPrivateV4(ip: string): boolean {
   return false;
 }
 
+/** Whether Private V6. */
 function isPrivateV6(ip: string): boolean {
   const x = ip.toLowerCase().replace(/^\[|\]$/g, '');
   if (x === '::1' || x === '::') return true; // loopback / unspecified
@@ -81,6 +74,7 @@ function isPrivateV6(ip: string): boolean {
   return false;
 }
 
+/** Whether Blocked Host. */
 function isBlockedHost(host: string): boolean {
   const h = host.toLowerCase().replace(/\.$/, '');
   if (BLOCKED_HOSTS.has(h)) return true;
@@ -89,9 +83,7 @@ function isBlockedHost(host: string): boolean {
 
 export class SsrfError extends Error {}
 
-/** Validate a URL is safe to fetch: scheme + host allowlist + literal-IP guard.
- *  Throws {@link SsrfError} on any violation; returns the parsed URL on success.
- *  (No DNS resolution - the runtime blocks private destinations itself.) */
+/** Validate a URL is safe to fetch: scheme + host allowlist + literal-IP guard. Throws {@link SsrfError} on any violation; returns the parsed URL on success. (No DNS resolution - the runtime blocks private destinations itself.) */
 export function assertPublicUrl(raw: string): URL {
   let u: URL;
   try {

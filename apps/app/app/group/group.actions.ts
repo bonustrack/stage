@@ -1,6 +1,4 @@
-/** useGroupActions — owns the group-detail mutation state + handlers (name,
- *  description, image, add/remove member, leave). Extracted from group/[convId]
- *  for lint line-budget. Behaviour identical. */
+/** @file useGroupActions hook owning the group-detail mutation state and handlers (name, description, image, add/remove member, leave). */
 
 import { useState } from 'react';
 import { Alert } from 'react-native';
@@ -46,6 +44,7 @@ export function useGroupActions(line: string, invalidateConvMeta: () => void): {
   const [savingDescription, setSavingDescription] = useState(false);
   const [leaving, setLeaving] = useState(false);
 
+  /** Add Member. */
   const addMember = async (onSuccess?: () => void): Promise<void> => {
     const addr = addDraft.trim();
     if (!/^0x[0-9a-fA-F]{40}$/.test(addr) || adding) {
@@ -64,6 +63,7 @@ export function useGroupActions(line: string, invalidateConvMeta: () => void): {
     } finally { setAdding(false); }
   };
 
+  /** Remove Member. */
   const removeMember = (addr: string): void => {
     Alert.alert(
       'Remove member',
@@ -87,12 +87,12 @@ export function useGroupActions(line: string, invalidateConvMeta: () => void): {
     );
   };
 
+  /** Pick Image. */
   const pickImage = async (): Promise<void> => {
     if (uploadingImage) return;
     const r = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: 'images', quality: 0.85, allowsMultipleSelection: false,
-      /** Built-in square crop/resize step before upload — `allowsEditing` is
-       *  part of expo-image-picker, no extra native dep. */
+      /** Built-in square crop/resize step before upload — `allowsEditing` is part of expo-image-picker, no extra native dep. */
       allowsEditing: true, aspect: [1, 1],
     });
     const a = r.canceled ? undefined : r.assets[0];
@@ -108,6 +108,7 @@ export function useGroupActions(line: string, invalidateConvMeta: () => void): {
     } finally { setUploadingImage(false); }
   };
 
+  /** Set the Description. */
   const saveDescription = async (): Promise<void> => {
     const next = descriptionDraft.trim();
     if (savingDescription) return;
@@ -122,8 +123,7 @@ export function useGroupActions(line: string, invalidateConvMeta: () => void): {
     } finally { setSavingDescription(false); }
   };
 
-  /** Leave the group from the info view — confirm, call the SDK (true leave
-   *  when supported, else consent-deny hide), pop back to the conversation list. */
+  /** Leave the group from the info view — confirm, call the SDK (true leave when supported, else consent-deny hide), pop back to the conversation list. */
   const leaveGroup = (onClose: () => void): void => {
     onClose();
     Alert.alert(
@@ -149,6 +149,7 @@ export function useGroupActions(line: string, invalidateConvMeta: () => void): {
     );
   };
 
+  /** Set the Name. */
   const saveName = async (): Promise<void> => {
     const next = draft.trim();
     if (!next || saving) return;

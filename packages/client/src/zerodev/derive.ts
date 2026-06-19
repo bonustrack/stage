@@ -1,4 +1,8 @@
-/** Pure HD-derivation rules for the ZeroDev smart-account wallet. No storage, no
+/**
+ * @file Pure HD-derivation rules deriving per-index owner EOAs from the single app mnemonic for ZeroDev Kernel accounts.
+ */
+/**
+ * Pure HD-derivation rules for the ZeroDev smart-account wallet. No storage, no
  *  platform deps — viem only (mirrors ../accounts/keys). The single app mnemonic
  *  is the root for BOTH user accounts AND agents: every account is the next HD
  *  index off that one phrase, deriving an owner EOA that backs a Kernel.
@@ -8,7 +12,8 @@
  *
  *  Path: m/44'/60'/0'/0/<index> (standard Ethereum), passed BOTH as the viem
  *  derivation path AND as `index: BigInt(n)` to createKernelAccount, so the
- *  counterfactual Kernel address is reproducible from the phrase + index alone. */
+ *  counterfactual Kernel address is reproducible from the phrase + index alone.
+ */
 
 import { generateMnemonic, mnemonicToAccount, english, type HDAccount } from 'viem/accounts';
 
@@ -20,8 +25,7 @@ export function ownerDerivationPath(index: number): `m/44'/60'/0'/0/${string}` {
   return `m/44'/60'/0'/0/${index}`;
 }
 
-/** Generate a fresh 12-word BIP-39 mnemonic (128-bit entropy). Used once on
- *  first launch; the host persists it hardened. */
+/** Generate a fresh 12-word BIP-39 mnemonic (128-bit entropy). Used once on first launch; the host persists it hardened. */
 export function generateWalletMnemonic(): string {
   return generateMnemonic(english);
 }
@@ -31,10 +35,7 @@ export function normalizeMnemonic(phrase: string): string {
   return phrase.trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
-/** True iff the phrase is a valid BIP-39 mnemonic. viem's `mnemonicToAccount`
- *  runs the wordlist + checksum check and throws on a bad phrase; we reuse it so
- *  no extra bip39 dep is pulled in (matches accounts/keys.ts which derives via
- *  the same path). */
+/** True iff the phrase is a valid BIP-39 mnemonic. viem's `mnemonicToAccount` runs the wordlist + checksum check and throws on a bad phrase; we reuse it so no extra bip39 dep is pulled in (matches accounts/keys.ts which derives via the same path). */
 export function isValidMnemonic(phrase: string): boolean {
   const words = normalizeMnemonic(phrase).split(' ');
   if (![12, 15, 18, 21, 24].includes(words.length)) return false;
@@ -46,9 +47,7 @@ export function isValidMnemonic(phrase: string): boolean {
   }
 }
 
-/** Derive the owner HD account (a viem signer) for a smart-account index off the
- *  app mnemonic. Throws on an invalid phrase. The returned account both signs
- *  (ECDSA validator) and pins the deterministic Kernel address via its index. */
+/** Derive the owner HD account (a viem signer) for a smart-account index off the app mnemonic. Throws on an invalid phrase. The returned account both signs (ECDSA validator) and pins the deterministic Kernel address via its index. */
 export function deriveOwner(mnemonic: string, index: number): HDAccount {
   const phrase = normalizeMnemonic(mnemonic);
   if (!isValidMnemonic(phrase)) {
@@ -59,8 +58,7 @@ export function deriveOwner(mnemonic: string, index: number): HDAccount {
   return mnemonicToAccount(phrase, { path: ownerDerivationPath(index) });
 }
 
-/** The owner address (lowercased) for an index — handy for record bookkeeping
- *  without holding the signer. */
+/** The owner address (lowercased) for an index — handy for record bookkeeping without holding the signer. */
 export function ownerAddress(mnemonic: string, index: number): string {
   return deriveOwner(mnemonic, index).address.toLowerCase();
 }

@@ -1,18 +1,7 @@
-/** UNSHIELD orchestration — move funds from the user's OWN 0zk shielded balance
- *  back to a PUBLIC address (default: the user's own EOA). Pure RN composition
- *  over the bridge primitives + a viem sign/broadcast with the in-app EOA key.
- *
- *  Flow (REQUIRES a Groth16 proof, unlike shield):
- *    derive key material → engineInit → ensureProviderLoaded → walletInfo →
- *    build EIP-1559 gas details (viem) → gasEstimateUnshield →
- *    generateUnshieldProof (heavy: embedded Groth16 prover, ~10-30s) →
- *    populateProvedUnshield → sign + broadcast the populated tx → confirm.
- *
- *  Self-broadcast only: sendWithPublicWallet=true, no broadcaster fee. The
- *  recipient defaults to the user's own EOA (the same key the 0zk wallet derives
- *  from). Progress + errors flow through the pending-action store (cache.ts) so
- *  the Private tab chip reflects proving → broadcasting → confirmed/failed. The
- *  private key is never logged. Sepolia-first. */
+/**
+ * @file UNSHIELD orchestration — move funds from the user's own 0zk shielded balance back to a public address (default: their own EOA), composing bridge primitives + a heavy Groth16 proof + a viem sign/broadcast with the in-app EOA key.
+ *  Self-broadcast only (sendWithPublicWallet=true, no broadcaster fee); progress/errors flow through the pending-action store so the Private tab chip reflects proving → broadcasting → confirmed/failed.
+ */
 import { parseUnits, type Hex } from 'viem';
 import { getActiveAccountId } from '../accounts';
 import { engineInit, walletInfo } from './bridge';
@@ -44,6 +33,7 @@ export interface UnshieldResult {
   recipient: Hex;
 }
 
+/** Token Meta. */
 function tokenMeta(chainId: number, symbol: string): TokenMeta {
   const net = chainId === 1 ? 'mainnet' : 'sepolia';
   const meta = RAILGUN_TOKENS[net].find(t => t.symbol === symbol);
@@ -51,9 +41,7 @@ function tokenMeta(chainId: number, symbol: string): TokenMeta {
   return meta;
 }
 
-/** Run the full unshield. Resolves with the broadcast tx hash; the pending chip
- *  is driven through `proving` (estimate + Groth16) → `broadcasting` →
- *  `confirmed`/`failed`. The optimistic delta is NEGATIVE (funds leaving). */
+/** Run the full unshield. Resolves with the broadcast tx hash; the pending chip is driven through `proving` (estimate + Groth16) → `broadcasting` → `confirmed`/`failed`. The optimistic delta is NEGATIVE (funds leaving). */
 export async function unshieldToPublic(params: UnshieldParams): Promise<UnshieldResult> {
   const accountId = await getActiveAccountId();
   if (!accountId) throw new Error('No active account');

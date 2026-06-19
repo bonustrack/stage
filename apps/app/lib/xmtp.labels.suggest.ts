@@ -1,13 +1,11 @@
-/** Label SUGGESTIONS — surface labels the user has already used in their OTHER
- *  groups when adding a label to one group. EFFICIENT: reads from the in-memory
- *  channels-list cache (`getCachedRows`), which already carries each group's
- *  `labels[]` (read off the conv's synced appData during the list build). No
- *  per-group re-sync happens here — we operate purely on already-loaded rows. */
+/**
+ * @file Label suggestions: surface labels the user has already used across their other groups,
+ *  read purely from the in-memory channels-list cache (`getCachedRows`) with no per-group re-sync.
+ */
 
 import { getCachedRows } from './channelsCache';
 
-/** Each cached channel row carries a `labels` array (groups only; DMs []). The
- *  cache type is opaque ([key: string]: unknown), so narrow it structurally. */
+/** Each cached channel row carries a `labels` array (groups only; DMs []). The cache type is opaque ([key: string]: unknown), so narrow it structurally. */
 function rowLabels(row: unknown): string[] {
   if (!row || typeof row !== 'object') return [];
   const raw = (row as { labels?: unknown }).labels;
@@ -15,10 +13,12 @@ function rowLabels(row: unknown): string[] {
   return raw.filter((l): l is string => typeof l === 'string');
 }
 
-/** The union of every label across ALL the user's groups, deduped
+/**
+ * The union of every label across ALL the user's groups, deduped
  *  case-insensitively (keeping the first-seen casing) and sorted A→Z. Built
  *  from the in-memory channels cache — no network / no sync. Returns [] before
- *  the channels list has populated the cache. */
+ *  the channels list has populated the cache.
+ */
 export function getAllKnownLabels(): string[] {
   const rows = getCachedRows();
   if (!rows) return [];
@@ -35,10 +35,12 @@ export function getAllKnownLabels(): string[] {
   return out.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 }
 
-/** Suggestions for the add-label input on THIS group: all known labels minus
+/**
+ * Suggestions for the add-label input on THIS group: all known labels minus
  *  the ones already applied here (case-insensitive), optionally filtered by the
  *  current input as a case-insensitive substring. Excludes an exact-match of
- *  the query itself (adding it verbatim is already the primary action). */
+ *  the query itself (adding it verbatim is already the primary action).
+ */
 export function suggestLabels(query: string, applied: string[]): string[] {
   const appliedKeys = new Set(applied.map((l) => l.toLowerCase()));
   const q = query.trim().toLowerCase();

@@ -1,16 +1,8 @@
-/** Contact search for the Home screen.
- *
- *  The unified Home search input drives BOTH the channel-list filter (see
- *  HomeScreen.search) AND this contacts block: when the query is non-empty we
- *  surface people results below the filtered channels. This brings the
- *  contact-search behaviour from the former standalone /search page onto Home:
- *
- *   - ADDRESS / ENS: a full address (or an ENS-style `name.eth`, resolved via
- *     resolveEnsName) yields a "start a chat" result that opens/creates a DM.
- *   - EXISTING CONTACTS: cached DM peers whose name or address matches the query.
- *
- *  Tapping any row opens or creates the DM and pushes `/xmtp/[convId]`. Styling
- *  mirrors the old search page (Avatar + name + short address rows). */
+/**
+ * @file HomeScreen.contacts — contact-search results for the Home screen, surfaced
+ *  below the filtered channels when the unified search query is non-empty:
+ *  address/ENS "start a chat" rows plus matching cached DM peers, opening a DM on tap.
+ */
 
 import { useEffect, useMemo, useState } from 'react';
 
@@ -89,6 +81,7 @@ export function HomeContactResults(
     });
   }, [existing, q]);
 
+  /** Open helper. */
   const open = (address: string, convId?: string): void => {
     if (opening) return;
     const key = address.toLowerCase();
@@ -106,8 +99,7 @@ export function HomeContactResults(
   const showResolved = resolved && !filtered.some(p => p.address.toLowerCase() === resolved.address);
   if (!q) return null;
   if (!showResolved && filtered.length === 0) {
-    /** Nothing matched here - only show a combined "No matches" line when the
-     *  channel list also came up empty (so it isn't shown beside channel hits). */
+    /** Nothing matched here - only show a combined "No matches" line when the channel list also came up empty (so it isn't shown beside channel hits). */
     if (!noChannels) return null;
     return (
       <Text size="xs" color={c.sub} style={{ textAlign: 'center', paddingVertical: 24, paddingHorizontal: 24 }}>

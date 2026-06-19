@@ -1,5 +1,6 @@
-/** Discord-style messenger row: every message left-aligned, avatar at the start,
- *  no colored bubble even for the local user's own messages. */
+/**
+ * @file Discord-style messenger row bubble: every message left-aligned, avatar at the start, no colored bubble even for the local user's own messages.
+ */
 
 import { memo, useMemo, useRef, useState } from 'react';
 import { Vibration } from 'react-native';
@@ -21,16 +22,15 @@ import { usePalette } from '../lib/theme';
 
 export { REACT_PRESETS };
 
+/** The Messenger Bubble Base component. */
 function MessengerBubbleBase({
   entry, dark, unread, pending, replyTarget, onReact, onReply, onLongPress, onOpenMenu, onAnswer,
   replyPreview, onReplyPreviewPress, reactions, pendingReactions, pendingRemovals, ownEmojis, transcript, myUri, senderEthAddress, onAvatarPress,
   votes, ownVotes, onVote, openAnswers, onOpenAnswer, onPay, paying, onSign, signing, consentAllowed, selectable, highlight,
 }: MessengerBubbleProps): React.ReactElement {
-  /** Discord-style layout doesn't visually distinguish own messages — myUri is
-   *  accepted for forward compatibility (e.g. read-receipts) but not styled-on. */
+  /** Discord-style layout doesn't visually distinguish own messages — myUri is accepted for forward compatibility (e.g. read-receipts) but not styled-on. */
   void (entry.from === myUri);
-  /** Group system events (rename / member add / image change) get a muted feed
-   *  color — set when envelopeOfXmtpMessage stamps `payload.system: true`. */
+  /** Group system events (rename / member add / image change) get a muted feed color — set when envelopeOfXmtpMessage stamps `payload.system: true`. */
   const isSystem = (entry.payload as { system?: boolean } | undefined)?.system === true;
   const pal = usePalette();
   // system → muted body text (#9f9fa3/#57606a); else → strong primary (#ffffff/#000000)
@@ -40,7 +40,8 @@ function MessengerBubbleBase({
   const pillBg = pal.border; // #282a2d / #e4e4e5
   const avatarBg = pal.border;
   const [pickerOpen, setPickerOpen] = useState(false);
-  /** Swipe-to-reply (right→left, Telegram-style) on react-native-gesture-handler so
+  /**
+   * Swipe-to-reply (right→left, Telegram-style) on react-native-gesture-handler so
    *  RNGH can arbitrate it against the back gesture + FlatList scroll by direction:
    *    - reply  = LEFTWARD  → `.activeOffsetX(-15)` (arms only on a clear left drag).
    *    - scroll = VERTICAL  → `.failOffsetY([-12,12])` (hands a vertical drag to the list).
@@ -50,17 +51,17 @@ function MessengerBubbleBase({
    *  translateX tracks the finger on the UI thread (rubber-band past the trigger);
    *  a light haptic fires once when crossing the -64px trigger, and on release past
    *  it onReply sets that message as the reply target + focuses the composer, then
-   *  the bubble springs back. */
-  /** Light haptic tick via RN's built-in Vibration (no native dep, hot-reloadable;
-   *  expo-haptics is not installed). Fired from the JS gesture callbacks. */
+   *  the bubble springs back.
+   */
+  /** Light haptic tick via RN's built-in Vibration (no native dep, hot-reloadable; expo-haptics is not installed). Fired from the JS gesture callbacks. */
   const lightHaptic = (): void => { Vibration.vibrate(10); };
   const swipeX = useSharedValue(0);
-  /** Crossed-threshold latch (UI thread) so the haptic fires exactly ONCE per
-   *  drag the moment the finger passes the trigger point, Telegram-style, not on
-   *  release. Reset on each gesture begin. */
+  /** Crossed-threshold latch (UI thread) so the haptic fires exactly ONCE per drag the moment the finger passes the trigger point, Telegram-style, not on release. Reset on each gesture begin. */
   const crossed = useSharedValue(false);
+  /** Fire Reply. */
   const fireReply = (): void => { if (!pending) onReply?.(); };
-  /** The navigator's full-screen back-pan (@react-navigation/stack, armed via
+  /**
+   * The navigator's full-screen back-pan (@react-navigation/stack, armed via
    *  `gestureResponseDistance: 9999` in app/_layout) is an ANCESTOR
    *  PanGestureHandler. By RNGH's default arbitration it competes with this
    *  child reply pan and, being an ancestor that samples horizontal movement
@@ -72,10 +73,9 @@ function MessengerBubbleBase({
    *  both run together instead of one cancelling the other. They then separate
    *  cleanly by sign: rightward arms only the navigator back-pan
    *  (`failOffsetX(15)` bails reply), leftward arms only this reply pan, vertical
-   *  goes to the list (`failOffsetY`). */
-  /** `useGestureHandlerRef()` is typed as the broad `React.Ref` union (callback |
-   *  object | null), but the Stack provider always supplies a RefObject; narrow it
-   *  to the object form RNGH's `simultaneousWithExternalGesture` accepts. */
+   *  goes to the list (`failOffsetY`).
+   */
+  /** `useGestureHandlerRef()` is typed as the broad `React.Ref` union (callback | object | null), but the Stack provider always supplies a RefObject; narrow it to the object form RNGH's `simultaneousWithExternalGesture` accepts. */
   const navGestureRef = useGestureHandlerRef() as React.RefObject<React.ComponentType | undefined>;
   const replyPan = useMemo(() => Gesture.Pan()
     .activeOffsetX(-15)
@@ -105,13 +105,13 @@ function MessengerBubbleBase({
     // fireReply/lightHaptic close over onReply+pending; recreate when they change.
     [onReply, pending, swipeX, crossed, navGestureRef]);
   const swipeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: swipeX.value }] }));
-  /** Reply arrow that fades + scales in behind the bubble as it's pulled left,
-   *  reaching full opacity at the trigger point (Telegram-style affordance). */
+  /** Reply arrow that fades + scales in behind the bubble as it's pulled left, reaching full opacity at the trigger point (Telegram-style affordance). */
   const replyHintStyle = useAnimatedStyle(() => ({
     opacity: interpolate(swipeX.value, [-64, -20, 0], [1, 0.35, 0], Extrapolation.CLAMP),
     transform: [{ scale: interpolate(swipeX.value, [-64, 0], [1, 0.6], Extrapolation.CLAMP) }],
   }));
-  /** Tap handling is split into discrete RNGH gestures so double-tap and long-press
+  /**
+   * Tap handling is split into discrete RNGH gestures so double-tap and long-press
    *  arbitrate cleanly (and against the horizontal swipe-to-reply pan):
    *   - DOUBLE tap → quick 👍, reusing the same optimistic onReact toggle path as the
    *     emoji picker/pills (adds if absent, removes your 👍 if already present).
@@ -119,10 +119,12 @@ function MessengerBubbleBase({
    *     the action menu opens ONLY via press-and-hold.
    *  We measure the row's on-screen rect via measureInWindow and hand the parent the
    *  Y + height so it can float the overlay just above/below the bubble; lastAnchor is
-   *  the synchronous fallback for the first open before a measure has returned. */
+   *  the synchronous fallback for the first open before a measure has returned.
+   */
   const rowRef = useRef<View>(null);
   /** Last measured row rect — opens the menu synchronously while a fresh measure flies. */
   const lastAnchor = useRef<{ y: number; height: number }>({ y: 0, height: 0 });
+  /** Open Menu. */
   const openMenu = (): void => {
     if (pending || !onOpenMenu) { if (!onOpenMenu) onLongPress?.(); return; }
     lightHaptic();
@@ -133,6 +135,7 @@ function MessengerBubbleBase({
       onOpenMenu({ y, height: h });
     });
   };
+  /** Handle the Double Tap. */
   const onDoubleTap = (): void => { if (!pending) { lightHaptic(); onReact?.('👍'); } };
   const doubleTap = useMemo(() => Gesture.Tap().numberOfTaps(2).onEnd((_e, ok) => {
     if (ok) runOnJS(onDoubleTap)();
@@ -140,9 +143,7 @@ function MessengerBubbleBase({
   const longPress = useMemo(() => Gesture.LongPress().minDuration(300)
     .onStart(() => { runOnJS(openMenu)(); }),
     [openMenu]);
-  /** Pan owns horizontal swipe-to-reply; the long-press and double-tap are mutually
-   *  exclusive with each other, and race against the pan (pan only arms on a clear
-   *  left drag). A plain single tap is intentionally unhandled. */
+  /** Pan owns horizontal swipe-to-reply; the long-press and double-tap are mutually exclusive with each other, and race against the pan (pan only arms on a clear left drag). A plain single tap is intentionally unhandled. */
   const tapGestures = useMemo(
     () => Gesture.Race(replyPan, Gesture.Exclusive(longPress, doubleTap)),
     [replyPan, longPress, doubleTap]);
@@ -153,15 +154,13 @@ function MessengerBubbleBase({
       style={[swipeStyle, {
         flexDirection: 'row', alignItems: 'flex-start',
         paddingHorizontal: 12, paddingVertical: 6, gap: 10,
-        /** Permalink/reply jump target: full-row lighter background spanning the
-         *  whole width incl. the avatar gutter. */
+        /** Permalink/reply jump target: full-row lighter background spanning the whole width incl. the avatar gutter. */
         backgroundColor: replyTarget
           ? (dark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.05)')
           : (unread ? (dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)') : 'transparent'),
       }]}
 >
-      {/** Telegram-style reply affordance: a reply arrow pinned to the right gutter
-        *  that fades + scales in as the bubble is pulled left toward the trigger. */}
+      {/** Telegram-style reply affordance: a reply arrow pinned to the right gutter that fades + scales in as the bubble is pulled left toward the trigger. */}
       <Animated.View
         pointerEvents="none"
         style={[replyHintStyle, { position: 'absolute', right: 16, top: 0, bottom: 0, justifyContent: 'center' }]}
@@ -182,12 +181,10 @@ function MessengerBubbleBase({
       )}
       {/** Right column: message content + reactions + reaction picker stacked. */}
       <Col minWidth={0} flex={1} style={{ opacity: pending ? 0.5 : 1 }}>
-      {/** Tap/double-tap/long-press all live on the outer GestureDetector now; this is
-        *  just the content wrapper carrying the unread outline. */}
+      {/** Tap/double-tap/long-press all live on the outer GestureDetector now; this is just the content wrapper carrying the unread outline. */}
       <Col
         style={{
-          /** Reply-target highlight is a full-row background on the outer View now;
-           *  keep only the unread outline here. */
+          /** Reply-target highlight is a full-row background on the outer View now; keep only the unread outline here. */
           borderWidth: unread ? 1.5 : 0,
           borderColor: unread ? (dark ? '#ffffff' : '#000000') : 'transparent',
         }}
@@ -242,14 +239,16 @@ function MessengerBubbleBase({
   );
 }
 
-/** Custom memo comparator: the feed's renderItem (useFeedRenderItem) builds
+/**
+ * Custom memo comparator: the feed's renderItem (useFeedRenderItem) builds
  *  ~10 brand-new arrow-function props for EVERY bubble on every parent render,
  *  so the default shallow memo (which compares those callbacks by identity) is
  *  defeated — one reaction/vote re-rendered the entire visible window. We ignore
  *  callback identity entirely and re-render a bubble only when a render-affecting
  *  DATA prop for its own id actually changes. The per-id Maps/Sets passed in are
  *  the result of `map.get(item.id)`, which returns a stable reference while the
- *  underlying collection is unchanged, so reference equality is correct here. */
+ *  underlying collection is unchanged, so reference equality is correct here.
+ */
 const DATA_KEYS = [
   'entry', 'dark', 'unread', 'pending', 'replyTarget', 'replyPreview',
   'reactions', 'pendingReactions', 'pendingRemovals', 'ownEmojis',
@@ -257,6 +256,7 @@ const DATA_KEYS = [
   'highlight', 'senderEthAddress', 'myUri', 'transcript', 'consentAllowed',
 ] as const satisfies readonly (keyof MessengerBubbleProps)[];
 
+/** Bubble Props Equal. */
 function bubblePropsEqual(prev: MessengerBubbleProps, next: MessengerBubbleProps): boolean {
   for (const k of DATA_KEYS) {
     if (prev[k] !== next[k]) return false;
@@ -264,6 +264,5 @@ function bubblePropsEqual(prev: MessengerBubbleProps, next: MessengerBubbleProps
   return true;
 }
 
-/** #6: memoised so a single stream tick only re-renders bubbles whose data props
- *  changed, not the whole window (callback identity is intentionally ignored). */
+/** #6: memoised so a single stream tick only re-renders bubbles whose data props changed, not the whole window (callback identity is intentionally ignored). */
 export const MessengerBubble = memo(MessengerBubbleBase, bubblePropsEqual);

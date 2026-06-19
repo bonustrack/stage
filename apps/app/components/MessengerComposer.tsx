@@ -1,4 +1,6 @@
-/** Floating two-line composer (Claude-mobile-style): textarea on top, [+ / mic / send] below. */
+/**
+ * @file MessengerComposer: the conversation message composer (input, attachments, mentions, replies, poll/signature/payment sheets, and send flows).
+ */
 
 import { useRef, useState, type ComponentRef } from 'react';
 
@@ -15,30 +17,20 @@ import { DANGER, usePalette } from '../lib/theme';
 
 interface Props {
   dark: boolean;
-  /** Target XMTP conversation line URI (`metro://xmtp/<convId>`). Required — the
-   *  mobile composer only supports the XMTP transport now (the daemon-routed
-   *  messenger pipeline was removed). */
+  /** Target XMTP conversation line URI (`metro://xmtp/<convId>`). Required — the mobile composer only supports the XMTP transport now (the daemon-routed messenger pipeline was removed). */
   xmtpLine: string;
-  /** Candidates surfaced in the `@`-mention popup — channel members for
-   *  groups, or contact list for DMs. Parent owns the source-of-truth list;
-   *  composer just filters/renders. Empty array disables the popup. */
+  /** Candidates surfaced in the `@`-mention popup — channel members for groups, or contact list for DMs. Parent owns the source-of-truth list; composer just filters/renders. Empty array disables the popup. */
   mentionCandidates?: { address: string; name: string }[];
-  /** `nonce` (optional) changes on every reply action — even re-replying to the
-   *  same message — so the composer re-focuses + re-opens the keyboard each time. */
+  /** `nonce` (optional) changes on every reply action — even re-replying to the same message — so the composer re-focuses + re-opens the keyboard each time. */
   replyingTo?: { id: string; preview: string; sender?: string | null; nonce?: number };
-  /** Bump to focus the composer + raise the keyboard WITHOUT setting a reply
-   *  target (e.g. a focus=1 deep link). Each new value re-fires
-   *  the focus effect. */
+  /** Bump to focus the composer + raise the keyboard WITHOUT setting a reply target (e.g. a focus=1 deep link). Each new value re-fires the focus effect. */
   autoFocusNonce?: number;
   onClearReply?: () => void;
-  /** Tap the reply banner → best-effort scroll the feed to the replied-to
-   *  message (crash-safe; no-ops if the row isn't currently loaded). */
+  /** Tap the reply banner → best-effort scroll the feed to the replied-to message (crash-safe; no-ops if the row isn't currently loaded). */
   onJumpToReply?: (messageId: string) => void;
   /** Optimistic-render hook: invoked the moment the user taps send, before the API call. */
   onOptimistic?: (entry: { localId: string; text: string; attachments: Attachment[]; replyTo?: string; payload?: unknown }) => void;
-  /** Fired AFTER the send completes (success OR failure). Lets the parent drop the
-   *  optimistic entry instead of waiting for an SSE/stream echo that may never arrive
-   *  (XMTP `streamMessages` doesn't always replay self-sends — pending bubbles would stick). */
+  /** Fired AFTER the send completes (success OR failure). Lets the parent drop the optimistic entry instead of waiting for an SSE/stream echo that may never arrive (XMTP `streamMessages` doesn't always replay self-sends — pending bubbles would stick). */
   onSent?: (localId: string, error?: string, sentId?: string) => void;
 }
 
@@ -54,8 +46,7 @@ export function MessengerComposer({
   const palette = { fg, sub, inputBg, chipBg };
 
   const [text, setText] = useState('');
-  /** Cursor position in `text`, kept in sync via onSelectionChange so the
-   *  mention detector knows where the user is typing. */
+  /** Cursor position in `text`, kept in sync via onSelectionChange so the mention detector knows where the user is typing. */
   const [selection, setSelection] = useState<{ start: number; end: number }>({ start: 0, end: 0 });
   const [pending, setPending] = useState<Attachment[]>([]);
   const [, setSending] = useState(false); // set by send loop; button hides on clear, not via disabled
@@ -105,6 +96,7 @@ export function MessengerComposer({
   const hasContent = text.trim().length> 0 || pending.length> 0; // text or any pending attachment
 
   const { matches: mentionMatches, range: mentionRange } = computeMentions(text, selection.start, mentionCandidates);
+  /** Pick Mention. */
   const pickMention = (c: { address: string; name: string }): void => {
     if (!mentionRange) return;
     const { next, cursor } = applyMention(text, mentionRange, c.address);

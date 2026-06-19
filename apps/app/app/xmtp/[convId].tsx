@@ -1,5 +1,7 @@
-/** XMTP conversation view — opened from the messenger tab list. State + handlers
- *  live in useConversationState; presentational pieces in components/xmtp-conv. */
+/**
+ * @file XMTP conversation screen opened from the messenger tab list; state and
+ * handlers live in useConversationState, presentational pieces in components/xmtp-conv.
+ */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -35,7 +37,8 @@ import { RequestActionBar } from '../../components/RequestActionBar';
 /** Full-screen XMTP conversation thread with message composer and swipe-back. */
 export default function XmtpConversation(): React.ReactElement {
   const router = useRouter();
-  /** FULL-SCREEN swipe-back coexists with the bubble's swipe-to-reply by
+  /**
+   * FULL-SCREEN swipe-back coexists with the bubble's swipe-to-reply by
    *  DIRECTION, not by a thin edge band. The app-wide JS card-stack back-gesture
    *  (app/_layout, `gestureResponseDistance: 9999`) arms only on a RIGHTWARD drag
    *  (@react-navigation/stack's horizontal criteria use `minOffsetX: 5`), while
@@ -46,7 +49,8 @@ export default function XmtpConversation(): React.ReactElement {
    *  leftward. A previous `gestureResponseDistance: 40` override narrowed back to
    *  a thin left-edge band to dodge an activation race; the direction-exclusive
    *  arming makes that band unnecessary, so we inherit the global full-screen
-   *  distance here (no per-screen override). */
+   *  distance here (no per-screen override).
+   */
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head, bg, border } = usePalette();
   const sub = fg, rowBg = border;
@@ -61,14 +65,17 @@ export default function XmtpConversation(): React.ReactElement {
     mentionCandidates, onReact, onOptimistic, onSent, jumpToMessage, markAtBottom,
   } = c;
 
-  /** In-conversation local message search (Stage #6) — opened from the 3-dot
+  /**
+   * In-conversation local message search (Stage #6) — opened from the 3-dot
    *  overflow menu. When open the topnav swaps to the shared SearchTopnavBar
    *  (the same expanding input Home uses) and a results panel renders under it.
-   *  The query lives here so the topnav bar drives the results panel. */
+   *  The query lives here so the topnav bar drives the results panel.
+   */
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const closeSearch = useCallback(() => { setSearchOpen(false); setSearchQuery(''); }, []);
-  /** Keyboard-on-search, the real root cause: search opens from the ChannelMenu
+  /**
+   * Keyboard-on-search, the real root cause: search opens from the ChannelMenu
    *  bottom sheet, which is a native RN <Modal> (its OWN Android window). While
    *  that window is up / sliding out it OWNS the input-method focus, so the
    *  SearchTopnavBar's autoFocus binds to a window that no longer has IME focus
@@ -79,7 +86,8 @@ export default function XmtpConversation(): React.ReactElement {
    *  finish (runAfterInteractions), then blur()+focus() and confirm the keyboard
    *  actually showed via keyboardDidShow; if it didn't, retry every 150ms up to
    *  ~1.2s. The blur() first is what makes the second focus() re-open the IME on
-   *  Android. Cancels the moment the keyboard shows or search closes. */
+   *  Android. Cancels the moment the keyboard shows or search closes.
+   */
   const searchInputRef = useRef<React.ComponentRef<typeof Input>>(null);
   useEffect(() => {
     if (!searchOpen) return;
@@ -87,6 +95,7 @@ export default function XmtpConversation(): React.ReactElement {
     let timer: ReturnType<typeof setTimeout> | undefined;
     let attempts = 0;
     const sub = Keyboard.addListener('keyboardDidShow', () => { shown = true; });
+    /** Poke helper. */
     const poke = (): void => {
       if (shown || attempts >= 8) return;
       attempts += 1;
@@ -105,28 +114,28 @@ export default function XmtpConversation(): React.ReactElement {
     };
   }, [searchOpen]);
 
-  /** Message-request gate. The overwhelmingly common case is an already-accepted
+  /**
+   * Message-request gate. The overwhelmingly common case is an already-accepted
    *  channel, so we DEFAULT to showing the composer immediately on open (no
    *  flash). Consent resolves asynchronously; only if it comes back as a pending
    *  request ('unknown') do we hide the composer and swap in the Approve/Reject
    *  bar. A rare incoming request may briefly show the composer before the bar
-   *  appears, an acceptable tradeoff to never flash the common case. */
+   *  appears, an acceptable tradeoff to never flash the common case.
+   */
   const [requestPending, setRequestPending] = useState(false);
   const onRequestPending = useCallback((pending: boolean) => { setRequestPending(pending); }, []);
 
-  /** Reactive archived flag so the overflow menu shows Unarchive immediately
-   *  (the store loads async; a bare sync read can miss the first paint). */
+  /** Reactive archived flag so the overflow menu shows Unarchive immediately (the store loads async; a bare sync read can miss the first paint). */
   const [archived, setArchived] = useState(convId ? isArchived(convId) : false);
   useEffect(() => {
+    /** Sync helper. */
     const sync = (): void => { setArchived(convId ? isArchived(convId) : false); };
     void loadArchivedIds().then(sync);
     return subscribeArchived(sync);
   }, [convId]);
 
   const insets = useSafeAreaInsets();
-  /** Reanimated keyboard offset shared with the composer's KeyboardStickyView so the
-   *  FlatList wrapper lifts in lockstep. Match the composer's `height - insets.bottom`
-   *  translate (subtract insets.bottom too) or the feed overshoots. Clamp ≥0. */
+  /** Reanimated keyboard offset shared with the composer's KeyboardStickyView so the FlatList wrapper lifts in lockstep. Match the composer's `height - insets.bottom` translate (subtract insets.bottom too) or the feed overshoots. Clamp ≥0. */
   const { height: kbHeightShared } = useReanimatedKeyboardAnimation();
   const listWrapperStyle = useAnimatedStyle(() => ({ marginBottom: Math.max(0, -kbHeightShared.value - insets.bottom) }));
 
@@ -144,9 +153,7 @@ export default function XmtpConversation(): React.ReactElement {
         flex: 1, backgroundColor: bg,
       }}
 >
-      {/** Swipe-back handled by the @react-navigation/stack JS card stack
-       *   (app/_layout): its left-edge rightward gesture pops + composes with
-       *   the inverted FlatList scroll + leftward bubble swipe-to-reply. */}
+      {/** Swipe-back handled by the @react-navigation/stack JS card stack (app/_layout): its left-edge rightward gesture pops + composes with the inverted FlatList scroll + leftward bubble swipe-to-reply. */}
       <Reanimated.View style={[{ flex: 1 }, listWrapperStyle]}>
       <ConversationFeed
         c={c}
@@ -172,11 +179,13 @@ export default function XmtpConversation(): React.ReactElement {
         ) : undefined}
 />
       </Reanimated.View>
-      {/** Top nav: solid bg strip mirrors the composer footer + extends UP over the
+      {/**
+       * Top nav: solid bg strip mirrors the composer footer + extends UP over the
        *  status-bar area so content sliding under the keyboard doesn't show through.
        *  When search is open the whole strip swaps to the shared SearchTopnavBar
        *  (the exact expanding search input Home uses); the results panel renders
-       *  directly underneath it. */}
+       *  directly underneath it.
+       */}
       {searchOpen ? (
         <Box style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2 }}>
           <SearchTopnavBar
@@ -199,8 +208,7 @@ export default function XmtpConversation(): React.ReactElement {
 >
           <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
-        {/** Everything right of the back arrow is one tap target → group/channel
-         *   detail (or peer profile for a DM); fills full height + width. */}
+        {/** Everything right of the back arrow is one tap target → group/channel detail (or peer profile for a DM); fills full height + width. */}
         <Pressable
           onPress={() => {
             if (isGroup) router.push({ pathname: '/group/[convId]', params: { convId: convId ?? '' } });
@@ -214,8 +222,7 @@ export default function XmtpConversation(): React.ReactElement {
               : peerAddr ? (getPeerName(peerAddr) ?? shortAddress(peerAddr)) : ''}
           </Text>
         </Pressable>
-        {/** Topnav links (groups only): GitHub issue/PR, then overflow (search lives
-         *   in the overflow menu now). */}
+        {/** Topnav links (groups only): GitHub issue/PR, then overflow (search lives in the overflow menu now). */}
         {isGroup && github ? <GithubNavButton url={github} color={fg} /> : null}
         <Pressable
           onPress={() => { setOverflowOpen(true); }}
@@ -228,9 +235,7 @@ export default function XmtpConversation(): React.ReactElement {
       )}
       <KeyboardStickyView offset={{ opened: insets.bottom }}>
       <Box>
-      {/** Jump-to-bottom: anchored above the composer (bottom:'100%') inside the
-       *   KeyboardStickyView so it tracks composer height + keyboard. Bumping the
-       *   FlatList key remounts → inverted offset 0 = newest at the bottom. */}
+      {/** Jump-to-bottom: anchored above the composer (bottom:'100%') inside the KeyboardStickyView so it tracks composer height + keyboard. Bumping the FlatList key remounts → inverted offset 0 = newest at the bottom. */}
       {showJump ? (
         <Pressable
           onPress={() => { markAtBottom(); setListEpoch(e => e + 1); setShowJump(false); }}
@@ -244,10 +249,7 @@ export default function XmtpConversation(): React.ReactElement {
           <Icon name="arrowDown" size={18} color="#ffffff"/>
         </Pressable>
       ) : null}
-      {/** Message-request gate: RequestActionBar resolves the conversation's
-       *   consent state async and reports it via onPending. Composer shows by
-       *   default; only a confirmed pending request hides it + renders the
-       *   Approve/Reject row in its place. */}
+      {/** Message-request gate: RequestActionBar resolves the conversation's consent state async and reports it via onPending. Composer shows by default; only a confirmed pending request hides it + renders the Approve/Reject row in its place. */}
       <RequestActionBar convId={convId ?? ''} dark={dark} onPending={onRequestPending}/>
       {!requestPending ? (
         <MessengerComposer
@@ -262,11 +264,13 @@ export default function XmtpConversation(): React.ReactElement {
           onSent={onSent}
 />
       ) : null}
-      {/** Bottom safe-area strip painted with the composer's visible surface
+      {/**
+       * Bottom safe-area strip painted with the composer's visible surface
        *   (`raised` == the editor pill fill) instead of the page `bg`, so the area
        *   under the Android nav bar reads as one continuous surface with the
        *   composer above it. Lives inside the sticky view so it tracks the
-       *   composer; only this screen (composer present) is affected. */}
+       *   composer; only this screen (composer present) is affected.
+       */}
       <Box height={insets.bottom} surface="raised"/>
       </Box>
       </KeyboardStickyView>
@@ -305,8 +309,7 @@ export default function XmtpConversation(): React.ReactElement {
           setMenuFor(null);
         }}
         onShareLink={() => {
-          /** Shareable permalink to this message. Opens the conversation on the
-           *  web today; the metro:// universal-link handling is the follow-up. */
+          /** Shareable permalink to this message. Opens the conversation on the web today; the metro:// universal-link handling is the follow-up. */
           if (menuFor) void Share.share({ message: `https://metro.box/#/xmtp/${convId}?m=${menuFor.id}` });
           setMenuFor(null);
         }}

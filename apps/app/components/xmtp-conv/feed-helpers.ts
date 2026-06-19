@@ -1,5 +1,4 @@
-/** Pure feed-derivation helpers for the XMTP conversation screen — extracted
- *  from app/xmtp/[convId].tsx verbatim (phase-2 lint split). Behavior identical. */
+/** @file Pure feed-derivation helpers for the XMTP conversation screen — extracted from app/xmtp/[convId].tsx verbatim (phase-2 lint split). Behavior identical. */
 
 import {
   votesByPoll as tallyVotes, ownVotes as tallyOwnVotes,
@@ -9,17 +8,18 @@ import {
 import { humanizeMentions, attachmentEmojiPreview } from '@stage-labs/client/xmtp/humanize';
 import type { HistoryEntry } from '../../lib/types';
 
-/** Whether an entry carries attachments — used to dedup an optimistic
- *  attachment-only send (empty text) against its confirmed twin. */
+/** Whether an entry carries attachments — used to dedup an optimistic attachment-only send (empty text) against its confirmed twin. */
 export function hasAttachments(e: HistoryEntry): boolean {
   return (((e.payload as { attachments?: unknown[] } | undefined)?.attachments?.length) ?? 0) > 0;
 }
 
-/** True when a reaction is actually a poll VOTE (and so must not render as an
+/**
+ * True when a reaction is actually a poll VOTE (and so must not render as an
  *  emoji pill). A vote is either tagged `schema:'custom'`, or — for decode paths
  *  that drop the schema — a reaction on a poll bubble whose content is a pure
  *  non-negative integer that is a valid option index for that poll. A genuine
- *  emoji reaction on a poll (❤️, 👍, …) is NOT an integer, so it stays a pill. */
+ *  emoji reaction on a poll (❤️, 👍, …) is NOT an integer, so it stays a pill.
+ */
 function isPollVote(
   p: { reactTo?: string; emoji?: string; schema?: string } | undefined,
   pollOptionCounts: Map<string, number>,
@@ -34,15 +34,12 @@ function isPollVote(
   return Number.isInteger(idx) && idx >= 0 && idx < optionCount;
 }
 
-/** Reaction events decorate their target msg — fold them into per-message,
- *  per-emoji counts rather than rendering as standalone bubbles. */
+/** Reaction events decorate their target msg — fold them into per-message, per-emoji counts rather than rendering as standalone bubbles. */
 export function reactionsByMessage(events: HistoryEntry[], pollOptionCounts: Map<string, number>): Map<string, Map<string, number>> {
   const latest = new Map<string, { ts: string; removed: boolean }>();
   for (const e of events) {
     const p = e.payload as { reactTo?: string; emoji?: string; removed?: boolean; schema?: string } | undefined;
-    /** Skip poll VOTES only — they're tallied separately by votesByPoll and would
-     *  otherwise render as a "0"/"1"/"2" emoji pill. Genuine emoji reactions on a
-     *  poll (❤️, 👍, …) must still render as pills. */
+    /** Skip poll VOTES only — they're tallied separately by votesByPoll and would otherwise render as a "0"/"1"/"2" emoji pill. Genuine emoji reactions on a poll (❤️, 👍, …) must still render as pills. */
     if (isPollVote(p, pollOptionCounts)) continue;
     if (!p?.reactTo || !p.emoji) continue;
     const k = `${p.reactTo} ${p.emoji} ${e.from}`;
@@ -61,8 +58,7 @@ export function reactionsByMessage(events: HistoryEntry[], pollOptionCounts: Map
   return out;
 }
 
-/** Emojis the local user currently has on each message (latest add not undone by a
- *  later removal). Drives un-react: tapping an emoji you already own toggles it off. */
+/** Emojis the local user currently has on each message (latest add not undone by a later removal). Drives un-react: tapping an emoji you already own toggles it off. */
 export function ownReactionsByMessage(events: HistoryEntry[], myUri: string, pollOptionCounts: Map<string, number>): Map<string, Set<string>> {
   const latest = new Map<string, { ts: string; removed: boolean }>();
   for (const e of events) {
@@ -92,8 +88,7 @@ export function isReaction(e: HistoryEntry): boolean {
   return Boolean(p?.reactTo);
 }
 
-/** Adapt the conversation's reaction events into the shared `VoteEvent` shape
- *  the pure tally helpers consume. Only schema:'custom' reactions are votes. */
+/** Adapt the conversation's reaction events into the shared `VoteEvent` shape the pure tally helpers consume. Only schema:'custom' reactions are votes. */
 function voteEventsOf(events: HistoryEntry[]): VoteEvent[] {
   const out: VoteEvent[] = [];
   for (const e of events) {
@@ -104,9 +99,7 @@ function voteEventsOf(events: HistoryEntry[]): VoteEvent[] {
   return out;
 }
 
-/** Poll message ids → normalized `PollQuestion[]` (legacy single-question polls
- *  fold to a one-element array; option strings coerce to {label}). The single
- *  source of truth the vote tally + isPollVote use to reason about a poll. */
+/** Poll message ids → normalized `PollQuestion[]` (legacy single-question polls fold to a one-element array; option strings coerce to {label}). The single source of truth the vote tally + isPollVote use to reason about a poll. */
 export function pollQuestionsInFeed(events: HistoryEntry[]): Map<string, PollQuestion[]> {
   const out = new Map<string, PollQuestion[]>();
   for (const e of events) {
@@ -118,8 +111,7 @@ export function pollQuestionsInFeed(events: HistoryEntry[]): Map<string, PollQue
   return out;
 }
 
-/** Poll message ids → q0 option count. Used by isPollVote to tell a bare-integer
- *  vote (legacy / question-0 form) from a genuine emoji reaction on a poll. */
+/** Poll message ids → q0 option count. Used by isPollVote to tell a bare-integer vote (legacy / question-0 form) from a genuine emoji reaction on a poll. */
 export function pollOptionCountsInFeed(events: HistoryEntry[]): Map<string, number> {
   const out = new Map<string, number>();
   for (const [id, qs] of pollQuestionsInFeed(events)) {
@@ -129,9 +121,7 @@ export function pollOptionCountsInFeed(events: HistoryEntry[]): Map<string, numb
   return out;
 }
 
-/** Build `pollMessageId -> (questionIndex -> (optionIndex -> Set<voterUri>))` for
- *  every poll in the feed. Each question is tallied independently with its own
- *  multiSelect rule; the vote key (q, o) is decoded by the shared tally. */
+/** Build `pollMessageId -> (questionIndex -> (optionIndex -> Set<voterUri>))` for every poll in the feed. Each question is tallied independently with its own multiSelect rule; the vote key (q, o) is decoded by the shared tally. */
 export function votesByMessage(events: HistoryEntry[]): Map<string, Map<number, Map<number, Set<string>>>> {
   const polls = pollQuestionsInFeed(events);
   if (polls.size === 0) return new Map();
@@ -159,9 +149,7 @@ export function ownVotesByMessage(events: HistoryEntry[], myUri: string): Map<st
   return out;
 }
 
-/** Free-text (open) answers per poll then per question: pollId -> (questionIndex
- *  -> (voterUri -> {text, ts})). Mirrors votesByMessage for the open-question
- *  path. Only questions flagged `open` are tallied. */
+/** Free-text (open) answers per poll then per question: pollId -> (questionIndex -> (voterUri -> {text, ts})). Mirrors votesByMessage for the open-question path. Only questions flagged `open` are tallied. */
 export function openAnswersByMessage(
   events: HistoryEntry[],
 ): Map<string, Map<number, Map<string, { text: string; ts: string }>>> {

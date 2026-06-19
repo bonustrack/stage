@@ -1,13 +1,6 @@
-/** Box / Row / Col - React Native layout primitives. RELOCATED here from
- *  apps/app/components/layout/Box.tsx so Kit is the single import source
- *  (apps/app now re-exports these). Mirrors ChatKit's `Box`/`Row`/`Col` layout
- *  widgets via the SHARED prop->style mapper in `./layout`, so the RN renderer
- *  and the Vue renderer in apps/ui stay in lock-step. Numbers = px (RN treats
- *  unitless numbers as px). The `style` prop is merged AFTER the computed style
- *  so caller overrides / escape-hatch props (borders, etc.) win.
- *
- *  Box defaults to a column. Row/Col lock `direction` and otherwise accept the
- *  full Box API. */
+/**
+ * @file React Native Box/Row/Col layout primitives that drive style through the shared `./layout` prop->style mapper (numbers are px); Box defaults to a column, Row/Col lock direction.
+ */
 
 import { View, type ViewProps, type ViewStyle } from 'react-native';
 import {
@@ -21,18 +14,19 @@ import { useKitPalette, useKitScheme, type KitPalette } from './theme-context';
 
 export type { Align, Justify };
 
-/** Semantic surface variant - resolved from the theme palette.
+/**
+ * Semantic surface variant - resolved from the theme palette.
  *    none    transparent (default - most Box)
  *    surface palette `bg`
  *    raised  palette `inputBg` (cards / inputs / sheets / dropdowns)
  *    sunken  palette `bg`      (pressed / well - recessed under a raised surface)
- *    toolbar palette `toolbarBg` */
+ *    toolbar palette `toolbarBg`
+ */
 export type Surface = 'none' | 'surface' | 'raised' | 'sunken' | 'toolbar';
 
 export type BoxProps = ViewProps &
   BoxBaseProps & {
-    /** Semantic surface variant - resolves a background from the theme palette.
-     *  Default `none` (transparent). A `background` override wins over it. */
+    /** Semantic surface variant - resolves a background from the theme palette. Default `none` (transparent). A `background` override wins over it. */
     surface?: Surface;
   };
 

@@ -1,7 +1,8 @@
-/** Settings → Security — "Export private key" + "Remove account" for the active
- *  account. Pure wrapper around the existing AccountSecuritySection: export
- *  reuses getPrivateKey behind a warning Alert (key never logged), remove reuses
- *  deleteAccount. No new key handling. */
+/**
+ * @file Settings -> Security screen: Export private key and Remove account for
+ *  the active account, wrapping the existing AccountSecuritySection plus the
+ *  wallet-backup nudge.
+ */
 
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

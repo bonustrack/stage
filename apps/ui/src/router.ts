@@ -1,3 +1,6 @@
+/**
+ * @file vue-router hash-history route table for the web app (channels, contacts, settings, profile, conversation, embed).
+ */
 import { createRouter, createWebHashHistory, type RouteRecordRaw } from 'vue-router';
 
 const routes: RouteRecordRaw[] = [
@@ -9,8 +12,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/user/:address', name: 'user',  component: () => import('./pages/UserProfile.vue') },
   { path: '/group/:convId', name: 'group', component: () => import('./pages/GroupDetail.vue') },
   { path: '/xmtp/:convId', name: 'xmtp',   component: () => import('./pages/XmtpConversation.vue') },
-  /** Embed route — same conversation view, no tab bar, intended to be
-   *  iframed into a third-party site (Intercom-style). */
+  /** Embed route — same conversation view, no tab bar, intended to be iframed into a third-party site (Intercom-style). */
   { path: '/embed/:convId', name: 'embed',  component: () => import('./pages/XmtpConversation.vue') },
 ];
 

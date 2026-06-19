@@ -1,7 +1,4 @@
-/** Public | Private segmented pill for the Receive screen. Switches the shown
- *  address between the public EOA (0x…) and the shielded Railgun 0zk address.
- *  When the private address isn't ready yet the Private segment shows a subtle
- *  "loading…" label and is disabled so the screen never lands on a blank QR. */
+/** @file Public | Private segmented pill for the Receive screen that toggles the shown address between the public EOA and the shielded Railgun 0zk address, disabling Private until it is ready. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
 
@@ -19,6 +16,7 @@ export function ReceiveModeToggle({ mode, onChange, privateReady }: {
 }): React.ReactElement {
   const { link: head, text: sub, border } = usePalette();
   const rowBg = border;
+  /** Segment helper. */
   const segment = (value: ReceiveMode, label: string, disabled: boolean): React.ReactElement => {
     const active = mode === value;
     return (

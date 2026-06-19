@@ -1,31 +1,6 @@
-/** Metro link-preview metadata Worker (preview.metro.box).
- *
- *  The Metro proxy (apps/proxy): given an arbitrary http(s) URL it
- *  fetches the page at the edge, parses OpenGraph / Twitter-card / <title> /
- *  meta description / favicon, and returns a compact JSON card the app renders.
- *  When the URL answers HTTP 402 with an x402 payment challenge it surfaces the
- *  normalised challenge instead, so the chat can render an x402 payment card.
- *
- *  Same API contract as the Node service:
- *    GET /health                 -> "ok"
- *    GET /preview?url=<encoded>  -> { url, title, description, image, siteName,
- *                                     favicon, imageOrigin?, faviconOrigin? }
- *                                   OR an x402 challenge object.
- *    GET /img?url=<encoded>&w=<px> -> the proxied (optionally resized) image.
- *
- *  Image proxy: /preview rewrites og:image + favicon to /img URLs so the app
- *  never loads assets straight from origin sites (which would leak the reader's
- *  IP). /img fetches them at the edge behind the same SSRF guards and attempts a
- *  Cloudflare Image Resizing pass.
- *
- *  Zero laptop dependency: runs on Cloudflare's edge, no origin/tunnel. Every
- *  response carries `x-served-by: worker` so callers can prove it's the Worker
- *  and not the legacy cloudflared tunnel answering.
- *
- *  Caching: successful results are cached in `caches.default` (the edge cache)
- *  keyed by the normalised request (preview ~1 day, images ~7 days). SSRF: see
- *  ssrf.ts - the Workers runtime refuses to route fetch() to private addresses,
- *  so we only keep the host-allowlist + literal-IP guard. */
+/**
+ * @file Cloudflare Worker entrypoint for the preview.metro.box link-preview proxy, routing /health, /preview, /img, and /x402-settle with per-IP rate limiting and edge caching.
+ */
 
 import { fetchPage } from './fetchPage.ts';
 import { fetchImage, parseWidth } from './fetchImage.ts';
@@ -42,6 +17,7 @@ const IMG_CACHE_TTL = 7 * 24 * 60 * 60; // 7 days, in seconds
 // rejected. Not a security boundary (the header is trivially forgeable) - just
 // a bandwidth/abuse speed-bump on top of the per-IP rate limit + SSRF guards.
 const CLIENT_HEADER = 'x-stage-client';
+/** Whether Client Header. */
 function hasClientHeader(request: Request): boolean {
   return request.headers.get(CLIENT_HEADER) === '1';
 }
@@ -54,6 +30,7 @@ const RL_WINDOW_MS = 60_000;
 const RL_MAX = 60;
 const hits = new Map<string, { count: number; reset: number }>();
 
+/** Rate Limited. */
 function rateLimited(ip: string): boolean {
   const now = Date.now();
   const e = hits.get(ip);
@@ -65,6 +42,7 @@ function rateLimited(ip: string): boolean {
   return e.count > RL_MAX;
 }
 
+/** Client Ip. */
 function clientIp(request: Request): string {
   return request.headers.get('cf-connecting-ip')
     ?? request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
@@ -76,6 +54,7 @@ const BASE_HEADERS = {
   'access-control-allow-origin': '*',
 };
 
+/** Json helper. */
 function json(body: unknown, status = 200, extra: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -83,6 +62,7 @@ function json(body: unknown, status = 200, extra: Record<string, string> = {}): 
   });
 }
 
+/** Handle the Preview. */
 async function handlePreview(request: Request, ctx: ExecutionContext): Promise<Response> {
   if (!hasClientHeader(request)) return json({ error: 'forbidden' }, 403);
   if (rateLimited(clientIp(request))) return json({ error: 'rate limited' }, 429);
@@ -124,6 +104,7 @@ async function handlePreview(request: Request, ctx: ExecutionContext): Promise<R
   }
 }
 
+/** Handle the Img. */
 async function handleImg(request: Request, ctx: ExecutionContext): Promise<Response> {
   // NOTE: /img intentionally does NOT require the x-stage-client header. React
   // Native's <Image> can't attach custom headers to its GETs (flaky on Android),
@@ -178,6 +159,7 @@ async function handleImg(request: Request, ctx: ExecutionContext): Promise<Respo
 // caller's signed X-PAYMENT header server-side (behind the SSRF guards) so the
 // upstream verifies + settles. Used by the x402 app worker, which can't make the
 // settle fetch from the device under our IP-privacy posture. Not cached.
+/** Handle the Settle. */
 async function handleSettle(request: Request): Promise<Response> {
   if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405);
   if (rateLimited(clientIp(request))) return json({ error: 'rate limited' }, 429);

@@ -1,10 +1,4 @@
-/** Wallet → Receive screen — full-page QR of the logged-in address with the
- *  full address shown below, tap to copy. A Public/Private toggle at the top
- *  switches between the public EOA address (0x…) and the shielded Railgun 0zk
- *  address. Funds received to the 0zk address are private (shielded).
- *
- *  Uses `react-native-qrcode-svg` (pure JS, no native module — no APK rebuild
- *  needed) layered on react-native-svg which the app already depends on. */
+/** @file Wallet → Receive screen showing a QR of the public EOA or shielded Railgun 0zk address, toggleable and tap-to-copy. */
 
 import { useEffect, useState } from 'react';
 
@@ -52,6 +46,7 @@ export default function WalletReceive(): React.ReactElement {
   const activeMode: ReceiveMode = mode === 'private' && !privateReady ? 'public' : mode;
   const address = activeMode === 'private' ? privateAddress : publicAddress;
 
+  /** Copy helper. */
   const copy = (): void => {
     if (!address) return;
     void Clipboard.setStringAsync(address);

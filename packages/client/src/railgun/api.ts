@@ -1,4 +1,8 @@
-/** THE Railgun bridge contract - one TypeScript interface enumerating the full
+/**
+ * @file Type-only RailgunBridgeAPI interface enumerating the full Railgun bridge surface (engine, wallet, shield/transfer/unshield, events).
+ */
+/**
+ * THE Railgun bridge contract - one TypeScript interface enumerating the full
  *  public bridge surface (engine lifecycle, wallet, balances, the shield /
  *  private-transfer / unshield flows, and the live push events).
  *
@@ -12,7 +16,8 @@
  *  dispatcher stays available for advanced orchestration, but every step it can
  *  run is enumerated in SDK_METHODS so the contract and host cannot desync.
  *
- *  PURE: type-only. No native / RN / expo imports. */
+ *  PURE: type-only. No native / RN / expo imports.
+ */
 import type {
   RailgunNet,
   CreateWalletParams,
@@ -42,17 +47,18 @@ export interface BalancesSnapshot {
   scanning: boolean;
 }
 
-/** Engine init options passed from RN (scanConfig is structural to avoid pulling
- *  the RN-side ScanConfig type into the pure client; the host validates it). */
+/** Engine init options passed from RN (scanConfig is structural to avoid pulling the RN-side ScanConfig type into the pure client; the host validates it). */
 export interface EngineInitOptions {
   dev?: boolean;
   scanConfig?: unknown;
 }
 
-/** The full intent-level Railgun bridge contract. The RN client implements this
+/**
+ * The full intent-level Railgun bridge contract. The RN client implements this
  *  over the nodejs-mobile channel; nothing here imports a native module. Every
  *  method maps to either a typed host handler (engine lifecycle / wallet /
- *  balances) or a composition of whitelisted SDK_METHODS (the tx flows). */
+ *  balances) or a composition of whitelisted SDK_METHODS (the tx flows).
+ */
 export interface RailgunBridgeAPI {
   /** True when the embedded Node runtime can serve calls on this binary. */
   isAvailable(): boolean;
@@ -75,8 +81,7 @@ export interface RailgunBridgeAPI {
   /** Trigger a shielded-balance rescan for a wallet on a network. */
   scan(walletId: string, net: RailgunNet): Promise<void>;
 
-  /** Populate a SHIELD tx (public -> private). RN signs + broadcasts. The shape
-   *  is the SHIELD intent; the impl composes the whitelisted populateShield* . */
+  /** Populate a SHIELD tx (public -> private). RN signs + broadcasts. The shape is the SHIELD intent; the impl composes the whitelisted populateShield* . */
   estimateShield(params: ShieldEstimateInput): Promise<{ gasEstimate: string }>;
   populateShield(params: ShieldPopulateInput): Promise<PopulateResult>;
 
@@ -90,8 +95,7 @@ export interface RailgunBridgeAPI {
   proveUnshield(params: UnshieldFlowInput): Promise<void>;
   populateUnshield(params: UnshieldPopulateInput): Promise<PopulateResult>;
 
-  /** The generic escape hatch: invoke one whitelisted SDK primitive by name. The
-   *  method param is the SdkMethod union so an unknown name is a compile error. */
+  /** The generic escape hatch: invoke one whitelisted SDK primitive by name. The method param is the SdkMethod union so an unknown name is a compile error. */
   sdk<T = unknown>(method: SdkMethod, args?: readonly unknown[]): Promise<T>;
 
   /** Capability probe: SDK methods reachable on THIS binary (no rebuild). */

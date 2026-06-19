@@ -1,6 +1,8 @@
-/** HomeScreen presentational parts — the error/spinner/empty states and the
- *  "Message requests" list header, extracted from HomeScreen.tsx (phase-2 lint,
- *  rendering identical). */
+/**
+ * @file HomeScreen.parts — HomeScreen presentational pieces: the error/spinner/
+ *  empty states, the channel-row renderer hook, and the "Message requests" list
+ *  header, extracted from HomeScreen.tsx.
+ */
 
 import { useCallback } from 'react';
 
@@ -22,22 +24,22 @@ import { DANGER } from '../../lib/theme';
 
 interface RowMenu { convId: string; title: string; isUnread: boolean; isGroup: boolean; peerAddress: string | null }
 
-/** #6: hoisted renderItem so its identity is stable across stream ticks (only
+/**
+ * #6: hoisted renderItem so its identity is stable across stream ticks (only
  *  re-created when a resolution version changes), letting memoised ChannelRow
  *  skip rows whose props are unchanged. Versions drive re-creation so
- *  name/avatar/pin/draft resolutions repaint. */
+ *  name/avatar/pin/draft resolutions repaint.
+ */
 export function useChannelRowRenderer(
   router: { push: (to: { pathname: string; params: { convId: string } }) => void },
   setRowMenu: (m: RowMenu) => void,
   deps: { channelProfilesVersion: number; draftsVersion: number; pinned: Set<string>; query?: string },
 ): ({ item }: { item: RowT }) => React.ReactElement {
   const { channelProfilesVersion, draftsVersion, pinned, query } = deps;
-  /** Versions drive re-creation so name/avatar/pin/draft resolutions repaint.
-   *  (deps intentionally partial — react-hooks/exhaustive-deps not enabled.) */
+  /** Versions drive re-creation so name/avatar/pin/draft resolutions repaint. (deps intentionally partial — react-hooks/exhaustive-deps not enabled.) */
   return useCallback(({ item }: { item: RowT }): React.ReactElement => {
     const displayTitle = item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title;
-    /** Self prefix resolves our own stamp name (lastSenderAddress is set for self
-     *  too); falls back to "You" only until the profile lands. */
+    /** Self prefix resolves our own stamp name (lastSenderAddress is set for self too); falls back to "You" only until the profile lands. */
     const senderPrefix = item.lastFromSelf
       ? `${(item.lastSenderAddress && getPeerName(item.lastSenderAddress)) ?? 'You'}: `
       : item.lastSenderAddress
@@ -46,13 +48,15 @@ export function useChannelRowRenderer(
     const preview = item.lastPreview
       ? `${senderPrefix}${item.lastPreview}`
       : '(no messages yet)';
-    /** Avatar address gate:
+    /**
+     * Avatar address gate:
      *   - GROUP (peerAddress == null): the address IS the deterministic
      *     channel-id stamp seed — render it directly (no peer profile to
      *     resolve, and we must NEVER blank a group avatar). Skipped only when
      *     a group-uploaded image (avatarUri) takes precedence.
      *   - DM (peerAddress set): hold off until the peer profile resolves so we
-     *     don't flash a cache-buster-less stamp before the real URL lands. */
+     *     don't flash a cache-buster-less stamp before the real URL lands.
+     */
     const isGroup = !item.peerAddress;
     const showAddr = item.avatarUri || !item.avatarAddress
       ? null
@@ -74,18 +78,13 @@ export function useChannelRowRenderer(
         hasDraft={hasDraft(item.convId)}
         draftText={getDraft(item.convId)}
         labels={isGroup ? item.labels : undefined}
-        /** Already on the Channels tab — requesting the filter fans out to this
-         *  screen's live subscription, which sets labelFilter. No navigation
-         *  needed; the nested chip Pressable swallows the tap so the row's
-         *  onPress (open conversation) doesn't also fire. */
+        /** Already on the Channels tab — requesting the filter fans out to this screen's live subscription, which sets labelFilter. No navigation needed; the nested chip Pressable swallows the tap so the row's onPress (open conversation) doesn't also fire. */
         onLabelPress={isGroup ? requestLabelFilter : undefined}
-        /** Warm the feed cache the instant the row is touched (before the push
-         *  animation finishes) so the conversation screen opens from cache. */
+        /** Warm the feed cache the instant the row is touched (before the push animation finishes) so the conversation screen opens from cache. */
         onPressIn={() => { prefetchFeed(lineOfConv(item.convId)); }}
         onPress={() => { router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } }); }}
         onLongPress={() => {
-          /** Tiny haptic-style buzz when the long-press opens the row menu.
-           *  RN core Vibration (no native dep / rebuild needed); ~10ms = a subtle tap. */
+          /** Tiny haptic-style buzz when the long-press opens the row menu. RN core Vibration (no native dep / rebuild needed); ~10ms = a subtle tap. */
           Vibration.vibrate(10);
           setRowMenu({
             convId: item.convId,
@@ -138,8 +137,7 @@ export function HomeSpinner({ head }: { head: string; bg: string }): React.React
   );
 }
 
-/** Empty-list placeholder. Default copy is "no conversations yet"; pass a
- *  message (e.g. the search "No matches" state) to override it. */
+/** Empty-list placeholder. Default copy is "no conversations yet"; pass a message (e.g. the search "No matches" state) to override it. */
 export function HomeEmpty({ sub, message }: { sub: string; message?: string }): React.ReactElement {
   return (
     <Col padding={32} align="center">

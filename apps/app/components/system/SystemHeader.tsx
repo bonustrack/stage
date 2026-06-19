@@ -1,8 +1,8 @@
-/** Shared topnav for the System menu + its sub-pages — back arrow + title,
- *  mirroring the Accounts page. Paints `toolbarBg` and absorbs the top
- *  safe-area inset so the toolbar fill extends to the very top edge (behind
- *  the status-bar icons). Consumers should NOT add their own `paddingTop:
- *  insets.top` wrapper; this header owns the top inset now. */
+/**
+ * @file SystemHeader — shared back-arrow + title topnav for the System menu and
+ *  its sub-pages; paints the toolbar surface and absorbs the top safe-area inset
+ *  so consumers must not add their own paddingTop wrapper.
+ */
 
 import { Pressable } from '@metro-labs/kit/pressable';
 

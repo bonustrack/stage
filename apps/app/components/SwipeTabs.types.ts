@@ -1,8 +1,7 @@
-/** Shared SwipeTabs types — leaf module with no component imports.
- *
- *  Lives apart from SwipeTabs.config.tsx (which imports every tab component) so
- *  tab screens can import `SimultaneousRefs` without forming a cycle back into
- *  the config/pager. */
+/**
+ * @file Leaf module of shared SwipeTabs types (SimultaneousRefs), kept free of
+ *  component imports so tab screens import it without cycling into the config.
+ */
 
 import type { GestureType } from 'react-native-gesture-handler';
 

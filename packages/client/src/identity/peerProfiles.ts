@@ -1,4 +1,8 @@
-/** Lazy, batched cache of peer identities (display name) keyed by lower-cased
+/**
+ * @file Lazy batched cache of peer display names resolved from stamp.fyi, keyed by lowercased address.
+ */
+/**
+ * Lazy, batched cache of peer identities (display name) keyed by lower-cased
  *  address. Lets the channels list, conversation header, and message bubbles
  *  show a user's display name (instead of the raw 0x… address).
  *
@@ -12,7 +16,8 @@
  *  "no name" → {}) are cached for the session so repeated renders are free.
  *
  *  This is the framework-agnostic core. The React `usePeerProfiles` hook stays
- *  in apps/app and subscribes via {@link subscribePeerProfiles}. */
+ *  in apps/app and subscribes via {@link subscribePeerProfiles}.
+ */
 
 import { STAMP_URL } from '../profile/snapshot';
 
@@ -24,20 +29,22 @@ const store = new Map<string, PeerProfile>();
 const pending = new Set<string>();
 const listeners = new Set<() => void>();
 
+/** Notify helper. */
 function notify(): void {
   listeners.forEach(l => { l(); });
 }
 
-/** stamp.fyi `lookup_addresses` rejects (HTTP 500) when asked for more than ~50
- *  addresses at once, so we split every request into chunks below that cap. */
+/** stamp.fyi `lookup_addresses` rejects (HTTP 500) when asked for more than ~50 addresses at once, so we split every request into chunks below that cap. */
 const STAMP_LOOKUP_CHUNK = 50;
 
-/** Resolve display names for ONE chunk (<= STAMP_LOOKUP_CHUNK addrs) from
+/**
+ * Resolve display names for ONE chunk (<= STAMP_LOOKUP_CHUNK addrs) from
  *  stamp.fyi (`lookup_addresses` → ENS), the same source Snapshot's own UI
  *  uses. Returns a lower-cased `{ address → name }` map; addresses with no ENS
  *  are simply absent. Returns `null` (NOT `{}`) on a failed request so the
  *  caller can leave those addresses unresolved and retry, rather than caching a
- *  false "no name" that would hide a real ENS forever. */
+ *  false "no name" that would hide a real ENS forever.
+ */
 async function lookupNamesChunk(addrs: string[]): Promise<Record<string, string> | null> {
   try {
     const res = await fetch(STAMP_URL, {
@@ -63,6 +70,7 @@ async function lookupNamesChunk(addrs: string[]): Promise<Record<string, string>
   }
 }
 
+/** Get the Batch. */
 async function fetchBatch(addrs: string[]): Promise<void> {
   try {
     for (let i = 0; i < addrs.length; i += STAMP_LOOKUP_CHUNK) {
@@ -74,9 +82,7 @@ async function fetchBatch(addrs: string[]): Promise<void> {
         chunk.forEach(a => pending.delete(a));
         continue;
       }
-      /** Cache an entry for every requested address (name undefined when no
-       *  ENS) so each address resolves once; consumers fall back to the
-       *  truncated address, and avatars to the stamp identicon. */
+      /** Cache an entry for every requested address (name undefined when no ENS) so each address resolves once; consumers fall back to the truncated address, and avatars to the stamp identicon. */
       for (const a of chunk) {
         store.set(a, { name: names[a] });
         pending.delete(a);
@@ -102,8 +108,7 @@ export function ensurePeerProfiles(addresses: (string | null | undefined)[]): vo
   void fetchBatch(todo);
 }
 
-/** True once we've fetched this address's profile (hit or miss). Lets callers
- *  hold off rendering an avatar until its final URL is known. */
+/** True once we've fetched this address's profile (hit or miss). Lets callers hold off rendering an avatar until its final URL is known. */
 export function isPeerResolved(address?: string | null): boolean {
   return !!address && store.has(address.toLowerCase());
 }
@@ -115,8 +120,7 @@ export function getPeerName(address?: string | null): string | undefined {
   return n?.trim() ? n.trim() : undefined;
 }
 
-/** Subscribe to cache changes. Returns an unsubscribe fn. The host's React hook
- *  wraps this to re-render on resolution. */
+/** Subscribe to cache changes. Returns an unsubscribe fn. The host's React hook wraps this to re-render on resolution. */
 export function subscribePeerProfiles(listener: () => void): () => void {
   listeners.add(listener);
   return () => {

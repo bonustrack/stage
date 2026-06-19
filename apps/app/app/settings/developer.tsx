@@ -1,5 +1,4 @@
-/** Settings → Developer route - device-local diagnostic toggles (Railgun debug
- *  console). Reached via /settings → "Developer" row. */
+/** @file Settings → Developer route exposing device-local diagnostic toggles (Railgun debug console). */
 
 import { DeveloperSettings } from '../../components/settings/DeveloperSettings';
 

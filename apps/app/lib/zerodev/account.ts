@@ -1,19 +1,4 @@
-/** Kernel smart-account construction.
- *
- *  Two creation paths share one address space (deterministic per HD index):
- *    - ECDSA owner (always works, no native dep): the mnemonic-derived owner is
- *      the `sudo` validator. This is the canonical phrase-restore path (spec
- *      Screen 3 / Path A) and the path used until the passkey APK ships.
- *    - Passkey (user accounts, needs the new APK): the device passkey is `sudo`;
- *      built SERVERLESS (spec §z). Guarded behind passkeysAvailable() + lazy
- *      requires so a binary without `react-native-passkeys` / the @zerodev passkey
- *      JS packages neither crashes nor fails to bundle/typecheck.
- *
- *  The account is COUNTERFACTUAL — `account.address` is available immediately and
- *  is the wallet identity; the Kernel deploys lazily inside the first sponsored
- *  userOp (see ./client). `index: BigInt(hdIndex)` makes the address reproducible
- *  from the phrase + index alone. */
-
+/** @file Kernel smart-account construction (mnemonic-derived ECDSA owner or device passkey as the `sudo` validator) over one deterministic per-HD-index, counterfactual address space. */
 import '../cryptoShim';
 import type { PublicClient } from 'viem';
 import type { HDAccount } from 'viem/accounts';
@@ -22,11 +7,13 @@ import { signerToEcdsaValidator } from '@zerodev/ecdsa-validator';
 import { ENTRY_POINT, KERNEL_VERSION } from './config';
 import { passkeysAvailable } from './native';
 
-/** Build JUST the ECDSA KernelValidator from the mnemonic-derived owner (no Kernel
+/**
+ * Build JUST the ECDSA KernelValidator from the mnemonic-derived owner (no Kernel
  *  account). Used by createEcdsaKernel AND by the remove-passkey flow, which swaps
  *  the sudo validator back to this ECDSA validator on-chain (changeSudoValidator) —
  *  the validator is still installed (only demoted at enable time), so promoting it
- *  to sudo restores ECDSA root signing. One construction shared by both paths. */
+ *  to sudo restores ECDSA root signing. One construction shared by both paths.
+ */
 export async function ecdsaValidatorForOwner(
   publicClient: PublicClient,
   owner: HDAccount,
@@ -38,8 +25,7 @@ export async function ecdsaValidatorForOwner(
   });
 }
 
-/** Build a counterfactual Kernel owned by an ECDSA `sudo` validator derived from
- *  the app mnemonic at `hdIndex`. No tx is sent; `.address` is the identity. */
+/** Build a counterfactual Kernel owned by an ECDSA `sudo` validator derived from the app mnemonic at `hdIndex`. No tx is sent; `.address` is the identity. */
 export async function createEcdsaKernel(
   publicClient: PublicClient,
   owner: HDAccount,
@@ -54,10 +40,12 @@ export async function createEcdsaKernel(
   });
 }
 
-/** Narrowly-typed boundaries for the lazily-`require`d native/SDK modules (untyped
+/**
+ * Narrowly-typed boundaries for the lazily-`require`d native/SDK modules (untyped
  *  requires, so Metro/tsc need not resolve them until the passkey APK ships). The
  *  shapes describe exactly the members used; each require() result is guarded with a
- *  typeof/`in` check before use, failing closed (throw/null) on an unexpected shape. */
+ *  typeof/`in` check before use, failing closed (throw/null) on an unexpected shape.
+ */
 
 /** The live WebAuthn key handed to toPasskeyValidator. */
 interface WebAuthnKey {
@@ -155,9 +143,7 @@ function asPasskeysNative(mod: unknown): PasskeysNativeModule {
   throw new Error('Unexpected react-native-passkeys shape');
 }
 
-/** The public WebAuthn key material persisted on an account record so the passkey
- *  validator can be REBUILT on later launches without re-registering. Mirrors
- *  AccountRecord.passkey — pubX/pubY are hex strings (bigint isn't JSON-safe). */
+/** The public WebAuthn key material persisted on an account record so the passkey validator can be REBUILT on later launches without re-registering. Mirrors AccountRecord.passkey — pubX/pubY are hex strings (bigint isn't JSON-safe). */
 export interface StoredPasskey {
   pubX: string;
   pubY: string;
@@ -166,7 +152,8 @@ export interface StoredPasskey {
   rpID: string;
 }
 
-/** The passkey WebAuthnValidator contract version. MUST be a real member of the
+/**
+ * The passkey WebAuthnValidator contract version. MUST be a real member of the
  *  installed @zerodev/passkey-validator `PasskeyValidatorContractVersion` enum.
  *
  *  ROOT-CAUSE GUARD: the enum members are `V0_0_1_UNPATCHED` / `V0_0_2_UNPATCHED`
@@ -185,7 +172,8 @@ export interface StoredPasskey {
  *  counterfactual ADDRESS changes with the version. Fine for NEW accounts (create
  *  on 0.0.3 -> sponsorable -> deploys). Existing 0.0.2 accounts derive a different
  *  address now, but they were never sponsorable on 0.0.2 (stuck), so the forward
- *  path is a fresh create. We deliberately do NOT auto-migrate existing accounts. */
+ *  path is a fresh create. We deliberately do NOT auto-migrate existing accounts.
+ */
 function passkeyContractVersion(
   PasskeyValidatorContractVersion: Record<string, string>,
 ): string {
@@ -197,9 +185,7 @@ function passkeyContractVersion(
   return byValue;
 }
 
-/** Reconstruct the live `WebAuthnKey` (with the on-device signing callback) from a
- *  StoredPasskey. PRIVATE — both the create path (after registration) and the
- *  rebuild path go through toPasskeyValidator with one of these. */
+/** Reconstruct the live `WebAuthnKey` (with the on-device signing callback) from a StoredPasskey. PRIVATE — both the create path (after registration) and the rebuild path go through toPasskeyValidator with one of these. */
 function liveWebAuthnKey(stored: StoredPasskey): WebAuthnKey {
   const { signMessageWithReactNativePasskeys } = asPasskeysUtils(
     require('@zerodev/react-native-passkeys-utils'),
@@ -217,7 +203,8 @@ function liveWebAuthnKey(stored: StoredPasskey): WebAuthnKey {
   };
 }
 
-/** Build a Kernel whose `sudo` validator is the PASSKEY (from StoredPasskey) and
+/**
+ * Build a Kernel whose `sudo` validator is the PASSKEY (from StoredPasskey) and
  *  whose ONLY active validator is that passkey — the mnemonic-derived ECDSA owner
  *  is NOT installed as a `regular` validator. Used by BOTH the create path (right
  *  after registration) and the rebuild path (later launches).
@@ -234,16 +221,19 @@ function liveWebAuthnKey(stored: StoredPasskey): WebAuthnKey {
  *  the `sudo` validator via its own weighted-ECDSA validator on the recovery
  *  action selector — it does not rely on the `regular` slot.
  *
- *  Lazy requires keep this file bundling/typechecking without the passkey deps. */
+ *  Lazy requires keep this file bundling/typechecking without the passkey deps.
+ */
 async function buildPasskeyKernel(
   publicClient: PublicClient,
   _owner: HDAccount,
   hdIndex: number,
   stored: StoredPasskey,
-  /** When the account ALREADY exists (enable-passkey on an account whose address
+  /**
+   * When the account ALREADY exists (enable-passkey on an account whose address
    *  was derived from the ECDSA sudo validator), pin the Kernel to that address so
    *  swapping sudo to the passkey does NOT change the wallet identity. Omitted on
-   *  the fresh-create path, where the passkey IS the sudo the address derives from. */
+   *  the fresh-create path, where the passkey IS the sudo the address derives from.
+   */
   addressOverride?: `0x${string}`,
 ): Promise<CreateKernelAccountReturnType> {
   const { toPasskeyValidator, PasskeyValidatorContractVersion } = asPasskeyValidator(
@@ -264,10 +254,12 @@ async function buildPasskeyKernel(
   });
 }
 
-/** Build JUST the passkey KernelValidator from stored material (no Kernel account).
+/**
+ * Build JUST the passkey KernelValidator from stored material (no Kernel account).
  *  Used by the enable-passkey flow to install/swap the validator on an existing,
  *  deployed Kernel via the SDK's changeSudoValidator. Null when the native module
- *  is absent. Lazy require keeps this bundling without the passkey deps. */
+ *  is absent. Lazy require keeps this bundling without the passkey deps.
+ */
 export async function passkeyValidatorFromStored(
   publicClient: PublicClient,
   stored: StoredPasskey,
@@ -288,10 +280,12 @@ export async function passkeyValidatorFromStored(
   }
 }
 
-/** REGISTER a NEW passkey credential for an EXISTING account WITHOUT building a
+/**
+ * REGISTER a NEW passkey credential for an EXISTING account WITHOUT building a
  *  Kernel (the enable-passkey flow). Runs the on-device WebAuthn create() (the
  *  native prompt) and returns the StoredPasskey to persist + install. Null when
- *  the native module is absent. Mirrors createPasskeyKernel's registration half. */
+ *  the native module is absent. Mirrors createPasskeyKernel's registration half.
+ */
 export async function registerPasskeyCredential(
   hdIndex: number,
   opts: { rpId: string; userName: string; userDisplayName?: string },
@@ -327,20 +321,24 @@ export async function registerPasskeyCredential(
   }
 }
 
-/** REBUILD a passkey Kernel for an existing record from its StoredPasskey. Returns
+/**
+ * REBUILD a passkey Kernel for an existing record from its StoredPasskey. Returns
  *  null when the running binary lacks the passkey native module (caller falls back
  *  to the ECDSA owner so an old binary still loads). No re-registration: the public
  *  key material is reused; only the on-device WebAuthn ASSERTION (the prompt) runs
- *  at sign time. */
+ *  at sign time.
+ */
 export async function passkeyKernelFromStored(
   publicClient: PublicClient,
   owner: HDAccount,
   hdIndex: number,
   stored: StoredPasskey,
-  /** The account's known address. REQUIRED for accounts whose passkey was added
+  /**
+   * The account's known address. REQUIRED for accounts whose passkey was added
    *  AFTER creation (the address was derived from the ECDSA sudo, not the passkey),
    *  so the rebuilt passkey-sudo Kernel resolves to the SAME identity. Pass the
-   *  record address always; harmless on fresh passkey accounts (same address). */
+   *  record address always; harmless on fresh passkey accounts (same address).
+   */
   addressOverride?: `0x${string}`,
 ): Promise<CreateKernelAccountReturnType | null> {
   if (!passkeysAvailable()) return null;
@@ -355,7 +353,8 @@ export async function passkeyKernelFromStored(
   }
 }
 
-/** REVEAL-GATE passkey assertion. Runs an on-device WebAuthn `get()` over a fresh
+/**
+ * REVEAL-GATE passkey assertion. Runs an on-device WebAuthn `get()` over a fresh
  *  random challenge, scoped to THIS account's stored credential (rpID +
  *  authenticatorId) with `userVerification: 'required'`, so the OS prompts for the
  *  passkey + biometric/PIN and the credential must actually be present. We do not
@@ -370,7 +369,8 @@ export async function passkeyKernelFromStored(
  *               assert at all; caller falls back to the device-auth sentinel so an
  *               old binary still works (it never crashes).
  *
- *  Lazy require keeps this bundling/typechecking without react-native-passkeys. */
+ *  Lazy require keeps this bundling/typechecking without react-native-passkeys.
+ */
 export async function assertPasskeyPresence(stored: StoredPasskey): Promise<boolean | null> {
   if (!passkeysAvailable()) return null;
   try {

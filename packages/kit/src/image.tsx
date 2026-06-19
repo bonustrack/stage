@@ -1,9 +1,6 @@
-/** Image - a ChatKit-styled image node. Mirrors ChatKit's `Image` widget; no
- *  `dark` deviation (fill/tint do not branch on scheme). Unifies the app's raw
- *  RN Image call sites behind one primitive so the RN-Image vs expo-image
- *  renderer can be swapped in ONE place later (switching the import below is the
- *  only change needed to migrate every call site). `fit` maps onto RN
- *  resizeMode. */
+/**
+ * @file Image — a ChatKit-styled image node unifying the app's raw RN Image call sites behind one primitive (`fit` maps onto resizeMode) so the underlying renderer can be swapped in one place.
+ */
 
 import {
   Image as RNImage,
@@ -36,6 +33,7 @@ const RADIUS: Record<ImageRadius, number> = {
   xl: 16, '2xl': 20, '3xl': 24, '4xl': 28, full: 999, '100%': 999,
 };
 
+/** Radius Value. */
 function radiusValue(radius?: ImageRadius | number): number | undefined {
   if (radius === undefined) return undefined;
   return typeof radius === 'number' ? radius : RADIUS[radius];
@@ -48,13 +46,11 @@ export interface ImageProps {
   alt?: string;
   /** ChatKit: fit. Maps onto RN resizeMode. Default 'cover'. */
   fit?: ImageFit;
-  /** ChatKit: position. Object-position hint (RN honours center/contain only;
-   *  stored for parity + future expo-image objectPosition support). */
+  /** ChatKit: position. Object-position hint (RN honours center/contain only; stored for parity + future expo-image objectPosition support). */
   position?: ImagePosition;
   /** ChatKit: frame. Draw a 1px hairline border around the image. */
   frame?: boolean;
-  /** ChatKit: flush. Escape the container's horizontal padding (full-bleed).
-   *  Pass the padding px (default 16 when true). */
+  /** ChatKit: flush. Escape the container's horizontal padding (full-bleed). Pass the padding px (default 16 when true). */
   flush?: number | boolean;
   /** ChatKit: radius. Named scale ('sm'..'full') or raw px. */
   radius?: ImageRadius | number;
@@ -131,8 +127,7 @@ export function Image(props: ImageProps): React.ReactElement {
   );
 }
 
-/** Style-bag escape hatch for callers that need a plain box with the same
- *  radius scale (e.g. placeholder before src resolves). */
+/** Style-bag escape hatch for callers that need a plain box with the same radius scale (e.g. placeholder before src resolves). */
 export function imageRadius(radius?: ImageRadius | number): ViewStyle {
   const r = radiusValue(radius) ?? BLOCK_RADIUS_DEFAULT;
   return { borderRadius: r };

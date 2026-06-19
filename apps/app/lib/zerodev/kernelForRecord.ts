@@ -1,19 +1,6 @@
-/** Rebuild the Kernel account + client for an existing smart-account record, for
- *  signing paths (the XMTP SCW signer, lazy-deploy userOps). Re-derives the owner
- *  from the app mnemonic at the record's hdIndex and reconstructs the
- *  counterfactual Kernel at the same deterministic address.
- *
- *  SIGNER SELECTION (Less's hard requirement):
- *    - If the record HAS a passkey (`rec.passkey`), the Kernel is rebuilt with the
- *      PASSKEY validator as the active `sudo` signer, so sendTransaction / userOp /
- *      signMessage / signTypedData ALL go through the on-device WebAuthn prompt and
- *      the mnemonic is NEVER read for signing. The ECDSA owner is only the backup.
- *    - Else (passkey skipped) the Kernel is rebuilt with the ECDSA owner (derived
- *      from the mnemonic) as `sudo`, the always-works fallback.
- *
- *  If a passkey IS recorded but the running binary lacks the native module
- *  (passkeyKernelFromStored returns null), we degrade to the ECDSA owner so an old
- *  binary still loads rather than hard-crashing. */
+/**
+ * @file Rebuilds the Kernel account + client for an existing smart-account record on signing paths, selecting the passkey validator as sudo when the record has one (else the HD-derived ECDSA owner, also used as a degraded fallback when the native passkey module is absent).
+ */
 
 import '../cryptoShim';
 import type { KernelAccountClient } from '@zerodev/sdk';
@@ -23,10 +10,12 @@ import { makePublicClient, makeKernelClient } from './client';
 import { createEcdsaKernel, passkeyKernelFromStored } from './account';
 import { passkeysAvailable } from './native';
 
-/** Build a Kernel account client for a smart record (re-derives owner at
+/**
+ * Build a Kernel account client for a smart record (re-derives owner at
  *  hdIndex). Throws if the record isn't a smart account or the mnemonic / HD
  *  index is missing. Reading the mnemonic prompts device auth — only call on a
- *  deliberate signing action, never on the boot hot path. */
+ *  deliberate signing action, never on the boot hot path.
+ */
 export async function kernelClientForRecord(rec: AccountRecord): Promise<KernelAccountClient> {
   if (rec.type !== 'smart' || rec.hdIndex == null) {
     throw new Error('Not a smart account.');

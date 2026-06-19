@@ -1,14 +1,8 @@
-/** Direct render of the app's APP-LEVEL components (NOT the @metro-labs/kit
- *  primitives, which live on the Kit page) with representative sample data. No
- *  controls, no story indirection - each component is rendered inline with a
- *  fixed sample.
- *
- *  Mapping (no literal UserCard/ChannelCard/TokenCard exports exist):
- *   - UserCard    -> ChannelRow, DM mode (circle avatar).
- *   - ChannelCard -> ChannelRow, group mode (square avatar).
- *   - TokenCard   -> TokenRow (the wallet Tokens-tab asset row).
- *   - MessageRow  -> MessengerBubble (incoming + outgoing, with reactions).
- *   - Composer    -> MessengerComposer (default empty state, stubbed handlers). */
+/**
+ * @file Inline gallery rendering the app's app-level components (ChannelRow,
+ *  TokenRow, MessengerBubble, MessengerComposer) with fixed representative sample
+ *  data and no controls or story indirection.
+ */
 
 import { Box } from '../layout';
 import { GallerySection } from './GallerySection';

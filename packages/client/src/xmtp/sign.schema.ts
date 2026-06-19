@@ -1,4 +1,8 @@
-/** Zod boundary schemas for the Metro in-chat signature wire bodies
+/**
+ * @file Zod boundary schemas (with field/size caps) for the Metro in-chat signature-request and signature-reference wire bodies.
+ */
+/**
+ * Zod boundary schemas for the Metro in-chat signature wire bodies
  *  (`metro.box/signatureRequest:1.0` + `metro.box/signatureReference:1.0`).
  *
  *  SECURITY: a signature request arrives over XMTP from an UNTRUSTED peer and,
@@ -8,14 +12,14 @@
  *  unsupported bubble) instead of an `as`-cast handing the signer a wrong-but-
  *  typed object. We also CAP field counts + string sizes so a peer can't ship a
  *  pathological typed-data blob (DoS / UI-flood / memory) through the renderer
- *  and signer. */
+ *  and signer.
+ */
 
 import { z } from 'zod';
 import type { ZodType } from 'zod';
 import type { SignatureRequestContent, SignatureReferenceContent } from './sign';
 
-/** Caps — generous for any legitimate typed-data, tight enough to reject an
- *  abusive blob. A real Permit / order has a handful of types + fields. */
+/** Caps — generous for any legitimate typed-data, tight enough to reject an abusive blob. A real Permit / order has a handful of types + fields. */
 const MAX_STR = 8_192;          // any single string field (message values, desc)
 const MAX_TYPE_NAMES = 64;      // distinct struct types in `types`
 const MAX_FIELDS_PER_TYPE = 64; // fields within one struct type
@@ -38,9 +42,7 @@ const typeFieldSchema = z.object({
   type: z.string().max(256),
 });
 
-/** The standard eth_signTypedData_v4 shape: {domain, types, primaryType, message}.
- *  Values are kept as `unknown` (typed-data carries arbitrary JSON), but their
- *  CONTAINERS are bounded so a hostile blob can't explode the renderer/signer. */
+/** The standard eth_signTypedData_v4 shape: {domain, types, primaryType, message}. Values are kept as `unknown` (typed-data carries arbitrary JSON), but their CONTAINERS are bounded so a hostile blob can't explode the renderer/signer. */
 const eip712Schema = z.object({
   domain: cappedRecord(z.unknown(), MAX_DOMAIN_KEYS),
   types: z.record(
@@ -54,9 +56,7 @@ const eip712Schema = z.object({
   message: cappedRecord(z.unknown(), MAX_MESSAGE_KEYS),
 });
 
-/** SignatureRequest wire schema. `kind` is bound to the two known variants and
- *  the eip712 shape is REQUIRED when kind === 'eip712' (so the signer never gets
- *  a kind:'eip712' with no typed-data, or a typed-data it can't decode). */
+/** SignatureRequest wire schema. `kind` is bound to the two known variants and the eip712 shape is REQUIRED when kind === 'eip712' (so the signer never gets a kind:'eip712' with no typed-data, or a typed-data it can't decode). */
 export const signatureRequestSchema: ZodType<SignatureRequestContent> = z.object({
   id: z.string().min(1).max(256),
   kind: z.enum(['eip712', 'personal']),

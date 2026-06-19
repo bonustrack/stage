@@ -1,14 +1,8 @@
-/** Settings → Notifications — enable / disable PUSH notifications.
- *
- *  A single Switch wired to the device-local push preference (lib/pushPref):
- *   - ON  → persist the preference, request OS notification permission, and
- *           register this device's push token with the daemon
- *           (`registerPushWithDaemon`, which now respects the preference).
- *   - OFF → persist the preference + tell the daemon to drop this device's
- *           token (`unregisterPushFromDaemon`) so background pushes stop.
- *
- *  Reflects the current OS permission state below the toggle so the user knows
- *  if the system has blocked notifications regardless of the in-app preference. */
+/**
+ * @file Settings -> Notifications screen: a single toggle wired to the
+ *  device-local push preference that registers/unregisters this device's push
+ *  token with the daemon and reflects the current OS permission state.
+ */
 
 import { useEffect, useState } from 'react';
 
@@ -41,6 +35,7 @@ export function NotificationsSettings(): React.ReactElement {
     return subscribePushPref(() => { setEnabled(isPushEnabledSync()); });
   }, []);
 
+  /** Handle the Toggle. */
   const onToggle = (next: boolean): void => {
     setEnabled(next); // optimistic
     void (async (): Promise<void> => {

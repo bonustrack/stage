@@ -1,4 +1,7 @@
-/** Lazy, guarded feature-detection of `nodejs-mobile-react-native`.
+/** @file Lazy, guarded feature-detection of `nodejs-mobile-react-native`, typing the channel subset the bridge drives and returning null (never throwing) on web or binaries without the native runtime. */
+
+/*
+ * Lazy, guarded feature-detection of `nodejs-mobile-react-native`.
  *
  *  Mirrors lib/railgun/native.ts exactly: the module is required LAZILY behind a
  *  try/catch so the Metro bundler never has to resolve it on a build where the
@@ -9,7 +12,8 @@
  *  The real channel surface (per nodejs-mobile-react-native): a default export
  *  with `.start(mainFile)`, `.startWithScript(...)`, and a `.channel` carrying
  *  `.send(event, ...args)` + `.addListener(event, cb)` + `.post`. We type only
- *  the subset the bridge drives. */
+ *  the subset the bridge drives.
+ */
 import { Platform } from 'react-native';
 
 /** The bi-directional message channel exposed by nodejs-mobile-react-native. */
@@ -36,9 +40,7 @@ interface RawModule {
 let resolved = false;
 let cached: NodejsMobileModule | null = null;
 
-/** Lazily resolve the nodejs-mobile runtime. Returns null on web or a binary
- *  without the native module. Memoized; never throws; never statically
- *  referenced so Metro can't fail to resolve it. */
+/** Lazily resolve the nodejs-mobile runtime. Returns null on web or a binary without the native module. Memoized; never throws; never statically referenced so Metro can't fail to resolve it. */
 export function loadNodejsMobile(): NodejsMobileModule | null {
   if (resolved) return cached;
   resolved = true;
@@ -53,8 +55,7 @@ export function loadNodejsMobile(): NodejsMobileModule | null {
   return cached;
 }
 
-/** True when the embedded Node runtime is present in THIS binary. iOS/Android
- *  only; never true on web. Memoized. */
+/** True when the embedded Node runtime is present in THIS binary. iOS/Android only; never true on web. Memoized. */
 export function isNodejsMobilePresent(): boolean {
   return loadNodejsMobile() != null;
 }

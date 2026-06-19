@@ -1,4 +1,4 @@
-/** In-chat signature + transaction cards for MessengerBubble (phase-2 split). */
+/** @file In-chat signature-request and transaction cards for MessengerBubble (phase-2 split). */
 import { Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 
@@ -24,8 +24,7 @@ import { useTxSimulation } from '../lib/txSimulate';
 import { SimulationBlock } from './MessengerBubble.sim';
 import { txActionLabel, isTransferRequest } from './MessengerBubble.txwording';
 
-/** Stringify only primitive EIP-712 domain fields; ignore objects so we never
- *  render '[object Object]'. */
+/** Stringify only primitive EIP-712 domain fields; ignore objects so we never render '[object Object]'. */
 function stringifyPrimitive(v: unknown): string | undefined {
   if (typeof v === 'string') return v;
   if (typeof v === 'number' || typeof v === 'bigint' || typeof v === 'boolean') return String(v);
@@ -44,8 +43,7 @@ export function SigRequestCard({ req, dark, sub, signing, onSign, consentAllowed
   /** undefined = unknown/not gated (allowed convs), false = stranger -> block. */
   consentAllowed?: boolean;
 }): React.ReactElement {
-  /** TRUSTED title derived by the app from the request kind/typedata — NOT the
-   *  peer's free-text description. */
+  /** TRUSTED title derived by the app from the request kind/typedata — NOT the peer's free-text description. */
   const title = req.kind === 'eip712' ? `Sign ${req.eip712?.primaryType ?? 'typed data'}` : 'Sign message';
   /** Peer-supplied note, shown separately + clearly marked untrusted. */
   const senderNote = req.description?.trim();
@@ -132,6 +130,7 @@ export function SigRequestCard({ req, dark, sub, signing, onSign, consentAllowed
 export function SigReferenceCard({ ref, dark, sub }: {
   ref: SigReference; dark: boolean; sub: string;
 }): React.ReactElement {
+  /** Short helper. */
   const short = (h?: string): string => (h && h.length> 14 ? `${h.slice(0, 8)}…${h.slice(-4)}` : (h ?? '')); const blockRadius = useBlockRadius();
   return (
     <Box radius={blockRadius} background={dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)'} padding={12} margin={{ top: 8 }} gap={6} style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)' }}>
@@ -152,10 +151,12 @@ export function SigReferenceCard({ ref, dark, sub }: {
     </Box>
   );
 }
-/** TxRequestCard — in-chat payment request. Thin wrapper over the shared
+/**
+ * TxRequestCard — in-chat payment request. Thin wrapper over the shared
  *  PaymentCard: it computes the amount/recipient/token from the tx request and
  *  passes its own "Pay" action (the caller's onPay runs walletSendCalls /
- *  sendCall). The recipient line is a tappable profile link (TxToRow). */
+ *  sendCall). The recipient line is a tappable profile link (TxToRow).
+ */
 export function TxRequestCard({ req, dark, sub, paying, onPay, consentAllowed }: {
   req: TxRequest; dark: boolean; sub: string; paying?: boolean;
   onPay?: () => void;
@@ -175,10 +176,12 @@ export function TxRequestCard({ req, dark, sub, paying, onPay, consentAllowed }:
   // ERC20 when the recipient (metadata.toAddress) differs from call.to — then
   // call.to is the token contract. Native ETH otherwise.
   const tokenAddr = call?.metadata?.toAddress ? call?.to : undefined;
-  /** Token logo + network badge, exactly like the wallet token row. Resolved via
+  /**
+   * Token logo + network badge, exactly like the wallet token row. Resolved via
    *  the registry (lib/txAssets): a KNOWN ERC-20 (e.g. STAGE) shows its real
    *  logo, native ETH shows the ETH logo, and an UNKNOWN token shows a neutral
-   *  identicon — NEVER the ETH logo for a non-ETH token. */
+   *  identicon — NEVER the ETH logo for a non-ETH token.
+   */
   const chainNum = chainIdToNumber(req.chainId ?? '0x1');
   const logoUrl = tokenLogoUrl(chainNum, tokenAddr ?? null, 36);
   // USD value beside the big amount (FIX 2). Native ETH prices off null; an
@@ -254,10 +257,12 @@ export function TxRequestCard({ req, dark, sub, paying, onPay, consentAllowed }:
     />
   );
 }
-/** TxToRow — the payment "To" line: a tappable link to the recipient's profile,
+/**
+ * TxToRow — the payment "To" line: a tappable link to the recipient's profile,
  *  with the stamp-resolved username (falls back to the short address while it
  *  loads) + a stamp.fyi avatar. Its own component so `usePeerProfiles` runs once
- *  per address (the shared cache dedupes the lookup). */
+ *  per address (the shared cache dedupes the lookup).
+ */
 function TxToRow({ address }: { address: string }): React.ReactElement {
   const router = useRouter();
   usePeerProfiles([address]);
@@ -275,9 +280,7 @@ function TxToRow({ address }: { address: string }): React.ReactElement {
     </Pressable>
   );
 }
-/** TxNativeValueRow — surfaces native ETH that rides along with a contract call
- *  (calldata + value > 0). Without this the ETH leaving the wallet is hidden
- *  behind the function call, since the amount header is suppressed for calls. */
+/** TxNativeValueRow — surfaces native ETH that rides along with a contract call (calldata + value > 0). Without this the ETH leaving the wallet is hidden behind the function call, since the amount header is suppressed for calls. */
 function TxNativeValueRow({ eth, chainId }: { eth: string; chainId: number }): React.ReactElement {
   const pal = usePalette();
   const usd = useUsdValue(chainId, null, eth);
@@ -288,17 +291,18 @@ function TxNativeValueRow({ eth, chainId }: { eth: string; chainId: number }): R
     </Row>
   );
 }
-/** Shorten a decoded arg value for display: 0x-addresses (and address-like 42-char
- *  hex) are truncated; everything else (strings, big numbers) is shown as-is. */
+/** Shorten a decoded arg value for display: 0x-addresses (and address-like 42-char hex) are truncated; everything else (strings, big numbers) is shown as-is. */
 function fmtArgValue(v: string): string {
   if (/^0x[0-9a-fA-F]{40}$/.test(v)) return shortAddress(v);
   return v;
 }
-/** DecodedCallBlock — the trusted "what this tx actually does" view for a generic
+/**
+ * DecodedCallBlock — the trusted "what this tx actually does" view for a generic
  *  contract call: the resolved function signature + each decoded arg (name: value)
  *  + the target contract. While the ABI fetch is in flight it shows the raw
  *  selector; a failed decode shows the selector + the "could not decode" note.
- *  This is derived from the calldata, NOT the sender's description. */
+ *  This is derived from the calldata, NOT the sender's description.
+ */
 function DecodedCallBlock({ decoded, pending, target, sub, selector }: {
   decoded: DecodedCall | null; pending: boolean; target?: string; sub: string; selector?: string;
 }): React.ReactElement {
@@ -338,8 +342,7 @@ function DecodedCallBlock({ decoded, pending, target, sub, selector }: {
     </Col>
   );
 }
-/** TxWarning — anti-spoof banner: the app could not verify the contract, could
- *  not decode the call, or the decode disagrees with the sender's description. */
+/** TxWarning — anti-spoof banner: the app could not verify the contract, could not decode the call, or the decode disagrees with the sender's description. */
 function TxWarning({ text }: { text: string }): React.ReactElement {
   const pal = usePalette();
   return (
