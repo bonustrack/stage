@@ -10,7 +10,7 @@
 import { getEntryPoint, KERNEL_V3_1 } from '@zerodev/sdk/constants';
 import { ENTRY_POINT_VERSION } from '@stage-labs/client/zerodev/config';
 
-export { SCW_CHAIN_ID, SCW_CHAIN_ID_BIGINT } from '@stage-labs/client/zerodev/config';
+export { SCW_CHAIN_ID } from '@stage-labs/client/zerodev/config';
 
 /** EntryPoint v0.7 ({ address, version }) — the branded EntryPointType. */
 export const ENTRY_POINT = getEntryPoint(ENTRY_POINT_VERSION);
