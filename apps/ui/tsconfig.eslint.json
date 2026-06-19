@@ -1,5 +1,0 @@
-{
-  "_comment": "Lint-only TS project for type-aware ESLint: extends the app tsconfig and includes the same src .ts/.tsx/.vue/.d.ts set, so both the pure-TS block and the .vue block resolve every file through one explicit project. Not used by `vue-tsc --noEmit` (the typecheck task).",
-  "extends": "./tsconfig.json",
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue", "src/**/*.d.ts"]
-}

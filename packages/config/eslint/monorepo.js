@@ -91,7 +91,7 @@ export async function monorepo({ vue = true } = {}) {
     // every lintable file.
     typeAwareBlock("apps/app", "apps/app/tsconfig.eslint.json"),
     ...scopePreset("apps/app", reactNative()),
-    typeAwareBlock("packages/kit", "packages/kit/tsconfig.eslint.json"),
+    typeAwareBlock("packages/kit", "packages/kit/tsconfig.json"),
     ...scopePreset("packages/kit", kitEslint()),
 
     // Pure-TypeScript packages/apps — base preset (type-checked recommended +
@@ -114,8 +114,8 @@ export async function monorepo({ vue = true } = {}) {
     ]);
     // Type-aware block for apps/ui's pure-TS sources (the .vue block carries its
     // own vue-eslint-parser languageOptions, so only .ts/.tsx need this).
-    config.push(typeAwareBlock("apps/ui", "apps/ui/tsconfig.eslint.json"));
-    config.push(...scopePreset("apps/ui", vuePreset({ vueParser, vuePlugin, rootDir: ROOT_DIR, project: "apps/ui/tsconfig.eslint.json" })));
+    config.push(typeAwareBlock("apps/ui", "apps/ui/tsconfig.json"));
+    config.push(...scopePreset("apps/ui", vuePreset({ vueParser, vuePlugin, rootDir: ROOT_DIR, project: "apps/ui/tsconfig.json" })));
   }
 
   // TYPE-aware rules OFF for files that are NOT part of any app tsconfig and run

@@ -1,5 +1,0 @@
-{
-  "_comment": "Lint-only TS project: extends the package tsconfig. Kit has no test suite of its own; this exists so the type-aware ESLint projectService resolves every src file through one explicit project (kept symmetric with the other workspaces).",
-  "extends": "./tsconfig.json",
-  "include": ["src/**/*"]
-}

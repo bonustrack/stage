@@ -54,7 +54,7 @@ cd apps/proxy
 # auth: either `wrangler login` (interactive) or export CLOUDFLARE_API_TOKEN
 #       (token needs Workers Scripts:Edit + Workers Routes:Edit on the
 #        metro.box zone, and Account: Workers Scripts)
-npx wrangler deploy
+bunx wrangler deploy
 ```
 
 `wrangler.toml` binds the Worker to a route `preview.metro.box/*` on the
