@@ -16,39 +16,29 @@ type ParsedRoute =
   | { pathname: '/(tabs)/settings'; params?: undefined }
   | { pathname: '/(tabs)/contacts'; params?: undefined };
 
-/**
- * Pull `{ path, query }` out of any inbound link, preferring the hash fragment
- *  (where the web client keeps its route) and falling back to the URL path.
- *  Handles `metro://xmtp/x`, `https://metro.box/#/xmtp/x?m=y`,
- *  `https://metro.box/xmtp/x`, and bare `xmtp/x`.
- */
+/** Strip the scheme+authority off a non-hash link, yielding a leading-slash path (http(s) drops the host; custom schemes keep the authority as the first segment). */
+function stripAuthority(work: string): string {
+  const m = /^([a-z][a-z0-9+.-]*):\/\/(.*)$/i.exec(work);
+  const scheme = m?.[1];
+  const rest = m?.[2];
+  if (scheme === undefined || rest === undefined) return work;
+  if (scheme.toLowerCase() === 'http' || scheme.toLowerCase() === 'https') {
+    // Drop the host: everything up to the first '/', '?' or end.
+    const cut = rest.search(/[/?]/);
+    return cut === -1 ? '/' : rest.slice(cut);
+  }
+  // Custom scheme — the authority IS the path (metro://xmtp/abc).
+  return '/' + rest;
+}
+
+/** Pull `{ segments, query }` out of any inbound link, preferring the hash fragment (web routes) and falling back to the URL path. */
 function extractRoute(url: string): { segments: string[]; query: URLSearchParams } {
   let work = url.trim();
 
   // Prefer the hash fragment if present: "....#/xmtp/abc?m=1" -> "/xmtp/abc?m=1".
   // (Web permalinks are hash-routed, so the real route lives after the `#`.)
   const hashIdx = work.indexOf('#');
-  if (hashIdx !== -1) {
-    work = work.slice(hashIdx + 1);
-  } else {
-    // No hash. The leading authority differs by scheme:
-    //   http(s)://metro.box/xmtp/abc  → "metro.box" is a real host → strip it.
-    //   metro://xmtp/abc              → "xmtp" is NOT a host, it's the first
-    //                                    route segment → keep it.
-    const m = /^([a-z][a-z0-9+.-]*):\/\/(.*)$/i.exec(work);
-    const scheme = m?.[1];
-    const rest = m?.[2];
-    if (scheme !== undefined && rest !== undefined) {
-      if (scheme.toLowerCase() === 'http' || scheme.toLowerCase() === 'https') {
-        // Drop the host: everything up to the first '/', '?' or end.
-        const cut = rest.search(/[/?]/);
-        work = cut === -1 ? '/' : rest.slice(cut);
-      } else {
-        // Custom scheme — the authority IS the path (metro://xmtp/abc).
-        work = '/' + rest;
-      }
-    }
-  }
+  work = hashIdx !== -1 ? work.slice(hashIdx + 1) : stripAuthority(work);
 
   const qIdx = work.indexOf('?');
   const pathPart = qIdx === -1 ? work : work.slice(0, qIdx);
@@ -62,37 +52,39 @@ function extractRoute(url: string): { segments: string[]; query: URLSearchParams
   return { segments, query: new URLSearchParams(queryPart) };
 }
 
+/** Build the conversation route for an `xmtp`/`embed` link, carrying optional `m` and `focus` query params. */
+function conversationRoute(second: string | undefined, query: URLSearchParams): ParsedRoute | null {
+  if (!second) return null;
+  const m = query.get('m') ?? undefined;
+  // `focus=1` → the conversation screen auto-focuses the composer + raises the keyboard on arrival.
+  const focus = query.get('focus') ?? undefined;
+  return {
+    pathname: '/xmtp/[convId]',
+    params: { convId: second, ...(m ? { m } : {}), ...(focus ? { focus } : {}) },
+  };
+}
+
+/** Static (no-param) head segments that map directly to a fixed tab route. */
+const STATIC_ROUTES: Record<string, ParsedRoute> = {
+  channels: { pathname: '/(tabs)' },
+  settings: { pathname: '/(tabs)/settings' },
+  contacts: { pathname: '/(tabs)/contacts' },
+};
+
 /** Map a parsed link to an expo-router target, or null when it doesn't address a known screen (in which case the deep link is ignored and the app opens to its default tab). */
 function routeForUrl(url: string): ParsedRoute | null {
   const { segments, query } = extractRoute(url);
   if (segments.length === 0) return { pathname: '/(tabs)' };
 
   const [head, second] = segments;
-  switch (head) {
-    case 'xmtp':
-    case 'embed': {
-      if (!second) return null;
-      const m = query.get('m') ?? undefined;
-      /** `focus=1` → the conversation screen auto-focuses the composer + raises the keyboard on arrival. */
-      const focus = query.get('focus') ?? undefined;
-      return {
-        pathname: '/xmtp/[convId]',
-        params: { convId: second, ...(m ? { m } : {}), ...(focus ? { focus } : {}) },
-      };
-    }
-    case 'group':
-      return second ? { pathname: '/group/[convId]', params: { convId: second } } : null;
-    case 'user':
-      return second ? { pathname: '/user/[address]', params: { address: second } } : null;
-    case 'channels':
-      return { pathname: '/(tabs)' };
-    case 'settings':
-      return { pathname: '/(tabs)/settings' };
-    case 'contacts':
-      return { pathname: '/(tabs)/contacts' };
-    default:
-      return null;
+  if (head === 'xmtp' || head === 'embed') return conversationRoute(second, query);
+  if (head === 'group') {
+    return second ? { pathname: '/group/[convId]', params: { convId: second } } : null;
   }
+  if (head === 'user') {
+    return second ? { pathname: '/user/[address]', params: { address: second } } : null;
+  }
+  return (head !== undefined ? STATIC_ROUTES[head] : undefined) ?? null;
 }
 
 /** Navigate to the screen a link addresses. Returns true when it matched a known route. */

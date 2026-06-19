@@ -99,7 +99,57 @@ function ControlRow({ onSkip, onOpen, dark, hint }: {
   );
 }
 
-/** Poll / payment / signing card: mounts the conversation for one channel and renders the request body (PollView / TxRequestCard / SigRequestCard) wired to the same vote/pay/sign pipeline the chat uses. */
+/** Resolve the author name + posted-at line for the card header from the source entry. */
+function headerFields(authorAddr: string | null, ts: string | undefined): { authorName: string | null; postedAt: string | null } {
+  return {
+    authorName: authorAddr ? (getPeerName(authorAddr) ?? shortAddress(authorAddr)) : null,
+    postedAt: ts ? fmtTs(ts) : null,
+  };
+}
+
+/** Resolve the channel title for a conversation request (group name or peer name/address). */
+function conversationTitle(isGroup: boolean, groupName: string | null | undefined, peerAddr: string | null): string {
+  if (isGroup) return groupName?.trim() ? groupName.trim() : 'Untitled group';
+  return peerAddr ? (getPeerName(peerAddr) ?? shortAddress(peerAddr)) : '';
+}
+
+/** Control-row hint for a conversation request kind, or undefined while loading. */
+function controlHint(kind: RequestKind, loading: boolean): string | undefined {
+  if (loading) return undefined;
+  if (kind === 'poll') return 'Tap an option to vote, or send a custom message below.';
+  if (kind === 'payment') return 'Tap Pay to confirm, or send a custom message below.';
+  return 'Tap Sign to confirm, or send a custom message below.';
+}
+
+/** Renders the request body: PollView / TxRequestCard / SigRequestCard, or a loading line. */
+function RequestBody({ proposal, c, msgId, dark, sub, onPayPress, onSignPress }: {
+  proposal: QueuedRequest; c: ReturnType<typeof useConversationState>; msgId: string;
+  dark: boolean; sub: string; onPayPress: () => void; onSignPress: () => void;
+}): React.ReactElement {
+  const entry = c.events.find(e => e.id === msgId);
+  const poll = entry ? pollOf(entry) : undefined;
+  const tx = entry ? txRequestOf(entry) : undefined;
+  const sig = entry ? sigRequestOf(entry) : undefined;
+  const kindLabel = proposal.kind === 'payment' ? 'payment request'
+    : proposal.kind === 'signing' ? 'signature request' : 'proposal';
+  if (poll) {
+    return (
+      <PollView
+        poll={poll} dark={dark} sub={sub}
+        votes={c.displayVotes.get(msgId)} ownVotes={c.displayOwnVotes.get(msgId)}
+        onVote={(q, o, action) => { c.onVote(msgId, q, o, action); }}
+        openAnswers={c.displayOpenAnswers.get(msgId)}
+        onOpenAnswer={(q, text) => { c.onOpenAnswer(msgId, q, text); }}
+        myUri={c.myUri}
+      />
+    );
+  }
+  if (tx) return <TxRequestCard req={tx} dark={dark} sub={sub} paying={c.payingIds.has(msgId)} onPay={onPayPress} />;
+  if (sig) return <SigRequestCard req={sig} dark={dark} sub={sub} signing={c.signingIds.has(msgId)} onSign={onSignPress} />;
+  return <Text role="secondary" style={{ marginTop: 12 }}>Loading {kindLabel}…</Text>;
+}
+
+/** Poll / payment / signing card: mounts the conversation and renders the request body wired to the chat's vote/pay/sign pipeline. */
 function ConversationRequestCard({ proposal, onAdvance }: {
   proposal: QueuedRequest; onAdvance: () => void;
 }): React.ReactElement {
@@ -111,110 +161,43 @@ function ConversationRequestCard({ proposal, onAdvance }: {
   const msgId = proposal.msgId ?? '';
 
   const c = useConversationState(proposal.convId, undefined);
-  const {
-    activeLine, events, myUri, isGroup, groupName, peerAddr,
-    mentionCandidates, displayVotes, displayOwnVotes, onVote,
-    displayOpenAnswers, onOpenAnswer, onOptimistic, onSent,
-    senderEthOf, onPay, payingIds, onSign, signingIds,
-  } = c;
-
-  /** The source message itself - re-found in the live feed by the queued id so the poll tally / pay+sign spinners stay live. */
-  const entry = useMemo(() => events.find(e => e.id === msgId), [events, msgId]);
-  const poll = entry ? pollOf(entry) : undefined;
-  const tx = entry ? txRequestOf(entry) : undefined;
-  const sig = entry ? sigRequestOf(entry) : undefined;
-
-  const title = isGroup
-    ? (groupName?.trim() ? groupName.trim() : 'Untitled group')
-    : (peerAddr ? (getPeerName(peerAddr) ?? shortAddress(peerAddr)) : '');
-
-  const authorAddr = useMemo(
-    () => (entry ? senderEthOf(entry.from) : null),
-    [entry, senderEthOf],
-  );
-  const authorName = authorAddr ? (getPeerName(authorAddr) ?? shortAddress(authorAddr)) : null;
-  const postedAt = entry?.ts ? fmtTs(entry.ts) : null;
+  // The source message, re-found in the live feed so tally / spinners stay live.
+  const entry = useMemo(() => c.events.find(e => e.id === msgId), [c.events, msgId]);
+  const title = conversationTitle(c.isGroup, c.groupName, c.peerAddr);
+  const authorAddr = useMemo(() => (entry ? c.senderEthOf(entry.from) : null), [entry, c]);
+  const header = headerFields(authorAddr, entry?.ts);
 
   const openChannel = useCallback(() => {
     router.push({ pathname: '/xmtp/[convId]', params: { convId: proposal.convId } });
   }, [router, proposal.convId]);
 
-  /** Pay / sign reuse the chat handlers verbatim, then advance to the next item (the receipt posts back into the channel via the shared pipeline). */
-  const wsc = entry ? (entry.payload as { walletSendCalls?: WalletSendCallsContent } | undefined)?.walletSendCalls : undefined;
-  const sigReq = entry ? (entry.payload as { signatureRequest?: SignatureRequestContent } | undefined)?.signatureRequest : undefined;
+  // Pay / sign reuse the chat handlers verbatim, then advance to the next item.
+  const payload = entry?.payload as { walletSendCalls?: WalletSendCallsContent; signatureRequest?: SignatureRequestContent } | undefined;
+  const wsc = payload?.walletSendCalls;
+  const sigReq = payload?.signatureRequest;
+  const { onPay, onSign, onOptimistic, onSent } = c;
   const onPayPress = useCallback(() => { if (wsc) { onPay(msgId, wsc); onAdvance(); } }, [wsc, onPay, msgId, onAdvance]);
   const onSignPress = useCallback(() => { if (sigReq) { onSign(msgId, sigReq); onAdvance(); } }, [sigReq, onSign, msgId, onAdvance]);
-
   const onComposerOptimistic = useCallback((entryArg: Parameters<NonNullable<typeof onOptimistic>>[0]) => {
     onOptimistic?.(entryArg);
     onAdvance();
   }, [onOptimistic, onAdvance]);
 
-  const loading = !entry;
-  const kindLabel = proposal.kind === 'payment' ? 'payment request'
-    : proposal.kind === 'signing' ? 'signature request' : 'proposal';
-
+  const poll = entry ? pollOf(entry) : undefined;
   return (
     <Col flex={1} surface="surface">
       <Box flex={1} padding={{ x: 16, top: 16 }} style={{ alignSelf: 'stretch' }}>
-        <CardHeader kind={proposal.kind} title={title} authorAddr={authorAddr} authorName={authorName} postedAt={postedAt} fg={fg}/>
-
+        <CardHeader kind={proposal.kind} title={title} authorAddr={authorAddr} authorName={header.authorName} postedAt={header.postedAt} fg={fg}/>
         {poll?.question ? (
-          <Text weight="semibold" size="4xl" color={fg} style={{ marginTop: 6 }}>
-            {poll.question}
-          </Text>
+          <Text weight="semibold" size="4xl" color={fg} style={{ marginTop: 6 }}>{poll.question}</Text>
         ) : null}
-
-        {poll ? (
-          <PollView
-            poll={poll}
-            dark={dark}
-            sub={sub}
-            votes={displayVotes.get(msgId)}
-            ownVotes={displayOwnVotes.get(msgId)}
-            onVote={(q, o, action) => { onVote(msgId, q, o, action); }}
-            openAnswers={displayOpenAnswers.get(msgId)}
-            onOpenAnswer={(q, text) => { onOpenAnswer(msgId, q, text); }}
-            myUri={myUri}
-          />
-        ) : tx ? (
-          <TxRequestCard
-            req={tx}
-            dark={dark}
-            sub={sub}
-            paying={payingIds.has(msgId)}
-            onPay={onPayPress}
-          />
-        ) : sig ? (
-          <SigRequestCard
-            req={sig}
-            dark={dark}
-            sub={sub}
-            signing={signingIds.has(msgId)}
-            onSign={onSignPress}
-          />
-        ) : (
-          <Text role="secondary" style={{ marginTop: 12 }}>Loading {kindLabel}…</Text>
-        )}
-
-        <ControlRow
-          onSkip={onAdvance}
-          onOpen={openChannel}
-          dark={dark}
-          hint={loading ? undefined : proposal.kind === 'poll'
-            ? 'Tap an option to vote, or send a custom message below.'
-            : proposal.kind === 'payment'
-              ? 'Tap Pay to confirm, or send a custom message below.'
-              : 'Tap Sign to confirm, or send a custom message below.'}
-        />
+        <RequestBody proposal={proposal} c={c} msgId={msgId} dark={dark} sub={sub} onPayPress={onPayPress} onSignPress={onSignPress} />
+        <ControlRow onSkip={onAdvance} onOpen={openChannel} dark={dark} hint={controlHint(proposal.kind, !entry)} />
       </Box>
       <KeyboardStickyView offset={{ opened: insets.bottom }}>
         <MessengerComposer
-          dark={dark}
-          xmtpLine={activeLine}
-          mentionCandidates={mentionCandidates}
-          onOptimistic={onComposerOptimistic}
-          onSent={onSent}
+          dark={dark} xmtpLine={c.activeLine} mentionCandidates={c.mentionCandidates}
+          onOptimistic={onComposerOptimistic} onSent={onSent}
         />
         <Box height={insets.bottom} surface="raised"/>
       </KeyboardStickyView>
@@ -222,7 +205,13 @@ function ConversationRequestCard({ proposal, onAdvance }: {
   );
 }
 
-/** Message-request card: a compact channel preview with Accept / Block (reusing the requests-list consent handlers) + Open. Channel-level, no conversation mount; acting advances to the next item. */
+/** Resolve the display title for a message-request channel preview. */
+function requestTitle(view: QueuedRequest['request']): string {
+  if (!view) return '';
+  return view.peerAddress ? (getPeerName(view.peerAddress) ?? view.title) : view.title;
+}
+
+/** Message-request card: a compact channel preview with Accept / Block + Open. Channel-level; acting advances to the next item. */
 function MessageRequestCard({ request, onAdvance }: {
   request: QueuedRequest; onAdvance: () => void;
 }): React.ReactElement {
@@ -230,9 +219,7 @@ function MessageRequestCard({ request, onAdvance }: {
   const dark = useEffectiveColorScheme() === 'dark';
   const pal = usePalette();
   const view = request.request;
-  const displayTitle = view
-    ? (view.peerAddress ? (getPeerName(view.peerAddress) ?? view.title) : view.title)
-    : '';
+  const displayTitle = requestTitle(view);
 
   const openChannel = useCallback(() => {
     router.push({ pathname: '/xmtp/[convId]', params: { convId: request.convId } });

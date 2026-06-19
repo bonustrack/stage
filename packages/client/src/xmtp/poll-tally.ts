@@ -63,12 +63,12 @@ export function parseOpenVote(content: string): { q: number; text: string } | nu
   return { q, text: b64dec(m[2] ?? '') };
 }
 
-/** Latest free-text answer per voter for one (poll, question). A `removed` event (or empty text) clears the voter's answer. Returns voterUri -> {text, ts}. */
-export function openAnswersByPoll(
+/** Last-write-wins collect of the latest open-answer state per voter for one (poll, question). */
+function latestOpenAnswers(
   events: VoteEvent[],
   pollMessageId: string,
-  questionIndex = 0,
-): Map<string, { text: string; ts: string }> {
+  questionIndex: number,
+): Map<string, { ts: string; removed: boolean; text: string }> {
   const latest = new Map<string, { ts: string; removed: boolean; text: string }>();
   for (const e of events) {
     if (e.reference !== pollMessageId || e.schema !== 'custom') continue;
@@ -77,6 +77,16 @@ export function openAnswersByPoll(
     const cur = latest.get(e.voter);
     if (!cur || cur.ts < e.ts) latest.set(e.voter, { ts: e.ts, removed: !!e.removed, text: k.text });
   }
+  return latest;
+}
+
+/** Latest free-text answer per voter for one (poll, question). A `removed` event (or empty text) clears the voter's answer. Returns voterUri -> {text, ts}. */
+export function openAnswersByPoll(
+  events: VoteEvent[],
+  pollMessageId: string,
+  questionIndex = 0,
+): Map<string, { text: string; ts: string }> {
+  const latest = latestOpenAnswers(events, pollMessageId, questionIndex);
   const out = new Map<string, { text: string; ts: string }>();
   for (const [voter, v] of latest) {
     if (v.removed || !v.text) continue;
@@ -120,27 +130,39 @@ export function votesByPoll(
     const k = parseVoteKey(e.content);
     return k?.q === questionIndex ? k.o : null;
   };
-  if (multiSelect) {
-    // latest add/remove state per (voter, optionIndex)
-    const latest = new Map<string, { ts: string; removed: boolean; idx: number; voter: string }>();
-    for (const e of events) {
-      const idx = optOf(e);
-      if (idx === null) continue;
-      const key = `${e.voter} ${idx}`;
-      const cur = latest.get(key);
-      if (!cur || cur.ts < e.ts) latest.set(key, { ts: e.ts, removed: !!e.removed, idx, voter: e.voter });
-    }
-    const out = new Map<number, Set<string>>();
-    for (const v of latest.values()) {
-      if (v.removed) continue;
-      let s = out.get(v.idx);
-      if (!s) { s = new Set(); out.set(v.idx, s); }
-      s.add(v.voter);
-    }
-    return out;
+  return multiSelect ? multiSelectVotes(events, optOf) : singleSelectVotes(events, optOf);
+}
+
+/** Add `voter` to the voter set for `idx` in `out`, creating the set on first use. */
+function addVoter(out: Map<number, Set<string>>, idx: number, voter: string): void {
+  let s = out.get(idx);
+  if (!s) { s = new Set(); out.set(idx, s); }
+  s.add(voter);
+}
+
+/** Multi-select tally: latest add/remove state per (voter, optionIndex). */
+function multiSelectVotes(
+  events: VoteEvent[],
+  optOf: (e: VoteEvent) => number | null,
+): Map<number, Set<string>> {
+  const latest = new Map<string, { ts: string; removed: boolean; idx: number; voter: string }>();
+  for (const e of events) {
+    const idx = optOf(e);
+    if (idx === null) continue;
+    const key = `${e.voter} ${idx}`;
+    const cur = latest.get(key);
+    if (!cur || cur.ts < e.ts) latest.set(key, { ts: e.ts, removed: !!e.removed, idx, voter: e.voter });
   }
-  // single-select: latest 'added' option per voter wins (ignore removals; a
-  // bare removal just clears, a switch is the newer 'added').
+  const out = new Map<number, Set<string>>();
+  for (const v of latest.values()) if (!v.removed) addVoter(out, v.idx, v.voter);
+  return out;
+}
+
+/** Single-select tally: latest 'added' option per voter wins (a bare removal clears, a switch is the newer 'added'). */
+function singleSelectVotes(
+  events: VoteEvent[],
+  optOf: (e: VoteEvent) => number | null,
+): Map<number, Set<string>> {
   const latest = new Map<string, { ts: string; removed: boolean; idx: number }>();
   for (const e of events) {
     const idx = optOf(e);
@@ -149,12 +171,7 @@ export function votesByPoll(
     if (!cur || cur.ts < e.ts) latest.set(e.voter, { ts: e.ts, removed: !!e.removed, idx });
   }
   const out = new Map<number, Set<string>>();
-  for (const [voter, v] of latest) {
-    if (v.removed) continue;
-    let s = out.get(v.idx);
-    if (!s) { s = new Set(); out.set(v.idx, s); }
-    s.add(voter);
-  }
+  for (const [voter, v] of latest) if (!v.removed) addVoter(out, v.idx, voter);
   return out;
 }
 

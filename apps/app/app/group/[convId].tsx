@@ -4,9 +4,6 @@ import { useEffect, useState } from 'react';
 
 import { useQueryClient } from '@tanstack/react-query';
 import { Pressable } from '@metro-labs/kit/pressable';
-import { Text } from '@metro-labs/kit/text';
-/** RNGH gesture-aware FlatList so vertical scroll composes with the native-stack edge swipe-back under GestureDetectorProvider (see xmtp/[convId] for rationale). */
-import { FlatList } from 'react-native-gesture-handler';
 import { Row, Col } from '../../components/layout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,7 +12,8 @@ import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { Icon } from '@metro-labs/kit/icon';
 import { ImageViewer } from '../../components/ImageViewer';
-import { MemberRow, AddMemberModal, OverflowModal } from './group.parts';
+import { AddMemberModal, OverflowModal } from './group.parts';
+import { GroupMembersList } from './group.members';
 import { GroupProfileHeader, GroupNameEditor, GroupDescriptionEditor } from './group.editor';
 import { messagingKeys } from '../../modules/messaging';
 import { useGroupDetail } from './group.detail';
@@ -101,42 +99,12 @@ export default function GroupDetail(): React.ReactElement {
 
       <GroupLabelsSection line={line} p={pal}/>
       <GroupGithubSection line={line} p={pal}/>
-      {/** MEMBERS header: label + add-member button → opens add-by-address modal. */}
-      <Row padding={{ x: 16, bottom: 8 }} align="center" justify="between">
-        <Text size="xs" color={sub}>
-          MEMBERS ({members.length})
-        </Text>
-        <Pressable
-          onPress={() => { setAddDraft(''); setAddOpen(true); }}
-          hitSlop={8}
-          style={({ pressed }) => ({
-            flexDirection: 'row', alignItems: 'center', gap: 5,
-            paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999,
-            borderWidth: 1, borderColor: border,
-            backgroundColor: pressed ? border : 'transparent',
-          })}
->
-          <Icon name="users" size={16} color={fg}/>
-          <Icon name="plus" size={14} color={fg}/>
-        </Pressable>
-      </Row>
-      <FlatList
-        data={members}
-        extraData={memberNames}
-        keyExtractor={addr => addr.toLowerCase()}
-        renderItem={({ item }) => (
-          <MemberRow
-            item={item}
-            isSelf={item.toLowerCase() === selfAddress}
-            isRemovingThis={removing === item.toLowerCase()}
-            role={memberRoles[item]}
-            name={memberNames[item]}
-            dark={dark}
-            p={pal}
-            onPress={() => { router.push({ pathname: '/user/[address]', params: { address: item } }); }}
-            onRemove={() => { removeMember(item); }}
-/>
-        )}
+      <GroupMembersList
+        members={members} memberNames={memberNames} memberRoles={memberRoles}
+        selfAddress={selfAddress} removing={removing} dark={dark} p={pal}
+        onAdd={() => { setAddDraft(''); setAddOpen(true); }}
+        onOpenMember={(item) => { router.push({ pathname: '/user/[address]', params: { address: item } }); }}
+        onRemoveMember={(item) => { removeMember(item); }}
 />
 
       <AddMemberModal

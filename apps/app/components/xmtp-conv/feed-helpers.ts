@@ -34,50 +34,60 @@ function isPollVote(
   return Number.isInteger(idx) && idx >= 0 && idx < optionCount;
 }
 
+/** A genuine emoji reaction payload, after poll-vote + missing-field filtering. */
+interface ReactionPayload { reactTo: string; emoji: string; removed: boolean }
+
+/** Extract the genuine emoji-reaction payload from an entry, or null (poll vote / not a reaction). */
+function reactionPayloadOf(e: HistoryEntry, pollOptionCounts: Map<string, number>): ReactionPayload | null {
+  const p = e.payload as { reactTo?: string; emoji?: string; removed?: boolean; schema?: string } | undefined;
+  // Skip poll VOTES — tallied separately; genuine emoji reactions on a poll stay pills.
+  if (isPollVote(p, pollOptionCounts)) return null;
+  if (!p?.reactTo || !p.emoji) return null;
+  return { reactTo: p.reactTo, emoji: p.emoji, removed: !!p.removed };
+}
+
+/** Fold reactions into the latest (add/remove) state per dedupe key, keeping the newest event per key. */
+function latestReactions(
+  events: HistoryEntry[], pollOptionCounts: Map<string, number>,
+  keyOf: (e: HistoryEntry, p: ReactionPayload) => string | null,
+): Map<string, { ts: string; removed: boolean; reactTo: string; emoji: string }> {
+  const latest = new Map<string, { ts: string; removed: boolean; reactTo: string; emoji: string }>();
+  for (const e of events) {
+    const p = reactionPayloadOf(e, pollOptionCounts);
+    if (!p) continue;
+    const k = keyOf(e, p);
+    if (k === null) continue;
+    const cur = latest.get(k);
+    if (!cur || cur.ts < e.ts) latest.set(k, { ts: e.ts, removed: p.removed, reactTo: p.reactTo, emoji: p.emoji });
+  }
+  return latest;
+}
+
 /** Reaction events decorate their target msg — fold them into per-message, per-emoji counts rather than rendering as standalone bubbles. */
 export function reactionsByMessage(events: HistoryEntry[], pollOptionCounts: Map<string, number>): Map<string, Map<string, number>> {
-  const latest = new Map<string, { ts: string; removed: boolean }>();
-  for (const e of events) {
-    const p = e.payload as { reactTo?: string; emoji?: string; removed?: boolean; schema?: string } | undefined;
-    /** Skip poll VOTES only — they're tallied separately by votesByPoll and would otherwise render as a "0"/"1"/"2" emoji pill. Genuine emoji reactions on a poll (❤️, 👍, …) must still render as pills. */
-    if (isPollVote(p, pollOptionCounts)) continue;
-    if (!p?.reactTo || !p.emoji) continue;
-    const k = `${p.reactTo} ${p.emoji} ${e.from}`;
-    const cur = latest.get(k);
-    if (!cur || cur.ts < e.ts) latest.set(k, { ts: e.ts, removed: !!p.removed });
-  }
+  const latest = latestReactions(events, pollOptionCounts, (e, p) => `${p.reactTo} ${p.emoji} ${e.from}`);
   const out = new Map<string, Map<string, number>>();
-  for (const [k, v] of latest) {
+  for (const v of latest.values()) {
     if (v.removed) continue;
-    const [msgId, emoji] = k.split(' ');
-    if (msgId === undefined || emoji === undefined) continue;
-    let m = out.get(msgId);
-    if (!m) { m = new Map(); out.set(msgId, m); }
-    m.set(emoji, (m.get(emoji) ?? 0) + 1);
+    let m = out.get(v.reactTo);
+    if (!m) { m = new Map(); out.set(v.reactTo, m); }
+    m.set(v.emoji, (m.get(v.emoji) ?? 0) + 1);
   }
   return out;
 }
 
-/** Emojis the local user currently has on each message (latest add not undone by a later removal). Drives un-react: tapping an emoji you already own toggles it off. */
+/** Emojis the local user currently has on each message (latest add not undone by a later removal). Drives un-react. */
 export function ownReactionsByMessage(events: HistoryEntry[], myUri: string, pollOptionCounts: Map<string, number>): Map<string, Set<string>> {
-  const latest = new Map<string, { ts: string; removed: boolean }>();
-  for (const e of events) {
-    if (e.from !== myUri) continue;
-    const p = e.payload as { reactTo?: string; emoji?: string; removed?: boolean; schema?: string } | undefined;
-    if (isPollVote(p, pollOptionCounts)) continue;
-    if (!p?.reactTo || !p.emoji) continue;
-    const k = `${p.reactTo} ${p.emoji}`;
-    const cur = latest.get(k);
-    if (!cur || cur.ts < e.ts) latest.set(k, { ts: e.ts, removed: !!p.removed });
-  }
+  const latest = latestReactions(
+    events, pollOptionCounts,
+    (e, p) => (e.from === myUri ? `${p.reactTo} ${p.emoji}` : null),
+  );
   const out = new Map<string, Set<string>>();
-  for (const [k, v] of latest) {
+  for (const v of latest.values()) {
     if (v.removed) continue;
-    const [msgId, emoji] = k.split(' ');
-    if (msgId === undefined || emoji === undefined) continue;
-    let s = out.get(msgId);
-    if (!s) { s = new Set(); out.set(msgId, s); }
-    s.add(emoji);
+    let s = out.get(v.reactTo);
+    if (!s) { s = new Set(); out.set(v.reactTo, s); }
+    s.add(v.emoji);
   }
   return out;
 }

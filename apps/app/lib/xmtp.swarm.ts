@@ -75,14 +75,25 @@ export async function materializeFileUri(src: string): Promise<string> {
   /** Bare absolute path (no scheme) — just prefix it. */
   if (src.startsWith('/')) return `file://${src}`;
   const ext = src.split('?')[0]?.split('#')[0]?.split('.').pop()?.toLowerCase() ?? 'bin';
-  const tmpName = `xmtp-send-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext.length <= 5 ? ext : 'bin'}`;
-  const dest = new File(Paths.cache, tmpName);
-  if (dest.exists) try { dest.delete(); } catch { /* overwrite below */ }
+  const dest = freshCacheFile('xmtp-send', ext.length <= 5 ? ext : 'bin');
   const blob = await (await fetch(src)).blob();
   const buf = new Uint8Array(await blob.arrayBuffer());
   dest.create();
   dest.write(buf);
-  return dest.uri.startsWith('file://') ? dest.uri : `file://${dest.uri.replace(/^file:\/+/, '/')}`;
+  return toFileUri(dest.uri);
+}
+
+/** A fresh, uniquely-named cache File for `prefix`/`ext`, with any pre-existing one deleted. */
+function freshCacheFile(prefix: string, ext: string): File {
+  const tmpName = `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const dest = new File(Paths.cache, tmpName);
+  if (dest.exists) try { dest.delete(); } catch { /* overwrite below */ }
+  return dest;
+}
+
+/** Normalise a possibly schemeless cache uri to a `file://` uri. */
+function toFileUri(uri: string): string {
+  return uri.startsWith('file://') ? uri : `file://${uri.replace(/^file:\/+/, '/')}`;
 }
 
 /**
@@ -115,16 +126,21 @@ export async function sanitizeFileUri(
     if (!stripped || bytes.length === input.length && bytes.every((v, k) => v === input[k])) {
       return uri as SanitizedFileUri; // nothing removed (no metadata present) - keep original file
     }
-    const ext = (filename ?? uri).split('?')[0]?.split('.').pop()?.toLowerCase() ?? 'img';
-    const dest = new File(Paths.cache, `xmtp-clean-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext.length <= 5 ? ext : 'img'}`);
-    if (dest.exists) try { dest.delete(); } catch { /* overwrite below */ }
-    dest.create();
-    dest.write(bytes);
-    const clean = dest.uri.startsWith('file://') ? dest.uri : `file://${dest.uri.replace(/^file:\/+/, '/')}`;
-    return clean as SanitizedFileUri;
+    return writeCleanImage(bytes, filename, uri);
   } catch {
     return uri as SanitizedFileUri; // never block a send on a strip failure
   }
+}
+
+/** Write stripped image bytes to a fresh cache file and return its branded SanitizedFileUri. */
+function writeCleanImage(
+  bytes: Uint8Array, filename: string | undefined, uri: string,
+): SanitizedFileUri {
+  const ext = (filename ?? uri).split('?')[0]?.split('.').pop()?.toLowerCase() ?? 'img';
+  const dest = freshCacheFile('xmtp-clean', ext.length <= 5 ? ext : 'img');
+  dest.create();
+  dest.write(bytes);
+  return toFileUri(dest.uri) as SanitizedFileUri;
 }
 
 /**

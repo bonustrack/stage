@@ -10,6 +10,33 @@ import { TabsPager } from '../../components/SwipeTabs';
 import { HoistedTopnav } from '../../components/tabs/HoistedTopnav';
 import { useTotalUnread } from '../../lib/useTotalUnread';
 
+/** Pager overlay: the fixed Topnav above the swipeable tab bodies. */
+function PagerOverlay({ insetTop, tabBarHeight }: { insetTop: number; tabBarHeight: number }): React.ReactElement {
+  return (
+    <Col
+      pointerEvents="box-none"
+      style={{
+        position: 'absolute',
+        top: insetTop,
+        left: 0,
+        right: 0,
+        bottom: tabBarHeight,
+      }}
+>
+      {/* ONE fixed Topnav, ABOVE the pager. A sibling of the pager strip, so
+          a horizontal tab-swipe (which translates the strip) and a vertical
+          scroll inside a tab both leave it pinned. It is UNIFORM: always the
+          Home bar (identity + search/requests/overflow) on every tab. */}
+      <HoistedTopnav/>
+      {/* Pager below the bar as the flex:1 scroll region. It now mounts only
+          the scrollable BODIES of each tab (no per-tab header). */}
+      <Box flex={1}>
+        <TabsPager/>
+      </Box>
+    </Col>
+  );
+}
+
 /** Bottom tab navigator hosting the Messenger, Contacts and Wallet pager scenes. */
 export default function TabsLayout(): React.ReactElement {
   const pathname = usePathname();
@@ -103,29 +130,7 @@ export default function TabsLayout(): React.ReactElement {
       </Tabs>
       {/* Pager overlay — covers the scene area (status-bar inset at top, stops
           above the tab bar at the bottom) so the tab bar keeps its taps. */}
-      {pagerVisible ? (
-        <Col
-          pointerEvents="box-none"
-          style={{
-            position: 'absolute',
-            top: insets.top,
-            left: 0,
-            right: 0,
-            bottom: tabBarHeight,
-          }}
->
-          {/* ONE fixed Topnav, ABOVE the pager. A sibling of the pager strip, so
-              a horizontal tab-swipe (which translates the strip) and a vertical
-              scroll inside a tab both leave it pinned. It is UNIFORM: always the
-              Home bar (identity + search/requests/overflow) on every tab. */}
-          <HoistedTopnav/>
-          {/* Pager below the bar as the flex:1 scroll region. It now mounts only
-              the scrollable BODIES of each tab (no per-tab header). */}
-          <Box flex={1}>
-            <TabsPager/>
-          </Box>
-        </Col>
-      ) : null}
+      {pagerVisible ? <PagerOverlay insetTop={insets.top} tabBarHeight={tabBarHeight}/> : null}
     </Col>
   );
 }

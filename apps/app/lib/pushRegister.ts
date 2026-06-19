@@ -51,6 +51,32 @@ function platformTag(): 'android' | 'ios' | null {
 /** Minimal slice of the XMTP client we depend on; keeps the param typeable whether callers pass `Client` or a narrower mock. */
 type PushClient = Pick<Client, 'inboxId' | 'publicIdentity' | 'conversations'>;
 
+/** True when this exact (token) was registered for `stateKey` within REGISTER_TTL_MS, so registration can be skipped. */
+async function isRecentlyRegistered(stateKey: string, token: string): Promise<boolean> {
+  const prev = await AsyncStorage.getItem(stateKey).catch(() => null);
+  if (!prev) return false;
+  try {
+    const { token: prevToken, at } = JSON.parse(prev) as { token: string; at: number };
+    return prevToken === token && Date.now() - at < REGISTER_TTL_MS;
+  } catch { return false; /* corrupt entry — re-register */ }
+}
+
+/** Send the register-push control DM to the daemon's inbox and persist the debounce state. */
+async function sendRegisterControlDm(
+  client: PushClient,
+  args: { token: string; platform: 'android' | 'ios'; address: string; inboxId: string; stateKey: string },
+): Promise<void> {
+  const dm = await client.conversations.findOrCreateDmWithIdentity(
+    new PublicIdentity(DAEMON_INBOX_ADDRESS, 'ETHEREUM'),
+  );
+  const body = buildRegisterPushBody({
+    token: args.token, platform: args.platform, address: args.address, inboxId: args.inboxId,
+  });
+  await dm.send(body);
+  await AsyncStorage.setItem(args.stateKey, JSON.stringify({ token: args.token, at: Date.now() }))
+    .catch(() => undefined);
+}
+
 /**
  * Auto-register this device's push token with the daemon for the account the
  *  given client is logged into. Fire-and-forget + debounced — never throws,
@@ -81,27 +107,10 @@ export async function registerPushWithDaemon(client: PushClient): Promise<void> 
     const token = await getDeviceFcmToken();
     if (!token) return;
 
-    // Debounce by account+token: skip if we already registered this exact
-    // pairing recently.
-    const account = address.toLowerCase();
-    const stateKey = lastRegisterKey(account);
-    const prev = await AsyncStorage.getItem(stateKey).catch(() => null);
-    if (prev) {
-      try {
-        const { token: prevToken, at } = JSON.parse(prev) as { token: string; at: number };
-        if (prevToken === token && Date.now() - at < REGISTER_TTL_MS) return;
-      } catch { /* corrupt entry — fall through and re-register */ }
-    }
+    const stateKey = lastRegisterKey(address.toLowerCase());
+    if (await isRecentlyRegistered(stateKey, token)) return;
 
-    // Send the private control DM to the daemon's inbox.
-    const dm = await client.conversations.findOrCreateDmWithIdentity(
-      new PublicIdentity(DAEMON_INBOX_ADDRESS, 'ETHEREUM'),
-    );
-    const body = buildRegisterPushBody({ token, platform, address, inboxId });
-    await dm.send(body);
-
-    await AsyncStorage.setItem(stateKey, JSON.stringify({ token, at: Date.now() }))
-      .catch(() => undefined);
+    await sendRegisterControlDm(client, { token, platform, address, inboxId, stateKey });
   } catch (err) {
     // Best-effort: registration failure must never break app boot or messaging.
     if (process.env.NODE_ENV !== 'production') {

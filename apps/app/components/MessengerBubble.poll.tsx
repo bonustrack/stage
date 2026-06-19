@@ -17,6 +17,52 @@ type PollVotes = Map<number, Map<number, Set<string>>>;
 type PollOwn = Map<number, Set<number>>;
 type OpenByQ = Map<number, Map<string, { text: string; ts: string }>>;
 
+/** Background color for a poll option given its on/pressed state. */
+function pollOptionBg(isOn: boolean, pressed: boolean, dark: boolean, linkColor: string): string {
+  if (isOn) return withAlpha(linkColor, dark ? 0.22 : 0.16);
+  if (pressed) return dark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.08)';
+  return dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+}
+
+/** One poll option row: result bar, label (with checkmark/checkbox glyph) and live vote count. */
+function PollOption({ opt, isOn, count, pct, multi, dark, sub, onPress }: {
+  opt: PollQuestion['options'][number]; isOn: boolean; count: number; pct: number;
+  multi: boolean; dark: boolean; sub: string; onPress: () => void;
+}): React.ReactElement {
+  const pal = usePalette();
+  const radius = useBlockRadius();
+  const restBorder = dark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)';
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius, overflow: 'hidden',
+        backgroundColor: pollOptionBg(isOn, pressed, dark, pal.link),
+        borderWidth: 1,
+        borderColor: isOn ? pal.link : restBorder,
+      })}
+    >
+      <Box width={`${pct}%`} background={withAlpha(pal.link, dark ? 0.16 : 0.12)}
+        pointerEvents="none"
+        style={{ position: 'absolute', left: 0, top: 0, bottom: 0 }}
+      />
+      <Row align="center" justify="between">
+        <Text size="xl" color={isOn ? '#fff' : pal.text} style={{ flexShrink: 1 }}>
+          {isOn ? '✓  ' : (multi ? '☐  ' : '')}{opt.label}
+        </Text>
+        <Text weight="semibold" size="md" color={isOn ? '#fff' : sub} style={{ marginLeft: 8 }}>
+          {count}
+        </Text>
+      </Row>
+      {opt.description ? (
+        <Text size="sm" color={sub} style={{ marginTop: 2 }}>
+
+        </Text>
+      ) : null}
+    </Pressable>
+  );
+}
+
 /** One question block: header chip, option list with counts + result bars + a checkmark on the local user's selected options. Open questions append a free-text input below the options (or stand alone with no options). */
 function PollQuestionBlock({ q, qi, sub, dark, votes, own, onVote, openAnswers, mine, onOpenAnswer }: {
   q: PollQuestion; qi: number; sub: string; dark: boolean;
@@ -27,16 +73,11 @@ function PollQuestionBlock({ q, qi, sub, dark, votes, own, onVote, openAnswers, 
   mine?: string;
   onOpenAnswer?: (text: string) => void;
 }): React.ReactElement {
-  const pal = usePalette();
-  const radius = useBlockRadius();
   const multi = q.multiSelect === true;
   const options = Array.isArray(q.options) ? q.options : [];
   const total = options.reduce((n, _o, i) => n + (votes?.get(i)?.size ?? 0), 0);
   /** Tap helper. */
   const tap = (idx: number): void => { onVote(idx, (own?.has(idx) ?? false) ? 'removed' : 'added'); };
-  const restBg = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
-  const pressBg = dark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.08)';
-  const restBorder = dark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)';
   return (
     <Box gap={6} style={{ alignSelf: 'stretch' }}>
       {q.header ? (
@@ -47,41 +88,15 @@ function PollQuestionBlock({ q, qi, sub, dark, votes, own, onVote, openAnswers, 
       {options.map((opt, i) => {
         const count = votes?.get(i)?.size ?? 0;
         const isOn = own?.has(i) ?? false;
-        const pct = total> 0 ? Math.round((count / total) * 100) : 0;
+        const pct = total > 0 ? Math.round((count / total) * 100) : 0;
         return (
-          <Pressable
-            key={`${i}-${opt.label}`}
-            onPress={() => { tap(i); }}
-            style={({ pressed }) => ({
-              paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius, overflow: 'hidden',
-              backgroundColor: isOn
-                ? withAlpha(pal.link, dark ? 0.22 : 0.16)
-                : pressed ? pressBg : restBg,
-              borderWidth: 1,
-              borderColor: isOn ? pal.link : restBorder,
-            })}
->
-            <Box width={`${pct}%`} background={withAlpha(pal.link, dark ? 0.16 : 0.12)}
-              pointerEvents="none"
-              style={{ position: 'absolute', left: 0, top: 0, bottom: 0 }}
-/>
-            <Row align="center" justify="between">
-              <Text size="xl" color={isOn ? '#fff' : pal.text} style={{ flexShrink: 1 }}>
-                {isOn ? '✓  ' : (multi ? '☐  ' : '')}{opt.label}
-              </Text>
-              <Text weight="semibold" size="md" color={isOn ? '#fff' : sub} style={{ marginLeft: 8 }}>
-                {count}
-              </Text>
-            </Row>
-            {opt.description ? (
-              <Text size="sm" color={sub} style={{ marginTop: 2 }}>
-
-              </Text>
-            ) : null}
-          </Pressable>
+          <PollOption
+            key={`${i}-${opt.label}`} opt={opt} isOn={isOn} count={count} pct={pct}
+            multi={multi} dark={dark} sub={sub} onPress={() => { tap(i); }}
+          />
         );
       })}
-      {options.length> 0 ? (
+      {options.length > 0 ? (
         <Text size="xs" color={sub} style={{ marginTop: 2 }}>
           {total} vote{total === 1 ? '' : 's'}{q.open ? ' · or type your own' : ''}
         </Text>

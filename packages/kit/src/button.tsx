@@ -119,28 +119,135 @@ function resolveModel(
   return { color: baseColor, variant: treatment };
 }
 
+/** Resolved colour set with tint overrides applied. */
+type ResolvedColors = ReturnType<typeof resolveColors>;
+
+/** Inputs to the Pressable container style callback. */
+interface ContainerStyleArgs {
+  spec: (typeof SIZES)[ButtonSize];
+  square: boolean;
+  stretch: boolean;
+  radius: number | undefined;
+  c: ResolvedColors;
+  isDisabled: boolean;
+  style: ViewStyle | undefined;
+}
+
+/** Pick the resting/pressed background colour for the container. */
+function pickBackground(c: ResolvedColors, usePressedBg: boolean): string {
+  if (usePressedBg && c.pressedBg) return c.pressedBg;
+  if (usePressedBg && c.ghostPressedBg) return c.ghostPressedBg;
+  return c.bg;
+}
+
+/** Compute the container opacity for resting/pressed/disabled states. */
+function pickOpacity(c: ResolvedColors, usePressedBg: boolean, isDisabled: boolean): number {
+  if (isDisabled) return 0.4;
+  if (usePressedBg && !c.pressedBg && !c.ghostPressedBg) return 0.85;
+  return 1;
+}
+
+/** Build the Pressable container style for a given pressed state. */
+function containerStyle(
+  args: ContainerStyleArgs,
+  pressed: boolean,
+): (ViewStyle | undefined)[] {
+  const { spec, square, stretch, radius, c, isDisabled, style } = args;
+  const usePressedBg = pressed && !isDisabled;
+  const base: ViewStyle = {
+    height: spec.height,
+    // square (`pill`/`uniform`) = icon-only: square aspect, no h-padding.
+    width: square ? spec.height : stretch ? '100%' : undefined,
+    paddingHorizontal: square ? 0 : spec.paddingHorizontal,
+    // All buttons follow the explicit `radius` prop, else the app-wide
+    // token default (setDefaultButtonRadius). At 999 a square button stays
+    // a full circle; lower the token and it becomes a rounded-square.
+    borderRadius: radius ?? defaultButtonRadius,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spec.gap,
+    backgroundColor: pickBackground(c, usePressedBg),
+    borderWidth: c.borderColor ? 1 : 0,
+    borderColor: c.borderColor,
+    alignSelf: stretch && !square ? 'stretch' : 'flex-start',
+    opacity: pickOpacity(c, usePressedBg, isDisabled),
+  };
+  return [base, style];
+}
+
+/** Render the button label from `children` or `label`. */
+function renderLabel(
+  children: ReactNode,
+  label: string | undefined,
+  spec: (typeof SIZES)[ButtonSize],
+  textColor: string,
+  textStyle: TextStyle | undefined,
+): ReactNode {
+  if (children !== undefined) {
+    if (typeof children !== 'string') return children;
+    return (
+      <Text style={[textLabelStyle(spec, textColor), textStyle]} numberOfLines={1}>
+        {children}
+      </Text>
+    );
+  }
+  if (label !== undefined) {
+    return (
+      <Text style={[textLabelStyle(spec, textColor), textStyle]} numberOfLines={1}>
+        {label}
+      </Text>
+    );
+  }
+  return null;
+}
+
+/** Tint inputs for the memoised colour resolver. */
+interface TintArgs {
+  color: ButtonColor | undefined;
+  variant: ButtonControlVariant | ButtonVariant | undefined;
+  styleColor: 'primary' | 'secondary' | undefined;
+  dark: boolean;
+  tintBg: string | undefined;
+  tintFg: string | undefined;
+}
+
+/** Resolve the tint-merged colour set, memoised on its inputs. */
+function useResolvedColors(t: TintArgs): ResolvedColors {
+  return useMemo(() => {
+    const model = resolveModel(t.color, t.variant, t.styleColor);
+    const base = resolveColors(model.color, model.variant, t.dark);
+    return { ...base, bg: t.tintBg ?? base.bg, text: t.tintFg ?? base.text };
+  }, [t.color, t.variant, t.styleColor, t.dark, t.tintBg, t.tintFg]);
+}
+
+/** Logical-or of two optional boolean flags (legacy alias semantics). */
+function orFlag(a: boolean | undefined, b: boolean | undefined): boolean {
+  return a === true || b === true;
+}
+
 /** OpenAI ChatKit-API RN button. Accessible (role=button, busy/disabled state). */
 export function Button(props: ButtonProps): React.ReactElement {
   const {
     color,
     variant,
     styleColor,
+    block,
+    fullWidth,
+    pill,
+    uniform,
+    dark = false,
+    tintBg,
+    tintFg,
     size = 'md',
     label,
     children,
     disabled = false,
     loading = false,
-    block = false,
-    fullWidth = false,
-    pill = false,
-    uniform = false,
     iconStart,
     iconEnd,
     icon,
     iconRight,
-    dark = false,
-    tintBg,
-    tintFg,
     radius,
     style,
     textStyle,
@@ -149,73 +256,22 @@ export function Button(props: ButtonProps): React.ReactElement {
 
   const startIcon = iconStart ?? icon;
   const endIcon = iconEnd ?? iconRight;
-  const stretch = block || fullWidth;
-  const square = pill || uniform;
+  const stretch = orFlag(block, fullWidth);
+  const square = orFlag(pill, uniform);
 
   const spec = SIZES[size];
-  const c = useMemo(() => {
-    const model = resolveModel(color, variant, styleColor);
-    const base = resolveColors(model.color, model.variant, dark);
-    return {
-      ...base,
-      bg: tintBg ?? base.bg,
-      text: tintFg ?? base.text,
-    };
-  }, [color, variant, styleColor, dark, tintBg, tintFg]);
+  const c = useResolvedColors({ color, variant, styleColor, dark, tintBg, tintFg });
   const isDisabled = disabled || loading;
 
-  const labelNode =
-    children !== undefined ? (
-      typeof children === 'string' ? (
-        <Text style={[textLabelStyle(spec, c.text), textStyle]} numberOfLines={1}>
-          {children}
-        </Text>
-      ) : (
-        children
-      )
-    ) : label !== undefined ? (
-      <Text style={[textLabelStyle(spec, c.text), textStyle]} numberOfLines={1}>
-        {label}
-      </Text>
-    ) : null;
+  const labelNode = renderLabel(children, label, spec, c.text, textStyle);
+  const styleArgs: ContainerStyleArgs = { spec, square, stretch, radius, c, isDisabled, style };
 
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ disabled: isDisabled, busy: loading }}
       disabled={isDisabled}
-      style={({ pressed }: { pressed: boolean }) => {
-        const usePressedBg = pressed && !isDisabled;
-        const base: ViewStyle = {
-          height: spec.height,
-          // square (`pill`/`uniform`) = icon-only: square aspect, no h-padding.
-          width: square ? spec.height : stretch ? '100%' : undefined,
-          paddingHorizontal: square ? 0 : spec.paddingHorizontal,
-          // All buttons follow the explicit `radius` prop, else the app-wide
-          // token default (setDefaultButtonRadius). At 999 a square button stays
-          // a full circle; lower the token and it becomes a rounded-square.
-          borderRadius: radius ?? defaultButtonRadius,
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: spec.gap,
-          backgroundColor:
-            usePressedBg && c.pressedBg
-              ? c.pressedBg
-              : usePressedBg && c.ghostPressedBg
-                ? c.ghostPressedBg
-                : c.bg,
-          borderWidth: c.borderColor ? 1 : 0,
-          borderColor: c.borderColor,
-          alignSelf: stretch && !square ? 'stretch' : 'flex-start',
-          opacity: isDisabled
-            ? 0.4
-            : usePressedBg && !c.pressedBg && !c.ghostPressedBg
-              ? 0.85
-              : 1,
-        };
-        return [base, style];
-      }}
+      style={({ pressed }: { pressed: boolean }) => containerStyle(styleArgs, pressed)}
       {...rest}
     >
       {loading ? (

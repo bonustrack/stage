@@ -134,48 +134,53 @@ export function makeMsgStreamHandler({ isCancelled, setRows, refresh, refreshReq
         ?? (msg as unknown as { conversationId?: string }).conversationId
         ?? null;
 
-      let needsRefresh = false;
-      /** Captured from the matched row so the foreground rich-notification path (below, outside setRows) has the conversation context without a second lookup. Null until a row matches. */
-      let notify: NotifyCtx | null = null;
-      setRows(prev => {
-        if (!prev) return prev;
-        const idx = msgConvId ? prev.findIndex(r => r.convId === msgConvId) : -1;
-        /** Miss: convId not in rows. Coalesced + consent-aware handling lives in onMiss (pending-request convs only recount; others debounce refresh). */
-        const cur = idx === -1 ? undefined : prev[idx];
-        if (cur === undefined) { needsRefresh = true; return prev; }
-        const senderAddr = cur.inboxToAddr[msg.senderInboxId ?? ''] ?? null;
-        notify = {
-          title: cur.title,
-          senderAddr,
-          isGroup: cur.peerAddress == null,
-          fromSelf: msg.senderInboxId === cur.selfInboxId,
-        };
-        /**
-         * DM cards are pinned to the PEER's avatar — never the latest sender.
-         *  GROUP cards are pinned to the group's OWN avatar (uploaded image via
-         *  avatarUri, else the channel-id stamp seed already set on the row) —
-         *  never a member's stamp. So a new inbound never flips the avatar:
-         *  DM keeps the peer, group keeps its stable seed (cur.avatarAddress).
-         */
-        const newAvatar = cur.peerAddress ?? cur.avatarAddress;
-        /** Attribute the preview to whoever SENT this message — including a reaction (its senderInboxId is the reactor). Without this the row keeps the stale lastSenderAddress from summarize(). */
-        const lastFromSelf = msg.senderInboxId === cur.selfInboxId;
-        /** Bump unread when the new msg is newer than what we'd read AND not authored by the local user. */
-        const isUnread = (msg.sentNs ?? 0) > cur.lastReadNs
-          && msg.senderInboxId !== cur.selfInboxId;
-        const unreadCount = isUnread ? cur.unreadCount + 1 : cur.unreadCount;
-        const updated = {
-          ...cur, lastTs, lastPreview, avatarAddress: newAvatar,
-          lastSenderAddress: senderAddr, lastFromSelf, unreadCount,
-        };
-        /** A real inbound message supersedes a stale forced-unread flag. */
-        if (isUnread) updated.markedUnread = false;
-        return [updated, ...prev.slice(0, idx), ...prev.slice(idx + 1)];
-      });
-      if (needsRefresh) onMiss(msgConvId);
-      maybeNotify(notify, msgConvId, msg.id, lastPreview);
+      const result = applyToRows(msgConvId, msg, lastTs, lastPreview, setRows);
+      if (result.needsRefresh) onMiss(msgConvId);
+      maybeNotify(result.notify, msgConvId, msg.id, lastPreview);
     }))();
   };
+}
+
+/** Build the updated row for a matched inbound message (avatar/sender/unread bookkeeping). */
+function updatedRow(cur: RowT, msg: StreamedMsg, lastTs: number, lastPreview: string, senderAddr: string | null): RowT {
+  // DM cards pin to the PEER's avatar; GROUP cards keep their own stable seed —
+  // so a new inbound never flips the avatar.
+  const newAvatar = cur.peerAddress ?? cur.avatarAddress;
+  const lastFromSelf = msg.senderInboxId === cur.selfInboxId;
+  // Bump unread when the msg is newer than what we'd read AND not ours.
+  const isUnread = (msg.sentNs ?? 0) > cur.lastReadNs && msg.senderInboxId !== cur.selfInboxId;
+  const unreadCount = isUnread ? cur.unreadCount + 1 : cur.unreadCount;
+  const updated: RowT = {
+    ...cur, lastTs, lastPreview, avatarAddress: newAvatar,
+    lastSenderAddress: senderAddr, lastFromSelf, unreadCount,
+  };
+  // A real inbound message supersedes a stale forced-unread flag.
+  if (isUnread) updated.markedUnread = false;
+  return updated;
+}
+
+/** Apply an inbound message to the rows, returning whether a refresh is needed and the notify context. */
+function applyToRows(
+  msgConvId: string | null, msg: StreamedMsg, lastTs: number, lastPreview: string,
+  setRows: MsgHandlerDeps['setRows'],
+): { needsRefresh: boolean; notify: NotifyCtx | null } {
+  let needsRefresh = false;
+  let notify: NotifyCtx | null = null;
+  setRows(prev => {
+    if (!prev) return prev;
+    const idx = msgConvId ? prev.findIndex(r => r.convId === msgConvId) : -1;
+    const cur = idx === -1 ? undefined : prev[idx];
+    // Miss: convId not in rows. Coalesced + consent-aware handling lives in onMiss.
+    if (cur === undefined) { needsRefresh = true; return prev; }
+    const senderAddr = cur.inboxToAddr[msg.senderInboxId ?? ''] ?? null;
+    notify = {
+      title: cur.title, senderAddr,
+      isGroup: cur.peerAddress == null, fromSelf: msg.senderInboxId === cur.selfInboxId,
+    };
+    const updated = updatedRow(cur, msg, lastTs, lastPreview, senderAddr);
+    return [updated, ...prev.slice(0, idx), ...prev.slice(idx + 1)];
+  });
+  return { needsRefresh, notify };
 }
 
 /**
@@ -187,14 +192,26 @@ export function makeMsgStreamHandler({ isCancelled, setRows, refresh, refreshReq
  *  when we already notified this message id (de-dupe). DMs title with the peer
  *  (name / short addr); groups title with the group + prefix the sender.
  */
+/** Resolve the {title, body} for a notification: groups prefix the sender, DMs title with the peer. */
+function notifyTitleBody(n: NotifyCtx, preview: string): { title: string; body: string } {
+  const senderName = getPeerName(n.senderAddr)
+    ?? (n.senderAddr ? shortAddress(n.senderAddr) : 'New message');
+  if (n.isGroup) return { title: n.title, body: `${senderName}: ${preview}` };
+  return { title: getPeerName(n.senderAddr) ?? n.title, body: preview };
+}
+
+/** True when an inbound message should NOT raise a foreground notification (own msg, active conv, or already notified). */
+function shouldSkipNotify(n: NotifyCtx | null, convId: string | null, msgId: string | undefined): n is null {
+  if (!n || n.fromSelf || !convId || isActiveConv(convId)) return true;
+  if (msgId && alreadyNotified(msgId)) return true;
+  return false;
+}
+
+/** Post a foreground rich notification for an inbound stream message, unless it should be suppressed. */
 function maybeNotify(
   n: NotifyCtx | null, convId: string | null, msgId: string | undefined, preview: string,
 ): void {
-  if (!n || n.fromSelf || !convId || isActiveConv(convId)) return;
-  if (msgId && alreadyNotified(msgId)) return;
-  const senderName = getPeerName(n.senderAddr)
-    ?? (n.senderAddr ? shortAddress(n.senderAddr) : 'New message');
-  const title = n.isGroup ? n.title : (getPeerName(n.senderAddr) ?? n.title);
-  const body = n.isGroup ? `${senderName}: ${preview}` : preview;
+  if (shouldSkipNotify(n, convId, msgId) || !n || !convId) return;
+  const { title, body } = notifyTitleBody(n, preview);
   void presentInboundNotification({ title, body, convId, messageId: msgId });
 }

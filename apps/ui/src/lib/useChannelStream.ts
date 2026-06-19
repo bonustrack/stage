@@ -10,6 +10,33 @@ import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 
 interface StreamHandle { end: () => Promise<unknown> }
 
+/** Minimal shape of an inbound streamed message used to patch a cached row. */
+interface InboundMsg {
+  content: unknown;
+  contentType?: { typeId?: string };
+  sentAtNs: bigint;
+  conversationId?: string;
+  senderInboxId?: string;
+}
+
+/** Patch a cached row from an inbound message; returns the new rows array, or null when a full refresh is needed. */
+function rowsWithInbound(prev: ChannelRow[], msg: InboundMsg): ChannelRow[] | null {
+  const preview = previewOfXmtpContent(msg.content, msg.contentType?.typeId);
+  const lastTs = Number(msg.sentAtNs / 1_000_000n);
+  const lastPreview = preview.slice(0, 80);
+  const idx = prev.findIndex(r => r.convId === msg.conversationId);
+  const cur = idx === -1 ? undefined : prev[idx];
+  if (cur === undefined) return null;
+  const newAvatar = cur.inboxToAddr[msg.senderInboxId ?? ''] ?? cur.avatarAddress;
+  const sentNs = Number(msg.sentAtNs);
+  const isUnread = sentNs > cur.lastReadNs && msg.senderInboxId !== cur.selfInboxId;
+  const unreadCount = isUnread ? cur.unreadCount + 1 : cur.unreadCount;
+  const updated: ChannelRow = { ...cur, lastTs, lastPreview, avatarAddress: newAvatar, unreadCount };
+  /** A real inbound message supersedes a stale forced-unread flag. */
+  if (isUnread) updated.markedUnread = false;
+  return [updated, ...prev.slice(0, idx), ...prev.slice(idx + 1)];
+}
+
 export interface ChannelStreamHandles {
   stop: () => Promise<void>;
   /** Manual refresh — exposed so the Refresh button / pull-to-refresh control can drive it without re-binding to the underlying streams. */
@@ -68,21 +95,10 @@ export async function startChannelStream(client: XmtpClient): Promise<ChannelStr
   stopMsgStream = await client.conversations.streamAllMessages({
     onValue: (msg) => {
       if (!msg) return;
-      const preview = previewOfXmtpContent(msg.content, msg.contentType?.typeId);
-      const lastTs = Number(msg.sentAtNs / 1_000_000n);
-      const lastPreview = preview.slice(0, 80);
       const prev = (cachedRows.value as ChannelRow[] | null) ?? [];
-      const idx = prev.findIndex(r => r.convId === msg.conversationId);
-      const cur = idx === -1 ? undefined : prev[idx];
-      if (cur === undefined) { void refresh(); return; }
-      const newAvatar = cur.inboxToAddr[msg.senderInboxId ?? ''] ?? cur.avatarAddress;
-      const sentNs = Number(msg.sentAtNs);
-      const isUnread = sentNs > cur.lastReadNs && msg.senderInboxId !== cur.selfInboxId;
-      const unreadCount = isUnread ? cur.unreadCount + 1 : cur.unreadCount;
-      const updated: ChannelRow = { ...cur, lastTs, lastPreview, avatarAddress: newAvatar, unreadCount };
-      /** A real inbound message supersedes a stale forced-unread flag. */
-      if (isUnread) updated.markedUnread = false;
-      setCachedRows([updated, ...prev.slice(0, idx), ...prev.slice(idx + 1)]);
+      const next = rowsWithInbound(prev, msg);
+      if (next === null) { void refresh(); return; }
+      setCachedRows(next);
     },
     onError: () => { /* backstops fire */ },
   });

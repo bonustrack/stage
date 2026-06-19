@@ -19,33 +19,40 @@ import type { ComposerActionsArgs } from './MessengerComposer.types';
 /** Mint Local Id. */
 const mintLocalId = (): string => `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
+/** Build a personal-message signature content, or null (after alerting) when the message is empty. */
+function buildPersonalContent(message: string, description: string): SignatureRequestContent | null {
+  if (!message) { Alert.alert('Enter a message to sign'); return null; }
+  return { id: mintSignatureRequestId(), kind: 'personal', message, ...(description ? { description } : {}) };
+}
+
+/** Build an EIP-712 signature content from the typed-data JSON, or null (after alerting) when invalid. */
+function buildEip712Content(json: string, description: string): SignatureRequestContent | null {
+  let parsed: unknown;
+  try { parsed = JSON.parse(json); }
+  catch { Alert.alert('Typed-data JSON is not valid JSON'); return null; }
+  const td = parsed as { domain?: unknown; types?: unknown; primaryType?: unknown; message?: unknown };
+  if (!td || typeof td !== 'object' || !td.types || !td.primaryType || !td.message) {
+    Alert.alert('Typed data needs `types`, `primaryType`, and `message` fields'); return null;
+  }
+  return {
+    id: mintSignatureRequestId(), kind: 'eip712',
+    eip712: {
+      domain: (td.domain ?? {}) as Record<string, unknown>,
+      types: td.types as Record<string, { name: string; type: string }[]>,
+      primaryType: td.primaryType as string,
+      message: td.message as Record<string, unknown>,
+    },
+    ...(description ? { description } : {}),
+  };
+}
+
 /** Builds and optimistically sends a signature-request message from the composer state. */
 export async function sendSignatureRequest(a: ComposerActionsArgs): Promise<void> {
   const description = a.sigDesc.trim();
-  let content: SignatureRequestContent;
-  if (a.sigKind === 'personal') {
-    const message = a.sigMessage.trim();
-    if (!message) { Alert.alert('Enter a message to sign'); return; }
-    content = { id: mintSignatureRequestId(), kind: 'personal', message, ...(description ? { description } : {}) };
-  } else {
-    let parsed: unknown;
-    try { parsed = JSON.parse(a.sigJson); }
-    catch { Alert.alert('Typed-data JSON is not valid JSON'); return; }
-    const td = parsed as { domain?: unknown; types?: unknown; primaryType?: unknown; message?: unknown };
-    if (!td || typeof td !== 'object' || !td.types || !td.primaryType || !td.message) {
-      Alert.alert('Typed data needs `types`, `primaryType`, and `message` fields'); return;
-    }
-    content = {
-      id: mintSignatureRequestId(), kind: 'eip712',
-      eip712: {
-        domain: (td.domain ?? {}) as Record<string, unknown>,
-        types: td.types as Record<string, { name: string; type: string }[]>,
-        primaryType: td.primaryType as string,
-        message: td.message as Record<string, unknown>,
-      },
-      ...(description ? { description } : {}),
-    };
-  }
+  const content = a.sigKind === 'personal'
+    ? buildPersonalContent(a.sigMessage.trim(), description)
+    : buildEip712Content(a.sigJson, description);
+  if (!content) return;
   const localId = mintLocalId();
   setLastAttachment('Sign');
   a.onOptimistic?.({ localId, text: signatureRequestFallbackText(content), attachments: [], payload: { contentType: 'signatureRequest', signatureRequest: content } });

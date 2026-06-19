@@ -28,6 +28,40 @@ import { MemberPicker, useMemberPicker } from './MemberPicker';
 /** Locally-picked group image, held until create-time. We upload on submit (not on pick) so a cancelled create costs no blob; `uri` is the on-device asset uri used only for the preview. */
 interface PickedImage { uri: string; mime: string; name: string }
 
+/** Tappable square group-image picker with a + placeholder and upload spinner. */
+function GroupImageField({ image, creating, fg, sub, border, rowBg, onPick }: {
+  image: PickedImage | null; creating: boolean;
+  fg: string; sub: string; border: string; rowBg: string; onPick: () => void;
+}): React.ReactElement {
+  return (
+    <Box align="center" gap={8}>
+      <Pressable onPress={onPick} disabled={creating} hitSlop={8}>
+        {image ? (
+          <Image
+            src={image.uri}
+            style={{
+              width: 88, height: 88, borderRadius: Math.round(88 * 0.12),
+              backgroundColor: rowBg, opacity: creating ? 0.5 : 1,
+            }}
+/>
+        ) : (
+          <Box width={88} height={88} radius={Math.round(88 * 0.12)} surface="raised" align="center" justify="center" style={{ borderWidth: 1, borderColor: border }}>
+            <Text size="6xl" color={sub}>＋</Text>
+          </Box>
+        )}
+        {creating && image ? (
+          <Box align="center" justify="center" style={{ position: 'absolute', inset: 0 }}>
+            <Spinner size={20} color={fg}/>
+          </Box>
+        ) : null}
+      </Pressable>
+      <Text size="xs" color={sub}>
+        {image ? 'Tap to change image' : 'Tap to add a group image'}
+      </Text>
+    </Box>
+  );
+}
+
 /** Screen for creating a new XMTP group with name, image and members. */
 export default function NewGroup(): React.ReactElement {
   const router = useRouter();
@@ -93,31 +127,8 @@ export default function NewGroup(): React.ReactElement {
         keyboardShouldPersistTaps="handled"
 >
         {/* Group image (optional) — tap to pick, square preview. */}
-        <Box align="center" gap={8}>
-          <Pressable onPress={() => { void pickImage(); }} disabled={creating} hitSlop={8}>
-            {image ? (
-              <Image
-                src={image.uri}
-                style={{
-                  width: 88, height: 88, borderRadius: Math.round(88 * 0.12),
-                  backgroundColor: rowBg, opacity: creating ? 0.5 : 1,
-                }}
-/>
-            ) : (
-              <Box width={88} height={88} radius={Math.round(88 * 0.12)} surface="raised" align="center" justify="center" style={{ borderWidth: 1, borderColor: border }}>
-                <Text size="6xl" color={sub}>＋</Text>
-              </Box>
-            )}
-            {creating && image ? (
-              <Box align="center" justify="center" style={{ position: 'absolute', inset: 0 }}>
-                <Spinner size={20} color={fg}/>
-              </Box>
-            ) : null}
-          </Pressable>
-          <Text size="xs" color={sub}>
-            {image ? 'Tap to change image' : 'Tap to add a group image'}
-          </Text>
-        </Box>
+        <GroupImageField image={image} creating={creating} fg={fg} sub={sub} border={border} rowBg={rowBg}
+          onPick={() => { void pickImage(); }}/>
 
         {/* Group name (optional) */}
         <Col gap={6}>

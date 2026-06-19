@@ -25,6 +25,13 @@ const RESERVED = new Set([
   'settings', 'notifications', 'explore', 'about', 'pricing', 'login',
 ]);
 
+/** Map a regex `pull`/`issues` subpath token to a GithubKind (defaulting to `repo`). */
+function kindOf(sub: string | undefined): GithubKind {
+  if (sub === 'pull') return 'pull';
+  if (sub === 'issues') return 'issue';
+  return 'repo';
+}
+
 /** Detect the first github.com repo/PR/issue link in `text`, or null. */
 export function githubLinkOf(text?: string | null): GithubRef | null {
   if (!text) return null;
@@ -37,8 +44,6 @@ export function githubLinkOf(text?: string | null): GithubRef | null {
   // Strip a trailing .git and any stray punctuation the regex may have caught.
   const repo = rawRepo.replace(/\.git$/i, '');
   if (!owner || !repo) return null;
-  const sub = m[3];
   const num = m[4] ? Number(m[4]) : undefined;
-  const kind: GithubKind = sub === 'pull' ? 'pull' : sub === 'issues' ? 'issue' : 'repo';
-  return { url: m[0], owner, repo, kind, number: num };
+  return { url: m[0], owner, repo, kind: kindOf(m[3]), number: num };
 }

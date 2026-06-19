@@ -2,18 +2,16 @@
  * @file MessengerComposer: the conversation message composer (input, attachments, mentions, replies, poll/signature/payment sheets, and send flows).
  */
 
-import { useRef, useState, type ComponentRef } from 'react';
-
 import { Text } from '@metro-labs/kit/text';
-import { Textarea } from '@metro-labs/kit/textarea';
 import { Col } from './layout';
 import { type Attachment } from './MessengerComposer.helpers';
 import { useComposerActions } from './MessengerComposer.actions';
 import { useComposerDrafts, useComposerFocus, computeMentions, applyMention, useLastAttachment } from './MessengerComposer.hooks';
-import { PollSheet, SignatureSheet, PaymentSheet } from './MessengerComposer.sheets';
 import { ReplyBanner, MentionPopup, PendingRow } from './MessengerComposer.parts';
 import { ComposerEditor, AttachMenu, buildAttachActions } from './MessengerComposer.editor';
 import { DANGER, usePalette } from '../lib/theme';
+import { useComposerState } from './MessengerComposer.state';
+import { ComposerSheets } from './MessengerComposer.sheets.bound';
 
 interface Props {
   dark: boolean;
@@ -34,156 +32,133 @@ interface Props {
   onSent?: (localId: string, error?: string, sentId?: string) => void;
 }
 
+/** Build the action-handler args object from composer props + state. */
+function actionsArgs(props: Props, s: ReturnType<typeof useComposerState>) {
+  return {
+    xmtpLine: props.xmtpLine, text: s.text, pending: s.pending,
+    replyingTo: props.replyingTo, mentionCandidates: props.mentionCandidates,
+    setPending: s.setPending, setText: s.setText, setSending: s.setSending,
+    setUploading: s.setUploading, setErr: s.setErr,
+    setRecording: s.setRecording, setRecordSecs: s.setRecordSecs, setLevels: s.setLevels,
+    setPollOpen: s.setPollOpen, pollQuestion: s.pollQuestion, pollHeader: s.pollHeader,
+    pollOptions: s.pollOptions, pollMulti: s.pollMulti,
+    setPollQuestion: s.setPollQuestion, setPollHeader: s.setPollHeader,
+    setPollOptions: s.setPollOptions, setPollMulti: s.setPollMulti,
+    setSigOpen: s.setSigOpen, sigKind: s.sigKind, sigDesc: s.sigDesc,
+    sigMessage: s.sigMessage, sigJson: s.sigJson,
+    setSigKind: s.setSigKind, setSigDesc: s.setSigDesc,
+    setSigMessage: s.setSigMessage, setSigJson: s.setSigJson,
+    setTxOpen: s.setTxOpen, txTo: s.txTo, txAmount: s.txAmount, txNote: s.txNote,
+    setTxTo: s.setTxTo, setTxAmount: s.setTxAmount, setTxNote: s.setTxNote,
+    onOptimistic: props.onOptimistic, onSent: props.onSent, onClearReply: props.onClearReply,
+  };
+}
+
+/** Renders the composer header stack: reply banner, mention popup, pending attachments row, and the upload/error line. */
+function ComposerHeader(p: {
+  dark: boolean; fg: string; head: string; sub: string; chipBg: string;
+  replyingTo?: Props['replyingTo']; onClearReply?: () => void; onJumpToReply?: (id: string) => void;
+  mentionRange: ReturnType<typeof computeMentions>['range'];
+  mentionMatches: ReturnType<typeof computeMentions>['matches'];
+  onPickMention: (c: { address: string; name: string }) => void;
+  pending: Attachment[]; onRemovePending: (i: number) => void;
+  uploading: boolean; err: string | null;
+}): React.ReactElement {
+  const { replyingTo, onJumpToReply } = p;
+  return (
+    <>
+      {replyingTo ? (
+        <ReplyBanner
+          dark={p.dark} sub={p.sub} sender={replyingTo.sender} onClear={p.onClearReply}
+          onPress={onJumpToReply ? () => { onJumpToReply(replyingTo.id); } : undefined}
+        />
+      ) : null}
+      {p.mentionRange && p.mentionMatches.length > 0 ? (
+        <MentionPopup dark={p.dark} head={p.head} sub={p.sub} matches={p.mentionMatches} onPick={p.onPickMention}/>
+      ) : null}
+      {p.pending.length > 0 ? (
+        <PendingRow fg={p.fg} sub={p.sub} chipBg={p.chipBg} pending={p.pending} onRemove={p.onRemovePending} />
+      ) : null}
+      {p.uploading || p.err ? (
+        <Text size="2xs" color={p.err ? DANGER : p.sub} style={{ paddingHorizontal: 14, paddingBottom: 4 }}>
+          {p.err ?? 'Uploading…'}
+        </Text>
+      ) : null}
+    </>
+  );
+}
+
 /** Renders the conversation message composer (input, attachments, mentions, replies, and send flows). */
-export function MessengerComposer({
-  dark, xmtpLine, mentionCandidates, replyingTo, autoFocusNonce, onClearReply, onJumpToReply, onOptimistic, onSent,
-}: Props): React.ReactElement {
+export function MessengerComposer(props: Props): React.ReactElement {
+  const { dark, xmtpLine, mentionCandidates, replyingTo, autoFocusNonce, onClearReply, onJumpToReply } = props;
   const pal = usePalette(); // text/primary/border/bg ← tokens
-  const fg = pal.text, head = pal.link, inputBg = pal.inputBg, chipBg = pal.border;
-  // `sub` = muted/secondary text (placeholder, timestamps). No `muted` token
-  // exists yet, so map to `text` to keep it editable. TODO: dedicated muted token.
+  const fg = pal.text, head = pal.link, inputBg = pal.inputBg, chipBg = pal.border, bg = pal.bg;
+  // `sub` = muted/secondary text; no `muted` token yet, so map to `text`.
   const sub = pal.text;
   const palette = { fg, sub, inputBg, chipBg };
 
-  const [text, setText] = useState('');
-  /** Cursor position in `text`, kept in sync via onSelectionChange so the mention detector knows where the user is typing. */
-  const [selection, setSelection] = useState<{ start: number; end: number }>({ start: 0, end: 0 });
-  const [pending, setPending] = useState<Attachment[]>([]);
-  const [, setSending] = useState(false); // set by send loop; button hides on clear, not via disabled
-  const [uploading, setUploading] = useState(false);
-  /** Textarea content height — drives the scroll fades. */
-  const [textareaH, setTextareaH] = useState(0);
-  const [err, setErr] = useState<string | null>(null);
-  const [recording, setRecording] = useState(false);
-  const [recordSecs, setRecordSecs] = useState(0);
-  /** Rolling mic levels (0..1) for the recording waveform — newest at the end. */
-  const [levels, setLevels] = useState<number[]>([]);
-  const [attachMenuOpen, setAttachMenuOpen] = useState(false);
-  const [pollOpen, setPollOpen] = useState(false);
-  const [pollQuestion, setPollQuestion] = useState('');
-  const [pollHeader, setPollHeader] = useState('');
-  const [pollOptions, setPollOptions] = useState<string[]>(['', '']);
-  const [pollMulti, setPollMulti] = useState(false);
-  const [sigOpen, setSigOpen] = useState(false);
-  const [sigKind, setSigKind] = useState<'personal' | 'eip712'>('personal');
-  const [sigDesc, setSigDesc] = useState('');
-  const [sigMessage, setSigMessage] = useState('');
-  const [sigJson, setSigJson] = useState('');
-  const [txOpen, setTxOpen] = useState(false);
-  const [txTo, setTxTo] = useState('');
-  const [txAmount, setTxAmount] = useState('');
-  const [txNote, setTxNote] = useState('');
-  /** Composer text input — focused programmatically when a reply target is set. */
-  const inputRef = useRef<ComponentRef<typeof Textarea>>(null);
-
-  const actions = useComposerActions({
-    xmtpLine, text, pending, replyingTo, mentionCandidates,
-    setPending, setText, setSending, setUploading, setErr,
-    setRecording, setRecordSecs, setLevels,
-    setPollOpen, pollQuestion, pollHeader, pollOptions, pollMulti,
-    setPollQuestion, setPollHeader, setPollOptions, setPollMulti,
-    setSigOpen, sigKind, sigDesc, sigMessage, sigJson,
-    setSigKind, setSigDesc, setSigMessage, setSigJson,
-    setTxOpen, txTo, txAmount, txNote, setTxTo, setTxAmount, setTxNote,
-    onOptimistic, onSent, onClearReply,
-  });
+  const s = useComposerState();
+  const actions = useComposerActions(actionsArgs(props, s));
   const { slideX, micPanResponder, SLIDE_CANCEL_THRESHOLD_PX } = actions;
 
   const convId = xmtpLine.replace('metro://xmtp/', '');
-  useComposerDrafts(convId, text, setText);
-  useComposerFocus(inputRef, replyingTo?.id, replyingTo?.nonce, autoFocusNonce);
+  useComposerDrafts(convId, s.text, s.setText);
+  useComposerFocus(s.inputRef, replyingTo?.id, replyingTo?.nonce, autoFocusNonce);
 
-  const hasContent = text.trim().length> 0 || pending.length> 0; // text or any pending attachment
+  const hasContent = s.text.trim().length > 0 || s.pending.length > 0; // text or any pending attachment
 
-  const { matches: mentionMatches, range: mentionRange } = computeMentions(text, selection.start, mentionCandidates);
+  const { matches: mentionMatches, range: mentionRange } = computeMentions(s.text, s.selection.start, mentionCandidates);
   /** Pick Mention. */
   const pickMention = (c: { address: string; name: string }): void => {
     if (!mentionRange) return;
-    const { next, cursor } = applyMention(text, mentionRange, c.address);
-    setText(next);
-    setSelection({ start: cursor, end: cursor });
+    const { next, cursor } = applyMention(s.text, mentionRange, c.address);
+    s.setText(next);
+    s.setSelection({ start: cursor, end: cursor });
   };
 
   const attachActions = buildAttachActions({
     pickImage: actions.pickImage, takePhoto: actions.takePhoto,
     pickFile: actions.pickFile, pickLocation: actions.pickLocation,
-    openPoll: () => { setPollOpen(true); }, openSig: () => { setSigOpen(true); }, openTx: () => { actions.openTx(); },
+    openPoll: () => { s.setPollOpen(true); }, openSig: () => { s.setSigOpen(true); }, openTx: () => { actions.openTx(); },
   });
   /** Last-used type's icon → quick-access button left of "+"; hidden until first use. */
   const lastLabel = useLastAttachment();
   const quick = attachActions.find(([, label]) => label === lastLabel);
 
-  const bg = pal.bg; // #0e0f10 / #ffffff
   return (
     <Col padding={{ x: 0, top: 0, bottom: 0 }} surface="surface">
-      {replyingTo ? (
-        <ReplyBanner
-          dark={dark} sub={sub} sender={replyingTo.sender} onClear={onClearReply}
-          onPress={onJumpToReply ? () => { onJumpToReply(replyingTo.id); } : undefined}
-/>
-      ) : null}
-      {/** @-mention popup — Discord-style, stacked above the composer. */}
-      {mentionRange && mentionMatches.length> 0 ? (
-        <MentionPopup dark={dark} head={head} sub={sub} matches={mentionMatches} onPick={pickMention}/>
-      ) : null}
-      {pending.length> 0 ? (
-        <PendingRow
-          fg={fg} sub={sub} chipBg={chipBg} pending={pending}
-          onRemove={(i) => { setPending(prev => prev.filter((_, j) => j !== i)); }}
-/>
-      ) : null}
-      {uploading || err ? (
-        <Text size="2xs" color={err ? DANGER : sub} style={{ paddingHorizontal: 14, paddingBottom: 4 }}>
-          {err ?? 'Uploading…'}
-        </Text>
-      ) : null}
+      <ComposerHeader
+        dark={dark} fg={fg} head={head} sub={sub} chipBg={chipBg}
+        replyingTo={replyingTo} onClearReply={onClearReply} onJumpToReply={onJumpToReply}
+        mentionRange={mentionRange} mentionMatches={mentionMatches} onPickMention={pickMention}
+        pending={s.pending} onRemovePending={(i) => { s.setPending(prev => prev.filter((_, j) => j !== i)); }}
+        uploading={s.uploading} err={s.err}
+      />
       <ComposerEditor
         dark={dark} fg={fg} head={head} bg={bg} sub={sub} inputBg={inputBg} chipBg={chipBg}
-        recording={recording} levels={levels} recordSecs={recordSecs}
+        recording={s.recording} levels={s.levels} recordSecs={s.recordSecs}
         slideX={slideX} slideThresholdPx={SLIDE_CANCEL_THRESHOLD_PX} micPanResponder={micPanResponder}
-        text={text} setText={setText}
-        selection={selection} setSelection={setSelection}
-        textareaH={textareaH} setTextareaH={setTextareaH}
-        inputRef={inputRef}
-        attachMenuOpen={attachMenuOpen} setAttachMenuOpen={setAttachMenuOpen}
+        text={s.text} setText={s.setText}
+        selection={s.selection} setSelection={s.setSelection}
+        textareaH={s.textareaH} setTextareaH={s.setTextareaH}
+        inputRef={s.inputRef}
+        attachMenuOpen={s.attachMenuOpen} setAttachMenuOpen={s.setAttachMenuOpen}
         quickIcon={quick?.[0]}
         onQuick={quick ? () => void quick[2]() : undefined}
         hasContent={hasContent}
         onCancelRec={() => void actions.cancelRec()}
         onStopRec={() => void actions.stopRec()}
         onSend={() => void actions.send()}
-/>
-      {/** Attach menu — horizontally-scrollable row of circular icon+label buttons. */}
-      {attachMenuOpen ? (
+      />
+      {/* Attach menu — horizontally-scrollable row of circular icon+label buttons. */}
+      {s.attachMenuOpen ? (
         <AttachMenu
           head={head} inputBg={inputBg} chipBg={chipBg}
-          onClose={() => { setAttachMenuOpen(() => false); }}
+          onClose={() => { s.setAttachMenuOpen(() => false); }}
           actions={attachActions}
-/>
+        />
       ) : null}
-      <PollSheet
-        open={pollOpen} onClose={() => { setPollOpen(false); }} palette={palette} dark={dark}
-        question={pollQuestion} setQuestion={setPollQuestion}
-        header={pollHeader} setHeader={setPollHeader}
-        options={pollOptions} setOptions={setPollOptions}
-        multi={pollMulti} setMulti={setPollMulti}
-        onSend={() => void actions.sendPoll()}
-/>
-      <SignatureSheet
-        open={sigOpen} onClose={() => { setSigOpen(false); }} palette={palette} dark={dark}
-        kind={sigKind} setKind={setSigKind}
-        desc={sigDesc} setDesc={setSigDesc}
-        message={sigMessage} setMessage={setSigMessage}
-        json={sigJson} setJson={setSigJson}
-        onSend={() => void actions.sendSignatureRequest()}
-/>
-      <PaymentSheet
-        open={txOpen} onClose={() => { setTxOpen(false); }} palette={palette} dark={dark}
-        to={txTo} setTo={setTxTo}
-        amount={txAmount} setAmount={setTxAmount}
-        note={txNote} setNote={setTxNote}
-        onSend={() => void actions.sendTxRequest()}
-/>
+      <ComposerSheets s={s} palette={palette} dark={dark} actions={actions} />
     </Col>
   );
 }

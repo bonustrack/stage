@@ -74,18 +74,37 @@ export async function fetchAssetRows(
     platforms.map((p, i) => [p, platformPriceList[i] ?? {}]),
   );
 
-  return ASSETS.map(a => {
-    const idx = ASSETS.filter(x => x.chainId === a.chainId).indexOf(a);
-    const raw = balancesByChain.get(a.chainId)?.[idx] ?? 0n;
-    const balance = a.address === null ? formatEther(raw) : formatUnits(raw, a.decimals);
-    const priceRec: Price | undefined = a.address === null
-      ? (a.cgId ? simplePrices[a.cgId] : undefined)
-      : (a.cgPlatform ? tokenPricesByPlatform.get(a.cgPlatform)?.[(a.priceAddress ?? a.address).toLowerCase()] : undefined);
-    const priceUsd = priceRec?.usd ?? null;
-    const change24h = typeof priceRec?.usd_24h_change === 'number' ? priceRec.usd_24h_change : null;
-    return {
-      symbol: a.symbol, name: a.name, chainId: a.chainId, balance, priceUsd, change24h,
-      logoUrl: tokenLogo(a.chainId, a.logoAddress, 32),
-    };
-  });
+  return ASSETS.map(a =>
+    buildAssetRow(a, balancesByChain, simplePrices, tokenPricesByPlatform, tokenLogo));
+}
+
+/** Resolve the CoinGecko price record for one asset (native → simple-price by cgId; ERC-20 → contract price by platform+address). */
+function priceFor(
+  a: (typeof ASSETS)[number],
+  simplePrices: Record<string, Price>,
+  tokenPricesByPlatform: Map<string, Record<string, Price>>,
+): Price | undefined {
+  if (a.address === null) return a.cgId ? simplePrices[a.cgId] : undefined;
+  if (!a.cgPlatform) return undefined;
+  return tokenPricesByPlatform.get(a.cgPlatform)?.[(a.priceAddress ?? a.address).toLowerCase()];
+}
+
+/** Shape one asset's on-chain balance + USD price into a ready-to-render AssetRow. */
+function buildAssetRow(
+  a: (typeof ASSETS)[number],
+  balancesByChain: Map<number, bigint[]>,
+  simplePrices: Record<string, Price>,
+  tokenPricesByPlatform: Map<string, Record<string, Price>>,
+  tokenLogo: TokenLogoResolver,
+): AssetRow {
+  const idx = ASSETS.filter(x => x.chainId === a.chainId).indexOf(a);
+  const raw = balancesByChain.get(a.chainId)?.[idx] ?? 0n;
+  const balance = a.address === null ? formatEther(raw) : formatUnits(raw, a.decimals);
+  const priceRec = priceFor(a, simplePrices, tokenPricesByPlatform);
+  const priceUsd = priceRec?.usd ?? null;
+  const change24h = typeof priceRec?.usd_24h_change === 'number' ? priceRec.usd_24h_change : null;
+  return {
+    symbol: a.symbol, name: a.name, chainId: a.chainId, balance, priceUsd, change24h,
+    logoUrl: tokenLogo(a.chainId, a.logoAddress, 32),
+  };
 }

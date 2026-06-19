@@ -150,41 +150,44 @@ function applySpacing(
   if (value.left !== undefined) s[Left] = value.left;
 }
 
-/**
- * Pure prop -> style mapping. The SINGLE source of layout logic. Omits any
- *  key whose prop is undefined so it never overrides a renderer default or a
- *  passthrough style. `padding`/`margin` accept a scalar (all sides) or a
- *  `Spacing` object (per-side wins over axis).
- */
-export function boxStyleEntries(props: BoxBaseProps): BoxStyleEntries {
-  const s: BoxStyleEntries = {};
+/** Copy a defined prop value onto the style record under `key`. */
+function setIf(s: BoxStyleEntries, key: string, value: string | number | undefined): void {
+  if (value !== undefined) s[key] = value;
+}
 
+/** Apply the flex/alignment/visual props onto the style record. */
+function applyFlex(s: BoxStyleEntries, props: BoxBaseProps): void {
   s.flexDirection = props.direction === 'row' ? 'row' : 'column';
-
-  if (props.gap !== undefined) s.gap = props.gap;
-
-  applySpacing(s, 'padding', props.padding);
-  applySpacing(s, 'margin', props.margin);
-
+  setIf(s, 'gap', props.gap);
   if (props.align !== undefined) s.alignItems = ALIGN[props.align];
   if (props.justify !== undefined) s.justifyContent = JUSTIFY[props.justify];
-  if (props.flex !== undefined) s.flex = props.flex;
+  setIf(s, 'flex', props.flex);
   if (props.wrap !== undefined) s.flexWrap = props.wrap ? 'wrap' : 'nowrap';
   if (props.background !== undefined) s.backgroundColor = resolveBg(props.background);
   if (props.radius !== undefined) s.borderRadius = resolveBoxRadius(props.radius);
+}
 
-  // ChatKit BlockProps sizing. `size` sets both axes; explicit width/height win.
+/** Apply the ChatKit BlockProps sizing props (`size` sets both axes; width/height win). */
+function applySizing(s: BoxStyleEntries, props: BoxBaseProps): void {
   if (props.size !== undefined) {
     s.width = props.size;
     s.height = props.size;
   }
-  if (props.width !== undefined) s.width = props.width;
-  if (props.height !== undefined) s.height = props.height;
-  if (props.minWidth !== undefined) s.minWidth = props.minWidth;
-  if (props.minHeight !== undefined) s.minHeight = props.minHeight;
-  if (props.maxWidth !== undefined) s.maxWidth = props.maxWidth;
-  if (props.maxHeight !== undefined) s.maxHeight = props.maxHeight;
-  if (props.aspectRatio !== undefined) s.aspectRatio = props.aspectRatio;
+  setIf(s, 'width', props.width);
+  setIf(s, 'height', props.height);
+  setIf(s, 'minWidth', props.minWidth);
+  setIf(s, 'minHeight', props.minHeight);
+  setIf(s, 'maxWidth', props.maxWidth);
+  setIf(s, 'maxHeight', props.maxHeight);
+  setIf(s, 'aspectRatio', props.aspectRatio);
+}
 
+/** Pure prop -> style mapping (single source of layout logic); omits undefined keys so renderer defaults stand. */
+export function boxStyleEntries(props: BoxBaseProps): BoxStyleEntries {
+  const s: BoxStyleEntries = {};
+  applyFlex(s, props);
+  applySpacing(s, 'padding', props.padding);
+  applySpacing(s, 'margin', props.margin);
+  applySizing(s, props);
   return s;
 }

@@ -20,63 +20,107 @@ export type {
   ConversationView, ConversationRequestView, RequestAvatarDescriptor,
 } from './conversation.types';
 
-/** Summarise a raw conversation into the full channels-list domain view. Moved UNCHANGED from HomeScreen.helpers.summarize. */
-export async function summarizeConversation(
-  conv: Conversation, selfInboxId: string,
-): Promise<ConversationView> {
-  await conv.sync().catch(() => undefined);
-  /** Pull only the latest message for the row PREVIEW - the unread count is maintained incrementally from the live stream deltas. We fetch 2 so a trailing control DM doesn't blank the preview. */
-  const recent: DecodedMessage[] = await conv.messages({ limit: 2 }).catch(() => []);
-  const msgs = recent;
+/** Choose the latest non-control message for the row preview, falling back to the newest. */
+function pickLastMessage(msgs: DecodedMessage[]): DecodedMessage | undefined {
   /** Skip our own register-push control DMs when choosing the "last message". */
-  const last = msgs.find(m => {
+  return msgs.find(m => {
     try { const c: unknown = m.content(); return !(typeof c === 'string' && isMetroControlBody(c)); }
     catch { return true; }
   }) ?? msgs[0];
-  let preview = '';
-  if (last) {
-    try { preview = previewOfXmtpContent(last.content(), last.contentTypeId); }
-    catch { preview = `[${last.contentTypeId ?? 'unknown'}]`; }
-  }
-  const peerAddress = await peerEthAddressOfDm(conv);
-  const memberAddresses = peerAddress ? [] : await groupMemberEthAddresses(conv);
-  const inboxToAddr = await memberInboxToAddressMap(conv);
-  const totalMembers = memberAddresses.length + 1;
-  /** Read group metadata (name + uploaded image) in one shot for groups. */
-  const groupMeta = peerAddress
-    ? { name: '', imageUrl: '' }
-    : await (async (): Promise<{ name: string; imageUrl: string }> => {
-        const g = conv as unknown as { name?: () => Promise<string>; imageUrl?: () => Promise<string> };
-        const [n, img] = await Promise.all([
-          g.name?.() ?? Promise.resolve(''),
-          g.imageUrl?.().catch(() => '') ?? Promise.resolve(''),
-        ]);
-        return { name: n ?? '', imageUrl: img ?? '' };
-      })();
-  /** Group labels (DMs have none). Read off the conv synced above. */
-  const labels = peerAddress ? [] : await labelsOfSyncedGroup(conv);
-  const github = peerAddress ? undefined : await githubOfSyncedGroup(conv);
-  const title = peerAddress
-    ? shortAddress(peerAddress)
-    : (groupMeta.name.trim()
-      ? groupMeta.name.trim()
-      : memberAddresses.length > 0
-        ? `${totalMembers} member${totalMembers === 1 ? '' : 's'}`
-        : conv.topic.replace(/^.*\//, '').slice(0, 12));
-  const lastSenderAddress = last?.senderInboxId
-    ? inboxToAddr[last.senderInboxId] ?? null
-    : null;
-  const lastFromSelf = !!last && last.senderInboxId === selfInboxId;
-  const avatarUri = peerAddress ? null : (groupMeta.imageUrl.trim() || null);
-  const avatarAddress = peerAddress
-    ?? (avatarUri ? null : channelStampSeed(conv.id));
-  const lastReadNs = await getLastReadNs(conv.id);
+}
+
+/** Render a message's human preview, falling back to a bracketed content-type tag on decode failure. */
+function previewOfMessage(last: DecodedMessage | undefined): string {
+  if (!last) return '';
+  try { return previewOfXmtpContent(last.content(), last.contentTypeId); }
+  catch { return `[${last.contentTypeId ?? 'unknown'}]`; }
+}
+
+/** Read a group conv's name + uploaded image in one shot (empty for DMs). */
+async function readGroupNameImage(
+  conv: Conversation,
+): Promise<{ name: string; imageUrl: string }> {
+  const g = conv as unknown as { name?: () => Promise<string>; imageUrl?: () => Promise<string> };
+  const [n, img] = await Promise.all([
+    g.name?.() ?? Promise.resolve(''),
+    g.imageUrl?.().catch(() => '') ?? Promise.resolve(''),
+  ]);
+  return { name: n ?? '', imageUrl: img ?? '' };
+}
+
+/** Compute the row title from peer address / group name / member count / topic. */
+function computeTitle(
+  conv: Conversation, peerAddress: string | null, groupName: string,
+  memberAddresses: string[], totalMembers: number,
+): string {
+  if (peerAddress) return shortAddress(peerAddress);
+  if (groupName.trim()) return groupName.trim();
+  if (memberAddresses.length > 0) return `${totalMembers} member${totalMembers === 1 ? '' : 's'}`;
+  return conv.topic.replace(/^.*\//, '').slice(0, 12);
+}
+
+/** Count consecutive newest non-self messages newer than the last-read marker. */
+function countUnread(msgs: DecodedMessage[], lastReadNs: number, selfInboxId: string): number {
   let unreadCount = 0;
   for (const m of msgs) {
     if (!m.sentNs || m.sentNs <= lastReadNs) break;
     if (m.senderInboxId === selfInboxId) continue;
     unreadCount += 1;
   }
+  return unreadCount;
+}
+
+interface GroupRowData {
+  memberAddresses: string[];
+  groupMeta: { name: string; imageUrl: string };
+  labels: Awaited<ReturnType<typeof labelsOfSyncedGroup>>;
+  github: Awaited<ReturnType<typeof githubOfSyncedGroup>> | undefined;
+}
+
+/** Gather the group-only row data (members, name/image, labels, github); empty defaults for a DM. */
+async function gatherGroupRowData(conv: Conversation, peerAddress: string | null): Promise<GroupRowData> {
+  if (peerAddress) {
+    return { memberAddresses: [], groupMeta: { name: '', imageUrl: '' }, labels: [], github: undefined };
+  }
+  const [memberAddresses, groupMeta, labels, github] = await Promise.all([
+    groupMemberEthAddresses(conv),
+    readGroupNameImage(conv),
+    labelsOfSyncedGroup(conv),
+    githubOfSyncedGroup(conv),
+  ]);
+  return { memberAddresses, groupMeta, labels, github };
+}
+
+/** Resolve the avatar uri + seed address for a row from peer/group image. */
+function rowAvatar(
+  conv: Conversation, peerAddress: string | null, groupImageUrl: string,
+): { avatarUri: string | null; avatarAddress: string | null } {
+  const avatarUri = peerAddress ? null : (groupImageUrl.trim() || null);
+  const avatarAddress = peerAddress ?? (avatarUri ? null : channelStampSeed(conv.id));
+  return { avatarUri, avatarAddress };
+}
+
+/** Summarise a raw conversation into the full channels-list domain view. Moved UNCHANGED from HomeScreen.helpers.summarize. */
+export async function summarizeConversation(
+  conv: Conversation, selfInboxId: string,
+): Promise<ConversationView> {
+  await conv.sync().catch(() => undefined);
+  /** Pull only the latest message for the row PREVIEW - the unread count is maintained incrementally from the live stream deltas. We fetch 2 so a trailing control DM doesn't blank the preview. */
+  const msgs: DecodedMessage[] = await conv.messages({ limit: 2 }).catch(() => []);
+  const last = pickLastMessage(msgs);
+  const preview = previewOfMessage(last);
+  const peerAddress = await peerEthAddressOfDm(conv);
+  const inboxToAddr = await memberInboxToAddressMap(conv);
+  const { memberAddresses, groupMeta, labels, github } = await gatherGroupRowData(conv, peerAddress);
+  const totalMembers = memberAddresses.length + 1;
+  const title = computeTitle(conv, peerAddress, groupMeta.name, memberAddresses, totalMembers);
+  const lastSenderAddress = last?.senderInboxId
+    ? inboxToAddr[last.senderInboxId] ?? null
+    : null;
+  const lastFromSelf = !!last && last.senderInboxId === selfInboxId;
+  const { avatarUri, avatarAddress } = rowAvatar(conv, peerAddress, groupMeta.imageUrl);
+  const lastReadNs = await getLastReadNs(conv.id);
+  const unreadCount = countUnread(msgs, lastReadNs, selfInboxId);
   const markedUnread = lastReadNs === 0
     && unreadCount === 0 && !!last && !lastFromSelf;
   return {
@@ -99,6 +143,20 @@ export async function summarizeConversation(
   };
 }
 
+/** Read a request's group members + name + image (empty for a DM). */
+async function readRequestGroupData(
+  conv: Conversation, isGroup: boolean,
+): Promise<{ memberAddresses: string[]; groupName: string; groupImage: string }> {
+  if (!isGroup) return { memberAddresses: [], groupName: '', groupImage: '' };
+  const g = conv as unknown as { name?: () => Promise<string>; imageUrl?: () => Promise<string> };
+  const [memberAddresses, groupName, groupImageRaw] = await Promise.all([
+    groupMemberEthAddresses(conv),
+    g.name?.().catch(() => '') ?? Promise.resolve(''),
+    g.imageUrl?.().catch(() => '') ?? Promise.resolve(''),
+  ]);
+  return { memberAddresses, groupName: groupName ?? '', groupImage: (groupImageRaw ?? '').trim() };
+}
+
 /** Summarise a raw conversation into the message-request domain view. Moved UNCHANGED from app/xmtp/requests.summarizeRequest. */
 export async function summarizeConversationRequest(
   conv: Conversation,
@@ -106,21 +164,10 @@ export async function summarizeConversationRequest(
   await conv.sync().catch(() => undefined);
   const peerAddress = await peerEthAddressOfDm(conv);
   const isGroup = !peerAddress;
-  const memberAddresses = isGroup ? await groupMemberEthAddresses(conv) : [];
-  const g = conv as unknown as { name?: () => Promise<string>; imageUrl?: () => Promise<string> };
-  const groupName = isGroup
-    ? await g.name?.().catch(() => '') ?? ''
-    : '';
-  const groupImage = isGroup
-    ? (await g.imageUrl?.().catch(() => '') ?? '').trim()
-    : '';
+  const { memberAddresses, groupName, groupImage } = await readRequestGroupData(conv, isGroup);
   const recent: DecodedMessage[] = await conv.messages({ limit: 1 }).catch(() => []);
   const last = recent[0];
-  let preview = '';
-  if (last) {
-    try { preview = previewOfXmtpContent(last.content(), last.contentTypeId); }
-    catch { preview = `[${last.contentTypeId ?? 'unknown'}]`; }
-  }
+  const preview = previewOfMessage(last);
   const title = peerAddress
     ? shortAddress(peerAddress)
     : (groupName.trim() || `${memberAddresses.length + 1} members`);

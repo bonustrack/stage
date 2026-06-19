@@ -1,28 +1,66 @@
 /** @file Wallet → Recovery screen for setting up or approving smart-account guardian social recovery. */
 
-import { useCallback, useEffect, useState } from 'react';
-import { Alert } from 'react-native';
+import { useEffect, useState } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Text } from '@metro-labs/kit/text';
 import { Col } from '../../components/layout';
-import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
-import { ActionPage, WalletFooter, useFormPal } from './wallet.form';
+import { usePalette, useEffectiveColorScheme, type Palette } from '../../lib/theme';
+import { ActionPage, WalletFooter, useFormPal, type FormPal } from './wallet.form';
 import { GuardianEditor, PendingRecoveryCard, ApprovalCard, formatDelay } from './recovery.parts';
-import { resolveEnsName } from '../../lib/ens';
 import { getActiveAccount, type AccountRecord } from '../../lib/accounts';
 import { DEFAULT_RECOVERY_DELAY_SECONDS } from '@stage-labs/client/zerodev/recovery';
-import {
-  zerodevConfigured, installGuardians, updateGuardians, cancelRecovery,
-  signRecoveryApproval, sendRecoveryApproval, smartOwnerSigner,
-} from '../../lib/zerodev';
-import type { Address } from 'viem';
+import { zerodevConfigured } from '../../lib/zerodev';
+import { useRecoveryActions, type RecoveryActions } from './recovery.actions';
+
+type PagePal = Pick<Palette, 'link' | 'bg' | 'border'>;
+
+/** A bare ActionPage with a single explanatory line (used for unavailable states). */
+function RecoveryNotice({ pal, p, onBack, message }: {
+  pal: FormPal; p: PagePal; onBack: () => void; message: string;
+}): React.ReactElement {
+  return (
+    <ActionPage title="Recovery" head={p.link} bg={p.bg} border={p.border} onBack={onBack}>
+      <Text size="sm" color={pal.sub}>{message}</Text>
+    </ActionPage>
+  );
+}
+
+/** The guardian setup/edit form with its pinned footer. */
+function RecoverySetupForm({ rec, pal, dark, p, params, delay, guardians, setGuardians, threshold, setThreshold, busy, actions, onBack }: {
+  rec: AccountRecord; pal: FormPal; dark: boolean; p: PagePal;
+  params: { newOwner?: string }; delay: number;
+  guardians: string[]; setGuardians: (g: string[]) => void;
+  threshold: number; setThreshold: (n: number) => void;
+  busy: boolean; actions: RecoveryActions; onBack: () => void;
+}): React.ReactElement {
+  const pendingNewOwner = params.newOwner;
+  return (
+    <ActionPage title="Recovery" head={p.link} bg={p.bg} border={p.border} onBack={onBack}
+      footer={(
+        <WalletFooter border={p.border} dark={dark} onCancel={onBack}
+          submitLabel={(rec.guardians ?? []).length ? 'Update guardians' : 'Save guardians'}
+          onSubmit={() => void actions.onSave()}
+          submitDisabled={guardians.length === 0 || busy} submitLoading={busy}/>
+      )}>
+      <Col gap={16}>
+        {pendingNewOwner ? (
+          <PendingRecoveryCard pal={pal} dark={dark} newOwner={pendingNewOwner}
+            finalizeAfterLabel={`in up to ${formatDelay(delay)}`} onCancel={() => void actions.onCancel()} cancelling={busy}/>
+        ) : null}
+        <GuardianEditor pal={pal} dark={dark} guardians={guardians} threshold={threshold}
+          delaySeconds={delay} onChange={setGuardians} onThreshold={setThreshold}/>
+      </Col>
+    </ActionPage>
+  );
+}
 
 /** Screen for setting up or approving smart-account social recovery. */
 export default function WalletRecovery(): React.ReactElement {
   const router = useRouter();
   const params = useLocalSearchParams<{ mode?: string; line?: string; wallet?: string; newOwner?: string }>();
   const mode = params.mode === 'approve' ? 'approve' : 'setup';
-  const { link: head, bg, border } = usePalette();
+  const { link, bg, border } = usePalette();
+  const p: PagePal = { link, bg, border };
   const dark = useEffectiveColorScheme() === 'dark';
   const pal = useFormPal();
 
@@ -45,117 +83,25 @@ export default function WalletRecovery(): React.ReactElement {
   }, []);
 
   const delay = rec?.guardianDelay ?? DEFAULT_RECOVERY_DELAY_SECONDS;
-
-  /** Save guardians: install on first config, else reconfigure (native renew). */
-  const onSave = useCallback(async (): Promise<void> => {
-    if (!rec) return;
-    setBusy(true);
-    try {
-      // Resolve any ENS names left as raw entries (addresses pass through).
-      const resolved: string[] = [];
-      for (const g of guardians) {
-        if (g.startsWith('0x')) { resolved.push(g); continue; }
-        const a = await resolveEnsName(g);
-        if (!a) throw new Error(`Could not resolve ${g}`);
-        resolved.push(a.toLowerCase());
-      }
-      const already = (rec.guardians ?? []).length > 0;
-      if (already) await updateGuardians(rec, resolved, threshold, delay);
-      else await installGuardians(rec, resolved, threshold, delay);
-      Alert.alert('Guardians saved', 'Your recovery guardians are set.');
-      router.back();
-    } catch (e) {
-      Alert.alert('Could not save guardians', e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-    }
-  }, [rec, guardians, threshold, delay, router]);
-
-  /** Owner cancel of a pending rotation (native veto). The pending newOwner comes from the deep link (the recovery request) — we cancel that specific rotation. */
-  const onCancel = useCallback(async (): Promise<void> => {
-    if (!rec || !params.newOwner) return;
-    setBusy(true);
-    try {
-      // nonce 0 = the recovery validator's first proposal slot for this account.
-      await cancelRecovery(rec, params.newOwner as Address, 0n);
-      Alert.alert('Recovery cancelled', 'The pending recovery was cancelled.');
-      router.back();
-    } catch (e) {
-      Alert.alert('Could not cancel', e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-    }
-  }, [rec, params.newOwner, router]);
-
-  /** Guardian approves an inbound request: sign offchain + post back to the line. */
-  const onApprove = useCallback(async (): Promise<void> => {
-    if (!params.line || !params.wallet || !params.newOwner) return;
-    const active = await getActiveAccount();
-    if (active?.type !== 'smart' || active.hdIndex == null) {
-      Alert.alert('No smart wallet', 'You need a smart wallet to approve a recovery.');
-      return;
-    }
-    setApproving(true);
-    try {
-      const signer = await smartOwnerSigner(active.hdIndex);
-      const signature = await signRecoveryApproval(
-        signer, params.wallet as Address, params.newOwner as Address, 0n,
-      );
-      await sendRecoveryApproval(params.line, {
-        wallet: params.wallet, newOwner: params.newOwner,
-        guardian: signer.address.toLowerCase(), signature,
-      });
-      setApproved(true);
-      Alert.alert('Approved', 'Your approval was sent to the recovery conversation.');
-    } catch (e) {
-      Alert.alert('Could not approve', e instanceof Error ? e.message : String(e));
-    } finally {
-      setApproving(false);
-    }
-  }, [params.line, params.wallet, params.newOwner]);
+  const actions = useRecoveryActions({ rec, guardians, threshold, delay, params, setBusy, setApproving, setApproved, router });
+  /** Pop back to the previous screen. */
+  const onBack = (): void => { router.back(); };
 
   if (mode === 'approve') {
     return (
-      <ActionPage title="Approve recovery" head={head} bg={bg} border={border} onBack={() => { router.back(); }}>
+      <ActionPage title="Approve recovery" head={link} bg={bg} border={border} onBack={onBack}>
         <ApprovalCard pal={pal} dark={dark}
           wallet={params.wallet ?? ''} newOwner={params.newOwner ?? ''}
-          onApprove={() => { void onApprove(); }} approving={approving} approved={approved}/>
+          onApprove={() => { void actions.onApprove(); }} approving={approving} approved={approved}/>
       </ActionPage>
     );
   }
+  if (!zerodevConfigured()) return <RecoveryNotice pal={pal} p={p} onBack={onBack} message="Smart wallet is not configured on this build."/>;
+  if (!rec) return <RecoveryNotice pal={pal} p={p} onBack={onBack} message="Create a smart wallet first to set up guardian recovery."/>;
 
-  if (!zerodevConfigured()) {
-    return (
-      <ActionPage title="Recovery" head={head} bg={bg} border={border} onBack={() => { router.back(); }}>
-        <Text size="sm" color={pal.sub}>Smart wallet is not configured on this build.</Text>
-      </ActionPage>
-    );
-  }
-  if (!rec) {
-    return (
-      <ActionPage title="Recovery" head={head} bg={bg} border={border} onBack={() => { router.back(); }}>
-        <Text size="sm" color={pal.sub}>Create a smart wallet first to set up guardian recovery.</Text>
-      </ActionPage>
-    );
-  }
-
-  const pendingNewOwner = params.newOwner;
   return (
-    <ActionPage title="Recovery" head={head} bg={bg} border={border} onBack={() => { router.back(); }}
-      footer={(
-        <WalletFooter border={border} dark={dark} onCancel={() => { router.back(); }}
-          submitLabel={(rec.guardians ?? []).length ? 'Update guardians' : 'Save guardians'}
-          onSubmit={() => void onSave()}
-          submitDisabled={guardians.length === 0 || busy} submitLoading={busy}/>
-      )}>
-      <Col gap={16}>
-        {pendingNewOwner ? (
-          <PendingRecoveryCard pal={pal} dark={dark} newOwner={pendingNewOwner}
-            finalizeAfterLabel={`in up to ${formatDelay(delay)}`} onCancel={() => void onCancel()} cancelling={busy}/>
-        ) : null}
-        <GuardianEditor pal={pal} dark={dark} guardians={guardians} threshold={threshold}
-          delaySeconds={delay} onChange={setGuardians} onThreshold={setThreshold}/>
-      </Col>
-    </ActionPage>
+    <RecoverySetupForm rec={rec} pal={pal} dark={dark} p={p} params={params} delay={delay}
+      guardians={guardians} setGuardians={setGuardians} threshold={threshold} setThreshold={setThreshold}
+      busy={busy} actions={actions} onBack={onBack}/>
   );
 }

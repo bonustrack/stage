@@ -18,6 +18,23 @@ import {
 import { resetForOnboarding } from '../../lib/wallet';
 import { resetEverything } from '../../lib/resetEverything';
 
+/** Renders a destructive reset action card in the Developer danger zone. */
+function DangerAction({ onPress, busy, label, description, danger, blockRadius, top }: {
+  onPress: () => void; busy: boolean; label: string; description: string;
+  danger: string; blockRadius: number; top: number;
+}): React.ReactElement {
+  return (
+    <Pressable onPress={onPress} disabled={busy}>
+      <Box radius={blockRadius} surface="raised" padding={14} margin={{ x: 16, top }}
+        style={{ borderWidth: 1, borderColor: danger, opacity: busy ? 0.5 : 1 }}
+>
+        <Text weight="semibold" size="md" role="danger">{label}</Text>
+        <Text size="xs" role="secondary" style={{ marginTop: 2 }}>{description}</Text>
+      </Box>
+    </Pressable>
+  );
+}
+
 /** Renders the developer settings screen with reset and debugging actions. */
 export function DeveloperSettings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
@@ -107,30 +124,16 @@ export function DeveloperSettings(): React.ReactElement {
         <Text size="xs" role="secondary" style={{ paddingHorizontal: 16, paddingTop: 28 }}>
           DANGER ZONE
         </Text>
-        <Pressable onPress={onReset} disabled={resetting}>
-          <Box radius={blockRadius} surface="raised" padding={14} margin={{ x: 16, top: 8 }}
-            style={{ borderWidth: 1, borderColor: danger, opacity: resetting ? 0.5 : 1 }}
->
-            <Text weight="semibold" size="md" role="danger">
-              {resetting ? 'Resetting…' : 'Reset accounts (dev)'}
-            </Text>
-            <Text size="xs" role="secondary" style={{ marginTop: 2 }}>
-              Wipe all local accounts, wallet keys, the recovery phrase and XMTP message stores, then return to onboarding. Cannot be undone.
-            </Text>
-          </Box>
-        </Pressable>
-        <Pressable onPress={onNuke} disabled={nuking}>
-          <Box radius={blockRadius} surface="raised" padding={14} margin={{ x: 16, top: 12 }}
-            style={{ borderWidth: 1, borderColor: danger, opacity: nuking ? 0.5 : 1 }}
->
-            <Text weight="semibold" size="md" role="danger">
-              {nuking ? 'Erasing…' : 'Reset everything (dev)'}
-            </Text>
-            <Text size="xs" role="secondary" style={{ marginTop: 2 }}>
-              Full nuke: everything above PLUS all settings, preferences, pins, read markers and cached data. Restarts the app as a fresh install. Cannot be undone.
-            </Text>
-          </Box>
-        </Pressable>
+        <DangerAction
+          onPress={onReset} busy={resetting} danger={danger} blockRadius={blockRadius} top={8}
+          label={resetting ? 'Resetting…' : 'Reset accounts (dev)'}
+          description="Wipe all local accounts, wallet keys, the recovery phrase and XMTP message stores, then return to onboarding. Cannot be undone."
+        />
+        <DangerAction
+          onPress={onNuke} busy={nuking} danger={danger} blockRadius={blockRadius} top={12}
+          label={nuking ? 'Erasing…' : 'Reset everything (dev)'}
+          description="Full nuke: everything above PLUS all settings, preferences, pins, read markers and cached data. Restarts the app as a fresh install. Cannot be undone."
+        />
       </ScrollView>
     </Col>
   );

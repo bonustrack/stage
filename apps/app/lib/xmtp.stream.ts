@@ -146,67 +146,88 @@ function rearmGlobalStream(): void {
   }, 500) as unknown as number;
 }
 
+type StreamCb = Parameters<
+  Awaited<ReturnType<typeof getOrCreateXmtpClient>>['conversations']['streamAllMessages']
+>[0];
+type StreamCbMsg = Parameters<StreamCb>[0];
+
+/** Fan out the raw stream message to channels-list subscribers (#1); one decode, two consumers. */
+function fanOutToSubscribers(convId: string | undefined, msg: StreamCbMsg): void {
+  if (streamSubscribers.size === 0) return;
+  for (const cb of streamSubscribers) {
+    try { cb({ convId: convId ?? null, msg }); } catch { /* ignore */ }
+  }
+}
+
+/** Route a derived-conv-id message into its feedCache slice + run arrival-continuity / desync heals. */
+function routeMessageToFeed(convId: string, msg: StreamCbMsg): void {
+  const line = lineOfConv(convId);
+  const env = envelopeOfXmtpMessage(msg, line);
+  if (isMetroControlBody(env.text)) return;
+  /** Capture the open feed's tail BEFORE the push so arrival-continuity can tell whether this message is the direct successor of what the feed had, or whether an earlier message is missing locally (a sentNs gap). */
+  const prevLatestNs = activeFeedLines.has(line) ? feedLatestNs(line) : 0;
+  pushToFeedSlice(line, env);
+  /** ARRIVAL CONTINUITY: if this conv is open and the arriving message isn't contiguous with the feed's prior tail, do ONE targeted conv.sync + slice reload so the gap is filled (event-driven, no poll). */
+  if (activeFeedLines.has(line)) {
+    const arrivingNs = (msg as unknown as { sentNs?: number }).sentNs ?? 0;
+    void reconcileOnArrival(line, prevLatestNs, arrivingNs, env.id);
+  }
+  /**
+   * DESYNC GUARD (Home updates, open feed doesn't): the topic-derived
+   *  `convId` here can differ from the route's convId the open feed
+   *  subscribed under (`lineOfConv(routeConvId)`), so this slice write lands
+   *  on a key nothing is listening to. When the pushed line isn't an active
+   *  feed but SOME feed is open, resync the active feed(s) immediately via
+   *  the canonical `convOfLine` handle so the open conversation shows the
+   *  message live instead of only after reopen/refresh.
+   */
+  if (activeFeedLines.size > 0 && !activeFeedLines.has(line)) void resyncActiveFeeds();
+}
+
+/** Handle one inbound message from the single global stream: fan out to subscribers, then key it into its feed slice. */
+function handleStreamMessage(msg: StreamCbMsg): Promise<void> {
+  if (!msg) return Promise.resolve();
+  /** Mark a live delivery so a push arriving right after is treated as redundant (see onXmtpPush's STREAM_FRESH_MS skip). */
+  noteStreamDelivery();
+  /**
+   * Derive the conv id TOPIC-FIRST (the `g-<hex>` group id), `conversationId`
+   *  only as fallback. MUST match the channels list (HomeScreen.stream's
+   *  topic-first `convIdFromTopic`) + the open feed (`lineOfConv(convId)`).
+   *  ROOT CAUSE of "open feed misses messages the list got": RN
+   *  `DecodedMessage.conversationId`, when present, isn't always the topic
+   *  `g-<hex>` id rows/lines use — preferring it made
+   *  `pushToFeedSlice(lineOfConv(id))` write a DIFFERENT feedCache key than
+   *  the one the open feed subscribed under, so its slice subscription never
+   *  fired (list still bumped, topic-first).
+   */
+  const convId = convIdFromTopicStr((msg as unknown as { topic?: string }).topic)
+    ?? (msg as unknown as { conversationId?: string }).conversationId;
+  fanOutToSubscribers(convId, msg);
+  if (!convId) {
+    /** Couldn't derive a conv id from this message → can't key it into a feedCache slice. If a feed is open, resync it so the message isn't stranded until the next push/resume backstop (mirrors the channels-list refresh fallback on a convId miss). */
+    if (activeFeedLines.size > 0) void resyncActiveFeeds();
+    return Promise.resolve();
+  }
+  routeMessageToFeed(convId, msg);
+  return Promise.resolve();
+}
+
+/** onClose for the global stream: drop the stale cancel, resync once, stamp the close time, and re-arm. */
+function onGlobalStreamClose(): void {
+  /** Native stream closed (backgrounding/blip). Drop the stale cancel, resync the active feed once to cover the gap, then re-arm. Stamp the close time so a push during the dead/re-arming window force-syncs. */
+  globalStreamCancel = null;
+  lastStreamCloseAt = Date.now();
+  void resyncActiveFeeds();
+  rearmGlobalStream();
+}
+
 /** Subscribe the one native fan-out for every conversation on this inbox. Maps each message to its metro line and routes it into the matching feedCache slice + channels-list subscribers. Re-armed via `onClose` on native drop. */
 async function startStream(client: Awaited<ReturnType<typeof getOrCreateXmtpClient>>): Promise<void> {
   await client.conversations.streamAllMessages(
-    (msg): Promise<void> => {
-      if (!msg) return Promise.resolve();
-      /** Mark a live delivery so a push arriving right after is treated as redundant (see onXmtpPush's STREAM_FRESH_MS skip). */
-      noteStreamDelivery();
-      /**
-       * Derive the conv id TOPIC-FIRST (the `g-<hex>` group id), `conversationId`
-       *  only as fallback. MUST match the channels list (HomeScreen.stream's
-       *  topic-first `convIdFromTopic`) + the open feed (`lineOfConv(convId)`).
-       *  ROOT CAUSE of "open feed misses messages the list got": RN
-       *  `DecodedMessage.conversationId`, when present, isn't always the topic
-       *  `g-<hex>` id rows/lines use — preferring it made
-       *  `pushToFeedSlice(lineOfConv(id))` write a DIFFERENT feedCache key than
-       *  the one the open feed subscribed under, so its slice subscription never
-       *  fired (list still bumped, topic-first).
-       */
-      const convId = convIdFromTopicStr((msg as unknown as { topic?: string }).topic)
-        ?? (msg as unknown as { conversationId?: string }).conversationId;
-      /** Fan out the raw message to channels-list subscribers FIRST (#1) — they do their own control-DM filtering + need the raw msg for preview/sender. One decode, two consumers. */
-      if (streamSubscribers.size > 0) {
-        for (const cb of streamSubscribers) { try { cb({ convId: convId ?? null, msg }); } catch { /* ignore */ } }
-      }
-      if (!convId) {
-        /** Couldn't derive a conv id from this message → can't key it into a feedCache slice. If a feed is open, resync it so the message isn't stranded until the next push/resume backstop (mirrors the channels-list refresh fallback on a convId miss). */
-        if (activeFeedLines.size > 0) void resyncActiveFeeds();
-        return Promise.resolve();
-      }
-      const line = lineOfConv(convId);
-      const env = envelopeOfXmtpMessage(msg, line);
-      if (isMetroControlBody(env.text)) return Promise.resolve();
-      /** Capture the open feed's tail BEFORE the push so arrival-continuity can tell whether this message is the direct successor of what the feed had, or whether an earlier message is missing locally (a sentNs gap). */
-      const prevLatestNs = activeFeedLines.has(line) ? feedLatestNs(line) : 0;
-      pushToFeedSlice(line, env);
-      /** ARRIVAL CONTINUITY: if this conv is open and the arriving message isn't contiguous with the feed's prior tail, do ONE targeted conv.sync + slice reload so the gap is filled (event-driven, no poll). */
-      if (activeFeedLines.has(line)) {
-        const arrivingNs = (msg as unknown as { sentNs?: number }).sentNs ?? 0;
-        void reconcileOnArrival(line, prevLatestNs, arrivingNs, env.id);
-      }
-      /**
-       * DESYNC GUARD (Home updates, open feed doesn't): the topic-derived
-       *  `convId` here can differ from the route's convId the open feed
-       *  subscribed under (`lineOfConv(routeConvId)`), so this slice write lands
-       *  on a key nothing is listening to. When the pushed line isn't an active
-       *  feed but SOME feed is open, resync the active feed(s) immediately via
-       *  the canonical `convOfLine` handle so the open conversation shows the
-       *  message live instead of only after reopen/refresh.
-       */
-      if (activeFeedLines.size > 0 && !activeFeedLines.has(line)) void resyncActiveFeeds();
-      return Promise.resolve();
-    },
+    handleStreamMessage,
     'all',
     STREAM_CONSENT_STATES,
-    () => {
-      /** Native stream closed (backgrounding/blip). Drop the stale cancel, resync the active feed once to cover the gap, then re-arm. Stamp the close time so a push during the dead/re-arming window force-syncs. */
-      globalStreamCancel = null;
-      lastStreamCloseAt = Date.now();
-      void resyncActiveFeeds();
-      rearmGlobalStream();
-    },
+    onGlobalStreamClose,
   );
 }
 

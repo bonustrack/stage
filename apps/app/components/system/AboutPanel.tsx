@@ -49,22 +49,45 @@ function AboutRow({ label, value, mono, border, href, head }: AboutRowProps): Re
   );
 }
 
+/** Resolved build + runtime metadata shown in the About panel. */
+interface AboutMeta {
+  pkgName: string; versionLabel: string; gitHash: string; shortHash: string; buildProfile: string;
+}
+
+/** Read a non-empty string from the Expo config `extra` map, or a fallback. */
+function extraString(extra: Record<string, unknown>, key: string, fallback: string): string {
+  const v = extra[key];
+  return typeof v === 'string' && v.length> 0 ? v : fallback;
+}
+
+/** Resolve the native build version string, or null when unavailable. */
+function resolveNativeBuild(): string | null {
+  if (Application.nativeBuildVersion) return Application.nativeBuildVersion;
+  const code = Constants.expoConfig?.android?.versionCode;
+  return code != null ? String(code) : null;
+}
+
+/** Resolve app/version/commit/build metadata from the Expo config + native build version. */
+function resolveAboutMeta(): AboutMeta {
+  const cfg = Constants.expoConfig;
+  const version = cfg?.version ?? 'unknown';
+  const extra = (cfg?.extra ?? {}) as Record<string, unknown>;
+  const gitHash = extraString(extra, 'gitHash', 'dev');
+  const nativeBuild = resolveNativeBuild();
+  return {
+    pkgName: cfg?.name ?? 'Stage',
+    versionLabel: nativeBuild ? `${version} (build ${nativeBuild})` : version,
+    gitHash,
+    shortHash: gitHash === 'dev' ? 'dev' : gitHash.slice(0, 12),
+    buildProfile: extraString(extra, 'buildProfile', 'dev'),
+  };
+}
+
 /** Renders the About panel showing app version and build metadata. */
 export function AboutPanel({ dark, head, sub, border, rowBg }: {
   dark: boolean; head: string; sub: string; border: string; rowBg: string;
 }): React.ReactElement {
-  const cfg = Constants.expoConfig;
-  const version = cfg?.version ?? 'unknown';
-  const extra = (cfg?.extra ?? {}) as { gitHash?: unknown; buildProfile?: unknown };
-  const gitHash = typeof extra.gitHash === 'string' && extra.gitHash.length> 0 ? extra.gitHash : 'dev';
-  const shortHash = gitHash === 'dev' ? 'dev' : gitHash.slice(0, 12);
-  const buildProfile = typeof extra.buildProfile === 'string' && extra.buildProfile.length> 0
-    ? extra.buildProfile : 'dev';
-  const pkgName = cfg?.name ?? 'Stage';
-  const nativeBuild = Application.nativeBuildVersion
-    ?? (Constants.expoConfig?.android?.versionCode != null
-      ? String(Constants.expoConfig.android.versionCode) : null);
-  const versionLabel = nativeBuild ? `${version} (build ${nativeBuild})` : version;
+  const { pkgName, versionLabel, gitHash, shortHash, buildProfile } = resolveAboutMeta();
 
   return (
     <Box padding={{ top: 18 }}>

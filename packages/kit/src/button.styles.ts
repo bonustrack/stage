@@ -103,40 +103,72 @@ function accent(
   }
 }
 
+/** Common context shared by every variant resolver. */
+interface ColorCtx {
+  a: { bg: string; pressed: string; on: string };
+  border: string;
+  ghostPressedBg: string;
+  neutralText: string;
+  isNeutral: boolean;
+  color: ButtonColor;
+}
+
+/** Resolve the solid variant colour set. */
+function solidColors(ctx: ColorCtx): VariantColors {
+  return {
+    bg: ctx.a.bg,
+    pressedBg: ctx.a.pressed,
+    text: ctx.a.on,
+    // secondary solid keeps its hairline border (legacy look).
+    borderColor: ctx.color === 'secondary' ? ctx.border : undefined,
+  };
+}
+
+/** Resolve the soft variant colour set. */
+function softColors(ctx: ColorCtx, dark: boolean): VariantColors {
+  // tinted, low-emphasis fill on the page background.
+  const soft = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)';
+  return { bg: soft, text: ctx.isNeutral ? ctx.neutralText : ctx.a.bg, ghostPressedBg: ctx.ghostPressedBg };
+}
+
+/** Resolve the outline variant colour set. */
+function outlineColors(ctx: ColorCtx): VariantColors {
+  return {
+    bg: 'transparent',
+    text: ctx.isNeutral ? ctx.neutralText : ctx.a.bg,
+    borderColor: ctx.isNeutral ? ctx.border : ctx.a.bg,
+    ghostPressedBg: ctx.ghostPressedBg,
+  };
+}
+
+/** Resolve the ghost variant colour set. */
+function ghostColors(ctx: ColorCtx): VariantColors {
+  return { bg: 'transparent', text: ctx.isNeutral ? ctx.neutralText : ctx.a.bg, ghostPressedBg: ctx.ghostPressedBg };
+}
+
 /** Resolve a colour set from the canonical ChatKit `color` + `variant` model. */
 export function resolveColors(
   color: ButtonColor,
   variant: ButtonControlVariant,
   dark: boolean,
 ): VariantColors {
-  const a = accent(color, dark);
-  const border = schemePalette(dark).border;
-  const ghostPressedBg = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-  const neutralText = schemePalette(dark).head;
-  const isNeutral = color === 'primary' || color === 'secondary';
+  const ctx: ColorCtx = {
+    a: accent(color, dark),
+    border: schemePalette(dark).border,
+    ghostPressedBg: dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+    neutralText: schemePalette(dark).head,
+    isNeutral: color === 'primary' || color === 'secondary',
+    color,
+  };
   switch (variant) {
     case 'solid':
-      return {
-        bg: a.bg,
-        pressedBg: a.pressed,
-        text: a.on,
-        // secondary solid keeps its hairline border (legacy look).
-        borderColor: color === 'secondary' ? border : undefined,
-      };
-    case 'soft': {
-      // tinted, low-emphasis fill on the page background.
-      const soft = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)';
-      return { bg: soft, text: isNeutral ? neutralText : a.bg, ghostPressedBg };
-    }
+      return solidColors(ctx);
+    case 'soft':
+      return softColors(ctx, dark);
     case 'outline':
-      return {
-        bg: 'transparent',
-        text: isNeutral ? neutralText : a.bg,
-        borderColor: isNeutral ? border : a.bg,
-        ghostPressedBg,
-      };
+      return outlineColors(ctx);
     case 'ghost':
-      return { bg: 'transparent', text: isNeutral ? neutralText : a.bg, ghostPressedBg };
+      return ghostColors(ctx);
   }
 }
 

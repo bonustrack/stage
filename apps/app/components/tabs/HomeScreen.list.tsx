@@ -56,96 +56,90 @@ interface ChannelsListProps {
   getRowLayout: (d: ArrayLike<RowT> | null | undefined, index: number) => { length: number; offset: number; index: number };
 }
 
-/** Renders the home screen's scrollable list of channels with search and label filters. */
-export function ChannelsList({
-  panRef, router, sortedRows, requestCount, barLabels, enabledLabels, onToggleLabel,
-  unreadOnly, onToggleUnread, onClearAll,
-  query, setQuery,
-  fg, head, sub, border,
-  listExtraData, listRef, savedOffsetRef, didRestoreRef, contentHeightRef,
-  renderRow, getRowLayout,
-}: ChannelsListProps): React.ReactElement {
-  // Request-count badge: white bg + black text in dark theme. In light theme a
-  // white badge would vanish on the light topnav, so flip to a dark bg + white
-  // text there to stay legible.
+/** Renders Home's contextual right-slot: search, message-requests badge, and overflow menu. */
+function HomeTopnavRight({ head, requestCount, router, onOpenSearch }: {
+  head: string; requestCount: number;
+  router: ChannelsListProps['router']; onOpenSearch: () => void;
+}): React.ReactElement {
+  // Request-count badge: white bg + black text in dark theme; flip in light theme to stay legible.
   const dark = useEffectiveColorScheme() === 'dark';
   const badgeBg = dark ? '#ffffff' : '#000000';
   const badgeFg = dark ? '#000000' : '#ffffff';
-  // Search is collapsed by default: a search icon sits in the topnav, and
-  // tapping it swaps the whole topnav for a full-width search field. Closing
-  // clears the query so the list returns to its full state.
-  const [searchOpen, setSearchOpen] = useState(false);
-  /** Close Search. */
-  const closeSearch = () => { setSearchOpen(false); setQuery(''); };
-
-  /**
-   * Home's contextual right-slot (search / requests / overflow), published to
-   *  the single Topnav hoisted ABOVE the pager in (tabs)/_layout.tsx. The bar is
-   *  no longer rendered inside this page, so a tab-swipe or vertical scroll can't
-   *  move it. Memoised on the values it actually depends on.
-   */
-  const right = useMemo(
-    () => (
-      <>
-        {/* Search opens the full-width search field over the topnav. */}
-        <Pressable onPress={() => { setSearchOpen(true); }} hitSlop={8}>
-          <Icon name="search" size={24} color={head}/>
-        </Pressable>
-        {/* Message requests: inbox icon + count badge (pending 'unknown' consent
-         *  convs). Badge hidden when 0; tap opens the requests list. */}
-        <Pressable onPress={() => { router.push('/xmtp/requests'); }} hitSlop={8} style={{ position: 'relative' }}>
-          <Icon name="inbox" size={24} color={head}/>
-          {requestCount> 0 ? (
-            <Box minWidth={16} height={16} padding={{ x: 5 }}
-              radius="full"
-              background={badgeBg}
-              align="center"
-              justify="center"
-              style={{ position: 'absolute', top: -6, right: -8 }}
->
-              <Text weight="semibold" size="3xs" color={badgeFg}>
-                {requestCount> 99 ? '99+' : requestCount}
-              </Text>
-            </Box>
-          ) : null}
-        </Pressable>
-        {/* Overflow (3-dot) menu: Archived + New-group + Profile + Settings. */}
-        <HomeOverflowMenu
-          color={head}
-          onArchived={() => { router.push('/xmtp/archived'); }}
-          onNewGroup={() => { router.push('/xmtp/new-group'); }}
-          onProfile={() => {
-            // Own-profile tab was removed → view yourself via the shared peer
-            // profile route (/user/[address]) for the active account.
-            void getActiveAccount().then(acct => {
-              if (acct?.address) router.push(`/user/${acct.address}`);
-            });
-          }}
-          onSettings={() => { router.push('/settings'); }}
-/>
-      </>
-    ),
-    [head, requestCount, badgeBg, badgeFg, router],
+  return (
+    <>
+      <Pressable onPress={onOpenSearch} hitSlop={8}>
+        <Icon name="search" size={24} color={head}/>
+      </Pressable>
+      <Pressable onPress={() => { router.push('/xmtp/requests'); }} hitSlop={8} style={{ position: 'relative' }}>
+        <Icon name="inbox" size={24} color={head}/>
+        {requestCount > 0 ? (
+          <Box minWidth={16} height={16} padding={{ x: 5 }} radius="full" background={badgeBg}
+            align="center" justify="center" style={{ position: 'absolute', top: -6, right: -8 }}>
+            <Text weight="semibold" size="3xs" color={badgeFg}>{requestCount > 99 ? '99+' : requestCount}</Text>
+          </Box>
+        ) : null}
+      </Pressable>
+      <HomeOverflowMenu
+        color={head}
+        onArchived={() => { router.push('/xmtp/archived'); }}
+        onNewGroup={() => { router.push('/xmtp/new-group'); }}
+        onProfile={() => {
+          // Own-profile tab was removed → view yourself via /user/[address].
+          void getActiveAccount().then(acct => {
+            if (acct?.address) router.push(`/user/${acct.address}`);
+          });
+        }}
+        onSettings={() => { router.push('/settings'); }}
+      />
+    </>
   );
+}
 
-  /** When search is open the whole bar becomes a full-width search field (a full-bar override that replaces identity+right). Otherwise just the right slot above is published. */
+/** Renders the channels list header: pending-polls banner + label-filter bar. */
+function ChannelsListHeader({ p }: { p: ChannelsListProps }): React.ReactElement {
+  return (
+    <>
+      <ProposalsBanner/>
+      <LabelFilterBar
+        labels={p.barLabels} enabled={p.enabledLabels} unreadOnly={p.unreadOnly}
+        onToggle={p.onToggleLabel} onToggleUnread={p.onToggleUnread} onClearAll={p.onClearAll}
+        panRef={p.panRef}
+      />
+    </>
+  );
+}
+
+/** Publish Home's topnav right-slot + the full-width search override when open. */
+function useHomeTopnav(p: ChannelsListProps, searchOpen: boolean, onOpenSearch: () => void, onCloseSearch: () => void): void {
+  const { head, requestCount, router, query, setQuery, sub, border } = p;
+  const right = useMemo(
+    () => <HomeTopnavRight head={head} requestCount={requestCount} router={router} onOpenSearch={onOpenSearch} />,
+    [head, requestCount, router, onOpenSearch],
+  );
   const override = useMemo(
     () => (searchOpen ? (
-      <ChannelsSearchBar
-        query={query}
-        setQuery={setQuery}
-        onClose={closeSearch}
-        head={head}
-        sub={sub}
-        border={border}
-/>
+      <ChannelsSearchBar query={query} setQuery={setQuery} onClose={onCloseSearch} head={head} sub={sub} border={border} />
     ) : undefined),
-    // closeSearch/setQuery are stable enough; re-derive when search opens, the
-    // query changes, or theming colours change.
-    [searchOpen, query, head, sub, border],
+    [searchOpen, query, setQuery, onCloseSearch, head, sub, border],
   );
-
   usePublishTopnavSlot({ right, override });
+}
+
+/** Renders the home screen's scrollable list of channels with search and label filters. */
+export function ChannelsList(props: ChannelsListProps): React.ReactElement {
+  const {
+    panRef, sortedRows, query, fg, head, sub, border, setQuery,
+    listExtraData, listRef, savedOffsetRef, didRestoreRef, contentHeightRef,
+    renderRow, getRowLayout,
+  } = props;
+  // Search is collapsed by default; opening it swaps the topnav for a full-width
+  // field, closing clears the query so the list returns to its full state.
+  const [searchOpen, setSearchOpen] = useState(false);
+  /** Open the full-width search field. */
+  const openSearch = (): void => { setSearchOpen(true); };
+  /** Close search and clear the query. */
+  const closeSearch = (): void => { setSearchOpen(false); setQuery(''); };
+  useHomeTopnav(props, searchOpen, openSearch, closeSearch);
 
   return (
     <>
@@ -181,22 +175,7 @@ export function ChannelsList({
          *  feed instead of staying pinned under the (fixed) search bar. One
          *  toggle chip per unique label across non-archived channels; hidden
          *  when there are no labels. */
-        ListHeaderComponent={
-          <>
-            {/* Pending-polls banner: under the (fixed) topnav, before the label
-             *  bar. Hidden when there are 0 pending / all skipped this session. */}
-            <ProposalsBanner/>
-            <LabelFilterBar
-              labels={barLabels}
-              enabled={enabledLabels}
-              unreadOnly={unreadOnly}
-              onToggle={onToggleLabel}
-              onToggleUnread={onToggleUnread}
-              onClearAll={onClearAll}
-              panRef={panRef}
-            />
-          </>
-        }
+        ListHeaderComponent={<ChannelsListHeader p={props} />}
         ListEmptyComponent={query.trim() ? null : <HomeEmpty sub={sub} />}
         ListFooterComponent={
           query.trim()

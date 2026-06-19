@@ -57,6 +57,26 @@ async function fetchFollowing(
   throw new SsrfError('too many redirects');
 }
 
+/** Drain `reader` into a single buffer, returning null once the size cap is exceeded. */
+async function drainCapped(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+): Promise<ArrayBuffer | null> {
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (!value) continue;
+    total += value.length;
+    if (total > MAX_IMG_BYTES) { void reader.cancel(); return null; }
+    chunks.push(value);
+  }
+  const out = new Uint8Array(total);
+  let off = 0;
+  for (const c of chunks) { out.set(c, off); off += c.length; }
+  return out.buffer;
+}
+
 /** Read a response body, enforcing the size cap. Returns null if it exceeds the cap (so the caller can fall back / reject rather than buffer unbounded). */
 async function readImageCapped(res: Response): Promise<ArrayBuffer | null> {
   const declared = Number(res.headers.get('content-length') ?? '');
@@ -66,21 +86,7 @@ async function readImageCapped(res: Response): Promise<ArrayBuffer | null> {
     const buf = await res.arrayBuffer();
     return buf.byteLength > MAX_IMG_BYTES ? null : buf;
   }
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (value) {
-      total += value.length;
-      if (total > MAX_IMG_BYTES) { void reader.cancel(); return null; }
-      chunks.push(value);
-    }
-  }
-  const out = new Uint8Array(total);
-  let off = 0;
-  for (const c of chunks) { out.set(c, off); off += c.length; }
-  return out.buffer;
+  return drainCapped(reader);
 }
 
 /** Image Content Type. */

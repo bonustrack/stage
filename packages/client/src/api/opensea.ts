@@ -14,6 +14,7 @@
  */
 
 import { parseOpenseaResponse } from './opensea.schema';
+import type { ApiNft } from './opensea.types';
 export type { ApiNft } from './opensea.types';
 
 const DEFAULT_KEY =
@@ -88,24 +89,28 @@ export async function getNfts(
 
   return nfts
     .filter(a => SUPPORTED_ABIS.includes(a.token_standard))
-    .map(a => {
-      const tokenId = a.identifier;
-      const baseName = a.name ?? '';
-      const title =
-        baseName && (/(#[0-9]+)$/.test(baseName) || !tokenId)
-          ? baseName
-          : tokenId
-            ? `${baseName || a.collection || 'Untitled'} #${tokenId}`
-            : baseName || 'Untitled';
-      return {
-        id: `${a.contract}:${tokenId}`,
-        chainId,
-        title,
-        collection: a.collection ?? '',
-        image: a.image_url ?? '',
-        openseaUrl: a.opensea_url ?? '',
-      };
-    });
+    .map(a => toNft(a, chainId));
+}
+
+/** Derive the display title for one OpenSea NFT, appending `#<identifier>` unless the name already carries it (or there is no token id). */
+function nftTitle(a: ApiNft): string {
+  const tokenId = a.identifier;
+  const baseName = a.name ?? '';
+  if (baseName && (/(#[0-9]+)$/.test(baseName) || !tokenId)) return baseName;
+  if (tokenId) return `${baseName || a.collection || 'Untitled'} #${tokenId}`;
+  return baseName || 'Untitled';
+}
+
+/** Shape one raw OpenSea NFT into the normalised Nft row the wallet grid renders. */
+function toNft(a: ApiNft, chainId: string): Nft {
+  return {
+    id: `${a.contract}:${a.identifier}`,
+    chainId,
+    title: nftTitle(a),
+    collection: a.collection ?? '',
+    image: a.image_url ?? '',
+    openseaUrl: a.opensea_url ?? '',
+  };
 }
 
 /** Chains we fan out across when loading the wallet's NFT grid. */

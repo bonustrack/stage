@@ -33,6 +33,38 @@ function phaseToStage(p?: PendingAction['phase']): ShieldStage {
   }
 }
 
+/** True while a flow stage is mid-flight (submitting/confirming/scanning). */
+function isBusyStage(stage: ShieldStage): boolean {
+  return stage === 'submitting' || stage === 'confirming' || stage === 'scanning';
+}
+
+/** Pick the newest `shield` pending row started at/after this submit. */
+function pickShieldAction(list: PendingAction[] | undefined, submittedAt: number): PendingAction | null {
+  const mine = (list ?? [])
+    .filter(a => a.kind === 'shield' && a.startedAt >= submittedAt - 2000)
+    .sort((a, b) => b.startedAt - a.startedAt)[0];
+  return mine ?? null;
+}
+
+/** Whether the amount is a positive finite number and the bridge can run a flow now. */
+function canRunFlow(amount: string, busy: boolean): boolean {
+  const n = Number(amount);
+  return isFinite(n) && n > 0 && !busy && isBridgeAvailable();
+}
+
+/** Footer label for the shield body keyed off busy + done. */
+function shieldSubmitLabel(busy: boolean, stage: ShieldStage): string {
+  if (busy) return 'Shielding…';
+  return stage === 'done' ? 'Shielded ✓' : 'Shield';
+}
+
+/** Footer label for the send body keyed off the stage. */
+function sendSubmitLabel(stage: ShieldStage): string {
+  if (stage === 'submitting') return 'Proving…';
+  if (stage === 'confirming' || stage === 'scanning') return 'Broadcasting…';
+  return stage === 'done' ? 'Sent ✓' : 'Send';
+}
+
 export interface ShieldFlowFormProps {
   /** "shield" = public→private deposit (locked own 0zk); "send" = private→private transfer to any 0zk address. */
   mode: 'shield' | 'send';
@@ -75,12 +107,7 @@ function ShieldBody({ pal, dark, zkAddress, initialSymbol, initialChainId, onFoo
       const id = await getActiveAccountId();
       if (!id || cancelled) return;
       /** Read helper. */
-      const read = (list: PendingAction[] | undefined): void => {
-        const mine = (list ?? [])
-          .filter(a => a.kind === 'shield' && a.startedAt >= submittedAt - 2000)
-          .sort((a, b) => b.startedAt - a.startedAt)[0];
-        setAction(mine ?? null);
-      };
+      const read = (list: PendingAction[] | undefined): void => { setAction(pickShieldAction(list, submittedAt)); };
       read(pendingStore.get(id));
       unsub = pendingStore.subscribe(id, read);
     })();
@@ -89,9 +116,8 @@ function ShieldBody({ pal, dark, zkAddress, initialSymbol, initialChainId, onFoo
 
   const stage = err ? 'error' : phaseToStage(action?.phase);
   const txHash = action?.txHash ?? null;
-  const n = Number(amount);
-  const busy = stage === 'submitting' || stage === 'confirming' || stage === 'scanning';
-  const canSubmit = !!zkAddress && isFinite(n) && n > 0 && !busy && isBridgeAvailable();
+  const busy = isBusyStage(stage);
+  const canSubmit = !!zkAddress && canRunFlow(amount, busy);
 
   /** Handle the Submit. */
   const onSubmit = (): void => {
@@ -108,7 +134,7 @@ function ShieldBody({ pal, dark, zkAddress, initialSymbol, initialChainId, onFoo
 
   // Report the primary-button state up so the page renders it in the pinned
   // footer (keeps the form as the source of truth for label/disabled/loading).
-  const submitLabel = busy ? 'Shielding…' : stage === 'done' ? 'Shielded ✓' : 'Shield';
+  const submitLabel = shieldSubmitLabel(busy, stage);
   useEffect(() => {
     onFooter?.({ submitLabel, onSubmit, submitDisabled: !canSubmit, submitLoading: busy });
   }, [onFooter, submitLabel, canSubmit, busy, onSubmit]);
@@ -139,10 +165,9 @@ function SendBody({ pal, dark, symbol = 'ETH', chainId = 1, balance = null, onFo
   const [err, setErr] = useState<string | null>(null);
   const [errPhase, setErrPhase] = useState<string | null>(null);
 
-  const n = Number(amount);
-  const busy = stage === 'submitting' || stage === 'confirming' || stage === 'scanning';
+  const busy = isBusyStage(stage);
   const validTo = to.trim().toLowerCase().startsWith('0zk');
-  const canSubmit = validTo && isFinite(n) && n > 0 && !busy && isBridgeAvailable();
+  const canSubmit = validTo && canRunFlow(amount, busy);
 
   /** Handle the Submit. */
   const onSubmit = (): void => {
@@ -168,9 +193,7 @@ function SendBody({ pal, dark, symbol = 'ETH', chainId = 1, balance = null, onFo
     })();
   };
 
-  const submitLabel = stage === 'submitting' ? 'Proving…'
-    : stage === 'confirming' || stage === 'scanning' ? 'Broadcasting…'
-    : stage === 'done' ? 'Sent ✓' : 'Send';
+  const submitLabel = sendSubmitLabel(stage);
   useEffect(() => {
     onFooter?.({ submitLabel, onSubmit, submitDisabled: !canSubmit, submitLoading: busy });
   }, [onFooter, submitLabel, canSubmit, busy, onSubmit]);

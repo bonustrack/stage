@@ -39,6 +39,53 @@ export interface RadioGroupProps {
   style?: ViewStyle | ViewStyle[];
 }
 
+/** Normalise the escape-hatch style prop to a flat array. */
+function styleList(style: ViewStyle | ViewStyle[] | undefined): ViewStyle[] {
+  if (!style) return [];
+  return Array.isArray(style) ? style : [style];
+}
+
+/** A single radio option row: dot + label. */
+function RadioOptionRow(props: {
+  opt: RadioOption;
+  selected: string | undefined;
+  groupDisabled: boolean;
+  size: number;
+  head: string;
+  border: string;
+  onPick: (v: string) => void;
+}): React.ReactElement {
+  const { opt, selected, groupDisabled, size, head, border, onPick } = props;
+  const isSel = opt.value === selected;
+  const optDisabled = groupDisabled || (opt.disabled ?? false);
+  const outer: ViewStyle = {
+    width: size,
+    height: size,
+    borderRadius: size / 2,
+    borderWidth: 1.5,
+    borderColor: isSel ? head : border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  };
+  return (
+    <Pressable
+      accessibilityRole="radio"
+      accessibilityState={{ selected: isSel, disabled: optDisabled }}
+      accessibilityLabel={opt.label}
+      disabled={optDisabled}
+      onPress={() => { onPick(opt.value); }}
+      style={{ flexDirection: 'row', alignItems: 'center', gap: 10, opacity: optDisabled ? 0.5 : 1 }}
+    >
+      <View style={outer}>
+        {isSel ? (
+          <View style={{ width: size * 0.5, height: size * 0.5, borderRadius: size * 0.25, backgroundColor: head }} />
+        ) : null}
+      </View>
+      <RNText style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Medium' }}>{opt.label}</RNText>
+    </Pressable>
+  );
+}
+
 /** ChatKit-style RN radio group. */
 export function RadioGroup(props: RadioGroupProps): React.ReactElement {
   const {
@@ -73,47 +120,21 @@ export function RadioGroup(props: RadioGroupProps): React.ReactElement {
       accessibilityLabel={ariaLabel ?? name}
       style={[
         { flexDirection: direction === 'row' ? 'row' : 'column', gap: 12 },
-        ...(style ? (Array.isArray(style) ? style : [style]) : []),
+        ...styleList(style),
       ]}
     >
-      {options.map((opt) => {
-        const isSel = opt.value === selected;
-        const optDisabled = (groupDisabled ?? false) || (opt.disabled ?? false);
-        const outer: ViewStyle = {
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          borderWidth: 1.5,
-          borderColor: isSel ? head : border,
-          alignItems: 'center',
-          justifyContent: 'center',
-        };
-        return (
-          <Pressable
-            key={opt.value}
-            accessibilityRole="radio"
-            accessibilityState={{ selected: isSel, disabled: optDisabled }}
-            accessibilityLabel={opt.label}
-            disabled={optDisabled}
-            onPress={() => { pick(opt.value); }}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 10, opacity: optDisabled ? 0.5 : 1 }}
-          >
-            <View style={outer}>
-              {isSel ? (
-                <View
-                  style={{
-                    width: size * 0.5,
-                    height: size * 0.5,
-                    borderRadius: size * 0.25,
-                    backgroundColor: head,
-                  }}
-                />
-              ) : null}
-            </View>
-            <RNText style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Medium' }}>{opt.label}</RNText>
-          </Pressable>
-        );
-      })}
+      {options.map((opt) => (
+        <RadioOptionRow
+          key={opt.value}
+          opt={opt}
+          selected={selected}
+          groupDisabled={groupDisabled ?? false}
+          size={size}
+          head={head}
+          border={border}
+          onPick={pick}
+        />
+      ))}
     </View>
   );
 }

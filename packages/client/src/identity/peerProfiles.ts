@@ -54,20 +54,22 @@ async function lookupNamesChunk(addrs: string[]): Promise<Record<string, string>
     });
     if (!res.ok) return null;
     const json: unknown = await res.json();
-    const result =
-      typeof json === 'object' && json !== null && 'result' in json
-        ? json.result
-        : undefined;
-    const out: Record<string, string> = {};
-    if (typeof result === 'object' && result !== null) {
-      for (const [addr, name] of Object.entries(result)) {
-        if (typeof name === 'string' && name.trim()) out[addr.toLowerCase()] = name.trim();
-      }
-    }
-    return out;
+    return namesFromResult(json);
   } catch {
     return null;
   }
+}
+
+/** Extract a lower-cased `{ address → trimmed name }` map from a stamp.fyi response body, skipping blank/non-string names. */
+function namesFromResult(json: unknown): Record<string, string> {
+  const result =
+    typeof json === 'object' && json !== null && 'result' in json ? json.result : undefined;
+  const out: Record<string, string> = {};
+  if (typeof result !== 'object' || result === null) return out;
+  for (const [addr, name] of Object.entries(result)) {
+    if (typeof name === 'string' && name.trim()) out[addr.toLowerCase()] = name.trim();
+  }
+  return out;
 }
 
 /** Get the Batch. */

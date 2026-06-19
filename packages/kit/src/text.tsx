@@ -129,6 +129,47 @@ const ALIGN_MAP: Record<TextAlign, TextStyle['textAlign']> = {
   end: 'right',
 };
 
+/** Resolve the text colour from an explicit `color` token or the semantic role. */
+function textColor(
+  color: ColorToken | (string & {}) | undefined,
+  scheme: 'light' | 'dark',
+  role: TextRole,
+  palette: KitPalette,
+): string {
+  return color != null ? resolveColorToken(color, scheme) : roleColor(role, palette);
+}
+
+/** The subset of Text props that drive the base text style. */
+type StyleProps = Pick<
+  TextProps,
+  'color' | 'role' | 'variant' | 'size' | 'weight' | 'textAlign' | 'italic' | 'lineThrough'
+>;
+
+/** Build the base text style from the style-driving props. */
+function buildBaseStyle(
+  p: StyleProps,
+  scheme: 'light' | 'dark',
+  palette: KitPalette,
+): TextStyle {
+  const { color, role, variant, size, weight = 'normal', textAlign, italic, lineThrough } = p;
+  const effectiveRole: TextRole = role ?? variantRole(variant);
+  const base: TextStyle = {
+    color: textColor(color, scheme, effectiveRole, palette),
+    fontSize: resolveSize(size, variant),
+    fontFamily: variant === 'mono' ? 'Menlo' : FONTS[normalizeWeight(weight)],
+  };
+  if (textAlign) base.textAlign = ALIGN_MAP[textAlign];
+  if (italic) base.fontStyle = 'italic';
+  if (lineThrough) base.textDecorationLine = 'line-through';
+  return base;
+}
+
+/** Normalise the escape-hatch style prop merged onto the base style. */
+function mergeStyle(base: TextStyle, style: TextStyle | TextStyle[] | undefined): TextStyle | TextStyle[] {
+  if (!style) return base;
+  return [base, ...(Array.isArray(style) ? style : [style])];
+}
+
 /** OpenAI ChatKit-API RN text. */
 export function Text(props: TextProps): React.ReactElement {
   const {
@@ -136,11 +177,11 @@ export function Text(props: TextProps): React.ReactElement {
     role,
     variant,
     size,
-    weight = 'normal',
+    weight,
     color,
     textAlign,
-    italic = false,
-    lineThrough = false,
+    italic,
+    lineThrough,
     truncate = false,
     maxLines,
     style,
@@ -150,28 +191,14 @@ export function Text(props: TextProps): React.ReactElement {
 
   const palette = useKitPalette();
   const scheme = useKitScheme();
-  const effectiveRole: TextRole = role ?? variantRole(variant);
 
-  const base: TextStyle = {
-    color: color != null
-      ? resolveColorToken(color, scheme)
-      : roleColor(effectiveRole, palette),
-    fontSize: resolveSize(size, variant),
-    fontFamily: variant === 'mono' ? 'Menlo' : FONTS[normalizeWeight(weight)],
-  };
-  if (textAlign) base.textAlign = ALIGN_MAP[textAlign];
-  if (italic) base.fontStyle = 'italic';
-  if (lineThrough) base.textDecorationLine = 'line-through';
-
+  const styleProps: StyleProps = { role, variant, size, weight, color, textAlign, italic, lineThrough };
+  const base = buildBaseStyle(styleProps, scheme, palette);
   const clamp = truncate ? 1 : maxLines;
   const content = children ?? value;
 
   return (
-    <RNText
-      style={style ? [base, ...(Array.isArray(style) ? style : [style])] : base}
-      numberOfLines={clamp}
-      {...rest}
-    >
+    <RNText style={mergeStyle(base, style)} numberOfLines={clamp} {...rest}>
       {content}
     </RNText>
   );

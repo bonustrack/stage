@@ -41,6 +41,40 @@ function hasLiveShield(accountId: string, chainId: number): boolean {
   );
 }
 
+/** Minimal viem public client shape this watcher uses for block/nonce reads. */
+type ShieldRpcClient = ReturnType<typeof createPublicClient>;
+
+/** Register a synthetic pending shield for a detected EOA->proxy tx hash and hand off to the balance-scan watcher; no-op if already tracked. */
+function registerDetectedShield(accountId: string, chainId: number, txHash: Hex): void {
+  const id = `shield-eoa-${txHash}`;
+  if ((pendingStore.get(accountId) ?? []).some(p => p.id === id)) return;
+  addPending(accountId, {
+    id, kind: 'shield', symbol: 'ETH', chainId,
+    delta: '0', phase: 'broadcasting', txHash, startedAt: Date.now(),
+  });
+  watchShieldLanding(accountId, id, chainId);
+}
+
+/** Scan the latest few blocks for an EOA->proxy shield and register it when found. */
+async function scanRecentBlocksForShield(
+  client: ShieldRpcClient, accountId: string, eoa: Hex, proxy: Hex, chainId: number,
+): Promise<void> {
+  const tip = await client.getBlockNumber();
+  for (let i = 0n; i < LOOKBACK_BLOCKS; i++) {
+    if (tip - i < 0n) break;
+    const block = await client.getBlock({ blockNumber: tip - i, includeTransactions: true });
+    const hit = block.transactions.find(
+      tx => typeof tx !== 'string'
+        && tx.from.toLowerCase() === eoa.toLowerCase()
+        && tx.to?.toLowerCase() === proxy.toLowerCase(),
+    );
+    if (hit && typeof hit !== 'string') {
+      registerDetectedShield(accountId, chainId, hit.hash);
+      return;
+    }
+  }
+}
+
 /** Poll the EOA for an in-flight shield to the Railgun proxy on one chain. */
 async function pollOnce(accountId: string, eoa: Hex, chainId: number): Promise<void> {
   if (hasLiveShield(accountId, chainId)) return;
@@ -57,28 +91,7 @@ async function pollOnce(accountId: string, eoa: Hex, chainId: number): Promise<v
   if (pendingN <= latestN) return; // nothing in flight
 
   // Nonce gap → inspect the latest few blocks for a shield to the proxy.
-  const tip = await client.getBlockNumber();
-  for (let i = 0n; i < LOOKBACK_BLOCKS; i++) {
-    if (tip - i < 0n) break;
-    const block = await client.getBlock({ blockNumber: tip - i, includeTransactions: true });
-    const hit = block.transactions.find(
-      tx => typeof tx !== 'string'
-        && tx.from.toLowerCase() === eoa.toLowerCase()
-        && tx.to?.toLowerCase() === proxy.toLowerCase(),
-    );
-    if (hit && typeof hit !== 'string') {
-      // Register a synthetic pending shield (amount unknown → delta '0' so the
-      // optimistic overlay doesn't fake a balance) and hand off to the scan.
-      const id = `shield-eoa-${hit.hash}`;
-      if ((pendingStore.get(accountId) ?? []).some(p => p.id === id)) return;
-      addPending(accountId, {
-        id, kind: 'shield', symbol: 'ETH', chainId,
-        delta: '0', phase: 'broadcasting', txHash: hit.hash, startedAt: Date.now(),
-      });
-      watchShieldLanding(accountId, id, chainId);
-      return;
-    }
-  }
+  await scanRecentBlocksForShield(client, accountId, eoa, proxy, chainId);
 }
 
 /** Start watching the EOA's pending shields across both chains. Returns a stop fn. No-op-safe: swallows RPC errors so a flaky endpoint never breaks the tab. */

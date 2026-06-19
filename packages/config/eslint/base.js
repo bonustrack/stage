@@ -157,6 +157,26 @@ export const COMMENT_RULES = {
   "stage/file-header-max-lines": ["error", { max: 3 }],
 };
 
+/** The `max-lines-per-function` value used everywhere: cap a single function at
+ *  100 lines. `skipBlankLines` + `skipComments` mean the JSDoc/`@file` headers
+ *  and blank lines a function carries do NOT count toward the limit (so the
+ *  comment-convention rules above never push a function over the cap), and
+ *  `IIFEs: true` counts immediately-invoked function expressions too. Extract a
+ *  helper / split the logic rather than crossing it. */
+export const MAX_LINES_PER_FUNCTION = ["error", { max: 100, skipBlankLines: true, skipComments: true, IIFEs: true }];
+
+/** The `complexity` value used everywhere: cap a function's cyclomatic
+ *  complexity at 10 (a sane default). Split branchy logic into smaller,
+ *  separately-testable functions rather than crossing it. */
+export const COMPLEXITY = ["error", 10];
+
+/** The shared function-size rule set spread into every preset (alongside
+ *  COMMENT_RULES): cap each function at 100 lines and cyclomatic complexity 10. */
+export const FUNCTION_SIZE_RULES = {
+  "max-lines-per-function": MAX_LINES_PER_FUNCTION,
+  complexity: COMPLEXITY,
+};
+
 /** typescript-eslint's `strict-type-checked` + `stylistic-type-checked` flat
  *  configs. These are the TYPE-AWARE presets: they need type information, which
  *  the consumer supplies by enabling the type-checked language options (see
@@ -262,6 +282,9 @@ export function strictTsBlock({ files = ["src/**/*.{ts,tsx}"], tsconfigRootDir, 
       // Comment conventions: 1 JSDoc per function, 1 line each, `@file` header
       // on every file (capped at 3 lines), `/** */` blocks only.
       ...COMMENT_RULES,
+      // Function size: cap each function at 100 lines (skipping blanks/comments)
+      // and cyclomatic complexity at 10. Extract helpers rather than crossing.
+      ...FUNCTION_SIZE_RULES,
     },
   };
 }

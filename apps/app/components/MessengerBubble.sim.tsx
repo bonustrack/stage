@@ -12,6 +12,31 @@ import type { SimulateResult, AssetMove } from '../lib/txSimulate';
 import { NATIVE_TOKEN_SENTINEL } from '@stage-labs/client/wallet/assets';
 import { useUsdValue } from '../lib/txPrices';
 
+/** Renders the resolved (success/fail) simulation outcome: badge + predicted asset movements. */
+function SimOutcome({ sim, sub, chainId }: {
+  sim: SimulateResult; sub: string; chainId: number;
+}): React.ReactElement {
+  const pal = usePalette();
+  const fail = !sim.success;
+  const { in: incoming, out } = sim.assetChanges;
+  const noChange = incoming.length === 0 && out.length === 0;
+  // FAIL gets the red danger frame (loud); SUCCESS a calm success-tinted box.
+  const accent = fail ? pal.danger : pal.success;
+  const badge = fail ? `Will fail: ${sim.revertReason ?? 'transaction would revert'}` : 'Will succeed';
+  return (
+    <Box radius="md" padding={10} gap={8} background={withAlpha(accent, 0.1)}
+      style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: accent }}>
+      <Row align="center" gap={6}>
+        <Icon name={fail ? 'shieldExclamation' : 'checkCircle'} size={14} color={accent} />
+        <Text size="xs" weight="semibold" color={accent} numberOfLines={3}>{badge}</Text>
+      </Row>
+      {out.map((m, i) => <AssetMoveRow key={`o-${i}`} move={m} sign="-" color={pal.danger} label="You send" sub={sub} chainId={chainId} />)}
+      {incoming.map((m, i) => <AssetMoveRow key={`i-${i}`} move={m} sign="+" color={pal.success} label="You receive" sub={sub} chainId={chainId} />)}
+      {!fail && noChange ? <Text size="xs" color={sub}>No balance changes</Text> : null}
+    </Box>
+  );
+}
+
 /** Renders the pre-sign transaction simulation result (success/fail badge and predicted asset movements). */
 export function SimulationBlock({ sim, pending, sub, chainId }: {
   sim: SimulateResult | null; pending: boolean; sub: string; chainId: number;
@@ -23,27 +48,7 @@ export function SimulationBlock({ sim, pending, sub, chainId }: {
   if (sim.success === 'unknown') {
     return <SimNote text="Could not simulate this transaction" sub={sub} bg={pal.border} />;
   }
-  const fail = !sim.success;
-  const { in: incoming, out } = sim.assetChanges;
-  const noChange = incoming.length === 0 && out.length === 0;
-  // FAIL gets the red danger frame (loud); SUCCESS a calm success-tinted box.
-  const accent = fail ? pal.danger : pal.success;
-  return (
-    <Box radius="md" padding={10} gap={8} background={withAlpha(accent, 0.1)}
-      style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: accent }}>
-      <Row align="center" gap={6}>
-        <Icon name={fail ? 'shieldExclamation' : 'checkCircle'} size={14} color={accent} />
-        <Text size="xs" weight="semibold" color={accent} numberOfLines={3}>
-          {fail
-            ? `Will fail: ${sim.revertReason ?? 'transaction would revert'}`
-            : 'Will succeed'}
-        </Text>
-      </Row>
-      {out.map((m, i) => <AssetMoveRow key={`o-${i}`} move={m} sign="-" color={pal.danger} label="You send" sub={sub} chainId={chainId} />)}
-      {incoming.map((m, i) => <AssetMoveRow key={`i-${i}`} move={m} sign="+" color={pal.success} label="You receive" sub={sub} chainId={chainId} />)}
-      {!fail && noChange ? <Text size="xs" color={sub}>No balance changes</Text> : null}
-    </Box>
-  );
+  return <SimOutcome sim={sim} sub={sub} chainId={chainId} />;
 }
 
 /** A neutral one-line note box (pending / could-not-simulate states). */
