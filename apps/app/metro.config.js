@@ -111,6 +111,16 @@ config.resolver.extraNodeModules = {
 // that sits alongside it in the same package — no hard-coded bun-store hash.
 const upstreamResolveRequest = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (context, moduleName, platform) => {
+  // WEB-ONLY: expo-secure-store has no browser implementation (it's the iOS
+  // Keychain / Android Keystore), so `expo start --web` crashes at boot. Swap in
+  // a localStorage-backed shim for web bundles only; native keeps the real
+  // module. Test convenience for UI walkthroughs — not a production secret store.
+  if (platform === 'web' && moduleName === 'expo-secure-store') {
+    return {
+      type: 'sourceFile',
+      filePath: path.resolve(projectRoot, 'metro.shims', 'secureStore.web.js'),
+    };
+  }
   const resolved = upstreamResolveRequest
     ? upstreamResolveRequest(context, moduleName, platform)
     : context.resolveRequest(context, moduleName, platform);
