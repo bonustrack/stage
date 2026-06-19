@@ -48,10 +48,12 @@ const LINK_PREFIX =
   // OR  https://{metro,stage}.box/  optionally hash-routed (#/...)
   '|https?:\\/\\/(?:metro|stage)\\.box\\/(?:#\\/)?)';
 
-/** Compiled once at module load — these detectors run per URL-shaped token on
+/**
+ * Compiled once at module load — these detectors run per URL-shaped token on
  *  every message render (see apps/app/lib/cardLinks classify), so recompiling a
  *  fresh RegExp on each call is pure waste. The patterns are stateless (no `/g`
- *  flag), so shared reuse carries no `lastIndex` hazard. */
+ *  flag), so shared reuse carries no `lastIndex` hazard.
+ */
 const DM_PEER_RE = new RegExp(LINK_PREFIX + '(?:xmtp\\/)?user\\/(0x[a-fA-F0-9]{40})');
 const CONV_ID_RE = new RegExp(LINK_PREFIX + 'xmtp\\/(?!user\\/)([^\\s/?#]+)');
 
