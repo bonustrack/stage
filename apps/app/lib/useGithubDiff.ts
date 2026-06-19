@@ -162,7 +162,10 @@ export function useGithubDiff(ref: GithubRef | null): {
 } {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['githubDiff', ref?.url ?? ''],
-    queryFn: () => fetchGithubDiff(ref!),
+    queryFn: () => {
+      if (ref === null) throw new Error('useGithubDiff: queryFn ran without a ref');
+      return fetchGithubDiff(ref);
+    },
     enabled: !!ref,
     staleTime: 10 * 60_000,
     gcTime: 60 * 60_000,

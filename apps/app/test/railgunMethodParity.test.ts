@@ -13,16 +13,22 @@
  *  A failure here means run `node apps/app/scripts/gen-railgun-methods.mjs` and
  *  reconcile sdkDispatch.js - it CANNOT ship a silent runtime gap. */
 
+import { createRequire } from 'node:module';
 import { describe, expect, test } from 'bun:test';
 import { railgunMethodManifest, SDK_METHODS } from '@stage-labs/client/railgun';
 import generated from '../nodejs-assets/nodejs-project/railgun-methods.json';
-// The host whitelist (plain CJS; its requires of the native SDK are lazy, so
-// importing the module here does NOT pull in @railgun-community/wallet).
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const sdkDispatch = require('../nodejs-assets/nodejs-project/sdkDispatch.js') as {
+
+/** The Node host whitelist module's public surface (plain CJS). */
+interface SdkDispatch {
   listMethods(): string[];
   assertWhitelistParity(): { ok: boolean; skipped: boolean; missingInHost: string[]; extraInHost: string[] };
-};
+}
+
+// The host whitelist is plain CJS (its requires of the native SDK are lazy, so
+// loading it here does NOT pull in @railgun-community/wallet). Use createRequire
+// to load the CJS module from this ESM test without the banned bare `require`.
+const requireCjs = createRequire(import.meta.url);
+const sdkDispatch = requireCjs('../nodejs-assets/nodejs-project/sdkDispatch.js') as SdkDispatch;
 
 describe('railgun method contract parity', () => {
   test('generated manifest matches the contract const (codegen not stale)', () => {

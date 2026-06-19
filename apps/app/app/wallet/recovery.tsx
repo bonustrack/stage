@@ -26,7 +26,7 @@ import {
   zerodevConfigured, installGuardians, updateGuardians, cancelRecovery,
   signRecoveryApproval, sendRecoveryApproval, smartOwnerSigner,
 } from '../../lib/zerodev';
-import type { Address, Hex } from 'viem';
+import type { Address } from 'viem';
 
 /** Screen for setting up or approving smart-account social recovery. */
 export default function WalletRecovery(): React.ReactElement {
@@ -131,7 +131,7 @@ export default function WalletRecovery(): React.ReactElement {
       <ActionPage title="Approve recovery" head={head} bg={bg} border={border} onBack={() => { router.back(); }}>
         <ApprovalCard pal={pal} dark={dark}
           wallet={params.wallet ?? ''} newOwner={params.newOwner ?? ''}
-          onApprove={onApprove} approving={approving} approved={approved}/>
+          onApprove={() => { void onApprove(); }} approving={approving} approved={approved}/>
       </ActionPage>
     );
   }

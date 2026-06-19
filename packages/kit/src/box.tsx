@@ -89,7 +89,7 @@ export function Box({
     background !== undefined && isColorToken(background)
       ? resolveColorToken(background, scheme)
       : background;
-  const bg = override !== undefined ? override : surfaceColor(surface, palette);
+  const bg = override ?? surfaceColor(surface, palette);
 
   const computed = boxStyleEntries({
     direction,

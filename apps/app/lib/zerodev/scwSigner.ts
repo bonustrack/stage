@@ -24,7 +24,7 @@ import { SCW_CHAIN_ID } from './config';
  *  Client.create / Client.build / revokeInstallations alike. */
 export function scwSigner(kernelClient: KernelAccountClient, scwAddress: string): XmtpSigner {
   return {
-    getIdentifier: async () => new PublicIdentity(scwAddress, 'ETHEREUM'),
+    getIdentifier: () => Promise.resolve(new PublicIdentity(scwAddress, 'ETHEREUM')),
     getChainId: () => SCW_CHAIN_ID,
     getBlockNumber: () => undefined,
     signerType: () => 'SCW',

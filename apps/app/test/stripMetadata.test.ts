@@ -14,7 +14,7 @@ import { stripMetadataBytes, isStrippableImage } from '../lib/stripMetadata';
 
 /** Helper: does buf contain the ASCII marker anywhere? */
 function contains(buf: Uint8Array, ascii: string): boolean {
-  const needle = [...ascii].map((c) => c.charCodeAt(0));
+  const needle = Array.from(ascii).map((c) => c.charCodeAt(0));
   outer: for (let i = 0; i + needle.length <= buf.length; i += 1) {
     for (let j = 0; j < needle.length; j += 1) if (buf[i + j] !== needle[j]) continue outer;
     return true;
@@ -57,9 +57,10 @@ function makeJpegWithExif(): Uint8Array {
   for (const c of lightStr) tiff.push(c.charCodeAt(0));
   // Drop in obvious GPS/timestamp ASCII leaks at the tail so contains() can find them pre-strip.
   for (const c of 'GPSLatitude 51.5074 GPSLongitude -0.1278 2026:06:08 12:00:00') tiff.push(c.charCodeAt(0));
-  const app1Payload = [...'Exif\0\0'].map((c) => c.charCodeAt(0)).concat(tiff);
+  const app1Payload = Array.from('Exif\0\0').map((c) => c.charCodeAt(0)).concat(tiff);
   const app1Len = app1Payload.length + 2;
-  const iccPayload = [...'ICC_PROFILE\0'].map((c) => c.charCodeAt(0)).concat([1, 1, ...Array(32).fill(0x5a)]);
+  const iccFill: number[] = Array.from({ length: 32 }, () => 0x5a);
+  const iccPayload = Array.from('ICC_PROFILE\0').map((c) => c.charCodeAt(0)).concat([1, 1, ...iccFill]);
   const iccLen = iccPayload.length + 2;
   const dqt = [0xff, 0xdb, 0x00, 0x04, 0x00, 0x00];
   return Uint8Array.from([
@@ -106,7 +107,7 @@ function makePngWithText(): Uint8Array {
     const len = data.length;
     return [
       (len >> 24) & 0xff, (len >> 16) & 0xff, (len >> 8) & 0xff, len & 0xff,
-      ...[...type].map((c) => c.charCodeAt(0)),
+      ...Array.from(type).map((c) => c.charCodeAt(0)),
       ...data,
       0, 0, 0, 0, // placeholder CRC
     ];
@@ -114,8 +115,8 @@ function makePngWithText(): Uint8Array {
   return Uint8Array.from([
     ...sig,
     ...chunk('IHDR', [0, 0, 0, 1, 0, 0, 0, 1, 8, 2, 0, 0, 0]),
-    ...chunk('tEXt', [...'Comment\0secret GPS here'].map((c) => c.charCodeAt(0))),
-    ...chunk('eXIf', [...'GPSdata'].map((c) => c.charCodeAt(0))),
+    ...chunk('tEXt', Array.from('Comment\0secret GPS here').map((c) => c.charCodeAt(0))),
+    ...chunk('eXIf', Array.from('GPSdata').map((c) => c.charCodeAt(0))),
     ...chunk('IDAT', [0x78, 0x9c, 0x00]),
     ...chunk('IEND', []),
   ]);
@@ -123,7 +124,7 @@ function makePngWithText(): Uint8Array {
 
 /** Build a tiny WebP with an EXIF chunk. RIFF 'WEBP' + VP8X + EXIF + VP8. */
 function makeWebpWithExif(): Uint8Array {
-  const fourcc = (s: string): number[] => [...s].map((c) => c.charCodeAt(0));
+  const fourcc = (s: string): number[] => Array.from(s).map((c) => c.charCodeAt(0));
   const chunk = (cc: string, data: number[]): number[] => {
     const sz = data.length;
     const padded = sz & 1 ? [...data, 0] : data;
@@ -232,7 +233,7 @@ describe('stripMetadataBytes - WebP', () => {
 
 describe('stripMetadataBytes - unsupported formats', () => {
   test('passes non-image bytes through unchanged and reports stripped=false', () => {
-    const pdf = Uint8Array.from([...'%PDF-1.7 /Author Less /CreationDate 2026'].map((c) => c.charCodeAt(0)));
+    const pdf = Uint8Array.from(Array.from('%PDF-1.7 /Author Less /CreationDate 2026').map((c) => c.charCodeAt(0)));
     const { bytes, stripped, format } = stripMetadataBytes(pdf);
     expect(format).toBe('unsupported');
     expect(stripped).toBe(false);

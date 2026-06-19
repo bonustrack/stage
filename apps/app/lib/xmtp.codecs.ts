@@ -80,7 +80,7 @@ export const XMTP_CODECS = [
  *  undefined" inside the native registration handler. */
 function signerForAccount(account: PrivateKeyAccount): Signer {
   return {
-    getIdentifier: async () => new PublicIdentity(account.address, 'ETHEREUM'),
+    getIdentifier: () => Promise.resolve(new PublicIdentity(account.address, 'ETHEREUM')),
     getChainId: () => 1,
     getBlockNumber: () => undefined,
     signerType: () => 'EOA',
@@ -128,7 +128,7 @@ async function signerForSmart(rec: AccountRecord): Promise<Signer> {
     const hdIndex = rec.hdIndex;
     const ownerAddr = await smartOwnerAddress(hdIndex);
     return {
-      getIdentifier: async () => new PublicIdentity(ownerAddr, 'ETHEREUM'),
+      getIdentifier: () => Promise.resolve(new PublicIdentity(ownerAddr, 'ETHEREUM')),
       getChainId: () => 1,
       getBlockNumber: () => undefined,
       signerType: () => 'EOA',

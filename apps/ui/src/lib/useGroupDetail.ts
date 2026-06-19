@@ -64,7 +64,9 @@ export function useGroupDetail(): GroupDetail {
     return false;
   });
 
-  watchEffect(async () => {
+  watchEffect(() => { void runGroupDetailEffect(); });
+
+  async function runGroupDetailEffect(): Promise<void> {
     if (!convId.value) return;
     const c = getCachedXmtpClient();
     if (c) selfAddress.value = c.accountIdentifier?.identifier.toLowerCase() ?? '';
@@ -105,9 +107,14 @@ export function useGroupDetail(): GroupDetail {
       addrs.map(a => readProfile(a).catch(() => null as SnapshotProfile | null)),
     );
     const next: Record<string, string | null> = {};
-    for (let i = 0; i < addrs.length; i++) next[addrs[i]!] = profiles[i]?.name?.trim() || null;
+    for (let i = 0; i < addrs.length; i++) {
+      const addr = addrs[i];
+      if (addr === undefined) continue;
+      const trimmed = profiles[i]?.name?.trim();
+      next[addr] = trimmed !== undefined && trimmed !== '' ? trimmed : null;
+    }
     memberNames.value = next;
-  });
+  }
 
   async function onSaveName(next: string): Promise<void> {
     if (!next || saving.value) return;

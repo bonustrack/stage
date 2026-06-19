@@ -34,10 +34,11 @@ export function githubLinkOf(text?: string | null): GithubRef | null {
   const m = RE.exec(text);
   if (!m) return null;
   const owner = m[1];
-  let repo = m[2];
+  const rawRepo = m[2];
+  if (owner === undefined || rawRepo === undefined) return null;
   if (RESERVED.has(owner.toLowerCase())) return null;
   // Strip a trailing .git and any stray punctuation the regex may have caught.
-  repo = repo.replace(/\.git$/i, '');
+  const repo = rawRepo.replace(/\.git$/i, '');
   if (!owner || !repo) return null;
   const sub = m[3];
   const num = m[4] ? Number(m[4]) : undefined;

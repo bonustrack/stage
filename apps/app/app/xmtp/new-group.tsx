@@ -60,8 +60,8 @@ export default function NewGroup(): React.ReactElement {
       mediaTypes: 'images', quality: 0.85, allowsMultipleSelection: false,
       allowsEditing: true, aspect: [1, 1],
     });
-    if (r.canceled || !r.assets?.length) return;
-    const a = r.assets[0]!;
+    const a = r.canceled ? undefined : r.assets[0];
+    if (a === undefined) return;
     setImage({ uri: a.uri, mime: a.mimeType ?? 'image/jpeg', name: a.fileName ?? 'group-avatar' });
   }, [creating]);
 

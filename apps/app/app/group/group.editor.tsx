@@ -113,7 +113,7 @@ export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, sa
       ) : (
         <Pressable onPress={() => { setEditing(true); }} hitSlop={6} style={{ marginTop: 6, alignItems: 'flex-start' }}>
           <Text weight="semibold" size="5xl" color={head} style={{ textAlign: 'left' }}>
-            {name && name.trim() ? name : 'Untitled group'}
+            {name?.trim() ? name : 'Untitled group'}
           </Text>
           <Text size="xs" color={sub} style={{ marginTop: 4 }}>Tap to rename</Text>
         </Pressable>

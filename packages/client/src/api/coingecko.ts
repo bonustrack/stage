@@ -32,7 +32,7 @@ export async function getErc20UsdPrices(
     .join(',')}&vs_currencies=usd&include_24hr_change=true&x_cg_pro_api_key=${apiKey}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`coingecko ${res.status}`);
-  return res.json();
+  return (await res.json()) as Record<string, CgPrice>;
 }
 
 /** Fetch a "simple price" by CoinGecko coin id (ETH = `ethereum`).
@@ -45,5 +45,5 @@ export async function getSimplePrices(
   const url = `${CG_URL}/price?ids=${ids.join(',')}&vs_currencies=usd&include_24hr_change=true&x_cg_pro_api_key=${apiKey}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`coingecko ${res.status}`);
-  return res.json();
+  return (await res.json()) as Record<string, CgPrice>;
 }

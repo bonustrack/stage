@@ -52,10 +52,10 @@ function extractRoute(url: string): { segments: string[]; query: URLSearchParams
     //   metro://xmtp/abc              → "xmtp" is NOT a host, it's the first
     //                                    route segment → keep it.
     const m = /^([a-z][a-z0-9+.-]*):\/\/(.*)$/i.exec(work);
-    if (m) {
-      const scheme = m[1].toLowerCase();
-      const rest = m[2];
-      if (scheme === 'http' || scheme === 'https') {
+    const scheme = m?.[1];
+    const rest = m?.[2];
+    if (scheme !== undefined && rest !== undefined) {
+      if (scheme.toLowerCase() === 'http' || scheme.toLowerCase() === 'https') {
         // Drop the host: everything up to the first '/', '?' or end.
         const cut = rest.search(/[/?]/);
         work = cut === -1 ? '/' : rest.slice(cut);

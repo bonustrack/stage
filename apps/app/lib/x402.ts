@@ -115,7 +115,8 @@ export function x402AmountNumber(accept: X402Accept): number | undefined {
 export function sanitizeTokenName(name: string): string {
   let out = "";
   for (const ch of name) {
-    const c = ch.codePointAt(0)!;
+    const c = ch.codePointAt(0);
+    if (c === undefined) continue;
     // Drop C0/C1 controls, the bidi embedding/override/isolate marks
     // (U+202A-202E, U+2066-2069), zero-width chars (U+200B-200F) and the BOM
     // (U+FEFF), any of which can visually reorder or hide the amount line.

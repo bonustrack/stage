@@ -127,7 +127,7 @@ export function rawCall(call: BridgeCall | ExtraCall, params: unknown, timeoutMs
         status(`request sent → ${call} (id ${id})`);
         ch.post(REQUEST_EVENT, envelope);
       },
-      (err: Error) => {
+      (err: unknown) => {
         if (!pending.has(id)) return;
         pending.delete(id);
         clearTimeout(timer);

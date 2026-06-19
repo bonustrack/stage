@@ -94,23 +94,17 @@ function ensureWired(): void {
 export const proposalsStore = {
   /** Subscribe to count/queue changes; returns an unsubscribe. First subscriber
    *  wires the cache listener + triggers the initial build. */
-  subscribe(listener: () => void): () => void {
+  subscribe: (listener: () => void): () => void => {
     ensureWired();
     listeners.add(listener);
     return () => { listeners.delete(listener); };
   },
   /** Number of pending (non-skipped) proposals - O(1)-ish, no scan. */
-  getCount(): number {
-    return visible().length;
-  },
+  getCount: (): number => visible().length,
   /** The visible queue (non-skipped), oldest-first. */
-  getQueue(): QueuedRequest[] {
-    return visible();
-  },
+  getQueue: (): QueuedRequest[] => visible(),
   /** True once the first scan has settled. */
-  isReady(): boolean {
-    return ready;
-  },
+  isReady: (): boolean => ready,
   /** Mark a request skipped for the session by its item key (advances both
    *  surfaces). Also used after a request is acted on (voted / paid / signed /
    *  accepted / blocked) so it drops out without waiting for a rescan. */

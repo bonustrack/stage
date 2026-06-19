@@ -138,7 +138,7 @@ export const XMTP_USER_PREFIX = 'metro://xmtp/user/';
 /** Extract the conversation id from a metro XMTP line URI, or null when it doesn't match. */
 export function convIdOfLine(line: string): string | null {
   const m = /^metro:\/\/xmtp\/([^/]+)$/.exec(line);
-  return m ? m[1] : null;
+  return m?.[1] ?? null;
 }
 
 /** Look up an XMTP conversation by metro line URI. */

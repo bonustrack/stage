@@ -17,6 +17,18 @@ function draftsFile(): File {
   return new File(dir, 'composer-drafts.json');
 }
 
+/** Parse the persisted drafts blob into a `Record<string, string>`, dropping any
+ *  non-string values so a corrupt/legacy file can't poison the in-memory map. */
+function parseDrafts(raw: string): Record<string, string> {
+  const parsed: unknown = JSON.parse(raw);
+  if (parsed === null || typeof parsed !== 'object') return {};
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
+    if (typeof v === 'string') out[k] = v;
+  }
+  return out;
+}
+
 let drafts: Record<string, string> = {};
 let loaded = false;
 /** In-flight load promise, memoized so two concurrent boot callers await the
@@ -33,7 +45,7 @@ export async function loadDrafts(): Promise<void> {
   loading = (async (): Promise<void> => {
     try {
       const f = draftsFile();
-      if (f.exists) { const raw = await f.text(); drafts = raw ? JSON.parse(raw) : {}; }
+      if (f.exists) { const raw = await f.text(); drafts = raw ? parseDrafts(raw) : {}; }
     } catch { drafts = {}; }
     // Mark loaded only AFTER the read resolves, so the sync fast path can't
     // observe loaded===true with an empty in-memory map.
@@ -88,7 +100,7 @@ export function hasDraft(convId?: string | null): boolean {
 /** Store (or clear, if blank) a conversation's draft, then persist + notify. */
 export function setDraft(convId: string, text: string): void {
   const t = text.trim() ? text : '';
-  if (t) drafts[convId] = t; else delete drafts[convId];
+  if (t) drafts[convId] = t; else Reflect.deleteProperty(drafts, convId);
   persist();
   notify();
 }

@@ -27,7 +27,7 @@ function fmtEvent(d: BalanceDebug): string {
     const s = JSON.stringify(d.lastEvent);
     return s.length> 600 ? `${s.slice(0, 600)}…` : s;
   } catch {
-    return String(d.lastEvent);
+    return '[unserializable event]';
   }
 }
 

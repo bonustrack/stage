@@ -46,11 +46,16 @@ async function lookupNamesChunk(addrs: string[]): Promise<Record<string, string>
       body: JSON.stringify({ method: 'lookup_addresses', params: addrs }),
     });
     if (!res.ok) return null;
-    const json = await res.json();
-    const result: Record<string, string> = json?.result ?? {};
+    const json: unknown = await res.json();
+    const result =
+      typeof json === 'object' && json !== null && 'result' in json
+        ? json.result
+        : undefined;
     const out: Record<string, string> = {};
-    for (const [addr, name] of Object.entries(result)) {
-      if (name && name.trim()) out[addr.toLowerCase()] = name.trim();
+    if (typeof result === 'object' && result !== null) {
+      for (const [addr, name] of Object.entries(result)) {
+        if (typeof name === 'string' && name.trim()) out[addr.toLowerCase()] = name.trim();
+      }
     }
     return out;
   } catch {
@@ -86,7 +91,11 @@ async function fetchBatch(addrs: string[]): Promise<void> {
 /** Queue any not-yet-known addresses for a batched fetch. Safe to call often. */
 export function ensurePeerProfiles(addresses: (string | null | undefined)[]): void {
   const todo = [
-    ...new Set(addresses.filter(Boolean).map(a => (a!).toLowerCase())),
+    ...new Set(
+      addresses
+        .filter((a): a is string => typeof a === 'string' && a.length > 0)
+        .map(a => a.toLowerCase()),
+    ),
   ].filter(a => !store.has(a) && !pending.has(a));
   if (!todo.length) return;
   todo.forEach(a => pending.add(a));

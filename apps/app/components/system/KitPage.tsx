@@ -30,7 +30,7 @@ export function KitPage(): React.ReactElement {
         title="Kit" dark={dark} fg={fg} head={head} border={border}
         right={
           <Pressable
-            onPress={() => Linking.openURL(KIT_GITHUB_URL)}
+            onPress={() => { void Linking.openURL(KIT_GITHUB_URL); }}
             hitSlop={8}
             style={{ padding: 4 }}
             accessibilityLabel="View @metro-labs/kit on GitHub"

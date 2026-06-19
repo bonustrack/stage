@@ -198,7 +198,12 @@ export function DatePicker(props: DatePickerProps): React.ReactElement {
           style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 24 }}
           onPress={() => { setOpen(false); }}
         >
-          <Pressable style={{ backgroundColor: sheetBg, borderRadius: 16, padding: 16 }} onPress={() => {}}>
+          <Pressable
+            style={{ backgroundColor: sheetBg, borderRadius: 16, padding: 16 }}
+            onPress={() => {
+              /* intentional no-op: swallow press so taps inside the sheet don't dismiss it */
+            }}
+          >
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
               <Pressable accessibilityRole="button" accessibilityLabel="Previous month" onPress={() => { shiftMonth(-1); }} hitSlop={8}>
                 <Icon name="chevronLeft" size={20} color={head} />

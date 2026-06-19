@@ -43,11 +43,11 @@ const queryClient = getQueryClient();
  *  Calibre should pin fontFamily explicitly. */
 (function applyDefaultFont(): void {
   const TextAny = Text as unknown as { defaultProps?: Record<string, unknown> };
-  TextAny.defaultProps = TextAny.defaultProps || {};
+  TextAny.defaultProps = TextAny.defaultProps ?? {};
   TextAny.defaultProps.style = [{ fontFamily: 'Calibre-Medium' }, TextAny.defaultProps.style];
   TextAny.defaultProps.selectable = true;
   const TextInputAny = TextInput as unknown as { defaultProps?: Record<string, unknown> };
-  TextInputAny.defaultProps = TextInputAny.defaultProps || {};
+  TextInputAny.defaultProps = TextInputAny.defaultProps ?? {};
   TextInputAny.defaultProps.style = [{ fontFamily: 'Calibre-Medium' }, TextInputAny.defaultProps.style];
 })();
 
@@ -55,8 +55,9 @@ const queryClient = getQueryClient();
  *  light (white) status-bar icons. */
 function isDarkBg(hex: string): boolean {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
-  if (!m) return true; // assume dark (app's default chrome) when unparseable
-  const n = parseInt(m[1], 16);
+  const hexDigits = m?.[1];
+  if (hexDigits === undefined) return true; // assume dark (app's default chrome) when unparseable
+  const n = parseInt(hexDigits, 16);
   const r = (n >> 16) & 0xff, g = (n >> 8) & 0xff, b = n & 0xff;
   return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.5;
 }
@@ -133,8 +134,8 @@ function RootLayoutInner(): React.ReactElement {
    *  TTF (not WOFF2) so Android's native Typeface loader can pick it up — expo-font's WOFF2
    *  support is web-only. */
   const [loaded] = useFonts({
-    'Calibre-Medium': require('../assets/fonts/Calibre-Medium-Custom.ttf'),
-    'Calibre-Semibold': require('../assets/fonts/Calibre-Semibold-Custom.ttf'),
+    'Calibre-Medium': require('../assets/fonts/Calibre-Medium-Custom.ttf') as number,
+    'Calibre-Semibold': require('../assets/fonts/Calibre-Semibold-Custom.ttf') as number,
   });
 
   const gatesOpen = loaded && onboarding.ready && restore.ready;

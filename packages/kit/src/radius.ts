@@ -51,6 +51,6 @@ export function isRadiusValue(r: string): r is RadiusValue {
 /** Resolve a Box `radius` prop value: a token name -> px (or '50%'); a raw
  *  number or non-token string passes through unchanged (escape hatch, e.g. the
  *  live `blockRadius` px or a '12px' literal). */
-export function resolveBoxRadius(r: RadiusValue | number | string): number | string {
+export function resolveBoxRadius(r: number | string): number | string {
   return typeof r === 'string' && isRadiusValue(r) ? BOX_RADIUS_SCALE[r] : r;
 }

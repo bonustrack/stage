@@ -65,18 +65,18 @@ export function ComponentsSections({ dark, head, sub, border }: GalleryPalette):
   return (
     <Box>
       <GallerySection name="UserCard" note="Person row (ChannelRow, circle avatar) - DMs & profiles" {...sec}>
-        <ChannelRow title="vitalik.eth" subtitle="Direct message" avatarAddress={SAMPLE_USER_ADDR} onPress={() => {}} noBorder />
+        <ChannelRow title="vitalik.eth" subtitle="Direct message" avatarAddress={SAMPLE_USER_ADDR} onPress={() => {/* noop */}} noBorder />
       </GallerySection>
 
       <GallerySection name="ChannelCard" note="Channel row (ChannelRow, square avatar) - groups & channels" {...sec}>
         <ChannelRow
           title="Metro Dev" subtitle="12 members" avatarAddress={SAMPLE_USER_ADDR} square
-          lastPreview="Less: shipping the Components page" onPress={() => {}} noBorder
+          lastPreview="Less: shipping the Components page" onPress={() => {/* noop */}} noBorder
         />
       </GallerySection>
 
       <GallerySection name="TokenCard" note="Wallet asset row (TokenRow) - the Tokens tab" {...sec} innerPadH={14}>
-        <TokenRow r={SAMPLE_TOKEN} head={head} sub={sub} border={border} bg={bg} onPress={() => {}} />
+        <TokenRow r={SAMPLE_TOKEN} head={head} sub={sub} border={border} bg={bg} onPress={() => {/* noop */}} />
       </GallerySection>
 
       <GallerySection name="MessageRow" note="Chat message row (MessengerBubble) - the conversation feed" {...sec} innerPadV={6}>

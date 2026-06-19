@@ -155,7 +155,7 @@ export async function enablePasskeyForRecord(rec: AccountRecord): Promise<Enable
     try {
       stored = await registerPasskeyCredential(rec.hdIndex, {
         rpId: zerodevRpId(),
-        userName: rec.label?.trim() || `stage-${rec.hdIndex}`,
+        userName: rec.label?.trim() ? rec.label.trim() : `stage-${rec.hdIndex}`,
       });
     } catch (e) {
       return { ok: false, reason: 'error', message: e instanceof Error ? e.message : 'Passkey registration failed' };

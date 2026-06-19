@@ -118,7 +118,7 @@ export function useCommonChannels(peerAddress: string | null, enabled: boolean):
    *  re-hits this account's cached common-channels instead of re-walking. */
   const { data, isLoading } = useQuery({
     queryKey: ['commonChannels', getActiveAccountIdSync(), peerAddress?.toLowerCase() ?? ''],
-    queryFn: () => resolveCommonChannels(peerAddress!),
+    queryFn: () => resolveCommonChannels(peerAddress ?? ''),
     enabled: enabled && !!peerAddress,
     staleTime: 5 * 60_000,
   });

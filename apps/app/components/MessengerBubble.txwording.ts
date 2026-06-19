@@ -62,8 +62,9 @@ export function humanizeAction(decoded: DecodedCall | null): string {
     .toLowerCase()
     .split(/\s+/)
     .filter(Boolean);
-  if (words.length === 0) return 'Confirm';
-  words[0] = words[0].charAt(0).toUpperCase() + words[0].slice(1);
+  const first = words[0];
+  if (first === undefined) return 'Confirm';
+  words[0] = first.charAt(0).toUpperCase() + first.slice(1);
   return words.join(' ');
 }
 

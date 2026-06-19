@@ -26,6 +26,7 @@ export function reactionsByMessage(events: HistoryEntry[]): Map<string, Map<stri
   for (const [k, v] of latest) {
     if (v.removed) continue;
     const [msgId, emoji] = k.split(' ');
+    if (msgId === undefined || emoji === undefined) continue;
     let m = out.get(msgId);
     if (!m) { m = new Map(); out.set(msgId, m); }
     m.set(emoji, (m.get(emoji) ?? 0) + 1);

@@ -115,7 +115,7 @@ export function AmountBox({ pal, amount, setAmount, busy, balance, symbol, dark 
         <Text size="xs" color={sub} style={{ flex: 1 }}>AMOUNT</Text>
         {balance != null ? (
           <Button variant="ghost" size="sm" dark={!!dark} disabled={!hasBal || busy}
-            onPress={() => { if (hasBal) setAmount(String(balance)); }}
+            onPress={() => { if (hasBal) setAmount(balance); }}
             label="MAX" textStyle={{ color: hasBal ? link : sub, fontSize: fontSize('xs') }}
             style={{ height: 24, paddingHorizontal: 8 }}/>
         ) : null}

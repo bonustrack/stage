@@ -173,7 +173,7 @@ export async function createClientForAccount(
   const signer = await signerForRecord(rec);
   try {
     const created = await createWithTimeout(signer, opts);
-    return finalizeClient(created, rec, env);
+    return await finalizeClient(created, rec, env);
   } catch (e) {
     /** Real local corruption → wipe THIS account's store + key, retry once. */
     if (!recovered && isStoreCorruption(e)) {

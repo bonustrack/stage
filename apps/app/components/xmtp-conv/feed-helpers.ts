@@ -53,6 +53,7 @@ export function reactionsByMessage(events: HistoryEntry[], pollOptionCounts: Map
   for (const [k, v] of latest) {
     if (v.removed) continue;
     const [msgId, emoji] = k.split(' ');
+    if (msgId === undefined || emoji === undefined) continue;
     let m = out.get(msgId);
     if (!m) { m = new Map(); out.set(msgId, m); }
     m.set(emoji, (m.get(emoji) ?? 0) + 1);
@@ -77,6 +78,7 @@ export function ownReactionsByMessage(events: HistoryEntry[], myUri: string, pol
   for (const [k, v] of latest) {
     if (v.removed) continue;
     const [msgId, emoji] = k.split(' ');
+    if (msgId === undefined || emoji === undefined) continue;
     let s = out.get(msgId);
     if (!s) { s = new Set(); out.set(msgId, s); }
     s.add(emoji);
@@ -120,7 +122,10 @@ export function pollQuestionsInFeed(events: HistoryEntry[]): Map<string, PollQue
  *  vote (legacy / question-0 form) from a genuine emoji reaction on a poll. */
 export function pollOptionCountsInFeed(events: HistoryEntry[]): Map<string, number> {
   const out = new Map<string, number>();
-  for (const [id, qs] of pollQuestionsInFeed(events)) out.set(id, qs[0].options.length);
+  for (const [id, qs] of pollQuestionsInFeed(events)) {
+    const q0 = qs[0];
+    if (q0 !== undefined) out.set(id, q0.options.length);
+  }
   return out;
 }
 

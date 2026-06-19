@@ -15,19 +15,19 @@ import * as Notifications from 'expo-notifications';
  *  defaults to suppressing both. Set globally so it applies regardless of which
  *  screen is mounted when the push arrives. */
 Notifications.setNotificationHandler({
-  handleNotification: async () => {
+  handleNotification: () => {
     /** The JS local-notification path was removed (the daemon + native
      *  MetroFcmService are the single source of inbound push, rendering one
      *  merged avatar card per conversation, and that native notify() bypasses
      *  this handler entirely). So there's no longer a per-message local notif to
      *  de-dup against. Whatever DOES reach this handler (e.g. a non-native
      *  expo-displayed push) is surfaced normally — no suppression. */
-    return {
+    return Promise.resolve({
       shouldShowBanner: true,
       shouldShowList: true,
       shouldPlaySound: true,
       shouldSetBadge: true,
-    };
+    });
   },
 });
 
@@ -43,9 +43,9 @@ async function ensureChannel(): Promise<void> {
 
 async function ensurePermission(): Promise<boolean> {
   const existing = await Notifications.getPermissionsAsync();
-  if (existing.status === 'granted') return true;
+  if (existing.granted) return true;
   const req = await Notifications.requestPermissionsAsync();
-  return req.status === 'granted';
+  return req.granted;
 }
 
 /** Resolve the FCM (Android) / APNs (iOS) device token for this install. Returns

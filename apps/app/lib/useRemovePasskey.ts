@@ -56,7 +56,7 @@ export function useRemovePasskey(epoch?: number, onChanged?: () => void): {
         } else if (res.reason === 'unavailable') {
           flash('Passkeys need the latest app build');
         } else {
-          flash(res.message || 'Could not remove passkey');
+          flash(res.message ?? 'Could not remove passkey');
         }
       } finally {
         setBusy(false);

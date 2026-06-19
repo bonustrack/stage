@@ -15,7 +15,11 @@ interface FormContextValue {
   submit: () => void;
 }
 
-const FormContext = createContext<FormContextValue>({ submit: () => {} });
+const FormContext = createContext<FormContextValue>({
+  submit: () => {
+    /* intentional no-op: default submit outside a Form provider */
+  },
+});
 
 /** Access the enclosing Form's submit handler (for kit submit controls). */
 export function useFormSubmit(): () => void {

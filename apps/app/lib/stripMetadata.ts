@@ -33,7 +33,7 @@ export interface StripResult {
   format: 'jpeg' | 'png' | 'webp' | 'unsupported';
 }
 
-const u8 = (a: number, b: number): boolean => a === b;
+const u8 = (a: number | undefined, b: number): boolean => a === b;
 
 /** Read the EXIF Orientation tag (TIFF tag 0x0112) out of a JPEG APP1 payload.
  *  Returns the 1..8 value, or undefined if absent / unparseable / the default 1.
@@ -43,17 +43,20 @@ const u8 = (a: number, b: number): boolean => a === b;
  *  We parse only IFD0 (the rotation lives there); we never follow the Exif/GPS
  *  sub-IFD pointers, so no other tag is ever read or kept. */
 function readJpegOrientation(payload: Uint8Array): number | undefined {
+  // Bounds-guarded byte read; out-of-range bytes read as 0 (every call below is
+  // already length-checked, so this only satisfies noUncheckedIndexedAccess).
+  const at = (o: number): number => payload[o] ?? 0;
   // payload starts with "Exif\0\0" then the TIFF header.
   if (payload.length < 6 + 8) return undefined;
-  if (payload[0] !== 0x45 || payload[1] !== 0x78 || payload[2] !== 0x69 || payload[3] !== 0x66) return undefined;
+  if (at(0) !== 0x45 || at(1) !== 0x78 || at(2) !== 0x69 || at(3) !== 0x66) return undefined;
   const tiff = 6; // offset of the TIFF header within the payload
-  const le = payload[tiff] === 0x49 && payload[tiff + 1] === 0x49; // 'II' little / 'MM' big
-  const be = payload[tiff] === 0x4d && payload[tiff + 1] === 0x4d;
+  const le = at(tiff) === 0x49 && at(tiff + 1) === 0x49; // 'II' little / 'MM' big
+  const be = at(tiff) === 0x4d && at(tiff + 1) === 0x4d;
   if (!le && !be) return undefined;
-  const u16 = (o: number): number => (le ? payload[o] | (payload[o + 1] << 8) : (payload[o] << 8) | payload[o + 1]);
+  const u16 = (o: number): number => (le ? at(o) | (at(o + 1) << 8) : (at(o) << 8) | at(o + 1));
   const u32 = (o: number): number => (le
-    ? payload[o] | (payload[o + 1] << 8) | (payload[o + 2] << 16) | (payload[o + 3] << 24)
-    : (payload[o] << 24) | (payload[o + 1] << 16) | (payload[o + 2] << 8) | payload[o + 3]);
+    ? at(o) | (at(o + 1) << 8) | (at(o + 2) << 16) | (at(o + 3) << 24)
+    : (at(o) << 24) | (at(o + 1) << 16) | (at(o + 2) << 8) | at(o + 3));
   const ifd0 = tiff + u32(tiff + 4);
   if (ifd0 + 2 > payload.length) return undefined;
   const count = u16(ifd0);
@@ -100,14 +103,15 @@ function buildOrientationApp1(orientation: number): number[] {
  *  pixel re-encode (which would need a native codec / new APK). Orientation is
  *  not sensitive (1..8). Every other EXIF/GPS/ICC byte is gone. */
 function stripJpeg(b: Uint8Array): Uint8Array {
+  const at = (o: number): number => b[o] ?? 0;
   const out: number[] = [0xff, 0xd8];
   let orientation: number | undefined;
   let i = 2;
   while (i + 1 < b.length) {
-    if (b[i] !== 0xff) { // resync defensively; copy byte
-      out.push(b[i]); i += 1; continue;
+    if (at(i) !== 0xff) { // resync defensively; copy byte
+      out.push(at(i)); i += 1; continue;
     }
-    const marker = b[i + 1];
+    const marker = at(i + 1);
     // Standalone markers without a length payload (RSTn, SOI, EOI, TEM).
     if (marker === 0xd9) { out.push(0xff, 0xd9); break; } // EOI
     if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) {
@@ -115,10 +119,10 @@ function stripJpeg(b: Uint8Array): Uint8Array {
     }
     // Start of scan: copy the rest of the file unchanged (scan data).
     if (marker === 0xda) {
-      for (let j = i; j < b.length; j += 1) out.push(b[j]);
+      for (let j = i; j < b.length; j += 1) out.push(at(j));
       break;
     }
-    const len = (b[i + 2] << 8) | b[i + 3]; // segment length incl. these 2 bytes
+    const len = (at(i + 2) << 8) | at(i + 3); // segment length incl. these 2 bytes
     const isApp1 = marker === 0xe1;
     const dropApp = marker >= 0xe1 && marker <= 0xef; // APP1..APP15 (keep APP0 JFIF)
     const dropCom = marker === 0xfe; // COM comment
@@ -127,7 +131,7 @@ function stripJpeg(b: Uint8Array): Uint8Array {
       orientation = orientation ?? readJpegOrientation(payload); // capture before dropping
     }
     if (!dropApp && !dropCom) {
-      for (let j = i; j < i + 2 + len; j += 1) out.push(b[j]);
+      for (let j = i; j < i + 2 + len; j += 1) out.push(at(j));
     }
     i += 2 + len;
   }
@@ -144,16 +148,17 @@ function stripJpeg(b: Uint8Array): Uint8Array {
  *  verbatim, including their original CRCs. */
 const PNG_DROP = new Set(['tEXt', 'zTXt', 'iTXt', 'tIME', 'eXIf']);
 function stripPng(b: Uint8Array): Uint8Array {
+  const at = (o: number): number => b[o] ?? 0;
   const out: number[] = [];
-  for (let k = 0; k < 8; k += 1) out.push(b[k]); // signature
+  for (let k = 0; k < 8; k += 1) out.push(at(k)); // signature
   let i = 8;
   while (i + 8 <= b.length) {
-    const len = (b[i] << 24) | (b[i + 1] << 16) | (b[i + 2] << 8) | b[i + 3];
-    const type = String.fromCharCode(b[i + 4], b[i + 5], b[i + 6], b[i + 7]);
+    const len = (at(i) << 24) | (at(i + 1) << 16) | (at(i + 2) << 8) | at(i + 3);
+    const type = String.fromCharCode(at(i + 4), at(i + 5), at(i + 6), at(i + 7));
     const total = 12 + len; // length(4) + type(4) + data(len) + crc(4)
     if (i + total > b.length) break; // truncated; stop
     if (!PNG_DROP.has(type)) {
-      for (let j = i; j < i + total; j += 1) out.push(b[j]);
+      for (let j = i; j < i + total; j += 1) out.push(at(j));
     }
     i += total;
     if (type === 'IEND') break;
@@ -166,18 +171,19 @@ function stripPng(b: Uint8Array): Uint8Array {
  *  (We also clear the EXIF/XMP flag bits in a VP8X header so decoders don't look
  *  for chunks we removed.) */
 function stripWebp(b: Uint8Array): Uint8Array {
+  const at = (o: number): number => b[o] ?? 0;
   const head = Array.from(b.slice(0, 12)); // 'RIFF' size 'WEBP'
   const body: number[] = [];
   let i = 12;
   while (i + 8 <= b.length) {
-    const fourcc = String.fromCharCode(b[i], b[i + 1], b[i + 2], b[i + 3]);
-    const size = b[i + 4] | (b[i + 5] << 8) | (b[i + 6] << 16) | (b[i + 7] << 24);
+    const fourcc = String.fromCharCode(at(i), at(i + 1), at(i + 2), at(i + 3));
+    const size = at(i + 4) | (at(i + 5) << 8) | (at(i + 6) << 16) | (at(i + 7) << 24);
     const padded = size + (size & 1); // chunks are padded to even length
     const total = 8 + padded;
     if (i + total > b.length) break;
     if (fourcc !== 'EXIF' && fourcc !== 'XMP ') {
       const chunk = Array.from(b.slice(i, i + total));
-      if (fourcc === 'VP8X') chunk[8] &= ~0b00001100; // clear EXIF(0x08)+XMP(0x04) flags
+      if (fourcc === 'VP8X') chunk[8] = (chunk[8] ?? 0) & ~0b00001100; // clear EXIF(0x08)+XMP(0x04) flags
       body.push(...chunk);
     }
     i += total;

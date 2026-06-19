@@ -28,7 +28,7 @@ export function voteKey(questionIndex: number, optionIndex: number): string {
  *  `content` string round-trip. UTF-8 safe via encodeURIComponent. */
 const b64enc = (s: string): string => {
   const g = globalThis as { btoa?: (x: string) => string; Buffer?: { from(x: string, e: string): { toString(e: string): string } } };
-  const bytes = encodeURIComponent(s).replace(/%([0-9A-F]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
+  const bytes = encodeURIComponent(s).replace(/%([0-9A-F]{2})/g, (_, h: string) => String.fromCharCode(parseInt(h, 16)));
   if (g.btoa) return g.btoa(bytes);
   if (g.Buffer) return g.Buffer.from(s, 'utf-8').toString('base64');
   return s;
@@ -59,7 +59,7 @@ export function parseOpenVote(content: string): { q: number; text: string } | nu
   if (!m) return null;
   const q = Number(m[1]);
   if (!Number.isInteger(q)) return null;
-  return { q, text: b64dec(m[2]) };
+  return { q, text: b64dec(m[2] ?? '') };
 }
 
 /** Latest free-text answer per voter for one (poll, question). A `removed` event

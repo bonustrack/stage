@@ -25,8 +25,14 @@ function probe(): boolean {
   resolved = true;
   if (Platform.OS !== 'ios' && Platform.OS !== 'android') return (cached = false);
   try {
-    const mod = require('react-native-passkeys');
-    cached = typeof mod?.create === 'function' && typeof mod?.get === 'function';
+    const mod: unknown = require('react-native-passkeys');
+    cached =
+      typeof mod === 'object' &&
+      mod !== null &&
+      'create' in mod &&
+      typeof mod.create === 'function' &&
+      'get' in mod &&
+      typeof mod.get === 'function';
   } catch {
     cached = false;
   }

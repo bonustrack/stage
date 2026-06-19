@@ -87,7 +87,7 @@ export async function streamConvConsent(
   onChange: (convId: string, state: 'allowed' | 'denied' | 'unknown') => void,
 ): Promise<() => Promise<void>> {
   const client = getCachedXmtpClient();
-  if (!client) return async () => undefined;
+  if (!client) return () => Promise.resolve();
   const stream = await client.preferences.streamConsent({
     onValue: (records: Consent[]) => {
       for (const c of records) {

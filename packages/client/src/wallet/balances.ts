@@ -51,16 +51,28 @@ export async function fetchAssetRows(
 
   /** Prices: simple-price once for ETH (same price on every chain), plus the
    *  contract endpoint per CoinGecko platform for the ERC-20s. */
-  const platforms = [...new Set(ASSETS.filter(a => a.cgPlatform).map(a => a.cgPlatform!))];
-  const cgIds = [...new Set(ASSETS.filter(a => a.cgId).map(a => a.cgId!))];
+  const emptyPrices = (): Record<string, Price> => ({});
+  const platforms = [
+    ...new Set(
+      ASSETS.map(a => a.cgPlatform).filter((p): p is string => typeof p === 'string'),
+    ),
+  ];
+  const cgIds = [
+    ...new Set(ASSETS.map(a => a.cgId).filter((id): id is string => typeof id === 'string')),
+  ];
   const [simplePrices, ...platformPriceList] = await Promise.all([
-    getSimplePrices(cgIds, coingeckoKey).catch(() => ({})),
+    getSimplePrices(cgIds, coingeckoKey).catch(emptyPrices),
     ...platforms.map(p =>
-      getErc20UsdPrices(p, ASSETS.filter(a => a.cgPlatform === p).map(a => (a.priceAddress ?? a.address!).toLowerCase()), coingeckoKey)
-        .catch(() => ({}))),
+      getErc20UsdPrices(
+        p,
+        ASSETS.filter(a => a.cgPlatform === p).map(a =>
+          (a.priceAddress ?? a.address ?? '').toLowerCase(),
+        ),
+        coingeckoKey,
+      ).catch(emptyPrices)),
   ]);
   const tokenPricesByPlatform = new Map<string, Record<string, Price>>(
-    platforms.map((p, i) => [p, platformPriceList[i]!]),
+    platforms.map((p, i) => [p, platformPriceList[i] ?? {}]),
   );
 
   return ASSETS.map(a => {

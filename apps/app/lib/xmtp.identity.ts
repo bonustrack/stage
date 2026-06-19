@@ -25,8 +25,10 @@ function inboxEthFetcher(
     );
     const out: Record<string, string> = {};
     for (let i = 0; i < ids.length; i++) {
+      const id = ids[i];
+      if (id === undefined) continue;
       const eth = states[i]?.identities.find(it => it.kind === 'ETHEREUM');
-      if (eth?.identifier) out[ids[i]!] = eth.identifier;
+      if (eth?.identifier) out[id] = eth.identifier;
     }
     return out;
   };

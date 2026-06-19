@@ -49,8 +49,10 @@ export async function memberInboxToAddressMap(conv: Conversation): Promise<Recor
     const states = await client.preferences.getInboxStates(ids);
     const map: Record<string, string> = {};
     for (let i = 0; i < ids.length; i++) {
+      const id = ids[i];
+      if (id === undefined) continue;
       const eth = states[i]?.accountIdentifiers.find(it => it.identifierKind === IdentifierKind.Ethereum);
-      if (eth?.identifier) map[ids[i]!] = eth.identifier;
+      if (eth?.identifier) map[id] = eth.identifier;
     }
     return map;
   } catch { return {}; }

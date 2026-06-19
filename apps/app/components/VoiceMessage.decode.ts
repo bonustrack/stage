@@ -105,12 +105,12 @@ function bucketRms(pcm: Float32Array, count: number): number[] {
     const end = b === count - 1 ? pcm.length : Math.min(pcm.length, start + per);
     let sum = 0;
     let n = 0;
-    for (let i = start; i < end; i++) { const s = pcm[i]; sum += s * s; n++; }
+    for (let i = start; i < end; i++) { const s = pcm[i] ?? 0; sum += s * s; n++; }
     const rms = n > 0 ? Math.sqrt(sum / n) : 0;
     out[b] = rms;
     if (rms > max) max = rms;
   }
   if (max <= 0) throw new Error('silent PCM');
-  for (let b = 0; b < count; b++) out[b] = Math.max(0.06, Math.min(1, out[b] / max));
+  for (let b = 0; b < count; b++) out[b] = Math.max(0.06, Math.min(1, (out[b] ?? 0) / max));
   return out;
 }

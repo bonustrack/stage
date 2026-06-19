@@ -41,9 +41,11 @@ export interface DecodedMessageView {
 /** Structural mirror of the RN SDK's `ReactionContent`. */
 interface ReactionContentView {
   reference: string;
-  action: 'added' | 'removed' | string;
+  /** 'added' | 'removed' (the RN SDK leaves this open-ended). */
+  action: string;
   content: string;
-  schema: 'unicode' | 'custom' | string;
+  /** 'unicode' | 'custom' (the RN SDK leaves this open-ended). */
+  schema: string;
 }
 /** Structural mirror of the RN SDK's `ReplyContent` (text-only inner content). */
 interface ReplyContentView { reference: string; content?: { text?: string } }
@@ -178,8 +180,9 @@ export function mapDecodedToEnvelope(msg: DecodedMessageView, line: string): His
           : ['mp4', 'mov', 'webm'].includes(ext) ? 'video' : 'file';
       return { kind, name, remote: info };
     });
-    const summary = attachments.length === 1
-      ? `[${attachments[0]!.kind}: ${attachments[0]!.name}]`
+    const first = attachments[0];
+    const summary = first !== undefined && attachments.length === 1
+      ? `[${first.kind}: ${first.name}]`
       : `[${attachments.length} attachments]`;
     return { ...base, text: summary, payload: { contentType: typeId, attachments } };
   }

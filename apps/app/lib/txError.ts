@@ -78,7 +78,8 @@ export function txErrorMessage(err: unknown, fallback: string): string {
     const raw = collect(err) ?? fallback;
     const out = humanize(raw);
     // Keep it toast-sized: first line, capped.
-    const firstLine = out.split('\n')[0]?.trim() || fallback;
+    const trimmed = out.split('\n')[0]?.trim();
+    const firstLine = trimmed !== undefined && trimmed.length > 0 ? trimmed : fallback;
     return firstLine.length > 140 ? `${firstLine.slice(0, 137)}...` : firstLine;
   } catch {
     return fallback;

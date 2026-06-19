@@ -138,8 +138,9 @@ export function pollOf(entry: HistoryEntry): Poll | undefined {
   if (!raw) return undefined;
   // normalizeQuestions folds BOTH shapes into one array (option strings -> {label}).
   const questions = normalizeQuestions(raw);
-  if (questions.length === 0) return undefined;
-  return { pollId: raw.pollId, question: questions[0].question, questions };
+  const first = questions[0];
+  if (first === undefined) return undefined;
+  return { pollId: raw.pollId, question: first.question, questions };
 }
 
 export interface SigRequest {
@@ -182,7 +183,7 @@ export function fmtSigValue(v: unknown): string {
   try {
     const s = JSON.stringify(v);
     return s.length > 200 ? `${s.slice(0, 197)}…` : s;
-  } catch { return String(v); }
+  } catch { return '[unserializable]'; }
 }
 
 export interface TxRequest {

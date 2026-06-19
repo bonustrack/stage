@@ -56,7 +56,7 @@ export function UnshieldPhaseLine({ pal, phase, txHash, err, bridgeOk, chainId }
         <Text size="xs" color={sub}>Broadcasting…</Text>
       ) : null}
       {txHash ? (
-        <Pressable onPress={() => Linking.openURL(explorerTxUrl(chainId, txHash))} hitSlop={6}>
+        <Pressable onPress={() => { void Linking.openURL(explorerTxUrl(chainId, txHash)); }} hitSlop={6}>
           <Text size="xs">
             {txHash.slice(0, 10)}…{txHash.slice(-8)}
           </Text>

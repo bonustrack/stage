@@ -148,7 +148,7 @@ function ConversationRequestCard({ proposal, onAdvance }: {
   const sig = entry ? sigRequestOf(entry) : undefined;
 
   const title = isGroup
-    ? (groupName?.trim() || 'Untitled group')
+    ? (groupName?.trim() ? groupName.trim() : 'Untitled group')
     : (peerAddr ? (getPeerName(peerAddr) ?? shortAddress(peerAddr)) : '');
 
   const authorAddr = useMemo(
@@ -290,7 +290,7 @@ function MessageRequestCard({ request, onAdvance }: {
             avatarAddress={view?.avatarAddress ?? null}
             avatarUri={view?.avatarUri ?? null}
             square={view?.isGroup}
-            lastPreview={view?.preview || '(no messages yet)'}
+            lastPreview={view?.preview == null || view.preview === '' ? '(no messages yet)' : view.preview}
             onPress={openChannel}
           />
         </Box>

@@ -94,7 +94,7 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
   const query = useQuery<HistoryEntry[]>({
     queryKey,
     enabled: enabled && !!line,
-    queryFn: () => loadFeedFirstPage(line!),
+    queryFn: () => loadFeedFirstPage(line ?? ''),
     initialData: () => (line ? feedCache.get(line) ?? EMPTY : EMPTY),
     staleTime: 0,
   });

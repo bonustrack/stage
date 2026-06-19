@@ -49,7 +49,9 @@ export function X402Card({ challenge, dark }: {
   const [phase, setPhase] = useState<PayPhase>('idle');
 
   const endpoint = challenge.endpoint || '';
-  const desc = accept?.description || challenge.error || 'Payment required';
+  const desc = accept?.description != null && accept.description !== ''
+    ? accept.description
+    : (challenge.error != null && challenge.error !== '' ? challenge.error : 'Payment required');
   const amountLabel = accept ? x402AmountLabel(accept) : undefined;
   const network = accept ? x402NetworkLabel(accept.network) : '';
   const chainNum = accept ? x402ChainNumber(accept.network) : 1;

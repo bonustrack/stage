@@ -47,8 +47,8 @@ export function createSetStore(key: string): SetStore {
   const hydration = hydrateOnce(async (): Promise<Set<string>> => {
     try {
       const raw = await AsyncStorage.getItem(key);
-      const ids: string[] = raw ? JSON.parse(raw) : [];
-      if (Array.isArray(ids)) cache = new Set(ids.filter(x => typeof x === 'string'));
+      const ids: unknown = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(ids)) cache = new Set(ids.filter((x): x is string => typeof x === 'string'));
     } catch { /* corrupt/missing → start empty */ }
     return cache;
   });

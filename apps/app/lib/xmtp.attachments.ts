@@ -68,7 +68,7 @@ export async function xmtpSendMultiRemoteAttachment(
     const fileUri = await materializeFileUri(f.fileUri);
     /** Never hand the native encoder an empty MIME — guarantee one from the
      *  filename extension as a last resort (matches the composer's `mimeOf`). */
-    const mimeType = f.mimeType && f.mimeType.includes('/')
+    const mimeType = f.mimeType?.includes('/')
       ? f.mimeType
       : (EXT_MIME[f.filename.split('.').pop()?.toLowerCase() ?? ''] ?? 'application/octet-stream');
     /** Force-strip embedded metadata (EXIF/GPS/XMP/ICC/timestamps) from images

@@ -50,7 +50,7 @@ export function parseSettleBody(body: unknown): SettleRequest | null {
 
 /** Read a response body trimmed to MAX_BODY_BYTES, decoded as UTF-8. */
 async function readTrimmed(res: Response): Promise<string> {
-  const reader = res.body?.getReader();
+  const reader = res.body?.getReader() as ReadableStreamDefaultReader<Uint8Array> | undefined;
   if (!reader) return (await res.text()).slice(0, MAX_BODY_BYTES);
   const chunks: Uint8Array[] = [];
   let total = 0;

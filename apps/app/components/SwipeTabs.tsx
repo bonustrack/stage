@@ -38,7 +38,7 @@ import { usePathname, useRouter } from 'expo-router';
 
 import {
   FLING_VELOCITY, PAGES, SWITCH_FRACTION, TAB_HREF, TAB_ORDER,
-  indexOfPathname, type SimultaneousRefs,
+  indexOfPathname,
 } from './SwipeTabs.config';
 
 /** Single pager host. Rendered once from `(tabs)/_layout.tsx` as the scene for

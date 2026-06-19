@@ -69,14 +69,20 @@ const postStringData = encodeFunctionData({
 
 type FetchMock = (url: string) => { ok: boolean; json: () => Promise<unknown> };
 function mockFetch(impl: FetchMock): void {
-  // @ts-expect-error - override global fetch for the test
-  globalThis.fetch = async (input: string) => impl(String(input));
+  // Build a value with fetch's real signature, narrowing the request input to
+  // the URL string the decoder always passes, and widening the partial mock
+  // result to Response (only `ok`/`json` are read by the code under test).
+  const mocked: typeof globalThis.fetch = (input) => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+    return Promise.resolve(impl(url) as unknown as Response);
+  };
+  globalThis.fetch = mocked;
 }
 const realFetch = globalThis.fetch;
 
 const sourcifyHit = (url: string) => ({
   ok: true,
-  json: async () => (url.includes('sourcify')
+  json: () => Promise.resolve(url.includes('sourcify')
     ? { abi: POSTER_ABI, match: 'match' }
     : { results: [{ id: 1, text_signature: 'post(string)' }] }),
 });
@@ -108,8 +114,8 @@ describe('decodeCall selector mismatch detection', () => {
 
   test('(c) non-Sourcify contract + 4byte hit -> neutral note, no scary warning', async () => {
     mockFetch((url) => (url.includes('sourcify')
-      ? { ok: false, json: async () => ({}) }
-      : { ok: true, json: async () => ({ results: [{ id: 1, text_signature: 'post(string)' }] }) }));
+      ? { ok: false, json: () => Promise.resolve({}) }
+      : { ok: true, json: () => Promise.resolve({ results: [{ id: 1, text_signature: 'post(string)' }] }) }));
     const r = await decodeCall('0x000000000000000000000000000000000000aaa3', postStringData, 1);
     expect(r.source).toBe('4byte');
     expect(r.decoded).toBe(true);

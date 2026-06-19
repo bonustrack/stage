@@ -77,7 +77,7 @@ export function useFeedRenderItem(
       pendingRemovals={optimisticRemovals.get(item.id)}
       ownEmojis={ownReactions.get(item.id)}
       replyPreview={item.replyTo ? previewOf(eventsById.get(item.replyTo) ?? item) : undefined}
-      onReplyPreviewPress={item.replyTo ? () => { jumpToMessage(item.replyTo!); } : undefined}
+      onReplyPreviewPress={item.replyTo ? () => { const target = item.replyTo; if (target) jumpToMessage(target); } : undefined}
       votes={displayVotes.get(item.id)}
       ownVotes={displayOwnVotes.get(item.id)}
       onVote={(qIdx, idx, action) => { onVote(item.id, qIdx, idx, action); }}

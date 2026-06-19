@@ -68,6 +68,22 @@ export interface SignConfirmSummary {
   message?: string;
 }
 
+/** Stringify a domain scalar (name/chainId/verifyingContract) for display,
+ *  preserving the prior `String(v)` output for scalar values while avoiding an
+ *  unguarded base-to-string on `unknown`. Objects (not expected here) fall back
+ *  to JSON so we never emit a bare "[object Object]". */
+function toScalarString(v: unknown): string | undefined {
+  if (v == null) return undefined;
+  if (typeof v === 'object') {
+    try { return JSON.stringify(v); } catch { return undefined; }
+  }
+  if (typeof v === 'string') return v;
+  if (typeof v === 'number' || typeof v === 'bigint' || typeof v === 'boolean') {
+    return String(v);
+  }
+  return undefined;
+}
+
 /** Pull the first string-valued field from `message` matching any candidate key
  *  (case-insensitive). Typed-data field names vary by standard. */
 function fieldOf(message: Record<string, unknown> | undefined, keys: string[]): string | undefined {
@@ -99,9 +115,9 @@ export function deriveSignSummary(req: SignatureRequestContent): SignConfirmSumm
   const primary = (td.primaryType ?? '').trim();
   const risk = HIGH_RISK_PRIMARY_TYPES[primary.toLowerCase()];
   const domain = td.domain as { name?: unknown; chainId?: unknown; verifyingContract?: unknown } | undefined;
-  const domainName = domain?.name != null ? String(domain.name) : undefined;
-  const chainId = domain?.chainId != null ? String(domain.chainId) : undefined;
-  const verifyingContract = domain?.verifyingContract != null ? String(domain.verifyingContract) : undefined;
+  const domainName = toScalarString(domain?.name);
+  const chainId = toScalarString(domain?.chainId);
+  const verifyingContract = toScalarString(domain?.verifyingContract);
   /** Decode the empowered counterparty + token from message fields. The exact
    *  keys differ per standard; we probe the common ones (Permit `spender`,
    *  Seaport `offerer`/`zone`, EIP-3009 `to`). */
@@ -115,9 +131,14 @@ export function deriveSignSummary(req: SignatureRequestContent): SignConfirmSumm
         value: ((): string => {
           if (v == null) return '';
           if (typeof v === 'object') {
-            try { return JSON.stringify(v).slice(0, 80); } catch { return String(v); }
+            try { return JSON.stringify(v).slice(0, 80); } catch { return '[object Object]'.slice(0, 80); }
           }
-          return String(v).slice(0, 80);
+          if (typeof v === 'string') return v.slice(0, 80);
+          if (typeof v === 'symbol') return v.toString().slice(0, 80);
+          if (typeof v === 'number' || typeof v === 'bigint' || typeof v === 'boolean') {
+            return String(v).slice(0, 80);
+          }
+          try { return JSON.stringify(v).slice(0, 80); } catch { return ''; }
         })(),
       }))
     : undefined;

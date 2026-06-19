@@ -18,7 +18,7 @@ export type Row = ConversationView & Record<string, unknown>;
 export function convIdFromTopic(topic: string | undefined): string | null {
   if (!topic) return null;
   const m = /\/g-([0-9a-fA-F]+)\//.exec(topic);
-  return m ? m[1]! : null;
+  return m?.[1] ?? null;
 }
 
 /** Fixed ChannelRow height: 14px vertical padding ×2 + ~48px content (title 22 +

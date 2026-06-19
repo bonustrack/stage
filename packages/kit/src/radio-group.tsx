@@ -81,7 +81,7 @@ export function RadioGroup(props: RadioGroupProps): React.ReactElement {
     >
       {options.map((opt) => {
         const isSel = opt.value === selected;
-        const optDisabled = groupDisabled || opt.disabled;
+        const optDisabled = (groupDisabled ?? false) || (opt.disabled ?? false);
         const outer: ViewStyle = {
           width: size,
           height: size,

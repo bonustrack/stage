@@ -60,25 +60,27 @@ export async function startChannelStream(client: XmtpClient): Promise<ChannelStr
   await refresh(true);
 
   stopConvStream = await client.conversations.stream({
-    onValue: async (conv: Conversation | undefined) => {
+    onValue: (conv: Conversation | undefined) => {
       if (!conv) return;
-      const r = await summarizeConv(conv, selfInboxId);
-      const prev = (cachedRows.value as ChannelRow[] | null) ?? [];
-      setCachedRows([r, ...prev.filter(x => x.convId !== r.convId)]);
+      void (async () => {
+        const r = await summarizeConv(conv, selfInboxId);
+        const prev = (cachedRows.value as ChannelRow[] | null) ?? [];
+        setCachedRows([r, ...prev.filter(x => x.convId !== r.convId)]);
+      })();
     },
     onError: () => { /* backstops will resync */ },
   });
 
   stopMsgStream = await client.conversations.streamAllMessages({
-    onValue: async (msg) => {
+    onValue: (msg) => {
       if (!msg) return;
       const preview = previewOfXmtpContent(msg.content, msg.contentType?.typeId);
       const lastTs = Number(msg.sentAtNs / 1_000_000n);
       const lastPreview = preview.slice(0, 80);
       const prev = (cachedRows.value as ChannelRow[] | null) ?? [];
       const idx = prev.findIndex(r => r.convId === msg.conversationId);
-      if (idx === -1) { void refresh(); return; }
-      const cur = prev[idx]!;
+      const cur = idx === -1 ? undefined : prev[idx];
+      if (cur === undefined) { void refresh(); return; }
       const newAvatar = cur.inboxToAddr[msg.senderInboxId ?? ''] ?? cur.avatarAddress;
       const sentNs = Number(msg.sentAtNs);
       const isUnread = sentNs > cur.lastReadNs && msg.senderInboxId !== cur.selfInboxId;

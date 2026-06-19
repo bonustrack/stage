@@ -113,7 +113,7 @@ export function makeMsgStreamHandler({ isCancelled, setRows, refresh, refreshReq
   const onMiss = makeMissRefresher(isCancelled, refresh, refreshRequestCount);
   return ({ convId: streamConvId, msg }: { convId: string | null; msg: StreamedMsg | null }): void => {
     if (isCancelled() || !msg) return;
-    void (async (): Promise<void> => {
+    (((): void => {
       let decoded: unknown;
       let preview = '';
       try { decoded = msg.content(); preview = previewOfXmtpContent(decoded, msg.contentTypeId); }
@@ -143,8 +143,8 @@ export function makeMsgStreamHandler({ isCancelled, setRows, refresh, refreshReq
         const idx = msgConvId ? prev.findIndex(r => r.convId === msgConvId) : -1;
         /** Miss: convId not in rows. Coalesced + consent-aware handling lives in
          *  onMiss (pending-request convs only recount; others debounce refresh). */
-        if (idx === -1) { needsRefresh = true; return prev; }
-        const cur = prev[idx]!;
+        const cur = idx === -1 ? undefined : prev[idx];
+        if (cur === undefined) { needsRefresh = true; return prev; }
         const senderAddr = cur.inboxToAddr[msg.senderInboxId ?? ''] ?? null;
         notify = {
           title: cur.title,
@@ -177,7 +177,7 @@ export function makeMsgStreamHandler({ isCancelled, setRows, refresh, refreshReq
       });
       if (needsRefresh) onMiss(msgConvId);
       maybeNotify(notify, msgConvId, msg.id, lastPreview);
-    })();
+    }))();
   };
 }
 

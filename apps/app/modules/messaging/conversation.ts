@@ -35,7 +35,7 @@ export async function summarizeConversation(
   const msgs = recent;
   /** Skip our own register-push control DMs when choosing the "last message". */
   const last = msgs.find(m => {
-    try { const c = m.content(); return !(typeof c === 'string' && isMetroControlBody(c)); }
+    try { const c: unknown = m.content(); return !(typeof c === 'string' && isMetroControlBody(c)); }
     catch { return true; }
   }) ?? msgs[0];
   let preview = '';

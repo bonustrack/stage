@@ -23,6 +23,14 @@ import { useDecodedCall, spoofWarning, type DecodedCall } from '../lib/txDecode'
 import { useTxSimulation } from '../lib/txSimulate';
 import { SimulationBlock } from './MessengerBubble.sim';
 import { txActionLabel, isTransferRequest } from './MessengerBubble.txwording';
+
+/** Stringify only primitive EIP-712 domain fields; ignore objects so we never
+ *  render '[object Object]'. */
+function stringifyPrimitive(v: unknown): string | undefined {
+  if (typeof v === 'string') return v;
+  if (typeof v === 'number' || typeof v === 'bigint' || typeof v === 'boolean') return String(v);
+  return undefined;
+}
 // SigRequestCard — signature-request bubble: trusted (app-derived) title + the
 // typed-data/message detail. The peer-supplied `description` is rendered
 // SEPARATELY and labelled sender-provided, never as the prominent trusted
@@ -47,8 +55,8 @@ export function SigRequestCard({ req, dark, sub, signing, onSign, consentAllowed
   const pal = usePalette(); const blockRadius = useBlockRadius();
   const head = pal.link; // #ffffff / #000000
   const domain = req.eip712?.domain as { name?: unknown; chainId?: unknown } | undefined;
-  const domainName = domain?.name != null ? String(domain.name) : undefined;
-  const chainId = domain?.chainId != null ? String(domain.chainId) : undefined;
+  const domainName = stringifyPrimitive(domain?.name);
+  const chainId = stringifyPrimitive(domain?.chainId);
   const fields = req.kind === 'eip712' && req.eip712?.message
     ? Object.entries(req.eip712.message)
     : [];

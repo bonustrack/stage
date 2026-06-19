@@ -172,7 +172,7 @@ export function RecordingBar({
         </Text>
       </Animated.View>
       <Row height={28} flex={1} align="center" justify="end" style={{ overflow: 'hidden' }}>
-        {[...Array(Math.max(0, 40 - levels.length)).fill(0.05), ...levels].slice(-40).map((lvl, i) => (
+        {[...(Array<number>(Math.max(0, 40 - levels.length)).fill(0.05)), ...levels].slice(-40).map((lvl, i) => (
           <Box width={3} radius="2xs" height={Math.max(3, Math.round(lvl * 26))} background={head} margin={{ x: 1 }} key={i} style={{ opacity: 0.85 }}/>
         ))}
       </Row>

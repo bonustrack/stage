@@ -51,14 +51,14 @@ const LINK_PREFIX =
 export function metroDmPeerOf(text?: string | null): string | null {
   if (!text) return null;
   const m = new RegExp(LINK_PREFIX + '(?:xmtp\\/)?user\\/(0x[a-fA-F0-9]{40})').exec(text);
-  return m ? m[1]! : null;
+  return m?.[1] ?? null;
 }
 
 /** Extract the XMTP conversation id from a `metro://xmtp/<convId>` line URI.
  *  Anchored to the whole string. Returns null when the line doesn't match. */
 export function convIdOfLine(line: string): string | null {
   const m = /^metro:\/\/xmtp\/([^/]+)$/.exec(line);
-  return m ? m[1]! : null;
+  return m?.[1] ?? null;
 }
 
 /** Find a `metro://xmtp/<convId>` channel link ANYWHERE in a block of text and
@@ -72,5 +72,5 @@ export function convIdOfLine(line: string): string | null {
 export function metroConvIdOf(text?: string | null): string | null {
   if (!text) return null;
   const m = new RegExp(LINK_PREFIX + 'xmtp\\/(?!user\\/)([^\\s/?#]+)').exec(text);
-  return m ? m[1]! : null;
+  return m?.[1] ?? null;
 }

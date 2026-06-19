@@ -50,7 +50,8 @@ const ENTRY_POINT = getEntryPoint('0.7');
  *  (override with EXPO_PUBLIC_ZERODEV_RPC). If the network is unreachable in CI
  *  the suite SKIPS (rather than false-failing); when it responds, every
  *  derivation invariant is asserted hard. */
-const RPC = process.env.EXPO_PUBLIC_ZERODEV_RPC?.trim() || 'https://mainnet.base.org';
+const RPC_ENV: unknown = process.env.EXPO_PUBLIC_ZERODEV_RPC;
+const RPC = typeof RPC_ENV === 'string' && RPC_ENV.trim() !== '' ? RPC_ENV.trim() : 'https://mainnet.base.org';
 const publicClient = createPublicClient({ chain: base, transport: http(RPC) });
 
 /** Whether the Base RPC answered — gates the network-dependent assertions. */
@@ -86,7 +87,7 @@ function liveWebAuthnKey(stored: typeof STORED) {
     authenticatorIdHash: stored.authenticatorIdHash,
     rpID: stored.rpID,
     // Stubbed: building the account never calls this; only sign-time does.
-    signMessageCallback: async () => '0x' as `0x${string}`,
+    signMessageCallback: () => Promise.resolve('0x' as `0x${string}`),
   };
 }
 

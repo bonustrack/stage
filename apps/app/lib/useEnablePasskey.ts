@@ -72,7 +72,7 @@ export function useEnablePasskey(epoch?: number): {
         } else if (res.reason === 'unavailable') {
           flash('Passkeys need the latest app build');
         } else {
-          flash(res.message || 'Could not enable passkey');
+          flash(res.message ?? 'Could not enable passkey');
         }
       } finally {
         setBusy(false);

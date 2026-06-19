@@ -117,10 +117,11 @@ export async function addSmartAccount(rec: AccountRecord): Promise<AccountRecord
     await setActiveAccountId(id);
     return existing;
   }
-  const next = [...list, { ...rec, id }];
+  const created = { ...rec, id };
+  const next = [...list, created];
   await persist(next);
   await setActiveAccountId(id);
-  return next[next.length - 1];
+  return created;
 }
 
 /** Update mutable bookkeeping fields on a smart account (deployed flag, the
@@ -158,7 +159,8 @@ export async function removeAccount(id: string): Promise<AccountRecord[]> {
   await persist(next);
   const active = await getActiveAccountId();
   if (active === id) {
-    if (next.length) await setActiveAccountId(next[0].id);
+    const first = next[0];
+    if (first) await setActiveAccountId(first.id);
     else await SecureStore.deleteItemAsync(ACTIVE_KEY).catch(() => undefined);
   }
   return next;

@@ -39,6 +39,6 @@ export const pollContentSchema: ZodType<PollContent> = z.object({
   options: z.array(optionSchema).min(2).optional(),
   multiSelect: z.boolean().optional(),
 }).refine(
-  p => (p.questions && p.questions.length > 0) || (typeof p.question === 'string' && (p.options?.length ?? 0) >= 2),
+  p => (p.questions !== undefined && p.questions.length > 0) || (typeof p.question === 'string' && (p.options?.length ?? 0) >= 2),
   { message: 'poll needs either questions[] or a question + options' },
 ) as unknown as ZodType<PollContent>;

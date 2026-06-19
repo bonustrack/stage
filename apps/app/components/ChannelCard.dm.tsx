@@ -19,7 +19,8 @@ export function DmPeerCard({ address }: { address: string }): React.ReactElement
   const { border } = usePalette();
   const blockRadius = useBlockRadius();
 
-  const title = getPeerName(address) || shortAddress(address);
+  const peerName = getPeerName(address);
+  const title = peerName == null || peerName === '' ? shortAddress(address) : peerName;
   /** Hold the stamp back until the peer profile resolves so we don't flash an
    *  identicon before the name lands (mirrors ChannelCard). */
   const avatarAddress = !isPeerResolved(address) ? null : address;

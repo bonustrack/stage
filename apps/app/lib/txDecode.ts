@@ -83,14 +83,25 @@ function selectorOf(data?: string): string | undefined {
   return data.slice(0, 10).toLowerCase();
 }
 
+/** Convert an object to its default string form, preserving any custom
+ *  `toString`, without tripping no-base-to-string on a bare `String(obj)`. */
+function safeObjectToString(v: object): string {
+  const fn: unknown = (v as { toString?: unknown }).toString;
+  if (typeof fn === 'function') {
+    const out: unknown = (fn as () => unknown).call(v);
+    if (typeof out === 'string') return out;
+  }
+  return Object.prototype.toString.call(v);
+}
+
 /** Stringify a decoded arg value for display (BigInt-safe, address-preserving). */
 function fmtArg(v: unknown): string {
   if (typeof v === 'bigint') return v.toString();
   if (typeof v === 'string') return v;
   if (Array.isArray(v)) return `[${v.map(fmtArg).join(', ')}]`;
   if (v && typeof v === 'object') {
-    try { return JSON.stringify(v, (_k, x) => (typeof x === 'bigint' ? x.toString() : x)); }
-    catch { return String(v); }
+    try { return JSON.stringify(v, (_k, x: unknown) => (typeof x === 'bigint' ? x.toString() : x)); }
+    catch { return safeObjectToString(v); }
   }
   return String(v);
 }
@@ -182,11 +193,16 @@ export async function decodeCall(
             i.type === 'function' && i.name === decoded.functionName,
         );
         const inputs = fn?.inputs ?? [];
-        const args = (decoded.args ?? []).map((v, i) => ({
-          name: inputs[i]?.name || `arg${i}`,
-          type: inputs[i]?.type || '',
-          value: fmtArg(v),
-        }));
+        const args = (decoded.args ?? []).map((v, i) => {
+          const input = inputs[i];
+          const argName = input?.name;
+          const argType = input?.type;
+          return {
+            name: argName !== undefined && argName.length > 0 ? argName : `arg${i}`,
+            type: argType ?? '',
+            value: fmtArg(v),
+          };
+        });
         const signature = fn
           ? `${fn.name}(${inputs.map(p => p.type).join(',')})`
           : decoded.functionName;
@@ -229,11 +245,16 @@ export async function decodeCall(
       // Guard the selector actually matches (4byte can return collisions).
       if (toFunctionSelector(item).toLowerCase() === selector) {
         const decoded = decodeFunctionData({ abi: [item] as Abi, data: data as Hex });
-        args = (decoded.args ?? []).map((v, i) => ({
-          name: item.inputs[i]?.name || `arg${i}`,
-          type: item.inputs[i]?.type || '',
-          value: fmtArg(v),
-        }));
+        args = (decoded.args ?? []).map((v, i) => {
+          const input = item.inputs[i];
+          const argName = input?.name;
+          const argType = input?.type;
+          return {
+            name: argName !== undefined && argName.length > 0 ? argName : `arg${i}`,
+            type: argType ?? '',
+            value: fmtArg(v),
+          };
+        });
       }
     } catch { /* keep name only */ }
     return {

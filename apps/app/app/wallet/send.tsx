@@ -36,7 +36,7 @@ export default function WalletSend(): React.ReactElement {
   const hasParamToken = typeof params.symbol === 'string' && params.symbol.length > 0;
   const initial = useMemo<TokenChoice>(() => {
     const isPrivate = params.private === '1' || params.private === 'true';
-    const symbol = hasParamToken ? (params.symbol!) : 'ETH';
+    const symbol = typeof params.symbol === 'string' && params.symbol.length > 0 ? params.symbol : 'ETH';
     const chainId = typeof params.chainId === 'string' && Number.isFinite(Number(params.chainId))
       ? Number(params.chainId) : isPrivate ? 11155111 : 1;
     return { symbol, chainId, isPrivate };

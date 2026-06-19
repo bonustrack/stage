@@ -158,7 +158,9 @@ export function Select(props: SelectProps): React.ReactElement {
         >
           <Pressable
             style={{ backgroundColor: sheetBg, borderRadius: 14, overflow: 'hidden', maxHeight: '70%' }}
-            onPress={() => {}}
+            onPress={() => {
+              /* intentional no-op: swallow press so taps inside the sheet don't dismiss it */
+            }}
           >
             <ScrollView>
               {options.map((opt) => {

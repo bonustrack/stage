@@ -79,8 +79,9 @@ export function resolveActiveAccount(
   list: AccountRecord[],
   activeId: string | null,
 ): AccountRecord | null {
-  if (!list.length) return null;
-  return list.find(a => a.id === activeId) ?? list[0];
+  const first = list[0];
+  if (first === undefined) return null;
+  return list.find(a => a.id === activeId) ?? first;
 }
 
 /** Whether an account can sign in-app (has, or can have, a local key). A

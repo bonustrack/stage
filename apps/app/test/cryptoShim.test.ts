@@ -61,7 +61,7 @@ describe('cryptoShim CSPRNG invariant', () => {
     expect(() => { assertSecureRandom({ crypto: {} }); }).toThrow();
     // Real CSPRNG present -> ok.
     expect(() =>
-      { assertSecureRandom({ crypto: { getRandomValues: () => {} } }); },
+      { assertSecureRandom({ crypto: { getRandomValues: (arr: unknown) => arr } }); },
     ).not.toThrow();
   });
 });

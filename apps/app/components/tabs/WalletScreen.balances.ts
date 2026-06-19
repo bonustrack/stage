@@ -105,7 +105,7 @@ export function useWalletBalances(privAccountId: string | null, focused: boolean
     /** Fire the Railgun shielded re-scan in the BACKGROUND (it can take many
      *  seconds and pushes its result into the cache store the UI subscribes to)
      *  so it never holds the spinner hostage. */
-    if (privAccountId) void refreshSnapshot(privAccountId).catch(() => {});
+    if (privAccountId) void refreshSnapshot(privAccountId).catch(() => {/* noop */});
 
     void (async (): Promise<void> => {
       try {

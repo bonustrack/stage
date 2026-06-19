@@ -51,7 +51,8 @@ export function rememberLocalAttachments(messageId: string, uris: readonly (stri
  *  cached for a send made this session. */
 function getLocalAttachment(messageId: string, index: number): string | undefined {
   const uri = byMessageId.get(messageId)?.[index];
-  return uri ? uri : undefined;
+  // Treat both missing and stored-empty as "no local"; ?? would leak ''.
+  return uri === undefined || uri === '' ? undefined : uri;
 }
 
 /** Copy a freshly-picked local `file://` URI into a STABLE app-cache file so it
@@ -89,7 +90,7 @@ export function stashLocalAttachment(srcUri: string): string {
 export function useLocalAttachment(messageId?: string, index?: number): string | undefined {
   return useSyncExternalStore(
     (cb) => {
-      if (messageId === undefined || index === undefined) return () => {};
+      if (messageId === undefined || index === undefined) return () => { /* nothing to unsubscribe */ return; };
       listeners.add(cb);
       return () => { listeners.delete(cb); };
     },

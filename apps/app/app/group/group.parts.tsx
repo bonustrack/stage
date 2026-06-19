@@ -43,7 +43,7 @@ export function MemberRow({
 />
       <Col minWidth={0} flex={1}>
         <Text weight="semibold" size="md" color={head} numberOfLines={1}>
-          {name || shortAddress(item)}{isSelf ? ' (you)' : ''}
+          {name == null || name === '' ? shortAddress(item) : name}{isSelf ? ' (you)' : ''}
         </Text>
         {name ? (
           <Text size="xs" color={sub} style={{ marginTop: 2 }} numberOfLines={1}>

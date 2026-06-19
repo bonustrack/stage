@@ -47,7 +47,8 @@ export function MentionBody({ text, fg, dark, selectable }: { text: string; fg: 
   let i = 0;
   while ((m = MENTION_RE.exec(text)) !== null) {
     if (m.index> last) runs.push(text.slice(last, m.index));
-    runs.push(<MentionLink key={`m${i}`} address={m[1].toLowerCase()} dark={dark} />);
+    const mentionAddr = m[1] ?? m[0];
+    runs.push(<MentionLink key={`m${i}`} address={mentionAddr.toLowerCase()} dark={dark} />);
     last = m.index + m[0].length;
     i += 1;
   }

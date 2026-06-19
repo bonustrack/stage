@@ -90,7 +90,7 @@ export function useChannelRowRenderer(
           setRowMenu({
             convId: item.convId,
             title: item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title,
-            isUnread: item.unreadCount> 0 || !!item.markedUnread,
+            isUnread: item.unreadCount> 0 || item.markedUnread,
             isGroup: !item.peerAddress,
             peerAddress: item.peerAddress,
           });

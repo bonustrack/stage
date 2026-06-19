@@ -31,9 +31,11 @@ const NONCE = '0x' + '11'.repeat(32);
 describe('buildAuthorization', () => {
   test('maps challenge + payer into the EIP-3009 authorization', () => {
     const auth = buildAuthorization({ from: FROM, accept: FIXTURE_ACCEPT, now: NOW, nonce: NONCE });
+    const payTo = FIXTURE_ACCEPT.payTo;
+    if (payTo === undefined) throw new Error('fixture must define payTo');
     expect(auth).toEqual({
       from: FROM,
-      to: FIXTURE_ACCEPT.payTo!,
+      to: payTo,
       value: '10000',
       validAfter: '0',
       validBefore: String(NOW + 600),
@@ -85,7 +87,7 @@ describe('buildPaymentHeader', () => {
     const auth = buildAuthorization({ from: FROM, accept: FIXTURE_ACCEPT, now: NOW, nonce: NONCE });
     const header = buildPaymentHeader({ accept: FIXTURE_ACCEPT, authorization: auth, signature: SIGNATURE });
 
-    const decoded = JSON.parse(Buffer.from(header, 'base64').toString('utf-8'));
+    const decoded: unknown = JSON.parse(Buffer.from(header, 'base64').toString('utf-8'));
     expect(decoded).toEqual({
       x402Version: 1,
       scheme: 'exact',
@@ -114,8 +116,11 @@ describe('buildPaymentHeader', () => {
   test('honours an explicit x402Version', () => {
     const auth = buildAuthorization({ from: FROM, accept: FIXTURE_ACCEPT, now: NOW, nonce: NONCE });
     const header = buildPaymentHeader({ accept: FIXTURE_ACCEPT, authorization: auth, signature: SIGNATURE, x402Version: 2 });
-    const decoded = JSON.parse(Buffer.from(header, 'base64').toString('utf-8'));
-    expect(decoded.x402Version).toBe(2);
+    const decoded: unknown = JSON.parse(Buffer.from(header, 'base64').toString('utf-8'));
+    const version = decoded !== null && typeof decoded === 'object' && 'x402Version' in decoded
+      ? decoded.x402Version
+      : undefined;
+    expect(version).toBe(2);
   });
 });
 

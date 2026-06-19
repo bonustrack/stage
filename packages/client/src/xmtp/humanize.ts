@@ -98,9 +98,9 @@ export function previewOfXmtpContent(decoded: unknown, contentTypeId: string | u
  *  remote-attachment metadata omits the MIME (multi-remote attachments). */
 export function attachmentEmojiPreview(mimeType?: string | null, filename?: string | null): string {
   const ext = filename?.split('.').pop()?.toLowerCase() ?? '';
-  const isImage = mimeType?.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic'].includes(ext);
-  const isAudio = mimeType?.startsWith('audio/') || ['m4a', 'mp3', 'wav', 'aac', 'ogg'].includes(ext);
-  const isVideo = mimeType?.startsWith('video/') || ['mp4', 'mov', 'webm'].includes(ext);
+  const isImage = (mimeType?.startsWith('image/') ?? false) || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic'].includes(ext);
+  const isAudio = (mimeType?.startsWith('audio/') ?? false) || ['m4a', 'mp3', 'wav', 'aac', 'ogg'].includes(ext);
+  const isVideo = (mimeType?.startsWith('video/') ?? false) || ['mp4', 'mov', 'webm'].includes(ext);
   if (isImage) return '📷';
   if (isAudio) return '🎤';
   if (isVideo) return '🎥';

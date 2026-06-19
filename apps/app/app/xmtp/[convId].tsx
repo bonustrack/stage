@@ -274,7 +274,7 @@ export default function XmtpConversation(): React.ReactElement {
       <ChannelMenu
         visible={overflowOpen}
         convId={convId ?? ''}
-        title={isGroup ? (groupName || undefined) : (peerAddr ? (getPeerName(peerAddr) ?? shortAddress(peerAddr)) : undefined)}
+        title={isGroup ? (groupName == null || groupName === '' ? undefined : groupName) : (peerAddr ? (getPeerName(peerAddr) ?? shortAddress(peerAddr)) : undefined)}
         isGroup={isGroup}
         peerAddress={peerAddr}
         isUnread={(getCachedRows()?.find(r => r.convId === convId)?.unreadCount ?? 0) > 0}

@@ -76,7 +76,7 @@ async function send(): Promise<void> {
       const replyTo = props.replyingTo?.id;
       emit('optimistic', { localId, text: body, ...(replyTo ? { replyTo } : {}) });
       text.value = '';
-      nextTick(autoGrow);
+      void nextTick(autoGrow);
       if (replyTo) await xmtpReply(props.line, replyTo, body);
       else await xmtpSendText(props.line, body);
       emit('clear-reply');

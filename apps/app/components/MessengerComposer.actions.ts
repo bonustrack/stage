@@ -59,17 +59,18 @@ export function useComposerActions(a: ComposerActionsArgs) {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) { Alert.alert('Camera permission denied'); return; }
     const r = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.5 });
-    if (r.canceled || !r.assets?.length) return;
+    const asset = r.canceled ? undefined : r.assets[0];
+    if (asset === undefined) return;
     setLastAttachment('Camera');
-    const asset = r.assets[0]!;
     await upload(asset.uri, asset.mimeType ?? 'image/jpeg', asset.fileName ?? undefined);
   };
 
   const pickFile = async (): Promise<void> => {
     const r = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true });
     if (r.canceled) return;
-    setLastAttachment('File');
     const asset = r.assets[0];
+    if (asset === undefined) return;
+    setLastAttachment('File');
     await upload(asset.uri, asset.mimeType ?? 'application/octet-stream', asset.name);
   };
 
@@ -91,7 +92,8 @@ export function useComposerActions(a: ComposerActionsArgs) {
 
   /** Prefill the recipient with the lone DM peer when opening the sheet. */
   const openTx = (): void => {
-    if (!a.txTo && a.mentionCandidates?.length === 1) a.setTxTo(a.mentionCandidates[0]!.address);
+    const lone = a.mentionCandidates?.length === 1 ? a.mentionCandidates[0] : undefined;
+    if (!a.txTo && lone !== undefined) a.setTxTo(lone.address);
     a.setTxOpen(true);
   };
 
@@ -138,8 +140,7 @@ export function useComposerActions(a: ComposerActionsArgs) {
      *  otherwise stay disabled forever and wedge the composer. */
     let sendErr: string | undefined;
     try {
-      for (let i = 0; i < steps.length; i++) {
-        const s = steps[i]!;
+      for (const s of steps) {
         if (sendErr) { a.onSent?.(s.localId, sendErr); continue; }
         try {
           const id = await s.run();

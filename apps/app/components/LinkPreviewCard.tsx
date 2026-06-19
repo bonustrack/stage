@@ -37,7 +37,9 @@ export function LinkPreviewCard({ url, dark }: {
 
   const subColor = pal.text;
   const border = pal.border;
-  const domain = meta.siteName || domainOf(meta.url || url);
+  const domain = meta.siteName == null || meta.siteName === ''
+    ? domainOf(meta.url == null || meta.url === '' ? url : meta.url)
+    : meta.siteName;
 
   return (
     <Pressable onPress={() => void Linking.openURL(url)}>

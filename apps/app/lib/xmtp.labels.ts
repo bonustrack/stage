@@ -40,10 +40,18 @@ interface GroupLike {
   updateAppData?: (appData: string) => Promise<void>;
 }
 
-/** Narrow a conversation to a GroupLike if it exposes the appData read/write methods, else null. */
-export function asGroup(conv: unknown): GroupLike | null {
+/** A GroupLike that has been verified to expose the appData read/write methods. */
+export interface Group extends GroupLike {
+  appData: () => Promise<string>;
+  updateAppData: (appData: string) => Promise<void>;
+}
+
+/** Narrow a conversation to a Group if it exposes the appData read/write methods, else null. */
+export function asGroup(conv: unknown): Group | null {
   const g = conv as GroupLike;
-  return g && typeof g.appData === 'function' && typeof g.updateAppData === 'function' ? g : null;
+  return g && typeof g.appData === 'function' && typeof g.updateAppData === 'function'
+    ? (g as Group)
+    : null;
 }
 
 /** Normalise one label: trim, collapse inner whitespace, cap length. */
@@ -90,7 +98,7 @@ export async function getGroupLabels(line: string): Promise<string[]> {
   if (!group) return [];
   try {
     await group.sync?.();
-    const appData = await group.appData!();
+    const appData = await group.appData();
     return readLabels(parseBlob(appData));
   } catch {
     return [];
@@ -107,7 +115,7 @@ export async function labelsOfSyncedGroup(conv: unknown): Promise<string[]> {
   const group = asGroup(conv);
   if (!group) return [];
   try {
-    return readLabels(parseBlob(await group.appData!()));
+    return readLabels(parseBlob(await group.appData()));
   } catch {
     return [];
   }
@@ -121,11 +129,11 @@ async function mutate(line: string, fn: (labels: string[]) => string[]): Promise
   const group = asGroup(conv);
   if (!group) throw new Error('Not a group conversation');
   await group.sync?.();
-  const existing = parseBlob(await group.appData!());
+  const existing = parseBlob(await group.appData());
   const next = readLabels({ ...existing, labels: fn(readLabels(existing)) });
   const blob: LabelsBlob & Record<string, unknown> = { ...existing, v: 1, labels: next };
   try {
-    await group.updateAppData!(JSON.stringify(blob));
+    await group.updateAppData(JSON.stringify(blob));
   } catch (e) {
     const msg = e instanceof Error ? e.message.toLowerCase() : '';
     if (msg.includes('permission') || msg.includes('not authorized') || msg.includes('unauthorized')) {

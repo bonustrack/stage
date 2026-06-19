@@ -15,7 +15,7 @@ const props = defineProps<{
   /** Only show the remove button when the viewer is a group admin/owner. */
   canRemove?: boolean;
 }>();
-const emit = defineEmits<{ (e: 'open'): void; (e: 'remove'): void }>();
+const emit = defineEmits<{ open: []; remove: [] }>();
 </script>
 
 <template>

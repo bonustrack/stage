@@ -31,7 +31,7 @@ export async function removeGroupMember(line: string, addr: string): Promise<str
   };
   if (!group.removeMembersByIdentity) throw new Error('Not a group conversation');
   await group.removeMembersByIdentity([new PublicIdentity(addr, 'ETHEREUM')]);
-  return sortedMembers(conv!);
+  return sortedMembers(conv);
 }
 
 /** Update the group's image URL via the XMTP group metadata. */

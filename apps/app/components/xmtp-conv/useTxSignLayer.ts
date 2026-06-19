@@ -148,6 +148,7 @@ export function useTxSignLayer(activeLine: string) {
   const onPay = useCallback((requestId: string, wsc: WalletSendCallsContent) => {
     const call = wsc.calls?.[0];
     if (!call?.to) { flash('Malformed payment request'); return; }
+    const callTo = call.to;
     const chainId = chainIdToNumber(wsc.chainId);
     const chainName = VIEM_CHAINS[chainId]?.name ?? `chain ${chainId}`;
     const nativeSymbol = VIEM_CHAINS[chainId]?.nativeCurrency?.symbol ?? 'ETH';
@@ -199,7 +200,7 @@ export function useTxSignLayer(activeLine: string) {
            *  ERC-20 this broadcasts the encoded `transfer(...)` to the token
            *  contract; for a native send it's a value-only tx. */
           txHash = await sendCall({
-            to: call.to!, data: call.data, value: call.value, chainId,
+            to: callTo, data: call.data, value: call.value, chainId,
           });
         }
         /** Receipt metadata is built from the VERIFIED summary (decoded from the

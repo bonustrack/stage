@@ -16,8 +16,11 @@ export type { X402Accept, X402Challenge };
 
 /** Base url of the link-preview proxy. Overridable via env so a dev build can
  *  point at a local instance; defaults to the production tunnel host. */
+const LINK_PREVIEW_BASE_ENV: unknown = process.env.EXPO_PUBLIC_LINKPROXY_URL;
 export const LINK_PREVIEW_BASE =
-  process.env.EXPO_PUBLIC_LINKPROXY_URL?.replace(/\/$/, '') || 'https://preview.metro.box';
+  typeof LINK_PREVIEW_BASE_ENV === 'string' && LINK_PREVIEW_BASE_ENV !== ''
+    ? LINK_PREVIEW_BASE_ENV.replace(/\/$/, '')
+    : 'https://preview.metro.box';
 
 interface LinkPreview {
   url: string;
@@ -74,7 +77,7 @@ async function fetchLinkPreview(url: string): Promise<LinkPreviewResult | null> 
 export function useLinkPreview(url: string | null): LinkPreviewResult | null {
   const { data } = useQuery({
     queryKey: ['linkPreview', url ?? ''],
-    queryFn: () => fetchLinkPreview(url!),
+    queryFn: () => fetchLinkPreview(url ?? ''),
     enabled: !!url,
     staleTime: 60 * 60_000,
     gcTime: 24 * 60 * 60_000,

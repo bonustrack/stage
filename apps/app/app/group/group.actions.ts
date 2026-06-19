@@ -95,8 +95,8 @@ export function useGroupActions(line: string, invalidateConvMeta: () => void): {
        *  part of expo-image-picker, no extra native dep. */
       allowsEditing: true, aspect: [1, 1],
     });
-    if (r.canceled || !r.assets?.length) return;
-    const a = r.assets[0]!;
+    const a = r.canceled ? undefined : r.assets[0];
+    if (a === undefined) return;
     setUploadingImage(true);
     try {
       const url = await uploadAvatar(a.uri, a.mimeType ?? 'image/jpeg', a.fileName ?? 'group-avatar');

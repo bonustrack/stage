@@ -174,7 +174,7 @@ export function deleteDbFiles(dbDirName: string): void {
 function dbDirObj(name: string): Directory { return new Directory(Paths.document, name); }
 
 /** Ensure the XMTP sqlite/key-store directory exists and is writable, returning its fs path. */
-export async function ensureDbDir(name: string): Promise<string> {
+export function ensureDbDir(name: string): Promise<string> {
   const dir = dbDirObj(name);
   /** Create the dir (recursively) BEFORE create() so the native SQLCipher open
    *  has a real, writable, app-private target. A missing dir is the classic cause
@@ -182,7 +182,7 @@ export async function ensureDbDir(name: string): Promise<string> {
   if (!dir.exists) dir.create({ intermediates: true });
   const path = toFsPath(dir);
   if (__DEV__) assertWritableDir(dir, path);
-  return path;
+  return Promise.resolve(path);
 }
 
 /** Convert an expo-file-system directory URI into the absolute filesystem path

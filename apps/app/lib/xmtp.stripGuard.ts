@@ -23,15 +23,22 @@ import type { encryptSanitizedAttachment } from './xmtp.attachments';
 /** Helper: assert `A` is assignable to `B` at the type level. */
 type AssertAssignable<B, A extends B> = A;
 
+/** Helper: `true` iff `A` is assignable to `B`, else `false` (no error raised). */
+type IsAssignable<A, B> = [A] extends [B] ? true : false;
+
+/** Helper: compile-time assertion that a boolean type is exactly `false`. Used to
+ *  prove a NEGATIVE assignability relationship without an error directive. */
+type AssertFalse<T extends false> = T;
+
 /** The encrypt boundary's `fileUri` param. */
 type BoundaryFileUri = Parameters<typeof encryptSanitizedAttachment>[1]['fileUri'];
 
 /** GUARD 1: the boundary requires the brand. A plain `string` must NOT be
- *  assignable to the boundary's `fileUri` - if it were, the next line errors. */
-type _RawStringRejected =
-  // @ts-expect-error - `string` is wider than `SanitizedFileUri`; if the boundary
-  // ever accepts a bare string this directive becomes unused and fails the build.
-  AssertAssignable<BoundaryFileUri, string>;
+ *  assignable to the boundary's `fileUri`. We assert the NEGATIVE relationship:
+ *  `IsAssignable<string, BoundaryFileUri>` must resolve to `false`. If the
+ *  boundary ever loosens to accept a bare string, this resolves to `true` and
+ *  `AssertFalse` stops compiling - failing the build. */
+type _RawStringRejected = AssertFalse<IsAssignable<string, BoundaryFileUri>>;
 
 /** GUARD 2: `sanitizeFileUri`'s output IS accepted by the boundary (it is the
  *  sole legitimate producer). Breaks if `sanitizeFileUri` returns plain string. */

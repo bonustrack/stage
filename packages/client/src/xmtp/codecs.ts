@@ -61,9 +61,9 @@ export interface EncodedJsonContent {
  *  `JSON.stringify` -> UTF-8 bytes. `fallback` carries the plain-text rendering
  *  so vanilla XMTP clients (and any client missing the codec) show a readable
  *  string instead of a blank/error bubble. */
-export function encodeJsonContent<T>(
+export function encodeJsonContent(
   type: XmtpContentTypeId,
-  content: T,
+  content: unknown,
   fallback?: string,
 ): EncodedJsonContent {
   return {

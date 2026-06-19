@@ -39,8 +39,8 @@ function ConvIdCard({ convId }: { convId: string }): React.ReactElement {
   const peer = meta.peerAddr;
   const peerName = getPeerName(peer);
   const title = isGroup
-    ? (meta.groupName || 'Channel')
-    : (peerName || (peer ? shortAddress(peer) : `Channel ${convId.slice(0, 6)}…`));
+    ? (meta.groupName == null || meta.groupName === '' ? 'Channel' : meta.groupName)
+    : (peerName == null || peerName === '' ? (peer ? shortAddress(peer) : `Channel ${convId.slice(0, 6)}…`) : peerName);
   const subtitle = isGroup
     ? (meta.memberAddrs.length ? `${meta.memberAddrs.length} members` : 'Channel')
     : (peer ? 'Direct message' : 'Open channel');

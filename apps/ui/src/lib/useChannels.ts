@@ -105,7 +105,7 @@ export function useChannels(): ChannelsState {
     rowMenu.value = {
       convId: r.convId,
       title: r.title,
-      isUnread: r.unreadCount > 0 || !!r.markedUnread,
+      isUnread: r.unreadCount > 0 || r.markedUnread,
       x: Math.max(8, Math.min(ev.clientX, maxX)),
       y: ev.clientY,
     };
