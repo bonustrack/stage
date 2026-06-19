@@ -2,6 +2,7 @@
  *  button, the Tokens|NFTs tabs. Extracted from WalletScreen for lint
  *  line-budget. Rendering identical. */
 
+import { memo } from 'react';
 import { Pressable } from '@metro-labs/kit/pressable';
 
 import { Text } from '@metro-labs/kit/text';
@@ -91,7 +92,7 @@ function PrivateBadge({ sub }: { sub: string }): React.ReactElement {
 /** A single asset row — 4-corner layout with token avatar + network badge.
  *  Tappable: `onPress` navigates to the token detail screen (wired by the
  *  caller). Wrapped in a Pressable with a subtle pressed-opacity. */
-export function TokenRow({ r, head, sub, border, bg, onPress }: { r: AssetRow; onPress?: () => void } & Omit<Palette, 'card'>): React.ReactElement {
+export const TokenRow = memo(function TokenRow({ r, head, sub, border, bg, onPress }: { r: AssetRow; onPress?: () => void } & Omit<Palette, 'card'>): React.ReactElement {
   const valueUsd = r.priceUsd === null ? null : r.priceUsd * Number(r.balance);
   /** Up/down colour for the 24h change pill — green for non-negative,
    *  red for negative. Uses the same tones as Snapshot UI's treasury. */
@@ -136,7 +137,7 @@ export function TokenRow({ r, head, sub, border, bg, onPress }: { r: AssetRow; o
     </Row>
     </Pressable>
   );
-}
+});
 
 // NftsView lives in its own module; re-export so import paths are unchanged.
 export { NftsView } from './WalletScreen.nfts';
