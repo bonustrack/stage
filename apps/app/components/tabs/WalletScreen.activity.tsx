@@ -3,7 +3,7 @@
  *  Each row shows a direction icon, decoded action + counterparty, relative time, signed ETH value, and a chain badge.
  */
 
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 
 import { Text } from '@metro-labs/kit/text';
 import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
@@ -41,8 +41,11 @@ export function ActivityView({ address, head, sub, border, bg }: {
     return () => { cancelled = true; };
   }, [address]);
 
-  // Pre-resolve the counterparties' Snapshot names for nicer rows.
-  usePeerProfiles(rows.map(r => r.counterparty));
+  // Pre-resolve the counterparties' Snapshot names for nicer rows. Memoized on
+  // `rows` so the address list keeps a stable identity across the parent's
+  // frequent re-renders (balance/price ticks) instead of a fresh array each time.
+  const counterparties = useMemo(() => rows.map(r => r.counterparty), [rows]);
+  usePeerProfiles(counterparties);
 
   // The private (shielded 0zk) transfer section paints independently of the
   // public Etherscan fetch: it always renders above the public list when it has
@@ -97,8 +100,8 @@ const DIR_ICON: Record<ActivityRow['direction'], HeroIconName> = {
   send: 'arrowUp', receive: 'arrowDown', self: 'switchHorizontal',
 };
 
-/** A single transaction row — 4-corner layout matching TokenRow: a circular direction icon, the action title over counterparty + time, and the signed ETH value over the tx status. */
-function TxRow({ r, head, sub, border, bg }: {
+/** A single transaction row — 4-corner layout matching TokenRow: a circular direction icon, the action title over counterparty + time, and the signed ETH value over the tx status. Wrapped in React.memo (mirroring the memoized TokenRow): the parent re-renders every few seconds on balance/price/snapshot ticks, but each row's props are referentially stable (`r` from the stable `rows` state, palette strings), so the memo skips re-rendering unchanged rows. */
+const TxRow = memo(function TxRow({ r, head, sub, border, bg }: {
   r: ActivityRow; head: string; sub: string; border: string; bg: string;
 }): React.ReactElement {
   void bg;
@@ -140,7 +143,7 @@ function TxRow({ r, head, sub, border, bg }: {
       </Col>
     </Row>
   );
-}
+});
 
 /** Compact relative time: "3h", "2d", or a date for older txs. */
 function relTime(ts: number): string {
