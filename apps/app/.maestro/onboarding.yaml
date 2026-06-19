@@ -1,0 +1,40 @@
+# Maestro onboarding flow for the Stage mobile app (apps/app).
+#
+# appId is the default (non-prod) variant package from app.config.js.
+# The prod variant (APP_VARIANT=prod) is `box.metro.monitor` — change appId
+# below if testing a prod build.
+#
+# Run against a connected Android emulator/device or iOS simulator:
+#     maestro test apps/app/.maestro/onboarding.yaml
+# Or upload to Maestro Cloud for a recorded run on a managed device.
+#
+# These assertions match the onboarding + restore screens verified to render
+# under `expo start --web`. Adding `testID` props to the inputs/buttons (then
+# matching `id:` here instead of text) would make the flow language- and
+# copy-change-proof.
+appId: box.stage
+---
+- launchApp:
+    clearState: true
+
+# --- Onboarding hero ---
+- assertVisible: "Stage"
+- assertVisible: "Your wallet, your messages, your governance.*"
+- assertVisible: "Create new wallet"
+- assertVisible: "I have a recovery phrase"
+- takeScreenshot: onboarding
+
+# --- Restore-wallet flow ---
+- tapOn: "I have a recovery phrase"
+- assertVisible: "Restore wallet"
+- assertVisible: "Enter your 12-24 word recovery phrase.*"
+# Focus the phrase field (matches the placeholder) and type a public BIP39
+# zero-entropy test vector — NOT a real seed.
+- tapOn: "word1 word2 word3 …"
+- inputText: "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
+- assertVisible: "Continue"
+- takeScreenshot: restore-filled
+
+# --- Back to onboarding ---
+- tapOn: "Back"
+- assertVisible: "Create new wallet"
