@@ -79,6 +79,25 @@ describe('buildSortedTokenRows', () => {
     expect(pub.map(r => r.symbol)).toEqual(['A']);
     expect(priv.map(r => r.symbol)).toEqual(['B']);
   });
+
+  test('passes input row objects through by reference (memo-safety invariant)', () => {
+    // TokenRow is React.memo'd on `r`; the parent's useMemo is keyed on the row
+    // arrays, so as long as the same AssetRow object identities flow in, the
+    // emitted `r` must be the SAME reference — that referential stability is
+    // exactly what lets the memo skip a re-render. Guard it directly: the
+    // transform must never clone/spread the row objects it forwards.
+    const pub = [
+      row({ symbol: 'A', balance: '1', priceUsd: 10 }),
+      row({ symbol: 'B', balance: '2', priceUsd: 100 }),
+    ];
+    const priv = [row({ symbol: 'C', balance: '5', priceUsd: 20, isPrivate: true })];
+    const out = buildSortedTokenRows(pub, priv);
+    const inputs = new Set<AssetRow>([...pub, ...priv]);
+    for (const { r } of out) expect(inputs.has(r)).toBe(true);
+    // And stable across calls on the same identities (memo cache-hit path).
+    const again = buildSortedTokenRows(pub, priv);
+    expect(again.map(x => x.r)).toEqual(out.map(x => x.r));
+  });
 });
 
 describe('tokenRowId', () => {
