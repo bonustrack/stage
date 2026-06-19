@@ -1,10 +1,6 @@
-/** RadioGroup - a ChatKit-styled radio group. Mirrors ChatKit's `RadioGroup`
- *  widget. Faithful prop names: `name`, `options` ({ label, value, disabled }[]),
- *  `defaultValue`, `direction` ('row' | 'col'), `disabled`, `required`,
- *  `ariaLabel`. Deviation (kit is interactive RN): ChatKit's `onChangeAction`
- *  (server ActionConfig) is replaced by an `onChange(value)` callback, and a
- *  controlled `value` prop is accepted. `dark` boolean keeps the kit hook-free.
- *  Each option's dot is drawn with RN views. */
+/**
+ * @file RadioGroup — a hook-free interactive ChatKit-styled radio group (controlled `value` + `onChange`) rendering each option's dot with RN views.
+ */
 
 import { useState } from 'react';
 import { Pressable, View, Text as RNText, type ViewStyle } from 'react-native';

@@ -1,11 +1,8 @@
-/** Settings → Display - switch the app theme between System / Light / Dark, or
- *  pick Custom to edit the palette color + radius tokens inline.
- *  Reuses the existing theme store (lib/theme: setThemePreference +
- *  useThemePreference, a module-level pub/sub that re-themes the whole app
- *  instantly) and the shared THEME_OPTIONS data. Custom is an orthogonal flag
- *  (useCustomTheme/setCustomTheme): when on, the saved color overrides apply
- *  and the ColorTokens editor (moved here from the Kit page) is revealed. No
- *  new store. */
+/**
+ * @file Settings -> Display screen: switch the app theme between
+ *  System/Light/Dark or pick Custom to edit palette color and radius tokens
+ *  inline, backed by the shared lib/theme store.
+ */
 
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 

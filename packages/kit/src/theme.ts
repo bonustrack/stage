@@ -1,8 +1,6 @@
-/** Theme-preference primitives shared by both shells. The *storage* and
- *  *reactivity* are framework-specific (apps/ui uses a Vue ref + localStorage;
- *  apps/app uses a React hook + expo-secure-store), so only the type, the
- *  valid-value set, and the storage key live here — the single contract both
- *  implementations agree on. */
+/**
+ * @file Shared theme-preference contract — the type, valid-value set, and storage key both shells agree on, leaving framework-specific storage and reactivity to each app.
+ */
 
 export type ThemePreference = 'light' | 'dark' | 'system';
 

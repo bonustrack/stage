@@ -1,4 +1,8 @@
-/** Typed bridge frame builders for the RAILGUN UNSHIELD primitives.
+/**
+ * @file Typed bridge frame builders for the Railgun unshield (private to public) primitives (estimate, prove, populate).
+ */
+/**
+ * Typed bridge frame builders for the RAILGUN UNSHIELD primitives.
  *
  *  Unshield is private->public: it moves funds from the user's shielded balance
  *  back to a PUBLIC address (the user's own EOA by default). Unlike shield it
@@ -13,14 +17,14 @@
  *  sendWithPublicWallet is always `true` and broadcasterFeeERC20AmountRecipient
  *  is undefined.
  *
- *  PURE: no native imports. The dispatcher that ships these frames is injected. */
+ *  PURE: no native imports. The dispatcher that ships these frames is injected.
+ */
 import type { RailgunDispatch } from './dispatch';
 import { SDK_METHOD } from './methods';
 import { bn } from './wire';
 import type { PopulateResult } from './shieldCalls';
 
-/** EIP-1559 (Type2) gas details - both Ethereum + Sepolia default to Type2.
- *  Fees are decimal-string wei (wire-encoded to bigint in the host). */
+/** EIP-1559 (Type2) gas details - both Ethereum + Sepolia default to Type2. Fees are decimal-string wei (wire-encoded to bigint in the host). */
 export interface UnshieldGasDetails {
   /** EVMGasType enum value; 2 = Type2 (EIP-1559). */
   evmGasType: 0 | 1 | 2;
@@ -38,8 +42,7 @@ export interface UnshieldErc20Recipient {
   recipientAddress: string;
 }
 
-/** Gas estimate for an unproven unshield. `sendWithPublicWallet` is `true`
- *  (self-broadcast, no broadcaster). Resolves the gasEstimate (decimal string). */
+/** Gas estimate for an unproven unshield. `sendWithPublicWallet` is `true` (self-broadcast, no broadcaster). Resolves the gasEstimate (decimal string). */
 export async function gasEstimateUnshield(dispatch: RailgunDispatch, params: {
   txidVersion: string;
   networkName: string;
@@ -63,8 +66,7 @@ export async function gasEstimateUnshield(dispatch: RailgunDispatch, params: {
   ]);
 }
 
-/** Generate the Groth16 unshield proof (caches it in the host for the populate
- *  step). Resolves void; the heavy proving runs in the embedded prover. */
+/** Generate the Groth16 unshield proof (caches it in the host for the populate step). Resolves void; the heavy proving runs in the embedded prover. */
 export async function generateUnshieldProof(dispatch: RailgunDispatch, params: {
   txidVersion: string;
   networkName: string;

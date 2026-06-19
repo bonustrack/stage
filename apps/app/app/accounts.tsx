@@ -1,8 +1,4 @@
-/** Accounts page — full-screen account switcher, opened by tapping the topnav
- *  avatar on the Channels tab. Hosts AccountsManager (flat mode) under a native
- *  in-screen header (back arrow + "Accounts" title), matching the search page.
- *  Switching is in-place (epoch bump) so the channels list re-inits without a
- *  full reload; the user taps back to return. */
+/** @file Full-screen account switcher screen hosting AccountsManager for viewing and switching the user's saved accounts in place. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
 

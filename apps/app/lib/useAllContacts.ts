@@ -1,17 +1,7 @@
-/** Derives the full "contacts" list for the Contacts page — every user the
- *  active account has access to: all DM peers PLUS all members of every group
- *  the account belongs to, deduplicated by address (self excluded).
- *
- *  Unlike `useContacts` (which reads only the cached DM-peer rows for the
- *  member-picker), this enumerates the live XMTP conversation list so group
- *  members are included. The walk is non-blocking: the screen paints whatever
- *  is already cached, then this hook resolves members in the background and
- *  pushes the deduped, name-sorted result. Member-inbox→eth resolution is
- *  cache-first (primeInboxEthCache), so re-entry costs ~no reads.
- *
- *  Returns the contact list + a `loading` flag (true until the first walk
- *  settles). Profiles (name/avatar) resolve via the shared peerProfiles cache;
- *  the Avatar component renders the stamp.fyi image from the address itself. */
+/**
+ * @file Hook deriving the full Contacts-page list — every DM peer plus every member of every group the active account belongs to, deduped by address (self excluded).
+ *  Walks the live XMTP conversation list non-blocking over the cached seed, resolves names/avatars via peerProfiles, and returns the name-sorted list with a `loading` flag.
+ */
 
 import { useEffect, useMemo, useState } from 'react';
 import { type Conversation } from '@xmtp/react-native-sdk';
@@ -30,8 +20,7 @@ export interface Contact {
   name: string;
 }
 
-/** Seed from the cached channel rows so the page paints DM peers instantly,
- *  before the live group-member walk completes. */
+/** Seed from the cached channel rows so the page paints DM peers instantly, before the live group-member walk completes. */
 function seedAddresses(): string[] {
   const out = new Set<string>();
   for (const r of getCachedRows() ?? []) {
@@ -41,16 +30,13 @@ function seedAddresses(): string[] {
   return [...out];
 }
 
-/** Walk every accepted conversation, collecting unique member addresses:
- *  the peer for DMs, all other members for groups. Self is excluded. */
+/** Walk every accepted conversation, collecting unique member addresses: the peer for DMs, all other members for groups. Self is excluded. */
 async function collectAddresses(): Promise<string[]> {
   const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
   const self = (getActiveAccountIdSync() ?? '').toLowerCase();
   const convs = await client.conversations.list(undefined, undefined, ['allowed']);
 
-  /** Prime the inbox→eth cache for every member across all convs in ONE
-   *  network call (mirrors HomeScreen.sync) so the per-conv resolves below are
-   *  cache hits and stay under the XMTP read rate limit. */
+  /** Prime the inbox→eth cache for every member across all convs in ONE network call (mirrors HomeScreen.sync) so the per-conv resolves below are cache hits and stay under the XMTP read rate limit. */
   try {
     const memberLists = await Promise.all(convs.map(c =>
       (c as unknown as { members: () => Promise<{ inboxId: string }[]> })
@@ -78,12 +64,14 @@ export function useAllContacts(): { contacts: Contact[]; loading: boolean } {
   const [addresses, setAddresses] = useState<string[]>(() => seedAddresses());
   const [loading, setLoading] = useState(true);
 
-  /** FOCUS GATE: the Contacts tab body is mounted at app boot (the pager mounts
+  /**
+   * FOCUS GATE: the Contacts tab body is mounted at app boot (the pager mounts
    *  all tabs side-by-side), so an unconditional mount effect here ran the full
    *  conversation walk + primeInboxEthCache network call on EVERY cold start —
    *  even when the user never opens Contacts — duplicating HomeScreen.sync's
    *  member walk (so the walk ran TWICE at boot). Latch on first Contacts focus
-   *  so the walk only happens when the page is actually visited. */
+   *  so the walk only happens when the page is actually visited.
+   */
   const focused = useContactsFocused();
 
   useEffect(() => {

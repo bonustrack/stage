@@ -1,6 +1,7 @@
-/** AccountsManager list body — the ACCOUNTS section card (flat / collapsed /
- *  expanded modes + the "Add account" row + footer hint). Extracted from
- *  AccountsManager for lint line-budget. Rendering identical. */
+/**
+ * @file AccountsManager list body rendering the Accounts section card (active
+ * account, other accounts in flat/collapsed/expanded modes, and the Add-account row).
+ */
 
 import { Pressable } from '@metro-labs/kit/pressable';
 

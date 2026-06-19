@@ -1,11 +1,8 @@
-/** Settings menu - a System-page-style list whose rows push their own
- *  sub-pages: Display (theme), Messenger (XMTP account + settings), Security
- *  (export / remove account). Reached from the LeftDrawer's "Settings" row.
- *
- *  Plus a top-level, always-visible DANGER ZONE so onboarding can be re-tested
- *  without digging into Experimental → Developer: a "Reset accounts" row
- *  (resetForOnboarding) and a "Reset everything" row (resetEverything, the full
- *  nuke + auto-reload). Both confirm via Alert and go through the keyring. */
+/**
+ * @file Top-level Settings menu: a list whose rows push the Display, Messenger,
+ *  Notifications, and Security sub-pages, plus a danger zone with Reset accounts
+ *  and Reset everything actions.
+ */
 
 import { useState } from 'react';
 import { Alert, Pressable } from 'react-native';

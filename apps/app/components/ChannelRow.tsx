@@ -1,11 +1,8 @@
-/** Shared presentational row for a channel/conversation card. Used by BOTH the
- *  channels tab (app/(tabs)/index.tsx) and "Common channels" on a peer profile
- *  (CommonChannels.tsx) so the two surfaces stay identical. PRESENTATION ONLY:
- *  all data/state logic lives in the caller and is passed down as props.
- *  Layout: avatar (square for groups/channels, circle for DMs) + a title row
- *  (optional pin/draft glyphs, title, right-aligned timestamp) + a subtitle row
- *  (preview or member count, optional unread badge/dot). Timestamp/preview/
- *  unread props are optional so callers without context can omit them. */
+/**
+ * @file Shared presentation-only row for a channel/conversation (avatar + title
+ *  row with pin/draft glyphs and timestamp + preview/member-count subtitle),
+ *  used by both the channels tab and a peer profile's "Common channels".
+ */
 
 import { memo } from 'react';
 
@@ -46,48 +43,52 @@ export interface ChannelRowProps {
   hasDraft?: boolean;
   /** Unsent composer draft; with hasDraft it replaces the preview (pencil icon + "You: " text). */
   draftText?: string | null;
-  /** Group labels (from XMTP appData) rendered as compact read-only chips on
+  /**
+   * Group labels (from XMTP appData) rendered as compact read-only chips on
    *  the LEFT of the preview line, before the last-message text (groups only;
    *  DMs pass none). Capped to a few visible + a "+N" pill; the preview text
-   *  fills the remaining width and truncates first. */
+   *  fills the remaining width and truncates first.
+   */
   labels?: string[];
-  /** Tapping a label chip calls this with the chip's label (the caller
+  /**
+   * Tapping a label chip calls this with the chip's label (the caller
    *  navigates to the Channels tab + applies it as the active filter). When
    *  omitted the chips render non-interactive. The press is swallowed so it
-   *  never also fires the row's own onPress (opening the conversation). */
+   *  never also fires the row's own onPress (opening the conversation).
+   */
   onLabelPress?: (label: string) => void;
   /** Trailing chevron (used in the boxed common-channels list). */
   showChevron?: boolean;
   avatarSize?: number;
   onPress?: () => void;
-  /** Fires on touch-down (before onPress) - used to warm the feed cache the
-   *  instant a row is touched so the conversation opens from cache. */
+  /** Fires on touch-down (before onPress) - used to warm the feed cache the instant a row is touched so the conversation opens from cache. */
   onPressIn?: () => void;
   onLongPress?: () => void;
   /** Pressable style override (the channels tab insets the separator itself). */
   containerStyle?: StyleProp<ViewStyle>;
   /** No-op: rows no longer render a bottom separator. Kept for caller compat. */
   noBorder?: boolean;
-  /** Active search query — when set, its case-insensitive occurrences in the
-   *  title and last-message preview are highlighted (fluo yellow), matching the
-   *  in-conversation search highlight. Empty/absent leaves text untouched. */
+  /** Active search query — when set, its case-insensitive occurrences in the title and last-message preview are highlighted (fluo yellow), matching the in-conversation search highlight. Empty/absent leaves text untouched. */
   highlightQuery?: string;
 }
 
-/** Max label chips shown inline before collapsing the rest into "+N". Kept low
- *  (2) so the chips stay secondary to the group name on the same row. */
+/** Max label chips shown inline before collapsing the rest into "+N". Kept low (2) so the chips stay secondary to the group name on the same row. */
 const MAX_VISIBLE_LABELS = 2;
 
-/** Constant content height on the OUTER row so a 1-line and a 2-line preview
+/**
+ * Constant content height on the OUTER row so a 1-line and a 2-line preview
  *  render the SAME total height (title ~23 + 2 * 21 lines ~= 67, also> the 44px
  *  avatar). No internal blank reservation, so the title+preview group centers as
- *  a unit next to the centered avatar. */
+ *  a unit next to the centered avatar.
+ */
 const ROW_CONTENT_HEIGHT = 67;
 
-/** Build ROUNDED label chips as INLINE <View>s placed as the FIRST children
+/**
+ * Build ROUNDED label chips as INLINE <View>s placed as the FIRST children
  *  INSIDE the preview <Text>; the preview text flows around them. marginRight on
  *  an inline <View> is NOT honored by RN, so the gap comes from a sibling inline
- *  <Text> spacer. Caps at MAX_VISIBLE + a "+N". */
+ *  <Text> spacer. Caps at MAX_VISIBLE + a "+N".
+ */
 function buildLabelChips({ labels, fg, rowBg }: {
   labels: string[]; fg: string; rowBg: string;
 }): React.ReactNode[] {
@@ -113,9 +114,7 @@ function buildLabelChips({ labels, fg, rowBg }: {
   ]);
 }
 
-/** #6: memoised so a stream tick that re-renders the channels list only
- *  re-renders the rows whose props actually changed (not the whole window).
- *  All props are primitives or stable callbacks (hoisted in the caller). */
+/** #6: memoised so a stream tick that re-renders the channels list only re-renders the rows whose props actually changed (not the whole window). All props are primitives or stable callbacks (hoisted in the caller). */
 function ChannelRowBase({
   title, avatarAddress, avatarUri, cacheBuster, square,
   lastPreview, timestamp, subtitle, unreadCount = 0, markedUnread,

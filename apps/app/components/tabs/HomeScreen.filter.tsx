@@ -1,11 +1,8 @@
-/** Cross-screen label-filter glue for the Home (Channels) tab.
- *
- *  A channel-card label chip (rendered by ChannelRow's LabelChips, used on the
- *  Channels tab AND a peer profile's Common Channels) is tappable. Tapping it
- *  navigates to the Channels tab and toggles that label in HomeScreen's enabled
- *  filter set, so the list narrows to chats carrying it. The actual filter UI is
- *  the horizontal chip bar under the search bar (HomeScreen.labelbar). This
- *  module only carries the cross-screen tap request into HomeScreen's state. */
+/**
+ * @file HomeScreen.filter — cross-screen label-filter glue for the Channels tab:
+ *  carries a tapped label-chip request (from a channel card or peer profile) into
+ *  HomeScreen's enabled-filter state so the list narrows to that label.
+ */
 
 import { useEffect } from 'react';
 import {
@@ -16,17 +13,12 @@ import {
 import { UNLABELED } from './HomeScreen.filter.types';
 import type { LabelFilterValue } from './HomeScreen.filter.types';
 
-/** A cross-screen request only ever carries a concrete label string (a tapped
- *  chip). The null / UNLABELED sentinels have no chip in the bar, so ignore
- *  them rather than toggling a non-existent filter. */
+/** A cross-screen request only ever carries a concrete label string (a tapped chip). The null / UNLABELED sentinels have no chip in the bar, so ignore them rather than toggling a non-existent filter. */
 function asLabel(value: LabelFilterValue): string | null {
   return value != null && value !== UNLABELED ? value : null;
 }
 
-/** Apply cross-screen label-filter requests by toggling the tapped label into
- *  HomeScreen's enabled set. Honours a request pending on mount (chip tapped on
- *  another tab → navigated here) AND subscribes so an already-mounted Home
- *  updates live. */
+/** Apply cross-screen label-filter requests by toggling the tapped label into HomeScreen's enabled set. Honours a request pending on mount (chip tapped on another tab → navigated here) AND subscribes so an already-mounted Home updates live. */
 export function useIncomingLabelFilter(toggleLabel: (label: string) => void): void {
   useEffect(() => {
     const pending = asLabel(consumeLabelFilterRequest()?.value ?? null);

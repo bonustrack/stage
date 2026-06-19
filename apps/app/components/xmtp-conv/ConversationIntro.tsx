@@ -1,14 +1,4 @@
-/** Empty-state intro header shown at the visual TOP of a conversation, once all
- *  history is loaded — the avatar + name block above the first message.
- *
- *  Rendered inside ConversationFeed's ListFooterComponent (inverted list, so the
- *  footer is the top). Two variants:
- *    - DM   → round peer avatar + display name + short address + Snapshot bio.
- *    - Group → SQUARED avatar + group name + label chips + group description.
- *
- *  Presentation only; all data is resolved by the caller (useConversationState /
- *  useConvMeta / peerProfiles) and passed in. Kept in its own file so
- *  ConversationFeed stays under the 200-line cap. */
+/** @file The avatar + name intro header shown at the visual top of a conversation once all history is loaded, with distinct DM and group variants, rendered in ConversationFeed's inverted-list footer. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
 
@@ -19,9 +9,7 @@ import { getPeerName } from '../../lib/peerProfiles';
 import { channelStampSeed } from '@metro-labs/kit/avatar';
 import { shortAddress } from '../../modules/messaging';
 
-/** Read-only label chips for the group intro — same rounded-pill look as the
- *  ChannelRow inline chips, just left-aligned under the name. Renders nothing for
- *  an empty list. */
+/** Read-only label chips for the group intro — same rounded-pill look as the ChannelRow inline chips, just left-aligned under the name. Renders nothing for an empty list. */
 function IntroLabelChips({ labels, fg }: {
   labels: string[]; fg: string; rowBg: string;
 }): React.ReactElement | null {

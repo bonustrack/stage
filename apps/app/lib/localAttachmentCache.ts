@@ -1,4 +1,7 @@
-/** Session-scoped cache of the LOCAL `file://` URIs for attachments the user just
+/** @file Reactive session cache mapping XMTP message ids to locally-sent attachment `file://` URIs so confirmed bubbles paint the on-disk image instantly instead of spinning on the IPFS round trip. */
+
+/*
+ * Session-scoped cache of the LOCAL `file://` URIs for attachments the user just
  *  sent, keyed by the REAL XMTP message id. Bridges the optimistic→confirmed
  *  handoff for image (and other) attachments:
  *
@@ -24,13 +27,13 @@
  *
  *  The cache holds plain `file://` cache-dir URIs (already materialised by the
  *  picker / send path), so it costs nothing to keep for the app session; entries
- *  are dropped on app restart. */
+ *  are dropped on app restart.
+ */
 
 import { useSyncExternalStore } from 'react';
 import { File, Paths } from 'expo-file-system';
 
-/** messageId → ordered list of local `file://` URIs (one per attachment, in the
- *  same order the composer staged them). */
+/** messageId → ordered list of local `file://` URIs (one per attachment, in the same order the composer staged them). */
 const byMessageId = new Map<string, string[]>();
 
 /** Subscribers notified on every write so already-mounted resolvers re-read. */
@@ -38,9 +41,7 @@ const listeners = new Set<() => void>();
 /** Emit helper. */
 function emit(): void { for (const l of listeners) l(); }
 
-/** Remember the local URIs for a freshly-sent message, keyed by its REAL XMTP
- *  message id (the id `conv.send()` resolved with — identical to the stream
- *  echo's id). Empty/falsey uris are skipped — only on-disk locals are useful. */
+/** Remember the local URIs for a freshly-sent message, keyed by its REAL XMTP message id (the id `conv.send()` resolved with — identical to the stream echo's id). Empty/falsey uris are skipped — only on-disk locals are useful. */
 export function rememberLocalAttachments(messageId: string, uris: readonly (string | undefined)[]): void {
   const locals = uris.map(u => u ?? '');
   if (locals.every(u => u === '')) return;
@@ -48,15 +49,15 @@ export function rememberLocalAttachments(messageId: string, uris: readonly (stri
   emit();
 }
 
-/** Local `file://` URI for the attachment at `index` of `messageId`, if one was
- *  cached for a send made this session. */
+/** Local `file://` URI for the attachment at `index` of `messageId`, if one was cached for a send made this session. */
 function getLocalAttachment(messageId: string, index: number): string | undefined {
   const uri = byMessageId.get(messageId)?.[index];
   // Treat both missing and stored-empty as "no local"; ?? would leak ''.
   return uri === undefined || uri === '' ? undefined : uri;
 }
 
-/** Copy a freshly-picked local `file://` URI into a STABLE app-cache file so it
+/**
+ * Copy a freshly-picked local `file://` URI into a STABLE app-cache file so it
  *  survives the entire pending window. The OS image/document picker hands back a
  *  temp URI (e.g. an `ImagePicker` cache entry) that can be evicted while the
  *  send is in flight — if that happens mid-pending the dimmed thumbnail blanks.
@@ -64,7 +65,8 @@ function getLocalAttachment(messageId: string, index: number): string | undefine
  *
  *  Best-effort + synchronous-friendly: on any failure (non-`file://` scheme,
  *  copy error) it returns the original URI so the caller is never worse off. The
- *  copy is cheap (already-on-disk bytes) and the dest lives until app restart. */
+ *  copy is cheap (already-on-disk bytes) and the dest lives until app restart.
+ */
 export function stashLocalAttachment(srcUri: string): string {
   if (!srcUri.startsWith('file://')) return srcUri;
   try {
@@ -83,11 +85,13 @@ export function stashLocalAttachment(srcUri: string): string {
   }
 }
 
-/** Reactive read of the cached local URI for `(messageId, index)`. Re-renders the
+/**
+ * Reactive read of the cached local URI for `(messageId, index)`. Re-renders the
  *  caller when the URI lands (e.g. `conv.send()` resolves AFTER the echo bubble
  *  mounted) so the bubble swaps its spinner for the on-disk local file with zero
  *  gap. Pass `undefined` ids/indexes to opt out (returns undefined, no subscribe
- *  churn). */
+ *  churn).
+ */
 export function useLocalAttachment(messageId?: string, index?: number): string | undefined {
   return useSyncExternalStore(
     (cb) => {

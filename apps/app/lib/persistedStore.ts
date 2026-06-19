@@ -1,4 +1,7 @@
-/** Generic persisted-store factories - the shared load/save/subscribe/hydrate
+/** @file Generic AsyncStorage-backed store factories (`createSetStore`, `createValueStore`) providing the shared load/save/subscribe/hydrate boilerplate for the small device-local preference stores. */
+
+/*
+ * Generic persisted-store factories - the shared load/save/subscribe/hydrate
  *  boilerplate that the small device-local preference stores (pins, archived,
  *  notifReadState, pushPref, lastAttachment, …) all hand-rolled near-identically.
  *
@@ -19,14 +22,14 @@
  *  per-store modules re-export their EXACT historical public API as thin
  *  wrappers so every consumer stays untouched. Storage keys, defaults, and
  *  serialization are passed in verbatim so previously-persisted data keeps
- *  loading after the update. */
+ *  loading after the update.
+ */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { hydrateOnce, makeListeners } from './storeCore';
 
 export interface SetStore {
-  /** Read the persisted set once and cache it; later calls return the cache
-   *  without touching storage. Corrupt/missing → empty set. */
+  /** Read the persisted set once and cache it; later calls return the cache without touching storage. Corrupt/missing → empty set. */
   load: () => Promise<Set<string>>;
   /** Synchronous membership check from the in-memory mirror (false until load). */
   has: (id: string) => boolean;
@@ -104,28 +107,22 @@ export interface ValueStoreOptions<T> {
   default: T;
   /** Serialize a value to the stored string. Default: `String(value)`. */
   serialize?: (value: T) => string;
-  /** Parse a stored string back to a value; return `undefined` to keep the
-   *  current value (e.g. unrecognised/corrupt input). */
+  /** Parse a stored string back to a value; return `undefined` to keep the current value (e.g. unrecognised/corrupt input). */
   deserialize: (raw: string) => T | undefined;
-  /** When false (default), `set` short-circuits if the value is `===` the
-   *  current one. Set true to always notify + persist (matching stores whose
-   *  historical setter fired on every call). */
+  /** When false (default), `set` short-circuits if the value is `===` the current one. Set true to always notify + persist (matching stores whose historical setter fired on every call). */
   alwaysNotify?: boolean;
 }
 
 export interface ValueStore<T> {
   /** Await the one-time load and get the resulting value (async consumers). */
   load: () => Promise<T>;
-  /** Fire-and-forget the one-time load; notifies subscribers when it lands
-   *  (sync-style consumers that read via `get` on the next render). */
+  /** Fire-and-forget the one-time load; notifies subscribers when it lands (sync-style consumers that read via `get` on the next render). */
   loadAsync: () => void;
   /** Synchronous snapshot of the in-memory value. */
   get: () => T;
-  /** Replace the value, persist, and notify (no-op if unchanged by `===`,
-   *  unless `alwaysNotify`). Fire-and-forget persistence. */
+  /** Replace the value, persist, and notify (no-op if unchanged by `===`, unless `alwaysNotify`). Fire-and-forget persistence. */
   set: (value: T) => void;
-  /** Like `set` but awaits the AsyncStorage write (for callers whose historical
-   *  setter returned a Promise). Always notifies + persists. */
+  /** Like `set` but awaits the AsyncStorage write (for callers whose historical setter returned a Promise). Always notifies + persists. */
   setAsync: (value: T) => Promise<void>;
   /** Subscribe to changes. Returns an unsubscribe fn. */
   subscribe: (cb: () => void) => () => void;

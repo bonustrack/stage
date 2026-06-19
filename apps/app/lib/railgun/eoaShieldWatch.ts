@@ -1,4 +1,6 @@
-/** Detect an in-flight shield on the EOA WITHOUT any local tx history.
+/** @file Cheap nonce-delta poller that detects an in-flight EOA->proxy shield with no local tx history and registers a synthetic pending action so the Tokens tab shows it until mined. */
+/**
+ * Detect an in-flight shield on the EOA WITHOUT any local tx history.
  *
  *  Public RPCs here don't expose a reliable full mempool, so the robust signal
  *  is a pending-vs-latest nonce delta: when the EOA has a transaction in flight
@@ -10,7 +12,8 @@
  *
  *  CHEAP BY DESIGN: polls on a long interval (POLL_MS), only reads block bodies
  *  when a nonce gap exists, and never blocks the UI. Caller (a React effect)
- *  starts/stops it; it self-dedupes so the same shield isn't added twice. */
+ *  starts/stops it; it self-dedupes so the same shield isn't added twice.
+ */
 import { createPublicClient, http, type Hex } from 'viem';
 import { NETWORK_CONFIG } from '@railgun-community/shared-models';
 import { RAILGUN_NETWORKS } from './networks';
@@ -30,8 +33,7 @@ const proxyFor = (chainId: number): Hex | null => {
   return cfg ? (cfg.proxyContract as Hex) : null;
 };
 
-/** True when this EOA already has a tracked shield in flight (local or detected),
- *  so the watcher doesn't double-register. */
+/** True when this EOA already has a tracked shield in flight (local or detected), so the watcher doesn't double-register. */
 function hasLiveShield(accountId: string, chainId: number): boolean {
   return (pendingStore.get(accountId) ?? []).some(
     p => p.kind === 'shield' && p.chainId === chainId
@@ -79,8 +81,7 @@ async function pollOnce(accountId: string, eoa: Hex, chainId: number): Promise<v
   }
 }
 
-/** Start watching the EOA's pending shields across both chains. Returns a stop
- *  fn. No-op-safe: swallows RPC errors so a flaky endpoint never breaks the tab. */
+/** Start watching the EOA's pending shields across both chains. Returns a stop fn. No-op-safe: swallows RPC errors so a flaky endpoint never breaks the tab. */
 export function startEoaShieldWatch(accountId: string, eoa: string): () => void {
   let stopped = false;
   /** Tick helper. */

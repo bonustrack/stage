@@ -1,15 +1,8 @@
-/** PollCodec — the RN @xmtp/react-native-sdk JS content codec for the Metro
- *  poll content type `metro.box/poll:1.0`.
- *
- *  Pure JS (no native module): the poll body is just `JSON.stringify(poll)`
- *  encoded as UTF-8 bytes inside an `EncodedContent`, so registering it in
- *  `XMTP_CODECS` needs NO dev-client rebuild. `fallback` carries the plain-text
- *  rendering so vanilla XMTP clients (and any client missing this codec) show a
- *  readable "📊 Poll: …" string instead of a blank/error bubble.
- *
- *  Votes are NOT handled here — a vote is an `xmtp.org/reaction:2.0` whose
- *  `reference` is the poll message id and whose `content` is the option index
- *  (`schema:'custom'`). See xmtp.ts `xmtpVote`. */
+/**
+ * @file PollCodec, the pure-JS @xmtp/react-native-sdk content codec for the Metro poll content type
+ *  `metro.box/poll:1.0` (JSON body plus a plain-text fallback for clients missing the codec, so it
+ *  registers without a dev-client rebuild); votes are reactions handled elsewhere.
+ */
 
 import type {
   JSContentCodec, ContentTypeId, EncodedContent,

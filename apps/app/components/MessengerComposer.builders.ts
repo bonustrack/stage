@@ -1,7 +1,6 @@
-/** Poll / signature-request / payment-request send builders for the
- *  MessengerComposer, extracted from MessengerComposer.actions.ts for the lint
- *  line-budget. Behavior identical — each reads/writes parent state via the
- *  ComposerActionsArgs setters and reuses the same optimistic flow as text. */
+/**
+ * @file Poll / signature-request / payment-request optimistic send builders for the MessengerComposer.
+ */
 
 import { Alert } from 'react-native';
 import { isAddress, parseUnits, toHex } from 'viem';

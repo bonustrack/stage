@@ -1,5 +1,4 @@
-/** Group-detail header editor — image picker, inline name + description editing.
- *  Extracted from group/[convId] for lint line-budget. Rendering identical. */
+/** @file Group-detail header editor components: image picker plus inline name and description editing. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
 import { fontSize } from '@metro-labs/kit/tokens';
@@ -14,9 +13,7 @@ import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 import { channelStampSeed, stampAvatarUrl } from '@metro-labs/kit/avatar';
 import { usePalette } from '../../lib/theme';
 
-/** Inline "Save" pill shared by the name + description editors. A small primary
- *  button matched to the prior bespoke pill: paddingHorizontal 14, the legacy
- *  13px Calibre-Medium label, height ~32 (kit `sm`). */
+/** Inline "Save" pill shared by the name + description editors. A small primary button matched to the prior bespoke pill: paddingHorizontal 14, the legacy 13px Calibre-Medium label, height ~32 (kit `sm`). */
 function SaveButton({ saving, disabled, onSave, dark }: {
   saving: boolean; disabled: boolean; onSave: () => void; dark: boolean;
 }): React.ReactElement {
@@ -39,20 +36,20 @@ function SaveButton({ saving, disabled, onSave, dark }: {
 
 interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }
 
-/** Group header — mirrors the user ProfileScreen layout exactly: a full-bleed
+/**
+ * Group header — mirrors the user ProfileScreen layout exactly: a full-bleed
  *  cover banner (rowBg), then a page-bg sheet pulled UP 18px with rounded top
  *  corners, and the group avatar (88px, square) overlapping the cover at
  *  marginTop -44 (~80% over cover, half over the rounded black edge). The cover
  *  has no dedicated image (groups carry a single avatar), so it uses the same
- *  flat rowBg fallback the user profile uses. Tap avatar → view, hold → change. */
+ *  flat rowBg fallback the user profile uses. Tap avatar → view, hold → change.
+ */
 export function GroupProfileHeader({ imageUrl, channelId, uploadingImage, insetTop, fg, sub, bg, rowBg, onTap, onPick }: {
   imageUrl: string; channelId: string; uploadingImage: boolean; insetTop: number;
   fg: string; sub: string; bg: string; rowBg: string;
   onTap: () => void; onPick: () => void;
 }): React.ReactElement {
-  /** No uploaded image → deterministic stamp.fyi identicon seeded by the channel
-   *  id, matching the list + header fallback so the channel reads the same
-   *  everywhere. Long-press still opens the picker (caption keeps the hint). */
+  /** No uploaded image → deterministic stamp.fyi identicon seeded by the channel id, matching the list + header fallback so the channel reads the same everywhere. Long-press still opens the picker (caption keeps the hint). */
   const fallbackUri = channelId ? stampAvatarUrl(channelStampSeed(channelId), 88) : '';
   return (
     <>

@@ -1,31 +1,8 @@
-/** Pending-request detection for the Pending requests page.
- *
- *  Scans for FOUR kinds of pending request and folds them into one newest-first
- *  queue (most recent requests surface at the top of the queue):
- *
- *   1. POLLS    - a non-archived channel whose LATEST message is a poll
- *                 (`pollOf`). Latest-message rule, as the original tab shipped.
- *   2. PAYMENTS - a non-archived channel whose LATEST message is a walletSendCalls
- *                 payment request (`txRequestOf`). "Latest" already encodes
- *                 "unpaid": once paid, the TxReference receipt becomes the latest
- *                 message and the request drops out.
- *   3. SIGNING  - a non-archived channel whose LATEST message is a signatureRequest
- *                 (`sigRequestOf`). Same latest = unsigned logic (the
- *                 SignatureReference receipt would be latest once signed).
- *   4. MESSAGE  - a conversation whose consent is `'unknown'` (the message-request
- *                 inbox). These are CHANNEL-level, not message-level, so they come
- *                 from `listRequestConvs()` + `summarizeConversationRequest`, not
- *                 the latest-message scan. Consent-unknown convs are NOT in the
- *                 channels-list cache (allowed-only), so they never double-count
- *                 against the message-level kinds.
- *
- *  Detection for kinds 1-3 rides the existing local-first feed loader
- *  (`loadFeedFirstPage`) - each channel's tail is read from the same feedCache
- *  the chat view uses, so no extra network beyond what the channels list synced.
- *  We only inspect the newest event per channel (`events[0]`, newest-first).
- *
- *  Pure data layer (no React) so the screen hook stays thin. Concurrency is
- *  bounded so opening the page doesn't fan out N parallel feed loads. */
+/**
+ * @file Proposals.queue — the pure (no-React) pending-request detector that folds
+ *  poll, payment, signing and message-request kinds into one newest-first queue,
+ *  reading each channel's tail from the local-first feed cache with bounded concurrency.
+ */
 
 import {
   loadFeedFirstPage, lineOfConv, listRequestConvs,
@@ -37,12 +14,9 @@ import { isArchived } from '../../lib/archived';
 /** The kind of pending request - drives which card the screen renders. */
 export type RequestKind = 'poll' | 'payment' | 'signing' | 'message';
 
-/** One queued pending request. `convId` + `ts` are common; the message-level
- *  kinds (poll/payment/signing) carry `msgId` (the latest message's id);
- *  the channel-level `message` kind carries the summarized request view. */
+/** One queued pending request. `convId` + `ts` are common; the message-level kinds (poll/payment/signing) carry `msgId` (the latest message's id); the channel-level `message` kind carries the summarized request view. */
 export interface QueuedRequest {
-  /** Stable per-item key (`kind:convId`) - used as the session-skip key and the
-   *  React list key. One channel yields at most one item, so this is unique. */
+  /** Stable per-item key (`kind:convId`) - used as the session-skip key and the React list key. One channel yields at most one item, so this is unique. */
   key: string;
   kind: RequestKind;
   convId: string;
@@ -54,10 +28,12 @@ export interface QueuedRequest {
   ts: number;
 }
 
-/** Detect the single message-level pending request in a channel, if any. The
+/**
+ * Detect the single message-level pending request in a channel, if any. The
  *  feed is newest-first, so `events[0]` is the latest message; a poll / payment /
  *  signing request there satisfies the "latest message of a channel" rule.
- *  Never throws (a feed-load failure just means "nothing pending here"). */
+ *  Never throws (a feed-load failure just means "nothing pending here").
+ */
 async function detectOne(convId: string): Promise<QueuedRequest | null> {
   try {
     const events = await loadFeedFirstPage(lineOfConv(convId));
@@ -73,8 +49,7 @@ async function detectOne(convId: string): Promise<QueuedRequest | null> {
   }
 }
 
-/** Run `tasks` with at most `limit` in flight at once. Order of results is not
- *  significant (the caller sorts), so this is a simple worker-pool drain. */
+/** Run `tasks` with at most `limit` in flight at once. Order of results is not significant (the caller sorts), so this is a simple worker-pool drain. */
 async function mapLimit<T, R>(items: T[], limit: number, fn: (t: T) => Promise<R>): Promise<R[]> {
   const out: R[] = [];
   let i = 0;
@@ -90,16 +65,14 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (t: T) => Promise<R
   return out;
 }
 
-/** Detect the message-request (consent-unknown) channels and summarize each into
- *  a queued item. Best-effort: a listing/summarize failure yields no items. */
+/** Detect the message-request (consent-unknown) channels and summarize each into a queued item. Best-effort: a listing/summarize failure yields no items. */
 async function detectMessageRequests(): Promise<QueuedRequest[]> {
   try {
     const convs = await listRequestConvs();
     const summarized = await Promise.all(convs.map(async (conv): Promise<QueuedRequest | null> => {
       try {
         const view = await summarizeConversationRequest(conv);
-        /** Order requests against the other kinds by their latest activity; the
-         *  conv's `lastMessage` time when available, else now (newest). */
+        /** Order requests against the other kinds by their latest activity; the conv's `lastMessage` time when available, else now (newest). */
         const ts = await requestTs(conv);
         return { key: `message:${view.convId}`, kind: 'message', convId: view.convId, request: view, ts };
       } catch {
@@ -112,9 +85,7 @@ async function detectMessageRequests(): Promise<QueuedRequest[]> {
   }
 }
 
-/** Best-effort latest-activity time (ms) for a request conversation, used only to
- *  position it in the newest-first queue. Falls back to 0 (oldest) so a request
- *  with no resolvable time sorts to the back rather than crowding the front. */
+/** Best-effort latest-activity time (ms) for a request conversation, used only to position it in the newest-first queue. Falls back to 0 (oldest) so a request with no resolvable time sorts to the back rather than crowding the front. */
 async function requestTs(conv: unknown): Promise<number> {
   try {
     const last = await (conv as { lastMessage?: () => Promise<{ sentAtNs?: number } | null> }).lastMessage?.();
@@ -124,10 +95,12 @@ async function requestTs(conv: unknown): Promise<number> {
   return 0;
 }
 
-/** Build the newest-first pending-request queue. Message-level kinds come from
+/**
+ * Build the newest-first pending-request queue. Message-level kinds come from
  *  the channels-list rows (archived ones skipped per "all my non-archived chat");
  *  message requests come from the consent-unknown inbox. The two sources never
- *  overlap (allowed-only cache vs unknown-only requests). */
+ *  overlap (allowed-only cache vs unknown-only requests).
+ */
 export async function buildProposalQueue(rows: CachedRow[]): Promise<QueuedRequest[]> {
   const candidates = rows.map(r => r.convId).filter(id => !isArchived(id));
   const [detected, messageReqs] = await Promise.all([

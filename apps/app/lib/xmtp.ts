@@ -1,13 +1,8 @@
-/** Local XMTP client lifecycle for the mobile app - public barrel. Re-exports
- *  the cohesive `xmtp.*` siblings so existing `./xmtp` import sites resolve
- *  unchanged.
- *
- *  Lifecycle: first launch `Client.createRandom({env})` has the native SDK
- *  generate a wallet + persist keys in its sqlite at `dbDirectory`; we stash the
- *  resulting address in expo-secure-store. Subsequent launches
- *  `Client.build(address, {env, dbDirectory})` reuse the on-disk wallet. Key
- *  material never crosses the JS bridge - the SDK keeps it native side, backed
- *  by the device keystore (Android) / secure enclave (iOS). */
+/**
+ * @file Public barrel for the mobile app's local XMTP client lifecycle, re-exporting the cohesive
+ *  `xmtp.*` sibling modules so existing `./xmtp` import sites resolve unchanged (client keys stay
+ *  native-side in the SDK's sqlite, backed by the device keystore / secure enclave).
+ */
 
 export type {
   XmtpEnv, XmtpConsent, ConversationVersion, XmtpFeedStatus,

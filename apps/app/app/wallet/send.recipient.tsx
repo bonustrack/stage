@@ -1,16 +1,8 @@
-/** Recipient user-row + contacts picker for the Wallet → Send screen.
- *
- *  - `RecipientRow` renders a resolved recipient as the same avatar + name +
- *    short-address row the app uses everywhere else (Search results, member
- *    picker): `Avatar` + `getPeerName` + `shortAddress`. It
- *    fetches the peer's Snapshot profile (name/avatar) via the shared
- *    `peerProfiles` cache so a known contact shows their display name.
- *
- *  - `ContactsModal` is an `AppModal` bottom-sheet (same pattern as the
- *    TokenSelector) listing the user's contacts — their existing 1:1 DM peers
- *    via `useContacts` — as the same user-row. Tapping one fills the recipient.
- *
- *  No bespoke/gold styling — Kit `Text`/`Icon` + palette tokens only. */
+/**
+ * @file Recipient avatar/name row and contacts bottom-sheet picker for the
+ * Wallet send screen, resolving peer Snapshot profiles and listing the user's
+ * existing 1:1 DM peers so tapping one fills the recipient address.
+ */
 import { Pressable } from '@metro-labs/kit/pressable';
 
 import { Text } from '@metro-labs/kit/text';
@@ -24,8 +16,7 @@ import { useContacts } from '../../lib/useContacts';
 
 interface RowPalette { head: string; sub: string; border: string }
 
-/** A single avatar + name + short-address row for one address. Reused for the
- *  resolved recipient and every contact in the picker. */
+/** A single avatar + name + short-address row for one address. Reused for the resolved recipient and every contact in the picker. */
 export function RecipientRow({ address, pal, right, onPress }: {
   address: string;
   pal: RowPalette;
@@ -81,8 +72,7 @@ export function RecipientRow({ address, pal, right, onPress }: {
   );
 }
 
-/** Bottom-sheet list of the user's contacts (DM peers). Tapping one calls
- *  `onPick(address)` and closes. */
+/** Bottom-sheet list of the user's contacts (DM peers). Tapping one calls `onPick(address)` and closes. */
 export function ContactsModal({ visible, onClose, onPick, pal }: {
   visible: boolean;
   onClose: () => void;
@@ -115,8 +105,7 @@ export function ContactsModal({ visible, onClose, onPick, pal }: {
   );
 }
 
-/** Icon button that opens the contacts picker. Sits at the right edge of the
- *  recipient input. */
+/** Icon button that opens the contacts picker. Sits at the right edge of the recipient input. */
 export function ContactsButton({ color, border, onPress }: {
   color: string; border: string; onPress: () => void;
 }): React.ReactElement {

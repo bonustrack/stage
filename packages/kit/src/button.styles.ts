@@ -1,13 +1,6 @@
-/** Button styling internals - size specs, colour resolution, and the label
- *  text style. Split out of button.tsx to keep each module small.
- *  Mirrors the palette convention in apps/app/lib/theme.ts (head/bg/rowBg/border).
- *
- *  ChatKit reconciliation: the canonical API mirrors OpenAI ChatKit's Button:
- *  `color` (semantic palette: primary/secondary/info/discovery/success/caution/
- *  warning/danger) + `variant` (solid/soft/outline/ghost). The legacy app prop
- *  `variant` historically carried COLOUR names (primary/secondary/ghost/danger);
- *  those still resolve, mapped onto the new colour+variant model, so the 20+
- *  existing call sites keep working unchanged. */
+/**
+ * @file Button styling internals split out of button.tsx: size specs, colour+variant resolution (including legacy colour-name variant aliases), and the label text style.
+ */
 
 import type { TextStyle } from 'react-native';
 import { FONT_SIZE, colors, schemePalette } from './tokens';
@@ -26,8 +19,7 @@ export type ButtonColor =
 /** ChatKit control variant - the visual treatment of the colour. */
 export type ButtonControlVariant = 'solid' | 'soft' | 'outline' | 'ghost';
 
-/** ChatKit control size scale. The canonical `size` prop accepts the full
- *  scale; the four legacy tokens (sm/md/lg/xl) keep their exact dimensions. */
+/** ChatKit control size scale. The canonical `size` prop accepts the full scale; the four legacy tokens (sm/md/lg/xl) keep their exact dimensions. */
 export type ButtonSize =
   | '3xs'
   | '2xs'
@@ -39,9 +31,11 @@ export type ButtonSize =
   | '2xl'
   | '3xl';
 
-/** @deprecated Legacy app `variant` values. These carried colour names AND an
+/**
+ * @deprecated Legacy app `variant` values. These carried colour names AND an
  *  implied treatment (ghost = transparent). Kept as aliases so existing call
- *  sites compile and render identically. Prefer `color` + `variant`. */
+ *  sites compile and render identically. Prefer `color` + `variant`.
+ */
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 export interface SizeSpec {
@@ -146,8 +140,10 @@ export function resolveColors(
   }
 }
 
-/** @deprecated Map a legacy app `variant` (colour-name) onto the canonical
- *  `color` + `variant` model so old usages render exactly as before. */
+/**
+ * @deprecated Map a legacy app `variant` (colour-name) onto the canonical
+ *  `color` + `variant` model so old usages render exactly as before.
+ */
 export function legacyVariantToColor(v: ButtonVariant): {
   color: ButtonColor;
   variant: ButtonControlVariant;

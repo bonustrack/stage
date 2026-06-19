@@ -1,9 +1,6 @@
-/** Label - a ChatKit-styled form-field label. Mirrors ChatKit's `Label` widget
- *  (a distinct text node ChatKit keeps separate from Text/Caption because it
- *  labels a form control). Faithful prop names: `value`, `fieldName`, `size`,
- *  `weight`, `textAlign`, `color`. Deviation: `dark` boolean (kit is hook-free)
- *  and `nativeID` wiring derived from `fieldName` so RN screen readers associate
- *  the label with its control. Children are accepted too for parity. */
+/**
+ * @file Label — a hook-free ChatKit-styled form-field label that wires a `nativeID` from `fieldName` so RN screen readers associate the label with its control.
+ */
 
 import { Text as RNText, type TextStyle } from 'react-native';
 import { type ReactNode } from 'react';
@@ -32,8 +29,7 @@ export interface LabelProps {
   /** ChatKit: value. The label text (children also accepted). */
   value?: string;
   children?: ReactNode;
-  /** ChatKit: fieldName. The `name` of the control this label is for. Used to
-   *  derive the RN `nativeID` so screen readers can pair them. */
+  /** ChatKit: fieldName. The `name` of the control this label is for. Used to derive the RN `nativeID` so screen readers can pair them. */
   fieldName?: string;
   /** ChatKit: size. Default 'md' (15). */
   size?: LabelSize;

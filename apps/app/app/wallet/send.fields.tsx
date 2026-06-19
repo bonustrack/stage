@@ -1,7 +1,7 @@
-/** Recipient + amount input fields for the Wallet → Send screen.
- *
- *  Extracted from send.tsx (mechanical split, behavior identical). Presentational
- *  only — all state + handlers are owned by the parent screen and passed in. */
+/**
+ * @file Presentational recipient/amount input fields and tx-status row for the Wallet send screen.
+ * All state and handlers are owned by the parent screen and passed in.
+ */
 import { useState } from 'react';
 import { fontSize } from '@metro-labs/kit/tokens';
 import { Linking } from 'react-native';

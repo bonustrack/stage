@@ -1,8 +1,4 @@
-/** Facebook-Messenger-style voice message player for conversation bubbles:
- *  a rounded accent pill holding a circular play/pause button, a tappable
- *  waveform (representative bars that fill with playback progress), and the
- *  elapsed / total duration. Playback uses expo-av (same lib the composer's
- *  recorder uses). Any audio attachment renders through this. */
+/** @file Messenger-style voice message player for conversation bubbles: play/pause button, tappable waveform that fills with playback progress, and elapsed/total duration, using expo-av. */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -14,12 +10,10 @@ import { Row, Col } from './layout';
 import { waveformBars } from './VoiceMessage.bars';
 import { useDecodedBars } from './VoiceMessage.barsCache';
 
-/** Bar count — shared by the synthetic placeholder and the real decode so the
- *  swap from placeholder to true waveform doesn't reflow the track. */
+/** Bar count — shared by the synthetic placeholder and the real decode so the swap from placeholder to true waveform doesn't reflow the track. */
 const BAR_COUNT = 34;
 
-/** Messenger's outgoing-bubble blue. Used for the pill so the player reads as
- *  a voice message regardless of the flat Discord-style row theming around it. */
+/** Messenger's outgoing-bubble blue. Used for the pill so the player reads as a voice message regardless of the flat Discord-style row theming around it. */
 const ACCENT = '#0a7cff';
 const ON_ACCENT = '#ffffff';
 const TRACK_H = 26;
@@ -40,9 +34,7 @@ export function VoiceMessage({ uri }: Props): React.ReactElement {
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [barWidth, setBarWidth] = useState(0);
-  /** Synthetic placeholder shown until the on-device decode resolves; the real
-   *  PCM-derived bars replace it once `useDecodedBars` returns (and fall back to
-   *  this synthetic shape if decode fails or the native module is unavailable). */
+  /** Synthetic placeholder shown until the on-device decode resolves; the real PCM-derived bars replace it once `useDecodedBars` returns (and fall back to this synthetic shape if decode fails or the native module is unavailable). */
   const synthetic = useMemo(() => waveformBars(uri, BAR_COUNT), [uri]);
   const decoded = useDecodedBars(uri, BAR_COUNT);
   const bars = decoded ?? synthetic;

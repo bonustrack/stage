@@ -1,12 +1,6 @@
-/** Shared profile screen — renders BOTH the logged-in user's own profile and
- *  any peer's public profile. Identity is READ-ONLY and resolved entirely from
- *  stamp.fyi / ENS (display name) + the stamp.fyi identicon (avatar), the same
- *  source used for peers everywhere else. There is no in-app profile editing.
- *  Own-vs-other is decided by comparing the viewed `address` to the active
- *  account's address (resolved from the XMTP client). Own → no Message/Send
- *  (can't message yourself). Other → Message + Send. `variant`: `tab` (footer
- *  Profile, no back button) vs `route` (/user/[address], own back button +
- *  inset). Presentational pieces live in ./ProfileScreen.parts. */
+/**
+ * @file ProfileScreen: the shared profile screen rendering both the user's own profile and any peer's public profile, as a tab or standalone route.
+ */
 
 import { useState } from 'react';
 
@@ -36,8 +30,7 @@ export type ProfileScreenVariant = 'tab' | 'route';
 export function ProfileScreen({ address, variant, panRef }: {
   address: string;
   variant: ProfileScreenVariant;
-  /** When mounted inside the swipe pager (Profile tab), the horizontal pager
-   *  Pan ref so this screen's ScrollView relates to it simultaneously. */
+  /** When mounted inside the swipe pager (Profile tab), the horizontal pager Pan ref so this screen's ScrollView relates to it simultaneously. */
   panRef?: SimultaneousRefs;
 }): React.ReactElement {
   const router = useRouter();

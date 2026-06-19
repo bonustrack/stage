@@ -1,13 +1,6 @@
-/** Select - a ChatKit-styled dropdown. Mirrors ChatKit's `Select` widget.
- *  Faithful prop names: `name`, `options` ({ label, value }[]), `defaultValue`,
- *  `placeholder`, `variant` ('soft' | 'outline'), `size` (ControlSize), `pill`,
- *  `block`, `clearable`, `disabled`. Deviation (kit is interactive RN, not
- *  server-streamed): ChatKit's `onChangeAction` (a server ActionConfig) is
- *  replaced by an `onChange(value)` callback, and a controlled `value` prop is
- *  accepted so the app can drive the field. `dark` boolean keeps the kit
- *  hook-free. Implemented as a Pressable trigger that opens an RN Modal sheet of
- *  options, drawn with kit tokens + the shared control box style (no native
- *  picker dependency). */
+/**
+ * @file Select — a hook-free interactive ChatKit-styled dropdown (controlled `value` + `onChange`) implemented as a Pressable trigger opening an RN Modal options sheet, with no native picker dependency.
+ */
 
 import { useState } from 'react';
 import {

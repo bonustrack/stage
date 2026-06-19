@@ -1,11 +1,6 @@
-/** @metro-labs/kit — shared design system primitives for the Metro
- *  clients. Because apps/ui is Vue and apps/app is React Native, there are no
- *  literal cross-framework components; what IS shareable is the framework-
- *  agnostic data behind them: colour/spacing tokens, HeroIcon path data,
- *  station icon definitions, and the theme-preference contract.
- *
- *  See README.md for the component-naming convention and the
- *  shareable-vs-framework-specific breakdown. */
+/**
+ * @file Public entry point for @stage-labs/kit, re-exporting the shared design-system primitives, framework-agnostic tokens, HeroIcon data, and theme contracts for the Metro clients.
+ */
 
 export * from './tokens';
 export * from './theme-derive';

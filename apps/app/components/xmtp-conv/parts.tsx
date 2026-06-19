@@ -1,5 +1,4 @@
-/** Presentational sub-components for the XMTP conversation screen — extracted
- *  from app/xmtp/[convId].tsx verbatim (phase-2 lint split). Behavior identical. */
+/** @file Presentational sub-components for the XMTP conversation screen — extracted from app/xmtp/[convId].tsx verbatim (phase-2 lint split). Behavior identical. */
 
 import { useEffect, useState } from 'react';
 
@@ -33,11 +32,13 @@ export function GithubNavButton({ url, color }: { url: string; color: string }):
   );
 }
 
-/** Topnav avatar — 1-1 conversations use the peer's identicon/custom avatar,
+/**
+ * Topnav avatar — 1-1 conversations use the peer's identicon/custom avatar,
  *  groups show their uploaded image, and groups WITHOUT one fall back to a
  *  deterministic stamp.fyi identicon seeded by the channel id (so every channel
  *  gets its own stable avatar everywhere). Delegates rendering to the shared
- *  Avatar component. */
+ *  Avatar component.
+ */
 export function HeaderAvatar({ peerAddr, groupImage, channelId, isGroup, border }: {
   peerAddr: string | null; groupImage: string; channelId: string; isGroup: boolean; border: string;
 }): React.ReactElement | null {
@@ -53,16 +54,17 @@ export function HeaderAvatar({ peerAddr, groupImage, channelId, isGroup, border 
   return null;
 }
 
-/** Fuller emoji set revealed by the strip's chevron — a quick scrollable row
- *  beyond the 7 presets. Kept inline (no native emoji-keyboard dependency). */
+/** Fuller emoji set revealed by the strip's chevron — a quick scrollable row beyond the 7 presets. Kept inline (no native emoji-keyboard dependency). */
 const MORE_EMOJIS = ['❤️', '😂', '😮', '😢', '🎉', '🤯', '🥳', '👏', '🙌', '🤝', '✅', '❌', '👌', '🚀', '💀', '🤔', '😅', '🫶'];
 
-/** Telegram-style anchored message menu: a horizontal emoji-reaction pill floating
+/**
+ * Telegram-style anchored message menu: a horizontal emoji-reaction pill floating
  *  just above the tapped message, and a vertical action dropdown just below it, over
  *  a dimmed full-screen backdrop. Positioning is driven by the row's measured
  *  on-screen rect (`anchor`), clamped to the screen so it never runs off the top or
  *  bottom edge. Tapping a strip emoji reacts + closes; the chevron reveals more
- *  emojis; any action or an outside tap dismisses. */
+ *  emojis; any action or an outside tap dismisses.
+ */
 export function BubbleActionMenu({
   target, anchor, dark, onClose, onReact, onReply, onCopy, onSelect, onShareLink,
 }: {
@@ -85,14 +87,16 @@ export function BubbleActionMenu({
   const divider = pal.border;
 
   const screenH = Dimensions.get('window').height;
-  /** Strip + dropdown are ONE cohesive stacked unit rendered in a single absolute
+  /**
+   * Strip + dropdown are ONE cohesive stacked unit rendered in a single absolute
    *  column: emoji strip on top, a literal GAP-px spacer, then the action dropdown
    *  directly below. Because the dropdown follows the strip's REAL rendered height
    *  in normal flow, the only vertical space between them is exactly GAP — no
    *  hard-coded strip-height estimate. The column is anchored near the tapped
    *  message and clamped so its bottom never runs off-screen past the composer /
    *  safe area (clamp uses an ESTIMATED total height; the strip↔card gap stays
-   *  the literal GAP regardless). */
+   *  the literal GAP regardless).
+   */
   const actionCount = 2 + (target?.text ? 2 : 0);
   const cardH = actionCount * 48 + 16;       // estimated dropdown height (clamp only)
   const stripH = 40;                          // estimated strip height (clamp only)
@@ -131,8 +135,7 @@ export function BubbleActionMenu({
         onPress={onClose}
         style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }}
 >
-        {/** Strip + dropdown as one absolute column. The dropdown sits directly
-          *  below the strip's REAL height + a literal GAP spacer — no stripH math. */}
+        {/** Strip + dropdown as one absolute column. The dropdown sits directly below the strip's REAL height + a literal GAP spacer — no stripH math. */}
         <Box
           align="start" style={{ position: 'absolute', left: 12, right: 12, top: stripTop }}
           pointerEvents="box-none"

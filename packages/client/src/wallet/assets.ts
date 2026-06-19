@@ -1,21 +1,22 @@
-/** Wallet asset registry + network metadata. Framework-agnostic (viem types +
- *  plain data); shared by the wallet surfaces. Moved out of apps/app's
- *  WalletScreen.assets for the Stage SDK. */
+/**
+ * @file Wallet asset registry and per-chain network metadata (ETH plus stablecoins) shared by the wallet surfaces.
+ */
+/** Wallet asset registry + network metadata. Framework-agnostic (viem types + plain data); shared by the wallet surfaces. Moved out of apps/app's WalletScreen.assets for the Stage SDK. */
 
 import type { Hex, Chain } from 'viem';
 import { mainnet, sepolia, base } from 'viem/chains';
 
-/** Sentinel address Snapshot uses for native ETH on stamp.fyi. Matches
- *  sx-monorepo's `ETH_CONTRACT` (and kit's NATIVE_TOKEN_SENTINEL). Inlined here
- *  so packages/client stays standalone (no @metro-labs/kit dependency). */
+/** Sentinel address Snapshot uses for native ETH on stamp.fyi. Matches sx-monorepo's `ETH_CONTRACT` (and kit's NATIVE_TOKEN_SENTINEL). Inlined here so packages/client stays standalone (no @metro-labs/kit dependency). */
 export const NATIVE_TOKEN_SENTINEL = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
 
 export const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11' as const;
 
-/** Asset registry — ETH + the stablecoins. `address: null` is the special
+/**
+ * Asset registry — ETH + the stablecoins. `address: null` is the special
  *  "native" row; everything else is an ERC-20. `cgId` lets us hit the
  *  simple-price endpoint for ETH (the contract-price endpoint doesn't cover
- *  native coins). `logoAddress` is the contract used to fetch the token icon. */
+ *  native coins). `logoAddress` is the contract used to fetch the token icon.
+ */
 export interface Asset {
   symbol: string;
   name: string;
@@ -26,12 +27,9 @@ export interface Asset {
   logoAddress: string;
   /** coingecko id for native price lookup. */
   cgId?: string;
-  /** CoinGecko asset-platform id for the contract-price endpoint (`ethereum`).
-   *  Only set for ERC-20 rows. */
+  /** CoinGecko asset-platform id for the contract-price endpoint (`ethereum`). Only set for ERC-20 rows. */
   cgPlatform?: string;
-  /** Contract address used for the CoinGecko price lookup. Defaults to
-   *  `address`, but testnet ERC-20s (Sepolia USDC) reuse the mainnet contract on
-   *  the `ethereum` platform so the $ column isn't blank. */
+  /** Contract address used for the CoinGecko price lookup. Defaults to `address`, but testnet ERC-20s (Sepolia USDC) reuse the mainnet contract on the `ethereum` platform so the $ column isn't blank. */
   priceAddress?: Hex;
 }
 
@@ -51,9 +49,7 @@ export const ASSETS: Asset[] = [
   { symbol: 'STAGE', name: 'Stage', decimals: 18, chainId: 11155111, address: '0x7a49F33AD000220a764ED303f9911cB08422d138', logoAddress: '0x7a49F33AD000220a764ED303f9911cB08422d138' },
 ];
 
-/** Network bullets — Ethereum is Snapshot's IPFS-hosted logo; Sepolia is the
- *  testnet IPFS mark. Keyed by chainId so the renderer can drop the right badge
- *  over each token avatar. */
+/** Network bullets — Ethereum is Snapshot's IPFS-hosted logo; Sepolia is the testnet IPFS mark. Keyed by chainId so the renderer can drop the right badge over each token avatar. */
 export const MAINNET_NETWORK_LOGO = 'https://ipfs.snapshot.box/ipfs/bafkreid7ndxh6y2ljw2jhbisodiyrhcy2udvnwqgon5wgells3kh4si5z4';
 export const SEPOLIA_NETWORK_LOGO = 'https://ipfs.snapshot.box/ipfs/bafkreif5b7trz7plh4mpfbnom2wqc6yogux6sgzwau6znwu7pbq6qeu63e';
 export const BASE_NETWORK_LOGO = 'https://ipfs.snapshot.box/ipfs/bafkreid4ek4gnj6ccxl3yubwj2wr3d5t6dqelvvh4hv5wo5eldkqs725ri';

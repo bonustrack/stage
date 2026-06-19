@@ -1,8 +1,6 @@
-/** Account-security section of the Settings tab: "Export private key" and
- *  "Remove account" rows for the ACTIVE account. Both gate behind a warning
- *  Alert. Export reuses getPrivateKey (self-heals legacy keys); remove reuses
- *  deleteAccount (drops the registry entry, the SecureStore key + the on-disk
- *  XMTP store). The key is never logged. */
+/**
+ * @file Account-security section of the Settings tab providing Alert-gated export-private-key and remove-account actions for the active account.
+ */
 
 import { useEffect, useState } from 'react';
 

@@ -1,6 +1,8 @@
-/** HomeScreen list view - the topnav (avatar + "+") and the channels FlatList
- *  (scroll persistence, requests header, empty state), extracted from
- *  HomeScreen.tsx (phase-2 lint, rendering identical). */
+/**
+ * @file HomeScreen.list — the channels list view: the Home topnav slot and the
+ *  channels FlatList with scroll persistence, requests header and empty state,
+ *  extracted from HomeScreen.tsx.
+ */
 
 import type { MutableRefObject, RefObject } from 'react';
 import { useMemo, useState } from 'react';
@@ -76,10 +78,12 @@ export function ChannelsList({
   /** Close Search. */
   const closeSearch = () => { setSearchOpen(false); setQuery(''); };
 
-  /** Home's contextual right-slot (search / requests / overflow), published to
+  /**
+   * Home's contextual right-slot (search / requests / overflow), published to
    *  the single Topnav hoisted ABOVE the pager in (tabs)/_layout.tsx. The bar is
    *  no longer rendered inside this page, so a tab-swipe or vertical scroll can't
-   *  move it. Memoised on the values it actually depends on. */
+   *  move it. Memoised on the values it actually depends on.
+   */
   const right = useMemo(
     () => (
       <>
@@ -124,9 +128,7 @@ export function ChannelsList({
     [head, requestCount, badgeBg, badgeFg, router],
   );
 
-  /** When search is open the whole bar becomes a full-width search field (a
-   *  full-bar override that replaces identity+right). Otherwise just the right
-   *  slot above is published. */
+  /** When search is open the whole bar becomes a full-width search field (a full-bar override that replaces identity+right). Otherwise just the right slot above is published. */
   const override = useMemo(
     () => (searchOpen ? (
       <ChannelsSearchBar
@@ -154,9 +156,7 @@ export function ChannelsList({
         /** Persist the offset as the user scrolls (debounced inside the lib). */
         onScroll={(ev) => { saveScrollOffset(CHANNELS_SCROLL_KEY, ev.nativeEvent.contentOffset.y); }}
         scrollEventThrottle={16}
-        /** Restore the saved offset once, after rows have laid out. Clamp to the
-         *  measured content height so a stale offset (rows since removed) can't
-         *  scroll past the end. */
+        /** Restore the saved offset once, after rows have laid out. Clamp to the measured content height so a stale offset (rows since removed) can't scroll past the end. */
         onContentSizeChange={(_w, h) => {
           contentHeightRef.current = h;
           if (didRestoreRef.current) return;
@@ -209,10 +209,7 @@ export function ChannelsList({
   );
 }
 
-/** getItemLayout lets the list skip measuring + jump-scroll without rendering
- *  intermediate rows. Every row is uniform height (group label chips render
- *  inline on the name row, not a separate line), so offsets are a flat
- *  index × CHANNEL_ROW_HEIGHT. */
+/** getItemLayout lets the list skip measuring + jump-scroll without rendering intermediate rows. Every row is uniform height (group label chips render inline on the name row, not a separate line), so offsets are a flat index × CHANNEL_ROW_HEIGHT. */
 export function channelRowLayout(_d: ArrayLike<RowT> | null | undefined, index: number): { length: number; offset: number; index: number } {
   return { length: CHANNEL_ROW_HEIGHT, offset: CHANNEL_ROW_HEIGHT * index, index };
 }

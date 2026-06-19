@@ -1,16 +1,8 @@
-/** MenuSheet — the account/nav surface (formerly the full-screen /menu route),
- *  now presented in-place as the app's standard AppModal bottom-sheet over the
- *  current screen. Opened by tapping the top-left avatar (TopnavIdentity). It
- *  hosts what the old slide-out LeftDrawer rendered:
- *    - avatar header: active account's stamp avatar + name + short address
- *    - tap-to-switch accounts list (same switchToAccount path as before)
- *    - New / Add account actions
- *    - Profile + Settings nav rows
- *
- *  The presentational pieces are reused from LeftDrawer.parts / .accounts (the
- *  same components the drawer + the old page used) — no logic is duplicated.
- *  Switching an account or tapping a nav row closes the sheet first, then runs
- *  the action. */
+/**
+ * @file Account/nav AppModal bottom-sheet opened from the top-left avatar, hosting
+ *  the avatar header, tap-to-switch accounts list, New/Add account actions, and
+ *  Profile/Settings nav rows (reusing LeftDrawer.parts/.accounts components).
+ */
 
 import { useCallback, useEffect, useState } from 'react';
 
@@ -59,9 +51,7 @@ export function MenuSheet({ visible, onClose }: {
     router.navigate(href);
   }
 
-  /** "Profile" opens the active account's own profile through the shared peer
-   *  profile route (/user/[address]) — the dedicated own-profile tab was
-   *  removed; viewing yourself reuses the same read-only ProfileScreen. */
+  /** "Profile" opens the active account's own profile through the shared peer profile route (/user/[address]) — the dedicated own-profile tab was removed; viewing yourself reuses the same read-only ProfileScreen. */
   function goProfile(): void {
     const addr = activeRec?.address;
     if (!addr) return;

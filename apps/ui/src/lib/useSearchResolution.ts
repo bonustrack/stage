@@ -1,10 +1,6 @@
-/** Shared search-box resolution for the Channels + Contacts tabs.
- *
- *  Watches the search `query` — when it contains a domain like `fabien.eth`,
- *  resolves it via Stamp so the page can render an "Open profile" suggestion
- *  below the list. Pure address inputs short-circuit (no resolution needed);
- *  anything else resets to idle. `openSearchedProfile` navigates to the
- *  resolved profile. Extracted from the two pages so the logic lives once. */
+/**
+ * @file Composable that watches the search query and resolves an ENS domain via Stamp into an "Open profile" suggestion for the Channels and Contacts tabs.
+ */
 
 import { ref, watch, type Ref } from 'vue';
 import type { Router } from 'vue-router';

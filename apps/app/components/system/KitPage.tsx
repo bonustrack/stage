@@ -1,7 +1,8 @@
-/** Kit sub-page of Settings - back-arrow header + theme switcher, then the kit
- *  primitives rendered directly (KitSections). Reached via /settings -> "Kit"
- *  row -> /settings/kit. The live color/radius editor moved to Settings ->
- *  Display under the Custom theme. */
+/**
+ * @file KitPage — the Kit sub-page of Settings (/settings/kit): a back-arrow
+ *  header plus theme switcher above the Kit primitives rendered directly via
+ *  KitSections.
+ */
 
 import { Linking } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';

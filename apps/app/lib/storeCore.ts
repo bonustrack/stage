@@ -1,18 +1,9 @@
-/** Shared core for the app's two persisted-store abstractions (lib/cache.ts's
- *  PersistentStore and lib/persistedStore.ts's createSetStore/createValueStore).
- *  Both solved the same two problems independently:
- *
- *   1. pub/sub fan-out that never lets one bad subscriber break the rest, and
- *   2. hydrate-ONCE off a backend (file / AsyncStorage) without racing.
- *
- *  This module owns both so the two store flavours stay in sync. Backends are NOT
- *  unified on purpose: cache.ts mirrors large JSON blobs to expo-file-system
- *  (channels list, debounced writes), while persistedStore.ts keeps small prefs
- *  in AsyncStorage. Only the cross-cutting plumbing lives here. */
+/**
+ * @file Shared cross-cutting plumbing for the app's two persisted-store abstractions (PersistentStore in cache.ts and createSetStore/createValueStore in persistedStore.ts): isolating pub/sub fan-out and hydrate-ONCE-without-racing.
+ *  Backends stay un-unified on purpose (cache.ts mirrors large JSON to expo-file-system, persistedStore.ts keeps small prefs in AsyncStorage); only the shared plumbing lives here.
+ */
 
-/** A pub/sub listener set + a `notify` that isolates subscriber throws (a bad
- *  callback can't break the rest of the fan-out). `T` is the value passed to each
- *  listener (`void` for the zero-arg style persistedStore uses). */
+/** A pub/sub listener set + a `notify` that isolates subscriber throws (a bad callback can't break the rest of the fan-out). `T` is the value passed to each listener (`void` for the zero-arg style persistedStore uses). */
 export function makeListeners<T = void>(): {
   listeners: Set<(v: T) => void>;
   notify: (v: T) => void;
@@ -27,7 +18,8 @@ export function makeListeners<T = void>(): {
   return { listeners, notify };
 }
 
-/** Hydrate-ONCE guard. Wraps an async `reader` so the underlying backend read
+/**
+ * Hydrate-ONCE guard. Wraps an async `reader` so the underlying backend read
  *  runs at most once and concurrent boot callers await the SAME in-flight read
  *  rather than racing (the bug cache.ts hit: a second caller arriving mid-read
  *  saw `loaded === true` with a still-null value). The done flag is set only
@@ -36,7 +28,8 @@ export function makeListeners<T = void>(): {
  *  `run()` returns the reader's result; `done()` reports whether a read has
  *  completed (sync fast-path callers); `markDone()` short-circuits a pending read
  *  when a `set()` has already supplied the authoritative value; `reset()` clears
- *  both so a fresh account re-hydrates from a clean slate. */
+ *  both so a fresh account re-hydrates from a clean slate.
+ */
 export function hydrateOnce<T>(reader: () => Promise<T>): {
   run: () => Promise<T>;
   done: () => boolean;

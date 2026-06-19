@@ -1,25 +1,7 @@
-/** React hook bridging the Railgun cache/pending stores into a screen.
- *
- *  Returns an INSTANT first paint: the cached snapshot is read synchronously on
- *  mount (no spinner / no `loading` flash), pending optimistic deltas are
- *  overlaid live, and a background refresh swaps in fresh balances when ready.
- *
- *  BOOT-RACE GUARD: refreshSnapshot()→engineInit() boots the embedded Node
- *  (nodejs-mobile) runtime, whose native crypto/SQLCipher startup CONTENDS with
- *  XMTP's native `Client.create` MLS handshake when both run in the same process
- *  on first launch (intermittent "XMTP.create timed out" hangs). So the engine
- *  boot is ALWAYS gated behind `waitForXmtpReady()` — it only ever starts AFTER
- *  the XMTP client is ready, so nodejs-mobile is serialized after Client.create
- *  and never races it on boot:
- *    - `autoStart:true` consumers (WalletScreen's Tokens tab — but only ONCE the
- *      Wallet tab is focused, see useWalletFocused — AND the Private tab) await
- *      waitForXmtpReady() THEN boot the engine + background-refresh. The bridge's
- *      own `started`/readyPromise guard makes this single-flight, so whichever
- *      tab triggers it first wins and the other is a no-op (no double-start, one
- *      engine boot total). NB: WalletScreen passes autoStart=false until the
- *      Wallet tab is focused, so an app open that never visits Wallet never boots
- *      nodejs-mobile.
- *    - `autoStart:false` (default) reads the warm cache only and never boots. */
+/**
+ * @file React hook bridging the Railgun cache/pending stores into a screen with an INSTANT first paint (synchronous warm snapshot + live optimistic pending deltas + background refresh).
+ *  BOOT-RACE GUARD: engine boot (nodejs-mobile) is always gated behind `waitForXmtpReady()` so its native crypto/SQLCipher startup never races XMTP's `Client.create` on first launch; `autoStart:false` reads the warm cache only.
+ */
 import { useEffect, useState } from 'react';
 import { getActiveAccountId } from '../accounts';
 import { useAccountEpoch } from '../accountEpoch';
@@ -35,17 +17,17 @@ export interface PrivateWalletState {
   pending: PendingAction[];
 }
 
-/** @param autoStart  When true (Tokens tab + Private tab), boot the engine +
+/**
+ * @param autoStart  When true (Tokens tab + Private tab), boot the engine +
  *  background-refresh AFTER XMTP is ready (single-flight via the bridge guard).
- *  When false, read the warm cache only; do NOT boot nodejs-mobile. */
+ *  When false, read the warm cache only; do NOT boot nodejs-mobile.
+ */
 export function usePrivateWallet(autoStart = false): PrivateWalletState {
   const [accountId, setAccountId] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<PrivateSnapshot | null>(null);
   const [pending, setPending] = useState<PendingAction[]>([]);
 
-  /** Re-run the per-account init when the active account changes (switchToAccount
-   *  bumps this epoch). Without it the hook captures the boot account's id once
-   *  and the shielded snapshot/pending stay stale after a switch. */
+  /** Re-run the per-account init when the active account changes (switchToAccount bumps this epoch). Without it the hook captures the boot account's id once and the shielded snapshot/pending stay stale after a switch. */
   const accountEpoch = useAccountEpoch();
 
   useEffect(() => {

@@ -1,7 +1,8 @@
-/** Components sub-page of Settings - back-arrow header + theme switcher, then the
- *  app-level components rendered directly (ComponentsSections) with sample data.
- *  Reached via /settings -> "Components" row. Mirrors KitPage's structure but
- *  showcases the APP-level components instead of the @metro-labs/kit primitives. */
+/**
+ * @file Components sub-page of Settings: a header plus theme switcher above the
+ *  app-level components (ComponentsSections) rendered with sample data, mirroring
+ *  KitPage but showcasing app components rather than kit primitives.
+ */
 
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

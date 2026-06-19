@@ -1,4 +1,6 @@
-/** Bridge-backed private-wallet refresh (Kohaku phase 1-2).
+/** @file Bridge-backed private-wallet refresh: derives keys, inits the engine, and reads the on-device 0zk address + shielded balances into the UI's PrivateBalance shape. */
+/**
+ * Bridge-backed private-wallet refresh (Kohaku phase 1-2).
  *
  *  This is the REAL path on a device build: the RAILGUN engine only inits inside
  *  the embedded Node host (Hermes can't load the prover), so the actual 0zk
@@ -9,7 +11,8 @@
  *  if already warm) → walletInfo (create-or-load the 0zk wallet) → getBalances
  *  (trigger a scan + read current amounts). Maps wei rows to the UI's
  *  PrivateBalance shape. Balances may be empty while the Merkle scan runs —
- *  that's expected and renders as the $0/empty state. Never throws. */
+ *  that's expected and renders as the $0/empty state. Never throws.
+ */
 import { formatUnits } from 'viem';
 import { stampTokenUrl } from '@metro-labs/kit/avatar';
 import {
@@ -25,8 +28,7 @@ import { RAILGUN_TOKENS } from './tokens';
 import { patchBalanceDebug } from './balanceDebug';
 import type { PrivateBalance, PrivateSnapshot } from './types';
 
-/** Map raw wei rows for a chainId (not net) → fixed display rows. Used by the
- *  live balanceUpdate watcher, which only knows the numeric chain id. */
+/** Map raw wei rows for a chainId (not net) → fixed display rows. Used by the live balanceUpdate watcher, which only knows the numeric chain id. */
 export function mapEventRows(chainId: number, rows: BridgeBalanceRow[]): PrivateBalance[] {
   const net = (Object.keys(RAILGUN_NETWORKS) as RailgunNet[]).find(
     (n) => RAILGUN_NETWORKS[n].chainId === chainId,
@@ -34,9 +36,7 @@ export function mapEventRows(chainId: number, rows: BridgeBalanceRow[]): Private
   return net ? mapRows(net, rows) : [];
 }
 
-/** Sum the engine's wei rows for a given token address (case-insensitive).
- *  Railgun keys balances by ERC20 contract address; native ETH lands under the
- *  network's WETH address (see tokens.ts). A token absent from the rows is 0. */
+/** Sum the engine's wei rows for a given token address (case-insensitive). Railgun keys balances by ERC20 contract address; native ETH lands under the network's WETH address (see tokens.ts). A token absent from the rows is 0. */
 function weiForToken(rows: BridgeBalanceRow[], address: string): bigint {
   let total = 0n;
   const want = address.toLowerCase();
@@ -47,9 +47,7 @@ function weiForToken(rows: BridgeBalanceRow[], address: string): bigint {
   return total;
 }
 
-/** Map a network's raw wei rows to the FIXED ETH + USDC display rows, formatted
- *  by each token's real decimals (ETH/WETH 18, USDC 6). Rows are emitted even at
- *  zero so the tab always shows both tokens per network. */
+/** Map a network's raw wei rows to the FIXED ETH + USDC display rows, formatted by each token's real decimals (ETH/WETH 18, USDC 6). Rows are emitted even at zero so the tab always shows both tokens per network. */
 function mapRows(net: RailgunNet, rows: BridgeBalanceRow[]): PrivateBalance[] {
   const cfg = RAILGUN_NETWORKS[net];
   return RAILGUN_TOKENS[net].map((t) => ({
@@ -61,10 +59,12 @@ function mapRows(net: RailgunNet, rows: BridgeBalanceRow[]): PrivateBalance[] {
   }));
 }
 
-/** Resolve the live private snapshot (0zk address + shielded balances) via the
+/**
+ * Resolve the live private snapshot (0zk address + shielded balances) via the
  *  embedded Node bridge. Returns null when the bridge isn't in this binary so
  *  the caller can fall back. Throws only on genuine derivation/call failure
- *  (caught by the caller, which keeps the warm cache). */
+ *  (caught by the caller, which keeps the warm cache).
+ */
 export async function bridgeRefreshSnapshot(prev: PrivateSnapshot | null): Promise<PrivateSnapshot | null> {
   if (!isBridgeAvailable()) {
     patchBalanceDebug({ bridgeAvailable: false, phase: 'idle' });

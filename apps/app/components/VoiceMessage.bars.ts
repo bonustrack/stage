@@ -1,8 +1,4 @@
-/** Deterministic representative waveform bars for a voice clip. No amplitude
- *  data travels with an XMTP audio attachment, so we synthesize a stable bar
- *  pattern seeded from the clip's uri — same clip always draws the same shape
- *  (Messenger does this for received clips too). Heights are 0.18..1.0 of the
- *  track height so the row reads as a voice waveform, not a flat bar. */
+/** @file Synthesizes deterministic representative waveform bars for a voice clip (seeded from its uri) since XMTP audio attachments carry no amplitude data. */
 
 const BAR_COUNT = 34;
 
@@ -27,8 +23,7 @@ export function waveformBars(uri: string, count: number = BAR_COUNT): number[] {
   };
   const out: number[] = [];
   for (let i = 0; i < count; i++) {
-    /** Blend a slow sine envelope with per-bar noise so it looks speech-like
-     *  (taller in the middle, quieter at the edges) rather than pure static. */
+    /** Blend a slow sine envelope with per-bar noise so it looks speech-like (taller in the middle, quieter at the edges) rather than pure static. */
     const env = 0.45 + 0.5 * Math.sin((i / count) * Math.PI);
     const noise = next();
     out.push(Math.max(0.18, Math.min(1, env * (0.55 + 0.6 * noise))));

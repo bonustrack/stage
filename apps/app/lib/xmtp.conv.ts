@@ -1,15 +1,13 @@
-/** Conversation discovery + message-request / consent helpers for the app's XMTP
- *  client lib. Extracted from lib/xmtp.ts (phase-2 lint split); re-exported from
- *  there. `convOfLine` itself lives in xmtp.client.ts (it's the bridge to the
- *  cached client every module shares). */
+/**
+ * @file Conversation discovery (e.g. open-DM-by-address) plus message-request / consent helpers for the app's XMTP client lib.
+ *  Extracted from lib/xmtp.ts and re-exported there; `convOfLine` itself lives in xmtp.client.ts.
+ */
 
 import { PublicIdentity, type Conversation } from '@xmtp/react-native-sdk';
 import { getCachedXmtpClient, getOrCreateXmtpClient, convOfLine } from './xmtp.client';
 import { lineOfConv, type XmtpConsent } from './xmtp.types';
 
-/** Find or create a DM with a peer by Ethereum address. Returns the conv id
- *  ready to push into `/xmtp/[convId]`. Used from the per-user profile page'​s
- *  "Open chat" button. */
+/** Find or create a DM with a peer by Ethereum address. Returns the conv id ready to push into `/xmtp/[convId]`. Used from the per-user profile page'​s "Open chat" button. */
 export async function openDmWithAddress(address: string): Promise<string> {
   const client = await getOrCreateXmtpClient('production');
   const dm = await client.conversations.findOrCreateDmWithIdentity(
@@ -18,14 +16,16 @@ export async function openDmWithAddress(address: string): Promise<string> {
   return dm.id;
 }
 
-/** Message-requests: a conversation whose consent is `'unknown'` is a pending
+/**
+ * Message-requests: a conversation whose consent is `'unknown'` is a pending
  *  request (someone we never accepted started a DM/added us to a group). The
  *  channels list shows only `'allowed'` convs; the Requests screen lists the
  *  `'unknown'` ones with Accept / Block actions.
  *
  *  - Accept → `updateConsent('allowed')` moves it into the main inbox.
  *  - Block  → `updateConsent('denied')` drops it from both lists.
- *  Both are cross-device via XMTP's synced consent preferences. */
+ *  Both are cross-device via XMTP's synced consent preferences.
+ */
 export async function listRequestConvs(): Promise<Conversation[]> {
   const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
   try {
@@ -34,10 +34,12 @@ export async function listRequestConvs(): Promise<Conversation[]> {
   return client.conversations.list(undefined, undefined, ['unknown']).catch(() => []);
 }
 
-/** Read a single conversation's current consent state (`'allowed'`,
+/**
+ * Read a single conversation's current consent state (`'allowed'`,
  *  `'denied'`, or `'unknown'`). Used by the in-channel request action bar to
  *  decide whether the open conversation is still a pending request. Returns
- *  `null` if the conversation can't be resolved. */
+ *  `null` if the conversation can't be resolved.
+ */
 export async function getConvConsentState(convId: string): Promise<XmtpConsent | null> {
   const conv = await convOfLine(lineOfConv(convId));
   if (!conv) return null;
@@ -48,26 +50,26 @@ export async function getConvConsentState(convId: string): Promise<XmtpConsent |
   }
 }
 
-/** Accept a pending message request: set consent to `'allowed'` so it moves
- *  from the Requests list into the main inbox. */
+/** Accept a pending message request: set consent to `'allowed'` so it moves from the Requests list into the main inbox. */
 export async function acceptRequestConv(convId: string): Promise<void> {
   const conv = await convOfLine(lineOfConv(convId));
   if (!conv) throw new Error('Conversation not found');
   await (conv as unknown as { updateConsent: (s: XmtpConsent) => Promise<void> }).updateConsent('allowed');
 }
 
-/** Block/decline a pending message request: set consent to `'denied'` so it
- *  drops out of both the Requests list and the main inbox. */
+/** Block/decline a pending message request: set consent to `'denied'` so it drops out of both the Requests list and the main inbox. */
 export async function blockRequestConv(convId: string): Promise<void> {
   const conv = await convOfLine(lineOfConv(convId));
   if (!conv) throw new Error('Conversation not found');
   await (conv as unknown as { updateConsent: (s: XmtpConsent) => Promise<void> }).updateConsent('denied');
 }
 
-/** Subscribe to live consent-state changes across conversations so the channels
+/**
+ * Subscribe to live consent-state changes across conversations so the channels
  *  list + Requests list reconcile when a conv is accepted/blocked on another
  *  device (or via a stream). Returns an unsubscribe fn. Best-effort: if the SDK
- *  build lacks `streamConsent`, this is a no-op. */
+ *  build lacks `streamConsent`, this is a no-op.
+ */
 export function streamConvConsent(cb: () => void): () => void {
   const client = getCachedXmtpClient();
   const prefs = (client as unknown as {
@@ -89,8 +91,7 @@ export function streamConvConsent(cb: () => void): () => void {
   return () => { cancelled = true; canceller?.(); };
 }
 
-/** Pull synced consent updates from the network into the local DB. Call on app
- *  foreground so accept/block done on another device lands here. */
+/** Pull synced consent updates from the network into the local DB. Call on app foreground so accept/block done on another device lands here. */
 export async function syncConsent(): Promise<void> {
   try {
     const client = getCachedXmtpClient();

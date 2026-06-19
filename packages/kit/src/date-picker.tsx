@@ -1,13 +1,6 @@
-/** DatePicker - a ChatKit-styled date field. Mirrors ChatKit's `DatePicker`
- *  widget. Faithful prop names: `name`, `defaultValue` (YYYY-MM-DD), `placeholder`,
- *  `variant` ('soft' | 'outline'), `size` (ControlSize), `pill`, `block`,
- *  `clearable`, `disabled`, `min`, `max` (YYYY-MM-DD bounds). Deviations (kit is
- *  interactive RN, not server-streamed): ChatKit's `onChangeAction` (a server
- *  ActionConfig) is replaced by an `onChange(value)` callback, a controlled
- *  `value` prop is accepted, and ChatKit's popover `align`/`side` placement is
- *  expressed as a centred RN Modal sheet. `dark` boolean keeps the kit hook-free.
- *  Self-contained calendar grid (no native date dependency) drawn with kit
- *  tokens + the shared control box style. Values are ISO YYYY-MM-DD strings. */
+/**
+ * @file DatePicker — a hook-free ChatKit-styled date field backed by a self-contained calendar grid in a centred RN Modal (no native date dependency), emitting ISO YYYY-MM-DD strings.
+ */
 
 import { useState } from 'react';
 import {

@@ -1,4 +1,8 @@
-/** CoinGecko token-price helper. Mirrors `apps/ui/src/helpers/coingecko.ts`
+/**
+ * @file CoinGecko Pro price lookups for ETH and ERC-20 tokens used by the wallet tab (pure fetch).
+ */
+/**
+ * CoinGecko token-price helper. Mirrors `apps/ui/src/helpers/coingecko.ts`
  *  in sx-monorepo, trimmed to the price-lookup path Metro needs. Uses the
  *  Snapshot UI's CG Pro key so we don't burn a separate quota; the wallet tab
  *  reads ETH + a couple of ERC-20s, which is well inside the limits.
@@ -8,7 +12,8 @@
  *  Pro URL for parity with sx-monorepo.
  *
  *  Pure `fetch`, no platform deps. The default key can be overridden by passing
- *  `apiKey` (the Stage client threads its `apiKeys.coingecko` through here). */
+ *  `apiKey` (the Stage client threads its `apiKeys.coingecko` through here).
+ */
 
 const CG_KEY = 'CG-o41PzYqjLPSWSJdMEyDELEpB';
 const CG_URL = 'https://pro-api.coingecko.com/api/v3/simple';
@@ -18,9 +23,7 @@ export interface CgPrice {
   usd_24h_change: number;
 }
 
-/** Fetch USD prices for a set of ERC-20 contracts on the given platform
- *  (`ethereum`, `polygon-pos`, ...). Returns a contract->price map; missing
- *  contracts simply don't appear in the result. */
+/** Fetch USD prices for a set of ERC-20 contracts on the given platform (`ethereum`, `polygon-pos`, ...). Returns a contract->price map; missing contracts simply don't appear in the result. */
 export async function getErc20UsdPrices(
   platform: string,
   contracts: string[],
@@ -35,8 +38,7 @@ export async function getErc20UsdPrices(
   return (await res.json()) as Record<string, CgPrice>;
 }
 
-/** Fetch a "simple price" by CoinGecko coin id (ETH = `ethereum`).
- *  Returns the price record keyed by the id. */
+/** Fetch a "simple price" by CoinGecko coin id (ETH = `ethereum`). Returns the price record keyed by the id. */
 export async function getSimplePrices(
   ids: string[],
   apiKey: string = CG_KEY,

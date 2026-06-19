@@ -1,4 +1,6 @@
-/** Private Railgun fund-movement history for the Activity tab.
+/** @file Best-effort fetch of private RAILGUN fund movements (shields, unshields, 0zk transfers) via the Node bridge's `wallet.getTransactionHistory` for the Activity tab. */
+/**
+ * Private Railgun fund-movement history for the Activity tab.
  *
  *  Surfaces the wallet's private (0zk) fund movements (shields, unshields,
  *  0zk->0zk transfers) alongside the public Etherscan activity. We include ALL
@@ -11,7 +13,8 @@
  *  hot-reloadable). A per-leg shieldFee marker distinguishes a shield-in receive
  *  from a plain transfer-in receive; the bridge serializes bigints to decimal
  *  strings so amounts survive JSON intact. Never throws: a chain that errors or
- *  has no shielded history is skipped (best-effort, like the balance refresh). */
+ *  has no shielded history is skipped (best-effort, like the balance refresh).
+ */
 import { formatUnits } from 'viem';
 import { stampTokenUrl } from '@metro-labs/kit/avatar';
 import { isBridgeAvailable, engineInit, walletInfo } from './bridge';
@@ -32,8 +35,7 @@ export interface PrivateActivityRow {
   direction: 'in' | 'out';
   /** Display symbol (ETH / USDC) when known, else a shortened token address. */
   symbol: string;
-  /** stamp.fyi token logo URL (same resolver the wallet token rows use); empty
-   *  string for an unknown token so the avatar renders just its border circle. */
+  /** stamp.fyi token logo URL (same resolver the wallet token rows use); empty string for an unknown token so the avatar renders just its border circle. */
   logoUrl: string;
   /** Decimal-string amount (formatUnits output), e.g. "1.25". */
   amount: string;
@@ -44,9 +46,7 @@ export interface PrivateActivityRow {
   txid: string;
 }
 
-/** Minimal slice of the SDK's TransactionHistoryItem we consume. The bridge
- *  serializes bigints to decimal strings, so `amount`/`shieldFee` arrive as
- *  strings and `category` arrives as its enum string value. */
+/** Minimal slice of the SDK's TransactionHistoryItem we consume. The bridge serializes bigints to decimal strings, so `amount`/`shieldFee` arrive as strings and `category` arrives as its enum string value. */
 interface HistoryErc20Amount {
   tokenAddress: string;
   amount: string;
@@ -73,14 +73,14 @@ function shortToken(address: string): string {
   return address.length > 10 ? `${address.slice(0, 6)}…${address.slice(-4)}` : address;
 }
 
-/** A receive leg is a shield-in (vs a 0zk transfer-in) when it carries a
- *  shieldFee marker, or when the item category is the shield category. */
+/** A receive leg is a shield-in (vs a 0zk transfer-in) when it carries a shieldFee marker, or when the item category is the shield category. */
 function isShieldReceive(item: HistoryItem, leg: HistoryErc20Amount): boolean {
   if (leg.shieldFee !== undefined && leg.shieldFee !== null) return true;
   return item.category === 'ShieldERC20s';
 }
 
-/** Flatten one history item's ERC20 legs into private-activity rows.
+/**
+ * Flatten one history item's ERC20 legs into private-activity rows.
  *
  *  - receiveERC20Amounts -> shield-in (if shieldFee present) else transfer-in
  *  - unshieldERC20Amounts -> unshield-out
@@ -88,7 +88,8 @@ function isShieldReceive(item: HistoryItem, leg: HistoryErc20Amount): boolean {
  *
  *  changeERC20Amounts (self-change from a spend) and broadcasterFeeERC20Amount
  *  are intentionally not surfaced - they are accounting artifacts, not movements
- *  the user initiated. */
+ *  the user initiated.
+ */
 function rowsForItem(net: RailgunNet, item: HistoryItem): PrivateActivityRow[] {
   const cfg = RAILGUN_NETWORKS[net];
   const ts = typeof item.timestamp === 'number' ? item.timestamp : 0;
@@ -122,8 +123,7 @@ function rowsForItem(net: RailgunNet, item: HistoryItem): PrivateActivityRow[] {
   ];
 }
 
-/** Fetch the private fund-movement history for one network. Best-effort: returns
- *  [] on any failure (engine not warm, scan not ready, RPC hiccup). */
+/** Fetch the private fund-movement history for one network. Best-effort: returns [] on any failure (engine not warm, scan not ready, RPC hiccup). */
 async function historyForNet(net: RailgunNet, walletID: string): Promise<PrivateActivityRow[]> {
   const cfg = RAILGUN_NETWORKS[net];
   try {
@@ -138,18 +138,18 @@ async function historyForNet(net: RailgunNet, walletID: string): Promise<Private
   }
 }
 
-/** Outcome of a private-activity fetch. `available` is false only when the
- *  bridge isn't in this binary (web / non-Railgun build); the caller uses it to
- *  decide whether to render the section + its empty state at all. */
+/** Outcome of a private-activity fetch. `available` is false only when the bridge isn't in this binary (web / non-Railgun build); the caller uses it to decide whether to render the section + its empty state at all. */
 export interface PrivateActivityResult {
   available: boolean;
   rows: PrivateActivityRow[];
 }
 
-/** Resolve the private (0zk) fund-movement history across both supported chains,
+/**
+ * Resolve the private (0zk) fund-movement history across both supported chains,
  *  newest-first. Returns { available:false } when the bridge isn't in this
  *  binary. Never throws. Reuses the balance read path's boot (engineInit +
- *  walletInfo); when the Private tab already booted the engine these are cheap. */
+ *  walletInfo); when the Private tab already booted the engine these are cheap.
+ */
 export async function fetchPrivateActivity(): Promise<PrivateActivityResult> {
   if (!isBridgeAvailable()) return { available: false, rows: [] };
   const key = await deriveRailgunKeyMaterial();

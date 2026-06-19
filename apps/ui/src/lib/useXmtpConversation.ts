@@ -1,6 +1,7 @@
-/** XMTP conversation-view state: feed wiring, header metadata, optimistic
- *  bubbles, permalink scroll, and bubble actions. Extracted from
- *  `pages/XmtpConversation.vue` so the SFC stays under the lint cap. */
+/**
+ * @file Composable backing the conversation view: feed wiring, header metadata, optimistic bubbles, permalink scroll, and bubble actions.
+ */
+/** XMTP conversation-view state: feed wiring, header metadata, optimistic bubbles, permalink scroll, and bubble actions. Extracted from `pages/XmtpConversation.vue` so the SFC stays under the lint cap. */
 
 import {
   ref, computed, watch, watchEffect, nextTick, onMounted,
@@ -90,8 +91,7 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
     inboxToAddr.value = await memberInboxToAddressMap(conv);
   }
 
-  /** Mark conv as read when bubbles arrive; ping the embed host (if iframed)
-   *  with the inbound count so its launcher can badge unread. */
+  /** Mark conv as read when bubbles arrive; ping the embed host (if iframed) with the inbound count so its launcher can badge unread. */
   watch(() => feed.events.value.length, (len, prev) => {
     if (convId.value && len > 0) markConvRead(convId.value);
     const added = len - (prev ?? 0);
@@ -128,10 +128,12 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
     if (stillPending.length !== optimistic.value.length) optimistic.value = stillPending;
   });
 
-  /** Permalink target message (`metro.box/#/xmtp/<convId>?m=<msgId>`). When set we
+  /**
+   * Permalink target message (`metro.box/#/xmtp/<convId>?m=<msgId>`). When set we
    *  scroll to that bubble (once it exists in the feed) instead of pinning to the
    *  bottom, and flash-highlight it. Cleared after the first successful scroll so
-   *  later inbound messages resume normal sticky-bottom behaviour. */
+   *  later inbound messages resume normal sticky-bottom behaviour.
+   */
   const targetMsgId = computed(() => {
     const m = route.query.m;
     return (Array.isArray(m) ? m[0] : m) ?? null;

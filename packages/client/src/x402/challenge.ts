@@ -1,4 +1,8 @@
-/** Shared x402 payment-challenge wire format + parser.
+/**
+ * @file Shared x402 (HTTP 402) payment-challenge wire format and parser, the single source of truth across proxy and app.
+ */
+/**
+ * Shared x402 payment-challenge wire format + parser.
  *
  *  x402 (coinbase/x402) reactivates HTTP 402 Payment Required: a server that
  *  wants payment answers `402` with a machine-readable challenge. Both the
@@ -16,12 +20,15 @@
  *   - v2:       per-option amount field named `amount` (atomic units); a single
  *               inlined option may appear under `accepted`.
  *  Both normalise to { scheme, network, asset?, amount?, payTo?, description?,
- *  maxTimeoutSeconds?, extra? }. */
+ *  maxTimeoutSeconds?, extra? }.
+ */
 
-/** A normalised single payment option from an x402 challenge. `amount` is the
+/**
+ * A normalised single payment option from an x402 challenge. `amount` is the
  *  required amount in the asset's atomic (smallest) units, as a decimal string,
  *  exactly as the server stated it. `network` is the server's network id
- *  (CAIP-2 like `eip155:8453`, or a legacy name like `base`). */
+ *  (CAIP-2 like `eip155:8453`, or a legacy name like `base`).
+ */
 export interface X402Accept {
   scheme: string;
   network: string;
@@ -34,8 +41,7 @@ export interface X402Accept {
   extra?: Record<string, unknown>;
 }
 
-/** The proxy's x402 result for a URL: the probed endpoint, the normalised
- *  accepted payment options, the x402 protocol version, and the raw challenge. */
+/** The proxy's x402 result for a URL: the probed endpoint, the normalised accepted payment options, the x402 protocol version, and the raw challenge. */
 export interface X402Challenge {
   kind: 'x402';
   endpoint: string;
@@ -62,8 +68,7 @@ function str(v: unknown): string | undefined {
   return typeof v === 'string' && v.length > 0 ? v : undefined;
 }
 
-/** Normalise one raw accept option. Returns null when it lacks a usable
- *  scheme + network (the minimum to be actionable). */
+/** Normalise one raw accept option. Returns null when it lacks a usable scheme + network (the minimum to be actionable). */
 export function normaliseAccept(a: RawAccept): X402Accept | null {
   const scheme = str(a.scheme);
   const network = str(a.network);
@@ -86,12 +91,14 @@ export function normaliseAccept(a: RawAccept): X402Accept | null {
   };
 }
 
-/** Parse a decoded x402 challenge object (the JSON body, the decoded
+/**
+ * Parse a decoded x402 challenge object (the JSON body, the decoded
  *  `PAYMENT-REQUIRED` header, or the proxy's own JSON envelope) into a
  *  normalised challenge. Returns null if it doesn't look like an x402 challenge.
  *
  *  `endpoint` is the fallback endpoint to record when the object doesn't already
- *  carry one (the proxy's own envelope embeds `endpoint`). */
+ *  carry one (the proxy's own envelope embeds `endpoint`).
+ */
 export function parseX402Challenge(
   obj: unknown,
   endpoint: string,

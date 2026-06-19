@@ -1,6 +1,7 @@
-/** Composer attachment handling — stage an image (paste or file pick) as a
- *  pending preview, then flush it as an XMTP attachment on send. Pulled out
- *  of Composer.vue to keep that file under the per-file LOC cap. */
+/**
+ * @file Composable that stages a composer image attachment as a pending preview and flushes it as an XMTP attachment on send.
+ */
+/** Composer attachment handling — stage an image (paste or file pick) as a pending preview, then flush it as an XMTP attachment on send. Pulled out of Composer.vue to keep that file under the per-file LOC cap. */
 
 import { ref } from 'vue';
 import { xmtpSendAttachment } from './xmtpSend';

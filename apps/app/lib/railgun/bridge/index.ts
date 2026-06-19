@@ -1,4 +1,7 @@
-/** RN-side RAILGUN bridge client — public barrel.
+/** @file Public barrel for the RN-side Railgun bridge client, re-exporting the transport plus the higher-level typed wrappers `pingBridge`/`engineInit` for liveness and engine+prover initialization. */
+
+/*
+ * RN-side RAILGUN bridge client — public barrel.
  *
  *  The low-level transport (channel boot, id-matched RPC, `rawCall`/`bridgeCall`)
  *  lives in ./transport so sdk.ts / wallet.ts can depend on it without importing
@@ -8,7 +11,8 @@
  *
  *  GUARD CONTRACT (like lib/railgun/native.ts): absent runtime ⇒ isBridge
  *  Available() false, calls reject friendly, nothing throws on import, bundler
- *  never resolves the native module. */
+ *  never resolves the native module.
+ */
 import type { ScanConfig } from './scanConfig';
 import { DEFAULT_SCAN_CONFIG } from './scanConfig';
 import { rawCall, ENGINE_INIT_TIMEOUT_MS } from './transport';
@@ -44,10 +48,12 @@ export interface EngineStatusResult {
   error?: string;
 }
 
-/** Init engine + prover + providers (idempotent); overrides the short timeout.
+/**
+ * Init engine + prover + providers (idempotent); overrides the short timeout.
  *  scanConfig (per-chain enable, RPC urls, batch size, stall/attempt timeouts,
  *  heartbeat cadence) is passed IN from RN instead of being hardcoded in
- *  engine.js. DEFAULT_SCAN_CONFIG mirrors the old hardcoded values 1:1. */
+ *  engine.js. DEFAULT_SCAN_CONFIG mirrors the old hardcoded values 1:1.
+ */
 export async function engineInit(
   dev = __DEV__,
   scanConfig: ScanConfig = DEFAULT_SCAN_CONFIG,

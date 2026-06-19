@@ -1,13 +1,6 @@
-/** Wire the live-update pipeline for the Channels list:
- *   - subscribe to newly-created conversations (`conversations.stream`)
- *   - subscribe to every inbound message (`streamAllMessages`) and patch
- *     the cached row's preview / timestamp / unread count
- *   - fall back to a full refresh when a message lands for a conv we
- *     haven't summarised yet (peer-initiated)
- *   - re-sync on visibility change + every 30s
- *
- *  Returns the start/stop pair so the calling page binds them to its
- *  Vue lifecycle (onMounted / onUnmounted). */
+/**
+ * @file Live-update pipeline that streams new conversations and inbound messages to keep cached Channels-list rows fresh, with periodic and visibility-change re-sync.
+ */
 
 import type { Conversation } from '@xmtp/browser-sdk';
 import { type XmtpClient, syncPreferences, streamConvConsent } from './xmtp';
@@ -19,8 +12,7 @@ interface StreamHandle { end: () => Promise<unknown> }
 
 export interface ChannelStreamHandles {
   stop: () => Promise<void>;
-  /** Manual refresh — exposed so the Refresh button / pull-to-refresh
-   *  control can drive it without re-binding to the underlying streams. */
+  /** Manual refresh — exposed so the Refresh button / pull-to-refresh control can drive it without re-binding to the underlying streams. */
   refresh: () => Promise<void>;
 }
 
@@ -28,12 +20,14 @@ export interface ChannelStreamHandles {
 export async function startChannelStream(client: XmtpClient): Promise<ChannelStreamHandles> {
   const selfInboxId = client.inboxId ?? '';
 
-  /** A full refresh re-summarises every conversation — `messages()` + per-member
+  /**
+   * A full refresh re-summarises every conversation — `messages()` + per-member
    *  inbox-state resolution per conv — which is the call pattern that previously
    *  drained the XMTP read rate limit. The live streams below cover real-time
    *  updates, so a full refresh is only a backstop: debounce the automatic callers
    *  (visibility + poll + peer-conv fallback) to at most once per window, while
-   *  letting an explicit user action (`force`) always run. */
+   *  letting an explicit user action (`force`) always run.
+   */
   let lastRefreshAt = 0;
   const MIN_AUTO_REFRESH_MS = 20_000;
   /** Refresh helper. */
@@ -55,8 +49,7 @@ export async function startChannelStream(client: XmtpClient): Promise<ChannelStr
   let pollTimer: ReturnType<typeof setInterval> | null = null;
   let visibilityHandler: (() => void) | null = null;
 
-  /** Pull synced consent from the network before the first summarise so
-   *  cross-device read/unread state is reflected from the start. */
+  /** Pull synced consent from the network before the first summarise so cross-device read/unread state is reflected from the start. */
   await syncPreferences();
   await refresh(true);
 
@@ -94,8 +87,7 @@ export async function startChannelStream(client: XmtpClient): Promise<ChannelStr
     onError: () => { /* backstops fire */ },
   });
 
-  /** Cross-device read/unread: live consent changes from another installation
-   *  reconcile the badge here. */
+  /** Cross-device read/unread: live consent changes from another installation reconcile the badge here. */
   stopConsentStream = await streamConvConsent((convId, state) => {
     applyConsentToRows(convId, state === 'unknown');
   });
@@ -104,8 +96,7 @@ export async function startChannelStream(client: XmtpClient): Promise<ChannelStr
     if (document.visibilityState === 'visible') { void syncPreferences(); void refresh(); }
   };
   document.addEventListener('visibilitychange', visibilityHandler);
-  /** Backstop poll for dropped streams — every 5min, not 30s. The live streams
-   *  handle real-time updates; this just catches anything they missed. */
+  /** Backstop poll for dropped streams — every 5min, not 30s. The live streams handle real-time updates; this just catches anything they missed. */
   pollTimer = setInterval(() => { void refresh(); }, 300_000);
 
   return {

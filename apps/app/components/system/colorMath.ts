@@ -1,5 +1,7 @@
-/** Pure-JS HSV <-> hex conversions for the color picker. No dependencies.
- *  h in [0,360], s/v in [0,1]. hex is `#rrggbb`. */
+/**
+ * @file Pure-JS, dependency-free HSV <-> hex color conversions for the color
+ *  picker (h in [0,360], s/v in [0,1], hex as `#rrggbb`).
+ */
 
 /** Clamp01 helper. */
 function clamp01(n: number): number { return Math.max(0, Math.min(1, n)); }

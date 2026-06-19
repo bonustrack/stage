@@ -1,13 +1,8 @@
-/** On-screen "Railgun debug" panel for the shielded-balance pipeline.
- *
- *  We have no adb on-device, so this renders the raw truth of the balance flow
- *  so the user can screenshot it: bridge/engine readiness, the refresh phase +
- *  error, the initial getBalances row counts, and — the key signal — the RAW
- *  last `event:balanceUpdate` payload the engine emitted. If "balance events: 0"
- *  the engine emitted NOTHING (scan/RPC/merkle problem, engine-side). If it
- *  shows rows but the tab reads 0, it's an RN-side sum/store/decimals bug.
- *
- *  Clearly labeled + diagnostic; subscribes to the in-memory balanceDebug store. */
+/**
+ * @file RailgunDebugPanel — on-screen, screenshot-friendly diagnostic panel for the
+ *  shielded-balance pipeline (bridge/engine readiness, refresh phase + error, getBalances
+ *  row counts, and the raw last balanceUpdate payload); subscribes to the balanceDebug store.
+ */
 import { useEffect, useState } from 'react';
 
 import { Text } from '@metro-labs/kit/text';

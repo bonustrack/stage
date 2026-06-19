@@ -1,5 +1,7 @@
-/** Presentational sub-parts for the Shield form (locked 0zk recipient + the
- *  phase/result line) — split out of send.shield.tsx for the <200-line cap. */
+/**
+ * @file Presentational sub-parts for the Shield form: the locked own-0zk
+ * recipient row and the phase/result status line.
+ */
 import { Linking } from 'react-native';
 
 import { Pressable } from '@metro-labs/kit/pressable';
@@ -13,8 +15,7 @@ interface Pal { fg: string; head: string; sub: string; border: string; inputBg: 
 /** Short0zk helper. */
 const short0zk = (a: string): string => (a.length> 18 ? `${a.slice(0, 10)}…${a.slice(-6)}` : a);
 
-/** The shield recipient is ALWAYS the user's own 0zk — shown read-only/locked
- *  so it can never be a third party. */
+/** The shield recipient is ALWAYS the user's own 0zk — shown read-only/locked so it can never be a third party. */
 export function ShieldRecipient({ pal, zkAddress }: {
   pal: Pal; zkAddress: string | null;
 }): React.ReactElement {
@@ -34,10 +35,12 @@ export function ShieldRecipient({ pal, zkAddress }: {
   );
 }
 
-/** Result line shown alongside the stepper: the "needs latest build" notice when
+/**
+ * Result line shown alongside the stepper: the "needs latest build" notice when
  *  the bridge is absent, the chain-aware explorer tx link once broadcast, and a
  *  clear error message on failure. The per-phase progress text now lives in the
- *  <ShieldStepper>; this line carries only the link + error + bridge notice. */
+ *  <ShieldStepper>; this line carries only the link + error + bridge notice.
+ */
 export function ShieldPhaseLine({ pal, txHash, err, errPhase, bridgeOk, chainId }: {
   pal: Pal; txHash: string | null; err: string | null; errPhase?: string | null;
   bridgeOk: boolean; chainId: number;

@@ -1,31 +1,6 @@
-/** Metro link-preview metadata Worker (preview.metro.box).
- *
- *  The Metro proxy (apps/proxy): given an arbitrary http(s) URL it
- *  fetches the page at the edge, parses OpenGraph / Twitter-card / <title> /
- *  meta description / favicon, and returns a compact JSON card the app renders.
- *  When the URL answers HTTP 402 with an x402 payment challenge it surfaces the
- *  normalised challenge instead, so the chat can render an x402 payment card.
- *
- *  Same API contract as the Node service:
- *    GET /health                 -> "ok"
- *    GET /preview?url=<encoded>  -> { url, title, description, image, siteName,
- *                                     favicon, imageOrigin?, faviconOrigin? }
- *                                   OR an x402 challenge object.
- *    GET /img?url=<encoded>&w=<px> -> the proxied (optionally resized) image.
- *
- *  Image proxy: /preview rewrites og:image + favicon to /img URLs so the app
- *  never loads assets straight from origin sites (which would leak the reader's
- *  IP). /img fetches them at the edge behind the same SSRF guards and attempts a
- *  Cloudflare Image Resizing pass.
- *
- *  Zero laptop dependency: runs on Cloudflare's edge, no origin/tunnel. Every
- *  response carries `x-served-by: worker` so callers can prove it's the Worker
- *  and not the legacy cloudflared tunnel answering.
- *
- *  Caching: successful results are cached in `caches.default` (the edge cache)
- *  keyed by the normalised request (preview ~1 day, images ~7 days). SSRF: see
- *  ssrf.ts - the Workers runtime refuses to route fetch() to private addresses,
- *  so we only keep the host-allowlist + literal-IP guard. */
+/**
+ * @file Cloudflare Worker entrypoint for the preview.metro.box link-preview proxy, routing /health, /preview, /img, and /x402-settle with per-IP rate limiting and edge caching.
+ */
 
 import { fetchPage } from './fetchPage.ts';
 import { fetchImage, parseWidth } from './fetchImage.ts';

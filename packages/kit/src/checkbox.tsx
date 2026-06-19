@@ -1,10 +1,6 @@
-/** Checkbox - a ChatKit-styled checkbox. Mirrors ChatKit's `Checkbox` widget.
- *  Faithful prop names: `name`, `label`, `defaultChecked`, `disabled`,
- *  `required`. Deviation (kit is interactive RN, not server-streamed): ChatKit's
- *  `onChangeAction` (a server ActionConfig) is replaced by an `onChange(checked)`
- *  callback, and a controlled `checked` prop is accepted so the app can drive it.
- *  `dark` boolean keeps the kit hook-free. The box is drawn with RN views + the
- *  shared Kit `check` heroicon glyph. */
+/**
+ * @file Checkbox — a hook-free interactive ChatKit-styled checkbox (controlled `checked` + `onChange` instead of ChatKit's server action), drawn with RN views and the shared `check` heroicon glyph.
+ */
 
 import { useState } from 'react';
 import { Pressable, View, Text as RNText, type ViewStyle } from 'react-native';

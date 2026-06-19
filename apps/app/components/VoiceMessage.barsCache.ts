@@ -1,16 +1,9 @@
-/** Per-clip cache + React hook for the TRUE decoded waveform bars. Decoding is
- *  async + relatively expensive, so we cache the result keyed by the clip's
- *  resolved uri (stable per message once its remote attachment is materialised)
- *  and never re-decode on re-render. While a decode is in flight the hook
- *  returns null; the player shows synthetic bars as a placeholder and swaps to
- *  the real ones when they resolve. Decode failure caches a sentinel so we
- *  don't retry a clip that can't be decoded. */
+/** @file Per-clip cache + React hook for the true decoded waveform bars, keyed by resolved uri so each clip decodes once, returning null while in flight and caching a sentinel on decode failure. */
 
 import { useEffect, useState } from 'react';
 import { decodeWaveformBars } from './VoiceMessage.decode';
 
-/** Resolved real bars, or `false` to mark a permanent decode failure (so the
- *  hook stays on synthetic bars without re-attempting). */
+/** Resolved real bars, or `false` to mark a permanent decode failure (so the hook stays on synthetic bars without re-attempting). */
 type Entry = number[] | false;
 
 const cache = new Map<string, Entry>();
@@ -29,8 +22,7 @@ function decodeOnce(uri: string, count: number): Promise<Entry> {
   return p;
 }
 
-/** Returns the decoded bars for `uri`, or null while decoding / on failure.
- *  Null signals the caller to render synthetic fallback bars. */
+/** Returns the decoded bars for `uri`, or null while decoding / on failure. Null signals the caller to render synthetic fallback bars. */
 export function useDecodedBars(uri: string, count: number): number[] | null {
   const cached = cache.get(uri);
   const [bars, setBars] = useState<number[] | null>(

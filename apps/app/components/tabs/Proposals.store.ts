@@ -1,34 +1,29 @@
-/** Shared proposal-queue store - one module-level singleton that owns the
- *  pending-poll queue, the session "skipped" set, and a lazy/cached rebuild.
- *
- *  WHY a singleton (not the hook's local state): the Home banner only needs the
- *  *count* of pending proposals, and the Proposals screen needs the full queue +
- *  the same skip set. Home re-renders constantly, so the count must be O(1) to
- *  read and the underlying scan must NOT run per render. This store builds the
- *  queue lazily - once on first access, then only when the channels-list cache
- *  actually changes (debounced) - caches the result, and notifies subscribers
- *  only when the visible count flips. Both surfaces read from here, sharing the
- *  session skip set so a poll skipped in the screen also drops out of the banner.
- *
- *  Skipped ids live for the session (a module Set) and reset on a manual
- *  refresh() / app restart, matching the original hook's semantics. */
+/**
+ * @file Proposals.store — the module-level singleton owning the pending-proposal
+ *  queue, the session skip set and a lazy/cache-driven rebuild, giving the Home
+ *  banner an O(1) count and the Proposals screen the full shared queue.
+ */
 
 import { getCachedRows, subscribeCachedRows, type CachedRow } from '../../modules/messaging';
 import { buildProposalQueue, type QueuedRequest } from './Proposals.queue';
 
-/** Per-item keys skipped this session - filtered out of every rebuilt queue so a
+/**
+ * Per-item keys skipped this session - filtered out of every rebuilt queue so a
  *  skipped request never reappears (in the banner count or the screen) until a
  *  manual refresh / app restart. Keyed by `QueuedRequest.key` (`kind:convId`) so
- *  distinct request kinds in the same channel skip independently. */
+ *  distinct request kinds in the same channel skip independently.
+ */
 const skipped = new Set<string>();
 
 let queue: QueuedRequest[] = [];
-/** Cached visible (non-skipped) view + the (queue, skip-size) it was built from.
+/**
+ * Cached visible (non-skipped) view + the (queue, skip-size) it was built from.
  *  getQueue() is read on EVERY render by useSyncExternalStore, which bails the
  *  re-render loop only when the snapshot is reference-stable. Recomputing the
  *  filtered array each call returns a fresh reference every time → React sees an
  *  ever-changing snapshot → "Maximum update depth exceeded". So memoize it and
- *  invalidate only when the underlying queue or skip set actually changes. */
+ *  invalidate only when the underlying queue or skip set actually changes.
+ */
 let visibleCache: QueuedRequest[] = [];
 let visibleQueue: QueuedRequest[] | null = null;
 let visibleSkipSize = -1;
@@ -43,9 +38,7 @@ let wired = false;
 
 const listeners = new Set<() => void>();
 
-/** Visible queue = built queue minus session-skipped ids. Memoized on the
- *  (queue, skip-size) pair so repeated reads (every render) return a stable
- *  reference; see visibleCache note above. */
+/** Visible queue = built queue minus session-skipped ids. Memoized on the (queue, skip-size) pair so repeated reads (every render) return a stable reference; see visibleCache note above. */
 function visible(): QueuedRequest[] {
   if (visibleQueue === queue && visibleSkipSize === skipped.size) return visibleCache;
   visibleCache = skipped.size === 0 ? queue : queue.filter(p => !skipped.has(p.key));
@@ -69,23 +62,20 @@ function applyBuild(id: number, q: QueuedRequest[]): void {
   emit();
 }
 
-/** Kick a fresh scan from the current cache. `clearSkips` resets session skips
- *  (manual refresh). The scan is bounded inside buildProposalQueue. */
+/** Kick a fresh scan from the current cache. `clearSkips` resets session skips (manual refresh). The scan is bounded inside buildProposalQueue. */
 function rebuild(rows: CachedRow[] | null, clearSkips: boolean): void {
   if (clearSkips) skipped.clear();
   const id = ++buildId;
   void buildProposalQueue(rows ?? []).then(q => { applyBuild(id, q); });
 }
 
-/** Debounced rebuild used by the cache subscription so a burst of cache writes
- *  during sync collapses into a single scan. */
+/** Debounced rebuild used by the cache subscription so a burst of cache writes during sync collapses into a single scan. */
 function scheduleRebuild(rows: CachedRow[] | null): void {
   if (rebuildTimer) clearTimeout(rebuildTimer);
   rebuildTimer = setTimeout(() => { rebuildTimer = null; rebuild(rows, false); }, 250);
 }
 
-/** Lazily wire the single cache subscription + run the first build. Called from
- *  subscribe() so nothing scans until a surface actually mounts. */
+/** Lazily wire the single cache subscription + run the first build. Called from subscribe() so nothing scans until a surface actually mounts. */
 function ensureWired(): void {
   if (wired) return;
   wired = true;
@@ -94,8 +84,7 @@ function ensureWired(): void {
 }
 
 export const proposalsStore = {
-  /** Subscribe to count/queue changes; returns an unsubscribe. First subscriber
-   *  wires the cache listener + triggers the initial build. */
+  /** Subscribe to count/queue changes; returns an unsubscribe. First subscriber wires the cache listener + triggers the initial build. */
   subscribe: (listener: () => void): () => void => {
     ensureWired();
     listeners.add(listener);
@@ -107,9 +96,7 @@ export const proposalsStore = {
   getQueue: (): QueuedRequest[] => visible(),
   /** True once the first scan has settled. */
   isReady: (): boolean => ready,
-  /** Mark a request skipped for the session by its item key (advances both
-   *  surfaces). Also used after a request is acted on (voted / paid / signed /
-   *  accepted / blocked) so it drops out without waiting for a rescan. */
+  /** Mark a request skipped for the session by its item key (advances both surfaces). Also used after a request is acted on (voted / paid / signed / accepted / blocked) so it drops out without waiting for a rescan. */
   skip(key: string): void {
     if (skipped.has(key)) return;
     skipped.add(key);

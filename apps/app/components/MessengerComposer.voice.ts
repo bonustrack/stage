@@ -1,6 +1,6 @@
-/** Voice-recording + slide-to-cancel gesture for the MessengerComposer,
- *  extracted for the lint line-budget. Behavior identical. Stages the recorded
- *  clip as a pending attachment via the passed `upload` callback. */
+/**
+ * @file useVoiceRecorder hook: microphone capture, level metering, and slide-to-cancel gesture that stages a recorded voice clip as a pending composer attachment.
+ */
 
 import { useMemo, useRef } from 'react';
 import { Alert, Animated, PanResponder } from 'react-native';
@@ -14,8 +14,7 @@ export interface VoiceArgs {
   setLevels: React.Dispatch<React.SetStateAction<number[]>>;
 }
 
-/** Slide-to-cancel threshold — distance the mic has to travel left before a
- *  release cancels the recording instead of stopping+staging it. */
+/** Slide-to-cancel threshold — distance the mic has to travel left before a release cancels the recording instead of stopping+staging it. */
 export const SLIDE_CANCEL_THRESHOLD_PX = 80;
 
 /** Hook that drives microphone capture, level metering, and staging for the composer's voice messages. */

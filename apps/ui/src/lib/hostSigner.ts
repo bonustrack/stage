@@ -1,20 +1,6 @@
-/** Embedded-widget signer bridge.
- *
- *  When Metro runs as an iframe inside a host app (e.g. Snapshot), the widget
- *  borrows the host's already-connected wallet to sign XMTP identity operations
- *  instead of minting its own throwaway key. The widget never holds a key: it
- *  proxies sign requests to the parent window over postMessage, and the host
- *  signs with its own wallet provider (wagmi/viem) and posts the signature back.
- *
- *  Host integration contract (the host adds a small listener — see README):
- *    widget → host  { type: 'metro:account-request' }
- *    host  → widget { type: 'metro:account', address }          // connected EOA, or omit/empty to decline
- *    widget → host  { type: 'metro:sign-request', id, message } // personal_sign the string
- *    host  → widget { type: 'metro:sign-response', id, signature }   // 0x… hex
- *                   { type: 'metro:sign-response', id, error }       // user rejected / failed
- *
- *  XMTP only needs real signatures at inbox creation + installation registration,
- *  so the user sees ~1 wallet prompt on first open, then nothing per message. */
+/**
+ * @file XMTP Signer for the embedded widget that proxies sign requests to the embedding host's wallet over postMessage instead of holding a key.
+ */
 
 import { IdentifierKind, type Signer } from '@xmtp/browser-sdk';
 import { hexToBytes, type Hex } from 'viem';
@@ -51,9 +37,7 @@ function ensureSignListener(): void {
   });
 }
 
-/** Ask the host for its currently-connected wallet address. Resolves null when
- *  not embedded, or when the host doesn't answer within `timeoutMs` (no Metro
- *  bridge / no wallet connected) — callers then fall back to a local key. */
+/** Ask the host for its currently-connected wallet address. Resolves null when not embedded, or when the host doesn't answer within `timeoutMs` (no Metro bridge / no wallet connected) — callers then fall back to a local key. */
 export function getHostAccount(timeoutMs = 4000): Promise<string | null> {
   if (!runningInIframe()) return Promise.resolve(null);
   return new Promise((resolve) => {
@@ -77,8 +61,7 @@ export function getHostAccount(timeoutMs = 4000): Promise<string | null> {
   });
 }
 
-/** Request a personal_sign of `message` from the host wallet. Long timeout —
- *  the user may take a while to approve in their wallet. */
+/** Request a personal_sign of `message` from the host wallet. Long timeout — the user may take a while to approve in their wallet. */
 function hostSignMessage(message: string, timeoutMs = 120_000): Promise<string> {
   ensureSignListener();
   const id = `sig_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;

@@ -1,7 +1,6 @@
-/** Builder sheets for the MessengerComposer: poll, signature-request, and
- *  payment-request. Extracted from MessengerComposer.tsx for readability; the
- *  JSX + behavior are identical — state is owned by the parent and threaded via
- *  props. */
+/**
+ * @file Builder bottom sheets for the MessengerComposer: poll, signature-request, and payment-request composition UIs.
+ */
 
 import { Pressable } from '@metro-labs/kit/pressable';
 import { fontSize } from '@metro-labs/kit/tokens';

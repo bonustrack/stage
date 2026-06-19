@@ -1,14 +1,8 @@
-/** Wallet → Unshield token (private → public).
- *
- *  Moves funds from the user's OWN 0zk shielded balance back to a PUBLIC address
- *  (defaults to the user's own EOA). Reached from the token detail page's
- *  "Unshield" button (shielded holdings only). Token/network pre-selected via
- *  query params; amount is chosen.
- *
- *  Unshield REQUIRES a Groth16 proof, so confirm runs the full estimate → prove
- *  → populate → broadcast flow in lib/railgun/unshield.ts. Proving is the slow
- *  step (~10-30s); progress flows through the phase line + Private-tab chip.
- *  Recipient defaults to own EOA (kept simple, not editable). */
+/**
+ * @file Wallet unshield-token screen moving funds from the user's own 0zk
+ * shielded balance back to a public address (defaults to their own EOA) via the
+ * Groth16 estimate-prove-populate-broadcast flow in lib/railgun/unshield.ts.
+ */
 import { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';

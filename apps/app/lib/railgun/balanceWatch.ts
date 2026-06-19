@@ -1,4 +1,7 @@
-/** Global shielded-balance-update watcher (the RN-side fix for "balance shows 0
+/** @file Global watcher that subscribes once to the engine's `event:balanceUpdate` and folds late-arriving shielded-balance rows into the snapshot store so the Private tab repaints without user action. */
+
+/*
+ * Global shielded-balance-update watcher (the RN-side fix for "balance shows 0
  *  after shield").
  *
  *  THE BUG: engine.js's `balances` handler fires `refreshBalances` fire-and-
@@ -12,7 +15,8 @@
  *  THE FIX: subscribe ONCE to `event:balanceUpdate` for the active account and
  *  fold each payload's rows straight into the snapshot store, so a balance that
  *  lands after the initial scan repaints the tab without any user action. Also
- *  mirrors every event into balanceDebug for the on-screen diagnostics. */
+ *  mirrors every event into balanceDebug for the on-screen diagnostics.
+ */
 import { bridgeListen } from './bridge';
 import { snapshotStore } from './cache';
 import { mapEventRows } from './bridgeWallet';

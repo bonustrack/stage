@@ -1,22 +1,21 @@
-/** Notification-tap deep-link handling.
- *
- *  Extracted from pushRegister.ts (mechanical split, behavior identical). */
+/** @file `usePushDeepLinks` hook that routes a tapped notification (cold-start and warm) to `/xmtp/[convId]`, clearing the stale cold-start response so a relaunch can't re-fire it. */
 
 import * as Notifications from 'expo-notifications';
 import { useEffect } from 'react';
 import { router } from 'expo-router';
-/** Deferred to break the deeplink → channelsCache → xmtp.client → push → … cycle.
- *  The unread-clear is already async + best-effort, so the lazy import is invisible. */
+/** Deferred to break the deeplink → channelsCache → xmtp.client → push → … cycle. The unread-clear is already async + best-effort, so the lazy import is invisible. */
 const markConvRead = async (convId: string): Promise<void> => {
   const { markConvRead: fn } = await import('./channelsCache');
   return fn(convId);
 };
 
-/** Extract the conversation id a notification points at. Both the foreground
+/**
+ * Extract the conversation id a notification points at. Both the foreground
  *  local notif (`presentInboundNotification`, data.convId) and the daemon's
  *  remote FCM push carry the conv id in `data` — accept the common aliases the
  *  daemon may use (`convId` / `conversationId` / a `line` like
- *  `metro://xmtp/<acct>/<convId>`). Returns null when none is present. */
+ *  `metro://xmtp/<acct>/<convId>`). Returns null when none is present.
+ */
 function convIdFromNotificationData(data: unknown): string | null {
   if (!data || typeof data !== 'object') return null;
   const d = data as Record<string, unknown>;
@@ -31,9 +30,7 @@ function convIdFromNotificationData(data: unknown): string | null {
   return null;
 }
 
-/** Navigate to the conversation a tapped notification points at + clear its
- *  unread badge. Shared by the cold-start (getLastNotificationResponse) and
- *  warm (addNotificationResponseReceivedListener) paths. Best-effort. */
+/** Navigate to the conversation a tapped notification points at + clear its unread badge. Shared by the cold-start (getLastNotificationResponse) and warm (addNotificationResponseReceivedListener) paths. Best-effort. */
 function openConvFromResponse(response: Notifications.NotificationResponse | null): void {
   if (!response) return;
   const convId = convIdFromNotificationData(response.notification?.request?.content?.data);
@@ -43,7 +40,8 @@ function openConvFromResponse(response: Notifications.NotificationResponse | nul
   void markConvRead(convId).catch(() => undefined);
 }
 
-/** Install the notification-tap deep-link handler once for the app's lifetime.
+/**
+ * Install the notification-tap deep-link handler once for the app's lifetime.
  *  Mount in the root layout. Handles BOTH:
  *   - cold start: the app was launched by tapping a push while killed
  *     (`getLastNotificationResponseAsync`),
@@ -66,7 +64,8 @@ function openConvFromResponse(response: Notifications.NotificationResponse | nul
  *  the lastRoute restore and shoving the user back into the conversation after
  *  they'd pressed back to Home. We now CLEAR the response the instant we read
  *  it on cold start, so it can only ever drive a single navigation and a normal
- *  relaunch no longer re-fires it. */
+ *  relaunch no longer re-fires it.
+ */
 export function usePushDeepLinks(): void {
   useEffect(() => {
     let cancelled = false;

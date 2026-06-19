@@ -1,18 +1,7 @@
-/** TanStack Query hook fetching a PR's per-file diff for the in-app diff viewer.
- *
- *  Given a parsed GitHub ref (owner/repo + pull/issue number) it asks the Metro
- *  daemon's authenticated GitHub proxy (blob.metro.box/gh/diff) to resolve the PR
- *  number, pull the PR meta + changed files (each with a unified-diff `patch`) and
- *  hand them back in ONE keyless round trip. The GitHub token stays server-side,
- *  so reads use the 5000 req/hr authenticated ceiling instead of the unauth
- *  60 req/hr/IP limit that left the viewer blank.
- *
- *  Issue links: an issue is not a PR, so the proxy resolves a linked PR via the
- *  issue's `timeline` (cross-referenced / connected PRs). If none is found it
- *  returns { kind: 'no-pr' } so the page can show a graceful message.
- *
- *  Fallback: if the proxy is unreachable the hook retries GitHub directly
- *  (unauthenticated) so the viewer still works off-daemon, just rate-limited. */
+/**
+ * @file TanStack Query hook fetching a PR's per-file diff (meta + unified `patch` per file) for the in-app diff viewer via the Metro daemon's authenticated GitHub proxy.
+ *  Resolves a linked PR for issue refs (returning `{ kind: 'no-pr' }` when none), and falls back to direct unauthenticated GitHub if the proxy is unreachable.
+ */
 
 import { useQuery } from '@tanstack/react-query';
 import type { GithubRef } from './githubDetect';
@@ -35,14 +24,12 @@ export interface GithubDiff {
   deletions: number;
 }
 
-/** Authenticated daemon proxy: keeps the GitHub token server-side and lifts the
- *  rate limit to 5000 req/hr. Same host family as the blob upload proxy. */
+/** Authenticated daemon proxy: keeps the GitHub token server-side and lifts the rate limit to 5000 req/hr. Same host family as the blob upload proxy. */
 const PROXY = 'https://blob.metro.box/gh/diff';
 const GH = 'https://api.github.com';
 const HEADERS = { Accept: 'application/vnd.github+json' };
 
-/** Raw shape the proxy returns: same fields, but `files` are raw GitHub file
- *  objects (mapped to DiffFile client-side). `no-pr` carries no files. */
+/** Raw shape the proxy returns: same fields, but `files` are raw GitHub file objects (mapped to DiffFile client-side). `no-pr` carries no files. */
 interface ProxyResult {
   kind: 'ok' | 'no-pr';
   owner: string;
@@ -56,8 +43,7 @@ interface ProxyResult {
   error?: string;
 }
 
-/** Sum per-file additions/deletions as a fallback when the source omits the
- *  aggregate PR-level totals. */
+/** Sum per-file additions/deletions as a fallback when the source omits the aggregate PR-level totals. */
 function totalsOf(files: DiffFile[]): { additions: number; deletions: number } {
   return files.reduce(
     (acc, f) => ({ additions: acc.additions + f.additions, deletions: acc.deletions + f.deletions }),
@@ -65,9 +51,7 @@ function totalsOf(files: DiffFile[]): { additions: number; deletions: number } {
   );
 }
 
-/** The daemon proxy returns title + files but omits the PR/issue body, so the
- *  description renders blank. Fetch it directly from GitHub as a best-effort
- *  fill (unauthenticated; failures are swallowed and leave body undefined). */
+/** The daemon proxy returns title + files but omits the PR/issue body, so the description renders blank. Fetch it directly from GitHub as a best-effort fill (unauthenticated; failures are swallowed and leave body undefined). */
 async function fetchBody(owner: string, repo: string, kind: 'pull' | 'issue', n: number): Promise<string | undefined> {
   const path = kind === 'pull' ? 'pulls' : 'issues';
   try {
@@ -103,8 +87,7 @@ async function fetchViaProxy(ref: GithubRef): Promise<GithubDiff> {
   };
 }
 
-/** Resolve the PR number for an issue link via the issue timeline. Only used by
- *  the direct-GitHub fallback; the proxy does this server-side. */
+/** Resolve the PR number for an issue link via the issue timeline. Only used by the direct-GitHub fallback; the proxy does this server-side. */
 async function resolvePrNumber(ref: GithubRef): Promise<number | null> {
   if (ref.kind === 'pull' && ref.number) return ref.number;
   if (ref.kind !== 'issue' || !ref.number) return null;

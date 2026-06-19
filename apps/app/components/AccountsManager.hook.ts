@@ -1,9 +1,8 @@
-/** useAccountsManager — state, effects + handlers for AccountsManager.
- *  Extracted for lint line-budget. Behaviour identical.
- *
- *  Every account is a mnemonic-derived ZeroDev smart account; "Add account"
- *  mints the next HD-index smart account (createSmartAccount). There is no
- *  key/phrase import or external-wallet connect path. */
+/**
+ * @file useAccountsManager hook owning the state, effects, and handlers for the
+ * AccountsManager Settings section (switch, add, remove, export), where every
+ * account is a mnemonic-derived ZeroDev smart account.
+ */
 
 import { useCallback, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
@@ -30,8 +29,7 @@ export function useAccountsManager(onSwitched?: () => void): {
   const [accounts, setAccounts] = useState<AccountRecord[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  /** Collapsed by default — show only the active account as a row with a chevron;
-   *  tapping expands the other accounts + "Add account". Collapses after a switch. */
+  /** Collapsed by default — show only the active account as a row with a chevron; tapping expands the other accounts + "Add account". Collapses after a switch. */
   const [expanded, setExpanded] = useState(false);
 
   const [manageId, setManageId] = useState<string | null>(null);
@@ -49,8 +47,7 @@ export function useAccountsManager(onSwitched?: () => void): {
   const activeRec = accounts.find(a => a.id === activeId) ?? null;
   const otherAccounts = accounts.filter(a => a.id !== activeId);
 
-  /** Resolve Snapshot display names for each account address (re-renders the
-   *  rows once they load) so the list shows names, not just addresses. */
+  /** Resolve Snapshot display names for each account address (re-renders the rows once they load) so the list shows names, not just addresses. */
   usePeerProfiles(accounts.map(a => a.address));
 
   /** Handle the Switch. */
@@ -58,7 +55,8 @@ export function useAccountsManager(onSwitched?: () => void): {
     if (id === activeId || busy) return;
     setBusy(true);
     try {
-      /** In-place switch — no full app reload (which on the dev client re-downloads
+      /**
+       * In-place switch — no full app reload (which on the dev client re-downloads
        *  the whole JS bundle + flashes white). switchToAccount drops the cached
        *  client + global stream, builds the target account's client, points the
        *  (account-scoped) channels cache at the target account's store, and bumps
@@ -66,21 +64,19 @@ export function useAccountsManager(onSwitched?: () => void): {
        *  conversation against the new inbox. We DON'T clear the cache: each
        *  account keeps its own rows, so the target account's channels render
        *  instantly from cache (instant 2nd open) and the stream revalidates in the
-       *  background. Far snappier than reloadApp(). */
+       *  background. Far snappier than reloadApp().
+       */
       await AccountManager.switch(id);
       await refresh();
       setExpanded(() => false);
-      /** Let the host dismiss itself after a switch (the full-page /accounts
-       *  switcher passes router.back). Other callers omit it → no-op. */
+      /** Let the host dismiss itself after a switch (the full-page /accounts switcher passes router.back). Other callers omit it → no-op. */
       onSwitched?.();
     } catch (e) {
       Alert.alert('Switch failed', (e as Error).message);
     } finally { setBusy(false); }
   }
 
-  /** Add a new account = mint the next HD-index ZeroDev smart account off the
-   *  single app mnemonic, make it active, and reload so XMTP re-inits against the
-   *  new inbox. */
+  /** Add a new account = mint the next HD-index ZeroDev smart account off the single app mnemonic, make it active, and reload so XMTP re-inits against the new inbox. */
   async function onAdd(): Promise<void> {
     if (busy) return;
     setBusy(true);

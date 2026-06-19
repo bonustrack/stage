@@ -1,21 +1,6 @@
-/** First-launch ONBOARDING flow — mnemonic + ZeroDev-only account model.
- *
- *  This is the PRIMARY entry: the root layout (app/_layout.tsx) renders it as an
- *  opaque overlay whenever the account registry is empty (lib/accountGate), and
- *  it goes away the instant a wallet is created/restored (the flow bumps the
- *  account epoch -> the gate flips -> the live app underneath shows).
- *
- *  STEPS (a tiny internal state machine, no navigator — this is an overlay):
- *    welcome  -> "Create new wallet" | "I have a recovery phrase"
- *    restore  -> paste + validate a BIP-39 phrase
- *    passkey  -> SKIPPABLE "Add a passkey" (skip = ECDSA-only)
- *
- *  Locked design (Less): NO recovery phrase is shown here (backup is deferred to
- *  a skippable nudge — see SecureWalletNudge), passkey is SKIPPABLE, and the
- *  Welcome screen uses a CLEAN STATIC background (the animated kaleidoscope /
- *  dithered flipbook is gone from onboarding). XMTP cutover stays OFF.
- *
- *  The heavy lifting (mnemonic + Kernel) lives in ./flow; the screens are dumb. */
+/**
+ * @file Onboarding: the first-launch overlay flow (welcome / restore / passkey steps) shown while the account registry is empty.
+ */
 
 import { useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,8 +17,7 @@ import { createWallet, restoreWallet, bringMessagingOnline, XmtpSetupError, type
 
 type Step = 'welcome' | 'restore' | 'passkey' | 'setup';
 
-/** User-facing label for each setup stage. "Setting up secure messaging" is the
- *  ~20s XMTP registration step — the user must understand the wait. */
+/** User-facing label for each setup stage. "Setting up secure messaging" is the ~20s XMTP registration step — the user must understand the wait. */
 const STAGE_LABELS: Record<Stage, string> = {
   wallet: 'Creating your wallet',
   messaging: 'Setting up secure messaging',
@@ -41,8 +25,7 @@ const STAGE_LABELS: Record<Stage, string> = {
 };
 
 export interface OnboardingProps {
-  /** Called when a wallet exists and the user is in the app. Kept for parity —
-   *  the account gate also flips on its own when the flow creates an account. */
+  /** Called when a wallet exists and the user is in the app. Kept for parity — the account gate also flips on its own when the flow creates an account. */
   onDone: () => void;
 }
 
@@ -56,8 +39,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
   const [phrase, setPhrase] = useState('');
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
-  /** Live setup stage shown on the progress screen, and a recoverable setup error
-   *  (with the kind so we offer Retry-messaging vs Try again). */
+  /** Live setup stage shown on the progress screen, and a recoverable setup error (with the kind so we offer Retry-messaging vs Try again). */
   const [stage, setStage] = useState<Stage>('wallet');
   const [setupErr, setSetupErr] = useState<{ message: string; accountId?: string } | null>(null);
   /** The chosen path is run AFTER the passkey decision, so remember it. */
@@ -67,9 +49,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
   const padBottom = 16 + insets.bottom;
   const padTop = 24 + insets.top;
 
-  /** Build the account for a chosen path + passkey decision, AWAIT full readiness
-   *  (wallet + XMTP registered), then enter the app. We show the progress screen
-   *  throughout so the user is never staring at a blind wait. */
+  /** Build the account for a chosen path + passkey decision, AWAIT full readiness (wallet + XMTP registered), then enter the app. We show the progress screen throughout so the user is never staring at a blind wait. */
   const run = (choice: Choice, withPasskey: boolean): void => {
     if (busy) return;
     setBusy(true);
@@ -83,10 +63,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
         onDone();
       } catch (e) {
         setBusy(false);
-        /** XMTP setup failed but the wallet exists + is active: keep the user on
-         *  the setup screen and offer a plain Retry of the messaging step (no
-         *  wipe). Any earlier failure (bad phrase, wallet build) is a hard error
-         *  → back to Welcome to choose again. */
+        /** XMTP setup failed but the wallet exists + is active: keep the user on the setup screen and offer a plain Retry of the messaging step (no wipe). Any earlier failure (bad phrase, wallet build) is a hard error → back to Welcome to choose again. */
         if (e instanceof XmtpSetupError) {
           setSetupErr({ message: e.message, accountId: e.accountId });
         } else {
@@ -117,8 +94,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
     })();
   };
 
-  /** Advance to the (skippable) passkey step, or run straight through (ECDSA-only)
-   *  when passkeys aren't available on this build. */
+  /** Advance to the (skippable) passkey step, or run straight through (ECDSA-only) when passkeys aren't available on this build. */
   const toPasskey = (choice: Choice): void => {
     setPending(choice);
     if (!passkeysAvailable()) { run(choice, false); return; }

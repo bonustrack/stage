@@ -1,7 +1,4 @@
-/** GitHub link detection for message bubbles. Extracts the first github.com
- *  repo / PR / issue URL from message text so the bubble can render a rich
- *  preview card below the body. Pure string parsing — no network — so it stays
- *  cheap to run on every render and unit-testable. */
+/** @file Extracts the first github.com repo/PR/issue URL from message text (pure string parsing, no network) so a bubble can render a rich preview card. */
 
 type GithubKind = 'repo' | 'pull' | 'issue';
 

@@ -1,8 +1,4 @@
-/** Unified-diff parsing for the in-app PR diff viewer. The GitHub API returns a
- *  per-file `patch` string (a unified diff hunk body, no file headers) for each
- *  changed file in a PR. This module turns that raw patch into typed lines the
- *  FileDiff component can render GitHub-style (added / removed / context /
- *  hunk-header). Pure string work - no network - so it stays unit-testable. */
+/** @file Parses a GitHub per-file unified-diff `patch` body into typed add/del/context/hunk lines for the in-app PR diff viewer (pure, no network). */
 
 type DiffLineKind = 'add' | 'del' | 'context' | 'hunk' | 'meta';
 
@@ -29,9 +25,7 @@ export interface DiffFile {
   noPatch: boolean;
 }
 
-/** Parse one file's unified-diff `patch` body into typed lines. Hunk headers
- *  (@@ ... @@) and "\ No newline" markers are kept as their own kinds so the
- *  renderer can style them distinctly. */
+/** Parse one file's unified-diff `patch` body into typed lines. Hunk headers (@@ ... @@) and "\ No newline" markers are kept as their own kinds so the renderer can style them distinctly. */
 export function parsePatch(patch: string): DiffLine[] {
   if (!patch) return [];
   const out: DiffLine[] = [];

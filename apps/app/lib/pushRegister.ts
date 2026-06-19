@@ -1,4 +1,7 @@
-/** Push registration + foreground local-notification helpers (option b).
+/** @file XMTP-client-typed push helpers: debounced `registerPushWithDaemon`/`unregisterPushFromDaemon` control-DM token registration plus `presentInboundNotification` foreground local notifications de-duped against background FCM cards. */
+
+/*
+ * Push registration + foreground local-notification helpers (option b).
  *  Split from `lib/push.ts` so the channels list can pull `isMetroControlBody`
  *  without dragging the XMTP client in; `lib/push.ts` re-exports the public API.
  *
@@ -8,7 +11,8 @@
  *  local notif per inbound while the app runs (covers phone-only wallets too).
  *
  *  Control-DM wire format (the daemon train parses the same string) lives in
- *  pushRegister.control.ts — `METRO_CTRL:register-push:{json}` plain-text DM. */
+ *  pushRegister.control.ts — `METRO_CTRL:register-push:{json}` plain-text DM.
+ */
 
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
@@ -26,9 +30,7 @@ import { buildDisablePushBody } from './pushRegister.control';
 // Re-export the notification-tap deep-link handler (extracted for line cap).
 export { usePushDeepLinks } from './pushRegister.deeplink';
 
-/** Debounce: don't re-send the same (account, token) pairing more than once per
- *  window. A device switching accounts re-registers (different key); a token
- *  rotation re-registers (different value). */
+/** Debounce: don't re-send the same (account, token) pairing more than once per window. A device switching accounts re-registers (different key); a token rotation re-registers (different value). */
 // Kept deliberately short: if the server-side token is ever lost (e.g. a daemon
 // FCM token wipe), this debounce is the only thing gating re-registration. A long
 // TTL means the server stays token-less — and pushes stay dead — until the window
@@ -46,11 +48,11 @@ function platformTag(): 'android' | 'ios' | null {
   return null; // web / unsupported — no device push token
 }
 
-/** Minimal slice of the XMTP client we depend on; keeps the param typeable
- *  whether callers pass `Client` or a narrower mock. */
+/** Minimal slice of the XMTP client we depend on; keeps the param typeable whether callers pass `Client` or a narrower mock. */
 type PushClient = Pick<Client, 'inboxId' | 'publicIdentity' | 'conversations'>;
 
-/** Auto-register this device's push token with the daemon for the account the
+/**
+ * Auto-register this device's push token with the daemon for the account the
  *  given client is logged into. Fire-and-forget + debounced — never throws,
  *  never blocks boot. Called on client-ready and on account switch.
  *
@@ -58,7 +60,8 @@ type PushClient = Pick<Client, 'inboxId' | 'publicIdentity' | 'conversations'>;
  *   - the platform delivers no device token (web / emulator w/o Play Services),
  *   - notification permission is denied,
  *   - the same (account, token) was registered within REGISTER_TTL_MS,
- *   - sending the control DM fails (best-effort; foreground notifs still work). */
+ *   - sending the control DM fails (best-effort; foreground notifs still work).
+ */
 export async function registerPushWithDaemon(client: PushClient): Promise<void> {
   try {
     const platform = platformTag();
@@ -107,11 +110,13 @@ export async function registerPushWithDaemon(client: PushClient): Promise<void> 
   }
 }
 
-/** Tell the daemon to STOP pushing to this device and clear the local
+/**
+ * Tell the daemon to STOP pushing to this device and clear the local
  *  registration state so the TTL gate treats the device as unregistered. Called
  *  when the user turns push OFF in Settings → Notifications. Best-effort: even if
  *  the control DM fails, the local register-state key is cleared so the next
- *  `registerPushWithDaemon` (now gated by the OFF preference) won't re-send. */
+ *  `registerPushWithDaemon` (now gated by the OFF preference) won't re-send.
+ */
 export async function unregisterPushFromDaemon(client: PushClient): Promise<void> {
   try {
     const address = client.publicIdentity?.identifier;
@@ -136,18 +141,18 @@ export async function unregisterPushFromDaemon(client: PushClient): Promise<void
   }
 }
 
-/** Message ids whose BACKGROUND push card the native FCM service already posted
+/**
+ * Message ids whose BACKGROUND push card the native FCM service already posted
  *  (the push arrived while the app was not foregrounded — MetroFcmService posts
  *  the generic card only when `app_foreground` is false). Tracked so a later
  *  foreground resync can't ALSO post a rich local card for the same message,
  *  double-notifying across the foreground/background handoff. Bounded so it
- *  can't grow unbounded over a long session. */
+ *  can't grow unbounded over a long session.
+ */
 const bgDeliveredMsgIds = new Set<string>();
 const BG_DELIVERED_MAX = 200;
 
-/** Record that the native side delivered a background push card for this message
- *  id. Called from the `onXmtpPush` subscription whenever a push lands while the
- *  app is NOT foregrounded (i.e. the native generic card was shown). */
+/** Record that the native side delivered a background push card for this message id. Called from the `onXmtpPush` subscription whenever a push lands while the app is NOT foregrounded (i.e. the native generic card was shown). */
 export function markBackgroundDelivered(messageId: string | null | undefined): void {
   if (!messageId) return;
   bgDeliveredMsgIds.add(messageId);
@@ -157,14 +162,14 @@ export function markBackgroundDelivered(messageId: string | null | undefined): v
   }
 }
 
-/** True (and consumes the id) when a background push card was already delivered
- *  for this message — so the foreground local notif must be suppressed. */
+/** True (and consumes the id) when a background push card was already delivered for this message — so the foreground local notif must be suppressed. */
 function consumeBackgroundDelivered(messageId: string | undefined): boolean {
   if (!messageId) return false;
   return bgDeliveredMsgIds.delete(messageId);
 }
 
-/** Present a foreground local notification for an inbound XMTP message (option
+/**
+ * Present a foreground local notification for an inbound XMTP message (option
  *  b). Called from the global message stream for messages that are NOT our own,
  *  NOT system/silent types, and NOT our own control DMs (the caller filters
  *  those). Posts on the 'xmtp' channel so it matches the daemon's FCM channel.
@@ -174,7 +179,8 @@ function consumeBackgroundDelivered(messageId: string | undefined): boolean {
  *  backgrounded), skip the foreground card so the handoff doesn't double-notify.
  *
  *  `convId` / `messageId` ride in `data` so a future notification-tap handler
- *  can deep-link into the conversation. Best-effort — never throws. */
+ *  can deep-link into the conversation. Best-effort — never throws.
+ */
 export async function presentInboundNotification(args: {
   title: string;
   body: string;

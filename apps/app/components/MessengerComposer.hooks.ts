@@ -1,6 +1,6 @@
-/** Small composer hooks (per-conversation drafts, reply/auto focus, @-mention
- *  parsing) extracted from MessengerComposer.tsx for the lint line-budget.
- *  Behavior identical. */
+/**
+ * @file Small MessengerComposer hooks: per-conversation drafts, reply/auto focus, last-used attachment, and @-mention parsing.
+ */
 
 import { useEffect, useRef, useState, type ComponentRef, type RefObject } from 'react';
 import { AppState, Keyboard } from 'react-native';
@@ -8,8 +8,7 @@ import type { Textarea } from '@metro-labs/kit/textarea';
 import { loadDrafts, getDraft, setDraft } from '../lib/drafts';
 import { loadLastAttachment, getLastAttachment, subscribeLastAttachment } from '../lib/lastAttachment';
 
-/** Last-used attachment label, reactive: loads from storage on mount and updates
- *  whenever the user picks a new attachment type. undefined until first use. */
+/** Last-used attachment label, reactive: loads from storage on mount and updates whenever the user picks a new attachment type. undefined until first use. */
 export function useLastAttachment(): string | undefined {
   const [label, setLabel] = useState<string | undefined>(getLastAttachment);
   useEffect(() => {
@@ -22,8 +21,7 @@ export function useLastAttachment(): string | undefined {
   return label;
 }
 
-/** Per-conversation draft: restore on mount, persist (debounced) on change,
- *  keyed by convId so each channel keeps its own unsent text. */
+/** Per-conversation draft: restore on mount, persist (debounced) on change, keyed by convId so each channel keeps its own unsent text. */
 export function useComposerDrafts(convId: string, text: string, setText: (v: string) => void): void {
   const draftRestored = useRef(false);
   const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -43,9 +41,7 @@ export function useComposerDrafts(convId: string, text: string, setText: (v: str
   }, [text, convId]);
 }
 
-/** Focus the input + raise the keyboard on a reply target (keyed on `nonce`,
- *  bumped on EVERY reply action — blur→focus re-raises reliably) or a reply-less
- *  autofocus signal. */
+/** Focus the input + raise the keyboard on a reply target (keyed on `nonce`, bumped on EVERY reply action — blur→focus re-raises reliably) or a reply-less autofocus signal. */
 export function useComposerFocus(
   inputRef: RefObject<ComponentRef<typeof Textarea> | null>,
   replyTargetId: string | undefined,
@@ -65,14 +61,16 @@ export function useComposerFocus(
     const t = setTimeout(() => inputRef.current?.focus(), 0);
     return () => { clearTimeout(t); };
   }, [autoFocusNonce]);
-  /** On background, blur the input ONLY if the keyboard was already closed.
+  /**
+   * On background, blur the input ONLY if the keyboard was already closed.
    *  The bug: a focused-but-keyboard-closed input gets its IME re-raised by
    *  Android on resume; blurring kills that. But blurring while the keyboard
    *  IS up desyncs react-native-keyboard-controller (on resume the IME is gone
    *  yet the sticky-view/feed offset stays raised -> floating composer / blank
    *  gap). So when the keyboard is visible we leave focus alone: Android
    *  restores both focus and IME cleanly, no stale offset. Intentional focus
-   *  (input tap, reply-swipe, autoFocusNonce) is untouched. */
+   *  (input tap, reply-swipe, autoFocusNonce) is untouched.
+   */
   useEffect(() => {
     let keyboardVisible = false;
     const showSub = Keyboard.addListener('keyboardDidShow', () => { keyboardVisible = true; });
@@ -86,8 +84,7 @@ export function useComposerFocus(
 
 interface MentionCandidate { address: string; name: string; cacheBuster?: number }
 
-/** `@`-mention parser + matcher + inserter. Looks backwards from the cursor for
- *  the most recent `@` and grabs the token up to any whitespace. */
+/** `@`-mention parser + matcher + inserter. Looks backwards from the cursor for the most recent `@` and grabs the token up to any whitespace. */
 export function computeMentions(
   text: string,
   cursor: number,
@@ -105,9 +102,7 @@ export function computeMentions(
   return { matches, range: { start, end: cursor } };
 }
 
-/** Insert the bare address as `@<address> ` — the stable wire form (survives
- *  username changes); the bubble renderer resolves it to a tappable `@<name>`.
- *  Trailing space prevents re-parsing as an active mention. */
+/** Insert the bare address as `@<address> ` — the stable wire form (survives username changes); the bubble renderer resolves it to a tappable `@<name>`. Trailing space prevents re-parsing as an active mention. */
 export function applyMention(
   text: string,
   range: { start: number; end: number },

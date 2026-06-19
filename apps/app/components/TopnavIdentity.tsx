@@ -1,9 +1,4 @@
-/** TopnavIdentity — the avatar + display-name element shown in the Home topnav,
- *  reused across the contacts and wallet tabs for a consistent
- *  identity affordance. Self-contained: resolves the active account address,
- *  resolves its display name (getPeerName ?? shortAddress via usePeerProfiles),
- *  renders a 28px avatar + name, and opens the Menu sheet on tap (account
- *  switcher + Profile/Settings), matching the Home topnav exactly. */
+/** @file The topnav avatar + display-name element (shared across Home/contacts/wallet tabs) that resolves the active account's address and name and opens the Menu sheet on tap. */
 
 import { useEffect, useState } from 'react';
 

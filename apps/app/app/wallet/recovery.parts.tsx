@@ -1,13 +1,4 @@
-/** Guardian social-recovery UI parts (phase 2). Minimalist, palette-driven,
- *  built on the shared wallet form primitives + Kit. No bespoke styling.
- *
- *  Three surfaces, all thin over lib/zerodev/recovery:
- *    - GuardianEditor: add/remove guardian addresses + an M-of-N threshold picker
- *      (the skippable "secure your wallet" recovery step).
- *    - PendingRecoveryCard: a live pending rotation + a one-tap owner Cancel
- *      (native `veto`) during the timelock window.
- *    - ApprovalCard: a guardian approving an inbound recovery request (offchain
- *      signature, gasless). */
+/** @file Guardian social-recovery UI parts: the guardian editor, pending-recovery card and guardian approval card. */
 
 import { useState } from 'react';
 import { fontSize } from '@metro-labs/kit/tokens';
@@ -29,10 +20,12 @@ export function formatDelay(seconds: number): string {
   return `${d} day${d === 1 ? '' : 's'}`;
 }
 
-/** The skippable guardian setup: a list of friend addresses + an M-of-N picker.
+/**
+ * The skippable guardian setup: a list of friend addresses + an M-of-N picker.
  *  Pure presentational + local edit state; the page owns persistence (install /
  *  update via lib/zerodev/recovery). `resolveEns` lets the page resolve a typed
- *  name to an address before adding. */
+ *  name to an address before adding.
+ */
 export function GuardianEditor({
   pal, dark, guardians, threshold, delaySeconds = DEFAULT_RECOVERY_DELAY_SECONDS,
   onChange, onThreshold,
@@ -111,8 +104,7 @@ export function GuardianEditor({
   );
 }
 
-/** A live pending rotation with a one-tap owner Cancel (native veto). Shown when
- *  proposalStatus is Ongoing/Approved and the timelock window has not elapsed. */
+/** A live pending rotation with a one-tap owner Cancel (native veto). Shown when proposalStatus is Ongoing/Approved and the timelock window has not elapsed. */
 export function PendingRecoveryCard({
   pal, dark, newOwner, finalizeAfterLabel, onCancel, cancelling,
 }: {

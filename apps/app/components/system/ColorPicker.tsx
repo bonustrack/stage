@@ -1,8 +1,8 @@
-/** Pure-JS visual color picker - three draggable HSV sliders (Hue / Saturation
- *  / Value) plus a live preview swatch + the resulting hex, and a hex text
- *  field for typists. No native module: dragging uses react-native-gesture-handler
- *  (Pan + Tap) and the geometry is computed in JS. Used by the ColorTokens editor
- *  inside AppModal. Fonts: Calibre-Medium / Calibre-Semibold only. */
+/**
+ * @file Pure-JS visual color picker with three draggable HSV sliders, a live
+ *  preview swatch, and a hex text field, used by the ColorTokens editor and
+ *  driven by react-native-gesture-handler with no native module.
+ */
 
 import { useMemo, useRef, useState } from 'react';
 import { fontSize } from '@metro-labs/kit/tokens';

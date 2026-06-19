@@ -1,6 +1,6 @@
-/** Wallet sub-components + formatting helpers — TokenRow, NftsView, the action
- *  button, the Tokens|NFTs tabs. Extracted from WalletScreen for lint
- *  line-budget. Rendering identical. */
+/**
+ * @file Wallet sub-components + formatting helpers — the action button (Btn), the Tokens|NFTs|Activity|Railgun tabs, and re-exported value formatters.
+ */
 
 import { memo } from 'react';
 import { Pressable } from '@metro-labs/kit/pressable';
@@ -13,18 +13,18 @@ import { type AssetRow } from './WalletScreen.assets';
 import { TokenAvatar } from './WalletScreen.tokenAvatar';
 import { DANGER } from '../../lib/theme';
 
-/** Wallet value formatting (fmtUsd / splitUsd / fmtBalance) moved into the
- *  framework-agnostic Stage SDK (@stage-labs/client). Imported here (this file
- *  uses them) and re-exported so existing app imports stay stable. */
+/** Wallet value formatting (fmtUsd / splitUsd / fmtBalance) moved into the framework-agnostic Stage SDK (@stage-labs/client). Imported here (this file uses them) and re-exported so existing app imports stay stable. */
 import { fmtUsd, splitUsd, fmtBalance } from '@stage-labs/client/wallet/format';
 export { fmtUsd, splitUsd, fmtBalance };
 
 interface Palette { head: string; sub: string; border: string; bg: string; card: string; }
 
-/** Action button — a kit `pill` icon-only Button rendering a 56×56 circle
+/**
+ * Action button — a kit `pill` icon-only Button rendering a 56×56 circle
  *  (`size="xl"`, `variant="secondary"` = rowBg fill + border), with the text
  *  label as a separate <Text> BELOW the circle. The four actions (Send /
- *  Receive / Swap / Buy) sit LEFT-aligned on a single row, centered columns. */
+ *  Receive / Swap / Buy) sit LEFT-aligned on a single row, centered columns.
+ */
 export function Btn({ icon, label, onPress, head, border, dark }: {
   icon: HeroIconName; label: string; onPress: () => void;
   head: string; border: string; dark: boolean;
@@ -81,21 +81,16 @@ export function WalletTabs({ tab, setTab, head, sub, border }: {
   );
 }
 
-/** Small shield-check icon shown on Railgun-shielded token rows so they're
- *  visually distinct from public balances. Subtle muted glyph in the secondary
- *  text tone — quieter than a text pill, matches the app's metadata styling. */
+/** Small shield-check icon shown on Railgun-shielded token rows so they're visually distinct from public balances. Subtle muted glyph in the secondary text tone — quieter than a text pill, matches the app's metadata styling. */
 function PrivateBadge({ sub }: { sub: string }): React.ReactElement {
   const name: HeroIconName = 'shieldCheck';
   return <Icon name={name} size={15} color={sub} />;
 }
 
-/** A single asset row — 4-corner layout with token avatar + network badge.
- *  Tappable: `onPress` navigates to the token detail screen (wired by the
- *  caller). Wrapped in a Pressable with a subtle pressed-opacity. */
+/** A single asset row — 4-corner layout with token avatar + network badge. Tappable: `onPress` navigates to the token detail screen (wired by the caller). Wrapped in a Pressable with a subtle pressed-opacity. */
 export const TokenRow = memo(function TokenRow({ r, head, sub, border, bg, onPress }: { r: AssetRow; onPress?: () => void } & Omit<Palette, 'card'>): React.ReactElement {
   const valueUsd = r.priceUsd === null ? null : r.priceUsd * Number(r.balance);
-  /** Up/down colour for the 24h change pill — green for non-negative,
-   *  red for negative. Uses the same tones as Snapshot UI's treasury. */
+  /** Up/down colour for the 24h change pill — green for non-negative, red for negative. Uses the same tones as Snapshot UI's treasury. */
   const changeColor = r.change24h === null ? sub : r.change24h >= 0 ? '#22c55e' : DANGER;
   const changeText = r.change24h === null ? '' :
     `${r.change24h >= 0 ? '+' : ''}${r.change24h.toFixed(2)}%`;

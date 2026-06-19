@@ -1,13 +1,4 @@
-/** Account-switch signal.
- *
- *  Switching accounts used to call DevSettings.reload() — a full app reload that,
- *  on the dev client, re-downloads the whole JS bundle (the bulk of the 5-10s
- *  switch delay) and flashes white. Instead we switch the XMTP client in place
- *  (see switchToAccount) and bump this epoch; screens that hold per-account state
- *  (the channels list) re-init their XMTP usage when the epoch changes.
- *
- *  The old client object is only dereferenced (not destroyed), so any still-mounted
- *  screen keeps working until it re-renders — no crash, just stale until renavigate. */
+/** @file Account-switch signal: a bumped epoch lets screens holding per-account state re-init their XMTP usage when the active account changes, avoiding a full app reload. */
 
 import { useSyncExternalStore } from 'react';
 
@@ -20,13 +11,10 @@ export function bumpAccountEpoch(): void {
   for (const l of listeners) l();
 }
 
-/** Non-hook read of the current account epoch — for react-query keys that need
- *  to scope a cached resolution to the active account (so an in-place account
- *  switch invalidates the entry without a hook). */
+/** Non-hook read of the current account epoch — for react-query keys that need to scope a cached resolution to the active account (so an in-place account switch invalidates the entry without a hook). */
 export function getAccountEpoch(): number { return epoch; }
 
-/** Re-renders the caller whenever the active account changes. Use the returned
- *  value as a useEffect dependency to re-run per-account initialisation. */
+/** Re-renders the caller whenever the active account changes. Use the returned value as a useEffect dependency to re-run per-account initialisation. */
 export function useAccountEpoch(): number {
   return useSyncExternalStore(
     (cb) => { listeners.add(cb); return () => listeners.delete(cb); },

@@ -1,15 +1,6 @@
-/** Table - a ChatKit-styled data table. Mirrors ChatKit's `Table` widget family
- *  1:1 on shape: a Table holds `children` rows, each `Table.Row` holds
- *  `children` cells, and a row may be a `header`. Cells mirror ChatKit's
- *  `Table.Cell`: `width`, `padding`, `colSpan`, `align`, `vAlign`, plus nested
- *  children. ChatKit composes these as `Table.Row` / `Table.Cell`; in RN we
- *  expose them as attached subcomponents (`Table.Row`, `Table.Cell`) so call
- *  sites read identically. Hook-free: `dark` drives the hairline + header tint.
- *
- *  Implementation: each row is a flex row of cells. `width` fixes a cell's
- *  width; otherwise cells share space via flex (defaulting to `flex: 1`).
- *  `colSpan` widens a cell by adding flex weight. RowSpan/colSize are accepted
- *  for parity but not laid out (flat flex rows cannot span vertically). */
+/**
+ * @file Table — a hook-free ChatKit-styled data table with attached `Table.Row`/`Table.Cell` subcomponents, laid out as flex rows where `width` fixes a cell and `colSpan` adds flex weight.
+ */
 
 import { Children, cloneElement, isValidElement, type ReactNode } from 'react';
 import { View, type ViewStyle } from 'react-native';
@@ -49,8 +40,7 @@ export interface TableCellProps {
   style?: ViewStyle;
 }
 
-/** ChatKit `Table.Cell`. Rendered by the parent Row (it reads these props off
- *  the element); standalone render is a styled box for safety. */
+/** ChatKit `Table.Cell`. Rendered by the parent Row (it reads these props off the element); standalone render is a styled box for safety. */
 function TableCell(props: TableCellProps): React.ReactElement {
   const { children, width, padding = 8, colSpan = 1, align = 'start', vAlign = 'center', style } = props;
   const base: ViewStyle = {
@@ -103,8 +93,7 @@ interface TableComponent {
   Cell: typeof TableCell;
 }
 
-/** ChatKit-style RN table. Wraps rows in a bordered container and threads
- *  `dark` into each `Table.Row` so the hairlines track the scheme. */
+/** ChatKit-style RN table. Wraps rows in a bordered container and threads `dark` into each `Table.Row` so the hairlines track the scheme. */
 const TableBase = (props: TableProps): React.ReactElement => {
   const { children, dark = false, style } = props;
   const border = dark ? '#282a2d' : '#e4e4e5';

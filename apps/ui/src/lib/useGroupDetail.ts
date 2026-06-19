@@ -1,5 +1,7 @@
-/** Group detail state + mutations (name/description/avatar/members). Extracted
- *  from `pages/GroupDetail.vue` so the SFC stays under the lint cap. */
+/**
+ * @file Composable for the Group Detail screen: group state plus name/description/avatar/member mutations.
+ */
+/** Group detail state + mutations (name/description/avatar/members). Extracted from `pages/GroupDetail.vue` so the SFC stays under the lint cap. */
 
 import { ref, computed, watchEffect, type ComputedRef, type Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -54,8 +56,7 @@ export function useGroupDetail(): GroupDetail {
   const description = ref<string>('');
   const savingDescription = ref(false);
 
-  /** Only group admins/owners can edit metadata + manage members (enforced by the
-   *  group's admin-only policy); hide those affordances from plain members. */
+  /** Only group admins/owners can edit metadata + manage members (enforced by the group's admin-only policy); hide those affordances from plain members. */
   const selfIsAdmin = computed(() => {
     const self = selfAddress.value.toLowerCase();
     for (const [addr, role] of Object.entries(memberRoles.value)) {
@@ -90,8 +91,7 @@ export function useGroupDetail(): GroupDetail {
     const addrMap = await memberInboxToAddressMap(conv);
     const addrs = Object.values(addrMap).sort((a, b) => a.localeCompare(b));
     members.value = addrs;
-    /** Role per member: super-admin → Owner, admin → Admin, else Member.
-     *  superAdmins/admins are inbox ids, matched against the inbox→address map. */
+    /** Role per member: super-admin → Owner, admin → Admin, else Member. superAdmins/admins are inbox ids, matched against the inbox→address map. */
     try {
       const superSet = new Set((group.superAdmins ?? []).map(s => s.toLowerCase()));
       const adminSet = new Set((group.admins?.() ?? []).map(a => a.toLowerCase()));
@@ -102,8 +102,7 @@ export function useGroupDetail(): GroupDetail {
       }
       memberRoles.value = roles;
     } catch { /* roles are best-effort */ }
-    /** Enrich with Snapshot profile names — pure best-effort, rows fall back
-     *  to short addresses when the lookup misses. */
+    /** Enrich with Snapshot profile names — pure best-effort, rows fall back to short addresses when the lookup misses. */
     const profiles = await Promise.all(
       addrs.map(a => readProfile(a).catch(() => null as SnapshotProfile | null)),
     );

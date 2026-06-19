@@ -1,7 +1,10 @@
-/** REMOVE PASSKEY from an EXISTING smart account — the exact inverse of
- *  enablePasskey.ts (deployAndSwapToPasskey / enablePasskeyForRecord). Reverts a
- *  passkey-root Kernel back to ECDSA key-signing.
- *
+/**
+ * @file Removes a passkey from an existing smart account (the inverse of enablePasskey.ts),
+ *  reverting a passkey-root Kernel to ECDSA key-signing via a single passkey-signed
+ *  `changeSudoValidator` userOp that promotes the still-installed ECDSA validator back to sudo.
+ */
+
+/*
  *  WHY: a user who enabled a passkey may want to go back to plain key signing
  *  (lost device, shared account, or simply no longer wanting the WebAuthn prompt).
  *  This is SECURITY-REDUCING (passkey -> key), so the UI confirms first; the swap
@@ -25,7 +28,8 @@
  *  kernelForRecord unable to decide which validator is root).
  *
  *  ON-DEVICE: building the passkey-sudo Kernel client and signing the swap userOp
- *  run the on-device WebAuthn assertion — not exercisable in CI. */
+ *  run the on-device WebAuthn assertion — not exercisable in CI.
+ */
 
 import '../cryptoShim';
 import type { AccountRecord } from '../accounts';
@@ -48,7 +52,8 @@ export type SwapToEcdsaResult =
   | { ok: true; txHash: string }
   | { ok: false; message: string };
 
-/** THE single on-chain place that turns a passkey-sudo Kernel back into an
+/**
+ * THE single on-chain place that turns a passkey-sudo Kernel back into an
  *  ECDSA-sudo one. Builds the CURRENT (passkey-sudo) Kernel client at `hdIndex`
  *  (pinned to `address` because the account's address was ECDSA-derived) and issues
  *  ONE sponsored userOp (`changeSudoValidator` -> ECDSA validator). The PASSKEY
@@ -58,7 +63,8 @@ export type SwapToEcdsaResult =
  *
  *  The ECDSA validator is still installed on-chain (it was only demoted at enable
  *  time) and `ecdsaValidatorStorage` still holds the owner, so making it `sudo`
- *  again restores ECDSA root signing. */
+ *  again restores ECDSA root signing.
+ */
 export async function swapRootToEcdsa(
   publicClient: ReturnType<typeof makePublicClient>,
   rec: AccountRecord,
@@ -119,14 +125,16 @@ export async function swapRootToEcdsa(
   }
 }
 
-/** Revert `rec` from passkey-root to ECDSA key-signing: swap the sudo validator
+/**
+ * Revert `rec` from passkey-root to ECDSA key-signing: swap the sudo validator
  *  back to the ECDSA owner on-chain (one sponsored userOp signed by the passkey),
  *  then — and ONLY after the receipt succeeds — clear rec.passkey / passkeyCredId /
  *  passkeySudo so kernelForRecord rebuilds the ECDSA Kernel. Fail-closed: any error
  *  leaves the account a working passkey account with state intact.
  *
  *  Typed non-throwing guards: not-smart / no-passkey / no native module / not
- *  configured all return a typed result. */
+ *  configured all return a typed result.
+ */
 export async function removePasskeyFromRecord(rec: AccountRecord): Promise<RemovePasskeyResult> {
   if (rec.type !== 'smart' || rec.hdIndex == null) {
     return { ok: false, reason: 'error', message: 'Not a smart account.' };

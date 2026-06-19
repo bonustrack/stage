@@ -1,14 +1,12 @@
-/** Pure parse + format helpers for the pre-sign simulation (lib/txSimulate).
- *
- *  Split out so the log → asset-delta math is unit-testable WITHOUT pulling in
- *  the RN-bound account/RPC layer (lib/accounts → react-native). No React, no
- *  network, no key material here — just bytes in, AssetMove out. */
+/**
+ * @file Pure log → asset-delta parse + format helpers for the pre-sign simulation, split out so the math is unit-testable without the RN-bound account/RPC layer.
+ *  No React, no network, no key material — bytes in, AssetMove out.
+ */
 
 import { ASSETS, NATIVE_TOKEN_SENTINEL } from '@stage-labs/client/wallet/assets';
 import { decodeAbiParameters, type Hex } from 'viem';
 
-/** keccak256("Transfer(address,address,uint256)") — the ERC-20 / synthetic-ETH
- *  transfer topic that traceTransfers emits. */
+/** keccak256("Transfer(address,address,uint256)") — the ERC-20 / synthetic-ETH transfer topic that traceTransfers emits. */
 const TRANSFER_TOPIC =
   '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 
@@ -31,11 +29,13 @@ export interface SimCall {
   error?: { message?: string; data?: string };
 }
 
-/** Normalise a raw revert/RPC message into a short, human reason. Recognises the
+/**
+ * Normalise a raw revert/RPC message into a short, human reason. Recognises the
  *  common cases the node surfaces as free text (insufficient funds/balance, gas,
  *  generic "execution reverted") so the card reads "Will fail: insufficient
  *  funds" instead of a node-specific blob. Returns the input trimmed when no
- *  pattern matches. */
+ *  pattern matches.
+ */
 export function humanizeRevert(raw: string): string {
   const s = raw.trim();
   const lc = s.toLowerCase();
@@ -51,10 +51,7 @@ export function humanizeRevert(raw: string): string {
   return s;
 }
 
-/** Decode a standard `Error(string)` revert payload (0x08c379a0 selector) into
- *  its message; falls back to a generic note for `Panic(uint256)` / opaque data.
- *  The decoded/RPC message is run through {@link humanizeRevert} so common
- *  failures read cleanly. */
+/** Decode a standard `Error(string)` revert payload (0x08c379a0 selector) into its message; falls back to a generic note for `Panic(uint256)` / opaque data. The decoded/RPC message is run through {@link humanizeRevert} so common failures read cleanly. */
 export function decodeRevert(returnData?: string, errMsg?: string): string | undefined {
   const d = returnData && returnData !== '0x' ? returnData : undefined;
   if (d?.startsWith('0x08c379a0')) {
@@ -68,8 +65,7 @@ export function decodeRevert(returnData?: string, errMsg?: string): string | und
   return undefined;
 }
 
-/** Symbol/decimals for a token contract from the static registry; short-address
- *  + 18-decimal fallback when unknown. Registry-only by design (no extra RPC). */
+/** Symbol/decimals for a token contract from the static registry; short-address + 18-decimal fallback when unknown. Registry-only by design (no extra RPC). */
 function tokenMeta(addr: string, chainId: number): { symbol: string; decimals: number } {
   const lc = addr.toLowerCase();
   const hit = ASSETS.find(a => a.chainId === chainId && a.address?.toLowerCase() === lc);
@@ -95,9 +91,7 @@ export function formatAmount(raw: bigint, decimals: number): string {
   return `${whole.toString()}.${fs}`;
 }
 
-/** Build the "insufficient ETH" reason for a native-value transfer whose value
- *  exceeds the sender's balance: "insufficient ETH (have X, need Y)". Pure (wei
- *  in, string out) so it's unit-testable without the RPC. */
+/** Build the "insufficient ETH" reason for a native-value transfer whose value exceeds the sender's balance: "insufficient ETH (have X, need Y)". Pure (wei in, string out) so it's unit-testable without the RPC. */
 export function insufficientEthReason(balanceWei: bigint, valueWei: bigint, chainId: number): string {
   const { symbol, decimals } = nativeMeta(chainId);
   return `insufficient ${symbol} (have ${formatAmount(balanceWei, decimals)}, need ${formatAmount(valueWei, decimals)})`;
@@ -108,8 +102,7 @@ function topicToAddr(topic: string): string {
   return ('0x' + topic.slice(-40)).toLowerCase();
 }
 
-/** Net the simulation's transfer logs (ERC-20 + synthetic native) into a signed
- *  per-token delta relative to `from`, split into in/out lists. */
+/** Net the simulation's transfer logs (ERC-20 + synthetic native) into a signed per-token delta relative to `from`, split into in/out lists. */
 export function parseAssetChanges(
   calls: SimCall[],
   from: string,

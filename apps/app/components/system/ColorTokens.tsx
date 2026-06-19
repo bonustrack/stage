@@ -1,13 +1,8 @@
-/** ChatKit SEED theme editor for the Display settings page. Instead of editing 9
- *  flat hex tokens, the user sets a few SEEDS and the whole palette is DERIVED
- *  (lib/colorOverrides -> @metro-labs/kit derivePalette):
- *    - grayscale base  (neutral ramp -> border/inputBg/sub)
- *    - accent          (interactive emphasis -> link/primary)
- *    - surface bg      (main fill -> bg/toolbar)
- *    - surface fg      (default body text -> text)
- *  Plus the ChatKit non-color knobs: density, radius (name), typography base
- *  size. Edits write the seed so the whole app re-themes live. Reset restores
- *  the default seed (today's exact look). Fonts: Calibre-Medium/Semibold only. */
+/**
+ * @file ChatKit SEED theme editor for the Display settings page: the user sets a
+ *  few color seeds plus density/radius/typography knobs and the whole palette is
+ *  derived, written back to the seed so the app re-themes live.
+ */
 
 import { useState } from 'react';
 import { Pressable } from '@metro-labs/kit/pressable';
@@ -95,8 +90,7 @@ function SeedSwatch({ name, seedKey, value, scheme, p }: {
   );
 }
 
-/** A labelled segmented selector for one ChatKit non-color seed (density/radius/
- *  typography). Generic over the option value so each knob reuses it. */
+/** A labelled segmented selector for one ChatKit non-color seed (density/radius/ typography). Generic over the option value so each knob reuses it. */
 function SeedChoice<T extends string | number>({ name, options, value, onSelect, p }: {
   name: string; options: readonly T[]; value: T; onSelect: (v: T) => void; p: GalleryPalette;
 }): React.ReactElement {

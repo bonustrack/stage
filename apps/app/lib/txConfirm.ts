@@ -1,29 +1,11 @@
-/** Anti-spoof confirm-summary derivation for in-chat payment requests.
- *
- *  A payment request (EIP-5792 walletSendCalls) arrives over XMTP from an
- *  untrusted peer. It carries the ACTUAL transaction to broadcast in
- *  `call.to` / `call.data` / `call.value`, plus a `metadata` block of display
- *  hints (amount / toAddress / currency). The metadata is NOT bound to the
- *  calldata: a malicious request can display "Send 0.01 USDC to friend" while
- *  `call.data` actually encodes `transfer(attacker, entireBalance)`, or
- *  `call.to` is a drainer contract.
- *
- *  This module derives the confirm-sheet summary ONLY from the bytes that will
- *  actually be broadcast:
- *   - native send: recipient = call.to, amount = call.value (wei).
- *   - ERC-20 transfer: we decode `transfer(address,uint256)` from call.data;
- *     recipient + amount come from the decoded args, the token is call.to.
- *  Metadata is never consulted for the security-relevant to/amount. If the
- *  calldata can't be decoded to a recognised transfer, we return an `unverified`
- *  summary (the raw target + selector) so the sheet warns instead of showing a
- *  friendly, spoofable line.
- *
- *  Pure + synchronous (no wallet, no network) so it is unit-testable. */
+/**
+ * @file Anti-spoof confirm-summary derivation for in-chat payment requests (EIP-5792 walletSendCalls) from an untrusted peer, deriving the to/amount ONLY from the calldata that will actually be broadcast — never the unbound display `metadata`.
+ *  Unrecognised calldata yields an `unverified` summary (raw target + selector) so the sheet warns instead of showing a spoofable line; pure + synchronous so it is unit-testable.
+ */
 
 import { decodeFunctionData, formatEther, formatUnits, isAddress, type Hex } from 'viem';
 
-/** Minimal ABI for ERC-20 `transfer(address,uint256)` — the only method we
- *  decode for a "verified" payment summary. */
+/** Minimal ABI for ERC-20 `transfer(address,uint256)` — the only method we decode for a "verified" payment summary. */
 const ERC20_TRANSFER_ABI = [
   {
     type: 'function',
@@ -37,9 +19,7 @@ const ERC20_TRANSFER_ABI = [
   },
 ] as const;
 
-/** Known ERC-20 tokens (lowercased contract address -> symbol/decimals) for a
- *  friendly amount label. Unknown tokens still get a verified recipient/amount,
- *  just labelled by the raw token contract + atomic units. USDC across chains. */
+/** Known ERC-20 tokens (lowercased contract address -> symbol/decimals) for a friendly amount label. Unknown tokens still get a verified recipient/amount, just labelled by the raw token contract + atomic units. USDC across chains. */
 const KNOWN_TOKENS: Record<string, { symbol: string; decimals: number }> = {
   '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913': { symbol: 'USDC', decimals: 6 }, // Base
   '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': { symbol: 'USDC', decimals: 6 }, // Ethereum
@@ -49,8 +29,7 @@ const KNOWN_TOKENS: Record<string, { symbol: string; decimals: number }> = {
 
 /** The verified transaction summary derived from the actual call bytes. */
 export interface ConfirmSummary {
-  /** True when we could fully decode the call into a known transfer shape. When
-   *  false the caller MUST show a warning, not a friendly send line. */
+  /** True when we could fully decode the call into a known transfer shape. When false the caller MUST show a warning, not a friendly send line. */
   verified: boolean;
   /** The on-chain recipient of value (decoded transfer arg, or call.to native). */
   recipient: string;
@@ -76,8 +55,7 @@ function selectorOf(data?: string): string | undefined {
   return data.slice(0, 10).toLowerCase();
 }
 
-/** Derive the confirm summary from the ACTUAL call bytes. `nativeSymbol` is the
- *  chain's native coin symbol (default ETH) used for value-only sends. */
+/** Derive the confirm summary from the ACTUAL call bytes. `nativeSymbol` is the chain's native coin symbol (default ETH) used for value-only sends. */
 export function deriveConfirmSummary(
   call: CallLike,
   nativeSymbol = 'ETH',
@@ -141,10 +119,12 @@ export function deriveConfirmSummary(
   };
 }
 
-/** Build the confirm Alert message from a derived summary. Verified transfers
+/**
+ * Build the confirm Alert message from a derived summary. Verified transfers
  *  get a "Send <amount> <symbol> to <recipient>" line; unverified calls get an
  *  explicit warning naming the raw target + selector so the user can't be lulled
- *  by a spoofed metadata summary. */
+ *  by a spoofed metadata summary.
+ */
 export function confirmMessage(s: ConfirmSummary, chainName: string): string {
   if (s.verified) {
     const amountPart = s.amount != null

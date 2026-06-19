@@ -1,8 +1,6 @@
-/** Send-step planner for the composer. Splits a single composer submission into
- *  the SEPARATE XMTP messages it actually produces — a text message, then one
- *  multi-remote-attachment message, then one message per audio clip — so the
- *  optimistic preview can emit one entry per planned message (same count + order
- *  as the final bubbles) and confirm each independently by its real id. */
+/**
+ * @file Send-step planner for the MessengerComposer: splits one submission into the separate ordered XMTP messages it produces (text, multi-attachment, per-audio-clip).
+ */
 
 import {
   fileUriToBase64, xmtpReply, xmtpSendAttachment, xmtpSendMultiRemoteAttachment, xmtpSendText,
@@ -22,9 +20,7 @@ export interface SendStep {
   run: () => Promise<string>;
 }
 
-/** Build the ordered list of messages this submission will produce. Order is the
- *  on-wire / display order: text first, then the bundled image/video/file
- *  attachment message, then each audio clip as its own message. */
+/** Build the ordered list of messages this submission will produce. Order is the on-wire / display order: text first, then the bundled image/video/file attachment message, then each audio clip as its own message. */
 export function planSendSteps(
   xmtpLine: string,
   body: string,
@@ -63,14 +59,16 @@ export function planSendSteps(
   return steps;
 }
 
-/** Audio voice notes are sent as INLINE static attachments (raw bytes, base64),
+/**
+ * Audio voice notes are sent as INLINE static attachments (raw bytes, base64),
  *  NOT through the remote-attachment / `encryptSanitizedAttachment` file boundary.
  *  This is intentional and not a privacy gap: audio recorded in-app (m4a/caf/etc.)
  *  is not an EXIF / location-metadata vector the way camera images are, so it is
  *  deliberately exempt from the `SanitizedFileUri` strip gate (see prior worker's
  *  honesty note in the PR). Only the image/video/file path
  *  (`xmtpSendMultiRemoteAttachment`) is routed through the branded strip
- *  chokepoint. */
+ *  chokepoint.
+ */
 async function sendAudio(xmtpLine: string, at: Attachment): Promise<string> {
   const mimeType = mimeOf(at.mime, at.name ?? at.url);
   const filename = at.name ?? at.id;

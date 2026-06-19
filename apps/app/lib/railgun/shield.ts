@@ -1,4 +1,6 @@
-/** SHIELD orchestration — deposit a PUBLIC token into the user's OWN 0zk
+/** @file SHIELD orchestration: composes the bridge shield primitives plus a viem EOA sign/broadcast (with ERC20 approve when needed) to deposit a public token into the user's own 0zk balance, reporting via the pending-action store. */
+/**
+ * SHIELD orchestration — deposit a PUBLIC token into the user's OWN 0zk
  *  shielded balance. Pure RN composition over the bridge primitives + a viem
  *  sign/broadcast with the in-app EOA key.
  *
@@ -11,7 +13,8 @@
  *  Progress + errors are surfaced through the existing pending-action store
  *  (cache.ts) so WalletScreen.private's chip + the optimistic balance overlay
  *  reflect the in-flight shield without blocking the UI. Recipient is ALWAYS the
- *  user's own 0zk — never an arbitrary address. The private key is never logged. */
+ *  user's own 0zk — never an arbitrary address. The private key is never logged.
+ */
 import { parseUnits, erc20Abi, type Hex } from 'viem';
 import { NETWORK_CONFIG } from '@railgun-community/shared-models';
 import { getActiveAccountId } from '../accounts';
@@ -48,8 +51,7 @@ function tokenMeta(chainId: number, symbol: string): TokenMeta {
   return meta;
 }
 
-/** Run the full shield. Resolves with the broadcast tx hash; the pending chip is
- *  driven through `proving` (populating) → `broadcasting` → `confirmed`/`failed`. */
+/** Run the full shield. Resolves with the broadcast tx hash; the pending chip is driven through `proving` (populating) → `broadcasting` → `confirmed`/`failed`. */
 export async function shieldToPrivate(params: ShieldParams): Promise<ShieldResult> {
   const accountId = await getActiveAccountId();
   if (!accountId) throw new Error('No active account');

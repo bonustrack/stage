@@ -1,15 +1,4 @@
-/** Wallet -> Recovery (guardian social recovery, phase 2).
- *
- *  One focused page covering all four guardian surfaces (spec §(d)), driven by a
- *  `mode` param to stay low-LOC:
- *    - setup   (default): add/remove guardians + M-of-N threshold; Save runs
- *      installGuardians (first time) / updateGuardians (after) — one sponsored
- *      userOp. Also surfaces a live PendingRecoveryCard with native owner-Cancel.
- *    - approve: a guardian approves an inbound recovery request (offchain,
- *      gasless), posting the signature back into the recovery conversation.
- *
- *  Thin over lib/zerodev/recovery + lib/zerodev/recovery.comms; the timelock +
- *  cancel are NATIVE (validator `delay` / `veto`). Gated by zerodevConfigured(). */
+/** @file Wallet → Recovery screen for setting up or approving smart-account guardian social recovery. */
 
 import { useCallback, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
@@ -82,8 +71,7 @@ export default function WalletRecovery(): React.ReactElement {
     }
   }, [rec, guardians, threshold, delay, router]);
 
-  /** Owner cancel of a pending rotation (native veto). The pending newOwner comes
-   *  from the deep link (the recovery request) — we cancel that specific rotation. */
+  /** Owner cancel of a pending rotation (native veto). The pending newOwner comes from the deep link (the recovery request) — we cancel that specific rotation. */
   const onCancel = useCallback(async (): Promise<void> => {
     if (!rec || !params.newOwner) return;
     setBusy(true);

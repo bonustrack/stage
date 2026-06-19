@@ -1,8 +1,12 @@
-/** Peer Snapshot-profile cache. The framework-agnostic core (the batched store,
+/** @file React `usePeerProfiles` hook re-exporting the Stage SDK peer-profile cache and bumping a version counter (FlatList `extraData`) when a batch resolves. */
+
+/*
+ * Peer Snapshot-profile cache. The framework-agnostic core (the batched store,
  *  fetch, and accessors) moved into the Stage SDK (@stage-labs/client); this
  *  module re-exports it and keeps only the React `usePeerProfiles` hook, which
  *  subscribes via the SDK's subscribePeerProfiles + bumps a version counter so
- *  rows re-render (usable as FlatList `extraData`). */
+ *  rows re-render (usable as FlatList `extraData`).
+ */
 
 import { useEffect, useReducer } from 'react';
 import {
@@ -15,8 +19,7 @@ export {
   getPeerName,
 } from '@stage-labs/client/identity/peerProfiles';
 
-/** Subscribe + fetch: re-renders the caller when the batch resolves. Returns a
- *  version counter usable as FlatList `extraData` so rows re-render too. */
+/** Subscribe + fetch: re-renders the caller when the batch resolves. Returns a version counter usable as FlatList `extraData` so rows re-render too. */
 export function usePeerProfiles(addresses: (string | null | undefined)[]): number {
   const [version, bump] = useReducer((x: number) => x + 1, 0);
   const key = addresses.filter(Boolean).join(',');

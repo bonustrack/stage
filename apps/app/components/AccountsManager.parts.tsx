@@ -1,5 +1,7 @@
-/** AccountsManager sub-components — account row + the bottom-sheet modal/button.
- *  Extracted for lint line-budget. Rendering identical. */
+/**
+ * @file AccountsManager presentational sub-components: the per-account row and
+ * the reusable bottom-sheet modal and sheet rows.
+ */
 
 import { Modal } from 'react-native';
 
@@ -15,8 +17,7 @@ import { type AccountRecord } from '../lib/accounts';
 import { TYPE_LABEL } from './AccountsManager.helpers';
 import { DANGER } from '../lib/theme';
 
-/** Single account row — avatar, name + short address/type, and a trailing slot
- *  (chevron on the active/collapsed row, ⋯ manage affordance on the others). */
+/** Single account row — avatar, name + short address/type, and a trailing slot (chevron on the active/collapsed row, ⋯ manage affordance on the others). */
 export function AccountRow({ rec, onPress, onLongPress, topBorder, trailing, head, sub, border }: {
   rec: AccountRecord; onPress: () => void; onLongPress: () => void;
   topBorder: boolean; trailing: React.ReactNode;
@@ -54,8 +55,7 @@ export function SheetModal({ visible, onClose, children, bg, border }: {
   /** title/head accepted for call-site compatibility; header chrome removed. */
   bg: string; border: string; title?: string; head?: string;
 }): React.ReactElement {
-  /** Pad the sheet past the Android nav bar so its last row isn't overlapped
-   *  / cut off by the system navigation buttons. */
+  /** Pad the sheet past the Android nav bar so its last row isn't overlapped / cut off by the system navigation buttons. */
   const insets = useSafeAreaInsets();
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -69,8 +69,7 @@ export function SheetModal({ visible, onClose, children, bg, border }: {
   );
 }
 
-/** Option row for the account bottom-sheets, on the shared Kit ListView style
- *  (drop inside a <ListView>). Label + optional description; danger tint. */
+/** Option row for the account bottom-sheets, on the shared Kit ListView style (drop inside a <ListView>). Label + optional description; danger tint. */
 export function SheetRow({ label, desc, onPress, head, sub, danger, dark }: {
   label: string; desc?: string; onPress: () => void;
   head: string; sub: string; danger?: boolean; dark: boolean;

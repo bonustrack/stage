@@ -1,7 +1,8 @@
-/** A labelled gallery block: a component name + one-line note above a framed
- *  example. Shared by the Kit page (primitives) and the Components page (app-level
- *  components). No controls, no story indirection - the children render the
- *  component directly with sample props. Fonts: Calibre-Medium / Calibre-Semibold. */
+/**
+ * @file GallerySection — a labelled gallery block (name + note above a framed
+ *  example) shared by the Kit and Components pages, rendering children directly
+ *  with sample props and no controls or story indirection.
+ */
 
 import { Box } from '../layout';
 

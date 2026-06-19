@@ -1,17 +1,8 @@
-/** SignatureRequestCodec + SignatureReferenceCodec — the RN
- *  @xmtp/react-native-sdk JS content codecs for the Metro signature content
- *  types `metro.box/signatureRequest:1.0` and `metro.box/signatureReference:1.0`.
- *
- *  There is no official XMTP signature-request content type (walletSendCalls /
- *  transactionReference are for broadcasting txs, not signing an arbitrary
- *  message), so this is a CUSTOM Metro content type under our own authority,
- *  mirroring PollCodec / the tx codecs.
- *
- *  Pure JS (no native module): both bodies are just `JSON.stringify(content)`
- *  encoded as UTF-8 bytes inside an `EncodedContent`, so registering them in
- *  `XMTP_CODECS` needs NO dev-client rebuild. `fallback` carries the plain-text
- *  rendering so vanilla XMTP clients (and any client missing this codec) show a
- *  readable string instead of a blank/error bubble. */
+/**
+ * @file SignatureRequestCodec and SignatureReferenceCodec, the pure-JS @xmtp/react-native-sdk
+ *  content codecs for the custom Metro `metro.box/signatureRequest:1.0` and `signatureReference:1.0`
+ *  types (arbitrary-message signing, which has no official XMTP type), each with a plain-text fallback.
+ */
 
 import type {
   JSContentCodec, ContentTypeId, EncodedContent,
@@ -38,10 +29,7 @@ export class SignatureRequestCodec implements JSContentCodec<SignatureRequestCon
 
   /** Decode and schema-validate the untrusted signature-request wire body. */
   decode(encoded: EncodedContent): SignatureRequestContent {
-    /** SECURITY: validate the untrusted wire body against the strict schema so a
-     *  malformed / hostile signature request throws here (rendered as an
-     *  unsupported bubble) and can never reach the signer as a wrong-but-typed
-     *  object. */
+    /** SECURITY: validate the untrusted wire body against the strict schema so a malformed / hostile signature request throws here (rendered as an unsupported bubble) and can never reach the signer as a wrong-but-typed object. */
     return decodeJsonContent<SignatureRequestContent>(
       encoded.content, signatureRequestSchema, 'xmtp.signatureRequest',
     );

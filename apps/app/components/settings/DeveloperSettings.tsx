@@ -1,11 +1,7 @@
-/** Settings → Developer - device-local diagnostic toggles.
- *
- *  Currently a single Switch wired to the Railgun debug-console preference
- *  (lib/railgun/debugConsole, default OFF). When ON, the Private wallet tab
- *  renders the balance-pipeline panel + the Node-bridge ping probe, which stream
- *  the engine's live bridge logs (the +0ms scan[...] / rx event lines). Those
- *  blocks were always mounted before and streamed continuously, which made the
- *  phone laggy - they are now opt-in here. */
+/**
+ * @file Settings -> Developer screen: device-local diagnostic toggles, currently
+ *  the opt-in Railgun debug-console preference plus reset actions.
+ */
 
 import { useEffect, useState } from 'react';
 

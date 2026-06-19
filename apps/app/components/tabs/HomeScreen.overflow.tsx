@@ -1,10 +1,8 @@
-/** HomeScreen overflow menu - the Home topnav 3-dot (kebab) button + the
- *  bottom-sheet it opens. Declutters the topnav by folding the former
- *  Archived + New-group icons into a single overflow menu, presented as the
- *  app's standard AppModal sheet (same surface + MenuRow pattern as the
- *  per-conversation ChannelMenu). The requests icon stays in the topnav.
- *  Also surfaces the two common account actions (Profile + Settings)
- *  that otherwise live behind the avatar Menu page. */
+/**
+ * @file HomeScreen.overflow — the Home topnav kebab button and its AppModal
+ *  bottom-sheet, folding Archived, New-group and the Profile/Settings account
+ *  actions into one overflow menu.
+ */
 
 import { useState } from 'react';
 
@@ -32,8 +30,7 @@ interface HomeOverflowMenuProps {
   onSettings: () => void;
 }
 
-/** Topnav kebab button + its overflow sheet. Owns its own open/close state so
- *  the list view only passes the actions. */
+/** Topnav kebab button + its overflow sheet. Owns its own open/close state so the list view only passes the actions. */
 export function HomeOverflowMenu({ color, onArchived, onNewGroup, onProfile, onSettings }: HomeOverflowMenuProps): React.ReactElement {
   const [open, setOpen] = useState(false);
   const dark = useEffectiveColorScheme() === 'dark';

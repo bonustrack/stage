@@ -1,8 +1,6 @@
-/** Conversation-list domain types + adapters, behind the facade. Owns
- *  `ConversationView` (channels-list row) + `ConversationRequestView` (lighter
- *  message-request row) and adapters that summarise a raw XMTP `Conversation`
- *  into those shapes, so components consume domain types instead of leaking raw
- *  SDK types (`Conversation` / `DecodedMessage`) into the component tree. */
+/**
+ * @file Adapters that summarise a raw XMTP `Conversation` into the facade's `ConversationView` / `ConversationRequestView` domain row shapes, so components consume domain types instead of leaking raw SDK handles into the component tree.
+ */
 
 import type { Conversation, DecodedMessage } from '@xmtp/react-native-sdk';
 import {
@@ -22,15 +20,12 @@ export type {
   ConversationView, ConversationRequestView, RequestAvatarDescriptor,
 } from './conversation.types';
 
-/** Summarise a raw conversation into the full channels-list domain view. Moved
- *  UNCHANGED from HomeScreen.helpers.summarize. */
+/** Summarise a raw conversation into the full channels-list domain view. Moved UNCHANGED from HomeScreen.helpers.summarize. */
 export async function summarizeConversation(
   conv: Conversation, selfInboxId: string,
 ): Promise<ConversationView> {
   await conv.sync().catch(() => undefined);
-  /** Pull only the latest message for the row PREVIEW - the unread count is
-   *  maintained incrementally from the live stream deltas. We fetch 2 so a
-   *  trailing control DM doesn't blank the preview. */
+  /** Pull only the latest message for the row PREVIEW - the unread count is maintained incrementally from the live stream deltas. We fetch 2 so a trailing control DM doesn't blank the preview. */
   const recent: DecodedMessage[] = await conv.messages({ limit: 2 }).catch(() => []);
   const msgs = recent;
   /** Skip our own register-push control DMs when choosing the "last message". */
@@ -104,8 +99,7 @@ export async function summarizeConversation(
   };
 }
 
-/** Summarise a raw conversation into the message-request domain view. Moved
- *  UNCHANGED from app/xmtp/requests.summarizeRequest. */
+/** Summarise a raw conversation into the message-request domain view. Moved UNCHANGED from app/xmtp/requests.summarizeRequest. */
 export async function summarizeConversationRequest(
   conv: Conversation,
 ): Promise<ConversationRequestView> {
@@ -143,10 +137,12 @@ export async function summarizeConversationRequest(
   };
 }
 
-/** Lightweight avatar-only descriptor for a message request (the notifications
+/**
+ * Lightweight avatar-only descriptor for a message request (the notifications
  *  preview pile). Moved UNCHANGED from useRequestPreviews.describe: resolves the
  *  DM peer / group image only - deliberately NO conv.sync()/messages() round-trip
- *  (the pile only needs avatars). */
+ *  (the pile only needs avatars).
+ */
 export async function requestAvatarDescriptor(
   conv: Conversation,
 ): Promise<RequestAvatarDescriptor> {

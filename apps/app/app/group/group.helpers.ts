@@ -1,5 +1,4 @@
-/** Group-detail SDK action helpers - pure async fns operating on an XMTP line.
- *  Extracted from group/[convId] for lint line-budget. Behaviour identical. */
+/** @file Pure async XMTP SDK action helpers for group detail (add/remove member, update name/description/image) operating on a conversation line. */
 
 import { convOfLine, memberInboxToAddressMap } from '../../modules/messaging';
 import { PublicIdentity } from '@xmtp/react-native-sdk';
@@ -23,9 +22,7 @@ export async function addGroupMember(line: string, addr: string): Promise<string
 /** Remove an address from the group (admin-only); returns the refreshed member list. */
 export async function removeGroupMember(line: string, addr: string): Promise<string[]> {
   const conv = await convOfLine(line);
-  /** XMTP V3 groups expose `removeMembersByIdentity` - callable only by group
-   *  admins/super-admins. Surface the raw error (often "not authorised") so the
-   *  user can act on it. */
+  /** XMTP V3 groups expose `removeMembersByIdentity` - callable only by group admins/super-admins. Surface the raw error (often "not authorised") so the user can act on it. */
   const group = conv as unknown as {
     removeMembersByIdentity?: (ids: PublicIdentity[]) => Promise<unknown>;
   };

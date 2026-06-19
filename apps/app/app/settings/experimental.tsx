@@ -1,6 +1,4 @@
-/** Settings → Experimental route - groups the not-yet-stable surfaces (Kit
- *  gallery, app Components gallery, Developer diagnostics) under one page.
- *  Reached via /settings → "Experimental" row. */
+/** @file Settings → Experimental route grouping the not-yet-stable surfaces (Kit gallery, Components gallery, Developer diagnostics). */
 
 import { ExperimentalSettings } from '../../components/settings/ExperimentalSettings';
 

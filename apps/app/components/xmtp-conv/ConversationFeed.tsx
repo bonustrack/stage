@@ -1,4 +1,4 @@
-/** The inverted message FlatList for the XMTP conversation screen (lint split). */
+/** @file The inverted message FlatList for the XMTP conversation screen (lint split). */
 
 import { FlatList } from 'react-native-gesture-handler';
 import { Box } from '../layout';
@@ -20,9 +20,7 @@ export function ConversationFeed({
   head: string; sub: string; fg: string; border: string; rowBg: string;
   insets: { top: number };
   router: { push: (h: { pathname: '/user/[address]'; params: { address: string } }) => void };
-  /** When search is open with a query, this results list REPLACES the message
-   *  FlatList in the feed region (same area, below the search topnav). Empty/no
-   *  query → undefined, so the normal feed shows. */
+  /** When search is open with a query, this results list REPLACES the message FlatList in the feed region (same area, below the search topnav). Empty/no query → undefined, so the normal feed shows. */
   searchSlot?: React.ReactNode;
 }): React.ReactElement {
   const {
@@ -33,15 +31,16 @@ export function ConversationFeed({
     allBubbles,
   } = c;
 
-  /** Stable renderItem + extraData (id→event Map for O(1) reply lookup) —
-   *  extracted to a hook so this file stays under the 200-line lint cap. */
+  /** Stable renderItem + extraData (id→event Map for O(1) reply lookup) — extracted to a hook so this file stays under the 200-line lint cap. */
   const { renderItem, extraData } = useFeedRenderItem(c, dark, router);
 
-  /** The empty-state intro/hero (avatar + name + bio/description). Shown at the
+  /**
+   * The empty-state intro/hero (avatar + name + bio/description). Shown at the
    *  visual top of the thread once history is exhausted (`hasMore === false`).
    *  Reused in BOTH the footer (non-empty thread) and the empty component
    *  (brand-new channel with zero messages) so the hero always appears before the
-   *  first message — not just after a scroll-up happens to flip `hasMore`. */
+   *  first message — not just after a scroll-up happens to flip `hasMore`.
+   */
   const intro = (
     <ConversationIntro
       isGroup={isGroup}
@@ -60,8 +59,7 @@ export function ConversationFeed({
     />
   );
 
-  /** Search active → render the results list in the feed region. Pad the top so
-   *  rows clear the absolute search topnav (height + status-bar inset). */
+  /** Search active → render the results list in the feed region. Pad the top so rows clear the absolute search topnav (height + status-bar inset). */
   if (searchSlot !== undefined) {
     return (
       <Box flex={1} padding={{ top: insets.top + 52 }}>
@@ -78,42 +76,32 @@ export function ConversationFeed({
       extraData={extraData}
       inverted
       showsVerticalScrollIndicator={false}
-      /** Anchor the bottom-visible item (= newest on inverted) so as new bubbles or the
-       *  initial seed lands, scroll stays pinned to the latest message. */
+      /** Anchor the bottom-visible item (= newest on inverted) so as new bubbles or the initial seed lands, scroll stays pinned to the latest message. */
       maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
       keyExtractor={e => e.id}
       style={{ flex: 1 }}
-      /** #5 FlatList perf: bubbles are VARIABLE height so no getItemLayout — but
-       *  cap render window + batch size + clip offscreen rows on long threads. */
+      /** #5 FlatList perf: bubbles are VARIABLE height so no getItemLayout — but cap render window + batch size + clip offscreen rows on long threads. */
       windowSize={11}
       initialNumToRender={12}
       maxToRenderPerBatch={10}
       removeClippedSubviews
-      /** Inverted: onEndReached fires near the visual TOP (oldest end) → page in
-       *  older history. loadOlder appends to the data END (= above the view, no
-       *  viewport shift). No-ops while loading / once exhausted (guarded in hook). */
+      /** Inverted: onEndReached fires near the visual TOP (oldest end) → page in older history. loadOlder appends to the data END (= above the view, no viewport shift). No-ops while loading / once exhausted (guarded in hook). */
       onEndReached={() => { void loadOlder(); }}
       onEndReachedThreshold={0.5}
-      /** Inverted: paddingTop = visual BOTTOM (composer side), paddingBottom = visual TOP
-       *  (nav side). Bump the top so the oldest message clears the absolute top-nav strip. */
+      /** Inverted: paddingTop = visual BOTTOM (composer side), paddingBottom = visual TOP (nav side). Bump the top so the oldest message clears the absolute top-nav strip. */
       contentContainerStyle={{ paddingTop: 24, paddingBottom: insets.top + 52 + 24 }}
-      /** Inverted: `contentOffset.y` ~0 at the visual bottom. Hide the jump button
-       *  within ~12px of bottom, show it on scroll-up. 16ms throttle = ~1/frame. */
+      /** Inverted: `contentOffset.y` ~0 at the visual bottom. Hide the jump button within ~12px of bottom, show it on scroll-up. 16ms throttle = ~1/frame. */
       onScroll={(ev) => {
         const y = ev.nativeEvent.contentOffset.y;
         const next = y> 12;
         setShowJump(prev => (prev === next ? prev : next));
         /** Authoritative at-bottom flag for the unmount flush (beats the debounce race). */
         isAtBottomRef.current = y <= AT_BOTTOM_THRESHOLD_PX;
-        /** Persist the inverted offset (debounced). At bottom store sentinel 0
-         *  (restore treats <=0 as "land at bottom") so returning shows the newest
-         *  even if msgs arrived while away; a concrete old offset would be stale. */
+        /** Persist the inverted offset (debounced). At bottom store sentinel 0 (restore treats <=0 as "land at bottom") so returning shows the newest even if msgs arrived while away; a concrete old offset would be stale. */
         if (convId) saveScrollOffset(convScrollKey(convId), y <= AT_BOTTOM_THRESHOLD_PX ? 0 : y);
       }}
       scrollEventThrottle={16}
-      /** Initial-mount (epoch 0) scroll restore — see planFeedRestore. Restores a
-       *  concrete saved offset, or pins to bottom (newest) across a short settle
-       *  window for the at-bottom sentinel. Remounts (epoch> 0) skip → land bottom. */
+      /** Initial-mount (epoch 0) scroll restore — see planFeedRestore. Restores a concrete saved offset, or pins to bottom (newest) across a short settle window for the at-bottom sentinel. Remounts (epoch> 0) skip → land bottom. */
       onContentSizeChange={(_w, h) => {
         if (didRestoreScroll.current || listEpoch !== 0) return;
         const plan = planFeedRestore({
@@ -132,14 +120,10 @@ export function ConversationFeed({
           try { listRef.current?.scrollToOffset({ offset, animated: false }); } catch { /* reanimated #3670 / best-effort */ }
         });
       }}
-      /** Silent fallback — `scrollToIndex` can fire before the target row has
-       *  rendered; without this handler RN's red-screen pops on dev. No-op; the
-       *  bubble still highlights via `replyTarget`. */
+      /** Silent fallback — `scrollToIndex` can fire before the target row has rendered; without this handler RN's red-screen pops on dev. No-op; the bubble still highlights via `replyTarget`. */
       onScrollToIndexFailed={() => undefined}
       renderItem={renderItem}
-      /** Empty thread: still loading → spinner; loaded with zero history
-       *  (`hasMore === false`) → show the hero intro so a brand-new channel isn't
-       *  blank before its first message; otherwise a brief settling state. */
+      /** Empty thread: still loading → spinner; loaded with zero history (`hasMore === false`) → show the hero intro so a brand-new channel isn't blank before its first message; otherwise a brief settling state. */
       ListEmptyComponent={
         status !== 'open'
           ? <Box padding={32} align="center"><Spinner size={28} color={head} /></Box>
@@ -147,11 +131,13 @@ export function ConversationFeed({
             ? intro
             : <Box padding={32} align="center"><Spinner size={28} color={head} /></Box>
       }
-      /** Inverted list → `ListFooterComponent` renders at the visual TOP (oldest
+      /**
+       * Inverted list → `ListFooterComponent` renders at the visual TOP (oldest
        *  end). Holds two things, top-to-bottom: a small "loading older" spinner
        *  while a previous page is paginating in, then the conversation intro
        *  header. The intro only shows once history is exhausted (`!hasMore`) so
-       *  it doesn't sit mid-scroll above still-unloaded messages. */
+       *  it doesn't sit mid-scroll above still-unloaded messages.
+       */
       ListFooterComponent={
         <>
           {loadingOlder ? (

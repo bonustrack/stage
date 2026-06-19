@@ -1,33 +1,29 @@
-/** Unified client/cache persistence layer. The app's caches sit on three small
- *  primitives defined here:
- *    - `PersistentStore<T>`  in-memory value mirrored to a JSON file in the app
- *                            document dir, with pub/sub + lazy hydration.
- *    - `MemoryStore<K,V>`    in-memory Map (no disk) with pub/sub, for session
- *                            caches that don't need to survive a reload.
- *    - SecureStore helpers   `getSecure / setSecure` for small string keys that
- *                            must live in the device keystore. */
+/** @file Cache persistence primitives: PersistentStore (JSON-file-backed value with pub/sub), MemoryStore (in-memory keyed cache), and SecureStore string helpers. */
+// Unified client/cache persistence layer. The app's caches sit on three small
+// primitives defined here:
+//   - `PersistentStore<T>`  in-memory value mirrored to a JSON file in the app
+//                           document dir, with pub/sub + lazy hydration.
+//   - `MemoryStore<K,V>`    in-memory Map (no disk) with pub/sub, for session
+//                           caches that don't need to survive a reload.
+//   - SecureStore helpers   `getSecure / setSecure` for small string keys that
+//                           must live in the device keystore.
 
 import { AppState } from 'react-native';
 import { Directory, File, Paths } from 'expo-file-system';
 import * as SecureStore from 'expo-secure-store';
 import { hydrateOnce, makeListeners } from './storeCore';
 
-/** Trailing flush window for debounced PersistentStores. A streamed message can
- *  fire set() many times a second with a 100s-of-KB payload; coalescing the
- *  SYNCHRONOUS disk write to one pass per window keeps the JS thread free. */
+/** Trailing flush window for debounced PersistentStores. A streamed message can fire set() many times a second with a 100s-of-KB payload; coalescing the SYNCHRONOUS disk write to one pass per window keeps the JS thread free. */
 const FLUSH_DEBOUNCE_MS = 1_500;
 
-/** Every debounced store with a pending in-memory change, so a single AppState
- *  background/inactive transition can flush them ALL synchronously (nothing is
- *  lost on kill). WeakRef-free on purpose: stores are app-lived singletons. */
+/** Every debounced store with a pending in-memory change, so a single AppState background/inactive transition can flush them ALL synchronously (nothing is lost on kill). WeakRef-free on purpose: stores are app-lived singletons. */
 const dirtyStores = new Set<{ flushNow: () => void }>();
 let appStateFlushWired = false;
 /** Wire App State Flush. */
 function wireAppStateFlush(): void {
   if (appStateFlushWired) return;
   appStateFlushWired = true;
-  /** On the way to background/inactive, flush every dirty debounced store NOW so
-   *  a process kill can't drop the last in-memory writes. */
+  /** On the way to background/inactive, flush every dirty debounced store NOW so a process kill can't drop the last in-memory writes. */
   AppState.addEventListener('change', (state) => {
     if (state === 'active') return;
     for (const s of dirtyStores) { try { s.flushNow(); } catch { /* best-effort */ } }
@@ -41,31 +37,32 @@ function metroDir(): Directory {
   return dir;
 }
 
-/** A single value persisted to one JSON file, mirrored in memory, with
- *  listeners. Used by the channels-list cache. Generic over the stored shape. */
+/** A single value persisted to one JSON file, mirrored in memory, with listeners. Used by the channels-list cache. Generic over the stored shape. */
 export class PersistentStore<T> {
   private value: T | null = null;
-  /** Hydrate-once guard (shared core): memoizes the in-flight disk read so
+  /**
+   * Hydrate-once guard (shared core): memoizes the in-flight disk read so
    *  concurrent boot callers await the SAME read instead of racing, and only
    *  flips "done" AFTER the read resolves (a second caller arriving mid-read can
-   *  never observe done===true with a still-null value). */
+   *  never observe done===true with a still-null value).
+   */
   private readonly hydration = hydrateOnce<T | null>(() => this.readDisk());
   private readonly pubsub = makeListeners<T | null>();
   private get listeners(): Set<(v: T | null) => void> { return this.pubsub.listeners; }
   /** Notify helper. */
   private notify(v: T | null): void { this.pubsub.notify(v); }
-  /** Pending trailing-flush timer (debounced stores only). `number` RN timer id
-   *  — the Railgun SDK pulls @types/node in, whose Timeout collides with DOM. */
+  /** Pending trailing-flush timer (debounced stores only). `number` RN timer id — the Railgun SDK pulls @types/node in, whose Timeout collides with DOM. */
   private flushTimer: number | null = null;
-  /** True when in-memory `value` differs from what's on disk (a debounced set()
-   *  ran but the flush hasn't landed yet). */
+  /** True when in-memory `value` differs from what's on disk (a debounced set() ran but the flush hasn't landed yet). */
   private dirty = false;
 
-  /** @param fileName  JSON file under the metro document dir.
+  /**
+   * @param fileName  JSON file under the metro document dir.
    *  @param debounced When true, set() updates memory + notifies subscribers
    *    immediately but defers the SYNCHRONOUS disk write to a trailing timer
    *    (and an AppState background flush), instead of writing on every call.
-   *    Opt-in so other stores keep their write-through behaviour. */
+   *    Opt-in so other stores keep their write-through behaviour.
+   */
   constructor(private readonly fileName: string, private readonly debounced = false) {
     if (debounced) wireAppStateFlush();
   }
@@ -73,8 +70,7 @@ export class PersistentStore<T> {
   /** File helper. */
   private file(): File { return new File(metroDir(), this.fileName); }
 
-  /** Write the current in-memory value to disk synchronously (or delete the file
-   *  when null). Clears the dirty flag + dirty-set membership. */
+  /** Write the current in-memory value to disk synchronously (or delete the file when null). Clears the dirty flag + dirty-set membership. */
   private writeToDisk(): void {
     try {
       const f = this.file();
@@ -85,8 +81,7 @@ export class PersistentStore<T> {
     dirtyStores.delete(this);
   }
 
-  /** Flush any pending debounced write immediately (timer + AppState background).
-   *  No-op when nothing is pending. */
+  /** Flush any pending debounced write immediately (timer + AppState background). No-op when nothing is pending. */
   flushNow(): void {
     if (this.flushTimer) { clearTimeout(this.flushTimer); this.flushTimer = null; }
     if (this.dirty) this.writeToDisk();
@@ -105,9 +100,7 @@ export class PersistentStore<T> {
     return this.value;
   }
 
-  /** Read the persisted value off disk into memory once. Idempotent; the file
-   *  read only happens on the first call. Concurrent boot callers await the SAME
-   *  read (hydrateOnce) so none observes a half-populated value. */
+  /** Read the persisted value off disk into memory once. Idempotent; the file read only happens on the first call. Concurrent boot callers await the SAME read (hydrateOnce) so none observes a half-populated value. */
   async hydrate(): Promise<T | null> {
     if (this.hydration.done()) return this.value;
     return this.hydration.run();
@@ -119,16 +112,12 @@ export class PersistentStore<T> {
   /** Set the authoritative value, notify subscribers, and persist (debounced). */
   set(next: T | null): void {
     this.value = next;
-    /** A set() supplies the authoritative value — short-circuit any pending
-     *  hydration so a later hydrate() can't clobber it with stale disk data. */
+    /** A set() supplies the authoritative value — short-circuit any pending hydration so a later hydrate() can't clobber it with stale disk data. */
     this.hydration.markDone();
-    /** Notify subscribers immediately so the UI reflects the change without
-     *  waiting on disk. */
+    /** Notify subscribers immediately so the UI reflects the change without waiting on disk. */
     this.notify(this.value);
     if (!this.debounced) { this.writeToDisk(); return; }
-    /** Debounced: mark dirty + (re)arm the trailing flush. A burst of streamed
-     *  set()s collapses to ONE synchronous write per FLUSH_DEBOUNCE_MS; the
-     *  AppState background handler flushes early so a kill loses nothing. */
+    /** Debounced: mark dirty + (re)arm the trailing flush. A burst of streamed set()s collapses to ONE synchronous write per FLUSH_DEBOUNCE_MS; the AppState background handler flushes early so a kill loses nothing. */
     this.dirty = true;
     dirtyStores.add(this);
     if (this.flushTimer) clearTimeout(this.flushTimer);
@@ -138,11 +127,9 @@ export class PersistentStore<T> {
     }, FLUSH_DEBOUNCE_MS) as unknown as number;
   }
 
-  /** Clear in-memory + on-disk and reset hydration so a fresh account hydrates
-   *  from a clean slate. */
+  /** Clear in-memory + on-disk and reset hydration so a fresh account hydrates from a clean slate. */
   clear(): void {
-    /** Cancel any pending debounced flush so it can't resurrect the file we're
-     *  about to delete. */
+    /** Cancel any pending debounced flush so it can't resurrect the file we're about to delete. */
     if (this.flushTimer) { clearTimeout(this.flushTimer); this.flushTimer = null; }
     this.dirty = false;
     dirtyStores.delete(this);
@@ -161,17 +148,12 @@ export class PersistentStore<T> {
   }
 }
 
-/** An in-memory keyed cache with pub/sub. Used by the per-conversation message
- *  cache + the inbox→eth cache: session-lived, never persisted, but they share
- *  the same get/set/subscribe/clear surface so callers don't re-implement it. */
+/** An in-memory keyed cache with pub/sub. Used by the per-conversation message cache + the inbox→eth cache: session-lived, never persisted, but they share the same get/set/subscribe/clear surface so callers don't re-implement it. */
 export class MemoryStore<K, V> {
   private readonly map = new Map<K, V>();
-  /** Keyed listeners (notified for a specific key's changes) + global listeners
-   *  (notified for any change). */
+  /** Keyed listeners (notified for a specific key's changes) + global listeners (notified for any change). */
   private readonly keyed = new Map<K, Set<(v: V | undefined) => void>>();
-  /** Global listeners notified for ANY key's change. The feed→TanStack-Query
-   *  bridge uses this to mirror every feedCache slice write into the shared
-   *  query cache without wrapping each individual `set` call site. */
+  /** Global listeners notified for ANY key's change. The feed→TanStack-Query bridge uses this to mirror every feedCache slice write into the shared query cache without wrapping each individual `set` call site. */
   private readonly global = new Set<(key: K, v: V | undefined) => void>();
 
   /** Value for a key, or undefined if absent. */
@@ -213,8 +195,7 @@ export class MemoryStore<K, V> {
   }
 }
 
-/** SecureStore keys must match `[A-Za-z0-9._-]+` — colons are rejected on
- *  Android. Callers are responsible for sanitising any dynamic segment. */
+/** SecureStore keys must match `[A-Za-z0-9._-]+` — colons are rejected on Android. Callers are responsible for sanitising any dynamic segment. */
 export async function getSecure(key: string): Promise<string | null> {
   try { return await SecureStore.getItemAsync(key); } catch { return null; }
 }

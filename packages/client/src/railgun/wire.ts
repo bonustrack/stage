@@ -1,4 +1,8 @@
-/** Wire-encoding helpers for the Railgun bridge protocol.
+/**
+ * @file Bigint wire-encoding helpers ({ __bigint }) so Railgun bridge amounts survive the JSON channel to the Node host.
+ */
+/**
+ * Wire-encoding helpers for the Railgun bridge protocol.
  *
  *  The bridge channel is JSON, which cannot carry a bigint. The shield/transfer
  *  SDK primitives (populateShield / populateShieldBaseToken / gasEstimate*) take
@@ -10,7 +14,8 @@
  *
  *  PURE: no react-native / expo / native imports. The frame builders below are
  *  framework-agnostic; the actual transport that ships them is injected via the
- *  Stage client's RailgunTransport. */
+ *  Stage client's RailgunTransport.
+ */
 
 /** The on-wire marker for a bigint value the host must revive. */
 export interface BigIntWire {

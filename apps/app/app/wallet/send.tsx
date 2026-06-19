@@ -1,17 +1,8 @@
-/** Wallet → Send token (unified public + shielded).
- *
- *  ONE page for sending any token the wallet holds. The combined TokenSelector
- *  modal lists EVERY positive-balance token — public AND Railgun-shielded — each
- *  row tagged with the shielded badge so the kind is obvious. Picking a token
- *  carries its `isPrivate` flag, and the page routes the send automatically:
- *
- *    • public token  → PublicSendBody  → sendNativeOrToken / send.public
- *    • shielded token → SendShieldedBody → runAction({ kind: 'send' }) (0zk→0zk)
- *
- *  There is NO manual public/shielded toggle — the chosen token decides. Shield
- *  (public→private) and Unshield (private→public) remain their own pages.
- *  `?to=` pre-fills the public recipient; `?symbol=&chainId=&private=` pre-select
- *  a token (e.g. from a token detail page's Send button). */
+/**
+ * @file Unified Wallet send-token screen for any held token, routing public
+ * balances to an on-chain transfer and Railgun-shielded balances to a 0zk
+ * transfer based on the token picked in the combined TokenSelector.
+ */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { Col } from '../../components/layout';

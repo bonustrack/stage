@@ -1,14 +1,8 @@
-/** Public-send state + lifecycle hook for the Wallet → Send screen.
- *
- *  Owns recipient resolution (address/ENS), the selected token's balance +
- *  live price bootstrap, the token⇄USD amount conversion, and the submit →
- *  broadcast → confirm lifecycle. The selected token (symbol + chain) is driven
- *  by the shared TokenSelector modal; native ETH sends as value, any ERC-20
- *  routes through sendNativeOrToken with its on-chain address/decimals.
- *
- *  A `smart` (ZeroDev Kernel) account executes the transfer as a SPONSORED
- *  userOp through its Kernel client (gasless, Base); a legacy local-EOA record
- *  broadcasts through sendNativeOrToken. There is no external-wallet connect. */
+/**
+ * @file Public-send state and lifecycle hook for the Wallet send screen, owning
+ * ENS resolution, balance/price bootstrap, token-USD conversion, and the
+ * submit-broadcast-confirm flow for smart-account and legacy-EOA transfers.
+ */
 import { useEffect, useMemo, useState } from 'react';
 import {
   isAddress, erc20Abi, encodeFunctionData, parseUnits, createPublicClient, type Hex,
@@ -36,8 +30,10 @@ export interface PublicSend {
   onMax: () => void; onSubmit: () => void;
 }
 
-/** @param token  the currently selected token (symbol + chainId).
- *  @param balance  that token's balance string from the wallet rows, or null. */
+/**
+ * @param token  the currently selected token (symbol + chainId).
+ *  @param balance  that token's balance string from the wallet rows, or null.
+ */
 export function usePublicSend(initialTo: string, token: TokenChoice, balance: string | null): PublicSend {
   const [to, setTo] = useState<string>(initialTo);
   const [amount, setAmount] = useState('');
@@ -50,14 +46,12 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
   const [txHash, setTxHash] = useState<Hex | null>(null);
   const [txErr, setTxErr] = useState<string | null>(null);
 
-  /** The registry asset for the current selection — its address (null = native)
-   *  and decimals drive the actual transfer call. */
+  /** The registry asset for the current selection — its address (null = native) and decimals drive the actual transfer call. */
   const asset = useMemo(
     () => ASSETS.find(a => a.symbol === token.symbol && a.chainId === token.chainId),
     [token.symbol, token.chainId],
   );
-  /** Balance comes from the wallet rows (passed in); price only matters for the
-   *  USD toggle and is currently bootstrapped for ETH (USDC ≈ $1 implicitly). */
+  /** Balance comes from the wallet rows (passed in); price only matters for the USD toggle and is currently bootstrapped for ETH (USDC ≈ $1 implicitly). */
   const ethBalance = balance;
 
   useEffect(() => {
@@ -72,8 +66,7 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
     return () => { cancelled = true; };
   }, []);
 
-  /** Per-unit USD price of the SELECTED token: ETH uses the live feed, USD-pegged
-   *  stables default to 1 so the USD toggle + Max work without a price call. */
+  /** Per-unit USD price of the SELECTED token: ETH uses the live feed, USD-pegged stables default to 1 so the USD toggle + Max work without a price call. */
   const tokenPriceUsd = token.symbol === 'ETH' ? ethPriceUsd
     : token.symbol === 'USDC' ? 1 : null;
 
@@ -144,10 +137,12 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
         let hash: Hex;
         let receiptChainId = token.chainId;
         if (active.type === 'smart') {
-          /** Smart account: execute as a SPONSORED userOp on Base through the
+          /**
+           * Smart account: execute as a SPONSORED userOp on Base through the
            *  Kernel client (the paymaster covers gas; the userOp deploys the
            *  Kernel on first send). Settles on Base regardless of the selected
-           *  token's nominal chain, matching the chat-pay smart path. */
+           *  token's nominal chain, matching the chat-pay smart path.
+           */
           const kernel = await kernelClientForRecord(active);
           receiptChainId = base.id;
           const value = parseUnits(tokStr, asset.address ? asset.decimals : 18);

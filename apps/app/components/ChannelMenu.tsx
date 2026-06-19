@@ -1,20 +1,7 @@
-/** ChannelMenu — the SINGLE per-conversation action sheet shared by both the
- *  channels-list long-press menu (HomeScreen) and the conversation-view 3-dot
- *  overflow menu ([convId]). Presented as the app's standard bottom sheet
- *  (AppModal) in both places for one consistent, themed surface.
- *
- *  The component owns the actions that only need ids/flags — Mark read/unread
- *  (channelsCache), Pin/Unpin (pins), and navigation to Group info / Profile
- *  (expo-router). Context-specific flows that carry their own confirm dialog
- *  (Leave group) are passed in as optional callbacks by the channel-view caller.
- *
- *  Action visibility:
- *    - Mark read/unread  — both contexts (toggle by `isUnread`)
- *    - Pin / Unpin       — both contexts (toggle by `isPinned`)
- *    - Group info        — groups only (navigates to /group/[convId])
- *    - Add members       — groups only (navigates to /xmtp/add-members)
- *    - Profile           — DMs only, when `peerAddress` is known
- *    - Leave group       — ALL groups, both contexts (built-in confirm + leave)
+/**
+ * @file Shared per-conversation action sheet (AppModal bottom sheet) used by both
+ *  the channels-list long-press menu and the conversation-view overflow menu,
+ *  offering mark read/unread, pin/unpin, group info, add members, profile, leave.
  */
 
 import { Alert } from 'react-native';
@@ -49,16 +36,13 @@ export interface ChannelMenuProps {
   /** Sheet visibility (controlled by the parent). */
   visible: boolean;
   onClose: () => void;
-  /** Where the menu is mounted — drives post-leave navigation. 'view' pops back
-   *  to the channels list; 'list' just lets the list reconcile (default). */
+  /** Where the menu is mounted — drives post-leave navigation. 'view' pops back to the channels list; 'list' just lets the list reconcile (default). */
   context?: 'list' | 'view';
   /** Optional hook fired after a successful leave (e.g. toast / refresh). */
   onAfterLeave?: (result: 'left' | 'hidden') => void;
-  /** Optional hook fired after toggling archive (carries the new state). The
-   *  conversation view uses this to pop back to the list when archiving. */
+  /** Optional hook fired after toggling archive (carries the new state). The conversation view uses this to pop back to the list when archiving. */
   onAfterArchive?: (archived: boolean) => void;
-  /** Optional in-conversation search action — when provided (conversation view),
-   *  a "Search" row is shown that closes the sheet and opens the search topnav. */
+  /** Optional in-conversation search action — when provided (conversation view), a "Search" row is shown that closes the sheet and opens the search topnav. */
   onSearch?: () => void;
 }
 
@@ -76,20 +60,21 @@ export function ChannelMenu({
   /** Run helper. */
   const run = (fn: () => void): void => { onClose(); fn(); };
 
-  /** Search needs the sheet to be GONE first: this AppModal is a native RN
+  /**
+   * Search needs the sheet to be GONE first: this AppModal is a native RN
    *  <Modal> (its own Android window that owns IME focus). If we open search in
    *  the same tick as closing the sheet, the search input autofocuses while the
    *  modal window is still mounted/animating out and the keyboard never attaches.
    *  So close the sheet, then fire onSearch on the next macrotask once `visible`
    *  has flipped false and the dismiss has started. The conversation view pairs
-   *  this with a verified blur/focus retry once the dismiss interaction settles. */
+   *  this with a verified blur/focus retry once the dismiss interaction settles.
+   */
   const runSearch = (fn: () => void): void => {
     onClose();
     setTimeout(fn, 0);
   };
 
-  /** Built-in Leave-group flow — confirm, leave via XMTP, then navigate
-   *  context-aware: pop back from the channel view; let the list reconcile. */
+  /** Built-in Leave-group flow — confirm, leave via XMTP, then navigate context-aware: pop back from the channel view; let the list reconcile. */
   const onLeaveGroup = (): void => {
     onClose();
     Alert.alert(

@@ -1,6 +1,6 @@
-/** Presentational pieces of the shared ProfileScreen (see ProfileScreen.tsx).
- *  Split out purely to keep each file under the 200-line lint cap; these have no
- *  state of their own beyond what the parent passes down. */
+/**
+ * @file Presentational pieces and hooks (header, actions, palette/self-address) for the shared ProfileScreen.
+ */
 
 import { useEffect, useState } from 'react';
 import { Pressable } from '@metro-labs/kit/pressable';
@@ -19,9 +19,7 @@ export function useProfileColors(): ProfileColors {
   return usePalette();
 }
 
-/** Resolve the active account's address: cached client first (synchronous, so
- *  own-vs-other settles on first paint when the client is already up), then a
- *  best-effort async fetch on cold start. */
+/** Resolve the active account's address: cached client first (synchronous, so own-vs-other settles on first paint when the client is already up), then a best-effort async fetch on cold start. */
 export function useSelfAddress(): string {
   const cached = getCachedXmtpClient();
   const [self, setSelf] = useState(cached?.publicIdentity.identifier ?? '');
@@ -39,10 +37,12 @@ export function useSelfAddress(): string {
   return self;
 }
 
-/** Top header bar — variant-specific. The route variant adds a back button on
+/**
+ * Top header bar — variant-specific. The route variant adds a back button on
  *  the left and floats over the full-bleed cover; the tab variant shows the
  *  Home-style identity (avatar + name → Menu). Identity is read-only, so there
- *  is no edit/overflow affordance. */
+ *  is no edit/overflow affordance.
+ */
 export function ProfileHeader({ variant, insetTop, onBack, c }: {
   variant: 'tab' | 'route'; insetTop: number;
   onBack: () => void; c: ProfileColors;
@@ -72,10 +72,12 @@ export function ProfileHeader({ variant, insetTop, onBack, c }: {
   );
 }
 
-/** Message + Send action pair shown only on OTHER users' profiles.
+/**
+ * Message + Send action pair shown only on OTHER users' profiles.
  *  Kit `pill` icon-only Buttons (secondary variant, `size="xl"`) rendering a
  *  56×56 circle, each with the text label as a separate <Text> BELOW the circle.
- *  LEFT-aligned in a single row — matches the wallet tab's action buttons. */
+ *  LEFT-aligned in a single row — matches the wallet tab's action buttons.
+ */
 export function ProfileActions({ dark, opening, onMessage, onSend, c }: {
   dark: boolean; opening: boolean; onMessage: () => void; onSend: () => void; c: ProfileColors;
 }): React.ReactElement {

@@ -1,14 +1,8 @@
-/** Settings -> Wallet - everything about the active ZeroDev smart-account wallet,
- *  read-only. Shows the smart-account address (full, copyable), the account label
- *  + HD index, the active signer (passkey vs recovery key), the Kernel modules /
- *  validators (passkey / ECDSA owner / guardian recovery) with role + status, the
- *  on-chain deploy status (counterfactual vs deployed), the chain + Kernel /
- *  EntryPoint versions, the XMTP identity address, and the derived owner/recovery
- *  EOA address. Links to the recovery / guardian screen.
- *
- *  No private key or mnemonic is ever displayed - addresses + module metadata
- *  only (the keyring chokepoint stays intact). Data + deploy detection live in
- *  ./WalletSettings.parts. A non-smart / legacy account renders only what applies. */
+/**
+ * @file Settings -> Wallet screen: a read-only view of the active ZeroDev
+ *  smart-account (address, signer, Kernel modules, deploy status, versions, XMTP
+ *  address) with a link to recovery, displaying addresses and metadata only.
+ */
 
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { useRouter } from 'expo-router';

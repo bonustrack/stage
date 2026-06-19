@@ -1,12 +1,8 @@
-/** Accounts section for Settings — multi-wallet management.
- *
- *  Lists every account the device holds, marks the active one, and lets the
- *  user switch (no logout), add a new account (mints the next HD-index ZeroDev
- *  smart account off the single app mnemonic), or remove one. Switching/adding
- *  sets the active account and reloads so XMTP re-inits against the new inbox.
- *  Android-safe: confirm/export use in-app Modals (Alert.prompt is iOS-only).
- *  State + handlers live in useAccountsManager; the list card + sheets in sibling
- *  modules. */
+/**
+ * @file Accounts section for Settings providing multi-wallet management
+ * (switch, add a new HD-index ZeroDev smart account, remove, export), composing
+ * the useAccountsManager hook with the sibling list-card and sheet modules.
+ */
 
 import { Box } from './layout';
 import { Spinner } from './Spinner';
@@ -28,10 +24,12 @@ export function AccountsManager({ dark, flat = false, onSwitched }: { dark: bool
 
   const m = useAccountsManager(onSwitched);
 
-  /** Resolve every account's display name via the SAME stamp.fyi resolver the
+  /**
+   * Resolve every account's display name via the SAME stamp.fyi resolver the
    *  peers use, so the user's OWN account(s) show their ENS/stamp name (e.g.
    *  "less") instead of just the truncated address. The rows read getPeerName;
-   *  without this ensure() nothing ever fetches the self addresses. */
+   *  without this ensure() nothing ever fetches the self addresses.
+   */
   usePeerProfiles(m.accounts.map(a => a.address));
 
   return (

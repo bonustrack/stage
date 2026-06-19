@@ -1,20 +1,8 @@
-/** In-channel message-request action bar. When the open conversation is still a
- *  pending request (XMTP consent `'unknown'` - someone we never accepted started
- *  a DM / added us to a group), this renders an Approve / Reject row in place of
- *  the composer, pinned at the bottom of the conversation as the latest item.
- *
- *  It REUSES the exact same consent handlers the Requests list uses
- *  (`acceptRequestConv` → `updateConsent('allowed')`, `blockRequestConv` →
- *  `updateConsent('denied')`), so accepting/rejecting here is identical and
- *  cross-device synced.
- *
- *  - Approve → allow consent, then hand control back to the parent (which then
- *    renders the normal composer so the user can reply right away).
- *  - Reject  → deny consent, then close the conversation (router back to inbox),
- *    matching what the Requests list does on reject.
- *
- *  Additive: this is a self-contained component mounted by the conversation view
- *  behind a single consent-state check, keeping the view's edits minimal. */
+/**
+ * @file In-channel Approve/Reject action bar shown in place of the composer when
+ *  the open conversation is still a pending XMTP message request, reusing the
+ *  same consent handlers as the Requests list.
+ */
 
 import { useCallback, useEffect, useState } from 'react';
 import { Text } from '@metro-labs/kit/text';
@@ -27,9 +15,7 @@ import {
 import { usePalette } from '../lib/theme';
 import { Box, Col, Row } from './layout';
 
-/** Force a synced-prefs refresh so other surfaces (channels list, Requests list,
- *  other devices) converge after an in-channel accept/reject. Mirrors the
- *  Requests list's post-write syncConsent call. */
+/** Force a synced-prefs refresh so other surfaces (channels list, Requests list, other devices) converge after an in-channel accept/reject. Mirrors the Requests list's post-write syncConsent call. */
 function syncConsentBestEffort(): void {
   void (getCachedXmtpClient() as unknown as {
     preferences?: { syncConsent?: () => Promise<unknown> };
@@ -39,19 +25,23 @@ function syncConsentBestEffort(): void {
 export interface RequestActionBarProps {
   convId: string;
   dark: boolean;
-  /** Reports whether the open conversation is a pending message request. The
+  /**
+   * Reports whether the open conversation is a pending message request. The
    *  parent defaults to showing the composer and only hides it (swapping in this
    *  bar) when this fires `true`. Fired `false` when consent is allowed/denied,
    *  resolution fails, or the user approves here, so the composer (re)appears.
    *  Defaulting the parent to composer-visible avoids flashing the composer in
-   *  late for the common already-accepted case. */
+   *  late for the common already-accepted case.
+   */
   onPending: (pending: boolean) => void;
 }
 
-/** Bottom action row for a pending message request. Renders nothing until it has
+/**
+ * Bottom action row for a pending message request. Renders nothing until it has
  *  confirmed the conversation is actually a pending request; while pending it
  *  reports `onPending(true)` and renders the Approve/Reject row. Once allowed it
- *  reports `onPending(false)` and renders nothing (the parent shows composer). */
+ *  reports `onPending(false)` and renders nothing (the parent shows composer).
+ */
 export function RequestActionBar(props: RequestActionBarProps): React.ReactElement | null {
   const { convId, dark, onPending } = props;
   const router = useRouter();
@@ -59,8 +49,7 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
   const [pending, setPending] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
 
-  /** Resolve the conversation's consent state. `'unknown'` → pending request;
-   *  anything else → not a request (show composer via onAllowed). */
+  /** Resolve the conversation's consent state. `'unknown'` → pending request; anything else → not a request (show composer via onAllowed). */
   useEffect(() => {
     let cancelled = false;
     /** Resolve helper. */

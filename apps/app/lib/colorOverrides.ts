@@ -1,21 +1,4 @@
-/** ChatKit SEED-based theme store (per-scheme) + the Custom-theme flag.
- *
- *  Replaces the old 9-flat-hex per-token override model with ChatKit's SEED
- *  model: the user sets a few SEEDS (grayscale base, accent, surface
- *  background/foreground) plus density/radius/typography, and the full palette
- *  is DERIVED by @metro-labs/kit `derivePalette`. usePalette() layers the
- *  derived palette OVER the kit default; the default seed reproduces today's
- *  palette pixel-for-pixel (lossless).
- *
- *  Device-only, persisted to AsyncStorage. Same in-memory-mirror + pub/sub
- *  pattern as before; no new dependency.
- *
- *  UPGRADE: a user with no saved seed (`theme:seed`) starts on the default seed
- *  (which is lossless: reproduces today's palette pixel-for-pixel). The old
- *  per-token hex override key (`theme:colorOverrides`) is NOT read or migrated -
- *  everyone gets a clean default seed and can re-customize from the editor. The
- *  old key is left in storage untouched (non-destructive); we just ignore it.
- */
+/** @file AsyncStorage-backed ChatKit Custom-theme store: persists per-scheme seeds plus density/radius/typography, from which the full @metro-labs/kit palette is derived. */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -66,9 +49,7 @@ function persist(): void {
   void AsyncStorage.setItem(SEED_KEY, JSON.stringify(cache)).catch(() => { /* best-effort */ });
 }
 
-/** Kick off the one-time load from storage; notify subscribers when it lands.
- *  No saved seed -> keep the default seed (lossless). The old per-token override
- *  key is intentionally not read: everyone upgrades onto a clean default seed. */
+/** Kick off the one-time load from storage; notify subscribers when it lands. No saved seed -> keep the default seed (lossless). The old per-token override key is intentionally not read: everyone upgrades onto a clean default seed. */
 export function loadOverrides(): void {
   if (loaded) return;
   loaded = true;
@@ -105,8 +86,7 @@ export function setCustomTheme(on: boolean): void {
   void AsyncStorage.setItem(CUSTOM_KEY, on ? '1' : '0').catch(() => { /* best-effort */ });
 }
 
-/** Set one seed COLOR (grayscale|accent|background|foreground) for a scheme.
- *  Invalid hex is ignored. Persists + notifies so the app re-themes live. */
+/** Set one seed COLOR (grayscale|accent|background|foreground) for a scheme. Invalid hex is ignored. Persists + notifies so the app re-themes live. */
 export type SeedColorKey = 'grayscale' | 'accent' | 'background' | 'foreground';
 /** Set one seed color for a scheme; ignores invalid hex, persists, and notifies. */
 export function setSeedColor(scheme: Scheme, key: SeedColorKey, hex: string): void {

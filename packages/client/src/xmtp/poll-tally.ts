@@ -1,11 +1,14 @@
-/** Pure poll-vote tally helpers + the vote-key wire codec. Split out of poll.ts
+/**
+ * @file Pure poll-vote tally helpers and the vote-key wire codec split out of poll.ts.
+ */
+/**
+ * Pure poll-vote tally helpers + the vote-key wire codec. Split out of poll.ts
  *  to keep both files under the lint line cap. Votes are reaction events
  *  (schema:'custom') whose `reference` is the poll message id and whose `content`
- *  is the vote key (`"q:o"`, or a BARE option index for question 0 / legacy). */
+ *  is the vote key (`"q:o"`, or a BARE option index for question 0 / legacy).
+ */
 
-/** Parse a vote `content` string into its (questionIndex, optionIndex). The wire
- *  form is `"q:o"`; a BARE integer (legacy single-question votes) is question 0.
- *  Returns null when the string is not a valid vote key. */
+/** Parse a vote `content` string into its (questionIndex, optionIndex). The wire form is `"q:o"`; a BARE integer (legacy single-question votes) is question 0. Returns null when the string is not a valid vote key. */
 export function parseVoteKey(content: string): { q: number; o: number } | null {
   const m = /^(?:(\d+):)?(\d+)$/.exec(content);
   if (!m) return null;
@@ -15,17 +18,17 @@ export function parseVoteKey(content: string): { q: number; o: number } | null {
   return { q, o };
 }
 
-/** Build the vote `content` string for a (questionIndex, optionIndex). Question 0
- *  emits a BARE option index so legacy single-question clients (and the existing
- *  tally) keep decoding it; other questions use the `"q:o"` form. */
+/** Build the vote `content` string for a (questionIndex, optionIndex). Question 0 emits a BARE option index so legacy single-question clients (and the existing tally) keep decoding it; other questions use the `"q:o"` form. */
 export function voteKey(questionIndex: number, optionIndex: number): string {
   return questionIndex === 0 ? String(optionIndex) : `${questionIndex}:${optionIndex}`;
 }
 
-/** base64 encode/decode that works in both RN (Hermes has btoa/atob via the app's
+/**
+ * base64 encode/decode that works in both RN (Hermes has btoa/atob via the app's
  *  polyfills) and Node - falls back to a Buffer when the globals are missing.
  *  Used so a free-text answer (which may contain `:`) survives the flat vote
- *  `content` string round-trip. UTF-8 safe via encodeURIComponent. */
+ *  `content` string round-trip. UTF-8 safe via encodeURIComponent.
+ */
 const b64enc = (s: string): string => {
   const g = globalThis as { btoa?: (x: string) => string; Buffer?: { from(x: string, e: string): { toString(e: string): string } } };
   const bytes = encodeURIComponent(s).replace(/%([0-9A-F]{2})/g, (_, h: string) => String.fromCharCode(parseInt(h, 16)));
@@ -46,15 +49,12 @@ const b64dec = (s: string): string => {
   return s;
 };
 
-/** Build the vote `content` for a FREE-TEXT (open) answer to a question. The
- *  text is base64-encoded so an answer containing `:` can't break the key. The
- *  `open:` prefix makes it unambiguous against a choice key. */
+/** Build the vote `content` for a FREE-TEXT (open) answer to a question. The text is base64-encoded so an answer containing `:` can't break the key. The `open:` prefix makes it unambiguous against a choice key. */
 export function openVoteKey(questionIndex: number, text: string): string {
   return `open:${questionIndex}:${b64enc(text)}`;
 }
 
-/** Parse an open-answer vote `content`. Returns the question index + decoded
- *  text, or null when the string is not an open-vote key. */
+/** Parse an open-answer vote `content`. Returns the question index + decoded text, or null when the string is not an open-vote key. */
 export function parseOpenVote(content: string): { q: number; text: string } | null {
   const m = /^open:(\d+):([\s\S]*)$/.exec(content);
   if (!m) return null;
@@ -63,8 +63,7 @@ export function parseOpenVote(content: string): { q: number; text: string } | nu
   return { q, text: b64dec(m[2] ?? '') };
 }
 
-/** Latest free-text answer per voter for one (poll, question). A `removed` event
- *  (or empty text) clears the voter's answer. Returns voterUri -> {text, ts}. */
+/** Latest free-text answer per voter for one (poll, question). A `removed` event (or empty text) clears the voter's answer. Returns voterUri -> {text, ts}. */
 export function openAnswersByPoll(
   events: VoteEvent[],
   pollMessageId: string,
@@ -86,9 +85,7 @@ export function openAnswersByPoll(
   return out;
 }
 
-/** A normalized vote event. The minimal shape the tally needs. Both the app
- *  envelope (`payload.reactTo`/`emoji`/`removed`/`schema`) and the web client
- *  can adapt their reaction events into this. */
+/** A normalized vote event. The minimal shape the tally needs. Both the app envelope (`payload.reactTo`/`emoji`/`removed`/`schema`) and the web client can adapt their reaction events into this. */
 export interface VoteEvent {
   /** The XMTP message id this vote targets (poll bubble id). */
   reference: string;
@@ -104,11 +101,13 @@ export interface VoteEvent {
   ts: string;
 }
 
-/** Build `Map<optionIndex, Set<voterUri>>` for one poll from raw vote events.
+/**
+ * Build `Map<optionIndex, Set<voterUri>>` for one poll from raw vote events.
  *  - single-select: each voter's latest `added` content wins (one option/voter).
  *  - multiSelect: latest add/remove state per (voter, optionIndex).
  *  Only `schema === 'custom'` events referencing `pollMessageId` count; a real
- *  emoji reaction on the same bubble is ignored. */
+ *  emoji reaction on the same bubble is ignored.
+ */
 export function votesByPoll(
   events: VoteEvent[],
   pollMessageId: string,
@@ -159,8 +158,7 @@ export function votesByPoll(
   return out;
 }
 
-/** Option indices the given voter currently has selected on this poll. Drives
- *  the highlighted/selected option pills. */
+/** Option indices the given voter currently has selected on this poll. Drives the highlighted/selected option pills. */
 export function ownVotes(
   events: VoteEvent[],
   myVoter: string,

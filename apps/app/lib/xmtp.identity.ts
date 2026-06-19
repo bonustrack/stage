@@ -1,7 +1,4 @@
-/** inbox-id → ETH-address resolution + per-conversation member helpers for the
- *  app's XMTP client lib. Extracted from lib/xmtp.ts (phase-2 lint split);
- *  re-exported from there. Cache-first so channel re-summarizes stay under the
- *  XMTP read rate limit. */
+/** @file Cache-first inbox-id to ETH-address resolution plus per-conversation member helpers for the app's XMTP client lib, keeping channel re-summarizes under the XMTP read rate limit; extracted from lib/xmtp.ts. */
 
 import { type Conversation } from '@xmtp/react-native-sdk';
 import {
@@ -10,11 +7,13 @@ import {
 import { getCachedXmtpClient, inboxEthCache } from './xmtp.state';
 import { getOrCreateXmtpClient } from './xmtp.client';
 
-/** The native inbox→eth fetcher for a given client: one `inboxStates(true, ids)`
+/**
+ * The native inbox→eth fetcher for a given client: one `inboxStates(true, ids)`
  *  call, projected to a `{ inboxId → ethAddress }` map. This is the ONLY part of
  *  the resolution that touches the native client; the cache-first RULE
  *  (collect-missing / prime / merge) lives in the Stage SDK
- *  (@stage-labs/client/xmtp/inboxCache) and is shared. */
+ *  (@stage-labs/client/xmtp/inboxCache) and is shared.
+ */
 function inboxEthFetcher(
   client: Awaited<ReturnType<typeof getOrCreateXmtpClient>>,
 ): (ids: string[]) => Promise<Record<string, string>> {
@@ -34,10 +33,12 @@ function inboxEthFetcher(
   };
 }
 
-/** Batch-resolve inbox ids → ETH address across MANY rows in ONE network call.
+/**
+ * Batch-resolve inbox ids → ETH address across MANY rows in ONE network call.
  *  Pre-warms the shared inbox→eth cache via the SDK rule so per-row
  *  `resolveInboxEth` calls are cache hits (zero reads). Kills the N+1 where each
- *  channel row resolved its members serially. */
+ *  channel row resolved its members serially.
+ */
 export async function primeInboxEthCache(
   client: Awaited<ReturnType<typeof getOrCreateXmtpClient>>,
   ids: string[],
@@ -45,8 +46,7 @@ export async function primeInboxEthCache(
   await primeInboxEthCacheRule(inboxEthCache, inboxEthFetcher(client), ids);
 }
 
-/** Resolve inbox ids → ETH address, cache-first (SDK rule). Only ids not already
- *  cached hit the network (`inboxStates(true)`); cached ids cost zero reads. */
+/** Resolve inbox ids → ETH address, cache-first (SDK rule). Only ids not already cached hit the network (`inboxStates(true)`); cached ids cost zero reads. */
 async function resolveInboxEth(
   client: Awaited<ReturnType<typeof getOrCreateXmtpClient>>,
   ids: string[],
@@ -54,8 +54,7 @@ async function resolveInboxEth(
   return await resolveInboxEthCached(inboxEthCache, inboxEthFetcher(client), ids);
 }
 
-/** Resolve the peer's Ethereum address for a DM conversation. Returns null for
- *  groups or when the lookup fails. Cached after the first resolve. */
+/** Resolve the peer's Ethereum address for a DM conversation. Returns null for groups or when the lookup fails. Cached after the first resolve. */
 export async function peerEthAddressOfDm(conv: Conversation): Promise<string | null> {
   /** `version` is 'DM' | 'GROUP'; only DMs have a single peer. */
   if ((conv as unknown as { version?: string }).version !== 'DM') return null;
@@ -68,9 +67,7 @@ export async function peerEthAddressOfDm(conv: Conversation): Promise<string | n
   } catch { return null; }
 }
 
-/** Resolve every member of a conversation as a `{inboxId → ethAddress}` map,
- *  INCLUDING the local user. Used by the conversation view to look up the
- *  sender of each message and render their stamp.fyi avatar. */
+/** Resolve every member of a conversation as a `{inboxId → ethAddress}` map, INCLUDING the local user. Used by the conversation view to look up the sender of each message and render their stamp.fyi avatar. */
 export async function memberInboxToAddressMap(conv: Conversation): Promise<Record<string, string>> {
   try {
     const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
@@ -85,10 +82,12 @@ export async function memberInboxToAddressMap(conv: Conversation): Promise<Recor
   }
 }
 
-/** Resolve the Ethereum addresses of every member of a group conversation, excluding the
+/**
+ * Resolve the Ethereum addresses of every member of a group conversation, excluding the
  *  local user's own inbox. Used by the Channels list to render a multi-avatar stack for
  *  group rows. Returns [] for DMs (use `peerEthAddressOfDm` for those) or when the
- *  members lookup fails. */
+ *  members lookup fails.
+ */
 export async function groupMemberEthAddresses(conv: Conversation): Promise<string[]> {
   if ((conv as unknown as { version?: string }).version !== 'GROUP') return [];
   try {

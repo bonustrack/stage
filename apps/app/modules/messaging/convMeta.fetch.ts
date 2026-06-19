@@ -1,11 +1,6 @@
-/** Conversation-metadata fetcher (the queryFn behind ['xmtp','convMeta',convId]).
- *
- *  Moved here from lib/useConvMeta so BOTH the chat-view topnav hook and the
- *  group-info screen read the same fetcher through one Query key, killing the
- *  duplicate fetch (the group screen used to run its own Promise.all in
- *  loadGroupDetail that re-resolved name/image/description/members). The group
- *  screen now reads this for those shared fields and fetches ONLY its extra
- *  admin-roles map separately. */
+/**
+ * @file Conversation-metadata fetcher (the queryFn behind ['xmtp','convMeta',convId]) shared by the chat-view topnav hook and the group-info screen so name/image/description/members resolve through one Query key instead of duplicate fetches.
+ */
 
 // Import the helpers from their defining submodules rather than the `lib/xmtp`
 // barrel: the barrel pulls in the whole xmtp graph (incl. xmtp.feed →
@@ -61,9 +56,7 @@ export async function fetchConvMeta(convId: string): Promise<ConvMeta> {
   };
 }
 
-/** The group-info screen's EXTRA, non-shared data: per-member admin roles, keyed
- *  by lower-cased eth address. Derived from the SDK admin lists + the already-
- *  resolved inbox->addr map (passed in so we don't re-fetch members here). */
+/** The group-info screen's EXTRA, non-shared data: per-member admin roles, keyed by lower-cased eth address. Derived from the SDK admin lists + the already- resolved inbox->addr map (passed in so we don't re-fetch members here). */
 /** Resolve each group member's role (owner/admin/member) keyed by lower-cased eth address. */
 export async function fetchGroupRoles(
   convId: string,

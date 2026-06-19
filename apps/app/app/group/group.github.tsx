@@ -1,7 +1,4 @@
-/** Group GITHUB LINK section — set/edit the linked GitHub issue/PR URL stored
- *  in the group's synced `appData` (Linear-style linked item). Validates a
- *  github.com URL and saves it; any member may edit. Backed by lib/xmtp.github
- *  (merge-preserving write so labels survive). */
+/** @file Group GitHub-link section for setting and editing the linked GitHub issue/PR URL stored in the group's synced appData. */
 
 import { useEffect, useState } from 'react';
 import { fontSize } from '@metro-labs/kit/tokens';

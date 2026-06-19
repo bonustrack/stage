@@ -1,7 +1,8 @@
-/** Open free-text answer block for a poll question (AskUserQuestion open type):
- *  a Kit-styled input + send Button, with the submitted answers listed below.
- *  Submitting an empty box retracts the local user's prior answer. Split out of
- *  MessengerBubble.poll.tsx to keep each file under the lint line cap. */
+/**
+ * @file Open free-text answer block for a poll question (AskUserQuestion open type):
+ *  a Kit input + send Button with submitted answers listed below, where an empty
+ *  submission retracts the local user's prior answer.
+ */
 
 import { useState } from 'react';
 import { fontSize } from '@metro-labs/kit/tokens';

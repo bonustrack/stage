@@ -1,9 +1,6 @@
-/** ListView + ListViewItem - ChatKit-styled list primitives. Mirrors ChatKit's
- *  ListView/ListViewItem; deviations: `dark` boolean (kit is hook-free) and
- *  local `onPress` in place of server `onClickAction`. Dividers are drawn
- *  BETWEEN items only (not after the last) and inset by ROW_INSET on both sides
- *  so they align with the row content; each item owns its own pressed-bg +
- *  horizontal padding so the fill spans full width. */
+/**
+ * @file ListView + ListViewItem — hook-free ChatKit-styled list primitives with local `onPress`, inset dividers drawn only between items, and per-item pressed-bg fill.
+ */
 
 import { Children, isValidElement, type ReactNode } from 'react';
 import { Pressable, View, Text as RNText, type ViewStyle } from 'react-native';
@@ -11,9 +8,7 @@ import { FONT_SIZE, schemePalette } from './tokens';
 
 export type ListItemAlign = 'start' | 'center' | 'end';
 
-/** Horizontal content inset shared by the row padding and the divider, so the
- *  divider starts where the row content (icon) starts and ends with equal
- *  spacing on the right. */
+/** Horizontal content inset shared by the row padding and the divider, so the divider starts where the row content (icon) starts and ends with equal spacing on the right. */
 const ROW_INSET = 16;
 
 const ALIGN: Record<ListItemAlign, ViewStyle['alignItems']> = {

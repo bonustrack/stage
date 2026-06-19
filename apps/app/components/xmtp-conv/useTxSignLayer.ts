@@ -1,5 +1,4 @@
-/** In-chat signature + payment request handlers for the XMTP conversation screen
- *  — extracted from app/xmtp/[convId].tsx verbatim (phase-2 lint split). */
+/** @file In-chat signature + payment request handlers for the XMTP conversation screen — extracted from app/xmtp/[convId].tsx verbatim (phase-2 lint split). */
 
 import { useCallback, useState } from 'react';
 import { Alert } from 'react-native';
@@ -23,11 +22,11 @@ import { kernelClientForRecord } from '../../lib/zerodev';
 
 /** Provides transaction-signing state and handlers for the conversation. */
 export function useTxSignLayer(activeLine: string) {
-  /** Message ids whose signature is currently being produced — drives the
-   *  Sign-button spinner. */
+  /** Message ids whose signature is currently being produced — drives the Sign-button spinner. */
   const [signingIds, setSigningIds] = useState<Set<string>>(new Set());
 
-  /** Sign an in-chat signature request. For `eip712` we route the typed data
+  /**
+   * Sign an in-chat signature request. For `eip712` we route the typed data
    *  through wagmi `signTypedData`; for `personal` through `signMessage`. On
    *  success we post a SignatureReference back into the SAME conversation so the
    *  request card flips to a "Signed ✓" receipt for everyone.
@@ -38,7 +37,8 @@ export function useTxSignLayer(activeLine: string) {
    *  signing. The confirm summary is derived from the typed-data STRUCTURE
    *  (deriveSignSummary), never from the peer's free-text `description`, and a
    *  recognised high-risk primaryType gets an explicit warning + destructive
-   *  button. The actual signing only runs from the confirm sheet's onPress. */
+   *  button. The actual signing only runs from the confirm sheet's onPress.
+   */
   const onSign = useCallback((requestId: string, req: SignatureRequestContent) => {
     const summary = deriveSignSummary(req);
     /** Do Sign. */
@@ -46,7 +46,8 @@ export function useTxSignLayer(activeLine: string) {
     setSigningIds(prev => new Set(prev).add(requestId));
     void (async () => {
       try {
-        /** Resolve the ACTIVE account and route signing by its kind. The in-app
+        /**
+         * Resolve the ACTIVE account and route signing by its kind. The in-app
          *  wallet is the source of truth — there is no "connect a wallet" step:
          *   - `smart` (ZeroDev Kernel): sign with the Kernel via
          *     kernelClientForRecord. signMessage/signTypedData produce an
@@ -54,7 +55,8 @@ export function useTxSignLayer(activeLine: string) {
          *     owner unlock (passkey) at sign-time. The signer is the smart-account
          *     address itself.
          *   - legacy local EOA (`generated`/`privateKey`): sign with its viem
-         *     account directly, no popup (backward-compat for old records). */
+         *     account directly, no popup (backward-compat for old records).
+         */
         const active = await getActiveAccount();
         let signature: string;
         let signer: string;
@@ -86,22 +88,17 @@ export function useTxSignLayer(activeLine: string) {
           await xmtpSendSignatureReference(activeLine, ref);
           return;
         }
-        /** Legacy local-EOA record (generated/imported/migrated): sign with its
-         *  viem account directly, no popup. */
+        /** Legacy local-EOA record (generated/imported/migrated): sign with its viem account directly, no popup. */
         const local = await getActiveViemAccount();
         if (!local) throw new Error('No active wallet to sign with');
         const account = local.address;
         if (req.kind === 'eip712') {
           const td = req.eip712;
           if (!td) throw new Error('Malformed typed-data request');
-          /** viem injects the EIP712Domain entry itself from `domain`; a duplicate
-           *  in `types` makes it reject the request. Strip it. */
+          /** viem injects the EIP712Domain entry itself from `domain`; a duplicate in `types` makes it reject the request. Strip it. */
           const types = { ...td.types };
           delete types.EIP712Domain;
-          /** The wire payload is arbitrary JSON (any valid eth_signTypedData_v4
-           *  shape), so we cast once to viem's generic `TypedDataDefinition`
-           *  rather than satisfy its heavily-conditional generics field-by-field.
-           *  A real viem type — not `any`. */
+          /** The wire payload is arbitrary JSON (any valid eth_signTypedData_v4 shape), so we cast once to viem's generic `TypedDataDefinition` rather than satisfy its heavily-conditional generics field-by-field. A real viem type — not `any`. */
           const typedData = {
             domain: td.domain,
             types,
@@ -138,14 +135,15 @@ export function useTxSignLayer(activeLine: string) {
     );
   }, [activeLine]);
 
-  /** Message ids whose payment is currently broadcasting — drives the Pay
-   *  spinner. */
+  /** Message ids whose payment is currently broadcasting — drives the Pay spinner. */
   const [payingIds, setPayingIds] = useState<Set<string>>(new Set());
 
-  /** Pay an in-chat payment request. Broadcasts the first call via the phase-3
+  /**
+   * Pay an in-chat payment request. Broadcasts the first call via the phase-3
    *  sendTx helper (native ETH or ERC-20 transfer decoded from the call), then
    *  posts a TransactionReference back into the SAME conversation so the request
-   *  card flips to a receipt for everyone. */
+   *  card flips to a receipt for everyone.
+   */
   const onPay = useCallback((requestId: string, wsc: WalletSendCallsContent) => {
     const call = wsc.calls?.[0];
     if (!call?.to) { flash('Malformed payment request'); return; }
@@ -153,24 +151,26 @@ export function useTxSignLayer(activeLine: string) {
     const chainId = chainIdToNumber(wsc.chainId);
     const chainName = VIEM_CHAINS[chainId]?.name ?? `chain ${chainId}`;
     const nativeSymbol = VIEM_CHAINS[chainId]?.nativeCurrency?.symbol ?? 'ETH';
-    /** SECURITY: derive the displayed recipient/amount/token from the ACTUAL
+    /**
+     * SECURITY: derive the displayed recipient/amount/token from the ACTUAL
      *  bytes that will be broadcast (`call.to` / `call.data` / `call.value`),
      *  NOT from the peer-supplied `metadata` (which is unbound to the calldata
      *  and trivially spoofable). For an ERC-20 this decodes
      *  `transfer(address,uint256)` from `call.data`; for a native send it reads
      *  `call.to` + `call.value`. An undecodable / unrecognised call yields an
-     *  unverified summary so the confirm sheet warns instead of lying. */
+     *  unverified summary so the confirm sheet warns instead of lying.
+     */
     const summary = deriveConfirmSummary(
       { to: call.to, data: call.data, value: call.value },
       nativeSymbol,
     );
-    /** This moves real funds, so confirm before broadcast; the message is built
-     *  from the verified summary, never the spoofable metadata hints. */
+    /** This moves real funds, so confirm before broadcast; the message is built from the verified summary, never the spoofable metadata hints. */
     const broadcast = (): void => {
     setPayingIds(prev => new Set(prev).add(requestId));
     void (async () => {
       try {
-        /** Resolve the ACTIVE account and route execution by its kind — the
+        /**
+         * Resolve the ACTIVE account and route execution by its kind — the
          *  in-app wallet is the source of truth, there is no "connect a wallet"
          *  step:
          *   - `smart` (ZeroDev Kernel): execute the call as a SPONSORED userOp
@@ -180,13 +180,16 @@ export function useTxSignLayer(activeLine: string) {
          *     Signed by the owner (passkey/unlock) at send-time. Returns the
          *     settled tx hash.
          *   - legacy local EOA: fall through to sendCall, which forwards the call
-         *     verbatim from the in-app key (backward-compat for old records). */
+         *     verbatim from the in-app key (backward-compat for old records).
+         */
         const active = await getActiveAccount();
         let txHash: `0x${string}`;
-        /** The chain the tx actually settles on — the smart account is a Base
+        /**
+         * The chain the tx actually settles on — the smart account is a Base
          *  Kernel (paymaster is Base-scoped), so its userOps always land on Base
          *  regardless of the request's declared chainId; EOA/WC honour the
-         *  request chain. Used for the receipt's networkId + explorer link. */
+         *  request chain. Used for the receipt's networkId + explorer link.
+         */
         let settledChainId = chainId;
         if (active?.type === 'smart') {
           settledChainId = base.id;
@@ -197,16 +200,12 @@ export function useTxSignLayer(activeLine: string) {
             ...(call.data ? { data: call.data as `0x${string}` } : {}),
           } as Parameters<typeof kernel.sendTransaction>[0]);
         } else {
-          /** Forward the request's call VERBATIM (`to`/`data`/`value`): for an
-           *  ERC-20 this broadcasts the encoded `transfer(...)` to the token
-           *  contract; for a native send it's a value-only tx. */
+          /** Forward the request's call VERBATIM (`to`/`data`/`value`): for an ERC-20 this broadcasts the encoded `transfer(...)` to the token contract; for a native send it's a value-only tx. */
           txHash = await sendCall({
             to: callTo, data: call.data, value: call.value, chainId,
           });
         }
-        /** Receipt metadata is built from the VERIFIED summary (decoded from the
-         *  broadcast bytes), so the on-chain truth, not the request's hints, is
-         *  what the receipt card shows. */
+        /** Receipt metadata is built from the VERIFIED summary (decoded from the broadcast bytes), so the on-chain truth, not the request's hints, is what the receipt card shows. */
         const ref: TransactionReferenceContent = {
           networkId: settledChainId,
           reference: txHash,

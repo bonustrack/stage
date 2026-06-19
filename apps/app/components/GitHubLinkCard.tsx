@@ -1,12 +1,8 @@
-/** Rich preview card for a github.com repo / PR / issue link found in a message
- *  body. Rendered as a bordered, transparent container (matching the metro://
- *  channel card look - 1px theme border, rounded, no background fill), with the
- *  real GitHub mark via `GithubLogo`.
- *
- *  Metadata is fetched (unauthenticated) through `useGithubMeta`; while it's
- *  loading OR on any failure (private 404, rate-limit 403, network) the hook
- *  returns null and we render NOTHING - the plain text link stays as-is, never a
- *  broken/empty card. Detection is done by the caller via `githubLinkOf`. */
+/**
+ * @file Rich preview card for a github.com repo/PR/issue link in a message body:
+ *  bordered transparent container with the GitHub mark and metadata from
+ *  useGithubMeta, rendering nothing while loading or on any fetch failure.
+ */
 
 import { Linking } from 'react-native';
 
@@ -28,8 +24,7 @@ const fmt = (n: number): string => n.toLocaleString('en-US');
 
 /** Renders a rich preview card for a GitHub repo/PR/issue link, or nothing while loading or on failure. */
 export function GitHubLinkCard({ url }: {
-  /** `dark` is accepted for call-site symmetry but no longer needed - all colors
-   *  now come from the live palette tokens. */
+  /** `dark` is accepted for call-site symmetry but no longer needed - all colors now come from the live palette tokens. */
   url: string; dark?: boolean;
 }): React.ReactElement | null {
   const ref = githubLinkOf(url);

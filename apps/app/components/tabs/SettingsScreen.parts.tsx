@@ -1,5 +1,6 @@
-/** Pieces of the Settings tab split out to keep SettingsScreen.tsx under the
- *  line cap: the theme-option list data. */
+/**
+ * @file Theme-option list data (THEME_OPTIONS) split out of SettingsScreen.tsx to keep it under the line cap.
+ */
 
 import { type HeroIconName } from '@metro-labs/kit/icon';
 import { type ThemePreference } from '../../lib/theme';

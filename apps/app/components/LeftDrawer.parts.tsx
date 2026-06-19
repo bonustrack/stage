@@ -1,6 +1,8 @@
-/** Presentational pieces of LeftDrawer, split out to keep LeftDrawer.tsx under
- *  the line cap: the avatar header, the tap-to-switch accounts list, and the
- *  Profile/Settings nav row. Behaviour is identical to the inlined version. */
+/**
+ * @file Presentational LeftDrawer pieces split out to keep LeftDrawer.tsx under the
+ *  line cap: the avatar header, the tap-to-switch accounts list, and the
+ *  Profile/Settings nav row.
+ */
 
 import { Box, Col } from './layout';
 
@@ -35,9 +37,7 @@ export function DrawerHeader({ rec, c }: {
   );
 }
 
-/** Tap-to-switch accounts list - returns a flat array of ListViewItems (one per
- *  account) so the caller spreads them as DIRECT ListView children, letting the
- *  Kit ListView draw its inset divider between every row. */
+/** Tap-to-switch accounts list - returns a flat array of ListViewItems (one per account) so the caller spreads them as DIRECT ListView children, letting the Kit ListView draw its inset divider between every row. */
 export function drawerAccountRows({ accounts, activeId, onSwitch, c, dark }: {
   accounts: AccountRecord[]; activeId: string | null;
   onSwitch: (id: string) => void; c: DrawerColors; dark: boolean;
@@ -58,9 +58,7 @@ export function drawerAccountRows({ accounts, activeId, onSwitch, c, dark }: {
   ));
 }
 
-/** A single Kit ListView row for the Menu page (account actions + nav), styled
- *  to match the canonical Settings list: head-colored leading icon, Calibre-
- *  Medium 18px label, trailing chevron. */
+/** A single Kit ListView row for the Menu page (account actions + nav), styled to match the canonical Settings list: head-colored leading icon, Calibre- Medium 18px label, trailing chevron. */
 export function DrawerRow({ rowKey, icon, label, onPress, head, sub, dark }: {
   rowKey?: string; icon: HeroIconName; label: string; onPress: () => void;
   head: string; sub: string; border: string; dark: boolean;

@@ -1,6 +1,4 @@
-/** useGroupActions — owns the group-detail mutation state + handlers (name,
- *  description, image, add/remove member, leave). Extracted from group/[convId]
- *  for lint line-budget. Behaviour identical. */
+/** @file useGroupActions hook owning the group-detail mutation state and handlers (name, description, image, add/remove member, leave). */
 
 import { useState } from 'react';
 import { Alert } from 'react-native';
@@ -94,8 +92,7 @@ export function useGroupActions(line: string, invalidateConvMeta: () => void): {
     if (uploadingImage) return;
     const r = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: 'images', quality: 0.85, allowsMultipleSelection: false,
-      /** Built-in square crop/resize step before upload — `allowsEditing` is
-       *  part of expo-image-picker, no extra native dep. */
+      /** Built-in square crop/resize step before upload — `allowsEditing` is part of expo-image-picker, no extra native dep. */
       allowsEditing: true, aspect: [1, 1],
     });
     const a = r.canceled ? undefined : r.assets[0];
@@ -126,8 +123,7 @@ export function useGroupActions(line: string, invalidateConvMeta: () => void): {
     } finally { setSavingDescription(false); }
   };
 
-  /** Leave the group from the info view — confirm, call the SDK (true leave
-   *  when supported, else consent-deny hide), pop back to the conversation list. */
+  /** Leave the group from the info view — confirm, call the SDK (true leave when supported, else consent-deny hide), pop back to the conversation list. */
   const leaveGroup = (onClose: () => void): void => {
     onClose();
     Alert.alert(

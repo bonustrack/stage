@@ -1,18 +1,8 @@
-/** usePayerBalance — fetch the ACTIVE account's balance of the asset a payment
- *  request is asking for, on the request's chain. Native via `getBalance`,
- *  ERC-20 via `balanceOf`. One-shot on mount (no polling).
- *
- *  Resolution order:
- *   1. Registry-known asset on a known chain (VIEM_CHAINS + ASSETS) — uses the
- *      curated decimals/symbol and the wallet's brovider RPC.
- *   2. Generic on-chain fallback for UNKNOWN tokens/chains: a viem public client
- *      is built for any chainId (brovider RPC by chainId) and decimals/symbol are
- *      read straight off the ERC-20 (native falls back to ETH). This is what lets
- *      the card show "Balance: …" even when the asset/chain isn't in the registry.
- *
- *  Per-(chainId, token, account) cached so re-renders don't refetch. Any RPC /
- *  network error degrades gracefully (the row falls back to a subtle dash via the
- *  card) — it never throws. */
+/**
+ * @file usePayerBalance hook fetching the active account's balance of a payment
+ *  request's asset/chain (registry-known or generic on-chain ERC-20 fallback),
+ *  one-shot, per-(chain,token,account) cached, degrading gracefully on RPC error.
+ */
 import { useEffect, useState } from 'react';
 import { formatUnits, isAddress, erc20Abi, type Hex } from 'viem';
 
@@ -28,8 +18,7 @@ export interface PayerBalance {
   insufficient: boolean;
 }
 
-/** Parse a request chainId (hex/decimal string or number), defaulting to
- *  mainnet when absent. Delegates the hex/decimal parse to the SDK. */
+/** Parse a request chainId (hex/decimal string or number), defaulting to mainnet when absent. Delegates the hex/decimal parse to the SDK. */
 function parseChainId(raw?: string | number): number {
   return raw == null || raw === '' ? 1 : chainIdToNumber(raw);
 }
@@ -58,8 +47,7 @@ interface OnchainMeta {
   symbol: string;
 }
 
-/** Cache keyed by chainId:token:account so re-renders / re-mounts don't refetch.
- *  Stores the in-flight promise so concurrent cards dedupe too. */
+/** Cache keyed by chainId:token:account so re-renders / re-mounts don't refetch. Stores the in-flight promise so concurrent cards dedupe too. */
 const cache = new Map<string, Promise<OnchainMeta | null>>();
 
 const minimalErc20Abi = [
@@ -95,10 +83,12 @@ async function readOnchain(
   return { raw, decimals, symbol };
 }
 
-/** @param chainId   request chain (hex/dec string or number)
+/**
+ * @param chainId   request chain (hex/dec string or number)
  *  @param token     ERC-20 contract address, or null/undefined/sentinel for native
  *  @param symbol    display symbol from the request (e.g. "USDC", "STAGE")
- *  @param needed    requested amount in whole units, used for the insufficient flag */
+ *  @param needed    requested amount in whole units, used for the insufficient flag
+ */
 export function usePayerBalance(
   chainId: string | number | undefined,
   token: string | undefined,

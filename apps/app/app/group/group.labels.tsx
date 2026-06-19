@@ -1,7 +1,4 @@
-/** Group LABELS section — chips for the group's synced `appData` labels.
- *  Renders only for groups (the parent gates on the group line). Any member may
- *  add a label via the inline input or remove one by tapping its chip's x.
- *  Backed by lib/xmtp.labels (read → mutate → write to MLS-synced appData). */
+/** @file Group labels section rendering add/remove label chips backed by the group's MLS-synced appData. */
 
 import { useEffect, useMemo, useState } from 'react';
 import { fontSize } from '@metro-labs/kit/tokens';
@@ -21,8 +18,7 @@ import { suggestLabels } from '../../modules/messaging';
 /** How many suggestion chips to show at once (keeps the row compact). */
 const MAX_SUGGESTIONS = 8;
 
-/** One tappable suggestion pill — filled, borderless (matches the label chip
- *  fill), with a leading + to read as "add this". */
+/** One tappable suggestion pill — filled, borderless (matches the label chip fill), with a leading + to read as "add this". */
 function SuggestionChip({ label, busy, onAdd, p }: {
   label: string; busy: boolean; onAdd: () => void; p: Pal;
 }): React.ReactElement {
@@ -105,9 +101,7 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
 
   const atCap = labels.length >= MAX_LABELS;
 
-  /** Distinct labels from the user's OTHER groups (in-memory channels cache),
-   *  filtered by the current draft + excluding ones already on this group.
-   *  Recomputed only when the draft or this group's labels change. */
+  /** Distinct labels from the user's OTHER groups (in-memory channels cache), filtered by the current draft + excluding ones already on this group. Recomputed only when the draft or this group's labels change. */
   const suggestions = useMemo(
     () => suggestLabels(draft, labels).slice(0, MAX_SUGGESTIONS),
     [draft, labels],

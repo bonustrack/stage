@@ -14,7 +14,7 @@
 // The shared custom-rule definitions (theme-native, keyring guard) are exported
 // individually too, in case a future RN package needs them.
 import tseslint from "typescript-eslint";
-import { MAX_LINES, REQUIRE_JSDOC, jsdocPlugin, recommended, NO_ESCAPE_HATCHES } from "./base.js";
+import { MAX_LINES, recommended, NO_ESCAPE_HATCHES, commentPlugins, COMMENT_RULES } from "./base.js";
 
 /* ============================================================================
  * Custom inline rule: theme-native role/surface hint (WARNING).
@@ -133,10 +133,11 @@ export function reactNative() {
     ...recommended,
     {
       files: ["app/**/*.{ts,tsx}", "components/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}", "modules/**/*.{ts,tsx}"],
-      plugins: { metro: { rules: { ...metroThemeNative.rules, ...keyringGuardRule } }, jsdoc: jsdocPlugin },
+      plugins: { metro: { rules: { ...metroThemeNative.rules, ...keyringGuardRule } }, ...commentPlugins },
       rules: {
-        // Every function/method (exported or not) needs a leading JSDoc description.
-        "jsdoc/require-jsdoc": REQUIRE_JSDOC,
+        // Comment conventions: 1 JSDoc per function, 1 line each, `@file` header
+        // on every file (capped at 3 lines), `/** */` blocks only.
+        ...COMMENT_RULES,
         // THEME-NATIVE: WARNING nudging per-call color=/background= palette idents
         // toward the semantic role/surface variant (escape-hatch one-offs never fire).
         "metro/prefer-role-variant": "warn",
@@ -408,14 +409,15 @@ export function kitEslint() {
     ...recommended,
     {
       files: ["src/**/*.{ts,tsx}"],
-      plugins: { jsdoc: jsdocPlugin },
+      plugins: commentPlugins,
       rules: {
         // Strong typing: ban `any` + the type-system escape hatches (ts-comment,
         // non-null `!`). Use `unknown` + narrowing, real interfaces, generics,
         // or library types instead.
         ...NO_ESCAPE_HATCHES,
-        // Every function/method (exported or not) needs a leading JSDoc description.
-        "jsdoc/require-jsdoc": REQUIRE_JSDOC,
+        // Comment conventions: 1 JSDoc per function, 1 line each, `@file` header
+        // on every file (capped at 3 lines), `/** */` blocks only.
+        ...COMMENT_RULES,
         // `error`: cap hand-written files at 400 lines. Split rather than cross it.
         "max-lines": MAX_LINES,
         // Layout: a `<Box>` is direction-neutral - it must NOT set `flex` or
