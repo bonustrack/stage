@@ -11,6 +11,7 @@ import type { useConversationState } from './useConversationState';
 type ConvState = ReturnType<typeof useConversationState>;
 
 /** Scrollable message feed for a conversation. */
+// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export function ConversationFeed({
   c, convId, dark, head, sub, fg, border, rowBg, insets, router, searchSlot,
 }: {

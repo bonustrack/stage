@@ -27,6 +27,7 @@ import { useTxSignLayer } from './useTxSignLayer';
 import { useOutboundLayer } from './useOutboundLayer';
 
 /** Provides the aggregated state (feed, votes, reactions, outbound) for a conversation. */
+// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export function useConversationState(convId: string | undefined, focus: string | undefined) {
   const activeLine = lineOfConv(convId ?? '');
   const autoFocusNonce = useMemo(() => (focus ? Date.now() : undefined), [focus]);

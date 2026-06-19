@@ -27,6 +27,7 @@ import { useWalletBalances } from './WalletScreen.balances';
 import { useWalletFocused } from './useWalletFocused';
 
 /** Wallet tab screen showing balances, tokens, and activity. */
+// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const router = useRouter();
   const { link: head, text: sub, bg, border } = usePalette();

@@ -33,11 +33,6 @@ multi-user fan-out) are in
 scheme is in
 [`packages/metro/docs/uri-scheme.md`](packages/metro/docs/uri-scheme.md).
 
-## Documentation
-
-The root documentation hub lives in [`docs/`](docs/README.md). Start there for
-architecture, CLI/agent workflow, development, operations, and client notes.
-
 ## Development
 
 ```sh

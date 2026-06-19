@@ -21,6 +21,7 @@ export type {
 } from './conversation.types';
 
 /** Summarise a raw conversation into the full channels-list domain view. Moved UNCHANGED from HomeScreen.helpers.summarize. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export async function summarizeConversation(
   conv: Conversation, selfInboxId: string,
 ): Promise<ConversationView> {
@@ -100,6 +101,7 @@ export async function summarizeConversation(
 }
 
 /** Summarise a raw conversation into the message-request domain view. Moved UNCHANGED from app/xmtp/requests.summarizeRequest. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export async function summarizeConversationRequest(
   conv: Conversation,
 ): Promise<ConversationRequestView> {

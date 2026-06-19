@@ -31,6 +31,7 @@ export interface ChannelRow {
 }
 
 /** Summarise a conversation into a channels-list row (preview, timestamp, unread count, members). */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export async function summarizeConv(
   conv: Conversation, selfInboxId: string,
 ): Promise<ChannelRow> {

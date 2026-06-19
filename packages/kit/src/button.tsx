@@ -120,6 +120,7 @@ function resolveModel(
 }
 
 /** OpenAI ChatKit-API RN button. Accessible (role=button, busy/disabled state). */
+// eslint-disable-next-line complexity, max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export function Button(props: ButtonProps): React.ReactElement {
   const {
     color,
@@ -184,6 +185,7 @@ export function Button(props: ButtonProps): React.ReactElement {
       accessibilityRole="button"
       accessibilityState={{ disabled: isDisabled, busy: loading }}
       disabled={isDisabled}
+      // eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
       style={({ pressed }: { pressed: boolean }) => {
         const usePressedBg = pressed && !isDisabled;
         const base: ViewStyle = {

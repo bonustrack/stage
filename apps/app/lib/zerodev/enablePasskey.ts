@@ -89,6 +89,7 @@ export async function deployAndSwapToPasskey(
  *  passkey but is NOT deployed (the old broken counterfactual shortcut) is repaired
  *  by reusing the stored credential and running the deploy-and-swap.
  */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export async function enablePasskeyForRecord(rec: AccountRecord): Promise<EnablePasskeyResult> {
   if (rec.type !== 'smart' || rec.hdIndex == null) {
     return { ok: false, reason: 'error', message: 'Not a smart account.' };

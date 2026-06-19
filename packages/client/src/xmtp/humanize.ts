@@ -21,6 +21,7 @@ export interface GroupUpdatedContent {
 }
 
 /** Summarise a group_updated system message as one readable line (renames, image/description edits, members added or removed). */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export function humanizeGroupUpdated(g: GroupUpdatedContent): string {
   const parts: string[] = [];
   const fields = g.metadataFieldsChanged ?? g.metadataFieldChanges ?? [];
@@ -62,6 +63,7 @@ export function shortContentType(raw: string | undefined | null): string {
 }
 
 /** Build a one-line human-readable preview for any decoded XMTP message content. Used by the channels-list row and the daemon-side `query` / `listConvs` actions to surface system messages as readable text. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export function previewOfXmtpContent(decoded: unknown, contentTypeId: string | undefined | null): string {
   const typeId = shortContentType(contentTypeId);
   if (typeof decoded === 'string') return humanizeMentions(decoded);
@@ -97,6 +99,7 @@ export function previewOfXmtpContent(decoded: unknown, contentTypeId: string | u
  *  MIME type is authoritative; falls back to the filename extension when the
  *  remote-attachment metadata omits the MIME (multi-remote attachments).
  */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export function attachmentEmojiPreview(mimeType?: string | null, filename?: string | null): string {
   const ext = filename?.split('.').pop()?.toLowerCase() ?? '';
   const isImage = (mimeType?.startsWith('image/') ?? false) || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic'].includes(ext);

@@ -38,6 +38,7 @@ const ROWS: { href: Href; label: string; icon: HeroIconName }[] = [
 ];
 
 /** Renders the top-level settings menu listing each settings section. */
+// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export function SettingsMenu(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';

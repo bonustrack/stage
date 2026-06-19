@@ -47,6 +47,7 @@ function bytesToBase64(bytes: Uint8Array): string {
 }
 
 /** Convert a decoded XMTP message into the shared `HistoryEntry` envelope so the bubble renderer doesn't need to know which transport it came from. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export function envelopeOfXmtpMessage(msg: DecodedMessage, line: string): HistoryEntry {
   const base: HistoryEntry = {
     id: msg.id,

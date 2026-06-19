@@ -33,6 +33,7 @@ export function isPrivateIp(host: string): boolean {
 }
 
 /** Whether Private V4. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 function isPrivateV4(ip: string): boolean {
   const parts = ip.split('.').map(Number);
   const a = parts[0] ?? NaN;

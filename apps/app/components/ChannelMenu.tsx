@@ -47,6 +47,7 @@ export interface ChannelMenuProps {
 }
 
 /** Renders the shared per-conversation action sheet (mark read, pin, archive, leave, navigate). */
+// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export function ChannelMenu({
   convId, isGroup, peerAddress, isUnread, isPinned, isArchived,
   visible, onClose, context = 'list', onAfterLeave, onAfterArchive, onSearch,

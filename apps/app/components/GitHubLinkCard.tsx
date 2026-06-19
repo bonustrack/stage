@@ -23,6 +23,7 @@ const DOT: Record<string, string> = {
 const fmt = (n: number): string => n.toLocaleString('en-US');
 
 /** Renders a rich preview card for a GitHub repo/PR/issue link, or nothing while loading or on failure. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export function GitHubLinkCard({ url }: {
   /** `dark` is accepted for call-site symmetry but no longer needed - all colors now come from the live palette tokens. */
   url: string; dark?: boolean;

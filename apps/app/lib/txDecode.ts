@@ -143,6 +143,7 @@ async function fetch4byteSig(selector: string): Promise<string | null> {
 }
 
 /** Decode `call.data` for `to` on `chainId` into a function + named args. Network-backed; never throws — every failure path returns a `decoded:false` result the card renders as "could not decode" with the raw selector. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export async function decodeCall(
   to: string | undefined, data: string | undefined, chainId: number,
 ): Promise<DecodedCall> {

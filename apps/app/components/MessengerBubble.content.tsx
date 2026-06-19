@@ -29,6 +29,7 @@ import { PollView } from './MessengerBubble.poll';
 import { SigRequestCard, SigReferenceCard, TxRequestCard, TxReceiptCard } from './MessengerBubble.cards';
 
 /** Renders a bubble's inner content column: header, reply preview, attachments, body, and interactive cards. */
+// eslint-disable-next-line complexity, max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export function BubbleContent({
   entry, dark, pending, fg, sub, replyPreview, onReplyPreviewPress, transcript,
   onAnswer, votes, ownVotes, onVote, openAnswers, onOpenAnswer, myUri,

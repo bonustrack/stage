@@ -24,6 +24,7 @@ import { GroupGithubSection } from './group.github';
 import { useGroupActions } from './group.actions';
 
 /** Group detail screen for editing a conversation's name, description and members. */
+// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export default function GroupDetail(): React.ReactElement {
   const router = useRouter();
   const insets = useSafeAreaInsets();

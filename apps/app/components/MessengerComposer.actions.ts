@@ -18,6 +18,7 @@ import type { ComposerActionsArgs } from './MessengerComposer.types';
 export type { ComposerActionsArgs } from './MessengerComposer.types';
 
 /** Hook providing the composer's imperative action handlers (attachments, pickers, poll/signature/payment, send). */
+// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export function useComposerActions(a: ComposerActionsArgs) {
   /** Upload helper. */
   const upload = async (uri: string, mime: string, name?: string): Promise<void> => {

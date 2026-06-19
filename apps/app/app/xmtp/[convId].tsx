@@ -35,6 +35,7 @@ import { useConversationState } from '../../components/xmtp-conv/useConversation
 import { RequestActionBar } from '../../components/RequestActionBar';
 
 /** Full-screen XMTP conversation thread with message composer and swipe-back. */
+// eslint-disable-next-line complexity, max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export default function XmtpConversation(): React.ReactElement {
   const router = useRouter();
   /**

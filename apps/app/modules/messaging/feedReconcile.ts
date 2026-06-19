@@ -82,6 +82,7 @@ export async function reconcileOnOpen(line: string): Promise<void> {
  *  preview already shows. `prevLatestNs` is the feed-latest ns BEFORE the push;
  *  `arrivingId` is the message that just arrived. No-op when contiguous.
  */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export async function reconcileOnArrival(
   line: string, prevLatestNs: number, arrivingNs: number, arrivingId: string,
 ): Promise<void> {

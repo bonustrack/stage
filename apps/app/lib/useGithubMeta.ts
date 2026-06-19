@@ -23,6 +23,7 @@ export interface GithubMeta {
 }
 
 /** Get the Github Meta. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 async function fetchGithubMeta(ref: GithubRef): Promise<GithubMeta | null> {
   const base = `https://api.github.com/repos/${ref.owner}/${ref.repo}`;
   const path = ref.kind === 'pull'

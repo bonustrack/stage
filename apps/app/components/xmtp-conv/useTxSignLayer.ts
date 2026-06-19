@@ -21,6 +21,7 @@ import { getActiveAccount, getActiveViemAccount } from '../../lib/accounts';
 import { kernelClientForRecord } from '../../lib/zerodev';
 
 /** Provides transaction-signing state and handlers for the conversation. */
+// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export function useTxSignLayer(activeLine: string) {
   /** Message ids whose signature is currently being produced — drives the Sign-button spinner. */
   const [signingIds, setSigningIds] = useState<Set<string>>(new Set());

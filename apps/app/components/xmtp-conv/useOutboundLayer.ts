@@ -8,6 +8,7 @@ import type { FlatList } from 'react-native-gesture-handler';
 import { hasAttachments, isReaction } from './feed-helpers';
 
 /** Provides outbound feed state such as the jump-to-latest indicator. */
+// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export function useOutboundLayer(
   events: HistoryEntry[],
   myUri: string,

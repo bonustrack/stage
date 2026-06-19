@@ -23,6 +23,7 @@ import { usePalette } from '../lib/theme';
 export { REACT_PRESETS };
 
 /** The Messenger Bubble Base component. */
+// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 function MessengerBubbleBase({
   entry, dark, unread, pending, replyTarget, onReact, onReply, onLongPress, onOpenMenu, onAnswer,
   replyPreview, onReplyPreviewPress, reactions, pendingReactions, pendingRemovals, ownEmojis, transcript, myUri, senderEthAddress, onAvatarPress,

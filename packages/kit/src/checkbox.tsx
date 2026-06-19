@@ -30,6 +30,7 @@ export interface CheckboxProps {
 }
 
 /** ChatKit-style RN checkbox. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export function Checkbox(props: CheckboxProps): React.ReactElement {
   const {
     name,

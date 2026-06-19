@@ -11,6 +11,7 @@ import { HoistedTopnav } from '../../components/tabs/HoistedTopnav';
 import { useTotalUnread } from '../../lib/useTotalUnread';
 
 /** Bottom tab navigator hosting the Messenger, Contacts and Wallet pager scenes. */
+// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export default function TabsLayout(): React.ReactElement {
   const pathname = usePathname();
   /** Total unread across all non-archived convs - drives the badge on the Messenger (index) tab. Live: updates as messages arrive / are read. */

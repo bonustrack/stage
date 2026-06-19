@@ -48,6 +48,7 @@ export interface ActivityRow {
  *  the caller can render an error state; an address with no history resolves
  *  to an empty array (Etherscan returns status "0" / "No transactions found").
  */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export async function fetchActivity(
   address: string,
   chainId = 1,

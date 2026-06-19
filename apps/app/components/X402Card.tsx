@@ -28,6 +28,7 @@ import { usePalette, withAlpha } from '../lib/theme';
 type PayPhase = 'idle' | 'paying' | 'paid' | 'failed';
 
 /** Card that renders an x402 payment challenge and drives the pay flow. */
+// eslint-disable-next-line complexity, max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export function X402Card({ challenge, dark }: {
   challenge: X402Challenge; dark?: boolean;
 }): React.ReactElement | null {

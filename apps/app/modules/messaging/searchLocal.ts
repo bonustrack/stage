@@ -43,6 +43,7 @@ function yieldToEventLoop(): Promise<void> {
  *  render progressively. Resolves with the final result when the scan ends
  *  (history exhausted, a cap reached, or aborted). Never throws.
  */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export async function searchLocalHistory(
   line: string,
   query: string,

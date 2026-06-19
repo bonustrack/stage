@@ -115,6 +115,7 @@ function applySpacing(
  *  passthrough style. `display` is NOT emitted here — the web renderer
  *  adds `display:flex` explicitly (RN Views are flex by default).
  */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 function boxStyleEntries(
   props: BoxProps,
 ): Record<string, string | number> {

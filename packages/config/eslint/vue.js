@@ -7,7 +7,7 @@
 // vue-eslint-parser and eslint-plugin-vue are the consumer's own deps and are
 // passed in, so this package never pins those versions.
 import tseslint from "typescript-eslint";
-import { MAX_LINES, REQUIRE_JSDOC, jsdocPlugin, recommended, NO_ESCAPE_HATCHES, commentPlugins, COMMENT_RULES } from "./base.js";
+import { MAX_LINES, REQUIRE_JSDOC, jsdocPlugin, recommended, NO_ESCAPE_HATCHES, commentPlugins, COMMENT_RULES, FUNCTION_SIZE_RULES } from "./base.js";
 
 /**
  * Build the Vue flat-config array.
@@ -45,6 +45,9 @@ export function vue({ vueParser, vuePlugin, rootDir, project }) {
         // Comment conventions: 1 JSDoc per function, 1 line each, `@file` header
         // on every file (capped at 3 lines), `/** */` blocks only.
         ...COMMENT_RULES,
+        // Function size: cap each function at 100 lines (skipping blanks/comments)
+        // and cyclomatic complexity at 15. Extract helpers rather than crossing.
+        ...FUNCTION_SIZE_RULES,
       },
     },
     {
@@ -78,6 +81,9 @@ export function vue({ vueParser, vuePlugin, rootDir, project }) {
         "vue/first-attribute-linebreak": "off",
         "vue/attribute-hyphenation": "off",
         "max-lines": MAX_LINES,
+        // Function size: cap each function at 100 lines (skipping blanks/comments)
+        // and cyclomatic complexity at 15. Extract helpers rather than crossing.
+        ...FUNCTION_SIZE_RULES,
       },
     },
   ];

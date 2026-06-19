@@ -92,6 +92,7 @@ async function callForRevert(
 }
 
 /** Simulate a single call with eth_simulateV1 and return success + asset moves. Never throws — RPC/parse failures resolve to `{ success: 'unknown', error }`. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 async function simulateTx(p: SimulateParams): Promise<SimulateResult> {
   const empty = { in: [], out: [] };
   let from: string, to: string;

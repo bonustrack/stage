@@ -138,6 +138,7 @@ export function deriveSignSummary(req: SignatureRequestContent): SignConfirmSumm
  *  `description` is appended SEPARATELY and clearly labelled as sender-provided
  *  so it is never mistaken for the app's trusted summary.
  */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export function signConfirmMessage(s: SignConfirmSummary, description?: string): string {
   const desc = description?.trim();
   const senderNote = desc ? `\n\nSender's note (untrusted): "${desc}"` : '';

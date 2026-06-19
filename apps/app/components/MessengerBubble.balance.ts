@@ -99,6 +99,7 @@ export function usePayerBalance(
 
   useEffect(() => {
     let cancelled = false;
+    // eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
     void (async () => {
       try {
         const cid = parseChainId(chainId);

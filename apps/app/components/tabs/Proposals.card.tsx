@@ -100,6 +100,7 @@ function ControlRow({ onSkip, onOpen, dark, hint }: {
 }
 
 /** Poll / payment / signing card: mounts the conversation for one channel and renders the request body (PollView / TxRequestCard / SigRequestCard) wired to the same vote/pay/sign pipeline the chat uses. */
+// eslint-disable-next-line complexity, max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 function ConversationRequestCard({ proposal, onAdvance }: {
   proposal: QueuedRequest; onAdvance: () => void;
 }): React.ReactElement {

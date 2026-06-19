@@ -19,6 +19,7 @@ import { resetForOnboarding } from '../../lib/wallet';
 import { resetEverything } from '../../lib/resetEverything';
 
 /** Renders the developer settings screen with reset and debugging actions. */
+// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export function DeveloperSettings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head, border, danger } = usePalette();

@@ -45,6 +45,7 @@ export interface XmtpConversation {
 }
 
 /** Hook providing XMTP conversation-view state: feed, header metadata, optimistic bubbles, and bubble actions. */
+// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConversation {
   const route = useRoute();
   const router = useRouter();

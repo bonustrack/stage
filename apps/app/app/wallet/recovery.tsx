@@ -18,6 +18,7 @@ import {
 import type { Address } from 'viem';
 
 /** Screen for setting up or approving smart-account social recovery. */
+// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export default function WalletRecovery(): React.ReactElement {
   const router = useRouter();
   const params = useLocalSearchParams<{ mode?: string; line?: string; wallet?: string; newOwner?: string }>();

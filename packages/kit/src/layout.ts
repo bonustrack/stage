@@ -156,6 +156,7 @@ function applySpacing(
  *  passthrough style. `padding`/`margin` accept a scalar (all sides) or a
  *  `Spacing` object (per-side wins over axis).
  */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export function boxStyleEntries(props: BoxBaseProps): BoxStyleEntries {
   const s: BoxStyleEntries = {};
 

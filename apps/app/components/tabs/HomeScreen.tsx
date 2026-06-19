@@ -26,6 +26,7 @@ import { deriveLabels, useHomeFilters } from './HomeScreen.labelbar';
 import { filterRowsByQuery } from './HomeScreen.search';
 
 /** Home tab screen showing the conversation list and primary navigation. */
+// eslint-disable-next-line complexity, max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';

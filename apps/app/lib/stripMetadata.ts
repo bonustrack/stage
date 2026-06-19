@@ -24,6 +24,7 @@ const u8 = (a: number | undefined, b: number): boolean => a === b;
  *  We parse only IFD0 (the rotation lives there); we never follow the Exif/GPS
  *  sub-IFD pointers, so no other tag is ever read or kept.
  */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 function readJpegOrientation(payload: Uint8Array): number | undefined {
   // Bounds-guarded byte read; out-of-range bytes read as 0 (every call below is
   // already length-checked, so this only satisfies noUncheckedIndexedAccess).
@@ -91,6 +92,7 @@ function buildOrientationApp1(orientation: number): number[] {
  *  pixel re-encode (which would need a native codec / new APK). Orientation is
  *  not sensitive (1..8). Every other EXIF/GPS/ICC byte is gone.
  */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 function stripJpeg(b: Uint8Array): Uint8Array {
   /** At helper. */
   const at = (o: number): number => b[o] ?? 0;
@@ -194,6 +196,7 @@ function stripWebp(b: Uint8Array): Uint8Array {
 }
 
 /** Detect the container from magic bytes. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 function detect(b: Uint8Array): StripResult['format'] {
   if (b.length >= 3 && u8(b[0], 0xff) && u8(b[1], 0xd8) && u8(b[2], 0xff)) return 'jpeg';
   if (

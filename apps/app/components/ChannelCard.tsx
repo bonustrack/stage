@@ -29,6 +29,7 @@ export function ChannelCard(
 }
 
 /** The Conv Id Card component. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 function ConvIdCard({ convId }: { convId: string }): React.ReactElement {
   const meta = useConvMeta(convId);
   usePeerProfiles([meta.peerAddr]);

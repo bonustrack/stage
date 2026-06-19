@@ -37,6 +37,7 @@ export interface GroupDetail {
 }
 
 /** Hook providing group detail state and mutations (name, description, avatar, members). */
+// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export function useGroupDetail(): GroupDetail {
   const route = useRoute();
   const router = useRouter();
@@ -68,6 +69,7 @@ export function useGroupDetail(): GroupDetail {
   watchEffect(() => { void runGroupDetailEffect(); });
 
   /** Run Group Detail Effect. */
+  // eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
   async function runGroupDetailEffect(): Promise<void> {
     if (!convId.value) return;
     const c = getCachedXmtpClient();

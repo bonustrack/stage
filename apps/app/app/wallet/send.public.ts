@@ -34,6 +34,7 @@ export interface PublicSend {
  * @param token  the currently selected token (symbol + chainId).
  *  @param balance  that token's balance string from the wallet rows, or null.
  */
+// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export function usePublicSend(initialTo: string, token: TokenChoice, balance: string | null): PublicSend {
   const [to, setTo] = useState<string>(initialTo);
   const [amount, setAmount] = useState('');

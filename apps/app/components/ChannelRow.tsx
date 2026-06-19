@@ -115,6 +115,7 @@ function buildLabelChips({ labels, fg, rowBg }: {
 }
 
 /** #6: memoised so a stream tick that re-renders the channels list only re-renders the rows whose props actually changed (not the whole window). All props are primitives or stable callbacks (hoisted in the caller). */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 function ChannelRowBase({
   title, avatarAddress, avatarUri, cacheBuster, square,
   lastPreview, timestamp, subtitle, unreadCount = 0, markedUnread,

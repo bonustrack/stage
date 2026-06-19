@@ -43,6 +43,7 @@ function humanize(s: string): string {
 }
 
 /** Walk the error + its `cause` chain, collecting the most specific strings. Bounded depth so a self-referential cause can't loop. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 function collect(err: unknown, depth = 0): string | undefined {
   if (!err || depth > 6) return undefined;
   if (typeof err === 'string') return str(err);

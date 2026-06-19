@@ -22,6 +22,7 @@ import { reloadApp } from '../AccountsManager.helpers';
 interface SectionColors { fg: string; head: string; sub: string; border: string; rowBg: string }
 
 /** Settings section presenting account security options and danger-zone actions. */
+// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export function AccountSecuritySection(
   { c, danger, dark }: { c: SectionColors; danger: string; dark: boolean },
 ): React.ReactElement | null {

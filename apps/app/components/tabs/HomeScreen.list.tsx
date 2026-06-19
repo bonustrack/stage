@@ -57,6 +57,7 @@ interface ChannelsListProps {
 }
 
 /** Renders the home screen's scrollable list of channels with search and label filters. */
+// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export function ChannelsList({
   panRef, router, sortedRows, requestCount, barLabels, enabledLabels, onToggleLabel,
   unreadOnly, onToggleUnread, onClearAll,

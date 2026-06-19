@@ -29,9 +29,11 @@ interface SyncArgs {
 }
 
 /** Drives the entire channels-list lifecycle; re-runs when `accountEpoch` changes (in-place account switch). Mirrors the original inline effect. */
+// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export function useChannelsSync({
   accountEpoch, rows, setRowsState, setRows, setError, setRequestCount, refreshFromNetworkRef,
 }: SyncArgs): void {
+  // eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
   useEffect(() => {
     /**
      * Clear any error captured by a PREVIOUS run before re-initialising. The

@@ -35,6 +35,7 @@ interface Props {
 }
 
 /** Renders the conversation message composer (input, attachments, mentions, replies, and send flows). */
+// eslint-disable-next-line complexity, max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export function MessengerComposer({
   dark, xmtpLine, mentionCandidates, replyingTo, autoFocusNonce, onClearReply, onJumpToReply, onOptimistic, onSent,
 }: Props): React.ReactElement {

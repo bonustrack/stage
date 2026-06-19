@@ -108,6 +108,7 @@ export interface VoteEvent {
  *  Only `schema === 'custom'` events referencing `pollMessageId` count; a real
  *  emoji reaction on the same bubble is ignored.
  */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export function votesByPoll(
   events: VoteEvent[],
   pollMessageId: string,

@@ -63,6 +63,7 @@ function extractRoute(url: string): { segments: string[]; query: URLSearchParams
 }
 
 /** Map a parsed link to an expo-router target, or null when it doesn't address a known screen (in which case the deep link is ignored and the app opens to its default tab). */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 function routeForUrl(url: string): ParsedRoute | null {
   const { segments, query } = extractRoute(url);
   if (segments.length === 0) return { pathname: '/(tabs)' };

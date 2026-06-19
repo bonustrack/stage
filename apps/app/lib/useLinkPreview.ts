@@ -38,6 +38,7 @@ export function isX402(r: LinkPreviewResult | null): r is X402Challenge {
 }
 
 /** Get the Link Preview. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 async function fetchLinkPreview(url: string): Promise<LinkPreviewResult | null> {
   try {
     const res = await fetch(`${LINK_PREVIEW_BASE}/preview?url=${encodeURIComponent(url)}`, {

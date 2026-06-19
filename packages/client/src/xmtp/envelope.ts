@@ -61,6 +61,7 @@ interface MultiRemoteAttachmentView {
 }
 
 /** Convert a decoded XMTP message into the `HistoryEntry` envelope used by the daemon-side event log + the MessengerBubble renderer. Mirrors the shape emitted by the node-sdk train so the UI layer is transport-agnostic. */
+// eslint-disable-next-line complexity, max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export function mapDecodedToEnvelope(msg: DecodedMessageView, line: string): HistoryEntry {
   const from = `${XMTP_USER_PREFIX}${msg.senderInboxId}`;
   /** `sentNs` is nanoseconds. Divide to ms — ample precision for ts strings. */

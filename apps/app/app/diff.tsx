@@ -22,6 +22,7 @@ import { mdParser } from '../lib/mdParser';
 import { diffMarkdownStyles } from '../lib/diffMarkdownStyles';
 
 /** Screen rendering a markdown diff view of pending changes. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export default function Diff(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';

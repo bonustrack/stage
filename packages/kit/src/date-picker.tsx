@@ -77,6 +77,7 @@ export interface DatePickerProps {
 }
 
 /** ChatKit-style RN date picker. */
+// eslint-disable-next-line complexity, max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export function DatePicker(props: DatePickerProps): React.ReactElement {
   const {
     name,

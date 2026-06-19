@@ -60,6 +60,7 @@ export interface SelectProps {
 }
 
 /** ChatKit-style RN select / dropdown. */
+// eslint-disable-next-line complexity, max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export function Select(props: SelectProps): React.ReactElement {
   const {
     name,

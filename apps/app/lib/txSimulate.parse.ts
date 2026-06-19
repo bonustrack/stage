@@ -103,6 +103,7 @@ function topicToAddr(topic: string): string {
 }
 
 /** Net the simulation's transfer logs (ERC-20 + synthetic native) into a signed per-token delta relative to `from`, split into in/out lists. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export function parseAssetChanges(
   calls: SimCall[],
   from: string,

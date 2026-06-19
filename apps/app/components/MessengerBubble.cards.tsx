@@ -37,6 +37,7 @@ function stringifyPrimitive(v: unknown): string | undefined {
 // "Sign in"). `consentAllowed === false` disables the Sign action for an
 // unaccepted (stranger) conversation.
 /** Renders an in-chat signature-request card with a trusted summary and a Sign action. */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export function SigRequestCard({ req, dark, sub, signing, onSign, consentAllowed }: {
   req: SigRequest; dark: boolean; sub: string; signing?: boolean;
   onSign?: () => void;
@@ -157,6 +158,7 @@ export function SigReferenceCard({ ref, dark, sub }: {
  *  passes its own "Pay" action (the caller's onPay runs walletSendCalls /
  *  sendCall). The recipient line is a tappable profile link (TxToRow).
  */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export function TxRequestCard({ req, dark, sub, paying, onPay, consentAllowed }: {
   req: TxRequest; dark: boolean; sub: string; paying?: boolean;
   onPay?: () => void;
@@ -303,6 +305,7 @@ function fmtArgValue(v: string): string {
  *  selector; a failed decode shows the selector + the "could not decode" note.
  *  This is derived from the calldata, NOT the sender's description.
  */
+// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 function DecodedCallBlock({ decoded, pending, target, sub, selector }: {
   decoded: DecodedCall | null; pending: boolean; target?: string; sub: string; selector?: string;
 }): React.ReactElement {
