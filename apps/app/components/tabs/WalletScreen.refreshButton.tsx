@@ -1,14 +1,13 @@
-/** Tap-to-refresh icon button for the Wallet header (top-right). The reliable
- *  fallback to the pull-to-refresh gesture: a single tap fires the same
- *  `onRefresh` from useWalletBalances. While `refreshing` is true the glyph
- *  spins (JS-driven Animated loop) and the button is disabled so taps can't
- *  stack. Rendered in the Wallet page body, top-right of the balance area. */
+/**
+ * @file Tap-to-refresh icon button for the Wallet header that fires onRefresh and spins its glyph (disabled) while a refresh is in flight.
+ */
 
 import { useEffect, useRef } from 'react';
 import { Animated, Easing } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Icon } from '@metro-labs/kit/icon';
 
+/** Button that triggers a wallet refresh and spins while refreshing. */
 export function RefreshButton({
   refreshing,
   onRefresh,
@@ -35,7 +34,7 @@ export function RefreshButton({
       }),
     );
     loop.start();
-    return () => loop.stop();
+    return () => { loop.stop(); };
   }, [refreshing, spin]);
 
   const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });

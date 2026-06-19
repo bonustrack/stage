@@ -1,8 +1,8 @@
-/** Shared Wallet form primitives for the Send / Send-shielded / Shield /
- *  Unshield pages. Replaces the old hand-rolled "gold" segmented selectors
- *  (#c0a06e borders + rgba(192,160,110) fills) with the canonical palette:
- *  the selected state uses usePalette().link, the app's accent token, so these
- *  controls match the rest of the UI instead of a bespoke gold treatment. */
+/**
+ * @file Shared Wallet form primitives (page shell, footer button, palette and
+ * footer-reporter hooks) for the Send, Shield, and Unshield action pages,
+ * styled with the canonical palette accent token.
+ */
 import { useCallback, useRef, useState } from 'react';
 import { fontSize } from '@metro-labs/kit/tokens';
 import { Pressable } from '@metro-labs/kit/pressable';
@@ -17,14 +17,13 @@ import { usePalette } from '../../lib/theme';
 
 export interface FormPal { fg: string; head: string; sub: string; border: string; inputBg: string; link: string }
 
-/** Submit-button state a form reports up to the page so the page can render the
- *  pinned <WalletFooter>. The page owns Cancel (router.back); the form owns the
- *  primary's label + handler + disabled/loading. */
+/** Submit-button state a form reports up to the page so the page can render the pinned <WalletFooter>. The page owns Cancel (router.back); the form owns the primary's label + handler + disabled/loading. */
 export interface FooterState {
   submitLabel: string; onSubmit: () => void; submitDisabled: boolean; submitLoading: boolean;
 }
 
-/** Collect a child form's reported FooterState for a pinned <WalletFooter>.
+/**
+ * Collect a child form's reported FooterState for a pinned <WalletFooter>.
  *
  *  The child re-calls `report` on EVERY render (its onSubmit/label closures are
  *  fresh each time), so a naive `setState(footerObject)` would update the parent
@@ -33,7 +32,8 @@ export interface FooterState {
  *  when a *displayed* field (label/disabled/loading) actually changed. onSubmit
  *  is deliberately excluded from the equality check — it changes every render —
  *  but the latest closure is kept in a ref and invoked via the returned
- *  `onSubmit`, so the footer always runs the freshest handler. */
+ *  `onSubmit`, so the footer always runs the freshest handler.
+ */
 export function useFooterReporter(): {
   footer: FooterState | null;
   report: (s: FooterState) => void;
@@ -44,8 +44,7 @@ export function useFooterReporter(): {
   const report = useCallback((s: FooterState): void => {
     ref.current = s;
     setFooter(prev => {
-      if (prev
-        && prev.submitLabel === s.submitLabel
+      if (prev?.submitLabel === s.submitLabel
         && prev.submitDisabled === s.submitDisabled
         && prev.submitLoading === s.submitLoading) {
         return prev;
@@ -80,11 +79,10 @@ export function ActionHeader({ title, head, border, onBack }: {
   );
 }
 
-/** A labelled segmented selector built on the Kit Button (secondary = unselected,
- *  primary = selected). Replaces the bespoke gold Pressable pills. */
+/** A labelled segmented selector built on the Kit Button (secondary = unselected, primary = selected). Replaces the bespoke gold Pressable pills. */
 export function Segmented<T extends string | number>({ label, value, options, onChange, dark }: {
   label?: string; value: T; dark: boolean;
-  options: ReadonlyArray<readonly [T, string]>;
+  options: readonly (readonly [T, string])[];
   onChange: (v: T) => void;
 }): React.ReactElement {
   const { sub } = useFormPal();
@@ -95,15 +93,14 @@ export function Segmented<T extends string | number>({ label, value, options, on
         {options.map(([id, text]) => (
           <Button key={String(id)} variant={value === id ? 'primary' : 'secondary'}
             size="md" dark={dark} pill style={{ flex: 1 }}
-            onPress={() => onChange(id)} label={text}/>
+            onPress={() => { onChange(id); }} label={text}/>
         ))}
       </Row>
     </Box>
   );
 }
 
-/** Plain amount input box (Kit-styled). Optionally shows the selected token's
- *  balance with a Max button (when `balance` is provided, even "0"). */
+/** Plain amount input box (Kit-styled). Optionally shows the selected token's balance with a Max button (when `balance` is provided, even "0"). */
 export function AmountBox({ pal, amount, setAmount, busy, balance, symbol, dark }: {
   pal: FormPal; amount: string; setAmount: (v: string) => void; busy: boolean;
   balance?: string | null; symbol?: string; dark?: boolean;
@@ -116,7 +113,7 @@ export function AmountBox({ pal, amount, setAmount, busy, balance, symbol, dark 
         <Text size="xs" color={sub} style={{ flex: 1 }}>AMOUNT</Text>
         {balance != null ? (
           <Button variant="ghost" size="sm" dark={!!dark} disabled={!hasBal || busy}
-            onPress={() => { if (hasBal) setAmount(String(balance)); }}
+            onPress={() => { if (hasBal) setAmount(balance); }}
             label="MAX" textStyle={{ color: hasBal ? link : sub, fontSize: fontSize('xs') }}
             style={{ height: 24, paddingHorizontal: 8 }}/>
         ) : null}
@@ -153,10 +150,12 @@ export function LockedRecipient({ pal, label, value, hint }: {
   );
 }
 
-/** Pinned bottom footer with two equal half-width buttons: a secondary "Cancel"
+/**
+ * Pinned bottom footer with two equal half-width buttons: a secondary "Cancel"
  *  (dismiss / router.back) on the left and the page's primary submit on the
  *  right. Shared by the Send / Shield / Unshield pages so the action bar matches
- *  across all three. Adds safe-area bottom padding + a top divider. */
+ *  across all three. Adds safe-area bottom padding + a top divider.
+ */
 export function WalletFooter({
   border, dark, onCancel, submitLabel, onSubmit, submitDisabled, submitLoading,
 }: {
@@ -178,8 +177,7 @@ export function WalletFooter({
   );
 }
 
-/** Standard page shell: bg + header + scroll body + optional pinned footer.
- *  When `footer` is given it renders below the scroll so it stays pinned. */
+/** Standard page shell: bg + header + scroll body + optional pinned footer. When `footer` is given it renders below the scroll so it stays pinned. */
 export function ActionPage({ title, head, border, onBack, footer, children }: {
   title: string; head: string; bg: string; border: string; onBack: () => void;
   footer?: React.ReactNode;

@@ -1,6 +1,8 @@
-/** HomeScreen list view - the topnav (avatar + "+") and the channels FlatList
- *  (scroll persistence, requests header, empty state), extracted from
- *  HomeScreen.tsx (phase-2 lint, rendering identical). */
+/**
+ * @file HomeScreen.list — the channels list view: the Home topnav slot and the
+ *  channels FlatList with scroll persistence, requests header and empty state,
+ *  extracted from HomeScreen.tsx.
+ */
 
 import type { MutableRefObject, RefObject } from 'react';
 import { useMemo, useState } from 'react';
@@ -54,6 +56,7 @@ interface ChannelsListProps {
   getRowLayout: (d: ArrayLike<RowT> | null | undefined, index: number) => { length: number; offset: number; index: number };
 }
 
+/** Renders the home screen's scrollable list of channels with search and label filters. */
 export function ChannelsList({
   panRef, router, sortedRows, requestCount, barLabels, enabledLabels, onToggleLabel,
   unreadOnly, onToggleUnread, onClearAll,
@@ -72,22 +75,25 @@ export function ChannelsList({
   // tapping it swaps the whole topnav for a full-width search field. Closing
   // clears the query so the list returns to its full state.
   const [searchOpen, setSearchOpen] = useState(false);
+  /** Close Search. */
   const closeSearch = () => { setSearchOpen(false); setQuery(''); };
 
-  /** Home's contextual right-slot (search / requests / overflow), published to
+  /**
+   * Home's contextual right-slot (search / requests / overflow), published to
    *  the single Topnav hoisted ABOVE the pager in (tabs)/_layout.tsx. The bar is
    *  no longer rendered inside this page, so a tab-swipe or vertical scroll can't
-   *  move it. Memoised on the values it actually depends on. */
+   *  move it. Memoised on the values it actually depends on.
+   */
   const right = useMemo(
     () => (
       <>
         {/* Search opens the full-width search field over the topnav. */}
-        <Pressable onPress={() => setSearchOpen(true)} hitSlop={8}>
+        <Pressable onPress={() => { setSearchOpen(true); }} hitSlop={8}>
           <Icon name="search" size={24} color={head}/>
         </Pressable>
         {/* Message requests: inbox icon + count badge (pending 'unknown' consent
          *  convs). Badge hidden when 0; tap opens the requests list. */}
-        <Pressable onPress={() => router.push('/xmtp/requests')} hitSlop={8} style={{ position: 'relative' }}>
+        <Pressable onPress={() => { router.push('/xmtp/requests'); }} hitSlop={8} style={{ position: 'relative' }}>
           <Icon name="inbox" size={24} color={head}/>
           {requestCount> 0 ? (
             <Box minWidth={16} height={16} padding={{ x: 5 }}
@@ -106,8 +112,8 @@ export function ChannelsList({
         {/* Overflow (3-dot) menu: Archived + New-group + Profile + Settings. */}
         <HomeOverflowMenu
           color={head}
-          onArchived={() => router.push('/xmtp/archived')}
-          onNewGroup={() => router.push('/xmtp/new-group')}
+          onArchived={() => { router.push('/xmtp/archived'); }}
+          onNewGroup={() => { router.push('/xmtp/new-group'); }}
           onProfile={() => {
             // Own-profile tab was removed → view yourself via the shared peer
             // profile route (/user/[address]) for the active account.
@@ -115,16 +121,14 @@ export function ChannelsList({
               if (acct?.address) router.push(`/user/${acct.address}`);
             });
           }}
-          onSettings={() => router.push('/settings')}
+          onSettings={() => { router.push('/settings'); }}
 />
       </>
     ),
     [head, requestCount, badgeBg, badgeFg, router],
   );
 
-  /** When search is open the whole bar becomes a full-width search field (a
-   *  full-bar override that replaces identity+right). Otherwise just the right
-   *  slot above is published. */
+  /** When search is open the whole bar becomes a full-width search field (a full-bar override that replaces identity+right). Otherwise just the right slot above is published. */
   const override = useMemo(
     () => (searchOpen ? (
       <ChannelsSearchBar
@@ -152,9 +156,7 @@ export function ChannelsList({
         /** Persist the offset as the user scrolls (debounced inside the lib). */
         onScroll={(ev) => { saveScrollOffset(CHANNELS_SCROLL_KEY, ev.nativeEvent.contentOffset.y); }}
         scrollEventThrottle={16}
-        /** Restore the saved offset once, after rows have laid out. Clamp to the
-         *  measured content height so a stale offset (rows since removed) can't
-         *  scroll past the end. */
+        /** Restore the saved offset once, after rows have laid out. Clamp to the measured content height so a stale offset (rows since removed) can't scroll past the end. */
         onContentSizeChange={(_w, h) => {
           contentHeightRef.current = h;
           if (didRestoreRef.current) return;
@@ -207,10 +209,7 @@ export function ChannelsList({
   );
 }
 
-/** getItemLayout lets the list skip measuring + jump-scroll without rendering
- *  intermediate rows. Every row is uniform height (group label chips render
- *  inline on the name row, not a separate line), so offsets are a flat
- *  index × CHANNEL_ROW_HEIGHT. */
+/** getItemLayout lets the list skip measuring + jump-scroll without rendering intermediate rows. Every row is uniform height (group label chips render inline on the name row, not a separate line), so offsets are a flat index × CHANNEL_ROW_HEIGHT. */
 export function channelRowLayout(_d: ArrayLike<RowT> | null | undefined, index: number): { length: number; offset: number; index: number } {
   return { length: CHANNEL_ROW_HEIGHT, offset: CHANNEL_ROW_HEIGHT * index, index };
 }

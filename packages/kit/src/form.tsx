@@ -1,11 +1,6 @@
-/** Form - a ChatKit-styled form container. Mirrors ChatKit's `Form` widget.
- *  Faithful prop names: `direction` ('row' | 'col') plus the full Box layout API
- *  (BoxBaseProps: gap / padding / align / justify / etc), since ChatKit's Form
- *  extends BoxBaseProps. Deviation (kit is interactive RN, not server-streamed):
- *  ChatKit's `onSubmitAction` (a server ActionConfig fired when a child submit
- *  button is pressed) is replaced by an `onSubmit()` callback exposed to children
- *  via React context, so a kit Button/Input inside the form can trigger it. The
- *  form itself is a Box; it groups controls and owns the submit handler. */
+/**
+ * @file Form — a ChatKit-styled Box-based form container that groups controls and exposes an `onSubmit` callback to child Buttons/Inputs via React context.
+ */
 
 import { createContext, useContext, type ReactNode } from 'react';
 import { Box, type BoxProps } from './box';
@@ -15,7 +10,11 @@ interface FormContextValue {
   submit: () => void;
 }
 
-const FormContext = createContext<FormContextValue>({ submit: () => {} });
+const FormContext = createContext<FormContextValue>({
+  submit: () => {
+    /* intentional no-op: default submit outside a Form provider */
+  },
+});
 
 /** Access the enclosing Form's submit handler (for kit submit controls). */
 export function useFormSubmit(): () => void {
@@ -30,10 +29,10 @@ export interface FormProps extends Omit<BoxProps, 'direction'> {
   children?: ReactNode;
 }
 
-/** ChatKit-style RN form container. The container itself is colour-agnostic;
- *  pass `dark` to the kit controls placed inside it. */
+/** ChatKit-style RN form container. The container itself is colour-agnostic; pass `dark` to the kit controls placed inside it. */
 export function Form(props: FormProps): React.ReactElement {
   const { direction = 'col', onSubmit, children, gap = 12, ...rest } = props;
+  /** Submit helper. */
   const submit = (): void => {
     onSubmit?.();
   };

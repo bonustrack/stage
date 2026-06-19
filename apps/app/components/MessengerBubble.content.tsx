@@ -1,6 +1,8 @@
-/** Inner content column of a MessengerBubble — timestamp header, reply preview,
- *  attachments, body text / embeds, and the interactive question/poll/sig/tx
- *  cards + transcription line. Extracted to keep the row component under the cap. */
+/**
+ * @file Inner content column of a MessengerBubble — timestamp header, reply preview,
+ *  attachments, body text/embeds, and the interactive question/poll/sig/tx cards
+ *  plus transcription line.
+ */
 
 import { useMemo } from 'react';
 import { openInBubbleLink } from '../lib/safeOpenLink';
@@ -26,6 +28,7 @@ import { HighlightText } from './HighlightText';
 import { PollView } from './MessengerBubble.poll';
 import { SigRequestCard, SigReferenceCard, TxRequestCard, TxReceiptCard } from './MessengerBubble.cards';
 
+/** Renders a bubble's inner content column: header, reply preview, attachments, body, and interactive cards. */
 export function BubbleContent({
   entry, dark, pending, fg, sub, replyPreview, onReplyPreviewPress, transcript,
   onAnswer, votes, ownVotes, onVote, openAnswers, onOpenAnswer, myUri,
@@ -42,17 +45,12 @@ export function BubbleContent({
   onPay?: () => void; paying?: boolean; onSign?: () => void; signing?: boolean;
   /** XMTP consent of the conv: `false` (stranger) disables Sign/Pay on cards. */
   consentAllowed?: boolean;
-  /** When true, render the body in a plain selectable <Text> so OS text-selection
-   *  handles appear for partial copy (Markdown's nested Texts don't select cleanly). */
+  /** When true, render the body in a plain selectable <Text> so OS text-selection handles appear for partial copy (Markdown's nested Texts don't select cleanly). */
   selectable?: boolean;
-  /** Search mode: case-insensitive occurrences of this query in the body get a
-   *  fluo-yellow highlight (renders the body via HighlightText instead of
-   *  Markdown). Undefined/empty in the normal feed. */
+  /** Search mode: case-insensitive occurrences of this query in the body get a fluo-yellow highlight (renders the body via HighlightText instead of Markdown). Undefined/empty in the normal feed. */
   highlight?: string;
 }): React.ReactElement {
-  /** Parse the payload descriptors ONCE per entry instead of re-running every
-   *  detector (+ pollOf's normalizeQuestions) on every render. A reaction/vote
-   *  tick elsewhere in the feed used to re-run all of these for every bubble. */
+  /** Parse the payload descriptors ONCE per entry instead of re-running every detector (+ pollOf's normalizeQuestions) on every render. A reaction/vote tick elsewhere in the feed used to re-run all of these for every bubble. */
   const { atts, question, poll, sigReq, sigRef, txReq, txReceipt } = useMemo(() => ({
     atts: attachmentsOf(entry),
     question: questionOf(entry),
@@ -93,10 +91,7 @@ export function BubbleContent({
         </Pressable>
       ) : null}
       {atts.length> 0 ? <Box style={{ alignSelf: 'stretch' }}>{atts.map((a, i) => {
-        /** XMTP inline attachments carry bytes in `dataB64` — render via data: URI.
-         *  Optimistic (pending) attachments carry the local `file://` URI so the
-         *  image shows instantly while the send is in flight; full `http(s)`/
-         *  `data:` URIs render as-is. */
+        /** XMTP inline attachments carry bytes in `dataB64` — render via data: URI. Optimistic (pending) attachments carry the local `file://` URI so the image shows instantly while the send is in flight; full `http(s)`/ `data:` URIs render as-is. */
         const key = a.id ?? `${entry.id}-att-${i}`;
         /** Multi-remote attachments carry encrypted bytes on IPFS — resolve lazily. */
         if (a.remote) {
@@ -120,18 +115,18 @@ export function BubbleContent({
         /** Transaction bubbles render an interactive card instead of raw fallback text. */
         null
       ) : entry.text ? (
-        /** Always render the body text, even when the whole message is a single
+        /**
+         * Always render the body text, even when the whole message is a single
          *  shared link: the cards below are an ADDITION, not a replacement, so a
          *  lone-link share still shows the url it shared (then its card stacks
-         *  beneath). Mixed text + links already kept both. */
+         *  beneath). Mixed text + links already kept both.
+         */
         (() => {
-          /** Repair line breaks delivered as the literal 2-char `\n` (escaped by
-           *  a sender that JSON-stringified the body) so they render as real
-           *  breaks. Lossless for normal messages (no-op fast path). */
+          /** Repair line breaks delivered as the literal 2-char `\n` (escaped by a sender that JSON-stringified the body) so they render as real breaks. Lossless for normal messages (no-op fast path). */
           const body = unescapeBody(entry.text);
           return (
             <Box style={{ alignSelf: 'stretch' }}>
-              {highlight && highlight.trim()
+              {highlight?.trim()
                 ? <HighlightText text={body} query={highlight} fg={fg} />
                 : selectable
                   ? <Text size="3xl" selectable color={fg} style={{ lineHeight: 23 }}>{body}</Text>
@@ -142,9 +137,7 @@ export function BubbleContent({
           );
         })()
       ) : null}
-      {/** Inline embeds — one card per card-generating link in the body, stacked
-       *  below the text (in appearance order, deduped) so each URL stays tappable.
-       *  Capped at MAX_CARDS; extra links remain plain text. */}
+      {/** Inline embeds — one card per card-generating link in the body, stacked below the text (in appearance order, deduped) so each URL stays tappable. Capped at MAX_CARDS; extra links remain plain text. */}
       {cardLinks.map(card => {
         const node = card.kind === 'dm' ? <ChannelCard peerAddress={card.peerAddress} dark={dark} />
           : card.kind === 'channel' ? <ChannelCard convId={card.convId} dark={dark} />

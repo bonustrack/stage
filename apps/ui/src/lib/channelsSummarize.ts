@@ -1,6 +1,7 @@
-/** Pure summarisation pipeline for a single XMTP conversation row. Pulled
- *  out of `pages/Channels.vue` so the view-layer file stays under the
- *  per-file cap and the summariser is unit-testable in isolation. */
+/**
+ * @file Pure summariser that turns an XMTP conversation into a channels-list row (preview, timestamp, unread, members).
+ */
+/** Pure summarisation pipeline for a single XMTP conversation row. Pulled out of `pages/Channels.vue` so the view-layer file stays under the per-file cap and the summariser is unit-testable in isolation. */
 
 import type { Conversation } from '@xmtp/browser-sdk';
 import {
@@ -16,8 +17,7 @@ export interface ChannelRow {
   lastPreview: string;
   /** Stamp.fyi address — used when there's no uploaded group image. */
   avatarAddress: string | null;
-  /** Group-uploaded image (ipfs:// or http). Takes precedence over the
-   *  stamp address when present. Null for DMs. */
+  /** Group-uploaded image (ipfs:// or http). Takes precedence over the stamp address when present. Null for DMs. */
   avatarUri: string | null;
   inboxToAddr: Record<string, string>;
   unreadCount: number;
@@ -30,14 +30,13 @@ export interface ChannelRow {
   [key: string]: unknown;
 }
 
+/** Summarise a conversation into a channels-list row (preview, timestamp, unread count, members). */
 export async function summarizeConv(
   conv: Conversation, selfInboxId: string,
 ): Promise<ChannelRow> {
-  /** Pull the latest 50 messages — enough for an accurate unread count on
-   *  active convs without ballooning per-row fetch time. */
+  /** Pull the latest 50 messages — enough for an accurate unread count on active convs without ballooning per-row fetch time. */
   const msgs = await conv.messages({ limit: 50n }).catch(() => []);
-  /** Browser SDK returns chronological (oldest-first); flip so msgs[0] is
-   *  the latest, matching the mobile codepath. */
+  /** Browser SDK returns chronological (oldest-first); flip so msgs[0] is the latest, matching the mobile codepath. */
   const recent = [...msgs].reverse();
   const last = recent[0];
   const preview = last ? previewOfXmtpContent(last.content, last.contentType?.typeId) : '';
@@ -69,11 +68,13 @@ export async function summarizeConv(
     unreadCount += 1;
   }
   const lastFromSelf = !!last && last.senderInboxId === selfInboxId;
-  /** Cross-device read flag: consent 'unknown' forces a badge only when this
+  /**
+   * Cross-device read flag: consent 'unknown' forces a badge only when this
    *  device has no local read marker yet (lastReadNs === 0), the timestamp
    *  count is 0, and there's an inbound last message. Opening a conv flips
    *  consent → 'allowed', so this self-heals and avoids phantom badges on
-   *  conversations read before this feature existed. */
+   *  conversations read before this feature existed.
+   */
   const consent = await getConvConsent(conv.id).catch(() => 'unknown' as const);
   const markedUnread = consent === 'unknown' && lastReadNs === 0
     && unreadCount === 0 && !!last && !lastFromSelf;

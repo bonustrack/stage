@@ -1,4 +1,6 @@
-/** Railgun private-wallet cache + optimistic pending-action store.
+/** @file Railgun private-wallet cache: persisted per-account {zkAddress, balances} snapshot for instant tab paint plus an in-memory optimistic shield/send/unshield pending-action store. */
+/**
+ * Railgun private-wallet cache + optimistic pending-action store.
  *
  *  This is the piece that makes the private balances tab feel INSTANT:
  *    - `snapshotStore` persists the last-known {zkAddress, balances} to disk
@@ -8,37 +10,34 @@
  *      the UI reflects the delta the instant the user confirms — while the
  *      ~20-30s proof + broadcast runs in the background.
  *
- *  Built on the shared primitives in lib/cache.ts; no new disk plumbing. */
+ *  Built on the shared primitives in lib/cache.ts; no new disk plumbing.
+ */
 import { PersistentStore, MemoryStore } from '../cache';
 import type { PrivateSnapshot, PendingAction, PrivateBalance } from './types';
 
-/** Per-account snapshot file. Account-scoped so switching identities never
- *  shows another account's private balances (mirrors xmtp db-key scoping). */
+/** Per-account snapshot file. Account-scoped so switching identities never shows another account's private balances (mirrors xmtp db-key scoping). */
 const stores = new Map<string, PersistentStore<PrivateSnapshot>>();
+/** Lazily-created persistent snapshot store for an account (memoized per id). */
 export function snapshotStore(accountId: string): PersistentStore<PrivateSnapshot> {
   let s = stores.get(accountId);
   if (!s) { s = new PersistentStore<PrivateSnapshot>(`railgun-${accountId}.json`); stores.set(accountId, s); }
   return s;
 }
 
-/** In-memory optimistic actions, keyed by accountId. Never persisted — a
- *  pending proof doesn't survive a reload, and on reload the background refresh
- *  reflects whatever actually landed on-chain. */
+/** In-memory optimistic actions, keyed by accountId. Never persisted — a pending proof doesn't survive a reload, and on reload the background refresh reflects whatever actually landed on-chain. */
 export const pendingStore = new MemoryStore<string, PendingAction[]>();
 
+/** Append an optimistic pending action for an account. */
 export function addPending(accountId: string, action: PendingAction): void {
   pendingStore.set(accountId, [...(pendingStore.get(accountId) ?? []), action]);
 }
+/** Patch a single pending action (matched by id) for an account. */
 export function updatePending(accountId: string, id: string, patch: Partial<PendingAction>): void {
   pendingStore.set(accountId, (pendingStore.get(accountId) ?? []).map(a => a.id === id ? { ...a, ...patch } : a));
 }
 /** Phases that are still in flight (kept in the store + drive optimistic UI). */
-export function isLivePending(p: PendingAction): boolean {
+function isLivePending(p: PendingAction): boolean {
   return p.phase === 'proving' || p.phase === 'broadcasting' || p.phase === 'scanning';
-}
-
-export function clearSettledPending(accountId: string): void {
-  pendingStore.set(accountId, (pendingStore.get(accountId) ?? []).filter(isLivePending));
 }
 
 /** Drop a single pending action (e.g. once its shielded balance has landed). */
@@ -46,9 +45,7 @@ export function removePending(accountId: string, id: string): void {
   pendingStore.set(accountId, (pendingStore.get(accountId) ?? []).filter(a => a.id !== id));
 }
 
-/** Overlay in-flight optimistic deltas onto the cached balances so the rendered
- *  rows reflect pending shields/sends before they confirm. Pure — does not
- *  mutate the cache; the real numbers replace these on the next refresh. */
+/** Overlay in-flight optimistic deltas onto the cached balances so the rendered rows reflect pending shields/sends before they confirm. Pure — does not mutate the cache; the real numbers replace these on the next refresh. */
 export function applyPending(balances: PrivateBalance[], pending: PendingAction[]): PrivateBalance[] {
   const live = pending.filter(isLivePending);
   if (!live.length) return balances;

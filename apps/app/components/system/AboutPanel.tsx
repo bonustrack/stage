@@ -1,9 +1,8 @@
-/** About panel for the System screen: app version, git commit hash, package
- *  name + build profile. Version comes from expo Constants (app.config version);
- *  the git hash is injected at build time into `extra.gitHash` (EAS sets
- *  EAS_BUILD_GIT_COMMIT_HASH on cloud builds, the PR-preview Action sets
- *  GIT_COMMIT, and local builds fall back to `git rev-parse`). The Commit row is
- *  tappable through to the GitHub commit when a real SHA is stamped. */
+/**
+ * @file About panel for the System screen showing app version, git commit hash,
+ *  package name, and build profile, with the commit row linking through to the
+ *  GitHub commit when a real SHA is stamped at build time.
+ */
 
 import Constants from 'expo-constants';
 import * as Application from 'expo-application';
@@ -21,6 +20,7 @@ interface AboutRowProps {
   href?: string; head?: string;
 }
 
+/** The About Row component. */
 function AboutRow({ label, value, mono, border, href, head }: AboutRowProps): React.ReactElement {
   const valueColor = href ? head : undefined;
   const row = (
@@ -49,6 +49,7 @@ function AboutRow({ label, value, mono, border, href, head }: AboutRowProps): Re
   );
 }
 
+/** Renders the About panel showing app version and build metadata. */
 export function AboutPanel({ dark, head, sub, border, rowBg }: {
   dark: boolean; head: string; sub: string; border: string; rowBg: string;
 }): React.ReactElement {

@@ -1,37 +1,6 @@
-/** ENABLE PASSKEY on an EXISTING smart account (so the user need not recreate the
- *  wallet to get a passkey-gated signer).
- *
- *  WHY: an account created on the ECDSA path (no passkey native module at create
- *  time, or passkey skipped) has NO `rec.passkey`, so kernelForRecord builds with
- *  the ECDSA owner as sudo and signing NEVER prompts WebAuthn. This flow registers
- *  a NEW device passkey, makes it the Kernel's `sudo` validator, and persists the
- *  StoredPasskey so every later kernelForRecord rebuilds with the passkey validator
- *  (the ECDSA owner becomes the `regular` backup). After this, tx/message/userOp
- *  signing all route through the on-device WebAuthn prompt.
- *
- *  ONE on-chain path for BOTH counterfactual + deployed (Less's root-cause fix):
- *    We ALWAYS swap the sudo validator on-chain via the SDK's `changeSudoValidator`
- *    on the CURRENT (ECDSA-sudo) Kernel client -> ONE sponsored userOp (paymaster
- *    pays gas; the current ECDSA owner authorizes the swap). For a COUNTERFACTUAL
- *    account this SAME userOp first deploys the Kernel (with the ECDSA initCode, so
- *    the factory deploys to the ECDSA-derived address that the record already uses)
- *    AND changes the root validator to the passkey, in one bundle. Only after the
- *    userOp lands do we persist rec.passkey.
- *
- *    WHY NOT the old "counterfactual = persist + address-pin" shortcut: pinning a
- *    passkey-sudo Kernel to the ECDSA-derived address is UNSATISFIABLE. The sudo
- *    validator is part of the Kernel's CREATE2 salt, so a passkey-sudo initCode
- *    deploys to a DIFFERENT address than the ECDSA-derived `rec.address`. The first
- *    userOp's deploy half then reverts in the meta-factory with `Unauthorized`
- *    (salt/sender mismatch) -> the on-device "Unauthorized" toast, even though the
- *    passkey signs fine. signMessage masked it: ERC-6492 validates that initCode
- *    OFF-CHAIN (eth_call) and never asks the factory to deploy at a pinned address.
- *    Deploying with the ECDSA initCode (address matches) then swapping sudo avoids
- *    the mismatch entirely.
- *
- *  ON-DEVICE: the WebAuthn create() prompt (registration) and, for the deployed
- *  case, the userOp signing happen on-device only — this cannot be exercised in CI.
- *  The mnemonic never leaves the keyring; the ECDSA owner only authorizes the swap. */
+/**
+ * @file Enables a device passkey on an existing smart account by swapping the Kernel's sudo validator to the passkey via one sponsored userOp (deploying the counterfactual Kernel with the ECDSA initCode in the same bundle when needed), then persisting the StoredPasskey so all later signing routes through WebAuthn.
+ */
 
 import '../cryptoShim';
 import type { AccountRecord } from '../accounts';
@@ -51,13 +20,13 @@ export type EnablePasskeyResult =
   | { ok: true; deployed: boolean; userOpHash?: string }
   | { ok: false; reason: 'unavailable' | 'already' | 'cancelled' | 'error'; message?: string };
 
-/** Result of the shared on-chain deploy-and-swap. `txHash` is the swap userOp hash
- *  (also used as the diagnostic tx reference). `ok:false` carries a human message. */
+/** Result of the shared on-chain deploy-and-swap. `txHash` is the swap userOp hash (also used as the diagnostic tx reference). `ok:false` carries a human message. */
 export type DeployAndSwapResult =
   | { ok: true; txHash: string }
   | { ok: false; message: string };
 
-/** THE single on-chain place that turns an ECDSA-sudo Kernel into a passkey-sudo
+/**
+ * THE single on-chain place that turns an ECDSA-sudo Kernel into a passkey-sudo
  *  one. Builds the CURRENT (ECDSA-sudo) Kernel client at `hdIndex` and issues ONE
  *  sponsored userOp (`changeSudoValidator` -> passkey). For a COUNTERFACTUAL Kernel
  *  this same userOp first DEPLOYS the Kernel with the ECDSA initCode (so the factory
@@ -67,7 +36,8 @@ export type DeployAndSwapResult =
  *  create path so the proven logic lives in ONE place.
  *
  *  ON-DEVICE: the userOp signing (ECDSA owner authorizes the swap) and, for the
- *  create path, the preceding WebAuthn registration are device-only — not in CI. */
+ *  create path, the preceding WebAuthn registration are device-only — not in CI.
+ */
 export async function deployAndSwapToPasskey(
   publicClient: ReturnType<typeof makePublicClient>,
   hdIndex: number,
@@ -77,7 +47,7 @@ export async function deployAndSwapToPasskey(
     const owner = await smartOwnerSigner(hdIndex);
     const ecdsaAccount = await createEcdsaKernel(publicClient, owner, hdIndex);
     const kernelClient = makeKernelClient(
-      ecdsaAccount as Parameters<typeof makeKernelClient>[0],
+      ecdsaAccount,
       publicClient,
     );
     const passkeyValidator = await passkeyValidatorFromStored(publicClient, stored);
@@ -110,13 +80,15 @@ export async function deployAndSwapToPasskey(
   }
 }
 
-/** Register a NEW device passkey for `rec` and make it the Kernel's sudo validator.
+/**
+ * Register a NEW device passkey for `rec` and make it the Kernel's sudo validator.
  *  Persists rec.passkey only after the on-chain swap userOp succeeds (deploy +
  *  swap for a counterfactual account, swap-only for a deployed one). Idempotent
  *  guards: passkey-already-installed-on-chain / not-smart / no native module /
  *  not configured all return a typed non-throwing result. A record that carries a
  *  passkey but is NOT deployed (the old broken counterfactual shortcut) is repaired
- *  by reusing the stored credential and running the deploy-and-swap. */
+ *  by reusing the stored credential and running the deploy-and-swap.
+ */
 export async function enablePasskeyForRecord(rec: AccountRecord): Promise<EnablePasskeyResult> {
   if (rec.type !== 'smart' || rec.hdIndex == null) {
     return { ok: false, reason: 'error', message: 'Not a smart account.' };
@@ -155,7 +127,7 @@ export async function enablePasskeyForRecord(rec: AccountRecord): Promise<Enable
     try {
       stored = await registerPasskeyCredential(rec.hdIndex, {
         rpId: zerodevRpId(),
-        userName: rec.label?.trim() || `stage-${rec.hdIndex}`,
+        userName: rec.label?.trim() ? rec.label.trim() : `stage-${rec.hdIndex}`,
       });
     } catch (e) {
       return { ok: false, reason: 'error', message: e instanceof Error ? e.message : 'Passkey registration failed' };

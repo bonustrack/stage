@@ -1,8 +1,8 @@
-/** Pure-JS visual color picker - three draggable HSV sliders (Hue / Saturation
- *  / Value) plus a live preview swatch + the resulting hex, and a hex text
- *  field for typists. No native module: dragging uses react-native-gesture-handler
- *  (Pan + Tap) and the geometry is computed in JS. Used by the ColorTokens editor
- *  inside AppModal. Fonts: Calibre-Medium / Calibre-Semibold only. */
+/**
+ * @file Pure-JS visual color picker with three draggable HSV sliders, a live
+ *  preview swatch, and a hex text field, used by the ColorTokens editor and
+ *  driven by react-native-gesture-handler with no native module.
+ */
 
 import { useMemo, useRef, useState } from 'react';
 import { fontSize } from '@metro-labs/kit/tokens';
@@ -17,6 +17,7 @@ import { hexToHsv, hsvToHex } from './colorMath';
 
 const TRACK_H = 26;
 
+/** The Track component. */
 function Track({ colors, thumb, onFraction, p }: {
   colors: string[]; thumb: number;
   onFraction: (f: number) => void; p: GalleryPalette;
@@ -25,6 +26,7 @@ function Track({ colors, thumb, onFraction, p }: {
   // GestureDetector view (the whole track), so fraction is reliable mid-drag.
   // Default 1 (not 0) avoids a divide-by-zero no-move before first layout.
   const widthRef = useRef(1);
+  /** Emit helper. */
   const emit = (x: number): void => {
     onFraction(Math.max(0, Math.min(1, x / widthRef.current)));
   };
@@ -62,10 +64,12 @@ function Track({ colors, thumb, onFraction, p }: {
   );
 }
 
+/** Hue Stops. */
 function hueStops(): string[] {
   return Array.from({ length: 24 }, (_, i) => hsvToHex((i / 23) * 360, 1, 1));
 }
 
+/** Renders an HSV color picker for selecting a theme color. */
 export function ColorPicker({ value, onChange, p }: {
   value: string; onChange: (hex: string) => void; p: GalleryPalette;
 }): React.ReactElement {
@@ -73,6 +77,7 @@ export function ColorPicker({ value, onChange, p }: {
   const [text, setText] = useState<string | null>(null);
   const hex = hsvToHex(hsv.h, hsv.s, hsv.v);
 
+  /** Apply helper. */
   const apply = (h: number, s: number, v: number): void => {
     setHsv({ h, s, v });
     setText(null);
@@ -98,13 +103,13 @@ export function ColorPicker({ value, onChange, p }: {
 
       <Label text="Hue" p={p}/>
       <Track colors={hueStops()} thumb={hsv.h / 360} p={p}
-        onFraction={(f) => apply(f * 360, hsv.s, hsv.v)}/>
+        onFraction={(f) => { apply(f * 360, hsv.s, hsv.v); }}/>
       <Label text="Saturation" p={p}/>
       <Track colors={satStops} thumb={hsv.s} p={p}
-        onFraction={(f) => apply(hsv.h, f, hsv.v)}/>
+        onFraction={(f) => { apply(hsv.h, f, hsv.v); }}/>
       <Label text="Value" p={p}/>
       <Track colors={valStops} thumb={hsv.v} p={p}
-        onFraction={(f) => apply(hsv.h, hsv.s, f)}/>
+        onFraction={(f) => { apply(hsv.h, hsv.s, f); }}/>
 
       <Label text="Hex" p={p}/>
       <Input
@@ -128,6 +133,7 @@ export function ColorPicker({ value, onChange, p }: {
   );
 }
 
+/** The Label component. */
 function Label({ text, p }: { text: string; p: GalleryPalette }): React.ReactElement {
   return (
     <Text weight="semibold" size="xs" color={p.sub} style={{ marginTop: 16, marginBottom: 6 }}>

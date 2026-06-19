@@ -1,19 +1,12 @@
-/** Shared token avatar + network badge for the Wallet list.
- *
- *  The 32x32 token logo with a small round network-logo chip overlaid at the
- *  bottom-right, exactly as the Snapshot-treasury wallet rows render it.
- *  Extracted from WalletScreen.parts (TokenRow) so other surfaces - the private
- *  Activity rows - reuse the SAME rendering instead of rebuilding it. The chip
- *  ring uses the page bg colour; the network logo fills (cover) and is clipped
- *  to a circle so a square logo (e.g. Base) renders identically to Ethereum.
- *
- *  An optional `badge` overlays the TOP-right corner (e.g. a Railgun shield) so
- *  callers can mark a row as private without touching the avatar geometry. */
+/**
+ * @file Shared token avatar for the Wallet list: a token logo with an overlaid round network badge and an optional top-right badge (e.g. a Railgun shield).
+ */
 
 import { Image } from '@metro-labs/kit/image';
 import { Box } from '../layout';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO } from './WalletScreen.assets';
 
+/** Circular token avatar with the token logo and a network badge. */
 export function TokenAvatar({ logoUrl, chainId, bg, border, badge }: {
   /** stamp.fyi token logo URL; empty string renders just the border circle. */
   logoUrl: string;

@@ -1,4 +1,7 @@
-/** Generic persisted-store factories - the shared load/save/subscribe/hydrate
+/** @file Generic AsyncStorage-backed store factories (`createSetStore`, `createValueStore`) providing the shared load/save/subscribe/hydrate boilerplate for the small device-local preference stores. */
+
+/*
+ * Generic persisted-store factories - the shared load/save/subscribe/hydrate
  *  boilerplate that the small device-local preference stores (pins, archived,
  *  notifReadState, pushPref, lastAttachment, …) all hand-rolled near-identically.
  *
@@ -19,14 +22,14 @@
  *  per-store modules re-export their EXACT historical public API as thin
  *  wrappers so every consumer stays untouched. Storage keys, defaults, and
  *  serialization are passed in verbatim so previously-persisted data keeps
- *  loading after the update. */
+ *  loading after the update.
+ */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { hydrateOnce, makeListeners } from './storeCore';
 
 export interface SetStore {
-  /** Read the persisted set once and cache it; later calls return the cache
-   *  without touching storage. Corrupt/missing → empty set. */
+  /** Read the persisted set once and cache it; later calls return the cache without touching storage. Corrupt/missing → empty set. */
   load: () => Promise<Set<string>>;
   /** Synchronous membership check from the in-memory mirror (false until load). */
   has: (id: string) => boolean;
@@ -42,31 +45,36 @@ export interface SetStore {
 
 /** Build a `Set<string>` store persisted as a JSON string array under `key`. */
 export function createSetStore(key: string): SetStore {
-  let cache: Set<string> = new Set();
+  let cache = new Set<string>();
   const { listeners, notify } = makeListeners();
   const hydration = hydrateOnce(async (): Promise<Set<string>> => {
     try {
       const raw = await AsyncStorage.getItem(key);
-      const ids: string[] = raw ? JSON.parse(raw) : [];
-      if (Array.isArray(ids)) cache = new Set(ids.filter(x => typeof x === 'string'));
+      const ids: unknown = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(ids)) cache = new Set(ids.filter((x): x is string => typeof x === 'string'));
     } catch { /* corrupt/missing → start empty */ }
     return cache;
   });
 
+  /** Persist helper. */
   async function persist(): Promise<void> {
     try {
       await AsyncStorage.setItem(key, JSON.stringify([...cache]));
     } catch { /* best-effort - the in-memory cache still reflects the change */ }
   }
 
+  /** Load helper. */
   async function load(): Promise<Set<string>> {
     if (hydration.done()) return cache;
     return hydration.run();
   }
 
+  /** Has helper. */
   function has(id: string): boolean { return cache.has(id); }
+  /** Get helper. */
   function get(): Set<string> { return cache; }
 
+  /** Set helper. */
   async function set(next: Set<string>): Promise<Set<string>> {
     cache = next;
     hydration.markDone();
@@ -75,6 +83,7 @@ export function createSetStore(key: string): SetStore {
     return cache;
   }
 
+  /** Toggle helper. */
   async function toggle(id: string): Promise<Set<string>> {
     const next = new Set(cache);
     if (next.has(id)) next.delete(id);
@@ -82,6 +91,7 @@ export function createSetStore(key: string): SetStore {
     return set(next);
   }
 
+  /** Subscribe helper. */
   function subscribe(cb: () => void): () => void {
     listeners.add(cb);
     return () => { listeners.delete(cb); };
@@ -97,28 +107,22 @@ export interface ValueStoreOptions<T> {
   default: T;
   /** Serialize a value to the stored string. Default: `String(value)`. */
   serialize?: (value: T) => string;
-  /** Parse a stored string back to a value; return `undefined` to keep the
-   *  current value (e.g. unrecognised/corrupt input). */
+  /** Parse a stored string back to a value; return `undefined` to keep the current value (e.g. unrecognised/corrupt input). */
   deserialize: (raw: string) => T | undefined;
-  /** When false (default), `set` short-circuits if the value is `===` the
-   *  current one. Set true to always notify + persist (matching stores whose
-   *  historical setter fired on every call). */
+  /** When false (default), `set` short-circuits if the value is `===` the current one. Set true to always notify + persist (matching stores whose historical setter fired on every call). */
   alwaysNotify?: boolean;
 }
 
 export interface ValueStore<T> {
   /** Await the one-time load and get the resulting value (async consumers). */
   load: () => Promise<T>;
-  /** Fire-and-forget the one-time load; notifies subscribers when it lands
-   *  (sync-style consumers that read via `get` on the next render). */
+  /** Fire-and-forget the one-time load; notifies subscribers when it lands (sync-style consumers that read via `get` on the next render). */
   loadAsync: () => void;
   /** Synchronous snapshot of the in-memory value. */
   get: () => T;
-  /** Replace the value, persist, and notify (no-op if unchanged by `===`,
-   *  unless `alwaysNotify`). Fire-and-forget persistence. */
+  /** Replace the value, persist, and notify (no-op if unchanged by `===`, unless `alwaysNotify`). Fire-and-forget persistence. */
   set: (value: T) => void;
-  /** Like `set` but awaits the AsyncStorage write (for callers whose historical
-   *  setter returned a Promise). Always notifies + persists. */
+  /** Like `set` but awaits the AsyncStorage write (for callers whose historical setter returned a Promise). Always notifies + persists. */
   setAsync: (value: T) => Promise<void>;
   /** Subscribe to changes. Returns an unsubscribe fn. */
   subscribe: (cb: () => void) => () => void;
@@ -130,6 +134,7 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
   let cache: T = opts.default;
   const { listeners, notify } = makeListeners();
 
+  /** Apply helper. */
   function apply(raw: string | null): boolean {
     if (raw == null) return false;
     const parsed = opts.deserialize(raw);
@@ -144,22 +149,27 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
     catch { return false; /* best-effort → keep default */ }
   });
 
+  /** Persist helper. */
   function persist(): void {
     void AsyncStorage.setItem(opts.key, serialize(cache)).catch(() => { /* best-effort */ });
   }
 
+  /** Load helper. */
   async function load(): Promise<T> {
     if (!hydration.done()) await hydration.run();
     return cache;
   }
 
+  /** Load the persisted value asynchronously. */
   function loadAsync(): void {
     if (hydration.done()) return;
     void hydration.run().then((changed) => { if (changed) notify(); });
   }
 
+  /** Get helper. */
   function get(): T { return cache; }
 
+  /** Set helper. */
   function set(value: T): void {
     if (!opts.alwaysNotify && value === cache) return;
     cache = value;
@@ -168,6 +178,7 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
     persist();
   }
 
+  /** Set the persisted value asynchronously. */
   async function setAsync(value: T): Promise<void> {
     cache = value;
     hydration.markDone();
@@ -176,6 +187,7 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
     catch { /* best-effort, the in-memory cache still reflects the change */ }
   }
 
+  /** Subscribe helper. */
   function subscribe(cb: () => void): () => void {
     listeners.add(cb);
     return () => { listeners.delete(cb); };

@@ -1,11 +1,8 @@
-/** Public-send body for the unified Wallet → Send token page.
- *
- *  Renders the recipient (address/ENS) + amount fields and the submit/status
- *  for a PUBLIC token transfer (sendNativeOrToken over the connected
- *  Reown/wagmi wallet). The selected token + its balance are owned by the
- *  parent page (the combined TokenSelector) and passed in; all public-send
- *  state + lifecycle live in usePublicSend. Mounted only when the chosen token
- *  is a public balance — the shielded twin routes to SendShieldedBody. */
+/**
+ * @file Public-send body for the unified Wallet send token page, rendering the
+ * recipient/amount fields and submit/status for an on-chain (public) token
+ * transfer; selected token comes from the parent, state from usePublicSend.
+ */
 import { useEffect } from 'react';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import {
@@ -15,6 +12,7 @@ import { usePublicSend } from './send.public';
 import { useSelectedBalance, type TokenChoice } from './TokenSelector';
 import type { FooterState } from './wallet.form';
 
+/** Body for a public (on-chain) token send, owning recipient and amount input. */
 export function PublicSendBody({ token, initialTo, onFooter }: {
   token: TokenChoice; initialTo: string;
   /** Report submit state up so the page renders the pinned footer button. */

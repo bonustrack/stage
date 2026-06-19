@@ -1,14 +1,8 @@
-/** Direct render of the app's APP-LEVEL components (NOT the @metro-labs/kit
- *  primitives, which live on the Kit page) with representative sample data. No
- *  controls, no story indirection - each component is rendered inline with a
- *  fixed sample.
- *
- *  Mapping (no literal UserCard/ChannelCard/TokenCard exports exist):
- *   - UserCard    -> ChannelRow, DM mode (circle avatar).
- *   - ChannelCard -> ChannelRow, group mode (square avatar).
- *   - TokenCard   -> TokenRow (the wallet Tokens-tab asset row).
- *   - MessageRow  -> MessengerBubble (incoming + outgoing, with reactions).
- *   - Composer    -> MessengerComposer (default empty state, stubbed handlers). */
+/**
+ * @file Inline gallery rendering the app's app-level components (ChannelRow,
+ *  TokenRow, MessengerBubble, MessengerComposer) with fixed representative sample
+ *  data and no controls or story indirection.
+ */
 
 import { Box } from '../layout';
 import { GallerySection } from './GallerySection';
@@ -58,24 +52,25 @@ const SAMPLE_TOKEN: AssetRow = {
   logoUrl: 'https://cdn.stamp.fyi/avatar/eth:0x0000000000000000000000000000000000000000?s=64',
 };
 
+/** Renders the gallery sections showcasing UI components. */
 export function ComponentsSections({ dark, head, sub, border }: GalleryPalette): React.ReactElement {
   const { bg } = usePalette();
   const sec = { head, sub, border };
   return (
     <Box>
       <GallerySection name="UserCard" note="Person row (ChannelRow, circle avatar) - DMs & profiles" {...sec}>
-        <ChannelRow title="vitalik.eth" subtitle="Direct message" avatarAddress={SAMPLE_USER_ADDR} onPress={() => {}} noBorder />
+        <ChannelRow title="vitalik.eth" subtitle="Direct message" avatarAddress={SAMPLE_USER_ADDR} onPress={() => {/* noop */}} noBorder />
       </GallerySection>
 
       <GallerySection name="ChannelCard" note="Channel row (ChannelRow, square avatar) - groups & channels" {...sec}>
         <ChannelRow
           title="Metro Dev" subtitle="12 members" avatarAddress={SAMPLE_USER_ADDR} square
-          lastPreview="Less: shipping the Components page" onPress={() => {}} noBorder
+          lastPreview="Less: shipping the Components page" onPress={() => {/* noop */}} noBorder
         />
       </GallerySection>
 
       <GallerySection name="TokenCard" note="Wallet asset row (TokenRow) - the Tokens tab" {...sec} innerPadH={14}>
-        <TokenRow r={SAMPLE_TOKEN} head={head} sub={sub} border={border} bg={bg} onPress={() => {}} />
+        <TokenRow r={SAMPLE_TOKEN} head={head} sub={sub} border={border} bg={bg} onPress={() => {/* noop */}} />
       </GallerySection>
 
       <GallerySection name="MessageRow" note="Chat message row (MessengerBubble) - the conversation feed" {...sec} innerPadV={6}>

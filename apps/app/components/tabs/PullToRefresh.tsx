@@ -1,27 +1,8 @@
-/** Custom JS-only pull-to-refresh for the Wallet Tokens list.
- *
- *  WHY: RN's native `RefreshControl`, when fed a controlled `refreshing` prop
- *  inside this nested-gesture ScrollView (RNGH ScrollView declared simultaneous
- *  with the horizontal pager Pan), did NOT reliably dismiss its native spinner
- *  on Android — flipping `refreshing` false left the comet stranded. Three
- *  prior fixes (public-only fetch, timer dismiss, try/finally + race, ScrollView
- *  swap + remount key) all failed because the stranded element is the NATIVE
- *  control, not our state.
- *
- *  FIX: render the spinner OURSELVES. Visibility is bound solely to our own
- *  `refreshing` state (which is guaranteed to clear via try/finally + 8s
- *  hardStop in WalletScreen.balances.ts) plus the live pull distance. Because we
- *  draw and hide it, it can never get wedged by the native layer.
- *
- *  MECHANISM (pure onScroll, no extra PanGestureHandler so it never competes
- *  with the pager pan): we read `contentOffset.y` on scroll. On iOS bounce y
- *  goes negative on over-scroll; on Android (overScrollMode) the value can also
- *  dip below 0, but to be robust we ALSO track the most-negative y seen during
- *  the active drag and treat the release (`onScrollEndDrag`) as the trigger:
- *  if the user pulled past `THRESHOLD` and lets go, we fire `onRefresh`. The
- *  spinner's opacity/translate track the pull distance for live feedback, then
- *  snap to a fixed "active" position while `refreshing` is true, and animate
- *  out the instant `refreshing` flips false. */
+/**
+ * @file Custom JS-only pull-to-refresh spinner and onScroll handlers for the Wallet Tokens list.
+ *  We render the spinner ourselves (bound to our own `refreshing` state + live pull distance) because RN's native
+ *  RefreshControl could not be reliably dismissed inside this nested-gesture ScrollView on Android.
+ */
 
 import { useEffect, useRef } from 'react';
 import { Animated, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
@@ -40,6 +21,7 @@ export interface PullHandlers {
   scrollEventThrottle: number;
 }
 
+/** Provides pan handlers and an animated indicator for pull-to-refresh gestures. */
 export function usePullToRefresh(
   refreshing: boolean,
   onRefresh: () => void,
@@ -64,6 +46,7 @@ export function usePullToRefresh(
     if (!refreshing) armed.current = false;
   }, [refreshing, pull]);
 
+  /** Handle the Scroll Begin Drag. */
   const onScrollBeginDrag = (e: NativeSyntheticEvent<NativeScrollEvent>): void => {
     // Reset the per-drag latch/baseline. Use the offset at drag start as the
     // reference so a pull is measured RELATIVE to wherever the top sits — on
@@ -72,6 +55,7 @@ export function usePullToRefresh(
     minY.current = e.nativeEvent.contentOffset.y;
   };
 
+  /** Handle the Scroll. */
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>): void => {
     const y = e.nativeEvent.contentOffset.y;
     if (y < minY.current) minY.current = y;
@@ -89,6 +73,7 @@ export function usePullToRefresh(
     }
   };
 
+  /** Handle the Scroll End Drag. */
   const onScrollEndDrag = (e: NativeSyntheticEvent<NativeScrollEvent>): void => {
     const pulled = -Math.min(minY.current, e.nativeEvent.contentOffset.y);
     minY.current = 0;

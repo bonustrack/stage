@@ -1,16 +1,4 @@
-/** The merged public + shielded token list for the Wallet Tokens tab.
- *
- *  Public and shielded (Private-badged) rows are merged into ONE flat list then
- *  sorted by USD value (priceUsd × balance) DESCENDING, so the highest-value
- *  holdings sit at the top. A high-value private token can outrank a low-value
- *  public one — the list is ranked purely by $. Rows with no price / zero
- *  balance compute usdValue 0 and sink to the bottom; `.sort` is stable
- *  (V8/Hermes) so among equal-value rows the original public-then-private order
- *  is preserved. Pending shield rows render above the sorted list.
- *
- *  Only positive-balance rows are shown: zero-balance public and shielded rows
- *  (including the always-seeded fixed private set) are filtered out so the wallet
- *  page lists only tokens the user actually holds. */
+/** @file Wallet Tokens tab list: merges public + shielded rows into one list sorted by USD value descending, filtering out zero-balance rows and rendering pending shield rows on top. */
 
 import { useMemo } from 'react';
 import { useRouter } from 'expo-router';
@@ -25,6 +13,7 @@ import { buildSortedTokenRows } from './WalletScreen.sort';
 // it's unit-testable). Re-exported here so existing import sites stay stable.
 export { buildSortedTokenRows, tokenRowId } from './WalletScreen.sort';
 
+/** Renders the wallet's public and private token holdings with pending actions. */
 export function TokensList({
   rows, privateRows, pending, head, sub, border, bg,
 }: {

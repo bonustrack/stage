@@ -1,5 +1,7 @@
-/** About sub-page of the System menu — back-arrow header + the AboutPanel body.
- *  Reached via /system → "About" row → /system/about. */
+/**
+ * @file About sub-page of the System menu: a back-arrow header wrapping the
+ *  AboutPanel body, reached via /system/about.
+ */
 
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,6 +10,7 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { SystemHeader } from './SystemHeader';
 import { AboutPanel } from './AboutPanel';
 
+/** Renders the About page of the system design section. */
 export function AboutPage(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head, border } = usePalette();

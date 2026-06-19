@@ -1,4 +1,6 @@
-/** Floating two-line composer (Claude-mobile-style): textarea on top, [+ / mic / send] below. */
+/**
+ * @file MessengerComposer: the conversation message composer (input, attachments, mentions, replies, poll/signature/payment sheets, and send flows).
+ */
 
 import { useRef, useState, type ComponentRef } from 'react';
 
@@ -15,33 +17,24 @@ import { DANGER, usePalette } from '../lib/theme';
 
 interface Props {
   dark: boolean;
-  /** Target XMTP conversation line URI (`metro://xmtp/<convId>`). Required — the
-   *  mobile composer only supports the XMTP transport now (the daemon-routed
-   *  messenger pipeline was removed). */
+  /** Target XMTP conversation line URI (`metro://xmtp/<convId>`). Required — the mobile composer only supports the XMTP transport now (the daemon-routed messenger pipeline was removed). */
   xmtpLine: string;
-  /** Candidates surfaced in the `@`-mention popup — channel members for
-   *  groups, or contact list for DMs. Parent owns the source-of-truth list;
-   *  composer just filters/renders. Empty array disables the popup. */
+  /** Candidates surfaced in the `@`-mention popup — channel members for groups, or contact list for DMs. Parent owns the source-of-truth list; composer just filters/renders. Empty array disables the popup. */
   mentionCandidates?: { address: string; name: string }[];
-  /** `nonce` (optional) changes on every reply action — even re-replying to the
-   *  same message — so the composer re-focuses + re-opens the keyboard each time. */
+  /** `nonce` (optional) changes on every reply action — even re-replying to the same message — so the composer re-focuses + re-opens the keyboard each time. */
   replyingTo?: { id: string; preview: string; sender?: string | null; nonce?: number };
-  /** Bump to focus the composer + raise the keyboard WITHOUT setting a reply
-   *  target (e.g. a focus=1 deep link). Each new value re-fires
-   *  the focus effect. */
+  /** Bump to focus the composer + raise the keyboard WITHOUT setting a reply target (e.g. a focus=1 deep link). Each new value re-fires the focus effect. */
   autoFocusNonce?: number;
   onClearReply?: () => void;
-  /** Tap the reply banner → best-effort scroll the feed to the replied-to
-   *  message (crash-safe; no-ops if the row isn't currently loaded). */
+  /** Tap the reply banner → best-effort scroll the feed to the replied-to message (crash-safe; no-ops if the row isn't currently loaded). */
   onJumpToReply?: (messageId: string) => void;
   /** Optimistic-render hook: invoked the moment the user taps send, before the API call. */
   onOptimistic?: (entry: { localId: string; text: string; attachments: Attachment[]; replyTo?: string; payload?: unknown }) => void;
-  /** Fired AFTER the send completes (success OR failure). Lets the parent drop the
-   *  optimistic entry instead of waiting for an SSE/stream echo that may never arrive
-   *  (XMTP `streamMessages` doesn't always replay self-sends — pending bubbles would stick). */
+  /** Fired AFTER the send completes (success OR failure). Lets the parent drop the optimistic entry instead of waiting for an SSE/stream echo that may never arrive (XMTP `streamMessages` doesn't always replay self-sends — pending bubbles would stick). */
   onSent?: (localId: string, error?: string, sentId?: string) => void;
 }
 
+/** Renders the conversation message composer (input, attachments, mentions, replies, and send flows). */
 export function MessengerComposer({
   dark, xmtpLine, mentionCandidates, replyingTo, autoFocusNonce, onClearReply, onJumpToReply, onOptimistic, onSent,
 }: Props): React.ReactElement {
@@ -53,8 +46,7 @@ export function MessengerComposer({
   const palette = { fg, sub, inputBg, chipBg };
 
   const [text, setText] = useState('');
-  /** Cursor position in `text`, kept in sync via onSelectionChange so the
-   *  mention detector knows where the user is typing. */
+  /** Cursor position in `text`, kept in sync via onSelectionChange so the mention detector knows where the user is typing. */
   const [selection, setSelection] = useState<{ start: number; end: number }>({ start: 0, end: 0 });
   const [pending, setPending] = useState<Attachment[]>([]);
   const [, setSending] = useState(false); // set by send loop; button hides on clear, not via disabled
@@ -104,6 +96,7 @@ export function MessengerComposer({
   const hasContent = text.trim().length> 0 || pending.length> 0; // text or any pending attachment
 
   const { matches: mentionMatches, range: mentionRange } = computeMentions(text, selection.start, mentionCandidates);
+  /** Pick Mention. */
   const pickMention = (c: { address: string; name: string }): void => {
     if (!mentionRange) return;
     const { next, cursor } = applyMention(text, mentionRange, c.address);
@@ -114,7 +107,7 @@ export function MessengerComposer({
   const attachActions = buildAttachActions({
     pickImage: actions.pickImage, takePhoto: actions.takePhoto,
     pickFile: actions.pickFile, pickLocation: actions.pickLocation,
-    openPoll: () => setPollOpen(true), openSig: () => setSigOpen(true), openTx: () => actions.openTx(),
+    openPoll: () => { setPollOpen(true); }, openSig: () => { setSigOpen(true); }, openTx: () => { actions.openTx(); },
   });
   /** Last-used type's icon → quick-access button left of "+"; hidden until first use. */
   const lastLabel = useLastAttachment();
@@ -126,7 +119,7 @@ export function MessengerComposer({
       {replyingTo ? (
         <ReplyBanner
           dark={dark} sub={sub} sender={replyingTo.sender} onClear={onClearReply}
-          onPress={onJumpToReply ? () => onJumpToReply(replyingTo.id) : undefined}
+          onPress={onJumpToReply ? () => { onJumpToReply(replyingTo.id); } : undefined}
 />
       ) : null}
       {/** @-mention popup — Discord-style, stacked above the composer. */}
@@ -136,7 +129,7 @@ export function MessengerComposer({
       {pending.length> 0 ? (
         <PendingRow
           fg={fg} sub={sub} chipBg={chipBg} pending={pending}
-          onRemove={(i) => setPending(prev => prev.filter((_, j) => j !== i))}
+          onRemove={(i) => { setPending(prev => prev.filter((_, j) => j !== i)); }}
 />
       ) : null}
       {uploading || err ? (
@@ -164,12 +157,12 @@ export function MessengerComposer({
       {attachMenuOpen ? (
         <AttachMenu
           head={head} inputBg={inputBg} chipBg={chipBg}
-          onClose={() => setAttachMenuOpen(() => false)}
+          onClose={() => { setAttachMenuOpen(() => false); }}
           actions={attachActions}
 />
       ) : null}
       <PollSheet
-        open={pollOpen} onClose={() => setPollOpen(false)} palette={palette} dark={dark}
+        open={pollOpen} onClose={() => { setPollOpen(false); }} palette={palette} dark={dark}
         question={pollQuestion} setQuestion={setPollQuestion}
         header={pollHeader} setHeader={setPollHeader}
         options={pollOptions} setOptions={setPollOptions}
@@ -177,7 +170,7 @@ export function MessengerComposer({
         onSend={() => void actions.sendPoll()}
 />
       <SignatureSheet
-        open={sigOpen} onClose={() => setSigOpen(false)} palette={palette} dark={dark}
+        open={sigOpen} onClose={() => { setSigOpen(false); }} palette={palette} dark={dark}
         kind={sigKind} setKind={setSigKind}
         desc={sigDesc} setDesc={setSigDesc}
         message={sigMessage} setMessage={setSigMessage}
@@ -185,7 +178,7 @@ export function MessengerComposer({
         onSend={() => void actions.sendSignatureRequest()}
 />
       <PaymentSheet
-        open={txOpen} onClose={() => setTxOpen(false)} palette={palette} dark={dark}
+        open={txOpen} onClose={() => { setTxOpen(false); }} palette={palette} dark={dark}
         to={txTo} setTo={setTxTo}
         amount={txAmount} setAmount={setTxAmount}
         note={txNote} setNote={setTxNote}

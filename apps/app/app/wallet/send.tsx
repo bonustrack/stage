@@ -1,17 +1,8 @@
-/** Wallet → Send token (unified public + shielded).
- *
- *  ONE page for sending any token the wallet holds. The combined TokenSelector
- *  modal lists EVERY positive-balance token — public AND Railgun-shielded — each
- *  row tagged with the shielded badge so the kind is obvious. Picking a token
- *  carries its `isPrivate` flag, and the page routes the send automatically:
- *
- *    • public token  → PublicSendBody  → sendNativeOrToken / send.public
- *    • shielded token → SendShieldedBody → runAction({ kind: 'send' }) (0zk→0zk)
- *
- *  There is NO manual public/shielded toggle — the chosen token decides. Shield
- *  (public→private) and Unshield (private→public) remain their own pages.
- *  `?to=` pre-fills the public recipient; `?symbol=&chainId=&private=` pre-select
- *  a token (e.g. from a token detail page's Send button). */
+/**
+ * @file Unified Wallet send-token screen for any held token, routing public
+ * balances to an on-chain transfer and Railgun-shielded balances to a 0zk
+ * transfer based on the token picked in the combined TokenSelector.
+ */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { Col } from '../../components/layout';
@@ -23,6 +14,7 @@ import { PublicSendBody } from './send.public.body';
 import { ShieldFlowForm } from './send.shield';
 import { TokenSelector, useSelectedBalance, useTopToken, type TokenChoice } from './TokenSelector';
 
+/** Screen for sending tokens, supporting public and private transfers. */
 export default function WalletSend(): React.ReactElement {
   const router = useRouter();
   const params = useLocalSearchParams<{ to?: string; symbol?: string; chainId?: string; private?: string }>();
@@ -35,7 +27,7 @@ export default function WalletSend(): React.ReactElement {
   const hasParamToken = typeof params.symbol === 'string' && params.symbol.length > 0;
   const initial = useMemo<TokenChoice>(() => {
     const isPrivate = params.private === '1' || params.private === 'true';
-    const symbol = hasParamToken ? (params.symbol as string) : 'ETH';
+    const symbol = typeof params.symbol === 'string' && params.symbol.length > 0 ? params.symbol : 'ETH';
     const chainId = typeof params.chainId === 'string' && Number.isFinite(Number(params.chainId))
       ? Number(params.chainId) : isPrivate ? 11155111 : 1;
     return { symbol, chainId, isPrivate };
@@ -53,6 +45,7 @@ export default function WalletSend(): React.ReactElement {
     touched.current = true;
     setToken(topToken);
   }, [topToken]);
+  /** Handle the Change. */
   const onChange = (v: TokenChoice): void => { touched.current = true; setToken(v); };
 
   const balance = useSelectedBalance('combined', token);
@@ -69,7 +62,7 @@ export default function WalletSend(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <SendHeader fg={fg} head={head} border={border} onBack={() => router.back()}/>
+      <SendHeader fg={fg} head={head} border={border} onBack={() => { router.back(); }}/>
 
       <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ padding: 16, gap: 16 }}>
@@ -85,7 +78,7 @@ export default function WalletSend(): React.ReactElement {
       </ScrollView>
 
       {footer ? (
-        <WalletFooter border={border} dark={dark} onCancel={() => router.back()}
+        <WalletFooter border={border} dark={dark} onCancel={() => { router.back(); }}
           submitLabel={footer.submitLabel} onSubmit={footerSubmit}
           submitDisabled={footer.submitDisabled} submitLoading={footer.submitLoading}/>
       ) : null}

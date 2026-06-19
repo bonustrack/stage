@@ -1,13 +1,15 @@
-/** A labelled gallery block: a component name + one-line note above a framed
- *  example. Shared by the Kit page (primitives) and the Components page (app-level
- *  components). No controls, no story indirection - the children render the
- *  component directly with sample props. Fonts: Calibre-Medium / Calibre-Semibold. */
+/**
+ * @file GallerySection — a labelled gallery block (name + note above a framed
+ *  example) shared by the Kit and Components pages, rendering children directly
+ *  with sample props and no controls or story indirection.
+ */
 
 import { Box } from '../layout';
 
 import { Text } from '@metro-labs/kit/text';
 import { useBlockRadius } from '../../lib/theme';
 
+/** Renders a labeled gallery section, optionally wrapped in a bordered card. */
 export function GallerySection({ name, note, head, sub, border, framed = true, innerPadH, innerPadV, children }: {
   name: string; note?: string; head: string; sub: string; border: string;
   /** When true (default) wrap children in a bordered rounded card; else no frame. */

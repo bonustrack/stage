@@ -1,12 +1,11 @@
-/** XMTP group lifecycle helpers (create / add members / leave) for the app's
- *  XMTP client lib. Extracted from lib/xmtp.ts (phase-2 lint split); re-exported
- *  from there. */
+/** @file XMTP group lifecycle helpers (create / add members / leave) for the app's XMTP client lib; extracted from lib/xmtp.ts and re-exported from there. */
 
 import { PublicIdentity } from '@xmtp/react-native-sdk';
 import { getCachedXmtpClient, getOrCreateXmtpClient, convOfLine } from './xmtp.client';
 import { lineOfConv, type XmtpConsent } from './xmtp.types';
 
-/** Create a new XMTP group conversation with the given members.
+/**
+ * Create a new XMTP group conversation with the given members.
  *
  *  `addresses` accepts 0x Ethereum addresses (.eth resolution is done by the
  *  caller / create-group screen via resolveEnsName before we get here — this
@@ -20,7 +19,8 @@ import { lineOfConv, type XmtpConsent } from './xmtp.types';
  *
  *  Gotcha: every member must already have an XMTP inbox. The SDK throws when an
  *  address has never registered on XMTP; we surface that as a clear message so
- *  the screen can tell the user which address isn't reachable. */
+ *  the screen can tell the user which address isn't reachable.
+ */
 export async function createGroup(
   addresses: string[],
   name?: string,
@@ -36,9 +36,7 @@ export async function createGroup(
   const opts: { name?: string; imageUrl?: string } = {};
   const trimmedName = name?.trim();
   if (trimmedName) opts.name = trimmedName;
-  /** The RN SDK 5.7 CreateGroupOptions carries `imageUrl` (the group's
-   *  imageUrlSquare); set it at creation so no follow-up update call is
-   *  needed. Caller passes an already-uploaded https blob url. */
+  /** The RN SDK 5.7 CreateGroupOptions carries `imageUrl` (the group's imageUrlSquare); set it at creation so no follow-up update call is needed. Caller passes an already-uploaded https blob url. */
   const trimmedImage = imageUrl?.trim();
   if (trimmedImage) opts.imageUrl = trimmedImage;
 
@@ -60,11 +58,13 @@ export async function createGroup(
   }
 }
 
-/** Add members to an existing group by Ethereum address. Resolves the
+/**
+ * Add members to an existing group by Ethereum address. Resolves the
  *  conversation for `convId`, builds `PublicIdentity[]` the same way
  *  `createGroup` does, and calls the SDK's `group.addMembersByIdentity` (5.7.0).
  *  Throws a legible error for addresses not on XMTP and for permission denials
- *  (only group admins may add members). */
+ *  (only group admins may add members).
+ */
 export async function addGroupMembers(convId: string, addresses: string[]): Promise<void> {
   const members = addresses
     .map(a => a.trim())
@@ -91,12 +91,14 @@ export async function addGroupMembers(convId: string, addresses: string[]): Prom
   }
 }
 
-/** Leave a group conversation. The XMTP RN SDK (5.7) exposes `group.leaveGroup()`
+/**
+ * Leave a group conversation. The XMTP RN SDK (5.7) exposes `group.leaveGroup()`
  *  natively — it removes the local inbox from the group's member list (a real
  *  leave, not a local hide). Falls back to denying consent (local hide) when the
  *  conversation predates the method or `leaveGroup` throws, so the row still
  *  disappears from the user's list either way. Returns `'left'` for a true leave,
- *  `'hidden'` when it could only deny consent. */
+ *  `'hidden'` when it could only deny consent.
+ */
 export async function leaveGroupConv(line: string): Promise<'left' | 'hidden'> {
   const conv = await convOfLine(line);
   if (!conv) throw new Error('Conversation not found');
@@ -107,8 +109,7 @@ export async function leaveGroupConv(line: string): Promise<'left' | 'hidden'> {
   if (group.leaveGroup) {
     try {
       await group.leaveGroup();
-      /** Also deny consent so the conversation drops out of the local list
-       *  immediately, before the member-removal commit syncs back. */
+      /** Also deny consent so the conversation drops out of the local list immediately, before the member-removal commit syncs back. */
       await group.updateConsent?.('denied').catch(() => undefined);
       return 'left';
     } catch {

@@ -1,9 +1,14 @@
-/** @stage-labs/client — framework-agnostic shared logic for the Metro
+/**
+ * @file Public entrypoint barrel for @stage-labs/client, re-exporting every framework-agnostic Metro client module.
+ */
+/**
+ * @stage-labs/client — framework-agnostic shared logic for the Metro
  *  clients (apps/ui Vue web + apps/app React Native). Pure TypeScript only:
  *  no Vue, no React, no react-native, no browser-only globals beyond `fetch`.
  *
  *  Subpath exports are also available (e.g. `@stage-labs/client/profile`)
- *  for call-sites that want to keep imports narrow. */
+ *  for call-sites that want to keep imports narrow.
+ */
 
 export * from './types';
 export * from './profile/snapshot';

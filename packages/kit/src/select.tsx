@@ -1,13 +1,6 @@
-/** Select - a ChatKit-styled dropdown. Mirrors ChatKit's `Select` widget.
- *  Faithful prop names: `name`, `options` ({ label, value }[]), `defaultValue`,
- *  `placeholder`, `variant` ('soft' | 'outline'), `size` (ControlSize), `pill`,
- *  `block`, `clearable`, `disabled`. Deviation (kit is interactive RN, not
- *  server-streamed): ChatKit's `onChangeAction` (a server ActionConfig) is
- *  replaced by an `onChange(value)` callback, and a controlled `value` prop is
- *  accepted so the app can drive the field. `dark` boolean keeps the kit
- *  hook-free. Implemented as a Pressable trigger that opens an RN Modal sheet of
- *  options, drawn with kit tokens + the shared control box style (no native
- *  picker dependency). */
+/**
+ * @file Select — a hook-free interactive ChatKit-styled dropdown (controlled `value` + `onChange`) implemented as a Pressable trigger opening an RN Modal options sheet, with no native picker dependency.
+ */
 
 import { useState } from 'react';
 import {
@@ -101,12 +94,14 @@ export function Select(props: SelectProps): React.ReactElement {
 
   const current = options.find((o) => o.value === selected);
 
+  /** Pick helper. */
   function pick(v: string): void {
     if (controlled === undefined) setInternal(v);
     onChange?.(v);
     setOpen(false);
   }
 
+  /** Clear helper. */
   function clear(): void {
     if (controlled === undefined) setInternal(undefined);
     onChange?.('');
@@ -119,7 +114,7 @@ export function Select(props: SelectProps): React.ReactElement {
         accessibilityLabel={name}
         accessibilityState={{ disabled, expanded: open }}
         disabled={disabled}
-        onPress={() => setOpen(true)}
+        onPress={() => { setOpen(true); }}
         style={[
           box,
           {
@@ -151,14 +146,16 @@ export function Select(props: SelectProps): React.ReactElement {
         <Icon name="selector" size={16} color={colors.placeholder} />
       </Pressable>
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => { setOpen(false); }}>
         <Pressable
           style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 24 }}
-          onPress={() => setOpen(false)}
+          onPress={() => { setOpen(false); }}
         >
           <Pressable
             style={{ backgroundColor: sheetBg, borderRadius: 14, overflow: 'hidden', maxHeight: '70%' }}
-            onPress={() => {}}
+            onPress={() => {
+              /* intentional no-op: swallow press so taps inside the sheet don't dismiss it */
+            }}
           >
             <ScrollView>
               {options.map((opt) => {
@@ -168,7 +165,7 @@ export function Select(props: SelectProps): React.ReactElement {
                     key={opt.value}
                     accessibilityRole="menuitem"
                     accessibilityState={{ selected: isSel }}
-                    onPress={() => pick(opt.value)}
+                    onPress={() => { pick(opt.value); }}
                     style={{
                       flexDirection: 'row',
                       alignItems: 'center',

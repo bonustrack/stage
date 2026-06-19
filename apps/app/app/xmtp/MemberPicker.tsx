@@ -1,11 +1,8 @@
-/** Shared member picker used by the new-group + add-members screens.
- *
- *  Owns the staged-member list and the "address / .eth → resolved chip" entry
- *  flow (the two screens previously duplicated this verbatim). `useMemberPicker`
- *  exposes the staged `members` (and a `reset`) so each screen can drive its own
- *  Create / Add submit; `<MemberPicker>` renders the entry field, the tap-to-add
- *  suggestions sourced from existing DM contacts, + removable chips. Manual
- *  0x / .eth entry still works for peers not in the contact list. */
+/**
+ * @file Shared member picker (useMemberPicker hook plus MemberPicker component)
+ * for the new-group and add-members screens, owning the staged-member list and
+ * the address/.eth resolution, contact suggestions, and removable chips.
+ */
 
 import { useCallback, useMemo, useState } from 'react';
 import { fontSize } from '@metro-labs/kit/tokens';
@@ -41,11 +38,11 @@ export interface MemberPickerState {
   removeMember: (address: string) => void;
   /** Tap-to-add/remove a suggested contact (toggles selection by address). */
   toggleContact: (contact: Contact) => void;
-  /** Lowercased addresses of every staged member — drives the suggestion
-   *  checkmarks. */
+  /** Lowercased addresses of every staged member — drives the suggestion checkmarks. */
   selectedAddresses: Set<string>;
 }
 
+/** Hook managing the member-picker entry field and staged member list. */
 export function useMemberPicker(): MemberPickerState {
   const [entry, setEntry] = useState('');
   const [members, setMembers] = useState<Member[]>([]);
@@ -71,7 +68,7 @@ export function useMemberPicker(): MemberPickerState {
       if (members.some(m => m.address.toLowerCase() === lower)) {
         flash('Already added'); setEntry(''); return;
       }
-      setMembers(prev => [...prev, { address: address as string, label }]);
+      setMembers(prev => [...prev, { address: address, label }]);
       setEntry('');
     } catch (err) {
       flash((err as Error)?.message ?? 'Failed to add member');
@@ -104,12 +101,11 @@ export function useMemberPicker(): MemberPickerState {
   };
 }
 
+/** UI for searching, adding and removing members when composing a group. */
 export function MemberPicker({ state, dark, exclude = [] }: {
   state: MemberPickerState;
   dark: boolean;
-  /** Addresses to omit from suggestions beyond self (e.g. an existing group's
-   *  current members). Staged members are NOT excluded — they stay visible with
-   *  a checkmark so a tap removes them. */
+  /** Addresses to omit from suggestions beyond self (e.g. an existing group's current members). Staged members are NOT excluded — they stay visible with a checkmark so a tap removes them. */
   exclude?: string[];
 }): React.ReactElement {
   const { link: head, text: sub, border, inputBg } = usePalette();
@@ -182,7 +178,7 @@ export function MemberPicker({ state, dark, exclude = [] }: {
                 )}
               </Col>
               <Pressable
-                onPress={() => removeMember(m.address)}
+                onPress={() => { removeMember(m.address); }}
                 hitSlop={6}
                 style={{ width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: border }}
 >

@@ -1,15 +1,13 @@
-/** Pure parse + format helpers for the pre-sign simulation (lib/txSimulate).
- *
- *  Split out so the log → asset-delta math is unit-testable WITHOUT pulling in
- *  the RN-bound account/RPC layer (lib/accounts → react-native). No React, no
- *  network, no key material here — just bytes in, AssetMove out. */
+/**
+ * @file Pure log → asset-delta parse + format helpers for the pre-sign simulation, split out so the math is unit-testable without the RN-bound account/RPC layer.
+ *  No React, no network, no key material — bytes in, AssetMove out.
+ */
 
 import { ASSETS, NATIVE_TOKEN_SENTINEL } from '@stage-labs/client/wallet/assets';
 import { decodeAbiParameters, type Hex } from 'viem';
 
-/** keccak256("Transfer(address,address,uint256)") — the ERC-20 / synthetic-ETH
- *  transfer topic that traceTransfers emits. */
-export const TRANSFER_TOPIC =
+/** keccak256("Transfer(address,address,uint256)") — the ERC-20 / synthetic-ETH transfer topic that traceTransfers emits. */
+const TRANSFER_TOPIC =
   '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 
 /** One side of the asset delta shown on the card. */
@@ -23,7 +21,7 @@ export interface AssetMove {
   decimals: number;
 }
 
-export interface SimLog { address: string; topics: string[]; data: string }
+interface SimLog { address: string; topics: string[]; data: string }
 export interface SimCall {
   status: string;
   returnData?: string;
@@ -31,11 +29,13 @@ export interface SimCall {
   error?: { message?: string; data?: string };
 }
 
-/** Normalise a raw revert/RPC message into a short, human reason. Recognises the
+/**
+ * Normalise a raw revert/RPC message into a short, human reason. Recognises the
  *  common cases the node surfaces as free text (insufficient funds/balance, gas,
  *  generic "execution reverted") so the card reads "Will fail: insufficient
  *  funds" instead of a node-specific blob. Returns the input trimmed when no
- *  pattern matches. */
+ *  pattern matches.
+ */
 export function humanizeRevert(raw: string): string {
   const s = raw.trim();
   const lc = s.toLowerCase();
@@ -51,28 +51,24 @@ export function humanizeRevert(raw: string): string {
   return s;
 }
 
-/** Decode a standard `Error(string)` revert payload (0x08c379a0 selector) into
- *  its message; falls back to a generic note for `Panic(uint256)` / opaque data.
- *  The decoded/RPC message is run through {@link humanizeRevert} so common
- *  failures read cleanly. */
+/** Decode a standard `Error(string)` revert payload (0x08c379a0 selector) into its message; falls back to a generic note for `Panic(uint256)` / opaque data. The decoded/RPC message is run through {@link humanizeRevert} so common failures read cleanly. */
 export function decodeRevert(returnData?: string, errMsg?: string): string | undefined {
   const d = returnData && returnData !== '0x' ? returnData : undefined;
-  if (d && d.startsWith('0x08c379a0')) {
+  if (d?.startsWith('0x08c379a0')) {
     try {
       const [msg] = decodeAbiParameters([{ type: 'string' }], ('0x' + d.slice(10)) as Hex);
-      if (msg) return humanizeRevert(String(msg));
+      if (msg) return humanizeRevert(msg);
     } catch { /* fall through */ }
   }
-  if (d && d.startsWith('0x4e487b71')) return 'Execution panic (assert/overflow)';
+  if (d?.startsWith('0x4e487b71')) return 'Execution panic (assert/overflow)';
   if (errMsg) return humanizeRevert(errMsg);
   return undefined;
 }
 
-/** Symbol/decimals for a token contract from the static registry; short-address
- *  + 18-decimal fallback when unknown. Registry-only by design (no extra RPC). */
+/** Symbol/decimals for a token contract from the static registry; short-address + 18-decimal fallback when unknown. Registry-only by design (no extra RPC). */
 function tokenMeta(addr: string, chainId: number): { symbol: string; decimals: number } {
   const lc = addr.toLowerCase();
-  const hit = ASSETS.find(a => a.chainId === chainId && a.address && a.address.toLowerCase() === lc);
+  const hit = ASSETS.find(a => a.chainId === chainId && a.address?.toLowerCase() === lc);
   if (hit) return { symbol: hit.symbol, decimals: hit.decimals };
   return { symbol: `${addr.slice(0, 6)}…${addr.slice(-4)}`, decimals: 18 };
 }
@@ -95,9 +91,7 @@ export function formatAmount(raw: bigint, decimals: number): string {
   return `${whole.toString()}.${fs}`;
 }
 
-/** Build the "insufficient ETH" reason for a native-value transfer whose value
- *  exceeds the sender's balance: "insufficient ETH (have X, need Y)". Pure (wei
- *  in, string out) so it's unit-testable without the RPC. */
+/** Build the "insufficient ETH" reason for a native-value transfer whose value exceeds the sender's balance: "insufficient ETH (have X, need Y)". Pure (wei in, string out) so it's unit-testable without the RPC. */
 export function insufficientEthReason(balanceWei: bigint, valueWei: bigint, chainId: number): string {
   const { symbol, decimals } = nativeMeta(chainId);
   return `insufficient ${symbol} (have ${formatAmount(balanceWei, decimals)}, need ${formatAmount(valueWei, decimals)})`;
@@ -108,8 +102,7 @@ function topicToAddr(topic: string): string {
   return ('0x' + topic.slice(-40)).toLowerCase();
 }
 
-/** Net the simulation's transfer logs (ERC-20 + synthetic native) into a signed
- *  per-token delta relative to `from`, split into in/out lists. */
+/** Net the simulation's transfer logs (ERC-20 + synthetic native) into a signed per-token delta relative to `from`, split into in/out lists. */
 export function parseAssetChanges(
   calls: SimCall[],
   from: string,
@@ -118,17 +111,22 @@ export function parseAssetChanges(
 ): { in: AssetMove[]; out: AssetMove[] } {
   const me = from.toLowerCase();
   const net = new Map<string, bigint>(); // '' = native, else lowercased contract
+  /** Add helper. */
   const add = (token: string, delta: bigint): void => {
     net.set(token, (net.get(token) ?? 0n) + delta);
   };
 
   for (const c of calls) {
     for (const log of c.logs ?? []) {
-      if (!log.topics?.length) continue;
-      if (log.topics[0].toLowerCase() !== TRANSFER_TOPIC) continue;
-      if (log.topics.length < 3) continue;
-      const fromA = topicToAddr(log.topics[1]);
-      const toA = topicToAddr(log.topics[2]);
+      const topics = log.topics;
+      if (!topics?.length) continue;
+      if (topics[0]?.toLowerCase() !== TRANSFER_TOPIC) continue;
+      if (topics.length < 3) continue;
+      const topic1 = topics[1];
+      const topic2 = topics[2];
+      if (topic1 === undefined || topic2 === undefined) continue;
+      const fromA = topicToAddr(topic1);
+      const toA = topicToAddr(topic2);
       let amount: bigint;
       try { amount = BigInt(log.data && log.data !== '0x' ? log.data : '0x0'); }
       catch { continue; }

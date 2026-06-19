@@ -1,15 +1,7 @@
-/** Shared "Remove passkey" action for an existing smart account, surfaced in
- *  Settings -> Wallet. The exact inverse of useEnablePasskey: it reverts a
- *  passkey-root Kernel back to ECDSA key-signing via removePasskeyFromRecord.
- *
- *  SECURITY-REDUCING (passkey -> key), so it confirms with a destructive Alert
- *  first. The on-chain swap userOp is authorized by the CURRENT root signer — the
- *  PASSKEY — so completing it proves device possession (no extra gate). State is
- *  cleared fail-closed: rec.passkey is only removed after the swap receipt succeeds.
- *
- *  ON-DEVICE: signing the sudo-swap userOp runs the OS WebAuthn assertion — not
- *  exercisable in CI. {available} hides the affordance unless this binary can run
- *  passkeys AND the active account actually HAS one. */
+/**
+ * @file Shared "Remove passkey" hook (Settings -> Wallet) — the inverse of useEnablePasskey, reverting a passkey-root Kernel back to ECDSA signing via removePasskeyFromRecord behind a destructive confirm.
+ *  The swap userOp is authorized by the current passkey root (signed via the OS WebAuthn assertion) and the stored passkey is cleared fail-closed only after the receipt succeeds.
+ */
 
 import { useCallback, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
@@ -17,9 +9,9 @@ import { getActiveAccount } from './accounts';
 import { removePasskeyFromRecord, passkeysAvailable } from './zerodev';
 import { flash } from './toast';
 
+/** Provides whether a passkey can be removed from the active smart account and a confirm-and-remove action. */
 export function useRemovePasskey(epoch?: number, onChanged?: () => void): {
-  /** True only when this binary can run passkeys AND the active account is a smart
-   *  account that currently HAS a passkey (so removal is meaningful). */
+  /** True only when this binary can run passkeys AND the active account is a smart account that currently HAS a passkey (so removal is meaningful). */
   available: boolean;
   busy: boolean;
   /** Confirm + swap root back to ECDSA + clear stored passkey; flashes the outcome. */
@@ -55,7 +47,7 @@ export function useRemovePasskey(epoch?: number, onChanged?: () => void): {
         } else if (res.reason === 'unavailable') {
           flash('Passkeys need the latest app build');
         } else {
-          flash(res.message || 'Could not remove passkey');
+          flash(res.message ?? 'Could not remove passkey');
         }
       } finally {
         setBusy(false);

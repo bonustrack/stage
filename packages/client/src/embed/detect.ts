@@ -1,13 +1,9 @@
-/** Pure detection helpers shared between the RN app and the Vue web client.
- *  Imported from `apps/app/lib/embedDetect.ts` (re-exports) and
- *  `apps/ui/src/lib/embedDetect.ts`. Keep dependency-free. */
+/**
+ * @file Dependency-free detectors that extract YouTube ids and map coordinates from message text for inline embeds.
+ */
+/** Pure detection helpers shared between the RN app and the Vue web client. Imported from `apps/app/lib/embedDetect.ts` (re-exports) and `apps/ui/src/lib/embedDetect.ts`. Keep dependency-free. */
 
-/** Extract a YouTube video id from a message body. Supports:
- *   - youtu.be/<id>(?…)
- *   - youtube.com/watch?v=<id>(&…)
- *   - youtube.com/shorts/<id>
- *   - m.youtube.com/watch?v=<id>
- *  Returns null when no link is present. */
+/** Extract a YouTube video id from a message body. Supports: - youtu.be/<id>(?…) - youtube.com/watch?v=<id>(&…) - youtube.com/shorts/<id> - m.youtube.com/watch?v=<id> Returns null when no link is present. */
 export function youtubeIdOf(text: string | undefined | null): string | null {
   if (!text) return null;
   const patterns = [
@@ -28,9 +24,7 @@ export function youtubeIdOf(text: string | undefined | null): string | null {
 
 export interface MapCoords { lat: number; lng: number; sourceUrl: string }
 
-/** Extract lat/lng + the original URL from a message body containing a Google
- *  Maps / OSM / Apple Maps link. Returns null when no recognizable map link
- *  is present. */
+/** Extract lat/lng + the original URL from a message body containing a Google Maps / OSM / Apple Maps link. Returns null when no recognizable map link is present. */
 export function mapCoordsOf(text: string | undefined | null): MapCoords | null {
   if (!text) return null;
   const patterns: RegExp[] = [

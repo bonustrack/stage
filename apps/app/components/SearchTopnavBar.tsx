@@ -1,12 +1,8 @@
-/** SearchTopnavBar — the full-width search field that fully REPLACES a topnav
- *  while search is open (the parent hides its own topnav entirely and renders
- *  this in its place). A back chevron on the left collapses search (via
- *  onClose); the query sits on a FLAT toolbar surface — no inset field, no
- *  background, no pill/radius — just a leading search glyph, the text/placeholder
- *  and a trailing clear button. Autofocuses on mount (the parent only renders it
- *  while search is open). Shared by Home (channels list) and the conversation
- *  view so both use the exact same bar, sized to match the topnav it stands in
- *  for. */
+/**
+ * @file Full-width flat search field that replaces the topnav while search is
+ *  open, shared by the channels list and conversation view, with a back chevron
+ *  to collapse and a trailing clear button.
+ */
 
 import { forwardRef } from 'react';
 import { fontSize } from '@metro-labs/kit/tokens';
@@ -26,8 +22,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
   border: string;
   /** Placeholder text — defaults to "Search". */
   placeholder?: string;
-  /** Optional extra top inset (e.g. status-bar height on the conversation view
-   *  whose topnav extends under the status bar). Defaults to 0. */
+  /** Optional extra top inset (e.g. status-bar height on the conversation view whose topnav extends under the status bar). Defaults to 0. */
   topInset?: number;
 }>(function SearchTopnavBar(props, ref): React.ReactElement {
   const { head, sub } = props;
@@ -53,7 +48,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
           backgroundColor: 'transparent', minHeight: 0, borderWidth: 0 }}
 />
       {props.query.length> 0 ? (
-        <Pressable onPress={() => props.setQuery('')} hitSlop={8}>
+        <Pressable onPress={() => { props.setQuery(''); }} hitSlop={8}>
           <Icon name="x" size={18} color={sub}/>
         </Pressable>
       ) : null}

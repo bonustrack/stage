@@ -1,14 +1,8 @@
-/** Generic rich preview card for a plain http(s) link found in a message body
- *  (anything not already claimed by a GitHub / channel / YouTube / map / EAS
- *  preview card — see lib/cardLinks.ts). Metadata (OpenGraph / Twitter-card /
- *  title / description / image / favicon) is fetched through the Metro
- *  link-preview proxy via `useLinkPreview`.
- *
- *  Matches the github / channel card look: 1px theme border, rounded (block
- *  radius), transparent fill, palette tokens — plus an optional OG image at the
- *  top. While loading OR on any failure (proxy unreachable, blocked url, no
- *  metadata) the hook returns null and we render NOTHING — the plain text link
- *  stays as-is, never a broken/empty card. Tappable -> opens the link. */
+/**
+ * @file Generic rich preview card for a plain http(s) message link not claimed by
+ *  a more specific card, fetching OpenGraph/Twitter metadata via the Metro
+ *  link-preview proxy (useLinkPreview) and rendering nothing on load/failure.
+ */
 
 import { Linking } from 'react-native';
 
@@ -21,10 +15,9 @@ import { useLinkPreview, isX402 } from '../lib/useLinkPreview';
 import { X402Card } from './X402Card';
 import { usePalette, useBlockRadius } from '../lib/theme';
 
+/** Renders a generic OpenGraph preview card for a plain link, or nothing while loading or on failure. */
 export function LinkPreviewCard({ url, dark }: {
-  /** `dark` is forwarded to the x402 payment card (Pay-style button tinting);
-   *  the OG preview path takes colors from the live palette tokens (same
-   *  convention as GitHubLinkCard / PreviewLinkCard). */
+  /** `dark` is forwarded to the x402 payment card (Pay-style button tinting); the OG preview path takes colors from the live palette tokens (same convention as GitHubLinkCard / PreviewLinkCard). */
   url: string; dark?: boolean;
 }): React.ReactElement | null {
   const meta = useLinkPreview(url);
@@ -36,7 +29,9 @@ export function LinkPreviewCard({ url, dark }: {
 
   const subColor = pal.text;
   const border = pal.border;
-  const domain = meta.siteName || domainOf(meta.url || url);
+  const domain = meta.siteName == null || meta.siteName === ''
+    ? domainOf(meta.url == null || meta.url === '' ? url : meta.url)
+    : meta.siteName;
 
   return (
     <Pressable onPress={() => void Linking.openURL(url)}>

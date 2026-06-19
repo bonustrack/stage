@@ -1,8 +1,4 @@
-/** Facebook-Messenger-style voice message player for conversation bubbles:
- *  a rounded accent pill holding a circular play/pause button, a tappable
- *  waveform (representative bars that fill with playback progress), and the
- *  elapsed / total duration. Playback uses expo-av (same lib the composer's
- *  recorder uses). Any audio attachment renders through this. */
+/** @file Messenger-style voice message player for conversation bubbles: play/pause button, tappable waveform that fills with playback progress, and elapsed/total duration, using expo-av. */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -14,39 +10,38 @@ import { Row, Col } from './layout';
 import { waveformBars } from './VoiceMessage.bars';
 import { useDecodedBars } from './VoiceMessage.barsCache';
 
-/** Bar count — shared by the synthetic placeholder and the real decode so the
- *  swap from placeholder to true waveform doesn't reflow the track. */
+/** Bar count — shared by the synthetic placeholder and the real decode so the swap from placeholder to true waveform doesn't reflow the track. */
 const BAR_COUNT = 34;
 
-/** Messenger's outgoing-bubble blue. Used for the pill so the player reads as
- *  a voice message regardless of the flat Discord-style row theming around it. */
+/** Messenger's outgoing-bubble blue. Used for the pill so the player reads as a voice message regardless of the flat Discord-style row theming around it. */
 const ACCENT = '#0a7cff';
 const ON_ACCENT = '#ffffff';
 const TRACK_H = 26;
 
 interface Props { uri: string }
 
+/** Fmt helper. */
 function fmt(ms: number | undefined): string {
   if (!ms || ms <= 0) return '0:00';
   const s = Math.round(ms / 1000);
   return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 }
 
+/** Audio message bubble with play/pause controls for the given URI. */
 export function VoiceMessage({ uri }: Props): React.ReactElement {
   const soundRef = useRef<Audio.Sound | null>(null);
   const [playing, setPlaying] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [barWidth, setBarWidth] = useState(0);
-  /** Synthetic placeholder shown until the on-device decode resolves; the real
-   *  PCM-derived bars replace it once `useDecodedBars` returns (and fall back to
-   *  this synthetic shape if decode fails or the native module is unavailable). */
+  /** Synthetic placeholder shown until the on-device decode resolves; the real PCM-derived bars replace it once `useDecodedBars` returns (and fall back to this synthetic shape if decode fails or the native module is unavailable). */
   const synthetic = useMemo(() => waveformBars(uri, BAR_COUNT), [uri]);
   const decoded = useDecodedBars(uri, BAR_COUNT);
   const bars = decoded ?? synthetic;
 
   useEffect(() => () => { void soundRef.current?.unloadAsync().catch(() => undefined); }, []);
 
+  /** Handle the Status. */
   const onStatus = (st: AVPlaybackStatus): void => {
     if (!st.isLoaded) return;
     setPosition(st.positionMillis);
@@ -60,6 +55,7 @@ export function VoiceMessage({ uri }: Props): React.ReactElement {
     }
   };
 
+  /** Toggle helper. */
   const toggle = async (): Promise<void> => {
     try {
       if (soundRef.current) {
@@ -73,6 +69,7 @@ export function VoiceMessage({ uri }: Props): React.ReactElement {
     } catch { /** Network / decode error — stay idle; tap to retry. */ }
   };
 
+  /** Seek To. */
   const seekTo = (x: number): void => {
     if (!soundRef.current || duration <= 0 || barWidth <= 0) return;
     const fraction = Math.max(0, Math.min(1, x / barWidth));
@@ -94,8 +91,8 @@ export function VoiceMessage({ uri }: Props): React.ReactElement {
       </Pressable>
       <Pressable
         style={{ flex: 1, height: TRACK_H, justifyContent: 'center' }}
-        onLayout={(ev) => setBarWidth(ev.nativeEvent.layout.width)}
-        onPress={(ev) => seekTo(ev.nativeEvent.locationX)}
+        onLayout={(ev) => { setBarWidth(ev.nativeEvent.layout.width); }}
+        onPress={(ev) => { seekTo(ev.nativeEvent.locationX); }}
 >
         <Row height={TRACK_H} align="center" gap={2}>
           {bars.map((h, i) => {

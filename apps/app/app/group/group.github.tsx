@@ -1,7 +1,4 @@
-/** Group GITHUB LINK section — set/edit the linked GitHub issue/PR URL stored
- *  in the group's synced `appData` (Linear-style linked item). Validates a
- *  github.com URL and saves it; any member may edit. Backed by lib/xmtp.github
- *  (merge-preserving write so labels survive). */
+/** @file Group GitHub-link section for setting and editing the linked GitHub issue/PR URL stored in the group's synced appData. */
 
 import { useEffect, useState } from 'react';
 import { fontSize } from '@metro-labs/kit/tokens';
@@ -18,6 +15,7 @@ import { getGithubLink, setGithubLink } from '../../modules/messaging';
 
 interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }
 
+/** Section for linking and editing a group's associated GitHub repository. */
 export function GroupGithubSection({ line, p }: { line: string; p: Pal }): React.ReactElement {
   const { fg, sub, border, inputBg } = p;
   const [url, setUrl] = useState<string | undefined>(undefined);
@@ -35,11 +33,13 @@ export function GroupGithubSection({ line, p }: { line: string; p: Pal }): React
     return (): void => { cancelled = true; };
   }, [line]);
 
+  /** Report Error. */
   const reportError = (e: unknown): void => {
     if (e instanceof LabelPermissionError) flash(e.message);
     else flash(e instanceof Error ? e.message : 'Could not save link. Try again.');
   };
 
+  /** Save helper. */
   const save = async (): Promise<void> => {
     if (busy) return;
     setBusy(true);

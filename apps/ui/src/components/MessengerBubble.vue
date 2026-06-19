@@ -23,9 +23,8 @@ const props = defineProps<{
   inboxToAddr?: Record<string, string>;
 }>();
 const emit = defineEmits<{
-  (e: 'request-actions', entry: HistoryEntry): void;
+  (e: 'request-actions' | 'reply', entry: HistoryEntry): void;
   (e: 'react', payload: { entry: HistoryEntry; emoji: string }): void;
-  (e: 'reply', entry: HistoryEntry): void;
   (e: 'open-avatar', address: string): void;
 }>();
 

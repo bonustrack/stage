@@ -1,18 +1,12 @@
-/** Conversation-list domain types, behind the facade (stage 2).
- *
- *  Plain JS view-models for a conversation row - no XMTP SDK handle leaks into
- *  consumers. Built by the adapters in `./conversation`. */
+/** @file Conversation-list domain types behind the facade: plain-JS view-models (no XMTP SDK handle) for a conversation row, built by the adapters in `./conversation`. */
 
-/** Full channels-list row view-model - the domain projection of a conversation
- *  the Home channels list renders. Every field is a plain JS value (no SDK
- *  handle), so consumers never touch `@xmtp/react-native-sdk`. */
+/** Full channels-list row view-model - the domain projection of a conversation the Home channels list renders. Every field is a plain JS value (no SDK handle), so consumers never touch `@xmtp/react-native-sdk`. */
 export interface ConversationView {
   convId: string;
   title: string;
   lastTs: number | null;
   lastPreview: string;
-  /** Eth address whose stamp.fyi avatar renders in the row (latest sender,
-   *  else DM peer / channel-id seed). Ignored when `avatarUri` is set. */
+  /** Eth address whose stamp.fyi avatar renders in the row (latest sender, else DM peer / channel-id seed). Ignored when `avatarUri` is set. */
   avatarAddress: string | null;
   /** Group-uploaded image (ipfs:// or http URL). Takes precedence over the seed. */
   avatarUri: string | null;
@@ -38,16 +32,13 @@ export interface ConversationView {
   github?: string;
 }
 
-/** Just the avatar fields of a message request - the lightest projection, used
- *  by the notifications-card preview pile (no title / preview-text resolution,
- *  so no conv.sync()/messages() round-trip). */
+/** Just the avatar fields of a message request - the lightest projection, used by the notifications-card preview pile (no title / preview-text resolution, so no conv.sync()/messages() round-trip). */
 export type RequestAvatarDescriptor = Pick<
   ConversationRequestView,
   'convId' | 'avatarAddress' | 'avatarUri' | 'isGroup'
 >;
 
-/** Lighter message-request row view-model (the requests screen + the
- *  notifications-card preview pile). */
+/** Lighter message-request row view-model (the requests screen + the notifications-card preview pile). */
 export interface ConversationRequestView {
   convId: string;
   title: string;

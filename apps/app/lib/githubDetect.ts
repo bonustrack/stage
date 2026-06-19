@@ -1,9 +1,6 @@
-/** GitHub link detection for message bubbles. Extracts the first github.com
- *  repo / PR / issue URL from message text so the bubble can render a rich
- *  preview card below the body. Pure string parsing — no network — so it stays
- *  cheap to run on every render and unit-testable. */
+/** @file Extracts the first github.com repo/PR/issue URL from message text (pure string parsing, no network) so a bubble can render a rich preview card. */
 
-export type GithubKind = 'repo' | 'pull' | 'issue';
+type GithubKind = 'repo' | 'pull' | 'issue';
 
 export interface GithubRef {
   /** The matched github.com URL (used as the cache / query key). */
@@ -34,10 +31,11 @@ export function githubLinkOf(text?: string | null): GithubRef | null {
   const m = RE.exec(text);
   if (!m) return null;
   const owner = m[1];
-  let repo = m[2];
+  const rawRepo = m[2];
+  if (owner === undefined || rawRepo === undefined) return null;
   if (RESERVED.has(owner.toLowerCase())) return null;
   // Strip a trailing .git and any stray punctuation the regex may have caught.
-  repo = repo.replace(/\.git$/i, '');
+  const repo = rawRepo.replace(/\.git$/i, '');
   if (!owner || !repo) return null;
   const sub = m[3];
   const num = m[4] ? Number(m[4]) : undefined;

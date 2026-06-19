@@ -1,20 +1,6 @@
-/** "Secure your wallet" nudge — SKIPPABLE post-onboarding backup prompt.
- *
- *  Onboarding deliberately does NOT show the recovery phrase (Less's locked
- *  decision: defer backup). This card is where the user can, later and at their
- *  own pace, actually secure the wallet:
- *    - Back up recovery phrase  -> reveal the phrase (device auth) + a confirm
- *      step, then mark it backed up so the nudge stops showing.
- *    - Add guardians            -> route to the existing /wallet/recovery screen.
- *
- *  It is never forced: a "Dismiss" action hides it (persisted) without backing
- *  up. It only renders for a `smart` account that has not been backed up or
- *  dismissed yet, so it self-hides once handled. Lives at the top of Settings ->
- *  Security (see SecuritySettings).
- *
- *  Reveal/confirm UI is intentionally minimal (no screenshots-block etc. — that
- *  can come later); the phrase comes from the keyring's revealRecoveryPhrase()
- *  which prompts device auth (the only guarded path that returns the mnemonic). */
+/**
+ * @file SecureWalletNudge: the skippable post-onboarding "secure your wallet" card (reveal/confirm recovery phrase or add guardians).
+ */
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
@@ -29,6 +15,7 @@ import { revealRecoveryPhrase } from '../../lib/zerodev';
 import { useEnablePasskey } from '../../lib/useEnablePasskey';
 import { isWalletBackedUp, setWalletBackedUp } from '../../lib/walletBackup';
 
+/** Renders a prompt urging the user to back up their wallet, or nothing once it is secured. */
 export function SecureWalletNudge(): React.ReactElement | null {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -78,6 +65,7 @@ export function SecureWalletNudge(): React.ReactElement | null {
     })();
   };
 
+  /** Dismiss helper. */
   const dismiss = (): void => {
     void (async () => { await setWalletBackedUp(true); setShow(false); })();
   };
@@ -106,7 +94,7 @@ export function SecureWalletNudge(): React.ReactElement | null {
                   onPress={passkey.run}/>
               ) : null}
               <Button dark={dark} variant="secondary" size="md" fullWidth
-                label="Add guardians" onPress={() => router.push('/wallet/recovery')}/>
+                label="Add guardians" onPress={() => { router.push('/wallet/recovery'); }}/>
               <Button dark={dark} variant="ghost" size="md" fullWidth
                 label="Not now" onPress={dismiss}/>
             </Col>
@@ -125,7 +113,7 @@ export function SecureWalletNudge(): React.ReactElement | null {
             </Box>
             <Row gap={8}>
               <Button dark={dark} variant="ghost" size="md" fullWidth style={{ flex: 1 }}
-                label="Hide" onPress={() => setPhrase(null)}/>
+                label="Hide" onPress={() => { setPhrase(null); }}/>
               <Button dark={dark} variant="primary" size="md" fullWidth style={{ flex: 1 }}
                 tintBg={pal.primary} tintFg={pal.bg}
                 label="I saved it" onPress={confirm}/>

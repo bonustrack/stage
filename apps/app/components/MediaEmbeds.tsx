@@ -1,10 +1,8 @@
-/** YouTube + location-map embed renderers. Both wrap their content in
- *  `MediaCard` so the visual frame is shared with image/video attachments.
- *  Pure-JS — no native deps — so they ship without an APK rebuild.
- *
- *  Detection happens at the message level via `lib/embedDetect`; this module
- *  only renders given the pre-extracted id/coords. Keeps the bubble simple
- *  and lets the detection logic stay unit-testable. */
+/**
+ * @file Pure-JS YouTube and OSM location-map embed renderers, both wrapping their
+ *  content in MediaCard, rendering from pre-extracted id/coords (detection lives
+ *  separately in lib/embedDetect).
+ */
 
 import { Linking } from 'react-native';
 
@@ -15,14 +13,12 @@ import { MediaCard } from './MediaCard';
 import { osmTileUrl } from '../lib/embedDetect';
 import { usePalette } from '../lib/theme';
 
-/** YouTube preview card: hqdefault thumbnail with a play-button overlay.
- *  Tap → opens the YouTube app (or the browser fallback). 16:9 ratio. */
+/** YouTube preview card: hqdefault thumbnail with a play-button overlay. Tap → opens the YouTube app (or the browser fallback). 16:9 ratio. */
 export function YouTubeEmbed({ videoId, dark }: {
   videoId: string; dark: boolean;
 }): React.ReactElement {
   const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
-  /** hqdefault is universally available (mqdefault has missing-frame issues
-   *  on shorts; maxresdefault 404s when the upload didn't generate one). */
+  /** hqdefault is universally available (mqdefault has missing-frame issues on shorts; maxresdefault 404s when the upload didn't generate one). */
   const thumbUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
   return (
     <MediaCard dark={dark} onPress={() => void Linking.openURL(watchUrl)}>
@@ -32,8 +28,7 @@ export function YouTubeEmbed({ videoId, dark }: {
           fit="cover"
           style={{ width: '100%', height: '100%', backgroundColor: '#000000' }}
 />
-        {/** Play-button overlay — semi-opaque dark scrim + a centered "▶" so
-         *   the thumbnail reads as "tap to watch" at a glance. */}
+        {/** Play-button overlay — semi-opaque dark scrim + a centered "▶" so the thumbnail reads as "tap to watch" at a glance. */}
         <Box background={'rgba(0,0,0,0.25)'} align="center" justify="center" style={{ position: 'absolute', inset: 0 }}>
           <Box width={48} height={48} radius="full" background={'rgba(0,0,0,0.7)'} align="center" justify="center">
             <Text size="5xl" color={'#ffffff'} style={{ marginLeft: 3 }}>▶</Text>
@@ -49,10 +44,7 @@ export function YouTubeEmbed({ videoId, dark }: {
   );
 }
 
-/** Location preview card: a single OSM tile at zoom 14 centered roughly on
- *  the lat/lng (one tile = ~1km wide at z14 in mid-latitudes) with a 📍
- *  emoji overlaid at the center. Tap → opens the source map URL in the
- *  device's native maps app. */
+/** Location preview card: a single OSM tile at zoom 14 centered roughly on the lat/lng (one tile = ~1km wide at z14 in mid-latitudes) with a 📍 emoji overlaid at the center. Tap → opens the source map URL in the device's native maps app. */
 export function LocationEmbed({ lat, lng, sourceUrl, dark }: {
   lat: number; lng: number; sourceUrl: string; dark: boolean;
 }): React.ReactElement {

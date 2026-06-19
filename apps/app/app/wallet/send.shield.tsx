@@ -1,29 +1,8 @@
-/** Unified shield-flow form for the Wallet, driving BOTH:
- *
- *    • mode="shield"  - Shield (public → private). Deposits a PUBLIC token into
- *      the user's OWN 0zk shielded balance. Recipient is ALWAYS the user's own
- *      0zk address (locked, read-only). Owns its OWN TokenSelector. Runs
- *      shieldToPrivate(); the 4-stage stepper is driven off the SHARED
- *      pending-action store (cache.ts) so the post-receipt 'scanning' tail
- *      (balance-landed watcher) is reflected even though the awaited
- *      shieldToPrivate() returns right after the receipt.
- *
- *    • mode="send"    - Shielded send (private → private 0zk transfer). Recipient
- *      = any 0zk address (free text). Token/network/balance are owned by the
- *      parent page (the combined TokenSelector) and passed in. Runs the REAL
- *      bridge-backed private transfer (sendShielded → lib/railgun/send.ts), which
- *      mirrors the unshield flow: estimate → Groth16 proof → populate → sign +
- *      broadcast via the embedded Node host. Proving is the slow step (~10-30s).
- *
- *  WHY one component: the two flows share the amount input, stepper, phase line,
- *  busy/footer wiring, and bridge gating verbatim - only the recipient row, the
- *  token source, the submit fn, and the labels differ by `mode`. The shield-only
- *  pending-store subscription stays gated behind mode==='shield'.
- *
- *  WHY NOT runAction (send mode): runAction()/sdkTx route the transfer through the
- *  Hermes direct SDK, where the RAILGUN engine never inits on-device - so it
- *  failed immediately at "Submitting transaction". The engine only lives in the
- *  Node bridge, which is what send.ts uses (same path as shield/unshield). */
+/**
+ * @file Unified shield-flow form driving both shield (public to own private
+ * 0zk balance) and shielded send (private 0zk-to-0zk transfer), sharing the
+ * amount input, stepper, and footer wiring while differing by mode.
+ */
 import { useEffect, useState } from 'react';
 import { fontSize } from '@metro-labs/kit/tokens';
 import { Input } from '@metro-labs/kit/input';
@@ -42,9 +21,7 @@ import { TokenSelector, useSelectedBalance } from './TokenSelector';
 
 type Pal = FormPal;
 
-/** Map a pending-action phase to a stepper stage. `proving`/`broadcasting` are
- *  the two on-chain stages; `scanning` is the merkle-scan tail; `confirmed`/
- *  `failed` are terminal. (shield mode only.) */
+/** Map a pending-action phase to a stepper stage. `proving`/`broadcasting` are the two on-chain stages; `scanning` is the merkle-scan tail; `confirmed`/ `failed` are terminal. (shield mode only.) */
 function phaseToStage(p?: PendingAction['phase']): ShieldStage {
   switch (p) {
     case 'proving': return 'submitting';
@@ -57,8 +34,7 @@ function phaseToStage(p?: PendingAction['phase']): ShieldStage {
 }
 
 export interface ShieldFlowFormProps {
-  /** "shield" = public→private deposit (locked own 0zk); "send" = private→private
-   *  transfer to any 0zk address. */
+  /** "shield" = public→private deposit (locked own 0zk); "send" = private→private transfer to any 0zk address. */
   mode: 'shield' | 'send';
   pal: Pal; dark: boolean;
   /** shield mode: the user's own 0zk address (locked recipient). */
@@ -71,6 +47,7 @@ export interface ShieldFlowFormProps {
   onFooter?: (s: FooterState) => void;
 }
 
+/** Renders the shield or send body depending on the active flow mode. */
 export function ShieldFlowForm(props: ShieldFlowFormProps): React.ReactElement {
   return props.mode === 'shield' ? <ShieldBody {...props} /> : <SendBody {...props} />;
 }
@@ -97,6 +74,7 @@ function ShieldBody({ pal, dark, zkAddress, initialSymbol, initialChainId, onFoo
     void (async (): Promise<void> => {
       const id = await getActiveAccountId();
       if (!id || cancelled) return;
+      /** Read helper. */
       const read = (list: PendingAction[] | undefined): void => {
         const mine = (list ?? [])
           .filter(a => a.kind === 'shield' && a.startedAt >= submittedAt - 2000)
@@ -115,6 +93,7 @@ function ShieldBody({ pal, dark, zkAddress, initialSymbol, initialChainId, onFoo
   const busy = stage === 'submitting' || stage === 'confirming' || stage === 'scanning';
   const canSubmit = !!zkAddress && isFinite(n) && n > 0 && !busy && isBridgeAvailable();
 
+  /** Handle the Submit. */
   const onSubmit = (): void => {
     if (!canSubmit) return;
     setErr(null); setAction(null); setSubmittedAt(Date.now());
@@ -150,8 +129,7 @@ function ShieldBody({ pal, dark, zkAddress, initialSymbol, initialChainId, onFoo
   );
 }
 
-/** Shielded send (private → private) body - token/balance from the parent page,
- *  free 0zk recipient input, local stage state. */
+/** Shielded send (private → private) body - token/balance from the parent page, free 0zk recipient input, local stage state. */
 function SendBody({ pal, dark, symbol = 'ETH', chainId = 1, balance = null, onFooter }: ShieldFlowFormProps): React.ReactElement {
   const { head, sub, inputBg } = pal;
   const [to, setTo] = useState('');
@@ -166,6 +144,7 @@ function SendBody({ pal, dark, symbol = 'ETH', chainId = 1, balance = null, onFo
   const validTo = to.trim().toLowerCase().startsWith('0zk');
   const canSubmit = validTo && isFinite(n) && n > 0 && !busy && isBridgeAvailable();
 
+  /** Handle the Submit. */
   const onSubmit = (): void => {
     if (!canSubmit) return;
     setErr(null); setErrPhase(null); setTxHash(null); setStage('submitting');

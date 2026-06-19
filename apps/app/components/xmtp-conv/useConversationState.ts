@@ -1,5 +1,4 @@
-/** State + side-effects + action wiring for the XMTP conversation screen — the
- *  route owns only the render tree; reaction/vote/tx-sign layers are own hooks. */
+/** @file State + side-effects + action wiring for the XMTP conversation screen — the route owns only the render tree; reaction/vote/tx-sign layers are own hooks. */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
@@ -27,6 +26,7 @@ import { useVotesLayer } from './useVotesLayer';
 import { useTxSignLayer } from './useTxSignLayer';
 import { useOutboundLayer } from './useOutboundLayer';
 
+/** Provides the aggregated state (feed, votes, reactions, outbound) for a conversation. */
 export function useConversationState(convId: string | undefined, focus: string | undefined) {
   const activeLine = lineOfConv(convId ?? '');
   const autoFocusNonce = useMemo(() => (focus ? Date.now() : undefined), [focus]);
@@ -38,8 +38,7 @@ export function useConversationState(convId: string | undefined, focus: string |
     if (!convId) return;
     void markConvRead(convId); // mark read when the latest event count changes
   }, [convId, events.length]);
-  /** Tell native + JS which conversation is on-screen so FCM + foreground rich-notif
-   *  paths suppress it. Lowercase: the native FCM compare is case-sensitive. */
+  /** Tell native + JS which conversation is on-screen so FCM + foreground rich-notif paths suppress it. Lowercase: the native FCM compare is case-sensitive. */
   const activeConvId = useMemo(() => convId?.toLowerCase(), [convId]);
   useFocusEffect(useCallback(() => {
     if (!activeConvId) return;
@@ -71,23 +70,24 @@ export function useConversationState(convId: string | undefined, focus: string |
   const [menuAnchor, setMenuAnchor] = useState<{ y: number; height: number }>({ y: 0, height: 0 });
   /** Topnav overflow (3-dot) menu open state. */
   const [overflowOpen, setOverflowOpen] = useState(false);
-  /** Conversation metadata via TanStack Query — cached by convId (groupName:
-   *  null = not resolved, '' = no name; isGroup gates the title→/group). */
+  /** Conversation metadata via TanStack Query — cached by convId (groupName: null = not resolved, '' = no name; isGroup gates the title→/group). */
   const { peerAddr, memberAddrs, inboxToAddr, groupName, groupImage, groupDescription, isGroup } = useConvMeta(convId);
-  /** Synced-appData string field (github link). Seeds from the cached row, then
-   *  refreshes off the group's appData on mount; drives the topnav GitHub icon. */
+  /** Synced-appData string field (github link). Seeds from the cached row, then refreshes off the group's appData on mount; drives the topnav GitHub icon. */
   const github = useCachedGroupString(convId, activeLine, isGroup, 'github', getGithubLink);
 
-  /** SECURITY (audit HIGH/#2): gate the in-chat Sign/Pay card ACTIONS behind XMTP
+  /**
+   * SECURITY (audit HIGH/#2): gate the in-chat Sign/Pay card ACTIONS behind XMTP
    *  consent. `undefined` = unresolved (leave enabled, the common already-accepted
    *  case), `true` = allowed (enabled), `false` = an unknown/stranger DM (the
    *  Sign/Pay buttons are disabled so a single tap can't sign/pay for a sender the
    *  user never accepted). Reuses the same consent read + stream the request bar
-   *  uses; reconciles if accepted/blocked on another device while open. */
+   *  uses; reconciles if accepted/blocked on another device while open.
+   */
   const [consentAllowed, setConsentAllowed] = useState<boolean | undefined>(undefined);
   useEffect(() => {
     if (!convId) { setConsentAllowed(undefined); return; }
     let cancelled = false;
+    /** Resolve helper. */
     const resolve = async (): Promise<void> => {
       try {
         const state = await getConvConsentState(convId);
@@ -120,19 +120,20 @@ export function useConversationState(convId: string | undefined, focus: string |
     return inboxToAddr[inboxId] ?? null;
   }, [inboxToAddr]);
 
-  /** Our own eth address (via the inbox→addr map), so our OWN message bubbles +
-   *  reply previews resolve our stamp name/avatar — a DM's memberAddrs is empty,
-   *  so without this self is never fetched and renders blank. */
+  /** Our own eth address (via the inbox→addr map), so our OWN message bubbles + reply previews resolve our stamp name/avatar — a DM's memberAddrs is empty, so without this self is never fetched and renders blank. */
   const selfAddr = xmtpFeed.inboxId ? (inboxToAddr[xmtpFeed.inboxId] ?? null) : null;
 
   /** Resolve peer + member + self profiles → display names + avatar cache-busters. */
   const profilesVersion = usePeerProfiles([peerAddr, selfAddr, ...memberAddrs]);
 
-  /** @-mention candidates for the composer popup — group members (sans self) or
-   *  the lone DM peer, from the resolved peerProfiles cache. */
+  /**
+   * @-mention candidates for the composer popup — group members (sans self) or
+   *  the lone DM peer, from the resolved peerProfiles cache.
+   */
   const mentionCandidates = useMemo(() => {
     const seen = new Set<string>();
     const out: { address: string; name: string }[] = [];
+    /** Add helper. */
     const add = (addr: string | null): void => {
       if (!addr) return;
       const k = addr.toLowerCase();
@@ -148,16 +149,13 @@ export function useConversationState(convId: string | undefined, focus: string |
     return out;
   }, [isGroup, memberAddrs, peerAddr, profilesVersion]);
 
-  /** Per-conversation scroll persistence. INVERTED list → offset 0 = bottom/newest.
-   *  Restore once on first layout if a saved offset exists; remounts land at bottom. */
+  /** Per-conversation scroll persistence. INVERTED list → offset 0 = bottom/newest. Restore once on first layout if a saved offset exists; remounts land at bottom. */
   const savedScrollRef = useRef<number | undefined>(undefined);
   const savedScrollLoaded = useRef(false);
   const didRestoreScroll = useRef(false);
   /** Deadline (ms epoch) the at-bottom mount keeps re-pinning to 0; 0 = unarmed. */
   const pinBottomUntil = useRef(0);
-  /** At-bottom flag, set on EVERY scroll (and by markAtBottom). The debounced save
-   *  can lose its final at-bottom frame to a fast back-nav; this ref can't, so on
-   *  unmount we force-persist sentinel 0 when true. Defaults true (fresh = bottom). */
+  /** At-bottom flag, set on EVERY scroll (and by markAtBottom). The debounced save can lose its final at-bottom frame to a fast back-nav; this ref can't, so on unmount we force-persist sentinel 0 when true. Defaults true (fresh = bottom). */
   const isAtBottomRef = useRef(true);
   useEffect(() => {
     if (!convId) return;
@@ -188,8 +186,7 @@ export function useConversationState(convId: string | undefined, focus: string |
     listRef, confirmedIds, allBubbles, jumpToMessage, onOptimistic, onSent,
   } = useOutboundLayer(events, myUri, convId, activeLine);
 
-  /** Jump-to-bottom pressed → list remounts to offset 0 (newest) but may not emit
-   *  an onScroll, so flag at-bottom + persist sentinel 0 now to survive leave. */
+  /** Jump-to-bottom pressed → list remounts to offset 0 (newest) but may not emit an onScroll, so flag at-bottom + persist sentinel 0 now to survive leave. */
   const markAtBottom = useCallback(() => {
     isAtBottomRef.current = true;
     if (convId) markConvAtBottom(convId);

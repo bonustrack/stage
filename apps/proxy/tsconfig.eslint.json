@@ -1,0 +1,8 @@
+{
+  "_comment": "Lint-only TS project: extends the proxy tsconfig and additionally includes the node:test suite so type-aware ESLint (projectService) has type information for test files too. Not used by `tsc --noEmit` (the typecheck task), which keeps its tighter src include.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["@cloudflare/workers-types", "node"]
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts"]
+}

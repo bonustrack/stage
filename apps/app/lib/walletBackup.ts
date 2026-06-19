@@ -1,10 +1,7 @@
-/** Device-local "has the user backed up / dismissed the recovery-phrase nudge".
- *
- *  Onboarding defers showing the recovery phrase; the SecureWalletNudge (Settings
- *  -> Security) is where the user backs it up later. This single persisted
- *  boolean records that they either confirmed the backup OR dismissed the nudge,
- *  so it stops pestering them. Default FALSE so a fresh smart wallet sees the
- *  nudge once. Built on the shared createValueStore factory. */
+/**
+ * @file Device-local persisted boolean recording whether the user has backed up (or dismissed the nudge for) their recovery phrase, so the SecureWalletNudge stops pestering them.
+ *  Built on the shared createValueStore factory; defaults FALSE so a fresh smart wallet sees the nudge once.
+ */
 
 import { createValueStore } from './persistedStore';
 

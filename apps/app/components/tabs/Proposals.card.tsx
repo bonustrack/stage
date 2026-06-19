@@ -1,25 +1,8 @@
-/** The single active pending-request card on the Pending requests page.
- *
- *  Dispatches on the queued request's `kind`:
- *   - poll     → PollRequestCard: the live poll tally + vote, reusing the chat
- *                view's vote pipeline (useConversationState → useVotesLayer).
- *   - payment  → TxPayCard: the SAME TxRequestCard the chat renders, wired to the
- *                conversation's Pay flow (confirm + own-balance via useTxSignLayer).
- *   - signing  → SigSignCard: the SAME SigRequestCard with its native Sign action.
- *   - message  → MessageRequestCard: a compact channel preview (name + last
- *                message) with Accept / Block (reusing the requests-list consent
- *                handlers) + Open.
- *
- *  The message-level kinds (poll/payment/signing) mount the FULL conversation
- *  machinery for ONE channel via `useConversationState`, so voting / paying /
- *  signing reuse the exact same path (and receipts) as the chat view. The message
- *  kind is channel-level (consent-unknown), so it needs no conversation mount.
- *
- *  Common controls per card: Skip (session) + Open channel. Acting on a request
- *  (vote / pay / sign / accept / block) advances to the next.
- *
- *  Keyed by the request key at the call site so switching requests remounts the
- *  hook cleanly (fresh feed for the next channel). */
+/**
+ * @file Proposals.card — the single active pending-request card, dispatching on
+ *  the queued request's kind (poll/payment/signing/message) to reuse the chat
+ *  view's vote/pay/sign pipelines, with Skip + Open advancing to the next request.
+ */
 
 import { useCallback, useMemo } from 'react';
 import { useRouter } from 'expo-router';
@@ -42,8 +25,7 @@ import { getPeerName } from '../../lib/peerProfiles';
 import { shortAddress, acceptRequestConv, blockRequestConv, getCachedXmtpClient } from '../../modules/messaging';
 import type { QueuedRequest, RequestKind } from './Proposals.queue';
 
-/** Human label for each request kind, shown as the card-header eyebrow so the
- *  type is clear at a glance ("Poll" / "Payment request" / …). */
+/** Human label for each request kind, shown as the card-header eyebrow so the type is clear at a glance ("Poll" / "Payment request" / …). */
 const KIND_LABEL: Record<RequestKind, string> = {
   poll: 'Poll',
   payment: 'Payment request',
@@ -51,8 +33,7 @@ const KIND_LABEL: Record<RequestKind, string> = {
   message: 'Message request',
 };
 
-/** Small uppercase type eyebrow above the card title. Uses kit text tokens
- *  (secondary role, smallest step) so it stays minimal and theme-aware. */
+/** Small uppercase type eyebrow above the card title. Uses kit text tokens (secondary role, smallest step) so it stays minimal and theme-aware. */
 function KindEyebrow({ kind }: { kind: RequestKind }): React.ReactElement {
   return (
     <Text role="secondary" size="2xs" weight="semibold"
@@ -72,8 +53,7 @@ export function ProposalCard({ proposal, onAdvance }: {
   return <ConversationRequestCard proposal={proposal} onAdvance={onAdvance}/>;
 }
 
-/** Header shared by the conversation-backed cards: channel title + (for the
- *  source message) author + posted-at, matching the chat sender resolution. */
+/** Header shared by the conversation-backed cards: channel title + (for the source message) author + posted-at, matching the chat sender resolution. */
 function CardHeader({ kind, title, authorAddr, authorName, postedAt, fg }: {
   kind: RequestKind; title: string; authorAddr: string | null; authorName: string | null;
   postedAt: string | null; fg: string;
@@ -119,9 +99,7 @@ function ControlRow({ onSkip, onOpen, dark, hint }: {
   );
 }
 
-/** Poll / payment / signing card: mounts the conversation for one channel and
- *  renders the request body (PollView / TxRequestCard / SigRequestCard) wired to
- *  the same vote/pay/sign pipeline the chat uses. */
+/** Poll / payment / signing card: mounts the conversation for one channel and renders the request body (PollView / TxRequestCard / SigRequestCard) wired to the same vote/pay/sign pipeline the chat uses. */
 function ConversationRequestCard({ proposal, onAdvance }: {
   proposal: QueuedRequest; onAdvance: () => void;
 }): React.ReactElement {
@@ -140,15 +118,14 @@ function ConversationRequestCard({ proposal, onAdvance }: {
     senderEthOf, onPay, payingIds, onSign, signingIds,
   } = c;
 
-  /** The source message itself - re-found in the live feed by the queued id so
-   *  the poll tally / pay+sign spinners stay live. */
+  /** The source message itself - re-found in the live feed by the queued id so the poll tally / pay+sign spinners stay live. */
   const entry = useMemo(() => events.find(e => e.id === msgId), [events, msgId]);
   const poll = entry ? pollOf(entry) : undefined;
   const tx = entry ? txRequestOf(entry) : undefined;
   const sig = entry ? sigRequestOf(entry) : undefined;
 
   const title = isGroup
-    ? (groupName?.trim() || 'Untitled group')
+    ? (groupName?.trim() ? groupName.trim() : 'Untitled group')
     : (peerAddr ? (getPeerName(peerAddr) ?? shortAddress(peerAddr)) : '');
 
   const authorAddr = useMemo(
@@ -162,8 +139,7 @@ function ConversationRequestCard({ proposal, onAdvance }: {
     router.push({ pathname: '/xmtp/[convId]', params: { convId: proposal.convId } });
   }, [router, proposal.convId]);
 
-  /** Pay / sign reuse the chat handlers verbatim, then advance to the next item
-   *  (the receipt posts back into the channel via the shared pipeline). */
+  /** Pay / sign reuse the chat handlers verbatim, then advance to the next item (the receipt posts back into the channel via the shared pipeline). */
   const wsc = entry ? (entry.payload as { walletSendCalls?: WalletSendCallsContent } | undefined)?.walletSendCalls : undefined;
   const sigReq = entry ? (entry.payload as { signatureRequest?: SignatureRequestContent } | undefined)?.signatureRequest : undefined;
   const onPayPress = useCallback(() => { if (wsc) { onPay(msgId, wsc); onAdvance(); } }, [wsc, onPay, msgId, onAdvance]);
@@ -246,9 +222,7 @@ function ConversationRequestCard({ proposal, onAdvance }: {
   );
 }
 
-/** Message-request card: a compact channel preview with Accept / Block (reusing
- *  the requests-list consent handlers) + Open. Channel-level, no conversation
- *  mount; acting advances to the next item. */
+/** Message-request card: a compact channel preview with Accept / Block (reusing the requests-list consent handlers) + Open. Channel-level, no conversation mount; acting advances to the next item. */
 function MessageRequestCard({ request, onAdvance }: {
   request: QueuedRequest; onAdvance: () => void;
 }): React.ReactElement {
@@ -264,9 +238,7 @@ function MessageRequestCard({ request, onAdvance }: {
     router.push({ pathname: '/xmtp/[convId]', params: { convId: request.convId } });
   }, [router, request.convId]);
 
-  /** Accept / Block reuse the exact requests-list handlers; either resolves the
-   *  request, so advance optimistically (the consent write + sync reconcile the
-   *  channels list + other devices). */
+  /** Accept / Block reuse the exact requests-list handlers; either resolves the request, so advance optimistically (the consent write + sync reconcile the channels list + other devices). */
   const act = useCallback((accept: boolean) => {
     void (accept ? acceptRequestConv(request.convId) : blockRequestConv(request.convId))
       .then(() => {
@@ -290,18 +262,18 @@ function MessageRequestCard({ request, onAdvance }: {
             avatarAddress={view?.avatarAddress ?? null}
             avatarUri={view?.avatarUri ?? null}
             square={view?.isGroup}
-            lastPreview={view?.preview || '(no messages yet)'}
+            lastPreview={view?.preview == null || view.preview === '' ? '(no messages yet)' : view.preview}
             onPress={openChannel}
           />
         </Box>
 
         <Row gap={10} margin={{ top: 16 }} style={{ alignSelf: 'stretch' }}>
           <Box flex={1}>
-            <Button block variant="danger" size="md" dark={dark} onPress={() => act(false)} label="Block"
+            <Button block variant="danger" size="md" dark={dark} onPress={() => { act(false); }} label="Block"
               tintBg={pal.danger} tintFg={pal.bg}/>
           </Box>
           <Box flex={1}>
-            <Button block variant="primary" size="md" dark={dark} onPress={() => act(true)} label="Accept"
+            <Button block variant="primary" size="md" dark={dark} onPress={() => { act(true); }} label="Accept"
               tintBg={pal.link} tintFg={pal.bg}/>
           </Box>
         </Row>

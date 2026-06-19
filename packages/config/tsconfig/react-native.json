@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "_comment": "@stage-labs/config — shared TypeScript options for the React Native app (apps/app), layered ON TOP of expo/tsconfig.base. The consumer extends BOTH (array extends, this one last so it wins): [\"expo/tsconfig.base\", \"@stage-labs/config/tsconfig/react-native.json\"]. Package-specific `paths`/`include` stay in the consumer. The full strict family + noUncheckedIndexedAccess + noImplicitOverride match the base so strictness is uniform with the pure-TS packages.",
+  "compilerOptions": {
+    "types": ["react", "react-native"],
+    "moduleResolution": "bundler",
+
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "useUnknownInCatchVariables": true,
+
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true
+  }
+}

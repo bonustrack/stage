@@ -8,10 +8,6 @@
     "test": {
       "dependsOn": ["build"]
     },
-    "typecheck": {},
-    "lint": {},
-    "lint:fix": {
-      "cache": false
-    }
+    "typecheck": {}
   }
 }

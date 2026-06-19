@@ -1,4 +1,7 @@
-/** Restore-last-screen: persist the current route to AsyncStorage on every
+/** @file Cold-start route restore: persists the live route to AsyncStorage and re-navigates there on launch (Home beneath, no flash), with deep-link precedence and once-per-process guards. */
+
+/*
+ * Restore-last-screen: persist the current route to AsyncStorage on every
  *  navigation and, on a cold launch, return the user to where they left off -
  *  WITHOUT flashing the Home tab first.
  *
@@ -39,7 +42,8 @@
  *      roots and the accounts overlay are skipped (re-opening on Home is the
  *      expected default, and tab state is cheap to re-derive).
  *    - Hydration failure (corrupt value, missing key) → no-op, default route.
- *    - Restore is attempted ONCE per launch (a ref guards re-entry). */
+ *    - Restore is attempted ONCE per launch (a ref guards re-entry).
+ */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
@@ -48,7 +52,8 @@ import { useEffect, useState } from 'react';
 
 const STORAGE_KEY = 'metro:lastRoute:v1';
 
-/** PROCESS-LEVEL restore state. The root layout (and therefore this hook)
+/**
+ * PROCESS-LEVEL restore state. The root layout (and therefore this hook)
  *  REMOUNTS several times on a real device during heavy boot (xmtp client +
  *  Railgun node settling) — Less's on-device trace showed 3 mounts, the last
  *  ~10s in. Component-scoped refs reset on every remount, so each remount
@@ -56,53 +61,52 @@ const STORAGE_KEY = 'metro:lastRoute:v1';
  *  scope makes restore strictly once-per-process: remounts read this and bail.
  *    idle      → no gate has run yet this process
  *    restoring → gate decided to restore; push in flight / waiting on navstate
- *    done      → restore issued (or skipped); never run the gate again */
+ *    done      → restore issued (or skipped); never run the gate again
+ */
 let restoreState: 'idle' | 'restoring' | 'done' = 'idle';
 
-/** The route resolved by the FIRST gate run this process (null = nothing to
- *  restore). Held at module scope so a remount mid-restore reuses it instead of
- *  re-reading (the key is already consumed/deleted by then anyway). */
+/** The route resolved by the FIRST gate run this process (null = nothing to restore). Held at module scope so a remount mid-restore reuses it instead of re-reading (the key is already consumed/deleted by then anyway). */
 let processSavedRoute: string | null = null;
 
-/** The route we restored TO this process. Persistence stays SUSPENDED until the
+/**
+ * The route we restored TO this process. Persistence stays SUSPENDED until the
  *  live pathname moves AWAY from this at least once (a real user navigation).
  *  This is the second half of the bug: the post-restore persist effect saw the
  *  restored channel as the live pathname and wrote it straight back to storage,
  *  so the next remount's gate read hasSaved=true and restored AGAIN. We must
- *  NOT re-persist the restored target. */
+ *  NOT re-persist the restored target.
+ */
 let restoredTarget: string | null = null;
 
-/** Flips true once a real navigation has moved the pathname away from
- *  `restoredTarget`; only then does persistence resume for a restore launch.
- *  For a NORMAL open (no restore) this starts effectively true (see below). */
+/** Flips true once a real navigation has moved the pathname away from `restoredTarget`; only then does persistence resume for a restore launch. For a NORMAL open (no restore) this starts effectively true (see below). */
 let persistResumed = false;
 
-/** For a restore launch: have we actually OBSERVED the pathname settle ON the
+/**
+ * For a restore launch: have we actually OBSERVED the pathname settle ON the
  *  restored target yet? Persistence may only resume on a move AWAY from the
  *  target, but during boot the pathname is the transient `/` BEFORE the push
  *  lands — resuming there would persist `/`, then the subsequent settle on the
  *  target would re-persist the channel (the exact loop). So we require the
- *  target to have been reached first; only a move away AFTER that resumes. */
+ *  target to have been reached first; only a move away AFTER that resumes.
+ */
 let reachedTarget = false;
 
-/** Routes we never restore TO — landing on a tab root or the accounts sheet on
- *  cold start is the intended default. */
+/** Routes we never restore TO — landing on a tab root or the accounts sheet on cold start is the intended default. */
 function isRestorable(path: string): boolean {
   if (!path || path === '/') return false;
   if (path === '/accounts') return false;
-  if (/^\/\(tabs\)/.test(path)) return false;
+  if (path.startsWith("/(tabs)")) return false;
   const TAB_ROOTS = ['/wallet', '/settings'];
   if (TAB_ROOTS.includes(path)) return false;
   return true;
 }
 
+/** Persist helper. */
 function persist(path: string): void {
   void AsyncStorage.setItem(STORAGE_KEY, path).catch(() => { /* best-effort */ });
 }
 
-/** Whether the cold-start launch URL addresses a real screen (so the deep link
- *  should win and we must NOT restore over it). A bare app-open (no URL, or a
- *  URL with no route segments) is not a deep link. */
+/** Whether the cold-start launch URL addresses a real screen (so the deep link should win and we must NOT restore over it). A bare app-open (no URL, or a URL with no route segments) is not a deep link. */
 function hasColdStartDeepLink(url: string | null): boolean {
   if (!url) return false;
   // Cheap, scheme-agnostic check: any path/hash segment beyond the host means
@@ -113,13 +117,12 @@ function hasColdStartDeepLink(url: string | null): boolean {
 }
 
 export interface RestoreGate {
-  /** False until the one-time load (saved route + launch URL) has resolved. The
-   *  root layout renders its boot spinner while this is false so the Stack -
-   *  and Home - never mount before the restore decision is known. */
+  /** False until the one-time load (saved route + launch URL) has resolved. The root layout renders its boot spinner while this is false so the Stack - and Home - never mount before the restore decision is known. */
   ready: boolean;
 }
 
-/** Root-layout gate + restore driver. Mounted ONCE in the root layout. Holds
+/**
+ * Root-layout gate + restore driver. Mounted ONCE in the root layout. Holds
  *  the boot spinner until the saved route loads, restores it once when ready
  *  (Home underneath → swipe-back pops to Home, no late re-fire), then keeps the
  *  saved route in sync as the user navigates. Returns `{ ready }` for the
@@ -144,7 +147,8 @@ export interface RestoreGate {
  *  start persisting the live pathname AFTER the restore push has been issued, so
  *  the boot-time `/` doesn't clobber the saved channel before we read it, and so
  *  a user-initiated back-to-Home overwrites the saved route with a
- *  non-restorable root for the rest of the session. */
+ *  non-restorable root for the rest of the session.
+ */
 export function useRestoreGate(): RestoreGate {
   const pathname = usePathname();
   const navState = useRootNavigationState();
@@ -226,12 +230,13 @@ export function useRestoreGate(): RestoreGate {
     if (!saved) { restoreState = 'done'; persistResumed = true; return; }
     // Find the card stack that holds `(tabs)`: it's either the root state itself
     // or its nested `state` (expo-router wraps everything under a `__root`).
+    /** Stack Has Tabs. */
     const stackHasTabs = (s?: { routes?: { name: string; state?: unknown }[] }): boolean =>
-      Array.isArray(s?.routes) && s!.routes.some((r) => r.name === '(tabs)');
+      Array.isArray(s?.routes) && s.routes.some((r) => r.name === '(tabs)');
     const rootHasTabs =
       stackHasTabs(navState) ||
       (Array.isArray(navState?.routes) &&
-        navState!.routes.some((r: { state?: { routes?: { name: string }[] } }) => stackHasTabs(r.state)));
+        navState.routes.some((r: { state?: { routes?: { name: string }[] } }) => stackHasTabs(r.state)));
     if (!rootHasTabs) return;
     // Claim the restore for this process BEFORE the async push so a concurrent
     // remount's effect can't also pass the guard and double-push.
@@ -239,9 +244,9 @@ export function useRestoreGate(): RestoreGate {
     // One frame of slack so the committed `(tabs)` card has painted before the
     // push enters the stack on top of it.
     const raf = requestAnimationFrame(() => {
-      router.push(saved as Parameters<typeof router.push>[0]);
+      router.push(saved);
     });
-    return () => cancelAnimationFrame(raf);
+    return () => { cancelAnimationFrame(raf); };
   }, [ready, navState]);
 
   // Keep the saved route current — but NEVER re-persist the route we just

@@ -1,7 +1,8 @@
-/** Kit sub-page of Settings - back-arrow header + theme switcher, then the kit
- *  primitives rendered directly (KitSections). Reached via /settings -> "Kit"
- *  row -> /settings/kit. The live color/radius editor moved to Settings ->
- *  Display under the Custom theme. */
+/**
+ * @file KitPage — the Kit sub-page of Settings (/settings/kit): a back-arrow
+ *  header plus theme switcher above the Kit primitives rendered directly via
+ *  KitSections.
+ */
 
 import { Linking } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
@@ -16,6 +17,7 @@ import { GithubLogo } from '../GithubLogo';
 
 const KIT_GITHUB_URL = 'https://github.com/bonustrack/stage/tree/main/packages/kit';
 
+/** Renders the Kit gallery page of the system design section. */
 export function KitPage(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head, border } = usePalette();
@@ -29,7 +31,7 @@ export function KitPage(): React.ReactElement {
         title="Kit" dark={dark} fg={fg} head={head} border={border}
         right={
           <Pressable
-            onPress={() => Linking.openURL(KIT_GITHUB_URL)}
+            onPress={() => { void Linking.openURL(KIT_GITHUB_URL); }}
             hitSlop={8}
             style={{ padding: 4 }}
             accessibilityLabel="View @metro-labs/kit on GitHub"

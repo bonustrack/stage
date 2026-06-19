@@ -1,4 +1,8 @@
-/** Map a decoded XMTP message -> the app/daemon `HistoryEntry` envelope.
+/**
+ * @file Maps a decoded XMTP message onto the shared HistoryEntry envelope via a structural message view.
+ */
+/**
+ * Map a decoded XMTP message -> the app/daemon `HistoryEntry` envelope.
  *
  *  This is the framework-agnostic shaping that turns a decoded message into the
  *  same `HistoryEntry` shape the daemon-side train emits + the MessengerBubble
@@ -8,7 +12,8 @@
  *  module operates on a structural VIEW of it (`DecodedMessageView`) — the few
  *  fields the mapper reads — so the package never imports the native type. The
  *  app passes its native message straight in (it satisfies the view). ZERO @xmtp
- *  / react-native / expo imports. */
+ *  / react-native / expo imports.
+ */
 
 import type { HistoryEntry } from '../types';
 import { humanizeGroupUpdated, type GroupUpdatedContent } from './humanize';
@@ -23,8 +28,7 @@ import {
 } from './tx';
 import { XMTP_USER_PREFIX } from './line';
 
-/** The structural subset of the RN SDK's `DecodedMessage` the envelope mapper
- *  reads. The app's native message satisfies this shape directly. */
+/** The structural subset of the RN SDK's `DecodedMessage` the envelope mapper reads. The app's native message satisfies this shape directly. */
 export interface DecodedMessageView {
   id: string;
   senderInboxId: string;
@@ -41,9 +45,11 @@ export interface DecodedMessageView {
 /** Structural mirror of the RN SDK's `ReactionContent`. */
 interface ReactionContentView {
   reference: string;
-  action: 'added' | 'removed' | string;
+  /** 'added' | 'removed' (the RN SDK leaves this open-ended). */
+  action: string;
   content: string;
-  schema: 'unicode' | 'custom' | string;
+  /** 'unicode' | 'custom' (the RN SDK leaves this open-ended). */
+  schema: string;
 }
 /** Structural mirror of the RN SDK's `ReplyContent` (text-only inner content). */
 interface ReplyContentView { reference: string; content?: { text?: string } }
@@ -51,12 +57,10 @@ interface ReplyContentView { reference: string; content?: { text?: string } }
 interface StaticAttachmentView { filename: string; mimeType?: string; data: string }
 /** Structural mirror of the RN SDK's `MultiRemoteAttachmentContent`. */
 interface MultiRemoteAttachmentView {
-  attachments?: Array<{ filename?: string } & Record<string, unknown>>;
+  attachments?: ({ filename?: string } & Record<string, unknown>)[];
 }
 
-/** Convert a decoded XMTP message into the `HistoryEntry` envelope used by the
- *  daemon-side event log + the MessengerBubble renderer. Mirrors the shape
- *  emitted by the node-sdk train so the UI layer is transport-agnostic. */
+/** Convert a decoded XMTP message into the `HistoryEntry` envelope used by the daemon-side event log + the MessengerBubble renderer. Mirrors the shape emitted by the node-sdk train so the UI layer is transport-agnostic. */
 export function mapDecodedToEnvelope(msg: DecodedMessageView, line: string): HistoryEntry {
   const from = `${XMTP_USER_PREFIX}${msg.senderInboxId}`;
   /** `sentNs` is nanoseconds. Divide to ms — ample precision for ts strings. */
@@ -82,10 +86,12 @@ export function mapDecodedToEnvelope(msg: DecodedMessageView, line: string): His
   if (typeId === 'reaction') {
     const r = decoded as ReactionContentView;
     const removed = r.action === 'removed';
-    /** A poll VOTE is a reaction with schema:'custom' whose content is the
+    /**
+     * A poll VOTE is a reaction with schema:'custom' whose content is the
      *  option index. Surface `schema:'custom'` + `voteFor`/`optionIndex` so the
      *  tally helpers can pick votes out of history and the channels-list preview
-     *  doesn't render an index as an emoji. */
+     *  doesn't render an index as an emoji.
+     */
     if (r.schema === 'custom') {
       return {
         ...base,
@@ -165,21 +171,24 @@ export function mapDecodedToEnvelope(msg: DecodedMessageView, line: string): His
     };
   }
   if (typeId === 'multiRemoteStaticAttachment' || typeId === 'multiRemoteAttachment') {
-    /** One message carrying N encrypted-remote attachments. The bytes live on
+    /**
+     * One message carrying N encrypted-remote attachments. The bytes live on
      *  IPFS (ciphertext); each is rendered as a `remote` placeholder + lazily
      *  downloaded/decrypted by the bubble. MIME isn't in the metadata, so infer
-     *  `kind` from the filename extension. */
+     *  `kind` from the filename extension.
+     */
     const m = decoded as MultiRemoteAttachmentView;
     const attachments = (m.attachments ?? []).map((info, i) => {
-      const name = (info.filename as string | undefined) ?? `attachment-${i + 1}`;
+      const name = (info.filename) ?? `attachment-${i + 1}`;
       const ext = name.split('.').pop()?.toLowerCase() ?? '';
       const kind = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic'].includes(ext) ? 'image'
         : ['m4a', 'mp3', 'wav', 'aac', 'ogg'].includes(ext) ? 'audio'
           : ['mp4', 'mov', 'webm'].includes(ext) ? 'video' : 'file';
       return { kind, name, remote: info };
     });
-    const summary = attachments.length === 1
-      ? `[${attachments[0]!.kind}: ${attachments[0]!.name}]`
+    const first = attachments[0];
+    const summary = first !== undefined && attachments.length === 1
+      ? `[${first.kind}: ${first.name}]`
       : `[${attachments.length} attachments]`;
     return { ...base, text: summary, payload: { contentType: typeId, attachments } };
   }

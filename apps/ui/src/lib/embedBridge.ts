@@ -1,27 +1,26 @@
-/** When the messenger runs inside an iframe (the embed widget), notify the
- *  host page of inbound messages so it can badge its launcher button. No-op
- *  on the standalone metro.box site. */
+/**
+ * @file postMessage bridge between the embedded iframe widget and its host page (unread badge, close, theme).
+ */
+/** When the messenger runs inside an iframe (the embed widget), notify the host page of inbound messages so it can badge its launcher button. No-op on the standalone metro.box site. */
 
+/** True when the messenger is running inside an iframe (the embed widget). */
 export function runningInIframe(): boolean {
   return typeof window !== 'undefined' && window.self !== window.top;
 }
 
+/** Notify the host page of the current unread count so it can badge its launcher. */
 export function postUnreadToParent(count: number): void {
   if (count > 0 && runningInIframe()) {
     window.parent.postMessage({ type: 'metro:inbound', count }, '*');
   }
 }
 
-/** Ask the host page to close the widget. Used by the in-widget close button
- *  so the messenger's own topnav carries the close affordance (single topnav)
- *  instead of the host stacking a second header bar above the iframe. */
+/** Ask the host page to close the widget. Used by the in-widget close button so the messenger's own topnav carries the close affordance (single topnav) instead of the host stacking a second header bar above the iframe. */
 export function postCloseToParent(): void {
   if (runningInIframe()) window.parent.postMessage({ type: 'metro:close' }, '*');
 }
 
-/** When embedded, let the host page drive the color scheme so the widget
- *  matches the surrounding UI instantly. The host posts
- *  `{ type: 'metro:theme', theme: 'light' | 'dark' | 'system' }`. */
+/** When embedded, let the host page drive the color scheme so the widget matches the surrounding UI instantly. The host posts `{ type: 'metro:theme', theme: 'light' | 'dark' | 'system' }`. */
 export function installEmbedThemeBridge(apply: (t: 'light' | 'dark' | 'system') => void): void {
   if (!runningInIframe()) return;
   window.addEventListener('message', (e: MessageEvent) => {

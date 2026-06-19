@@ -1,10 +1,8 @@
-/** Inline card for a DM-by-address link (`metro://xmtp/user/<address>`).
- *  Unlike a conv-id card, a DM share carries only the PEER's eth address — the
- *  conversation id is installation-local, so each side resolves their OWN local
- *  DM on tap via `openDmWithAddress` (findOrCreateDmWithIdentity). Metadata
- *  (name + avatar) comes straight from `peerProfiles`, keyed on the address, so
- *  the card renders for the recipient even though they're not a member of the
- *  sender's local conversation row. */
+/**
+ * @file Inline card for a DM-by-address link (metro://xmtp/user/<address>),
+ * resolving each side's own local DM on tap via openDmWithAddress and pulling
+ * name/avatar from peerProfiles keyed on the peer address.
+ */
 
 import { router } from 'expo-router';
 import { ChannelRow } from './ChannelRow';
@@ -13,16 +11,18 @@ import { usePeerProfiles, getPeerName, isPeerResolved } from '../lib/peerProfile
 import { usePalette, useBlockRadius } from '../lib/theme';
 import { openDmWithAddress, shortAddress } from '../modules/messaging';
 
+/** Renders an inline card for a DM-by-address link that opens the local DM with the peer on tap. */
 export function DmPeerCard({ address }: { address: string }): React.ReactElement {
   usePeerProfiles([address]);
   const { border } = usePalette();
   const blockRadius = useBlockRadius();
 
-  const title = getPeerName(address) || shortAddress(address);
-  /** Hold the stamp back until the peer profile resolves so we don't flash an
-   *  identicon before the name lands (mirrors ChannelCard). */
+  const peerName = getPeerName(address);
+  const title = peerName == null || peerName === '' ? shortAddress(address) : peerName;
+  /** Hold the stamp back until the peer profile resolves so we don't flash an identicon before the name lands (mirrors ChannelCard). */
   const avatarAddress = !isPeerResolved(address) ? null : address;
 
+  /** Open helper. */
   const open = (): void => {
     void (async () => {
       try {

@@ -1,5 +1,7 @@
-/** Reaction pills row (confirmed + optimistic) and the preset reaction picker
- *  for MessengerBubble. Extracted to keep the component file under the lint cap. */
+/**
+ * @file Reaction pills row (confirmed + optimistic) and the preset reaction picker
+ *  for MessengerBubble, extracted to keep the component file under the lint cap.
+ */
 
 import { Pressable } from '@metro-labs/kit/pressable';
 
@@ -8,8 +10,7 @@ import { Row, Box } from './layout';
 import { REACT_PRESETS } from './MessengerBubble.helpers';
 import { usePalette } from '../lib/theme';
 
-/** Confirmed + optimistic reaction pills. Returns null when there's nothing to
- *  show. Tapping/long-pressing any pill toggles that emoji as the user's own. */
+/** Confirmed + optimistic reaction pills. Returns null when there's nothing to show. Tapping/long-pressing any pill toggles that emoji as the user's own. */
 export function ReactionsRow({
   reactions, pendingReactions, pendingRemovals, ownEmojis, sub, pillBg, onReact,
 }: {
@@ -21,8 +22,7 @@ export function ReactionsRow({
   onReact?: (emoji: string) => void;
 }): React.ReactElement | null {
   const { link } = usePalette();
-  /** Only show a pending pill for an emoji the live stream hasn't yet confirmed —
-   *  guards the in-between frame so we never render confirmed + pending together. */
+  /** Only show a pending pill for an emoji the live stream hasn't yet confirmed — guards the in-between frame so we never render confirmed + pending together. */
   const pendingEmojis = (pendingReactions ?? []).filter(e => !reactions?.has(e));
   /** Drop optimistically-removed emojis so the pill vanishes before the echo. */
   const removed = new Set(pendingRemovals ?? []);
@@ -51,8 +51,8 @@ export function ReactionsRow({
         return onReact ? (
           <Pressable
             key={emoji}
-            onPress={() => onReact(emoji)}
-            onLongPress={() => onReact(emoji)}
+            onPress={() => { onReact(emoji); }}
+            onLongPress={() => { onReact(emoji); }}
             delayLongPress={300}
             hitSlop={6}
             style={pillStyle}
@@ -85,7 +85,7 @@ export function ReactionPicker({ dark, sub, onPick, onClose }: {
       alignSelf: 'flex-start',
     }}>
       {REACT_PRESETS.map(e => (
-        <Pressable key={e} onPress={() => onPick(e)}>
+        <Pressable key={e} onPress={() => { onPick(e); }}>
           <Text size="5xl">{e}</Text>
         </Pressable>
       ))}

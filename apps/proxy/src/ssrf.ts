@@ -1,14 +1,6 @@
-/** SSRF guard for the link-preview Worker.
- *
- *  Unlike the Node service this Worker does NOT (and cannot) resolve DNS: the
- *  Cloudflare Workers runtime refuses to connect to private / loopback /
- *  link-local / RFC1918 addresses from `fetch()` by design, so DNS-rebinding to
- *  an internal IP is already neutralised at the platform layer. We therefore
- *  keep only the host-allowlist guard here: reject non-http(s) schemes, literal
- *  private IPs (cheap, catches obvious probes), and our own internal Metro/Stage
- *  surface (which is reachable from inside Cloudflare's network and so must be
- *  blocked explicitly). The literal-IP and host checks are re-run on every
- *  redirect hop by the caller. */
+/**
+ * @file SSRF guard for the link-preview Worker: rejects non-http(s) schemes, private/loopback/link-local IP literals, and internal Metro/Stage hosts on every redirect hop.
+ */
 
 /** Hostnames we never fetch (internal Metro/Stage surface + cloud metadata). */
 const BLOCKED_HOST_SUFFIXES = [
@@ -27,22 +19,24 @@ const BLOCKED_HOSTS = new Set([
   'metadata.google.internal',
 ]);
 
+/** Whether I Pv4. */
 function isIPv4(s: string): boolean {
   const p = s.split('.');
   return p.length === 4 && p.every(o => /^\d+$/.test(o) && Number(o) <= 255);
 }
 
-/** True if `ip` (v4 or v6 literal) is in a private / loopback / link-local /
- *  reserved range. A defence-in-depth check on top of the platform's refusal to
- *  route to private addresses. */
+/** True if `ip` (v4 or v6 literal) is in a private / loopback / link-local / reserved range. A defence-in-depth check on top of the platform's refusal to route to private addresses. */
 export function isPrivateIp(host: string): boolean {
   if (isIPv4(host)) return isPrivateV4(host);
   if (host.includes(':')) return isPrivateV6(host);
   return false;
 }
 
+/** Whether Private V4. */
 function isPrivateV4(ip: string): boolean {
-  const [a, b] = ip.split('.').map(Number);
+  const parts = ip.split('.').map(Number);
+  const a = parts[0] ?? NaN;
+  const b = parts[1] ?? NaN;
   if (a === 10) return true; // 10.0.0.0/8
   if (a === 127) return true; // loopback
   if (a === 0) return true; // 0.0.0.0/8 "this host"
@@ -54,6 +48,7 @@ function isPrivateV4(ip: string): boolean {
   return false;
 }
 
+/** Whether Private V6. */
 function isPrivateV6(ip: string): boolean {
   const x = ip.toLowerCase().replace(/^\[|\]$/g, '');
   if (x === '::1' || x === '::') return true; // loopback / unspecified
@@ -62,20 +57,24 @@ function isPrivateV6(ip: string): boolean {
   if (x.startsWith('ff')) return true; // multicast
   // IPv4-mapped IPv6, dotted-quad form: ::ffff:127.0.0.1
   const dotted = /::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(x);
-  if (dotted) return isPrivateV4(dotted[1]);
+  const dottedV4 = dotted?.[1];
+  if (dottedV4 !== undefined) return isPrivateV4(dottedV4);
   // IPv4-mapped IPv6, packed hex form: ::ffff:7f00:1 == 127.0.0.1. Two 16-bit
   // hextets after ::ffff: encode the 4 IPv4 octets, so reassemble + reuse the v4
   // check. (Without this, ::ffff:7f00:1 would slip past as a "public" address.)
   const hex = /::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/.exec(x);
-  if (hex) {
-    const hi = parseInt(hex[1], 16);
-    const lo = parseInt(hex[2], 16);
+  const hexHi = hex?.[1];
+  const hexLo = hex?.[2];
+  if (hexHi !== undefined && hexLo !== undefined) {
+    const hi = parseInt(hexHi, 16);
+    const lo = parseInt(hexLo, 16);
     const v4 = `${(hi >> 8) & 0xff}.${hi & 0xff}.${(lo >> 8) & 0xff}.${lo & 0xff}`;
     return isPrivateV4(v4);
   }
   return false;
 }
 
+/** Whether Blocked Host. */
 function isBlockedHost(host: string): boolean {
   const h = host.toLowerCase().replace(/\.$/, '');
   if (BLOCKED_HOSTS.has(h)) return true;
@@ -84,9 +83,7 @@ function isBlockedHost(host: string): boolean {
 
 export class SsrfError extends Error {}
 
-/** Validate a URL is safe to fetch: scheme + host allowlist + literal-IP guard.
- *  Throws {@link SsrfError} on any violation; returns the parsed URL on success.
- *  (No DNS resolution - the runtime blocks private destinations itself.) */
+/** Validate a URL is safe to fetch: scheme + host allowlist + literal-IP guard. Throws {@link SsrfError} on any violation; returns the parsed URL on success. (No DNS resolution - the runtime blocks private destinations itself.) */
 export function assertPublicUrl(raw: string): URL {
   let u: URL;
   try {

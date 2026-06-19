@@ -1,19 +1,6 @@
-/** Dev/feasibility probe for the embedded nodejs-mobile RAILGUN bridge.
- *
- *  Renders a clearly-labeled "Test Node bridge" button in the private-wallet
- *  view. On press it round-trips a 'ping' through pingBridge() and shows the
- *  result on screen so it can be eyeballed on-device - the KEY check that a
- *  build shipped + booted the Node runtime and the channel works both ways.
- *
- *  The native bridge stays guarded: when isBridgeAvailable() is false (the
- *  nodejs-mobile runtime isn't in this binary) we never call into it, so tsc /
- *  eslint / the bundler stay clean even though the native module isn't
- *  resolvable here. Any throw is caught and surfaced as text.
- *
- *  This file bundles the whole ping-probe family: the status-log renderer, the
- *  batched/capped log buffer, the action callbacks, and the probe component
- *  itself (previously split across .ping.log / .ping.log.buffer / .ping.actions
- *  purely to satisfy the old 200-line cap). */
+/**
+ * @file Dev feasibility probe for the embedded nodejs-mobile RAILGUN bridge: a "Test Node bridge" button family (ping/init/scan/methods) that round-trips through the guarded bridge and streams capped lifecycle + scan-debug logs on-device.
+ */
 import {
   useCallback,
   useEffect,
@@ -38,20 +25,21 @@ import {
   getBalances,
   isBridgeAvailable,
   pingBridge,
-  sdkListMethods,
   setBridgeStatusListener,
   walletInfo,
 } from '../../lib/railgun/bridge';
+import { sdkListMethods } from '../../lib/railgun/bridge/sdk';
 import { deriveRailgunKeyMaterial } from '../../lib/railgun/deriveKeys';
 
 /* ── Status log ─────────────────────────────────────────────────────────── */
 
 /** One timestamped status line: ms elapsed since the run started + the text. */
-export interface LogLine { ms: number; line: string }
+interface LogLine { ms: number; line: string }
 
 /** Render a single log line to the plain text used for selection + clipboard. */
 function fmtLine(l: LogLine): string { return `+${l.ms}ms  ${l.line}`; }
 
+/** Tone helper. */
 function tone(line: string, sub: string): string {
   if (line.includes('✗')) return DANGER;
   if (line.includes('✓') || line.startsWith('reply ← pong')) return SUCCESS;
@@ -64,8 +52,7 @@ function copyAll(lines: LogLine[]): void {
   flash('Logs copied');
 }
 
-/** Renders the ordered lifecycle lines the bridge emits as a compact monospace
- *  list so the whole boot→reply sequence fits in one on-device screenshot. */
+/** Renders the ordered lifecycle lines the bridge emits as a compact monospace list so the whole boot→reply sequence fits in one on-device screenshot. */
 function PingLog({ lines, sub, head, border }: {
   lines: LogLine[]; sub: string; head?: string; border?: string;
 }): React.ReactElement | null {
@@ -74,7 +61,7 @@ function PingLog({ lines, sub, head, border }: {
     <Col margin={{ top: 4 }} gap={2}>
       <Row margin={{ top: 2, bottom: 2 }} justify="end">
         <Pressable
-          onPress={() => copyAll(lines)}
+          onPress={() => { copyAll(lines); }}
           hitSlop={8}
           accessibilityLabel="Copy scan logs"
           style={{
@@ -107,13 +94,15 @@ function PingLog({ lines, sub, head, border }: {
 
 /* ── Batched log buffer ─────────────────────────────────────────────────── */
 
-/** The probe streams two HIGH-FREQUENCY sources into the on-screen log: the
+/**
+ * The probe streams two HIGH-FREQUENCY sources into the on-screen log: the
  *  bridge lifecycle sink and the engine's live `event:scanDebug` events.
  *  Appending each line straight into React state re-rendered the whole probe AND
  *  grew an unbounded array on EVERY line. This hook lands incoming lines in a
  *  plain ref ring buffer (no render), capped to the last CAP entries, flushed
  *  into state at most once per FLUSH_MS so a burst of N lines costs ONE
- *  re-render. `append` is render-free; `replace` swaps the visible log. */
+ *  re-render. `append` is render-free; `replace` swaps the visible log.
+ */
 
 /** Keep only the most recent lines - older lines scroll off, bounded memory. */
 const CAP = 300;
@@ -129,6 +118,7 @@ interface BatchedLog {
   replace: (lines: LogLine[]) => void;
 }
 
+/** Hook: use Batched Log. */
 function useBatchedLog(): BatchedLog {
   const [lines, setLines] = useState<LogLine[]>([]);
   const buf = useRef<LogLine[]>([]);
@@ -145,6 +135,7 @@ function useBatchedLog(): BatchedLog {
   // FLUSH_MS (setTimeout typing is portable across RN/node, unlike setInterval).
   useEffect(() => {
     let live = true;
+    /** Tick helper. */
     const tick = (): void => {
       if (!live) return;
       flush();
@@ -175,7 +166,7 @@ function useBatchedLog(): BatchedLog {
 
 /* ── Action callbacks ───────────────────────────────────────────────────── */
 
-export type ProbeState =
+type ProbeState =
   | { kind: 'idle' }
   | { kind: 'running' }
   | { kind: 'ok'; text: string }
@@ -199,8 +190,7 @@ interface ProbeActions {
   onMethods: () => Promise<void>;
 }
 
-/** Each handler round-trips through the guarded nodejs-mobile bridge and reports
- *  onto the two ProbeState slots (ping/engine) + the on-device log. */
+/** Each handler round-trips through the guarded nodejs-mobile bridge and reports onto the two ProbeState slots (ping/engine) + the on-device log. */
 function useProbeActions(deps: ProbeDeps): ProbeActions {
   const { count, setCount, setState, setEngine, setLog, runStart } = deps;
 
@@ -294,6 +284,7 @@ function useProbeActions(deps: ProbeDeps): ProbeActions {
 
 /* ── Probe component ────────────────────────────────────────────────────── */
 
+/** Probe that pings the private bridge and renders its reachability status. */
 export function BridgePingProbe({ sub, border }: {
   sub: string; border: string;
 }): React.ReactElement {
@@ -321,7 +312,7 @@ export function BridgePingProbe({ sub, border }: {
       const ms = runStart.current ? Date.now() - runStart.current : 0;
       append({ ms, line });
     });
-    return () => setBridgeStatusListener(null);
+    return () => { setBridgeStatusListener(null); };
   }, [append]);
 
   // Stream the engine's live scan diagnostics ('event:scanDebug') into the
@@ -331,7 +322,7 @@ export function BridgePingProbe({ sub, border }: {
     if (!isBridgeAvailable()) return undefined;
     return bridgeListen('event:scanDebug', (p) => {
       const e = p as { t?: number; chain?: number; msg?: string } | undefined;
-      if (!e || !e.msg) return;
+      if (!e?.msg) return;
       const ms = runStart.current ? Date.now() - runStart.current : 0;
       append({ ms, line: `scan[${e.chain ?? '?'}] ${e.msg}` });
     });

@@ -1,9 +1,4 @@
-/** TopnavIdentity — the avatar + display-name element shown in the Home topnav,
- *  reused across the contacts and wallet tabs for a consistent
- *  identity affordance. Self-contained: resolves the active account address,
- *  resolves its display name (getPeerName ?? shortAddress via usePeerProfiles),
- *  renders a 28px avatar + name, and opens the Menu sheet on tap (account
- *  switcher + Profile/Settings), matching the Home topnav exactly. */
+/** @file The topnav avatar + display-name element (shared across Home/contacts/wallet tabs) that resolves the active account's address and name and opens the Menu sheet on tap. */
 
 import { useEffect, useState } from 'react';
 
@@ -18,6 +13,7 @@ import { getActiveAccount } from '../lib/accounts';
 import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
 import { shortAddress } from '../modules/messaging';
 
+/** Top-nav identity slot rendering the user's avatar and name as a menu trigger. */
 export function TopnavIdentity(): React.ReactElement {
   const { link: head, border } = usePalette();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -42,7 +38,7 @@ export function TopnavIdentity(): React.ReactElement {
   // on Home — the single canonical identity tap-target across tabs.
   return (
     <>
-      <Pressable onPress={() => setMenuOpen(true)} hitSlop={8}>
+      <Pressable onPress={() => { setMenuOpen(true); }} hitSlop={8}>
         <Row align="center" gap={8}>
           <Avatar address={myAddress} size={28} style={{ backgroundColor: border }} />
           {myName ? (
@@ -53,7 +49,7 @@ export function TopnavIdentity(): React.ReactElement {
           ) : null}
         </Row>
       </Pressable>
-      <MenuSheet visible={menuOpen} onClose={() => setMenuOpen(false)} />
+      <MenuSheet visible={menuOpen} onClose={() => { setMenuOpen(false); }} />
     </>
   );
 }

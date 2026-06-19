@@ -1,21 +1,14 @@
-/** React bindings over the shared proposalsStore (Proposals.store).
- *
- *  `useProposals` drives the Proposals screen: the current card, the cursor into
- *  the session-visible queue, and skip/advance/refresh. `useProposalCount` is the
- *  cheap read used by the Home banner - it only re-renders when the pending count
- *  changes (no queue scan on Home's frequent re-renders; the scan lives in the
- *  store and is cache-driven + debounced).
- *
- *  Skipping/voting marks the proposal skipped in the store (shared session set),
- *  so it drops out of BOTH the screen and the banner. "Skipped" ids return on a
- *  manual refresh / next app run. */
+/**
+ * @file Proposals.hook — React bindings over the shared proposalsStore: useProposals
+ *  drives the Proposals screen (current card, queue cursor, skip/advance/refresh)
+ *  and useProposalCount is the cheap pending-count read for the Home banner.
+ */
 
 import { useCallback, useState, useSyncExternalStore } from 'react';
 import { proposalsStore } from './Proposals.store';
 import type { QueuedRequest } from './Proposals.queue';
 
-/** Cheap pending-poll count for the Home banner. Re-renders only when the count
- *  changes. The store does the (cache-driven, debounced) scanning. */
+/** Cheap pending-poll count for the Home banner. Re-renders only when the count changes. The store does the (cache-driven, debounced) scanning. */
 export function useProposalCount(): number {
   return useSyncExternalStore(
     proposalsStore.subscribe,
@@ -38,6 +31,7 @@ export interface ProposalsState {
   refresh: () => void;
 }
 
+/** Provides the visible proposals queue and subscribes to the shared store. */
 export function useProposals(): ProposalsState {
   /** Subscribe to the shared store; re-renders when the visible queue changes. */
   const queue = useSyncExternalStore(
@@ -51,10 +45,12 @@ export function useProposals(): ProposalsState {
     proposalsStore.isReady,
   );
 
-  /** Local cursor into the visible queue. The store filters skipped ids out of
+  /**
+   * Local cursor into the visible queue. The store filters skipped ids out of
    *  the queue, so advancing = skip the current id (store re-emits a shorter
    *  queue) and the cursor naturally lands on the next still-present entry. We
-   *  keep a cursor only to show "N of M" while the head stays at index 0. */
+   *  keep a cursor only to show "N of M" while the head stays at index 0.
+   */
   const [seen, setSeen] = useState(0);
 
   const advance = useCallback(() => {

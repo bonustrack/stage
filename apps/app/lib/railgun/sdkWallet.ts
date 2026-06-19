@@ -1,4 +1,6 @@
-/** Derive the Railgun (0zk) wallet from the user's EXISTING active account so
+/** @file Direct-SDK path that creates/loads the Railgun 0zk wallet from the active account's EOA key via deterministic mnemonic + encryptionKey derivation. */
+/**
+ * Derive the Railgun (0zk) wallet from the user's EXISTING active account so
  *  the private wallet layers onto the identity used everywhere else (lib/
  *  accounts). The SDK keys a wallet off a BIP39 mnemonic + encryption key; our
  *  accounts store a raw secp256k1 private key, so we bridge deterministically:
@@ -11,7 +13,8 @@
  *  real password gate is a second-pass item).
  *
  *  Ref: docs.railgun.org → getting-started → "Create a RAILGUN Wallet"
- *  (createRailgunWallet(encryptionKey, mnemonic, creationBlockNumbers)). */
+ *  (createRailgunWallet(encryptionKey, mnemonic, creationBlockNumbers)).
+ */
 
 import '../cryptoShim';
 import { getActiveAccount } from '../accounts';
@@ -30,11 +33,13 @@ export interface RailgunWalletHandle {
 let cached: RailgunWalletHandle | null = null;
 let cachedForId: string | null = null;
 
-/** Create-or-load the Railgun wallet for the CURRENT active account, memoized
+/**
+ * Create-or-load the Railgun wallet for the CURRENT active account, memoized
  *  per account id. Throws when the account can't expose a key (WalletConnect),
  *  surfaced by the caller as an unsupported-account message. Key derivation is
  *  shared with the embedded-Node bridge path (deriveKeys.ts) so the 0zk address
- *  is identical no matter which path created the wallet. */
+ *  is identical no matter which path created the wallet.
+ */
 export async function deriveRailgunWallet(): Promise<RailgunWalletHandle> {
   const acct = await getActiveAccount();
   if (!acct) throw new Error('No active account');
@@ -44,13 +49,9 @@ export async function deriveRailgunWallet(): Promise<RailgunWalletHandle> {
 
   const sdk = requireWalletApi();
   const info = await sdk.createRailgunWallet(encryptionKey, mnemonic, creationBlocks);
-  cached = { id: info.id, railgunAddress: sdk.getRailgunAddress(info.id) ?? '', encryptionKey };
+  const addr: unknown = sdk.getRailgunAddress(info.id);
+  const railgunAddress = typeof addr === 'string' ? addr : '';
+  cached = { id: info.id, railgunAddress, encryptionKey };
   cachedForId = acct.id;
   return cached;
-}
-
-/** Drop the memoized handle (e.g. after switching accounts). */
-export function resetRailgunWallet(): void {
-  cached = null;
-  cachedForId = null;
 }

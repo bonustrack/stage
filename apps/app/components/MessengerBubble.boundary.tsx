@@ -1,13 +1,8 @@
-/** Per-bubble error boundary for the conversation feed.
- *
- *  WHY: the conversation FlatList renders each message via MessengerBubble. React
- *  has no built-in per-item isolation, so if ONE bubble throws during render
- *  (e.g. a malformed/legacy poll body that slipped past the codec), the thrown
- *  error unmounts the entire FlatList subtree and the whole conversation comes up
- *  blank/stuck while the Home channel-list preview (a separate pure-string
- *  humanize path) keeps working. Wrapping each row in this boundary contains the
- *  blast radius to the single bad message: it renders a small inline fallback in
- *  place of that one bubble and the rest of the feed renders normally. */
+/**
+ * @file Per-bubble error boundary for the conversation feed, containing a single
+ *  throwing message to a small inline fallback so one malformed bubble can't
+ *  unmount the whole FlatList subtree.
+ */
 
 import { Component } from 'react';
 
@@ -23,18 +18,21 @@ interface Props {
 interface State { failed: boolean }
 
 export class BubbleErrorBoundary extends Component<Props, State> {
-  state: State = { failed: false };
+  override state: State = { failed: false };
 
+  /** Flags the boundary as failed when a child bubble throws during render. */
   static getDerivedStateFromError(): State {
     return { failed: true };
   }
 
-  componentDidCatch(error: unknown): void {
+  /** Logs the caught render error without rethrowing so the feed stays alive. */
+  override componentDidCatch(error: unknown): void {
     // Log so a recurring bad message is diagnosable, but never rethrow.
     console.warn('MessengerBubble render failed; rendered fallback', error);
   }
 
-  render(): ReactNode {
+  /** Renders the children, or an inline fallback line when a bubble has failed. */
+  override render(): ReactNode {
     if (this.state.failed) {
       return (
         <Box padding={{ x: 16, y: 6 }}>

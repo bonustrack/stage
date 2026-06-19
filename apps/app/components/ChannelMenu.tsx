@@ -1,20 +1,7 @@
-/** ChannelMenu — the SINGLE per-conversation action sheet shared by both the
- *  channels-list long-press menu (HomeScreen) and the conversation-view 3-dot
- *  overflow menu ([convId]). Presented as the app's standard bottom sheet
- *  (AppModal) in both places for one consistent, themed surface.
- *
- *  The component owns the actions that only need ids/flags — Mark read/unread
- *  (channelsCache), Pin/Unpin (pins), and navigation to Group info / Profile
- *  (expo-router). Context-specific flows that carry their own confirm dialog
- *  (Leave group) are passed in as optional callbacks by the channel-view caller.
- *
- *  Action visibility:
- *    - Mark read/unread  — both contexts (toggle by `isUnread`)
- *    - Pin / Unpin       — both contexts (toggle by `isPinned`)
- *    - Group info        — groups only (navigates to /group/[convId])
- *    - Add members       — groups only (navigates to /xmtp/add-members)
- *    - Profile           — DMs only, when `peerAddress` is known
- *    - Leave group       — ALL groups, both contexts (built-in confirm + leave)
+/**
+ * @file Shared per-conversation action sheet (AppModal bottom sheet) used by both
+ *  the channels-list long-press menu and the conversation-view overflow menu,
+ *  offering mark read/unread, pin/unpin, group info, add members, profile, leave.
  */
 
 import { Alert } from 'react-native';
@@ -49,19 +36,17 @@ export interface ChannelMenuProps {
   /** Sheet visibility (controlled by the parent). */
   visible: boolean;
   onClose: () => void;
-  /** Where the menu is mounted — drives post-leave navigation. 'view' pops back
-   *  to the channels list; 'list' just lets the list reconcile (default). */
+  /** Where the menu is mounted — drives post-leave navigation. 'view' pops back to the channels list; 'list' just lets the list reconcile (default). */
   context?: 'list' | 'view';
   /** Optional hook fired after a successful leave (e.g. toast / refresh). */
   onAfterLeave?: (result: 'left' | 'hidden') => void;
-  /** Optional hook fired after toggling archive (carries the new state). The
-   *  conversation view uses this to pop back to the list when archiving. */
+  /** Optional hook fired after toggling archive (carries the new state). The conversation view uses this to pop back to the list when archiving. */
   onAfterArchive?: (archived: boolean) => void;
-  /** Optional in-conversation search action — when provided (conversation view),
-   *  a "Search" row is shown that closes the sheet and opens the search topnav. */
+  /** Optional in-conversation search action — when provided (conversation view), a "Search" row is shown that closes the sheet and opens the search topnav. */
   onSearch?: () => void;
 }
 
+/** Renders the shared per-conversation action sheet (mark read, pin, archive, leave, navigate). */
 export function ChannelMenu({
   convId, isGroup, peerAddress, isUnread, isPinned, isArchived,
   visible, onClose, context = 'list', onAfterLeave, onAfterArchive, onSearch,
@@ -72,22 +57,24 @@ export function ChannelMenu({
   const head = pal.link;
   const danger = pal.danger;
 
+  /** Run helper. */
   const run = (fn: () => void): void => { onClose(); fn(); };
 
-  /** Search needs the sheet to be GONE first: this AppModal is a native RN
+  /**
+   * Search needs the sheet to be GONE first: this AppModal is a native RN
    *  <Modal> (its own Android window that owns IME focus). If we open search in
    *  the same tick as closing the sheet, the search input autofocuses while the
    *  modal window is still mounted/animating out and the keyboard never attaches.
    *  So close the sheet, then fire onSearch on the next macrotask once `visible`
    *  has flipped false and the dismiss has started. The conversation view pairs
-   *  this with a verified blur/focus retry once the dismiss interaction settles. */
+   *  this with a verified blur/focus retry once the dismiss interaction settles.
+   */
   const runSearch = (fn: () => void): void => {
     onClose();
     setTimeout(fn, 0);
   };
 
-  /** Built-in Leave-group flow — confirm, leave via XMTP, then navigate
-   *  context-aware: pop back from the channel view; let the list reconcile. */
+  /** Built-in Leave-group flow — confirm, leave via XMTP, then navigate context-aware: pop back from the channel view; let the list reconcile. */
   const onLeaveGroup = (): void => {
     onClose();
     Alert.alert(
@@ -123,7 +110,7 @@ export function ChannelMenu({
             label="Search"
             color={head}
             dark={dark}
-            onPress={() => runSearch(onSearch)}
+            onPress={() => { runSearch(onSearch); }}
           />
         ) : null}
 
@@ -133,7 +120,7 @@ export function ChannelMenu({
             label="Add members"
             color={head}
             dark={dark}
-            onPress={() => run(() => router.push({ pathname: '/xmtp/add-members', params: { convId } }))}
+            onPress={() => { run(() => { router.push({ pathname: '/xmtp/add-members', params: { convId } }); }); }}
           />
         ) : null}
 
@@ -142,7 +129,7 @@ export function ChannelMenu({
           label={isUnread ? 'Mark as read' : 'Mark as unread'}
           color={head}
           dark={dark}
-          onPress={() => run(() => { void (isUnread ? markConvRead(convId) : markConvUnread(convId)); })}
+          onPress={() => { run(() => { void (isUnread ? markConvRead(convId) : markConvUnread(convId)); }); }}
         />
 
         <MenuRow
@@ -150,7 +137,7 @@ export function ChannelMenu({
           label={isPinned ? 'Unpin' : 'Pin'}
           color={head}
           dark={dark}
-          onPress={() => run(() => { void togglePin(convId); })}
+          onPress={() => { run(() => { void togglePin(convId); }); }}
         />
 
         {isGroup ? (
@@ -159,7 +146,7 @@ export function ChannelMenu({
             label="Group info"
             color={head}
             dark={dark}
-            onPress={() => run(() => router.push({ pathname: '/group/[convId]', params: { convId } }))}
+            onPress={() => { run(() => { router.push({ pathname: '/group/[convId]', params: { convId } }); }); }}
           />
         ) : peerAddress ? (
           <MenuRow
@@ -167,7 +154,7 @@ export function ChannelMenu({
             label="Profile"
             color={head}
             dark={dark}
-            onPress={() => run(() => router.push({ pathname: '/user/[address]', params: { address: peerAddress } }))}
+            onPress={() => { run(() => { router.push({ pathname: '/user/[address]', params: { address: peerAddress } }); }); }}
           />
         ) : null}
 
@@ -180,11 +167,11 @@ export function ChannelMenu({
           label={isArchived ? 'Unarchive' : 'Archive'}
           color={danger}
           dark={dark}
-          onPress={() => run(() => {
+          onPress={() => { run(() => {
             void toggleArchived(convId);
             onAfterArchive?.(!isArchived);
             if (!isArchived && context === 'view') router.replace('/');
-          })}
+          }); }}
         />
 
         {isGroup ? (
@@ -195,6 +182,7 @@ export function ChannelMenu({
   );
 }
 
+/** The Menu Row component. */
 function MenuRow({ icon, label, color, dark, onPress }: {
   icon: React.ComponentProps<typeof Icon>['name'];
   label: string;

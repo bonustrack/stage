@@ -1,17 +1,4 @@
-/** In-conversation message search results — rendered INSIDE the feed area as a
- *  REAL message feed.
- *
- *  When search is open with a query, the conversation screen swaps the message
- *  FlatList for this one. It scans the LOCAL XMTP history of the current
- *  conversation (searchLocalHistory, no inbox-wide sync) for messages whose body
- *  matches the query, then renders those matches using the EXACT SAME bubble
- *  renderer as the normal feed (useFeedRenderItem → MessengerBubble) so results
- *  look and behave like the live thread - just filtered down to matches, with
- *  the keyword highlighted in fluo-yellow inside each bubble.
- *
- *  Local-only + chunked: searchLocalHistory pages the local MLS db in chunks,
- *  yields between pages, and streams partial results so matches appear
- *  progressively. */
+/** @file In-conversation message search feed that scans local XMTP history in chunks for body matches and renders them with the same bubble renderer as the live feed, with the keyword highlighted. */
 
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator } from 'react-native';
@@ -30,13 +17,13 @@ export interface ConversationSearchProps {
   /** Live query string — owned by the conversation screen's topnav search bar. */
   query: string;
   sub: string; bg: string;
-  /** Full conversation state — reused so matches render with the identical bubble
-   *  renderer (and all its handlers) as the live feed. */
+  /** Full conversation state — reused so matches render with the identical bubble renderer (and all its handlers) as the live feed. */
   c: ConvState;
   dark: boolean;
   router: { push: (h: { pathname: '/user/[address]'; params: { address: string } }) => void };
 }
 
+/** In-conversation search bar that filters and highlights matching messages. */
 export function ConversationSearch({
   line, query, sub, bg, c, dark, router,
 }: ConversationSearchProps): React.ReactElement {
@@ -50,8 +37,7 @@ export function ConversationSearch({
   /** Same bubble renderer as the live feed, with the keyword highlighted. */
   const { renderItem, extraData } = useFeedRenderItem(c, dark, router, q);
 
-  /** Debounced scan: each query change starts a fresh local scan and cancels the
-   *  previous one via the epoch guard. Empty/short query clears results. */
+  /** Debounced scan: each query change starts a fresh local scan and cancels the previous one via the epoch guard. Empty/short query clears results. */
   useEffect(() => {
     const epoch = ++scanEpoch.current;
     if (q.length < 2) { setResult({ hits: [], truncated: false }); setScanning(false); return; }
@@ -63,7 +49,7 @@ export function ConversationSearch({
         () => scanEpoch.current !== epoch,
       ).finally(() => { if (scanEpoch.current === epoch) setScanning(false); });
     }, 220);
-    return () => clearTimeout(t);
+    return () => { clearTimeout(t); };
   }, [q, line]);
 
   useEffect(() => () => { scanEpoch.current += 1; }, []);
@@ -75,8 +61,7 @@ export function ConversationSearch({
       style={{ flex: 1, backgroundColor: bg }}
       data={result.hits}
       extraData={extraData}
-      /** Hits come back newest-first; invert so they read like the live feed
-       *  (newest at the bottom, oldest scrolling up). */
+      /** Hits come back newest-first; invert so they read like the live feed (newest at the bottom, oldest scrolling up). */
       inverted
       keyExtractor={h => h.id}
       keyboardShouldPersistTaps="handled"
@@ -89,8 +74,7 @@ export function ConversationSearch({
           ? <Box padding={{ y: 28 }} align="center"><Text size="sm" color={sub}>No matches</Text></Box>
           : null
       }
-      /** Inverted → footer renders at the visual TOP. Holds the scanning spinner
-       *  and the "first matches only" cap hint. */
+      /** Inverted → footer renders at the visual TOP. Holds the scanning spinner and the "first matches only" cap hint. */
       ListFooterComponent={
         <>
           {scanning ? (

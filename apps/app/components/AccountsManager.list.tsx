@@ -1,6 +1,7 @@
-/** AccountsManager list body — the ACCOUNTS section card (flat / collapsed /
- *  expanded modes + the "Add account" row + footer hint). Extracted from
- *  AccountsManager for lint line-budget. Rendering identical. */
+/**
+ * @file AccountsManager list body rendering the Accounts section card (active
+ * account, other accounts in flat/collapsed/expanded modes, and the Add-account row).
+ */
 
 import { Pressable } from '@metro-labs/kit/pressable';
 
@@ -10,6 +11,7 @@ import { Icon } from '@metro-labs/kit/icon';
 import { type AccountRecord } from '../lib/accounts';
 import { AccountRow } from './AccountsManager.parts';
 
+/** Renders the Accounts section card (active account, other accounts, and the Add-account row). */
 export function AccountList({
   flat, accounts, activeId, activeRec, otherAccounts, expanded, setExpanded,
   head, sub, border, rowBg, onSwitch, setManageId, onAdd,
@@ -20,12 +22,23 @@ export function AccountList({
   head: string; sub: string; border: string; rowBg: string;
   onSwitch: (id: string) => void; setManageId: (id: string) => void; onAdd: () => void;
 }): React.ReactElement {
+  /** Manage Trailing. */
   const manageTrailing = (id: string): React.ReactElement => (
-    <Pressable hitSlop={10} onPress={() => setManageId(id)}>
+    <Pressable hitSlop={10} onPress={() => { setManageId(id); }}>
       <Text weight="semibold" size="4xl" color={sub} style={{ paddingHorizontal: 4 }}>⋯</Text>
     </Pressable>
   );
 
+  // Conditional style branch (flat vs card); the card branch's marginHorizontal
+  // can't be a static layout prop, so the style is built here and passed as an
+  // identifier (the layout-prop lint only flags inline style object literals on
+  // Box/Row/Col).
+  const containerStyle = flat
+    ? { backgroundColor: 'transparent' }
+    : {
+        marginHorizontal: 16, borderRadius: 12, overflow: 'hidden' as const,
+        borderWidth: 1, borderColor: border, backgroundColor: rowBg,
+      };
   return (
     <>
       {!flat ? (
@@ -34,14 +47,7 @@ export function AccountList({
         </Text>
       ) : null}
       <Box
-        /* eslint-disable no-restricted-syntax -- conditional style branch (flat ? ... : ...); marginHorizontal can't be a static layout prop here. */
-        style={flat ? {
-          backgroundColor: 'transparent',
-        } : {
-          marginHorizontal: 16, borderRadius: 12, overflow: 'hidden',
-          borderWidth: 1, borderColor: border, backgroundColor: rowBg,
-        }}
-        /* eslint-enable no-restricted-syntax */
+        style={containerStyle}
 >
         {flat ? (
           /* Flat mode (modal) — EVERY account as a row, all visible at once,
@@ -56,8 +62,8 @@ export function AccountList({
                 <AccountRow
                   rec={a}
                   topBorder={i > 0}
-                  onPress={() => onSwitch(a.id)}
-                  onLongPress={() => setManageId(a.id)}
+                  onPress={() => { onSwitch(a.id); }}
+                  onLongPress={() => { setManageId(a.id); }}
                   head={head} sub={sub} border={border}
                   trailing={
                     a.id === activeId
@@ -75,8 +81,8 @@ export function AccountList({
             <AccountRow
               rec={activeRec}
               topBorder={false}
-              onPress={() => setExpanded(e => !e)}
-              onLongPress={() => setManageId(activeRec.id)}
+              onPress={() => { setExpanded(e => !e); }}
+              onLongPress={() => { setManageId(activeRec.id); }}
               head={head} sub={sub} border={border}
               trailing={<Icon name={expanded ? 'chevronUp' : 'chevronDown'} size={20} color={sub} />}
 />
@@ -96,8 +102,8 @@ export function AccountList({
                 key={a.id}
                 rec={a}
                 topBorder
-                onPress={() => onSwitch(a.id)}
-                onLongPress={() => setManageId(a.id)}
+                onPress={() => { onSwitch(a.id); }}
+                onLongPress={() => { setManageId(a.id); }}
                 head={head} sub={sub} border={border}
                 trailing={manageTrailing(a.id)}
 />

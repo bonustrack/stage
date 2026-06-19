@@ -1,8 +1,6 @@
-/** Spacer - a ChatKit-styled flexible spacer. Mirrors ChatKit's `Spacer`
- *  widget. A gap that grows to fill free space on the parent's main axis (flex:1
- *  default), pushing siblings apart. `minSize` floors both dimensions so it
- *  keeps a minimum gap when there is no free space to flex into (e.g. in a
- *  scroll view); pass `flex={0}` for a pure fixed `minSize` gap. */
+/**
+ * @file Spacer — a ChatKit-styled flexible gap that grows to fill the parent's main axis (flex:1 default), with `minSize` flooring both dimensions for a guaranteed minimum gap.
+ */
 
 import { View, type ViewStyle, type DimensionValue } from 'react-native';
 

@@ -1,8 +1,6 @@
-/** Shared sizing + colours for ChatKit form controls (Input, Textarea, and
- *  future Select/DatePicker). Mirrors ChatKit's `ControlSize` scale and the
- *  `soft` / `outline` variants. Split out so each control module stays small and
- *  the size/variant tables live in one place. Colours follow the palette
- *  convention in apps/app/lib/theme.ts (head / sub / input-bg / border). */
+/**
+ * @file Shared ControlSize sizing and soft/outline colour tables for the Kit form controls (Input, Textarea, Select, DatePicker), kept in one place so each control module stays small.
+ */
 
 import type { ViewStyle, TextStyle } from 'react-native';
 import { FONT_SIZE, schemePalette } from './tokens';

@@ -1,11 +1,8 @@
-/** Settings menu - a System-page-style list whose rows push their own
- *  sub-pages: Display (theme), Messenger (XMTP account + settings), Security
- *  (export / remove account). Reached from the LeftDrawer's "Settings" row.
- *
- *  Plus a top-level, always-visible DANGER ZONE so onboarding can be re-tested
- *  without digging into Experimental → Developer: a "Reset accounts" row
- *  (resetForOnboarding) and a "Reset everything" row (resetEverything, the full
- *  nuke + auto-reload). Both confirm via Alert and go through the keyring. */
+/**
+ * @file Top-level Settings menu: a list whose rows push the Display, Messenger,
+ *  Notifications, and Security sub-pages, plus a danger zone with Reset accounts
+ *  and Reset everything actions.
+ */
 
 import { useState } from 'react';
 import { Alert, Pressable } from 'react-native';
@@ -40,6 +37,7 @@ const ROWS: { href: Href; label: string; icon: HeroIconName }[] = [
   { href: '/settings/about', label: 'About', icon: 'questionMarkCircle' },
 ];
 
+/** Renders the top-level settings menu listing each settings section. */
 export function SettingsMenu(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -51,6 +49,7 @@ export function SettingsMenu(): React.ReactElement {
   const [resetting, setResetting] = useState(false);
   const [nuking, setNuking] = useState(false);
 
+  /** Handle the Reset. */
   const onReset = (): void => {
     Alert.alert(
       'Reset accounts',
@@ -63,14 +62,15 @@ export function SettingsMenu(): React.ReactElement {
           onPress: () => {
             setResetting(true);
             void resetForOnboarding()
-              .catch(() => Alert.alert('Reset failed', 'Could not clear account state.'))
-              .finally(() => setResetting(false));
+              .catch(() => { Alert.alert('Reset failed', 'Could not clear account state.'); })
+              .finally(() => { setResetting(false); });
           },
         },
       ],
     );
   };
 
+  /** Handle the Nuke. */
   const onNuke = (): void => {
     Alert.alert(
       'Reset everything',
@@ -97,7 +97,7 @@ export function SettingsMenu(): React.ReactElement {
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <ListView dark={dark}>
           {ROWS.map((row) => (
-            <ListViewItem key={row.href} dark={dark} onPress={() => router.push(row.href)}>
+            <ListViewItem key={row.href} dark={dark} onPress={() => { router.push(row.href); }}>
               <Icon name={row.icon} size={22} color={head}/>
               <Col flex={1}>
                 <Text size="xl" color={head}>{row.label}</Text>

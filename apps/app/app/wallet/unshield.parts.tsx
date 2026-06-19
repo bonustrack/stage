@@ -1,6 +1,7 @@
-/** Presentational sub-parts for the Unshield screen (the public EOA recipient
- *  card + the phase/result line) — split out for the <200-line cap. Mirrors
- *  send.shield.parts.tsx. */
+/**
+ * @file Presentational sub-parts for the Unshield screen: the locked own-EOA
+ * public recipient card and the phase/result status line.
+ */
 import { Linking } from 'react-native';
 
 import { Pressable } from '@metro-labs/kit/pressable';
@@ -12,10 +13,10 @@ import { explorerTxUrl } from '@stage-labs/client/xmtp/tx';
 interface Pal { fg: string; head: string; sub: string; border: string; inputBg: string; link: string }
 type Phase = 'idle' | 'proving' | 'broadcasting' | 'done' | 'error';
 
+/** Short Addr. */
 const shortAddr = (a: string): string => (a.length> 12 ? `${a.slice(0, 6)}…${a.slice(-4)}` : a);
 
-/** The unshield recipient is the user's OWN public EOA by default — shown
- *  read-only so funds always return to the user's own wallet. */
+/** The unshield recipient is the user's OWN public EOA by default — shown read-only so funds always return to the user's own wallet. */
 export function UnshieldRecipient({ pal, eoa, network }: {
   pal: Pal; eoa: string | null; network: string;
 }): React.ReactElement {
@@ -35,8 +36,7 @@ export function UnshieldRecipient({ pal, eoa, network }: {
   );
 }
 
-/** Progress + result line. Proving is the slow Groth16 step; broadcasting then
- *  confirmed shows the explorer link; errors render in red. */
+/** Progress + result line. Proving is the slow Groth16 step; broadcasting then confirmed shows the explorer link; errors render in red. */
 export function UnshieldPhaseLine({ pal, phase, txHash, err, bridgeOk, chainId }: {
   pal: Pal; phase: Phase; txHash: string | null; err: string | null; bridgeOk: boolean; chainId: number;
 }): React.ReactElement | null {
@@ -56,7 +56,7 @@ export function UnshieldPhaseLine({ pal, phase, txHash, err, bridgeOk, chainId }
         <Text size="xs" color={sub}>Broadcasting…</Text>
       ) : null}
       {txHash ? (
-        <Pressable onPress={() => Linking.openURL(explorerTxUrl(chainId, txHash))} hitSlop={6}>
+        <Pressable onPress={() => { void Linking.openURL(explorerTxUrl(chainId, txHash)); }} hitSlop={6}>
           <Text size="xs">
             {txHash.slice(0, 10)}…{txHash.slice(-8)}
           </Text>

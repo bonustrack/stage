@@ -1,17 +1,6 @@
-/** Shared layout-primitive contract for the Metro clients.
- *
- *  This module holds the SINGLE SOURCE OF TRUTH for the Box/Row/Col prop API
- *  and the prop -> style mapping. It is pure data + a pure function — no
- *  framework deps — so both renderers consume identical names and mapping:
- *    - apps/app (React Native) spreads `boxStyleEntries(props)` into a ViewStyle
- *      (numbers pass straight through; RN treats unitless numbers as px).
- *    - apps/ui (Vue) maps the same record to inline CSS, stringifying numeric
- *      values to `${n}px`.
- *
- *  The contract: every spacing/size number = px on BOTH platforms. The mapper
- *  returns NEUTRAL values (raw numbers, CSS-ish string enums like 'flex-start'
- *  / 'row'); it never bakes units and never emits `display` (RN Views are flex
- *  by default; web must add display:flex itself — each renderer owns that). */
+/**
+ * @file Framework-agnostic single source of truth for the Box/Row/Col prop API and its pure prop->style mapper (numbers = px), consumed identically by the RN and Vue renderers.
+ */
 
 import {
   colors,
@@ -34,11 +23,13 @@ export type Justify =
   | 'around'
   | 'evenly';
 
-/** Per-side / per-axis spacing object, mirroring OpenAI ChatKit's `Spacing`.
+/**
+ * Per-side / per-axis spacing object, mirroring OpenAI ChatKit's `Spacing`.
  *  `x` -> horizontal (left+right), `y` -> vertical (top+bottom); `top`/`right`/
  *  `bottom`/`left` target a single side. Per-side keys override the axis keys
  *  (RN applies paddingHorizontal/Vertical first, then the specific side wins).
- *  Each value is a number (px) or a string (passthrough). */
+ *  Each value is a number (px) or a string (passthrough).
+ */
 export interface Spacing {
   top?: number | string;
   right?: number | string;
@@ -48,10 +39,12 @@ export interface Spacing {
   y?: number | string;
 }
 
-/** The framework-agnostic prop contract. Renderers extend this with their own
+/**
+ * The framework-agnostic prop contract. Renderers extend this with their own
  *  passthrough typing (RN: ViewProps + `style`; Vue: `class` + `as`).
  *  Spacing props match ChatKit 1:1: `padding`/`margin` accept a scalar (all
- *  sides) or a `Spacing` object. No letter shorthands. */
+ *  sides) or a `Spacing` object. No letter shorthands.
+ */
 export interface BoxBaseProps {
   /** flex axis. 'col' -> column (default), 'row' -> row. */
   direction?: 'row' | 'col';
@@ -69,16 +62,16 @@ export interface BoxBaseProps {
   flex?: number;
   /** wrap children (default false). */
   wrap?: boolean;
-  /** ChatKit `background`: a semantic ColorToken (resolved scheme-aware via the
-   *  Box renderer), a kit `colors` scale key (resolved to hex), or a raw colour
-   *  string (escape hatch). Maps to style.backgroundColor. */
+  /** ChatKit `background`: a semantic ColorToken (resolved scheme-aware via the Box renderer), a kit `colors` scale key (resolved to hex), or a raw colour string (escape hatch). Maps to style.backgroundColor. */
   background?: ColorToken | (string & {});
-  /** ChatKit `radius`: a token from the corner-radius scale
+  /**
+   * ChatKit `radius`: a token from the corner-radius scale
    *  ('none'|'2xs'|..|'4xl'|'full'|'100%'). Maps to style.borderRadius. A raw
    *  string ('12px') OR a raw number passes through as the escape hatch - used
    *  for the app's live, user-overridable `blockRadius` (radiusOverride store),
    *  whose px value is dynamic and has no fixed token. Mirrors how `background`
-   *  / Text `color` accept a raw value alongside the token. */
+   *  / Text `color` accept a raw value alongside the token.
+   */
   radius?: RadiusValue | number | (string & {});
   /** ChatKit BlockProps sizing (number=px | string='50%'/'auto'). */
   width?: Size;
@@ -109,23 +102,21 @@ const JUSTIFY: Record<Justify, string> = {
   evenly: 'space-evenly',
 };
 
-/** Resolve a `background` value's `colors`-scale layer: a kit `colors` key ->
- *  hex, otherwise pass through. (Semantic ColorToken -> scheme colour is done
- *  upstream in the Box renderer, which knows the active scheme; this pure module
- *  has no scheme.) */
+/** Resolve a `background` value's `colors`-scale layer: a kit `colors` key -> hex, otherwise pass through. (Semantic ColorToken -> scheme colour is done upstream in the Box renderer, which knows the active scheme; this pure module has no scheme.) */
 export function resolveBg(bg: string): string {
   return (colors as Record<string, string>)[bg] ?? bg;
 }
 
-/** A neutral, CSS-ish record of style entries. Values are raw numbers (px) or
- *  string enums. Consumed by both renderers. `display` is intentionally absent. */
+/** A neutral, CSS-ish record of style entries. Values are raw numbers (px) or string enums. Consumed by both renderers. `display` is intentionally absent. */
 export type BoxStyleEntries = Record<string, string | number>;
 
-/** Expand a `padding`/`margin` prop into per-side style entries under the
+/**
+ * Expand a `padding`/`margin` prop into per-side style entries under the
  *  given key prefix ('padding' | 'margin'). A scalar (number|string) sets all
  *  four sides. A `Spacing` object resolves x -> left+right, y -> top+bottom,
  *  then per-side keys (top/right/bottom/left) override the axis (later writes
- *  win), matching RN's paddingHorizontal/Vertical-then-side precedence. */
+ *  win), matching RN's paddingHorizontal/Vertical-then-side precedence.
+ */
 function applySpacing(
   s: BoxStyleEntries,
   prefix: 'padding' | 'margin',
@@ -159,10 +150,12 @@ function applySpacing(
   if (value.left !== undefined) s[Left] = value.left;
 }
 
-/** Pure prop -> style mapping. The SINGLE source of layout logic. Omits any
+/**
+ * Pure prop -> style mapping. The SINGLE source of layout logic. Omits any
  *  key whose prop is undefined so it never overrides a renderer default or a
  *  passthrough style. `padding`/`margin` accept a scalar (all sides) or a
- *  `Spacing` object (per-side wins over axis). */
+ *  `Spacing` object (per-side wins over axis).
+ */
 export function boxStyleEntries(props: BoxBaseProps): BoxStyleEntries {
   const s: BoxStyleEntries = {};
 

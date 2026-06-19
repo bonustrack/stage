@@ -1,11 +1,7 @@
-/** Settings → Developer - device-local diagnostic toggles.
- *
- *  Currently a single Switch wired to the Railgun debug-console preference
- *  (lib/railgun/debugConsole, default OFF). When ON, the Private wallet tab
- *  renders the balance-pipeline panel + the Node-bridge ping probe, which stream
- *  the engine's live bridge logs (the +0ms scan[...] / rx event lines). Those
- *  blocks were always mounted before and streamed continuously, which made the
- *  phone laggy - they are now opt-in here. */
+/**
+ * @file Settings -> Developer screen: device-local diagnostic toggles, currently
+ *  the opt-in Railgun debug-console preference plus reset actions.
+ */
 
 import { useEffect, useState } from 'react';
 
@@ -22,6 +18,7 @@ import {
 import { resetForOnboarding } from '../../lib/wallet';
 import { resetEverything } from '../../lib/resetEverything';
 
+/** Renders the developer settings screen with reset and debugging actions. */
 export function DeveloperSettings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head, border, danger } = usePalette();
@@ -32,17 +29,19 @@ export function DeveloperSettings(): React.ReactElement {
 
   useEffect(() => {
     void loadDebugConsole().then(setEnabled);
-    return subscribeDebugConsole(() => setEnabled(isDebugConsoleEnabled()));
+    return subscribeDebugConsole(() => { setEnabled(isDebugConsoleEnabled()); });
   }, []);
 
   const [resetting, setResetting] = useState(false);
   const [nuking, setNuking] = useState(false);
 
+  /** Handle the Toggle. */
   const onToggle = (next: boolean): void => {
     setEnabled(next); // optimistic
     void setDebugConsole(next);
   };
 
+  /** Handle the Reset. */
   const onReset = (): void => {
     Alert.alert(
       'Reset accounts',
@@ -55,14 +54,15 @@ export function DeveloperSettings(): React.ReactElement {
           onPress: () => {
             setResetting(true);
             void resetForOnboarding()
-              .catch(() => Alert.alert('Reset failed', 'Could not clear account state.'))
-              .finally(() => setResetting(false));
+              .catch(() => { Alert.alert('Reset failed', 'Could not clear account state.'); })
+              .finally(() => { setResetting(false); });
           },
         },
       ],
     );
   };
 
+  /** Handle the Nuke. */
   const onNuke = (): void => {
     Alert.alert(
       'Reset everything',

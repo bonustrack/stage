@@ -1,8 +1,6 @@
-/** Messaging caches behind the facade. Re-exposes the channelsCache
- *  (per-account channels list + unread markers) and xmtp.state session caches
- *  (feedCache / activeFeedLines / inboxEthCache) so components import them from
- *  `@/modules/messaging` instead of lib. The lib-internal consumers (xmtp.feed /
- *  xmtp.stream / xmtp.client) keep importing the lib modules directly. */
+/**
+ * @file Re-exports the messaging caches (per-account channelsCache + unread markers and the xmtp.state session caches) behind the facade so components import them from `@/modules/messaging` rather than lib.
+ */
 
 export {
   type CachedRow,

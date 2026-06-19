@@ -1,18 +1,8 @@
-/** usePayerBalance — fetch the ACTIVE account's balance of the asset a payment
- *  request is asking for, on the request's chain. Native via `getBalance`,
- *  ERC-20 via `balanceOf`. One-shot on mount (no polling).
- *
- *  Resolution order:
- *   1. Registry-known asset on a known chain (VIEM_CHAINS + ASSETS) — uses the
- *      curated decimals/symbol and the wallet's brovider RPC.
- *   2. Generic on-chain fallback for UNKNOWN tokens/chains: a viem public client
- *      is built for any chainId (brovider RPC by chainId) and decimals/symbol are
- *      read straight off the ERC-20 (native falls back to ETH). This is what lets
- *      the card show "Balance: …" even when the asset/chain isn't in the registry.
- *
- *  Per-(chainId, token, account) cached so re-renders don't refetch. Any RPC /
- *  network error degrades gracefully (the row falls back to a subtle dash via the
- *  card) — it never throws. */
+/**
+ * @file usePayerBalance hook fetching the active account's balance of a payment
+ *  request's asset/chain (registry-known or generic on-chain ERC-20 fallback),
+ *  one-shot, per-(chain,token,account) cached, degrading gracefully on RPC error.
+ */
 import { useEffect, useState } from 'react';
 import { formatUnits, isAddress, erc20Abi, type Hex } from 'viem';
 
@@ -28,8 +18,7 @@ export interface PayerBalance {
   insufficient: boolean;
 }
 
-/** Parse a request chainId (hex/decimal string or number), defaulting to
- *  mainnet when absent. Delegates the hex/decimal parse to the SDK. */
+/** Parse a request chainId (hex/decimal string or number), defaulting to mainnet when absent. Delegates the hex/decimal parse to the SDK. */
 function parseChainId(raw?: string | number): number {
   return raw == null || raw === '' ? 1 : chainIdToNumber(raw);
 }
@@ -38,8 +27,8 @@ function parseChainId(raw?: string | number): number {
 function trim(value: string): string {
   if (!value.includes('.')) return value;
   const [whole, frac] = value.split('.');
-  const cut = frac.slice(0, 4).replace(/0+$/, '');
-  return cut ? `${whole}.${cut}` : whole;
+  const cut = (frac ?? '').slice(0, 4).replace(/0+$/, '');
+  return cut ? `${whole ?? ''}.${cut}` : (whole ?? '');
 }
 
 /** True for the native-coin sentinel / zero address (treated as native, not ERC-20). */
@@ -58,8 +47,7 @@ interface OnchainMeta {
   symbol: string;
 }
 
-/** Cache keyed by chainId:token:account so re-renders / re-mounts don't refetch.
- *  Stores the in-flight promise so concurrent cards dedupe too. */
+/** Cache keyed by chainId:token:account so re-renders / re-mounts don't refetch. Stores the in-flight promise so concurrent cards dedupe too. */
 const cache = new Map<string, Promise<OnchainMeta | null>>();
 
 const minimalErc20Abi = [
@@ -78,27 +66,29 @@ async function readOnchain(
     return { raw, decimals: chain.nativeCurrency.decimals, symbol: chain.nativeCurrency.symbol };
   }
 
-  if (!isAddress(token!)) return null;
-  const t = token as Hex;
+  if (token === undefined || !isAddress(token)) return null;
+  const t = token;
   // Balance is required; decimals/symbol are best-effort (some tokens omit them).
   const raw = await pub.readContract({
     address: t, abi: erc20Abi, functionName: 'balanceOf', args: [addr],
-  }) as bigint;
+  });
   let decimals = 18;
   let symbol = 'tokens';
   try {
-    decimals = Number(await pub.readContract({ address: t, abi: minimalErc20Abi, functionName: 'decimals' }));
+    decimals = await pub.readContract({ address: t, abi: minimalErc20Abi, functionName: 'decimals' });
   } catch { /* keep default 18 */ }
   try {
-    symbol = String(await pub.readContract({ address: t, abi: minimalErc20Abi, functionName: 'symbol' }));
+    symbol = await pub.readContract({ address: t, abi: minimalErc20Abi, functionName: 'symbol' });
   } catch { /* keep default 'tokens' */ }
   return { raw, decimals, symbol };
 }
 
-/** @param chainId   request chain (hex/dec string or number)
+/**
+ * @param chainId   request chain (hex/dec string or number)
  *  @param token     ERC-20 contract address, or null/undefined/sentinel for native
  *  @param symbol    display symbol from the request (e.g. "USDC", "STAGE")
- *  @param needed    requested amount in whole units, used for the insufficient flag */
+ *  @param needed    requested amount in whole units, used for the insufficient flag
+ */
 export function usePayerBalance(
   chainId: string | number | undefined,
   token: string | undefined,
@@ -125,7 +115,7 @@ export function usePayerBalance(
         const key = `${cid}:${(token ?? 'native').toLowerCase()}:${addr.toLowerCase()}`;
         let meta = cache.get(key);
         if (!meta) {
-          meta = readOnchain(cid, token, addr as Hex).catch(() => null);
+          meta = readOnchain(cid, token, addr).catch(() => null);
           cache.set(key, meta);
         }
         const onchain = await meta;

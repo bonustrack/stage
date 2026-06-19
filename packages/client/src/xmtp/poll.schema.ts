@@ -1,9 +1,14 @@
-/** Zod boundary schema for the Metro poll wire body (`metro.box/poll:1.0`).
+/**
+ * @file Zod boundary schema validating the Metro poll wire body (metro.box/poll:1.0).
+ */
+/**
+ * Zod boundary schema for the Metro poll wire body (`metro.box/poll:1.0`).
  *
  *  A poll arrives over XMTP as a JSON-encoded EncodedContent body. Pairing this
  *  schema with `decodeJsonContent(bytes, pollSchema)` makes a drifted poll body
  *  throw loudly (with a logged reason) at the codec boundary, instead of an
- *  `as PollContent` cast handing the renderer a malformed object. */
+ *  `as PollContent` cast handing the renderer a malformed object.
+ */
 
 import { z } from 'zod';
 import type { ZodType } from 'zod';
@@ -27,10 +32,12 @@ const questionSchema = z.object({
   { message: 'a choice question needs >=2 options (or set open:true for free-text)' },
 );
 
-/** Validates the on-wire poll shape. Accepts BOTH forms: the multi-question
+/**
+ * Validates the on-wire poll shape. Accepts BOTH forms: the multi-question
  *  `questions[]` array (AskUserQuestion shape) and the legacy single-question
  *  top-level fields. A poll must satisfy at least one of the two via the
- *  refinement so `normalizeQuestions()` always yields a non-empty array. */
+ *  refinement so `normalizeQuestions()` always yields a non-empty array.
+ */
 export const pollContentSchema: ZodType<PollContent> = z.object({
   pollId: z.string().min(1),
   questions: z.array(questionSchema).min(1).optional(),
@@ -39,6 +46,6 @@ export const pollContentSchema: ZodType<PollContent> = z.object({
   options: z.array(optionSchema).min(2).optional(),
   multiSelect: z.boolean().optional(),
 }).refine(
-  p => (p.questions && p.questions.length > 0) || (typeof p.question === 'string' && (p.options?.length ?? 0) >= 2),
+  p => (p.questions !== undefined && p.questions.length > 0) || (typeof p.question === 'string' && (p.options?.length ?? 0) >= 2),
   { message: 'poll needs either questions[] or a question + options' },
 ) as unknown as ZodType<PollContent>;

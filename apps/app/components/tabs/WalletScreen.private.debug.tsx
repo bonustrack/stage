@@ -1,13 +1,8 @@
-/** On-screen "Railgun debug" panel for the shielded-balance pipeline.
- *
- *  We have no adb on-device, so this renders the raw truth of the balance flow
- *  so the user can screenshot it: bridge/engine readiness, the refresh phase +
- *  error, the initial getBalances row counts, and — the key signal — the RAW
- *  last `event:balanceUpdate` payload the engine emitted. If "balance events: 0"
- *  the engine emitted NOTHING (scan/RPC/merkle problem, engine-side). If it
- *  shows rows but the tab reads 0, it's an RN-side sum/store/decimals bug.
- *
- *  Clearly labeled + diagnostic; subscribes to the in-memory balanceDebug store. */
+/**
+ * @file RailgunDebugPanel — on-screen, screenshot-friendly diagnostic panel for the
+ *  shielded-balance pipeline (bridge/engine readiness, refresh phase + error, getBalances
+ *  row counts, and the raw last balanceUpdate payload); subscribes to the balanceDebug store.
+ */
 import { useEffect, useState } from 'react';
 
 import { Text } from '@metro-labs/kit/text';
@@ -19,18 +14,21 @@ import {
   type BalanceDebug,
 } from '../../lib/railgun/balanceDebug';
 
+/** Fmt Time. */
 const fmtTime = (t: number | null): string => (t ? new Date(t).toLocaleTimeString() : '—');
 
+/** Fmt Event. */
 function fmtEvent(d: BalanceDebug): string {
   if (d.lastEvent == null) return 'none received yet';
   try {
     const s = JSON.stringify(d.lastEvent);
     return s.length> 600 ? `${s.slice(0, 600)}…` : s;
   } catch {
-    return String(d.lastEvent);
+    return '[unserializable event]';
   }
 }
 
+/** The Debug Row component. */
 function DebugRow({ label, value, sub, head }: {
   label: string; value: string; sub: string; head: string;
 }): React.ReactElement {
@@ -44,6 +42,7 @@ function DebugRow({ label, value, sub, head }: {
   );
 }
 
+/** Debug panel exposing Railgun private-balance internals for diagnostics. */
 export function RailgunDebugPanel({ head, sub, border }: {
   head: string; sub: string; border: string;
 }): React.ReactElement {

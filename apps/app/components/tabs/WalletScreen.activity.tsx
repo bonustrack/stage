@@ -1,13 +1,7 @@
-/** Activity tab — the connected wallet's recent Ethereum-mainnet transactions,
- *  ordered nonce-desc (newest first) via Etherscan v2 `txlist?sort=desc`. Each
- *  tx is one row: a direction icon, the decoded action + counterparty (resolved
- *  Snapshot name when known, else shortened address), the relative time, and the
- *  signed ETH value. Mirrors the data-hook + row patterns of the Tokens tab.
- *
- *  Scope: Ethereum mainnet + Sepolia, fetched in parallel and merged
- *  newest-first. Each row carries a small chain badge ("Ethereum"/"Sepolia").
- *  A chain that errors or has no history is skipped; empty only when BOTH
- *  chains return nothing. */
+/**
+ * @file Wallet Activity tab rendering the connected wallet's recent Ethereum mainnet and Sepolia transactions, fetched via Etherscan and merged newest-first.
+ *  Each row shows a direction icon, decoded action + counterparty, relative time, signed ETH value, and a chain badge.
+ */
 
 import { useEffect, useState } from 'react';
 
@@ -103,9 +97,7 @@ const DIR_ICON: Record<ActivityRow['direction'], HeroIconName> = {
   send: 'arrowUp', receive: 'arrowDown', self: 'switchHorizontal',
 };
 
-/** A single transaction row — 4-corner layout matching TokenRow: a circular
- *  direction icon, the action title over counterparty + time, and the signed
- *  ETH value over the tx status. */
+/** A single transaction row — 4-corner layout matching TokenRow: a circular direction icon, the action title over counterparty + time, and the signed ETH value over the tx status. */
 function TxRow({ r, head, sub, border, bg }: {
   r: ActivityRow; head: string; sub: string; border: string; bg: string;
 }): React.ReactElement {

@@ -1,7 +1,8 @@
-/** Open free-text answer block for a poll question (AskUserQuestion open type):
- *  a Kit-styled input + send Button, with the submitted answers listed below.
- *  Submitting an empty box retracts the local user's prior answer. Split out of
- *  MessengerBubble.poll.tsx to keep each file under the lint line cap. */
+/**
+ * @file Open free-text answer block for a poll question (AskUserQuestion open type):
+ *  a Kit input + send Button with submitted answers listed below, where an empty
+ *  submission retracts the local user's prior answer.
+ */
 
 import { useState } from 'react';
 import { fontSize } from '@metro-labs/kit/tokens';
@@ -11,6 +12,7 @@ import { Button } from '@metro-labs/kit/button';
 import { Row, Box } from './layout';
 import { usePalette, useBlockRadius, withAlpha } from '../lib/theme';
 
+/** Renders the free-text answer input and submitted-answers list for an open poll question. */
 export function OpenAnswerBlock({ qi, sub, dark, answers, mine, onSubmit }: {
   qi: number; sub: string; dark: boolean;
   answers?: Map<string, { text: string; ts: string }>;
@@ -20,6 +22,7 @@ export function OpenAnswerBlock({ qi, sub, dark, answers, mine, onSubmit }: {
   const radius = useBlockRadius();
   const [draft, setDraft] = useState('');
   const list = answers ? [...answers.entries()].sort((a, b) => a[1].ts.localeCompare(b[1].ts)) : [];
+  /** Submit helper. */
   const submit = (): void => { onSubmit(draft); setDraft(''); };
   // Borderless input: neutral overlay fill + radius so it still reads as an
   // input, but no visible outline. Body text in the palette text token.

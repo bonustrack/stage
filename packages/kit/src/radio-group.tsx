@@ -1,10 +1,6 @@
-/** RadioGroup - a ChatKit-styled radio group. Mirrors ChatKit's `RadioGroup`
- *  widget. Faithful prop names: `name`, `options` ({ label, value, disabled }[]),
- *  `defaultValue`, `direction` ('row' | 'col'), `disabled`, `required`,
- *  `ariaLabel`. Deviation (kit is interactive RN): ChatKit's `onChangeAction`
- *  (server ActionConfig) is replaced by an `onChange(value)` callback, and a
- *  controlled `value` prop is accepted. `dark` boolean keeps the kit hook-free.
- *  Each option's dot is drawn with RN views. */
+/**
+ * @file RadioGroup — a hook-free interactive ChatKit-styled radio group (controlled `value` + `onChange`) rendering each option's dot with RN views.
+ */
 
 import { useState } from 'react';
 import { Pressable, View, Text as RNText, type ViewStyle } from 'react-native';
@@ -65,6 +61,7 @@ export function RadioGroup(props: RadioGroupProps): React.ReactElement {
   const head = dark ? '#ffffff' : '#000000';
   const border = dark ? '#282a2d' : '#e4e4e5';
 
+  /** Pick helper. */
   function pick(v: string): void {
     if (controlled === undefined) setInternal(v);
     onChange?.(v);
@@ -81,7 +78,7 @@ export function RadioGroup(props: RadioGroupProps): React.ReactElement {
     >
       {options.map((opt) => {
         const isSel = opt.value === selected;
-        const optDisabled = groupDisabled || opt.disabled;
+        const optDisabled = (groupDisabled ?? false) || (opt.disabled ?? false);
         const outer: ViewStyle = {
           width: size,
           height: size,
@@ -98,7 +95,7 @@ export function RadioGroup(props: RadioGroupProps): React.ReactElement {
             accessibilityState={{ selected: isSel, disabled: optDisabled }}
             accessibilityLabel={opt.label}
             disabled={optDisabled}
-            onPress={() => pick(opt.value)}
+            onPress={() => { pick(opt.value); }}
             style={{ flexDirection: 'row', alignItems: 'center', gap: 10, opacity: optDisabled ? 0.5 : 1 }}
           >
             <View style={outer}>

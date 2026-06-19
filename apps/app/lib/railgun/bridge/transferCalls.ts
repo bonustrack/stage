@@ -1,7 +1,10 @@
-/** RN-side private-TRANSFER bridge wrappers - thin shims over the pure frame
+/** @file RN-side private-TRANSFER bridge wrappers (gas-estimate, proof, populate) binding the pure @stage-labs/client/railgun builders to this binary's native `sdk()` dispatcher. */
+/**
+ * RN-side private-TRANSFER bridge wrappers - thin shims over the pure frame
  *  builders in @stage-labs/client/railgun, bound to THIS binary's native `sdk()`
  *  dispatcher. No logic is duplicated: the wire protocol lives in the SDK; the
- *  native channel (nodejsMobile) stays here. */
+ *  native channel (nodejsMobile) stays here.
+ */
 import { sdk } from './sdk';
 import {
   gasEstimateTransfer as gasEstimateTransferSdk,

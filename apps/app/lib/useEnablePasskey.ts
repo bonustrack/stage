@@ -1,12 +1,7 @@
-/** Shared "Enable passkey" action for an existing smart account, surfaced in
- *  Settings -> Wallet and the Secure-your-wallet nudge. Wraps the keyring-safe
- *  enablePasskeyForRecord flow with a confirm + busy + flash, so the two UI
- *  call-sites stay declarative (no duplicated orchestration).
- *
- *  ON-DEVICE: registering the passkey runs the OS WebAuthn create() sheet, and a
- *  DEPLOYED Kernel additionally signs the sudo-swap userOp on-device — neither is
- *  exercisable in CI. The hook returns {available} so a binary without the passkey
- *  native module (or an account that already has one) hides the affordance. */
+/**
+ * @file Shared "Enable passkey" hook for an existing smart account (Settings -> Wallet and the secure-wallet nudge), wrapping enablePasskeyForRecord with confirm + busy + flash.
+ *  Registration runs the OS WebAuthn sheet (and on a deployed Kernel signs the sudo-swap userOp), so `{available}` is false unless this binary can run passkeys and the account lacks one.
+ */
 
 import { useCallback, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
@@ -14,13 +9,12 @@ import { getActiveAccount } from './accounts';
 import { enablePasskeyForRecord, passkeysAvailable, kernelDeployedOnChain } from './zerodev';
 import { flash } from './toast';
 
+/** Hook providing passkey availability and an action to register one for the active account. */
 export function useEnablePasskey(epoch?: number): {
-  /** True only when this binary can run passkeys AND the active account is a smart
-   *  account WITHOUT a passkey yet (so the affordance is worth showing). */
+  /** True only when this binary can run passkeys AND the active account is a smart account WITHOUT a passkey yet (so the affordance is worth showing). */
   available: boolean;
   busy: boolean;
-  /** Confirm + register + install the passkey; flashes the outcome. Resolves true
-   *  on success so callers can refresh. */
+  /** Confirm + register + install the passkey; flashes the outcome. Resolves true on success so callers can refresh. */
   run: () => void;
 } {
   const [available, setAvailable] = useState(false);
@@ -71,7 +65,7 @@ export function useEnablePasskey(epoch?: number): {
         } else if (res.reason === 'unavailable') {
           flash('Passkeys need the latest app build');
         } else {
-          flash(res.message || 'Could not enable passkey');
+          flash(res.message ?? 'Could not enable passkey');
         }
       } finally {
         setBusy(false);

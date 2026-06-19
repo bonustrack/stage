@@ -1,6 +1,6 @@
-/** Presentational fragments for the MessengerComposer (reply banner, @-mention
- *  popup, staged-attachment row, recording waveform bar), extracted for the lint
- *  line-budget. JSX + behavior identical — state owned by the parent. */
+/**
+ * @file Presentational fragments for the MessengerComposer: reply banner, @-mention popup, staged-attachment row, and recording waveform bar.
+ */
 
 import { Animated, StyleSheet } from 'react-native';
 
@@ -15,10 +15,12 @@ import { getPeerName } from '../lib/peerProfiles';
 import { type Attachment } from './MessengerComposer.helpers';
 import { usePalette } from '../lib/theme';
 
+/** Kind Icon. */
 const kindIcon = (kind: string): HeroIconName => (
   kind === 'image' ? 'photo' : kind === 'audio' ? 'microphone' : 'paperClip'
 );
 
+/** Renders the banner above the composer showing the message being replied to. */
 export function ReplyBanner({
   dark, sub, sender, onClear, onPress,
 }: {
@@ -27,23 +29,23 @@ export function ReplyBanner({
   /** Tap the banner body → scroll the feed to the replied-to message. */
   onPress?: () => void;
 }): React.ReactElement {
-  /** Username color: white in dark theme, the light brand blue otherwise (one-off,
-   *  no matching token — leave hardcoded). */
+  /** Username color: white in dark theme, the light brand blue otherwise (one-off, no matching token — leave hardcoded). */
   const nameColor = dark ? '#ffffff' : '#2f6feb';
   /** TopNav border value — matches the conversation header hairline exactly. */
   const borderColor = usePalette().border; // #282a2d / #e4e4e5
   return (
-    /** The parent composer Col is already edge-to-edge (padding x:0), so the Box
+    /**
+     * The parent composer Col is already edge-to-edge (padding x:0), so the Box
      *  itself spans the full screen width — its `surface` bg and top hairline run
      *  edge-to-edge automatically. The px:22 here is a REAL inset (no negative
      *  margin breakout), pushing the content 22px in from each screen edge to line
      *  up with the composer input (Col padding 10 + Textarea `md` paddingHorizontal
      *  12 = 22px). Both the reply glyph (left) and the ✕ (right) sit at this 22px
-     *  inset, symmetric. The bg uses the same `surface` token as the composer. */
+     *  inset, symmetric. The bg uses the same `surface` token as the composer.
+     */
     <Box padding={{ x: 22 }} surface="surface" style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: borderColor }}>
       <Pressable onPress={onPress} disabled={!onPress}>
-        {/** No extra inset → the outer Box px:22 alone supplies the full composer-
-         *   matched inset on both sides. */}
+        {/** No extra inset → the outer Box px:22 alone supplies the full composer- matched inset on both sides. */}
         <Row padding={{ y: 11, x: 0 }} align="center" gap={10}>
           {/** Reply glyph leading the label (the swipe-to-reply icon). */}
           <Icon name="reply" size={16} color={sub}/>
@@ -63,6 +65,7 @@ export function ReplyBanner({
   );
 }
 
+/** Renders the @-mention autocomplete popup of matching members above the composer. */
 export function MentionPopup({
   dark, head, sub, matches, onPick,
 }: {
@@ -79,7 +82,7 @@ export function MentionPopup({
       {matches.map((c, i) => (
         <Pressable
           key={c.address}
-          onPress={() => onPick(c)}
+          onPress={() => { onPick(c); }}
           style={({ pressed }) => ({
             flexDirection: 'row', alignItems: 'center', gap: 10,
             paddingHorizontal: 12, paddingVertical: 8,
@@ -100,6 +103,7 @@ export function MentionPopup({
   );
 }
 
+/** Renders the row of staged (pending) attachment chips with remove buttons. */
 export function PendingRow({
   fg, sub, chipBg, pending, onRemove,
 }: {
@@ -115,7 +119,7 @@ export function PendingRow({
             <Box>
               <Image src={a.url} size={72} radius={8} fit="cover"/>
               <Pressable
-                onPress={() => onRemove(i)}
+                onPress={() => { onRemove(i); }}
                 hitSlop={6}
                 style={{
                   position: 'absolute', top: -4, right: -4,
@@ -134,7 +138,7 @@ export function PendingRow({
           <Row padding={{ x: 8, y: 4 }} key={a.id} align="center" gap={6} radius="lg" background={chipBg}>
             <Icon name={kindIcon(a.kind)} size={14} color={fg}/>
             <Text size="2xs" color={fg} style={{ maxWidth: 140 }} numberOfLines={1}>{a.name ?? a.id}</Text>
-            <Pressable onPress={() => onRemove(i)} hitSlop={6}>
+            <Pressable onPress={() => { onRemove(i); }} hitSlop={6}>
               <Icon name="x" size={14} color={sub}/>
             </Pressable>
           </Row>
@@ -144,6 +148,7 @@ export function PendingRow({
   );
 }
 
+/** Renders the active voice-recording bar with waveform levels, elapsed time, and slide-to-cancel. */
 export function RecordingBar({
   head, sub, levels, recordSecs, slideX, slideThresholdPx,
 }: {
@@ -168,7 +173,7 @@ export function RecordingBar({
         </Text>
       </Animated.View>
       <Row height={28} flex={1} align="center" justify="end" style={{ overflow: 'hidden' }}>
-        {[...Array(Math.max(0, 40 - levels.length)).fill(0.05), ...levels].slice(-40).map((lvl, i) => (
+        {[...(Array<number>(Math.max(0, 40 - levels.length)).fill(0.05)), ...levels].slice(-40).map((lvl, i) => (
           <Box width={3} radius="2xs" height={Math.max(3, Math.round(lvl * 26))} background={head} margin={{ x: 1 }} key={i} style={{ opacity: 0.85 }}/>
         ))}
       </Row>

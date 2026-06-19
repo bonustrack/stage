@@ -1,10 +1,4 @@
-/** Wallet → Receive screen — full-page QR of the logged-in address with the
- *  full address shown below, tap to copy. A Public/Private toggle at the top
- *  switches between the public EOA address (0x…) and the shielded Railgun 0zk
- *  address. Funds received to the 0zk address are private (shielded).
- *
- *  Uses `react-native-qrcode-svg` (pure JS, no native module — no APK rebuild
- *  needed) layered on react-native-svg which the app already depends on. */
+/** @file Wallet → Receive screen showing a QR of the public EOA or shielded Railgun 0zk address, toggleable and tap-to-copy. */
 
 import { useEffect, useState } from 'react';
 
@@ -23,6 +17,7 @@ import { Icon } from '@metro-labs/kit/icon';
 import { flash } from '../../lib/toast';
 import { ReceiveModeToggle, type ReceiveMode } from '../../components/wallet/ReceiveModeToggle';
 
+/** Screen for receiving funds, showing the wallet address and QR code. */
 export default function WalletReceive(): React.ReactElement {
   const router = useRouter();
   const { text: fg, link: head, border } = usePalette();
@@ -51,6 +46,7 @@ export default function WalletReceive(): React.ReactElement {
   const activeMode: ReceiveMode = mode === 'private' && !privateReady ? 'public' : mode;
   const address = activeMode === 'private' ? privateAddress : publicAddress;
 
+  /** Copy helper. */
   const copy = (): void => {
     if (!address) return;
     void Clipboard.setStringAsync(address);
@@ -64,7 +60,7 @@ export default function WalletReceive(): React.ReactElement {
   return (
     <Col surface="surface" flex={1}>
       <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
+        <Pressable onPress={() => { router.back(); }} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
         <Text weight="semibold" size="xl" color={head} style={{ flex: 1 }}>Receive</Text>

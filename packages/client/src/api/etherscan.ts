@@ -1,34 +1,24 @@
-/** Etherscan v2 tx-history helper. Mirrors the API-key convention used by
+/**
+ * @file Etherscan v2 transaction-history fetcher returning an account's normal txs newest-first across activity chains.
+ */
+/**
+ * Etherscan v2 tx-history helper. Mirrors the API-key convention used by
  *  coingecko.ts / opensea.ts (reuse Snapshot UI's read key; overridable via
  *  EXPO_PUBLIC_ETHERSCAN_API_KEY, or the `apiKey` arg the Stage client
  *  threads through). Etherscan v1 is deprecated in 2026, so this uses the
  *  unified v2 endpoint (`/v2/api?chainid=<id>&...`).
  *
  *  Returns the account's normal transactions sorted newest-first (sort=desc),
- *  which for a single EOA corresponds to NONCE DESCENDING. Pure `fetch`. */
+ *  which for a single EOA corresponds to NONCE DESCENDING. Pure `fetch`.
+ */
 
 import { parseEtherscanResponse } from './etherscan.schema';
+export type { EtherscanTx } from './etherscan.types';
 
 const DEFAULT_KEY =
   process.env.EXPO_PUBLIC_ETHERSCAN_API_KEY ?? '2UAJBTBZRQTSZUF9JW953W9XMGDM3YAZWY';
 
 const V2_URL = 'https://api.etherscan.io/v2/api';
-
-/** Raw Etherscan `txlist` row (subset we render). All numeric fields arrive
- *  as decimal strings. */
-export interface EtherscanTx {
-  hash: string;
-  nonce: string;
-  timeStamp: string;
-  from: string;
-  to: string;
-  value: string; // wei
-  isError: string; // "0" ok, "1" failed
-  functionName?: string;
-  input: string; // "0x" = plain transfer
-  gasUsed: string;
-  gasPrice: string;
-}
 
 /** Chains the Activity tab fetches, newest-first across all of them. */
 export const ACTIVITY_CHAINS = [
@@ -52,10 +42,12 @@ export interface ActivityRow {
   chainLabel: string; // human label for the per-row badge
 }
 
-/** Fetch up to `limit` normal transactions for `address` on `chainId`,
+/**
+ * Fetch up to `limit` normal transactions for `address` on `chainId`,
  *  newest-first (nonce desc for an EOA). Throws on a transport/API error so
  *  the caller can render an error state; an address with no history resolves
- *  to an empty array (Etherscan returns status "0" / "No transactions found"). */
+ *  to an empty array (Etherscan returns status "0" / "No transactions found").
+ */
 export async function fetchActivity(
   address: string,
   chainId = 1,
@@ -104,10 +96,12 @@ export async function fetchActivity(
   });
 }
 
-/** Fetch activity across ALL ACTIVITY_CHAINS in parallel, merged newest-first.
+/**
+ * Fetch activity across ALL ACTIVITY_CHAINS in parallel, merged newest-first.
  *  Each chain's errors are isolated, so a failed/empty chain is skipped while
  *  the other still renders. Rejects only if EVERY chain throws (so the caller
- *  can show an error state); an all-empty result resolves to []. */
+ *  can show an error state); an all-empty result resolves to [].
+ */
 export async function fetchActivityAllChains(
   address: string,
   limit = 50,
@@ -126,8 +120,7 @@ export async function fetchActivityAllChains(
     .slice(0, limit);
 }
 
-/** wei (decimal string) -> trimmed ETH decimal string. Avoids viem to keep this
- *  helper dependency-light; precision to 6 dp is plenty for a row. */
+/** wei (decimal string) -> trimmed ETH decimal string. Avoids viem to keep this helper dependency-light; precision to 6 dp is plenty for a row. */
 function weiToEth(wei: string): string {
   let n = 0;
   try {

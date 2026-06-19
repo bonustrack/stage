@@ -1,14 +1,8 @@
-/** Wallet → Unshield token (private → public).
- *
- *  Moves funds from the user's OWN 0zk shielded balance back to a PUBLIC address
- *  (defaults to the user's own EOA). Reached from the token detail page's
- *  "Unshield" button (shielded holdings only). Token/network pre-selected via
- *  query params; amount is chosen.
- *
- *  Unshield REQUIRES a Groth16 proof, so confirm runs the full estimate → prove
- *  → populate → broadcast flow in lib/railgun/unshield.ts. Proving is the slow
- *  step (~10-30s); progress flows through the phase line + Private-tab chip.
- *  Recipient defaults to own EOA (kept simple, not editable). */
+/**
+ * @file Wallet unshield-token screen moving funds from the user's own 0zk
+ * shielded balance back to a public address (defaults to their own EOA) via the
+ * Groth16 estimate-prove-populate-broadcast flow in lib/railgun/unshield.ts.
+ */
 import { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
@@ -22,6 +16,7 @@ import { TokenSelector, useSelectedBalance } from './TokenSelector';
 type Phase = 'idle' | 'proving' | 'broadcasting' | 'done' | 'error';
 const NET_LABEL: Record<number, string> = { 1: 'Ethereum', 11155111: 'Sepolia' };
 
+/** Screen for unshielding tokens from a private balance back to public. */
 export default function WalletUnshield(): React.ReactElement {
   const router = useRouter();
   const params = useLocalSearchParams<{ symbol?: string; chainId?: string }>();
@@ -30,7 +25,7 @@ export default function WalletUnshield(): React.ReactElement {
   const pal = useFormPal();
 
   const [eoa, setEoa] = useState<string | null>(null);
-  useEffect(() => { void getActiveAccount().then(a => setEoa(a?.address ?? null)); }, []);
+  useEffect(() => { void getActiveAccount().then(a => { setEoa(a?.address ?? null); }); }, []);
 
   const initialSymbol = params.symbol === 'USDC' ? 'USDC' : 'ETH';
   const initialChainId = typeof params.chainId === 'string' && Number.isFinite(Number(params.chainId))
@@ -47,6 +42,7 @@ export default function WalletUnshield(): React.ReactElement {
   const busy = phase === 'proving' || phase === 'broadcasting';
   const canSubmit = isFinite(n) && n > 0 && !busy && !!eoa && isBridgeAvailable();
 
+  /** Handle the Submit. */
   const onSubmit = (): void => {
     if (!canSubmit) return;
     setErr(null); setTxHash(null); setPhase('proving');
@@ -61,9 +57,9 @@ export default function WalletUnshield(): React.ReactElement {
   };
 
   return (
-    <ActionPage title="Unshield token" head={head} bg={bg} border={border} onBack={() => router.back()}
+    <ActionPage title="Unshield token" head={head} bg={bg} border={border} onBack={() => { router.back(); }}
       footer={
-        <WalletFooter border={border} dark={dark} onCancel={() => router.back()}
+        <WalletFooter border={border} dark={dark} onCancel={() => { router.back(); }}
           submitDisabled={!canSubmit} submitLoading={busy} onSubmit={onSubmit}
           submitLabel={phase === 'proving' ? 'Proving…' : phase === 'broadcasting' ? 'Broadcasting…'
             : phase === 'done' ? 'Unshielded ✓' : 'Unshield'} />

@@ -1,11 +1,11 @@
-/** Inline video attachment — plays via expo-av `Video` with native controls.
- *  `uri` is either a decrypted local `file://` (remote/multi-remote, resolved by
- *  RemoteAttachmentResolver) or a local `file://`/`data:` (optimistic local send).
- *  Not autoplay; CONTAIN fit; capped height with rounded corners for bubble parity. */
+/**
+ * @file MessengerVideoAttachment: inline video message attachment played via expo-av with native controls.
+ */
 
 import { Video, ResizeMode } from 'expo-av';
 import { Box } from './layout';
 
+/** Renders an inline video message attachment with native playback controls. */
 export function MessengerVideoAttachment({ uri }: { uri: string }): React.ReactElement {
   return (
     <Box width={220} radius="md" background={'#000'} margin={{ bottom: 6 }} style={{ overflow: 'hidden' }}>

@@ -1,4 +1,8 @@
-/** Metro in-chat transaction content types - shared between the RN app, web
+/**
+ * @file Metro in-chat transaction content types mirroring XMTP walletSendCalls and transactionReference (wire shapes, ids, fallback text).
+ */
+/**
+ * Metro in-chat transaction content types - shared between the RN app, web
  *  client, and daemon. Pure TS: wire shapes, content-type id constants, and
  *  plain-text fallback builders.
  *
@@ -12,19 +16,18 @@
  *
  *  Payment is a two-message handshake: a WalletSendCalls (EIP-5792 batch)
  *  request, then a TransactionReference receipt posted back into the SAME conv
- *  once the payer broadcasts. */
+ *  once the payer broadcasts.
+ */
 
 // ---------------------------------------------------------------------------
 // WalletSendCalls — `xmtp.org/walletSendCalls:1.0`
 // ---------------------------------------------------------------------------
 
-/** Optional per-call metadata. `description` is shown on the request card;
- *  `transactionType` is a free-form hint (e.g. `transfer`). */
+/** Optional per-call metadata. `description` is shown on the request card; `transactionType` is a free-form hint (e.g. `transfer`). */
 export interface WalletSendCallMetadata {
   description?: string;
   transactionType?: string;
-  /** Hints used to render the amount nicely on the card without re-decoding
-   *  `data`. All optional — a vanilla wallet_sendCalls has none of these. */
+  /** Hints used to render the amount nicely on the card without re-decoding `data`. All optional — a vanilla wallet_sendCalls has none of these. */
   currency?: string;
   amount?: number;
   decimals?: number;
@@ -32,10 +35,12 @@ export interface WalletSendCallMetadata {
   [k: string]: unknown;
 }
 
-/** One EIP-5792 call. `to`/`data`/`value` are all 0x-hex strings (`value` is
+/**
+ * One EIP-5792 call. `to`/`data`/`value` are all 0x-hex strings (`value` is
  *  hex WEI, NOT decimal). For a native transfer: `to` = recipient, `value` =
  *  hex wei, no `data`. For an ERC-20 transfer: `to` = token contract, `value`
- *  = `0x0`, `data` = encoded `transfer(recipient,amount)`. */
+ *  = `0x0`, `data` = encoded `transfer(recipient,amount)`.
+ */
 export interface WalletSendCall {
   to?: string;
   data?: string;
@@ -74,8 +79,7 @@ export interface TransactionMetadata {
 }
 
 export interface TransactionReferenceContent {
-  /** Chain id — number or hex/decimal string per the spec; we emit a decimal
-   *  number (mainnet = 1) but tolerate strings on decode. */
+  /** Chain id — number or hex/decimal string per the spec; we emit a decimal number (mainnet = 1) but tolerate strings on decode. */
   networkId: number | string;
   /** The broadcast transaction hash (0x…64). */
   reference: string;
@@ -89,8 +93,7 @@ export const TRANSACTION_REFERENCE_TYPE_SHORT = 'transactionReference';
 // Fallbacks + helpers (pure, shared by RN + daemon codecs and previews)
 // ---------------------------------------------------------------------------
 
-/** Plain-text fallback for a WalletSendCalls (vanilla XMTP clients show this
- *  instead of a blank bubble). */
+/** Plain-text fallback for a WalletSendCalls (vanilla XMTP clients show this instead of a blank bubble). */
 export function walletSendCallsFallbackText(c: WalletSendCallsContent): string {
   const desc = c.calls?.[0]?.metadata?.description;
   return desc ? `[Transaction request] ${desc}` : '[Transaction request]';
@@ -106,6 +109,7 @@ export function walletSendCallsPreviewText(c: WalletSendCallsContent): string {
   const desc = c.calls?.[0]?.metadata?.description;
   return desc ? `Payment request: ${desc}` : 'Payment request';
 }
+/** One-line channels-list preview for a TransactionReference receipt. */
 export function transactionReferencePreviewText(): string {
   return 'Transaction';
 }
@@ -116,8 +120,7 @@ export function chainIdToNumber(chainId: string | number): number {
   return chainId.startsWith('0x') ? parseInt(chainId, 16) : parseInt(chainId, 10);
 }
 
-/** Block-explorer base URL for a chain id (hex/decimal/number). Falls back to
- *  Etherscan mainnet. Covers the chains the wallet Send screen offers. */
+/** Block-explorer base URL for a chain id (hex/decimal/number). Falls back to Etherscan mainnet. Covers the chains the wallet Send screen offers. */
 export function explorerTxUrl(chainId: string | number, txHash: string): string {
   const id = chainIdToNumber(chainId);
   const base: Record<number, string> = {

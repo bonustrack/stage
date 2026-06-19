@@ -14,9 +14,11 @@ const profile = ref<SnapshotProfile>({});
 const loaded = ref(false);
 const copyHint = ref<'address' | 'inboxId' | null>(null);
 
-const displayName = computed(() =>
-  profile.value.name?.trim() || (address.value ? shortAddress(address.value) : 'Loading…'),
-);
+const displayName = computed(() => {
+  const trimmed = profile.value.name?.trim();
+  if (trimmed !== undefined && trimmed !== '') return trimmed;
+  return address.value ? shortAddress(address.value) : 'Loading…';
+});
 
 onMounted(async () => {
   try {

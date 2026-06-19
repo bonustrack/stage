@@ -1,7 +1,6 @@
-/** Poll / signature-request / payment-request send builders for the
- *  MessengerComposer, extracted from MessengerComposer.actions.ts for the lint
- *  line-budget. Behavior identical — each reads/writes parent state via the
- *  ComposerActionsArgs setters and reuses the same optimistic flow as text. */
+/**
+ * @file Poll / signature-request / payment-request optimistic send builders for the MessengerComposer.
+ */
 
 import { Alert } from 'react-native';
 import { isAddress, parseUnits, toHex } from 'viem';
@@ -17,8 +16,10 @@ import { getActiveAccount } from '../lib/accounts';
 import { setLastAttachment } from '../lib/lastAttachment';
 import type { ComposerActionsArgs } from './MessengerComposer.types';
 
+/** Mint Local Id. */
 const mintLocalId = (): string => `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
+/** Builds and optimistically sends a signature-request message from the composer state. */
 export async function sendSignatureRequest(a: ComposerActionsArgs): Promise<void> {
   const description = a.sigDesc.trim();
   let content: SignatureRequestContent;
@@ -38,7 +39,7 @@ export async function sendSignatureRequest(a: ComposerActionsArgs): Promise<void
       id: mintSignatureRequestId(), kind: 'eip712',
       eip712: {
         domain: (td.domain ?? {}) as Record<string, unknown>,
-        types: td.types as Record<string, Array<{ name: string; type: string }>>,
+        types: td.types as Record<string, { name: string; type: string }[]>,
         primaryType: td.primaryType as string,
         message: td.message as Record<string, unknown>,
       },
@@ -57,6 +58,7 @@ export async function sendSignatureRequest(a: ComposerActionsArgs): Promise<void
   finally { a.onSent?.(localId, sendErr, sentId); }
 }
 
+/** Builds and optimistically sends a poll message from the composer state. */
 export async function sendPoll(a: ComposerActionsArgs): Promise<void> {
   const question = a.pollQuestion.trim();
   const options = a.pollOptions.map(o => o.trim()).filter(Boolean);
@@ -83,6 +85,7 @@ export async function sendPoll(a: ComposerActionsArgs): Promise<void> {
   finally { a.onSent?.(localId, sendErr, sentId); }
 }
 
+/** Builds and optimistically sends a transaction/payment-request message from the composer state. */
 export async function sendTxRequest(a: ComposerActionsArgs): Promise<void> {
   const to = a.txTo.trim();
   const amount = a.txAmount.trim();

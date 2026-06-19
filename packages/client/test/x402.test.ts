@@ -6,6 +6,12 @@
 import { describe, expect, test } from 'bun:test';
 import { parseX402Challenge, normaliseAccept } from '../src/x402/challenge';
 
+/** Assert non-null and narrow for the type checker (mirrors the toBeNull check). */
+function assertPresent<T>(value: T | null | undefined): T {
+  if (value === null || value === undefined) throw new Error('expected a value, got null/undefined');
+  return value;
+}
+
 describe('parseX402Challenge', () => {
   test('v1 body: maxAmountRequired -> amount', () => {
     const c = parseX402Challenge(
@@ -17,10 +23,11 @@ describe('parseX402Challenge', () => {
       'https://api.example.com/paid',
     );
     expect(c).not.toBeNull();
-    expect(c!.kind).toBe('x402');
-    expect(c!.accepts).toHaveLength(1);
-    expect(c!.accepts[0].amount).toBe('10000');
-    expect(c!.x402Version).toBe(1);
+    const ch = assertPresent(c);
+    expect(ch.kind).toBe('x402');
+    expect(ch.accepts).toHaveLength(1);
+    expect(assertPresent(ch.accepts[0]).amount).toBe('10000');
+    expect(ch.x402Version).toBe(1);
   });
 
   test('v2: amount field + inlined `accepted` single option', () => {
@@ -28,7 +35,7 @@ describe('parseX402Challenge', () => {
       { accepted: { scheme: 'exact', network: 'eip155:8453', amount: '5' } },
       'https://x.com',
     );
-    expect(c!.accepts[0].amount).toBe('5');
+    expect(assertPresent(assertPresent(c).accepts[0]).amount).toBe('5');
   });
 
   test('prefers an embedded endpoint over the fallback', () => {
@@ -36,7 +43,7 @@ describe('parseX402Challenge', () => {
       { endpoint: 'https://real/paid', accepts: [{ scheme: 'exact', network: 'base' }] },
       'https://fallback',
     );
-    expect(c!.endpoint).toBe('https://real/paid');
+    expect(assertPresent(c).endpoint).toBe('https://real/paid');
   });
 
   test('drops options missing scheme/network; null when none remain', () => {
@@ -45,7 +52,7 @@ describe('parseX402Challenge', () => {
       { accepts: [{ amount: '5' }, { scheme: 'exact', network: 'base', amount: '5' }] },
       'x',
     );
-    expect(c!.accepts).toHaveLength(1);
+    expect(assertPresent(c).accepts).toHaveLength(1);
   });
 
   test('returns null for non-object / empty', () => {
@@ -56,7 +63,7 @@ describe('parseX402Challenge', () => {
 
 describe('normaliseAccept', () => {
   test('keeps extra only when an object', () => {
-    expect(normaliseAccept({ scheme: 'exact', network: 'base', extra: { name: 'USDC' } })!.extra).toEqual({ name: 'USDC' });
-    expect(normaliseAccept({ scheme: 'exact', network: 'base', extra: 'no' })!.extra).toBeUndefined();
+    expect(assertPresent(normaliseAccept({ scheme: 'exact', network: 'base', extra: { name: 'USDC' } })).extra).toEqual({ name: 'USDC' });
+    expect(assertPresent(normaliseAccept({ scheme: 'exact', network: 'base', extra: 'no' })).extra).toBeUndefined();
   });
 });

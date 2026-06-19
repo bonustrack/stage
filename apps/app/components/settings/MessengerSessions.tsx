@@ -1,10 +1,8 @@
-/** Settings -> Messenger -> Sessions - lists the active XMTP inbox's
- *  installations (devices), newest first, with the current device flagged, and a
- *  per-row "Revoke" that kills that installation. Revoke confirms via Alert
- *  (with a stronger warning for the current device, since revoking it logs this
- *  device out), signs through the active account's keyring-backed signer, then
- *  refreshes the list. All data comes from the live inbox state; no invented
- *  fields. Handles client-not-ready / empty / revoke-failure without crashing. */
+/**
+ * @file Settings -> Messenger -> Sessions screen: lists the active XMTP inbox's
+ *  installations newest-first with the current device flagged, and a per-row
+ *  Revoke that confirms then kills that installation via the account signer.
+ */
 
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert } from 'react-native';
@@ -20,11 +18,13 @@ import {
 import { flash } from '../../lib/toast';
 import { DANGER, useBlockRadius, usePalette } from '../../lib/theme';
 
+/** When helper. */
 function when(ms: number | undefined): string {
   if (!ms) return 'Unknown date';
   return new Date(ms).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
+/** The Session component. */
 function Session({ inst, busy, onRevoke, c }: {
   inst: XmtpInstallation; busy: boolean; onRevoke: () => void;
   c: { fg: string; sub: string; border: string; rowBg: string };
@@ -57,6 +57,7 @@ function Session({ inst, busy, onRevoke, c }: {
   );
 }
 
+/** Renders the messenger sessions screen listing the account's active sessions. */
 export function MessengerSessions(): React.ReactElement {
   const { text: fg, border } = usePalette();
   const c = { fg, sub: fg, border, rowBg: border };
@@ -73,6 +74,7 @@ export function MessengerSessions(): React.ReactElement {
 
   useEffect(() => { void load(); }, [load, epoch]);
 
+  /** Revoke helper. */
   const revoke = (inst: XmtpInstallation): void => {
     Alert.alert(
       inst.current ? 'Revoke this device?' : 'Revoke session',
@@ -86,8 +88,8 @@ export function MessengerSessions(): React.ReactElement {
             setBusy(inst.id);
             void revokeXmtpInstallation(inst.id)
               .then(() => { flash('Session revoked'); return load(); })
-              .catch(() => Alert.alert('Revoke failed', 'Could not revoke that session. Check your connection and try again.'))
-              .finally(() => setBusy(null));
+              .catch(() => { Alert.alert('Revoke failed', 'Could not revoke that session. Check your connection and try again.'); })
+              .finally(() => { setBusy(null); });
           },
         },
       ],
@@ -114,7 +116,7 @@ export function MessengerSessions(): React.ReactElement {
         </Text>
       ) : (
         list.map(inst => (
-          <Session key={inst.id} inst={inst} busy={busy === inst.id} onRevoke={() => revoke(inst)} c={c} />
+          <Session key={inst.id} inst={inst} busy={busy === inst.id} onRevoke={() => { revoke(inst); }} c={c} />
         ))
       )}
     </Col>

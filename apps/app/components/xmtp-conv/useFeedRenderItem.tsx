@@ -1,12 +1,4 @@
-/** Stable FlatList renderItem + extraData for the conversation feed, extracted
- *  from ConversationFeed.tsx to keep both files under the 200-line lint cap.
- *
- *  Perf: a fresh renderItem closure or extraData array every parent render
- *  defeats MessengerBubble's React.memo for the whole visible window. Both are
- *  memoised here (useCallback / useMemo) with minimal, render-affecting dep
- *  lists; the action callbacks they close over are already stable (useCallback
- *  in useConversationState / setState identities). The reply-preview lookup uses
- *  an id→event Map (O(1)) instead of an O(n) `events.find` per bubble. */
+/** @file Memoised FlatList renderItem + extraData for the conversation feed so MessengerBubble's React.memo holds, with an id→event Map for O(1) reply-preview lookup. */
 
 import { useCallback, useMemo } from 'react';
 import { MessengerBubble } from '../MessengerBubble';
@@ -20,12 +12,12 @@ import type { useConversationState } from './useConversationState';
 type ConvState = ReturnType<typeof useConversationState>;
 type Bubble = ConvState['allBubbles'][number];
 
+/** Provides the render function for a single conversation feed item. */
 export function useFeedRenderItem(
   c: ConvState,
   dark: boolean,
   router: { push: (h: { pathname: '/user/[address]'; params: { address: string } }) => void },
-  /** Search mode: when set, every rendered bubble highlights this query in its
-   *  body text (fluo-yellow). Undefined in the normal feed. */
+  /** Search mode: when set, every rendered bubble highlights this query in its body text (fluo-yellow). Undefined in the normal feed. */
   highlight?: string,
 ): {
   renderItem: ({ item }: { item: Bubble }) => React.ReactElement;
@@ -40,20 +32,16 @@ export function useFeedRenderItem(
     setMenuAnchor, setMenuFor, setReplyTarget, selectedForCopy, consentAllowed,
   } = c;
 
-  /** Muted color for the per-bubble error fallback (see BubbleErrorBoundary).
-   *  Mirrors MessengerBubble's `sub = pal.text` (no muted token yet). */
+  /** Muted color for the per-bubble error fallback (see BubbleErrorBoundary). Mirrors MessengerBubble's `sub = pal.text` (no muted token yet). */
   const sub = usePalette().text;
 
-  /** Referentially-stable extraData — only a NEW array when a render-affecting
-   *  value actually changes, so the list doesn't re-render the whole window on
-   *  every parent re-render. Mirrors the prior inline list. */
+  /** Referentially-stable extraData — only a NEW array when a render-affecting value actually changes, so the list doesn't re-render the whole window on every parent re-render. Mirrors the prior inline list. */
   const extraData = useMemo(
     () => [profilesVersion, optimisticReactions, reactions, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, confirmedIds, selectedForCopy, groupDescription, groupLabels, consentAllowed],
     [profilesVersion, optimisticReactions, reactions, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, confirmedIds, selectedForCopy, groupDescription, groupLabels, consentAllowed],
   );
 
-  /** id → event map, built once per `events` change → O(1) reply-preview lookup
-   *  instead of an O(n) `events.find` per bubble (was O(n²) over the window). */
+  /** id → event map, built once per `events` change → O(1) reply-preview lookup instead of an O(n) `events.find` per bubble (was O(n²) over the window). */
   const eventsById = useMemo(() => {
     const m = new Map<string, Bubble>();
     for (const e of events) m.set(e.id, e);
@@ -67,7 +55,7 @@ export function useFeedRenderItem(
       dark={dark}
       myUri={myUri}
       senderEthAddress={senderEthOf(item.from)}
-      onAvatarPress={(addr) => router.push({ pathname: '/user/[address]', params: { address: addr } })}
+      onAvatarPress={(addr) => { router.push({ pathname: '/user/[address]', params: { address: addr } }); }}
       unread={false}
       pending={item.id.startsWith('tmp_') && !confirmedIds.has(item.id)}
       replyTarget={replyingTo?.id === item.id || jumpHighlightId === item.id}
@@ -76,31 +64,31 @@ export function useFeedRenderItem(
       pendingRemovals={optimisticRemovals.get(item.id)}
       ownEmojis={ownReactions.get(item.id)}
       replyPreview={item.replyTo ? previewOf(eventsById.get(item.replyTo) ?? item) : undefined}
-      onReplyPreviewPress={item.replyTo ? () => jumpToMessage(item.replyTo as string) : undefined}
+      onReplyPreviewPress={item.replyTo ? () => { const target = item.replyTo; if (target) jumpToMessage(target); } : undefined}
       votes={displayVotes.get(item.id)}
       ownVotes={displayOwnVotes.get(item.id)}
-      onVote={(qIdx, idx, action) => onVote(item.id, qIdx, idx, action)}
+      onVote={(qIdx, idx, action) => { onVote(item.id, qIdx, idx, action); }}
       openAnswers={displayOpenAnswers.get(item.id)}
-      onOpenAnswer={(qIdx, text) => onOpenAnswer(item.id, qIdx, text)}
+      onOpenAnswer={(qIdx, text) => { onOpenAnswer(item.id, qIdx, text); }}
       signing={signingIds.has(item.id)}
       consentAllowed={consentAllowed}
       onSign={(() => {
         const req = (item.payload as { signatureRequest?: SignatureRequestContent } | undefined)?.signatureRequest;
         if (!req || item.from === myUri) return undefined;
-        return () => onSign(item.id, req);
+        return () => { onSign(item.id, req); };
       })()}
       paying={payingIds.has(item.id)}
       onPay={(() => {
         const wsc = (item.payload as { walletSendCalls?: WalletSendCallsContent } | undefined)?.walletSendCalls;
         if (!wsc || item.from === myUri) return undefined;
-        return () => onPay(item.id, wsc);
+        return () => { onPay(item.id, wsc); };
       })()}
-      onReact={(emoji) => onReact(item.id, emoji)}
-      onReply={() => setReplyTarget(item.id, previewOf(item), senderEthOf(item.from))}
+      onReact={(emoji) => { onReact(item.id, emoji); }}
+      onReply={() => { setReplyTarget(item.id, previewOf(item), senderEthOf(item.from)); }}
       onOpenMenu={(anchor) => { setMenuAnchor(anchor); setMenuFor(item); }}
-      onCloseMenu={() => setMenuFor(null)}
+      onCloseMenu={() => { setMenuFor(null); }}
       selectable={selectedForCopy === item.id}
-      onAnswer={(label) => onAnswer(item.id, label)}
+      onAnswer={(label) => { onAnswer(item.id, label); }}
       highlight={highlight}
     />
     </BubbleErrorBoundary>

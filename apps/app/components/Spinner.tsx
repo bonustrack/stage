@@ -1,11 +1,13 @@
-/** Loading spinner mirroring @snapshot-labs/tune's UiLoading (the sx-monorepo
- *  spinner) so the mobile app matches the web: a rotating comet — a
- *  gradient-stroked circle + a solid leading arc. */
+/**
+ * @file Animated circular loading spinner (a rotating gradient-stroked comet)
+ *  that mirrors @snapshot-labs/tune's UiLoading so the app matches the web.
+ */
 
 import { useEffect, useRef } from 'react';
 import { Animated, Easing } from 'react-native';
 import Svg, { Circle, Defs, G, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 
+/** Renders an animated circular loading spinner. */
 export function Spinner({ size = 24, color = '#000000' }: { size?: number; color?: string }) {
   const spin = useRef(new Animated.Value(0)).current;
   const gid = useRef(`metroSpin${Math.random().toString(36).slice(2, 8)}`).current;
@@ -17,7 +19,7 @@ export function Spinner({ size = 24, color = '#000000' }: { size?: number; color
       }),
     );
     anim.start();
-    return () => anim.stop();
+    return () => { anim.stop(); };
   }, [spin]);
 
   const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });

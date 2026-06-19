@@ -1,8 +1,6 @@
-/** Account-security section of the Settings tab: "Export private key" and
- *  "Remove account" rows for the ACTIVE account. Both gate behind a warning
- *  Alert. Export reuses getPrivateKey (self-heals legacy keys); remove reuses
- *  deleteAccount (drops the registry entry, the SecureStore key + the on-disk
- *  XMTP store). The key is never logged. */
+/**
+ * @file Account-security section of the Settings tab providing Alert-gated export-private-key and remove-account actions for the active account.
+ */
 
 import { useEffect, useState } from 'react';
 
@@ -23,6 +21,7 @@ import { reloadApp } from '../AccountsManager.helpers';
 
 interface SectionColors { fg: string; head: string; sub: string; border: string; rowBg: string }
 
+/** Settings section presenting account security options and danger-zone actions. */
 export function AccountSecuritySection(
   { c, danger, dark }: { c: SectionColors; danger: string; dark: boolean },
 ): React.ReactElement | null {
@@ -43,6 +42,7 @@ export function AccountSecuritySection(
   if (!rec) return null;
   const exportable = canExportPrivateKey(rec);
 
+  /** Confirm Export. */
   function confirmExport(): void {
     Alert.alert(
       'Export private key',
@@ -62,6 +62,7 @@ export function AccountSecuritySection(
     );
   }
 
+  /** Confirm Remove. */
   function confirmRemove(): void {
     const name = rec?.label ?? shortAddress(rec?.address ?? '');
     Alert.alert(
@@ -116,7 +117,7 @@ export function AccountSecuritySection(
             {rec.type === 'smart' ? (
               <ListViewItem
                 dark={dark}
-                onPress={() => router.push('/wallet/recovery')}
+                onPress={() => { router.push('/wallet/recovery'); }}
                 style={{ paddingHorizontal: 14, paddingVertical: 14 }}
               >
                 <Icon name="userGroup" size={22} color={c.head} />

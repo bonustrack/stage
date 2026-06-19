@@ -1,8 +1,4 @@
-/** Accounts page — full-screen account switcher, opened by tapping the topnav
- *  avatar on the Channels tab. Hosts AccountsManager (flat mode) under a native
- *  in-screen header (back arrow + "Accounts" title), matching the search page.
- *  Switching is in-place (epoch bump) so the channels list re-inits without a
- *  full reload; the user taps back to return. */
+/** @file Full-screen account switcher screen hosting AccountsManager for viewing and switching the user's saved accounts in place. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
 
@@ -15,6 +11,7 @@ import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { Icon } from '@metro-labs/kit/icon';
 import { AccountsManager } from '../components/AccountsManager';
 
+/** Screen for viewing and switching between the user's saved accounts. */
 export default function Accounts(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -26,7 +23,7 @@ export default function Accounts(): React.ReactElement {
       {/* Topnav: back + title, mirroring the search page. Paints toolbarBg +
           absorbs the top inset so the bar reaches the screen edge. */}
       <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
+        <Pressable onPress={() => { router.back(); }} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
         <Title size="sm" color={head}>
@@ -35,7 +32,7 @@ export default function Accounts(): React.ReactElement {
       </Row>
 
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}>
-        <AccountsManager dark={dark} flat onSwitched={() => router.back()}/>
+        <AccountsManager dark={dark} flat onSwitched={() => { router.back(); }}/>
       </ScrollView>
     </Col>
   );

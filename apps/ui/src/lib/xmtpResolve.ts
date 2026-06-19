@@ -1,12 +1,12 @@
-/** Conversation-membership resolvers — peer eth address (DMs), group member
- *  eth addresses, inbox-id → eth-address map. Pulled out of `xmtp.ts` so
- *  that file stays under the per-file LOC cap. */
+/**
+ * @file Resolvers mapping XMTP conversation membership to Ethereum addresses (DM peer, group members, inbox-id map).
+ */
+/** Conversation-membership resolvers — peer eth address (DMs), group member eth addresses, inbox-id → eth-address map. Pulled out of `xmtp.ts` so that file stays under the per-file LOC cap. */
 
 import { IdentifierKind, type Conversation } from '@xmtp/browser-sdk';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from './xmtp';
 
-/** Resolve the peer's Ethereum address for a DM conversation. Returns null
- *  for groups or when the lookup fails. */
+/** Resolve the peer's Ethereum address for a DM conversation. Returns null for groups or when the lookup fails. */
 export async function peerEthAddressOfDm(conv: Conversation): Promise<string | null> {
   /** DMs expose `peerInboxId()`; groups don't. */
   const dm = conv as unknown as { peerInboxId?: () => Promise<string> };
@@ -38,8 +38,7 @@ export async function groupMemberEthAddresses(conv: Conversation): Promise<strin
   } catch { return []; }
 }
 
-/** Map every member inbox id of a conversation to its Ethereum address.
- *  Includes the local user. */
+/** Map every member inbox id of a conversation to its Ethereum address. Includes the local user. */
 export async function memberInboxToAddressMap(conv: Conversation): Promise<Record<string, string>> {
   try {
     const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
@@ -49,8 +48,10 @@ export async function memberInboxToAddressMap(conv: Conversation): Promise<Recor
     const states = await client.preferences.getInboxStates(ids);
     const map: Record<string, string> = {};
     for (let i = 0; i < ids.length; i++) {
+      const id = ids[i];
+      if (id === undefined) continue;
       const eth = states[i]?.accountIdentifiers.find(it => it.identifierKind === IdentifierKind.Ethereum);
-      if (eth?.identifier) map[ids[i]!] = eth.identifier;
+      if (eth?.identifier) map[id] = eth.identifier;
     }
     return map;
   } catch { return {}; }

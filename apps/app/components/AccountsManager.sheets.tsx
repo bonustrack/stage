@@ -1,5 +1,7 @@
-/** AccountsManager bottom sheets — per-account manage + export-reveal. Extracted
- *  for lint line-budget. Rendering identical. */
+/**
+ * @file AccountsManager bottom sheets: the per-account manage sheet
+ * (switch/export/remove) and the private-key export-reveal sheet.
+ */
 
 import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
@@ -12,6 +14,7 @@ import { DANGER, useEffectiveColorScheme, usePalette } from '../lib/theme';
 
 interface Pal { head: string; sub: string; border: string; sheetBg: string; }
 
+/** Bottom sheet with switch/export/remove actions for a single account. */
 export function ManageSheet({ manageRec, activeId, onClose, onSwitch, onExport, onRemove, p }: {
   manageRec: AccountRecord | null; activeId: string | null; onClose: () => void;
   onSwitch: (id: string) => void; onExport: (id: string) => void;
@@ -34,13 +37,14 @@ export function ManageSheet({ manageRec, activeId, onClose, onSwitch, onExport, 
           <SheetRow label="Export private key" desc="Reveal + copy this account's key" head={p.head} sub={p.sub} dark={dark} onPress={() => { const id = manageRec.id; onClose(); onExport(id); }} />
         ) : null}
         {manageRec ? (
-          <SheetRow label="Remove account" desc="Delete from this device" danger head={p.head} sub={p.sub} dark={dark} onPress={() => onRemove(manageRec)} />
+          <SheetRow label="Remove account" desc="Delete from this device" danger head={p.head} sub={p.sub} dark={dark} onPress={() => { onRemove(manageRec); }} />
         ) : null}
       </ListView>
     </SheetModal>
   );
 }
 
+/** Bottom sheet that reveals and copies an account's exported private key. */
 export function ExportSheet({ revealPk, onClose, dark, p }: {
   revealPk: string | null; onClose: () => void; dark: boolean; p: Pal;
 }): React.ReactElement {

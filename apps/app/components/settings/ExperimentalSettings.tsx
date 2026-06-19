@@ -1,7 +1,7 @@
-/** Settings → Experimental menu - a System-page-style list (same Kit ListView
- *  style as the main Settings menu) housing the not-yet-stable surfaces: the Kit
- *  theme/component gallery, the app Components gallery, and the Developer
- *  diagnostics console. Reached via /settings → "Experimental" row. */
+/**
+ * @file Settings -> Experimental menu listing the not-yet-stable surfaces: the
+ *  Kit gallery, the app Components gallery, and the Developer diagnostics console.
+ */
 
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 
@@ -21,6 +21,7 @@ const ROWS: { href: Href; label: string; icon: HeroIconName }[] = [
   { href: '/settings/developer', label: 'Developer', icon: 'beaker' },
 ];
 
+/** Renders the experimental settings screen for opt-in feature flags. */
 export function ExperimentalSettings(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -34,7 +35,7 @@ export function ExperimentalSettings(): React.ReactElement {
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <ListView dark={dark}>
           {ROWS.map((row) => (
-            <ListViewItem key={row.href} dark={dark} onPress={() => router.push(row.href)}>
+            <ListViewItem key={row.href} dark={dark} onPress={() => { router.push(row.href); }}>
               <Icon name={row.icon} size={22} color={head}/>
               <Col flex={1}>
                 <Text size="xl" color={head}>{row.label}</Text>

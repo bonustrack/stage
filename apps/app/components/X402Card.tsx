@@ -1,17 +1,4 @@
-/** x402 payment card for a plain http(s) link that turned out to be an x402
- *  payment endpoint. The link-preview proxy probes the URL; when it answers
- *  HTTP 402 with an x402 challenge (coinbase/x402), `useLinkPreview` returns the
- *  normalised challenge and this card renders a payment-request-style bubble:
- *  amount + asset + recipient (mirroring MessengerBubble TxRequestCard), PLUS
- *  the endpoint URL and a small `x402` badge.
- *
- *  Pay capability: for the `exact` scheme on a known network paying a known asset
- *  (USDC) we run the full in-app x402 pay path (lib/x402.pay.ts): sign an
- *  EIP-3009 `transferWithAuthorization` authorization with the in-app wallet,
- *  base64 it into an X-PAYMENT header, and POST it to the link-proxy
- *  `/x402-settle` endpoint which replays the resource GET server-side. No gas, no
- *  on-chain tx from the app. For any other scheme/network/asset we fall back to
- *  "Open endpoint" (display-only). Insufficient USDC disables Pay with a hint. */
+/** @file Renders a payment-request bubble for a link that returned an x402 challenge, and for the exact/USDC scheme runs the in-app x402 pay path (EIP-3009 authorization + X-PAYMENT POST to the link-proxy /x402-settle endpoint). */
 
 import { useState } from 'react';
 import { Alert, Linking } from 'react-native';
@@ -40,6 +27,7 @@ import { usePalette, withAlpha } from '../lib/theme';
 
 type PayPhase = 'idle' | 'paying' | 'paid' | 'failed';
 
+/** Card that renders an x402 payment challenge and drives the pay flow. */
 export function X402Card({ challenge, dark }: {
   challenge: X402Challenge; dark?: boolean;
 }): React.ReactElement | null {
@@ -48,7 +36,9 @@ export function X402Card({ challenge, dark }: {
   const [phase, setPhase] = useState<PayPhase>('idle');
 
   const endpoint = challenge.endpoint || '';
-  const desc = accept?.description || challenge.error || 'Payment required';
+  const desc = accept?.description != null && accept.description !== ''
+    ? accept.description
+    : (challenge.error != null && challenge.error !== '' ? challenge.error : 'Payment required');
   const amountLabel = accept ? x402AmountLabel(accept) : undefined;
   const network = accept ? x402NetworkLabel(accept.network) : '';
   const chainNum = accept ? x402ChainNumber(accept.network) : 1;
@@ -65,8 +55,10 @@ export function X402Card({ challenge, dark }: {
 
   if (!accept) return null;
 
+  /** Open Endpoint. */
   const openEndpoint = (): void => { if (endpoint) void Linking.openURL(endpoint); };
 
+  /** Run Pay. */
   const runPay = (): void => {
     setPhase('paying');
     void (async () => {
@@ -90,6 +82,7 @@ export function X402Card({ challenge, dark }: {
     })();
   };
 
+  /** Confirm Pay. */
   const confirmPay = (): void => {
     const payLabel = amountLabel ?? 'this amount';
     Alert.alert(
@@ -106,6 +99,7 @@ export function X402Card({ challenge, dark }: {
 
   // The primary action label depends on capability + phase + affordability
   // (insufficient is resolved from the balance PaymentCard fetched).
+  /** Pay Button Label. */
   const payButtonLabel = (insufficient: boolean): string => {
     if (phase === 'paid') return 'Paid';
     if (phase === 'paying') return 'Paying...';

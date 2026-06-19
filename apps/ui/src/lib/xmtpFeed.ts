@@ -1,6 +1,7 @@
-/** XMTP live-feed composable. The decoded-message → HistoryEntry envelope +
- *  reaction aggregation live in `xmtpEnvelope.ts` (re-exported here). Split so
- *  each file stays under the lint cap. */
+/**
+ * @file Composable that loads and live-streams a conversation's messages into a reactive HistoryEntry feed.
+ */
+/** XMTP live-feed composable. The decoded-message → HistoryEntry envelope + reaction aggregation live in `xmtpEnvelope.ts` (re-exported here). Split so each file stays under the lint cap. */
 
 import { ref, watch, onUnmounted, type Ref } from 'vue';
 import { getOrCreateXmtpClient, convOfLine } from './xmtp';
@@ -20,14 +21,10 @@ export interface XmtpFeedHandle {
   inboxId: Ref<string>;
 }
 
-/** Per-conversation message cache so re-opening a channel renders its messages
- *  instantly (no loading spinner); the live history still refreshes in the
- *  background. Keyed by line, survives navigation within the SPA session. */
+/** Per-conversation message cache so re-opening a channel renders its messages instantly (no loading spinner); the live history still refreshes in the background. Keyed by line, survives navigation within the SPA session. */
 const feedCache = new Map<string, HistoryEntry[]>();
 
-/** Vue composable: load a conversation's history then subscribe to its live stream.
- *  Events are returned newest-first so an inverted list can consume them unchanged.
- *  Pass `enabled=false` while the client is still booting to keep the feed idle. */
+/** Vue composable: load a conversation's history then subscribe to its live stream. Events are returned newest-first so an inverted list can consume them unchanged. Pass `enabled=false` while the client is still booting to keep the feed idle. */
 export function useXmtpFeed(line: Ref<string | null>, enabled: Ref<boolean>): XmtpFeedHandle {
   const events = ref<HistoryEntry[]>([]);
   const status = ref<XmtpFeedStatus>('idle');
@@ -40,12 +37,14 @@ export function useXmtpFeed(line: Ref<string | null>, enabled: Ref<boolean>): Xm
   let onVisibility: (() => void) | null = null;
   let activeLine: string | null = null;
 
+  /** Teardown helper. */
   const teardown = (): void => {
     if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
     if (streamCloser?.return) { void streamCloser.return().catch(() => undefined); streamCloser = null; }
     if (onVisibility) { document.removeEventListener('visibilitychange', onVisibility); onVisibility = null; }
   };
 
+  /** Refresh helper. */
   const refresh = async (): Promise<void> => {
     const current = activeLine;
     if (!current) return;
@@ -68,6 +67,7 @@ export function useXmtpFeed(line: Ref<string | null>, enabled: Ref<boolean>): Xm
     } catch { /* next tick or visibility flip retries */ }
   };
 
+  /** Start helper. */
   const start = async (): Promise<void> => {
     if (!enabled.value || !line.value) { status.value = 'idle'; return; }
     activeLine = line.value;
@@ -76,7 +76,7 @@ export function useXmtpFeed(line: Ref<string | null>, enabled: Ref<boolean>): Xm
     /** Seed instantly from cache so re-opening a channel skips the spinner. */
     const seeded = line.value ? feedCache.get(line.value) : undefined;
     events.value = seeded ? [...seeded] : [];
-    status.value = seeded && seeded.length ? 'open' : 'loading';
+    status.value = seeded?.length ? 'open' : 'loading';
     try {
       const client = await getOrCreateXmtpClient('production');
       if (cancelled || activeLine !== line.value) return;
@@ -96,7 +96,7 @@ export function useXmtpFeed(line: Ref<string | null>, enabled: Ref<boolean>): Xm
               }
             },
           });
-          streamCloser = stream as unknown as { return?: () => Promise<unknown> };
+          streamCloser = stream;
         }
       } catch { /* stream init failed — poll backstop keeps the feed fresh */ }
       onVisibility = (): void => { if (document.visibilityState === 'visible') void refresh(); };
@@ -109,6 +109,7 @@ export function useXmtpFeed(line: Ref<string | null>, enabled: Ref<boolean>): Xm
     }
   };
 
+  /** Restart helper. */
   const restart = (): void => { cancelled = true; teardown(); void start(); };
 
   void start();

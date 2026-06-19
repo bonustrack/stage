@@ -1,4 +1,7 @@
-/** Device-local PUSH notifications preference (enable/disable).
+/** @file Device-local persisted boolean preference gating whether this device registers its push token with the daemon (default ON), built on the shared value-store factory. */
+
+/*
+ * Device-local PUSH notifications preference (enable/disable).
  *
  *  A single persisted boolean gating whether this device registers its push
  *  token with the daemon. The auto-registration path (`registerPushWithDaemon`,
@@ -9,14 +12,14 @@
  *
  *  Built on the shared lib/persistedStore.ts value-store factory; the in-memory
  *  mirror lets the registration path read synchronously after a one-time load,
- *  and the pub/sub repaints the Settings toggle the instant it flips. */
+ *  and the pub/sub repaints the Settings toggle the instant it flips.
+ */
 
 import { createValueStore } from './persistedStore';
 
 const STORAGE_KEY = 'push.enabled';
 
-/** Stored as '1' / '0'. Missing or unrecognised -> default ON. The historical
- *  loader also treated the legacy string 'false' as off. */
+/** Stored as '1' / '0'. Missing or unrecognised -> default ON. The historical loader also treated the legacy string 'false' as off. */
 const store = createValueStore<boolean>({
   key: STORAGE_KEY,
   default: true,
@@ -25,12 +28,10 @@ const store = createValueStore<boolean>({
   alwaysNotify: true,
 });
 
-/** Read the persisted preference once and cache it. Subsequent calls return the
- *  cached value without touching storage. Missing -> enabled (default ON). */
+/** Read the persisted preference once and cache it. Subsequent calls return the cached value without touching storage. Missing -> enabled (default ON). */
 export const loadPushEnabled = (): Promise<boolean> => store.load();
 
-/** Synchronous read from the in-memory cache. Returns the default (true) until
- *  `loadPushEnabled` has run. */
+/** Synchronous read from the in-memory cache. Returns the default (true) until `loadPushEnabled` has run. */
 export const isPushEnabledSync = (): boolean => store.get();
 
 /** Persist + apply a new preference, update the cache, and notify subscribers. */

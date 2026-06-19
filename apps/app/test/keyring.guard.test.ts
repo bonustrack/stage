@@ -15,7 +15,7 @@ const SCAN_DIRS = ['lib', 'app', 'components', 'modules'];
 const KEYRING = join('lib', 'zerodev', 'keyring.ts');
 
 /** Banned import shapes — each is a (regex, label) the keyring alone may match. */
-const BANNED: Array<{ re: RegExp; label: string }> = [
+const BANNED: { re: RegExp; label: string }[] = [
   { re: /import\s*\{[^}]*\bderiveOwner\b[^}]*\}\s*from\s*['"]@stage-labs\/client\/zerodev\/derive['"]/, label: 'deriveOwner from zerodev/derive' },
   { re: /import\s*\{[^}]*\bgenerateWalletMnemonic\b[^}]*\}\s*from\s*['"]@stage-labs\/client\/zerodev\/derive['"]/, label: 'generateWalletMnemonic from zerodev/derive' },
   { re: /import\s*\{[^}]*\b(PK_PREFIX|LEGACY_PK_KEY)\b[^}]*\}\s*from\s*['"]@stage-labs\/client\/accounts\/keys['"]/, label: 'PK storage-key constants' },

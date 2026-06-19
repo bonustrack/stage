@@ -9,7 +9,6 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint app/ components/ lib/ modules/",
     "test": "bun test test/",
     "eas-build-post-install": "node ./scripts/install-nodejs-project.js"
   },
@@ -19,7 +18,6 @@
     "@zerodev/sdk": "5.5.10",
     "@zerodev/ecdsa-validator": "5.4.9",
     "@zerodev/weighted-ecdsa-validator": "5.4.4",
-    "@zerodev/permissions": "5.6.3",
     "@zerodev/passkey-validator": "5.6.0",
     "@zerodev/webauthn-key": "5.4.2",
     "@zerodev/react-native-passkeys-utils": "5.4.2",
@@ -27,7 +25,6 @@
     "@railgun-community/shared-models": "7.6.1",
     "@railgun-community/wallet": "10.4.0",
     "@react-native-async-storage/async-storage": "2.2.0",
-    "@react-native-community/netinfo": "11.4.1",
     "@react-navigation/stack": "^7.9.3",
     "@tanstack/react-query": "^5.100.14",
     "@xmtp/react-native-sdk": "^5.7.0",
@@ -79,10 +76,12 @@
     "viem": "^2.51.0"
   },
   "devDependencies": {
+    "@expo/config-plugins": "~54.0.4",
+    "@expo/config-types": "~54.0.10",
+    "@stage-labs/config": "workspace:*",
     "@types/react": "~19.1.0",
     "babel-preset-expo": "~54.0.10",
-    "eslint": "^10.3.0",
     "typescript": "~5.9.2",
-    "typescript-eslint": "^8.59.2"
+    "@types/bun": "^1.2.0"
   }
 }

@@ -1,4 +1,8 @@
-/** SINGLE SOURCE OF TRUTH for the Railgun bridge method surface.
+/**
+ * @file Single source of truth enumerating every whitelisted Railgun bridge method name to keep client and host in sync.
+ */
+/**
+ * SINGLE SOURCE OF TRUTH for the Railgun bridge method surface.
  *
  *  THE DESYNC PROBLEM THIS SOLVES: before phase 2 the bridge method names lived
  *  as bare string literals in FOUR places that had to be hand-kept in sync -
@@ -16,10 +20,10 @@
  *  a method that exists in the contract but not the host whitelist FAILS CI.
  *  Adding a method can no longer desync the four files.
  *
- *  PURE: no native / RN / expo imports. Plain string constants. */
+ *  PURE: no native / RN / expo imports. Plain string constants.
+ */
 
-/** Stateful ENGINE ops routed in the host to engine.js (it owns LevelDB + prover
- *  + provider wiring + the wallet cache). NOT in the SDK whitelist. */
+/** Stateful ENGINE ops routed in the host to engine.js (it owns LevelDB + prover + provider wiring + the wallet cache). NOT in the SDK whitelist. */
 export const ENGINE_OPS = [
   'initEngine',
   'engineStatus',
@@ -30,9 +34,7 @@ export const ENGINE_OPS = [
 ] as const;
 export type EngineOp = (typeof ENGINE_OPS)[number];
 
-/** High-level convenience calls the host answers directly on the channel without
- *  going through the generic `sdk` dispatcher (liveness + handshake + the typed
- *  engine lifecycle handlers). Mirrors the RN bridge ExtraCall union. */
+/** High-level convenience calls the host answers directly on the channel without going through the generic `sdk` dispatcher (liveness + handshake + the typed engine lifecycle handlers). Mirrors the RN bridge ExtraCall union. */
 export const EXTRA_CALLS = [
   'ping',
   'hello',
@@ -44,17 +46,17 @@ export const EXTRA_CALLS = [
 ] as const;
 export type ExtraCall = (typeof EXTRA_CALLS)[number];
 
-/** Composite intents whose SHAPE the dispatcher supports but which RN composes
- *  from the whitelisted primitives (never run as a single host call). The host
- *  rejects these with `not_implemented` so an accidental direct call is loud. */
+/** Composite intents whose SHAPE the dispatcher supports but which RN composes from the whitelisted primitives (never run as a single host call). The host rejects these with `not_implemented` so an accidental direct call is loud. */
 export const COMPOSITE_OPS = ['shield', 'privateTransfer', 'unshield'] as const;
 export type CompositeOp = (typeof COMPOSITE_OPS)[number];
 
-/** THE WHITELIST - every @railgun-community/wallet primitive the Node host may
+/**
+ * THE WHITELIST - every @railgun-community/wallet primitive the Node host may
  *  invoke by name. The RN frame builders reference these via SDK_METHOD (typed)
  *  so a name typo is a compile error; the host's WHITELIST keys MUST equal this
  *  set exactly (asserted by the dispatch-parity test). Grouped engine/wallet/
- *  balance/gas/proof/tx for readability; order is not significant. */
+ *  balance/gas/proof/tx for readability; order is not significant.
+ */
 export const SDK_METHODS = [
   // engine lifecycle (lower-level than ENGINE_OPS; for advanced orchestration)
   'engine.has',
@@ -98,15 +100,12 @@ export const SDK_METHODS = [
 /** A whitelisted SDK method name (compile-time-checked literal union). */
 export type SdkMethod = (typeof SDK_METHODS)[number];
 
-/** Identity helper so call sites read `SDK_METHOD('tx.populateShield')` and get
- *  a compile error on a typo / removed name, instead of a silent string. */
+/** Identity helper so call sites read `SDK_METHOD('tx.populateShield')` and get a compile error on a typo / removed name, instead of a silent string. */
 export function SDK_METHOD<M extends SdkMethod>(m: M): M {
   return m;
 }
 
-/** The JSON-serializable manifest shipped to the Node host (via the generated
- *  railgun-methods.json). The host asserts its WHITELIST / engine-op / composite
- *  routing equals this so the contract and the host can never diverge silently. */
+/** The JSON-serializable manifest shipped to the Node host (via the generated railgun-methods.json). The host asserts its WHITELIST / engine-op / composite routing equals this so the contract and the host can never diverge silently. */
 export interface RailgunMethodManifest {
   sdkMethods: readonly string[];
   engineOps: readonly string[];

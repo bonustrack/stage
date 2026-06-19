@@ -1,10 +1,6 @@
-/** Icon — renders the shared HeroIcon path data (@metro-labs/kit/icons) as a
- *  react-native-svg glyph. A drop-in for apps/app's <HeroIcon>: same name set,
- *  same currentColor stroke / transparent fill / 24×24 v1-outline viewBox.
- *
- *  A real RN component (imports react-native-svg) living alongside Button/Text/
- *  Title. Hook-free: pass `color` directly, or `dark` to pick the head colour
- *  from the palette convention when no explicit colour is given. */
+/**
+ * @file Icon — a hook-free RN component that renders the shared HeroIcon path data as a react-native-svg glyph (currentColor stroke, transparent fill, 24x24 v1-outline viewBox).
+ */
 
 import { Path, Svg } from 'react-native-svg';
 import { heroIconPaths, HERO_ICON_DEFAULTS, type HeroIconName } from '@metro-labs/kit/icons';
@@ -54,8 +50,7 @@ export interface BrandIconProps {
   dark?: boolean;
 }
 
-/** Filled social brand glyph (X, GitHub, Lens, Farcaster). Unlike the stroke-only
- *  Heroicons these are solid marks drawn with fill=currentColor and no stroke. */
+/** Filled social brand glyph (X, GitHub, Lens, Farcaster). Unlike the stroke-only Heroicons these are solid marks drawn with fill=currentColor and no stroke. */
 export function BrandIcon({ name, size = 22, color, dark }: BrandIconProps): React.ReactElement {
   const fill = color ?? (dark === undefined ? 'currentColor' : dark ? '#ffffff' : '#000000');
   return (

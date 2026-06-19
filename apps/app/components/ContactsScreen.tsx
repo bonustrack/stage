@@ -1,16 +1,8 @@
-/** Contacts page — every user the active account has access to: all DM peers
- *  plus all members of every group the account belongs to, deduplicated by
- *  address and sorted alphabetically by resolved name. Data comes from
- *  `useAllContacts` (live XMTP walk, cache-first, non-blocking); each row reuses
- *  the shared `ChannelRow` (Avatar + name + short address), tapping it opens (or
- *  starts) a DM with that user.
- *
- *  Contacts is the 2nd swipe-pager tab (Channels → Contacts → Wallet →
- *  Notifications → Profile). Like the other pager bodies it renders ONLY its
- *  scrollable list — the shared `HoistedTopnav` and the top safe-area inset are
- *  provided once by the pager overlay in (tabs)/_layout.tsx. It declares the
- *  pager Pan in `simultaneousHandlers` so a horizontal swipe pages tabs while a
- *  vertical drag scrolls the list. */
+/**
+ * @file Contacts swipe-pager tab listing every user the active account can reach
+ *  (DM peers plus all group members, deduped and name-sorted via useAllContacts),
+ *  each a ChannelRow that opens or starts a DM on tap.
+ */
 
 import { useCallback, useState } from 'react';
 import { FlatList } from 'react-native-gesture-handler';
@@ -24,6 +16,7 @@ import { useAllContacts, type Contact } from '../lib/useAllContacts';
 import { getPeerName } from '../lib/peerProfiles';
 import { openDmWithAddress, shortAddress } from '../modules/messaging';
 
+/** Renders the Contacts pager tab listing every reachable user, tapping a row opens a DM. */
 export function ContactsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const { bg } = usePalette();
   const router = useRouter();
@@ -50,7 +43,7 @@ export function ContactsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): 
         avatarAddress={item.address}
         square={false}
         subtitle={hasName ? shortAddress(item.address) : null}
-        onPress={() => open(item.address)}
+        onPress={() => { open(item.address); }}
       />
     );
   }, [open]);

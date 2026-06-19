@@ -1,16 +1,7 @@
-/** Derives the user's "contacts" — the peers from their existing 1:1 DM
- *  conversations — for the member-picker suggestion list.
- *
- *  Source: the account-scoped `channelsCache` rows that the Channels screen
- *  already loads + persists. Each DM row carries `peerAddress` (the resolved
- *  peer eth address) + `title`; group rows have `peerAddress === null` and are
- *  ignored. No new network calls — we reuse data that's already in memory.
- *
- *  The hook subscribes to the cache so the suggestions stay live, fetches the
- *  peers' Snapshot profiles (name/avatar) via the shared `peerProfiles` cache,
- *  and returns a deduplicated, name-sorted contact list with the caller's
- *  `exclude` set (self, already-staged members, current group members) removed
- *  and an optional case-insensitive `query` filter applied. */
+/**
+ * @file Hook deriving the member-picker contact suggestions — the peers from existing 1:1 DM conversations, read from the account-scoped channelsCache (group rows ignored, no new network calls).
+ *  Subscribes to the cache for live updates, fetches peer profiles, and returns a deduped, name-sorted list with the caller's `exclude` set removed and an optional `query` filter applied.
+ */
 
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -42,7 +33,8 @@ function peerAddressesFromRows(rows: CachedRow[] | null): string[] {
   return out;
 }
 
-/** Live list of DM-peer contacts, minus `exclude`, filtered by `query`.
+/**
+ * Live list of DM-peer contacts, minus `exclude`, filtered by `query`.
  *
  *  @param exclude addresses to omit (self is always omitted). Case-insensitive.
  *  @param query   case-insensitive filter over name + address; '' shows all.

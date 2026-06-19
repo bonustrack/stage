@@ -1,9 +1,4 @@
-/** In-app PR diff viewer - opened by tapping a channel topnav's GitHub icon.
- *  Receives the channel's linked GitHub URL (`url` param), parses it to an
- *  owner/repo + PR (or issue -> linked PR) ref, fetches the per-file diff from
- *  the GitHub REST API and renders it GitHub-style via FileDiff. A link icon in
- *  the top-right of the topnav opens the PR on GitHub. Issues with no linked PR
- *  show a graceful message. All text uses the Calibre font family. */
+/** @file In-app GitHub PR diff viewer that parses a channel's linked GitHub URL, fetches the per-file diff, and renders it GitHub-style. */
 
 import { ActivityIndicator, Linking } from 'react-native';
 
@@ -26,6 +21,7 @@ import Markdown from 'react-native-markdown-display';
 import { mdParser } from '../lib/mdParser';
 import { diffMarkdownStyles } from '../lib/diffMarkdownStyles';
 
+/** Screen rendering a markdown diff view of pending changes. */
 export default function Diff(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -33,11 +29,13 @@ export default function Diff(): React.ReactElement {
   const insets = useSafeAreaInsets();
   const { url } = useLocalSearchParams<{ url?: string }>();
 
-  /** Disable the app's full-width swipe-back (the JS card stack's interactive
+  /**
+   * Disable the app's full-width swipe-back (the JS card stack's interactive
    *  horizontal pan, armed from anywhere via gestureResponseDistance:9999 in
    *  _layout). On this page it captured vertical pans and starved the diff
    *  ScrollView, so the page wouldn't scroll. The header back arrow still pops
-   *  the route, so losing the gesture here is fine. */
+   *  the route, so losing the gesture here is fine.
+   */
   const navigation = useNavigation();
   useLayoutEffect(() => {
     navigation.setOptions({ gestureEnabled: false });
@@ -58,7 +56,7 @@ export default function Diff(): React.ReactElement {
   return (
     <Col surface="surface" flex={1}>
       <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: p.border }}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
+        <Pressable onPress={() => { router.back(); }} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={p.text}/>
         </Pressable>
         <Title size="sm" style={{ flex: 1 }} numberOfLines={1}>
@@ -92,7 +90,7 @@ export default function Diff(): React.ReactElement {
             ) : null}
             <Text color={p.text} style={{ opacity: 0.7 }}>This link points to an issue with no linked pull request yet.</Text>
           </Box>
-        ) : diff && diff.files.length === 0 ? (
+        ) : diff?.files.length === 0 ? (
           <Text color={p.text} style={{ opacity: 0.7, paddingHorizontal: 12 }}>No file changes in this pull request.</Text>
         ) : (
           <>

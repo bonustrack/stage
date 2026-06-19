@@ -59,7 +59,7 @@ describe('reconstruct a passkey validator from stored material (rebuild path)', 
       authenticatorIdHash: STORED.authenticatorIdHash,
       rpID: STORED.rpID,
       // On-device assertion is stubbed; not invoked during construction.
-      signMessageCallback: async () => '0x' as `0x${string}`,
+      signMessageCallback: () => Promise.resolve('0x' as `0x${string}`),
     };
     const validator = await toPasskeyValidator(publicClient, {
       webAuthnKey,

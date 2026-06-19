@@ -1,12 +1,6 @@
-/** Shared profile screen — renders BOTH the logged-in user's own profile and
- *  any peer's public profile. Identity is READ-ONLY and resolved entirely from
- *  stamp.fyi / ENS (display name) + the stamp.fyi identicon (avatar), the same
- *  source used for peers everywhere else. There is no in-app profile editing.
- *  Own-vs-other is decided by comparing the viewed `address` to the active
- *  account's address (resolved from the XMTP client). Own → no Message/Send
- *  (can't message yourself). Other → Message + Send. `variant`: `tab` (footer
- *  Profile, no back button) vs `route` (/user/[address], own back button +
- *  inset). Presentational pieces live in ./ProfileScreen.parts. */
+/**
+ * @file ProfileScreen: the shared profile screen rendering both the user's own profile and any peer's public profile, as a tab or standalone route.
+ */
 
 import { useState } from 'react';
 
@@ -32,11 +26,11 @@ import { ProfileHoldings } from './ProfileScreen.holdings';
 
 export type ProfileScreenVariant = 'tab' | 'route';
 
+/** Renders a user's profile, either as a tab or a standalone route. */
 export function ProfileScreen({ address, variant, panRef }: {
   address: string;
   variant: ProfileScreenVariant;
-  /** When mounted inside the swipe pager (Profile tab), the horizontal pager
-   *  Pan ref so this screen's ScrollView relates to it simultaneously. */
+  /** When mounted inside the swipe pager (Profile tab), the horizontal pager Pan ref so this screen's ScrollView relates to it simultaneously. */
   panRef?: SimultaneousRefs;
 }): React.ReactElement {
   const router = useRouter();
@@ -54,6 +48,7 @@ export function ProfileScreen({ address, variant, panRef }: {
   const [openingDm, setOpeningDm] = useState(false);
   const [viewerUri, setViewerUri] = useState<string | null>(null);
 
+  /** Handle the Message. */
   const onMessage = async (): Promise<void> => {
     if (!addr || openingDm) return;
     setOpeningDm(true);
@@ -65,6 +60,7 @@ export function ProfileScreen({ address, variant, panRef }: {
     } finally { setOpeningDm(false); }
   };
 
+  /** Copy helper. */
   const copy = (value: string, label = 'Address'): void => {
     void Clipboard.setStringAsync(value);
     flash(`${label} copied`);
@@ -77,7 +73,7 @@ export function ProfileScreen({ address, variant, panRef }: {
     <Col flex={1} surface="surface">
       <ProfileHeader
         variant={variant} insetTop={insets.top} c={c}
-        onBack={() => router.back()}
+        onBack={() => { router.back(); }}
       />
 
       <ScrollView simultaneousHandlers={panRef} style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 32 }}>
@@ -109,7 +105,7 @@ export function ProfileScreen({ address, variant, panRef }: {
           </Text>
           {addr ? (
             <Pressable
-              onPress={() => copy(addr, 'Address')}
+              onPress={() => { copy(addr, 'Address'); }}
               hitSlop={8}
               style={{ marginTop: 2 }}
 >
@@ -124,7 +120,7 @@ export function ProfileScreen({ address, variant, panRef }: {
             <ProfileActions
               dark={dark} opening={openingDm} c={c}
               onMessage={() => { void onMessage(); }}
-              onSend={() => router.push({ pathname: '/wallet/send', params: { to: addr } })}
+              onSend={() => { router.push({ pathname: '/wallet/send', params: { to: addr } }); }}
 />
           ) : null}
         </Box>
@@ -138,7 +134,7 @@ export function ProfileScreen({ address, variant, panRef }: {
         {addr ? <ProfileHoldings address={addr} /> : null}
       </ScrollView>
 
-      <ImageViewer uri={viewerUri ?? ''} visible={viewerUri !== null} onClose={() => setViewerUri(null)}/>
+      <ImageViewer uri={viewerUri ?? ''} visible={viewerUri !== null} onClose={() => { setViewerUri(null); }}/>
     </Col>
   );
 }

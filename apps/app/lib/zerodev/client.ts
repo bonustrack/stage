@@ -1,11 +1,8 @@
-/** ZeroDev viem clients for the smart account: a Base public client, the
- *  ZeroDev paymaster client, and a Kernel account client wired to sponsor every
- *  userOp. Thin IO over the SDK — protocol constants come from
- *  @stage-labs/client/zerodev/config; the RPC URL from ./env.
- *
- *  Lazy-deploy: the Kernel is counterfactual until the first sponsored userOp,
- *  which deploys it inside that op (paid by the paymaster). Until then
- *  `account.address` is the stable, deterministic wallet identity. */
+/**
+ * @file ZeroDev viem clients for the smart account (Base public client, ZeroDev paymaster client,
+ *  and a Kernel account client wired to sponsor every userOp); thin IO over the SDK that lazily
+ *  deploys the counterfactual Kernel inside the first paymaster-sponsored userOp.
+ */
 
 import '../cryptoShim';
 import { http, createPublicClient, type Chain, type PublicClient } from 'viem';
@@ -25,24 +22,24 @@ export function makePublicClient(): PublicClient {
   // `base` is an OP-stack chain whose formatters make viem infer a chain-specific
   // client type; widen to the plain `Chain` so the result matches the declared
   // `PublicClient` return (avoids a spurious cross-viem-copy TS2719 under turbo).
-  return createPublicClient({ chain: base as Chain, transport: http(rpc) });
+  const chain: Chain = base;
+  return createPublicClient({ chain, transport: http(rpc) });
 }
 
-/** Whether a Kernel address has on-chain bytecode (i.e. the account is deployed,
+/**
+ * Whether a Kernel address has on-chain bytecode (i.e. the account is deployed,
  *  not just counterfactual). A read-only `getCode` over the ZeroDev public client.
  *  Used to tell a genuinely-installed passkey (deployed) from the old broken
  *  counterfactual shortcut (passkey persisted but never installed on-chain), which
- *  must be repaired by a deploy-and-swap. Throws if ZeroDev is not configured. */
+ *  must be repaired by a deploy-and-swap. Throws if ZeroDev is not configured.
+ */
 export async function kernelDeployedOnChain(address: string): Promise<boolean> {
   const publicClient = makePublicClient();
   const code = await publicClient.getCode({ address: address as `0x${string}` });
   return !!code && code !== '0x';
 }
 
-/** A Kernel account client that sponsors every userOp through the ZeroDev
- *  paymaster and prices gas via the bundler. `account` comes from ./account
- *  (createKernelAccount). The returned client deploys the Kernel lazily on the
- *  first `sendUserOperation`. */
+/** A Kernel account client that sponsors every userOp through the ZeroDev paymaster and prices gas via the bundler. `account` comes from ./account (createKernelAccount). The returned client deploys the Kernel lazily on the first `sendUserOperation`. */
 export function makeKernelClient(
   account: SmartAccount<KernelSmartAccountImplementation>,
   publicClient: PublicClient,

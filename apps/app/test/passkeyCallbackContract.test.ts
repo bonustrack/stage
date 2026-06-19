@@ -31,7 +31,8 @@ import { PasskeyValidatorContractVersion, toPasskeyValidator } from '@zerodev/pa
 const ENTRY_POINT = getEntryPoint('0.7');
 /** toPasskeyValidator reads chainId via an RPC getChainId at build time; use the
  *  Base endpoint (override with EXPO_PUBLIC_ZERODEV_RPC) and guard offline. */
-const RPC = process.env.EXPO_PUBLIC_ZERODEV_RPC?.trim() || 'https://mainnet.base.org';
+const RPC_ENV: unknown = process.env.EXPO_PUBLIC_ZERODEV_RPC;
+const RPC = typeof RPC_ENV === 'string' && RPC_ENV.trim() !== '' ? RPC_ENV.trim() : 'https://mainnet.base.org';
 const publicClient = createPublicClient({ chain: base, transport: http(RPC) });
 
 const STORED = {
@@ -60,9 +61,9 @@ describe('passkey sign callback contract', () => {
         authenticatorIdHash: STORED.authenticatorIdHash,
         rpID: STORED.rpID,
         // Capture exactly how the SDK calls our on-device callback.
-        signMessageCallback: async (...args: unknown[]) => {
+        signMessageCallback: (...args: unknown[]) => {
           calls.push(args);
-          return '0x' as `0x${string}`;
+          return Promise.resolve('0x');
         },
       },
       entryPoint: ENTRY_POINT,
@@ -85,7 +86,7 @@ describe('passkey sign callback contract', () => {
     expect(chainId).toBe(base.id);
     // arg 3: allowCredentials scoped to our stored authenticator id.
     expect(Array.isArray(allowCredentials)).toBe(true);
-    expect((allowCredentials as Array<{ id: string; type: string }>)[0]).toEqual({
+    expect((allowCredentials as { id: string; type: string }[])[0]).toEqual({
       id: STORED.authenticatorId,
       type: 'public-key',
     });

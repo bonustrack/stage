@@ -1,19 +1,6 @@
-/** Button - an OpenAI ChatKit-API RN button. Imports react-native directly
- *  (declared as a peerDependency); fine since only apps/app imports it.
- *  Hook-free: caller passes `dark` so the kit stays importable anywhere while
- *  colours track the palette convention in apps/app/lib/theme.ts.
- *
- *  CANONICAL API (mirrors ChatKit's Button widget 1:1):
- *    color       primary|secondary|info|discovery|success|caution|warning|danger
- *    variant     solid|soft|outline|ghost  (ChatKit ControlVariant)
- *    style       primary|secondary         (ChatKit Button.style sugar)
- *    size        3xs..3xl                  (ChatKit ControlSize)
- *    label / children, iconStart, iconEnd, block, pill, uniform, disabled
- *
- *  BACK-COMPAT ALIASES (deprecated, kept so existing apps/app call sites work):
- *    variant="primary|secondary|ghost|danger"  legacy colour-name form, mapped
- *    fullWidth  -> block      icon -> iconStart      iconRight -> iconEnd
- *  Size specs / colour resolution / label style live in ./button.styles. */
+/**
+ * @file Hook-free React Native Button matching OpenAI ChatKit's Button API (color/variant/style/size plus deprecated back-compat aliases); styling internals live in ./button.styles.
+ */
 
 import { useMemo, type ReactNode } from 'react';
 import {
@@ -42,22 +29,28 @@ export type {
   ButtonVariant,
 } from './button.styles';
 
-/** Legacy colour-name variant values - distinguished from ChatKit control
+/**
+ * Legacy colour-name variant values - distinguished from ChatKit control
  *  variants so an overloaded `variant` prop routes to the right model. Note
  *  `ghost` is the one value common to both; it is treated as the ChatKit ghost
  *  treatment over the current `color` (default primary), which matches the
- *  legacy ghost look. */
+ *  legacy ghost look.
+ */
 const LEGACY_VARIANTS = new Set<ButtonVariant>(['primary', 'secondary', 'danger']);
 
-/** App-wide default corner radius for all buttons. Mutable module-level
+/**
+ * App-wide default corner radius for all buttons. Mutable module-level
  *  state (framework-free, like the tint props pattern) so the app can wire the
  *  persisted `radius` design token here once and have EVERY button follow it
  *  without threading a prop through 20+ call sites. `pill` icon buttons follow
- *  it too. Default 999 keeps the original fully-rounded/circular look. */
+ *  it too. Default 999 keeps the original fully-rounded/circular look.
+ */
 let defaultButtonRadius = 999;
+/** Set the app-wide default corner radius applied to every button. */
 export function setDefaultButtonRadius(r: number): void {
   if (Number.isFinite(r) && r >= 0) defaultButtonRadius = r;
 }
+/** Return the current app-wide default button corner radius. */
 export function getDefaultButtonRadius(): number {
   return defaultButtonRadius;
 }
@@ -66,12 +59,9 @@ export interface ButtonProps
   extends Omit<PressableProps, 'children' | 'style' | 'disabled'> {
   /** ChatKit semantic colour. Default `primary`. */
   color?: ButtonColor;
-  /** ChatKit control variant (visual treatment). Default `solid`. Also accepts
-   *  the legacy colour-name values (primary/secondary/ghost/danger) for
-   *  back-compat, which are mapped onto `color` + treatment. */
+  /** ChatKit control variant (visual treatment). Default `solid`. Also accepts the legacy colour-name values (primary/secondary/ghost/danger) for back-compat, which are mapped onto `color` + treatment. */
   variant?: ButtonControlVariant | ButtonVariant;
-  /** ChatKit `style` sugar (primary/secondary). Sets `color` when `color` is
-   *  not explicitly provided. */
+  /** ChatKit `style` sugar (primary/secondary). Sets `color` when `color` is not explicitly provided. */
   style?: ViewStyle;
   /** ChatKit Button.style: convenience colour shorthand. */
   styleColor?: 'primary' | 'secondary';
@@ -87,8 +77,7 @@ export interface ButtonProps
   block?: boolean;
   /** @deprecated Alias of `block`. */
   fullWidth?: boolean;
-  /** Square icon-only button: square aspect (width = height for the size),
-   *  centered icon, no horizontal padding. ChatKit `pill` + `uniform`. */
+  /** Square icon-only button: square aspect (width = height for the size), centered icon, no horizontal padding. ChatKit `pill` + `uniform`. */
   pill?: boolean;
   /** ChatKit `uniform`: equal padding so the button is square for its size. */
   uniform?: boolean;
@@ -102,22 +91,17 @@ export interface ButtonProps
   iconRight?: ReactNode;
   /** Effective color scheme. Pass `useEffectiveColorScheme() === 'dark'`. */
   dark?: boolean;
-  /** Override the resting background - pass a live palette token (e.g. the
-   *  `primary` token) so the color editor re-themes the button. Falls back to
-   *  the resolved colour default when omitted. */
+  /** Override the resting background - pass a live palette token (e.g. the `primary` token) so the color editor re-themes the button. Falls back to the resolved colour default when omitted. */
   tintBg?: string;
-  /** Override the label/icon colour - pass the contrasting palette token (e.g.
-   *  `bg`) so it tracks `tintBg`. Falls back to the resolved colour default. */
+  /** Override the label/icon colour - pass the contrasting palette token (e.g. `bg`) so it tracks `tintBg`. Falls back to the resolved colour default. */
   tintFg?: string;
-  /** Corner radius for the button (including `pill`). Falls back to the app-wide
-   *  default set via `setDefaultButtonRadius` (the persisted `radius` token). */
+  /** Corner radius for the button (including `pill`). Falls back to the app-wide default set via `setDefaultButtonRadius` (the persisted `radius` token). */
   radius?: number;
   /** Escape-hatch style merged onto the label last. */
   textStyle?: TextStyle;
 }
 
-/** Resolve the canonical `color` + ChatKit `variant` from the (possibly
- *  overloaded / legacy) props. */
+/** Resolve the canonical `color` + ChatKit `variant` from the (possibly overloaded / legacy) props. */
 function resolveModel(
   color: ButtonColor | undefined,
   variant: ButtonControlVariant | ButtonVariant | undefined,

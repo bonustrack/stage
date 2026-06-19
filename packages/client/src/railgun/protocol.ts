@@ -1,4 +1,8 @@
-/** nodejs-mobile bridge protocol - the typed request/response contract between
+/**
+ * @file Typed request/response and event wire contract for the nodejs-mobile bridge to the embedded Railgun engine and prover.
+ */
+/**
+ * nodejs-mobile bridge protocol - the typed request/response contract between
  *  the host app and the embedded Node process that actually runs the RAILGUN
  *  engine + Groth16 prover.
  *
@@ -12,16 +16,13 @@
  *  depending on the Node-only types.
  *
  *  PURE: this is the wire SHAPE only - no native module, no RN/expo imports. The
- *  Stage client builds these frames; the injected RailgunTransport ships them. */
+ *  Stage client builds these frames; the injected RailgunTransport ships them.
+ */
 
-/** Supported Railgun networks. Re-declared here as a string union so the client
- *  package stays free of the @railgun-community native deps (the host maps these
- *  back to the SDK's NetworkName enum). */
+/** Supported Railgun networks. Re-declared here as a string union so the client package stays free of the @railgun-community native deps (the host maps these back to the SDK's NetworkName enum). */
 export type RailgunNet = 'sepolia' | 'mainnet';
 
-/** Named RPC calls the Node process registers handlers for. One string per
- *  operation; the IPC layer routes by this name. Keep in sync with the host
- *  side's `bridgeRegisterCall(<name>, handler)` registrations. */
+/** Named RPC calls the Node process registers handlers for. One string per operation; the IPC layer routes by this name. Keep in sync with the host side's `bridgeRegisterCall(<name>, handler)` registrations. */
 export type BridgeCall =
   | 'engine:init'
   | 'engine:loadProvider'
@@ -33,9 +34,7 @@ export type BridgeCall =
   | 'proof:generateTransfer'
   | 'proof:generateUnshield';
 
-/** Push events the Node process emits unsolicited (no request). Used for engine
- *  logs, balance-scan updates, and proof progress so the UI can show a live
- *  indicator during the ~20-30s proof. */
+/** Push events the Node process emits unsolicited (no request). Used for engine logs, balance-scan updates, and proof progress so the UI can show a live indicator during the ~20-30s proof. */
 export type BridgeEvent =
   | 'event:message'
   | 'event:error'
@@ -46,8 +45,7 @@ export type BridgeEvent =
   | 'event:heartbeat'
   | 'event:uncaughtException';
 
-/** Engine bootstrap params. The encryption key + mnemonic are derived on the
- *  host side and passed IN so the secret never has to be re-derived in Node. */
+/** Engine bootstrap params. The encryption key + mnemonic are derived on the host side and passed IN so the secret never has to be re-derived in Node. */
 export interface InitParams {
   walletSource: string;
   /** Absolute path inside the app sandbox for the engine LevelDB + artifacts. */
@@ -107,8 +105,7 @@ export interface UnshieldParams {
   toEoaAddress: string;
 }
 
-/** A populated transaction, serialized for the channel. The host broadcasts it
- *  with the active account (Node never holds the EOA key). */
+/** A populated transaction, serialized for the channel. The host broadcasts it with the active account (Node never holds the EOA key). */
 export interface PopulatedTxResult {
   to: string;
   data: string;

@@ -1,7 +1,10 @@
-/** Orchestrates creating a new smart (ZeroDev Kernel) account from the single
- *  app mnemonic: ensure the mnemonic, derive the owner at the next HD index,
- *  build the counterfactual ECDSA-owner Kernel, and persist the registry record.
- *
+/**
+ * @file Orchestrates creating a new ZeroDev Kernel smart account from the single app mnemonic:
+ *  derive the owner at the next HD index, build the counterfactual ECDSA-sudo Kernel, and persist
+ *  the registry record (passkey-agnostic; the caller decides what signs the first XMTP inbox).
+ */
+
+/*
  *  PASSKEY IS NOT REGISTERED HERE. createSmartAccount is passkey-AGNOSTIC: the
  *  account is ALWAYS created ECDSA-sudo so its address derives from the ECDSA owner
  *  (deployable initCode). The CALLER decides what signs the first XMTP inbox:
@@ -20,7 +23,8 @@
  *  it before the inbox can't pop the empty OS picker ("No available sign-in").
  *
  *  Thin glue over ./mnemonic + ./account + accounts.ts. No tx is sent here — the
- *  Kernel deploys lazily (on the first sponsored userOp, or on the passkey swap). */
+ *  Kernel deploys lazily (on the first sponsored userOp, or on the passkey swap).
+ */
 
 import '../cryptoShim';
 import { addSmartAccount, nextSmartHdIndex, type AccountRecord } from '../accounts';
@@ -33,11 +37,13 @@ export interface CreateSmartAccountOpts {
   label?: string;
 }
 
-/** Create + persist a new ECDSA-owner smart account (passkey-agnostic). Returns
+/**
+ * Create + persist a new ECDSA-owner smart account (passkey-agnostic). Returns
  *  the new record (active). Throws if ZeroDev is not configured. Callers that want
  *  a passkey-gated signer must call enablePasskeyForRecord on the returned record
  *  BEFORE bringing XMTP online (so the deployed passkey Kernel signs the first inbox
- *  registration via ERC-1271 and the ECDSA key never signs the XMTP identity). */
+ *  registration via ERC-1271 and the ECDSA key never signs the XMTP identity).
+ */
 export async function createSmartAccount(opts: CreateSmartAccountOpts = {}): Promise<AccountRecord> {
   if (!zerodevConfigured()) {
     throw new Error('Smart wallet is not configured (missing ZeroDev project).');

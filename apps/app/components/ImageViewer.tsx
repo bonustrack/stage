@@ -1,20 +1,8 @@
-/** Reusable full-screen image viewer modal.
- *
- *  One component for every "open this image large" surface — message image
- *  attachments AND profile/group avatars. Shows the image fit-to-screen on a
- *  near-black backdrop, a close (✕) affordance, and a Download button that
- *  saves the image to the device camera roll via expo-media-library.
- *
- *  Supported source URIs:
- *    - `http(s)://…`  remote — downloaded to a temp file first, then saved.
- *    - `file://…`     already local — saved directly.
- *    - `data:…;base64,…`  inline (XMTP attachments) — bytes written to a temp
- *      file, then saved.
- *
- *  Download UX: requests the media-library write permission on first save,
- *  shows an in-button "Saving…" state, and gives an Android toast / iOS Alert
- *  on success or failure (matching the app's existing `flash` + `Alert`
- *  patterns — there's no iOS toast primitive). */
+/**
+ * @file Reusable full-screen image viewer modal for message attachments and
+ *  avatars, showing the image fit-to-screen with a close affordance and a
+ *  Download button that saves remote/local/base64 sources to the camera roll.
+ */
 
 import { useState } from 'react';
 
@@ -30,8 +18,7 @@ import { Buffer } from 'buffer';
 import { Icon } from '@metro-labs/kit/icon';
 import { flash } from '../lib/toast';
 
-/** Extension guessed from a `data:` URI mime or a URL path, used so the saved
- *  asset lands with a sensible suffix (the camera roll cares on some OSes). */
+/** Extension guessed from a `data:` URI mime or a URL path, used so the saved asset lands with a sensible suffix (the camera roll cares on some OSes). */
 function extOf(uri: string): string {
   const dataMime = /^data:image\/([a-z0-9.+-]+)/i.exec(uri)?.[1];
   if (dataMime) return dataMime === 'jpeg' ? 'jpg' : dataMime;
@@ -39,19 +26,19 @@ function extOf(uri: string): string {
   return (urlExt ?? 'jpg').toLowerCase();
 }
 
-/** Scratch directory for temp downloads — created lazily under the app cache
+/**
+ * Scratch directory for temp downloads — created lazily under the app cache
  *  dir (the OS may reclaim it, which is fine since it's only a staging area for
  *  the save call). We don't bother cleaning up individual files; the volume is
- *  tiny and the cache dir is transient by design. */
+ *  tiny and the cache dir is transient by design.
+ */
 function tempDir(): Directory {
   const dir = new Directory(Paths.cache, 'image-viewer');
   if (!dir.exists) dir.create({ intermediates: true });
   return dir;
 }
 
-/** Resolve `uri` to a local `file://` path suitable for MediaLibrary. Remote
- *  URLs are downloaded; data: URIs are decoded to a temp file; file: URIs pass
- *  through untouched. Returns the local uri. */
+/** Resolve `uri` to a local `file://` path suitable for MediaLibrary. Remote URLs are downloaded; data: URIs are decoded to a temp file; file: URIs pass through untouched. Returns the local uri. */
 async function toLocalUri(uri: string): Promise<string> {
   if (uri.startsWith('file://')) return uri;
   const ext = extOf(uri);
@@ -69,6 +56,7 @@ async function toLocalUri(uri: string): Promise<string> {
   return downloaded.uri;
 }
 
+/** Renders a full-screen image viewer modal with close and save-to-camera-roll actions. */
 export function ImageViewer({ uri, visible, onClose }: {
   /** Image source — http(s)://, file://, or data:…;base64,… */
   uri: string;
@@ -77,6 +65,7 @@ export function ImageViewer({ uri, visible, onClose }: {
 }): React.ReactElement {
   const [saving, setSaving] = useState(false);
 
+  /** Handle the Download. */
   const onDownload = async (): Promise<void> => {
     if (saving || !uri) return;
     setSaving(true);

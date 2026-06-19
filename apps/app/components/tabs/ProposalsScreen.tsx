@@ -1,15 +1,7 @@
-/** Proposals screen - works through pending polls across all non-archived chats,
- *  oldest-first, one at a time.
- *
- *  A "pending proposal" is a channel whose LATEST message is a poll (see
- *  Proposals.queue). The screen shows ONE proposal card at a time
- *  (Proposals.card) with vote/skip/open + a composer; acting on it advances to
- *  the next. When the queue is exhausted it shows a minimal empty state.
- *
- *  Opened as a pushed/stacked route from the Home banner (app/proposals.tsx), so
- *  it owns a back-header topnav matching the other pushed pages (Menu / Accounts
- *  / Search). The pending count + queue come from the shared proposalsStore via
- *  useProposals, so this screen and the Home banner stay in sync. */
+/**
+ * @file Proposals screen that works through pending poll proposals oldest-first, one card at a time, across all non-archived chats.
+ *  Opened as a pushed route from the Home banner; pending count + queue come from the shared proposalsStore via useProposals.
+ */
 
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Icon } from '@metro-labs/kit/icon';
@@ -23,6 +15,7 @@ import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { useProposals } from './Proposals.hook';
 import { ProposalCard } from './Proposals.card';
 
+/** Screen that lists governance proposals as cards. */
 export function ProposalsScreen(): React.ReactElement {
   const pal = usePalette();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -36,7 +29,7 @@ export function ProposalsScreen(): React.ReactElement {
     <Col flex={1} surface="surface">
       {/* Topnav: back + title, mirroring the Menu / Accounts / Search pages. */}
       <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
+        <Pressable onPress={() => { router.back(); }} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={head}/>
         </Pressable>
         <Title size="sm">

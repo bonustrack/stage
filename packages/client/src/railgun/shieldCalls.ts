@@ -1,4 +1,8 @@
-/** Typed bridge frame builders for the RAILGUN SHIELD primitives.
+/**
+ * @file Typed bridge frame builders for the Railgun shield (public to private) primitives.
+ */
+/**
+ * Typed bridge frame builders for the RAILGUN SHIELD primitives.
  *
  *  Thin typed shells over the injected generic `dispatch()` (RailgunDispatch):
  *  each composes one whitelisted @railgun-community/wallet call. bigint amounts
@@ -12,7 +16,8 @@
  *  populate (no broadcaster) - the EOA signs + broadcasts the returned tx on the
  *  host side.
  *
- *  PURE: no native imports. The dispatcher that ships these frames is injected. */
+ *  PURE: no native imports. The dispatcher that ships these frames is injected.
+ */
 import type { RailgunDispatch } from './dispatch';
 import { SDK_METHOD } from './methods';
 import { bn } from './wire';
@@ -22,19 +27,17 @@ export async function shieldPrivateKeyMessage(dispatch: RailgunDispatch): Promis
   return dispatch<string>(SDK_METHOD('tx.getShieldPrivateKeySignatureMessage'));
 }
 
-/** Fallback-provider JSON config the engine's loadProvider expects:
- *  { chainId, providers:[{ provider:url, priority, weight }] }. */
+/** Fallback-provider JSON config the engine's loadProvider expects: { chainId, providers:[{ provider:url, priority, weight }] }. */
 export interface FallbackProviderConfig {
   chainId: number;
   providers: { provider: string; priority: number; weight: number }[];
 }
 
-/** Chains whose RPC provider has already been loaded into the embedded engine
- *  this session, so repeat shields don't reload (the SDK is idempotent, but a
- *  reload re-spins the polling provider - skip the round-trip). */
+/** Chains whose RPC provider has already been loaded into the embedded engine this session, so repeat shields don't reload (the SDK is idempotent, but a reload re-spins the polling provider - skip the round-trip). */
 const providerLoaded = new Set<number>();
 
-/** Load the RPC provider + register the merkletree for `networkName` into the
+/**
+ * Load the RPC provider + register the merkletree for `networkName` into the
  *  embedded engine, via the already-whitelisted `engine.loadProvider` dispatch.
  *
  *  WHY: the bridge `engineInit` attempts both networks' providers but swallows
@@ -44,7 +47,8 @@ const providerLoaded = new Set<number>();
  *  We re-load it here, BEFORE shielding, and let any RPC/load error surface with
  *  a clear message instead of that null-merkletree error.
  *
- *  Idempotent per chainId for the session; errors are NOT swallowed. */
+ *  Idempotent per chainId for the session; errors are NOT swallowed.
+ */
 export async function ensureProviderLoaded(
   dispatch: RailgunDispatch,
   cfg: FallbackProviderConfig,
@@ -60,8 +64,7 @@ export async function ensureProviderLoaded(
   providerLoaded.add(cfg.chainId);
 }
 
-/** An ethers-style populated tx returned by populate*; bigints arrive as decimal
- *  strings (the host serialized them). `to`/`data`/`value` are what we sign. */
+/** An ethers-style populated tx returned by populate*; bigints arrive as decimal strings (the host serialized them). `to`/`data`/`value` are what we sign. */
 export interface PopulatedTx {
   to?: string;
   data?: string;
@@ -72,8 +75,7 @@ export interface PopulateResult {
   transaction: PopulatedTx;
 }
 
-/** Populate a native-ETH (base-token) shield: wraps to the network WETH and
- *  shields it to `railgunAddress` (the user's OWN 0zk). `amountWei` is decimal. */
+/** Populate a native-ETH (base-token) shield: wraps to the network WETH and shields it to `railgunAddress` (the user's OWN 0zk). `amountWei` is decimal. */
 export async function populateShieldBaseToken(dispatch: RailgunDispatch, params: {
   txidVersion: string;
   networkName: string;
@@ -91,8 +93,7 @@ export async function populateShieldBaseToken(dispatch: RailgunDispatch, params:
   ]);
 }
 
-/** Populate an ERC20 shield to the user's OWN 0zk (`recipientAddress`). Requires
- *  a prior ERC20 approve of `amountWei` to the network proxy contract. */
+/** Populate an ERC20 shield to the user's OWN 0zk (`recipientAddress`). Requires a prior ERC20 approve of `amountWei` to the network proxy contract. */
 export async function populateShieldErc20(dispatch: RailgunDispatch, params: {
   txidVersion: string;
   networkName: string;

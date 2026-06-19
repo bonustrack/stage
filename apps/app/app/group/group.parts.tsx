@@ -1,5 +1,4 @@
-/** Group-detail sub-components — member row + add-member / overflow modals.
- *  Extracted from group/[convId] for lint line-budget. Rendering identical. */
+/** @file Group-detail sub-components: the member row plus the add-member and overflow modals. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
 import { fontSize } from '@metro-labs/kit/tokens';
@@ -15,6 +14,7 @@ import { DANGER, usePalette } from '../../lib/theme';
 
 interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }
 
+/** One member row: avatar, name/address, owner/admin badge, and a remove button. */
 export function MemberRow({
   item, isSelf, isRemovingThis, role, name, dark, p, onPress, onRemove,
 }: {
@@ -42,7 +42,7 @@ export function MemberRow({
 />
       <Col minWidth={0} flex={1}>
         <Text weight="semibold" size="md" color={head} numberOfLines={1}>
-          {name || shortAddress(item)}{isSelf ? ' (you)' : ''}
+          {name == null || name === '' ? shortAddress(item) : name}{isSelf ? ' (you)' : ''}
         </Text>
         {name ? (
           <Text size="xs" color={sub} style={{ marginTop: 2 }} numberOfLines={1}>
@@ -74,6 +74,7 @@ export function MemberRow({
   );
 }
 
+/** Modal for adding a group member by Ethereum address. */
 export function AddMemberModal({
   visible, onClose, addDraft, setAddDraft, adding, onAdd, dark, p,
 }: {
@@ -116,6 +117,7 @@ export function AddMemberModal({
   );
 }
 
+/** Group overflow modal: surfaces the leave-group action. */
 export function OverflowModal({
   visible, onClose, leaving, onLeave,
 }: {

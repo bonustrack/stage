@@ -1,16 +1,8 @@
-/** MenuSheet — the account/nav surface (formerly the full-screen /menu route),
- *  now presented in-place as the app's standard AppModal bottom-sheet over the
- *  current screen. Opened by tapping the top-left avatar (TopnavIdentity). It
- *  hosts what the old slide-out LeftDrawer rendered:
- *    - avatar header: active account's stamp avatar + name + short address
- *    - tap-to-switch accounts list (same switchToAccount path as before)
- *    - New / Add account actions
- *    - Profile + Settings nav rows
- *
- *  The presentational pieces are reused from LeftDrawer.parts / .accounts (the
- *  same components the drawer + the old page used) — no logic is duplicated.
- *  Switching an account or tapping a nav row closes the sheet first, then runs
- *  the action. */
+/**
+ * @file Account/nav AppModal bottom-sheet opened from the top-left avatar, hosting
+ *  the avatar header, tap-to-switch accounts list, New/Add account actions, and
+ *  Profile/Settings nav rows (reusing LeftDrawer.parts/.accounts components).
+ */
 
 import { useCallback, useEffect, useState } from 'react';
 
@@ -24,6 +16,7 @@ import { loadAccounts, getActiveAccountId, type AccountRecord } from '../lib/acc
 import { drawerAccountRows, DrawerHeader, DrawerRow } from './LeftDrawer.parts';
 import { useDrawerAccountActions } from './LeftDrawer.accounts';
 
+/** Renders the account/navigation bottom sheet with the active account, account switcher, and nav rows. */
 export function MenuSheet({ visible, onClose }: {
   visible: boolean;
   onClose: () => void;
@@ -52,14 +45,13 @@ export function MenuSheet({ visible, onClose }: {
     head, sub, border, dark, onChanged: () => { onClose(); void refresh(); },
   });
 
+  /** Go helper. */
   function go(href: '/settings'): void {
     onClose();
     router.navigate(href);
   }
 
-  /** "Profile" opens the active account's own profile through the shared peer
-   *  profile route (/user/[address]) — the dedicated own-profile tab was
-   *  removed; viewing yourself reuses the same read-only ProfileScreen. */
+  /** "Profile" opens the active account's own profile through the shared peer profile route (/user/[address]) — the dedicated own-profile tab was removed; viewing yourself reuses the same read-only ProfileScreen. */
   function goProfile(): void {
     const addr = activeRec?.address;
     if (!addr) return;
@@ -67,6 +59,7 @@ export function MenuSheet({ visible, onClose }: {
     router.navigate(`/user/${addr}`);
   }
 
+  /** Handle the Switch. */
   function onSwitch(id: string): void {
     onClose();
     if (id === activeId) return;
@@ -84,7 +77,7 @@ export function MenuSheet({ visible, onClose }: {
         {drawerAccountRows({ accounts, activeId, onSwitch, c: { head, sub, border }, dark })}
         {actions.rows}
         <DrawerRow rowKey="profile" icon="user" label="Profile" head={head} sub={sub} border={border} dark={dark} onPress={goProfile}/>
-        <DrawerRow rowKey="settings" icon="cog" label="Settings" head={head} sub={sub} border={border} dark={dark} onPress={() => go('/settings')}/>
+        <DrawerRow rowKey="settings" icon="cog" label="Settings" head={head} sub={sub} border={border} dark={dark} onPress={() => { go('/settings'); }}/>
       </ListView>
       {actions.modal}
     </AppModal>

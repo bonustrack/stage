@@ -17,7 +17,6 @@ declare module 'vue' {
     Col: typeof import('./components/layout/Col.vue')['default']
     Composer: typeof import('./components/Composer.vue')['default']
     ConversationHeader: typeof import('./components/ConversationHeader.vue')['default']
-    EditProfileModal: typeof import('./components/EditProfileModal.vue')['default']
     GroupAvatarEditor: typeof import('./components/GroupAvatarEditor.vue')['default']
     HeroIcon: typeof import('./components/HeroIcon.vue')['default']
     InlineEditableText: typeof import('./components/InlineEditableText.vue')['default']

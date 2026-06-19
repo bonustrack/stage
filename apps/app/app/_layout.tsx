@@ -1,14 +1,16 @@
-/** ES2023 Array polyfills (toReversed/toSorted) for the release Hermes engine —
- *  must run before any dependency that calls them. See lib/jsPolyfills. */
+/** @file Root expo-router layout that installs JS polyfills/crypto shims, mounts global providers (Query, theme, gestures, keyboard), and gates the app behind the account/onboarding flow. */
 import '../lib/jsPolyfills';
-/** Hoisted side-effect import — installs the crypto.getRandomValues shim
- *  BEFORE any viem (and transitively any wallet/profile) module loads. */
+/** Hoisted side-effect import — installs the crypto.getRandomValues shim BEFORE any viem (and transitively any wallet/profile) module loads. */
 import '../lib/cryptoShim';
 import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { useEffect } from 'react';
-// eslint-disable-next-line no-restricted-imports -- raw TextInput required: this sets TextInput.defaultProps app-wide for the default font (Kit Input wraps TextInput, so the global default must target the RN primitive itself).
-import { Text, TextInput } from 'react-native';
+import { Text } from 'react-native';
+// raw TextInput required: this sets TextInput.defaultProps app-wide for the
+// default font (Kit Input wraps TextInput, so the global default must target the
+// RN primitive itself). Imported via the sanctioned layout/native escape hatch
+// (the one place the RN-import ban is turned off).
+import { TextInput } from '../components/layout/native';
 import { Col } from '../components/layout';
 import { Spinner } from '../components/Spinner';
 import { Onboarding } from '../components/onboarding/Onboarding';
@@ -26,41 +28,47 @@ import { ensureActiveAccount, ensureMessagingStreamSync } from '../modules/messa
 import { QueryClientProvider } from '@tanstack/react-query';
 import { getQueryClient } from '../lib/queryClient';
 
-/** App-wide TanStack Query client: caches request/response data (profiles,
+/**
+ * App-wide TanStack Query client: caches request/response data (profiles,
  *  message history) with stale-while-revalidate + dedup. Live XMTP streams stay
  *  outside Query (they're push, not fetch). The instance lives in lib/queryClient
- *  so non-React code (stream wiring) writes the SAME cache. */
+ *  so non-React code (stream wiring) writes the SAME cache.
+ */
 const queryClient = getQueryClient();
 
-/** Set Calibre-Medium as the app-wide default for Text + TextInput via defaultProps.
+/**
+ * Set Calibre-Medium as the app-wide default for Text + TextInput via defaultProps.
  *  This is a fallback — call-site `style={{…}}` overrides — but it's the safest path:
  *  monkey-patching the forwardRef render fn upstream broke FlatList.scrollToOffset on
  *  some Android versions (see git for details). Individual screens that want guaranteed
- *  Calibre should pin fontFamily explicitly. */
+ *  Calibre should pin fontFamily explicitly.
+ */
 (function applyDefaultFont(): void {
   const TextAny = Text as unknown as { defaultProps?: Record<string, unknown> };
-  TextAny.defaultProps = TextAny.defaultProps || {};
+  TextAny.defaultProps = TextAny.defaultProps ?? {};
   TextAny.defaultProps.style = [{ fontFamily: 'Calibre-Medium' }, TextAny.defaultProps.style];
   TextAny.defaultProps.selectable = true;
   const TextInputAny = TextInput as unknown as { defaultProps?: Record<string, unknown> };
-  TextInputAny.defaultProps = TextInputAny.defaultProps || {};
+  TextInputAny.defaultProps = TextInputAny.defaultProps ?? {};
   TextInputAny.defaultProps.style = [{ fontFamily: 'Calibre-Medium' }, TextInputAny.defaultProps.style];
 })();
 
-/** Perceived-luminance check on a #rrggbb hex. < 0.5 → dark surface → needs
- *  light (white) status-bar icons. */
+/** Perceived-luminance check on a #rrggbb hex. < 0.5 → dark surface → needs light (white) status-bar icons. */
 function isDarkBg(hex: string): boolean {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
-  if (!m) return true; // assume dark (app's default chrome) when unparseable
-  const n = parseInt(m[1], 16);
+  const hexDigits = m?.[1];
+  if (hexDigits === undefined) return true; // assume dark (app's default chrome) when unparseable
+  const n = parseInt(hexDigits, 16);
   const r = (n >> 16) & 0xff, g = (n >> 8) & 0xff, b = n & 0xff;
   return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.5;
 }
 
-/** THEME-NATIVE root: mount the Kit theme provider ONCE here (alongside the
+/**
+ * THEME-NATIVE root: mount the Kit theme provider ONCE here (alongside the
  *  existing useRadius/useOverridesVersion wiring) so every Kit primitive below
  *  resolves its colours by role from the live palette. Reuses the SAME
- *  usePalette() global-variable source (overrides included) - no fork. */
+ *  usePalette() global-variable source (overrides included) - no fork.
+ */
 export default function RootLayout(): React.ReactElement {
   const scheme = useEffectiveColorScheme();
   const palette = usePalette();
@@ -71,6 +79,7 @@ export default function RootLayout(): React.ReactElement {
   );
 }
 
+/** The Root Layout Inner component. */
 function RootLayoutInner(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { bg, toolbarBg } = usePalette();
@@ -78,7 +87,8 @@ function RootLayoutInner(): React.ReactElement {
   // the whole tree when it changes. Mounted at the root so it's always live.
   useRadius();
 
-  /** Status-bar icons must follow the RENDERED chrome, not just the
+  /**
+   * Status-bar icons must follow the RENDERED chrome, not just the
    *  color-scheme pref. The app paints a near-black surface in dark mode and so
    *  needs LIGHT (white) icons. The previous `dark ? 'light' : 'dark'` showed
    *  dark, invisible icons whenever the OS was in light mode but pref='system'
@@ -87,55 +97,52 @@ function RootLayoutInner(): React.ReactElement {
    *  to the top edge), so drive the icon style off toolbarBg luminance, and ALSO
    *  set it imperatively (effect below) because under Android edge-to-edge the
    *  declarative <StatusBar> can be shadowed by the native baseline on first
-   *  paint. */
+   *  paint.
+   */
   const barStyle: 'light' | 'dark' = isDarkBg(toolbarBg) ? 'light' : 'dark';
   useEffect(() => { setStatusBarStyle(barStyle, true); }, [barStyle]);
 
-  /** Universal/deep links → screen navigation. `getInitialURL` resolves async
-   *  (after the Stack below has mounted) so cold-start taps land correctly; warm
-   *  links navigate immediately. */
+  /** Universal/deep links → screen navigation. `getInitialURL` resolves async (after the Stack below has mounted) so cold-start taps land correctly; warm links navigate immediately. */
   useDeepLinks();
 
-  /** Persist the active route on every navigation + restore it on a cold launch
+  /**
+   * Persist the active route on every navigation + restore it on a cold launch
    *  (return the user to the last screen) WITHOUT flashing Home: `restore.ready`
    *  gates the boot spinner below until the saved-route load resolves, so the
    *  Stack (and Home) never mount before the restore decision is known.
    *  Coordinates with useDeepLinks: a recognised cold-start deep link wins and
-   *  the restore yields to it. */
+   *  the restore yields to it.
+   */
   const restore = useRestoreGate();
 
-  /** Notification taps → open that conversation + clear its unread badge.
-   *  Handles both cold-start (app launched by the tap) and warm/background
-   *  taps. Installed once for the app's lifetime. */
+  /** Notification taps → open that conversation + clear its unread badge. Handles both cold-start (app launched by the tap) and warm/background taps. Installed once for the app's lifetime. */
   usePushDeepLinks();
 
-  /** FIRST-LAUNCH GATE: on a clean install (no account in the registry) the real
+  /**
+   * FIRST-LAUNCH GATE: on a clean install (no account in the registry) the real
    *  onboarding flow (components/onboarding) is the PRIMARY entry — it creates the
    *  mnemonic + ZeroDev smart account. So we NO LONGER auto-mint a throwaway EOA
    *  at boot (that would skip onboarding). `ready` gates on the registry's
    *  one-time load so a returning user never flashes onboarding (see
-   *  lib/accountGate); the gate flips the instant the flow adds an account. */
+   *  lib/accountGate); the gate flips the instant the flow adds an account.
+   */
   const onboarding = useAccountGate();
 
-  /** Once an account EXISTS, make sure messaging/wallet are wired (idempotent —
-   *  this no longer creates an account, it only revalidates an existing one so a
-   *  clean reinstall with a stale db key self-heals into the recoverable Home). */
+  /** Once an account EXISTS, make sure messaging/wallet are wired (idempotent — this no longer creates an account, it only revalidates an existing one so a clean reinstall with a stale db key self-heals into the recoverable Home). */
   useEffect(() => { if (onboarding.hasAccount) void ensureActiveAccount(); }, [onboarding.hasAccount]);
-  /** Wire streamed group-metadata events into Query (invalidate convMeta) so the
-   *  topnav / group screen refresh on rename/image/desc without a reload. */
+  /** Wire streamed group-metadata events into Query (invalidate convMeta) so the topnav / group screen refresh on rename/image/desc without a reload. */
   useEffect(() => { ensureMessagingStreamSync(); }, []);
 
-  /** Calibre — matches sx-monorepo's typography. Two weights: medium (default) + semibold (headers/buttons).
-   *  TTF (not WOFF2) so Android's native Typeface loader can pick it up — expo-font's WOFF2
-   *  support is web-only. */
+  /** Calibre — matches sx-monorepo's typography. Two weights: medium (default) + semibold (headers/buttons). TTF (not WOFF2) so Android's native Typeface loader can pick it up — expo-font's WOFF2 support is web-only. */
   const [loaded] = useFonts({
-    'Calibre-Medium': require('../assets/fonts/Calibre-Medium-Custom.ttf'),
-    'Calibre-Semibold': require('../assets/fonts/Calibre-Semibold-Custom.ttf'),
+    'Calibre-Medium': require('../assets/fonts/Calibre-Medium-Custom.ttf') as number,
+    'Calibre-Semibold': require('../assets/fonts/Calibre-Semibold-Custom.ttf') as number,
   });
 
   const gatesOpen = loaded && onboarding.ready && restore.ready;
 
-  /** IDENTITY-STABLE ROOT: the providers + navigator subtree below renders on
+  /**
+   * IDENTITY-STABLE ROOT: the providers + navigator subtree below renders on
    *  EVERY commit (no conditional early-return that swaps the root element type),
    *  so `NativeSwipeStack` — and the whole @react-navigation card stack inside it
    *  — mounts EXACTLY ONCE per process and is never torn down + rebuilt as the
@@ -150,13 +157,15 @@ function RootLayoutInner(): React.ReactElement {
    *  itself gated on `restore.ready` (lib/lastRoute), and the overlay fully
    *  covers the tab root until then, so the user never SEES Home — the original
    *  no-flash guarantee is preserved without coupling it to the navigator's
-   *  mount lifecycle. */
+   *  mount lifecycle.
+   */
   return (
     <QueryClientProvider client={queryClient}>
     <GestureHandlerRootView style={{ flex: 1 }}>
       <KeyboardProvider>
       <StatusBar style={barStyle} translucent backgroundColor="transparent"/>
-      {/** @react-navigation/stack JS card stack (via NativeSwipeStack /
+      {/**
+       * @react-navigation/stack JS card stack (via NativeSwipeStack /
        *   withLayoutContext). SWIPE-BACK: the JS stack's `gestureEnabled` pan +
        *   `TransitionPresets.SlideFromRightIOS` (forHorizontalIOS) finger-follow
        *   the back gesture and parallax the previous card in from the left (pure
@@ -164,28 +173,30 @@ function RootLayoutInner(): React.ReactElement {
        *   rn-screens' goBackGesture worklet - it crashes on reanimated 4's
        *   measure()). gestureResponseDistance widens the edge catch-zone; the
        *   conversation screen's leftward reply-swipe coexists because the stack
-       *   gesture arms only on a RIGHTWARD drag. */}
+       *   gesture arms only on a RIGHTWARD drag.
+       */}
       <NativeSwipeStack
-        /** Perf: stop the off-screen previous card from re-rendering / running
+        /**
+         * Perf: stop the off-screen previous card from re-rendering / running
          *  effects while it's fully blurred. `detachInactiveScreens` lets
          *  react-native-screens detach the inactive card; `freezeOnBlur`
          *  (react-native-screens enableFreeze) suspends its renders until it's
          *  focused again. The swipe-back REVEAL is preserved: during an actual
          *  swipe the card is transitioning (not blurred), so it's live; freeze
          *  only kicks in once it's settled off-screen, and unfreezes the instant
-         *  the gesture/transition re-focuses it. */
+         *  the gesture/transition re-focuses it.
+         */
         detachInactiveScreens
         screenOptions={{
           headerShown: false,
           freezeOnBlur: true,
           cardStyle: { backgroundColor: bg },
           gestureEnabled: true,
-          /** Full-width back-swipe: a rightward horizontal drag arms the pop from
-           *  ANYWHERE (9999 > any screen width). gestureDirection stays 'horizontal'
-           *  so vertical scroll + the LEFTWARD reply-swipe still win on their axes. */
+          /** Full-width back-swipe: a rightward horizontal drag arms the pop from ANYWHERE (9999 > any screen width). gestureDirection stays 'horizontal' so vertical scroll + the LEFTWARD reply-swipe still win on their axes. */
           gestureResponseDistance: 9999,
           ...TransitionPresets.SlideFromRightIOS,
-          /** INSTANT PUSH + interactive swipe-back reveal. We keep the
+          /**
+           * INSTANT PUSH + interactive swipe-back reveal. We keep the
            *  SlideFromRightIOS preset (its `forHorizontalIOS` cardStyleInterpolator
            *  is what makes the previous card parallax-in during a finger-follow
            *  swipe) and gestureEnabled:true. We do NOT use `animation:'none'` —
@@ -196,7 +207,8 @@ function RootLayoutInner(): React.ReactElement {
            *  instantly, while `close` keeps the iOS spring so a swipe-back release
            *  (or programmatic pop) still animates smoothly. The gesture's
            *  finger-tracking is driven directly by the pan, independent of the
-           *  open spec, so the reveal is preserved. */
+           *  open spec, so the reveal is preserved.
+           */
           transitionSpec: {
             open: { animation: 'timing', config: { duration: 0 } },
             close: TransitionSpecs.TransitionIOSSpec,
@@ -209,12 +221,14 @@ function RootLayoutInner(): React.ReactElement {
           options={{ animationEnabled: false, gestureEnabled: false }}
 />
       </NativeSwipeStack>
-      {/** BOOT / ONBOARDING OVERLAY — an OPAQUE layer over the live navigator,
+      {/**
+       * BOOT / ONBOARDING OVERLAY — an OPAQUE layer over the live navigator,
        *   not a replacement for it (the old code early-returned a different root
        *   element, which forced the navigator to mount only after the gates flip
        *   and made it vulnerable to teardown). Absolute-fills the screen so the
        *   tab root underneath is never visible until everything is ready: no Home
-       *   flash, and the @react-navigation card stack keeps its single mount. */}
+       *   flash, and the @react-navigation card stack keeps its single mount.
+       */}
       {!gatesOpen ? (
         <Col
           surface="surface" align="center" justify="center"

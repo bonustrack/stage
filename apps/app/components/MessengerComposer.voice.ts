@@ -1,6 +1,6 @@
-/** Voice-recording + slide-to-cancel gesture for the MessengerComposer,
- *  extracted for the lint line-budget. Behavior identical. Stages the recorded
- *  clip as a pending attachment via the passed `upload` callback. */
+/**
+ * @file useVoiceRecorder hook: microphone capture, level metering, and slide-to-cancel gesture that stages a recorded voice clip as a pending composer attachment.
+ */
 
 import { useMemo, useRef } from 'react';
 import { Alert, Animated, PanResponder } from 'react-native';
@@ -14,10 +14,10 @@ export interface VoiceArgs {
   setLevels: React.Dispatch<React.SetStateAction<number[]>>;
 }
 
-/** Slide-to-cancel threshold — distance the mic has to travel left before a
- *  release cancels the recording instead of stopping+staging it. */
+/** Slide-to-cancel threshold — distance the mic has to travel left before a release cancels the recording instead of stopping+staging it. */
 export const SLIDE_CANCEL_THRESHOLD_PX = 80;
 
+/** Hook that drives microphone capture, level metering, and staging for the composer's voice messages. */
 export function useVoiceRecorder(args: VoiceArgs) {
   const { upload, setErr, setRecording, setRecordSecs, setLevels } = args;
   const recRef = useRef<Audio.Recording | null>(null);
@@ -36,6 +36,7 @@ export function useVoiceRecorder(args: VoiceArgs) {
   /** If a stop/cancel arrives while startRec is still preparing, stash it. */
   const pendingStop = useRef<null | 'send' | 'cancel'>(null);
 
+  /** Start Rec. */
   const startRec = async (): Promise<void> => {
     if (recordingRef.current) return;
     setErr(null);
@@ -45,7 +46,9 @@ export function useVoiceRecorder(args: VoiceArgs) {
     if (!perm.granted) { recordingRef.current = false; Alert.alert('Mic permission denied'); return; }
     await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
     const rec = new Audio.Recording();
-    await rec.prepareToRecordAsync({ ...Audio.RecordingOptionsPresets.HIGH_QUALITY, isMeteringEnabled: true });
+    const preset = Audio.RecordingOptionsPresets.HIGH_QUALITY;
+    if (preset === undefined) { recordingRef.current = false; setErr('Recording unavailable'); return; }
+    await rec.prepareToRecordAsync({ ...preset, isMeteringEnabled: true });
     /** Feed mic metering (dBFS, ~-55 silent → 0 loud) into the waveform. */
     rec.setProgressUpdateInterval(80);
     rec.setOnRecordingStatusUpdate((s) => {

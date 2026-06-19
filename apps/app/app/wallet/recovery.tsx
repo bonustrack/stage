@@ -1,15 +1,4 @@
-/** Wallet -> Recovery (guardian social recovery, phase 2).
- *
- *  One focused page covering all four guardian surfaces (spec §(d)), driven by a
- *  `mode` param to stay low-LOC:
- *    - setup   (default): add/remove guardians + M-of-N threshold; Save runs
- *      installGuardians (first time) / updateGuardians (after) — one sponsored
- *      userOp. Also surfaces a live PendingRecoveryCard with native owner-Cancel.
- *    - approve: a guardian approves an inbound recovery request (offchain,
- *      gasless), posting the signature back into the recovery conversation.
- *
- *  Thin over lib/zerodev/recovery + lib/zerodev/recovery.comms; the timelock +
- *  cancel are NATIVE (validator `delay` / `veto`). Gated by zerodevConfigured(). */
+/** @file Wallet → Recovery screen for setting up or approving smart-account guardian social recovery. */
 
 import { useCallback, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
@@ -26,8 +15,9 @@ import {
   zerodevConfigured, installGuardians, updateGuardians, cancelRecovery,
   signRecoveryApproval, sendRecoveryApproval, smartOwnerSigner,
 } from '../../lib/zerodev';
-import type { Address, Hex } from 'viem';
+import type { Address } from 'viem';
 
+/** Screen for setting up or approving smart-account social recovery. */
 export default function WalletRecovery(): React.ReactElement {
   const router = useRouter();
   const params = useLocalSearchParams<{ mode?: string; line?: string; wallet?: string; newOwner?: string }>();
@@ -81,8 +71,7 @@ export default function WalletRecovery(): React.ReactElement {
     }
   }, [rec, guardians, threshold, delay, router]);
 
-  /** Owner cancel of a pending rotation (native veto). The pending newOwner comes
-   *  from the deep link (the recovery request) — we cancel that specific rotation. */
+  /** Owner cancel of a pending rotation (native veto). The pending newOwner comes from the deep link (the recovery request) — we cancel that specific rotation. */
   const onCancel = useCallback(async (): Promise<void> => {
     if (!rec || !params.newOwner) return;
     setBusy(true);
@@ -111,7 +100,7 @@ export default function WalletRecovery(): React.ReactElement {
       const signer = await smartOwnerSigner(active.hdIndex);
       const signature = await signRecoveryApproval(
         signer, params.wallet as Address, params.newOwner as Address, 0n,
-      ) as Hex;
+      );
       await sendRecoveryApproval(params.line, {
         wallet: params.wallet, newOwner: params.newOwner,
         guardian: signer.address.toLowerCase(), signature,
@@ -127,24 +116,24 @@ export default function WalletRecovery(): React.ReactElement {
 
   if (mode === 'approve') {
     return (
-      <ActionPage title="Approve recovery" head={head} bg={bg} border={border} onBack={() => router.back()}>
+      <ActionPage title="Approve recovery" head={head} bg={bg} border={border} onBack={() => { router.back(); }}>
         <ApprovalCard pal={pal} dark={dark}
           wallet={params.wallet ?? ''} newOwner={params.newOwner ?? ''}
-          onApprove={onApprove} approving={approving} approved={approved}/>
+          onApprove={() => { void onApprove(); }} approving={approving} approved={approved}/>
       </ActionPage>
     );
   }
 
   if (!zerodevConfigured()) {
     return (
-      <ActionPage title="Recovery" head={head} bg={bg} border={border} onBack={() => router.back()}>
+      <ActionPage title="Recovery" head={head} bg={bg} border={border} onBack={() => { router.back(); }}>
         <Text size="sm" color={pal.sub}>Smart wallet is not configured on this build.</Text>
       </ActionPage>
     );
   }
   if (!rec) {
     return (
-      <ActionPage title="Recovery" head={head} bg={bg} border={border} onBack={() => router.back()}>
+      <ActionPage title="Recovery" head={head} bg={bg} border={border} onBack={() => { router.back(); }}>
         <Text size="sm" color={pal.sub}>Create a smart wallet first to set up guardian recovery.</Text>
       </ActionPage>
     );
@@ -152,9 +141,9 @@ export default function WalletRecovery(): React.ReactElement {
 
   const pendingNewOwner = params.newOwner;
   return (
-    <ActionPage title="Recovery" head={head} bg={bg} border={border} onBack={() => router.back()}
+    <ActionPage title="Recovery" head={head} bg={bg} border={border} onBack={() => { router.back(); }}
       footer={(
-        <WalletFooter border={border} dark={dark} onCancel={() => router.back()}
+        <WalletFooter border={border} dark={dark} onCancel={() => { router.back(); }}
           submitLabel={(rec.guardians ?? []).length ? 'Update guardians' : 'Save guardians'}
           onSubmit={() => void onSave()}
           submitDisabled={guardians.length === 0 || busy} submitLoading={busy}/>

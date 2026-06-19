@@ -1,16 +1,12 @@
-/** Group LABELS — small free-form tags stored in the XMTP group's synced
- *  `appData` slot (a single string, MLS-encrypted E2E to all members). All
- *  members of an all-members group may edit. Labels are group metadata, kept
- *  separate from any per-token UI badges.
- *
- *  appData holds ONE JSON object. We own the `labels` key but MERGE on write so
- *  any other keys another feature may add are preserved. Versioned schema with
- *  tolerant parsing: empty / old / malformed appData → `{ labels: [] }`. */
+/**
+ * @file Group labels: read/write small free-form tags in the XMTP group's synced `appData` slot,
+ *  owning the `labels` key but merging on write so other features' keys survive (versioned schema
+ *  with tolerant parsing; all members may edit, E2E MLS-encrypted to the group).
+ */
 
 import { convOfLine } from './xmtp';
 
-/** Versioned shape we persist. Other keys may coexist in the same object.
- *  `github` is an optional linked GitHub issue/PR URL (Linear-style). */
+/** Versioned shape we persist. Other keys may coexist in the same object. `github` is an optional linked GitHub issue/PR URL (Linear-style). */
 interface LabelsBlob {
   v: 1;
   labels: string[];
@@ -18,12 +14,14 @@ interface LabelsBlob {
 }
 
 /** Caps — keep the blob tiny so it stays well inside MLS message limits. */
+/** Max number of labels allowed per group blob. */
 export const MAX_LABELS = 16;
+/** Max character length of a single label after cleaning. */
 export const MAX_LABEL_LEN = 24;
 
-/** Thrown when updateAppData is rejected by group permissions. The UI surfaces
- *  `.message` inline. Shouldn't happen for all-members groups. */
+/** Thrown when updateAppData is rejected by group permissions. The UI surfaces `.message` inline. Shouldn't happen for all-members groups. */
 export class LabelPermissionError extends Error {
+  /** Build the label-permission error with its fixed message and name. */
   constructor() {
     super("You don't have permission to edit labels in this group.");
     this.name = 'LabelPermissionError';
@@ -37,9 +35,18 @@ interface GroupLike {
   updateAppData?: (appData: string) => Promise<void>;
 }
 
-export function asGroup(conv: unknown): GroupLike | null {
+/** A GroupLike that has been verified to expose the appData read/write methods. */
+export interface Group extends GroupLike {
+  appData: () => Promise<string>;
+  updateAppData: (appData: string) => Promise<void>;
+}
+
+/** Narrow a conversation to a Group if it exposes the appData read/write methods, else null. */
+export function asGroup(conv: unknown): Group | null {
   const g = conv as GroupLike;
-  return g && typeof g.appData === 'function' && typeof g.updateAppData === 'function' ? g : null;
+  return g && typeof g.appData === 'function' && typeof g.updateAppData === 'function'
+    ? (g as Group)
+    : null;
 }
 
 /** Normalise one label: trim, collapse inner whitespace, cap length. */
@@ -49,7 +56,7 @@ function cleanLabel(raw: string): string {
 
 /** Parse appData into a record, tolerating empty / malformed input. */
 export function parseBlob(appData: string): Record<string, unknown> {
-  if (!appData || !appData.trim()) return {};
+  if (!appData?.trim()) return {};
   try {
     const parsed: unknown = JSON.parse(appData);
     return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
@@ -62,7 +69,7 @@ export function parseBlob(appData: string): Record<string, unknown> {
 
 /** Pull a clean, deduped, capped label array out of a parsed blob. */
 export function readLabels(blob: Record<string, unknown>): string[] {
-  const raw = blob['labels'];
+  const raw = blob.labels;
   if (!Array.isArray(raw)) return [];
   const out: string[] = [];
   const seen = new Set<string>();
@@ -78,50 +85,49 @@ export function readLabels(blob: Record<string, unknown>): string[] {
   return out;
 }
 
-/** Read the group's current labels. Syncs first for the latest committed state.
- *  Returns [] for DMs, missing groups, or any read error. */
+/** Read the group's current labels. Syncs first for the latest committed state. Returns [] for DMs, missing groups, or any read error. */
 export async function getGroupLabels(line: string): Promise<string[]> {
   const conv = await convOfLine(line);
   const group = asGroup(conv);
   if (!group) return [];
   try {
     await group.sync?.();
-    const appData = await group.appData!();
+    const appData = await group.appData();
     return readLabels(parseBlob(appData));
   } catch {
     return [];
   }
 }
 
-/** Read the labels off an ALREADY-LOADED group conversation WITHOUT forcing a
+/**
+ * Read the labels off an ALREADY-LOADED group conversation WITHOUT forcing a
  *  fresh `sync()`. The channels list calls `conv.sync()` once per row in
  *  `summarize()`; this piggybacks on that synced state to read `appData()` with
  *  no extra network round-trip — so rendering label chips on every card never
  *  triggers a per-row sync (which would jank/rate-limit the list). Returns []
- *  for DMs, non-groups, or any read error. */
+ *  for DMs, non-groups, or any read error.
+ */
 export async function labelsOfSyncedGroup(conv: unknown): Promise<string[]> {
   const group = asGroup(conv);
   if (!group) return [];
   try {
-    return readLabels(parseBlob(await group.appData!()));
+    return readLabels(parseBlob(await group.appData()));
   } catch {
     return [];
   }
 }
 
-/** Read → mutate → write, merging into the existing appData object so we never
- *  clobber other keys. Returns the resulting label list. Throws
- *  LabelPermissionError when the write is permission-denied. */
+/** Read → mutate → write, merging into the existing appData object so we never clobber other keys. Returns the resulting label list. Throws LabelPermissionError when the write is permission-denied. */
 async function mutate(line: string, fn: (labels: string[]) => string[]): Promise<string[]> {
   const conv = await convOfLine(line);
   const group = asGroup(conv);
   if (!group) throw new Error('Not a group conversation');
   await group.sync?.();
-  const existing = parseBlob(await group.appData!());
+  const existing = parseBlob(await group.appData());
   const next = readLabels({ ...existing, labels: fn(readLabels(existing)) });
   const blob: LabelsBlob & Record<string, unknown> = { ...existing, v: 1, labels: next };
   try {
-    await group.updateAppData!(JSON.stringify(blob));
+    await group.updateAppData(JSON.stringify(blob));
   } catch (e) {
     const msg = e instanceof Error ? e.message.toLowerCase() : '';
     if (msg.includes('permission') || msg.includes('not authorized') || msg.includes('unauthorized')) {
@@ -132,8 +138,7 @@ async function mutate(line: string, fn: (labels: string[]) => string[]): Promise
   return next;
 }
 
-/** Add a label (trimmed, deduped case-insensitively, capped). No-op when the
- *  cleaned label is empty, already present, or the cap is reached. */
+/** Add a label (trimmed, deduped case-insensitively, capped). No-op when the cleaned label is empty, already present, or the cap is reached. */
 export async function addGroupLabel(line: string, label: string): Promise<string[]> {
   const clean = cleanLabel(label);
   return mutate(line, (labels) => {

@@ -1,13 +1,6 @@
-/** Tokens + NFTs holdings for a profile, parameterized by the viewed `address`
- *  (NOT the connected wallet). Reuses the exact Wallet-tab presentational
- *  components — TokensList (public balances only; no Railgun/shielded rows on a
- *  peer profile) and NftsView — plus the same underline-tab styling, so a
- *  profile's holdings render identically to the owner's own Wallet tab.
- *
- *  Data is fetched directly for `address` via the same primitives the Wallet tab
- *  uses (fetchAssetRows / getNftsAcrossChains). NFTs are lazy-loaded on the
- *  first switch to the NFTs tab and cached. There is no pull-to-refresh and no
- *  private/Activity tab — a peer profile shows only public Tokens + NFTs. */
+/**
+ * @file ProfileHoldings: a profile's public Tokens + NFTs tabs for the viewed address, reusing the Wallet-tab presentational components.
+ */
 
 import { useEffect, useRef, useState } from 'react';
 
@@ -25,8 +18,7 @@ import { getNftsAcrossChains, type Nft } from '../lib/opensea';
 type HoldingsTab = 'tokens' | 'nfts';
 const TAB_LABEL: Record<HoldingsTab, string> = { tokens: 'Tokens', nfts: 'NFTs' };
 
-/** Tokens | NFTs underline tabs — mirrors WalletTabs styling (no Activity/
- *  Railgun on a peer profile). */
+/** Tokens | NFTs underline tabs — mirrors WalletTabs styling (no Activity/ Railgun on a peer profile). */
 function HoldingsTabs({ tab, setTab, head, sub, border }: {
   tab: HoldingsTab; setTab: (t: HoldingsTab) => void; head: string; sub: string; border: string;
 }): React.ReactElement {
@@ -38,7 +30,7 @@ function HoldingsTabs({ tab, setTab, head, sub, border }: {
         return (
           <Pressable
             key={t}
-            onPress={() => setTab(t)}
+            onPress={() => { setTab(t); }}
             style={{
               paddingVertical: 10,
               marginBottom: -1,
@@ -56,6 +48,7 @@ function HoldingsTabs({ tab, setTab, head, sub, border }: {
   );
 }
 
+/** Renders the holdings section of a profile with tabs for tokens and other assets. */
 export function ProfileHoldings({ address }: { address: string }): React.ReactElement {
   const { link: head, text: sub, bg, border } = usePalette();
 
@@ -67,8 +60,7 @@ export function ProfileHoldings({ address }: { address: string }): React.ReactEl
   const [nfts, setNfts] = useState<Nft[] | null>(null);
   const [nftStatus, setNftStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
 
-  /** Public token balances for the VIEWED address (no Railgun — shielded
-   *  balances are private to their owner and never visible on a peer profile). */
+  /** Public token balances for the VIEWED address (no Railgun — shielded balances are private to their owner and never visible on a peer profile). */
   useEffect(() => {
     if (!address) return;
     let cancelled = false;
@@ -85,8 +77,7 @@ export function ProfileHoldings({ address }: { address: string }): React.ReactEl
     return () => { cancelled = true; };
   }, [address]);
 
-  /** Lazy-load NFTs on the first switch to the NFTs tab, cached per address.
-   *  Guard re-fetch by the loaded address (not by status) — see WalletScreen. */
+  /** Lazy-load NFTs on the first switch to the NFTs tab, cached per address. Guard re-fetch by the loaded address (not by status) — see WalletScreen. */
   const loadedAddrRef = useRef<string | null>(null);
   useEffect(() => {
     if (tab !== 'nfts' || !address || loadedAddrRef.current === address) return;

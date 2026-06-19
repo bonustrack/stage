@@ -21,6 +21,15 @@ jobs:
         run: bun run lint
       - name: Typecheck
         run: bun run typecheck
+      # Dead-code / dependency gate. `knip` exits non-zero on any finding
+      # (unused files/deps/exports, unlisted deps, unresolved imports) and
+      # `madge` (scripts/madge.mjs) exits non-zero on any circular dependency,
+      # so both fail the job and block the PR. These are blocking, not advisory:
+      # the non-fatal `report:deps` script is for local pre-flight only.
+      - name: Knip (unused files/deps/exports)
+        run: bun run knip
+      - name: Madge (circular dependencies)
+        run: bun run madge
       - name: Build
         run: bun run build
       - name: Test

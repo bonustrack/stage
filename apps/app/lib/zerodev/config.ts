@@ -1,11 +1,8 @@
-/** Host-side ZeroDev config: the BRANDED protocol constants the @zerodev/sdk
- *  typed APIs require, built from the framework-agnostic string choices in
- *  @stage-labs/client/zerodev/config (the single source of truth for the
- *  protocol VERSIONS — EntryPoint v0.7, Kernel v3.1, Base 8453).
- *
- *  The SDK dependency lives here (apps/app) and not in the pure client package,
- *  so the client package has no @zerodev/sdk in its dependency closure. Every
- *  host module imports the branded ENTRY_POINT / KERNEL_VERSION from here. */
+/**
+ * @file Host-side ZeroDev config exposing the branded @zerodev/sdk protocol constants
+ *  (ENTRY_POINT v0.7, Kernel v3.1, Base 8453), built from the framework-agnostic string choices in
+ *  @stage-labs/client/zerodev/config so the pure client package keeps no @zerodev/sdk dependency.
+ */
 
 import { getEntryPoint, KERNEL_V3_1 } from '@zerodev/sdk/constants';
 import { ENTRY_POINT_VERSION } from '@stage-labs/client/zerodev/config';

@@ -1,14 +1,7 @@
-/** Create-group screen — a pushed (non-tab) route reached from the "+" button
- *  in the Channels topnav. Lets the user name the group (optional) and add
- *  members by Ethereum address or .eth name, then creates the XMTP group and
- *  opens it.
- *
- *  - Members are entered one at a time via the shared MemberPicker; .eth names
- *    are resolved via the same resolveEnsName path the Search screen uses.
- *    Resolved members render as removable chips.
- *  - Create is disabled until at least one valid member is staged. It calls
- *    createGroup(members, name) → router.replace into the new conversation.
- *  - Errors (invalid entry, address not on XMTP, create failure) flash a toast.
+/**
+ * @file Create-group screen letting the user name a group and stage members by
+ * address/.eth via the shared MemberPicker, then calling createGroup and
+ * opening the new XMTP conversation.
  */
 
 import { useCallback, useState } from 'react';
@@ -32,11 +25,10 @@ import { Box, Col, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 import { MemberPicker, useMemberPicker } from './MemberPicker';
 
-/** Locally-picked group image, held until create-time. We upload on submit
- *  (not on pick) so a cancelled create costs no blob; `uri` is the on-device
- *  asset uri used only for the preview. */
+/** Locally-picked group image, held until create-time. We upload on submit (not on pick) so a cancelled create costs no blob; `uri` is the on-device asset uri used only for the preview. */
 interface PickedImage { uri: string; mime: string; name: string }
 
+/** Screen for creating a new XMTP group with name, image and members. */
 export default function NewGroup(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -51,24 +43,22 @@ export default function NewGroup(): React.ReactElement {
   const [creating, setCreating] = useState(false);
   const [image, setImage] = useState<PickedImage | null>(null);
 
-  /** Same square-crop image-pick flow the group-detail editor uses; we only
-   *  stage the asset here and upload it on create. */
+  /** Same square-crop image-pick flow the group-detail editor uses; we only stage the asset here and upload it on create. */
   const pickImage = useCallback(async (): Promise<void> => {
     if (creating) return;
     const r = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: 'images', quality: 0.85, allowsMultipleSelection: false,
       allowsEditing: true, aspect: [1, 1],
     });
-    if (r.canceled || !r.assets?.length) return;
-    const a = r.assets[0]!;
+    const a = r.canceled ? undefined : r.assets[0];
+    if (a === undefined) return;
     setImage({ uri: a.uri, mime: a.mimeType ?? 'image/jpeg', name: a.fileName ?? 'group-avatar' });
   }, [creating]);
 
   const onCreate = useCallback(async (): Promise<void> => {
     if (members.length === 0 || creating) return;
     setCreating(true);
-    /** Upload first (so the url can be set in CreateGroupOptions). A failed
-     *  upload doesn't block creation — we create imageless + warn. */
+    /** Upload first (so the url can be set in CreateGroupOptions). A failed upload doesn't block creation — we create imageless + warn. */
     let imageUrl: string | undefined;
     if (image) {
       try {
@@ -90,7 +80,7 @@ export default function NewGroup(): React.ReactElement {
     <Col surface="surface" flex={1}>
       {/* Header — back button + title, consistent with other pushed screens. */}
       <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
+        <Pressable onPress={() => { router.back(); }} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
         <Title size="sm" color={head}>

@@ -1,7 +1,4 @@
-/** Bottom tab bar — Messenger (channel list) + Settings.
- *  Mirrors the minimal icon-only layout from acdee49^ — solid bg matching the
- *  active theme, no labels, status-bar inset baked into `sceneStyle.paddingTop`
- *  so individual screens don't have to reach for `useSafeAreaInsets` themselves. */
+/** @file Bottom tab navigator hosting the Messenger, Contacts and Wallet swipe-pager scenes plus a hidden Settings route. */
 
 import { Box, Col } from '../../components/layout';
 import { fontSize } from '@metro-labs/kit/tokens';
@@ -13,15 +10,13 @@ import { TabsPager } from '../../components/SwipeTabs';
 import { HoistedTopnav } from '../../components/tabs/HoistedTopnav';
 import { useTotalUnread } from '../../lib/useTotalUnread';
 
+/** Bottom tab navigator hosting the Messenger, Contacts and Wallet pager scenes. */
 export default function TabsLayout(): React.ReactElement {
   const pathname = usePathname();
-  /** Total unread across all non-archived convs - drives the badge on the
-   *  Messenger (index) tab. Live: updates as messages arrive / are read. */
+  /** Total unread across all non-archived convs - drives the badge on the Messenger (index) tab. Live: updates as messages arrive / are read. */
   const unread = useTotalUnread();
   const unreadBadge = unread > 0 ? (unread > 99 ? '99+' : String(unread)) : undefined;
-  /** The pager mounts the three swipe-tab bodies (Channels/Contacts/Wallet).
-   *  Settings is the only non-pager tab route → hide the pager overlay there so
-   *  the real SettingsScreen rendered by the route shows through. */
+  /** The pager mounts the three swipe-tab bodies (Channels/Contacts/Wallet). Settings is the only non-pager tab route → hide the pager overlay there so the real SettingsScreen rendered by the route shows through. */
   const pagerVisible = !pathname.startsWith('/settings');
   const insets = useSafeAreaInsets();
   const pal = usePalette();
@@ -31,8 +26,7 @@ export default function TabsLayout(): React.ReactElement {
 
   const tabBarStyle = {
     backgroundColor: pal.toolbarBg,
-    /** Hairline top border on the footer nav (palette border token). Kill
-     *  Android's default elevation shadow so only the border line shows. */
+    /** Hairline top border on the footer nav (palette border token). Kill Android's default elevation shadow so only the border line shows. */
     borderTopWidth: 1,
     borderTopColor: pal.border,
     elevation: 0,
@@ -42,8 +36,7 @@ export default function TabsLayout(): React.ReactElement {
     paddingBottom: insets.bottom,
   };
 
-  /** The bottom tab bar's full height (content + safe-area inset) — used to
-   *  inset the pager overlay so its content stops exactly above the bar. */
+  /** The bottom tab bar's full height (content + safe-area inset) — used to inset the pager overlay so its content stops exactly above the bar. */
   const tabBarHeight = 60 + insets.bottom;
 
   return (
@@ -77,7 +70,7 @@ export default function TabsLayout(): React.ReactElement {
             ['index', 'chatBubble'],
             ['contacts', 'users'],
             ['wallet', 'wallet'],
-          ] as const satisfies ReadonlyArray<readonly [string, HeroIconName]>
+          ] as const satisfies readonly (readonly [string, HeroIconName])[]
         ).map(([name, icon]) => (
           <Tabs.Screen
             key={name}

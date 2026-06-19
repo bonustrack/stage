@@ -1,4 +1,8 @@
-/** OpenSea v2 NFT helper. Mirrors Snapshot UI's `getNfts`
+/**
+ * @file OpenSea v2 helper listing the NFTs an account holds on a given chain (pure fetch).
+ */
+/**
+ * OpenSea v2 NFT helper. Mirrors Snapshot UI's `getNfts`
  *  (~/work/sx-monorepo/apps/ui/src/helpers/opensea.ts).
  *
  *  Lists the NFTs an account holds on a given chain. The API key is a public
@@ -6,9 +10,11 @@
  *  not a git secret, so it lives as a plain constant here. Overridable via
  *  EXPO_PUBLIC_OPENSEA_API_KEY, or the `apiKey` arg the Stage client threads
  *  through. Pure `fetch` (uses AbortController, available in RN + browser +
- *  Node 18+). */
+ *  Node 18+).
+ */
 
 import { parseOpenseaResponse } from './opensea.schema';
+export type { ApiNft } from './opensea.types';
 
 const DEFAULT_KEY =
   process.env.EXPO_PUBLIC_OPENSEA_API_KEY ?? '51754bb53b324552ba4741c5b7298096';
@@ -18,8 +24,7 @@ interface ChainItem {
   isTestnet: boolean;
 }
 
-/** chainId -> OpenSea network slug. Subset of Snapshot's SUPPORTED_CHAIN_IDS
- *  covering the main EVM L1/L2s plus Sepolia for testing. */
+/** chainId -> OpenSea network slug. Subset of Snapshot's SUPPORTED_CHAIN_IDS covering the main EVM L1/L2s plus Sepolia for testing. */
 const NETWORKS: Record<string, ChainItem> = {
   '1': { name: 'ethereum', isTestnet: false },
   '10': { name: 'optimism', isTestnet: false },
@@ -31,16 +36,6 @@ const NETWORKS: Record<string, ChainItem> = {
 };
 
 const SUPPORTED_ABIS = ['erc721', 'erc1155'];
-
-export interface ApiNft {
-  identifier: string;
-  collection: string;
-  contract: string;
-  token_standard: string;
-  name: string;
-  image_url: string;
-  opensea_url: string;
-}
 
 export interface Nft {
   /** `<contract>:<identifier>` - stable key for lists. */
@@ -54,9 +49,7 @@ export interface Nft {
   openseaUrl: string;
 }
 
-/** Fetch the NFTs `address` holds on `chainId` from OpenSea v2. Returns []
- *  for unsupported chains or non-200 responses (caller merges across chains;
- *  one chain failing shouldn't blank the whole grid). */
+/** Fetch the NFTs `address` holds on `chainId` from OpenSea v2. Returns [] for unsupported chains or non-200 responses (caller merges across chains; one chain failing shouldn't blank the whole grid). */
 export async function getNfts(
   address: string,
   chainId: string,
@@ -73,7 +66,7 @@ export async function getNfts(
   // Promise.all (in getNftsAcrossChains) pending forever -> the NFT grid spinner
   // spins indefinitely. Abort after 10s and degrade to [] like a non-200.
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 10000);
+  const timer = setTimeout(() => { ctrl.abort(); }, 10000);
   let res: Response;
   try {
     res = await fetch(url, {
@@ -118,8 +111,7 @@ export async function getNfts(
 /** Chains we fan out across when loading the wallet's NFT grid. */
 export const NFT_CHAIN_IDS = ['1', '8453', '42161', '10', '137'];
 
-/** Fetch + merge NFTs across `chainIds` in parallel. Per-chain failures are
- *  swallowed (getNfts returns []). */
+/** Fetch + merge NFTs across `chainIds` in parallel. Per-chain failures are swallowed (getNfts returns []). */
 export async function getNftsAcrossChains(
   address: string,
   chainIds: string[] = NFT_CHAIN_IDS,

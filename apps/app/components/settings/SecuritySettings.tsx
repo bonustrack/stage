@@ -1,7 +1,8 @@
-/** Settings → Security — "Export private key" + "Remove account" for the active
- *  account. Pure wrapper around the existing AccountSecuritySection: export
- *  reuses getPrivateKey behind a warning Alert (key never logged), remove reuses
- *  deleteAccount. No new key handling. */
+/**
+ * @file Settings -> Security screen: Export private key and Remove account for
+ *  the active account, wrapping the existing AccountSecuritySection plus the
+ *  wallet-backup nudge.
+ */
 
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,6 +12,7 @@ import { AccountSecuritySection } from '../tabs/SettingsScreen.account';
 import { SystemHeader } from '../system/SystemHeader';
 import { SecureWalletNudge } from '../onboarding/SecureWalletNudge';
 
+/** Renders the security settings screen including the wallet backup nudge. */
 export function SecuritySettings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head, border } = usePalette();

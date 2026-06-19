@@ -1,4 +1,6 @@
-/** Railgun native-availability guard.
+/** @file Railgun native-availability guard that lazily requires the nodejs-mobile Groth16 prover behind a try/catch, returning null (graceful degrade) on Hermes/Expo builds lacking it. */
+/**
+ * Railgun native-availability guard.
  *
  *  The Railgun engine (@railgun-community/wallet) is JS, but PROVING needs a
  *  Groth16 implementation that on mobile is the C++ `@railgun-privacy/native-prover`
@@ -16,11 +18,11 @@
  *  bundler never has to resolve a missing native module. The native prover
  *  exposes the engine's `setNativeProverGroth16(nativeProveRailgun,
  *  nativeProvePOI, CIRCUITS)` triple; the older snarkjs-style accessor is kept
- *  as a structural fallback for any prover that exposes a `groth16` object. */
+ *  as a structural fallback for any prover that exposes a `groth16` object.
+ */
 import { Platform } from 'react-native';
 
-/** Minimal structural type for the snarkjs `groth16` object the engine expects
- *  (typed loosely-but-without-`any`; we only hand it to the engine). */
+/** Minimal structural type for the snarkjs `groth16` object the engine expects (typed loosely-but-without-`any`; we only hand it to the engine). */
 export interface SnarkJSGroth16Like {
   fullProve: (
     input: Record<string, unknown>,
@@ -30,9 +32,8 @@ export interface SnarkJSGroth16Like {
   verify: (vkey: Record<string, unknown>, publicSignals: unknown, proof: unknown) => Promise<boolean>;
 }
 
-/** The native prover's per-circuit synchronous prove fn (returns a Groth16
- *  Proof). Typed loosely — we only forward it into the engine's setter. */
-export type NativeProveFn = (
+/** The native prover's per-circuit synchronous prove fn (returns a Groth16 Proof). Typed loosely — we only forward it into the engine's setter. */
+type NativeProveFn = (
   circuitId: number,
   datBuffer: Uint8Array,
   zkeyBuffer: Uint8Array,
@@ -40,8 +41,7 @@ export type NativeProveFn = (
   progressCallback: (progress: number) => void,
 ) => unknown;
 
-/** The exact triple `getEngine().prover.setNativeProverGroth16(...)` consumes,
- *  exported by `@railgun-privacy/native-prover`. */
+/** The exact triple `getEngine().prover.setNativeProverGroth16(...)` consumes, exported by `@railgun-privacy/native-prover`. */
 export interface NativeProverTriple {
   nativeProveRailgun: NativeProveFn;
   nativeProvePOI: NativeProveFn;
@@ -59,9 +59,7 @@ interface NativeProverModule {
 let modResolved = false;
 let modCached: NativeProverModule | null = null;
 
-/** Lazily resolve the native prover module behind the guard. Returns null on a
- *  binary without the nodejs-mobile prover (plain Expo/Hermes). Memoized; never
- *  throws — and never statically referenced so Metro can't fail to resolve it. */
+/** Lazily resolve the native prover module behind the guard. Returns null on a binary without the nodejs-mobile prover (plain Expo/Hermes). Memoized; never throws — and never statically referenced so Metro can't fail to resolve it. */
 function loadNativeProverModule(): NativeProverModule | null {
   if (modResolved) return modCached;
   modResolved = true;
@@ -74,8 +72,7 @@ function loadNativeProverModule(): NativeProverModule | null {
   return modCached;
 }
 
-/** Resolve the engine's native Groth16 prover triple, or null when the native
- *  module isn't in the running binary. Memoized; never throws. */
+/** Resolve the engine's native Groth16 prover triple, or null when the native module isn't in the running binary. Memoized; never throws. */
 export function getNativeProverTriple(): NativeProverTriple | null {
   const mod = loadNativeProverModule();
   if (!mod?.nativeProveRailgun || !mod.nativeProvePOI || !mod.CIRCUITS) return null;
@@ -86,8 +83,7 @@ export function getNativeProverTriple(): NativeProverTriple | null {
   };
 }
 
-/** Structural snarkjs-style fallback accessor (some prover builds expose a
- *  `groth16` object instead of the native triple). Memoized; never throws. */
+/** Structural snarkjs-style fallback accessor (some prover builds expose a `groth16` object instead of the native triple). Memoized; never throws. */
 export function getNativeGroth16(): SnarkJSGroth16Like | null {
   const mod = loadNativeProverModule();
   return mod?.groth16 ?? mod?.default ?? null;
@@ -95,23 +91,9 @@ export function getNativeGroth16(): SnarkJSGroth16Like | null {
 
 let cached: boolean | null = null;
 
-/** True when the Railgun feature can actually prove on THIS binary (native
- *  prover present, either as the triple or a snarkjs-style object). iOS/Android
- *  only; never true on web. Memoized. */
+/** True when the Railgun feature can actually prove on THIS binary (native prover present, either as the triple or a snarkjs-style object). iOS/Android only; never true on web. Memoized. */
 export function isRailgunAvailable(): boolean {
   if (cached !== null) return cached;
   cached = getNativeProverTriple() != null || getNativeGroth16() != null;
   return cached;
-}
-
-/** Resolve the engine JS module behind the guard, or null when unavailable.
- *  Typed loosely (`unknown`) because the heavy surface is only relevant on a
- *  native build; callers narrow what they touch. */
-export function loadRailgunEngine(): unknown | null {
-  if (!isRailgunAvailable()) return null;
-  try {
-    return require('@railgun-community/wallet');
-  } catch {
-    return null;
-  }
 }

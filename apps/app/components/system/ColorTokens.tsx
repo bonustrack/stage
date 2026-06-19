@@ -1,13 +1,8 @@
-/** ChatKit SEED theme editor for the Display settings page. Instead of editing 9
- *  flat hex tokens, the user sets a few SEEDS and the whole palette is DERIVED
- *  (lib/colorOverrides -> @metro-labs/kit derivePalette):
- *    - grayscale base  (neutral ramp -> border/inputBg/sub)
- *    - accent          (interactive emphasis -> link/primary)
- *    - surface bg      (main fill -> bg/toolbar)
- *    - surface fg      (default body text -> text)
- *  Plus the ChatKit non-color knobs: density, radius (name), typography base
- *  size. Edits write the seed so the whole app re-themes live. Reset restores
- *  the default seed (today's exact look). Fonts: Calibre-Medium/Semibold only. */
+/**
+ * @file ChatKit SEED theme editor for the Display settings page: the user sets a
+ *  few color seeds plus density/radius/typography knobs and the whole palette is
+ *  derived, written back to the seed so the app re-themes live.
+ */
 
 import { useState } from 'react';
 import { Pressable } from '@metro-labs/kit/pressable';
@@ -29,7 +24,7 @@ import {
 } from '@metro-labs/kit/tokens';
 
 /** The 4 editable seed colors in display order. `key` is the SeedColorKey. */
-const SEED_ROWS: ReadonlyArray<readonly [label: string, key: SeedColorKey]> = [
+const SEED_ROWS: readonly (readonly [label: string, key: SeedColorKey])[] = [
   ['surface-background', 'background'],
   ['surface-foreground', 'foreground'],
   ['accent', 'accent'],
@@ -40,6 +35,7 @@ const DENSITY_OPTS: readonly Density[] = ['compact', 'normal', 'spacious'];
 const RADIUS_OPTS: readonly RadiusName[] = ['pill', 'round', 'soft', 'sharp'];
 const BASE_SIZE_OPTS: readonly BaseSize[] = [14, 15, 16, 17, 18];
 
+/** The Seed Swatch component. */
 function SeedSwatch({ name, seedKey, value, scheme, p }: {
   name: string; seedKey: SeedColorKey; value: string;
   scheme: 'light' | 'dark'; p: GalleryPalette;
@@ -49,6 +45,7 @@ function SeedSwatch({ name, seedKey, value, scheme, p }: {
   const [pending, setPending] = useState<string | null>(null);
   const shown = draft ?? value;
   const invalid = draft != null && !isHex(draft);
+  /** Close Picker. */
   const closePicker = (): void => { setPicking(false); setPending(null); };
   return (
     <Row margin={{ top: 12 }} gap={14} align="center">
@@ -66,7 +63,7 @@ function SeedSwatch({ name, seedKey, value, scheme, p }: {
           value={shown}
           onChangeText={(t) => { setDraft(t); if (isHex(t)) setSeedColor(scheme, seedKey, t); }}
           dark={p.dark}
-          inputProps={{ onBlur: () => setDraft(null), autoCapitalize: 'none', autoCorrect: false }}
+          inputProps={{ onBlur: () => { setDraft(null); }, autoCapitalize: 'none', autoCorrect: false }}
           placeholder="#rrggbb" placeholderTextColor={p.sub}
           style={{
             marginTop: 2, paddingVertical: 2, paddingHorizontal: 0, minHeight: 0,
@@ -93,8 +90,7 @@ function SeedSwatch({ name, seedKey, value, scheme, p }: {
   );
 }
 
-/** A labelled segmented selector for one ChatKit non-color seed (density/radius/
- *  typography). Generic over the option value so each knob reuses it. */
+/** A labelled segmented selector for one ChatKit non-color seed (density/radius/ typography). Generic over the option value so each knob reuses it. */
 function SeedChoice<T extends string | number>({ name, options, value, onSelect, p }: {
   name: string; options: readonly T[]; value: T; onSelect: (v: T) => void; p: GalleryPalette;
 }): React.ReactElement {
@@ -107,7 +103,7 @@ function SeedChoice<T extends string | number>({ name, options, value, onSelect,
             key={String(opt)}
             variant={opt === value ? 'primary' : 'secondary'}
             size="sm" dark={p.dark}
-            onPress={() => onSelect(opt)}
+            onPress={() => { onSelect(opt); }}
             label={String(opt)}
             accessibilityLabel={`Set ${name} to ${String(opt)}`}
 />
@@ -117,11 +113,13 @@ function SeedChoice<T extends string | number>({ name, options, value, onSelect,
   );
 }
 
+/** Renders the palette color tokens for the current theme. */
 export function ColorTokens({ p }: { p: GalleryPalette }): React.ReactElement {
   const palette = usePalette();
   const scheme = useEffectiveColorScheme();
   const seeds = useThemeSeeds();
   const seed = seeds[scheme];
+  /** Seed Value. */
   const seedValue = (key: SeedColorKey): string =>
     key === 'background' ? seed.surface.background
       : key === 'foreground' ? seed.surface.foreground
@@ -134,7 +132,7 @@ export function ColorTokens({ p }: { p: GalleryPalette }): React.ReactElement {
         </Text>
         <Button
           variant="secondary" size="sm" dark={p.dark}
-          onPress={() => resetOverrides()}
+          onPress={() => { resetOverrides(); }}
           label="Reset" accessibilityLabel="Reset theme seed to defaults"
 />
       </Row>
@@ -151,7 +149,7 @@ export function ColorTokens({ p }: { p: GalleryPalette }): React.ReactElement {
           {([
             ['bg', palette.bg], ['border', palette.border], ['text', palette.text],
             ['sub', palette.sub], ['link', palette.link], ['inputBg', palette.inputBg],
-          ] as ReadonlyArray<readonly [string, string]>).map(([k, c]) => (
+          ] as readonly (readonly [string, string])[]).map(([k, c]) => (
             <Col key={k} align="center" gap={2}>
               <Box width={32} height={32} background={c} style={{ borderRadius: 8, borderWidth: 1, borderColor: p.border }}/>
               <Text size="3xs" color={p.sub}>{k}</Text>

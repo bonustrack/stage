@@ -1,11 +1,8 @@
-/** Message requests — pending XMTP conversations whose consent is 'unknown'
- *  (someone we never accepted started a DM / added us to a group). Each row
- *  shows the peer/group identity, a one-line preview, and Accept / Block.
- *
- *  - Accept → acceptRequestConv (updateConsent 'allowed') → moves to the inbox.
- *  - Block  → blockRequestConv  (updateConsent 'denied')  → drops everywhere.
- *  Both are cross-device via XMTP synced consent. The Channels list reconciles
- *  live (streamConvConsent) so accepted requests appear there without a reload. */
+/**
+ * @file Message-requests screen listing pending XMTP conversations with
+ * 'unknown' consent, each row offering Accept (updateConsent allowed) or Block
+ * (updateConsent denied), synced cross-device via XMTP consent.
+ */
 
 import { useCallback, useEffect, useState } from 'react';
 
@@ -28,11 +25,10 @@ import { ChannelRow } from '../../components/ChannelRow';
 import { Col, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 
-/** Message-request row view-model. The shape lives on the facade's
- *  `ConversationRequestView` domain type (built by `summarizeConversationRequest`,
- *  which owns the SDK access + summarise logic, unchanged). */
+/** Message-request row view-model. The shape lives on the facade's `ConversationRequestView` domain type (built by `summarizeConversationRequest`, which owns the SDK access + summarise logic, unchanged). */
 type ReqRow = ConversationRequestView;
 
+/** Screen listing pending conversation requests awaiting accept or decline. */
 export default function Requests(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -51,8 +47,7 @@ export default function Requests(): React.ReactElement {
   usePeerProfiles((rows ?? []).map(r => r.peerAddress));
 
   const act = useCallback((convId: string, accept: boolean): void => {
-    /** Optimistic: drop the row immediately; the consent write + the channels
-     *  list's streamConvConsent reconcile the rest. */
+    /** Optimistic: drop the row immediately; the consent write + the channels list's streamConvConsent reconcile the rest. */
     setRows(prev => (prev ?? []).filter(r => r.convId !== convId));
     void (accept ? acceptRequestConv(convId) : blockRequestConv(convId))
       .then(() => {
@@ -77,22 +72,21 @@ export default function Requests(): React.ReactElement {
             avatarUri={item.avatarUri}
             square={item.isGroup}
             lastPreview={item.preview || '(no messages yet)'}
-            /** Warm the feed cache on touch-down so the request conversation
-             *  opens from cache instead of waiting on the inbox-wide sync. */
-            onPressIn={() => prefetchFeed(lineOfConv(item.convId))}
-            onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } })}
+            /** Warm the feed cache on touch-down so the request conversation opens from cache instead of waiting on the inbox-wide sync. */
+            onPressIn={() => { prefetchFeed(lineOfConv(item.convId)); }}
+            onPress={() => { router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } }); }}
 />
         </Col>
         <Row gap={8} style={{ flexShrink: 0 }}>
           <Pressable
-            onPress={() => act(item.convId, false)}
+            onPress={() => { act(item.convId, false); }}
             hitSlop={6}
             style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: border }}
 >
             <Icon name="x" size={18} color={danger}/>
           </Pressable>
           <Pressable
-            onPress={() => act(item.convId, true)}
+            onPress={() => { act(item.convId, true); }}
             hitSlop={6}
             style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: dark ? '#15321f' : '#dcf5e6' }}
 >
@@ -106,7 +100,7 @@ export default function Requests(): React.ReactElement {
   return (
     <Col surface="surface" flex={1}>
       <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
+        <Pressable onPress={() => { router.back(); }} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
         <Title size="sm" color={head}>

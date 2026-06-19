@@ -1,13 +1,8 @@
-/** Data layer for Settings -> Wallet. Pure read-only assembly of a display model
- *  for the ACTIVE account: account metadata (label / HD index / addresses),
- *  active signer (passkey vs recovery key), the Kernel modules / validators, the
- *  on-chain deploy status, and the XMTP identity address. NO private key or
- *  mnemonic is ever read or returned here - addresses + module metadata only, so
- *  the keyring chokepoint stays intact.
- *
- *  Deploy status is detected by reading the contract code at the smart-account
- *  address on Base via the public client (publicClient.getCode): empty / 0x ->
- *  counterfactual (not yet deployed), any bytecode -> deployed on-chain. */
+/**
+ * @file Read-only data layer for Settings -> Wallet: assembles the active
+ *  account's display model (metadata, signer, Kernel modules, XMTP address) and
+ *  detects on-chain deploy status via getCode, never touching private keys.
+ */
 
 import { useEffect, useState } from 'react';
 import { KERNEL_VERSION_STRING, ENTRY_POINT_VERSION, SCW_CHAIN_ID } from '@stage-labs/client/zerodev/config';
@@ -15,7 +10,7 @@ import { getActiveAccount, type AccountRecord } from '../../lib/accounts';
 import { makePublicClient } from '../../lib/zerodev/client';
 
 export type ModuleRole = 'sudo' | 'backup' | 'recovery' | 'session';
-export interface WalletModule {
+interface WalletModule {
   /** Human name of the validator / module. */
   name: string;
   /** Its role on the Kernel. */
@@ -55,9 +50,7 @@ function formatDelay(seconds?: number): string | null {
   return `${seconds}s`;
 }
 
-/** Build the ordered module / validator list from a smart-account record. The
- *  on-chain source of truth lives in the Kernel; this mirrors what the app
- *  configured (passkey validator + ECDSA owner + optional guardian validator). */
+/** Build the ordered module / validator list from a smart-account record. The on-chain source of truth lives in the Kernel; this mirrors what the app configured (passkey validator + ECDSA owner + optional guardian validator). */
 function buildModules(rec: AccountRecord): WalletModule[] {
   const mods: WalletModule[] = [];
   const hasPasskey = !!rec.passkey;
@@ -83,8 +76,7 @@ function buildModules(rec: AccountRecord): WalletModule[] {
 /** Assemble the synchronous part of the wallet model from a record. */
 function modelFromRecord(rec: AccountRecord): WalletModel {
   const isSmart = rec.type === 'smart';
-  /** XMTP identity is the SCW (Kernel) address unless the legacy escape hatch
-   *  (scwXmtp === false) is set explicitly - mirrors lib/xmtp.codecs. */
+  /** XMTP identity is the SCW (Kernel) address unless the legacy escape hatch (scwXmtp === false) is set explicitly - mirrors lib/xmtp.codecs. */
   const xmtpAddress = rec.scwXmtp === false ? (rec.ownerAddress ?? rec.address) : rec.address;
   return {
     rec,
@@ -103,9 +95,7 @@ function modelFromRecord(rec: AccountRecord): WalletModel {
   };
 }
 
-/** Read-only hook: the active account's wallet model + live deploy status.
- *  `epoch` re-fetches when the active account changes. Deploy status starts as
- *  'loading' and resolves to 'deployed' / 'counterfactual' / 'unknown'. */
+/** Read-only hook: the active account's wallet model + live deploy status. `epoch` re-fetches when the active account changes. Deploy status starts as 'loading' and resolves to 'deployed' / 'counterfactual' / 'unknown'. */
 export function useWalletModel(epoch: number): { model: WalletModel | null; deploy: DeployState } {
   const [model, setModel] = useState<WalletModel | null>(null);
   const [deploy, setDeploy] = useState<DeployState>('loading');

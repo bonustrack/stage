@@ -1,15 +1,8 @@
-/** Archived conversations - convs the user hid from the main inbox via the
- *  channel menu's Archive action. Archive state is DEVICE-LOCAL (lib/archived.ts):
- *  XMTP consent only has allowed/denied/unknown, and `denied` already means
- *  "blocked" - reusing it for archive would conflate archive with block, so we
- *  keep a separate reversible local set. (Cross-device sync would need a
- *  dedicated archive flag later.)
- *
- *  Rows reuse the channels-list cache (channelsCache) filtered to the archived
- *  set, so titles/avatars/previews are already resolved. Each row is the shared
- *  ChannelRow (identical to the inbox); tapping it opens the conversation, where
- *  the overflow menu offers Unarchive. The list + the channels tab reconcile
- *  live via subscribeArchived. */
+/**
+ * @file Archived-conversations screen listing convs the user hid from the inbox
+ * via the channel menu, using the device-local archive set (lib/archived.ts)
+ * and reusing the channels-list cache and shared ChannelRow.
+ */
 
 import { useCallback, useEffect, useState } from 'react';
 
@@ -31,6 +24,7 @@ import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { ChannelRow } from '../../components/ChannelRow';
 import { Col, Row } from '../../components/layout';
 
+/** Screen listing the user's archived conversations. */
 export default function Archived(): React.ReactElement {
   const router = useRouter();
   const { text: fg, link: head, border } = usePalette();
@@ -41,9 +35,9 @@ export default function Archived(): React.ReactElement {
 
   useEffect(() => {
     void loadArchivedIds().then(setArchived);
-    return subscribeArchived(() => { void loadArchivedIds().then(s => setArchived(new Set(s))); });
+    return subscribeArchived(() => { void loadArchivedIds().then(s => { setArchived(new Set(s)); }); });
   }, []);
-  useEffect(() => subscribeCachedRows(r => setRows((r as RowT[] | null) ?? [])), []);
+  useEffect(() => subscribeCachedRows(r => { setRows((r as RowT[] | null) ?? []); }), []);
 
   const data = rows.filter(r => archived.has(r.convId));
   usePeerProfiles(data.map(r => r.peerAddress));
@@ -62,7 +56,7 @@ export default function Archived(): React.ReactElement {
         avatarUri={item.avatarUri}
         square={!item.peerAddress}
         lastPreview={item.lastPreview || preview || '(no messages yet)'}
-        onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } })}
+        onPress={() => { router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } }); }}
 />
     );
   }, [router]);
@@ -70,7 +64,7 @@ export default function Archived(): React.ReactElement {
   return (
     <Col surface="surface" flex={1}>
       <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
+        <Pressable onPress={() => { router.back(); }} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
         <Title size="sm" color={head}>Archived</Title>

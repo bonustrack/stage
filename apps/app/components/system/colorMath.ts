@@ -1,8 +1,12 @@
-/** Pure-JS HSV <-> hex conversions for the color picker. No dependencies.
- *  h in [0,360], s/v in [0,1]. hex is `#rrggbb`. */
+/**
+ * @file Pure-JS, dependency-free HSV <-> hex color conversions for the color
+ *  picker (h in [0,360], s/v in [0,1], hex as `#rrggbb`).
+ */
 
+/** Clamp01 helper. */
 function clamp01(n: number): number { return Math.max(0, Math.min(1, n)); }
 
+/** To Byte. */
 function toByte(n: number): string {
   return Math.round(clamp01(n) * 255).toString(16).padStart(2, '0');
 }
@@ -30,7 +34,7 @@ export function hexToHsv(hex: string): { h: number; s: number; v: number } {
   const short = six ? null : /^#?([0-9a-f]{3})$/i.exec(t);
   const digits = six
     ? six[1]
-    : short
+    : short?.[1] !== undefined
       ? short[1].split('').map((c) => c + c).join('')
       : null;
   if (digits == null) return { h: 0, s: 0, v: 0 };

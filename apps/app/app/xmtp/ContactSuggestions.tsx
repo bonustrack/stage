@@ -1,10 +1,8 @@
-/** Tap-to-add contact suggestions for the member picker.
- *
- *  Renders the user's existing DM peers (from `useContacts`) as tappable rows
- *  with avatar + name. Tapping toggles selection — selected contacts show a
- *  filled check. Already-staged members are passed in `selected` so they read
- *  as selected and tapping removes them. The list is hidden when empty (e.g. a
- *  brand-new account with no DMs, or a query that matches no contact). */
+/**
+ * @file Tap-to-add contact suggestions for the member picker, rendering the
+ * user's existing DM peers as toggleable avatar/name rows that stage or unstage
+ * the contact; hidden when empty.
+ */
 
 import { Pressable } from '@metro-labs/kit/pressable';
 
@@ -16,6 +14,7 @@ import type { Contact } from '../../lib/useContacts';
 import { Avatar } from '../../components/Avatar';
 import { Col, Row } from '../../components/layout';
 
+/** Selectable list of contact suggestions for staging group members. */
 export function ContactSuggestions({
   contacts, selected, onToggle,
 }: {
@@ -38,7 +37,7 @@ export function ContactSuggestions({
           return (
             <Pressable
               key={c.address}
-              onPress={() => onToggle(c)}
+              onPress={() => { onToggle(c); }}
               style={({ pressed }) => ({
                 flexDirection: 'row', alignItems: 'center', gap: 10,
                 borderRadius: 12, paddingHorizontal: 8, paddingVertical: 8,

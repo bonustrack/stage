@@ -1,9 +1,6 @@
-/** Friendly card for an Expo dev-client PR-preview deep link found in a message
- *  body (`metro://expo-development-client/?url=https://u.expo.dev/<proj>/group/<id>`).
- *  Matches the github / metro-channel card look exactly: 1px theme border, rounded
- *  (block radius), transparent fill, Calibre, palette tokens. Tappable -> opens the
- *  deep link via `Linking.openURL`, which launches the matching dev-client build.
- *  Detection is done by the caller via `previewLinkOf`. */
+/**
+ * @file PreviewLinkCard: a tappable card for an Expo dev-client PR-preview deep link found in a message body, opening the matching dev-client build.
+ */
 
 import { Linking } from 'react-native';
 
@@ -13,9 +10,9 @@ import { Box } from './layout';
 import { previewLinkOf } from '../lib/previewLinkDetect';
 import { usePalette, useBlockRadius } from '../lib/theme';
 
+/** Renders a rich preview card for a detected link URL. */
 export function PreviewLinkCard({ url }: {
-  /** `dark` is accepted for call-site symmetry but unused - colors come from the
-   *  live palette tokens (same convention as GitHubLinkCard / ChannelCard). */
+  /** `dark` is accepted for call-site symmetry but unused - colors come from the live palette tokens (same convention as GitHubLinkCard / ChannelCard). */
   url: string; dark?: boolean;
 }): React.ReactElement | null {
   const ref = previewLinkOf(url);

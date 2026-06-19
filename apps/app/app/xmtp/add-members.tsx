@@ -1,14 +1,6 @@
-/** Add-members screen — a pushed (non-tab) route reached from the "Add members"
- *  item in a group's ChannelMenu. Reuses the shared MemberPicker (address /
- *  .eth entry + validation + removable chips) WITHOUT a group-name field, since
- *  the group already exists.
- *
- *  - Members are entered one at a time; .eth names resolve via the same
- *    resolveEnsName path the Search + new-group screens use. Resolved members
- *    render as removable chips.
- *  - "Add" is disabled until at least one valid member is staged. It calls
- *    addGroupMembers(convId, addresses) → router.back() + a confirmation flash.
- *  - Errors (invalid entry, address not on XMTP, not a group admin) flash a toast.
+/**
+ * @file Add-members screen for an existing XMTP group, reusing the shared
+ * MemberPicker to stage address/.eth members and calling addGroupMembers.
  */
 
 import { useCallback, useState } from 'react';
@@ -27,6 +19,7 @@ import { Box, Row, Col } from '../../components/layout';
 import { useConvMeta } from '../../modules/messaging';
 import { MemberPicker, useMemberPicker } from './MemberPicker';
 
+/** Screen for adding new members to an existing XMTP group conversation. */
 export default function AddMembers(): React.ReactElement {
   const router = useRouter();
   const { convId } = useLocalSearchParams<{ convId: string }>();
@@ -37,8 +30,7 @@ export default function AddMembers(): React.ReactElement {
   const picker = useMemberPicker();
   const { members } = picker;
   const [submitting, setSubmitting] = useState(false);
-  /** Current group members — excluded from the contact suggestions so we don't
-   *  suggest adding someone who's already in the group. */
+  /** Current group members — excluded from the contact suggestions so we don't suggest adding someone who's already in the group. */
   const { memberAddrs } = useConvMeta(convId);
 
   const onSubmit = useCallback(async (): Promise<void> => {
@@ -58,7 +50,7 @@ export default function AddMembers(): React.ReactElement {
     <Col surface="surface" flex={1}>
       {/* Header — back button + title, consistent with other pushed screens. */}
       <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
+        <Pressable onPress={() => { router.back(); }} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
         <Title size="sm" color={head}>

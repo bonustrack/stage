@@ -1,17 +1,13 @@
-/** Shared prop contract + pure style mapper for the Box/Row/Col layout
- *  primitives. Prop names are kept in lock-step with the React Native
- *  implementation (apps/app) so the API can't drift across platforms.
- *
- *  Numbers mean px on both platforms. This module returns a neutral record
- *  of CSS-ish keys; the Vue renderer stringifies numeric values to `${n}px`,
- *  while a RN renderer would pass the numbers straight into a ViewStyle. */
+/**
+ * @file Shared prop contract and pure CSS-style mapper for the Box/Row/Col layout primitives, kept in lock-step with the React Native implementation in apps/app.
+ */
 
 import { colors, resolveBoxRadius, type RadiusValue } from '@metro-labs/kit';
 
-export type Direction = 'row' | 'col';
-export type Size = number | string;
-export type Align = 'start' | 'center' | 'end' | 'stretch' | 'baseline';
-export type Justify =
+type Direction = 'row' | 'col';
+type Size = number | string;
+type Align = 'start' | 'center' | 'end' | 'stretch' | 'baseline';
+type Justify =
   | 'start'
   | 'center'
   | 'end'
@@ -20,9 +16,8 @@ export type Justify =
   | 'evenly';
 
 /** Prop API shared by Box/Row/Col. Row/Col omit `direction`. */
-/** Per-side / per-axis spacing object, mirroring OpenAI ChatKit's `Spacing`.
- *  `x` -> left+right, `y` -> top+bottom; per-side keys override the axis. */
-export interface Spacing {
+/** Per-side / per-axis spacing object, mirroring OpenAI ChatKit's `Spacing`. `x` -> left+right, `y` -> top+bottom; per-side keys override the axis. */
+interface Spacing {
   top?: number | string;
   right?: number | string;
   bottom?: number | string;
@@ -79,9 +74,7 @@ function resolveBg(bg: string): string {
   return (colors as Record<string, string>)[bg] ?? bg;
 }
 
-/** Expand a `padding`/`margin` prop into per-side entries. A scalar sets all
- *  four sides; a `Spacing` object resolves x -> left+right, y -> top+bottom,
- *  then per-side keys (top/right/bottom/left) override the axis. */
+/** Expand a `padding`/`margin` prop into per-side entries. A scalar sets all four sides; a `Spacing` object resolves x -> left+right, y -> top+bottom, then per-side keys (top/right/bottom/left) override the axis. */
 function applySpacing(
   out: Record<string, string | number>,
   prefix: 'padding' | 'margin',
@@ -115,12 +108,14 @@ function applySpacing(
   if (value.left !== undefined) out[Left] = value.left;
 }
 
-/** Pure mapper: BoxProps -> neutral CSS-ish record. Numbers stay numbers;
+/**
+ * Pure mapper: BoxProps -> neutral CSS-ish record. Numbers stay numbers;
  *  string values (flexDirection, alignItems, colors...) stay strings.
  *  Any undefined prop is omitted so it never overrides a default or a
  *  passthrough style. `display` is NOT emitted here — the web renderer
- *  adds `display:flex` explicitly (RN Views are flex by default). */
-export function boxStyleEntries(
+ *  adds `display:flex` explicitly (RN Views are flex by default).
+ */
+function boxStyleEntries(
   props: BoxProps,
 ): Record<string, string | number> {
   const out: Record<string, string | number> = {};
@@ -156,8 +151,7 @@ export function boxStyleEntries(
   return out;
 }
 
-/** Web-specific: stringify numeric entries to `${n}px` and add display:flex.
- *  This is the single place units are baked for the Vue renderer. */
+/** Web-specific: stringify numeric entries to `${n}px` and add display:flex. This is the single place units are baked for the Vue renderer. */
 export function boxInlineStyle(props: BoxProps): Record<string, string> {
   const entries = boxStyleEntries(props);
   const css: Record<string, string> = { display: 'flex' };

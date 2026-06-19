@@ -1,6 +1,7 @@
-/** Rounded, bordered "media bubble" wrapper. Used to give every shared
- *  attachment (image, video, map, YouTube thumbnail) a consistent frame so
- *  they feel like discrete cards rather than free-floating images. */
+/**
+ * @file Rounded, bordered "media bubble" wrapper giving every shared attachment
+ *  (image, video, map, YouTube thumbnail) a consistent card-like frame.
+ */
 
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Box } from './layout';
@@ -10,12 +11,12 @@ interface Props {
   dark: boolean;
   /** Optional press handler — when set, the whole card is tappable. */
   onPress?: () => void;
-  /** Card width hint. Defaults to a fluid `100% with max 280` so the card
-   *  fits the bubble column without clipping but doesn't sprawl on tablet. */
+  /** Card width hint. Defaults to a fluid `100% with max 280` so the card fits the bubble column without clipping but doesn't sprawl on tablet. */
   width?: number;
   children: React.ReactNode;
 }
 
+/** Renders a rounded, bordered frame wrapping a shared media attachment. */
 export function MediaCard({ onPress, width, children }: Props): React.ReactElement {
   const border = usePalette().border; // #282a2d / #e4e4e5
   const bg = border;

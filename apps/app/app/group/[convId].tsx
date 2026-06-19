@@ -1,13 +1,11 @@
-/** Group detail view — opened by tapping the conversation header title. Lists
- *  members, shows the inline-editable group name, labels + GitHub link. */
+/** @file Group detail screen for editing a conversation's name, description, image, members, labels and linked GitHub URL. */
 
 import { useEffect, useState } from 'react';
 
 import { useQueryClient } from '@tanstack/react-query';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
-/** RNGH gesture-aware FlatList so vertical scroll composes with the native-stack
- *  edge swipe-back under GestureDetectorProvider (see xmtp/[convId] for rationale). */
+/** RNGH gesture-aware FlatList so vertical scroll composes with the native-stack edge swipe-back under GestureDetectorProvider (see xmtp/[convId] for rationale). */
 import { FlatList } from 'react-native-gesture-handler';
 import { Row, Col } from '../../components/layout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -25,6 +23,7 @@ import { GroupLabelsSection } from './group.labels';
 import { GroupGithubSection } from './group.github';
 import { useGroupActions } from './group.actions';
 
+/** Group detail screen for editing a conversation's name, description and members. */
 export default function GroupDetail(): React.ReactElement {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -36,9 +35,7 @@ export default function GroupDetail(): React.ReactElement {
   const { convId } = useLocalSearchParams<{ convId: string }>();
   const line = lineOfConv(convId ?? '');
   const queryClient = useQueryClient();
-  /** Invalidate cached conv metadata so the chat-view topnav (and this screen,
-   *  which also reads useConvMeta) picks up rename / new image / description
-   *  without a reload. Keyed via the shared messaging key factory. */
+  /** Invalidate cached conv metadata so the chat-view topnav (and this screen, which also reads useConvMeta) picks up rename / new image / description without a reload. Keyed via the shared messaging key factory. */
   const invalidateConvMeta = (): void => {
     if (convId) void queryClient.invalidateQueries({ queryKey: messagingKeys.convMeta(convId) });
   };
@@ -53,8 +50,7 @@ export default function GroupDetail(): React.ReactElement {
     leaving, leaveGroup,
   } = a;
 
-  /** Shared metadata seeding (convMeta query, deduped) + group-only roles/names,
-   *  extracted to a hook for the line cap. */
+  /** Shared metadata seeding (convMeta query, deduped) + group-only roles/names, extracted to a hook for the line cap. */
   const { memberNames, memberRoles } = useGroupDetail(convId, a);
   const [addOpen, setAddOpen] = useState(false);
   /** Lower-cased local wallet address — suppresses the remove button on self. */
@@ -76,10 +72,10 @@ export default function GroupDetail(): React.ReactElement {
     <Col surface="surface" flex={1}>
       {/* Floating topnav over the cover banner — mirrors ProfileScreen `route`. */}
       <Row height={44 + insets.top} padding={{ x: 14, top: insets.top }} align="center" justify="between" style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2 }}>
-        <Pressable onPress={() => router.back()} hitSlop={10} style={{ padding: 6 }}>
+        <Pressable onPress={() => { router.back(); }} hitSlop={10} style={{ padding: 6 }}>
           <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
-        <Pressable onPress={() => setOverflowOpen(true)} hitSlop={10} style={{ padding: 6 }}>
+        <Pressable onPress={() => { setOverflowOpen(true); }} hitSlop={10} style={{ padding: 6 }}>
           <Icon name="dotsHorizontal" size={22} color={fg}/>
         </Pressable>
       </Row>
@@ -137,28 +133,28 @@ export default function GroupDetail(): React.ReactElement {
             name={memberNames[item]}
             dark={dark}
             p={pal}
-            onPress={() => router.push({ pathname: '/user/[address]', params: { address: item } })}
-            onRemove={() => removeMember(item)}
+            onPress={() => { router.push({ pathname: '/user/[address]', params: { address: item } }); }}
+            onRemove={() => { removeMember(item); }}
 />
         )}
 />
 
       <AddMemberModal
         visible={addOpen}
-        onClose={() => setAddOpen(false)}
+        onClose={() => { setAddOpen(false); }}
         addDraft={addDraft} setAddDraft={setAddDraft} adding={adding}
-        onAdd={() => { void addMember(() => setAddOpen(false)); }}
+        onAdd={() => { void addMember(() => { setAddOpen(false); }); }}
         dark={dark} p={pal}
 />
       <OverflowModal
         visible={overflowOpen}
-        onClose={() => setOverflowOpen(false)}
-        leaving={leaving} onLeave={() => leaveGroup(() => setOverflowOpen(false))}
+        onClose={() => { setOverflowOpen(false); }}
+        leaving={leaving} onLeave={() => { leaveGroup(() => { setOverflowOpen(false); }); }}
 />
       <ImageViewer
         uri={imageUrl ? avatarRenderUrl('', imageUrl, 1024) : ''}
         visible={viewerOpen}
-        onClose={() => setViewerOpen(false)}
+        onClose={() => { setViewerOpen(false); }}
 />
     </Col>
   );

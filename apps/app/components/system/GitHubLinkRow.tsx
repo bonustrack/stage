@@ -1,6 +1,8 @@
-/** A reusable tappable row that opens a GitHub URL via Linking. Renders the
- *  GitHub mark + title + subtitle and an externalLink chevron, matching the
- *  System-page link styling. Shared by the Kit page and the About page. */
+/**
+ * @file GitHubLinkRow — a reusable tappable row (GitHub mark + title/subtitle +
+ *  external-link chevron) that opens a GitHub URL via Linking, shared by the Kit
+ *  and About pages.
+ */
 
 import { Linking } from 'react-native';
 
@@ -10,6 +12,7 @@ import { Icon } from '@metro-labs/kit/icon';
 import { Text } from '@metro-labs/kit/text';
 import { GithubLogo } from '../GithubLogo';
 
+/** Renders a tappable row linking to a GitHub URL. */
 export function GitHubLinkRow({ head, sub, border, url, title, subtitle }: {
   dark: boolean; head: string; sub: string; border: string; rowBg: string;
   url: string; title: string; subtitle: string;

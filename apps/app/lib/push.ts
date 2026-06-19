@@ -1,4 +1,7 @@
-/** Push-notification helper for the XMTP messenger.
+/** @file Single-import barrel for the XMTP push surface, re-exporting the background daemon-registration and foreground local-notification helpers from `pushRegister`. */
+
+/*
+ * Push-notification helper for the XMTP messenger.
  *
  *  Two delivery paths, per the push design (option b):
  *
@@ -17,19 +20,21 @@
  *
  *  Device-token acquisition lives in lib/push.device.ts (a leaf with no XMTP
  *  imports) so lib/pushRegister.ts can share it without a module cycle. This
- *  module re-exports the whole push surface so callers import it from one place. */
+ *  module re-exports the whole push surface so callers import it from one place.
+ */
 
-/** Device-token helpers (getDeviceFcmToken / ensureNotificationReady) live in
- *  lib/push.device.ts; import them from there directly. */
+/** Device-token helpers (getDeviceFcmToken / ensureNotificationReady) live in lib/push.device.ts; import them from there directly. */
 
-/** Public re-exports from the XMTP-client-typed `pushRegister` module so callers
+/**
+ * Public re-exports from the XMTP-client-typed `pushRegister` module so callers
  *  import the whole push surface from one place (`lib/push`):
  *   - `isMetroControlBody`     — suppress control DMs in list / conversation UI
  *     (no XMTP-client import needed at the call site).
  *   - `registerPushWithDaemon` — auto-register the device token over an XMTP
  *     control DM (called from the client-ready / account-switch paths).
  *   - `presentInboundNotification` — foreground local notification (option b),
- *     called from the global message stream. */
+ *     called from the global message stream.
+ */
 export {
   isMetroControlBody,
   registerPushWithDaemon,

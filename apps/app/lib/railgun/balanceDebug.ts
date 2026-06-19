@@ -1,4 +1,7 @@
-/** On-screen diagnostics for the RAILGUN shielded-balance pipeline.
+/** @file In-memory observable diagnostics store for the Railgun shielded-balance pipeline (bridge/engine readiness, refresh phase, raw last balanceUpdate event) rendered as the Private-tab debug block. */
+
+/*
+ * On-screen diagnostics for the RAILGUN shielded-balance pipeline.
  *
  *  We have NO adb on-device, so this captures the raw truth of the balance flow
  *  into a tiny observable store the Private tab renders as a "Railgun debug"
@@ -8,8 +11,9 @@
  *    - engine emits NOTHING → scan/RPC/merkle problem (engine-side, needs APK).
  *    - engine emits buckets but the UI shows 0 → RN-side sum/store/decimals bug.
  *
- *  Pure in-memory + a synchronous getter + subscribe (no disk, no deps). */
-export type RefreshPhase = 'idle' | 'scanning' | 'done' | 'error';
+ *  Pure in-memory + a synchronous getter + subscribe (no disk, no deps).
+ */
+type RefreshPhase = 'idle' | 'scanning' | 'done' | 'error';
 
 export interface BalanceDebug {
   /** isBridgeAvailable() — is the nodejs-mobile runtime in this binary? */
@@ -23,9 +27,7 @@ export interface BalanceDebug {
   refreshError: string | null;
   /** The one-shot getBalances() result rows count per net (initial scan). */
   getBalancesRows: { mainnet: number; sepolia: number } | null;
-  /** RAW last `event:balanceUpdate` payload the engine pushed (or null). This is
-   *  the load-bearing signal — JSON of {chainId, walletId, rows:[{tokenAddress,
-   *  amount}]}. "none received yet" means the engine emitted no balance event. */
+  /** RAW last `event:balanceUpdate` payload the engine pushed (or null). This is the load-bearing signal — JSON of {chainId, walletId, rows:[{tokenAddress, amount}]}. "none received yet" means the engine emitted no balance event. */
   lastEventAt: number | null;
   lastEvent: unknown;
   /** Count of balanceUpdate events received since boot. */
@@ -47,10 +49,12 @@ let state: BalanceDebug = {
 
 const subs = new Set<(s: BalanceDebug) => void>();
 
+/** Current balance-debug state snapshot. */
 export function getBalanceDebug(): BalanceDebug {
   return state;
 }
 
+/** Subscribe to balance-debug state changes. Returns an unsubscribe fn. */
 export function subscribeBalanceDebug(cb: (s: BalanceDebug) => void): () => void {
   subs.add(cb);
   return () => subs.delete(cb);

@@ -1,13 +1,6 @@
-/** DatePicker - a ChatKit-styled date field. Mirrors ChatKit's `DatePicker`
- *  widget. Faithful prop names: `name`, `defaultValue` (YYYY-MM-DD), `placeholder`,
- *  `variant` ('soft' | 'outline'), `size` (ControlSize), `pill`, `block`,
- *  `clearable`, `disabled`, `min`, `max` (YYYY-MM-DD bounds). Deviations (kit is
- *  interactive RN, not server-streamed): ChatKit's `onChangeAction` (a server
- *  ActionConfig) is replaced by an `onChange(value)` callback, a controlled
- *  `value` prop is accepted, and ChatKit's popover `align`/`side` placement is
- *  expressed as a centred RN Modal sheet. `dark` boolean keeps the kit hook-free.
- *  Self-contained calendar grid (no native date dependency) drawn with kit
- *  tokens + the shared control box style. Values are ISO YYYY-MM-DD strings. */
+/**
+ * @file DatePicker — a hook-free ChatKit-styled date field backed by a self-contained calendar grid in a centred RN Modal (no native date dependency), emitting ISO YYYY-MM-DD strings.
+ */
 
 import { useState } from 'react';
 import {
@@ -122,12 +115,14 @@ export function DatePicker(props: DatePickerProps): React.ReactElement {
   const minD = parseISO(min);
   const maxD = parseISO(max);
 
+  /** In Range. */
   function inRange(d: Date): boolean {
     if (minD && d < minD) return false;
     if (maxD && d > maxD) return false;
     return true;
   }
 
+  /** Pick helper. */
   function pick(d: Date): void {
     const iso = toISO(d);
     if (controlled === undefined) setInternal(iso);
@@ -135,11 +130,13 @@ export function DatePicker(props: DatePickerProps): React.ReactElement {
     setOpen(false);
   }
 
+  /** Clear helper. */
   function clear(): void {
     if (controlled === undefined) setInternal(undefined);
     onChange?.('');
   }
 
+  /** Shift Month. */
   function shiftMonth(delta: number): void {
     setView((v) => new Date(v.getFullYear(), v.getMonth() + delta, 1));
   }
@@ -193,20 +190,25 @@ export function DatePicker(props: DatePickerProps): React.ReactElement {
         <Icon name="calendar" size={16} color={colors.placeholder} />
       </Pressable>
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => { setOpen(false); }}>
         <Pressable
           style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 24 }}
-          onPress={() => setOpen(false)}
+          onPress={() => { setOpen(false); }}
         >
-          <Pressable style={{ backgroundColor: sheetBg, borderRadius: 16, padding: 16 }} onPress={() => {}}>
+          <Pressable
+            style={{ backgroundColor: sheetBg, borderRadius: 16, padding: 16 }}
+            onPress={() => {
+              /* intentional no-op: swallow press so taps inside the sheet don't dismiss it */
+            }}
+          >
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-              <Pressable accessibilityRole="button" accessibilityLabel="Previous month" onPress={() => shiftMonth(-1)} hitSlop={8}>
+              <Pressable accessibilityRole="button" accessibilityLabel="Previous month" onPress={() => { shiftMonth(-1); }} hitSlop={8}>
                 <Icon name="chevronLeft" size={20} color={head} />
               </Pressable>
               <RNText style={{ flex: 1, textAlign: 'center', color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>
                 {MONTHS[month]} {year}
               </RNText>
-              <Pressable accessibilityRole="button" accessibilityLabel="Next month" onPress={() => shiftMonth(1)} hitSlop={8}>
+              <Pressable accessibilityRole="button" accessibilityLabel="Next month" onPress={() => { shiftMonth(1); }} hitSlop={8}>
                 <Icon name="chevronRight" size={20} color={head} />
               </Pressable>
             </View>
@@ -231,7 +233,7 @@ export function DatePicker(props: DatePickerProps): React.ReactElement {
                     accessibilityLabel={toISO(d)}
                     accessibilityState={{ selected: isSel, disabled: !enabled }}
                     disabled={!enabled}
-                    onPress={() => pick(d)}
+                    onPress={() => { pick(d); }}
                     style={{ width: `${100 / 7}%`, height: 40, alignItems: 'center', justifyContent: 'center' }}
                   >
                     <View

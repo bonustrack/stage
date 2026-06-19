@@ -1,17 +1,8 @@
-/** Wallet → Token detail screen.
- *
- *  Reached by tapping a token row on the Wallet page. The full AssetRow is
- *  passed through the route params as JSON (`?row=…`) so this page renders the
- *  exact same balance/price/logo the list showed — no refetch, instant paint.
- *
- *  Shows the token (logo + network badge, name, symbol, balance + $ value) and
- *  TWO big rounded primary buttons reusing the Wallet page's action-button
- *  style (`Btn` from WalletScreen.parts):
- *  Public holding:  Send → /wallet/send,  Shield → /wallet/shield.
- *  Shielded holding: Send → /wallet/send (unified page, pre-selected to the
- *                    shielded token via ?private=1 → private 0zk transfer),
- *                    Unshield → /wallet/unshield.
- *  Pre-fill is via query params (symbol/chainId) read by each page. */
+/**
+ * @file Wallet token-detail screen showing one token's balance/price/logo
+ * (passed in via route params, no refetch) with Send/Shield or Send/Unshield
+ * action buttons that route to the matching wallet pages with pre-fill params.
+ */
 
 import { Pressable } from '@metro-labs/kit/pressable';
 
@@ -28,8 +19,7 @@ import { withStampDisplayPx } from '@metro-labs/kit/avatar';
 
 const NETWORK_LABEL: Record<number, string> = { 1: 'Ethereum', 11155111: 'Sepolia' };
 
-/** Parse the serialized AssetRow param. Returns null when missing/malformed so
- *  the screen can render a graceful fallback instead of crashing. */
+/** Parse the serialized AssetRow param. Returns null when missing/malformed so the screen can render a graceful fallback instead of crashing. */
 function parseRow(raw: string | undefined): AssetRow | null {
   if (typeof raw !== 'string') return null;
   try {
@@ -41,6 +31,7 @@ function parseRow(raw: string | undefined): AssetRow | null {
   }
 }
 
+/** Screen showing detail and activity for a single token in the wallet. */
 export default function TokenDetail(): React.ReactElement {
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string; row?: string }>();
@@ -52,7 +43,7 @@ export default function TokenDetail(): React.ReactElement {
   if (!r) {
     return (
       <Col surface="surface" flex={1}>
-        <Header head={head} border={border} onBack={() => router.back()} title="Token"/>
+        <Header head={head} border={border} onBack={() => { router.back(); }} title="Token"/>
         <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center">
           <Text size="md" color={sub}>Token not found</Text>
         </Col>
@@ -70,7 +61,7 @@ export default function TokenDetail(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <Header head={head} border={border} onBack={() => router.back()} title={r.name}/>
+      <Header head={head} border={border} onBack={() => { router.back(); }} title={r.name}/>
 
       {/* Token identity card — large logo with network badge, name + symbol,
           balance and its USD value. Mirrors the list row's data, scaled up.
@@ -117,28 +108,28 @@ export default function TokenDetail(): React.ReactElement {
             {/* Shielded holding → unified Send page, pre-selected to this
                 shielded token (private → another 0zk). */}
             <Btn icon="send" label="Send" head={head} border={border} dark={dark}
-              onPress={() => router.push({
+              onPress={() => { router.push({
                 pathname: '/wallet/send',
                 params: { symbol: symbol ?? r.symbol, chainId: String(r.chainId), private: '1' },
-              })}/>
+              }); }}/>
             {/* Shielded holding → Unshield (private → public, back to own EOA). */}
             <Btn icon="eye" label="Unshield" head={head} border={border} dark={dark}
-              onPress={() => router.push({
+              onPress={() => { router.push({
                 pathname: '/wallet/unshield',
                 params: { symbol: symbol ?? r.symbol, chainId: String(r.chainId) },
-              })}/>
+              }); }}/>
           </>
         ) : (
           <>
             {/* Public holding → public Send. */}
             <Btn icon="send" label="Send" head={head} border={border} dark={dark}
-              onPress={() => router.push({ pathname: '/wallet/send', params: sendParams })}/>
+              onPress={() => { router.push({ pathname: '/wallet/send', params: sendParams }); }}/>
             {/* Public holding → Shield (public → own 0zk). */}
             <Btn icon="eyeOff" label="Shield" head={head} border={border} dark={dark}
-              onPress={() => router.push({
+              onPress={() => { router.push({
                 pathname: '/wallet/shield',
                 params: { symbol: symbol ?? r.symbol, chainId: String(r.chainId) },
-              })}/>
+              }); }}/>
           </>
         )}
       </Row>

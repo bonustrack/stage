@@ -1,7 +1,7 @@
-/** Settings → Messenger — XMTP account info (address, inbox id, installation
- *  id — tap to copy) + the "Reset XMTP
- *  identity" flow. All real, existing data/behaviour pulled out of the old flat
- *  Settings tab; no invented toggles. */
+/**
+ * @file Settings -> Messenger screen: tap-to-copy XMTP account info (address,
+ *  inbox id, installation id) plus the Reset XMTP identity flow.
+ */
 
 import { useEffect, useState } from 'react';
 
@@ -19,6 +19,7 @@ import { DANGER, useBlockRadius, useEffectiveColorScheme, usePalette } from '../
 import { SystemHeader } from '../system/SystemHeader';
 import { MessengerSessions } from './MessengerSessions';
 
+/** The Copy Row component. */
 function CopyRow({ label, value, display, c }: {
   label: string; value: string; display: string;
   c: { fg: string; sub: string; border: string; rowBg: string };
@@ -38,6 +39,7 @@ function CopyRow({ label, value, display, c }: {
   );
 }
 
+/** Renders the messenger settings screen. */
 export function MessengerSettings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head, border } = usePalette();

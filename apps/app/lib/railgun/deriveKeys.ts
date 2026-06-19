@@ -1,4 +1,6 @@
-/** Deterministic RAILGUN key material from the active account's EOA key.
+/** @file Single source of truth deriving deterministic RAILGUN key material (BIP39 mnemonic + 32-byte encryption key) from the account's EOA private key via keccak256 so the 0zk address never drifts. */
+/**
+ * Deterministic RAILGUN key material from the active account's EOA key.
  *
  *  WHY: the app's accounts store a raw secp256k1 private key, but the RAILGUN
  *  SDK keys a wallet off a BIP39 mnemonic + a 32-byte encryption key. We bridge
@@ -13,7 +15,8 @@
  *  No extra secret is stored; the EOA private key never leaves the RN side
  *  beyond the in-process bridge channel (see bridge/index.ts SECURITY note).
  *  This is the SINGLE source of truth for the derivation — both paths import it
- *  so the 0zk address can never drift between them. */
+ *  so the 0zk address can never drift between them.
+ */
 import '../cryptoShim';
 import { keccak256, type Hex } from 'viem';
 import { Mnemonic } from 'ethers';
@@ -44,7 +47,7 @@ export function encryptionKeyFromPrivateKey(pk: Hex): string {
 }
 
 /** Per-network deployment blocks, used as RAILGUN wallet creation blocks. */
-export function railgunCreationBlocks(): Record<string, number> {
+function railgunCreationBlocks(): Record<string, number> {
   const out: Record<string, number> = {};
   for (const cfg of Object.values(RAILGUN_NETWORKS)) {
     out[cfg.networkName] = NETWORK_CONFIG[cfg.networkName].deploymentBlock;
@@ -52,9 +55,7 @@ export function railgunCreationBlocks(): Record<string, number> {
   return out;
 }
 
-/** Resolve the deterministic key material for the CURRENT active account.
- *  Throws a friendly error when the account can't expose a raw key (e.g.
- *  WalletConnect), surfaced by callers as an unsupported-account message. */
+/** Resolve the deterministic key material for the CURRENT active account. Throws a friendly error when the account can't expose a raw key (e.g. WalletConnect), surfaced by callers as an unsupported-account message. */
 export async function deriveRailgunKeyMaterial(): Promise<RailgunKeyMaterial> {
   const acct = await getActiveAccount();
   if (!acct) throw new Error('No active account');

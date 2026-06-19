@@ -1,17 +1,11 @@
-/** Dependency-free amount validation for on-chain sends.
- *
- *  Kept separate from `lib/tx.ts` (which pulls wagmi / react-native) so the
- *  pure decimal-string -> base-units parse can be unit-tested in isolation.
- *
- *  Why not `Number(amount)`: floats silently round very small / high-precision
- *  values (so the guard and the signed value disagree) and accept forms like
- *  "1e3" that `parseUnits` then rejects with a confusing low-level error. We
- *  validate the EXACT decimal string `parseUnits` consumes, before signing. */
+/**
+ * @file Dependency-free decimal-string -> base-units amount parse/validation for on-chain sends, kept separate from lib/tx.ts so it is unit-testable in isolation.
+ *  Validates the EXACT string `parseUnits` consumes (rejecting float-rounding forms like "1e3" and excess precision) before signing, so the guard and the signed value never disagree.
+ */
 
 import { parseUnits } from 'viem';
 
-/** Parse a human-readable decimal `amount` into base units, rejecting any
- *  invalid or non-positive value with a clean error. */
+/** Parse a human-readable decimal `amount` into base units, rejecting any invalid or non-positive value with a clean error. */
 export function parseAmount(amount: string, decimals: number): bigint {
   const trimmed = typeof amount === 'string' ? amount.trim() : '';
   if (!/^\d+(\.\d+)?$/.test(trimmed)) {
