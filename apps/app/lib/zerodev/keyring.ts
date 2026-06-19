@@ -281,16 +281,16 @@ export async function signOwnerMessage(hdIndex: number, message: string): Promis
  *  single-key location into the per-account slot. PRIVATE — the raw key never
  *  leaves except via revealPrivateKey / the in-place signers below. */
 async function loadPrivateKey(id: string): Promise<Hex | null> {
-  const pk = await SecureStore.getItemAsync(PK_PREFIX + id).catch(() => null);
+  const pk = await SecureStore.getItemAsync(PK_PREFIX + id, STORE_OPTS).catch(() => null);
   if (pk && /^0x[0-9a-f]{64}$/.test(pk)) return pk as Hex;
-  // Self-heal: a pre-multi-account key may live only under the legacy slot. Accept
-  // iff it derives to THIS id, then re-write per-account so future reads are direct.
-  const legacy = await SecureStore.getItemAsync(LEGACY_PK_KEY).catch(() => null);
+  // Self-heal: a pre-multi-account key may live only under the legacy slot. Accept iff
+  // it derives to THIS id, then re-write per-account (device-bound STORE_OPTS) so future reads are direct.
+  const legacy = await SecureStore.getItemAsync(LEGACY_PK_KEY, STORE_OPTS).catch(() => null);
   if (legacy && /^0x[0-9a-fA-F]{64}$/.test(legacy)) {
     const norm = ('0x' + legacy.slice(2).toLowerCase()) as Hex;
     try {
       if (privateKeyToAccount(norm).address.toLowerCase() === id.toLowerCase()) {
-        await SecureStore.setItemAsync(PK_PREFIX + id, norm).catch(() => undefined);
+        await SecureStore.setItemAsync(PK_PREFIX + id, norm, STORE_OPTS).catch(() => undefined);
         return norm;
       }
     } catch { /* malformed legacy key — fall through to null */ }
@@ -335,7 +335,7 @@ export async function importKey(input: string): Promise<{ id: string; address: s
  *  the registry's first-run migration. Returns the migrated (id, address) or null
  *  when there is no valid legacy key. */
 export async function adoptLegacyKey(): Promise<{ id: string; address: string } | null> {
-  const legacy = await SecureStore.getItemAsync(LEGACY_PK_KEY).catch(() => null);
+  const legacy = await SecureStore.getItemAsync(LEGACY_PK_KEY, STORE_OPTS).catch(() => null);
   if (!legacy || !/^0x[0-9a-fA-F]{64}$/.test(legacy)) return null;
   const pk = ('0x' + legacy.slice(2).toLowerCase()) as Hex;
   const acct = privateKeyToAccount(pk);
