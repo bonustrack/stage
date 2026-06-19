@@ -12,6 +12,7 @@ declare global {
   const XMTP_USER_PREFIX: typeof import('./lib/xmtp').XMTP_USER_PREFIX
   const applyConsentToRows: typeof import('./lib/channelsCache').applyConsentToRows
   const cachedRows: typeof import('./lib/channelsCache').cachedRows
+  const computeMemberRoles: typeof import('./lib/useGroupDetailHelpers').computeMemberRoles
   const computed: typeof import('vue').computed
   const convIdOfLine: typeof import('./lib/xmtp').convIdOfLine
   const convOfLine: typeof import('./lib/xmtp').convOfLine
@@ -55,8 +56,10 @@ declare global {
   const markConvUnreadSynced: typeof import('./lib/xmtpConsent').markConvUnreadSynced
   const markRaw: typeof import('vue').markRaw
   const memberInboxToAddressMap: typeof import('./lib/xmtpResolve').memberInboxToAddressMap
+  const mutateMembers: typeof import('./lib/useGroupDetail.mutations').mutateMembers
   const nextTick: typeof import('vue').nextTick
   const onActivated: typeof import('vue').onActivated
+  const onAddMember: typeof import('./lib/useGroupDetail.mutations').onAddMember
   const onBeforeMount: typeof import('vue').onBeforeMount
   const onBeforeRouteLeave: typeof import('vue-router').onBeforeRouteLeave
   const onBeforeRouteUpdate: typeof import('vue-router').onBeforeRouteUpdate
@@ -65,8 +68,11 @@ declare global {
   const onDeactivated: typeof import('vue').onDeactivated
   const onErrorCaptured: typeof import('vue').onErrorCaptured
   const onMounted: typeof import('vue').onMounted
+  const onPickImage: typeof import('./lib/useGroupDetail.mutations').onPickImage
   const onRenderTracked: typeof import('vue').onRenderTracked
   const onRenderTriggered: typeof import('vue').onRenderTriggered
+  const onSaveDescription: typeof import('./lib/useGroupDetail.mutations').onSaveDescription
+  const onSaveName: typeof import('./lib/useGroupDetail.mutations').onSaveName
   const onScopeDispose: typeof import('vue').onScopeDispose
   const onServerPrefetch: typeof import('vue').onServerPrefetch
   const onUnmounted: typeof import('vue').onUnmounted
@@ -84,10 +90,14 @@ declare global {
   const readProfile: typeof import('./lib/profile').readProfile
   const readonly: typeof import('vue').readonly
   const ref: typeof import('vue').ref
+  const removeMember: typeof import('./lib/useGroupDetail.mutations').removeMember
   const renderMarkdown: typeof import('./lib/renderMarkdown').renderMarkdown
   const resolveComponent: typeof import('vue').resolveComponent
   const resolveDomain: typeof import('./lib/stamp').resolveDomain
+  const resolveMemberNames: typeof import('./lib/useGroupDetailHelpers').resolveMemberNames
   const resolveSearchInputToAddress: typeof import('./lib/stamp').resolveSearchInputToAddress
+  const resolveSelfAddress: typeof import('./lib/useGroupDetailHelpers').resolveSelfAddress
+  const runGroupDetailEffect: typeof import('./lib/useGroupDetail.mutations').runGroupDetailEffect
   const runningInIframe: typeof import('./lib/embedBridge').runningInIframe
   const setCachedRows: typeof import('./lib/channelsCache').setCachedRows
   const setLastReadNs: typeof import('./lib/xmtpConsent').setLastReadNs
@@ -166,8 +176,14 @@ declare global {
   export type { ChannelsState } from './lib/useChannels'
   import('./lib/useChannels')
   // @ts-ignore
+  export type { GroupDetailState } from './lib/useGroupDetail.mutations'
+  import('./lib/useGroupDetail.mutations')
+  // @ts-ignore
   export type { GroupDetail } from './lib/useGroupDetail'
   import('./lib/useGroupDetail')
+  // @ts-ignore
+  export type { GroupShape } from './lib/useGroupDetailHelpers'
+  import('./lib/useGroupDetailHelpers')
   // @ts-ignore
   export type { SearchResolution } from './lib/useSearchResolution'
   import('./lib/useSearchResolution')
@@ -193,6 +209,7 @@ declare module 'vue' {
     readonly XMTP_USER_PREFIX: UnwrapRef<typeof import('./lib/xmtp')['XMTP_USER_PREFIX']>
     readonly applyConsentToRows: UnwrapRef<typeof import('./lib/channelsCache')['applyConsentToRows']>
     readonly cachedRows: UnwrapRef<typeof import('./lib/channelsCache')['cachedRows']>
+    readonly computeMemberRoles: UnwrapRef<typeof import('./lib/useGroupDetailHelpers')['computeMemberRoles']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>
     readonly convIdOfLine: UnwrapRef<typeof import('./lib/xmtp')['convIdOfLine']>
     readonly convOfLine: UnwrapRef<typeof import('./lib/xmtp')['convOfLine']>
@@ -235,8 +252,10 @@ declare module 'vue' {
     readonly markConvUnreadSynced: UnwrapRef<typeof import('./lib/xmtpConsent')['markConvUnreadSynced']>
     readonly markRaw: UnwrapRef<typeof import('vue')['markRaw']>
     readonly memberInboxToAddressMap: UnwrapRef<typeof import('./lib/xmtpResolve')['memberInboxToAddressMap']>
+    readonly mutateMembers: UnwrapRef<typeof import('./lib/useGroupDetail.mutations')['mutateMembers']>
     readonly nextTick: UnwrapRef<typeof import('vue')['nextTick']>
     readonly onActivated: UnwrapRef<typeof import('vue')['onActivated']>
+    readonly onAddMember: UnwrapRef<typeof import('./lib/useGroupDetail.mutations')['onAddMember']>
     readonly onBeforeMount: UnwrapRef<typeof import('vue')['onBeforeMount']>
     readonly onBeforeRouteLeave: UnwrapRef<typeof import('vue-router')['onBeforeRouteLeave']>
     readonly onBeforeRouteUpdate: UnwrapRef<typeof import('vue-router')['onBeforeRouteUpdate']>
@@ -245,8 +264,11 @@ declare module 'vue' {
     readonly onDeactivated: UnwrapRef<typeof import('vue')['onDeactivated']>
     readonly onErrorCaptured: UnwrapRef<typeof import('vue')['onErrorCaptured']>
     readonly onMounted: UnwrapRef<typeof import('vue')['onMounted']>
+    readonly onPickImage: UnwrapRef<typeof import('./lib/useGroupDetail.mutations')['onPickImage']>
     readonly onRenderTracked: UnwrapRef<typeof import('vue')['onRenderTracked']>
     readonly onRenderTriggered: UnwrapRef<typeof import('vue')['onRenderTriggered']>
+    readonly onSaveDescription: UnwrapRef<typeof import('./lib/useGroupDetail.mutations')['onSaveDescription']>
+    readonly onSaveName: UnwrapRef<typeof import('./lib/useGroupDetail.mutations')['onSaveName']>
     readonly onScopeDispose: UnwrapRef<typeof import('vue')['onScopeDispose']>
     readonly onServerPrefetch: UnwrapRef<typeof import('vue')['onServerPrefetch']>
     readonly onUnmounted: UnwrapRef<typeof import('vue')['onUnmounted']>
@@ -263,9 +285,13 @@ declare module 'vue' {
     readonly readProfile: UnwrapRef<typeof import('./lib/profile')['readProfile']>
     readonly readonly: UnwrapRef<typeof import('vue')['readonly']>
     readonly ref: UnwrapRef<typeof import('vue')['ref']>
+    readonly removeMember: UnwrapRef<typeof import('./lib/useGroupDetail.mutations')['removeMember']>
     readonly renderMarkdown: UnwrapRef<typeof import('./lib/renderMarkdown')['renderMarkdown']>
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
     readonly resolveDomain: UnwrapRef<typeof import('./lib/stamp')['resolveDomain']>
+    readonly resolveMemberNames: UnwrapRef<typeof import('./lib/useGroupDetailHelpers')['resolveMemberNames']>
+    readonly resolveSelfAddress: UnwrapRef<typeof import('./lib/useGroupDetailHelpers')['resolveSelfAddress']>
+    readonly runGroupDetailEffect: UnwrapRef<typeof import('./lib/useGroupDetail.mutations')['runGroupDetailEffect']>
     readonly runningInIframe: UnwrapRef<typeof import('./lib/embedBridge')['runningInIframe']>
     readonly setCachedRows: UnwrapRef<typeof import('./lib/channelsCache')['setCachedRows']>
     readonly setLastReadNs: UnwrapRef<typeof import('./lib/xmtpConsent')['setLastReadNs']>

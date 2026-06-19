@@ -68,6 +68,14 @@ function str(v: unknown): string | undefined {
   return typeof v === 'string' && v.length > 0 ? v : undefined;
 }
 
+/** Collect the raw accept options from an x402 body: the `accepts` array, or a single inlined `accepted` option (v2), or null when neither is present. */
+function rawAcceptsOf(o: Record<string, unknown>): RawAccept[] | null {
+  if (Array.isArray(o.accepts)) return o.accepts as RawAccept[];
+  // Some single-option servers inline the option (v2 `accepted`).
+  if (o.accepted && typeof o.accepted === 'object') return [o.accepted];
+  return null;
+}
+
 /** Normalise one raw accept option. Returns null when it lacks a usable scheme + network (the minimum to be actionable). */
 export function normaliseAccept(a: RawAccept): X402Accept | null {
   const scheme = str(a.scheme);
@@ -99,19 +107,13 @@ export function normaliseAccept(a: RawAccept): X402Accept | null {
  *  `endpoint` is the fallback endpoint to record when the object doesn't already
  *  carry one (the proxy's own envelope embeds `endpoint`).
  */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
 export function parseX402Challenge(
   obj: unknown,
   endpoint: string,
 ): X402Challenge | null {
   if (!obj || typeof obj !== 'object') return null;
   const o = obj as Record<string, unknown>;
-  const rawAccepts = Array.isArray(o.accepts)
-    ? (o.accepts as RawAccept[])
-    : // Some single-option servers inline the option (v2 `accepted`).
-      o.accepted && typeof o.accepted === 'object'
-      ? [o.accepted as RawAccept]
-      : null;
+  const rawAccepts = rawAcceptsOf(o);
   if (!rawAccepts || rawAccepts.length === 0) return null;
 
   const accepts = rawAccepts

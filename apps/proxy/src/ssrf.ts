@@ -32,48 +32,54 @@ export function isPrivateIp(host: string): boolean {
   return false;
 }
 
+// Private/loopback/reserved IPv4 ranges keyed on the first octet `a`; each rule
+// optionally constrains the second octet `b`. Replaces a long if-chain.
+const PRIVATE_V4_RULES: { a: number; b?: (b: number) => boolean }[] = [
+  { a: 10 }, // 10.0.0.0/8
+  { a: 127 }, // loopback
+  { a: 0 }, // 0.0.0.0/8 "this host"
+  { a: 169, b: b => b === 254 }, // link-local 169.254/16 (cloud metadata)
+  { a: 172, b: b => b >= 16 && b <= 31 }, // 172.16/12
+  { a: 192, b: b => b === 168 }, // 192.168/16
+  { a: 100, b: b => b >= 64 && b <= 127 }, // CGNAT 100.64/10
+];
+
 /** Whether Private V4. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 function isPrivateV4(ip: string): boolean {
   const parts = ip.split('.').map(Number);
   const a = parts[0] ?? NaN;
   const b = parts[1] ?? NaN;
-  if (a === 10) return true; // 10.0.0.0/8
-  if (a === 127) return true; // loopback
-  if (a === 0) return true; // 0.0.0.0/8 "this host"
-  if (a === 169 && b === 254) return true; // link-local 169.254/16 (cloud metadata)
-  if (a === 172 && b >= 16 && b <= 31) return true; // 172.16/12
-  if (a === 192 && b === 168) return true; // 192.168/16
-  if (a === 100 && b >= 64 && b <= 127) return true; // CGNAT 100.64/10
   if (a >= 224) return true; // multicast + reserved
-  return false;
+  return PRIVATE_V4_RULES.some(r => r.a === a && (r.b ? r.b(b) : true));
 }
 
-/** Whether Private V6. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 13)
-function isPrivateV6(ip: string): boolean {
-  const x = ip.toLowerCase().replace(/^\[|\]$/g, '');
-  if (x === '::1' || x === '::') return true; // loopback / unspecified
-  if (x.startsWith('fe80')) return true; // link-local
-  if (x.startsWith('fc') || x.startsWith('fd')) return true; // unique-local fc00::/7
-  if (x.startsWith('ff')) return true; // multicast
-  // IPv4-mapped IPv6, dotted-quad form: ::ffff:127.0.0.1
+// IPv6 prefixes that are always private/loopback/link-local/multicast.
+const PRIVATE_V6_EXACT = new Set(['::1', '::']); // loopback / unspecified
+const PRIVATE_V6_PREFIXES = ['fe80', 'fc', 'fd', 'ff']; // link-local, ULA, multicast
+
+/** Extract the embedded IPv4 from an IPv4-mapped IPv6 literal, or undefined. */
+function mappedV4(x: string): string | undefined {
+  // dotted-quad form: ::ffff:127.0.0.1
   const dotted = /::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(x);
-  const dottedV4 = dotted?.[1];
-  if (dottedV4 !== undefined) return isPrivateV4(dottedV4);
-  // IPv4-mapped IPv6, packed hex form: ::ffff:7f00:1 == 127.0.0.1. Two 16-bit
-  // hextets after ::ffff: encode the 4 IPv4 octets, so reassemble + reuse the v4
-  // check. (Without this, ::ffff:7f00:1 would slip past as a "public" address.)
+  if (dotted?.[1] !== undefined) return dotted[1];
+  // packed hex form: ::ffff:7f00:1 == 127.0.0.1. Two 16-bit hextets after
+  // ::ffff: encode the 4 IPv4 octets, so reassemble them.
   const hex = /::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/.exec(x);
   const hexHi = hex?.[1];
   const hexLo = hex?.[2];
-  if (hexHi !== undefined && hexLo !== undefined) {
-    const hi = parseInt(hexHi, 16);
-    const lo = parseInt(hexLo, 16);
-    const v4 = `${(hi >> 8) & 0xff}.${hi & 0xff}.${(lo >> 8) & 0xff}.${lo & 0xff}`;
-    return isPrivateV4(v4);
-  }
-  return false;
+  if (hexHi === undefined || hexLo === undefined) return undefined;
+  const hi = parseInt(hexHi, 16);
+  const lo = parseInt(hexLo, 16);
+  return `${(hi >> 8) & 0xff}.${hi & 0xff}.${(lo >> 8) & 0xff}.${lo & 0xff}`;
+}
+
+/** Whether Private V6. */
+function isPrivateV6(ip: string): boolean {
+  const x = ip.toLowerCase().replace(/^\[|\]$/g, '');
+  if (PRIVATE_V6_EXACT.has(x)) return true;
+  if (PRIVATE_V6_PREFIXES.some(p => x.startsWith(p))) return true;
+  const v4 = mappedV4(x);
+  return v4 !== undefined ? isPrivateV4(v4) : false;
 }
 
 /** Whether Blocked Host. */

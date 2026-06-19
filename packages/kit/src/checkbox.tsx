@@ -29,8 +29,40 @@ export interface CheckboxProps {
   style?: ViewStyle | ViewStyle[];
 }
 
+/** Normalise the escape-hatch style prop to a flat array. */
+function styleList(style: ViewStyle | ViewStyle[] | undefined): ViewStyle[] {
+  if (!style) return [];
+  return Array.isArray(style) ? style : [style];
+}
+
+/** Resolve the checkbox colour set for the active scheme. */
+function checkboxColors(dark: boolean): { head: string; bg: string; border: string } {
+  return {
+    head: dark ? '#ffffff' : '#000000',
+    bg: dark ? '#0e0f10' : '#ffffff',
+    border: dark ? '#282a2d' : '#e4e4e5',
+  };
+}
+
+/** Build the box style for the given checked/size/colour state. */
+function boxStyle(
+  size: number,
+  checked: boolean,
+  colors: { head: string; bg: string; border: string },
+): ViewStyle {
+  return {
+    width: size,
+    height: size,
+    borderRadius: 6,
+    borderWidth: checked ? 0 : 1,
+    borderColor: colors.border,
+    backgroundColor: checked ? colors.head : colors.bg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  };
+}
+
 /** ChatKit-style RN checkbox. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export function Checkbox(props: CheckboxProps): React.ReactElement {
   const {
     name,
@@ -47,9 +79,7 @@ export function Checkbox(props: CheckboxProps): React.ReactElement {
   const [internal, setInternal] = useState(defaultChecked ?? false);
   const checked = controlled ?? internal;
 
-  const head = dark ? '#ffffff' : '#000000';
-  const bg = dark ? '#0e0f10' : '#ffffff';
-  const border = dark ? '#282a2d' : '#e4e4e5';
+  const { head, bg } = checkboxColors(dark);
 
   /** Toggle helper. */
   function toggle(): void {
@@ -59,16 +89,7 @@ export function Checkbox(props: CheckboxProps): React.ReactElement {
     onChange?.(next);
   }
 
-  const box: ViewStyle = {
-    width: size,
-    height: size,
-    borderRadius: 6,
-    borderWidth: checked ? 0 : 1,
-    borderColor: border,
-    backgroundColor: checked ? head : bg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  };
+  const box = boxStyle(size, checked, checkboxColors(dark));
 
   return (
     <Pressable
@@ -79,7 +100,7 @@ export function Checkbox(props: CheckboxProps): React.ReactElement {
       onPress={toggle}
       style={[
         { flexDirection: 'row', alignItems: 'center', gap: 10, opacity: disabled ? 0.5 : 1 },
-        ...(style ? (Array.isArray(style) ? style : [style]) : []),
+        ...styleList(style),
       ]}
     >
       <View style={box}>

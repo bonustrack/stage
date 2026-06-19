@@ -30,37 +30,24 @@ export interface ChannelRow {
   [key: string]: unknown;
 }
 
-/** Summarise a conversation into a channels-list row (preview, timestamp, unread count, members). */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
-export async function summarizeConv(
-  conv: Conversation, selfInboxId: string,
-): Promise<ChannelRow> {
-  /** Pull the latest 50 messages — enough for an accurate unread count on active convs without ballooning per-row fetch time. */
-  const msgs = await conv.messages({ limit: 50n }).catch(() => []);
-  /** Browser SDK returns chronological (oldest-first); flip so msgs[0] is the latest, matching the mobile codepath. */
-  const recent = [...msgs].reverse();
-  const last = recent[0];
-  const preview = last ? previewOfXmtpContent(last.content, last.contentType?.typeId) : '';
-  const peerAddress = await peerEthAddressOfDm(conv);
-  const memberAddresses = peerAddress ? [] : await groupMemberEthAddresses(conv);
-  const inboxToAddr = await memberInboxToAddressMap(conv);
-  const totalMembers = memberAddresses.length + 1;
-  /** Browser SDK exposes name + imageUrl as synchronous getters. */
-  const groupMeta = conv as unknown as { name?: string; imageUrl?: string };
-  const resolvedName = (groupMeta.name ?? '').trim();
-  const title = peerAddress
-    ? shortAddress(peerAddress)
-    : (resolvedName
-      ? resolvedName
-      : memberAddresses.length > 0
-        ? `${totalMembers} member${totalMembers === 1 ? '' : 's'}`
-        : conv.id.slice(0, 12));
-  const lastSenderAddress = last?.senderInboxId
-    ? inboxToAddr[last.senderInboxId] ?? null
-    : null;
-  const avatarAddress = peerAddress ?? lastSenderAddress ?? memberAddresses[0] ?? null;
-  const avatarUri = peerAddress ? null : ((groupMeta.imageUrl ?? '').trim() || null);
-  const lastReadNs = getLastReadNs(conv.id);
+/** A decoded XMTP message as exposed by the browser SDK's `messages()` call. */
+interface RecentMsg { content: unknown; contentType?: { typeId?: string }; senderInboxId?: string; sentAtNs: bigint }
+
+/** Resolve a conversation's display title from peer address, group name, member count, or id. */
+function resolveTitle(
+  peerAddress: string | null, resolvedName: string, memberAddresses: string[], convId: string,
+): string {
+  if (peerAddress) return shortAddress(peerAddress);
+  if (resolvedName) return resolvedName;
+  if (memberAddresses.length > 0) {
+    const totalMembers = memberAddresses.length + 1;
+    return `${totalMembers} member${totalMembers === 1 ? '' : 's'}`;
+  }
+  return convId.slice(0, 12);
+}
+
+/** Count consecutive inbound messages newer than the last-read marker. */
+function countUnread(recent: RecentMsg[], lastReadNs: number, selfInboxId: string): number {
   let unreadCount = 0;
   for (const m of recent) {
     const sentNs = Number(m.sentAtNs);
@@ -68,17 +55,68 @@ export async function summarizeConv(
     if (m.senderInboxId === selfInboxId) continue;
     unreadCount += 1;
   }
+  return unreadCount;
+}
+
+/** Pick the stamp avatar address: DM peer, else last sender, else first member. */
+function resolveAvatarAddress(
+  peerAddress: string | null, lastSenderAddress: string | null, memberAddresses: string[],
+): string | null {
+  return peerAddress ?? lastSenderAddress ?? memberAddresses[0] ?? null;
+}
+
+/** Resolve the eth address of a message's sender via the inbox→address map. */
+function senderAddressOf(last: RecentMsg | undefined, inboxToAddr: Record<string, string>): string | null {
+  if (!last?.senderInboxId) return null;
+  return inboxToAddr[last.senderInboxId] ?? null;
+}
+
+/** Resolve a group's uploaded avatar URI (DMs have none). */
+function resolveAvatarUri(peerAddress: string | null, imageUrl: string | undefined): string | null {
+  if (peerAddress) return null;
+  return (imageUrl ?? '').trim() || null;
+}
+
+/**
+ * Cross-device read flag: consent 'unknown' forces a badge only when this
+ *  device has no local read marker yet (lastReadNs === 0), the unread count
+ *  is 0, and there's an inbound last message. Opening a conv flips consent →
+ *  'allowed', so this self-heals and avoids phantom badges on conversations
+ *  read before this feature existed.
+ */
+async function resolveMarkedUnread(
+  convId: string, lastReadNs: number, unreadCount: number, hasLast: boolean, lastFromSelf: boolean,
+): Promise<boolean> {
+  const consent = await getConvConsent(convId).catch(() => 'unknown' as const);
+  return consent === 'unknown' && lastReadNs === 0 && unreadCount === 0 && hasLast && !lastFromSelf;
+}
+
+/** Summarise a conversation into a channels-list row (preview, timestamp, unread count, members). */
+export async function summarizeConv(
+  conv: Conversation, selfInboxId: string,
+): Promise<ChannelRow> {
+  /** Pull the latest 50 messages — enough for an accurate unread count on active convs without ballooning per-row fetch time. */
+  const msgs = await conv.messages({ limit: 50n }).catch(() => []);
+  /** Browser SDK returns chronological (oldest-first); flip so msgs[0] is the latest, matching the mobile codepath. */
+  const recent = [...msgs].reverse() as RecentMsg[];
+  const last = recent[0];
+  const preview = last ? previewOfXmtpContent(last.content, last.contentType?.typeId) : '';
+  const peerAddress = await peerEthAddressOfDm(conv);
+  const memberAddresses = peerAddress ? [] : await groupMemberEthAddresses(conv);
+  const inboxToAddr = await memberInboxToAddressMap(conv);
+  /** Browser SDK exposes name + imageUrl as synchronous getters. */
+  const groupMeta = conv as unknown as { name?: string; imageUrl?: string };
+  const resolvedName = (groupMeta.name ?? '').trim();
+  const title = resolveTitle(peerAddress, resolvedName, memberAddresses, conv.id);
+  const lastSenderAddress = senderAddressOf(last, inboxToAddr);
+  const avatarAddress = resolveAvatarAddress(peerAddress, lastSenderAddress, memberAddresses);
+  const avatarUri = resolveAvatarUri(peerAddress, groupMeta.imageUrl);
+  const lastReadNs = getLastReadNs(conv.id);
+  const unreadCount = countUnread(recent, lastReadNs, selfInboxId);
   const lastFromSelf = !!last && last.senderInboxId === selfInboxId;
-  /**
-   * Cross-device read flag: consent 'unknown' forces a badge only when this
-   *  device has no local read marker yet (lastReadNs === 0), the timestamp
-   *  count is 0, and there's an inbound last message. Opening a conv flips
-   *  consent → 'allowed', so this self-heals and avoids phantom badges on
-   *  conversations read before this feature existed.
-   */
-  const consent = await getConvConsent(conv.id).catch(() => 'unknown' as const);
-  const markedUnread = consent === 'unknown' && lastReadNs === 0
-    && unreadCount === 0 && !!last && !lastFromSelf;
+  const markedUnread = await resolveMarkedUnread(
+    conv.id, lastReadNs, unreadCount, !!last, lastFromSelf,
+  );
   return {
     convId: conv.id,
     title,

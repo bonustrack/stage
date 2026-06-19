@@ -85,8 +85,26 @@ export function resolveUrl(href: string | undefined, base: string): string | und
   }
 }
 
+/** Non-empty string `v`, otherwise `fallback`. */
+function orFallback(v: string | undefined, fallback: string): string {
+  return v !== undefined && v.length > 0 ? v : fallback;
+}
+
+/** Non-empty string `v`, otherwise undefined. */
+function orUndefined(v: string | undefined): string | undefined {
+  return v !== undefined && v.length > 0 ? v : undefined;
+}
+
+/** Hostname of `finalUrl` (www-stripped), or `finalUrl` itself on parse failure. */
+function hostOf(finalUrl: string): string {
+  try {
+    return new URL(finalUrl).hostname.replace(/^www\./, '');
+  } catch {
+    return finalUrl;
+  }
+}
+
 /** Extract preview metadata from raw HTML. `finalUrl` is the post-redirect URL, used both as the canonical `url` and to resolve relative image/favicon refs. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
 export function parseMeta(html: string, finalUrl: string): PreviewMeta {
   // Only scan the head region for speed/safety; fall back to whole doc if no
   // </head> (some pages stream the title late).
@@ -94,11 +112,7 @@ export function parseMeta(html: string, finalUrl: string): PreviewMeta {
   const head = headEnd > 0 ? html.slice(0, headEnd) : html.slice(0, 200_000);
 
   const title = firstMeta(head, ['og:title', 'twitter:title']) ?? titleTag(head);
-  const description = firstMeta(head, [
-    'og:description',
-    'twitter:description',
-    'description',
-  ]);
+  const description = firstMeta(head, ['og:description', 'twitter:description', 'description']);
   const rawImage = firstMeta(head, [
     'og:image:secure_url',
     'og:image:url',
@@ -108,18 +122,14 @@ export function parseMeta(html: string, finalUrl: string): PreviewMeta {
   ]);
   const siteName = firstMeta(head, ['og:site_name', 'application-name', 'twitter:site']);
   const canonical = firstMeta(head, ['og:url']) ?? finalUrl;
-
-  let host = finalUrl;
-  try {
-    host = new URL(finalUrl).hostname.replace(/^www\./, '');
-  } catch { /* keep finalUrl */ }
+  const host = hostOf(finalUrl);
 
   return {
     url: canonical,
-    title: title !== undefined && title.length > 0 ? title : host,
-    description: description !== undefined && description.length > 0 ? description : undefined,
+    title: orFallback(title, host),
+    description: orUndefined(description),
     image: resolveUrl(rawImage, finalUrl),
-    siteName: siteName !== undefined && siteName.length > 0 ? siteName : host,
+    siteName: orFallback(siteName, host),
     favicon: resolveUrl(faviconLink(head) ?? '/favicon.ico', finalUrl),
   };
 }

@@ -62,8 +62,32 @@ function json(body: unknown, status = 200, extra: Record<string, string> = {}): 
   });
 }
 
+/** Serve a cached response (marking x-cache HIT), or null on a miss. */
+async function cacheHit(cacheKey: Request): Promise<Response | null> {
+  const hit = await caches.default.match(cacheKey);
+  if (!hit) return null;
+  const h = new Headers(hit.headers);
+  h.set('x-cache', 'HIT');
+  return new Response(hit.body, { status: hit.status, headers: h });
+}
+
+/** Map a thrown upstream error to a JSON error Response (400 on SSRF, else 502). */
+function errorResponse(e: unknown, fallback: string): Response {
+  if (e instanceof SsrfError) return json({ error: e.message }, 400);
+  return json({ error: e instanceof Error ? e.message : fallback }, 502);
+}
+
+/** Build the cacheable preview payload from a fetched page + request origin. */
+function previewPayload(page: NonNullable<Awaited<ReturnType<typeof fetchPage>>>, request: Request): unknown {
+  // x402 challenge or OpenGraph card - both are cacheable success results.
+  // For OG cards, rewrite image + favicon to proxied /img URLs so the app
+  // never beacons the reader's IP to origin sites (originals kept as *Origin).
+  if ('kind' in page) return page;
+  const selfOrigin = new URL(request.url).origin;
+  return proxyPreviewImages(parseMeta(page.html, page.finalUrl), selfOrigin);
+}
+
 /** Handle the Preview. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
 async function handlePreview(request: Request, ctx: ExecutionContext): Promise<Response> {
   if (!hasClientHeader(request)) return json({ error: 'forbidden' }, 403);
   if (rateLimited(clientIp(request))) return json({ error: 'rate limited' }, 429);
@@ -73,40 +97,25 @@ async function handlePreview(request: Request, ctx: ExecutionContext): Promise<R
 
   // Edge cache lookup, keyed by the normalised preview request (not the upstream
   // url) so the cache key is stable + can't be poisoned by header variance.
-  const cache = caches.default;
   const cacheKey = new Request(`https://preview.metro.box/preview?url=${encodeURIComponent(url)}`);
-  const hit = await cache.match(cacheKey);
-  if (hit) {
-    const h = new Headers(hit.headers);
-    h.set('x-cache', 'HIT');
-    return new Response(hit.body, { status: hit.status, headers: h });
-  }
+  const cached = await cacheHit(cacheKey);
+  if (cached) return cached;
 
   try {
     const page = await fetchPage(url);
     if (!page) return json({ error: 'no previewable content' }, 422);
-    // x402 challenge or OpenGraph card - both are cacheable success results.
-    // For OG cards, rewrite image + favicon to proxied /img URLs so the app
-    // never beacons the reader's IP to origin sites (originals kept as *Origin).
-    const selfOrigin = new URL(request.url).origin;
-    const payload = 'kind' in page
-      ? page
-      : proxyPreviewImages(parseMeta(page.html, page.finalUrl), selfOrigin);
-    const res = json(payload, 200, {
+    const res = json(previewPayload(page, request), 200, {
       'x-cache': 'MISS',
       'cache-control': `public, max-age=${CACHE_TTL}`,
     });
-    ctx.waitUntil(cache.put(cacheKey, res.clone()));
+    ctx.waitUntil(caches.default.put(cacheKey, res.clone()));
     return res;
   } catch (e) {
-    if (e instanceof SsrfError) return json({ error: e.message }, 400);
-    const msg = e instanceof Error ? e.message : 'fetch failed';
-    return json({ error: msg }, 502);
+    return errorResponse(e, 'fetch failed');
   }
 }
 
 /** Handle the Img. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
 async function handleImg(request: Request, ctx: ExecutionContext): Promise<Response> {
   // NOTE: /img intentionally does NOT require the x-stage-client header. React
   // Native's <Image> can't attach custom headers to its GETs (flaky on Android),
@@ -122,16 +131,11 @@ async function handleImg(request: Request, ctx: ExecutionContext): Promise<Respo
 
   // Edge cache, keyed by the normalised url+width so the same asset at the same
   // width is served from cache (no header variance / poisoning).
-  const cache = caches.default;
   const cacheKey = new Request(
     `https://preview.metro.box/img?url=${encodeURIComponent(url)}&w=${width ?? ''}`,
   );
-  const hit = await cache.match(cacheKey);
-  if (hit) {
-    const h = new Headers(hit.headers);
-    h.set('x-cache', 'HIT');
-    return new Response(hit.body, { status: hit.status, headers: h });
-  }
+  const cached = await cacheHit(cacheKey);
+  if (cached) return cached;
 
   try {
     const img = await fetchImage(url, width);
@@ -148,12 +152,10 @@ async function handleImg(request: Request, ctx: ExecutionContext): Promise<Respo
         ...BASE_HEADERS,
       },
     });
-    ctx.waitUntil(cache.put(cacheKey, res.clone()));
+    ctx.waitUntil(caches.default.put(cacheKey, res.clone()));
     return res;
   } catch (e) {
-    if (e instanceof SsrfError) return json({ error: e.message }, 400);
-    const msg = e instanceof Error ? e.message : 'fetch failed';
-    return json({ error: msg }, 502);
+    return errorResponse(e, 'fetch failed');
   }
 }
 
@@ -179,9 +181,7 @@ async function handleSettle(request: Request): Promise<Response> {
     const result = await settleX402(req);
     return json(result, 200);
   } catch (e) {
-    if (e instanceof SsrfError) return json({ error: e.message }, 400);
-    const msg = e instanceof Error ? e.message : 'settle failed';
-    return json({ error: msg }, 502);
+    return errorResponse(e, 'settle failed');
   }
 }
 

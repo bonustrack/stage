@@ -59,8 +59,136 @@ export interface SelectProps {
   style?: ViewStyle | ViewStyle[];
 }
 
+/** Normalise the escape-hatch style prop to a flat array. */
+function styleList(style: ViewStyle | ViewStyle[] | undefined): ViewStyle[] {
+  if (!style) return [];
+  return Array.isArray(style) ? style : [style];
+}
+
+/** Props for the select trigger box. */
+interface SelectTriggerProps {
+  name?: string;
+  disabled?: boolean;
+  block?: boolean;
+  clearable?: boolean;
+  open: boolean;
+  current?: SelectOption;
+  placeholder: string;
+  box: ViewStyle;
+  head: string;
+  placeholderColor: string;
+  style?: ViewStyle | ViewStyle[];
+  onOpen: () => void;
+  onClear: () => void;
+}
+
+/** Pressable trigger box showing the selected option and affordances. */
+function SelectTrigger(props: SelectTriggerProps): React.ReactElement {
+  const { name, disabled, block, clearable, open, current, placeholder, box, head, placeholderColor, style, onOpen, onClear } = props;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={name}
+      accessibilityState={{ disabled, expanded: open }}
+      disabled={disabled}
+      onPress={onOpen}
+      style={[
+        box,
+        { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: block ? 'stretch' : 'flex-start', opacity: disabled ? 0.5 : 1 },
+        ...styleList(style),
+      ]}
+    >
+      <RNText
+        numberOfLines={1}
+        style={{ flex: 1, color: current ? head : placeholderColor, fontSize: FONT_SIZE.md, fontFamily: 'Calibre-Medium' }}
+      >
+        {current ? current.label : placeholder}
+      </RNText>
+      {clearable && current ? (
+        <Pressable accessibilityRole="button" accessibilityLabel="Clear" onPress={onClear} hitSlop={8}>
+          <Icon name="x" size={16} color={placeholderColor} />
+        </Pressable>
+      ) : null}
+      <Icon name="selector" size={16} color={placeholderColor} />
+    </Pressable>
+  );
+}
+
+/** A single option row inside the select sheet. */
+function SelectRow(props: {
+  opt: SelectOption;
+  selected: string | undefined;
+  head: string;
+  rowBorder: string;
+  onPick: (v: string) => void;
+}): React.ReactElement {
+  const { opt, selected, head, rowBorder, onPick } = props;
+  const isSel = opt.value === selected;
+  return (
+    <Pressable
+      accessibilityRole="menuitem"
+      accessibilityState={{ selected: isSel }}
+      onPress={() => { onPick(opt.value); }}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        paddingHorizontal: 16,
+        paddingVertical: 13,
+        borderBottomWidth: 1,
+        borderBottomColor: rowBorder,
+      }}
+    >
+      <RNText style={{ flex: 1, color: head, fontSize: FONT_SIZE.lg, fontFamily: 'Calibre-Medium' }}>
+        {opt.label}
+      </RNText>
+      {isSel ? <Icon name="check" size={18} color={head} /> : null}
+    </Pressable>
+  );
+}
+
+/** Modal sheet listing the select options. */
+function SelectSheet(props: {
+  open: boolean;
+  options: SelectOption[];
+  selected: string | undefined;
+  sheetBg: string;
+  head: string;
+  rowBorder: string;
+  placeholderColor: string;
+  onPick: (v: string) => void;
+  onClose: () => void;
+}): React.ReactElement {
+  const { open, options, selected, sheetBg, head, rowBorder, placeholderColor, onPick, onClose } = props;
+  return (
+    <Modal visible={open} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable
+        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 24 }}
+        onPress={onClose}
+      >
+        <Pressable
+          style={{ backgroundColor: sheetBg, borderRadius: 14, overflow: 'hidden', maxHeight: '70%' }}
+          onPress={() => {
+            /* intentional no-op: swallow press so taps inside the sheet don't dismiss it */
+          }}
+        >
+          <ScrollView>
+            {options.map((opt) => (
+              <SelectRow key={opt.value} opt={opt} selected={selected} head={head} rowBorder={rowBorder} onPick={onPick} />
+            ))}
+            {options.length === 0 ? (
+              <View style={{ padding: 16 }}>
+                <RNText style={{ color: placeholderColor, fontFamily: 'Calibre-Medium' }}>No options</RNText>
+              </View>
+            ) : null}
+          </ScrollView>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
 /** ChatKit-style RN select / dropdown. */
-// eslint-disable-next-line complexity, max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export function Select(props: SelectProps): React.ReactElement {
   const {
     name,
@@ -110,89 +238,33 @@ export function Select(props: SelectProps): React.ReactElement {
 
   return (
     <>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={name}
-        accessibilityState={{ disabled, expanded: open }}
+      <SelectTrigger
+        name={name}
         disabled={disabled}
-        onPress={() => { setOpen(true); }}
-        style={[
-          box,
-          {
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 8,
-            alignSelf: block ? 'stretch' : 'flex-start',
-            opacity: disabled ? 0.5 : 1,
-          },
-          ...(style ? (Array.isArray(style) ? style : [style]) : []),
-        ]}
-      >
-        <RNText
-          numberOfLines={1}
-          style={{
-            flex: 1,
-            color: current ? head : colors.placeholder,
-            fontSize: FONT_SIZE.md,
-            fontFamily: 'Calibre-Medium',
-          }}
-        >
-          {current ? current.label : placeholder}
-        </RNText>
-        {clearable && current ? (
-          <Pressable accessibilityRole="button" accessibilityLabel="Clear" onPress={clear} hitSlop={8}>
-            <Icon name="x" size={16} color={colors.placeholder} />
-          </Pressable>
-        ) : null}
-        <Icon name="selector" size={16} color={colors.placeholder} />
-      </Pressable>
+        block={block}
+        clearable={clearable}
+        open={open}
+        current={current}
+        placeholder={placeholder}
+        box={box}
+        head={head}
+        placeholderColor={colors.placeholder}
+        style={style}
+        onOpen={() => { setOpen(true); }}
+        onClear={clear}
+      />
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => { setOpen(false); }}>
-        <Pressable
-          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 24 }}
-          onPress={() => { setOpen(false); }}
-        >
-          <Pressable
-            style={{ backgroundColor: sheetBg, borderRadius: 14, overflow: 'hidden', maxHeight: '70%' }}
-            onPress={() => {
-              /* intentional no-op: swallow press so taps inside the sheet don't dismiss it */
-            }}
-          >
-            <ScrollView>
-              {options.map((opt) => {
-                const isSel = opt.value === selected;
-                return (
-                  <Pressable
-                    key={opt.value}
-                    accessibilityRole="menuitem"
-                    accessibilityState={{ selected: isSel }}
-                    onPress={() => { pick(opt.value); }}
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      gap: 10,
-                      paddingHorizontal: 16,
-                      paddingVertical: 13,
-                      borderBottomWidth: 1,
-                      borderBottomColor: rowBorder,
-                    }}
-                  >
-                    <RNText style={{ flex: 1, color: head, fontSize: FONT_SIZE.lg, fontFamily: 'Calibre-Medium' }}>
-                      {opt.label}
-                    </RNText>
-                    {isSel ? <Icon name="check" size={18} color={head} /> : null}
-                  </Pressable>
-                );
-              })}
-              {options.length === 0 ? (
-                <View style={{ padding: 16 }}>
-                  <RNText style={{ color: colors.placeholder, fontFamily: 'Calibre-Medium' }}>No options</RNText>
-                </View>
-              ) : null}
-            </ScrollView>
-          </Pressable>
-        </Pressable>
-      </Modal>
+      <SelectSheet
+        open={open}
+        options={options}
+        selected={selected}
+        sheetBg={sheetBg}
+        head={head}
+        rowBorder={rowBorder}
+        placeholderColor={colors.placeholder}
+        onPick={pick}
+        onClose={() => { setOpen(false); }}
+      />
     </>
   );
 }

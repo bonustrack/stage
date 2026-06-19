@@ -108,26 +108,13 @@ function applySpacing(
   if (value.left !== undefined) out[Left] = value.left;
 }
 
-/**
- * Pure mapper: BoxProps -> neutral CSS-ish record. Numbers stay numbers;
- *  string values (flexDirection, alignItems, colors...) stay strings.
- *  Any undefined prop is omitted so it never overrides a default or a
- *  passthrough style. `display` is NOT emitted here — the web renderer
- *  adds `display:flex` explicitly (RN Views are flex by default).
- */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
-function boxStyleEntries(
+/** Emit flex/visual layout entries (direction, gap, alignment, background, radius). */
+function applyFlexEntries(
+  out: Record<string, string | number>,
   props: BoxProps,
-): Record<string, string | number> {
-  const out: Record<string, string | number> = {};
-
+): void {
   out.flexDirection = props.direction === 'row' ? 'row' : 'column';
-
   if (props.gap !== undefined) out.gap = props.gap;
-
-  applySpacing(out, 'padding', props.padding);
-  applySpacing(out, 'margin', props.margin);
-
   if (props.align !== undefined) out.alignItems = ALIGN_MAP[props.align];
   if (props.justify !== undefined)
     out.justifyContent = JUSTIFY_MAP[props.justify];
@@ -135,8 +122,15 @@ function boxStyleEntries(
   if (props.wrap !== undefined) out.flexWrap = props.wrap ? 'wrap' : 'nowrap';
   if (props.background !== undefined)
     out.backgroundColor = resolveBg(props.background);
-  if (props.radius !== undefined) out.borderRadius = resolveBoxRadius(props.radius);
+  if (props.radius !== undefined)
+    out.borderRadius = resolveBoxRadius(props.radius);
+}
 
+/** Emit sizing entries (size/width/height/min/max/aspectRatio); `size` sets both width and height. */
+function applySizing(
+  out: Record<string, string | number>,
+  props: BoxProps,
+): void {
   if (props.size !== undefined) {
     out.width = props.size;
     out.height = props.size;
@@ -148,7 +142,17 @@ function boxStyleEntries(
   if (props.maxWidth !== undefined) out.maxWidth = props.maxWidth;
   if (props.maxHeight !== undefined) out.maxHeight = props.maxHeight;
   if (props.aspectRatio !== undefined) out.aspectRatio = props.aspectRatio;
+}
 
+/** Pure mapper: BoxProps -> neutral CSS-ish record; undefined props are omitted and `display` is added by the web renderer. */
+function boxStyleEntries(
+  props: BoxProps,
+): Record<string, string | number> {
+  const out: Record<string, string | number> = {};
+  applyFlexEntries(out, props);
+  applySpacing(out, 'padding', props.padding);
+  applySpacing(out, 'margin', props.margin);
+  applySizing(out, props);
   return out;
 }
 

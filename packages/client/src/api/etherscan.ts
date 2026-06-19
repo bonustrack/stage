@@ -12,7 +12,8 @@
  *  which for a single EOA corresponds to NONCE DESCENDING. Pure `fetch`.
  */
 
-import { parseEtherscanResponse } from './etherscan.schema';
+import { parseEtherscanResponse, type EtherscanResponse } from './etherscan.schema';
+import type { EtherscanTx } from './etherscan.types';
 export type { EtherscanTx } from './etherscan.types';
 
 const DEFAULT_KEY =
@@ -48,7 +49,6 @@ export interface ActivityRow {
  *  the caller can render an error state; an address with no history resolves
  *  to an empty array (Etherscan returns status "0" / "No transactions found").
  */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export async function fetchActivity(
   address: string,
   chainId = 1,
@@ -66,35 +66,43 @@ export async function fetchActivity(
   // Boundary: validate the response envelope so a drifted/garbage body throws
   // loudly with a logged reason instead of being cast into a wrong shape.
   const json = parseEtherscanResponse(await res.json());
+  const rows = resultRowsOrThrow(json);
+  return rows.map(tx => mapTx(tx, addr, chainId, label));
+}
+
+/** Extract the tx-list array from an Etherscan envelope, treating "no transactions" as empty and any other non-"1" status as a thrown error. */
+function resultRowsOrThrow(json: EtherscanResponse): EtherscanTx[] {
   // status "0" with message "No transactions found" + array result = empty (not an error).
-  if (json.status !== '1') {
-    if (Array.isArray(json.result) && json.result.length === 0) return [];
-    if (typeof json.result === 'string' && /no transactions/i.test(json.result)) return [];
-    if (typeof json.result === 'string' && /no transactions/i.test(json.message)) return [];
+  if (json.status !== '1' && !Array.isArray(json.result)) {
+    const noTx = typeof json.result === 'string' && /no transactions/i.test(json.result);
+    const noTxMsg = typeof json.result === 'string' && /no transactions/i.test(json.message);
     // Anything else (rate limit, invalid key) is a real error.
-    if (!Array.isArray(json.result))
+    if (!noTx && !noTxMsg) {
       throw new Error(typeof json.result === 'string' ? json.result : json.message);
+    }
   }
-  const rows = Array.isArray(json.result) ? json.result : [];
-  return rows.map(tx => {
-    const isOut = tx.from.toLowerCase() === addr;
-    const isIn = tx.to.toLowerCase() === addr;
-    const direction: ActivityRow['direction'] = isOut && isIn ? 'self' : isOut ? 'send' : 'receive';
-    const isContract = !!tx.input && tx.input !== '0x' && tx.input !== '0x0';
-    return {
-      hash: tx.hash,
-      nonce: Number(tx.nonce),
-      timestamp: Number(tx.timeStamp),
-      direction,
-      isContract,
-      counterparty: (isOut ? tx.to : tx.from).toLowerCase(),
-      valueEth: weiToEth(tx.value),
-      failed: tx.isError === '1',
-      functionName: shortFn(tx.functionName ?? ''),
-      chainId,
-      chainLabel: label,
-    };
-  });
+  return Array.isArray(json.result) ? json.result : [];
+}
+
+/** Shape one raw Etherscan tx into the normalised ActivityRow the Activity tab renders. */
+function mapTx(tx: EtherscanTx, addr: string, chainId: number, label: string): ActivityRow {
+  const isOut = tx.from.toLowerCase() === addr;
+  const isIn = tx.to.toLowerCase() === addr;
+  const direction: ActivityRow['direction'] = isOut && isIn ? 'self' : isOut ? 'send' : 'receive';
+  const isContract = !!tx.input && tx.input !== '0x' && tx.input !== '0x0';
+  return {
+    hash: tx.hash,
+    nonce: Number(tx.nonce),
+    timestamp: Number(tx.timeStamp),
+    direction,
+    isContract,
+    counterparty: (isOut ? tx.to : tx.from).toLowerCase(),
+    valueEth: weiToEth(tx.value),
+    failed: tx.isError === '1',
+    functionName: shortFn(tx.functionName ?? ''),
+    chainId,
+    chainLabel: label,
+  };
 }
 
 /**

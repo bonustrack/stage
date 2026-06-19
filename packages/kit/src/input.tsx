@@ -10,6 +10,9 @@ import {
   type StyleProp,
   type TextStyle,
 } from 'react-native';
+
+/** The focus/blur event type accepted by RN TextInput's onFocus handler. */
+type FocusEv = Parameters<NonNullable<TextInputProps['onFocus']>>[0];
 import {
   controlBoxStyle,
   controlColors,
@@ -77,8 +80,24 @@ export interface InputProps {
   >;
 }
 
+/** Accessibility id pair derived from the field `name`. */
+function fieldIds(name: string | undefined): { nativeID?: string; accessibilityLabelledBy?: string } {
+  if (!name) return {};
+  return { nativeID: `input-${name}`, accessibilityLabelledBy: `label-${name}` };
+}
+
+/** Set focus state then forward the event to the caller's handler. */
+function chainFocus(
+  focused: boolean,
+  setFocused: (v: boolean) => void,
+  next: ((e: FocusEv) => void) | undefined,
+  e: FocusEv,
+): void {
+  setFocused(focused);
+  next?.(e);
+}
+
 /** ChatKit-style RN single-line input. Forwards a ref to the underlying RN TextInput so call sites can focus/blur it. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 11)
 export const Input = forwardRef<TextInput, InputProps>(function Input(props, ref) {
   const {
     name,
@@ -111,8 +130,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(props, ref
     <TextInput
       {...inputProps}
       ref={ref}
-      nativeID={name ? `input-${name}` : undefined}
-      accessibilityLabelledBy={name ? `label-${name}` : undefined}
+      {...fieldIds(name)}
       value={value}
       defaultValue={defaultValue}
       placeholder={placeholder}
@@ -127,14 +145,8 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(props, ref
         onSubmit?.(e.nativeEvent.text);
         inputProps?.onSubmitEditing?.(e);
       }}
-      onFocus={(e) => {
-        setFocused(true);
-        inputProps?.onFocus?.(e);
-      }}
-      onBlur={(e) => {
-        setFocused(false);
-        inputProps?.onBlur?.(e);
-      }}
+      onFocus={(e) => { chainFocus(true, setFocused, inputProps?.onFocus, e); }}
+      onBlur={(e) => { chainFocus(false, setFocused, inputProps?.onBlur, e); }}
       style={[box, text, disabled && { opacity: 0.5 }, style]}
     />
   );

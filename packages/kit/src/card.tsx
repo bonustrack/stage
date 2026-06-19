@@ -60,76 +60,70 @@ function palette(dark: boolean): { surface: string; border: string; sub: string 
   return { surface: p.surface, border: p.border, sub: p.sub };
 }
 
+/** Muted status line rendered above the card body. */
+function CardStatusLine(props: {
+  status: CardStatus;
+  size: CardSize;
+  collapsed: boolean;
+  sub: string;
+}): React.ReactElement {
+  const { status, size, collapsed, sub } = props;
+  return (
+    <RNText
+      style={{
+        color: sub,
+        fontSize: STATUS_SIZE[size],
+        fontFamily: 'Calibre-Medium',
+        marginBottom: collapsed ? 0 : 8,
+      }}
+      numberOfLines={1}
+    >
+      {status.favicon ? `${status.favicon}  ` : ''}
+      {status.text}
+    </RNText>
+  );
+}
+
+/** Foot row with the optional cancel/confirm actions. */
+function CardFoot(props: {
+  confirm?: CardAction;
+  cancel?: CardAction;
+  dark: boolean;
+}): React.ReactElement | null {
+  const { confirm, cancel, dark } = props;
+  if (!confirm && !cancel) return null;
+  return (
+    <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
+      {cancel ? (
+        <Button variant="secondary" size="sm" label={cancel.label} onPress={cancel.onPress} dark={dark} />
+      ) : null}
+      {confirm ? (
+        <Button variant="primary" size="sm" label={confirm.label} onPress={confirm.onPress} dark={dark} />
+      ) : null}
+    </View>
+  );
+}
+
+/** Card inner content: status line, body, and foot actions. */
+function CardBody(props: CardProps & { sub: string }): React.ReactElement {
+  const { children, size = 'md', status, collapsed = false, confirm, cancel, dark, sub } = props;
+  return (
+    <>
+      {status ? <CardStatusLine status={status} size={size} collapsed={collapsed} sub={sub} /> : null}
+      {collapsed ? null : children}
+      <CardFoot confirm={confirm} cancel={cancel} dark={dark} />
+    </>
+  );
+}
+
 /** ChatKit-style RN card. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 14)
 export function Card(props: CardProps): React.ReactElement {
-  const {
-    children,
-    size = 'md',
-    padding,
-    background,
-    status,
-    collapsed = false,
-    confirm,
-    cancel,
-    onPress,
-    dark,
-    style,
-  } = props;
+  const { size = 'md', padding, background, onPress, dark, style } = props;
 
   const c = palette(dark);
   const pad = padding ?? PADDING[size];
 
-  const body = (
-    <>
-      {status ? (
-        <RNText
-          style={{
-            color: c.sub,
-            fontSize: STATUS_SIZE[size],
-            fontFamily: 'Calibre-Medium',
-            marginBottom: collapsed ? 0 : 8,
-          }}
-          numberOfLines={1}
-        >
-          {status.favicon ? `${status.favicon}  ` : ''}
-          {status.text}
-        </RNText>
-      ) : null}
-
-      {collapsed ? null : children}
-
-      {confirm || cancel ? (
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'flex-end',
-            gap: 8,
-            marginTop: 12,
-          }}
-        >
-          {cancel ? (
-            <Button
-              variant="secondary"
-              size="sm"
-              label={cancel.label}
-              onPress={cancel.onPress}
-              dark={dark}
-            />
-          ) : null}
-          {confirm ? (
-            <Button
-              variant="primary"
-              size="sm"
-              label={confirm.label}
-              onPress={confirm.onPress}
-              dark={dark}
-            />
-          ) : null}
-        </View>
-      ) : null}
-    </>
-  );
+  const body = <CardBody {...props} sub={c.sub} />;
 
   const base: ViewStyle = {
     backgroundColor: background ?? c.surface,

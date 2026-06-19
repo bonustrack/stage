@@ -20,21 +20,29 @@ export interface GroupUpdatedContent {
   metadataFieldChanges?: FieldChange[];
 }
 
+/** Describe one metadata field change as a readable clause (rename, image/description edit, or a generic "changed X"). */
+function describeFieldChange(f: FieldChange): string {
+  if (f.fieldName === 'group_name') return `renamed the group to "${f.newValue}"`;
+  if (f.fieldName === 'group_image_url_square') return 'updated the group image';
+  if (f.fieldName === 'description') return 'updated the group description';
+  return `changed ${f.fieldName.replace(/_/g, ' ')}`;
+}
+
+/** Format `<verb> N member(s)` for a non-zero count, else '' (so an empty clause can be filtered out). */
+function memberClause(verb: string, count: number): string {
+  return count ? `${verb} ${count} member${count === 1 ? '' : 's'}` : '';
+}
+
 /** Summarise a group_updated system message as one readable line (renames, image/description edits, members added or removed). */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export function humanizeGroupUpdated(g: GroupUpdatedContent): string {
-  const parts: string[] = [];
   const fields = g.metadataFieldsChanged ?? g.metadataFieldChanges ?? [];
-  for (const f of fields) {
-    if (f.fieldName === 'group_name') parts.push(`renamed the group to "${f.newValue}"`);
-    else if (f.fieldName === 'group_image_url_square') parts.push('updated the group image');
-    else if (f.fieldName === 'description') parts.push('updated the group description');
-    else parts.push(`changed ${f.fieldName.replace(/_/g, ' ')}`);
-  }
-  const addedCount = (g.membersAdded ?? g.addedInboxes)?.length ?? 0;
-  if (addedCount) parts.push(`added ${addedCount} member${addedCount === 1 ? '' : 's'}`);
-  const removedCount = (g.membersRemoved ?? g.removedInboxes)?.length ?? 0;
-  if (removedCount) parts.push(`removed ${removedCount} member${removedCount === 1 ? '' : 's'}`);
+  const added = (g.membersAdded ?? g.addedInboxes)?.length ?? 0;
+  const removed = (g.membersRemoved ?? g.removedInboxes)?.length ?? 0;
+  const parts = [
+    ...fields.map(describeFieldChange),
+    memberClause('added', added),
+    memberClause('removed', removed),
+  ].filter(Boolean);
   return parts.length ? parts.join(' • ') : 'updated the group';
 }
 
@@ -62,34 +70,40 @@ export function shortContentType(raw: string | undefined | null): string {
   return raw.split('/').pop()?.split(':')[0] ?? raw;
 }
 
+/** Preview a `reply` content as its (mention-humanised) inner text, else `[reply]`. */
+function previewReply(decoded: unknown): string {
+  const r = decoded as { content?: { text?: string } | string };
+  if (typeof r.content === 'string') return humanizeMentions(r.content);
+  return r.content?.text ? humanizeMentions(r.content.text) : '[reply]';
+}
+
+/** Preview a `poll` content as `Poll: <first question>`, else `[poll]`. */
+function previewPoll(decoded: unknown): string {
+  const p = decoded as { question?: string; questions?: { question?: string }[] };
+  const title = p.questions?.[0]?.question ?? p.question;
+  return title ? `Poll: ${title}` : '[poll]';
+}
+
+/** Per-typeId preview builders for non-string decoded XMTP content (channels-list row + daemon query/listConvs). */
+const PREVIEW_HANDLERS: Record<string, (decoded: unknown) => string> = {
+  group_updated: decoded => humanizeGroupUpdated(decoded as GroupUpdatedContent),
+  groupUpdated: decoded => humanizeGroupUpdated(decoded as GroupUpdatedContent),
+  // Preview a reaction as just the emoji (e.g. "🔥") rather than "[react 🔥]".
+  reaction: decoded => (decoded as { content?: string }).content ?? '👍',
+  poll: previewPoll,
+  reply: previewReply,
+  attachment: decoded => {
+    const a = decoded as { filename?: string; mimeType?: string };
+    return attachmentEmojiPreview(a.mimeType, a.filename);
+  },
+};
+
 /** Build a one-line human-readable preview for any decoded XMTP message content. Used by the channels-list row and the daemon-side `query` / `listConvs` actions to surface system messages as readable text. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export function previewOfXmtpContent(decoded: unknown, contentTypeId: string | undefined | null): string {
   const typeId = shortContentType(contentTypeId);
   if (typeof decoded === 'string') return humanizeMentions(decoded);
-  if (typeId === 'group_updated' || typeId === 'groupUpdated') {
-    return humanizeGroupUpdated(decoded as GroupUpdatedContent);
-  }
-  if (typeId === 'reaction') {
-    // Preview as just the emoji (e.g. "🔥") rather than "[react 🔥]".
-    const r = decoded as { content?: string };
-    return r.content ?? '👍';
-  }
-  if (typeId === 'poll') {
-    const p = decoded as { question?: string; questions?: { question?: string }[] };
-    const title = p.questions?.[0]?.question ?? p.question;
-    return title ? `Poll: ${title}` : '[poll]';
-  }
-  if (typeId === 'reply') {
-    const r = decoded as { content?: { text?: string } | string };
-    if (typeof r.content === 'string') return humanizeMentions(r.content);
-    return r.content?.text ? humanizeMentions(r.content.text) : '[reply]';
-  }
-  if (typeId === 'attachment') {
-    const a = decoded as { filename?: string; mimeType?: string };
-    return attachmentEmojiPreview(a.mimeType, a.filename);
-  }
-  return `[${typeId}]`;
+  const handler = PREVIEW_HANDLERS[typeId];
+  return handler ? handler(decoded) : `[${typeId}]`;
 }
 
 /**
@@ -99,14 +113,20 @@ export function previewOfXmtpContent(decoded: unknown, contentTypeId: string | u
  *  MIME type is authoritative; falls back to the filename extension when the
  *  remote-attachment metadata omits the MIME (multi-remote attachments).
  */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export function attachmentEmojiPreview(mimeType?: string | null, filename?: string | null): string {
   const ext = filename?.split('.').pop()?.toLowerCase() ?? '';
-  const isImage = (mimeType?.startsWith('image/') ?? false) || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic'].includes(ext);
-  const isAudio = (mimeType?.startsWith('audio/') ?? false) || ['m4a', 'mp3', 'wav', 'aac', 'ogg'].includes(ext);
-  const isVideo = (mimeType?.startsWith('video/') ?? false) || ['mp4', 'mov', 'webm'].includes(ext);
-  if (isImage) return '📷';
-  if (isAudio) return '🎤';
-  if (isVideo) return '🎥';
+  const mime = mimeType ?? '';
+  if (matchesKind(mime, ext, 'image/', IMAGE_EXTS)) return '📷';
+  if (matchesKind(mime, ext, 'audio/', AUDIO_EXTS)) return '🎤';
+  if (matchesKind(mime, ext, 'video/', VIDEO_EXTS)) return '🎥';
   return '📎';
 }
+
+/** True when a MIME prefix matches, or (when MIME is absent/other) the filename extension is in the kind's list. */
+function matchesKind(mime: string, ext: string, mimePrefix: string, exts: string[]): boolean {
+  return mime.startsWith(mimePrefix) || exts.includes(ext);
+}
+
+const IMAGE_EXTS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic'];
+const AUDIO_EXTS = ['m4a', 'mp3', 'wav', 'aac', 'ogg'];
+const VIDEO_EXTS = ['mp4', 'mov', 'webm'];

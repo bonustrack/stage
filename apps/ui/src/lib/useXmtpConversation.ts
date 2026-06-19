@@ -44,8 +44,44 @@ export interface XmtpConversation {
   onActionCopyLink: () => void;
 }
 
+/** Header metadata (peer address or group name) resolved for a conversation. */
+interface ConvMeta { peerAddress: string | null; groupName: string; inboxToAddr: Record<string, string> }
+
+/** Load a conversation's header metadata: DM peer address or group name, plus the inbox→address map. */
+async function loadConvMeta(line: string): Promise<ConvMeta> {
+  const empty: ConvMeta = { peerAddress: null, groupName: '', inboxToAddr: {} };
+  const conv = await convOfLine(line).catch(() => null);
+  if (!conv) return empty;
+  const peer = await peerEthAddressOfDm(conv);
+  let groupName = '';
+  let peerAddress: string | null = null;
+  if (peer) peerAddress = peer;
+  else {
+    const n = (conv as unknown as { name?: string | (() => Promise<string>) }).name;
+    groupName = typeof n === 'function' ? await n() : (n ?? '');
+  }
+  return { peerAddress, groupName, inboxToAddr: await memberInboxToAddressMap(conv) };
+}
+
+/** True when a live confirmed bubble is the network twin of an optimistic one (same author/text within 30s). */
+function isOptimisticTwin(live: HistoryEntry, optimisticEntry: HistoryEntry, myUri: string): boolean {
+  return live.from === myUri && live.text === optimisticEntry.text
+    && Math.abs(new Date(live.ts).getTime() - new Date(optimisticEntry.ts).getTime()) < 30_000;
+}
+
+/** Drop optimistic entries that already have a confirmed live twin. */
+function pendingOptimistic(
+  optimisticEntries: HistoryEntry[], live: HistoryEntry[], myUri: string,
+): HistoryEntry[] {
+  return optimisticEntries.filter(o => !live.some(e => isOptimisticTwin(e, o, myUri)));
+}
+
+/** Scroll the given scroller element to its bottom. */
+function scrollToBottom(scroller: Ref<HTMLElement | null>): void {
+  if (scroller.value) scroller.value.scrollTop = scroller.value.scrollHeight;
+}
+
 /** Hook providing XMTP conversation-view state: feed, header metadata, optimistic bubbles, and bubble actions. */
-// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConversation {
   const route = useRoute();
   const router = useRouter();
@@ -73,24 +109,18 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
       .map(([, addr]) => addr),
   );
 
-  watchEffect(() => { void loadConvMeta(); });
-
-  /** Get the Conv Meta. */
-  async function loadConvMeta(): Promise<void> {
+  /** Refresh header metadata into the local refs for the active conversation. */
+  async function refreshConvMeta(): Promise<void> {
     if (!convId.value || !line.value) return;
     peerAddress.value = null;
     groupName.value = '';
     inboxToAddr.value = {};
-    const conv = await convOfLine(line.value).catch(() => null);
-    if (!conv) return;
-    const peer = await peerEthAddressOfDm(conv);
-    if (peer) peerAddress.value = peer;
-    else {
-      const n = (conv as unknown as { name?: string | (() => Promise<string>) }).name;
-      groupName.value = typeof n === 'function' ? await n() : (n ?? '');
-    }
-    inboxToAddr.value = await memberInboxToAddressMap(conv);
+    const meta = await loadConvMeta(line.value);
+    peerAddress.value = meta.peerAddress;
+    groupName.value = meta.groupName;
+    inboxToAddr.value = meta.inboxToAddr;
   }
+  watchEffect(() => { void refreshConvMeta(); });
 
   /** Mark conv as read when bubbles arrive; ping the embed host (if iframed) with the inbound count so its launcher can badge unread. */
   watch(() => feed.events.value.length, (len, prev) => {
@@ -113,19 +143,13 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
 
   /** Drop optimistic twins of confirmed bubbles; flip to oldest-first. */
   const allBubbles = computed(() => {
-    const live = optimistic.value.filter(o =>
-      !liveBubbles.value.some(e => e.from === myUri.value && e.text === o.text
-        && Math.abs(new Date(e.ts).getTime() - new Date(o.ts).getTime()) < 30_000),
-    );
+    const live = pendingOptimistic(optimistic.value, liveBubbles.value, myUri.value);
     return [...liveBubbles.value, ...live].reverse();
   });
 
   watch([liveBubbles, optimistic], () => {
     if (!optimistic.value.length) return;
-    const stillPending = optimistic.value.filter(o =>
-      !liveBubbles.value.some(e => e.from === myUri.value && e.text === o.text
-        && Math.abs(new Date(e.ts).getTime() - new Date(o.ts).getTime()) < 30_000),
-    );
+    const stillPending = pendingOptimistic(optimistic.value, liveBubbles.value, myUri.value);
     if (stillPending.length !== optimistic.value.length) optimistic.value = stillPending;
   });
 
@@ -159,10 +183,6 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
   /** Reset the one-shot scroll guard when navigating to a different permalink. */
   watch([convId, targetMsgId], () => { scrolledToTarget.value = false; });
 
-  /** Scroll To Bottom. */
-  function scrollToBottom(): void {
-    if (scroller.value) scroller.value.scrollTop = scroller.value.scrollHeight;
-  }
   watch(allBubbles, () => {
     void nextTick(() => {
       // If a permalink targets a specific message and we haven't reached it yet,
@@ -172,13 +192,13 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
         // Target not in the feed yet — stay put while more history streams in.
         return;
       }
-      scrollToBottom();
+      scrollToBottom(scroller);
     });
   }, { flush: 'post' });
   onMounted(() => {
     void nextTick(() => {
       if (targetMsgId.value && scrollToTargetMessage()) return;
-      scrollToBottom();
+      scrollToBottom(scroller);
     });
   });
 

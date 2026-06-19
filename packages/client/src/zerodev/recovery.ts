@@ -107,21 +107,24 @@ export function encodeRecoveryMessage(msg: RecoveryMessage): string {
   return `${REQUEST_PREFIX}${JSON.stringify(msg)}`;
 }
 
+/** Match a parsed object to a known recovery message shape (request or approval), or null. */
+function asRecoveryMessage(rec: Record<string, unknown>): RecoveryMessage | null {
+  if (rec.kind === 'recovery.request' && rec.wallet && rec.newOwner) {
+    return rec as unknown as RecoveryRequest;
+  }
+  if (rec.kind === 'recovery.approval' && rec.wallet && rec.newOwner && rec.signature) {
+    return rec as unknown as RecoveryApproval;
+  }
+  return null;
+}
+
 /** Parse a recovery control message from an XMTP text line, or null if the line is ordinary chat. Defensive: never throws on malformed input. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 13)
 export function parseRecoveryMessage(text: string): RecoveryMessage | null {
   if (!text?.startsWith(REQUEST_PREFIX)) return null;
   try {
     const obj: unknown = JSON.parse(text.slice(REQUEST_PREFIX.length));
     if (typeof obj !== 'object' || obj === null) return null;
-    const rec = obj as Record<string, unknown>;
-    if (rec.kind === 'recovery.request' && rec.wallet && rec.newOwner) {
-      return obj as RecoveryRequest;
-    }
-    if (rec.kind === 'recovery.approval' && rec.wallet && rec.newOwner && rec.signature) {
-      return obj as RecoveryApproval;
-    }
-    return null;
+    return asRecoveryMessage(obj as Record<string, unknown>);
   } catch {
     return null;
   }

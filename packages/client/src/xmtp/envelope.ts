@@ -60,20 +60,130 @@ interface MultiRemoteAttachmentView {
   attachments?: ({ filename?: string } & Record<string, unknown>)[];
 }
 
+/** Map a `reaction` content into its envelope — a poll vote (schema:'custom') carries voteFor/optionIndex so tally helpers can pick it out; otherwise a plain emoji react. */
+function reactionEnvelope(base: HistoryEntry, typeId: string, decoded: unknown): HistoryEntry {
+  const r = decoded as ReactionContentView;
+  const removed = r.action === 'removed';
+  if (r.schema === 'custom') {
+    return {
+      ...base,
+      text: `[vote ${r.content}${removed ? ' (removed)' : ''}]`,
+      payload: {
+        contentType: typeId, reactTo: r.reference, emoji: r.content,
+        schema: 'custom', voteFor: r.reference, optionIndex: Number(r.content), removed,
+      },
+    };
+  }
+  return {
+    ...base,
+    text: `[react ${r.content}${removed ? ' (removed)' : ''}]`,
+    payload: { contentType: typeId, reactTo: r.reference, emoji: r.content, removed },
+  };
+}
+
+/** Map a `reply` content into its envelope, surfacing the inner text + the referenced message id. */
+function replyEnvelope(base: HistoryEntry, typeId: string, decoded: unknown): HistoryEntry {
+  const r = decoded as ReplyContentView;
+  return {
+    ...base,
+    text: r.content?.text ?? `[reply]`,
+    replyTo: r.reference,
+    payload: { contentType: typeId, replyTo: r.reference },
+  };
+}
+
+/** Infer an attachment `kind` (image/audio/video/file) from a MIME type, else 'file'. */
+function kindFromMime(mime?: string): 'image' | 'audio' | 'video' | 'file' {
+  if (mime?.startsWith('image/')) return 'image';
+  if (mime?.startsWith('audio/')) return 'audio';
+  if (mime?.startsWith('video/')) return 'video';
+  return 'file';
+}
+
+/** Infer an attachment `kind` from a filename extension, else 'file'. */
+function kindFromExt(name: string): 'image' | 'audio' | 'video' | 'file' {
+  const ext = name.split('.').pop()?.toLowerCase() ?? '';
+  if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic'].includes(ext)) return 'image';
+  if (['m4a', 'mp3', 'wav', 'aac', 'ogg'].includes(ext)) return 'audio';
+  if (['mp4', 'mov', 'webm'].includes(ext)) return 'video';
+  return 'file';
+}
+
+/** Map an inline `attachment` content (bytes already base64 over the RN bridge) into its envelope. */
+function attachmentEnvelope(base: HistoryEntry, typeId: string, decoded: unknown): HistoryEntry {
+  const a = decoded as StaticAttachmentView;
+  const kind = kindFromMime(a.mimeType);
+  return {
+    ...base,
+    text: `[${kind}: ${a.filename}]`,
+    payload: {
+      contentType: typeId,
+      attachments: [{ kind, mime: a.mimeType, name: a.filename, dataB64: a.data }],
+    },
+  };
+}
+
+/** Map a `multiRemoteAttachment` content (N encrypted-remote attachments on IPFS) into its envelope; MIME is absent so kind is inferred from the filename. */
+function multiRemoteEnvelope(base: HistoryEntry, typeId: string, decoded: unknown): HistoryEntry {
+  const m = decoded as MultiRemoteAttachmentView;
+  const attachments = (m.attachments ?? []).map((info, i) => {
+    const name = info.filename ?? `attachment-${i + 1}`;
+    return { kind: kindFromExt(name), name, remote: info };
+  });
+  const first = attachments[0];
+  const summary = first !== undefined && attachments.length === 1
+    ? `[${first.kind}: ${first.name}]`
+    : `[${attachments.length} attachments]`;
+  return { ...base, text: summary, payload: { contentType: typeId, attachments } };
+}
+
+/** Per-typeId envelope builders for non-string decoded XMTP content. Keys are the short authority-less content-type names. */
+const ENVELOPE_HANDLERS: Record<
+  string,
+  (base: HistoryEntry, typeId: string, decoded: unknown) => HistoryEntry
+> = {
+  reaction: reactionEnvelope,
+  poll: (base, typeId, decoded) => ({
+    ...base, text: pollFallbackText(decoded as PollContent),
+    payload: { contentType: typeId, poll: decoded as PollContent },
+  }),
+  signatureRequest: (base, typeId, decoded) => ({
+    ...base, text: signatureRequestFallbackText(decoded as SignatureRequestContent),
+    payload: { contentType: typeId, signatureRequest: decoded as SignatureRequestContent },
+  }),
+  signatureReference: (base, typeId, decoded) => ({
+    ...base, text: signatureReferenceFallbackText(decoded as SignatureReferenceContent),
+    payload: { contentType: typeId, signatureReference: decoded as SignatureReferenceContent },
+  }),
+  walletSendCalls: (base, typeId, decoded) => ({
+    ...base, text: walletSendCallsFallbackText(decoded as WalletSendCallsContent),
+    payload: { contentType: typeId, walletSendCalls: decoded as WalletSendCallsContent },
+  }),
+  transactionReference: (base, typeId, decoded) => ({
+    ...base, text: transactionReferenceFallbackText(decoded as TransactionReferenceContent),
+    payload: { contentType: typeId, txReference: decoded as TransactionReferenceContent },
+  }),
+  reply: replyEnvelope,
+  group_updated: (base, typeId, decoded) => ({
+    ...base, text: humanizeGroupUpdated(decoded as GroupUpdatedContent),
+    payload: { contentType: typeId, system: true },
+  }),
+  groupUpdated: (base, typeId, decoded) => ({
+    ...base, text: humanizeGroupUpdated(decoded as GroupUpdatedContent),
+    payload: { contentType: typeId, system: true },
+  }),
+  attachment: attachmentEnvelope,
+  multiRemoteStaticAttachment: multiRemoteEnvelope,
+  multiRemoteAttachment: multiRemoteEnvelope,
+};
+
 /** Convert a decoded XMTP message into the `HistoryEntry` envelope used by the daemon-side event log + the MessengerBubble renderer. Mirrors the shape emitted by the node-sdk train so the UI layer is transport-agnostic. */
-// eslint-disable-next-line complexity, max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export function mapDecodedToEnvelope(msg: DecodedMessageView, line: string): HistoryEntry {
-  const from = `${XMTP_USER_PREFIX}${msg.senderInboxId}`;
   /** `sentNs` is nanoseconds. Divide to ms — ample precision for ts strings. */
   const ts = new Date(Math.floor(msg.sentNs / 1_000_000)).toISOString();
   const base: HistoryEntry = {
-    id: msg.id,
-    ts,
-    station: 'xmtp',
-    line,
-    from,
-    to: line,
-    messageId: msg.id,
+    id: msg.id, ts, station: 'xmtp', line,
+    from: `${XMTP_USER_PREFIX}${msg.senderInboxId}`, to: line, messageId: msg.id,
   };
   /** typeId looks like `xmtp.org/text:1.0` — strip authority + version. */
   const typeId = msg.contentTypeId.split('/').pop()?.split(':')[0] ?? 'unknown';
@@ -84,115 +194,8 @@ export function mapDecodedToEnvelope(msg: DecodedMessageView, line: string): His
   if (typeof decoded === 'string') {
     return { ...base, text: decoded, payload: { contentType: typeId } };
   }
-  if (typeId === 'reaction') {
-    const r = decoded as ReactionContentView;
-    const removed = r.action === 'removed';
-    /**
-     * A poll VOTE is a reaction with schema:'custom' whose content is the
-     *  option index. Surface `schema:'custom'` + `voteFor`/`optionIndex` so the
-     *  tally helpers can pick votes out of history and the channels-list preview
-     *  doesn't render an index as an emoji.
-     */
-    if (r.schema === 'custom') {
-      return {
-        ...base,
-        text: `[vote ${r.content}${removed ? ' (removed)' : ''}]`,
-        payload: {
-          contentType: typeId, reactTo: r.reference, emoji: r.content,
-          schema: 'custom', voteFor: r.reference, optionIndex: Number(r.content), removed,
-        },
-      };
-    }
-    return {
-      ...base,
-      text: `[react ${r.content}${removed ? ' (removed)' : ''}]`,
-      payload: { contentType: typeId, reactTo: r.reference, emoji: r.content, removed },
-    };
-  }
-  if (typeId === 'poll') {
-    const poll = decoded as PollContent;
-    return { ...base, text: pollFallbackText(poll), payload: { contentType: typeId, poll } };
-  }
-  if (typeId === 'signatureRequest') {
-    const sig = decoded as SignatureRequestContent;
-    return {
-      ...base,
-      text: signatureRequestFallbackText(sig),
-      payload: { contentType: typeId, signatureRequest: sig },
-    };
-  }
-  if (typeId === 'signatureReference') {
-    const ref = decoded as SignatureReferenceContent;
-    return {
-      ...base,
-      text: signatureReferenceFallbackText(ref),
-      payload: { contentType: typeId, signatureReference: ref },
-    };
-  }
-  if (typeId === 'walletSendCalls') {
-    const wsc = decoded as WalletSendCallsContent;
-    return {
-      ...base,
-      text: walletSendCallsFallbackText(wsc),
-      payload: { contentType: typeId, walletSendCalls: wsc },
-    };
-  }
-  if (typeId === 'transactionReference') {
-    const ref = decoded as TransactionReferenceContent;
-    return {
-      ...base,
-      text: transactionReferenceFallbackText(ref),
-      payload: { contentType: typeId, txReference: ref },
-    };
-  }
-  if (typeId === 'reply') {
-    const r = decoded as ReplyContentView;
-    const innerText = r.content?.text;
-    return {
-      ...base,
-      text: innerText ?? `[reply]`,
-      replyTo: r.reference,
-      payload: { contentType: typeId, replyTo: r.reference },
-    };
-  }
-  if (typeId === 'group_updated' || typeId === 'groupUpdated') {
-    const summary = humanizeGroupUpdated(decoded as GroupUpdatedContent);
-    return { ...base, text: summary, payload: { contentType: typeId, system: true } };
-  }
-  if (typeId === 'attachment') {
-    const a = decoded as StaticAttachmentView;
-    const kind = a.mimeType?.startsWith('image/') ? 'image'
-      : a.mimeType?.startsWith('audio/') ? 'audio'
-        : a.mimeType?.startsWith('video/') ? 'video' : 'file';
-    return {
-      ...base,
-      text: `[${kind}: ${a.filename}]`,
-      /** `data` arrives already base64-encoded over the RN bridge. Pass through. */
-      payload: { contentType: typeId, attachments: [{ kind, mime: a.mimeType, name: a.filename, dataB64: a.data }] },
-    };
-  }
-  if (typeId === 'multiRemoteStaticAttachment' || typeId === 'multiRemoteAttachment') {
-    /**
-     * One message carrying N encrypted-remote attachments. The bytes live on
-     *  IPFS (ciphertext); each is rendered as a `remote` placeholder + lazily
-     *  downloaded/decrypted by the bubble. MIME isn't in the metadata, so infer
-     *  `kind` from the filename extension.
-     */
-    const m = decoded as MultiRemoteAttachmentView;
-    const attachments = (m.attachments ?? []).map((info, i) => {
-      const name = (info.filename) ?? `attachment-${i + 1}`;
-      const ext = name.split('.').pop()?.toLowerCase() ?? '';
-      const kind = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic'].includes(ext) ? 'image'
-        : ['m4a', 'mp3', 'wav', 'aac', 'ogg'].includes(ext) ? 'audio'
-          : ['mp4', 'mov', 'webm'].includes(ext) ? 'video' : 'file';
-      return { kind, name, remote: info };
-    });
-    const first = attachments[0];
-    const summary = first !== undefined && attachments.length === 1
-      ? `[${first.kind}: ${first.name}]`
-      : `[${attachments.length} attachments]`;
-    return { ...base, text: summary, payload: { contentType: typeId, attachments } };
-  }
+  const handler = ENVELOPE_HANDLERS[typeId];
+  if (handler) return handler(base, typeId, decoded);
   /** Unknown / unsupported codec — render fallback if the codec provided one. */
   return { ...base, text: msg.fallback ?? `[${typeId} payload]`, payload: { contentType: typeId } };
 }

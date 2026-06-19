@@ -4,6 +4,7 @@
 /** XMTP live-feed composable. The decoded-message → HistoryEntry envelope + reaction aggregation live in `xmtpEnvelope.ts` (re-exported here). Split so each file stays under the lint cap. */
 
 import { ref, watch, onUnmounted, type Ref } from 'vue';
+import type { DecodedMessage } from '@xmtp/browser-sdk';
 import { getOrCreateXmtpClient, convOfLine } from './xmtp';
 import { envelopeOfXmtpMessage } from './xmtpEnvelope';
 import type { HistoryEntry } from './types';
@@ -67,42 +68,57 @@ export function useXmtpFeed(line: Ref<string | null>, enabled: Ref<boolean>): Xm
     } catch { /* next tick or visibility flip retries */ }
   };
 
-  /** Start helper. */
-  // eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 15)
-  const start = async (): Promise<void> => {
-    if (!enabled.value || !line.value) { status.value = 'idle'; return; }
-    activeLine = line.value;
-    cancelled = false;
-    error.value = null;
-    /** Seed instantly from cache so re-opening a channel skips the spinner. */
+  /** Append a streamed message to the feed (deduped) and update the cache. */
+  const ingestStreamed = (msg: DecodedMessage | undefined): void => {
+    if (cancelled || !msg || activeLine === null) return;
+    const env = envelopeOfXmtpMessage(msg, activeLine);
+    if (!events.value.some(e => e.id === env.id)) {
+      events.value = [env, ...events.value];
+      feedCache.set(activeLine, events.value);
+    }
+  };
+
+  /** Open the live conversation stream as a backstop-supplemented real-time source. */
+  const attachStream = async (current: string): Promise<void> => {
+    try {
+      const conv = await convOfLine(current);
+      if (conv && !cancelled) {
+        streamCloser = await conv.stream({ onValue: ingestStreamed });
+      }
+    } catch { /* stream init failed — poll backstop keeps the feed fresh */ }
+  };
+
+  /** Wire the visibility-refresh listener and the 5s poll backstop. */
+  const attachBackstops = (): void => {
+    onVisibility = (): void => { if (document.visibilityState === 'visible') void refresh(); };
+    document.addEventListener('visibilitychange', onVisibility);
+    pollTimer = setInterval(() => { void refresh(); }, 5_000);
+  };
+
+  /** Seed the feed from cache and set the initial loading/open status. */
+  const seedFromCache = (): void => {
     const seeded = line.value ? feedCache.get(line.value) : undefined;
     events.value = seeded ? [...seeded] : [];
     status.value = seeded?.length ? 'open' : 'loading';
+  };
+
+  /** Start helper. */
+  const start = async (): Promise<void> => {
+    if (!enabled.value || !line.value) { status.value = 'idle'; return; }
+    const current = line.value;
+    activeLine = current;
+    cancelled = false;
+    error.value = null;
+    /** Seed instantly from cache so re-opening a channel skips the spinner. */
+    seedFromCache();
     try {
       const client = await getOrCreateXmtpClient('production');
       if (cancelled || activeLine !== line.value) return;
       inboxId.value = client.inboxId ?? '';
       await refresh();
       status.value = 'open';
-      try {
-        const conv = await convOfLine(activeLine);
-        if (conv && !cancelled) {
-          const stream = await conv.stream({
-            onValue: (msg) => {
-              if (cancelled || !msg || activeLine === null) return;
-              const env = envelopeOfXmtpMessage(msg, activeLine);
-              if (!events.value.some(e => e.id === env.id)) {
-                events.value = [env, ...events.value];
-                feedCache.set(activeLine, events.value);
-              }
-            },
-          });
-          streamCloser = stream;
-        }
-      } catch { /* stream init failed — poll backstop keeps the feed fresh */ }
-      onVisibility = (): void => { if (document.visibilityState === 'visible') void refresh(); };
-      document.addEventListener('visibilitychange', onVisibility);
-      pollTimer = setInterval(() => { void refresh(); }, 5_000);
+      await attachStream(current);
+      attachBackstops();
     } catch (e) {
       if (cancelled) return;
       status.value = 'error';

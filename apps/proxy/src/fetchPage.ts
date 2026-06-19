@@ -62,46 +62,59 @@ async function readJsonCapped(res: Response): Promise<unknown> {
   }
 }
 
+// Sentinel telling the fetch loop to follow a redirect to `next`.
+interface Redirect { redirectTo: string }
+/** Whether Redirect. */
+function isRedirect(v: unknown): v is Redirect {
+  return typeof v === 'object' && v !== null && 'redirectTo' in v;
+}
+
+/** Issue the previewable GET for `current` with the standard preview headers. */
+async function fetchOnce(current: string): Promise<Response> {
+  return fetch(current, {
+    method: 'GET',
+    redirect: 'manual',
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+    headers: {
+      'User-Agent': UA,
+      Accept: 'application/json,text/html,application/xhtml+xml',
+      'Accept-Language': 'en-US,en;q=0.9',
+    },
+  });
+}
+
+/** Interpret one response: an x402 challenge, a Redirect sentinel, an HTML result, or null. */
+async function handleResponse(
+  res: Response,
+  current: string,
+): Promise<FetchResult | X402Challenge | Redirect | null> {
+  // x402: a 402 carries a payment challenge (JSON body and/or PAYMENT-REQUIRED
+  // header). Parse it instead of treating 402 as a dead end.
+  if (res.status === 402) {
+    const ct = res.headers.get('content-type') ?? '';
+    const body = /json/i.test(ct) ? await readJsonCapped(res) : null;
+    return challengeFrom402(current, res.headers, body);
+  }
+  // Manual redirect handling: validate the next hop through the SSRF guard.
+  if (res.status >= 300 && res.status < 400) {
+    const loc = res.headers.get('location');
+    if (!loc) return null;
+    const next = assertPublicUrl(new URL(loc, current).toString()).toString();
+    return { redirectTo: next };
+  }
+  if (!res.ok) return null;
+  const ct = res.headers.get('content-type') ?? '';
+  if (!/text\/html|application\/xhtml/i.test(ct)) return null;
+  return { html: await readCapped(res), finalUrl: current };
+}
+
 /** Fetch `rawUrl` safely and return its HTML + final (post-redirect) URL, an {@link X402Challenge} on an x402 402 challenge, or null when there's nothing previewable. Throws {@link SsrfError} if any URL in the chain is unsafe. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 11)
 export async function fetchPage(rawUrl: string): Promise<FetchResult | X402Challenge | null> {
   let current = assertPublicUrl(rawUrl).toString();
-
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
-    const res = await fetch(current, {
-      method: 'GET',
-      redirect: 'manual',
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-      headers: {
-        'User-Agent': UA,
-        Accept: 'application/json,text/html,application/xhtml+xml',
-        'Accept-Language': 'en-US,en;q=0.9',
-      },
-    });
-
-    // x402: a 402 carries a payment challenge (JSON body and/or PAYMENT-REQUIRED
-    // header). Parse it instead of treating 402 as a dead end.
-    if (res.status === 402) {
-      const ct = res.headers.get('content-type') ?? '';
-      const body = /json/i.test(ct) ? await readJsonCapped(res) : null;
-      return challengeFrom402(current, res.headers, body);
-    }
-
-    // Manual redirect handling: validate the next hop through the SSRF guard.
-    if (res.status >= 300 && res.status < 400) {
-      const loc = res.headers.get('location');
-      if (!loc) return null;
-      const next = new URL(loc, current).toString();
-      current = assertPublicUrl(next).toString();
-      continue;
-    }
-
-    if (!res.ok) return null;
-    const ct = res.headers.get('content-type') ?? '';
-    if (!/text\/html|application\/xhtml/i.test(ct)) return null;
-
-    const html = await readCapped(res);
-    return { html, finalUrl: current };
+    const outcome = await handleResponse(await fetchOnce(current), current);
+    if (isRedirect(outcome)) { current = outcome.redirectTo; continue; }
+    return outcome;
   }
   throw new SsrfError('too many redirects');
 }
