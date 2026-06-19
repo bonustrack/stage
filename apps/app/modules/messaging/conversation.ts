@@ -13,11 +13,11 @@ import { isMetroControlBody } from '../../lib/push';
 import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 import { channelStampSeed } from '@metro-labs/kit/avatar';
 import type {
-  ConversationView, ConversationRequestView, RequestAvatarDescriptor,
+  ConversationView, ConversationRequestView,
 } from './conversation.types';
 
 export type {
-  ConversationView, ConversationRequestView, RequestAvatarDescriptor,
+  ConversationView, ConversationRequestView,
 } from './conversation.types';
 
 /** Summarise a raw conversation into the full channels-list domain view. Moved UNCHANGED from HomeScreen.helpers.summarize. */
@@ -134,28 +134,5 @@ export async function summarizeConversationRequest(
     avatarUri,
     preview: preview.slice(0, 80),
     isGroup,
-  };
-}
-
-/**
- * Lightweight avatar-only descriptor for a message request (the notifications
- *  preview pile). Moved UNCHANGED from useRequestPreviews.describe: resolves the
- *  DM peer / group image only - deliberately NO conv.sync()/messages() round-trip
- *  (the pile only needs avatars).
- */
-export async function requestAvatarDescriptor(
-  conv: Conversation,
-): Promise<RequestAvatarDescriptor> {
-  const peerAddress = await peerEthAddressOfDm(conv).catch(() => null);
-  if (peerAddress) {
-    return { convId: conv.id, avatarAddress: peerAddress, avatarUri: null, isGroup: false };
-  }
-  const g = conv as unknown as { imageUrl?: () => Promise<string> };
-  const imageUrl = (await g.imageUrl?.().catch(() => '') ?? '').trim();
-  return {
-    convId: conv.id,
-    avatarAddress: imageUrl ? null : channelStampSeed(conv.id),
-    avatarUri: imageUrl || null,
-    isGroup: true,
   };
 }

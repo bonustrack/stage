@@ -32,12 +32,6 @@ export interface ConversationView {
   github?: string;
 }
 
-/** Just the avatar fields of a message request - the lightest projection, used by the notifications-card preview pile (no title / preview-text resolution, so no conv.sync()/messages() round-trip). */
-export type RequestAvatarDescriptor = Pick<
-  ConversationRequestView,
-  'convId' | 'avatarAddress' | 'avatarUri' | 'isGroup'
->;
-
 /** Lighter message-request row view-model (the requests screen + the notifications-card preview pile). */
 export interface ConversationRequestView {
   convId: string;
