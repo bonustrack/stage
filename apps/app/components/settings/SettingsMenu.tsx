@@ -37,8 +37,29 @@ const ROWS: { href: Href; label: string; icon: HeroIconName }[] = [
   { href: '/settings/about', label: 'About', icon: 'questionMarkCircle' },
 ];
 
+/** Renders a destructive reset action row in the Settings danger zone. */
+function DangerRow({ onPress, busy, icon, label, description, danger, blockRadius, top }: {
+  onPress: () => void; busy: boolean; icon: HeroIconName; label: string;
+  description: string; danger: string; blockRadius: number; top: number;
+}): React.ReactElement {
+  return (
+    <Pressable onPress={onPress} disabled={busy}>
+      <Box radius={blockRadius} surface="raised" padding={14} margin={{ x: 16, top }}
+        style={{ borderWidth: 1, borderColor: danger, opacity: busy ? 0.5 : 1 }}
+>
+        <Row align="center" gap={12}>
+          <Icon name={icon} size={22} color={danger}/>
+          <Col minWidth={0} flex={1}>
+            <Text weight="semibold" size="md" role="danger">{label}</Text>
+            <Text size="xs" role="secondary" style={{ marginTop: 2 }}>{description}</Text>
+          </Col>
+        </Row>
+      </Box>
+    </Pressable>
+  );
+}
+
 /** Renders the top-level settings menu listing each settings section. */
-// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export function SettingsMenu(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -111,40 +132,16 @@ export function SettingsMenu(): React.ReactElement {
         <Text size="xs" role="secondary" style={{ paddingHorizontal: 16, paddingTop: 28 }}>
           DANGER ZONE
         </Text>
-        <Pressable onPress={onReset} disabled={resetting}>
-          <Box radius={blockRadius} surface="raised" padding={14} margin={{ x: 16, top: 8 }}
-            style={{ borderWidth: 1, borderColor: danger, opacity: resetting ? 0.5 : 1 }}
->
-            <Row align="center" gap={12}>
-              <Icon name="refresh" size={22} color={danger}/>
-              <Col minWidth={0} flex={1}>
-                <Text weight="semibold" size="md" role="danger">
-                  {resetting ? 'Resetting…' : 'Reset accounts'}
-                </Text>
-                <Text size="xs" role="secondary" style={{ marginTop: 2 }}>
-                  Wipe all local accounts, wallet keys, the recovery phrase and XMTP message stores, then return to onboarding.
-                </Text>
-              </Col>
-            </Row>
-          </Box>
-        </Pressable>
-        <Pressable onPress={onNuke} disabled={nuking}>
-          <Box radius={blockRadius} surface="raised" padding={14} margin={{ x: 16, top: 12 }}
-            style={{ borderWidth: 1, borderColor: danger, opacity: nuking ? 0.5 : 1 }}
->
-            <Row align="center" gap={12}>
-              <Icon name="trash" size={22} color={danger}/>
-              <Col minWidth={0} flex={1}>
-                <Text weight="semibold" size="md" role="danger">
-                  {nuking ? 'Erasing…' : 'Reset everything'}
-                </Text>
-                <Text size="xs" role="secondary" style={{ marginTop: 2 }}>
-                  Full nuke: everything above PLUS all settings, pins, read markers and cached data. Restarts the app as a fresh install.
-                </Text>
-              </Col>
-            </Row>
-          </Box>
-        </Pressable>
+        <DangerRow
+          onPress={onReset} busy={resetting} icon="refresh" danger={danger} blockRadius={blockRadius} top={8}
+          label={resetting ? 'Resetting…' : 'Reset accounts'}
+          description="Wipe all local accounts, wallet keys, the recovery phrase and XMTP message stores, then return to onboarding."
+        />
+        <DangerRow
+          onPress={onNuke} busy={nuking} icon="trash" danger={danger} blockRadius={blockRadius} top={12}
+          label={nuking ? 'Erasing…' : 'Reset everything'}
+          description="Full nuke: everything above PLUS all settings, pins, read markers and cached data. Restarts the app as a fresh install."
+        />
       </ScrollView>
     </Col>
   );

@@ -26,83 +26,15 @@ import { ActivityView } from './WalletScreen.activity';
 import { useWalletBalances } from './WalletScreen.balances';
 import { useWalletFocused } from './useWalletFocused';
 
-/** Wallet tab screen showing balances, tokens, and activity. */
-// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
-export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
-  const router = useRouter();
-  const { link: head, text: sub, bg, border } = usePalette();
-  const dark = useEffectiveColorScheme() === 'dark';
+/** Lazily-loaded NFT collection state for the Wallet NFTs tab. */
+interface NftState { nfts: Nft[] | null; nftStatus: 'idle' | 'loading' | 'ready' | 'error' }
 
-  /**
-   * LAZY RAILGUN BOOT: this tab body is mounted at app boot (the pager mounts
-   *  all five tabs at once), so gate every engine-booting side effect on the
-   *  Wallet tab actually becoming the active page. `focused` latches true on the
-   *  first focus and never flips back — booting nodejs-mobile is the expensive
-   *  part, so we keep it warm once started rather than tear it down on tab-away.
-   *  If the user never opens Wallet, the engine never boots.
-   */
-  const focused = useWalletFocused();
-
-  const { snapshot: privSnapshot, accountId: privAccountId, pending } = usePrivateWallet(focused);
-  const { address, rows, err, refreshing, onRefresh } = useWalletBalances(privAccountId, focused);
-  usePeerProfiles([address]);
-
-  /**
-   * Custom JS-only pull-to-refresh — replaces RN's native RefreshControl, which
-   *  stranded its spinner on Android inside this nested-gesture ScrollView. The
-   *  indicator's visibility is bound solely to `refreshing` (guaranteed to clear
-   *  via try/finally + 8s hardStop in balances.ts), so it can never wedge.
-   */
-  const pull = usePullToRefresh(refreshing, onRefresh, head);
-
-  /**
-   * Watch the EOA's mempool/nonce for an in-flight shield to the Railgun proxy
-   *  so a shield arriving from anywhere (incl. external/cross-session, no local
-   *  history) surfaces as a pending row. Cheap long-poll; only when the bridge is
-   *  present (otherwise the private wallet isn't active on this build).
-   */
-  useEffect(() => {
-    if (!focused || !privAccountId || !address || !isBridgeAvailable()) return;
-    return startEoaShieldWatch(privAccountId, address);
-  }, [focused, privAccountId, address]);
-
-  /**
-   * Shielded (Railgun) balances — reuses the Private tab's instant-paint hook
-   *  (cached snapshot + pending overlay, no refetch), merged into the public
-   *  Tokens list below as `isPrivate` rows. autoStart:true boots the Railgun
-   *  engine here so private balances show without opening the Private tab — the
-   *  SAME guarded path the Private tab uses (waitForXmtpReady + single-flight
-   *  started/readyPromise), so a prior start makes this a no-op.
-   */
-  // ALWAYS render the fixed private row set (ETH/USDC × mainnet/Sepolia), even
-  // pre-snapshot / pre-scan / at zero — pass the snapshot (may be null) so the
-  // mapper seeds zero rows from the token registry then overlays live amounts.
-  // Memoized so the merged Tokens list (TokensList) gets a stable `privateRows`
-  // reference across parent re-renders — without this the child's sort memo
-  // would re-run every render. Pure mapping keyed on the snapshot + public rows.
-  const privateRows = useMemo(
-    () => privateBalancesToRows(privSnapshot, symbolPricesFromPublic(rows ?? [])),
-    [privSnapshot, rows],
-  );
-
-  /** Tokens | NFTs segmented toggle. NFTs are lazy-loaded: we only fetch on the first switch to the NFTs tab, then cache in `nfts` so toggling back and forth doesn't refetch. `nftStatus` drives the loading/error/empty UI. */
-  const [tab, setTab] = useState<WalletTab>('tokens');
-
-  /**
-   * Pre-warm the Railgun engine + prover + Groth16 artifacts in the background
-   *  ONCE the Wallet tab is focused (behind the native guard, no-op when the
-   *  module isn't linked) so hitting Send on the Private tab pays no cold-start
-   *  cost. Gated on focus (not mount) so it never boots nodejs-mobile on an app
-   *  open that never visits Wallet.
-   */
-  useEffect(() => { if (focused) void prewarmRailgun(); }, [focused]);
+/** Lazy-load NFTs the first time the NFTs tab is opened for an address (cached after). */
+function useWalletNfts(tab: WalletTab, address?: string): NftState {
   const [nfts, setNfts] = useState<Nft[] | null>(null);
-  const [nftStatus, setNftStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
-
-  // Guard re-fetch by the address we've already loaded for, NOT by `nftStatus`.
-  // (If `nftStatus` were a dep, setting it to 'loading' would re-run the effect,
-  //  whose cleanup flips `cancelled = true` on the in-flight run → the resolved
-  //  fetch skips setNftStatus('ready') and the spinner spins forever.)
+  const [nftStatus, setNftStatus] = useState<NftState['nftStatus']>('idle');
+  // Guard re-fetch by the loaded address, NOT by nftStatus (so 'loading' doesn't
+  // re-run the effect and cancel the in-flight fetch, wedging the spinner).
   const loadedAddrRef = useRef<string | null>(null);
   useEffect(() => {
     if (tab !== 'nfts' || !address || loadedAddrRef.current === address) return;
@@ -113,18 +45,100 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
       try {
         const list = await getNftsAcrossChains(address);
         if (cancelled) return;
-        setNfts(list);
-        setNftStatus('ready');
-      } catch {
-        if (!cancelled) setNftStatus('error');
-      }
+        setNfts(list); setNftStatus('ready');
+      } catch { if (!cancelled) setNftStatus('error'); }
     })();
     return () => { cancelled = true; };
   }, [tab, address]);
+  return { nfts, nftStatus };
+}
+
+/** Side effects gated on Wallet focus: EOA shield-watch + Railgun prewarm. */
+function useWalletEffects(focused: boolean, privAccountId: string | null, address?: string): void {
+  // Watch the EOA mempool/nonce for an in-flight shield so it surfaces as a pending row.
+  useEffect(() => {
+    if (!focused || !privAccountId || !address || !isBridgeAvailable()) return;
+    return startEoaShieldWatch(privAccountId, address);
+  }, [focused, privAccountId, address]);
+  // Pre-warm the Railgun engine/prover once focused so Send pays no cold-start cost.
+  useEffect(() => { if (focused) void prewarmRailgun(); }, [focused]);
+}
+
+/** Renders the active tab body: private / NFTs / activity / tokens (with err/loading states). */
+function WalletTabBody({ tab, nftState, address, rows, privateRows, pending, err, c }: {
+  tab: WalletTab; nftState: NftState; address?: string;
+  rows: ReturnType<typeof useWalletBalances>['rows'];
+  privateRows: ReturnType<typeof privateBalancesToRows>;
+  pending: ReturnType<typeof usePrivateWallet>['pending'];
+  err: boolean; c: { head: string; sub: string; border: string; bg: string };
+}): React.ReactElement {
+  if (tab === 'private') return <PrivateView head={c.head} sub={c.sub} border={c.border}/>;
+  if (tab === 'nfts') return <NftsView status={nftState.nftStatus} nfts={nftState.nfts} head={c.head} sub={c.sub} border={c.border}/>;
+  if (tab === 'activity') return <ActivityView address={address} head={c.head} sub={c.sub} border={c.border} bg={c.bg}/>;
+  if (err) {
+    return (
+      <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center">
+        <Text size="md" color={DANGER}>Couldn’t load tokens</Text>
+      </Col>
+    );
+  }
+  if (rows === null) {
+    return (
+      <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center"><Spinner size={28} color={c.head}/></Col>
+    );
+  }
+  // Asset list — ONE flat list (merged public + shielded rows, $-sorted, pending on top).
+  return <TokensList rows={rows} privateRows={privateRows} pending={pending} head={c.head} sub={c.sub} border={c.border} bg={c.bg}/>;
+}
+
+/** Renders the big total-USD balance card (error / loading / value states). */
+function WalletBalanceCard({ err, totalUsd, head, sub }: {
+  err: boolean; totalUsd: number | null; head: string; sub: string;
+}): React.ReactElement {
+  return (
+    <Col padding={{ top: 4, bottom: 16 }} margin={{ x: 16 }} align="start">
+      {err ? (
+        <Text size="xs" color={DANGER}>Couldn’t load balances</Text>
+      ) : totalUsd === null ? (
+        <Text weight="semibold" size="7xl" color={head}>…</Text>
+      ) : (
+        <Text weight="semibold" size="7xl" color={head}>
+          {splitUsd(fmtUsd(totalUsd)).int}
+          <Text weight="semibold" size="7xl" color={sub}>{splitUsd(fmtUsd(totalUsd)).dec}</Text>
+        </Text>
+      )}
+    </Col>
+  );
+}
+
+/** Wallet tab screen showing balances, tokens, and activity. */
+export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
+  const router = useRouter();
+  const { link: head, text: sub, bg, border } = usePalette();
+  const dark = useEffectiveColorScheme() === 'dark';
+  // LAZY RAILGUN BOOT: `focused` latches true on first focus (the pager mounts
+  // all tabs at once) so engine-booting side effects only run if Wallet is opened.
+  const focused = useWalletFocused();
+
+  const { snapshot: privSnapshot, accountId: privAccountId, pending } = usePrivateWallet(focused);
+  const { address, rows, err, refreshing, onRefresh } = useWalletBalances(privAccountId, focused);
+  usePeerProfiles([address]);
+  // Custom JS-only pull-to-refresh (RN's RefreshControl strands its spinner here).
+  const pull = usePullToRefresh(refreshing, onRefresh, head);
+  useWalletEffects(focused, privAccountId, address);
+
+  // ALWAYS render the fixed private row set; memoized so TokensList gets a stable ref.
+  const privateRows = useMemo(
+    () => privateBalancesToRows(privSnapshot, symbolPricesFromPublic(rows ?? [])),
+    [privSnapshot, rows],
+  );
+  const [tab, setTab] = useState<WalletTab>('tokens');
+  const nftState = useWalletNfts(tab, address);
 
   const totalUsd = rows
     ? rows.reduce((s, r) => s + (r.priceUsd ?? 0) * Number(r.balance), 0)
     : null;
+  const c = { head, sub, border, bg };
 
   return (
     /**
@@ -166,22 +180,8 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
       <Row margin={{ x: 16, top: 8 }} justify="end" align="center" gap={18}>
         <RefreshButton refreshing={refreshing} onRefresh={onRefresh} color={head}/>
       </Row>
-      {/* Value card — compact, left-aligned: just the big total USD value.
-          Decimals render in the dim `sub` colour to keep the dollars prominent. */}
-      <Col padding={{ top: 4, bottom: 16 }} margin={{ x: 16 }} align="start">
-        {err ? (
-          <Text size="xs" color={DANGER}>
-            Couldn’t load balances
-          </Text>
-        ) : totalUsd === null ? (
-          <Text weight="semibold" size="7xl" color={head}>…</Text>
-        ) : (
-          <Text weight="semibold" size="7xl" color={head}>
-            {splitUsd(fmtUsd(totalUsd)).int}
-            <Text weight="semibold" size="7xl" color={sub}>{splitUsd(fmtUsd(totalUsd)).dec}</Text>
-          </Text>
-        )}
-      </Col>
+      {/* Value card — compact, left-aligned: just the big total USD value. */}
+      <WalletBalanceCard err={!!err} totalUsd={totalUsd} head={head} sub={sub} />
 
       {/* Four action circles — Send / Receive route to existing screens;
           Swap / Buy are placeholders (no on/off-ramp wired yet) and flash a
@@ -195,30 +195,10 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
 
       <WalletTabs tab={tab} setTab={setTab} head={head} sub={sub} border={border}/>
 
-      {tab === 'private' ? (
-        <PrivateView head={head} sub={sub} border={border}/>
-      ) : tab === 'nfts' ? (
-        <NftsView status={nftStatus} nfts={nfts} head={head} sub={sub} border={border}/>
-      ) : tab === 'activity' ? (
-        <ActivityView address={address} head={head} sub={sub} border={border} bg={bg}/>
-      ) : err ? (
-        <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center">
-          <Text size="md" color={DANGER}>
-            Couldn’t load tokens
-          </Text>
-        </Col>
-      ) : rows === null ? (
-        <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center">
-          <Spinner size={28} color={head}/>
-        </Col>
-      ) : (
-      /* Asset list — ONE flat list (see WalletScreen.tokens: merged public +
-         shielded rows, $-sorted, pending shields on top). */
-      <TokensList
-        rows={rows} privateRows={privateRows} pending={pending}
-        head={head} sub={sub} border={border} bg={bg}
-/>
-      )}
+      <WalletTabBody
+        tab={tab} nftState={nftState} address={address} rows={rows}
+        privateRows={privateRows} pending={pending} err={!!err} c={c}
+      />
     </ScrollView>
     </Col>
   );

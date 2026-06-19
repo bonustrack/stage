@@ -114,8 +114,81 @@ function buildLabelChips({ labels, fg, rowBg }: {
   ]);
 }
 
+/** Renders the title + pin glyph + right-aligned timestamp line of a channel row. */
+function TitleLine({ title, pinned, timestamp, highlightQuery, head, sub }: {
+  title: string; pinned?: boolean; timestamp?: string | null;
+  highlightQuery?: string; head: string; sub: string;
+}): React.ReactElement {
+  return (
+    <Row align="center" gap={6}>
+      {pinned ? <Icon name="mapPin" size={13} color={sub} /> : null}
+      {/* Name + labels hug each other on the left; name shrinks (and
+          ellipsizes) first, the label chip stays right beside it. */}
+      <Text weight="semibold" size="3xl" color={head} style={{ flexShrink: 1, minWidth: 0 }}
+        numberOfLines={1}
+        ellipsizeMode="tail">
+        {highlightQuery ? highlightSegments(title, highlightQuery) : title}
+      </Text>
+      {/* Flexible spacer pushes the timestamp to the far right edge. */}
+      <Spacer/>
+      {timestamp ? <Text size="sm" color={sub}>{timestamp}</Text> : null}
+    </Row>
+  );
+}
+
+/** Renders the trailing unread count pill, marked-unread dot, or chevron of a channel row. */
+function TrailingBadge({ unreadCount, markedUnread, showChevron, head, bg, sub }: {
+  unreadCount: number; markedUnread?: boolean; showChevron?: boolean;
+  head: string; bg: string; sub: string;
+}): React.ReactElement | null {
+  if (unreadCount> 0) {
+    return (
+      <Row minWidth={22} height={22} padding={{ x: 7 }} align="center" justify="center" radius="full" background={head}>
+        <Text weight="semibold" size="2xs" color={bg}>{unreadCount> 99 ? '99+' : unreadCount}</Text>
+      </Row>
+    );
+  }
+  if (markedUnread) return <Box width={12} height={12} radius="full" background={head}/>;
+  if (showChevron) return <Text size="2xl" color={sub}>›</Text>;
+  return null;
+}
+
+/** Renders the preview/draft line (label chips + last-message text) of a channel row. */
+function PreviewLine({ draft, labels, previewText, highlightQuery, fg, rowBg, sub }: {
+  draft: string | null; labels?: string[]; previewText: string;
+  highlightQuery?: string; fg: string; rowBg: string; sub: string;
+}): React.ReactElement {
+  return (
+    <>
+      {/* Draft pencil + "You: " text replaces the preview. */}
+      {draft ? (
+        <Box margin={{ top: 3.5 }}>
+          <Icon name="pencil" size={14} color={sub}/>
+        </Box>
+      ) : null}
+      <Text size="lg" color={sub} style={{ lineHeight: 21, flex: 1 }}
+        numberOfLines={2}
+        ellipsizeMode="tail">
+        {!draft && labels && labels.length> 0 ? buildLabelChips({ labels, fg, rowBg }) : null}
+        {highlightQuery && !draft ? highlightSegments(previewText, highlightQuery) : previewText}
+      </Text>
+    </>
+  );
+}
+
+/** Resolve the trimmed draft text (or null) for a channel row. */
+function resolveDraft(hasDraft?: boolean, draftText?: string | null): string | null {
+  return hasDraft && draftText && draftText.trim().length> 0 ? draftText.trim() : null;
+}
+
+/** Resolve the preview text shown on a channel row (draft, last message, or subtitle). */
+function resolvePreviewText(draft: string | null, lastPreview?: string | null, subtitle?: string | null): string {
+  if (draft) return `You: ${draft}`;
+  if (lastPreview && lastPreview.length> 0) return lastPreview;
+  return subtitle ?? '';
+}
+
 /** #6: memoised so a stream tick that re-renders the channels list only re-renders the rows whose props actually changed (not the whole window). All props are primitives or stable callbacks (hoisted in the caller). */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 function ChannelRowBase({
   title, avatarAddress, avatarUri, cacheBuster, square,
   lastPreview, timestamp, subtitle, unreadCount = 0, markedUnread,
@@ -123,9 +196,8 @@ function ChannelRowBase({
   onPress, onPressIn, onLongPress, containerStyle, labels, highlightQuery,
 }: ChannelRowProps): React.ReactElement {
   const { link: head, text: sub, bg, border } = usePalette();
-  const fg = sub, rowBg = border;
-  const draft = hasDraft && draftText && draftText.trim().length> 0 ? draftText.trim() : null;
-  const previewText = draft ? `You: ${draft}` : (lastPreview && lastPreview.length> 0 ? lastPreview : subtitle ?? '');
+  const draft = resolveDraft(hasDraft, draftText);
+  const previewText = resolvePreviewText(draft, lastPreview, subtitle);
 
   return (
     <Pressable
@@ -139,8 +211,7 @@ function ChannelRowBase({
       }))}
 >
       {/* align-center: avatar + text column center as a group within a
-          CONSTANT-height row. Fixed height lives on the ROW (ROW_CONTENT_HEIGHT,
-          the 2-line case), so 1- and 2-line rows match (no bottom gap). */}
+          CONSTANT-height row. */}
       <Row minHeight={ROW_CONTENT_HEIGHT} padding={{ y: 9 }} align="center" gap={12}>
         <Avatar
           imageUri={avatarUri}
@@ -151,52 +222,14 @@ function ChannelRowBase({
           style={{ backgroundColor: border }}
 />
         <Col minWidth={0} flex={1}>
-          <Row align="center" gap={6}>
-            {pinned ? <Icon name="mapPin" size={13} color={sub} /> : null}
-            {/* Name + labels hug each other on the left; name shrinks (and
-                ellipsizes) first, the label chip stays right beside it. */}
-            <Text weight="semibold" size="3xl" color={head} style={{ flexShrink: 1, minWidth: 0 }}
-              numberOfLines={1}
-              ellipsizeMode="tail">
-              {highlightQuery ? highlightSegments(title, highlightQuery) : title}
-            </Text>
-            {/* Flexible spacer pushes the timestamp to the far right edge. */}
-            <Spacer/>
-            {timestamp ? (
-              <Text size="sm" color={sub}>{timestamp}</Text>
-            ) : null}
-          </Row>
-          {/* No internal height reservation: the preview block is only as tall
-              as its content (1-2 lines) so the title+preview group centers in the
-              fixed-height row. align-start pins the badge to line 1 on wrap. */}
+          <TitleLine title={title} pinned={pinned} timestamp={timestamp}
+            highlightQuery={highlightQuery} head={head} sub={sub} />
+          {/* No internal height reservation; align-start pins the badge to line 1 on wrap. */}
           <Row margin={{ top: 2 }} align="start" gap={7}>
-            {/* Draft pencil + "You: " text replaces the preview. Row stays
-                align-start (badge on line 1 when preview wraps), so nudge the
-                14px glyph down (lineHeight 21 - 14)/2 to center it on line 1. */}
-            {draft ? (
-              <Box margin={{ top: 3.5 }}>
-                <Icon name="pencil" size={14} color={sub}/>
-              </Box>
-            ) : null}
-            <Text size="lg" color={sub} style={{ lineHeight: 21, flex: 1 }}
-              numberOfLines={2}
-              ellipsizeMode="tail">
-              {!draft && labels && labels.length> 0
-                ? buildLabelChips({ labels, fg, rowBg })
-                : null}
-              {highlightQuery && !draft ? highlightSegments(previewText, highlightQuery) : previewText}
-            </Text>
-            {unreadCount> 0 ? (
-              <Row minWidth={22} height={22} padding={{ x: 7 }} align="center" justify="center" radius="full" background={head}>
-                <Text weight="semibold" size="2xs" color={bg}>
-                  {unreadCount> 99 ? '99+' : unreadCount}
-                </Text>
-              </Row>
-            ) : markedUnread ? (
-              <Box width={12} height={12} radius="full" background={head}/>
-            ) : showChevron ? (
-              <Text size="2xl" color={sub}>›</Text>
-            ) : null}
+            <PreviewLine draft={draft} labels={labels} previewText={previewText}
+              highlightQuery={highlightQuery} fg={sub} rowBg={border} sub={sub} />
+            <TrailingBadge unreadCount={unreadCount} markedUnread={markedUnread}
+              showChevron={showChevron} head={head} bg={bg} sub={sub} />
           </Row>
         </Col>
       </Row>

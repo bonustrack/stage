@@ -83,6 +83,60 @@ async function readOnchain(
   return { raw, decimals, symbol };
 }
 
+/** Read cached/on-chain meta for a (chain,token,account), deduping concurrent reads via the shared cache. */
+async function loadMeta(cid: number, token: string | undefined, addr: Hex): Promise<OnchainMeta | null> {
+  const key = `${cid}:${(token ?? 'native').toLowerCase()}:${addr.toLowerCase()}`;
+  let meta = cache.get(key);
+  if (!meta) {
+    meta = readOnchain(cid, token, addr).catch(() => null);
+    cache.set(key, meta);
+  }
+  const onchain = await meta;
+  if (!onchain) {
+    // Reading failed (unreachable RPC / unsupported chain) — drop the cache
+    // entry so a later mount can retry, and leave the row hidden.
+    cache.delete(key);
+  }
+  return onchain;
+}
+
+/** Build the display PayerBalance from registry + on-chain meta, preferring curated decimals/symbol. */
+function buildBalance(
+  onchain: OnchainMeta, native: boolean,
+  symbol: string | undefined, needed: number | undefined,
+  known: { decimals: number; symbol: string } | undefined,
+): PayerBalance {
+  // Decimals/symbol: prefer the registry, then on-chain reads, then the
+  // request-provided symbol, then sensible defaults.
+  const decimals = known?.decimals ?? onchain.decimals;
+  const human = formatUnits(onchain.raw, decimals);
+  const sym = known?.symbol
+    ?? symbol
+    ?? (native ? onchain.symbol : (onchain.symbol === 'tokens' ? 'tokens' : onchain.symbol));
+  return {
+    text: `Balance: ${trim(human)} ${sym}`,
+    insufficient: needed != null && Number(human) < needed,
+  };
+}
+
+/** Resolve the active account's balance for a request, returning null when unreadable. */
+async function resolveBalance(
+  chainId: string | number | undefined,
+  token: string | undefined, symbol: string | undefined, needed?: number,
+): Promise<PayerBalance | null> {
+  const cid = parseChainId(chainId);
+  const acct = await getActiveAccount();
+  const addr = acct?.address;
+  if (!addr || !isAddress(addr)) return null;
+  // Prefer registry metadata (curated decimals/symbol) when the (chain, symbol)
+  // pair is known — keeps display consistent with the wallet tab.
+  const known = ASSETS.find(a => a.chainId === cid
+    && a.symbol.toLowerCase() === (symbol ?? '').toLowerCase());
+  const onchain = await loadMeta(cid, token, addr);
+  if (!onchain) return null;
+  return buildBalance(onchain, isNativeToken(token), symbol, needed, known);
+}
+
 /**
  * @param chainId   request chain (hex/dec string or number)
  *  @param token     ERC-20 contract address, or null/undefined/sentinel for native
@@ -99,47 +153,10 @@ export function usePayerBalance(
 
   useEffect(() => {
     let cancelled = false;
-    // eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
     void (async () => {
       try {
-        const cid = parseChainId(chainId);
-        const acct = await getActiveAccount();
-        const addr = acct?.address;
-        if (!addr || !isAddress(addr)) return;
-
-        const native = isNativeToken(token);
-        // Prefer registry metadata (curated decimals/symbol) when the (chain,
-        // symbol) pair is known — keeps display consistent with the wallet tab.
-        const known = ASSETS.find(a => a.chainId === cid
-          && a.symbol.toLowerCase() === (symbol ?? '').toLowerCase());
-
-        const key = `${cid}:${(token ?? 'native').toLowerCase()}:${addr.toLowerCase()}`;
-        let meta = cache.get(key);
-        if (!meta) {
-          meta = readOnchain(cid, token, addr).catch(() => null);
-          cache.set(key, meta);
-        }
-        const onchain = await meta;
-        if (cancelled) return;
-        if (!onchain) {
-          // Reading failed (unreachable RPC / unsupported chain) — drop the
-          // cache entry so a later mount can retry, and leave the row hidden.
-          cache.delete(key);
-          return;
-        }
-
-        // Decimals/symbol: prefer the registry, then on-chain reads, then the
-        // request-provided symbol, then sensible defaults.
-        const decimals = known?.decimals ?? onchain.decimals;
-        const human = formatUnits(onchain.raw, decimals);
-        const sym = known?.symbol
-          ?? symbol
-          ?? (native ? onchain.symbol : (onchain.symbol === 'tokens' ? 'tokens' : onchain.symbol));
-
-        setBal({
-          text: `Balance: ${trim(human)} ${sym}`,
-          insufficient: needed != null && Number(human) < needed,
-        });
+        const next = await resolveBalance(chainId, token, symbol, needed);
+        if (!cancelled && next) setBal(next);
       } catch {
         // Defensive: never let the balance hook throw into the card.
       }

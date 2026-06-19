@@ -98,22 +98,25 @@ export function x402AmountNumber(accept: X402Accept): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
+/** True for chars that can visually reorder or hide the amount line: C0/C1 controls, bidi marks (U+202A-202E, U+2066-2069), zero-width chars (U+200B-200F) and the BOM (U+FEFF). */
+function isSpoofChar(c: number): boolean {
+  return (
+    c <= 0x1f ||
+    (c >= 0x7f && c <= 0x9f) ||
+    (c >= 0x200b && c <= 0x200f) ||
+    (c >= 0x202a && c <= 0x202e) ||
+    (c >= 0x2066 && c <= 0x2069) ||
+    c === 0xfeff
+  );
+}
+
 /** Sanitise an attacker-controlled token-name hint (`extra.name`) before it goes in a user-facing label: strip control + bidi/RTL-override chars (which can visually reorder the amount line into a spoof) and clamp the length. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 13)
 export function sanitizeTokenName(name: string): string {
   let out = "";
   for (const ch of name) {
     const c = ch.codePointAt(0);
     if (c === undefined) continue;
-    // Drop C0/C1 controls, the bidi embedding/override/isolate marks
-    // (U+202A-202E, U+2066-2069), zero-width chars (U+200B-200F) and the BOM
-    // (U+FEFF), any of which can visually reorder or hide the amount line.
-    if (c <= 0x1f) continue;
-    if (c >= 0x7f && c <= 0x9f) continue;
-    if (c >= 0x200b && c <= 0x200f) continue;
-    if (c >= 0x202a && c <= 0x202e) continue;
-    if (c >= 0x2066 && c <= 0x2069) continue;
-    if (c === 0xfeff) continue;
+    if (isSpoofChar(c)) continue;
     out += ch;
   }
   return out.trim().slice(0, 16);

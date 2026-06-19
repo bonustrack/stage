@@ -80,17 +80,8 @@ export async function deployAndSwapToPasskey(
   }
 }
 
-/**
- * Register a NEW device passkey for `rec` and make it the Kernel's sudo validator.
- *  Persists rec.passkey only after the on-chain swap userOp succeeds (deploy +
- *  swap for a counterfactual account, swap-only for a deployed one). Idempotent
- *  guards: passkey-already-installed-on-chain / not-smart / no native module /
- *  not configured all return a typed non-throwing result. A record that carries a
- *  passkey but is NOT deployed (the old broken counterfactual shortcut) is repaired
- *  by reusing the stored credential and running the deploy-and-swap.
- */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
-export async function enablePasskeyForRecord(rec: AccountRecord): Promise<EnablePasskeyResult> {
+/** Pre-flight guard: typed reject when `rec` can't take a passkey (not smart / no native module / not configured). null means proceed. */
+function passkeyPreflight(rec: AccountRecord): EnablePasskeyResult | null {
   if (rec.type !== 'smart' || rec.hdIndex == null) {
     return { ok: false, reason: 'error', message: 'Not a smart account.' };
   }
@@ -98,18 +89,56 @@ export async function enablePasskeyForRecord(rec: AccountRecord): Promise<Enable
   if (!zerodevConfigured()) {
     return { ok: false, reason: 'error', message: 'Smart wallet is not configured.' };
   }
+  return null;
+}
+
+/** Whether the Kernel is already deployed on-chain (has bytecode); false on any read error. */
+async function isKernelDeployed(
+  publicClient: ReturnType<typeof makePublicClient>,
+  address: string,
+): Promise<boolean> {
+  try {
+    const code = await publicClient.getCode({ address: address as `0x${string}` });
+    return !!code && code !== '0x';
+  } catch {
+    return false;
+  }
+}
+
+/** Either the result of resolving a StoredPasskey to install, or a typed early-return outcome. */
+type CredentialResolution =
+  | { stored: StoredPasskey }
+  | { result: EnablePasskeyResult };
+
+/** Reuse the record's stored passkey on the repair path, else register a NEW on-device credential (the WebAuthn create() prompt). */
+async function resolveCredential(rec: AccountRecord & { hdIndex: number }): Promise<CredentialResolution> {
+  if (rec.passkey) return { stored: rec.passkey };
+  let stored: StoredPasskey | null;
+  try {
+    stored = await registerPasskeyCredential(rec.hdIndex, {
+      rpId: zerodevRpId(),
+      userName: rec.label?.trim() ? rec.label.trim() : `stage-${rec.hdIndex}`,
+    });
+  } catch (e) {
+    return { result: { ok: false, reason: 'error', message: e instanceof Error ? e.message : 'Passkey registration failed' } };
+  }
+  // null => the user cancelled the OS sheet or the native flow is not exercisable.
+  if (!stored) return { result: { ok: false, reason: 'cancelled' } };
+  return { stored };
+}
+
+/** Register/reuse a device passkey for `rec` and make it the Kernel's sudo validator, persisting only after the on-chain swap succeeds; idempotent guards return typed non-throwing results. */
+export async function enablePasskeyForRecord(record: AccountRecord): Promise<EnablePasskeyResult> {
+  const guard = passkeyPreflight(record);
+  if (guard) return guard;
+  // preflight guarantees smart + non-null hdIndex.
+  const rec = record as AccountRecord & { hdIndex: number };
 
   const publicClient = makePublicClient();
 
   // Was the Kernel already deployed on-chain? Reported on success for the UI; also
   // decides the `already` vs `repair` case for a record that ALREADY has a passkey.
-  let deployed = false;
-  try {
-    const code = await publicClient.getCode({ address: rec.address as `0x${string}` });
-    deployed = !!code && code !== '0x';
-  } catch {
-    deployed = false;
-  }
+  const deployed = await isKernelDeployed(publicClient, rec.address);
 
   // REPAIR vs ALREADY for a record that already carries a passkey:
   //   - DEPLOYED  -> the on-chain sudo is really the passkey; genuinely done.
@@ -119,23 +148,10 @@ export async function enablePasskeyForRecord(rec: AccountRecord): Promise<Enable
   //     so the Kernel deploys (ECDSA initCode) and the sudo becomes the passkey.
   if (rec.passkey && deployed) return { ok: false, reason: 'already' };
 
-  // 1) Get the passkey credential to install: reuse the stored one on the repair
-  //    path, else register a NEW credential on-device (the WebAuthn create() prompt).
-  let stored: StoredPasskey | null;
-  if (rec.passkey) {
-    stored = rec.passkey;
-  } else {
-    try {
-      stored = await registerPasskeyCredential(rec.hdIndex, {
-        rpId: zerodevRpId(),
-        userName: rec.label?.trim() ? rec.label.trim() : `stage-${rec.hdIndex}`,
-      });
-    } catch (e) {
-      return { ok: false, reason: 'error', message: e instanceof Error ? e.message : 'Passkey registration failed' };
-    }
-    // null => the user cancelled the OS sheet or the native flow is not exercisable.
-    if (!stored) return { ok: false, reason: 'cancelled' };
-  }
+  // 1) Get the passkey credential to install.
+  const cred = await resolveCredential(rec);
+  if ('result' in cred) return cred.result;
+  const stored = cred.stored;
 
   // 2) Swap the sudo validator from the ECDSA owner to the passkey via the SHARED
   //    on-chain deploy-and-swap (one sponsored userOp; deploys the Kernel first with

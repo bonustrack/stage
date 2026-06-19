@@ -142,113 +142,137 @@ async function fetch4byteSig(selector: string): Promise<string | null> {
   return null;
 }
 
+/** Map a decoded function's raw args into display-ready DecodedArg list given its ABI inputs. */
+function mapDecodedArgs(
+  rawArgs: readonly unknown[] | undefined,
+  inputs: readonly { name?: string; type: string }[],
+): DecodedArg[] {
+  return (rawArgs ?? []).map((v, i) => {
+    const input = inputs[i];
+    const argName = input?.name;
+    return {
+      name: argName !== undefined && argName.length > 0 ? argName : `arg${i}`,
+      type: input?.type ?? '',
+      value: fmtArg(v),
+    };
+  });
+}
+
+/** True when the ABI contains a function whose selector matches `selector`. */
+function abiHasSelector(abi: Abi, selector: string): boolean {
+  return abi.some((i) => {
+    if (i.type !== 'function') return false;
+    try { return toFunctionSelector(i).toLowerCase() === selector; }
+    catch { return false; }
+  });
+}
+
+/** Decode against a verified Sourcify ABI known to contain `selector`, or null when args won't decode. */
+function decodeWithSourcify(
+  abi: Abi, verified: boolean, data: string, selector: string,
+): DecodedCall | null {
+  try {
+    const decoded = decodeFunctionData({ abi, data: data as Hex });
+    const fn = abi.find(
+      (i): i is Extract<Abi[number], { type: 'function' }> =>
+        i.type === 'function' && i.name === decoded.functionName,
+    );
+    const inputs = fn?.inputs ?? [];
+    return {
+      decoded: true,
+      verified,
+      source: 'sourcify',
+      functionName: decoded.functionName,
+      signature: fn ? `${fn.name}(${inputs.map(p => p.type).join(',')})` : decoded.functionName,
+      args: mapDecodedArgs(decoded.args, inputs),
+      selector,
+      note: undefined,
+    };
+  } catch {
+    return null; // selector is in the ABI but args failed to decode — caller treats as mismatch
+  }
+}
+
+/** Build the RED "selector not on this verified contract" mismatch result (4byte guess used for display only). */
+async function buildMismatch(verified: boolean, selector: string): Promise<DecodedCall> {
+  const guessSig = await fetch4byteSig(selector);
+  const guess = guessSig ? `looks like ${guessSig} per 4byte, but ` : '';
+  return {
+    decoded: false,
+    verified,
+    source: 'mismatch',
+    functionName: guessSig ? guessSig.split('(')[0] : undefined,
+    signature: guessSig ?? undefined,
+    args: [],
+    selector,
+    note: `This calls a function that does not exist on this verified contract (selector ${selector}). ${guess ? `${guess.charAt(0).toUpperCase()}${guess.slice(1)}` : 'The '}this contract has no such function. The transaction will likely fail or is malformed - do not sign unless you trust it.`,
+  };
+}
+
+/** Resolve a call against a verified Sourcify contract: a calm decode when the selector is implemented, else a mismatch warning. */
+async function decodeViaSourcify(
+  abi: Abi, verified: boolean, data: string, selector: string,
+): Promise<DecodedCall> {
+  // Does the verified ABI actually contain this selector? This is the load-bearing
+  // check: if the contract is verified but NONE of its functions has this selector,
+  // the tx targets a function the contract does not implement — it will revert / is
+  // malformed — and we must NOT silently fall back to 4byte and render a confident decode.
+  if (abiHasSelector(abi, selector)) {
+    const calm = decodeWithSourcify(abi, verified, data, selector);
+    if (calm) return calm;
+  }
+  return buildMismatch(verified, selector);
+}
+
+/** Best-effort decode args from a 4byte text signature; empty when the signature can't be parsed or the selector doesn't match. */
+function decode4byteArgs(sig: string, data: string, selector: string): DecodedArg[] {
+  try {
+    const item = parseAbiItem(`function ${sig}`) as Extract<Abi[number], { type: 'function' }>;
+    // Guard the selector actually matches (4byte can return collisions).
+    if (toFunctionSelector(item).toLowerCase() !== selector) return [];
+    const decoded = decodeFunctionData({ abi: [item] as Abi, data: data as Hex });
+    return mapDecodedArgs(decoded.args, item.inputs);
+  } catch {
+    return []; // keep name only
+  }
+}
+
+/** Resolve a call via the 4byte directory (unverified signature + best-effort args), or null on a miss. */
+async function decodeVia4byte(data: string, selector: string): Promise<DecodedCall | null> {
+  const sig = await fetch4byteSig(selector);
+  if (!sig) return null;
+  return {
+    decoded: true,
+    verified: false,
+    source: '4byte',
+    functionName: sig.split('(')[0],
+    signature: sig,
+    args: decode4byteArgs(sig, data, selector),
+    selector,
+    note: 'Decoded via function signature.',
+  };
+}
+
 /** Decode `call.data` for `to` on `chainId` into a function + named args. Network-backed; never throws — every failure path returns a `decoded:false` result the card renders as "could not decode" with the raw selector. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export async function decodeCall(
   to: string | undefined, data: string | undefined, chainId: number,
 ): Promise<DecodedCall> {
   const selector = selectorOf(data);
-  if (!selector || !to) {
+  // `selector` is only ever defined when `data` is a hex string; the `!data` arm
+  // narrows the type without changing behaviour.
+  if (!selector || !to || !data) {
     return { decoded: false, verified: false, source: 'none', args: [], selector, note: 'No calldata to decode.' };
   }
 
-  // 1. Sourcify ABI -> exact name + named args.
+  // 1. Sourcify ABI -> exact name + named args (or a mismatch warning).
   const sourcify = await fetchSourcifyAbi(chainId, to);
   if (sourcify) {
-    // Does the verified ABI actually contain this selector? We compute the
-    // selector of every function in the ABI and compare. This is the load-bearing
-    // check: if the contract is verified but NONE of its functions has this
-    // selector, the tx targets a function the contract does not implement — it
-    // will revert / is malformed — and we must NOT silently fall back to 4byte and
-    // render a confident-looking decode.
-    const selectorInAbi = sourcify.abi.some((i) => {
-      if (i.type !== 'function') return false;
-      try { return toFunctionSelector(i).toLowerCase() === selector; }
-      catch { return false; }
-    });
-    if (selectorInAbi) {
-      try {
-        const decoded = decodeFunctionData({ abi: sourcify.abi, data: data as Hex });
-        const fn = sourcify.abi.find(
-          (i): i is Extract<Abi[number], { type: 'function' }> =>
-            i.type === 'function' && i.name === decoded.functionName,
-        );
-        const inputs = fn?.inputs ?? [];
-        const args = (decoded.args ?? []).map((v, i) => {
-          const input = inputs[i];
-          const argName = input?.name;
-          const argType = input?.type;
-          return {
-            name: argName !== undefined && argName.length > 0 ? argName : `arg${i}`,
-            type: argType ?? '',
-            value: fmtArg(v),
-          };
-        });
-        const signature = fn
-          ? `${fn.name}(${inputs.map(p => p.type).join(',')})`
-          : decoded.functionName;
-        return {
-          decoded: true,
-          verified: sourcify.verified,
-          source: 'sourcify',
-          functionName: decoded.functionName,
-          signature,
-          args,
-          selector,
-          note: undefined,
-        };
-      } catch { /* selector is in the ABI but args failed to decode — fall through to mismatch */ }
-    }
-    // Verified contract, but this selector is NOT one of its functions (or the
-    // matched function's args wouldn't decode). RED FLAG: do not pretend this is a
-    // valid call. Optionally name the selector via 4byte for display, but frame it
-    // strictly as a warning — never a calm decode.
-    const guessSig = await fetch4byteSig(selector);
-    const guess = guessSig ? `looks like ${guessSig} per 4byte, but ` : '';
-    return {
-      decoded: false,
-      verified: sourcify.verified,
-      source: 'mismatch',
-      functionName: guessSig ? guessSig.split('(')[0] : undefined,
-      signature: guessSig ?? undefined,
-      args: [],
-      selector,
-      note: `This calls a function that does not exist on this verified contract (selector ${selector}). ${guess ? `${guess.charAt(0).toUpperCase()}${guess.slice(1)}` : 'The '}this contract has no such function. The transaction will likely fail or is malformed - do not sign unless you trust it.`,
-    };
+    return decodeViaSourcify(sourcify.abi, sourcify.verified, data, selector);
   }
 
   // 2. 4byte fallback -> signature + best-effort arg decode (unverified).
-  const sig = await fetch4byteSig(selector);
-  if (sig) {
-    let args: DecodedArg[] = [];
-    try {
-      const item = parseAbiItem(`function ${sig}`) as Extract<Abi[number], { type: 'function' }>;
-      // Guard the selector actually matches (4byte can return collisions).
-      if (toFunctionSelector(item).toLowerCase() === selector) {
-        const decoded = decodeFunctionData({ abi: [item] as Abi, data: data as Hex });
-        args = (decoded.args ?? []).map((v, i) => {
-          const input = item.inputs[i];
-          const argName = input?.name;
-          const argType = input?.type;
-          return {
-            name: argName !== undefined && argName.length > 0 ? argName : `arg${i}`,
-            type: argType ?? '',
-            value: fmtArg(v),
-          };
-        });
-      }
-    } catch { /* keep name only */ }
-    return {
-      decoded: true,
-      verified: false,
-      source: '4byte',
-      functionName: sig.split('(')[0],
-      signature: sig,
-      args,
-      selector,
-      note: 'Decoded via function signature.',
-    };
-  }
+  const fourByte = await decodeVia4byte(data, selector);
+  if (fourByte) return fourByte;
 
   // 3. Nothing matched.
   return {

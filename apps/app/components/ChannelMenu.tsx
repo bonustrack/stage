@@ -46,8 +46,56 @@ export interface ChannelMenuProps {
   onSearch?: () => void;
 }
 
+/** Confirm + run the Leave-group flow (leave via XMTP, then navigate context-aware). */
+function confirmLeaveGroup(
+  convId: string, context: 'list' | 'view',
+  router: ReturnType<typeof useRouter>,
+  onClose: () => void, onAfterLeave?: (result: 'left' | 'hidden') => void,
+): void {
+  onClose();
+  Alert.alert(
+    'Leave group',
+    'You’ll stop receiving messages from this group. You can be re-added by a member later.',
+    [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Leave', style: 'destructive', onPress: () => {
+          void (async (): Promise<void> => {
+            try {
+              const result = await leaveGroupConv(lineOfConv(convId));
+              onAfterLeave?.(result);
+              if (context === 'view') router.replace('/');
+            } catch (e) {
+              Alert.alert('Couldn’t leave', (e as Error).message ?? 'Unknown error');
+            }
+          })();
+        },
+      },
+    ],
+  );
+}
+
+/** Renders the Group-info (group) or Profile (DM) navigation row. */
+function InfoRow({ isGroup, peerAddress, head, dark, run, router, convId }: {
+  isGroup: boolean; peerAddress?: string | null; head: string; dark: boolean;
+  run: (fn: () => void) => void; router: ReturnType<typeof useRouter>; convId: string;
+}): React.ReactElement | null {
+  if (isGroup) {
+    return (
+      <MenuRow icon="users" label="Group info" color={head} dark={dark}
+        onPress={() => { run(() => { router.push({ pathname: '/group/[convId]', params: { convId } }); }); }} />
+    );
+  }
+  if (peerAddress) {
+    return (
+      <MenuRow icon="user" label="Profile" color={head} dark={dark}
+        onPress={() => { run(() => { router.push({ pathname: '/user/[address]', params: { address: peerAddress } }); }); }} />
+    );
+  }
+  return null;
+}
+
 /** Renders the shared per-conversation action sheet (mark read, pin, archive, leave, navigate). */
-// eslint-disable-next-line max-lines-per-function, complexity -- TODO(chaitu): refactor to satisfy function-size limits + refactor (complexity 12)
 export function ChannelMenu({
   convId, isGroup, peerAddress, isUnread, isPinned, isArchived,
   visible, onClose, context = 'list', onAfterLeave, onAfterArchive, onSearch,
@@ -58,125 +106,44 @@ export function ChannelMenu({
   const head = pal.link;
   const danger = pal.danger;
 
-  /** Run helper. */
+  /** Run helper — close the sheet, then run the action. */
   const run = (fn: () => void): void => { onClose(); fn(); };
 
-  /**
-   * Search needs the sheet to be GONE first: this AppModal is a native RN
-   *  <Modal> (its own Android window that owns IME focus). If we open search in
-   *  the same tick as closing the sheet, the search input autofocuses while the
-   *  modal window is still mounted/animating out and the keyboard never attaches.
-   *  So close the sheet, then fire onSearch on the next macrotask once `visible`
-   *  has flipped false and the dismiss has started. The conversation view pairs
-   *  this with a verified blur/focus retry once the dismiss interaction settles.
-   */
-  const runSearch = (fn: () => void): void => {
-    onClose();
-    setTimeout(fn, 0);
-  };
-
-  /** Built-in Leave-group flow — confirm, leave via XMTP, then navigate context-aware: pop back from the channel view; let the list reconcile. */
-  const onLeaveGroup = (): void => {
-    onClose();
-    Alert.alert(
-      'Leave group',
-      'You’ll stop receiving messages from this group. You can be re-added by a member later.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Leave', style: 'destructive', onPress: () => {
-            void (async (): Promise<void> => {
-              try {
-                const result = await leaveGroupConv(lineOfConv(convId));
-                onAfterLeave?.(result);
-                if (context === 'view') router.replace('/');
-              } catch (e) {
-                Alert.alert('Couldn’t leave', (e as Error).message ?? 'Unknown error');
-              }
-            })();
-          },
-        },
-      ],
-    );
-  };
+  /** Toggle archive, notify, and pop back to the list when archiving from the conversation view. */
+  const onToggleArchive = (): void => { run(() => {
+    void toggleArchived(convId);
+    onAfterArchive?.(!isArchived);
+    if (!isArchived && context === 'view') router.replace('/');
+  }); };
 
   return (
     <AppModal visible={visible} onClose={onClose}>
-      {/* Cancel AppModal's 16px ScrollView padding so the list spans edge-to-edge
-          and the row content inset (ROW_INSET 16) matches the Settings page. */}
+      {/* Cancel AppModal's 16px ScrollView padding so the list spans edge-to-edge. */}
       <ListView dark={dark} style={{ marginHorizontal: -16 }}>
         {onSearch ? (
-          <MenuRow
-            icon="search"
-            label="Search"
-            color={head}
-            dark={dark}
-            onPress={() => { runSearch(onSearch); }}
-          />
+          // Search needs the sheet GONE first (native RN <Modal> owns IME focus),
+          // so close, then fire onSearch on the next macrotask.
+          <MenuRow icon="search" label="Search" color={head} dark={dark}
+            onPress={() => { onClose(); setTimeout(onSearch, 0); }} />
         ) : null}
-
         {isGroup ? (
-          <MenuRow
-            icon="plus"
-            label="Add members"
-            color={head}
-            dark={dark}
-            onPress={() => { run(() => { router.push({ pathname: '/xmtp/add-members', params: { convId } }); }); }}
-          />
+          <MenuRow icon="plus" label="Add members" color={head} dark={dark}
+            onPress={() => { run(() => { router.push({ pathname: '/xmtp/add-members', params: { convId } }); }); }} />
         ) : null}
-
-        <MenuRow
-          icon={isUnread ? 'check' : 'envelope'}
-          label={isUnread ? 'Mark as read' : 'Mark as unread'}
-          color={head}
-          dark={dark}
-          onPress={() => { run(() => { void (isUnread ? markConvRead(convId) : markConvUnread(convId)); }); }}
-        />
-
-        <MenuRow
-          icon="mapPin"
-          label={isPinned ? 'Unpin' : 'Pin'}
-          color={head}
-          dark={dark}
-          onPress={() => { run(() => { void togglePin(convId); }); }}
-        />
-
+        <MenuRow icon={isUnread ? 'check' : 'envelope'}
+          label={isUnread ? 'Mark as read' : 'Mark as unread'} color={head} dark={dark}
+          onPress={() => { run(() => { void (isUnread ? markConvRead(convId) : markConvUnread(convId)); }); }} />
+        <MenuRow icon="mapPin" label={isPinned ? 'Unpin' : 'Pin'} color={head} dark={dark}
+          onPress={() => { run(() => { void togglePin(convId); }); }} />
+        <InfoRow isGroup={isGroup} peerAddress={peerAddress} head={head} dark={dark}
+          run={run} router={router} convId={convId} />
+        {/* Archive / Unarchive — local archived store hides the conv (reversible). */}
+        <MenuRow icon={isArchived ? 'arrowUp' : 'archive'}
+          label={isArchived ? 'Unarchive' : 'Archive'} color={danger} dark={dark}
+          onPress={onToggleArchive} />
         {isGroup ? (
-          <MenuRow
-            icon="users"
-            label="Group info"
-            color={head}
-            dark={dark}
-            onPress={() => { run(() => { router.push({ pathname: '/group/[convId]', params: { convId } }); }); }}
-          />
-        ) : peerAddress ? (
-          <MenuRow
-            icon="user"
-            label="Profile"
-            color={head}
-            dark={dark}
-            onPress={() => { run(() => { router.push({ pathname: '/user/[address]', params: { address: peerAddress } }); }); }}
-          />
-        ) : null}
-
-        {/* Archive / Unarchive — local archived store hides the conv from the
-            main inbox (reversible, distinct from block). Shown in destructive red
-            and placed just before Leave group. On archive from the conversation
-            view, pop back to the list via onAfterArchive. */}
-        <MenuRow
-          icon={isArchived ? 'arrowUp' : 'archive'}
-          label={isArchived ? 'Unarchive' : 'Archive'}
-          color={danger}
-          dark={dark}
-          onPress={() => { run(() => {
-            void toggleArchived(convId);
-            onAfterArchive?.(!isArchived);
-            if (!isArchived && context === 'view') router.replace('/');
-          }); }}
-        />
-
-        {isGroup ? (
-          <MenuRow icon="arrowLeft" label="Leave group" color={danger} dark={dark} onPress={onLeaveGroup} />
+          <MenuRow icon="arrowLeft" label="Leave group" color={danger} dark={dark}
+            onPress={() => { confirmLeaveGroup(convId, context, router, onClose, onAfterLeave); }} />
         ) : null}
       </ListView>
     </AppModal>

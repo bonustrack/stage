@@ -55,77 +55,68 @@ function selectorOf(data?: string): string | undefined {
   return data.slice(0, 10).toLowerCase();
 }
 
+/** Parse a hex value to bigint, or null when malformed. */
+function parseWei(value?: string): bigint | null {
+  try { return BigInt(value ?? '0x0'); } catch { return null; }
+}
+
+/** Derive the summary for a native value send (no calldata). */
+function deriveNativeSummary(
+  to: string | undefined, value: string | undefined, nativeSymbol: string,
+): ConfirmSummary {
+  const wei = parseWei(value);
+  if (to && isAddress(to) && wei !== null) {
+    return { verified: true, recipient: to, amount: formatEther(wei), symbol: nativeSymbol };
+  }
+  // Malformed native call.
+  return { verified: false, recipient: to ?? '(unknown)', target: to, selector: undefined };
+}
+
+/** Derive a verified ERC-20 transfer summary from calldata, or undefined when not a recognised transfer. */
+function deriveTransferSummary(
+  to: string | undefined, data: string,
+): ConfirmSummary | undefined {
+  try {
+    const decoded = decodeFunctionData({ abi: ERC20_TRANSFER_ABI, data: data as Hex });
+    if (decoded.functionName !== 'transfer') return undefined;
+    const [recipient, rawAmount] = decoded.args as readonly [string, bigint];
+    const known = KNOWN_TOKENS[(to ?? '').toLowerCase()];
+    const amount = known
+      ? formatUnits(rawAmount, known.decimals)
+      : rawAmount.toString(); // unknown token: show atomic units, no false symbol
+    return {
+      verified: true,
+      recipient,
+      amount,
+      symbol: known?.symbol, // undefined for unknown token -> label by target
+      target: to,
+    };
+  } catch {
+    return undefined; // undecodable -> caller falls through to unverified
+  }
+}
+
 /** Derive the confirm summary from the ACTUAL call bytes. `nativeSymbol` is the chain's native coin symbol (default ETH) used for value-only sends. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 15)
 export function deriveConfirmSummary(
   call: CallLike,
   nativeSymbol = 'ETH',
 ): ConfirmSummary {
   const to = call.to;
-  const hasData = !!call.data && call.data !== '0x' && call.data.length > 2;
+  const data = call.data;
+  const hasData = !!data && data !== '0x' && data.length > 2;
 
   // Native send: no calldata. Recipient = call.to, amount = call.value (wei).
-  if (!hasData) {
-    const wei = (() => {
-      try { return BigInt(call.value ?? '0x0'); } catch { return null; }
-    })();
-    if (to && isAddress(to) && wei !== null) {
-      return {
-        verified: true,
-        recipient: to,
-        amount: formatEther(wei),
-        symbol: nativeSymbol,
-      };
-    }
-    // Malformed native call.
-    return {
-      verified: false,
-      recipient: to ?? '(unknown)',
-      target: to,
-      selector: undefined,
-    };
-  }
+  if (!hasData) return deriveNativeSummary(to, call.value, nativeSymbol);
 
   // Has calldata: only an ERC-20 transfer(address,uint256) is "verified".
-  try {
-    const decoded = decodeFunctionData({
-      abi: ERC20_TRANSFER_ABI,
-      data: call.data as Hex,
-    });
-    if (decoded.functionName === 'transfer') {
-      const [recipient, rawAmount] = decoded.args as readonly [string, bigint];
-      const token = (to ?? '').toLowerCase();
-      const known = KNOWN_TOKENS[token];
-      const amount = known
-        ? formatUnits(rawAmount, known.decimals)
-        : rawAmount.toString(); // unknown token: show atomic units, no false symbol
-      return {
-        verified: true,
-        recipient,
-        amount,
-        symbol: known?.symbol, // undefined for unknown token -> label by target
-        target: to,
-      };
-    }
-  } catch {
-    // fall through to unverified
-  }
+  const transfer = deriveTransferSummary(to, data);
+  if (transfer) return transfer;
 
   // Unrecognised method / undecodable calldata: warn, never summarise friendly.
-  return {
-    verified: false,
-    recipient: to ?? '(unknown)',
-    target: to,
-    selector: selectorOf(call.data),
-  };
+  return { verified: false, recipient: to ?? '(unknown)', target: to, selector: selectorOf(call.data) };
 }
 
-/**
- * Build the confirm Alert message from a derived summary. Verified transfers
- *  get a "Send <amount> <symbol> to <recipient>" line; unverified calls get an
- *  explicit warning naming the raw target + selector so the user can't be lulled
- *  by a spoofed metadata summary.
- */
+/** Build the confirm Alert message from a derived summary (friendly send line when verified, else a warning naming the raw target + selector). */
 export function confirmMessage(s: ConfirmSummary, chainName: string): string {
   if (s.verified) {
     const amountPart = s.amount != null

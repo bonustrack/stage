@@ -56,10 +56,50 @@ function LabelChip({ label, busy, onRemove, p }: {
   );
 }
 
-/** Group labels section: lists the group's label chips and lets members add or remove them. */
-// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
-export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React.ReactElement {
+/** Add-label input row: text field + Add button, shown only below the cap. */
+function LabelAddRow({ draft, setDraft, busy, onAdd, p }: {
+  draft: string; setDraft: (s: string) => void; busy: boolean; onAdd: () => void; p: Pal;
+}): React.ReactElement {
   const { fg, sub, border, inputBg } = p;
+  const disabled = busy || !draft.trim();
+  return (
+    <Row margin={{ top: 10 }} align="center" gap={8}>
+      <Input
+        value={draft}
+        onChangeText={setDraft}
+        onSubmit={onAdd}
+        placeholder="Add a label"
+        placeholderTextColor={sub}
+        disabled={busy}
+        inputProps={{ maxLength: MAX_LABEL_LEN, returnKeyType: 'done' }}
+        style={{
+          flex: 1, color: fg, backgroundColor: inputBg,
+          borderWidth: 1, borderColor: border, borderRadius: 10,
+          paddingHorizontal: 10, paddingVertical: 8, fontSize: fontSize('md'),
+        }}
+/>
+      <Pressable
+        onPress={onAdd}
+        disabled={disabled}
+        hitSlop={8}
+        style={({ pressed }) => ({
+          flexDirection: 'row', alignItems: 'center', gap: 4,
+          paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999,
+          borderWidth: 1, borderColor: border,
+          opacity: disabled ? 0.5 : 1,
+          backgroundColor: pressed ? border : 'transparent',
+        })}
+>
+        {busy ? <Spinner size={14} color={fg} /> : <Icon name="plus" size={14} color={fg} />}
+        <Text size="xs" color={fg}>Add</Text>
+      </Pressable>
+    </Row>
+  );
+}
+
+/** Group labels section: lists the group's label chips and lets members add or remove them. */
+export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React.ReactElement {
+  const { sub } = p;
   const [labels, setLabels] = useState<string[]>([]);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
@@ -130,37 +170,7 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
       ) : null}
 
       {!atCap ? (
-        <Row margin={{ top: 10 }} align="center" gap={8}>
-          <Input
-            value={draft}
-            onChangeText={setDraft}
-            onSubmit={() => { void add(draft); }}
-            placeholder="Add a label"
-            placeholderTextColor={sub}
-            disabled={busy}
-            inputProps={{ maxLength: MAX_LABEL_LEN, returnKeyType: 'done' }}
-            style={{
-              flex: 1, color: fg, backgroundColor: inputBg,
-              borderWidth: 1, borderColor: border, borderRadius: 10,
-              paddingHorizontal: 10, paddingVertical: 8, fontSize: fontSize('md'),
-            }}
-/>
-          <Pressable
-            onPress={() => { void add(draft); }}
-            disabled={busy || !draft.trim()}
-            hitSlop={8}
-            style={({ pressed }) => ({
-              flexDirection: 'row', alignItems: 'center', gap: 4,
-              paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999,
-              borderWidth: 1, borderColor: border,
-              opacity: busy || !draft.trim() ? 0.5 : 1,
-              backgroundColor: pressed ? border : 'transparent',
-            })}
->
-            {busy ? <Spinner size={14} color={fg} /> : <Icon name="plus" size={14} color={fg} />}
-            <Text size="xs" color={fg}>Add</Text>
-          </Pressable>
-        </Row>
+        <LabelAddRow draft={draft} setDraft={setDraft} busy={busy} onAdd={() => { void add(draft); }} p={p}/>
       ) : (
         <Text size="xs" color={sub} style={{ marginTop: 8 }}>
           Label limit reached ({MAX_LABELS}).

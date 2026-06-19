@@ -62,20 +62,14 @@ async function fetchBody(owner: string, repo: string, kind: 'pull' | 'issue', n:
   } catch { return undefined; }
 }
 
-/** Primary path: one authenticated round trip through the daemon proxy. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
-async function fetchViaProxy(ref: GithubRef): Promise<GithubDiff> {
-  const qs = new URLSearchParams({
-    owner: ref.owner, repo: ref.repo, kind: ref.kind, number: String(ref.number ?? 0),
-  });
-  const res = await fetch(`${PROXY}?${qs}`, { headers: { Accept: 'application/json' } });
-  if (!res.ok) throw new Error(`proxy ${res.status}`);
-  const out = (await res.json()) as ProxyResult;
-  if (out.error) throw new Error(out.error);
-  if (out.kind === 'no-pr') {
-    const body = out.body ?? (ref.number ? await fetchBody(out.owner, out.repo, 'issue', ref.number) : undefined);
-    return { kind: 'no-pr', owner: out.owner, repo: out.repo, title: out.title, body, files: [], additions: 0, deletions: 0 };
-  }
+/** Build the `no-pr` GithubDiff from a proxy result, backfilling the issue body when omitted. */
+async function noPrFromProxy(out: ProxyResult, ref: GithubRef): Promise<GithubDiff> {
+  const body = out.body ?? (ref.number ? await fetchBody(out.owner, out.repo, 'issue', ref.number) : undefined);
+  return { kind: 'no-pr', owner: out.owner, repo: out.repo, title: out.title, body, files: [], additions: 0, deletions: 0 };
+}
+
+/** Build the `ok` GithubDiff from a proxy result, mapping files and backfilling the PR body/totals. */
+async function okFromProxy(out: ProxyResult): Promise<GithubDiff> {
   const files = (out.files ?? []).map(toDiffFile);
   const summed = totalsOf(files);
   // Proxy omits body; backfill from the resolved PR number when missing.
@@ -88,8 +82,27 @@ async function fetchViaProxy(ref: GithubRef): Promise<GithubDiff> {
   };
 }
 
+/** Primary path: one authenticated round trip through the daemon proxy. */
+async function fetchViaProxy(ref: GithubRef): Promise<GithubDiff> {
+  const qs = new URLSearchParams({
+    owner: ref.owner, repo: ref.repo, kind: ref.kind, number: String(ref.number ?? 0),
+  });
+  const res = await fetch(`${PROXY}?${qs}`, { headers: { Accept: 'application/json' } });
+  if (!res.ok) throw new Error(`proxy ${res.status}`);
+  const out = (await res.json()) as ProxyResult;
+  if (out.error) throw new Error(out.error);
+  if (out.kind === 'no-pr') return noPrFromProxy(out, ref);
+  return okFromProxy(out);
+}
+
+/** Extract the linked-PR number from a single issue-timeline event, or null when it isn't a cross-reference to a PR. */
+function prNumberFromTimelineEvent(e: Record<string, unknown>): number | null {
+  const src = e.source as { issue?: { number?: number; pull_request?: unknown } } | undefined;
+  if (src?.issue?.pull_request && typeof src.issue.number === 'number') return src.issue.number;
+  return null;
+}
+
 /** Resolve the PR number for an issue link via the issue timeline. Only used by the direct-GitHub fallback; the proxy does this server-side. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 11)
 async function resolvePrNumber(ref: GithubRef): Promise<number | null> {
   if (ref.kind === 'pull' && ref.number) return ref.number;
   if (ref.kind !== 'issue' || !ref.number) return null;
@@ -99,8 +112,8 @@ async function resolvePrNumber(ref: GithubRef): Promise<number | null> {
   const events = (await res.json()) as Record<string, unknown>[];
   let found: number | null = null;
   for (const e of events) {
-    const src = e.source as { issue?: { number?: number; pull_request?: unknown } } | undefined;
-    if (src?.issue?.pull_request && typeof src.issue.number === 'number') found = src.issue.number;
+    const n = prNumberFromTimelineEvent(e);
+    if (n != null) found = n;
   }
   return found;
 }

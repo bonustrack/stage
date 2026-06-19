@@ -28,41 +28,42 @@ export function ChannelCard(
   return <ConvIdCard convId={convId} />;
 }
 
+/** Resolve the title text for a conv-id channel card (group name or peer name/address). */
+function convTitle(meta: ReturnType<typeof useConvMeta>, convId: string): string {
+  if (meta.isGroup) return meta.groupName == null || meta.groupName === '' ? 'Channel' : meta.groupName;
+  const peerName = getPeerName(meta.peerAddr);
+  if (peerName != null && peerName !== '') return peerName;
+  return meta.peerAddr ? shortAddress(meta.peerAddr) : `Channel ${convId.slice(0, 6)}…`;
+}
+
+/** Resolve the subtitle text for a conv-id channel card (member count or DM label). */
+function convSubtitle(meta: ReturnType<typeof useConvMeta>): string {
+  if (meta.isGroup) return meta.memberAddrs.length ? `${meta.memberAddrs.length} members` : 'Channel';
+  return meta.peerAddr ? 'Direct message' : 'Open channel';
+}
+
+/** Resolve {avatarUri, avatarAddress} for a conv-id channel card, mirroring HomeScreen. */
+function convAvatar(
+  meta: ReturnType<typeof useConvMeta>, convId: string,
+): { avatarUri: string | null; avatarAddress: string | null } {
+  const isGroup = meta.isGroup;
+  const avatarUri = isGroup ? (meta.groupImage?.trim() || null) : null;
+  const avatarSeed = isGroup ? (avatarUri ? null : channelStampSeed(convId)) : meta.peerAddr;
+  let avatarAddress: string | null = null;
+  if (!avatarUri && avatarSeed && (isGroup || isPeerResolved(avatarSeed))) avatarAddress = avatarSeed;
+  return { avatarUri, avatarAddress };
+}
+
 /** The Conv Id Card component. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 function ConvIdCard({ convId }: { convId: string }): React.ReactElement {
   const meta = useConvMeta(convId);
   usePeerProfiles([meta.peerAddr]);
   const { border } = usePalette();
   const blockRadius = useBlockRadius();
 
-  const isGroup = meta.isGroup;
-  const peer = meta.peerAddr;
-  const peerName = getPeerName(peer);
-  const title = isGroup
-    ? (meta.groupName == null || meta.groupName === '' ? 'Channel' : meta.groupName)
-    : (peerName == null || peerName === '' ? (peer ? shortAddress(peer) : `Channel ${convId.slice(0, 6)}…`) : peerName);
-  const subtitle = isGroup
-    ? (meta.memberAddrs.length ? `${meta.memberAddrs.length} members` : 'Channel')
-    : (peer ? 'Direct message' : 'Open channel');
-
-  /**
-   * Mirror HomeScreen.helpers avatar resolution exactly so the card matches the
-   *  Home channel list:
-   *   - DM: peer's stamp (real eth address) + peer profile image if present.
-   *   - Group WITH uploaded image: that image via avatarUri (address ignored).
-   *   - Group WITHOUT image: a deterministic stamp seeded by the channel id.
-   */
-  const avatarUri = isGroup ? (meta.groupImage?.trim() || null) : null;
-  const avatarSeed = isGroup
-    ? (avatarUri ? null : channelStampSeed(convId))
-    : peer;
-  /** Render-gate (mirrors HomeScreen.parts): groups render their seed directly; DMs hold off until the peer profile resolves so we don't flash a cache-buster-less stamp before the real URL lands. */
-  const avatarAddress = avatarUri || !avatarSeed
-    ? null
-    : isGroup || isPeerResolved(avatarSeed)
-      ? avatarSeed
-      : null;
+  const title = convTitle(meta, convId);
+  const subtitle = convSubtitle(meta);
+  const { avatarUri, avatarAddress } = convAvatar(meta, convId);
 
   /** Open helper. */
   const open = (): void => {
@@ -76,7 +77,7 @@ function ConvIdCard({ convId }: { convId: string }): React.ReactElement {
         subtitle={subtitle}
         avatarUri={avatarUri}
         avatarAddress={avatarAddress}
-        square={isGroup}
+        square={meta.isGroup}
         onPress={open}
         noBorder
       />

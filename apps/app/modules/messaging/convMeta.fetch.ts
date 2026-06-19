@@ -30,21 +30,18 @@ export const EMPTY_CONV_META: ConvMeta = {
   groupDescription: '', memberAddrs: [], inboxToAddr: {},
 };
 
-/** Resolve a conversation's shared metadata (peer/group name, image, members) by line id. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
-export async function fetchConvMeta(convId: string): Promise<ConvMeta> {
-  const conv = await convOfLine(lineOfConv(convId));
-  if (!conv) return EMPTY_CONV_META;
-  const [peer, inboxToAddr] = await Promise.all([
-    peerEthAddressOfDm(conv),
-    memberInboxToAddressMap(conv),
-  ]);
-  if (peer) return { ...EMPTY_CONV_META, peerAddr: peer, inboxToAddr };
-  const g = conv as unknown as {
-    name?: () => Promise<string>;
-    imageUrl?: () => Promise<string>;
-    description?: () => Promise<string>;
-  };
+interface GroupMetaAccessor {
+  name?: () => Promise<string>;
+  imageUrl?: () => Promise<string>;
+  description?: () => Promise<string>;
+}
+
+/** Resolve a group conv's name/image/description/members into the ConvMeta group shape. */
+async function fetchGroupConvMeta(
+  conv: Parameters<typeof groupMemberEthAddresses>[0],
+  inboxToAddr: Record<string, string>,
+): Promise<ConvMeta> {
+  const g = conv as unknown as GroupMetaAccessor;
   const [members, name, image, description] = await Promise.all([
     groupMemberEthAddresses(conv),
     g.name?.() ?? Promise.resolve(''),
@@ -55,6 +52,18 @@ export async function fetchConvMeta(convId: string): Promise<ConvMeta> {
     peerAddr: null, isGroup: true, groupName: name ?? '', groupImage: image ?? '',
     groupDescription: description ?? '', memberAddrs: members, inboxToAddr,
   };
+}
+
+/** Resolve a conversation's shared metadata (peer/group name, image, members) by line id. */
+export async function fetchConvMeta(convId: string): Promise<ConvMeta> {
+  const conv = await convOfLine(lineOfConv(convId));
+  if (!conv) return EMPTY_CONV_META;
+  const [peer, inboxToAddr] = await Promise.all([
+    peerEthAddressOfDm(conv),
+    memberInboxToAddressMap(conv),
+  ]);
+  if (peer) return { ...EMPTY_CONV_META, peerAddr: peer, inboxToAddr };
+  return fetchGroupConvMeta(conv, inboxToAddr);
 }
 
 /** The group-info screen's EXTRA, non-shared data: per-member admin roles, keyed by lower-cased eth address. Derived from the SDK admin lists + the already- resolved inbox->addr map (passed in so we don't re-fetch members here). */

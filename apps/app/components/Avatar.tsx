@@ -37,26 +37,35 @@ interface Props {
   onPress?: (fullUri: string | null) => void;
 }
 
+/** Resolve a displayable avatar URI at the given fetch/stamp pixel sizes, or null. */
+function resolveAvatarUri(
+  address: string | null | undefined,
+  imageUri: string | null | undefined,
+  renderPx: number,
+  stampPx: number,
+  cacheBuster?: number | string,
+): string | null {
+  if (imageUri?.trim()) return avatarRenderUrl(address ?? '', imageUri, renderPx);
+  if (address) return stampAvatarUrl(address, stampPx, cacheBuster);
+  return null;
+}
+
 /** Renders a user or group avatar from a custom image, stamp.fyi identicon, or placeholder circle. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
 export function Avatar({
   address, imageUri, size = 'md', cacheBuster, square, style, onPress,
 }: Props): React.ReactElement {
   const px = typeof size === 'number' ? size : SIZE_PX[size];
   /** stamp.fyi serves doubled-pixel WebPs by convention — keeps retina rows crisp without bumping the displayed dimension. */
   const fetchPx = px * 2;
-  let uri: string | null = null;
-  if (imageUri?.trim()) uri = avatarRenderUrl(address ?? '', imageUri, fetchPx);
-  else if (address) uri = stampAvatarUrl(address, px, cacheBuster);
+  const uri = resolveAvatarUri(address, imageUri, fetchPx, px, cacheBuster);
 
   const inner = <AvatarView src={uri} size={px} square={square} style={style} />;
 
   if (!onPress) return inner;
 
-  /** Resolve a larger URI for the fullscreen viewer than the displayed one. */
-  let fullUri: string | null = null;
-  if (imageUri?.trim()) fullUri = avatarRenderUrl(address ?? '', imageUri, FULLSCREEN_FETCH_PX);
-  else if (address) fullUri = stampAvatarUrl(address, FULLSCREEN_FETCH_PX / 2, cacheBuster);
+  const fullUri = resolveAvatarUri(
+    address, imageUri, FULLSCREEN_FETCH_PX, FULLSCREEN_FETCH_PX / 2, cacheBuster,
+  );
 
   return (
     <Pressable onPress={() => { onPress(fullUri); }} hitSlop={8}>

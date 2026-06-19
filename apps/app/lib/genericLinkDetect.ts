@@ -5,23 +5,31 @@ import { githubLinkOf } from './githubDetect';
 import { previewLinkOf } from './previewLinkDetect';
 import { metroConvIdOf, metroDmPeerOf } from '@stage-labs/client/xmtp/line';
 
-/** True when `token` is a plain http(s) link with no more-specific card. The checks mirror cardLinks.ts `classify` precedence so a URL is never rendered as both a special card and a generic preview. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 11)
-export function isGenericLink(token: string): boolean {
-  if (!/^https?:\/\//i.test(token)) return false; // only web links (not metro://)
-  if (metroDmPeerOf(token)) return false;
-  if (metroConvIdOf(token)) return false;
-  if (youtubeIdOf(token)) return false;
-  if (mapCoordsOf(token)) return false;
-  if (githubLinkOf(token)) return false;
-  if (previewLinkOf(token)) return false;
-  // Validate it actually parses as a URL with a host.
+/** Detectors that claim a URL as a more-specific card; any match disqualifies a generic preview. */
+const SPECIFIC_DETECTORS: ((t: string) => unknown)[] = [
+  metroDmPeerOf,
+  metroConvIdOf,
+  youtubeIdOf,
+  mapCoordsOf,
+  githubLinkOf,
+  previewLinkOf,
+];
+
+/** True when `token` parses as an http(s) URL with a host. */
+function isWebUrlWithHost(token: string): boolean {
   try {
     const u = new URL(token);
     return !!u.hostname && (u.protocol === 'http:' || u.protocol === 'https:');
   } catch {
     return false;
   }
+}
+
+/** True when `token` is a plain http(s) link with no more-specific card. The checks mirror cardLinks.ts `classify` precedence so a URL is never rendered as both a special card and a generic preview. */
+export function isGenericLink(token: string): boolean {
+  if (!/^https?:\/\//i.test(token)) return false; // only web links (not metro://)
+  if (SPECIFIC_DETECTORS.some(detect => detect(token))) return false;
+  return isWebUrlWithHost(token);
 }
 
 /** The bare hostname (minus a leading www.) of a link, for the card's domain line. Returns the raw url on parse failure. */

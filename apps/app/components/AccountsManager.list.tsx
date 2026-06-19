@@ -11,124 +11,122 @@ import { Icon } from '@metro-labs/kit/icon';
 import { type AccountRecord } from '../lib/accounts';
 import { AccountRow } from './AccountsManager.parts';
 
-/** Renders the Accounts section card (active account, other accounts, and the Add-account row). */
-// eslint-disable-next-line max-lines-per-function, complexity -- TODO(chaitu): refactor to satisfy function-size limits + refactor (complexity 13)
-export function AccountList({
-  flat, accounts, activeId, activeRec, otherAccounts, expanded, setExpanded,
-  head, sub, border, rowBg, onSwitch, setManageId, onAdd,
-}: {
+/** Shared props passed to the AccountList sub-renderers. */
+interface AccountListProps {
   flat: boolean; accounts: AccountRecord[]; activeId: string | null;
   activeRec: AccountRecord | null; otherAccounts: AccountRecord[];
   expanded: boolean; setExpanded: (fn: (e: boolean) => boolean) => void;
   head: string; sub: string; border: string; rowBg: string;
   onSwitch: (id: string) => void; setManageId: (id: string) => void; onAdd: () => void;
-}): React.ReactElement {
-  /** Manage Trailing. */
-  const manageTrailing = (id: string): React.ReactElement => (
-    <Pressable hitSlop={10} onPress={() => { setManageId(id); }}>
-      <Text weight="semibold" size="4xl" color={sub} style={{ paddingHorizontal: 4 }}>⋯</Text>
+}
+
+/** Builds the trailing "⋯" manage button for an account row. */
+function manageTrailing(p: AccountListProps, id: string): React.ReactElement {
+  return (
+    <Pressable hitSlop={10} onPress={() => { p.setManageId(id); }}>
+      <Text weight="semibold" size="4xl" color={p.sub} style={{ paddingHorizontal: 4 }}>⋯</Text>
     </Pressable>
   );
+}
 
+/** Renders the "No accounts yet." placeholder text. */
+function EmptyAccounts({ sub }: { sub: string }): React.ReactElement {
+  return <Text size="xs" color={sub} style={{ padding: 14 }}>No accounts yet.</Text>;
+}
+
+/** Renders the flat-mode list (every account as a row, active highlighted). */
+function FlatAccounts(p: AccountListProps): React.ReactElement {
+  if (p.accounts.length === 0) return <EmptyAccounts sub={p.sub} />;
+  return (
+    <>
+      {p.accounts.map((a, i) => (
+        <Box background={a.id === p.activeId ? p.border : 'transparent'} key={a.id}>
+          <AccountRow
+            rec={a} topBorder={i > 0}
+            onPress={() => { p.onSwitch(a.id); }}
+            onLongPress={() => { p.setManageId(a.id); }}
+            head={p.head} sub={p.sub} border={p.border}
+            trailing={a.id === p.activeId ? <Icon name="check" size={20} color={p.head}/> : manageTrailing(p, a.id)}
+/>
+        </Box>
+      ))}
+    </>
+  );
+}
+
+/** Renders the collapsed header row (active account + chevron) for non-flat mode. */
+function CollapsedHeader(p: AccountListProps): React.ReactElement | null {
+  const active = p.activeRec;
+  if (active) {
+    return (
+      <AccountRow
+        rec={active} topBorder={false}
+        onPress={() => { p.setExpanded(e => !e); }}
+        onLongPress={() => { p.setManageId(active.id); }}
+        head={p.head} sub={p.sub} border={p.border}
+        trailing={<Icon name={p.expanded ? 'chevronUp' : 'chevronDown'} size={20} color={p.sub} />}
+/>
+    );
+  }
+  if (p.accounts.length === 0) return <EmptyAccounts sub={p.sub} />;
+  return null;
+}
+
+/** Renders the "Add account" row plus (non-flat) the other-account rows when expanded. */
+function AddSection(p: AccountListProps): React.ReactElement {
+  return (
+    <>
+      {!p.flat ? p.otherAccounts.map(a => (
+        <AccountRow
+          key={a.id} rec={a} topBorder
+          onPress={() => { p.onSwitch(a.id); }}
+          onLongPress={() => { p.setManageId(a.id); }}
+          head={p.head} sub={p.sub} border={p.border}
+          trailing={manageTrailing(p, a.id)}
+/>
+      )) : null}
+      <Pressable
+        onPress={p.onAdd}
+        style={({ pressed }) => ({
+          paddingHorizontal: 14, paddingVertical: 12,
+          flexDirection: 'row', alignItems: 'center', gap: 12,
+          borderTopWidth: 1, borderTopColor: p.border,
+          backgroundColor: pressed ? p.border : 'transparent',
+        })}
+>
+        <Box width={28} height={28} radius="full" align="center" justify="center" style={{ borderWidth: 1, borderColor: p.sub, borderStyle: 'dashed' }}>
+          <Icon name="plus" size={16} color={p.sub}/>
+        </Box>
+        <Text weight="semibold" size="md" color={p.head}>Add account</Text>
+      </Pressable>
+    </>
+  );
+}
+
+/** Renders the Accounts section card (active account, other accounts, and the Add-account row). */
+export function AccountList(p: AccountListProps): React.ReactElement {
   // Conditional style branch (flat vs card); the card branch's marginHorizontal
-  // can't be a static layout prop, so the style is built here and passed as an
-  // identifier (the layout-prop lint only flags inline style object literals on
-  // Box/Row/Col).
-  const containerStyle = flat
+  // can't be a static layout prop, so the style is built here and passed as an identifier.
+  const containerStyle = p.flat
     ? { backgroundColor: 'transparent' }
     : {
         marginHorizontal: 16, borderRadius: 12, overflow: 'hidden' as const,
-        borderWidth: 1, borderColor: border, backgroundColor: rowBg,
+        borderWidth: 1, borderColor: p.border, backgroundColor: p.rowBg,
       };
   return (
     <>
-      {!flat ? (
-        <Text size="xs" color={sub} style={{ paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8 }}>
+      {!p.flat ? (
+        <Text size="xs" color={p.sub} style={{ paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8 }}>
           ACCOUNTS
         </Text>
       ) : null}
-      <Box
-        style={containerStyle}
->
-        {flat ? (
-          /* Flat mode (modal) — EVERY account as a row, all visible at once,
-             active one highlighted. No collapse/dropdown. */
-          accounts.length === 0 ? (
-            <Text size="xs" color={sub} style={{ padding: 14 }}>
-              No accounts yet.
-            </Text>
-          ) : (
-            accounts.map((a, i) => (
-              <Box background={a.id === activeId ? border : 'transparent'} key={a.id}>
-                <AccountRow
-                  rec={a}
-                  topBorder={i > 0}
-                  onPress={() => { onSwitch(a.id); }}
-                  onLongPress={() => { setManageId(a.id); }}
-                  head={head} sub={sub} border={border}
-                  trailing={
-                    a.id === activeId
-                      ? <Icon name="check" size={20} color={head}/>
-                      : manageTrailing(a.id)
-                  }
-/>
-              </Box>
-            ))
-          )
-        ) : (
-          /* Collapsed header row — the ACTIVE account + a chevron. Tapping it
-             toggles the dropdown of the other accounts. */
-          activeRec ? (
-            <AccountRow
-              rec={activeRec}
-              topBorder={false}
-              onPress={() => { setExpanded(e => !e); }}
-              onLongPress={() => { setManageId(activeRec.id); }}
-              head={head} sub={sub} border={border}
-              trailing={<Icon name={expanded ? 'chevronUp' : 'chevronDown'} size={20} color={sub} />}
-/>
-          ) : accounts.length === 0 ? (
-            <Text size="xs" color={sub} style={{ padding: 14 }}>
-              No accounts yet.
-            </Text>
-          ) : null
-        )}
-
-        {/* Expanded (non-flat) OR always (flat) — followed by "Add account".
-            In flat mode the OTHER accounts are already rendered above. */}
-        {flat || expanded ? (
-          <>
-            {!flat ? otherAccounts.map(a => (
-              <AccountRow
-                key={a.id}
-                rec={a}
-                topBorder
-                onPress={() => { onSwitch(a.id); }}
-                onLongPress={() => { setManageId(a.id); }}
-                head={head} sub={sub} border={border}
-                trailing={manageTrailing(a.id)}
-/>
-            )) : null}
-            <Pressable
-              onPress={onAdd}
-              style={({ pressed }) => ({
-                paddingHorizontal: 14, paddingVertical: 12,
-                flexDirection: 'row', alignItems: 'center', gap: 12,
-                borderTopWidth: 1, borderTopColor: border,
-                backgroundColor: pressed ? border : 'transparent',
-              })}
->
-              <Box width={28} height={28} radius="full" align="center" justify="center" style={{ borderWidth: 1, borderColor: sub, borderStyle: 'dashed' }}>
-                <Icon name="plus" size={16} color={sub}/>
-              </Box>
-              <Text weight="semibold" size="md" color={head}>Add account</Text>
-            </Pressable>
-          </>
-        ) : null}
+      <Box style={containerStyle}>
+        {p.flat ? <FlatAccounts {...p} /> : <CollapsedHeader {...p} />}
+        {p.flat || p.expanded ? <AddSection {...p} /> : null}
       </Box>
-      {!flat ? (
-        <Text size="xs" color={sub} style={{ paddingHorizontal: 16, paddingTop: 8 }}>
-          {expanded ? 'Tap an account to switch · long-press for options' : 'Tap to switch or add accounts'}
+      {!p.flat ? (
+        <Text size="xs" color={p.sub} style={{ paddingHorizontal: 16, paddingTop: 8 }}>
+          {p.expanded ? 'Tap an account to switch · long-press for options' : 'Tap to switch or add accounts'}
         </Text>
       ) : null}
     </>

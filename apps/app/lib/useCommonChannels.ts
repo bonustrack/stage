@@ -55,6 +55,35 @@ async function memberSetOf(convId: string): Promise<string[]> {
   return members;
 }
 
+/** Build a CommonChannel from a cached group row + its resolved member set (members excludes self → +1). */
+function commonChannelFromRow(row: CachedRow, members: string[]): CommonChannel {
+  return {
+    convId: row.convId,
+    title: typeof row.title === 'string' && row.title.trim()
+      ? row.title.trim() : 'Group',
+    avatarUri: typeof row.avatarUri === 'string' ? row.avatarUri : null,
+    /** Mirror HomeScreen.helpers (avatarAddress): when there's no uploaded group image, seed the stamp from the channel's own id so the row shows the CHANNEL avatar — never a member's / the viewed peer's stamp. */
+    avatarAddress: (typeof row.avatarUri === 'string' && row.avatarUri)
+      ? null : channelStampSeed(row.convId),
+    memberCount: members.length + 1,
+    lastTs: typeof row.lastTs === 'number' ? row.lastTs : null,
+    lastPreview: typeof row.lastPreview === 'string' ? row.lastPreview : '',
+    lastSenderAddress: typeof row.lastSenderAddress === 'string' ? row.lastSenderAddress : null,
+    lastFromSelf: row.lastFromSelf === true,
+    unreadCount: typeof row.unreadCount === 'number' ? row.unreadCount : 0,
+    markedUnread: row.markedUnread === true,
+  };
+}
+
+/** Resolve a single group row to a CommonChannel when the peer is a member, else null. */
+async function resolveGroupRow(row: CachedRow, peer: string): Promise<CommonChannel | null> {
+  try {
+    const members = await memberSetOf(row.convId);
+    if (!members.some(a => a.toLowerCase() === peer)) return null;
+    return commonChannelFromRow(row, members);
+  } catch { return null; }
+}
+
 /** Resolve Common Channels. */
 async function resolveCommonChannels(peerAddress: string): Promise<CommonChannel[]> {
   const peer = peerAddress.toLowerCase();
@@ -66,31 +95,7 @@ async function resolveCommonChannels(peerAddress: string): Promise<CommonChannel
   const groups = rows.filter((r): r is CachedRow & { peerAddress: null } =>
     r.peerAddress == null && !archived.has(r.convId));
   /** #7: walk all candidate groups' member sets IN PARALLEL (was serial). */
-  // eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
-  const resolved = await Promise.all(groups.map(async (row) => {
-    try {
-      const members = await memberSetOf(row.convId);
-      if (!members.some(a => a.toLowerCase() === peer)) return null;
-      /** Reuse the SAME cached row the channels tab summarised — it carries the preview/unread/timestamp/marked-unread the homepage renders. `row` IS that cached row, so just read the fields off it (no extra fetch). */
-      return {
-        convId: row.convId,
-        title: typeof row.title === 'string' && row.title.trim()
-          ? row.title.trim() : 'Group',
-        avatarUri: typeof row.avatarUri === 'string' ? row.avatarUri : null,
-        /** Mirror HomeScreen.helpers (avatarAddress): when there's no uploaded group image, seed the stamp from the channel's own id so the row shows the CHANNEL avatar — never a member's / the viewed peer's stamp. */
-        avatarAddress: (typeof row.avatarUri === 'string' && row.avatarUri)
-          ? null : channelStampSeed(row.convId),
-        /** members excludes self → +1 for the local user. */
-        memberCount: members.length + 1,
-        lastTs: typeof row.lastTs === 'number' ? row.lastTs : null,
-        lastPreview: typeof row.lastPreview === 'string' ? row.lastPreview : '',
-        lastSenderAddress: typeof row.lastSenderAddress === 'string' ? row.lastSenderAddress : null,
-        lastFromSelf: row.lastFromSelf === true,
-        unreadCount: typeof row.unreadCount === 'number' ? row.unreadCount : 0,
-        markedUnread: row.markedUnread === true,
-      };
-    } catch { return null; }
-  }));
+  const resolved = await Promise.all(groups.map((row) => resolveGroupRow(row, peer)));
   return resolved.filter((c): c is CommonChannel => c !== null);
 }
 

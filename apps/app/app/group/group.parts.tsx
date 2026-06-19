@@ -14,16 +14,53 @@ import { DANGER, usePalette } from '../../lib/theme';
 
 interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }
 
+type MemberRole = 'owner' | 'admin' | 'member' | undefined;
+
+/** Owner/admin badge pill for a member row (renders nothing for plain members). */
+function MemberRoleBadge({ role, sub, border, dark }: {
+  role: MemberRole; sub: string; border: string; dark: boolean;
+}): React.ReactElement | null {
+  if (!role || role === 'member') return null;
+  const isOwner = role === 'owner';
+  const background = isOwner ? (dark ? 'rgba(45,212,191,0.18)' : 'rgba(13,148,136,0.12)') : border;
+  const color = isOwner ? (dark ? '#2dd4bf' : '#0d9488') : sub;
+  return (
+    <Box radius="full" background={background} padding={{ x: 8, y: 2 }}>
+      <Text size="3xs" color={color}>{isOwner ? 'Owner' : 'Admin'}</Text>
+    </Box>
+  );
+}
+
+/** Trailing remove (trash) button for a member row; hidden for self. */
+function MemberRemoveButton({ isSelf, isRemovingThis, dark, onRemove }: {
+  isSelf: boolean; isRemovingThis: boolean; dark: boolean; onRemove: () => void;
+}): React.ReactElement | null {
+  if (isSelf) return null;
+  return (
+    <Pressable
+      onPress={onRemove}
+      disabled={isRemovingThis}
+      hitSlop={10}
+      style={({ pressed }) => ({
+        padding: 6, borderRadius: 999,
+        backgroundColor: pressed ? (dark ? '#3a1820' : '#fbe3e8') : 'transparent',
+      })}
+>
+      <Icon name="trash" size={18} color={DANGER}/>
+    </Pressable>
+  );
+}
+
 /** One member row: avatar, name/address, owner/admin badge, and a remove button. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 13)
 export function MemberRow({
   item, isSelf, isRemovingThis, role, name, dark, p, onPress, onRemove,
 }: {
   item: string; isSelf: boolean; isRemovingThis: boolean;
-  role: 'owner' | 'admin' | 'member' | undefined; name: string | null | undefined;
+  role: MemberRole; name: string | null | undefined;
   dark: boolean; p: Pal; onPress: () => void; onRemove: () => void;
 }): React.ReactElement {
   const { head, sub, border } = p;
+  const displayName = name == null || name === '' ? shortAddress(item) : name;
   return (
     <Pressable
       onPress={onPress}
@@ -43,7 +80,7 @@ export function MemberRow({
 />
       <Col minWidth={0} flex={1}>
         <Text weight="semibold" size="md" color={head} numberOfLines={1}>
-          {name == null || name === '' ? shortAddress(item) : name}{isSelf ? ' (you)' : ''}
+          {displayName}{isSelf ? ' (you)' : ''}
         </Text>
         {name ? (
           <Text size="xs" color={sub} style={{ marginTop: 2 }} numberOfLines={1}>
@@ -51,26 +88,8 @@ export function MemberRow({
           </Text>
         ) : null}
       </Col>
-      {role && role !== 'member' ? (
-        <Box radius="full" background={role === 'owner'
-            ? (dark ? 'rgba(45,212,191,0.18)' : 'rgba(13,148,136,0.12)')
-            : border} padding={{ x: 8, y: 2 }}>
-          <Text size="3xs" color={role === 'owner' ? (dark ? '#2dd4bf' : '#0d9488') : sub}>{role === 'owner' ? 'Owner' : 'Admin'}</Text>
-        </Box>
-      ) : null}
-      {isSelf ? null : (
-        <Pressable
-          onPress={onRemove}
-          disabled={isRemovingThis}
-          hitSlop={10}
-          style={({ pressed }) => ({
-            padding: 6, borderRadius: 999,
-            backgroundColor: pressed ? (dark ? '#3a1820' : '#fbe3e8') : 'transparent',
-          })}
->
-          <Icon name="trash" size={18} color={DANGER}/>
-        </Pressable>
-      )}
+      <MemberRoleBadge role={role} sub={sub} border={border} dark={dark}/>
+      <MemberRemoveButton isSelf={isSelf} isRemovingThis={isRemovingThis} dark={dark} onRemove={onRemove}/>
     </Pressable>
   );
 }

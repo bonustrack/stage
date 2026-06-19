@@ -34,6 +34,51 @@ function yieldToEventLoop(): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, 0));
 }
 
+interface ScanState {
+  hits: SearchHit[];
+  seen: Set<string>;
+  truncated: boolean;
+}
+
+/** Read one DESCENDING page of local messages before the cursor, mapped to envelopes; null on read failure. */
+async function readLocalSearchPage(
+  conv: NonNullable<Awaited<ReturnType<typeof convOfLine>>>,
+  beforeNs: number | undefined,
+  line: string,
+): Promise<HistoryEntry[] | null> {
+  try {
+    const batch = await conv.messages({
+      limit: PAGE_SIZE, direction: 'DESCENDING', ...(beforeNs ? { beforeNs } : {}),
+    });
+    return batch.map(m => envelopeOfXmtpMessage(m, line));
+  } catch {
+    return null;
+  }
+}
+
+/** Fold a page's matches into the scan state; returns true when the result cap is hit. */
+function collectPageHits(mapped: HistoryEntry[], needle: string, state: ScanState): boolean {
+  for (const e of mapped) {
+    if (state.seen.has(e.id)) continue;
+    state.seen.add(e.id);
+    if (matches(e, needle)) {
+      state.hits.push(e);
+      if (state.hits.length >= SEARCH_MAX_RESULTS) { state.truncated = true; return true; }
+    }
+  }
+  return false;
+}
+
+/** Decide whether to stop scanning after a page; marks truncated when the final page is reached. */
+function shouldStopScan(
+  capped: boolean, state: ScanState, pageLen: number, page: number,
+): boolean {
+  if (capped || state.truncated) return true;
+  if (pageLen < PAGE_SIZE) return true; // history exhausted
+  if (page === SEARCH_MAX_PAGES - 1) { state.truncated = true; return true; }
+  return false;
+}
+
 /**
  * Scan the local history of `line` for `query`, off the critical path.
  *
@@ -43,7 +88,6 @@ function yieldToEventLoop(): Promise<void> {
  *  render progressively. Resolves with the final result when the scan ends
  *  (history exhausted, a cap reached, or aborted). Never throws.
  */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export async function searchLocalHistory(
   line: string,
   query: string,
@@ -57,45 +101,27 @@ export async function searchLocalHistory(
   const conv = await convOfLine(line);
   if (!conv) return empty;
 
-  const hits: SearchHit[] = [];
-  let truncated = false;
+  const state: ScanState = { hits: [], seen: new Set<string>(), truncated: false };
   let beforeNs: number | undefined;
-  const seen = new Set<string>();
 
   for (let page = 0; page < SEARCH_MAX_PAGES; page += 1) {
     if (shouldAbort()) break;
-    let batch: Awaited<ReturnType<typeof conv.messages>>;
-    try {
-      batch = await conv.messages({ limit: PAGE_SIZE, direction: 'DESCENDING', ...(beforeNs ? { beforeNs } : {}) });
-    } catch {
-      break; // local read failed; return what we have
-    }
-    if (batch.length === 0) break;
+    const mapped = await readLocalSearchPage(conv, beforeNs, line);
+    if (mapped === null || mapped.length === 0) break; // read failed / exhausted
 
-    const mapped = batch.map(m => envelopeOfXmtpMessage(m, line));
-    for (const e of mapped) {
-      if (seen.has(e.id)) continue;
-      seen.add(e.id);
-      if (matches(e, needle)) {
-        hits.push(e);
-        if (hits.length >= SEARCH_MAX_RESULTS) { truncated = true; break; }
-      }
-    }
+    const capped = collectPageHits(mapped, needle, state);
     /** Advance the cursor to just-before the oldest message of this page. */
     const oldest = mapped[mapped.length - 1];
     if (oldest === undefined) break; // empty page (batch was non-empty above)
     beforeNs = new Date(oldest.ts).getTime() * 1_000_000;
 
-    onResults({ hits: [...hits], truncated });
+    onResults({ hits: [...state.hits], truncated: state.truncated });
 
-    if (truncated) break;
-    if (batch.length < PAGE_SIZE) break; // history exhausted
-    if (page === SEARCH_MAX_PAGES - 1) truncated = true;
-
+    if (shouldStopScan(capped, state, mapped.length, page)) break;
     await yieldToEventLoop();
   }
 
-  const final: SearchScanResult = { hits, truncated };
+  const final: SearchScanResult = { hits: state.hits, truncated: state.truncated };
   onResults(final);
   return final;
 }

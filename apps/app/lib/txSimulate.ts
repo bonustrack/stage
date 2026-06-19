@@ -91,8 +91,67 @@ async function callForRevert(
   } catch { return null; }
 }
 
+/** A single simulation call object passed to eth_simulateV1 / eth_call. */
+interface SimCallInput { from: string; to: string; value: string; data?: string }
+
+/** The shape we read back from eth_simulateV1: blocks each carrying their per-call results. */
+interface SimV1Response { result?: { calls?: SimCall[] }[]; error?: { message?: string } }
+
+/** Run eth_simulateV1 for a single call, normalising the response shape. Throws only on transport failure. */
+async function runSimulateV1(call: SimCallInput, chainId: number): Promise<SimV1Response> {
+  // eth_simulateV1 returns one block object per blockStateCall; each block carries
+  // its per-call results under `.calls` (NOT as a bare array). We send one block
+  // with one call, so the result is result[0].calls[0].
+  const resp = await rpc(chainId, 'eth_simulateV1', [
+    { blockStateCalls: [{ calls: [call] }], traceTransfers: true, validation: false },
+    'latest',
+  ]);
+  return {
+    result: Array.isArray(resp.result) ? (resp.result as { calls?: SimCall[] }[]) : undefined,
+    error: resp.error,
+  };
+}
+
+/** Interpret a successful eth_simulateV1 response into a SimulateResult (status + asset moves). */
+function interpretSimResult(
+  json: SimV1Response, from: string, call: SimCallInput, chainId: number,
+): SimulateResult {
+  const empty = { in: [], out: [] };
+  const allCalls = (json.result ?? []).flatMap(b => b.calls ?? []);
+  const c = allCalls[0];
+  if (!c) return { success: 'unknown', assetChanges: empty, error: 'Empty simulation result' };
+
+  const assetChanges = parseAssetChanges(allCalls, from, chainId, call.value);
+  if (c.status !== '0x1') {
+    return {
+      success: false,
+      revertReason: decodeRevert(c.returnData, c.error?.message) ?? 'Transaction would revert',
+      assetChanges,
+    };
+  }
+  return { success: true, assetChanges };
+}
+
+/** Normalise the optional hex value to a non-empty hex string ('0x0' default). */
+function normaliseValue(value?: string): string {
+  return value && value !== '0x' ? value : '0x0';
+}
+
+/** Handle an eth_simulateV1 JSON-RPC error: fall back to eth_call for a real revert reason, else "could not simulate". */
+async function handleSimError(
+  json: SimV1Response, call: SimCallInput, chainId: number,
+): Promise<SimulateResult> {
+  const empty = { in: [], out: [] };
+  // A JSON-RPC error here is a REAL method/RPC failure (not a simulated revert).
+  // Reserve "could not simulate" for this path — but first fall back to eth_call
+  // to try to surface the actual revert reason, so a node that lacks
+  // eth_simulateV1 still shows "Will fail: <reason>" when the tx truly reverts.
+  const reason = await callForRevert(call, chainId);
+  if (reason) return { success: false, revertReason: reason, assetChanges: empty };
+  return { success: 'unknown', assetChanges: empty, error: json.error?.message ?? 'Simulation unavailable' };
+}
+
 /** Simulate a single call with eth_simulateV1 and return success + asset moves. Never throws — RPC/parse failures resolve to `{ success: 'unknown', error }`. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 async function simulateTx(p: SimulateParams): Promise<SimulateResult> {
   const empty = { in: [], out: [] };
   let from: string, to: string;
@@ -103,35 +162,20 @@ async function simulateTx(p: SimulateParams): Promise<SimulateResult> {
     return { success: 'unknown', assetChanges: empty, error: 'Invalid address' };
   }
 
-  const valueHex = p.value && p.value !== '0x' ? p.value : '0x0';
+  const valueHex = normaliseValue(p.value);
+  const hasData = !!p.data && p.data !== '0x';
   // PRE-CHECK: a plain native ETH send (value, no calldata) against the sender's
   // balance. Surfaces the exact "insufficient ETH (have X, need Y)" before we
-  // even simulate — the 0-balance-send case that otherwise read as "cannot
-  // simulate".
-  if (!p.data || p.data === '0x') {
+  // even simulate — the 0-balance-send case that otherwise read as "cannot simulate".
+  if (!hasData) {
     const pre = await checkNativeBalance(from, valueHex, p.chainId);
     if (pre) return pre;
   }
 
-  const call = {
-    from,
-    to,
-    value: valueHex,
-    ...(p.data && p.data !== '0x' ? { data: p.data } : {}),
-  };
-  // eth_simulateV1 returns one block object per blockStateCall; each block carries
-  // its per-call results under `.calls` (NOT as a bare array). We send one block
-  // with one call, so the result is result[0].calls[0].
-  let json: { result?: { calls?: SimCall[] }[]; error?: { message?: string } };
+  const call: SimCallInput = { from, to, value: valueHex, ...(hasData ? { data: p.data } : {}) };
+  let json: SimV1Response;
   try {
-    const resp = await rpc(p.chainId, 'eth_simulateV1', [
-      { blockStateCalls: [{ calls: [call] }], traceTransfers: true, validation: false },
-      'latest',
-    ]);
-    json = {
-      result: Array.isArray(resp.result) ? (resp.result as { calls?: SimCall[] }[]) : undefined,
-      error: resp.error,
-    };
+    json = await runSimulateV1(call, p.chainId);
   } catch (e) {
     return {
       success: 'unknown', assetChanges: empty,
@@ -139,33 +183,8 @@ async function simulateTx(p: SimulateParams): Promise<SimulateResult> {
     };
   }
 
-  // A JSON-RPC error here is a REAL method/RPC failure (not a simulated revert).
-  // Reserve "could not simulate" for this path — but first fall back to eth_call
-  // to try to surface the actual revert reason, so a node that lacks
-  // eth_simulateV1 still shows "Will fail: <reason>" when the tx truly reverts.
-  if (json.error || !json.result) {
-    const reason = await callForRevert(call, p.chainId);
-    if (reason) return { success: false, revertReason: reason, assetChanges: empty };
-    return {
-      success: 'unknown', assetChanges: empty,
-      error: json.error?.message ?? 'Simulation unavailable',
-    };
-  }
-
-  const allCalls = json.result.flatMap(b => b.calls ?? []);
-  const c = allCalls[0];
-  if (!c) return { success: 'unknown', assetChanges: empty, error: 'Empty simulation result' };
-
-  const ok = c.status === '0x1';
-  const assetChanges = parseAssetChanges(allCalls, from, p.chainId, call.value);
-  if (!ok) {
-    return {
-      success: false,
-      revertReason: decodeRevert(c.returnData, c.error?.message) ?? 'Transaction would revert',
-      assetChanges,
-    };
-  }
-  return { success: true, assetChanges };
+  if (json.error || !json.result) return handleSimError(json, call, p.chainId);
+  return interpretSimResult(json, from, call, p.chainId);
 }
 
 /**

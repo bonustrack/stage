@@ -15,20 +15,19 @@ export interface StripResult {
 /** U8 helper. */
 const u8 = (a: number | undefined, b: number): boolean => a === b;
 
-/**
- * Read the EXIF Orientation tag (TIFF tag 0x0112) out of a JPEG APP1 payload.
- *  Returns the 1..8 value, or undefined if absent / unparseable / the default 1.
- *  Orientation is the ONE tag worth preserving: it is not a privacy leak (just a
- *  display-rotation hint, 1..8) and dropping it would make some camera photos
- *  show up rotated, because a lossless container rewrite cannot re-bake pixels.
- *  We parse only IFD0 (the rotation lives there); we never follow the Exif/GPS
- *  sub-IFD pointers, so no other tag is ever read or kept.
- */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
-function readJpegOrientation(payload: Uint8Array): number | undefined {
-  // Bounds-guarded byte read; out-of-range bytes read as 0 (every call below is
-  // already length-checked, so this only satisfies noUncheckedIndexedAccess).
-  /** At helper. */
+/** Little/big-endian aware TIFF readers over an "Exif\0\0"-prefixed payload. */
+interface TiffReader {
+  /** Read a 16-bit unsigned int at byte offset `o`. */
+  u16: (o: number) => number;
+  /** Read a 32-bit unsigned int at byte offset `o`. */
+  u32: (o: number) => number;
+  /** Byte offset of the TIFF header within the payload. */
+  tiff: number;
+}
+
+/** Build endian-aware TIFF readers for an APP1 payload, or undefined if it lacks a valid Exif/TIFF header. */
+function tiffReaderFor(payload: Uint8Array): TiffReader | undefined {
+  /** Bounds-guarded byte read; out-of-range reads as 0 (satisfies noUncheckedIndexedAccess). */
   const at = (o: number): number => payload[o] ?? 0;
   // payload starts with "Exif\0\0" then the TIFF header.
   if (payload.length < 6 + 8) return undefined;
@@ -43,14 +42,29 @@ function readJpegOrientation(payload: Uint8Array): number | undefined {
   const u32 = (o: number): number => (le
     ? at(o) | (at(o + 1) << 8) | (at(o + 2) << 16) | (at(o + 3) << 24)
     : (at(o) << 24) | (at(o + 1) << 16) | (at(o + 2) << 8) | at(o + 3));
-  const ifd0 = tiff + u32(tiff + 4);
+  return { u16, u32, tiff };
+}
+
+/**
+ * Read the EXIF Orientation tag (TIFF tag 0x0112) out of a JPEG APP1 payload.
+ *  Returns the 1..8 value, or undefined if absent / unparseable / the default 1.
+ *  Orientation is the ONE tag worth preserving: it is not a privacy leak (just a
+ *  display-rotation hint, 1..8) and dropping it would make some camera photos
+ *  show up rotated, because a lossless container rewrite cannot re-bake pixels.
+ *  We parse only IFD0 (the rotation lives there); we never follow the Exif/GPS
+ *  sub-IFD pointers, so no other tag is ever read or kept.
+ */
+function readJpegOrientation(payload: Uint8Array): number | undefined {
+  const r = tiffReaderFor(payload);
+  if (!r) return undefined;
+  const ifd0 = r.tiff + r.u32(r.tiff + 4);
   if (ifd0 + 2 > payload.length) return undefined;
-  const count = u16(ifd0);
+  const count = r.u16(ifd0);
   for (let k = 0; k < count; k += 1) {
     const entry = ifd0 + 2 + k * 12;
     if (entry + 12 > payload.length) break;
-    if (u16(entry) === 0x0112) { // Orientation
-      const v = u16(entry + 8); // SHORT value sits in the value field
+    if (r.u16(entry) === 0x0112) { // Orientation
+      const v = r.u16(entry + 8); // SHORT value sits in the value field
       return v >= 1 && v <= 8 ? v : undefined;
     }
   }
@@ -79,59 +93,64 @@ function buildOrientationApp1(orientation: number): number[] {
   return [0xff, 0xe1, (len >> 8) & 0xff, len & 0xff, ...payload];
 }
 
-/**
- * JPEG: SOI (FFD8) then a sequence of marker segments. We DROP every metadata-
- *  bearing application marker - APP1 (EXIF/XMP), APP2 (ICC_PROFILE), APP13
- *  (IPTC/Photoshop) and all APP3..APP15 - plus COM comments, leaving NO residual
- *  EXIF or ICC. APP0 (JFIF) is harmless and kept. Everything from SOS (FFDA)
- *  onward is entropy-coded scan data and is copied verbatim.
- *
- *  Orientation handling (lossless, approach a): before dropping APP1 we read its
- *  Orientation value. If it is non-default (2..8) we re-emit a MINIMAL APP1 that
- *  carries ONLY that tag, so the photo still displays the right way up without a
- *  pixel re-encode (which would need a native codec / new APK). Orientation is
- *  not sensitive (1..8). Every other EXIF/GPS/ICC byte is gone.
- */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
+/** Mutable scan state threaded through the JPEG marker walk. */
+interface JpegScan {
+  /** Output bytes accumulated so far. */
+  out: number[];
+  /** Captured non-default orientation, if any. */
+  orientation: number | undefined;
+  /** Current read offset; -1 signals the walk should stop. */
+  next: number;
+}
+
+/** Handle a length-bearing JPEG segment (APPn/COM/other): capture orientation, drop metadata markers, copy the rest. */
+function handleJpegSegment(b: Uint8Array, at: (o: number) => number, i: number, marker: number, s: JpegScan): void {
+  const len = (at(i + 2) << 8) | at(i + 3); // segment length incl. these 2 bytes
+  if (marker === 0xe1) { // APP1 — capture orientation before dropping
+    const payload = b.subarray(i + 4, i + 2 + len);
+    s.orientation = s.orientation ?? readJpegOrientation(payload);
+  }
+  const dropApp = marker >= 0xe1 && marker <= 0xef; // APP1..APP15 (keep APP0 JFIF)
+  const dropCom = marker === 0xfe; // COM comment
+  if (!dropApp && !dropCom) {
+    for (let j = i; j < i + 2 + len; j += 1) s.out.push(at(j));
+  }
+  s.next = i + 2 + len;
+}
+
+/** Process one JPEG marker at offset `i`, mutating scan state and advancing `s.next` (-1 to stop). */
+function stepJpegMarker(b: Uint8Array, at: (o: number) => number, i: number, s: JpegScan): void {
+  if (at(i) !== 0xff) { // resync defensively; copy byte
+    s.out.push(at(i)); s.next = i + 1; return;
+  }
+  const marker = at(i + 1);
+  if (marker === 0xd9) { s.out.push(0xff, 0xd9); s.next = -1; return; } // EOI
+  if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) { // standalone markers
+    s.out.push(0xff, marker); s.next = i + 2; return;
+  }
+  if (marker === 0xda) { // start of scan: copy the rest unchanged
+    for (let j = i; j < b.length; j += 1) s.out.push(at(j));
+    s.next = -1; return;
+  }
+  handleJpegSegment(b, at, i, marker, s);
+}
+
+/** Strip metadata markers (APP1..APP15, COM) from a JPEG while preserving a non-default orientation as a minimal APP1, copying scan data verbatim. */
 function stripJpeg(b: Uint8Array): Uint8Array {
   /** At helper. */
   const at = (o: number): number => b[o] ?? 0;
-  const out: number[] = [0xff, 0xd8];
-  let orientation: number | undefined;
+  const s: JpegScan = { out: [0xff, 0xd8], orientation: undefined, next: 2 };
   let i = 2;
   while (i + 1 < b.length) {
-    if (at(i) !== 0xff) { // resync defensively; copy byte
-      out.push(at(i)); i += 1; continue;
-    }
-    const marker = at(i + 1);
-    // Standalone markers without a length payload (RSTn, SOI, EOI, TEM).
-    if (marker === 0xd9) { out.push(0xff, 0xd9); break; } // EOI
-    if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) {
-      out.push(0xff, marker); i += 2; continue;
-    }
-    // Start of scan: copy the rest of the file unchanged (scan data).
-    if (marker === 0xda) {
-      for (let j = i; j < b.length; j += 1) out.push(at(j));
-      break;
-    }
-    const len = (at(i + 2) << 8) | at(i + 3); // segment length incl. these 2 bytes
-    const isApp1 = marker === 0xe1;
-    const dropApp = marker >= 0xe1 && marker <= 0xef; // APP1..APP15 (keep APP0 JFIF)
-    const dropCom = marker === 0xfe; // COM comment
-    if (isApp1) {
-      const payload = b.subarray(i + 4, i + 2 + len);
-      orientation = orientation ?? readJpegOrientation(payload); // capture before dropping
-    }
-    if (!dropApp && !dropCom) {
-      for (let j = i; j < i + 2 + len; j += 1) out.push(at(j));
-    }
-    i += 2 + len;
+    stepJpegMarker(b, at, i, s);
+    if (s.next < 0) break;
+    i = s.next;
   }
   // Re-insert an orientation-only EXIF right after SOI when rotation is non-default.
-  if (orientation !== undefined && orientation !== 1) {
-    out.splice(2, 0, ...buildOrientationApp1(orientation));
+  if (s.orientation !== undefined && s.orientation !== 1) {
+    s.out.splice(2, 0, ...buildOrientationApp1(s.orientation));
   }
-  return Uint8Array.from(out);
+  return Uint8Array.from(s.out);
 }
 
 /**
@@ -195,18 +214,28 @@ function stripWebp(b: Uint8Array): Uint8Array {
   return Uint8Array.from([...head, ...body]);
 }
 
+/** True when bytes start with the JPEG SOI magic. */
+function isJpeg(b: Uint8Array): boolean {
+  return b.length >= 3 && u8(b[0], 0xff) && u8(b[1], 0xd8) && u8(b[2], 0xff);
+}
+
+/** True when bytes start with the 8-byte PNG signature. */
+function isPng(b: Uint8Array): boolean {
+  return b.length >= 8 && u8(b[0], 0x89) && u8(b[1], 0x50) && u8(b[2], 0x4e) && u8(b[3], 0x47)
+    && u8(b[4], 0x0d) && u8(b[5], 0x0a) && u8(b[6], 0x1a) && u8(b[7], 0x0a);
+}
+
+/** True when bytes are a RIFF/WEBP container. */
+function isWebp(b: Uint8Array): boolean {
+  return b.length >= 12 && u8(b[0], 0x52) && u8(b[1], 0x49) && u8(b[2], 0x46) && u8(b[3], 0x46)
+    && u8(b[8], 0x57) && u8(b[9], 0x45) && u8(b[10], 0x42) && u8(b[11], 0x50);
+}
+
 /** Detect the container from magic bytes. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 function detect(b: Uint8Array): StripResult['format'] {
-  if (b.length >= 3 && u8(b[0], 0xff) && u8(b[1], 0xd8) && u8(b[2], 0xff)) return 'jpeg';
-  if (
-    b.length >= 8 && u8(b[0], 0x89) && u8(b[1], 0x50) && u8(b[2], 0x4e) && u8(b[3], 0x47)
-    && u8(b[4], 0x0d) && u8(b[5], 0x0a) && u8(b[6], 0x1a) && u8(b[7], 0x0a)
-  ) return 'png';
-  if (
-    b.length >= 12 && u8(b[0], 0x52) && u8(b[1], 0x49) && u8(b[2], 0x46) && u8(b[3], 0x46)
-    && u8(b[8], 0x57) && u8(b[9], 0x45) && u8(b[10], 0x42) && u8(b[11], 0x50)
-  ) return 'webp';
+  if (isJpeg(b)) return 'jpeg';
+  if (isPng(b)) return 'png';
+  if (isWebp(b)) return 'webp';
   return 'unsupported';
 }
 
@@ -224,11 +253,14 @@ export function stripMetadataBytes(input: Uint8Array): StripResult {
   return { bytes: input, stripped: false, format };
 }
 
+/** MIME types we can strip. */
+const STRIPPABLE_MIMES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']);
+/** File extensions we can strip. */
+const STRIPPABLE_EXTS = new Set(['jpg', 'jpeg', 'png', 'webp']);
+
 /** Whether a given MIME / filename names a raster image format we can strip. Lets the send path skip reading bytes for files we know we cannot sanitise. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
 export function isStrippableImage(mimeType: string | undefined, filename: string | undefined): boolean {
-  const m = (mimeType ?? '').toLowerCase();
-  if (m === 'image/jpeg' || m === 'image/jpg' || m === 'image/png' || m === 'image/webp') return true;
+  if (STRIPPABLE_MIMES.has((mimeType ?? '').toLowerCase())) return true;
   const ext = (filename ?? '').split('.').pop()?.toLowerCase() ?? '';
-  return ext === 'jpg' || ext === 'jpeg' || ext === 'png' || ext === 'webp';
+  return STRIPPABLE_EXTS.has(ext);
 }

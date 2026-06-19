@@ -19,6 +19,42 @@ import { fetchBalanceAndPrice, looksLikeEns } from './send.helpers';
 
 export type SendTxState = 'idle' | 'submitting' | 'pending' | 'confirmed';
 
+interface SendAsset { address: Hex | null; decimals: number; }
+type ActiveAccount = NonNullable<Awaited<ReturnType<typeof getActiveAccount>>>;
+
+/** Broadcast a transfer via the smart-account Kernel client (sponsored userOp on Base). */
+async function sendSmart(active: ActiveAccount, asset: SendAsset, resolved: string, tokStr: string): Promise<Hex> {
+  const kernel = await kernelClientForRecord(active);
+  const value = parseUnits(tokStr, asset.address ? asset.decimals : 18);
+  return asset.address
+    ? kernel.sendTransaction({
+        to: asset.address,
+        data: encodeFunctionData({ abi: erc20Abi, functionName: 'transfer', args: [resolved as Hex, value] }),
+      } as Parameters<typeof kernel.sendTransaction>[0])
+    : kernel.sendTransaction({ to: resolved as Hex, value } as Parameters<typeof kernel.sendTransaction>[0]);
+}
+
+/** Broadcast a transfer from a legacy EOA. */
+async function sendLegacy(asset: SendAsset, resolved: string, tokStr: string, chainId: number): Promise<Hex> {
+  return sendNativeOrToken({
+    to: resolved, amount: tokStr, chainId,
+    token: asset.address ? { address: asset.address, decimals: asset.decimals } : undefined,
+  });
+}
+
+/** Build the "≈ $x" / "≈ x TOKEN" secondary label under the amount input. */
+function secondaryLabelOf(amount: string, mode: 'eth' | 'usd', tokenPriceUsd: number | null, symbol: string): string {
+  if (!amount.trim() || !tokenPriceUsd) return '';
+  const n = Number(amount);
+  if (!isFinite(n) || n <= 0) return '';
+  if (mode === 'eth') {
+    const usd = n * tokenPriceUsd;
+    return `≈ ${usd.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })}`;
+  }
+  const tok = n / tokenPriceUsd;
+  return `≈ ${tok.toLocaleString(undefined, { maximumFractionDigits: 6 })} ${symbol}`;
+}
+
 export interface PublicSend {
   to: string; setTo: (v: string) => void;
   amount: string; setAmount: (v: string) => void;
@@ -34,7 +70,6 @@ export interface PublicSend {
  * @param token  the currently selected token (symbol + chainId).
  *  @param balance  that token's balance string from the wallet rows, or null.
  */
-// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
 export function usePublicSend(initialTo: string, token: TokenChoice, balance: string | null): PublicSend {
   const [to, setTo] = useState<string>(initialTo);
   const [amount, setAmount] = useState('');
@@ -103,17 +138,10 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
     return n / tokenPriceUsd;
   }, [amount, mode, tokenPriceUsd]);
 
-  const secondaryLabel = useMemo(() => {
-    if (!amount.trim() || !tokenPriceUsd) return '';
-    const n = Number(amount);
-    if (!isFinite(n) || n <= 0) return '';
-    if (mode === 'eth') {
-      const usd = n * tokenPriceUsd;
-      return `≈ ${usd.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })}`;
-    }
-    const tok = n / tokenPriceUsd;
-    return `≈ ${tok.toLocaleString(undefined, { maximumFractionDigits: 6 })} ${token.symbol}`;
-  }, [amount, mode, tokenPriceUsd, token.symbol]);
+  const secondaryLabel = useMemo(
+    () => secondaryLabelOf(amount, mode, tokenPriceUsd, token.symbol),
+    [amount, mode, tokenPriceUsd, token.symbol],
+  );
 
   const busy = txState === 'submitting' || txState === 'pending';
   const canSubmit = !!resolved && tokenAmount > 0 && !!asset;
@@ -135,34 +163,17 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
         const active = await getActiveAccount();
         if (!active) { setTxState('idle'); setTxErr('No active wallet'); return; }
 
-        let hash: Hex;
-        let receiptChainId = token.chainId;
-        if (active.type === 'smart') {
-          /**
-           * Smart account: execute as a SPONSORED userOp on Base through the
-           *  Kernel client (the paymaster covers gas; the userOp deploys the
-           *  Kernel on first send). Settles on Base regardless of the selected
-           *  token's nominal chain, matching the chat-pay smart path.
-           */
-          const kernel = await kernelClientForRecord(active);
-          receiptChainId = base.id;
-          const value = parseUnits(tokStr, asset.address ? asset.decimals : 18);
-          hash = asset.address
-            ? await kernel.sendTransaction({
-                to: asset.address,
-                data: encodeFunctionData({
-                  abi: erc20Abi, functionName: 'transfer', args: [resolved as Hex, value],
-                }),
-              } as Parameters<typeof kernel.sendTransaction>[0])
-            : await kernel.sendTransaction({
-                to: resolved as Hex, value,
-              } as Parameters<typeof kernel.sendTransaction>[0]);
-        } else {
-          hash = await sendNativeOrToken({
-            to: resolved, amount: tokStr, chainId: token.chainId,
-            token: asset.address ? { address: asset.address, decimals: asset.decimals } : undefined,
-          });
-        }
+        /**
+         * Smart account: execute as a SPONSORED userOp on Base through the
+         *  Kernel client (the paymaster covers gas; the userOp deploys the
+         *  Kernel on first send). Settles on Base regardless of the selected
+         *  token's nominal chain, matching the chat-pay smart path.
+         */
+        const isSmart = active.type === 'smart';
+        const receiptChainId = isSmart ? base.id : token.chainId;
+        const hash = isSmart
+          ? await sendSmart(active, asset, resolved, tokStr)
+          : await sendLegacy(asset, resolved, tokStr, token.chainId);
         setTxHash(hash); setTxState('pending');
         const pub = createPublicClient({ transport: broviderTransport(receiptChainId) });
         await pub.waitForTransactionReceipt({ hash });

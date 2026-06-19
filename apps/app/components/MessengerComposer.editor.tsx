@@ -33,13 +33,11 @@ interface EditorProps {
   onCancelRec: () => void; onStopRec: () => void; onSend: () => void;
 }
 
-/** Renders the composer's text input row with attach, quick-action, and send/record buttons. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 14)
-export function ComposerEditor(p: EditorProps): React.ReactElement {
-  const { dark, fg, head, bg, sub, chipBg, recording } = p;
-  const { primary } = usePalette();
-  /** The Btn component. */
-  const Btn = ({ icon, onPress, mr }: { icon: HeroIconName; onPress: () => void; mr?: number }): React.ReactElement => (
+/** A circular 38px icon button used in the composer button row. */
+function ComposerBtn({ icon, onPress, fg, chipBg, mr }: {
+  icon: HeroIconName; onPress: () => void; fg: string; chipBg: string; mr?: number;
+}): React.ReactElement {
+  return (
     <Pressable onPress={onPress} style={({ pressed }) => ({
       width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
       backgroundColor: pressed ? chipBg : 'transparent', marginRight: mr,
@@ -47,62 +45,87 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
       <Icon name={icon} size={22} color={fg}/>
     </Pressable>
   );
+}
+
+/** Renders the top input slot: the recording waveform while recording, else the textarea. */
+function ComposerInputSlot({ p }: { p: EditorProps }): React.ReactElement {
+  const { dark, head, sub } = p;
+  if (p.recording) {
+    return (
+      <RecordingBar
+        head={head} sub={sub} levels={p.levels} recordSecs={p.recordSecs}
+        slideX={p.slideX} slideThresholdPx={p.slideThresholdPx}
+      />
+    );
+  }
+  return (
+    <Box style={{ position: 'relative' }}>
+      <Textarea
+        ref={p.inputRef}
+        value={p.text} onChangeText={p.setText} placeholder="Message" placeholderTextColor={sub}
+        autoResize={false} dark={dark}
+        inputProps={{
+          onContentSizeChange: (e) => { p.setTextareaH(e.nativeEvent.contentSize.height); },
+          selection: p.selection,
+          onSelectionChange: (e) => { p.setSelection(e.nativeEvent.selection); },
+        }}
+        style={{ color: head, fontFamily: 'Calibre-Medium', fontSize: fontSize('3xl'), lineHeight: 23, minHeight: 24, maxHeight: 210, height: undefined, paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8, textAlignVertical: 'top', backgroundColor: 'transparent', borderWidth: 0 }}
+      />
+    </Box>
+  );
+}
+
+/** Renders the left controls of the button row: cancel (recording) or attach + quick-access. */
+function ComposerLeftControls({ p }: { p: EditorProps }): React.ReactElement {
+  const { fg, chipBg } = p;
+  if (p.recording) return <ComposerBtn icon="x" onPress={p.onCancelRec} fg={fg} chipBg={chipBg} />;
+  const showQuick = !p.attachMenuOpen && !!p.quickIcon && !!p.onQuick;
+  return (
+    <>
+      {/* + first; negative marginRight pulls the quick-access icon tight against it (only when shown). */}
+      <ComposerBtn
+        icon={p.attachMenuOpen ? 'x' : 'plus'}
+        onPress={() => { p.setAttachMenuOpen(o => !o); }}
+        fg={fg} chipBg={chipBg}
+        mr={showQuick ? -12 : undefined}
+      />
+      {showQuick && p.quickIcon && p.onQuick
+        ? <ComposerBtn icon={p.quickIcon} onPress={p.onQuick} fg={fg} chipBg={chipBg} />
+        : null}
+    </>
+  );
+}
+
+/** Renders the right action button of the row: confirm (recording) or send, or nothing. */
+function ComposerRightAction({ p, primary }: { p: EditorProps; primary: string }): React.ReactElement | null {
+  const { dark, bg } = p;
+  if (p.recording) {
+    return (
+      <Button variant="primary" size="md" pill dark={dark} tintBg={primary}
+        onPress={p.onStopRec} icon={<Icon name="check" size={20} color={bg} />} />
+    );
+  }
+  // Shown only when there is content to send, and always enabled; tapping send
+  // clears content synchronously so this unmounts instantly (no disabled flash).
+  if (!p.hasContent) return null;
+  return (
+    <Button variant="primary" size="md" pill dark={dark} tintBg={primary}
+      onPress={p.onSend} icon={<Icon name="arrowSmUp" size={20} color={bg} />} />
+  );
+}
+
+/** Renders the composer's text input row with attach, quick-action, and send/record buttons. */
+export function ComposerEditor(p: EditorProps): React.ReactElement {
+  const { fg, recording } = p;
+  const { primary } = usePalette();
   return (
     <Col padding={10} surface="raised" radius="none">
-      {/** Top slot: live waveform + timer while recording, else the textarea. The button row below stays mounted across both states. */}
-      {recording ? (
-        <RecordingBar
-          head={head} sub={sub} levels={p.levels} recordSecs={p.recordSecs}
-          slideX={p.slideX} slideThresholdPx={p.slideThresholdPx}
-/>
-      ) : (
-        <Box style={{ position: 'relative' }}>
-          <Textarea
-            ref={p.inputRef}
-            value={p.text} onChangeText={p.setText} placeholder="Message" placeholderTextColor={sub}
-            autoResize={false} dark={dark}
-            inputProps={{
-              onContentSizeChange: (e) => { p.setTextareaH(e.nativeEvent.contentSize.height); },
-              selection: p.selection,
-              onSelectionChange: (e) => { p.setSelection(e.nativeEvent.selection); },
-            }}
-            style={{ color: head, fontFamily: 'Calibre-Medium', fontSize: fontSize('3xl'), lineHeight: 23, minHeight: 24, maxHeight: 210, height: undefined, paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8, textAlignVertical: 'top', backgroundColor: 'transparent', borderWidth: 0 }}
-/>
-        </Box>
-      )}
-      {/**
-       * Fixed 40px row height = the tallest possible child (the md send/confirm
-       *   Button is 40, the +/mic icon buttons are 38). Pinning it keeps the
-       *   composer the SAME height whether or not the send button is mounted, so
-       *   typing the first letter no longer grows the composer. Children stay
-       *   vertically centered via align="center".
-       */}
+      <ComposerInputSlot p={p} />
+      {/* Fixed 40px row height keeps the composer the same height whether the send button is mounted or not. */}
       <Row align="center" gap={4} height={40}>
-        {/** Left: cancel (✕) while recording, else the attach (+) menu toggle. */}
-        {recording
-          ? <Btn icon="x" onPress={p.onCancelRec}/>
-          : (
-            <>
-              {/**
-               * + first (leftmost). Negative marginRight pulls the quick-access
-               *   icon tight against it — the 38px Btns have wide internal padding,
-               *   so this removes the visual slack (the Row gap=4 below would
-               *   otherwise leave the pair looking spread). Only apply the pull when
-               *   the quick icon is actually shown.
-               */}
-              <Btn
-                icon={p.attachMenuOpen ? 'x' : 'plus'}
-                onPress={() => { p.setAttachMenuOpen(o => !o); }}
-                mr={!p.attachMenuOpen && p.quickIcon && p.onQuick ? -12 : undefined}
-/>
-              {/** Quick-access: re-trigger the last-used attachment type directly. */}
-              {!p.attachMenuOpen && p.quickIcon && p.onQuick
-                ? <Btn icon={p.quickIcon} onPress={p.onQuick}/>
-                : null}
-            </>
-          )}
+        <ComposerLeftControls p={p} />
         <Spacer/>
-        {/** Mic — both record flows, mounted across recording so the gesture survives. */}
+        {/* Mic — both record flows, mounted across recording so the gesture survives. */}
         <Animated.View
           {...p.micPanResponder.panHandlers}
           style={{
@@ -110,40 +133,10 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
             backgroundColor: recording ? '#e2622f' : 'transparent',
             transform: [{ translateX: p.slideX }],
           }}
->
+        >
           <Icon name="microphone" size={22} color={recording ? '#ffffff' : fg}/>
         </Animated.View>
-        {/** Right: ✓ confirm (stop+stage) while recording, else send. A circular icon-only kit pill (primary) — black/white solid per scheme. */}
-        {recording ? (
-          <Button
-            variant="primary"
-            size="md"
-            pill
-            dark={dark}
-            tintBg={primary}
-            onPress={p.onStopRec}
-            icon={<Icon name="check" size={20} color={bg} />}
-/>
-        ) : p.hasContent ? (
-          /**
-           * Shown only when there is content to send, and always enabled. Tapping
-           *  send clears the text + attachments synchronously, so hasContent flips
-           *  false and this button unmounts INSTANTLY (no greyed/disabled frame) -
-           *  the send itself continues in the background. Rapid double-taps are a
-           *  no-op: the second tap sees empty content (the send() guard returns
-           *  early). We deliberately do NOT gate on `sending` here, since that path
-           *  is what produced the brief disabled flash after tap.
-           */
-          <Button
-            variant="primary"
-            size="md"
-            pill
-            dark={dark}
-            tintBg={primary}
-            onPress={p.onSend}
-            icon={<Icon name="arrowSmUp" size={20} color={bg} />}
-/>
-        ) : null}
+        <ComposerRightAction p={p} primary={primary} />
       </Row>
     </Col>
   );

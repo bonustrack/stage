@@ -97,19 +97,33 @@ const DIR_ICON: Record<ActivityRow['direction'], HeroIconName> = {
   send: 'arrowUp', receive: 'arrowDown', self: 'switchHorizontal',
 };
 
+/** Derive the title for a tx row (contract function name, or send/receive/self verb). */
+function txTitle(r: ActivityRow): string {
+  if (r.isContract) return r.functionName || 'Contract';
+  if (r.direction === 'receive') return 'Received';
+  if (r.direction === 'self') return 'Self';
+  return 'Sent';
+}
+
+/** Derive the display fields (title, value prefix/color, counterparty label) for a tx row. */
+function txRowFields(r: ActivityRow, head: string): {
+  title: string; prefix: string; valueColor: string; partyLabel: string;
+} {
+  const name = getPeerName(r.counterparty) ?? shortAddress(r.counterparty);
+  const prefix = r.direction === 'receive' ? '+' : r.direction === 'send' ? '−' : '';
+  const valueColor = r.failed ? DANGER : r.direction === 'receive' ? '#22c55e' : head;
+  return {
+    title: txTitle(r), prefix, valueColor,
+    partyLabel: r.direction === 'receive' ? `From ${name}` : `To ${name}`,
+  };
+}
+
 /** A single transaction row — 4-corner layout matching TokenRow: a circular direction icon, the action title over counterparty + time, and the signed ETH value over the tx status. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 15)
 function TxRow({ r, head, sub, border, bg }: {
   r: ActivityRow; head: string; sub: string; border: string; bg: string;
 }): React.ReactElement {
   void bg;
-  const name = getPeerName(r.counterparty) ?? shortAddress(r.counterparty);
-  const title = r.isContract
-    ? (r.functionName || 'Contract')
-    : r.direction === 'receive' ? 'Received' : r.direction === 'self' ? 'Self' : 'Sent';
-  const prefix = r.direction === 'receive' ? '+' : r.direction === 'send' ? '−' : '';
-  const valueColor = r.failed ? DANGER : r.direction === 'receive' ? '#22c55e' : head;
-  const partyLabel = r.direction === 'receive' ? `From ${name}` : `To ${name}`;
+  const { title, prefix, valueColor, partyLabel } = txRowFields(r, head);
   return (
     <Row padding={{ y: 14 }} align="center" gap={12} 
       style={{ borderBottomWidth: 1, borderBottomColor: border }}>

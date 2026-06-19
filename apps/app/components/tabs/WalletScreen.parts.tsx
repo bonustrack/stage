@@ -87,14 +87,20 @@ function PrivateBadge({ sub }: { sub: string }): React.ReactElement {
   return <Icon name={name} size={15} color={sub} />;
 }
 
-/** A single asset row — 4-corner layout with token avatar + network badge. Tappable: `onPress` navigates to the token detail screen (wired by the caller). Wrapped in a Pressable with a subtle pressed-opacity. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 11)
-export const TokenRow = memo(function TokenRow({ r, head, sub, border, bg, onPress }: { r: AssetRow; onPress?: () => void } & Omit<Palette, 'card'>): React.ReactElement {
+/** Derive the USD value + 24h change color/text for a token row. */
+function tokenRowFields(r: AssetRow, sub: string): {
+  valueUsd: number | null; changeColor: string; changeText: string;
+} {
   const valueUsd = r.priceUsd === null ? null : r.priceUsd * Number(r.balance);
-  /** Up/down colour for the 24h change pill — green for non-negative, red for negative. Uses the same tones as Snapshot UI's treasury. */
+  // Up/down colour for the 24h change pill (Snapshot treasury tones).
   const changeColor = r.change24h === null ? sub : r.change24h >= 0 ? '#22c55e' : DANGER;
-  const changeText = r.change24h === null ? '' :
-    `${r.change24h >= 0 ? '+' : ''}${r.change24h.toFixed(2)}%`;
+  const changeText = r.change24h === null ? '' : `${r.change24h >= 0 ? '+' : ''}${r.change24h.toFixed(2)}%`;
+  return { valueUsd, changeColor, changeText };
+}
+
+/** A single asset row — 4-corner layout with token avatar + network badge. Tappable via `onPress` (wired by the caller). */
+export const TokenRow = memo(function TokenRow({ r, head, sub, border, bg, onPress }: { r: AssetRow; onPress?: () => void } & Omit<Palette, 'card'>): React.ReactElement {
+  const { valueUsd, changeColor, changeText } = tokenRowFields(r, sub);
   return (
     <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
     <Row padding={{ y: 14 }}

@@ -86,50 +86,86 @@ function fieldOf(message: Record<string, unknown> | undefined, keys: string[]): 
   return undefined;
 }
 
+/** Compactly stringify a single top-level message field value (capped to 80 chars) for the confirm sheet. */
+function fmtFieldValue(v: unknown): string {
+  if (v == null) return '';
+  if (typeof v === 'object') {
+    try { return JSON.stringify(v).slice(0, 80); } catch { return '[object Object]'.slice(0, 80); }
+  }
+  if (typeof v === 'string') return v.slice(0, 80);
+  if (typeof v === 'symbol') return v.toString().slice(0, 80);
+  if (typeof v === 'number' || typeof v === 'bigint' || typeof v === 'boolean') {
+    return String(v).slice(0, 80);
+  }
+  try { return JSON.stringify(v).slice(0, 80); } catch { return ''; }
+}
+
+/** Flatten the top-level message into capped compact name:value pairs, or undefined when there is no message. */
+function deriveMessageFields(message: Record<string, unknown> | undefined): { name: string; value: string }[] | undefined {
+  if (!message) return undefined;
+  return Object.entries(message).slice(0, 6).map(([name, v]) => ({ name, value: fmtFieldValue(v) }));
+}
+
+/** Build the full typed-data (eip712) confirm summary. */
+function deriveTypedDataSummary(td: Eip712TypedData): SignConfirmSummary {
+  const primary = (td.primaryType ?? '').trim();
+  const risk = HIGH_RISK_PRIMARY_TYPES[primary.toLowerCase()];
+  const domain = td.domain as { name?: unknown; chainId?: unknown; verifyingContract?: unknown } | undefined;
+  const verifyingContract = toScalarString(domain?.verifyingContract);
+  /** Decode the empowered counterparty + token from message fields. The exact keys differ per standard; we probe the common ones (Permit `spender`, Seaport `offerer`/`zone`, EIP-3009 `to`). */
+  const counterparty = fieldOf(td.message, ['spender', 'operator', 'to', 'offerer', 'zone', 'delegate']);
+  return {
+    highRisk: !!risk,
+    kindLabel: risk ?? (primary || 'typed data'),
+    domainName: toScalarString(domain?.name),
+    chainId: toScalarString(domain?.chainId),
+    counterparty,
+    token: fieldOf(td.message, ['token']) ?? verifyingContract,
+    primaryType: primary || undefined,
+    fields: deriveMessageFields(td.message),
+  };
+}
+
 /** Derive the signature confirm summary from the typed-data STRUCTURE. For a `personal` request there's no structure to decode, so it's a low-risk plain-message sign. Never consults `description`. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
 export function deriveSignSummary(req: SignatureRequestContent): SignConfirmSummary {
   if (req.kind !== 'eip712' || !req.eip712) {
     return { highRisk: false, kindLabel: 'message', message: req.message };
   }
-  const td: Eip712TypedData = req.eip712;
-  const primary = (td.primaryType ?? '').trim();
-  const risk = HIGH_RISK_PRIMARY_TYPES[primary.toLowerCase()];
-  const domain = td.domain as { name?: unknown; chainId?: unknown; verifyingContract?: unknown } | undefined;
-  const domainName = toScalarString(domain?.name);
-  const chainId = toScalarString(domain?.chainId);
-  const verifyingContract = toScalarString(domain?.verifyingContract);
-  /** Decode the empowered counterparty + token from message fields. The exact keys differ per standard; we probe the common ones (Permit `spender`, Seaport `offerer`/`zone`, EIP-3009 `to`). */
-  const counterparty = fieldOf(td.message, ['spender', 'operator', 'to', 'offerer', 'zone', 'delegate']);
-  const token = fieldOf(td.message, ['token']) ?? verifyingContract;
-  /** Flatten the top-level message into compact name:value pairs so the sheet shows the concrete content being signed (capped to keep the alert readable). */
-  const fields = td.message
-    ? Object.entries(td.message).slice(0, 6).map(([name, v]) => ({
-        name,
-        value: ((): string => {
-          if (v == null) return '';
-          if (typeof v === 'object') {
-            try { return JSON.stringify(v).slice(0, 80); } catch { return '[object Object]'.slice(0, 80); }
-          }
-          if (typeof v === 'string') return v.slice(0, 80);
-          if (typeof v === 'symbol') return v.toString().slice(0, 80);
-          if (typeof v === 'number' || typeof v === 'bigint' || typeof v === 'boolean') {
-            return String(v).slice(0, 80);
-          }
-          try { return JSON.stringify(v).slice(0, 80); } catch { return ''; }
-        })(),
-      }))
-    : undefined;
-  return {
-    highRisk: !!risk,
-    kindLabel: risk ?? (primary || 'typed data'),
-    domainName,
-    chainId,
-    counterparty,
-    token,
-    primaryType: primary || undefined,
-    fields,
-  };
+  return deriveTypedDataSummary(req.eip712);
+}
+
+/** Format the optional "App: <name> · chain <id>" line for a summary, or '' when absent. */
+function domLine(s: SignConfirmSummary): string {
+  return s.domainName ? `\nApp: ${s.domainName}${s.chainId ? ` · chain ${s.chainId}` : ''}` : '';
+}
+
+/** Build the high-risk authorization warning body. */
+function highRiskMessage(s: SignConfirmSummary, senderNote: string): string {
+  const who = s.counterparty ? ` to ${s.counterparty}` : '';
+  const tok = s.token ? `\nToken/contract: ${s.token}` : '';
+  return `⚠️ This signature grants a ${s.kindLabel}${who}.${tok}${domLine(s)}\n`
+    + `Signing it can let someone move your assets later. Only sign if you fully trust the sender.`
+    + senderNote;
+}
+
+/** Build the plain personal-message confirm body. */
+function plainMessageBody(s: SignConfirmSummary, senderNote: string): string {
+  const body = s.message?.trim();
+  const shown = body
+    ? `\n\nMessage:\n"${body.length > 300 ? `${body.slice(0, 300)}…` : body}"`
+    : '';
+  return `Sign this message?${shown}\nOnly sign if you trust the sender.${senderNote}`;
+}
+
+/** Build the typed-data confirm body with decoded fields. */
+function typedDataBody(s: SignConfirmSummary, senderNote: string): string {
+  const fieldLines = (s.fields ?? [])
+    .filter(f => f.value)
+    .map(f => `\n  ${f.name}: ${f.value}`)
+    .join('');
+  const content = fieldLines ? `\nFields:${fieldLines}` : '';
+  return `Sign typed data (${s.primaryType ?? s.kindLabel})?${domLine(s)}${content}\n`
+    + `Only sign if you trust the sender.${senderNote}`;
 }
 
 /**
@@ -139,32 +175,11 @@ export function deriveSignSummary(req: SignatureRequestContent): SignConfirmSumm
  *  `description` is appended SEPARATELY and clearly labelled as sender-provided
  *  so it is never mistaken for the app's trusted summary.
  */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export function signConfirmMessage(s: SignConfirmSummary, description?: string): string {
   const desc = description?.trim();
   const senderNote = desc ? `\n\nSender's note (untrusted): "${desc}"` : '';
-  if (s.highRisk) {
-    const who = s.counterparty ? ` to ${s.counterparty}` : '';
-    const tok = s.token ? `\nToken/contract: ${s.token}` : '';
-    const dom = s.domainName ? `\nApp: ${s.domainName}${s.chainId ? ` · chain ${s.chainId}` : ''}` : '';
-    return `⚠️ This signature grants a ${s.kindLabel}${who}.${tok}${dom}\n`
-      + `Signing it can let someone move your assets later. Only sign if you fully trust the sender.`
-      + senderNote;
-  }
+  if (s.highRisk) return highRiskMessage(s, senderNote);
   // Concrete content the user is actually signing — never just the sender's label.
-  if (s.kindLabel === 'message') {
-    const body = s.message?.trim();
-    const shown = body
-      ? `\n\nMessage:\n"${body.length > 300 ? `${body.slice(0, 300)}…` : body}"`
-      : '';
-    return `Sign this message?${shown}\nOnly sign if you trust the sender.${senderNote}`;
-  }
-  const dom = s.domainName ? `\nApp: ${s.domainName}${s.chainId ? ` · chain ${s.chainId}` : ''}` : '';
-  const fieldLines = (s.fields ?? [])
-    .filter(f => f.value)
-    .map(f => `\n  ${f.name}: ${f.value}`)
-    .join('');
-  const content = fieldLines ? `\nFields:${fieldLines}` : '';
-  return `Sign typed data (${s.primaryType ?? s.kindLabel})?${dom}${content}\n`
-    + `Only sign if you trust the sender.${senderNote}`;
+  if (s.kindLabel === 'message') return plainMessageBody(s, senderNote);
+  return typedDataBody(s, senderNote);
 }

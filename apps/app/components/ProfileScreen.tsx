@@ -26,8 +26,52 @@ import { ProfileHoldings } from './ProfileScreen.holdings';
 
 export type ProfileScreenVariant = 'tab' | 'route';
 
+/** Resolve the display name for a profile address (peer name, short address, or loading). */
+function profileDisplayName(addr: string): string {
+  if (!addr) return 'Loading…';
+  return getPeerName(addr) ?? shortAddress(addr);
+}
+
+/** Renders the identity content sheet (avatar, name, address, action buttons) of the profile. */
+function ProfileIdentity({ addr, isSelf, dark, opening, c, variant, insetTop, displayName, onAvatar, onCopy, onMessage, onSend }: {
+  addr: string; isSelf: boolean; dark: boolean; opening: boolean;
+  c: ReturnType<typeof useProfileColors>; variant: ProfileScreenVariant; insetTop: number;
+  displayName: string; onAvatar: (uri: string | null) => void; onCopy: () => void;
+  onMessage: () => void; onSend: () => void;
+}): React.ReactElement {
+  return (
+    <>
+      {/* Full-bleed cover banner (input-bg), flat bottom edge scooped by the sheet below. */}
+      <Box height={140 + (variant === 'route' ? insetTop : 0)} background={c.border}/>
+      {/* Content sheet pulled UP 18px to overlap the cover with rounded top corners. */}
+      <Box surface="surface" padding={{ x: 16, bottom: 8 }} margin={{ top: -18 }} align="start" style={{ borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'visible' }}>
+        <Avatar
+          address={addr || null}
+          size={88}
+          style={{
+            backgroundColor: c.border, marginTop: -88 * 0.8, zIndex: 1,
+            borderWidth: 3, borderColor: c.bg,
+          }}
+          onPress={onAvatar}
+/>
+        <Text weight="semibold" size="4xl" color={c.link} style={{ marginTop: 14 }}>
+          {displayName}
+        </Text>
+        {addr ? (
+          <Pressable onPress={onCopy} hitSlop={8} style={{ marginTop: 2 }}>
+            <Text size="md" color={c.text}>{shortAddress(addr)}</Text>
+          </Pressable>
+        ) : null}
+        {/* Message + Send — only for OTHER users (can't message yourself). */}
+        {!isSelf && addr ? (
+          <ProfileActions dark={dark} opening={opening} c={c} onMessage={onMessage} onSend={onSend} />
+        ) : null}
+      </Box>
+    </>
+  );
+}
+
 /** Renders a user's profile, either as a tab or a standalone route. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export function ProfileScreen({ address, variant, panRef }: {
   address: string;
   variant: ProfileScreenVariant;
@@ -67,8 +111,7 @@ export function ProfileScreen({ address, variant, panRef }: {
     flash(`${label} copied`);
   };
 
-  const displayName = (addr ? getPeerName(addr) : undefined)
-    ?? (addr ? shortAddress(addr) : 'Loading…');
+  const displayName = profileDisplayName(addr);
 
   return (
     <Col flex={1} surface="surface">
@@ -78,53 +121,14 @@ export function ProfileScreen({ address, variant, panRef }: {
       />
 
       <ScrollView simultaneousHandlers={panRef} style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 32 }}>
-        {/* Full-bleed cover banner (input-bg). For the `route` variant the cover
-            extends up behind the floating header/status bar (height += insets.top)
-            so the colour bleeds to y=0. Its bottom edge is FLAT — the black content
-            sheet below rounds UP over it (inverted/scooped curve), so the gray no
-            longer pokes down with rounded corners. */}
-        <Box height={140 + (variant === 'route' ? insets.top : 0)} background={c.border}/>
-        {/* Content sheet: page-bg block pulled UP 18px to overlap the cover, with
-            rounded TOP corners so the black curves over the gray banner (bottom-sheet
-            look). overflow:'visible' + avatar zIndex keep the avatar from being
-            clipped by the rounding. */}
-        <Box surface="surface" padding={{ x: 16, bottom: 8 }} margin={{ top: -18 }} align="start" style={{ borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'visible' }}>
-          {/* Avatar resolves from the stamp.fyi identicon (address fallback) —
-              read-only, identical to peer rows. marginTop -88*0.8 pulls it UP by
-              80% of its height; zIndex:1 keeps it above the sheet. */}
-          <Avatar
-            address={addr || null}
-            size={88}
-            style={{
-              backgroundColor: c.border, marginTop: -88 * 0.8, zIndex: 1,
-              borderWidth: 3, borderColor: c.bg,
-            }}
-            onPress={uri => { if (uri) setViewerUri(uri); }}
-/>
-          <Text weight="semibold" size="4xl" color={c.link} style={{ marginTop: 14 }}>
-            {displayName}
-          </Text>
-          {addr ? (
-            <Pressable
-              onPress={() => { copy(addr, 'Address'); }}
-              hitSlop={8}
-              style={{ marginTop: 2 }}
->
-              <Text size="md" color={c.text}>
-                {shortAddress(addr)}
-              </Text>
-            </Pressable>
-          ) : null}
-
-          {/* Message + Send — only for OTHER users (can't message yourself). */}
-          {!isSelf && addr ? (
-            <ProfileActions
-              dark={dark} opening={openingDm} c={c}
-              onMessage={() => { void onMessage(); }}
-              onSend={() => { router.push({ pathname: '/wallet/send', params: { to: addr } }); }}
-/>
-          ) : null}
-        </Box>
+        <ProfileIdentity
+          addr={addr} isSelf={isSelf} dark={dark} opening={openingDm} c={c}
+          variant={variant} insetTop={insets.top} displayName={displayName}
+          onAvatar={uri => { if (uri) setViewerUri(uri); }}
+          onCopy={() => { copy(addr, 'Address'); }}
+          onMessage={() => { void onMessage(); }}
+          onSend={() => { router.push({ pathname: '/wallet/send', params: { to: addr } }); }}
+        />
 
         {/* Common channels — groups the local user + this peer are BOTH in.
             Only for OTHER users; resolves async so it never blocks the render. */}

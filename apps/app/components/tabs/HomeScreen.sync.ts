@@ -28,199 +28,175 @@ interface SyncArgs {
   refreshFromNetworkRef: MutableRefObject<(() => Promise<void>) | null>;
 }
 
-/** Drives the entire channels-list lifecycle; re-runs when `accountEpoch` changes (in-place account switch). Mirrors the original inline effect. */
-// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
-export function useChannelsSync({
-  accountEpoch, rows, setRowsState, setRows, setError, setRequestCount, refreshFromNetworkRef,
-}: SyncArgs): void {
-  // eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
-  useEffect(() => {
-    /**
-     * Clear any error captured by a PREVIOUS run before re-initialising. The
-     *  channels tab mounts under the onboarding overlay, so the very first run
-     *  fires BEFORE the account exists and getOrCreateXmtpClient throws
-     *  NoAccountError. Once onboarding creates the account it bumps the epoch and
-     *  this effect re-runs against the now-warm client — but without this reset
-     *  the stale boot-time error stuck on screen, surfacing the "No account —
-     *  onboarding not completed yet." HomeError with a Reset button on a freshly
-     *  onboarded user (Less's report).
-     */
-    setError('');
-    let cancelled = false;
-    let cancelConvStream: (() => void) | null = null;
-    let cancelMsgStream: (() => void) | null = null;
-    let cancelConsentStream: (() => void) | null = null;
-    let appStateSub: { remove: () => void } | null = null;
+/** Mutable per-run state shared between init and cleanup of the sync effect. */
+interface SyncRun {
+  cancelled: boolean;
+  initTimer: ReturnType<typeof setTimeout>;
+  cancelConvStream: (() => void) | null;
+  cancelMsgStream: (() => void) | null;
+  cancelConsentStream: (() => void) | null;
+  appStateSub: { remove: () => void } | null;
+}
 
-    /** Hydrate the persisted cache first — if we have rows from a previous session, render them immediately so the user sees the channels list before XMTP finishes initialising. The network refresh below then reconciles any changes. */
-    void hydrateCachedRows().then(cached => {
-      if (cancelled) return;
-      if (cached && Array.isArray(cached) && cached.length > 0 && !rows) {
-        setRowsState(cached as RowT[]);
-      }
+/** The refresh callbacks built once per run against the warm XMTP client. */
+interface Refreshers {
+  refresh: () => Promise<void>;
+  refreshThrottled: () => Promise<void>;
+  refreshRequestCount: () => Promise<void>;
+}
+
+/** Build the refresh/refreshThrottled/refreshRequestCount callbacks for a run. */
+function makeRefreshers(
+  client: Awaited<ReturnType<typeof getOrCreateXmtpClient>>, selfInboxId: string,
+  run: SyncRun, args: SyncArgs,
+): Refreshers {
+  // Coalesce the expensive full re-summarise: the live streams + miss-coalescer
+  // already apply incremental deltas, so resume/consent triggers throttle.
+  let lastRefreshAt = 0;
+  const THROTTLE_MS = 30_000;
+  /** Recount pending message requests ('unknown' consent) — cheap, local conv list only. */
+  const refreshRequestCount = async (): Promise<void> => {
+    try {
+      const reqs = await listRequestConvs();
+      if (!run.cancelled) args.setRequestCount(reqs.length);
+    } catch { /* swallow */ }
+  };
+  /** Full re-sync + re-summarise of the accepted-conv list (any event trigger can call it). */
+  const refresh = async (): Promise<void> => {
+    if (run.cancelled) return;
+    try {
+      await client.conversations.syncAllConversations(['allowed', 'unknown']);
+      // Main inbox = only ACCEPTED ('allowed') convs; 'unknown' are pending requests.
+      const convs = await client.conversations.list(undefined, undefined, ['allowed']);
+      void refreshRequestCount();
+      await primeMembers(client, convs);
+      const summarized = await Promise.all(convs.map(c => summarize(c, selfInboxId)));
+      if (run.cancelled) return;
+      summarized.sort((a, b) => (b.lastTs ?? 0) - (a.lastTs ?? 0));
+      args.setRows(summarized);
+      lastRefreshAt = Date.now();
+      clearTimeout(run.initTimer);
+    } catch { /* swallow — event-driven triggers re-run refresh */ }
+  };
+  /** Throttled refresh for noisy resume/consent triggers; skips if one ran <30s ago. */
+  const refreshThrottled = async (): Promise<void> => {
+    if (run.cancelled || Date.now() - lastRefreshAt < THROTTLE_MS) return;
+    await refresh();
+  };
+  return { refresh, refreshThrottled, refreshRequestCount };
+}
+
+/** #3 BATCH inbox resolution: prime the eth cache for every member inbox in one call. */
+async function primeMembers(client: Awaited<ReturnType<typeof getOrCreateXmtpClient>>, convs: Conversation[]): Promise<void> {
+  try {
+    const memberLists = await Promise.all(convs.map(c =>
+      (c as unknown as { members: () => Promise<{ inboxId: string }[]> })
+        .members().then(ms => ms.map(m => m.inboxId)).catch(() => [] as string[]),
+    ));
+    await primeInboxEthCache(client, memberLists.flat());
+  } catch { /* per-row resolveInboxEth still falls back */ }
+}
+
+/** Subscribe to newly-created conversations; stashes the canceller on the run. */
+async function subscribeConvStream(
+  client: Awaited<ReturnType<typeof getOrCreateXmtpClient>>, selfInboxId: string,
+  run: SyncRun, args: SyncArgs, r: Refreshers,
+): Promise<void> {
+  try {
+    // RN xmtp types `stream` as Promise<void> but at runtime resolves to an unsubscribe fn.
+    const streamFn = client.conversations.stream.bind(client.conversations) as
+      (cb: (conv: Conversation | null) => Promise<void>) => Promise<unknown>;
+    const streamResult: unknown = await streamFn(async (conv) => {
+      if (run.cancelled || !conv) return;
+      // A streamed 'unknown'-consent conv is a message request — count it, don't inbox it.
+      const cs = await (conv as unknown as { consentState: () => Promise<string> })
+        .consentState().catch(() => 'allowed');
+      if (cs !== 'allowed') { void r.refreshRequestCount(); return; }
+      const row = await summarize(conv, selfInboxId);
+      args.setRows(prev => (prev ? [row, ...prev.filter(x => x.convId !== row.convId)] : [row]));
     });
+    run.cancelConvStream = typeof streamResult === 'function' ? (streamResult as () => void) : null;
+  } catch { /* stream init failed — AppState resume re-runs refresh */ }
+}
 
-    /** Outer init timeout — if XMTP boot+sync hasn't finished in 30s AND we have no cached rows to render, surface an error + recovery UI instead of leaving the user staring at a spinner. Skipped when cache is warm. */
-    const initTimer = setTimeout(() => {
-      if (cancelled || (rows && rows.length > 0)) return;
+/** Subscribe message + consent streams and the AppState resume listener for a run. */
+function subscribeLiveStreams(run: SyncRun, args: SyncArgs, r: Refreshers): void {
+  // #1 ONE STREAM: reuse the module-level streamAllMessages fan-out (reducer in HomeScreen.stream.ts).
+  try {
+    run.cancelMsgStream = subscribeAllMessages(makeMsgStreamHandler({
+      isCancelled: () => run.cancelled, setRows: args.setRows,
+      refresh: r.refresh, refreshRequestCount: r.refreshRequestCount,
+    }));
+  } catch { /* message stream init failed — preview will lag */ }
+  // Live-reconcile consent changes (accept/block here or another device).
+  try {
+    run.cancelConsentStream = streamConvConsent(() => {
+      void (async (): Promise<void> => {
+        await syncConsent(); void r.refresh(); void r.refreshRequestCount();
+      })();
+    });
+  } catch { /* stream init failed — AppState resume re-runs refresh */ }
+  // Foreground resume — native streams often die while backgrounded; re-sync on active.
+  run.appStateSub = AppState.addEventListener('change', (state) => {
+    if (state !== 'active') return;
+    void syncPreferences(); void syncConsent();
+    void r.refreshThrottled(); void r.refreshRequestCount();
+  });
+}
+
+/** Boot XMTP, run the initial refresh, and wire all streams; handles NoAccountError quietly. */
+async function initSync(run: SyncRun, args: SyncArgs): Promise<void> {
+  try {
+    const client = await getOrCreateXmtpClient('production');
+    const selfInboxId = client.inboxId;
+    const r = makeRefreshers(client, selfInboxId, run, args);
+    args.refreshFromNetworkRef.current = r.refresh;
+    await r.refresh();
+    await subscribeConvStream(client, selfInboxId, run, args, r);
+    subscribeLiveStreams(run, args, r);
+    // Pull synced preferences/consent on init (read/unread is per-device lastReadNs).
+    await syncPreferences();
+    await syncConsent();
+  } catch (e) {
+    // NoAccountError is NOT a failure: the effect ran under the onboarding overlay
+    // before the account existed; wait for the epoch bump to re-run against a warm client.
+    if (run.cancelled || e instanceof NoAccountError) { clearTimeout(run.initTimer); return; }
+    if (!args.rows || args.rows.length === 0) args.setError((e as Error).message);
+  }
+}
+
+/** Drives the entire channels-list lifecycle; re-runs when `accountEpoch` changes (in-place account switch). */
+export function useChannelsSync(args: SyncArgs): void {
+  const { accountEpoch, rows, setRowsState, setError, refreshFromNetworkRef } = args;
+  useEffect(() => {
+    // Clear any error from a previous run: the very first run fires before the
+    // account exists (under onboarding) and throws NoAccountError — without this
+    // the stale boot error stuck on screen for a freshly onboarded user.
+    setError('');
+    const run: SyncRun = {
+      cancelled: false, initTimer: undefined as unknown as ReturnType<typeof setTimeout>,
+      cancelConvStream: null, cancelMsgStream: null, cancelConsentStream: null, appStateSub: null,
+    };
+    // Outer init timeout: surface recovery UI if boot+sync stalls and no cache is warm.
+    run.initTimer = setTimeout(() => {
+      if (run.cancelled || (rows && rows.length > 0)) return;
       setError('XMTP failed to initialise (timed out). Tap Reset below to wipe the local identity and start fresh.');
     }, 30_000);
-
-    void (async (): Promise<void> => {
-      try {
-        const client = await getOrCreateXmtpClient('production');
-        const selfInboxId = client.inboxId;
-
-        /** Recount pending message requests ('unknown' consent). Cheap — only reads the local conv list (synced separately by listRequestConvs). */
-        const refreshRequestCount = async (): Promise<void> => {
-          try {
-            const reqs = await listRequestConvs();
-            if (!cancelled) setRequestCount(reqs.length);
-          } catch { /* swallow */ }
-        };
-
-        /**
-         * Timestamp of the last completed full refresh. The live message/conv
-         *  streams + the miss-coalescer already keep the list current with
-         *  incremental deltas, so a full re-summarise (syncAllConversations +
-         *  list + per-conv members()/primeInboxEthCache + summarize) on EVERY
-         *  AppState resume is largely redundant and expensive. We coalesce it.
-         */
-        let lastRefreshAt = 0;
-        const REFRESH_THROTTLE_MS = 30_000;
-
-        /** Reusable refresh that any event-driven trigger (app-open sync, AppState resume, pull-to-refresh, push, unknown-conv stream hit) can call to re-sync + re-summarise the full list. */
-        const refresh = async (): Promise<void> => {
-          if (cancelled) return;
-          try {
-            await client.conversations.syncAllConversations(['allowed', 'unknown']);
-            /** Main inbox = only ACCEPTED convs ('allowed'). The 'unknown' convs are pending message requests, surfaced separately via the Requests entry (count refreshed alongside). */
-            const convs = await client.conversations.list(undefined, undefined, ['allowed']);
-            void refreshRequestCount();
-            /**
-             * #3 BATCH inbox resolution: collect every member inbox id across all
-             *  convs in parallel, then resolve the uncached ones in ONE
-             *  inboxStates(true, [...]) call so per-row summarise hits the cache
-             *  (kills the per-row N+1 GetIdentityUpdates that caused the outage).
-             */
-            try {
-              const memberLists = await Promise.all(convs.map(c =>
-                (c as unknown as { members: () => Promise<{ inboxId: string }[]> })
-                  .members().then(ms => ms.map(m => m.inboxId)).catch(() => [] as string[]),
-              ));
-              await primeInboxEthCache(client, memberLists.flat());
-            } catch { /* per-row resolveInboxEth still falls back */ }
-            const summarized = await Promise.all(convs.map(c => summarize(c, selfInboxId)));
-            if (cancelled) return;
-            summarized.sort((a, b) => (b.lastTs ?? 0) - (a.lastTs ?? 0));
-            setRows(summarized);
-            lastRefreshAt = Date.now();
-            clearTimeout(initTimer);
-          } catch { /* swallow — event-driven triggers re-run refresh */ }
-        };
-
-        /**
-         * Throttled refresh for the noisy resume/consent triggers: skip the full
-         *  re-summarise if one ran within the last ~30s, since the live streams +
-         *  miss-coalescer already cover the deltas. Bounded triggers (cold start,
-         *  pull-to-refresh) call `refresh` directly and bypass this.
-         */
-        const refreshThrottled = async (): Promise<void> => {
-          if (cancelled) return;
-          if (Date.now() - lastRefreshAt < REFRESH_THROTTLE_MS) return;
-          await refresh();
-        };
-        refreshFromNetworkRef.current = refresh;
-
-        await refresh();
-
-        /** Subscribe to newly-created conversations so groups + DMs created while the tab is mounted show up without a manual refresh. */
-        try {
-          /** RN xmtp types `stream` as `Promise<void>`, but at runtime it resolves to an unsubscribe function — capture it through an unknown-returning view of the method so we can stash the canceller. */
-          const streamFn = client.conversations.stream.bind(client.conversations) as
-            (cb: (conv: Conversation | null) => Promise<void>) => Promise<unknown>;
-          const streamResult: unknown = await streamFn(async (conv) => {
-            if (cancelled || !conv) return;
-            /** A streamed conv we haven't accepted yet ('unknown') is a message request — surface it in the Requests count, not the inbox. */
-            const cs = await (conv as unknown as { consentState: () => Promise<string> })
-              .consentState().catch(() => 'allowed');
-            if (cs !== 'allowed') { void refreshRequestCount(); return; }
-            const r = await summarize(conv, selfInboxId);
-            setRows(prev => {
-              const next = prev ? [r, ...prev.filter(x => x.convId !== r.convId)] : [r];
-              return next;
-            });
-          });
-          cancelConvStream = typeof streamResult === 'function'
-            ? (streamResult as () => void)
-            : null;
-        } catch { /* stream init failed — AppState resume re-runs refresh */ }
-
-        /**
-         * Subscribe to every new message across all convs so the per-row
-         *  lastTs + lastPreview reflect activity in real time.
-         *  #1 ONE STREAM: subscribe to the single module-level
-         *  streamAllMessages fan-out in lib/xmtp instead of starting our own
-         *  (every inbound used to be decoded twice — here + the conv-view feed).
-         *  The reducer that turns a message into a row update lives in
-         *  HomeScreen.stream.ts.
-         */
-        try {
-          cancelMsgStream = subscribeAllMessages(makeMsgStreamHandler({
-            isCancelled: () => cancelled,
-            setRows,
-            refresh,
-            refreshRequestCount,
-          }));
-        } catch { /* message stream init failed — preview will lag */ }
-
-        /** Pull synced preferences from the network on init. Read/unread is now per-device (lastReadNs), so there's no consent stream to subscribe to. */
-        await syncPreferences();
-        await syncConsent();
-
-        /** Live-reconcile when a conv is accepted/blocked (here or on another device): re-pull consent, then re-summarise the inbox + recount requests so an accepted request appears + the badge drops. */
-        try {
-          cancelConsentStream = streamConvConsent(() => {
-            void (async (): Promise<void> => {
-              await syncConsent();
-              void refresh();
-              void refreshRequestCount();
-            })();
-          });
-        } catch { /* stream init failed — AppState resume re-runs refresh */ }
-
-        /** Foreground resume — the native streams often die while the app is backgrounded; re-sync on every active transition. */
-        appStateSub = AppState.addEventListener('change', (state) => {
-          if (state === 'active') {
-            void syncPreferences(); void syncConsent();
-            // Throttled: the streams + miss-coalescer already apply deltas while
-            // backgrounded, so skip the full re-summarise if one ran <30s ago.
-            void refreshThrottled(); void refreshRequestCount();
-          }
-        });
-      } catch (e) {
-        /**
-         * NoAccountError is NOT a failure: it just means this effect ran under
-         *  the onboarding overlay before the account was created. Swallow it and
-         *  wait for the account-epoch bump (onboarding's bringMessagingOnline)
-         *  to re-run this effect against the warm client. Surfacing it would show
-         *  the scary "onboarding not completed" Reset screen to a user who just
-         *  finished onboarding.
-         */
-        if (cancelled || e instanceof NoAccountError) { clearTimeout(initTimer); return; }
-        if (!rows || rows.length === 0) setError((e as Error).message);
-      }
-    })();
-
+    // Hydrate the persisted cache first so the list paints before XMTP finishes booting.
+    void hydrateCachedRows().then(cached => {
+      if (run.cancelled) return;
+      if (cached && Array.isArray(cached) && cached.length > 0 && !rows) setRowsState(cached as RowT[]);
+    });
+    void initSync(run, args);
     return (): void => {
-      cancelled = true;
-      clearTimeout(initTimer);
+      run.cancelled = true;
+      clearTimeout(run.initTimer);
       refreshFromNetworkRef.current = null;
-      if (cancelConvStream) try { cancelConvStream(); } catch { /* ignore */ }
-      if (cancelMsgStream) try { cancelMsgStream(); } catch { /* ignore */ }
-      if (cancelConsentStream) try { cancelConsentStream(); } catch { /* ignore */ }
-      if (appStateSub) try { appStateSub.remove(); } catch { /* ignore */ }
+      if (run.cancelConvStream) try { run.cancelConvStream(); } catch { /* ignore */ }
+      if (run.cancelMsgStream) try { run.cancelMsgStream(); } catch { /* ignore */ }
+      if (run.cancelConsentStream) try { run.cancelConsentStream(); } catch { /* ignore */ }
+      if (run.appStateSub) try { run.appStateSub.remove(); } catch { /* ignore */ }
     };
-    /** Re-runs only on account switch (deps intentionally partial — react-hooks/exhaustive-deps not enabled). */
+    // Re-runs only on account switch (deps intentionally partial — react-hooks/exhaustive-deps not enabled).
   }, [accountEpoch]);
 }

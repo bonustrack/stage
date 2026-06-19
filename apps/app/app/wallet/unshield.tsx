@@ -16,8 +16,15 @@ import { TokenSelector, useSelectedBalance } from './TokenSelector';
 type Phase = 'idle' | 'proving' | 'broadcasting' | 'done' | 'error';
 const NET_LABEL: Record<number, string> = { 1: 'Ethereum', 11155111: 'Sepolia' };
 
+/** Map an unshield phase to its footer submit-button label. */
+function submitLabelFor(phase: Phase): string {
+  const byPhase: Partial<Record<Phase, string>> = {
+    proving: 'Proving…', broadcasting: 'Broadcasting…', done: 'Unshielded ✓',
+  };
+  return byPhase[phase] ?? 'Unshield';
+}
+
 /** Screen for unshielding tokens from a private balance back to public. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 13)
 export default function WalletUnshield(): React.ReactElement {
   const router = useRouter();
   const params = useLocalSearchParams<{ symbol?: string; chainId?: string }>();
@@ -62,8 +69,7 @@ export default function WalletUnshield(): React.ReactElement {
       footer={
         <WalletFooter border={border} dark={dark} onCancel={() => { router.back(); }}
           submitDisabled={!canSubmit} submitLoading={busy} onSubmit={onSubmit}
-          submitLabel={phase === 'proving' ? 'Proving…' : phase === 'broadcasting' ? 'Broadcasting…'
-            : phase === 'done' ? 'Unshielded ✓' : 'Unshield'} />
+          submitLabel={submitLabelFor(phase)} />
       }>
       <UnshieldRecipient pal={pal} eoa={eoa} network={NET_LABEL[chainId] ?? `Chain ${chainId}`} />
 

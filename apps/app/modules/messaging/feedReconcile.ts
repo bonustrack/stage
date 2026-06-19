@@ -38,6 +38,24 @@ function reloadSlice(line: string, msgs: HistoryEntry[]): void {
   feedCache.set(line, [...fresh, ...prev]);
 }
 
+/** Log a feed-reconcile heal event with the before/after latest ids+timestamps. */
+function logReconcileHeal(
+  label: string, line: string, healedBy: string,
+  before: HistoryEntry | undefined, after: { id: string | null; ts: string | null },
+): void {
+  console.log(
+    label,
+    JSON.stringify({
+      line,
+      feedLatestId: before?.id ?? null,
+      feedLatestTs: before?.ts ?? null,
+      storeLatestId: after.id,
+      storeLatestTs: after.ts,
+      healedBy,
+    }),
+  );
+}
+
 /**
  * OPEN-TIME EXACTNESS. Called after the background open-sync settled. Compares
  *  the feed's latest entry against the conv's true latest (`conv.messages` limit
@@ -45,7 +63,6 @@ function reloadSlice(line: string, msgs: HistoryEntry[]): void {
  *  preview is ahead of the open feed), bust + reload the slice from the local
  *  store. Best-effort + idempotent; safe to call repeatedly.
  */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 11)
 export async function reconcileOnOpen(line: string): Promise<void> {
   try {
     const conv = await convOfLine(line);
@@ -59,17 +76,7 @@ export async function reconcileOnOpen(line: string): Promise<void> {
     /** Divergence: the store has a newer (or different) tail than the open feed. Reload the full first page from the now-synced local store. */
     const page = await conv.messages({ limit: PAGE_SIZE });
     reloadSlice(line, page.map(m => envelopeOfXmtpMessage(m, line)));
-    console.log(
-      '[feed-reconcile] open-time heal',
-      JSON.stringify({
-        line,
-        feedLatestId: feed?.id ?? null,
-        feedLatestTs: feed?.ts ?? null,
-        storeLatestId: storeLatest.id,
-        storeLatestTs: storeLatest.ts,
-        healedBy: 'reconcileOnOpen',
-      }),
-    );
+    logReconcileHeal('[feed-reconcile] open-time heal', line, 'reconcileOnOpen', feed, storeLatest);
   } catch { /* best-effort - next open / arrival retries */ }
 }
 
@@ -83,7 +90,6 @@ export async function reconcileOnOpen(line: string): Promise<void> {
  *  preview already shows. `prevLatestNs` is the feed-latest ns BEFORE the push;
  *  `arrivingId` is the message that just arrived. No-op when contiguous.
  */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export async function reconcileOnArrival(
   line: string, prevLatestNs: number, arrivingNs: number, arrivingId: string,
 ): Promise<void> {
@@ -92,6 +98,11 @@ export async function reconcileOnArrival(
   const latestNow = feedLatest(line);
   if (latestNow?.id === arrivingId && arrivingNs >= prevLatestNs) return;
   /** Desync: the arriving message did NOT become the visible tail (push landed on a different key, or an older slice is masking it). Reload from store. */
+  await healArrivalGap(line);
+}
+
+/** Sync the conv, reload its slice from the local store, and log the heal if the visible tail changed. */
+async function healArrivalGap(line: string): Promise<void> {
   try {
     const conv = await convOfLine(line);
     if (!conv) return;
@@ -102,16 +113,9 @@ export async function reconcileOnArrival(
     reloadSlice(line, mapped);
     const after = feedLatest(line);
     if (before?.id !== after?.id) {
-      console.log(
-        '[feed-reconcile] arrival-gap heal',
-        JSON.stringify({
-          line,
-          feedLatestId: before?.id ?? null,
-          feedLatestTs: before?.ts ?? null,
-          storeLatestId: after?.id ?? null,
-          storeLatestTs: after?.ts ?? null,
-          healedBy: 'reconcileOnArrival',
-        }),
+      logReconcileHeal(
+        '[feed-reconcile] arrival-gap heal', line, 'reconcileOnArrival',
+        before, { id: after?.id ?? null, ts: after?.ts ?? null },
       );
     }
   } catch { /* best-effort - next arrival / open retries */ }

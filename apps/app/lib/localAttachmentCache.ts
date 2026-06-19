@@ -56,6 +56,17 @@ function getLocalAttachment(messageId: string, index: number): string | undefine
   return uri === undefined || uri === '' ? undefined : uri;
 }
 
+/** Pick a safe lowercase file extension (<=5 chars) from a source URI, defaulting to 'bin'. */
+function safeExtFor(srcUri: string): string {
+  const ext = srcUri.split('?')[0]?.split('#')[0]?.split('.').pop()?.toLowerCase() ?? 'bin';
+  return ext.length > 0 && ext.length <= 5 ? ext : 'bin';
+}
+
+/** Normalise an `expo-file-system` URI to a `file://` scheme. */
+function asFileUri(uri: string): string {
+  return uri.startsWith('file://') ? uri : `file://${uri.replace(/^file:\/+/, '/')}`;
+}
+
 /**
  * Copy a freshly-picked local `file://` URI into a STABLE app-cache file so it
  *  survives the entire pending window. The OS image/document picker hands back a
@@ -67,19 +78,15 @@ function getLocalAttachment(messageId: string, index: number): string | undefine
  *  copy error) it returns the original URI so the caller is never worse off. The
  *  copy is cheap (already-on-disk bytes) and the dest lives until app restart.
  */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 12)
 export function stashLocalAttachment(srcUri: string): string {
   if (!srcUri.startsWith('file://')) return srcUri;
   try {
-    const ext = srcUri.split('?')[0]?.split('#')[0]?.split('.').pop()?.toLowerCase() ?? 'bin';
-    const safeExt = ext.length > 0 && ext.length <= 5 ? ext : 'bin';
-    const name = `metro-pending-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${safeExt}`;
+    const name = `metro-pending-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${safeExtFor(srcUri)}`;
     const src = new File(srcUri);
     const dest = new File(Paths.cache, name);
     if (dest.exists) try { dest.delete(); } catch { /* overwrite below */ }
     src.copy(dest);
-    const uri = dest.uri;
-    return uri.startsWith('file://') ? uri : `file://${uri.replace(/^file:\/+/, '/')}`;
+    return asFileUri(dest.uri);
   } catch {
     /** Picker temp is still on disk in the common case — fall back to it. */
     return srcUri;

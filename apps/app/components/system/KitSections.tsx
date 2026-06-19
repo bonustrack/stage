@@ -34,12 +34,11 @@ const SAMPLE_ICONS = ['cog', 'bell', 'wallet', 'chat', 'user', 'check'] as const
 const LIST_ROWS = ['Display', 'Messenger', 'Notifications', 'Security'];
 const SAMPLE_IMAGE = 'https://cdn.stamp.fyi/avatar/eth:0x2539f6dd5e4ab2c3a30c2b9a0a8a8a8a8a8a79d5?s=160';
 
-/** Renders the gallery sections showcasing Kit components. */
-// eslint-disable-next-line max-lines-per-function -- TODO(chaitu): refactor to satisfy function-size limits
-export function KitSections({ dark, head, sub, border }: GalleryPalette): React.ReactElement {
+/** Renders the typography + button + icon gallery sections. */
+function TypographySections({ dark, head, sub, border }: GalleryPalette): React.ReactElement {
   const sec = { head, sub, border };
   return (
-    <Box>
+    <>
       <GallerySection name="Title" note="Heading typography, levels 1-3" {...sec} innerPadH={14} innerPadV={12}>
         <Title level={1} color={head}>Level 1 title</Title>
         <Title level={2} color={head}>Level 2 title</Title>
@@ -73,14 +72,10 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
           <Button dark={dark} block label="Block"/>
         </Row>
         <Row margin={{ top: 10 }} gap={8} align="center" style={{ flexWrap: 'wrap' }}>
-          <Button
-            dark={dark} color="primary"
-            label="iconStart" iconStart={<Icon name="check" size={18} color={dark ? '#000' : '#fff'} />}
-/>
-          <Button
-            dark={dark} color="secondary"
-            label="iconEnd" iconEnd={<Icon name="check" size={18} color={head} />}
-/>
+          <Button dark={dark} color="primary"
+            label="iconStart" iconStart={<Icon name="check" size={18} color={dark ? '#000' : '#fff'} />}/>
+          <Button dark={dark} color="secondary"
+            label="iconEnd" iconEnd={<Icon name="check" size={18} color={head} />}/>
           <Button dark={dark} color="secondary" pill iconStart={<Icon name="cog" size={18} color={head} />}/>
         </Row>
       </GallerySection>
@@ -90,10 +85,17 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
           {SAMPLE_ICONS.map((n) => <Icon key={n} name={n} size={26} color={head} />)}
         </Row>
       </GallerySection>
+    </>
+  );
+}
 
+/** Renders the surface gallery sections (card, list, divider, caption, image, spacer). */
+function SurfaceSections({ dark, head, sub, border }: GalleryPalette): React.ReactElement {
+  const sec = { head, sub, border };
+  return (
+    <>
       <GallerySection name="Card" note="ChatKit surface with status + actions" {...sec} framed={false}>
-        <Card
-          dark={dark}
+        <Card dark={dark}
           status={{ text: 'Pending confirmation' }}
           confirm={{ label: 'Confirm', onPress: () => {/* noop */} }}
           cancel={{ label: 'Cancel', onPress: () => {/* noop */} }}
@@ -145,7 +147,15 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
           <Text color={sub}>End</Text>
         </Row>
       </GallerySection>
+    </>
+  );
+}
 
+/** Renders the form-control gallery sections (label/input/textarea/checkbox/radio/select/date/form). */
+function FormSections({ dark, head, sub, border }: GalleryPalette): React.ReactElement {
+  const sec = { head, sub, border };
+  return (
+    <>
       <GallerySection name="Label" note="Form-field label - size / weight / align" {...sec} innerPadH={14} innerPadV={14}>
         <Label dark={dark} fieldName="email" value="Email address"/>
         <Label dark={dark} value="Semibold large label" size="lg" weight="semibold"/>
@@ -171,42 +181,28 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
       </GallerySection>
 
       <GallerySection name="RadioGroup" note="Single-select - options / direction" {...sec} innerPadH={14} innerPadV={14}>
-        <RadioGroup
-          dark={dark}
-          name="plan"
-          defaultValue="pro"
+        <RadioGroup dark={dark} name="plan" defaultValue="pro"
           options={[
             { label: 'Free', value: 'free' },
             { label: 'Pro', value: 'pro' },
             { label: 'Team', value: 'team' },
-          ]}
-/>
+          ]}/>
       </GallerySection>
 
       <GallerySection name="Select" note="Dropdown - options / placeholder / clearable" {...sec} innerPadH={14} innerPadV={14}>
         <Box gap={10}>
-          <Select
-            dark={dark}
-            name="network"
-            placeholder="Choose a network"
-            clearable
+          <Select dark={dark} name="network" placeholder="Choose a network" clearable
             options={[
               { label: 'Ethereum', value: 'eth' },
               { label: 'Base', value: 'base' },
               { label: 'Optimism', value: 'op' },
               { label: 'Arbitrum', value: 'arb' },
-            ]}
-/>
-          <Select
-            dark={dark}
-            name="role"
-            variant="outline"
-            defaultValue="admin"
+            ]}/>
+          <Select dark={dark} name="role" variant="outline" defaultValue="admin"
             options={[
               { label: 'Admin', value: 'admin' },
               { label: 'Member', value: 'member' },
-            ]}
-/>
+            ]}/>
         </Box>
       </GallerySection>
 
@@ -221,24 +217,26 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
         <Form onSubmit={() => {/* noop */}}>
           <Label dark={dark} fieldName="name" value="Display name"/>
           <Input dark={dark} name="name" placeholder="Satoshi"/>
-          <Select
-            dark={dark}
-            name="plan"
-            placeholder="Select a plan"
+          <Select dark={dark} name="plan" placeholder="Select a plan"
             options={[
               { label: 'Free', value: 'free' },
               { label: 'Pro', value: 'pro' },
-            ]}
-/>
+            ]}/>
           <Button dark={dark} variant="primary" label="Submit"/>
         </Form>
       </GallerySection>
+    </>
+  );
+}
 
+/** Renders the content gallery sections (markdown/table/scroll/pressable). */
+function ContentSections({ dark, head, sub, border }: GalleryPalette): React.ReactElement {
+  const sec = { head, sub, border };
+  return (
+    <>
       <GallerySection name="Markdown" note="ChatKit value - headings / code / links" {...sec} innerPadH={14} innerPadV={12}>
-        <Markdown
-          dark={dark}
-          value={'## Markdown\nRenders **bold**, _italic_, `inline code`, and [links](https://metro.box).\n\n- Bulleted item\n- Second item\n\n```\ncode fence\n```'}
-/>
+        <Markdown dark={dark}
+          value={'## Markdown\nRenders **bold**, _italic_, `inline code`, and [links](https://metro.box).\n\n- Bulleted item\n- Second item\n\n```\ncode fence\n```'}/>
       </GallerySection>
 
       <GallerySection name="Table" note="ChatKit Table / Row / Cell - header + data" {...sec} framed={false}>
@@ -275,6 +273,18 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
           </Box>
         </Pressable>
       </GallerySection>
+    </>
+  );
+}
+
+/** Renders the gallery sections showcasing Kit components. */
+export function KitSections(p: GalleryPalette): React.ReactElement {
+  return (
+    <Box>
+      <TypographySections {...p} />
+      <SurfaceSections {...p} />
+      <FormSections {...p} />
+      <ContentSections {...p} />
     </Box>
   );
 }

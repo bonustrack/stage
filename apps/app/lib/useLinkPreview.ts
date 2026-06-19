@@ -37,8 +37,37 @@ export function isX402(r: LinkPreviewResult | null): r is X402Challenge {
   return !!r && 'kind' in r && r.kind === 'x402';
 }
 
+/** The value at `key` when it's a string, else undefined. */
+function str(j: Record<string, unknown>, key: string): string | undefined {
+  const v = j[key];
+  return typeof v === 'string' ? v : undefined;
+}
+
+/** Map a proxy OG payload to a LinkPreview, or null when there's no title/image worth rendering. */
+function ogPreviewFrom(j: Record<string, unknown>, url: string): LinkPreview | null {
+  // A preview card needs at least a title or an image to be worth rendering.
+  if (typeof j.title !== 'string' && typeof j.image !== 'string') return null;
+  return {
+    url: str(j, 'url') ?? url,
+    title: str(j, 'title'),
+    description: str(j, 'description'),
+    image: str(j, 'image'),
+    siteName: str(j, 'siteName'),
+    favicon: str(j, 'favicon'),
+    imageOrigin: str(j, 'imageOrigin'),
+    faviconOrigin: str(j, 'faviconOrigin'),
+  };
+}
+
+/** Map a parsed proxy payload to an x402 challenge, OG preview, or null. */
+function linkPreviewFrom(j: Record<string, unknown>, url: string): LinkPreviewResult | null {
+  if (typeof j.error === 'string' && !('accepts' in j)) return null;
+  // x402 payment challenge takes precedence over an OG card.
+  if (j.kind === 'x402') return parseX402Challenge(j, typeof j.endpoint === 'string' ? j.endpoint : '');
+  return ogPreviewFrom(j, url);
+}
+
 /** Get the Link Preview. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 async function fetchLinkPreview(url: string): Promise<LinkPreviewResult | null> {
   try {
     const res = await fetch(`${LINK_PREVIEW_BASE}/preview?url=${encodeURIComponent(url)}`, {
@@ -49,21 +78,7 @@ async function fetchLinkPreview(url: string): Promise<LinkPreviewResult | null> 
     });
     if (!res.ok) return null;
     const j = (await res.json()) as Record<string, unknown>;
-    if (typeof j.error === 'string' && !('accepts' in j)) return null;
-    // x402 payment challenge takes precedence over an OG card.
-    if (j.kind === 'x402') return parseX402Challenge(j, typeof j.endpoint === 'string' ? j.endpoint : '');
-    // A preview card needs at least a title or an image to be worth rendering.
-    if (typeof j.title !== 'string' && typeof j.image !== 'string') return null;
-    return {
-      url: typeof j.url === 'string' ? j.url : url,
-      title: typeof j.title === 'string' ? j.title : undefined,
-      description: typeof j.description === 'string' ? j.description : undefined,
-      image: typeof j.image === 'string' ? j.image : undefined,
-      siteName: typeof j.siteName === 'string' ? j.siteName : undefined,
-      favicon: typeof j.favicon === 'string' ? j.favicon : undefined,
-      imageOrigin: typeof j.imageOrigin === 'string' ? j.imageOrigin : undefined,
-      faviconOrigin: typeof j.faviconOrigin === 'string' ? j.faviconOrigin : undefined,
-    };
+    return linkPreviewFrom(j, url);
   } catch {
     return null; // proxy unreachable / network — graceful no-op
   }

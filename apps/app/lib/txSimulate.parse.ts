@@ -102,8 +102,70 @@ function topicToAddr(topic: string): string {
   return ('0x' + topic.slice(-40)).toLowerCase();
 }
 
+/** Map key for a log's emitter: '' for native (zero address / sentinel), else the lowercased contract. */
+function emitterKey(address?: string): string {
+  const emitter = (address ?? '').toLowerCase();
+  const isNative =
+    emitter === '' ||
+    emitter === '0x0000000000000000000000000000000000000000' ||
+    emitter === NATIVE_TOKEN_SENTINEL.toLowerCase();
+  return isNative ? '' : emitter;
+}
+
+/** A parsed transfer log: its token key, transfer amount, and from/to addresses. */
+interface ParsedTransfer { key: string; amount: bigint; fromA: string; toA: string }
+
+/** Return the [from, to] topics of a Transfer log, or null when it isn't a usable Transfer event. */
+function transferTopics(log: SimLog): [string, string] | null {
+  const topics = log.topics;
+  if (!topics?.length || topics[0]?.toLowerCase() !== TRANSFER_TOPIC || topics.length < 3) return null;
+  const topic1 = topics[1];
+  const topic2 = topics[2];
+  if (topic1 === undefined || topic2 === undefined) return null;
+  return [topic1, topic2];
+}
+
+/** Parse a single log into a transfer, or null when it isn't a usable Transfer event. */
+function parseTransferLog(log: SimLog): ParsedTransfer | null {
+  const topics = transferTopics(log);
+  if (!topics) return null;
+  let amount: bigint;
+  try { amount = BigInt(log.data && log.data !== '0x' ? log.data : '0x0'); }
+  catch { return null; }
+  if (amount === 0n) return null;
+  return { key: emitterKey(log.address), amount, fromA: topicToAddr(topics[0]), toA: topicToAddr(topics[1]) };
+}
+
+/** Net all transfer logs across calls into a signed per-token delta map relative to `me`. */
+function netTransfers(calls: SimCall[], me: string): Map<string, bigint> {
+  const net = new Map<string, bigint>(); // '' = native, else lowercased contract
+  /** Accumulate a signed delta for a token key. */
+  const add = (token: string, delta: bigint): void => {
+    net.set(token, (net.get(token) ?? 0n) + delta);
+  };
+  for (const c of calls) {
+    for (const log of c.logs ?? []) {
+      const t = parseTransferLog(log);
+      if (!t) continue;
+      if (t.toA === me) add(t.key, t.amount);
+      if (t.fromA === me) add(t.key, -t.amount);
+    }
+  }
+  return net;
+}
+
+/** Build the AssetMove for a netted token key + delta on the chain. */
+function buildMove(key: string, delta: bigint, chainId: number): AssetMove {
+  const meta = key === '' ? nativeMeta(chainId) : tokenMeta(key, chainId);
+  return {
+    token: key === '' ? NATIVE_TOKEN_SENTINEL : key,
+    symbol: meta.symbol,
+    decimals: meta.decimals,
+    amount: formatAmount(delta, meta.decimals),
+  };
+}
+
 /** Net the simulation's transfer logs (ERC-20 + synthetic native) into a signed per-token delta relative to `from`, split into in/out lists. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor to satisfy function-size limits
 export function parseAssetChanges(
   calls: SimCall[],
   from: string,
@@ -111,43 +173,13 @@ export function parseAssetChanges(
   topValue?: string,
 ): { in: AssetMove[]; out: AssetMove[] } {
   const me = from.toLowerCase();
-  const net = new Map<string, bigint>(); // '' = native, else lowercased contract
-  /** Add helper. */
-  const add = (token: string, delta: bigint): void => {
-    net.set(token, (net.get(token) ?? 0n) + delta);
-  };
-
-  for (const c of calls) {
-    for (const log of c.logs ?? []) {
-      const topics = log.topics;
-      if (!topics?.length) continue;
-      if (topics[0]?.toLowerCase() !== TRANSFER_TOPIC) continue;
-      if (topics.length < 3) continue;
-      const topic1 = topics[1];
-      const topic2 = topics[2];
-      if (topic1 === undefined || topic2 === undefined) continue;
-      const fromA = topicToAddr(topic1);
-      const toA = topicToAddr(topic2);
-      let amount: bigint;
-      try { amount = BigInt(log.data && log.data !== '0x' ? log.data : '0x0'); }
-      catch { continue; }
-      if (amount === 0n) continue;
-      const emitter = (log.address ?? '').toLowerCase();
-      const isNative =
-        emitter === '' ||
-        emitter === '0x0000000000000000000000000000000000000000' ||
-        emitter === NATIVE_TOKEN_SENTINEL.toLowerCase();
-      const key = isNative ? '' : emitter;
-      if (toA === me) add(key, amount);
-      if (fromA === me) add(key, -amount);
-    }
-  }
+  const net = netTransfers(calls, me);
 
   // Fold the top-level native value as OUT when no synthetic log covered it.
   if (topValue) {
     try {
       const v = BigInt(topValue);
-      if (v > 0n && (net.get('') ?? 0n) === 0n) add('', -v);
+      if (v > 0n && (net.get('') ?? 0n) === 0n) net.set('', -v);
     } catch { /* ignore */ }
   }
 
@@ -155,13 +187,7 @@ export function parseAssetChanges(
   const incoming: AssetMove[] = [];
   for (const [key, delta] of net) {
     if (delta === 0n) continue;
-    const meta = key === '' ? nativeMeta(chainId) : tokenMeta(key, chainId);
-    const move: AssetMove = {
-      token: key === '' ? NATIVE_TOKEN_SENTINEL : key,
-      symbol: meta.symbol,
-      decimals: meta.decimals,
-      amount: formatAmount(delta, meta.decimals),
-    };
+    const move = buildMove(key, delta, chainId);
     if (delta < 0n) out.push(move); else incoming.push(move);
   }
   return { in: incoming, out };

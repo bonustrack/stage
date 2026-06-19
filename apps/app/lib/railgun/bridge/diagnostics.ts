@@ -25,28 +25,31 @@ export function status(line: string): void {
   onBridgeStatus?.(line);
 }
 
+/** Best-effort stringify for a payload that failed `JSON.stringify` (cyclic/throwing toJSON). */
+function fmtUnstringifiable(payload: unknown): string {
+  if (typeof payload === 'object' && payload !== null) {
+    const fn: unknown = (payload as { toString?: unknown }).toString;
+    if (typeof fn === 'function') {
+      const out: unknown = (fn as () => unknown).call(payload);
+      if (typeof out === 'string') return out;
+    }
+    return Object.prototype.toString.call(payload);
+  }
+  if (typeof payload === 'symbol') return payload.toString();
+  if (typeof payload === 'number' || typeof payload === 'bigint' || typeof payload === 'boolean') {
+    return String(payload);
+  }
+  return '';
+}
+
 /** Compact, throw-safe stringify of a channel payload for the status log. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 13)
 export function fmtPayload(payload: unknown): string {
   if (payload === undefined) return '';
   try {
     const s = typeof payload === 'string' ? payload : JSON.stringify(payload);
     return s.length > 120 ? `${s.slice(0, 117)}…` : s;
   } catch {
-    if (typeof payload === 'object') {
-      const fn: unknown = (payload as { toString?: unknown }).toString;
-      if (typeof fn === 'function') {
-        const out: unknown = (fn as () => unknown).call(payload);
-        if (typeof out === 'string') return out;
-      }
-      return Object.prototype.toString.call(payload);
-    }
-    if (typeof payload === 'symbol') return payload.toString();
-    if (typeof payload === 'string' || typeof payload === 'number' ||
-        typeof payload === 'bigint' || typeof payload === 'boolean') {
-      return String(payload);
-    }
-    return '';
+    return fmtUnstringifiable(payload);
   }
 }
 

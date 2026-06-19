@@ -33,8 +33,41 @@ export interface PaymentAction {
   disabled?: boolean;
 }
 
+/** Renders the balance line of a payment card (placeholder while loading, danger-tinted when insufficient). */
+function PaymentBalanceLine({ show, bal, pal }: {
+  show: boolean; bal: PayerBalance | null; pal: ReturnType<typeof usePalette>;
+}): React.ReactElement | null {
+  if (!show) return null;
+  if (bal) {
+    return (
+      <Text size="xs" color={bal.insufficient ? pal.danger : pal.sub} numberOfLines={1}>
+        {bal.text}
+      </Text>
+    );
+  }
+  return (
+    <Text size="xs" color={pal.sub} numberOfLines={1} style={{ opacity: 0.5 }}>
+      Balance: …
+    </Text>
+  );
+}
+
+/** Renders the full-width primary action button of a payment card. */
+function PaymentActionButton({ action, dark, pal }: {
+  action: PaymentAction; dark?: boolean; pal: ReturnType<typeof usePalette>;
+}): React.ReactElement {
+  return (
+    <Button
+      variant="primary" size="lg" fullWidth radius={24} dark={dark}
+      loading={action.loading} disabled={action.disabled} onPress={action.onPress}
+      label={action.label}
+      iconStart={action.icon ?? <Icon name="wallet" size={18} color={pal.bg}/>}
+      tintBg={pal.primary} tintFg={pal.bg} style={{ marginTop: 2 }}
+    />
+  );
+}
+
 /** Renders a payment summary card showing the token, amount, balance, and action. */
-// eslint-disable-next-line complexity -- TODO(chaitu): refactor (complexity 14)
 export function PaymentCard({
   dark, logoUrl, chainNum, description, badge, amountLabel,
   detail, balance, action, footer,
@@ -92,35 +125,10 @@ export function PaymentCard({
       ) : null}
       {detail}
       {/* Balance line — always shown for a known asset on a known chain.
-          Placeholder while loading, danger-tinted when below the amount.
           Never silently hidden so the card can't look broken. */}
-      {balance.show ? (
-        bal ? (
-          <Text size="xs" color={bal.insufficient ? pal.danger : pal.sub} numberOfLines={1}>
-            {bal.text}
-          </Text>
-        ) : (
-          <Text size="xs" color={pal.sub} numberOfLines={1} style={{ opacity: 0.5 }}>
-            Balance: …
-          </Text>
-        )
-      ) : null}
+      <PaymentBalanceLine show={balance.show} bal={bal} pal={pal} />
       {resolvedAction ? (
-        <Button
-          variant="primary"
-          size="lg"
-          fullWidth
-          radius={24}
-          dark={dark}
-          loading={resolvedAction.loading}
-          disabled={resolvedAction.disabled}
-          onPress={resolvedAction.onPress}
-          label={resolvedAction.label}
-          iconStart={resolvedAction.icon ?? <Icon name="wallet" size={18} color={pal.bg}/>}
-          tintBg={pal.primary}
-          tintFg={pal.bg}
-          style={{ marginTop: 2 }}
-        />
+        <PaymentActionButton action={resolvedAction} dark={dark} pal={pal} />
       ) : footer ?? null}
     </Box>
   );
