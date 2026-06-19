@@ -23,10 +23,13 @@ export function isGenericLink(token: string): boolean {
   }
 }
 
+/** Leading `www.` stripped off a hostname for the domain line. Hoisted to module scope so it is compiled once, not on every {@link domainOf} call (domainOf runs in non-memoized card render bodies). */
+const WWW_RE = /^www\./;
+
 /** The bare hostname (minus a leading www.) of a link, for the card's domain line. Returns the raw url on parse failure. */
 export function domainOf(url: string): string {
   try {
-    return new URL(url).hostname.replace(/^www\./, '');
+    return new URL(url).hostname.replace(WWW_RE, '');
   } catch {
     return url;
   }

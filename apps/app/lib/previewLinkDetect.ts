@@ -31,6 +31,9 @@ export interface PreviewLinkRef {
 const RE =
   /(?:(?:metro|stage):\/\/expo-development-client\/\?url=|https?:\/\/(?:metro|stage)\.box\/preview-launcher\.html\?u=)(\S+)/i;
 
+/** Extracts the EAS Update group id from a decoded u.expo.dev preview url. Hoisted to module scope so it is compiled once, not on every {@link previewLinkOf} call (this runs on every message render). */
+const GROUP_RE = /u\.expo\.dev\/[^/\s]+\/group\/([A-Za-z0-9-]+)/i;
+
 /** Detect the first expo dev-client preview deep link in `text`, or null. */
 export function previewLinkOf(text?: string | null): PreviewLinkRef | null {
   if (!text) return null;
@@ -46,7 +49,7 @@ export function previewLinkOf(text?: string | null): PreviewLinkRef | null {
   } catch {
     /* keep raw if it isn't valid percent-encoding */
   }
-  const g = /u\.expo\.dev\/[^/\s]+\/group\/([A-Za-z0-9-]+)/i.exec(inner);
+  const g = GROUP_RE.exec(inner);
   if (!g) return null;
   const groupId = g[1];
   if (groupId === undefined) return null;
