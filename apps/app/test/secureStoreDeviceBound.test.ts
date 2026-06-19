@@ -126,4 +126,30 @@ describe('device-bound secret storage', () => {
     expect(src).not.toMatch(/setItemAsync\(\s*id,\s*legacy\)\s*\.catch/);
     expect(src).not.toMatch(/setItemAsync\(\s*id,\s*encodeKey\(fresh\)\)\s*;/);
   });
+
+  /** Read-site consistency: every secret-bearing getItemAsync in the secret
+   *  modules passes the same device-bound options const as its paired write. On
+   *  iOS `keychainAccessible` is a write-time attribute (not a read query
+   *  predicate), so this does NOT break reads of pre-existing items; it keeps the
+   *  query attributes uniform and prevents a future read/write class drift. The
+   *  keyring's mnemonic + sentinel reads and xmtp.dbkey's reads already do this;
+   *  this pins that the per-account/legacy private-key reads do too (regression:
+   *  PK reads previously omitted STORE_OPTS while writes set it). */
+  for (const [label, path] of [
+    ['keyring', KEYRING],
+    ['xmtp.dbkey', DBKEY],
+  ] as const) {
+    test(`${label}: every getItemAsync passes a device-bound options const`, () => {
+      const code = stripComments(readFileSync(path, 'utf8'));
+      const re = /SecureStore\.getItemAsync\s*\(([^;]*?)\)\s*\.catch/g;
+      const offenders: string[] = [];
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(code)) !== null) {
+        const args = m[1];
+        const hasOpts = [...DEVICE_BOUND_OPTS].some((o) => args.includes(o));
+        if (!hasOpts) offenders.push(m[0].trim());
+      }
+      expect(offenders).toEqual([]);
+    });
+  }
 });
