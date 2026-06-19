@@ -22,6 +22,7 @@ const FLUSH_DEBOUNCE_MS = 1_500;
  *  lost on kill). WeakRef-free on purpose: stores are app-lived singletons. */
 const dirtyStores = new Set<{ flushNow: () => void }>();
 let appStateFlushWired = false;
+/** Wire App State Flush. */
 function wireAppStateFlush(): void {
   if (appStateFlushWired) return;
   appStateFlushWired = true;
@@ -51,6 +52,7 @@ export class PersistentStore<T> {
   private readonly hydration = hydrateOnce<T | null>(() => this.readDisk());
   private readonly pubsub = makeListeners<T | null>();
   private get listeners(): Set<(v: T | null) => void> { return this.pubsub.listeners; }
+  /** Notify helper. */
   private notify(v: T | null): void { this.pubsub.notify(v); }
   /** Pending trailing-flush timer (debounced stores only). `number` RN timer id
    *  — the Railgun SDK pulls @types/node in, whose Timeout collides with DOM. */
@@ -68,6 +70,7 @@ export class PersistentStore<T> {
     if (debounced) wireAppStateFlush();
   }
 
+  /** File helper. */
   private file(): File { return new File(metroDir(), this.fileName); }
 
   /** Write the current in-memory value to disk synchronously (or delete the file

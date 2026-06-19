@@ -52,6 +52,7 @@ export default function WalletReceive(): React.ReactElement {
   const activeMode: ReceiveMode = mode === 'private' && !privateReady ? 'public' : mode;
   const address = activeMode === 'private' ? privateAddress : publicAddress;
 
+  /** Copy helper. */
   const copy = (): void => {
     if (!address) return;
     void Clipboard.setStringAsync(address);

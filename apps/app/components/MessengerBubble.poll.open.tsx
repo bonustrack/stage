@@ -21,6 +21,7 @@ export function OpenAnswerBlock({ qi, sub, dark, answers, mine, onSubmit }: {
   const radius = useBlockRadius();
   const [draft, setDraft] = useState('');
   const list = answers ? [...answers.entries()].sort((a, b) => a[1].ts.localeCompare(b[1].ts)) : [];
+  /** Submit helper. */
   const submit = (): void => { onSubmit(draft); setDraft(''); };
   // Borderless input: neutral overlay fill + radius so it still reads as an
   // input, but no visible outline. Body text in the palette text token.

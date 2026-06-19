@@ -35,13 +35,16 @@ export function useHomeFilters(): {
   clearAllFilters: () => void;
 } {
   const [enabledLabels, setEnabledLabels] = useState<Set<string>>(new Set());
+  /** Toggle Label. */
   const toggleLabel = (label: string): void => { setEnabledLabels(prev => {
     const next = new Set(prev), key = label.toLowerCase();
     if (next.has(key)) next.delete(key); else next.add(key);
     return next;
   }); };
   const [unreadOnly, setUnreadOnly] = useState<boolean>(false);
+  /** Toggle Unread. */
   const toggleUnread = (): void => { setUnreadOnly(v => !v); };
+  /** Clear All Filters. */
   const clearAllFilters = (): void => { setEnabledLabels(new Set()); setUnreadOnly(false); };
   return { enabledLabels, toggleLabel, unreadOnly, toggleUnread, clearAllFilters };
 }
@@ -126,6 +129,7 @@ export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggle
    *  short of the true boundary; scrollEventThrottle 16 keeps the state current. */
   const [atStart, setAtStart] = useState(true);  // a fresh ScrollView sits at the left (start) edge
   const [atEnd, setAtEnd] = useState(false);
+  /** Handle the Scroll. */
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>): void => {
     const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
     const max = contentSize.width - layoutMeasurement.width;
@@ -139,6 +143,7 @@ export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggle
    *  true (any swipe pages). layoutWRef caches the last measured viewport width so
    *  onContentSizeChange can decide before any onScroll has fired. */
   const layoutWRef = useRef(0);
+  /** Handle the Measure. */
   const onMeasure = (contentW: number, layoutW: number): void => {
     if (layoutW <= 0) return;
     if (contentW - layoutW <= 2) { setAtStart(true); setAtEnd(true); }

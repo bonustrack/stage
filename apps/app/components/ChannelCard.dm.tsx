@@ -25,6 +25,7 @@ export function DmPeerCard({ address }: { address: string }): React.ReactElement
    *  identicon before the name lands (mirrors ChannelCard). */
   const avatarAddress = !isPeerResolved(address) ? null : address;
 
+  /** Open helper. */
   const open = (): void => {
     void (async () => {
       try {

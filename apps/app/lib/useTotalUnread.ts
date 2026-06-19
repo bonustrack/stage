@@ -34,6 +34,7 @@ export function useTotalUnread(): number {
 
   useEffect(() => {
     let mounted = true;
+    /** Recompute helper. */
     const recompute = (): void => {
       if (mounted) setTotal(computeTotal(getCachedRows()));
     };

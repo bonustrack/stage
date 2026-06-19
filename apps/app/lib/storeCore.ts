@@ -18,6 +18,7 @@ export function makeListeners<T = void>(): {
   notify: (v: T) => void;
 } {
   const listeners = new Set<(v: T) => void>();
+  /** Notify helper. */
   const notify = (v: T): void => {
     for (const cb of listeners) {
       try { cb(v); } catch { /* a bad subscriber shouldn't break the rest */ }

@@ -28,6 +28,7 @@ const DECODE_SAMPLE_RATE = 8000;
  *  synthetic bars. The eval is never allowed to throw uncaught. */
 let loaded = false;
 let decodeAudioDataFn: typeof DecodeAudioData | null = null;
+/** Get the Decode Audio Data. */
 function getDecodeAudioData(): typeof DecodeAudioData | null {
   if (loaded) return decodeAudioDataFn;
   loaded = true;

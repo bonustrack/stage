@@ -36,11 +36,13 @@ export function GroupGithubSection({ line, p }: { line: string; p: Pal }): React
     return (): void => { cancelled = true; };
   }, [line]);
 
+  /** Report Error. */
   const reportError = (e: unknown): void => {
     if (e instanceof LabelPermissionError) flash(e.message);
     else flash(e instanceof Error ? e.message : 'Could not save link. Try again.');
   };
 
+  /** Save helper. */
   const save = async (): Promise<void> => {
     if (busy) return;
     setBusy(true);

@@ -27,10 +27,12 @@ export interface TopnavSlot {
 let slot: TopnavSlot | undefined;
 const listeners = new Set<() => void>();
 
+/** Emit helper. */
 function emit(): void {
   for (const l of listeners) l();
 }
 
+/** Subscribe helper. */
 function subscribe(cb: () => void): () => void {
   listeners.add(cb);
   return () => { listeners.delete(cb); };

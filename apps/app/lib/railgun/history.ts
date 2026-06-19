@@ -92,6 +92,7 @@ function isShieldReceive(item: HistoryItem, leg: HistoryErc20Amount): boolean {
 function rowsForItem(net: RailgunNet, item: HistoryItem): PrivateActivityRow[] {
   const cfg = RAILGUN_NETWORKS[net];
   const ts = typeof item.timestamp === 'number' ? item.timestamp : 0;
+  /** Map helper. */
   const map = (
     a: HistoryErc20Amount,
     kind: PrivateActivityKind,

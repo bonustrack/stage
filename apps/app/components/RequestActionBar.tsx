@@ -63,6 +63,7 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
    *  anything else → not a request (show composer via onAllowed). */
   useEffect(() => {
     let cancelled = false;
+    /** Resolve helper. */
     const resolve = async (): Promise<void> => {
       try {
         const state = await getConvConsentState(convId);

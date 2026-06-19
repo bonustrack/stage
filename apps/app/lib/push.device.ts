@@ -31,6 +31,7 @@ Notifications.setNotificationHandler({
   },
 });
 
+/** Ensure Channel. */
 async function ensureChannel(): Promise<void> {
   if (Platform.OS !== 'android') return;
   await Notifications.setNotificationChannelAsync('xmtp', {
@@ -41,6 +42,7 @@ async function ensureChannel(): Promise<void> {
   });
 }
 
+/** Ensure Permission. */
 async function ensurePermission(): Promise<boolean> {
   const existing = await Notifications.getPermissionsAsync();
   if (existing.granted) return true;

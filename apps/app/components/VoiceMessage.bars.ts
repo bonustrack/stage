@@ -19,6 +19,7 @@ function hash(s: string): number {
 /** Build a stable array of normalized bar heights (0..1) for the given uri. */
 export function waveformBars(uri: string, count: number = BAR_COUNT): number[] {
   let seed = hash(uri) || 1;
+  /** Next helper. */
   const next = (): number => {
     /** xorshift32 — fast, stable, good enough for visual jitter. */
     seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5;

@@ -21,6 +21,7 @@ import { usePalette } from '../lib/theme';
 
 export { REACT_PRESETS };
 
+/** The Messenger Bubble Base component. */
 function MessengerBubbleBase({
   entry, dark, unread, pending, replyTarget, onReact, onReply, onLongPress, onOpenMenu, onAnswer,
   replyPreview, onReplyPreviewPress, reactions, pendingReactions, pendingRemovals, ownEmojis, transcript, myUri, senderEthAddress, onAvatarPress,
@@ -59,6 +60,7 @@ function MessengerBubbleBase({
    *  drag the moment the finger passes the trigger point, Telegram-style, not on
    *  release. Reset on each gesture begin. */
   const crossed = useSharedValue(false);
+  /** Fire Reply. */
   const fireReply = (): void => { if (!pending) onReply?.(); };
   /** The navigator's full-screen back-pan (@react-navigation/stack, armed via
    *  `gestureResponseDistance: 9999` in app/_layout) is an ANCESTOR
@@ -123,6 +125,7 @@ function MessengerBubbleBase({
   const rowRef = useRef<View>(null);
   /** Last measured row rect — opens the menu synchronously while a fresh measure flies. */
   const lastAnchor = useRef<{ y: number; height: number }>({ y: 0, height: 0 });
+  /** Open Menu. */
   const openMenu = (): void => {
     if (pending || !onOpenMenu) { if (!onOpenMenu) onLongPress?.(); return; }
     lightHaptic();
@@ -133,6 +136,7 @@ function MessengerBubbleBase({
       onOpenMenu({ y, height: h });
     });
   };
+  /** Handle the Double Tap. */
   const onDoubleTap = (): void => { if (!pending) { lightHaptic(); onReact?.('👍'); } };
   const doubleTap = useMemo(() => Gesture.Tap().numberOfTaps(2).onEnd((_e, ok) => {
     if (ok) runOnJS(onDoubleTap)();
@@ -257,6 +261,7 @@ const DATA_KEYS = [
   'highlight', 'senderEthAddress', 'myUri', 'transcript', 'consentAllowed',
 ] as const satisfies readonly (keyof MessengerBubbleProps)[];
 
+/** Bubble Props Equal. */
 function bubblePropsEqual(prev: MessengerBubbleProps, next: MessengerBubbleProps): boolean {
   for (const k of DATA_KEYS) {
     if (prev[k] !== next[k]) return false;

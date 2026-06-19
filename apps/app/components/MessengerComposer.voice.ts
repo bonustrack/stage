@@ -37,6 +37,7 @@ export function useVoiceRecorder(args: VoiceArgs) {
   /** If a stop/cancel arrives while startRec is still preparing, stash it. */
   const pendingStop = useRef<null | 'send' | 'cancel'>(null);
 
+  /** Start Rec. */
   const startRec = async (): Promise<void> => {
     if (recordingRef.current) return;
     setErr(null);

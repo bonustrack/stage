@@ -10,6 +10,7 @@ import {
 import { type Attachment, mimeOf, INLINE_ATTACHMENT_MAX_BYTES } from './MessengerComposer.helpers';
 
 let seq = 0;
+/** Mint Local Id. */
 const mintLocalId = (): string =>
   `tmp_${Date.now()}_${(seq++).toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
 

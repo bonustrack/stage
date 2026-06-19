@@ -65,6 +65,7 @@ export function usePullToRefresh(
     if (!refreshing) armed.current = false;
   }, [refreshing, pull]);
 
+  /** Handle the Scroll Begin Drag. */
   const onScrollBeginDrag = (e: NativeSyntheticEvent<NativeScrollEvent>): void => {
     // Reset the per-drag latch/baseline. Use the offset at drag start as the
     // reference so a pull is measured RELATIVE to wherever the top sits — on
@@ -73,6 +74,7 @@ export function usePullToRefresh(
     minY.current = e.nativeEvent.contentOffset.y;
   };
 
+  /** Handle the Scroll. */
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>): void => {
     const y = e.nativeEvent.contentOffset.y;
     if (y < minY.current) minY.current = y;
@@ -90,6 +92,7 @@ export function usePullToRefresh(
     }
   };
 
+  /** Handle the Scroll End Drag. */
   const onScrollEndDrag = (e: NativeSyntheticEvent<NativeScrollEvent>): void => {
     const pulled = -Math.min(minY.current, e.nativeEvent.contentOffset.y);
     minY.current = 0;

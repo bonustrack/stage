@@ -53,6 +53,7 @@ export function useAccountsManager(onSwitched?: () => void): {
    *  rows once they load) so the list shows names, not just addresses. */
   usePeerProfiles(accounts.map(a => a.address));
 
+  /** Handle the Switch. */
   async function onSwitch(id: string): Promise<void> {
     if (id === activeId || busy) return;
     setBusy(true);
@@ -104,12 +105,14 @@ export function useAccountsManager(onSwitched?: () => void): {
     }
   }
 
+  /** Handle the Export. */
   async function onExport(id: string): Promise<void> {
     const pk = await getPrivateKey(id);
     if (!pk) { Alert.alert('No key', 'This account has no exportable private key.'); return; }
     setRevealPk(pk);
   }
 
+  /** Handle the Remove. */
   function onRemove(rec: AccountRecord): void {
     Alert.alert(
       'Remove account',

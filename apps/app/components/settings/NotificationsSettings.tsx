@@ -41,6 +41,7 @@ export function NotificationsSettings(): React.ReactElement {
     return subscribePushPref(() => { setEnabled(isPushEnabledSync()); });
   }, []);
 
+  /** Handle the Toggle. */
   const onToggle = (next: boolean): void => {
     setEnabled(next); // optimistic
     void (async (): Promise<void> => {

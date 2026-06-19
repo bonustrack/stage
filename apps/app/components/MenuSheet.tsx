@@ -53,6 +53,7 @@ export function MenuSheet({ visible, onClose }: {
     head, sub, border, dark, onChanged: () => { onClose(); void refresh(); },
   });
 
+  /** Go helper. */
   function go(href: '/settings'): void {
     onClose();
     router.navigate(href);
@@ -68,6 +69,7 @@ export function MenuSheet({ visible, onClose }: {
     router.navigate(`/user/${addr}`);
   }
 
+  /** Handle the Switch. */
   function onSwitch(id: string): void {
     onClose();
     if (id === activeId) return;

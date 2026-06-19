@@ -45,6 +45,7 @@ export interface SendResult {
   recipient: string;
 }
 
+/** Token Meta. */
 function tokenMeta(chainId: number, symbol: string): TokenMeta {
   const net = chainId === 1 ? 'mainnet' : 'sepolia';
   const meta = RAILGUN_TOKENS[net].find(t => t.symbol === symbol);

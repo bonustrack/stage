@@ -26,6 +26,7 @@ export interface SnapshotProfile {
  *  exactly like the mobile peerProfiles store. */
 const PROFILE_CACHE_PREFIX = 'profile.cache.';
 
+/** Cache Key. */
 function cacheKey(address: string): string {
   return PROFILE_CACHE_PREFIX + address.toLowerCase();
 }
@@ -39,6 +40,7 @@ export function loadCachedProfile(address: string): SnapshotProfile | null {
   } catch { return null; }
 }
 
+/** Set the Cached Profile. */
 function storeCachedProfile(address: string, profile: SnapshotProfile): void {
   if (!address) return;
   try { localStorage.setItem(cacheKey(address), JSON.stringify(profile)); }

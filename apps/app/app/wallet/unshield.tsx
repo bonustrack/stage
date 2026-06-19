@@ -48,6 +48,7 @@ export default function WalletUnshield(): React.ReactElement {
   const busy = phase === 'proving' || phase === 'broadcasting';
   const canSubmit = isFinite(n) && n > 0 && !busy && !!eoa && isBridgeAvailable();
 
+  /** Handle the Submit. */
   const onSubmit = (): void => {
     if (!canSubmit) return;
     setErr(null); setTxHash(null); setPhase('proving');

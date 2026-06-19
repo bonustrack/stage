@@ -100,6 +100,7 @@ async function readImageCapped(res: Response): Promise<ArrayBuffer | null> {
   return out.buffer;
 }
 
+/** Image Content Type. */
 function imageContentType(res: Response): string | null {
   const ct = (res.headers.get('content-type') ?? '').split(';')[0]?.trim().toLowerCase() ?? '';
   return ct.startsWith('image/') ? ct : null;

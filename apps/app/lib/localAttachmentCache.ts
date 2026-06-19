@@ -35,6 +35,7 @@ const byMessageId = new Map<string, string[]>();
 
 /** Subscribers notified on every write so already-mounted resolvers re-read. */
 const listeners = new Set<() => void>();
+/** Emit helper. */
 function emit(): void { for (const l of listeners) l(); }
 
 /** Remember the local URIs for a freshly-sent message, keyed by its REAL XMTP

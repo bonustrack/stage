@@ -19,6 +19,7 @@ import { DANGER, useBlockRadius, useEffectiveColorScheme, usePalette } from '../
 import { SystemHeader } from '../system/SystemHeader';
 import { MessengerSessions } from './MessengerSessions';
 
+/** The Copy Row component. */
 function CopyRow({ label, value, display, c }: {
   label: string; value: string; display: string;
   c: { fg: string; sub: string; border: string; rowBg: string };

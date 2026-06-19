@@ -65,6 +65,7 @@ async function memberSetOf(convId: string): Promise<string[]> {
   return members;
 }
 
+/** Resolve Common Channels. */
 async function resolveCommonChannels(peerAddress: string): Promise<CommonChannel[]> {
   const peer = peerAddress.toLowerCase();
   await hydrateCachedRows().catch(() => undefined);

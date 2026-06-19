@@ -77,6 +77,7 @@ export function streamConvConsent(cb: () => void): () => void {
   let canceller: (() => void) | null = null;
   let cancelled = false;
   void prefs.streamConsent(() => { cb(); }).then(sub => {
+    /** Stop helper. */
     const stop = () => {
       const end = (sub as { end?: () => void }).end;
       if (typeof end === 'function') end.call(sub);

@@ -17,6 +17,7 @@ import { getActiveAccount } from '../lib/accounts';
 import { setLastAttachment } from '../lib/lastAttachment';
 import type { ComposerActionsArgs } from './MessengerComposer.types';
 
+/** Mint Local Id. */
 const mintLocalId = (): string => `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
 /** Builds and optimistically sends a signature-request message from the composer state. */

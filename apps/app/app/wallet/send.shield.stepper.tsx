@@ -28,6 +28,7 @@ const STEPS: readonly (readonly [ShieldStage, string])[] = [
 ];
 const ORDER: ShieldStage[] = ['submitting', 'confirming', 'scanning', 'done'];
 
+/** Stage Index. */
 function stageIndex(s: ShieldStage): number {
   return s === 'idle' || s === 'error' ? -1 : ORDER.indexOf(s);
 }

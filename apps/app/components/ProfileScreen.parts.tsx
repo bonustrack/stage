@@ -79,6 +79,7 @@ export function ProfileHeader({ variant, insetTop, onBack, c }: {
 export function ProfileActions({ dark, opening, onMessage, onSend, c }: {
   dark: boolean; opening: boolean; onMessage: () => void; onSend: () => void; c: ProfileColors;
 }): React.ReactElement {
+  /** The Btn component. */
   const Btn = ({ icon, label, onPress, disabled }: {
     icon: HeroIconName; label: string; onPress: () => void; disabled?: boolean;
   }): React.ReactElement => (

@@ -17,6 +17,7 @@ import type { Palette } from '../lib/theme';
 import type { DiffFile, DiffLine } from '../lib/diffParse';
 
 
+/** Line Bg. */
 function lineBg(kind: DiffLine['kind'], dark: boolean): string {
   if (kind === 'add') return dark ? 'rgba(63,185,80,0.15)' : 'rgba(46,160,67,0.12)';
   if (kind === 'del') return dark ? 'rgba(248,81,73,0.15)' : 'rgba(248,81,73,0.12)';
@@ -24,6 +25,7 @@ function lineBg(kind: DiffLine['kind'], dark: boolean): string {
   return 'transparent';
 }
 
+/** Line Color. */
 function lineColor(kind: DiffLine['kind'], p: Palette): string {
   if (kind === 'add') return p.success;
   if (kind === 'del') return p.danger;
@@ -31,12 +33,14 @@ function lineColor(kind: DiffLine['kind'], p: Palette): string {
   return p.text;
 }
 
+/** Marker helper. */
 function marker(kind: DiffLine['kind']): string {
   if (kind === 'add') return '+';
   if (kind === 'del') return '-';
   return ' ';
 }
 
+/** Gutter helper. */
 function gutter(n: number | null): string {
   return n === null ? '' : String(n);
 }

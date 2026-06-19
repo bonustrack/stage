@@ -22,6 +22,7 @@ const ALIGN: Record<ListItemAlign, ViewStyle['alignItems']> = {
   end: 'flex-end',
 };
 
+/** Palette helper. */
 function palette(dark: boolean): { border: string; pressed: string; sub: string } {
   // Pressed row fill = the hover surface in both schemes (#1c1d1f / #f2f2f3).
   const p = schemePalette(dark);

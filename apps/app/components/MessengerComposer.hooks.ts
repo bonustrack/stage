@@ -14,6 +14,7 @@ export function useLastAttachment(): string | undefined {
   const [label, setLabel] = useState<string | undefined>(getLastAttachment);
   useEffect(() => {
     loadLastAttachment();
+    /** Sync helper. */
     const sync = (): void => { setLabel(getLastAttachment()); };
     sync();
     return subscribeLastAttachment(sync);

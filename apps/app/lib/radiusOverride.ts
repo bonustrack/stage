@@ -25,7 +25,9 @@ function clamp(n: number, def: number): number {
   if (!Number.isFinite(n)) return def;
   return Math.max(RADIUS_MIN, Math.min(RADIUS_MAX, Math.round(n)));
 }
+/** Clamp Radius. */
 function clampRadius(n: number): number { return clamp(n, BUTTON_RADIUS_DEFAULT); }
+/** Clamp Block Radius. */
 function clampBlockRadius(n: number): number { return clamp(n, BLOCK_RADIUS_DEFAULT); }
 
 /** In-memory mirrors so the hooks can read synchronously after the one-time
@@ -35,6 +37,7 @@ let blockCache: number | null = null;
 let loaded = false;
 const listeners = new Set<() => void>();
 
+/** Emit helper. */
 function emit(): void { for (const l of listeners) l(); }
 
 /** Kick off the one-time load from storage; notify subscribers when it lands. */

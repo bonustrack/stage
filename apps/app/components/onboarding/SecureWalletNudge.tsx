@@ -79,6 +79,7 @@ export function SecureWalletNudge(): React.ReactElement | null {
     })();
   };
 
+  /** Dismiss helper. */
   const dismiss = (): void => {
     void (async () => { await setWalletBackedUp(true); setShow(false); })();
   };

@@ -18,6 +18,7 @@ const UA = 'Mozilla/5.0 (compatible; MetroLinkPreview/1.0; +https://metro.box)';
 
 export interface FetchResult { html: string; finalUrl: string }
 
+/** Concat helper. */
 function concat(chunks: Uint8Array[]): Uint8Array {
   const len = chunks.reduce((n, c) => n + c.length, 0);
   const out = new Uint8Array(len);

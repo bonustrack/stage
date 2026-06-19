@@ -65,6 +65,7 @@ export interface PollContent {
  *  Option strings are coerced to `{label}`. Never throws (bad poll => `[]`). */
 export function normalizeQuestions(poll: PollContent | undefined): PollQuestion[] {
   if (!poll) return [];
+  /** Coerce helper. */
   const coerce = (o: (PollOption | string)[] | undefined): PollOption[] =>
     Array.isArray(o) ? o.map(x => (typeof x === 'string' ? { label: x } : x)) : [];
   const qs = poll.questions;

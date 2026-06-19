@@ -12,6 +12,7 @@ import { explorerTxUrl } from '@stage-labs/client/xmtp/tx';
 interface Pal { fg: string; head: string; sub: string; border: string; inputBg: string; link: string }
 type Phase = 'idle' | 'proving' | 'broadcasting' | 'done' | 'error';
 
+/** Short Addr. */
 const shortAddr = (a: string): string => (a.length> 12 ? `${a.slice(0, 6)}…${a.slice(-4)}` : a);
 
 /** The unshield recipient is the user's OWN public EOA by default — shown

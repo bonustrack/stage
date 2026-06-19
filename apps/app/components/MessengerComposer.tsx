@@ -105,6 +105,7 @@ export function MessengerComposer({
   const hasContent = text.trim().length> 0 || pending.length> 0; // text or any pending attachment
 
   const { matches: mentionMatches, range: mentionRange } = computeMentions(text, selection.start, mentionCandidates);
+  /** Pick Mention. */
   const pickMention = (c: { address: string; name: string }): void => {
     if (!mentionRange) return;
     const { next, cursor } = applyMention(text, mentionRange, c.address);

@@ -55,6 +55,7 @@ export function ProfileScreen({ address, variant, panRef }: {
   const [openingDm, setOpeningDm] = useState(false);
   const [viewerUri, setViewerUri] = useState<string | null>(null);
 
+  /** Handle the Message. */
   const onMessage = async (): Promise<void> => {
     if (!addr || openingDm) return;
     setOpeningDm(true);
@@ -66,6 +67,7 @@ export function ProfileScreen({ address, variant, panRef }: {
     } finally { setOpeningDm(false); }
   };
 
+  /** Copy helper. */
   const copy = (value: string, label = 'Address'): void => {
     void Clipboard.setStringAsync(value);
     flash(`${label} copied`);

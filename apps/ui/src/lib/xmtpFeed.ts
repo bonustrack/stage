@@ -40,12 +40,14 @@ export function useXmtpFeed(line: Ref<string | null>, enabled: Ref<boolean>): Xm
   let onVisibility: (() => void) | null = null;
   let activeLine: string | null = null;
 
+  /** Teardown helper. */
   const teardown = (): void => {
     if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
     if (streamCloser?.return) { void streamCloser.return().catch(() => undefined); streamCloser = null; }
     if (onVisibility) { document.removeEventListener('visibilitychange', onVisibility); onVisibility = null; }
   };
 
+  /** Refresh helper. */
   const refresh = async (): Promise<void> => {
     const current = activeLine;
     if (!current) return;
@@ -68,6 +70,7 @@ export function useXmtpFeed(line: Ref<string | null>, enabled: Ref<boolean>): Xm
     } catch { /* next tick or visibility flip retries */ }
   };
 
+  /** Start helper. */
   const start = async (): Promise<void> => {
     if (!enabled.value || !line.value) { status.value = 'idle'; return; }
     activeLine = line.value;
@@ -109,6 +112,7 @@ export function useXmtpFeed(line: Ref<string | null>, enabled: Ref<boolean>): Xm
     }
   };
 
+  /** Restart helper. */
   const restart = (): void => { cancelled = true; teardown(); void start(); };
 
   void start();

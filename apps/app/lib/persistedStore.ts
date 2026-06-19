@@ -53,20 +53,25 @@ export function createSetStore(key: string): SetStore {
     return cache;
   });
 
+  /** Persist helper. */
   async function persist(): Promise<void> {
     try {
       await AsyncStorage.setItem(key, JSON.stringify([...cache]));
     } catch { /* best-effort - the in-memory cache still reflects the change */ }
   }
 
+  /** Load helper. */
   async function load(): Promise<Set<string>> {
     if (hydration.done()) return cache;
     return hydration.run();
   }
 
+  /** Has helper. */
   function has(id: string): boolean { return cache.has(id); }
+  /** Get helper. */
   function get(): Set<string> { return cache; }
 
+  /** Set helper. */
   async function set(next: Set<string>): Promise<Set<string>> {
     cache = next;
     hydration.markDone();
@@ -75,6 +80,7 @@ export function createSetStore(key: string): SetStore {
     return cache;
   }
 
+  /** Toggle helper. */
   async function toggle(id: string): Promise<Set<string>> {
     const next = new Set(cache);
     if (next.has(id)) next.delete(id);
@@ -82,6 +88,7 @@ export function createSetStore(key: string): SetStore {
     return set(next);
   }
 
+  /** Subscribe helper. */
   function subscribe(cb: () => void): () => void {
     listeners.add(cb);
     return () => { listeners.delete(cb); };
@@ -130,6 +137,7 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
   let cache: T = opts.default;
   const { listeners, notify } = makeListeners();
 
+  /** Apply helper. */
   function apply(raw: string | null): boolean {
     if (raw == null) return false;
     const parsed = opts.deserialize(raw);
@@ -144,22 +152,27 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
     catch { return false; /* best-effort → keep default */ }
   });
 
+  /** Persist helper. */
   function persist(): void {
     void AsyncStorage.setItem(opts.key, serialize(cache)).catch(() => { /* best-effort */ });
   }
 
+  /** Load helper. */
   async function load(): Promise<T> {
     if (!hydration.done()) await hydration.run();
     return cache;
   }
 
+  /** Load the persisted value asynchronously. */
   function loadAsync(): void {
     if (hydration.done()) return;
     void hydration.run().then((changed) => { if (changed) notify(); });
   }
 
+  /** Get helper. */
   function get(): T { return cache; }
 
+  /** Set helper. */
   function set(value: T): void {
     if (!opts.alwaysNotify && value === cache) return;
     cache = value;
@@ -168,6 +181,7 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
     persist();
   }
 
+  /** Set the persisted value asynchronously. */
   async function setAsync(value: T): Promise<void> {
     cache = value;
     hydration.markDone();
@@ -176,6 +190,7 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
     catch { /* best-effort, the in-memory cache still reflects the change */ }
   }
 
+  /** Subscribe helper. */
   function subscribe(cb: () => void): () => void {
     listeners.add(cb);
     return () => { listeners.delete(cb); };

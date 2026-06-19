@@ -122,12 +122,14 @@ export function DatePicker(props: DatePickerProps): React.ReactElement {
   const minD = parseISO(min);
   const maxD = parseISO(max);
 
+  /** In Range. */
   function inRange(d: Date): boolean {
     if (minD && d < minD) return false;
     if (maxD && d > maxD) return false;
     return true;
   }
 
+  /** Pick helper. */
   function pick(d: Date): void {
     const iso = toISO(d);
     if (controlled === undefined) setInternal(iso);
@@ -135,11 +137,13 @@ export function DatePicker(props: DatePickerProps): React.ReactElement {
     setOpen(false);
   }
 
+  /** Clear helper. */
   function clear(): void {
     if (controlled === undefined) setInternal(undefined);
     onChange?.('');
   }
 
+  /** Shift Month. */
   function shiftMonth(delta: number): void {
     setView((v) => new Date(v.getFullYear(), v.getMonth() + delta, 1));
   }

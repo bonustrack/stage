@@ -54,10 +54,12 @@ function visible(): QueuedRequest[] {
   return visibleCache;
 }
 
+/** Emit helper. */
 function emit(): void {
   for (const l of listeners) l();
 }
 
+/** Apply Build. */
 function applyBuild(id: number, q: QueuedRequest[]): void {
   if (id !== buildId) return; // a newer build superseded this one
   queue = q;

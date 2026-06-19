@@ -83,6 +83,7 @@ function ModuleRow(
   );
 }
 
+/** Deploy Label. */
 function deployLabel(d: DeployState): string {
   if (d === 'loading') return 'Checking…';
   if (d === 'deployed') return 'Deployed on-chain';
@@ -90,6 +91,7 @@ function deployLabel(d: DeployState): string {
   return 'Unknown';
 }
 
+/** The Section Label component. */
 function SectionLabel({ children, c }: { children: string; c: C }): React.ReactElement {
   return (
     <Text size="xs" color={c.sub} style={{ paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8 }}>
@@ -112,6 +114,7 @@ export function WalletSettings(): React.ReactElement {
   const passkey = useEnablePasskey(epoch);
   const removePasskey = useRemovePasskey(epoch);
 
+  /** Card helper. */
   const card = (children: React.ReactNode): React.ReactElement => (
     <Box margin={{ x: 16 }} radius={blockRadius} style={{ overflow: 'hidden' }}>
       <Card dark={dark} background={c.rowBg} padding={0}>

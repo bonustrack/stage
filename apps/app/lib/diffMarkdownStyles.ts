@@ -17,6 +17,7 @@ export function diffMarkdownStyles(p: DiffMdPalette, dark: boolean): Record<stri
   const fg = p.text;
   const codeBg = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
   const lh = 23;
+  /** H helper. */
   const h = (fontSize: number, lineHeight: number): object =>
     ({ color: fg, fontSize, lineHeight, fontFamily: 'Calibre-Semibold', marginTop: 8, marginBottom: 3 });
   return {

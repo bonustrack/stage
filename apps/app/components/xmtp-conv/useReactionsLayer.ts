@@ -78,6 +78,7 @@ export function useReactionsLayer(
         if (left.length) next.set(messageId, left); else next.delete(messageId);
         return next;
       });
+      /** Undo helper. */
       const undo = (): void => { setOptimisticRemovals(prev => {
         const cur = prev.get(messageId);
         if (!cur) return prev;
@@ -101,6 +102,7 @@ export function useReactionsLayer(
       next.set(messageId, [...cur, emoji]);
       return next;
     });
+    /** Drop Pending. */
     const dropPending = (): void => { setOptimisticReactions(prev => {
       const cur = prev.get(messageId);
       if (!cur) return prev;

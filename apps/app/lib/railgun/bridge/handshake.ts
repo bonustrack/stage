@@ -72,11 +72,13 @@ export function startReadinessHandshake(deps: HandshakeDeps): Handshake {
     rejectReady = rej;
   });
 
+  /** Clear Hello. */
   const clearHello = (): void => {
     if (helloId != null) offReply(helloId);
     helloId = null;
   };
 
+  /** Succeed helper. */
   const succeed = (reason: string): void => {
     if (state === 'ready' || state === 'failed') return;
     state = 'ready';
@@ -87,6 +89,7 @@ export function startReadinessHandshake(deps: HandshakeDeps): Handshake {
     resolveReady();
   };
 
+  /** Fail helper. */
   const fail = (): void => {
     if (state === 'ready' || state === 'failed') return;
     state = 'failed';

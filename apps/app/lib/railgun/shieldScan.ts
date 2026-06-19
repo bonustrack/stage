@@ -31,6 +31,7 @@ export function watchShieldLanding(accountId: string, pendingId: string, chainId
 
   let done = false;
 
+  /** Finish helper. */
   const finish = (): void => {
     if (done) return;
     done = true;

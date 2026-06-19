@@ -36,6 +36,7 @@ export async function startChannelStream(client: XmtpClient): Promise<ChannelStr
    *  letting an explicit user action (`force`) always run. */
   let lastRefreshAt = 0;
   const MIN_AUTO_REFRESH_MS = 20_000;
+  /** Refresh helper. */
   const refresh = async (force = false): Promise<void> => {
     if (!force && Date.now() - lastRefreshAt < MIN_AUTO_REFRESH_MS) return;
     lastRefreshAt = Date.now();

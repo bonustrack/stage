@@ -33,6 +33,7 @@ const b64enc = (s: string): string => {
   if (g.Buffer) return g.Buffer.from(s, 'utf-8').toString('base64');
   return s;
 };
+/** B64dec helper. */
 const b64dec = (s: string): string => {
   const g = globalThis as { atob?: (x: string) => string; Buffer?: { from(x: string, e: string): { toString(e: string): string } } };
   try {

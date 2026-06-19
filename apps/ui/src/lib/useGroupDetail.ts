@@ -66,6 +66,7 @@ export function useGroupDetail(): GroupDetail {
 
   watchEffect(() => { void runGroupDetailEffect(); });
 
+  /** Run Group Detail Effect. */
   async function runGroupDetailEffect(): Promise<void> {
     if (!convId.value) return;
     const c = getCachedXmtpClient();
@@ -116,6 +117,7 @@ export function useGroupDetail(): GroupDetail {
     memberNames.value = next;
   }
 
+  /** Handle the Save Name. */
   async function onSaveName(next: string): Promise<void> {
     if (!next || saving.value) return;
     saving.value = true;
@@ -131,6 +133,7 @@ export function useGroupDetail(): GroupDetail {
     } finally { saving.value = false; }
   }
 
+  /** Handle the Save Description. */
   async function onSaveDescription(next: string): Promise<void> {
     if (savingDescription.value) return;
     savingDescription.value = true;
@@ -148,6 +151,7 @@ export function useGroupDetail(): GroupDetail {
   }
 
   type MemberOp = 'addMembersByIdentifiers' | 'removeMembersByIdentifiers';
+  /** Mutate Members. */
   async function mutateMembers(op: MemberOp, addr: string, errLabel: string): Promise<void> {
     errorMsg.value = '';
     try {
@@ -162,6 +166,7 @@ export function useGroupDetail(): GroupDetail {
     } catch (e) { errorMsg.value = `${errLabel}: ${(e as Error).message}`; }
   }
 
+  /** Handle the Add Member. */
   async function onAddMember(addr: string): Promise<void> {
     if (adding.value) return;
     adding.value = true;
@@ -169,6 +174,7 @@ export function useGroupDetail(): GroupDetail {
     finally { adding.value = false; }
   }
 
+  /** Remove Member. */
   async function removeMember(addr: string): Promise<void> {
     if (!confirm(`Remove ${shortAddress(addr)} from this group?`)) return;
     removing.value = addr.toLowerCase();
@@ -176,8 +182,10 @@ export function useGroupDetail(): GroupDetail {
     finally { removing.value = null; }
   }
 
+  /** Open Member. */
   function openMember(addr: string): void { void router.push(`/user/${addr}`); }
 
+  /** Handle the Pick Image. */
   async function onPickImage(file: File): Promise<void> {
     if (uploadingImage.value) return;
     uploadingImage.value = true;

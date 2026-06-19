@@ -19,8 +19,10 @@ import {
   type BalanceDebug,
 } from '../../lib/railgun/balanceDebug';
 
+/** Fmt Time. */
 const fmtTime = (t: number | null): string => (t ? new Date(t).toLocaleTimeString() : '—');
 
+/** Fmt Event. */
 function fmtEvent(d: BalanceDebug): string {
   if (d.lastEvent == null) return 'none received yet';
   try {
@@ -31,6 +33,7 @@ function fmtEvent(d: BalanceDebug): string {
   }
 }
 
+/** The Debug Row component. */
 function DebugRow({ label, value, sub, head }: {
   label: string; value: string; sub: string; head: string;
 }): React.ReactElement {

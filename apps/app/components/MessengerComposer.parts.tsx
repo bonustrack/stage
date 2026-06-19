@@ -15,6 +15,7 @@ import { getPeerName } from '../lib/peerProfiles';
 import { type Attachment } from './MessengerComposer.helpers';
 import { usePalette } from '../lib/theme';
 
+/** Kind Icon. */
 const kindIcon = (kind: string): HeroIconName => (
   kind === 'image' ? 'photo' : kind === 'audio' ? 'microphone' : 'paperClip'
 );

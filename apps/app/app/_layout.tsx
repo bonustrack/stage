@@ -76,6 +76,7 @@ export default function RootLayout(): React.ReactElement {
   );
 }
 
+/** The Root Layout Inner component. */
 function RootLayoutInner(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { bg, toolbarBg } = usePalette();

@@ -35,6 +35,7 @@ const ACTIVE_KEY = 'accounts.active';
 
 let cache: AccountRecord[] | null = null;
 
+/** Persist helper. */
 async function persist(list: AccountRecord[]): Promise<void> {
   cache = list;
   await SecureStore.setItemAsync(LIST_KEY, JSON.stringify(list));

@@ -23,6 +23,7 @@ interface StreamedMsg {
  *  we must never post two cards for one message. Tracks the last N notified
  *  message ids; bounded so it can't grow unbounded over a long session. */
 const notifiedMsgIds = new Set<string>();
+/** Already Notified. */
 function alreadyNotified(id: string): boolean {
   if (notifiedMsgIds.has(id)) return true;
   notifiedMsgIds.add(id);
@@ -79,6 +80,7 @@ function makeMissRefresher(
     refreshInFlight = true;
     void refresh().finally(() => { refreshInFlight = false; });
   };
+  /** Arm Full Refresh. */
   function armFullRefresh(): void {
     if (missTimer) clearTimeout(missTimer);
     missTimer = setTimeout(() => {

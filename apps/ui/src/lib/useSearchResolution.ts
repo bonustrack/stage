@@ -37,6 +37,7 @@ export function useSearchResolution(query: Ref<string>, router: Router): {
     });
   }, { flush: 'post' });
 
+  /** Open Searched Profile. */
   function openSearchedProfile(): void {
     const addr = searchResolution.value.address;
     if (addr) void router.push(`/user/${addr}`);

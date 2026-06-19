@@ -27,6 +27,7 @@ const BLOCKED_HOSTS = new Set([
   'metadata.google.internal',
 ]);
 
+/** Whether I Pv4. */
 function isIPv4(s: string): boolean {
   const p = s.split('.');
   return p.length === 4 && p.every(o => /^\d+$/.test(o) && Number(o) <= 255);
@@ -41,6 +42,7 @@ export function isPrivateIp(host: string): boolean {
   return false;
 }
 
+/** Whether Private V4. */
 function isPrivateV4(ip: string): boolean {
   const parts = ip.split('.').map(Number);
   const a = parts[0] ?? NaN;
@@ -56,6 +58,7 @@ function isPrivateV4(ip: string): boolean {
   return false;
 }
 
+/** Whether Private V6. */
 function isPrivateV6(ip: string): boolean {
   const x = ip.toLowerCase().replace(/^\[|\]$/g, '');
   if (x === '::1' || x === '::') return true; // loopback / unspecified
@@ -81,6 +84,7 @@ function isPrivateV6(ip: string): boolean {
   return false;
 }
 
+/** Whether Blocked Host. */
 function isBlockedHost(host: string): boolean {
   const h = host.toLowerCase().replace(/\.$/, '');
   if (BLOCKED_HOSTS.has(h)) return true;

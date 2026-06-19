@@ -57,6 +57,7 @@ function ensureSignListener(): void {
 export function getHostAccount(timeoutMs = 4000): Promise<string | null> {
   if (!runningInIframe()) return Promise.resolve(null);
   return new Promise((resolve) => {
+    /** Handle the Msg. */
     const onMsg = (e: MessageEvent): void => {
       if (!fromParent(e)) return;
       const d = e.data as { type?: string; address?: string } | null;
@@ -69,6 +70,7 @@ export function getHostAccount(timeoutMs = 4000): Promise<string | null> {
       );
     };
     const t = setTimeout(() => { cleanup(); resolve(null); }, timeoutMs);
+    /** Cleanup helper. */
     const cleanup = (): void => { window.removeEventListener('message', onMsg); clearTimeout(t); };
     window.addEventListener('message', onMsg);
     window.parent.postMessage({ type: 'metro:account-request' }, '*');

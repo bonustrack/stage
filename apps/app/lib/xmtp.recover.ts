@@ -86,6 +86,7 @@ export function isStoreCorruption(err: unknown): boolean {
  *  one-shot wipe+retry runs, then the HomeError UX path) instead of spinning.
  *  Mirrors the `Client.build` timeout in xmtp.client.ts. */
 const CREATE_TIMEOUT_MS = 30_000;
+/** Create the With Timeout. */
 async function createWithTimeout(
   signer: Awaited<ReturnType<typeof signerForRecord>>, opts: CreateOpts,
 ): Promise<Client> {
@@ -113,6 +114,7 @@ const INSTALLATION_LIMIT = [
   'Please revoke existing installations',
   'Cannot register a new installation',
 ];
+/** Whether Installation Limit. */
 function isInstallationLimit(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
   return INSTALLATION_LIMIT.some(sig => msg.toLowerCase().includes(sig.toLowerCase()));
@@ -147,6 +149,7 @@ async function tryFreeInstallationSlot(rec: AccountRecord, env: XmtpEnv): Promis
   }
 }
 
+/** Finalize Client. */
 async function finalizeClient(created: Client, rec: AccountRecord, env: XmtpEnv): Promise<Client> {
   setCachedXmtpClient(created);
   await markRegistered(rec.id);

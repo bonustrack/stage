@@ -39,6 +39,7 @@ interface EditorProps {
 export function ComposerEditor(p: EditorProps): React.ReactElement {
   const { dark, fg, head, bg, sub, chipBg, recording } = p;
   const { primary } = usePalette();
+  /** The Btn component. */
   const Btn = ({ icon, onPress, mr }: { icon: HeroIconName; onPress: () => void; mr?: number }): React.ReactElement => (
     <Pressable onPress={onPress} style={({ pressed }) => ({
       width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',

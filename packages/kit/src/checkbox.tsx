@@ -54,6 +54,7 @@ export function Checkbox(props: CheckboxProps): React.ReactElement {
   const bg = dark ? '#0e0f10' : '#ffffff';
   const border = dark ? '#282a2d' : '#e4e4e5';
 
+  /** Toggle helper. */
   function toggle(): void {
     if (disabled) return;
     const next = !checked;

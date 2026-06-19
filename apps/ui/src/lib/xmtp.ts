@@ -41,6 +41,7 @@ function loadOrCreateAccount(): PrivateKeyAccount {
   return privateKeyToAccount(fresh);
 }
 
+/** Signer For Account. */
 function signerForAccount(account: PrivateKeyAccount): Signer {
   return {
     type: 'EOA',

@@ -21,6 +21,7 @@ interface AboutRowProps {
   href?: string; head?: string;
 }
 
+/** The About Row component. */
 function AboutRow({ label, value, mono, border, href, head }: AboutRowProps): React.ReactElement {
   const valueColor = href ? head : undefined;
   const row = (

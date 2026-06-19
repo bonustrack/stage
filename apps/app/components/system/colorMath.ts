@@ -1,8 +1,10 @@
 /** Pure-JS HSV <-> hex conversions for the color picker. No dependencies.
  *  h in [0,360], s/v in [0,1]. hex is `#rrggbb`. */
 
+/** Clamp01 helper. */
 function clamp01(n: number): number { return Math.max(0, Math.min(1, n)); }
 
+/** To Byte. */
 function toByte(n: number): string {
   return Math.round(clamp01(n) * 255).toString(16).padStart(2, '0');
 }

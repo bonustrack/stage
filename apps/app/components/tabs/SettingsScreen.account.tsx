@@ -44,6 +44,7 @@ export function AccountSecuritySection(
   if (!rec) return null;
   const exportable = canExportPrivateKey(rec);
 
+  /** Confirm Export. */
   function confirmExport(): void {
     Alert.alert(
       'Export private key',
@@ -63,6 +64,7 @@ export function AccountSecuritySection(
     );
   }
 
+  /** Confirm Remove. */
   function confirmRemove(): void {
     const name = rec?.label ?? shortAddress(rec?.address ?? '');
     Alert.alert(

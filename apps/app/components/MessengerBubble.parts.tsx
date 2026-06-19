@@ -73,6 +73,7 @@ export function QuestionView({ question, dark, sub, onAnswer }: {
   const fg = usePalette().text; // #9f9fa3 / #57606a
   const multi = question.multiSelect === true;
   const allowOther = question.allowOther !== false;
+  /** Toggle helper. */
   const toggle = (label: string): void => {
     if (!multi) { onAnswer(label); return; }
     setSelected(prev => {
@@ -81,6 +82,7 @@ export function QuestionView({ question, dark, sub, onAnswer }: {
       return next;
     });
   };
+  /** Submit helper. */
   const submit = (): void => {
     /** Preserve the user's option order so the answer reads naturally. */
     const chosen = question.options.filter(o => selected.has(o.label)).map(o => o.label);

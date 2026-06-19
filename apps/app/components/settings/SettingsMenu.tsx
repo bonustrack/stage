@@ -52,6 +52,7 @@ export function SettingsMenu(): React.ReactElement {
   const [resetting, setResetting] = useState(false);
   const [nuking, setNuking] = useState(false);
 
+  /** Handle the Reset. */
   const onReset = (): void => {
     Alert.alert(
       'Reset accounts',
@@ -72,6 +73,7 @@ export function SettingsMenu(): React.ReactElement {
     );
   };
 
+  /** Handle the Nuke. */
   const onNuke = (): void => {
     Alert.alert(
       'Reset everything',

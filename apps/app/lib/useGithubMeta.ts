@@ -23,6 +23,7 @@ export interface GithubMeta {
   deletions?: number;
 }
 
+/** Get the Github Meta. */
 async function fetchGithubMeta(ref: GithubRef): Promise<GithubMeta | null> {
   const base = `https://api.github.com/repos/${ref.owner}/${ref.repo}`;
   const path = ref.kind === 'pull'

@@ -49,6 +49,7 @@ export interface LabelProps {
   style?: TextStyle | TextStyle[];
 }
 
+/** Head Color. */
 function headColor(dark: boolean): string {
   return dark ? '#ffffff' : '#000000';
 }

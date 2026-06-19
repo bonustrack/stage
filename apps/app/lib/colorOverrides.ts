@@ -58,8 +58,10 @@ let customEnabled = false;
 let loaded = false;
 const listeners = new Set<() => void>();
 
+/** Emit helper. */
 function emit(): void { for (const l of listeners) l(); }
 
+/** Persist helper. */
 function persist(): void {
   void AsyncStorage.setItem(SEED_KEY, JSON.stringify(cache)).catch(() => { /* best-effort */ });
 }

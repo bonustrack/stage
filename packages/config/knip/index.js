@@ -64,9 +64,6 @@ const knipConfig = {
         "node-gyp-build-mobile",
       ],
     },
-    "apps/api": {
-      project: ["src/**"],
-    },
     "apps/ui": {
       entry: ["index.html"],
       project: ["src/**"],

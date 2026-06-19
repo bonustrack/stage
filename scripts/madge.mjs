@@ -13,7 +13,6 @@ const ROOTS = [
   "apps/app/components",
   "apps/app/lib",
   "apps/app/modules",
-  "apps/api/src",
   "packages/client/src",
   "packages/kit/src",
   // apps/ui (Vue SFCs) is intentionally excluded: madge's detective can't parse

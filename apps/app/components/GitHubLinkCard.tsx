@@ -23,6 +23,7 @@ const DOT: Record<string, string> = {
   open: SUCCESS, merged: '#a371f7', closed: DANGER,
 };
 
+/** Fmt helper. */
 const fmt = (n: number): string => n.toLocaleString('en-US');
 
 /** Renders a rich preview card for a GitHub repo/PR/issue link, or nothing while loading or on failure. */

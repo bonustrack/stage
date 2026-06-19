@@ -39,11 +39,13 @@ export function DeveloperSettings(): React.ReactElement {
   const [resetting, setResetting] = useState(false);
   const [nuking, setNuking] = useState(false);
 
+  /** Handle the Toggle. */
   const onToggle = (next: boolean): void => {
     setEnabled(next); // optimistic
     void setDebugConsole(next);
   };
 
+  /** Handle the Reset. */
   const onReset = (): void => {
     Alert.alert(
       'Reset accounts',
@@ -64,6 +66,7 @@ export function DeveloperSettings(): React.ReactElement {
     );
   };
 
+  /** Handle the Nuke. */
   const onNuke = (): void => {
     Alert.alert(
       'Reset everything',

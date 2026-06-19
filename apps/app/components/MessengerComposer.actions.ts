@@ -20,6 +20,7 @@ export type { ComposerActionsArgs } from './MessengerComposer.types';
 
 /** Hook providing the composer's imperative action handlers (attachments, pickers, poll/signature/payment, send). */
 export function useComposerActions(a: ComposerActionsArgs) {
+  /** Upload helper. */
   const upload = async (uri: string, mime: string, name?: string): Promise<void> => {
     a.setUploading(true);
     try {
@@ -41,6 +42,7 @@ export function useComposerActions(a: ComposerActionsArgs) {
     setRecordSecs: a.setRecordSecs, setLevels: a.setLevels,
   });
 
+  /** Pick Image. */
   const pickImage = async (): Promise<void> => {
     const r = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images', 'videos'], quality: 0.5, allowsMultipleSelection: true, selectionLimit: 10,
@@ -65,6 +67,7 @@ export function useComposerActions(a: ComposerActionsArgs) {
     await upload(asset.uri, asset.mimeType ?? 'image/jpeg', asset.fileName ?? undefined);
   };
 
+  /** Pick File. */
   const pickFile = async (): Promise<void> => {
     const r = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true });
     if (r.canceled) return;
@@ -97,6 +100,7 @@ export function useComposerActions(a: ComposerActionsArgs) {
     a.setTxOpen(true);
   };
 
+  /** Send helper. */
   const send = async (): Promise<void> => {
     const body = a.text.trim();
     if (!body && a.pending.length === 0) return;

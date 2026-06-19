@@ -98,6 +98,7 @@ function ShieldBody({ pal, dark, zkAddress, initialSymbol, initialChainId, onFoo
     void (async (): Promise<void> => {
       const id = await getActiveAccountId();
       if (!id || cancelled) return;
+      /** Read helper. */
       const read = (list: PendingAction[] | undefined): void => {
         const mine = (list ?? [])
           .filter(a => a.kind === 'shield' && a.startedAt >= submittedAt - 2000)
@@ -116,6 +117,7 @@ function ShieldBody({ pal, dark, zkAddress, initialSymbol, initialChainId, onFoo
   const busy = stage === 'submitting' || stage === 'confirming' || stage === 'scanning';
   const canSubmit = !!zkAddress && isFinite(n) && n > 0 && !busy && isBridgeAvailable();
 
+  /** Handle the Submit. */
   const onSubmit = (): void => {
     if (!canSubmit) return;
     setErr(null); setAction(null); setSubmittedAt(Date.now());
@@ -167,6 +169,7 @@ function SendBody({ pal, dark, symbol = 'ETH', chainId = 1, balance = null, onFo
   const validTo = to.trim().toLowerCase().startsWith('0zk');
   const canSubmit = validTo && isFinite(n) && n > 0 && !busy && isBridgeAvailable();
 
+  /** Handle the Submit. */
   const onSubmit = (): void => {
     if (!canSubmit) return;
     setErr(null); setErrPhase(null); setTxHash(null); setStage('submitting');

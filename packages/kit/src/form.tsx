@@ -38,6 +38,7 @@ export interface FormProps extends Omit<BoxProps, 'direction'> {
  *  pass `dark` to the kit controls placed inside it. */
 export function Form(props: FormProps): React.ReactElement {
   const { direction = 'col', onSubmit, children, gap = 12, ...rest } = props;
+  /** Submit helper. */
   const submit = (): void => {
     onSubmit?.();
   };

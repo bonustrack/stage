@@ -93,10 +93,12 @@ const FONTS: Record<'normal' | 'medium' | 'semibold' | 'bold', string> = {
   bold: 'Calibre-Semibold',
 };
 
+/** Normalize Weight. */
 function normalizeWeight(w: TextWeight): keyof typeof FONTS {
   return w === 'regular' ? 'normal' : w;
 }
 
+/** Resolve Size. */
 function resolveSize(
   size: TextSizeToken | undefined,
   variant: TextVariant | undefined,

@@ -39,6 +39,7 @@ export function isReactionEntry(e: HistoryEntry): boolean {
   return Boolean((e.payload as { reactTo?: string } | undefined)?.reactTo);
 }
 
+/** Bytes To Base64. */
 function bytesToBase64(bytes: Uint8Array): string {
   let s = '';
   for (const b of bytes) s += String.fromCharCode(b);

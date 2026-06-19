@@ -89,6 +89,7 @@ export function useConversationState(convId: string | undefined, focus: string |
   useEffect(() => {
     if (!convId) { setConsentAllowed(undefined); return; }
     let cancelled = false;
+    /** Resolve helper. */
     const resolve = async (): Promise<void> => {
       try {
         const state = await getConvConsentState(convId);
@@ -134,6 +135,7 @@ export function useConversationState(convId: string | undefined, focus: string |
   const mentionCandidates = useMemo(() => {
     const seen = new Set<string>();
     const out: { address: string; name: string }[] = [];
+    /** Add helper. */
     const add = (addr: string | null): void => {
       if (!addr) return;
       const k = addr.toLowerCase();

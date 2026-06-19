@@ -26,6 +26,7 @@ function dbKeyId(accountId: string): string {
   return `xmtp.dbEncryptionKey.${accountId}`;
 }
 
+/** Decode Key. */
 function decodeKey(b64: string): Uint8Array {
   const bin = atob(b64);
   const out = new Uint8Array(bin.length);
@@ -33,12 +34,14 @@ function decodeKey(b64: string): Uint8Array {
   return out;
 }
 
+/** Encode Key. */
 function encodeKey(key: Uint8Array): string {
   let s = '';
   for (const byte of key) s += String.fromCharCode(byte);
   return btoa(s);
 }
 
+/** Random Key. */
 function randomKey(): Uint8Array {
   const fresh = new Uint8Array(32);
   /** This 32-byte key AES-encrypts the on-device XMTP SQLite store. A

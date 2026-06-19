@@ -56,6 +56,7 @@ const STATUS_SIZE: Record<CardSize, number> = {
   lg: FONT_SIZE.sm,
 };
 
+/** Palette helper. */
 function palette(dark: boolean): { surface: string; border: string; sub: string } {
   const p = schemePalette(dark);
   return { surface: p.surface, border: p.border, sub: p.sub };

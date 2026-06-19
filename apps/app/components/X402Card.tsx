@@ -68,8 +68,10 @@ export function X402Card({ challenge, dark }: {
 
   if (!accept) return null;
 
+  /** Open Endpoint. */
   const openEndpoint = (): void => { if (endpoint) void Linking.openURL(endpoint); };
 
+  /** Run Pay. */
   const runPay = (): void => {
     setPhase('paying');
     void (async () => {
@@ -93,6 +95,7 @@ export function X402Card({ challenge, dark }: {
     })();
   };
 
+  /** Confirm Pay. */
   const confirmPay = (): void => {
     const payLabel = amountLabel ?? 'this amount';
     Alert.alert(
@@ -109,6 +112,7 @@ export function X402Card({ challenge, dark }: {
 
   // The primary action label depends on capability + phase + affordability
   // (insufficient is resolved from the balance PaymentCard fetched).
+  /** Pay Button Label. */
   const payButtonLabel = (insufficient: boolean): string => {
     if (phase === 'paid') return 'Paid';
     if (phase === 'paying') return 'Paying...';

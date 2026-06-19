@@ -36,8 +36,10 @@ export { usePushDeepLinks } from './pushRegister.deeplink';
 // token is restored on the next app open within 6h of any server-side wipe, while
 // still avoiding a re-register on every single launch.
 const REGISTER_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours
+/** Last Register Key. */
 const lastRegisterKey = (account: string): string => `push.register.${account}`;
 
+/** Platform Tag. */
 function platformTag(): 'android' | 'ios' | null {
   if (Platform.OS === 'android') return 'android';
   if (Platform.OS === 'ios') return 'ios';

@@ -19,6 +19,7 @@ export function ReceiveModeToggle({ mode, onChange, privateReady }: {
 }): React.ReactElement {
   const { link: head, text: sub, border } = usePalette();
   const rowBg = border;
+  /** Segment helper. */
   const segment = (value: ReceiveMode, label: string, disabled: boolean): React.ReactElement => {
     const active = mode === value;
     return (

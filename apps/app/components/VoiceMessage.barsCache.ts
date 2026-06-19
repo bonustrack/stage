@@ -17,6 +17,7 @@ const cache = new Map<string, Entry>();
 /** De-dupe concurrent decodes of the same uri (e.g. two bubbles, same clip). */
 const inflight = new Map<string, Promise<Entry>>();
 
+/** Decode Once. */
 function decodeOnce(uri: string, count: number): Promise<Entry> {
   const existing = inflight.get(uri);
   if (existing) return existing;

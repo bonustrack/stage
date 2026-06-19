@@ -9,16 +9,19 @@ import { xmtpSendAttachment } from './xmtpSend';
 export function useComposerAttach(getLine: () => string, onError: (m: string) => void) {
   const pending = ref<{ file: File; url: string } | null>(null);
 
+  /** Stage helper. */
   function stage(file: File): void {
     if (pending.value) URL.revokeObjectURL(pending.value.url);
     pending.value = { file, url: URL.createObjectURL(file) };
   }
 
+  /** Clear helper. */
   function clear(): void {
     if (pending.value) URL.revokeObjectURL(pending.value.url);
     pending.value = null;
   }
 
+  /** Handle the Paste. */
   function onPaste(ev: ClipboardEvent): void {
     const item = Array.from(ev.clipboardData?.items ?? []).find(i => i.type.startsWith('image/'));
     const file = item?.getAsFile();
@@ -27,6 +30,7 @@ export function useComposerAttach(getLine: () => string, onError: (m: string) =>
     stage(file);
   }
 
+  /** Handle the File Change. */
   function onFileChange(ev: Event): void {
     const input = ev.target as HTMLInputElement;
     const file = input.files?.[0];

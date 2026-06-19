@@ -24,6 +24,7 @@ const store = new Map<string, PeerProfile>();
 const pending = new Set<string>();
 const listeners = new Set<() => void>();
 
+/** Notify helper. */
 function notify(): void {
   listeners.forEach(l => { l(); });
 }
@@ -63,6 +64,7 @@ async function lookupNamesChunk(addrs: string[]): Promise<Record<string, string>
   }
 }
 
+/** Get the Batch. */
 async function fetchBatch(addrs: string[]): Promise<void> {
   try {
     for (let i = 0; i < addrs.length; i += STAMP_LOOKUP_CHUNK) {

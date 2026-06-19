@@ -21,6 +21,7 @@ export interface DividerProps {
   style?: ViewStyle;
 }
 
+/** Border Color. */
 function borderColor(dark: boolean): string {
   return dark ? '#282a2d' : '#e4e4e5';
 }

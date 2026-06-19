@@ -39,6 +39,7 @@ export function useDrawerAccountActions({ head, sub, border, dark, onChanged }: 
 }): { rows: React.ReactElement[]; modal: React.ReactElement | null } {
   const [busy, setBusy] = useState(false);
 
+  /** Handle the New. */
   const onNew = (): void => {
     if (busy) return;
     setBusy(true);

@@ -46,6 +46,7 @@ export function useGroupActions(line: string, invalidateConvMeta: () => void): {
   const [savingDescription, setSavingDescription] = useState(false);
   const [leaving, setLeaving] = useState(false);
 
+  /** Add Member. */
   const addMember = async (onSuccess?: () => void): Promise<void> => {
     const addr = addDraft.trim();
     if (!/^0x[0-9a-fA-F]{40}$/.test(addr) || adding) {
@@ -64,6 +65,7 @@ export function useGroupActions(line: string, invalidateConvMeta: () => void): {
     } finally { setAdding(false); }
   };
 
+  /** Remove Member. */
   const removeMember = (addr: string): void => {
     Alert.alert(
       'Remove member',
@@ -87,6 +89,7 @@ export function useGroupActions(line: string, invalidateConvMeta: () => void): {
     );
   };
 
+  /** Pick Image. */
   const pickImage = async (): Promise<void> => {
     if (uploadingImage) return;
     const r = await ImagePicker.launchImageLibraryAsync({
@@ -108,6 +111,7 @@ export function useGroupActions(line: string, invalidateConvMeta: () => void): {
     } finally { setUploadingImage(false); }
   };
 
+  /** Set the Description. */
   const saveDescription = async (): Promise<void> => {
     const next = descriptionDraft.trim();
     if (savingDescription) return;
@@ -149,6 +153,7 @@ export function useGroupActions(line: string, invalidateConvMeta: () => void): {
     );
   };
 
+  /** Set the Name. */
   const saveName = async (): Promise<void> => {
     const next = draft.trim();
     if (!next || saving) return;

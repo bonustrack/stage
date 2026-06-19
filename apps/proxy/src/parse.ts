@@ -56,6 +56,7 @@ function firstMeta(html: string, keys: string[]): string | undefined {
   return undefined;
 }
 
+/** Title Tag. */
 function titleTag(html: string): string | undefined {
   const m = /<title[^>]*>([\s\S]*?)<\/title>/i.exec(html);
   const inner = m?.[1];

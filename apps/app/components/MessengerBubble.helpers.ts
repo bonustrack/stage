@@ -34,6 +34,7 @@ const CODE_SPAN_RE = /```[\s\S]*?```|`[^`\n]*`/g;
  *  returned unchanged (fast path), so correctly-formatted messages are untouched. */
 export function unescapeBody(text: string): string {
   if (!text.includes('\\n') && !text.includes('\\t') && !text.includes('\\r')) return text;
+  /** Unescape Run. */
   const unescapeRun = (s: string): string =>
     s.replace(/\\r\\n|\\n|\\r/g, '\n').replace(/\\t/g, '\t');
   let out = '';

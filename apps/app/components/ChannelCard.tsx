@@ -29,6 +29,7 @@ export function ChannelCard(
   return <ConvIdCard convId={convId} />;
 }
 
+/** The Conv Id Card component. */
 function ConvIdCard({ convId }: { convId: string }): React.ReactElement {
   const meta = useConvMeta(convId);
   usePeerProfiles([meta.peerAddr]);
@@ -63,6 +64,7 @@ function ConvIdCard({ convId }: { convId: string }): React.ReactElement {
       ? avatarSeed
       : null;
 
+  /** Open helper. */
   const open = (): void => {
     router.push({ pathname: '/xmtp/[convId]', params: { convId } });
   };

@@ -65,6 +65,7 @@ export function RadioGroup(props: RadioGroupProps): React.ReactElement {
   const head = dark ? '#ffffff' : '#000000';
   const border = dark ? '#282a2d' : '#e4e4e5';
 
+  /** Pick helper. */
   function pick(v: string): void {
     if (controlled === undefined) setInternal(v);
     onChange?.(v);

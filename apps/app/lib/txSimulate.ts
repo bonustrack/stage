@@ -74,6 +74,7 @@ interface RpcResponse {
   result?: unknown;
   error?: { message?: string; data?: string };
 }
+/** Rpc helper. */
 async function rpc(chainId: number, method: string, params: unknown[]): Promise<RpcResponse> {
   const res = await fetch(broviderRpc(chainId), {
     method: 'POST',

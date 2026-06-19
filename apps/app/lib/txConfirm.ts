@@ -70,6 +70,7 @@ interface CallLike {
   value?: string;
 }
 
+/** Selector Of. */
 function selectorOf(data?: string): string | undefined {
   if (!data || !/^0x[0-9a-fA-F]{8}/.test(data)) return undefined;
   return data.slice(0, 10).toLowerCase();

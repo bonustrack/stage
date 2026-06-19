@@ -97,8 +97,6 @@ export async function monorepo({ vue = true } = {}) {
     // Pure-TypeScript packages/apps — base preset (type-checked recommended +
     // strict TS escape-hatch bans). The workspace-wide typeAwareBlock supplies
     // the project; strictTsBlock re-states it for its own src/** block.
-    typeAwareBlock("apps/api", "apps/api/tsconfig.eslint.json"),
-    ...scopePreset("apps/api", [baseIgnores(), ...recommended, strictTsBlock({ tsconfigRootDir: ROOT_DIR, project: "apps/api/tsconfig.eslint.json" })]),
     typeAwareBlock("apps/proxy", "apps/proxy/tsconfig.eslint.json"),
     ...scopePreset("apps/proxy", [baseIgnores(), ...recommended, strictTsBlock({ tsconfigRootDir: ROOT_DIR, project: "apps/proxy/tsconfig.eslint.json" })]),
     typeAwareBlock("packages/client", "packages/client/tsconfig.eslint.json"),

@@ -132,6 +132,7 @@ export function SigRequestCard({ req, dark, sub, signing, onSign, consentAllowed
 export function SigReferenceCard({ ref, dark, sub }: {
   ref: SigReference; dark: boolean; sub: string;
 }): React.ReactElement {
+  /** Short helper. */
   const short = (h?: string): string => (h && h.length> 14 ? `${h.slice(0, 8)}…${h.slice(-4)}` : (h ?? '')); const blockRadius = useBlockRadius();
   return (
     <Box radius={blockRadius} background={dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)'} padding={12} margin={{ top: 8 }} gap={6} style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)' }}>

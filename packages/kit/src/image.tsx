@@ -36,6 +36,7 @@ const RADIUS: Record<ImageRadius, number> = {
   xl: 16, '2xl': 20, '3xl': 24, '4xl': 28, full: 999, '100%': 999,
 };
 
+/** Radius Value. */
 function radiusValue(radius?: ImageRadius | number): number | undefined {
   if (radius === undefined) return undefined;
   return typeof radius === 'number' ? radius : RADIUS[radius];

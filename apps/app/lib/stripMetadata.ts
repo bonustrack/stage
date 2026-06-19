@@ -33,6 +33,7 @@ export interface StripResult {
   format: 'jpeg' | 'png' | 'webp' | 'unsupported';
 }
 
+/** U8 helper. */
 const u8 = (a: number | undefined, b: number): boolean => a === b;
 
 /** Read the EXIF Orientation tag (TIFF tag 0x0112) out of a JPEG APP1 payload.
@@ -45,6 +46,7 @@ const u8 = (a: number | undefined, b: number): boolean => a === b;
 function readJpegOrientation(payload: Uint8Array): number | undefined {
   // Bounds-guarded byte read; out-of-range bytes read as 0 (every call below is
   // already length-checked, so this only satisfies noUncheckedIndexedAccess).
+  /** At helper. */
   const at = (o: number): number => payload[o] ?? 0;
   // payload starts with "Exif\0\0" then the TIFF header.
   if (payload.length < 6 + 8) return undefined;
@@ -53,7 +55,9 @@ function readJpegOrientation(payload: Uint8Array): number | undefined {
   const le = at(tiff) === 0x49 && at(tiff + 1) === 0x49; // 'II' little / 'MM' big
   const be = at(tiff) === 0x4d && at(tiff + 1) === 0x4d;
   if (!le && !be) return undefined;
+  /** U16 helper. */
   const u16 = (o: number): number => (le ? at(o) | (at(o + 1) << 8) : (at(o) << 8) | at(o + 1));
+  /** U32 helper. */
   const u32 = (o: number): number => (le
     ? at(o) | (at(o + 1) << 8) | (at(o + 2) << 16) | (at(o + 3) << 24)
     : (at(o) << 24) | (at(o + 1) << 16) | (at(o + 2) << 8) | at(o + 3));
@@ -103,6 +107,7 @@ function buildOrientationApp1(orientation: number): number[] {
  *  pixel re-encode (which would need a native codec / new APK). Orientation is
  *  not sensitive (1..8). Every other EXIF/GPS/ICC byte is gone. */
 function stripJpeg(b: Uint8Array): Uint8Array {
+  /** At helper. */
   const at = (o: number): number => b[o] ?? 0;
   const out: number[] = [0xff, 0xd8];
   let orientation: number | undefined;
@@ -147,7 +152,9 @@ function stripJpeg(b: Uint8Array): Uint8Array {
  *  every other chunk (IHDR, PLTE, IDAT, IEND, color/gamma rendering chunks)
  *  verbatim, including their original CRCs. */
 const PNG_DROP = new Set(['tEXt', 'zTXt', 'iTXt', 'tIME', 'eXIf']);
+/** Strip Png. */
 function stripPng(b: Uint8Array): Uint8Array {
+  /** At helper. */
   const at = (o: number): number => b[o] ?? 0;
   const out: number[] = [];
   for (let k = 0; k < 8; k += 1) out.push(at(k)); // signature
@@ -171,6 +178,7 @@ function stripPng(b: Uint8Array): Uint8Array {
  *  (We also clear the EXIF/XMP flag bits in a VP8X header so decoders don't look
  *  for chunks we removed.) */
 function stripWebp(b: Uint8Array): Uint8Array {
+  /** At helper. */
   const at = (o: number): number => b[o] ?? 0;
   const head = Array.from(b.slice(0, 12)); // 'RIFF' size 'WEBP'
   const body: number[] = [];

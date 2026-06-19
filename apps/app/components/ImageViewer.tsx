@@ -78,6 +78,7 @@ export function ImageViewer({ uri, visible, onClose }: {
 }): React.ReactElement {
   const [saving, setSaving] = useState(false);
 
+  /** Handle the Download. */
   const onDownload = async (): Promise<void> => {
     if (saving || !uri) return;
     setSaving(true);

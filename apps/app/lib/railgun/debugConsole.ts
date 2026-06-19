@@ -24,6 +24,7 @@ let loaded = false;
 
 const subscribers = new Set<() => void>();
 
+/** Notify helper. */
 function notify(): void {
   for (const cb of subscribers) {
     try { cb(); } catch { /* a bad subscriber shouldn't break the rest */ }

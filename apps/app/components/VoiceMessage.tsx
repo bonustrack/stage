@@ -26,6 +26,7 @@ const TRACK_H = 26;
 
 interface Props { uri: string }
 
+/** Fmt helper. */
 function fmt(ms: number | undefined): string {
   if (!ms || ms <= 0) return '0:00';
   const s = Math.round(ms / 1000);
@@ -48,6 +49,7 @@ export function VoiceMessage({ uri }: Props): React.ReactElement {
 
   useEffect(() => () => { void soundRef.current?.unloadAsync().catch(() => undefined); }, []);
 
+  /** Handle the Status. */
   const onStatus = (st: AVPlaybackStatus): void => {
     if (!st.isLoaded) return;
     setPosition(st.positionMillis);
@@ -61,6 +63,7 @@ export function VoiceMessage({ uri }: Props): React.ReactElement {
     }
   };
 
+  /** Toggle helper. */
   const toggle = async (): Promise<void> => {
     try {
       if (soundRef.current) {
@@ -74,6 +77,7 @@ export function VoiceMessage({ uri }: Props): React.ReactElement {
     } catch { /** Network / decode error — stay idle; tap to retry. */ }
   };
 
+  /** Seek To. */
   const seekTo = (x: number): void => {
     if (!soundRef.current || duration <= 0 || barWidth <= 0) return;
     const fraction = Math.max(0, Math.min(1, x / barWidth));

@@ -124,12 +124,14 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
   const busy = txState === 'submitting' || txState === 'pending';
   const canSubmit = !!resolved && tokenAmount > 0 && !!asset;
 
+  /** Handle the Max. */
   const onMax = (): void => {
     if (!ethBalance) return;
     if (mode === 'eth') setAmount(ethBalance);
     else if (tokenPriceUsd) setAmount((Number(ethBalance) * tokenPriceUsd).toFixed(2));
   };
 
+  /** Handle the Submit. */
   const onSubmit = (): void => {
     if (!resolved || tokenAmount <= 0 || busy || !asset) return;
     void (async (): Promise<void> => {

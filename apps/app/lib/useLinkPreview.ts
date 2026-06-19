@@ -43,6 +43,7 @@ export function isX402(r: LinkPreviewResult | null): r is X402Challenge {
   return !!r && 'kind' in r && r.kind === 'x402';
 }
 
+/** Get the Link Preview. */
 async function fetchLinkPreview(url: string): Promise<LinkPreviewResult | null> {
   try {
     const res = await fetch(`${LINK_PREVIEW_BASE}/preview?url=${encodeURIComponent(url)}`, {

@@ -87,6 +87,7 @@ export default function XmtpConversation(): React.ReactElement {
     let timer: ReturnType<typeof setTimeout> | undefined;
     let attempts = 0;
     const sub = Keyboard.addListener('keyboardDidShow', () => { shown = true; });
+    /** Poke helper. */
     const poke = (): void => {
       if (shown || attempts >= 8) return;
       attempts += 1;
@@ -118,6 +119,7 @@ export default function XmtpConversation(): React.ReactElement {
    *  (the store loads async; a bare sync read can miss the first paint). */
   const [archived, setArchived] = useState(convId ? isArchived(convId) : false);
   useEffect(() => {
+    /** Sync helper. */
     const sync = (): void => { setArchived(convId ? isArchived(convId) : false); };
     void loadArchivedIds().then(sync);
     return subscribeArchived(sync);

@@ -37,8 +37,11 @@ interface HomeOverflowMenuProps {
 export function HomeOverflowMenu({ color, onArchived, onNewGroup, onProfile, onSettings }: HomeOverflowMenuProps): React.ReactElement {
   const [open, setOpen] = useState(false);
   const dark = useEffectiveColorScheme() === 'dark';
+  /** Close helper. */
   const close = (): void => { setOpen(false); };
+  /** Run helper. */
   const run = (fn: () => void): void => { close(); fn(); };
+  /** Handle the Copy Address. */
   const onCopyAddress = (): void => { run(() => {
     void getActiveAccount().then(acct => {
       if (!acct?.address) return;
@@ -67,6 +70,7 @@ export function HomeOverflowMenu({ color, onArchived, onNewGroup, onProfile, onS
   );
 }
 
+/** The Overflow Row component. */
 function OverflowRow({ icon, label, color, dark, onPress }: {
   icon: React.ComponentProps<typeof Icon>['name'];
   label: string;

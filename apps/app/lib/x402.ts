@@ -35,6 +35,7 @@ const NETWORKS: Record<string, { chainId: number; label: string }> = {
   'eip155:43114': { chainId: 43114, label: 'Avalanche' },
 };
 
+/** Net Key. */
 function netKey(network: string): string {
   return network.trim().toLowerCase();
 }

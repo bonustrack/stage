@@ -23,6 +23,7 @@ const POLL_MS = 25_000;
 /** How many recent blocks to inspect when a pending-nonce gap is seen. */
 const LOOKBACK_BLOCKS = 3n;
 
+/** Proxy For. */
 const proxyFor = (chainId: number): Hex | null => {
   const net = chainId === 1 ? RAILGUN_NETWORKS.mainnet : RAILGUN_NETWORKS.sepolia;
   const cfg = NETWORK_CONFIG[net.networkName];
@@ -82,6 +83,7 @@ async function pollOnce(accountId: string, eoa: Hex, chainId: number): Promise<v
  *  fn. No-op-safe: swallows RPC errors so a flaky endpoint never breaks the tab. */
 export function startEoaShieldWatch(accountId: string, eoa: string): () => void {
   let stopped = false;
+  /** Tick helper. */
   const tick = (): void => {
     if (stopped) return;
     void Promise.allSettled([

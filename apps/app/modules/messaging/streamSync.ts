@@ -19,6 +19,7 @@ import { invalidateConvMeta } from './queries';
  *  substring so we don't depend on the exact version suffix. */
 const GROUP_UPDATED = 'group_updated';
 
+/** Whether Group Updated. */
 function isGroupUpdated(m: StreamMsg): boolean {
   const id = (m.msg as unknown as { contentTypeId?: string }).contentTypeId;
   return typeof id === 'string' && id.includes(GROUP_UPDATED);

@@ -15,6 +15,7 @@ import type { PendingAction } from '../../lib/railgun/types';
 
 interface Pal { head: string; sub: string; border: string }
 
+/** Phase Label. */
 const phaseLabel = (p: PendingAction['phase']): string => {
   switch (p) {
     case 'proving': return 'submitting…';

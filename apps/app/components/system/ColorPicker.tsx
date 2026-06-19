@@ -17,6 +17,7 @@ import { hexToHsv, hsvToHex } from './colorMath';
 
 const TRACK_H = 26;
 
+/** The Track component. */
 function Track({ colors, thumb, onFraction, p }: {
   colors: string[]; thumb: number;
   onFraction: (f: number) => void; p: GalleryPalette;
@@ -25,6 +26,7 @@ function Track({ colors, thumb, onFraction, p }: {
   // GestureDetector view (the whole track), so fraction is reliable mid-drag.
   // Default 1 (not 0) avoids a divide-by-zero no-move before first layout.
   const widthRef = useRef(1);
+  /** Emit helper. */
   const emit = (x: number): void => {
     onFraction(Math.max(0, Math.min(1, x / widthRef.current)));
   };
@@ -62,6 +64,7 @@ function Track({ colors, thumb, onFraction, p }: {
   );
 }
 
+/** Hue Stops. */
 function hueStops(): string[] {
   return Array.from({ length: 24 }, (_, i) => hsvToHex((i / 23) * 360, 1, 1));
 }
@@ -74,6 +77,7 @@ export function ColorPicker({ value, onChange, p }: {
   const [text, setText] = useState<string | null>(null);
   const hex = hsvToHex(hsv.h, hsv.s, hsv.v);
 
+  /** Apply helper. */
   const apply = (h: number, s: number, v: number): void => {
     setHsv({ h, s, v });
     setText(null);
@@ -129,6 +133,7 @@ export function ColorPicker({ value, onChange, p }: {
   );
 }
 
+/** The Label component. */
 function Label({ text, p }: { text: string; p: GalleryPalette }): React.ReactElement {
   return (
     <Text weight="semibold" size="xs" color={p.sub} style={{ marginTop: 16, marginBottom: 6 }}>

@@ -43,6 +43,7 @@ export function isEngineReady(): boolean { return engineReady; }
 function createArtifactStore(): ArtifactStore {
   const { ArtifactStore } = requireWalletApi();
   const root = new Directory(Paths.document, ARTIFACT_DIR);
+  /** Abs helper. */
   const abs = (p: string): string => `${root.uri.replace(/\/$/, '')}/${p}`;
   return new ArtifactStore(
     async (path: string) => {
@@ -65,6 +66,7 @@ function createArtifactStore(): ArtifactStore {
  *  asyncstorage-down) is a second-pass item. The engine doesn't touch the db
  *  until a wallet op runs (only possible once the native prover is present). */
 interface EngineDb { location: string }
+/** Create the Engine Db. */
 function createEngineDb(): EngineDb {
   const d = new Directory(Paths.document, ENGINE_DB_DIR);
   if (!d.exists) d.create({ intermediates: true });

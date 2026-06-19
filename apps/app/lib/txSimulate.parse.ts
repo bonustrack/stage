@@ -118,6 +118,7 @@ export function parseAssetChanges(
 ): { in: AssetMove[]; out: AssetMove[] } {
   const me = from.toLowerCase();
   const net = new Map<string, bigint>(); // '' = native, else lowercased contract
+  /** Add helper. */
   const add = (token: string, delta: bigint): void => {
     net.set(token, (net.get(token) ?? 0n) + delta);
   };

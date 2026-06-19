@@ -21,6 +21,7 @@ import { useDebugConsole } from '../../lib/railgun/debugConsole';
 import { BridgePingProbe } from './WalletScreen.private.ping';
 import { RailgunDebugPanel } from './WalletScreen.private.debug';
 
+/** Short0zk helper. */
 const short0zk = (a: string): string => (a.length> 14 ? `${a.slice(0, 8)}…${a.slice(-4)}` : a);
 
 /** Wallet view showing the user's private (Railgun) balances and actions. */

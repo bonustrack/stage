@@ -46,6 +46,7 @@ export function isBridgeAvailable(): boolean {
   return isNodejsMobilePresent();
 }
 
+/** Channel helper. */
 function channel(): NodejsChannel | null {
   return loadNodejsMobile()?.channel ?? null;
 }
@@ -144,6 +145,7 @@ export function bridgeListen(
 ): () => void {
   const ch = channel();
   if (!ch) return () => undefined;
+  /** Handler helper. */
   const handler = (...args: unknown[]): void => { cb(args[0]); };
   ch.addListener(event, handler);
   return () => ch.removeListener?.(event, handler);

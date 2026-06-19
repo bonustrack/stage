@@ -73,6 +73,7 @@ export function ChannelsList({
   // tapping it swaps the whole topnav for a full-width search field. Closing
   // clears the query so the list returns to its full state.
   const [searchOpen, setSearchOpen] = useState(false);
+  /** Close Search. */
   const closeSearch = () => { setSearchOpen(false); setQuery(''); };
 
   /** Home's contextual right-slot (search / requests / overflow), published to

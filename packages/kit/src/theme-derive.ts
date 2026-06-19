@@ -57,6 +57,7 @@ export const SUCCESS_FIXED = '#57b375';
 
 /* ---- hex helpers (pure, #rrggbb only) ---- */
 
+/** Clamp255 helper. */
 function clamp255(n: number): number { return n < 0 ? 0 : n > 255 ? 255 : Math.round(n); }
 
 /** Parse `#rrggbb` -> [r,g,b]. Returns null on malformed input. */
@@ -67,7 +68,9 @@ export function parseHex(hex: string): [number, number, number] | null {
   return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
 }
 
+/** To Hex. */
 function toHex([r, g, b]: [number, number, number]): string {
+  /** H helper. */
   const h = (n: number): string => clamp255(n).toString(16).padStart(2, '0');
   return `#${h(r)}${h(g)}${h(b)}`;
 }
@@ -145,6 +148,7 @@ const LEGACY: Record<Scheme, DerivedPalette> = {
   },
 };
 
+/** Seed Equals. */
 function seedEquals(a: ThemeSeed, b: ThemeSeed): boolean {
   return a.grayscale.toLowerCase() === b.grayscale.toLowerCase()
     && a.accent.toLowerCase() === b.accent.toLowerCase()

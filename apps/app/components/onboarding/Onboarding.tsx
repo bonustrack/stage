@@ -125,6 +125,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
     setStep('passkey');
   };
 
+  /** Handle the Restore Next. */
   const onRestoreNext = (): void => {
     const p = phrase.trim();
     if (!p) { setErr('Enter your recovery phrase.'); return; }

@@ -40,6 +40,7 @@ const DENSITY_OPTS: readonly Density[] = ['compact', 'normal', 'spacious'];
 const RADIUS_OPTS: readonly RadiusName[] = ['pill', 'round', 'soft', 'sharp'];
 const BASE_SIZE_OPTS: readonly BaseSize[] = [14, 15, 16, 17, 18];
 
+/** The Seed Swatch component. */
 function SeedSwatch({ name, seedKey, value, scheme, p }: {
   name: string; seedKey: SeedColorKey; value: string;
   scheme: 'light' | 'dark'; p: GalleryPalette;
@@ -49,6 +50,7 @@ function SeedSwatch({ name, seedKey, value, scheme, p }: {
   const [pending, setPending] = useState<string | null>(null);
   const shown = draft ?? value;
   const invalid = draft != null && !isHex(draft);
+  /** Close Picker. */
   const closePicker = (): void => { setPicking(false); setPending(null); };
   return (
     <Row margin={{ top: 12 }} gap={14} align="center">
@@ -123,6 +125,7 @@ export function ColorTokens({ p }: { p: GalleryPalette }): React.ReactElement {
   const scheme = useEffectiveColorScheme();
   const seeds = useThemeSeeds();
   const seed = seeds[scheme];
+  /** Seed Value. */
   const seedValue = (key: SeedColorKey): string =>
     key === 'background' ? seed.surface.background
       : key === 'foreground' ? seed.surface.foreground

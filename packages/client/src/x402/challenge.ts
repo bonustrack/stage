@@ -57,6 +57,7 @@ interface RawAccept {
   extra?: unknown;
 }
 
+/** Str helper. */
 function str(v: unknown): string | undefined {
   return typeof v === 'string' && v.length > 0 ? v : undefined;
 }

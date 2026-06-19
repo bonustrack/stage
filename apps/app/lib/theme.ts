@@ -62,6 +62,7 @@ let cached: ThemePreference = 'system';
 let loaded = false;
 const listeners = new Set<(p: ThemePreference) => void>();
 
+/** Emit helper. */
 function emit(p: ThemePreference): void {
   cached = p;
   for (const l of listeners) l(p);
@@ -90,6 +91,7 @@ export function useThemePreference(): ThemePreference {
   const [pref, setPref] = useState<ThemePreference>(cached);
   useEffect(() => {
     void ensureLoaded();
+    /** Fn helper. */
     const fn = (p: ThemePreference): void => { setPref(p); };
     listeners.add(fn);
     return (): void => { listeners.delete(fn); };
@@ -126,6 +128,7 @@ function useOverridesVersion(): number {
   useEffect(() => {
     loadOverrides();
     loadRadius();
+    /** Bump helper. */
     const bump = (): void => { setV((n) => n + 1); };
     // Radius edits also push into the kit Button default here so every palette
     // consumer (i.e. every screen) repaints its buttons with the new radius.

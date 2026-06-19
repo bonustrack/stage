@@ -1,8 +1,8 @@
 // @stage-labs/config — base ESLint flat-config preset.
 //
 // This centralises the rules that were previously duplicated, byte-for-byte,
-// across the pure-TypeScript packages/apps (packages/client, apps/api,
-// apps/proxy) and that the react-native / vue presets build on. It changes NO
+// across the pure-TypeScript packages/apps (packages/client, apps/proxy) and
+// that the react-native / vue presets build on. It changes NO
 // behaviour: it only relocates the exact same flat-config blocks.
 //
 // Consumers compose the exported pieces with `tseslint.config(...)`, e.g.:
@@ -20,18 +20,30 @@ import jsdoc from "eslint-plugin-jsdoc";
  *  counting blank lines and comments. Split a file rather than crossing it. */
 export const MAX_LINES = ["error", { max: 400, skipBlankLines: false, skipComments: false }];
 
-// REQUIRE_EXPORTED_JSDOC — every EXPORTED function needs a leading
-// JSDoc/description comment. Uses eslint-plugin-jsdoc's `require-jsdoc`, scoped
-// to exported declarations: named exported `function`s + exported class methods
-// (via `require`), and exported arrow/function-expression consts + exported
-// default function/arrow (via `contexts`). `publicOnly` restricts it to things
-// reachable through an `export`. Only a non-empty description is required —
-// `require` does NOT force @param/@returns tags, so a single `/** … */` line
-// satisfies the rule. Trivial accessors/constructors stay exempt.
-export const REQUIRE_EXPORTED_JSDOC = [
+// REQUIRE_JSDOC — EVERY function needs a leading JSDoc/description comment, not
+// just exported ones. Uses eslint-plugin-jsdoc's `require-jsdoc` with
+// `publicOnly: false`, so the rule fires regardless of whether a function is
+// reachable through an `export`:
+//   - every named `function` declaration (top-level or nested);
+//   - every class method;
+//   - every arrow-function / function-expression bound to a name via a
+//     `const`/`let`/`var` declarator (the "named function" shape), exported or
+//     not, at module scope or nested.
+// Bare anonymous callbacks passed inline as call/JSX arguments (e.g.
+// `arr.map(x => x + 1)`, `tabBarIcon: ({color}) => <Icon/>`) are intentionally
+// NOT required to carry JSDoc — a doc comment can't be placed on them cleanly
+// and they are implementation detail of their enclosing (already-documented)
+// function. That is why `FunctionExpression`/`ArrowFunctionExpression` stay off
+// under `require` (which would flag those inline forms) and are instead matched
+// via `contexts` only when bound to a declarator.
+// Only a non-empty description is required — `require` does NOT force
+// @param/@returns tags, so a single `/** … */` line satisfies the rule.
+// Trivial accessors/constructors stay exempt (checkConstructors/checkGetters/
+// checkSetters all false).
+export const REQUIRE_JSDOC = [
   "error",
   {
-    publicOnly: true,
+    publicOnly: false,
     enableFixer: false,
     checkConstructors: false,
     checkGetters: false,
@@ -45,10 +57,8 @@ export const REQUIRE_EXPORTED_JSDOC = [
       MethodDefinition: true,
     },
     contexts: [
-      "ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > ArrowFunctionExpression",
-      "ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > FunctionExpression",
-      "ExportDefaultDeclaration > ArrowFunctionExpression",
-      "ExportDefaultDeclaration > FunctionExpression",
+      "VariableDeclaration > VariableDeclarator > ArrowFunctionExpression",
+      "VariableDeclaration > VariableDeclarator > FunctionExpression",
     ],
   },
 ];
@@ -142,10 +152,10 @@ export function ignores(extra = []) {
   return { ignores: ["node_modules/**", "dist/**", ...extra] };
 }
 
-/** The shared "strict TS" block applied to `src/**` in packages/client,
- *  apps/api and apps/proxy: turn on type-aware linting, ban the escape hatches
- *  (`any` / ts-comment / non-null `!`), cap file length, and require exported
- *  JSDoc. `tsconfigRootDir` anchors the projectService tsconfig lookup at the
+/** The shared "strict TS" block applied to `src/**` in packages/client and
+ *  apps/proxy: turn on type-aware linting, ban the escape hatches
+ *  (`any` / ts-comment / non-null `!`), cap file length, and require a JSDoc
+ *  comment on every function. `tsconfigRootDir` anchors the projectService tsconfig lookup at the
  *  repo root. Override `files` for packages whose sources live elsewhere. */
 export function strictTsBlock({ files = ["src/**/*.{ts,tsx}"], tsconfigRootDir, project } = {}) {
   return {
@@ -159,8 +169,8 @@ export function strictTsBlock({ files = ["src/**/*.{ts,tsx}"], tsconfigRootDir, 
       ...NO_ESCAPE_HATCHES,
       // `error`: cap files at 400 lines. Split a file rather than crossing it.
       "max-lines": MAX_LINES,
-      // Every exported function/method needs a leading JSDoc description.
-      "jsdoc/require-jsdoc": REQUIRE_EXPORTED_JSDOC,
+      // Every function/method (exported or not) needs a leading JSDoc description.
+      "jsdoc/require-jsdoc": REQUIRE_JSDOC,
     },
   };
 }

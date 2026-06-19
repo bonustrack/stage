@@ -11,6 +11,7 @@ import { Directory, File, Paths } from 'expo-file-system';
  *  the composer from janking on every character. */
 const PERSIST_DEBOUNCE_MS = 800;
 
+/** Drafts File. */
 function draftsFile(): File {
   const dir = new Directory(Paths.document, 'metro');
   if (!dir.exists) dir.create({ intermediates: true });
@@ -36,6 +37,7 @@ let loaded = false;
  *  resolved, so a second caller saw an empty `drafts` map mid-read. */
 let loading: Promise<void> | null = null;
 const listeners = new Set<() => void>();
+/** Notify helper. */
 const notify = (): void => { listeners.forEach(l => { l(); }); };
 
 /** Hydrate drafts from disk once; concurrent callers await the same read. */
@@ -110,6 +112,7 @@ export function useDraftsVersion(): number {
   const [version, bump] = useReducer((x: number) => x + 1, 0);
   useEffect(() => {
     void loadDrafts();
+    /** Fn helper. */
     const fn = (): void => { bump(); };
     listeners.add(fn);
     return () => { listeners.delete(fn); };

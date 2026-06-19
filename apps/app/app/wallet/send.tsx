@@ -54,6 +54,7 @@ export default function WalletSend(): React.ReactElement {
     touched.current = true;
     setToken(topToken);
   }, [topToken]);
+  /** Handle the Change. */
   const onChange = (v: TokenChoice): void => { touched.current = true; setToken(v); };
 
   const balance = useSelectedBalance('combined', token);

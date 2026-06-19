@@ -35,6 +35,7 @@ export interface MarkdownProps {
 function markdownStyles(fg: string, link: string, dark: boolean): Record<string, object> {
   const codeBg = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
   const lh = 23;
+  /** H helper. */
   const h = (fontSize: number, lineHeight: number): object => ({
     color: fg,
     fontSize,

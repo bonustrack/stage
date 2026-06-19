@@ -151,6 +151,7 @@ async function fetchDirect(ref: GithubRef): Promise<GithubDiff> {
   };
 }
 
+/** Get the Github Diff. */
 async function fetchGithubDiff(ref: GithubRef): Promise<GithubDiff> {
   try { return await fetchViaProxy(ref); }
   catch { return await fetchDirect(ref); }

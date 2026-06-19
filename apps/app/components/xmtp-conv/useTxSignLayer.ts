@@ -41,6 +41,7 @@ export function useTxSignLayer(activeLine: string) {
    *  button. The actual signing only runs from the confirm sheet's onPress. */
   const onSign = useCallback((requestId: string, req: SignatureRequestContent) => {
     const summary = deriveSignSummary(req);
+    /** Do Sign. */
     const doSign = (): void => {
     setSigningIds(prev => new Set(prev).add(requestId));
     void (async () => {

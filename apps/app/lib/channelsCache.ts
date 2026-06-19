@@ -56,6 +56,7 @@ let activeStoreUnsub: (() => void) | null = null;
  *  A single scheduled flag coalesces rapid successive writes into ONE flush,
  *  and the flush reads the LATEST rows once (no per-write replay, no loop). */
 let notifyScheduled = false;
+/** Notify Active. */
 function notifyActive(): void {
   if (notifyScheduled) return;
   notifyScheduled = true;
@@ -66,6 +67,7 @@ function notifyActive(): void {
   });
 }
 
+/** File Name For. */
 function fileNameFor(id: string): string {
   /** Sanitise the id for a filename (account ids are lowercased addresses, but
    *  be defensive). The legacy single-account file name is preserved for the
@@ -75,6 +77,7 @@ function fileNameFor(id: string): string {
   return `channels-cache.${safe}.json`;
 }
 
+/** Set the For. */
 function storeFor(id: string): PersistentStore<CachedRow[]> {
   let s = stores.get(id);
   /** Debounced: this store is written per streamed message (setRows write-through)
@@ -84,6 +87,7 @@ function storeFor(id: string): PersistentStore<CachedRow[]> {
   return s;
 }
 
+/** Active Store. */
 function activeStore(): PersistentStore<CachedRow[]> { return storeFor(activeId); }
 
 /** Synchronous snapshot of the active account id — for react-query keys that

@@ -40,6 +40,7 @@ function PollQuestionBlock({ q, qi, sub, dark, votes, own, onVote, openAnswers, 
   const multi = q.multiSelect === true;
   const options = Array.isArray(q.options) ? q.options : [];
   const total = options.reduce((n, _o, i) => n + (votes?.get(i)?.size ?? 0), 0);
+  /** Tap helper. */
   const tap = (idx: number): void => { onVote(idx, (own?.has(idx) ?? false) ? 'removed' : 'added'); };
   const restBg = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
   const pressBg = dark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.08)';

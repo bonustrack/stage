@@ -42,6 +42,7 @@ const IMG_CACHE_TTL = 7 * 24 * 60 * 60; // 7 days, in seconds
 // rejected. Not a security boundary (the header is trivially forgeable) - just
 // a bandwidth/abuse speed-bump on top of the per-IP rate limit + SSRF guards.
 const CLIENT_HEADER = 'x-stage-client';
+/** Whether Client Header. */
 function hasClientHeader(request: Request): boolean {
   return request.headers.get(CLIENT_HEADER) === '1';
 }
@@ -54,6 +55,7 @@ const RL_WINDOW_MS = 60_000;
 const RL_MAX = 60;
 const hits = new Map<string, { count: number; reset: number }>();
 
+/** Rate Limited. */
 function rateLimited(ip: string): boolean {
   const now = Date.now();
   const e = hits.get(ip);
@@ -65,6 +67,7 @@ function rateLimited(ip: string): boolean {
   return e.count > RL_MAX;
 }
 
+/** Client Ip. */
 function clientIp(request: Request): string {
   return request.headers.get('cf-connecting-ip')
     ?? request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
@@ -76,6 +79,7 @@ const BASE_HEADERS = {
   'access-control-allow-origin': '*',
 };
 
+/** Json helper. */
 function json(body: unknown, status = 200, extra: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -83,6 +87,7 @@ function json(body: unknown, status = 200, extra: Record<string, string> = {}): 
   });
 }
 
+/** Handle the Preview. */
 async function handlePreview(request: Request, ctx: ExecutionContext): Promise<Response> {
   if (!hasClientHeader(request)) return json({ error: 'forbidden' }, 403);
   if (rateLimited(clientIp(request))) return json({ error: 'rate limited' }, 429);
@@ -124,6 +129,7 @@ async function handlePreview(request: Request, ctx: ExecutionContext): Promise<R
   }
 }
 
+/** Handle the Img. */
 async function handleImg(request: Request, ctx: ExecutionContext): Promise<Response> {
   // NOTE: /img intentionally does NOT require the x-stage-client header. React
   // Native's <Image> can't attach custom headers to its GETs (flaky on Android),
@@ -178,6 +184,7 @@ async function handleImg(request: Request, ctx: ExecutionContext): Promise<Respo
 // caller's signed X-PAYMENT header server-side (behind the SSRF guards) so the
 // upstream verifies + settles. Used by the x402 app worker, which can't make the
 // settle fetch from the device under our IP-privacy posture. Not cached.
+/** Handle the Settle. */
 async function handleSettle(request: Request): Promise<Response> {
   if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405);
   if (rateLimited(clientIp(request))) return json({ error: 'rate limited' }, 429);

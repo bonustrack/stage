@@ -104,8 +104,10 @@ export function BubbleActionMenu({
   const maxTop = screenH - BOTTOM_MARGIN - unitH;
   const stripTop = Math.max(TOP_MARGIN, Math.min(anchor.y, maxTop));
 
+  /** React And Close. */
   const reactAndClose = (e: string): void => { onReact(e); onClose(); };
 
+  /** The Action Row component. */
   const ActionRow = ({ icon, label, color, onPress }: {
     icon: React.ComponentProps<typeof Icon>['name']; label: string; color?: string; onPress: () => void;
   }): React.ReactElement => (

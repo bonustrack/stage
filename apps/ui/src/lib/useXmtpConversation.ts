@@ -73,6 +73,7 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
 
   watchEffect(() => { void loadConvMeta(); });
 
+  /** Get the Conv Meta. */
   async function loadConvMeta(): Promise<void> {
     if (!convId.value || !line.value) return;
     peerAddress.value = null;
@@ -100,6 +101,7 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
     }
   });
 
+  /** Open Header. */
   function openHeader(): void {
     if (peerAddress.value) void router.push(`/user/${peerAddress.value}`);
     else if (convId.value) void router.push(`/group/${convId.value}`);
@@ -137,6 +139,7 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
   const highlightId = ref<string | null>(null);
   const scrolledToTarget = ref(false);
 
+  /** Scroll To Target Message. */
   function scrollToTargetMessage(): boolean {
     const id = targetMsgId.value;
     if (!id || scrolledToTarget.value) return false;
@@ -153,6 +156,7 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
   /** Reset the one-shot scroll guard when navigating to a different permalink. */
   watch([convId, targetMsgId], () => { scrolledToTarget.value = false; });
 
+  /** Scroll To Bottom. */
   function scrollToBottom(): void {
     if (scroller.value) scroller.value.scrollTop = scroller.value.scrollHeight;
   }

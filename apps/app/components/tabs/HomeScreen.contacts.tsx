@@ -89,6 +89,7 @@ export function HomeContactResults(
     });
   }, [existing, q]);
 
+  /** Open helper. */
   const open = (address: string, convId?: string): void => {
     if (opening) return;
     const key = address.toLowerCase();

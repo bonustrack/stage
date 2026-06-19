@@ -73,6 +73,7 @@ export function TabsPager(): React.ReactElement {
    *  (rotation), never on a bare pathname update. */
   const lastWidth = useSharedValue(width);
 
+  /** Navigate helper. */
   const navigate = (i: number): void => {
     const name = TAB_ORDER[i];
     if (name) router.navigate(TAB_HREF[name]);

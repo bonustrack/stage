@@ -45,6 +45,7 @@ export function GuardianEditor({
   const { head, sub, link } = pal;
   const [entry, setEntry] = useState('');
 
+  /** Add helper. */
   const add = (): void => {
     const next = dedupeGuardians([...guardians, entry]);
     if (next.length !== guardians.length) {
@@ -54,6 +55,7 @@ export function GuardianEditor({
     }
     setEntry('');
   };
+  /** Remove helper. */
   const remove = (addr: string): void => {
     const next = guardians.filter(g => g !== addr);
     onChange(next);

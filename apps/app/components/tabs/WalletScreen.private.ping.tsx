@@ -52,6 +52,7 @@ interface LogLine { ms: number; line: string }
 /** Render a single log line to the plain text used for selection + clipboard. */
 function fmtLine(l: LogLine): string { return `+${l.ms}ms  ${l.line}`; }
 
+/** Tone helper. */
 function tone(line: string, sub: string): string {
   if (line.includes('✗')) return DANGER;
   if (line.includes('✓') || line.startsWith('reply ← pong')) return SUCCESS;
@@ -129,6 +130,7 @@ interface BatchedLog {
   replace: (lines: LogLine[]) => void;
 }
 
+/** Hook: use Batched Log. */
 function useBatchedLog(): BatchedLog {
   const [lines, setLines] = useState<LogLine[]>([]);
   const buf = useRef<LogLine[]>([]);
@@ -145,6 +147,7 @@ function useBatchedLog(): BatchedLog {
   // FLUSH_MS (setTimeout typing is portable across RN/node, unlike setInterval).
   useEffect(() => {
     let live = true;
+    /** Tick helper. */
     const tick = (): void => {
       if (!live) return;
       flush();

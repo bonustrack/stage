@@ -65,6 +65,7 @@ export function useGroupDetail(
    *  shared stamp cache resolves. */
   useEffect(() => {
     if (sortedMembers.length === 0) return;
+    /** Recompute helper. */
     const recompute = (): void => {
       const next: Names = {};
       for (const m of sortedMembers) next[m] = getPeerName(m) ?? null;

@@ -73,6 +73,7 @@ export function ChannelMenu({
   const head = pal.link;
   const danger = pal.danger;
 
+  /** Run helper. */
   const run = (fn: () => void): void => { onClose(); fn(); };
 
   /** Search needs the sheet to be GONE first: this AppModal is a native RN
@@ -196,6 +197,7 @@ export function ChannelMenu({
   );
 }
 
+/** The Menu Row component. */
 function MenuRow({ icon, label, color, dark, onPress }: {
   icon: React.ComponentProps<typeof Icon>['name'];
   label: string;

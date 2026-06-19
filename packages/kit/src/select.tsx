@@ -101,12 +101,14 @@ export function Select(props: SelectProps): React.ReactElement {
 
   const current = options.find((o) => o.value === selected);
 
+  /** Pick helper. */
   function pick(v: string): void {
     if (controlled === undefined) setInternal(v);
     onChange?.(v);
     setOpen(false);
   }
 
+  /** Clear helper. */
   function clear(): void {
     if (controlled === undefined) setInternal(undefined);
     onChange?.('');

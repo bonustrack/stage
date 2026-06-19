@@ -81,6 +81,7 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
     else flash('Could not update labels. Try again.');
   };
 
+  /** Add helper. */
   const add = async (value: string): Promise<void> => {
     const clean = value.trim();
     if (!clean || busy) return;
@@ -92,6 +93,7 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
     } catch (e) { reportError(e); } finally { setBusy(false); }
   };
 
+  /** Remove helper. */
   const remove = async (label: string): Promise<void> => {
     if (removing) return;
     setRemoving(label);

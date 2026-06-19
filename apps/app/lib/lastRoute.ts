@@ -96,6 +96,7 @@ function isRestorable(path: string): boolean {
   return true;
 }
 
+/** Persist helper. */
 function persist(path: string): void {
   void AsyncStorage.setItem(STORAGE_KEY, path).catch(() => { /* best-effort */ });
 }
@@ -226,6 +227,7 @@ export function useRestoreGate(): RestoreGate {
     if (!saved) { restoreState = 'done'; persistResumed = true; return; }
     // Find the card stack that holds `(tabs)`: it's either the root state itself
     // or its nested `state` (expo-router wraps everything under a `__root`).
+    /** Stack Has Tabs. */
     const stackHasTabs = (s?: { routes?: { name: string; state?: unknown }[] }): boolean =>
       Array.isArray(s?.routes) && s.routes.some((r) => r.name === '(tabs)');
     const rootHasTabs =
