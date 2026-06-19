@@ -164,13 +164,7 @@ export function legacyVariantToColor(v: ButtonVariant): {
   }
 }
 
-/** @deprecated Back-compat shim: resolve colours straight from a legacy
- *  `variant`. Retained for any external importer. */
-export function variantColors(variant: ButtonVariant, dark: boolean): VariantColors {
-  const { color, variant: cv } = legacyVariantToColor(variant);
-  return resolveColors(color, cv, dark);
-}
-
+/** Build the text style for a button label at a given size and color. */
 export function textLabelStyle(spec: SizeSpec, color: string): TextStyle {
   return {
     color,

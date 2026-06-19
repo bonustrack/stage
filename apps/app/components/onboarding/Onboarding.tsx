@@ -46,6 +46,7 @@ export interface OnboardingProps {
   onDone: () => void;
 }
 
+/** Renders the first-run onboarding flow that introduces the app and creates the wallet. */
 export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const pal = usePalette();
@@ -147,7 +148,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
               tintBg={pal.primary} tintFg={pal.bg}
               label="Create new wallet"
               disabled={busy}
-              onPress={() => toPasskey({ kind: 'create' })}
+              onPress={() => { toPasskey({ kind: 'create' }); }}
             />
             <Button
               dark={dark} variant="secondary" size="lg" fullWidth

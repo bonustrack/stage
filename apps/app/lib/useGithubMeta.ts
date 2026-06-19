@@ -63,10 +63,14 @@ async function fetchGithubMeta(ref: GithubRef): Promise<GithubMeta | null> {
   }
 }
 
+/** Hook fetching cached metadata (title, stats) for a GitHub ref. */
 export function useGithubMeta(ref: GithubRef | null): GithubMeta | null {
   const { data } = useQuery({
     queryKey: ['githubMeta', ref?.url ?? ''],
-    queryFn: () => fetchGithubMeta(ref as GithubRef),
+    queryFn: () => {
+      if (ref === null) throw new Error('useGithubMeta: queryFn ran without a ref');
+      return fetchGithubMeta(ref);
+    },
     enabled: !!ref,
     // Cache hard: respect the 60/hr unauthed limit. No background refetch.
     staleTime: 60 * 60_000,

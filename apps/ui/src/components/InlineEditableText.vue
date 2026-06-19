@@ -25,7 +25,7 @@ const props = withDefaults(defineProps<{
   readonly: false,
   valueClass: 'text-xl text-metro-head-light dark:text-metro-head-dark font-head',
 });
-const emit = defineEmits<{ (e: 'save', next: string): void }>();
+const emit = defineEmits<(e: 'save', next: string) => void>();
 
 const editing = ref(false);
 const draft = ref(props.value);

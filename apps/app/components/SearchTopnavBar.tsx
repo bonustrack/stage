@@ -53,7 +53,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
           backgroundColor: 'transparent', minHeight: 0, borderWidth: 0 }}
 />
       {props.query.length> 0 ? (
-        <Pressable onPress={() => props.setQuery('')} hitSlop={8}>
+        <Pressable onPress={() => { props.setQuery(''); }} hitSlop={8}>
           <Icon name="x" size={18} color={sub}/>
         </Pressable>
       ) : null}

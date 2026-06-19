@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "_comment": "@stage-labs/config — shared TypeScript options for the Vue app (apps/ui), layered ON TOP of @vue/tsconfig/tsconfig.dom.json. The consumer extends BOTH (array extends, this one last so it wins): [\"@vue/tsconfig/tsconfig.dom.json\", \"@stage-labs/config/tsconfig/vue.json\"]. Package-specific `types`/`baseUrl`/`paths`/`include` stay in the consumer. The full strict family + noUncheckedIndexedAccess + noImplicitOverride match the base so strictness is uniform with the pure-TS packages.",
+  "compilerOptions": {
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "useUnknownInCatchVariables": true,
+
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true
+  }
+}

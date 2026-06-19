@@ -12,6 +12,7 @@ interface DiffMdPalette {
   link: string;
 }
 
+/** Build the react-native-markdown-display style map for the diff page's PR/issue body. */
 export function diffMarkdownStyles(p: DiffMdPalette, dark: boolean): Record<string, object> {
   const fg = p.text;
   const codeBg = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';

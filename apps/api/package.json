@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "start": "bun src/index.ts",
-    "lint": "eslint src/"
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "eslint": "^10.3.0",
-    "typescript-eslint": "^8.59.2"
+    "@stage-labs/config": "workspace:*",
+    "@types/bun": "^1.2.0",
+    "typescript": "~5.9.2"
   }
 }

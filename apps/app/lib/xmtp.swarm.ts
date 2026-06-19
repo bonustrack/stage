@@ -134,6 +134,7 @@ export async function sanitizeFileUri(
  *  but currently 413 at swarmy until that cap is lifted (or the store changes). */
 const SWARM_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 
+/** Upload an already-encrypted file to Swarm via the daemon proxy and return its public gateway URL. */
 export async function uploadEncryptedToIpfs(encryptedFileUri: string, filename: string): Promise<string> {
   /** Read the encrypted bytes off disk; `fetch(file://)` gives us a Blob we can
    *  ship as a raw binary body (the proxy reads `req.arrayBuffer()`). */

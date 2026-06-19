@@ -13,7 +13,6 @@ import {
 export {
   isPeerResolved,
   getPeerName,
-  type PeerProfile,
 } from '@stage-labs/client/identity/peerProfiles';
 
 /** Subscribe + fetch: re-renders the caller when the batch resolves. Returns a
@@ -23,7 +22,7 @@ export function usePeerProfiles(addresses: (string | null | undefined)[]): numbe
   const key = addresses.filter(Boolean).join(',');
   useEffect(() => {
     ensurePeerProfiles(addresses);
-    return subscribePeerProfiles(() => bump());
+    return subscribePeerProfiles(() => { bump(); });
   }, [key]);
   return version;
 }

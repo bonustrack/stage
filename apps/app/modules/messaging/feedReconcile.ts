@@ -73,7 +73,7 @@ export async function reconcileOnOpen(line: string): Promise<void> {
     const storeLatest = envelopeOfXmtpMessage(storeLatestMsg, line);
     if (isMetroControlBody(storeLatest.text)) return; // control DM, not a visible tail
     const feed = feedLatest(line);
-    if (feed && feed.id === storeLatest.id) return; // converged - nothing to heal
+    if (feed?.id === storeLatest.id) return; // converged - nothing to heal
     /** Divergence: the store has a newer (or different) tail than the open feed.
      *  Reload the full first page from the now-synced local store. */
     const page = await conv.messages({ limit: PAGE_SIZE });

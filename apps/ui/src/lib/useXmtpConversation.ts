@@ -43,6 +43,7 @@ export interface XmtpConversation {
   onActionCopyLink: () => void;
 }
 
+/** Hook providing XMTP conversation-view state: feed, header metadata, optimistic bubbles, and bubble actions. */
 export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConversation {
   const route = useRoute();
   const router = useRouter();
@@ -70,7 +71,9 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
       .map(([, addr]) => addr),
   );
 
-  watchEffect(async () => {
+  watchEffect(() => { void loadConvMeta(); });
+
+  async function loadConvMeta(): Promise<void> {
     if (!convId.value || !line.value) return;
     peerAddress.value = null;
     groupName.value = '';
@@ -84,7 +87,7 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
       groupName.value = typeof n === 'function' ? await n() : (n ?? '');
     }
     inboxToAddr.value = await memberInboxToAddressMap(conv);
-  });
+  }
 
   /** Mark conv as read when bubbles arrive; ping the embed host (if iframed)
    *  with the inbound count so its launcher can badge unread. */
@@ -154,7 +157,7 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
     if (scroller.value) scroller.value.scrollTop = scroller.value.scrollHeight;
   }
   watch(allBubbles, () => {
-    nextTick(() => {
+    void nextTick(() => {
       // If a permalink targets a specific message and we haven't reached it yet,
       // try to scroll there; only fall back to the bottom when there's no target.
       if (targetMsgId.value && !scrolledToTarget.value) {
@@ -166,7 +169,7 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
     });
   }, { flush: 'post' });
   onMounted(() => {
-    nextTick(() => {
+    void nextTick(() => {
       if (targetMsgId.value && scrollToTargetMessage()) return;
       scrollToBottom();
     });

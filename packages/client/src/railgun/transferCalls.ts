@@ -72,7 +72,7 @@ export async function generateTransferProof(dispatch: RailgunDispatch, params: {
   encryptionKey: string;
   erc20Recipients: TransferErc20Recipient[];
 }): Promise<void> {
-  await dispatch<void>(SDK_METHOD('proof.transfer'), [
+  await dispatch(SDK_METHOD('proof.transfer'), [
     params.txidVersion,
     params.networkName,
     params.railgunWalletID,

@@ -19,7 +19,7 @@ function assetFor(chainId: number, token: string | null | undefined) {
   const isNative = !token || token.toLowerCase() === NATIVE_TOKEN_SENTINEL.toLowerCase();
   if (isNative) return ASSETS.find(a => a.chainId === chainId && a.address === null);
   const lc = token.toLowerCase();
-  return ASSETS.find(a => a.chainId === chainId && a.address && a.address.toLowerCase() === lc);
+  return ASSETS.find(a => a.chainId === chainId && a.address?.toLowerCase() === lc);
 }
 
 /** The logo URL to show for `(chainId, token)`:

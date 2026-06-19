@@ -8,27 +8,12 @@
  *  which for a single EOA corresponds to NONCE DESCENDING. Pure `fetch`. */
 
 import { parseEtherscanResponse } from './etherscan.schema';
+export type { EtherscanTx } from './etherscan.types';
 
 const DEFAULT_KEY =
   process.env.EXPO_PUBLIC_ETHERSCAN_API_KEY ?? '2UAJBTBZRQTSZUF9JW953W9XMGDM3YAZWY';
 
 const V2_URL = 'https://api.etherscan.io/v2/api';
-
-/** Raw Etherscan `txlist` row (subset we render). All numeric fields arrive
- *  as decimal strings. */
-export interface EtherscanTx {
-  hash: string;
-  nonce: string;
-  timeStamp: string;
-  from: string;
-  to: string;
-  value: string; // wei
-  isError: string; // "0" ok, "1" failed
-  functionName?: string;
-  input: string; // "0x" = plain transfer
-  gasUsed: string;
-  gasPrice: string;
-}
 
 /** Chains the Activity tab fetches, newest-first across all of them. */
 export const ACTIVITY_CHAINS = [

@@ -12,7 +12,9 @@ import { MemoryStore } from './cache';
 
 let cachedClient: Client | null = null;
 
+/** The cached XMTP client for the current inbox, or null before onboarding. */
 export function getCachedXmtpClient(): Client | null { return cachedClient; }
+/** Cache (or clear) the active XMTP client. */
 export function setCachedXmtpClient(client: Client | null): void { cachedClient = client; }
 
 /** Resolve once the XMTP client is built/created (or after `capMs`), so heavy
@@ -52,6 +54,7 @@ export const activeFeedLines = new Set<string>();
  *  module's `resetClientScopedState` can tear the stream down on account switch
  *  without importing the feed module (which would re-create the cycle). */
 let globalStreamTeardown: (() => void) | null = null;
+/** Register the feed module's global-stream teardown for cross-module reset. */
 export function registerGlobalStreamTeardown(fn: () => void): void { globalStreamTeardown = fn; }
 
 /** Drop all client-scoped in-memory state on an account change: the cached

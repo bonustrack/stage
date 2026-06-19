@@ -32,6 +32,7 @@ const SAMPLE_ICONS = ['cog', 'bell', 'wallet', 'chat', 'user', 'check'] as const
 const LIST_ROWS = ['Display', 'Messenger', 'Notifications', 'Security'];
 const SAMPLE_IMAGE = 'https://cdn.stamp.fyi/avatar/eth:0x2539f6dd5e4ab2c3a30c2b9a0a8a8a8a8a8a79d5?s=160';
 
+/** Renders the gallery sections showcasing Kit components. */
 export function KitSections({ dark, head, sub, border }: GalleryPalette): React.ReactElement {
   const sec = { head, sub, border };
   return (
@@ -91,8 +92,8 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
         <Card
           dark={dark}
           status={{ text: 'Pending confirmation' }}
-          confirm={{ label: 'Confirm', onPress: () => {} }}
-          cancel={{ label: 'Cancel', onPress: () => {} }}
+          confirm={{ label: 'Confirm', onPress: () => {/* noop */} }}
+          cancel={{ label: 'Cancel', onPress: () => {/* noop */} }}
 >
           <Text>A bordered Card surface holding arbitrary body content.</Text>
         </Card>
@@ -101,7 +102,7 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
       <GallerySection name="ListView" note="Grouped rows (ListView + ListViewItem)" {...sec} framed={false}>
         <ListView dark={dark} status={{ text: `${LIST_ROWS.length} items` }}>
           {LIST_ROWS.map((label) => (
-            <ListViewItem key={label} dark={dark} onPress={() => {}}>
+            <ListViewItem key={label} dark={dark} onPress={() => {/* noop */}}>
               <Icon name="cog" size={22} color={head}/>
               <Col flex={1}>
                 <Text color={head} weight="medium" size="xl">{label}</Text>
@@ -214,7 +215,7 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
       </GallerySection>
 
       <GallerySection name="Form" note="Groups controls + onSubmit" {...sec} innerPadH={14} innerPadV={14}>
-        <Form onSubmit={() => {}}>
+        <Form onSubmit={() => {/* noop */}}>
           <Label dark={dark} fieldName="name" value="Display name"/>
           <Input dark={dark} name="name" placeholder="Satoshi"/>
           <Select
@@ -265,7 +266,7 @@ export function KitSections({ dark, head, sub, border }: GalleryPalette): React.
       </GallerySection>
 
       <GallerySection name="Pressable" note="Kit Pressable wrapper - pressedOpacity feedback" {...sec} innerPadH={14} innerPadV={12}>
-        <Pressable pressedOpacity={0.5} onPress={() => {}}>
+        <Pressable pressedOpacity={0.5} onPress={() => {/* noop */}}>
           <Box padding={{ x: 12, y: 10 }} radius="sm" background={dark ? '#1c1c1e' : '#f0f0f2'}>
             <Text>Tap me - dims on press</Text>
           </Box>

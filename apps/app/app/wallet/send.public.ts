@@ -151,7 +151,7 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
           const value = parseUnits(tokStr, asset.address ? asset.decimals : 18);
           hash = asset.address
             ? await kernel.sendTransaction({
-                to: asset.address as Hex,
+                to: asset.address,
                 data: encodeFunctionData({
                   abi: erc20Abi, functionName: 'transfer', args: [resolved as Hex, value],
                 }),

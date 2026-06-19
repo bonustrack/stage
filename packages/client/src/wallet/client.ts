@@ -13,7 +13,7 @@ import { VIEM_CHAINS } from './assets';
 
 /** brovider multichain RPC base — the path segment is the chainId. */
 export function broviderRpc(chainId: number): string {
-  return 'https://rpc.brovider.xyz/' + chainId;
+  return `https://rpc.brovider.xyz/${chainId}`;
 }
 
 /** viem transport pointed at brovider for `chainId`. viem's stock chain defs
@@ -32,10 +32,10 @@ export function chainFor(chainId: number): Chain {
   const rpc = broviderRpc(chainId);
   return {
     id: chainId,
-    name: 'Chain ' + chainId,
+    name: `Chain ${chainId}`,
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     rpcUrls: { default: { http: [rpc] }, public: { http: [rpc] } },
-  } as Chain;
+  };
 }
 
 /** A viem public client for `chainId`, using the brovider RPC. Falls back to a

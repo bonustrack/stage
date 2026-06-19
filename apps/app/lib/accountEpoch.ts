@@ -14,6 +14,7 @@ import { useSyncExternalStore } from 'react';
 let epoch = 0;
 const listeners = new Set<() => void>();
 
+/** Bump the account epoch, notifying all subscribers that the active account changed. */
 export function bumpAccountEpoch(): void {
   epoch += 1;
   for (const l of listeners) l();

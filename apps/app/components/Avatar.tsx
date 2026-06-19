@@ -51,6 +51,7 @@ interface Props {
   onPress?: (fullUri: string | null) => void;
 }
 
+/** Renders a user or group avatar from a custom image, stamp.fyi identicon, or placeholder circle. */
 export function Avatar({
   address, imageUri, size = 'md', cacheBuster, square, style, onPress,
 }: Props): React.ReactElement {
@@ -59,7 +60,7 @@ export function Avatar({
    *  crisp without bumping the displayed dimension. */
   const fetchPx = px * 2;
   let uri: string | null = null;
-  if (imageUri && imageUri.trim()) uri = avatarRenderUrl(address ?? '', imageUri, fetchPx);
+  if (imageUri?.trim()) uri = avatarRenderUrl(address ?? '', imageUri, fetchPx);
   else if (address) uri = stampAvatarUrl(address, px, cacheBuster);
 
   const inner = <AvatarView src={uri} size={px} square={square} style={style} />;
@@ -68,11 +69,11 @@ export function Avatar({
 
   /** Resolve a larger URI for the fullscreen viewer than the displayed one. */
   let fullUri: string | null = null;
-  if (imageUri && imageUri.trim()) fullUri = avatarRenderUrl(address ?? '', imageUri, FULLSCREEN_FETCH_PX);
+  if (imageUri?.trim()) fullUri = avatarRenderUrl(address ?? '', imageUri, FULLSCREEN_FETCH_PX);
   else if (address) fullUri = stampAvatarUrl(address, FULLSCREEN_FETCH_PX / 2, cacheBuster);
 
   return (
-    <Pressable onPress={() => onPress(fullUri)} hitSlop={8}>
+    <Pressable onPress={() => { onPress(fullUri); }} hitSlop={8}>
       {inner}
     </Pressable>
   );

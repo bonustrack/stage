@@ -77,7 +77,7 @@ export async function deployAndSwapToPasskey(
     const owner = await smartOwnerSigner(hdIndex);
     const ecdsaAccount = await createEcdsaKernel(publicClient, owner, hdIndex);
     const kernelClient = makeKernelClient(
-      ecdsaAccount as Parameters<typeof makeKernelClient>[0],
+      ecdsaAccount,
       publicClient,
     );
     const passkeyValidator = await passkeyValidatorFromStored(publicClient, stored);
@@ -155,7 +155,7 @@ export async function enablePasskeyForRecord(rec: AccountRecord): Promise<Enable
     try {
       stored = await registerPasskeyCredential(rec.hdIndex, {
         rpId: zerodevRpId(),
-        userName: rec.label?.trim() || `stage-${rec.hdIndex}`,
+        userName: rec.label?.trim() ? rec.label.trim() : `stage-${rec.hdIndex}`,
       });
     } catch (e) {
       return { ok: false, reason: 'error', message: e instanceof Error ? e.message : 'Passkey registration failed' };

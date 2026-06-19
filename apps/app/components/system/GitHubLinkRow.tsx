@@ -10,6 +10,7 @@ import { Icon } from '@metro-labs/kit/icon';
 import { Text } from '@metro-labs/kit/text';
 import { GithubLogo } from '../GithubLogo';
 
+/** Renders a tappable row linking to a GitHub URL. */
 export function GitHubLinkRow({ head, sub, border, url, title, subtitle }: {
   dark: boolean; head: string; sub: string; border: string; rowBg: string;
   url: string; title: string; subtitle: string;

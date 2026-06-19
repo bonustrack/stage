@@ -17,6 +17,7 @@ import { getActiveAccount } from './accounts';
 import { removePasskeyFromRecord, passkeysAvailable } from './zerodev';
 import { flash } from './toast';
 
+/** Provides whether a passkey can be removed from the active smart account and a confirm-and-remove action. */
 export function useRemovePasskey(epoch?: number, onChanged?: () => void): {
   /** True only when this binary can run passkeys AND the active account is a smart
    *  account that currently HAS a passkey (so removal is meaningful). */
@@ -55,7 +56,7 @@ export function useRemovePasskey(epoch?: number, onChanged?: () => void): {
         } else if (res.reason === 'unavailable') {
           flash('Passkeys need the latest app build');
         } else {
-          flash(res.message || 'Could not remove passkey');
+          flash(res.message ?? 'Could not remove passkey');
         }
       } finally {
         setBusy(false);

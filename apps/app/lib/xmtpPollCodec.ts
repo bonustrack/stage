@@ -22,14 +22,17 @@ import {
 export class PollCodec implements JSContentCodec<PollContent> {
   contentType: ContentTypeId = POLL_CONTENT_TYPE;
 
+  /** Encode a poll as JSON-bytes content with its plain-text fallback. */
   encode(content: PollContent): EncodedContent {
-    return encodeJsonContent(this.contentType, content, pollFallbackText(content)) as EncodedContent;
+    return encodeJsonContent(this.contentType, content, pollFallbackText(content));
   }
 
+  /** Decode the JSON wire body back into a poll. */
   decode(encoded: EncodedContent): PollContent {
     return decodeJsonContent<PollContent>(encoded.content);
   }
 
+  /** Plain-text rendering shown by clients missing this codec. */
   fallback(content: PollContent): string | undefined {
     return pollFallbackText(content);
   }

@@ -43,7 +43,8 @@ function metaContent(html: string, key: string): string | undefined {
   const tag = re.exec(html);
   if (!tag) return undefined;
   const c = /content=["']([^"']*)["']/i.exec(tag[0]);
-  return c ? decodeEntities(c[1]) : undefined;
+  const content = c?.[1];
+  return content === undefined ? undefined : decodeEntities(content);
 }
 
 /** First non-empty of a list of meta keys. */
@@ -57,7 +58,8 @@ function firstMeta(html: string, keys: string[]): string | undefined {
 
 function titleTag(html: string): string | undefined {
   const m = /<title[^>]*>([\s\S]*?)<\/title>/i.exec(html);
-  return m ? decodeEntities(m[1].replace(/\s+/g, ' ')) : undefined;
+  const inner = m?.[1];
+  return inner === undefined ? undefined : decodeEntities(inner.replace(/\s+/g, ' '));
 }
 
 /** Favicon from a <link rel="icon"|"shortcut icon"|"apple-touch-icon">. */
@@ -66,11 +68,12 @@ function faviconLink(html: string): string | undefined {
   let best: string | undefined;
   let m: RegExpExecArray | null;
   while ((m = re.exec(html))) {
-    const rel = m[1].toLowerCase();
+    const rel = (m[1] ?? '').toLowerCase();
     if (!/\bicon\b/.test(rel)) continue;
     const href = /href=["']([^"']+)["']/i.exec(m[0]);
-    if (!href) continue;
-    best = decodeEntities(href[1]);
+    const hrefVal = href?.[1];
+    if (hrefVal === undefined) continue;
+    best = decodeEntities(hrefVal);
     if (rel === 'icon' || rel === 'shortcut icon') break; // prefer plain icon
   }
   return best;
@@ -121,10 +124,10 @@ export function parseMeta(html: string, finalUrl: string): PreviewMeta {
 
   return {
     url: canonical,
-    title: title || host,
-    description: description || undefined,
+    title: title !== undefined && title.length > 0 ? title : host,
+    description: description !== undefined && description.length > 0 ? description : undefined,
     image: resolveUrl(rawImage, finalUrl),
-    siteName: siteName || host,
+    siteName: siteName !== undefined && siteName.length > 0 ? siteName : host,
     favicon: resolveUrl(faviconLink(head) ?? '/favicon.ico', finalUrl),
   };
 }

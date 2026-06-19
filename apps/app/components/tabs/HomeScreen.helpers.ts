@@ -9,9 +9,7 @@ import type { ConversationView } from '../../modules/messaging';
  *  domain type owned by `modules/messaging`; `Row` is that view plus an index
  *  signature so it stays a structural superset of `CachedRow` and can be passed
  *  straight through `setCachedRows` without casting. */
-export type Row = ConversationView & {
-  [key: string]: unknown;
-};
+export type Row = ConversationView & Record<string, unknown>;
 
 /** Extract the conversation id from an XMTP MLS topic. Stream `DecodedMessage`s
  *  only expose `topic` (`/xmtp/mls/1/g-<hexId>/proto`), not `conversationId`, so
@@ -20,7 +18,7 @@ export type Row = ConversationView & {
 export function convIdFromTopic(topic: string | undefined): string | null {
   if (!topic) return null;
   const m = /\/g-([0-9a-fA-F]+)\//.exec(topic);
-  return m ? m[1]! : null;
+  return m?.[1] ?? null;
 }
 
 /** Fixed ChannelRow height: 14px vertical padding ×2 + ~48px content (title 22 +
@@ -29,6 +27,7 @@ export function convIdFromTopic(topic: string | undefined): string | null {
  *  every row is uniform height regardless of labels. */
 export const CHANNEL_ROW_HEIGHT = 77;
 
+/** Formats a message timestamp for display in the channel list. */
 export function fmtTs(ts: number | null): string {
   if (!ts) return '';
   const d = new Date(ts);

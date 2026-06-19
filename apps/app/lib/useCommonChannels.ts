@@ -102,12 +102,13 @@ async function resolveCommonChannels(peerAddress: string): Promise<CommonChannel
         lastFromSelf: row.lastFromSelf === true,
         unreadCount: typeof row.unreadCount === 'number' ? row.unreadCount : 0,
         markedUnread: row.markedUnread === true,
-      } as CommonChannel;
+      };
     } catch { return null; }
   }));
   return resolved.filter((c): c is CommonChannel => c !== null);
 }
 
+/** Hook providing the channels shared with a peer (cached per active account). */
 export function useCommonChannels(peerAddress: string | null, enabled: boolean): {
   channels: CommonChannel[];
   loading: boolean;
@@ -117,7 +118,7 @@ export function useCommonChannels(peerAddress: string | null, enabled: boolean):
    *  re-hits this account's cached common-channels instead of re-walking. */
   const { data, isLoading } = useQuery({
     queryKey: ['commonChannels', getActiveAccountIdSync(), peerAddress?.toLowerCase() ?? ''],
-    queryFn: () => resolveCommonChannels(peerAddress as string),
+    queryFn: () => resolveCommonChannels(peerAddress ?? ''),
     enabled: enabled && !!peerAddress,
     staleTime: 5 * 60_000,
   });

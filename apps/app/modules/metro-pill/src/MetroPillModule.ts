@@ -7,9 +7,23 @@ import { NativeModule, requireNativeModule } from 'expo-modules-core';
  *  build; the JS layer no longer declares or calls them.) */
 /** Event map for the native module's `addListener`. `onXmtpPush` carries the
  *  contentless push's routing metadata so JS can target the resync. */
-type MetroPillEvents = {
-  onXmtpPush: (e: { line?: string | null; convId?: string | null; messageId?: string | null }) => void;
-};
+/** Payload for the native `onXmtpPush` event: the contentless push's routing
+ *  metadata so JS can target the resync. */
+interface XmtpPushEvent {
+  line?: string | null;
+  convId?: string | null;
+  messageId?: string | null;
+}
+
+interface MetroPillEvents {
+  // Index signature so the shape satisfies expo's `EventsMap` constraint
+  // (Record<string, (...args) => void>): an interface alone lacks the implicit
+  // index signature that constraint requires. The value type is the single real
+  // event's listener signature, which IS assignable to the constraint's
+  // `(...args: any[]) => void` (so this is type-safe, not a widening escape).
+  [event: string]: (e: XmtpPushEvent) => void;
+  onXmtpPush: (e: XmtpPushEvent) => void;
+}
 
 declare class MetroPillModule extends NativeModule<MetroPillEvents> {
   /** Report the conversation the user is currently viewing (bare convId) so the

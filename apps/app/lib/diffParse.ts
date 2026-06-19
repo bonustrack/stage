@@ -4,7 +4,7 @@
  *  FileDiff component can render GitHub-style (added / removed / context /
  *  hunk-header). Pure string work - no network - so it stays unit-testable. */
 
-export type DiffLineKind = 'add' | 'del' | 'context' | 'hunk' | 'meta';
+type DiffLineKind = 'add' | 'del' | 'context' | 'hunk' | 'meta';
 
 export interface DiffLine {
   kind: DiffLineKind;

@@ -84,7 +84,7 @@ export function GuardianEditor({
           {guardians.map(addr => (
             <Row key={addr} surface="raised" radius="lg" padding={{ x: 14, y: 10 }} align="center" gap={8}>
               <Text size="sm" color={head} style={{ flex: 1 }} numberOfLines={1} ellipsizeMode="middle">{addr}</Text>
-              <Pressable onPress={() => remove(addr)} hitSlop={8} style={{ padding: 2 }}>
+              <Pressable onPress={() => { remove(addr); }} hitSlop={8} style={{ padding: 2 }}>
                 <Icon name="x" size={18} color={sub}/>
               </Pressable>
             </Row>

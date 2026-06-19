@@ -25,6 +25,7 @@ import { buildSortedTokenRows } from './WalletScreen.sort';
 // it's unit-testable). Re-exported here so existing import sites stay stable.
 export { buildSortedTokenRows, tokenRowId } from './WalletScreen.sort';
 
+/** Renders the wallet's public and private token holdings with pending actions. */
 export function TokensList({
   rows, privateRows, pending, head, sub, border, bg,
 }: {

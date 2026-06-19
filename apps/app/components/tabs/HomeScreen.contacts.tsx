@@ -47,6 +47,7 @@ function getExistingPeers(): { address: string; convId: string }[] {
 
 interface Colors { fg: string; head: string; sub: string; border: string }
 
+/** Renders contact search results on the home screen, or nothing when the query is empty. */
 export function HomeContactResults(
   { query, c, noChannels }: { query: string; c: Colors; noChannels: boolean },
 ): React.ReactElement | null {
@@ -126,7 +127,7 @@ export function HomeContactResults(
           avatarAddress={resolved.address}
           square={false}
           subtitle="Start chat"
-          onPress={() => open(resolved.address)}
+          onPress={() => { open(resolved.address); }}
         />
       ) : null}
       {filtered.map(p => (
@@ -136,7 +137,7 @@ export function HomeContactResults(
           avatarAddress={p.address}
           square={false}
           subtitle={getPeerName(p.address) ? shortAddress(p.address) : null}
-          onPress={() => open(p.address, p.convId)}
+          onPress={() => { open(p.address, p.convId); }}
         />
       ))}
     </Box>

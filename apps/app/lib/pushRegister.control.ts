@@ -9,7 +9,7 @@ export const DAEMON_INBOX_ADDRESS = '0x0bA043c6F25085C68042bad079c29bD8f16a651A'
 
 /** Magic prefix marking a plain-text XMTP message as a private control payload
  *  rather than a chat message. The daemon parses the same prefix. */
-export const METRO_CTRL_PREFIX = 'METRO_CTRL:';
+const METRO_CTRL_PREFIX = 'METRO_CTRL:';
 
 /** The control-DM verb for push registration. Full body =
  *  `${METRO_CTRL_PREFIX}${CTRL_REGISTER_PUSH}:${json}`. */

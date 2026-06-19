@@ -9,7 +9,7 @@
  *    - engine emits buckets but the UI shows 0 → RN-side sum/store/decimals bug.
  *
  *  Pure in-memory + a synchronous getter + subscribe (no disk, no deps). */
-export type RefreshPhase = 'idle' | 'scanning' | 'done' | 'error';
+type RefreshPhase = 'idle' | 'scanning' | 'done' | 'error';
 
 export interface BalanceDebug {
   /** isBridgeAvailable() — is the nodejs-mobile runtime in this binary? */
@@ -47,10 +47,12 @@ let state: BalanceDebug = {
 
 const subs = new Set<(s: BalanceDebug) => void>();
 
+/** Current balance-debug state snapshot. */
 export function getBalanceDebug(): BalanceDebug {
   return state;
 }
 
+/** Subscribe to balance-debug state changes. Returns an unsubscribe fn. */
 export function subscribeBalanceDebug(cb: (s: BalanceDebug) => void): () => void {
   subs.add(cb);
   return () => subs.delete(cb);

@@ -5,6 +5,7 @@
  *  stays correct, and the bottom tab-bar highlight is router-driven. It renders
  *  nothing (the pager overlays the scene). */
 
+/** Empty Contacts route stub kept so expo-router resolves `/contacts`. */
 export default function TabRoutePlaceholder(): null {
   return null;
 }

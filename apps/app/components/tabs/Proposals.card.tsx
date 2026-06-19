@@ -148,7 +148,7 @@ function ConversationRequestCard({ proposal, onAdvance }: {
   const sig = entry ? sigRequestOf(entry) : undefined;
 
   const title = isGroup
-    ? (groupName?.trim() || 'Untitled group')
+    ? (groupName?.trim() ? groupName.trim() : 'Untitled group')
     : (peerAddr ? (getPeerName(peerAddr) ?? shortAddress(peerAddr)) : '');
 
   const authorAddr = useMemo(
@@ -290,18 +290,18 @@ function MessageRequestCard({ request, onAdvance }: {
             avatarAddress={view?.avatarAddress ?? null}
             avatarUri={view?.avatarUri ?? null}
             square={view?.isGroup}
-            lastPreview={view?.preview || '(no messages yet)'}
+            lastPreview={view?.preview == null || view.preview === '' ? '(no messages yet)' : view.preview}
             onPress={openChannel}
           />
         </Box>
 
         <Row gap={10} margin={{ top: 16 }} style={{ alignSelf: 'stretch' }}>
           <Box flex={1}>
-            <Button block variant="danger" size="md" dark={dark} onPress={() => act(false)} label="Block"
+            <Button block variant="danger" size="md" dark={dark} onPress={() => { act(false); }} label="Block"
               tintBg={pal.danger} tintFg={pal.bg}/>
           </Box>
           <Box flex={1}>
-            <Button block variant="primary" size="md" dark={dark} onPress={() => act(true)} label="Accept"
+            <Button block variant="primary" size="md" dark={dark} onPress={() => { act(true); }} label="Accept"
               tintBg={pal.link} tintFg={pal.bg}/>
           </Box>
         </Row>

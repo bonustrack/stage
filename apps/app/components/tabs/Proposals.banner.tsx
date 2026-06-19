@@ -14,6 +14,7 @@ import { Row } from '../layout';
 import { usePalette } from '../../lib/theme';
 import { useProposalCount } from './Proposals.hook';
 
+/** Banner that surfaces the active proposal count and links to the proposals screen. */
 export function ProposalsBanner(): React.ReactElement | null {
   const router = useRouter();
   const pal = usePalette();
@@ -23,7 +24,7 @@ export function ProposalsBanner(): React.ReactElement | null {
   if (count <= 0) return null;
 
   return (
-    <Pressable onPress={() => router.push('/proposals')}>
+    <Pressable onPress={() => { router.push('/proposals'); }}>
       <Row
         surface="surface"
         align="center"

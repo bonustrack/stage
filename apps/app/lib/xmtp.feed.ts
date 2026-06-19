@@ -94,7 +94,7 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
   const query = useQuery<HistoryEntry[]>({
     queryKey,
     enabled: enabled && !!line,
-    queryFn: () => loadFeedFirstPage(line as string),
+    queryFn: () => loadFeedFirstPage(line ?? ''),
     initialData: () => (line ? feedCache.get(line) ?? EMPTY : EMPTY),
     staleTime: 0,
   });
@@ -113,7 +113,7 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
     : query.isError ? 'error'
       : (query.isSuccess || events.length > 0) ? 'open'
         : 'loading';
-  const error = query.error ? (query.error as Error).message : null;
+  const error = query.error ? (query.error).message : null;
 
   /** Fetch the next older page on scroll-up. Stable identity (deps are only refs)
    *  so the FlatList's onEndReached prop never churns. Never throws. */

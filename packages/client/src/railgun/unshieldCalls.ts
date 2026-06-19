@@ -72,7 +72,7 @@ export async function generateUnshieldProof(dispatch: RailgunDispatch, params: {
   encryptionKey: string;
   erc20Recipients: UnshieldErc20Recipient[];
 }): Promise<void> {
-  await dispatch<void>(SDK_METHOD('proof.unshield'), [
+  await dispatch(SDK_METHOD('proof.unshield'), [
     params.txidVersion,
     params.networkName,
     params.railgunWalletID,

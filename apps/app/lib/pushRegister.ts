@@ -21,7 +21,7 @@ import { isPushEnabledSync, loadPushEnabled } from './pushPref';
 
 // Re-export the control-DM wire-format surface so existing import paths keep
 // working (extracted into pushRegister.control.ts for the <200-line cap).
-export { DAEMON_INBOX_ADDRESS, METRO_CTRL_PREFIX, isMetroControlBody, buildRegisterPushBody } from './pushRegister.control';
+export { isMetroControlBody } from './pushRegister.control';
 import { buildDisablePushBody } from './pushRegister.control';
 // Re-export the notification-tap deep-link handler (extracted for line cap).
 export { usePushDeepLinks } from './pushRegister.deeplink';

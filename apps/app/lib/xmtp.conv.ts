@@ -76,11 +76,11 @@ export function streamConvConsent(cb: () => void): () => void {
   if (!prefs?.streamConsent) return () => undefined;
   let canceller: (() => void) | null = null;
   let cancelled = false;
-  void prefs.streamConsent(() => cb()).then(sub => {
+  void prefs.streamConsent(() => { cb(); }).then(sub => {
     const stop = () => {
       const end = (sub as { end?: () => void }).end;
       if (typeof end === 'function') end.call(sub);
-      else if (typeof sub === 'function') (sub as () => void)();
+      else if (typeof sub === 'function') (sub)();
     };
     if (cancelled) { try { stop(); } catch { /* ignore */ } return; }
     canceller = () => { try { stop(); } catch { /* ignore */ } };

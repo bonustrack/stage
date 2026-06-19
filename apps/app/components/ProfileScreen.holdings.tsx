@@ -38,7 +38,7 @@ function HoldingsTabs({ tab, setTab, head, sub, border }: {
         return (
           <Pressable
             key={t}
-            onPress={() => setTab(t)}
+            onPress={() => { setTab(t); }}
             style={{
               paddingVertical: 10,
               marginBottom: -1,
@@ -56,6 +56,7 @@ function HoldingsTabs({ tab, setTab, head, sub, border }: {
   );
 }
 
+/** Renders the holdings section of a profile with tabs for tokens and other assets. */
 export function ProfileHoldings({ address }: { address: string }): React.ReactElement {
   const { link: head, text: sub, bg, border } = usePalette();
 

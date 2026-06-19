@@ -44,13 +44,9 @@ export async function deriveRailgunWallet(): Promise<RailgunWalletHandle> {
 
   const sdk = requireWalletApi();
   const info = await sdk.createRailgunWallet(encryptionKey, mnemonic, creationBlocks);
-  cached = { id: info.id, railgunAddress: sdk.getRailgunAddress(info.id) ?? '', encryptionKey };
+  const addr: unknown = sdk.getRailgunAddress(info.id);
+  const railgunAddress = typeof addr === 'string' ? addr : '';
+  cached = { id: info.id, railgunAddress, encryptionKey };
   cachedForId = acct.id;
   return cached;
-}
-
-/** Drop the memoized handle (e.g. after switching accounts). */
-export function resetRailgunWallet(): void {
-  cached = null;
-  cachedForId = null;
 }

@@ -146,7 +146,7 @@ export async function sendShielded(params: SendParams): Promise<SendResult> {
     return { txHash, recipient };
   } catch (e) {
     const raw = e instanceof Error ? e.message : String(e);
-    const msg = raw && raw.trim() ? raw : `Unknown error (no message) at step "${step}"`;
+    const msg = raw?.trim() ? raw : `Unknown error (no message) at step "${step}"`;
     // Surface to the bundler/metro logs so we can read it off-device too.
     console.error(`[sendShielded] failed at step="${step}":`, e);
     updatePending(accountId, pendingId, { phase: 'failed', error: msg });

@@ -40,6 +40,7 @@ export { ensureActiveAccount } from './xmtp.recover';
  *  (the onboarding overlay covers the UI until the flow creates the real account
  *  and flips the gate). */
 export class NoAccountError extends Error {
+  /** Build the no-account error with its fixed message and name. */
   constructor() { super('No account — onboarding not completed yet.'); this.name = 'NoAccountError'; }
 }
 
@@ -92,7 +93,7 @@ async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<
     try {
       const built = await Promise.race<Client | null>([
         Client.build(new PublicIdentity(rec.address, 'ETHEREUM'), opts),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), 20_000)),
+        new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 20_000)),
       ]);
       if (built) {
         setCachedXmtpClient(built);
@@ -209,12 +210,14 @@ export async function revokeXmtpInstallation(installationId: string): Promise<vo
 /** Per-conv "last read at" timestamp (XMTP `sentNs` units) in SecureStore. Drives
  *  the Channels unread count + marks messages read on open. */
 const LAST_READ_PREFIX = 'unread.lastRead.';
+/** Read the stored "last read at" timestamp (sentNs) for a conversation, or 0 if unset. */
 export async function getLastReadNs(convId: string): Promise<number> {
   const raw = await getSecure(LAST_READ_PREFIX + convId);
   if (!raw) return 0;
   const n = Number(raw);
   return Number.isFinite(n) ? n : 0;
 }
+/** Persist the "last read at" timestamp (sentNs) for a conversation in SecureStore. */
 export async function setLastReadNs(convId: string, ns: number): Promise<void> {
   await setSecure(LAST_READ_PREFIX + convId, String(ns));
 }

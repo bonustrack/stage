@@ -1,26 +1,13 @@
 {
+  "extends": "@stage-labs/config/tsconfig/base.json",
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "lib": ["ESNext", "DOM"],
     "jsx": "react-jsx",
-    "strict": true,
-    "noEmit": true,
-    "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
       "react-native": ["../../apps/app/node_modules/react-native"],
       "react-native-svg": ["../../apps/app/node_modules/react-native-svg"],
       "react-native-markdown-display": ["../../apps/app/node_modules/react-native-markdown-display"]
-    },
-    "resolveJsonModule": true,
-    "esModuleInterop": true,
-    "verbatimModuleSyntax": false,
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    }
   },
   "include": ["src/**/*"]
 }

@@ -40,6 +40,7 @@ function fmtTs(ts: number | null): string {
   return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
+/** Renders the profile section listing groups the local user and the viewed peer both belong to. */
 export function CommonChannels({ peerAddress, enabled, c }: {
   peerAddress: string | null;
   enabled: boolean;
@@ -99,7 +100,7 @@ export function CommonChannels({ peerAddress, enabled, c }: {
             pinned={isPinned(ch.convId)}
             hasDraft={hasDraft(ch.convId)}
             draftText={getDraft(ch.convId)}
-            onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: ch.convId } })}
+            onPress={() => { router.push({ pathname: '/xmtp/[convId]', params: { convId: ch.convId } }); }}
           />
         );
       })}

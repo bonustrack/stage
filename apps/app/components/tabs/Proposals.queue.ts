@@ -81,7 +81,9 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (t: T) => Promise<R
   const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
     while (i < items.length) {
       const idx = i++;
-      out[idx] = await fn(items[idx]!);
+      const item = items[idx];
+      if (item === undefined) continue;
+      out[idx] = await fn(item);
     }
   });
   await Promise.all(workers);
@@ -135,6 +137,3 @@ export async function buildProposalQueue(rows: CachedRow[]): Promise<QueuedReque
   return [...detected.filter((p): p is QueuedRequest => p !== null), ...messageReqs]
     .sort((a, b) => b.ts - a.ts);
 }
-
-/** Back-compat alias: the original queue type name. */
-export type QueuedProposal = QueuedRequest;

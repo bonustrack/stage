@@ -41,9 +41,11 @@ export interface DecodedMessageView {
 /** Structural mirror of the RN SDK's `ReactionContent`. */
 interface ReactionContentView {
   reference: string;
-  action: 'added' | 'removed' | string;
+  /** 'added' | 'removed' (the RN SDK leaves this open-ended). */
+  action: string;
   content: string;
-  schema: 'unicode' | 'custom' | string;
+  /** 'unicode' | 'custom' (the RN SDK leaves this open-ended). */
+  schema: string;
 }
 /** Structural mirror of the RN SDK's `ReplyContent` (text-only inner content). */
 interface ReplyContentView { reference: string; content?: { text?: string } }
@@ -51,7 +53,7 @@ interface ReplyContentView { reference: string; content?: { text?: string } }
 interface StaticAttachmentView { filename: string; mimeType?: string; data: string }
 /** Structural mirror of the RN SDK's `MultiRemoteAttachmentContent`. */
 interface MultiRemoteAttachmentView {
-  attachments?: Array<{ filename?: string } & Record<string, unknown>>;
+  attachments?: ({ filename?: string } & Record<string, unknown>)[];
 }
 
 /** Convert a decoded XMTP message into the `HistoryEntry` envelope used by the
@@ -171,15 +173,16 @@ export function mapDecodedToEnvelope(msg: DecodedMessageView, line: string): His
      *  `kind` from the filename extension. */
     const m = decoded as MultiRemoteAttachmentView;
     const attachments = (m.attachments ?? []).map((info, i) => {
-      const name = (info.filename as string | undefined) ?? `attachment-${i + 1}`;
+      const name = (info.filename) ?? `attachment-${i + 1}`;
       const ext = name.split('.').pop()?.toLowerCase() ?? '';
       const kind = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic'].includes(ext) ? 'image'
         : ['m4a', 'mp3', 'wav', 'aac', 'ogg'].includes(ext) ? 'audio'
           : ['mp4', 'mov', 'webm'].includes(ext) ? 'video' : 'file';
       return { kind, name, remote: info };
     });
-    const summary = attachments.length === 1
-      ? `[${attachments[0]!.kind}: ${attachments[0]!.name}]`
+    const first = attachments[0];
+    const summary = first !== undefined && attachments.length === 1
+      ? `[${first.kind}: ${first.name}]`
       : `[${attachments.length} attachments]`;
     return { ...base, text: summary, payload: { contentType: typeId, attachments } };
   }

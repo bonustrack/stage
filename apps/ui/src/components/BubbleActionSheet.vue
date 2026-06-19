@@ -8,11 +8,8 @@ const ACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '🔥', '🎉'];
 
 const props = defineProps<{ target: HistoryEntry | null }>();
 const emit = defineEmits<{
-  (e: 'close'): void;
+  (e: 'close' | 'reply' | 'copy' | 'copy-link'): void;
   (e: 'react', emoji: string): void;
-  (e: 'reply'): void;
-  (e: 'copy'): void;
-  (e: 'copy-link'): void;
 }>();
 void props;
 </script>

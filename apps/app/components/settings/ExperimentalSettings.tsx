@@ -21,6 +21,7 @@ const ROWS: { href: Href; label: string; icon: HeroIconName }[] = [
   { href: '/settings/developer', label: 'Developer', icon: 'beaker' },
 ];
 
+/** Renders the experimental settings screen for opt-in feature flags. */
 export function ExperimentalSettings(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -34,7 +35,7 @@ export function ExperimentalSettings(): React.ReactElement {
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <ListView dark={dark}>
           {ROWS.map((row) => (
-            <ListViewItem key={row.href} dark={dark} onPress={() => router.push(row.href)}>
+            <ListViewItem key={row.href} dark={dark} onPress={() => { router.push(row.href); }}>
               <Icon name={row.icon} size={22} color={head}/>
               <Col flex={1}>
                 <Text size="xl" color={head}>{row.label}</Text>

@@ -12,6 +12,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePalette, useBlockRadius } from '../lib/theme';
 
+/** Renders the app's reusable bottom-sheet modal with a backdrop, optional title row, and scrollable content. */
 export function AppModal({
   visible, onClose, children,
 }: {
@@ -41,7 +42,7 @@ export function AppModal({
         style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}
       >
         <Pressable
-          onPress={e => e.stopPropagation()}
+          onPress={e => { e.stopPropagation(); }}
           style={{
             backgroundColor: sheetBg,
             borderTopLeftRadius: sheetRadius,

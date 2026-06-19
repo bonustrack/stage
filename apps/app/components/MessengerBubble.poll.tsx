@@ -40,7 +40,7 @@ function PollQuestionBlock({ q, qi, sub, dark, votes, own, onVote, openAnswers, 
   const multi = q.multiSelect === true;
   const options = Array.isArray(q.options) ? q.options : [];
   const total = options.reduce((n, _o, i) => n + (votes?.get(i)?.size ?? 0), 0);
-  const tap = (idx: number): void => onVote(idx, (own?.has(idx) ?? false) ? 'removed' : 'added');
+  const tap = (idx: number): void => { onVote(idx, (own?.has(idx) ?? false) ? 'removed' : 'added'); };
   const restBg = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
   const pressBg = dark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.08)';
   const restBorder = dark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)';
@@ -58,7 +58,7 @@ function PollQuestionBlock({ q, qi, sub, dark, votes, own, onVote, openAnswers, 
         return (
           <Pressable
             key={`${i}-${opt.label}`}
-            onPress={() => tap(i)}
+            onPress={() => { tap(i); }}
             style={({ pressed }) => ({
               paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius, overflow: 'hidden',
               backgroundColor: isOn
@@ -124,10 +124,10 @@ export function PollView({ poll, dark, sub, votes, ownVotes, onVote, openAnswers
             q={q} qi={qi} sub={sub} dark={dark}
             votes={votes?.get(qi)}
             own={ownVotes?.get(qi)}
-            onVote={(o, a) => onVote(qi, o, a)}
+            onVote={(o, a) => { onVote(qi, o, a); }}
             openAnswers={openAnswers?.get(qi)}
             mine={myUri}
-            onOpenAnswer={onOpenAnswer ? (text) => onOpenAnswer(qi, text) : undefined}
+            onOpenAnswer={onOpenAnswer ? (text) => { onOpenAnswer(qi, text); } : undefined}
 />
         </Box>
       ))}

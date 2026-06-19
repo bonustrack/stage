@@ -25,7 +25,7 @@ const pending = new Set<string>();
 const listeners = new Set<() => void>();
 
 function notify(): void {
-  listeners.forEach(l => l());
+  listeners.forEach(l => { l(); });
 }
 
 /** stamp.fyi `lookup_addresses` rejects (HTTP 500) when asked for more than ~50
@@ -46,11 +46,16 @@ async function lookupNamesChunk(addrs: string[]): Promise<Record<string, string>
       body: JSON.stringify({ method: 'lookup_addresses', params: addrs }),
     });
     if (!res.ok) return null;
-    const json = await res.json();
-    const result: Record<string, string> = json?.result ?? {};
+    const json: unknown = await res.json();
+    const result =
+      typeof json === 'object' && json !== null && 'result' in json
+        ? json.result
+        : undefined;
     const out: Record<string, string> = {};
-    for (const [addr, name] of Object.entries(result)) {
-      if (name && name.trim()) out[addr.toLowerCase()] = name.trim();
+    if (typeof result === 'object' && result !== null) {
+      for (const [addr, name] of Object.entries(result)) {
+        if (typeof name === 'string' && name.trim()) out[addr.toLowerCase()] = name.trim();
+      }
     }
     return out;
   } catch {
@@ -86,7 +91,11 @@ async function fetchBatch(addrs: string[]): Promise<void> {
 /** Queue any not-yet-known addresses for a batched fetch. Safe to call often. */
 export function ensurePeerProfiles(addresses: (string | null | undefined)[]): void {
   const todo = [
-    ...new Set(addresses.filter(Boolean).map(a => (a as string).toLowerCase())),
+    ...new Set(
+      addresses
+        .filter((a): a is string => typeof a === 'string' && a.length > 0)
+        .map(a => a.toLowerCase()),
+    ),
   ].filter(a => !store.has(a) && !pending.has(a));
   if (!todo.length) return;
   todo.forEach(a => pending.add(a));
@@ -99,10 +108,11 @@ export function isPeerResolved(address?: string | null): boolean {
   return !!address && store.has(address.toLowerCase());
 }
 
+/** Return the cached ENS display name for an address, or undefined when none. */
 export function getPeerName(address?: string | null): string | undefined {
   if (!address) return undefined;
   const n = store.get(address.toLowerCase())?.name;
-  return n && n.trim() ? n.trim() : undefined;
+  return n?.trim() ? n.trim() : undefined;
 }
 
 /** Subscribe to cache changes. Returns an unsubscribe fn. The host's React hook

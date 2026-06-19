@@ -25,7 +25,7 @@ export function isTransferRequest(
   decoded: DecodedCall | null, isErc20Transfer: boolean,
 ): boolean {
   if (isErc20Transfer) return true;          // metadata.toAddress => transfer(token)
-  if (!decoded || !decoded.decoded) return true; // no calldata => native transfer
+  if (!decoded?.decoded) return true; // no calldata => native transfer
   const fn = (decoded.functionName ?? '').toLowerCase();
   return TRANSFER_FNS.has(fn);
 }
@@ -62,8 +62,9 @@ export function humanizeAction(decoded: DecodedCall | null): string {
     .toLowerCase()
     .split(/\s+/)
     .filter(Boolean);
-  if (words.length === 0) return 'Confirm';
-  words[0] = words[0].charAt(0).toUpperCase() + words[0].slice(1);
+  const first = words[0];
+  if (first === undefined) return 'Confirm';
+  words[0] = first.charAt(0).toUpperCase() + first.slice(1);
   return words.join(' ');
 }
 

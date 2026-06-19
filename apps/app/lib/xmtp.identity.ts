@@ -21,12 +21,14 @@ function inboxEthFetcher(
   return async (ids) => {
     const states = await client.inboxStates(
       true,
-      ids as Parameters<typeof client.inboxStates>[1],
+      ids,
     );
     const out: Record<string, string> = {};
     for (let i = 0; i < ids.length; i++) {
+      const id = ids[i];
+      if (id === undefined) continue;
       const eth = states[i]?.identities.find(it => it.kind === 'ETHEREUM');
-      if (eth?.identifier) out[ids[i]!] = eth.identifier;
+      if (eth?.identifier) out[id] = eth.identifier;
     }
     return out;
   };

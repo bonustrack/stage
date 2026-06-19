@@ -23,12 +23,21 @@ import { useDecodedCall, spoofWarning, type DecodedCall } from '../lib/txDecode'
 import { useTxSimulation } from '../lib/txSimulate';
 import { SimulationBlock } from './MessengerBubble.sim';
 import { txActionLabel, isTransferRequest } from './MessengerBubble.txwording';
+
+/** Stringify only primitive EIP-712 domain fields; ignore objects so we never
+ *  render '[object Object]'. */
+function stringifyPrimitive(v: unknown): string | undefined {
+  if (typeof v === 'string') return v;
+  if (typeof v === 'number' || typeof v === 'bigint' || typeof v === 'boolean') return String(v);
+  return undefined;
+}
 // SigRequestCard — signature-request bubble: trusted (app-derived) title + the
 // typed-data/message detail. The peer-supplied `description` is rendered
 // SEPARATELY and labelled sender-provided, never as the prominent trusted
 // summary (a phishing request could otherwise mislabel a Permit2 as a benign
 // "Sign in"). `consentAllowed === false` disables the Sign action for an
 // unaccepted (stranger) conversation.
+/** Renders an in-chat signature-request card with a trusted summary and a Sign action. */
 export function SigRequestCard({ req, dark, sub, signing, onSign, consentAllowed }: {
   req: SigRequest; dark: boolean; sub: string; signing?: boolean;
   onSign?: () => void;
@@ -46,8 +55,8 @@ export function SigRequestCard({ req, dark, sub, signing, onSign, consentAllowed
   const pal = usePalette(); const blockRadius = useBlockRadius();
   const head = pal.link; // #ffffff / #000000
   const domain = req.eip712?.domain as { name?: unknown; chainId?: unknown } | undefined;
-  const domainName = domain?.name != null ? String(domain.name) : undefined;
-  const chainId = domain?.chainId != null ? String(domain.chainId) : undefined;
+  const domainName = stringifyPrimitive(domain?.name);
+  const chainId = stringifyPrimitive(domain?.chainId);
   const fields = req.kind === 'eip712' && req.eip712?.message
     ? Object.entries(req.eip712.message)
     : [];
@@ -221,7 +230,7 @@ export function TxRequestCard({ req, dark, sub, paying, onPay, consentAllowed }:
           {showDecodedBlock ? (
             <DecodedCallBlock decoded={decoded} pending={decoding} target={call?.to} sub={sub} selector={decoded?.selector}/>
           ) : null}
-          {sendsNativeWithCall ? <TxNativeValueRow eth={eth as string} chainId={chainNum} /> : null}
+          {sendsNativeWithCall ? <TxNativeValueRow eth={eth} chainId={chainNum} /> : null}
           {recipient ? <TxToRow address={recipient} /> : null}
           <Text size="xs" color={sub}>On {VIEM_CHAINS[chainNum]?.name ?? `chain ${chainNum}`}</Text>
         </Col>
@@ -255,7 +264,7 @@ function TxToRow({ address }: { address: string }): React.ReactElement {
   const display = getPeerName(address) ?? shortAddress(address);
   return (
     <Pressable
-      onPress={() => router.push({ pathname: '/user/[address]', params: { address } })}>
+      onPress={() => { router.push({ pathname: '/user/[address]', params: { address } }); }}>
       <Row align="center" gap={6}>
         <Text role="secondary" size="xs">To</Text>
         <Avatar address={address} size={16} />

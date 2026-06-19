@@ -19,6 +19,7 @@ import type { SimulateResult, AssetMove } from '../lib/txSimulate';
 import { NATIVE_TOKEN_SENTINEL } from '@stage-labs/client/wallet/assets';
 import { useUsdValue } from '../lib/txPrices';
 
+/** Renders the pre-sign transaction simulation result (success/fail badge and predicted asset movements). */
 export function SimulationBlock({ sim, pending, sub, chainId }: {
   sim: SimulateResult | null; pending: boolean; sub: string; chainId: number;
 }): React.ReactElement | null {
@@ -29,7 +30,7 @@ export function SimulationBlock({ sim, pending, sub, chainId }: {
   if (sim.success === 'unknown') {
     return <SimNote text="Could not simulate this transaction" sub={sub} bg={pal.border} />;
   }
-  const fail = sim.success === false;
+  const fail = !sim.success;
   const { in: incoming, out } = sim.assetChanges;
   const noChange = incoming.length === 0 && out.length === 0;
   // FAIL gets the red danger frame (loud); SUCCESS a calm success-tinted box.

@@ -25,7 +25,7 @@ export interface X402Authorization {
 }
 
 /** The decoded X-PAYMENT header body (before base64). */
-export interface X402PaymentPayload {
+interface X402PaymentPayload {
   x402Version: number;
   scheme: string;
   network: string;
@@ -37,7 +37,7 @@ export interface X402PaymentPayload {
 
 /** EIP-3009 typed-data `types` block — `TransferWithAuthorization` is the gasless
  *  transfer permit USDC (and other EIP-3009 tokens) implement. */
-export const TRANSFER_WITH_AUTHORIZATION_TYPES = {
+const TRANSFER_WITH_AUTHORIZATION_TYPES = {
   TransferWithAuthorization: [
     { name: 'from', type: 'address' },
     { name: 'to', type: 'address' },
@@ -49,7 +49,7 @@ export const TRANSFER_WITH_AUTHORIZATION_TYPES = {
 } as const;
 
 /** Default authorization window (seconds) when the challenge omits a timeout. */
-export const DEFAULT_TIMEOUT_SECONDS = 600;
+const DEFAULT_TIMEOUT_SECONDS = 600;
 
 /** Inputs needed to build the EIP-3009 authorization for an `exact` challenge. */
 export interface BuildAuthorizationParams {
@@ -98,22 +98,21 @@ export function buildTypedData(
     types: TRANSFER_WITH_AUTHORIZATION_TYPES,
     primaryType: 'TransferWithAuthorization',
     message: {
-      from: authorization.from as Hex,
-      to: authorization.to as Hex,
+      from: authorization.from,
+      to: authorization.to,
       value: BigInt(authorization.value),
       validAfter: BigInt(authorization.validAfter),
       validBefore: BigInt(authorization.validBefore),
-      nonce: authorization.nonce as Hex,
+      nonce: authorization.nonce,
     },
-  } as TypedDataDefinition;
+  };
 }
 
 /** base64-encode a UTF-8 string. RN has global `btoa`; fall back to Buffer so
  *  this works under the test runner and any environment. */
 function toBase64(s: string): string {
   if (typeof btoa === 'function') return btoa(unescape(encodeURIComponent(s)));
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const B: any = (globalThis as any).Buffer;
+  const B = (globalThis as { Buffer?: { from(s: string, enc: string): { toString(enc: string): string } } }).Buffer;
   if (B) return B.from(s, 'utf-8').toString('base64');
   throw new Error('no base64 encoder');
 }
@@ -149,8 +148,7 @@ export function buildPaymentHeader(args: {
  *  transfer behind a weak nonce. */
 export function randomNonce(): string {
   const bytes = new Uint8Array(32);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const c: any = (globalThis as any).crypto;
+  const c: Crypto | undefined = globalThis.crypto;
   if (!c?.getRandomValues) {
     throw new Error('Secure random unavailable: refusing to build a payment authorization with a weak nonce');
   }

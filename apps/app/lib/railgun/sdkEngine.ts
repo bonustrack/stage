@@ -35,6 +35,7 @@ let engineReady = false;
 let initPromise: Promise<boolean> | null = null;
 const loadedNetworks = new Set<RailgunNet>();
 
+/** Whether the engine has finished initialising. */
 export function isEngineReady(): boolean { return engineReady; }
 
 /** Persistent artifact store backed by expo-file-system (the engine downloads
@@ -49,12 +50,13 @@ function createArtifactStore(): ArtifactStore {
       if (!f.exists) return null;
       return Buffer.from(await f.bytes());
     },
-    async (dir: string, path: string, item: string | Uint8Array) => {
+    (dir: string, path: string, item: string | Uint8Array) => {
       const d = new Directory(root, dir);
       if (!d.exists) d.create({ intermediates: true });
       new File(abs(path)).write(item);
+      return Promise.resolve();
     },
-    async (path: string) => new File(abs(path)).exists,
+    (path: string) => Promise.resolve(new File(abs(path)).exists),
   );
 }
 

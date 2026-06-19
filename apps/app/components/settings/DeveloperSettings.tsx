@@ -22,6 +22,7 @@ import {
 import { resetForOnboarding } from '../../lib/wallet';
 import { resetEverything } from '../../lib/resetEverything';
 
+/** Renders the developer settings screen with reset and debugging actions. */
 export function DeveloperSettings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head, border, danger } = usePalette();
@@ -32,7 +33,7 @@ export function DeveloperSettings(): React.ReactElement {
 
   useEffect(() => {
     void loadDebugConsole().then(setEnabled);
-    return subscribeDebugConsole(() => setEnabled(isDebugConsoleEnabled()));
+    return subscribeDebugConsole(() => { setEnabled(isDebugConsoleEnabled()); });
   }, []);
 
   const [resetting, setResetting] = useState(false);
@@ -55,8 +56,8 @@ export function DeveloperSettings(): React.ReactElement {
           onPress: () => {
             setResetting(true);
             void resetForOnboarding()
-              .catch(() => Alert.alert('Reset failed', 'Could not clear account state.'))
-              .finally(() => setResetting(false));
+              .catch(() => { Alert.alert('Reset failed', 'Could not clear account state.'); })
+              .finally(() => { setResetting(false); });
           },
         },
       ],

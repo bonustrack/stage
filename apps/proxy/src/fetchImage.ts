@@ -78,7 +78,7 @@ async function fetchFollowing(
 async function readImageCapped(res: Response): Promise<ArrayBuffer | null> {
   const declared = Number(res.headers.get('content-length') ?? '');
   if (Number.isFinite(declared) && declared > MAX_IMG_BYTES) return null;
-  const reader = res.body?.getReader();
+  const reader = res.body?.getReader() as ReadableStreamDefaultReader<Uint8Array> | undefined;
   if (!reader) {
     const buf = await res.arrayBuffer();
     return buf.byteLength > MAX_IMG_BYTES ? null : buf;
@@ -101,7 +101,7 @@ async function readImageCapped(res: Response): Promise<ArrayBuffer | null> {
 }
 
 function imageContentType(res: Response): string | null {
-  const ct = (res.headers.get('content-type') ?? '').split(';')[0].trim().toLowerCase();
+  const ct = (res.headers.get('content-type') ?? '').split(';')[0]?.trim().toLowerCase() ?? '';
   return ct.startsWith('image/') ? ct : null;
 }
 

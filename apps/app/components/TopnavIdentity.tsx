@@ -18,6 +18,7 @@ import { getActiveAccount } from '../lib/accounts';
 import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
 import { shortAddress } from '../modules/messaging';
 
+/** Top-nav identity slot rendering the user's avatar and name as a menu trigger. */
 export function TopnavIdentity(): React.ReactElement {
   const { link: head, border } = usePalette();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -42,7 +43,7 @@ export function TopnavIdentity(): React.ReactElement {
   // on Home — the single canonical identity tap-target across tabs.
   return (
     <>
-      <Pressable onPress={() => setMenuOpen(true)} hitSlop={8}>
+      <Pressable onPress={() => { setMenuOpen(true); }} hitSlop={8}>
         <Row align="center" gap={8}>
           <Avatar address={myAddress} size={28} style={{ backgroundColor: border }} />
           {myName ? (
@@ -53,7 +54,7 @@ export function TopnavIdentity(): React.ReactElement {
           ) : null}
         </Row>
       </Pressable>
-      <MenuSheet visible={menuOpen} onClose={() => setMenuOpen(false)} />
+      <MenuSheet visible={menuOpen} onClose={() => { setMenuOpen(false); }} />
     </>
   );
 }

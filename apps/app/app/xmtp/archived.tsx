@@ -31,6 +31,7 @@ import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { ChannelRow } from '../../components/ChannelRow';
 import { Col, Row } from '../../components/layout';
 
+/** Screen listing the user's archived conversations. */
 export default function Archived(): React.ReactElement {
   const router = useRouter();
   const { text: fg, link: head, border } = usePalette();
@@ -41,9 +42,9 @@ export default function Archived(): React.ReactElement {
 
   useEffect(() => {
     void loadArchivedIds().then(setArchived);
-    return subscribeArchived(() => { void loadArchivedIds().then(s => setArchived(new Set(s))); });
+    return subscribeArchived(() => { void loadArchivedIds().then(s => { setArchived(new Set(s)); }); });
   }, []);
-  useEffect(() => subscribeCachedRows(r => setRows((r as RowT[] | null) ?? [])), []);
+  useEffect(() => subscribeCachedRows(r => { setRows((r as RowT[] | null) ?? []); }), []);
 
   const data = rows.filter(r => archived.has(r.convId));
   usePeerProfiles(data.map(r => r.peerAddress));
@@ -62,7 +63,7 @@ export default function Archived(): React.ReactElement {
         avatarUri={item.avatarUri}
         square={!item.peerAddress}
         lastPreview={item.lastPreview || preview || '(no messages yet)'}
-        onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } })}
+        onPress={() => { router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } }); }}
 />
     );
   }, [router]);
@@ -70,7 +71,7 @@ export default function Archived(): React.ReactElement {
   return (
     <Col surface="surface" flex={1}>
       <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
+        <Pressable onPress={() => { router.back(); }} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
         <Title size="sm" color={head}>Archived</Title>

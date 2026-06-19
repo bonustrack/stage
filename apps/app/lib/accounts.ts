@@ -27,7 +27,7 @@ import { resolveActiveAccount } from '@stage-labs/client/accounts/registry';
 
 export { canExportPrivateKey, getPrivateKey, getViemAccount } from './accounts.keys';
 
-export type { AccountType, AccountRecord } from './accounts.types';
+export type { AccountRecord } from './accounts.types';
 import type { AccountRecord } from './accounts.types';
 
 const LIST_KEY = 'accounts.list';
@@ -40,6 +40,7 @@ async function persist(list: AccountRecord[]): Promise<void> {
   await SecureStore.setItemAsync(LIST_KEY, JSON.stringify(list));
 }
 
+/** Load the account registry from secure storage, migrating the legacy single key on first run. */
 export async function loadAccounts(): Promise<AccountRecord[]> {
   if (cache) return cache;
   const raw = await SecureStore.getItemAsync(LIST_KEY).catch(() => null);
@@ -62,6 +63,7 @@ export async function loadAccounts(): Promise<AccountRecord[]> {
   return list;
 }
 
+/** Read the active account id, pointing the channels cache at its store on cold start. */
 export async function getActiveAccountId(): Promise<string | null> {
   const id = await SecureStore.getItemAsync(ACTIVE_KEY).catch(() => null);
   /** Boot init: point the channels cache at the active account's store so the
@@ -71,6 +73,7 @@ export async function getActiveAccountId(): Promise<string | null> {
   return id;
 }
 
+/** Set the active account and swap the channels cache to that account's store. */
 export async function setActiveAccountId(id: string): Promise<void> {
   await SecureStore.setItemAsync(ACTIVE_KEY, id);
   /** Point the channels cache at THIS account's store. We no longer wipe — each
@@ -114,10 +117,11 @@ export async function addSmartAccount(rec: AccountRecord): Promise<AccountRecord
     await setActiveAccountId(id);
     return existing;
   }
-  const next = [...list, { ...rec, id }];
+  const created = { ...rec, id };
+  const next = [...list, created];
   await persist(next);
   await setActiveAccountId(id);
-  return next[next.length - 1];
+  return created;
 }
 
 /** Update mutable bookkeeping fields on a smart account (deployed flag, the
@@ -139,6 +143,7 @@ export async function nextSmartHdIndex(): Promise<number> {
   return list.filter(a => a.type === 'smart').length;
 }
 
+/** Mark an account as registered (XMTP inbox provisioned), persisting only if it changed. */
 export async function markRegistered(id: string): Promise<void> {
   const list = await loadAccounts();
   const rec = list.find(a => a.id === id);
@@ -154,7 +159,8 @@ export async function removeAccount(id: string): Promise<AccountRecord[]> {
   await persist(next);
   const active = await getActiveAccountId();
   if (active === id) {
-    if (next.length) await setActiveAccountId(next[0].id);
+    const first = next[0];
+    if (first) await setActiveAccountId(first.id);
     else await SecureStore.deleteItemAsync(ACTIVE_KEY).catch(() => undefined);
   }
   return next;

@@ -35,13 +35,13 @@
 import '../cryptoShim';
 import { encodeFunctionData, keccak256, encodeAbiParameters, parseAbiParameters, type Address, type Hex, type PublicClient } from 'viem';
 import type { HDAccount } from 'viem/accounts';
-import { createKernelAccount, type KernelAccountClient } from '@zerodev/sdk';
+import { createKernelAccount } from '@zerodev/sdk';
 import { createWeightedECDSAValidator, getRecoveryAction, getUpdateConfigCall } from '@zerodev/weighted-ecdsa-validator';
 import { getValidatorAddress as getEcdsaValidatorAddress, signerToEcdsaValidator } from '@zerodev/ecdsa-validator';
 import { getValidatorAddress as getWeightedValidatorAddress } from '@zerodev/weighted-ecdsa-validator';
 import { ENTRY_POINT, KERNEL_VERSION } from './config';
 import {
-  weightedConfigFor, type WeightedConfig, type PendingRotation, DEFAULT_RECOVERY_DELAY_SECONDS,
+  weightedConfigFor, type WeightedConfig, DEFAULT_RECOVERY_DELAY_SECONDS,
 } from '@stage-labs/client/zerodev/recovery';
 import type { AccountRecord } from '../accounts';
 import { updateSmartAccount } from '../accounts';
@@ -68,9 +68,6 @@ const WEIGHTED_ABI = [
   { type: 'function', name: 'veto', stateMutability: 'nonpayable', inputs: [{ name: '_callDataAndNonceHash', type: 'bytes32' }], outputs: [] },
   { type: 'function', name: 'proposalStatus', stateMutability: 'view', inputs: [{ name: 'callDataAndNonceHash', type: 'bytes32' }, { name: 'kernel', type: 'address' }], outputs: [{ name: 'status', type: 'uint8' }, { name: 'validAfter', type: 'uint48' }] },
 ] as const;
-
-/** ProposalStatus enum (WeightedECDSAValidator). */
-export enum ProposalStatus { Ongoing = 0, Approved = 1, Executed = 2, Rejected = 3 }
 
 /** The recovery callData = a single doRecovery call rotating the ECDSA `sudo`
  *  validator to `newOwner`. The validator's enable data for an ECDSA owner is
@@ -134,7 +131,7 @@ export async function installGuardians(
     kernelVersion: KERNEL_VERSION,
     index: BigInt(rec.hdIndex),
   });
-  const kernelClient = makeKernelClient(account as Parameters<typeof makeKernelClient>[0], publicClient);
+  const kernelClient = makeKernelClient(account, publicClient);
 
   // A no-op self-call userOp materializes the plugin install (enable data is
   // carried in the userOp's validator enable, sponsored by the paymaster).
@@ -175,77 +172,6 @@ export async function signRecoveryApproval(
   });
 }
 
-/** INITIATOR side: execute the rotation. Builds the guardian validator with the
- *  collected guardian approvals as its signers and sends ONE sponsored doRecovery
- *  userOp. The on-chain `delay` opens the timelock window; the rotation does NOT
- *  take effect until it elapses (or is vetoed). Returns the userOp hash + the
- *  PendingRotation mirror.
- *
- *  NOTE: the guardian signers passed here must be light Signer adapters that
- *  REPLAY the offchain signatures collected over XMTP — they sign no fresh
- *  material. We adapt each collected {guardian,signature} into a Signer whose
- *  signTypedData/signMessage returns the stored signature, which the validator's
- *  signUserOperation concatenates verbatim. */
-export async function executeRecovery(
-  wallet: Address,
-  newOwner: Address,
-  cfg: WeightedConfig,
-  approvals: Array<{ guardian: Address; signature: Hex }>,
-  nowSeconds: number = Math.floor(Date.now() / 1000),
-): Promise<{ hash: string; pending: PendingRotation }> {
-  if (approvals.length < cfg.threshold) {
-    throw new Error(`Need ${cfg.threshold} guardian approvals, have ${approvals.length}.`);
-  }
-  const publicClient = makePublicClient();
-  // Replay-signer adapters: the validator iterates signers and calls
-  // signTypedData (all but last) / signMessage (last). Each returns the stored
-  // offchain signature, so no guardian key is needed at execution time.
-  const signers = approvals.map(a => replaySigner(a.guardian, a.signature));
-  const guardianValidator = await buildGuardianValidator(publicClient, cfg, signers as never);
-
-  // Rebuild the recoverable Kernel at the SAME address with the guardian validator
-  // as the active validator + the recovery action.
-  const account = await createKernelAccount(publicClient, {
-    address: wallet,
-    plugins: { sudo: guardianValidator, action: getRecoveryAction(ENTRY_POINT.version) },
-    entryPoint: ENTRY_POINT,
-    kernelVersion: KERNEL_VERSION,
-  });
-  const kernelClient = makeKernelClient(account as Parameters<typeof makeKernelClient>[0], publicClient);
-  const hash = await kernelClient.sendUserOperation({ callData: recoveryCallData(newOwner) });
-  await kernelClient.waitForUserOperationReceipt({ hash });
-
-  const pending: PendingRotation = {
-    wallet: wallet.toLowerCase(),
-    newOwner: newOwner.toLowerCase(),
-    approvedAt: nowSeconds,
-    finalizeAfter: nowSeconds + cfg.delay,
-  };
-  return { hash, pending };
-}
-
-/** Read the on-chain pending-rotation status for a wallet + newOwner. Mirrors the
- *  validator's proposalStatus into a PendingRotation (the timelock window is
- *  validAfter). Returns null when there is no live proposal. */
-export async function readPendingRotation(
-  wallet: Address,
-  newOwner: Address,
-  nonce: bigint,
-): Promise<{ status: ProposalStatus; validAfter: number } | null> {
-  const publicClient = makePublicClient();
-  const callData = recoveryCallData(newOwner);
-  const hash = callDataAndNonceHash(wallet, callData, nonce);
-  const validatorAddress = getWeightedValidatorAddress(ENTRY_POINT, KERNEL_VERSION);
-  try {
-    const [status, validAfter] = await publicClient.readContract({
-      abi: WEIGHTED_ABI, address: validatorAddress, functionName: 'proposalStatus', args: [hash, wallet],
-    }) as unknown as [number, bigint];
-    return { status: status as ProposalStatus, validAfter: Number(validAfter) };
-  } catch {
-    return null;
-  }
-}
-
 /** OWNER CANCEL (native veto): during the timelock window the owner cancels a
  *  pending rotation with their passkey/owner key. One sponsored userOp calling
  *  the validator's `veto`. The owner's current Kernel client signs it. */
@@ -254,10 +180,10 @@ export async function cancelRecovery(rec: AccountRecord, newOwner: Address, nonc
   const owner = await smartOwnerSigner(rec.hdIndex);
   const publicClient = makePublicClient();
   const account = await createEcdsaKernel(publicClient, owner, rec.hdIndex);
-  const kernelClient = makeKernelClient(account as Parameters<typeof makeKernelClient>[0], publicClient);
+  const kernelClient = makeKernelClient(account, publicClient);
 
   const callData = recoveryCallData(newOwner);
-  const hash = callDataAndNonceHash(account.address as Address, callData, nonce);
+  const hash = callDataAndNonceHash(account.address, callData, nonce);
   const validatorAddress = getWeightedValidatorAddress(ENTRY_POINT, KERNEL_VERSION);
   const userOpHash = await kernelClient.sendUserOperation({
     callData: await account.encodeCalls([{
@@ -283,7 +209,7 @@ export async function updateGuardians(
   const owner = await smartOwnerSigner(rec.hdIndex);
   const publicClient = makePublicClient();
   const account = await createEcdsaKernel(publicClient, owner, rec.hdIndex);
-  const kernelClient = makeKernelClient(account as Parameters<typeof makeKernelClient>[0], publicClient);
+  const kernelClient = makeKernelClient(account, publicClient);
 
   const call = getUpdateConfigCall(ENTRY_POINT, KERNEL_VERSION, {
     threshold: cfg.threshold,
@@ -302,28 +228,3 @@ export async function updateGuardians(
   return userOpHash;
 }
 
-/** RESUME after a successful (and un-vetoed, timelock-elapsed) rotation: rebuild
- *  the Kernel at the same address with the NEW owner as `sudo`, and return its
- *  client. The XMTP inbox survives (stable SCW address); only a new installation
- *  must re-register via the SCW signer (chainId 8453). */
-export async function resumeWithNewOwner(wallet: Address, newOwnerSigner: HDAccount): Promise<KernelAccountClient> {
-  const publicClient = makePublicClient();
-  const newOwnerValidator = await signerToEcdsaValidator(publicClient, { signer: newOwnerSigner, entryPoint: ENTRY_POINT, kernelVersion: KERNEL_VERSION });
-  const account = await createKernelAccount(publicClient, {
-    address: wallet,
-    plugins: { sudo: newOwnerValidator },
-    entryPoint: ENTRY_POINT,
-    kernelVersion: KERNEL_VERSION,
-  });
-  return makeKernelClient(account as Parameters<typeof makeKernelClient>[0], publicClient);
-}
-
-/** Adapt a collected offchain {guardian, signature} into a viem-ish Signer that
- *  REPLAYS the stored signature for the validator's signUserOperation. signMessage
- *  / signTypedData both return the stored sig (the validator never re-derives the
- *  message — it concatenates the produced bytes). `address` lets the validator sort
- *  signers by guardian address (matching its on-chain ordering). */
-function replaySigner(guardian: Address, signature: Hex) {
-  const replay = async () => signature;
-  return { address: guardian, signMessage: replay, signTypedData: replay } as never;
-}

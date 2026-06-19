@@ -20,7 +20,8 @@ const ALLOWED_SCHEMES = new Set(['http', 'https', 'mailto', 'metro', 'stage']);
  *  when the string has no scheme. */
 function schemeOf(url: string): string | null {
   const m = /^([a-zA-Z][a-zA-Z0-9+.-]*):/.exec(url.trim());
-  return m ? m[1].toLowerCase() : null;
+  const scheme = m?.[1];
+  return scheme !== undefined ? scheme.toLowerCase() : null;
 }
 
 /** True when `url` uses a scheme we are willing to open from an untrusted link. */

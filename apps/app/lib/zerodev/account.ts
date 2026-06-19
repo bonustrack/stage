@@ -17,7 +17,7 @@
 import '../cryptoShim';
 import type { PublicClient } from 'viem';
 import type { HDAccount } from 'viem/accounts';
-import { createKernelAccount, type CreateKernelAccountReturnType } from '@zerodev/sdk';
+import { createKernelAccount, type CreateKernelAccountReturnType, type KernelValidator } from '@zerodev/sdk';
 import { signerToEcdsaValidator } from '@zerodev/ecdsa-validator';
 import { ENTRY_POINT, KERNEL_VERSION } from './config';
 import { passkeysAvailable } from './native';
@@ -54,6 +54,107 @@ export async function createEcdsaKernel(
   });
 }
 
+/** Narrowly-typed boundaries for the lazily-`require`d native/SDK modules (untyped
+ *  requires, so Metro/tsc need not resolve them until the passkey APK ships). The
+ *  shapes describe exactly the members used; each require() result is guarded with a
+ *  typeof/`in` check before use, failing closed (throw/null) on an unexpected shape. */
+
+/** The live WebAuthn key handed to toPasskeyValidator. */
+interface WebAuthnKey {
+  pubX: bigint;
+  pubY: bigint;
+  authenticatorId: string;
+  authenticatorIdHash: `0x${string}`;
+  rpID: string;
+  signMessageCallback: unknown;
+}
+/** The credential shape parsed back out of a WebAuthn create() result. */
+interface ParsedPasskeyCred {
+  pubX: bigint;
+  pubY: bigint;
+  authenticatorId: string;
+  authenticatorIdHash: `0x${string}`;
+}
+
+/** Members of `@zerodev/react-native-passkeys-utils` we use. */
+interface PasskeysUtilsModule {
+  signMessageWithReactNativePasskeys: unknown;
+  parsePasskeyCred: (cred: unknown, rpId: string) => ParsedPasskeyCred;
+}
+
+/** Members of `@zerodev/passkey-validator` we use. */
+interface PasskeyValidatorModule {
+  toPasskeyValidator: (publicClient: PublicClient, args: {
+    webAuthnKey: WebAuthnKey;
+    entryPoint: typeof ENTRY_POINT;
+    kernelVersion: typeof KERNEL_VERSION;
+    validatorContractVersion: string;
+  }) => Promise<KernelValidator>;
+  PasskeyValidatorContractVersion: Record<string, string>;
+}
+
+/** Members of `react-native-passkeys` we use. */
+interface PasskeysNativeModule {
+  create: (request: unknown) => Promise<unknown>;
+  get: (request: unknown) => Promise<unknown>;
+}
+
+/** True for any non-null object — the base guard before `in` member probes. */
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+/** Narrow the passkeys-utils require() result; throws if the shape is wrong. */
+function asPasskeysUtils(mod: unknown): PasskeysUtilsModule {
+  if (
+    isObject(mod) &&
+    'parsePasskeyCred' in mod &&
+    typeof mod.parsePasskeyCred === 'function' &&
+    'signMessageWithReactNativePasskeys' in mod
+  ) {
+    return {
+      signMessageWithReactNativePasskeys: mod.signMessageWithReactNativePasskeys,
+      parsePasskeyCred: mod.parsePasskeyCred as PasskeysUtilsModule['parsePasskeyCred'],
+    };
+  }
+  throw new Error('Unexpected @zerodev/react-native-passkeys-utils shape');
+}
+
+/** Narrow the passkey-validator require() result; throws if the shape is wrong. */
+function asPasskeyValidator(mod: unknown): PasskeyValidatorModule {
+  if (
+    isObject(mod) &&
+    'toPasskeyValidator' in mod &&
+    typeof mod.toPasskeyValidator === 'function' &&
+    'PasskeyValidatorContractVersion' in mod &&
+    isObject(mod.PasskeyValidatorContractVersion)
+  ) {
+    return {
+      toPasskeyValidator: mod.toPasskeyValidator as PasskeyValidatorModule['toPasskeyValidator'],
+      PasskeyValidatorContractVersion:
+        mod.PasskeyValidatorContractVersion as Record<string, string>,
+    };
+  }
+  throw new Error('Unexpected @zerodev/passkey-validator shape');
+}
+
+/** Narrow the react-native-passkeys require() result; throws if the shape is wrong. */
+function asPasskeysNative(mod: unknown): PasskeysNativeModule {
+  if (
+    isObject(mod) &&
+    'create' in mod &&
+    typeof mod.create === 'function' &&
+    'get' in mod &&
+    typeof mod.get === 'function'
+  ) {
+    return {
+      create: mod.create as PasskeysNativeModule['create'],
+      get: mod.get as PasskeysNativeModule['get'],
+    };
+  }
+  throw new Error('Unexpected react-native-passkeys shape');
+}
+
 /** The public WebAuthn key material persisted on an account record so the passkey
  *  validator can be REBUILT on later launches without re-registering. Mirrors
  *  AccountRecord.passkey — pubX/pubY are hex strings (bigint isn't JSON-safe). */
@@ -63,14 +164,6 @@ export interface StoredPasskey {
   authenticatorId: string;
   authenticatorIdHash: string;
   rpID: string;
-}
-
-/** Result of the passkey CREATE path: the counterfactual Kernel (passkey `sudo`,
- *  the sole active signer; ECDSA owner is recovery-only, not installed) plus the
- *  StoredPasskey to persist on the record. */
-export interface PasskeyKernelResult {
-  account: CreateKernelAccountReturnType;
-  passkey: StoredPasskey;
 }
 
 /** The passkey WebAuthnValidator contract version. MUST be a real member of the
@@ -107,8 +200,10 @@ function passkeyContractVersion(
 /** Reconstruct the live `WebAuthnKey` (with the on-device signing callback) from a
  *  StoredPasskey. PRIVATE — both the create path (after registration) and the
  *  rebuild path go through toPasskeyValidator with one of these. */
-function liveWebAuthnKey(stored: StoredPasskey) {
-  const { signMessageWithReactNativePasskeys } = require('@zerodev/react-native-passkeys-utils');
+function liveWebAuthnKey(stored: StoredPasskey): WebAuthnKey {
+  const { signMessageWithReactNativePasskeys } = asPasskeysUtils(
+    require('@zerodev/react-native-passkeys-utils'),
+  );
   return {
     pubX: BigInt(stored.pubX),
     pubY: BigInt(stored.pubY),
@@ -151,7 +246,9 @@ async function buildPasskeyKernel(
    *  the fresh-create path, where the passkey IS the sudo the address derives from. */
   addressOverride?: `0x${string}`,
 ): Promise<CreateKernelAccountReturnType> {
-  const { toPasskeyValidator, PasskeyValidatorContractVersion } = require('@zerodev/passkey-validator');
+  const { toPasskeyValidator, PasskeyValidatorContractVersion } = asPasskeyValidator(
+    require('@zerodev/passkey-validator'),
+  );
   const passkeyValidator = await toPasskeyValidator(publicClient, {
     webAuthnKey: liveWebAuthnKey(stored),
     entryPoint: ENTRY_POINT,
@@ -174,10 +271,12 @@ async function buildPasskeyKernel(
 export async function passkeyValidatorFromStored(
   publicClient: PublicClient,
   stored: StoredPasskey,
-): Promise<unknown | null> {
+): Promise<unknown> {
   if (!passkeysAvailable()) return null;
   try {
-    const { toPasskeyValidator, PasskeyValidatorContractVersion } = require('@zerodev/passkey-validator');
+    const { toPasskeyValidator, PasskeyValidatorContractVersion } = asPasskeyValidator(
+      require('@zerodev/passkey-validator'),
+    );
     return await toPasskeyValidator(publicClient, {
       webAuthnKey: liveWebAuthnKey(stored),
       entryPoint: ENTRY_POINT,
@@ -199,8 +298,8 @@ export async function registerPasskeyCredential(
 ): Promise<StoredPasskey | null> {
   if (!passkeysAvailable()) return null;
   try {
-    const passkey = require('react-native-passkeys');
-    const { parsePasskeyCred } = require('@zerodev/react-native-passkeys-utils');
+    const passkey = asPasskeysNative(require('react-native-passkeys'));
+    const { parsePasskeyCred } = asPasskeysUtils(require('@zerodev/react-native-passkeys-utils'));
     const challengeBytes = new Uint8Array(32);
     crypto.getRandomValues(challengeBytes);
     const challenge = bytesToBase64Url(challengeBytes);
@@ -256,75 +355,6 @@ export async function passkeyKernelFromStored(
   }
 }
 
-/** Build a counterfactual Kernel with a device PASSKEY as `sudo` and the
- *  mnemonic-derived owner as the `regular` backup validator. Returns null when
- *  the running binary lacks the passkey native module (caller falls back to
- *  createEcdsaKernel + shows the "needs the new app build" state).
- *
- *  SERVERLESS construction (spec §z): the registration challenge is
- *  client-generated, the pubkey is parsed on-device from the create() response,
- *  signing uses the userOp hash as the WebAuthn challenge. NO passkey server.
- *
- *  Returns the account AND the StoredPasskey the caller must persist on the
- *  record so the validator can be rebuilt on later launches (createPasskeyKernel
- *  registers a NEW credential; the rebuild path is passkeyKernelFromStored).
- *
- *  All passkey deps are required LAZILY here so this file bundles/typechecks
- *  without `react-native-passkeys` / `@zerodev/passkey-validator` /
- *  `@zerodev/webauthn-key` / `@zerodev/react-native-passkeys-utils` present. */
-export async function createPasskeyKernel(
-  publicClient: PublicClient,
-  owner: HDAccount,
-  hdIndex: number,
-  opts: { rpId: string; userName: string; userDisplayName?: string },
-): Promise<PasskeyKernelResult | null> {
-  // NULL means "this binary cannot do passkeys at all" (old APK without the native
-  // module) -> the caller legitimately falls back to ECDSA. Once the native module
-  // IS present, a passkey was REQUESTED at create: any failure below must THROW (not
-  // return null), so createSmartAccount never silently downgrades a passkey account
-  // to an ECDSA-sudo one (the bug where "created with a passkey" still showed
-  // "Enable passkey" and signed with the key). Cancellation throws too -> surfaced
-  // to the onboarding UI rather than silently producing the wrong account.
-  if (!passkeysAvailable()) return null;
-  const passkey = require('react-native-passkeys');
-  const { parsePasskeyCred } = require('@zerodev/react-native-passkeys-utils');
-
-  // Client-generated 32-byte random challenge (base64url) — see spec §z(b).
-  const challengeBytes = new Uint8Array(32);
-  crypto.getRandomValues(challengeBytes);
-  const challenge = bytesToBase64Url(challengeBytes);
-
-  const cred = await passkey.create({
-    challenge,
-    pubKeyCredParams: [{ alg: -7, type: 'public-key' }], // ES256 / P-256
-    rp: { id: opts.rpId, name: 'Stage' },
-    user: {
-      id: bytesToBase64Url(new TextEncoder().encode(`${opts.userName}:${hdIndex}`)),
-      name: opts.userName,
-      displayName: opts.userDisplayName ?? opts.userName,
-    },
-    authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
-  });
-  if (!cred) throw new Error('Passkey creation was cancelled');
-
-  // pubkey comes back in the create() response; parsed on-device (no verify roundtrip).
-  const parsed = parsePasskeyCred(cred, opts.rpId);
-  const stored: StoredPasskey = {
-    pubX: `0x${parsed.pubX.toString(16)}`,
-    pubY: `0x${parsed.pubY.toString(16)}`,
-    authenticatorId: parsed.authenticatorId,
-    authenticatorIdHash: parsed.authenticatorIdHash,
-    rpID: opts.rpId,
-  };
-
-  // Build the Kernel with the PASSKEY as sudo and NO addressOverride: the address
-  // derives from the passkey-sudo validator + index (the CREATE2 salt), so the
-  // deploy initCode and rec.address agree and the first sponsored userOp deploys at
-  // exactly that address (no meta-factory `Unauthorized`, no separate enable step).
-  const account = await buildPasskeyKernel(publicClient, owner, hdIndex, stored);
-  return { account, passkey: stored };
-}
-
 /** REVEAL-GATE passkey assertion. Runs an on-device WebAuthn `get()` over a fresh
  *  random challenge, scoped to THIS account's stored credential (rpID +
  *  authenticatorId) with `userVerification: 'required'`, so the OS prompts for the
@@ -344,7 +374,7 @@ export async function createPasskeyKernel(
 export async function assertPasskeyPresence(stored: StoredPasskey): Promise<boolean | null> {
   if (!passkeysAvailable()) return null;
   try {
-    const passkey = require('react-native-passkeys');
+    const passkey = asPasskeysNative(require('react-native-passkeys'));
     const challengeBytes = new Uint8Array(32);
     crypto.getRandomValues(challengeBytes);
     const assertion = await passkey.get({

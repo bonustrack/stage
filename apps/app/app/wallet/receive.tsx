@@ -23,6 +23,7 @@ import { Icon } from '@metro-labs/kit/icon';
 import { flash } from '../../lib/toast';
 import { ReceiveModeToggle, type ReceiveMode } from '../../components/wallet/ReceiveModeToggle';
 
+/** Screen for receiving funds, showing the wallet address and QR code. */
 export default function WalletReceive(): React.ReactElement {
   const router = useRouter();
   const { text: fg, link: head, border } = usePalette();
@@ -64,7 +65,7 @@ export default function WalletReceive(): React.ReactElement {
   return (
     <Col surface="surface" flex={1}>
       <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
+        <Pressable onPress={() => { router.back(); }} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
         <Text weight="semibold" size="xl" color={head} style={{ flex: 1 }}>Receive</Text>

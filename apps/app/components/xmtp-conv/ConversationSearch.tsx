@@ -37,6 +37,7 @@ export interface ConversationSearchProps {
   router: { push: (h: { pathname: '/user/[address]'; params: { address: string } }) => void };
 }
 
+/** In-conversation search bar that filters and highlights matching messages. */
 export function ConversationSearch({
   line, query, sub, bg, c, dark, router,
 }: ConversationSearchProps): React.ReactElement {
@@ -63,7 +64,7 @@ export function ConversationSearch({
         () => scanEpoch.current !== epoch,
       ).finally(() => { if (scanEpoch.current === epoch) setScanning(false); });
     }, 220);
-    return () => clearTimeout(t);
+    return () => { clearTimeout(t); };
   }, [q, line]);
 
   useEffect(() => () => { scanEpoch.current += 1; }, []);

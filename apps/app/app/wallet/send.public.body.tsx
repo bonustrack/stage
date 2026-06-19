@@ -15,6 +15,7 @@ import { usePublicSend } from './send.public';
 import { useSelectedBalance, type TokenChoice } from './TokenSelector';
 import type { FooterState } from './wallet.form';
 
+/** Body for a public (on-chain) token send, owning recipient and amount input. */
 export function PublicSendBody({ token, initialTo, onFooter }: {
   token: TokenChoice; initialTo: string;
   /** Report submit state up so the page renders the pinned footer button. */

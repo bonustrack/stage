@@ -78,7 +78,7 @@ export function loadOverrides(): void {
       if (seedRaw != null) {
         const parsed = JSON.parse(seedRaw) as Partial<ThemeSeeds>;
         if (parsed && typeof parsed === 'object' && parsed.light && parsed.dark) {
-          cache = { ...defaultSeeds(), ...parsed } as ThemeSeeds;
+          cache = { ...defaultSeeds(), ...parsed };
           changed = true;
         }
       }
@@ -106,6 +106,7 @@ export function setCustomTheme(on: boolean): void {
 /** Set one seed COLOR (grayscale|accent|background|foreground) for a scheme.
  *  Invalid hex is ignored. Persists + notifies so the app re-themes live. */
 export type SeedColorKey = 'grayscale' | 'accent' | 'background' | 'foreground';
+/** Set one seed color for a scheme; ignores invalid hex, persists, and notifies. */
 export function setSeedColor(scheme: Scheme, key: SeedColorKey, hex: string): void {
   if (!isHex(hex)) return;
   const v = hex.trim().toLowerCase();

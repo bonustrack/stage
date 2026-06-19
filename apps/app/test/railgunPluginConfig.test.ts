@@ -17,13 +17,20 @@
  *  (plugins/nodejsMobileConfig.js - no @expo/config-plugins runtime needed) so
  *  CI catches a regression instead of a fresh APK. */
 
+import { createRequire } from 'node:module';
 import { describe, expect, test } from 'bun:test';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const cfg = require('../plugins/nodejsMobileConfig.js') as {
+
+/** The Expo config-plugin helper module's public surface (plain CJS). */
+interface NodejsMobileConfig {
   transformAppBuildGradle(src: string): string;
   setExtractNativeLibs(m: { application?: { $?: Record<string, string> }[] }): unknown;
   setGradleMemory(p: { type: string; key: string; value: string }[]): unknown;
-};
+}
+
+// Plain CJS config-plugin helper; load it from this ESM test via createRequire
+// instead of the banned bare `require`.
+const requireCjs = createRequire(import.meta.url);
+const cfg = requireCjs('../plugins/nodejsMobileConfig.js') as NodejsMobileConfig;
 
 const TEMPLATE_GRADLE = [
   'android {',

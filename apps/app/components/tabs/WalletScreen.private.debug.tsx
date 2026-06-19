@@ -27,7 +27,7 @@ function fmtEvent(d: BalanceDebug): string {
     const s = JSON.stringify(d.lastEvent);
     return s.length> 600 ? `${s.slice(0, 600)}…` : s;
   } catch {
-    return String(d.lastEvent);
+    return '[unserializable event]';
   }
 }
 
@@ -44,6 +44,7 @@ function DebugRow({ label, value, sub, head }: {
   );
 }
 
+/** Debug panel exposing Railgun private-balance internals for diagnostics. */
 export function RailgunDebugPanel({ head, sub, border }: {
   head: string; sub: string; border: string;
 }): React.ReactElement {

@@ -43,6 +43,7 @@ export interface PaymentAction {
   disabled?: boolean;
 }
 
+/** Renders a payment summary card showing the token, amount, balance, and action. */
 export function PaymentCard({
   dark, logoUrl, chainNum, description, badge, amountLabel,
   detail, balance, action, footer,

@@ -98,6 +98,7 @@ function SectionLabel({ children, c }: { children: string; c: C }): React.ReactE
   );
 }
 
+/** Renders the wallet settings screen for managing the account's wallet. */
 export function WalletSettings(): React.ReactElement {
   const epoch = useActiveAccount();
   const router = useRouter();
@@ -219,7 +220,7 @@ export function WalletSettings(): React.ReactElement {
                     ) : null}
                     <ListViewItem
                       dark={dark}
-                      onPress={() => router.push('/wallet/recovery')}
+                      onPress={() => { router.push('/wallet/recovery'); }}
                       style={{ paddingHorizontal: 14, paddingVertical: 14 }}
                     >
                       <Icon name="userGroup" size={22} color={c.head} />

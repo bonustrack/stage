@@ -18,6 +18,7 @@ import { getGithubLink, setGithubLink } from '../../modules/messaging';
 
 interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }
 
+/** Section for linking and editing a group's associated GitHub repository. */
 export function GroupGithubSection({ line, p }: { line: string; p: Pal }): React.ReactElement {
   const { fg, sub, border, inputBg } = p;
   const [url, setUrl] = useState<string | undefined>(undefined);

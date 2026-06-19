@@ -19,6 +19,7 @@ const kindIcon = (kind: string): HeroIconName => (
   kind === 'image' ? 'photo' : kind === 'audio' ? 'microphone' : 'paperClip'
 );
 
+/** Renders the banner above the composer showing the message being replied to. */
 export function ReplyBanner({
   dark, sub, sender, onClear, onPress,
 }: {
@@ -63,6 +64,7 @@ export function ReplyBanner({
   );
 }
 
+/** Renders the @-mention autocomplete popup of matching members above the composer. */
 export function MentionPopup({
   dark, head, sub, matches, onPick,
 }: {
@@ -79,7 +81,7 @@ export function MentionPopup({
       {matches.map((c, i) => (
         <Pressable
           key={c.address}
-          onPress={() => onPick(c)}
+          onPress={() => { onPick(c); }}
           style={({ pressed }) => ({
             flexDirection: 'row', alignItems: 'center', gap: 10,
             paddingHorizontal: 12, paddingVertical: 8,
@@ -100,6 +102,7 @@ export function MentionPopup({
   );
 }
 
+/** Renders the row of staged (pending) attachment chips with remove buttons. */
 export function PendingRow({
   fg, sub, chipBg, pending, onRemove,
 }: {
@@ -115,7 +118,7 @@ export function PendingRow({
             <Box>
               <Image src={a.url} size={72} radius={8} fit="cover"/>
               <Pressable
-                onPress={() => onRemove(i)}
+                onPress={() => { onRemove(i); }}
                 hitSlop={6}
                 style={{
                   position: 'absolute', top: -4, right: -4,
@@ -134,7 +137,7 @@ export function PendingRow({
           <Row padding={{ x: 8, y: 4 }} key={a.id} align="center" gap={6} radius="lg" background={chipBg}>
             <Icon name={kindIcon(a.kind)} size={14} color={fg}/>
             <Text size="2xs" color={fg} style={{ maxWidth: 140 }} numberOfLines={1}>{a.name ?? a.id}</Text>
-            <Pressable onPress={() => onRemove(i)} hitSlop={6}>
+            <Pressable onPress={() => { onRemove(i); }} hitSlop={6}>
               <Icon name="x" size={14} color={sub}/>
             </Pressable>
           </Row>
@@ -144,6 +147,7 @@ export function PendingRow({
   );
 }
 
+/** Renders the active voice-recording bar with waveform levels, elapsed time, and slide-to-cancel. */
 export function RecordingBar({
   head, sub, levels, recordSecs, slideX, slideThresholdPx,
 }: {
@@ -168,7 +172,7 @@ export function RecordingBar({
         </Text>
       </Animated.View>
       <Row height={28} flex={1} align="center" justify="end" style={{ overflow: 'hidden' }}>
-        {[...Array(Math.max(0, 40 - levels.length)).fill(0.05), ...levels].slice(-40).map((lvl, i) => (
+        {[...(Array<number>(Math.max(0, 40 - levels.length)).fill(0.05)), ...levels].slice(-40).map((lvl, i) => (
           <Box width={3} radius="2xs" height={Math.max(3, Math.round(lvl * 26))} background={head} margin={{ x: 1 }} key={i} style={{ opacity: 0.85 }}/>
         ))}
       </Row>

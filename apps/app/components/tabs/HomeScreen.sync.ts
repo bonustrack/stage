@@ -11,6 +11,7 @@ import {
   listRequestConvs, streamConvConsent, syncConsent,
 } from '../../modules/messaging';
 import { hydrateCachedRows } from '../../modules/messaging';
+import type { Conversation } from '@xmtp/react-native-sdk';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { summarize } from './HomeScreen.helpers';
 import { makeMsgStreamHandler } from './HomeScreen.stream';
@@ -135,7 +136,12 @@ export function useChannelsSync({
         /** Subscribe to newly-created conversations so groups + DMs created
          *  while the tab is mounted show up without a manual refresh. */
         try {
-          cancelConvStream = await client.conversations.stream(async (conv) => {
+          /** RN xmtp types `stream` as `Promise<void>`, but at runtime it resolves
+           *  to an unsubscribe function — capture it through an unknown-returning
+           *  view of the method so we can stash the canceller. */
+          const streamFn = client.conversations.stream.bind(client.conversations) as
+            (cb: (conv: Conversation | null) => Promise<void>) => Promise<unknown>;
+          const streamResult: unknown = await streamFn(async (conv) => {
             if (cancelled || !conv) return;
             /** A streamed conv we haven't accepted yet ('unknown') is a message
              *  request — surface it in the Requests count, not the inbox. */
@@ -147,7 +153,10 @@ export function useChannelsSync({
               const next = prev ? [r, ...prev.filter(x => x.convId !== r.convId)] : [r];
               return next;
             });
-          }) ?? null;
+          });
+          cancelConvStream = typeof streamResult === 'function'
+            ? (streamResult as () => void)
+            : null;
         } catch { /* stream init failed — AppState resume re-runs refresh */ }
 
         /** Subscribe to every new message across all convs so the per-row

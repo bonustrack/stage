@@ -38,6 +38,7 @@ function CopyRow({ label, value, display, c }: {
   );
 }
 
+/** Renders the messenger settings screen. */
 export function MessengerSettings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head, border } = usePalette();

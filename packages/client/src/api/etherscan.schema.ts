@@ -8,7 +8,7 @@
 
 import { z } from 'zod';
 import { parseOrThrow } from '../validate';
-import type { EtherscanTx } from './etherscan';
+import type { EtherscanTx } from './etherscan.types';
 
 /** A single txlist row. All numeric fields arrive as decimal strings; optional
  *  fields are kept loose since the caller defaults them. */
@@ -42,5 +42,5 @@ export interface EtherscanResponse {
 /** Validate a raw Etherscan response body. Throws (with a logged reason) when
  *  the envelope itself is malformed. */
 export function parseEtherscanResponse(data: unknown): EtherscanResponse {
-  return parseOrThrow('api.etherscan', responseSchema, data) as EtherscanResponse;
+  return parseOrThrow('api.etherscan', responseSchema, data);
 }

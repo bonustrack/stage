@@ -8,7 +8,7 @@ const props = defineProps<{
   address: string | null;
   query: string;
 }>();
-const emit = defineEmits<{ (e: 'open'): void }>();
+const emit = defineEmits<(e: 'open') => void>();
 </script>
 
 <template>

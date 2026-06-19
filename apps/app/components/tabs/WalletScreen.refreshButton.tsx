@@ -9,6 +9,7 @@ import { Animated, Easing } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Icon } from '@metro-labs/kit/icon';
 
+/** Button that triggers a wallet refresh and spins while refreshing. */
 export function RefreshButton({
   refreshing,
   onRefresh,
@@ -35,7 +36,7 @@ export function RefreshButton({
       }),
     );
     loop.start();
-    return () => loop.stop();
+    return () => { loop.stop(); };
   }, [refreshing, spin]);
 
   const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });

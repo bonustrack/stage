@@ -6,6 +6,7 @@
 import { Video, ResizeMode } from 'expo-av';
 import { Box } from './layout';
 
+/** Renders an inline video message attachment with native playback controls. */
 export function MessengerVideoAttachment({ uri }: { uri: string }): React.ReactElement {
   return (
     <Box width={220} radius="md" background={'#000'} margin={{ bottom: 6 }} style={{ overflow: 'hidden' }}>

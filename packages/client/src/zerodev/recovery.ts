@@ -21,7 +21,7 @@ export type GuardianAddress = string;
  *  is the required total weight, `delay` is the timelock in seconds. */
 export interface WeightedConfig {
   threshold: number;
-  signers: Array<{ address: GuardianAddress; weight: number }>;
+  signers: { address: GuardianAddress; weight: number }[];
   /** On-chain timelock (seconds) before an approved rotation can finalize. */
   delay: number;
 }
@@ -110,13 +110,15 @@ export function encodeRecoveryMessage(msg: RecoveryMessage): string {
 /** Parse a recovery control message from an XMTP text line, or null if the line
  *  is ordinary chat. Defensive: never throws on malformed input. */
 export function parseRecoveryMessage(text: string): RecoveryMessage | null {
-  if (!text || !text.startsWith(REQUEST_PREFIX)) return null;
+  if (!text?.startsWith(REQUEST_PREFIX)) return null;
   try {
-    const obj = JSON.parse(text.slice(REQUEST_PREFIX.length));
-    if (obj?.kind === 'recovery.request' && obj.wallet && obj.newOwner) {
+    const obj: unknown = JSON.parse(text.slice(REQUEST_PREFIX.length));
+    if (typeof obj !== 'object' || obj === null) return null;
+    const rec = obj as Record<string, unknown>;
+    if (rec.kind === 'recovery.request' && rec.wallet && rec.newOwner) {
       return obj as RecoveryRequest;
     }
-    if (obj?.kind === 'recovery.approval' && obj.wallet && obj.newOwner && obj.signature) {
+    if (rec.kind === 'recovery.approval' && rec.wallet && rec.newOwner && rec.signature) {
       return obj as RecoveryApproval;
     }
     return null;

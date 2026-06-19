@@ -40,6 +40,7 @@ function IntroLabelChips({ labels, fg }: {
   );
 }
 
+/** Header that introduces a conversation's peer or group details. */
 export function ConversationIntro({
   isGroup, peerAddr, groupName, groupImage, groupDescription, groupLabels,
   convId, head, sub, fg, border, rowBg, onPressPeer,
@@ -82,7 +83,7 @@ export function ConversationIntro({
   if (!peerAddr) return null;
   return (
     <Pressable
-      onPress={() => onPressPeer(peerAddr)}
+      onPress={() => { onPressPeer(peerAddr); }}
       style={{ alignItems: 'flex-start', paddingVertical: 24, paddingHorizontal: 12 }}
     >
       <Avatar address={peerAddr} size="lg" style={{ backgroundColor: border }} />

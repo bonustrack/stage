@@ -44,8 +44,7 @@ export function useFooterReporter(): {
   const report = useCallback((s: FooterState): void => {
     ref.current = s;
     setFooter(prev => {
-      if (prev
-        && prev.submitLabel === s.submitLabel
+      if (prev?.submitLabel === s.submitLabel
         && prev.submitDisabled === s.submitDisabled
         && prev.submitLoading === s.submitLoading) {
         return prev;
@@ -84,7 +83,7 @@ export function ActionHeader({ title, head, border, onBack }: {
  *  primary = selected). Replaces the bespoke gold Pressable pills. */
 export function Segmented<T extends string | number>({ label, value, options, onChange, dark }: {
   label?: string; value: T; dark: boolean;
-  options: ReadonlyArray<readonly [T, string]>;
+  options: readonly (readonly [T, string])[];
   onChange: (v: T) => void;
 }): React.ReactElement {
   const { sub } = useFormPal();
@@ -95,7 +94,7 @@ export function Segmented<T extends string | number>({ label, value, options, on
         {options.map(([id, text]) => (
           <Button key={String(id)} variant={value === id ? 'primary' : 'secondary'}
             size="md" dark={dark} pill style={{ flex: 1 }}
-            onPress={() => onChange(id)} label={text}/>
+            onPress={() => { onChange(id); }} label={text}/>
         ))}
       </Row>
     </Box>
@@ -116,7 +115,7 @@ export function AmountBox({ pal, amount, setAmount, busy, balance, symbol, dark 
         <Text size="xs" color={sub} style={{ flex: 1 }}>AMOUNT</Text>
         {balance != null ? (
           <Button variant="ghost" size="sm" dark={!!dark} disabled={!hasBal || busy}
-            onPress={() => { if (hasBal) setAmount(String(balance)); }}
+            onPress={() => { if (hasBal) setAmount(balance); }}
             label="MAX" textStyle={{ color: hasBal ? link : sub, fontSize: fontSize('xs') }}
             style={{ height: 24, paddingHorizontal: 8 }}/>
         ) : null}

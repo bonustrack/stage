@@ -110,8 +110,10 @@ export class PersistentStore<T> {
     return this.hydration.run();
   }
 
+  /** Current in-memory value (null until hydrated or set). */
   get(): T | null { return this.value; }
 
+  /** Set the authoritative value, notify subscribers, and persist (debounced). */
   set(next: T | null): void {
     this.value = next;
     /** A set() supplies the authoritative value — short-circuit any pending
@@ -149,6 +151,7 @@ export class PersistentStore<T> {
     this.notify(null);
   }
 
+  /** Subscribe to value changes. Returns an unsubscribe fn. */
   subscribe(l: (v: T | null) => void): () => void {
     this.listeners.add(l);
     return () => { this.listeners.delete(l); };
@@ -168,9 +171,12 @@ export class MemoryStore<K, V> {
    *  query cache without wrapping each individual `set` call site. */
   private readonly global = new Set<(key: K, v: V | undefined) => void>();
 
+  /** Value for a key, or undefined if absent. */
   get(key: K): V | undefined { return this.map.get(key); }
+  /** Whether a key is present in the cache. */
   has(key: K): boolean { return this.map.has(key); }
 
+  /** Store a value for a key and notify keyed + global listeners. */
   set(key: K, value: V): void {
     this.map.set(key, value);
     const ls = this.keyed.get(key);
@@ -189,7 +195,7 @@ export class MemoryStore<K, V> {
     let ls = this.keyed.get(key);
     if (!ls) { ls = new Set(); this.keyed.set(key, ls); }
     ls.add(l);
-    return () => { ls!.delete(l); };
+    return () => { ls.delete(l); };
   }
 
   /** Wipe everything (e.g. on account switch) + notify all keyed listeners. */
@@ -209,6 +215,7 @@ export class MemoryStore<K, V> {
 export async function getSecure(key: string): Promise<string | null> {
   try { return await SecureStore.getItemAsync(key); } catch { return null; }
 }
+/** Write a value to SecureStore; best-effort (swallows errors). */
 export async function setSecure(key: string, value: string): Promise<void> {
   try { await SecureStore.setItemAsync(key, value); } catch { /* best-effort */ }
 }

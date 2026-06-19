@@ -21,6 +21,7 @@ import { useLinkPreview, isX402 } from '../lib/useLinkPreview';
 import { X402Card } from './X402Card';
 import { usePalette, useBlockRadius } from '../lib/theme';
 
+/** Renders a generic OpenGraph preview card for a plain link, or nothing while loading or on failure. */
 export function LinkPreviewCard({ url, dark }: {
   /** `dark` is forwarded to the x402 payment card (Pay-style button tinting);
    *  the OG preview path takes colors from the live palette tokens (same
@@ -36,7 +37,9 @@ export function LinkPreviewCard({ url, dark }: {
 
   const subColor = pal.text;
   const border = pal.border;
-  const domain = meta.siteName || domainOf(meta.url || url);
+  const domain = meta.siteName == null || meta.siteName === ''
+    ? domainOf(meta.url == null || meta.url === '' ? url : meta.url)
+    : meta.siteName;
 
   return (
     <Pressable onPress={() => void Linking.openURL(url)}>

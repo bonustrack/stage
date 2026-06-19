@@ -9,6 +9,7 @@
  *  Node 18+). */
 
 import { parseOpenseaResponse } from './opensea.schema';
+export type { ApiNft } from './opensea.types';
 
 const DEFAULT_KEY =
   process.env.EXPO_PUBLIC_OPENSEA_API_KEY ?? '51754bb53b324552ba4741c5b7298096';
@@ -31,16 +32,6 @@ const NETWORKS: Record<string, ChainItem> = {
 };
 
 const SUPPORTED_ABIS = ['erc721', 'erc1155'];
-
-export interface ApiNft {
-  identifier: string;
-  collection: string;
-  contract: string;
-  token_standard: string;
-  name: string;
-  image_url: string;
-  opensea_url: string;
-}
 
 export interface Nft {
   /** `<contract>:<identifier>` - stable key for lists. */
@@ -73,7 +64,7 @@ export async function getNfts(
   // Promise.all (in getNftsAcrossChains) pending forever -> the NFT grid spinner
   // spins indefinitely. Abort after 10s and degrade to [] like a non-200.
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 10000);
+  const timer = setTimeout(() => { ctrl.abort(); }, 10000);
   let res: Response;
   try {
     res = await fetch(url, {

@@ -91,7 +91,7 @@ export async function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promis
     /** Reuse on-disk identity only when both the address (key match) and env
      *  (network match) line up — different networks live under different inboxes.
      *  Reusing skips re-signing — important for the host-wallet path (no extra prompt). */
-    if (savedAddress && savedAddress.toLowerCase() === address && savedEnv === env) {
+    if (savedAddress?.toLowerCase() === address && savedEnv === env) {
       try {
         cachedClient = await Client.build(
           { identifier: address, identifierKind: IdentifierKind.Ethereum },
@@ -109,6 +109,7 @@ export async function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promis
   finally { buildingClient = null; }
 }
 
+/** Return the already-built XMTP client if one exists, else null. */
 export function getCachedXmtpClient(): XmtpClient | null { return cachedClient; }
 
 /** Format a metro-style line URI for an XMTP conversation. */
@@ -134,9 +135,10 @@ export { peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap } 
 /** URI prefix used for inbound XMTP "from" addresses. Mirrors the mobile app. */
 export const XMTP_USER_PREFIX = 'metro://xmtp/user/';
 
+/** Extract the conversation id from a metro XMTP line URI, or null when it doesn't match. */
 export function convIdOfLine(line: string): string | null {
-  const m = line.match(/^metro:\/\/xmtp\/([^/]+)$/);
-  return m ? m[1] : null;
+  const m = /^metro:\/\/xmtp\/([^/]+)$/.exec(line);
+  return m?.[1] ?? null;
 }
 
 /** Look up an XMTP conversation by metro line URI. */

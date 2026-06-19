@@ -12,6 +12,7 @@
 import { Topnav } from '../Topnav';
 import { useTopnavSlot } from './topnavSlots';
 
+/** Renders the top navigation bar hoisted from the active tab's slot. */
 export function HoistedTopnav(): React.ReactElement {
   const slot = useTopnavSlot();
   // Home's expanded search replaces the entire bar (identity included).

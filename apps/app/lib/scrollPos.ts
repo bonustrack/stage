@@ -11,7 +11,9 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+/** Storage key for the channel list's saved scroll offset. */
 export const CHANNELS_SCROLL_KEY = 'scroll:channels';
+/** Storage key for a single conversation's saved scroll offset. */
 export function convScrollKey(convId: string): string { return `scroll:conv:${convId}`; }
 
 /** In-memory mirror so a restore on mount can answer synchronously after the

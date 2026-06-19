@@ -21,7 +21,7 @@ import { RAILGUN_NETWORKS, type RailgunNet } from './networks';
 import { RAILGUN_TOKENS, type TokenMeta } from './tokens';
 
 /** Kind of private fund movement, used to pick the row label + icon. */
-export type PrivateActivityKind = 'shield' | 'unshield' | 'transfer';
+type PrivateActivityKind = 'shield' | 'unshield' | 'transfer';
 
 /** One private fund movement, pre-formatted for the Activity row. */
 export interface PrivateActivityRow {

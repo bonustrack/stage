@@ -9,7 +9,7 @@ import { decodeAbiParameters, type Hex } from 'viem';
 
 /** keccak256("Transfer(address,address,uint256)") — the ERC-20 / synthetic-ETH
  *  transfer topic that traceTransfers emits. */
-export const TRANSFER_TOPIC =
+const TRANSFER_TOPIC =
   '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 
 /** One side of the asset delta shown on the card. */
@@ -23,7 +23,7 @@ export interface AssetMove {
   decimals: number;
 }
 
-export interface SimLog { address: string; topics: string[]; data: string }
+interface SimLog { address: string; topics: string[]; data: string }
 export interface SimCall {
   status: string;
   returnData?: string;
@@ -57,13 +57,13 @@ export function humanizeRevert(raw: string): string {
  *  failures read cleanly. */
 export function decodeRevert(returnData?: string, errMsg?: string): string | undefined {
   const d = returnData && returnData !== '0x' ? returnData : undefined;
-  if (d && d.startsWith('0x08c379a0')) {
+  if (d?.startsWith('0x08c379a0')) {
     try {
       const [msg] = decodeAbiParameters([{ type: 'string' }], ('0x' + d.slice(10)) as Hex);
-      if (msg) return humanizeRevert(String(msg));
+      if (msg) return humanizeRevert(msg);
     } catch { /* fall through */ }
   }
-  if (d && d.startsWith('0x4e487b71')) return 'Execution panic (assert/overflow)';
+  if (d?.startsWith('0x4e487b71')) return 'Execution panic (assert/overflow)';
   if (errMsg) return humanizeRevert(errMsg);
   return undefined;
 }
@@ -72,7 +72,7 @@ export function decodeRevert(returnData?: string, errMsg?: string): string | und
  *  + 18-decimal fallback when unknown. Registry-only by design (no extra RPC). */
 function tokenMeta(addr: string, chainId: number): { symbol: string; decimals: number } {
   const lc = addr.toLowerCase();
-  const hit = ASSETS.find(a => a.chainId === chainId && a.address && a.address.toLowerCase() === lc);
+  const hit = ASSETS.find(a => a.chainId === chainId && a.address?.toLowerCase() === lc);
   if (hit) return { symbol: hit.symbol, decimals: hit.decimals };
   return { symbol: `${addr.slice(0, 6)}…${addr.slice(-4)}`, decimals: 18 };
 }
@@ -124,11 +124,15 @@ export function parseAssetChanges(
 
   for (const c of calls) {
     for (const log of c.logs ?? []) {
-      if (!log.topics?.length) continue;
-      if (log.topics[0].toLowerCase() !== TRANSFER_TOPIC) continue;
-      if (log.topics.length < 3) continue;
-      const fromA = topicToAddr(log.topics[1]);
-      const toA = topicToAddr(log.topics[2]);
+      const topics = log.topics;
+      if (!topics?.length) continue;
+      if (topics[0]?.toLowerCase() !== TRANSFER_TOPIC) continue;
+      if (topics.length < 3) continue;
+      const topic1 = topics[1];
+      const topic2 = topics[2];
+      if (topic1 === undefined || topic2 === undefined) continue;
+      const fromA = topicToAddr(topic1);
+      const toA = topicToAddr(topic2);
       let amount: bigint;
       try { amount = BigInt(log.data && log.data !== '0x' ? log.data : '0x0'); }
       catch { continue; }

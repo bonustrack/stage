@@ -46,6 +46,7 @@ export interface MemberPickerState {
   selectedAddresses: Set<string>;
 }
 
+/** Hook managing the member-picker entry field and staged member list. */
 export function useMemberPicker(): MemberPickerState {
   const [entry, setEntry] = useState('');
   const [members, setMembers] = useState<Member[]>([]);
@@ -71,7 +72,7 @@ export function useMemberPicker(): MemberPickerState {
       if (members.some(m => m.address.toLowerCase() === lower)) {
         flash('Already added'); setEntry(''); return;
       }
-      setMembers(prev => [...prev, { address: address as string, label }]);
+      setMembers(prev => [...prev, { address: address, label }]);
       setEntry('');
     } catch (err) {
       flash((err as Error)?.message ?? 'Failed to add member');
@@ -104,6 +105,7 @@ export function useMemberPicker(): MemberPickerState {
   };
 }
 
+/** UI for searching, adding and removing members when composing a group. */
 export function MemberPicker({ state, dark, exclude = [] }: {
   state: MemberPickerState;
   dark: boolean;
@@ -182,7 +184,7 @@ export function MemberPicker({ state, dark, exclude = [] }: {
                 )}
               </Col>
               <Pressable
-                onPress={() => removeMember(m.address)}
+                onPress={() => { removeMember(m.address); }}
                 hitSlop={6}
                 style={{ width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: border }}
 >

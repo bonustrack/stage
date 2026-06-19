@@ -32,6 +32,7 @@ function fmt(ms: number | undefined): string {
   return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 }
 
+/** Audio message bubble with play/pause controls for the given URI. */
 export function VoiceMessage({ uri }: Props): React.ReactElement {
   const soundRef = useRef<Audio.Sound | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -94,8 +95,8 @@ export function VoiceMessage({ uri }: Props): React.ReactElement {
       </Pressable>
       <Pressable
         style={{ flex: 1, height: TRACK_H, justifyContent: 'center' }}
-        onLayout={(ev) => setBarWidth(ev.nativeEvent.layout.width)}
-        onPress={(ev) => seekTo(ev.nativeEvent.locationX)}
+        onLayout={(ev) => { setBarWidth(ev.nativeEvent.layout.width); }}
+        onPress={(ev) => { seekTo(ev.nativeEvent.locationX); }}
 >
         <Row height={TRACK_H} align="center" gap={2}>
           {bars.map((h, i) => {

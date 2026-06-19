@@ -68,16 +68,19 @@ export interface Attachment {
   kind: string; mime?: string; size?: number; name?: string;
 }
 
+/** Formats a timestamp string as a 24-hour HH:MM label. */
 export function fmtTs(ts: string): string {
   try { return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }); }
   catch { return ts.slice(11, 16); }
 }
 
+/** Returns the attachments array from a history entry's payload, or an empty array. */
 export function attachmentsOf(entry: HistoryEntry): Attachment[] {
   const p = entry.payload as { attachments?: Attachment[] } | undefined;
   return Array.isArray(p?.attachments) ? p.attachments : [];
 }
 
+/** Builds the markdown render style map for a bubble body given its color, theme, and ownership. */
 export function markdownStyles(fg: string, dark: boolean, mine: boolean): Record<string, object> {
   const codeBg = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
   /** Tighter leading on the user's own bubble — Less prefers a snugger look there.
@@ -107,7 +110,7 @@ export function markdownStyles(fg: string, dark: boolean, mine: boolean): Record
   };
 }
 
-export interface QuestionOption { label: string; description?: string }
+interface QuestionOption { label: string; description?: string }
 export interface Question {
   header?: string;
   options: QuestionOption[];
@@ -117,30 +120,33 @@ export interface Question {
   allowOther?: boolean;
 }
 
+/** Extracts a valid question payload from a history entry, or undefined. */
 export function questionOf(entry: HistoryEntry): Question | undefined {
   const p = entry.payload as { question?: Question } | undefined;
   if (!p?.question || !Array.isArray(p.question.options)) return undefined;
   return p.question;
 }
 
-export interface PollOption { label: string; description?: string }
+interface PollOption { label: string; description?: string }
 export interface PollQuestion { question: string; header?: string; options: PollOption[]; multiSelect?: boolean; open?: boolean }
 /** Normalized poll: non-empty `questions[]`; `question` is the bubble title (q0). */
 export interface Poll { pollId?: string; question?: string; questions: PollQuestion[] }
 
+/** Extracts and normalizes a poll payload from a history entry, or undefined. */
 export function pollOf(entry: HistoryEntry): Poll | undefined {
   const raw = (entry.payload as { poll?: PollContent })?.poll;
   if (!raw) return undefined;
   // normalizeQuestions folds BOTH shapes into one array (option strings -> {label}).
   const questions = normalizeQuestions(raw);
-  if (questions.length === 0) return undefined;
-  return { pollId: raw.pollId, question: questions[0].question, questions };
+  const first = questions[0];
+  if (first === undefined) return undefined;
+  return { pollId: raw.pollId, question: first.question, questions };
 }
 
 export interface SigRequest {
   id?: string;
   kind?: 'eip712' | 'personal';
-  eip712?: { domain?: Record<string, unknown>; types?: Record<string, Array<{ name: string; type: string }>>; primaryType?: string; message?: Record<string, unknown> };
+  eip712?: { domain?: Record<string, unknown>; types?: Record<string, { name: string; type: string }[]>; primaryType?: string; message?: Record<string, unknown> };
   message?: string;
   description?: string;
 }
@@ -150,11 +156,13 @@ export interface SigReference {
   signer?: string;
 }
 
+/** Extracts a signature-request payload from a history entry, or undefined. */
 export function sigRequestOf(entry: HistoryEntry): SigRequest | undefined {
   const p = entry.payload as { signatureRequest?: SigRequest } | undefined;
   if (!p?.signatureRequest?.kind) return undefined;
   return p.signatureRequest;
 }
+/** Extracts a signature-reference (completed signature) payload from a history entry, or undefined. */
 export function sigReferenceOf(entry: HistoryEntry): SigReference | undefined {
   const p = entry.payload as { signatureReference?: SigReference } | undefined;
   if (!p?.signatureReference?.signature) return undefined;
@@ -175,14 +183,14 @@ export function fmtSigValue(v: unknown): string {
   try {
     const s = JSON.stringify(v);
     return s.length > 200 ? `${s.slice(0, 197)}…` : s;
-  } catch { return String(v); }
+  } catch { return '[unserializable]'; }
 }
 
 export interface TxRequest {
   version?: string;
   chainId?: string;
   from?: string;
-  calls: Array<{ to?: string; data?: string; value?: string; metadata?: { description?: string; currency?: string; amount?: number; toAddress?: string } }>;
+  calls: { to?: string; data?: string; value?: string; metadata?: { description?: string; currency?: string; amount?: number; toAddress?: string } }[];
 }
 export interface TxReceipt {
   networkId: number | string;
@@ -190,11 +198,13 @@ export interface TxReceipt {
   metadata?: { currency?: string; amount?: number; toAddress?: string };
 }
 
+/** Extracts a wallet-send-calls transaction request from a history entry, or undefined. */
 export function txRequestOf(entry: HistoryEntry): TxRequest | undefined {
   const p = entry.payload as { walletSendCalls?: TxRequest } | undefined;
   if (!p?.walletSendCalls || !Array.isArray(p.walletSendCalls.calls)) return undefined;
   return p.walletSendCalls;
 }
+/** Extracts a transaction-reference (receipt) payload from a history entry, or undefined. */
 export function txReceiptOf(entry: HistoryEntry): TxReceipt | undefined {
   const p = entry.payload as { txReference?: TxReceipt } | undefined;
   if (!p?.txReference?.reference) return undefined;

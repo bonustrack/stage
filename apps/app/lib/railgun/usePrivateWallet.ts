@@ -62,7 +62,7 @@ export function usePrivateWallet(autoStart = false): PrivateWalletState {
       // null) immediately rather than leaving the previous account's snapshot.
       setSnapshot(snapshotStore(id).get());
       unsub = snapshotStore(id).subscribe(setSnapshot);
-      unsubP = pendingStore.subscribe(id, v => setPending(v ?? []));
+      unsubP = pendingStore.subscribe(id, v => { setPending(v ?? []); });
       setPending(pendingStore.get(id) ?? []);
       if (!autoStart) {
         // Tokens-tab path: hydrate the disk cache for a fuller paint, but never

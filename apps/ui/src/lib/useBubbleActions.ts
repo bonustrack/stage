@@ -26,6 +26,7 @@ export interface BubbleActions {
   onActionCopyLink: () => void;
 }
 
+/** Hook providing bubble action handlers (react, reply, copy, optimistic send) for the conversation view. */
 export function useBubbleActions(deps: BubbleActionsDeps): BubbleActions {
   const { convId, line, myUri, actionTarget, replyingTo, optimistic } = deps;
 
@@ -52,7 +53,7 @@ export function useBubbleActions(deps: BubbleActionsDeps): BubbleActions {
       text: payload.text,
       pending: true,
       ...(payload.replyTo ? { replyTo: payload.replyTo } : {}),
-    } as HistoryEntry];
+    }];
   }
 
   /** Send resolved: flip the optimistic bubble from pending (gray) to normal.

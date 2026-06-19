@@ -107,7 +107,7 @@ bindActiveStore();
  *  the target account's CURRENT rows (instant) and kicks off a lazy hydrate of
  *  its file (notifies again when disk lands). Cross-account data is untouched. */
 export function setActiveAccountForCache(id: string | null): void {
-  const next = id || DEFAULT_KEY;
+  const next = id !== null && id !== '' ? id : DEFAULT_KEY;
   if (next === activeId) return;
   activeId = next;
   bindActiveStore();
@@ -133,8 +133,11 @@ export async function hydrateCachedRows(): Promise<CachedRow[] | null> {
  *  every account's cache and just swaps the active pointer. */
 export function clearCachedRows(): void { activeStore().clear(); }
 
+/** Cached channel rows for the active account, or null if none. */
 export function getCachedRows(): CachedRow[] | null { return activeStore().get(); }
+/** Replace the active account's cached channel rows. */
 export function setCachedRows(next: CachedRow[] | null): void { activeStore().set(next); }
+/** Subscribe to active-account row changes. Returns an unsubscribe fn. */
 export function subscribeCachedRows(l: (rows: CachedRow[] | null) => void): () => void {
   activeListeners.add(l);
   return () => { activeListeners.delete(l); };
@@ -153,9 +156,10 @@ export async function markConvRead(convId: string): Promise<void> {
   const rows = currentRows();
   if (!rows) return;
   const idx = rows.findIndex(r => r.convId === convId);
-  if (idx === -1) return;
+  const cur = rows[idx];
+  if (cur === undefined) return;
   const next = [...rows];
-  next[idx] = { ...rows[idx]!, unreadCount: 0, lastReadNs: nowNs, markedUnread: false };
+  next[idx] = { ...cur, unreadCount: 0, lastReadNs: nowNs, markedUnread: false };
   setCachedRows(next);
 }
 
@@ -166,11 +170,11 @@ export async function markConvUnread(convId: string): Promise<void> {
   const rows = currentRows();
   if (!rows) return;
   const idx = rows.findIndex(r => r.convId === convId);
-  if (idx === -1) return;
+  const cur = rows[idx];
+  if (cur === undefined) return;
   const next = [...rows];
   /** Surface at least one unread so the badge shows even when the timestamp
    *  recount hasn't run yet. */
-  const cur = rows[idx]!;
   next[idx] = { ...cur, unreadCount: Math.max(1, cur.unreadCount), lastReadNs: 0, markedUnread: true };
   setCachedRows(next);
 }
@@ -187,8 +191,8 @@ export function patchRowSent(convId: string, preview: string): void {
   const rows = currentRows();
   if (!rows) return;
   const idx = rows.findIndex(r => r.convId === convId);
-  if (idx === -1) return;
-  const cur = rows[idx]!;
+  const cur = rows[idx];
+  if (cur === undefined) return;
   const updated: CachedRow = {
     ...cur,
     lastTs: Date.now(),

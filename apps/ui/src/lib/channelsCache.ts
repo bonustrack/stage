@@ -24,6 +24,7 @@ const STORAGE_KEY = 'metro.channels.cache.v1';
 export const cachedRows: Ref<CachedRow[] | null> = ref<CachedRow[] | null>(null);
 let hydrated = false;
 
+/** Lazily load the persisted channel rows from localStorage into the shared ref. */
 export function hydrateCachedRows(): CachedRow[] | null {
   if (hydrated) return cachedRows.value;
   hydrated = true;
@@ -36,6 +37,7 @@ export function hydrateCachedRows(): CachedRow[] | null {
   return cachedRows.value;
 }
 
+/** Update the shared channel rows and persist them to localStorage. */
 export function setCachedRows(next: CachedRow[] | null): void {
   cachedRows.value = next;
   try {
@@ -51,9 +53,10 @@ export function markConvRead(convId: string): void {
   void markConvReadSynced(convId);
   if (!cachedRows.value) return;
   const idx = cachedRows.value.findIndex(r => r.convId === convId);
-  if (idx === -1) return;
+  const cur = idx === -1 ? undefined : cachedRows.value[idx];
+  if (cur === undefined) return;
   const next = [...cachedRows.value];
-  next[idx] = { ...cachedRows.value[idx]!, unreadCount: 0, lastReadNs: nowNs, markedUnread: false };
+  next[idx] = { ...cur, unreadCount: 0, lastReadNs: nowNs, markedUnread: false };
   setCachedRows(next);
 }
 
@@ -64,9 +67,9 @@ export function markConvUnread(convId: string): void {
   void markConvUnreadSynced(convId);
   if (!cachedRows.value) return;
   const idx = cachedRows.value.findIndex(r => r.convId === convId);
-  if (idx === -1) return;
+  const cur = idx === -1 ? undefined : cachedRows.value[idx];
+  if (cur === undefined) return;
   const next = [...cachedRows.value];
-  const cur = cachedRows.value[idx]!;
   next[idx] = { ...cur, unreadCount: Math.max(1, cur.unreadCount), lastReadNs: 0, markedUnread: true };
   setCachedRows(next);
 }
@@ -76,9 +79,9 @@ export function markConvUnread(convId: string): void {
 export function applyConsentToRows(convId: string, markedUnread: boolean): void {
   if (!cachedRows.value) return;
   const idx = cachedRows.value.findIndex(r => r.convId === convId);
-  if (idx === -1) return;
-  const cur = cachedRows.value[idx]!;
-  if (!!cur.markedUnread === markedUnread) return;
+  const cur = idx === -1 ? undefined : cachedRows.value[idx];
+  if (cur === undefined) return;
+  if (cur.markedUnread === markedUnread) return;
   const next = [...cachedRows.value];
   next[idx] = markedUnread
     ? { ...cur, markedUnread: true, unreadCount: Math.max(1, cur.unreadCount) }

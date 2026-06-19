@@ -22,6 +22,7 @@ interface Palette {
   fg: string; head: string; sub: string; border: string; inputBg: string;
 }
 
+/** Recipient address/ENS input field for the send flow. */
 export function RecipientField(props: {
   pal: Palette;
   to: string;
@@ -50,7 +51,7 @@ export function RecipientField(props: {
             minHeight: 0, borderWidth: 0,
           }}
 />
-        <ContactsButton color={fg} border={border} onPress={() => setPicking(true)}/>
+        <ContactsButton color={fg} border={border} onPress={() => { setPicking(true); }}/>
       </Row>
 
       {/* Once a valid recipient is resolved, show them as a user row
@@ -71,14 +72,15 @@ export function RecipientField(props: {
 
       <ContactsModal
         visible={picking}
-        onClose={() => setPicking(false)}
-        onPick={(addr) => props.setTo(addr)}
+        onClose={() => { setPicking(false); }}
+        onPick={(addr) => { props.setTo(addr); }}
         pal={rowPal}
 />
     </Box>
   );
 }
 
+/** Amount input field with Max and fiat-conversion helpers for the send flow. */
 export function AmountField(props: {
   pal: Palette;
   dark: boolean;
@@ -174,6 +176,7 @@ const PUBLIC_SEND_CHAIN = 1;
 
 type TxState = 'idle' | 'submitting' | 'pending' | 'confirmed';
 
+/** Header row for the send screen with a back control. */
 export function SendHeader(props: {
   fg: string; head: string; border: string; onBack: () => void;
 }): React.ReactElement {
@@ -188,6 +191,7 @@ export function SendHeader(props: {
   );
 }
 
+/** Submit button reflecting the current send transaction state. */
 export function SubmitButton(props: {
   dark: boolean; busy: boolean; canSubmit: boolean; txState: TxState; onSubmit: () => void;
 }): React.ReactElement {
@@ -211,6 +215,7 @@ export function SubmitButton(props: {
   );
 }
 
+/** Inline status display for a send transaction's progress, hash or error. */
 export function TxStatus(props: {
   sub: string; txState: TxState; txHash: Hex | null; txErr: string | null;
 }): React.ReactElement {
@@ -224,7 +229,7 @@ export function TxStatus(props: {
           <Text size="xs" color={sub}>
             {txState === 'confirmed' ? 'Confirmed' : 'Pending'}
           </Text>
-          <Pressable onPress={() => Linking.openURL(explorerTxUrl(PUBLIC_SEND_CHAIN, txHash))} hitSlop={6}>
+          <Pressable onPress={() => { void Linking.openURL(explorerTxUrl(PUBLIC_SEND_CHAIN, txHash)); }} hitSlop={6}>
             <Text size="xs" color={link}>
               {txHash.slice(0, 10)}…{txHash.slice(-8)}
             </Text>

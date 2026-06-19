@@ -16,7 +16,7 @@ const props = defineProps<{
   memberAddresses: string[];
   status: XmtpFeedStatus;
 }>();
-const emit = defineEmits<{ (e: 'back'): void; (e: 'open'): void }>();
+const emit = defineEmits<{ back: []; open: [] }>();
 
 const visibleMembers = computed(() => props.memberAddresses.slice(0, 3));
 const overflow = computed(() => Math.max(0, props.memberAddresses.length - 3));

@@ -12,6 +12,7 @@ import { Box, Row, Col } from '../layout';
 import { Icon } from '@metro-labs/kit/icon';
 import { Title } from '@metro-labs/kit/title';
 
+/** Renders the header bar for a system design section page. */
 export function SystemHeader({ title, fg, head, border, right }: {
   title: string; dark: boolean; fg: string; head: string; border: string;
   right?: React.ReactNode;
@@ -21,7 +22,7 @@ export function SystemHeader({ title, fg, head, border, right }: {
   return (
     <Box surface="toolbar" padding={{ top: insets.top }}>
       <Row padding={{ x: 12, top: 8, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
+        <Pressable onPress={() => { router.back(); }} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
         <Title size="sm" color={head}>{title}</Title>

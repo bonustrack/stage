@@ -8,6 +8,7 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { SystemHeader } from './SystemHeader';
 import { AboutPanel } from './AboutPanel';
 
+/** Renders the About page of the system design section. */
 export function AboutPage(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head, border } = usePalette();

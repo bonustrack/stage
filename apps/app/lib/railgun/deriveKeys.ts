@@ -44,7 +44,7 @@ export function encryptionKeyFromPrivateKey(pk: Hex): string {
 }
 
 /** Per-network deployment blocks, used as RAILGUN wallet creation blocks. */
-export function railgunCreationBlocks(): Record<string, number> {
+function railgunCreationBlocks(): Record<string, number> {
   const out: Record<string, number> = {};
   for (const cfg of Object.values(RAILGUN_NETWORKS)) {
     out[cfg.networkName] = NETWORK_CONFIG[cfg.networkName].deploymentBlock;

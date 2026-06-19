@@ -17,6 +17,7 @@ import { resolveRemoteAttachment } from '../modules/messaging';
 import { useLocalAttachment } from '../lib/localAttachmentCache';
 import type { Attachment } from './MessengerBubble.helpers';
 
+/** Renders a single message attachment (image, video, audio, or file) by its type. */
 export function AttachmentView({ att, fullUrl, fg, dark }: {
   att: Attachment; fullUrl: string; fg: string; dark: boolean;
 }): React.ReactElement {
@@ -87,7 +88,7 @@ export function RemoteAttachmentResolver({ att, fg, sub, dark, msgId, index }: {
   if (failed) {
     return (
       <Pressable
-        onPress={() => setAttempt(a => a + 1)}
+        onPress={() => { setAttempt(a => a + 1); }}
         style={{
           flexDirection: 'row', alignItems: 'center', gap: 8,
           paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8,

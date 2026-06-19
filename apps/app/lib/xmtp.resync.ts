@@ -43,6 +43,7 @@ export function pushToFeedSlice(line: string, env: HistoryEntry): void {
  *  hammering the read-rate limit that previously caused an outage. */
 let inboxSyncInFlight: Promise<void> | null = null;
 let lastInboxSyncAt = 0;
+/** Coalesced, freshness-windowed sync of the XMTP inbox so concurrent callers share one network pass. */
 export async function syncInboxOnce(maxAgeMs = 3_000): Promise<void> {
   if (inboxSyncInFlight) return inboxSyncInFlight;
   if (Date.now() - lastInboxSyncAt < maxAgeMs) return;

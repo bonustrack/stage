@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { xmtpReact } from '../../modules/messaging';
 
+/** Provides reaction state and the handler for sending reactions on a conversation. */
 export function useReactionsLayer(
   activeLine: string,
   reactions: Map<string, Map<string, number>>,
@@ -77,14 +78,14 @@ export function useReactionsLayer(
         if (left.length) next.set(messageId, left); else next.delete(messageId);
         return next;
       });
-      const undo = (): void => setOptimisticRemovals(prev => {
+      const undo = (): void => { setOptimisticRemovals(prev => {
         const cur = prev.get(messageId);
         if (!cur) return prev;
         const left = cur.filter(e => e !== emoji);
         const next = new Map(prev);
         if (left.length) next.set(messageId, left); else next.delete(messageId);
         return next;
-      });
+      }); };
       void xmtpReact(activeLine, messageId, emoji, 'removed')
         .catch((e: unknown) => { console.warn('xmtp un-react failed', e); undo(); });
       return;
@@ -100,14 +101,14 @@ export function useReactionsLayer(
       next.set(messageId, [...cur, emoji]);
       return next;
     });
-    const dropPending = (): void => setOptimisticReactions(prev => {
+    const dropPending = (): void => { setOptimisticReactions(prev => {
       const cur = prev.get(messageId);
       if (!cur) return prev;
       const left = cur.filter(e => e !== emoji);
       const next = new Map(prev);
       if (left.length) next.set(messageId, left); else next.delete(messageId);
       return next;
-    });
+    }); };
     void xmtpReact(activeLine, messageId, emoji, 'added')
       .catch((e: unknown) => { console.warn('xmtp react failed', e); dropPending(); });
   }, [activeLine, ownReactions, optimisticRemovals]);

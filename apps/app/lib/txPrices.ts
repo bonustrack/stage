@@ -23,7 +23,7 @@ const inflight = new Map<string, Promise<number | null>>();
 /** Fetch (and cache) the USD spot price for a resolved PriceKey. Returns null
  *  for an unpriceable key, or on any network/parse error (caller shows amount
  *  only — never a fake value). Concurrent callers share one in-flight request. */
-export async function fetchUsdPrice(key: PriceKey): Promise<number | null> {
+async function fetchUsdPrice(key: PriceKey): Promise<number | null> {
   const id = priceKeyId(key);
   if (!id || !key) return null;
   const hit = cache.get(id);

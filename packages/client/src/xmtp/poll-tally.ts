@@ -28,7 +28,7 @@ export function voteKey(questionIndex: number, optionIndex: number): string {
  *  `content` string round-trip. UTF-8 safe via encodeURIComponent. */
 const b64enc = (s: string): string => {
   const g = globalThis as { btoa?: (x: string) => string; Buffer?: { from(x: string, e: string): { toString(e: string): string } } };
-  const bytes = encodeURIComponent(s).replace(/%([0-9A-F]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
+  const bytes = encodeURIComponent(s).replace(/%([0-9A-F]{2})/g, (_, h: string) => String.fromCharCode(parseInt(h, 16)));
   if (g.btoa) return g.btoa(bytes);
   if (g.Buffer) return g.Buffer.from(s, 'utf-8').toString('base64');
   return s;
@@ -59,7 +59,7 @@ export function parseOpenVote(content: string): { q: number; text: string } | nu
   if (!m) return null;
   const q = Number(m[1]);
   if (!Number.isInteger(q)) return null;
-  return { q, text: b64dec(m[2]) };
+  return { q, text: b64dec(m[2] ?? '') };
 }
 
 /** Latest free-text answer per voter for one (poll, question). A `removed` event
@@ -73,7 +73,7 @@ export function openAnswersByPoll(
   for (const e of events) {
     if (e.reference !== pollMessageId || e.schema !== 'custom') continue;
     const k = parseOpenVote(e.content);
-    if (!k || k.q !== questionIndex) continue;
+    if (k?.q !== questionIndex) continue;
     const cur = latest.get(e.voter);
     if (!cur || cur.ts < e.ts) latest.set(e.voter, { ts: e.ts, removed: !!e.removed, text: k.text });
   }
@@ -118,7 +118,7 @@ export function votesByPoll(
   const optOf = (e: VoteEvent): number | null => {
     if (e.reference !== pollMessageId || e.schema !== 'custom') return null;
     const k = parseVoteKey(e.content);
-    return k && k.q === questionIndex ? k.o : null;
+    return k?.q === questionIndex ? k.o : null;
   };
   if (multiSelect) {
     // latest add/remove state per (voter, optionIndex)

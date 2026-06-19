@@ -92,6 +92,7 @@ export async function searchLocalHistory(
     }
     /** Advance the cursor to just-before the oldest message of this page. */
     const oldest = mapped[mapped.length - 1];
+    if (oldest === undefined) break; // empty page (batch was non-empty above)
     beforeNs = new Date(oldest.ts).getTime() * 1_000_000;
 
     onResults({ hits: [...hits], truncated });

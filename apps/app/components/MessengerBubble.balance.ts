@@ -38,8 +38,8 @@ function parseChainId(raw?: string | number): number {
 function trim(value: string): string {
   if (!value.includes('.')) return value;
   const [whole, frac] = value.split('.');
-  const cut = frac.slice(0, 4).replace(/0+$/, '');
-  return cut ? `${whole}.${cut}` : whole;
+  const cut = (frac ?? '').slice(0, 4).replace(/0+$/, '');
+  return cut ? `${whole ?? ''}.${cut}` : (whole ?? '');
 }
 
 /** True for the native-coin sentinel / zero address (treated as native, not ERC-20). */
@@ -78,19 +78,19 @@ async function readOnchain(
     return { raw, decimals: chain.nativeCurrency.decimals, symbol: chain.nativeCurrency.symbol };
   }
 
-  if (!isAddress(token!)) return null;
-  const t = token as Hex;
+  if (token === undefined || !isAddress(token)) return null;
+  const t = token;
   // Balance is required; decimals/symbol are best-effort (some tokens omit them).
   const raw = await pub.readContract({
     address: t, abi: erc20Abi, functionName: 'balanceOf', args: [addr],
-  }) as bigint;
+  });
   let decimals = 18;
   let symbol = 'tokens';
   try {
-    decimals = Number(await pub.readContract({ address: t, abi: minimalErc20Abi, functionName: 'decimals' }));
+    decimals = await pub.readContract({ address: t, abi: minimalErc20Abi, functionName: 'decimals' });
   } catch { /* keep default 18 */ }
   try {
-    symbol = String(await pub.readContract({ address: t, abi: minimalErc20Abi, functionName: 'symbol' }));
+    symbol = await pub.readContract({ address: t, abi: minimalErc20Abi, functionName: 'symbol' });
   } catch { /* keep default 'tokens' */ }
   return { raw, decimals, symbol };
 }
@@ -125,7 +125,7 @@ export function usePayerBalance(
         const key = `${cid}:${(token ?? 'native').toLowerCase()}:${addr.toLowerCase()}`;
         let meta = cache.get(key);
         if (!meta) {
-          meta = readOnchain(cid, token, addr as Hex).catch(() => null);
+          meta = readOnchain(cid, token, addr).catch(() => null);
           cache.set(key, meta);
         }
         const onchain = await meta;

@@ -20,7 +20,7 @@ export type ShieldStage = 'idle' | 'submitting' | 'confirming' | 'scanning' | 'd
 
 const ERR = DANGER;
 
-const STEPS: ReadonlyArray<readonly [ShieldStage, string]> = [
+const STEPS: readonly (readonly [ShieldStage, string])[] = [
   ['submitting', 'Submitting transaction'],
   ['confirming', 'Confirming on-chain'],
   ['scanning', 'Scanning into private balance'],

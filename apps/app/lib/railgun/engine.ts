@@ -16,8 +16,6 @@ import { isRailgunAvailable } from './native';
 import { initEngine, ensureProvider, isEngineReady } from './sdkEngine';
 import { DEFAULT_RAILGUN_NET, netForChainId } from './networks';
 
-export function isRailgunReady(): boolean { return isEngineReady(); }
-
 /** Eagerly initialise the engine, load the Groth16 prover, and connect the
  *  default network's RPC so the first proof doesn't pay a cold start. Idempotent
  *  + safe to call on every app/wallet open. Resolves `false` (never throws) when

@@ -41,11 +41,11 @@ export function setAppForeground(foreground: boolean): boolean {
 /** Routing-only payload carried by the native `onXmtpPush` event. All fields are
  *  optional (the daemon's contentless push may omit any of them); they're used
  *  only to target the resync, never rendered. */
-export type XmtpPushEvent = {
+export interface XmtpPushEvent {
   line?: string | null;
   convId?: string | null;
   messageId?: string | null;
-};
+}
 
 /** Subscribe to the native `onXmtpPush` event, fired by MetroFcmService on every
  *  contentless xmtp push BEFORE its card-suppression early-returns — so it wakes

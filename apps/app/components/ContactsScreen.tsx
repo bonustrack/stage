@@ -24,6 +24,7 @@ import { useAllContacts, type Contact } from '../lib/useAllContacts';
 import { getPeerName } from '../lib/peerProfiles';
 import { openDmWithAddress, shortAddress } from '../modules/messaging';
 
+/** Renders the Contacts pager tab listing every reachable user, tapping a row opens a DM. */
 export function ContactsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const { bg } = usePalette();
   const router = useRouter();
@@ -50,7 +51,7 @@ export function ContactsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): 
         avatarAddress={item.address}
         square={false}
         subtitle={hasName ? shortAddress(item.address) : null}
-        onPress={() => open(item.address)}
+        onPress={() => { open(item.address); }}
       />
     );
   }, [open]);

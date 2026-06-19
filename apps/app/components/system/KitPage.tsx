@@ -16,6 +16,7 @@ import { GithubLogo } from '../GithubLogo';
 
 const KIT_GITHUB_URL = 'https://github.com/bonustrack/stage/tree/main/packages/kit';
 
+/** Renders the Kit gallery page of the system design section. */
 export function KitPage(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head, border } = usePalette();
@@ -29,7 +30,7 @@ export function KitPage(): React.ReactElement {
         title="Kit" dark={dark} fg={fg} head={head} border={border}
         right={
           <Pressable
-            onPress={() => Linking.openURL(KIT_GITHUB_URL)}
+            onPress={() => { void Linking.openURL(KIT_GITHUB_URL); }}
             hitSlop={8}
             style={{ padding: 4 }}
             accessibilityLabel="View @metro-labs/kit on GitHub"

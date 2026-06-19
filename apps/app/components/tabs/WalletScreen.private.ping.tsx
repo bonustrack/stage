@@ -38,16 +38,16 @@ import {
   getBalances,
   isBridgeAvailable,
   pingBridge,
-  sdkListMethods,
   setBridgeStatusListener,
   walletInfo,
 } from '../../lib/railgun/bridge';
+import { sdkListMethods } from '../../lib/railgun/bridge/sdk';
 import { deriveRailgunKeyMaterial } from '../../lib/railgun/deriveKeys';
 
 /* ── Status log ─────────────────────────────────────────────────────────── */
 
 /** One timestamped status line: ms elapsed since the run started + the text. */
-export interface LogLine { ms: number; line: string }
+interface LogLine { ms: number; line: string }
 
 /** Render a single log line to the plain text used for selection + clipboard. */
 function fmtLine(l: LogLine): string { return `+${l.ms}ms  ${l.line}`; }
@@ -74,7 +74,7 @@ function PingLog({ lines, sub, head, border }: {
     <Col margin={{ top: 4 }} gap={2}>
       <Row margin={{ top: 2, bottom: 2 }} justify="end">
         <Pressable
-          onPress={() => copyAll(lines)}
+          onPress={() => { copyAll(lines); }}
           hitSlop={8}
           accessibilityLabel="Copy scan logs"
           style={{
@@ -175,7 +175,7 @@ function useBatchedLog(): BatchedLog {
 
 /* ── Action callbacks ───────────────────────────────────────────────────── */
 
-export type ProbeState =
+type ProbeState =
   | { kind: 'idle' }
   | { kind: 'running' }
   | { kind: 'ok'; text: string }
@@ -294,6 +294,7 @@ function useProbeActions(deps: ProbeDeps): ProbeActions {
 
 /* ── Probe component ────────────────────────────────────────────────────── */
 
+/** Probe that pings the private bridge and renders its reachability status. */
 export function BridgePingProbe({ sub, border }: {
   sub: string; border: string;
 }): React.ReactElement {
@@ -321,7 +322,7 @@ export function BridgePingProbe({ sub, border }: {
       const ms = runStart.current ? Date.now() - runStart.current : 0;
       append({ ms, line });
     });
-    return () => setBridgeStatusListener(null);
+    return () => { setBridgeStatusListener(null); };
   }, [append]);
 
   // Stream the engine's live scan diagnostics ('event:scanDebug') into the
@@ -331,7 +332,7 @@ export function BridgePingProbe({ sub, border }: {
     if (!isBridgeAvailable()) return undefined;
     return bridgeListen('event:scanDebug', (p) => {
       const e = p as { t?: number; chain?: number; msg?: string } | undefined;
-      if (!e || !e.msg) return;
+      if (!e?.msg) return;
       const ms = runStart.current ? Date.now() - runStart.current : 0;
       append({ ms, line: `scan[${e.chain ?? '?'}] ${e.msg}` });
     });

@@ -15,6 +15,7 @@ import { AppModal } from './AppModal';
 import { usePalette, useBlockRadius } from '../lib/theme';
 import { type Palette } from './MessengerComposer.helpers';
 
+/** Renders the bottom sheet for composing and sending a poll. */
 export function PollSheet({
   open, onClose, palette, dark, question, setQuestion, header, setHeader,
   options, setOptions, multi, setMulti, onSend,
@@ -53,14 +54,14 @@ export function PollSheet({
           <Row key={i} align="center" gap={8}>
             <Input
               value={opt}
-              onChangeText={t => setOptions(prev => prev.map((o, j) => (j === i ? t : o)))}
+              onChangeText={t => { setOptions(prev => prev.map((o, j) => (j === i ? t : o))); }}
               placeholder={`Option ${i + 1}`}
               placeholderTextColor={sub}
               dark={dark}
               style={{ flex: 1, color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: fontSize('lg'), minHeight: 0 }}
 />
             {options.length> 2 ? (
-              <Pressable onPress={() => setOptions(prev => prev.filter((_, j) => j !== i))} hitSlop={8}>
+              <Pressable onPress={() => { setOptions(prev => prev.filter((_, j) => j !== i)); }} hitSlop={8}>
                 <Icon name="x" size={18} color={sub}/>
               </Pressable>
             ) : null}
@@ -70,12 +71,12 @@ export function PollSheet({
           variant="ghost"
           size="sm"
           dark={dark}
-          onPress={() => setOptions(prev => [...prev, ''])}
+          onPress={() => { setOptions(prev => [...prev, '']); }}
           label="Add option"
           icon={<Icon name="plus" size={16} color={fg} />}
 />
         <Pressable
-          onPress={() => setMulti(m => !m)}
+          onPress={() => { setMulti(m => !m); }}
           style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 }}
 >
           <Text size="md" color={fg}>Allow multiple choices</Text>
@@ -99,6 +100,7 @@ export function PollSheet({
   );
 }
 
+/** Renders the bottom sheet for composing and sending a signature request. */
 export function SignatureSheet({
   open, onClose, palette, dark, kind, setKind, desc, setDesc,
   message, setMessage, json, setJson, onSend,
@@ -120,7 +122,7 @@ export function SignatureSheet({
           {([['personal', 'Message'], ['eip712', 'Typed data']] as const).map(([k, label]) => (
             <Pressable
               key={k}
-              onPress={() => setKind(k)}
+              onPress={() => { setKind(k); }}
               style={{
                 flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: r,
                 borderWidth: 1, borderColor: kind === k ? '#c0a06e' : chipBg,
@@ -175,6 +177,7 @@ export function SignatureSheet({
   );
 }
 
+/** Renders the bottom sheet for composing and sending a payment request. */
 export function PaymentSheet({
   open, onClose, palette, dark, to, setTo, amount, setAmount, note, setNote, onSend,
 }: {

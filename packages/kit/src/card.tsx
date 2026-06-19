@@ -20,7 +20,7 @@ export interface CardStatus {
 
 export interface CardAction {
   label: string;
-  onPress(): void;
+  onPress: () => void;
 }
 
 export interface CardProps {

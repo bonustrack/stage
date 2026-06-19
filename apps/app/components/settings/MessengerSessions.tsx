@@ -57,6 +57,7 @@ function Session({ inst, busy, onRevoke, c }: {
   );
 }
 
+/** Renders the messenger sessions screen listing the account's active sessions. */
 export function MessengerSessions(): React.ReactElement {
   const { text: fg, border } = usePalette();
   const c = { fg, sub: fg, border, rowBg: border };
@@ -86,8 +87,8 @@ export function MessengerSessions(): React.ReactElement {
             setBusy(inst.id);
             void revokeXmtpInstallation(inst.id)
               .then(() => { flash('Session revoked'); return load(); })
-              .catch(() => Alert.alert('Revoke failed', 'Could not revoke that session. Check your connection and try again.'))
-              .finally(() => setBusy(null));
+              .catch(() => { Alert.alert('Revoke failed', 'Could not revoke that session. Check your connection and try again.'); })
+              .finally(() => { setBusy(null); });
           },
         },
       ],
@@ -114,7 +115,7 @@ export function MessengerSessions(): React.ReactElement {
         </Text>
       ) : (
         list.map(inst => (
-          <Session key={inst.id} inst={inst} busy={busy === inst.id} onRevoke={() => revoke(inst)} c={c} />
+          <Session key={inst.id} inst={inst} busy={busy === inst.id} onRevoke={() => { revoke(inst); }} c={c} />
         ))
       )}
     </Col>

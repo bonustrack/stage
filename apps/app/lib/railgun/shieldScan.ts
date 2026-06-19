@@ -37,7 +37,7 @@ export function watchShieldLanding(accountId: string, pendingId: string, chainId
     clearTimeout(timer);
     unsub();
     updatePending(accountId, pendingId, { phase: 'confirmed' });
-    void refreshSnapshot(accountId).then(() => removePending(accountId, pendingId));
+    void refreshSnapshot(accountId).then(() => { removePending(accountId, pendingId); });
   };
 
   const unsub = bridgeListen('event:balanceUpdate', (payload: unknown) => {

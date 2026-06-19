@@ -31,15 +31,18 @@ export function previewLinkOf(text?: string | null): PreviewLinkRef | null {
   const m = RE.exec(text);
   if (!m) return null;
   const url = m[0];
+  const rawInner = m[1];
+  if (rawInner === undefined) return null;
   // The inner expo URL may be raw or percent-encoded; decode defensively.
-  let inner = m[1];
+  let inner = rawInner;
   try {
-    inner = decodeURIComponent(m[1]);
+    inner = decodeURIComponent(rawInner);
   } catch {
     /* keep raw if it isn't valid percent-encoding */
   }
   const g = /u\.expo\.dev\/[^/\s]+\/group\/([A-Za-z0-9-]+)/i.exec(inner);
   if (!g) return null;
   const groupId = g[1];
+  if (groupId === undefined) return null;
   return { url, groupId, shortGroup: groupId.slice(0, 8) };
 }

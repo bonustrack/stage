@@ -1,19 +1,4 @@
 {
-  "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "lib": ["ESNext", "DOM"],
-    "strict": true,
-    "noEmit": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "esModuleInterop": true,
-    "verbatimModuleSyntax": false,
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
-  },
+  "extends": "@stage-labs/config/tsconfig/base.json",
   "include": ["src/**/*"]
 }

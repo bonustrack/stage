@@ -38,6 +38,7 @@ export interface ProposalsState {
   refresh: () => void;
 }
 
+/** Provides the visible proposals queue and subscribes to the shared store. */
 export function useProposals(): ProposalsState {
   /** Subscribe to the shared store; re-renders when the visible queue changes. */
   const queue = useSyncExternalStore(

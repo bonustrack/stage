@@ -55,9 +55,11 @@ const LEGACY_VARIANTS = new Set<ButtonVariant>(['primary', 'secondary', 'danger'
  *  without threading a prop through 20+ call sites. `pill` icon buttons follow
  *  it too. Default 999 keeps the original fully-rounded/circular look. */
 let defaultButtonRadius = 999;
+/** Set the app-wide default corner radius applied to every button. */
 export function setDefaultButtonRadius(r: number): void {
   if (Number.isFinite(r) && r >= 0) defaultButtonRadius = r;
 }
+/** Return the current app-wide default button corner radius. */
 export function getDefaultButtonRadius(): number {
   return defaultButtonRadius;
 }

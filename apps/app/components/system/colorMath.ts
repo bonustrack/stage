@@ -30,7 +30,7 @@ export function hexToHsv(hex: string): { h: number; s: number; v: number } {
   const short = six ? null : /^#?([0-9a-f]{3})$/i.exec(t);
   const digits = six
     ? six[1]
-    : short
+    : short?.[1] !== undefined
       ? short[1].split('').map((c) => c + c).join('')
       : null;
   if (digits == null) return { h: 0, s: 0, v: 0 };

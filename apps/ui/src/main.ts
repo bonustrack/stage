@@ -1,4 +1,5 @@
 import { createApp } from 'vue';
+import type { Component } from 'vue';
 import { VueQueryPlugin, QueryClient } from '@tanstack/vue-query';
 import { router } from './router';
 import App from './App.vue';
@@ -14,4 +15,4 @@ const queryClient = new QueryClient({
 
 installThemeClassEffect();
 installEmbedThemeBridge(setThemePreference);
-createApp(App).use(router).use(VueQueryPlugin, { queryClient }).mount('#app');
+createApp(App as Component).use(router).use(VueQueryPlugin, { queryClient }).mount('#app');

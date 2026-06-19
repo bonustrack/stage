@@ -30,7 +30,7 @@ let cached: RailgunWalletApi | null = null;
 
 /** Lazily require the wallet SDK once. Returns null when unavailable; memoized.
  *  Never throws. */
-export function getWalletApi(): RailgunWalletApi | null {
+function getWalletApi(): RailgunWalletApi | null {
   if (resolved) return cached;
   resolved = true;
   try {

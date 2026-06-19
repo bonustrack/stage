@@ -17,6 +17,7 @@ export interface GroupUpdatedContent {
   metadataFieldChanges?: FieldChange[];
 }
 
+/** Summarise a group_updated system message as one readable line (renames, image/description edits, members added or removed). */
 export function humanizeGroupUpdated(g: GroupUpdatedContent): string {
   const parts: string[] = [];
   const fields = g.metadataFieldsChanged ?? g.metadataFieldChanges ?? [];
@@ -51,9 +52,6 @@ export function humanizeMentions(text: string): string {
     `@${addr.slice(0, 6)}…${addr.slice(-4)}`);
 }
 
-/** Back-compat alias — older call sites import `stripMentionMarkup`. */
-export const stripMentionMarkup = humanizeMentions;
-
 /** Normalise a content-type id — RN SDK returns the full
  *  `xmtp.org/group_updated:1.0` form, browser SDK returns the short
  *  `group_updated`. Reduce both to the short authority-less name. */
@@ -67,7 +65,7 @@ export function shortContentType(raw: string | undefined | null): string {
  *  `listConvs` actions to surface system messages as readable text. */
 export function previewOfXmtpContent(decoded: unknown, contentTypeId: string | undefined | null): string {
   const typeId = shortContentType(contentTypeId);
-  if (typeof decoded === 'string') return stripMentionMarkup(decoded);
+  if (typeof decoded === 'string') return humanizeMentions(decoded);
   if (typeId === 'group_updated' || typeId === 'groupUpdated') {
     return humanizeGroupUpdated(decoded as GroupUpdatedContent);
   }
@@ -83,8 +81,8 @@ export function previewOfXmtpContent(decoded: unknown, contentTypeId: string | u
   }
   if (typeId === 'reply') {
     const r = decoded as { content?: { text?: string } | string };
-    if (typeof r.content === 'string') return stripMentionMarkup(r.content);
-    return r.content?.text ? stripMentionMarkup(r.content.text) : '[reply]';
+    if (typeof r.content === 'string') return humanizeMentions(r.content);
+    return r.content?.text ? humanizeMentions(r.content.text) : '[reply]';
   }
   if (typeId === 'attachment') {
     const a = decoded as { filename?: string; mimeType?: string };
@@ -100,9 +98,9 @@ export function previewOfXmtpContent(decoded: unknown, contentTypeId: string | u
  *  remote-attachment metadata omits the MIME (multi-remote attachments). */
 export function attachmentEmojiPreview(mimeType?: string | null, filename?: string | null): string {
   const ext = filename?.split('.').pop()?.toLowerCase() ?? '';
-  const isImage = mimeType?.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic'].includes(ext);
-  const isAudio = mimeType?.startsWith('audio/') || ['m4a', 'mp3', 'wav', 'aac', 'ogg'].includes(ext);
-  const isVideo = mimeType?.startsWith('video/') || ['mp4', 'mov', 'webm'].includes(ext);
+  const isImage = (mimeType?.startsWith('image/') ?? false) || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic'].includes(ext);
+  const isAudio = (mimeType?.startsWith('audio/') ?? false) || ['m4a', 'mp3', 'wav', 'aac', 'ogg'].includes(ext);
+  const isVideo = (mimeType?.startsWith('video/') ?? false) || ['mp4', 'mov', 'webm'].includes(ext);
   if (isImage) return '📷';
   if (isAudio) return '🎤';
   if (isVideo) return '🎥';

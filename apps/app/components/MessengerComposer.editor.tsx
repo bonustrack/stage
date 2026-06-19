@@ -35,6 +35,7 @@ interface EditorProps {
   onCancelRec: () => void; onStopRec: () => void; onSend: () => void;
 }
 
+/** Renders the composer's text input row with attach, quick-action, and send/record buttons. */
 export function ComposerEditor(p: EditorProps): React.ReactElement {
   const { dark, fg, head, bg, sub, chipBg, recording } = p;
   const { primary } = usePalette();
@@ -62,9 +63,9 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
             value={p.text} onChangeText={p.setText} placeholder="Message" placeholderTextColor={sub}
             autoResize={false} dark={dark}
             inputProps={{
-              onContentSizeChange: (e) => p.setTextareaH(e.nativeEvent.contentSize.height),
+              onContentSizeChange: (e) => { p.setTextareaH(e.nativeEvent.contentSize.height); },
               selection: p.selection,
-              onSelectionChange: (e) => p.setSelection(e.nativeEvent.selection),
+              onSelectionChange: (e) => { p.setSelection(e.nativeEvent.selection); },
             }}
             style={{ color: head, fontFamily: 'Calibre-Medium', fontSize: fontSize('3xl'), lineHeight: 23, minHeight: 24, maxHeight: 210, height: undefined, paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8, textAlignVertical: 'top', backgroundColor: 'transparent', borderWidth: 0 }}
 />
@@ -88,7 +89,7 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
                *   the quick icon is actually shown. */}
               <Btn
                 icon={p.attachMenuOpen ? 'x' : 'plus'}
-                onPress={() => p.setAttachMenuOpen(o => !o)}
+                onPress={() => { p.setAttachMenuOpen(o => !o); }}
                 mr={!p.attachMenuOpen && p.quickIcon && p.onQuick ? -12 : undefined}
 />
               {/** Quick-access: re-trigger the last-used attachment type directly. */}
@@ -164,6 +165,7 @@ export function buildAttachActions(a: {
   ];
 }
 
+/** Renders the attachment action menu (photo, file, location, poll, sign, payment). */
 export function AttachMenu({
   head, inputBg, chipBg, actions, onClose,
 }: {

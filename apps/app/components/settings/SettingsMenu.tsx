@@ -40,6 +40,7 @@ const ROWS: { href: Href; label: string; icon: HeroIconName }[] = [
   { href: '/settings/about', label: 'About', icon: 'questionMarkCircle' },
 ];
 
+/** Renders the top-level settings menu listing each settings section. */
 export function SettingsMenu(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -63,8 +64,8 @@ export function SettingsMenu(): React.ReactElement {
           onPress: () => {
             setResetting(true);
             void resetForOnboarding()
-              .catch(() => Alert.alert('Reset failed', 'Could not clear account state.'))
-              .finally(() => setResetting(false));
+              .catch(() => { Alert.alert('Reset failed', 'Could not clear account state.'); })
+              .finally(() => { setResetting(false); });
           },
         },
       ],
@@ -97,7 +98,7 @@ export function SettingsMenu(): React.ReactElement {
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <ListView dark={dark}>
           {ROWS.map((row) => (
-            <ListViewItem key={row.href} dark={dark} onPress={() => router.push(row.href)}>
+            <ListViewItem key={row.href} dark={dark} onPress={() => { router.push(row.href); }}>
               <Icon name={row.icon} size={22} color={head}/>
               <Col flex={1}>
                 <Text size="xl" color={head}>{row.label}</Text>

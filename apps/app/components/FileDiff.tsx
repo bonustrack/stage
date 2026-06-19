@@ -41,13 +41,14 @@ function gutter(n: number | null): string {
   return n === null ? '' : String(n);
 }
 
+/** Renders one collapsible per-file diff section with colored patch lines and a line-number gutter. */
 export function FileDiff({ file, p, dark }: {
   file: DiffFile; p: Palette; dark: boolean;
 }): React.ReactElement {
   const [open, setOpen] = useState(false);
   return (
     <Box>
-      <ListViewItem dark={dark} gap={8} onPress={() => setOpen(o => !o)}>
+      <ListViewItem dark={dark} gap={8} onPress={() => { setOpen(o => !o); }}>
         <Icon name={open ? 'chevronDown' : 'chevronRight'} size={16} color={p.text}/>
         <Text size="xs" numberOfLines={1} color={p.text} style={{ flex: 1}}>
           {file.filename}

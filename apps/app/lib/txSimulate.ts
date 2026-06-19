@@ -56,7 +56,7 @@ export interface SimulateResult {
   error?: string;
 }
 
-export interface SimulateParams {
+interface SimulateParams {
   /** The sender to simulate from. For the smart account, pass its address. */
   from: string;
   to: string;
@@ -70,13 +70,17 @@ export interface SimulateParams {
 /** Minimal JSON-RPC POST to brovider. Returns the parsed body, or a thrown
  *  Error on transport failure. Caller distinguishes a JSON-RPC `error` (the node
  *  refused/failed the method) from a successful `result`. */
-async function rpc<T>(chainId: number, method: string, params: unknown[]): Promise<{ result?: T; error?: { message?: string } }> {
+interface RpcResponse {
+  result?: unknown;
+  error?: { message?: string; data?: string };
+}
+async function rpc(chainId: number, method: string, params: unknown[]): Promise<RpcResponse> {
   const res = await fetch(broviderRpc(chainId), {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
   });
-  return (await res.json()) as { result?: T; error?: { message?: string } };
+  return (await res.json()) as RpcResponse;
 }
 
 /** PRE-CHECK a native ETH value transfer against the sender's on-chain balance.
@@ -93,8 +97,8 @@ async function checkNativeBalance(
   if (value <= 0n) return null;
   let balance: bigint;
   try {
-    const j = await rpc<string>(chainId, 'eth_getBalance', [from, 'latest']);
-    if (j.error || !j.result) return null;
+    const j = await rpc(chainId, 'eth_getBalance', [from, 'latest']);
+    if (j.error || typeof j.result !== 'string' || !j.result) return null;
     balance = BigInt(j.result);
   } catch { return null; }
   if (value <= balance) return null;
@@ -112,16 +116,16 @@ async function callForRevert(
   call: { from: string; to: string; value: string; data?: string }, chainId: number,
 ): Promise<string | null> {
   try {
-    const j = await rpc<string>(chainId, 'eth_call', [call, 'latest']);
+    const j = await rpc(chainId, 'eth_call', [call, 'latest']);
     if (!j.error) return null; // call didn't revert -> no reason to surface
-    const data = (j.error as { data?: string })?.data;
+    const data = j.error.data;
     return decodeRevert(typeof data === 'string' ? data : undefined, j.error.message) ?? null;
   } catch { return null; }
 }
 
 /** Simulate a single call with eth_simulateV1 and return success + asset moves.
  *  Never throws — RPC/parse failures resolve to `{ success: 'unknown', error }`. */
-export async function simulateTx(p: SimulateParams): Promise<SimulateResult> {
+async function simulateTx(p: SimulateParams): Promise<SimulateResult> {
   const empty = { in: [], out: [] };
   let from: string, to: string;
   try {
@@ -152,10 +156,14 @@ export async function simulateTx(p: SimulateParams): Promise<SimulateResult> {
   // with one call, so the result is result[0].calls[0].
   let json: { result?: { calls?: SimCall[] }[]; error?: { message?: string } };
   try {
-    json = await rpc<{ calls?: SimCall[] }[]>(p.chainId, 'eth_simulateV1', [
+    const resp = await rpc(p.chainId, 'eth_simulateV1', [
       { blockStateCalls: [{ calls: [call] }], traceTransfers: true, validation: false },
       'latest',
     ]);
+    json = {
+      result: Array.isArray(resp.result) ? (resp.result as { calls?: SimCall[] }[]) : undefined,
+      error: resp.error,
+    };
   } catch (e) {
     return {
       success: 'unknown', assetChanges: empty,

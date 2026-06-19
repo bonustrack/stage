@@ -18,6 +18,7 @@ export interface VoiceArgs {
  *  release cancels the recording instead of stopping+staging it. */
 export const SLIDE_CANCEL_THRESHOLD_PX = 80;
 
+/** Hook that drives microphone capture, level metering, and staging for the composer's voice messages. */
 export function useVoiceRecorder(args: VoiceArgs) {
   const { upload, setErr, setRecording, setRecordSecs, setLevels } = args;
   const recRef = useRef<Audio.Recording | null>(null);
@@ -45,7 +46,9 @@ export function useVoiceRecorder(args: VoiceArgs) {
     if (!perm.granted) { recordingRef.current = false; Alert.alert('Mic permission denied'); return; }
     await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
     const rec = new Audio.Recording();
-    await rec.prepareToRecordAsync({ ...Audio.RecordingOptionsPresets.HIGH_QUALITY, isMeteringEnabled: true });
+    const preset = Audio.RecordingOptionsPresets.HIGH_QUALITY;
+    if (preset === undefined) { recordingRef.current = false; setErr('Recording unavailable'); return; }
+    await rec.prepareToRecordAsync({ ...preset, isMeteringEnabled: true });
     /** Feed mic metering (dBFS, ~-55 silent → 0 loud) into the waveform. */
     rec.setProgressUpdateInterval(80);
     rec.setOnRecordingStatusUpdate((s) => {

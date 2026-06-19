@@ -17,3 +17,13 @@
   # and several workspace deps assume Node >=22, so the default image can
   # fail the clean build even though it passes locally on Node 22.
   NODE_VERSION = "22"
+  # Netlify enhanced secret scanning flags the `AIza...` keys inside the
+  # committed Firebase config files (apps/app/google-services*.json) and
+  # fails the deploy with a build-stage non-zero exit. Those are public
+  # Firebase *client* config values (Web API keys are restricted by
+  # Firebase app/SHA + API-key referrer rules, not bearer secrets) and are
+  # intentionally committed for the React Native app — they are not part of
+  # the apps/ui site that is actually published here. Omit them from the
+  # scan so a legitimate, non-secret value can't break every deploy
+  # (this had been failing builds on ALL branches, including main).
+  SECRETS_SCAN_OMIT_PATHS = "apps/app/google-services.json,apps/app/google-services.prod.json"

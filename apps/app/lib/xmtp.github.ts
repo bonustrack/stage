@@ -27,7 +27,7 @@ export function normalizeGithubUrl(raw: string): string {
 
 /** Pull the github link out of a parsed blob (string or undefined). */
 function readGithub(blob: Record<string, unknown>): string | undefined {
-  const raw = blob['github'];
+  const raw = blob.github;
   return typeof raw === 'string' && raw.trim() ? raw.trim() : undefined;
 }
 
@@ -39,7 +39,7 @@ export async function getGithubLink(line: string): Promise<string | undefined> {
   if (!group) return undefined;
   try {
     await group.sync?.();
-    return readGithub(parseBlob(await group.appData!()));
+    return readGithub(parseBlob(await group.appData()));
   } catch {
     return undefined;
   }
@@ -51,7 +51,7 @@ export async function githubOfSyncedGroup(conv: unknown): Promise<string | undef
   const group = asGroup(conv);
   if (!group) return undefined;
   try {
-    return readGithub(parseBlob(await group.appData!()));
+    return readGithub(parseBlob(await group.appData()));
   } catch {
     return undefined;
   }
@@ -65,12 +65,12 @@ export async function setGithubLink(line: string, url: string): Promise<string |
   const group = asGroup(conv);
   if (!group) throw new Error('Not a group conversation');
   await group.sync?.();
-  const existing = parseBlob(await group.appData!());
+  const existing = parseBlob(await group.appData());
   const blob: Record<string, unknown> = { ...existing, v: 1, labels: readLabels(existing) };
-  if (clean) blob['github'] = clean;
-  else delete blob['github'];
+  if (clean) blob.github = clean;
+  else delete blob.github;
   try {
-    await group.updateAppData!(JSON.stringify(blob));
+    await group.updateAppData(JSON.stringify(blob));
   } catch (e) {
     const msg = e instanceof Error ? e.message.toLowerCase() : '';
     if (msg.includes('permission') || msg.includes('not authorized') || msg.includes('unauthorized')) {

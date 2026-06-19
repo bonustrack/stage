@@ -33,6 +33,7 @@ import { Spinner } from '../../components/Spinner';
  *  which owns the SDK access + summarise logic, unchanged). */
 type ReqRow = ConversationRequestView;
 
+/** Screen listing pending conversation requests awaiting accept or decline. */
 export default function Requests(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -79,20 +80,20 @@ export default function Requests(): React.ReactElement {
             lastPreview={item.preview || '(no messages yet)'}
             /** Warm the feed cache on touch-down so the request conversation
              *  opens from cache instead of waiting on the inbox-wide sync. */
-            onPressIn={() => prefetchFeed(lineOfConv(item.convId))}
-            onPress={() => router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } })}
+            onPressIn={() => { prefetchFeed(lineOfConv(item.convId)); }}
+            onPress={() => { router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } }); }}
 />
         </Col>
         <Row gap={8} style={{ flexShrink: 0 }}>
           <Pressable
-            onPress={() => act(item.convId, false)}
+            onPress={() => { act(item.convId, false); }}
             hitSlop={6}
             style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: border }}
 >
             <Icon name="x" size={18} color={danger}/>
           </Pressable>
           <Pressable
-            onPress={() => act(item.convId, true)}
+            onPress={() => { act(item.convId, true); }}
             hitSlop={6}
             style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: dark ? '#15321f' : '#dcf5e6' }}
 >
@@ -106,7 +107,7 @@ export default function Requests(): React.ReactElement {
   return (
     <Col surface="surface" flex={1}>
       <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
+        <Pressable onPress={() => { router.back(); }} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg}/>
         </Pressable>
         <Title size="sm" color={head}>

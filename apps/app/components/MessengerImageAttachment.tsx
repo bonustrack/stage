@@ -12,6 +12,7 @@ import { ImageViewer } from './ImageViewer';
  *  not Image — Kit Image's style prop is ImageStyle). */
 const ABSOLUTE_FILL: ImageStyle = { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 };
 
+/** Renders an image message attachment with a tap-to-open fullscreen viewer. */
 export function MessengerImageAttachment({ uri, dark = true }: {
   uri: string; dark?: boolean;
 }): React.ReactElement {
@@ -30,7 +31,7 @@ export function MessengerImageAttachment({ uri, dark = true }: {
   }, [uri]);
   return (
     <>
-      <MediaCard dark={dark} onPress={() => setOpen(true)} width={220}>
+      <MediaCard dark={dark} onPress={() => { setOpen(true); }} width={220}>
         {prevUri && prevUri !== uri ? (
           <Image src={prevUri} style={ABSOLUTE_FILL} fit="cover" />
         ) : null}
@@ -42,7 +43,7 @@ export function MessengerImageAttachment({ uri, dark = true }: {
           onLoad={() => { loadedUri.current = uri; if (prevUri) setPrevUri(null); }}
         />
       </MediaCard>
-      <ImageViewer uri={uri} visible={open} onClose={() => setOpen(false)} />
+      <ImageViewer uri={uri} visible={open} onClose={() => { setOpen(false); }} />
     </>
   );
 }

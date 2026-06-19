@@ -84,6 +84,7 @@ export function GroupProfileHeader({ imageUrl, channelId, uploadingImage, insetT
   );
 }
 
+/** Inline editor for a group's name with save/cancel controls. */
 export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, saving, onSave, dark, p }: {
   name: string | null; draft: string; setDraft: (s: string) => void;
   editing: boolean; setEditing: (b: boolean) => void; saving: boolean; onSave: () => void;
@@ -110,9 +111,9 @@ export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, sa
           <SaveButton saving={saving} disabled={saving || !draft.trim()} onSave={onSave} dark={dark}/>
         </Row>
       ) : (
-        <Pressable onPress={() => setEditing(true)} hitSlop={6} style={{ marginTop: 6, alignItems: 'flex-start' }}>
+        <Pressable onPress={() => { setEditing(true); }} hitSlop={6} style={{ marginTop: 6, alignItems: 'flex-start' }}>
           <Text weight="semibold" size="5xl" color={head} style={{ textAlign: 'left' }}>
-            {name && name.trim() ? name : 'Untitled group'}
+            {name?.trim() ? name : 'Untitled group'}
           </Text>
           <Text size="xs" color={sub} style={{ marginTop: 4 }}>Tap to rename</Text>
         </Pressable>
@@ -121,6 +122,7 @@ export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, sa
   );
 }
 
+/** Inline editor for a group's description with save/cancel controls. */
 export function GroupDescriptionEditor({ description, descriptionDraft, setDescriptionDraft, editing, setEditing, saving, onSave, dark, p }: {
   description: string; descriptionDraft: string; setDescriptionDraft: (s: string) => void;
   editing: boolean; setEditing: (b: boolean) => void; saving: boolean; onSave: () => void;
@@ -149,7 +151,7 @@ export function GroupDescriptionEditor({ description, descriptionDraft, setDescr
           <SaveButton saving={saving} disabled={saving} onSave={onSave} dark={dark}/>
         </Row>
       ) : (
-        <Pressable onPress={() => setEditing(true)} hitSlop={6} style={{ marginTop: 6 }}>
+        <Pressable onPress={() => { setEditing(true); }} hitSlop={6} style={{ marginTop: 6 }}>
           <Text size="md" color={description.trim() ? fg : sub}>
             {description.trim() || 'Tap to add a description'}
           </Text>

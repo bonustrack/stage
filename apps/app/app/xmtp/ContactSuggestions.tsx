@@ -16,6 +16,7 @@ import type { Contact } from '../../lib/useContacts';
 import { Avatar } from '../../components/Avatar';
 import { Col, Row } from '../../components/layout';
 
+/** Selectable list of contact suggestions for staging group members. */
 export function ContactSuggestions({
   contacts, selected, onToggle,
 }: {
@@ -38,7 +39,7 @@ export function ContactSuggestions({
           return (
             <Pressable
               key={c.address}
-              onPress={() => onToggle(c)}
+              onPress={() => { onToggle(c); }}
               style={({ pressed }) => ({
                 flexDirection: 'row', alignItems: 'center', gap: 10,
                 borderRadius: 12, paddingHorizontal: 8, paddingVertical: 8,

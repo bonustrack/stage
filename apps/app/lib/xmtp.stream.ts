@@ -49,6 +49,7 @@ export { PAGE_SIZE, syncInboxOnce } from './xmtp.resync';
  *  inbound is decoded once and routed to BOTH the feedCache slice (conv view)
  *  AND these subscribers (row/preview/unread bookkeeping). */
 const streamSubscribers = new Set<(m: StreamMsg) => void>();
+/** Subscribe to every inbound message on the single global stream; returns an unsubscribe fn. */
 export function subscribeAllMessages(cb: (m: StreamMsg) => void): () => void {
   streamSubscribers.add(cb);
   /** Ensure the one app-wide stream is running once anyone subscribes. */
@@ -155,8 +156,8 @@ function rearmGlobalStream(): void {
  *  slice + channels-list subscribers. Re-armed via `onClose` on native drop. */
 async function startStream(client: Awaited<ReturnType<typeof getOrCreateXmtpClient>>): Promise<void> {
   await client.conversations.streamAllMessages(
-    async (msg) => {
-      if (!msg) return;
+    (msg): Promise<void> => {
+      if (!msg) return Promise.resolve();
       /** Mark a live delivery so a push arriving right after is treated as
        *  redundant (see onXmtpPush's STREAM_FRESH_MS skip). */
       noteStreamDelivery();
@@ -183,11 +184,11 @@ async function startStream(client: Awaited<ReturnType<typeof getOrCreateXmtpClie
          *  stranded until the next push/resume backstop (mirrors the channels-list refresh
          *  fallback on a convId miss). */
         if (activeFeedLines.size > 0) void resyncActiveFeeds();
-        return;
+        return Promise.resolve();
       }
       const line = lineOfConv(convId);
       const env = envelopeOfXmtpMessage(msg, line);
-      if (isMetroControlBody(env.text)) return;
+      if (isMetroControlBody(env.text)) return Promise.resolve();
       /** Capture the open feed's tail BEFORE the push so arrival-continuity can
        *  tell whether this message is the direct successor of what the feed had,
        *  or whether an earlier message is missing locally (a sentNs gap). */
@@ -208,6 +209,7 @@ async function startStream(client: Awaited<ReturnType<typeof getOrCreateXmtpClie
        *  the canonical `convOfLine` handle so the open conversation shows the
        *  message live instead of only after reopen/refresh. */
       if (activeFeedLines.size > 0 && !activeFeedLines.has(line)) void resyncActiveFeeds();
+      return Promise.resolve();
     },
     'all',
     STREAM_CONSENT_STATES,
@@ -241,7 +243,7 @@ export async function ensureGlobalStream(): Promise<void> {
      *  real-time wake — it fires even when foregrounded / already viewing the
      *  conv (MetroFcmService emits before its card suppression), so it covers
      *  both a silently-dead stream and the live-but-missed case. */
-    if (!globalPushSub) globalPushSub = subscribeXmtpPush((e) => {
+    globalPushSub ??= subscribeXmtpPush((e) => {
       /** If the push landed while the app wasn't foregrounded, the native FCM
        *  service already posted a generic card for it (MetroFcmService skips its
        *  card only when foregrounded). Record the message id so a subsequent
@@ -255,18 +257,16 @@ export async function ensureGlobalStream(): Promise<void> {
      *  channels-list stream handler) is the single foreground card. Cleared on
      *  background below so cold/background falls back to the generic card. */
     setAppForeground(AppState.currentState === 'active');
-    if (!globalAppStateSub) {
-      globalAppStateSub = AppState.addEventListener('change', (state) => {
-        /** Mirror the active-conv plumbing: foreground ⟺ JS posts rich cards +
-         *  native suppresses its generic one; background ⟺ native generic card. */
-        setAppForeground(state === 'active');
-        if (state !== 'active') return;
-        void resyncActiveFeeds();
-        /** Stream may have died while backgrounded (onClose nulled the cancel) —
-         *  restart it in addition to the one-off resync. */
-        if (!globalStreamCancel) void ensureGlobalStream();
-      });
-    }
+    globalAppStateSub ??= AppState.addEventListener('change', (state) => {
+      /** Mirror the active-conv plumbing: foreground ⟺ JS posts rich cards +
+       *  native suppresses its generic one; background ⟺ native generic card. */
+      setAppForeground(state === 'active');
+      if (state !== 'active') return;
+      void resyncActiveFeeds();
+      /** Stream may have died while backgrounded (onClose nulled the cancel) —
+       *  restart it in addition to the one-off resync. */
+      if (!globalStreamCancel) void ensureGlobalStream();
+    });
   } catch { /* stream init failed — resync backstop still covers active feeds */ }
   finally { globalStreamStarting = false; }
 }
@@ -297,5 +297,5 @@ registerGlobalStreamTeardown(teardownGlobalStream);
 function convIdFromTopicStr(topic: string | undefined): string | null {
   if (!topic) return null;
   const m = /\/g-([0-9a-fA-F]+)\//.exec(topic);
-  return m ? m[1]! : null;
+  return m?.[1] ?? null;
 }

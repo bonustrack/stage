@@ -22,7 +22,7 @@
  *  types) so any valid typed-data structure round-trips through JSON unchanged. */
 export interface Eip712TypedData {
   domain: Record<string, unknown>;
-  types: Record<string, Array<{ name: string; type: string }>>;
+  types: Record<string, { name: string; type: string }[]>;
   primaryType: string;
   message: Record<string, unknown>;
 }
@@ -88,6 +88,7 @@ export function signatureRequestPreviewText(c: SignatureRequestContent): string 
   const desc = c?.description?.trim();
   return desc ? `Signature request: ${desc}` : 'Signature request';
 }
+/** One-line channels-list preview for a SignatureReference receipt. */
 export function signatureReferencePreviewText(): string {
   return 'Signature';
 }

@@ -74,6 +74,7 @@ const CREATE_TIMEOUT_MESSAGE = 'XMTP.create timed out (native handshake hang)';
 const STORE_CORRUPTION = [
   'PRAGMA key', 'StorageError', 'incorrect value', CREATE_TIMEOUT_MESSAGE,
 ];
+/** True when the error matches a local-store corruption signature that warrants a wipe + retry. */
 export function isStoreCorruption(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
   return STORE_CORRUPTION.some(sig => msg.includes(sig));
@@ -91,7 +92,7 @@ async function createWithTimeout(
   let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<never>((_, reject) => {
     timer = setTimeout(
-      () => reject(new Error(CREATE_TIMEOUT_MESSAGE)),
+      () => { reject(new Error(CREATE_TIMEOUT_MESSAGE)); },
       CREATE_TIMEOUT_MS,
     );
   });
@@ -172,7 +173,7 @@ export async function createClientForAccount(
   const signer = await signerForRecord(rec);
   try {
     const created = await createWithTimeout(signer, opts);
-    return finalizeClient(created, rec, env);
+    return await finalizeClient(created, rec, env);
   } catch (e) {
     /** Real local corruption → wipe THIS account's store + key, retry once. */
     if (!recovered && isStoreCorruption(e)) {

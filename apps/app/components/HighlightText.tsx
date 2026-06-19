@@ -5,8 +5,11 @@
  *  the Home channels list so the matched query stands out in channel names and
  *  last-message previews (via the inline `highlightSegments` helper). */
 
-// eslint-disable-next-line @typescript-eslint/no-restricted-imports -- the highlight span MUST be a bare RN Text so it inherits the surrounding text's font family/size/weight/colour and only adds a background; the Kit Text always sets its own fontSize/fontFamily, which would override the row/bubble typography.
-import { Text as RNText } from 'react-native';
+// the highlight span MUST be a bare RN Text so it inherits the surrounding
+// text's font family/size/weight/colour and only adds a background; the Kit Text
+// always sets its own fontSize/fontFamily, which would override the row/bubble
+// typography. Imported via the sanctioned layout/native escape hatch.
+import { Text as RNText } from './layout/native';
 import { Text } from '@metro-labs/kit/text';
 
 /** Bright "fluo" yellow highlight. The match span ONLY adds this background -
@@ -51,6 +54,7 @@ export function highlightSegments(text: string, query: string): React.ReactNode 
   ));
 }
 
+/** Renders a string with every case-insensitive occurrence of the query highlighted. */
 export function HighlightText({ text, query, fg }: {
   text: string;
   query: string;

@@ -23,6 +23,7 @@ import { reloadApp } from '../AccountsManager.helpers';
 
 interface SectionColors { fg: string; head: string; sub: string; border: string; rowBg: string }
 
+/** Settings section presenting account security options and danger-zone actions. */
 export function AccountSecuritySection(
   { c, danger, dark }: { c: SectionColors; danger: string; dark: boolean },
 ): React.ReactElement | null {
@@ -116,7 +117,7 @@ export function AccountSecuritySection(
             {rec.type === 'smart' ? (
               <ListViewItem
                 dark={dark}
-                onPress={() => router.push('/wallet/recovery')}
+                onPress={() => { router.push('/wallet/recovery'); }}
                 style={{ paddingHorizontal: 14, paddingVertical: 14 }}
               >
                 <Icon name="userGroup" size={22} color={c.head} />

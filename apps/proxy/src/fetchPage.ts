@@ -29,7 +29,7 @@ function concat(chunks: Uint8Array[]): Uint8Array {
 /** Read a response body up to MAX_BYTES, decoding as UTF-8, aborting the stream
  *  once enough bytes for the head are in hand. */
 async function readCapped(res: Response): Promise<string> {
-  const reader = res.body?.getReader();
+  const reader = res.body?.getReader() as ReadableStreamDefaultReader<Uint8Array> | undefined;
   if (!reader) return await res.text();
   const chunks: Uint8Array[] = [];
   let total = 0;
@@ -49,7 +49,7 @@ async function readCapped(res: Response): Promise<string> {
  *  value or null on bad/oversized/non-JSON. */
 async function readJsonCapped(res: Response): Promise<unknown> {
   try {
-    const reader = res.body?.getReader();
+    const reader = res.body?.getReader() as ReadableStreamDefaultReader<Uint8Array> | undefined;
     if (!reader) return JSON.parse(await res.text());
     const chunks: Uint8Array[] = [];
     let total = 0;

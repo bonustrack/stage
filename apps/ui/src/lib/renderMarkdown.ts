@@ -12,11 +12,15 @@ const defaultLinkOpen =
   md.renderer.rules.link_open ??
   ((tokens, idx, options, _env, self) => self.renderToken(tokens, idx, options));
 md.renderer.rules.link_open = (tokens, idx, options, env, self) => {
-  tokens[idx].attrSet('target', '_blank');
-  tokens[idx].attrSet('rel', 'noopener noreferrer nofollow');
+  const token = tokens[idx];
+  if (token) {
+    token.attrSet('target', '_blank');
+    token.attrSet('rel', 'noopener noreferrer nofollow');
+  }
   return defaultLinkOpen(tokens, idx, options, env, self);
 };
 
+/** Render Markdown text to sanitised HTML with external links hardened. */
 export function renderMarkdown(text: string): string {
   return md.render(text);
 }

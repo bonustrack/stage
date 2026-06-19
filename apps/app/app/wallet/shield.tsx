@@ -10,6 +10,7 @@ import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
 import { ActionPage, WalletFooter, useFooterReporter, useFormPal } from './wallet.form';
 import { ShieldFlowForm } from './send.shield';
 
+/** Screen for shielding tokens from a public balance into a private one. */
 export default function WalletShield(): React.ReactElement {
   const router = useRouter();
   const params = useLocalSearchParams<{ symbol?: string; chainId?: string }>();
@@ -23,9 +24,9 @@ export default function WalletShield(): React.ReactElement {
   const initialChainId = typeof params.chainId === 'string' ? Number(params.chainId) : undefined;
 
   return (
-    <ActionPage title="Shield token" head={head} bg={bg} border={border} onBack={() => router.back()}
+    <ActionPage title="Shield token" head={head} bg={bg} border={border} onBack={() => { router.back(); }}
       footer={footer ? (
-        <WalletFooter border={border} dark={dark} onCancel={() => router.back()}
+        <WalletFooter border={border} dark={dark} onCancel={() => { router.back(); }}
           submitLabel={footer.submitLabel} onSubmit={footerSubmit}
           submitDisabled={footer.submitDisabled} submitLoading={footer.submitLoading} />
       ) : null}>

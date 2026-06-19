@@ -13,6 +13,7 @@ import { Box } from './layout';
 import { previewLinkOf } from '../lib/previewLinkDetect';
 import { usePalette, useBlockRadius } from '../lib/theme';
 
+/** Renders a rich preview card for a detected link URL. */
 export function PreviewLinkCard({ url }: {
   /** `dark` is accepted for call-site symmetry but unused - colors come from the
    *  live palette tokens (same convention as GitHubLinkCard / ChannelCard). */

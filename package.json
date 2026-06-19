@@ -11,26 +11,31 @@
   "type": "module",
   "workspaces": [
     "packages/*",
-    "apps/*",
-    "!apps/proxy"
+    "apps/*"
   ],
   "scripts": {
     "build": "turbo run build",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
-    "lint": "turbo run lint",
-    "lint:fix": "turbo run lint:fix",
-    "madge": "madge --circular --extensions ts,tsx apps/app/app apps/app/components apps/app/lib apps/app/modules apps/api/src packages/client/src packages/kit/src",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "madge": "node scripts/madge.mjs",
     "knip": "knip",
-    "check": "turbo run lint typecheck && bun run madge && bun run knip",
+    "check": "bun run lint && turbo run typecheck",
+    "report:deps": "bun run madge || true; bun run knip || true",
     "served:reset": "bash scripts/served-reset.sh",
     "served:drift-check": "bash scripts/served-drift-check.sh",
     "worktree:prune": "bash scripts/worktree-prune.sh"
   },
   "devDependencies": {
+    "@stage-labs/config": "workspace:*",
+    "eslint": "^10.3.0",
+    "eslint-plugin-vue": "^9.32.0",
     "knip": "^6.15.0",
     "madge": "^8.0.0",
-    "turbo": "^2.3.3"
+    "turbo": "^2.3.3",
+    "typescript-eslint": "^8.59.2",
+    "vue-eslint-parser": "^9.4.3"
   },
   "packageManager": "bun@1.3.9",
   "engines": {

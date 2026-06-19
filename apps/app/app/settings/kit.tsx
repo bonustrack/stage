@@ -5,6 +5,7 @@ import { useLayoutEffect } from 'react';
 import { useNavigation } from 'expo-router';
 import { KitPage } from '../../components/system/KitPage';
 
+/** Settings → Kit screen: the @metro-labs/kit component gallery + theme color editor. */
 export default function SettingsKitRoute(): React.ReactElement {
   /** Disable the app's full-width swipe-back (the JS card stack's interactive
    *  horizontal pan, armed from anywhere via gestureResponseDistance:9999 in

@@ -19,7 +19,7 @@ export type BoundaryName = string;
 
 /** Format a zod issue list into a single compact line. */
 function summarize(error: unknown): string {
-  const issues = (error as { issues?: Array<{ path: unknown[]; message: string }> }).issues;
+  const issues = (error as { issues?: { path: unknown[]; message: string }[] }).issues;
   if (!Array.isArray(issues)) return String(error);
   return issues
     .map(i => `${i.path.length ? i.path.join('.') : '(root)'}: ${i.message}`)

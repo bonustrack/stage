@@ -28,7 +28,7 @@ const EXT_MIME: Record<string, string> = {
  *  `encryptAttachment`/IPFS upload at send time, so fall back to the file
  *  extension, then to a generic binary type. */
 export function mimeOf(mime: string | undefined | null, nameOrUri: string): string {
-  if (mime && mime.includes('/')) return mime;
+  if (mime?.includes('/')) return mime;
   const ext = nameOrUri.split('?')[0]?.split('#')[0]?.split('.').pop()?.toLowerCase() ?? '';
   return EXT_MIME[ext] ?? 'application/octet-stream';
 }

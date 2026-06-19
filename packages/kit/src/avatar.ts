@@ -47,7 +47,7 @@ export function channelStampSeed(channelId: string): string {
  *  DOES have an uploaded image, so call sites can use this as the single source
  *  of truth: `channelAvatarUrl(id, imageUrl, px)`. */
 export function channelAvatarUrl(channelId: string, imageUrl: string | null | undefined, displayPx: number): string {
-  if (imageUrl && imageUrl.trim()) return imageUrl;
+  if (imageUrl?.trim()) return imageUrl;
   return stampAvatarUrl(channelStampSeed(channelId), displayPx);
 }
 

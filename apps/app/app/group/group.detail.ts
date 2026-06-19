@@ -23,6 +23,7 @@ interface ActionSeeders {
   setMembers: (m: string[]) => void;
 }
 
+/** Hook resolving a group conversation's member names and roles from metadata. */
 export function useGroupDetail(
   convId: string | undefined,
   a: ActionSeeders,

@@ -23,9 +23,7 @@ import { useIncomingLabelFilter } from './HomeScreen.filter';
 import { deriveLabels, useHomeFilters } from './HomeScreen.labelbar';
 import { filterRowsByQuery } from './HomeScreen.search';
 
-/** Re-exported so existing import paths (`./HomeScreen`) stay unchanged. */
-export type { Row } from './HomeScreen.helpers';
-
+/** Home tab screen showing the conversation list and primary navigation. */
 export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -37,7 +35,7 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
   const setRows = (next: RowT[] | null | ((p: RowT[] | null) => RowT[] | null)): void => {
     if (typeof next === 'function') {
       setRowsState(prev => {
-        const v = (next as (p: RowT[] | null) => RowT[] | null)(prev);
+        const v = (next)(prev);
         setCachedRows(v);
         return v;
       });
@@ -46,7 +44,7 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
       setCachedRows(next);
     }
   };
-  useEffect(() => subscribeCachedRows(r => setRowsState(r as RowT[] | null)), []);
+  useEffect(() => subscribeCachedRows(r => { setRowsState(r as RowT[] | null); }), []);
   /** Mirror the channels cache into TanStack Query (stage-1 cache unification) so
    *  read-only consumers dedupe off one entry. The cache stays the writer; this
    *  screen's own state path above is unchanged. */
@@ -85,11 +83,11 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
     void loadPinnedIds().then(setPinned);
     /** On toggle the cache is already updated; re-read it (resolves instantly
      *  once loaded) into a fresh Set so React sees a new reference. */
-    return subscribePins(() => { void loadPinnedIds().then(s => setPinned(new Set(s))); });
+    return subscribePins(() => { void loadPinnedIds().then(s => { setPinned(new Set(s)); }); });
   }, []);
   useEffect(() => {
     void loadArchivedIds().then(setArchived);
-    return subscribeArchived(() => { void loadArchivedIds().then(s => setArchived(new Set(s))); });
+    return subscribeArchived(() => { void loadArchivedIds().then(s => { setArchived(new Set(s)); }); });
   }, []);
 
   /** Display ordering: pinned rows float to the top (keeping their own lastTs
@@ -187,7 +185,7 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
         isUnread={rowMenu?.isUnread ?? false}
         isPinned={rowMenu ? pinned.has(rowMenu.convId) : false}
         isArchived={rowMenu ? archived.has(rowMenu.convId) : false}
-        onClose={() => setRowMenu(null)}
+        onClose={() => { setRowMenu(null); }}
 />
     </Col>
   );

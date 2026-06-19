@@ -54,6 +54,7 @@ function surfaceColor(surface: Surface, palette: KitPalette): string | undefined
   }
 }
 
+/** Flexbox layout primitive that maps shorthand spacing/alignment props to a React Native View style. */
 export function Box({
   direction,
   gap,
@@ -88,7 +89,7 @@ export function Box({
     background !== undefined && isColorToken(background)
       ? resolveColorToken(background, scheme)
       : background;
-  const bg = override !== undefined ? override : surfaceColor(surface, palette);
+  const bg = override ?? surfaceColor(surface, palette);
 
   const computed = boxStyleEntries({
     direction,
@@ -120,10 +121,12 @@ export function Box({
 
 export type RowColProps = Omit<BoxProps, 'direction'>;
 
+/** Box variant locked to a horizontal (row) layout. */
 export function Row(props: RowColProps) {
   return <Box direction="row" {...props} />;
 }
 
+/** Box variant locked to a vertical (column) layout. */
 export function Col(props: RowColProps) {
   return <Box direction="col" {...props} />;
 }
