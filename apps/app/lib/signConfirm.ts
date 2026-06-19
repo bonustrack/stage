@@ -40,11 +40,42 @@ const HIGH_RISK_PRIMARY_TYPES: Record<string, string> = {
   safetx: 'Safe transaction',
 };
 
+/** Normalize an EIP-712 `domain.chainId` (which may arrive as a number, a
+ *  decimal string, or a `0x`-hex string over JSON) to a `bigint`, or undefined
+ *  when absent/unparseable. */
+export function normalizeChainId(raw: unknown): bigint | undefined {
+  if (raw == null) return undefined;
+  if (typeof raw === 'bigint') return raw;
+  if (typeof raw === 'number') return Number.isFinite(raw) ? BigInt(Math.trunc(raw)) : undefined;
+  if (typeof raw === 'string') {
+    const s = raw.trim();
+    if (!s) return undefined;
+    try {
+      // BigInt() parses both decimal and `0x`-hex strings; throws otherwise.
+      return BigInt(s);
+    } catch {
+      return undefined;
+    }
+  }
+  return undefined;
+}
+
 /** The risk summary the confirm sheet renders. */
 export interface SignConfirmSummary {
-  /** A high-risk typed-data authorization (Permit/Seaport/EIP-3009/...) -> the
-   *  sheet MUST show the warning + destructive button. */
+  /** A high-risk typed-data authorization (Permit/Seaport/EIP-3009/...) OR a
+   *  chain-id mismatch (see `chainMismatch`) -> the sheet MUST show the warning
+   *  + destructive button. */
   highRisk: boolean;
+  /** True when the typed data declares a `domain.chainId` that differs from the
+   *  chain the signing wallet actually settles on (`expectedChainId`). A valid
+   *  EIP-712 signature is bound to its domain's chainId, so a mismatch lets an
+   *  untrusted peer harvest a signature replayable on a DIFFERENT chain than the
+   *  one the user believes they're acting on (cross-chain allowance / EIP-3009
+   *  replay). Surfaced as high-risk regardless of the primaryType. */
+  chainMismatch?: boolean;
+  /** The chain id the wallet actually signs/settles on, when the caller supplied
+   *  one to compare against (decimal string, for display). */
+  expectedChainId?: string;
   /** Human label for the typed data's primaryType (e.g. "token spending
    *  approval (Permit2)"), or the raw primaryType / "message" otherwise. */
   kindLabel: string;
@@ -90,8 +121,17 @@ function fieldOf(message: Record<string, unknown> | undefined, keys: string[]): 
 
 /** Derive the signature confirm summary from the typed-data STRUCTURE. For a
  *  `personal` request there's no structure to decode, so it's a low-risk
- *  plain-message sign. Never consults `description`. */
-export function deriveSignSummary(req: SignatureRequestContent): SignConfirmSummary {
+ *  plain-message sign. Never consults `description`.
+ *
+ *  `expectedChainId` is the chain the signing wallet ACTUALLY settles on (e.g.
+ *  Base for a smart account). When provided, a typed-data `domain.chainId` that
+ *  differs is flagged as a chain mismatch and forced high-risk — see
+ *  `SignConfirmSummary.chainMismatch`. A personal_sign carries no chainId, so it
+ *  is never affected. */
+export function deriveSignSummary(
+  req: SignatureRequestContent,
+  expectedChainId?: bigint | number | string,
+): SignConfirmSummary {
   if (req.kind !== 'eip712' || !req.eip712) {
     return { highRisk: false, kindLabel: 'message', message: req.message };
   }
@@ -121,8 +161,19 @@ export function deriveSignSummary(req: SignatureRequestContent): SignConfirmSumm
         })(),
       }))
     : undefined;
+  /** A signature is bound to its domain's chainId. If the wallet settles on a
+   *  KNOWN chain (`expectedChainId`) and the request declares a DIFFERENT one,
+   *  the produced signature is valid on the attacker-chosen chain, not the
+   *  user's — force high-risk and surface the mismatch explicitly. When the
+   *  request omits chainId, or we can't determine the wallet's chain, we don't
+   *  flag (no false positives for legitimately chain-agnostic typed data). */
+  const want = normalizeChainId(expectedChainId);
+  const got = normalizeChainId(domain?.chainId);
+  const chainMismatch = want != null && got != null && want !== got;
   return {
-    highRisk: !!risk,
+    highRisk: !!risk || chainMismatch,
+    chainMismatch: chainMismatch || undefined,
+    expectedChainId: want != null ? want.toString() : undefined,
     kindLabel: risk ?? (primary || 'typed data'),
     domainName,
     chainId,
@@ -141,11 +192,25 @@ export function deriveSignSummary(req: SignatureRequestContent): SignConfirmSumm
 export function signConfirmMessage(s: SignConfirmSummary, description?: string): string {
   const desc = description?.trim();
   const senderNote = desc ? `\n\nSender's note (untrusted): "${desc}"` : '';
+  /** A chain-id mismatch is its own headline warning: the signature would be
+   *  valid on the request's chain, NOT the wallet's, so name both chains. */
+  const chainWarn = s.chainMismatch
+    ? `⚠️ Chain mismatch: this signature is for chain ${s.chainId ?? '?'}, but your wallet signs on chain ${s.expectedChainId ?? '?'}. `
+      + `The signature would be valid on chain ${s.chainId ?? '?'}, where someone may already be able to move your assets. `
+    : '';
   if (s.highRisk) {
     const who = s.counterparty ? ` to ${s.counterparty}` : '';
     const tok = s.token ? `\nToken/contract: ${s.token}` : '';
     const dom = s.domainName ? `\nApp: ${s.domainName}${s.chainId ? ` · chain ${s.chainId}` : ''}` : '';
-    return `⚠️ This signature grants a ${s.kindLabel}${who}.${tok}${dom}\n`
+    /** When the ONLY reason this is high-risk is the chain mismatch (the
+     *  primaryType itself isn't a recognised authorization), the kindLabel is the
+     *  raw type — don't claim it "grants" an allowance. The chainWarn carries the
+     *  alarm; describe the request neutrally. */
+    const grantsAllowance = HIGH_RISK_PRIMARY_TYPES[(s.primaryType ?? '').toLowerCase()] != null;
+    const grant = grantsAllowance
+      ? `This signature grants a ${s.kindLabel}${who}.${tok}${dom}\n`
+      : `This signature authorizes a ${s.primaryType ?? 'typed-data'} request${who}.${tok}${dom}\n`;
+    return `⚠️ ${chainWarn}${grant}`
       + `Signing it can let someone move your assets later. Only sign if you fully trust the sender.`
       + senderNote;
   }

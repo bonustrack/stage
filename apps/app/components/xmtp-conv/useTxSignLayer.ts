@@ -39,7 +39,17 @@ export function useTxSignLayer(activeLine: string) {
    *  recognised high-risk primaryType gets an explicit warning + destructive
    *  button. The actual signing only runs from the confirm sheet's onPress. */
   const onSign = useCallback((requestId: string, req: SignatureRequestContent) => {
-    const summary = deriveSignSummary(req);
+    void (async () => {
+    /** Resolve the signing account up-front so the confirm summary knows which
+     *  chain the signature will actually be VALID on. A smart (ZeroDev Kernel)
+     *  account always settles on Base (the paymaster is Base-scoped), so a
+     *  typed-data request whose `domain.chainId` is anything other than Base
+     *  yields a signature replayable on the attacker-chosen chain — the summary
+     *  flags this mismatch as high-risk. A legacy EOA exists on every chain, so
+     *  we don't assert a single expected chain there. */
+    const activeForChain = await getActiveAccount();
+    const expectedChainId = activeForChain?.type === 'smart' ? base.id : undefined;
+    const summary = deriveSignSummary(req, expectedChainId);
     const doSign = (): void => {
     setSigningIds(prev => new Set(prev).add(requestId));
     void (async () => {
@@ -134,6 +144,7 @@ export function useTxSignLayer(activeLine: string) {
         },
       ],
     );
+    })();
   }, [activeLine]);
 
   /** Message ids whose payment is currently broadcasting — drives the Pay
