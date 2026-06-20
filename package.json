@@ -34,6 +34,7 @@
     "knip": "^6.15.0",
     "madge": "^8.0.0",
     "turbo": "^2.3.3",
+    "typescript": "~5.9.2",
     "typescript-eslint": "^8.59.2",
     "vue-eslint-parser": "^9.4.3"
   },

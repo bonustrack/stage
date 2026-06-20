@@ -29,6 +29,7 @@
   },
   "peerDependencies": {
     "eslint": "*",
+    "typescript": "*",
     "typescript-eslint": "*"
   },
   "peerDependenciesMeta": {
