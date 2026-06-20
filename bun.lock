@@ -11,6 +11,7 @@
         "knip": "^6.15.0",
         "madge": "^8.0.0",
         "turbo": "^2.3.3",
+        "typescript": "~5.9.2",
         "typescript-eslint": "^8.59.2",
         "vue-eslint-parser": "^9.4.3",
       },
@@ -86,7 +87,6 @@
         "@types/bun": "^1.2.0",
         "@types/react": "~19.1.0",
         "babel-preset-expo": "~54.0.10",
-        "typescript": "~5.9.2",
       },
     },
     "apps/proxy": {
@@ -98,7 +98,6 @@
       "devDependencies": {
         "@cloudflare/workers-types": "^4.20250601.0",
         "@types/node": "^22.0.0",
-        "typescript": "^5.7.0",
         "wrangler": "^4.100.0",
       },
     },
@@ -123,7 +122,6 @@
         "autoprefixer": "^10.4.20",
         "postcss": "^8.5.0",
         "tailwindcss": "^3.4.17",
-        "typescript": "~5.9.2",
         "unplugin-auto-import": "^21.0.0",
         "unplugin-vue-components": "^32.0.0",
         "vite": "^6.0.7",
@@ -140,7 +138,6 @@
       "devDependencies": {
         "@stage-labs/config": "workspace:*",
         "@types/bun": "^1.2.0",
-        "typescript": "~5.9.2",
       },
     },
     "packages/config": {
@@ -148,6 +145,7 @@
       "version": "0.1.0-beta.0",
       "peerDependencies": {
         "eslint": "*",
+        "typescript": "*",
         "typescript-eslint": "*",
       },
     },
@@ -157,7 +155,6 @@
       "devDependencies": {
         "@stage-labs/config": "workspace:*",
         "@types/react": "~19.1.0",
-        "typescript": "~5.9.2",
       },
       "peerDependencies": {
         "react": "*",

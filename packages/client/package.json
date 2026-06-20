@@ -56,7 +56,6 @@
   },
   "devDependencies": {
     "@stage-labs/config": "workspace:*",
-    "@types/bun": "^1.2.0",
-    "typescript": "~5.9.2"
+    "@types/bun": "^1.2.0"
   }
 }
