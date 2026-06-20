@@ -67,7 +67,7 @@ export function useConversationState(convId: string | undefined, focus: string |
   const { loadOlder, hasMore, loadingOlder } = xmtpFeed;
   useEffect(() => {
     if (!convId) return;
-    void markConvRead(convId); // mark read when the latest event count changes
+    void markConvRead(convId); /** mark read when the latest event count changes */
   }, [convId, events.length]);
   useActiveConvSuppression(convId);
   const status = feedStatus(xmtpFeed.status);

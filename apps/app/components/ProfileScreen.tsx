@@ -130,12 +130,10 @@ export function ProfileScreen({ address, variant, panRef }: {
           onSend={() => { router.push({ pathname: '/wallet/send', params: { to: addr } }); }}
         />
 
-        {/* Common channels — groups the local user + this peer are BOTH in.
-            Only for OTHER users; resolves async so it never blocks the render. */}
+        {/* Common channels both the local user and this peer are in (other users only; resolves async so it never blocks render). */}
         {!isSelf && addr ? <CommonChannels peerAddress={addr} enabled={!isSelf} c={c} /> : null}
 
-        {/* Tokens + NFTs holdings for the VIEWED address — reuses the Wallet
-            tab's TokensList / NftsView (public balances only; no Railgun). */}
+        {/* Tokens + NFTs holdings for the viewed address, reusing the Wallet tab's TokensList / NftsView (public balances only, no Railgun). */}
         {addr ? <ProfileHoldings address={addr} /> : null}
       </ScrollView>
 

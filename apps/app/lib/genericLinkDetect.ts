@@ -27,7 +27,7 @@ function isWebUrlWithHost(token: string): boolean {
 
 /** True when `token` is a plain http(s) link with no more-specific card. The checks mirror cardLinks.ts `classify` precedence so a URL is never rendered as both a special card and a generic preview. */
 export function isGenericLink(token: string): boolean {
-  if (!/^https?:\/\//i.test(token)) return false; // only web links (not metro://)
+  if (!/^https?:\/\//i.test(token)) return false; /** only web links (not metro://) */
   if (SPECIFIC_DETECTORS.some(detect => detect(token))) return false;
   return isWebUrlWithHost(token);
 }

@@ -40,7 +40,7 @@ export function useComposerState(): ComposerState {
   /** Cursor position in `text`, kept in sync via onSelectionChange for the mention detector. */
   const [selection, setSelection] = useState<{ start: number; end: number }>({ start: 0, end: 0 });
   const [pending, setPending] = useState<Attachment[]>([]);
-  const [, setSending] = useState(false); // set by send loop; button hides on clear, not via disabled
+  const [, setSending] = useState(false); /** set by send loop; button hides on clear, not via disabled */
   const [uploading, setUploading] = useState(false);
   const [textareaH, setTextareaH] = useState(0);
   const [err, setErr] = useState<string | null>(null);

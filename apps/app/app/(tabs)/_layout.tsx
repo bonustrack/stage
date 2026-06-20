@@ -23,13 +23,9 @@ function PagerOverlay({ insetTop, tabBarHeight }: { insetTop: number; tabBarHeig
         bottom: tabBarHeight,
       }}
 >
-      {/* ONE fixed Topnav, ABOVE the pager. A sibling of the pager strip, so
-          a horizontal tab-swipe (which translates the strip) and a vertical
-          scroll inside a tab both leave it pinned. It is UNIFORM: always the
-          Home bar (identity + search/requests/overflow) on every tab. */}
+      {/* One fixed Topnav above the pager (sibling of the pager strip) so a tab-swipe and in-tab scroll both leave it pinned; uniform Home bar on every tab. */}
       <HoistedTopnav/>
-      {/* Pager below the bar as the flex:1 scroll region. It now mounts only
-          the scrollable BODIES of each tab (no per-tab header). */}
+      {/* Pager below the bar as the flex:1 scroll region, mounting only the scrollable bodies of each tab (no per-tab header). */}
       <Box flex={1}>
         <TabsPager/>
       </Box>
@@ -47,7 +43,7 @@ export default function TabsLayout(): React.ReactElement {
   const pagerVisible = !pathname.startsWith('/settings');
   const insets = useSafeAreaInsets();
   const pal = usePalette();
-  const active = pal.link; // #ffffff / #000000
+  const active = pal.link; /** #ffffff / #000000 */
   /** inactive nav icon = muted; no `muted` token yet → map to `text`. TODO: muted token. */
   const inactive = pal.text;
 
@@ -68,20 +64,12 @@ export default function TabsLayout(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      {/* Status-bar inset filler: paint the top safe-area (behind the Android
-          system icons) with toolbarBg so the tab topnavs - which start below
-          insets.top - extend seamlessly to the very top edge. Sits under the
-          pager overlay; toolbarBg matches the topnav fill below it. */}
+      {/* Status-bar inset filler: paints the top safe-area with toolbarBg so the tab topnavs extend seamlessly to the top edge; sits under the pager overlay. */}
       <Box height={insets.top} surface="toolbar"
         pointerEvents="none"
         style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1 }}
 />
-      {/* `Tabs` stays mounted as the ROUTING + tab-bar source of truth: deep
-          links to /wallet etc. resolve, the URL is correct, and the active
-          highlight is router-driven. The route scenes themselves render
-          nothing (placeholders) — the real content is the single `TabsPager`
-          overlaid below, which mounts all five bodies side-by-side and follows
-          the finger on a horizontal swipe. */}
+      {/* `Tabs` stays mounted as the routing + tab-bar source of truth (deep links resolve, active highlight is router-driven); the scenes are placeholders and the real content is the TabsPager overlaid below. */}
       <Tabs
         screenOptions={{
           headerShown: false,
@@ -124,12 +112,10 @@ export default function TabsLayout(): React.ReactElement {
             }}
 />
         ))}
-        {/* Settings is reachable only from the Menu sheet now - keep the route
-            (so the menu can navigate to /settings) but hide it from the bar. */}
+        {/* Settings is reachable only from the Menu sheet: keep the route (so the menu can navigate to /settings) but hide it from the bar. */}
         <Tabs.Screen name="settings" options={{ href: null }}/>
       </Tabs>
-      {/* Pager overlay — covers the scene area (status-bar inset at top, stops
-          above the tab bar at the bottom) so the tab bar keeps its taps. */}
+      {/* Pager overlay covers the scene area (below the status-bar inset, above the tab bar) so the tab bar keeps its taps. */}
       {pagerVisible ? <PagerOverlay insetTop={insets.top} tabBarHeight={tabBarHeight}/> : null}
     </Col>
   );
