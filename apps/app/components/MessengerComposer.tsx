@@ -1,6 +1,3 @@
-/**
- * @file MessengerComposer: the conversation message composer (input, attachments, mentions, replies, poll/signature/payment sheets, and send flows).
- */
 
 import { Text } from '@stage-labs/kit/text';
 import { Col } from './layout';
@@ -15,24 +12,16 @@ import { ComposerSheets } from './MessengerComposer.sheets.bound';
 
 interface Props {
   dark: boolean;
-  /** Target XMTP conversation line URI (`metro://xmtp/<convId>`). Required — the mobile composer only supports the XMTP transport now (the daemon-routed messenger pipeline was removed). */
   xmtpLine: string;
-  /** Candidates surfaced in the `@`-mention popup — channel members for groups, or contact list for DMs. Parent owns the source-of-truth list; composer just filters/renders. Empty array disables the popup. */
   mentionCandidates?: { address: string; name: string }[];
-  /** `nonce` (optional) changes on every reply action — even re-replying to the same message — so the composer re-focuses + re-opens the keyboard each time. */
   replyingTo?: { id: string; preview: string; sender?: string | null; nonce?: number };
-  /** Bump to focus the composer + raise the keyboard WITHOUT setting a reply target (e.g. a focus=1 deep link). Each new value re-fires the focus effect. */
   autoFocusNonce?: number;
   onClearReply?: () => void;
-  /** Tap the reply banner → best-effort scroll the feed to the replied-to message (crash-safe; no-ops if the row isn't currently loaded). */
   onJumpToReply?: (messageId: string) => void;
-  /** Optimistic-render hook: invoked the moment the user taps send, before the API call. */
   onOptimistic?: (entry: { localId: string; text: string; attachments: Attachment[]; replyTo?: string; payload?: unknown }) => void;
-  /** Fired AFTER the send completes (success OR failure). Lets the parent drop the optimistic entry instead of waiting for an SSE/stream echo that may never arrive (XMTP `streamMessages` doesn't always replay self-sends — pending bubbles would stick). */
   onSent?: (localId: string, error?: string, sentId?: string) => void;
 }
 
-/** Build the action-handler args object from composer props + state. */
 function actionsArgs(props: Props, s: ReturnType<typeof useComposerState>) {
   return {
     xmtpLine: props.xmtpLine, text: s.text, pending: s.pending,
@@ -54,7 +43,6 @@ function actionsArgs(props: Props, s: ReturnType<typeof useComposerState>) {
   };
 }
 
-/** Renders the composer header stack: reply banner, mention popup, pending attachments row, and the upload/error line. */
 function ComposerHeader(p: {
   dark: boolean; fg: string; head: string; sub: string; chipBg: string;
   replyingTo?: Props['replyingTo']; onClearReply?: () => void; onJumpToReply?: (id: string) => void;
@@ -88,12 +76,10 @@ function ComposerHeader(p: {
   );
 }
 
-/** Renders the conversation message composer (input, attachments, mentions, replies, and send flows). */
 export function MessengerComposer(props: Props): React.ReactElement {
   const { dark, xmtpLine, mentionCandidates, replyingTo, autoFocusNonce, onClearReply, onJumpToReply } = props;
-  const pal = usePalette(); /** text/primary/border/bg ← tokens */
+  const pal = usePalette();
   const fg = pal.text, head = pal.link, inputBg = pal.inputBg, chipBg = pal.border, bg = pal.bg;
-  /** `sub` = muted/secondary text; no `muted` token yet, so map to `text`. */
   const sub = pal.text;
   const palette = { fg, sub, inputBg, chipBg };
 
@@ -105,10 +91,9 @@ export function MessengerComposer(props: Props): React.ReactElement {
   useComposerDrafts(convId, s.text, s.setText);
   useComposerFocus(s.inputRef, replyingTo?.id, replyingTo?.nonce, autoFocusNonce);
 
-  const hasContent = s.text.trim().length > 0 || s.pending.length > 0; /** text or any pending attachment */
+  const hasContent = s.text.trim().length > 0 || s.pending.length > 0;
 
   const { matches: mentionMatches, range: mentionRange } = computeMentions(s.text, s.selection.start, mentionCandidates);
-  /** Pick Mention. */
   const pickMention = (c: { address: string; name: string }): void => {
     if (!mentionRange) return;
     const { next, cursor } = applyMention(s.text, mentionRange, c.address);
@@ -121,7 +106,6 @@ export function MessengerComposer(props: Props): React.ReactElement {
     pickFile: actions.pickFile, pickLocation: actions.pickLocation,
     openPoll: () => { s.setPollOpen(true); }, openSig: () => { s.setSigOpen(true); }, openTx: () => { actions.openTx(); },
   });
-  /** Last-used type's icon → quick-access button left of "+"; hidden until first use. */
   const lastLabel = useLastAttachment();
   const quick = attachActions.find(([, label]) => label === lastLabel);
 
@@ -150,7 +134,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
         onStopRec={() => void actions.stopRec()}
         onSend={() => void actions.send()}
       />
-      {/* Attach menu — horizontally-scrollable row of circular icon+label buttons. */}
+      {}
       {s.attachMenuOpen ? (
         <AttachMenu
           head={head} inputBg={inputBg} chipBg={chipBg}

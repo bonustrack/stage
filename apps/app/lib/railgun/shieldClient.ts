@@ -1,4 +1,3 @@
-/** @file On-chain signing + broadcast for the RAILGUN shield flow using the active account's in-app EOA key; the private key only builds an in-process viem client (never logged or bridged), and shieldPrivateKey is keccak256(EOA signature of the SDK's fixed message). */
 import '../cryptoShim';
 import {
   createPublicClient, createWalletClient, http, keccak256,
@@ -20,7 +19,6 @@ export interface ShieldSigner {
   chain: Chain;
 }
 
-/** Build a viem public + wallet client bound to the active account's EOA key on the given Railgun network. Throws a friendly error if the active account has no exportable key (e.g. WalletConnect). */
 export async function getShieldSigner(cfg: RailgunNetworkConfig): Promise<ShieldSigner> {
   const id = await getActiveAccountId();
   if (!id) throw new Error('No active account');
@@ -33,14 +31,12 @@ export async function getShieldSigner(cfg: RailgunNetworkConfig): Promise<Shield
   return { address: account.address, publicClient, walletClient, account, chain };
 }
 
-/** Derive the 32-byte shieldPrivateKey = keccak256(EOA signature of the SDK's fixed shield message). The SDK uses this deterministically to blind the shield note; it must come from the same EOA each time. */
 export async function deriveShieldPrivateKey(signer: ShieldSigner): Promise<string> {
   const message = await shieldPrivateKeyMessage();
   const signature = await signer.walletClient.signMessage({ account: signer.account, message });
   return keccak256(signature);
 }
 
-/** Resolve the Railgun network config for a chainId (defaults to Sepolia). */
 export function shieldNetForChainId(chainId: number): RailgunNetworkConfig {
   return chainId === 1 ? RAILGUN_NETWORKS.mainnet : RAILGUN_NETWORKS.sepolia;
 }

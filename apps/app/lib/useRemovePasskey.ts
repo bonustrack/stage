@@ -1,4 +1,3 @@
-/** @file Shared "Remove passkey" hook (Settings -> Wallet) reverting a passkey-root Kernel back to ECDSA signing via removePasskeyFromRecord behind a destructive confirm; the swap userOp is authorized by the current passkey root and the stored passkey is cleared only after the receipt succeeds. */
 
 import { useCallback, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
@@ -6,12 +5,9 @@ import { getActiveAccount } from './accounts';
 import { removePasskeyFromRecord, passkeysAvailable } from './zerodev';
 import { flash } from './toast';
 
-/** Provides whether a passkey can be removed from the active smart account and a confirm-and-remove action. */
 export function useRemovePasskey(epoch?: number, onChanged?: () => void): {
-  /** True only when this binary can run passkeys AND the active account is a smart account that currently HAS a passkey (so removal is meaningful). */
   available: boolean;
   busy: boolean;
-  /** Confirm + swap root back to ECDSA + clear stored passkey; flashes the outcome. */
   run: () => void;
 } {
   const [available, setAvailable] = useState(false);

@@ -1,6 +1,3 @@
-/**
- * @file Onboarding: the first-launch overlay flow (welcome / restore / passkey steps) shown while the account registry is empty.
- */
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Col } from '../layout';
@@ -9,11 +6,9 @@ import { WelcomeStep, RestoreStep, PasskeyStep, SetupStep } from './Onboarding.s
 import { useOnboardingFlow } from './useOnboardingFlow';
 
 export interface OnboardingProps {
-  /** Called when a wallet exists and the user is in the app. Kept for parity — the account gate also flips on its own when the flow creates an account. */
   onDone: () => void;
 }
 
-/** Renders the first-run onboarding flow that introduces the app and creates the wallet. */
 export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const pal = usePalette();

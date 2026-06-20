@@ -1,4 +1,3 @@
-/** @file Rich preview card for a github.com repo/PR/issue link: bordered container with the GitHub mark and useGithubMeta metadata, rendering nothing while loading or on fetch failure. */
 
 import { Linking } from 'react-native';
 
@@ -10,18 +9,14 @@ import { githubLinkOf } from '../lib/githubDetect';
 import { useGithubMeta } from '../lib/useGithubMeta';
 import { DANGER, SUCCESS, usePalette, useBlockRadius } from '../lib/theme';
 
-/** state → dot color (open green, merged purple, closed red). */
 const DOT: Record<string, string> = {
   open: SUCCESS, merged: '#a371f7', closed: DANGER,
 };
 
-/** Fmt helper. */
 const fmt = (n: number): string => n.toLocaleString('en-US');
 
-/** Type of resolved GitHub metadata used by the card footer. */
 type GithubMeta = NonNullable<ReturnType<typeof useGithubMeta>>;
 
-/** Renders the +additions/−deletions diff counts for a pull-request card. */
 function GithubDiffStats({ meta }: { meta: GithubMeta }): React.ReactElement | null {
   if (meta.kind !== 'pull' || (meta.additions == null && meta.deletions == null)) return null;
   return (
@@ -36,7 +31,6 @@ function GithubDiffStats({ meta }: { meta: GithubMeta }): React.ReactElement | n
   );
 }
 
-/** Renders the status/author/diff footer row of a GitHub link card. */
 function GithubFooter({ meta, subColor }: { meta: GithubMeta; subColor: string }): React.ReactElement {
   const dot = DOT[meta.state];
   return (
@@ -58,9 +52,7 @@ function GithubFooter({ meta, subColor }: { meta: GithubMeta; subColor: string }
   );
 }
 
-/** Renders a rich preview card for a GitHub repo/PR/issue link, or nothing while loading or on failure. */
 export function GitHubLinkCard({ url }: {
-  /** `dark` is accepted for call-site symmetry but no longer needed - all colors now come from the live palette tokens. */
   url: string; dark?: boolean;
 }): React.ReactElement | null {
   const ref = githubLinkOf(url);
@@ -69,7 +61,6 @@ export function GitHubLinkCard({ url }: {
   const blockRadius = useBlockRadius();
   if (!ref || !meta) return null;
 
-  /** muted metadata text; no `muted` token yet → map to `text`. */
   const subColor = pal.text;
   const numLabel = meta.number != null ? `#${meta.number}` : null;
 

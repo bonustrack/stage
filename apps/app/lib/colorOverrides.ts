@@ -1,4 +1,3 @@
-/** @file AsyncStorage-backed ChatKit Custom-theme store: persists per-scheme seeds plus density/radius/typography, from which the full @stage-labs/kit palette is derived. */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -9,7 +8,6 @@ import {
 
 export type { Scheme };
 
-/** The persisted Custom theme: a seed per scheme + shared non-color knobs. */
 export interface ThemeSeeds {
   light: ThemeSeed;
   dark: ThemeSeed;
@@ -22,10 +20,8 @@ const SEED_KEY = 'theme:seed';
 const CUSTOM_KEY = 'theme:custom';
 const HEX_RE = /^#([0-9a-fA-F]{6})$/;
 
-/** True for a valid `#rrggbb` string. */
 export function isHex(v: string): boolean { return HEX_RE.test(v.trim()); }
 
-/** The clean default seeds (lossless: reproduces today's palette exactly). */
 function defaultSeeds(): ThemeSeeds {
   return {
     light: { ...DEFAULT_SEED.light, surface: { ...DEFAULT_SEED.light.surface } },
@@ -41,15 +37,12 @@ let customEnabled = false;
 let loaded = false;
 const listeners = new Set<() => void>();
 
-/** Emit helper. */
 function emit(): void { for (const l of listeners) l(); }
 
-/** Persist helper. */
 function persist(): void {
-  void AsyncStorage.setItem(SEED_KEY, JSON.stringify(cache)).catch(() => { /* best-effort */ });
+  void AsyncStorage.setItem(SEED_KEY, JSON.stringify(cache)).catch(() => undefined);
 }
 
-/** Kick off the one-time load from storage; notify subscribers when it lands. No saved seed -> keep the default seed (lossless). The old per-token override key is intentionally not read: everyone upgrades onto a clean default seed. */
 export function loadOverrides(): void {
   if (loaded) return;
   loaded = true;
@@ -69,26 +62,21 @@ export function loadOverrides(): void {
       if (customRaw != null) { customEnabled = customRaw === '1'; changed = true; }
       if (changed) emit();
     })
-    .catch(() => { /* best-effort: keep default seed */ });
+    .catch(() => undefined);
 }
 
-/** Synchronous snapshot of the current seeds. */
 export function getSeeds(): ThemeSeeds { return cache; }
 
-/** Whether the Custom theme is currently active. */
 export function isCustomTheme(): boolean { return customEnabled; }
 
-/** Toggle the Custom theme on/off, then persist + notify so the app repaints. */
 export function setCustomTheme(on: boolean): void {
   if (customEnabled === on) return;
   customEnabled = on;
   emit();
-  void AsyncStorage.setItem(CUSTOM_KEY, on ? '1' : '0').catch(() => { /* best-effort */ });
+  void AsyncStorage.setItem(CUSTOM_KEY, on ? '1' : '0').catch(() => undefined);
 }
 
-/** Set one seed COLOR (grayscale|accent|background|foreground) for a scheme. Invalid hex is ignored. Persists + notifies so the app re-themes live. */
 export type SeedColorKey = 'grayscale' | 'accent' | 'background' | 'foreground';
-/** Set one seed color for a scheme; ignores invalid hex, persists, and notifies. */
 export function setSeedColor(scheme: Scheme, key: SeedColorKey, hex: string): void {
   if (!isHex(hex)) return;
   const v = hex.trim().toLowerCase();
@@ -102,35 +90,30 @@ export function setSeedColor(scheme: Scheme, key: SeedColorKey, hex: string): vo
   persist();
 }
 
-/** Set the shared density seed. */
 export function setSeedDensity(d: Density): void {
   cache = { ...cache, density: d };
   emit();
   persist();
 }
 
-/** Set the shared radius (name) seed. */
 export function setSeedRadius(r: RadiusName): void {
   cache = { ...cache, radius: r };
   emit();
   persist();
 }
 
-/** Set the shared base font size seed. */
 export function setSeedBaseSize(b: BaseSize): void {
   cache = { ...cache, baseSize: b };
   emit();
   persist();
 }
 
-/** Reset to the default seed -> back to today's exact palette. */
 export function resetOverrides(): void {
   cache = defaultSeeds();
   emit();
   persist();
 }
 
-/** Subscribe to seed/custom changes (load/edit/reset). Returns an unsubscribe fn. */
 export function subscribe(fn: () => void): () => void {
   listeners.add(fn);
   return () => { listeners.delete(fn); };

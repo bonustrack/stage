@@ -1,14 +1,10 @@
-/** @file Pure-JS, dependency-free HSV <-> hex color conversions for the color picker (h in [0,360], s/v in [0,1], hex as `#rrggbb`). */
 
-/** Clamp01 helper. */
 function clamp01(n: number): number { return Math.max(0, Math.min(1, n)); }
 
-/** To Byte. */
 function toByte(n: number): string {
   return Math.round(clamp01(n) * 255).toString(16).padStart(2, '0');
 }
 
-/** HSV -> `#rrggbb`. */
 export function hsvToHex(h: number, s: number, v: number): string {
   const hh = ((h % 360) + 360) % 360 / 60;
   const c = clamp01(v) * clamp01(s);
@@ -24,7 +20,6 @@ export function hsvToHex(h: number, s: number, v: number): string {
   return `#${toByte(r + m)}${toByte(g + m)}${toByte(b + m)}`;
 }
 
-/** Normalize a hex string to 6 lowercase hex digits, or null on bad input. */
 function normalizeHexDigits(hex: string): string | null {
   const t = hex.trim();
   const six = /^#?([0-9a-f]{6})$/i.exec(t);
@@ -34,7 +29,6 @@ function normalizeHexDigits(hex: string): string | null {
   return null;
 }
 
-/** Compute hue (deg) from normalized rgb channels and their max/delta. */
 function rgbToHue(r: number, g: number, b: number, max: number, d: number): number {
   if (d === 0) return 0;
   let h: number;
@@ -45,7 +39,6 @@ function rgbToHue(r: number, g: number, b: number, max: number, d: number): numb
   return h < 0 ? h + 360 : h;
 }
 
-/** `#rrggbb` (or `#rgb`) -> HSV. Falls back to black on bad input. */
 export function hexToHsv(hex: string): { h: number; s: number; v: number } {
   const digits = normalizeHexDigits(hex);
   if (digits == null) return { h: 0, s: 0, v: 0 };

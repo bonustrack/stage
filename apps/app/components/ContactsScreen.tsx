@@ -1,4 +1,3 @@
-/** @file Contacts swipe-pager tab listing every reachable user (DM peers plus group members, deduped and name-sorted via useAllContacts), each a ChannelRow that opens or starts a DM on tap. */
 
 import { useCallback, useState } from 'react';
 import { FlatList } from 'react-native-gesture-handler';
@@ -12,7 +11,6 @@ import { useAllContacts, type Contact } from '../lib/useAllContacts';
 import { getPeerName } from '../lib/peerProfiles';
 import { openDmWithAddress, shortAddress } from '../modules/messaging';
 
-/** Renders the Contacts pager tab listing every reachable user, tapping a row opens a DM. */
 export function ContactsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const { bg } = usePalette();
   const router = useRouter();
@@ -26,7 +24,7 @@ export function ContactsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): 
       try {
         const id = await openDmWithAddress(address);
         router.push({ pathname: '/xmtp/[convId]', params: { convId: id } });
-      } catch { /* swallow */ } finally { setOpening(null); }
+      } catch { } finally { setOpening(null); }
     })();
   }, [opening, router]);
 
@@ -45,7 +43,6 @@ export function ContactsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): 
   }, [open]);
 
   return (
-    /** Shared Topnav + top inset are hoisted above the pager in (tabs)/_layout.tsx, so this body renders only the scrollable list. */
     <Col surface="surface" flex={1}>
       <FlatList
         simultaneousHandlers={panRef}

@@ -1,4 +1,3 @@
-/** @file KitSections — direct render of the @stage-labs/kit primitives for the Kit page, each shown as a few representative variants with sample props and no controls. */
 
 import { Box, Row, Col } from '../layout';
 import { Title } from '@stage-labs/kit/title';
@@ -30,7 +29,6 @@ const SAMPLE_ICONS = ['cog', 'bell', 'wallet', 'chat', 'user', 'check'] as const
 const LIST_ROWS = ['Display', 'Messenger', 'Notifications', 'Security'];
 const SAMPLE_IMAGE = 'https://cdn.stamp.fyi/avatar/eth:0x2539f6dd5e4ab2c3a30c2b9a0a8a8a8a8a8a79d5?s=160';
 
-/** Renders the typography + button + icon gallery sections. */
 function TypographySections({ dark, head, sub, border }: GalleryPalette): React.ReactElement {
   const sec = { head, sub, border };
   return (
@@ -85,7 +83,6 @@ function TypographySections({ dark, head, sub, border }: GalleryPalette): React.
   );
 }
 
-/** Renders the surface gallery sections (card, list, divider, caption, image, spacer). */
 function SurfaceSections({ dark, head, sub, border }: GalleryPalette): React.ReactElement {
   const sec = { head, sub, border };
   return (
@@ -93,8 +90,8 @@ function SurfaceSections({ dark, head, sub, border }: GalleryPalette): React.Rea
       <GallerySection name="Card" note="ChatKit surface with status + actions" {...sec} framed={false}>
         <Card dark={dark}
           status={{ text: 'Pending confirmation' }}
-          confirm={{ label: 'Confirm', onPress: () => {/* noop */} }}
-          cancel={{ label: 'Cancel', onPress: () => {/* noop */} }}
+          confirm={{ label: 'Confirm', onPress: () => undefined }}
+          cancel={{ label: 'Cancel', onPress: () => undefined }}
 >
           <Text>A bordered Card surface holding arbitrary body content.</Text>
         </Card>
@@ -103,7 +100,7 @@ function SurfaceSections({ dark, head, sub, border }: GalleryPalette): React.Rea
       <GallerySection name="ListView" note="Grouped rows (ListView + ListViewItem)" {...sec} framed={false}>
         <ListView dark={dark} status={{ text: `${LIST_ROWS.length} items` }}>
           {LIST_ROWS.map((label) => (
-            <ListViewItem key={label} dark={dark} onPress={() => {/* noop */}}>
+            <ListViewItem key={label} dark={dark} onPress={() => undefined}>
               <Icon name="cog" size={22} color={head}/>
               <Col flex={1}>
                 <Text color={head} weight="medium" size="xl">{label}</Text>
@@ -147,7 +144,6 @@ function SurfaceSections({ dark, head, sub, border }: GalleryPalette): React.Rea
   );
 }
 
-/** Renders the form-control gallery sections (label/input/textarea/checkbox/radio/select/date/form). */
 function FormSections({ dark, head, sub, border }: GalleryPalette): React.ReactElement {
   const sec = { head, sub, border };
   return (
@@ -210,7 +206,7 @@ function FormSections({ dark, head, sub, border }: GalleryPalette): React.ReactE
       </GallerySection>
 
       <GallerySection name="Form" note="Groups controls + onSubmit" {...sec} innerPadH={14} innerPadV={14}>
-        <Form onSubmit={() => {/* noop */}}>
+        <Form onSubmit={() => undefined}>
           <Label dark={dark} fieldName="name" value="Display name"/>
           <Input dark={dark} name="name" placeholder="Satoshi"/>
           <Select dark={dark} name="plan" placeholder="Select a plan"
@@ -225,7 +221,6 @@ function FormSections({ dark, head, sub, border }: GalleryPalette): React.ReactE
   );
 }
 
-/** Renders the content gallery sections (markdown/table/scroll/pressable). */
 function ContentSections({ dark, head, sub, border }: GalleryPalette): React.ReactElement {
   const sec = { head, sub, border };
   return (
@@ -263,7 +258,7 @@ function ContentSections({ dark, head, sub, border }: GalleryPalette): React.Rea
       </GallerySection>
 
       <GallerySection name="Pressable" note="Kit Pressable wrapper - pressedOpacity feedback" {...sec} innerPadH={14} innerPadV={12}>
-        <Pressable pressedOpacity={0.5} onPress={() => {/* noop */}}>
+        <Pressable pressedOpacity={0.5} onPress={() => undefined}>
           <Box padding={{ x: 12, y: 10 }} radius="sm" background={dark ? '#1c1c1e' : '#f0f0f2'}>
             <Text>Tap me - dims on press</Text>
           </Box>
@@ -273,7 +268,6 @@ function ContentSections({ dark, head, sub, border }: GalleryPalette): React.Rea
   );
 }
 
-/** Renders the gallery sections showcasing Kit components. */
 export function KitSections(p: GalleryPalette): React.ReactElement {
   return (
     <Box>

@@ -1,4 +1,3 @@
-/** @file Group detail screen for editing a conversation's name, description, image, members, labels and linked GitHub URL. */
 
 import { useEffect, useState } from 'react';
 
@@ -21,7 +20,6 @@ import { GroupLabelsSection } from './group.labels';
 import { GroupGithubSection } from './group.github';
 import { useGroupActions } from './group.actions';
 
-/** Group detail screen for editing a conversation's name, description and members. */
 export default function GroupDetail(): React.ReactElement {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -33,7 +31,6 @@ export default function GroupDetail(): React.ReactElement {
   const { convId } = useLocalSearchParams<{ convId: string }>();
   const line = lineOfConv(convId ?? '');
   const queryClient = useQueryClient();
-  /** Invalidate cached conv metadata so the chat-view topnav (and this screen, which also reads useConvMeta) picks up rename / new image / description without a reload. Keyed via the shared messaging key factory. */
   const invalidateConvMeta = (): void => {
     if (convId) void queryClient.invalidateQueries({ queryKey: messagingKeys.convMeta(convId) });
   };
@@ -48,14 +45,10 @@ export default function GroupDetail(): React.ReactElement {
     leaving, leaveGroup,
   } = a;
 
-  /** Shared metadata seeding (convMeta query, deduped) + group-only roles/names, extracted to a hook for the line cap. */
   const { memberNames, memberRoles } = useGroupDetail(convId, a);
   const [addOpen, setAddOpen] = useState(false);
-  /** Lower-cased local wallet address — suppresses the remove button on self. */
   const [selfAddress, setSelfAddress] = useState<string>('');
-  /** When set, the fullscreen ImageViewer shows the group image. */
   const [viewerOpen, setViewerOpen] = useState(false);
-  /** Overflow (3-dot) menu in the group-info topnav. */
   const [overflowOpen, setOverflowOpen] = useState(false);
 
   useEffect(() => {
@@ -68,7 +61,7 @@ export default function GroupDetail(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      {/* Floating topnav over the cover banner — mirrors ProfileScreen `route`. */}
+      {}
       <Row height={44 + insets.top} padding={{ x: 14, top: insets.top }} align="center" justify="between" style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2 }}>
         <Pressable onPress={() => { router.back(); }} hitSlop={10} style={{ padding: 6 }}>
           <Icon name="arrowLeft" size={22} color={fg}/>

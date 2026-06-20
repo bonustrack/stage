@@ -1,4 +1,3 @@
-/** @file Group-detail header editor components: image picker plus inline name and description editing. */
 
 import { Pressable } from '@stage-labs/kit/pressable';
 import { fontSize } from '@stage-labs/kit/tokens';
@@ -13,7 +12,6 @@ import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 import { channelStampSeed, stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { usePalette } from '../../lib/theme';
 
-/** Inline "Save" pill shared by the name + description editors. A small primary button matched to the prior bespoke pill: paddingHorizontal 14, the legacy 13px Calibre-Medium label, height ~32 (kit `sm`). */
 function SaveButton({ saving, disabled, onSave, dark }: {
   saving: boolean; disabled: boolean; onSave: () => void; dark: boolean;
 }): React.ReactElement {
@@ -36,17 +34,15 @@ function SaveButton({ saving, disabled, onSave, dark }: {
 
 interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }
 
-/** Group header mirroring ProfileScreen: full-bleed cover banner, page-bg sheet pulled up 18px, square 88px avatar overlapping the cover; tap to view, hold to change. */
 export function GroupProfileHeader({ imageUrl, channelId, uploadingImage, insetTop, fg, sub, bg, rowBg, onTap, onPick }: {
   imageUrl: string; channelId: string; uploadingImage: boolean; insetTop: number;
   fg: string; sub: string; bg: string; rowBg: string;
   onTap: () => void; onPick: () => void;
 }): React.ReactElement {
-  /** No uploaded image → deterministic stamp.fyi identicon seeded by the channel id, matching the list + header fallback so the channel reads the same everywhere. Long-press still opens the picker (caption keeps the hint). */
   const fallbackUri = channelId ? stampAvatarUrl(channelStampSeed(channelId), 88) : '';
   return (
     <>
-      {/* Cover extends up behind the floating topnav so the colour bleeds to y=0 (height += insetTop), like the ProfileScreen route. */}
+      {}
       <Box height={140 + insetTop} surface="raised"/>
       <Box surface="surface" padding={{ x: 16 }} margin={{ top: -18 }} align="start" style={{ borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'visible' }}>
         <Pressable onPress={onTap} onLongPress={onPick} disabled={uploadingImage} hitSlop={8}
@@ -73,7 +69,6 @@ export function GroupProfileHeader({ imageUrl, channelId, uploadingImage, insetT
   );
 }
 
-/** Inline editor for a group's name with save/cancel controls. */
 export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, saving, onSave, dark, p }: {
   name: string | null; draft: string; setDraft: (s: string) => void;
   editing: boolean; setEditing: (b: boolean) => void; saving: boolean; onSave: () => void;
@@ -111,7 +106,6 @@ export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, sa
   );
 }
 
-/** Inline editor for a group's description with save/cancel controls. */
 export function GroupDescriptionEditor({ description, descriptionDraft, setDescriptionDraft, editing, setEditing, saving, onSave, dark, p }: {
   description: string; descriptionDraft: string; setDescriptionDraft: (s: string) => void;
   editing: boolean; setEditing: (b: boolean) => void; saving: boolean; onSave: () => void;

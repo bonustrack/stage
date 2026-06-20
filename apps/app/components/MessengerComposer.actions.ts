@@ -1,6 +1,3 @@
-/**
- * @file useComposerActions hook: the MessengerComposer's imperative action handlers (attachment staging, pickers, poll/signature/payment, send).
- */
 
 import { useVoiceRecorder, SLIDE_CANCEL_THRESHOLD_PX } from './MessengerComposer.voice';
 import { sendPoll, sendSignatureRequest, sendTxRequest } from './MessengerComposer.builders';
@@ -11,9 +8,7 @@ import {
 
 export type { ComposerActionsArgs } from './MessengerComposer.types';
 
-/** Hook providing the composer's imperative action handlers (attachments, pickers, poll/signature/payment, send). */
 export function useComposerActions(a: ComposerActionsArgs) {
-  /** Upload helper. */
   const upload = (uri: string, mime: string, name?: string): Promise<void> => uploadAttachment(a, uri, mime, name);
 
   const voice = useVoiceRecorder({
@@ -21,7 +16,6 @@ export function useComposerActions(a: ComposerActionsArgs) {
     setRecordSecs: a.setRecordSecs, setLevels: a.setLevels,
   });
 
-  /** Prefill the recipient with the lone DM peer when opening the sheet. */
   const openTx = (): void => {
     const lone = a.mentionCandidates?.length === 1 ? a.mentionCandidates[0] : undefined;
     if (!a.txTo && lone !== undefined) a.setTxTo(lone.address);

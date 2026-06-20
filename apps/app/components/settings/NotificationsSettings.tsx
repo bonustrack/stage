@@ -1,4 +1,3 @@
-/** @file Settings -> Notifications screen: a toggle wired to the device-local push preference that registers/unregisters this device's push token with the daemon and reflects the current OS permission state. */
 
 import { useEffect, useState } from 'react';
 
@@ -15,7 +14,6 @@ import { loadPushEnabled, setPushEnabled, subscribePushPref, isPushEnabledSync }
 import { getOrCreateXmtpClient } from '../../modules/messaging';
 import { registerPushWithDaemon, unregisterPushFromDaemon } from '../../lib/push';
 
-/** Renders the notifications settings screen for managing push registration. */
 export function NotificationsSettings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head, border } = usePalette();
@@ -31,17 +29,16 @@ export function NotificationsSettings(): React.ReactElement {
     return subscribePushPref(() => { setEnabled(isPushEnabledSync()); });
   }, []);
 
-  /** Handle the Toggle. */
   const onToggle = (next: boolean): void => {
-    setEnabled(next); /* optimistic */
+    setEnabled(next);
     void (async (): Promise<void> => {
       await setPushEnabled(next);
       try {
         const client = await getOrCreateXmtpClient('production');
         if (next) await registerPushWithDaemon(client);
         else await unregisterPushFromDaemon(client);
-      } catch { /* best-effort — preference is already persisted */ }
-      try { setPerm((await Notifications.getPermissionsAsync()).status); } catch { /* ignore */ }
+      } catch { }
+      try { setPerm((await Notifications.getPermissionsAsync()).status); } catch { }
     })();
   };
 

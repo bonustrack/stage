@@ -1,4 +1,3 @@
-/** @file Wallet token-detail screen rendering one token's balance/price/logo from route params (no refetch), with Send/Shield or Send/Unshield buttons routing to the matching wallet pages with pre-fill params. */
 
 import { Pressable } from '@stage-labs/kit/pressable';
 
@@ -15,7 +14,6 @@ import { withStampDisplayPx } from '@stage-labs/kit/avatar';
 
 const NETWORK_LABEL: Record<number, string> = { 1: 'Ethereum', 11155111: 'Sepolia' };
 
-/** Parse the serialized AssetRow param. Returns null when missing/malformed so the screen can render a graceful fallback instead of crashing. */
 function parseRow(raw: string | undefined): AssetRow | null {
   if (typeof raw !== 'string') return null;
   try {
@@ -27,7 +25,6 @@ function parseRow(raw: string | undefined): AssetRow | null {
   }
 }
 
-/** Screen showing detail and activity for a single token in the wallet. */
 export default function TokenDetail(): React.ReactElement {
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string; row?: string }>();
@@ -59,10 +56,10 @@ export default function TokenDetail(): React.ReactElement {
     <Col surface="surface" flex={1}>
       <Header head={head} border={border} onBack={() => { router.back(); }} title={r.name}/>
 
-      {/* Left-aligned token identity card: large logo with network badge, name + symbol, balance and USD value (the list row's data scaled up). */}
+      {}
       <Col padding={{ top: 28 }} margin={{ x: 16 }} align="start" gap={6}>
         <Box width={72} height={72}>
-          {/* r.logoUrl is cached at the 32px list size (s=64); re-request at 2x the 72px detail size (s=144) so the big logo stays crisp. */}
+          {}
           <Image src={withStampDisplayPx(r.logoUrl, 72)}
             style={{ width: 72, height: 72, borderRadius: 999, backgroundColor: border }}/>
           <Box width={30} height={30} radius="full" background={border} style={{ position: 'absolute', right: -2, bottom: -2, borderWidth: 3, borderColor: bg, overflow: 'hidden' }}>
@@ -76,7 +73,7 @@ export default function TokenDetail(): React.ReactElement {
           <Text weight="semibold" size="5xl" color={head}>{r.name}</Text>
         </Row>
 
-        {/* Network badge pill */}
+        {}
         <Box radius="full" padding={{ x: 10, y: 3 }} style={{ borderWidth: 1, borderColor: border }}>
           <Text size="xs" color={sub}>
             {NETWORK_LABEL[r.chainId] ?? `Chain ${r.chainId}`}
@@ -91,17 +88,17 @@ export default function TokenDetail(): React.ReactElement {
         </Text>
       </Col>
 
-      {/* Two big rounded action buttons (same style as the Wallet page circles): Send opens the public send flow and Shield opens send.tsx in shield mode, both pre-selected to this token. */}
+      {}
       <Row margin={{ x: 16, top: 32 }} justify="start" gap={36}>
         {r.isPrivate ? (
           <>
-            {/* Shielded holding to the unified Send page, pre-selected to this shielded token (private to another 0zk). */}
+            {}
             <Btn icon="send" label="Send" head={head} border={border} dark={dark}
               onPress={() => { router.push({
                 pathname: '/wallet/send',
                 params: { symbol: symbol ?? r.symbol, chainId: String(r.chainId), private: '1' },
               }); }}/>
-            {/* Shielded holding → Unshield (private → public, back to own EOA). */}
+            {}
             <Btn icon="eye" label="Unshield" head={head} border={border} dark={dark}
               onPress={() => { router.push({
                 pathname: '/wallet/unshield',
@@ -110,10 +107,10 @@ export default function TokenDetail(): React.ReactElement {
           </>
         ) : (
           <>
-            {/* Public holding → public Send. */}
+            {}
             <Btn icon="send" label="Send" head={head} border={border} dark={dark}
               onPress={() => { router.push({ pathname: '/wallet/send', params: sendParams }); }}/>
-            {/* Public holding → Shield (public → own 0zk). */}
+            {}
             <Btn icon="eyeOff" label="Shield" head={head} border={border} dark={dark}
               onPress={() => { router.push({
                 pathname: '/wallet/shield',
@@ -126,7 +123,6 @@ export default function TokenDetail(): React.ReactElement {
   );
 }
 
-/** Local back-header (the shared SendHeader hardcodes "Send"). */
 function Header({ head, border, onBack, title }: {
   head: string; border: string; onBack: () => void; title: string;
 }): React.ReactElement {

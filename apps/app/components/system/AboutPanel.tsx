@@ -1,4 +1,3 @@
-/** @file About panel for the System screen showing app version, git commit hash, package name, and build profile; the commit row links to the GitHub commit when a real SHA is stamped at build time. */
 
 import Constants from 'expo-constants';
 import * as Application from 'expo-application';
@@ -16,7 +15,6 @@ interface AboutRowProps {
   href?: string; head?: string;
 }
 
-/** The About Row component. */
 function AboutRow({ label, value, mono, border, href, head }: AboutRowProps): React.ReactElement {
   const valueColor = href ? head : undefined;
   const row = (
@@ -45,25 +43,21 @@ function AboutRow({ label, value, mono, border, href, head }: AboutRowProps): Re
   );
 }
 
-/** Resolved build + runtime metadata shown in the About panel. */
 interface AboutMeta {
   pkgName: string; versionLabel: string; gitHash: string; shortHash: string; buildProfile: string;
 }
 
-/** Read a non-empty string from the Expo config `extra` map, or a fallback. */
 function extraString(extra: Record<string, unknown>, key: string, fallback: string): string {
   const v = extra[key];
   return typeof v === 'string' && v.length> 0 ? v : fallback;
 }
 
-/** Resolve the native build version string, or null when unavailable. */
 function resolveNativeBuild(): string | null {
   if (Application.nativeBuildVersion) return Application.nativeBuildVersion;
   const code = Constants.expoConfig?.android?.versionCode;
   return code != null ? String(code) : null;
 }
 
-/** Resolve app/version/commit/build metadata from the Expo config + native build version. */
 function resolveAboutMeta(): AboutMeta {
   const cfg = Constants.expoConfig;
   const version = cfg?.version ?? 'unknown';
@@ -79,7 +73,6 @@ function resolveAboutMeta(): AboutMeta {
   };
 }
 
-/** Renders the About panel showing app version and build metadata. */
 export function AboutPanel({ dark, head, sub, border, rowBg }: {
   dark: boolean; head: string; sub: string; border: string; rowBg: string;
 }): React.ReactElement {

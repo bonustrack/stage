@@ -1,4 +1,3 @@
-/** @file Shared Wallet form primitives (page shell, footer button, palette and footer-reporter hooks) for the Send/Shield/Unshield action pages, styled with the canonical palette accent token. */
 import { useCallback, useRef, useState } from 'react';
 import { fontSize } from '@stage-labs/kit/tokens';
 import { Pressable } from '@stage-labs/kit/pressable';
@@ -13,12 +12,10 @@ import { usePalette } from '../../lib/theme';
 
 export interface FormPal { fg: string; head: string; sub: string; border: string; inputBg: string; link: string }
 
-/** Submit-button state a form reports up to the page so the page can render the pinned <WalletFooter>. The page owns Cancel (router.back); the form owns the primary's label + handler + disabled/loading. */
 export interface FooterState {
   submitLabel: string; onSubmit: () => void; submitDisabled: boolean; submitLoading: boolean;
 }
 
-/** Collects a child form's reported FooterState for a pinned <WalletFooter>, committing only when a displayed field (label/disabled/loading) changed so the every-render report stays idempotent; the latest onSubmit closure is kept in a ref and invoked via the returned onSubmit. */
 export function useFooterReporter(): {
   footer: FooterState | null;
   report: (s: FooterState) => void;
@@ -41,13 +38,11 @@ export function useFooterReporter(): {
   return { footer, report, onSubmit };
 }
 
-/** Build the form palette from the canonical app palette. */
 export function useFormPal(): FormPal {
   const { text, link, border, inputBg } = usePalette();
   return { fg: text, head: link, sub: text, border, inputBg, link };
 }
 
-/** Back header used by all four wallet-action pages. */
 export function ActionHeader({ title, head, border, onBack }: {
   title: string; head: string; border: string; onBack: () => void;
 }): React.ReactElement {
@@ -64,7 +59,6 @@ export function ActionHeader({ title, head, border, onBack }: {
   );
 }
 
-/** A labelled segmented selector built on the Kit Button (secondary = unselected, primary = selected). Replaces the bespoke gold Pressable pills. */
 export function Segmented<T extends string | number>({ label, value, options, onChange, dark }: {
   label?: string; value: T; dark: boolean;
   options: readonly (readonly [T, string])[];
@@ -85,7 +79,6 @@ export function Segmented<T extends string | number>({ label, value, options, on
   );
 }
 
-/** Plain amount input box (Kit-styled). Optionally shows the selected token's balance with a Max button (when `balance` is provided, even "0"). */
 export function AmountBox({ pal, amount, setAmount, busy, balance, symbol, dark }: {
   pal: FormPal; amount: string; setAmount: (v: string) => void; busy: boolean;
   balance?: string | null; symbol?: string; dark?: boolean;
@@ -119,7 +112,6 @@ export function AmountBox({ pal, amount, setAmount, busy, balance, symbol, dark 
   );
 }
 
-/** Read-only locked recipient card (shared by shield/unshield/self-send). */
 export function LockedRecipient({ pal, label, value, hint }: {
   pal: FormPal; label: string; value: string; hint: string;
 }): React.ReactElement {
@@ -135,7 +127,6 @@ export function LockedRecipient({ pal, label, value, hint }: {
   );
 }
 
-/** Pinned bottom footer with two half-width buttons — a secondary "Cancel" and the page's primary submit — shared by the Send/Shield/Unshield pages; adds safe-area bottom padding and a top divider. */
 export function WalletFooter({
   border, dark, onCancel, submitLabel, onSubmit, submitDisabled, submitLoading,
 }: {
@@ -157,7 +148,6 @@ export function WalletFooter({
   );
 }
 
-/** Standard page shell: bg + header + scroll body + optional pinned footer. When `footer` is given it renders below the scroll so it stays pinned. */
 export function ActionPage({ title, head, border, onBack, footer, children }: {
   title: string; head: string; bg: string; border: string; onBack: () => void;
   footer?: React.ReactNode;

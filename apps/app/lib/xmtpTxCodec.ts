@@ -1,4 +1,3 @@
-/** @file WalletSendCallsCodec and TransactionReferenceCodec, the hand-rolled pure-JS @xmtp/react-native-sdk content codecs for the official `walletSendCalls:1.0` and `transactionReference:1.0` types (npm packages target the incompatible Node SDK shape). */
 
 import type {
   JSContentCodec, ContentTypeId, EncodedContent,
@@ -18,25 +17,20 @@ import {
 export class WalletSendCallsCodec implements JSContentCodec<WalletSendCallsContent> {
   contentType: ContentTypeId = WALLET_SEND_CALLS_CONTENT_TYPE;
 
-  /** Encode a payment request as JSON-bytes content with its plain-text fallback. */
   encode(content: WalletSendCallsContent): EncodedContent {
     return encodeJsonContent(this.contentType, content, walletSendCallsFallbackText(content));
   }
 
-  /** Decode and schema-validate the untrusted payment-request wire body. */
   decode(encoded: EncodedContent): WalletSendCallsContent {
-    /** SECURITY: validate the untrusted wire body so a malformed / hostile payment request throws here (rendered unsupported) instead of reaching the pay path as a wrong-but-typed object. */
     return decodeJsonContent<WalletSendCallsContent>(
       encoded.content, walletSendCallsSchema, 'xmtp.walletSendCalls',
     );
   }
 
-  /** Plain-text rendering shown by clients missing this codec. */
   fallback(content: WalletSendCallsContent): string | undefined {
     return walletSendCallsFallbackText(content);
   }
 
-  /** A payment request is worth a push. */
   shouldPush(): boolean {
     return true;
   }
@@ -45,24 +39,20 @@ export class WalletSendCallsCodec implements JSContentCodec<WalletSendCallsConte
 export class TransactionReferenceCodec implements JSContentCodec<TransactionReferenceContent> {
   contentType: ContentTypeId = TRANSACTION_REFERENCE_CONTENT_TYPE;
 
-  /** Encode a transaction receipt as JSON-bytes content with its plain-text fallback. */
   encode(content: TransactionReferenceContent): EncodedContent {
     return encodeJsonContent(this.contentType, content, transactionReferenceFallbackText(content));
   }
 
-  /** Decode and schema-validate the transaction-reference wire body. */
   decode(encoded: EncodedContent): TransactionReferenceContent {
     return decodeJsonContent<TransactionReferenceContent>(
       encoded.content, transactionReferenceSchema, 'xmtp.transactionReference',
     );
   }
 
-  /** Plain-text rendering shown by clients missing this codec. */
   fallback(content: TransactionReferenceContent): string | undefined {
     return transactionReferenceFallbackText(content);
   }
 
-  /** A receipt confirming a payment landed — push it. */
   shouldPush(): boolean {
     return true;
   }

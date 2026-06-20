@@ -1,4 +1,3 @@
-/** @file Side-effect-only ES2023 Array.prototype polyfills (toReversed/toSorted) for the production Hermes engine that lacks them; import it FIRST in the app entry. */
 
 type AnyArray = unknown[];
 

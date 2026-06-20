@@ -1,4 +1,3 @@
-/** @file HomeScreen.list — the channels list view: Home topnav slot and channels FlatList with scroll persistence, requests header and empty state. */
 
 import type { MutableRefObject, RefObject } from 'react';
 import { useMemo, useState } from 'react';
@@ -25,18 +24,12 @@ interface ChannelsListProps {
   router: { push: (to: string | { pathname: string; params: Record<string, string> }) => void };
   sortedRows: RowT[];
   requestCount: number;
-  /** Unique labels across non-archived channels → the filter bar chips. */
   barLabels: string[];
-  /** Enabled label keys (lowercased); empty = no filter. */
   enabledLabels: Set<string>;
-  /** Toggle a label's enabled state. */
   onToggleLabel: (label: string) => void;
-  /** Built-in "Unread" chip state + toggle (only-unread filter). */
   unreadOnly: boolean;
   onToggleUnread: () => void;
-  /** Built-in "All" chip: clears every active filter. */
   onClearAll: () => void;
-  /** Channels search query + setter (owned by HomeScreen) → search bar + filter. */
   query: string;
   setQuery: (v: string) => void;
   fg: string;
@@ -52,12 +45,10 @@ interface ChannelsListProps {
   getRowLayout: (d: ArrayLike<RowT> | null | undefined, index: number) => { length: number; offset: number; index: number };
 }
 
-/** Renders Home's contextual right-slot: search, message-requests badge, and overflow menu. */
 function HomeTopnavRight({ head, requestCount, router, onOpenSearch }: {
   head: string; requestCount: number;
   router: ChannelsListProps['router']; onOpenSearch: () => void;
 }): React.ReactElement {
-  /** Request-count badge: white bg + black text in dark theme; flip in light theme to stay legible. */
   const dark = useEffectiveColorScheme() === 'dark';
   const badgeBg = dark ? '#ffffff' : '#000000';
   const badgeFg = dark ? '#000000' : '#ffffff';
@@ -80,7 +71,6 @@ function HomeTopnavRight({ head, requestCount, router, onOpenSearch }: {
         onArchived={() => { router.push('/xmtp/archived'); }}
         onNewGroup={() => { router.push('/xmtp/new-group'); }}
         onProfile={() => {
-          /** Own-profile tab was removed → view yourself via /user/[address]. */
           void getActiveAccount().then(acct => {
             if (acct?.address) router.push(`/user/${acct.address}`);
           });
@@ -91,7 +81,6 @@ function HomeTopnavRight({ head, requestCount, router, onOpenSearch }: {
   );
 }
 
-/** Renders the channels list header: pending-polls banner + label-filter bar. */
 function ChannelsListHeader({ p }: { p: ChannelsListProps }): React.ReactElement {
   return (
     <>
@@ -105,7 +94,6 @@ function ChannelsListHeader({ p }: { p: ChannelsListProps }): React.ReactElement
   );
 }
 
-/** Publish Home's topnav right-slot + the full-width search override when open. */
 function useHomeTopnav(p: ChannelsListProps, searchOpen: boolean, onOpenSearch: () => void, onCloseSearch: () => void): void {
   const { head, requestCount, router, query, setQuery, sub, border } = p;
   const right = useMemo(
@@ -121,18 +109,14 @@ function useHomeTopnav(p: ChannelsListProps, searchOpen: boolean, onOpenSearch: 
   usePublishTopnavSlot({ right, override });
 }
 
-/** Renders the home screen's scrollable list of channels with search and label filters. */
 export function ChannelsList(props: ChannelsListProps): React.ReactElement {
   const {
     panRef, sortedRows, query, fg, head, sub, border, setQuery,
     listExtraData, listRef, savedOffsetRef, didRestoreRef, contentHeightRef,
     renderRow, getRowLayout,
   } = props;
-  /** Search is collapsed by default; opening swaps the topnav for a full-width field, closing clears the query. */
   const [searchOpen, setSearchOpen] = useState(false);
-  /** Open the full-width search field. */
   const openSearch = (): void => { setSearchOpen(true); };
-  /** Close search and clear the query. */
   const closeSearch = (): void => { setSearchOpen(false); setQuery(''); };
   useHomeTopnav(props, searchOpen, openSearch, closeSearch);
 
@@ -142,20 +126,18 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
         ref={listRef}
         simultaneousHandlers={panRef}
         data={sortedRows}
-        /** Persist the offset as the user scrolls (debounced inside the lib). */
         onScroll={(ev) => { saveScrollOffset(CHANNELS_SCROLL_KEY, ev.nativeEvent.contentOffset.y); }}
         scrollEventThrottle={16}
-        /** Restore the saved offset once, after rows have laid out. Clamp to the measured content height so a stale offset (rows since removed) can't scroll past the end. */
         onContentSizeChange={(_w, h) => {
           contentHeightRef.current = h;
           if (didRestoreRef.current) return;
           const want = savedOffsetRef.current;
           if (want == null || want <= 0) { didRestoreRef.current = true; return; }
-          if (h <= 0) return; /** not laid out yet - wait for the next size change */
+          if (h <= 0) return;
           didRestoreRef.current = true;
           const offset = Math.min(want, Math.max(0, h));
           requestAnimationFrame(() => {
-            try { listRef.current?.scrollToOffset({ offset, animated: false }); } catch { /** best-effort */ }
+            try { listRef.current?.scrollToOffset({ offset, animated: false }); } catch { }
           });
         }}
         extraData={listExtraData}
@@ -166,7 +148,6 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
         maxToRenderPerBatch={10}
         removeClippedSubviews
         contentContainerStyle={{ paddingBottom: 24 }}
-        /** Label-filter bar rides as the list header so it scrolls away with the feed; one toggle chip per unique label, hidden when none. */
         ListHeaderComponent={<ChannelsListHeader p={props} />}
         ListEmptyComponent={query.trim() ? null : <HomeEmpty sub={sub} />}
         ListFooterComponent={
@@ -180,7 +161,6 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
   );
 }
 
-/** getItemLayout lets the list skip measuring + jump-scroll without rendering intermediate rows. Every row is uniform height (group label chips render inline on the name row, not a separate line), so offsets are a flat index × CHANNEL_ROW_HEIGHT. */
 export function channelRowLayout(_d: ArrayLike<RowT> | null | undefined, index: number): { length: number; offset: number; index: number } {
   return { length: CHANNEL_ROW_HEIGHT, offset: CHANNEL_ROW_HEIGHT * index, index };
 }

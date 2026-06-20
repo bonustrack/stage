@@ -1,4 +1,3 @@
-/** @file Settings -> Display screen: switch the app theme between System/Light/Dark or pick Custom to edit palette color and radius tokens inline, backed by the shared lib/theme store. */
 
 import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
 
@@ -16,7 +15,6 @@ import { THEME_OPTIONS } from '../tabs/SettingsScreen.parts';
 import { SystemHeader } from '../system/SystemHeader';
 import { ColorTokens } from '../system/ColorTokens';
 
-/** Renders the display settings screen for theme preference and custom colors. */
 export function DisplaySettings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const pref = useThemePreference();

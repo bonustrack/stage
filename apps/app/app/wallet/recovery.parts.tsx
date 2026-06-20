@@ -1,4 +1,3 @@
-/** @file Guardian social-recovery UI parts: the guardian editor, pending-recovery card and guardian approval card. */
 
 import { useState } from 'react';
 import { fontSize } from '@stage-labs/kit/tokens';
@@ -12,7 +11,6 @@ import type { FormPal } from './wallet.form';
 import { Segmented } from './wallet.form';
 import { dedupeGuardians, DEFAULT_RECOVERY_DELAY_SECONDS } from '@stage-labs/client/zerodev/recovery';
 
-/** Format a delay (seconds) as a short human window for display. */
 export function formatDelay(seconds: number): string {
   const h = Math.round(seconds / 3600);
   if (h < 24) return `${h}h`;
@@ -20,7 +18,6 @@ export function formatDelay(seconds: number): string {
   return `${d} day${d === 1 ? '' : 's'}`;
 }
 
-/** Skippable guardian setup (friend addresses + M-of-N picker); presentational with local edit state, page owns persistence. */
 export function GuardianEditor({
   pal, dark, guardians, threshold, delaySeconds = DEFAULT_RECOVERY_DELAY_SECONDS,
   onChange, onThreshold,
@@ -33,17 +30,14 @@ export function GuardianEditor({
   const { head, sub, link } = pal;
   const [entry, setEntry] = useState('');
 
-  /** Add helper. */
   const add = (): void => {
     const next = dedupeGuardians([...guardians, entry]);
     if (next.length !== guardians.length) {
       onChange(next);
-      /** Keep threshold within 1..N. */
       if (threshold > next.length) onThreshold(next.length);
     }
     setEntry('');
   };
-  /** Remove helper. */
   const remove = (addr: string): void => {
     const next = guardians.filter(g => g !== addr);
     onChange(next);
@@ -99,7 +93,6 @@ export function GuardianEditor({
   );
 }
 
-/** A live pending rotation with a one-tap owner Cancel (native veto). Shown when proposalStatus is Ongoing/Approved and the timelock window has not elapsed. */
 export function PendingRecoveryCard({
   pal, dark, newOwner, finalizeAfterLabel, onCancel, cancelling,
 }: {
@@ -124,7 +117,6 @@ export function PendingRecoveryCard({
   );
 }
 
-/** A guardian approving an inbound recovery request (offchain, gasless). */
 export function ApprovalCard({
   pal, dark, wallet, newOwner, onApprove, approving, approved,
 }: {

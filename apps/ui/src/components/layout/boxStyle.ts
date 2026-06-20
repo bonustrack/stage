@@ -1,4 +1,3 @@
-/** @file Shared prop contract and pure CSS-style mapper for the Box/Row/Col layout primitives, kept in lock-step with the React Native implementation in apps/app. */
 
 import { colors, resolveBoxRadius, type RadiusValue } from '@stage-labs/kit';
 
@@ -13,7 +12,6 @@ type Justify =
   | 'around'
   | 'evenly';
 
-/** Per-side / per-axis spacing object for the Box/Row/Col prop API (mirrors ChatKit's `Spacing`): `x` -> left+right, `y` -> top+bottom, per-side keys override the axis. */
 interface Spacing {
   top?: number | string;
   right?: number | string;
@@ -26,19 +24,14 @@ interface Spacing {
 export interface BoxProps {
   direction?: Direction;
   gap?: number;
-  /** padding: scalar (all sides) or per-side/axis `Spacing` object. */
   padding?: number | string | Spacing;
-  /** margin: scalar (all sides) or per-side/axis `Spacing` object. */
   margin?: number | string | Spacing;
   align?: Align;
   justify?: Justify;
   flex?: number;
   wrap?: boolean;
-  /** ChatKit `background`: a kit `colors` key (resolved to hex) or a raw colour. */
   background?: string;
-  /** ChatKit `radius` token enum ('none'|'2xs'|..|'4xl'|'full'|'100%'). */
   radius?: RadiusValue | (string & {});
-  /** ChatKit BlockProps sizing. */
   width?: Size;
   height?: Size;
   size?: Size;
@@ -66,12 +59,10 @@ const JUSTIFY_MAP: Record<Justify, string> = {
   evenly: 'space-evenly',
 };
 
-/** Resolve `bg`: kit color-token key -> hex, else pass through literal. */
 function resolveBg(bg: string): string {
   return (colors as Record<string, string>)[bg] ?? bg;
 }
 
-/** Expand a `padding`/`margin` prop into per-side entries. A scalar sets all four sides; a `Spacing` object resolves x -> left+right, y -> top+bottom, then per-side keys (top/right/bottom/left) override the axis. */
 function applySpacing(
   out: Record<string, string | number>,
   prefix: 'padding' | 'margin',
@@ -105,7 +96,6 @@ function applySpacing(
   if (value.left !== undefined) out[Left] = value.left;
 }
 
-/** Emit flex/visual layout entries (direction, gap, alignment, background, radius). */
 function applyFlexEntries(
   out: Record<string, string | number>,
   props: BoxProps,
@@ -123,7 +113,6 @@ function applyFlexEntries(
     out.borderRadius = resolveBoxRadius(props.radius);
 }
 
-/** Emit sizing entries (size/width/height/min/max/aspectRatio); `size` sets both width and height. */
 function applySizing(
   out: Record<string, string | number>,
   props: BoxProps,
@@ -141,7 +130,6 @@ function applySizing(
   if (props.aspectRatio !== undefined) out.aspectRatio = props.aspectRatio;
 }
 
-/** Pure mapper: BoxProps -> neutral CSS-ish record; undefined props are omitted and `display` is added by the web renderer. */
 function boxStyleEntries(
   props: BoxProps,
 ): Record<string, string | number> {
@@ -153,7 +141,6 @@ function boxStyleEntries(
   return out;
 }
 
-/** Web-specific: stringify numeric entries to `${n}px` and add display:flex. This is the single place units are baked for the Vue renderer. */
 export function boxInlineStyle(props: BoxProps): Record<string, string> {
   const entries = boxStyleEntries(props);
   const css: Record<string, string> = { display: 'flex' };

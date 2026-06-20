@@ -1,4 +1,3 @@
-/** @file Wallet → Receive screen showing a QR of the public EOA or shielded Railgun 0zk address, toggleable and tap-to-copy. */
 
 import { useEffect, useState } from 'react';
 
@@ -17,7 +16,6 @@ import { Icon } from '@stage-labs/kit/icon';
 import { flash } from '../../lib/toast';
 import { ReceiveModeToggle, type ReceiveMode } from '../../components/wallet/ReceiveModeToggle';
 
-/** Screen for receiving funds, showing the wallet address and QR code. */
 export default function WalletReceive(): React.ReactElement {
   const router = useRouter();
   const { text: fg, link: head, border } = usePalette();
@@ -37,16 +35,14 @@ export default function WalletReceive(): React.ReactElement {
       try {
         const client = await getOrCreateXmtpClient('production');
         if (!cancelled) setPublicAddress(client.publicIdentity.identifier);
-      } catch { /* leave blank — the parent topnav handles back */ }
+      } catch { }
     })();
     return () => { cancelled = true; };
   }, []);
 
-  /** Fall back to public if private was selected but the 0zk address vanished. */
   const activeMode: ReceiveMode = mode === 'private' && !privateReady ? 'public' : mode;
   const address = activeMode === 'private' ? privateAddress : publicAddress;
 
-  /** Copy helper. */
   const copy = (): void => {
     if (!address) return;
     void Clipboard.setStringAsync(address);
@@ -73,7 +69,7 @@ export default function WalletReceive(): React.ReactElement {
           privateReady={privateReady}
 />
 
-        {/* QR card — always white background so contrast is correct in dark mode too. */}
+        {}
         <Box background={'#ffffff'} radius="xl" padding={16} align="center" justify="center" style={{ borderWidth: 1, borderColor: border }}>
           {address ? (
             <QRCode

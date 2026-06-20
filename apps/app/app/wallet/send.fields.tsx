@@ -1,4 +1,3 @@
-/** @file Presentational recipient/amount input fields and tx-status row for the Wallet send screen; all state and handlers are owned by the parent and passed in. */
 import { useState } from 'react';
 import { fontSize } from '@stage-labs/kit/tokens';
 import { Linking } from 'react-native';
@@ -19,7 +18,6 @@ interface Palette {
   fg: string; head: string; sub: string; border: string; inputBg: string;
 }
 
-/** Recipient address/ENS input field for the send flow. */
 export function RecipientField(props: {
   pal: Palette;
   to: string;
@@ -34,7 +32,7 @@ export function RecipientField(props: {
   return (
     <Box gap={6}>
       <Text size="xs" color={sub}>RECIPIENT</Text>
-      {/* Input + a contacts-picker icon button on the right. */}
+      {}
       <Row surface="raised" radius="lg" padding={{ x: 6, left: 14 }} align="center" gap={4}>
         <Input
           value={props.to}
@@ -51,7 +49,7 @@ export function RecipientField(props: {
         <ContactsButton color={fg} border={border} onPress={() => { setPicking(true); }}/>
       </Row>
 
-      {/** Resolved recipient renders as the shared user row; while resolving or on error, show the inline status line. */}
+      {}
       {props.resolving ? (
         <Row padding={{ x: 4 }} align="center" gap={8}>
           <Spinner size={20} color={fg}/>
@@ -75,11 +73,9 @@ export function RecipientField(props: {
   );
 }
 
-/** Amount input field with Max and fiat-conversion helpers for the send flow. */
 export function AmountField(props: {
   pal: Palette;
   dark: boolean;
-  /** Symbol of the currently selected token — labels the amount toggle + balance. */
   symbol: string;
   amount: string;
   setAmount: (v: string) => void;
@@ -123,14 +119,13 @@ export function AmountField(props: {
             padding: 0, backgroundColor: 'transparent', minHeight: 0, borderWidth: 0,
           }}
 />
-        {/** Mode toggle flips ETH and USD, converting the current value so the user doesn't lose what they typed. */}
+        {}
         <Pressable
           onPress={() => {
             if (!amount.trim() || !ethPriceUsd) { setMode(m => m === 'eth' ? 'usd' : 'eth'); return; }
             const n = Number(amount);
             if (!isFinite(n) || n <= 0) { setMode(m => m === 'eth' ? 'usd' : 'eth'); return; }
             if (mode === 'eth') {
-              /** ETH → USD: round to cents for UX. */
               setAmount((n * ethPriceUsd).toFixed(2));
               setMode(() => 'usd');
             } else {
@@ -165,12 +160,10 @@ export function AmountField(props: {
   );
 }
 
-/** Public sends always broadcast on mainnet (send.public.ts pins chainId 1). */
 const PUBLIC_SEND_CHAIN = 1;
 
 type TxState = 'idle' | 'submitting' | 'pending' | 'confirmed';
 
-/** Header row for the send screen with a back control. */
 export function SendHeader(props: {
   fg: string; head: string; border: string; onBack: () => void;
 }): React.ReactElement {
@@ -185,7 +178,6 @@ export function SendHeader(props: {
   );
 }
 
-/** Submit button reflecting the current send transaction state. */
 export function SubmitButton(props: {
   dark: boolean; busy: boolean; canSubmit: boolean; txState: TxState; onSubmit: () => void;
 }): React.ReactElement {
@@ -209,7 +201,6 @@ export function SubmitButton(props: {
   );
 }
 
-/** Inline status display for a send transaction's progress, hash or error. */
 export function TxStatus(props: {
   sub: string; txState: TxState; txHash: Hex | null; txErr: string | null;
 }): React.ReactElement {
@@ -217,7 +208,7 @@ export function TxStatus(props: {
   const { link } = usePalette();
   return (
     <>
-      {/* Tx status: hash link once broadcast, plus errors. */}
+      {}
       {txHash ? (
         <Box padding={{ x: 4 }} gap={4}>
           <Text size="xs" color={sub}>

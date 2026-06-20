@@ -1,11 +1,9 @@
-/** @file x402 `exact` (EIP-3009 / USDC) wire-format builders — the pure pay path (challenge -> authorization -> EIP-712 typed data -> base64 X-PAYMENT header), free of wallet/network imports so it stays unit-testable and the coinbase/x402 v1 format can't drift. */
 
 import type { TypedDataDefinition, Hex } from 'viem';
 
 import { x402ChainNumber } from './x402';
 import type { X402Accept } from './useLinkPreview';
 
-/** The EIP-3009 `transferWithAuthorization` authorization tuple, as it appears in the X-PAYMENT payload. All numeric fields are decimal strings (atomic units / unix seconds) and `nonce` is a 0x-prefixed 32-byte hex string. */
 export interface X402Authorization {
   from: string;
   to: string;
@@ -15,7 +13,6 @@ export interface X402Authorization {
   nonce: string;
 }
 
-/** The decoded X-PAYMENT header body (before base64). */
 interface X402PaymentPayload {
   x402Version: number;
   scheme: string;
@@ -26,7 +23,6 @@ interface X402PaymentPayload {
   };
 }
 
-/** EIP-3009 typed-data `types` block — `TransferWithAuthorization` is the gasless transfer permit USDC (and other EIP-3009 tokens) implement. */
 const TRANSFER_WITH_AUTHORIZATION_TYPES = {
   TransferWithAuthorization: [
     { name: 'from', type: 'address' },
@@ -38,22 +34,15 @@ const TRANSFER_WITH_AUTHORIZATION_TYPES = {
   ],
 } as const;
 
-/** Default authorization window (seconds) when the challenge omits a timeout. */
 const DEFAULT_TIMEOUT_SECONDS = 600;
 
-/** Inputs needed to build the EIP-3009 authorization for an `exact` challenge. */
 export interface BuildAuthorizationParams {
-  /** The payer (active wallet) address. */
   from: string;
-  /** The challenge accept (scheme/network/asset/amount/payTo/extra/timeout). */
   accept: X402Accept;
-  /** Unix seconds "now" — injectable so tests are deterministic. */
   now: number;
-  /** 32-byte 0x nonce — injectable so tests are deterministic. */
   nonce: string;
 }
 
-/** Build the EIP-3009 authorization message from a challenge accept + payer. Pure: deterministic given (from, accept, now, nonce). */
 export function buildAuthorization(p: BuildAuthorizationParams): X402Authorization {
   const timeout = p.accept.maxTimeoutSeconds ?? DEFAULT_TIMEOUT_SECONDS;
   return {
@@ -66,7 +55,6 @@ export function buildAuthorization(p: BuildAuthorizationParams): X402Authorizati
   };
 }
 
-/** Build the EIP-712 typed-data definition for the EIP-3009 transfer. The domain name/version come from the challenge's `extra` (USDC carries name "USD Coin" / version "2"); `verifyingContract` is the asset (token) address. Pure. */
 export function buildTypedData(
   accept: X402Accept,
   authorization: X402Authorization,
@@ -95,7 +83,6 @@ export function buildTypedData(
   };
 }
 
-/** base64-encode a UTF-8 string. RN has global `btoa`; fall back to Buffer so this works under the test runner and any environment. */
 function toBase64(s: string): string {
   if (typeof btoa === 'function') return btoa(unescape(encodeURIComponent(s)));
   const B = (globalThis as { Buffer?: { from(s: string, enc: string): { toString(enc: string): string } } }).Buffer;
@@ -103,7 +90,6 @@ function toBase64(s: string): string {
   throw new Error('no base64 encoder');
 }
 
-/** Build the base64 X-PAYMENT header from a signed authorization. Pure given its inputs — unit-tested against a fixture challenge so the wire format is locked to the coinbase/x402 v1 spec. */
 export function buildPaymentHeader(args: {
   accept: X402Accept;
   authorization: X402Authorization;
@@ -122,7 +108,6 @@ export function buildPaymentHeader(args: {
   return toBase64(JSON.stringify(payload));
 }
 
-/** Generate a random 32-byte 0x nonce (via `crypto.getRandomValues`), the only replay protection on an EIP-3009 authorization; THROW if that CSPRNG is absent rather than sign behind a weak `Math.random()` nonce. */
 export function randomNonce(): string {
   const bytes = new Uint8Array(32);
   const c: Crypto | undefined = globalThis.crypto;

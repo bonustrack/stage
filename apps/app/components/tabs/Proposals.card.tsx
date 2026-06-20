@@ -1,4 +1,3 @@
-/** @file Proposals.card — the single active pending-request card, dispatching on the queued request's kind (poll/payment/signing/message) to reuse the chat view's vote/pay/sign pipelines, with Skip + Open advancing to the next request. */
 
 import { useCallback, useMemo } from 'react';
 import { useRouter } from 'expo-router';
@@ -21,7 +20,6 @@ import { getPeerName } from '../../lib/peerProfiles';
 import { shortAddress, acceptRequestConv, blockRequestConv, getCachedXmtpClient } from '../../modules/messaging';
 import type { QueuedRequest, RequestKind } from './Proposals.queue';
 
-/** Human label for each request kind, shown as the card-header eyebrow so the type is clear at a glance ("Poll" / "Payment request" / …). */
 const KIND_LABEL: Record<RequestKind, string> = {
   poll: 'Poll',
   payment: 'Payment request',
@@ -29,7 +27,6 @@ const KIND_LABEL: Record<RequestKind, string> = {
   message: 'Message request',
 };
 
-/** Small uppercase type eyebrow above the card title. Uses kit text tokens (secondary role, smallest step) so it stays minimal and theme-aware. */
 function KindEyebrow({ kind }: { kind: RequestKind }): React.ReactElement {
   return (
     <Text role="secondary" size="2xs" weight="semibold"
@@ -39,17 +36,14 @@ function KindEyebrow({ kind }: { kind: RequestKind }): React.ReactElement {
   );
 }
 
-/** Top-level dispatcher: route to the right card by request kind. */
 export function ProposalCard({ proposal, onAdvance }: {
   proposal: QueuedRequest;
-  /** Advance to the next request (Skip, or after acting on this one). */
   onAdvance: () => void;
 }): React.ReactElement {
   if (proposal.kind === 'message') return <MessageRequestCard request={proposal} onAdvance={onAdvance}/>;
   return <ConversationRequestCard proposal={proposal} onAdvance={onAdvance}/>;
 }
 
-/** Header shared by the conversation-backed cards: channel title + (for the source message) author + posted-at, matching the chat sender resolution. */
 function CardHeader({ kind, title, authorAddr, authorName, postedAt, fg }: {
   kind: RequestKind; title: string; authorAddr: string | null; authorName: string | null;
   postedAt: string | null; fg: string;
@@ -72,7 +66,6 @@ function CardHeader({ kind, title, authorAddr, authorName, postedAt, fg }: {
   );
 }
 
-/** Skip / Open-channel control row, shared by every card. */
 function ControlRow({ onSkip, onOpen, dark, hint }: {
   onSkip: () => void; onOpen: () => void; dark: boolean; hint?: string;
 }): React.ReactElement {
@@ -95,7 +88,6 @@ function ControlRow({ onSkip, onOpen, dark, hint }: {
   );
 }
 
-/** Resolve the author name + posted-at line for the card header from the source entry. */
 function headerFields(authorAddr: string | null, ts: string | undefined): { authorName: string | null; postedAt: string | null } {
   return {
     authorName: authorAddr ? (getPeerName(authorAddr) ?? shortAddress(authorAddr)) : null,
@@ -103,13 +95,11 @@ function headerFields(authorAddr: string | null, ts: string | undefined): { auth
   };
 }
 
-/** Resolve the channel title for a conversation request (group name or peer name/address). */
 function conversationTitle(isGroup: boolean, groupName: string | null | undefined, peerAddr: string | null): string {
   if (isGroup) return groupName?.trim() ? groupName.trim() : 'Untitled group';
   return peerAddr ? (getPeerName(peerAddr) ?? shortAddress(peerAddr)) : '';
 }
 
-/** Control-row hint for a conversation request kind, or undefined while loading. */
 function controlHint(kind: RequestKind, loading: boolean): string | undefined {
   if (loading) return undefined;
   if (kind === 'poll') return 'Tap an option to vote, or send a custom message below.';
@@ -117,7 +107,6 @@ function controlHint(kind: RequestKind, loading: boolean): string | undefined {
   return 'Tap Sign to confirm, or send a custom message below.';
 }
 
-/** Renders the request body: PollView / TxRequestCard / SigRequestCard, or a loading line. */
 function RequestBody({ proposal, c, msgId, dark, sub, onPayPress, onSignPress }: {
   proposal: QueuedRequest; c: ReturnType<typeof useConversationState>; msgId: string;
   dark: boolean; sub: string; onPayPress: () => void; onSignPress: () => void;
@@ -145,7 +134,6 @@ function RequestBody({ proposal, c, msgId, dark, sub, onPayPress, onSignPress }:
   return <Text role="secondary" style={{ marginTop: 12 }}>Loading {kindLabel}…</Text>;
 }
 
-/** Poll / payment / signing card: mounts the conversation and renders the request body wired to the chat's vote/pay/sign pipeline. */
 function ConversationRequestCard({ proposal, onAdvance }: {
   proposal: QueuedRequest; onAdvance: () => void;
 }): React.ReactElement {
@@ -157,7 +145,6 @@ function ConversationRequestCard({ proposal, onAdvance }: {
   const msgId = proposal.msgId ?? '';
 
   const c = useConversationState(proposal.convId, undefined);
-  /** The source message, re-found in the live feed so tally / spinners stay live. */
   const entry = useMemo(() => c.events.find(e => e.id === msgId), [c.events, msgId]);
   const title = conversationTitle(c.isGroup, c.groupName, c.peerAddr);
   const authorAddr = useMemo(() => (entry ? c.senderEthOf(entry.from) : null), [entry, c]);
@@ -167,7 +154,6 @@ function ConversationRequestCard({ proposal, onAdvance }: {
     router.push({ pathname: '/xmtp/[convId]', params: { convId: proposal.convId } });
   }, [router, proposal.convId]);
 
-  /** Pay / sign reuse the chat handlers verbatim, then advance to the next item. */
   const payload = entry?.payload as { walletSendCalls?: WalletSendCallsContent; signatureRequest?: SignatureRequestContent } | undefined;
   const wsc = payload?.walletSendCalls;
   const sigReq = payload?.signatureRequest;
@@ -201,13 +187,11 @@ function ConversationRequestCard({ proposal, onAdvance }: {
   );
 }
 
-/** Resolve the display title for a message-request channel preview. */
 function requestTitle(view: QueuedRequest['request']): string {
   if (!view) return '';
   return view.peerAddress ? (getPeerName(view.peerAddress) ?? view.title) : view.title;
 }
 
-/** Message-request card: a compact channel preview with Accept / Block + Open. Channel-level; acting advances to the next item. */
 function MessageRequestCard({ request, onAdvance }: {
   request: QueuedRequest; onAdvance: () => void;
 }): React.ReactElement {
@@ -221,14 +205,13 @@ function MessageRequestCard({ request, onAdvance }: {
     router.push({ pathname: '/xmtp/[convId]', params: { convId: request.convId } });
   }, [router, request.convId]);
 
-  /** Accept / Block reuse the exact requests-list handlers; either resolves the request, so advance optimistically (the consent write + sync reconcile the channels list + other devices). */
   const act = useCallback((accept: boolean) => {
     void (accept ? acceptRequestConv(request.convId) : blockRequestConv(request.convId))
       .then(() => {
         void (getCachedXmtpClient() as unknown as { preferences?: { syncConsent?: () => Promise<unknown> } })
           ?.preferences?.syncConsent?.();
       })
-      .catch(() => { /* best-effort; a failed write just leaves it for next rescan */ });
+      .catch(() => undefined);
     onAdvance();
   }, [request.convId, onAdvance]);
 

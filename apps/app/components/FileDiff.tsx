@@ -1,4 +1,3 @@
-/** @file Collapsible per-file section for the in-app PR diff viewer: a header (filename + add/del counts) toggling a kind-colored patch body with a line-number gutter, fed by diffParse. */
 
 import { useState } from 'react';
 
@@ -11,7 +10,6 @@ import type { Palette } from '../lib/theme';
 import type { DiffFile, DiffLine } from '../lib/diffParse';
 
 
-/** Line Bg. */
 function lineBg(kind: DiffLine['kind'], dark: boolean): string {
   if (kind === 'add') return dark ? 'rgba(63,185,80,0.15)' : 'rgba(46,160,67,0.12)';
   if (kind === 'del') return dark ? 'rgba(248,81,73,0.15)' : 'rgba(248,81,73,0.12)';
@@ -19,7 +17,6 @@ function lineBg(kind: DiffLine['kind'], dark: boolean): string {
   return 'transparent';
 }
 
-/** Line Color. */
 function lineColor(kind: DiffLine['kind'], p: Palette): string {
   if (kind === 'add') return p.success;
   if (kind === 'del') return p.danger;
@@ -27,19 +24,16 @@ function lineColor(kind: DiffLine['kind'], p: Palette): string {
   return p.text;
 }
 
-/** Marker helper. */
 function marker(kind: DiffLine['kind']): string {
   if (kind === 'add') return '+';
   if (kind === 'del') return '-';
   return ' ';
 }
 
-/** Gutter helper. */
 function gutter(n: number | null): string {
   return n === null ? '' : String(n);
 }
 
-/** Renders one collapsible per-file diff section with colored patch lines and a line-number gutter. */
 export function FileDiff({ file, p, dark }: {
   file: DiffFile; p: Palette; dark: boolean;
 }): React.ReactElement {

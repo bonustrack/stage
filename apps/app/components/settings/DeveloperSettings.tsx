@@ -1,4 +1,3 @@
-/** @file Settings -> Developer screen: device-local diagnostic toggles (the opt-in Railgun debug-console preference) plus reset actions. */
 
 import { useEffect, useState } from 'react';
 
@@ -15,7 +14,6 @@ import {
 import { resetForOnboarding } from '../../lib/wallet';
 import { resetEverything } from '../../lib/resetEverything';
 
-/** Renders a destructive reset action card in the Developer danger zone. */
 function DangerAction({ onPress, busy, label, description, danger, blockRadius, top }: {
   onPress: () => void; busy: boolean; label: string; description: string;
   danger: string; blockRadius: number; top: number;
@@ -32,7 +30,6 @@ function DangerAction({ onPress, busy, label, description, danger, blockRadius, 
   );
 }
 
-/** Renders the developer settings screen with reset and debugging actions. */
 export function DeveloperSettings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head, border, danger } = usePalette();
@@ -49,13 +46,11 @@ export function DeveloperSettings(): React.ReactElement {
   const [resetting, setResetting] = useState(false);
   const [nuking, setNuking] = useState(false);
 
-  /** Handle the Toggle. */
   const onToggle = (next: boolean): void => {
-    setEnabled(next); /** optimistic */
+    setEnabled(next);
     void setDebugConsole(next);
   };
 
-  /** Handle the Reset. */
   const onReset = (): void => {
     Alert.alert(
       'Reset accounts',
@@ -76,7 +71,6 @@ export function DeveloperSettings(): React.ReactElement {
     );
   };
 
-  /** Handle the Nuke. */
   const onNuke = (): void => {
     Alert.alert(
       'Reset everything',
@@ -90,7 +84,6 @@ export function DeveloperSettings(): React.ReactElement {
             setNuking(true);
             void resetEverything()
               .catch(() => { setNuking(false); Alert.alert('Reset failed', 'Could not wipe local state.'); });
-            /** No finally: on success the app reloads, so nuking stays true until then. */
           },
         },
       ],

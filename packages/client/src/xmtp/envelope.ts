@@ -1,4 +1,3 @@
-/** @file Maps a decoded XMTP message onto the shared HistoryEntry envelope (the transport-agnostic shape the daemon train emits and MessengerBubble consumes) via a structural DecodedMessageView, so the package imports zero @xmtp/react-native/expo types. */
 
 import type { HistoryEntry } from '../types';
 import { humanizeGroupUpdated, type GroupUpdatedContent } from './humanize';
@@ -13,39 +12,27 @@ import {
 } from './tx';
 import { XMTP_USER_PREFIX } from './line';
 
-/** The structural subset of the RN SDK's `DecodedMessage` the envelope mapper reads. The app's native message satisfies this shape directly. */
 export interface DecodedMessageView {
   id: string;
   senderInboxId: string;
-  /** Nanoseconds since epoch (RN SDK form). */
   sentNs: number;
-  /** e.g. `xmtp.org/text:1.0`. */
   contentTypeId: string;
-  /** Decodes the body; may throw if the codec is unavailable. */
   content(): unknown;
-  /** Plain-text fallback the codec supplied, if any. */
   fallback?: string;
 }
 
-/** Structural mirror of the RN SDK's `ReactionContent`. */
 interface ReactionContentView {
   reference: string;
-  /** 'added' | 'removed' (the RN SDK leaves this open-ended). */
   action: string;
   content: string;
-  /** 'unicode' | 'custom' (the RN SDK leaves this open-ended). */
   schema: string;
 }
-/** Structural mirror of the RN SDK's `ReplyContent` (text-only inner content). */
 interface ReplyContentView { reference: string; content?: { text?: string } }
-/** Structural mirror of the RN SDK's `StaticAttachmentContent`. */
 interface StaticAttachmentView { filename: string; mimeType?: string; data: string }
-/** Structural mirror of the RN SDK's `MultiRemoteAttachmentContent`. */
 interface MultiRemoteAttachmentView {
   attachments?: ({ filename?: string } & Record<string, unknown>)[];
 }
 
-/** Map a `reaction` content into its envelope — a poll vote (schema:'custom') carries voteFor/optionIndex so tally helpers can pick it out; otherwise a plain emoji react. */
 function reactionEnvelope(base: HistoryEntry, typeId: string, decoded: unknown): HistoryEntry {
   const r = decoded as ReactionContentView;
   const removed = r.action === 'removed';
@@ -66,7 +53,6 @@ function reactionEnvelope(base: HistoryEntry, typeId: string, decoded: unknown):
   };
 }
 
-/** Map a `reply` content into its envelope, surfacing the inner text + the referenced message id. */
 function replyEnvelope(base: HistoryEntry, typeId: string, decoded: unknown): HistoryEntry {
   const r = decoded as ReplyContentView;
   return {
@@ -77,7 +63,6 @@ function replyEnvelope(base: HistoryEntry, typeId: string, decoded: unknown): Hi
   };
 }
 
-/** Infer an attachment `kind` (image/audio/video/file) from a MIME type, else 'file'. */
 function kindFromMime(mime?: string): 'image' | 'audio' | 'video' | 'file' {
   if (mime?.startsWith('image/')) return 'image';
   if (mime?.startsWith('audio/')) return 'audio';
@@ -85,7 +70,6 @@ function kindFromMime(mime?: string): 'image' | 'audio' | 'video' | 'file' {
   return 'file';
 }
 
-/** Infer an attachment `kind` from a filename extension, else 'file'. */
 function kindFromExt(name: string): 'image' | 'audio' | 'video' | 'file' {
   const ext = name.split('.').pop()?.toLowerCase() ?? '';
   if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic'].includes(ext)) return 'image';
@@ -94,7 +78,6 @@ function kindFromExt(name: string): 'image' | 'audio' | 'video' | 'file' {
   return 'file';
 }
 
-/** Map an inline `attachment` content (bytes already base64 over the RN bridge) into its envelope. */
 function attachmentEnvelope(base: HistoryEntry, typeId: string, decoded: unknown): HistoryEntry {
   const a = decoded as StaticAttachmentView;
   const kind = kindFromMime(a.mimeType);
@@ -108,7 +91,6 @@ function attachmentEnvelope(base: HistoryEntry, typeId: string, decoded: unknown
   };
 }
 
-/** Map a `multiRemoteAttachment` content (N encrypted-remote attachments on IPFS) into its envelope; MIME is absent so kind is inferred from the filename. */
 function multiRemoteEnvelope(base: HistoryEntry, typeId: string, decoded: unknown): HistoryEntry {
   const m = decoded as MultiRemoteAttachmentView;
   const attachments = (m.attachments ?? []).map((info, i) => {
@@ -122,7 +104,6 @@ function multiRemoteEnvelope(base: HistoryEntry, typeId: string, decoded: unknow
   return { ...base, text: summary, payload: { contentType: typeId, attachments } };
 }
 
-/** Per-typeId envelope builders for non-string decoded XMTP content. Keys are the short authority-less content-type names. */
 const ENVELOPE_HANDLERS: Record<
   string,
   (base: HistoryEntry, typeId: string, decoded: unknown) => HistoryEntry
@@ -162,15 +143,12 @@ const ENVELOPE_HANDLERS: Record<
   multiRemoteAttachment: multiRemoteEnvelope,
 };
 
-/** Convert a decoded XMTP message into the `HistoryEntry` envelope used by the daemon-side event log + the MessengerBubble renderer. Mirrors the shape emitted by the node-sdk train so the UI layer is transport-agnostic. */
 export function mapDecodedToEnvelope(msg: DecodedMessageView, line: string): HistoryEntry {
-  /** `sentNs` is nanoseconds. Divide to ms — ample precision for ts strings. */
   const ts = new Date(Math.floor(msg.sentNs / 1_000_000)).toISOString();
   const base: HistoryEntry = {
     id: msg.id, ts, station: 'xmtp', line,
     from: `${XMTP_USER_PREFIX}${msg.senderInboxId}`, to: line, messageId: msg.id,
   };
-  /** typeId looks like `xmtp.org/text:1.0` — strip authority + version. */
   const typeId = msg.contentTypeId.split('/').pop()?.split(':')[0] ?? 'unknown';
   let decoded: unknown;
   try { decoded = msg.content(); }
@@ -181,6 +159,5 @@ export function mapDecodedToEnvelope(msg: DecodedMessageView, line: string): His
   }
   const handler = ENVELOPE_HANDLERS[typeId];
   if (handler) return handler(base, typeId, decoded);
-  /** Unknown / unsupported codec — render fallback if the codec provided one. */
   return { ...base, text: msg.fallback ?? `[${typeId} payload]`, payload: { contentType: typeId } };
 }

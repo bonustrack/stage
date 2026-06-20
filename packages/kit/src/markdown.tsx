@@ -1,29 +1,20 @@
-/** @file Markdown — a hook-free ChatKit-styled markdown node backed by `react-native-markdown-display`, styled (Calibre + Menlo-for-code) to match the app's other markdown surfaces. */
 
 import { useMemo } from 'react';
 import { type TextStyle } from 'react-native';
 import RNMarkdown from 'react-native-markdown-display';
 
 export interface MarkdownProps {
-  /** ChatKit: value. The markdown source string. */
   value: string;
-  /** ChatKit: streaming. True while the value is still being streamed in (parity flag; RN render is identical either way). */
   streaming?: boolean;
-  /** Override the body text colour; wins over the dark/light default. */
   color?: string;
-  /** Override the link colour; defaults to the Metro brand teal link colour. */
   linkColor?: string;
-  /** Effective color scheme. Pass `useEffectiveColorScheme() === 'dark'`. */
   dark?: boolean;
-  /** Escape-hatch style merged onto the markdown body. */
   style?: TextStyle;
 }
 
-/** Builds the react-native-markdown-display style map for the palette; heading/inline sizes must live on the leaf rules since RN's nearest fontSize wins and a wrapping body fontSize can never size headings/strong/em. */
 function markdownStyles(fg: string, link: string, dark: boolean): Record<string, object> {
   const codeBg = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
   const lh = 23;
-  /** H helper. */
   const h = (fontSize: number, lineHeight: number): object => ({
     color: fg,
     fontSize,
@@ -41,11 +32,9 @@ function markdownStyles(fg: string, link: string, dark: boolean): Record<string,
     heading4: h(18, 22),
     heading5: h(18, 22),
     heading6: h(18, 22),
-    /** fontWeight:'normal' lets the Calibre-Semibold family win (registered as its own family, not a bold weight of Calibre-Medium). */
     strong: { fontFamily: 'Calibre-Semibold', fontWeight: 'normal', fontSize: 15, lineHeight: lh },
     em: { fontFamily: 'Calibre-Medium', fontStyle: 'italic', fontWeight: 'normal', fontSize: 15, lineHeight: lh },
     link: { color: link, textDecorationLine: 'underline' },
-    /** Menlo's em-square is wider than Calibre's, so size down to match. */
     code_inline: { backgroundColor: codeBg, paddingHorizontal: 4, borderRadius: 4, fontFamily: 'Menlo', fontSize: 13, lineHeight: lh },
     fence: { backgroundColor: codeBg, padding: 8, borderRadius: 6, fontFamily: 'Menlo', fontSize: 13, lineHeight: 19 },
     code_block: { backgroundColor: codeBg, padding: 8, borderRadius: 6, fontFamily: 'Menlo', fontSize: 13, lineHeight: 19 },
@@ -55,12 +44,10 @@ function markdownStyles(fg: string, link: string, dark: boolean): Record<string,
   };
 }
 
-/** ChatKit-style RN markdown renderer. */
 export function Markdown(props: MarkdownProps): React.ReactElement {
   const { value, color, linkColor, dark = false, style } = props;
 
   const fg = color ?? (dark ? '#ffffff' : '#000000');
-  /** Metro brand teal link colour (matches the app palette `link` token). */
   const link = linkColor ?? '#2cc6c6';
 
   const styles = useMemo(() => {

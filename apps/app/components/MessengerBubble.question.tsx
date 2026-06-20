@@ -1,4 +1,3 @@
-/** @file QuestionView and its option/other/submit sub-rows for MessengerBubble. */
 import { useState } from 'react';
 import { fontSize } from '@stage-labs/kit/tokens';
 import { Pressable } from '@stage-labs/kit/pressable';
@@ -8,7 +7,6 @@ import { Box } from './layout';
 import type { Question } from './MessengerBubble.helpers';
 import { usePalette } from '../lib/theme';
 
-/** Local question-answering state (selection set + free-text "Other" field) and its actions. */
 interface QuestionState {
   selected: Set<string>;
   otherOpen: boolean;
@@ -21,14 +19,12 @@ interface QuestionState {
   submit: () => void;
 }
 
-/** Manage selection + free-text state and the toggle/submit actions for a question. */
 function useQuestionState(question: Question, onAnswer: (label: string) => void): QuestionState {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [otherOpen, setOtherOpen] = useState(false);
   const [otherText, setOtherText] = useState('');
   const multi = question.multiSelect === true;
   const allowOther = question.allowOther !== false;
-  /** Toggle helper. */
   const toggle = (label: string): void => {
     if (!multi) { onAnswer(label); return; }
     setSelected(prev => {
@@ -37,9 +33,7 @@ function useQuestionState(question: Question, onAnswer: (label: string) => void)
       return next;
     });
   };
-  /** Submit helper. */
   const submit = (): void => {
-    /** Preserve the user's option order so the answer reads naturally. */
     const chosen = question.options.filter(o => selected.has(o.label)).map(o => o.label);
     const other = otherText.trim();
     if (multi) {
@@ -47,21 +41,18 @@ function useQuestionState(question: Question, onAnswer: (label: string) => void)
       onAnswer([...chosen, ...(other ? [other] : [])].join(', '));
       return;
     }
-    /** Single-select Other submit — just send the typed text. */
     if (!other) return;
     onAnswer(other);
   };
   return { selected, otherOpen, otherText, multi, allowOther, setOtherOpen, setOtherText, toggle, submit };
 }
 
-/** Background color for an option button given its selected/pressed state. */
 function optionBg(isOn: boolean, pressed: boolean, dark: boolean): string {
   if (isOn) return dark ? 'rgba(192,160,110,0.22)' : 'rgba(192,160,110,0.18)';
   if (pressed) return dark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.08)';
   return dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)';
 }
 
-/** Renders one selectable question option row. */
 function OptionRow({ opt, isOn, multi, dark, sub, fg, onPress }: {
   opt: Question['options'][number]; isOn: boolean; multi: boolean;
   dark: boolean; sub: string; fg: string; onPress: () => void;
@@ -84,7 +75,6 @@ function OptionRow({ opt, isOn, multi, dark, sub, fg, onPress }: {
   );
 }
 
-/** Renders the dashed "Other…" affordance that opens the free-text field. */
 function OtherToggle({ dark, sub, onPress }: { dark: boolean; sub: string; onPress: () => void }): React.ReactElement {
   return (
     <Pressable
@@ -103,7 +93,6 @@ function OtherToggle({ dark, sub, onPress }: { dark: boolean; sub: string; onPre
   );
 }
 
-/** Renders the free-text "Other" answer textarea. */
 function OtherField({ value, onChange, onSubmit, dark, sub, fg }: {
   value: string; onChange: (v: string) => void; onSubmit: () => void;
   dark: boolean; sub: string; fg: string;
@@ -128,7 +117,6 @@ function OtherField({ value, onChange, onSubmit, dark, sub, fg }: {
   );
 }
 
-/** Renders the Submit button (multi-select / Other), disabled until there's an answer. */
 function SubmitButton({ s, dark }: { s: QuestionState; dark: boolean }): React.ReactElement {
   const disabled = s.multi ? (s.selected.size === 0 && !s.otherText.trim()) : !s.otherText.trim();
   return (
@@ -151,12 +139,11 @@ function SubmitButton({ s, dark }: { s: QuestionState; dark: boolean }): React.R
   );
 }
 
-/** Question view: single-select fires onAnswer instantly while multi-select toggles options locally and submits the joined labels on "Submit"; an implicit "Other…" affordance (default on) allows a free-text answer instead of or alongside the listed options. */
 export function QuestionView({ question, dark, sub, onAnswer }: {
   question: Question; dark: boolean; sub: string; onAnswer: (label: string) => void;
 }): React.ReactElement {
   const s = useQuestionState(question, onAnswer);
-  const fg = usePalette().text; /* #9f9fa3 / #57606a */
+  const fg = usePalette().text;
   const needSubmitButton = s.multi || s.otherOpen;
   return (
     <Box margin={{ top: 8 }} gap={6} style={{ alignSelf: 'stretch' }}>

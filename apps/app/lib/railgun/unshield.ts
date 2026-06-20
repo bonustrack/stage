@@ -1,4 +1,3 @@
-/** @file UNSHIELD orchestration — move funds from the user's own 0zk shielded balance back to a public address (default their own EOA) via bridge primitives + a Groth16 proof + a viem sign/broadcast with the in-app EOA key; self-broadcast only (no broadcaster fee), with progress/errors flowing through the pending-action store for the Private tab chip. */
 import { parseUnits, type Hex } from 'viem';
 import { getActiveAccountId } from '../accounts';
 import { engineInit, walletInfo } from './bridge';
@@ -15,13 +14,9 @@ import { RAILGUN_TOKENS, type TokenMeta } from './tokens';
 const TXID_VERSION = 'V2_PoseidonMerkle';
 
 export interface UnshieldParams {
-  /** 1 = mainnet, 11155111 = Sepolia (default for testing). */
   chainId: number;
-  /** Token symbol from the shielded list — 'ETH' or 'USDC'. */
   symbol: 'ETH' | 'USDC';
-  /** Human-readable amount, e.g. "0.01". */
   amount: string;
-  /** Public recipient; defaults to the user's own EOA when omitted. */
   recipient?: Hex;
 }
 
@@ -30,7 +25,6 @@ export interface UnshieldResult {
   recipient: Hex;
 }
 
-/** Token Meta. */
 function tokenMeta(chainId: number, symbol: string): TokenMeta {
   const net = chainId === 1 ? 'mainnet' : 'sepolia';
   const meta = RAILGUN_TOKENS[net].find(t => t.symbol === symbol);
@@ -38,7 +32,6 @@ function tokenMeta(chainId: number, symbol: string): TokenMeta {
   return meta;
 }
 
-/** Run the full unshield. Resolves with the broadcast tx hash; the pending chip is driven through `proving` (estimate + Groth16) → `broadcasting` → `confirmed`/`failed`. The optimistic delta is NEGATIVE (funds leaving). */
 export async function unshieldToPublic(params: UnshieldParams): Promise<UnshieldResult> {
   const accountId = await getActiveAccountId();
   if (!accountId) throw new Error('No active account');
@@ -73,7 +66,6 @@ export async function unshieldToPublic(params: UnshieldParams): Promise<Unshield
       tokenAddress: meta.address, amountWei: amountWei.toString(), recipientAddress: recipient,
     }];
 
-    /** EIP-1559 gas details (Ethereum + Sepolia default to Type2); gasEstimate is a placeholder for the estimate call whose returned value feeds the populate step. */
     const fees = await signer.publicClient.estimateFeesPerGas();
     const baseGas: UnshieldGasDetails = {
       evmGasType: 2,

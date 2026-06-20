@@ -1,4 +1,3 @@
-/** @file RailgunDebugPanel — on-screen diagnostic panel for the shielded-balance pipeline (readiness, refresh phase/error, row counts, last payload), subscribing to the balanceDebug store. */
 import { useEffect, useState } from 'react';
 
 import { Text } from '@stage-labs/kit/text';
@@ -10,10 +9,8 @@ import {
   type BalanceDebug,
 } from '../../lib/railgun/balanceDebug';
 
-/** Fmt Time. */
 const fmtTime = (t: number | null): string => (t ? new Date(t).toLocaleTimeString() : '—');
 
-/** Fmt Event. */
 function fmtEvent(d: BalanceDebug): string {
   if (d.lastEvent == null) return 'none received yet';
   try {
@@ -24,7 +21,6 @@ function fmtEvent(d: BalanceDebug): string {
   }
 }
 
-/** The Debug Row component. */
 function DebugRow({ label, value, sub, head }: {
   label: string; value: string; sub: string; head: string;
 }): React.ReactElement {
@@ -38,7 +34,6 @@ function DebugRow({ label, value, sub, head }: {
   );
 }
 
-/** Debug panel exposing Railgun private-balance internals for diagnostics. */
 export function RailgunDebugPanel({ head, sub, border }: {
   head: string; sub: string; border: string;
 }): React.ReactElement {

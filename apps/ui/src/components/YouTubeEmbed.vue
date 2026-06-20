@@ -1,7 +1,4 @@
 <script setup lang="ts">
-/** YouTube preview card — hqdefault thumbnail with a play-button overlay,
- *  click → opens youtube.com/watch?v=<id> in a new tab. Vue port of the RN
- *  YouTubeEmbed component. */
 
 const props = defineProps<{ videoId: string }>();
 const watchUrl = computed(() => `https://www.youtube.com/watch?v=${props.videoId}`);

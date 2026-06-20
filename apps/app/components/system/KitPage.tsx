@@ -1,4 +1,3 @@
-/** @file KitPage — the Kit sub-page of Settings (/settings/kit): a back-arrow header plus theme switcher above the Kit primitives rendered directly via KitSections. */
 
 import { Linking } from 'react-native';
 import { Pressable } from '@stage-labs/kit/pressable';
@@ -13,7 +12,6 @@ import { GithubLogo } from '../GithubLogo';
 
 const KIT_GITHUB_URL = 'https://github.com/bonustrack/stage/tree/main/packages/kit';
 
-/** Renders the Kit gallery page of the system design section. */
 export function KitPage(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head, border } = usePalette();

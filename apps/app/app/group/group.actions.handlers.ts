@@ -1,4 +1,3 @@
-/** @file Mutation handlers for the group-detail screen, factored out of useGroupActions to keep the hook small. */
 
 import { Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -10,7 +9,6 @@ import {
   updateGroupDescription, updateGroupName,
 } from './group.helpers';
 
-/** State + setters the handlers operate on, plus router + the invalidate hook. */
 export interface GroupHandlersCtx {
   line: string;
   invalidateConvMeta: () => void;
@@ -26,7 +24,6 @@ export interface GroupHandlersCtx {
   setLeaving: (b: boolean) => void;
 }
 
-/** Build the Add Member handler. */
 export function makeAddMember(c: GroupHandlersCtx): (onSuccess?: () => void) => Promise<void> {
   return async (onSuccess?: () => void): Promise<void> => {
     const addr = c.addDraft.trim();
@@ -47,7 +44,6 @@ export function makeAddMember(c: GroupHandlersCtx): (onSuccess?: () => void) => 
   };
 }
 
-/** Build the Remove Member handler. */
 export function makeRemoveMember(c: GroupHandlersCtx): (addr: string) => void {
   return (addr: string): void => {
     Alert.alert(
@@ -61,7 +57,6 @@ export function makeRemoveMember(c: GroupHandlersCtx): (addr: string) => void {
   };
 }
 
-/** Perform the member removal after the confirm prompt. */
 async function runRemoveMember(c: GroupHandlersCtx, addr: string): Promise<void> {
   c.setRemoving(addr.toLowerCase());
   try {
@@ -72,13 +67,11 @@ async function runRemoveMember(c: GroupHandlersCtx, addr: string): Promise<void>
   } finally { c.setRemoving(null); }
 }
 
-/** Build the Pick Image handler. */
 export function makePickImage(c: GroupHandlersCtx): () => Promise<void> {
   return async (): Promise<void> => {
     if (c.uploadingImage) return;
     const r = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: 'images', quality: 0.85, allowsMultipleSelection: false,
-      /** Built-in square crop/resize step before upload — `allowsEditing` is part of expo-image-picker, no extra native dep. */
       allowsEditing: true, aspect: [1, 1],
     });
     const a = r.canceled ? undefined : r.assets[0];
@@ -95,7 +88,6 @@ export function makePickImage(c: GroupHandlersCtx): () => Promise<void> {
   };
 }
 
-/** Build the Save Description handler. */
 export function makeSaveDescription(c: GroupHandlersCtx): () => Promise<void> {
   return async (): Promise<void> => {
     const next = c.descriptionDraft.trim();
@@ -112,7 +104,6 @@ export function makeSaveDescription(c: GroupHandlersCtx): () => Promise<void> {
   };
 }
 
-/** Build the Leave Group handler. */
 export function makeLeaveGroup(c: GroupHandlersCtx): (onClose: () => void) => void {
   return (onClose: () => void): void => {
     onClose();
@@ -127,7 +118,6 @@ export function makeLeaveGroup(c: GroupHandlersCtx): (onClose: () => void) => vo
   };
 }
 
-/** Perform the leave after the confirm prompt. */
 async function runLeaveGroup(c: GroupHandlersCtx): Promise<void> {
   c.setLeaving(true);
   try {
@@ -139,7 +129,6 @@ async function runLeaveGroup(c: GroupHandlersCtx): Promise<void> {
   } finally { c.setLeaving(false); }
 }
 
-/** Build the Save Name handler. */
 export function makeSaveName(c: GroupHandlersCtx): () => Promise<void> {
   return async (): Promise<void> => {
     const next = c.draft.trim();

@@ -1,4 +1,3 @@
-/** @file Smart-account detail sections (deploy/modules/identity/network/manage) for the Wallet settings screen. */
 
 import { Text } from '@stage-labs/kit/text';
 import { Icon } from '@stage-labs/kit/icon';
@@ -9,7 +8,6 @@ import { type DeployState, type ModuleRole, type useWalletModel } from './Wallet
 import { type useEnablePasskey } from '../../lib/useEnablePasskey';
 import { type useRemovePasskey } from '../../lib/useRemovePasskey';
 
-/** Palette colours used by the wallet settings rows. */
 export interface C { fg: string; head: string; sub: string; border: string; rowBg: string }
 
 type WalletModel = NonNullable<ReturnType<typeof useWalletModel>['model']>;
@@ -20,7 +18,6 @@ const ROLE_COLOR: Record<ModuleRole, 'success' | 'link' | 'secondary'> = {
   sudo: 'success', backup: 'secondary', recovery: 'link', session: 'secondary',
 };
 
-/** A labelled, tap-to-copy full address row. */
 export function CopyRow({ label, value, dark, c, onCopy }: {
   label: string; value: string; dark: boolean; c: C; onCopy: (label: string, value: string) => void;
 }): React.ReactElement {
@@ -37,7 +34,6 @@ export function CopyRow({ label, value, dark, c, onCopy }: {
   );
 }
 
-/** A plain label / value info row (no copy). */
 export function InfoRow({ label, value, dark, c }: {
   label: string; value: string; dark: boolean; c: C;
 }): React.ReactElement {
@@ -49,7 +45,6 @@ export function InfoRow({ label, value, dark, c }: {
   );
 }
 
-/** One Kernel module / validator row: name + role badge + status detail. */
 function ModuleRow({ name, role, status, dark, c }: {
   name: string; role: ModuleRole; status: string; dark: boolean; c: C;
 }): React.ReactElement {
@@ -66,7 +61,6 @@ function ModuleRow({ name, role, status, dark, c }: {
   );
 }
 
-/** Section header label. */
 export function SectionLabel({ children, c }: { children: string; c: C }): React.ReactElement {
   return (
     <Text size="xs" color={c.sub} style={{ paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8 }}>
@@ -75,7 +69,6 @@ export function SectionLabel({ children, c }: { children: string; c: C }): React
   );
 }
 
-/** Human-readable deploy status. */
 function deployLabel(d: DeployState): string {
   if (d === 'loading') return 'Checking…';
   if (d === 'deployed') return 'Deployed on-chain';
@@ -83,10 +76,8 @@ function deployLabel(d: DeployState): string {
   return 'Unknown';
 }
 
-/** Card wrapper builder bound to the current palette + radius. */
 export type CardFn = (children: React.ReactNode) => React.ReactElement;
 
-/** Build a rounded card wrapper for the wallet settings list sections. */
 export function makeCard(dark: boolean, rowBg: string, blockRadius: number): CardFn {
   return (children) => (
     <Box margin={{ x: 16 }} radius={blockRadius} style={{ overflow: 'hidden' }}>
@@ -97,7 +88,6 @@ export function makeCard(dark: boolean, rowBg: string, blockRadius: number): Car
   );
 }
 
-/** A manage-section action row (passkey enable/remove, recovery). */
 function ManageRow({ dark, c, icon, label, onPress }: {
   dark: boolean; c: C; icon: React.ComponentProps<typeof Icon>['name']; label: string; onPress: () => void;
 }): React.ReactElement {
@@ -110,7 +100,6 @@ function ManageRow({ dark, c, icon, label, onPress }: {
   );
 }
 
-/** Renders the Manage section (enable/remove passkey + recovery navigation). */
 function ManageSection({ dark, c, card, passkey, removePasskey, guardianCount, onRecovery }: {
   dark: boolean; c: C; card: CardFn; passkey: Passkey; removePasskey: RemovePasskey;
   guardianCount: number | undefined; onRecovery: () => void;
@@ -139,7 +128,6 @@ function ManageSection({ dark, c, card, passkey, removePasskey, guardianCount, o
   );
 }
 
-/** Renders the smart-account-only sections (deploy, modules, identity, network, manage). */
 export function SmartAccountSections({ model, deploy, dark, c, card, passkey, removePasskey, onCopy, onRecovery }: {
   model: WalletModel; deploy: DeployState; dark: boolean; c: C; card: CardFn;
   passkey: Passkey; removePasskey: RemovePasskey;

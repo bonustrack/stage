@@ -1,4 +1,3 @@
-/** @file Presentational LeftDrawer pieces (avatar header, tap-to-switch accounts list, Profile/Settings nav row) split out to keep LeftDrawer.tsx under the line cap. */
 
 import { Box, Col } from './layout';
 
@@ -12,7 +11,6 @@ import { type AccountRecord } from '../lib/accounts';
 
 export interface DrawerColors { head: string; sub: string; border: string }
 
-/** Avatar header - active account's stamp avatar + name + short address. */
 export function DrawerHeader({ rec, c }: {
   rec: AccountRecord | null; c: DrawerColors;
 }): React.ReactElement {
@@ -33,7 +31,6 @@ export function DrawerHeader({ rec, c }: {
   );
 }
 
-/** Tap-to-switch accounts list - returns a flat array of ListViewItems (one per account) so the caller spreads them as DIRECT ListView children, letting the Kit ListView draw its inset divider between every row. */
 export function drawerAccountRows({ accounts, activeId, onSwitch, c, dark }: {
   accounts: AccountRecord[]; activeId: string | null;
   onSwitch: (id: string) => void; c: DrawerColors; dark: boolean;
@@ -54,7 +51,6 @@ export function drawerAccountRows({ accounts, activeId, onSwitch, c, dark }: {
   ));
 }
 
-/** A single Kit ListView row for the Menu page (account actions + nav), styled to match the canonical Settings list: head-colored leading icon, Calibre- Medium 18px label, trailing chevron. */
 export function DrawerRow({ rowKey, icon, label, onPress, head, sub, dark }: {
   rowKey?: string; icon: HeroIconName; label: string; onPress: () => void;
   head: string; sub: string; border: string; dark: boolean;

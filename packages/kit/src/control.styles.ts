@@ -1,13 +1,8 @@
-/**
- * @file Shared ControlSize sizing and soft/outline colour tables for the Kit form controls (Input, Textarea, Select, DatePicker), kept in one place so each control module stays small.
- */
 
 import type { ViewStyle, TextStyle } from 'react-native';
 import { FONT_SIZE, schemePalette } from './tokens';
 
-/** ChatKit ControlSize. */
 export type ControlSize = '3xs' | '2xs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
-/** ChatKit control variant. */
 export type ControlVariant = 'soft' | 'outline';
 
 export interface ControlSizeSpec {
@@ -17,7 +12,6 @@ export interface ControlSizeSpec {
   fontSize: number;
 }
 
-/** ControlSize -> box metrics. `md` reproduces today's input sizing. */
 export const CONTROL_SIZES: Record<ControlSize, ControlSizeSpec> = {
   '3xs': { minHeight: 24, paddingHorizontal: 8, paddingVertical: 3, fontSize: FONT_SIZE['2xs'] },
   '2xs': { minHeight: 28, paddingHorizontal: 9, paddingVertical: 4, fontSize: FONT_SIZE.xs },
@@ -38,12 +32,10 @@ export interface ControlColors {
   focusBorder: string;
 }
 
-/** Resolve control colours for a variant under the given scheme. */
 export function controlColors(variant: ControlVariant, dark: boolean): ControlColors {
   const p = schemePalette(dark);
   const head = p.head;
   const sub = p.sub;
-  /** Input fill + focus accent have no semantic token equivalent (kept literal). */
   const inputBg = dark ? '#1b1c1e' : '#f4f4f5';
   const border = p.border;
   const accent = dark ? '#4f9cf9' : '#2f6fed';
@@ -56,7 +48,6 @@ export function controlColors(variant: ControlVariant, dark: boolean): ControlCo
   };
 }
 
-/** Box style shared by Input/Textarea built from a size + variant + radius. */
 export function controlBoxStyle(
   size: ControlSize,
   variant: ControlVariant,
@@ -76,7 +67,6 @@ export function controlBoxStyle(
   };
 }
 
-/** Text style for the control's editable text. */
 export function controlTextStyle(size: ControlSize, colors: ControlColors): TextStyle {
   return {
     color: colors.text,

@@ -1,4 +1,3 @@
-/** @file Composable loading and live-streaming a conversation's messages into a reactive HistoryEntry feed; envelope and reaction aggregation live in `xmtpEnvelope.ts` (re-exported here) to stay under the lint cap. */
 
 import { ref, watch, onUnmounted, type Ref } from 'vue';
 import type { DecodedMessage } from '@xmtp/browser-sdk';
@@ -19,10 +18,8 @@ export interface XmtpFeedHandle {
   inboxId: Ref<string>;
 }
 
-/** Per-conversation message cache so re-opening a channel renders its messages instantly (no loading spinner); the live history still refreshes in the background. Keyed by line, survives navigation within the SPA session. */
 const feedCache = new Map<string, HistoryEntry[]>();
 
-/** Vue composable: load a conversation's history then subscribe to its live stream. Events are returned newest-first so an inverted list can consume them unchanged. Pass `enabled=false` while the client is still booting to keep the feed idle. */
 export function useXmtpFeed(line: Ref<string | null>, enabled: Ref<boolean>): XmtpFeedHandle {
   const events = ref<HistoryEntry[]>([]);
   const status = ref<XmtpFeedStatus>('idle');
@@ -35,14 +32,12 @@ export function useXmtpFeed(line: Ref<string | null>, enabled: Ref<boolean>): Xm
   let onVisibility: (() => void) | null = null;
   let activeLine: string | null = null;
 
-  /** Teardown helper. */
   const teardown = (): void => {
     if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
     if (streamCloser?.return) { void streamCloser.return().catch(() => undefined); streamCloser = null; }
     if (onVisibility) { document.removeEventListener('visibilitychange', onVisibility); onVisibility = null; }
   };
 
-  /** Refresh helper. */
   const refresh = async (): Promise<void> => {
     const current = activeLine;
     if (!current) return;
@@ -52,7 +47,6 @@ export function useXmtpFeed(line: Ref<string | null>, enabled: Ref<boolean>): Xm
       await conv.sync().catch(() => undefined);
       const msgs = await conv.messages({ limit: 100n });
       if (cancelled || activeLine !== current) return;
-      /** `messages()` is oldest-first; flip for inverted feed. */
       const fresh = msgs.map(m => envelopeOfXmtpMessage(m, current)).reverse();
       if (events.value.length === 0) {
         events.value = fresh;
@@ -62,10 +56,9 @@ export function useXmtpFeed(line: Ref<string | null>, enabled: Ref<boolean>): Xm
         if (additions.length) events.value = [...additions, ...events.value];
       }
       feedCache.set(current, events.value);
-    } catch { /* next tick or visibility flip retries */ }
+    } catch { }
   };
 
-  /** Append a streamed message to the feed (deduped) and update the cache. */
   const ingestStreamed = (msg: DecodedMessage | undefined): void => {
     if (cancelled || !msg || activeLine === null) return;
     const env = envelopeOfXmtpMessage(msg, activeLine);
@@ -75,38 +68,33 @@ export function useXmtpFeed(line: Ref<string | null>, enabled: Ref<boolean>): Xm
     }
   };
 
-  /** Open the live conversation stream as a backstop-supplemented real-time source. */
   const attachStream = async (current: string): Promise<void> => {
     try {
       const conv = await convOfLine(current);
       if (conv && !cancelled) {
         streamCloser = await conv.stream({ onValue: ingestStreamed });
       }
-    } catch { /* stream init failed — poll backstop keeps the feed fresh */ }
+    } catch { }
   };
 
-  /** Wire the visibility-refresh listener and the 5s poll backstop. */
   const attachBackstops = (): void => {
     onVisibility = (): void => { if (document.visibilityState === 'visible') void refresh(); };
     document.addEventListener('visibilitychange', onVisibility);
     pollTimer = setInterval(() => { void refresh(); }, 5_000);
   };
 
-  /** Seed the feed from cache and set the initial loading/open status. */
   const seedFromCache = (): void => {
     const seeded = line.value ? feedCache.get(line.value) : undefined;
     events.value = seeded ? [...seeded] : [];
     status.value = seeded?.length ? 'open' : 'loading';
   };
 
-  /** Start helper. */
   const start = async (): Promise<void> => {
     if (!enabled.value || !line.value) { status.value = 'idle'; return; }
     const current = line.value;
     activeLine = current;
     cancelled = false;
     error.value = null;
-    /** Seed instantly from cache so re-opening a channel skips the spinner. */
     seedFromCache();
     try {
       const client = await getOrCreateXmtpClient('production');
@@ -123,7 +111,6 @@ export function useXmtpFeed(line: Ref<string | null>, enabled: Ref<boolean>): Xm
     }
   };
 
-  /** Restart helper. */
   const restart = (): void => { cancelled = true; teardown(); void start(); };
 
   void start();

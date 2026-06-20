@@ -1,8 +1,6 @@
-/** @file Archived-conversations screen listing convs hidden from the inbox, using the device-local archive set plus the channels-list cache and shared ChannelRow. */
 
 import { useCallback, useEffect, useState } from 'react';
 
-/** FlatList from gesture-handler (not RN): the plain RN list can be blocked from scrolling by the screen-root swipe-back pan handler. */
 import { FlatList } from 'react-native-gesture-handler';
 import { Pressable } from '@stage-labs/kit/pressable';
 import { Text } from '@stage-labs/kit/text';
@@ -19,7 +17,6 @@ import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { ChannelRow } from '../../components/ChannelRow';
 import { Col, Row } from '../../components/layout';
 
-/** Screen listing the user's archived conversations. */
 export default function Archived(): React.ReactElement {
   const router = useRouter();
   const { text: fg, link: head, border } = usePalette();

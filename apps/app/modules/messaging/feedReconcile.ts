@@ -1,4 +1,3 @@
-/** @file Event-driven (zero-timer) reconciler that converges the open feed with the local XMTP store, busting and reloading a stale slice when (at open time or on a gapped arrival) the feed latest disagrees with the store latest — the "in the row preview but missing in the open channel" bug. */
 
 import type { HistoryEntry } from '../../lib/types';
 import { isMetroControlBody } from '../../lib/push';
@@ -7,31 +6,26 @@ import { envelopeOfXmtpMessage } from '../../lib/xmtp.messages';
 import { feedCache, activeFeedLines } from '../../lib/xmtp.state';
 import { PAGE_SIZE } from '../../lib/xmtp.resync';
 
-/** Newest non-control entry currently in the feed slice (newest-first order). */
 function feedLatest(line: string): HistoryEntry | undefined {
   const slice = feedCache.get(line);
   if (!slice) return undefined;
   return slice.find(e => !isMetroControlBody(e.text));
 }
 
-/** `sentNs` for a HistoryEntry. The envelope carries `ts` (ISO ms); reconstruct ns so feed-latest and store-latest compare on the same axis the stream uses. */
 function entryNs(e: HistoryEntry): number {
   const ms = new Date(e.ts).getTime();
   return Number.isFinite(ms) ? ms * 1_000_000 : 0;
 }
 
-/** Merge a freshly-read first page into `line`'s slice (newest-first, deduped, control-DMs dropped): a MERGE not a replace, so already-scrolled older pages survive and only the missing newer tail is folded in ahead — the heal write for both reconcilers. */
 function reloadSlice(line: string, msgs: HistoryEntry[]): void {
   const page = msgs.filter(e => !isMetroControlBody(e.text));
   const prev = feedCache.get(line) ?? [];
   const seen = new Set(prev.map(e => e.id));
   const fresh = page.filter(e => !seen.has(e.id));
   if (fresh.length === 0) return;
-  /** Page is newest-first; existing slice is newest-first. New tail entries are all newer than the current head (a gap heal), so prepend them. */
   feedCache.set(line, [...fresh, ...prev]);
 }
 
-/** Log a feed-reconcile heal event with the before/after latest ids+timestamps. */
 function logReconcileHeal(
   label: string, line: string, healedBy: string,
   before: HistoryEntry | undefined, after: { id: string | null; ts: string | null },
@@ -49,7 +43,6 @@ function logReconcileHeal(
   );
 }
 
-/** OPEN-TIME EXACTNESS: after the background open-sync settles, compare the feed's latest against the conv's true latest (the same source the preview reads) and, if the preview is ahead, bust and reload the slice from the local store; best-effort and idempotent. */
 export async function reconcileOnOpen(line: string): Promise<void> {
   try {
     const conv = await convOfLine(line);
@@ -57,29 +50,24 @@ export async function reconcileOnOpen(line: string): Promise<void> {
     const [storeLatestMsg] = await conv.messages({ limit: 1 });
     if (!storeLatestMsg) return;
     const storeLatest = envelopeOfXmtpMessage(storeLatestMsg, line);
-    if (isMetroControlBody(storeLatest.text)) return; /** control DM, not a visible tail */
+    if (isMetroControlBody(storeLatest.text)) return;
     const feed = feedLatest(line);
-    if (feed?.id === storeLatest.id) return; /** converged - nothing to heal */
-    /** Divergence: the store has a newer (or different) tail than the open feed. Reload the full first page from the now-synced local store. */
+    if (feed?.id === storeLatest.id) return;
     const page = await conv.messages({ limit: PAGE_SIZE });
     reloadSlice(line, page.map(m => envelopeOfXmtpMessage(m, line)));
     logReconcileHeal('[feed-reconcile] open-time heal', line, 'reconcileOnOpen', feed, storeLatest);
-  } catch { /* best-effort - next open / arrival retries */ }
+  } catch { }
 }
 
-/** ARRIVAL CONTINUITY: called from the global stream right after a push; the arriving message SHOULD be the feed's latest, and when it isn't (push keyed elsewhere or the tail is behind) that desync triggers a targeted `conv.sync()` + slice reload so the feed catches what the preview shows. No-op when contiguous. */
 export async function reconcileOnArrival(
   line: string, prevLatestNs: number, arrivingNs: number, arrivingId: string,
 ): Promise<void> {
   if (!activeFeedLines.has(line)) return;
-  /** Healthy path: the push made the arriving message the feed's latest AND it is at-or-after the prior tail (forward, contiguous). Nothing to heal. */
   const latestNow = feedLatest(line);
   if (latestNow?.id === arrivingId && arrivingNs >= prevLatestNs) return;
-  /** Desync: the arriving message did NOT become the visible tail (push landed on a different key, or an older slice is masking it). Reload from store. */
   await healArrivalGap(line);
 }
 
-/** Sync the conv, reload its slice from the local store, and log the heal if the visible tail changed. */
 async function healArrivalGap(line: string): Promise<void> {
   try {
     const conv = await convOfLine(line);
@@ -96,10 +84,9 @@ async function healArrivalGap(line: string): Promise<void> {
         before, { id: after?.id ?? null, ts: after?.ts ?? null },
       );
     }
-  } catch { /* best-effort - next arrival / open retries */ }
+  } catch { }
 }
 
-/** Synchronous feed-latest ns for `line` - used by the stream to capture the pre-push tail so `reconcileOnArrival` can detect a gap. */
 export function feedLatestNs(line: string): number {
   const e = feedLatest(line);
   return e ? entryNs(e) : 0;

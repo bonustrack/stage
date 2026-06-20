@@ -1,4 +1,3 @@
-/** @file Composable backing the XMTP conversation view (feed wiring, header metadata, optimistic bubbles, permalink scroll, bubble actions), extracted from XmtpConversation.vue so the SFC stays under the lint cap. */
 
 import {
   ref, computed, watch, watchEffect, nextTick, onMounted,
@@ -41,10 +40,8 @@ export interface XmtpConversation {
   onActionCopyLink: () => void;
 }
 
-/** Header metadata (peer address or group name) resolved for a conversation. */
 interface ConvMeta { peerAddress: string | null; groupName: string; inboxToAddr: Record<string, string> }
 
-/** Load a conversation's header metadata: DM peer address or group name, plus the inbox→address map. */
 async function loadConvMeta(line: string): Promise<ConvMeta> {
   const empty: ConvMeta = { peerAddress: null, groupName: '', inboxToAddr: {} };
   const conv = await convOfLine(line).catch(() => null);
@@ -60,25 +57,21 @@ async function loadConvMeta(line: string): Promise<ConvMeta> {
   return { peerAddress, groupName, inboxToAddr: await memberInboxToAddressMap(conv) };
 }
 
-/** True when a live confirmed bubble is the network twin of an optimistic one (same author/text within 30s). */
 function isOptimisticTwin(live: HistoryEntry, optimisticEntry: HistoryEntry, myUri: string): boolean {
   return live.from === myUri && live.text === optimisticEntry.text
     && Math.abs(new Date(live.ts).getTime() - new Date(optimisticEntry.ts).getTime()) < 30_000;
 }
 
-/** Drop optimistic entries that already have a confirmed live twin. */
 function pendingOptimistic(
   optimisticEntries: HistoryEntry[], live: HistoryEntry[], myUri: string,
 ): HistoryEntry[] {
   return optimisticEntries.filter(o => !live.some(e => isOptimisticTwin(e, o, myUri)));
 }
 
-/** Scroll the given scroller element to its bottom. */
 function scrollToBottom(scroller: Ref<HTMLElement | null>): void {
   if (scroller.value) scroller.value.scrollTop = scroller.value.scrollHeight;
 }
 
-/** Hook providing XMTP conversation-view state: feed, header metadata, optimistic bubbles, and bubble actions. */
 export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConversation {
   const route = useRoute();
   const router = useRouter();
@@ -93,20 +86,16 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
   const actionTarget = ref<HistoryEntry | null>(null);
   const optimistic = ref<HistoryEntry[]>([]);
 
-  /** Header metadata — DM peer address or group name. */
   const peerAddress = ref<string | null>(null);
   const groupName = ref<string>('');
   const isGroup = computed(() => peerAddress.value === null && groupName.value !== '');
-  /** inboxId → eth address for every member (threaded into each bubble). */
   const inboxToAddr = ref<Record<string, string>>({});
-  /** Member eth addresses excluding self — drives the header avatar stack. */
   const memberAddresses = computed(() =>
     Object.entries(inboxToAddr.value)
       .filter(([id]) => id !== feed.inboxId.value)
       .map(([, addr]) => addr),
   );
 
-  /** Refresh header metadata into the local refs for the active conversation. */
   async function refreshConvMeta(): Promise<void> {
     if (!convId.value || !line.value) return;
     peerAddress.value = null;
@@ -119,7 +108,6 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
   }
   watchEffect(() => { void refreshConvMeta(); });
 
-  /** Mark conv as read when bubbles arrive; ping the embed host (if iframed) with the inbound count so its launcher can badge unread. */
   watch(() => feed.events.value.length, (len, prev) => {
     if (convId.value && len > 0) markConvRead(convId.value);
     const added = len - (prev ?? 0);
@@ -129,7 +117,6 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
     }
   });
 
-  /** Open Header. */
   function openHeader(): void {
     if (peerAddress.value) void router.push(`/user/${peerAddress.value}`);
     else if (convId.value) void router.push(`/group/${convId.value}`);
@@ -138,7 +125,6 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
   const reactions = computed(() => reactionsByMessage(feed.events.value));
   const liveBubbles = computed(() => feed.events.value.filter(e => !isReactionEntry(e)));
 
-  /** Drop optimistic twins of confirmed bubbles; flip to oldest-first. */
   const allBubbles = computed(() => {
     const live = pendingOptimistic(optimistic.value, liveBubbles.value, myUri.value);
     return [...liveBubbles.value, ...live].reverse();
@@ -150,7 +136,6 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
     if (stillPending.length !== optimistic.value.length) optimistic.value = stillPending;
   });
 
-  /** Permalink target message (`?m=<msgId>`): when set, scroll to and flash-highlight that bubble once it appears instead of pinning to the bottom, cleared after the first scroll so later messages resume sticky-bottom. */
   const targetMsgId = computed(() => {
     const m = route.query.m;
     return (Array.isArray(m) ? m[0] : m) ?? null;
@@ -158,7 +143,6 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
   const highlightId = ref<string | null>(null);
   const scrolledToTarget = ref(false);
 
-  /** Scroll To Target Message. */
   function scrollToTargetMessage(): boolean {
     const id = targetMsgId.value;
     if (!id || scrolledToTarget.value) return false;
@@ -167,20 +151,16 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
     el.scrollIntoView({ block: 'center' });
     highlightId.value = id;
     scrolledToTarget.value = true;
-    /** Drop the highlight after the flash animation so re-renders don't replay it. */
     window.setTimeout(() => { if (highlightId.value === id) highlightId.value = null; }, 2200);
     return true;
   }
 
-  /** Reset the one-shot scroll guard when navigating to a different permalink. */
   watch([convId, targetMsgId], () => { scrolledToTarget.value = false; });
 
   watch(allBubbles, () => {
     void nextTick(() => {
-      /** If a permalink targets a message not yet reached, try to scroll there; only fall back to the bottom when there's no target. */
       if (targetMsgId.value && !scrolledToTarget.value) {
         if (scrollToTargetMessage()) return;
-        /** Target not in the feed yet — stay put while more history streams in. */
         return;
       }
       scrollToBottom(scroller);

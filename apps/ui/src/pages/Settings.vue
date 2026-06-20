@@ -1,5 +1,4 @@
 <script setup lang="ts">
-/** Settings tab — wallet-address copy pill + theme switcher. */
 
 import pkg from '../../package.json';
 import { getOrCreateXmtpClient, shortAddress } from '../lib/xmtp';
@@ -21,7 +20,7 @@ onMounted(async () => {
   try {
     const client = await getOrCreateXmtpClient('production');
     myAddress.value = client.accountIdentifier?.identifier ?? '';
-  } catch { /* swallow — Settings shouldn't block on XMTP boot */ }
+  } catch { }
 });
 
 async function copyAddress(): Promise<void> {
@@ -30,7 +29,7 @@ async function copyAddress(): Promise<void> {
     await navigator.clipboard.writeText(myAddress.value);
     copied.value = true;
     setTimeout(() => { copied.value = false; }, 1500);
-  } catch { /* no clipboard permission — show nothing */ }
+  } catch { }
 }
 </script>
 

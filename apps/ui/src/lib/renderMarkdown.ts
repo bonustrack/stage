@@ -1,6 +1,3 @@
-/**
- * @file Renders message text to sanitised HTML via markdown-it (linkify, breaks, hardened external links), matching the mobile app's markdown behaviour.
- */
 
 import MarkdownIt from 'markdown-it';
 
@@ -18,7 +15,6 @@ md.renderer.rules.link_open = (tokens, idx, options, env, self) => {
   return defaultLinkOpen(tokens, idx, options, env, self);
 };
 
-/** Render Markdown text to sanitised HTML with external links hardened. */
 export function renderMarkdown(text: string): string {
   return md.render(text);
 }

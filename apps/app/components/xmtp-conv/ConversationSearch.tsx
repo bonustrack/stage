@@ -1,4 +1,3 @@
-/** @file In-conversation message search feed that scans local XMTP history in chunks for body matches and renders them with the same bubble renderer as the live feed, with the keyword highlighted. */
 
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator } from 'react-native';
@@ -14,30 +13,24 @@ type ConvState = ReturnType<typeof useConversationState>;
 
 export interface ConversationSearchProps {
   line: string;
-  /** Live query string — owned by the conversation screen's topnav search bar. */
   query: string;
   sub: string; bg: string;
-  /** Full conversation state — reused so matches render with the identical bubble renderer (and all its handlers) as the live feed. */
   c: ConvState;
   dark: boolean;
   router: { push: (h: { pathname: '/user/[address]'; params: { address: string } }) => void };
 }
 
-/** In-conversation search bar that filters and highlights matching messages. */
 export function ConversationSearch({
   line, query, sub, bg, c, dark, router,
 }: ConversationSearchProps): React.ReactElement {
   const [result, setResult] = useState<SearchScanResult>({ hits: [], truncated: false });
   const [scanning, setScanning] = useState(false);
-  /** Bumped on every new scan / unmount so an in-flight scan aborts itself. */
   const scanEpoch = useRef(0);
 
   const q = query.trim();
 
-  /** Same bubble renderer as the live feed, with the keyword highlighted. */
   const { renderItem, extraData } = useFeedRenderItem(c, dark, router, q);
 
-  /** Debounced scan: each query change starts a fresh local scan and cancels the previous one via the epoch guard. Empty/short query clears results. */
   useEffect(() => {
     const epoch = ++scanEpoch.current;
     if (q.length < 2) { setResult({ hits: [], truncated: false }); setScanning(false); return; }
@@ -61,7 +54,6 @@ export function ConversationSearch({
       style={{ flex: 1, backgroundColor: bg }}
       data={result.hits}
       extraData={extraData}
-      /** Hits come back newest-first; invert so they read like the live feed (newest at the bottom, oldest scrolling up). */
       inverted
       keyExtractor={h => h.id}
       keyboardShouldPersistTaps="handled"
@@ -74,7 +66,6 @@ export function ConversationSearch({
           ? <Box padding={{ y: 28 }} align="center"><Text size="sm" color={sub}>No matches</Text></Box>
           : null
       }
-      /** Inverted → footer renders at the visual TOP. Holds the scanning spinner and the "first matches only" cap hint. */
       ListFooterComponent={
         <>
           {scanning ? (

@@ -1,4 +1,3 @@
-/** @file HomeScreen — Channels tab listing the XMTP conversations the local wallet belongs to; tapping a row pushes into /xmtp/[convId], avatars cached per conv in state. */
 
 import { useMemo, useState } from 'react';
 import type { SimultaneousRefs } from '../SwipeTabs.types';
@@ -18,7 +17,6 @@ import { filterRowsByQuery } from './HomeScreen.search';
 import { useHomeState, type HomeState } from './HomeScreen.state';
 import { deriveSortedRows } from './HomeScreen.derive';
 
-/** Compute the ChannelMenu props for the (possibly null) long-pressed row. */
 function rowMenuProps(rowMenu: HomeState['rowMenu'], pinned: Set<string>, archived: Set<string>) {
   if (!rowMenu) {
     return { visible: false, convId: '', title: undefined, isGroup: false, peerAddress: null, isUnread: false, isPinned: false, isArchived: false };
@@ -35,13 +33,11 @@ function rowMenuProps(rowMenu: HomeState['rowMenu'], pinned: Set<string>, archiv
   };
 }
 
-/** Renders the row long-press action sheet for the channels list. */
 function HomeRowMenu({ st }: { st: HomeState }): React.ReactElement {
   const { rowMenu, pinned, archived, setRowMenu } = st;
   return <ChannelMenu {...rowMenuProps(rowMenu, pinned, archived)} onClose={() => { setRowMenu(null); }} />;
 }
 
-/** Home tab screen showing the conversation list and primary navigation. */
 export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -49,20 +45,15 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
   const sub = fg;
   const st = useHomeState();
   const { rows, pinned, archived } = st;
-  /** Filter chip state: enabled label OR-filter + the built-in "Unread" toggle + the "All" clear. */
   const { enabledLabels, toggleLabel, unreadOnly, toggleUnread, clearAllFilters } = useHomeFilters();
   const [query, setQuery] = useState<string>('');
-  /** Apply cross-screen label-filter requests (tapped label chip on a row). */
   useIncomingLabelFilter(toggleLabel);
 
-  /** Display ordering (pinned rows float to top, then lastTs desc), derived for display only so source `rows` state stays untouched for stream updates. */
   const sortedRows = useMemo(
     () => deriveSortedRows({ rows, archived, enabledLabels, unreadOnly, pinned }),
     [rows, pinned, enabledLabels, unreadOnly, archived],
   );
-  /** Unique label set across NON-ARCHIVED channels → drives the filter bar. */
   const barLabels = useMemo(() => deriveLabels((rows ?? []).filter(r => !archived.has(r.convId))), [rows, archived]);
-  /** Search applied on top of the sorted list so it never surfaces hidden channels. */
   const visibleRows = useMemo(() => filterRowsByQuery(sortedRows, query), [sortedRows, query]);
 
   const channelProfilesVersion = usePeerProfiles(
@@ -77,7 +68,6 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
     refreshFromNetworkRef: st.refreshFromNetworkRef,
   });
 
-  /** Stable extraData (identity only changes when a version does) so the list doesn't re-render its window each tick. */
   const listExtraData = useMemo(
     () => [channelProfilesVersion, draftsVersion, pinned, query] as const,
     [channelProfilesVersion, draftsVersion, pinned, query],

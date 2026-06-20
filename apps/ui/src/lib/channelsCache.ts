@@ -1,6 +1,3 @@
-/**
- * @file localStorage-backed cache of channel-list rows (hydrate/persist/markRead) so the Channels page renders before XMTP boots.
- */
 
 import { ref, type Ref } from 'vue';
 import { markConvReadSynced, markConvUnreadSynced } from './xmtp';
@@ -9,18 +6,15 @@ export interface CachedRow {
   convId: string;
   unreadCount: number;
   lastReadNs: number;
-  /** Synced (cross-device) "explicitly marked unread" flag, driven by XMTP conversation consent state. Forces a badge even when the count is 0. */
   markedUnread?: boolean;
   [key: string]: unknown;
 }
 
 const STORAGE_KEY = 'metro.channels.cache.v1';
 
-/** Reactive ref shared across screens. Hydrated lazily on first access. */
 export const cachedRows: Ref<CachedRow[] | null> = ref<CachedRow[] | null>(null);
 let hydrated = false;
 
-/** Lazily load the persisted channel rows from localStorage into the shared ref. */
 export function hydrateCachedRows(): CachedRow[] | null {
   if (hydrated) return cachedRows.value;
   hydrated = true;
@@ -29,20 +23,18 @@ export function hydrateCachedRows(): CachedRow[] | null {
     if (!raw) return cachedRows.value;
     const parsed = JSON.parse(raw) as CachedRow[];
     if (Array.isArray(parsed)) cachedRows.value = parsed;
-  } catch { /* corrupted cache — next setCachedRows overwrites it */ }
+  } catch { }
   return cachedRows.value;
 }
 
-/** Update the shared channel rows and persist them to localStorage. */
 export function setCachedRows(next: CachedRow[] | null): void {
   cachedRows.value = next;
   try {
     if (next === null) localStorage.removeItem(STORAGE_KEY);
     else localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  } catch { /* quota — best effort */ }
+  } catch { }
 }
 
-/** Mark a conv as read NOW — clears the badge, persists lastReadNs, and flips the synced consent flag to Allowed so other installations agree. */
 export function markConvRead(convId: string): void {
   const nowNs = Date.now() * 1_000_000;
   void markConvReadSynced(convId);
@@ -55,7 +47,6 @@ export function markConvRead(convId: string): void {
   setCachedRows(next);
 }
 
-/** Mark a conv as UNREAD — cross-device. Flips the synced consent flag to Unknown, rewinds the local lastReadNs, and patches the cached row so the badge appears immediately on this device. */
 export function markConvUnread(convId: string): void {
   void markConvUnreadSynced(convId);
   if (!cachedRows.value) return;
@@ -67,7 +58,6 @@ export function markConvUnread(convId: string): void {
   setCachedRows(next);
 }
 
-/** Apply a consent change that arrived from another device (via the consent stream) to the cached rows so the badge reconciles live without a refetch. */
 export function applyConsentToRows(convId: string, markedUnread: boolean): void {
   if (!cachedRows.value) return;
   const idx = cachedRows.value.findIndex(r => r.convId === convId);

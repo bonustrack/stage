@@ -1,4 +1,3 @@
-/** @file SimulationBlock — pre-sign eth_simulateV1 dry-run view for a tx-request card, showing a SUCCESS/FAIL badge and predicted asset movement (loud on a predicted revert) without ever hard-blocking signing. */
 
 import { Text } from '@stage-labs/kit/text';
 import { Icon } from '@stage-labs/kit/icon';
@@ -8,7 +7,6 @@ import type { SimulateResult, AssetMove } from '../lib/txSimulate';
 import { NATIVE_TOKEN_SENTINEL } from '@stage-labs/client/wallet/assets';
 import { useUsdValue } from '../lib/txPrices';
 
-/** Renders the resolved (success/fail) simulation outcome: badge + predicted asset movements. */
 function SimOutcome({ sim, sub, chainId }: {
   sim: SimulateResult; sub: string; chainId: number;
 }): React.ReactElement {
@@ -16,7 +14,6 @@ function SimOutcome({ sim, sub, chainId }: {
   const fail = !sim.success;
   const { in: incoming, out } = sim.assetChanges;
   const noChange = incoming.length === 0 && out.length === 0;
-  /** FAIL gets the red danger frame (loud); SUCCESS a calm success-tinted box. */
   const accent = fail ? pal.danger : pal.success;
   const badge = fail ? `Will fail: ${sim.revertReason ?? 'transaction would revert'}` : 'Will succeed';
   return (
@@ -33,21 +30,18 @@ function SimOutcome({ sim, sub, chainId }: {
   );
 }
 
-/** Renders the pre-sign transaction simulation result (success/fail badge and predicted asset movements). */
 export function SimulationBlock({ sim, pending, sub, chainId }: {
   sim: SimulateResult | null; pending: boolean; sub: string; chainId: number;
 }): React.ReactElement | null {
   const pal = usePalette();
   if (pending) return <SimNote text="Simulating…" sub={sub} bg={pal.border} />;
   if (!sim) return null;
-  /** Could-not-simulate: calm, informative — the rest of the card still works. */
   if (sim.success === 'unknown') {
     return <SimNote text="Could not simulate this transaction" sub={sub} bg={pal.border} />;
   }
   return <SimOutcome sim={sim} sub={sub} chainId={chainId} />;
 }
 
-/** A neutral one-line note box (pending / could-not-simulate states). */
 function SimNote({ text, sub, bg }: { text: string; sub: string; bg: string }): React.ReactElement {
   return (
     <Col radius="md" background={bg} padding={10} gap={6} style={{ alignSelf: 'stretch' }}>
@@ -59,7 +53,6 @@ function SimNote({ text, sub, bg }: { text: string; sub: string; bg: string }): 
   );
 }
 
-/** One asset line: a labelled signed amount + symbol, with a `~$X` USD suffix when the token has a known price (amount only otherwise — never a fake $). */
 function AssetMoveRow({ move, sign, color, label, sub, chainId }: {
   move: AssetMove; sign: '+' | '-'; color: string; label: string; sub: string; chainId: number;
 }): React.ReactElement {

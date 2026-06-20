@@ -1,6 +1,4 @@
 <script setup lang="ts">
-/** Profile tab — wallet identity + read-only display name/avatar resolved from
- *  stamp.fyi / ENS. No in-app profile editing and no Snapshot hub. */
 
 import { getOrCreateXmtpClient, shortAddress } from '../lib/xmtp';
 import { loadCachedProfile, readProfile, type SnapshotProfile } from '../lib/profile';
@@ -25,8 +23,6 @@ onMounted(async () => {
     const client = await getOrCreateXmtpClient('production');
     address.value = client.accountIdentifier?.identifier ?? '';
     inboxId.value = client.inboxId ?? '';
-    // Seed from THIS address's cached profile (per-address key) so a prior
-    // peer lookup can't clobber/blank the user's own name.
     const cached = address.value ? loadCachedProfile(address.value) : null;
     if (cached) profile.value = cached;
     loaded.value = true;
@@ -34,7 +30,7 @@ onMounted(async () => {
       const remote = await readProfile(address.value);
       if (remote) profile.value = remote;
     }
-  } catch { /* leave fields blank */ }
+  } catch { }
 });
 
 async function copy(value: string, label: 'address' | 'inboxId'): Promise<void> {
@@ -43,7 +39,7 @@ async function copy(value: string, label: 'address' | 'inboxId'): Promise<void> 
     await navigator.clipboard.writeText(value);
     copyHint.value = label;
     setTimeout(() => { copyHint.value = null; }, 1500);
-  } catch { /* no clipboard permission */ }
+  } catch { }
 }
 </script>
 

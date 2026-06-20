@@ -1,4 +1,3 @@
-/** @file PendingShieldRows — greyed "pending shield arriving" placeholder rows atop the Tokens tab, surfacing an in-flight shield until the note lands; styled like TokenRow but muted/non-tappable. */
 import { Text } from '@stage-labs/kit/text';
 
 import { Col, Row, Box } from '../layout';
@@ -7,7 +6,6 @@ import type { PendingAction } from '../../lib/railgun/types';
 
 interface Pal { head: string; sub: string; border: string }
 
-/** Phase Label. */
 const phaseLabel = (p: PendingAction['phase']): string => {
   switch (p) {
     case 'proving': return 'submitting…';
@@ -17,7 +15,6 @@ const phaseLabel = (p: PendingAction['phase']): string => {
   }
 };
 
-/** A single muted pending-shield row. Internal — rendered by PendingShieldRows. */
 function PendingShieldRow({ p, pal }: { p: PendingAction; pal: Pal }): React.ReactElement {
   const { head, sub, border } = pal;
   return (
@@ -42,7 +39,6 @@ function PendingShieldRow({ p, pal }: { p: PendingAction; pal: Pal }): React.Rea
   );
 }
 
-/** Render the muted placeholder rows for every in-flight shield. Returns null when none. Sits at the TOP of the Tokens list so it's the first thing seen. */
 export function PendingShieldRows({ pending, pal }: {
   pending: PendingAction[]; pal: Pal;
 }): React.ReactElement | null {

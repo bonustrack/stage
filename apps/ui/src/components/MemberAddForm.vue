@@ -1,7 +1,4 @@
 <script setup lang="ts">
-/** Add-member input + submit button — extracted from GroupDetail.vue to
- *  keep that page under the per-file LOC cap. Validates a 0x address
- *  locally so the parent's add-member call doesn't have to. */
 
 import { Row } from './layout';
 

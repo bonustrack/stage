@@ -1,6 +1,3 @@
-/**
- * @file Select — a hook-free interactive ChatKit-styled dropdown (controlled `value` + `onChange`) implemented as a Pressable trigger opening an RN Modal options sheet, with no native picker dependency.
- */
 
 import { useState } from 'react';
 import {
@@ -20,52 +17,34 @@ import {
 import { BLOCK_RADIUS_DEFAULT, FONT_SIZE, schemePalette } from './tokens';
 import { Icon } from './icon';
 
-/** ChatKit Select option shape. */
 export interface SelectOption {
   label: string;
   value: string;
 }
 
 export interface SelectProps {
-  /** ChatKit: name. Form field name (required). */
   name?: string;
-  /** ChatKit: options. The selectable choices. */
   options?: SelectOption[];
-  /** ChatKit: defaultValue. Initial selection (uncontrolled). */
   defaultValue?: string;
-  /** Controlled selected value (kit extension; pair with onChange). */
   value?: string;
-  /** ChatKit: placeholder. Shown when no value is selected. */
   placeholder?: string;
-  /** ChatKit: variant. 'soft' (filled) | 'outline'. Default 'soft'. */
   variant?: ControlVariant;
-  /** ChatKit: size. ControlSize scale. Default 'md'. */
   size?: ControlSize;
-  /** ChatKit: pill. Fully-rounded corners. */
   pill?: boolean;
-  /** ChatKit: block. Stretch to the container width. */
   block?: boolean;
-  /** ChatKit: clearable. Show a clear ('x') affordance when a value is set. */
   clearable?: boolean;
-  /** ChatKit: disabled. */
   disabled?: boolean;
-  /** Corner radius (px). Falls back to the block radius token (or pill). */
   radius?: number;
-  /** RN substitute for ChatKit's onChangeAction. */
   onChange?: (value: string) => void;
-  /** Effective color scheme. Pass useEffectiveColorScheme() === 'dark'. */
   dark?: boolean;
-  /** Escape-hatch style merged last onto the trigger box. */
   style?: ViewStyle | ViewStyle[];
 }
 
-/** Normalise the escape-hatch style prop to a flat array. */
 function styleList(style: ViewStyle | ViewStyle[] | undefined): ViewStyle[] {
   if (!style) return [];
   return Array.isArray(style) ? style : [style];
 }
 
-/** Props for the select trigger box. */
 interface SelectTriggerProps {
   name?: string;
   disabled?: boolean;
@@ -82,7 +61,6 @@ interface SelectTriggerProps {
   onClear: () => void;
 }
 
-/** Pressable trigger box showing the selected option and affordances. */
 function SelectTrigger(props: SelectTriggerProps): React.ReactElement {
   const { name, disabled, block, clearable, open, current, placeholder, box, head, placeholderColor, style, onOpen, onClear } = props;
   return (
@@ -114,7 +92,6 @@ function SelectTrigger(props: SelectTriggerProps): React.ReactElement {
   );
 }
 
-/** A single option row inside the select sheet. */
 function SelectRow(props: {
   opt: SelectOption;
   selected: string | undefined;
@@ -147,7 +124,6 @@ function SelectRow(props: {
   );
 }
 
-/** Modal sheet listing the select options. */
 function SelectSheet(props: {
   open: boolean;
   options: SelectOption[];
@@ -168,9 +144,7 @@ function SelectSheet(props: {
       >
         <Pressable
           style={{ backgroundColor: sheetBg, borderRadius: 14, overflow: 'hidden', maxHeight: '70%' }}
-          onPress={() => {
-            /* intentional no-op: swallow press so taps inside the sheet don't dismiss it */
-          }}
+          onPress={() => undefined}
         >
           <ScrollView>
             {options.map((opt) => (
@@ -188,7 +162,6 @@ function SelectSheet(props: {
   );
 }
 
-/** ChatKit-style RN select / dropdown. */
 export function Select(props: SelectProps): React.ReactElement {
   const {
     name,
@@ -217,20 +190,17 @@ export function Select(props: SelectProps): React.ReactElement {
   const box = controlBoxStyle(size, variant, colors, corner, false);
   const p = schemePalette(dark);
   const head = p.head;
-  /** Sheet fill has no semantic token equivalent (kept literal). */
   const sheetBg = dark ? '#1b1c1e' : '#ffffff';
   const rowBorder = p.border;
 
   const current = options.find((o) => o.value === selected);
 
-  /** Pick helper. */
   function pick(v: string): void {
     if (controlled === undefined) setInternal(v);
     onChange?.(v);
     setOpen(false);
   }
 
-  /** Clear helper. */
   function clear(): void {
     if (controlled === undefined) setInternal(undefined);
     onChange?.('');

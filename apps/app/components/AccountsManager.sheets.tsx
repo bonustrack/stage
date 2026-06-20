@@ -1,4 +1,3 @@
-/** @file AccountsManager bottom sheets: the per-account manage sheet (switch/export/remove) and the private-key export-reveal sheet. */
 
 import { Text } from '@stage-labs/kit/text';
 import { Button } from '@stage-labs/kit/button';
@@ -11,7 +10,6 @@ import { DANGER, useEffectiveColorScheme, usePalette } from '../lib/theme';
 
 interface Pal { head: string; sub: string; border: string; sheetBg: string; }
 
-/** Bottom sheet with switch/export/remove actions for a single account. */
 export function ManageSheet({ manageRec, activeId, onClose, onSwitch, onExport, onRemove, p }: {
   manageRec: AccountRecord | null; activeId: string | null; onClose: () => void;
   onSwitch: (id: string) => void; onExport: (id: string) => void;
@@ -24,7 +22,7 @@ export function ManageSheet({ manageRec, activeId, onClose, onSwitch, onExport, 
       onClose={onClose}
       bg={p.sheetBg} border={p.border}
     >
-      {/** Cancel SheetModal's 16px padding so the list spans edge-to-edge with the row inset matching the Settings page. */}
+      {}
       <ListView dark={dark} style={{ marginHorizontal: -16 }}>
         {manageRec && manageRec.id !== activeId ? (
           <SheetRow label="Switch to this account" head={p.head} sub={p.sub} dark={dark} onPress={() => { const id = manageRec.id; onClose(); onSwitch(id); }} />
@@ -40,7 +38,6 @@ export function ManageSheet({ manageRec, activeId, onClose, onSwitch, onExport, 
   );
 }
 
-/** Bottom sheet that reveals and copies an account's exported private key. */
 export function ExportSheet({ revealPk, onClose, dark, p }: {
   revealPk: string | null; onClose: () => void; dark: boolean; p: Pal;
 }): React.ReactElement {

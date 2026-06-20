@@ -1,4 +1,3 @@
-/** @file Proposals.banner — the Home strip under the topnav showing the pending-poll count and linking to /proposals; hidden when the count (from the shared proposalsStore, session-skips filtered) is zero. */
 
 import { useRouter } from 'expo-router';
 import { Pressable } from '@stage-labs/kit/pressable';
@@ -8,13 +7,11 @@ import { Row } from '../layout';
 import { usePalette } from '../../lib/theme';
 import { useProposalCount } from './Proposals.hook';
 
-/** Banner that surfaces the active proposal count and links to the proposals screen. */
 export function ProposalsBanner(): React.ReactElement | null {
   const router = useRouter();
   const pal = usePalette();
   const count = useProposalCount();
 
-  /** Hidden when nothing pending / everything skipped this session. */
   if (count <= 0) return null;
 
   return (

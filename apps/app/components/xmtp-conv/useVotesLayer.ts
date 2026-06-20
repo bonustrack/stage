@@ -1,4 +1,3 @@
-/** @file Optimistic poll-vote layer for the XMTP conversation screen, handling multi-question polls with votes/ownVotes nested by pollId and question index. */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { xmtpVote, xmtpOpenAnswer } from '../../modules/messaging';
 import type { HistoryEntry } from '../../lib/types';
@@ -9,15 +8,12 @@ type Own = Map<string, Map<number, Set<number>>>;
 type OpenAnswers = Map<string, Map<number, Map<string, { text: string; ts: string }>>>;
 type PollsInFeed = ReturnType<typeof pollQuestionsInFeed>;
 
-/** Composite optimistic key: poll message id + question index. */
 const ck = (pollId: string, q: number): string => `${pollId}:${q}`;
-/** Split a composite key back into its poll id and question index. */
 const unCk = (k: string): { pollId: string; q: number } => {
   const i = k.lastIndexOf(':');
   return { pollId: k.slice(0, i), q: Number(k.slice(i + 1)) };
 };
 
-/** Deep-clone the confirmed vote tally so optimistic overrides never mutate source state. */
 const cloneVotes = (votes: Votes): Votes => {
   const merged: Votes = new Map();
   for (const [pollId, byQ] of votes) {
@@ -26,7 +22,6 @@ const cloneVotes = (votes: Votes): Votes => {
   return merged;
 };
 
-/** Get-or-create the inner option→voters tally for one (poll, question) inside a cloned map. */
 const ensureTally = (merged: Votes, pollId: string, q: number): Map<number, Set<string>> => {
   let byQ = merged.get(pollId);
   if (!byQ) { byQ = new Map(); merged.set(pollId, byQ); }
@@ -35,7 +30,6 @@ const ensureTally = (merged: Votes, pollId: string, q: number): Map<number, Set<
   return tally;
 };
 
-/** Apply one optimistic selection over a cloned tally: drop me from dropped options, add me to the pending picks. */
 const applyOptimisticVote = (
   tally: Map<number, Set<string>>,
   confirmed: Set<number>,
@@ -50,7 +44,6 @@ const applyOptimisticVote = (
   }
 };
 
-/** Optimistic multiple-choice vote concern: selection state, dedup, merged display tallies, and the vote handler. */
 function useOptimisticVotes(
   activeLine: string,
   votes: Votes,
@@ -58,14 +51,11 @@ function useOptimisticVotes(
   pollsInFeed: PollsInFeed,
   myUri: string,
 ) {
-  /** Optimistic per-(poll,question) selection the local user just tapped, applied over the confirmed tally until the live stream echoes the vote back. */
   const [optimistic, setOptimistic] = useState<Map<string, Set<number>>>(new Map());
 
-  /** Read the confirmed own-selection for one (poll, question). */
   const confirmedOwn = useCallback((pollId: string, q: number): Set<number> =>
     ownVotes.get(pollId)?.get(q) ?? new Set<number>(), [ownVotes]);
 
-  /** Drop an override once the confirmed tally matches it (same index set). */
   useEffect(() => {
     setOptimistic(prev => {
       if (prev.size === 0) return prev;
@@ -115,9 +105,7 @@ function useOptimisticVotes(
     else { next.clear(); next.add(optionIndex); }
     setOptimistic(prev => { const m = new Map(prev); m.set(key, next); return m; });
 
-    /** Undo helper. */
     const undo = (): void => { setOptimistic(prev => { const m = new Map(prev); m.delete(key); return m; }); };
-    /** Single-select switch: retract every previously-held option that isn't the new pick (same question) so other clients don't double-count. */
     if (!multi && action === 'added') {
       for (const prevIdx of current) {
         if (prevIdx !== optionIndex) {
@@ -133,12 +121,9 @@ function useOptimisticVotes(
   return { displayVotes, displayOwnVotes, onVote };
 }
 
-/** Optimistic free-text answer concern: pending answers, dedup, merged display map, and the submit handler. */
 function useOptimisticOpenAnswers(activeLine: string, openAnswers: OpenAnswers, myUri: string) {
-  /** Optimistic free-text answer the local user just submitted per (poll,q), applied over the confirmed tally until the live stream echoes it back. */
   const [optimisticOpen, setOptimisticOpen] = useState<Map<string, { text: string; ts: string }>>(new Map());
 
-  /** Drop an open override once the confirmed answer matches (same text). */
   useEffect(() => {
     setOptimisticOpen(prev => {
       if (prev.size === 0) return prev;
@@ -176,7 +161,6 @@ function useOptimisticOpenAnswers(activeLine: string, openAnswers: OpenAnswers, 
     setOptimisticOpen(prev => {
       const m = new Map(prev); m.set(key, { text: trimmed, ts: new Date().toISOString() }); return m;
     });
-    /** Undo helper. */
     const undo = (): void => { setOptimisticOpen(prev => { const m = new Map(prev); m.delete(key); return m; }); };
     void xmtpOpenAnswer(activeLine, pollId, q, trimmed)
       .catch((e: unknown) => { console.warn('xmtp open-answer failed', e); undo(); });
@@ -185,7 +169,6 @@ function useOptimisticOpenAnswers(activeLine: string, openAnswers: OpenAnswers, 
   return { displayOpenAnswers, onOpenAnswer };
 }
 
-/** Provides vote tallies and the handler for casting votes within a conversation. */
 export function useVotesLayer(
   activeLine: string,
   events: HistoryEntry[],
@@ -194,7 +177,6 @@ export function useVotesLayer(
   openAnswers: OpenAnswers,
   myUri: string,
 ) {
-  /** Poll metadata derived purely from the feed; memoized so a vote tap reads it from cache instead of re-scanning every event on each press. Polls depend only on `events`, so the result is identical to the per-tap scan. */
   const pollsInFeed = useMemo(() => pollQuestionsInFeed(events), [events]);
 
   const { displayVotes, displayOwnVotes, onVote } = useOptimisticVotes(

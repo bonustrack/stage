@@ -1,4 +1,3 @@
-/** @file Hook resolving the group channels both the local user and a viewed peer belong to (the profile's "Common channels" section): seeds candidate groups from cached channel rows, then lazily resolves each group's member addresses (cached per account+epoch) to test peer membership. */
 
 import { useQuery } from '@tanstack/react-query';
 import { getCachedRows, hydrateCachedRows, getActiveAccountIdSync, type CachedRow } from './channelsCache';
@@ -8,27 +7,22 @@ import { getAccountEpoch } from './accountEpoch';
 import { MemoryStore } from './cache';
 import { loadArchivedIds } from './archived';
 
-/** Member-set cache keyed by `${convId}:${accountEpoch}` (#7); caches the only per-group network work in the walk so repeat profile opens are free, and the epoch suffix invalidates entries on account switch. */
 const memberSetCache = new MemoryStore<string, string[]>();
 
 export interface CommonChannel {
   convId: string;
   title: string;
   avatarUri: string | null;
-  /** The CHANNEL's own stamp seed (channelStampSeed(convId)) — stamp fallback when there's no group image. Mirrors the channels tab so a profile's channel cards render the CHANNEL avatar, not a member's (or the viewed peer's). */
   avatarAddress: string | null;
   memberCount: number;
-  /** Homepage-parity fields from the SAME persisted channelsCache the channels tab writes (keyed by convId); undefined/0 when there's no entry yet, falling back to the member-count subtitle with no extra network calls. */
   lastTs: number | null;
   lastPreview: string;
-  /** Latest sender's eth address (for the "Name: …" preview prefix). */
   lastSenderAddress: string | null;
   lastFromSelf: boolean;
   unreadCount: number;
   markedUnread: boolean;
 }
 
-/** Resolve a group's member eth set, cache-first (#7, keyed by convId+epoch). */
 async function memberSetOf(convId: string): Promise<string[]> {
   const key = `${convId}:${getAccountEpoch()}`;
   const cached = memberSetCache.get(key);
@@ -40,14 +34,12 @@ async function memberSetOf(convId: string): Promise<string[]> {
   return members;
 }
 
-/** Build a CommonChannel from a cached group row + its resolved member set (members excludes self → +1). */
 function commonChannelFromRow(row: CachedRow, members: string[]): CommonChannel {
   return {
     convId: row.convId,
     title: typeof row.title === 'string' && row.title.trim()
       ? row.title.trim() : 'Group',
     avatarUri: typeof row.avatarUri === 'string' ? row.avatarUri : null,
-    /** Mirror HomeScreen.helpers (avatarAddress): when there's no uploaded group image, seed the stamp from the channel's own id so the row shows the CHANNEL avatar — never a member's / the viewed peer's stamp. */
     avatarAddress: (typeof row.avatarUri === 'string' && row.avatarUri)
       ? null : channelStampSeed(row.convId),
     memberCount: members.length + 1,
@@ -60,7 +52,6 @@ function commonChannelFromRow(row: CachedRow, members: string[]): CommonChannel 
   };
 }
 
-/** Resolve a single group row to a CommonChannel when the peer is a member, else null. */
 async function resolveGroupRow(row: CachedRow, peer: string): Promise<CommonChannel | null> {
   try {
     const members = await memberSetOf(row.convId);
@@ -69,27 +60,21 @@ async function resolveGroupRow(row: CachedRow, peer: string): Promise<CommonChan
   } catch { return null; }
 }
 
-/** Resolve Common Channels. */
 async function resolveCommonChannels(peerAddress: string): Promise<CommonChannel[]> {
   const peer = peerAddress.toLowerCase();
   await hydrateCachedRows().catch(() => undefined);
-  /** Reuse the SAME archived predicate the channels feed uses (lib/archived): device-only archived set. Hide archived channels here too so the profile Channels tab matches the home list (no archived rows). */
   const archived = await loadArchivedIds().catch(() => new Set<string>());
   const rows = getCachedRows() ?? [];
-  /** Group rows only (DMs carry a non-null peerAddress), minus archived ones. */
   const groups = rows.filter((r): r is CachedRow & { peerAddress: null } =>
     r.peerAddress == null && !archived.has(r.convId));
-  /** #7: walk all candidate groups' member sets IN PARALLEL (was serial). */
   const resolved = await Promise.all(groups.map((row) => resolveGroupRow(row, peer)));
   return resolved.filter((c): c is CommonChannel => c !== null);
 }
 
-/** Hook providing the channels shared with a peer (cached per active account). */
 export function useCommonChannels(peerAddress: string | null, enabled: boolean): {
   channels: CommonChannel[];
   loading: boolean;
 } {
-  /** TanStack Query keyed by the ACTIVE ACCOUNT ID (stable per account, unlike the monotonic account epoch) so switching to another account and BACK re-hits this account's cached common-channels instead of re-walking. */
   const { data, isLoading } = useQuery({
     queryKey: ['commonChannels', getActiveAccountIdSync(), peerAddress?.toLowerCase() ?? ''],
     queryFn: () => resolveCommonChannels(peerAddress ?? ''),

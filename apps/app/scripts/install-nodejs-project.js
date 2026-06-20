@@ -1,4 +1,3 @@
-/** @file EAS build hook installing the embedded Node host's deps for nodejs-mobile gradle bundling + per-ABI rebuild. */
 
 'use strict';
 
@@ -10,7 +9,6 @@ const projDir = path.resolve(__dirname, '..', 'nodejs-assets', 'nodejs-project')
 const appDir = path.resolve(__dirname, '..');
 const marker = path.join(projDir, 'node_modules', '@railgun-community', 'wallet', 'package.json');
 
-/** Recreate node-gyp-build-mobile bins in app node_modules/.bin so gradle's hard-coded per-ABI rebuild path resolves. */
 function linkNodeGypBuildMobileBin() {
   let pkgJson;
   try {
@@ -37,7 +35,6 @@ function linkNodeGypBuildMobileBin() {
     try {
       fs.symlinkSync(path.relative(binDir, target), linkPath);
     } catch {
-      /** Fall back to a copy if symlinks are unavailable. */
       fs.copyFileSync(target, linkPath);
     }
     try { fs.chmodSync(target, 0o755); } catch {}
@@ -45,12 +42,10 @@ function linkNodeGypBuildMobileBin() {
   }
 }
 
-/** Delete asset-unsafe entries (underscore dirs, symlinks, dotfiles) so gradle's file.list and aapt stay in lockstep. */
 function pruneForAssetBundling() {
   const nm = path.join(projDir, 'node_modules');
   if (!fs.existsSync(nm)) return;
   let removed = 0;
-  /** Recurse a dir, removing symlinks, dotfiles, underscore dirs, and untokenizable AAB dir names. */
   const walk = (dir) => {
     let entries;
     try {
@@ -60,23 +55,19 @@ function pruneForAssetBundling() {
     }
     for (const ent of entries) {
       const full = path.join(dir, ent.name);
-      /** Symlinks: AssetManager can't open them; aapt won't package them either. */
       if (ent.isSymbolicLink()) {
         try { fs.rmSync(full, { force: true }); removed++; } catch {}
         continue;
       }
-      /** Dotfiles/-dirs: excluded from Gradle's file.list AND ignored by aapt; remove so the tree matches both sets. */
       if (ent.name.startsWith('.')) {
         try { fs.rmSync(full, { recursive: true, force: true }); removed++; } catch {}
         continue;
       }
       if (ent.isDirectory()) {
-        /** Underscore-prefixed DIR (test/fixture trees): aapt drops it but Gradle lists its files; delete at every depth. */
         if (ent.name.startsWith('_')) {
           try { fs.rmSync(full, { recursive: true, force: true }); removed++; } catch {}
           continue;
         }
-        /** Drop bundletool-untokenizable dir names (es5-ext `#`/`@@iterator`); dead web3 subtree that blocks the AAB. */
         if (ent.name === '#' || ent.name.startsWith('@@') || ent.name === '@') {
           try { fs.rmSync(full, { recursive: true, force: true }); removed++; } catch {}
           continue;
@@ -96,17 +87,14 @@ function pruneForAssetBundling() {
   );
 }
 
-/** Rewrite urlpattern-polyfill's Unicode property escapes to ASCII so the no-ICU nodejs-mobile Node v18 won't SyntaxError. */
 function patchUrlPatternForNoICU() {
   const nm = path.join(projDir, 'node_modules');
   if (!fs.existsSync(nm)) return;
-  /** Exact token substitutions; only the property-escape token is touched so the surrounding char class is preserved. */
   const subs = [
     ['\\p{ID_Start}', 'A-Za-z'],
     ['\\p{ID_Continue}', '0-9A-Za-z'],
   ];
   const targets = [];
-  /** Recurse node_modules collecting urlpattern-polyfill dist files (urlpattern.cjs/.js) into targets. */
   const walk = (dir) => {
     let entries;
     try {
@@ -123,7 +111,6 @@ function patchUrlPatternForNoICU() {
         ent.name === 'urlpattern.cjs' ||
         ent.name === 'urlpattern.js'
       ) {
-        /** Only the urlpattern-polyfill dist copies. */
         if (full.includes(path.join('urlpattern-polyfill', 'dist'))) {
           targets.push(full);
         }
@@ -167,7 +154,6 @@ function patchUrlPatternForNoICU() {
   );
 }
 
-/** Recursively count symlinks under a directory. */
 function countSymlinks(dir) {
   let n = 0;
   let entries;
@@ -184,7 +170,6 @@ function countSymlinks(dir) {
   return n;
 }
 
-/** Regenerate the bridge method manifest from the source-of-truth contract; non-fatal (CI parity test catches drift). */
 function regenMethodManifest() {
   try {
     execSync('node ' + JSON.stringify(path.join(appDir, 'scripts', 'gen-railgun-methods.mjs')), {
@@ -199,7 +184,6 @@ function regenMethodManifest() {
   }
 }
 
-/** Entry point: regen the manifest, install host deps if needed, then prune, patch, and link bins for gradle. */
 function main() {
   if (!fs.existsSync(path.join(projDir, 'package.json'))) {
     process.stdout.write('[install-nodejs-project] no nodejs-project — skipping\n');
@@ -215,11 +199,8 @@ function main() {
       stdio: 'inherit',
     });
   }
-  /** Strip asset-unsafe entries before gradle's asset list / aapt merge; idempotent and cheap. */
   pruneForAssetBundling();
-  /** Rewrite urlpattern-polyfill regexes to ASCII so the no-ICU nodejs-mobile Node v18 won't SyntaxError. */
   patchUrlPatternForNoICU();
-  /** (Re)create the bin gradle's per-ABI rebuild hard-codes; safe post-prune since .bin sits under an excluded dot dir. */
   linkNodeGypBuildMobileBin();
   process.stdout.write('[install-nodejs-project] done\n');
 }

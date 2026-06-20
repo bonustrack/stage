@@ -1,8 +1,4 @@
 <script setup lang="ts">
-/** Discord-style messenger row: every message left-aligned, 24px stamp
- *  avatar at the start, no colored bubble even for the local user's own
- *  messages. Mirrors apps/app/components/MessengerBubble.tsx so the two
- *  clients look identical. */
 
 import { stampAvatarUrl, XMTP_USER_PREFIX } from '../lib/xmtp';
 import type { HistoryEntry } from '../lib/types';
@@ -18,8 +14,6 @@ const props = defineProps<{
   mine: boolean;
   reactions?: Map<string, number>;
   replyPreview?: string;
-  /** inboxId → eth address map, threaded from the parent so the avatar
-   *  can be resolved for each sender without a per-bubble round trip. */
   inboxToAddr?: Record<string, string>;
 }>();
 const emit = defineEmits<{
@@ -36,10 +30,8 @@ const attachments = computed<AttachmentLike[]>(() => {
 const youtubeId = computed(() => youtubeIdOf(props.entry.text));
 const mapCoords = computed(() => mapCoordsOf(props.entry.text));
 const isSystem = computed(() => (props.entry.payload as { system?: boolean } | undefined)?.system === true);
-/** Optimistic message awaiting network confirmation — render gray, like mobile. */
 const isPending = computed(() => props.entry.pending === true);
 
-/** Same preset set as the mobile app's inline reaction picker. */
 const REACT_PRESETS = ['👍', '❤️', '😂', '😮', '🔥', '🎉'];
 const pickerOpen = ref(false);
 
@@ -68,10 +60,6 @@ function onContext(ev: MouseEvent): void {
   emit('request-actions', props.entry);
 }
 
-/** Long-press (touch) / press-hold (mouse) opens the action sheet, matching the
- *  mobile app — right-click alone isn't reachable on touch and gets swallowed
- *  by the host page inside the embed widget. Cancels if the pointer moves
- *  (a scroll/drag) or lifts before the hold threshold. */
 let lpTimer: ReturnType<typeof setTimeout> | null = null;
 let lpX = 0;
 let lpY = 0;

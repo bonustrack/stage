@@ -1,5 +1,5 @@
 import tseslint from 'typescript-eslint';
-import { MAX_LINES, REQUIRE_JSDOC, jsdocPlugin, recommended, NO_ESCAPE_HATCHES, commentPlugins, COMMENT_RULES, FUNCTION_SIZE_RULES } from './base.js';
+import { MAX_LINES, recommended, NO_ESCAPE_HATCHES, commentPlugins, COMMENT_RULES, FUNCTION_SIZE_RULES } from './base.js';
 
 export function vue({ vueParser, vuePlugin, rootDir, project }) {
   return [
@@ -36,9 +36,10 @@ export function vue({ vueParser, vuePlugin, rootDir, project }) {
           extraFileExtensions: ['.vue'],
         },
       },
-      plugins: { vue: vuePlugin, '@typescript-eslint': tseslint.plugin, jsdoc: jsdocPlugin },
+      plugins: { vue: vuePlugin, '@typescript-eslint': tseslint.plugin, ...commentPlugins },
       rules: {
         ...NO_ESCAPE_HATCHES,
+        ...COMMENT_RULES,
         ...vuePlugin.configs['flat/recommended'][0].rules,
         'vue/multi-word-component-names': 'off',
         'vue/no-multiple-template-root': 'off',

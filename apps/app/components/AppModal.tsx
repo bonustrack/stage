@@ -1,4 +1,3 @@
-/** @file AppModal: the app's reusable bottom-sheet modal with rounded top corners, tap-to-close backdrop, scrollable content, and safe-area handling. */
 
 import type { ReactNode } from 'react';
 import { Modal } from 'react-native';
@@ -8,25 +7,22 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePalette, useBlockRadius } from '../lib/theme';
 
-/** Renders the app's reusable bottom-sheet modal with a backdrop, optional title row, and scrollable content. */
 export function AppModal({
   visible, onClose, children,
 }: {
   visible: boolean;
   onClose: () => void;
-  /** Accepted for call-site compatibility; no longer rendered (no title chrome). */
   title?: string;
   children: ReactNode;
 }): React.ReactElement {
   const insets = useSafeAreaInsets();
   const pal = usePalette();
-  const sheetBg = pal.bg; /** sheet surface → bg token (editable) */
-  /** Sheet top corners follow the border-radius token, bumped ×1.4 so the edge stays rounder than inline cards; no hard cap so the radius keeps applying when cranked up. */
+  const sheetBg = pal.bg;
   const sheetRadius = Math.round(useBlockRadius() * 1.4);
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      {/** RN Modal renders in its own native window the app-root GestureHandlerRootView doesn't cover; without this wrapper every inner GestureDetector is silently dead. */}
+      {}
       <GestureHandlerRootView style={{ flex: 1 }}>
       <Pressable
         onPress={onClose}

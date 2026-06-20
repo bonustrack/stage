@@ -1,7 +1,4 @@
 <script setup lang="ts">
-/** Rounded, bordered "media bubble" wrapper. Vue counterpart to
- *  apps/app/components/MediaCard.tsx. Wraps shared attachments so image /
- *  video / map / YouTube thumbnails all read as discrete cards. */
 
 const props = defineProps<{ onPress?: () => void; width?: number }>();
 </script>

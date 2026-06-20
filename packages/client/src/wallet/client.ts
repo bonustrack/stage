@@ -1,19 +1,15 @@
-/** @file Shared viem public-client + brovider multichain RPC setup for the wallet read surfaces; brovider keys by chainId path segment and is great for multicall/getBalance/ERC-20 reads but REJECTS eth_getLogs, so the Railgun engine scan keeps its own client. */
 
 import { createPublicClient, http, type Chain, type PublicClient } from 'viem';
 import { VIEM_CHAINS } from './assets';
 
-/** brovider multichain RPC base — the path segment is the chainId. */
 export function broviderRpc(chainId: number): string {
   return `https://rpc.brovider.xyz/${chainId}`;
 }
 
-/** viem transport pointed at brovider for `chainId`. viem's stock chain defs point `rpcUrls.default` at flaky public endpoints, so always route reads through this instead of a bare `http()`. */
 export function broviderTransport(chainId: number) {
   return http(broviderRpc(chainId));
 }
 
-/** A viem chain for ANY chainId. Known chains come from VIEM_CHAINS; unknown chains get a minimal generic definition pointed at brovider's per-chain RPC (which fronts a public RPC for most EVM networks). */
 export function chainFor(chainId: number): Chain {
   const known = VIEM_CHAINS[chainId];
   if (known) return known;
@@ -26,7 +22,6 @@ export function chainFor(chainId: number): Chain {
   };
 }
 
-/** A viem public client for `chainId`, using the brovider RPC. Falls back to a generic chain definition for chainIds not in VIEM_CHAINS. */
 export function publicClientFor(chainId: number): PublicClient {
   return createPublicClient({
     chain: chainFor(chainId),

@@ -1,4 +1,3 @@
-/** @file Recipient row and contacts picker for the Wallet send screen, resolving peer profiles and listing 1:1 DM peers so tapping one fills the recipient address. */
 import { Pressable } from '@stage-labs/kit/pressable';
 
 import { Text } from '@stage-labs/kit/text';
@@ -12,16 +11,13 @@ import { useContacts } from '../../lib/useContacts';
 
 interface RowPalette { head: string; sub: string; border: string }
 
-/** A single avatar + name + short-address row for one address. Reused for the resolved recipient and every contact in the picker. */
 export function RecipientRow({ address, pal, right, onPress }: {
   address: string;
   pal: RowPalette;
-  /** Optional trailing element (e.g. a clear/chevron icon). */
   right?: React.ReactNode;
   onPress?: () => void;
 }): React.ReactElement {
   const { head, sub, border } = pal;
-  /** Fetch (and re-render on) this peer's Snapshot profile — name + avatar. */
   usePeerProfiles([address]);
   const name = getPeerName(address) ?? shortAddress(address);
   const showAddrLine = name !== shortAddress(address);
@@ -68,7 +64,6 @@ export function RecipientRow({ address, pal, right, onPress }: {
   );
 }
 
-/** Bottom-sheet list of the user's contacts (DM peers). Tapping one calls `onPick(address)` and closes. */
 export function ContactsModal({ visible, onClose, onPick, pal }: {
   visible: boolean;
   onClose: () => void;
@@ -101,7 +96,6 @@ export function ContactsModal({ visible, onClose, onPick, pal }: {
   );
 }
 
-/** Icon button that opens the contacts picker. Sits at the right edge of the recipient input. */
 export function ContactsButton({ color, border, onPress }: {
   color: string; border: string; onPress: () => void;
 }): React.ReactElement {

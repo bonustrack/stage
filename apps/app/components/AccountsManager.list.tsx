@@ -1,4 +1,3 @@
-/** @file AccountsManager list body rendering the Accounts section card (active account, other accounts in flat/collapsed/expanded modes, and the Add-account row). */
 
 import { Pressable } from '@stage-labs/kit/pressable';
 
@@ -8,7 +7,6 @@ import { Icon } from '@stage-labs/kit/icon';
 import { type AccountRecord } from '../lib/accounts';
 import { AccountRow } from './AccountsManager.parts';
 
-/** Shared props passed to the AccountList sub-renderers. */
 interface AccountListProps {
   flat: boolean; accounts: AccountRecord[]; activeId: string | null;
   activeRec: AccountRecord | null; otherAccounts: AccountRecord[];
@@ -17,7 +15,6 @@ interface AccountListProps {
   onSwitch: (id: string) => void; setManageId: (id: string) => void; onAdd: () => void;
 }
 
-/** Builds the trailing "⋯" manage button for an account row. */
 function manageTrailing(p: AccountListProps, id: string): React.ReactElement {
   return (
     <Pressable hitSlop={10} onPress={() => { p.setManageId(id); }}>
@@ -26,12 +23,10 @@ function manageTrailing(p: AccountListProps, id: string): React.ReactElement {
   );
 }
 
-/** Renders the "No accounts yet." placeholder text. */
 function EmptyAccounts({ sub }: { sub: string }): React.ReactElement {
   return <Text size="xs" color={sub} style={{ padding: 14 }}>No accounts yet.</Text>;
 }
 
-/** Renders the flat-mode list (every account as a row, active highlighted). */
 function FlatAccounts(p: AccountListProps): React.ReactElement {
   if (p.accounts.length === 0) return <EmptyAccounts sub={p.sub} />;
   return (
@@ -51,7 +46,6 @@ function FlatAccounts(p: AccountListProps): React.ReactElement {
   );
 }
 
-/** Renders the collapsed header row (active account + chevron) for non-flat mode. */
 function CollapsedHeader(p: AccountListProps): React.ReactElement | null {
   const active = p.activeRec;
   if (active) {
@@ -69,7 +63,6 @@ function CollapsedHeader(p: AccountListProps): React.ReactElement | null {
   return null;
 }
 
-/** Renders the "Add account" row plus (non-flat) the other-account rows when expanded. */
 function AddSection(p: AccountListProps): React.ReactElement {
   return (
     <>
@@ -100,9 +93,7 @@ function AddSection(p: AccountListProps): React.ReactElement {
   );
 }
 
-/** Renders the Accounts section card (active account, other accounts, and the Add-account row). */
 export function AccountList(p: AccountListProps): React.ReactElement {
-  /** Builds the container style inline (flat vs card) since the card branch's marginHorizontal can't be a static layout prop. */
   const containerStyle = p.flat
     ? { backgroundColor: 'transparent' }
     : {

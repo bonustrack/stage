@@ -1,7 +1,4 @@
 <script setup lang="ts">
-/** Group detail view — avatar/name/description editing, member list +
- *  add/remove. Web counterpart to apps/app/app/group/[convId].tsx.
- *  State + mutations live in `useGroupDetail` so this SFC stays under the cap. */
 
 import { useGroupDetail } from '../lib/useGroupDetail';
 

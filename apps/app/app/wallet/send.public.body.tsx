@@ -1,4 +1,3 @@
-/** @file Public-send body for the Wallet send page: recipient/amount fields plus submit/status for an on-chain transfer, token from the parent and state from usePublicSend. */
 import { useEffect } from 'react';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import {
@@ -8,10 +7,8 @@ import { usePublicSend } from './send.public';
 import { useSelectedBalance, type TokenChoice } from './TokenSelector';
 import type { FooterState } from './wallet.form';
 
-/** Body for a public (on-chain) token send, owning recipient and amount input. */
 export function PublicSendBody({ token, initialTo, onFooter }: {
   token: TokenChoice; initialTo: string;
-  /** Report submit state up so the page renders the pinned footer button. */
   onFooter?: (s: FooterState) => void;
 }): React.ReactElement {
   const { text: fg, link: head, border } = usePalette();

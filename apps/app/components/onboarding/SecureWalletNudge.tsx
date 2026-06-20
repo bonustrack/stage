@@ -1,6 +1,3 @@
-/**
- * @file SecureWalletNudge: the skippable post-onboarding "secure your wallet" card (reveal/confirm recovery phrase or add guardians).
- */
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
@@ -15,7 +12,6 @@ import { revealRecoveryPhrase } from '../../lib/zerodev';
 import { useEnablePasskey } from '../../lib/useEnablePasskey';
 import { isWalletBackedUp, setWalletBackedUp } from '../../lib/walletBackup';
 
-/** Renders a prompt urging the user to back up their wallet, or nothing once it is secured. */
 export function SecureWalletNudge(): React.ReactElement | null {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -38,7 +34,6 @@ export function SecureWalletNudge(): React.ReactElement | null {
 
   if (!show) return null;
 
-  /** Reveal the phrase (prompts device auth via the hardened secure-store read). */
   const reveal = (): void => {
     if (busy) return;
     setBusy(true);
@@ -55,7 +50,6 @@ export function SecureWalletNudge(): React.ReactElement | null {
     })();
   };
 
-  /** Confirm the user saved it: mark backed up + hide. */
   const confirm = (): void => {
     void (async () => {
       await setWalletBackedUp(true);
@@ -65,7 +59,6 @@ export function SecureWalletNudge(): React.ReactElement | null {
     })();
   };
 
-  /** Dismiss helper. */
   const dismiss = (): void => {
     void (async () => { await setWalletBackedUp(true); setShow(false); })();
   };

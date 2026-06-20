@@ -1,4 +1,3 @@
-/** @file SHIELD orchestration: composes the bridge shield primitives plus a viem EOA sign/broadcast (ERC20 approve when needed) to deposit a public token into the user's OWN 0zk balance (never an arbitrary address, key never logged), reporting progress/errors via the pending-action store. */
 import { parseUnits, erc20Abi, type Hex } from 'viem';
 import { NETWORK_CONFIG } from '@railgun-community/shared-models';
 import { getActiveAccountId } from '../accounts';
@@ -14,11 +13,8 @@ import type { TokenMeta } from './tokens';
 const TXID_VERSION = 'V2_PoseidonMerkle';
 
 export interface ShieldParams {
-  /** 1 = mainnet, 11155111 = Sepolia (default for testing). */
   chainId: number;
-  /** Token symbol from the public list — 'ETH' (native, base-token) or 'USDC'. */
   symbol: 'ETH' | 'USDC';
-  /** Human-readable amount, e.g. "0.01". */
   amount: string;
 }
 
@@ -27,7 +23,6 @@ export interface ShieldResult {
   zkAddress: string;
 }
 
-/** Token Meta. */
 function tokenMeta(chainId: number, symbol: string): TokenMeta {
   const net = chainId === 1 ? 'mainnet' : 'sepolia';
   const meta = RAILGUN_TOKENS[net].find(t => t.symbol === symbol);
@@ -35,7 +30,6 @@ function tokenMeta(chainId: number, symbol: string): TokenMeta {
   return meta;
 }
 
-/** Run the full shield. Resolves with the broadcast tx hash; the pending chip is driven through `proving` (populating) → `broadcasting` → `confirmed`/`failed`. */
 export async function shieldToPrivate(params: ShieldParams): Promise<ShieldResult> {
   const accountId = await getActiveAccountId();
   if (!accountId) throw new Error('No active account');
@@ -53,7 +47,6 @@ export async function shieldToPrivate(params: ShieldParams): Promise<ShieldResul
   try {
     const key = await deriveRailgunKeyMaterial();
     await engineInit();
-    /** Ensure an RPC provider + merkletree exist for THIS chain before populating, since engineInit swallows per-network RPC failures; loading it here (idempotent per chain) surfaces a real RPC error clearly instead of a later "txidVersion=null" failure. */
     await ensureProviderLoaded(
       {
         chainId: cfg.chainId,
@@ -75,7 +68,6 @@ export async function shieldToPrivate(params: ShieldParams): Promise<ShieldResul
         wrappedTokenAddress: meta.address, amountWei: amountWei.toString(),
       });
     } else {
-      /** ERC20: approve the proxy contract for this amount, then populate. */
       const proxy = NETWORK_CONFIG[cfg.networkName].proxyContract as Hex;
       const approveHash = await signer.walletClient.writeContract({
         account: signer.account, chain: signer.chain,
@@ -98,7 +90,6 @@ export async function shieldToPrivate(params: ShieldParams): Promise<ShieldResul
       value: tx.value ? BigInt(tx.value) : (params.symbol === 'ETH' ? amountWei : 0n),
     });
     await signer.publicClient.waitForTransactionReceipt({ hash: txHash });
-    /** Tx mined — record the hash and hand off to the merkle-scan watcher (scanning → confirmed once the note lands, or after a timeout); don't mark confirmed here since the private balance hasn't been scanned in yet. */
     updatePending(accountId, pendingId, { txHash });
     watchShieldLanding(accountId, pendingId, params.chainId);
     return { txHash, zkAddress: info.railgunAddress };

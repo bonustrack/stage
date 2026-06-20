@@ -1,4 +1,3 @@
-/** @file Presentational pieces of the XMTP conversation screen: topnav, composer footer, and the menu/overlay portals. */
 
 import { Share } from 'react-native';
 import { Pressable } from '@stage-labs/kit/pressable';
@@ -26,13 +25,11 @@ import type { EdgeInsets } from 'react-native-safe-area-context';
 type Conv = ReturnType<typeof useConversationState>;
 type Router = ReturnType<typeof useRouter>;
 
-/** The conversation title text (group name or DM peer name/address). */
 function topnavTitle(c: Conv): string {
   if (c.isGroup) return c.groupName === null ? '' : (c.groupName || 'Untitled group');
   return c.peerAddr ? (getPeerName(c.peerAddr) ?? shortAddress(c.peerAddr)) : '';
 }
 
-/** Default conversation topnav: back, avatar+title tap target, optional GitHub + overflow. */
 export function ConversationTopnav({ c, convId, fg, head, border, insets, router }: {
   c: Conv; convId: string; fg: string; head: string; border: string; insets: EdgeInsets; router: Router;
 }): React.ReactElement {
@@ -45,7 +42,7 @@ export function ConversationTopnav({ c, convId, fg, head, border, insets, router
 >
         <Icon name="arrowLeft" size={22} color={fg}/>
       </Pressable>
-      {/** Everything right of the back arrow is one tap target → group/channel detail (or peer profile for a DM); fills full height + width. */}
+      {}
       <Pressable
         onPress={() => {
           if (isGroup) router.push({ pathname: '/group/[convId]', params: { convId } });
@@ -58,7 +55,7 @@ export function ConversationTopnav({ c, convId, fg, head, border, insets, router
           {topnavTitle(c)}
         </Text>
       </Pressable>
-      {/** Topnav links (groups only): GitHub issue/PR, then overflow (search lives in the overflow menu now). */}
+      {}
       {isGroup && github ? <GithubNavButton url={github} color={fg} /> : null}
       <Pressable
         onPress={() => { setOverflowOpen(true); }}
@@ -71,7 +68,6 @@ export function ConversationTopnav({ c, convId, fg, head, border, insets, router
   );
 }
 
-/** The composer footer: jump-to-bottom button, request gate, composer, safe-area strip. */
 export function ConversationFooter({ c, convId, dark, rowBg, insets, requestPending, onRequestPending }: {
   c: Conv; convId: string; dark: boolean; rowBg: string; insets: EdgeInsets;
   requestPending: boolean; onRequestPending: (pending: boolean) => void;
@@ -116,7 +112,6 @@ export function ConversationFooter({ c, convId, dark, rowBg, insets, requestPend
   );
 }
 
-/** Header strip when search is open: the shared expanding SearchTopnavBar. */
 export function ConversationSearchTopnav({ searchInputRef, border, head, sub, query, setQuery, onClose, topInset }: {
   searchInputRef: React.RefObject<React.ComponentRef<typeof Input> | null>;
   border: string; head: string; sub: string;
@@ -139,7 +134,6 @@ export function ConversationSearchTopnav({ searchInputRef, border, head, sub, qu
   );
 }
 
-/** Channel-overflow and bubble-action menu portals. */
 export function ConversationOverlays({ c, convId, dark, archived, onOpenSearch }: {
   c: Conv; convId: string; dark: boolean; archived: boolean; onOpenSearch: () => void;
 }): React.ReactElement {
@@ -182,12 +176,10 @@ export function ConversationOverlays({ c, convId, dark, archived, onOpenSearch }
           setMenuFor(null);
         }}
         onSelect={() => {
-          /** Flip this message into a selectable <Text> for partial-copy handles. */
           if (menuFor) setSelectedForCopy(menuFor.id);
           setMenuFor(null);
         }}
         onShareLink={() => {
-          /** Shareable permalink to this message. Opens the conversation on the web today; the metro:// universal-link handling is the follow-up. */
           if (menuFor) void Share.share({ message: `https://metro.box/#/xmtp/${convId}?m=${menuFor.id}` });
           setMenuFor(null);
         }}

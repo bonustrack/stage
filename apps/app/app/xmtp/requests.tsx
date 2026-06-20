@@ -1,4 +1,3 @@
-/** @file Message-requests screen listing pending XMTP conversations with 'unknown' consent; each row offers Accept or Block, synced cross-device via XMTP consent. */
 
 import { useCallback, useEffect, useState } from 'react';
 
@@ -21,10 +20,8 @@ import { ChannelRow } from '../../components/ChannelRow';
 import { Col, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 
-/** Message-request row view-model. The shape lives on the facade's `ConversationRequestView` domain type (built by `summarizeConversationRequest`, which owns the SDK access + summarise logic, unchanged). */
 type ReqRow = ConversationRequestView;
 
-/** Screen listing pending conversation requests awaiting accept or decline. */
 export default function Requests(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -43,11 +40,9 @@ export default function Requests(): React.ReactElement {
   usePeerProfiles((rows ?? []).map(r => r.peerAddress));
 
   const act = useCallback((convId: string, accept: boolean): void => {
-    /** Optimistic: drop the row immediately; the consent write + the channels list's streamConvConsent reconcile the rest. */
     setRows(prev => (prev ?? []).filter(r => r.convId !== convId));
     void (accept ? acceptRequestConv(convId) : blockRequestConv(convId))
       .then(() => {
-        /** Force a synced-prefs refresh so other surfaces converge. */
         void (getCachedXmtpClient() as unknown as { preferences?: { syncConsent?: () => Promise<unknown> } })
           ?.preferences?.syncConsent?.();
       })
@@ -57,7 +52,6 @@ export default function Requests(): React.ReactElement {
   const renderRow = useCallback(({ item }: { item: ReqRow }): React.ReactElement => {
     const displayTitle = item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title;
     return (
-      /** Same channel card as the channels list with an approve/reject cluster pinned right; ChannelRow flexes to fill, actions sit beside it. */
       <Row padding={{ right: 12 }} align="center">
         <Col minWidth={0} flex={1}>
           <ChannelRow
@@ -66,7 +60,6 @@ export default function Requests(): React.ReactElement {
             avatarUri={item.avatarUri}
             square={item.isGroup}
             lastPreview={item.preview || '(no messages yet)'}
-            /** Warm the feed cache on touch-down so the request conversation opens from cache instead of waiting on the inbox-wide sync. */
             onPressIn={() => { prefetchFeed(lineOfConv(item.convId)); }}
             onPress={() => { router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } }); }}
 />

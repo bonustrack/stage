@@ -1,6 +1,3 @@
-/**
- * @file Card — a hook-free ChatKit-styled bordered surface for the Metro mobile client, with a local `onPress` and a `collapsed` mode that hides the body.
- */
 
 import { type ReactNode } from 'react';
 import { Pressable, View, Text as RNText, type ViewStyle } from 'react-native';
@@ -10,9 +7,7 @@ import { BLOCK_RADIUS_DEFAULT, FONT_SIZE, schemePalette } from './tokens';
 export type CardSize = 'sm' | 'md' | 'lg';
 
 export interface CardStatus {
-  /** Status line text shown above the body. ChatKit: status. */
   text: string;
-  /** Optional favicon/emoji rendered before the status text. */
   favicon?: string;
 }
 
@@ -23,27 +18,16 @@ export interface CardAction {
 
 export interface CardProps {
   children?: ReactNode;
-  /** ChatKit: size. Controls padding + status font. Default 'md'. */
   size?: CardSize;
-  /** ChatKit: padding. Overrides the size-derived padding (px). */
   padding?: number;
-  /** ChatKit: background. Token/hex; falls back to the scheme surface. */
   background?: string;
-  /** ChatKit: status. Muted line above the body. */
   status?: CardStatus;
-  /** ChatKit: collapsed. Hides the body, keeps status + actions. */
   collapsed?: boolean;
-  /** ChatKit: asForm. Semantic hint (passthrough on RN). */
   asForm?: boolean;
-  /** ChatKit: confirm. Primary action in the foot row. */
   confirm?: CardAction;
-  /** ChatKit: cancel. Secondary action in the foot row. */
   cancel?: CardAction;
-  /** RN form of ChatKit onClickAction. Makes the whole card pressable. */
   onPress?: () => void;
-  /** Effective color scheme. Pass useEffectiveColorScheme() === 'dark'. */
   dark: boolean;
-  /** Escape-hatch style merged onto the container last. */
   style?: ViewStyle;
 }
 
@@ -54,13 +38,11 @@ const STATUS_SIZE: Record<CardSize, number> = {
   lg: FONT_SIZE.sm,
 };
 
-/** Palette helper. */
 function palette(dark: boolean): { surface: string; border: string; sub: string } {
   const p = schemePalette(dark);
   return { surface: p.surface, border: p.border, sub: p.sub };
 }
 
-/** Muted status line rendered above the card body. */
 function CardStatusLine(props: {
   status: CardStatus;
   size: CardSize;
@@ -84,7 +66,6 @@ function CardStatusLine(props: {
   );
 }
 
-/** Foot row with the optional cancel/confirm actions. */
 function CardFoot(props: {
   confirm?: CardAction;
   cancel?: CardAction;
@@ -104,7 +85,6 @@ function CardFoot(props: {
   );
 }
 
-/** Card inner content: status line, body, and foot actions. */
 function CardBody(props: CardProps & { sub: string }): React.ReactElement {
   const { children, size = 'md', status, collapsed = false, confirm, cancel, dark, sub } = props;
   return (
@@ -116,7 +96,6 @@ function CardBody(props: CardProps & { sub: string }): React.ReactElement {
   );
 }
 
-/** ChatKit-style RN card. */
 export function Card(props: CardProps): React.ReactElement {
   const { size = 'md', padding, background, onPress, dark, style } = props;
 

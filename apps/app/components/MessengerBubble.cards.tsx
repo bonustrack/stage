@@ -1,4 +1,3 @@
-/** @file In-chat signature-request and transaction cards for MessengerBubble (phase-2 split). */
 import { Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 
@@ -23,7 +22,6 @@ import { useTxSimulation } from '../lib/txSimulate';
 import { SimulationBlock } from './MessengerBubble.sim';
 import { txActionLabel, isTransferRequest } from './MessengerBubble.txwording';
 
-/** Computed fields backing a TxRequestCard render. */
 interface TxCardModel {
   target?: string;
   eth?: string;
@@ -46,13 +44,10 @@ interface TxCardModel {
   warning?: string;
   showBalance: boolean;
 }
-/** Re-exports SigRequestCard / SigReferenceCard from MessengerBubble.cards.sig so existing './MessengerBubble.cards' importers keep their path. */
 export { SigRequestCard, SigReferenceCard } from './MessengerBubble.cards.sig';
-/** TxRequestCard — in-chat payment request: a thin wrapper over PaymentCard computing amount/recipient/token and supplying its own "Pay" action (onPay runs walletSendCalls/sendCall); the recipient line is a tappable profile link. */
 export function TxRequestCard({ req, dark, sub, paying, onPay, consentAllowed }: {
   req: TxRequest; dark: boolean; sub: string; paying?: boolean;
   onPay?: () => void;
-  /** undefined = unknown/not gated (allowed convs), false = stranger -> block. */
   consentAllowed?: boolean;
 }): React.ReactElement {
   const pal = usePalette();
@@ -81,7 +76,6 @@ export function TxRequestCard({ req, dark, sub, paying, onPay, consentAllowed }:
     />
   );
 }
-/** Static (non-hook) fields derived from a tx request's first call. */
 interface TxCallFields {
   target?: string; data?: string; value?: string; eth?: string;
   amount?: number; currency?: string; desc: string; rawDesc?: string;
@@ -90,7 +84,6 @@ interface TxCallFields {
   isErc20Transfer: boolean; showDecodedBlock: boolean; showBalance: boolean;
 }
 
-/** Resolve the amount value/unit display pair for a tx call. */
 function amountDisplay(amount: string | number | undefined, currency: string | undefined, eth: string | undefined): {
   amountValue?: string; amountUnit?: string;
 } {
@@ -98,7 +91,6 @@ function amountDisplay(amount: string | number | undefined, currency: string | u
   return { amountValue: eth, amountUnit: eth ? 'ETH' : undefined };
 }
 
-/** Derive the boolean flags (transfer / decoded-block / balance) from resolved call fields. */
 function txCallFlags(args: { data?: string; tokenAddr?: string; currency?: string; eth?: string }): {
   isErc20Transfer: boolean; showDecodedBlock: boolean; showBalance: boolean;
 } {
@@ -107,12 +99,10 @@ function txCallFlags(args: { data?: string; tokenAddr?: string; currency?: strin
   return {
     isErc20Transfer,
     showDecodedBlock: hasCalldata && !isErc20Transfer,
-    /** Show balance for a known currency, a native ETH transfer, or any token contract. */
     showBalance: !!args.currency || !!args.eth || !!args.tokenAddr,
   };
 }
 
-/** Pull the raw target/data/value/metadata off a tx request's first call (safe defaults). */
 function rawCall(req: TxRequest): {
   target?: string; data?: string; value?: string;
   meta: NonNullable<TxRequest['calls'][number]['metadata']>;
@@ -121,12 +111,10 @@ function rawCall(req: TxRequest): {
   return { target: call?.to, data: call?.data, value: call?.value, meta: call?.metadata ?? {} };
 }
 
-/** Derive the non-hook fields (amount/recipient/token/flags) from a tx request. */
 function txCallFields(req: TxRequest): TxCallFields {
   const { target, data, value, meta } = rawCall(req);
   const { amount, currency, toAddress, description } = meta;
   const eth = ethFromWeiHex(value);
-  /** For ERC20 requests `call.to` is the token contract; the real recipient is in `metadata.toAddress` (present means a transfer of that token). */
   const tokenAddr = toAddress ? target : undefined;
   const desc = description ?? 'Payment request';
   const recipient = toAddress ?? target;
@@ -139,7 +127,6 @@ function txCallFields(req: TxRequest): TxCallFields {
   };
 }
 
-/** Computed view-model for a TxRequestCard: static fields plus decode + simulation + price hooks. */
 function useTxCardModel(req: TxRequest): TxCardModel {
   const f = txCallFields(req);
   const logoUrl = tokenLogoUrl(f.chainNum, f.tokenAddr ?? null, 36);
@@ -153,7 +140,6 @@ function useTxCardModel(req: TxRequest): TxCardModel {
     amountLabel, chainNum: f.chainNum, logoUrl, desc: f.desc,
     recipient: f.recipient, tokenAddr: f.tokenAddr, decoded, decoding, sim, simulating,
     showDecodedBlock: f.showDecodedBlock,
-    /** contract call (calldata) that ALSO sends native ETH (value > 0). */
     sendsNativeWithCall: f.showDecodedBlock && !!f.eth && f.eth !== '0',
     actionLabel: txActionLabel(decoded, f.isErc20Transfer),
     isTransfer: isTransferRequest(decoded, f.isErc20Transfer),
@@ -161,7 +147,6 @@ function useTxCardModel(req: TxRequest): TxCardModel {
     showBalance: f.showBalance,
   };
 }
-/** Renders the stacked detail column of a TxRequestCard (warning, simulation, decode, recipient, network). */
 function TxRequestDetail({ m, sub }: { m: TxCardModel; sub: string }): React.ReactElement {
   return (
     <Col gap={8} style={{ alignSelf: 'stretch' }}>
@@ -176,7 +161,6 @@ function TxRequestDetail({ m, sub }: { m: TxCardModel; sub: string }): React.Rea
     </Col>
   );
 }
-/** TxToRow — the payment "To" line: a tappable link to the recipient's profile with the stamp-resolved username (short address while loading) and avatar; its own component so `usePeerProfiles` runs once per address. */
 function TxToRow({ address }: { address: string }): React.ReactElement {
   const router = useRouter();
   usePeerProfiles([address]);
@@ -194,7 +178,6 @@ function TxToRow({ address }: { address: string }): React.ReactElement {
     </Pressable>
   );
 }
-/** TxNativeValueRow — surfaces native ETH that rides along with a contract call (calldata + value > 0). Without this the ETH leaving the wallet is hidden behind the function call, since the amount header is suppressed for calls. */
 function TxNativeValueRow({ eth, chainId }: { eth: string; chainId: number }): React.ReactElement {
   const pal = usePalette();
   const usd = useUsdValue(chainId, null, eth);
@@ -205,21 +188,17 @@ function TxNativeValueRow({ eth, chainId }: { eth: string; chainId: number }): R
     </Row>
   );
 }
-/** Shorten a decoded arg value for display: 0x-addresses (and address-like 42-char hex) are truncated; everything else (strings, big numbers) is shown as-is. */
 function fmtArgValue(v: string): string {
   if (/^0x[0-9a-fA-F]{40}$/.test(v)) return shortAddress(v);
   return v;
 }
-/** Resolve the function label for a decoded call (the trusted calldata-derived signature), hiding clean signatures on a selector mismatch. */
 function decodedFnLabel(decoded: DecodedCall | null, selector?: string): string {
-  /** On a verified-contract selector mismatch, show the raw selector instead of a clean-looking signature; the red TxWarning above carries the "looks like X but no such function" detail. */
   if (!decoded) return selector ?? 'call';
   if (decoded.source === 'mismatch') {
     return selector ?? decoded.selector ?? 'unknown function';
   }
   return decoded.signature ?? decoded.functionName ?? selector ?? 'call';
 }
-/** Renders the trusted decoded-call block: function signature, decoded args, optional note + contract. */
 function DecodedCallBlock({ decoded, pending, target, sub, selector }: {
   decoded: DecodedCall | null; pending: boolean; target?: string; sub: string; selector?: string;
 }): React.ReactElement {
@@ -237,7 +216,7 @@ function DecodedCallBlock({ decoded, pending, target, sub, selector }: {
       </Text>
       {decoded?.args.map((a, i) => (
         <Row key={`${a.name}-${i}`} align="start" gap={8}>
-          {/* name (type): the ABI/4byte param type sits next to the name so the user can read the call shape, e.g. "content (string)". */}
+          {}
           <Text size="xs" color={sub} style={{ minWidth: 80, flexShrink: 0 }} numberOfLines={2}>
             {a.name}{a.type ? ` (${a.type})` : ''}
           </Text>
@@ -253,7 +232,6 @@ function DecodedCallBlock({ decoded, pending, target, sub, selector }: {
     </Col>
   );
 }
-/** TxWarning — anti-spoof banner: the app could not verify the contract, could not decode the call, or the decode disagrees with the sender's description. */
 function TxWarning({ text }: { text: string }): React.ReactElement {
   const pal = usePalette();
   return (
@@ -267,14 +245,12 @@ function TxWarning({ text }: { text: string }): React.ReactElement {
     </Box>
   );
 }
-/** TxReceiptCard — a confirmed payment: amount + tappable explorer link. */
 export function TxReceiptCard({ receipt, dark }: {
   receipt: TxReceipt; dark: boolean;
 }): React.ReactElement {
   const amountLabel = receipt.metadata?.amount != null
     ? `${receipt.metadata.amount} ${receipt.metadata.currency ?? 'ETH'}`
     : undefined;
-  /** A receipt with an amount/currency reads as "Payment sent"; a bare contract-call receipt (no amount) reads as "Transaction sent" so a contract interaction is never mislabelled as a payment. */
   const successLabel = amountLabel ? `Payment sent · ${amountLabel}` : 'Transaction sent';
   const url = explorerTxUrl(receipt.networkId, receipt.reference);
   const blockRadius = useBlockRadius(); const pal = usePalette();

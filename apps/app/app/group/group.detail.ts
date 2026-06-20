@@ -1,4 +1,3 @@
-/** @file useGroupDetail hook resolving a group conversation's member names and admin roles from deduped convMeta. */
 
 import { useEffect, useMemo, useState } from 'react';
 import { useConvMeta, fetchGroupRoles } from '../../modules/messaging';
@@ -7,7 +6,6 @@ import { ensurePeerProfiles, getPeerName, subscribePeerProfiles } from '@stage-l
 type Roles = Record<string, 'owner' | 'admin' | 'member'>;
 type Names = Record<string, string | null>;
 
-/** The subset of useGroupActions setters this hook seeds. */
 interface ActionSeeders {
   setName: (n: string | null) => void;
   setDraft: (n: string) => void;
@@ -17,7 +15,6 @@ interface ActionSeeders {
   setMembers: (m: string[]) => void;
 }
 
-/** Hook resolving a group conversation's member names and roles from metadata. */
 export function useGroupDetail(
   convId: string | undefined,
   a: ActionSeeders,
@@ -26,14 +23,12 @@ export function useGroupDetail(
   const [memberNames, setMemberNames] = useState<Names>({});
   const [memberRoles, setMemberRoles] = useState<Roles>({});
 
-  /** Members pre-sorted (the old loadGroupDetail sorted Object.values too). */
   const metaMembers = meta.memberAddrs;
   const sortedMembers = useMemo(
     () => [...metaMembers].sort((x, y) => x.localeCompare(y)),
     [metaMembers],
   );
 
-  /** Seed the inline editors from the shared convMeta query. */
   useEffect(() => {
     a.setName(meta.groupName ?? '');
     a.setDraft(meta.groupName ?? '');
@@ -43,7 +38,6 @@ export function useGroupDetail(
     a.setMembers(sortedMembers);
   }, [meta.groupName, meta.groupImage, meta.groupDescription, sortedMembers]);
 
-  /** Group-only extra: per-member admin roles, off the query's inbox->addr map. */
   const inboxToAddr = meta.inboxToAddr;
   useEffect(() => {
     if (!convId || Object.keys(inboxToAddr).length === 0) return;
@@ -54,10 +48,8 @@ export function useGroupDetail(
     return (): void => { cancelled = true; };
   }, [convId, inboxToAddr]);
 
-  /** Member display names from stamp.fyi / ENS (read-only identity; pure enrichment - rows fall back to the short address). Recomputes whenever the shared stamp cache resolves. */
   useEffect(() => {
     if (sortedMembers.length === 0) return;
-    /** Recompute helper. */
     const recompute = (): void => {
       const next: Names = {};
       for (const m of sortedMembers) next[m] = getPeerName(m) ?? null;

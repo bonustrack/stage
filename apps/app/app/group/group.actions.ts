@@ -1,4 +1,3 @@
-/** @file useGroupActions hook owning the group-detail mutation state and handlers (name, description, image, add/remove member, leave). */
 
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
@@ -7,7 +6,6 @@ import {
   makeSaveDescription, makeLeaveGroup, makeSaveName,
 } from './group.actions.handlers';
 
-/** Hook wiring the editable group name/description state to mutation actions. */
 export function useGroupActions(line: string, invalidateConvMeta: () => void): {
   name: string | null; setName: (n: string | null) => void;
   draft: string; setDraft: (s: string) => void;

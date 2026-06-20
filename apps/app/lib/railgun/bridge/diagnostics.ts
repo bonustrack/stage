@@ -1,22 +1,16 @@
-/** @file On-screen lifecycle diagnostics for the nodejs-mobile bridge: a single status-line sink plus a raw catch-all probe that surfaces every channel event by name when adb logcat is unavailable. */
 
-/** With no on-device adb logcat, the bridge emits one formatted status line per lifecycle point plus a raw catch-all for ANY channel event; the probe UI registers a sink via setBridgeStatusListener and renders the ordered log so a stall shows in one screenshot. */
 import type { NodejsChannel } from './nodejsMobile';
 
-/** Optional sink the probe UI registers; null clears it. */
 let onBridgeStatus: ((line: string) => void) | null = null;
 
-/** Register (or clear, with null) the diagnostics sink. */
 export function setBridgeStatusListener(cb: ((line: string) => void) | null): void {
   onBridgeStatus = cb;
 }
 
-/** Emit one status line to the registered sink (no-op when none). */
 export function status(line: string): void {
   onBridgeStatus?.(line);
 }
 
-/** Best-effort stringify for a payload that failed `JSON.stringify` (cyclic/throwing toJSON). */
 function fmtUnstringifiable(payload: unknown): string {
   if (typeof payload === 'object' && payload !== null) {
     const fn: unknown = (payload as { toString?: unknown }).toString;
@@ -33,7 +27,6 @@ function fmtUnstringifiable(payload: unknown): string {
   return '';
 }
 
-/** Compact, throw-safe stringify of a channel payload for the status log. */
 export function fmtPayload(payload: unknown): string {
   if (payload === undefined) return '';
   try {
@@ -46,7 +39,6 @@ export function fmtPayload(payload: unknown): string {
 
 let rawProbeAttached = false;
 
-/** Listen on every event name the boot signal might arrive under and emit "rx event: <name>" so an unexpected name is visible. 'message' is the legacy nodejs-mobile default channel event. Idempotent across startBridge calls. */
 export function attachRawProbe(ch: NodejsChannel, names: readonly string[]): void {
   if (rawProbeAttached) return;
   rawProbeAttached = true;

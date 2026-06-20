@@ -1,10 +1,9 @@
-/** @file Replays a GET with the caller's signed X-PAYMENT header at the edge to settle an x402 payment, behind the SSRF guards and dropping the bearer on cross-origin redirects. */
 
 import { assertPublicUrl, SsrfError } from './ssrf.ts';
 
-const TIMEOUT_MS = 8000; /** settlement (on-chain verify) can be slower than a page fetch */
+const TIMEOUT_MS = 8000;
 const MAX_REDIRECTS = 3;
-const MAX_BODY_BYTES = 16_000; /** trimmed echo of the paid response, not the full asset */
+const MAX_BODY_BYTES = 16_000;
 const UA = 'Mozilla/5.0 (compatible; MetroLinkPreview/1.0; +https://metro.box)';
 
 export interface SettleRequest {
@@ -18,7 +17,6 @@ export interface SettleResult {
   body?: string;
 }
 
-/** Validate a parsed POST body is a usable settle request. */
 export function parseSettleBody(body: unknown): SettleRequest | null {
   if (!body || typeof body !== 'object') return null;
   const o = body as Record<string, unknown>;
@@ -28,7 +26,6 @@ export function parseSettleBody(body: unknown): SettleRequest | null {
   return { url, paymentHeader };
 }
 
-/** Read a response body trimmed to MAX_BODY_BYTES, decoded as UTF-8. */
 async function readTrimmed(res: Response): Promise<string> {
   const reader = res.body?.getReader() as ReadableStreamDefaultReader<Uint8Array> | undefined;
   if (!reader) return (await res.text()).slice(0, MAX_BODY_BYTES);
@@ -49,11 +46,9 @@ async function readTrimmed(res: Response): Promise<string> {
   return new TextDecoder('utf-8').decode(out).slice(0, MAX_BODY_BYTES);
 }
 
-/** Replay a GET to `url` with the caller's `X-PAYMENT` header, behind the SSRF guards (re-validated on every redirect hop). Throws {@link SsrfError} on an unsafe URL/redirect. Returns the upstream status + a trimmed body echo. */
 export async function settleX402(req: SettleRequest): Promise<SettleResult> {
   let current = assertPublicUrl(req.url).toString();
   const initialOrigin = new URL(current).origin;
-  /** Only present the bearer X-PAYMENT header to same-origin hosts; the first hop is same-origin by definition, and a cross-origin redirect drops it permanently for the rest of the chain. */
   let sendPaymentHeader = true;
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
     const headers: Record<string, string> = {
@@ -71,7 +66,6 @@ export async function settleX402(req: SettleRequest): Promise<SettleResult> {
       const loc = res.headers.get('location');
       if (!loc) return { status: res.status, ok: false };
       current = assertPublicUrl(new URL(loc, current).toString()).toString();
-      /** Never replay the signed payment authorization to a different origin. */
       if (new URL(current).origin !== initialOrigin) sendPaymentHeader = false;
       continue;
     }

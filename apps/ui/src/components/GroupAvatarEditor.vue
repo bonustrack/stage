@@ -1,15 +1,10 @@
 <script setup lang="ts">
-/** Avatar editor for the group/channel page — large round image, hidden
- *  file input, tap-to-pick. Extracted from GroupDetail.vue to keep that
- *  file under the per-file LOC cap. Calls the parent on file selection;
- *  parent handles the IPFS upload + XMTP `updateImageUrl`. */
 
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 
 const props = defineProps<{
   imageUrl: string;
   uploading: boolean;
-  /** Members who aren't admins can't change the image — show it, no picker. */
   readonly?: boolean;
 }>();
 const emit = defineEmits<(e: 'pick', file: File) => void>();

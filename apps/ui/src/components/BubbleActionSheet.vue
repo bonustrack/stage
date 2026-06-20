@@ -1,6 +1,4 @@
 <script setup lang="ts">
-/** Modal action sheet that pops over the conversation when a bubble is long-pressed or
- *  right-clicked. Six quick reactions, reply, and copy-text actions. */
 
 import type { HistoryEntry } from '../lib/types';
 

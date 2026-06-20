@@ -1,4 +1,3 @@
-/** @file Shared token-selector field + bottom-sheet modal for Wallet action pages, listing public or Railgun-shielded balances as wallet-style rows and reporting the chosen token to the parent. */
 import { useEffect, useMemo, useState } from 'react';
 
 import { Pressable } from '@stage-labs/kit/pressable';
@@ -19,32 +18,27 @@ import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
 export type SelectorMode = 'public' | 'shielded' | 'combined';
 export interface TokenChoice { symbol: string; chainId: number; isPrivate?: boolean }
 
-/** Find the AssetRow matching the current selection (for the field + balance). Public ETH and shielded ETH share symbol+chainId, so the `isPrivate` flag is part of the identity in combined mode. */
 function findRow(rows: AssetRow[], sel: TokenChoice): AssetRow | undefined {
   return rows.find(r =>
     r.symbol === sel.symbol && r.chainId === sel.chainId && !!r.isPrivate === !!sel.isPrivate,
   );
 }
 
-/** True when a row's decimal-string balance parses to a positive number. Used to hide zero/empty-balance tokens from the selector. */
 function hasBalance(r: AssetRow): boolean {
   const n = Number.parseFloat(r.balance);
   return Number.isFinite(n) && n> 0;
 }
 
-/** USD value of a row = balance × per-unit price. Rows with no price (CoinGecko miss) contribute 0 so they sort to the bottom. Drives the highest-value-first ordering of the selector list (and thus the page's default selection). */
 function usdValue(r: AssetRow): number {
   const bal = Number.parseFloat(r.balance);
   if (!Number.isFinite(bal) || r.priceUsd == null) return 0;
   return bal * r.priceUsd;
 }
 
-/** Sort a copy of the rows descending by USD value (highest balance worth first). */
 function byValueDesc(rows: AssetRow[]): AssetRow[] {
   return [...rows].sort((a, b) => usdValue(b) - usdValue(a));
 }
 
-/** Load the candidate token rows for the selector. PUBLIC = on-chain multicall; SHIELDED = the active Railgun snapshot mapped to rows. */
 function useSelectorRows(mode: SelectorMode): { rows: AssetRow[]; loading: boolean } {
   const [publicRows, setPublicRows] = useState<AssetRow[] | null>(null);
   const { snapshot } = usePrivateWallet(mode === 'shielded' || mode === 'combined');
@@ -57,7 +51,7 @@ function useSelectorRows(mode: SelectorMode): { rows: AssetRow[]; loading: boole
         if (!acct?.address || cancelled) return;
         const next = await fetchAssetRows(acct.address);
         if (!cancelled) setPublicRows(next);
-      } catch { /* leave null → spinner stays until retry/close */ }
+      } catch { }
     })();
     return () => { cancelled = true; };
   }, []);
@@ -70,20 +64,17 @@ function useSelectorRows(mode: SelectorMode): { rows: AssetRow[]; loading: boole
   if (mode === 'shielded') return { rows: byValueDesc(shieldedRows.filter(hasBalance)), loading: false };
   const pub = (publicRows ?? []).filter(hasBalance);
   if (mode === 'combined') {
-    /** Combined public + positive-balance shielded rows, value-sorted; `isPrivate` distinguishes a public token from its shielded twin. */
     return { rows: byValueDesc([...pub, ...shieldedRows.filter(hasBalance)]), loading: publicRows === null };
   }
   return { rows: byValueDesc(pub), loading: publicRows === null };
 }
 
-/** The highest-USD-value token in the list for `mode`, or null until rows load / if the wallet holds nothing. Lets a page default-select the most valuable holding instead of the hardcoded native token. */
 export function useTopToken(mode: SelectorMode): TokenChoice | null {
   const { rows } = useSelectorRows(mode);
   const top = rows[0];
   return top ? { symbol: top.symbol, chainId: top.chainId, isPrivate: top.isPrivate } : null;
 }
 
-/** Tappable token field. Shows the selected token avatar + symbol + a chevron; opening it presents the modal list. */
 export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
   mode: SelectorMode;
   value: TokenChoice;
@@ -160,7 +151,6 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
   );
 }
 
-/** Helper for the parent amount field — returns the selected token's balance string (or null) so the page can render "Balance: …" and a Max button. */
 export function useSelectedBalance(mode: SelectorMode, value: TokenChoice): string | null {
   const { rows } = useSelectorRows(mode);
   return findRow(rows, value)?.balance ?? null;

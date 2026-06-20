@@ -1,4 +1,3 @@
-/** @file apps/app ESLint preset: the React Native app's bespoke rules (Kit theme-native hints, the keyring import chokepoint, Kit layout/import restrictions), composed by the root config via reactNative(). */
 import { MAX_LINES, recommended, NO_ESCAPE_HATCHES, commentPlugins, COMMENT_RULES, FUNCTION_SIZE_RULES } from '@stage-labs/config/eslint/base';
 
 const TEXT_ROLE_HINT = {
@@ -58,7 +57,6 @@ const keyringGuardRule = {
       create(context) {
         const file = (context.filename ?? context.getFilename?.() ?? '').replace(/\\/g, '/');
         if (file.endsWith('/lib/zerodev/keyring.ts')) return {};
-        /** Report a keyring-guard violation on node, naming the forbidden import. */
         const fail = (node, what) =>
           context.report({
             node,
@@ -95,7 +93,6 @@ const keyringGuardRule = {
     },
 };
 
-/** Build the apps/app flat-config blocks: type-aware recommended, the Kit/keyring custom rules, and the Kit layout/import restrictions scoped to the app's source dirs. */
 export function reactNative() {
   return [
     { ignores: ['node_modules/**', '.expo/**', 'dist/**', 'nodejs-assets/**'] },

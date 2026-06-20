@@ -1,4 +1,3 @@
-/** @file Guardian-recovery action handlers (save/cancel/approve) extracted from the recovery screen to keep the component small. */
 
 import { useCallback } from 'react';
 import { Alert } from 'react-native';
@@ -10,7 +9,6 @@ import {
 } from '../../lib/zerodev';
 import type { Address } from 'viem';
 
-/** Inputs the recovery handlers close over. */
 export interface RecoveryActionsArgs {
   rec: AccountRecord | null;
   guardians: string[];
@@ -23,14 +21,12 @@ export interface RecoveryActionsArgs {
   router: { back: () => void };
 }
 
-/** The three async recovery handlers wired to the screen state. */
 export interface RecoveryActions {
   onSave: () => Promise<void>;
   onCancel: () => Promise<void>;
   onApprove: () => Promise<void>;
 }
 
-/** Resolve any ENS guardian entries to addresses (addresses pass through). */
 async function resolveGuardians(guardians: string[]): Promise<string[]> {
   const resolved: string[] = [];
   for (const g of guardians) {
@@ -42,11 +38,9 @@ async function resolveGuardians(guardians: string[]): Promise<string[]> {
   return resolved;
 }
 
-/** Build the save/cancel/approve handlers for the recovery screen. */
 export function useRecoveryActions(a: RecoveryActionsArgs): RecoveryActions {
   const { rec, guardians, threshold, delay, params, setBusy, setApproving, setApproved, router } = a;
 
-  /** Save guardians: install on first config, else reconfigure (native renew). */
   const onSave = useCallback(async (): Promise<void> => {
     if (!rec) return;
     setBusy(true);
@@ -64,12 +58,10 @@ export function useRecoveryActions(a: RecoveryActionsArgs): RecoveryActions {
     }
   }, [rec, guardians, threshold, delay, router, setBusy]);
 
-  /** Owner cancel of a pending rotation (native veto) for the deep-linked newOwner. */
   const onCancel = useCallback(async (): Promise<void> => {
     if (!rec || !params.newOwner) return;
     setBusy(true);
     try {
-      /** nonce 0 = the recovery validator's first proposal slot for this account. */
       await cancelRecovery(rec, params.newOwner as Address, 0n);
       Alert.alert('Recovery cancelled', 'The pending recovery was cancelled.');
       router.back();
@@ -80,7 +72,6 @@ export function useRecoveryActions(a: RecoveryActionsArgs): RecoveryActions {
     }
   }, [rec, params.newOwner, router, setBusy]);
 
-  /** Guardian approves an inbound request: sign offchain + post back to the line. */
   const onApprove = useCallback(async (): Promise<void> => {
     if (!params.line || !params.wallet || !params.newOwner) return;
     const active = await getActiveAccount();

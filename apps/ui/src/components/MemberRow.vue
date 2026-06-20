@@ -1,7 +1,4 @@
 <script setup lang="ts">
-/** Single member row in the GroupDetail page — avatar + name + remove
- *  button. Extracted from GroupDetail.vue to keep that file under the
- *  per-file LOC cap. */
 
 import { shortAddress, stampAvatarUrl } from '../lib/xmtp';
 import { Row } from './layout';
@@ -12,7 +9,6 @@ const props = defineProps<{
   isSelf: boolean;
   removing: boolean;
   role?: 'owner' | 'admin' | 'member';
-  /** Only show the remove button when the viewer is a group admin/owner. */
   canRemove?: boolean;
 }>();
 const emit = defineEmits<{ open: []; remove: [] }>();

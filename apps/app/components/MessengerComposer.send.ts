@@ -1,4 +1,3 @@
-/** @file Send-step planner for the MessengerComposer: splits one submission into the separate ordered XMTP messages it produces (text, multi-attachment, per-audio-clip). */
 
 import {
   fileUriToBase64, xmtpReply, xmtpSendAttachment, xmtpSendMultiRemoteAttachment, xmtpSendText,
@@ -6,11 +5,9 @@ import {
 import { type Attachment, mimeOf, INLINE_ATTACHMENT_MAX_BYTES } from './MessengerComposer.helpers';
 
 let seq = 0;
-/** Mint Local Id. */
 const mintLocalId = (): string =>
   `tmp_${Date.now()}_${(seq++).toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
 
-/** One planned outbound message: the optimistic content to preview + how to send it. */
 export interface SendStep {
   localId: string;
   text: string;
@@ -18,7 +15,6 @@ export interface SendStep {
   run: () => Promise<string>;
 }
 
-/** Build the ordered list of messages this submission will produce. Order is the on-wire / display order: text first, then the bundled image/video/file attachment message, then each audio clip as its own message. */
 export function planSendSteps(
   xmtpLine: string,
   body: string,
@@ -57,7 +53,6 @@ export function planSendSteps(
   return steps;
 }
 
-/** Sends an audio voice note as an INLINE base64 attachment, intentionally bypassing the remote-attachment strip gate (in-app audio is not an EXIF/location vector like camera images, which still route through xmtpSendMultiRemoteAttachment). */
 async function sendAudio(xmtpLine: string, at: Attachment): Promise<string> {
   const mimeType = mimeOf(at.mime, at.name ?? at.url);
   const filename = at.name ?? at.id;

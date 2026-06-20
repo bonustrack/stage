@@ -1,4 +1,3 @@
-/** @file Tap-to-add contact suggestions for the member picker: existing DM peers as toggleable avatar/name rows that stage or unstage a contact; hidden when empty. */
 
 import { Pressable } from '@stage-labs/kit/pressable';
 
@@ -10,12 +9,10 @@ import type { Contact } from '../../lib/useContacts';
 import { Avatar } from '../../components/Avatar';
 import { Col, Row } from '../../components/layout';
 
-/** Selectable list of contact suggestions for staging group members. */
 export function ContactSuggestions({
   contacts, selected, onToggle,
 }: {
   contacts: Contact[];
-  /** Lowercased addresses currently staged — render as selected. */
   selected: Set<string>;
   onToggle: (contact: Contact) => void;
 }): React.ReactElement | null {

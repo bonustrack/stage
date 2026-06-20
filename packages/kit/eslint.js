@@ -1,7 +1,5 @@
-/** @file packages/kit ESLint preset: the design-system's bespoke rules (Kit layout-param enforcement, raw fontSize/hex bans on specific source files), composed by the root config via kitEslint(). */
 import { MAX_LINES, recommended, NO_ESCAPE_HATCHES, commentPlugins, COMMENT_RULES, FUNCTION_SIZE_RULES } from '@stage-labs/config/eslint/base';
 
-/** Build the packages/kit flat-config blocks: type-aware recommended plus the Kit layout-param and raw-token restrictions scoped to the kit sources. */
 export function kitEslint() {
   return [
     { ignores: ['node_modules/**', 'dist/**', 'src/heroicons.data.ts'] },

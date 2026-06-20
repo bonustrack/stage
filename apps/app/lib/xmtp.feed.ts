@@ -1,4 +1,3 @@
-/** @file TanStack-query-backed `useXmtpFeed` conversation-feed hook rendering from a query keyed by `messagingKeys.messages(epoch, line)` while `feedCache` stays the live-write source of truth; extracted from lib/xmtp.ts and re-exported from there. */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -16,12 +15,10 @@ import { type XmtpFeedStatus } from './xmtp.types';
 
 const EMPTY: HistoryEntry[] = [];
 
-/** Loads an XMTP conversation's message history then keeps it live; `events` are newest-first (inverted FlatList order). Caller passes a metro line URI; when `enabled` is false the hook stays idle (suppresses loading until the client is built). */
 export function useXmtpFeed(line: string | null, enabled: boolean): {
   events: HistoryEntry[]; status: XmtpFeedStatus; error: string | null; inboxId: string;
   loadOlder: () => Promise<void>; hasMore: boolean; loadingOlder: boolean;
 } {
-  /** Re-init the feed when the active account changes (in-place switch) - the cached client + feedCache have been swapped out under us, so the query key's epoch segment changes and react-query refetches against the new inbox. */
   const accountEpoch = useAccountEpoch();
   const [inboxId, setInboxId] = useState<string>('');
   const [hasMore, setHasMore] = useState(true);
@@ -34,19 +31,16 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
   const epochRef = useRef(accountEpoch);
   epochRef.current = accountEpoch;
 
-  /** Registers this conv as having a live viewer (drives the resync backstop) and ensures the single app-wide stream + feedCache→query mirror run; no per-conv stream, the module-level `streamAllMessages` fan-out routes inbound messages into `feedCache` which the mirror copies into this query's cache. */
   useEffect(() => {
     if (!enabled || !line) return;
     const ln = line;
     ensureFeedQueryBridge();
     activeFeedLines.add(ln);
     void ensureGlobalStream();
-    /** Resolve the inbox id once so `myUri` (consumer-side) is populated. */
     let cancelled = false;
     void getOrCreateXmtpClient('production')
       .then(c => { if (!cancelled) setInboxId(c.inboxId); })
       .catch(() => undefined);
-    /** Fresh conversation → reset older-page pagination so scroll-up can fetch history again from the new conv's tail. */
     setHasMore(true);
     setLoadingOlder(false);
     loadingOlderRef.current = false;
@@ -54,7 +48,6 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
     return () => { cancelled = true; activeFeedLines.delete(ln); };
   }, [line, enabled, accountEpoch]);
 
-  /** The feed query: `initialData` seeds synchronously from feedCache (instant re-open, no empty flash), the queryFn does the local-first load + forced inbox sync on open (#375) writing through feedCache, and live appends arrive via the mirror's setQueryData so `data` re-renders without the queryFn re-running. */
   const queryKey = messagingKeys.messages(accountEpoch, line ?? '');
   const query = useQuery<HistoryEntry[]>({
     queryKey,
@@ -65,7 +58,6 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
   });
   const events = query.data ?? EMPTY;
 
-  /** A short first page (or empty conv) means the whole thread is already loaded, so flip `hasMore` to false so the intro/hero renders without waiting for an `onEndReached` a short list may never fire; keyed on fetched length, only after a real fetch settled. */
   useEffect(() => {
     if (query.isFetching || !query.isFetched) return;
     if (events.length < PAGE_SIZE) { hasMoreRef.current = false; setHasMore(false); }
@@ -77,7 +69,6 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
         : 'loading';
   const error = query.error ? (query.error).message : null;
 
-  /** Fetch the next older page on scroll-up. Stable identity (deps are only refs) so the FlatList's onEndReached prop never churns. Never throws. */
   const loadOlder = useCallback(async (): Promise<void> => {
     const ln = lineRef.current;
     if (loadingOlderRef.current || !hasMoreRef.current || !ln) return;
@@ -91,7 +82,7 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
     try {
       const more = await loadFeedOlderPage(ln, oldest);
       if (!more) { hasMoreRef.current = false; setHasMore(false); }
-    } catch { /* best-effort - scroll-up retries on the next onEndReached */ }
+    } catch { }
     finally {
       loadingOlderRef.current = false;
       setLoadingOlder(false);

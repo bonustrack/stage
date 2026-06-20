@@ -1,6 +1,4 @@
 <script setup lang="ts">
-/** Contacts tab — distinct DM peers extracted from the local XMTP inbox.
- *  Mirrors apps/app/app/(tabs)/contacts.tsx. */
 
 import {
   getOrCreateXmtpClient, peerEthAddressOfDm, stampAvatarUrl, shortAddress,

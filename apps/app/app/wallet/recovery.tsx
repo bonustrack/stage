@@ -1,4 +1,3 @@
-/** @file Wallet → Recovery screen for setting up or approving smart-account guardian social recovery. */
 
 import { useEffect, useState } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -14,7 +13,6 @@ import { useRecoveryActions, type RecoveryActions } from './recovery.actions';
 
 type PagePal = Pick<Palette, 'link' | 'bg' | 'border'>;
 
-/** A bare ActionPage with a single explanatory line (used for unavailable states). */
 function RecoveryNotice({ pal, p, onBack, message }: {
   pal: FormPal; p: PagePal; onBack: () => void; message: string;
 }): React.ReactElement {
@@ -25,7 +23,6 @@ function RecoveryNotice({ pal, p, onBack, message }: {
   );
 }
 
-/** The guardian setup/edit form with its pinned footer. */
 function RecoverySetupForm({ rec, pal, dark, p, params, delay, guardians, setGuardians, threshold, setThreshold, busy, actions, onBack }: {
   rec: AccountRecord; pal: FormPal; dark: boolean; p: PagePal;
   params: { newOwner?: string }; delay: number;
@@ -54,7 +51,6 @@ function RecoverySetupForm({ rec, pal, dark, p, params, delay, guardians, setGua
   );
 }
 
-/** Screen for setting up or approving smart-account social recovery. */
 export default function WalletRecovery(): React.ReactElement {
   const router = useRouter();
   const params = useLocalSearchParams<{ mode?: string; line?: string; wallet?: string; newOwner?: string }>();
@@ -84,7 +80,6 @@ export default function WalletRecovery(): React.ReactElement {
 
   const delay = rec?.guardianDelay ?? DEFAULT_RECOVERY_DELAY_SECONDS;
   const actions = useRecoveryActions({ rec, guardians, threshold, delay, params, setBusy, setApproving, setApproved, router });
-  /** Pop back to the previous screen. */
   const onBack = (): void => { router.back(); };
 
   if (mode === 'approve') {

@@ -1,6 +1,4 @@
-/** @file Single source of truth enumerating every whitelisted Railgun bridge method name once as a typed const so the RN frame builders, host whitelist, and engine-op routing can no longer desync (a typo is a compile error; a host-whitelist mismatch fails CI). Pure string constants, no RN/expo imports. */
 
-/** Stateful ENGINE ops routed in the host to engine.js (it owns LevelDB + prover + provider wiring + the wallet cache). NOT in the SDK whitelist. */
 export const ENGINE_OPS = [
   'initEngine',
   'engineStatus',
@@ -11,7 +9,6 @@ export const ENGINE_OPS = [
 ] as const;
 export type EngineOp = (typeof ENGINE_OPS)[number];
 
-/** High-level convenience calls the host answers directly on the channel without going through the generic `sdk` dispatcher (liveness + handshake + the typed engine lifecycle handlers). Mirrors the RN bridge ExtraCall union. */
 export const EXTRA_CALLS = [
   'ping',
   'hello',
@@ -23,18 +20,14 @@ export const EXTRA_CALLS = [
 ] as const;
 export type ExtraCall = (typeof EXTRA_CALLS)[number];
 
-/** Composite intents whose SHAPE the dispatcher supports but which RN composes from the whitelisted primitives (never run as a single host call). The host rejects these with `not_implemented` so an accidental direct call is loud. */
 export const COMPOSITE_OPS = ['shield', 'privateTransfer', 'unshield'] as const;
 export type CompositeOp = (typeof COMPOSITE_OPS)[number];
 
-/** THE WHITELIST — every @railgun-community/wallet primitive the host may invoke by name; RN frame builders reference these via SDK_METHOD (typed) and the host's WHITELIST keys MUST equal this set exactly (dispatch-parity test). Grouped for readability; order is not significant. */
 export const SDK_METHODS = [
-  /** engine lifecycle (lower-level than ENGINE_OPS; for advanced orchestration) */
   'engine.has',
   'engine.get',
   'engine.loadProvider',
   'engine.unloadProvider',
-  /** wallet management */
   'wallet.create',
   'wallet.createViewOnly',
   'wallet.loadByID',
@@ -44,23 +37,19 @@ export const SDK_METHODS = [
   'wallet.getMnemonic',
   'wallet.getShareableViewingKey',
   'wallet.getTransactionHistory',
-  /** balances */
   'balance.refresh',
   'balance.forERC20',
   'balance.getSerializedERC20',
   'balance.rescanFull',
   'balance.awaitWalletScan',
-  /** gas estimation */
   'gas.estimateShield',
   'gas.estimateShieldBaseToken',
   'gas.estimateTransfer',
   'gas.estimateUnshield',
   'gas.estimateUnshieldBaseToken',
-  /** proof generation (Groth16 - the whole reason the Node host exists) */
   'proof.transfer',
   'proof.unshield',
   'proof.unshieldBaseToken',
-  /** transaction population (returns a populated tx; RN signs + broadcasts) */
   'tx.populateShield',
   'tx.populateShieldBaseToken',
   'tx.populateProvedTransfer',
@@ -68,22 +57,18 @@ export const SDK_METHODS = [
   'tx.getShieldPrivateKeySignatureMessage',
 ] as const;
 
-/** A whitelisted SDK method name (compile-time-checked literal union). */
 export type SdkMethod = (typeof SDK_METHODS)[number];
 
-/** Identity helper so call sites read `SDK_METHOD('tx.populateShield')` and get a compile error on a typo / removed name, instead of a silent string. */
 export function SDK_METHOD<M extends SdkMethod>(m: M): M {
   return m;
 }
 
-/** The JSON-serializable manifest shipped to the Node host (via the generated railgun-methods.json). The host asserts its WHITELIST / engine-op / composite routing equals this so the contract and the host can never diverge silently. */
 export interface RailgunMethodManifest {
   sdkMethods: readonly string[];
   engineOps: readonly string[];
   compositeOps: readonly string[];
 }
 
-/** Build the manifest object (used by the codegen script + the parity test). */
 export function railgunMethodManifest(): RailgunMethodManifest {
   return {
     sdkMethods: [...SDK_METHODS].sort(),

@@ -1,4 +1,3 @@
-/** @file Renders a payment-request bubble for a link that returned an x402 challenge, and for the exact/USDC scheme runs the in-app x402 pay path (EIP-3009 authorization + X-PAYMENT POST to the link-proxy /x402-settle endpoint). */
 
 import { useState } from 'react';
 import { Alert, Linking } from 'react-native';
@@ -27,17 +26,14 @@ import { usePalette, withAlpha } from '../lib/theme';
 
 type PayPhase = 'idle' | 'paying' | 'paid' | 'failed';
 
-/** Single accepted x402 payment option. */
 type X402Accept = X402Challenge['accepts'][number];
 
-/** Resolve the description line for an x402 challenge (accept description, error, or default). */
 function x402Description(challenge: X402Challenge, accept: X402Accept): string {
   if (accept.description != null && accept.description !== '') return accept.description;
   if (challenge.error != null && challenge.error !== '') return challenge.error;
   return 'Payment required';
 }
 
-/** Renders the recipient + network + tappable endpoint detail block of the x402 card. */
 function X402Detail({ accept, network, endpoint, pal, onOpen }: {
   accept: X402Accept; network: string; endpoint: string;
   pal: ReturnType<typeof usePalette>; onOpen: () => void;
@@ -68,7 +64,6 @@ function X402Detail({ accept, network, endpoint, pal, onOpen }: {
   );
 }
 
-/** Resolve the primary pay-button label from capability, phase, and affordability. */
 function payButtonLabel(phase: PayPhase, insufficient: boolean, asset: { symbol: string } | undefined, amountLabel?: string): string {
   if (phase === 'paid') return 'Paid';
   if (phase === 'paying') return 'Paying...';
@@ -77,7 +72,6 @@ function payButtonLabel(phase: PayPhase, insufficient: boolean, asset: { symbol:
   return amountLabel ? `Pay ${amountLabel}` : 'Pay';
 }
 
-/** Card that renders an x402 payment challenge and drives the pay flow. */
 export function X402Card({ challenge, dark }: {
   challenge: X402Challenge; dark?: boolean;
 }): React.ReactElement | null {
@@ -95,10 +89,8 @@ export function X402Card({ challenge, dark }: {
 
   if (!accept) return null;
 
-  /** Open Endpoint. */
   const openEndpoint = (): void => { if (endpoint) void Linking.openURL(endpoint); };
 
-  /** Run Pay — settle the x402 authorization and surface the result. */
   const runPay = (): void => {
     setPhase('paying');
     void (async () => {
@@ -113,7 +105,6 @@ export function X402Card({ challenge, dark }: {
     })();
   };
 
-  /** Confirm Pay — prompt before signing the gasless authorization. */
   const confirmPay = (): void => {
     Alert.alert(
       'Confirm payment',
@@ -124,7 +115,6 @@ export function X402Card({ challenge, dark }: {
     );
   };
 
-  /** Build the PaymentCard primary action for a resolved balance. */
   const buildAction = (bal: { insufficient: boolean } | null): {
     label: string; onPress: () => void; disabled?: boolean; icon: React.ReactElement;
   } => {
@@ -137,11 +127,9 @@ export function X402Card({ challenge, dark }: {
         icon: <Icon name={phase === 'paid' ? 'check' : 'wallet'} size={18} color={pal.bg}/>,
       };
     }
-    /** Non-`exact` schemes / unsupported networks / unknown assets: open in browser. */
     return { label: 'Open endpoint', onPress: openEndpoint, icon: <Icon name="externalLink" size={18} color={pal.bg}/> };
   };
 
-  /** x402 protocol badge — small primary-tinted pill. */
   const badge = (
     <Box radius={999} background={withAlpha(pal.primary, 0.16)} padding={{ x: 8, y: 3 }}>
       <Text weight="semibold" size="3xs" color={pal.primary}>x402</Text>
@@ -158,7 +146,6 @@ export function X402Card({ challenge, dark }: {
       amountLabel={amountLabel}
       detail={<X402Detail accept={accept} network={network} endpoint={endpoint} pal={pal} onOpen={openEndpoint} />}
       balance={{
-        /** Show balance whenever we have an asset reference + chain (decimals read on-chain for unknowns). */
         show: !!accept.asset && chainNum > 0,
         chainId: chainNum,
         token: accept.asset,

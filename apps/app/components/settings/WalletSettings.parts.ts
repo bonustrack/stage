@@ -1,4 +1,3 @@
-/** @file Read-only data layer for Settings -> Wallet: assembles the active account's display model (metadata, signer, Kernel modules, XMTP address) and detects deploy status via getCode, never touching private keys. */
 
 import { useEffect, useState } from 'react';
 import { KERNEL_VERSION_STRING, ENTRY_POINT_VERSION, SCW_CHAIN_ID } from '@stage-labs/client/zerodev/config';
@@ -7,11 +6,8 @@ import { makePublicClient } from '../../lib/zerodev/client';
 
 export type ModuleRole = 'sudo' | 'backup' | 'recovery' | 'session';
 interface WalletModule {
-  /** Human name of the validator / module. */
   name: string;
-  /** Its role on the Kernel. */
   role: ModuleRole;
-  /** Short status / detail line (e.g. "Active signer", "2 of 3, 48h delay"). */
   status: string;
 }
 
@@ -20,15 +16,11 @@ export type DeployState = 'loading' | 'deployed' | 'counterfactual' | 'unknown';
 export interface WalletModel {
   rec: AccountRecord;
   isSmart: boolean;
-  /** Counterfactual Kernel / account address (== rec.address). */
   address: string;
   label: string;
   hdIndex: number | null;
-  /** 'Passkey' when rec.passkey is present, else 'Recovery key'. */
   activeSigner: 'Passkey' | 'Recovery key';
-  /** Derived ECDSA owner / recovery EOA address (display only). */
   ownerAddress: string | null;
-  /** The address used as the XMTP identity (SCW address when scwXmtp on). */
   xmtpAddress: string;
   modules: WalletModule[];
   chainId: number;
@@ -37,7 +29,6 @@ export interface WalletModel {
   guardianCount: number;
 }
 
-/** Format a recovery-timelock delay (seconds) into a compact human string. */
 function formatDelay(seconds?: number): string | null {
   if (!seconds || seconds <= 0) return null;
   if (seconds % 86400 === 0) return `${seconds / 86400}d`;
@@ -46,7 +37,6 @@ function formatDelay(seconds?: number): string | null {
   return `${seconds}s`;
 }
 
-/** Build the ordered module / validator list from a smart-account record. The on-chain source of truth lives in the Kernel; this mirrors what the app configured (passkey validator + ECDSA owner + optional guardian validator). */
 function buildModules(rec: AccountRecord): WalletModule[] {
   const mods: WalletModule[] = [];
   const hasPasskey = !!rec.passkey;
@@ -69,10 +59,8 @@ function buildModules(rec: AccountRecord): WalletModule[] {
   return mods;
 }
 
-/** Assemble the synchronous part of the wallet model from a record. */
 function modelFromRecord(rec: AccountRecord): WalletModel {
   const isSmart = rec.type === 'smart';
-  /** XMTP identity is the SCW (Kernel) address unless the legacy escape hatch (scwXmtp === false) is set explicitly - mirrors lib/xmtp.codecs. */
   const xmtpAddress = rec.scwXmtp === false ? (rec.ownerAddress ?? rec.address) : rec.address;
   return {
     rec,
@@ -91,7 +79,6 @@ function modelFromRecord(rec: AccountRecord): WalletModel {
   };
 }
 
-/** Read-only hook: the active account's wallet model + live deploy status. `epoch` re-fetches when the active account changes. Deploy status starts as 'loading' and resolves to 'deployed' / 'counterfactual' / 'unknown'. */
 export function useWalletModel(epoch: number): { model: WalletModel | null; deploy: DeployState } {
   const [model, setModel] = useState<WalletModel | null>(null);
   const [deploy, setDeploy] = useState<DeployState>('loading');

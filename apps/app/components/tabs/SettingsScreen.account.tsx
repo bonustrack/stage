@@ -1,6 +1,3 @@
-/**
- * @file Account-security section of the Settings tab providing Alert-gated export-private-key and remove-account actions for the active account.
- */
 
 import { useEffect, useState } from 'react';
 
@@ -21,7 +18,6 @@ import { reloadApp } from '../AccountsManager.helpers';
 
 interface SectionColors { fg: string; head: string; sub: string; border: string; rowBg: string }
 
-/** Alert-gated reveal of the active account's private key, setting `revealed` on confirm. */
 function confirmExport(rec: AccountRecord, setRevealed: (pk: string) => void): void {
   Alert.alert(
     'Export private key',
@@ -39,7 +35,6 @@ function confirmExport(rec: AccountRecord, setRevealed: (pk: string) => void): v
   );
 }
 
-/** Alert-gated removal of the active account, reloading the app on confirm. */
 function confirmRemove(rec: AccountRecord): void {
   const name = rec.label ?? shortAddress(rec.address ?? '');
   Alert.alert(
@@ -54,7 +49,6 @@ function confirmRemove(rec: AccountRecord): void {
   );
 }
 
-/** Export-private-key row: confirms before revealing, then taps-to-copy the revealed key. */
 function ExportKeyRow({ c, dark, rec, revealed, setRevealed }: {
   c: SectionColors; dark: boolean; rec: AccountRecord; revealed: string | null; setRevealed: (pk: string) => void;
 }): React.ReactElement {
@@ -77,7 +71,6 @@ function ExportKeyRow({ c, dark, rec, revealed, setRevealed }: {
   );
 }
 
-/** Guardian-recovery row for smart accounts (label depends on whether guardians are set). */
 function RecoveryRow({ c, dark, rec, onPress }: {
   c: SectionColors; dark: boolean; rec: AccountRecord; onPress: () => void;
 }): React.ReactElement {
@@ -92,7 +85,6 @@ function RecoveryRow({ c, dark, rec, onPress }: {
   );
 }
 
-/** Track the active account record + clear the revealed key whenever the active account changes. */
 function useActiveRecord(epoch: number): [AccountRecord | null, string | null, React.Dispatch<React.SetStateAction<string | null>>] {
   const [rec, setRec] = useState<AccountRecord | null>(null);
   const [revealed, setRevealed] = useState<string | null>(null);
@@ -107,7 +99,6 @@ function useActiveRecord(epoch: number): [AccountRecord | null, string | null, R
   return [rec, revealed, setRevealed];
 }
 
-/** Settings section presenting account security options and danger-zone actions. */
 export function AccountSecuritySection(
   { c, danger, dark }: { c: SectionColors; danger: string; dark: boolean },
 ): React.ReactElement | null {

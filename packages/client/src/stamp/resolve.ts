@@ -1,8 +1,6 @@
-/** @file Cross-platform Stamp API helpers for ENS-like domain-to-address resolution and avatar URLs, used by mobile + web messenger search to resolve typed names like "fabien.eth" before opening the profile view. */
 
 const STAMP_URL = 'https://stamp.fyi';
 
-/** Resolve a single ENS-like domain (`name.eth`, `name.lens`, …) to its Ethereum address via the Stamp API. Returns null on miss / network failure rather than throwing — call-sites use this as a "best effort enrichment" of search input. */
 export async function resolveDomain(domain: string, chainId = 1): Promise<string | null> {
   if (!isDomainLike(domain)) return null;
   try {
@@ -19,7 +17,6 @@ export async function resolveDomain(domain: string, chainId = 1): Promise<string
   } catch { return null; }
 }
 
-/** Reverse lookup — turn an Ethereum address into its primary ENS-like name if one is registered. Returns null on miss. */
 export async function lookupName(address: string): Promise<string | null> {
   if (!isAddressLike(address)) return null;
   try {
@@ -34,19 +31,16 @@ export async function lookupName(address: string): Promise<string | null> {
   } catch { return null; }
 }
 
-/** True when the input looks like a 0x-prefixed 40-hex-char Ethereum address. */
 export function isAddressLike(input: string | undefined | null): input is string {
   return !!input && /^0x[0-9a-fA-F]{40}$/.test(input.trim());
 }
 
-/** True when the input looks like a tld'd handle that Stamp can resolve. */
 export function isDomainLike(input: string | undefined | null): input is string {
   if (!input) return false;
   const v = input.trim().toLowerCase();
   return /^[a-z0-9][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*)+$/.test(v) && v.includes('.');
 }
 
-/** Best-effort: take a free-form search query, return the resolved 0x address if it's either already an address or a domain Stamp knows about. */
 export async function resolveSearchInputToAddress(query: string): Promise<string | null> {
   const v = query.trim();
   if (isAddressLike(v)) return v;

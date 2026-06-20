@@ -1,4 +1,3 @@
-/** @file Proposals screen working through pending poll proposals oldest-first, one card at a time across all non-archived chats; opened as a pushed route from the Home banner, with count and queue from the shared proposalsStore via useProposals. */
 
 import { Pressable } from '@stage-labs/kit/pressable';
 import { Icon } from '@stage-labs/kit/icon';
@@ -12,7 +11,6 @@ import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { useProposals } from './Proposals.hook';
 import { ProposalCard } from './Proposals.card';
 
-/** Screen that lists governance proposals as cards. */
 export function ProposalsScreen(): React.ReactElement {
   const pal = usePalette();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -24,7 +22,7 @@ export function ProposalsScreen(): React.ReactElement {
 
   return (
     <Col flex={1} surface="surface">
-      {/* Topnav: back + title, mirroring the Menu / Accounts / Search pages. */}
+      {}
       <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable onPress={() => { router.back(); }} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={head}/>
@@ -35,7 +33,6 @@ export function ProposalsScreen(): React.ReactElement {
       </Row>
 
       {current ? (
-        /** Key by convId so advancing remounts the card (fresh feed per channel). */
         <Col flex={1} surface="surface">
           <Box padding={{ x: 16, top: 12 }}>
             <Text size="xs" color={pal.text} style={{ opacity: 0.6 }}>

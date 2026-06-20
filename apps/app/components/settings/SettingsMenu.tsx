@@ -1,4 +1,3 @@
-/** @file Top-level Settings menu: a list whose rows push the Display, Messenger, Notifications, and Security sub-pages, plus a danger zone with Reset accounts and Reset everything actions. */
 
 import { useState } from 'react';
 import { Alert, Pressable } from 'react-native';
@@ -33,7 +32,6 @@ const ROWS: { href: Href; label: string; icon: HeroIconName }[] = [
   { href: '/settings/about', label: 'About', icon: 'questionMarkCircle' },
 ];
 
-/** Renders a destructive reset action row in the Settings danger zone. */
 function DangerRow({ onPress, busy, icon, label, description, danger, blockRadius, top }: {
   onPress: () => void; busy: boolean; icon: HeroIconName; label: string;
   description: string; danger: string; blockRadius: number; top: number;
@@ -55,7 +53,6 @@ function DangerRow({ onPress, busy, icon, label, description, danger, blockRadiu
   );
 }
 
-/** Renders the top-level settings menu listing each settings section. */
 export function SettingsMenu(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -67,7 +64,6 @@ export function SettingsMenu(): React.ReactElement {
   const [resetting, setResetting] = useState(false);
   const [nuking, setNuking] = useState(false);
 
-  /** Handle the Reset. */
   const onReset = (): void => {
     Alert.alert(
       'Reset accounts',
@@ -88,7 +84,6 @@ export function SettingsMenu(): React.ReactElement {
     );
   };
 
-  /** Handle the Nuke. */
   const onNuke = (): void => {
     Alert.alert(
       'Reset everything',
@@ -102,7 +97,6 @@ export function SettingsMenu(): React.ReactElement {
             setNuking(true);
             void resetEverything()
               .catch(() => { setNuking(false); Alert.alert('Reset failed', 'Could not wipe local state.'); });
-            /** No finally: on success the app reloads, so nuking stays true until then. */
           },
         },
       ],

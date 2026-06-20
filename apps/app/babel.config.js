@@ -1,4 +1,3 @@
-/** @file Babel config: Expo preset + Worklets plugin, with import.meta rewrite for Hermes. */
 module.exports = function (api) {
   api.cache(true);
   return {

@@ -1,4 +1,3 @@
-/** @file Shared member picker (useMemberPicker hook plus MemberPicker component) for new-group and add-members screens: staged-member list, address/.eth resolution, contact suggestions, removable chips. */
 
 import { useCallback, useMemo, useState } from 'react';
 import { fontSize } from '@stage-labs/kit/tokens';
@@ -17,9 +16,7 @@ import { useContacts, type Contact } from '../../lib/useContacts';
 import { ContactSuggestions } from './ContactSuggestions';
 
 export interface Member {
-  /** Resolved 0x address — the canonical key. */
   address: string;
-  /** What the user typed (e.g. an ENS name) for display, when not a raw addr. */
   label: string;
 }
 
@@ -32,13 +29,10 @@ export interface MemberPickerState {
   adding: boolean;
   addMember: () => Promise<void>;
   removeMember: (address: string) => void;
-  /** Tap-to-add/remove a suggested contact (toggles selection by address). */
   toggleContact: (contact: Contact) => void;
-  /** Lowercased addresses of every staged member — drives the suggestion checkmarks. */
   selectedAddresses: Set<string>;
 }
 
-/** Hook managing the member-picker entry field and staged member list. */
 export function useMemberPicker(): MemberPickerState {
   const [entry, setEntry] = useState('');
   const [members, setMembers] = useState<Member[]>([]);
@@ -97,11 +91,9 @@ export function useMemberPicker(): MemberPickerState {
   };
 }
 
-/** UI for searching, adding and removing members when composing a group. */
 export function MemberPicker({ state, dark, exclude = [] }: {
   state: MemberPickerState;
   dark: boolean;
-  /** Addresses to omit from suggestions beyond self (e.g. an existing group's current members). Staged members are NOT excluded — they stay visible with a checkmark so a tap removes them. */
   exclude?: string[];
 }): React.ReactElement {
   const { link: head, text: sub, border, inputBg } = usePalette();
@@ -113,7 +105,7 @@ export function MemberPicker({ state, dark, exclude = [] }: {
 
   return (
     <>
-      {/* Member entry */}
+      {}
       <Col gap={6}>
         <Text size="xs" color={sub}>
           Add members
@@ -145,14 +137,14 @@ export function MemberPicker({ state, dark, exclude = [] }: {
         </Row>
       </Col>
 
-      {/* Tap-to-add suggestions from the user's existing DM contacts */}
+      {}
       <ContactSuggestions
         contacts={contacts}
         selected={selectedAddresses}
         onToggle={toggleContact}
 />
 
-      {/* Member chips */}
+      {}
       {members.length> 0 && (
         <Col gap={8}>
           {members.map(m => (

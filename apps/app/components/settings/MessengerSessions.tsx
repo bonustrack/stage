@@ -1,4 +1,3 @@
-/** @file Settings Messenger Sessions screen: lists the active XMTP inbox's installations newest-first with the current device flagged, plus a per-row Revoke that confirms then kills that installation. */
 
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert } from 'react-native';
@@ -14,13 +13,11 @@ import {
 import { flash } from '../../lib/toast';
 import { DANGER, useBlockRadius, usePalette } from '../../lib/theme';
 
-/** When helper. */
 function when(ms: number | undefined): string {
   if (!ms) return 'Unknown date';
   return new Date(ms).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-/** The Session component. */
 function Session({ inst, busy, onRevoke, c }: {
   inst: XmtpInstallation; busy: boolean; onRevoke: () => void;
   c: { fg: string; sub: string; border: string; rowBg: string };
@@ -53,7 +50,6 @@ function Session({ inst, busy, onRevoke, c }: {
   );
 }
 
-/** Renders the messenger sessions screen listing the account's active sessions. */
 export function MessengerSessions(): React.ReactElement {
   const { text: fg, border } = usePalette();
   const c = { fg, sub: fg, border, rowBg: border };
@@ -70,7 +66,6 @@ export function MessengerSessions(): React.ReactElement {
 
   useEffect(() => { void load(); }, [load, epoch]);
 
-  /** Revoke helper. */
   const revoke = (inst: XmtpInstallation): void => {
     Alert.alert(
       inst.current ? 'Revoke this device?' : 'Revoke session',

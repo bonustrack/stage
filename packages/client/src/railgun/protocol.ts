@@ -1,9 +1,6 @@
-/** @file Typed request/response + event wire contract for the nodejs-mobile bridge to the embedded Railgun engine and Groth16 prover (which Hermes can't run as an N-API addon, so it lives in an embedded Node runtime); pure wire shape only, no native or RN imports. */
 
-/** Supported Railgun networks. Re-declared here as a string union so the client package stays free of the @railgun-community native deps (the host maps these back to the SDK's NetworkName enum). */
 export type RailgunNet = 'sepolia' | 'mainnet';
 
-/** Named RPC calls the Node process registers handlers for. One string per operation; the IPC layer routes by this name. Keep in sync with the host side's `bridgeRegisterCall(<name>, handler)` registrations. */
 export type BridgeCall =
   | 'engine:init'
   | 'engine:loadProvider'
@@ -15,7 +12,6 @@ export type BridgeCall =
   | 'proof:generateTransfer'
   | 'proof:generateUnshield';
 
-/** Push events the Node process emits unsolicited (no request). Used for engine logs, balance-scan updates, and proof progress so the UI can show a live indicator during the ~20-30s proof. */
 export type BridgeEvent =
   | 'event:message'
   | 'event:error'
@@ -26,10 +22,8 @@ export type BridgeEvent =
   | 'event:heartbeat'
   | 'event:uncaughtException';
 
-/** Engine bootstrap params. The encryption key + mnemonic are derived on the host side and passed IN so the secret never has to be re-derived in Node. */
 export interface InitParams {
   walletSource: string;
-  /** Absolute path inside the app sandbox for the engine LevelDB + artifacts. */
   dbPath: string;
   artifactsPath: string;
   dev: boolean;
@@ -42,9 +36,7 @@ export interface LoadProviderParams {
 }
 
 export interface CreateWalletParams {
-  /** keccak256(privateKey) hex (no 0x). Derived on the host, used as engine key. */
   encryptionKey: string;
-  /** 12-word mnemonic deterministically derived from the account key. */
   mnemonic: string;
   creationBlocks: Record<string, number>;
 }
@@ -56,14 +48,12 @@ export interface WalletResult {
 
 export interface TokenAmountParam {
   tokenAddress: string;
-  /** Decimal-string amount (serialized - bigint can't cross the JSON channel). */
   amount: string;
 }
 
 export interface ShieldParams {
   net: RailgunNet;
   encryptionKey: string;
-  /** Shield private key = keccak256(EOA signature) hex; signed on the host side. */
   shieldPrivateKey: string;
   fromAddress: string;
   token: TokenAmountParam;
@@ -86,18 +76,15 @@ export interface UnshieldParams {
   toEoaAddress: string;
 }
 
-/** A populated transaction, serialized for the channel. The host broadcasts it with the active account (Node never holds the EOA key). */
 export interface PopulatedTxResult {
   to: string;
   data: string;
   value: string;
-  /** Optional gas fields, serialized as decimal strings. */
   gasLimit?: string;
   maxFeePerGas?: string;
   maxPriorityFeePerGas?: string;
 }
 
-/** Maps each call name to its [params, result] tuple for end-to-end typing. */
 export interface BridgeCallMap {
   'engine:init': [InitParams, boolean];
   'engine:loadProvider': [LoadProviderParams, boolean];
@@ -112,7 +99,6 @@ export interface BridgeCallMap {
 
 export interface BalanceRowResult {
   tokenAddress: string;
-  /** Decimal-string balance. */
   amount: string;
 }
 

@@ -1,14 +1,11 @@
-/** @file Root ESLint flat config: stage's single-root composer scoping each workspace's preset, pulling generic presets from @stage-labs/config and the app/kit-specific rules from their own folders. */
 import { fileURLToPath } from 'node:url';
 import tseslint from 'typescript-eslint';
 import { ignores as baseIgnores, recommended, strictTsBlock, typeCheckedLanguageOptions, commentPlugins, COMMENT_RULES, QUOTES } from '@stage-labs/config/eslint/base';
 import { reactNative } from './apps/app/eslint.mjs';
 import { kitEslint } from './packages/kit/eslint.js';
 
-/** Monorepo root holding the workspace tsconfigs the type-aware projectService resolves. */
 const ROOT_DIR = fileURLToPath(new URL('.', import.meta.url));
 
-/** Flat-config block enabling type-aware linting for a workspace's TS/TSX files via its tsconfig, anchored at ROOT_DIR. */
 function typeAwareBlock(dir, project, extraFiles = []) {
   return {
     files: [`${dir}/**/*.{ts,tsx}`, ...extraFiles],
@@ -16,13 +13,11 @@ function typeAwareBlock(dir, project, extraFiles = []) {
   };
 }
 
-/** Join a workspace dir prefix onto a single glob, preserving leading negations. */
 function prefixGlob(dir, glob) {
   if (glob.startsWith('!')) return '!' + prefixGlob(dir, glob.slice(1));
   return `${dir}/${glob}`;
 }
 
-/** Copy a flat-config block with its files/ignores globs prefixed by dir, adding a files scope when the block has neither. */
 function scopeBlock(dir, block) {
   const out = { ...block };
   if (Array.isArray(block.ignores)) {
@@ -36,14 +31,11 @@ function scopeBlock(dir, block) {
   return out;
 }
 
-/** Scope every block of a preset array to a workspace directory. */
 function scopePreset(dir, preset) {
   return preset.map((block) => scopeBlock(dir, block));
 }
 
-/** Build the full single-root flat-config array for the monorepo; opts.vue (default true) includes the lazily-loaded apps/ui Vue block. */
 async function buildConfig({ vue = true } = {}) {
-  /** @type {import("eslint").Linter.Config[]} */
   const config = [
     { ignores: ['**/node_modules/**', '**/dist/**', '**/.expo/**', '**/.vite/**'] },
 
@@ -76,7 +68,6 @@ async function buildConfig({ vue = true } = {}) {
 
   config.push({
     files: ['**/*.{js,jsx,cjs,mjs}'],
-    ignores: ['packages/config/**'],
     plugins: commentPlugins,
     rules: { ...COMMENT_RULES },
   });

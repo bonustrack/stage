@@ -1,4 +1,3 @@
-/** @file ThemeSwitcher — app-wide theme switcher rendered as a System/Light/Dark segmented pill that writes lib/theme's setThemePreference, re-theming the whole app instantly via its pub/sub. */
 
 import { Box, Row } from '../layout';
 import { Icon } from '@stage-labs/kit/icon';
@@ -7,7 +6,6 @@ import { Button } from '@stage-labs/kit/button';
 import { setThemePreference, useThemePreference } from '../../lib/theme';
 import { THEME_OPTIONS } from '../tabs/SettingsScreen.parts';
 
-/** Renders controls for switching the app's theme preference. */
 export function ThemeSwitcher({ dark, head }: {
   dark: boolean; head: string; sub: string; border: string; rowBg: string;
 }): React.ReactElement {
@@ -18,7 +16,6 @@ export function ThemeSwitcher({ dark, head }: {
       <Row margin={{ top: 10 }} gap={8}>
         {THEME_OPTIONS.map((opt) => {
           const active = pref === opt.value;
-          /** Active text is bg-contrasting (dark scheme → dark text); inactive uses the head token, and the icon mirrors it. */
           const fg = active ? (dark ? '#000000' : '#ffffff') : head;
           return (
             <Button

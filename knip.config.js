@@ -1,4 +1,3 @@
-/** @file Root knip config: stage's per-workspace entry/project globs and ignore-dependency lists for the BLOCKING CI dead-code check (workspace topology is stage-specific, so it lives here, not in @stage-labs/config). */
 const knipConfig = {
   $schema: 'https://unpkg.com/knip@6/schema.json',
   ignoreExportsUsedInFile: true,

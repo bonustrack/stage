@@ -1,4 +1,3 @@
-/** @file PaymentCard: the shared presentational payment bubble (token avatar, amount, recipient, balance row, primary action) used by both TxRequestCard and X402Card. */
 
 import { Text } from '@stage-labs/kit/text';
 import { Icon } from '@stage-labs/kit/icon';
@@ -8,7 +7,6 @@ import { TokenAvatar } from './tabs/WalletScreen.tokenAvatar';
 import { usePayerBalance, type PayerBalance } from './MessengerBubble.balance';
 import { usePalette, useBlockRadius, withAlpha } from '../lib/theme';
 
-/** Args for the balance line: when `show` is false the row is omitted entirely (no amount / unknown asset / unknown chain); when true it always renders, a placeholder while loading then the resolved balance. */
 export interface PaymentBalanceArgs {
   show: boolean;
   chainId: string | number | undefined;
@@ -20,13 +18,11 @@ export interface PaymentBalanceArgs {
 export interface PaymentAction {
   label: string;
   onPress: () => void;
-  /** Leading icon (defaults to the wallet glyph). */
   icon?: React.ReactElement;
   loading?: boolean;
   disabled?: boolean;
 }
 
-/** Renders the balance line of a payment card (placeholder while loading, danger-tinted when insufficient). */
 function PaymentBalanceLine({ show, bal, pal }: {
   show: boolean; bal: PayerBalance | null; pal: ReturnType<typeof usePalette>;
 }): React.ReactElement | null {
@@ -45,7 +41,6 @@ function PaymentBalanceLine({ show, bal, pal }: {
   );
 }
 
-/** Renders the full-width primary action button of a payment card. */
 function PaymentActionButton({ action, dark, pal }: {
   action: PaymentAction; dark?: boolean; pal: ReturnType<typeof usePalette>;
 }): React.ReactElement {
@@ -60,7 +55,6 @@ function PaymentActionButton({ action, dark, pal }: {
   );
 }
 
-/** Renders a payment summary card showing the token, amount, balance, and action. */
 export function PaymentCard({
   dark, logoUrl, chainNum, description, badge, amountLabel,
   detail, balance, action, footer,
@@ -68,19 +62,12 @@ export function PaymentCard({
   dark?: boolean;
   logoUrl: string;
   chainNum: number;
-  /** Title line next to the token avatar (the request description). */
   description: string;
-  /** Distinguishing pill rendered top-right (e.g. the x402 badge). Optional. */
   badge?: React.ReactElement;
-  /** Big amount line (e.g. "0.01 USDC"). Omitted when undefined. */
   amountLabel?: string;
-  /** Recipient ("To …") / endpoint line(s). The caller renders these so each card keeps its own recipient-vs-endpoint presentation. */
   detail?: React.ReactNode;
-  /** Balance line config (always shown when `show`). */
   balance: PaymentBalanceArgs;
-  /** Full-width primary action: a static action or a function of the resolved balance (so label/disabled can depend on affordability — x402 card); omit / return undefined for a buttonless read-only card. */
   action?: PaymentAction | ((bal: PayerBalance | null) => PaymentAction | undefined);
-  /** Replaces the action button when there is none (e.g. a consent-gated note telling the user to accept the conversation before paying). */
   footer?: React.ReactNode;
 }): React.ReactElement {
   const pal = usePalette();
@@ -112,7 +99,7 @@ export function PaymentCard({
         </Text>
       ) : null}
       {detail}
-      {/** Balance line — always shown for a known asset on a known chain, never silently hidden so the card can't look broken. */}
+      {}
       <PaymentBalanceLine show={balance.show} bal={bal} pal={pal} />
       {resolvedAction ? (
         <PaymentActionButton action={resolvedAction} dark={dark} pal={pal} />

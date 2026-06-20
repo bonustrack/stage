@@ -1,4 +1,3 @@
-/** @file Settings -> Experimental menu listing the not-yet-stable surfaces: the Kit gallery, the app Components gallery, and the Developer diagnostics console. */
 
 import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
 
@@ -18,7 +17,6 @@ const ROWS: { href: Href; label: string; icon: HeroIconName }[] = [
   { href: '/settings/developer', label: 'Developer', icon: 'beaker' },
 ];
 
-/** Renders the experimental settings screen for opt-in feature flags. */
 export function ExperimentalSettings(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';

@@ -1,6 +1,4 @@
-/** @file Global watcher that subscribes once to the engine's `event:balanceUpdate` and folds late-arriving shielded-balance rows into the snapshot store so the Private tab repaints without user action. */
 
-/** Global shielded-balance-update watcher: engine.js returns cached (empty) balances immediately while real rows arrive later via `event:balanceUpdate`, so this subscribes once per active account and folds each payload into the snapshot store (also mirrored to balanceDebug) to repaint without user action. */
 import { bridgeListen } from './bridge';
 import { snapshotStore } from './cache';
 import { mapEventRows } from './bridgeWallet';
@@ -15,7 +13,6 @@ interface BalanceUpdatePayload {
 
 const watched = new Set<string>();
 
-/** Start the live balanceUpdate→snapshot fold for an account (idempotent). */
 export function startBalanceWatch(accountId: string): () => void {
   if (watched.has(accountId)) return () => undefined;
   watched.add(accountId);
@@ -27,7 +24,6 @@ export function startBalanceWatch(accountId: string): () => void {
     if (!fresh.length) return;
     const prev = snapshotStore(accountId).get();
     if (!prev) return;
-    /** Replace this chain's rows with the fresh ones; keep other chains intact. */
     const others = prev.balances.filter((b) => b.chainId !== p.chainId);
     snapshotStore(accountId).set({
       ...prev,

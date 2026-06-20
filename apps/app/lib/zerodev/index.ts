@@ -1,4 +1,3 @@
-/** @file Barrel for the ZeroDev smart-account wallet module, re-exporting only the symbols consumed via the `lib/zerodev` path (keyring, account creation, kernel rebuild, passkey enable/disable, guardian recovery); add a name only when a caller imports it from here. */
 export {
   restoreMnemonic, revealRecoveryPhrase, smartOwnerSigner,
 } from './keyring';

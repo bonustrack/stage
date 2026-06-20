@@ -1,4 +1,3 @@
-/** @file In-channel Approve/Reject action bar shown in place of the composer when the open conversation is still a pending XMTP message request, reusing the Requests list's consent handlers. */
 
 import { useCallback, useEffect, useState } from 'react';
 import { Text } from '@stage-labs/kit/text';
@@ -11,7 +10,6 @@ import {
 import { usePalette } from '../lib/theme';
 import { Box, Col, Row } from './layout';
 
-/** Force a synced-prefs refresh so other surfaces (channels list, Requests list, other devices) converge after an in-channel accept/reject. Mirrors the Requests list's post-write syncConsent call. */
 function syncConsentBestEffort(): void {
   void (getCachedXmtpClient() as unknown as {
     preferences?: { syncConsent?: () => Promise<unknown> };
@@ -21,11 +19,9 @@ function syncConsentBestEffort(): void {
 export interface RequestActionBarProps {
   convId: string;
   dark: boolean;
-  /** Reports whether the open conversation is a pending request: parent shows the composer by default and hides it only on `true`; fired `false` once allowed/denied/approved so the composer reappears. */
   onPending: (pending: boolean) => void;
 }
 
-/** Bottom action row for a pending message request: renders nothing until confirmed pending, then reports onPending(true) with the Approve/Reject row; once allowed reports onPending(false) and renders nothing. */
 export function RequestActionBar(props: RequestActionBarProps): React.ReactElement | null {
   const { convId, dark, onPending } = props;
   const router = useRouter();
@@ -33,10 +29,8 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
   const [pending, setPending] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
 
-  /** Resolve the conversation's consent state. `'unknown'` → pending request; anything else → not a request (show composer via onAllowed). */
   useEffect(() => {
     let cancelled = false;
-    /** Resolve helper. */
     const resolve = async (): Promise<void> => {
       try {
         const state = await getConvConsentState(convId);
@@ -48,13 +42,12 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
       }
     };
     void resolve();
-    /** Reconcile if the request is accepted/blocked on another device while open. */
     let cancelConsent: (() => void) | null = null;
     try { cancelConsent = streamConvConsent(() => { void resolve(); }); }
-    catch { /* best-effort */ }
+    catch { }
     return (): void => {
       cancelled = true;
-      if (cancelConsent) try { cancelConsent(); } catch { /* ignore */ }
+      if (cancelConsent) try { cancelConsent(); } catch { }
     };
   }, [convId, onPending]);
 
@@ -72,7 +65,6 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
     void blockRequestConv(convId)
       .then(() => {
         syncConsentBestEffort();
-        /** Match the Requests list reject: drop the conversation + leave the view. */
         if (router.canGoBack()) router.back(); else router.replace('/');
       })
       .catch(() => { setBusy(false); });
@@ -86,7 +78,7 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
         <Text color={fg} style={{ textAlign: 'center', opacity: 0.8 }}>
           This is a message request. Approve to reply, or reject to decline.
         </Text>
-        {/* Full-bleed row: each half flexes to fill the width; do NOT use the Button `pill` prop (it forces a fixed square circle) — rely on `fullWidth` for full-width rounded buttons. */}
+        {}
         <Row width={'100%'} gap={10} style={{ alignSelf: 'stretch' }}>
           <Col flex={1} style={{ alignSelf: 'stretch' }}>
             <Button
