@@ -1,7 +1,7 @@
 {
   "name": "@stage-labs/config",
   "version": "0.1.0-beta.0",
-  "description": "Generic, repo-agnostic lint/TypeScript configuration: a base ESLint flat-config preset, a single-package composer, a parametric Vue preset, shared madge options, and the matching tsconfig bases. Consumers compose these; repo-specific topology (monorepo scoping, knip workspaces, app/kit rules) stays in the consuming repo.",
+  "description": "Shared ESLint and TypeScript config presets.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -12,7 +12,8 @@
   "files": [
     "eslint",
     "madge",
-    "tsconfig"
+    "tsconfig",
+    "README.md"
   ],
   "publishConfig": {
     "access": "public"
