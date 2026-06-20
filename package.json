@@ -2,7 +2,7 @@
   "name": "stage-monorepo",
   "private": true,
   "version": "0.0.0",
-  "description": "Monorepo for Stage — live JSON stream of Telegram + Discord messages for local Claude Code / Codex sessions.",
+  "description": "Stage — an XMTP messenger with multi-account support, Snapshot profiles, group channels, and an onchain wallet, with parallel Vue web and Expo mobile clients.",
   "license": "MIT",
   "repository": {
     "type": "git",
