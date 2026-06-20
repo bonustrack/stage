@@ -1,6 +1,6 @@
 {
   "name": "@stage-labs/client",
-  "version": "0.1.0",
+  "version": "0.1.0-beta.0",
   "private": true,
   "description": "Framework-agnostic shared logic for the Stage clients (web + mobile): Snapshot profiles, XMTP content humanisation, embed detection, Stamp resolution, and shared types. Pure TypeScript - no Vue / React / react-native.",
   "license": "MIT",
