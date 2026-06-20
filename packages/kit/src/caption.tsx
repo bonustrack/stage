@@ -1,6 +1,3 @@
-/**
- * @file Caption — a hook-free ChatKit-styled small secondary label (section headers / muted captions) defaulting to the muted `sub` colour at a small size.
- */
 
 import { Text as RNText, type TextStyle } from 'react-native';
 import { type ReactNode } from 'react';
@@ -24,26 +21,17 @@ const ALIGN: Record<CaptionAlign, TextStyle['textAlign']> = {
 };
 
 export interface CaptionProps {
-  /** ChatKit: value. The label text (children also accepted). */
   value?: string;
   children?: ReactNode;
-  /** ChatKit: size. Default 'md' (13). */
   size?: CaptionSize;
-  /** ChatKit: weight. Default 'medium'. */
   weight?: CaptionWeight;
-  /** ChatKit: textAlign. Default 'start'. */
   textAlign?: CaptionAlign;
-  /** ChatKit: color. A semantic ColorToken name resolves scheme-aware via the kit palette; any other string is a raw colour (escape hatch). Falls back to the scheme sub colour. */
   color?: ColorToken | (string & {});
-  /** ChatKit: truncate. Single line with ellipsis. */
   truncate?: boolean;
-  /** ChatKit: maxLines. Caps the line count. */
   maxLines?: number;
-  /** Escape-hatch style merged last. */
   style?: TextStyle | TextStyle[];
 }
 
-/** ChatKit-style RN caption / section label. THEME-NATIVE: defaults to the palette `sub` (secondary grey) from the Kit theme provider. */
 export function Caption(props: CaptionProps): React.ReactElement {
   const {
     value,

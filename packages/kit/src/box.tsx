@@ -1,4 +1,3 @@
-/** @file React Native Box/Row/Col layout primitives driving style through the shared `./layout` prop->style mapper (numbers are px); Box defaults to a column, Row/Col lock direction. */
 
 import { View, type ViewProps, type ViewStyle } from 'react-native';
 import {
@@ -12,16 +11,13 @@ import { useKitPalette, useKitScheme, type KitPalette } from './theme-context';
 
 export type { Align, Justify };
 
-/** Semantic surface variant resolved from the theme palette: none=transparent, surface/sunken=`bg`, raised=`inputBg` (cards/inputs/sheets), toolbar=`toolbarBg`. */
 export type Surface = 'none' | 'surface' | 'raised' | 'sunken' | 'toolbar';
 
 export type BoxProps = ViewProps &
   BoxBaseProps & {
-    /** Semantic surface variant - resolves a background from the theme palette. Default `none` (transparent). A `background` override wins over it. */
     surface?: Surface;
   };
 
-/** Resolve a surface variant to a palette background. `none` -> undefined. */
 function surfaceColor(surface: Surface, palette: KitPalette): string | undefined {
   switch (surface) {
     case 'surface':
@@ -29,7 +25,6 @@ function surfaceColor(surface: Surface, palette: KitPalette): string | undefined
     case 'raised':
       return palette.inputBg;
     case 'sunken':
-      /** No dedicated pressed/well token; the recessed look reads as the base bg sitting under a raised surface. */
       return palette.bg;
     case 'toolbar':
       return palette.toolbarBg;
@@ -38,7 +33,6 @@ function surfaceColor(surface: Surface, palette: KitPalette): string | undefined
   }
 }
 
-/** Flexbox layout primitive that maps shorthand spacing/alignment props to a React Native View style. */
 export function Box({
   direction,
   gap,
@@ -66,7 +60,6 @@ export function Box({
   const palette = useKitPalette();
   const scheme = useKitScheme();
 
-  /** Precedence: explicit `background` override > semantic `surface` variant; a ColorToken background resolves scheme-aware here while kit `colors` keys and raw strings resolve in the mapper. */
   const override =
     background !== undefined && isColorToken(background)
       ? resolveColorToken(background, scheme)
@@ -103,12 +96,10 @@ export function Box({
 
 export type RowColProps = Omit<BoxProps, 'direction'>;
 
-/** Box variant locked to a horizontal (row) layout. */
 export function Row(props: RowColProps) {
   return <Box direction="row" {...props} />;
 }
 
-/** Box variant locked to a vertical (column) layout. */
 export function Col(props: RowColProps) {
   return <Box direction="col" {...props} />;
 }

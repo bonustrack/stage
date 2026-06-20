@@ -1,4 +1,3 @@
-/** @file Group-detail sub-components: the member row plus the add-member and overflow modals. */
 
 import { Pressable } from '@stage-labs/kit/pressable';
 import { fontSize } from '@stage-labs/kit/tokens';
@@ -16,7 +15,6 @@ interface Pal { fg: string; head: string; sub: string; border: string; rowBg: st
 
 type MemberRole = 'owner' | 'admin' | 'member' | undefined;
 
-/** Owner/admin badge pill for a member row (renders nothing for plain members). */
 function MemberRoleBadge({ role, sub, border, dark }: {
   role: MemberRole; sub: string; border: string; dark: boolean;
 }): React.ReactElement | null {
@@ -31,7 +29,6 @@ function MemberRoleBadge({ role, sub, border, dark }: {
   );
 }
 
-/** Trailing remove (trash) button for a member row; hidden for self. */
 function MemberRemoveButton({ isSelf, isRemovingThis, dark, onRemove }: {
   isSelf: boolean; isRemovingThis: boolean; dark: boolean; onRemove: () => void;
 }): React.ReactElement | null {
@@ -51,7 +48,6 @@ function MemberRemoveButton({ isSelf, isRemovingThis, dark, onRemove }: {
   );
 }
 
-/** One member row: avatar, name/address, owner/admin badge, and a remove button. */
 export function MemberRow({
   item, isSelf, isRemovingThis, role, name, dark, p, onPress, onRemove,
 }: {
@@ -94,7 +90,6 @@ export function MemberRow({
   );
 }
 
-/** Modal for adding a group member by Ethereum address. */
 export function AddMemberModal({
   visible, onClose, addDraft, setAddDraft, adding, onAdd, dark, p,
 }: {
@@ -137,7 +132,6 @@ export function AddMemberModal({
   );
 }
 
-/** Group overflow modal: surfaces the leave-group action. */
 export function OverflowModal({
   visible, onClose, leaving, onLeave,
 }: {

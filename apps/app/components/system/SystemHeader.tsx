@@ -1,4 +1,3 @@
-/** @file SystemHeader — shared back-arrow + title topnav for the System menu and sub-pages; paints the toolbar surface and absorbs the top safe-area inset so consumers add no paddingTop wrapper. */
 
 import { Pressable } from '@stage-labs/kit/pressable';
 
@@ -8,7 +7,6 @@ import { Box, Row, Col } from '../layout';
 import { Icon } from '@stage-labs/kit/icon';
 import { Title } from '@stage-labs/kit/title';
 
-/** Renders the header bar for a system design section page. */
 export function SystemHeader({ title, fg, head, border, right }: {
   title: string; dark: boolean; fg: string; head: string; border: string;
   right?: React.ReactNode;

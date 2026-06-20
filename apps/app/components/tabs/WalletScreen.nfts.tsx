@@ -1,4 +1,3 @@
-/** @file NftsView — 2-column wallet NFT grid (OpenSea), with loading/error/empty states, tappable to each NFT's OpenSea page. */
 
 import { Linking } from 'react-native';
 
@@ -11,7 +10,6 @@ import { Col, Row, Box } from '../layout';
 import { type Nft } from '../../lib/opensea';
 import { DANGER } from '../../lib/theme';
 
-/** NFT grid view — 2-column grid of the account's OpenSea NFTs: spinner while loading, error line on failure, empty state when none, else image cells (placeholder when missing) tappable to each NFT's OpenSea page. */
 export function NftsView({
   status, nfts, head, sub, border,
 }: {

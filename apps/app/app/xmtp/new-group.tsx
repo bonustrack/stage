@@ -1,4 +1,3 @@
-/** @file Create-group screen: name a group, stage members by address/.eth via the shared MemberPicker, then call createGroup and open the new XMTP conversation. */
 
 import { useCallback, useState } from 'react';
 import { fontSize } from '@stage-labs/kit/tokens';
@@ -21,10 +20,8 @@ import { Box, Col, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 import { MemberPicker, useMemberPicker } from './MemberPicker';
 
-/** Locally-picked group image, held until create-time. We upload on submit (not on pick) so a cancelled create costs no blob; `uri` is the on-device asset uri used only for the preview. */
 interface PickedImage { uri: string; mime: string; name: string }
 
-/** Tappable square group-image picker with a + placeholder and upload spinner. */
 function GroupImageField({ image, creating, fg, sub, border, rowBg, onPick }: {
   image: PickedImage | null; creating: boolean;
   fg: string; sub: string; border: string; rowBg: string; onPick: () => void;
@@ -58,7 +55,6 @@ function GroupImageField({ image, creating, fg, sub, border, rowBg, onPick }: {
   );
 }
 
-/** Screen for creating a new XMTP group with name, image and members. */
 export default function NewGroup(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -73,7 +69,6 @@ export default function NewGroup(): React.ReactElement {
   const [creating, setCreating] = useState(false);
   const [image, setImage] = useState<PickedImage | null>(null);
 
-  /** Same square-crop image-pick flow the group-detail editor uses; we only stage the asset here and upload it on create. */
   const pickImage = useCallback(async (): Promise<void> => {
     if (creating) return;
     const r = await ImagePicker.launchImageLibraryAsync({
@@ -88,7 +83,6 @@ export default function NewGroup(): React.ReactElement {
   const onCreate = useCallback(async (): Promise<void> => {
     if (members.length === 0 || creating) return;
     setCreating(true);
-    /** Upload first (so the url can be set in CreateGroupOptions). A failed upload doesn't block creation — we create imageless + warn. */
     let imageUrl: string | undefined;
     if (image) {
       try {
@@ -108,7 +102,7 @@ export default function NewGroup(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      {/* Header — back button + title, consistent with other pushed screens. */}
+      {}
       <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable onPress={() => { router.back(); }} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg}/>
@@ -122,11 +116,11 @@ export default function NewGroup(): React.ReactElement {
         contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 24 + insets.bottom }}
         keyboardShouldPersistTaps="handled"
 >
-        {/* Group image (optional) — tap to pick, square preview. */}
+        {}
         <GroupImageField image={image} creating={creating} fg={fg} sub={sub} border={border} rowBg={rowBg}
           onPick={() => { void pickImage(); }}/>
 
-        {/* Group name (optional) */}
+        {}
         <Col gap={6}>
           <Text size="xs" color={sub}>
             Group name (optional)
@@ -148,7 +142,7 @@ export default function NewGroup(): React.ReactElement {
         <MemberPicker state={picker} dark={dark}/>
       </ScrollView>
 
-      {/* Create */}
+      {}
       <Box padding={{ top: 16, right: 16, bottom: 16 + insets.bottom, left: 16 }} style={{ borderTopWidth: 1, borderTopColor: border }}>
         <Button
           variant="primary"

@@ -1,6 +1,4 @@
-/** @file Conversation-metadata fetcher (queryFn behind ['xmtp','convMeta',convId]) shared by the chat topnav hook and group-info screen so name/image/description/members resolve through one Query key. */
 
-/** Import from leaf submodules rather than the `lib/xmtp` barrel, which would pull in the whole xmtp graph and form a static import cycle. */
 import { lineOfConv } from '../../lib/xmtp.types';
 import { convOfLine } from '../../lib/xmtp.client';
 import {
@@ -10,16 +8,13 @@ import {
 export interface ConvMeta {
   peerAddr: string | null;
   isGroup: boolean;
-  /** null = not resolved yet, '' = group with no name, else the name. */
   groupName: string | null;
   groupImage: string;
-  /** Group's XMTP-metadata description ('' = none). Empty for DMs. */
   groupDescription: string;
   memberAddrs: string[];
   inboxToAddr: Record<string, string>;
 }
 
-/** Default placeholder metadata for an unresolved or missing conversation. */
 export const EMPTY_CONV_META: ConvMeta = {
   peerAddr: null, isGroup: false, groupName: null, groupImage: '',
   groupDescription: '', memberAddrs: [], inboxToAddr: {},
@@ -31,7 +26,6 @@ interface GroupMetaAccessor {
   description?: () => Promise<string>;
 }
 
-/** Resolve a group conv's name/image/description/members into the ConvMeta group shape. */
 async function fetchGroupConvMeta(
   conv: Parameters<typeof groupMemberEthAddresses>[0],
   inboxToAddr: Record<string, string>,
@@ -49,7 +43,6 @@ async function fetchGroupConvMeta(
   };
 }
 
-/** Resolve a conversation's shared metadata (peer/group name, image, members) by line id. */
 export async function fetchConvMeta(convId: string): Promise<ConvMeta> {
   const conv = await convOfLine(lineOfConv(convId));
   if (!conv) return EMPTY_CONV_META;
@@ -61,7 +54,6 @@ export async function fetchConvMeta(convId: string): Promise<ConvMeta> {
   return fetchGroupConvMeta(conv, inboxToAddr);
 }
 
-/** Resolve each group member's role (owner/admin/member) keyed by lower-cased eth address, derived from the SDK admin lists and the passed-in inbox->addr map. */
 export async function fetchGroupRoles(
   convId: string,
   inboxToAddr: Record<string, string>,

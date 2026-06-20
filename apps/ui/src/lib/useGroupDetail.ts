@@ -1,4 +1,3 @@
-/** @file Composable for the Group Detail screen: group state plus name/description/avatar/member mutations, extracted from `pages/GroupDetail.vue` so the SFC stays under the lint cap. */
 
 import { ref, computed, watchEffect, type ComputedRef, type Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -32,7 +31,6 @@ export interface GroupDetail {
   onPickImage: (file: File) => Promise<void>;
 }
 
-/** True when `self` is an owner/admin in the role map (case-insensitive address match). */
 function isSelfAdmin(
   self: string, roles: Record<string, 'owner' | 'admin' | 'member'>,
 ): boolean {
@@ -43,7 +41,6 @@ function isSelfAdmin(
   return false;
 }
 
-/** Hook providing group detail state and mutations (name, description, avatar, members). */
 export function useGroupDetail(): GroupDetail {
   const route = useRoute();
   const router = useRouter();
@@ -66,12 +63,10 @@ export function useGroupDetail(): GroupDetail {
     savingDescription: ref(false),
   };
 
-  /** Only group admins/owners can edit metadata + manage members (enforced by the group's admin-only policy); hide those affordances from plain members. */
   const selfIsAdmin = computed(() => isSelfAdmin(state.selfAddress.value, state.memberRoles.value));
 
   watchEffect(() => { void runGroupDetailEffect(state); });
 
-  /** Open Member. */
   function openMember(addr: string): void { void router.push(`/user/${addr}`); }
 
   return {

@@ -1,11 +1,8 @@
-/** @file Expo Metro config for the bun monorepo: workspace watch, node-core polyfills, axios browser build. */
 
-/** Polyfill Array.prototype.toReversed for Node 18 (metro-config 0.83 calls it during loadConfig). */
 if (!Array.prototype.toReversed) {
   Object.defineProperty(Array.prototype, 'toReversed', { value: function () { return [...this].reverse(); }, writable: true, configurable: true });
 }
 
-/** Extend Expo Metro for the bun monorepo: watch root, dual node_modules, pin a single react/react-native/svg copy. */
 const path = require('path');
 const { getDefaultConfig } = require('expo/metro-config');
 
@@ -14,22 +11,18 @@ const workspaceRoot = path.resolve(projectRoot, '..', '..');
 
 const config = getDefaultConfig(projectRoot);
 config.watchFolders = [...(config.watchFolders ?? []), workspaceRoot];
-/** Keep serverRoot at the workspace root so bun's .bun store symlink path resolves instead of 404ing. */
 config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, 'node_modules'),
   path.resolve(workspaceRoot, 'node_modules'),
 ];
 
-/** Block the embedded-Node host (nodejs-assets) from Metro; nodejs-mobile bundles it natively instead. */
 const nodejsHostBlock = /[/\\]nodejs-assets[/\\].*/;
 config.resolver.blockList = config.resolver.blockList
   ? [].concat(config.resolver.blockList, nodejsHostBlock)
   : nodejsHostBlock;
 
-/** Single instance of the React/RN runtime for every package (incl. @stage-labs/kit). */
 const appNodeModules = path.resolve(projectRoot, 'node_modules');
 
-/** Map node-core names to pure-JS browser polyfills (or an empty shim) for the RAILGUN SDK on RN. */
 const emptyShim = path.resolve(projectRoot, 'metro.shims', 'empty.js');
 const nodeCorePolyfills = {
   url: 'react-native-url-polyfill',
@@ -72,7 +65,6 @@ config.resolver.extraNodeModules = {
   ...Object.fromEntries(emptyShimNames.map((name) => [name, emptyShim])),
 };
 
-/** Rewrite resolved axios to its browser build (XHR adapter) so it pulls in no node-core. */
 const upstreamResolveRequest = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   const resolved = upstreamResolveRequest

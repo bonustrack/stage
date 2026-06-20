@@ -1,11 +1,9 @@
 #!/usr/bin/env node
-/** @file Turns `eas update --json` output into a dev-client deep link emitted as `deeplink=<url>` for $GITHUB_OUTPUT. */
 import { readFileSync } from 'node:fs';
 
-const SCHEME = 'stage'; /** dev variant scheme (app.config.js); prod = 'stage'. */
+const SCHEME = 'stage';
 
 const raw = JSON.parse(readFileSync(process.argv[2], 'utf8'));
-/** `eas update --json` emits per-platform records sharing a groupId; tolerate object or array shape. */
 const records = Array.isArray(raw) ? raw : raw.updates ?? [raw];
 const rec = records.find((r) => r?.group) ?? records[0];
 const group = rec?.group;

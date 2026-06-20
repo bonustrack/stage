@@ -1,4 +1,3 @@
-/** @file Step screens (welcome / restore / passkey / setup) rendered by the Onboarding flow. */
 
 import { fontSize } from '@stage-labs/kit/tokens';
 import { Title } from '@stage-labs/kit/title';
@@ -10,10 +9,8 @@ import { Spinner } from '../Spinner';
 import { usePalette, DANGER } from '../../lib/theme';
 import { type Stage } from './flow';
 
-/** Recoverable setup error (with the kind so we offer Retry-messaging vs Try again). */
 export interface SetupErr { message: string; accountId?: string }
 
-/** User-facing label for each setup stage. */
 const STAGE_LABELS: Record<Stage, string> = {
   wallet: 'Creating your wallet',
   messaging: 'Setting up secure messaging',
@@ -22,7 +19,6 @@ const STAGE_LABELS: Record<Stage, string> = {
 
 type Pal = ReturnType<typeof usePalette>;
 
-/** Renders the welcome step (create / restore choice). */
 export function WelcomeStep({ pal, dark, busy, onCreate, onRestore }: {
   pal: Pal; dark: boolean; busy: boolean; onCreate: () => void; onRestore: () => void;
 }): React.ReactElement {
@@ -44,7 +40,6 @@ export function WelcomeStep({ pal, dark, busy, onCreate, onRestore }: {
   );
 }
 
-/** Renders the restore step (recovery-phrase entry). */
 export function RestoreStep({ pal, dark, busy, phrase, err, onChange, onNext, onBack }: {
   pal: Pal; dark: boolean; busy: boolean; phrase: string; err: string;
   onChange: (t: string) => void; onNext: () => void; onBack: () => void;
@@ -82,7 +77,6 @@ export function RestoreStep({ pal, dark, busy, phrase, err, onChange, onNext, on
   );
 }
 
-/** Renders the (skippable) passkey step. */
 export function PasskeyStep({ pal, dark, busy, onAdd, onSkip }: {
   pal: Pal; dark: boolean; busy: boolean; onAdd: () => void; onSkip: () => void;
 }): React.ReactElement {
@@ -105,7 +99,6 @@ export function PasskeyStep({ pal, dark, busy, onAdd, onSkip }: {
   );
 }
 
-/** Renders the live progress list of setup stages. */
 function StageProgress({ pal, stage }: { pal: Pal; stage: Stage }): React.ReactElement {
   const order: Stage[] = ['wallet', 'messaging', 'finishing'];
   return (
@@ -123,7 +116,6 @@ function StageProgress({ pal, stage }: { pal: Pal; stage: Stage }): React.ReactE
   );
 }
 
-/** Renders the in-progress spinner + stage labels of the setup step. */
 function SetupProgress({ pal, stage }: { pal: Pal; stage: Stage }): React.ReactElement {
   return (
     <Col gap={14} padding={{ top: 24 }} align="center">
@@ -139,7 +131,6 @@ function SetupProgress({ pal, stage }: { pal: Pal; stage: Stage }): React.ReactE
   );
 }
 
-/** Renders the error-state action buttons of the setup step. */
 function SetupErrorActions({ pal, dark, busy, setupErr, onRetry, onBack }: {
   pal: Pal; dark: boolean; busy: boolean; setupErr: SetupErr; onRetry: () => void; onBack: () => void;
 }): React.ReactElement {
@@ -154,7 +145,6 @@ function SetupErrorActions({ pal, dark, busy, setupErr, onRetry, onBack }: {
   );
 }
 
-/** Renders the setup step (progress while creating, or a recoverable error). */
 export function SetupStep({ pal, dark, busy, stage, setupErr, onRetry, onBack }: {
   pal: Pal; dark: boolean; busy: boolean; stage: Stage; setupErr: SetupErr | null;
   onRetry: () => void; onBack: () => void;

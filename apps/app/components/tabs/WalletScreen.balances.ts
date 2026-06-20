@@ -1,4 +1,3 @@
-/** @file useWalletBalances hook — public-balance load + pull-to-refresh state for the Wallet tab; refresh also kicks a detached Railgun shielded-snapshot scan, with the spinner 8s-race-capped so it never lingers. */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getActiveAccount } from '../../lib/accounts';
@@ -15,7 +14,6 @@ export interface WalletBalances {
   onRefresh: () => void;
 }
 
-/** Loads public balances and pull-to-refresh state; privAccountId's shielded snapshot refreshes alongside, and focused gates the fetch until the Wallet tab is first focused. */
 export function useWalletBalances(privAccountId: string | null, focused: boolean): WalletBalances {
   const [address, setAddress] = useState<string>('');
   const [rows, setRows] = useState<AssetRow[] | null>(null);
@@ -24,7 +22,6 @@ export function useWalletBalances(privAccountId: string | null, focused: boolean
   const mounted = useRef(true);
   const spinnerTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  /** Re-derive on account switch (switchToAccount bumps this epoch). The address + balances were captured once on mount, so without this the Wallet tab kept showing the PREVIOUS account after a switch. */
   const accountEpoch = useActiveAccount();
 
   useEffect(() => {
@@ -36,17 +33,14 @@ export function useWalletBalances(privAccountId: string | null, focused: boolean
   }, []);
 
   useEffect(() => {
-    /** Defer the public balance burst until the Wallet tab is actually focused. */
     if (!focused) return;
     let cancelled = false;
     void (async (): Promise<void> => {
       try {
-        /** Derive the EOA address straight from the active account record (NOT the XMTP client): the local wallet is decoupled from XMTP, switchToAccount repoints the active id before the inbox rebuilds, and this never hangs on a slow/failed Client.create. */
         const rec = await getActiveAccount();
         const addr = rec?.address ?? '';
         if (cancelled) return;
         setAddress(addr);
-        /** Clear the prior account's rows so we paint the spinner, not stale balances, while the new account's balances load. */
         setRows(null);
         setErr('');
         if (!addr) return;
@@ -63,18 +57,15 @@ export function useWalletBalances(privAccountId: string | null, focused: boolean
   const onRefresh = useCallback((): void => {
     if (!address) return;
     setRefreshing(true);
-    /** Absolute backstop, fully independent of the fetch/race below: clear the visible spinner within 9s no matter what. The pure-JS pull-to-refresh overlay is bound to `refreshing`, but this guarantees the JS state never lingers even if the fetch wedges. */
     const hardStop = setTimeout(() => { if (mounted.current) setRefreshing(false); }, 9000);
 
-    /** Always-resolving dismiss: the spinner is tied to the public fetch and a hard 8s cap racing it, dismissed by whichever lands first, and the dismiss runs in a `finally` so a rejected fetch can never strand it. */
     const stop = (): void => {
       clearTimeout(hardStop);
       if (spinnerTimer.current) { clearTimeout(spinnerTimer.current); spinnerTimer.current = null; }
       if (mounted.current) setRefreshing(false);
     };
 
-    /** Fire the Railgun shielded re-scan in the BACKGROUND (it can take many seconds and pushes its result into the cache store the UI subscribes to) so it never holds the spinner hostage. */
-    if (privAccountId) void refreshSnapshot(privAccountId).catch(() => {/* noop */});
+    if (privAccountId) void refreshSnapshot(privAccountId).catch(() => undefined);
 
     void (async (): Promise<void> => {
       try {
@@ -87,7 +78,6 @@ export function useWalletBalances(privAccountId: string | null, focused: boolean
         setRows(next);
         setErr('');
       } catch (e) {
-        /** A timeout is a spinner-cap only, not a balance error — keep the last rows and surface a fetch error string only for non-timeout failures. */
         if (mounted.current && (e as Error).message !== 'refresh timeout') setErr((e as Error).message);
       } finally {
         stop();

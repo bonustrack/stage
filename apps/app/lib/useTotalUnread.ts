@@ -1,10 +1,8 @@
-/** @file Hook summing total unread across non-archived conversations for the footer badge, reusing channelsCache rows (`unreadCount` + `markedUnread`) minus the device-local archived set and subscribing to both for live updates. */
 
 import { useEffect, useState } from 'react';
 import { getCachedRows, subscribeCachedRows, type CachedRow } from './channelsCache';
 import { isArchived, loadArchivedIds, subscribeArchived } from './archived';
 
-/** Sum unread across non-archived rows. A `markedUnread` row with no counted messages still contributes 1 so the badge mirrors the per-row indicator. */
 function computeTotal(rows: CachedRow[] | null): number {
   if (!rows) return 0;
   let total = 0;
@@ -17,17 +15,14 @@ function computeTotal(rows: CachedRow[] | null): number {
   return total;
 }
 
-/** Live total unread count across all conversations, reactive to cached rows and archived state. */
 export function useTotalUnread(): number {
   const [total, setTotal] = useState<number>(() => computeTotal(getCachedRows()));
 
   useEffect(() => {
     let mounted = true;
-    /** Recompute helper. */
     const recompute = (): void => {
       if (mounted) setTotal(computeTotal(getCachedRows()));
     };
-    /** Ensure the archived set is hydrated, then reconcile once. */
     void loadArchivedIds().then(recompute);
     const offRows = subscribeCachedRows(recompute);
     const offArchived = subscribeArchived(recompute);

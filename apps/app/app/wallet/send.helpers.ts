@@ -1,4 +1,3 @@
-/** @file Pure helpers and constants for the Wallet send screen: ENS detection and fetching the connected wallet's ETH balance plus live ETH price. */
 import { formatEther, type Hex } from 'viem';
 import { getOrCreateXmtpClient } from '../../modules/messaging';
 import { getSimplePrices } from '../../lib/coingecko';
@@ -12,12 +11,10 @@ export const multicall3Abi = [{
   outputs: [{ name: 'b', type: 'uint256' }],
 }] as const;
 
-/** Returns true when the string looks like an ENS name (e.g. `foo.eth`). */
 export function looksLikeEns(s: string): boolean {
   return /^[a-z0-9-]+(\.[a-z0-9-]+)+\.eth$|^[a-z0-9-]+\.eth$/i.test(s.trim());
 }
 
-/** Pull the connected wallet's ETH balance + the live ETH price so `Max` and the USD↔ETH conversion have real numbers to work with. Returns nulls on failure (UI degrades to a basic Send form). */
 export async function fetchBalanceAndPrice(): Promise<{
   ethBalance: string | null;
   ethPriceUsd: number | null;

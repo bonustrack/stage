@@ -1,4 +1,3 @@
-/** @file Text — a theme-native RN text component matching ChatKit's Text/BaseTextProps API that resolves its colour by semantic role from useKitPalette, with deprecated back-compat variant/size/weight aliases. */
 
 import {
   Text as RNText,
@@ -8,10 +7,8 @@ import {
 import { FONT_SIZE, type FontSizeName, resolveColorToken, type ColorToken } from './tokens';
 import { useKitPalette, useKitScheme, type KitPalette } from './theme-context';
 
-/** @deprecated Legacy role-name `variant`. Mapped onto colour + font family. */
 export type TextVariant = 'body' | 'secondary' | 'caption' | 'mono';
 
-/** Semantic text role - resolved scheme-aware from the Kit theme palette. `default` is today's body text colour exactly (lossless). */
 export type TextRole =
   | 'default'
   | 'secondary'
@@ -21,46 +18,29 @@ export type TextRole =
   | 'danger'
   | 'success';
 
-/** ChatKit font weight, plus the legacy `regular` alias of `normal`. */
 export type TextWeight = 'normal' | 'medium' | 'semibold' | 'bold' | 'regular';
 
-/** Named TextSize scale (3xs..6xl). Single source of truth in tokens.ts. */
 export type TextSizeToken = FontSizeName;
 
-/** ChatKit text alignment. */
 export type TextAlign = 'start' | 'center' | 'end';
 
 export interface TextProps extends Omit<RNTextProps, 'style' | 'role'> {
-  /** ChatKit `value`. Ignored if `children` is provided. */
   value?: string;
-  /** Semantic text role - resolves scheme-aware from the theme palette. Default `default` = body text. */
   role?: TextRole;
-  /** @deprecated Legacy role variant (body/secondary/caption/mono), mapped onto the new `role` (secondary/caption -> secondary). */
   variant?: TextVariant;
-  /** Named TextSize token (3xs..6xl). Default md (15), or sm (13) when the legacy `caption` variant is used. */
   size?: TextSizeToken;
-  /** ChatKit font weight. `regular` is a deprecated alias of `normal`. */
   weight?: TextWeight;
-  /** Override colour (escape hatch). A semantic ColorToken name resolves scheme-aware; any other string is a raw colour. Wins over `role`. */
   color?: ColorToken | (string & {});
-  /** ChatKit `textAlign` (start/center/end). */
   textAlign?: TextAlign;
-  /** ChatKit `italic`. */
   italic?: boolean;
-  /** ChatKit `lineThrough`. */
   lineThrough?: boolean;
-  /** ChatKit `truncate`: single-line ellipsis. */
   truncate?: boolean;
-  /** ChatKit `maxLines`: clamp to N lines. */
   maxLines?: number;
-  /** Escape-hatch style merged last. */
   style?: TextStyle | TextStyle[];
 }
 
-/** Named TextSize px values - the kit FONT_SIZE scale. */
 const SIZE_TOKENS = FONT_SIZE;
 
-/** Only two Calibre faces are bundled: normal/medium -> Calibre-Medium, semibold/bold -> Calibre-Semibold. */
 const FONTS: Record<'normal' | 'medium' | 'semibold' | 'bold', string> = {
   normal: 'Calibre-Medium',
   medium: 'Calibre-Medium',
@@ -68,12 +48,10 @@ const FONTS: Record<'normal' | 'medium' | 'semibold' | 'bold', string> = {
   bold: 'Calibre-Semibold',
 };
 
-/** Normalize Weight. */
 function normalizeWeight(w: TextWeight): keyof typeof FONTS {
   return w === 'regular' ? 'normal' : w;
 }
 
-/** Resolve Size. */
 function resolveSize(
   size: TextSizeToken | undefined,
   variant: TextVariant | undefined,
@@ -82,13 +60,11 @@ function resolveSize(
   return variant === 'caption' ? SIZE_TOKENS.xs : SIZE_TOKENS.md;
 }
 
-/** Map the legacy `variant` onto a semantic role. */
 function variantRole(variant: TextVariant | undefined): TextRole {
   if (variant === 'secondary' || variant === 'caption') return 'secondary';
   return 'default';
 }
 
-/** Resolve a role to a palette colour; `default` intentionally maps to `palette.link` (=== head hexes) to stay pixel-identical to today's body text rather than the body-grey `text`. */
 function roleColor(role: TextRole, palette: KitPalette): string {
   switch (role) {
     case 'secondary':
@@ -113,7 +89,6 @@ const ALIGN_MAP: Record<TextAlign, TextStyle['textAlign']> = {
   end: 'right',
 };
 
-/** Resolve the text colour from an explicit `color` token or the semantic role. */
 function textColor(
   color: ColorToken | (string & {}) | undefined,
   scheme: 'light' | 'dark',
@@ -123,13 +98,11 @@ function textColor(
   return color != null ? resolveColorToken(color, scheme) : roleColor(role, palette);
 }
 
-/** The subset of Text props that drive the base text style. */
 type StyleProps = Pick<
   TextProps,
   'color' | 'role' | 'variant' | 'size' | 'weight' | 'textAlign' | 'italic' | 'lineThrough'
 >;
 
-/** Build the base text style from the style-driving props. */
 function buildBaseStyle(
   p: StyleProps,
   scheme: 'light' | 'dark',
@@ -148,13 +121,11 @@ function buildBaseStyle(
   return base;
 }
 
-/** Normalise the escape-hatch style prop merged onto the base style. */
 function mergeStyle(base: TextStyle, style: TextStyle | TextStyle[] | undefined): TextStyle | TextStyle[] {
   if (!style) return base;
   return [base, ...(Array.isArray(style) ? style : [style])];
 }
 
-/** OpenAI ChatKit-API RN text. */
 export function Text(props: TextProps): React.ReactElement {
   const {
     value,

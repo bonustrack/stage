@@ -1,4 +1,3 @@
-/** @file Full-width flat search field replacing the topnav while search is open, shared by the channels list and conversation view, with a back chevron to collapse and a trailing clear button. */
 
 import { forwardRef } from 'react';
 import { fontSize } from '@stage-labs/kit/tokens';
@@ -14,11 +13,8 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
   onClose: () => void;
   head: string;
   sub: string;
-  /** Hairline bottom-border colour — mirrors the topnav's separator. */
   border: string;
-  /** Placeholder text — defaults to "Search". */
   placeholder?: string;
-  /** Optional extra top inset (e.g. status-bar height on the conversation view whose topnav extends under the status bar). Defaults to 0. */
   topInset?: number;
 }>(function SearchTopnavBar(props, ref): React.ReactElement {
   const { head, sub } = props;

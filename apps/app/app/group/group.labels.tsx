@@ -1,4 +1,3 @@
-/** @file Group labels section rendering add/remove label chips backed by the group's MLS-synced appData. */
 
 import { useEffect, useMemo, useState } from 'react';
 import { fontSize } from '@stage-labs/kit/tokens';
@@ -15,10 +14,8 @@ import {
 } from '../../modules/messaging';
 import { suggestLabels } from '../../modules/messaging';
 
-/** How many suggestion chips to show at once (keeps the row compact). */
 const MAX_SUGGESTIONS = 8;
 
-/** One tappable suggestion pill — filled, borderless (matches the label chip fill), with a leading + to read as "add this". */
 function SuggestionChip({ label, busy, onAdd, p }: {
   label: string; busy: boolean; onAdd: () => void; p: Pal;
 }): React.ReactElement {
@@ -42,7 +39,6 @@ function SuggestionChip({ label, busy, onAdd, p }: {
 
 interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }
 
-/** One label pill: text + a tappable x to remove. */
 function LabelChip({ label, busy, onRemove, p }: {
   label: string; busy: boolean; onRemove: () => void; p: Pal;
 }): React.ReactElement {
@@ -56,7 +52,6 @@ function LabelChip({ label, busy, onRemove, p }: {
   );
 }
 
-/** Add-label input row: text field + Add button, shown only below the cap. */
 function LabelAddRow({ draft, setDraft, busy, onAdd, p }: {
   draft: string; setDraft: (s: string) => void; busy: boolean; onAdd: () => void; p: Pal;
 }): React.ReactElement {
@@ -97,13 +92,11 @@ function LabelAddRow({ draft, setDraft, busy, onAdd, p }: {
   );
 }
 
-/** Group labels section: lists the group's label chips and lets members add or remove them. */
 export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React.ReactElement {
   const { sub } = p;
   const [labels, setLabels] = useState<string[]>([]);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
-  /** Label currently being removed (for the per-chip spinner/opacity). */
   const [removing, setRemoving] = useState<string | null>(null);
 
   useEffect(() => {
@@ -112,13 +105,11 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
     return (): void => { cancelled = true; };
   }, [line]);
 
-  /** Map a thrown error to a user-facing message; permission denial is inline. */
   const reportError = (e: unknown): void => {
     if (e instanceof LabelPermissionError) flash(e.message);
     else flash('Could not update labels. Try again.');
   };
 
-  /** Add helper. */
   const add = async (value: string): Promise<void> => {
     const clean = value.trim();
     if (!clean || busy) return;
@@ -130,7 +121,6 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
     } catch (e) { reportError(e); } finally { setBusy(false); }
   };
 
-  /** Remove helper. */
   const remove = async (label: string): Promise<void> => {
     if (removing) return;
     setRemoving(label);
@@ -142,7 +132,6 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
 
   const atCap = labels.length >= MAX_LABELS;
 
-  /** Distinct labels from the user's OTHER groups (in-memory channels cache), filtered by the current draft + excluding ones already on this group. Recomputed only when the draft or this group's labels change. */
   const suggestions = useMemo(
     () => suggestLabels(draft, labels).slice(0, MAX_SUGGESTIONS),
     [draft, labels],

@@ -1,12 +1,8 @@
 <script setup lang="ts">
-/** XMTP conversation view — live-streamed via the local XMTP client.
- *  State + handlers live in `useXmtpConversation` so the SFC stays under the cap. */
 
 import { ref } from 'vue';
 import { useXmtpConversation } from '../lib/useXmtpConversation';
 
-/** Template ref for the scroll container; passed into the composable so it can
- *  pin-to-bottom / scroll-to-permalink. */
 const scroller = ref<HTMLElement | null>(null);
 
 const {

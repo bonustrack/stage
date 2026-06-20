@@ -1,18 +1,14 @@
-/** @file ComposerSheets — poll/signature/payment bottom sheets bound to composer state + send actions. */
 import { PollSheet, SignatureSheet, PaymentSheet } from './MessengerComposer.sheets';
 import type { ComposerState } from './MessengerComposer.state';
 
-/** Palette tuple shared by the composer sheets. */
 interface SheetPalette { fg: string; sub: string; inputBg: string; chipBg: string }
 
-/** Send-action callbacks the sheets fire on submit. */
 interface SheetActions {
   sendPoll: () => void;
   sendSignatureRequest: () => void;
   sendTxRequest: () => void;
 }
 
-/** Renders the poll, signature, and payment bottom sheets wired to composer state. */
 export function ComposerSheets({ s, palette, dark, actions }: {
   s: ComposerState; palette: SheetPalette; dark: boolean; actions: SheetActions;
 }): React.ReactElement {

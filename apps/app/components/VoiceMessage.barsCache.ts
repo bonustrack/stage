@@ -1,16 +1,12 @@
-/** @file Per-clip cache + React hook for the true decoded waveform bars, keyed by resolved uri so each clip decodes once, returning null while in flight and caching a sentinel on decode failure. */
 
 import { useEffect, useState } from 'react';
 import { decodeWaveformBars } from './VoiceMessage.decode';
 
-/** Resolved real bars, or `false` to mark a permanent decode failure (so the hook stays on synthetic bars without re-attempting). */
 type Entry = number[] | false;
 
 const cache = new Map<string, Entry>();
-/** De-dupe concurrent decodes of the same uri (e.g. two bubbles, same clip). */
 const inflight = new Map<string, Promise<Entry>>();
 
-/** Decode Once. */
 function decodeOnce(uri: string, count: number): Promise<Entry> {
   const existing = inflight.get(uri);
   if (existing) return existing;
@@ -22,7 +18,6 @@ function decodeOnce(uri: string, count: number): Promise<Entry> {
   return p;
 }
 
-/** Returns the decoded bars for `uri`, or null while decoding / on failure. Null signals the caller to render synthetic fallback bars. */
 export function useDecodedBars(uri: string, count: number): number[] | null {
   const cached = cache.get(uri);
   const [bars, setBars] = useState<number[] | null>(

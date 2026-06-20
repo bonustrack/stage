@@ -1,9 +1,7 @@
-/** @file useComposerState hook: groups the MessengerComposer's local input/attachment/sheet state and setters. */
 import { useRef, useState, type ComponentRef } from 'react';
 import { Textarea } from '@stage-labs/kit/textarea';
 import { type Attachment } from './MessengerComposer.helpers';
 
-/** All local state + setters + the input ref for the MessengerComposer. */
 export interface ComposerState {
   text: string; setText: (v: string) => void;
   selection: { start: number; end: number };
@@ -34,13 +32,11 @@ export interface ComposerState {
   inputRef: React.RefObject<ComponentRef<typeof Textarea> | null>;
 }
 
-/** Allocate all of the MessengerComposer's local input/attachment/sheet state. */
 export function useComposerState(): ComposerState {
   const [text, setText] = useState('');
-  /** Cursor position in `text`, kept in sync via onSelectionChange for the mention detector. */
   const [selection, setSelection] = useState<{ start: number; end: number }>({ start: 0, end: 0 });
   const [pending, setPending] = useState<Attachment[]>([]);
-  const [, setSending] = useState(false); /** set by send loop; button hides on clear, not via disabled */
+  const [, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [textareaH, setTextareaH] = useState(0);
   const [err, setErr] = useState<string | null>(null);
@@ -62,7 +58,6 @@ export function useComposerState(): ComposerState {
   const [txTo, setTxTo] = useState('');
   const [txAmount, setTxAmount] = useState('');
   const [txNote, setTxNote] = useState('');
-  /** Composer text input — focused programmatically when a reply target is set. */
   const inputRef = useRef<ComponentRef<typeof Textarea>>(null);
   return {
     text, setText, selection, setSelection, pending, setPending, setSending,

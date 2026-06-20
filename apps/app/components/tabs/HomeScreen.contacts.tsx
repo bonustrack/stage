@@ -1,4 +1,3 @@
-/** @file HomeScreen.contacts — contact-search results below the filtered channels when the search query is non-empty: address/ENS "start a chat" rows plus matching cached DM peers, opening a DM on tap. */
 
 import { useEffect, useMemo, useState } from 'react';
 
@@ -11,12 +10,10 @@ import { resolveEnsName } from '../../lib/ens';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { getCachedRows } from '../../modules/messaging';
 
-/** Cheap pre-flight - accept any `*.eth` (single or multi-label) as resolvable. */
 function looksLikeEns(s: string): boolean {
   return /^[a-z0-9-]+(\.[a-z0-9-]+)*\.eth$/i.test(s.trim());
 }
 
-/** Existing DM peers (address-keyed) pulled from the cached channels list. */
 function getExistingPeers(): { address: string; convId: string }[] {
   const rows = getCachedRows() ?? [];
   const seen = new Set<string>();
@@ -35,7 +32,6 @@ function getExistingPeers(): { address: string; convId: string }[] {
 
 interface Colors { fg: string; head: string; sub: string; border: string }
 
-/** Renders contact search results on the home screen, or nothing when the query is empty. */
 export function HomeContactResults(
   { query, c, noChannels }: { query: string; c: Colors; noChannels: boolean },
 ): React.ReactElement | null {
@@ -43,11 +39,9 @@ export function HomeContactResults(
   const [resolved, setResolved] = useState<{ address: string; source: 'address' | 'ens' } | null>(null);
   const [opening, setOpening] = useState<string | null>(null);
 
-  /** Existing DM peers (address-keyed) pulled from the cached channels list. */
   const existing = useMemo(() => getExistingPeers(), []);
   usePeerProfiles([resolved?.address, ...existing.map(p => p.address)]);
 
-  /** Address / ENS resolution → a "start a chat" result. Debounced for names. */
   useEffect(() => {
     const needle = q.toLowerCase();
     if (!needle) { setResolved(null); return; }
@@ -60,13 +54,12 @@ export function HomeContactResults(
         try {
           const addr = await resolveEnsName(needle);
           if (!cancelled && addr) setResolved({ address: addr.toLowerCase(), source: 'ens' });
-        } catch { /* no resolved result */ }
+        } catch { }
       })();
     }, 300);
     return () => { cancelled = true; clearTimeout(t); };
   }, [q]);
 
-  /** Existing contacts filtered by the query (name or address substring). */
   const filtered = useMemo(() => {
     const needle = q.toLowerCase();
     if (!needle) return [];
@@ -77,7 +70,6 @@ export function HomeContactResults(
     });
   }, [existing, q]);
 
-  /** Open helper. */
   const open = (address: string, convId?: string): void => {
     if (opening) return;
     const key = address.toLowerCase();
@@ -87,15 +79,13 @@ export function HomeContactResults(
         const { router } = await import('expo-router');
         const id = convId ?? await openDmWithAddress(address);
         router.push({ pathname: '/xmtp/[convId]', params: { convId: id } });
-      } catch { /* swallow */ } finally { setOpening(null); }
+      } catch { } finally { setOpening(null); }
     })();
   };
 
-  /** Don't surface a resolved address that's already an existing contact. */
   const showResolved = resolved && !filtered.some(p => p.address.toLowerCase() === resolved.address);
   if (!q) return null;
   if (!showResolved && filtered.length === 0) {
-    /** Nothing matched here - only show a combined "No matches" line when the channel list also came up empty (so it isn't shown beside channel hits). */
     if (!noChannels) return null;
     return (
       <Text size="xs" color={c.sub} style={{ textAlign: 'center', paddingVertical: 24, paddingHorizontal: 24 }}>

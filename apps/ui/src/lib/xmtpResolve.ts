@@ -1,11 +1,8 @@
-/** @file XMTP conversation-membership resolvers mapping to Ethereum addresses (DM peer, group members, inbox-id → eth-address map); split out of `xmtp.ts` to stay under the per-file LOC cap. */
 
 import { IdentifierKind, type Conversation } from '@xmtp/browser-sdk';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from './xmtp';
 
-/** Resolve the peer's Ethereum address for a DM conversation. Returns null for groups or when the lookup fails. */
 export async function peerEthAddressOfDm(conv: Conversation): Promise<string | null> {
-  /** DMs expose `peerInboxId()`; groups don't. */
   const dm = conv as unknown as { peerInboxId?: () => Promise<string> };
   if (typeof dm.peerInboxId !== 'function') return null;
   try {
@@ -17,7 +14,6 @@ export async function peerEthAddressOfDm(conv: Conversation): Promise<string | n
   } catch { return null; }
 }
 
-/** Group member eth addresses, excluding the local user's own inbox. [] for DMs. */
 export async function groupMemberEthAddresses(conv: Conversation): Promise<string[]> {
   if (typeof (conv as unknown as { peerInboxId?: unknown }).peerInboxId === 'function') return [];
   try {
@@ -35,7 +31,6 @@ export async function groupMemberEthAddresses(conv: Conversation): Promise<strin
   } catch { return []; }
 }
 
-/** Map every member inbox id of a conversation to its Ethereum address. Includes the local user. */
 export async function memberInboxToAddressMap(conv: Conversation): Promise<Record<string, string>> {
   try {
     const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');

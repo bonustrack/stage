@@ -1,8 +1,4 @@
 <script setup lang="ts">
-/** Read-only public profile view for a peer's Ethereum address. Opened from
- *  any avatar tap or "open profile" search suggestion. Mirrors the Profile
- *  tab layout but without edit controls; adds a Message button that
- *  find-or-creates the DM and routes to the conversation. */
 
 import { openDmWithAddress, shortAddress } from '../lib/xmtp';
 import { readProfile } from '../lib/profile';
@@ -38,7 +34,7 @@ async function copy(value: string): Promise<void> {
     await navigator.clipboard.writeText(value);
     copied.value = true;
     setTimeout(() => { copied.value = false; }, 1500);
-  } catch { /* no clipboard */ }
+  } catch { }
 }
 </script>
 

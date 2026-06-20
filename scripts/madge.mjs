@@ -1,4 +1,3 @@
-/** @file Root madge runner; reports circular deps across monorepo source roots via the @stage-labs/config/madge preset. */
 import madge from 'madge';
 import { madgeConfig } from '@stage-labs/config/madge';
 
@@ -9,7 +8,6 @@ const ROOTS = [
   'apps/app/modules',
   'packages/client/src',
   'packages/kit/src',
-  /** apps/ui (Vue SFCs) is excluded: madge's detective can't parse .vue files and it was never scanned. */
 ];
 
 const res = await madge(ROOTS, madgeConfig);

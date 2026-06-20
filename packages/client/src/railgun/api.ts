@@ -1,4 +1,3 @@
-/** @file Type-only RailgunBridgeAPI: one interface enumerating the full Railgun bridge surface (engine, wallet, balances, shield/transfer/unshield flows, events) so the RN client and host cannot desync; no native/RN/expo imports. */
 import type {
   RailgunNet,
   CreateWalletParams,
@@ -10,10 +9,8 @@ import type { UnshieldErc20Recipient } from './unshieldCalls';
 import type { PopulateResult } from './shieldCalls';
 import type { SdkMethod } from './methods';
 
-/** Engine readiness snapshot (mirrors the host engine.js status()). */
 export interface EngineStatus {
   ready: boolean;
-  /** Groth16 native prover loaded. */
   prover: boolean;
   networks: string[];
   version?: string | null;
@@ -21,64 +18,48 @@ export interface EngineStatus {
   error?: string;
 }
 
-/** Per-network shielded-balance result (+ a live scan flag). */
 export interface BalancesSnapshot {
   net: RailgunNet;
   rows: BalanceRowResult[];
   scanning: boolean;
 }
 
-/** Engine init options passed from RN (scanConfig is structural to avoid pulling the RN-side ScanConfig type into the pure client; the host validates it). */
 export interface EngineInitOptions {
   dev?: boolean;
   scanConfig?: unknown;
 }
 
-/** The full intent-level Railgun bridge contract the RN client implements over the nodejs-mobile channel (no native imports); each method maps to a typed host handler or a composition of whitelisted SDK_METHODS. */
 export interface RailgunBridgeAPI {
-  /** True when the embedded Node runtime can serve calls on this binary. */
   isAvailable(): boolean;
 
-  /** Round-trip liveness probe (proves the Node runtime booted + channel works). */
   ping(payload?: unknown): Promise<{ pong: boolean; node: string; at: number }>;
 
-  /** Read engine state without forcing init (pollable). */
   engineStatus(): Promise<EngineStatus>;
 
-  /** Init engine + native prover + RPC providers (idempotent). */
   engineInit(opts?: EngineInitOptions): Promise<EngineStatus>;
 
-  /** Create-or-load the deterministic Railgun wallet for the active account. */
   getWallet(params: CreateWalletParams): Promise<WalletResult>;
 
-  /** Currently-known shielded balances for a network (non-blocking). */
   getBalances(walletId: string, net: RailgunNet): Promise<BalancesSnapshot>;
 
-  /** Trigger a shielded-balance rescan for a wallet on a network. */
   scan(walletId: string, net: RailgunNet): Promise<void>;
 
-  /** Populate a SHIELD tx (public -> private). RN signs + broadcasts. The shape is the SHIELD intent; the impl composes the whitelisted populateShield* . */
   estimateShield(params: ShieldEstimateInput): Promise<{ gasEstimate: string }>;
   populateShield(params: ShieldPopulateInput): Promise<PopulateResult>;
 
-  /** Private TRANSFER (private -> private): estimate -> prove -> populate. */
   estimateTransfer(params: TransferFlowInput): Promise<{ gasEstimate: string }>;
   proveTransfer(params: TransferFlowInput): Promise<void>;
   populateTransfer(params: TransferPopulateInput): Promise<PopulateResult>;
 
-  /** UNSHIELD (private -> public): estimate -> prove -> populate. */
   estimateUnshield(params: UnshieldFlowInput): Promise<{ gasEstimate: string }>;
   proveUnshield(params: UnshieldFlowInput): Promise<void>;
   populateUnshield(params: UnshieldPopulateInput): Promise<PopulateResult>;
 
-  /** The generic escape hatch: invoke one whitelisted SDK primitive by name. The method param is the SdkMethod union so an unknown name is a compile error. */
   sdk<T = unknown>(method: SdkMethod, args?: readonly unknown[]): Promise<T>;
 
-  /** Capability probe: SDK methods reachable on THIS binary (no rebuild). */
   listMethods(): Promise<string[]>;
 }
 
-/** Inputs for the SHIELD intent (RN supplies txidVersion/network strings). */
 export interface ShieldEstimateInput {
   txidVersion: string;
   networkName: string;
@@ -91,7 +72,6 @@ export interface ShieldPopulateInput {
   networkName: string;
   railgunAddress: string;
   shieldPrivateKey: string;
-  /** native-ETH base-token shield when set, else ERC20. */
   baseToken?: { wrappedTokenAddress: string; amountWei: string };
   erc20?: { tokenAddress: string; amountWei: string };
 }

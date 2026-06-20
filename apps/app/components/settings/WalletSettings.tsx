@@ -1,4 +1,3 @@
-/** @file Settings -> Wallet screen: a read-only view of the active ZeroDev smart-account (address, signer, Kernel modules, deploy status, versions, XMTP address) with a link to recovery. */
 
 import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
 import { useRouter } from 'expo-router';
@@ -18,7 +17,6 @@ import {
   type C, CopyRow, InfoRow, SectionLabel, makeCard, SmartAccountSections,
 } from './WalletSettings.sections';
 
-/** Renders the wallet settings screen for managing the account's wallet. */
 export function WalletSettings(): React.ReactElement {
   const epoch = useActiveAccount();
   const router = useRouter();
@@ -33,7 +31,6 @@ export function WalletSettings(): React.ReactElement {
   const removePasskey = useRemovePasskey(epoch);
 
   const card = makeCard(dark, c.rowBg, blockRadius);
-  /** Copy a value to the clipboard and flash a confirmation toast. */
   const onCopy = (label: string, value: string): void => {
     void Clipboard.setStringAsync(value); flash(`${label} copied`);
   };

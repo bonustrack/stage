@@ -1,4 +1,3 @@
-/** @file CoinGecko Pro price lookups (pure fetch) for ETH and ERC-20 tokens on the wallet tab, mirroring the sx-monorepo helper with a shared CG Pro key and an overridable `apiKey`. */
 
 const CG_KEY = 'CG-o41PzYqjLPSWSJdMEyDELEpB';
 const CG_URL = 'https://pro-api.coingecko.com/api/v3/simple';
@@ -8,7 +7,6 @@ export interface CgPrice {
   usd_24h_change: number;
 }
 
-/** Fetch USD prices for a set of ERC-20 contracts on the given platform (`ethereum`, `polygon-pos`, ...). Returns a contract->price map; missing contracts simply don't appear in the result. */
 export async function getErc20UsdPrices(
   platform: string,
   contracts: string[],
@@ -23,7 +21,6 @@ export async function getErc20UsdPrices(
   return (await res.json()) as Record<string, CgPrice>;
 }
 
-/** Fetch a "simple price" by CoinGecko coin id (ETH = `ethereum`). Returns the price record keyed by the id. */
 export async function getSimplePrices(
   ids: string[],
   apiKey: string = CG_KEY,

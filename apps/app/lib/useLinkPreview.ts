@@ -1,12 +1,9 @@
-/** @file TanStack Query hook fetching OpenGraph-ish metadata for a plain http(s) link via the Metro link-preview proxy (server-side fetch/parse + SSRF guarding); results are hard-cached by url and any failure resolves to null so the caller renders no card. */
 
 import { useQuery } from '@tanstack/react-query';
 import { parseX402Challenge, type X402Accept, type X402Challenge } from '@stage-labs/client/x402';
 
-/** Re-export the shared wire-format types so existing `./useLinkPreview` imports keep working; the source of truth lives in @stage-labs/client/x402. */
 export type { X402Accept, X402Challenge };
 
-/** Base url of the link-preview proxy. Overridable via env so a dev build can point at a local instance; defaults to the production tunnel host. */
 const LINK_PREVIEW_BASE_ENV: unknown = process.env.EXPO_PUBLIC_LINKPROXY_URL;
 export const LINK_PREVIEW_BASE =
   typeof LINK_PREVIEW_BASE_ENV === 'string' && LINK_PREVIEW_BASE_ENV !== ''
@@ -20,28 +17,22 @@ interface LinkPreview {
   image?: string;
   siteName?: string;
   favicon?: string;
-  /** Original (un-proxied) image/favicon URLs, kept for debugging / fallback. The app renders `image`/`favicon` (Worker /img proxy URLs), never these. */
   imageOrigin?: string;
   faviconOrigin?: string;
 }
 
-/** The proxy returns either an OpenGraph preview or an x402 payment challenge. */
 export type LinkPreviewResult = LinkPreview | X402Challenge;
 
-/** True when a proxy result is an x402 payment challenge (vs an OG preview). */
 export function isX402(r: LinkPreviewResult | null): r is X402Challenge {
   return !!r && 'kind' in r && r.kind === 'x402';
 }
 
-/** The value at `key` when it's a string, else undefined. */
 function str(j: Record<string, unknown>, key: string): string | undefined {
   const v = j[key];
   return typeof v === 'string' ? v : undefined;
 }
 
-/** Map a proxy OG payload to a LinkPreview, or null when there's no title/image worth rendering. */
 function ogPreviewFrom(j: Record<string, unknown>, url: string): LinkPreview | null {
-  /** A preview card needs at least a title or an image to be worth rendering. */
   if (typeof j.title !== 'string' && typeof j.image !== 'string') return null;
   return {
     url: str(j, 'url') ?? url,
@@ -55,30 +46,25 @@ function ogPreviewFrom(j: Record<string, unknown>, url: string): LinkPreview | n
   };
 }
 
-/** Map a parsed proxy payload to an x402 challenge, OG preview, or null. */
 function linkPreviewFrom(j: Record<string, unknown>, url: string): LinkPreviewResult | null {
   if (typeof j.error === 'string' && !('accepts' in j)) return null;
-  /** x402 payment challenge takes precedence over an OG card. */
   if (j.kind === 'x402') return parseX402Challenge(j, typeof j.endpoint === 'string' ? j.endpoint : '');
   return ogPreviewFrom(j, url);
 }
 
-/** Get the Link Preview. */
 async function fetchLinkPreview(url: string): Promise<LinkPreviewResult | null> {
   try {
     const res = await fetch(`${LINK_PREVIEW_BASE}/preview?url=${encodeURIComponent(url)}`, {
-      /** x-stage-client: abuse speed-bump the Worker requires on /preview; /img does NOT require it since RN <Image> GETs can't send custom headers (see apps/proxy). */
       headers: { Accept: 'application/json', 'x-stage-client': '1' },
     });
     if (!res.ok) return null;
     const j = (await res.json()) as Record<string, unknown>;
     return linkPreviewFrom(j, url);
   } catch {
-    return null; /** proxy unreachable / network — graceful no-op */
+    return null;
   }
 }
 
-/** Fetch + cache OpenGraph link preview metadata for a URL, or null while idle/unavailable. */
 export function useLinkPreview(url: string | null): LinkPreviewResult | null {
   const { data } = useQuery({
     queryKey: ['linkPreview', url ?? ''],

@@ -1,7 +1,4 @@
 <script setup lang="ts">
-/** Inline-editable text field — used for both the group name (single line)
- *  and the group description (multiline). Click the value to switch to
- *  edit mode; Save commits and emits to the parent. */
 
 const props = withDefaults(defineProps<{
   label: string;
@@ -10,12 +7,7 @@ const props = withDefaults(defineProps<{
   multiline?: boolean;
   saving?: boolean;
   emptyLabel?: string;
-  /** When true the value is shown as static text — no click-to-edit. Used to
-   *  hide editing from members who aren't group admins. */
   readonly?: boolean;
-  /** Tailwind classes applied to the rendered value when not editing.
-   *  Lets the parent pick a heading size for `name` vs body size for
-   *  `description` without forking the component. */
   valueClass?: string;
 }>(), {
   placeholder: '',

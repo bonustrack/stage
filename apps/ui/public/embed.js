@@ -1,4 +1,3 @@
-/** @file Metro embed loader; injects an Intercom-style floating chat button and iframe panel from one script tag. */
 
 (function () {
   var script = document.currentScript;
@@ -10,7 +9,6 @@
     return;
   }
 
-  /** Styles are inlined (no extra CSS) and the widget lives in its own top z-layer above page chrome. */
   var WIDGET_ID = 'metro-embed-widget';
   if (document.getElementById(WIDGET_ID)) return;
 
@@ -50,12 +48,10 @@
   iframe.title = title;
   iframe.style.cssText = 'flex:1;width:100%;border:0;display:block';
   iframe.allow = 'clipboard-write; geolocation; microphone; camera';
-  /** Lazy hash-routed src; set only when the panel first opens so the iframe defers booting XMTP. */
   iframe.dataset.src = metroUrl.replace(/\/$/, '') + '/#/embed/' + encodeURIComponent(convId);
   panel.appendChild(iframe);
 
   var open = false;
-  /** Toggle the panel open/closed, swap the button glyph, and lazy-load the iframe src on first open. */
   function toggle() {
     open = !open;
     panel.style.display = open ? 'flex' : 'none';

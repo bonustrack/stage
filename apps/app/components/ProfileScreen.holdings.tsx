@@ -1,4 +1,3 @@
-/** @file ProfileHoldings: a profile's public Tokens + NFTs tabs for the viewed address, reusing the Wallet-tab presentational components. */
 
 import { useEffect, useRef, useState } from 'react';
 
@@ -16,7 +15,6 @@ import { getNftsAcrossChains, type Nft } from '../lib/opensea';
 type HoldingsTab = 'tokens' | 'nfts';
 const TAB_LABEL: Record<HoldingsTab, string> = { tokens: 'Tokens', nfts: 'NFTs' };
 
-/** Tokens | NFTs underline tabs — mirrors WalletTabs styling (no Activity/ Railgun on a peer profile). */
 function HoldingsTabs({ tab, setTab, head, sub, border }: {
   tab: HoldingsTab; setTab: (t: HoldingsTab) => void; head: string; sub: string; border: string;
 }): React.ReactElement {
@@ -46,7 +44,6 @@ function HoldingsTabs({ tab, setTab, head, sub, border }: {
   );
 }
 
-/** Renders the holdings section of a profile with tabs for tokens and other assets. */
 export function ProfileHoldings({ address }: { address: string }): React.ReactElement {
   const { link: head, text: sub, bg, border } = usePalette();
 
@@ -58,7 +55,6 @@ export function ProfileHoldings({ address }: { address: string }): React.ReactEl
   const [nfts, setNfts] = useState<Nft[] | null>(null);
   const [nftStatus, setNftStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
 
-  /** Public token balances for the VIEWED address (no Railgun — shielded balances are private to their owner and never visible on a peer profile). */
   useEffect(() => {
     if (!address) return;
     let cancelled = false;
@@ -75,7 +71,6 @@ export function ProfileHoldings({ address }: { address: string }): React.ReactEl
     return () => { cancelled = true; };
   }, [address]);
 
-  /** Lazy-load NFTs on the first switch to the NFTs tab, cached per address. Guard re-fetch by the loaded address (not by status) — see WalletScreen. */
   const loadedAddrRef = useRef<string | null>(null);
   useEffect(() => {
     if (tab !== 'nfts' || !address || loadedAddrRef.current === address) return;
@@ -118,7 +113,6 @@ export function ProfileHoldings({ address }: { address: string }): React.ReactEl
           </Text>
         </Col>
       ) : (
-        /* Public rows only — no shielded (privateRows) and no pending shields on a peer profile. */
         <TokensList
           rows={rows} privateRows={[]} pending={[]}
           head={head} sub={sub} border={border} bg={bg}

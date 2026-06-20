@@ -1,4 +1,3 @@
-/** @file Unified Wallet send-token screen routing each held token to an on-chain or Railgun 0zk transfer per the combined TokenSelector pick. */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
 import { Col } from '../../components/layout';
@@ -10,7 +9,6 @@ import { PublicSendBody } from './send.public.body';
 import { ShieldFlowForm } from './send.shield';
 import { TokenSelector, useSelectedBalance, useTopToken, type TokenChoice } from './TokenSelector';
 
-/** Screen for sending tokens, supporting public and private transfers. */
 export default function WalletSend(): React.ReactElement {
   const router = useRouter();
   const params = useLocalSearchParams<{ to?: string; symbol?: string; chainId?: string; private?: string }>();
@@ -18,7 +16,6 @@ export default function WalletSend(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const formPal = useFormPal();
 
-  /** A caller can pin a token via `?symbol=&chainId=&private=`; otherwise default to the highest-USD-value holding once rows load. */
   const hasParamToken = typeof params.symbol === 'string' && params.symbol.length > 0;
   const initial = useMemo<TokenChoice>(() => {
     const isPrivate = params.private === '1' || params.private === 'true';
@@ -30,7 +27,6 @@ export default function WalletSend(): React.ReactElement {
 
   const [token, setToken] = useState<TokenChoice>(initial);
 
-  /** Default-select the highest-value token once the list loads, unless pinned or user-picked; `touched` latches on first change so later refreshes don't override. */
   const topToken = useTopToken('combined');
   const touched = useRef(hasParamToken);
   useEffect(() => {
@@ -38,16 +34,13 @@ export default function WalletSend(): React.ReactElement {
     touched.current = true;
     setToken(topToken);
   }, [topToken]);
-  /** Handle the Change. */
   const onChange = (v: TokenChoice): void => { touched.current = true; setToken(v); };
 
   const balance = useSelectedBalance('combined', token);
   const initialTo = typeof params.to === 'string' ? params.to : '';
 
-  /** Reset per-token body state on kind/symbol/chain change by keying the body on the selection identity. */
   const bodyKey = `${token.isPrivate ? 'priv' : 'pub'}:${token.chainId}:${token.symbol}`;
 
-  /** The mounted body reports its submit state up for the pinned footer; useFooterReporter makes the report idempotent so re-reporting each render doesn't loop. */
   const { footer, report: reportFooter, onSubmit: footerSubmit } = useFooterReporter();
 
   return (

@@ -1,11 +1,7 @@
-/**
- * @file Pure helpers for the Group Detail composable: self-address resolution, role mapping, and member name lookup.
- */
 
 import { getCachedXmtpClient, getOrCreateXmtpClient } from './xmtp';
 import { readProfile, type SnapshotProfile } from './profile';
 
-/** Browser-SDK group shape used for reading metadata and admin lists. */
 export interface GroupShape {
   name?: string;
   imageUrl?: string;
@@ -14,7 +10,6 @@ export interface GroupShape {
   admins?: () => string[];
 }
 
-/** Resolve the connected wallet's lowercased address from the cached or freshly-created XMTP client. */
 export async function resolveSelfAddress(): Promise<string> {
   const c = getCachedXmtpClient();
   if (c) return c.accountIdentifier?.identifier.toLowerCase() ?? '';
@@ -22,7 +17,6 @@ export async function resolveSelfAddress(): Promise<string> {
   return client ? (client.accountIdentifier?.identifier.toLowerCase() ?? '') : '';
 }
 
-/** Map each member address to its role (owner/admin/member) from the group's super-admin and admin inbox-id sets. */
 export function computeMemberRoles(
   group: GroupShape, addrMap: Record<string, string>,
 ): Record<string, 'owner' | 'admin' | 'member'> {
@@ -36,7 +30,6 @@ export function computeMemberRoles(
   return roles;
 }
 
-/** Resolve Snapshot profile display names for the given addresses (best-effort; misses become null). */
 export async function resolveMemberNames(addrs: string[]): Promise<Record<string, string | null>> {
   const profiles = await Promise.all(
     addrs.map(a => readProfile(a).catch(() => null as SnapshotProfile | null)),

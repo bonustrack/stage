@@ -1,6 +1,4 @@
 <script setup lang="ts">
-/** Location preview card — single OSM tile at z14 with a 📍 emoji overlay.
- *  Click → opens the original maps URL in a new tab. */
 
 import { osmTileUrl } from '../lib/embedDetect';
 

@@ -1,6 +1,4 @@
-/** @file Dependency-free detectors extracting YouTube ids and map coordinates from message text for inline embeds, shared between the RN app and the Vue web client. */
 
-/** Extract a YouTube video id from a message body. Supports: - youtu.be/<id>(?…) - youtube.com/watch?v=<id>(&…) - youtube.com/shorts/<id> - m.youtube.com/watch?v=<id> Returns null when no link is present. */
 export function youtubeIdOf(text: string | undefined | null): string | null {
   if (!text) return null;
   const patterns = [
@@ -21,7 +19,6 @@ export function youtubeIdOf(text: string | undefined | null): string | null {
 
 export interface MapCoords { lat: number; lng: number; sourceUrl: string }
 
-/** Extract lat/lng + the original URL from a message body containing a Google Maps / OSM / Apple Maps link. Returns null when no recognizable map link is present. */
 export function mapCoordsOf(text: string | undefined | null): MapCoords | null {
   if (!text) return null;
   const patterns: RegExp[] = [
@@ -45,7 +42,6 @@ export function mapCoordsOf(text: string | undefined | null): MapCoords | null {
   return null;
 }
 
-/** Compute an OSM XYZ tile coordinate for the given lat/lng + zoom. */
 export function osmTileXY(lat: number, lng: number, zoom: number): { x: number; y: number } {
   const n = 2 ** zoom;
   const x = Math.floor(((lng + 180) / 360) * n);
@@ -56,7 +52,6 @@ export function osmTileXY(lat: number, lng: number, zoom: number): { x: number; 
   return { x: Math.min(n - 1, Math.max(0, x)), y: Math.min(n - 1, Math.max(0, y)) };
 }
 
-/** Single 256x256 OSM tile URL — public, no API key, fine for a preview. */
 export function osmTileUrl(lat: number, lng: number, zoom = 14): string {
   const { x, y } = osmTileXY(lat, lng, zoom);
   return `https://tile.openstreetmap.org/${zoom}/${x}/${y}.png`;

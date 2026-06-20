@@ -1,7 +1,4 @@
 <script setup lang="ts">
-/** Single row in the Channels list — avatar, title, last-message preview,
- *  unread badge. Extracted from Channels.vue to keep that file under the
- *  per-file LOC cap. */
 
 import { stampAvatarUrl } from '../lib/xmtp';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';

@@ -1,4 +1,3 @@
-/** @file useVoiceRecorder hook: microphone capture, level metering, and slide-to-cancel gesture that stages a recorded voice clip as a pending composer attachment. */
 
 import { useMemo, useRef } from 'react';
 import { Alert, Animated, PanResponder } from 'react-native';
@@ -12,27 +11,18 @@ export interface VoiceArgs {
   setLevels: React.Dispatch<React.SetStateAction<number[]>>;
 }
 
-/** Slide-to-cancel threshold — distance the mic has to travel left before a release cancels the recording instead of stopping+staging it. */
 export const SLIDE_CANCEL_THRESHOLD_PX = 80;
 
-/** Hook that drives microphone capture, level metering, and staging for the composer's voice messages. */
 export function useVoiceRecorder(args: VoiceArgs) {
   const { upload, setErr, setRecording, setRecordSecs, setLevels } = args;
   const recRef = useRef<Audio.Recording | null>(null);
-  /** Pinned to `number` (the RN timer id): the Railgun SDK pulls @types/node in, whose Timeout return type collides with the DOM lib at clearInterval() — `number` keeps the clear calls clean. */
   const recTimerRef = useRef<number | null>(null);
-  /** Mic press timestamp — distinguishes push-to-talk (hold) from a tap. */
   const micPressStart = useRef(0);
-  /** Synchronous mirror of `recording` so push-to-talk release reliably stops. */
   const recordingRef = useRef(false);
-  /** Animated value drives mic translateX + the "← slide to cancel" hint fade. */
   const slideX = useRef(new Animated.Value(0)).current;
-  /** Synchronous mirror of the latest drag dx for onPanResponderRelease. */
   const slideXRef = useRef(0);
-  /** If a stop/cancel arrives while startRec is still preparing, stash it. */
   const pendingStop = useRef<null | 'send' | 'cancel'>(null);
 
-  /** Start Rec. */
   const startRec = async (): Promise<void> => {
     if (recordingRef.current) return;
     setErr(null);
@@ -45,7 +35,6 @@ export function useVoiceRecorder(args: VoiceArgs) {
     const preset = Audio.RecordingOptionsPresets.HIGH_QUALITY;
     if (preset === undefined) { recordingRef.current = false; setErr('Recording unavailable'); return; }
     await rec.prepareToRecordAsync({ ...preset, isMeteringEnabled: true });
-    /** Feed mic metering (dBFS, ~-55 silent → 0 loud) into the waveform. */
     rec.setProgressUpdateInterval(80);
     rec.setOnRecordingStatusUpdate((s) => {
       if (s.isRecording && typeof s.metering === 'number') {
@@ -59,12 +48,10 @@ export function useVoiceRecorder(args: VoiceArgs) {
     setRecording(true);
     setRecordSecs(0);
     recTimerRef.current = setInterval(() => { setRecordSecs(s => s + 1); }, 1000) as unknown as number;
-    /** A release/cancel that landed mid-prepare — honour it now that we're live. */
     if (pendingStop.current === 'cancel') void cancelRec();
     else if (pendingStop.current === 'send') void stopRec();
   };
 
-  /** Stop without staging (the ✕ / slide-left cancel). */
   const cancelRec = async (): Promise<void> => {
     recordingRef.current = false;
     const rec = recRef.current;
@@ -72,10 +59,9 @@ export function useVoiceRecorder(args: VoiceArgs) {
     setRecording(false); recRef.current = null; pendingStop.current = null;
     if (recTimerRef.current) { clearInterval(recTimerRef.current); recTimerRef.current = null; }
     setLevels([]);
-    try { await rec.stopAndUnloadAsync(); } catch { /* ignore */ }
+    try { await rec.stopAndUnloadAsync(); } catch { }
   };
 
-  /** Stop and stage the clip as a pending attachment (NOT auto-send). */
   const stopRec = async (): Promise<void> => {
     recordingRef.current = false;
     const rec = recRef.current;

@@ -1,4 +1,3 @@
-/** @file Network registry mapping the two supported chains to the Railgun SDK NetworkName and >=2 getLogs-capable public RPCs per net (loadProvider needs total weight >=2); NEVER brovider, which rejects eth_getLogs (code -32012) and breaks the merkletree scan. */
 
 import { NetworkName } from '@railgun-community/shared-models';
 
@@ -37,7 +36,6 @@ export const RAILGUN_NETWORKS: Record<RailgunNet, RailgunNetworkConfig> = {
 
 export const DEFAULT_RAILGUN_NET: RailgunNet = 'sepolia';
 
-/** Resolve the network config for a chainId; defaults to Sepolia when unknown. */
 export function netForChainId(chainId: number): RailgunNetworkConfig {
   return chainId === 1 ? RAILGUN_NETWORKS.mainnet : RAILGUN_NETWORKS.sepolia;
 }

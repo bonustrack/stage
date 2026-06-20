@@ -1,4 +1,3 @@
-/** @file ComposerEditor + attach menu for the MessengerComposer: the textarea / recording-waveform input row, the [+ / mic / send] buttons, and the attachment menu. */
 
 import type { RefObject } from 'react';
 import { fontSize } from '@stage-labs/kit/tokens';
@@ -24,14 +23,11 @@ interface EditorProps {
   textareaH: number; setTextareaH: (h: number) => void;
   inputRef: RefObject<React.ComponentRef<typeof Textarea> | null>;
   attachMenuOpen: boolean; setAttachMenuOpen: (fn: (o: boolean) => boolean) => void;
-  /** Quick-access shortcut: icon of the last-used attachment type + its handler. Both undefined until the user has picked an attachment once → button hidden. */
   quickIcon?: HeroIconName; onQuick?: () => void;
-  /** Any staged content (text or attachment): the send button is rendered only when true, and when rendered it is always enabled/tappable. */
   hasContent: boolean;
   onCancelRec: () => void; onStopRec: () => void; onSend: () => void;
 }
 
-/** A circular 38px icon button used in the composer button row. */
 function ComposerBtn({ icon, onPress, fg, chipBg, mr }: {
   icon: HeroIconName; onPress: () => void; fg: string; chipBg: string; mr?: number;
 }): React.ReactElement {
@@ -45,7 +41,6 @@ function ComposerBtn({ icon, onPress, fg, chipBg, mr }: {
   );
 }
 
-/** Renders the top input slot: the recording waveform while recording, else the textarea. */
 function ComposerInputSlot({ p }: { p: EditorProps }): React.ReactElement {
   const { dark, head, sub } = p;
   if (p.recording) {
@@ -73,14 +68,13 @@ function ComposerInputSlot({ p }: { p: EditorProps }): React.ReactElement {
   );
 }
 
-/** Renders the left controls of the button row: cancel (recording) or attach + quick-access. */
 function ComposerLeftControls({ p }: { p: EditorProps }): React.ReactElement {
   const { fg, chipBg } = p;
   if (p.recording) return <ComposerBtn icon="x" onPress={p.onCancelRec} fg={fg} chipBg={chipBg} />;
   const showQuick = !p.attachMenuOpen && !!p.quickIcon && !!p.onQuick;
   return (
     <>
-      {/* + first; negative marginRight pulls the quick-access icon tight against it (only when shown). */}
+      {}
       <ComposerBtn
         icon={p.attachMenuOpen ? 'x' : 'plus'}
         onPress={() => { p.setAttachMenuOpen(o => !o); }}
@@ -94,7 +88,6 @@ function ComposerLeftControls({ p }: { p: EditorProps }): React.ReactElement {
   );
 }
 
-/** Renders the right action button of the row: confirm (recording) or send, or nothing. */
 function ComposerRightAction({ p, primary }: { p: EditorProps; primary: string }): React.ReactElement | null {
   const { dark, bg } = p;
   if (p.recording) {
@@ -103,7 +96,6 @@ function ComposerRightAction({ p, primary }: { p: EditorProps; primary: string }
         onPress={p.onStopRec} icon={<Icon name="check" size={20} color={bg} />} />
     );
   }
-  /** Shown only with content to send and always enabled; tapping send clears content synchronously so this unmounts instantly (no disabled flash). */
   if (!p.hasContent) return null;
   return (
     <Button variant="primary" size="md" pill dark={dark} tintBg={primary}
@@ -111,18 +103,17 @@ function ComposerRightAction({ p, primary }: { p: EditorProps; primary: string }
   );
 }
 
-/** Renders the composer's text input row with attach, quick-action, and send/record buttons. */
 export function ComposerEditor(p: EditorProps): React.ReactElement {
   const { fg, recording } = p;
   const { primary } = usePalette();
   return (
     <Col padding={10} surface="raised" radius="none">
       <ComposerInputSlot p={p} />
-      {/* Fixed 40px row height keeps the composer the same height whether the send button is mounted or not. */}
+      {}
       <Row align="center" gap={4} height={40}>
         <ComposerLeftControls p={p} />
         <Spacer/>
-        {/* Mic — both record flows, mounted across recording so the gesture survives. */}
+        {}
         <Animated.View
           {...p.micPanResponder.panHandlers}
           style={{
@@ -141,7 +132,6 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
 
 export type AttachAction = [HeroIconName, string, () => void | Promise<void>];
 
-/** [icon, label, handler] for every + menu entry. Shared by the menu and the quick-access shortcut so both stay in lock-step. */
 export function buildAttachActions(a: {
   pickImage: () => Promise<void>; takePhoto: () => Promise<void>;
   pickFile: () => Promise<void>; pickLocation: () => Promise<void>;
@@ -158,7 +148,6 @@ export function buildAttachActions(a: {
   ];
 }
 
-/** Renders the attachment action menu (photo, file, location, poll, sign, payment). */
 export function AttachMenu({
   head, inputBg, chipBg, actions, onClose,
 }: {

@@ -1,32 +1,24 @@
-/** @file TanStack Query hook fetching a PR's per-file diff for the in-app viewer via the daemon's authenticated GitHub proxy, resolving linked PRs for issue refs and falling back to direct unauthenticated GitHub when the proxy is unreachable. */
 
 import { useQuery } from '@tanstack/react-query';
 import type { GithubRef } from './githubDetect';
 import { toDiffFile, type DiffFile } from './diffParse';
 
 export interface GithubDiff {
-  /** 'ok' = files resolved; 'no-pr' = link is an issue with no linked PR. */
   kind: 'ok' | 'no-pr';
   owner: string;
   repo: string;
-  /** Resolved PR number (present when kind === 'ok'). */
   prNumber?: number;
   title?: string;
-  /** PR (or linked issue) description body, markdown/plain. */
   body?: string;
   files: DiffFile[];
-  /** Total additions across the whole diff. */
   additions: number;
-  /** Total deletions across the whole diff. */
   deletions: number;
 }
 
-/** Authenticated daemon proxy: keeps the GitHub token server-side and lifts the rate limit to 5000 req/hr. Same host family as the blob upload proxy. */
 const PROXY = 'https://blob.metro.box/gh/diff';
 const GH = 'https://api.github.com';
 const HEADERS = { Accept: 'application/vnd.github+json' };
 
-/** Raw shape the proxy returns: same fields, but `files` are raw GitHub file objects (mapped to DiffFile client-side). `no-pr` carries no files. */
 interface ProxyResult {
   kind: 'ok' | 'no-pr';
   owner: string;
@@ -40,7 +32,6 @@ interface ProxyResult {
   error?: string;
 }
 
-/** Sum per-file additions/deletions as a fallback when the source omits the aggregate PR-level totals. */
 function totalsOf(files: DiffFile[]): { additions: number; deletions: number } {
   return files.reduce(
     (acc, f) => ({ additions: acc.additions + f.additions, deletions: acc.deletions + f.deletions }),
@@ -48,7 +39,6 @@ function totalsOf(files: DiffFile[]): { additions: number; deletions: number } {
   );
 }
 
-/** The daemon proxy returns title + files but omits the PR/issue body, so the description renders blank. Fetch it directly from GitHub as a best-effort fill (unauthenticated; failures are swallowed and leave body undefined). */
 async function fetchBody(owner: string, repo: string, kind: 'pull' | 'issue', n: number): Promise<string | undefined> {
   const path = kind === 'pull' ? 'pulls' : 'issues';
   try {
@@ -59,17 +49,14 @@ async function fetchBody(owner: string, repo: string, kind: 'pull' | 'issue', n:
   } catch { return undefined; }
 }
 
-/** Build the `no-pr` GithubDiff from a proxy result, backfilling the issue body when omitted. */
 async function noPrFromProxy(out: ProxyResult, ref: GithubRef): Promise<GithubDiff> {
   const body = out.body ?? (ref.number ? await fetchBody(out.owner, out.repo, 'issue', ref.number) : undefined);
   return { kind: 'no-pr', owner: out.owner, repo: out.repo, title: out.title, body, files: [], additions: 0, deletions: 0 };
 }
 
-/** Build the `ok` GithubDiff from a proxy result, mapping files and backfilling the PR body/totals. */
 async function okFromProxy(out: ProxyResult): Promise<GithubDiff> {
   const files = (out.files ?? []).map(toDiffFile);
   const summed = totalsOf(files);
-  /** Proxy omits body; backfill from the resolved PR number when missing. */
   const body = out.body ?? (out.prNumber ? await fetchBody(out.owner, out.repo, 'pull', out.prNumber) : undefined);
   return {
     kind: 'ok', owner: out.owner, repo: out.repo, prNumber: out.prNumber,
@@ -79,7 +66,6 @@ async function okFromProxy(out: ProxyResult): Promise<GithubDiff> {
   };
 }
 
-/** Primary path: one authenticated round trip through the daemon proxy. */
 async function fetchViaProxy(ref: GithubRef): Promise<GithubDiff> {
   const qs = new URLSearchParams({
     owner: ref.owner, repo: ref.repo, kind: ref.kind, number: String(ref.number ?? 0),
@@ -92,14 +78,12 @@ async function fetchViaProxy(ref: GithubRef): Promise<GithubDiff> {
   return okFromProxy(out);
 }
 
-/** Extract the linked-PR number from a single issue-timeline event, or null when it isn't a cross-reference to a PR. */
 function prNumberFromTimelineEvent(e: Record<string, unknown>): number | null {
   const src = e.source as { issue?: { number?: number; pull_request?: unknown } } | undefined;
   if (src?.issue?.pull_request && typeof src.issue.number === 'number') return src.issue.number;
   return null;
 }
 
-/** Resolve the PR number for an issue link via the issue timeline. Only used by the direct-GitHub fallback; the proxy does this server-side. */
 async function resolvePrNumber(ref: GithubRef): Promise<number | null> {
   if (ref.kind === 'pull' && ref.number) return ref.number;
   if (ref.kind !== 'issue' || !ref.number) return null;
@@ -115,7 +99,6 @@ async function resolvePrNumber(ref: GithubRef): Promise<number | null> {
   return found;
 }
 
-/** Fallback path: hit GitHub directly (unauthenticated, 60 req/hr/IP). */
 async function fetchDirect(ref: GithubRef): Promise<GithubDiff> {
   const prNumber = await resolvePrNumber(ref);
   if (prNumber == null) {
@@ -146,13 +129,11 @@ async function fetchDirect(ref: GithubRef): Promise<GithubDiff> {
   };
 }
 
-/** Get the Github Diff. */
 async function fetchGithubDiff(ref: GithubRef): Promise<GithubDiff> {
   try { return await fetchViaProxy(ref); }
   catch { return await fetchDirect(ref); }
 }
 
-/** Hook fetching the diff for a GitHub ref, with loading and error state. */
 export function useGithubDiff(ref: GithubRef | null): {
   diff: GithubDiff | null; isLoading: boolean; isError: boolean;
 } {

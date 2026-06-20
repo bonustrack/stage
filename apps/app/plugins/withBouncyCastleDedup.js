@@ -1,4 +1,3 @@
-/** @file Expo plugin excluding legacy bcprov-jdk15on app-wide to fix duplicate-classes vs bcprov-jdk15to18 1.78.1. */
 const { withAppBuildGradle } = require('expo/config-plugins');
 
 const SNIPPET = `

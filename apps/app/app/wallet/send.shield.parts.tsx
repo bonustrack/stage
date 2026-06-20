@@ -1,4 +1,3 @@
-/** @file Presentational sub-parts for the Shield form: locked own-0zk recipient row and phase/result status line. */
 import { Linking } from 'react-native';
 
 import { Pressable } from '@stage-labs/kit/pressable';
@@ -9,10 +8,8 @@ import { explorerTxUrl } from '@stage-labs/client/xmtp/tx';
 
 interface Pal { fg: string; head: string; sub: string; border: string; inputBg: string; link: string }
 
-/** Short0zk helper. */
 const short0zk = (a: string): string => (a.length> 18 ? `${a.slice(0, 10)}…${a.slice(-6)}` : a);
 
-/** The shield recipient is ALWAYS the user's own 0zk — shown read-only/locked so it can never be a third party. */
 export function ShieldRecipient({ pal, zkAddress }: {
   pal: Pal; zkAddress: string | null;
 }): React.ReactElement {
@@ -32,7 +29,6 @@ export function ShieldRecipient({ pal, zkAddress }: {
   );
 }
 
-/** Result line beside the stepper: bridge-missing notice, explorer tx link once broadcast, and error on failure (per-phase progress lives in ShieldStepper). */
 export function ShieldPhaseLine({ pal, txHash, err, errPhase, bridgeOk, chainId }: {
   pal: Pal; txHash: string | null; err: string | null; errPhase?: string | null;
   bridgeOk: boolean; chainId: number;

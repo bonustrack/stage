@@ -1,4 +1,3 @@
-/** @file Add-members screen for an existing XMTP group, staging address/.eth members via the shared MemberPicker and calling addGroupMembers. */
 
 import { useCallback, useState } from 'react';
 
@@ -16,7 +15,6 @@ import { Box, Row, Col } from '../../components/layout';
 import { useConvMeta } from '../../modules/messaging';
 import { MemberPicker, useMemberPicker } from './MemberPicker';
 
-/** Screen for adding new members to an existing XMTP group conversation. */
 export default function AddMembers(): React.ReactElement {
   const router = useRouter();
   const { convId } = useLocalSearchParams<{ convId: string }>();
@@ -27,7 +25,6 @@ export default function AddMembers(): React.ReactElement {
   const picker = useMemberPicker();
   const { members } = picker;
   const [submitting, setSubmitting] = useState(false);
-  /** Current group members — excluded from the contact suggestions so we don't suggest adding someone who's already in the group. */
   const { memberAddrs } = useConvMeta(convId);
 
   const onSubmit = useCallback(async (): Promise<void> => {
@@ -45,7 +42,7 @@ export default function AddMembers(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      {/* Header — back button + title, consistent with other pushed screens. */}
+      {}
       <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable onPress={() => { router.back(); }} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg}/>
@@ -62,7 +59,7 @@ export default function AddMembers(): React.ReactElement {
         <MemberPicker state={picker} dark={dark} exclude={memberAddrs}/>
       </ScrollView>
 
-      {/* Add */}
+      {}
       <Box padding={{ top: 16, right: 16, bottom: 16 + insets.bottom, left: 16 }} style={{ borderTopWidth: 1, borderTopColor: border }}>
         <Button
           variant="primary"

@@ -1,4 +1,3 @@
-/** @file Etherscan v2 tx-history fetcher: returns an account's normal txs newest-first (sort=desc, NONCE DESCENDING for an EOA) via the unified v2 endpoint, with the read key overridable via EXPO_PUBLIC_ETHERSCAN_API_KEY or the `apiKey` arg. Pure `fetch`. */
 
 import { parseEtherscanResponse, type EtherscanResponse } from './etherscan.schema';
 import type { EtherscanTx } from './etherscan.types';
@@ -9,29 +8,25 @@ const DEFAULT_KEY =
 
 const V2_URL = 'https://api.etherscan.io/v2/api';
 
-/** Chains the Activity tab fetches, newest-first across all of them. */
 export const ACTIVITY_CHAINS = [
   { id: 1, label: 'Ethereum' },
   { id: 11155111, label: 'Sepolia' },
 ] as const;
 
-/** Normalised row the Activity tab renders. */
 export interface ActivityRow {
   hash: string;
   nonce: number;
-  timestamp: number; /** unix seconds */
+  timestamp: number;
   direction: 'send' | 'receive' | 'self';
-  /** True when this is a contract interaction (non-empty calldata). */
   isContract: boolean;
-  counterparty: string; /** the other party's address (lowercased) */
-  valueEth: string; /** decimal ETH string */
+  counterparty: string;
+  valueEth: string;
   failed: boolean;
-  functionName: string; /** decoded method name, or '' for plain transfer */
-  chainId: number; /** source chain (1 mainnet, 11155111 Sepolia) */
-  chainLabel: string; /** human label for the per-row badge */
+  functionName: string;
+  chainId: number;
+  chainLabel: string;
 }
 
-/** Fetch up to `limit` normal transactions for `address` on `chainId`, newest-first (nonce desc for an EOA); throws on a transport/API error, and an address with no history resolves to an empty array. */
 export async function fetchActivity(
   address: string,
   chainId = 1,
@@ -46,19 +41,15 @@ export async function fetchActivity(
     `&sort=desc&apikey=${apiKey}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`etherscan ${res.status}`);
-  /** Boundary: validate the response envelope so a drifted/garbage body throws loudly with a logged reason instead of being cast into a wrong shape. */
   const json = parseEtherscanResponse(await res.json());
   const rows = resultRowsOrThrow(json);
   return rows.map(tx => mapTx(tx, addr, chainId, label));
 }
 
-/** Extract the tx-list array from an Etherscan envelope, treating "no transactions" as empty and any other non-"1" status as a thrown error. */
 function resultRowsOrThrow(json: EtherscanResponse): EtherscanTx[] {
-  /** status "0" with message "No transactions found" + array result = empty (not an error). */
   if (json.status !== '1' && !Array.isArray(json.result)) {
     const noTx = typeof json.result === 'string' && /no transactions/i.test(json.result);
     const noTxMsg = typeof json.result === 'string' && /no transactions/i.test(json.message);
-    /** Anything else (rate limit, invalid key) is a real error. */
     if (!noTx && !noTxMsg) {
       throw new Error(typeof json.result === 'string' ? json.result : json.message);
     }
@@ -66,7 +57,6 @@ function resultRowsOrThrow(json: EtherscanResponse): EtherscanTx[] {
   return Array.isArray(json.result) ? json.result : [];
 }
 
-/** Shape one raw Etherscan tx into the normalised ActivityRow the Activity tab renders. */
 function mapTx(tx: EtherscanTx, addr: string, chainId: number, label: string): ActivityRow {
   const isOut = tx.from.toLowerCase() === addr;
   const isIn = tx.to.toLowerCase() === addr;
@@ -87,7 +77,6 @@ function mapTx(tx: EtherscanTx, addr: string, chainId: number, label: string): A
   };
 }
 
-/** Fetch activity across ALL ACTIVITY_CHAINS in parallel, merged newest-first, with each chain's errors isolated so a failed/empty chain is skipped; rejects only if EVERY chain throws, and an all-empty result resolves to []. */
 export async function fetchActivityAllChains(
   address: string,
   limit = 50,
@@ -106,7 +95,6 @@ export async function fetchActivityAllChains(
     .slice(0, limit);
 }
 
-/** wei (decimal string) -> trimmed ETH decimal string. Avoids viem to keep this helper dependency-light; precision to 6 dp is plenty for a row. */
 function weiToEth(wei: string): string {
   let n = 0;
   try {
@@ -118,7 +106,6 @@ function weiToEth(wei: string): string {
   return n.toLocaleString(undefined, { maximumFractionDigits: 6 });
 }
 
-/** "transfer(address,uint256)" -> "transfer". Empty for plain ETH sends. */
 function shortFn(fn: string): string {
   if (!fn) return '';
   const i = fn.indexOf('(');

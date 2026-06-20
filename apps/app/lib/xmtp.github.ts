@@ -1,9 +1,7 @@
-/** @file Group GitHub-link helpers: read/write an optional GitHub issue/PR URL in the group's synced `appData` under the `github` key, merging so labels and other keys survive (back-compatible with old `{v:1,labels}` data; all members may edit). */
 
 import { convOfLine } from './xmtp';
 import { asGroup, parseBlob, readLabels, LabelPermissionError } from './xmtp.labels';
 
-/** Validate + normalise a GitHub URL. Returns the cleaned URL, or '' to clear the link. Throws on a non-github.com URL so the UI can surface it. */
 export function normalizeGithubUrl(raw: string): string {
   const trimmed = raw.trim();
   if (!trimmed) return '';
@@ -20,13 +18,11 @@ export function normalizeGithubUrl(raw: string): string {
   return u.toString();
 }
 
-/** Pull the github link out of a parsed blob (string or undefined). */
 function readGithub(blob: Record<string, unknown>): string | undefined {
   const raw = blob.github;
   return typeof raw === 'string' && raw.trim() ? raw.trim() : undefined;
 }
 
-/** Read the group's GitHub link, syncing first for the latest committed state. Returns undefined for DMs, missing groups, or any read error. */
 export async function getGithubLink(line: string): Promise<string | undefined> {
   const conv = await convOfLine(line);
   const group = asGroup(conv);
@@ -39,7 +35,6 @@ export async function getGithubLink(line: string): Promise<string | undefined> {
   }
 }
 
-/** Read the github link off an ALREADY-SYNCED conv (no extra sync) — mirror of labelsOfSyncedGroup, used by the channels list build. */
 export async function githubOfSyncedGroup(conv: unknown): Promise<string | undefined> {
   const group = asGroup(conv);
   if (!group) return undefined;
@@ -50,7 +45,6 @@ export async function githubOfSyncedGroup(conv: unknown): Promise<string | undef
   }
 }
 
-/** Set (or clear, with '') the group's GitHub link, merging into existing appData so labels/other keys survive. Throws LabelPermissionError on denial. */
 export async function setGithubLink(line: string, url: string): Promise<string | undefined> {
   const clean = normalizeGithubUrl(url);
   const conv = await convOfLine(line);

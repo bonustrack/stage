@@ -1,9 +1,6 @@
-/** @file Installs the platform CSPRNG `crypto.getRandomValues` and a Buffer polyfill viem needs on React Native; throws rather than falling back to weak entropy since key material must never come from a non-cryptographic PRNG. */
 
-/** Side-effect import: installs `globalThis.crypto.getRandomValues` backed by the platform CSPRNG. Must run before the assertion below and before any viem import. Keep this as the first import. */
 import 'react-native-get-random-values';
 
-/** viem (and most node-leaning libs) reach for `Buffer` for hex encode/decode. React Native doesn't ship it; the `buffer` npm package is a pure-JS shim. */
 import { Buffer as BufferPolyfill } from 'buffer';
 
 const G = globalThis as {
@@ -15,7 +12,6 @@ if (typeof G.Buffer === 'undefined') {
   G.Buffer = BufferPolyfill;
 }
 
-/** Hard invariant: after the native polyfill above, a real CSPRNG must exist. If it doesn't (native module failed to link, unsupported runtime), refuse to continue — never silently degrade to a non-cryptographic generator. */
 function assertSecureRandom(): void {
   const c = (globalThis as { crypto?: Crypto }).crypto;
   if (!c || typeof c.getRandomValues !== 'function') {

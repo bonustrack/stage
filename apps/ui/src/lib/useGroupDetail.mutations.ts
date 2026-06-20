@@ -1,6 +1,3 @@
-/**
- * @file Group Detail effect + mutation handlers, split from `useGroupDetail.ts` so the composable stays under the lint cap.
- */
 
 import { type ComputedRef, type Ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -11,7 +8,6 @@ import {
   resolveSelfAddress, computeMemberRoles, resolveMemberNames, type GroupShape,
 } from './useGroupDetailHelpers';
 
-/** Reactive state shared between the composable and its mutation handlers. */
 export interface GroupDetailState {
   router: ReturnType<typeof useRouter>;
   line: ComputedRef<string>;
@@ -33,7 +29,6 @@ export interface GroupDetailState {
 
 type MemberOp = 'addMembersByIdentifiers' | 'removeMembersByIdentifiers';
 
-/** Load group metadata, members, roles, and profile names into the reactive state. */
 export async function runGroupDetailEffect(s: GroupDetailState): Promise<void> {
   if (!s.convId.value) return;
   s.selfAddress.value = await resolveSelfAddress();
@@ -46,14 +41,11 @@ export async function runGroupDetailEffect(s: GroupDetailState): Promise<void> {
   const addrMap = await memberInboxToAddressMap(conv);
   const addrs = Object.values(addrMap).sort((a, b) => a.localeCompare(b));
   s.members.value = addrs;
-  /** Role per member: super-admin → Owner, admin → Admin, else Member. superAdmins/admins are inbox ids, matched against the inbox→address map. */
   try { s.memberRoles.value = computeMemberRoles(group, addrMap); }
-  catch { /* roles are best-effort */ }
-  /** Enrich with Snapshot profile names — pure best-effort, rows fall back to short addresses when the lookup misses. */
+  catch { }
   s.memberNames.value = await resolveMemberNames(addrs);
 }
 
-/** Handle the Save Name. */
 export async function onSaveName(s: GroupDetailState, next: string): Promise<void> {
   if (!next || s.saving.value) return;
   s.saving.value = true;
@@ -69,7 +61,6 @@ export async function onSaveName(s: GroupDetailState, next: string): Promise<voi
   } finally { s.saving.value = false; }
 }
 
-/** Handle the Save Description. */
 export async function onSaveDescription(s: GroupDetailState, next: string): Promise<void> {
   if (s.savingDescription.value) return;
   s.savingDescription.value = true;
@@ -86,7 +77,6 @@ export async function onSaveDescription(s: GroupDetailState, next: string): Prom
   } finally { s.savingDescription.value = false; }
 }
 
-/** Mutate Members. */
 export async function mutateMembers(
   s: GroupDetailState, op: MemberOp, addr: string, errLabel: string,
 ): Promise<void> {
@@ -103,7 +93,6 @@ export async function mutateMembers(
   } catch (e) { s.errorMsg.value = `${errLabel}: ${(e as Error).message}`; }
 }
 
-/** Handle the Add Member. */
 export async function onAddMember(s: GroupDetailState, addr: string): Promise<void> {
   if (s.adding.value) return;
   s.adding.value = true;
@@ -111,7 +100,6 @@ export async function onAddMember(s: GroupDetailState, addr: string): Promise<vo
   finally { s.adding.value = false; }
 }
 
-/** Remove Member. */
 export async function removeMember(s: GroupDetailState, addr: string): Promise<void> {
   if (!confirm(`Remove ${shortAddress(addr)} from this group?`)) return;
   s.removing.value = addr.toLowerCase();
@@ -119,7 +107,6 @@ export async function removeMember(s: GroupDetailState, addr: string): Promise<v
   finally { s.removing.value = null; }
 }
 
-/** Handle the Pick Image. */
 export async function onPickImage(s: GroupDetailState, file: File): Promise<void> {
   if (s.uploadingImage.value) return;
   s.uploadingImage.value = true;

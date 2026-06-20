@@ -1,6 +1,4 @@
 <script setup lang="ts">
-/** Bottom tab bar — Channels / Contacts / Settings / Profile.
- *  Mirrors apps/app/app/(tabs)/_layout.tsx (icons-only, no labels). */
 
 import type { HeroIconName } from './HeroIcon.vue';
 import { Row } from './layout';

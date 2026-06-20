@@ -1,6 +1,3 @@
-/**
- * @file Input — a hook-free ChatKit-styled single-line text field wrapping RN `TextInput` with controlled `value`/`onChangeText` support and `inputType` mapped onto keyboardType + secureTextEntry.
- */
 
 import { forwardRef, useState } from 'react';
 import {
@@ -11,7 +8,6 @@ import {
   type TextStyle,
 } from 'react-native';
 
-/** The focus/blur event type accepted by RN TextInput's onFocus handler. */
 type FocusEv = Parameters<NonNullable<TextInputProps['onFocus']>>[0];
 import {
   controlBoxStyle,
@@ -22,7 +18,6 @@ import {
 } from './control.styles';
 import { BLOCK_RADIUS_DEFAULT } from './tokens';
 
-/** ChatKit Input.inputType. */
 export type InputType = 'text' | 'email' | 'password' | 'number' | 'tel' | 'url';
 
 const KEYBOARD: Record<InputType, KeyboardTypeOptions> = {
@@ -35,58 +30,36 @@ const KEYBOARD: Record<InputType, KeyboardTypeOptions> = {
 };
 
 export interface InputProps {
-  /** ChatKit: name. Form field name (required). */
   name?: string;
-  /** ChatKit: defaultValue. Initial text for the uncontrolled field. */
   defaultValue?: string;
-  /** Controlled value (kit extension; pair with onChangeText). */
   value?: string;
-  /** ChatKit: placeholder. */
   placeholder?: string;
-  /** ChatKit: variant. 'soft' (filled) | 'outline'. Default 'soft'. */
   variant?: ControlVariant;
-  /** ChatKit: size. ControlSize scale. Default 'md'. */
   size?: ControlSize;
-  /** ChatKit: pill. Fully-rounded corners. */
   pill?: boolean;
-  /** ChatKit: disabled. */
   disabled?: boolean;
-  /** ChatKit: inputType. Maps onto RN keyboardType / secureTextEntry. */
   inputType?: InputType;
-  /** ChatKit: autoFocus. */
   autoFocus?: boolean;
-  /** ChatKit: autoSelect. Select all on focus. */
   autoSelect?: boolean;
-  /** ChatKit: required (parity only; validation is app-side). */
   required?: boolean;
-  /** ChatKit: pattern (parity only; validation is app-side). */
   pattern?: string;
-  /** Corner radius (px). Falls back to the block radius token (or pill). */
   radius?: number;
-  /** Called on each keystroke (RN substitute for ChatKit's onChangeAction). */
   onChangeText?: (text: string) => void;
-  /** Called on submit/return. */
   onSubmit?: (text: string) => void;
-  /** Effective color scheme. Pass useEffectiveColorScheme() === 'dark'. */
   dark?: boolean;
-  /** Override the placeholder colour (else derived from variant/scheme). */
   placeholderTextColor?: string;
-  /** Escape-hatch style merged last onto the box (accepts text + view style). */
   style?: StyleProp<TextStyle>;
-  /** Extra RN TextInput props (refs, returnKeyType, selection, etc.). Its onFocus/onBlur are chained after the kit focus tracking. */
   inputProps?: Omit<
     TextInputProps,
     'value' | 'defaultValue' | 'onChangeText' | 'style' | 'placeholder' | 'editable'
   >;
 }
 
-/** Accessibility id pair derived from the field `name`. */
 function fieldIds(name: string | undefined): { nativeID?: string; accessibilityLabelledBy?: string } {
   if (!name) return {};
   return { nativeID: `input-${name}`, accessibilityLabelledBy: `label-${name}` };
 }
 
-/** Set focus state then forward the event to the caller's handler. */
 function chainFocus(
   focused: boolean,
   setFocused: (v: boolean) => void,
@@ -97,7 +70,6 @@ function chainFocus(
   next?.(e);
 }
 
-/** ChatKit-style RN single-line input. Forwards a ref to the underlying RN TextInput so call sites can focus/blur it. */
 export const Input = forwardRef<TextInput, InputProps>(function Input(props, ref) {
   const {
     name,

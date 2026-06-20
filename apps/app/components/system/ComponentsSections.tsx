@@ -1,4 +1,3 @@
-/** @file Inline gallery rendering the app's app-level components (ChannelRow, TokenRow, MessengerBubble, MessengerComposer) with fixed representative sample data and no controls or story indirection. */
 
 import { Box } from '../layout';
 import { GallerySection } from './GallerySection';
@@ -48,25 +47,24 @@ const SAMPLE_TOKEN: AssetRow = {
   logoUrl: 'https://cdn.stamp.fyi/avatar/eth:0x0000000000000000000000000000000000000000?s=64',
 };
 
-/** Renders the gallery sections showcasing UI components. */
 export function ComponentsSections({ dark, head, sub, border }: GalleryPalette): React.ReactElement {
   const { bg } = usePalette();
   const sec = { head, sub, border };
   return (
     <Box>
       <GallerySection name="UserCard" note="Person row (ChannelRow, circle avatar) - DMs & profiles" {...sec}>
-        <ChannelRow title="vitalik.eth" subtitle="Direct message" avatarAddress={SAMPLE_USER_ADDR} onPress={() => {/* noop */}} noBorder />
+        <ChannelRow title="vitalik.eth" subtitle="Direct message" avatarAddress={SAMPLE_USER_ADDR} onPress={() => undefined} noBorder />
       </GallerySection>
 
       <GallerySection name="ChannelCard" note="Channel row (ChannelRow, square avatar) - groups & channels" {...sec}>
         <ChannelRow
           title="Metro Dev" subtitle="12 members" avatarAddress={SAMPLE_USER_ADDR} square
-          lastPreview="Less: shipping the Components page" onPress={() => {/* noop */}} noBorder
+          lastPreview="Less: shipping the Components page" onPress={() => undefined} noBorder
         />
       </GallerySection>
 
       <GallerySection name="TokenCard" note="Wallet asset row (TokenRow) - the Tokens tab" {...sec} innerPadH={14}>
-        <TokenRow r={SAMPLE_TOKEN} head={head} sub={sub} border={border} bg={bg} onPress={() => {/* noop */}} />
+        <TokenRow r={SAMPLE_TOKEN} head={head} sub={sub} border={border} bg={bg} onPress={() => undefined} />
       </GallerySection>
 
       <GallerySection name="MessageRow" note="Chat message row (MessengerBubble) - the conversation feed" {...sec} innerPadV={6}>

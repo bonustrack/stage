@@ -1,4 +1,3 @@
-/** @file Components sub-page of Settings: header plus theme switcher above app-level ComponentsSections rendered with sample data, mirroring KitPage but showcasing app components rather than kit primitives. */
 
 import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,7 +7,6 @@ import { SystemHeader } from './SystemHeader';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { ComponentsSections } from './ComponentsSections';
 
-/** Renders the Components gallery page of the system design section. */
 export function ComponentsPage(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head, border } = usePalette();

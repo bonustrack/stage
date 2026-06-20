@@ -1,4 +1,3 @@
-/** @file Wallet unshield-token screen moving funds from the user's 0zk shielded balance back to a public address via the Groth16 estimate-prove-populate-broadcast flow. */
 import { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
@@ -12,7 +11,6 @@ import { TokenSelector, useSelectedBalance } from './TokenSelector';
 type Phase = 'idle' | 'proving' | 'broadcasting' | 'done' | 'error';
 const NET_LABEL: Record<number, string> = { 1: 'Ethereum', 11155111: 'Sepolia' };
 
-/** Map an unshield phase to its footer submit-button label. */
 function submitLabelFor(phase: Phase): string {
   const byPhase: Partial<Record<Phase, string>> = {
     proving: 'Proving…', broadcasting: 'Broadcasting…', done: 'Unshielded ✓',
@@ -20,7 +18,6 @@ function submitLabelFor(phase: Phase): string {
   return byPhase[phase] ?? 'Unshield';
 }
 
-/** Screen for unshielding tokens from a private balance back to public. */
 export default function WalletUnshield(): React.ReactElement {
   const router = useRouter();
   const params = useLocalSearchParams<{ symbol?: string; chainId?: string }>();
@@ -46,7 +43,6 @@ export default function WalletUnshield(): React.ReactElement {
   const busy = phase === 'proving' || phase === 'broadcasting';
   const canSubmit = isFinite(n) && n > 0 && !busy && !!eoa && isBridgeAvailable();
 
-  /** Handle the Submit. */
   const onSubmit = (): void => {
     if (!canSubmit) return;
     setErr(null); setTxHash(null); setPhase('proving');

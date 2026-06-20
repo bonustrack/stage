@@ -1,4 +1,3 @@
-/** @file Open free-text answer block for a poll question (AskUserQuestion open type): a Kit input + send Button listing submitted answers, where an empty submission retracts the user's prior answer. */
 
 import { useState } from 'react';
 import { fontSize } from '@stage-labs/kit/tokens';
@@ -8,7 +7,6 @@ import { Button } from '@stage-labs/kit/button';
 import { Row, Box } from './layout';
 import { usePalette, useBlockRadius, withAlpha } from '../lib/theme';
 
-/** Renders the free-text answer input and submitted-answers list for an open poll question. */
 export function OpenAnswerBlock({ qi, sub, dark, answers, mine, onSubmit }: {
   qi: number; sub: string; dark: boolean;
   answers?: Map<string, { text: string; ts: string }>;
@@ -18,9 +16,7 @@ export function OpenAnswerBlock({ qi, sub, dark, answers, mine, onSubmit }: {
   const radius = useBlockRadius();
   const [draft, setDraft] = useState('');
   const list = answers ? [...answers.entries()].sort((a, b) => a[1].ts.localeCompare(b[1].ts)) : [];
-  /** Submit helper. */
   const submit = (): void => { onSubmit(draft); setDraft(''); };
-  /** Borderless input: neutral overlay fill + radius so it still reads as an input but has no visible outline; body text uses the palette text token. */
   const inputBg = pal.inputBg;
   return (
     <Box margin={{ top: 2 }} gap={6} style={{ alignSelf: 'stretch' }}>

@@ -1,4 +1,3 @@
-/** @file Public-send hook for the Wallet send screen: ENS resolution, balance/price bootstrap, token-USD conversion, and submit-broadcast-confirm for smart-account and legacy-EOA transfers. */
 import { useEffect, useMemo, useState } from 'react';
 import {
   isAddress, erc20Abi, encodeFunctionData, parseUnits, createPublicClient, type Hex,
@@ -18,7 +17,6 @@ export type SendTxState = 'idle' | 'submitting' | 'pending' | 'confirmed';
 interface SendAsset { address: Hex | null; decimals: number; }
 type ActiveAccount = NonNullable<Awaited<ReturnType<typeof getActiveAccount>>>;
 
-/** Broadcast a transfer via the smart-account Kernel client (sponsored userOp on Base). */
 async function sendSmart(active: ActiveAccount, asset: SendAsset, resolved: string, tokStr: string): Promise<Hex> {
   const kernel = await kernelClientForRecord(active);
   const value = parseUnits(tokStr, asset.address ? asset.decimals : 18);
@@ -30,7 +28,6 @@ async function sendSmart(active: ActiveAccount, asset: SendAsset, resolved: stri
     : kernel.sendTransaction({ to: resolved as Hex, value } as Parameters<typeof kernel.sendTransaction>[0]);
 }
 
-/** Broadcast a transfer from a legacy EOA. */
 async function sendLegacy(asset: SendAsset, resolved: string, tokStr: string, chainId: number): Promise<Hex> {
   return sendNativeOrToken({
     to: resolved, amount: tokStr, chainId,
@@ -38,7 +35,6 @@ async function sendLegacy(asset: SendAsset, resolved: string, tokStr: string, ch
   });
 }
 
-/** Build the "≈ $x" / "≈ x TOKEN" secondary label under the amount input. */
 function secondaryLabelOf(amount: string, mode: 'eth' | 'usd', tokenPriceUsd: number | null, symbol: string): string {
   if (!amount.trim() || !tokenPriceUsd) return '';
   const n = Number(amount);
@@ -62,7 +58,6 @@ export interface PublicSend {
   onMax: () => void; onSubmit: () => void;
 }
 
-/** Owns send-screen state given the selected token (symbol + chainId) and its balance string from the wallet rows (or null). */
 export function usePublicSend(initialTo: string, token: TokenChoice, balance: string | null): PublicSend {
   const [to, setTo] = useState<string>(initialTo);
   const [amount, setAmount] = useState('');
@@ -75,12 +70,10 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
   const [txHash, setTxHash] = useState<Hex | null>(null);
   const [txErr, setTxErr] = useState<string | null>(null);
 
-  /** The registry asset for the current selection — its address (null = native) and decimals drive the actual transfer call. */
   const asset = useMemo(
     () => ASSETS.find(a => a.symbol === token.symbol && a.chainId === token.chainId),
     [token.symbol, token.chainId],
   );
-  /** Balance comes from the wallet rows (passed in); price only matters for the USD toggle and is currently bootstrapped for ETH (USDC ≈ $1 implicitly). */
   const ethBalance = balance;
 
   useEffect(() => {
@@ -90,12 +83,11 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
         const { ethPriceUsd: p } = await fetchBalanceAndPrice();
         if (cancelled) return;
         if (typeof p === 'number') setEthPriceUsd(p);
-      } catch { /* leave null — USD toggle degrades to amount-only */ }
+      } catch { }
     })();
     return () => { cancelled = true; };
   }, []);
 
-  /** Per-unit USD price of the SELECTED token: ETH uses the live feed, USD-pegged stables default to 1 so the USD toggle + Max work without a price call. */
   const tokenPriceUsd = token.symbol === 'ETH' ? ethPriceUsd
     : token.symbol === 'USDC' ? 1 : null;
 
@@ -122,7 +114,6 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
     return () => { cancelled = true; clearTimeout(t); };
   }, [to]);
 
-  /** Amount in TOKEN units (the field can be entered in USD via the toggle). */
   const tokenAmount = useMemo(() => {
     const n = Number(amount);
     if (!isFinite(n) || n <= 0) return 0;
@@ -139,14 +130,12 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
   const busy = txState === 'submitting' || txState === 'pending';
   const canSubmit = !!resolved && tokenAmount > 0 && !!asset;
 
-  /** Handle the Max. */
   const onMax = (): void => {
     if (!ethBalance) return;
     if (mode === 'eth') setAmount(ethBalance);
     else if (tokenPriceUsd) setAmount((Number(ethBalance) * tokenPriceUsd).toFixed(2));
   };
 
-  /** Handle the Submit. */
   const onSubmit = (): void => {
     if (!resolved || tokenAmount <= 0 || busy || !asset) return;
     void (async (): Promise<void> => {
@@ -156,7 +145,6 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
         const active = await getActiveAccount();
         if (!active) { setTxState('idle'); setTxErr('No active wallet'); return; }
 
-        /** Smart accounts execute a sponsored userOp on Base via the Kernel client (paymaster covers gas, first send deploys the Kernel), settling on Base regardless of the token's nominal chain. */
         const isSmart = active.type === 'smart';
         const receiptChainId = isSmart ? base.id : token.chainId;
         const hash = isSmart

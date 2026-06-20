@@ -1,8 +1,6 @@
-/** @file ENS name to address resolution via the stamp.fyi server-side `resolve_names` endpoint, which handles the CCIP-Read / Universal Resolver offchain dance that viem's `getEnsAddress` fails on in React Native; pure `fetch`, no platform deps, so it lives in the Stage SDK. */
 
 const STAMP_URL = 'https://stamp.fyi';
 
-/** Resolve a single ENS-style name (already lowercased / normalised by the caller) to an Ethereum address. Returns `null` when nothing is registered. */
 export async function resolveEnsName(name: string): Promise<string | null> {
   const res = await fetch(STAMP_URL, {
     method: 'POST',
@@ -10,7 +8,6 @@ export async function resolveEnsName(name: string): Promise<string | null> {
     body: JSON.stringify({
       method: 'resolve_names',
       params: [name],
-      /** Mainnet ENS only: Metro DMs are always mainnet identities. */
       network: 1,
     }),
   });

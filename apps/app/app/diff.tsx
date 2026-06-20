@@ -1,4 +1,3 @@
-/** @file In-app GitHub PR diff viewer that parses a channel's linked GitHub URL, fetches the per-file diff, and renders it GitHub-style. */
 
 import { ActivityIndicator, Linking } from 'react-native';
 
@@ -30,7 +29,6 @@ interface MdProps {
   onLinkPress: (href: string) => boolean;
 }
 
-/** Body of the diff scroll view: dispatches loading/error/empty/diff states. */
 function DiffBody({ ref, diff, isLoading, isError, p, dark, mdProps }: {
   ref: GithubRef | null; diff: GithubDiff | null; isLoading: boolean; isError: boolean;
   p: Palette; dark: boolean; mdProps: MdProps;
@@ -43,7 +41,6 @@ function DiffBody({ ref, diff, isLoading, isError, p, dark, mdProps }: {
   return <DiffFiles diff={diff} p={p} dark={dark} mdProps={mdProps}/>;
 }
 
-/** Issue-with-no-linked-PR view: title, body and an explanatory note. */
 function DiffNoPr({ diff, p, mdProps }: { diff: GithubDiff; p: Palette; mdProps: MdProps }): React.ReactElement {
   const body = diff.body?.trim();
   return (
@@ -63,7 +60,6 @@ function DiffNoPr({ diff, p, mdProps }: { diff: GithubDiff; p: Palette; mdProps:
   );
 }
 
-/** Pull the header-relevant fields off a (possibly null) diff. */
 function headerFields(diff: GithubDiff | null): {
   title: string; body: string; fileCount: number; additions: number; deletions: number;
 } {
@@ -77,7 +73,6 @@ function headerFields(diff: GithubDiff | null): {
   };
 }
 
-/** PR header: title, body and the change summary row. */
 function DiffFilesHeader({ diff, p, mdProps }: { diff: GithubDiff | null; p: Palette; mdProps: MdProps }): React.ReactElement {
   const { title, body, fileCount, additions, deletions } = headerFields(diff);
   return (
@@ -103,7 +98,6 @@ function DiffFilesHeader({ diff, p, mdProps }: { diff: GithubDiff | null; p: Pal
   );
 }
 
-/** PR view: title, body, change summary and the per-file diff list. */
 function DiffFiles({ diff, p, dark, mdProps }: { diff: GithubDiff | null; p: Palette; dark: boolean; mdProps: MdProps }): React.ReactElement {
   return (
     <>
@@ -115,7 +109,6 @@ function DiffFiles({ diff, p, dark, mdProps }: { diff: GithubDiff | null; p: Pal
   );
 }
 
-/** Screen rendering a markdown diff view of pending changes. */
 export default function Diff(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -123,7 +116,6 @@ export default function Diff(): React.ReactElement {
   const insets = useSafeAreaInsets();
   const { url } = useLocalSearchParams<{ url?: string }>();
 
-  /** Disable the full-width swipe-back here so its horizontal pan stops starving the diff ScrollView; the header back arrow still pops the route. */
   const navigation = useNavigation();
   useLayoutEffect(() => {
     navigation.setOptions({ gestureEnabled: false });

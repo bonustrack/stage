@@ -1,13 +1,9 @@
-/** @file Renders a string with case-insensitive `query` matches wrapped in a fluo-yellow highlight, used in search and the Home channels list. */
 
-/** Use a bare RN Text so the highlight span inherits surrounding typography and only adds a background; Kit Text would override font size/family. */
 import { Text as RNText } from './layout/native';
 import { Text } from '@stage-labs/kit/text';
 
-/** Bright fluo-yellow highlight background; the match span only adds this colour and inherits all surrounding typography. */
 const HL_BG = '#FFF200';
 
-/** Split `text` into alternating non-match / match segments for `query` (case-insensitive). Returns the original text as a single non-match segment when the query is empty or absent. */
 function splitMatches(text: string, query: string): { text: string; hit: boolean }[] {
   const q = query.trim();
   if (!q) return [{ text, hit: false }];
@@ -25,7 +21,6 @@ function splitMatches(text: string, query: string): { text: string; hit: boolean
   return out;
 }
 
-/** Returns inline highlight `<Text>` children (not a wrapper) so the caller keeps its own text styling; matched runs get the fluo background, empty query returns the bare string. */
 export function highlightSegments(text: string, query: string): React.ReactNode {
   if (!query.trim()) return text;
   const parts = splitMatches(text, query);
@@ -36,7 +31,6 @@ export function highlightSegments(text: string, query: string): React.ReactNode 
   ));
 }
 
-/** Renders a string with every case-insensitive occurrence of the query highlighted. */
 export function HighlightText({ text, query, fg }: {
   text: string;
   query: string;

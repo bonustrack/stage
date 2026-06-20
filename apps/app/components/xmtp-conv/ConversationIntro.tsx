@@ -1,4 +1,3 @@
-/** @file The avatar + name intro header shown at the visual top of a conversation once all history is loaded, with distinct DM and group variants, rendered in ConversationFeed's inverted-list footer. */
 
 import { Pressable } from '@stage-labs/kit/pressable';
 
@@ -9,7 +8,6 @@ import { getPeerName } from '../../lib/peerProfiles';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
 import { shortAddress } from '../../modules/messaging';
 
-/** Read-only label chips for the group intro — same rounded-pill look as the ChannelRow inline chips, just left-aligned under the name. Renders nothing for an empty list. */
 function IntroLabelChips({ labels, fg }: {
   labels: string[]; fg: string; rowBg: string;
 }): React.ReactElement | null {
@@ -28,7 +26,6 @@ function IntroLabelChips({ labels, fg }: {
   );
 }
 
-/** Header that introduces a conversation's peer or group details. */
 export function ConversationIntro({
   isGroup, peerAddr, groupName, groupImage, groupDescription, groupLabels,
   convId, head, sub, fg, border, rowBg, onPressPeer,

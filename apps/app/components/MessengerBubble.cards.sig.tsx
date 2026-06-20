@@ -1,4 +1,3 @@
-/** @file Signature-request and signature-reference cards for MessengerBubble (split from cards). */
 import { Text } from '@stage-labs/kit/text';
 import { Icon } from '@stage-labs/kit/icon';
 import { Button } from '@stage-labs/kit/button';
@@ -9,14 +8,12 @@ import type { SigRequest, SigReference } from './MessengerBubble.helpers';
 import { usePalette, useBlockRadius } from '../lib/theme';
 import { isCardActionBlocked } from '../lib/consentGate';
 
-/** Stringify only primitive EIP-712 domain fields; ignore objects so we never render '[object Object]'. */
 function stringifyPrimitive(v: unknown): string | undefined {
   if (typeof v === 'string') return v;
   if (typeof v === 'number' || typeof v === 'bigint' || typeof v === 'boolean') return String(v);
   return undefined;
 }
 
-/** Detail bg/border tuple for a sig card's inner blocks, theme-aware. */
 function detailColors(dark: boolean): { bg: string; border: string } {
   return {
     bg: dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
@@ -24,7 +21,6 @@ function detailColors(dark: boolean): { bg: string; border: string } {
   };
 }
 
-/** Renders the peer-supplied, untrusted "Sender's note" block. */
 function SenderNote({ note, bg, border }: { note: string; bg: string; border: string }): React.ReactElement {
   return (
     <Box radius="md" background={bg} padding={8} style={{ borderWidth: 1, borderColor: border }}>
@@ -34,7 +30,6 @@ function SenderNote({ note, bg, border }: { note: string; bg: string; border: st
   );
 }
 
-/** Renders the domain header line of an EIP-712 detail block, or null when absent. */
 function Eip712DomainLine({ domain, sub }: {
   domain: { name?: unknown; chainId?: unknown } | undefined; sub: string;
 }): React.ReactElement | null {
@@ -48,7 +43,6 @@ function Eip712DomainLine({ domain, sub }: {
   );
 }
 
-/** Renders one decoded EIP-712 message field row (key + formatted value). */
 function Eip712FieldRow({ name, value, sub }: { name: string; value: unknown; sub: string }): React.ReactElement {
   return (
     <Row align="start" gap={8}>
@@ -60,7 +54,6 @@ function Eip712FieldRow({ name, value, sub }: { name: string; value: unknown; su
   );
 }
 
-/** Renders the decoded EIP-712 typed-data detail (domain, primary type, fields). */
 function Eip712Detail({ req, sub, bg, border }: {
   req: SigRequest; sub: string; bg: string; border: string;
 }): React.ReactElement {
@@ -76,7 +69,6 @@ function Eip712Detail({ req, sub, bg, border }: {
   );
 }
 
-/** Renders the plain-message detail block for a non-typed-data sign request. */
 function MessageDetail({ message, bg, border }: { message: string; bg: string; border: string }): React.ReactElement {
   return (
     <Box radius="md" background={bg} padding={10} style={{ borderWidth: 1, borderColor: border }}>
@@ -85,7 +77,6 @@ function MessageDetail({ message, bg, border }: { message: string; bg: string; b
   );
 }
 
-/** Renders the Sign action button, or the consent-gated hint when signing is blocked. */
 function SigAction({ gated, dark, signing, onSign }: {
   gated: boolean; dark: boolean; signing?: boolean; onSign: () => void;
 }): React.ReactElement {
@@ -106,16 +97,12 @@ function SigAction({ gated, dark, signing, onSign }: {
   );
 }
 
-/** Renders an in-chat signature-request card with an app-derived trusted title, the typed-data/message detail, and the peer's `description` shown separately as untrusted; `consentAllowed === false` disables Sign for stranger convs. */
 export function SigRequestCard({ req, dark, sub, signing, onSign, consentAllowed }: {
   req: SigRequest; dark: boolean; sub: string; signing?: boolean;
   onSign?: () => void;
-  /** undefined = unknown/not gated (allowed convs), false = stranger -> block. */
   consentAllowed?: boolean;
 }): React.ReactElement {
-  /** TRUSTED title derived by the app from the request kind/typedata — NOT the peer's free-text description. */
   const title = req.kind === 'eip712' ? `Sign ${req.eip712?.primaryType ?? 'typed data'}` : 'Sign message';
-  /** Peer-supplied note, shown separately + clearly marked untrusted. */
   const senderNote = req.description?.trim();
   const gated = isCardActionBlocked(consentAllowed);
   const { bg, border } = detailColors(dark);
@@ -138,11 +125,9 @@ export function SigRequestCard({ req, dark, sub, signing, onSign, consentAllowed
   );
 }
 
-/** SigReferenceCard — a completed signature: "Signed ✓" + signer + short sig. */
 export function SigReferenceCard({ ref, dark, sub }: {
   ref: SigReference; dark: boolean; sub: string;
 }): React.ReactElement {
-  /** Short helper. */
   const short = (h?: string): string => (h && h.length > 14 ? `${h.slice(0, 8)}…${h.slice(-4)}` : (h ?? '')); const blockRadius = useBlockRadius();
   return (
     <Box radius={blockRadius} background={dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)'} padding={12} margin={{ top: 8 }} gap={6} style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)' }}>

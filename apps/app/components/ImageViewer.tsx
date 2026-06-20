@@ -1,4 +1,3 @@
-/** @file Reusable full-screen image viewer modal for attachments and avatars: fit-to-screen image, close affordance, and a Download button that saves remote/local/base64 sources to the camera roll. */
 
 import { useState } from 'react';
 
@@ -14,7 +13,6 @@ import { Buffer } from 'buffer';
 import { Icon } from '@stage-labs/kit/icon';
 import { flash } from '../lib/toast';
 
-/** Extension guessed from a `data:` URI mime or a URL path, used so the saved asset lands with a sensible suffix (the camera roll cares on some OSes). */
 function extOf(uri: string): string {
   const dataMime = /^data:image\/([a-z0-9.+-]+)/i.exec(uri)?.[1];
   if (dataMime) return dataMime === 'jpeg' ? 'jpg' : dataMime;
@@ -22,14 +20,12 @@ function extOf(uri: string): string {
   return (urlExt ?? 'jpg').toLowerCase();
 }
 
-/** Lazily-created scratch directory under the app cache dir for temp downloads; the OS may reclaim it and we don't clean up individual files since it's only a staging area for the save call. */
 function tempDir(): Directory {
   const dir = new Directory(Paths.cache, 'image-viewer');
   if (!dir.exists) dir.create({ intermediates: true });
   return dir;
 }
 
-/** Resolve `uri` to a local `file://` path suitable for MediaLibrary. Remote URLs are downloaded; data: URIs are decoded to a temp file; file: URIs pass through untouched. Returns the local uri. */
 async function toLocalUri(uri: string): Promise<string> {
   if (uri.startsWith('file://')) return uri;
   const ext = extOf(uri);
@@ -41,22 +37,18 @@ async function toLocalUri(uri: string): Promise<string> {
     file.write(new Uint8Array(Buffer.from(b64, 'base64')));
     return file.uri;
   }
-  /** Remote http(s) — download into the temp dir. */
   const dest = new File(tempDir(), `img-${Date.now()}.${ext}`);
   const downloaded = await File.downloadFileAsync(uri, dest);
   return downloaded.uri;
 }
 
-/** Renders a full-screen image viewer modal with close and save-to-camera-roll actions. */
 export function ImageViewer({ uri, visible, onClose }: {
-  /** Image source — http(s)://, file://, or data:…;base64,… */
   uri: string;
   visible: boolean;
   onClose: () => void;
 }): React.ReactElement {
   const [saving, setSaving] = useState(false);
 
-  /** Handle the Download. */
   const onDownload = async (): Promise<void> => {
     if (saving || !uri) return;
     setSaving(true);
@@ -68,7 +60,6 @@ export function ImageViewer({ uri, visible, onClose }: {
       }
       const local = await toLocalUri(uri);
       await MediaLibrary.saveToLibraryAsync(local);
-      /** `flash` is an Android-only toast (no iOS primitive), so confirm via an explicit Alert on iOS instead. */
       if (Platform.OS === 'android') flash('Saved to photos');
       else Alert.alert('Saved', 'Image saved to your photos.');
     } catch (e) {
@@ -81,7 +72,7 @@ export function ImageViewer({ uri, visible, onClose }: {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Col background={'rgba(0,0,0,0.97)'} flex={1}>
-        {/* Tap the backdrop (anywhere not on a control) to dismiss. */}
+        {}
         <Pressable
           onPress={onClose}
           style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
@@ -91,7 +82,7 @@ export function ImageViewer({ uri, visible, onClose }: {
           ) : null}
         </Pressable>
 
-        {/* Close — top-right. */}
+        {}
         <Pressable
           onPress={onClose}
           style={{ position: 'absolute', top: 48, right: 20, padding: 10 }}
@@ -100,7 +91,7 @@ export function ImageViewer({ uri, visible, onClose }: {
           <Icon name="x" size={28} color="#ffffff"/>
         </Pressable>
 
-        {/* Download — bottom-center pill. */}
+        {}
         <Box align="center" style={{ position: 'absolute', bottom: 48, left: 0, right: 0 }}>
           <Pressable
             onPress={() => { void onDownload(); }}

@@ -1,4 +1,3 @@
-/** @file Dependency-free regex HTML head parser that extracts OpenGraph/Twitter/title/description/favicon metadata into a PreviewMeta card (precedence OpenGraph > Twitter > bare HTML). */
 
 export interface PreviewMeta {
   url: string;
@@ -9,7 +8,6 @@ export interface PreviewMeta {
   favicon?: string;
 }
 
-/** Decode the handful of HTML entities that show up in title/description text. */
 function decodeEntities(s: string): string {
   return s
     .replace(/&amp;/g, '&')
@@ -24,7 +22,6 @@ function decodeEntities(s: string): string {
     .trim();
 }
 
-/** Pull the content of every <meta> tag whose name/property matches `key` (case-insensitive), in document order. Handles attribute order variations (content before/after the name/property). */
 function metaContent(html: string, key: string): string | undefined {
   const re = new RegExp(
     `<meta[^>]*?(?:name|property)=["']${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["'][^>]*?>`,
@@ -37,7 +34,6 @@ function metaContent(html: string, key: string): string | undefined {
   return content === undefined ? undefined : decodeEntities(content);
 }
 
-/** First non-empty of a list of meta keys. */
 function firstMeta(html: string, keys: string[]): string | undefined {
   for (const k of keys) {
     const v = metaContent(html, k);
@@ -46,14 +42,12 @@ function firstMeta(html: string, keys: string[]): string | undefined {
   return undefined;
 }
 
-/** Title Tag. */
 function titleTag(html: string): string | undefined {
   const m = /<title[^>]*>([\s\S]*?)<\/title>/i.exec(html);
   const inner = m?.[1];
   return inner === undefined ? undefined : decodeEntities(inner.replace(/\s+/g, ' '));
 }
 
-/** Favicon from a <link rel="icon"|"shortcut icon"|"apple-touch-icon">. */
 function faviconLink(html: string): string | undefined {
   const re = /<link[^>]*rel=["']([^"']*)["'][^>]*>/gi;
   let best: string | undefined;
@@ -65,17 +59,15 @@ function faviconLink(html: string): string | undefined {
     const hrefVal = href?.[1];
     if (hrefVal === undefined) continue;
     best = decodeEntities(hrefVal);
-    if (rel === 'icon' || rel === 'shortcut icon') break; /** prefer plain icon. */
+    if (rel === 'icon' || rel === 'shortcut icon') break;
   }
   return best;
 }
 
-/** Resolve a possibly-relative URL against the page's base. Returns undefined on failure rather than throwing. */
 export function resolveUrl(href: string | undefined, base: string): string | undefined {
   if (!href) return undefined;
   try {
     const u = new URL(href, base);
-    /** Only surface http(s) assets — never data:/javascript:/about: refs. */
     if (u.protocol !== 'http:' && u.protocol !== 'https:') return undefined;
     return u.toString();
   } catch {
@@ -83,17 +75,14 @@ export function resolveUrl(href: string | undefined, base: string): string | und
   }
 }
 
-/** Non-empty string `v`, otherwise `fallback`. */
 function orFallback(v: string | undefined, fallback: string): string {
   return v !== undefined && v.length > 0 ? v : fallback;
 }
 
-/** Non-empty string `v`, otherwise undefined. */
 function orUndefined(v: string | undefined): string | undefined {
   return v !== undefined && v.length > 0 ? v : undefined;
 }
 
-/** Hostname of `finalUrl` (www-stripped), or `finalUrl` itself on parse failure. */
 function hostOf(finalUrl: string): string {
   try {
     return new URL(finalUrl).hostname.replace(/^www\./, '');
@@ -102,9 +91,7 @@ function hostOf(finalUrl: string): string {
   }
 }
 
-/** Extract preview metadata from raw HTML. `finalUrl` is the post-redirect URL, used both as the canonical `url` and to resolve relative image/favicon refs. */
 export function parseMeta(html: string, finalUrl: string): PreviewMeta {
-  /** Only scan the head region for speed/safety; fall back to the whole doc when there's no closing head tag (some pages stream the title late). */
   const headEnd = html.search(/<\/head>/i);
   const head = headEnd > 0 ? html.slice(0, headEnd) : html.slice(0, 200_000);
 

@@ -1,15 +1,12 @@
-/** @file Pure private-key normalization + mnemonic/HD owner-key derivation for the multi-account registry (viem-only, no storage); key STORAGE stays in the host behind the injected SecureStorage interface, re-exported by apps/app so call sites stay stable. */
 
 import { mnemonicToAccount, privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
 import { bytesToHex, type Hex } from 'viem';
 import type { AccountRecord } from './types';
 
 export const PK_PREFIX = 'wallet.pk.';
-/** Pre-multi-account single-key location + its XMTP db dir. */
 export const LEGACY_PK_KEY = 'wallet.privateKey';
 export const LEGACY_DB_DIR = 'xmtp';
 
-/** Accept a private key with or without the `0x` prefix and any case; return a normalized lowercase `0x…` 32-byte hex, or throw if it isn't 64 hex chars. */
 export function normalizePk(input: string): Hex {
   let pk = input.trim();
   if (pk.startsWith('0X')) pk = '0x' + pk.slice(2);
@@ -21,7 +18,6 @@ export function normalizePk(input: string): Hex {
   return pk as Hex;
 }
 
-/** Derive the raw private key from a BIP-39 mnemonic (default m/44'/60'/0'/0/0, the standard first Ethereum account); throws on an invalid phrase. Extracting the key lets the account be stored + signed identically to a pasted private key, with no special-case HD signer. */
 export function privateKeyFromMnemonic(input: string): Hex {
   const phrase = input.trim().replace(/\s+/g, ' ').toLowerCase();
   const words = phrase.split(' ');
@@ -38,17 +34,14 @@ export function privateKeyFromMnemonic(input: string): Hex {
   return bytesToHex(key);
 }
 
-/** A viem signer from a raw private key. */
 export function viemAccountFromPk(pk: Hex): PrivateKeyAccount {
   return privateKeyToAccount(pk);
 }
 
-/** The lowercased account id (storage key + record id) for a private key. */
 export function accountIdFromPk(pk: Hex): string {
   return privateKeyToAccount(pk).address.toLowerCase();
 }
 
-/** True only for the legacy local-EOA records ('generated'/'privateKey') that hold a raw key in the keyring. A `smart` account signs through its Kernel and has no exportable private key; 'walletconnect' is keyless too. */
 export function canExportPrivateKey(rec: AccountRecord): boolean {
   return rec.type === 'generated' || rec.type === 'privateKey';
 }

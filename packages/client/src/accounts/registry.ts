@@ -1,13 +1,10 @@
-/** @file Framework-agnostic registry rules for the multi-account wallet — how a record is shaped, the db dir named, a list mutated on add/upgrade/remove, and which account is active given a possibly-stale pointer; no storage or platform deps, those stay in the host. */
 
 import type { AccountRecord, AccountType } from './types';
 
-/** Per-account XMTP sqlite dir name. Each account gets its own store so inboxes stay isolated and switching is just a client rebuild. */
 export function dbDirFor(id: string): string {
   return `xmtp-${id}`;
 }
 
-/** Build a fresh local-account record (generated or imported key). */
 export function buildLocalAccount(
   id: string,
   address: string,
@@ -17,7 +14,6 @@ export function buildLocalAccount(
   return { id, address, type, dbDir: dbDirFor(id), registered: false, createdAt: now };
 }
 
-/** Build a WalletConnect record — no key stored locally; signing is delegated. */
 export function buildWalletConnectAccount(
   address: string,
   now: number = Date.now(),
@@ -26,17 +22,12 @@ export function buildWalletConnectAccount(
   return { id, address, type: 'walletconnect', dbDir: dbDirFor(id), registered: false, createdAt: now };
 }
 
-/** The outcome of adding a local key to a registry list — describes WHAT the host should persist, without doing any I/O itself. */
 export interface AddLocalResult {
-  /** The next account list to persist. */
   list: AccountRecord[];
-  /** The record that is now active (newly added, existing, or upgraded). */
   record: AccountRecord;
-  /** True when an existing WalletConnect account was upgraded to a local signer (the host should still write the key + flip the type). */
   upgraded: boolean;
 }
 
-/** Decide how the list changes when a local key for id/address is added: a new id appends a fresh record, an existing WalletConnect id upgrades to a local signer, an existing local one just re-activates; the host writes the key and persists `list` when it differs. */
 export function addLocalAccountToList(
   list: AccountRecord[],
   id: string,
@@ -56,7 +47,6 @@ export function addLocalAccountToList(
   return { list: [...list, rec], record: rec, upgraded: false };
 }
 
-/** The active record given the list + a (possibly stale/missing) active pointer. Falls back to the first account; null only when the registry is empty. */
 export function resolveActiveAccount(
   list: AccountRecord[],
   activeId: string | null,
@@ -66,7 +56,6 @@ export function resolveActiveAccount(
   return list.find(a => a.id === activeId) ?? first;
 }
 
-/** Whether an account can sign in-app (has, or can have, a local key). A WalletConnect account signs remotely → false. */
 export function canSignInApp(type: AccountType): boolean {
   return type !== 'walletconnect';
 }

@@ -1,11 +1,9 @@
-/** @file Wallet shield-token screen: shells ShieldFlowForm to deposit a public token into the user's own 0zk shielded balance, recipient locked to their own 0zk address. */
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
 import { ActionPage, WalletFooter, useFooterReporter, useFormPal } from './wallet.form';
 import { ShieldFlowForm } from './send.shield';
 
-/** Screen for shielding tokens from a public balance into a private one. */
 export default function WalletShield(): React.ReactElement {
   const router = useRouter();
   const params = useLocalSearchParams<{ symbol?: string; chainId?: string }>();

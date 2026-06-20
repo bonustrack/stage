@@ -1,6 +1,4 @@
 <script setup lang="ts">
-/** Plain-text composer wired to the local XMTP client. Enter sends, Shift+Enter newlines.
- *  When a reply target is set the bar above the input shows the snippet with a clear button. */
 
 import { xmtpSendText, xmtpReply } from '../lib/xmtpSend';
 import { useComposerAttach } from '../lib/useComposerAttach';
@@ -31,7 +29,6 @@ function pickImage(): void {
   fileInput.value?.click();
 }
 
-/** Grow the textarea with its content up to the max height. */
 function autoGrow(): void {
   const el = textarea.value;
   if (!el) return;

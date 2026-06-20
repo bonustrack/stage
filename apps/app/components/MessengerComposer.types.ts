@@ -1,6 +1,3 @@
-/**
- * @file Shared MessengerComposer types (ComposerActionsArgs) — a leaf module imported by composer actions and builders to avoid a cycle.
- */
 
 import type { Attachment } from './MessengerComposer.helpers';
 

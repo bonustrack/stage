@@ -1,5 +1,4 @@
 <script setup lang="ts">
-/** Row — Box with direction locked to 'row'. Same prop API minus `direction`. */
 import { type BoxProps } from './boxStyle';
 import Box from './Box.vue';
 

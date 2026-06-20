@@ -1,7 +1,4 @@
 <script setup lang="ts">
-/** Resolved-address suggestion banner shown under the search input when the
- *  query is a 0x address or a domain Stamp can resolve. Clicking opens the
- *  associated /user/:address profile. */
 
 const props = defineProps<{
   status: 'idle' | 'resolving' | 'resolved' | 'missed';

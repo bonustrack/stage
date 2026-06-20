@@ -1,4 +1,3 @@
-/** @file Hook deriving member-picker contact suggestions from existing 1:1 DM peers in the account-scoped channelsCache, returning a deduped, name-sorted list with `exclude` removed and an optional `query` filter applied. */
 
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -9,13 +8,10 @@ import { usePeerProfiles, getPeerName } from './peerProfiles';
 import { shortAddress } from './xmtp';
 
 export interface Contact {
-  /** Lowercased peer address — the dedupe + exclude key. */
   address: string;
-  /** Display name (ENS name from stamp.fyi, else shortened address). */
   name: string;
 }
 
-/** Pull the DM-peer addresses out of the cached channel rows. */
 function peerAddressesFromRows(rows: CachedRow[] | null): string[] {
   const out: string[] = [];
   const seen = new Set<string>();
@@ -30,13 +26,11 @@ function peerAddressesFromRows(rows: CachedRow[] | null): string[] {
   return out;
 }
 
-/** Live list of DM-peer contacts minus the case-insensitive `exclude` set (self always omitted), filtered by a case-insensitive `query` over name and address. */
 export function useContacts(exclude: string[], query: string): Contact[] {
   const [rows, setRows] = useState<CachedRow[] | null>(() => getCachedRows());
   useEffect(() => subscribeCachedRows(setRows), []);
 
   const peers = useMemo(() => peerAddressesFromRows(rows), [rows]);
-  /** Fetch (and re-render on) the peers' profiles — name + avatar. */
   const version = usePeerProfiles(peers);
 
   const excludeSet = useMemo(() => {
@@ -60,6 +54,5 @@ export function useContacts(exclude: string[], query: string): Contact[] {
           c.name.toLowerCase().includes(q) || c.address.includes(q))
       : contacts;
     return filtered.sort((a, b) => a.name.localeCompare(b.name));
-    /** `version` is a render-trigger when profiles resolve — intentional dep. */
   }, [peers, excludeSet, q, version]);
 }

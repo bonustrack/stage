@@ -1,4 +1,3 @@
-/** @file Accounts section for Settings: multi-wallet management (switch, add HD-index ZeroDev smart account, remove, export), composing useAccountsManager with the sibling list-card and sheet modules. */
 
 import { Box } from './layout';
 import { Spinner } from './Spinner';
@@ -8,19 +7,17 @@ import { ManageSheet, ExportSheet } from './AccountsManager.sheets';
 import { usePalette } from '../lib/theme';
 import { usePeerProfiles } from '../lib/peerProfiles';
 
-/** Settings section for listing, switching, adding, and removing the device's accounts. */
 export function AccountsManager({ dark, flat = false, onSwitched }: { dark: boolean; flat?: boolean; onSwitched?: () => void }): React.ReactElement {
   const tokens = usePalette();
-  const head = tokens.link; /** #ffffff / #000000 */
-  const sub = tokens.sub; /** de-forked onto the palette secondary grey */
-  const border = tokens.border; /** #282a2d / #e4e4e5 */
+  const head = tokens.link;
+  const sub = tokens.sub;
+  const border = tokens.border;
   const rowBg = border;
-  const sheetBg = dark ? '#1a1b1d' : '#ffffff'; /** elevated sheet surface, no token */
+  const sheetBg = dark ? '#1a1b1d' : '#ffffff';
   const pal = { head, sub, border, sheetBg };
 
   const m = useAccountsManager(onSwitched);
 
-  /** Resolve every account's display name via the same stamp.fyi resolver peers use, so the user's own accounts show their ENS/stamp name; without this ensure() nothing fetches the self addresses. */
   usePeerProfiles(m.accounts.map(a => a.address));
 
   return (

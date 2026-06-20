@@ -1,11 +1,9 @@
-/** @file Async calldata decoder for the tx-request card resolving the ABI (Sourcify, then 4byte, then raw selector) for a trustworthy function+args view; never blocks signing (failures return decoded:false with the raw selector) and caches per (chainId+address) and per selector. */
 
 import { useEffect, useState } from 'react';
 import {
   decodeFunctionData, parseAbiItem, toFunctionSelector, type Abi, type Hex,
 } from 'viem';
 
-/** One decoded argument: a name (from the ABI, or `arg0` when unnamed via 4byte) and a display-ready string value. */
 interface DecodedArg {
   name: string;
   type: string;
@@ -13,40 +11,27 @@ interface DecodedArg {
 }
 
 export interface DecodedCall {
-  /** True when we resolved a function name + decoded the args (Sourcify or 4byte). */
   decoded: boolean;
-  /** True when the contract's SOURCE is verified on Sourcify (full OR partial match) — the ABI is authentic. Drives whether we show a calm decode vs any caution. False for a 4byte-only / undecodable resolve. */
   verified: boolean;
-  /** How the ABI resolved: 'sourcify' (authentic verified ABI), '4byte' (signature only), 'mismatch' (verified contract lacks this selector — red do-not-sign warning), or 'none' (undecodable). */
   source: 'sourcify' | '4byte' | 'mismatch' | 'none';
-  /** Resolved function name (e.g. "post"), or undefined when nothing matched. */
   functionName?: string;
-  /** Full signature when known (e.g. "post(string)"). */
   signature?: string;
-  /** Decoded arguments in order. Empty for a no-arg call or when undecodable. */
   args: DecodedArg[];
-  /** The 4-byte selector (0x + 8 hex), always present for a call with data. */
   selector?: string;
-  /** Human note when we could not fully decode (shown on the card). */
   note?: string;
 }
 
-/** Sourcify v2 contract API returns the ABI + match status in one call with no redirect, unlike the legacy host whose 307 redirect made RN fetch unreliable and falsely dropped verified contracts to 4byte. */
 const SOURCIFY_BASE = 'https://sourcify.dev/server/v2/contract';
 const FOURBYTE_BASE = 'https://www.4byte.directory/api/v1/signatures/';
 
-/** Per (chainId:address) -> resolved ABI (or null when the contract is not verified on Sourcify). In-memory; lives for the app session. */
 const abiCache = new Map<string, { abi: Abi; verified: boolean } | null>();
-/** Per selector -> text signature from 4byte (or null when unknown). */
 const sigCache = new Map<string, string | null>();
 
-/** Selector Of. */
 function selectorOf(data?: string): string | undefined {
   if (!data || !/^0x[0-9a-fA-F]{8}/.test(data)) return undefined;
   return data.slice(0, 10).toLowerCase();
 }
 
-/** Convert an object to its default string form, preserving any custom `toString`, without tripping no-base-to-string on a bare `String(obj)`. */
 function safeObjectToString(v: object): string {
   const fn: unknown = (v as { toString?: unknown }).toString;
   if (typeof fn === 'function') {
@@ -56,7 +41,6 @@ function safeObjectToString(v: object): string {
   return Object.prototype.toString.call(v);
 }
 
-/** Stringify a decoded arg value for display (BigInt-safe, address-preserving). */
 function fmtArg(v: unknown): string {
   if (typeof v === 'bigint') return v.toString();
   if (typeof v === 'string') return v;
@@ -68,7 +52,6 @@ function fmtArg(v: unknown): string {
   return String(v);
 }
 
-/** Fetch the verified ABI for `address` on `chainId` from Sourcify v2, where any `match` (full or partial) means the source is verified and the ABI authentic; returns null when absent or the fetch fails (cached). */
 async function fetchSourcifyAbi(
   chainId: number, address: string,
 ): Promise<{ abi: Abi; verified: boolean } | null> {
@@ -83,19 +66,17 @@ async function fetchSourcifyAbi(
         abi?: Abi; match?: string | null;
       };
       const abi = meta?.abi;
-      /** `match` is 'exact_match' | 'match' (full/partial) when verified, null otherwise. */
       if (Array.isArray(abi) && abi.length && meta.match) {
         const out = { abi, verified: true };
         abiCache.set(key, out);
         return out;
       }
     }
-  } catch { /* fall through to null */ }
+  } catch { }
   abiCache.set(key, null);
   return null;
 }
 
-/** Resolve a 4-byte selector to a text signature via the 4byte directory. When several signatures collide on a selector, prefer the lowest id (the earliest / most canonical registration). Returns null on miss/failure. Cached. */
 async function fetch4byteSig(selector: string): Promise<string | null> {
   const hit = sigCache.get(selector);
   if (hit !== undefined) return hit;
@@ -111,12 +92,11 @@ async function fetch4byteSig(selector: string): Promise<string | null> {
         return best.text_signature;
       }
     }
-  } catch { /* fall through */ }
+  } catch { }
   sigCache.set(selector, null);
   return null;
 }
 
-/** Map a decoded function's raw args into display-ready DecodedArg list given its ABI inputs. */
 function mapDecodedArgs(
   rawArgs: readonly unknown[] | undefined,
   inputs: readonly { name?: string; type: string }[],
@@ -132,7 +112,6 @@ function mapDecodedArgs(
   });
 }
 
-/** True when the ABI contains a function whose selector matches `selector`. */
 function abiHasSelector(abi: Abi, selector: string): boolean {
   return abi.some((i) => {
     if (i.type !== 'function') return false;
@@ -141,7 +120,6 @@ function abiHasSelector(abi: Abi, selector: string): boolean {
   });
 }
 
-/** Decode against a verified Sourcify ABI known to contain `selector`, or null when args won't decode. */
 function decodeWithSourcify(
   abi: Abi, verified: boolean, data: string, selector: string,
 ): DecodedCall | null {
@@ -163,11 +141,10 @@ function decodeWithSourcify(
       note: undefined,
     };
   } catch {
-    return null; /** selector is in the ABI but args failed to decode — caller treats as mismatch */
+    return null;
   }
 }
 
-/** Build the RED "selector not on this verified contract" mismatch result (4byte guess used for display only). */
 async function buildMismatch(verified: boolean, selector: string): Promise<DecodedCall> {
   const guessSig = await fetch4byteSig(selector);
   const guess = guessSig ? `looks like ${guessSig} per 4byte, but ` : '';
@@ -183,11 +160,9 @@ async function buildMismatch(verified: boolean, selector: string): Promise<Decod
   };
 }
 
-/** Resolve a call against a verified Sourcify contract: a calm decode when the selector is implemented, else a mismatch warning. */
 async function decodeViaSourcify(
   abi: Abi, verified: boolean, data: string, selector: string,
 ): Promise<DecodedCall> {
-  /** Load-bearing check: if the verified ABI has no function with this selector the tx targets a function the contract doesn't implement (will revert / malformed), so we must NOT fall back to 4byte and render a confident decode. */
   if (abiHasSelector(abi, selector)) {
     const calm = decodeWithSourcify(abi, verified, data, selector);
     if (calm) return calm;
@@ -195,20 +170,17 @@ async function decodeViaSourcify(
   return buildMismatch(verified, selector);
 }
 
-/** Best-effort decode args from a 4byte text signature; empty when the signature can't be parsed or the selector doesn't match. */
 function decode4byteArgs(sig: string, data: string, selector: string): DecodedArg[] {
   try {
     const item = parseAbiItem(`function ${sig}`) as Extract<Abi[number], { type: 'function' }>;
-    /** Guard the selector actually matches (4byte can return collisions). */
     if (toFunctionSelector(item).toLowerCase() !== selector) return [];
     const decoded = decodeFunctionData({ abi: [item] as Abi, data: data as Hex });
     return mapDecodedArgs(decoded.args, item.inputs);
   } catch {
-    return []; /** keep name only */
+    return [];
   }
 }
 
-/** Resolve a call via the 4byte directory (unverified signature + best-effort args), or null on a miss. */
 async function decodeVia4byte(data: string, selector: string): Promise<DecodedCall | null> {
   const sig = await fetch4byteSig(selector);
   if (!sig) return null;
@@ -224,27 +196,22 @@ async function decodeVia4byte(data: string, selector: string): Promise<DecodedCa
   };
 }
 
-/** Decode `call.data` for `to` on `chainId` into a function + named args. Network-backed; never throws — every failure path returns a `decoded:false` result the card renders as "could not decode" with the raw selector. */
 export async function decodeCall(
   to: string | undefined, data: string | undefined, chainId: number,
 ): Promise<DecodedCall> {
   const selector = selectorOf(data);
-  /** `selector` is only defined when `data` is a hex string; the `!data` arm narrows the type without changing behaviour. */
   if (!selector || !to || !data) {
     return { decoded: false, verified: false, source: 'none', args: [], selector, note: 'No calldata to decode.' };
   }
 
-  /** 1. Sourcify ABI -> exact name + named args (or a mismatch warning). */
   const sourcify = await fetchSourcifyAbi(chainId, to);
   if (sourcify) {
     return decodeViaSourcify(sourcify.abi, sourcify.verified, data, selector);
   }
 
-  /** 2. 4byte fallback -> signature + best-effort arg decode (unverified). */
   const fourByte = await decodeVia4byte(data, selector);
   if (fourByte) return fourByte;
 
-  /** 3. Nothing matched. */
   return {
     decoded: false,
     verified: false,
@@ -255,7 +222,6 @@ export async function decodeCall(
   };
 }
 
-/** Card hook: decodes `data` for `to` on `chainId`, exposing `pending` while in flight (failures resolve to decoded:false, never throwing) and returning null for a plain ETH transfer so the caller keeps its simple view. */
 export function useDecodedCall(
   to: string | undefined, data: string | undefined, chainId: number,
 ): { call: DecodedCall | null; pending: boolean } {
@@ -274,17 +240,14 @@ export function useDecodedCall(
   return { call, pending };
 }
 
-/** A red "check before signing" warning fired only for genuinely risky cases — selector mismatch on a verified contract, undecodable calldata, or a description claiming a payment while the decoded function isn't a transfer — not merely for a 4byte resolve. */
 export function spoofWarning(call: DecodedCall | null, description?: string): string | undefined {
-  if (!call) return undefined; /** plain ETH transfer — handled by the simple view */
-  /** Selector-not-in-ABI on a verified contract: surface the explicit "do not sign" note from the decode (it names the selector and the 4byte guess if any). */
+  if (!call) return undefined;
   if (call.source === 'mismatch') {
     return call.note ?? 'This calls a function that does not exist on this verified contract. Do not sign unless you trust it.';
   }
   if (!call.decoded) {
     return 'This call could not be decoded, so the app cannot confirm what it does. Check before signing.';
   }
-  /** With a confident decode the only remaining risk worth a banner is a description that contradicts the action. */
   const desc = (description ?? '').toLowerCase();
   const claimsTransfer = /\b(send|sent|pay|paid|payment|transfer)\b|\$|usdc|eth\b/.test(desc);
   const fn = (call.functionName ?? '').toLowerCase();

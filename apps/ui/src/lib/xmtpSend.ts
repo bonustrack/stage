@@ -1,4 +1,3 @@
-/** @file Outbound XMTP send helpers for text, reaction, reply, and inline attachment messages, split out of `xmtp.ts` so each file stays under the lint cap. */
 
 import {
   ReactionAction, ReactionSchema, encodeText,
@@ -8,7 +7,6 @@ import {
   convOfLine, getCachedXmtpClient, getOrCreateXmtpClient,
 } from './xmtp';
 
-/** Base64 To Bytes. */
 function base64ToBytes(b64: string): Uint8Array {
   const bin = atob(b64);
   const out = new Uint8Array(bin.length);
@@ -16,14 +14,12 @@ function base64ToBytes(b64: string): Uint8Array {
   return out;
 }
 
-/** Send a plain-text XMTP message. */
 export async function xmtpSendText(line: string, text: string): Promise<string> {
   const conv = await convOfLine(line);
   if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
   return await conv.sendText(text);
 }
 
-/** Send an XMTP reaction targeting an existing message id. */
 export async function xmtpReact(
   line: string, messageId: string, emoji: string, action: 'added' | 'removed' = 'added',
 ): Promise<string> {
@@ -40,7 +36,6 @@ export async function xmtpReact(
   return await conv.sendReaction(payload);
 }
 
-/** Send an XMTP reply (text body referencing an earlier message id). */
 export async function xmtpReply(line: string, replyTo: string, text: string): Promise<string> {
   const conv = await convOfLine(line);
   if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
@@ -49,7 +44,6 @@ export async function xmtpReply(line: string, replyTo: string, text: string): Pr
   return await conv.sendReply(reply);
 }
 
-/** Send an inline (static) XMTP attachment. `dataB64` is the raw bytes base64-encoded. */
 export async function xmtpSendAttachment(
   line: string, filename: string, mimeType: string, dataB64: string,
 ): Promise<string> {

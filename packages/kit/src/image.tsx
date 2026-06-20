@@ -1,6 +1,3 @@
-/**
- * @file Image — a ChatKit-styled image node unifying the app's raw RN Image call sites behind one primitive (`fit` maps onto resizeMode) so the underlying renderer can be swapped in one place.
- */
 
 import {
   Image as RNImage,
@@ -33,56 +30,34 @@ const RADIUS: Record<ImageRadius, number> = {
   xl: 16, '2xl': 20, '3xl': 24, '4xl': 28, full: 999, '100%': 999,
 };
 
-/** Radius Value. */
 function radiusValue(radius?: ImageRadius | number): number | undefined {
   if (radius === undefined) return undefined;
   return typeof radius === 'number' ? radius : RADIUS[radius];
 }
 
 export interface ImageProps {
-  /** ChatKit: src. The image URI (http(s)://, file://, ipfs://, data:). */
   src: string;
-  /** ChatKit: alt. Accessibility label. */
   alt?: string;
-  /** ChatKit: fit. Maps onto RN resizeMode. Default 'cover'. */
   fit?: ImageFit;
-  /** ChatKit: position. Object-position hint (RN honours center/contain only; stored for parity + future expo-image objectPosition support). */
   position?: ImagePosition;
-  /** ChatKit: frame. Draw a 1px hairline border around the image. */
   frame?: boolean;
-  /** ChatKit: flush. Escape the container's horizontal padding (full-bleed). Pass the padding px (default 16 when true). */
   flush?: number | boolean;
-  /** ChatKit: radius. Named scale ('sm'..'full') or raw px. */
   radius?: ImageRadius | number;
-  /** ChatKit: size. Square shorthand for width + height. */
   size?: number | string;
-  /** ChatKit: aspectRatio. width / height. */
   aspectRatio?: number;
-  /** ChatKit: width. */
   width?: number | string;
-  /** ChatKit: height. */
   height?: number | string;
-  /** ChatKit: minWidth. */
   minWidth?: number | string;
-  /** ChatKit: maxWidth. */
   maxWidth?: number | string;
-  /** ChatKit: minHeight. */
   minHeight?: number | string;
-  /** ChatKit: maxHeight. */
   maxHeight?: number | string;
-  /** ChatKit: background. Placeholder fill shown behind/while loading. */
   background?: string;
-  /** ChatKit: margin. Uniform px margin around the image box. */
   margin?: number;
-  /** Escape-hatch style merged onto the image last. */
   style?: ImageStyle | ImageStyle[];
-  /** Fires when the image finishes loading (RN Image onLoad passthrough). */
   onLoad?: (event: NativeSyntheticEvent<ImageLoadEventData>) => void;
-  /** Fires when the image fails to load (RN Image onError passthrough). */
   onError?: () => void;
 }
 
-/** ChatKit-style RN image. */
 export function Image(props: ImageProps): React.ReactElement {
   const {
     src, alt, fit = 'cover', frame, flush, radius, size, aspectRatio,
@@ -127,7 +102,6 @@ export function Image(props: ImageProps): React.ReactElement {
   );
 }
 
-/** Style-bag escape hatch for callers that need a plain box with the same radius scale (e.g. placeholder before src resolves). */
 export function imageRadius(radius?: ImageRadius | number): ViewStyle {
   const r = radiusValue(radius) ?? BLOCK_RADIUS_DEFAULT;
   return { borderRadius: r };

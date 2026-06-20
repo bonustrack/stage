@@ -1,4 +1,3 @@
-/** @file Zod boundary schema validating the OpenSea v2 NFTs-by-account `{ nfts }` envelope; the per-NFT schema is loose since fields vary across collections, and on drift the helper logs and the caller degrades to an empty grid. */
 
 import { z } from 'zod';
 import { parseOrNull } from '../validate';
@@ -22,7 +21,6 @@ export interface OpenseaResponse {
   nfts?: ApiNft[];
 }
 
-/** Validate a raw OpenSea response body. Returns null (after logging) when the envelope is malformed, so the caller can degrade to []. */
 export function parseOpenseaResponse(data: unknown): OpenseaResponse | null {
   return parseOrNull('api.opensea', responseSchema, data) as OpenseaResponse | null;
 }

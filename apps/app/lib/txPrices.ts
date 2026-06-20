@@ -1,15 +1,12 @@
-/** @file USD-price layer for tx/sign cards + simulation asset lines: fetches and briefly caches CoinGecko spot prices and exposes a non-blocking hook turning a token amount into a `~$X` suffix; unpriceable tokens resolve to null (amount only, never a fake $), READ-ONLY fetch with no key material. */
 
 import { useEffect, useState } from 'react';
 import { getSimplePrices, getErc20UsdPrices } from '@stage-labs/client/api/coingecko';
 import { priceKeyFor, priceKeyId, type PriceKey } from './txAssets';
 
-/** In-memory price cache keyed by priceKeyId; entries expire after TTL so a long session re-quotes occasionally without hammering CoinGecko. */
 const TTL_MS = 60_000;
 const cache = new Map<string, { usd: number; at: number }>();
 const inflight = new Map<string, Promise<number | null>>();
 
-/** Fetch (and cache) the USD spot price for a resolved PriceKey. Returns null for an unpriceable key, or on any network/parse error (caller shows amount only — never a fake value). Concurrent callers share one in-flight request. */
 async function fetchUsdPrice(key: PriceKey): Promise<number | null> {
   const id = priceKeyId(key);
   if (!id || !key) return null;
@@ -42,7 +39,6 @@ async function fetchUsdPrice(key: PriceKey): Promise<number | null> {
   return p;
 }
 
-/** Format `amount × priceUsd` as a `~$X` suffix string, or null when there's no price. Sub-cent values still render (`~$0.00…` is suppressed -> show < $0.01 as "~$0.01" floor so it never reads as free). */
 export function fmtUsdValue(amount: string, priceUsd: number | null): string | null {
   if (priceUsd === null) return null;
   const n = Number(amount);
@@ -53,12 +49,10 @@ export function fmtUsdValue(amount: string, priceUsd: number | null): string | n
   return `~$${v.toLocaleString('en', { minimumFractionDigits: 0, maximumFractionDigits: frac })}`;
 }
 
-/** React hook: resolve the `~$X` suffix for a single `(chainId, token, amount)`. Non-blocking — returns null until the price resolves; null forever for an unpriceable token. */
 export function useUsdValue(
   chainId: number, token: string | null | undefined, amount: string | undefined,
 ): string | null {
   const [usd, setUsd] = useState<number | null>(null);
-  /** `id` is the stable identity of the (chainId, token) price source and drives the effect; `key` is rebuilt from it inside so the dep list stays a single primitive (no object churn). */
   const id = priceKeyId(priceKeyFor(chainId, token));
   useEffect(() => {
     if (!id) { setUsd(null); return; }

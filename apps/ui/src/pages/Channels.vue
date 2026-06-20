@@ -1,7 +1,4 @@
 <script setup lang="ts">
-/** Channels tab — XMTP conversations the local wallet is a member of.
- *  Mirrors apps/app/app/(tabs)/index.tsx (search, stamp avatars, unread
- *  badges, persisted cache so the list renders before XMTP boots). */
 
 import { ASK_QUESTION_MEMBERS, stampAvatarUrl } from '../lib/xmtp';
 import { postCloseToParent } from '../lib/embedBridge';

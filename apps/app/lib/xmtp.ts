@@ -1,4 +1,3 @@
-/** @file Public barrel for the mobile app's local XMTP client lifecycle, re-exporting the cohesive `xmtp.*` sibling modules so existing `./xmtp` import sites resolve unchanged (client keys stay native-side in the SDK's sqlite, backed by the device keystore / secure enclave). */
 
 export type {
   XmtpEnv, XmtpConsent, ConversationVersion, XmtpFeedStatus,

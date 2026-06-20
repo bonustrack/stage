@@ -1,112 +1,46 @@
 import tseslint from 'typescript-eslint';
-import jsdoc from 'eslint-plugin-jsdoc';
 
 export const MAX_LINES = ['error', { max: 400, skipBlankLines: false, skipComments: false }];
 
-export const REQUIRE_JSDOC = [
-  'error',
-  {
-    publicOnly: false,
-    enableFixer: false,
-    checkConstructors: false,
-    checkGetters: false,
-    checkSetters: false,
-    require: {
-      FunctionDeclaration: true,
-      FunctionExpression: false,
-      ArrowFunctionExpression: false,
-      ClassDeclaration: false,
-      ClassExpression: false,
-      MethodDefinition: true,
-    },
-    contexts: [
-      'VariableDeclaration > VariableDeclarator > ArrowFunctionExpression',
-      'VariableDeclaration > VariableDeclarator > FunctionExpression',
-    ],
-  },
-];
-
-export const REQUIRE_FILE_OVERVIEW = [
-  'error',
-  { tags: { file: { initialCommentsOnly: true, mustExist: true, preventDuplicates: true } } },
-];
-
-function countCommentContentLines(value) {
-  return value
-    .split('\n')
-    .map((line) => line.replace(/^\s*\*?/, '').trim())
-    .filter((line) => line.length > 0).length;
-}
-
-const DIRECTIVE_LINE_COMMENT =
-  /^(eslint\b|eslint-|@ts-|tslint:|prettier-ignore|istanbul\b|c8\b|v8\b|@jsxImportSource\b|\/\s*<)/;
+const DIRECTIVE_COMMENT =
+  /^(eslint\b|eslint-|@ts-|tslint:|prettier-ignore|istanbul\b|c8\b|v8\b|@jsxImportSource\b|\/\s*<|globals?\b|exported\b)/;
 
 export const COMMENT_PLUGIN = {
   rules: {
-    'comment-max-lines': {
-      meta: {
-        type: 'layout',
-        docs: { description: 'Limit every comment to at most `max` content lines.' },
-        schema: [{ type: 'object', properties: { max: { type: 'integer', minimum: 1 } }, additionalProperties: false }],
-        messages: { tooLong: 'A comment must be at most {{max}} line(s) (found {{found}}) — split it into separate one-line `/** … */` comments.' },
-      },
-      create(context) {
-        const max = context.options[0]?.max ?? 1;
-        const sourceCode = context.sourceCode ?? context.getSourceCode();
-        return {
-          Program() {
-            for (const comment of sourceCode.getAllComments()) {
-              if (comment.type !== 'Block') continue;
-              const found = countCommentContentLines(comment.value);
-              if (found > max) {
-                context.report({ node: comment, messageId: 'tooLong', data: { max: String(max), found: String(found) } });
-              }
-            }
-          },
-        };
-      },
-    },
-    'no-line-comments': {
+    'no-comments': {
       meta: {
         type: 'suggestion',
-        docs: { description: 'Disallow `//` line comments; require `/** … */` block comments (directive comments excepted).' },
+        fixable: 'code',
+        docs: { description: 'Disallow all comments; only functional tooling directives (eslint/`@ts-*`/triple-slash) may remain.' },
         schema: [],
-        messages: { line: 'Use a `/** … */` block comment, not `//` (only eslint/`@ts-*`/triple-slash directive comments may stay `//`).' },
+        messages: { banned: 'Comments are not allowed — delete this comment. Express intent in code (names, types). Only eslint/`@ts-*`/triple-slash directive comments are permitted.' },
       },
       create(context) {
         const sourceCode = context.sourceCode ?? context.getSourceCode();
         return {
           Program() {
+            const text = sourceCode.getText();
             for (const comment of sourceCode.getAllComments()) {
-              if (comment.type !== 'Line') continue;
-              if (DIRECTIVE_LINE_COMMENT.test(comment.value.trim())) continue;
-              context.report({ node: comment, messageId: 'line' });
-            }
-          },
-        };
-      },
-    },
-    'no-consecutive-comments': {
-      meta: {
-        type: 'suggestion',
-        docs: { description: 'Disallow two comments on consecutive lines — each comment must be standalone.' },
-        schema: [],
-        messages: { consecutive: 'Two comments on consecutive lines — merge them into ONE `/** … */` comment (or separate them with code).' },
-      },
-      create(context) {
-        const sourceCode = context.sourceCode ?? context.getSourceCode();
-        const ownLine = (c) => {
-          const before = sourceCode.getTokenBefore(c, { includeComments: true });
-          return !before || before.loc.end.line < c.loc.start.line;
-        };
-        return {
-          Program() {
-            const comments = sourceCode.getAllComments().filter((c) => c.type !== 'Shebang' && c.type !== 'Hashbang');
-            for (let i = 1; i < comments.length; i++) {
-              const prev = comments[i - 1], cur = comments[i];
-              if (cur.loc.start.line !== prev.loc.end.line + 1) continue;
-              if (!ownLine(prev) || !ownLine(cur)) continue;
-              context.report({ node: cur, messageId: 'consecutive' });
+              if (comment.type === 'Shebang' || comment.type === 'Hashbang') continue;
+              if (DIRECTIVE_COMMENT.test(comment.value.trim())) continue;
+              context.report({
+                node: comment,
+                messageId: 'banned',
+                fix(fixer) {
+                  let [start, end] = comment.range;
+                  let lineStart = start;
+                  while (lineStart > 0 && text[lineStart - 1] !== '\n') lineStart -= 1;
+                  const before = text.slice(lineStart, start);
+                  const isLineStart = before.trim() === '';
+                  if (isLineStart) {
+                    start = lineStart;
+                    if (text[end] === '\n') end += 1;
+                  } else {
+                    while (start > 0 && (text[start - 1] === ' ' || text[start - 1] === '\t')) start -= 1;
+                  }
+                  return fixer.removeRange([start, end]);
+                },
+              });
             }
           },
         };
@@ -115,17 +49,10 @@ export const COMMENT_PLUGIN = {
   },
 };
 
-export const jsdocPlugin = jsdoc;
-
-export const commentPlugins = { jsdoc, comments: COMMENT_PLUGIN };
+export const commentPlugins = { comments: COMMENT_PLUGIN };
 
 export const COMMENT_RULES = {
-  'jsdoc/require-jsdoc': REQUIRE_JSDOC,
-  'jsdoc/require-file-overview': REQUIRE_FILE_OVERVIEW,
-  'jsdoc/no-bad-blocks': 'error',
-  'comments/comment-max-lines': ['error', { max: 1 }],
-  'comments/no-line-comments': 'error',
-  'comments/no-consecutive-comments': 'error',
+  'comments/no-comments': 'error',
 };
 
 export const MAX_LINES_PER_FUNCTION = ['error', { max: 100, skipBlankLines: true, skipComments: true, IIFEs: true }];

@@ -1,7 +1,4 @@
 <script setup lang="ts">
-/** Loading spinner mirroring @snapshot-labs/tune's UiLoading (the sx-monorepo
- *  spinner): a rotating comet — a gradient-stroked circle + a solid leading arc.
- *  Uses currentColor so the caller sets the colour via a text-* class. */
 
 withDefaults(defineProps<{ size?: number }>(), { size: 20 });
 const gid = `metro-spin-${Math.random().toString(36).slice(2, 8)}`;

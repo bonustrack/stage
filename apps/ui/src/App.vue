@@ -1,14 +1,7 @@
 <script setup lang="ts">
-/** Root layout. Tab bar is pinned to the bottom on tab routes and hidden on the
- *  full-screen XMTP conversation view. Theme class is installed in main.ts. */
 
 const route = useRoute();
-/** True when running inside an iframe (the embed widget on a 3rd-party
- *  site). Embeds never show the metro tab bar — only the full metro.box
- *  site does. */
 const isEmbedded = runningInIframe();
-/** Hide the tab bar on the full-screen XMTP conversation view, on embed
- *  routes, and whenever we're iframed. */
 const showTabs = computed(
   () => !isEmbedded && route.name !== 'xmtp' && route.name !== 'embed',
 );

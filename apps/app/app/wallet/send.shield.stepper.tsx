@@ -1,4 +1,3 @@
-/** @file Presentational 4-stage shield-status stepper (submitting, confirming, scanning, shielded) that paints the active stage red on failure; the caller maps its phase to a ShieldStage. */
 import { Text } from '@stage-labs/kit/text';
 
 import { Col, Row, Box } from '../../components/layout';
@@ -7,7 +6,6 @@ import { DANGER } from '../../lib/theme';
 
 interface Pal { sub: string; head: string; link: string }
 
-/** Where the shield is right now. `error` marks the in-progress stage failed. */
 export type ShieldStage = 'idle' | 'submitting' | 'confirming' | 'scanning' | 'done' | 'error';
 
 const ERR = DANGER;
@@ -20,12 +18,10 @@ const STEPS: readonly (readonly [ShieldStage, string])[] = [
 ];
 const ORDER: ShieldStage[] = ['submitting', 'confirming', 'scanning', 'done'];
 
-/** Stage Index. */
 function stageIndex(s: ShieldStage): number {
   return s === 'idle' || s === 'error' ? -1 : ORDER.indexOf(s);
 }
 
-/** A single step row: a status dot (done ✓ / active spinner / pending hollow) + its label, plus an optional sub-hint under the active step. */
 function Step({ label, state, hint, pal }: {
   label: string; state: 'done' | 'active' | 'pending' | 'error'; hint?: string; pal: Pal;
 }): React.ReactElement {
@@ -49,7 +45,6 @@ function Step({ label, state, hint, pal }: {
   );
 }
 
-/** The full 4-step stepper; renders nothing while idle. `errorAt` is the index (0-3) of the failed step when `stage==='error'`. */
 export function ShieldStepper({ stage, pal, errorAt = 0 }: {
   stage: ShieldStage; pal: Pal; errorAt?: number;
 }): React.ReactElement | null {

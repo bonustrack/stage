@@ -1,4 +1,3 @@
-/** @file Wallet Activity tab: the connected wallet's recent Ethereum mainnet + Sepolia transactions, fetched via Etherscan and merged newest-first, each row showing a direction icon, decoded action + counterparty, relative time, signed ETH value, and a chain badge. */
 
 import { useEffect, useState } from 'react';
 
@@ -14,7 +13,6 @@ import { PrivateActivitySection } from './WalletScreen.privateActivity';
 
 type Status = 'idle' | 'loading' | 'ready' | 'error';
 
-/** Mainnet activity, fetched once per address and cached on the address ref. */
 export function ActivityView({ address, head, sub, border, bg }: {
   address?: string; head: string; sub: string; border: string; bg: string;
 }): React.ReactElement {
@@ -38,10 +36,8 @@ export function ActivityView({ address, head, sub, border, bg }: {
     return () => { cancelled = true; };
   }, [address]);
 
-  /** Pre-resolve the counterparties' Snapshot names for nicer rows. */
   usePeerProfiles(rows.map(r => r.counterparty));
 
-  /** The private (shielded 0zk) transfer section paints independently of the public Etherscan fetch, always rendering above the public list when it has rows so a private-only wallet still shows something. */
   const priv = <PrivateActivitySection head={head} sub={sub} border={border} bg={bg} />;
 
   if (status === 'error') {
@@ -92,7 +88,6 @@ const DIR_ICON: Record<ActivityRow['direction'], HeroIconName> = {
   send: 'arrowUp', receive: 'arrowDown', self: 'switchHorizontal',
 };
 
-/** Derive the title for a tx row (contract function name, or send/receive/self verb). */
 function txTitle(r: ActivityRow): string {
   if (r.isContract) return r.functionName || 'Contract';
   if (r.direction === 'receive') return 'Received';
@@ -100,7 +95,6 @@ function txTitle(r: ActivityRow): string {
   return 'Sent';
 }
 
-/** Derive the display fields (title, value prefix/color, counterparty label) for a tx row. */
 function txRowFields(r: ActivityRow, head: string): {
   title: string; prefix: string; valueColor: string; partyLabel: string;
 } {
@@ -113,7 +107,6 @@ function txRowFields(r: ActivityRow, head: string): {
   };
 }
 
-/** A single transaction row — 4-corner layout matching TokenRow: a circular direction icon, the action title over counterparty + time, and the signed ETH value over the tx status. */
 function TxRow({ r, head, sub, border, bg }: {
   r: ActivityRow; head: string; sub: string; border: string; bg: string;
 }): React.ReactElement {
@@ -152,7 +145,6 @@ function TxRow({ r, head, sub, border, bg }: {
   );
 }
 
-/** Compact relative time: "3h", "2d", or a date for older txs. */
 function relTime(ts: number): string {
   const s = Math.max(0, Math.floor(Date.now() / 1000 - ts));
   if (s < 60) return 'now';

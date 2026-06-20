@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/** @file Builds a static expo-updates-v1 manifest.json from an `expo export` dir, hashing the bundle and assets with --base-url URLs. */
 import { createHash, randomUUID } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -23,10 +22,8 @@ if (!dist || !baseUrl || !runtimeVersion) {
 }
 const base = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
 
-/** base64url(sha256(bytes)) — the asset integrity hash the dev-client verifies. */
 const sha256url = (buf) =>
   createHash('sha256').update(buf).digest('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-/** md5 hex — the asset `key` (stable cache id), matching expo's own scheme. */
 const md5hex = (buf) => createHash('md5').update(buf).digest('hex');
 
 const mimeByExt = {
@@ -42,10 +39,8 @@ if (!fm) {
   process.exit(1);
 }
 
-/** Read a dist-relative file into a Buffer. */
 const readDist = (rel) => readFileSync(join(dist, rel));
 
-/** launchAsset = the JS/Hermes bundle; fileExtension is omitted per spec. */
 const bundleBuf = readDist(fm.bundle);
 const launchAsset = {
   key: md5hex(bundleBuf),
@@ -54,7 +49,6 @@ const launchAsset = {
   hash: sha256url(bundleBuf),
 };
 
-/** assets = every bundled image/font, de-duped since metadata.json repeats @Nx variants. */
 const seen = new Set();
 const assets = [];
 for (const a of fm.assets ?? []) {

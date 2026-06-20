@@ -1,4 +1,3 @@
-/** @file Bottom tab navigator hosting the Messenger, Contacts and Wallet swipe-pager scenes plus a hidden Settings route. */
 
 import { Box, Col } from '../../components/layout';
 import { fontSize } from '@stage-labs/kit/tokens';
@@ -10,7 +9,6 @@ import { TabsPager } from '../../components/SwipeTabs';
 import { HoistedTopnav } from '../../components/tabs/HoistedTopnav';
 import { useTotalUnread } from '../../lib/useTotalUnread';
 
-/** Pager overlay: the fixed Topnav above the swipeable tab bodies. */
 function PagerOverlay({ insetTop, tabBarHeight }: { insetTop: number; tabBarHeight: number }): React.ReactElement {
   return (
     <Col
@@ -23,9 +21,9 @@ function PagerOverlay({ insetTop, tabBarHeight }: { insetTop: number; tabBarHeig
         bottom: tabBarHeight,
       }}
 >
-      {/* One fixed Topnav above the pager (sibling of the pager strip) so a tab-swipe and in-tab scroll both leave it pinned; uniform Home bar on every tab. */}
+      {}
       <HoistedTopnav/>
-      {/* Pager below the bar as the flex:1 scroll region, mounting only the scrollable bodies of each tab (no per-tab header). */}
+      {}
       <Box flex={1}>
         <TabsPager/>
       </Box>
@@ -33,23 +31,18 @@ function PagerOverlay({ insetTop, tabBarHeight }: { insetTop: number; tabBarHeig
   );
 }
 
-/** Bottom tab navigator hosting the Messenger, Contacts and Wallet pager scenes. */
 export default function TabsLayout(): React.ReactElement {
   const pathname = usePathname();
-  /** Total unread across all non-archived convs - drives the badge on the Messenger (index) tab. Live: updates as messages arrive / are read. */
   const unread = useTotalUnread();
   const unreadBadge = unread > 0 ? (unread > 99 ? '99+' : String(unread)) : undefined;
-  /** The pager mounts the three swipe-tab bodies (Channels/Contacts/Wallet). Settings is the only non-pager tab route → hide the pager overlay there so the real SettingsScreen rendered by the route shows through. */
   const pagerVisible = !pathname.startsWith('/settings');
   const insets = useSafeAreaInsets();
   const pal = usePalette();
-  const active = pal.link; /** #ffffff / #000000 */
-  /** inactive nav icon = muted; no `muted` token yet → map to `text`. TODO: muted token. */
+  const active = pal.link;
   const inactive = pal.text;
 
   const tabBarStyle = {
     backgroundColor: pal.toolbarBg,
-    /** Hairline top border on the footer nav (palette border token). Kill Android's default elevation shadow so only the border line shows. */
     borderTopWidth: 1,
     borderTopColor: pal.border,
     elevation: 0,
@@ -59,17 +52,16 @@ export default function TabsLayout(): React.ReactElement {
     paddingBottom: insets.bottom,
   };
 
-  /** The bottom tab bar's full height (content + safe-area inset) — used to inset the pager overlay so its content stops exactly above the bar. */
   const tabBarHeight = 60 + insets.bottom;
 
   return (
     <Col surface="surface" flex={1}>
-      {/* Status-bar inset filler: paints the top safe-area with toolbarBg so the tab topnavs extend seamlessly to the top edge; sits under the pager overlay. */}
+      {}
       <Box height={insets.top} surface="toolbar"
         pointerEvents="none"
         style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1 }}
 />
-      {/* `Tabs` stays mounted as the routing + tab-bar source of truth (deep links resolve, active highlight is router-driven); the scenes are placeholders and the real content is the TabsPager overlaid below. */}
+      {}
       <Tabs
         screenOptions={{
           headerShown: false,
@@ -94,7 +86,6 @@ export default function TabsLayout(): React.ReactElement {
               tabBarIcon: ({ color, focused }) => (
                 <Icon name={icon} size={26} color={color} focused={focused}/>
               ),
-              /** Messenger tab (index) shows the total unread-count badge. */
               ...(name === 'index'
                 ? {
                     tabBarBadge: unreadBadge,
@@ -112,10 +103,10 @@ export default function TabsLayout(): React.ReactElement {
             }}
 />
         ))}
-        {/* Settings is reachable only from the Menu sheet: keep the route (so the menu can navigate to /settings) but hide it from the bar. */}
+        {}
         <Tabs.Screen name="settings" options={{ href: null }}/>
       </Tabs>
-      {/* Pager overlay covers the scene area (below the status-bar inset, above the tab bar) so the tab bar keeps its taps. */}
+      {}
       {pagerVisible ? <PagerOverlay insetTop={insets.top} tabBarHeight={tabBarHeight}/> : null}
     </Col>
   );

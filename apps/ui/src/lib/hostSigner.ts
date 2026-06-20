@@ -1,6 +1,3 @@
-/**
- * @file XMTP Signer for the embedded widget that proxies sign requests to the embedding host's wallet over postMessage instead of holding a key.
- */
 
 import { IdentifierKind, type Signer } from '@xmtp/browser-sdk';
 import { hexToBytes, type Hex } from 'viem';
@@ -14,12 +11,10 @@ interface Pending {
 const pending = new Map<string, Pending>();
 let listening = false;
 
-/** Only trust messages coming from our direct parent frame (the host page). */
 function fromParent(e: MessageEvent): boolean {
   return e.source === window.parent && window.parent !== window;
 }
 
-/** Lazily attach the single sign-response listener (idempotent). */
 function ensureSignListener(): void {
   if (listening) return;
   listening = true;
@@ -37,11 +32,9 @@ function ensureSignListener(): void {
   });
 }
 
-/** Ask the host for its currently-connected wallet address. Resolves null when not embedded, or when the host doesn't answer within `timeoutMs` (no Metro bridge / no wallet connected) — callers then fall back to a local key. */
 export function getHostAccount(timeoutMs = 4000): Promise<string | null> {
   if (!runningInIframe()) return Promise.resolve(null);
   return new Promise((resolve) => {
-    /** Handle the Msg. */
     const onMsg = (e: MessageEvent): void => {
       if (!fromParent(e)) return;
       const d = e.data as { type?: string; address?: string } | null;
@@ -54,14 +47,12 @@ export function getHostAccount(timeoutMs = 4000): Promise<string | null> {
       );
     };
     const t = setTimeout(() => { cleanup(); resolve(null); }, timeoutMs);
-    /** Cleanup helper. */
     const cleanup = (): void => { window.removeEventListener('message', onMsg); clearTimeout(t); };
     window.addEventListener('message', onMsg);
     window.parent.postMessage({ type: 'metro:account-request' }, '*');
   });
 }
 
-/** Request a personal_sign of `message` from the host wallet. Long timeout — the user may take a while to approve in their wallet. */
 function hostSignMessage(message: string, timeoutMs = 120_000): Promise<string> {
   ensureSignListener();
   const id = `sig_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -75,7 +66,6 @@ function hostSignMessage(message: string, timeoutMs = 120_000): Promise<string> 
   });
 }
 
-/** XMTP `Signer` backed by the host wallet. `address` comes from getHostAccount(). */
 export function hostSigner(address: string): Signer {
   return {
     type: 'EOA',

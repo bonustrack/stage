@@ -1,4 +1,3 @@
-/** @file Memoised FlatList renderItem + extraData for the conversation feed so MessengerBubble's React.memo holds, with an id→event Map for O(1) reply-preview lookup. */
 
 import { useCallback, useMemo } from 'react';
 import { MessengerBubble } from '../MessengerBubble';
@@ -12,12 +11,10 @@ import type { useConversationState } from './useConversationState';
 type ConvState = ReturnType<typeof useConversationState>;
 type Bubble = ConvState['allBubbles'][number];
 
-/** Provides the render function for a single conversation feed item. */
 export function useFeedRenderItem(
   c: ConvState,
   dark: boolean,
   router: { push: (h: { pathname: '/user/[address]'; params: { address: string } }) => void },
-  /** Search mode: when set, every rendered bubble highlights this query in its body text (fluo-yellow). Undefined in the normal feed. */
   highlight?: string,
 ): {
   renderItem: ({ item }: { item: Bubble }) => React.ReactElement;
@@ -32,16 +29,13 @@ export function useFeedRenderItem(
     setMenuAnchor, setMenuFor, setReplyTarget, selectedForCopy, consentAllowed,
   } = c;
 
-  /** Muted color for the per-bubble error fallback (see BubbleErrorBoundary). Mirrors MessengerBubble's `sub = pal.text` (no muted token yet). */
   const sub = usePalette().text;
 
-  /** Referentially-stable extraData — only a NEW array when a render-affecting value actually changes, so the list doesn't re-render the whole window on every parent re-render. Mirrors the prior inline list. */
   const extraData = useMemo(
     () => [profilesVersion, optimisticReactions, reactions, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, confirmedIds, selectedForCopy, groupDescription, groupLabels, consentAllowed],
     [profilesVersion, optimisticReactions, reactions, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, confirmedIds, selectedForCopy, groupDescription, groupLabels, consentAllowed],
   );
 
-  /** id → event map, built once per `events` change → O(1) reply-preview lookup instead of an O(n) `events.find` per bubble (was O(n²) over the window). */
   const eventsById = useMemo(() => {
     const m = new Map<string, Bubble>();
     for (const e of events) m.set(e.id, e);

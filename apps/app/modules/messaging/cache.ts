@@ -1,6 +1,3 @@
-/**
- * @file Re-exports the messaging caches (per-account channelsCache + unread markers and the xmtp.state session caches) behind the facade so components import them from `@/modules/messaging` rather than lib.
- */
 
 export {
   type CachedRow,

@@ -1,6 +1,3 @@
-/**
- * @file DatePicker — a hook-free ChatKit-styled date field backed by a self-contained calendar grid in a centred RN Modal (no native date dependency), emitting ISO YYYY-MM-DD strings.
- */
 
 import { useState } from 'react';
 import {
@@ -25,7 +22,6 @@ const MONTHS = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
-/** Parse an ISO YYYY-MM-DD into a local Date (or null). */
 function parseISO(v: string | undefined): Date | null {
   if (!v) return null;
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
@@ -34,13 +30,11 @@ function parseISO(v: string | undefined): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-/** Normalise the escape-hatch style prop to a flat array. */
 function styleList(style: ViewStyle | ViewStyle[] | undefined): ViewStyle[] {
   if (!style) return [];
   return Array.isArray(style) ? style : [style];
 }
 
-/** Format a Date as ISO YYYY-MM-DD (local). */
 function toISO(d: Date): string {
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const dd = String(d.getDate()).padStart(2, '0');
@@ -48,41 +42,24 @@ function toISO(d: Date): string {
 }
 
 export interface DatePickerProps {
-  /** ChatKit: name. Form field name (required). */
   name?: string;
-  /** ChatKit: defaultValue. Initial date (YYYY-MM-DD, uncontrolled). */
   defaultValue?: string;
-  /** Controlled value (YYYY-MM-DD; kit extension, pair with onChange). */
   value?: string;
-  /** ChatKit: placeholder. Shown when no date is selected. */
   placeholder?: string;
-  /** ChatKit: variant. 'soft' (filled) | 'outline'. Default 'soft'. */
   variant?: ControlVariant;
-  /** ChatKit: size. ControlSize scale. Default 'md'. */
   size?: ControlSize;
-  /** ChatKit: pill. Fully-rounded corners. */
   pill?: boolean;
-  /** ChatKit: block. Stretch to the container width. */
   block?: boolean;
-  /** ChatKit: clearable. Show a clear ('x') affordance when a date is set. */
   clearable?: boolean;
-  /** ChatKit: disabled. */
   disabled?: boolean;
-  /** ChatKit: min. Earliest selectable date (YYYY-MM-DD). */
   min?: string;
-  /** ChatKit: max. Latest selectable date (YYYY-MM-DD). */
   max?: string;
-  /** Corner radius (px). Falls back to the block radius token (or pill). */
   radius?: number;
-  /** RN substitute for ChatKit's onChangeAction. */
   onChange?: (value: string) => void;
-  /** Effective color scheme. Pass useEffectiveColorScheme() === 'dark'. */
   dark?: boolean;
-  /** Escape-hatch style merged last onto the trigger box. */
   style?: ViewStyle | ViewStyle[];
 }
 
-/** Build the calendar grid cells (leading blanks + day dates) for a month. */
 function buildCells(year: number, month: number): (Date | null)[] {
   const firstDow = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -92,7 +69,6 @@ function buildCells(year: number, month: number): (Date | null)[] {
   return cells;
 }
 
-/** Calendar sheet colour set. */
 interface SheetColors {
   head: string;
   sub: string;
@@ -100,7 +76,6 @@ interface SheetColors {
   accent: string;
 }
 
-/** Single selectable day cell in the calendar grid. */
 function DayCell(props: {
   d: Date | null;
   index: number;
@@ -142,7 +117,6 @@ function DayCell(props: {
   );
 }
 
-/** Month header row with prev/next navigation. */
 function MonthHeader(props: {
   month: number;
   year: number;
@@ -165,7 +139,6 @@ function MonthHeader(props: {
   );
 }
 
-/** Props for the calendar modal sheet. */
 interface CalendarSheetProps {
   open: boolean;
   view: Date;
@@ -177,7 +150,6 @@ interface CalendarSheetProps {
   onClose: () => void;
 }
 
-/** Centred modal calendar grid for the date picker. */
 function CalendarSheet(props: CalendarSheetProps): React.ReactElement {
   const { open, view, selDate, colors, inRange, onPick, onShift, onClose } = props;
   const year = view.getFullYear();
@@ -191,9 +163,7 @@ function CalendarSheet(props: CalendarSheetProps): React.ReactElement {
       >
         <Pressable
           style={{ backgroundColor: colors.sheetBg, borderRadius: 16, padding: 16 }}
-          onPress={() => {
-            /* intentional no-op: swallow press so taps inside the sheet don't dismiss it */
-          }}
+          onPress={() => undefined}
         >
           <MonthHeader month={month} year={year} head={colors.head} onShift={onShift} />
           <View style={{ flexDirection: 'row' }}>
@@ -214,7 +184,6 @@ function CalendarSheet(props: CalendarSheetProps): React.ReactElement {
   );
 }
 
-/** Props for the date picker trigger box. */
 interface DateTriggerProps {
   name?: string;
   disabled?: boolean;
@@ -231,7 +200,6 @@ interface DateTriggerProps {
   onClear: () => void;
 }
 
-/** Pressable trigger box showing the selected date and affordances. */
 function DateTrigger(props: DateTriggerProps): React.ReactElement {
   const { name, disabled, block, clearable, open, selDate, label, box, ctrlColors, headColor, style, onOpen, onClear } = props;
   return (
@@ -269,7 +237,6 @@ function DateTrigger(props: DateTriggerProps): React.ReactElement {
   );
 }
 
-/** Build the calendar sheet colour set for a scheme. */
 function sheetColorsFor(dark: boolean): SheetColors {
   return {
     head: dark ? '#ffffff' : '#000000',
@@ -279,7 +246,6 @@ function sheetColorsFor(dark: boolean): SheetColors {
   };
 }
 
-/** ChatKit-style RN date picker. */
 export function DatePicker(props: DatePickerProps): React.ReactElement {
   const {
     name,
@@ -315,14 +281,12 @@ export function DatePicker(props: DatePickerProps): React.ReactElement {
   const minD = parseISO(min);
   const maxD = parseISO(max);
 
-  /** In Range. */
   function inRange(d: Date): boolean {
     if (minD && d < minD) return false;
     if (maxD && d > maxD) return false;
     return true;
   }
 
-  /** Pick helper. */
   function pick(d: Date): void {
     const iso = toISO(d);
     if (controlled === undefined) setInternal(iso);
@@ -330,13 +294,11 @@ export function DatePicker(props: DatePickerProps): React.ReactElement {
     setOpen(false);
   }
 
-  /** Clear helper. */
   function clear(): void {
     if (controlled === undefined) setInternal(undefined);
     onChange?.('');
   }
 
-  /** Shift Month. */
   function shiftMonth(delta: number): void {
     setView((v) => new Date(v.getFullYear(), v.getMonth() + delta, 1));
   }

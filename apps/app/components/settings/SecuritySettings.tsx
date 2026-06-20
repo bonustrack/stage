@@ -1,4 +1,3 @@
-/** @file Settings -> Security screen: Export private key and Remove account for the active account, wrapping AccountSecuritySection plus the wallet-backup nudge. */
 
 import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,7 +7,6 @@ import { AccountSecuritySection } from '../tabs/SettingsScreen.account';
 import { SystemHeader } from '../system/SystemHeader';
 import { SecureWalletNudge } from '../onboarding/SecureWalletNudge';
 
-/** Renders the security settings screen including the wallet backup nudge. */
 export function SecuritySettings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head, border } = usePalette();

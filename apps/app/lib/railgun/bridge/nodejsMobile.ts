@@ -1,9 +1,6 @@
-/** @file Lazy, guarded feature-detection of `nodejs-mobile-react-native`, typing the channel subset the bridge drives and returning null (never throwing) on web or binaries without the native runtime. */
 
-/** Requires the native module lazily behind a try/catch so Metro never resolves it on builds without the runtime and tsc/eslint stay clean; returns null when absent and types only the channel subset the bridge drives. */
 import { Platform } from 'react-native';
 
-/** The bi-directional message channel exposed by nodejs-mobile-react-native. */
 export interface NodejsChannel {
   send: (event: string, ...args: unknown[]) => void;
   post: (event: string, payload: unknown) => void;
@@ -12,7 +9,6 @@ export interface NodejsChannel {
   removeAllListeners?: (event: string) => void;
 }
 
-/** The subset of the nodejs-mobile-react-native default export we use. */
 export interface NodejsMobileModule {
   start: (mainFileName: string) => void;
   channel: NodejsChannel;
@@ -27,7 +23,6 @@ interface RawModule {
 let resolved = false;
 let cached: NodejsMobileModule | null = null;
 
-/** Lazily resolve the nodejs-mobile runtime. Returns null on web or a binary without the native module. Memoized; never throws; never statically referenced so Metro can't fail to resolve it. */
 export function loadNodejsMobile(): NodejsMobileModule | null {
   if (resolved) return cached;
   resolved = true;
@@ -42,7 +37,6 @@ export function loadNodejsMobile(): NodejsMobileModule | null {
   return cached;
 }
 
-/** True when the embedded Node runtime is present in THIS binary. iOS/Android only; never true on web. Memoized. */
 export function isNodejsMobilePresent(): boolean {
   return loadNodejsMobile() != null;
 }

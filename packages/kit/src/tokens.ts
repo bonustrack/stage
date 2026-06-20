@@ -1,57 +1,42 @@
-/** @file Metro design tokens — the framework-agnostic single source of truth for the colour palette shared by the Vue web client and the React Native app, keeping the two shells in lock-step. */
 
-/** The full `metro` colour scale. Keys match apps/ui's Tailwind `colors.metro.*`. Each light/dark pair is split so a consumer can pick by effective scheme. */
 export const colors = {
-  /** Backgrounds */
   'bg-dark': '#0e0f10',
   'bg-light': '#ffffff',
-  /** Inputs/surfaces share the border colour per the palette spec. */
   'surface-dark': '#282a2d',
   'surface-light': '#e4e4e5',
-  /** Input/dropdown fill: a subtle surface distinct from bg. */
   'input-bg-dark': '#1c1d1f',
   'input-bg-light': '#f2f2f3',
-  /** Toolbar/nav fill: solid bg behind the gradient/border navs. */
   'toolbar-bg-dark': '#0e0f10',
   'toolbar-bg-light': '#ffffff',
   'hover-dark': '#1c1d1f',
   'hover-light': '#f2f2f3',
-  /** Body / default text */
   'fg-dark': '#9f9fa3',
   'fg-light': '#57606a',
   'sub-dark': '#7a7a7e',
   'sub-light': '#8a929d',
-  /** Strong text: headings, links, primary buttons */
   'head-dark': '#ffffff',
   'head-light': '#000000',
-  /** Borders */
   'border-dark': '#282a2d',
   'border-light': '#e4e4e5',
-  /** Accents */
   accent: '#ffffff',
   'accent-hover': '#cccccc',
   ok: '#83c989',
   warn: '#c0a06e',
   err: '#d96868',
-  /** Canonical semantic danger/success — same value in both schemes. */
   'danger-dark': '#eb4c5b',
   'danger-light': '#eb4c5b',
   'success-dark': '#57b375',
   'success-light': '#57b375',
-  /** Brand primary — monochrome. White on dark, black on light so interactive text/primary surfaces read as high-contrast rather than a brand hue. Links reuse the same values. */
   'primary-dark': '#ffffff',
   'primary-light': '#000000',
   'link-dark': '#ffffff',
   'link-light': '#000000',
 } as const;
 
-/** The 7 canonical semantic color tokens — the single source of truth consumed by both shells via a scheme-aware lookup. Each maps to the palette values above so adopting a token never changes a rendered color. */
 export const semanticColors = {
   bgColor: { dark: colors['bg-dark'], light: colors['bg-light'] },
   borderColor: { dark: colors['border-dark'], light: colors['border-light'] },
-  /** Body text (fg). Strong/heading text stays on `head`. */
   textColor: { dark: colors['fg-dark'], light: colors['fg-light'] },
-  /** Secondary / muted text grey (sub). The value the Kit Text component used to hard-code as #7a7a7e/#8a929d - now sourced here so `secondary`/`muted` text roles + the AccountsManager/xmtp-conv one-offs de-fork onto it. */
   subColor: { dark: colors['sub-dark'], light: colors['sub-light'] },
   linkColor: { dark: colors['link-dark'], light: colors['link-light'] },
   primaryColor: { dark: colors['primary-dark'], light: colors['primary-light'] },
@@ -61,7 +46,6 @@ export const semanticColors = {
   toolbarBgColor: { dark: colors['toolbar-bg-dark'], light: colors['toolbar-bg-light'] },
 } as const;
 
-/** Resolve all 7 canonical tokens for an effective scheme. */
 export function semanticPalette(scheme: 'light' | 'dark'): {
   bgColor: string; borderColor: string; textColor: string; subColor: string;
   linkColor: string; primaryColor: string;
@@ -82,7 +66,6 @@ export function semanticPalette(scheme: 'light' | 'dark'): {
   };
 }
 
-/** Semantic text-colour token names taken by the Kit content components' `color` prop; each resolves scheme-aware to the canonical palette default via resolveColorToken, while a raw hex/rgb string is still accepted as the escape hatch for live usePalette() overrides. */
 export type ColorToken =
   | 'text'
   | 'secondary'
@@ -95,7 +78,6 @@ export type ColorToken =
 
 const COLOR_TOKEN_MAP: Record<ColorToken, keyof typeof semanticColors> = {
   text: 'textColor',
-  /** Secondary + muted both resolve to the `sub` grey (today's only secondary-text colour); muted is a reserved dimmer that currently renders identically, so adopting it is lossless. */
   secondary: 'subColor',
   muted: 'subColor',
   link: 'linkColor',
@@ -105,17 +87,14 @@ const COLOR_TOKEN_MAP: Record<ColorToken, keyof typeof semanticColors> = {
   border: 'borderColor',
 };
 
-/** True if `c` is one of the semantic ColorToken names (vs a raw colour string). */
 export function isColorToken(c: string): c is ColorToken {
   return c in COLOR_TOKEN_MAP;
 }
 
-/** Resolve a `color` prop value: a semantic ColorToken name -> the canonical scheme default; any other string passes through unchanged (escape hatch). */
 export function resolveColorToken(c: string, scheme: 'light' | 'dark'): string {
   return isColorToken(c) ? semanticColors[COLOR_TOKEN_MAP[c]][scheme] : c;
 }
 
-/** Scheme-resolved surface palette shared by the Kit component internals, sourced from the `colors` scale (reusing the same literals so adopters render identical pixels): head/text/sub are text colours, surface/pressed the hover/row fills, border the divider. */
 export interface SchemePalette {
   head: string;
   text: string;
@@ -125,7 +104,6 @@ export interface SchemePalette {
   border: string;
 }
 
-/** Resolve the shared surface palette for an effective scheme from `colors`. */
 export function schemePalette(dark: boolean): SchemePalette {
   const k = dark ? 'dark' : 'light';
   return {
@@ -138,34 +116,28 @@ export function schemePalette(dark: boolean): SchemePalette {
   };
 }
 
-/** Numeric (non-color) design tokens, editable + persisted via the radiusOverride store: BUTTON_RADIUS_DEFAULT (999, fully-rounded pill) is every non-circular button's corner radius, and BLOCK_RADIUS_DEFAULT (12) every non-button container surface's. */
 export const RADIUS_DEFAULT = 999;
 export const RADIUS_MIN = 0;
 export const RADIUS_MAX = 999;
-/** Alias for the button radius default (clearer name; same value as legacy RADIUS_DEFAULT). */
 export const BUTTON_RADIUS_DEFAULT = 999;
-/** Default corner radius for non-button container "blocks". */
 export const BLOCK_RADIUS_DEFAULT = 12;
 
-/** Named font-size scale (single source of truth for text sizing): a t-shirt scale covering every app text size since raw numeric fontSize is lint-banned, with ~19 historical px values collapsed to named steps by nearest-neighbour rounding (see FONT_SIZE_SNAP). */
 
-/** Named text sizes — a clean t-shirt scale with no half-step names; every px the app uses (11..20 plus 24/32) maps to one step so key surfaces render at their original px, not a snapped value. */
 export type FontSizeName =
-  | '3xs' /* 11 */
-  | '2xs' /* 12 */
-  | 'xs'  /* 13 */
-  | 'sm'  /* 14 */
-  | 'md'  /* 15 */
-  | 'lg'  /* 16 */
-  | 'xl'  /* 17 */
-  | '2xl' /* 18 */
-  | '3xl' /* 19 */
-  | '4xl' /* 20 */
-  | '5xl' /* 24 */
-  | '6xl' /* 32 */
-  | '7xl'; /* 40 */
+  | '3xs'
+  | '2xs'
+  | 'xs'
+  | 'sm'
+  | 'md'
+  | 'lg'
+  | 'xl'
+  | '2xl'
+  | '3xl'
+  | '4xl'
+  | '5xl'
+  | '6xl'
+  | '7xl';
 
-/** Named font-size scale -> px. The canonical set of text sizes. Every px the key surfaces use (11..20) is an exact step so snapping is lossless there. */
 export const FONT_SIZE: Record<FontSizeName, number> = {
   '3xs': 11,
   '2xs': 12,
@@ -182,15 +154,12 @@ export const FONT_SIZE: Record<FontSizeName, number> = {
   '7xl': 40,
 } as const;
 
-/** Default body size (matches the Kit Text default of 15 = md). */
 export const FONT_SIZE_DEFAULT: FontSizeName = 'md';
 
-/** Resolve a named size to px. Use for plain StyleSheet objects: `fontSize: fontSize('3xs')`. For Kit Text prefer the `size="xs"` prop. */
 export function fontSize(name: FontSizeName): number {
   return FONT_SIZE[name];
 }
 
-/** Documented nearest-neighbour mapping of every legacy raw px to a named step. Kept for reference / migration audit (not used at runtime). */
 export const FONT_SIZE_SNAP: Record<string, FontSizeName> = {
   '10': '3xs', '11': '3xs',
   '12': '2xs',
@@ -206,19 +175,15 @@ export const FONT_SIZE_SNAP: Record<string, FontSizeName> = {
   '28': '6xl', '34': '6xl', '38': '6xl',
 } as const;
 
-/** Font families used across both shells (Calibre is bundled in both apps). */
 export const fontFamily = {
   sans: ['Calibre-Medium', 'system-ui', 'sans-serif'],
   head: ['Calibre-Semibold', 'system-ui', 'sans-serif'],
   mono: ['Menlo', 'ui-monospace', 'monospace'],
 } as const;
 
-/** ChatKit-shaped theme alignment (additive, non-breaking): a ChatKit ThemeOption-shaped view of the same `semanticColors`, where the gotcha is ChatKit color.accent.primary maps to our linkColor (brand emphasis), NOT our button-fill primaryColor. */
 
-/** ChatKit `radius` option. Default 'pill'. */
 export type RadiusName = 'pill' | 'round' | 'soft' | 'sharp';
 
-/** Named-radius -> px map. `pill` reproduces today's BUTTON_RADIUS_DEFAULT and `soft` reproduces BLOCK_RADIUS_DEFAULT, so defaults are visually unchanged. The fine-grained px overrides (radiusOverride store) remain the lower layer. */
 export const RADIUS_SCALE: Record<RadiusName, number> = {
   pill: 999,
   round: 16,
@@ -226,10 +191,8 @@ export const RADIUS_SCALE: Record<RadiusName, number> = {
   sharp: 0,
 } as const;
 
-/** Default named radius (ChatKit default). Resolves to BUTTON_RADIUS_DEFAULT. */
 export const RADIUS_NAME_DEFAULT: RadiusName = 'pill';
 
-/** Box/Row/Col `radius` token enum + scale (BlockProps.radius), living in ./radius for the line cap and re-exported so the import surface stays unchanged. */
 export {
   type RadiusValue,
   BOX_RADIUS_SCALE,
@@ -237,34 +200,26 @@ export {
   resolveBoxRadius,
 } from './radius';
 
-/** ChatKit `density` option. Default 'normal'. */
 export type Density = 'compact' | 'normal' | 'spacious';
 
-/** Per-density padding scale (px) for Button/Card/ListView. `normal` reproduces today's spacing so the default render is unchanged. */
 export const DENSITY_SCALE: Record<Density, { paddingX: number; paddingY: number; gap: number }> = {
   compact: { paddingX: 10, paddingY: 6, gap: 6 },
   normal: { paddingX: 14, paddingY: 10, gap: 10 },
   spacious: { paddingX: 18, paddingY: 14, gap: 14 },
 } as const;
 
-/** Default density (ChatKit default). */
 export const DENSITY_DEFAULT: Density = 'normal';
 
-/** ChatKit `typography.baseSize`. Today's Text default is 15. */
 export type BaseSize = 14 | 15 | 16 | 17 | 18;
 
-/** Default base font size (matches today's Text default of 15). */
 export const BASE_SIZE_DEFAULT: BaseSize = 15;
 
-/** A ChatKit ThemeOption-shaped object derived from `semanticColors`. Returned by `kitTheme`. Naming mirrors `@openai/chatkit` ThemeOption so a future ChatKit-aligned consumer reads naturally; values come from our tokens. */
 export interface KitTheme {
   colorScheme: 'light' | 'dark';
   color: {
     surface: { background: string; foreground: string };
-    /** `accent` == our brand `link` (NOT our button-fill `primary`). */
     accent: { primary: string; level: 0 | 1 | 2 | 3 };
   };
-  /** Status extensions with no ChatKit equivalent; kept as Metro additions. */
   status: { danger: string; success: string };
   border: string;
   radius: { name: RadiusName; px: number };
@@ -272,16 +227,13 @@ export interface KitTheme {
   typography: { baseSize: BaseSize; fontFamily: string; fontFamilyMono: string };
 }
 
-/** Options for `kitTheme` (all optional; defaults reproduce today's values). */
 export interface KitThemeOptions {
   radius?: RadiusName;
   density?: Density;
   baseSize?: BaseSize;
-  /** Accent intensity 0-3 (hover/pressed). Cosmetic only in PR1. */
   accentLevel?: 0 | 1 | 2 | 3;
 }
 
-/** Derive a ChatKit-shaped theme object for an effective scheme from the same `semanticColors` source of truth. Pure data; no framework deps. With default options the result reproduces today's rendered values (non-breaking). */
 export function kitTheme(scheme: 'light' | 'dark', opts: KitThemeOptions = {}): KitTheme {
   const radiusName = opts.radius ?? RADIUS_NAME_DEFAULT;
   const densityName = opts.density ?? DENSITY_DEFAULT;

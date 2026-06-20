@@ -1,11 +1,7 @@
-/**
- * @file RadioGroup — a hook-free interactive ChatKit-styled radio group (controlled `value` + `onChange`) rendering each option's dot with RN views.
- */
 
 import { useState } from 'react';
 import { Pressable, View, Text as RNText, type ViewStyle } from 'react-native';
 
-/** ChatKit RadioGroup option shape. */
 export interface RadioOption {
   label: string;
   value: string;
@@ -13,39 +9,25 @@ export interface RadioOption {
 }
 
 export interface RadioGroupProps {
-  /** ChatKit: name. Form field name. */
   name?: string;
-  /** ChatKit: options. The selectable choices. */
   options?: RadioOption[];
-  /** ChatKit: defaultValue. Initial selection (uncontrolled). */
   defaultValue?: string;
-  /** Controlled selected value (kit extension; pair with onChange). */
   value?: string;
-  /** ChatKit: direction. Layout axis. Default 'col'. */
   direction?: 'row' | 'col';
-  /** ChatKit: disabled. Disables every option. */
   disabled?: boolean;
-  /** ChatKit: required (parity only). */
   required?: boolean;
-  /** ChatKit: ariaLabel. Accessibility label for the group. */
   ariaLabel?: string;
-  /** RN substitute for ChatKit's onChangeAction. */
   onChange?: (value: string) => void;
-  /** Dot size (px). Default 20. */
   size?: number;
-  /** Effective color scheme. */
   dark?: boolean;
-  /** Escape-hatch style merged onto the group container. */
   style?: ViewStyle | ViewStyle[];
 }
 
-/** Normalise the escape-hatch style prop to a flat array. */
 function styleList(style: ViewStyle | ViewStyle[] | undefined): ViewStyle[] {
   if (!style) return [];
   return Array.isArray(style) ? style : [style];
 }
 
-/** A single radio option row: dot + label. */
 function RadioOptionRow(props: {
   opt: RadioOption;
   selected: string | undefined;
@@ -86,7 +68,6 @@ function RadioOptionRow(props: {
   );
 }
 
-/** ChatKit-style RN radio group. */
 export function RadioGroup(props: RadioGroupProps): React.ReactElement {
   const {
     name,
@@ -108,7 +89,6 @@ export function RadioGroup(props: RadioGroupProps): React.ReactElement {
   const head = dark ? '#ffffff' : '#000000';
   const border = dark ? '#282a2d' : '#e4e4e5';
 
-  /** Pick helper. */
   function pick(v: string): void {
     if (controlled === undefined) setInternal(v);
     onChange?.(v);

@@ -1,4 +1,3 @@
-/** @file Private SEND orchestration moving funds 0zk->0zk by composing the bridge primitives (gas estimate, heavy Groth16 transfer proof, populate) plus a self-broadcasting viem EOA sign that pays gas, with progress/errors reported through the pending-action store; mirrors unshield.ts. */
 import { parseUnits, type Hex } from 'viem';
 import { getActiveAccountId } from '../accounts';
 import { engineInit, walletInfo } from './bridge';
@@ -15,13 +14,9 @@ import { RAILGUN_TOKENS, type TokenMeta } from './tokens';
 const TXID_VERSION = 'V2_PoseidonMerkle';
 
 export interface SendParams {
-  /** 1 = mainnet, 11155111 = Sepolia (default for testing). */
   chainId: number;
-  /** Token symbol from the shielded list — 'ETH' or 'USDC'. */
   symbol: 'ETH' | 'USDC';
-  /** Human-readable amount, e.g. "0.01". */
   amount: string;
-  /** 0zk… recipient address (required). */
   recipient: string;
 }
 
@@ -30,7 +25,6 @@ export interface SendResult {
   recipient: string;
 }
 
-/** Token Meta. */
 function tokenMeta(chainId: number, symbol: string): TokenMeta {
   const net = chainId === 1 ? 'mainnet' : 'sepolia';
   const meta = RAILGUN_TOKENS[net].find(t => t.symbol === symbol);
@@ -38,7 +32,6 @@ function tokenMeta(chainId: number, symbol: string): TokenMeta {
   return meta;
 }
 
-/** Run the full private transfer. Resolves with the broadcast tx hash; the pending chip is driven through `proving` (estimate + Groth16) → `broadcasting` → `confirmed`/`failed`. The optimistic delta is NEGATIVE. */
 export async function sendShielded(params: SendParams): Promise<SendResult> {
   const accountId = await getActiveAccountId();
   if (!accountId) throw new Error('No active account');
@@ -57,7 +50,6 @@ export async function sendShielded(params: SendParams): Promise<SendResult> {
     delta: `-${params.amount}`, phase: 'proving', startedAt: Date.now(),
   });
 
-  /** Track the current sub-step so a failure carries WHERE it died (attached to the thrown error and console.error'd below) — the bare red X with no text was impossible to diagnose otherwise. */
   let step = 'init';
   try {
     const key = await deriveRailgunKeyMaterial();
@@ -80,7 +72,6 @@ export async function sendShielded(params: SendParams): Promise<SendResult> {
       tokenAddress: meta.address, amountWei: amountWei.toString(), recipientAddress: recipient,
     }];
 
-    /** EIP-1559 gas details (Ethereum + Sepolia default to Type2); gasEstimate is a placeholder for the estimate call, then the SDK's real estimate feeds the populate step. */
     step = 'estimateFees';
     const fees = await signer.publicClient.estimateFeesPerGas();
     const baseGas: TransferGasDetails = {
@@ -127,7 +118,6 @@ export async function sendShielded(params: SendParams): Promise<SendResult> {
   } catch (e) {
     const raw = e instanceof Error ? e.message : String(e);
     const msg = raw?.trim() ? raw : `Unknown error (no message) at step "${step}"`;
-    /** Surface to the bundler/metro logs so we can read it off-device too. */
     console.error(`[sendShielded] failed at step="${step}":`, e);
     updatePending(accountId, pendingId, { phase: 'failed', error: msg });
     const wrapped = new Error(`${msg} (at ${step})`) as Error & { step?: string; cause?: unknown };

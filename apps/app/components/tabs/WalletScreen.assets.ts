@@ -1,6 +1,3 @@
-/**
- * @file Re-exports the Wallet asset registry + network metadata (now in the Stage SDK @stage-labs/client) so existing app imports stay stable.
- */
 export {
   ASSETS,
   MAINNET_NETWORK_LOGO,

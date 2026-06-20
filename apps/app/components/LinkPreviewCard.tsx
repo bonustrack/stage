@@ -1,4 +1,3 @@
-/** @file Generic rich preview card for a plain http(s) link not claimed by a more specific card, fetching OpenGraph/Twitter metadata via the Metro link-preview proxy and rendering nothing on load or failure. */
 
 import { Linking } from 'react-native';
 
@@ -11,7 +10,6 @@ import { useLinkPreview, isX402, type LinkPreviewResult } from '../lib/useLinkPr
 import { X402Card } from './X402Card';
 import { usePalette, useBlockRadius } from '../lib/theme';
 
-/** Renders the OpenGraph image/title/description body of a link preview card. */
 function LinkPreviewBody({ meta, url, subColor }: {
   meta: Exclude<LinkPreviewResult, { kind: 'x402' }>; url: string; subColor: string;
 }): React.ReactElement {
@@ -43,16 +41,13 @@ function LinkPreviewBody({ meta, url, subColor }: {
   );
 }
 
-/** Renders a generic OpenGraph preview card for a plain link, or nothing while loading or on failure. */
 export function LinkPreviewCard({ url, dark }: {
-  /** `dark` is forwarded to the x402 payment card (Pay-style button tinting); the OG preview path takes colors from the live palette tokens (same convention as GitHubLinkCard / PreviewLinkCard). */
   url: string; dark?: boolean;
 }): React.ReactElement | null {
   const meta = useLinkPreview(url);
   const pal = usePalette();
   const blockRadius = useBlockRadius();
   if (!meta) return null;
-  /** The proxy probe found an x402 payment challenge — render the payment card. */
   if (isX402(meta)) return <X402Card challenge={meta} dark={dark} />;
 
   return (

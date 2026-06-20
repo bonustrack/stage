@@ -1,8 +1,4 @@
 <script setup lang="ts">
-/** Top bar of the XMTP conversation view — back arrow, tap-to-open title
- *  (DM peer or group, left-aligned), connection-status dot or member avatar
- *  stack on the right. Mirrors apps/app/app/xmtp/[convId].tsx. Extracted from
- *  XmtpConversation.vue to keep that file under the per-file LOC cap. */
 
 import { shortAddress, stampAvatarUrl } from '../lib/xmtp';
 import type { XmtpFeedStatus } from '../lib/xmtpFeed';
@@ -20,8 +16,6 @@ const emit = defineEmits<{ back: []; open: [] }>();
 
 const visibleMembers = computed(() => props.memberAddresses.slice(0, 3));
 const overflow = computed(() => Math.max(0, props.memberAddresses.length - 3));
-/** Embedded (widget): show a close button at the end of this topnav so the
- *  widget has a single merged header instead of a second host-side bar. */
 const embedded = runningInIframe();
 </script>
 

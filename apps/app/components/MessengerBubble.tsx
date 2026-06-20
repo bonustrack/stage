@@ -1,4 +1,3 @@
-/** @file Discord-style messenger row bubble: every message left-aligned, avatar at the start, no colored bubble even for the local user's own messages. */
 
 import { memo, useState } from 'react';
 import { Pressable } from '@stage-labs/kit/pressable';
@@ -16,7 +15,6 @@ import { useBubbleGestures } from './MessengerBubble.gestures';
 
 export { REACT_PRESETS };
 
-/** Renders the row avatar (tappable when the sender address is known). */
 function BubbleAvatar({ address, bg, onPress }: {
   address?: string | null; bg: string; onPress?: (address: string) => void;
 }): React.ReactElement {
@@ -28,14 +26,12 @@ function BubbleAvatar({ address, bg, onPress }: {
   );
 }
 
-/** Background color of the bubble row (reply-target highlight, unread tint, else transparent). */
 function rowBackground(replyTarget: boolean | undefined, unread: boolean | undefined, dark: boolean): string {
   if (replyTarget) return dark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.05)';
   if (unread) return dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
   return 'transparent';
 }
 
-/** Renders the right column: content, reactions row and reaction picker. */
 function BubbleColumn({ p, fg, sub, pillBg }: {
   p: MessengerBubbleProps; fg: string; sub: string; pillBg: string;
 }): React.ReactElement {
@@ -45,7 +41,6 @@ function BubbleColumn({ p, fg, sub, pillBg }: {
     <Col minWidth={0} flex={1} style={{ opacity: pending ? 0.5 : 1 }}>
       <Col
         style={{
-          /** Reply-target highlight is a full-row background on the outer View now; keep only the unread outline here. */
           borderWidth: unread ? 1.5 : 0,
           borderColor: unread ? (dark ? '#ffffff' : '#000000') : 'transparent',
         }}
@@ -76,17 +71,12 @@ function BubbleColumn({ p, fg, sub, pillBg }: {
   );
 }
 
-/** The Messenger Bubble Base component: Discord-style row with avatar, gestures, and content column. */
 function MessengerBubbleBase(props: MessengerBubbleProps): React.ReactElement {
   const { entry, dark, unread, replyTarget, myUri, senderEthAddress, onAvatarPress } = props;
-  /** Discord-style layout doesn't distinguish own messages; myUri is accepted for forward compatibility (e.g. read-receipts) but not styled-on. */
   void (entry.from === myUri);
-  /** Group system events (rename / member add / image change) get a muted feed color. */
   const isSystem = (entry.payload as { system?: boolean } | undefined)?.system === true;
   const pal = usePalette();
-  /** system → muted body text; else → strong primary. */
   const fg = isSystem ? pal.text : pal.link;
-  /** muted meta (date, 'Sending'); no `muted` token yet. */
   const sub = pal.text;
   const g = useBubbleGestures(props);
   return (
@@ -112,7 +102,6 @@ function MessengerBubbleBase(props: MessengerBubbleProps): React.ReactElement {
   );
 }
 
-/** Custom memo comparator: renderItem rebuilds ~10 fresh callback props per bubble each render, defeating shallow memo, so we ignore callback identity and re-render only when a render-affecting DATA prop for the bubble's own id changes (per-id Maps/Sets are stable references via map.get). */
 const DATA_KEYS = [
   'entry', 'dark', 'unread', 'pending', 'replyTarget', 'replyPreview',
   'reactions', 'pendingReactions', 'pendingRemovals', 'ownEmojis',
@@ -120,7 +109,6 @@ const DATA_KEYS = [
   'highlight', 'senderEthAddress', 'myUri', 'transcript', 'consentAllowed',
 ] as const satisfies readonly (keyof MessengerBubbleProps)[];
 
-/** Bubble Props Equal. */
 function bubblePropsEqual(prev: MessengerBubbleProps, next: MessengerBubbleProps): boolean {
   for (const k of DATA_KEYS) {
     if (prev[k] !== next[k]) return false;
@@ -128,5 +116,4 @@ function bubblePropsEqual(prev: MessengerBubbleProps, next: MessengerBubbleProps
   return true;
 }
 
-/** #6: memoised so a single stream tick only re-renders bubbles whose data props changed, not the whole window (callback identity is intentionally ignored). */
 export const MessengerBubble = memo(MessengerBubbleBase, bubblePropsEqual);

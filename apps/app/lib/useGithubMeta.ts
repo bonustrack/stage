@@ -1,4 +1,3 @@
-/** @file TanStack Query hook fetching public GitHub metadata for a repo/PR/issue link so a bubble can render a preview card; uses the unauthenticated REST API with hard URL-keyed caching, returning null on any failure. */
 
 import { useQuery } from '@tanstack/react-query';
 import type { GithubRef } from './githubDetect';
@@ -6,20 +5,16 @@ import type { GithubRef } from './githubDetect';
 export interface GithubMeta {
   kind: GithubRef['kind'];
   title: string;
-  /** owner/repo. */
   repo: string;
   number?: number;
-  /** 'open' | 'closed' | 'merged' for PR/issue; '' for repo. */
   state: string;
   author?: string;
   description?: string;
   stars?: number;
-  /** PR only: lines added / removed. */
   additions?: number;
   deletions?: number;
 }
 
-/** The GitHub REST path for a ref's metadata (repo, pull, or issue). */
 function metaPath(ref: GithubRef): string {
   const base = `https://api.github.com/repos/${ref.owner}/${ref.repo}`;
   if (ref.kind === 'pull') return `${base}/pulls/${ref.number}`;
@@ -27,7 +22,6 @@ function metaPath(ref: GithubRef): string {
   return base;
 }
 
-/** Map a repo API payload to GithubMeta. */
 function repoMeta(j: Record<string, unknown>, ref: GithubRef, repo: string): GithubMeta {
   const name = typeof j.full_name === 'string' ? j.full_name : repo;
   return {
@@ -37,7 +31,6 @@ function repoMeta(j: Record<string, unknown>, ref: GithubRef, repo: string): Git
   };
 }
 
-/** PR-only added/removed line counts; undefined for issues or when absent. */
 function pullStats(j: Record<string, unknown>, ref: GithubRef): { additions?: number; deletions?: number } {
   if (ref.kind !== 'pull') return {};
   return {
@@ -46,7 +39,6 @@ function pullStats(j: Record<string, unknown>, ref: GithubRef): { additions?: nu
   };
 }
 
-/** Map a PR/issue API payload to GithubMeta (PR-only fields gated on kind). */
 function issueOrPullMeta(j: Record<string, unknown>, ref: GithubRef, repo: string): GithubMeta {
   const merged = ref.kind === 'pull' && j.merged_at != null;
   const rawState = typeof j.state === 'string' ? j.state : 'open';
@@ -64,7 +56,6 @@ function issueOrPullMeta(j: Record<string, unknown>, ref: GithubRef, repo: strin
   };
 }
 
-/** Get the Github Meta. */
 async function fetchGithubMeta(ref: GithubRef): Promise<GithubMeta | null> {
   try {
     const res = await fetch(metaPath(ref), {
@@ -79,7 +70,6 @@ async function fetchGithubMeta(ref: GithubRef): Promise<GithubMeta | null> {
   }
 }
 
-/** Hook fetching cached metadata (title, stats) for a GitHub ref. */
 export function useGithubMeta(ref: GithubRef | null): GithubMeta | null {
   const { data } = useQuery({
     queryKey: ['githubMeta', ref?.url ?? ''],
@@ -88,7 +78,6 @@ export function useGithubMeta(ref: GithubRef | null): GithubMeta | null {
       return fetchGithubMeta(ref);
     },
     enabled: !!ref,
-    /** Cache hard: respect the 60/hr unauthed limit. No background refetch. */
     staleTime: 60 * 60_000,
     gcTime: 24 * 60 * 60_000,
     retry: false,

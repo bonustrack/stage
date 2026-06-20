@@ -1,4 +1,3 @@
-/** @file Presentational fragments for the MessengerComposer: reply banner, @-mention popup, staged-attachment row, and recording waveform bar. */
 
 import { Animated, StyleSheet } from 'react-native';
 
@@ -13,31 +12,25 @@ import { getPeerName } from '../lib/peerProfiles';
 import { type Attachment } from './MessengerComposer.helpers';
 import { usePalette } from '../lib/theme';
 
-/** Kind Icon. */
 const kindIcon = (kind: string): HeroIconName => (
   kind === 'image' ? 'photo' : kind === 'audio' ? 'microphone' : 'paperClip'
 );
 
-/** Renders the banner above the composer showing the message being replied to. */
 export function ReplyBanner({
   dark, sub, sender, onClear, onPress,
 }: {
   dark: boolean; sub: string; sender?: string | null;
   onClear?: () => void;
-  /** Tap the banner body → scroll the feed to the replied-to message. */
   onPress?: () => void;
 }): React.ReactElement {
-  /** Username color: white in dark theme, the light brand blue otherwise (one-off, no matching token — leave hardcoded). */
   const nameColor = dark ? '#ffffff' : '#2f6feb';
-  /** TopNav border value — matches the conversation header hairline exactly. */
-  const borderColor = usePalette().border; /** #282a2d / #e4e4e5 */
+  const borderColor = usePalette().border;
   return (
-    /** The Box spans full screen width (parent Col is edge-to-edge); px:22 is a real inset matching the composer input (Col 10 + Textarea md 12) so both the reply glyph and ✕ sit symmetric at 22px, with the same `surface` bg. */
     <Box padding={{ x: 22 }} surface="surface" style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: borderColor }}>
       <Pressable onPress={onPress} disabled={!onPress}>
-        {/** No extra inset → the outer Box px:22 alone supplies the full composer- matched inset on both sides. */}
+        {}
         <Row padding={{ y: 11, x: 0 }} align="center" gap={10}>
-          {/** Reply glyph leading the label (the swipe-to-reply icon). */}
+          {}
           <Icon name="reply" size={16} color={sub}/>
           <Text size="xl" numberOfLines={1} style={{ flex: 1 }}>
             <Text size="xl" color={sub}>Replying to </Text>
@@ -45,7 +38,7 @@ export function ReplyBanner({
               {(sender ? getPeerName(sender) : undefined) ?? (sender ? shortAddress(sender) : 'message')}
             </Text>
           </Text>
-          {/** Plain ✕ on the right edge — no chip/circle bg, still tappable. */}
+          {}
           <Pressable onPress={onClear} hitSlop={8}>
             <Icon name="x" size={18} color={sub}/>
           </Pressable>
@@ -55,7 +48,6 @@ export function ReplyBanner({
   );
 }
 
-/** Renders the @-mention autocomplete popup of matching members above the composer. */
 export function MentionPopup({
   dark, head, sub, matches, onPick,
 }: {
@@ -63,7 +55,7 @@ export function MentionPopup({
   matches: { address: string; name: string; cacheBuster?: number }[];
   onPick: (c: { address: string; name: string }) => void;
 }): React.ReactElement {
-  const border = usePalette().border; /** #282a2d / #e4e4e5 */
+  const border = usePalette().border;
   return (
     <Col margin={{ x: 6, bottom: 8 }} radius="lg" background={dark ? '#1a1a1c' : '#ffffff'} style={{
       overflow: 'hidden',
@@ -93,7 +85,6 @@ export function MentionPopup({
   );
 }
 
-/** Renders the row of staged (pending) attachment chips with remove buttons. */
 export function PendingRow({
   fg, sub, chipBg, pending, onRemove,
 }: {
@@ -104,7 +95,6 @@ export function PendingRow({
     <Row padding={{ x: 6, bottom: 6 }} wrap gap={8}>
       {pending.map((a, i) => (
         a.kind === 'image' ? (
-          /** Image attachments: 72px square + filename label, x-to-remove pinned. */
           <Col width={72} key={a.id} align="center" gap={4}>
             <Box>
               <Image src={a.url} size={72} radius={8} fit="cover"/>
@@ -124,7 +114,6 @@ export function PendingRow({
             </Text>
           </Col>
         ) : (
-          /** Non-image attachments keep the inline chip layout. */
           <Row padding={{ x: 8, y: 4 }} key={a.id} align="center" gap={6} radius="lg" background={chipBg}>
             <Icon name={kindIcon(a.kind)} size={14} color={fg}/>
             <Text size="2xs" color={fg} style={{ maxWidth: 140 }} numberOfLines={1}>{a.name ?? a.id}</Text>
@@ -138,7 +127,6 @@ export function PendingRow({
   );
 }
 
-/** Renders the active voice-recording bar with waveform levels, elapsed time, and slide-to-cancel. */
 export function RecordingBar({
   head, sub, levels, recordSecs, slideX, slideThresholdPx,
 }: {
@@ -147,7 +135,7 @@ export function RecordingBar({
 }): React.ReactElement {
   return (
     <Row height={28} padding={{ x: 4 }} align="center">
-      {/** "← Slide to cancel" hint — fades in as the user drags the mic left. */}
+      {}
       <Animated.View style={{
         flexDirection: 'row', alignItems: 'center', gap: 6,
         transform: [{ translateX: slideX }],

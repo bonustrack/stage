@@ -1,10 +1,8 @@
-/** @file Zod boundary schema for the Etherscan v2 `txlist` response envelope `{ status, message, result }` (result is rows or an explanatory string); validates ONLY the envelope shape — rows are coerced by the caller, and non-envelope bodies throw loudly via the boundary helper. */
 
 import { z } from 'zod';
 import { parseOrThrow } from '../validate';
 import type { EtherscanTx } from './etherscan.types';
 
-/** A single txlist row. All numeric fields arrive as decimal strings; optional fields are kept loose since the caller defaults them. */
 const txSchema = z.object({
   hash: z.string(),
   nonce: z.string(),
@@ -19,7 +17,6 @@ const txSchema = z.object({
   gasPrice: z.string(),
 });
 
-/** The response envelope: `result` is rows OR an explanatory string. */
 const responseSchema = z.object({
   status: z.string(),
   message: z.string(),
@@ -32,7 +29,6 @@ export interface EtherscanResponse {
   result: EtherscanTx[] | string;
 }
 
-/** Validate a raw Etherscan response body. Throws (with a logged reason) when the envelope itself is malformed. */
 export function parseEtherscanResponse(data: unknown): EtherscanResponse {
   return parseOrThrow('api.etherscan', responseSchema, data);
 }

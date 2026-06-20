@@ -1,4 +1,3 @@
-/** @file Presentational sub-components for the XMTP conversation screen — extracted from app/xmtp/[convId].tsx verbatim (phase-2 lint split). Behavior identical. */
 
 import { useEffect, useState } from 'react';
 
@@ -18,7 +17,6 @@ import { usePalette } from '../../lib/theme';
 import type { HistoryEntry } from '../../lib/types';
 import { useBlockRadius } from '../../lib/theme';
 
-/** Topnav GitHub button — opens the in-app PR diff viewer for the linked PR/issue. */
 export function GithubNavButton({ url, color }: { url: string; color: string }): React.ReactElement {
   const router = useRouter();
   return (
@@ -32,7 +30,6 @@ export function GithubNavButton({ url, color }: { url: string; color: string }):
   );
 }
 
-/** Topnav avatar — peer identicon/custom avatar for 1-1s, uploaded image for groups, and a deterministic channel-id-seeded stamp.fyi identicon for groups without one, delegating rendering to the shared Avatar component. */
 export function HeaderAvatar({ peerAddr, groupImage, channelId, isGroup, border }: {
   peerAddr: string | null; groupImage: string; channelId: string; isGroup: boolean; border: string;
 }): React.ReactElement | null {
@@ -48,10 +45,8 @@ export function HeaderAvatar({ peerAddr, groupImage, channelId, isGroup, border 
   return null;
 }
 
-/** Fuller emoji set revealed by the strip's chevron — a quick scrollable row beyond the 7 presets. Kept inline (no native emoji-keyboard dependency). */
 const MORE_EMOJIS = ['❤️', '😂', '😮', '😢', '🎉', '🤯', '🥳', '👏', '🙌', '🤝', '✅', '❌', '👌', '🚀', '💀', '🤔', '😅', '🫶'];
 
-/** A single tappable row in the action dropdown (icon + label). */
 function ActionRow({ icon, label, color, fg, dark, onPress }: {
   icon: React.ComponentProps<typeof Icon>['name']; label: string; color?: string;
   fg: string; dark: boolean; onPress: () => void;
@@ -71,7 +66,6 @@ function ActionRow({ icon, label, color, fg, dark, onPress }: {
   );
 }
 
-/** Emoji reaction strip: the 7 presets + a chevron that expands to the fuller set. */
 function ReactionStrip({ expanded, setExpanded, dark, sub, stripBg, onReact }: {
   expanded: boolean; setExpanded: (v: boolean) => void; dark: boolean; sub: string;
   stripBg: string; onReact: (e: string) => void;
@@ -107,7 +101,6 @@ function ReactionStrip({ expanded, setExpanded, dark, sub, stripBg, onReact }: {
   );
 }
 
-/** Action dropdown card: Reply, (Copy / Select for text), and Share link. */
 function ActionDropdown({ target, dark, fg, divider, cardBg, blockRadius, on }: {
   target: HistoryEntry | null; dark: boolean; fg: string; divider: string; cardBg: string;
   blockRadius: number; on: { reply: () => void; copy: () => void; select: () => void; shareLink: () => void };
@@ -127,22 +120,19 @@ function ActionDropdown({ target, dark, fg, divider, cardBg, blockRadius, on }: 
   );
 }
 
-/** Clamp the menu's top so the estimated strip+dropdown unit stays within the screen. */
 function clampedMenuTop(anchorY: number, hasText: boolean): number {
   const actionCount = 2 + (hasText ? 2 : 0);
-  const unitH = 40 + 6 + (actionCount * 48 + 16); /** stripH + GAP + estimated cardH (clamp only) */
+  const unitH = 40 + 6 + (actionCount * 48 + 16);
   const maxTop = Dimensions.get('window').height - 40 - unitH;
   return Math.max(40, Math.min(anchorY, maxTop));
 }
 
-/** Telegram-style anchored message menu: emoji-reaction strip above the tapped message + an action dropdown below, clamped on-screen. */
 export function BubbleActionMenu({
   target, anchor, dark, onClose, onReact, onReply, onCopy, onSelect, onShareLink,
 }: {
   target: HistoryEntry | null; anchor: { y: number; height: number };
   dark: boolean; onClose: () => void;
   onReact: (emoji: string) => void; onReply: () => void; onCopy: () => void;
-  /** Enable OS text selection on the target message for partial copy. */
   onSelect: () => void;
   onShareLink: () => void;
 }): React.ReactElement {
@@ -152,13 +142,12 @@ export function BubbleActionMenu({
 
   const pal = usePalette();
   const stripTop = clampedMenuTop(anchor.y, !!target?.text);
-  /** React And Close. */
   const reactAndClose = (e: string): void => { onReact(e); onClose(); };
 
   return (
     <Modal visible={!!target} transparent animationType="none" onRequestClose={onClose}>
       <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }}>
-        {/* Strip + a literal 6px gap + dropdown, as one absolute column. */}
+        {}
         <Box align="start" style={{ position: 'absolute', left: 12, right: 12, top: stripTop }} pointerEvents="box-none">
           <ReactionStrip expanded={expanded} setExpanded={setExpanded} dark={dark} sub={pal.sub} stripBg={pal.bg} onReact={reactAndClose} />
           <Box height={6} pointerEvents="none"/>

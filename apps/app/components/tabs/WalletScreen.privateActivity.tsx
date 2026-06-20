@@ -1,6 +1,3 @@
-/**
- * @file Private (shielded 0zk) fund-movement section of the Activity tab, fetching and rendering shield/unshield/0zk-transfer rows with a "Private" badge above the public Etherscan list.
- */
 
 import { useEffect, useState } from 'react';
 
@@ -13,14 +10,12 @@ import {
   type PrivateActivityRow,
 } from '../../lib/railgun/history';
 
-/** The shield-check glyph the app already uses to mark Railgun-shielded tokens (see WalletScreen.parts PrivateBadge). Overlaid on each activity row's token avatar so a private/Railgun tx is unmistakable. */
 const SHIELD_ICON: HeroIconName = 'shieldCheck';
 
 type Status = 'loading' | 'ready';
 
 const PRIVATE_GREEN = '#22c55e';
 
-/** Fetch + render the private fund-movement rows. Once the bridge is present the header always renders, with a loading line, the rows, or an empty state - so the section is discoverable even before / without any private history. */
 export function PrivateActivitySection({ head, sub, border, bg }: {
   head: string; sub: string; border: string; bg: string;
 }): React.ReactElement | null {
@@ -37,7 +32,6 @@ export function PrivateActivitySection({ head, sub, border, bg }: {
         setAvailable(res.available);
         setRows(res.rows);
       } catch {
-        /* best-effort: leave rows empty, header still shows empty state */
       } finally {
         if (!cancelled) setStatus('ready');
       }
@@ -45,7 +39,6 @@ export function PrivateActivitySection({ head, sub, border, bg }: {
     return () => { cancelled = true; };
   }, []);
 
-  /** Bridge not in this binary (web / non-Railgun build): show nothing at all. */
   if (status === 'ready' && !available) return null;
 
   return (
@@ -73,14 +66,12 @@ export function PrivateActivitySection({ head, sub, border, bg }: {
   );
 }
 
-/** Per-kind row label. Shields are always inbound, unshields always outbound; transfers carry their own direction. */
 function rowTitle(r: PrivateActivityRow): string {
   if (r.kind === 'shield') return 'Shielded';
   if (r.kind === 'unshield') return 'Unshielded';
   return r.direction === 'in' ? 'Received privately' : 'Sent privately';
 }
 
-/** A single private-movement row. Layout matches the public TxRow: a circular direction icon, a title over the chain + time meta, and the signed amount with a "Private" tag. */
 function PrivateTxRow({ r, head, sub, border, bg }: {
   r: PrivateActivityRow; head: string; sub: string; border: string; bg: string;
 }): React.ReactElement {
@@ -89,7 +80,7 @@ function PrivateTxRow({ r, head, sub, border, bg }: {
   return (
     <Row padding={{ y: 14 }} align="center" gap={12} 
       style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-      {/* Token + network image (identical to the wallet token rows) with the Railgun shield glyph overlaid so the tx reads as private. */}
+      {}
       <TokenAvatar
         logoUrl={r.logoUrl}
         chainId={r.chainId}
@@ -129,7 +120,6 @@ function PrivateTxRow({ r, head, sub, border, bg }: {
   );
 }
 
-/** Compact relative time: "3h", "2d", or a date for older transfers. Mirrors the public Activity row's relTime so both sections read identically. */
 function relTime(ts: number): string {
   const s = Math.max(0, Math.floor(Date.now() / 1000 - ts));
   if (s < 60) return 'now';

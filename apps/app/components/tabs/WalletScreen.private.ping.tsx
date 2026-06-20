@@ -1,4 +1,3 @@
-/** @file Dev feasibility probe for the embedded nodejs-mobile RAILGUN bridge: a "Test Node bridge" button family (ping/init/scan/methods) that round-trips through the guarded bridge and streams capped lifecycle + scan-debug logs on-device. */
 import {
   useCallback,
   useEffect,
@@ -29,28 +28,22 @@ import {
 import { sdkListMethods } from '../../lib/railgun/bridge/sdk';
 import { deriveRailgunKeyMaterial } from '../../lib/railgun/deriveKeys';
 
-/* ── Status log ─────────────────────────────────────────────────────────── */
 
-/** One timestamped status line: ms elapsed since the run started + the text. */
 interface LogLine { ms: number; line: string }
 
-/** Render a single log line to the plain text used for selection + clipboard. */
 function fmtLine(l: LogLine): string { return `+${l.ms}ms  ${l.line}`; }
 
-/** Tone helper. */
 function tone(line: string, sub: string): string {
   if (line.includes('✗')) return DANGER;
   if (line.includes('✓') || line.startsWith('reply ← pong')) return SUCCESS;
   return sub;
 }
 
-/** Copy all log lines to the clipboard as plain text + flash a confirmation. */
 function copyAll(lines: LogLine[]): void {
   void Clipboard.setStringAsync(lines.map(fmtLine).join('\n'));
   flash('Logs copied');
 }
 
-/** Renders the ordered lifecycle lines the bridge emits as a compact monospace list so the whole boot→reply sequence fits in one on-device screenshot. */
 function PingLog({ lines, sub, head, border }: {
   lines: LogLine[]; sub: string; head?: string; border?: string;
 }): React.ReactElement | null {
@@ -90,25 +83,17 @@ function PingLog({ lines, sub, head, border }: {
   );
 }
 
-/* ── Batched log buffer ─────────────────────────────────────────────────── */
 
-/** Buffers two high-frequency log sources (bridge lifecycle + live scanDebug events) in a plain ref ring buffer capped to CAP entries and flushed to state at most once per FLUSH_MS, so a burst of N lines costs one re-render; `append` is render-free, `replace` swaps the visible log. */
 
-/** Keep only the most recent lines - older lines scroll off, bounded memory. */
 const CAP = 300;
-/** Coalesce bursts: flush the buffer to state at most this often (ms). */
 const FLUSH_MS = 350;
 
 interface BatchedLog {
-  /** The currently-rendered (flushed) lines. */
   lines: LogLine[];
-  /** Append a line to the ring buffer (render-free; flushed on the next tick). */
   append: (line: LogLine) => void;
-  /** Replace the whole log immediately (e.g. clear to [] at the start of a run). */
   replace: (lines: LogLine[]) => void;
 }
 
-/** Hook: use Batched Log. */
 function useBatchedLog(): BatchedLog {
   const [lines, setLines] = useState<LogLine[]>([]);
   const buf = useRef<LogLine[]>([]);
@@ -121,10 +106,8 @@ function useBatchedLog(): BatchedLog {
     setLines(buf.current.slice());
   }, []);
 
-  /** A self-rescheduling timeout coalesces all bursts into at most one render per FLUSH_MS (setTimeout typing is portable across RN/node, unlike setInterval). */
   useEffect(() => {
     let live = true;
-    /** Tick helper. */
     const tick = (): void => {
       if (!live) return;
       flush();
@@ -153,7 +136,6 @@ function useBatchedLog(): BatchedLog {
   return { lines, append, replace };
 }
 
-/* ── Action callbacks ───────────────────────────────────────────────────── */
 
 type ProbeState =
   | { kind: 'idle' }
@@ -179,7 +161,6 @@ interface ProbeActions {
   onMethods: () => Promise<void>;
 }
 
-/** Each handler round-trips through the guarded nodejs-mobile bridge and reports onto the two ProbeState slots (ping/engine) + the on-device log. */
 function useProbeActions(deps: ProbeDeps): ProbeActions {
   const { count, setCount, setState, setEngine, setLog, runStart } = deps;
 
@@ -271,9 +252,7 @@ function useProbeActions(deps: ProbeDeps): ProbeActions {
   return { onPress, onInit, onScan, onMethods };
 }
 
-/* ── Probe component ────────────────────────────────────────────────────── */
 
-/** Probe that pings the private bridge and renders its reachability status. */
 export function BridgePingProbe({ sub, border }: {
   sub: string; border: string;
 }): React.ReactElement {
@@ -281,18 +260,15 @@ export function BridgePingProbe({ sub, border }: {
   const [state, setState] = useState<ProbeState>({ kind: 'idle' });
   const [engine, setEngine] = useState<ProbeState>({ kind: 'idle' });
   const [count, setCount] = useState(0);
-  /** Batched + capped log: render-free appends coalesced into one render per tick, bounded to the last N lines; `replace` clears the log at the start of a run. */
   const { lines: log, append, replace } = useBatchedLog();
   const runStart = useRef(0);
 
-  /** The action callbacks only ever set the log to [] or a single line (clear/seed), so `replace` is the right SetState shape for them. */
   const setLog = replace as React.Dispatch<React.SetStateAction<LogLine[]>>;
 
   const { onPress, onInit, onScan, onMethods } = useProbeActions({
     count, setCount, setState, setEngine, setLog, runStart,
   });
 
-  /** Mirror the bridge's lifecycle lines into the batched buffer so the full boot→reply sequence renders on-device (no adb logcat); cleared per run. */
   useEffect(() => {
     setBridgeStatusListener((line) => {
       const ms = runStart.current ? Date.now() - runStart.current : 0;
@@ -301,7 +277,6 @@ export function BridgePingProbe({ sub, border }: {
     return () => { setBridgeStatusListener(null); };
   }, [append]);
 
-  /** Stream the engine's live scan diagnostics ('event:scanDebug') into the buffer so a screenshot shows WHY a scan returns 0 (getLogs range, commitment count, RPC error, scanned wallet id); no-op when the bridge isn't present. */
   useEffect(() => {
     if (!isBridgeAvailable()) return undefined;
     return bridgeListen('event:scanDebug', (p) => {

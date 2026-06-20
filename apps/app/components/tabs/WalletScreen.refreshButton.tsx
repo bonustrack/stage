@@ -1,13 +1,9 @@
-/**
- * @file Tap-to-refresh icon button for the Wallet header that fires onRefresh and spins its glyph (disabled) while a refresh is in flight.
- */
 
 import { useEffect, useRef } from 'react';
 import { Animated, Easing } from 'react-native';
 import { Pressable } from '@stage-labs/kit/pressable';
 import { Icon } from '@stage-labs/kit/icon';
 
-/** Button that triggers a wallet refresh and spins while refreshing. */
 export function RefreshButton({
   refreshing,
   onRefresh,
