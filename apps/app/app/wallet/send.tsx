@@ -1,8 +1,4 @@
-/**
- * @file Unified Wallet send-token screen for any held token, routing public
- * balances to an on-chain transfer and Railgun-shielded balances to a 0zk
- * transfer based on the token picked in the combined TokenSelector.
- */
+/** @file Unified Wallet send-token screen routing each held token to an on-chain or Railgun 0zk transfer per the combined TokenSelector pick. */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { Col } from '../../components/layout';
@@ -22,8 +18,7 @@ export default function WalletSend(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const formPal = useFormPal();
 
-  // A caller can pin a token via `?symbol=&chainId=&private=`; otherwise we
-  // default to the wallet's highest-USD-value holding once rows load (below).
+  /** A caller can pin a token via `?symbol=&chainId=&private=`; otherwise default to the highest-USD-value holding once rows load. */
   const hasParamToken = typeof params.symbol === 'string' && params.symbol.length > 0;
   const initial = useMemo<TokenChoice>(() => {
     const isPrivate = params.private === '1' || params.private === 'true';
@@ -35,9 +30,7 @@ export default function WalletSend(): React.ReactElement {
 
   const [token, setToken] = useState<TokenChoice>(initial);
 
-  // Default-select the highest-value token once the combined list loads — unless
-  // the caller pinned one via params or the user has already picked. `touched`
-  // latches on the first apply/user change so we don't override later refreshes.
+  /** Default-select the highest-value token once the list loads, unless pinned or user-picked; `touched` latches on first change so later refreshes don't override. */
   const topToken = useTopToken('combined');
   const touched = useRef(hasParamToken);
   useEffect(() => {
@@ -51,13 +44,10 @@ export default function WalletSend(): React.ReactElement {
   const balance = useSelectedBalance('combined', token);
   const initialTo = typeof params.to === 'string' ? params.to : '';
 
-  // Reset per-token body state when the kind/symbol/chain changes by keying the
-  // body on the selection identity.
+  /** Reset per-token body state on kind/symbol/chain change by keying the body on the selection identity. */
   const bodyKey = `${token.isPrivate ? 'priv' : 'pub'}:${token.chainId}:${token.symbol}`;
 
-  // The mounted body (public or shielded) reports its submit state up so we can
-  // render it in the pinned footer alongside Cancel. useFooterReporter makes the
-  // report idempotent so the body re-reporting on every render doesn't loop.
+  /** The mounted body reports its submit state up for the pinned footer; useFooterReporter makes the report idempotent so re-reporting each render doesn't loop. */
   const { footer, report: reportFooter, onSubmit: footerSubmit } = useFooterReporter();
 
   return (

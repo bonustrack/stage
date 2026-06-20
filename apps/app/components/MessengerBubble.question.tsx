@@ -39,7 +39,7 @@ function useQuestionState(question: Question, onAnswer: (label: string) => void)
   };
   /** Submit helper. */
   const submit = (): void => {
-    // Preserve the user's option order so the answer reads naturally.
+    /** Preserve the user's option order so the answer reads naturally. */
     const chosen = question.options.filter(o => selected.has(o.label)).map(o => o.label);
     const other = otherText.trim();
     if (multi) {
@@ -47,7 +47,7 @@ function useQuestionState(question: Question, onAnswer: (label: string) => void)
       onAnswer([...chosen, ...(other ? [other] : [])].join(', '));
       return;
     }
-    // Single-select Other submit — just send the typed text.
+    /** Single-select Other submit — just send the typed text. */
     if (!other) return;
     onAnswer(other);
   };
@@ -151,17 +151,12 @@ function SubmitButton({ s, dark }: { s: QuestionState; dark: boolean }): React.R
   );
 }
 
-/**
- * Question view — single-select fires onAnswer instantly; multi-select toggles
- *  options locally and submits the joined labels as one message on tap of "Submit".
- *  An implicit "Other…" affordance (default on) lets the user type a free-text
- *  answer instead of (or alongside, in multi mode) the listed options.
- */
+/** Question view: single-select fires onAnswer instantly while multi-select toggles options locally and submits the joined labels on "Submit"; an implicit "Other…" affordance (default on) allows a free-text answer instead of or alongside the listed options. */
 export function QuestionView({ question, dark, sub, onAnswer }: {
   question: Question; dark: boolean; sub: string; onAnswer: (label: string) => void;
 }): React.ReactElement {
   const s = useQuestionState(question, onAnswer);
-  const fg = usePalette().text; // #9f9fa3 / #57606a
+  const fg = usePalette().text; /* #9f9fa3 / #57606a */
   const needSubmitButton = s.multi || s.otherOpen;
   return (
     <Box margin={{ top: 8 }} gap={6} style={{ alignSelf: 'stretch' }}>

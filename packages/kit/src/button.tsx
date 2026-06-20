@@ -1,6 +1,4 @@
-/**
- * @file Hook-free React Native Button matching OpenAI ChatKit's Button API (color/variant/style/size plus deprecated back-compat aliases); styling internals live in ./button.styles.
- */
+/** @file Hook-free React Native Button matching OpenAI ChatKit's Button API (color/variant/style/size plus deprecated back-compat aliases); styling internals live in ./button.styles. */
 
 import { useMemo, type ReactNode } from 'react';
 import {
@@ -29,22 +27,10 @@ export type {
   ButtonVariant,
 } from './button.styles';
 
-/**
- * Legacy colour-name variant values - distinguished from ChatKit control
- *  variants so an overloaded `variant` prop routes to the right model. Note
- *  `ghost` is the one value common to both; it is treated as the ChatKit ghost
- *  treatment over the current `color` (default primary), which matches the
- *  legacy ghost look.
- */
+/** Legacy colour-name variant values, distinguished from ChatKit control variants so an overloaded `variant` prop routes correctly; `ghost` (common to both) is treated as the ChatKit ghost treatment over the current `color`, matching the legacy look. */
 const LEGACY_VARIANTS = new Set<ButtonVariant>(['primary', 'secondary', 'danger']);
 
-/**
- * App-wide default corner radius for all buttons. Mutable module-level
- *  state (framework-free, like the tint props pattern) so the app can wire the
- *  persisted `radius` design token here once and have EVERY button follow it
- *  without threading a prop through 20+ call sites. `pill` icon buttons follow
- *  it too. Default 999 keeps the original fully-rounded/circular look.
- */
+/** App-wide default corner radius for all buttons (incl. `pill`), a framework-free mutable module-level value so the app wires the persisted `radius` token once instead of threading a prop through 20+ call sites; default 999 keeps the fully-rounded look. */
 let defaultButtonRadius = 999;
 /** Set the app-wide default corner radius applied to every button. */
 export function setDefaultButtonRadius(r: number): void {
@@ -107,7 +93,7 @@ function resolveModel(
   variant: ButtonControlVariant | ButtonVariant | undefined,
   styleColor: 'primary' | 'secondary' | undefined,
 ): { color: ButtonColor; variant: ButtonControlVariant } {
-  // Legacy colour-name variant (primary/secondary/danger) takes the legacy path.
+  /** Legacy colour-name variant (primary/secondary/danger) takes the legacy path. */
   if (variant && LEGACY_VARIANTS.has(variant as ButtonVariant) && !color) {
     return legacyVariantToColor(variant as ButtonVariant);
   }
@@ -156,12 +142,10 @@ function containerStyle(
   const usePressedBg = pressed && !isDisabled;
   const base: ViewStyle = {
     height: spec.height,
-    // square (`pill`/`uniform`) = icon-only: square aspect, no h-padding.
+    /** square (`pill`/`uniform`) = icon-only: square aspect, no h-padding. */
     width: square ? spec.height : stretch ? '100%' : undefined,
     paddingHorizontal: square ? 0 : spec.paddingHorizontal,
-    // All buttons follow the explicit `radius` prop, else the app-wide
-    // token default (setDefaultButtonRadius). At 999 a square button stays
-    // a full circle; lower the token and it becomes a rounded-square.
+    /** All buttons follow the explicit `radius` prop, else the app-wide token default (setDefaultButtonRadius): at 999 a square button is a full circle, lower it for a rounded-square. */
     borderRadius: radius ?? defaultButtonRadius,
     flexDirection: 'row',
     alignItems: 'center',

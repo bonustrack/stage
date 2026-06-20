@@ -1,8 +1,4 @@
-/**
- * @file Message-requests screen listing pending XMTP conversations with
- * 'unknown' consent, each row offering Accept (updateConsent allowed) or Block
- * (updateConsent denied), synced cross-device via XMTP consent.
- */
+/** @file Message-requests screen listing pending XMTP conversations with 'unknown' consent; each row offers Accept or Block, synced cross-device via XMTP consent. */
 
 import { useCallback, useEffect, useState } from 'react';
 
@@ -61,9 +57,7 @@ export default function Requests(): React.ReactElement {
   const renderRow = useCallback(({ item }: { item: ReqRow }): React.ReactElement => {
     const displayTitle = item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title;
     return (
-      /* Same channel card as the channels list, with an approve/reject cluster
-         pinned on the right. ChannelRow flexes to fill; the actions sit beside
-         it (paddingRight on the row keeps the buttons off the screen edge). */
+      /** Same channel card as the channels list with an approve/reject cluster pinned right; ChannelRow flexes to fill, actions sit beside it. */
       <Row padding={{ right: 12 }} align="center">
         <Col minWidth={0} flex={1}>
           <ChannelRow

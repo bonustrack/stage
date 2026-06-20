@@ -1,6 +1,4 @@
-/**
- * @file Shared prop contract and pure CSS-style mapper for the Box/Row/Col layout primitives, kept in lock-step with the React Native implementation in apps/app.
- */
+/** @file Shared prop contract and pure CSS-style mapper for the Box/Row/Col layout primitives, kept in lock-step with the React Native implementation in apps/app. */
 
 import { colors, resolveBoxRadius, type RadiusValue } from '@metro-labs/kit';
 
@@ -15,8 +13,7 @@ type Justify =
   | 'around'
   | 'evenly';
 
-/** Prop API shared by Box/Row/Col. Row/Col omit `direction`. */
-/** Per-side / per-axis spacing object, mirroring OpenAI ChatKit's `Spacing`. `x` -> left+right, `y` -> top+bottom; per-side keys override the axis. */
+/** Per-side / per-axis spacing object for the Box/Row/Col prop API (mirrors ChatKit's `Spacing`): `x` -> left+right, `y` -> top+bottom, per-side keys override the axis. */
 interface Spacing {
   top?: number | string;
   right?: number | string;

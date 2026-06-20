@@ -1,8 +1,4 @@
-/**
- * @file XMTP installation-create path for an account, with narrow one-shot wipe-and-retry
- *  auto-recovery limited to genuinely corrupt local sqlite stores (never network installation-limit
- *  rejections), plus the boot-level EOA mint; split out of xmtp.client.ts to stay under the line cap.
- */
+/** @file XMTP installation-create path for an account, with narrow one-shot wipe-and-retry auto-recovery limited to genuinely corrupt local sqlite stores (never network installation-limit rejections), plus the boot-level EOA mint; split out of xmtp.client.ts for the line cap. */
 
 import * as SecureStore from 'expo-secure-store';
 import { Client, PublicIdentity } from '@xmtp/react-native-sdk';
@@ -36,35 +32,15 @@ class XmtpInstallationLimitError extends Error {
   constructor() { super(INSTALLATION_LIMIT_MESSAGE); this.name = 'XmtpInstallationLimitError'; }
 }
 
-/**
- * Revalidate the already-active account at boot (idempotent). This NEVER creates
- *  an account: a wallet exists ONLY after the user completes onboarding (the flow
- *  persists the smart account) or an explicit in-app "new account" action. The
- *  root layout calls this exclusively when the gate already reports hasAccount, so
- *  on a fresh, un-onboarded install it is a no-op and nothing is persisted — the
- *  onboarding overlay keeps showing on every launch until create/restore runs.
- */
+/** Revalidate the already-active account at boot (idempotent); never creates an account, so on a fresh un-onboarded install it is a no-op and the onboarding overlay keeps showing until create/restore runs. */
 export async function ensureActiveAccount(): Promise<void> {
   await getActiveAccount();
 }
 
-/**
- * Sentinel message for the create timeout. Treated as a corruption-class signal
- *  (see isStoreCorruption) because a native hang inside `Client.create` is, in
- *  practice, a SQLCipher key/salt mismatch manifesting as an sqlite-open that
- *  never returns rather than a thrown PRAGMA error. So the one-shot wipe+retry
- *  must run on a timeout too — otherwise the account is a permanent dead spinner.
- */
+/** Sentinel for the create timeout, treated as a corruption-class signal because a native hang inside Client.create is in practice a SQLCipher key/salt mismatch surfacing as a never-returning sqlite-open, so the one-shot wipe+retry must run on timeout too. */
 const CREATE_TIMEOUT_MESSAGE = 'XMTP.create timed out (native handshake hang)';
 
-/**
- * GENUINE local-store corruption signatures: a stale db-encryption key that no
- *  longer matches the wiped/half-written sqlite store (e.g. clean reinstall where
- *  the Android keystore survived), OR a create that hangs on sqlite-open (the
- *  same key/salt mismatch surfacing as a hang → CREATE_TIMEOUT_MESSAGE). These —
- *  and ONLY these — trigger a one-shot wipe + retry of THIS account's local store.
- *  NETWORK-side create rejections (installation limit, handshake) are NOT here.
- */
+/** Genuine local-store corruption signatures (stale db-encryption key vs a wiped/half-written sqlite store, or a sqlite-open hang surfacing as CREATE_TIMEOUT_MESSAGE) that — and only which — trigger a one-shot wipe + retry of THIS account's store; network-side rejections are excluded. */
 const STORE_CORRUPTION = [
   'PRAGMA key', 'StorageError', 'incorrect value', CREATE_TIMEOUT_MESSAGE,
 ];
@@ -74,13 +50,7 @@ export function isStoreCorruption(err: unknown): boolean {
   return STORE_CORRUPTION.some(sig => msg.includes(sig));
 }
 
-/**
- * A true native hang inside `Client.create` (MLS handshake / sqlite open never
- *  returns) would leave the account-switch promise pending forever → dead
- *  spinner. Race create against a 30s timeout so a hang REJECTS (then the
- *  one-shot wipe+retry runs, then the HomeError UX path) instead of spinning.
- *  Mirrors the `Client.build` timeout in xmtp.client.ts.
- */
+/** Race Client.create against a 30s timeout so a true native hang (MLS handshake / sqlite-open never returning) rejects — kicking off the wipe+retry then HomeError path — instead of leaving the account-switch promise pending forever. */
 const CREATE_TIMEOUT_MS = 30_000;
 /** Create the With Timeout. */
 async function createWithTimeout(
@@ -114,12 +84,7 @@ function isInstallationLimit(err: unknown): boolean {
   return INSTALLATION_LIMIT.some(sig => msg.toLowerCase().includes(sig.toLowerCase()));
 }
 
-/**
- * Best-effort: free ONE installation slot for a pre-existing inbox by revoking
- *  its oldest installation, so a fresh Client.create can register this device.
- *  Uses the SDK 5.7 static APIs (inboxStatesForInboxIds + revokeInstallations).
- *  Returns true if a revoke was attempted successfully. Never throws.
- */
+/** Best-effort: free ONE installation slot for a pre-existing inbox by revoking its oldest installation (SDK 5.7 static APIs) so a fresh Client.create can register this device; returns true if a revoke was attempted and never throws. */
 async function tryFreeInstallationSlot(rec: AccountRecord, env: XmtpEnv): Promise<boolean> {
   try {
     const identity = new PublicIdentity(rec.address, 'ETHEREUM');
@@ -154,18 +119,7 @@ async function finalizeClient(created: Client, rec: AccountRecord, env: XmtpEnv)
   return created;
 }
 
-/**
- * Run `Client.create` to register this device's installation.
- *
- *  Recovery is intentionally MINIMAL:
- *    - GENUINE local-store corruption → wipe THIS account's store + per-account
- *      key, retry create ONCE (guarded by `recovered`).
- *    - IMPORTED inbox installation-limit → try ONCE to revoke the oldest
- *      installation then retry create ONCE; if that's not feasible or also
- *      fails, throw XmtpInstallationLimitError (non-fatal, no loop, no wipe).
- *    - Anything else → rethrow to the caller's recoverable HomeError path.
- *  Only THIS account's local store/key is ever touched.
- */
+/** Run Client.create to register this device's installation, with minimal recovery: genuine corruption wipes+retries this account's store once, an imported-inbox installation limit tries once to revoke the oldest slot then retry (else throws non-fatally), and anything else rethrows to the HomeError path. */
 export async function createClientForAccount(
   rec: AccountRecord, env: XmtpEnv, opts: CreateOpts,
   recovered = false, slotFreed = false,

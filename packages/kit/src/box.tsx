@@ -1,6 +1,4 @@
-/**
- * @file React Native Box/Row/Col layout primitives that drive style through the shared `./layout` prop->style mapper (numbers are px); Box defaults to a column, Row/Col lock direction.
- */
+/** @file React Native Box/Row/Col layout primitives driving style through the shared `./layout` prop->style mapper (numbers are px); Box defaults to a column, Row/Col lock direction. */
 
 import { View, type ViewProps, type ViewStyle } from 'react-native';
 import {
@@ -14,14 +12,7 @@ import { useKitPalette, useKitScheme, type KitPalette } from './theme-context';
 
 export type { Align, Justify };
 
-/**
- * Semantic surface variant - resolved from the theme palette.
- *    none    transparent (default - most Box)
- *    surface palette `bg`
- *    raised  palette `inputBg` (cards / inputs / sheets / dropdowns)
- *    sunken  palette `bg`      (pressed / well - recessed under a raised surface)
- *    toolbar palette `toolbarBg`
- */
+/** Semantic surface variant resolved from the theme palette: none=transparent, surface/sunken=`bg`, raised=`inputBg` (cards/inputs/sheets), toolbar=`toolbarBg`. */
 export type Surface = 'none' | 'surface' | 'raised' | 'sunken' | 'toolbar';
 
 export type BoxProps = ViewProps &
@@ -38,8 +29,7 @@ function surfaceColor(surface: Surface, palette: KitPalette): string | undefined
     case 'raised':
       return palette.inputBg;
     case 'sunken':
-      // No dedicated pressed/well token in the app palette; the recessed look
-      // reads as the base bg sitting under a raised surface.
+      /** No dedicated pressed/well token; the recessed look reads as the base bg sitting under a raised surface. */
       return palette.bg;
     case 'toolbar':
       return palette.toolbarBg;
@@ -76,9 +66,7 @@ export function Box({
   const palette = useKitPalette();
   const scheme = useKitScheme();
 
-  // Precedence: explicit `background` override > semantic `surface` variant.
-  // A semantic ColorToken background resolves scheme-aware here (the pure mapper
-  // has no scheme); kit `colors` keys + raw strings are resolved in the mapper.
+  /** Precedence: explicit `background` override > semantic `surface` variant; a ColorToken background resolves scheme-aware here while kit `colors` keys and raw strings resolve in the mapper. */
   const override =
     background !== undefined && isColorToken(background)
       ? resolveColorToken(background, scheme)

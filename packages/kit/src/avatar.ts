@@ -1,6 +1,4 @@
-/**
- * @file Framework-agnostic avatar contract: the shared size scale plus the identicon URL helper that the per-framework RN and Vue renderers consume so web and mobile never drift.
- */
+/** @file Framework-agnostic avatar contract: the shared size scale plus the identicon URL helper that the per-framework RN and Vue renderers consume so web and mobile never drift. */
 
 export type AvatarSize = 'sm' | 'md' | 'lg';
 
@@ -11,25 +9,14 @@ export const AVATAR_SIZES: Record<AvatarSize, number> = {
   lg: 64,
 };
 
-/**
- * stamp.fyi identicon URL for a wallet address. Always doubled the requested
- *  pixel size — the CDN serves WebP, retina rows stay crisp.
- *  `cacheBust` invalidates the CDN cache when an upstream profile-avatar
- *  changes (Metro reads it from the Snapshot hub on profile update).
- */
+/** stamp.fyi identicon URL for a wallet address, always requesting 2× the display px (WebP CDN, retina-crisp); `cacheBust` invalidates the CDN cache when an upstream profile-avatar changes. */
 export function stampAvatarUrl(address: string, displayPx: number, cacheBust?: string | number): string {
   const fetchPx = displayPx * 2;
   const base = `https://cdn.stamp.fyi/avatar/eth:${address.toLowerCase()}?s=${fetchPx}`;
   return cacheBust === undefined ? base : `${base}&cb=${cacheBust}`;
 }
 
-/**
- * Derive a stable, address-shaped (0x + 40 hex) seed from an arbitrary channel
- *  id so stamp.fyi renders a deterministic per-channel identicon. XMTP group ids
- *  are already hex strings; we strip a leading `0x`, keep only hex chars, then
- *  pad/repeat to exactly 40 nibbles so the same channel always maps to the same
- *  avatar. Pure + deterministic — no hashing dependency needed.
- */
+/** Derive a stable address-shaped (0x + 40 hex) seed from an arbitrary channel id so stamp.fyi renders a deterministic per-channel identicon: strip a leading `0x`, keep only hex chars, then pad/repeat to exactly 40 nibbles. Pure and deterministic, no hashing dependency. */
 export function channelStampSeed(channelId: string): string {
   const hex = channelId.toLowerCase().replace(/^0x/, '').replace(/[^0-9a-f]/g, '');
   if (hex.length === 0) return `0x${'0'.repeat(40)}`;
@@ -38,13 +25,7 @@ export function channelStampSeed(channelId: string): string {
   return `0x${out.slice(0, 40)}`;
 }
 
-/**
- * stamp.fyi identicon for a CHANNEL/GROUP that has no uploaded image — seeded
- *  by the channel id (via {@link channelStampSeed}) so every channel gets a
- *  unique, stable fallback avatar. Returns `imageUrl` untouched when the channel
- *  DOES have an uploaded image, so call sites can use this as the single source
- *  of truth: `channelAvatarUrl(id, imageUrl, px)`.
- */
+/** stamp.fyi identicon for a channel/group with no uploaded image, seeded by the channel id via {@link channelStampSeed} for a unique stable fallback; returns `imageUrl` untouched when one exists, so call sites use it as the single source of truth. */
 export function channelAvatarUrl(channelId: string, imageUrl: string | null | undefined, displayPx: number): string {
   if (imageUrl?.trim()) return imageUrl;
   return stampAvatarUrl(channelStampSeed(channelId), displayPx);
@@ -56,14 +37,7 @@ export function stampTokenUrl(chainId: number, contract: string, displayPx: numb
   return `https://cdn.stamp.fyi/token/eip155:${chainId}:${contract.toLowerCase()}?s=${fetchPx}`;
 }
 
-/**
- * Re-point an already-built stamp.fyi URL's `s=` (size) query param at a NEW
- *  display size, requesting 2× for retina crispness. Use when a cached stamp URL
- *  (built for a small list thumbnail, e.g. s=64 for a 32px row) is re-rendered at
- *  a LARGER size (e.g. the 72px token-detail logo) and would otherwise upscale a
- *  too-small image and look blurry. Pass the DISPLAY px; `s` becomes `displayPx*2`.
- *  No-ops (returns the input) when the URL has no `s=` param.
- */
+/** Re-point an already-built stamp.fyi URL's `s=` size param at a NEW display size (requesting 2× for retina), for when a cached small-thumbnail URL is re-rendered larger and would otherwise upscale blurrily; pass the display px and `s` becomes displayPx*2, no-op when the URL has no `s=` param. */
 export function withStampDisplayPx(url: string, displayPx: number): string {
   if (!/[?&]s=\d+/.test(url)) return url;
   return url.replace(/([?&]s=)\d+/, `$1${displayPx * 2}`);

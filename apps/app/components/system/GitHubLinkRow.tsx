@@ -1,8 +1,4 @@
-/**
- * @file GitHubLinkRow — a reusable tappable row (GitHub mark + title/subtitle +
- *  external-link chevron) that opens a GitHub URL via Linking, shared by the Kit
- *  and About pages.
- */
+/** @file GitHubLinkRow — a reusable tappable row (GitHub mark + title/subtitle + external-link chevron) that opens a GitHub URL via Linking, shared by the Kit and About pages. */
 
 import { Linking } from 'react-native';
 

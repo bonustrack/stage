@@ -1,8 +1,4 @@
-/**
- * @file TanStack-query-backed `useXmtpFeed` conversation-feed hook for the app's XMTP client lib.
- *  The feed renders from a query keyed by `messagingKeys.messages(epoch, line)` while `feedCache`
- *  stays the live-write source of truth; extracted from lib/xmtp.ts and re-exported from there.
- */
+/** @file TanStack-query-backed `useXmtpFeed` conversation-feed hook rendering from a query keyed by `messagingKeys.messages(epoch, line)` while `feedCache` stays the live-write source of truth; extracted from lib/xmtp.ts and re-exported from there. */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -20,15 +16,7 @@ import { type XmtpFeedStatus } from './xmtp.types';
 
 const EMPTY: HistoryEntry[] = [];
 
-/**
- * Hook: load the existing message history for an XMTP conversation, then keep it
- *  live. Returned `events` are newest-first (the inverted FlatList ordering), the
- *  same shape the old hand-rolled hook returned.
- *
- *  Caller passes a metro line URI (`metro://xmtp/<convId>`). When `enabled` is
- *  false, the hook stays idle - callers use this to suppress loading until the
- *  client is built.
- */
+/** Loads an XMTP conversation's message history then keeps it live; `events` are newest-first (inverted FlatList order). Caller passes a metro line URI; when `enabled` is false the hook stays idle (suppresses loading until the client is built). */
 export function useXmtpFeed(line: string | null, enabled: boolean): {
   events: HistoryEntry[]; status: XmtpFeedStatus; error: string | null; inboxId: string;
   loadOlder: () => Promise<void>; hasMore: boolean; loadingOlder: boolean;
@@ -46,13 +34,7 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
   const epochRef = useRef(accountEpoch);
   epochRef.current = accountEpoch;
 
-  /**
-   * Register this conv as having a live viewer (drives the resync backstop) and
-   *  ensure the single app-wide stream + the feedCache→query mirror are running.
-   *  No per-conv stream / poll: the module-level `streamAllMessages` fan-out
-   *  routes inbound messages into `feedCache`, which the mirror copies into this
-   *  query's cache.
-   */
+  /** Registers this conv as having a live viewer (drives the resync backstop) and ensures the single app-wide stream + feedCache→query mirror run; no per-conv stream, the module-level `streamAllMessages` fan-out routes inbound messages into `feedCache` which the mirror copies into this query's cache. */
   useEffect(() => {
     if (!enabled || !line) return;
     const ln = line;
@@ -72,13 +54,7 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
     return () => { cancelled = true; activeFeedLines.delete(ln); };
   }, [line, enabled, accountEpoch]);
 
-  /**
-   * The feed query. `initialData` seeds synchronously from feedCache (instant
-   *  re-open, no empty flash); the queryFn does the local-first load + the
-   *  forced inbox sync on open (#375), writing through feedCache so the mirror
-   *  updates THIS query cache. Live appends arrive via the mirror's setQueryData,
-   *  so `data` re-renders without the queryFn re-running.
-   */
+  /** The feed query: `initialData` seeds synchronously from feedCache (instant re-open, no empty flash), the queryFn does the local-first load + forced inbox sync on open (#375) writing through feedCache, and live appends arrive via the mirror's setQueryData so `data` re-renders without the queryFn re-running. */
   const queryKey = messagingKeys.messages(accountEpoch, line ?? '');
   const query = useQuery<HistoryEntry[]>({
     queryKey,
@@ -89,12 +65,7 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
   });
   const events = query.data ?? EMPTY;
 
-  /**
-   * A short first page (or empty conv) means the whole thread is already loaded
-   *  → flip `hasMore` to false so the conversation intro/hero renders without
-   *  waiting for an `onEndReached` a short list may never fire. Keyed on the
-   *  fetched length, only after a real fetch settled (not the seeded initial).
-   */
+  /** A short first page (or empty conv) means the whole thread is already loaded, so flip `hasMore` to false so the intro/hero renders without waiting for an `onEndReached` a short list may never fire; keyed on fetched length, only after a real fetch settled. */
   useEffect(() => {
     if (query.isFetching || !query.isFetched) return;
     if (events.length < PAGE_SIZE) { hasMoreRef.current = false; setHasMore(false); }

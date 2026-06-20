@@ -1,8 +1,4 @@
-/**
- * @file HomeScreen.overflow — the Home topnav kebab button and its AppModal
- *  bottom-sheet, folding Archived, New-group and the Profile/Settings account
- *  actions into one overflow menu.
- */
+/** @file Home topnav kebab button and its AppModal bottom-sheet, folding Archived, New-group and the Profile/Settings account actions into one overflow menu. */
 
 import { useState } from 'react';
 
@@ -53,8 +49,7 @@ export function HomeOverflowMenu({ color, onArchived, onNewGroup, onProfile, onS
         <Icon name="dotsVertical" size={24} color={color} />
       </Pressable>
       <AppModal visible={open} onClose={close}>
-        {/* Cancel AppModal's 16px ScrollView padding so the list spans edge-to-edge
-            and the row content inset (ROW_INSET 16) matches the Settings page. */}
+        {/** Cancel AppModal's 16px ScrollView padding so the list spans edge-to-edge and the row inset matches the Settings page. */}
         <ListView dark={dark} style={{ marginHorizontal: -16 }}>
           <OverflowRow icon="plus" label="New group" color={color} dark={dark} onPress={() => { run(onNewGroup); }} />
           <OverflowRow icon="archive" label="Archived" color={color} dark={dark} onPress={() => { run(onArchived); }} />

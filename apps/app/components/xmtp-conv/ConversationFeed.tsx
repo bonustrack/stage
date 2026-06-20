@@ -14,9 +14,9 @@ type ConvState = ReturnType<typeof useConversationState>;
 function handleFeedScroll(c: ConvState, convId: string, y: number): void {
   const next = y > 12;
   c.setShowJump(prev => (prev === next ? prev : next));
-  // Authoritative at-bottom flag for the unmount flush (beats the debounce race).
+  /** Authoritative at-bottom flag for the unmount flush (beats the debounce race). */
   c.isAtBottomRef.current = y <= AT_BOTTOM_THRESHOLD_PX;
-  // Persist the offset (debounced); at bottom store sentinel 0 so a return lands at newest.
+  /** Persist the offset (debounced); at bottom store sentinel 0 so a return lands at newest. */
   if (convId) saveScrollOffset(convScrollKey(convId), y <= AT_BOTTOM_THRESHOLD_PX ? 0 : y);
 }
 
@@ -29,7 +29,7 @@ function restoreFeedScroll(c: ConvState, h: number): void {
     pinUntil: c.pinBottomUntil.current, setPinUntil: (t) => { c.pinBottomUntil.current = t; },
   });
   if (plan === 'skip') {
-    // Sentinel settle window elapsed → latch so later scrolls aren't yanked.
+    /** Sentinel settle window elapsed → latch so later scrolls aren't yanked. */
     if (c.pinBottomUntil.current !== 0) c.didRestoreScroll.current = true;
     return;
   }
@@ -69,13 +69,13 @@ export function ConversationFeed({
   searchSlot?: React.ReactNode;
 }): React.ReactElement {
   const { loadOlder, hasMore, loadingOlder, status, listEpoch, listRef, allBubbles } = c;
-  // Stable renderItem + extraData (id→event Map for O(1) reply lookup).
+  /** Stable renderItem + extraData (id→event Map for O(1) reply lookup). */
   const { renderItem, extraData } = useFeedRenderItem(c, dark, router);
-  // Shown at the visual top once history is exhausted — reused in footer + empty.
+  /** Shown at the visual top once history is exhausted — reused in footer + empty. */
   const intro = <FeedIntro c={c} convId={convId} head={head} sub={sub} fg={fg} border={border} rowBg={rowBg} router={router} />;
   const spinner = <Box padding={32} align="center"><Spinner size={28} color={head} /></Box>;
 
-  // Search active → render the results list, padded to clear the absolute search topnav.
+  /** Search active → render the results list, padded to clear the absolute search topnav. */
   if (searchSlot !== undefined) {
     return <Box flex={1} padding={{ top: insets.top + 52 }}>{searchSlot}</Box>;
   }
@@ -95,19 +95,19 @@ export function ConversationFeed({
       initialNumToRender={12}
       maxToRenderPerBatch={10}
       removeClippedSubviews
-      // Inverted: onEndReached fires near the visual TOP → page in older history.
+      /** Inverted: onEndReached fires near the visual TOP → page in older history. */
       onEndReached={() => { void loadOlder(); }}
       onEndReachedThreshold={0.5}
       contentContainerStyle={{ paddingTop: 24, paddingBottom: insets.top + 52 + 24 }}
       onScroll={(ev) => { handleFeedScroll(c, convId, ev.nativeEvent.contentOffset.y); }}
       scrollEventThrottle={16}
       onContentSizeChange={(_w, h) => { restoreFeedScroll(c, h); }}
-      // scrollToIndex can fire before the target row renders; no-op so dev red-screen doesn't pop.
+      /** scrollToIndex can fire before the target row renders; no-op so dev red-screen doesn't pop. */
       onScrollToIndexFailed={() => undefined}
       renderItem={renderItem}
-      // Empty thread: spinner while loading; intro once history is exhausted.
+      /** Empty thread: spinner while loading; intro once history is exhausted. */
       ListEmptyComponent={status !== 'open' ? spinner : !hasMore ? intro : spinner}
-      // Inverted footer = visual TOP: a "loading older" spinner, then the intro once exhausted.
+      /** Inverted footer = visual TOP: a "loading older" spinner, then the intro once exhausted. */
       ListFooterComponent={
         <>
           {loadingOlder ? <Box padding={{ y: 16 }} align="center"><Spinner size={20} color={sub} /></Box> : null}

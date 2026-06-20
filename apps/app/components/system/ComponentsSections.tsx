@@ -1,8 +1,4 @@
-/**
- * @file Inline gallery rendering the app's app-level components (ChannelRow,
- *  TokenRow, MessengerBubble, MessengerComposer) with fixed representative sample
- *  data and no controls or story indirection.
- */
+/** @file Inline gallery rendering the app's app-level components (ChannelRow, TokenRow, MessengerBubble, MessengerComposer) with fixed representative sample data and no controls or story indirection. */
 
 import { Box } from '../layout';
 import { GallerySection } from './GallerySection';

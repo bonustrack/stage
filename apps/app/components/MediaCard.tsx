@@ -1,7 +1,4 @@
-/**
- * @file Rounded, bordered "media bubble" wrapper giving every shared attachment
- *  (image, video, map, YouTube thumbnail) a consistent card-like frame.
- */
+/** @file Rounded, bordered "media bubble" wrapper giving every shared attachment (image, video, map, YouTube thumbnail) a consistent card-like frame. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Box } from './layout';
@@ -18,7 +15,8 @@ interface Props {
 
 /** Renders a rounded, bordered frame wrapping a shared media attachment. */
 export function MediaCard({ onPress, width, children }: Props): React.ReactElement {
-  const border = usePalette().border; // #282a2d / #e4e4e5
+  /** Theme border color (#282a2d dark / #e4e4e5 light). */
+  const border = usePalette().border;
   const bg = border;
   const blockRadius = useBlockRadius();
   const style = {

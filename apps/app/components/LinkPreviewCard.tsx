@@ -1,8 +1,4 @@
-/**
- * @file Generic rich preview card for a plain http(s) message link not claimed by
- *  a more specific card, fetching OpenGraph/Twitter metadata via the Metro
- *  link-preview proxy (useLinkPreview) and rendering nothing on load/failure.
- */
+/** @file Generic rich preview card for a plain http(s) link not claimed by a more specific card, fetching OpenGraph/Twitter metadata via the Metro link-preview proxy and rendering nothing on load or failure. */
 
 import { Linking } from 'react-native';
 
@@ -56,7 +52,7 @@ export function LinkPreviewCard({ url, dark }: {
   const pal = usePalette();
   const blockRadius = useBlockRadius();
   if (!meta) return null;
-  // The proxy probe found an x402 payment challenge — render the payment card.
+  /** The proxy probe found an x402 payment challenge — render the payment card. */
   if (isX402(meta)) return <X402Card challenge={meta} dark={dark} />;
 
   return (

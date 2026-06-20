@@ -1,36 +1,4 @@
-/**
- * @file The single app-wide `streamAllMessages` fan-out and its event-driven resync backstops for
- *  the app's XMTP client lib: one stream decodes each inbound message into the relevant feedCache
- *  slice instead of N per-conversation streams + polls hammering the read-rate limit (#6).
- */
-
-/*
- *  ───────────────────────────────────────────────────────────────────────────
- *  SINGLE GLOBAL MESSAGE STREAM (#6)
- *
- *  Previously every open `useXmtpFeed` started its OWN per-conversation
- *  `streamMessages` + a 5s `setInterval` poll. With several channels open that
- *  meant N native streams + N polls hammering the XMTP read-rate limit (which
- *  previously caused an outage) and the battery.
- *
- *  Now there is exactly ONE module-level `streamAllMessages` fan-out for the
- *  whole app. Each inbound message is decoded once, routed into the relevant
- *  conv's `feedCache` slice, and pushed to that slice's subscribers.
- *
- *  DELIVERY SIGNALS (fully event-driven — NO periodic poll):
- *    1. MLS `streamAllMessages` — the live stream; re-armed via `onClose` on a
- *       native drop (backgrounding/blip).
- *    2. FCM push (`onXmtpPush` from MetroFcmService) — the reliable real-time
- *       wake. The contentless push is the ONE signal that always reaches the
- *       device when a message lands, so on it we force a `syncInboxOnce(0)` +
- *       `resyncActiveFeeds()`. This covers the stream silently dying AND
- *       foreground (the native fires it before its card-suppression returns).
- *    3. AppState 'active' resume — coarse safety net for long backgrounds where
- *       FCM may have been throttled/dropped.
- *  The old 7s `setInterval` poll was REMOVED: stream + push are the real-time
- *  signals, AppState-resume is the backstop.
- *  ───────────────────────────────────────────────────────────────────────────
- */
+/** @file The single app-wide `streamAllMessages` fan-out and its event-driven resync backstops: one module-level stream decodes each inbound message once into the relevant feedCache slice (replacing N per-conversation streams + polls that hammered the read-rate limit), with delivery signals being the MLS stream (re-armed on native drop), the FCM push, and AppState-resume as the backstop (#6). */
 
 import { AppState } from 'react-native';
 import { setAppForeground, subscribeXmtpPush } from '../modules/metro-pill';
@@ -47,12 +15,7 @@ import { reconcileOnArrival, feedLatestNs } from '../modules/messaging/feedRecon
 
 export { PAGE_SIZE, syncInboxOnce } from './xmtp.resync';
 
-/**
- * Channels-list subscribers to the SINGLE global stream (#1). index.tsx
- *  subscribes here instead of starting its own `streamAllMessages`, so each
- *  inbound is decoded once and routed to BOTH the feedCache slice (conv view)
- *  AND these subscribers (row/preview/unread bookkeeping).
- */
+/** Channels-list subscribers to the single global stream (#1): index.tsx subscribes here instead of starting its own `streamAllMessages`, so each inbound is decoded once and routed to both the feedCache slice and these subscribers (row/preview/unread bookkeeping). */
 const streamSubscribers = new Set<(m: StreamMsg) => void>();
 /** Subscribe to every inbound message on the single global stream; returns an unsubscribe fn. */
 export function subscribeAllMessages(cb: (m: StreamMsg) => void): () => void {
@@ -64,8 +27,7 @@ export function subscribeAllMessages(cb: (m: StreamMsg) => void): () => void {
 
 let globalStreamCancel: (() => void) | null = null;
 let globalStreamStarting = false;
-// `number` (RN timer id): the Railgun SDK pulls @types/node into the app's type
-// program, whose Timeout return type collides with the DOM lib at clear*().
+/** `number` (RN timer id): the Railgun SDK pulls @types/node into the app's type program, whose Timeout return type collides with the DOM lib at clear*(). */
 let globalStreamRearmTimer: number | null = null;
 let globalAppStateSub: { remove: () => void } | null = null;
 let globalPushSub: (() => void) | null = null;
@@ -87,25 +49,7 @@ const STREAM_DEAD_GRACE_MS = 5_000;
 /** Called from the live stream callback so push handling can tell whether the stream just delivered (making a subsequent push redundant). */
 function noteStreamDelivery(): void { lastStreamMsgAt = Date.now(); }
 
-/**
- * Push-driven resync: the FCM `onXmtpPush` event is the real-time wake.
- *
- *  TRAILING-edge debounce (was leading): coalesce a push burst into ONE sync
- *  that runs ~300ms after the LAST push, so several messages landing together
- *  trigger a single pass instead of one-per-push.
- *
- *  When the timer fires we decide whether to FORCE (maxAge 0) the inbox sync:
- *    - Stream dead / re-arming (onClose fired recently OR no live cancel) →
- *      ALWAYS force. This is the #454 guarantee: a push is the only signal that
- *      reaches a device whose stream silently died, so it must resync promptly.
- *    - Stream alive AND it delivered a message within STREAM_FRESH_MS → the push
- *      is redundant (the stream already brought it); SKIP the forced sync. We
- *      still run a coalesced non-forced resync of open feeds (cheap, respects
- *      the syncInboxOnce freshness window) so nothing regresses.
- *    - Otherwise (stream alive but quiet) → force, but throttled to one forced
- *      sync per MIN_FORCED_SYNC_SPACING_MS so a burst can't run back-to-back
- *      full inbox passes.
- */
+/** Push-driven resync (FCM `onXmtpPush` is the real-time wake): trailing-edge debounce coalesces a push burst into one sync ~300ms after the last push, which forces a full inbox sync when the stream is dead/re-arming (the #454 guarantee) or alive-but-quiet (throttled to MIN_FORCED_SYNC_SPACING_MS), and skips it as redundant when the live stream delivered within STREAM_FRESH_MS. */
 function onXmtpPush(): void {
   if (pushResyncTimer) clearTimeout(pushResyncTimer);
   pushResyncTimer = setTimeout(() => {
@@ -172,15 +116,7 @@ function routeMessageToFeed(convId: string, msg: StreamCbMsg): void {
     const arrivingNs = (msg as unknown as { sentNs?: number }).sentNs ?? 0;
     void reconcileOnArrival(line, prevLatestNs, arrivingNs, env.id);
   }
-  /**
-   * DESYNC GUARD (Home updates, open feed doesn't): the topic-derived
-   *  `convId` here can differ from the route's convId the open feed
-   *  subscribed under (`lineOfConv(routeConvId)`), so this slice write lands
-   *  on a key nothing is listening to. When the pushed line isn't an active
-   *  feed but SOME feed is open, resync the active feed(s) immediately via
-   *  the canonical `convOfLine` handle so the open conversation shows the
-   *  message live instead of only after reopen/refresh.
-   */
+  /** DESYNC GUARD (Home updates but the open feed doesn't): the topic-derived `convId` can differ from the key the open feed subscribed under, so when the pushed line isn't active but some feed is open, resync the active feed(s) immediately so the open conversation shows the message live instead of only after reopen. */
   if (activeFeedLines.size > 0 && !activeFeedLines.has(line)) void resyncActiveFeeds();
 }
 
@@ -189,17 +125,7 @@ function handleStreamMessage(msg: StreamCbMsg): Promise<void> {
   if (!msg) return Promise.resolve();
   /** Mark a live delivery so a push arriving right after is treated as redundant (see onXmtpPush's STREAM_FRESH_MS skip). */
   noteStreamDelivery();
-  /**
-   * Derive the conv id TOPIC-FIRST (the `g-<hex>` group id), `conversationId`
-   *  only as fallback. MUST match the channels list (HomeScreen.stream's
-   *  topic-first `convIdFromTopic`) + the open feed (`lineOfConv(convId)`).
-   *  ROOT CAUSE of "open feed misses messages the list got": RN
-   *  `DecodedMessage.conversationId`, when present, isn't always the topic
-   *  `g-<hex>` id rows/lines use — preferring it made
-   *  `pushToFeedSlice(lineOfConv(id))` write a DIFFERENT feedCache key than
-   *  the one the open feed subscribed under, so its slice subscription never
-   *  fired (list still bumped, topic-first).
-   */
+  /** Derive the conv id TOPIC-FIRST (the `g-<hex>` group id), `conversationId` only as fallback, to match the channels list + open feed; preferring RN's `DecodedMessage.conversationId` made `pushToFeedSlice` write a different feedCache key than the open feed subscribed under, so its slice subscription never fired — the root cause of "open feed misses messages the list got". */
   const convId = convIdFromTopicStr((msg as unknown as { topic?: string }).topic)
     ?? (msg as unknown as { conversationId?: string }).conversationId;
   fanOutToSubscribers(convId, msg);
@@ -242,30 +168,13 @@ export async function ensureGlobalStream(): Promise<void> {
     globalStreamCancel = () => {
       try { client.conversations.cancelStreamAllMessages(); } catch { /* ignore */ }
     };
-    /**
-     * PUSH-DRIVEN RESYNC (replaces the periodic poll): subscribe once to the
-     *  native `onXmtpPush` event. The contentless FCM push is the reliable
-     *  real-time wake — it fires even when foregrounded / already viewing the
-     *  conv (MetroFcmService emits before its card suppression), so it covers
-     *  both a silently-dead stream and the live-but-missed case.
-     */
+    /** Push-driven resync (replaces the periodic poll): subscribe once to the native `onXmtpPush` event — the contentless FCM push is the reliable real-time wake, firing even when foregrounded, so it covers both a silently-dead stream and the live-but-missed case. */
     globalPushSub ??= subscribeXmtpPush((e) => {
-      /**
-       * If the push landed while the app wasn't foregrounded, the native FCM
-       *  service already posted a generic card for it (MetroFcmService skips its
-       *  card only when foregrounded). Record the message id so a subsequent
-       *  foreground resync doesn't ALSO post a rich local card for it.
-       */
+      /** If the push landed while not foregrounded the native FCM service already posted a generic card, so record the message id to stop a subsequent foreground resync posting a rich local card for it too. */
       if (AppState.currentState !== 'active') markBackgroundDelivered(e?.messageId);
       onXmtpPush();
     });
-    /**
-     * FOREGROUND FLAG: the app is foregrounded right now (the stream just
-     *  started from a live mount), so tell native to skip its generic push card —
-     *  the rich JS local notif (presentInboundNotification, fired from the
-     *  channels-list stream handler) is the single foreground card. Cleared on
-     *  background below so cold/background falls back to the generic card.
-     */
+    /** Foreground flag: the app is foregrounded now (stream just started from a live mount), so tell native to skip its generic push card — the rich JS local notif is the single foreground card; cleared on background below so cold/background falls back to the generic card. */
     setAppForeground(AppState.currentState === 'active');
     globalAppStateSub ??= AppState.addEventListener('change', (state) => {
       /** Mirror the active-conv plumbing: foreground ⟺ JS posts rich cards + native suppresses its generic one; background ⟺ native generic card. */

@@ -1,6 +1,4 @@
-/**
- * @file Dev feasibility probe for the embedded nodejs-mobile RAILGUN bridge: a "Test Node bridge" button family (ping/init/scan/methods) that round-trips through the guarded bridge and streams capped lifecycle + scan-debug logs on-device.
- */
+/** @file Dev feasibility probe for the embedded nodejs-mobile RAILGUN bridge: a "Test Node bridge" button family (ping/init/scan/methods) that round-trips through the guarded bridge and streams capped lifecycle + scan-debug logs on-device. */
 import {
   useCallback,
   useEffect,
@@ -94,15 +92,7 @@ function PingLog({ lines, sub, head, border }: {
 
 /* ── Batched log buffer ─────────────────────────────────────────────────── */
 
-/**
- * The probe streams two HIGH-FREQUENCY sources into the on-screen log: the
- *  bridge lifecycle sink and the engine's live `event:scanDebug` events.
- *  Appending each line straight into React state re-rendered the whole probe AND
- *  grew an unbounded array on EVERY line. This hook lands incoming lines in a
- *  plain ref ring buffer (no render), capped to the last CAP entries, flushed
- *  into state at most once per FLUSH_MS so a burst of N lines costs ONE
- *  re-render. `append` is render-free; `replace` swaps the visible log.
- */
+/** Buffers two high-frequency log sources (bridge lifecycle + live scanDebug events) in a plain ref ring buffer capped to CAP entries and flushed to state at most once per FLUSH_MS, so a burst of N lines costs one re-render; `append` is render-free, `replace` swaps the visible log. */
 
 /** Keep only the most recent lines - older lines scroll off, bounded memory. */
 const CAP = 300;
@@ -131,8 +121,7 @@ function useBatchedLog(): BatchedLog {
     setLines(buf.current.slice());
   }, []);
 
-  // A self-rescheduling timeout coalesces all bursts into at most one render per
-  // FLUSH_MS (setTimeout typing is portable across RN/node, unlike setInterval).
+  /** A self-rescheduling timeout coalesces all bursts into at most one render per FLUSH_MS (setTimeout typing is portable across RN/node, unlike setInterval). */
   useEffect(() => {
     let live = true;
     /** Tick helper. */
@@ -292,21 +281,18 @@ export function BridgePingProbe({ sub, border }: {
   const [state, setState] = useState<ProbeState>({ kind: 'idle' });
   const [engine, setEngine] = useState<ProbeState>({ kind: 'idle' });
   const [count, setCount] = useState(0);
-  // Batched + capped log: render-free appends coalesced into one render per tick,
-  // bounded to the last N lines. `replace` clears the log at the start of a run.
+  /** Batched + capped log: render-free appends coalesced into one render per tick, bounded to the last N lines; `replace` clears the log at the start of a run. */
   const { lines: log, append, replace } = useBatchedLog();
   const runStart = useRef(0);
 
-  // The action callbacks only ever set the log to [] or a single line (clear /
-  // seed), so `replace` is the right SetState shape for them.
+  /** The action callbacks only ever set the log to [] or a single line (clear/seed), so `replace` is the right SetState shape for them. */
   const setLog = replace as React.Dispatch<React.SetStateAction<LogLine[]>>;
 
   const { onPress, onInit, onScan, onMethods } = useProbeActions({
     count, setCount, setState, setEngine, setLog, runStart,
   });
 
-  // Mirror the bridge's lifecycle lines into the batched buffer so the full
-  // boot→reply sequence renders on-device (no adb logcat). Cleared per run.
+  /** Mirror the bridge's lifecycle lines into the batched buffer so the full boot→reply sequence renders on-device (no adb logcat); cleared per run. */
   useEffect(() => {
     setBridgeStatusListener((line) => {
       const ms = runStart.current ? Date.now() - runStart.current : 0;
@@ -315,9 +301,7 @@ export function BridgePingProbe({ sub, border }: {
     return () => { setBridgeStatusListener(null); };
   }, [append]);
 
-  // Stream the engine's live scan diagnostics ('event:scanDebug') into the
-  // buffer so a screenshot shows WHY a scan returns 0 (getLogs range, commitment
-  // count, RPC error, scanned wallet id). No-op when the bridge isn't present.
+  /** Stream the engine's live scan diagnostics ('event:scanDebug') into the buffer so a screenshot shows WHY a scan returns 0 (getLogs range, commitment count, RPC error, scanned wallet id); no-op when the bridge isn't present. */
   useEffect(() => {
     if (!isBridgeAvailable()) return undefined;
     return bridgeListen('event:scanDebug', (p) => {

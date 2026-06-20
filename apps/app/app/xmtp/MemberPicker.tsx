@@ -1,8 +1,4 @@
-/**
- * @file Shared member picker (useMemberPicker hook plus MemberPicker component)
- * for the new-group and add-members screens, owning the staged-member list and
- * the address/.eth resolution, contact suggestions, and removable chips.
- */
+/** @file Shared member picker (useMemberPicker hook plus MemberPicker component) for new-group and add-members screens: staged-member list, address/.eth resolution, contact suggestions, removable chips. */
 
 import { useCallback, useMemo, useState } from 'react';
 import { fontSize } from '@metro-labs/kit/tokens';

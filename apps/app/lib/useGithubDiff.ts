@@ -1,7 +1,4 @@
-/**
- * @file TanStack Query hook fetching a PR's per-file diff (meta + unified `patch` per file) for the in-app diff viewer via the Metro daemon's authenticated GitHub proxy.
- *  Resolves a linked PR for issue refs (returning `{ kind: 'no-pr' }` when none), and falls back to direct unauthenticated GitHub if the proxy is unreachable.
- */
+/** @file TanStack Query hook fetching a PR's per-file diff for the in-app viewer via the daemon's authenticated GitHub proxy, resolving linked PRs for issue refs and falling back to direct unauthenticated GitHub when the proxy is unreachable. */
 
 import { useQuery } from '@tanstack/react-query';
 import type { GithubRef } from './githubDetect';
@@ -72,7 +69,7 @@ async function noPrFromProxy(out: ProxyResult, ref: GithubRef): Promise<GithubDi
 async function okFromProxy(out: ProxyResult): Promise<GithubDiff> {
   const files = (out.files ?? []).map(toDiffFile);
   const summed = totalsOf(files);
-  // Proxy omits body; backfill from the resolved PR number when missing.
+  /** Proxy omits body; backfill from the resolved PR number when missing. */
   const body = out.body ?? (out.prNumber ? await fetchBody(out.owner, out.repo, 'pull', out.prNumber) : undefined);
   return {
     kind: 'ok', owner: out.owner, repo: out.repo, prNumber: out.prNumber,

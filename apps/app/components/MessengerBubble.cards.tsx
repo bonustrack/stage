@@ -46,15 +46,9 @@ interface TxCardModel {
   warning?: string;
   showBalance: boolean;
 }
-// SigRequestCard / SigReferenceCard live in MessengerBubble.cards.sig.tsx;
-// re-exported here so existing importers keep their './MessengerBubble.cards' path.
+/** Re-exports SigRequestCard / SigReferenceCard from MessengerBubble.cards.sig so existing './MessengerBubble.cards' importers keep their path. */
 export { SigRequestCard, SigReferenceCard } from './MessengerBubble.cards.sig';
-/**
- * TxRequestCard — in-chat payment request. Thin wrapper over the shared
- *  PaymentCard: it computes the amount/recipient/token from the tx request and
- *  passes its own "Pay" action (the caller's onPay runs walletSendCalls /
- *  sendCall). The recipient line is a tappable profile link (TxToRow).
- */
+/** TxRequestCard — in-chat payment request: a thin wrapper over PaymentCard computing amount/recipient/token and supplying its own "Pay" action (onPay runs walletSendCalls/sendCall); the recipient line is a tappable profile link. */
 export function TxRequestCard({ req, dark, sub, paying, onPay, consentAllowed }: {
   req: TxRequest; dark: boolean; sub: string; paying?: boolean;
   onPay?: () => void;
@@ -113,7 +107,7 @@ function txCallFlags(args: { data?: string; tokenAddr?: string; currency?: strin
   return {
     isErc20Transfer,
     showDecodedBlock: hasCalldata && !isErc20Transfer,
-    // Show balance for a known currency, a native ETH transfer, or any token contract.
+    /** Show balance for a known currency, a native ETH transfer, or any token contract. */
     showBalance: !!args.currency || !!args.eth || !!args.tokenAddr,
   };
 }
@@ -132,8 +126,7 @@ function txCallFields(req: TxRequest): TxCallFields {
   const { target, data, value, meta } = rawCall(req);
   const { amount, currency, toAddress, description } = meta;
   const eth = ethFromWeiHex(value);
-  // For ERC20 requests `call.to` is the token contract; the real recipient is
-  // carried in `metadata.toAddress` (present => transfer of that token).
+  /** For ERC20 requests `call.to` is the token contract; the real recipient is in `metadata.toAddress` (present means a transfer of that token). */
   const tokenAddr = toAddress ? target : undefined;
   const desc = description ?? 'Payment request';
   const recipient = toAddress ?? target;
@@ -160,7 +153,7 @@ function useTxCardModel(req: TxRequest): TxCardModel {
     amountLabel, chainNum: f.chainNum, logoUrl, desc: f.desc,
     recipient: f.recipient, tokenAddr: f.tokenAddr, decoded, decoding, sim, simulating,
     showDecodedBlock: f.showDecodedBlock,
-    // contract call (calldata) that ALSO sends native ETH (value > 0).
+    /** contract call (calldata) that ALSO sends native ETH (value > 0). */
     sendsNativeWithCall: f.showDecodedBlock && !!f.eth && f.eth !== '0',
     actionLabel: txActionLabel(decoded, f.isErc20Transfer),
     isTransfer: isTransferRequest(decoded, f.isErc20Transfer),
@@ -183,12 +176,7 @@ function TxRequestDetail({ m, sub }: { m: TxCardModel; sub: string }): React.Rea
     </Col>
   );
 }
-/**
- * TxToRow — the payment "To" line: a tappable link to the recipient's profile,
- *  with the stamp-resolved username (falls back to the short address while it
- *  loads) + a stamp.fyi avatar. Its own component so `usePeerProfiles` runs once
- *  per address (the shared cache dedupes the lookup).
- */
+/** TxToRow — the payment "To" line: a tappable link to the recipient's profile with the stamp-resolved username (short address while loading) and avatar; its own component so `usePeerProfiles` runs once per address. */
 function TxToRow({ address }: { address: string }): React.ReactElement {
   const router = useRouter();
   usePeerProfiles([address]);
@@ -222,18 +210,9 @@ function fmtArgValue(v: string): string {
   if (/^0x[0-9a-fA-F]{40}$/.test(v)) return shortAddress(v);
   return v;
 }
-/**
- * DecodedCallBlock — the trusted "what this tx actually does" view for a generic
- *  contract call: the resolved function signature + each decoded arg (name: value)
- *  + the target contract. While the ABI fetch is in flight it shows the raw
- *  selector; a failed decode shows the selector + the "could not decode" note.
- *  This is derived from the calldata, NOT the sender's description.
- */
-/** Resolve the function label for a decoded call, hiding clean signatures on a selector mismatch. */
+/** Resolve the function label for a decoded call (the trusted calldata-derived signature), hiding clean signatures on a selector mismatch. */
 function decodedFnLabel(decoded: DecodedCall | null, selector?: string): string {
-  // For a verified-contract selector mismatch, never show a clean-looking
-  // signature as if it were a real call — show the raw selector instead; the red
-  // TxWarning above carries the "looks like X but no such function" detail.
+  /** On a verified-contract selector mismatch, show the raw selector instead of a clean-looking signature; the red TxWarning above carries the "looks like X but no such function" detail. */
   if (!decoded) return selector ?? 'call';
   if (decoded.source === 'mismatch') {
     return selector ?? decoded.selector ?? 'unknown function';
@@ -258,8 +237,7 @@ function DecodedCallBlock({ decoded, pending, target, sub, selector }: {
       </Text>
       {decoded?.args.map((a, i) => (
         <Row key={`${a.name}-${i}`} align="start" gap={8}>
-          {/* name (type): the ABI/4byte param type sits next to the name so the
-              user can read the call shape, e.g. "content (string)". */}
+          {/* name (type): the ABI/4byte param type sits next to the name so the user can read the call shape, e.g. "content (string)". */}
           <Text size="xs" color={sub} style={{ minWidth: 80, flexShrink: 0 }} numberOfLines={2}>
             {a.name}{a.type ? ` (${a.type})` : ''}
           </Text>
@@ -296,9 +274,7 @@ export function TxReceiptCard({ receipt, dark }: {
   const amountLabel = receipt.metadata?.amount != null
     ? `${receipt.metadata.amount} ${receipt.metadata.currency ?? 'ETH'}`
     : undefined;
-  // A receipt carrying an amount/currency is a value transfer ("Payment sent");
-  // a bare contract-call receipt (no amount) reads as "Transaction sent" so a
-  // contract interaction is never mislabelled as a payment.
+  /** A receipt with an amount/currency reads as "Payment sent"; a bare contract-call receipt (no amount) reads as "Transaction sent" so a contract interaction is never mislabelled as a payment. */
   const successLabel = amountLabel ? `Payment sent · ${amountLabel}` : 'Transaction sent';
   const url = explorerTxUrl(receipt.networkId, receipt.reference);
   const blockRadius = useBlockRadius(); const pal = usePalette();

@@ -1,12 +1,6 @@
 /** @file React `usePeerProfiles` hook re-exporting the Stage SDK peer-profile cache and bumping a version counter (FlatList `extraData`) when a batch resolves. */
 
-/*
- * Peer Snapshot-profile cache. The framework-agnostic core (the batched store,
- *  fetch, and accessors) moved into the Stage SDK (@stage-labs/client); this
- *  module re-exports it and keeps only the React `usePeerProfiles` hook, which
- *  subscribes via the SDK's subscribePeerProfiles + bumps a version counter so
- *  rows re-render (usable as FlatList `extraData`).
- */
+/** Peer profile cache core lives in the Stage SDK; this module re-exports it and keeps only the React usePeerProfiles hook that subscribes and bumps a version counter for row re-renders. */
 
 import { useEffect, useReducer } from 'react';
 import {

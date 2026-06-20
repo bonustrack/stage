@@ -1,23 +1,4 @@
-/**
- * @file Typed request/response and event wire contract for the nodejs-mobile bridge to the embedded Railgun engine and prover.
- */
-/**
- * nodejs-mobile bridge protocol - the typed request/response contract between
- *  the host app and the embedded Node process that actually runs the RAILGUN
- *  engine + Groth16 prover.
- *
- *  WHY A BRIDGE AT ALL: the on-device Groth16 prover (@railgun-privacy/native-
- *  prover) is a node-gyp/N-API `.node` addon. Hermes (the RN JS engine) cannot
- *  `require` a Node N-API addon, so proving is IMPOSSIBLE in the RN VM. RAILGUN's
- *  own reference app (Railway-Wallet) solves this by running the ENTIRE engine
- *  inside a real embedded Node runtime via `nodejs-mobile-react-native`, and
- *  talking to it over an IPC channel. This file mirrors that contract so the
- *  host can issue request/response calls and receive push events without
- *  depending on the Node-only types.
- *
- *  PURE: this is the wire SHAPE only - no native module, no RN/expo imports. The
- *  Stage client builds these frames; the injected RailgunTransport ships them.
- */
+/** @file Typed request/response + event wire contract for the nodejs-mobile bridge to the embedded Railgun engine and Groth16 prover (which Hermes can't run as an N-API addon, so it lives in an embedded Node runtime); pure wire shape only, no native or RN imports. */
 
 /** Supported Railgun networks. Re-declared here as a string union so the client package stays free of the @railgun-community native deps (the host maps these back to the SDK's NetworkName enum). */
 export type RailgunNet = 'sepolia' | 'mainnet';

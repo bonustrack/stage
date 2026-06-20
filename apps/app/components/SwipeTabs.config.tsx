@@ -1,7 +1,4 @@
-/**
- * @file Static config for the SwipeTabs pager: tab order, expo-router hrefs,
- *  mounted page bodies, the pathname-to-index map, and swipe thresholds.
- */
+/** @file Static config for the SwipeTabs pager: tab order, expo-router hrefs, page bodies, pathname-to-index map, and swipe thresholds. */
 
 import type { Href } from 'expo-router';
 
@@ -9,12 +6,7 @@ import { HomeScreen } from './tabs/HomeScreen';
 import { ContactsScreen } from './ContactsScreen';
 import { WalletScreen } from './tabs/WalletScreen';
 
-/**
- * The shape accepted by an inner scrollable's `simultaneousHandlers` prop and
- *  by each tab body's `panRef` prop. Defined in the leaf SwipeTabs.types.ts so
- *  tab screens import it without cycling back into this config. Re-exported here
- *  for the existing import sites.
- */
+/** Shape for inner scrollables' `simultaneousHandlers` and tab bodies' `panRef`, defined in leaf SwipeTabs.types.ts to avoid a config cycle and re-exported here. */
 export type { SimultaneousRefs } from './SwipeTabs.types';
 import type { SimultaneousRefs } from './SwipeTabs.types';
 
@@ -29,12 +21,7 @@ export const TAB_HREF: Record<TabName, Href> = {
   wallet: '/wallet',
 };
 
-/**
- * The three tab bodies, mounted side-by-side in pager order. Mounting them all
- *  at once is fine (only three screens) and lets each keep its own scroll/state
- *  while the neighbour is already rendered during the drag — so it's visible the
- *  instant the finger moves.
- */
+/** The three tab bodies mounted side-by-side in pager order, so each keeps its own scroll/state and the neighbour is already rendered during a drag. */
 export const PAGES: Record<TabName, (props: { panRef?: SimultaneousRefs }) => React.ReactElement> = {
   index: HomeScreen,
   contacts: ContactsScreen,

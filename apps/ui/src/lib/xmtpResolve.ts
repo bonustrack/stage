@@ -1,7 +1,4 @@
-/**
- * @file Resolvers mapping XMTP conversation membership to Ethereum addresses (DM peer, group members, inbox-id map).
- */
-/** Conversation-membership resolvers — peer eth address (DMs), group member eth addresses, inbox-id → eth-address map. Pulled out of `xmtp.ts` so that file stays under the per-file LOC cap. */
+/** @file XMTP conversation-membership resolvers mapping to Ethereum addresses (DM peer, group members, inbox-id → eth-address map); split out of `xmtp.ts` to stay under the per-file LOC cap. */
 
 import { IdentifierKind, type Conversation } from '@xmtp/browser-sdk';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from './xmtp';

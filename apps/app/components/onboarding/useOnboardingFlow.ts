@@ -53,8 +53,7 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
         onDone();
       } catch (e) {
         setBusy(false);
-        // XMTP setup failed but the wallet exists: offer a plain Retry (no wipe).
-        // Any earlier failure is a hard error → back to Welcome to choose again.
+        /** XMTP setup failed but the wallet exists: offer a plain Retry; any earlier failure is hard, sending the user back to Welcome. */
         if (e instanceof XmtpSetupError) {
           setSetupErr({ message: e.message, accountId: e.accountId });
         } else {

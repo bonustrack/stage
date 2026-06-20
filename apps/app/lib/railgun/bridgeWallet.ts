@@ -1,18 +1,4 @@
-/** @file Bridge-backed private-wallet refresh: derives keys, inits the engine, and reads the on-device 0zk address + shielded balances into the UI's PrivateBalance shape. */
-/**
- * Bridge-backed private-wallet refresh (Kohaku phase 1-2).
- *
- *  This is the REAL path on a device build: the RAILGUN engine only inits inside
- *  the embedded Node host (Hermes can't load the prover), so the actual 0zk
- *  address + shielded balances come from the bridge — not the Hermes direct-SDK
- *  modules (sdkWallet/sdkEngine), which can't init the engine on-device.
- *
- *  Flow: derive deterministic key material (deriveKeys.ts) → engineInit (cheap
- *  if already warm) → walletInfo (create-or-load the 0zk wallet) → getBalances
- *  (trigger a scan + read current amounts). Maps wei rows to the UI's
- *  PrivateBalance shape. Balances may be empty while the Merkle scan runs —
- *  that's expected and renders as the $0/empty state. Never throws.
- */
+/** @file Bridge-backed private-wallet refresh (the real on-device path via the embedded Node host): derives keys, inits the engine, then reads the 0zk address + shielded balances into the UI's PrivateBalance shape; may be empty mid-scan and never throws. */
 import { formatUnits } from 'viem';
 import { stampTokenUrl } from '@metro-labs/kit/avatar';
 import {
@@ -59,12 +45,7 @@ function mapRows(net: RailgunNet, rows: BridgeBalanceRow[]): PrivateBalance[] {
   }));
 }
 
-/**
- * Resolve the live private snapshot (0zk address + shielded balances) via the
- *  embedded Node bridge. Returns null when the bridge isn't in this binary so
- *  the caller can fall back. Throws only on genuine derivation/call failure
- *  (caught by the caller, which keeps the warm cache).
- */
+/** Resolve the live private snapshot (0zk address + shielded balances) via the embedded Node bridge, returning null when the bridge isn't in this binary and throwing only on genuine derivation/call failure. */
 export async function bridgeRefreshSnapshot(prev: PrivateSnapshot | null): Promise<PrivateSnapshot | null> {
   if (!isBridgeAvailable()) {
     patchBalanceDebug({ bridgeAvailable: false, phase: 'idle' });
@@ -94,7 +75,7 @@ export async function bridgeRefreshSnapshot(prev: PrivateSnapshot | null): Promi
       getBalancesRows: { mainnet: res.networks.mainnet.length, sepolia: res.networks.sepolia.length },
     });
   } catch (e) {
-    // scan may not be ready; keep the 0zk address + prior balances
+    /** scan may not be ready; keep the 0zk address + prior balances */
     patchBalanceDebug({ phase: 'error', refreshError: (e as Error).message });
   }
   return { zkAddress: info.railgunAddress, balances, updatedAt: Date.now(), scanning };

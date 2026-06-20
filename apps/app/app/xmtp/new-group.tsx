@@ -1,8 +1,4 @@
-/**
- * @file Create-group screen letting the user name a group and stage members by
- * address/.eth via the shared MemberPicker, then calling createGroup and
- * opening the new XMTP conversation.
- */
+/** @file Create-group screen: name a group, stage members by address/.eth via the shared MemberPicker, then call createGroup and open the new XMTP conversation. */
 
 import { useCallback, useState } from 'react';
 import { fontSize } from '@metro-labs/kit/tokens';

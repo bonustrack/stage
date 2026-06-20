@@ -1,7 +1,4 @@
-/**
- * @file XMTP conversation screen opened from the messenger tab list; state and
- * handlers live in useConversationState, presentational pieces in components/xmtp-conv.
- */
+/** @file XMTP conversation screen from the messenger tab list; state/handlers in useConversationState, presentation in components/xmtp-conv. */
 
 import { useCallback, useState } from 'react';
 
@@ -24,20 +21,7 @@ import {
 /** Full-screen XMTP conversation thread with message composer and swipe-back. */
 export default function XmtpConversation(): React.ReactElement {
   const router = useRouter();
-  /**
-   * FULL-SCREEN swipe-back coexists with the bubble's swipe-to-reply by
-   *  DIRECTION, not by a thin edge band. The app-wide JS card-stack back-gesture
-   *  (app/_layout, `gestureResponseDistance: 9999`) arms only on a RIGHTWARD drag
-   *  (@react-navigation/stack's horizontal criteria use `minOffsetX: 5`), while
-   *  the bubble's reply pan arms only on a LEFTWARD drag (`activeOffsetX(-15)` +
-   *  `failOffsetX(15)` so a rightward drag immediately fails it and falls through
-   *  to the back gesture). Opposite signs = mutually exclusive, so back works
-   *  across the whole screen on rightward + reply works across the whole row on
-   *  leftward. A previous `gestureResponseDistance: 40` override narrowed back to
-   *  a thin left-edge band to dodge an activation race; the direction-exclusive
-   *  arming makes that band unnecessary, so we inherit the global full-screen
-   *  distance here (no per-screen override).
-   */
+  /** Full-screen swipe-back and the bubble's swipe-to-reply stay mutually exclusive by drag direction (rightward arms back, leftward arms reply), so no per-screen gesture-distance override is needed. */
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head, bg, border } = usePalette();
   const sub = fg, rowBg = border;
@@ -45,39 +29,14 @@ export default function XmtpConversation(): React.ReactElement {
   const c = useConversationState(convId, focus);
   const { activeLine } = c;
 
-  /**
-   * In-conversation local message search (Stage #6) — opened from the 3-dot
-   *  overflow menu. When open the topnav swaps to the shared SearchTopnavBar
-   *  (the same expanding input Home uses) and a results panel renders under it.
-   *  The query lives here so the topnav bar drives the results panel.
-   */
+  /** In-conversation local message search from the overflow menu: open swaps the topnav to the shared SearchTopnavBar with a results panel under it, driven by this query. */
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const closeSearch = useCallback(() => { setSearchOpen(false); setSearchQuery(''); }, []);
-  /**
-   * Keyboard-on-search, the real root cause: search opens from the ChannelMenu
-   *  bottom sheet, which is a native RN <Modal> (its OWN Android window). While
-   *  that window is up / sliding out it OWNS the input-method focus, so the
-   *  SearchTopnavBar's autoFocus binds to a window that no longer has IME focus
-   *  and the soft keyboard never attaches to the app window. Android also won't
-   *  re-show the keyboard for a focus() on an input it already considers focused.
-   *
-   *  Fix = sequence + verified retry: wait for the modal's dismiss interaction to
-   *  finish (runAfterInteractions), then blur()+focus() and confirm the keyboard
-   *  actually showed via keyboardDidShow; if it didn't, retry every 150ms up to
-   *  ~1.2s. The blur() first is what makes the second focus() re-open the IME on
-   *  Android. Cancels the moment the keyboard shows or search closes.
-   */
+  /** Search opens from a native Modal that owns IME focus, so the keyboard won't attach; fix waits for the modal dismiss then blur()+focus() and retries until keyboardDidShow. */
   const searchInputRef = useSearchKeyboardFocus(searchOpen);
 
-  /**
-   * Message-request gate. The overwhelmingly common case is an already-accepted
-   *  channel, so we DEFAULT to showing the composer immediately on open (no
-   *  flash). Consent resolves asynchronously; only if it comes back as a pending
-   *  request ('unknown') do we hide the composer and swap in the Approve/Reject
-   *  bar. A rare incoming request may briefly show the composer before the bar
-   *  appears, an acceptable tradeoff to never flash the common case.
-   */
+  /** Message-request gate: default to showing the composer (common accepted case, no flash) and only hide it for the Approve/Reject bar once consent resolves to a pending 'unknown' request. */
   const [requestPending, setRequestPending] = useState(false);
   const onRequestPending = useCallback((pending: boolean) => { setRequestPending(pending); }, []);
 
@@ -129,13 +88,7 @@ export default function XmtpConversation(): React.ReactElement {
         ) : undefined}
 />
       </Reanimated.View>
-      {/**
-       * Top nav: solid bg strip mirrors the composer footer + extends UP over the
-       *  status-bar area so content sliding under the keyboard doesn't show through.
-       *  When search is open the whole strip swaps to the shared SearchTopnavBar
-       *  (the exact expanding search input Home uses); the results panel renders
-       *  directly underneath it.
-       */}
+      {/** Top nav: solid bg strip mirroring the composer footer and extending over the status bar; when search is open it swaps to the shared SearchTopnavBar with the results panel beneath. */}
       {searchOpen ? (
         <ConversationSearchTopnav
           searchInputRef={searchInputRef}

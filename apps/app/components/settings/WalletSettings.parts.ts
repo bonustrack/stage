@@ -1,8 +1,4 @@
-/**
- * @file Read-only data layer for Settings -> Wallet: assembles the active
- *  account's display model (metadata, signer, Kernel modules, XMTP address) and
- *  detects on-chain deploy status via getCode, never touching private keys.
- */
+/** @file Read-only data layer for Settings -> Wallet: assembles the active account's display model (metadata, signer, Kernel modules, XMTP address) and detects deploy status via getCode, never touching private keys. */
 
 import { useEffect, useState } from 'react';
 import { KERNEL_VERSION_STRING, ENTRY_POINT_VERSION, SCW_CHAIN_ID } from '@stage-labs/client/zerodev/config';

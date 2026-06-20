@@ -1,29 +1,13 @@
-/**
- * @file Proposals.store — the module-level singleton owning the pending-proposal
- *  queue, the session skip set and a lazy/cache-driven rebuild, giving the Home
- *  banner an O(1) count and the Proposals screen the full shared queue.
- */
+/** @file Proposals.store — module-level singleton owning the pending-proposal queue, session skip set, and lazy/cache-driven rebuild, giving the Home banner an O(1) count and the Proposals screen the full shared queue. */
 
 import { getCachedRows, subscribeCachedRows, type CachedRow } from '../../modules/messaging';
 import { buildProposalQueue, type QueuedRequest } from './Proposals.queue';
 
-/**
- * Per-item keys skipped this session - filtered out of every rebuilt queue so a
- *  skipped request never reappears (in the banner count or the screen) until a
- *  manual refresh / app restart. Keyed by `QueuedRequest.key` (`kind:convId`) so
- *  distinct request kinds in the same channel skip independently.
- */
+/** Per-item keys skipped this session, filtered out of every rebuilt queue until a manual refresh/restart. Keyed by `QueuedRequest.key` (`kind:convId`) so distinct request kinds in the same channel skip independently. */
 const skipped = new Set<string>();
 
 let queue: QueuedRequest[] = [];
-/**
- * Cached visible (non-skipped) view + the (queue, skip-size) it was built from.
- *  getQueue() is read on EVERY render by useSyncExternalStore, which bails the
- *  re-render loop only when the snapshot is reference-stable. Recomputing the
- *  filtered array each call returns a fresh reference every time → React sees an
- *  ever-changing snapshot → "Maximum update depth exceeded". So memoize it and
- *  invalidate only when the underlying queue or skip set actually changes.
- */
+/** Cached visible (non-skipped) view plus the (queue, skip-size) it was built from; getQueue() is read every render by useSyncExternalStore which needs a reference-stable snapshot, so memoize and invalidate only when the queue or skip set changes (else "Maximum update depth exceeded"). */
 let visibleCache: QueuedRequest[] = [];
 let visibleQueue: QueuedRequest[] | null = null;
 let visibleSkipSize = -1;
@@ -54,11 +38,10 @@ function emit(): void {
 
 /** Apply Build. */
 function applyBuild(id: number, q: QueuedRequest[]): void {
-  if (id !== buildId) return; // a newer build superseded this one
+  if (id !== buildId) return; /** a newer build superseded this one */
   queue = q;
   ready = true;
-  // Always emit: the screen consumes the full queue (contents may change even
-  // when the count holds), and the banner cheaply re-reads its count.
+  /** Always emit: the screen consumes the full queue (contents may change even when the count holds), and the banner cheaply re-reads its count. */
   emit();
 }
 

@@ -1,8 +1,4 @@
-/**
- * @file usePayerBalance hook fetching the active account's balance of a payment
- *  request's asset/chain (registry-known or generic on-chain ERC-20 fallback),
- *  one-shot, per-(chain,token,account) cached, degrading gracefully on RPC error.
- */
+/** @file usePayerBalance hook fetching the active account's balance for a request's asset/chain (registry or on-chain ERC-20 fallback), one-shot, per-(chain,token,account) cached, RPC-error-tolerant. */
 import { useEffect, useState } from 'react';
 import { formatUnits, isAddress, erc20Abi, type Hex } from 'viem';
 
@@ -68,7 +64,7 @@ async function readOnchain(
 
   if (token === undefined || !isAddress(token)) return null;
   const t = token;
-  // Balance is required; decimals/symbol are best-effort (some tokens omit them).
+  /** Balance is required; decimals/symbol are best-effort (some tokens omit them). */
   const raw = await pub.readContract({
     address: t, abi: erc20Abi, functionName: 'balanceOf', args: [addr],
   });
@@ -93,8 +89,7 @@ async function loadMeta(cid: number, token: string | undefined, addr: Hex): Prom
   }
   const onchain = await meta;
   if (!onchain) {
-    // Reading failed (unreachable RPC / unsupported chain) — drop the cache
-    // entry so a later mount can retry, and leave the row hidden.
+    /** Reading failed (unreachable RPC / unsupported chain): drop the cache entry so a later mount can retry, and leave the row hidden. */
     cache.delete(key);
   }
   return onchain;
@@ -106,8 +101,7 @@ function buildBalance(
   symbol: string | undefined, needed: number | undefined,
   known: { decimals: number; symbol: string } | undefined,
 ): PayerBalance {
-  // Decimals/symbol: prefer the registry, then on-chain reads, then the
-  // request-provided symbol, then sensible defaults.
+  /** Decimals/symbol: prefer the registry, then on-chain reads, then the request-provided symbol, then sensible defaults. */
   const decimals = known?.decimals ?? onchain.decimals;
   const human = formatUnits(onchain.raw, decimals);
   const sym = known?.symbol
@@ -128,8 +122,7 @@ async function resolveBalance(
   const acct = await getActiveAccount();
   const addr = acct?.address;
   if (!addr || !isAddress(addr)) return null;
-  // Prefer registry metadata (curated decimals/symbol) when the (chain, symbol)
-  // pair is known — keeps display consistent with the wallet tab.
+  /** Prefer registry metadata when the (chain, symbol) pair is known, keeping display consistent with the wallet tab. */
   const known = ASSETS.find(a => a.chainId === cid
     && a.symbol.toLowerCase() === (symbol ?? '').toLowerCase());
   const onchain = await loadMeta(cid, token, addr);
@@ -137,12 +130,7 @@ async function resolveBalance(
   return buildBalance(onchain, isNativeToken(token), symbol, needed, known);
 }
 
-/**
- * @param chainId   request chain (hex/dec string or number)
- *  @param token     ERC-20 contract address, or null/undefined/sentinel for native
- *  @param symbol    display symbol from the request (e.g. "USDC", "STAGE")
- *  @param needed    requested amount in whole units, used for the insufficient flag
- */
+/** Resolve the active account's PayerBalance for a request: chainId (hex/dec/number), token (address or sentinel/native), symbol, and needed amount (whole units, drives the insufficient flag). */
 export function usePayerBalance(
   chainId: string | number | undefined,
   token: string | undefined,
@@ -158,7 +146,7 @@ export function usePayerBalance(
         const next = await resolveBalance(chainId, token, symbol, needed);
         if (!cancelled && next) setBal(next);
       } catch {
-        // Defensive: never let the balance hook throw into the card.
+        /** Defensive: never let the balance hook throw into the card. */
       }
     })();
     return () => { cancelled = true; };

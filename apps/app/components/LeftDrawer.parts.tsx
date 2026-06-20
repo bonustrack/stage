@@ -1,8 +1,4 @@
-/**
- * @file Presentational LeftDrawer pieces split out to keep LeftDrawer.tsx under the
- *  line cap: the avatar header, the tap-to-switch accounts list, and the
- *  Profile/Settings nav row.
- */
+/** @file Presentational LeftDrawer pieces (avatar header, tap-to-switch accounts list, Profile/Settings nav row) split out to keep LeftDrawer.tsx under the line cap. */
 
 import { Box, Col } from './layout';
 

@@ -1,14 +1,4 @@
-/**
- * @file Private-key normalization plus mnemonic/HD owner-key derivation for the multi-account registry (viem-only, no storage).
- */
-/**
- * Pure private-key normalization + derivation rules for the account registry.
- *  No storage, no platform deps — viem only. Key STORAGE stays in the host
- *  behind the injected SecureStorage interface (see ./registry).
- *
- *  Moved out of apps/app's accounts.keys for the Stage SDK; the app re-exports
- *  these so call sites stay stable.
- */
+/** @file Pure private-key normalization + mnemonic/HD owner-key derivation for the multi-account registry (viem-only, no storage); key STORAGE stays in the host behind the injected SecureStorage interface, re-exported by apps/app so call sites stay stable. */
 
 import { mnemonicToAccount, privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
 import { bytesToHex, type Hex } from 'viem';
@@ -31,12 +21,7 @@ export function normalizePk(input: string): Hex {
   return pk as Hex;
 }
 
-/**
- * Derive the raw private key from a BIP-39 mnemonic (default m/44'/60'/0'/0/0,
- *  the standard first Ethereum account). Throws if the phrase is not valid
- *  BIP-39. We extract the key so the account is stored + signed identically to
- *  a pasted private key (no special-case HD signer to maintain).
- */
+/** Derive the raw private key from a BIP-39 mnemonic (default m/44'/60'/0'/0/0, the standard first Ethereum account); throws on an invalid phrase. Extracting the key lets the account be stored + signed identically to a pasted private key, with no special-case HD signer. */
 export function privateKeyFromMnemonic(input: string): Hex {
   const phrase = input.trim().replace(/\s+/g, ' ').toLowerCase();
   const words = phrase.split(' ');

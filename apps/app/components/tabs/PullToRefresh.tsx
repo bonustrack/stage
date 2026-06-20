@@ -1,16 +1,12 @@
-/**
- * @file Custom JS-only pull-to-refresh spinner and onScroll handlers for the Wallet Tokens list.
- *  We render the spinner ourselves (bound to our own `refreshing` state + live pull distance) because RN's native
- *  RefreshControl could not be reliably dismissed inside this nested-gesture ScrollView on Android.
- */
+/** @file Custom JS-only pull-to-refresh spinner and onScroll handlers for the Wallet Tokens list, rendered ourselves because RN's RefreshControl couldn't be reliably dismissed inside this nested-gesture ScrollView on Android. */
 
 import { useEffect, useRef } from 'react';
 import { Animated, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { Box } from '../layout';
 import { Spinner } from '../Spinner';
 
-const THRESHOLD = 56; // px of over-scroll past the top to arm a refresh
-const ACTIVE_OFFSET = 44; // resting y of the spinner while refreshing
+const THRESHOLD = 56; /** px of over-scroll past the top to arm a refresh */
+const ACTIVE_OFFSET = 44; /** resting y of the spinner while refreshing */
 
 export interface PullHandlers {
   /** Spinner overlay — render as the FIRST child of the ScrollView's content. */
@@ -34,9 +30,7 @@ export function usePullToRefresh(
   /** Latch so one continuous over-scroll fires onRefresh at most once. */
   const armed = useRef(false);
 
-  // When refreshing flips on/off, animate the indicator to/from its active rest
-  // position. This is the SOLE driver of visibility once a refresh is running,
-  // so when `refreshing` clears the spinner always animates away — never strands.
+  /** When refreshing flips on/off, animate the indicator to/from its active rest position; this is the sole visibility driver while running, so the spinner always animates away and never strands. */
   useEffect(() => {
     Animated.timing(pull, {
       toValue: refreshing ? ACTIVE_OFFSET : 0,
@@ -48,10 +42,7 @@ export function usePullToRefresh(
 
   /** Handle the Scroll Begin Drag. */
   const onScrollBeginDrag = (e: NativeSyntheticEvent<NativeScrollEvent>): void => {
-    // Reset the per-drag latch/baseline. Use the offset at drag start as the
-    // reference so a pull is measured RELATIVE to wherever the top sits — on
-    // Android the over-scroll contentOffset.y may clamp at 0 and never report
-    // negative, so we can't rely on an absolute negative value alone.
+    /** Reset the per-drag baseline using the drag-start offset, so a pull is measured relative to wherever the top sits — Android may clamp over-scroll at 0 and never report negative. */
     minY.current = e.nativeEvent.contentOffset.y;
   };
 
@@ -59,14 +50,11 @@ export function usePullToRefresh(
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>): void => {
     const y = e.nativeEvent.contentOffset.y;
     if (y < minY.current) minY.current = y;
-    if (refreshing) return; // pinned to ACTIVE_OFFSET by the effect
-    // Over-scroll distance: how far below the top (y<0, iOS bounce / Android
-    // overscroll) we've pulled. Drive the indicator for live feedback.
+    if (refreshing) return; /** pinned to ACTIVE_OFFSET by the effect */
+    /** Over-scroll distance (how far below the top, y<0, we've pulled) drives the indicator for live feedback. */
     const pulled = y < 0 ? -y : 0;
     pull.setValue(Math.min(pulled, THRESHOLD * 1.6));
-    // Arm DURING the drag the instant we cross the threshold — don't wait for
-    // release. On Android the negative offset is transient (the scroller snaps
-    // back fast), so reading it at onScrollEndDrag often misses it entirely.
+    /** Arm during the drag the instant we cross the threshold rather than at release, because Android's negative offset is transient and onScrollEndDrag often misses it. */
     if (!armed.current && pulled >= THRESHOLD) {
       armed.current = true;
       onRefresh();
@@ -81,7 +69,7 @@ export function usePullToRefresh(
       armed.current = true;
       onRefresh();
     } else if (!refreshing && !armed.current) {
-      // Released short of the threshold — relax the indicator back to hidden.
+      /** Released short of the threshold — relax the indicator back to hidden. */
       Animated.timing(pull, { toValue: 0, duration: 160, useNativeDriver: true }).start();
     }
   };

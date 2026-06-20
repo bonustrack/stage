@@ -1,6 +1,4 @@
-/**
- * @file MessengerImageAttachment: inline image message attachment with a tap-to-open fullscreen ImageViewer and no-blank source-swap handling.
- */
+/** @file MessengerImageAttachment: inline image message attachment with a tap-to-open fullscreen ImageViewer and no-blank source-swap handling. */
 
 import { useEffect, useRef, useState } from 'react';
 import type { ImageStyle } from 'react-native';
@@ -16,13 +14,7 @@ export function MessengerImageAttachment({ uri, dark = true }: {
   uri: string; dark?: boolean;
 }): React.ReactElement {
   const [open, setOpen] = useState(false);
-  /**
-   * No-blank swap: when `uri` changes (local `file://` → resolved remote copy)
-   *  keep the previously-loaded image painted underneath until the new source's
-   *  `onLoad` fires, then drop the old layer. Without this the <Image> blanks for
-   *  the frames it takes to decode the new source — the "image disappears then
-   *  reappears" flicker. `prevUri` is the last source we know finished loading.
-   */
+  /** No-blank swap: when `uri` changes, keep the previously-loaded image painted underneath until the new source's `onLoad` fires, avoiding the decode-time blank flicker. */
   const [prevUri, setPrevUri] = useState<string | null>(null);
   const loadedUri = useRef<string | null>(null);
   useEffect(() => {

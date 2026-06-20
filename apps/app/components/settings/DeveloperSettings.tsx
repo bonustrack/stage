@@ -1,7 +1,4 @@
-/**
- * @file Settings -> Developer screen: device-local diagnostic toggles, currently
- *  the opt-in Railgun debug-console preference plus reset actions.
- */
+/** @file Settings -> Developer screen: device-local diagnostic toggles (the opt-in Railgun debug-console preference) plus reset actions. */
 
 import { useEffect, useState } from 'react';
 
@@ -54,7 +51,7 @@ export function DeveloperSettings(): React.ReactElement {
 
   /** Handle the Toggle. */
   const onToggle = (next: boolean): void => {
-    setEnabled(next); // optimistic
+    setEnabled(next); /** optimistic */
     void setDebugConsole(next);
   };
 
@@ -93,7 +90,7 @@ export function DeveloperSettings(): React.ReactElement {
             setNuking(true);
             void resetEverything()
               .catch(() => { setNuking(false); Alert.alert('Reset failed', 'Could not wipe local state.'); });
-            // No finally: on success the app reloads, so nuking stays true until then.
+            /** No finally: on success the app reloads, so nuking stays true until then. */
           },
         },
       ],

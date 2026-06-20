@@ -1,8 +1,4 @@
-/**
- * @file Contacts swipe-pager tab listing every user the active account can reach
- *  (DM peers plus all group members, deduped and name-sorted via useAllContacts),
- *  each a ChannelRow that opens or starts a DM on tap.
- */
+/** @file Contacts swipe-pager tab listing every reachable user (DM peers plus group members, deduped and name-sorted via useAllContacts), each a ChannelRow that opens or starts a DM on tap. */
 
 import { useCallback, useState } from 'react';
 import { FlatList } from 'react-native-gesture-handler';
@@ -49,8 +45,7 @@ export function ContactsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): 
   }, [open]);
 
   return (
-    // The shared Topnav + top inset are hoisted ABOVE the pager in
-    // (tabs)/_layout.tsx, so this body renders only the scrollable list.
+    /** Shared Topnav + top inset are hoisted above the pager in (tabs)/_layout.tsx, so this body renders only the scrollable list. */
     <Col surface="surface" flex={1}>
       <FlatList
         simultaneousHandlers={panRef}

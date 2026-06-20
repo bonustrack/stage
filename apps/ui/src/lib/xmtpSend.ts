@@ -1,7 +1,4 @@
-/**
- * @file Outbound XMTP send helpers for text, reaction, reply, and inline attachment messages.
- */
-/** Outbound XMTP send helpers — text, reaction, reply, inline attachment. Split out of `xmtp.ts` so each file stays under the lint cap. */
+/** @file Outbound XMTP send helpers for text, reaction, reply, and inline attachment messages, split out of `xmtp.ts` so each file stays under the lint cap. */
 
 import {
   ReactionAction, ReactionSchema, encodeText,

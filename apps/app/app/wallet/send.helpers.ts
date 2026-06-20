@@ -1,7 +1,4 @@
-/**
- * @file Pure helpers and constants for the Wallet send screen: ENS detection
- * and fetching the connected wallet's ETH balance plus live ETH price.
- */
+/** @file Pure helpers and constants for the Wallet send screen: ENS detection and fetching the connected wallet's ETH balance plus live ETH price. */
 import { formatEther, type Hex } from 'viem';
 import { getOrCreateXmtpClient } from '../../modules/messaging';
 import { getSimplePrices } from '../../lib/coingecko';

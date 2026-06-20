@@ -1,8 +1,4 @@
-/**
- * @file useAccountsManager hook owning the state, effects, and handlers for the
- * AccountsManager Settings section (switch, add, remove, export), where every
- * account is a mnemonic-derived ZeroDev smart account.
- */
+/** @file useAccountsManager hook owning state, effects, and switch/add/remove/export handlers for the AccountsManager Settings section, where every account is a mnemonic-derived ZeroDev smart account. */
 
 import { useCallback, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
@@ -55,17 +51,7 @@ export function useAccountsManager(onSwitched?: () => void): {
     if (id === activeId || busy) return;
     setBusy(true);
     try {
-      /**
-       * In-place switch — no full app reload (which on the dev client re-downloads
-       *  the whole JS bundle + flashes white). switchToAccount drops the cached
-       *  client + global stream, builds the target account's client, points the
-       *  (account-scoped) channels cache at the target account's store, and bumps
-       *  the account epoch — which re-inits the channels list + any open
-       *  conversation against the new inbox. We DON'T clear the cache: each
-       *  account keeps its own rows, so the target account's channels render
-       *  instantly from cache (instant 2nd open) and the stream revalidates in the
-       *  background. Far snappier than reloadApp().
-       */
+      /** In-place switch (no full app reload): drops the cached client + stream, rebuilds for the target account, repoints the account-scoped channels cache, and bumps the account epoch; cache is kept so each account's rows render instantly while the stream revalidates in the background. */
       await AccountManager.switch(id);
       await refresh();
       setExpanded(() => false);
@@ -81,11 +67,7 @@ export function useAccountsManager(onSwitched?: () => void): {
     if (busy) return;
     setBusy(true);
     try {
-      // Create ECDSA-owner (deployable) account, install the passkey (WebAuthn CREATE
-      // + deploy-and-swap sudo), THEN register its XMTP inbox. Passkey-BEFORE-switch
-      // makes the inbox registration sign with the passkey (the key never signs the
-      // XMTP identity). WebAuthn CREATE needs no prior credential, so it can't pop
-      // the empty "No available sign-in" picker.
+      /** Create the ECDSA-owner account, install the passkey (WebAuthn CREATE + deploy-and-swap sudo) before switching so the XMTP inbox registration signs with the passkey, avoiding the empty sign-in picker. */
       const rec = await createSmartAccount();
       if (passkeysAvailable()) {
         const res = await enablePasskeyForRecord(rec);

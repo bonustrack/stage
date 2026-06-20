@@ -91,9 +91,9 @@ function ComposerHeader(p: {
 /** Renders the conversation message composer (input, attachments, mentions, replies, and send flows). */
 export function MessengerComposer(props: Props): React.ReactElement {
   const { dark, xmtpLine, mentionCandidates, replyingTo, autoFocusNonce, onClearReply, onJumpToReply } = props;
-  const pal = usePalette(); // text/primary/border/bg ← tokens
+  const pal = usePalette(); /** text/primary/border/bg ← tokens */
   const fg = pal.text, head = pal.link, inputBg = pal.inputBg, chipBg = pal.border, bg = pal.bg;
-  // `sub` = muted/secondary text; no `muted` token yet, so map to `text`.
+  /** `sub` = muted/secondary text; no `muted` token yet, so map to `text`. */
   const sub = pal.text;
   const palette = { fg, sub, inputBg, chipBg };
 
@@ -105,7 +105,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
   useComposerDrafts(convId, s.text, s.setText);
   useComposerFocus(s.inputRef, replyingTo?.id, replyingTo?.nonce, autoFocusNonce);
 
-  const hasContent = s.text.trim().length > 0 || s.pending.length > 0; // text or any pending attachment
+  const hasContent = s.text.trim().length > 0 || s.pending.length > 0; /** text or any pending attachment */
 
   const { matches: mentionMatches, range: mentionRange } = computeMentions(s.text, s.selection.start, mentionCandidates);
   /** Pick Mention. */

@@ -1,6 +1,4 @@
-/**
- * @file ProfileHoldings: a profile's public Tokens + NFTs tabs for the viewed address, reusing the Wallet-tab presentational components.
- */
+/** @file ProfileHoldings: a profile's public Tokens + NFTs tabs for the viewed address, reusing the Wallet-tab presentational components. */
 
 import { useEffect, useRef, useState } from 'react';
 
@@ -120,8 +118,7 @@ export function ProfileHoldings({ address }: { address: string }): React.ReactEl
           </Text>
         </Col>
       ) : (
-        /* Public rows only — no shielded (privateRows) and no pending shields on
-           a peer profile. */
+        /* Public rows only — no shielded (privateRows) and no pending shields on a peer profile. */
         <TokensList
           rows={rows} privateRows={[]} pending={[]}
           head={head} sub={sub} border={border} bg={bg}

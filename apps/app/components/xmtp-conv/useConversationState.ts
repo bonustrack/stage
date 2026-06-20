@@ -67,7 +67,7 @@ export function useConversationState(convId: string | undefined, focus: string |
   const { loadOlder, hasMore, loadingOlder } = xmtpFeed;
   useEffect(() => {
     if (!convId) return;
-    void markConvRead(convId); // mark read when the latest event count changes
+    void markConvRead(convId); /** mark read when the latest event count changes */
   }, [convId, events.length]);
   useActiveConvSuppression(convId);
   const status = feedStatus(xmtpFeed.status);
@@ -94,7 +94,7 @@ export function useConversationState(convId: string | undefined, focus: string |
     return inboxToAddr[inboxId] ?? null;
   }, [inboxToAddr]);
 
-  // Our own eth address so our OWN bubbles resolve a stamp name/avatar (a DM's memberAddrs is empty).
+  /** Our own eth address so our OWN bubbles resolve a stamp name/avatar (a DM's memberAddrs is empty). */
   const selfAddr = xmtpFeed.inboxId ? (inboxToAddr[xmtpFeed.inboxId] ?? null) : null;
   const profilesVersion = usePeerProfiles([peerAddr, selfAddr, ...memberAddrs]);
   const mentionCandidates = useMentionCandidates(isGroup, memberAddrs, peerAddr, profilesVersion);

@@ -1,8 +1,4 @@
-/**
- * @file Shared client-scoped mutable state (cached client plus every session cache keyed to the
- *  current inbox) for the app's XMTP client lib, extracted from lib/xmtp.ts to break the cycle
- *  between client-lifecycle and feed modules; internal plumbing, not re-exported.
- */
+/** @file Shared client-scoped mutable state (cached client plus inbox-keyed session caches) for the XMTP client lib, extracted to break the client-lifecycle/feed module cycle; internal plumbing, not re-exported. */
 
 import type { Client } from '@xmtp/react-native-sdk';
 import type { HistoryEntry } from './types';
@@ -15,14 +11,7 @@ export function getCachedXmtpClient(): Client | null { return cachedClient; }
 /** Cache (or clear) the active XMTP client. */
 export function setCachedXmtpClient(client: Client | null): void { cachedClient = client; }
 
-/**
- * Resolve once the XMTP client is built/created (or after `capMs`), so heavy
- *  native consumers (the Railgun nodejs-mobile engine boot) can SERIALIZE behind
- *  XMTP onboarding instead of racing `Client.create`'s native MLS/SQLCipher
- *  handshake on first launch. Polls the cache — getOrCreateXmtpClient runs on
- *  boot from HomeScreen.sync, so we only wait, never trigger create here. The
- *  cap means a failed onboarding won't wedge the Private tab forever.
- */
+/** Resolve once the XMTP client is cached (or after `capMs`) so heavy native consumers serialize behind onboarding; only polls (never triggers create), and the cap stops a failed onboarding wedging the Private tab. */
 export async function waitForXmtpReady(capMs = 60_000): Promise<boolean> {
   if (cachedClient) return true;
   const start = Date.now();
@@ -33,13 +22,7 @@ export async function waitForXmtpReady(capMs = 60_000): Promise<boolean> {
   return false;
 }
 
-/**
- * inbox id → ETH address cache. An inbox's ETH identity is stable, so once
- *  resolved we never hit the identity API for it again. This is the key to
- *  staying under XMTP's read rate limit: channel re-summarizes (30s poll,
- *  per-message stream, AppState resume, pull-to-refresh) reuse cached identities
- *  instead of calling GetIdentityUpdates per member on every pass.
- */
+/** Inbox id → ETH address cache; identities are stable so we resolve once and reuse, keeping channel re-summarizes under XMTP's read rate limit. */
 export const inboxEthCache = new MemoryStore<string, string>();
 
 /** Per-conversation message cache so re-opening a channel renders its messages instantly (no empty-state flash); the network history still refreshes in the background. Survives navigation within the session. */
@@ -53,15 +36,7 @@ let globalStreamTeardown: (() => void) | null = null;
 /** Register the feed module's global-stream teardown for cross-module reset. */
 export function registerGlobalStreamTeardown(fn: () => void): void { globalStreamTeardown = fn; }
 
-/**
- * Drop all client-scoped in-memory state on an account change: the cached
- *  client, the single global message stream + its backstops, and every session
- *  cache that's keyed to the previous inbox (per-conv feeds, inbox→eth). The
- *  persisted channels-list cache is NOT cleared — it's account-scoped (one store
- *  per account id), so switchToAccount → setActiveAccountId just repoints it at
- *  the target account's store, keeping every account's rows cached for an instant
- *  re-open.
- */
+/** Drop all client-scoped in-memory state on account change (cached client, global stream + backstops, inbox-keyed session caches); the account-scoped persisted channels-list cache is left intact for instant re-open. */
 export function resetClientScopedState(): void {
   cachedClient = null;
   globalStreamTeardown?.();

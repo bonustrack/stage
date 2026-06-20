@@ -1,8 +1,4 @@
-/**
- * @file HomeScreen.contacts — contact-search results for the Home screen, surfaced
- *  below the filtered channels when the unified search query is non-empty:
- *  address/ENS "start a chat" rows plus matching cached DM peers, opening a DM on tap.
- */
+/** @file HomeScreen.contacts — contact-search results below the filtered channels when the search query is non-empty: address/ENS "start a chat" rows plus matching cached DM peers, opening a DM on tap. */
 
 import { useEffect, useMemo, useState } from 'react';
 

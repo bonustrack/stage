@@ -1,6 +1,4 @@
-/**
- * @file Button styling internals split out of button.tsx: size specs, colour+variant resolution (including legacy colour-name variant aliases), and the label text style.
- */
+/** @file Button styling internals split out of button.tsx: size specs, colour+variant resolution (including legacy colour-name variant aliases), and the label text style. */
 
 import type { TextStyle } from 'react-native';
 import { FONT_SIZE, colors, schemePalette } from './tokens';
@@ -31,11 +29,7 @@ export type ButtonSize =
   | '2xl'
   | '3xl';
 
-/**
- * @deprecated Legacy app `variant` values. These carried colour names AND an
- *  implied treatment (ghost = transparent). Kept as aliases so existing call
- *  sites compile and render identically. Prefer `color` + `variant`.
- */
+/** @deprecated Legacy app `variant` values carrying a colour name plus an implied treatment (ghost = transparent), kept as aliases so existing call sites compile and render identically; prefer `color` + `variant`. */
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 export interface SizeSpec {
@@ -53,8 +47,7 @@ export const SIZES: Record<ButtonSize, SizeSpec> = {
   sm: { height: 32, paddingHorizontal: 12, fontSize: FONT_SIZE.sm, gap: 6, spinner: 'small' },
   md: { height: 40, paddingHorizontal: 16, fontSize: FONT_SIZE.md, gap: 8, spinner: 'small' },
   lg: { height: 48, paddingHorizontal: 20, fontSize: FONT_SIZE.lg, gap: 8, spinner: 'small' },
-  // `xl` is sized so a `pill` icon-only Button renders a 56x56 circle - the
-  // original wallet/profile action-circle size. Used icon-only (label below).
+  /** `xl` is sized so a `pill` icon-only Button renders a 56x56 circle — the original wallet/profile action-circle size, used icon-only (label below). */
   xl: { height: 56, paddingHorizontal: 24, fontSize: FONT_SIZE.lg, gap: 8, spinner: 'small' },
   '2xl': { height: 64, paddingHorizontal: 28, fontSize: FONT_SIZE['2xl'], gap: 10, spinner: 'large' },
   '3xl': { height: 72, paddingHorizontal: 32, fontSize: FONT_SIZE['4xl'], gap: 12, spinner: 'large' },
@@ -119,14 +112,14 @@ function solidColors(ctx: ColorCtx): VariantColors {
     bg: ctx.a.bg,
     pressedBg: ctx.a.pressed,
     text: ctx.a.on,
-    // secondary solid keeps its hairline border (legacy look).
+    /** secondary solid keeps its hairline border (legacy look). */
     borderColor: ctx.color === 'secondary' ? ctx.border : undefined,
   };
 }
 
 /** Resolve the soft variant colour set. */
 function softColors(ctx: ColorCtx, dark: boolean): VariantColors {
-  // tinted, low-emphasis fill on the page background.
+  /** tinted, low-emphasis fill on the page background. */
   const soft = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)';
   return { bg: soft, text: ctx.isNeutral ? ctx.neutralText : ctx.a.bg, ghostPressedBg: ctx.ghostPressedBg };
 }
@@ -172,10 +165,7 @@ export function resolveColors(
   }
 }
 
-/**
- * @deprecated Map a legacy app `variant` (colour-name) onto the canonical
- *  `color` + `variant` model so old usages render exactly as before.
- */
+/** @deprecated Map a legacy app `variant` (colour-name) onto the canonical `color` + `variant` model so old usages render exactly as before. */
 export function legacyVariantToColor(v: ButtonVariant): {
   color: ButtonColor;
   variant: ButtonControlVariant;

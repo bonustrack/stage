@@ -1,19 +1,8 @@
-/** @file Device-local archived-channels store (AsyncStorage set + pub/sub) for hiding conversations from the inbox without using XMTP consent. */
-// Local (device-only) archived channels. Persists a set of archived
-// conversation ids in AsyncStorage so the channels list can hide them and a
-// dedicated "Archived" view can surface them. In-memory cache + dependency-free
-// pub/sub so both the channels list and the Archived view re-render the instant
-// a conv is archived/unarchived.
-//
-// WHY LOCAL (not XMTP consent): XMTP consent has only allowed/denied/unknown.
-// `denied` already means "blocked / message-request rejected", reusing it for
-// archive would conflate archive with block (archived convs would vanish from
-// the requests flow + read as blocked on every device). Archive needs a 4th,
-// reversible "hide from inbox but not blocked" state that consent can't express,
-// so we keep it device-local. True cross-device sync would need a dedicated
-// archive flag (e.g. stored in XMTP appData / a self-DM), a later step.
-//
-// Built on the shared lib/persistedStore.ts set-store factory.
+/** @file Device-local archived-channels store (AsyncStorage set + in-memory cache + dependency-free pub/sub) hiding conversations from the inbox so the channels list and a dedicated Archived view re-render instantly. */
+
+/** Kept device-local rather than XMTP consent because consent's allowed/denied/unknown can't express a 4th reversible "hidden but not blocked" state; true cross-device sync would need a dedicated archive flag later. */
+
+/** Built on the shared lib/persistedStore.ts set-store factory. */
 
 import { createSetStore } from './persistedStore';
 

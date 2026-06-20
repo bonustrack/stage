@@ -1,7 +1,4 @@
-/**
- * @file Anti-spoof confirm-summary derivation for in-chat payment requests (EIP-5792 walletSendCalls) from an untrusted peer, deriving the to/amount ONLY from the calldata that will actually be broadcast — never the unbound display `metadata`.
- *  Unrecognised calldata yields an `unverified` summary (raw target + selector) so the sheet warns instead of showing a spoofable line; pure + synchronous so it is unit-testable.
- */
+/** @file Anti-spoof confirm-summary derivation for in-chat payment requests, deriving to/amount only from the calldata that will broadcast (never display metadata); unrecognised calldata yields an unverified summary so the sheet warns, pure and synchronous for testability. */
 
 import { decodeFunctionData, formatEther, formatUnits, isAddress, type Hex } from 'viem';
 
@@ -21,10 +18,10 @@ const ERC20_TRANSFER_ABI = [
 
 /** Known ERC-20 tokens (lowercased contract address -> symbol/decimals) for a friendly amount label. Unknown tokens still get a verified recipient/amount, just labelled by the raw token contract + atomic units. USDC across chains. */
 const KNOWN_TOKENS: Record<string, { symbol: string; decimals: number }> = {
-  '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913': { symbol: 'USDC', decimals: 6 }, // Base
-  '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': { symbol: 'USDC', decimals: 6 }, // Ethereum
-  '0x036cbd53842c5426634e7929541ec2318f3dcf7e': { symbol: 'USDC', decimals: 6 }, // Base Sepolia
-  '0x1c7d4b196cb0c7b01d743fbc6116a902379c7238': { symbol: 'USDC', decimals: 6 }, // Sepolia
+  '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913': { symbol: 'USDC', decimals: 6 }, /** Base */
+  '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': { symbol: 'USDC', decimals: 6 }, /** Ethereum */
+  '0x036cbd53842c5426634e7929541ec2318f3dcf7e': { symbol: 'USDC', decimals: 6 }, /** Base Sepolia */
+  '0x1c7d4b196cb0c7b01d743fbc6116a902379c7238': { symbol: 'USDC', decimals: 6 }, /** Sepolia */
 };
 
 /** The verified transaction summary derived from the actual call bytes. */
@@ -68,7 +65,7 @@ function deriveNativeSummary(
   if (to && isAddress(to) && wei !== null) {
     return { verified: true, recipient: to, amount: formatEther(wei), symbol: nativeSymbol };
   }
-  // Malformed native call.
+  /** Malformed native call. */
   return { verified: false, recipient: to ?? '(unknown)', target: to, selector: undefined };
 }
 
@@ -83,16 +80,16 @@ function deriveTransferSummary(
     const known = KNOWN_TOKENS[(to ?? '').toLowerCase()];
     const amount = known
       ? formatUnits(rawAmount, known.decimals)
-      : rawAmount.toString(); // unknown token: show atomic units, no false symbol
+      : rawAmount.toString(); /** unknown token: show atomic units, no false symbol */
     return {
       verified: true,
       recipient,
       amount,
-      symbol: known?.symbol, // undefined for unknown token -> label by target
+      symbol: known?.symbol, /** undefined for unknown token -> label by target */
       target: to,
     };
   } catch {
-    return undefined; // undecodable -> caller falls through to unverified
+    return undefined; /** undecodable -> caller falls through to unverified */
   }
 }
 
@@ -105,14 +102,14 @@ export function deriveConfirmSummary(
   const data = call.data;
   const hasData = !!data && data !== '0x' && data.length > 2;
 
-  // Native send: no calldata. Recipient = call.to, amount = call.value (wei).
+  /** Native send: no calldata. Recipient = call.to, amount = call.value (wei). */
   if (!hasData) return deriveNativeSummary(to, call.value, nativeSymbol);
 
-  // Has calldata: only an ERC-20 transfer(address,uint256) is "verified".
+  /** Has calldata: only an ERC-20 transfer(address,uint256) is "verified". */
   const transfer = deriveTransferSummary(to, data);
   if (transfer) return transfer;
 
-  // Unrecognised method / undecodable calldata: warn, never summarise friendly.
+  /** Unrecognised method / undecodable calldata: warn, never summarise friendly. */
   return { verified: false, recipient: to ?? '(unknown)', target: to, selector: selectorOf(call.data) };
 }
 

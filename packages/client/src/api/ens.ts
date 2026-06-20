@@ -1,16 +1,4 @@
-/**
- * @file ENS name to address resolution via the stamp.fyi server-side resolver (handles CCIP-Read offchain names).
- */
-/**
- * ENS name -> address resolution via stamp.fyi.
- *
- *  We can't lean on viem's `getEnsAddress` here because most ENS names now
- *  resolve through CCIP-Read / custom Universal Resolver paths that fall over
- *  in React Native (fetch-from-resolver shape, EIP-3668 retries). stamp.fyi
- *  exposes a server-side `resolve_names` endpoint that already handles all
- *  the offchain dance (the same one Snapshot UI uses). Pure `fetch`, no
- *  platform deps, so it lives in the Stage SDK.
- */
+/** @file ENS name to address resolution via the stamp.fyi server-side `resolve_names` endpoint, which handles the CCIP-Read / Universal Resolver offchain dance that viem's `getEnsAddress` fails on in React Native; pure `fetch`, no platform deps, so it lives in the Stage SDK. */
 
 const STAMP_URL = 'https://stamp.fyi';
 

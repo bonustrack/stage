@@ -1,12 +1,4 @@
-/**
- * @file Shared ApiNft boundary type bridging the OpenSea fetch helper and its zod schema without an import cycle.
- */
-/**
- * Shared OpenSea boundary types. Extracted into its own module so the fetch
- *  helper (opensea.ts) and the zod boundary schema (opensea.schema.ts) can both
- *  reference `ApiNft` without importing each other — which would form an import
- *  cycle (opensea.ts → opensea.schema.ts → opensea.ts).
- */
+/** @file Shared ApiNft OpenSea boundary type in its own module so the fetch helper (opensea.ts) and the zod schema (opensea.schema.ts) can both reference it without forming an import cycle. */
 
 /** Raw OpenSea v2 NFT row (subset we render). */
 export interface ApiNft {

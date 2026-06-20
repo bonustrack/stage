@@ -1,12 +1,4 @@
-/** @file Group-avatar image upload helper that pins a local image to the pineapple IPFS gateway and returns an `ipfs://<cid>` URI. */
-
-/*
- * Image upload helper for group avatars. Uploads a local image to pineapple
- *  (Snapshot's IPFS pinning gateway) and returns an `ipfs://<cid>` URI suitable
- *  to store as a group's image. This is the only profile-related write left in
- *  the app: user identity (name/avatar) is READ-ONLY from stamp.fyi / ENS and
- *  has no in-app editing. No Snapshot hub usage.
- */
+/** @file Group-avatar image upload helper pinning a local image to the pineapple IPFS gateway and returning an `ipfs://<cid>` URI; the only profile write left, since user identity is read-only from stamp.fyi / ENS. */
 
 /** Pineapple image-pinning service (IPFS upload). Returns `{result:{cid}}`. */
 const PINEAPPLE_UPLOAD_URL = 'https://pineapple.fyi/upload';

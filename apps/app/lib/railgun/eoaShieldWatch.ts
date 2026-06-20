@@ -1,19 +1,4 @@
-/** @file Cheap nonce-delta poller that detects an in-flight EOA->proxy shield with no local tx history and registers a synthetic pending action so the Tokens tab shows it until mined. */
-/**
- * Detect an in-flight shield on the EOA WITHOUT any local tx history.
- *
- *  Public RPCs here don't expose a reliable full mempool, so the robust signal
- *  is a pending-vs-latest nonce delta: when the EOA has a transaction in flight
- *  (`getTransactionCount(pending) > getTransactionCount(latest)`) we then scan
- *  the latest mined blocks for a tx `from === eoa && to === proxyContract`. A
- *  hit means a shield is being mined — we register a synthetic pending action so
- *  the Tokens-tab placeholder row shows it, then hand off to the balance-scan
- *  watcher once mined (which resolves it on balance-landed).
- *
- *  CHEAP BY DESIGN: polls on a long interval (POLL_MS), only reads block bodies
- *  when a nonce gap exists, and never blocks the UI. Caller (a React effect)
- *  starts/stops it; it self-dedupes so the same shield isn't added twice.
- */
+/** @file Cheap nonce-delta poller detecting an in-flight EOA->proxy shield with no local tx history (via pending-vs-latest nonce gap + recent-block scan) and registering a synthetic pending action so the Tokens tab shows it until mined. */
 import { createPublicClient, http, type Hex } from 'viem';
 import { NETWORK_CONFIG } from '@railgun-community/shared-models';
 import { RAILGUN_NETWORKS } from './networks';
@@ -88,9 +73,9 @@ async function pollOnce(accountId: string, eoa: Hex, chainId: number): Promise<v
     client.getTransactionCount({ address: eoa, blockTag: 'pending' }),
     client.getTransactionCount({ address: eoa, blockTag: 'latest' }),
   ]);
-  if (pendingN <= latestN) return; // nothing in flight
+  if (pendingN <= latestN) return; /** nothing in flight */
 
-  // Nonce gap → inspect the latest few blocks for a shield to the proxy.
+  /** Nonce gap → inspect the latest few blocks for a shield to the proxy. */
   await scanRecentBlocksForShield(client, accountId, eoa, proxy, chainId);
 }
 

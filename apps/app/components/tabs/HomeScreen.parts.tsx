@@ -1,8 +1,4 @@
-/**
- * @file HomeScreen.parts — HomeScreen presentational pieces: the error/spinner/
- *  empty states, the channel-row renderer hook, and the "Message requests" list
- *  header, extracted from HomeScreen.tsx.
- */
+/** @file HomeScreen.parts — HomeScreen presentational pieces: error/spinner/empty states, the channel-row renderer hook, and the "Message requests" list header. */
 
 import { useCallback } from 'react';
 
@@ -32,7 +28,7 @@ function rowTitle(item: RowT): string {
 /** Build the last-message preview line, prefixing the resolved sender name. */
 function rowPreview(item: RowT): string {
   if (!item.lastPreview) return '(no messages yet)';
-  // Self prefix resolves our own stamp name (set for self too); falls back to "You" until it lands.
+  /** Self prefix resolves our own stamp name (set for self too); falls back to "You" until it lands. */
   let prefix = '';
   if (item.lastFromSelf) {
     prefix = `${(item.lastSenderAddress && getPeerName(item.lastSenderAddress)) ?? 'You'}: `;
@@ -42,12 +38,7 @@ function rowPreview(item: RowT): string {
   return `${prefix}${item.lastPreview}`;
 }
 
-/**
- * Resolve the avatar address to render, or null. GROUP (peerAddress null): the
- *  address is the deterministic stamp seed — render it directly (never blank a
- *  group avatar) unless a group image (avatarUri) wins. DM: hold off until the
- *  peer profile resolves so we don't flash a cache-buster-less stamp.
- */
+/** Resolve the avatar address to render, or null. Groups render the deterministic stamp seed directly (unless avatarUri wins); DMs hold off until the peer profile resolves. */
 function rowAvatarAddress(item: RowT, isGroup: boolean): string | null {
   if (item.avatarUri || !item.avatarAddress) return null;
   if (isGroup || isPeerResolved(item.avatarAddress)) return item.avatarAddress;
@@ -81,7 +72,7 @@ function ChannelRowItem({ item, router, setRowMenu, query }: {
       onPressIn={() => { prefetchFeed(lineOfConv(item.convId)); }}
       onPress={() => { router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } }); }}
       onLongPress={() => {
-        Vibration.vibrate(10); // ~10ms haptic buzz on long-press.
+        Vibration.vibrate(10); /** ~10ms haptic buzz on long-press. */
         setRowMenu({
           convId: item.convId, title: rowTitle(item),
           isUnread: item.unreadCount > 0 || item.markedUnread,
@@ -92,20 +83,14 @@ function ChannelRowItem({ item, router, setRowMenu, query }: {
   );
 }
 
-/**
- * #6: hoisted renderItem so its identity is stable across stream ticks (only
- *  re-created when a resolution version changes), letting memoised ChannelRow
- *  skip rows whose props are unchanged. Versions drive re-creation so
- *  name/avatar/pin/draft resolutions repaint.
- */
+/** #6: hoisted renderItem with a stable identity across stream ticks (re-created only when a resolution version changes) so memoised ChannelRow skips unchanged rows while name/avatar/pin/draft resolutions still repaint. */
 export function useChannelRowRenderer(
   router: { push: (to: { pathname: string; params: { convId: string } }) => void },
   setRowMenu: (m: RowMenu) => void,
   deps: { channelProfilesVersion: number; draftsVersion: number; pinned: Set<string>; query?: string },
 ): ({ item }: { item: RowT }) => React.ReactElement {
   const { channelProfilesVersion, draftsVersion, pinned, query } = deps;
-  // Versions drive re-creation so name/avatar/pin/draft resolutions repaint
-  // (deps intentionally partial — react-hooks/exhaustive-deps not enabled).
+  /** Versions drive re-creation so name/avatar/pin/draft resolutions repaint (deps intentionally partial — react-hooks/exhaustive-deps not enabled). */
   return useCallback(({ item }: { item: RowT }): React.ReactElement => (
     <ChannelRowItem item={item} router={router} setRowMenu={setRowMenu} query={query} />
   ), [router, setRowMenu, channelProfilesVersion, draftsVersion, pinned, query]);

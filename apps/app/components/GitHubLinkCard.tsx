@@ -1,8 +1,4 @@
-/**
- * @file Rich preview card for a github.com repo/PR/issue link in a message body:
- *  bordered transparent container with the GitHub mark and metadata from
- *  useGithubMeta, rendering nothing while loading or on any fetch failure.
- */
+/** @file Rich preview card for a github.com repo/PR/issue link: bordered container with the GitHub mark and useGithubMeta metadata, rendering nothing while loading or on fetch failure. */
 
 import { Linking } from 'react-native';
 
@@ -73,7 +69,7 @@ export function GitHubLinkCard({ url }: {
   const blockRadius = useBlockRadius();
   if (!ref || !meta) return null;
 
-  // muted metadata text; no `muted` token yet → map to `text`.
+  /** muted metadata text; no `muted` token yet → map to `text`. */
   const subColor = pal.text;
   const numLabel = meta.number != null ? `#${meta.number}` : null;
 

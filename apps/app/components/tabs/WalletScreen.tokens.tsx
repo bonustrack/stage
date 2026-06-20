@@ -9,8 +9,7 @@ import type { AssetRow } from './WalletScreen.assets';
 import type { PendingAction } from '../../lib/railgun/types';
 import { buildSortedTokenRows } from './WalletScreen.sort';
 
-// Pure merge/filter/sort/id transform lives in WalletScreen.sort (JSX-free, so
-// it's unit-testable). Re-exported here so existing import sites stay stable.
+/** The pure merge/filter/sort/id transform lives in JSX-free WalletScreen.sort (unit-testable); re-exported here so existing import sites stay stable. */
 export { buildSortedTokenRows, tokenRowId } from './WalletScreen.sort';
 
 /** Renders the wallet's public and private token holdings with pending actions. */
@@ -26,18 +25,7 @@ export function TokensList({
   bg: string;
 }): React.ReactElement {
   const router = useRouter();
-  // Merge public + shielded rows, drop zero-balance, then rank by USD value
-  // DESC. Memoized on the row arrays so this O(n log n) filter/map/sort chain
-  // only re-runs when the underlying data changes — not on every parent
-  // re-render (frequent: Railgun snapshot updates, balance refetches, tab
-  // switches). `.sort` stays stable (V8/Hermes) so equal-value ordering is
-  // preserved, matching the documented behavior exactly.
-  // Each entry carries a STABLE per-row id + onPress closure so the memoized
-  // TokenRow can skip re-rendering when the parent re-renders for unrelated
-  // reasons. Folding id/onPress into this memo (keyed on the data + router)
-  // keeps the closures referentially stable across renders — an inline
-  // `() => router.push(...)` per `.map()` would be a fresh function each render
-  // and defeat TokenRow's memo entirely.
+  /** Memoized merge/filter (drop zero-balance) and stable USD-DESC sort, with each entry carrying a stable per-row id + onPress closure so the O(n log n) work and memoized TokenRow only re-run/re-render when the underlying data or router changes. */
   const sortedRows = useMemo(
     () => buildSortedTokenRows(rows, privateRows).map(({ r, id }) => ({
       r,

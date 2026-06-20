@@ -1,6 +1,4 @@
-/**
- * @file KitThemeProvider / useKitPalette — the theme-native palette source that lets Kit primitives resolve colours by semantic role, with a safe light-scheme fallback so primitives rendered outside the provider never crash.
- */
+/** @file KitThemeProvider / useKitPalette — the theme-native palette source letting Kit primitives resolve colours by semantic role, with a safe light-scheme fallback so primitives rendered outside the provider never crash. */
 
 import { createContext, createElement, useContext, type ReactNode } from 'react';
 import { semanticPalette } from './tokens';
@@ -53,8 +51,7 @@ export interface KitThemeProviderProps {
 
 /** Mount once near the app root. Supplies the role-resolved palette + scheme to every Kit primitive below it. */
 export function KitThemeProvider({ value, scheme, children }: KitThemeProviderProps): React.ReactElement {
-  // Use createElement (not JSX) so vue-tsc, which type-checks this shared kit
-  // file from apps/ui, never tries to resolve a JSX runtime ('vue/jsx-runtime').
+  /** Use createElement (not JSX) so vue-tsc, which type-checks this shared kit file from apps/ui, never tries to resolve a JSX runtime ('vue/jsx-runtime'). */
   return createElement(KitThemeContext.Provider, { value: { palette: value, scheme } }, children);
 }
 

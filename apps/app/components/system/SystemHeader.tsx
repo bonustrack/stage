@@ -1,8 +1,4 @@
-/**
- * @file SystemHeader — shared back-arrow + title topnav for the System menu and
- *  its sub-pages; paints the toolbar surface and absorbs the top safe-area inset
- *  so consumers must not add their own paddingTop wrapper.
- */
+/** @file SystemHeader — shared back-arrow + title topnav for the System menu and sub-pages; paints the toolbar surface and absorbs the top safe-area inset so consumers add no paddingTop wrapper. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
 

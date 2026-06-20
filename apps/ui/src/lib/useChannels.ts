@@ -1,7 +1,4 @@
-/**
- * @file Composable backing the Channels tab: cached rows, search, live streaming, and the row context menu.
- */
-/** Channels-tab state: cached rows, search, live stream, row context menu. Extracted from `pages/Channels.vue` so the SFC stays under the lint cap. */
+/** @file Composable backing the Channels tab (cached rows, search, live streaming, row context menu), extracted from `pages/Channels.vue` so the SFC stays under the lint cap. */
 
 import { ref, computed, watchEffect, onMounted, onUnmounted, type ComputedRef, type Ref } from 'vue';
 import { useRouter } from 'vue-router';

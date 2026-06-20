@@ -1,8 +1,4 @@
-/**
- * @file Tap-to-add contact suggestions for the member picker, rendering the
- * user's existing DM peers as toggleable avatar/name rows that stage or unstage
- * the contact; hidden when empty.
- */
+/** @file Tap-to-add contact suggestions for the member picker: existing DM peers as toggleable avatar/name rows that stage or unstage a contact; hidden when empty. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
 

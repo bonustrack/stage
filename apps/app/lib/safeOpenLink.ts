@@ -1,7 +1,4 @@
-/**
- * @file In-bubble markdown link handler that guards against author-controlled hrefs by restricting `Linking.openURL` opens to a small scheme allowlist (http/https, mailto, metro://, stage://).
- *  Deliberately separate from the deep-link router table (which only matches our own trusted launch URLs); `react-native` is imported lazily so the pure predicate stays unit-testable.
- */
+/** @file In-bubble markdown link handler guarding author-controlled hrefs by restricting `Linking.openURL` to a scheme allowlist (http/https, mailto, metro://, stage://); separate from the deep-link router, with react-native lazily imported so the pure predicate stays unit-testable. */
 
 /** Schemes we are willing to hand to the OS from an untrusted in-bubble link. Anything else (file:, tel:, content:, intent:, javascript:, other app schemes) is ignored. */
 const ALLOWED_SCHEMES = new Set(['http', 'https', 'mailto', 'metro', 'stage']);
@@ -22,7 +19,7 @@ export function isAllowedLinkScheme(url: string): boolean {
 /** Open an in-bubble markdown link iff its scheme is allowlisted; silently ignore everything else. Best-effort — never throws. Returns false so the Markdown renderer doesn't also try to handle the press. */
 export function openInBubbleLink(url: string): boolean {
   if (isAllowedLinkScheme(url)) {
-    // Lazy require keeps the RN dependency out of the pure predicate's module graph.
+    /** Lazy require keeps the RN dependency out of the pure predicate's module graph. */
     const { Linking } = require('react-native') as typeof import('react-native');
     void Linking.openURL(url).catch(() => undefined);
   }

@@ -1,17 +1,6 @@
 /** @file Parser that detects Expo dev-client PR-preview deep links (app-scheme or https launcher) in message text and extracts the wrapped EAS Update group id for the preview-build bubble. */
 
-/*
- * Expo dev-client preview deep-link detection for message bubbles. PR-preview
- *  links posted into a channel take one of these forms:
- *    - app scheme   `metro://expo-development-client/?url=<expo url>`
- *                   `stage://expo-development-client/?url=<expo url>`  (Stage brand)
- *    - https launcher  `https://metro.box/preview-launcher.html?u=<expo url>`
- *                      `https://stage.box/preview-launcher.html?u=<expo url>`
- *  The wrapped expo url (the `url`/`u` query param) may be percent-encoded. When
- *  one is present the bubble renders a friendly "Open preview build" card instead
- *  of the raw URL. Pure string parsing - no network - cheap on every render and
- *  testable.
- */
+/** Detects Expo dev-client PR-preview links (app-scheme metro://stage:// or https launcher) in message text and extracts the wrapped, possibly percent-encoded expo url so the bubble renders an "Open preview build" card; pure string parsing, no network. */
 
 export interface PreviewLinkRef {
   /** The full matched deep link, opened verbatim via `Linking.openURL`. */
@@ -22,12 +11,7 @@ export interface PreviewLinkRef {
   shortGroup: string;
 }
 
-/**
- * Triggers for the app-scheme dev-client link (metro:// or stage://) and the
- *  https preview-launcher form, both wrapping a u.expo.dev group update. The
- *  wrapped url is the `url=` (app scheme) or `u=` (launcher) query param.
- *  Anything else returns null and renders as before.
- */
+/** Matches the app-scheme dev-client link (metro:// or stage://) and the https preview-launcher form, both wrapping a u.expo.dev group update in the `url=` or `u=` query param. */
 const RE =
   /(?:(?:metro|stage):\/\/expo-development-client\/\?url=|https?:\/\/(?:metro|stage)\.box\/preview-launcher\.html\?u=)(\S+)/i;
 
@@ -39,7 +23,7 @@ export function previewLinkOf(text?: string | null): PreviewLinkRef | null {
   const url = m[0];
   const rawInner = m[1];
   if (rawInner === undefined) return null;
-  // The inner expo URL may be raw or percent-encoded; decode defensively.
+  /** The inner expo URL may be raw or percent-encoded; decode defensively. */
   let inner = rawInner;
   try {
     inner = decodeURIComponent(rawInner);

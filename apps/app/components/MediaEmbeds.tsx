@@ -1,8 +1,4 @@
-/**
- * @file Pure-JS YouTube and OSM location-map embed renderers, both wrapping their
- *  content in MediaCard, rendering from pre-extracted id/coords (detection lives
- *  separately in lib/embedDetect).
- */
+/** @file Pure-JS YouTube and OSM location-map embed renderers, both wrapping content in MediaCard from pre-extracted id/coords (detection lives in lib/embedDetect). */
 
 import { Linking } from 'react-native';
 
@@ -50,7 +46,7 @@ export function LocationEmbed({ lat, lng, sourceUrl, dark }: {
 }): React.ReactElement {
   const tileUrl = osmTileUrl(lat, lng, 14);
   const label = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-  const tileBg = usePalette().border; // #282a2d / #e4e4e5 (loading placeholder tint)
+  const tileBg = usePalette().border; /** #282a2d / #e4e4e5 (loading placeholder tint) */
   return (
     <MediaCard dark={dark} onPress={() => void Linking.openURL(sourceUrl)}>
       <Box aspectRatio={1} style={{ position: 'relative' }}>

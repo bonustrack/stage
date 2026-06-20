@@ -1,7 +1,4 @@
-/**
- * @file Settings -> Experimental menu listing the not-yet-stable surfaces: the
- *  Kit gallery, the app Components gallery, and the Developer diagnostics console.
- */
+/** @file Settings -> Experimental menu listing the not-yet-stable surfaces: the Kit gallery, the app Components gallery, and the Developer diagnostics console. */
 
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 

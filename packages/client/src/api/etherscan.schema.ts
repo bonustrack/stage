@@ -1,15 +1,4 @@
-/**
- * @file Zod boundary schema validating the Etherscan v2 txlist response envelope.
- */
-/**
- * Zod boundary schema for the Etherscan v2 `txlist` response envelope.
- *
- *  Etherscan returns `{ status, message, result }` where `result` is either the
- *  tx rows (status "1") or an explanatory string (status "0" / errors). We
- *  validate ONLY the envelope shape here (the rows are mapped + coerced by the
- *  caller, which already tolerates missing fields); a body that isn't even this
- *  shape is real drift and throws loudly via the boundary helper.
- */
+/** @file Zod boundary schema for the Etherscan v2 `txlist` response envelope `{ status, message, result }` (result is rows or an explanatory string); validates ONLY the envelope shape — rows are coerced by the caller, and non-envelope bodies throw loudly via the boundary helper. */
 
 import { z } from 'zod';
 import { parseOrThrow } from '../validate';

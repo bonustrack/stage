@@ -1,8 +1,4 @@
-/**
- * @file HomeScreen.filter — cross-screen label-filter glue for the Channels tab:
- *  carries a tapped label-chip request (from a channel card or peer profile) into
- *  HomeScreen's enabled-filter state so the list narrows to that label.
- */
+/** @file HomeScreen.filter — cross-screen label-filter glue carrying a tapped label-chip request (from a channel card or peer profile) into HomeScreen's enabled-filter state so the list narrows to that label. */
 
 import { useEffect } from 'react';
 import {

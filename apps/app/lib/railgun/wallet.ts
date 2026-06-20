@@ -1,7 +1,4 @@
-/**
- * @file Railgun private-wallet API — the surface the UI calls, with an instant-feel contract (synchronous cached snapshot, background refresh, and optimistic runAction proving → broadcasting → confirmed/failed).
- *  Real engine/wallet/tx work is delegated to the SDK modules; when the native prover isn't in this build they resolve to safe empty/unavailable states.
- */
+/** @file Railgun private-wallet API the UI calls, with an instant-feel contract (synchronous cached snapshot, background refresh, optimistic runAction); engine/wallet/tx work is delegated to SDK modules that resolve to safe empty/unavailable states when the native prover isn't in this build. */
 import { isRailgunAvailable } from './native';
 import { isBridgeAvailable } from './bridge';
 import { bridgeRefreshSnapshot } from './bridgeWallet';
@@ -22,16 +19,7 @@ export async function openPrivateWallet(accountId: string): Promise<PrivateSnaps
   return warm;
 }
 
-/**
- * Background refresh: resolve the real 0zk address + shielded balances and
- *  persist them so the tab shows the user's actual private wallet. Never throws.
- *
- *  PREFERRED PATH (device): the embedded Node host — the RAILGUN engine only
- *  inits there, so it's the source of truth for both the 0zk address and the
- *  shielded balances (bridgeRefreshSnapshot). FALLBACK: the Hermes direct-SDK
- *  path, which can derive the 0zk address but can't init the engine on-device,
- *  so it's address-only and preserves any cached balances.
- */
+/** Background refresh (never throws): resolve and persist the real 0zk address + shielded balances; preferred path is the embedded Node host (the only place the engine inits), falling back to the Hermes direct-SDK path that derives the address only and preserves cached balances. */
 export async function refreshSnapshot(accountId: string): Promise<void> {
   const prev = getCachedSnapshot(accountId);
   try {
@@ -47,6 +35,6 @@ export async function refreshSnapshot(accountId: string): Promise<void> {
       balances: prev?.balances ?? [],
       updatedAt: Date.now(),
     });
-  } catch { /* keep the warm cache */ }
+  } catch { /** keep the warm cache */ }
 }
 

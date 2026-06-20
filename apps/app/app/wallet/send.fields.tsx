@@ -1,7 +1,4 @@
-/**
- * @file Presentational recipient/amount input fields and tx-status row for the Wallet send screen.
- * All state and handlers are owned by the parent screen and passed in.
- */
+/** @file Presentational recipient/amount input fields and tx-status row for the Wallet send screen; all state and handlers are owned by the parent and passed in. */
 import { useState } from 'react';
 import { fontSize } from '@metro-labs/kit/tokens';
 import { Linking } from 'react-native';
@@ -54,9 +51,7 @@ export function RecipientField(props: {
         <ContactsButton color={fg} border={border} onPress={() => { setPicking(true); }}/>
       </Row>
 
-      {/* Once a valid recipient is resolved, show them as a user row
-          (avatar + name + truncated address) — same row the rest of the app
-          uses. While resolving / on error, show the inline status line. */}
+      {/** Resolved recipient renders as the shared user row; while resolving or on error, show the inline status line. */}
       {props.resolving ? (
         <Row padding={{ x: 4 }} align="center" gap={8}>
           <Spinner size={20} color={fg}/>
@@ -128,8 +123,7 @@ export function AmountField(props: {
             padding: 0, backgroundColor: 'transparent', minHeight: 0, borderWidth: 0,
           }}
 />
-        {/* Mode toggle — pressing it flips ETH↔USD and converts the
-            current value so the user doesn't lose what they typed. */}
+        {/** Mode toggle flips ETH and USD, converting the current value so the user doesn't lose what they typed. */}
         <Pressable
           onPress={() => {
             if (!amount.trim() || !ethPriceUsd) { setMode(m => m === 'eth' ? 'usd' : 'eth'); return; }

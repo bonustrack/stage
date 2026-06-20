@@ -12,13 +12,13 @@ export interface SortInputs {
 
 /** Apply the archive, label (OR), and unread filters to the raw rows. */
 function filterRows(i: SortInputs): RowT[] {
-  // Archived convs are removed from the main list (shown only in Archived).
+  /** Archived convs are removed from the main list (shown only in Archived). */
   const all = (i.rows ?? []).filter(r => !i.archived.has(r.convId));
-  // Label filter (ANY/OR): empty enabled set → all; else keep rows with an enabled label.
+  /** Label filter (ANY/OR): empty enabled set → all; else keep rows with an enabled label. */
   const byLabel = i.enabledLabels.size === 0
     ? all
     : all.filter(r => (r.labels ?? []).some(l => i.enabledLabels.has(l.toLowerCase())));
-  // Unread chip: AND-narrow to conversations with unread messages.
+  /** Unread chip: AND-narrow to conversations with unread messages. */
   return i.unreadOnly ? byLabel.filter(r => r.unreadCount > 0 || r.markedUnread) : byLabel;
 }
 

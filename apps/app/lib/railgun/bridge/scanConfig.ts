@@ -1,19 +1,4 @@
-/** @file RN-owned runtime scan + RPC config (per-chain enable, RPC endpoints, batch sizing, stall timeout) handed to the embedded RAILGUN engine at engineInit. */
-/**
- * Runtime scan + RPC configuration passed from RN into the embedded engine at
- *  engineInit time (Phase 1).
- *
- *  These values used to be HARDCODED inside nodejs-assets/nodejs-project/engine.js
- *  (baked into the APK, untunable without a rebuild). Lifting them here lets RN
- *  own the policy: per-chain enable, RPC endpoints, JSON-RPC batch sizing, and the
- *  per-attempt stall timeout. The engine still falls back to its own identical
- *  defaults if a field is omitted, so this is behavior-preserving by default.
- *
- *  IMPORTANT: changing these does NOT need an APK rebuild as long as engine.js
- *  (which reads them) is already in the installed binary - the values travel over
- *  the in-process channel at init. The DEFAULTS below intentionally mirror the
- *  current engine.js constants 1:1 so Phase 1 ships with identical behavior.
- */
+/** @file RN-owned runtime scan + RPC config (per-chain enable, RPC endpoints, batch sizing, stall timeout) lifted out of engine.js and handed to the embedded RAILGUN engine at engineInit; defaults mirror the engine constants 1:1 and need no APK rebuild since they travel the in-process channel. */
 import type { RailgunNet } from './protocol';
 
 /** Per-chain scan policy. `enabled` gates BOTH provider load and scanning. */

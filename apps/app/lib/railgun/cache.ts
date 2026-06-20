@@ -1,17 +1,4 @@
-/** @file Railgun private-wallet cache: persisted per-account {zkAddress, balances} snapshot for instant tab paint plus an in-memory optimistic shield/send/unshield pending-action store. */
-/**
- * Railgun private-wallet cache + optimistic pending-action store.
- *
- *  This is the piece that makes the private balances tab feel INSTANT:
- *    - `snapshotStore` persists the last-known {zkAddress, balances} to disk
- *      (PersistentStore) so the tab paints immediately on open with no spinner;
- *      a background refresh then updates it.
- *    - `pendingStore` holds optimistic shield/send/unshield actions in memory so
- *      the UI reflects the delta the instant the user confirms — while the
- *      ~20-30s proof + broadcast runs in the background.
- *
- *  Built on the shared primitives in lib/cache.ts; no new disk plumbing.
- */
+/** @file Railgun private-wallet cache: snapshotStore persists per-account {zkAddress, balances} to disk for instant spinner-free tab paint, while pendingStore holds in-memory optimistic shield/send/unshield deltas during the ~20-30s proof + broadcast; built on lib/cache.ts. */
 import { PersistentStore, MemoryStore } from '../cache';
 import type { PrivateSnapshot, PendingAction, PrivateBalance } from './types';
 

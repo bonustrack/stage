@@ -1,7 +1,4 @@
-/**
- * @file Helpers and constants for AccountsManager: account-type display labels
- * and the dev-client app-reload helper.
- */
+/** @file Helpers and constants for AccountsManager: account-type display labels and the dev-client app-reload helper. */
 
 import { DevSettings } from 'react-native';
 import { type AccountRecord } from '../lib/accounts';

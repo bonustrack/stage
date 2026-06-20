@@ -117,8 +117,7 @@ function useOptimisticVotes(
 
     /** Undo helper. */
     const undo = (): void => { setOptimistic(prev => { const m = new Map(prev); m.delete(key); return m; }); };
-    // Single-select switch: retract every previously-held option that isn't the
-    // new pick (same question) so other clients don't double-count.
+    /** Single-select switch: retract every previously-held option that isn't the new pick (same question) so other clients don't double-count. */
     if (!multi && action === 'added') {
       for (const prevIdx of current) {
         if (prevIdx !== optionIndex) {

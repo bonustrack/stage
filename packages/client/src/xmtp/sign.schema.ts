@@ -1,30 +1,15 @@
-/**
- * @file Zod boundary schemas (with field/size caps) for the Metro in-chat signature-request and signature-reference wire bodies.
- */
-/**
- * Zod boundary schemas for the Metro in-chat signature wire bodies
- *  (`metro.box/signatureRequest:1.0` + `metro.box/signatureReference:1.0`).
- *
- *  SECURITY: a signature request arrives over XMTP from an UNTRUSTED peer and,
- *  once approved, makes the user produce a real EIP-712 / personal_sign
- *  signature. Pairing these schemas with `decodeJsonContent(bytes, schema)` makes
- *  a malformed / hostile body throw LOUDLY at the codec boundary (rendered as an
- *  unsupported bubble) instead of an `as`-cast handing the signer a wrong-but-
- *  typed object. We also CAP field counts + string sizes so a peer can't ship a
- *  pathological typed-data blob (DoS / UI-flood / memory) through the renderer
- *  and signer.
- */
+/** @file Zod boundary schemas with field/size caps for the Metro in-chat signature-request and signature-reference wire bodies; pairing them with `decodeJsonContent` makes a hostile body from an untrusted peer throw loudly at the codec boundary (rendered as an unsupported bubble) and caps counts/sizes so a peer can't DoS the renderer/signer with a pathological typed-data blob. */
 
 import { z } from 'zod';
 import type { ZodType } from 'zod';
 import type { SignatureRequestContent, SignatureReferenceContent } from './sign';
 
 /** Caps — generous for any legitimate typed-data, tight enough to reject an abusive blob. A real Permit / order has a handful of types + fields. */
-const MAX_STR = 8_192;          // any single string field (message values, desc)
-const MAX_TYPE_NAMES = 64;      // distinct struct types in `types`
-const MAX_FIELDS_PER_TYPE = 64; // fields within one struct type
-const MAX_MESSAGE_KEYS = 128;   // top-level keys in `message`
-const MAX_DOMAIN_KEYS = 16;     // keys in `domain` (EIP-712 domain has <=5)
+const MAX_STR = 8_192;          /* any single string field (message values, desc) */
+const MAX_TYPE_NAMES = 64;      /* distinct struct types in `types` */
+const MAX_FIELDS_PER_TYPE = 64; /* fields within one struct type */
+const MAX_MESSAGE_KEYS = 128;   /* top-level keys in `message` */
+const MAX_DOMAIN_KEYS = 16;     /* keys in `domain` (EIP-712 domain has <=5) */
 
 const boundedString = z.string().max(MAX_STR);
 

@@ -19,7 +19,7 @@ const ALIGN: Record<ListItemAlign, ViewStyle['alignItems']> = {
 
 /** Palette helper. */
 function palette(dark: boolean): { border: string; pressed: string; sub: string } {
-  // Pressed row fill = the hover surface in both schemes (#1c1d1f / #f2f2f3).
+  /** Pressed row fill = the hover surface in both schemes (#1c1d1f / #f2f2f3). */
   const p = schemePalette(dark);
   return { border: p.border, pressed: p.pressed, sub: p.sub };
 }

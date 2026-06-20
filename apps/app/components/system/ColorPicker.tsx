@@ -1,8 +1,4 @@
-/**
- * @file Pure-JS visual color picker with three draggable HSV sliders, a live
- *  preview swatch, and a hex text field, used by the ColorTokens editor and
- *  driven by react-native-gesture-handler with no native module.
- */
+/** @file Pure-JS visual color picker with three draggable HSV sliders, a live preview swatch, and a hex text field, driven by react-native-gesture-handler with no native module. */
 
 import { useMemo, useRef, useState } from 'react';
 import { fontSize } from '@metro-labs/kit/tokens';
@@ -22,19 +18,14 @@ function Track({ colors, thumb, onFraction, p }: {
   colors: string[]; thumb: number;
   onFraction: (f: number) => void; p: GalleryPalette;
 }): React.ReactElement {
-  // Track width measured via onLayout; the gesture's `x` is relative to the
-  // GestureDetector view (the whole track), so fraction is reliable mid-drag.
-  // Default 1 (not 0) avoids a divide-by-zero no-move before first layout.
+  /** Track width via onLayout; the gesture's `x` is relative to the whole track so fraction is reliable mid-drag, and a default of 1 (not 0) avoids a divide-by-zero before first layout. */
   const widthRef = useRef(1);
   /** Emit helper. */
   const emit = (x: number): void => {
     onFraction(Math.max(0, Math.min(1, x / widthRef.current)));
   };
   const gesture = useMemo(() => {
-    // minDistance(0) → the pan activates on the very first touch with zero
-    // threshold (works from rest, no "drag a bit first"). It also emits on
-    // onBegin so a plain tap registers. The parent ScrollView only scrolls
-    // vertically, so a horizontal/zero-distance pan here wins the first touch.
+    /** minDistance(0) activates the pan on the first touch with no threshold and emits onBegin so a plain tap registers; the parent ScrollView scrolls only vertically so this zero-distance pan wins the first touch. */
     const pan = Gesture.Pan()
       .minDistance(0)
       .shouldCancelWhenOutside(false)
@@ -42,7 +33,7 @@ function Track({ colors, thumb, onFraction, p }: {
       .onUpdate((e) => { runOnJS(emit)(e.x); });
     return pan;
   }, [onFraction]);
-  // Stepped gradient via N stacked flex slices (no native gradient dep).
+  /** Stepped gradient via N stacked flex slices (no native gradient dep). */
   return (
     <GestureDetector gesture={gesture}>
       <Box height={TRACK_H} radius={TRACK_H / 2}

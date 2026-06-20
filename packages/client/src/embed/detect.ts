@@ -1,7 +1,4 @@
-/**
- * @file Dependency-free detectors that extract YouTube ids and map coordinates from message text for inline embeds.
- */
-/** Pure detection helpers shared between the RN app and the Vue web client. Imported from `apps/app/lib/embedDetect.ts` (re-exports) and `apps/ui/src/lib/embedDetect.ts`. Keep dependency-free. */
+/** @file Dependency-free detectors extracting YouTube ids and map coordinates from message text for inline embeds, shared between the RN app and the Vue web client. */
 
 /** Extract a YouTube video id from a message body. Supports: - youtu.be/<id>(?…) - youtube.com/watch?v=<id>(&…) - youtube.com/shorts/<id> - m.youtube.com/watch?v=<id> Returns null when no link is present. */
 export function youtubeIdOf(text: string | undefined | null): string | null {

@@ -1,8 +1,4 @@
-/**
- * @file Full-width flat search field that replaces the topnav while search is
- *  open, shared by the channels list and conversation view, with a back chevron
- *  to collapse and a trailing clear button.
- */
+/** @file Full-width flat search field replacing the topnav while search is open, shared by the channels list and conversation view, with a back chevron to collapse and a trailing clear button. */
 
 import { forwardRef } from 'react';
 import { fontSize } from '@metro-labs/kit/tokens';

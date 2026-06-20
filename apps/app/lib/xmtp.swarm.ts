@@ -1,51 +1,18 @@
-/**
- * @file Swarm upload/read gateway plumbing and local file-URI materialisation (with the branded
- *  `SanitizedFileUri` strip boundary) for the app's XMTP remote-attachment flow; extracted from
- *  lib/xmtp.ts, with `swarmToHttp` re-exported from there.
- */
+/** @file Swarm upload/read gateway plumbing and local file-URI materialisation (with the branded `SanitizedFileUri` strip boundary) for the XMTP remote-attachment flow; extracted from lib/xmtp.ts, with `swarmToHttp` re-exported there. */
 
 import { File, Paths } from 'expo-file-system';
 import { stripMetadataBytes, isStrippableImage } from './stripMetadata';
 
-/**
- * Compile-time guarantee that the outbound file-metadata strip cannot be
- *  bypassed. `SanitizedFileUri` is a NOMINAL (branded) string: a plain `string`
- *  is NOT assignable to it. The ONLY function that produces one is
- *  `sanitizeFileUri` below - it runs the strip, then brands the result. The
- *  encrypt boundary (`encryptSanitizedAttachment`) accepts ONLY this type, so a
- *  future send path that hands a raw, un-sanitised uri to the encoder is a TYPE
- *  ERROR. Bypassing the strip therefore requires a deliberate, reviewable `as
- *  SanitizedFileUri` cast - it can no longer happen by accident. The brand is a
- *  phantom field (a `unique symbol`); it has zero runtime footprint - at runtime
- *  a `SanitizedFileUri` is just the string uri.
- */
+/** `SanitizedFileUri` is a NOMINAL (branded) string only `sanitizeFileUri` produces, so the encrypt boundary that accepts only this type makes handing it a raw un-sanitised uri a TYPE ERROR; the phantom `unique symbol` brand has zero runtime footprint. */
 declare const sanitizedBrand: unique symbol;
 export type SanitizedFileUri = string & { readonly [sanitizedBrand]: true };
 
-/** Pineapple = Snapshot's IPFS pinning gateway. Reused from the avatar-upload path (`lib/profile.ts`); attachments are encrypted client-side before upload, so the public CID only ever exposes ciphertext. */
-/**
- * Metro daemon Swarm upload-proxy (cloudflared named tunnel → swarmproxy train).
- *  The encrypted ciphertext is POSTed here as a raw binary body; the daemon holds
- *  the swarmy API key server-side and returns `{ ref: "<swarmReference>" }`. Not a
- *  secret — just the public host of the proxy endpoint.
- */
+/** Metro daemon Swarm upload-proxy: encrypted ciphertext is POSTed as a raw binary body, the daemon holds the swarmy API key server-side and returns `{ ref }`; not a secret, just the public proxy host. */
 const SWARM_UPLOAD_URL = 'https://blob.metro.box/upload';
-/**
- * Public KEYLESS Swarm read gateway. Reads need no daemon and no key — the bytes
- *  are fetched straight from any Swarm gateway by reference. The trailing slash is
- *  required (the `/bzz/<ref>/` form returns the exact original bytes; `/bytes`
- *  returns swarm-framed junk).
- */
+/** Public KEYLESS Swarm read gateway: bytes are fetched by reference with no daemon or key, and the trailing slash is required (the `/bzz/<ref>/` form returns the exact original bytes, unlike `/bytes`). */
 const SWARM_GATEWAY = 'https://api.swarmy.cloud/bzz/';
 
-/**
- * Resolve a gateway-agnostic `swarm://<ref>` URL to a concrete HTTPS read URL on
- *  the default gateway. Stored messages carry `swarm://<ref>` (no gateway baked
- *  in) so a future gateway swap needs no message rewrite — we pick a real gateway
- *  only at fetch time. Backward-compat: legacy messages (≤ ec2a2ce) carry a full
- *  `https://…/bzz/<ref>/` URL; those — and any other non-`swarm://` url — pass
- *  through unchanged so they still resolve.
- */
+/** Resolve a gateway-agnostic `swarm://<ref>` URL to a concrete HTTPS read URL on the default gateway (picked only at fetch time, so a gateway swap needs no message rewrite); any non-`swarm://` url (e.g. legacy full gateway URLs) passes through unchanged. */
 export function swarmToHttp(url: string): string {
   if (!url.startsWith('swarm://')) return url;
   const ref = url.slice('swarm://'.length).replace(/\/+$/, '');
@@ -61,15 +28,7 @@ export const EXT_MIME: Record<string, string> = {
   webm: 'video/webm', pdf: 'application/pdf',
 };
 
-/**
- * Resolve any staged source URI to a real on-disk `file://` URI.
- *
- *  `client.encryptAttachment` rejects anything that doesn't start with `file://`.
- *  A plain `file://` source is returned as-is. Other schemes (`content://` on
- *  Android, `blob:` / `data:` on web, bare paths) are streamed into the cache dir
- *  via `fetch().blob()` + `File.write` so the native side gets a path it can
- *  read.
- */
+/** Resolve any staged source URI to a real on-disk `file://` URI (required by `client.encryptAttachment`): `file://` passes through, other schemes are streamed into the cache dir via `fetch().blob()` + `File.write`. */
 export async function materializeFileUri(src: string): Promise<string> {
   if (src.startsWith('file://')) return src;
   /** Bare absolute path (no scheme) — just prefix it. */
@@ -96,25 +55,7 @@ function toFileUri(uri: string): string {
   return uri.startsWith('file://') ? uri : `file://${uri.replace(/^file:\/+/, '/')}`;
 }
 
-/**
- * Force-strip embedded metadata (EXIF/GPS/XMP/ICC/timestamps) from a staged
- *  `file://` image before it is encrypted and uploaded. Reads the bytes off disk,
- *  runs them through the pure-JS container rewriter (`stripMetadataBytes`), and -
- *  if anything changed - writes the sanitised bytes to a fresh cache file whose
- *  uri is returned. Non-image / unsupported formats (video, docs, HEIC) return
- *  the input uri UNCHANGED: we never claim a file is clean when we cannot strip
- *  it. Failures fall back to the original uri so a send is never blocked.
- *
- *  This is the single chokepoint: `xmtpSendMultiRemoteAttachment` calls it for
- *  every non-audio attachment, so EVERY image send is sanitised, not optionally.
- *
- *  Returns a branded `SanitizedFileUri` - the ONLY producer of that type. The
- *  encrypt boundary requires it, so the strip cannot be skipped (see the
- *  `SanitizedFileUri` doc). The non-strippable / unchanged / failure branches
- *  brand the ORIGINAL uri: that is correct because those formats are not a
- *  metadata-leak vector we can strip in pure JS (video/doc/HEIC) - the brand
- *  asserts "this uri has been through the strip gate", not "bytes were removed".
- */
+/** The single chokepoint that force-strips EXIF/GPS/etc from every staged image via the pure-JS rewriter before encrypt/upload, returning the branded `SanitizedFileUri` (its only producer); non-strippable formats and failures brand the ORIGINAL uri so a send is never blocked. */
 export async function sanitizeFileUri(
   uri: string, mimeType: string | undefined, filename: string | undefined,
 ): Promise<SanitizedFileUri> {
@@ -124,11 +65,11 @@ export async function sanitizeFileUri(
     const input = new Uint8Array(await blob.arrayBuffer());
     const { bytes, stripped } = stripMetadataBytes(input);
     if (!stripped || bytes.length === input.length && bytes.every((v, k) => v === input[k])) {
-      return uri as SanitizedFileUri; // nothing removed (no metadata present) - keep original file
+      return uri as SanitizedFileUri; /** nothing removed (no metadata present) - keep original file */
     }
     return writeCleanImage(bytes, filename, uri);
   } catch {
-    return uri as SanitizedFileUri; // never block a send on a strip failure
+    return uri as SanitizedFileUri; /** never block a send on a strip failure */
   }
 }
 
@@ -143,24 +84,7 @@ function writeCleanImage(
   return toFileUri(dest.uri) as SanitizedFileUri;
 }
 
-/**
- * Upload an encrypted attachment's ciphertext to Swarm (via the Metro daemon
- *  proxy) and return the public KEYLESS HTTPS URL the recipient fetches from.
- *
- *  The ciphertext is read off disk into a single binary body and POSTed raw to the
- *  daemon proxy (`SWARM_UPLOAD_URL`), which re-uploads it to swarmy.cloud with the
- *  server-side API key and returns `{ ref }`. We then return the keyless public
- *  gateway URL `https://api.gateway.ethswarm.org/bzz/<ref>/` — reads never touch
- *  the daemon. The blob is already client-side encrypted, so the public reference
- *  only ever exposes ciphertext.
- */
-/**
- * Max ciphertext we'll attempt to upload. The daemon proxy accepts up to ~12MB;
- *  this guards a touch below so the send fails fast with a clear message instead
- *  of buffering a huge body. NOTE: swarmy.cloud's nginx still hard-caps
- *  /api/files at ~1MB upstream — files between 1MB and this limit reach the proxy
- *  but currently 413 at swarmy until that cap is lifted (or the store changes).
- */
+/** Max ciphertext we'll attempt to upload: guards just below the daemon proxy's ~12MB so a send fails fast with a clear message; note swarmy.cloud's nginx still hard-caps upstream at ~1MB, so files between 1MB and this limit reach the proxy but 413 at swarmy. */
 const SWARM_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 
 /** Upload an already-encrypted file to Swarm via the daemon proxy and return its public gateway URL. */
@@ -183,12 +107,6 @@ export async function uploadEncryptedToIpfs(encryptedFileUri: string, filename: 
   }
   if (!res.ok || json.error) throw new Error(json.error ?? `Swarm upload failed (${res.status})`);
   if (!json.ref) throw new Error('Swarm proxy returned no reference');
-  /**
-   * Store a concrete HTTPS gateway URL in the message. The native XMTP SDK
-   *  validates the attachment url at send time and rejects non-http(s) schemes
-   *  (`java.net.MalformedURLException: unknown protocol: swarm`), so we must NOT
-   *  store a `swarm://<ref>` url here. Reads still pass through `swarmToHttp`,
-   *  which leaves https urls unchanged (and maps any legacy `swarm://` ones).
-   */
+  /** Store a concrete HTTPS gateway URL (never `swarm://<ref>`): the native XMTP SDK validates and rejects non-http(s) attachment schemes at send time; reads still pass through `swarmToHttp`, which leaves https urls unchanged. */
   return `${SWARM_GATEWAY}${json.ref}/`;
 }

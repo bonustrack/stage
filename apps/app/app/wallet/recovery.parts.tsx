@@ -20,12 +20,7 @@ export function formatDelay(seconds: number): string {
   return `${d} day${d === 1 ? '' : 's'}`;
 }
 
-/**
- * The skippable guardian setup: a list of friend addresses + an M-of-N picker.
- *  Pure presentational + local edit state; the page owns persistence (install /
- *  update via lib/zerodev/recovery). `resolveEns` lets the page resolve a typed
- *  name to an address before adding.
- */
+/** Skippable guardian setup (friend addresses + M-of-N picker); presentational with local edit state, page owns persistence. */
 export function GuardianEditor({
   pal, dark, guardians, threshold, delaySeconds = DEFAULT_RECOVERY_DELAY_SECONDS,
   onChange, onThreshold,
@@ -43,7 +38,7 @@ export function GuardianEditor({
     const next = dedupeGuardians([...guardians, entry]);
     if (next.length !== guardians.length) {
       onChange(next);
-      // Keep threshold within 1..N.
+      /** Keep threshold within 1..N. */
       if (threshold > next.length) onThreshold(next.length);
     }
     setEntry('');

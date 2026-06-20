@@ -1,17 +1,14 @@
-/**
- * @file x402 display helpers — pure, testable formatting for the x402 payment card, turning a challenge's atomic-unit amounts and CAIP-2/legacy network ids into human strings (amount + symbol, network label, chain number).
- *  Backed by the small set of USDC assets and networks the wallet already knows; no network, no signing.
- */
+/** @file x402 display helpers — pure, testable formatting for the x402 payment card, turning a challenge's atomic-unit amounts and CAIP-2/legacy network ids into human strings, backed by the USDC assets and networks the wallet already knows (no network, no signing). */
 
 import type { X402Accept } from './useLinkPreview';
 
 /** Atomic-unit decimals + symbol for the assets we can label. Keyed by the asset's lowercased contract address. USDC (6) on every chain we care about. */
 const KNOWN_ASSETS: Record<string, { symbol: string; decimals: number }> = {
-  // USDC — Base, Ethereum, Sepolia, Base-Sepolia, OP, Arbitrum, Polygon, etc.
-  '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913': { symbol: 'USDC', decimals: 6 }, // Base
-  '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': { symbol: 'USDC', decimals: 6 }, // Ethereum
-  '0x036cbd53842c5426634e7929541ec2318f3dcf7e': { symbol: 'USDC', decimals: 6 }, // Base Sepolia
-  '0x1c7d4b196cb0c7b01d743fbc6116a902379c7238': { symbol: 'USDC', decimals: 6 }, // Sepolia
+  /** USDC — Base, Ethereum, Sepolia, Base-Sepolia, OP, Arbitrum, Polygon, etc. */
+  '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913': { symbol: 'USDC', decimals: 6 }, /** Base */
+  '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': { symbol: 'USDC', decimals: 6 }, /** Ethereum */
+  '0x036cbd53842c5426634e7929541ec2318f3dcf7e': { symbol: 'USDC', decimals: 6 }, /** Base Sepolia */
+  '0x1c7d4b196cb0c7b01d743fbc6116a902379c7238': { symbol: 'USDC', decimals: 6 }, /** Sepolia */
 };
 
 /** CAIP-2 / legacy network id -> { chainId, label } for the networks x402 commonly runs on. Falls back gracefully for ids we don't recognise. */
@@ -60,7 +57,7 @@ export function formatAtomic(amount: string, decimals: number): string | undefin
   const padded = amount.padStart(decimals + 1, '0');
   const whole = padded.slice(0, padded.length - decimals);
   const frac = padded.slice(padded.length - decimals).replace(/0+$/, '');
-  // Group the integer part with thousands separators for readability.
+  /** Group the integer part with thousands separators for readability. */
   const groupedWhole = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   return frac ? `${groupedWhole}.${frac}` : groupedWhole;
 }
@@ -78,17 +75,7 @@ export function x402CanPayInApp(accept: X402Accept): boolean {
   return !!x402KnownAsset(accept);
 }
 
-/**
- * The requested amount in WHOLE units (for the balance comparison), or
- *  undefined when the asset/amount can't be resolved to a number.
- *
- *  Atomic amounts are integer strings; a non-integer (decimal/garbage) amount is
- *  a malformed challenge. We reuse `formatAtomic` (exact string math) which
- *  returns undefined for any non-integer / non-numeric amount, so a malformed
- *  challenge yields undefined here too — the card then can't show a payable
- *  state with a broken balance gate. Only the final comparison value is coerced
- *  to a Number.
- */
+/** The requested amount in whole units for the balance comparison, or undefined when the asset/amount can't resolve; reuses formatAtomic's exact string math, which rejects non-integer/garbage amounts so a malformed challenge can't show a payable state. */
 export function x402AmountNumber(accept: X402Accept): number | undefined {
   const asset = x402KnownAsset(accept);
   if (!asset || !accept.amount) return undefined;
@@ -130,8 +117,7 @@ export function x402AmountLabel(accept: X402Accept): string | undefined {
     const formatted = formatAtomic(accept.amount, asset.decimals);
     return formatted ? `${formatted} ${asset.symbol}` : undefined;
   }
-  // Unknown asset: show the raw atomic amount with whatever symbol hint we have.
-  // `extra.name` is attacker-controlled — sanitise + clamp before display.
+  /** Unknown asset: show the raw atomic amount with the attacker-controlled `extra.name` hint, sanitised + clamped before display. */
   const rawName = typeof accept.extra?.name === 'string' ? accept.extra.name : undefined;
   const extraName = rawName ? sanitizeTokenName(rawName) : undefined;
   return extraName ? `${accept.amount} ${extraName}` : accept.amount;

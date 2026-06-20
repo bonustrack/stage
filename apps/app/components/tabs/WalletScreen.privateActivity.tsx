@@ -45,7 +45,7 @@ export function PrivateActivitySection({ head, sub, border, bg }: {
     return () => { cancelled = true; };
   }, []);
 
-  // Bridge not in this binary (web / non-Railgun build): show nothing at all.
+  /** Bridge not in this binary (web / non-Railgun build): show nothing at all. */
   if (status === 'ready' && !available) return null;
 
   return (
@@ -89,8 +89,7 @@ function PrivateTxRow({ r, head, sub, border, bg }: {
   return (
     <Row padding={{ y: 14 }} align="center" gap={12} 
       style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-      {/* Token + network image, identical to the wallet token rows, with the
-          Railgun shield glyph overlaid so the tx is unmistakably private. */}
+      {/* Token + network image (identical to the wallet token rows) with the Railgun shield glyph overlaid so the tx reads as private. */}
       <TokenAvatar
         logoUrl={r.logoUrl}
         chainId={r.chainId}

@@ -1,16 +1,4 @@
-/**
- * @file Etherscan v2 transaction-history fetcher returning an account's normal txs newest-first across activity chains.
- */
-/**
- * Etherscan v2 tx-history helper. Mirrors the API-key convention used by
- *  coingecko.ts / opensea.ts (reuse Snapshot UI's read key; overridable via
- *  EXPO_PUBLIC_ETHERSCAN_API_KEY, or the `apiKey` arg the Stage client
- *  threads through). Etherscan v1 is deprecated in 2026, so this uses the
- *  unified v2 endpoint (`/v2/api?chainid=<id>&...`).
- *
- *  Returns the account's normal transactions sorted newest-first (sort=desc),
- *  which for a single EOA corresponds to NONCE DESCENDING. Pure `fetch`.
- */
+/** @file Etherscan v2 tx-history fetcher: returns an account's normal txs newest-first (sort=desc, NONCE DESCENDING for an EOA) via the unified v2 endpoint, with the read key overridable via EXPO_PUBLIC_ETHERSCAN_API_KEY or the `apiKey` arg. Pure `fetch`. */
 
 import { parseEtherscanResponse, type EtherscanResponse } from './etherscan.schema';
 import type { EtherscanTx } from './etherscan.types';
@@ -31,24 +19,19 @@ export const ACTIVITY_CHAINS = [
 export interface ActivityRow {
   hash: string;
   nonce: number;
-  timestamp: number; // unix seconds
+  timestamp: number; /** unix seconds */
   direction: 'send' | 'receive' | 'self';
   /** True when this is a contract interaction (non-empty calldata). */
   isContract: boolean;
-  counterparty: string; // the other party's address (lowercased)
-  valueEth: string; // decimal ETH string
+  counterparty: string; /** the other party's address (lowercased) */
+  valueEth: string; /** decimal ETH string */
   failed: boolean;
-  functionName: string; // decoded method name, or '' for plain transfer
-  chainId: number; // source chain (1 mainnet, 11155111 Sepolia)
-  chainLabel: string; // human label for the per-row badge
+  functionName: string; /** decoded method name, or '' for plain transfer */
+  chainId: number; /** source chain (1 mainnet, 11155111 Sepolia) */
+  chainLabel: string; /** human label for the per-row badge */
 }
 
-/**
- * Fetch up to `limit` normal transactions for `address` on `chainId`,
- *  newest-first (nonce desc for an EOA). Throws on a transport/API error so
- *  the caller can render an error state; an address with no history resolves
- *  to an empty array (Etherscan returns status "0" / "No transactions found").
- */
+/** Fetch up to `limit` normal transactions for `address` on `chainId`, newest-first (nonce desc for an EOA); throws on a transport/API error, and an address with no history resolves to an empty array. */
 export async function fetchActivity(
   address: string,
   chainId = 1,
@@ -63,8 +46,7 @@ export async function fetchActivity(
     `&sort=desc&apikey=${apiKey}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`etherscan ${res.status}`);
-  // Boundary: validate the response envelope so a drifted/garbage body throws
-  // loudly with a logged reason instead of being cast into a wrong shape.
+  /** Boundary: validate the response envelope so a drifted/garbage body throws loudly with a logged reason instead of being cast into a wrong shape. */
   const json = parseEtherscanResponse(await res.json());
   const rows = resultRowsOrThrow(json);
   return rows.map(tx => mapTx(tx, addr, chainId, label));
@@ -72,11 +54,11 @@ export async function fetchActivity(
 
 /** Extract the tx-list array from an Etherscan envelope, treating "no transactions" as empty and any other non-"1" status as a thrown error. */
 function resultRowsOrThrow(json: EtherscanResponse): EtherscanTx[] {
-  // status "0" with message "No transactions found" + array result = empty (not an error).
+  /** status "0" with message "No transactions found" + array result = empty (not an error). */
   if (json.status !== '1' && !Array.isArray(json.result)) {
     const noTx = typeof json.result === 'string' && /no transactions/i.test(json.result);
     const noTxMsg = typeof json.result === 'string' && /no transactions/i.test(json.message);
-    // Anything else (rate limit, invalid key) is a real error.
+    /** Anything else (rate limit, invalid key) is a real error. */
     if (!noTx && !noTxMsg) {
       throw new Error(typeof json.result === 'string' ? json.result : json.message);
     }
@@ -105,12 +87,7 @@ function mapTx(tx: EtherscanTx, addr: string, chainId: number, label: string): A
   };
 }
 
-/**
- * Fetch activity across ALL ACTIVITY_CHAINS in parallel, merged newest-first.
- *  Each chain's errors are isolated, so a failed/empty chain is skipped while
- *  the other still renders. Rejects only if EVERY chain throws (so the caller
- *  can show an error state); an all-empty result resolves to [].
- */
+/** Fetch activity across ALL ACTIVITY_CHAINS in parallel, merged newest-first, with each chain's errors isolated so a failed/empty chain is skipped; rejects only if EVERY chain throws, and an all-empty result resolves to []. */
 export async function fetchActivityAllChains(
   address: string,
   limit = 50,

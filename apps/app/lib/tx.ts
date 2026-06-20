@@ -1,7 +1,4 @@
-/**
- * @file Reusable on-chain send helper that builds an ERC-20 `transfer` / native send from human-readable inputs and broadcasts it via a viem wallet client keyed to the active account's in-app key, returning the tx hash.
- *  Legacy local-EOA path only (smart accounts execute through the ZeroDev Kernel client); throws a friendly error when the active account has no in-app key.
- */
+/** @file Reusable on-chain send helper that builds an ERC-20 `transfer` / native send from human-readable inputs and broadcasts via a viem wallet client keyed to the active account's in-app key (legacy local-EOA path only; throws when there is no in-app key), returning the tx hash. */
 
 import {
   isAddress, erc20Abi, encodeFunctionData,
@@ -12,12 +9,7 @@ import { VIEM_CHAINS } from '../components/tabs/WalletScreen.assets';
 import { broviderTransport } from '@stage-labs/client/wallet/client';
 import { parseAmount } from './txAmount';
 
-/**
- * The per-chain RPC the rest of the wallet uses (balances multicall, on-chain
- *  reads). viem's stock chain definitions point `rpcUrls.default` at flaky
- *  public endpoints, so the in-app signing client must NOT use a bare `http()`
- *  default; route through brovider's multichain RPC keyed by chainId instead.
- */
+/** The per-chain RPC the rest of the wallet uses; viem's stock chains point at flaky public endpoints, so the signing client routes through brovider's multichain RPC keyed by chainId instead of a bare `http()` default. */
 const rpcTransport = broviderTransport;
 
 /** A token to transfer. Omit (or pass `undefined`) to send the chain's native asset (ETH on mainnet). `decimals` defaults to 18 when not supplied. */
@@ -38,12 +30,7 @@ export interface SendParams {
   chainId?: number;
 }
 
-/**
- * Broadcast a native or ERC-20 transfer from the connected wallet.
- *  Returns the transaction hash once the wallet has signed + broadcast it
- *  (this resolves on broadcast, NOT on confirmation — callers that need a
- *  receipt should `waitForTransactionReceipt` separately).
- */
+/** Broadcast a native or ERC-20 transfer from the connected wallet, returning the tx hash; resolves on broadcast NOT confirmation (callers needing a receipt should `waitForTransactionReceipt` separately). */
 export async function sendNativeOrToken(params: SendParams): Promise<Hex> {
   const { to, amount, token, chainId = 1 } = params;
 
@@ -70,14 +57,7 @@ export async function sendNativeOrToken(params: SendParams): Promise<Hex> {
   return client.sendTransaction({ chain, to: to, value });
 }
 
-/**
- * Broadcast a raw EIP-5792 call verbatim — `{to, data, value}` as carried by a
- *  payment request's `WalletSendCall`. Unlike `sendNativeOrToken` this does NOT
- *  build its own calldata: it forwards the request's `data` untouched, so an
- *  ERC-20 transfer request (to = token contract, data = `transfer(...)`,
- *  value = 0x0) actually moves the token instead of a native send. Signs from
- *  the active in-app account's local key. Returns the broadcast tx hash.
- */
+/** A raw EIP-5792 call (`{to, data, value}` from a payment request's `WalletSendCall`) broadcast verbatim — `data` is forwarded untouched so an ERC-20 transfer request actually moves the token, signed from the active in-app account's local key. */
 export interface RawCall {
   to: string;
   data?: string;

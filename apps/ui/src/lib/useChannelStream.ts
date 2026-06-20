@@ -1,6 +1,4 @@
-/**
- * @file Live-update pipeline that streams new conversations and inbound messages to keep cached Channels-list rows fresh, with periodic and visibility-change re-sync.
- */
+/** @file Live-update pipeline that streams new conversations and inbound messages to keep cached Channels-list rows fresh, with periodic and visibility-change re-sync. */
 
 import type { Conversation } from '@xmtp/browser-sdk';
 import { type XmtpClient, syncPreferences, streamConvConsent } from './xmtp';
@@ -47,14 +45,7 @@ export interface ChannelStreamHandles {
 export async function startChannelStream(client: XmtpClient): Promise<ChannelStreamHandles> {
   const selfInboxId = client.inboxId ?? '';
 
-  /**
-   * A full refresh re-summarises every conversation — `messages()` + per-member
-   *  inbox-state resolution per conv — which is the call pattern that previously
-   *  drained the XMTP read rate limit. The live streams below cover real-time
-   *  updates, so a full refresh is only a backstop: debounce the automatic callers
-   *  (visibility + poll + peer-conv fallback) to at most once per window, while
-   *  letting an explicit user action (`force`) always run.
-   */
+  /** A full refresh re-summarises every conversation (the call pattern that previously drained the XMTP read rate limit), so it's only a backstop: automatic callers are debounced to once per window while an explicit `force` always runs. */
   let lastRefreshAt = 0;
   const MIN_AUTO_REFRESH_MS = 20_000;
   /** Refresh helper. */

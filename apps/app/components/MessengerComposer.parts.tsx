@@ -1,6 +1,4 @@
-/**
- * @file Presentational fragments for the MessengerComposer: reply banner, @-mention popup, staged-attachment row, and recording waveform bar.
- */
+/** @file Presentational fragments for the MessengerComposer: reply banner, @-mention popup, staged-attachment row, and recording waveform bar. */
 
 import { Animated, StyleSheet } from 'react-native';
 
@@ -32,17 +30,9 @@ export function ReplyBanner({
   /** Username color: white in dark theme, the light brand blue otherwise (one-off, no matching token — leave hardcoded). */
   const nameColor = dark ? '#ffffff' : '#2f6feb';
   /** TopNav border value — matches the conversation header hairline exactly. */
-  const borderColor = usePalette().border; // #282a2d / #e4e4e5
+  const borderColor = usePalette().border; /** #282a2d / #e4e4e5 */
   return (
-    /**
-     * The parent composer Col is already edge-to-edge (padding x:0), so the Box
-     *  itself spans the full screen width — its `surface` bg and top hairline run
-     *  edge-to-edge automatically. The px:22 here is a REAL inset (no negative
-     *  margin breakout), pushing the content 22px in from each screen edge to line
-     *  up with the composer input (Col padding 10 + Textarea `md` paddingHorizontal
-     *  12 = 22px). Both the reply glyph (left) and the ✕ (right) sit at this 22px
-     *  inset, symmetric. The bg uses the same `surface` token as the composer.
-     */
+    /** The Box spans full screen width (parent Col is edge-to-edge); px:22 is a real inset matching the composer input (Col 10 + Textarea md 12) so both the reply glyph and ✕ sit symmetric at 22px, with the same `surface` bg. */
     <Box padding={{ x: 22 }} surface="surface" style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: borderColor }}>
       <Pressable onPress={onPress} disabled={!onPress}>
         {/** No extra inset → the outer Box px:22 alone supplies the full composer- matched inset on both sides. */}
@@ -73,7 +63,7 @@ export function MentionPopup({
   matches: { address: string; name: string; cacheBuster?: number }[];
   onPick: (c: { address: string; name: string }) => void;
 }): React.ReactElement {
-  const border = usePalette().border; // #282a2d / #e4e4e5
+  const border = usePalette().border; /** #282a2d / #e4e4e5 */
   return (
     <Col margin={{ x: 6, bottom: 8 }} radius="lg" background={dark ? '#1a1a1c' : '#ffffff'} style={{
       overflow: 'hidden',

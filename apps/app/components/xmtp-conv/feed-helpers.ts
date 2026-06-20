@@ -13,13 +13,7 @@ export function hasAttachments(e: HistoryEntry): boolean {
   return (((e.payload as { attachments?: unknown[] } | undefined)?.attachments?.length) ?? 0) > 0;
 }
 
-/**
- * True when a reaction is actually a poll VOTE (and so must not render as an
- *  emoji pill). A vote is either tagged `schema:'custom'`, or — for decode paths
- *  that drop the schema — a reaction on a poll bubble whose content is a pure
- *  non-negative integer that is a valid option index for that poll. A genuine
- *  emoji reaction on a poll (❤️, 👍, …) is NOT an integer, so it stays a pill.
- */
+/** True when a reaction is actually a poll VOTE (not an emoji pill): tagged `schema:'custom'`, or a reaction on a poll bubble whose content is a valid non-negative option index; genuine emoji reactions aren't integers, so they stay pills. */
 function isPollVote(
   p: { reactTo?: string; emoji?: string; schema?: string } | undefined,
   pollOptionCounts: Map<string, number>,
@@ -28,8 +22,8 @@ function isPollVote(
   if (p.schema === 'custom') return true;
   if (!p.reactTo || !p.emoji) return false;
   const optionCount = pollOptionCounts.get(p.reactTo);
-  if (optionCount === undefined) return false; // not a reaction on a poll
-  if (!/^\d+$/.test(p.emoji)) return false; // a real emoji, not a bare index
+  if (optionCount === undefined) return false; /** not a reaction on a poll */
+  if (!/^\d+$/.test(p.emoji)) return false; /** a real emoji, not a bare index */
   const idx = Number.parseInt(p.emoji, 10);
   return Number.isInteger(idx) && idx >= 0 && idx < optionCount;
 }
@@ -40,7 +34,7 @@ interface ReactionPayload { reactTo: string; emoji: string; removed: boolean }
 /** Extract the genuine emoji-reaction payload from an entry, or null (poll vote / not a reaction). */
 function reactionPayloadOf(e: HistoryEntry, pollOptionCounts: Map<string, number>): ReactionPayload | null {
   const p = e.payload as { reactTo?: string; emoji?: string; removed?: boolean; schema?: string } | undefined;
-  // Skip poll VOTES — tallied separately; genuine emoji reactions on a poll stay pills.
+  /** Skip poll VOTES — tallied separately; genuine emoji reactions on a poll stay pills. */
   if (isPollVote(p, pollOptionCounts)) return null;
   if (!p?.reactTo || !p.emoji) return null;
   return { reactTo: p.reactTo, emoji: p.emoji, removed: !!p.removed };

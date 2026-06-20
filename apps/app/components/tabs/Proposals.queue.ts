@@ -1,8 +1,4 @@
-/**
- * @file Proposals.queue — the pure (no-React) pending-request detector that folds
- *  poll, payment, signing and message-request kinds into one newest-first queue,
- *  reading each channel's tail from the local-first feed cache with bounded concurrency.
- */
+/** @file Proposals.queue — pure (no-React) pending-request detector folding poll, payment, signing and message-request kinds into one newest-first queue, reading each channel's tail from the local-first feed cache with bounded concurrency. */
 
 import {
   loadFeedFirstPage, lineOfConv, listRequestConvs,
@@ -28,12 +24,7 @@ export interface QueuedRequest {
   ts: number;
 }
 
-/**
- * Detect the single message-level pending request in a channel, if any. The
- *  feed is newest-first, so `events[0]` is the latest message; a poll / payment /
- *  signing request there satisfies the "latest message of a channel" rule.
- *  Never throws (a feed-load failure just means "nothing pending here").
- */
+/** Detect a channel's single message-level pending request (poll/payment/signing on the newest message `events[0]`), if any; never throws (a feed-load failure means nothing pending). */
 async function detectOne(convId: string): Promise<QueuedRequest | null> {
   try {
     const events = await loadFeedFirstPage(lineOfConv(convId));
@@ -95,12 +86,7 @@ async function requestTs(conv: unknown): Promise<number> {
   return 0;
 }
 
-/**
- * Build the newest-first pending-request queue. Message-level kinds come from
- *  the channels-list rows (archived ones skipped per "all my non-archived chat");
- *  message requests come from the consent-unknown inbox. The two sources never
- *  overlap (allowed-only cache vs unknown-only requests).
- */
+/** Build the newest-first pending-request queue: message-level kinds from the non-archived channels-list rows, message requests from the consent-unknown inbox; the two sources never overlap (allowed-only cache vs unknown-only requests). */
 export async function buildProposalQueue(rows: CachedRow[]): Promise<QueuedRequest[]> {
   const candidates = rows.map(r => r.convId).filter(id => !isArchived(id));
   const [detected, messageReqs] = await Promise.all([

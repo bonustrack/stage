@@ -1,8 +1,4 @@
-/**
- * @file ZeroDev viem clients for the smart account (Base public client, ZeroDev paymaster client,
- *  and a Kernel account client wired to sponsor every userOp); thin IO over the SDK that lazily
- *  deploys the counterfactual Kernel inside the first paymaster-sponsored userOp.
- */
+/** @file ZeroDev viem clients for the smart account (Base public client, paymaster client, and a Kernel account client that sponsors every userOp); thin IO over the SDK that lazily deploys the counterfactual Kernel inside the first sponsored userOp. */
 
 import '../cryptoShim';
 import { http, createPublicClient, type Chain, type PublicClient } from 'viem';
@@ -19,20 +15,12 @@ import { zerodevRpcUrl } from './env';
 export function makePublicClient(): PublicClient {
   const rpc = zerodevRpcUrl();
   if (!rpc) throw new Error('ZeroDev project not configured (EXPO_PUBLIC_ZERODEV_PROJECT_ID).');
-  // `base` is an OP-stack chain whose formatters make viem infer a chain-specific
-  // client type; widen to the plain `Chain` so the result matches the declared
-  // `PublicClient` return (avoids a spurious cross-viem-copy TS2719 under turbo).
+  /** `base` is an OP-stack chain whose formatters make viem infer a chain-specific client type; widen to plain `Chain` so the result matches the declared `PublicClient` return (avoids a spurious cross-viem-copy TS2719 under turbo). */
   const chain: Chain = base;
   return createPublicClient({ chain, transport: http(rpc) });
 }
 
-/**
- * Whether a Kernel address has on-chain bytecode (i.e. the account is deployed,
- *  not just counterfactual). A read-only `getCode` over the ZeroDev public client.
- *  Used to tell a genuinely-installed passkey (deployed) from the old broken
- *  counterfactual shortcut (passkey persisted but never installed on-chain), which
- *  must be repaired by a deploy-and-swap. Throws if ZeroDev is not configured.
- */
+/** Whether a Kernel address has on-chain bytecode (deployed, not just counterfactual) via a read-only `getCode`, distinguishing a genuinely-installed passkey from the old counterfactual shortcut that needs a deploy-and-swap repair; throws if ZeroDev is not configured. */
 export async function kernelDeployedOnChain(address: string): Promise<boolean> {
   const publicClient = makePublicClient();
   const code = await publicClient.getCode({ address: address as `0x${string}` });

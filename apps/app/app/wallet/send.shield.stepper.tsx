@@ -1,8 +1,4 @@
-/**
- * @file Presentational 4-stage shield-status stepper (submitting, confirming,
- * scanning into the private balance, shielded), painting the active stage red
- * on failure; the caller maps its phase to a ShieldStage.
- */
+/** @file Presentational 4-stage shield-status stepper (submitting, confirming, scanning, shielded) that paints the active stage red on failure; the caller maps its phase to a ShieldStage. */
 import { Text } from '@metro-labs/kit/text';
 
 import { Col, Row, Box } from '../../components/layout';
@@ -53,10 +49,7 @@ function Step({ label, state, hint, pal }: {
   );
 }
 
-/**
- * The full 4-step stepper. Renders nothing while idle.
- *  @param errorAt  index (0-3) of the step that failed, when `stage==='error'`.
- */
+/** The full 4-step stepper; renders nothing while idle. `errorAt` is the index (0-3) of the failed step when `stage==='error'`. */
 export function ShieldStepper({ stage, pal, errorAt = 0 }: {
   stage: ShieldStage; pal: Pal; errorAt?: number;
 }): React.ReactElement | null {

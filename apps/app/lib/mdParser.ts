@@ -5,16 +5,7 @@ import { MarkdownIt } from 'react-native-markdown-display';
 /** `linkify` + `breaks` turn bare URLs into tappable links and treat `\n` as a line break, matching the markdown-it config on the web side. Constructed once at module scope — the lib re-parses input each render anyway. */
 export const mdParser = MarkdownIt({ typographer: false, linkify: true, breaks: true });
 
-/**
- * linkify-it only autolinks schemes it knows about (http/https/mailto/…); our
- *  custom deep-link schemes (`metro://`, `stage://`) would otherwise render as
- *  dead text. Register them so e.g. dev-client PR-preview links
- *  (`metro://expo-development-client/?url=https%3A%2F%2F…`) become tappable —
- *  `BubbleContent`'s `onLinkPress` then opens them via `Linking.openURL`.
- *  `validate` consumes the `//<rest-up-to-whitespace>` tail (incl. percent-encoded
- *  query params), returning its length so linkify-it knows where the URL ends.
- *  http(s)/mailto autolinking is untouched.
- */
+/** Register our custom deep-link schemes (`metro:`, `stage:`) with linkify-it so PR-preview links become tappable; `validate` consumes the tail up to whitespace (incl. percent-encoded params) and returns its length, leaving http(s)/mailto autolinking untouched. */
 const DEEP_LINK_RULE = {
   validate(text: string, pos: number): number {
     const m = /^\/\/[^\s]+/.exec(text.slice(pos));

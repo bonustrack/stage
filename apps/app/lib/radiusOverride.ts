@@ -1,27 +1,13 @@
 /** @file Device-local persisted override store for the two corner-radius design tokens (button pill + block container), with synchronous getters and pub/sub for the Kit editor and theme. */
 
-/*
- * Persisted numeric design tokens: two corner radii.
- *
- *  - `button` (button-border-radius) — px applied to every non-circular button.
- *    Default BUTTON_RADIUS_DEFAULT (999 = fully-rounded pill, the original look).
- *  - `block` (border-radius) — px applied to every non-button container surface
- *    (inputs/text fields, cards, modals/sheets, bordered/filled "blocks").
- *    Default BLOCK_RADIUS_DEFAULT (12 = prevailing container look).
- *
- *  Mirrors lib/colorOverrides.ts (in-memory mirror + AsyncStorage persist +
- *  pub/sub) but holds two numbers. The Kit editor edits them; theme.ts reads
- *  them reactively (useRadius / useBlockRadius) and wires the button value into
- *  the kit Button via setDefaultButtonRadius. Device-only. The app renders
- *  identically until the user edits a token.
- */
+/** Persisted corner radii (button pill default 999, block container default 12); mirrors colorOverrides.ts with in-memory cache + AsyncStorage + pub/sub, edited by the Kit editor and read reactively by theme.ts. */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   BUTTON_RADIUS_DEFAULT, BLOCK_RADIUS_DEFAULT, RADIUS_MIN, RADIUS_MAX,
 } from '@metro-labs/kit/tokens';
 
-const BUTTON_KEY = 'theme:radiusOverride'; // legacy key kept → no migration needed
+const BUTTON_KEY = 'theme:radiusOverride'; /** legacy key kept → no migration needed */
 const BLOCK_KEY = 'theme:blockRadiusOverride';
 
 /** Clamp + round any input into the valid [MIN, MAX] integer range. */
@@ -59,7 +45,7 @@ export function loadRadius(): void {
       }
       if (changed) emit();
     })
-    .catch(() => { /* best-effort: keep defaults */ });
+    .catch(() => { /** best-effort: keep defaults */ });
 }
 
 /** Synchronous snapshot of the effective button radius (override or default). */

@@ -42,8 +42,7 @@ export async function loadDrafts(): Promise<void> {
       const f = draftsFile();
       if (f.exists) { const raw = await f.text(); drafts = raw ? parseDrafts(raw) : {}; }
     } catch { drafts = {}; }
-    // Mark loaded only AFTER the read resolves, so the sync fast path can't
-    // observe loaded===true with an empty in-memory map.
+    /** Mark loaded only after the read resolves so the sync fast path can't observe loaded===true with an empty in-memory map. */
     loaded = true;
     loading = null;
     notify();

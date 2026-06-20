@@ -1,6 +1,4 @@
-/**
- * @file Typed TanStack-Query key factory + hooks for the messaging data sources (convMeta and channels keys), giving the stream/cache bridges one place to look up the keys they invalidate or setQueryData against.
- */
+/** @file Typed TanStack-Query key factory + hooks for the messaging data sources (convMeta and channels keys), giving the stream/cache bridges one place to look up the keys they invalidate or setQueryData against. */
 
 import { useQuery } from '@tanstack/react-query';
 import { getQueryClient } from '../../lib/queryClient';
@@ -12,14 +10,7 @@ export const messagingKeys = {
   convMeta: (convId: string | null | undefined) =>
     ['xmtp', 'convMeta', convId ?? ''] as const,
   channels: (account: string) => ['xmtp', 'channels', account] as const,
-  /**
-   * A conversation's message feed, scoped to the active account (epoch) + the
-   *  conv line. The in-channel feed AND the channels-list last-message preview
-   *  both read this ONE cache, so a streamed message that lands here surfaces in
-   *  both atomically (the desync class #375 patched at open-time). The epoch is
-   *  part of the key so an in-place account switch (which clears feedCache)
-   *  cannot leak the previous inbox's slice into the new account's view.
-   */
+  /** A conversation's message feed, keyed by account epoch + conv line; the in-channel feed and the channels-list preview share this one cache (atomic surfacing), and the epoch prevents an in-place account switch from leaking the previous inbox's slice. */
   messages: (account: number, line: string) =>
     ['xmtp', 'messages', account, line] as const,
 } as const;

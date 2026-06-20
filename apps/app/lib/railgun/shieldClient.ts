@@ -1,7 +1,4 @@
-/**
- * @file On-chain signing + broadcast for the RAILGUN shield flow, signed with the active account's in-app EOA key (the same key the 0zk wallet derives from).
- *  SECURITY: the private key only builds an in-process viem client; it is NEVER logged or sent across the bridge. shieldPrivateKey is keccak256(EOA signature of the SDK's fixed message).
- */
+/** @file On-chain signing + broadcast for the RAILGUN shield flow using the active account's in-app EOA key; the private key only builds an in-process viem client (never logged or bridged), and shieldPrivateKey is keccak256(EOA signature of the SDK's fixed message). */
 import '../cryptoShim';
 import {
   createPublicClient, createWalletClient, http, keccak256,

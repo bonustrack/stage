@@ -1,8 +1,4 @@
-/**
- * @file PollCodec, the pure-JS @xmtp/react-native-sdk content codec for the Metro poll content type
- *  `metro.box/poll:1.0` (JSON body plus a plain-text fallback for clients missing the codec, so it
- *  registers without a dev-client rebuild); votes are reactions handled elsewhere.
- */
+/** @file PollCodec, the pure-JS @xmtp/react-native-sdk content codec for `metro.box/poll:1.0` (JSON body + plain-text fallback so it registers without a dev-client rebuild); votes are reactions handled elsewhere. */
 
 import type {
   JSContentCodec, ContentTypeId, EncodedContent,

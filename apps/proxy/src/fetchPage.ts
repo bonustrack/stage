@@ -1,14 +1,12 @@
-/**
- * @file Edge-side HTML page fetcher for the link-preview Worker: SSRF-guarded, timeout- and size-capped fetch that also detects x402 402 payment challenges.
- */
+/** @file Edge-side HTML page fetcher for the link-preview Worker: SSRF-guarded, timeout- and size-capped fetch that also detects x402 402 payment challenges. */
 
 import { assertPublicUrl, SsrfError } from './ssrf.ts';
 import { challengeFrom402, type X402Challenge } from './x402.ts';
 
 const TIMEOUT_MS = 5000;
 const MAX_REDIRECTS = 3;
-const MAX_BYTES = 1_500_000; // 1.5 MB cap; the head is far smaller
-const X402_MAX_BYTES = 64_000; // x402 challenge bodies are tiny JSON
+const MAX_BYTES = 1_500_000; /** 1.5 MB cap; the head is far smaller */
+const X402_MAX_BYTES = 64_000; /** x402 challenge bodies are tiny JSON */
 const UA = 'Mozilla/5.0 (compatible; MetroLinkPreview/1.0; +https://metro.box)';
 
 export interface FetchResult { html: string; finalUrl: string }
@@ -62,7 +60,7 @@ async function readJsonCapped(res: Response): Promise<unknown> {
   }
 }
 
-// Sentinel telling the fetch loop to follow a redirect to `next`.
+/** Sentinel telling the fetch loop to follow a redirect to `next`. */
 interface Redirect { redirectTo: string }
 /** Whether Redirect. */
 function isRedirect(v: unknown): v is Redirect {
@@ -88,14 +86,13 @@ async function handleResponse(
   res: Response,
   current: string,
 ): Promise<FetchResult | X402Challenge | Redirect | null> {
-  // x402: a 402 carries a payment challenge (JSON body and/or PAYMENT-REQUIRED
-  // header). Parse it instead of treating 402 as a dead end.
+  /** x402: a 402 carries a payment challenge (JSON body and/or PAYMENT-REQUIRED header); parse it instead of treating 402 as a dead end. */
   if (res.status === 402) {
     const ct = res.headers.get('content-type') ?? '';
     const body = /json/i.test(ct) ? await readJsonCapped(res) : null;
     return challengeFrom402(current, res.headers, body);
   }
-  // Manual redirect handling: validate the next hop through the SSRF guard.
+  /** Manual redirect handling: validate the next hop through the SSRF guard. */
   if (res.status >= 300 && res.status < 400) {
     const loc = res.headers.get('location');
     if (!loc) return null;

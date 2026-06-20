@@ -1,12 +1,4 @@
-/**
- * @file Cross-platform humanisation of decoded XMTP content, notably group_updated system messages, into one readable line.
- */
-/**
- * Cross-platform humanisation for decoded XMTP message content. Shared by
- *  the mobile envelope builder and the channels-list preview path on both
- *  mobile and web — without this the channels row falls back to the raw
- *  `[xmtp.org/group_updated:1.0]` label instead of "removed 1 member".
- */
+/** @file Cross-platform humanisation of decoded XMTP content (notably group_updated system messages) into one readable line, shared by the mobile envelope builder and the channels-list preview path so rows don't show raw type labels. */
 
 interface FieldChange { fieldName: string; oldValue?: string; newValue?: string }
 /** The RN SDK and the browser/wasm SDK name these fields differently (`membersAdded`/`addedInboxes`, `metadataFieldsChanged`/`metadataFieldChanges`), so accept either shape. */
@@ -49,15 +41,7 @@ export function humanizeGroupUpdated(g: GroupUpdatedContent): string {
 /** Mention wire form stored in the raw XMTP message text: a bare address, `@0x<40 hex>`. The address is the source of truth; the bubble renderer resolves it to a tappable `@<username>` at render time. */
 const MENTION_RE = /@(0x[0-9a-fA-F]{40})\b/g;
 
-/**
- * Collapse an address mention `@0xABCD…1234` → the friendly short form
- *  `@0xabcd…1234` (first 6 + last 4 of the address, matching `shortAddress`'s
- *  `…` style) for any plain-text / preview / snippet context (channel-list
- *  rows, reply previews, push text) so the raw 42-char address never leaks.
- *  This is a pure helper with no profile lookup available, so it can't resolve
- *  the username — the live bubble renderer does that. No-op (cheap) when the
- *  text has no address mentions.
- */
+/** Collapse an address mention `@0xABCD…1234` to the short `@0x…` form (first 6 + last 4) for plain-text/preview contexts so the raw address never leaks; pure, so it can't resolve usernames, and a no-op when the text has no mentions. */
 export function humanizeMentions(text: string): string {
   if (!text.includes('@0x')) return text;
   return text.replace(MENTION_RE, (_m, addr: string) =>
@@ -88,7 +72,7 @@ function previewPoll(decoded: unknown): string {
 const PREVIEW_HANDLERS: Record<string, (decoded: unknown) => string> = {
   group_updated: decoded => humanizeGroupUpdated(decoded as GroupUpdatedContent),
   groupUpdated: decoded => humanizeGroupUpdated(decoded as GroupUpdatedContent),
-  // Preview a reaction as just the emoji (e.g. "🔥") rather than "[react 🔥]".
+  /** Preview a reaction as just the emoji (e.g. "🔥") rather than "[react 🔥]". */
   reaction: decoded => (decoded as { content?: string }).content ?? '👍',
   poll: previewPoll,
   reply: previewReply,
@@ -106,13 +90,7 @@ export function previewOfXmtpContent(decoded: unknown, contentTypeId: string | u
   return handler ? handler(decoded) : `[${typeId}]`;
 }
 
-/**
- * Map an attachment to a clean emoji preview (no filename noise) for the
- *  channels-list row, reply previews and push text:
- *    image → 📷, audio/voice → 🎤, video → 🎥, anything else → 📎.
- *  MIME type is authoritative; falls back to the filename extension when the
- *  remote-attachment metadata omits the MIME (multi-remote attachments).
- */
+/** Map an attachment to a clean emoji preview (image → 📷, audio → 🎤, video → 🎥, else → 📎) for previews, using MIME as authoritative and falling back to the filename extension when MIME is absent. */
 export function attachmentEmojiPreview(mimeType?: string | null, filename?: string | null): string {
   const ext = filename?.split('.').pop()?.toLowerCase() ?? '';
   const mime = mimeType ?? '';

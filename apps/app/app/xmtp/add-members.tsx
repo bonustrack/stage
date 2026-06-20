@@ -1,7 +1,4 @@
-/**
- * @file Add-members screen for an existing XMTP group, reusing the shared
- * MemberPicker to stage address/.eth members and calling addGroupMembers.
- */
+/** @file Add-members screen for an existing XMTP group, staging address/.eth members via the shared MemberPicker and calling addGroupMembers. */
 
 import { useCallback, useState } from 'react';
 

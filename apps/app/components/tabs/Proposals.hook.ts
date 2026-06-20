@@ -1,8 +1,4 @@
-/**
- * @file Proposals.hook — React bindings over the shared proposalsStore: useProposals
- *  drives the Proposals screen (current card, queue cursor, skip/advance/refresh)
- *  and useProposalCount is the cheap pending-count read for the Home banner.
- */
+/** @file Proposals.hook — React bindings over proposalsStore: useProposals drives the Proposals screen (card, cursor, skip/advance/refresh); useProposalCount is the cheap pending count for the Home banner. */
 
 import { useCallback, useState, useSyncExternalStore } from 'react';
 import { proposalsStore } from './Proposals.store';
@@ -45,18 +41,13 @@ export function useProposals(): ProposalsState {
     proposalsStore.isReady,
   );
 
-  /**
-   * Local cursor into the visible queue. The store filters skipped ids out of
-   *  the queue, so advancing = skip the current id (store re-emits a shorter
-   *  queue) and the cursor naturally lands on the next still-present entry. We
-   *  keep a cursor only to show "N of M" while the head stays at index 0.
-   */
+  /** Local cursor into the visible queue: the store filters skipped ids out, so advancing skips the head and the next entry slides up; the cursor exists only to show "N of M". */
   const [seen, setSeen] = useState(0);
 
   const advance = useCallback(() => {
     const cur = proposalsStore.getQueue()[0];
     if (cur) {
-      proposalsStore.skip(cur.key); // store drops it -> next becomes head
+      proposalsStore.skip(cur.key); /** store drops it -> next becomes head */
       setSeen(s => s + 1);
     }
   }, []);

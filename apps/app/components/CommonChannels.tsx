@@ -1,8 +1,4 @@
-/**
- * @file Peer-profile "Channels" section listing the group conversations the local
- *  user and the viewed peer both belong to (resolved async via useCommonChannels),
- *  each a tappable ChannelRow mirroring the channels-tab list.
- */
+/** @file Peer-profile "Channels" section: group conversations the local user and viewed peer share (via useCommonChannels), each a tappable ChannelRow mirroring the channels-tab list. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
 
@@ -43,9 +39,7 @@ export function CommonChannels({ peerAddress, enabled, c }: {
 
   return (
     <Box margin={{ top: 20 }}>
-      {/* Underline-tab header — mirrors the Wallet page's WalletTabs visual
-          treatment (active bottom-border, 18px Calibre-Semibold, head colour),
-          rendered as a single tab. */}
+      {/* Underline-tab header mirroring WalletTabs (active bottom-border, semibold head colour), rendered as a single tab. */}
       <Row margin={{ x: 16, bottom: 6 }} justify="start" align="center" gap={24} 
         style={{ borderBottomWidth: 1, borderBottomColor: c.border }}>
         <Pressable style={{ paddingVertical: 10, marginBottom: -1, borderBottomWidth: 2, borderBottomColor: c.link }}>
@@ -56,23 +50,14 @@ export function CommonChannels({ peerAddress, enabled, c }: {
         {loading ? <Spinner size={20} color={c.text} /> : null}
       </Row>
 
-      {/* Flat full-width rows — identical to the channels tab (index.tsx
-          renderRow): same preview prefix, timestamp, unread badge, pin/draft
-          glyphs. The preview/unread/timestamp come from the shared channels
-          cache (see useCommonChannels). When there's no cached last message we
-          fall back to the member-count subtitle, exactly as before. */}
+      {/* Flat full-width rows identical to the channels tab (preview prefix, timestamp, unread badge, pin/draft glyphs) from the shared cache, falling back to the member-count subtitle when there's no cached message. */}
       {channels.map(ch => {
         const hasMsg = ch.lastPreview.length> 0;
         /** Mirror index.tsx renderRow: always show the sender's name prefix (self-sent included — the daemon/agent shares the inbox, so "You:" would hide a legitimate agent reply; show its profile name instead). */
         const preview = hasMsg
           ? `${ch.lastSenderAddress ? `${getPeerName(ch.lastSenderAddress) ?? shortAddress(ch.lastSenderAddress)}: ` : ''}${ch.lastPreview}`
           : null;
-        /**
-         * Mirror HomeScreen.helpers showAddr: an uploaded group image takes
-         *  precedence (avatarUri). Otherwise these are all GROUPS, so the
-         *  channel's own stamp seed (avatarAddress) renders immediately — no
-         *  peer-resolution gate (the seed isn't a member address).
-         */
+        /** Mirror showAddr: an uploaded group image (avatarUri) wins; otherwise the group's own stamp seed (avatarAddress) renders immediately with no peer-resolution gate. */
         const showAddr = ch.avatarUri || !ch.avatarAddress ? null : ch.avatarAddress;
         return (
           <ChannelRow

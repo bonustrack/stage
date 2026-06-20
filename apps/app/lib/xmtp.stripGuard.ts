@@ -1,8 +1,4 @@
-/**
- * @file Compile-time type-level guard (no runtime logic) for the outbound file-metadata strip,
- *  asserting the branded `SanitizedFileUri` boundary holds so the bypass-proof wiring fails the
- *  build if the brand is removed or loosened (PR #376).
- */
+/** @file Compile-time type-level guard (no runtime logic) for the outbound file-metadata strip, asserting the branded `SanitizedFileUri` boundary holds so the build fails if the brand is removed or loosened (PR #376). */
 
 import type { SanitizedFileUri, sanitizeFileUri } from './xmtp.swarm';
 import type { encryptSanitizedAttachment } from './xmtp.attachments';
@@ -19,13 +15,7 @@ type AssertFalse<T extends false> = T;
 /** The encrypt boundary's `fileUri` param. */
 type BoundaryFileUri = Parameters<typeof encryptSanitizedAttachment>[1]['fileUri'];
 
-/**
- * GUARD 1: the boundary requires the brand. A plain `string` must NOT be
- *  assignable to the boundary's `fileUri`. We assert the NEGATIVE relationship:
- *  `IsAssignable<string, BoundaryFileUri>` must resolve to `false`. If the
- *  boundary ever loosens to accept a bare string, this resolves to `true` and
- *  `AssertFalse` stops compiling - failing the build.
- */
+/** GUARD 1: the boundary requires the brand — assert the NEGATIVE relationship that a plain `string` is NOT assignable, so if the boundary ever loosens to accept a bare string `AssertFalse` stops compiling and fails the build. */
 type _RawStringRejected = AssertFalse<IsAssignable<string, BoundaryFileUri>>;
 
 /** GUARD 2: `sanitizeFileUri`'s output IS accepted by the boundary (it is the sole legitimate producer). Breaks if `sanitizeFileUri` returns plain string. */

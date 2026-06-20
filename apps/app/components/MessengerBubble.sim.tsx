@@ -1,8 +1,4 @@
-/**
- * @file SimulationBlock — pre-sign eth_simulateV1 dry-run view for a tx-request card,
- *  showing a SUCCESS/FAIL badge and predicted asset movement (warning loudly on a
- *  predicted revert) without ever hard-blocking signing.
- */
+/** @file SimulationBlock — pre-sign eth_simulateV1 dry-run view for a tx-request card, showing a SUCCESS/FAIL badge and predicted asset movement (loud on a predicted revert) without ever hard-blocking signing. */
 
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
@@ -20,7 +16,7 @@ function SimOutcome({ sim, sub, chainId }: {
   const fail = !sim.success;
   const { in: incoming, out } = sim.assetChanges;
   const noChange = incoming.length === 0 && out.length === 0;
-  // FAIL gets the red danger frame (loud); SUCCESS a calm success-tinted box.
+  /** FAIL gets the red danger frame (loud); SUCCESS a calm success-tinted box. */
   const accent = fail ? pal.danger : pal.success;
   const badge = fail ? `Will fail: ${sim.revertReason ?? 'transaction would revert'}` : 'Will succeed';
   return (
@@ -44,7 +40,7 @@ export function SimulationBlock({ sim, pending, sub, chainId }: {
   const pal = usePalette();
   if (pending) return <SimNote text="Simulating…" sub={sub} bg={pal.border} />;
   if (!sim) return null;
-  // Could-not-simulate: calm, informative — the rest of the card still works.
+  /** Could-not-simulate: calm, informative — the rest of the card still works. */
   if (sim.success === 'unknown') {
     return <SimNote text="Could not simulate this transaction" sub={sub} bg={pal.border} />;
   }

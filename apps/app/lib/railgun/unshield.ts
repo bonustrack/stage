@@ -1,7 +1,4 @@
-/**
- * @file UNSHIELD orchestration — move funds from the user's own 0zk shielded balance back to a public address (default: their own EOA), composing bridge primitives + a heavy Groth16 proof + a viem sign/broadcast with the in-app EOA key.
- *  Self-broadcast only (sendWithPublicWallet=true, no broadcaster fee); progress/errors flow through the pending-action store so the Private tab chip reflects proving → broadcasting → confirmed/failed.
- */
+/** @file UNSHIELD orchestration — move funds from the user's own 0zk shielded balance back to a public address (default their own EOA) via bridge primitives + a Groth16 proof + a viem sign/broadcast with the in-app EOA key; self-broadcast only (no broadcaster fee), with progress/errors flowing through the pending-action store for the Private tab chip. */
 import { parseUnits, type Hex } from 'viem';
 import { getActiveAccountId } from '../accounts';
 import { engineInit, walletInfo } from './bridge';
@@ -76,9 +73,7 @@ export async function unshieldToPublic(params: UnshieldParams): Promise<Unshield
       tokenAddress: meta.address, amountWei: amountWei.toString(), recipientAddress: recipient,
     }];
 
-    // EIP-1559 gas details (both Ethereum + Sepolia default to Type2). The
-    // gasEstimate is a placeholder for the estimate call; the SDK returns the
-    // real estimate which we feed into the populate step.
+    /** EIP-1559 gas details (Ethereum + Sepolia default to Type2); gasEstimate is a placeholder for the estimate call whose returned value feeds the populate step. */
     const fees = await signer.publicClient.estimateFeesPerGas();
     const baseGas: UnshieldGasDetails = {
       evmGasType: 2,

@@ -1,8 +1,4 @@
-/**
- * @file ThemeSwitcher — app-wide theme switcher rendered as a System/Light/Dark
- *  segmented pill that writes lib/theme's setThemePreference, re-theming the
- *  whole app instantly via its pub/sub.
- */
+/** @file ThemeSwitcher — app-wide theme switcher rendered as a System/Light/Dark segmented pill that writes lib/theme's setThemePreference, re-theming the whole app instantly via its pub/sub. */
 
 import { Box, Row } from '../layout';
 import { Icon } from '@metro-labs/kit/icon';
@@ -22,8 +18,7 @@ export function ThemeSwitcher({ dark, head }: {
       <Row margin={{ top: 10 }} gap={8}>
         {THEME_OPTIONS.map((opt) => {
           const active = pref === opt.value;
-          // Primary (active) text is bg-contrasting (dark scheme → dark text);
-          // secondary (inactive) uses the head token. Mirror that for the icon.
+          /** Active text is bg-contrasting (dark scheme → dark text); inactive uses the head token, and the icon mirrors it. */
           const fg = active ? (dark ? '#000000' : '#ffffff') : head;
           return (
             <Button

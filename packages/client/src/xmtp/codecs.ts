@@ -1,22 +1,4 @@
-/**
- * @file Framework-agnostic XMTP content-type descriptors and JSON wire codec body helpers for the Metro custom content types.
- */
-/**
- * Framework-agnostic XMTP content-type DESCRIPTORS + JSON wire codec body
- *  helpers for the Metro custom content types.
- *
- *  The RN app registers JSContentCodecs (which `implements` the
- *  @xmtp/react-native-sdk JSContentCodec interface — that native interface keeps
- *  the codec CLASSES in apps/app). But every Metro codec's wire body is the same
- *  pure pattern: `JSON.stringify(content)` -> UTF-8 bytes inside an
- *  EncodedContent, and the reverse on decode. That logic plus the content-type
- *  descriptors live here ONCE so the app (and the daemon / web) don't duplicate
- *  the serialization.
- *
- *  ZERO @xmtp / react-native / expo imports. Uses only standard globals
- *  (TextEncoder / TextDecoder) so the byte round-trip is platform-neutral; the
- *  RN app's Buffer polyfill is no longer needed for these bodies.
- */
+/** @file Framework-agnostic XMTP content-type descriptors and JSON wire codec body helpers for the Metro custom content types, living here once so app/daemon/web share the JSON.stringify round-trip without native @xmtp/react-native/expo imports. */
 
 import type { ZodType } from 'zod';
 import { parseOrThrow, type BoundaryName } from '../validate';
@@ -58,12 +40,7 @@ export interface EncodedJsonContent {
   content: Uint8Array;
 }
 
-/**
- * Encode any JSON-serializable Metro content into an EncodedContent body:
- *  `JSON.stringify` -> UTF-8 bytes. `fallback` carries the plain-text rendering
- *  so vanilla XMTP clients (and any client missing the codec) show a readable
- *  string instead of a blank/error bubble.
- */
+/** Encodes any JSON-serializable Metro content into an EncodedContent body (JSON.stringify -> UTF-8 bytes); `fallback` carries plain text so clients missing the codec show a readable string. */
 export function encodeJsonContent(
   type: XmtpContentTypeId,
   content: unknown,
@@ -77,15 +54,7 @@ export function encodeJsonContent(
   };
 }
 
-/**
- * Decode a JSON-bodied EncodedContent back into its content shape. Accepts the
- *  bytes off the EncodedContent (`encoded.content`).
- *
- *  When a `schema` is supplied the decoded body is validated at this boundary:
- *  a malformed / drifted wire body throws loudly (with a logged reason) instead
- *  of being `as`-cast into a wrong-but-typed value. Without a schema it keeps
- *  the legacy `as`-cast behaviour so existing callers are unaffected.
- */
+/** Decodes a JSON-bodied EncodedContent back into its content shape; when a `schema` is supplied a malformed wire body throws loudly at this boundary, otherwise it keeps the legacy `as`-cast behaviour. */
 export function decodeJsonContent<T>(
   bytes: Uint8Array,
   schema?: ZodType<T>,

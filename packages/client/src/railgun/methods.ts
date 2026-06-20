@@ -1,27 +1,4 @@
-/**
- * @file Single source of truth enumerating every whitelisted Railgun bridge method name to keep client and host in sync.
- */
-/**
- * SINGLE SOURCE OF TRUTH for the Railgun bridge method surface.
- *
- *  THE DESYNC PROBLEM THIS SOLVES: before phase 2 the bridge method names lived
- *  as bare string literals in FOUR places that had to be hand-kept in sync -
- *    1. the RN frame builders (lib/railgun/.../shieldCalls/transferCalls/...),
- *    2. the RN sdk() dispatcher docs,
- *    3. the Node host whitelist (nodejs-assets/.../sdkDispatch.js WHITELIST),
- *    4. the Node host engine-op routing (main.js ENGINE_OPS / NOT_IMPL).
- *  Adding a method to one and forgetting another shipped a silent runtime gap
- *  (a call rejected with "not whitelisted" only at proof time on a real APK).
- *
- *  THE FIX: enumerate every method name ONCE here as a typed const. The RN frame
- *  builders import these literals (so a typo is a compile error); the Node host
- *  validates its WHITELIST against the generated manifest (railgun-methods.json,
- *  emitted from this file by scripts/gen-railgun-methods, asserted by a test) so
- *  a method that exists in the contract but not the host whitelist FAILS CI.
- *  Adding a method can no longer desync the four files.
- *
- *  PURE: no native / RN / expo imports. Plain string constants.
- */
+/** @file Single source of truth enumerating every whitelisted Railgun bridge method name once as a typed const so the RN frame builders, host whitelist, and engine-op routing can no longer desync (a typo is a compile error; a host-whitelist mismatch fails CI). Pure string constants, no RN/expo imports. */
 
 /** Stateful ENGINE ops routed in the host to engine.js (it owns LevelDB + prover + provider wiring + the wallet cache). NOT in the SDK whitelist. */
 export const ENGINE_OPS = [
@@ -50,20 +27,14 @@ export type ExtraCall = (typeof EXTRA_CALLS)[number];
 export const COMPOSITE_OPS = ['shield', 'privateTransfer', 'unshield'] as const;
 export type CompositeOp = (typeof COMPOSITE_OPS)[number];
 
-/**
- * THE WHITELIST - every @railgun-community/wallet primitive the Node host may
- *  invoke by name. The RN frame builders reference these via SDK_METHOD (typed)
- *  so a name typo is a compile error; the host's WHITELIST keys MUST equal this
- *  set exactly (asserted by the dispatch-parity test). Grouped engine/wallet/
- *  balance/gas/proof/tx for readability; order is not significant.
- */
+/** THE WHITELIST — every @railgun-community/wallet primitive the host may invoke by name; RN frame builders reference these via SDK_METHOD (typed) and the host's WHITELIST keys MUST equal this set exactly (dispatch-parity test). Grouped for readability; order is not significant. */
 export const SDK_METHODS = [
-  // engine lifecycle (lower-level than ENGINE_OPS; for advanced orchestration)
+  /** engine lifecycle (lower-level than ENGINE_OPS; for advanced orchestration) */
   'engine.has',
   'engine.get',
   'engine.loadProvider',
   'engine.unloadProvider',
-  // wallet management
+  /** wallet management */
   'wallet.create',
   'wallet.createViewOnly',
   'wallet.loadByID',
@@ -73,23 +44,23 @@ export const SDK_METHODS = [
   'wallet.getMnemonic',
   'wallet.getShareableViewingKey',
   'wallet.getTransactionHistory',
-  // balances
+  /** balances */
   'balance.refresh',
   'balance.forERC20',
   'balance.getSerializedERC20',
   'balance.rescanFull',
   'balance.awaitWalletScan',
-  // gas estimation
+  /** gas estimation */
   'gas.estimateShield',
   'gas.estimateShieldBaseToken',
   'gas.estimateTransfer',
   'gas.estimateUnshield',
   'gas.estimateUnshieldBaseToken',
-  // proof generation (Groth16 - the whole reason the Node host exists)
+  /** proof generation (Groth16 - the whole reason the Node host exists) */
   'proof.transfer',
   'proof.unshield',
   'proof.unshieldBaseToken',
-  // transaction population (returns a populated tx; RN signs + broadcasts)
+  /** transaction population (returns a populated tx; RN signs + broadcasts) */
   'tx.populateShield',
   'tx.populateShieldBaseToken',
   'tx.populateProvedTransfer',

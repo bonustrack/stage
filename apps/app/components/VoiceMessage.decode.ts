@@ -5,14 +5,7 @@ import type { decodeAudioData as DecodeAudioData } from 'react-native-audio-api'
 /** Resampling the decode to a low rate keeps the native→JS Float32 copy small (waveform only needs amplitude shape, not fidelity). 8 kHz mono is plenty for ~40 bars and roughly an order of magnitude less data than 44.1 kHz. */
 const DECODE_SAMPLE_RATE = 8000;
 
-/**
- * react-native-audio-api is a NATIVE module: a top-level import throws at
- *  module-eval time ("native module could not be found") on any APK built
- *  without it, crashing the whole feed before render. So we resolve it LAZILY
- *  + OPTIONALLY via require inside a try/catch, memoizing the result (the fn,
- *  or null when unavailable). null → decode rejects → caller falls back to
- *  synthetic bars. The eval is never allowed to throw uncaught.
- */
+/** Lazily and optionally require the native react-native-audio-api inside a try/catch, memoizing the fn (or null when unavailable) so a missing native module never throws at module-eval and callers fall back to synthetic bars. */
 let loaded = false;
 let decodeAudioDataFn: typeof DecodeAudioData | null = null;
 /** Get the Decode Audio Data. */
@@ -30,24 +23,7 @@ function getDecodeAudioData(): typeof DecodeAudioData | null {
   return decodeAudioDataFn;
 }
 
-/**
- * Resolve any voice-note source into a form `decodeAudioData` can actually
- *  decode on-device. The native decoder accepts three input shapes but rejects
- *  most string sources outright:
- *   - `file://…` / bare path → decoded directly off disk (works).
- *   - `http(s)://…`          → fetched then decoded (works).
- *   - `data:audio/…;base64,` → THROWN by `isBase64Source` ("Base64 source
- *                              decoding is not currently supported").
- *   - `blob:…`               → THROWN by `isDataBlobString`.
- *  Inline XMTP voice notes (StaticAttachment) render as `data:audio/m4a;base64,`
- *  and the sender's own optimistic echo can be `blob:`/`data:` — both hit the
- *  reject branches, so the decode always failed and the player fell back to the
- *  synthetic waveform. We sidestep every string-source rejection by fetching
- *  non-file/non-http sources into an ArrayBuffer (the `data:`/`blob:` fetch is a
- *  cheap in-memory read) and handing that to the decoder's memory-block path,
- *  which decodes m4a/aac/mp3/wav uniformly. `file://`/`http(s)` pass through so
- *  remote decrypted clips still decode straight off disk / the network.
- */
+/** Resolves a voice-note source into a decodable form: file/http pass through, but data:/blob: (which the native decoder rejects) are fetched into an ArrayBuffer for the decoder's memory-block path. */
 async function toDecodableInput(uri: string): Promise<string | ArrayBuffer> {
   if (
     uri.startsWith('file://') || uri.startsWith('/') ||
@@ -78,12 +54,7 @@ export async function decodeWaveformBars(uri: string, count: number): Promise<nu
   }
 }
 
-/**
- * Split `pcm` into `count` contiguous buckets, take each bucket's RMS, then
- *  normalize to 0..1 against the loudest bucket so quiet clips still fill the
- *  track. A 0.06 floor keeps silent gaps visible as a thin line (matches the
- *  synthetic fallback's minimum-height feel).
- */
+/** Splits `pcm` into `count` contiguous buckets, normalizing each bucket's RMS to 0..1 against the loudest with a 0.06 floor so quiet clips still fill the track and silent gaps stay visible. */
 function bucketRms(pcm: Float32Array, count: number): number[] {
   const per = Math.max(1, Math.floor(pcm.length / count));
   const out: number[] = new Array<number>(count).fill(0);

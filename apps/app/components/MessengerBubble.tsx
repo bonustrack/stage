@@ -1,6 +1,4 @@
-/**
- * @file Discord-style messenger row bubble: every message left-aligned, avatar at the start, no colored bubble even for the local user's own messages.
- */
+/** @file Discord-style messenger row bubble: every message left-aligned, avatar at the start, no colored bubble even for the local user's own messages. */
 
 import { memo, useState } from 'react';
 import { Pressable } from '@metro-labs/kit/pressable';
@@ -47,7 +45,7 @@ function BubbleColumn({ p, fg, sub, pillBg }: {
     <Col minWidth={0} flex={1} style={{ opacity: pending ? 0.5 : 1 }}>
       <Col
         style={{
-          // Reply-target highlight is a full-row background on the outer View now; keep only the unread outline here.
+          /** Reply-target highlight is a full-row background on the outer View now; keep only the unread outline here. */
           borderWidth: unread ? 1.5 : 0,
           borderColor: unread ? (dark ? '#ffffff' : '#000000') : 'transparent',
         }}
@@ -81,15 +79,15 @@ function BubbleColumn({ p, fg, sub, pillBg }: {
 /** The Messenger Bubble Base component: Discord-style row with avatar, gestures, and content column. */
 function MessengerBubbleBase(props: MessengerBubbleProps): React.ReactElement {
   const { entry, dark, unread, replyTarget, myUri, senderEthAddress, onAvatarPress } = props;
-  // Discord-style layout doesn't visually distinguish own messages — myUri is
-  // accepted for forward compatibility (e.g. read-receipts) but not styled-on.
+  /** Discord-style layout doesn't distinguish own messages; myUri is accepted for forward compatibility (e.g. read-receipts) but not styled-on. */
   void (entry.from === myUri);
-  // Group system events (rename / member add / image change) get a muted feed color.
+  /** Group system events (rename / member add / image change) get a muted feed color. */
   const isSystem = (entry.payload as { system?: boolean } | undefined)?.system === true;
   const pal = usePalette();
-  // system → muted body text; else → strong primary.
+  /** system → muted body text; else → strong primary. */
   const fg = isSystem ? pal.text : pal.link;
-  const sub = pal.text; // muted meta (date, 'Sending'); no `muted` token yet.
+  /** muted meta (date, 'Sending'); no `muted` token yet. */
+  const sub = pal.text;
   const g = useBubbleGestures(props);
   return (
     <GestureDetector gesture={g.tapGestures}>
@@ -114,16 +112,7 @@ function MessengerBubbleBase(props: MessengerBubbleProps): React.ReactElement {
   );
 }
 
-/**
- * Custom memo comparator: the feed's renderItem (useFeedRenderItem) builds
- *  ~10 brand-new arrow-function props for EVERY bubble on every parent render,
- *  so the default shallow memo (which compares those callbacks by identity) is
- *  defeated — one reaction/vote re-rendered the entire visible window. We ignore
- *  callback identity entirely and re-render a bubble only when a render-affecting
- *  DATA prop for its own id actually changes. The per-id Maps/Sets passed in are
- *  the result of `map.get(item.id)`, which returns a stable reference while the
- *  underlying collection is unchanged, so reference equality is correct here.
- */
+/** Custom memo comparator: renderItem rebuilds ~10 fresh callback props per bubble each render, defeating shallow memo, so we ignore callback identity and re-render only when a render-affecting DATA prop for the bubble's own id changes (per-id Maps/Sets are stable references via map.get). */
 const DATA_KEYS = [
   'entry', 'dark', 'unread', 'pending', 'replyTarget', 'replyPreview',
   'reactions', 'pendingReactions', 'pendingRemovals', 'ownEmojis',

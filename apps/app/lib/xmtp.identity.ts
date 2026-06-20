@@ -7,13 +7,7 @@ import {
 import { getCachedXmtpClient, inboxEthCache } from './xmtp.state';
 import { getOrCreateXmtpClient } from './xmtp.client';
 
-/**
- * The native inbox→eth fetcher for a given client: one `inboxStates(true, ids)`
- *  call, projected to a `{ inboxId → ethAddress }` map. This is the ONLY part of
- *  the resolution that touches the native client; the cache-first RULE
- *  (collect-missing / prime / merge) lives in the Stage SDK
- *  (@stage-labs/client/xmtp/inboxCache) and is shared.
- */
+/** The native inbox→eth fetcher for a client: one `inboxStates(true, ids)` call projected to a `{ inboxId → ethAddress }` map — the only part touching the native client; the shared cache-first rule lives in the Stage SDK (@stage-labs/client/xmtp/inboxCache). */
 function inboxEthFetcher(
   client: Awaited<ReturnType<typeof getOrCreateXmtpClient>>,
 ): (ids: string[]) => Promise<Record<string, string>> {
@@ -33,12 +27,7 @@ function inboxEthFetcher(
   };
 }
 
-/**
- * Batch-resolve inbox ids → ETH address across MANY rows in ONE network call.
- *  Pre-warms the shared inbox→eth cache via the SDK rule so per-row
- *  `resolveInboxEth` calls are cache hits (zero reads). Kills the N+1 where each
- *  channel row resolved its members serially.
- */
+/** Batch-resolve inbox ids → ETH address across many rows in one network call, pre-warming the shared cache via the SDK rule so per-row `resolveInboxEth` calls hit it (zero reads); kills the N+1 of serial per-row member resolution. */
 export async function primeInboxEthCache(
   client: Awaited<ReturnType<typeof getOrCreateXmtpClient>>,
   ids: string[],
@@ -82,12 +71,7 @@ export async function memberInboxToAddressMap(conv: Conversation): Promise<Recor
   }
 }
 
-/**
- * Resolve the Ethereum addresses of every member of a group conversation, excluding the
- *  local user's own inbox. Used by the Channels list to render a multi-avatar stack for
- *  group rows. Returns [] for DMs (use `peerEthAddressOfDm` for those) or when the
- *  members lookup fails.
- */
+/** Resolve the Ethereum addresses of every group member except the local user's own inbox (for the Channels multi-avatar stack); returns [] for DMs (use `peerEthAddressOfDm`) or when the members lookup fails. */
 export async function groupMemberEthAddresses(conv: Conversation): Promise<string[]> {
   if ((conv as unknown as { version?: string }).version !== 'GROUP') return [];
   try {

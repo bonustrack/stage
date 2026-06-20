@@ -1,8 +1,4 @@
-/**
- * @file Group labels: read/write small free-form tags in the XMTP group's synced `appData` slot,
- *  owning the `labels` key but merging on write so other features' keys survive (versioned schema
- *  with tolerant parsing; all members may edit, E2E MLS-encrypted to the group).
- */
+/** @file Group labels: read/write small free-form tags in the XMTP group's synced `appData` slot, owning the `labels` key but merging on write so other features' keys survive (versioned schema, tolerant parsing, all members may edit, E2E MLS-encrypted). */
 
 import { convOfLine } from './xmtp';
 
@@ -13,8 +9,7 @@ interface LabelsBlob {
   github?: string;
 }
 
-/** Caps — keep the blob tiny so it stays well inside MLS message limits. */
-/** Max number of labels allowed per group blob. */
+/** Max number of labels per group blob — caps keep the blob inside MLS message limits. */
 export const MAX_LABELS = 16;
 /** Max character length of a single label after cleaning. */
 export const MAX_LABEL_LEN = 24;
@@ -99,14 +94,7 @@ export async function getGroupLabels(line: string): Promise<string[]> {
   }
 }
 
-/**
- * Read the labels off an ALREADY-LOADED group conversation WITHOUT forcing a
- *  fresh `sync()`. The channels list calls `conv.sync()` once per row in
- *  `summarize()`; this piggybacks on that synced state to read `appData()` with
- *  no extra network round-trip — so rendering label chips on every card never
- *  triggers a per-row sync (which would jank/rate-limit the list). Returns []
- *  for DMs, non-groups, or any read error.
- */
+/** Reads labels off an already-loaded group without forcing a fresh sync(), piggybacking on the channels list's per-row sync so rendering label chips never triggers an extra round-trip; returns [] for DMs, non-groups, or any read error. */
 export async function labelsOfSyncedGroup(conv: unknown): Promise<string[]> {
   const group = asGroup(conv);
   if (!group) return [];

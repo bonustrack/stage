@@ -1,8 +1,4 @@
-/**
- * @file Interactive poll view for MessengerBubble: one block per AskUserQuestion
- *  with option lists, live vote counts and result bars, plus a free-text input
- *  (OpenAnswerBlock) for open questions, all themed via usePalette/withAlpha.
- */
+/** @file Interactive poll view for MessengerBubble: one block per AskUserQuestion with option lists, live vote counts, result bars, and an OpenAnswerBlock free-text input for open questions, themed via usePalette/withAlpha. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
 

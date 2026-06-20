@@ -34,13 +34,7 @@ export async function xmtpReact(
   return await conv.send({ reaction: buildReaction(messageId, emoji, action) });
 }
 
-/**
- * Send a Metro poll (`metro.box/poll:1.0`). The poll is encoded by PollCodec
- *  into an EncodedContent; we pass the codec's contentType so the SDK routes
- *  through the JS-codec send path (sendEncodedContent) rather than treating the
- *  object as a native content shape. Returns the poll's XMTP message id — the
- *  reference every vote targets.
- */
+/** Send a Metro poll (`metro.box/poll:1.0`); passes the codec's contentType so the SDK routes through the JS-codec send path. Returns the poll's XMTP message id — the reference every vote targets. */
 export async function xmtpSendPoll(line: string, poll: PollContent): Promise<string> {
   const conv = await convOfLine(line);
   if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
@@ -65,12 +59,7 @@ export async function xmtpSendSignatureReference(
   return await conv.send(ref, { contentType: SIGNATURE_REFERENCE_CODEC.contentType });
 }
 
-/**
- * Send an in-chat payment REQUEST (`xmtp.org/walletSendCalls:1.0`). The
- *  WalletSendCalls is encoded by WalletSendCallsCodec; we pass the codec's
- *  contentType so the SDK routes through the JS-codec send path. Returns the
- *  request's XMTP message id. Mirrors xmtpSendPoll.
- */
+/** Send an in-chat payment REQUEST (`xmtp.org/walletSendCalls:1.0`); passes the codec's contentType so the SDK routes through the JS-codec send path. Returns the request's XMTP message id. Mirrors xmtpSendPoll. */
 export async function xmtpSendTxRequest(line: string, params: WalletSendCallsContent): Promise<string> {
   const conv = await convOfLine(line);
   if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
@@ -84,12 +73,7 @@ export async function xmtpSendTxReference(line: string, ref: TransactionReferenc
   return await conv.send(ref, { contentType: TRANSACTION_REFERENCE_CODEC.contentType });
 }
 
-/**
- * Cast (`added`) or retract (`removed`) a poll vote. A vote is just a reaction
- *  with `schema:'custom'` whose `content` is the chosen option INDEX and whose
- *  `reference` is the poll message id — so votes reuse the reaction tally +
- *  cross-device sync with zero new content type.
- */
+/** Cast (`added`) or retract (`removed`) a poll vote — a custom-schema reaction whose content is the chosen option index and reference is the poll message id, reusing the reaction tally + cross-device sync with no new content type. */
 export async function xmtpVote(
   line: string, pollMessageId: string, optionIndex: number,
   action: 'added' | 'removed' = 'added', questionIndex = 0,
@@ -125,11 +109,7 @@ export async function xmtpSendAttachment(
   const conv = await convOfLine(line);
   if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
   const payload = buildStaticAttachment(filename, mimeType, dataB64);
-  /**
-   * Use the typed `sendAttachment` helper (not the generic `send({attachment})`) so the
-   *  native side runs the codec's full encode + size-validation path and surfaces real
-   *  errors instead of silently dropping payloads that exceed libxmtp's per-message limit.
-   */
+  /** Use the typed `sendAttachment` helper (not the generic send) so the native side runs the codec's full encode + size-validation path and surfaces real errors instead of silently dropping oversize payloads. */
 
   const c = conv as unknown as { sendAttachment?: (p: typeof payload) => Promise<string> };
   if (typeof c.sendAttachment === 'function') return await c.sendAttachment(payload);

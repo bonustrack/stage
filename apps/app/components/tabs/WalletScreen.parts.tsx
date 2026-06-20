@@ -1,6 +1,4 @@
-/**
- * @file Wallet sub-components + formatting helpers — the action button (Btn), the Tokens|NFTs|Activity|Railgun tabs, and re-exported value formatters.
- */
+/** @file Wallet sub-components + formatting helpers — the action button (Btn), the Tokens|NFTs|Activity|Railgun tabs, and re-exported value formatters. */
 
 import { memo } from 'react';
 import { Pressable } from '@metro-labs/kit/pressable';
@@ -19,12 +17,7 @@ export { fmtUsd, splitUsd, fmtBalance };
 
 interface Palette { head: string; sub: string; border: string; bg: string; card: string; }
 
-/**
- * Action button — a kit `pill` icon-only Button rendering a 56×56 circle
- *  (`size="xl"`, `variant="secondary"` = rowBg fill + border), with the text
- *  label as a separate <Text> BELOW the circle. The four actions (Send /
- *  Receive / Swap / Buy) sit LEFT-aligned on a single row, centered columns.
- */
+/** Action button — a kit pill icon-only Button (56x56 circle, secondary fill + border) with its label as a separate Text below; Send/Receive/Swap/Buy sit left-aligned in one row of centered columns. */
 export function Btn({ icon, label, onPress, head, border, dark }: {
   icon: HeroIconName; label: string; onPress: () => void;
   head: string; border: string; dark: boolean;
@@ -38,9 +31,7 @@ export function Btn({ icon, label, onPress, head, border, dark }: {
         dark={dark}
         onPress={onPress}
         icon={<Icon name={icon} size={26} color={head} />}
-        // Override the kit's static secondary fill with the live `border` palette
-        // token so the circle reacts to theme/colour overrides like the rest of
-        // the design system (ChannelRow rowBg = border).
+        /** Override the kit's static secondary fill with the live `border` palette token so the circle reacts to theme/colour overrides (ChannelRow rowBg = border). */
         style={{ backgroundColor: border, borderColor: border }}
 />
       <Text weight="semibold" size="md" color={head} numberOfLines={1}>{label}</Text>
@@ -92,7 +83,7 @@ function tokenRowFields(r: AssetRow, sub: string): {
   valueUsd: number | null; changeColor: string; changeText: string;
 } {
   const valueUsd = r.priceUsd === null ? null : r.priceUsd * Number(r.balance);
-  // Up/down colour for the 24h change pill (Snapshot treasury tones).
+  /** Up/down colour for the 24h change pill (Snapshot treasury tones). */
   const changeColor = r.change24h === null ? sub : r.change24h >= 0 ? '#22c55e' : DANGER;
   const changeText = r.change24h === null ? '' : `${r.change24h >= 0 ? '+' : ''}${r.change24h.toFixed(2)}%`;
   return { valueUsd, changeColor, changeText };
@@ -106,11 +97,9 @@ export const TokenRow = memo(function TokenRow({ r, head, sub, border, bg, onPre
     <Row padding={{ y: 14 }}
       align="center" gap={12} 
 >
-      {/* Token avatar + network badge - shared TokenAvatar (Snapshot-treasury
-          style), reused by the private Activity rows so both read identically. */}
+      {/* Shared TokenAvatar (token + network badge), reused by the private Activity rows so both read identically. */}
       <TokenAvatar logoUrl={r.logoUrl} chainId={r.chainId} bg={bg} border={border}/>
-      {/* Left column — token NAME (top) over price + 24h change (bottom).
-          Shielded rows carry a small "Private" pill next to the name. */}
+      {/* Left column — token name over price + 24h change; shielded rows carry a small Private pill next to the name. */}
       <Col minWidth={0} flex={1}>
         <Row minWidth={0} align="center" gap={6}>
           {r.isPrivate ? <PrivateBadge sub={sub} /> : null}
@@ -141,5 +130,5 @@ export const TokenRow = memo(function TokenRow({ r, head, sub, border, bg, onPre
   );
 });
 
-// NftsView lives in its own module; re-export so import paths are unchanged.
+/** NftsView lives in its own module; re-export so import paths are unchanged. */
 export { NftsView } from './WalletScreen.nfts';

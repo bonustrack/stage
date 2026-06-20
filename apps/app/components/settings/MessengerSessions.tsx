@@ -1,8 +1,4 @@
-/**
- * @file Settings -> Messenger -> Sessions screen: lists the active XMTP inbox's
- *  installations newest-first with the current device flagged, and a per-row
- *  Revoke that confirms then kills that installation via the account signer.
- */
+/** @file Settings Messenger Sessions screen: lists the active XMTP inbox's installations newest-first with the current device flagged, plus a per-row Revoke that confirms then kills that installation. */
 
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert } from 'react-native';

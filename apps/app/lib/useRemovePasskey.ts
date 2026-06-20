@@ -1,7 +1,4 @@
-/**
- * @file Shared "Remove passkey" hook (Settings -> Wallet) — the inverse of useEnablePasskey, reverting a passkey-root Kernel back to ECDSA signing via removePasskeyFromRecord behind a destructive confirm.
- *  The swap userOp is authorized by the current passkey root (signed via the OS WebAuthn assertion) and the stored passkey is cleared fail-closed only after the receipt succeeds.
- */
+/** @file Shared "Remove passkey" hook (Settings -> Wallet) reverting a passkey-root Kernel back to ECDSA signing via removePasskeyFromRecord behind a destructive confirm; the swap userOp is authorized by the current passkey root and the stored passkey is cleared only after the receipt succeeds. */
 
 import { useCallback, useEffect, useState } from 'react';
 import { Alert } from 'react-native';

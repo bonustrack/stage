@@ -1,8 +1,4 @@
-/**
- * @file Inline message-bubble card that renders a `metro://xmtp/<convId>` channel
- *  link as a bordered, tappable ChannelRow preview (resolving DM/group metadata
- *  via useConvMeta, falling back to a generic label when not a member).
- */
+/** @file Inline message-bubble card rendering a `metro://xmtp/<convId>` link as a bordered, tappable ChannelRow preview (DM/group metadata via useConvMeta, generic label when not a member). */
 
 import { router } from 'expo-router';
 import { ChannelRow } from './ChannelRow';
@@ -14,12 +10,7 @@ import { channelStampSeed } from '@metro-labs/kit/avatar';
 import { usePalette, useBlockRadius } from '../lib/theme';
 import { shortAddress } from '../modules/messaging';
 
-/**
- * When `peerAddress` is set the link is a DM-by-address share
- *  (`metro://xmtp/user/<addr>`): render the peer card + open-on-tap path that
- *  resolves each side's own local DM. Otherwise it's a conv-id link (group or
- *  DM-by-id) resolved through `useConvMeta`.
- */
+/** With `peerAddress` set it's a DM-by-address share rendering the peer card; otherwise a conv-id link (group or DM-by-id) resolved through `useConvMeta`. */
 export function ChannelCard(
   { convId, peerAddress }: { convId?: string; peerAddress?: string; dark?: boolean },
 ): React.ReactElement | null {

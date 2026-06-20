@@ -1,15 +1,8 @@
-/** @file Scans a message body for every URL-shaped token and classifies each into a rich-card descriptor (DM, channel, YouTube, map, GitHub, preview, generic), deduped and capped. */
-// Multi-link card detection for message bubbles.
-//
-// A single message body can contain several links that each render their own
-// rich card: a metro channel/DM deep link, a GitHub repo/PR/issue link, an EAS
-// preview-build deep link, a YouTube link, or a map link. The bubble renders one
-// card per detected link, stacked below the text in order of appearance.
-//
-// This helper scans the body for every URL-shaped token, classifies each via the
-// existing per-detector functions, dedupes identical URLs, and caps the result so
-// a link-heavy message can't spawn an unbounded number of cards. Pure string
-// parsing - no network - so it stays cheap on every render and unit-testable.
+/** @file Multi-link card detection: scans a message body for every URL-shaped token and classifies each into a rich-card descriptor (DM, channel, YouTube, map, GitHub, preview, generic), deduped and capped. */
+
+/** A message body can contain several links that each render their own rich card (channel/DM, GitHub, preview, YouTube, map), one card per link in appearance order. */
+
+/** Pure string parsing (no network): scans for every URL-shaped token, classifies via the per-detector functions, dedupes URLs, and caps the result so a link-heavy message can't spawn unbounded cards. */
 
 import { youtubeIdOf, mapCoordsOf } from './embedDetect';
 import { githubLinkOf } from './githubDetect';
@@ -32,15 +25,7 @@ export type CardLink =
 /** A URL-shaped token: an http(s) link or a `metro://` / `stage://` deep link (the app ships under both brands), terminated by whitespace. Matched globally so we can walk every link in appearance order. */
 const TOKEN_RE = /(?:https?:\/\/|metro:\/\/|stage:\/\/)\S+/gi;
 
-/**
- * Classify a single URL token into a card descriptor, or null if it isn't a
- *  card-generating link. The detectors are run against the lone token (not the
- *  whole body) so each card maps to exactly one link.
- *
- *  Order mirrors the original single-card precedence: DM before channel (the
- *  `user/<addr>` form must not be read as a conv id), then media embeds, then
- *  GitHub, then the generic preview deep link.
- */
+/** Classify a single URL token into a card descriptor (or null), running detectors against the lone token in precedence order: DM before channel, then media, GitHub, preview, generic. */
 function classify(token: string): CardLink | null {
   const dmPeer = metroDmPeerOf(token);
   if (dmPeer) return { kind: 'dm', url: token, peerAddress: dmPeer };
@@ -62,36 +47,21 @@ function classify(token: string): CardLink | null {
   const preview = previewLinkOf(token);
   if (preview) return { kind: 'preview', url: preview.url };
 
-  // Any other plain http(s) link gets a generic OpenGraph preview card. Strip
-  // trailing sentence punctuation the greedy token match may have swallowed.
+  /** Any other plain http(s) link gets a generic OpenGraph preview card, after stripping trailing sentence punctuation the greedy match may have swallowed. */
   const clean = token.replace(/[.,;:!?)\]}'"]+$/, '');
   if (isGenericLink(clean)) return { kind: 'generic', url: clean };
 
   return null;
 }
 
-/**
- * True when the matched URL token is wrapped in angle brackets, e.g.
- *  `<https://example.com>` - the Discord/Slack convention for "linkify but show
- *  no preview". We suppress every card (special or generic) for such links; the
- *  bubble still renders them as plain tappable text. The token may have swallowed
- *  the closing `>` into its greedy `\S+` match, so we accept either a `>`
- *  immediately after the token or as the token's last char, paired with a `<`
- *  immediately before it.
- */
+/** True when the URL token is angle-bracket wrapped (`<https://...>`, the Discord/Slack no-preview convention), accepting a `>` after or as the token's last char paired with a preceding `<`. */
 function isBracketWrapped(text: string, token: string, start: number): boolean {
   if (text[start - 1] !== '<') return false;
   const after = text[start + token.length];
   return token.endsWith('>') || after === '>';
 }
 
-/**
- * Extract every card-generating link from `text`, in order of appearance,
- *  deduped by the canonical card url, capped at {@link MAX_CARDS}. Returns an
- *  empty array when the body has no card links. Links wrapped in angle brackets
- *  (`<https://...>`) are skipped entirely (no card), matching the Discord/Slack
- *  preview-suppression convention.
- */
+/** Extract every card-generating link from `text` in appearance order, deduped by canonical url and capped at {@link MAX_CARDS}; angle-bracket-wrapped links are skipped. */
 export function cardLinksOf(text?: string | null): CardLink[] {
   if (!text) return [];
   const out: CardLink[] = [];

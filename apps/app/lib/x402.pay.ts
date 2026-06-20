@@ -1,7 +1,4 @@
-/**
- * @file x402 `exact` (EIP-3009 / USDC) pay helper — the wallet + network half: resolves the active wallet, signs the gasless transfer authorization, and POSTs the X-PAYMENT header to the link-proxy `/x402-settle` endpoint.
- *  Owns wallet resolution, signing, nonce/now, and the settle call; the pure header/typed-data builders live in lib/x402.payHeader.
- */
+/** @file x402 `exact` (EIP-3009 / USDC) pay helper — the wallet + network half that resolves the active wallet, signs the gasless transfer authorization, and POSTs the X-PAYMENT header to the link-proxy `/x402-settle` endpoint (pure header/typed-data builders live in lib/x402.payHeader). */
 
 import { getActiveViemAccount } from './accounts';
 import { LINK_PREVIEW_BASE } from './useLinkPreview';
@@ -34,8 +31,7 @@ async function settlePayment(resource: string, paymentHeader: string): Promise<X
     body: JSON.stringify({ url: resource, paymentHeader }),
   });
   if (!res.ok) {
-    // The settle endpoint itself errored (4xx/5xx from the proxy, not the
-    // resource). Surface its status so the UI can show a real failure.
+    /** The settle endpoint itself errored (4xx/5xx from the proxy, not the resource); surface its status so the UI can show a real failure. */
     return { ok: false, status: res.status };
   }
   const j = (await res.json()) as { ok?: boolean; status?: number; body?: string };
@@ -55,7 +51,7 @@ export async function payX402Exact(args: {
   const { accept, resource } = args;
   assertExactChallenge(accept);
 
-  // Sign with the active account's in-app local key (legacy EOA records).
+  /** Sign with the active account's in-app local key (legacy EOA records). */
   const local = await getActiveViemAccount();
   if (!local) throw new Error('No in-app wallet to pay with');
   const from = local.address;

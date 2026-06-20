@@ -1,22 +1,4 @@
-/** @file Single source of truth deriving deterministic RAILGUN key material (BIP39 mnemonic + 32-byte encryption key) from the account's EOA private key via keccak256 so the 0zk address never drifts. */
-/**
- * Deterministic RAILGUN key material from the active account's EOA key.
- *
- *  WHY: the app's accounts store a raw secp256k1 private key, but the RAILGUN
- *  SDK keys a wallet off a BIP39 mnemonic + a 32-byte encryption key. We bridge
- *  the two DETERMINISTICALLY so the same EOA always yields the same 0zk address
- *  across launches (and across the direct-SDK path in sdkWallet.ts and the
- *  embedded-Node bridge path that actually inits the engine on-device):
- *
- *    privateKey --keccak256--> 32-byte digest
- *      --first 16 bytes as entropy--> ethers Mnemonic.fromEntropy --> 12 words
- *    encryptionKey = keccak256(privateKey) hex (no 0x)
- *
- *  No extra secret is stored; the EOA private key never leaves the RN side
- *  beyond the in-process bridge channel (see bridge/index.ts SECURITY note).
- *  This is the SINGLE source of truth for the derivation — both paths import it
- *  so the 0zk address can never drift between them.
- */
+/** @file Single source of truth deterministically deriving RAILGUN key material (BIP39 mnemonic from keccak256(pk) entropy + a 32-byte encryption key) from the account's EOA private key so the 0zk address never drifts across launches or paths. */
 import '../cryptoShim';
 import { keccak256, type Hex } from 'viem';
 import { Mnemonic } from 'ethers';
@@ -37,7 +19,7 @@ export interface RailgunKeyMaterial {
 /** keccak256(pk) → first 16 bytes as entropy → 12-word mnemonic. */
 export function mnemonicFromPrivateKey(pk: Hex): string {
   const digest = keccak256(pk);
-  const entropy = ('0x' + digest.slice(2, 34)) as Hex; // 16 bytes → 12 words
+  const entropy = ('0x' + digest.slice(2, 34)) as Hex; /* 16 bytes → 12 words */
   return Mnemonic.fromEntropy(entropy).phrase;
 }
 

@@ -1,8 +1,4 @@
-/**
- * @file HomeScreen.stream — the message-stream handler that turns each streamed
- *  DecodedMessage into a per-row update (lastTs/preview/avatar/unread), with a
- *  de-dupe guard, extracted from HomeScreen.tsx.
- */
+/** @file HomeScreen.stream — message-stream handler turning each streamed DecodedMessage into a per-row update (lastTs/preview/avatar/unread) with a de-dupe guard, extracted from HomeScreen.tsx. */
 
 import { isMetroControlBody, presentInboundNotification } from '../../lib/push';
 import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
@@ -20,12 +16,7 @@ interface StreamedMsg {
   senderInboxId?: string;
 }
 
-/**
- * De-dupe guard: the same DecodedMessage can be delivered more than once (the
- *  native stream re-arm + an AppState-resume resync can both surface it), and
- *  we must never post two cards for one message. Tracks the last N notified
- *  message ids; bounded so it can't grow unbounded over a long session.
- */
+/** De-dupe guard: the same DecodedMessage can be delivered more than once (stream re-arm + resume resync), so track the last N notified ids (bounded) and never post two cards for one message. */
 const notifiedMsgIds = new Set<string>();
 /** Already Notified. */
 function alreadyNotified(id: string): boolean {
@@ -54,26 +45,13 @@ interface MsgHandlerDeps {
   refreshRequestCount: () => Promise<void>;
 }
 
-/**
- * STREAM-MISS REFRESH COALESCER. A streamed message whose convId isn't in the
- *  current rows triggers a refresh. Messages in PENDING-REQUEST convs (consent
- *  'unknown') ALWAYS miss — rows only hold 'allowed' convs — so without this
- *  every such message fired a full N+1 inbox refresh forever.
- *
- *  - Single-flight + ~1s trailing debounce so a miss burst coalesces into ONE
- *    full refresh instead of one-per-message.
- *  - For 'unknown' convs, skip the full refresh entirely: just bump the request
- *    count/preview (cheap local recount).
- *
- *  Build a per-subscription coalescer so it resets on account switch (the
- *  handler is rebuilt then).
- */
+/** Stream-miss refresh coalescer: a convId not in rows debounces a single-flight ~1s full refresh, while 'unknown'-consent (pending-request) convs only recount cheaply; built per-subscription so it resets on account switch. */
 function makeMissRefresher(
   isCancelled: () => boolean,
   refresh: () => Promise<void>,
   refreshRequestCount: () => Promise<void>,
 ) {
-  // `number` (RN timer id): @types/node's Timeout collides with DOM at clear*().
+  /** `number` (RN timer id): @types/node's Timeout collides with DOM at clear*(). */
   let missTimer: number | null = null;
   let refreshInFlight = false;
 
@@ -104,16 +82,7 @@ function makeMissRefresher(
   };
 }
 
-/**
- * Build the subscribeAllMessages callback. Owns all the channel-row /
- *  unread-count / cache work for an inbound message.
- *
- *  The JS local-notification path was REMOVED here: the daemon + native
- *  MetroFcmService are now the SINGLE source of inbound push notifications
- *  (one merged MessagingStyle card per conversation). This handler only updates
- *  the list. An account with no daemon push registration gets no notifications,
- *  which is acceptable (the daemon pushes for the active account).
- */
+/** Builds the subscribeAllMessages callback owning channel-row/unread/cache work; the JS local-notification path is gone (daemon + native MetroFcmService are the single inbound-push source), so this only updates the list. */
 export function makeMsgStreamHandler({ isCancelled, setRows, refresh, refreshRequestCount }: MsgHandlerDeps) {
   const onMiss = makeMissRefresher(isCancelled, refresh, refreshRequestCount);
   return ({ convId: streamConvId, msg }: { convId: string | null; msg: StreamedMsg | null }): void => {
@@ -143,18 +112,17 @@ export function makeMsgStreamHandler({ isCancelled, setRows, refresh, refreshReq
 
 /** Build the updated row for a matched inbound message (avatar/sender/unread bookkeeping). */
 function updatedRow(cur: RowT, msg: StreamedMsg, lastTs: number, lastPreview: string, senderAddr: string | null): RowT {
-  // DM cards pin to the PEER's avatar; GROUP cards keep their own stable seed —
-  // so a new inbound never flips the avatar.
+  /** DM cards pin to the peer's avatar, group cards keep their stable seed, so a new inbound never flips the avatar. */
   const newAvatar = cur.peerAddress ?? cur.avatarAddress;
   const lastFromSelf = msg.senderInboxId === cur.selfInboxId;
-  // Bump unread when the msg is newer than what we'd read AND not ours.
+  /** Bump unread when the msg is newer than what we'd read AND not ours. */
   const isUnread = (msg.sentNs ?? 0) > cur.lastReadNs && msg.senderInboxId !== cur.selfInboxId;
   const unreadCount = isUnread ? cur.unreadCount + 1 : cur.unreadCount;
   const updated: RowT = {
     ...cur, lastTs, lastPreview, avatarAddress: newAvatar,
     lastSenderAddress: senderAddr, lastFromSelf, unreadCount,
   };
-  // A real inbound message supersedes a stale forced-unread flag.
+  /** A real inbound message supersedes a stale forced-unread flag. */
   if (isUnread) updated.markedUnread = false;
   return updated;
 }
@@ -170,7 +138,7 @@ function applyToRows(
     if (!prev) return prev;
     const idx = msgConvId ? prev.findIndex(r => r.convId === msgConvId) : -1;
     const cur = idx === -1 ? undefined : prev[idx];
-    // Miss: convId not in rows. Coalesced + consent-aware handling lives in onMiss.
+    /** Miss: convId not in rows. Coalesced + consent-aware handling lives in onMiss. */
     if (cur === undefined) { needsRefresh = true; return prev; }
     const senderAddr = cur.inboxToAddr[msg.senderInboxId ?? ''] ?? null;
     notify = {
@@ -183,16 +151,7 @@ function applyToRows(
   return { needsRefresh, notify };
 }
 
-/**
- * FOREGROUND RICH NOTIFICATION: the app is warm and the message arrived on the
- *  live decrypted stream, so post a real sender + preview card (the native FCM
- *  service is skipping its generic one while foregrounded — see setAppForeground).
- *  Suppressed when it's our own message, when the user is viewing this exact
- *  conversation (isActiveConv mirrors the native active-conv suppression), or
- *  when we already notified this message id (de-dupe). DMs title with the peer
- *  (name / short addr); groups title with the group + prefix the sender.
- */
-/** Resolve the {title, body} for a notification: groups prefix the sender, DMs title with the peer. */
+/** Resolves the {title, body} for a foreground rich notification: groups prefix the sender, DMs title with the peer. */
 function notifyTitleBody(n: NotifyCtx, preview: string): { title: string; body: string } {
   const senderName = getPeerName(n.senderAddr)
     ?? (n.senderAddr ? shortAddress(n.senderAddr) : 'New message');

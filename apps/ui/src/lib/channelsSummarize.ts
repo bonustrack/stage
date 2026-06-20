@@ -1,7 +1,4 @@
-/**
- * @file Pure summariser that turns an XMTP conversation into a channels-list row (preview, timestamp, unread, members).
- */
-/** Pure summarisation pipeline for a single XMTP conversation row. Pulled out of `pages/Channels.vue` so the view-layer file stays under the per-file cap and the summariser is unit-testable in isolation. */
+/** @file Pure summariser turning an XMTP conversation into a channels-list row (preview, timestamp, unread, members), pulled out of pages/Channels.vue so it stays under the per-file cap and is unit-testable in isolation. */
 
 import type { Conversation } from '@xmtp/browser-sdk';
 import {
@@ -77,13 +74,7 @@ function resolveAvatarUri(peerAddress: string | null, imageUrl: string | undefin
   return (imageUrl ?? '').trim() || null;
 }
 
-/**
- * Cross-device read flag: consent 'unknown' forces a badge only when this
- *  device has no local read marker yet (lastReadNs === 0), the unread count
- *  is 0, and there's an inbound last message. Opening a conv flips consent →
- *  'allowed', so this self-heals and avoids phantom badges on conversations
- *  read before this feature existed.
- */
+/** Cross-device read flag: consent 'unknown' forces a badge only when this device has no local read marker yet, unread is 0, and the last message is inbound; opening a conv flips consent to 'allowed' so it self-heals and avoids phantom badges on pre-feature conversations. */
 async function resolveMarkedUnread(
   convId: string, lastReadNs: number, unreadCount: number, hasLast: boolean, lastFromSelf: boolean,
 ): Promise<boolean> {

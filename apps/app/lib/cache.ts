@@ -1,12 +1,4 @@
-/** @file Cache persistence primitives: PersistentStore (JSON-file-backed value with pub/sub), MemoryStore (in-memory keyed cache), and SecureStore string helpers. */
-// Unified client/cache persistence layer. The app's caches sit on three small
-// primitives defined here:
-//   - `PersistentStore<T>`  in-memory value mirrored to a JSON file in the app
-//                           document dir, with pub/sub + lazy hydration.
-//   - `MemoryStore<K,V>`    in-memory Map (no disk) with pub/sub, for session
-//                           caches that don't need to survive a reload.
-//   - SecureStore helpers   `getSecure / setSecure` for small string keys that
-//                           must live in the device keystore.
+/** @file Cache persistence primitives: PersistentStore (JSON-file-backed value with pub/sub + lazy hydration), MemoryStore (in-memory keyed cache for session data), and SecureStore string helpers for device-keystore keys. */
 
 import { AppState } from 'react-native';
 import { Directory, File, Paths } from 'expo-file-system';
@@ -40,12 +32,7 @@ function metroDir(): Directory {
 /** A single value persisted to one JSON file, mirrored in memory, with listeners. Used by the channels-list cache. Generic over the stored shape. */
 export class PersistentStore<T> {
   private value: T | null = null;
-  /**
-   * Hydrate-once guard (shared core): memoizes the in-flight disk read so
-   *  concurrent boot callers await the SAME read instead of racing, and only
-   *  flips "done" AFTER the read resolves (a second caller arriving mid-read can
-   *  never observe done===true with a still-null value).
-   */
+  /** Hydrate-once guard (shared core): memoizes the in-flight disk read so concurrent boot callers await the same read and "done" only flips after it resolves (no caller observes done===true with a still-null value). */
   private readonly hydration = hydrateOnce<T | null>(() => this.readDisk());
   private readonly pubsub = makeListeners<T | null>();
   private get listeners(): Set<(v: T | null) => void> { return this.pubsub.listeners; }
@@ -56,13 +43,7 @@ export class PersistentStore<T> {
   /** True when in-memory `value` differs from what's on disk (a debounced set() ran but the flush hasn't landed yet). */
   private dirty = false;
 
-  /**
-   * @param fileName  JSON file under the metro document dir.
-   *  @param debounced When true, set() updates memory + notifies subscribers
-   *    immediately but defers the SYNCHRONOUS disk write to a trailing timer
-   *    (and an AppState background flush), instead of writing on every call.
-   *    Opt-in so other stores keep their write-through behaviour.
-   */
+  /** `fileName` is the JSON file under the metro document dir; when `debounced`, set() updates memory + notifies immediately but defers the synchronous disk write to a trailing timer (plus an AppState background flush). */
   constructor(private readonly fileName: string, private readonly debounced = false) {
     if (debounced) wireAppStateFlush();
   }
@@ -134,8 +115,7 @@ export class PersistentStore<T> {
     this.dirty = false;
     dirtyStores.delete(this);
     this.value = null;
-    // Reset hydration (clears the done flag + any in-flight read) so a new
-    // account re-reads from a clean slate.
+    /** Reset hydration (clears the done flag + any in-flight read) so a new account re-reads from a clean slate. */
     this.hydration.reset();
     try { const f = this.file(); if (f.exists) f.delete(); } catch { /* best-effort */ }
     this.notify(null);

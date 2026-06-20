@@ -1,7 +1,4 @@
-/**
- * @file Proposals screen that works through pending poll proposals oldest-first, one card at a time, across all non-archived chats.
- *  Opened as a pushed route from the Home banner; pending count + queue come from the shared proposalsStore via useProposals.
- */
+/** @file Proposals screen working through pending poll proposals oldest-first, one card at a time across all non-archived chats; opened as a pushed route from the Home banner, with count and queue from the shared proposalsStore via useProposals. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Icon } from '@metro-labs/kit/icon';

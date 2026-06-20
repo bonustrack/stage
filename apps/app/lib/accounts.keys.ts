@@ -1,12 +1,4 @@
-/** @file Re-export layer over the keyring for account private-key access (signer, reveal) plus the pure key rules from the Stage SDK. */
-// Account-registry key helpers — now a thin re-export layer over the KEYRING
-// (lib/zerodev/keyring), the single chokepoint for all private-key access.
-//
-// This module used to read expo-secure-store private keys directly; that moved
-// into the keyring so the raw key lives behind ONE enforced gateway (see
-// SECURITY.md + the eslint guard). Here we only re-export the keyring's signer +
-// the framework-agnostic PURE rules from the Stage SDK (normalizePk etc. touch
-// no storage / no secrets), so existing call sites stay stable.
+/** @file Thin re-export layer over the keyring (the single chokepoint for all private-key access) for account signer + reveal, plus the framework-agnostic pure key rules from the Stage SDK. */
 
 import { getViemAccount, revealPrivateKey } from './zerodev/keyring';
 

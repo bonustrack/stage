@@ -1,8 +1,4 @@
-/**
- * @file Settings -> Notifications screen: a single toggle wired to the
- *  device-local push preference that registers/unregisters this device's push
- *  token with the daemon and reflects the current OS permission state.
- */
+/** @file Settings -> Notifications screen: a toggle wired to the device-local push preference that registers/unregisters this device's push token with the daemon and reflects the current OS permission state. */
 
 import { useEffect, useState } from 'react';
 
@@ -37,7 +33,7 @@ export function NotificationsSettings(): React.ReactElement {
 
   /** Handle the Toggle. */
   const onToggle = (next: boolean): void => {
-    setEnabled(next); // optimistic
+    setEnabled(next); /* optimistic */
     void (async (): Promise<void> => {
       await setPushEnabled(next);
       try {

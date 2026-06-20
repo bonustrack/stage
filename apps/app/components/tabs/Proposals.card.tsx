@@ -1,8 +1,4 @@
-/**
- * @file Proposals.card — the single active pending-request card, dispatching on
- *  the queued request's kind (poll/payment/signing/message) to reuse the chat
- *  view's vote/pay/sign pipelines, with Skip + Open advancing to the next request.
- */
+/** @file Proposals.card — the single active pending-request card, dispatching on the queued request's kind (poll/payment/signing/message) to reuse the chat view's vote/pay/sign pipelines, with Skip + Open advancing to the next request. */
 
 import { useCallback, useMemo } from 'react';
 import { useRouter } from 'expo-router';
@@ -161,7 +157,7 @@ function ConversationRequestCard({ proposal, onAdvance }: {
   const msgId = proposal.msgId ?? '';
 
   const c = useConversationState(proposal.convId, undefined);
-  // The source message, re-found in the live feed so tally / spinners stay live.
+  /** The source message, re-found in the live feed so tally / spinners stay live. */
   const entry = useMemo(() => c.events.find(e => e.id === msgId), [c.events, msgId]);
   const title = conversationTitle(c.isGroup, c.groupName, c.peerAddr);
   const authorAddr = useMemo(() => (entry ? c.senderEthOf(entry.from) : null), [entry, c]);
@@ -171,7 +167,7 @@ function ConversationRequestCard({ proposal, onAdvance }: {
     router.push({ pathname: '/xmtp/[convId]', params: { convId: proposal.convId } });
   }, [router, proposal.convId]);
 
-  // Pay / sign reuse the chat handlers verbatim, then advance to the next item.
+  /** Pay / sign reuse the chat handlers verbatim, then advance to the next item. */
   const payload = entry?.payload as { walletSendCalls?: WalletSendCallsContent; signatureRequest?: SignatureRequestContent } | undefined;
   const wsc = payload?.walletSendCalls;
   const sigReq = payload?.signatureRequest;

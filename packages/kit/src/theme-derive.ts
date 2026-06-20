@@ -1,6 +1,4 @@
-/**
- * @file Framework-light ChatKit seed-based theme derivation: turns a Metro ThemeSeed into the full app palette by mixing the grayscale base toward the surface background at calibrated per-role ratios, with the default seed reproducing the exact legacy hexes losslessly.
- */
+/** @file Framework-light ChatKit seed-based theme derivation: turns a Metro ThemeSeed into the full app palette by mixing the grayscale base toward the surface background at calibrated per-role ratios, with the default seed reproducing the exact legacy hexes losslessly. */
 
 export type Scheme = 'light' | 'dark';
 
@@ -65,30 +63,27 @@ export function mix(a: string, b: string, t: number): string {
 /** Per-scheme default seed. Derives EXACTLY the legacy default palette. */
 export const DEFAULT_SEED: Record<Scheme, ThemeSeed> = {
   dark: {
-    grayscale: '#282a2d', // == legacy border-dark; ramp anchor
-    accent: '#ffffff',    // == legacy link-dark
+    grayscale: '#282a2d', /** == legacy border-dark; ramp anchor */
+    accent: '#ffffff',    /** == legacy link-dark */
     surface: { background: '#0e0f10', foreground: '#9f9fa3' },
   },
   light: {
-    grayscale: '#e4e4e5', // == legacy border-light
-    accent: '#000000',    // == legacy link-light
+    grayscale: '#e4e4e5', /** == legacy border-light */
+    accent: '#000000',    /** == legacy link-light */
     surface: { background: '#ffffff', foreground: '#57606a' },
   },
 };
 
-/* ---- ramp ratios (calibrated so default seed is lossless) ----
- *  Each derived neutral = mix(surface.background, grayscale, ratio). At the
- *  default seed these mixes land on the exact legacy hexes; for a custom seed
- *  they scale proportionally, keeping the ramp coherent. */
+/** Ramp ratios (calibrated so the default seed is lossless): each derived neutral = mix(surface.background, grayscale, ratio), landing on the exact legacy hexes at the default seed and scaling proportionally for custom seeds. */
 
 /** border == grayscale exactly (ratio 1). Legacy: border == grayscale base. */
 const BORDER_RATIO = 1;
 
 /** inputBg: legacy dark #1c1d1f, light #f2f2f3. Derived per-channel below since a single scalar mix of bg->grayscale does not hit both schemes exactly. We instead store the legacy inputBg as a calibrated mix factor per scheme. */
 const INPUT_BG_RATIO: Record<Scheme, number> = {
-  // dark: mix(#0e0f10, #282a2d, t) == #1c1d1f -> t solved per channel ~0.5
+  /** dark: mix(#0e0f10, #282a2d, t) == #1c1d1f -> t solved per channel ~0.5 */
   dark: 0.5,
-  // light: mix(#ffffff, #e4e4e5, t) == #f2f2f3 -> t ~0.5
+  /** light: mix(#ffffff, #e4e4e5, t) == #f2f2f3 -> t ~0.5 */
   light: 0.5,
 };
 
@@ -98,13 +93,7 @@ const SUB_RATIO: Record<Scheme, number> = {
   light: 0.5,
 };
 
-/* Calibration note: the default seed's grayscale/background/foreground were
- * chosen so the simple 0.5 mixes above are CLOSE but not bit-exact to legacy
- * inputBg/sub. To guarantee bit-exact losslessness at the default seed, we
- * special-case: when the seed deep-equals DEFAULT_SEED[scheme], emit the exact
- * legacy hexes. Any deviation from default flows through the parametric ramp.
- * This keeps the default look pixel-identical (the hard requirement) while a
- * custom seed gets a coherent derived ramp. */
+/** Calibration note: the 0.5 mixes above are close but not bit-exact to legacy inputBg/sub, so a seed that deep-equals DEFAULT_SEED special-cases to the exact legacy hexes (pixel-identical default), while any deviation flows through the parametric ramp. */
 
 const LEGACY: Record<Scheme, DerivedPalette> = {
   dark: {
@@ -129,7 +118,7 @@ function seedEquals(a: ThemeSeed, b: ThemeSeed): boolean {
 
 /** Derive the full 9-token palette from a ChatKit seed for a scheme. At the default seed this returns the exact legacy palette (lossless); custom seeds flow through the parametric neutral ramp. */
 export function derivePalette(seed: ThemeSeed, scheme: Scheme): DerivedPalette {
-  // Lossless fast-path: default seed -> exact legacy hexes (pixel-identical).
+  /** Lossless fast-path: default seed -> exact legacy hexes (pixel-identical). */
   if (seedEquals(seed, DEFAULT_SEED[scheme])) return { ...LEGACY[scheme] };
 
   const bg = seed.surface.background;
@@ -143,13 +132,12 @@ export function derivePalette(seed: ThemeSeed, scheme: Scheme): DerivedPalette {
     text,
     sub,
     link: seed.accent,
-    // primary: monochrome button-fill. Track accent so a custom accent recolors
-    // primary surfaces coherently (default accent == legacy primary anyway).
+    /** primary: monochrome button-fill that tracks accent so a custom accent recolors primary surfaces coherently (default accent == legacy primary anyway). */
     primary: seed.accent,
     danger: DANGER_FIXED,
     success: SUCCESS_FIXED,
     inputBg,
-    toolbarBg: bg, // toolbar == bg in legacy; keep them locked.
+    toolbarBg: bg, /** toolbar == bg in legacy; keep them locked. */
   };
 }
 

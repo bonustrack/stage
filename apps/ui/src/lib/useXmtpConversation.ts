@@ -1,7 +1,4 @@
-/**
- * @file Composable backing the conversation view: feed wiring, header metadata, optimistic bubbles, permalink scroll, and bubble actions.
- */
-/** XMTP conversation-view state: feed wiring, header metadata, optimistic bubbles, permalink scroll, and bubble actions. Extracted from `pages/XmtpConversation.vue` so the SFC stays under the lint cap. */
+/** @file Composable backing the XMTP conversation view (feed wiring, header metadata, optimistic bubbles, permalink scroll, bubble actions), extracted from XmtpConversation.vue so the SFC stays under the lint cap. */
 
 import {
   ref, computed, watch, watchEffect, nextTick, onMounted,
@@ -153,12 +150,7 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
     if (stillPending.length !== optimistic.value.length) optimistic.value = stillPending;
   });
 
-  /**
-   * Permalink target message (`metro.box/#/xmtp/<convId>?m=<msgId>`). When set we
-   *  scroll to that bubble (once it exists in the feed) instead of pinning to the
-   *  bottom, and flash-highlight it. Cleared after the first successful scroll so
-   *  later inbound messages resume normal sticky-bottom behaviour.
-   */
+  /** Permalink target message (`?m=<msgId>`): when set, scroll to and flash-highlight that bubble once it appears instead of pinning to the bottom, cleared after the first scroll so later messages resume sticky-bottom. */
   const targetMsgId = computed(() => {
     const m = route.query.m;
     return (Array.isArray(m) ? m[0] : m) ?? null;
@@ -175,7 +167,7 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
     el.scrollIntoView({ block: 'center' });
     highlightId.value = id;
     scrolledToTarget.value = true;
-    // Drop the highlight after the flash animation so re-renders don't replay it.
+    /** Drop the highlight after the flash animation so re-renders don't replay it. */
     window.setTimeout(() => { if (highlightId.value === id) highlightId.value = null; }, 2200);
     return true;
   }
@@ -185,11 +177,10 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
 
   watch(allBubbles, () => {
     void nextTick(() => {
-      // If a permalink targets a specific message and we haven't reached it yet,
-      // try to scroll there; only fall back to the bottom when there's no target.
+      /** If a permalink targets a message not yet reached, try to scroll there; only fall back to the bottom when there's no target. */
       if (targetMsgId.value && !scrolledToTarget.value) {
         if (scrollToTargetMessage()) return;
-        // Target not in the feed yet — stay put while more history streams in.
+        /** Target not in the feed yet — stay put while more history streams in. */
         return;
       }
       scrollToBottom(scroller);

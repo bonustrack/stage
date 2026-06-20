@@ -1,6 +1,4 @@
-/**
- * @file Cloudflare Worker entrypoint for the preview.metro.box link-preview proxy, routing /health, /preview, /img, and /x402-settle with per-IP rate limiting and edge caching.
- */
+/** @file Cloudflare Worker entrypoint for the preview.metro.box link-preview proxy, routing /health, /preview, /img, and /x402-settle with per-IP rate limiting and edge caching. */
 
 import { fetchPage } from './fetchPage.ts';
 import { fetchImage, parseWidth } from './fetchImage.ts';
@@ -9,23 +7,17 @@ import { proxyPreviewImages } from './imgProxy.ts';
 import { parseSettleBody, settleX402 } from './settle.ts';
 import { SsrfError } from './ssrf.ts';
 
-const CACHE_TTL = 24 * 60 * 60; // 1 day, in seconds
-const IMG_CACHE_TTL = 7 * 24 * 60 * 60; // 7 days, in seconds
+const CACHE_TTL = 24 * 60 * 60; /** 1 day, in seconds */
+const IMG_CACHE_TTL = 7 * 24 * 60 * 60; /** 7 days, in seconds */
 
-// Cheap abuse barrier: /preview + /img require a header the app sets on its
-// proxy fetches. Casual scrapers hitting the public hostname without it are
-// rejected. Not a security boundary (the header is trivially forgeable) - just
-// a bandwidth/abuse speed-bump on top of the per-IP rate limit + SSRF guards.
+/** Cheap abuse barrier: /preview + /img require a header the app sets on its proxy fetches, rejecting casual scrapers — not a security boundary (trivially forgeable), just a speed-bump atop the per-IP rate limit + SSRF guards. */
 const CLIENT_HEADER = 'x-stage-client';
 /** Whether Client Header. */
 function hasClientHeader(request: Request): boolean {
   return request.headers.get(CLIENT_HEADER) === '1';
 }
 
-// Light best-effort per-IP rate limit. Worker isolates are ephemeral and there
-// are many of them, so this only bounds bursts within a single isolate - it is
-// NOT a hard global limit (use Cloudflare Rate Limiting Rules for that). Kept to
-// mirror the Node service's "be a good citizen" 60/min posture.
+/** Light best-effort per-IP rate limit: Worker isolates are ephemeral and many, so this only bounds bursts within a single isolate (not a hard global limit — use Cloudflare Rate Limiting Rules), mirroring the Node service's 60/min posture. */
 const RL_WINDOW_MS = 60_000;
 const RL_MAX = 60;
 const hits = new Map<string, { count: number; reset: number }>();
@@ -79,9 +71,7 @@ function errorResponse(e: unknown, fallback: string): Response {
 
 /** Build the cacheable preview payload from a fetched page + request origin. */
 function previewPayload(page: NonNullable<Awaited<ReturnType<typeof fetchPage>>>, request: Request): unknown {
-  // x402 challenge or OpenGraph card - both are cacheable success results.
-  // For OG cards, rewrite image + favicon to proxied /img URLs so the app
-  // never beacons the reader's IP to origin sites (originals kept as *Origin).
+  /** x402 challenge or OpenGraph card (both cacheable); for OG cards, rewrite image + favicon to proxied /img URLs so the app never beacons the reader's IP to origin sites (originals kept as *Origin). */
   if ('kind' in page) return page;
   const selfOrigin = new URL(request.url).origin;
   return proxyPreviewImages(parseMeta(page.html, page.finalUrl), selfOrigin);
@@ -95,8 +85,7 @@ async function handlePreview(request: Request, ctx: ExecutionContext): Promise<R
   const url = new URL(request.url).searchParams.get('url')?.trim() ?? '';
   if (!url) return json({ error: 'url query param required' }, 400);
 
-  // Edge cache lookup, keyed by the normalised preview request (not the upstream
-  // url) so the cache key is stable + can't be poisoned by header variance.
+  /** Edge cache lookup keyed by the normalised preview request (not the upstream url) so the key is stable and can't be poisoned by header variance. */
   const cacheKey = new Request(`https://preview.metro.box/preview?url=${encodeURIComponent(url)}`);
   const cached = await cacheHit(cacheKey);
   if (cached) return cached;
@@ -117,11 +106,7 @@ async function handlePreview(request: Request, ctx: ExecutionContext): Promise<R
 
 /** Handle the Img. */
 async function handleImg(request: Request, ctx: ExecutionContext): Promise<Response> {
-  // NOTE: /img intentionally does NOT require the x-stage-client header. React
-  // Native's <Image> can't attach custom headers to its GETs (flaky on Android),
-  // so requiring the header here 403s every proxied image + favicon in the app.
-  // Images are low-risk: still behind SSRF guards + image/* content-type + size
-  // cap (see fetchImage.ts) and the per-IP rate limit below.
+  /** NOTE: /img intentionally does NOT require the x-stage-client header (RN's Image can't attach custom headers to its GETs, which would 403 every proxied image); images stay low-risk behind SSRF guards, image content-type + size cap, and the per-IP rate limit below. */
   if (rateLimited(clientIp(request))) return json({ error: 'rate limited' }, 429);
 
   const params = new URL(request.url).searchParams;
@@ -129,8 +114,7 @@ async function handleImg(request: Request, ctx: ExecutionContext): Promise<Respo
   if (!url) return json({ error: 'url query param required' }, 400);
   const width = parseWidth(params.get('w'));
 
-  // Edge cache, keyed by the normalised url+width so the same asset at the same
-  // width is served from cache (no header variance / poisoning).
+  /** Edge cache keyed by the normalised url+width so the same asset at the same width is served from cache (no header variance / poisoning). */
   const cacheKey = new Request(
     `https://preview.metro.box/img?url=${encodeURIComponent(url)}&w=${width ?? ''}`,
   );
@@ -140,8 +124,7 @@ async function handleImg(request: Request, ctx: ExecutionContext): Promise<Respo
   try {
     const img = await fetchImage(url, width);
     if (!img) return json({ error: 'not a fetchable image' }, 422);
-    // Strip ALL upstream headers; only forward a sanitised content-type. No
-    // upstream caching/cookie/etag headers leak through.
+    /** Strip ALL upstream headers, forwarding only a sanitised content-type so no upstream caching/cookie/etag headers leak through. */
     const res = new Response(img.body, {
       status: 200,
       headers: {
@@ -159,11 +142,7 @@ async function handleImg(request: Request, ctx: ExecutionContext): Promise<Respo
   }
 }
 
-// POST /x402-settle { url, paymentHeader }: replay the GET to <url> with the
-// caller's signed X-PAYMENT header server-side (behind the SSRF guards) so the
-// upstream verifies + settles. Used by the x402 app worker, which can't make the
-// settle fetch from the device under our IP-privacy posture. Not cached.
-/** Handle the Settle. */
+/** POST /x402-settle { url, paymentHeader }: replays the GET to <url> with the caller's signed X-PAYMENT header server-side (behind SSRF guards) so the upstream verifies + settles; used by the x402 app worker, which can't make the settle fetch from the device under our IP-privacy posture. Not cached. */
 async function handleSettle(request: Request): Promise<Response> {
   if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405);
   if (rateLimited(clientIp(request))) return json({ error: 'rate limited' }, 429);

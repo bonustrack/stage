@@ -1,6 +1,4 @@
-/**
- * @file Browser XMTP client lifecycle for the web app: auto-minted viem wallet, localStorage-persisted key, and the create/build registration handshake.
- */
+/** @file Browser XMTP client lifecycle for the web app: auto-minted viem wallet, localStorage-persisted key, and the create/build registration handshake. */
 
 import {
   Client,
@@ -56,12 +54,7 @@ export async function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promis
   if (cachedClient) return cachedClient;
   if (buildingClient) return buildingClient;
   buildingClient = (async (): Promise<XmtpClient> => {
-    /**
-     * Embedded in a host app (e.g. Snapshot)? Borrow its connected wallet via the
-     *  postMessage bridge so the widget's XMTP identity == the user's wallet, with
-     *  no separate connect. Falls back to a local throwaway key on the standalone
-     *  site or when the host exposes no wallet.
-     */
+    /** When embedded in a host app (e.g. Snapshot), borrow its connected wallet via the postMessage bridge so the widget's XMTP identity is the user's wallet with no separate connect; falls back to a local throwaway key standalone or when the host exposes no wallet. */
     const hostAddress = await getHostAccount().catch(() => null);
     let signer: Signer;
     let address: string;
@@ -108,12 +101,7 @@ export function shortAddress(addr: string): string {
   return addr.length > 10 ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : addr;
 }
 
-/**
- * stamp.fyi avatar URL. `cdn.stamp.box` has no DNS — `stamp.fyi` is the canonical
- *  host. Returns a 200 identicon when no custom avatar exists. `cacheBust` is
- *  appended as `&cb=…` (pass `getCacheHash(profile.avatar)`) so stamp refetches
- *  when the avatar changes instead of serving the previously-cached image.
- */
+/** Build a stamp.fyi avatar URL (the canonical host; returns a 200 identicon when no custom avatar exists); `cacheBust` is appended as `&cb=…` so stamp refetches when the avatar changes instead of serving the cached image. */
 export function stampAvatarUrl(address: string, size = 120, cacheBust?: string): string {
   const base = `https://stamp.fyi/avatar/eth:${address.toLowerCase()}?s=${size}`;
   return cacheBust ? `${base}&cb=${encodeURIComponent(cacheBust)}` : base;

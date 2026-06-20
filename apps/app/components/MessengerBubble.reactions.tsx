@@ -1,7 +1,4 @@
-/**
- * @file Reaction pills row (confirmed + optimistic) and the preset reaction picker
- *  for MessengerBubble, extracted to keep the component file under the lint cap.
- */
+/** @file Reaction pills row (confirmed + optimistic) and the preset reaction picker for MessengerBubble. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
 

@@ -1,6 +1,4 @@
-/**
- * @file TanStack-Query bridge for the in-channel message feed: feedCache stays the live-write source of truth while a single global subscription mirrors every slice write into the shared query cache, so the open feed renders from useQuery and gets live appends without diverging from the channels-list preview.
- */
+/** @file TanStack-Query bridge for the in-channel message feed: feedCache stays the live-write source of truth while a single global subscription mirrors every slice write into the shared query cache, so the open feed renders from useQuery and gets live appends without diverging from the channels-list preview. */
 
 import { getQueryClient } from '../../lib/queryClient';
 import { getAccountEpoch } from '../../lib/accountEpoch';
@@ -44,15 +42,7 @@ function applyPage(line: string, msgs: Parameters<typeof envelopeOfXmtpMessage>[
 /** Coalesce concurrent background-syncs per line so a row-tap prefetch + the mount-time query don't fire two inbox-wide syncs for the same conversation. */
 const bgSyncInFlight = new Map<string, Promise<void>>();
 
-/**
- * Background catch-up for an already-painted feed: force the inbox-wide sync
- *  (#375: maxAge 0 - an explicit OPEN must not be short-circuited by
- *  `syncInboxOnce`'s freshness window), re-acquire the conversation handle AFTER
- *  the sync (the pre-sync handle's `.messages()` can lag the freshly-synced
- *  local DB) and re-read the true tail. Writes through `feedCache` so the global
- *  mirror updates the query cache + the channels-list preview - i.e. the open
- *  feed revalidates WITHOUT the screen ever waiting on the network round-trip.
- */
+/** Background catch-up for an already-painted feed: force the inbox-wide sync (#375, maxAge 0), re-acquire the conversation handle AFTER the sync, and re-read the true tail through `feedCache` so the feed revalidates without the screen waiting on the network. */
 function revalidateFeed(line: string): Promise<void> {
   const existing = bgSyncInFlight.get(line);
   if (existing) return existing;
@@ -63,13 +53,7 @@ function revalidateFeed(line: string): Promise<void> {
       if (!fresh) return;
       await fresh.sync().catch(() => undefined);
       applyPage(line, await fresh.messages({ limit: PAGE_SIZE }));
-      /**
-       * OPEN-TIME EXACTNESS NET: assert the just-painted feed tail matches the
-       *  conv's true latest (the same source the channels-row preview reads).
-       *  On mismatch this busts + reloads the slice - the safety net for the
-       *  "preview shows it, open feed doesn't" desync even if applyPage's read
-       *  lagged the late MLS commit.
-       */
+      /** OPEN-TIME EXACTNESS NET: assert the painted feed tail matches the conv's true latest (the channels-row preview's source); on mismatch it busts + reloads the slice, guarding the "preview shows it, open feed doesn't" desync. */
       await reconcileOnOpen(line);
     } catch { /* best-effort - the next open / resync retries */ }
     finally { bgSyncInFlight.delete(line); }
@@ -78,17 +62,7 @@ function revalidateFeed(line: string): Promise<void> {
   return run;
 }
 
-/**
- * Load a conversation's first page into `feedCache` and return it. LOCAL-FIRST
- *  and NON-BLOCKING on the network: read the local MLS db, paint it, and return
- *  immediately so the screen opens from cache instantly (this is what made
- *  message-request opens slow - the queryFn used to `await syncInboxOnce(0)`
- *  before returning, and a request has no seeded feedCache slice so the feed sat
- *  on `loading` for the whole inbox-wide round-trip). The inbox-wide catch-up
- *  (#375) is kicked off in the BACKGROUND via `revalidateFeed`; its result lands
- *  through `feedCache` -> the mirror -> this query's cache, so any message that
- *  arrived while backgrounded streams in a beat later without blocking paint.
- */
+/** Load a conversation's first page into `feedCache` and return it LOCAL-FIRST and NON-BLOCKING: paint the local MLS db and return immediately, while the inbox-wide catch-up (#375) runs in the background via `revalidateFeed` and streams in later through the mirror. */
 export async function loadFeedFirstPage(line: string): Promise<HistoryEntry[]> {
   const conv = await convOfLine(line);
   if (!conv) {
@@ -101,14 +75,7 @@ export async function loadFeedFirstPage(line: string): Promise<HistoryEntry[]> {
   return feedCache.get(line) ?? [];
 }
 
-/**
- * Warm a conversation's feed cache ahead of navigation (row tap / row mount).
- *  By the time the conversation screen mounts, `useXmtpFeed`'s `initialData`
- *  seeds synchronously from the now-populated `feedCache` -> instant open, no
- *  loading flash, no queryFn wait. Idempotent + cheap: TanStack dedupes the
- *  in-flight query by key, and the background revalidate is per-line coalesced.
- *  Never throws.
- */
+/** Warm a conversation's feed cache ahead of navigation so `useXmtpFeed`'s `initialData` seeds synchronously from the populated `feedCache` for an instant open with no loading flash; idempotent, cheap (TanStack dedupes by key), never throws. */
 export function prefetchFeed(line: string): void {
   void getQueryClient()
     .prefetchQuery({
@@ -119,12 +86,7 @@ export function prefetchFeed(line: string): void {
     .catch(() => undefined);
 }
 
-/**
- * Fetch the next older page (scroll-up). Events are newest-first, so the LAST
- *  loaded event is the oldest; its `ts` (ISO ms) reconstructs the ns cursor.
- *  Older messages APPEND to the END (still newest-first) through `feedCache`.
- *  Returns true when a full page came back (more history may remain).
- */
+/** Fetch the next older page (scroll-up): events are newest-first so the oldest loaded event's `ts` reconstructs the ns cursor, and older messages append to the END through `feedCache`; returns true when a full page came back (more history may remain). */
 export async function loadFeedOlderPage(line: string, oldest: HistoryEntry): Promise<boolean> {
   const conv = await convOfLine(line);
   if (!conv) return false;

@@ -1,23 +1,4 @@
-/**
- * @file Lazy batched cache of peer display names resolved from stamp.fyi, keyed by lowercased address.
- */
-/**
- * Lazy, batched cache of peer identities (display name) keyed by lower-cased
- *  address. Lets the channels list, conversation header, and message bubbles
- *  show a user's display name (instead of the raw 0x… address).
- *
- *  Identity is resolved ENTIRELY from stamp.fyi (the same source Snapshot's own
- *  UI uses): names via `lookup_addresses` (ENS) and avatars via the stamp.fyi
- *  identicon endpoint (handled by the Avatar component's address fallback).
- *  There is no in-app profile editing and no Snapshot hub usage — identity is
- *  read-only for the local user and every peer alike.
- *
- *  One stamp round-trip per batch of unseen addresses; resolved values (incl.
- *  "no name" → {}) are cached for the session so repeated renders are free.
- *
- *  This is the framework-agnostic core. The React `usePeerProfiles` hook stays
- *  in apps/app and subscribes via {@link subscribePeerProfiles}.
- */
+/** @file Framework-agnostic lazy batched cache of peer display names keyed by lower-cased address, resolved read-only and entirely from stamp.fyi (ENS via `lookup_addresses`) with one round-trip per batch of unseen addresses, results cached for the session; the React `usePeerProfiles` hook subscribes via subscribePeerProfiles. */
 
 import { STAMP_URL } from '../profile/snapshot';
 
@@ -37,14 +18,7 @@ function notify(): void {
 /** stamp.fyi `lookup_addresses` rejects (HTTP 500) when asked for more than ~50 addresses at once, so we split every request into chunks below that cap. */
 const STAMP_LOOKUP_CHUNK = 50;
 
-/**
- * Resolve display names for ONE chunk (<= STAMP_LOOKUP_CHUNK addrs) from
- *  stamp.fyi (`lookup_addresses` → ENS), the same source Snapshot's own UI
- *  uses. Returns a lower-cased `{ address → name }` map; addresses with no ENS
- *  are simply absent. Returns `null` (NOT `{}`) on a failed request so the
- *  caller can leave those addresses unresolved and retry, rather than caching a
- *  false "no name" that would hide a real ENS forever.
- */
+/** Resolve display names for ONE chunk (<= STAMP_LOOKUP_CHUNK addrs) from stamp.fyi (`lookup_addresses` ENS) into a lower-cased `{ address: name }` map (no-ENS addresses absent); returns `null` (NOT `{}`) on a failed request so the caller can retry rather than cache a false "no name". */
 async function lookupNamesChunk(addrs: string[]): Promise<Record<string, string> | null> {
   try {
     const res = await fetch(STAMP_URL, {
@@ -79,8 +53,7 @@ async function fetchBatch(addrs: string[]): Promise<void> {
       const chunk = addrs.slice(i, i + STAMP_LOOKUP_CHUNK);
       const names = await lookupNamesChunk(chunk);
       if (!names) {
-        /* This chunk failed — drop it from `pending` so a later ensure() can
-         * retry; do NOT cache a miss (that would hide real ENS names). */
+        /** This chunk failed — drop it from `pending` so a later ensure() can retry; do NOT cache a miss (that would hide real ENS names). */
         chunk.forEach(a => pending.delete(a));
         continue;
       }

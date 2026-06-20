@@ -1,12 +1,10 @@
-/**
- * @file Replays a GET with the caller's signed X-PAYMENT header at the edge to settle an x402 payment, behind the SSRF guards and dropping the bearer on cross-origin redirects.
- */
+/** @file Replays a GET with the caller's signed X-PAYMENT header at the edge to settle an x402 payment, behind the SSRF guards and dropping the bearer on cross-origin redirects. */
 
 import { assertPublicUrl, SsrfError } from './ssrf.ts';
 
-const TIMEOUT_MS = 8000; // settlement (on-chain verify) can be slower than a page fetch
+const TIMEOUT_MS = 8000; /** settlement (on-chain verify) can be slower than a page fetch */
 const MAX_REDIRECTS = 3;
-const MAX_BODY_BYTES = 16_000; // trimmed echo of the paid response, not the full asset
+const MAX_BODY_BYTES = 16_000; /** trimmed echo of the paid response, not the full asset */
 const UA = 'Mozilla/5.0 (compatible; MetroLinkPreview/1.0; +https://metro.box)';
 
 export interface SettleRequest {
@@ -55,9 +53,7 @@ async function readTrimmed(res: Response): Promise<string> {
 export async function settleX402(req: SettleRequest): Promise<SettleResult> {
   let current = assertPublicUrl(req.url).toString();
   const initialOrigin = new URL(current).origin;
-  // Only present the bearer X-PAYMENT header to same-origin hosts. The first hop
-  // is the caller's target (same origin by definition); a cross-origin redirect
-  // drops it permanently for the rest of the chain.
+  /** Only present the bearer X-PAYMENT header to same-origin hosts; the first hop is same-origin by definition, and a cross-origin redirect drops it permanently for the rest of the chain. */
   let sendPaymentHeader = true;
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
     const headers: Record<string, string> = {
@@ -75,7 +71,7 @@ export async function settleX402(req: SettleRequest): Promise<SettleResult> {
       const loc = res.headers.get('location');
       if (!loc) return { status: res.status, ok: false };
       current = assertPublicUrl(new URL(loc, current).toString()).toString();
-      // Never replay the signed payment authorization to a different origin.
+      /** Never replay the signed payment authorization to a different origin. */
       if (new URL(current).origin !== initialOrigin) sendPaymentHeader = false;
       continue;
     }

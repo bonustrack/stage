@@ -1,6 +1,4 @@
-/**
- * @file ComposerEditor + attach menu for the MessengerComposer: the textarea / recording-waveform input row, the [+ / mic / send] buttons, and the attachment menu.
- */
+/** @file ComposerEditor + attach menu for the MessengerComposer: the textarea / recording-waveform input row, the [+ / mic / send] buttons, and the attachment menu. */
 
 import type { RefObject } from 'react';
 import { fontSize } from '@metro-labs/kit/tokens';
@@ -105,8 +103,7 @@ function ComposerRightAction({ p, primary }: { p: EditorProps; primary: string }
         onPress={p.onStopRec} icon={<Icon name="check" size={20} color={bg} />} />
     );
   }
-  // Shown only when there is content to send, and always enabled; tapping send
-  // clears content synchronously so this unmounts instantly (no disabled flash).
+  /** Shown only with content to send and always enabled; tapping send clears content synchronously so this unmounts instantly (no disabled flash). */
   if (!p.hasContent) return null;
   return (
     <Button variant="primary" size="md" pill dark={dark} tintBg={primary}

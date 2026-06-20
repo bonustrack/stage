@@ -1,8 +1,4 @@
-/**
- * @file Shared per-conversation action sheet (AppModal bottom sheet) used by both
- *  the channels-list long-press menu and the conversation-view overflow menu,
- *  offering mark read/unread, pin/unpin, group info, add members, profile, leave.
- */
+/** @file Shared per-conversation action sheet used by the channels list and conversation view, offering mark read/unread, pin, archive, group info, add members, profile, and leave. */
 
 import { Alert } from 'react-native';
 
@@ -121,8 +117,7 @@ export function ChannelMenu({
       {/* Cancel AppModal's 16px ScrollView padding so the list spans edge-to-edge. */}
       <ListView dark={dark} style={{ marginHorizontal: -16 }}>
         {onSearch ? (
-          // Search needs the sheet GONE first (native RN <Modal> owns IME focus),
-          // so close, then fire onSearch on the next macrotask.
+          /** Search needs the sheet GONE first (native RN Modal owns IME focus), so close, then fire onSearch on the next macrotask. */
           <MenuRow icon="search" label="Search" color={head} dark={dark}
             onPress={() => { onClose(); setTimeout(onSearch, 0); }} />
         ) : null}

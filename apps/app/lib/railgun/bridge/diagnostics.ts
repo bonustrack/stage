@@ -1,15 +1,6 @@
 /** @file On-screen lifecycle diagnostics for the nodejs-mobile bridge: a single status-line sink plus a raw catch-all probe that surfaces every channel event by name when adb logcat is unavailable. */
 
-/*
- * On-screen lifecycle diagnostics for the nodejs-mobile bridge.
- *
- *  We can't get adb logcat on-device, so the bridge emits one formatted status
- *  line at each lifecycle point (start invoked, node booted, request sent,
- *  reply, timeout, error) plus a raw catch-all that surfaces ANY channel event
- *  under ANY name ("rx event: <name>"). The probe UI (WalletScreen.private.ping)
- *  registers a sink via setBridgeStatusListener and renders the ordered log so a
- *  stall is visible in a single screenshot.
- */
+/** With no on-device adb logcat, the bridge emits one formatted status line per lifecycle point plus a raw catch-all for ANY channel event; the probe UI registers a sink via setBridgeStatusListener and renders the ordered log so a stall shows in one screenshot. */
 import type { NodejsChannel } from './nodejsMobile';
 
 /** Optional sink the probe UI registers; null clears it. */

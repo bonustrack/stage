@@ -1,20 +1,4 @@
-/** @file Direct-SDK path that creates/loads the Railgun 0zk wallet from the active account's EOA key via deterministic mnemonic + encryptionKey derivation. */
-/**
- * Derive the Railgun (0zk) wallet from the user's EXISTING active account so
- *  the private wallet layers onto the identity used everywhere else (lib/
- *  accounts). The SDK keys a wallet off a BIP39 mnemonic + encryption key; our
- *  accounts store a raw secp256k1 private key, so we bridge deterministically:
- *
- *    privateKey --keccak256--> 32-byte digest
- *      --first 16 bytes as entropy--> ethers Mnemonic.fromEntropy --> 12 words
- *
- *  Same key in → same mnemonic → same 0zk address, no extra secret stored. The
- *  engine encryption key is keccak256(privateKey) (derived, not a password — a
- *  real password gate is a second-pass item).
- *
- *  Ref: docs.railgun.org → getting-started → "Create a RAILGUN Wallet"
- *  (createRailgunWallet(encryptionKey, mnemonic, creationBlockNumbers)).
- */
+/** @file Direct-SDK path creating/loading the Railgun 0zk wallet from the active account's EOA key, deterministically bridging the raw key to a BIP39 mnemonic + keccak256-derived encryptionKey so the same key always yields the same 0zk address with no extra secret stored. */
 
 import '../cryptoShim';
 import { getActiveAccount } from '../accounts';
@@ -33,13 +17,7 @@ export interface RailgunWalletHandle {
 let cached: RailgunWalletHandle | null = null;
 let cachedForId: string | null = null;
 
-/**
- * Create-or-load the Railgun wallet for the CURRENT active account, memoized
- *  per account id. Throws when the account can't expose a key (WalletConnect),
- *  surfaced by the caller as an unsupported-account message. Key derivation is
- *  shared with the embedded-Node bridge path (deriveKeys.ts) so the 0zk address
- *  is identical no matter which path created the wallet.
- */
+/** Create-or-load the Railgun wallet for the current active account, memoized per account id; throws when the account can't expose a key, sharing key derivation with the embedded-Node bridge path so the 0zk address is identical either way. */
 export async function deriveRailgunWallet(): Promise<RailgunWalletHandle> {
   const acct = await getActiveAccount();
   if (!acct) throw new Error('No active account');

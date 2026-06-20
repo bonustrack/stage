@@ -1,27 +1,12 @@
-/**
- * @file Zod boundary schemas (with field/size caps) for the in-chat walletSendCalls and transactionReference wire bodies.
- */
-/**
- * Zod boundary schemas for the in-chat transaction wire bodies
- *  (`xmtp.org/walletSendCalls:1.0` + `xmtp.org/transactionReference:1.0`).
- *
- *  SECURITY: a walletSendCalls request arrives over XMTP from an UNTRUSTED peer
- *  and, once approved, broadcasts a real transaction. Pairing these schemas with
- *  `decodeJsonContent(bytes, schema)` makes a malformed / hostile body throw at
- *  the codec boundary (rendered as an unsupported bubble) instead of an `as`-cast
- *  handing the pay path a wrong-but-typed object. Field counts + string sizes are
- *  capped so a peer can't ship a pathological calls[] blob. The actual to/amount
- *  shown on the confirm sheet is still re-derived from the call BYTES
- *  (txConfirm.ts) — this layer only guarantees a well-formed, bounded shape.
- */
+/** @file Zod boundary schemas (field/size capped) for the in-chat walletSendCalls + transactionReference wire bodies: a walletSendCalls request arrives from an UNTRUSTED peer and, once approved, broadcasts a real tx, so a malformed/hostile body throws at the codec boundary instead of `as`-casting a wrong-but-typed object into the pay path. */
 
 import { z } from 'zod';
 import type { ZodType } from 'zod';
 import type { WalletSendCallsContent, TransactionReferenceContent } from './tx';
 
-const MAX_STR = 16_384;   // calldata hex can be large (batched calls)
-const MAX_CALLS = 32;     // EIP-5792 batch size cap
-const MAX_META_KEYS = 32; // metadata is display-hints only
+const MAX_STR = 16_384;   /** calldata hex can be large (batched calls) */
+const MAX_CALLS = 32;     /** EIP-5792 batch size cap */
+const MAX_META_KEYS = 32; /** metadata is display-hints only */
 
 const hexish = z.string().max(MAX_STR);
 

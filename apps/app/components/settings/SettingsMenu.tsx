@@ -1,8 +1,4 @@
-/**
- * @file Top-level Settings menu: a list whose rows push the Display, Messenger,
- *  Notifications, and Security sub-pages, plus a danger zone with Reset accounts
- *  and Reset everything actions.
- */
+/** @file Top-level Settings menu: a list whose rows push the Display, Messenger, Notifications, and Security sub-pages, plus a danger zone with Reset accounts and Reset everything actions. */
 
 import { useState } from 'react';
 import { Alert, Pressable } from 'react-native';
@@ -106,7 +102,7 @@ export function SettingsMenu(): React.ReactElement {
             setNuking(true);
             void resetEverything()
               .catch(() => { setNuking(false); Alert.alert('Reset failed', 'Could not wipe local state.'); });
-            // No finally: on success the app reloads, so nuking stays true until then.
+            /** No finally: on success the app reloads, so nuking stays true until then. */
           },
         },
       ],

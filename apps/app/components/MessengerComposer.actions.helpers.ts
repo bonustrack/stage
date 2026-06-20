@@ -24,7 +24,7 @@ export async function uploadAttachment(a: ComposerActionsArgs, uri: string, mime
   try {
     const resolvedMime = mimeOf(mime, name ?? uri);
     const kind = kindOf(resolvedMime);
-    // Size is cosmetic (chip metadata only — no cap); read best-effort.
+    /** Size is cosmetic (chip metadata only — no cap); read best-effort. */
     let size = 0;
     try { size = (await (await fetch(uri)).blob()).size; } catch { /* size is cosmetic */ }
     const id = `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -89,8 +89,7 @@ export async function pickLocation(a: ComposerActionsArgs): Promise<void> {
 async function runStep(a: ComposerActionsArgs, s: SendStep): Promise<string | undefined> {
   try {
     const id = await s.run();
-    // Map the real msg id → the step's local image/video/file URIs so the live
-    // bubble paints the stashed bytes instantly. Audio rides an inline path, skip it.
+    /** Map the real msg id → the step's local image/video/file URIs so the live bubble paints stashed bytes instantly (audio rides an inline path, skipped). */
     const localUris = s.attachments.filter((at) => at.kind !== 'audio').map((at) => at.url);
     if (localUris.length > 0) rememberLocalAttachments(id, localUris);
     a.onSent?.(s.localId, undefined, id);
@@ -119,15 +118,13 @@ async function runSendSteps(a: ComposerActionsArgs, steps: SendStep[]): Promise<
 
 /** Build the send steps, emit optimistic previews, and clear the composer before any await. */
 function beginSend(a: ComposerActionsArgs, body: string): SendStep[] {
-  // Copy each picked local image/video/file into a STABLE app-cache path up front
-  // (the picker's temp URI can be evicted mid-send). Audio rides a separate inline path.
+  /** Copy each picked local image/video/file into a STABLE app-cache path up front since the picker's temp URI can be evicted mid-send (audio rides a separate inline path). */
   const sendingAttachments = a.pending.map((at) =>
     at.kind === 'audio' ? at : { ...at, url: stashLocalAttachment(at.url) });
   const sendingReplyTo = a.replyingTo?.id;
-  // Split this submission into the SEPARATE XMTP messages it produces so the
-  // optimistic preview mirrors the final bubbles 1:1.
+  /** Split this submission into the SEPARATE XMTP messages it produces so the optimistic preview mirrors the final bubbles 1:1. */
   const steps = planSendSteps(a.xmtpLine, body, sendingAttachments, sendingReplyTo);
-  // Emit each optimistic entry up-front, in send order — only the first carries replyTo.
+  /** Emit each optimistic entry up-front, in send order — only the first carries replyTo. */
   steps.forEach((s, i) => a.onOptimistic?.({
     localId: s.localId, text: s.text, attachments: s.attachments,
     replyTo: i === 0 ? sendingReplyTo : undefined,
@@ -141,13 +138,12 @@ function beginSend(a: ComposerActionsArgs, body: string): SendStep[] {
 export async function performSend(a: ComposerActionsArgs): Promise<void> {
   const body = a.text.trim();
   if (!body && a.pending.length === 0) return;
-  // Snapshot the raw input so a failed send can restore it (we clear optimistically before any await).
+  /** Snapshot the raw input so a failed send can restore it (we clear optimistically before any await). */
   const originalText = a.text;
   const originalPending = a.pending;
   const steps = beginSend(a, body);
   const sendErr = await runSendSteps(a, steps);
-  // Send failed: the optimistic bubble is dropped downstream, so put the original
-  // text + attachments back (only if the user hasn't already typed something new).
+  /** Send failed: optimistic bubble is dropped downstream, so restore the original text + attachments (only if the user hasn't already typed something new). */
   if (sendErr && a.text.trim().length === 0 && a.pending.length === 0) {
     a.setText(originalText);
     a.setPending(originalPending);

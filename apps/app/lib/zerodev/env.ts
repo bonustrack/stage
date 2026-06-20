@@ -17,7 +17,7 @@ export function zerodevRpcUrl(): string | null {
   const override = envString('EXPO_PUBLIC_ZERODEV_RPC');
   if (override) return override;
   if (!PROJECT_ID) return null;
-  // Standard ZeroDev RPC shape: https://rpc.zerodev.app/api/v3/<projectId>/chain/<chainId>
+  /** Standard ZeroDev RPC shape: https://rpc.zerodev.app/api/v3/<projectId>/chain/<chainId> */
   return `https://rpc.zerodev.app/api/v3/${PROJECT_ID}/chain/8453`;
 }
 

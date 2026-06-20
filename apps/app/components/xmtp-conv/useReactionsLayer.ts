@@ -11,12 +11,7 @@ export function useReactionsLayer(
 ) {
   /** Optimistic reactions: messageId → emoji[] the local user just tapped, shown semi-transparent until the live XMTP stream echoes the reaction back (or the send fails). Dropped per-pair in the dedup effect below + on send rejection. */
   const [optimisticReactions, setOptimisticReactions] = useState<Map<string, string[]>>(new Map());
-  /**
-   * Optimistic un-reacts: messageId → emoji[] the local user just removed. Hides
-   *  the confirmed pill immediately (semi-transparent removal isn't a thing — it
-   *  just vanishes) until the live stream echoes the `removed` event back, at which
-   *  point `reactions` no longer carries it and we drop it from this map.
-   */
+  /** Optimistic un-reacts: messageId → emoji[] just removed; hides the confirmed pill immediately until the live stream echoes the `removed` event, at which point `reactions` no longer carries it and we drop it from this map. */
   const [optimisticRemovals, setOptimisticRemovals] = useState<Map<string, string[]>>(new Map());
 
   /** Once the live stream confirms an optimistic reaction (emoji now present in `reactions` for that message), drop it from the pending map so the pill flips from semi-transparent to the solid confirmed pill. */

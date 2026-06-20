@@ -1,8 +1,4 @@
-/**
- * @file Settings -> Wallet screen: a read-only view of the active ZeroDev
- *  smart-account (address, signer, Kernel modules, deploy status, versions, XMTP
- *  address) with a link to recovery, displaying addresses and metadata only.
- */
+/** @file Settings -> Wallet screen: a read-only view of the active ZeroDev smart-account (address, signer, Kernel modules, deploy status, versions, XMTP address) with a link to recovery. */
 
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { useRouter } from 'expo-router';

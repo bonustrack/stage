@@ -1,8 +1,4 @@
-/**
- * @file Settings -> Display screen: switch the app theme between
- *  System/Light/Dark or pick Custom to edit palette color and radius tokens
- *  inline, backed by the shared lib/theme store.
- */
+/** @file Settings -> Display screen: switch the app theme between System/Light/Dark or pick Custom to edit palette color and radius tokens inline, backed by the shared lib/theme store. */
 
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 

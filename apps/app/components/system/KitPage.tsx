@@ -1,8 +1,4 @@
-/**
- * @file KitPage — the Kit sub-page of Settings (/settings/kit): a back-arrow
- *  header plus theme switcher above the Kit primitives rendered directly via
- *  KitSections.
- */
+/** @file KitPage — the Kit sub-page of Settings (/settings/kit): a back-arrow header plus theme switcher above the Kit primitives rendered directly via KitSections. */
 
 import { Linking } from 'react-native';
 import { Pressable } from '@metro-labs/kit/pressable';

@@ -1,7 +1,4 @@
-/**
- * @file Railgun shielded-token registry (a FIXED ETH + USDC set per network) for the Private tab balance display, keyed by the ERC20 contract address the engine reports.
- *  Native ETH is keyed by the network's WETH `wrappedAddress` (from shared-models NETWORK_CONFIG 7.5.0) and relabeled; USDC is the canonical Circle ERC20 per network.
- */
+/** @file Railgun shielded-token registry (a fixed ETH + USDC set per network) for the Private tab balance display, keyed by the ERC20 contract address the engine reports — native ETH keyed by the network's WETH address and relabeled, USDC the canonical Circle ERC20 per network. */
 import { NATIVE_TOKEN_SENTINEL } from '@stage-labs/client/wallet/assets';
 import type { RailgunNet } from './networks';
 
@@ -12,13 +9,7 @@ export interface TokenMeta {
   /** Lowercased ERC20 contract address Railgun keys the balance by (WETH for native ETH). Compared case-insensitively against engine rows. */
   address: string;
   decimals: number;
-  /**
-   * Contract address used to fetch the stamp.fyi token logo. Mirrors the
-   *  public Tokens-tab choice so private rows show the SAME icon: the ETH
-   *  sentinel for native ETH, and the canonical Ethereum-mainnet USDC contract
-   *  for USDC (stamp.fyi keys logos by mainnet contract — the WETH / Sepolia
-   *  Railgun-balance addresses have no curated logo).
-   */
+  /** Contract address used to fetch the stamp.fyi token logo, mirroring the public Tokens-tab choice so private rows show the same icon (ETH sentinel for native ETH, canonical mainnet USDC contract for USDC, since stamp.fyi keys logos by mainnet contract). */
   logoAddress: string;
   /** Chain id whose stamp.fyi namespace serves the logo. Always 1 (mainnet) here so Sepolia rows still get the real mainnet token icon. */
   logoChainId: number;

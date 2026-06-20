@@ -1,24 +1,4 @@
-/**
- * @file Typed bridge frame builders for the Railgun unshield (private to public) primitives (estimate, prove, populate).
- */
-/**
- * Typed bridge frame builders for the RAILGUN UNSHIELD primitives.
- *
- *  Unshield is private->public: it moves funds from the user's shielded balance
- *  back to a PUBLIC address (the user's own EOA by default). Unlike shield it
- *  REQUIRES a Groth16 proof, so the flow is three whitelisted dispatcher calls:
- *    gas.estimateUnshield -> proof.unshield -> tx.populateProvedUnshield
- *  (the base-token variant unwraps WETH->native ETH on the way out).
- *
- *  All three are already whitelisted in the host's sdkDispatch.js. bigint amounts
- *  are wire-encoded ({ __bigint }) so they survive the JSON channel and are
- *  revived to real bigints in the Node host. We only ever populate (no
- *  broadcaster) - the EOA signs + broadcasts the returned tx on the host side, so
- *  sendWithPublicWallet is always `true` and broadcasterFeeERC20AmountRecipient
- *  is undefined.
- *
- *  PURE: no native imports. The dispatcher that ships these frames is injected.
- */
+/** @file Typed bridge frame builders for the Railgun UNSHIELD (private->public) primitives — three whitelisted dispatcher calls (gas.estimateUnshield -> proof.unshield -> tx.populateProvedUnshield) that always self-broadcast (sendWithPublicWallet true) with wire-encoded bigint amounts; pure, the dispatcher is injected. */
 import type { RailgunDispatch } from './dispatch';
 import { SDK_METHOD } from './methods';
 import { bn } from './wire';
@@ -59,10 +39,10 @@ export async function gasEstimateUnshield(dispatch: RailgunDispatch, params: {
     params.erc20Recipients.map(r => ({
       tokenAddress: r.tokenAddress, amount: bn(r.amountWei), recipientAddress: r.recipientAddress,
     })),
-    [], // nftAmountRecipients
+    [], /** nftAmountRecipients */
     wireGasDetails(params.originalGasDetails),
-    undefined, // feeTokenDetails (self-broadcast)
-    true, // sendWithPublicWallet
+    undefined, /** feeTokenDetails (self-broadcast) */
+    true, /** sendWithPublicWallet */
   ]);
 }
 
@@ -82,11 +62,10 @@ export async function generateUnshieldProof(dispatch: RailgunDispatch, params: {
     params.erc20Recipients.map(r => ({
       tokenAddress: r.tokenAddress, amount: bn(r.amountWei), recipientAddress: r.recipientAddress,
     })),
-    [], // nftAmountRecipients
-    undefined, // broadcasterFeeERC20AmountRecipient (self-broadcast)
-    true, // sendWithPublicWallet
-    bn('0'), // overallBatchMinGasPrice
-    // progressCallback injected host-side (functions can't cross the channel)
+    [], /** nftAmountRecipients */
+    undefined, /** broadcasterFeeERC20AmountRecipient (self-broadcast) */
+    true, /** sendWithPublicWallet */
+    bn('0'), /** overallBatchMinGasPrice; progressCallback injected host-side (functions can't cross the channel) */
   ]);
 }
 
@@ -105,10 +84,10 @@ export async function populateProvedUnshield(dispatch: RailgunDispatch, params: 
     params.erc20Recipients.map(r => ({
       tokenAddress: r.tokenAddress, amount: bn(r.amountWei), recipientAddress: r.recipientAddress,
     })),
-    [], // nftAmountRecipients
-    undefined, // broadcasterFeeERC20AmountRecipient
-    true, // sendWithPublicWallet
-    bn('0'), // overallBatchMinGasPrice
+    [], /** nftAmountRecipients */
+    undefined, /** broadcasterFeeERC20AmountRecipient */
+    true, /** sendWithPublicWallet */
+    bn('0'), /** overallBatchMinGasPrice */
     wireGasDetails(params.gasDetails),
   ]);
 }

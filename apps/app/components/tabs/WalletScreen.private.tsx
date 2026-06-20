@@ -1,6 +1,4 @@
-/**
- * @file Private (Railgun-shielded) Wallet tab view rendering the cached 0zk address, live pending-proof chips, and the dev bridge probe, while booting usePrivateWallet so the shared snapshot the Tokens tab reads gets populated.
- */
+/** @file Private (Railgun-shielded) Wallet tab view rendering the cached 0zk address, live pending-proof chips, and the dev bridge probe, while booting usePrivateWallet so the shared snapshot the Tokens tab reads gets populated. */
 import { Pressable } from '@metro-labs/kit/pressable';
 
 import * as Clipboard from 'expo-clipboard';
@@ -21,20 +19,13 @@ const short0zk = (a: string): string => (a.length> 14 ? `${a.slice(0, 8)}…${a.
 export function PrivateView({ head, sub, border }: {
   head: string; sub: string; border: string;
 }): React.ReactElement {
-  // autoStart:true - this view is mounted ONLY on an explicit Private-tab open
-  // (WalletScreen renders it behind `tab === 'private'`), so it's safe to boot
-  // the nodejs-mobile engine here; usePrivateWallet serializes it behind XMTP
-  // readiness so it never races Client.create on first launch.
+  /** autoStart:true is safe — this view mounts only on an explicit Private-tab open, and usePrivateWallet serializes the nodejs-mobile boot behind XMTP readiness so it never races Client.create on first launch. */
   const { snapshot, pending } = usePrivateWallet(true);
   const live = pending.filter(p => p.phase === 'proving' || p.phase === 'broadcasting');
-  // Debug console is OFF by default (Settings → Developer). When off, neither
-  // diagnostic block mounts, so no high-frequency bridge subscription is
-  // registered and nothing accumulates - that was the source of the lag.
+  /** Debug console is OFF by default (Settings → Developer); when off neither diagnostic block mounts, so no high-frequency bridge subscription registers and nothing accumulates (the source of the lag). */
   const debug = useDebugConsole();
 
-  // The real view needs EITHER the native prover (full proving) OR just the
-  // embedded Node bridge (engine init + 0zk address + balance scan - no proof
-  // needed for phase 1-2). Only a build with neither shows the placeholder.
+  /** The real view needs EITHER the native prover or just the embedded Node bridge (engine init + 0zk address + balance scan, no proof for phase 1-2); only a build with neither shows the placeholder. */
   if (!isRailgunAvailable() && !isBridgeAvailable()) {
     return (
       <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center" gap={6}>
@@ -42,9 +33,7 @@ export function PrivateView({ head, sub, border }: {
         <Text size="md" color={sub} style={{ textAlign: 'center' }}>
           Shielded transfers arrive in the next app build.
         </Text>
-        {/* Bridge ping works without the native prover - let Less test the
-            nodejs-mobile round-trip even on a prover-less build. Gated behind
-            the debug-console toggle (off by default). */}
+        {/* Bridge ping works without the native prover so Less can test the nodejs-mobile round-trip on a prover-less build; gated behind the debug-console toggle (off by default). */}
         {debug ? <BridgePingProbe sub={sub} border={border} /> : null}
       </Col>
     );
@@ -65,8 +54,7 @@ export function PrivateView({ head, sub, border }: {
         </Text>
       </Pressable>
 
-      {/* Non-blocking pending indicator - the screen never freezes during the
-          ~20-30s proof; each in-flight action shows its phase here. */}
+      {/* Non-blocking pending indicator: the screen never freezes during the ~20-30s proof; each in-flight action shows its phase here. */}
       {live.map(p => (
         <Row padding={{ y: 8 }} key={p.id} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
           <Text weight="semibold" size="md" color={head}>
@@ -78,14 +66,9 @@ export function PrivateView({ head, sub, border }: {
         </Row>
       ))}
 
-      {/* Token BALANCES are no longer rendered here - they live solely in the
-          Tokens tab (merged public + shielded flat list). This view keeps
-          autoStart:true so the engine still inits + scans, which populates the
-          shared snapshot the Tokens tab reads. */}
+      {/* Token BALANCES live solely in the Tokens tab (merged public + shielded list); this view keeps autoStart:true so the engine still inits and scans, populating the shared snapshot the Tokens tab reads. */}
 
-      {/* Raw balance-pipeline diagnostics + Node-bridge ping probe. Both stream
-          high-frequency bridge logs, so they are gated behind the debug-console
-          toggle (Settings → Developer, OFF by default) to keep the tab smooth. */}
+      {/* Raw balance-pipeline diagnostics + Node-bridge ping probe both stream high-frequency bridge logs, so they are gated behind the debug-console toggle (Settings → Developer, OFF by default) to keep the tab smooth. */}
       {debug ? (
         <>
           <RailgunDebugPanel head={head} sub={sub} border={border} />

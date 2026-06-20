@@ -1,7 +1,4 @@
-/**
- * @file AccountsManager presentational sub-components: the per-account row and
- * the reusable bottom-sheet modal and sheet rows.
- */
+/** @file AccountsManager presentational sub-components: the per-account row and the reusable bottom-sheet modal and sheet rows. */
 
 import { Modal } from 'react-native';
 

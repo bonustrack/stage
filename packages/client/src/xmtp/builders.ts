@@ -1,19 +1,4 @@
-/**
- * @file Pure outbound XMTP payload builders for reaction, vote, reply, and attachment content (no native SDK imports).
- */
-/**
- * Pure outbound XMTP payload builders.
- *
- *  The app's send helpers all follow the same two steps: BUILD a content payload
- *  (pure object shaping), then hand it to the native conversation
- *  (`conv.send(...)`). This module owns step one for the reaction / vote / reply
- *  / static-attachment payloads so the shaping lives once; the native send stays
- *  in apps/app behind MessagingTransport.
- *
- *  ZERO @xmtp / react-native / expo imports. The returned shapes are
- *  structurally identical to the RN SDK's ReactionContent / ReplyContent /
- *  StaticAttachmentContent so the app casts them at the send boundary.
- */
+/** @file Pure outbound XMTP payload builders (reaction, vote, reply, attachment) with ZERO @xmtp/react-native/expo imports; shapes structurally mirror the RN SDK content types so the app casts them at the native send boundary. */
 
 /** Structural mirror of the RN SDK's `ReactionContent`. */
 export interface ReactionPayload {
@@ -52,19 +37,12 @@ export function buildVote(
   action: 'added' | 'removed' = 'added',
   questionIndex = 0,
 ): ReactionPayload {
-  // Vote key: `"q:o"`, or a BARE option index for question 0 so legacy
-  // single-question clients (and the existing tally) keep decoding it.
+  /** Vote key: `"q:o"`, or a BARE option index for question 0 so legacy single-question clients (and the existing tally) keep decoding it. */
   const content = questionIndex === 0 ? String(optionIndex) : `${questionIndex}:${optionIndex}`;
   return { reference: pollMessageId, action, content, schema: 'custom' };
 }
 
-/**
- * Build a FREE-TEXT (open) answer to a poll question. Like a vote it's a
- *  custom-schema reaction on the poll bubble, but its `content` carries the
- *  encoded answer text (`open:<q>:<base64>`) instead of an option index, so it
- *  rides the same cross-device sync + tally pipeline. `action:'removed'` (or an
- *  empty text) retracts the voter's answer.
- */
+/** Build a FREE-TEXT (open) answer to a poll question: a custom-schema reaction on the poll bubble whose `content` carries the encoded answer text (`open:<q>:<base64>`) so it rides the same sync + tally pipeline; `action:'removed'` (or empty text) retracts it. */
 export function buildOpenAnswer(
   pollMessageId: string,
   content: string,

@@ -1,8 +1,4 @@
-/**
- * @file Reusable full-screen image viewer modal for message attachments and
- *  avatars, showing the image fit-to-screen with a close affordance and a
- *  Download button that saves remote/local/base64 sources to the camera roll.
- */
+/** @file Reusable full-screen image viewer modal for attachments and avatars: fit-to-screen image, close affordance, and a Download button that saves remote/local/base64 sources to the camera roll. */
 
 import { useState } from 'react';
 
@@ -26,12 +22,7 @@ function extOf(uri: string): string {
   return (urlExt ?? 'jpg').toLowerCase();
 }
 
-/**
- * Scratch directory for temp downloads — created lazily under the app cache
- *  dir (the OS may reclaim it, which is fine since it's only a staging area for
- *  the save call). We don't bother cleaning up individual files; the volume is
- *  tiny and the cache dir is transient by design.
- */
+/** Lazily-created scratch directory under the app cache dir for temp downloads; the OS may reclaim it and we don't clean up individual files since it's only a staging area for the save call. */
 function tempDir(): Directory {
   const dir = new Directory(Paths.cache, 'image-viewer');
   if (!dir.exists) dir.create({ intermediates: true });
@@ -50,7 +41,7 @@ async function toLocalUri(uri: string): Promise<string> {
     file.write(new Uint8Array(Buffer.from(b64, 'base64')));
     return file.uri;
   }
-  // Remote http(s) — download into the temp dir.
+  /** Remote http(s) — download into the temp dir. */
   const dest = new File(tempDir(), `img-${Date.now()}.${ext}`);
   const downloaded = await File.downloadFileAsync(uri, dest);
   return downloaded.uri;
@@ -77,8 +68,7 @@ export function ImageViewer({ uri, visible, onClose }: {
       }
       const local = await toLocalUri(uri);
       await MediaLibrary.saveToLibraryAsync(local);
-      // `flash` is an Android-only toast (no iOS toast primitive), so give an
-      // explicit Alert confirmation on iOS instead.
+      /** `flash` is an Android-only toast (no iOS primitive), so confirm via an explicit Alert on iOS instead. */
       if (Platform.OS === 'android') flash('Saved to photos');
       else Alert.alert('Saved', 'Image saved to your photos.');
     } catch (e) {

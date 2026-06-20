@@ -1,6 +1,4 @@
-/**
- * @file Framework-agnostic single source of truth for the Box/Row/Col prop API and its pure prop->style mapper (numbers = px), consumed identically by the RN and Vue renderers.
- */
+/** @file Framework-agnostic single source of truth for the Box/Row/Col prop API and its pure prop->style mapper (numbers = px), consumed identically by the RN and Vue renderers. */
 
 import {
   colors,
@@ -23,13 +21,7 @@ export type Justify =
   | 'around'
   | 'evenly';
 
-/**
- * Per-side / per-axis spacing object, mirroring OpenAI ChatKit's `Spacing`.
- *  `x` -> horizontal (left+right), `y` -> vertical (top+bottom); `top`/`right`/
- *  `bottom`/`left` target a single side. Per-side keys override the axis keys
- *  (RN applies paddingHorizontal/Vertical first, then the specific side wins).
- *  Each value is a number (px) or a string (passthrough).
- */
+/** Per-side / per-axis spacing object mirroring ChatKit's `Spacing`: `x` -> left+right, `y` -> top+bottom, per-side keys override the axis (RN applies horizontal/vertical first, then the side wins); each value is a number (px) or a passthrough string. */
 export interface Spacing {
   top?: number | string;
   right?: number | string;
@@ -39,12 +31,7 @@ export interface Spacing {
   y?: number | string;
 }
 
-/**
- * The framework-agnostic prop contract. Renderers extend this with their own
- *  passthrough typing (RN: ViewProps + `style`; Vue: `class` + `as`).
- *  Spacing props match ChatKit 1:1: `padding`/`margin` accept a scalar (all
- *  sides) or a `Spacing` object. No letter shorthands.
- */
+/** The framework-agnostic prop contract that renderers extend with their own passthrough typing (RN ViewProps+style; Vue class+as); spacing props match ChatKit 1:1, with `padding`/`margin` taking a scalar or `Spacing` object and no letter shorthands. */
 export interface BoxBaseProps {
   /** flex axis. 'col' -> column (default), 'row' -> row. */
   direction?: 'row' | 'col';
@@ -64,14 +51,7 @@ export interface BoxBaseProps {
   wrap?: boolean;
   /** ChatKit `background`: a semantic ColorToken (resolved scheme-aware via the Box renderer), a kit `colors` scale key (resolved to hex), or a raw colour string (escape hatch). Maps to style.backgroundColor. */
   background?: ColorToken | (string & {});
-  /**
-   * ChatKit `radius`: a token from the corner-radius scale
-   *  ('none'|'2xs'|..|'4xl'|'full'|'100%'). Maps to style.borderRadius. A raw
-   *  string ('12px') OR a raw number passes through as the escape hatch - used
-   *  for the app's live, user-overridable `blockRadius` (radiusOverride store),
-   *  whose px value is dynamic and has no fixed token. Mirrors how `background`
-   *  / Text `color` accept a raw value alongside the token.
-   */
+  /** ChatKit `radius`: a corner-radius-scale token mapping to style.borderRadius, or a raw string/number escape hatch (used for the app's live user-overridable `blockRadius`, whose px value has no fixed token), mirroring how `background`/Text `color` accept a raw value alongside the token. */
   radius?: RadiusValue | number | (string & {});
   /** ChatKit BlockProps sizing (number=px | string='50%'/'auto'). */
   width?: Size;
@@ -110,13 +90,7 @@ export function resolveBg(bg: string): string {
 /** A neutral, CSS-ish record of style entries. Values are raw numbers (px) or string enums. Consumed by both renderers. `display` is intentionally absent. */
 export type BoxStyleEntries = Record<string, string | number>;
 
-/**
- * Expand a `padding`/`margin` prop into per-side style entries under the
- *  given key prefix ('padding' | 'margin'). A scalar (number|string) sets all
- *  four sides. A `Spacing` object resolves x -> left+right, y -> top+bottom,
- *  then per-side keys (top/right/bottom/left) override the axis (later writes
- *  win), matching RN's paddingHorizontal/Vertical-then-side precedence.
- */
+/** Expand a `padding`/`margin` prop into per-side style entries under the key prefix: a scalar sets all four sides, a `Spacing` object resolves x -> left+right and y -> top+bottom, then per-side keys override the axis (later writes win) matching RN's horizontal/vertical-then-side precedence. */
 function applySpacing(
   s: BoxStyleEntries,
   prefix: 'padding' | 'margin',

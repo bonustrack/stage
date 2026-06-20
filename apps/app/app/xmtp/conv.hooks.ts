@@ -22,8 +22,7 @@ export function useSearchKeyboardFocus(searchOpen: boolean): InputRef {
       attempts += 1;
       const input = searchInputRef.current;
       input?.blur();
-      // Next frame so the blur lands before the re-focus (Android needs the
-      // focus state to actually toggle for the IME to re-open).
+      /** Re-focus next frame so the blur lands first (Android needs the focus state to toggle for the IME to re-open). */
       requestAnimationFrame(() => { searchInputRef.current?.focus(); });
       timer = setTimeout(poke, 150);
     };

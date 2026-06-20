@@ -1,7 +1,4 @@
-/**
- * @file fetchAssetRows adapter — wallet token-balance fetch (multicall per chain +
- *  CoinGecko prices) wrapping the Stage SDK and injecting kit's stampTokenUrl logo helper.
- */
+/** @file fetchAssetRows adapter — wallet token-balance fetch (multicall per chain plus CoinGecko prices) wrapping the Stage SDK and injecting kit's stampTokenUrl logo helper. */
 
 import { fetchAssetRows as sdkFetchAssetRows } from '@stage-labs/client/wallet/balances';
 import { type AssetRow } from '@stage-labs/client/wallet/assets';

@@ -1,12 +1,4 @@
-/**
- * @file Barrel for the ZeroDev smart-account wallet module, re-exporting only the symbols consumed via the `lib/zerodev` path (keyring, account creation, kernel rebuild, passkey enable/disable, and guardian recovery).
- */
-
-// This barrel re-exports ONLY the symbols consumed via the `lib/zerodev` path.
-// Many submodule exports are imported directly from their source module (or via
-// a lazy `import('./zerodev/<mod>')`) by callers/tests, so re-exporting them here
-// too is dead surface — knip flags it. Add a name back here only when a caller
-// imports it from `'../lib/zerodev'`.
+/** @file Barrel for the ZeroDev smart-account wallet module, re-exporting only the symbols consumed via the `lib/zerodev` path (keyring, account creation, kernel rebuild, passkey enable/disable, guardian recovery); add a name only when a caller imports it from here. */
 export {
   restoreMnemonic, revealRecoveryPhrase, smartOwnerSigner,
 } from './keyring';

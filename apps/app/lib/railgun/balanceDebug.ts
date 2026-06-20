@@ -1,18 +1,6 @@
 /** @file In-memory observable diagnostics store for the Railgun shielded-balance pipeline (bridge/engine readiness, refresh phase, raw last balanceUpdate event) rendered as the Private-tab debug block. */
 
-/*
- * On-screen diagnostics for the RAILGUN shielded-balance pipeline.
- *
- *  We have NO adb on-device, so this captures the raw truth of the balance flow
- *  into a tiny observable store the Private tab renders as a "Railgun debug"
- *  block: engine/bridge readiness, the last refresh status + error, and — the
- *  key signal — the RAW last `event:balanceUpdate` payload the engine emitted.
- *  This disambiguates the two failure modes:
- *    - engine emits NOTHING → scan/RPC/merkle problem (engine-side, needs APK).
- *    - engine emits buckets but the UI shows 0 → RN-side sum/store/decimals bug.
- *
- *  Pure in-memory + a synchronous getter + subscribe (no disk, no deps).
- */
+/** Pure in-memory observable store (getter + subscribe, no disk/deps) capturing the RAILGUN shielded-balance flow for the Private tab's debug block — engine/bridge readiness, last refresh status/error, and the raw last `event:balanceUpdate` payload — to disambiguate engine-side scan failures from RN-side sum/store/decimals bugs. */
 type RefreshPhase = 'idle' | 'scanning' | 'done' | 'error';
 
 export interface BalanceDebug {

@@ -7,21 +7,15 @@ import type { HistoryEntry } from '../../lib/types';
 import type { FlatList } from 'react-native-gesture-handler';
 import { hasAttachments, isReaction } from './feed-helpers';
 
-/**
- * Match optimistic entries to confirmed live twins, returning the confirmed ids.
- *  Confirms by exact real id (from onSent) when known; else a text-only echo
- *  within a 1s-slack / 30s window. Consumes each live message at most once and
- *  only matches echoes at/after the optimistic send time, so a duplicate quick
- *  send never latches an older bubble (the "sent message vanishes" race).
- */
+/** Match optimistic entries to confirmed live twins by exact real id (from onSent) else a text-only echo in a 1s-slack/30s window, consuming each live message once and only at/after the send time so a quick duplicate send never latches an older bubble. */
 function matchConfirmed(
   optimistic: HistoryEntry[], liveBubbles: HistoryEntry[],
   myUri: string, confirmedIds: Map<string, string>,
 ): Set<string> {
   const confirmed = new Set<string>();
   if (!optimistic.length) return confirmed;
-  const used = new Set<string>(); // live message ids already claimed
-  // Oldest optimistic first so earlier sends claim earlier echoes.
+  const used = new Set<string>(); /** live message ids already claimed */
+  /** Oldest optimistic first so earlier sends claim earlier echoes. */
   const ordered = [...optimistic].sort((a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime());
   for (const o of ordered) {
     const realId = confirmedIds.get(o.id);
@@ -29,7 +23,7 @@ function matchConfirmed(
       const byId = liveBubbles.find(e => e.id === realId && !used.has(e.id));
       if (byId) { used.add(byId.id); confirmed.add(o.id); continue; }
     }
-    // Attachment sends confirm ONLY by exact id (above) — never the text/ts heuristic.
+    /** Attachment sends confirm ONLY by exact id (above) — never the text/ts heuristic. */
     if (hasAttachments(o)) continue;
     const oTs = new Date(o.ts).getTime();
     const match = liveBubbles.find(e =>
@@ -70,8 +64,7 @@ function useStickyBottom(allBubblesLength: number, showJump: boolean, setShowJum
   const prevBubbleCount = useRef(0);
   useEffect(() => {
     if (allBubblesLength > prevBubbleCount.current && prevBubbleCount.current > 0) {
-      // New message at the visual bottom — force-remount + clear the jump button
-      // (the inverted list can report a stale offset after a content shift).
+      /** New message at the visual bottom — force-remount + clear the jump button (the inverted list can report a stale offset after a content shift). */
       if (!showJump) setListEpoch(e => e + 1);
       setShowJump(false);
     }
@@ -87,12 +80,7 @@ export function useOutboundLayer(
   activeLine: string,
 ) {
   const [showJump, setShowJump] = useState(false);
-  /**
-   * Bump to force-remount the FlatList. Used by jump-to-bottom because every variant of
-   *  the scroll API (`scrollToOffset`, `scrollToIndex`, `getScrollResponder`,
-   *  `getNativeScrollRef`) trips reanimated #3670 "property is not writable" on devices
-   *  with Reduce Motion. Remount lands at the inverted list's default offset = bottom.
-   */
+  /** Bump to force-remount the FlatList for jump-to-bottom, since every scroll API variant trips reanimated #3670 on Reduce-Motion devices; remount lands at the inverted list's default offset (bottom). */
   const [listEpoch, setListEpoch] = useState(0);
   /** Transient highlight on a message we jumped to (by tapping its quoted reply-preview). Cleared after a short flash. */
   const [jumpHighlightId, setJumpHighlightId] = useState<string | null>(null);
@@ -101,13 +89,7 @@ export function useOutboundLayer(
 
   /** Optimistic outbound entries — rendered immediately on send, dropped once the composer resolves its send promise (XMTP self-sends don't always come back via streamMessages). */
   const [optimistic, setOptimistic] = useState<HistoryEntry[]>([]);
-  /**
-   * localId → real XMTP message id, resolved when the composer's send() promise
-   *  settles (conv.send returns the id). Lets us confirm/drop an optimistic entry
-   *  by EXACT id when that id appears in the live feed — zero false-confirm vs the
-   *  text+timestamp heuristic, which stays as a fallback for sends that resolve
-   *  without an id (or before the map updates).
-   */
+  /** localId → real XMTP message id (resolved when send() settles), used to confirm/drop an optimistic entry by EXACT id when it appears in the live feed; the text+timestamp heuristic stays as the fallback. */
   const [confirmedIds, setConfirmedIds] = useState<Map<string, string>>(new Map());
 
   const liveBubbles = useMemo(() => events.filter(e => !isReaction(e)), [events]);
@@ -121,14 +103,7 @@ export function useOutboundLayer(
   }, [liveBubbles, optimistic, confirmedOptimisticIds]);
   useOptimisticCleanup(optimistic, confirmedOptimisticIds, setOptimistic, setConfirmedIds);
   useStickyBottom(allBubbles.length, showJump, setShowJump, setListEpoch);
-  /**
-   * Jump to the original of a quoted/replied-to message: scroll the inverted
-   *  list to its row + flash a highlight. The scroll is best-effort — wrapped in
-   *  try/catch with `animated:false` (reanimated #3670 makes the animated path
-   *  throw on Reduce-Motion devices) and backed by the list's
-   *  `onScrollToIndexFailed` no-op for not-yet-rendered rows. The highlight
-   *  always fires so the user gets feedback even when the scroll can't land.
-   */
+  /** Jump to a quoted/replied-to message: best-effort scroll the inverted list to its row (try/catch + animated:false for reanimated #3670, with onScrollToIndexFailed for unrendered rows) and always flash a highlight so the user gets feedback even if the scroll can't land. */
   const jumpToMessage = useCallback((messageId: string) => {
     const idx = allBubbles.findIndex(b => b.id === messageId);
     setJumpHighlightId(messageId);
@@ -159,26 +134,13 @@ export function useOutboundLayer(
     /** Always remount so the user lands on their own bubble — `maintainVisibleContentPosition` anchors the previously-visible content and the new entry falls below the viewport. */
     setListEpoch(e => e + 1);
     setShowJump(false);
-    /**
-     * Patch the channels-list cache right away so the just-sent message
-     *  shows as the latest preview when the user goes back — XMTP
-     *  self-sends don't reliably replay through `streamAllMessages`, so
-     *  the list would otherwise lag until the next 30s poll / app resume.
-     */
+    /** Patch the channels-list cache now so the just-sent message shows as the latest preview on back — XMTP self-sends don't reliably replay through streamAllMessages, so the list would otherwise lag until the next poll/resume. */
     const preview = text.trim() || attachmentEmojiPreview(attachments[0]?.mime, attachments[0]?.name);
     if (convId) patchRowSent(convId, preview);
   }, [activeLine, myUri, convId]);
 
   const onSent = useCallback((localId: string, _error: unknown, sentId?: string) => {
-    /**
-     * conv.send() resolves with the real XMTP message id — thread it back so
-     *  the dedup memo confirms this optimistic entry by EXACT id when it shows
-     *  up in the live feed (no text+timestamp guessing). We DON'T drop the
-     *  optimistic entry here anymore: dropping it before the live echo arrives
-     *  made the just-sent bubble vanish for a frame. The dedup effect drops it
-     *  once the matching live bubble lands (by id, else the ts fallback). On a
-     *  send error (no id) keep the old behavior: drop the stranded bubble.
-     */
+    /** Thread the real XMTP id back so the dedup memo confirms this optimistic entry by EXACT id from the live feed; don't drop it here (that made the bubble vanish for a frame) — the dedup effect drops it once the live twin lands; on a send error (no id) drop the stranded bubble. */
     if (sentId) {
       setConfirmedIds(prev => {
         const next = new Map(prev);

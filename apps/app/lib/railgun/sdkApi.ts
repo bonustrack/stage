@@ -1,17 +1,4 @@
-/** @file Lazy facade over the heavy @railgun-community/wallet runtime module, returning the typed SDK function subset (or null) so callers degrade to 'unavailable' on builds without native bits. */
-/**
- * Lazy facade over the heavy @railgun-community/wallet runtime module.
- *
- *  The SDK is required LAZILY (never a top-level runtime import) so the Metro
- *  bundler / app eval never has to resolve it on a build without the native
- *  bits — mirroring lib/railgun/native.ts + components/VoiceMessage.decode.ts.
- *  Type-only imports (`import type`) are erased at compile time and are safe to
- *  keep static; only the runtime function objects come through here.
- *
- *  Callers must gate on isRailgunAvailable() first; getWalletApi() returns null
- *  when the module can't load, so every op degrades to 'unavailable' instead of
- *  throwing.
- */
+/** @file Lazy facade over the heavy @railgun-community/wallet runtime module, requiring it lazily (type-only imports stay static) so builds without native bits never resolve it; getWalletApi returns null and callers gating on isRailgunAvailable degrade to 'unavailable' instead of throwing. */
 
 import type * as WalletSdk from '@railgun-community/wallet';
 

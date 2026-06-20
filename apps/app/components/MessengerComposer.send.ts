@@ -1,6 +1,4 @@
-/**
- * @file Send-step planner for the MessengerComposer: splits one submission into the separate ordered XMTP messages it produces (text, multi-attachment, per-audio-clip).
- */
+/** @file Send-step planner for the MessengerComposer: splits one submission into the separate ordered XMTP messages it produces (text, multi-attachment, per-audio-clip). */
 
 import {
   fileUriToBase64, xmtpReply, xmtpSendAttachment, xmtpSendMultiRemoteAttachment, xmtpSendText,
@@ -59,16 +57,7 @@ export function planSendSteps(
   return steps;
 }
 
-/**
- * Audio voice notes are sent as INLINE static attachments (raw bytes, base64),
- *  NOT through the remote-attachment / `encryptSanitizedAttachment` file boundary.
- *  This is intentional and not a privacy gap: audio recorded in-app (m4a/caf/etc.)
- *  is not an EXIF / location-metadata vector the way camera images are, so it is
- *  deliberately exempt from the `SanitizedFileUri` strip gate (see prior worker's
- *  honesty note in the PR). Only the image/video/file path
- *  (`xmtpSendMultiRemoteAttachment`) is routed through the branded strip
- *  chokepoint.
- */
+/** Sends an audio voice note as an INLINE base64 attachment, intentionally bypassing the remote-attachment strip gate (in-app audio is not an EXIF/location vector like camera images, which still route through xmtpSendMultiRemoteAttachment). */
 async function sendAudio(xmtpLine: string, at: Attachment): Promise<string> {
   const mimeType = mimeOf(at.mime, at.name ?? at.url);
   const filename = at.name ?? at.id;

@@ -1,8 +1,4 @@
-/**
- * @file Wallet unshield-token screen moving funds from the user's own 0zk
- * shielded balance back to a public address (defaults to their own EOA) via the
- * Groth16 estimate-prove-populate-broadcast flow in lib/railgun/unshield.ts.
- */
+/** @file Wallet unshield-token screen moving funds from the user's 0zk shielded balance back to a public address via the Groth16 estimate-prove-populate-broadcast flow. */
 import { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';

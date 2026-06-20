@@ -1,23 +1,4 @@
-/**
- * @file Type-only RailgunBridgeAPI interface enumerating the full Railgun bridge surface (engine, wallet, shield/transfer/unshield, events).
- */
-/**
- * THE Railgun bridge contract - one TypeScript interface enumerating the full
- *  public bridge surface (engine lifecycle, wallet, balances, the shield /
- *  private-transfer / unshield flows, and the live push events).
- *
- *  WHY ONE INTERFACE: phase 1 spread the surface across bridge/index.ts (engine
- *  lifecycle), bridge/wallet.ts (wallet + balances), and the *Calls frame
- *  builders. RailgunBridgeAPI gathers the intent-level operations into a single
- *  typed contract so a consumer (and the host) has ONE place describing what the
- *  bridge can do. The concrete RN client (@metro-labs/railgun-mobile barrel /
- *  apps/app/lib/railgun/bridge) implements it; the wire frames + method registry
- *  (./protocol, ./methods) back it. The lower-level generic `sdk(method, args)`
- *  dispatcher stays available for advanced orchestration, but every step it can
- *  run is enumerated in SDK_METHODS so the contract and host cannot desync.
- *
- *  PURE: type-only. No native / RN / expo imports.
- */
+/** @file Type-only RailgunBridgeAPI: one interface enumerating the full Railgun bridge surface (engine, wallet, balances, shield/transfer/unshield flows, events) so the RN client and host cannot desync; no native/RN/expo imports. */
 import type {
   RailgunNet,
   CreateWalletParams,
@@ -53,12 +34,7 @@ export interface EngineInitOptions {
   scanConfig?: unknown;
 }
 
-/**
- * The full intent-level Railgun bridge contract. The RN client implements this
- *  over the nodejs-mobile channel; nothing here imports a native module. Every
- *  method maps to either a typed host handler (engine lifecycle / wallet /
- *  balances) or a composition of whitelisted SDK_METHODS (the tx flows).
- */
+/** The full intent-level Railgun bridge contract the RN client implements over the nodejs-mobile channel (no native imports); each method maps to a typed host handler or a composition of whitelisted SDK_METHODS. */
 export interface RailgunBridgeAPI {
   /** True when the embedded Node runtime can serve calls on this binary. */
   isAvailable(): boolean;

@@ -1,12 +1,4 @@
-/** @file RN-side SHIELD bridge wrappers binding the pure @stage-labs/client/railgun frame builders to this binary's native `sdk()` dispatcher. */
-/**
- * RN-side SHIELD bridge wrappers - thin shims over the pure frame builders in
- *  @stage-labs/client/railgun. The builders are framework-agnostic (they take an
- *  injected dispatcher); here we bind them to THIS binary's native `sdk()`
- *  dispatcher so the existing call sites keep their no-dispatch signatures and no
- *  logic is duplicated. The wire protocol lives in the SDK; the native channel
- *  (nodejsMobile) stays here.
- */
+/** @file RN-side SHIELD bridge wrappers — thin shims binding the framework-agnostic @stage-labs/client/railgun frame builders to this binary's native `sdk()` dispatcher so call sites keep their no-dispatch signatures with no duplicated logic. */
 import { sdk } from './sdk';
 import {
   shieldPrivateKeyMessage as shieldPrivateKeyMessageSdk,

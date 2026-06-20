@@ -1,7 +1,4 @@
-/**
- * @file Settings -> Messenger screen: tap-to-copy XMTP account info (address,
- *  inbox id, installation id) plus the Reset XMTP identity flow.
- */
+/** @file Settings -> Messenger screen: tap-to-copy XMTP account info (address, inbox id, installation id) plus the Reset XMTP identity flow. */
 
 import { useEffect, useState } from 'react';
 
@@ -60,7 +57,7 @@ export function MessengerSettings(): React.ReactElement {
         setAddr(client.publicIdentity.identifier);
         setInbox(client.inboxId);
         setInstall(client.installationId ?? '');
-      } catch { /* settings shouldn't block on XMTP boot */ }
+      } catch { /** settings shouldn't block on XMTP boot */ }
     })();
     return () => { alive = false; };
   }, [epoch]);
