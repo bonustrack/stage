@@ -1,0 +1,60 @@
+name: CI (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      bun-version:
+        type: string
+        default: '1.3.9'
+      runs-on:
+        type: string
+        default: 'ubuntu-latest'
+      install-command:
+        type: string
+        default: 'bun install --frozen-lockfile'
+      lint:
+        type: boolean
+        default: true
+      typecheck:
+        type: boolean
+        default: true
+      knip:
+        type: boolean
+        default: true
+      madge:
+        type: boolean
+        default: true
+      build:
+        type: boolean
+        default: true
+      test:
+        type: boolean
+        default: true
+
+jobs:
+  ci:
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ inputs.bun-version }}
+      - run: ${{ inputs.install-command }}
+      - name: Lint
+        if: ${{ inputs.lint }}
+        run: bun run lint
+      - name: Typecheck
+        if: ${{ inputs.typecheck }}
+        run: bun run typecheck
+      - name: Knip (unused files/deps/exports)
+        if: ${{ inputs.knip }}
+        run: bun run knip
+      - name: Madge (circular dependencies)
+        if: ${{ inputs.madge }}
+        run: bun run madge
+      - name: Build
+        if: ${{ inputs.build }}
+        run: bun run build
+      - name: Test
+        if: ${{ inputs.test }}
+        run: bun run test
