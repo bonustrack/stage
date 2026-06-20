@@ -1,8 +1,4 @@
-/**
- * @file HomeScreen.list — the channels list view: the Home topnav slot and the
- *  channels FlatList with scroll persistence, requests header and empty state,
- *  extracted from HomeScreen.tsx.
- */
+/** @file HomeScreen.list — the channels list view: Home topnav slot and channels FlatList with scroll persistence, requests header and empty state. */
 
 import type { MutableRefObject, RefObject } from 'react';
 import { useMemo, useState } from 'react';
@@ -61,7 +57,7 @@ function HomeTopnavRight({ head, requestCount, router, onOpenSearch }: {
   head: string; requestCount: number;
   router: ChannelsListProps['router']; onOpenSearch: () => void;
 }): React.ReactElement {
-  // Request-count badge: white bg + black text in dark theme; flip in light theme to stay legible.
+  /** Request-count badge: white bg + black text in dark theme; flip in light theme to stay legible. */
   const dark = useEffectiveColorScheme() === 'dark';
   const badgeBg = dark ? '#ffffff' : '#000000';
   const badgeFg = dark ? '#000000' : '#ffffff';
@@ -84,7 +80,7 @@ function HomeTopnavRight({ head, requestCount, router, onOpenSearch }: {
         onArchived={() => { router.push('/xmtp/archived'); }}
         onNewGroup={() => { router.push('/xmtp/new-group'); }}
         onProfile={() => {
-          // Own-profile tab was removed → view yourself via /user/[address].
+          /** Own-profile tab was removed → view yourself via /user/[address]. */
           void getActiveAccount().then(acct => {
             if (acct?.address) router.push(`/user/${acct.address}`);
           });
@@ -132,8 +128,7 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
     listExtraData, listRef, savedOffsetRef, didRestoreRef, contentHeightRef,
     renderRow, getRowLayout,
   } = props;
-  // Search is collapsed by default; opening it swaps the topnav for a full-width
-  // field, closing clears the query so the list returns to its full state.
+  /** Search is collapsed by default; opening swaps the topnav for a full-width field, closing clears the query. */
   const [searchOpen, setSearchOpen] = useState(false);
   /** Open the full-width search field. */
   const openSearch = (): void => { setSearchOpen(true); };
@@ -156,11 +151,11 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
           if (didRestoreRef.current) return;
           const want = savedOffsetRef.current;
           if (want == null || want <= 0) { didRestoreRef.current = true; return; }
-          if (h <= 0) return; // not laid out yet - wait for the next size change
+          if (h <= 0) return; /** not laid out yet - wait for the next size change */
           didRestoreRef.current = true;
           const offset = Math.min(want, Math.max(0, h));
           requestAnimationFrame(() => {
-            try { listRef.current?.scrollToOffset({ offset, animated: false }); } catch { /* best-effort */ }
+            try { listRef.current?.scrollToOffset({ offset, animated: false }); } catch { /** best-effort */ }
           });
         }}
         extraData={listExtraData}
@@ -171,10 +166,7 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
         maxToRenderPerBatch={10}
         removeClippedSubviews
         contentContainerStyle={{ paddingBottom: 24 }}
-        /* Label-filter bar rides as the list header so it scrolls away with the
-         *  feed instead of staying pinned under the (fixed) search bar. One
-         *  toggle chip per unique label across non-archived channels; hidden
-         *  when there are no labels. */
+        /** Label-filter bar rides as the list header so it scrolls away with the feed; one toggle chip per unique label, hidden when none. */
         ListHeaderComponent={<ChannelsListHeader p={props} />}
         ListEmptyComponent={query.trim() ? null : <HomeEmpty sub={sub} />}
         ListFooterComponent={

@@ -4,14 +4,7 @@ import { TopnavIdentity } from './TopnavIdentity';
 import { Row } from './layout';
 import { usePalette } from '../lib/theme';
 
-/**
- * The single canonical topnav height (px), shared by ALL top bars so every one
- *  is pixel-identical: the four main-tab Topnav, the Home search bar, the
- *  conversation topnav and the conversation search bar. This is the full OUTER
- *  height including the 1px hairline bottom border, which is drawn INSIDE the box
- *  (RN/Yoga border-box) so it never adds to the total. Every path renders a
- *  fixed-height border-box of exactly this value (+ any top inset).
- */
+/** The single canonical topnav height (px) shared by ALL top bars so each is pixel-identical; full OUTER height including the 1px border drawn INSIDE the box (border-box), so it never adds to the total. */
 export const TOPNAV_HEIGHT = 52;
 
 /** Top navigation bar with configurable left and right slots. */

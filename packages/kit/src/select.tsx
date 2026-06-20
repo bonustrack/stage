@@ -217,7 +217,7 @@ export function Select(props: SelectProps): React.ReactElement {
   const box = controlBoxStyle(size, variant, colors, corner, false);
   const p = schemePalette(dark);
   const head = p.head;
-  // Sheet fill has no semantic token equivalent (kept literal).
+  /** Sheet fill has no semantic token equivalent (kept literal). */
   const sheetBg = dark ? '#1b1c1e' : '#ffffff';
   const rowBorder = p.border;
 

@@ -1,23 +1,4 @@
-/** @file Network registry mapping the supported chains to the Railgun SDK NetworkName and >=2 getLogs-capable RPC endpoints per net (brovider excluded) for the engine's merkletree scan. */
-/**
- * Network registry for the Railgun SDK layer. Maps our two supported chains to
- *  the SDK's NetworkName + the RPC endpoints the engine polls.
- *
- *  IMPORTANT — do NOT use brovider (rpc.brovider.xyz) here. brovider is a
- *  multicall-oriented proxy that REJECTS eth_getLogs ("getLogs request exceeded
- *  max allowed range", code -32012) even for a single block, so the Railgun
- *  engine's merkletree scan can't run. (brovider is fine for lib/tx.ts /
- *  lib/ens.ts public-wallet multicall reads — just not for the SDK scan.)
- *
- *  Railgun's loadProvider also requires total provider weight >= 2 for fallback
- *  quorum (createFallbackProviderFromJsonConfig throws "Invalid fallback
- *  provider config" otherwise) — sdkEngine assigns weight 1 per url, so each
- *  net needs >= 2 urls. We use two getLogs-capable public RPCs per net,
- *  empirically verified to serve eth_getLogs over the Railgun proxy address:
- *    - ethereum-sepolia-rpc.publicnode.com  (getLogs OK, 50k-block range cap)
- *    - sepolia.drpc.org                     (getLogs OK, 10k-block range cap)
- *  The engine chunks its scan well under both caps. Sepolia is the test default.
- */
+/** @file Network registry mapping the two supported chains to the Railgun SDK NetworkName and >=2 getLogs-capable public RPCs per net (loadProvider needs total weight >=2); NEVER brovider, which rejects eth_getLogs (code -32012) and breaks the merkletree scan. */
 
 import { NetworkName } from '@railgun-community/shared-models';
 

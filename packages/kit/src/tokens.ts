@@ -1,6 +1,4 @@
-/**
- * @file Metro design tokens — the framework-agnostic single source of truth for the colour palette shared by the Vue web client and the React Native app, keeping the two shells in lock-step.
- */
+/** @file Metro design tokens — the framework-agnostic single source of truth for the colour palette shared by the Vue web client and the React Native app, keeping the two shells in lock-step. */
 
 /** The full `metro` colour scale. Keys match apps/ui's Tailwind `colors.metro.*`. Each light/dark pair is split so a consumer can pick by effective scheme. */
 export const colors = {
@@ -84,13 +82,7 @@ export function semanticPalette(scheme: 'light' | 'dark'): {
   };
 }
 
-/**
- * Semantic text-colour token names taken by the Kit content components'
- *  `color` prop. Each resolves (scheme-aware) to the canonical palette default
- *  via `resolveColorToken`, so a token never changes a rendered colour. A raw
- *  hex/rgb string is still accepted on the prop as the escape hatch (used where
- *  the colour is a live `usePalette()` value carrying the user's overrides).
- */
+/** Semantic text-colour token names taken by the Kit content components' `color` prop; each resolves scheme-aware to the canonical palette default via resolveColorToken, while a raw hex/rgb string is still accepted as the escape hatch for live usePalette() overrides. */
 export type ColorToken =
   | 'text'
   | 'secondary'
@@ -123,20 +115,7 @@ export function resolveColorToken(c: string, scheme: 'light' | 'dark'): string {
   return isColorToken(c) ? semanticColors[COLOR_TOKEN_MAP[c]][scheme] : c;
 }
 
-/**
- * Scheme-resolved surface palette shared by the Kit component internals,
- *  sourced from the `colors` scale so no component hard-codes a hex. Additive
- *  on top of the #394 token set: it reuses the SAME `colors` literals, so a
- *  component adopting it renders the identical pixels. `head`/`text`/`sub` are
- *  text colours, `surface`/`pressed` the hover/row fills, `border` the divider.
- *
- *  Reproduces the per-component hexes the Kit primitives used:
- *    head  = #ffffff / #000000   (head-*)
- *    text  = #9f9fa3 / #57606a   (fg-*)
- *    sub   = #7a7a7e / #8a929d   (sub-*)
- *    surface/pressed = #1c1d1f / #f2f2f3 (hover-*)
- *    border = #282a2d / #e4e4e5  (border-*)
- */
+/** Scheme-resolved surface palette shared by the Kit component internals, sourced from the `colors` scale (reusing the same literals so adopters render identical pixels): head/text/sub are text colours, surface/pressed the hover/row fills, border the divider. */
 export interface SchemePalette {
   head: string;
   text: string;
@@ -159,19 +138,7 @@ export function schemePalette(dark: boolean): SchemePalette {
   };
 }
 
-/**
- * Numeric design tokens (non-color), both editable + persisted via the app's
- *  radiusOverride store.
- *
- *  `button-border-radius` (BUTTON_RADIUS_DEFAULT) — corner radius (px) of every
- *  non-circular button across the app. Default 999 = fully-rounded (the original
- *  pill look); applied through the kit Button's `setDefaultButtonRadius`.
- *
- *  `border-radius` (BLOCK_RADIUS_DEFAULT) — corner radius (px) of every
- *  non-button container surface: inputs/text fields, cards, modals/sheets and
- *  general bordered/filled "blocks". Default 12 matches the prevailing container
- *  look (inputs 10–12, cards 14).
- */
+/** Numeric (non-color) design tokens, editable + persisted via the radiusOverride store: BUTTON_RADIUS_DEFAULT (999, fully-rounded pill) is every non-circular button's corner radius, and BLOCK_RADIUS_DEFAULT (12) every non-button container surface's. */
 export const RADIUS_DEFAULT = 999;
 export const RADIUS_MIN = 0;
 export const RADIUS_MAX = 999;
@@ -180,39 +147,23 @@ export const BUTTON_RADIUS_DEFAULT = 999;
 /** Default corner radius for non-button container "blocks". */
 export const BLOCK_RADIUS_DEFAULT = 12;
 
-/* ------------------------------------------------------------------------- *
- * Named font-size scale (single source of truth for text sizing).
- *
- * A t-shirt scale that covers every text size used across apps/app. Raw numeric
- * fontSize is banned by lint - callers use a named step, either via the Kit
- * Text `size` prop (3xs..6xl) or, for plain StyleSheet objects, the
- * `FONT_SIZE.<name>` value (or `fontSize(name)` helper).
- *
- * Snapping: the app historically used ~19 distinct px values; these collapse to
- * the named steps below by nearest-neighbour rounding (Less: "need to match
- * everything" = standardize). See FONT_SIZE_SNAP for the px -> name mapping.
- * ------------------------------------------------------------------------- */
+/** Named font-size scale (single source of truth for text sizing): a t-shirt scale covering every app text size since raw numeric fontSize is lint-banned, with ~19 historical px values collapsed to named steps by nearest-neighbour rounding (see FONT_SIZE_SNAP). */
 
-/**
- * Named text sizes - a clean t-shirt scale with NO `+`/`-` half-step names.
- *  Every px the app uses (11..20, plus 24/32) maps to one named step, so the
- *  key surfaces (channel rows, topnavs, messenger feed + composer) render at
- *  their original px, not a snapped value.
- */
+/** Named text sizes — a clean t-shirt scale with no half-step names; every px the app uses (11..20 plus 24/32) maps to one step so key surfaces render at their original px, not a snapped value. */
 export type FontSizeName =
-  | '3xs' // 11
-  | '2xs' // 12
-  | 'xs'  // 13
-  | 'sm'  // 14
-  | 'md'  // 15
-  | 'lg'  // 16
-  | 'xl'  // 17
-  | '2xl' // 18
-  | '3xl' // 19
-  | '4xl' // 20
-  | '5xl' // 24
-  | '6xl' // 32
-  | '7xl'; // 40
+  | '3xs' /* 11 */
+  | '2xs' /* 12 */
+  | 'xs'  /* 13 */
+  | 'sm'  /* 14 */
+  | 'md'  /* 15 */
+  | 'lg'  /* 16 */
+  | 'xl'  /* 17 */
+  | '2xl' /* 18 */
+  | '3xl' /* 19 */
+  | '4xl' /* 20 */
+  | '5xl' /* 24 */
+  | '6xl' /* 32 */
+  | '7xl'; /* 40 */
 
 /** Named font-size scale -> px. The canonical set of text sizes. Every px the key surfaces use (11..20) is an exact step so snapping is lossless there. */
 export const FONT_SIZE: Record<FontSizeName, number> = {
@@ -262,18 +213,7 @@ export const fontFamily = {
   mono: ['Menlo', 'ui-monospace', 'monospace'],
 } as const;
 
-/* ------------------------------------------------------------------------- *
- * ChatKit-shaped theme alignment (additive, non-breaking).
- *
- * The app-facing palette stays the short 7 keys (bg/text/link/...) consumed by
- * 60+ usePalette callers. This block adds a ChatKit ThemeOption-shaped view of
- * the SAME source-of-truth `semanticColors`, so naming aligns without a rename.
- *
- * KEY mapping gotcha (per CHATKIT_PLAN.md): ChatKit `color.accent.primary`
- * maps to OUR `linkColor` (brand emphasis), NOT our `primaryColor`. Our
- * `primaryColor` is the button-fill (white on dark / black on light), which
- * ChatKit has no direct equivalent for. Do not mix these up.
- * ------------------------------------------------------------------------- */
+/** ChatKit-shaped theme alignment (additive, non-breaking): a ChatKit ThemeOption-shaped view of the same `semanticColors`, where the gotcha is ChatKit color.accent.primary maps to our linkColor (brand emphasis), NOT our button-fill primaryColor. */
 
 /** ChatKit `radius` option. Default 'pill'. */
 export type RadiusName = 'pill' | 'round' | 'soft' | 'sharp';
@@ -289,9 +229,7 @@ export const RADIUS_SCALE: Record<RadiusName, number> = {
 /** Default named radius (ChatKit default). Resolves to BUTTON_RADIUS_DEFAULT. */
 export const RADIUS_NAME_DEFAULT: RadiusName = 'pill';
 
-// Box/Row/Col `radius` token enum + scale (BlockProps.radius). Lives in
-// ./radius to keep this file under the 400-line cap; re-exported so the
-// import surface (./tokens and the package index) is unchanged.
+/** Box/Row/Col `radius` token enum + scale (BlockProps.radius), living in ./radius for the line cap and re-exported so the import surface stays unchanged. */
 export {
   type RadiusValue,
   BOX_RADIUS_SCALE,

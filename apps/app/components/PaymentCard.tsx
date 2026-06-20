@@ -1,6 +1,4 @@
-/**
- * @file PaymentCard: the shared presentational payment bubble (token avatar, amount, recipient, balance row, primary action) used by both TxRequestCard and X402Card.
- */
+/** @file PaymentCard: the shared presentational payment bubble (token avatar, amount, recipient, balance row, primary action) used by both TxRequestCard and X402Card. */
 
 import { Text } from '@metro-labs/kit/text';
 import { Icon } from '@metro-labs/kit/icon';
@@ -10,12 +8,7 @@ import { TokenAvatar } from './tabs/WalletScreen.tokenAvatar';
 import { usePayerBalance, type PayerBalance } from './MessengerBubble.balance';
 import { usePalette, useBlockRadius, withAlpha } from '../lib/theme';
 
-/**
- * Args for the balance line. When `show` is false the row is omitted entirely
- *  (no amount / unknown asset / unknown chain — there's nothing meaningful to
- *  show). When true, the row always renders: a placeholder while loading, the
- *  resolved balance otherwise.
- */
+/** Args for the balance line: when `show` is false the row is omitted entirely (no amount / unknown asset / unknown chain); when true it always renders, a placeholder while loading then the resolved balance. */
 export interface PaymentBalanceArgs {
   show: boolean;
   chainId: string | number | undefined;
@@ -85,12 +78,7 @@ export function PaymentCard({
   detail?: React.ReactNode;
   /** Balance line config (always shown when `show`). */
   balance: PaymentBalanceArgs;
-  /**
-   * Full-width primary action. Either a static action or a function of the
-   *  resolved balance (so the action label/disabled can depend on whether the
-   *  payer can afford it — used by the x402 card). Omit / return undefined to
-   *  render the card with no button (read-only pending-requests list).
-   */
+  /** Full-width primary action: a static action or a function of the resolved balance (so label/disabled can depend on affordability — x402 card); omit / return undefined for a buttonless read-only card. */
   action?: PaymentAction | ((bal: PayerBalance | null) => PaymentAction | undefined);
   /** Replaces the action button when there is none (e.g. a consent-gated note telling the user to accept the conversation before paying). */
   footer?: React.ReactNode;
@@ -124,8 +112,7 @@ export function PaymentCard({
         </Text>
       ) : null}
       {detail}
-      {/* Balance line — always shown for a known asset on a known chain.
-          Never silently hidden so the card can't look broken. */}
+      {/** Balance line — always shown for a known asset on a known chain, never silently hidden so the card can't look broken. */}
       <PaymentBalanceLine show={balance.show} bal={bal} pal={pal} />
       {resolvedAction ? (
         <PaymentActionButton action={resolvedAction} dark={dark} pal={pal} />

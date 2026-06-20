@@ -1,8 +1,4 @@
-/**
- * @file Unified avatar component for the mobile app, with three canonical sizes
- * and a render priority of custom image, then stamp.fyi address identicon, then
- * a solid placeholder circle.
- */
+/** @file Unified mobile avatar with three canonical sizes, rendering a custom image, else a stamp.fyi address identicon, else a solid placeholder circle. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
 import { AvatarView } from '@metro-labs/kit/avatar-view';
@@ -28,12 +24,7 @@ interface Props {
   square?: boolean;
   /** Extra style overrides (background colour, ring, etc.). */
   style?: StyleProp<ImageStyle>;
-  /**
-   * Tap handler. Receives a HIGH-RES resolved image URI (sized for the
-   *  fullscreen viewer), or null when there's no image (placeholder circle).
-   *  When set, the avatar is wrapped in a Pressable. Keeps the avatar-URL
-   *  resolution in one place so call sites don't re-derive stamp/IPFS URLs.
-   */
+  /** Tap handler given a high-res image URI (fullscreen-sized) or null for the placeholder; wraps the avatar in a Pressable and centralizes URL resolution. */
   onPress?: (fullUri: string | null) => void;
 }
 

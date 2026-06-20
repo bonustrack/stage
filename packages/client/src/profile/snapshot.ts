@@ -1,7 +1,4 @@
-/**
- * @file Stamp.fyi read-only identity helpers (avatar render URL, ENS endpoint) shared by web and mobile.
- */
-/** Stamp.fyi identity helpers shared by web (apps/ui) and mobile (apps/app). Identity is READ-ONLY and resolved entirely from stamp.fyi / ENS — there is no in-app profile editing and no Snapshot hub usage. Keep dependency-free. */
+/** @file Stamp.fyi read-only identity helpers (avatar render URL, ENS endpoint) shared by web and mobile, resolved entirely from stamp.fyi / ENS with no in-app profile editing or Snapshot hub usage; keep dependency-free. */
 
 /** stamp.fyi JSON-RPC endpoint. Snapshot's own UI resolves display names from here (`lookup_addresses` → ENS) and serves identicon/ENS avatars. */
 export const STAMP_URL = 'https://stamp.fyi';

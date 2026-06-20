@@ -1,6 +1,4 @@
-/**
- * @file Event-driven (zero-timer) reconciler that converges the open feed with the local XMTP store, busting and reloading a stale feed slice when, at open time or on a gapped arrival, the feed latest disagrees with the store latest (the "message in the row preview but missing in the open channel" bug).
- */
+/** @file Event-driven (zero-timer) reconciler that converges the open feed with the local XMTP store, busting and reloading a stale slice when (at open time or on a gapped arrival) the feed latest disagrees with the store latest — the "in the row preview but missing in the open channel" bug. */
 
 import type { HistoryEntry } from '../../lib/types';
 import { isMetroControlBody } from '../../lib/push';
@@ -22,12 +20,7 @@ function entryNs(e: HistoryEntry): number {
   return Number.isFinite(ms) ? ms * 1_000_000 : 0;
 }
 
-/**
- * Merge a freshly-read first page into `line`'s slice, newest-first + deduped,
- *  control-DMs dropped. MERGE (not wholesale replace) so older pages the user
- *  already scrolled in are preserved - only the missing newer tail is folded in
- *  ahead of the existing slice. This is the heal write for both reconcilers.
- */
+/** Merge a freshly-read first page into `line`'s slice (newest-first, deduped, control-DMs dropped): a MERGE not a replace, so already-scrolled older pages survive and only the missing newer tail is folded in ahead — the heal write for both reconcilers. */
 function reloadSlice(line: string, msgs: HistoryEntry[]): void {
   const page = msgs.filter(e => !isMetroControlBody(e.text));
   const prev = feedCache.get(line) ?? [];
@@ -56,13 +49,7 @@ function logReconcileHeal(
   );
 }
 
-/**
- * OPEN-TIME EXACTNESS. Called after the background open-sync settled. Compares
- *  the feed's latest entry against the conv's true latest (`conv.messages` limit
- *  1 - the same source the channels-list preview reads). If they differ (the
- *  preview is ahead of the open feed), bust + reload the slice from the local
- *  store. Best-effort + idempotent; safe to call repeatedly.
- */
+/** OPEN-TIME EXACTNESS: after the background open-sync settles, compare the feed's latest against the conv's true latest (the same source the preview reads) and, if the preview is ahead, bust and reload the slice from the local store; best-effort and idempotent. */
 export async function reconcileOnOpen(line: string): Promise<void> {
   try {
     const conv = await convOfLine(line);
@@ -70,9 +57,9 @@ export async function reconcileOnOpen(line: string): Promise<void> {
     const [storeLatestMsg] = await conv.messages({ limit: 1 });
     if (!storeLatestMsg) return;
     const storeLatest = envelopeOfXmtpMessage(storeLatestMsg, line);
-    if (isMetroControlBody(storeLatest.text)) return; // control DM, not a visible tail
+    if (isMetroControlBody(storeLatest.text)) return; /** control DM, not a visible tail */
     const feed = feedLatest(line);
-    if (feed?.id === storeLatest.id) return; // converged - nothing to heal
+    if (feed?.id === storeLatest.id) return; /** converged - nothing to heal */
     /** Divergence: the store has a newer (or different) tail than the open feed. Reload the full first page from the now-synced local store. */
     const page = await conv.messages({ limit: PAGE_SIZE });
     reloadSlice(line, page.map(m => envelopeOfXmtpMessage(m, line)));
@@ -80,16 +67,7 @@ export async function reconcileOnOpen(line: string): Promise<void> {
   } catch { /* best-effort - next open / arrival retries */ }
 }
 
-/**
- * ARRIVAL CONTINUITY. Called from the global stream right after a message was
- *  pushed into `line`'s slice. The arriving message SHOULD now be the feed's
- *  latest (the push prepends newest-first). When it ISN'T - the push was a
- *  no-op because the slice was keyed elsewhere, or the feed's tail is somehow
- *  behind the arriving message - that's the desync signal: do one targeted
- *  `conv.sync()` + slice reload so the open feed catches the message the row
- *  preview already shows. `prevLatestNs` is the feed-latest ns BEFORE the push;
- *  `arrivingId` is the message that just arrived. No-op when contiguous.
- */
+/** ARRIVAL CONTINUITY: called from the global stream right after a push; the arriving message SHOULD be the feed's latest, and when it isn't (push keyed elsewhere or the tail is behind) that desync triggers a targeted `conv.sync()` + slice reload so the feed catches what the preview shows. No-op when contiguous. */
 export async function reconcileOnArrival(
   line: string, prevLatestNs: number, arrivingNs: number, arrivingId: string,
 ): Promise<void> {

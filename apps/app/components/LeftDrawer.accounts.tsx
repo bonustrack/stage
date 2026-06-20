@@ -1,8 +1,4 @@
-/**
- * @file LeftDrawer "New account" action row that mints a fresh mnemonic-derived
- *  ZeroDev smart account at the next HD index and switches the active client to
- *  it (split out of LeftDrawer.tsx to stay under the line cap).
- */
+/** @file LeftDrawer "New account" action row that mints a fresh mnemonic-derived ZeroDev smart account at the next HD index and switches the active client to it. */
 
 import { useState } from 'react';
 import { flash } from '../lib/toast';
@@ -10,14 +6,7 @@ import { AccountManager, shortAddress } from '../modules/messaging';
 import { createSmartAccount, enablePasskeyForRecord, passkeysAvailable } from '../lib/zerodev';
 import { DrawerRow } from './LeftDrawer.parts';
 
-/**
- * Switch the active XMTP client to a freshly added account id. The wallet
- *  switch happens regardless (decoupled from XMTP), and switchToAccount bumps the
- *  account epoch even when its XMTP inbox fails to build - so HomeScreen re-inits
- *  onto the recoverable HomeError screen instead of a dead spinner. We surface a
- *  toast here so the user knows messaging needs a reset, but never block the
- *  wallet switch (don't re-throw). The drawer still closes via onChanged().
- */
+/** Switch the active XMTP client to a freshly added account; the wallet switch always happens (toast on XMTP inbox failure, never re-throw, drawer still closes via onChanged). */
 async function activate(id: string, onChanged: () => void): Promise<void> {
   try {
     await AccountManager.switch(id);
@@ -41,10 +30,7 @@ export function useDrawerAccountActions({ head, sub, border, dark, onChanged }: 
     setBusy(true);
     void (async () => {
       try {
-        // ECDSA-owner (deployable) account first, install the passkey (WebAuthn
-        // CREATE + deploy-and-swap sudo), THEN register its XMTP inbox (activate) -
-        // so the inbox registration signs with the passkey, never the ECDSA key.
-        // WebAuthn CREATE needs no prior credential (no empty-picker modal).
+        /** Create the ECDSA-owner account, install the passkey, THEN register its XMTP inbox so registration signs with the passkey not the ECDSA key (WebAuthn CREATE needs no prior credential). */
         const rec = await createSmartAccount();
         if (passkeysAvailable()) {
           const res = await enablePasskeyForRecord(rec);

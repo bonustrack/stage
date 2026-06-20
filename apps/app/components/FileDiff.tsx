@@ -1,8 +1,4 @@
-/**
- * @file Collapsible per-file section for the in-app PR diff viewer: a ListViewItem
- *  header (filename + add/del counts) toggling a kind-colored patch body with a
- *  GitHub-style line-number gutter, fed by diffParse.
- */
+/** @file Collapsible per-file section for the in-app PR diff viewer: a header (filename + add/del counts) toggling a kind-colored patch body with a line-number gutter, fed by diffParse. */
 
 import { useState } from 'react';
 

@@ -1,8 +1,4 @@
-/**
- * @file KitSections — direct render of the @metro-labs/kit primitives for the Kit
- *  page, each shown as a couple of representative variants inline with sample
- *  props and no controls.
- */
+/** @file KitSections — direct render of the @metro-labs/kit primitives for the Kit page, each shown as a few representative variants with sample props and no controls. */
 
 import { Box, Row, Col } from '../layout';
 import { Title } from '@metro-labs/kit/title';

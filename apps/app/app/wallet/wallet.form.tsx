@@ -1,8 +1,4 @@
-/**
- * @file Shared Wallet form primitives (page shell, footer button, palette and
- * footer-reporter hooks) for the Send, Shield, and Unshield action pages,
- * styled with the canonical palette accent token.
- */
+/** @file Shared Wallet form primitives (page shell, footer button, palette and footer-reporter hooks) for the Send/Shield/Unshield action pages, styled with the canonical palette accent token. */
 import { useCallback, useRef, useState } from 'react';
 import { fontSize } from '@metro-labs/kit/tokens';
 import { Pressable } from '@metro-labs/kit/pressable';
@@ -22,18 +18,7 @@ export interface FooterState {
   submitLabel: string; onSubmit: () => void; submitDisabled: boolean; submitLoading: boolean;
 }
 
-/**
- * Collect a child form's reported FooterState for a pinned <WalletFooter>.
- *
- *  The child re-calls `report` on EVERY render (its onSubmit/label closures are
- *  fresh each time), so a naive `setState(footerObject)` would update the parent
- *  on every render → re-render → child re-reports → "Maximum update depth
- *  exceeded". This hook makes the report idempotent: it only commits new state
- *  when a *displayed* field (label/disabled/loading) actually changed. onSubmit
- *  is deliberately excluded from the equality check — it changes every render —
- *  but the latest closure is kept in a ref and invoked via the returned
- *  `onSubmit`, so the footer always runs the freshest handler.
- */
+/** Collects a child form's reported FooterState for a pinned <WalletFooter>, committing only when a displayed field (label/disabled/loading) changed so the every-render report stays idempotent; the latest onSubmit closure is kept in a ref and invoked via the returned onSubmit. */
 export function useFooterReporter(): {
   footer: FooterState | null;
   report: (s: FooterState) => void;
@@ -150,12 +135,7 @@ export function LockedRecipient({ pal, label, value, hint }: {
   );
 }
 
-/**
- * Pinned bottom footer with two equal half-width buttons: a secondary "Cancel"
- *  (dismiss / router.back) on the left and the page's primary submit on the
- *  right. Shared by the Send / Shield / Unshield pages so the action bar matches
- *  across all three. Adds safe-area bottom padding + a top divider.
- */
+/** Pinned bottom footer with two half-width buttons — a secondary "Cancel" and the page's primary submit — shared by the Send/Shield/Unshield pages; adds safe-area bottom padding and a top divider. */
 export function WalletFooter({
   border, dark, onCancel, submitLabel, onSubmit, submitDisabled, submitLoading,
 }: {

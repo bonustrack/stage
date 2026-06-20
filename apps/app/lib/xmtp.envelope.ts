@@ -1,7 +1,4 @@
-/**
- * @file Thin typed adapter mapping a native RN decoded XMTP message to the app/daemon `HistoryEntry` envelope, delegating to the SDK's pure `mapDecodedToEnvelope`.
- *  Kept for back-compat so every existing `from './xmtp'` import of `envelopeOfXmtpMessage` keeps resolving.
- */
+/** @file Thin typed adapter mapping a native RN decoded XMTP message to the app/daemon `HistoryEntry` envelope via the SDK's pure `mapDecodedToEnvelope`; kept for back-compat so existing `envelopeOfXmtpMessage` imports keep resolving. */
 
 import { type DecodedMessage } from '@xmtp/react-native-sdk';
 import type { HistoryEntry } from './types';

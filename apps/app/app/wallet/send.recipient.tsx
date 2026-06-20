@@ -1,8 +1,4 @@
-/**
- * @file Recipient avatar/name row and contacts bottom-sheet picker for the
- * Wallet send screen, resolving peer Snapshot profiles and listing the user's
- * existing 1:1 DM peers so tapping one fills the recipient address.
- */
+/** @file Recipient row and contacts picker for the Wallet send screen, resolving peer profiles and listing 1:1 DM peers so tapping one fills the recipient address. */
 import { Pressable } from '@metro-labs/kit/pressable';
 
 import { Text } from '@metro-labs/kit/text';
@@ -25,7 +21,7 @@ export function RecipientRow({ address, pal, right, onPress }: {
   onPress?: () => void;
 }): React.ReactElement {
   const { head, sub, border } = pal;
-  // Fetch (and re-render on) this peer's Snapshot profile — name + avatar.
+  /** Fetch (and re-render on) this peer's Snapshot profile — name + avatar. */
   usePeerProfiles([address]);
   const name = getPeerName(address) ?? shortAddress(address);
   const showAddrLine = name !== shortAddress(address);

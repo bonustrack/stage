@@ -1,7 +1,4 @@
-/**
- * @file Shared "Enable passkey" hook for an existing smart account (Settings -> Wallet and the secure-wallet nudge), wrapping enablePasskeyForRecord with confirm + busy + flash.
- *  Registration runs the OS WebAuthn sheet (and on a deployed Kernel signs the sudo-swap userOp), so `{available}` is false unless this binary can run passkeys and the account lacks one.
- */
+/** @file Shared "Enable passkey" hook for an existing smart account, wrapping enablePasskeyForRecord with confirm + busy + flash; registration runs the OS WebAuthn sheet (and signs the sudo-swap userOp on a deployed Kernel), so `{available}` is false unless this binary can run passkeys and the account lacks one. */
 
 import { useCallback, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
@@ -28,15 +25,7 @@ export function useEnablePasskey(epoch?: number): {
         if (alive) setAvailable(false);
         return;
       }
-      // No passkey yet -> offer enable. HAS a passkey but the Kernel is NOT deployed
-      // on-chain -> the old broken counterfactual shortcut left it un-installed
-      // (passkey userOps revert with the meta-factory `Unauthorized`); offer the
-      // REPAIR (re-run enable -> deploy-and-swap). HAS a passkey + CONFIRMED deployed
-      // -> done. On an RPC error we CANNOT confirm deployment, so default to
-      // not-confirmed (false) and OFFER the repair: re-running enable on an
-      // already-correct account is idempotent (enablePasskeyForRecord re-checks
-      // on-chain and returns `already`), whereas hiding it would strand a broken,
-      // undeployed passkey account with no way to deploy + swap.
+      /** No passkey -> offer enable; passkey but Kernel not deployed -> offer the repair (re-run enable -> deploy-and-swap); passkey + confirmed deployed -> done; on an RPC error default to not-confirmed and offer the idempotent repair rather than strand a broken undeployed account. */
       let ok = !acct.passkey;
       if (acct.passkey) {
         const deployed = await kernelDeployedOnChain(acct.address).catch(() => false);

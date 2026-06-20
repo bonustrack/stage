@@ -1,7 +1,4 @@
-/**
- * @file USD-price layer for the tx/sign cards + simulation asset lines: fetches and briefly caches CoinGecko spot prices (same source as the wallet tab) and exposes a non-blocking hook that turns a token amount into a `~$X` suffix.
- *  Unpriceable tokens (e.g. STAGE) resolve to null and show the amount only — never a fake or zero $; READ-ONLY fetch, no key material.
- */
+/** @file USD-price layer for tx/sign cards + simulation asset lines: fetches and briefly caches CoinGecko spot prices and exposes a non-blocking hook turning a token amount into a `~$X` suffix; unpriceable tokens resolve to null (amount only, never a fake $), READ-ONLY fetch with no key material. */
 
 import { useEffect, useState } from 'react';
 import { getSimplePrices, getErc20UsdPrices } from '@stage-labs/client/api/coingecko';
@@ -61,9 +58,7 @@ export function useUsdValue(
   chainId: number, token: string | null | undefined, amount: string | undefined,
 ): string | null {
   const [usd, setUsd] = useState<number | null>(null);
-  // `id` is the stable identity of the (chainId, token) price source; it drives
-  // the effect. `key` is rebuilt from it inside the effect so the dep list stays
-  // a single primitive (no object churn).
+  /** `id` is the stable identity of the (chainId, token) price source and drives the effect; `key` is rebuilt from it inside so the dep list stays a single primitive (no object churn). */
   const id = priceKeyId(priceKeyFor(chainId, token));
   useEffect(() => {
     if (!id) { setUsd(null); return; }

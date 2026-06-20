@@ -1,12 +1,4 @@
-/**
- * @file Pure poll-vote tally helpers and the vote-key wire codec split out of poll.ts.
- */
-/**
- * Pure poll-vote tally helpers + the vote-key wire codec. Split out of poll.ts
- *  to keep both files under the lint line cap. Votes are reaction events
- *  (schema:'custom') whose `reference` is the poll message id and whose `content`
- *  is the vote key (`"q:o"`, or a BARE option index for question 0 / legacy).
- */
+/** @file Pure poll-vote tally helpers + the vote-key wire codec split out of poll.ts for the line cap; votes are schema:'custom' reaction events whose `reference` is the poll message id and `content` is the vote key ("q:o", or a bare option index for question 0 / legacy). */
 
 /** Parse a vote `content` string into its (questionIndex, optionIndex). The wire form is `"q:o"`; a BARE integer (legacy single-question votes) is question 0. Returns null when the string is not a valid vote key. */
 export function parseVoteKey(content: string): { q: number; o: number } | null {
@@ -23,12 +15,7 @@ export function voteKey(questionIndex: number, optionIndex: number): string {
   return questionIndex === 0 ? String(optionIndex) : `${questionIndex}:${optionIndex}`;
 }
 
-/**
- * base64 encode/decode that works in both RN (Hermes has btoa/atob via the app's
- *  polyfills) and Node - falls back to a Buffer when the globals are missing.
- *  Used so a free-text answer (which may contain `:`) survives the flat vote
- *  `content` string round-trip. UTF-8 safe via encodeURIComponent.
- */
+/** UTF-8-safe base64 encode working in both RN (Hermes btoa) and Node (Buffer fallback) so a free-text answer containing `:` survives the flat vote `content` round-trip. */
 const b64enc = (s: string): string => {
   const g = globalThis as { btoa?: (x: string) => string; Buffer?: { from(x: string, e: string): { toString(e: string): string } } };
   const bytes = encodeURIComponent(s).replace(/%([0-9A-F]{2})/g, (_, h: string) => String.fromCharCode(parseInt(h, 16)));
@@ -111,13 +98,7 @@ export interface VoteEvent {
   ts: string;
 }
 
-/**
- * Build `Map<optionIndex, Set<voterUri>>` for one poll from raw vote events.
- *  - single-select: each voter's latest `added` content wins (one option/voter).
- *  - multiSelect: latest add/remove state per (voter, optionIndex).
- *  Only `schema === 'custom'` events referencing `pollMessageId` count; a real
- *  emoji reaction on the same bubble is ignored.
- */
+/** Build Map<optionIndex, Set<voterUri>> for one poll: single-select keeps each voter's latest 'added' content, multiSelect tracks latest add/remove per (voter, option); only schema:'custom' events referencing pollMessageId count, so a real emoji reaction is ignored. */
 export function votesByPoll(
   events: VoteEvent[],
   pollMessageId: string,

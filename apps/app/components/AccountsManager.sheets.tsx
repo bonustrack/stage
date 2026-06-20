@@ -1,7 +1,4 @@
-/**
- * @file AccountsManager bottom sheets: the per-account manage sheet
- * (switch/export/remove) and the private-key export-reveal sheet.
- */
+/** @file AccountsManager bottom sheets: the per-account manage sheet (switch/export/remove) and the private-key export-reveal sheet. */
 
 import { Text } from '@metro-labs/kit/text';
 import { Button } from '@metro-labs/kit/button';
@@ -27,8 +24,7 @@ export function ManageSheet({ manageRec, activeId, onClose, onSwitch, onExport, 
       onClose={onClose}
       bg={p.sheetBg} border={p.border}
     >
-      {/* Cancel SheetModal's 16px padding so the list spans edge-to-edge and the
-          row content inset (ROW_INSET 16) matches the Settings page. */}
+      {/** Cancel SheetModal's 16px padding so the list spans edge-to-edge with the row inset matching the Settings page. */}
       <ListView dark={dark} style={{ marginHorizontal: -16 }}>
         {manageRec && manageRec.id !== activeId ? (
           <SheetRow label="Switch to this account" head={p.head} sub={p.sub} dark={dark} onPress={() => { const id = manageRec.id; onClose(); onSwitch(id); }} />

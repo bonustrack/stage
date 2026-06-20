@@ -1,26 +1,6 @@
-/**
- * @file Metro custom in-chat signature-request and signature-reference content types (wire shapes, ids, fallback text).
- */
-/**
- * Metro in-chat signature content types - shared between the RN app, web
- *  client, and daemon. Pure TS: wire shapes, content-type id constants, and
- *  plain-text fallback builders.
- *
- *  There is NO official XMTP signature-request content type (the finalized
- *  tx-adjacent XIPs are walletSendCalls + transactionReference, both for
- *  BROADCASTING, neither carries an arbitrary message-to-sign), so this is a
- *  CUSTOM Metro content type under our own `metro.box` authority, mirroring the
- *  poll codec convention. Hand-rolled JSContentCodecs in RN + Node codecs in the
- *  daemon (see apps/app/lib/xmtpSignatureCodec.ts and ~/.metro/trains/xmtp.ts).
- *
- *  Two-message handshake like the tx pair: a SignatureRequest (EIP-712
- *  typed-data or personal_sign string), then a SignatureReference receipt posted
- *  back into the SAME conv once signed.
- */
+/** @file Metro CUSTOM in-chat signature-request/reference content types (no official XMTP equivalent) under our `metro.box` authority — pure TS wire shapes, ids, and plain-text fallbacks for a two-message SignatureRequest -> SignatureReference handshake shared by the RN app, web client, and daemon. */
 
-// ---------------------------------------------------------------------------
-// SignatureRequest — `metro.box/signatureRequest:1.0`
-// ---------------------------------------------------------------------------
+/** SignatureRequest — `metro.box/signatureRequest:1.0`. */
 
 /** A standard EIP-712 typed-data payload — exactly the `eth_signTypedData_v4` argument shape (domain / types / primaryType / message). Kept loose (record types) so any valid typed-data structure round-trips through JSON unchanged. */
 export interface Eip712TypedData {
@@ -46,9 +26,7 @@ export interface SignatureRequestContent {
 export const SIGNATURE_REQUEST_TYPE_ID = 'metro.box/signatureRequest:1.0';
 export const SIGNATURE_REQUEST_TYPE_SHORT = 'signatureRequest';
 
-// ---------------------------------------------------------------------------
-// SignatureReference — `metro.box/signatureReference:1.0`
-// ---------------------------------------------------------------------------
+/** SignatureReference — `metro.box/signatureReference:1.0`. */
 
 export interface SignatureReferenceContent {
   /** The `id` of the SignatureRequest this answers. */
@@ -62,9 +40,7 @@ export interface SignatureReferenceContent {
 export const SIGNATURE_REFERENCE_TYPE_ID = 'metro.box/signatureReference:1.0';
 export const SIGNATURE_REFERENCE_TYPE_SHORT = 'signatureReference';
 
-// ---------------------------------------------------------------------------
-// Fallbacks + helpers (pure, shared by RN + daemon codecs and previews)
-// ---------------------------------------------------------------------------
+/** Fallbacks + helpers (pure, shared by RN + daemon codecs and previews). */
 
 /** Mint a stable signature-request id. Mirrors mintPollId in poll.ts. */
 export function mintSignatureRequestId(): string {

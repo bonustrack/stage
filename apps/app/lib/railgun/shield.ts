@@ -1,20 +1,4 @@
-/** @file SHIELD orchestration: composes the bridge shield primitives plus a viem EOA sign/broadcast (with ERC20 approve when needed) to deposit a public token into the user's own 0zk balance, reporting via the pending-action store. */
-/**
- * SHIELD orchestration — deposit a PUBLIC token into the user's OWN 0zk
- *  shielded balance. Pure RN composition over the bridge primitives + a viem
- *  sign/broadcast with the in-app EOA key.
- *
- *  Flow (native ETH, base-token path):
- *    derive key material → engineInit → walletInfo (own 0zk) → EOA signer →
- *    shieldPrivateKey = keccak(EOA sig of fixed msg) → populateShieldBaseToken
- *    (recipient = own 0zk) → sign + broadcast the populated tx → confirm.
- *  ERC20 (USDC) adds an approve to the network proxy contract before populate.
- *
- *  Progress + errors are surfaced through the existing pending-action store
- *  (cache.ts) so WalletScreen.private's chip + the optimistic balance overlay
- *  reflect the in-flight shield without blocking the UI. Recipient is ALWAYS the
- *  user's own 0zk — never an arbitrary address. The private key is never logged.
- */
+/** @file SHIELD orchestration: composes the bridge shield primitives plus a viem EOA sign/broadcast (ERC20 approve when needed) to deposit a public token into the user's OWN 0zk balance (never an arbitrary address, key never logged), reporting progress/errors via the pending-action store. */
 import { parseUnits, erc20Abi, type Hex } from 'viem';
 import { NETWORK_CONFIG } from '@railgun-community/shared-models';
 import { getActiveAccountId } from '../accounts';
@@ -69,11 +53,7 @@ export async function shieldToPrivate(params: ShieldParams): Promise<ShieldResul
   try {
     const key = await deriveRailgunKeyMaterial();
     await engineInit();
-    // Ensure the engine has an RPC provider + merkletree for THIS chain before
-    // populating. engineInit (engine.js) loads providers best-effort and swallows
-    // per-network RPC failures, so a rate-limited/down public RPC at boot leaves
-    // no merkletree → populateShield fails with "txidVersion=null chain=0:<id>".
-    // Loading it here (idempotent per chain) surfaces a real RPC error clearly.
+    /** Ensure an RPC provider + merkletree exist for THIS chain before populating, since engineInit swallows per-network RPC failures; loading it here (idempotent per chain) surfaces a real RPC error clearly instead of a later "txidVersion=null" failure. */
     await ensureProviderLoaded(
       {
         chainId: cfg.chainId,
@@ -95,7 +75,7 @@ export async function shieldToPrivate(params: ShieldParams): Promise<ShieldResul
         wrappedTokenAddress: meta.address, amountWei: amountWei.toString(),
       });
     } else {
-      // ERC20: approve the proxy contract for this amount, then populate.
+      /** ERC20: approve the proxy contract for this amount, then populate. */
       const proxy = NETWORK_CONFIG[cfg.networkName].proxyContract as Hex;
       const approveHash = await signer.walletClient.writeContract({
         account: signer.account, chain: signer.chain,
@@ -118,10 +98,7 @@ export async function shieldToPrivate(params: ShieldParams): Promise<ShieldResul
       value: tx.value ? BigInt(tx.value) : (params.symbol === 'ETH' ? amountWei : 0n),
     });
     await signer.publicClient.waitForTransactionReceipt({ hash: txHash });
-    // Tx mined — record the hash, then hand off to the merkle-scan watcher which
-    // moves the action scanning → confirmed once the note lands in the shielded
-    // balance (or after a timeout). Don't mark `confirmed` here: the private
-    // balance hasn't been scanned in yet.
+    /** Tx mined — record the hash and hand off to the merkle-scan watcher (scanning → confirmed once the note lands, or after a timeout); don't mark confirmed here since the private balance hasn't been scanned in yet. */
     updatePending(accountId, pendingId, { txHash });
     watchShieldLanding(accountId, pendingId, params.chainId);
     return { txHash, zkAddress: info.railgunAddress };

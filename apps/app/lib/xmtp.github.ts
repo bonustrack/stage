@@ -1,8 +1,4 @@
-/**
- * @file Group GitHub-link helpers: read/write an optional GitHub issue/PR URL in the group's
- *  synced `appData` slot under the `github` key, merging so labels and other keys survive
- *  (back-compatible with old `{v:1,labels}` data; all members may edit).
- */
+/** @file Group GitHub-link helpers: read/write an optional GitHub issue/PR URL in the group's synced `appData` under the `github` key, merging so labels and other keys survive (back-compatible with old `{v:1,labels}` data; all members may edit). */
 
 import { convOfLine } from './xmtp';
 import { asGroup, parseBlob, readLabels, LabelPermissionError } from './xmtp.labels';

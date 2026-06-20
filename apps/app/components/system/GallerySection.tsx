@@ -1,8 +1,4 @@
-/**
- * @file GallerySection — a labelled gallery block (name + note above a framed
- *  example) shared by the Kit and Components pages, rendering children directly
- *  with sample props and no controls or story indirection.
- */
+/** @file GallerySection — labelled gallery block (name + note above a framed example) shared by Kit and Components pages, rendering children directly with sample props. */
 
 import { Box } from '../layout';
 

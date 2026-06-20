@@ -42,7 +42,7 @@ export default function WalletReceive(): React.ReactElement {
     return () => { cancelled = true; };
   }, []);
 
-  // Fall back to public if private was selected but the 0zk address vanished.
+  /** Fall back to public if private was selected but the 0zk address vanished. */
   const activeMode: ReceiveMode = mode === 'private' && !privateReady ? 'public' : mode;
   const address = activeMode === 'private' ? privateAddress : publicAddress;
 

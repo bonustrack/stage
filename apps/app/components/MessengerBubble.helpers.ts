@@ -1,7 +1,4 @@
-/**
- * @file Pure helpers, types, and shared module-scope constants (reaction presets,
- *  mention regex, content extractors/formatters) for MessengerBubble.
- */
+/** @file Pure helpers, types, and shared module-scope constants (reaction presets, mention regex, content extractors/formatters) for MessengerBubble. */
 
 import type { HistoryEntry } from '../lib/types';
 import { fontSize } from '@metro-labs/kit/tokens';
@@ -14,27 +11,13 @@ export const REACT_PRESETS = ['👍', '🔥', '👀', '🙏', '😁', '💯', '�
 /** Shared markdown-it instance (with metro://`/`stage://` deep-link schemes registered). Re-exported here so existing importers keep working. */
 export { mdParser } from '../lib/mdParser';
 
-/**
- * Matches an `@`-mention stored in the raw message as a bare lowercase address
- *  (the composer's wire form), e.g. `@0x1d8c…0b5b`. Capture group 1 is the
- *  42-char address. The `\b` boundary lets a mention be immediately followed by
- *  punctuation (`@0xabc…, hi`) without swallowing it. Address matching is
- *  case-insensitive so a hand-typed mixed-case address still links.
- */
+/** Matches an `@`-mention stored as a bare lowercase address (the composer's wire form); capture group 1 is the 42-char address, the `\b` boundary allows trailing punctuation, and matching is case-insensitive. */
 export const MENTION_RE = /@(0x[0-9a-fA-F]{40})\b/g;
 
 /** Matches a fenced or inline code span so `unescapeBody` can leave its literal `\n` untouched (a backslash-n inside code is intentional source, not a broken line break). Fences first (``` … ```), then inline `` `…` ``. */
 const CODE_SPAN_RE = /```[\s\S]*?```|`[^`\n]*`/g;
 
-/**
- * Some senders (a daemon/CLI that JSON-escaped the body, or an agent reply that
- *  was double-stringified) deliver line breaks as the literal 2-char sequence
- *  `\n` (backslash + n) instead of a real newline, so the bubble shows `\n` mid
- *  sentence. Convert those escaped whitespace sequences back to real characters
- *  for display — but ONLY outside code spans, where a literal `\n`/`\t` is part of
- *  the content the author typed. A body with no literal backslash-escape is
- *  returned unchanged (fast path), so correctly-formatted messages are untouched.
- */
+/** Converts literal backslash-escaped whitespace (`\n`/`\t`/`\r` from JSON-escaped or double-stringified senders) back to real characters, but only outside code spans; bodies with no such escape return unchanged (fast path). */
 export function unescapeBody(text: string): string {
   if (!text.includes('\\n') && !text.includes('\\t') && !text.includes('\\r')) return text;
   /** Unescape Run. */
@@ -61,12 +44,7 @@ export function hasMention(text: string): boolean {
   return found;
 }
 
-/**
- * Shape covers messenger-station attachments (id+url, served by the daemon), XMTP
- *  inline attachments (dataB64 carries the raw bytes — no URL exists), and XMTP
- *  multi-remote attachments (`remote` carries the IPFS URL + decryption metadata;
- *  the bytes are fetched + decrypted lazily by `RemoteAttachmentResolver`).
- */
+/** Shape covering messenger-station attachments (id+url), XMTP inline attachments (dataB64 raw bytes, no URL), and XMTP multi-remote attachments (`remote` carries IPFS URL plus decryption metadata, fetched lazily by RemoteAttachmentResolver). */
 export interface Attachment {
   id?: string; url?: string; dataB64?: string; remote?: RemoteAttachmentInfo;
   kind: string; mime?: string; size?: number; name?: string;
@@ -134,7 +112,7 @@ export interface Poll { pollId?: string; question?: string; questions: PollQuest
 export function pollOf(entry: HistoryEntry): Poll | undefined {
   const raw = (entry.payload as { poll?: PollContent })?.poll;
   if (!raw) return undefined;
-  // normalizeQuestions folds BOTH shapes into one array (option strings -> {label}).
+  /** normalizeQuestions folds BOTH shapes into one array (option strings -> {label}). */
   const questions = normalizeQuestions(raw);
   const first = questions[0];
   if (first === undefined) return undefined;
@@ -171,7 +149,7 @@ export function sigReferenceOf(entry: HistoryEntry): SigReference | undefined {
 export function fmtSigValue(v: unknown): string {
   if (v == null) return '';
   if (typeof v === 'string') {
-    // Truncate very long hex (calldata, byte blobs) but keep addresses intact.
+    /** Truncate very long hex (calldata, byte blobs) but keep addresses intact. */
     if (/^0x[0-9a-fA-F]{42,}$/.test(v) && v.length > 24) return `${v.slice(0, 12)}…${v.slice(-8)}`;
     return v;
   }

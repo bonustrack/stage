@@ -1,7 +1,4 @@
-/**
- * @file XMTP consent-state read/unread markers and per-conversation last-read timestamp tracking.
- */
-/** Cross-device read/unread markers + per-conv last-read tracking. Split out of `xmtp.ts` so each file stays under the lint cap; re-exported from there. */
+/** @file XMTP cross-device consent-state read/unread markers and per-conversation last-read timestamp tracking, split out of `xmtp.ts` to stay under the lint cap and re-exported from there. */
 
 import {
   ConsentState,
@@ -25,17 +22,7 @@ export function setLastReadNs(convId: string, ns: number): void {
   catch { /* quota / private-mode — best effort */ }
 }
 
-/**
- * Cross-device read/unread marker — synced across the inbox's installations via
- *  XMTP's per-conversation consent state. See the matching block in
- *  apps/app/lib/xmtp.ts for the full rationale: XMTP V3 has no arbitrary synced
- *  KV store, so we repurpose the consent `allowed`↔`unknown` axis as a synced
- *  read flag (never `denied`, which would hide the conversation):
- *    - `allowed` → read
- *    - `unknown` → unread
- *  The numeric unread *count* stays per-device (lastReadNs); the binary
- *  read/unread state propagates cross-device.
- */
+/** Cross-device read/unread marker synced via XMTP's per-conversation consent state (V3 has no synced KV store): `allowed` means read, `unknown` means unread, never `denied`; the numeric unread count stays per-device (lastReadNs) while the binary read/unread state propagates cross-device. */
 
 /** Map an XMTP `ConsentState` enum to its string form used across the UI. */
 function consentStateToString(s: ConsentState): 'allowed' | 'denied' | 'unknown' {

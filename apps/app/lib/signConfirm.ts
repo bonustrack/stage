@@ -1,16 +1,8 @@
-/**
- * @file Risk-decode + confirm-summary derivation for in-chat SIGNATURE requests (EIP-712 / personal_sign) arriving over XMTP from an untrusted peer, surfacing explicit warnings for high-risk primaryTypes (Permit2, EIP-3009, Seaport).
- *  Derives the summary ONLY from the typed-data structure, never the attacker-supplied free-text `description`; pure + synchronous (no wallet, no network) so it is unit-testable.
- */
+/** @file Risk-decode + confirm-summary derivation for in-chat XMTP SIGNATURE requests (EIP-712 / personal_sign) from untrusted peers, warning on high-risk primaryTypes (Permit2, EIP-3009, Seaport); derived only from the typed-data structure, never the free-text description, and pure/synchronous so it is unit-testable. */
 
 import type { Eip712TypedData, SignatureRequestContent } from '@stage-labs/client/xmtp/sign';
 
-/**
- * EIP-712 primaryTypes that grant a standing authorization an attacker can
- *  later use to move assets. A signature for any of these is treated as
- *  high-risk and gets an explicit warning (never a friendly "sign in" line).
- *  Lowercased for case-insensitive match.
- */
+/** EIP-712 primaryTypes granting a standing authorization an attacker could later use to move assets; any match is treated as high-risk with an explicit warning. Lowercased for case-insensitive match. */
 const HIGH_RISK_PRIMARY_TYPES: Record<string, string> = {
   permit: 'token spending approval (Permit)',
   permitsingle: 'token spending approval (Permit2)',
@@ -49,12 +41,7 @@ export interface SignConfirmSummary {
   message?: string;
 }
 
-/**
- * Stringify a domain scalar (name/chainId/verifyingContract) for display,
- *  preserving the prior `String(v)` output for scalar values while avoiding an
- *  unguarded base-to-string on `unknown`. Objects (not expected here) fall back
- *  to JSON so we never emit a bare "[object Object]".
- */
+/** Stringify a domain scalar (name/chainId/verifyingContract) for display, preserving the prior String(v) output for scalars while avoiding an unguarded base-to-string on unknown; objects fall back to JSON. */
 function toScalarString(v: unknown): string | undefined {
   if (v == null) return undefined;
   if (typeof v === 'object') {
@@ -76,7 +63,7 @@ function fieldOf(message: Record<string, unknown> | undefined, keys: string[]): 
     if (actual != null) {
       const v = message[actual];
       if (typeof v === 'string' && v.length > 0) return v;
-      // Permit2 nests spender at the top level but token under `details`.
+      /** Permit2 nests spender at the top level but token under `details`. */
       if (v && typeof v === 'object') {
         const nested = fieldOf(v as Record<string, unknown>, keys);
         if (nested) return nested;
@@ -168,18 +155,12 @@ function typedDataBody(s: SignConfirmSummary, senderNote: string): string {
     + `Only sign if you trust the sender.${senderNote}`;
 }
 
-/**
- * Build the confirm Alert message from a derived summary. A high-risk
- *  authorization gets an explicit warning naming what it grants + to whom; a
- *  plain message/typed-data sign gets a neutral confirm line. The peer-supplied
- *  `description` is appended SEPARATELY and clearly labelled as sender-provided
- *  so it is never mistaken for the app's trusted summary.
- */
+/** Build the confirm Alert message from a derived summary: high-risk authorizations get an explicit warning naming what they grant and to whom, plain signs get a neutral line, and the peer-supplied description is appended separately and labelled untrusted. */
 export function signConfirmMessage(s: SignConfirmSummary, description?: string): string {
   const desc = description?.trim();
   const senderNote = desc ? `\n\nSender's note (untrusted): "${desc}"` : '';
   if (s.highRisk) return highRiskMessage(s, senderNote);
-  // Concrete content the user is actually signing — never just the sender's label.
+  /** Concrete content the user is actually signing — never just the sender's label. */
   if (s.kindLabel === 'message') return plainMessageBody(s, senderNote);
   return typedDataBody(s, senderNote);
 }

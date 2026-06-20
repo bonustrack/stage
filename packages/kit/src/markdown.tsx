@@ -1,6 +1,4 @@
-/**
- * @file Markdown — a hook-free ChatKit-styled markdown node backed by `react-native-markdown-display`, styled (Calibre + Menlo-for-code) to match the app's other markdown surfaces.
- */
+/** @file Markdown — a hook-free ChatKit-styled markdown node backed by `react-native-markdown-display`, styled (Calibre + Menlo-for-code) to match the app's other markdown surfaces. */
 
 import { useMemo } from 'react';
 import { type TextStyle } from 'react-native';
@@ -21,12 +19,7 @@ export interface MarkdownProps {
   style?: TextStyle;
 }
 
-/**
- * Build the react-native-markdown-display style map for the given palette.
- *  Heading/inline sizes MUST live on the leaf rules: the renderer flattens
- *  these into each leaf <Text>'s inheritedStyles and the nearest fontSize wins
- *  in RN, so a wrapping body fontSize can never size headings/strong/em.
- */
+/** Builds the react-native-markdown-display style map for the palette; heading/inline sizes must live on the leaf rules since RN's nearest fontSize wins and a wrapping body fontSize can never size headings/strong/em. */
 function markdownStyles(fg: string, link: string, dark: boolean): Record<string, object> {
   const codeBg = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
   const lh = 23;

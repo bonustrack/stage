@@ -1,7 +1,4 @@
-/**
- * @file Pure log → asset-delta parse + format helpers for the pre-sign simulation, split out so the math is unit-testable without the RN-bound account/RPC layer.
- *  No React, no network, no key material — bytes in, AssetMove out.
- */
+/** @file Pure log → asset-delta parse + format helpers for the pre-sign simulation, split out so the math is unit-testable without the RN-bound account/RPC layer (no React, network, or key material). */
 
 import { ASSETS, NATIVE_TOKEN_SENTINEL } from '@stage-labs/client/wallet/assets';
 import { decodeAbiParameters, type Hex } from 'viem';
@@ -29,13 +26,7 @@ export interface SimCall {
   error?: { message?: string; data?: string };
 }
 
-/**
- * Normalise a raw revert/RPC message into a short, human reason. Recognises the
- *  common cases the node surfaces as free text (insufficient funds/balance, gas,
- *  generic "execution reverted") so the card reads "Will fail: insufficient
- *  funds" instead of a node-specific blob. Returns the input trimmed when no
- *  pattern matches.
- */
+/** Normalise a raw revert/RPC message into a short, human reason for common cases (insufficient funds/balance, gas, generic revert), returning the input trimmed when no pattern matches. */
 export function humanizeRevert(raw: string): string {
   const s = raw.trim();
   const lc = s.toLowerCase();
@@ -87,7 +78,7 @@ export function formatAmount(raw: bigint, decimals: number): string {
   const frac = raw % base;
   if (frac === 0n) return whole.toString();
   let fs = frac.toString().padStart(decimals, '0').replace(/0+$/, '');
-  if (fs.length > 6) fs = fs.slice(0, 6); // cap displayed precision
+  if (fs.length > 6) fs = fs.slice(0, 6); /** cap displayed precision */
   return `${whole.toString()}.${fs}`;
 }
 
@@ -138,7 +129,7 @@ function parseTransferLog(log: SimLog): ParsedTransfer | null {
 
 /** Net all transfer logs across calls into a signed per-token delta map relative to `me`. */
 function netTransfers(calls: SimCall[], me: string): Map<string, bigint> {
-  const net = new Map<string, bigint>(); // '' = native, else lowercased contract
+  const net = new Map<string, bigint>(); /** '' = native, else lowercased contract */
   /** Accumulate a signed delta for a token key. */
   const add = (token: string, delta: bigint): void => {
     net.set(token, (net.get(token) ?? 0n) + delta);
@@ -175,7 +166,7 @@ export function parseAssetChanges(
   const me = from.toLowerCase();
   const net = netTransfers(calls, me);
 
-  // Fold the top-level native value as OUT when no synthetic log covered it.
+  /** Fold the top-level native value as OUT when no synthetic log covered it. */
   if (topValue) {
     try {
       const v = BigInt(topValue);

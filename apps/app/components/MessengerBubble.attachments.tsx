@@ -1,8 +1,4 @@
-/**
- * @file MessengerBubble attachment renderers — image/video/audio/file plus the
- *  lazy remote (IPFS ciphertext) resolver, extracted to keep the bubble file
- *  under the lint cap.
- */
+/** @file MessengerBubble attachment renderers (image/video/audio/file) plus the lazy remote IPFS-ciphertext resolver, extracted to keep the bubble file under the lint cap. */
 
 import { useEffect, useState } from 'react';
 
@@ -44,30 +40,13 @@ export function AttachmentView({ att, fullUrl, fg, dark }: {
   );
 }
 
-/**
- * Remote (multi-remote) attachment: ciphertext lives on IPFS. Download +
- *  decrypt on mount to a local `file://` URI, then hand off to the regular
- *  `AttachmentView`. Shows a spinner while resolving and a tappable retry chip
- *  on failure (gateway hiccup / decrypt error).
- */
+/** Remote (multi-remote) attachment: download+decrypt the IPFS ciphertext on mount to a local `file://` URI then hand to AttachmentView, showing a spinner while resolving and a tappable retry chip on failure. */
 export function RemoteAttachmentResolver({ att, fg, sub, dark, msgId, index }: {
   att: Attachment; fg: string; sub: string; dark: boolean;
-  /**
-   * Message id + attachment index used to look up a LOCAL `file://` URI cached
-   *  by the composer when this user just sent the attachment. Lets us paint the
-   *  already-on-disk local copy instantly (no blank/spinner) while the remote
-   *  ciphertext downloads + decrypts in the background.
-   */
+  /** Message id + attachment index that look up a LOCAL `file://` URI the composer cached when this user just sent it, painting the on-disk copy instantly while the remote ciphertext downloads+decrypts in the background. */
   msgId?: string; index?: number;
 }): React.ReactElement {
-  /**
-   * REACTIVE cached local URI (sender side). Critical for zero-gap: the live echo
-   *  bubble often mounts BEFORE `conv.send()` resolves and runs
-   *  `rememberLocalAttachments`, so a one-shot `useState(initial)` read missed it
-   *  and the bubble sat on a spinner until the IPFS download finished. Subscribing
-   *  to the cache means the moment the local URI lands (whenever send resolves)
-   *  this re-renders and paints the already-on-disk file instantly.
-   */
+  /** REACTIVE cached local URI (sender side): the echo bubble often mounts before send resolves rememberLocalAttachments, so subscribing to the cache repaints the on-disk file the moment the local URI lands instead of sitting on a spinner. */
   const local = useLocalAttachment(msgId, index);
   /** Decrypted remote URI, set once the IPFS round trip completes. */
   const [remoteUri, setRemoteUri] = useState<string | null>(null);

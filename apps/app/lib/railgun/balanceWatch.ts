@@ -1,22 +1,6 @@
 /** @file Global watcher that subscribes once to the engine's `event:balanceUpdate` and folds late-arriving shielded-balance rows into the snapshot store so the Private tab repaints without user action. */
 
-/*
- * Global shielded-balance-update watcher (the RN-side fix for "balance shows 0
- *  after shield").
- *
- *  THE BUG: engine.js's `balances` handler fires `refreshBalances` fire-and-
- *  forget and returns IMMEDIATELY with whatever's already cached — empty on a
- *  cold wallet. The real rows arrive ~seconds later via `event:balanceUpdate`.
- *  bridgeRefreshSnapshot only did a single one-shot getBalances(), so that late
- *  event was dropped on the floor and the snapshot stayed at 0. (shieldScan only
- *  listens after an IN-APP shield; a balance shielded by any other path, or a
- *  plain tab-open, had no listener.)
- *
- *  THE FIX: subscribe ONCE to `event:balanceUpdate` for the active account and
- *  fold each payload's rows straight into the snapshot store, so a balance that
- *  lands after the initial scan repaints the tab without any user action. Also
- *  mirrors every event into balanceDebug for the on-screen diagnostics.
- */
+/** Global shielded-balance-update watcher: engine.js returns cached (empty) balances immediately while real rows arrive later via `event:balanceUpdate`, so this subscribes once per active account and folds each payload into the snapshot store (also mirrored to balanceDebug) to repaint without user action. */
 import { bridgeListen } from './bridge';
 import { snapshotStore } from './cache';
 import { mapEventRows } from './bridgeWallet';
@@ -43,7 +27,7 @@ export function startBalanceWatch(accountId: string): () => void {
     if (!fresh.length) return;
     const prev = snapshotStore(accountId).get();
     if (!prev) return;
-    // Replace this chain's rows with the fresh ones; keep other chains intact.
+    /** Replace this chain's rows with the fresh ones; keep other chains intact. */
     const others = prev.balances.filter((b) => b.chainId !== p.chainId);
     snapshotStore(accountId).set({
       ...prev,

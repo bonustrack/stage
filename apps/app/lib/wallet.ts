@@ -1,6 +1,4 @@
-/**
- * @file Local EOA compatibility layer backing Snapshot's EIP-712 profile signing — resolves the active account's viem signer (minting one on first use) over the lib/accounts registry, plus the dev full-wallet reset.
- */
+/** @file Local EOA compatibility layer backing Snapshot's EIP-712 profile signing — resolves the active account's viem signer (minting one on first use) over the lib/accounts registry, plus the dev full-wallet reset. */
 
 /** Side-effect import — installs the crypto.getRandomValues polyfill before any viem import (see lib/cryptoShim.ts). */
 import './cryptoShim';
@@ -15,23 +13,7 @@ export async function resetAccount(): Promise<void> {
   await clearAllAccounts();
 }
 
-/**
- * Dev "reset accounts" - full local wallet/account wipe that re-triggers
- *  onboarding (the useAccountGate sees an empty registry after the epoch bump).
- *
- *  Clears, in order:
- *   - the account registry (all records + active pointer + per-account keys +
- *     legacy single key) and every account's on-disk XMTP store + db keys
- *     (via resetXmtpClient, which calls clearAllAccounts internally),
- *   - the single app BIP-39 mnemonic (smart-wallet root),
- *   - the wallet.backupDone flag (so the new wallet sees the backup nudge again),
- *  then bumps the account epoch so the gate re-evaluates IMMEDIATELY (no reload).
- *
- *  WHAT IT WIPES: all local account/wallet state + XMTP sqlite stores for every
- *  account on THIS device. It does not touch remote XMTP network identity beyond
- *  dropping the local stores; a fresh onboarding mints a brand-new wallet, so the
- *  signer selection resets (expected for a fresh-onboarding test).
- */
+/** Dev full local wipe (registry+keys, XMTP stores/db keys, mnemonic, backup flag) then bumps the account epoch to re-trigger onboarding immediately; remote XMTP identity is untouched beyond dropping local stores. */
 export async function resetForOnboarding(): Promise<void> {
   await resetXmtpClient();
   await clearMnemonic();

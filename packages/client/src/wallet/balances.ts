@@ -1,14 +1,4 @@
-/**
- * @file Wallet token-balance fetcher combining Multicall3 reads with CoinGecko prices into ready-to-render asset rows.
- */
-/**
- * Wallet token-balance fetch — Multicall3 per chain + CoinGecko prices, shaped
- *  into ready-to-render AssetRow[]. Framework-agnostic (viem + fetch only).
- *
- *  Moved out of apps/app's WalletScreen.data for the Stage SDK. The token-logo
- *  URL is INJECTED (the app passes kit's stampTokenUrl) so packages/client stays
- *  free of any @metro-labs/kit dependency.
- */
+/** @file Framework-agnostic wallet token-balance fetcher (viem + fetch only): Multicall3 reads per chain plus CoinGecko prices shaped into ready-to-render AssetRow[], with the token-logo URL injected so packages/client stays free of any @metro-labs/kit dependency. */
 
 import { formatEther, formatUnits, type Hex } from 'viem';
 import { getErc20UsdPrices, getSimplePrices } from '../api/coingecko';

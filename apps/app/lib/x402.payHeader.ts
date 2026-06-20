@@ -1,7 +1,4 @@
-/**
- * @file x402 `exact` (EIP-3009 / USDC) wire-format builders — the pure half of the pay path: challenge -> EIP-3009 authorization -> EIP-712 typed data -> base64 X-PAYMENT header.
- *  Free of wallet/network imports so it stays unit-testable and the coinbase/x402 v1 wire format can't silently drift from the spec.
- */
+/** @file x402 `exact` (EIP-3009 / USDC) wire-format builders — the pure pay path (challenge -> authorization -> EIP-712 typed data -> base64 X-PAYMENT header), free of wallet/network imports so it stays unit-testable and the coinbase/x402 v1 format can't drift. */
 
 import type { TypedDataDefinition, Hex } from 'viem';
 
@@ -125,16 +122,7 @@ export function buildPaymentHeader(args: {
   return toBase64(JSON.stringify(payload));
 }
 
-/**
- * Generate a random 32-byte 0x nonce for the authorization. Uses the RN crypto
- *  polyfill (`crypto.getRandomValues`, installed app-wide).
- *
- *  The nonce is the only replay protection on an EIP-3009 transfer
- *  authorization: a predictable nonce lets an attacker collide / replay the
- *  signed authorization. `Math.random()` is not a CSPRNG, so if
- *  `crypto.getRandomValues` is somehow absent we THROW rather than sign a
- *  transfer behind a weak nonce.
- */
+/** Generate a random 32-byte 0x nonce (via `crypto.getRandomValues`), the only replay protection on an EIP-3009 authorization; THROW if that CSPRNG is absent rather than sign behind a weak `Math.random()` nonce. */
 export function randomNonce(): string {
   const bytes = new Uint8Array(32);
   const c: Crypto | undefined = globalThis.crypto;

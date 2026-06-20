@@ -1,21 +1,4 @@
-/**
- * @file Boundary validation helpers (parseOrThrow/parseOrNull) that log zod schema drift instead of silently mis-typing payloads.
- */
-/**
- * Boundary validation helper. Every external/untrusted payload (XMTP codec
- *  wire bodies, REST API responses) crosses into our typed world through here so
- *  a schema drift is LOGGED, never silently swallowed into a wrong-but-typed
- *  value via an `as`-cast.
- *
- *  Two modes:
- *    - `parseOrThrow`  : the caller already throws on bad input (e.g. a codec
- *                        decode that must fail loudly). Logs then rethrows.
- *    - `parseOrNull`   : the caller degrades gracefully (e.g. an API parser that
- *                        returns [] on a bad page). Logs and returns null so the
- *                        drift is visible in logs instead of disappearing.
- *
- *  ZERO @xmtp / react-native / expo imports - pure zod + console.
- */
+/** @file Boundary validation helpers (parseOrThrow logs+rethrows, parseOrNull logs+returns null) routing every untrusted payload through here so zod schema drift is logged, never silently mis-typed via an `as`-cast; pure zod + console, no @xmtp/react-native/expo imports. */
 
 import type { ZodType } from 'zod';
 

@@ -1,8 +1,4 @@
-/**
- * @file Open free-text answer block for a poll question (AskUserQuestion open type):
- *  a Kit input + send Button with submitted answers listed below, where an empty
- *  submission retracts the local user's prior answer.
- */
+/** @file Open free-text answer block for a poll question (AskUserQuestion open type): a Kit input + send Button listing submitted answers, where an empty submission retracts the user's prior answer. */
 
 import { useState } from 'react';
 import { fontSize } from '@metro-labs/kit/tokens';
@@ -24,8 +20,7 @@ export function OpenAnswerBlock({ qi, sub, dark, answers, mine, onSubmit }: {
   const list = answers ? [...answers.entries()].sort((a, b) => a[1].ts.localeCompare(b[1].ts)) : [];
   /** Submit helper. */
   const submit = (): void => { onSubmit(draft); setDraft(''); };
-  // Borderless input: neutral overlay fill + radius so it still reads as an
-  // input, but no visible outline. Body text in the palette text token.
+  /** Borderless input: neutral overlay fill + radius so it still reads as an input but has no visible outline; body text uses the palette text token. */
   const inputBg = pal.inputBg;
   return (
     <Box margin={{ top: 2 }} gap={6} style={{ alignSelf: 'stretch' }}>

@@ -1,23 +1,4 @@
-/**
- * @file Typed bridge frame builders for the Railgun private-to-private transfer primitives (estimate, prove, populate).
- */
-/**
- * Typed bridge frame builders for the RAILGUN private-TRANSFER primitives.
- *
- *  Private transfer is private->private: it moves funds from the user's shielded
- *  balance to ANOTHER 0zk address. Like unshield it REQUIRES a Groth16 proof, so
- *  the flow is three whitelisted dispatcher calls:
- *    gas.estimateTransfer -> proof.transfer -> tx.populateProvedTransfer
- *
- *  All three are whitelisted in the host's sdkDispatch.js. Transfer's SDK
- *  signatures carry two args unshield lacks - `showSenderAddressToRecipient` and
- *  `memoText` - we fix both (don't reveal sender, no memo). bigint amounts are
- *  wire-encoded ({ __bigint }) so they survive the JSON channel and are revived
- *  in the host. Self-broadcast only: sendWithPublicWallet=true, no broadcaster
- *  fee; the EOA signs + broadcasts the returned tx on the host side.
- *
- *  PURE: no native imports. The dispatcher that ships these frames is injected.
- */
+/** @file Typed, pure (no native imports) bridge frame builders for the RAILGUN private-to-private transfer primitives — gas.estimateTransfer → proof.transfer → tx.populateProvedTransfer — which require a Groth16 proof, fix sender-hiding + no-memo, wire-encode bigint amounts to survive the JSON channel, and self-broadcast (the host EOA signs the returned tx). */
 import type { RailgunDispatch } from './dispatch';
 import { SDK_METHOD } from './methods';
 import { bn } from './wire';
@@ -55,14 +36,14 @@ export async function gasEstimateTransfer(dispatch: RailgunDispatch, params: {
     params.networkName,
     params.railgunWalletID,
     params.encryptionKey,
-    undefined, // memoText
+    undefined, /* memoText */
     params.erc20Recipients.map(r => ({
       tokenAddress: r.tokenAddress, amount: bn(r.amountWei), recipientAddress: r.recipientAddress,
     })),
-    [], // nftAmountRecipients
+    [], /* nftAmountRecipients */
     wireGasDetails(params.originalGasDetails),
-    undefined, // feeTokenDetails (self-broadcast)
-    true, // sendWithPublicWallet
+    undefined, /* feeTokenDetails (self-broadcast) */
+    true, /* sendWithPublicWallet */
   ]);
 }
 
@@ -79,16 +60,16 @@ export async function generateTransferProof(dispatch: RailgunDispatch, params: {
     params.networkName,
     params.railgunWalletID,
     params.encryptionKey,
-    false, // showSenderAddressToRecipient
-    undefined, // memoText
+    false, /* showSenderAddressToRecipient */
+    undefined, /* memoText */
     params.erc20Recipients.map(r => ({
       tokenAddress: r.tokenAddress, amount: bn(r.amountWei), recipientAddress: r.recipientAddress,
     })),
-    [], // nftAmountRecipients
-    undefined, // broadcasterFeeERC20AmountRecipient (self-broadcast)
-    true, // sendWithPublicWallet
-    bn('0'), // overallBatchMinGasPrice
-    // progressCallback injected host-side (functions can't cross the channel)
+    [], /* nftAmountRecipients */
+    undefined, /* broadcasterFeeERC20AmountRecipient (self-broadcast) */
+    true, /* sendWithPublicWallet */
+    bn('0'), /* overallBatchMinGasPrice */
+    /** progressCallback injected host-side (functions can't cross the channel) */
   ]);
 }
 
@@ -104,15 +85,15 @@ export async function populateProvedTransfer(dispatch: RailgunDispatch, params: 
     params.txidVersion,
     params.networkName,
     params.railgunWalletID,
-    false, // showSenderAddressToRecipient
-    undefined, // memoText
+    false, /* showSenderAddressToRecipient */
+    undefined, /* memoText */
     params.erc20Recipients.map(r => ({
       tokenAddress: r.tokenAddress, amount: bn(r.amountWei), recipientAddress: r.recipientAddress,
     })),
-    [], // nftAmountRecipients
-    undefined, // broadcasterFeeERC20AmountRecipient
-    true, // sendWithPublicWallet
-    bn('0'), // overallBatchMinGasPrice
+    [], /* nftAmountRecipients */
+    undefined, /* broadcasterFeeERC20AmountRecipient */
+    true, /* sendWithPublicWallet */
+    bn('0'), /* overallBatchMinGasPrice */
     wireGasDetails(params.gasDetails),
   ]);
 }

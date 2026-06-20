@@ -1,7 +1,4 @@
-/**
- * @file TanStack Query hook fetching public GitHub metadata for a repo/PR/issue link so a message bubble can render a preview card.
- *  Uses the unauthenticated REST API with hard URL-keyed caching, returning null on any failure so the caller renders no card.
- */
+/** @file TanStack Query hook fetching public GitHub metadata for a repo/PR/issue link so a bubble can render a preview card; uses the unauthenticated REST API with hard URL-keyed caching, returning null on any failure. */
 
 import { useQuery } from '@tanstack/react-query';
 import type { GithubRef } from './githubDetect';
@@ -91,7 +88,7 @@ export function useGithubMeta(ref: GithubRef | null): GithubMeta | null {
       return fetchGithubMeta(ref);
     },
     enabled: !!ref,
-    // Cache hard: respect the 60/hr unauthed limit. No background refetch.
+    /** Cache hard: respect the 60/hr unauthed limit. No background refetch. */
     staleTime: 60 * 60_000,
     gcTime: 24 * 60 * 60_000,
     retry: false,

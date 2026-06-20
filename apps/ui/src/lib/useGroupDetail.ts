@@ -1,7 +1,4 @@
-/**
- * @file Composable for the Group Detail screen: group state plus name/description/avatar/member mutations.
- */
-/** Group detail state + mutations (name/description/avatar/members). Extracted from `pages/GroupDetail.vue` so the SFC stays under the lint cap. */
+/** @file Composable for the Group Detail screen: group state plus name/description/avatar/member mutations, extracted from `pages/GroupDetail.vue` so the SFC stays under the lint cap. */
 
 import { ref, computed, watchEffect, type ComputedRef, type Ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';

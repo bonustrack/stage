@@ -1,12 +1,4 @@
-/**
- * @file Shared HistoryEntry event/message envelope rendered identically by the web and mobile clients.
- */
-/**
- * Shared event/message envelope used by the XMTP feed + chat-bubble renderer.
- *  Mirrors the daemon's `HistoryEntry`; both the Vue web client (apps/ui) and
- *  the React Native app (apps/app) render against this single shape so the two
- *  clients speak the same language. Keep dependency-free.
- */
+/** @file Shared HistoryEntry event/message envelope (mirroring the daemon's shape) rendered identically by the Vue web client and the React Native app; kept dependency-free. */
 
 export interface HistoryEntry {
   id: string;

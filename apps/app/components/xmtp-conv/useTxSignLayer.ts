@@ -24,7 +24,7 @@ import { kernelClientForRecord } from '../../lib/zerodev';
 function typedDataOf(req: SignatureRequestContent): TypedDataDefinition {
   const td = req.eip712;
   if (!td) throw new Error('Malformed typed-data request');
-  // viem injects EIP712Domain from `domain`; a duplicate in `types` is rejected.
+  /** viem injects EIP712Domain from `domain`; a duplicate in `types` is rejected. */
   const types = { ...td.types };
   delete types.EIP712Domain;
   return {
@@ -77,7 +77,7 @@ type TxCall = NonNullable<WalletSendCallsContent['calls']>[number];
 async function broadcastCall(to: string, call: TxCall, chainId: number): Promise<{ txHash: `0x${string}`; settledChainId: number }> {
   const active = await getActiveAccount();
   if (active?.type === 'smart') {
-    // Smart account is a Base Kernel (Base-scoped paymaster) → userOps land on Base.
+    /** Smart account is a Base Kernel (Base-scoped paymaster) → userOps land on Base. */
     const kernel = await kernelClientForRecord(active);
     const txHash = await kernel.sendTransaction({
       to: to as `0x${string}`,
@@ -86,7 +86,7 @@ async function broadcastCall(to: string, call: TxCall, chainId: number): Promise
     } as Parameters<typeof kernel.sendTransaction>[0]);
     return { txHash, settledChainId: base.id };
   }
-  // Legacy EOA: forward the call verbatim (to/data/value).
+  /** Legacy EOA: forward the call verbatim (to/data/value). */
   const txHash = await sendCall({ to, data: call.data, value: call.value, chainId });
   return { txHash, settledChainId: chainId };
 }
@@ -121,20 +121,7 @@ export function useTxSignLayer(activeLine: string) {
   /** Message ids whose signature is currently being produced — drives the Sign-button spinner. */
   const [signingIds, setSigningIds] = useState<Set<string>>(new Set());
 
-  /**
-   * Sign an in-chat signature request. For `eip712` we route the typed data
-   *  through wagmi `signTypedData`; for `personal` through `signMessage`. On
-   *  success we post a SignatureReference back into the SAME conversation so the
-   *  request card flips to a "Signed ✓" receipt for everyone.
-   *
-   *  SECURITY: a signature is produced from an UNTRUSTED peer's request and a
-   *  single tap can authorize a Permit/Permit2/EIP-3009/Seaport allowance that
-   *  drains the wallet LATER. So, exactly like onPay, we ALWAYS confirm before
-   *  signing. The confirm summary is derived from the typed-data STRUCTURE
-   *  (deriveSignSummary), never from the peer's free-text `description`, and a
-   *  recognised high-risk primaryType gets an explicit warning + destructive
-   *  button. The actual signing only runs from the confirm sheet's onPress.
-   */
+  /** SECURITY: sign an UNTRUSTED peer's request only after an explicit confirm (a single tap can authorize a wallet-draining Permit/Permit2/EIP-3009/Seaport allowance); the summary comes from the typed-data STRUCTURE not the peer's description, high-risk types get a destructive button, and posts a SignatureReference receipt back into the same conversation. */
   const onSign = useCallback((requestId: string, req: SignatureRequestContent) => {
     const summary = deriveSignSummary(req);
     /** Do Sign. */
@@ -167,20 +154,14 @@ export function useTxSignLayer(activeLine: string) {
   /** Message ids whose payment is currently broadcasting — drives the Pay spinner. */
   const [payingIds, setPayingIds] = useState<Set<string>>(new Set());
 
-  /**
-   * Pay an in-chat payment request. Broadcasts the first call via the phase-3
-   *  sendTx helper (native ETH or ERC-20 transfer decoded from the call), then
-   *  posts a TransactionReference back into the SAME conversation so the request
-   *  card flips to a receipt for everyone.
-   */
+  /** Pay an in-chat payment request: broadcast the first call (native ETH or decoded ERC-20 transfer), then post a TransactionReference receipt back into the same conversation. */
   const onPay = useCallback((requestId: string, wsc: WalletSendCallsContent) => {
     const call = wsc.calls?.[0];
     if (!call?.to) { flash('Malformed payment request'); return; }
     const callTo = call.to;
     const chainId = chainIdToNumber(wsc.chainId);
     const { chainName, nativeSymbol } = chainMeta(chainId);
-    // SECURITY: derive the displayed recipient/amount/token from the ACTUAL
-    // broadcast bytes (call.to/data/value), NOT the spoofable peer metadata.
+    /** SECURITY: derive the displayed recipient/amount/token from the ACTUAL broadcast bytes (call.to/data/value), NOT the spoofable peer metadata. */
     const summary = deriveConfirmSummary(
       { to: call.to, data: call.data, value: call.value }, nativeSymbol,
     );

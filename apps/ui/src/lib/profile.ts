@@ -1,6 +1,4 @@
-/**
- * @file Read-only, stamp.fyi-backed display-identity resolution (ENS names, avatars) with a per-address cache for the web app.
- */
+/** @file Read-only, stamp.fyi-backed display-identity resolution (ENS names, avatars) with a per-address cache for the web app. */
 
 import { lookupName } from '@stage-labs/client/stamp/resolve';
 
@@ -15,12 +13,7 @@ export interface SnapshotProfile {
   farcaster?: string;
 }
 
-/**
- * Per-address cache key. A single shared key would let every peer lookup
- *  (incl. peers with no ENS, cached as `{}`) clobber the SELF profile, blanking
- *  the user's own name on the Profile tab — so the cache is keyed by address,
- *  exactly like the mobile peerProfiles store.
- */
+/** Per-address cache key: a single shared key would let every peer lookup (incl. no-ENS peers cached as `{}`) clobber the SELF profile and blank the user's own name, so the cache is keyed by address like the mobile peerProfiles store. */
 const PROFILE_CACHE_PREFIX = 'profile.cache.';
 
 /** Cache Key. */

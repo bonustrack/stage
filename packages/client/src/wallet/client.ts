@@ -1,17 +1,4 @@
-/**
- * @file Shared viem public-client and brovider multichain RPC setup for the wallet read surfaces.
- */
-/**
- * Shared viem public-client + RPC setup for the wallet surfaces. Framework-
- *  agnostic (viem only). One place owns the brovider multichain RPC base and the
- *  VIEM_CHAINS registry so the app's balance/send/tx readers don't each re-roll
- *  `createPublicClient({ chain, transport: http('https://rpc.brovider.xyz/'+id) })`.
- *
- *  brovider (rpc.brovider.xyz) is a multicall-oriented multichain proxy: the
- *  path segment is the chainId. It is great for the public-wallet reads here
- *  (multicall, getBalance, ERC-20 reads) but REJECTS eth_getLogs, so the Railgun
- *  engine scan must NOT use it — railgun keeps its own client (lib/railgun).
- */
+/** @file Shared viem public-client + brovider multichain RPC setup for the wallet read surfaces; brovider keys by chainId path segment and is great for multicall/getBalance/ERC-20 reads but REJECTS eth_getLogs, so the Railgun engine scan keeps its own client. */
 
 import { createPublicClient, http, type Chain, type PublicClient } from 'viem';
 import { VIEM_CHAINS } from './assets';

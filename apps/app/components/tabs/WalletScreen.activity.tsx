@@ -1,7 +1,4 @@
-/**
- * @file Wallet Activity tab rendering the connected wallet's recent Ethereum mainnet and Sepolia transactions, fetched via Etherscan and merged newest-first.
- *  Each row shows a direction icon, decoded action + counterparty, relative time, signed ETH value, and a chain badge.
- */
+/** @file Wallet Activity tab: the connected wallet's recent Ethereum mainnet + Sepolia transactions, fetched via Etherscan and merged newest-first, each row showing a direction icon, decoded action + counterparty, relative time, signed ETH value, and a chain badge. */
 
 import { useEffect, useState } from 'react';
 
@@ -41,12 +38,10 @@ export function ActivityView({ address, head, sub, border, bg }: {
     return () => { cancelled = true; };
   }, [address]);
 
-  // Pre-resolve the counterparties' Snapshot names for nicer rows.
+  /** Pre-resolve the counterparties' Snapshot names for nicer rows. */
   usePeerProfiles(rows.map(r => r.counterparty));
 
-  // The private (shielded 0zk) transfer section paints independently of the
-  // public Etherscan fetch: it always renders above the public list when it has
-  // rows, so a wallet with only private history still shows something.
+  /** The private (shielded 0zk) transfer section paints independently of the public Etherscan fetch, always rendering above the public list when it has rows so a private-only wallet still shows something. */
   const priv = <PrivateActivitySection head={head} sub={sub} border={border} bg={bg} />;
 
   if (status === 'error') {

@@ -1,34 +1,6 @@
 /** @file Reactive session cache mapping XMTP message ids to locally-sent attachment `file://` URIs so confirmed bubbles paint the on-disk image instantly instead of spinning on the IPFS round trip. */
 
-/*
- * Session-scoped cache of the LOCAL `file://` URIs for attachments the user just
- *  sent, keyed by the REAL XMTP message id. Bridges the optimistic→confirmed
- *  handoff for image (and other) attachments:
- *
- *   - The optimistic bubble renders the local picker URI instantly (shows at once).
- *   - On confirm, that bubble is dropped and replaced by the LIVE message, whose
- *     attachment is a `multiRemoteAttachment` placeholder — its bytes still have to
- *     be downloaded + decrypted from IPFS (`RemoteAttachmentResolver`). That round
- *     trip left a blank/spinner gap for a few seconds → the image "disappeared"
- *     then "reappeared".
- *
- *  THE TIMING BUG this version fixes: `conv.send({ multiRemoteAttachment })`
- *  encrypts + uploads to IPFS before its JS promise resolves, but the MLS message
- *  commits (and can stream-echo into the live feed) BEFORE that promise returns.
- *  So the echo bubble's `RemoteAttachmentResolver` frequently MOUNTED before
- *  `rememberLocalAttachments(realId, …)` ran. The previous design only read the
- *  cache in `useState(initial)`, so a late write was never observed → the bubble
- *  sat on a spinner until the IPFS download finished (the persistent gap).
- *
- *  Fix: make the cache a tiny reactive store. The resolver subscribes; the moment
- *  the local URI lands under its message id (whenever `conv.send` resolves), it
- *  re-reads and paints the already-on-disk local file instantly — no blank, no
- *  spinner — while the remote download finishes in the background.
- *
- *  The cache holds plain `file://` cache-dir URIs (already materialised by the
- *  picker / send path), so it costs nothing to keep for the app session; entries
- *  are dropped on app restart.
- */
+/** Session-scoped reactive store of local `file://` attachment URIs keyed by REAL XMTP message id; resolvers subscribe so a late `conv.send` write repaints the on-disk file instantly (fixing the spinner gap when the echo bubble mounts before the URI is remembered). Entries drop on app restart. */
 
 import { useSyncExternalStore } from 'react';
 import { File, Paths } from 'expo-file-system';
@@ -52,7 +24,7 @@ export function rememberLocalAttachments(messageId: string, uris: readonly (stri
 /** Local `file://` URI for the attachment at `index` of `messageId`, if one was cached for a send made this session. */
 function getLocalAttachment(messageId: string, index: number): string | undefined {
   const uri = byMessageId.get(messageId)?.[index];
-  // Treat both missing and stored-empty as "no local"; ?? would leak ''.
+  /** Treat both missing and stored-empty as "no local"; ?? would leak ''. */
   return uri === undefined || uri === '' ? undefined : uri;
 }
 
@@ -67,17 +39,7 @@ function asFileUri(uri: string): string {
   return uri.startsWith('file://') ? uri : `file://${uri.replace(/^file:\/+/, '/')}`;
 }
 
-/**
- * Copy a freshly-picked local `file://` URI into a STABLE app-cache file so it
- *  survives the entire pending window. The OS image/document picker hands back a
- *  temp URI (e.g. an `ImagePicker` cache entry) that can be evicted while the
- *  send is in flight — if that happens mid-pending the dimmed thumbnail blanks.
- *  Copying to our own `Paths.cache` entry pins the bytes for the app session.
- *
- *  Best-effort + synchronous-friendly: on any failure (non-`file://` scheme,
- *  copy error) it returns the original URI so the caller is never worse off. The
- *  copy is cheap (already-on-disk bytes) and the dest lives until app restart.
- */
+/** Copy a freshly-picked local `file://` URI into a STABLE app-cache file pinned for the app session so an evicted picker temp can't blank the pending thumbnail; best-effort, returning the original URI on any failure. */
 export function stashLocalAttachment(srcUri: string): string {
   if (!srcUri.startsWith('file://')) return srcUri;
   try {
@@ -93,13 +55,7 @@ export function stashLocalAttachment(srcUri: string): string {
   }
 }
 
-/**
- * Reactive read of the cached local URI for `(messageId, index)`. Re-renders the
- *  caller when the URI lands (e.g. `conv.send()` resolves AFTER the echo bubble
- *  mounted) so the bubble swaps its spinner for the on-disk local file with zero
- *  gap. Pass `undefined` ids/indexes to opt out (returns undefined, no subscribe
- *  churn).
- */
+/** Reactive read of the cached local URI for `(messageId, index)`, re-rendering when the URI lands so the bubble swaps its spinner for the on-disk file with zero gap; pass `undefined` ids/indexes to opt out. */
 export function useLocalAttachment(messageId?: string, index?: number): string | undefined {
   return useSyncExternalStore(
     (cb) => {

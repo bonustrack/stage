@@ -1,6 +1,4 @@
-/**
- * @file App-wide theme preference ('light' | 'dark' | 'system') persisted in expo-secure-store under `app.theme`, with a tiny module-level pub/sub that keeps every mounted screen in sync on toggle without a context provider.
- */
+/** @file App-wide theme preference ('light' | 'dark' | 'system') persisted in expo-secure-store under `app.theme`, with a tiny module-level pub/sub that keeps every mounted screen in sync on toggle without a context provider. */
 
 import { useEffect, useMemo, useState } from 'react';
 import { useColorScheme } from 'react-native';
@@ -44,8 +42,7 @@ export function useThemeSeeds(): import('./colorOverrides').ThemeSeeds {
 
 export type { ThemePreference };
 
-/** Scheme-independent semantic constants (same hex in dark + light) for the many sub-components that take a `dark` prop instead of the full palette. Sourced from the kit tokens — no app-local fork. */
-/** Semantic danger color (same hex in dark + light) for `dark`-prop sub-components. */
+/** Semantic danger color (same hex in dark + light) for `dark`-prop sub-components, sourced from the kit tokens with no app-local fork. */
 export const DANGER = semanticColors.dangerColor.dark;
 /** Semantic success color (same hex in dark + light) for `dark`-prop sub-components. */
 export const SUCCESS = semanticColors.successColor.dark;
@@ -100,12 +97,7 @@ export function useEffectiveColorScheme(): 'light' | 'dark' {
   return sys === 'dark' ? 'dark' : 'light';
 }
 
-/**
- * Scheme-aware palette shared by every screen's inline StyleSheet. Maps 1:1 to
- *  the canonical kit semantic tokens (@metro-labs/kit/tokens, no app-local
- *  forks): `text` body text, `link` emphasis, `primary` primary-button fill,
- *  `inputBg` input/dropdown fill, `toolbarBg` solid nav fill.
- */
+/** Scheme-aware palette shared by every screen's inline StyleSheet, mapping 1:1 to the canonical kit semantic tokens (no app-local forks): text body, link emphasis, primary button fill, inputBg field fill, toolbarBg solid nav fill. */
 export interface Palette {
   bg: string; border: string; text: string; sub: string; link: string;
   primary: string; danger: string; success: string;
@@ -120,8 +112,7 @@ function useOverridesVersion(): number {
     loadRadius();
     /** Bump helper. */
     const bump = (): void => { setV((n) => n + 1); };
-    // Radius edits also push into the kit Button default here so every palette
-    // consumer (i.e. every screen) repaints its buttons with the new radius.
+    /** Radius edits also push into the kit Button default here so every palette consumer (every screen) repaints its buttons with the new radius. */
     const unsubColors = subscribeOverrides(bump);
     const unsubRadius = subscribeRadius(() => { setDefaultButtonRadius(getRadius()); bump(); });
     setDefaultButtonRadius(getRadius());
@@ -130,13 +121,7 @@ function useOverridesVersion(): number {
   return v;
 }
 
-/**
- * The persisted button corner-radius token (px), reactive to load/edit/reset.
- *  Reading it also pushes the value into the kit Button's module-level default
- *  (setDefaultButtonRadius) so EVERY button — even ones not re-rendered by this
- *  hook — picks up the new radius on the next paint. Mount this once high in the
- *  tree (e.g. the root layout) so the wiring is always live.
- */
+/** The persisted button corner-radius token (px), reactive to load/edit/reset; reading it also pushes the value into the kit Button's module-level default so every button picks up the new radius on the next paint, so mount this once high in the tree (e.g. the root layout). */
 export function useRadius(): number {
   const [r, setR] = useState(getRadius());
   useEffect(() => {
@@ -152,19 +137,7 @@ export function useRadius(): number {
   return r;
 }
 
-/**
- * The persisted block corner-radius token (px) for non-button containers —
- *  inputs/text fields, cards, modals/sheets and general bordered/filled blocks.
- *  Reactive to load/edit/reset. Unlike the button radius this is read directly
- *  at each container call site (there's no kit-wide module default to push).
- */
-/**
- * Apply an alpha (0..1) to a palette token, returning an rgba() string. Handles
- *  #rgb / #rrggbb hex and rgb()/rgba() inputs (the forms palette tokens take,
- *  including user overrides). Falls back to the input unchanged if it can't be
- *  parsed, so a malformed override never crashes a render. Used for accent tints
- *  (e.g. the poll result bar / selected-row fill) that must track `link`.
- */
+/** Apply an alpha (0..1) to a palette token, returning an rgba() string; handles #rgb/#rrggbb hex and rgb()/rgba() inputs (including user overrides) and falls back to the input unchanged when unparseable so a malformed override never crashes a render — used for accent tints that must track `link`. */
 export function withAlpha(color: string, alpha: number): string {
   const a = Math.max(0, Math.min(1, alpha));
   const hex = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.exec(color.trim());
@@ -195,26 +168,13 @@ export function useBlockRadius(): number {
   return r;
 }
 
-/**
- * Resolve the shared palette for the effective color scheme. Each token is the
- *  user's persisted override (if any, for the active scheme) layered OVER the
- *  canonical kit default — making the whole app re-theme live when the Kit page
- *  edits a token. Reactive to BOTH theme changes and override changes.
- */
+/** Resolve the shared palette for the effective color scheme, each token being the user's persisted override layered over the canonical kit default so the whole app re-themes live; reactive to both theme and override changes. */
 export function usePalette(): Palette {
   const scheme = useEffectiveColorScheme();
-  const version = useOverridesVersion(); // re-render on override load/edit/reset
-  /**
-   * PERF: memoise so the palette object IDENTITY stays stable across unrelated
-   *  re-renders (only changes when scheme/override version bumps). usePalette is
-   *  consumed by ~60 components; a fresh object every render defeated every
-   *  downstream memo that closed over the palette.
-   */
+  const version = useOverridesVersion(); /* re-render on override load/edit/reset */
+  /** PERF: memoise so the palette object identity stays stable across unrelated re-renders (only bumping on scheme/override change); usePalette feeds ~60 components and a fresh object each render defeated every downstream memo that closed over it. */
   return useMemo(() => {
-    // The Custom theme DERIVES the whole palette from the user's seed (grayscale
-    // base + accent + surface bg/fg) via the kit `derivePalette`. The default
-    // seed reproduces the canonical kit palette pixel-for-pixel, so the non-
-    // custom path (plain Light/Dark/System) stays on `semanticPalette`.
+    /** The Custom theme derives the whole palette from the user's seed (grayscale base + accent + surface) via the kit `derivePalette`; the default seed reproduces the canonical kit palette pixel-for-pixel, so the non-custom path stays on `semanticPalette`. */
     if (isCustomTheme()) {
       const d = derivePalette(getSeeds()[scheme], scheme);
       return {

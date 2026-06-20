@@ -1,6 +1,4 @@
-/**
- * @file Text — a theme-native RN text component matching ChatKit's Text/BaseTextProps API that resolves its colour by semantic role from useKitPalette, with deprecated back-compat variant/size/weight aliases.
- */
+/** @file Text — a theme-native RN text component matching ChatKit's Text/BaseTextProps API that resolves its colour by semantic role from useKitPalette, with deprecated back-compat variant/size/weight aliases. */
 
 import {
   Text as RNText,
@@ -37,10 +35,7 @@ export interface TextProps extends Omit<RNTextProps, 'style' | 'role'> {
   value?: string;
   /** Semantic text role - resolves scheme-aware from the theme palette. Default `default` = body text. */
   role?: TextRole;
-  /**
-   * @deprecated Legacy role variant (body/secondary/caption/mono). Maps onto
-   *  the new `role` (secondary/caption -> secondary).
-   */
+  /** @deprecated Legacy role variant (body/secondary/caption/mono), mapped onto the new `role` (secondary/caption -> secondary). */
   variant?: TextVariant;
   /** Named TextSize token (3xs..6xl). Default md (15), or sm (13) when the legacy `caption` variant is used. */
   size?: TextSizeToken;
@@ -65,10 +60,7 @@ export interface TextProps extends Omit<RNTextProps, 'style' | 'role'> {
 /** Named TextSize px values - the kit FONT_SIZE scale. */
 const SIZE_TOKENS = FONT_SIZE;
 
-// Only two Calibre faces are bundled in apps/app: Calibre-Medium and
-// Calibre-Semibold. Weight -> face:
-//   normal / medium -> Calibre-Medium
-//   semibold / bold -> Calibre-Semibold
+/** Only two Calibre faces are bundled: normal/medium -> Calibre-Medium, semibold/bold -> Calibre-Semibold. */
 const FONTS: Record<'normal' | 'medium' | 'semibold' | 'bold', string> = {
   normal: 'Calibre-Medium',
   medium: 'Calibre-Medium',
@@ -96,15 +88,7 @@ function variantRole(variant: TextVariant | undefined): TextRole {
   return 'default';
 }
 
-/**
- * Resolve a role to a palette colour.
- *  LOSSLESS NOTE: today's Kit Text default (`variant="body"`) rendered the
- *  `head` colour (#ffffff/#000000), which in the app palette is `link`
- *  (link-* === head-* hexes), NOT the `fg` body-grey `text`. So `default`
- *  resolves to `palette.link` to stay pixel-identical to today. (The design
- *  brief labelled default `=text`; that would have re-coloured every default
- *  Text from white/black to grey, so it is intentionally mapped to `link`.)
- */
+/** Resolve a role to a palette colour; `default` intentionally maps to `palette.link` (=== head hexes) to stay pixel-identical to today's body text rather than the body-grey `text`. */
 function roleColor(role: TextRole, palette: KitPalette): string {
   switch (role) {
     case 'secondary':

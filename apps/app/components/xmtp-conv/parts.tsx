@@ -32,13 +32,7 @@ export function GithubNavButton({ url, color }: { url: string; color: string }):
   );
 }
 
-/**
- * Topnav avatar — 1-1 conversations use the peer's identicon/custom avatar,
- *  groups show their uploaded image, and groups WITHOUT one fall back to a
- *  deterministic stamp.fyi identicon seeded by the channel id (so every channel
- *  gets its own stable avatar everywhere). Delegates rendering to the shared
- *  Avatar component.
- */
+/** Topnav avatar — peer identicon/custom avatar for 1-1s, uploaded image for groups, and a deterministic channel-id-seeded stamp.fyi identicon for groups without one, delegating rendering to the shared Avatar component. */
 export function HeaderAvatar({ peerAddr, groupImage, channelId, isGroup, border }: {
   peerAddr: string | null; groupImage: string; channelId: string; isGroup: boolean; border: string;
 }): React.ReactElement | null {
@@ -136,7 +130,7 @@ function ActionDropdown({ target, dark, fg, divider, cardBg, blockRadius, on }: 
 /** Clamp the menu's top so the estimated strip+dropdown unit stays within the screen. */
 function clampedMenuTop(anchorY: number, hasText: boolean): number {
   const actionCount = 2 + (hasText ? 2 : 0);
-  const unitH = 40 + 6 + (actionCount * 48 + 16); // stripH + GAP + estimated cardH (clamp only)
+  const unitH = 40 + 6 + (actionCount * 48 + 16); /** stripH + GAP + estimated cardH (clamp only) */
   const maxTop = Dimensions.get('window').height - 40 - unitH;
   return Math.max(40, Math.min(anchorY, maxTop));
 }

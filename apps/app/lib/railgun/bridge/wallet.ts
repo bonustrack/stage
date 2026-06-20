@@ -1,18 +1,4 @@
-/** @file RN-side typed wrappers for RAILGUN wallet info + shielded-balance calls, routing `walletInfo`/`getBalances` through the generic `sdk()` dispatcher to the host engine. */
-/**
- * RN-side bridge wrappers for the RAILGUN wallet + shielded-balance calls
- *  (Kohaku phase 1-2). These are thin TYPED wrappers over the GENERIC `sdk()`
- *  dispatcher (./sdk.ts): `walletInfo` → sdk('createWallet'), `getBalances` →
- *  sdk('balances'). Routing those names back to engine.js's stateful logic
- *  (LevelDB + prover + wallet cache) happens in the host (main.js ENGINE_OPS),
- *  so the deterministic 0zk derivation + scan behavior is unchanged — but the
- *  wire path is now the one generic handler, so future ops need no new handler.
- *
- *  The deterministic key material (mnemonic + encryptionKey + creationBlocks) is
- *  derived on the RN side (lib/railgun/deriveKeys.ts) and passed IN so the EOA
- *  key never has to be re-derived in the Node host; see SECURITY note in
- *  ./index.ts.
- */
+/** @file RN-side thin typed wrappers for RAILGUN wallet info + shielded-balance calls, routing `walletInfo`/`getBalances` through the generic `sdk()` dispatcher to engine.js in the host; deterministic key material is derived on RN and passed in so the EOA key never re-derives in Node. */
 import { sdk } from './sdk';
 
 /** Result of `walletInfo`: the active account's RAILGUN wallet, create-or-loaded in the Node host from deterministic key material (deriveKeys.ts). */
@@ -38,13 +24,7 @@ export interface BalancesResult {
   scanDebug?: { t: number; chain: number; msg: string }[];
 }
 
-/**
- * Create-or-load the active account's RAILGUN wallet in the Node host and
- *  resolve its { railgunWalletID, railgunAddress }. Routed through the generic
- *  dispatcher (sdk('createWallet')) → engine.js, which inits the engine if cold.
- *  The deterministic key material is derived on RN and passed in so the EOA key
- *  never re-derives in Node.
- */
+/** Create-or-load the active account's RAILGUN wallet in the Node host and resolve { railgunWalletID, railgunAddress }, routed through sdk('createWallet') → engine.js (which inits the engine if cold); key material is derived on RN and passed in. */
 export async function walletInfo(params: {
   encryptionKey: string;
   mnemonic: string;

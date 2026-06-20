@@ -1,12 +1,10 @@
-/**
- * @file Edge-side image fetcher for the link-preview Worker: SSRF-guarded fetch with optional Cloudflare Image Resizing, credential stripping, and a size cap.
- */
+/** @file Edge-side image fetcher for the link-preview Worker: SSRF-guarded fetch with optional Cloudflare Image Resizing, credential stripping, and a size cap. */
 
 import { assertPublicUrl, SsrfError } from './ssrf.ts';
 
 const TIMEOUT_MS = 5000;
 const MAX_REDIRECTS = 3;
-export const MAX_IMG_BYTES = 3_000_000; // ~3 MB cap
+export const MAX_IMG_BYTES = 3_000_000; /** ~3 MB cap */
 const DEFAULT_WIDTH = 600;
 const MAX_WIDTH = 2000;
 const QUALITY = 80;
@@ -99,8 +97,7 @@ function imageContentType(res: Response): string | null {
 export async function fetchImage(rawUrl: string, width?: number): Promise<ImageResult | null> {
   const w = width ?? DEFAULT_WIDTH;
 
-  // 1) Try Cloudflare Image Resizing. On a plan without it the cf.image directive
-  //    is a no-op and the original passes through (we detect that via cf-resized).
+  /** 1) Try Cloudflare Image Resizing; on a plan without it the cf.image directive is a no-op and the original passes through (detected via cf-resized). */
   try {
     const { res } = await fetchFollowing(rawUrl, {
       image: { width: w, fit: 'scale-down', quality: QUALITY },
@@ -110,8 +107,7 @@ export async function fetchImage(rawUrl: string, width?: number): Promise<ImageR
       if (ct) {
         const body = await readImageCapped(res);
         if (body) {
-          // `cf-resized` is present (e.g. "internal stats=...") only when the
-          // resizing pipeline actually ran; absent => unsupported plan / no-op.
+          /** `cf-resized` is present only when the resizing pipeline actually ran; absent => unsupported plan / no-op. */
           const resized = res.headers.has('cf-resized');
           return { body, contentType: ct, resized };
         }
@@ -119,10 +115,10 @@ export async function fetchImage(rawUrl: string, width?: number): Promise<ImageR
     }
   } catch (e) {
     if (e instanceof SsrfError) throw e;
-    // fall through to a plain fetch below
+    /** fall through to a plain fetch below */
   }
 
-  // 2) Plain fetch fallback (no resize), still within the size cap + SSRF guard.
+  /** 2) Plain fetch fallback (no resize), still within the size cap + SSRF guard. */
   const { res } = await fetchFollowing(rawUrl);
   if (!res.ok) return null;
   const ct = imageContentType(res);

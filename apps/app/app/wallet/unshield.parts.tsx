@@ -1,7 +1,4 @@
-/**
- * @file Presentational sub-parts for the Unshield screen: the locked own-EOA
- * public recipient card and the phase/result status line.
- */
+/** @file Presentational sub-parts for the Unshield screen: the locked own-EOA public recipient card and the phase/result status line. */
 import { Linking } from 'react-native';
 
 import { Pressable } from '@metro-labs/kit/pressable';

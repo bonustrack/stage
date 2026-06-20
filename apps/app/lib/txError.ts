@@ -1,7 +1,4 @@
-/**
- * @file Turns a thrown signing / userOp / RPC error into a SHORT, SPECIFIC in-chat toast message by walking the viem/ZeroDev `BaseError` cause chain (details / shortMessage / metaMessages) for the real reason instead of the generic outer "RPC Request failed.".
- *  Falls back to a clear generic instead of the opaque outer message; NEVER throws.
- */
+/** @file Turns a thrown signing/userOp/RPC error into a SHORT, SPECIFIC toast by walking the viem/ZeroDev `BaseError` cause chain (details/shortMessage/metaMessages) for the real reason instead of the generic outer message; falls back to a clear generic and NEVER throws. */
 
 /** Fields viem's `BaseError` adds on top of `Error`. Optional + read defensively — the thrown value may be any shape. */
 interface ViemErrorLike {
@@ -61,8 +58,7 @@ function collect(err: unknown, depth = 0): string | undefined {
   if (typeof err === 'string') return str(err);
   if (typeof err !== 'object') return undefined;
   const e = err as ViemErrorLike;
-  // Prefer the cause's specific reason first (deepest is usually most precise),
-  // then this level's specific fields, before any generic message.
+  /** Prefer the cause's specific reason first (deepest is usually most precise), then this level's specific fields, before any generic message. */
   const specific = str(e.details) ?? metaMessage(e) ?? str(e.shortMessage);
   const candidate = collect(e.cause, depth + 1) ?? specific;
   return pickMessage(candidate, str(e.message));
@@ -73,7 +69,7 @@ export function txErrorMessage(err: unknown, fallback: string): string {
   try {
     const raw = collect(err) ?? fallback;
     const out = humanize(raw);
-    // Keep it toast-sized: first line, capped.
+    /** Keep it toast-sized: first line, capped. */
     const trimmed = out.split('\n')[0]?.trim();
     const firstLine = trimmed !== undefined && trimmed.length > 0 ? trimmed : fallback;
     return firstLine.length > 140 ? `${firstLine.slice(0, 137)}...` : firstLine;

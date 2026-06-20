@@ -1,6 +1,4 @@
-/**
- * @file Small MessengerComposer hooks: per-conversation drafts, reply/auto focus, last-used attachment, and @-mention parsing.
- */
+/** @file Small MessengerComposer hooks: per-conversation drafts, reply/auto focus, last-used attachment, and @-mention parsing. */
 
 import { useEffect, useRef, useState, type ComponentRef, type RefObject } from 'react';
 import { AppState, Keyboard } from 'react-native';
@@ -61,16 +59,7 @@ export function useComposerFocus(
     const t = setTimeout(() => inputRef.current?.focus(), 0);
     return () => { clearTimeout(t); };
   }, [autoFocusNonce]);
-  /**
-   * On background, blur the input ONLY if the keyboard was already closed.
-   *  The bug: a focused-but-keyboard-closed input gets its IME re-raised by
-   *  Android on resume; blurring kills that. But blurring while the keyboard
-   *  IS up desyncs react-native-keyboard-controller (on resume the IME is gone
-   *  yet the sticky-view/feed offset stays raised -> floating composer / blank
-   *  gap). So when the keyboard is visible we leave focus alone: Android
-   *  restores both focus and IME cleanly, no stale offset. Intentional focus
-   *  (input tap, reply-swipe, autoFocusNonce) is untouched.
-   */
+  /** On background, blur the input ONLY if the keyboard was already closed: blurring while the keyboard is up desyncs react-native-keyboard-controller; when visible, Android restores focus and IME cleanly on its own. */
   useEffect(() => {
     let keyboardVisible = false;
     const showSub = Keyboard.addListener('keyboardDidShow', () => { keyboardVisible = true; });

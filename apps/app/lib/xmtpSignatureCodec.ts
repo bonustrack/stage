@@ -1,8 +1,4 @@
-/**
- * @file SignatureRequestCodec and SignatureReferenceCodec, the pure-JS @xmtp/react-native-sdk
- *  content codecs for the custom Metro `metro.box/signatureRequest:1.0` and `signatureReference:1.0`
- *  types (arbitrary-message signing, which has no official XMTP type), each with a plain-text fallback.
- */
+/** @file SignatureRequestCodec and SignatureReferenceCodec, the pure-JS @xmtp/react-native-sdk content codecs for the custom Metro `signatureRequest:1.0` and `signatureReference:1.0` types (arbitrary-message signing, which has no official XMTP type), each with a plain-text fallback. */
 
 import type {
   JSContentCodec, ContentTypeId, EncodedContent,

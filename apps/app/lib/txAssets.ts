@@ -1,7 +1,4 @@
-/**
- * @file Pure asset-resolution helpers mapping a `(chainId, token)` pair to its display logo URL and CoinGecko price key for the tx/sign cards + simulation, derived from the shared static registry so cards match the wallet token list.
- *  No React, no network, no key material — bytes in, descriptors out (unit-testable without RN).
- */
+/** @file Pure asset-resolution helpers mapping a `(chainId, token)` pair to its display logo URL and CoinGecko price key for the tx/sign cards + simulation, derived from the shared static registry (no React, network, or key material) so cards match the wallet token list. */
 
 import { ASSETS, NATIVE_TOKEN_SENTINEL } from '@stage-labs/client/wallet/assets';
 import { stampTokenUrl } from '@metro-labs/kit/avatar';
@@ -14,13 +11,7 @@ function assetFor(chainId: number, token: string | null | undefined) {
   return ASSETS.find(a => a.chainId === chainId && a.address?.toLowerCase() === lc);
 }
 
-/**
- * The logo URL to show for `(chainId, token)`:
- *   - native ETH      -> the ETH sentinel logo,
- *   - a KNOWN ERC-20  -> the registry `logoAddress` (e.g. STAGE's own contract),
- *   - an UNKNOWN token -> a NEUTRAL generic coin glyph (never the ETH logo).
- *  `token` of null/undefined/native-sentinel is treated as native ETH.
- */
+/** The logo URL for `(chainId, token)`: native/null/sentinel -> ETH sentinel logo, known ERC-20 -> registry logoAddress, unknown -> a neutral coin glyph (never the ETH logo). */
 export function tokenLogoUrl(
   chainId: number, token: string | null | undefined, displayPx: number,
 ): string {
@@ -28,8 +19,7 @@ export function tokenLogoUrl(
   if (isNative) return stampTokenUrl(chainId, NATIVE_TOKEN_SENTINEL, displayPx);
   const hit = assetFor(chainId, token);
   if (hit) return stampTokenUrl(hit.chainId, hit.logoAddress, displayPx);
-  // Unknown token: stamp.fyi has a per-contract identicon; if it 404s the avatar
-  // falls back to the border circle. Either way it is NOT the ETH logo.
+  /** Unknown token: stamp.fyi serves a per-contract identicon (falling back to the border circle on 404), never the ETH logo. */
   return stampTokenUrl(chainId, token, displayPx);
 }
 
@@ -46,13 +36,7 @@ export type PriceKey =
   | { kind: 'erc20'; platform: string; contract: string }
   | null;
 
-/**
- * Resolve the CoinGecko price descriptor for `(chainId, token)` from the
- *  registry. Native => its cgId; a known ERC-20 with a cgPlatform => its
- *  (priceAddress|address, platform). Unknown token or a token with no price
- *  listing (e.g. STAGE) => null, so the card shows the amount with NO $ (never a
- *  fake or zero value).
- */
+/** Resolves the CoinGecko price descriptor for `(chainId, token)` from the registry: native -> its cgId, known ERC-20 with cgPlatform -> its (priceAddress|address, platform), otherwise null so the card shows the amount with no $ (never a fake value). */
 export function priceKeyFor(chainId: number, token: string | null | undefined): PriceKey {
   const a = assetFor(chainId, token);
   if (!a) return null;

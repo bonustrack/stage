@@ -1,6 +1,4 @@
-/**
- * @file The keyring: the one and only chokepoint for private-key + mnemonic access. Signs in place behind a single-module lockdown (ESLint + test invariant) so secrets stay OS-keystore-encrypted at rest, everyday use never prompts, and only the two passkey/device-auth-guarded reveals (recovery phrase / private key) ever return material.
- */
+/** @file The keyring: the one chokepoint for private-key + mnemonic access. Signs in place behind a single-module lockdown so secrets stay OS-keystore-encrypted at rest, everyday use never prompts, and only the two passkey/device-auth-guarded reveals (recovery phrase / private key) ever return material. */
 
 import '../cryptoShim';
 import * as SecureStore from 'expo-secure-store';
@@ -16,19 +14,12 @@ import {
   PK_PREFIX, LEGACY_PK_KEY,
 } from '@stage-labs/client/accounts/keys';
 
-// ===========================================================================
-// Storage-key constants (PRIVATE — never exported; no other file names them).
-// ===========================================================================
+/** Storage-key constants (PRIVATE — never exported; no other file names them). */
 
 /** SecureStore key for the single app BIP-39 mnemonic. `[A-Za-z0-9._-]+` only (colons are rejected on Android). */
 const MNEMONIC_KEY = 'wallet.mnemonic';
 
-/**
- * Storage options for ALL secret material (mnemonic + per-account PKs). Encrypted
- *  at rest + device-bound (`WHEN_UNLOCKED_THIS_DEVICE_ONLY`) but NOT
- *  `requireAuthentication`, so a normal read/sign NEVER prompts. The only
- *  device-auth is the explicit reveal gate (see note 4).
- */
+/** Storage options for ALL secret material: encrypted at rest + device-bound (WHEN_UNLOCKED_THIS_DEVICE_ONLY) but NOT requireAuthentication, so a normal read/sign never prompts; the only device-auth is the explicit reveal gate. */
 const STORE_OPTS: SecureStore.SecureStoreOptions = {
   keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
 };
@@ -43,20 +34,13 @@ const SENTINEL_OPTS: SecureStore.SecureStoreOptions = {
   authenticationPrompt: 'Verify it is you to reveal this secret',
 };
 
-/**
- * Device-auth gate (the no-passkey reveal path). Forces the OS biometric/passcode
- *  sheet by reading a hardened sentinel (provisioned lazily). true on success,
- *  false if declined/fails. A no-secure-lock device throws on the hardened write
- *  -> allow (secret is already on-device, UI warns) rather than lock the user out.
- */
+/** Device-auth gate (no-passkey reveal path): forces the OS biometric/passcode sheet by reading a lazily-provisioned hardened sentinel — true on success, false if declined; a no-secure-lock device throws on the hardened write and is allowed (secret already on-device, UI warns). */
 async function requireDeviceAuth(): Promise<boolean> {
-  // Reading a hardened item prompts; a missing item returns null with NO prompt;
-  // a cancelled/failed prompt throws (mapped to 'DENIED').
+  /** Reading a hardened item prompts; a missing item returns null with no prompt; a cancelled/failed prompt throws (mapped to 'DENIED'). */
   const existing = await SecureStore.getItemAsync(AUTH_SENTINEL_KEY, SENTINEL_OPTS).catch(() => 'DENIED');
   if (existing === 'DENIED') return false;
-  if (existing !== null) return true; // hardened read succeeded => auth passed.
-  // No sentinel yet: provision it hardened (a no-lock device throws => allow),
-  // then read back to force the prompt for this reveal too.
+  if (existing !== null) return true; /** hardened read succeeded => auth passed. */
+  /** No sentinel yet: provision it hardened (a no-lock device throws => allow), then read back to force the prompt for this reveal too. */
   try {
     await SecureStore.setItemAsync(AUTH_SENTINEL_KEY, '1', SENTINEL_OPTS);
   } catch {
@@ -65,18 +49,7 @@ async function requireDeviceAuth(): Promise<boolean> {
   return (await SecureStore.getItemAsync(AUTH_SENTINEL_KEY, SENTINEL_OPTS).catch(() => null)) !== null;
 }
 
-/**
- * REVEAL GATE (Less's finalized model: the passkey is the auth when set). Picks
- *  the gate for the two secret EXPORTS by the target account's stored passkey:
- *    - HAS a passkey + WebAuthn runs here -> a fresh on-device PASSKEY ASSERTION
- *      (`assertPasskeyPresence`) must succeed; cancel/fail returns false -> abort.
- *    - NO passkey, OR native module absent (assertPasskeyPresence -> null) -> fall
- *      back to the device-auth sentinel (`requireDeviceAuth`), so old binaries +
- *      phrase-only accounts still gate the raw seed.
- *  Stays INSIDE the chokepoint (secret read only on true). `id` scopes the lookup
- *  to the exported account (omit -> active, for the phrase). LAZY import avoids the
- *  static cycle (lib/accounts imports this module); a failed lookup -> device auth.
- */
+/** Reveal gate for the two secret exports: an account with a stored passkey requires a fresh on-device passkey assertion (cancel/fail aborts), otherwise falls back to the device-auth sentinel; `id` scopes the lookup (omit -> active), via a lazy import to avoid the static accounts cycle. */
 async function requireRevealAuth(id?: string): Promise<boolean> {
   let stored: import('./account').StoredPasskey | undefined;
   try {
@@ -91,24 +64,15 @@ async function requireRevealAuth(id?: string): Promise<boolean> {
   if (stored) {
     const { assertPasskeyPresence } = await import('./account');
     const ok = await assertPasskeyPresence(stored);
-    // true/false -> the passkey is the gate (honor cancel). null -> native module
-    // absent on this binary; fall through to the device-auth sentinel.
+    /** true/false -> the passkey is the gate (honor cancel); null -> native module absent on this binary, fall through to the device-auth sentinel. */
     if (ok !== null) return ok;
   }
   return requireDeviceAuth();
 }
 
-// ===========================================================================
-// Mnemonic provisioning (smart-account root).
-// ===========================================================================
+/** Mnemonic provisioning (smart-account root). */
 
-/**
- * SESSION CACHE (see SECURITY note 6). The decrypted, validated mnemonic for
- *  the current process. Populated by `unlockMnemonic()` (or on generate/restore,
- *  which already hold the plaintext), then reused by every derivation/sign to
- *  avoid redundant keystore round-trips. NO auth power — the reads it replaces
- *  also never prompt. Cleared on reset/nuke (`clearMnemonic`) and `lockSession()`.
- */
+/** Session cache: the decrypted, validated mnemonic for the current process, populated by unlockMnemonic (or generate/restore) and reused by every derivation/sign to avoid keystore round-trips; no auth power, cleared on reset/nuke and lockSession. */
 let sessionMnemonic: string | null = null;
 
 /** Raw keystore read of the mnemonic. Encrypted at rest, but NO device-auth prompt (see STORE_OPTS). PRIVATE — `unlockMnemonic` and the reveal paths (which add their own explicit auth gate) call it. */
@@ -119,12 +83,7 @@ async function readMnemonic(): Promise<string | null> {
   return isValidMnemonic(phrase) ? phrase : null;
 }
 
-/**
- * Get the mnemonic for in-session use with NO device-auth prompt. Reads the
- *  keystore once (encrypted-at-rest, no prompt) and caches it in memory; later
- *  calls reuse the cache. Returns null when none is stored. PRIVATE — callers use
- *  the signer factories; only the two reveals expose the string.
- */
+/** Get the mnemonic for in-session use with no device-auth prompt: reads the keystore once (encrypted-at-rest) and caches it in memory; null when none stored. PRIVATE — only the two reveals expose the string. */
 async function unlockMnemonic(): Promise<string | null> {
   if (sessionMnemonic) return sessionMnemonic;
   const phrase = await readMnemonic();
@@ -137,7 +96,7 @@ export async function restoreMnemonic(phrase: string): Promise<void> {
   const norm = normalizeMnemonic(phrase);
   if (!isValidMnemonic(norm)) throw new Error('Invalid recovery phrase — failed BIP-39 check.');
   await SecureStore.setItemAsync(MNEMONIC_KEY, norm, STORE_OPTS);
-  // Seed the cache with the plaintext we just stored (restore flow derivation).
+  /** Seed the cache with the plaintext we just stored (restore flow derivation). */
   sessionMnemonic = norm;
   ownerCache.clear();
 }
@@ -153,32 +112,19 @@ export async function clearMnemonic(): Promise<void> {
 export async function ensureMnemonic(): Promise<void> {
   const existing = await unlockMnemonic();
   if (existing) return;
-  // None stored: mint one + seed the cache so the create flow runs prompt-free.
+  /** None stored: mint one + seed the cache so the create flow runs prompt-free. */
   const minted = generateWalletMnemonic();
   await SecureStore.setItemAsync(MNEMONIC_KEY, minted, STORE_OPTS);
   sessionMnemonic = minted;
   ownerCache.clear();
 }
 
-// ===========================================================================
-// Smart-account (HD) signers — sign-in-place, owner derived from the mnemonic.
-// ===========================================================================
+/** Smart-account (HD) signers — sign-in-place, owner derived from the mnemonic. */
 
-/**
- * In-memory cache of derived owner HDAccounts, keyed by HD index. XMTP
- *  `Client.create` signs the owner identity SEVERAL times per flow; caching the
- *  derived HDAccount avoids re-deriving each sign and keeps create fast. Only the
- *  opaque viem signer object is cached, never a raw key/mnemonic string. Cleared
- *  on `clearMnemonic()` so a wiped wallet leaves nothing derivable in memory.
- */
+/** In-memory cache of derived owner HDAccounts keyed by HD index, so XMTP Client.create's repeated owner signs don't re-derive; only the opaque viem signer is cached, never a raw key/mnemonic, and it is cleared on clearMnemonic. */
 const ownerCache = new Map<number, HDAccount>();
 
-/**
- * Internal: derive the owner signer for a smart-account HD index. Reads the
- *  mnemonic (no prompt) then caches the opaque HDAccount in memory (see
- *  ownerCache) so repeat signs in one session don't re-derive. Throws if none
- *  stored. The returned HDAccount signs but exposes no key.
- */
+/** Internal: derive the owner signer for a smart-account HD index, reading the mnemonic (no prompt) and caching the opaque HDAccount so repeat signs don't re-derive; throws if none stored. The returned HDAccount signs but exposes no key. */
 async function ownerFor(hdIndex: number): Promise<HDAccount> {
   const cached = ownerCache.get(hdIndex);
   if (cached) return cached;
@@ -205,16 +151,13 @@ export async function signOwnerMessage(hdIndex: number, message: string): Promis
   return owner.signMessage({ message });
 }
 
-// ===========================================================================
-// Per-account EOA private keys (generated / imported wallets).
-// ===========================================================================
+/** Per-account EOA private keys (generated / imported wallets). */
 
 /** Internal: load the raw private key for an account id, self-healing a legacy single-key location into the per-account slot. PRIVATE — the raw key never leaves except via revealPrivateKey / the in-place signers below. */
 async function loadPrivateKey(id: string): Promise<Hex | null> {
   const pk = await SecureStore.getItemAsync(PK_PREFIX + id, STORE_OPTS).catch(() => null);
   if (pk && /^0x[0-9a-f]{64}$/.test(pk)) return pk as Hex;
-  // Self-heal: a pre-multi-account key may live only under the legacy slot. Accept iff
-  // it derives to THIS id, then re-write per-account (device-bound STORE_OPTS) so future reads are direct.
+  /** Self-heal: a pre-multi-account key may live only under the legacy slot — accept iff it derives to THIS id, then re-write per-account (device-bound) so future reads are direct. */
   const legacy = await SecureStore.getItemAsync(LEGACY_PK_KEY, STORE_OPTS).catch(() => null);
   if (legacy && /^0x[0-9a-fA-F]{64}$/.test(legacy)) {
     const norm = ('0x' + legacy.slice(2).toLowerCase()) as Hex;
@@ -260,10 +203,7 @@ export async function clearLegacyKey(): Promise<void> {
   await SecureStore.deleteItemAsync(LEGACY_PK_KEY).catch(() => undefined);
 }
 
-// ===========================================================================
-// Railgun key material — derived IN PLACE from the EOA key (0zk wallet keyed off
-// the same EOA, deterministically) so the raw key never leaves the module.
-// ===========================================================================
+/** Railgun key material — derived IN PLACE from the EOA key (0zk wallet keyed off the same EOA, deterministically) so the raw key never leaves the module. */
 
 export interface RailgunKeyMaterial {
   /** 12-word BIP39 mnemonic deterministically derived from the EOA key. */
@@ -283,9 +223,7 @@ export async function railgunKeyMaterialFor(id: string): Promise<RailgunKeyMater
   };
 }
 
-// ===========================================================================
-// THE TWO GUARDED REVEALS — the only paths that return raw secrets.
-// ===========================================================================
+/** THE TWO GUARDED REVEALS — the only paths that return raw secrets. */
 
 /** REVEAL the recovery phrase for the backup screen. Gated by `requireRevealAuth` (passkey when set, else device-auth) before the read. The ONLY path that returns the mnemonic. Never logged. null if none stored or the gate is declined/fails. */
 export async function revealRecoveryPhrase(): Promise<string | null> {

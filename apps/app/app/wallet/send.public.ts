@@ -1,8 +1,4 @@
-/**
- * @file Public-send state and lifecycle hook for the Wallet send screen, owning
- * ENS resolution, balance/price bootstrap, token-USD conversion, and the
- * submit-broadcast-confirm flow for smart-account and legacy-EOA transfers.
- */
+/** @file Public-send hook for the Wallet send screen: ENS resolution, balance/price bootstrap, token-USD conversion, and submit-broadcast-confirm for smart-account and legacy-EOA transfers. */
 import { useEffect, useMemo, useState } from 'react';
 import {
   isAddress, erc20Abi, encodeFunctionData, parseUnits, createPublicClient, type Hex,
@@ -66,10 +62,7 @@ export interface PublicSend {
   onMax: () => void; onSubmit: () => void;
 }
 
-/**
- * @param token  the currently selected token (symbol + chainId).
- *  @param balance  that token's balance string from the wallet rows, or null.
- */
+/** Owns send-screen state given the selected token (symbol + chainId) and its balance string from the wallet rows (or null). */
 export function usePublicSend(initialTo: string, token: TokenChoice, balance: string | null): PublicSend {
   const [to, setTo] = useState<string>(initialTo);
   const [amount, setAmount] = useState('');
@@ -163,12 +156,7 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
         const active = await getActiveAccount();
         if (!active) { setTxState('idle'); setTxErr('No active wallet'); return; }
 
-        /**
-         * Smart account: execute as a SPONSORED userOp on Base through the
-         *  Kernel client (the paymaster covers gas; the userOp deploys the
-         *  Kernel on first send). Settles on Base regardless of the selected
-         *  token's nominal chain, matching the chat-pay smart path.
-         */
+        /** Smart accounts execute a sponsored userOp on Base via the Kernel client (paymaster covers gas, first send deploys the Kernel), settling on Base regardless of the token's nominal chain. */
         const isSmart = active.type === 'smart';
         const receiptChainId = isSmart ? base.id : token.chainId;
         const hash = isSmart

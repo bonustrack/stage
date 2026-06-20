@@ -63,31 +63,11 @@ export const REQUIRE_JSDOC = [
   },
 ];
 
-// JSDOC_ONE_LINE — every FUNCTION comment must stay on a single line.
-// `jsdoc/multiline-blocks` with `noMultilineBlocks: true` prohibits multi-line
-// JSDoc blocks; `allowMultipleTags: false` means a tagged block (e.g. the
-// `@file` header) is NOT treated as a prohibited multiline block, so this rule
-// applies ONLY to the tagless one-sentence comments we put on functions while
-// leaving the (tagged) file-overview header free to span up to 3 lines.
-// `noFinalLineText`/`noSingleLineBlocks: false` keep `/** … */` on one line the
-// canonical, accepted shape. Net effect: a 2-line function JSDoc fails; a
-// 1-line `/** sentence. */` passes.
-export const JSDOC_ONE_LINE = [
-  "error",
-  {
-    noMultilineBlocks: true,
-    allowMultipleTags: false,
-    noSingleLineBlocks: false,
-    minimumLengthForMultiline: 250,
-  },
-];
-
 // REQUIRE_FILE_OVERVIEW — every file must open with a `@file` JSDoc block
 // (`/** @file … */`). `mustExist` makes a missing header an error;
 // `initialCommentsOnly` requires it at the very top; `preventDuplicates` bans a
-// second `@file`. Paired with FILE_HEADER_MAX_LINES (below) to cap the header
-// at 3 content lines, and exempted from JSDOC_ONE_LINE because it carries the
-// `@file` tag.
+// second `@file`. Like every other comment, the header is capped at ONE line by
+// `stage/comment-max-lines` (below) — there is no multi-line exemption.
 export const REQUIRE_FILE_OVERVIEW = [
   "error",
   { tags: { file: { initialCommentsOnly: true, mustExist: true, preventDuplicates: true } } },
@@ -103,33 +83,98 @@ function countCommentContentLines(value) {
     .filter((line) => line.length > 0).length;
 }
 
-// FILE_HEADER_MAX_LINES_PLUGIN — a tiny local plugin whose single rule caps the
-// `@file` header at 3 lines of actual content (the `@file` line plus up to two
-// more), since no stock jsdoc rule limits a tagged block's length. It scans
-// every `/** … */` block that contains an `@file` tag and reports when its
-// content-line count exceeds `max` (default 3). Registered under the `stage`
-// namespace so consumers reference it as `stage/file-header-max-lines`.
-export const FILE_HEADER_MAX_LINES_PLUGIN = {
+// DIRECTIVE_LINE_COMMENT — the ONLY `//` line comments that survive the
+// `no-line-comments` ban. These carry machine-read directives that MUST stay
+// line comments: eslint inline disables, TypeScript `@ts-*` pragmas, triple-slash
+// `/// <reference …>` (its value is `/ <reference …>`), tslint, prettier-ignore,
+// and the coverage pragmas (istanbul / c8 / v8). Tested against the comment's
+// trimmed text (the part after `//`).
+const DIRECTIVE_LINE_COMMENT =
+  /^(eslint\b|eslint-|@ts-|tslint:|prettier-ignore|istanbul\b|c8\b|v8\b|@jsxImportSource\b|\/\s*<)/;
+
+// STAGE_PLUGIN — the local plugin holding the monorepo's bespoke comment rules
+// (the ones no stock jsdoc/eslint rule covers). Registered under the `stage`
+// namespace, so consumers reference its rules as `stage/<rule>`:
+//
+//   - comment-max-lines: caps EVERY comment at `max` content lines (default 1).
+//     It scans every block comment (`/* … */` / `/** … */`, the `@file` header
+//     included — there is no exemption) and reports when its content-line count
+//     exceeds `max`. Line comments are inherently one line, so only blocks are
+//     checked. Split a long note into separate one-line `/** … */` comments.
+//   - no-line-comments: bans `//` line comments outright — every comment must be
+//     a `/** … */` block — except the machine-read directives in
+//     DIRECTIVE_LINE_COMMENT (eslint/`@ts-*`/triple-slash/…), which must stay `//`.
+//   - no-consecutive-comments: bans two own-line comments on adjacent lines, so a
+//     stack of comments must be merged into ONE one-line `/** … */`.
+export const STAGE_PLUGIN = {
   rules: {
-    "file-header-max-lines": {
+    "comment-max-lines": {
       meta: {
         type: "layout",
-        docs: { description: "Limit the `@file` JSDoc header to a maximum number of content lines." },
+        docs: { description: "Limit every comment to at most `max` content lines." },
         schema: [{ type: "object", properties: { max: { type: "integer", minimum: 1 } }, additionalProperties: false }],
-        messages: { tooLong: "File-overview JSDoc header must be at most {{max}} content lines (found {{found}})." },
+        messages: { tooLong: "A comment must be at most {{max}} line(s) (found {{found}}) — split it into separate one-line `/** … */` comments." },
       },
       create(context) {
-        const max = context.options[0]?.max ?? 3;
+        const max = context.options[0]?.max ?? 1;
         const sourceCode = context.sourceCode ?? context.getSourceCode();
         return {
           Program() {
             for (const comment of sourceCode.getAllComments()) {
-              if (comment.type !== "Block" || !comment.value.startsWith("*")) continue;
-              if (!/@file\b/.test(comment.value)) continue;
+              if (comment.type !== "Block") continue;
               const found = countCommentContentLines(comment.value);
               if (found > max) {
                 context.report({ node: comment, messageId: "tooLong", data: { max: String(max), found: String(found) } });
               }
+            }
+          },
+        };
+      },
+    },
+    "no-line-comments": {
+      meta: {
+        type: "suggestion",
+        docs: { description: "Disallow `//` line comments; require `/** … */` block comments (directive comments excepted)." },
+        schema: [],
+        messages: { line: "Use a `/** … */` block comment, not `//` (only eslint/`@ts-*`/triple-slash directive comments may stay `//`)." },
+      },
+      create(context) {
+        const sourceCode = context.sourceCode ?? context.getSourceCode();
+        return {
+          Program() {
+            for (const comment of sourceCode.getAllComments()) {
+              if (comment.type !== "Line") continue;
+              if (DIRECTIVE_LINE_COMMENT.test(comment.value.trim())) continue;
+              context.report({ node: comment, messageId: "line" });
+            }
+          },
+        };
+      },
+    },
+    "no-consecutive-comments": {
+      meta: {
+        type: "suggestion",
+        docs: { description: "Disallow two comments on consecutive lines — each comment must be standalone." },
+        schema: [],
+        messages: { consecutive: "Two comments on consecutive lines — merge them into ONE `/** … */` comment (or separate them with code)." },
+      },
+      create(context) {
+        const sourceCode = context.sourceCode ?? context.getSourceCode();
+        // A comment is "own-line" when no token precedes it on its own line — so a
+        // trailing comment after code (`foo(); /** x */`) never counts as one of a
+        // back-to-back pair. Only two OWN-LINE comments on adjacent lines are banned.
+        const ownLine = (c) => {
+          const before = sourceCode.getTokenBefore(c, { includeComments: true });
+          return !before || before.loc.end.line < c.loc.start.line;
+        };
+        return {
+          Program() {
+            const comments = sourceCode.getAllComments();
+            for (let i = 1; i < comments.length; i++) {
+              const prev = comments[i - 1], cur = comments[i];
+              if (cur.loc.start.line !== prev.loc.end.line + 1) continue; // not adjacent lines
+              if (!ownLine(prev) || !ownLine(cur)) continue; // a trailing comment is exempt
+              context.report({ node: cur, messageId: "consecutive" });
             }
           },
         };
@@ -143,18 +188,23 @@ export const FILE_HEADER_MAX_LINES_PLUGIN = {
 export const jsdocPlugin = jsdoc;
 
 /** The plugin map every comment-enforcing block must register: the jsdoc plugin
- *  plus the local `stage` plugin that owns the file-header line-cap rule. */
-export const commentPlugins = { jsdoc, stage: FILE_HEADER_MAX_LINES_PLUGIN };
+ *  plus the local `stage` plugin that owns the one-line comment cap and the
+ *  `//`-line-comment ban. */
+export const commentPlugins = { jsdoc, stage: STAGE_PLUGIN };
 
 /** The full comment-convention rule set shared by every preset: require a JSDoc
- *  comment on every function, force function comments onto one line, require a
- *  `@file` header, cap that header at 3 lines, and reject malformed blocks. */
+ *  comment on every function, require a `@file` header, reject malformed blocks,
+ *  cap EVERY comment (the `@file` header included) at one line, ban `//` line
+ *  comments so every comment is a one-line JSDoc block (eslint / `@ts-*` /
+ *  triple-slash directives excepted), and forbid two comments on adjacent lines
+ *  so each comment stands alone. */
 export const COMMENT_RULES = {
   "jsdoc/require-jsdoc": REQUIRE_JSDOC,
-  "jsdoc/multiline-blocks": JSDOC_ONE_LINE,
   "jsdoc/require-file-overview": REQUIRE_FILE_OVERVIEW,
   "jsdoc/no-bad-blocks": "error",
-  "stage/file-header-max-lines": ["error", { max: 3 }],
+  "stage/comment-max-lines": ["error", { max: 1 }],
+  "stage/no-line-comments": "error",
+  "stage/no-consecutive-comments": "error",
 };
 
 /** The `max-lines-per-function` value used everywhere: cap a single function at

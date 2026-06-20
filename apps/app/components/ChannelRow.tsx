@@ -1,14 +1,8 @@
-/**
- * @file Shared presentation-only row for a channel/conversation (avatar + title
- *  row with pin/draft glyphs and timestamp + preview/member-count subtitle),
- *  used by both the channels tab and a peer profile's "Common channels".
- */
+/** @file Shared presentation-only channel/conversation row (avatar + title with pin/draft glyphs, timestamp, preview/member-count subtitle), used by the channels tab and a peer profile's "Common channels". */
 
 import { memo } from 'react';
 
-// raw View is required as an INLINE element inside <Text> (Box/Row/Col carry
-// layout flex and don't embed inline in text flow). Imported via the sanctioned
-// layout/native escape hatch instead of an eslint-disable.
+/** Raw View (via the sanctioned layout/native escape hatch) needed as an INLINE element inside <Text>, which Box/Row/Col can't be. */
 import { View } from './layout/native';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';
@@ -43,19 +37,9 @@ export interface ChannelRowProps {
   hasDraft?: boolean;
   /** Unsent composer draft; with hasDraft it replaces the preview (pencil icon + "You: " text). */
   draftText?: string | null;
-  /**
-   * Group labels (from XMTP appData) rendered as compact read-only chips on
-   *  the LEFT of the preview line, before the last-message text (groups only;
-   *  DMs pass none). Capped to a few visible + a "+N" pill; the preview text
-   *  fills the remaining width and truncates first.
-   */
+  /** Group labels (XMTP appData) as compact read-only chips left of the preview text (groups only), capped to a few visible + a "+N" pill; the preview fills remaining width and truncates first. */
   labels?: string[];
-  /**
-   * Tapping a label chip calls this with the chip's label (the caller
-   *  navigates to the Channels tab + applies it as the active filter). When
-   *  omitted the chips render non-interactive. The press is swallowed so it
-   *  never also fires the row's own onPress (opening the conversation).
-   */
+  /** Tapping a label chip calls this with the chip's label (caller applies it as the active Channels filter); omitting it makes chips non-interactive, and the press is swallowed so it never fires the row's own onPress. */
   onLabelPress?: (label: string) => void;
   /** Trailing chevron (used in the boxed common-channels list). */
   showChevron?: boolean;
@@ -75,20 +59,10 @@ export interface ChannelRowProps {
 /** Max label chips shown inline before collapsing the rest into "+N". Kept low (2) so the chips stay secondary to the group name on the same row. */
 const MAX_VISIBLE_LABELS = 2;
 
-/**
- * Constant content height on the OUTER row so a 1-line and a 2-line preview
- *  render the SAME total height (title ~23 + 2 * 21 lines ~= 67, also> the 44px
- *  avatar). No internal blank reservation, so the title+preview group centers as
- *  a unit next to the centered avatar.
- */
+/** Constant outer-row content height so 1-line and 2-line previews render the same total height (title ~23 + 2 * 21 ~= 67, also > the 44px avatar) and the title+preview group centers as a unit next to the avatar. */
 const ROW_CONTENT_HEIGHT = 67;
 
-/**
- * Build ROUNDED label chips as INLINE <View>s placed as the FIRST children
- *  INSIDE the preview <Text>; the preview text flows around them. marginRight on
- *  an inline <View> is NOT honored by RN, so the gap comes from a sibling inline
- *  <Text> spacer. Caps at MAX_VISIBLE + a "+N".
- */
+/** Builds rounded label chips as inline <View>s placed first inside the preview <Text> (text flows around them); the gap is a sibling inline <Text> spacer since inline-View marginRight isn't honored by RN. Caps at MAX_VISIBLE + a "+N". */
 function buildLabelChips({ labels, fg, rowBg }: {
   labels: string[]; fg: string; rowBg: string;
 }): React.ReactNode[] {
@@ -101,15 +75,13 @@ function buildLabelChips({ labels, fg, rowBg }: {
       style={{
         height: 20, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2,
         backgroundColor: rowBg, justifyContent: 'center',
-        // RN aligns an inline <View> by its BOTTOM edge to the text baseline,
-        // so a 20px chip sits high vs the fontSize-17/lineHeight-22 preview text.
-        // Drop it down so the chip's vertical center matches the text line center.
+        /** RN aligns an inline <View> by its bottom edge to the text baseline, so drop the 20px chip down to center it against the fontSize-17/lineHeight-22 preview text. */
         transform: [{ translateY: 5 }],
       }}
 >
       <Text size="xs" color={fg}>{label}</Text>
     </View>,
-    // Real, rendered gap (inline-View margin is NOT honored by RN).
+    /** Real, rendered gap (inline-View margin is NOT honored by RN). */
     <Text size="xs" key={`gap-${i}`}>{'  '}</Text>,
   ]);
 }
@@ -122,14 +94,13 @@ function TitleLine({ title, pinned, timestamp, highlightQuery, head, sub }: {
   return (
     <Row align="center" gap={6}>
       {pinned ? <Icon name="mapPin" size={13} color={sub} /> : null}
-      {/* Name + labels hug each other on the left; name shrinks (and
-          ellipsizes) first, the label chip stays right beside it. */}
+      {/** Name + labels hug each other on the left; the name shrinks/ellipsizes first and the label chip stays beside it. */}
       <Text weight="semibold" size="3xl" color={head} style={{ flexShrink: 1, minWidth: 0 }}
         numberOfLines={1}
         ellipsizeMode="tail">
         {highlightQuery ? highlightSegments(title, highlightQuery) : title}
       </Text>
-      {/* Flexible spacer pushes the timestamp to the far right edge. */}
+      {/** Flexible spacer pushes the timestamp to the far right edge. */}
       <Spacer/>
       {timestamp ? <Text size="sm" color={sub}>{timestamp}</Text> : null}
     </Row>
@@ -160,7 +131,7 @@ function PreviewLine({ draft, labels, previewText, highlightQuery, fg, rowBg, su
 }): React.ReactElement {
   return (
     <>
-      {/* Draft pencil + "You: " text replaces the preview. */}
+      {/** Draft pencil + "You: " text replaces the preview. */}
       {draft ? (
         <Box margin={{ top: 3.5 }}>
           <Icon name="pencil" size={14} color={sub}/>
@@ -210,8 +181,7 @@ function ChannelRowBase({
         paddingHorizontal: 14,
       }))}
 >
-      {/* align-center: avatar + text column center as a group within a
-          CONSTANT-height row. */}
+      {/** align-center: avatar + text column center as a group within a constant-height row. */}
       <Row minHeight={ROW_CONTENT_HEIGHT} padding={{ y: 9 }} align="center" gap={12}>
         <Avatar
           imageUri={avatarUri}
@@ -224,7 +194,7 @@ function ChannelRowBase({
         <Col minWidth={0} flex={1}>
           <TitleLine title={title} pinned={pinned} timestamp={timestamp}
             highlightQuery={highlightQuery} head={head} sub={sub} />
-          {/* No internal height reservation; align-start pins the badge to line 1 on wrap. */}
+          {/** No internal height reservation; align-start pins the badge to line 1 on wrap. */}
           <Row margin={{ top: 2 }} align="start" gap={7}>
             <PreviewLine draft={draft} labels={labels} previewText={previewText}
               highlightQuery={highlightQuery} fg={sub} rowBg={border} sub={sub} />

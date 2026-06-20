@@ -1,8 +1,4 @@
-/**
- * @file Inner content column of a MessengerBubble — timestamp header, reply preview,
- *  attachments, body text/embeds, and the interactive question/poll/sig/tx cards
- *  plus transcription line.
- */
+/** @file Inner content column of a MessengerBubble — timestamp header, reply preview, attachments, body text/embeds, interactive question/poll/sig/tx cards, and transcription line. */
 
 import { useMemo } from 'react';
 import { openInBubbleLink } from '../lib/safeOpenLink';
@@ -61,16 +57,15 @@ function BubbleMain({ d, entry, fg, dark, selectable, highlight, markdownProps }
   d: ReturnType<typeof descriptorsOf>; entry: HistoryEntry; fg: string; dark: boolean;
   selectable?: boolean; highlight?: string; markdownProps: MarkdownProps;
 }): React.ReactElement | null {
-  // Poll bubble surfaces only the question here; PollView shows the options.
+  /** Poll bubble surfaces only the question here; PollView shows the options. */
   if (d.poll) {
     return d.poll.question ? (
       <Box style={{ alignSelf: 'stretch' }}><Markdown {...markdownProps}>{d.poll.question}</Markdown></Box>
     ) : null;
   }
-  // Transaction bubbles render an interactive card instead of raw fallback text.
+  /** Transaction bubbles render an interactive card instead of raw fallback text. */
   if (d.txReq || d.txReceipt) return null;
-  // Always render the body text, even for a lone-link share: the cards below are
-  // an ADDITION, not a replacement, so the shared url still shows (card stacks beneath).
+  /** Always render the body text, even for a lone-link share: the cards below are an addition, not a replacement, so the shared url still shows (card stacks beneath). */
   if (!entry.text) return null;
   return <BubbleBody text={entry.text} fg={fg} dark={dark} selectable={selectable} highlight={highlight} markdownProps={markdownProps} />;
 }
@@ -103,17 +98,16 @@ function BubbleCards({ d, p }: { d: ReturnType<typeof descriptorsOf>; p: BubbleC
 /** Renders a bubble's inner content column: header, reply preview, attachments, body, and interactive cards. */
 export function BubbleContent(props: BubbleContentProps): React.ReactElement {
   const { entry, dark, pending, fg, sub, replyPreview, onReplyPreviewPress, transcript, selectable, highlight } = props;
-  // Parse the payload descriptors ONCE per entry instead of re-running every
-  // detector on every render (a reaction/vote tick elsewhere re-renders bubbles).
+  /** Parse the payload descriptors once per entry instead of re-running every detector on every render (a reaction/vote tick elsewhere re-renders bubbles). */
   const d = useMemo(() => descriptorsOf(entry), [entry]);
-  // Card links re-parsed only when the body text changes (keyed on entry.text).
+  /** Card links re-parsed only when the body text changes (keyed on entry.text). */
   const cardLinks = useMemo(() => cardLinksOf(entry.text), [entry.text]);
-  // markdownStyles builds a fresh nested style object; cache it per [fg,dark].
+  /** markdownStyles builds a fresh nested style object; cache it per [fg,dark]. */
   const mdStyle = useMemo(() => markdownStyles(fg, dark, false), [fg, dark]);
   const markdownProps: MarkdownProps = {
     markdownit: mdParser,
     onLinkPress: (url: string): boolean => openInBubbleLink(url),
-    // Discord-style: all messages render with the same typography regardless of sender.
+    /** Discord-style: all messages render with the same typography regardless of sender. */
     style: mdStyle,
   };
   return (

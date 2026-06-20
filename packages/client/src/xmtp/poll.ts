@@ -1,22 +1,4 @@
-/**
- * @file Metro poll content type (metro.box/poll:1.0) wire shapes, constants, fallback text, and tally helpers.
- */
-/**
- * Metro poll content type - `metro.box/poll:1.0`. Shared between the RN app
- *  (apps/app) and the web client. Pure TypeScript: the interfaces, the wire
- *  constants, the plain-text fallback builder, and the pure tally helpers.
- *
- *  Modeled on Claude Code's AskUserQuestion tool schema
- *  (question / header / options[{label,description}] / multiSelect) plus a
- *  stable `pollId` so votes can reference the poll across edits/resends.
- *
- *  DESIGN: a poll is its own content type, but VOTES reuse the existing
- *  `xmtp.org/reaction:2.0` codec - a vote is a reaction whose `reference` is the
- *  poll's XMTP message id and whose `content` is the chosen option INDEX
- *  (`schema:'custom'`). That means votes decode on every client, sync
- *  cross-device, and reuse the whole reaction tally + optimistic-UI machinery
- *  with zero new codec on the vote path.
- */
+/** @file Metro poll content type (metro.box/poll:1.0) wire shapes, constants, fallback text, and tally helpers, modeled on AskUserQuestion's schema; votes reuse the reaction:2.0 codec referencing the poll message id with the option index as content. */
 
 export interface PollOption {
   /** Shown as the choice button text. Keep <= ~40 chars. */
@@ -34,13 +16,7 @@ export interface PollQuestion {
   options: PollOption[];
   /** Default false. true => multi-select for THIS question. */
   multiSelect?: boolean;
-  /**
-   * Default false. true => this question accepts a FREE-TEXT answer (mirrors
-   *  AskUserQuestion's always-available "Other"). May stand alone (no options =
-   *  pure free-text) or accompany options (pick one, or type your own). Open
-   *  answers are NOT option-index votes; they are carried as custom-schema vote
-   *  events whose content is `open:<q>:<text>` (see poll-tally).
-   */
+  /** Default false; true => this question accepts a free-text answer (alone or alongside options), carried as custom-schema vote events with content `open:<q>:<text>` rather than option-index votes. */
   open?: boolean;
 }
 
@@ -57,7 +33,7 @@ export interface PollContent {
   options?: PollOption[];
   /** LEGACY single-question multiSelect. */
   multiSelect?: boolean;
-  // allowOther is intentionally omitted: a poll is a closed set.
+  /** allowOther is intentionally omitted: a poll is a closed set. */
 }
 
 /** Fold either poll shape into a `PollQuestion[]`. Multi-question polls return their `questions[]`; legacy single-question polls return a one-element array. Option strings are coerced to `{label}`. Never throws (bad poll => `[]`). */

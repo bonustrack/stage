@@ -123,13 +123,7 @@ export default function Diff(): React.ReactElement {
   const insets = useSafeAreaInsets();
   const { url } = useLocalSearchParams<{ url?: string }>();
 
-  /**
-   * Disable the app's full-width swipe-back (the JS card stack's interactive
-   *  horizontal pan, armed from anywhere via gestureResponseDistance:9999 in
-   *  _layout). On this page it captured vertical pans and starved the diff
-   *  ScrollView, so the page wouldn't scroll. The header back arrow still pops
-   *  the route, so losing the gesture here is fine.
-   */
+  /** Disable the full-width swipe-back here so its horizontal pan stops starving the diff ScrollView; the header back arrow still pops the route. */
   const navigation = useNavigation();
   useLayoutEffect(() => {
     navigation.setOptions({ gestureEnabled: false });

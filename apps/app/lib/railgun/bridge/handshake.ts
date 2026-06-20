@@ -1,30 +1,6 @@
 /** @file Event-driven readiness gate for the nodejs-mobile bridge that resolves on either the host boot event or a single deterministic 'hello' reply, with one timeout instead of a polling retry loop. */
 
-/*
- * Event-driven readiness handshake for the nodejs-mobile bridge.
- *
- *  THE BOOT RACE: the nodejs-mobile channel does NOT buffer. A request posted
- *  before main.js registers its 'rg:request' listener is silently dropped, and
- *  the host's one-shot boot event (READY_EVENT) is likewise lost if the RN side
- *  attaches its listener a hair AFTER mod.start. Either miss used to deadlock
- *  behind a ~12s ping-retry loop.
- *
- *  THE FIX (deterministic, no polling loop):
- *    1. The RN side attaches ALL listeners (reply + boot event) BEFORE calling
- *       mod.start (enforced by the caller in index.ts - start happens last).
- *    2. Readiness resolves on EITHER signal, whichever lands first:
- *         (a) the host's boot event (markReady), OR
- *         (b) the reply to a single deterministic 'hello' request.
- *       The host answers 'hello' AND re-emits its boot event on receiving it, so
- *       even if (a) was missed, (b) both proves liveness and re-triggers (a).
- *       A 'hello' arriving before the listener is up is a no-op: we resend it
- *       exactly ONCE when the boot event lands (request-ready-on-attach).
- *    3. A SINGLE timeout (not a 20x retry loop) fails the gate loudly so the UI
- *       shows a real error instead of a silent per-call hang.
- *
- *  STATE MACHINE: idle -> starting -> ready | failed. Terminal states are sticky
- *  (settled guard); every transition flows through one place.
- */
+/** Deterministic, non-polling readiness handshake for the unbuffered nodejs-mobile bridge: listeners attach before mod.start, readiness resolves on whichever lands first (boot event or a single 'hello' reply, which also re-triggers the boot event), and one timeout fails the idle->starting->ready|failed gate loudly. */
 import type { NodejsChannel } from './nodejsMobile';
 import { fmtPayload, status } from './diagnostics';
 
@@ -57,12 +33,7 @@ export interface Handshake {
   markReady: () => void;
 }
 
-/**
- * Start the event-driven readiness gate. The caller MUST have attached the boot
- *  event + reply listeners already, and MUST call mod.start immediately after
- *  this returns (so the single 'hello' we post lands once the host is live, or
- *  is harmlessly dropped and re-sent on the boot event).
- */
+/** Starts the readiness gate; the caller must have attached boot-event + reply listeners and must call mod.start right after this returns, so the single posted 'hello' lands once the host is live (or is re-sent on the boot event). */
 export function startReadinessHandshake(deps: HandshakeDeps): Handshake {
   const { channel, requestEvent, nextId, onReply, offReply } = deps;
   let state: HandshakeState = 'idle';
@@ -104,13 +75,7 @@ export function startReadinessHandshake(deps: HandshakeDeps): Handshake {
     rejectReady(new Error('Railgun bridge: node host did not start'));
   };
 
-  /**
-   * Post a single deterministic 'hello'. Its reply proves the host channel +
-   *  rg:request listener are live → readiness. Posted directly so it bypasses
-   *  the ready gate it exists to satisfy. The host also re-emits its boot event
-   *  on receiving 'hello', so this doubles as request-ready-on-attach: if the
-   *  original boot event was missed, the reply (or the re-emit) still resolves.
-   */
+  /** Posts a single deterministic 'hello' directly (bypassing the gate it satisfies); its reply proves the host channel + rg:request listener are live, and the host's re-emitted boot event makes this double as request-ready-on-attach. */
   const sendHello = (): void => {
     if (state !== 'starting') return;
     const id = nextId();
@@ -129,8 +94,7 @@ export function startReadinessHandshake(deps: HandshakeDeps): Handshake {
 
   state = 'starting';
   timer = setTimeout(fail, READY_TIMEOUT_MS);
-  // Post the single hello on the next tick so the caller can finish wiring +
-  // call mod.start first. The hello reply OR the boot event resolves readiness.
+  /** Post the single hello on the next tick so the caller can finish wiring + call mod.start first; the hello reply or the boot event resolves readiness. */
   setTimeout(sendHello, 0);
 
   return { promise, state: () => state, markReady };

@@ -33,8 +33,7 @@ interface NftState { nfts: Nft[] | null; nftStatus: 'idle' | 'loading' | 'ready'
 function useWalletNfts(tab: WalletTab, address?: string): NftState {
   const [nfts, setNfts] = useState<Nft[] | null>(null);
   const [nftStatus, setNftStatus] = useState<NftState['nftStatus']>('idle');
-  // Guard re-fetch by the loaded address, NOT by nftStatus (so 'loading' doesn't
-  // re-run the effect and cancel the in-flight fetch, wedging the spinner).
+  /** Guards re-fetch by the loaded address, not nftStatus, so 'loading' doesn't re-run the effect and cancel the in-flight fetch, wedging the spinner. */
   const loadedAddrRef = useRef<string | null>(null);
   useEffect(() => {
     if (tab !== 'nfts' || !address || loadedAddrRef.current === address) return;
@@ -55,12 +54,12 @@ function useWalletNfts(tab: WalletTab, address?: string): NftState {
 
 /** Side effects gated on Wallet focus: EOA shield-watch + Railgun prewarm. */
 function useWalletEffects(focused: boolean, privAccountId: string | null, address?: string): void {
-  // Watch the EOA mempool/nonce for an in-flight shield so it surfaces as a pending row.
+  /** Watch the EOA mempool/nonce for an in-flight shield so it surfaces as a pending row. */
   useEffect(() => {
     if (!focused || !privAccountId || !address || !isBridgeAvailable()) return;
     return startEoaShieldWatch(privAccountId, address);
   }, [focused, privAccountId, address]);
-  // Pre-warm the Railgun engine/prover once focused so Send pays no cold-start cost.
+  /** Pre-warm the Railgun engine/prover once focused so Send pays no cold-start cost. */
   useEffect(() => { if (focused) void prewarmRailgun(); }, [focused]);
 }
 
@@ -87,7 +86,7 @@ function WalletTabBody({ tab, nftState, address, rows, privateRows, pending, err
       <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center"><Spinner size={28} color={c.head}/></Col>
     );
   }
-  // Asset list — ONE flat list (merged public + shielded rows, $-sorted, pending on top).
+  /** Asset list — ONE flat list (merged public + shielded rows, $-sorted, pending on top). */
   return <TokensList rows={rows} privateRows={privateRows} pending={pending} head={c.head} sub={c.sub} border={c.border} bg={c.bg}/>;
 }
 
@@ -116,18 +115,17 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
   const router = useRouter();
   const { link: head, text: sub, bg, border } = usePalette();
   const dark = useEffectiveColorScheme() === 'dark';
-  // LAZY RAILGUN BOOT: `focused` latches true on first focus (the pager mounts
-  // all tabs at once) so engine-booting side effects only run if Wallet is opened.
+  /** Lazy Railgun boot: `focused` latches true on first focus (the pager mounts all tabs at once) so engine-booting side effects only run if Wallet is opened. */
   const focused = useWalletFocused();
 
   const { snapshot: privSnapshot, accountId: privAccountId, pending } = usePrivateWallet(focused);
   const { address, rows, err, refreshing, onRefresh } = useWalletBalances(privAccountId, focused);
   usePeerProfiles([address]);
-  // Custom JS-only pull-to-refresh (RN's RefreshControl strands its spinner here).
+  /** Custom JS-only pull-to-refresh (RN's RefreshControl strands its spinner here). */
   const pull = usePullToRefresh(refreshing, onRefresh, head);
   useWalletEffects(focused, privAccountId, address);
 
-  // ALWAYS render the fixed private row set; memoized so TokensList gets a stable ref.
+  /** ALWAYS render the fixed private row set; memoized so TokensList gets a stable ref. */
   const privateRows = useMemo(
     () => privateBalancesToRows(privSnapshot, symbolPricesFromPublic(rows ?? [])),
     [privSnapshot, rows],
@@ -141,30 +139,14 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
   const c = { head, sub, border, bg };
 
   return (
-    /**
-     * RNGH ScrollView, simultaneous with the pager Pan (panRef). Pull-to-refresh
-     *  is a pure-JS onScroll gesture (usePullToRefresh) — RN's native
-     *  RefreshControl stranded its spinner on Android in this nested ScrollView.
-     *  Wrapped in a flex:1 Col so the tap-to-refresh icon button can anchor to
-     *  the screen top-right (absolute), independent of scroll content.
-     */
+    /** RNGH ScrollView simultaneous with the pager Pan; pull-to-refresh is a pure-JS onScroll gesture (RN's RefreshControl stranded its spinner on Android here), wrapped in a flex:1 Col so the refresh icon can anchor top-right independent of scroll. */
     <Col surface="surface" flex={1}>
-    {/* The shared Topnav (identity left, copy/refresh right) is hoisted ABOVE the
-        pager in (tabs)/_layout.tsx via the published slot above, so it stays
-        pinned on swipe AND scroll. This body renders only the scroll content. */}
+    {/* Shared Topnav is hoisted above the pager in (tabs)/_layout.tsx so it stays pinned on swipe and scroll; this body renders only the scroll content. */}
     <ScrollView
       simultaneousHandlers={panRef}
       style={{ flex: 1, backgroundColor: bg }}
       contentContainerStyle={{ paddingBottom: 24, flexGrow: 1 }}
-      /**
-       * bounces + alwaysBounceVertical + flexGrow:1 keep the list pullable even
-       *  when content is shorter than the viewport — without bounce the swipe-down
-       *  isn't an overscroll so the custom pull-to-refresh never fires.
-       *  overScrollMode='always' enables Android overscroll; nestedScrollEnabled
-       *  makes Android treat this as the scroller. The pager Pan gates on
-       *  failOffsetY + simultaneous panRef, so the vertical pull is never
-       *  swallowed by the horizontal tab-swipe.
-       */
+      /** bounces + alwaysBounceVertical + flexGrow:1 keep the list pullable when content is shorter than the viewport, with overScrollMode/nestedScrollEnabled for Android; the pager Pan gates on failOffsetY + panRef so the vertical pull is never swallowed by the tab-swipe. */
       bounces
       alwaysBounceVertical
       overScrollMode="always"
@@ -175,17 +157,14 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
       scrollEventThrottle={pull.scrollEventThrottle}
 >
       {pull.indicator}
-      {/* Refresh — anchored top-right of the balance area. Copy-address now
-          lives in the Home topnav 3-dots menu, so it's dropped from here. */}
+      {/* Refresh anchored top-right of the balance area; copy-address now lives in the Home topnav 3-dots menu. */}
       <Row margin={{ x: 16, top: 8 }} justify="end" align="center" gap={18}>
         <RefreshButton refreshing={refreshing} onRefresh={onRefresh} color={head}/>
       </Row>
       {/* Value card — compact, left-aligned: just the big total USD value. */}
       <WalletBalanceCard err={!!err} totalUsd={totalUsd} head={head} sub={sub} />
 
-      {/* Four action circles — Send / Receive route to existing screens;
-          Swap / Buy are placeholders (no on/off-ramp wired yet) and flash a
-          "coming soon" toast. LEFT-aligned on a single row (icon-over-label). */}
+      {/* Four action circles: Send/Receive route to existing screens; Swap/Buy are placeholders that flash a "coming soon" toast, left-aligned on a single row. */}
       <Row margin={{ x: 16, top: 12 }} justify="start" gap={12}>
         <Btn icon="send" label="Send" onPress={() => { router.push('/wallet/send'); }} head={head} border={border} dark={dark}/>
         <Btn icon="arrowDown" label="Receive" onPress={() => { router.push('/wallet/receive'); }} head={head} border={border} dark={dark}/>

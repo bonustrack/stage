@@ -1,25 +1,4 @@
-/** @file Railgun native-availability guard that lazily requires the nodejs-mobile Groth16 prover behind a try/catch, returning null (graceful degrade) on Hermes/Expo builds lacking it. */
-/**
- * Railgun native-availability guard.
- *
- *  The Railgun engine (@railgun-community/wallet) is JS, but PROVING needs a
- *  Groth16 implementation that on mobile is the C++ `@railgun-privacy/native-prover`
- *  module. That package is NOT a Hermes/Expo-autolinked native module — it is a
- *  node-gyp-build N-API `.node` addon compiled for nodejs-mobile (the engine's
- *  reference app, Railway-Wallet, runs the whole engine inside
- *  nodejs-mobile-react-native and `require`s the prover from that embedded Node
- *  process). It therefore only resolves when such a runtime is present in the
- *  binary; on a plain Expo/Hermes build the lazy require below returns null and
- *  the feature degrades gracefully (cached UI still renders; actions surface a
- *  friendly "needs the new app build") and never crashes.
- *
- *  The prover module is required LAZILY behind a try/catch (mirroring
- *  components/VoiceMessage.decode.ts + modules/metro-pill) so the Metro
- *  bundler never has to resolve a missing native module. The native prover
- *  exposes the engine's `setNativeProverGroth16(nativeProveRailgun,
- *  nativeProvePOI, CIRCUITS)` triple; the older snarkjs-style accessor is kept
- *  as a structural fallback for any prover that exposes a `groth16` object.
- */
+/** @file Railgun native-availability guard that lazily requires the nodejs-mobile Groth16 prover behind a try/catch (returning null to degrade gracefully on plain Expo/Hermes builds), exposing the engine's native triple with a snarkjs-style `groth16` fallback. */
 import { Platform } from 'react-native';
 
 /** Minimal structural type for the snarkjs `groth16` object the engine expects (typed loosely-but-without-`any`; we only hand it to the engine). */

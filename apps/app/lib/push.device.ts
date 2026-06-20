@@ -1,16 +1,6 @@
 /** @file Leaf helpers (no XMTP imports) that request notification permission, register the Android 'xmtp' channel, set the foreground notification handler, and fetch the raw FCM/APNs device token. */
 
-/*
- * Device-token + notification-readiness helpers (leaf, no XMTP imports).
- *
- *  Split out of lib/push.ts so lib/pushRegister.ts can use them without creating
- *  a push ↔ pushRegister module cycle. Behavior is unchanged.
- *
- *  Steps:
- *    1. Request POST_NOTIFICATIONS permission (Android 13+).
- *    2. Register the 'xmtp' notification channel the daemon + local path target.
- *    3. Fetch its raw FCM/APNs device token via expo-notifications.
- */
+/** Device-token + notification-readiness helpers (leaf, no XMTP imports): request POST_NOTIFICATIONS, register the 'xmtp' channel, and fetch the raw FCM/APNs token; split out of lib/push.ts to avoid a push ↔ pushRegister cycle. */
 
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
@@ -18,14 +8,7 @@ import * as Notifications from 'expo-notifications';
 /** Banner + sound even when the app is in the foreground. expo-notifications defaults to suppressing both. Set globally so it applies regardless of which screen is mounted when the push arrives. */
 Notifications.setNotificationHandler({
   handleNotification: () => {
-    /**
-     * The JS local-notification path was removed (the daemon + native
-     *  MetroFcmService are the single source of inbound push, rendering one
-     *  merged avatar card per conversation, and that native notify() bypasses
-     *  this handler entirely). So there's no longer a per-message local notif to
-     *  de-dup against. Whatever DOES reach this handler (e.g. a non-native
-     *  expo-displayed push) is surfaced normally — no suppression.
-     */
+    /** The JS local-notification path was removed (daemon + native MetroFcmService are the single inbound-push source and bypass this handler), so there's nothing to de-dup; whatever still reaches here (e.g. a non-native expo push) is surfaced with no suppression. */
     return Promise.resolve({
       shouldShowBanner: true,
       shouldShowList: true,

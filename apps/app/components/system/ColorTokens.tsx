@@ -1,8 +1,4 @@
-/**
- * @file ChatKit SEED theme editor for the Display settings page: the user sets a
- *  few color seeds plus density/radius/typography knobs and the whole palette is
- *  derived, written back to the seed so the app re-themes live.
- */
+/** @file ChatKit SEED theme editor for the Display settings page: the user sets color seeds plus density/radius/typography knobs and the whole palette is derived and written back to the seed so the app re-themes live. */
 
 import { useState } from 'react';
 import { Pressable } from '@metro-labs/kit/pressable';

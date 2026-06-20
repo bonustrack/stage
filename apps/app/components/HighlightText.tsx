@@ -1,22 +1,10 @@
-/**
- * @file Renders a string with every case-insensitive `query` match wrapped in a
- *  fluo-yellow highlight, used in conversation search and the Home channels list
- *  (via the inline highlightSegments helper) to pick out matched keywords.
- */
+/** @file Renders a string with case-insensitive `query` matches wrapped in a fluo-yellow highlight, used in search and the Home channels list. */
 
-// the highlight span MUST be a bare RN Text so it inherits the surrounding
-// text's font family/size/weight/colour and only adds a background; the Kit Text
-// always sets its own fontSize/fontFamily, which would override the row/bubble
-// typography. Imported via the sanctioned layout/native escape hatch.
+/** Use a bare RN Text so the highlight span inherits surrounding typography and only adds a background; Kit Text would override font size/family. */
 import { Text as RNText } from './layout/native';
 import { Text } from '@metro-labs/kit/text';
 
-/**
- * Bright "fluo" yellow highlight. The match span ONLY adds this background -
- *  font family / size / weight / colour are inherited from the surrounding text
- *  (it is a bare RN <Text> nested inside the parent), so the highlight never
- *  changes the typography, just the background colour.
- */
+/** Bright fluo-yellow highlight background; the match span only adds this colour and inherits all surrounding typography. */
 const HL_BG = '#FFF200';
 
 /** Split `text` into alternating non-match / match segments for `query` (case-insensitive). Returns the original text as a single non-match segment when the query is empty or absent. */
@@ -37,14 +25,7 @@ function splitMatches(text: string, query: string): { text: string; hit: boolean
   return out;
 }
 
-/**
- * Inline highlight segments — returns `<Text>` children (NOT a wrapper) so the
- *  caller can embed them inside its own `<Text>` and keep that text's sizing,
- *  weight, numberOfLines and ellipsize. Non-match segments inherit the parent
- *  `<Text>` style (no color/size override) so the row's title/preview styling is
- *  preserved; only the matched runs get the fluo background + dark ink. When the
- *  query is empty the original text is returned untouched (a bare string).
- */
+/** Returns inline highlight `<Text>` children (not a wrapper) so the caller keeps its own text styling; matched runs get the fluo background, empty query returns the bare string. */
 export function highlightSegments(text: string, query: string): React.ReactNode {
   if (!query.trim()) return text;
   const parts = splitMatches(text, query);

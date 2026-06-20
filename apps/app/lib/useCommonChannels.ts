@@ -1,7 +1,4 @@
-/**
- * @file Hook resolving the group channels both the local user and a viewed peer belong to — powers the "Common channels" section of a peer's profile.
- *  Seeds candidate groups from the cached channel rows, then lazily resolves each group's member addresses (cached per account+epoch) to test peer membership.
- */
+/** @file Hook resolving the group channels both the local user and a viewed peer belong to (the profile's "Common channels" section): seeds candidate groups from cached channel rows, then lazily resolves each group's member addresses (cached per account+epoch) to test peer membership. */
 
 import { useQuery } from '@tanstack/react-query';
 import { getCachedRows, hydrateCachedRows, getActiveAccountIdSync, type CachedRow } from './channelsCache';
@@ -11,13 +8,7 @@ import { getAccountEpoch } from './accountEpoch';
 import { MemoryStore } from './cache';
 import { loadArchivedIds } from './archived';
 
-/**
- * Member-set cache keyed by `${convId}:${accountEpoch}` (#7). Resolving a
- *  group's member eth addresses is the only per-group network work in the common-
- *  channels walk; caching it per account makes repeat profile opens (and
- *  cross-account switches back) free. Cleared implicitly on account switch by the
- *  epoch suffix changing — stale entries just go unread.
- */
+/** Member-set cache keyed by `${convId}:${accountEpoch}` (#7); caches the only per-group network work in the walk so repeat profile opens are free, and the epoch suffix invalidates entries on account switch. */
 const memberSetCache = new MemoryStore<string, string[]>();
 
 export interface CommonChannel {
@@ -27,12 +18,7 @@ export interface CommonChannel {
   /** The CHANNEL's own stamp seed (channelStampSeed(convId)) — stamp fallback when there's no group image. Mirrors the channels tab so a profile's channel cards render the CHANNEL avatar, not a member's (or the viewed peer's). */
   avatarAddress: string | null;
   memberCount: number;
-  /**
-   * Homepage-parity fields, pulled from the SAME persisted channels cache the
-   *  channels tab writes (`channelsCache`, keyed by convId). Undefined/0 when the
-   *  cache has no entry for this group yet (no extra network calls — falls back
-   *  to the member-count subtitle).
-   */
+  /** Homepage-parity fields from the SAME persisted channelsCache the channels tab writes (keyed by convId); undefined/0 when there's no entry yet, falling back to the member-count subtitle with no extra network calls. */
   lastTs: number | null;
   lastPreview: string;
   /** Latest sender's eth address (for the "Name: …" preview prefix). */
@@ -42,7 +28,6 @@ export interface CommonChannel {
   markedUnread: boolean;
 }
 
-/** Returns `{ channels, loading }`. `channels` is the resolved common-group set (empty until resolution finishes). `loading` is true while we're still walking the candidate groups. */
 /** Resolve a group's member eth set, cache-first (#7, keyed by convId+epoch). */
 async function memberSetOf(convId: string): Promise<string[]> {
   const key = `${convId}:${getAccountEpoch()}`;

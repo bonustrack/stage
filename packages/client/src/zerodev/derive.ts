@@ -1,19 +1,4 @@
-/**
- * @file Pure HD-derivation rules deriving per-index owner EOAs from the single app mnemonic for ZeroDev Kernel accounts.
- */
-/**
- * Pure HD-derivation rules for the ZeroDev smart-account wallet. No storage, no
- *  platform deps — viem only (mirrors ../accounts/keys). The single app mnemonic
- *  is the root for BOTH user accounts AND agents: every account is the next HD
- *  index off that one phrase, deriving an owner EOA that backs a Kernel.
- *
- *  Storage of the mnemonic itself stays in the host (hardened expo-secure-store);
- *  this module only turns (mnemonic, index) -> owner signer, deterministically.
- *
- *  Path: m/44'/60'/0'/0/<index> (standard Ethereum), passed BOTH as the viem
- *  derivation path AND as `index: BigInt(n)` to createKernelAccount, so the
- *  counterfactual Kernel address is reproducible from the phrase + index alone.
- */
+/** @file Pure viem-only HD-derivation rules turning (single app mnemonic, index) deterministically into per-index owner EOAs that back ZeroDev Kernel accounts via path m/44'/60'/0'/0/<index>; mnemonic storage stays in the host. */
 
 import { generateMnemonic, mnemonicToAccount, english, type HDAccount } from 'viem/accounts';
 
@@ -53,8 +38,7 @@ export function deriveOwner(mnemonic: string, index: number): HDAccount {
   if (!isValidMnemonic(phrase)) {
     throw new Error('Invalid recovery phrase — failed BIP-39 check.');
   }
-  // Explicit path keeps derivation auditable and matches the spec verbatim
-  // (equivalent to { addressIndex: index }).
+  /** Explicit path keeps derivation auditable and matches the spec verbatim (equivalent to { addressIndex: index }). */
   return mnemonicToAccount(phrase, { path: ownerDerivationPath(index) });
 }
 

@@ -1,8 +1,4 @@
-/**
- * @file Wallet shield-token screen depositing a public token into the user's
- * own 0zk shielded balance via shieldToPrivate; a focused shell around
- * ShieldFlowForm with the recipient locked to the user's own 0zk address.
- */
+/** @file Wallet shield-token screen: shells ShieldFlowForm to deposit a public token into the user's own 0zk shielded balance, recipient locked to their own 0zk address. */
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';

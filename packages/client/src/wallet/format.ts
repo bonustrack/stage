@@ -1,20 +1,6 @@
-/**
- * @file Pure number/currency formatting helpers (Intl-only) shared by the web and mobile wallet surfaces.
- */
-/**
- * Pure number/currency formatting for the wallet surfaces. Framework-agnostic
- *  (Intl only), shared by every client so the web + mobile wallet read the same.
- *
- *  Moved out of apps/app's WalletScreen for the Stage SDK; the app re-exports
- *  these from its WalletScreen.parts shim so call sites stay stable.
- */
+/** @file Pure Intl-only number/currency formatting helpers shared by the web and mobile wallet surfaces; the app re-exports them via its WalletScreen.parts shim so call sites stay stable. */
 
-/**
- * Plain `$` (no `US`). `currencyDisplay: 'narrowSymbol'` still resolves to
- *  `US$` on `en-US` system locales (Android default) — we explicitly request
- *  `en` to get the bare `$` symbol, then strip any stray `US` prefix as a
- *  belt-and-suspenders for locales that ignore the hint.
- */
+/** Format a plain `$` USD amount: request `en` (not the system locale) to get the bare `$` instead of `US$`, then strip any stray `US` prefix as a belt-and-suspenders for locales that ignore the hint. */
 export function fmtUsd(v: number, maxFrac = 2): string {
   const s = v.toLocaleString('en', {
     style: 'currency',

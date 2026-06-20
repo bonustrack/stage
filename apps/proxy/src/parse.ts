@@ -1,6 +1,4 @@
-/**
- * @file Dependency-free regex HTML head parser that extracts OpenGraph/Twitter/title/description/favicon metadata into a PreviewMeta card (precedence OpenGraph > Twitter > bare HTML).
- */
+/** @file Dependency-free regex HTML head parser that extracts OpenGraph/Twitter/title/description/favicon metadata into a PreviewMeta card (precedence OpenGraph > Twitter > bare HTML). */
 
 export interface PreviewMeta {
   url: string;
@@ -67,7 +65,7 @@ function faviconLink(html: string): string | undefined {
     const hrefVal = href?.[1];
     if (hrefVal === undefined) continue;
     best = decodeEntities(hrefVal);
-    if (rel === 'icon' || rel === 'shortcut icon') break; // prefer plain icon
+    if (rel === 'icon' || rel === 'shortcut icon') break; /** prefer plain icon. */
   }
   return best;
 }
@@ -77,7 +75,7 @@ export function resolveUrl(href: string | undefined, base: string): string | und
   if (!href) return undefined;
   try {
     const u = new URL(href, base);
-    // Only surface http(s) assets — never data:/javascript:/about: refs.
+    /** Only surface http(s) assets — never data:/javascript:/about: refs. */
     if (u.protocol !== 'http:' && u.protocol !== 'https:') return undefined;
     return u.toString();
   } catch {
@@ -106,8 +104,7 @@ function hostOf(finalUrl: string): string {
 
 /** Extract preview metadata from raw HTML. `finalUrl` is the post-redirect URL, used both as the canonical `url` and to resolve relative image/favicon refs. */
 export function parseMeta(html: string, finalUrl: string): PreviewMeta {
-  // Only scan the head region for speed/safety; fall back to whole doc if no
-  // </head> (some pages stream the title late).
+  /** Only scan the head region for speed/safety; fall back to the whole doc when there's no closing head tag (some pages stream the title late). */
   const headEnd = html.search(/<\/head>/i);
   const head = headEnd > 0 ? html.slice(0, headEnd) : html.slice(0, 200_000);
 

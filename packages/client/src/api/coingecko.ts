@@ -1,19 +1,4 @@
-/**
- * @file CoinGecko Pro price lookups for ETH and ERC-20 tokens used by the wallet tab (pure fetch).
- */
-/**
- * CoinGecko token-price helper. Mirrors `apps/ui/src/helpers/coingecko.ts`
- *  in sx-monorepo, trimmed to the price-lookup path Metro needs. Uses the
- *  Snapshot UI's CG Pro key so we don't burn a separate quota; the wallet tab
- *  reads ETH + a couple of ERC-20s, which is well inside the limits.
- *
- *  Pro endpoint is `pro-api.coingecko.com` (with `x_cg_pro_api_key` query
- *  param). Public/demo endpoints differ in URL and rate limits, so keep the
- *  Pro URL for parity with sx-monorepo.
- *
- *  Pure `fetch`, no platform deps. The default key can be overridden by passing
- *  `apiKey` (the Stage client threads its `apiKeys.coingecko` through here).
- */
+/** @file CoinGecko Pro price lookups (pure fetch) for ETH and ERC-20 tokens on the wallet tab, mirroring the sx-monorepo helper with a shared CG Pro key and an overridable `apiKey`. */
 
 const CG_KEY = 'CG-o41PzYqjLPSWSJdMEyDELEpB';
 const CG_URL = 'https://pro-api.coingecko.com/api/v3/simple';

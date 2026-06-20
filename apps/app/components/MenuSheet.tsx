@@ -1,8 +1,4 @@
-/**
- * @file Account/nav AppModal bottom-sheet opened from the top-left avatar, hosting
- *  the avatar header, tap-to-switch accounts list, New/Add account actions, and
- *  Profile/Settings nav rows (reusing LeftDrawer.parts/.accounts components).
- */
+/** @file Account/nav AppModal bottom-sheet from the top-left avatar, hosting the avatar header, tap-to-switch accounts list, New/Add account actions, and Profile/Settings nav rows (reusing LeftDrawer.parts/.accounts). */
 
 import { useCallback, useEffect, useState } from 'react';
 
@@ -25,7 +21,7 @@ export function MenuSheet({ visible, onClose }: {
   const dark = useEffectiveColorScheme() === 'dark';
   const pal = usePalette();
   const head = pal.link;
-  const sub = pal.text; // no `muted` token yet -> map to `text`.
+  const sub = pal.text; /** no `muted` token yet -> map to `text`. */
   const border = pal.border;
 
   const [accounts, setAccounts] = useState<AccountRecord[]>([]);
@@ -64,15 +60,14 @@ export function MenuSheet({ visible, onClose }: {
     onClose();
     if (id === activeId) return;
     void (async () => {
-      try { await AccountManager.switch(id); } catch { /* surfaced elsewhere */ }
+      try { await AccountManager.switch(id); } catch { /** surfaced elsewhere */ }
     })();
   }
 
   return (
     <AppModal visible={visible} onClose={onClose}>
       <DrawerHeader rec={activeRec} c={{ head, sub, border }}/>
-      {/* Cancel AppModal's 16px ScrollView padding so the list spans edge-to-edge,
-          matching the HomeScreen overflow sheet. */}
+      {/** Cancel AppModal's 16px ScrollView padding so the list spans edge-to-edge, matching the HomeScreen overflow sheet. */}
       <ListView dark={dark} style={{ marginHorizontal: -16 }}>
         {drawerAccountRows({ accounts, activeId, onSwitch, c: { head, sub, border }, dark })}
         {actions.rows}

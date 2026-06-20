@@ -1,19 +1,4 @@
-/** @file Per-account, disk-persisted channels-list cache (rows, unread counts) that swaps with the active account so the Channels screen renders instantly on open. */
-// Per-account channels-list cache shared between the Channels screen + any
-// other surface that needs to reach in and mutate the unread count.
-//
-// ACCOUNT-SCOPED: each account keeps its OWN persisted store
-// (`channels-cache.<accountId>.json`) plus its own in-memory mirror. Switching
-// accounts no longer WIPES the cache — it just swaps the active pointer, so the
-// target account's rows render instantly (from memory if seen this session, or
-// from its own file on disk) and then the live stream/summarize revalidates in
-// the background. This is what makes the 2nd open of an account instant.
-//
-// Persisted to a JSON file in the app document directory so the channels list
-// renders immediately on cold start instead of blocking on `Client.build` +
-// `syncAllConversations` (~3-8s on Less's network). The Channels screen re-syncs
-// from the network in the background regardless, so the cache is always brought
-// up to date within a few seconds.
+/** @file Account-scoped, disk-persisted channels-list cache (rows, unread counts) where each account keeps its own JSON store + in-memory mirror; switching accounts swaps the active pointer (no wipe) so rows render instantly on cold start and the live stream/summarize revalidates in the background. */
 
 import { PersistentStore } from './cache';
 import { markConvReadSynced, markConvUnreadSynced } from './xmtp';
@@ -40,15 +25,7 @@ const activeListeners = new Set<(rows: CachedRow[] | null) => void>();
 /** Per-store unsubscribe for the currently-active store, so we can detach when the active pointer moves. */
 let activeStoreUnsub: (() => void) | null = null;
 
-/**
- * Deferred + coalesced fan-out. Cache mutators (setCachedRows / patchRowSent /
- *  mark*) update the store value SYNCHRONOUSLY, but notifying subscribers
- *  synchronously can fire a listener's setState while a DIFFERENT component is
- *  mid-render (React warns: "Cannot update a component while rendering a
- *  different component"). So we defer the listener invocation to a microtask.
- *  A single scheduled flag coalesces rapid successive writes into ONE flush,
- *  and the flush reads the LATEST rows once (no per-write replay, no loop).
- */
+/** Deferred + coalesced fan-out: mutators update the store synchronously but listeners are deferred to a microtask (so setState never fires mid-render of a different component), with a single scheduled flag coalescing rapid writes into one flush that reads the latest rows once. */
 let notifyScheduled = false;
 /** Notify Active. */
 function notifyActive(): void {
@@ -80,12 +57,7 @@ function storeFor(id: string): PersistentStore<CachedRow[]> {
 /** Active Store. */
 function activeStore(): PersistentStore<CachedRow[]> { return storeFor(activeId); }
 
-/**
- * Synchronous snapshot of the active account id — for react-query keys that
- *  need to scope cached data to the active account (so each account keeps its
- *  OWN cache entry and switching BACK to an account hits cache instead of
- *  re-fetching). Stable per account, unlike the monotonic account epoch.
- */
+/** Synchronous snapshot of the active account id for react-query keys that scope cached data per account (so switching back to an account hits cache instead of re-fetching); stable per account, unlike the monotonic account epoch. */
 export function getActiveAccountIdSync(): string { return activeId; }
 
 /** Wire the active store's pub/sub to the active-listener set, so writes to the active account (including stream write-through) fan out to the Channels screen. Called whenever the active pointer changes. */
@@ -95,13 +67,7 @@ function bindActiveStore(): void {
 }
 bindActiveStore();
 
-/**
- * Point the unscoped API at a specific account's store. Called on app boot and
- *  on every account switch (replaces the old clearCachedRows-on-switch). Swaps
- *  the active pointer, re-binds pub/sub, then notifies active subscribers with
- *  the target account's CURRENT rows (instant) and kicks off a lazy hydrate of
- *  its file (notifies again when disk lands). Cross-account data is untouched.
- */
+/** Point the unscoped API at a specific account's store (on boot + every switch, replacing the old clear-on-switch): swap the active pointer, re-bind pub/sub, notify subscribers with the target's current rows instantly, then lazily hydrate its file; cross-account data is untouched. */
 export function setActiveAccountForCache(id: string | null): void {
   const next = id !== null && id !== '' ? id : DEFAULT_KEY;
   if (next === activeId) return;
@@ -136,12 +102,7 @@ export function subscribeCachedRows(l: (rows: CachedRow[] | null) => void): () =
 /** Latest in-memory rows for the active account. */
 function currentRows(): CachedRow[] | null { return activeStore().get(); }
 
-/**
- * Mark a conv as read NOW — patches the cached row (so the badge clears
- *  before the Channels screen re-syncs), writes the persistent `lastReadNs`
- *  SecureStore key so next mount agrees. Read state is per-device (lastReadNs);
- *  it no longer touches XMTP consent.
- */
+/** Mark a conv read now: patch the cached row so the badge clears before the Channels screen re-syncs and write the persistent per-device `lastReadNs` SecureStore key so next mount agrees (no longer touches XMTP consent). */
 export async function markConvRead(convId: string): Promise<void> {
   const nowNs = Date.now() * 1_000_000;
   await markConvReadSynced(convId);
@@ -169,16 +130,7 @@ export async function markConvUnread(convId: string): Promise<void> {
   setCachedRows(next);
 }
 
-/**
- * Patch a row's last-message preview after the LOCAL user sends — XMTP
- *  self-sends don't reliably replay through `streamAllMessages`, so without
- *  this the channels list keeps showing the previous preview/timestamp until
- *  the next 30s poll or app resume. Mirrors the stream-update path: bump
- *  `lastTs`, set the preview, mark it as from self, and re-sort newest-first so
- *  the conversation jumps to the top. Reading the conv also clears unread, so we
- *  zero those here too. No-op if the row isn't cached yet (a fresh conv lands on
- *  the next network refresh).
- */
+/** Patch a row's preview after a LOCAL send (self-sends don't reliably replay through `streamAllMessages`): bump `lastTs`, set the preview, mark from-self, zero unread, and re-sort newest-first so the conv jumps to the top; no-op if the row isn't cached yet. */
 export function patchRowSent(convId: string, preview: string): void {
   const rows = currentRows();
   if (!rows) return;

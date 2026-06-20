@@ -1,7 +1,4 @@
-/**
- * @file The GitHub Octocat mark as a color-able SVG component (size + color props),
- *  replacing the kit's generic 'code' Heroicon placeholder for GitHub links.
- */
+/** @file The GitHub Octocat mark as a color-able SVG component (size + color props), replacing the kit's generic 'code' Heroicon placeholder for GitHub links. */
 
 import Svg, { Path } from 'react-native-svg';
 

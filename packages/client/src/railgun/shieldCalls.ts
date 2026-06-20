@@ -1,23 +1,4 @@
-/**
- * @file Typed bridge frame builders for the Railgun shield (public to private) primitives.
- */
-/**
- * Typed bridge frame builders for the RAILGUN SHIELD primitives.
- *
- *  Thin typed shells over the injected generic `dispatch()` (RailgunDispatch):
- *  each composes one whitelisted @railgun-community/wallet call. bigint amounts
- *  are wire-encoded ({ __bigint }) so they survive the JSON channel and are
- *  revived to real bigints in the Node host before the SDK runs its commitment
- *  arithmetic.
- *
- *  Native ETH shields via the BASE-TOKEN path (populateShieldBaseToken - the
- *  contract wraps to WETH, tx carries `value`, no approve). ERC20 shields via
- *  populateShield (needs a prior approve to the proxy contract). We only ever
- *  populate (no broadcaster) - the EOA signs + broadcasts the returned tx on the
- *  host side.
- *
- *  PURE: no native imports. The dispatcher that ships these frames is injected.
- */
+/** @file Pure typed bridge frame builders for the Railgun shield (public->private) primitives over the injected `dispatch()`; bigints are wire-encoded, and we only populate (the EOA signs/broadcasts on the host). */
 import type { RailgunDispatch } from './dispatch';
 import { SDK_METHOD } from './methods';
 import { bn } from './wire';
@@ -36,19 +17,7 @@ export interface FallbackProviderConfig {
 /** Chains whose RPC provider has already been loaded into the embedded engine this session, so repeat shields don't reload (the SDK is idempotent, but a reload re-spins the polling provider - skip the round-trip). */
 const providerLoaded = new Set<number>();
 
-/**
- * Load the RPC provider + register the merkletree for `networkName` into the
- *  embedded engine, via the already-whitelisted `engine.loadProvider` dispatch.
- *
- *  WHY: the bridge `engineInit` attempts both networks' providers but swallows
- *  per-network RPC failures - so if the target chain's public RPC was rate-
- *  limited/down at boot, no merkletree is registered and a later `populateShield`
- *  fails with the cryptic "No value found for txidVersion=null and chain=0:<id>".
- *  We re-load it here, BEFORE shielding, and let any RPC/load error surface with
- *  a clear message instead of that null-merkletree error.
- *
- *  Idempotent per chainId for the session; errors are NOT swallowed.
- */
+/** Load the RPC provider + register the merkletree for `networkName` before shielding, so a boot-time RPC failure surfaces as a clear error instead of the cryptic null-merkletree one; idempotent per chainId, errors not swallowed. */
 export async function ensureProviderLoaded(
   dispatch: RailgunDispatch,
   cfg: FallbackProviderConfig,

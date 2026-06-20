@@ -1,8 +1,4 @@
-/**
- * @file Per-bubble error boundary for the conversation feed, containing a single
- *  throwing message to a small inline fallback so one malformed bubble can't
- *  unmount the whole FlatList subtree.
- */
+/** @file Per-bubble error boundary for the conversation feed: confines a throwing message to a small inline fallback so one malformed bubble can't unmount the whole FlatList subtree. */
 
 import { Component } from 'react';
 
@@ -27,7 +23,7 @@ export class BubbleErrorBoundary extends Component<Props, State> {
 
   /** Logs the caught render error without rethrowing so the feed stays alive. */
   override componentDidCatch(error: unknown): void {
-    // Log so a recurring bad message is diagnosable, but never rethrow.
+    /** Log so a recurring bad message is diagnosable, but never rethrow. */
     console.warn('MessengerBubble render failed; rendered fallback', error);
   }
 

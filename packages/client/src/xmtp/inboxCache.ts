@@ -1,21 +1,4 @@
-/**
- * @file Inbox-id to ETH-address cache plus cache-first resolution rule that keeps channel re-summarizes under XMTP read limits.
- */
-/**
- * inbox-id -> ETH-address cache MECHANISM + cache-first resolution RULE.
- *
- *  An inbox's ETH identity is stable, so once resolved we never need to hit the
- *  identity API for it again. This cache is the key to staying under XMTP's read
- *  rate limit: channel re-summarizes (poll, per-message stream, AppState resume,
- *  pull-to-refresh) reuse cached identities instead of calling
- *  GetIdentityUpdates per member on every pass.
- *
- *  The CACHE (this Map) and the RESOLUTION RULE (collect uncached ids, fetch the
- *  missing batch via an injected fetcher, prime, return) are pure and live here.
- *  The native `inboxStates(true, ids)` fetch is NOT here — it touches the native
- *  client and is supplied by the host through `MessagingTransport.inboxEthAddresses`
- *  (or any `(ids) => Promise<Record<id, eth>>` fetcher).
- */
+/** @file Inbox-id to ETH-address cache plus a pure cache-first resolution rule that keeps channel re-summarizes (poll, stream, resume, pull-to-refresh) under XMTP read limits by reusing stable cached identities; the native inboxStates fetch lives in the host, not here. */
 
 /** The minimal cache surface the resolution rule needs. The SDK's default `InboxEthCache` implements it; the RN app can also pass its existing pub/sub-backed MemoryStore adapter so the SDK rule drives ONE cache instead of duplicating the store. */
 export interface InboxEthStore {
@@ -41,12 +24,7 @@ export class InboxEthCache implements InboxEthStore {
 /** A fetcher that resolves a batch of inbox ids to ETH addresses over the network. The host implements it on top of the native client's `inboxStates(true, ids)`; missing ids may be absent from the returned map. */
 export type InboxEthFetcher = (ids: string[]) => Promise<Record<string, string>>;
 
-/**
- * Cache-first batch resolve: cached ids cost zero network reads; only the
- *  uncached ids are fetched (in ONE call) via `fetchMissing`, primed into the
- *  cache, and merged into the result. De-dupes ids. Returns `{ inboxId -> eth }`
- *  for every id that resolved (cached or freshly fetched).
- */
+/** Cache-first batch resolve: cached ids cost zero reads while deduped uncached ids are fetched in one `fetchMissing` call, primed, and merged; returns `{ inboxId -> eth }` for every id that resolved. */
 export async function resolveInboxEthCached(
   cache: InboxEthStore,
   fetchMissing: InboxEthFetcher,
@@ -70,12 +48,7 @@ export async function resolveInboxEthCached(
   return out;
 }
 
-/**
- * Pre-warm the cache for many ids in ONE network call (no return value).
- *  Used by the channels list to prime member identities before summarising rows
- *  so each row's later resolve is a pure cache hit. Best-effort: a fetch failure
- *  leaves the cache untouched and per-row resolves fall back.
- */
+/** Pre-warms the cache for many ids in one network call (no return) so the channels list's later per-row resolves are pure cache hits; best-effort, a fetch failure leaves the cache untouched. */
 export async function primeInboxEthCache(
   cache: InboxEthStore,
   fetchMissing: InboxEthFetcher,

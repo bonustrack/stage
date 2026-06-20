@@ -1,20 +1,4 @@
-/** @file Device-local, default-off toggle (pub/sub + AsyncStorage-backed) gating whether the on-screen RAILGUN debug console mounts and subscribes to bridge lifecycle/scan streams. */
-/**
- * Device-local toggle for the on-screen RAILGUN debug console.
- *
- *  The Private wallet tab can render two diagnostic blocks: the balance-pipeline
- *  panel (RailgunDebugPanel) and the Node-bridge ping probe (BridgePingProbe).
- *  Both subscribe to the bridge's high-frequency lifecycle + scanDebug streams
- *  and, when shown, append every line into on-screen log state. That streaming
- *  made the phone laggy, so the console is now HIDDEN BY DEFAULT and only mounts
- *  when this flag is ON. When OFF the components do not mount at all, so no
- *  subscription is registered and nothing accumulates. Engine scanning is wired
- *  separately (lib/railgun/balanceWatch + shieldScan) and is unaffected.
- *
- *  Dependency-free pub/sub + in-memory cache (same shape as lib/pushPref.ts) so
- *  the Settings toggle and the Private view repaint the instant it flips, and the
- *  gate can be read synchronously after a one-time load. Default OFF.
- */
+/** @file Device-local, default-off toggle (dependency-free pub/sub + AsyncStorage cache) gating whether the laggy on-screen RAILGUN debug console mounts and subscribes to bridge lifecycle/scan streams; engine scanning is wired separately and unaffected. */
 
 import { useSyncExternalStore } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';

@@ -1,34 +1,6 @@
-/**
- * @file Shared x402 (HTTP 402) payment-challenge wire format and parser, the single source of truth across proxy and app.
- */
-/**
- * Shared x402 payment-challenge wire format + parser.
- *
- *  x402 (coinbase/x402) reactivates HTTP 402 Payment Required: a server that
- *  wants payment answers `402` with a machine-readable challenge. Both the
- *  link-preview proxy (which probes the URL at the edge) and the app (which
- *  re-validates the proxy's JSON before rendering a payment card) need to agree
- *  on the EXACT same shape + parse rules — historically this type + parser was
- *  declared three times (apps/proxy, apps/app twice) and drifted. This is the
- *  single source of truth; both sides import it so the wire format can't fork.
- *
- *  Pure TypeScript: no viem, no fetch, no framework, no Node/Worker globals.
- *
- *  Wire formats accepted (coinbase/x402 specs, June 2026):
- *   - v1 body:  402 + JSON { x402Version, error?, accepts: [PaymentRequirements] }
- *               where the amount field is `maxAmountRequired` (atomic units).
- *   - v2:       per-option amount field named `amount` (atomic units); a single
- *               inlined option may appear under `accepted`.
- *  Both normalise to { scheme, network, asset?, amount?, payTo?, description?,
- *  maxTimeoutSeconds?, extra? }.
- */
+/** @file Shared x402 (HTTP 402 Payment Required) payment-challenge wire format and parser — pure TypeScript, the single source of truth imported by both proxy and app so the format can't fork; accepts v1 (`maxAmountRequired`) and v2 (`amount`/`accepted`) bodies, normalising to { scheme, network, asset?, amount?, payTo?, description?, maxTimeoutSeconds?, extra? }. */
 
-/**
- * A normalised single payment option from an x402 challenge. `amount` is the
- *  required amount in the asset's atomic (smallest) units, as a decimal string,
- *  exactly as the server stated it. `network` is the server's network id
- *  (CAIP-2 like `eip155:8453`, or a legacy name like `base`).
- */
+/** A normalised single payment option from an x402 challenge: `amount` is the required amount in the asset's atomic units as a decimal string (verbatim from the server), and `network` is the server's network id (CAIP-2 like `eip155:8453` or a legacy name like `base`). */
 export interface X402Accept {
   scheme: string;
   network: string;
@@ -71,7 +43,7 @@ function str(v: unknown): string | undefined {
 /** Collect the raw accept options from an x402 body: the `accepts` array, or a single inlined `accepted` option (v2), or null when neither is present. */
 function rawAcceptsOf(o: Record<string, unknown>): RawAccept[] | null {
   if (Array.isArray(o.accepts)) return o.accepts as RawAccept[];
-  // Some single-option servers inline the option (v2 `accepted`).
+  /** Some single-option servers inline the option (v2 `accepted`). */
   if (o.accepted && typeof o.accepted === 'object') return [o.accepted];
   return null;
 }
@@ -81,7 +53,7 @@ export function normaliseAccept(a: RawAccept): X402Accept | null {
   const scheme = str(a.scheme);
   const network = str(a.network);
   if (!scheme || !network) return null;
-  // v1 calls the amount `maxAmountRequired`; v2 calls it `amount`. Both atomic.
+  /** v1 calls the amount `maxAmountRequired`; v2 calls it `amount`. Both atomic. */
   const amount = str(a.amount) ?? str(a.maxAmountRequired);
   return {
     scheme,
@@ -99,14 +71,7 @@ export function normaliseAccept(a: RawAccept): X402Accept | null {
   };
 }
 
-/**
- * Parse a decoded x402 challenge object (the JSON body, the decoded
- *  `PAYMENT-REQUIRED` header, or the proxy's own JSON envelope) into a
- *  normalised challenge. Returns null if it doesn't look like an x402 challenge.
- *
- *  `endpoint` is the fallback endpoint to record when the object doesn't already
- *  carry one (the proxy's own envelope embeds `endpoint`).
- */
+/** Parses a decoded x402 challenge object (JSON body, decoded `PAYMENT-REQUIRED` header, or the proxy's envelope) into a normalised challenge, returning null if it isn't one; `endpoint` is the fallback recorded when the object doesn't carry its own. */
 export function parseX402Challenge(
   obj: unknown,
   endpoint: string,

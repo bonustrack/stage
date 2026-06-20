@@ -1,8 +1,4 @@
-/**
- * @file HomeScreen.labelbar — the horizontally scrollable Home filter chip bar
- *  (All / Unread plus one chip per unique non-archived label) plus useHomeFilters,
- *  with OR semantics across labels AND-combined with Unread; filter state lives in HomeScreen.
- */
+/** @file HomeScreen.labelbar — the horizontally scrollable Home filter chip bar (All / Unread plus one chip per unique non-archived label) plus useHomeFilters, with OR across labels AND-combined with Unread; filter state lives in HomeScreen. */
 
 import { useMemo, useRef, useState } from 'react';
 import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
@@ -87,42 +83,21 @@ export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggle
   onToggle: (label: string) => void;
   onToggleUnread: () => void;
   onClearAll: () => void;
-  /**
-   * The tabs pager's Pan ref. The chip row's own native scroll normally BLOCKS
-   *  it, so a horizontal drag over the chips scrolls the chips. We RELEASE the
-   *  block (hand the swipe to the pager) only when the drag heads off the edge the
-   *  row is parked at - see `chipScroll`.
-   */
+  /** The tabs pager's Pan ref; the chip row's native scroll normally blocks it, and the block is released (swipe handed to the pager) only when the drag heads off the parked edge - see `chipScroll`. */
   panRef?: SimultaneousRefs;
 }): React.ReactElement {
   const { link, text: fg, bg, border: rowBg } = usePalette();
   const allSelected = !unreadOnly && enabled.size === 0;
 
-  /**
-   * Symmetric, direction-aware edge release.
-   *
-   *  The chip row's native scroll gesture `blocksExternalGesture(panRef)`, so by
-   *  default a horizontal drag over the chips scrolls the chips and never pages.
-   *  We hand the gesture to the pager ONLY when the drag cannot scroll the row any
-   *  further in that direction:
-   *    - parked at the START edge -> only a left-to-right swipe (dx > 0) pages;
-   *    - parked at the END edge   -> only a right-to-left swipe (dx < 0) pages.
-   *  Anywhere mid-range, or for a swipe pointing back INTO scrollable range, the
-   *  chips keep scrolling. This fixes the old binary blocker, which only tracked
-   *  the END edge (one direction) so left-to-right page swipes misbehaved.
-   *
-   *  Edge state comes from the ScrollView's `onScroll`/`onLayout`/
-   *  `onContentSizeChange` - plain JS-thread callbacks, never gesture worklets. A
-   *  ~2px epsilon absorbs sub-pixel/momentum offsets that leave the row a hair
-   *  short of the true boundary; scrollEventThrottle 16 keeps the state current.
-   */
-  const [atStart, setAtStart] = useState(true);  // a fresh ScrollView sits at the left (start) edge
+  /** Symmetric, direction-aware edge release: the chips' native scroll blocks the pager, handing off only at a parked edge for the off-edge swipe direction (start->dx>0, end->dx<0); edge state comes from onScroll/onLayout/onContentSizeChange with a ~2px epsilon. */
+  const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
   /** Handle the Scroll. */
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>): void => {
     const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
     const max = contentSize.width - layoutMeasurement.width;
-    const fits = max <= 2;                       // content fits -> nothing to scroll, both edges
+    /** content fits -> nothing to scroll, both edges true */
+    const fits = max <= 2;
     const start = fits || contentOffset.x <= 2;
     const end = fits || contentOffset.x >= max - 2;
     setAtStart(prev => (prev === start ? prev : start));
@@ -136,13 +111,7 @@ export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggle
     if (contentW - layoutW <= 2) { setAtStart(true); setAtEnd(true); }
   };
 
-  /**
-   * `release` (JS state) decides which pager direction the chip row hands off to:
-   *  -1 lets a right-to-left (next-tab) swipe page, +1 lets a left-to-right
-   *  (prev-tab) swipe page, 0 blocks both (chips scroll). It is flipped by the
-   *  probe the instant it detects a directional off-edge drag, and reset on touch
-   *  end.
-   */
+  /** `release` (JS state) picks the pager hand-off direction: -1 pages a right-to-left swipe, +1 a left-to-right swipe, 0 blocks both; flipped by the probe on a directional off-edge drag and reset on touch end. */
   const [release, setRelease] = useState(0);
   /** UI-thread mirror of the edge booleans + a one-decision-per-gesture latch, read/written inside the probe worklet (no per-frame JS-bridge hop). */
   const atStartSV = useSharedValue(true);
@@ -152,29 +121,13 @@ export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggle
   atEndSV.value = atEnd;
 
   const chipScroll = useMemo(() => {
-    /**
-     * Native chip scroll. By default it `blocksExternalGesture(panRef)`, so the
-     *  pager Pan must wait for it to fail - a horizontal drag over the chips
-     *  scrolls the chips. While parked at an edge the row cannot scroll in the
-     *  off-edge direction, so the native gesture never activates and the pager
-     *  stays WAITING; the probe then DROPS the block (plain Gesture.Native, runs
-     *  simultaneously), letting the pager's own activeOffsetX arm and page within
-     *  the same continuous drag.
-     */
+    /** Native chip scroll blocksExternalGesture(panRef) so the pager waits; parked at an edge the native gesture never activates and the probe drops the block (plain Gesture.Native) so the pager can arm and page within the same drag. */
     const blocking = panRef && release === 0;
     const native = blocking
       ? Gesture.Native().blocksExternalGesture(panRef)
       : Gesture.Native();
     if (!panRef) return native;
-    /**
-     * Direction + edge probe: a Pan running SIMULTANEOUSLY with the native scroll
-     *  and the pager (it never moves anything itself). On the first clearly-
-     *  horizontal delta it decides ENTIRELY INLINE (no imported worklet helpers):
-     *  off the START edge with dx>0, or off the END edge with dx<0, it flips
-     *  `release` to that direction via a single async `runOnJS` - never a
-     *  synchronous UI-thread->JS call. Otherwise the chips keep scrolling. The
-     *  decision latches once per gesture and resets on finalize.
-     */
+    /** Direction + edge probe: a Pan running simultaneously with the native scroll and pager that, on the first clearly-horizontal delta, flips `release` (start edge + dx>0, or end edge + dx<0) via one async runOnJS; latches once per gesture, resets on finalize. */
     const probe = Gesture.Pan()
       .simultaneousWithExternalGesture(panRef)
       .onBegin(() => {
@@ -186,7 +139,8 @@ export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggle
         if (decidedSV.value) return;
         const dx = e.translationX;
         const dy = e.translationY;
-        if (Math.abs(dx) < 6 || Math.abs(dx) <= Math.abs(dy)) return; // not yet clearly horizontal
+        /** not yet clearly horizontal */
+        if (Math.abs(dx) < 6 || Math.abs(dx) <= Math.abs(dy)) return;
         decidedSV.value = true;
         if (atStartSV.value && dx > 0) runOnJS(setRelease)(1);
         else if (atEndSV.value && dx < 0) runOnJS(setRelease)(-1);

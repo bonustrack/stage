@@ -137,11 +137,11 @@ export function X402Card({ challenge, dark }: {
         icon: <Icon name={phase === 'paid' ? 'check' : 'wallet'} size={18} color={pal.bg}/>,
       };
     }
-    // Non-`exact` schemes / unsupported networks / unknown assets: open in browser.
+    /** Non-`exact` schemes / unsupported networks / unknown assets: open in browser. */
     return { label: 'Open endpoint', onPress: openEndpoint, icon: <Icon name="externalLink" size={18} color={pal.bg}/> };
   };
 
-  // x402 protocol badge — small primary-tinted pill.
+  /** x402 protocol badge — small primary-tinted pill. */
   const badge = (
     <Box radius={999} background={withAlpha(pal.primary, 0.16)} padding={{ x: 8, y: 3 }}>
       <Text weight="semibold" size="3xs" color={pal.primary}>x402</Text>
@@ -158,7 +158,7 @@ export function X402Card({ challenge, dark }: {
       amountLabel={amountLabel}
       detail={<X402Detail accept={accept} network={network} endpoint={endpoint} pal={pal} onOpen={openEndpoint} />}
       balance={{
-        // Show balance whenever we have an asset reference + chain (decimals read on-chain for unknowns).
+        /** Show balance whenever we have an asset reference + chain (decimals read on-chain for unknowns). */
         show: !!accept.asset && chainNum > 0,
         chainId: chainNum,
         token: accept.asset,

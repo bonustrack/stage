@@ -1,8 +1,4 @@
-/**
- * @file Wallet token-detail screen showing one token's balance/price/logo
- * (passed in via route params, no refetch) with Send/Shield or Send/Unshield
- * action buttons that route to the matching wallet pages with pre-fill params.
- */
+/** @file Wallet token-detail screen rendering one token's balance/price/logo from route params (no refetch), with Send/Shield or Send/Unshield buttons routing to the matching wallet pages with pre-fill params. */
 
 import { Pressable } from '@metro-labs/kit/pressable';
 
@@ -63,13 +59,10 @@ export default function TokenDetail(): React.ReactElement {
     <Col surface="surface" flex={1}>
       <Header head={head} border={border} onBack={() => { router.back(); }} title={r.name}/>
 
-      {/* Token identity card — large logo with network badge, name + symbol,
-          balance and its USD value. Mirrors the list row's data, scaled up.
-          LEFT-aligned to match the Wallet page's left-aligned value card. */}
+      {/* Left-aligned token identity card: large logo with network badge, name + symbol, balance and USD value (the list row's data scaled up). */}
       <Col padding={{ top: 28 }} margin={{ x: 16 }} align="start" gap={6}>
         <Box width={72} height={72}>
-          {/* r.logoUrl is cached at the 32px LIST size (s=64); re-request it at
-              2× the 72px detail size (s=144) so the big logo stays crisp. */}
+          {/* r.logoUrl is cached at the 32px list size (s=64); re-request at 2x the 72px detail size (s=144) so the big logo stays crisp. */}
           <Image src={withStampDisplayPx(r.logoUrl, 72)}
             style={{ width: 72, height: 72, borderRadius: 999, backgroundColor: border }}/>
           <Box width={30} height={30} radius="full" background={border} style={{ position: 'absolute', right: -2, bottom: -2, borderWidth: 3, borderColor: bg, overflow: 'hidden' }}>
@@ -98,15 +91,11 @@ export default function TokenDetail(): React.ReactElement {
         </Text>
       </Col>
 
-      {/* Two big rounded action buttons — same component/style as the Wallet
-          page's Send/Receive/Swap/Buy circles. Send opens the public send
-          flow pre-selected to this token; Shield opens send.tsx in shield
-          mode pre-selected to this token. */}
+      {/* Two big rounded action buttons (same style as the Wallet page circles): Send opens the public send flow and Shield opens send.tsx in shield mode, both pre-selected to this token. */}
       <Row margin={{ x: 16, top: 32 }} justify="start" gap={36}>
         {r.isPrivate ? (
           <>
-            {/* Shielded holding → unified Send page, pre-selected to this
-                shielded token (private → another 0zk). */}
+            {/* Shielded holding to the unified Send page, pre-selected to this shielded token (private to another 0zk). */}
             <Btn icon="send" label="Send" head={head} border={border} dark={dark}
               onPress={() => { router.push({
                 pathname: '/wallet/send',

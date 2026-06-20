@@ -1,7 +1,4 @@
-/**
- * @file Device-local persisted boolean recording whether the user has backed up (or dismissed the nudge for) their recovery phrase, so the SecureWalletNudge stops pestering them.
- *  Built on the shared createValueStore factory; defaults FALSE so a fresh smart wallet sees the nudge once.
- */
+/** @file Device-local persisted boolean recording whether the user backed up (or dismissed the nudge for) their recovery phrase so SecureWalletNudge stops pestering them; built on the shared createValueStore factory and defaults FALSE so a fresh smart wallet sees the nudge once. */
 
 import { createValueStore } from './persistedStore';
 

@@ -1,22 +1,4 @@
-/** @file Private SEND orchestration: composes the bridge primitives (gas estimate, Groth16 transfer proof, populate) plus a viem EOA sign/broadcast to move funds 0zk->0zk, reporting via the pending-action store. */
-/**
- * PRIVATE SEND orchestration — move funds from the user's OWN 0zk shielded
- *  balance to ANOTHER 0zk address (private→private). Pure RN composition over the
- *  bridge primitives + a viem sign/broadcast with the in-app EOA key (the EOA
- *  self-broadcasts + pays gas; the recipient receives shielded).
- *
- *  Flow (REQUIRES a Groth16 proof, like unshield):
- *    derive key material → engineInit → ensureProviderLoaded → walletInfo →
- *    build EIP-1559 gas details (viem) → gasEstimateTransfer →
- *    generateTransferProof (heavy: embedded Groth16 prover, ~10-30s) →
- *    populateProvedTransfer → sign + broadcast the populated tx → confirm.
- *
- *  Self-broadcast only: sendWithPublicWallet=true, no broadcaster fee. Progress +
- *  errors flow through the pending-action store (cache.ts) so the Send page chip
- *  reflects proving → broadcasting → confirmed/failed. The private key is never
- *  logged. Sepolia-first. Mirrors unshield.ts — the only differences are the
- *  recipient is a 0zk address (required) and the transfer primitives.
- */
+/** @file Private SEND orchestration moving funds 0zk->0zk by composing the bridge primitives (gas estimate, heavy Groth16 transfer proof, populate) plus a self-broadcasting viem EOA sign that pays gas, with progress/errors reported through the pending-action store; mirrors unshield.ts. */
 import { parseUnits, type Hex } from 'viem';
 import { getActiveAccountId } from '../accounts';
 import { engineInit, walletInfo } from './bridge';
@@ -75,9 +57,7 @@ export async function sendShielded(params: SendParams): Promise<SendResult> {
     delta: `-${params.amount}`, phase: 'proving', startedAt: Date.now(),
   });
 
-  // Track the current sub-step so a failure carries WHERE it died — the bare
-  // red X with no text was impossible to diagnose otherwise. The phase string is
-  // attached to the thrown error (see SendError) and console.error'd below.
+  /** Track the current sub-step so a failure carries WHERE it died (attached to the thrown error and console.error'd below) — the bare red X with no text was impossible to diagnose otherwise. */
   let step = 'init';
   try {
     const key = await deriveRailgunKeyMaterial();
@@ -100,9 +80,7 @@ export async function sendShielded(params: SendParams): Promise<SendResult> {
       tokenAddress: meta.address, amountWei: amountWei.toString(), recipientAddress: recipient,
     }];
 
-    // EIP-1559 gas details (both Ethereum + Sepolia default to Type2). The
-    // gasEstimate is a placeholder for the estimate call; the SDK returns the
-    // real estimate which we feed into the populate step.
+    /** EIP-1559 gas details (Ethereum + Sepolia default to Type2); gasEstimate is a placeholder for the estimate call, then the SDK's real estimate feeds the populate step. */
     step = 'estimateFees';
     const fees = await signer.publicClient.estimateFeesPerGas();
     const baseGas: TransferGasDetails = {
@@ -149,7 +127,7 @@ export async function sendShielded(params: SendParams): Promise<SendResult> {
   } catch (e) {
     const raw = e instanceof Error ? e.message : String(e);
     const msg = raw?.trim() ? raw : `Unknown error (no message) at step "${step}"`;
-    // Surface to the bundler/metro logs so we can read it off-device too.
+    /** Surface to the bundler/metro logs so we can read it off-device too. */
     console.error(`[sendShielded] failed at step="${step}":`, e);
     updatePending(accountId, pendingId, { phase: 'failed', error: msg });
     const wrapped = new Error(`${msg} (at ${step})`) as Error & { step?: string; cause?: unknown };

@@ -1,16 +1,4 @@
-/**
- * @file Framework-agnostic rules for shaping, adding, upgrading, removing, and selecting the active multi-account wallet record.
- */
-/**
- * Framework-agnostic registry RULES for the multi-account wallet. These are the
- *  pure decisions — how an AccountRecord is shaped, how the db dir is named, how
- *  a list mutates when adding / upgrading / removing an account, and which
- *  account is "active" given a possibly-stale pointer.
- *
- *  No storage, no platform deps. Key STORAGE + the SecureStore wiring stay in
- *  the host (apps/app's accounts.ts) which calls these rules and persists the
- *  results behind the injected SecureStorage interface. Logic lives here ONCE.
- */
+/** @file Framework-agnostic registry rules for the multi-account wallet — how a record is shaped, the db dir named, a list mutated on add/upgrade/remove, and which account is active given a possibly-stale pointer; no storage or platform deps, those stay in the host. */
 
 import type { AccountRecord, AccountType } from './types';
 
@@ -48,16 +36,7 @@ export interface AddLocalResult {
   upgraded: boolean;
 }
 
-/**
- * Decide how the list changes when a local key for `id`/`address` is added.
- *
- *  - new id           → append a fresh local record
- *  - existing WC id   → UPGRADE to a local signer (flip type), keep other fields
- *  - existing local   → no list change, just re-activate
- *
- *  The host writes the key into SecureStorage in all branches and persists
- *  `list` when it differs.
- */
+/** Decide how the list changes when a local key for id/address is added: a new id appends a fresh record, an existing WalletConnect id upgrades to a local signer, an existing local one just re-activates; the host writes the key and persists `list` when it differs. */
 export function addLocalAccountToList(
   list: AccountRecord[],
   id: string,

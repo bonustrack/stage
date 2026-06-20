@@ -1,7 +1,4 @@
-/**
- * @file Dev "Reset everything" — the FULL nuke: on top of resetForOnboarding's targeted wipe, erases every slice of device-local state the app owns (all AsyncStorage, remaining SecureStore keys, and the app-owned FileSystem trees) so the next launch is byte-for-byte a clean install.
- *  Leaves OS-managed scratch in Paths.cache untouched, and reloads the app at the end so in-memory store mirrors re-read from the cleared disk.
- */
+/** @file Dev "Reset everything" full nuke: erases every slice of device-local state the app owns (AsyncStorage, remaining SecureStore keys, app-owned FileSystem trees) and reloads for a byte-for-byte clean install, leaving OS-managed Paths.cache scratch untouched. */
 
 import { DevSettings } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,13 +17,7 @@ const THEME_KEY = 'app.theme';
 /** Mirror of lib/xmtp.client.ts. */
 const LAST_READ_PREFIX = 'unread.lastRead.';
 
-/**
- * Delete the per-conversation `unread.lastRead.<convId>` SecureStore markers.
- *  They're keyed by convId so there's no clear-all; we collect every convId
- *  across all accounts' cached rows (hydrating each account's file first) and
- *  delete those keys. Best-effort: an orphaned marker is harmless after a fresh
- *  identity is minted, but we clear them so the device truly holds zero state.
- */
+/** Delete the per-conversation `unread.lastRead.<convId>` SecureStore markers by collecting every convId across all accounts' cached rows (hydrating each first); best-effort so the device truly holds zero state. */
 async function clearLastReadMarkers(): Promise<void> {
   const convIds = new Set<string>();
   try {

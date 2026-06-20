@@ -48,7 +48,7 @@ export default function TabsLayout(): React.ReactElement {
   const insets = useSafeAreaInsets();
   const pal = usePalette();
   const active = pal.link; // #ffffff / #000000
-  // inactive nav icon = muted; no `muted` token yet → map to `text`. TODO: muted token.
+  /** inactive nav icon = muted; no `muted` token yet → map to `text`. TODO: muted token. */
   const inactive = pal.text;
 
   const tabBarStyle = {
@@ -106,7 +106,7 @@ export default function TabsLayout(): React.ReactElement {
               tabBarIcon: ({ color, focused }) => (
                 <Icon name={icon} size={26} color={color} focused={focused}/>
               ),
-              // Messenger tab (index) shows the total unread-count badge.
+              /** Messenger tab (index) shows the total unread-count badge. */
               ...(name === 'index'
                 ? {
                     tabBarBadge: unreadBadge,

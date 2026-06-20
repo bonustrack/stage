@@ -45,7 +45,7 @@ export function PrivateActivitySection({ head, sub, border, bg }: {
     return () => { cancelled = true; };
   }, []);
 
-  // Bridge not in this binary (web / non-Railgun build): show nothing at all.
+  /** Bridge not in this binary (web / non-Railgun build): show nothing at all. */
   if (status === 'ready' && !available) return null;
 
   return (

@@ -1,14 +1,6 @@
 /** @file Builds the react-native-markdown-display style map for the PR/issue body on the diff page (Calibre/Menlo, leaf-level font sizes). */
 import { fontSize } from '@metro-labs/kit/tokens';
-/**
- * Markdown styles for the PR/issue description body on the diff page.
- *  Mirrors the chat bubble styles (Calibre family, Menlo for code) but with a
- *  larger reading size and palette link color, since the diff page renders
- *  full GitHub markdown rather than a chat snippet. Heading/inline sizes MUST
- *  live here: react-native-markdown-display flattens these into the leaf
- *  <Text>'s inheritedStyles, and the nearest Text's fontSize wins in RN, so a
- *  wrapping <Text> can never size the glyphs.
- */
+/** Markdown styles for the diff-page PR/issue body, mirroring chat bubbles (Calibre, Menlo for code) at a larger reading size; heading/inline sizes must live here because react-native-markdown-display flattens them into leaf Text styles where the nearest fontSize wins. */
 
 interface DiffMdPalette {
   text: string;

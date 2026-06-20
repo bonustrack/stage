@@ -1,7 +1,4 @@
-/**
- * @file Maps decoded XMTP messages to HistoryEntry envelopes and aggregates per-message reaction counts.
- */
-/** Decoded XMTP message → HistoryEntry envelope + reaction aggregation. Split out of `xmtpFeed.ts` so each file stays under the lint cap; re-exported from there. */
+/** @file Maps decoded XMTP messages to HistoryEntry envelopes and aggregates per-message reaction counts; split out of `xmtpFeed.ts` (and re-exported there) to stay under the lint cap. */
 
 import {
   ReactionAction,

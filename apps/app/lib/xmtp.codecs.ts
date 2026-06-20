@@ -21,69 +21,26 @@ export const SIGNATURE_REFERENCE_CODEC = new SignatureReferenceCodec();
 export const WALLET_SEND_CALLS_CODEC = new WalletSendCallsCodec();
 export const TRANSACTION_REFERENCE_CODEC = new TransactionReferenceCodec();
 
-/**
- * Codecs the local XMTP client decodes inbound + uses to encode outbound. Without these
- *  the RN SDK's `msg.content()` throws on reaction/reply/attachment payloads and we fall
- *  back to "[<typeId> payload]" placeholder text — that's why Less saw "[reaction payload]"
- *  instead of "[react 👍]" on his own outbound bubbles. GroupUpdatedCodec is required for
- *  membership/rename system messages to decode at all.
- */
+/** Codecs the local XMTP client decodes inbound and encodes outbound; without them `msg.content()` throws on reaction/reply/attachment payloads and falls back to "[<typeId> payload]" placeholder text, and GroupUpdatedCodec is required for membership/rename system messages to decode at all. */
 export const XMTP_CODECS = [
   new ReactionCodec(),
   new ReplyCodec(),
   new StaticAttachmentCodec(),
   new RemoteAttachmentCodec(),
-  /**
-   * MultiRemoteAttachmentCodec lets one message carry several encrypted-remote
-   *  attachments (`xmtp.org/multiRemoteStaticAttachment`). Without it registered,
-   *  `msg.content()` throws on inbound multi-attachment payloads and we'd fall
-   *  back to the "[…payload]" placeholder; on outbound it's needed so
-   *  `conv.send({ multiRemoteAttachment })` encodes. Pure JS registration — the
-   *  native module (already in @xmtp/react-native-sdk 5.7.0) supplies the
-   *  encrypt/decrypt primitives, so no new native dep / dev-client rebuild.
-   */
+  /** MultiRemoteAttachmentCodec lets one message carry several encrypted-remote attachments; required to encode/decode multi-attachment payloads. Pure-JS registration over the native primitives in @xmtp/react-native-sdk 5.7.0, so no new native dep or dev-client rebuild. */
   new MultiRemoteAttachmentCodec(),
   new GroupUpdatedCodec(),
-  /**
-   * Metro poll content type `metro.box/poll:1.0`. Pure-JS JSContentCodec — the
-   *  poll body is UTF-8 JSON bytes inside an EncodedContent, so no native module
-   *  / dev-client rebuild. Required on both encode (xmtpSendPoll) and decode
-   *  (inbound poll bubbles) — without it msg.content() throws and we fall back
-   *  to the "[poll payload]" placeholder. Votes are plain reactions (see
-   *  xmtpVote) and need no extra codec.
-   */
+  /** Metro poll content type `metro.box/poll:1.0` — a pure-JS JSContentCodec (UTF-8 JSON body, no native rebuild) required to encode and decode poll bubbles; votes are plain reactions and need no extra codec. */
   POLL_CODEC,
-  /**
-   * Metro signature content types `metro.box/signatureRequest:1.0` (a request
-   *  to sign EIP-712 typed data or a personal_sign string) + `signatureReference`
-   *  (the signature posted back). Pure-JS JSContentCodecs (UTF-8 JSON bodies) — no
-   *  native module / dev-client rebuild. Required on both encode
-   *  (xmtpSendSignatureRequest/Reference) and decode (inbound bubbles) — without
-   *  them msg.content() throws and we fall back to the "[…payload]" placeholder.
-   */
+  /** Metro signature content types `signatureRequest:1.0` (a request to sign EIP-712/personal_sign) and `signatureReference` (the signature posted back) — pure-JS JSContentCodecs (UTF-8 JSON, no native rebuild) required to encode and decode their bubbles. */
   SIGNATURE_REQUEST_CODEC,
   SIGNATURE_REFERENCE_CODEC,
-  /**
-   * In-chat transactions. WalletSendCalls = a payment REQUEST (EIP-5792
-   *  wallet_sendCalls batch); TransactionReference = the RECEIPT (tx hash)
-   *  posted back after the payer broadcasts. Pure-JS JSContentCodecs (UTF-8
-   *  JSON bodies) — no native module / dev-client rebuild. Required on both
-   *  encode (xmtpSendTxRequest/Reference) and decode (inbound tx bubbles) —
-   *  without them msg.content() throws and we fall back to the "[…payload]"
-   *  placeholder.
-   */
+  /** In-chat transactions: WalletSendCalls is a payment REQUEST (EIP-5792 batch) and TransactionReference is the RECEIPT (tx hash) posted back — pure-JS JSContentCodecs (UTF-8 JSON, no native rebuild) required to encode and decode their bubbles. */
   WALLET_SEND_CALLS_CODEC,
   TRANSACTION_REFERENCE_CODEC,
 ];
 
-/**
- * Build the XMTP-RN `Signer` adapter for a viem `PrivateKeyAccount`.
- *  Shape pulled from `node_modules/@xmtp/react-native-sdk/src/lib/Signer.ts`:
- *  `getIdentifier / getChainId / getBlockNumber / signerType / signMessage`.
- *  `signMessage` resolves with `{ signature: hexString }` — passing a
- *  viem WalletClient instead surfaces as "Cannot read property 'raw' of
- *  undefined" inside the native registration handler.
- */
+/** Build the XMTP-RN `Signer` adapter for a viem `PrivateKeyAccount`; `signMessage` must resolve with `{ signature: hexString }` (passing a viem WalletClient instead surfaces as a "Cannot read property 'raw' of undefined" in the native registration handler). */
 function signerForAccount(account: PrivateKeyAccount): Signer {
   return {
     getIdentifier: () => Promise.resolve(new PublicIdentity(account.address, 'ETHEREUM')),
@@ -97,12 +54,7 @@ function signerForAccount(account: PrivateKeyAccount): Signer {
   };
 }
 
-/**
- * Build the XMTP Signer for an account record. A `smart` (ZeroDev Kernel)
- *  account signs via the SCW signer; legacy local-EOA records sign silently with
- *  their viem key. Only ever needed once, at installation registration
- *  (Client.create) — reads + sends afterwards use the on-device installation key.
- */
+/** Build the XMTP Signer for an account record: a `smart` (ZeroDev Kernel) account signs via the SCW signer, legacy local-EOA records via their viem key; only needed once at installation registration, as later reads/sends use the on-device installation key. */
 export async function signerForRecord(rec: AccountRecord): Promise<Signer> {
   if (rec.type === 'smart') return signerForSmart(rec);
   const acct = await getViemAccount(rec.id);
@@ -110,24 +62,7 @@ export async function signerForRecord(rec: AccountRecord): Promise<Signer> {
   return signerForAccount(acct);
 }
 
-/**
- * XMTP signer for a `smart` (ZeroDev Kernel) account.
- *
- *  DEFAULT (Less): the SMART ACCOUNT is the XMTP identity. The Kernel address
- *  registers its inbox via ERC-1271 (6492-wrapped while the Kernel is still
- *  counterfactual / undeployed), chainId 8453 — built through the ONE centralized
- *  factory (lib/zerodev/scwSigner) so the chainId is identical at registration
- *  and every later sign (else AssociationError.ChainIdMismatch).
- *
- *  LEGACY ESCAPE HATCH: only when `rec.scwXmtp === false` is set EXPLICITLY (an
- *  account minted under the pre-flip default) do we keep messaging over the
- *  mnemonic-derived OWNER EOA so its existing inbox isn't disrupted. A new account
- *  (scwXmtp === true) or any record with the flag UNSET defaults to the SCW
- *  identity — a fresh inbox at the SCW address, which is expected/accepted.
- *
- *  zerodev modules are imported LAZILY so the XMTP module graph doesn't pull the
- *  Kernel SDK unless a smart account is actually signed.
- */
+/** XMTP signer for a `smart` (ZeroDev Kernel) account: by default the SCW is the identity, registering its inbox via ERC-1271 (6492-wrapped) on chainId 8453 through the one centralized factory so the chainId matches at every sign; only an explicit `scwXmtp === false` keeps messaging over the mnemonic-derived owner EOA. zerodev modules load lazily. */
 async function signerForSmart(rec: AccountRecord): Promise<Signer> {
   if (rec.hdIndex == null) throw new Error('Smart account is missing its HD index.');
   if (rec.scwXmtp === false) {

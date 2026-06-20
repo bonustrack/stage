@@ -1,19 +1,6 @@
 /** @file Device-local persisted boolean preference gating whether this device registers its push token with the daemon (default ON), built on the shared value-store factory. */
 
-/*
- * Device-local PUSH notifications preference (enable/disable).
- *
- *  A single persisted boolean gating whether this device registers its push
- *  token with the daemon. The auto-registration path (`registerPushWithDaemon`,
- *  called on client-ready / account switch) consults `isPushEnabled()` and
- *  no-ops when the user has turned push OFF, so disabling stops the device
- *  from re-registering its token. Default is ON (push works out of the box,
- *  matching prior behaviour).
- *
- *  Built on the shared lib/persistedStore.ts value-store factory; the in-memory
- *  mirror lets the registration path read synchronously after a one-time load,
- *  and the pub/sub repaints the Settings toggle the instant it flips.
- */
+/** Device-local push preference: a persisted boolean gating whether this device registers its push token with the daemon (default ON), built on the persistedStore value-store factory so the registration path reads synchronously and the Settings toggle repaints on flip. */
 
 import { createValueStore } from './persistedStore';
 

@@ -1,8 +1,4 @@
-/**
- * @file Inbox-wide catch-up sync (`syncInboxOnce`) and active-feed resync backstop for the app's
- *  XMTP client lib, catching messages the native stream dropped while backgrounded; extracted from
- *  xmtp.stream.ts to stay under the line cap.
- */
+/** @file Inbox-wide catch-up sync (`syncInboxOnce`) and active-feed resync backstop for the XMTP client lib, catching messages the native stream dropped while backgrounded; split from xmtp.stream.ts for the line cap. */
 
 import type { ConsentState } from '@xmtp/react-native-sdk';
 import type { HistoryEntry } from './types';
@@ -24,20 +20,7 @@ export function pushToFeedSlice(line: string, env: HistoryEntry): void {
   feedCache.set(line, [env, ...prev]);
 }
 
-/**
- * Coalesced top-level inbox sync. A per-conv `conv.sync()` on a
- *  `findConversation` handle does NOT reliably land messages that arrived via
- *  MLS group commits while the native stream was dead/backgrounded — only the
- *  inbox-wide `syncAllConversations` processes those welcome/commit/application
- *  envelopes into the local DB (this is why the CHANNELS LIST, which calls it,
- *  saw the latest message the OPEN FEED missed). We run it before fetching the
- *  open conv's messages so re-open / foreground reflects the true network tail.
- *
- *  Coalesced on a single in-flight promise + a 3s freshness window so the
- *  open-effect, the foreground resume, the stream-death backstop and the 7s
- *  poll can all ask for "sync the inbox" without N concurrent network passes
- *  hammering the read-rate limit that previously caused an outage.
- */
+/** Coalesced top-level inbox sync: only inbox-wide `syncAllConversations` lands MLS-commit messages that arrived while the stream was dead, so it runs before fetching the open conv; coalesced on one in-flight promise + a 3s window so concurrent callers share a single network pass. */
 let inboxSyncInFlight: Promise<void> | null = null;
 let lastInboxSyncAt = 0;
 /** Coalesced, freshness-windowed sync of the XMTP inbox so concurrent callers share one network pass. */
@@ -56,13 +39,7 @@ export async function syncInboxOnce(maxAgeMs = 3_000): Promise<void> {
   return inboxSyncInFlight;
 }
 
-/**
- * Resync the currently-subscribed conv slices from the local store. Cheap
- *  backstop for anything the native stream dropped. Runs an inbox-wide sync
- *  FIRST (coalesced) so messages delivered while backgrounded land in the local
- *  DB before we read each conv's tail — a bare per-conv `conv.sync()` misses
- *  them.
- */
+/** Resync the subscribed conv slices from the local store as a cheap backstop, running an inbox-wide sync first (coalesced) so backgrounded messages land in the local DB before each conv's tail is read. */
 export async function resyncActiveFeeds(): Promise<void> {
   await syncInboxOnce();
   for (const line of activeFeedLines) {

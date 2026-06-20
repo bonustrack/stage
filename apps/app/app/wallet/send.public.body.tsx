@@ -1,8 +1,4 @@
-/**
- * @file Public-send body for the unified Wallet send token page, rendering the
- * recipient/amount fields and submit/status for an on-chain (public) token
- * transfer; selected token comes from the parent, state from usePublicSend.
- */
+/** @file Public-send body for the Wallet send page: recipient/amount fields plus submit/status for an on-chain transfer, token from the parent and state from usePublicSend. */
 import { useEffect } from 'react';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import {

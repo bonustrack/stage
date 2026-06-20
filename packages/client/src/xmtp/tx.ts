@@ -1,27 +1,6 @@
-/**
- * @file Metro in-chat transaction content types mirroring XMTP walletSendCalls and transactionReference (wire shapes, ids, fallback text).
- */
-/**
- * Metro in-chat transaction content types - shared between the RN app, web
- *  client, and daemon. Pure TS: wire shapes, content-type id constants, and
- *  plain-text fallback builders.
- *
- *  These mirror the official XMTP content types
- *  (`xmtp.org/walletSendCalls:1.0` and `xmtp.org/transactionReference:1.0`)
- *  byte-for-byte, BUT we re-declare the interfaces + hand-roll JSContentCodecs in
- *  RN: the npm `@xmtp/content-type-*` packages assume the Node SDK's
- *  `ContentCodec`/`EncodedContent` (`Uint8Array` content, class `ContentTypeId`)
- *  which is shape-incompatible with the RN SDK's `JSContentCodec`. See
- *  apps/app/lib/xmtpTxCodec.ts (RN) and ~/.metro/trains/xmtp.ts (daemon).
- *
- *  Payment is a two-message handshake: a WalletSendCalls (EIP-5792 batch)
- *  request, then a TransactionReference receipt posted back into the SAME conv
- *  once the payer broadcasts.
- */
+/** @file Metro in-chat transaction content types (wire shapes, ids, fallback text) shared by RN app, web client, and daemon, re-declaring the official XMTP walletSendCalls/transactionReference types because the npm codecs are shape-incompatible with the RN SDK's JSContentCodec; payment is a two-message WalletSendCalls request + TransactionReference receipt handshake. */
 
-// ---------------------------------------------------------------------------
-// WalletSendCalls — `xmtp.org/walletSendCalls:1.0`
-// ---------------------------------------------------------------------------
+/** WalletSendCalls — `xmtp.org/walletSendCalls:1.0`. */
 
 /** Optional per-call metadata. `description` is shown on the request card; `transactionType` is a free-form hint (e.g. `transfer`). */
 export interface WalletSendCallMetadata {
@@ -35,12 +14,7 @@ export interface WalletSendCallMetadata {
   [k: string]: unknown;
 }
 
-/**
- * One EIP-5792 call. `to`/`data`/`value` are all 0x-hex strings (`value` is
- *  hex WEI, NOT decimal). For a native transfer: `to` = recipient, `value` =
- *  hex wei, no `data`. For an ERC-20 transfer: `to` = token contract, `value`
- *  = `0x0`, `data` = encoded `transfer(recipient,amount)`.
- */
+/** One EIP-5792 call with 0x-hex `to`/`data`/`value` (value is hex wei): native transfer sets to=recipient + value, ERC-20 sets to=token, value=0x0, data=encoded transfer(recipient,amount). */
 export interface WalletSendCall {
   to?: string;
   data?: string;
@@ -63,9 +37,7 @@ export interface WalletSendCallsContent {
 export const WALLET_SEND_CALLS_TYPE_ID = 'xmtp.org/walletSendCalls:1.0';
 export const WALLET_SEND_CALLS_TYPE_SHORT = 'walletSendCalls';
 
-// ---------------------------------------------------------------------------
-// TransactionReference — `xmtp.org/transactionReference:1.0`
-// ---------------------------------------------------------------------------
+/** TransactionReference — `xmtp.org/transactionReference:1.0`. */
 
 export interface TransactionMetadata {
   transactionType?: string;
@@ -89,9 +61,7 @@ export interface TransactionReferenceContent {
 export const TRANSACTION_REFERENCE_TYPE_ID = 'xmtp.org/transactionReference:1.0';
 export const TRANSACTION_REFERENCE_TYPE_SHORT = 'transactionReference';
 
-// ---------------------------------------------------------------------------
-// Fallbacks + helpers (pure, shared by RN + daemon codecs and previews)
-// ---------------------------------------------------------------------------
+/** Fallbacks + helpers (pure, shared by RN + daemon codecs and previews). */
 
 /** Plain-text fallback for a WalletSendCalls (vanilla XMTP clients show this instead of a blank bubble). */
 export function walletSendCallsFallbackText(c: WalletSendCallsContent): string {

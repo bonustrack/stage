@@ -29,7 +29,7 @@ export interface DiffFile {
 export function parsePatch(patch: string): DiffLine[] {
   if (!patch) return [];
   const out: DiffLine[] = [];
-  // Running old/new line counters, (re)seeded by each @@ -a,b +c,d @@ header.
+  /** Running old/new line counters, (re)seeded by each @@ -a,b +c,d @@ header. */
   let oldNo = 0;
   let newNo = 0;
   for (const raw of patch.split('\n')) {
@@ -47,7 +47,7 @@ export function parsePatch(patch: string): DiffLine[] {
     } else if (raw.startsWith('\\')) {
       out.push({ kind: 'meta', text: raw, oldLine: null, newLine: null });
     } else {
-      // Leading space = context; a bare empty line is also context.
+      /** Leading space = context; a bare empty line is also context. */
       out.push({ kind: 'context', text: raw.startsWith(' ') ? raw.slice(1) : raw, oldLine: oldNo++, newLine: newNo++ });
     }
   }

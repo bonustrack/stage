@@ -1,7 +1,4 @@
-/**
- * @file Composable that loads and live-streams a conversation's messages into a reactive HistoryEntry feed.
- */
-/** XMTP live-feed composable. The decoded-message → HistoryEntry envelope + reaction aggregation live in `xmtpEnvelope.ts` (re-exported here). Split so each file stays under the lint cap. */
+/** @file Composable loading and live-streaming a conversation's messages into a reactive HistoryEntry feed; envelope and reaction aggregation live in `xmtpEnvelope.ts` (re-exported here) to stay under the lint cap. */
 
 import { ref, watch, onUnmounted, type Ref } from 'vue';
 import type { DecodedMessage } from '@xmtp/browser-sdk';

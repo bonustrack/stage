@@ -28,14 +28,11 @@ export function TopnavIdentity(): React.ReactElement {
     return () => { cancelled = true; };
   }, [accountEpoch]);
 
-  // Resolve the active account's display name (ENS / profile) the same way the
-  // Home topnav + Menu account header do (getPeerName ?? shortAddress);
-  // usePeerProfiles re-renders this row once the batch resolves.
+  /** Resolve the active account's display name via getPeerName ?? shortAddress (as Home topnav + Menu header do); usePeerProfiles re-renders this row once the batch resolves. */
   usePeerProfiles([myAddress]);
   const myName = myAddress ? (getPeerName(myAddress) ?? shortAddress(myAddress)) : '';
 
-  // Avatar opens the Menu sheet (account switcher + Profile/Settings), exactly as
-  // on Home — the single canonical identity tap-target across tabs.
+  /** Avatar opens the Menu sheet (account switcher + Profile/Settings), the single canonical identity tap-target across tabs as on Home. */
   return (
     <>
       <Pressable onPress={() => { setMenuOpen(true); }} hitSlop={8}>

@@ -1,8 +1,4 @@
-/**
- * @file In-channel Approve/Reject action bar shown in place of the composer when
- *  the open conversation is still a pending XMTP message request, reusing the
- *  same consent handlers as the Requests list.
- */
+/** @file In-channel Approve/Reject action bar shown in place of the composer when the open conversation is still a pending XMTP message request, reusing the Requests list's consent handlers. */
 
 import { useCallback, useEffect, useState } from 'react';
 import { Text } from '@metro-labs/kit/text';
@@ -25,23 +21,11 @@ function syncConsentBestEffort(): void {
 export interface RequestActionBarProps {
   convId: string;
   dark: boolean;
-  /**
-   * Reports whether the open conversation is a pending message request. The
-   *  parent defaults to showing the composer and only hides it (swapping in this
-   *  bar) when this fires `true`. Fired `false` when consent is allowed/denied,
-   *  resolution fails, or the user approves here, so the composer (re)appears.
-   *  Defaulting the parent to composer-visible avoids flashing the composer in
-   *  late for the common already-accepted case.
-   */
+  /** Reports whether the open conversation is a pending request: parent shows the composer by default and hides it only on `true`; fired `false` once allowed/denied/approved so the composer reappears. */
   onPending: (pending: boolean) => void;
 }
 
-/**
- * Bottom action row for a pending message request. Renders nothing until it has
- *  confirmed the conversation is actually a pending request; while pending it
- *  reports `onPending(true)` and renders the Approve/Reject row. Once allowed it
- *  reports `onPending(false)` and renders nothing (the parent shows composer).
- */
+/** Bottom action row for a pending message request: renders nothing until confirmed pending, then reports onPending(true) with the Approve/Reject row; once allowed reports onPending(false) and renders nothing. */
 export function RequestActionBar(props: RequestActionBarProps): React.ReactElement | null {
   const { convId, dark, onPending } = props;
   const router = useRouter();
@@ -102,11 +86,7 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
         <Text color={fg} style={{ textAlign: 'center', opacity: 0.8 }}>
           This is a message request. Approve to reply, or reject to decline.
         </Text>
-        {/* Full-bleed row: each half flexes to fill the width. NOTE: do NOT use
-         *  the Button `pill` prop here - `pill` forces a fixed square (width =
-         *  height) circular icon button, which collapses these to tiny circles
-         *  regardless of `fullWidth`. We want full-width rounded buttons, so we
-         *  rely on `fullWidth` (alignSelf:'stretch' + width:'100%') instead. */}
+        {/* Full-bleed row: each half flexes to fill the width; do NOT use the Button `pill` prop (it forces a fixed square circle) — rely on `fullWidth` for full-width rounded buttons. */}
         <Row width={'100%'} gap={10} style={{ alignSelf: 'stretch' }}>
           <Col flex={1} style={{ alignSelf: 'stretch' }}>
             <Button

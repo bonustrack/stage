@@ -1,14 +1,4 @@
-/**
- * @file Public barrel for the framework-agnostic Railgun wire-protocol logic (frame builders, method registry, bridge types).
- */
-/**
- * Railgun (private balances + shielded send / shield / unshield) pure logic.
- *
- *  EVERYTHING here is framework-agnostic wire-protocol: typed frame builders +
- *  message shapes for the nodejs-mobile bridge. The native bridge (engine boot,
- *  the embedded Node prover, the nodejs-mobile channel) stays in apps/app behind
- *  the injected RailgunTransport - this module never imports a native module.
- */
+/** @file Public barrel for the framework-agnostic Railgun wire-protocol logic (typed frame builders, method registry, message shapes for the nodejs-mobile bridge); the native bridge stays in apps/app behind the injected RailgunTransport and this module imports no native module. */
 
 export type { RailgunDispatch } from './dispatch';
 export { bn, type BigIntWire } from './wire';

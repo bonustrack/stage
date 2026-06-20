@@ -106,13 +106,7 @@ function SigAction({ gated, dark, signing, onSign }: {
   );
 }
 
-// SigRequestCard — signature-request bubble: trusted (app-derived) title + the
-// typed-data/message detail. The peer-supplied `description` is rendered
-// SEPARATELY and labelled sender-provided, never as the prominent trusted
-// summary (a phishing request could otherwise mislabel a Permit2 as a benign
-// "Sign in"). `consentAllowed === false` disables the Sign action for an
-// unaccepted (stranger) conversation.
-/** Renders an in-chat signature-request card with a trusted summary and a Sign action. */
+/** Renders an in-chat signature-request card with an app-derived trusted title, the typed-data/message detail, and the peer's `description` shown separately as untrusted; `consentAllowed === false` disables Sign for stranger convs. */
 export function SigRequestCard({ req, dark, sub, signing, onSign, consentAllowed }: {
   req: SigRequest; dark: boolean; sub: string; signing?: boolean;
   onSign?: () => void;

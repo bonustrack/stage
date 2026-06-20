@@ -1,8 +1,4 @@
-/**
- * @file HomeScreen.search — the pure client-side channel-row text filter
- *  (filterRowsByQuery), plus a re-export of the shared SearchTopnavBar as
- *  ChannelsSearchBar so Home call sites are unchanged.
- */
+/** @file HomeScreen.search — the pure client-side channel-row text filter (filterRowsByQuery), plus a re-export of the shared SearchTopnavBar as ChannelsSearchBar so Home call sites are unchanged. */
 
 import type { Row as RowT } from './HomeScreen.helpers';
 

@@ -1,7 +1,4 @@
-/**
- * @file Local XMTP client lifecycle for the mobile app — `Client.create` on first launch (persisting keys in native sqlite at `dbDirectory`) and `Client.build` on later launches, with the cached-client bridge other modules share.
- *  Key material never crosses the JS bridge (native keystore/secure enclave); extracted from lib/xmtp.ts and re-exported there.
- */
+/** @file Local XMTP client lifecycle (Client.create on first launch persisting keys in native sqlite, Client.build later) with the shared cached-client bridge; key material never crosses the JS bridge, extracted from lib/xmtp.ts. */
 
 import * as SecureStore from 'expo-secure-store';
 import { Client, PublicIdentity, type Conversation } from '@xmtp/react-native-sdk';
@@ -28,15 +25,7 @@ import { signerForRecord } from './xmtp.codecs';
 export { getCachedXmtpClient, waitForXmtpReady } from './xmtp.state';
 export { ensureActiveAccount } from './xmtp.recover';
 
-/**
- * Thrown by getOrCreateXmtpClient when the registry is empty (no completed
- *  onboarding). We must NOT auto-mint an account here: doing so on a boot-time
- *  caller (HomeScreen.sync mounts under the onboarding overlay) silently
- *  persisted a throwaway account, so a second launch saw a non-empty registry
- *  and skipped onboarding entirely. Callers already swallow client init errors
- *  (the onboarding overlay covers the UI until the flow creates the real account
- *  and flips the gate).
- */
+/** Thrown by getOrCreateXmtpClient when the registry is empty (onboarding incomplete); we must not auto-mint an account here since a boot-time caller doing so persisted a throwaway account that skipped onboarding next launch. */
 export class NoAccountError extends Error {
   /** Build the no-account error with its fixed message and name. */
   constructor() { super('No account — onboarding not completed yet.'); this.name = 'NoAccountError'; }
@@ -45,35 +34,14 @@ export class NoAccountError extends Error {
 /** SecureStore keys must match `[A-Za-z0-9._-]+` — colons are rejected on Android, which surfaced as an `Invalid key provided to SecureStore` runtime crash on Less's device. */
 const ENV_KEY = 'xmtp.env';
 
-/**
- * Lazily build the XMTP client. Returns a singleton — repeat calls share the instance.
- *  Called from the app's root effect on startup. The XMTP identity is bootstrapped
- *  from the local EOA in `lib/wallet.ts`, so the same address signs both XMTP
- *  registration and Snapshot profile updates.
- */
+/** Lazily build the XMTP client (singleton, repeat calls share the instance), called from the app's root effect; the identity bootstraps from the local EOA in `lib/wallet.ts` so the same address signs XMTP registration and Snapshot profile updates. */
 export async function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promise<Client> {
   const cached = getCachedXmtpClient();
   if (cached) return cached;
-  /**
-   * SINGLE-FLIGHT GUARD. Many screens (Wallet, Profile, Home.sync, group) mount
-   *  together and each call getOrCreate on first paint. Before the cache is warm
-   *  that's N concurrent create/build calls on the SAME dbDirectory — the native
-   *  SQLCipher store can't open twice at once, surfacing as the clean-install
-   *  cluster (`database is locked`, `disk I/O error`, `os error 13`, and a
-   *  half-written db3 whose salt sidecar is inconsistent → `PRAGMA key or salt
-   *  incorrect`). Coalesce all concurrent callers onto ONE in-flight promise.
-   */
+  /** Single-flight guard: many screens call getOrCreate on first paint, and N concurrent create/build calls on the same dbDirectory break the native SQLCipher store (can't open twice), so coalesce all callers onto one in-flight promise. */
   if (inFlightCreate) return inFlightCreate;
   inFlightCreate = (async () => {
-    /**
-     * Resolve the active account. We NEVER mint one here: an account is created
-     *  ONLY by the onboarding flow (or an explicit in-app "new account" action).
-     *  On a fresh install the registry is empty and boot-time callers (e.g.
-     *  HomeScreen.sync, which mounts under the onboarding overlay) must NOT cause
-     *  a throwaway account to be persisted — that flipped the no-account gate on
-     *  the next launch and skipped onboarding. Throw a recognisable error the
-     *  callers already swallow; the overlay stays until real onboarding runs.
-     */
+    /** Resolve the active account, never minting one here (only onboarding or an explicit action creates accounts), so boot-time callers on a fresh install don't persist a throwaway account that skips onboarding; throw the recognisable error callers swallow. */
     const account = await getActiveAccount();
     if (!account) throw new NoAccountError();
     return buildClientForAccount(account, env);
@@ -83,12 +51,7 @@ export async function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promis
 /** The one in-flight client bootstrap, shared by all concurrent first-paint callers so we never open the same on-disk SQLCipher store twice at once. */
 let inFlightCreate: Promise<Client> | null = null;
 
-/**
- * (Re)build the XMTP client for a specific account. Tries `Client.build`
- *  against that account's own db when we believe an installation exists, races
- *  a 20s timeout (MLS replay can hang on a corrupted store), and falls back to
- *  a fresh `Client.create` + installation registration.
- */
+/** (Re)build the XMTP client for an account: tries `Client.build` against its own db when an installation likely exists, races a 20s timeout (MLS replay can hang on a corrupt store), and falls back to a fresh `Client.create` + registration. */
 async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<Client> {
   const dbDirectory = await ensureDbDir(rec.dbDir);
   const dbEncryptionKey = await loadOrCreateDbKey(rec.id);
@@ -109,12 +72,7 @@ async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<
       }
       /** Build timed out — fall through to create() with a fresh registration. */
     } catch (e) {
-      /**
-       * Corrupt/key-mismatched store makes `Client.build` throw; falling through
-       *  to create() would re-open the same dirty store and fail identically. Wipe
-       *  this account's store + key FIRST, then rebuild opts against the clean dir +
-       *  fresh key. Non-corruption failures fall through to create() unchanged.
-       */
+      /** A corrupt/key-mismatched store makes `Client.build` throw, and create() would re-open the same dirty store and fail identically, so wipe this account's store + key first then rebuild opts against the clean dir + fresh key (non-corruption failures fall through unchanged). */
       if (isStoreCorruption(e)) {
         await wipeXmtpStore(rec.id, rec.dbDir);
         const dir = await ensureDbDir(rec.dbDir);
@@ -185,12 +143,7 @@ export async function listXmtpInstallations(): Promise<XmtpInstallation[]> {
     .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
 }
 
-/**
- * Revoke (kill) one installation of the active inbox. Signs via the active
- *  account's signer (SCW chainId 8453 / passkey for smart accounts, EOA for
- *  legacy) — the same keyring-backed path as the install-limit recovery. No key
- *  crosses the JS bridge. Revoking the current installation logs this device out.
- */
+/** Revoke one installation of the active inbox, signing via the active account's signer (the same keyring-backed path as install-limit recovery, no key crossing the JS bridge); revoking the current installation logs this device out. */
 export async function revokeXmtpInstallation(installationId: string): Promise<void> {
   const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
   const account = await getActiveAccount();

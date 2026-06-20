@@ -1,14 +1,4 @@
-/**
- * @file Cross-platform Stamp API helpers for ENS-like domain to address resolution and avatar URLs in messenger search.
- */
-/**
- * Cross-platform Stamp API helpers — domain ↔ address resolution + avatar
- *  URL. Mirrors `sx-monorepo/apps/ui/src/helpers/stamp.ts` but pared down to
- *  what messenger surfaces need.
- *
- *  Used by mobile + web search to let users type "fabien.eth" and resolve
- *  to an address before opening the profile view.
- */
+/** @file Cross-platform Stamp API helpers for ENS-like domain-to-address resolution and avatar URLs, used by mobile + web messenger search to resolve typed names like "fabien.eth" before opening the profile view. */
 
 const STAMP_URL = 'https://stamp.fyi';
 

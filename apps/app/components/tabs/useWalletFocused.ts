@@ -1,22 +1,12 @@
-/**
- * @file useTabFocused hook: a sticky latch (derived from the router pathname) for whether a tab route has ever been the active pager page.
- *  Callers gate expensive one-time boot work on it (e.g. the Wallet Railgun engine), so it latches once true and never flips back.
- */
+/** @file useTabFocused hook: a sticky pathname-derived latch for whether a tab route has ever been active; callers gate one-time boot work on it (e.g. Wallet Railgun engine) and it never flips back. */
 import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'expo-router';
 
-/**
- * Sticky "has this tab's route ever been the active pager page" latch. Matches
- *  the tab's base route (`/<tab>`) and its sub-routes (`/<tab>/*`) — the same
- *  rule the pager uses to pick index — and LATCHES once true: the expensive boot
- *  work a caller gates on this only needs to happen once, so we never flip back
- *  when the user swipes away. If the tab is never opened this stays false.
- */
+/** Sticky "has this tab's route ever been active" latch, matching `/<tab>` and `/<tab>/*` (the pager's index rule) and latching once true so gated boot work runs only once. */
 export function useTabFocused(base: string): boolean {
   const pathname = usePathname();
   const [everFocused, setEverFocused] = useState(false);
-  // Avoid a redundant setState once latched (the effect would otherwise re-run
-  // on every pathname change for the rest of the session).
+  /** Avoid a redundant setState once latched (the effect would otherwise re-run on every pathname change for the rest of the session). */
   const latched = useRef(false);
 
   useEffect(() => {
@@ -30,15 +20,7 @@ export function useTabFocused(base: string): boolean {
   return everFocused;
 }
 
-/**
- * True from the first moment the Wallet tab becomes the active pager page (or a
- *  /wallet/* sub-route is open), and stays true for the rest of the session.
- *  WHY this matters: every first-level tab body is mounted ONCE at app boot (the
- *  pager mounts all five side-by-side, see SwipeTabs.tsx), so a plain mount
- *  effect in WalletScreen would fire on EVERY app open — booting the embedded
- *  nodejs-mobile Railgun engine even when the user never opens Wallet. Gating on
- *  this latch defers that to first focus.
- */
+/** True from the first moment the Wallet tab (or a /wallet/* sub-route) is active, sticky thereafter — defers booting the embedded nodejs-mobile Railgun engine to first focus since all tab bodies mount once at app boot. */
 export function useWalletFocused(): boolean {
   return useTabFocused('/wallet');
 }

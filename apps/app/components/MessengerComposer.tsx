@@ -93,7 +93,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
   const { dark, xmtpLine, mentionCandidates, replyingTo, autoFocusNonce, onClearReply, onJumpToReply } = props;
   const pal = usePalette(); // text/primary/border/bg ← tokens
   const fg = pal.text, head = pal.link, inputBg = pal.inputBg, chipBg = pal.border, bg = pal.bg;
-  // `sub` = muted/secondary text; no `muted` token yet, so map to `text`.
+  /** `sub` = muted/secondary text; no `muted` token yet, so map to `text`. */
   const sub = pal.text;
   const palette = { fg, sub, inputBg, chipBg };
 

@@ -1,7 +1,4 @@
-/**
- * @file Composable of message-bubble action handlers (react, reply, copy, optimistic send) for the conversation view.
- */
-/** Bubble action handlers (react / reply / copy / optimistic send) for the XMTP conversation view. Extracted from `useXmtpConversation` so each file stays under the lint cap. */
+/** @file Composable of message-bubble action handlers (react, reply, copy, optimistic send) for the XMTP conversation view, extracted from `useXmtpConversation` so each file stays under the lint cap. */
 
 import type { ComputedRef, Ref } from 'vue';
 import { xmtpReact } from './xmtpSend';

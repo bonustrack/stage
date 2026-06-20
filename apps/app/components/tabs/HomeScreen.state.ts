@@ -44,7 +44,7 @@ export function useHomeState(): HomeState {
     }
   };
   useEffect(() => subscribeCachedRows(r => { setRowsState(r as RowT[] | null); }), []);
-  // Mirror the channels cache into TanStack Query so read-only consumers dedupe off one entry.
+  /** Mirror the channels cache into TanStack Query so read-only consumers dedupe off one entry. */
   useEffect(() => { ensureChannelsQueryBridge(); }, []);
 
   const [error, setError] = useState<string>('');
@@ -59,14 +59,14 @@ export function useHomeState(): HomeState {
   const didRestoreRef = useRef(false);
   const contentHeightRef = useRef(0);
 
-  // Load saved scroll offset once; actual scroll happens in onContentSizeChange.
+  /** Load saved scroll offset once; actual scroll happens in onContentSizeChange. */
   useEffect(() => {
     void getScrollOffset(CHANNELS_SCROLL_KEY).then(o => { savedOffsetRef.current = o; });
     return () => { flushScrollOffset(CHANNELS_SCROLL_KEY); };
   }, []);
   useEffect(() => {
     void loadPinnedIds().then(setPinned);
-    // On toggle the cache is already updated; re-read into a fresh Set so React sees a new ref.
+    /** On toggle the cache is already updated; re-read into a fresh Set so React sees a new ref. */
     return subscribePins(() => { void loadPinnedIds().then(s => { setPinned(new Set(s)); }); });
   }, []);
   useEffect(() => {

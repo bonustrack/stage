@@ -1,8 +1,4 @@
-/**
- * @file Settings -> Security screen: Export private key and Remove account for
- *  the active account, wrapping the existing AccountSecuritySection plus the
- *  wallet-backup nudge.
- */
+/** @file Settings -> Security screen: Export private key and Remove account for the active account, wrapping AccountSecuritySection plus the wallet-backup nudge. */
 
 import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

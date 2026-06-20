@@ -29,23 +29,7 @@ function isNoInboxError(msg: string): boolean {
   return /inbox|identity|not.*regist|cannot.*find/i.test(msg);
 }
 
-/**
- * Create a new XMTP group conversation with the given members.
- *
- *  `addresses` accepts 0x Ethereum addresses (.eth resolution is done by the
- *  caller / create-group screen via resolveEnsName before we get here — this
- *  helper only deals in raw addresses). At least one member is required.
- *
- *  Mirrors the daemon's `newGroup` action but uses the RN SDK 5.7 shape: the
- *  installed @xmtp/react-native-sdk has no `createGroupWithIdentifiers` —
- *  instead `conversations.newGroupWithIdentities(PublicIdentity[], opts)` where
- *  `opts.name` sets the group title. We build PublicIdentity the same way
- *  `openDmWithAddress` does (`new PublicIdentity(addr, 'ETHEREUM')`).
- *
- *  Gotcha: every member must already have an XMTP inbox. The SDK throws when an
- *  address has never registered on XMTP; we surface that as a clear message so
- *  the screen can tell the user which address isn't reachable.
- */
+/** Creates a new XMTP group from raw 0x addresses via the RN SDK 5.7 `newGroupWithIdentities`; every member must already have an XMTP inbox, else a clear unreachable-address error is surfaced. */
 export async function createGroup(
   addresses: string[],
   name?: string,
@@ -76,13 +60,7 @@ export async function createGroup(
   }
 }
 
-/**
- * Add members to an existing group by Ethereum address. Resolves the
- *  conversation for `convId`, builds `PublicIdentity[]` the same way
- *  `createGroup` does, and calls the SDK's `group.addMembersByIdentity` (5.7.0).
- *  Throws a legible error for addresses not on XMTP and for permission denials
- *  (only group admins may add members).
- */
+/** Adds members to an existing group by address via `addMembersByIdentity` (5.7.0), throwing legible errors for addresses not on XMTP and for non-admin permission denials. */
 export async function addGroupMembers(convId: string, addresses: string[]): Promise<void> {
   const members = validMemberAddresses(addresses);
   if (members.length === 0) throw new Error('Add at least one valid member address.');
@@ -107,14 +85,7 @@ export async function addGroupMembers(convId: string, addresses: string[]): Prom
   }
 }
 
-/**
- * Leave a group conversation. The XMTP RN SDK (5.7) exposes `group.leaveGroup()`
- *  natively — it removes the local inbox from the group's member list (a real
- *  leave, not a local hide). Falls back to denying consent (local hide) when the
- *  conversation predates the method or `leaveGroup` throws, so the row still
- *  disappears from the user's list either way. Returns `'left'` for a true leave,
- *  `'hidden'` when it could only deny consent.
- */
+/** Leaves a group via the RN SDK 5.7 `leaveGroup()` (a real member-list removal), falling back to denying consent (local hide) when unavailable; returns `'left'` for a true leave or `'hidden'` otherwise. */
 export async function leaveGroupConv(line: string): Promise<'left' | 'hidden'> {
   const conv = await convOfLine(line);
   if (!conv) throw new Error('Conversation not found');

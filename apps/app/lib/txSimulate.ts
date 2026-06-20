@@ -1,7 +1,4 @@
-/**
- * @file Pre-sign transaction simulation via eth_simulateV1: reports success/revert (with reason) and the ETH/ERC-20 in/out movements for a tx against current chain state.
- *  Uses broviderRpc with traceTransfers + validation:false; for smart accounts it simulates the inner call from the account address, and never throws (errors resolve to `{ success: 'unknown' }`).
- */
+/** @file Pre-sign tx simulation via eth_simulateV1: reports success/revert (with reason) and ETH/ERC-20 in/out movements against current chain state using broviderRpc (traceTransfers, validation:false), simulating from the account address and never throwing (errors resolve to `{ success: 'unknown' }`). */
 
 import { useEffect, useState } from 'react';
 import { broviderRpc } from '@stage-labs/client/wallet/client';
@@ -51,14 +48,7 @@ async function rpc(chainId: number, method: string, params: unknown[]): Promise<
   return (await res.json()) as RpcResponse;
 }
 
-/**
- * PRE-CHECK a native ETH value transfer against the sender's on-chain balance.
- *  Returns a `success:false` result with a clear "insufficient ETH (have/need)"
- *  reason when value > balance, or null when the balance covers it (so the full
- *  simulation proceeds). null on any RPC error too (don't block on a flaky read).
- *  This catches the common 0-balance send that eth_simulateV1 reports as a vague
- *  failure.
- */
+/** Pre-check a native ETH transfer against the sender's on-chain balance: returns a `success:false` "insufficient ETH (have/need)" when value > balance, else null (balance covers it, or any RPC error — don't block on a flaky read), catching the 0-balance send eth_simulateV1 reports vaguely. */
 async function checkNativeBalance(
   from: string, valueHex: string, chainId: number,
 ): Promise<SimulateResult | null> {
@@ -85,7 +75,7 @@ async function callForRevert(
 ): Promise<string | null> {
   try {
     const j = await rpc(chainId, 'eth_call', [call, 'latest']);
-    if (!j.error) return null; // call didn't revert -> no reason to surface
+    if (!j.error) return null; /** call didn't revert -> no reason to surface */
     const data = j.error.data;
     return decodeRevert(typeof data === 'string' ? data : undefined, j.error.message) ?? null;
   } catch { return null; }
@@ -99,9 +89,7 @@ interface SimV1Response { result?: { calls?: SimCall[] }[]; error?: { message?: 
 
 /** Run eth_simulateV1 for a single call, normalising the response shape. Throws only on transport failure. */
 async function runSimulateV1(call: SimCallInput, chainId: number): Promise<SimV1Response> {
-  // eth_simulateV1 returns one block object per blockStateCall; each block carries
-  // its per-call results under `.calls` (NOT as a bare array). We send one block
-  // with one call, so the result is result[0].calls[0].
+  /** eth_simulateV1 returns one block per blockStateCall, each carrying its per-call results under `.calls` (not a bare array); we send one block with one call, so the result is result[0].calls[0]. */
   const resp = await rpc(chainId, 'eth_simulateV1', [
     { blockStateCalls: [{ calls: [call] }], traceTransfers: true, validation: false },
     'latest',
@@ -142,10 +130,7 @@ async function handleSimError(
   json: SimV1Response, call: SimCallInput, chainId: number,
 ): Promise<SimulateResult> {
   const empty = { in: [], out: [] };
-  // A JSON-RPC error here is a REAL method/RPC failure (not a simulated revert).
-  // Reserve "could not simulate" for this path — but first fall back to eth_call
-  // to try to surface the actual revert reason, so a node that lacks
-  // eth_simulateV1 still shows "Will fail: <reason>" when the tx truly reverts.
+  /** A JSON-RPC error here is a real method/RPC failure (not a simulated revert); reserve "could not simulate" for this path but first fall back to eth_call to surface the real revert reason so nodes lacking eth_simulateV1 still show "Will fail: <reason>". */
   const reason = await callForRevert(call, chainId);
   if (reason) return { success: false, revertReason: reason, assetChanges: empty };
   return { success: 'unknown', assetChanges: empty, error: json.error?.message ?? 'Simulation unavailable' };
@@ -164,9 +149,7 @@ async function simulateTx(p: SimulateParams): Promise<SimulateResult> {
 
   const valueHex = normaliseValue(p.value);
   const hasData = !!p.data && p.data !== '0x';
-  // PRE-CHECK: a plain native ETH send (value, no calldata) against the sender's
-  // balance. Surfaces the exact "insufficient ETH (have X, need Y)" before we
-  // even simulate — the 0-balance-send case that otherwise read as "cannot simulate".
+  /** Pre-check a plain native ETH send (value, no calldata) against the sender's balance, surfacing the exact "insufficient ETH (have X, need Y)" before simulating — the 0-balance-send case that otherwise read as "cannot simulate". */
   if (!hasData) {
     const pre = await checkNativeBalance(from, valueHex, p.chainId);
     if (pre) return pre;
@@ -187,15 +170,7 @@ async function simulateTx(p: SimulateParams): Promise<SimulateResult> {
   return interpretSimResult(json, from, call, p.chainId);
 }
 
-/**
- * React hook: run a pre-sign simulation for the active account against a call.
- *
- *  Resolves the sender from the ACTIVE account (the smart-account address for a
- *  smart wallet, the EOA address otherwise) so the simulation runs from the same
- *  identity that will actually sign. While the active address loads / the
- *  simulation is in flight, `pending` is true (card shows "Simulating…"). The
- *  call key (to/data/value/chainId) drives a re-run; an absent `to` no-ops.
- */
+/** React hook running a pre-sign simulation for the active account, resolving the sender from the ACTIVE account (smart-account or EOA address) so it runs from the signing identity; `pending` is true while loading/in-flight, the call key (to/data/value/chainId) drives a re-run, and an absent `to` no-ops. */
 export function useTxSimulation(
   to: string | undefined,
   data: string | undefined,

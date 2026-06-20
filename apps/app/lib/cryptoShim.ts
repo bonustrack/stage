@@ -1,7 +1,4 @@
-/**
- * @file Installs the platform CSPRNG `crypto.getRandomValues` and a Buffer polyfill that viem needs on React Native.
- *  Throws rather than falling back to weak entropy, since key material must never be minted from a non-cryptographic PRNG.
- */
+/** @file Installs the platform CSPRNG `crypto.getRandomValues` and a Buffer polyfill viem needs on React Native; throws rather than falling back to weak entropy since key material must never come from a non-cryptographic PRNG. */
 
 /** Side-effect import: installs `globalThis.crypto.getRandomValues` backed by the platform CSPRNG. Must run before the assertion below and before any viem import. Keep this as the first import. */
 import 'react-native-get-random-values';

@@ -82,10 +82,9 @@ export function useConvScrollPersistence(convId: string | undefined): ScrollPers
   const savedScrollRef = useRef<number | undefined>(undefined);
   const savedScrollLoaded = useRef(false);
   const didRestoreScroll = useRef(false);
-  // Deadline the at-bottom mount keeps re-pinning to 0; 0 = unarmed.
+  /** Deadline the at-bottom mount keeps re-pinning to 0; 0 = unarmed. */
   const pinBottomUntil = useRef(0);
-  // At-bottom flag set on every scroll; the debounced save can lose its final frame
-  // to a fast back-nav, this ref can't, so we force-persist sentinel 0 on unmount.
+  /** At-bottom flag set on every scroll; the debounced save can lose its final frame to a fast back-nav, so this ref force-persists sentinel 0 on unmount. */
   const isAtBottomRef = useRef(true);
   useEffect(() => {
     if (!convId) return;

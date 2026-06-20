@@ -1,11 +1,6 @@
-/**
- * @file Conversation-metadata fetcher (the queryFn behind ['xmtp','convMeta',convId]) shared by the chat-view topnav hook and the group-info screen so name/image/description/members resolve through one Query key instead of duplicate fetches.
- */
+/** @file Conversation-metadata fetcher (queryFn behind ['xmtp','convMeta',convId]) shared by the chat topnav hook and group-info screen so name/image/description/members resolve through one Query key. */
 
-// Import the helpers from their defining submodules rather than the `lib/xmtp`
-// barrel: the barrel pulls in the whole xmtp graph (incl. xmtp.feed →
-// feedQuery → queries → here), forming a static import cycle. The submodules
-// are leaf-ish, so this keeps the dependency acyclic.
+/** Import from leaf submodules rather than the `lib/xmtp` barrel, which would pull in the whole xmtp graph and form a static import cycle. */
 import { lineOfConv } from '../../lib/xmtp.types';
 import { convOfLine } from '../../lib/xmtp.client';
 import {
@@ -66,8 +61,7 @@ export async function fetchConvMeta(convId: string): Promise<ConvMeta> {
   return fetchGroupConvMeta(conv, inboxToAddr);
 }
 
-/** The group-info screen's EXTRA, non-shared data: per-member admin roles, keyed by lower-cased eth address. Derived from the SDK admin lists + the already- resolved inbox->addr map (passed in so we don't re-fetch members here). */
-/** Resolve each group member's role (owner/admin/member) keyed by lower-cased eth address. */
+/** Resolve each group member's role (owner/admin/member) keyed by lower-cased eth address, derived from the SDK admin lists and the passed-in inbox->addr map. */
 export async function fetchGroupRoles(
   convId: string,
   inboxToAddr: Record<string, string>,

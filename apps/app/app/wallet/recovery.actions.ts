@@ -69,7 +69,7 @@ export function useRecoveryActions(a: RecoveryActionsArgs): RecoveryActions {
     if (!rec || !params.newOwner) return;
     setBusy(true);
     try {
-      // nonce 0 = the recovery validator's first proposal slot for this account.
+      /** nonce 0 = the recovery validator's first proposal slot for this account. */
       await cancelRecovery(rec, params.newOwner as Address, 0n);
       Alert.alert('Recovery cancelled', 'The pending recovery was cancelled.');
       router.back();

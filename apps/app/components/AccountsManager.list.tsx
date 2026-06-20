@@ -1,7 +1,4 @@
-/**
- * @file AccountsManager list body rendering the Accounts section card (active
- * account, other accounts in flat/collapsed/expanded modes, and the Add-account row).
- */
+/** @file AccountsManager list body rendering the Accounts section card (active account, other accounts in flat/collapsed/expanded modes, and the Add-account row). */
 
 import { Pressable } from '@metro-labs/kit/pressable';
 
@@ -105,8 +102,7 @@ function AddSection(p: AccountListProps): React.ReactElement {
 
 /** Renders the Accounts section card (active account, other accounts, and the Add-account row). */
 export function AccountList(p: AccountListProps): React.ReactElement {
-  // Conditional style branch (flat vs card); the card branch's marginHorizontal
-  // can't be a static layout prop, so the style is built here and passed as an identifier.
+  /** Builds the container style inline (flat vs card) since the card branch's marginHorizontal can't be a static layout prop. */
   const containerStyle = p.flat
     ? { backgroundColor: 'transparent' }
     : {

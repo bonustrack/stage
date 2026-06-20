@@ -1,8 +1,4 @@
-/**
- * @file Shared token-selector field and bottom-sheet modal for the Wallet
- * action pages, listing public (on-chain) or Railgun-shielded balances as
- * wallet-style rows and reporting the chosen token back to the parent.
- */
+/** @file Shared token-selector field + bottom-sheet modal for Wallet action pages, listing public or Railgun-shielded balances as wallet-style rows and reporting the chosen token to the parent. */
 import { useEffect, useMemo, useState } from 'react';
 
 import { Pressable } from '@metro-labs/kit/pressable';
@@ -74,9 +70,7 @@ function useSelectorRows(mode: SelectorMode): { rows: AssetRow[]; loading: boole
   if (mode === 'shielded') return { rows: byValueDesc(shieldedRows.filter(hasBalance)), loading: false };
   const pub = (publicRows ?? []).filter(hasBalance);
   if (mode === 'combined') {
-    // Combined public + positive-balance shielded rows, sorted highest USD value
-    // first (balance × price). Each row carries `isPrivate`, which the rows +
-    // selection identity use to distinguish a public token from its shielded twin.
+    /** Combined public + positive-balance shielded rows, value-sorted; `isPrivate` distinguishes a public token from its shielded twin. */
     return { rows: byValueDesc([...pub, ...shieldedRows.filter(hasBalance)]), loading: publicRows === null };
   }
   return { rows: byValueDesc(pub), loading: publicRows === null };

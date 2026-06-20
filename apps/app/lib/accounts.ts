@@ -1,14 +1,6 @@
-/** @file Multi-account registry: persists the list of ZeroDev smart-account records, the active-account pointer, and switches the XMTP/channels cache between them. */
-// Multi-account registry for the mobile app. The app holds several wallets at
-// once and switches without a logout. Every account is a mnemonic-derived
-// ZeroDev Kernel `smart` account — the ONLY account model the app creates.
-//
-// Each account gets its own XMTP sqlite store (`xmtp-<id>`) so inboxes stay
-// isolated and switching is just a client rebuild. A new account is the next HD
-// index off the single app mnemonic (createSmartAccount). Legacy on-device
-// records (a pre-smart-account 'generated'/'privateKey'/'walletconnect' row, or
-// the pre-multi-account single key under `wallet.privateKey`) are still read +
-// signed for backward compatibility, but no new such records are ever created.
+/** @file Multi-account registry persisting ZeroDev Kernel smart-account records, the active-account pointer, and switching the XMTP/channels cache between several wallets without a logout. */
+
+/** Each account has its own XMTP sqlite store (`xmtp-<id>`); a new account is the next HD index off the app mnemonic, while legacy on-device records are still read/signed for backward compatibility but never created. */
 
 import './cryptoShim';
 import * as SecureStore from 'expo-secure-store';
@@ -85,25 +77,14 @@ export async function getActiveAccount(): Promise<AccountRecord | null> {
   return resolveActiveAccount(list, id);
 }
 
-/**
- * The ACTIVE account as a viem signer, or null when it has no stored in-app key
- *  — i.e. a `smart` account (signs via the Kernel) or a legacy `walletconnect`
- *  record. Callers route smart accounts through the Kernel client. Resolves
- *  through getViemAccount, which self-heals a legacy `wallet.privateKey` into the
- *  per-account slot for the backward-compat local-EOA records.
- */
+/** The active account as a viem signer, or null for a smart/walletconnect record; resolves through getViemAccount, which self-heals a legacy `wallet.privateKey` into the per-account slot. */
 export async function getActiveViemAccount(): Promise<PrivateKeyAccount | null> {
   const rec = await getActiveAccount();
   if (!rec || rec.type === 'smart' || rec.type === 'walletconnect') return null;
   return getViemAccount(rec.id);
 }
 
-/**
- * Persist a `smart` (ZeroDev Kernel) account record and make it active. The id
- *  is the counterfactual Kernel address; no private key is stored (the owner is
- *  re-derived from the single app mnemonic at `hdIndex`). Idempotent on the id —
- *  re-adding merges the latest fields onto the existing record.
- */
+/** Persist a smart (ZeroDev Kernel) account record keyed by its counterfactual address and make it active, storing no private key; idempotent on the id, merging latest fields onto an existing record. */
 export async function addSmartAccount(rec: AccountRecord): Promise<AccountRecord> {
   const id = rec.id.toLowerCase();
   const list = await loadAccounts();

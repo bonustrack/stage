@@ -1,6 +1,4 @@
-/**
- * @file useVoiceRecorder hook: microphone capture, level metering, and slide-to-cancel gesture that stages a recorded voice clip as a pending composer attachment.
- */
+/** @file useVoiceRecorder hook: microphone capture, level metering, and slide-to-cancel gesture that stages a recorded voice clip as a pending composer attachment. */
 
 import { useMemo, useRef } from 'react';
 import { Alert, Animated, PanResponder } from 'react-native';
@@ -21,9 +19,7 @@ export const SLIDE_CANCEL_THRESHOLD_PX = 80;
 export function useVoiceRecorder(args: VoiceArgs) {
   const { upload, setErr, setRecording, setRecordSecs, setLevels } = args;
   const recRef = useRef<Audio.Recording | null>(null);
-  // Pinned to `number` (the RN timer id): adding the Railgun SDK pulls
-  // @types/node into the app's type program, whose Timeout return type collides
-  // with the DOM lib at clearInterval() — `number` keeps the clear calls clean.
+  /** Pinned to `number` (the RN timer id): the Railgun SDK pulls @types/node in, whose Timeout return type collides with the DOM lib at clearInterval() — `number` keeps the clear calls clean. */
   const recTimerRef = useRef<number | null>(null);
   /** Mic press timestamp — distinguishes push-to-talk (hold) from a tap. */
   const micPressStart = useRef(0);

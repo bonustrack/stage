@@ -41,7 +41,7 @@ export function githubLinkOf(text?: string | null): GithubRef | null {
   const rawRepo = m[2];
   if (owner === undefined || rawRepo === undefined) return null;
   if (RESERVED.has(owner.toLowerCase())) return null;
-  // Strip a trailing .git and any stray punctuation the regex may have caught.
+  /** Strip a trailing .git and any stray punctuation the regex may have caught. */
   const repo = rawRepo.replace(/\.git$/i, '');
   if (!owner || !repo) return null;
   const num = m[4] ? Number(m[4]) : undefined;

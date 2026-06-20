@@ -1,7 +1,4 @@
-/**
- * @file Hook deriving the full Contacts-page list — every DM peer plus every member of every group the active account belongs to, deduped by address (self excluded).
- *  Walks the live XMTP conversation list non-blocking over the cached seed, resolves names/avatars via peerProfiles, and returns the name-sorted list with a `loading` flag.
- */
+/** @file Hook deriving the full Contacts-page list (every DM peer plus every group member, deduped by address, self excluded) by walking the live XMTP conversation list non-blocking over the cached seed and resolving names/avatars via peerProfiles, returning the name-sorted list with a `loading` flag. */
 
 import { useEffect, useMemo, useState } from 'react';
 import { type Conversation } from '@xmtp/react-native-sdk';
@@ -64,14 +61,7 @@ export function useAllContacts(): { contacts: Contact[]; loading: boolean } {
   const [addresses, setAddresses] = useState<string[]>(() => seedAddresses());
   const [loading, setLoading] = useState(true);
 
-  /**
-   * FOCUS GATE: the Contacts tab body is mounted at app boot (the pager mounts
-   *  all tabs side-by-side), so an unconditional mount effect here ran the full
-   *  conversation walk + primeInboxEthCache network call on EVERY cold start —
-   *  even when the user never opens Contacts — duplicating HomeScreen.sync's
-   *  member walk (so the walk ran TWICE at boot). Latch on first Contacts focus
-   *  so the walk only happens when the page is actually visited.
-   */
+  /** FOCUS GATE: the Contacts tab body mounts at app boot (pager mounts all tabs side-by-side), so latch on first Contacts focus to avoid running the conversation walk + primeInboxEthCache on every cold start (which duplicated HomeScreen.sync's member walk). */
   const focused = useContactsFocused();
 
   useEffect(() => {
@@ -95,7 +85,7 @@ export function useAllContacts(): { contacts: Contact[]; loading: boolean } {
     return addresses
       .map(address => ({ address, name: getPeerName(address) ?? shortAddress(address) }))
       .sort((a, b) => a.name.localeCompare(b.name));
-    // `version` is intentional: re-sort/re-label when names resolve.
+    /** `version` is intentional: re-sort/re-label when names resolve. */
   }, [addresses, version]);
 
   return { contacts, loading };

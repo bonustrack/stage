@@ -1,13 +1,8 @@
-/**
- * @file Archived-conversations screen listing convs the user hid from the inbox
- * via the channel menu, using the device-local archive set (lib/archived.ts)
- * and reusing the channels-list cache and shared ChannelRow.
- */
+/** @file Archived-conversations screen listing convs hidden from the inbox, using the device-local archive set plus the channels-list cache and shared ChannelRow. */
 
 import { useCallback, useEffect, useState } from 'react';
 
-// FlatList from gesture-handler (not react-native): the plain RN list can be
-// blocked from scrolling by the swipe-back pan handler at the screen root.
+/** FlatList from gesture-handler (not RN): the plain RN list can be blocked from scrolling by the screen-root swipe-back pan handler. */
 import { FlatList } from 'react-native-gesture-handler';
 import { Pressable } from '@metro-labs/kit/pressable';
 import { Text } from '@metro-labs/kit/text';

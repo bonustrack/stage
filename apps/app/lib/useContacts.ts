@@ -1,7 +1,4 @@
-/**
- * @file Hook deriving the member-picker contact suggestions — the peers from existing 1:1 DM conversations, read from the account-scoped channelsCache (group rows ignored, no new network calls).
- *  Subscribes to the cache for live updates, fetches peer profiles, and returns a deduped, name-sorted list with the caller's `exclude` set removed and an optional `query` filter applied.
- */
+/** @file Hook deriving member-picker contact suggestions from existing 1:1 DM peers in the account-scoped channelsCache, returning a deduped, name-sorted list with `exclude` removed and an optional `query` filter applied. */
 
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -33,12 +30,7 @@ function peerAddressesFromRows(rows: CachedRow[] | null): string[] {
   return out;
 }
 
-/**
- * Live list of DM-peer contacts, minus `exclude`, filtered by `query`.
- *
- *  @param exclude addresses to omit (self is always omitted). Case-insensitive.
- *  @param query   case-insensitive filter over name + address; '' shows all.
- */
+/** Live list of DM-peer contacts minus the case-insensitive `exclude` set (self always omitted), filtered by a case-insensitive `query` over name and address. */
 export function useContacts(exclude: string[], query: string): Contact[] {
   const [rows, setRows] = useState<CachedRow[] | null>(() => getCachedRows());
   useEffect(() => subscribeCachedRows(setRows), []);
@@ -68,6 +60,6 @@ export function useContacts(exclude: string[], query: string): Contact[] {
           c.name.toLowerCase().includes(q) || c.address.includes(q))
       : contacts;
     return filtered.sort((a, b) => a.name.localeCompare(b.name));
-    // `version` is a render-trigger when profiles resolve — intentional dep.
+    /** `version` is a render-trigger when profiles resolve — intentional dep. */
   }, [peers, excludeSet, q, version]);
 }

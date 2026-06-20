@@ -1,8 +1,4 @@
-/**
- * @file HomeScreen — the Channels tab listing the XMTP conversations the local
- *  wallet belongs to; tapping a row pushes into /xmtp/[convId], with avatars
- *  resolved once per conv and cached in component state.
- */
+/** @file HomeScreen — Channels tab listing the XMTP conversations the local wallet belongs to; tapping a row pushes into /xmtp/[convId], avatars cached per conv in state. */
 
 import { useMemo, useState } from 'react';
 import type { SimultaneousRefs } from '../SwipeTabs.types';
@@ -53,21 +49,20 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
   const sub = fg;
   const st = useHomeState();
   const { rows, pinned, archived } = st;
-  // Filter chip state: enabled label OR-filter + the built-in "Unread" toggle + the "All" clear.
+  /** Filter chip state: enabled label OR-filter + the built-in "Unread" toggle + the "All" clear. */
   const { enabledLabels, toggleLabel, unreadOnly, toggleUnread, clearAllFilters } = useHomeFilters();
   const [query, setQuery] = useState<string>('');
-  // Apply cross-screen label-filter requests (tapped label chip on a row).
+  /** Apply cross-screen label-filter requests (tapped label chip on a row). */
   useIncomingLabelFilter(toggleLabel);
 
-  // Display ordering: pinned rows float to the top, then by lastTs desc. Derived
-  // for display only — the source `rows` state stays untouched for stream updates.
+  /** Display ordering (pinned rows float to top, then lastTs desc), derived for display only so source `rows` state stays untouched for stream updates. */
   const sortedRows = useMemo(
     () => deriveSortedRows({ rows, archived, enabledLabels, unreadOnly, pinned }),
     [rows, pinned, enabledLabels, unreadOnly, archived],
   );
-  // Unique label set across NON-ARCHIVED channels → drives the filter bar.
+  /** Unique label set across NON-ARCHIVED channels → drives the filter bar. */
   const barLabels = useMemo(() => deriveLabels((rows ?? []).filter(r => !archived.has(r.convId))), [rows, archived]);
-  // Search applied on top of the sorted list so it never surfaces hidden channels.
+  /** Search applied on top of the sorted list so it never surfaces hidden channels. */
   const visibleRows = useMemo(() => filterRowsByQuery(sortedRows, query), [sortedRows, query]);
 
   const channelProfilesVersion = usePeerProfiles(
@@ -82,7 +77,7 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
     refreshFromNetworkRef: st.refreshFromNetworkRef,
   });
 
-  // Stable extraData (identity only changes when a version does) so the list doesn't re-render its window each tick.
+  /** Stable extraData (identity only changes when a version does) so the list doesn't re-render its window each tick. */
   const listExtraData = useMemo(
     () => [channelProfilesVersion, draftsVersion, pinned, query] as const,
     [channelProfilesVersion, draftsVersion, pinned, query],

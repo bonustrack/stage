@@ -1,8 +1,4 @@
-/**
- * @file WalletSendCallsCodec and TransactionReferenceCodec, the hand-rolled pure-JS
- *  @xmtp/react-native-sdk content codecs for the official `xmtp.org/walletSendCalls:1.0` and
- *  `transactionReference:1.0` types (the npm packages target the incompatible Node SDK shape).
- */
+/** @file WalletSendCallsCodec and TransactionReferenceCodec, the hand-rolled pure-JS @xmtp/react-native-sdk content codecs for the official `walletSendCalls:1.0` and `transactionReference:1.0` types (npm packages target the incompatible Node SDK shape). */
 
 import type {
   JSContentCodec, ContentTypeId, EncodedContent,

@@ -1,17 +1,4 @@
-/**
- * @file OpenSea v2 helper listing the NFTs an account holds on a given chain (pure fetch).
- */
-/**
- * OpenSea v2 NFT helper. Mirrors Snapshot UI's `getNfts`
- *  (~/work/sx-monorepo/apps/ui/src/helpers/opensea.ts).
- *
- *  Lists the NFTs an account holds on a given chain. The API key is a public
- *  read key (same VITE_OPENSEA_API_KEY Snapshot ships in its client bundle),
- *  not a git secret, so it lives as a plain constant here. Overridable via
- *  EXPO_PUBLIC_OPENSEA_API_KEY, or the `apiKey` arg the Stage client threads
- *  through. Pure `fetch` (uses AbortController, available in RN + browser +
- *  Node 18+).
- */
+/** @file OpenSea v2 helper listing the NFTs an account holds on a given chain via pure `fetch` (AbortController-based); the API key is a public read key, overridable via EXPO_PUBLIC_OPENSEA_API_KEY or the `apiKey` arg. Mirrors Snapshot UI's `getNfts`. */
 
 import { parseOpenseaResponse } from './opensea.schema';
 import type { ApiNft } from './opensea.types';
@@ -63,9 +50,7 @@ export async function getNfts(
   const base = isTestnet ? 'https://testnets-api.opensea.io' : 'https://api.opensea.io';
   const url = `${base}/api/v2/chain/${name}/account/${address}/nfts`;
 
-  // fetch has no built-in timeout; without one a hung chain request leaves
-  // Promise.all (in getNftsAcrossChains) pending forever -> the NFT grid spinner
-  // spins indefinitely. Abort after 10s and degrade to [] like a non-200.
+  /** fetch has no built-in timeout, so a hung chain request would leave getNftsAcrossChains' Promise.all pending forever and spin the grid indefinitely; abort after 10s and degrade to [] like a non-200. */
   const ctrl = new AbortController();
   const timer = setTimeout(() => { ctrl.abort(); }, 10000);
   let res: Response;
@@ -75,15 +60,13 @@ export async function getNfts(
       signal: ctrl.signal,
     });
   } catch {
-    return []; // aborted / network error - degrade gracefully
+    return []; /** aborted / network error - degrade gracefully */
   } finally {
     clearTimeout(timer);
   }
-  if (!res.ok) return []; // rate-limited / not found - degrade gracefully
+  if (!res.ok) return []; /** rate-limited / not found - degrade gracefully */
 
-  // Boundary: validate the response envelope. On drift the helper logs and
-  // returns null, so we degrade to [] (matching the non-200 path) WITHOUT the
-  // bad shape silently flowing through as typed data.
+  /** Boundary: validate the response envelope; on drift the helper logs and returns null, so we degrade to [] (matching the non-200 path) without the bad shape silently flowing through as typed data. */
   const result = parseOpenseaResponse(await res.json());
   const nfts = result?.nfts ?? [];
 

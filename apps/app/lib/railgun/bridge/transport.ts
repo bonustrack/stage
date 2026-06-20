@@ -1,21 +1,4 @@
-/** @file RN-side RAILGUN bridge transport core: typed `rawCall`/`bridgeCall` RPC primitives over the in-process nodejs-mobile channel, kept in a leaf module to break the index→sdk→index cycle. */
-/**
- * RN-side RAILGUN bridge TRANSPORT core. Typed RPC over the in-process
- *  nodejs-mobile channel (each call gets a monotonic id the Node side echoes on
- *  the reply).
- *
- *  Split out of index.ts so the low-level `rawCall`/`bridgeCall` primitives live
- *  in a leaf module: sdk.ts and wallet.ts depend on the transport WITHOUT
- *  importing index.ts (which re-exports them), breaking what was an
- *  index → sdk → index import cycle. index.ts re-exports this module's public
- *  surface so existing `from './bridge'` call sites are unchanged.
- *
- *  GUARD CONTRACT (like lib/railgun/native.ts): absent runtime ⇒ isBridge
- *  Available() false, calls reject friendly, nothing throws on import, bundler
- *  never resolves the native module. SECURITY: encryptionKey + mnemonic derived
- *  on RN (deriveKeys.ts), passed over the in-process channel only (no network);
- *  the EOA private key NEVER leaves RN (txs signed on RN, populated tx passed in).
- */
+/** @file RN-side RAILGUN bridge transport core: typed `rawCall`/`bridgeCall` RPC over the in-process nodejs-mobile channel (monotonic id echoed on each reply), in a leaf module to break the index->sdk->index cycle; absent runtime rejects friendly, and encryptionKey/mnemonic cross the in-process channel only while the EOA key never leaves RN. */
 import { isNodejsMobilePresent, loadNodejsMobile, type NodejsChannel } from './nodejsMobile';
 import type { BridgeCall, BridgeEvent } from './protocol';
 import { attachRawProbe, fmtPayload, status } from './diagnostics';
@@ -34,7 +17,7 @@ const READY_EVENT = 'event:message';
 const readinessResolvers = new Map<number, () => void>();
 /** Tight so a genuine failure surfaces fast (the ready gate removes the old need for 120s of dropped-first-request headroom). */
 const CALL_TIMEOUT_MS = 15_000;
-export const ENGINE_INIT_TIMEOUT_MS = 90_000; // RPC providers + native prover
+export const ENGINE_INIT_TIMEOUT_MS = 90_000; /** RPC providers + native prover. */
 
 let started = false;
 let nextId = 1;
@@ -64,7 +47,7 @@ function startBridge(): boolean {
   mod.channel.addListener(REPLY_EVENT, (...args: unknown[]) => {
     const reply = args[0] as ReplyEnvelope | undefined;
     if (!reply || typeof reply.id !== 'number') return;
-    // Handshake probe replies resolve readiness directly (not real RPC calls).
+    /** Handshake probe replies resolve readiness directly (not real RPC calls). */
     const ready = readinessResolvers.get(reply.id);
     if (ready) {
       readinessResolvers.delete(reply.id);
@@ -83,9 +66,7 @@ function startBridge(): boolean {
       entry.reject(new Error(reply.error ?? 'Railgun bridge error'));
     }
   });
-  // LISTENER-BEFORE-START: boot-event listener + handshake (posts one 'hello' on
-  // the next tick) wired BEFORE mod.start. Readiness resolves on EITHER the boot
-  // event OR the 'hello' reply (first wins); a SINGLE timeout fails it. No loop.
+  /** LISTENER-BEFORE-START: boot-event listener + handshake (posts one 'hello' next tick) wired BEFORE mod.start; readiness resolves on EITHER the boot event OR the 'hello' reply (first wins) with a SINGLE timeout, no loop. */
   const hs = startReadinessHandshake({
     channel: mod.channel,
     requestEvent: REQUEST_EVENT,
@@ -99,7 +80,7 @@ function startBridge(): boolean {
     hs.markReady();
   });
   status('starting Node runtime…');
-  mod.start('main.js'); // start LAST: listeners attached, boot event can't be missed
+  mod.start('main.js'); /** start LAST: listeners attached, boot event can't be missed. */
   started = true;
   return true;
 }
@@ -120,9 +101,7 @@ export function rawCall(call: BridgeCall | ExtraCall, params: unknown, timeoutMs
       reject(new Error(`Railgun bridge call timed out: ${call}`));
     }, timeoutMs);
     pending.set(id, { resolve, reject, timer });
-    // Gate posts on the ready handshake: the channel does NOT buffer, so a post
-    // before main.js registers rg:request is dropped. readyPromise rejects on the
-    // handshake timeout if the host never boots, so the call fails loudly.
+    /** Gate posts on the ready handshake: the channel does NOT buffer, so a post before main.js registers rg:request is dropped; readyPromise rejects on the handshake timeout if the host never boots, so the call fails loudly. */
     (readyPromise ?? Promise.resolve()).then(
       () => {
         status(`request sent → ${call} (id ${id})`);

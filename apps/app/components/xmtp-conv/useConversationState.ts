@@ -94,7 +94,7 @@ export function useConversationState(convId: string | undefined, focus: string |
     return inboxToAddr[inboxId] ?? null;
   }, [inboxToAddr]);
 
-  // Our own eth address so our OWN bubbles resolve a stamp name/avatar (a DM's memberAddrs is empty).
+  /** Our own eth address so our OWN bubbles resolve a stamp name/avatar (a DM's memberAddrs is empty). */
   const selfAddr = xmtpFeed.inboxId ? (inboxToAddr[xmtpFeed.inboxId] ?? null) : null;
   const profilesVersion = usePeerProfiles([peerAddr, selfAddr, ...memberAddrs]);
   const mentionCandidates = useMentionCandidates(isGroup, memberAddrs, peerAddr, profilesVersion);

@@ -36,14 +36,7 @@ function SaveButton({ saving, disabled, onSave, dark }: {
 
 interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }
 
-/**
- * Group header — mirrors the user ProfileScreen layout exactly: a full-bleed
- *  cover banner (rowBg), then a page-bg sheet pulled UP 18px with rounded top
- *  corners, and the group avatar (88px, square) overlapping the cover at
- *  marginTop -44 (~80% over cover, half over the rounded black edge). The cover
- *  has no dedicated image (groups carry a single avatar), so it uses the same
- *  flat rowBg fallback the user profile uses. Tap avatar → view, hold → change.
- */
+/** Group header mirroring ProfileScreen: full-bleed cover banner, page-bg sheet pulled up 18px, square 88px avatar overlapping the cover; tap to view, hold to change. */
 export function GroupProfileHeader({ imageUrl, channelId, uploadingImage, insetTop, fg, sub, bg, rowBg, onTap, onPick }: {
   imageUrl: string; channelId: string; uploadingImage: boolean; insetTop: number;
   fg: string; sub: string; bg: string; rowBg: string;
@@ -53,8 +46,7 @@ export function GroupProfileHeader({ imageUrl, channelId, uploadingImage, insetT
   const fallbackUri = channelId ? stampAvatarUrl(channelStampSeed(channelId), 88) : '';
   return (
     <>
-      {/* Cover extends up behind the floating topnav/status bar so the colour
-          bleeds to y=0 (height += insetTop), exactly like ProfileScreen route. */}
+      {/* Cover extends up behind the floating topnav so the colour bleeds to y=0 (height += insetTop), like the ProfileScreen route. */}
       <Box height={140 + insetTop} surface="raised"/>
       <Box surface="surface" padding={{ x: 16 }} margin={{ top: -18 }} align="start" style={{ borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'visible' }}>
         <Pressable onPress={onTap} onLongPress={onPick} disabled={uploadingImage} hitSlop={8}

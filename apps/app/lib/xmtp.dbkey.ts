@@ -3,14 +3,7 @@
 import * as SecureStore from 'expo-secure-store';
 import { Directory, File, Paths } from 'expo-file-system';
 
-/**
- * SECURITY: the XMTP store-encryption key is device-bound at rest
- *  (WHEN_UNLOCKED_THIS_DEVICE_ONLY), mirroring the keyring's STORE_OPTS. Without
- *  this, expo-secure-store defaults to AFTER_FIRST_UNLOCK — which on iOS is
- *  eligible for iCloud Keychain sync / encrypted device backups, so an attacker
- *  with a backup could recover this AES key and decrypt the entire on-device
- *  message store off-device. Device-binding keeps the key on this device only.
- */
+/** SECURITY: the XMTP store-encryption key is device-bound at rest (WHEN_UNLOCKED_THIS_DEVICE_ONLY); the default AFTER_FIRST_UNLOCK is iCloud-backup-eligible, letting a backup leak this AES key and decrypt the message store off-device. */
 const STORE_OPTS: SecureStore.SecureStoreOptions = {
   keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
 };
@@ -41,15 +34,7 @@ function encodeKey(key: Uint8Array): string {
 /** Random Key. */
 function randomKey(): Uint8Array {
   const fresh = new Uint8Array(32);
-  /**
-   * This 32-byte key AES-encrypts the on-device XMTP SQLite store. A
-   *  non-CSPRNG (Math.random) key is predictable, so an attacker with disk
-   *  access could derive it and decrypt every message. If crypto.getRandomValues
-   *  is somehow absent we HARD-FAIL rather than mint a weak key (mirrors
-   *  x402.payHeader.ts's randomNonce, which throws for the same reason). RN
-   *  installs crypto.getRandomValues app-wide, so this never fires in a healthy
-   *  runtime.
-   */
+  /** This 32-byte key AES-encrypts the on-device XMTP SQLite store; a non-CSPRNG key would be derivable from disk, so we HARD-FAIL when crypto.getRandomValues is absent rather than mint a weak key. */
   if (typeof globalThis.crypto?.getRandomValues !== 'function') {
     throw new Error('Secure random unavailable: refusing to create a weak XMTP store-encryption key');
   }
@@ -57,17 +42,7 @@ function randomKey(): Uint8Array {
   return fresh;
 }
 
-/**
- * XMTP requires a 32-byte key it uses to AES-encrypt the on-device sqlite store.
- *  The key is now PER ACCOUNT (scoped by `accountId`), so wiping/recreating one
- *  account's store can NEVER affect another. Persisted in expo-secure-store
- *  (secure enclave on iOS, Android keystore on Android).
- *
- *  Migration: if this account has no per-account key yet but a legacy GLOBAL key
- *  exists, adopt the legacy key for this account (so a pre-existing, working
- *  store stays readable) and persist it under the per-account id. Brand-new
- *  accounts mint a fresh random key.
- */
+/** Load or create the per-account 32-byte AES key for the on-device XMTP sqlite store (scoped by accountId, persisted in expo-secure-store); migrates a legacy global key for the first account, else mints a fresh random key. */
 export async function loadOrCreateDbKey(accountId: string): Promise<Uint8Array> {
   const id = dbKeyId(accountId);
   const existing = await SecureStore.getItemAsync(id, STORE_OPTS).catch(() => null);
@@ -95,62 +70,21 @@ export async function deleteLegacyDbKey(): Promise<void> {
   await SecureStore.deleteItemAsync(LEGACY_DB_ENCRYPTION_KEY).catch(() => undefined);
 }
 
-/**
- * Auto-recovery wipe for a corrupt/key-mismatched LOCAL XMTP store. Deletes ONLY
- *  this account's on-disk sqlite store dir + its per-account db key, so the next
- *  Client.create mints a fresh key + store for THIS account alone. Never touches
- *  the account's private key / EOA registry, and never any OTHER account's key.
- *
- *  LEGACY-KEY CASE: a legacy-migrated account's per-account key is a COPY of the
- *  old global key (adopted in loadOrCreateDbKey). If that key is the corrupt one,
- *  deleting only the per-account copy is not enough: the retry's loadOrCreateDbKey
- *  finds no per-account key and RE-ADOPTS the still-present legacy global key — the
- *  same bad key — so create fails identically. To actually self-heal we must also
- *  drop the legacy global key when (and only when) THIS account was using it, so
- *  the retry mints a genuinely fresh key.
- *
- *  Safety: we delete the legacy key ONLY if this account's persisted per-account
- *  key byte-for-byte equals the legacy key. Any OTHER account that already loaded
- *  has its own persisted per-account copy (loadOrCreateDbKey persists on adopt),
- *  so it is unaffected. We never delete the legacy key on behalf of an account
- *  that wasn't actually keyed by it.
- */
+/** Auto-recovery wipe for a corrupt/key-mismatched local store: deletes only THIS account's store dir + per-account key, also dropping the legacy global key when (and only when) this account's key byte-equals it so the retry mints a genuinely fresh key. */
 export async function wipeXmtpStore(accountId: string, dbDirName: string): Promise<void> {
-  /**
-   * Delete the on-disk store (db3 + -wal/-shm + the read-only `.sqlcipher_salt`
-   *  sidecar) robustly — wiping the WHOLE dir — so neither a stale db3 NOR a
-   *  stale salt encrypted under the OLD key survives at the path the fresh key
-   *  will reopen. A surviving salt-without-db3 (or db3-without-salt) is exactly
-   *  what triggers the persistent `PRAGMA key or salt has incorrect value`.
-   */
+  /** Delete the whole on-disk store dir (db3 + -wal/-shm + read-only `.sqlcipher_salt`) so no stale db3 or salt under the old key survives — a surviving mismatch triggers `PRAGMA key or salt has incorrect value`. */
   deleteDbFiles(dbDirName);
   /** Decide BEFORE deleting the per-account key whether it matched the legacy key. */
   const accountKey = await SecureStore.getItemAsync(dbKeyId(accountId), STORE_OPTS).catch(() => null);
   const legacyKey = await SecureStore.getItemAsync(LEGACY_DB_ENCRYPTION_KEY, STORE_OPTS).catch(() => null);
   await deleteDbKey(accountId);
-  /**
-   * Only blow away the legacy global key if THIS account was actually keyed by it
-   *  (i.e. it's the legacy-migrated account whose corrupt store we're wiping), or
-   *  if this account had no per-account key yet but a legacy key exists (it would
-   *  have adopted that same key on retry). Either way the legacy key is the one
-   *  that would be re-adopted, so dropping it is what makes the retry fresh.
-   */
+  /** Drop the legacy global key only when THIS account was keyed by it (matching key, or no per-account key yet so it would re-adopt the legacy one) — that's what makes the retry mint a fresh key. */
   if (legacyKey && (accountKey === legacyKey || accountKey === null)) {
     await deleteLegacyDbKey();
   }
 }
 
-/**
- * Remove the on-disk sqlite store for one account, leaving an EMPTY, consistent
- *  dir so the next Client.create starts fresh (key, db3 header, salt all mutually
- *  consistent). libxmtp/SQLCipher writes `<name>.db3` + `-wal`/`-shm` + the
- *  read-only `<name>.db3.sqlcipher_salt` sidecar; a db3 without its salt (or vice
- *  versa) makes every open fail with `PRAGMA key or salt has incorrect value`, so
- *  a partial wipe is fatal. We wipe the WHOLE dir tree in ONE recursive native
- *  call (handles the read-only salt + busy WAL handle far better than a JS loop),
- *  falling back to a per-file sweep only if that throws, then ALWAYS recreate it
- *  empty so the dir is guaranteed-clean for the fresh create.
- */
+/** Remove one account's on-disk sqlite store, leaving an empty consistent dir for a fresh Client.create; a partial wipe (db3 without salt or vice versa) is fatal, so wipe the whole tree in one recursive call (per-file sweep fallback) then recreate it empty. */
 export function deleteDbFiles(dbDirName: string): void {
   const dir = dbDirObj(dbDirName);
   if (!dir.exists) {
@@ -187,22 +121,13 @@ export function ensureDbDir(name: string): Promise<string> {
   return Promise.resolve(path);
 }
 
-/**
- * Convert an expo-file-system directory URI into the absolute filesystem path
- *  libxmtp expects (`/data/user/0/...`), NOT a `file://` URI and NOT a relative
- *  path. `Paths.document.uri` is always an absolute `file://` URI on iOS/Android,
- *  so we: (1) strip the `file:` scheme + ALL leading slashes and re-anchor to a
- *  single leading `/` (handles both `file:///abs` and the rare `file:/abs`),
- *  (2) collapse any accidental double slashes in the body, (3) drop the trailing
- *  slash since the SDK appends `<inboxId>.db3` itself. A malformed/relative path
- *  here is exactly what makes the native open fail with os error 13.
- */
+/** Convert an expo-file-system directory URI into the absolute filesystem path libxmtp expects (not a `file://` URI or relative path): strip the scheme + leading slashes, re-anchor to one `/`, collapse double slashes, and drop the trailing slash; a malformed path causes the native open's os error 13. */
 function toFsPath(dir: Directory): string {
   const decoded = (() => { try { return decodeURI(dir.uri); } catch { return dir.uri; } })();
   return '/' + decoded
-    .replace(/^file:\/+/i, '')   // drop scheme + every leading slash
-    .replace(/\/{2,}/g, '/')     // collapse any `//` in the body
-    .replace(/\/+$/, '');        // drop trailing slash(es)
+    .replace(/^file:\/+/i, '')   /** drop scheme + every leading slash */
+    .replace(/\/{2,}/g, '/')     /** collapse any `//` in the body */
+    .replace(/\/+$/, '');        /** drop trailing slash(es) */
 }
 
 /** DEV-ONLY sanity: confirm the dbDirectory exists and is writable BEFORE handing it to Client.create, logging the PATH (never the key) so the os-error-13 cluster is diagnosable from logcat. Never throws — purely diagnostic. */

@@ -43,7 +43,7 @@ export function controlColors(variant: ControlVariant, dark: boolean): ControlCo
   const p = schemePalette(dark);
   const head = p.head;
   const sub = p.sub;
-  // Input fill + focus accent have no semantic token equivalent (kept literal).
+  /** Input fill + focus accent have no semantic token equivalent (kept literal). */
   const inputBg = dark ? '#1b1c1e' : '#f4f4f5';
   const border = p.border;
   const accent = dark ? '#4f9cf9' : '#2f6fed';

@@ -1,8 +1,4 @@
-/**
- * @file About panel for the System screen showing app version, git commit hash,
- *  package name, and build profile, with the commit row linking through to the
- *  GitHub commit when a real SHA is stamped at build time.
- */
+/** @file About panel for the System screen showing app version, git commit hash, package name, and build profile; the commit row links to the GitHub commit when a real SHA is stamped at build time. */
 
 import Constants from 'expo-constants';
 import * as Application from 'expo-application';

@@ -1,29 +1,4 @@
-/** @file Generic AsyncStorage-backed store factories (`createSetStore`, `createValueStore`) providing the shared load/save/subscribe/hydrate boilerplate for the small device-local preference stores. */
-
-/*
- * Generic persisted-store factories - the shared load/save/subscribe/hydrate
- *  boilerplate that the small device-local preference stores (pins, archived,
- *  notifReadState, pushPref, lastAttachment, …) all hand-rolled near-identically.
- *
- *  Two factories cover the two real shapes in lib/:
- *
- *   - `createSetStore`   - a `Set<string>` persisted as a JSON array to
- *     AsyncStorage (pins / archived / notifReadState). Async one-time load,
- *     synchronous membership reads from an in-memory mirror, dependency-free
- *     pub/sub so consumers repaint the instant the set changes.
- *
- *   - `createValueStore` - a single value of type `T` mirrored in memory and
- *     persisted to AsyncStorage with caller-supplied serialize/deserialize
- *     (pushPref boolean, lastAttachment string, …). Load can be awaited
- *     (async) or fire-and-forget (sync style) per the caller.
- *
- *  Each store exposes the same low-level surface the originals used internally
- *  (load / get / set / subscribe + a `notify`/listeners-equivalent), and the
- *  per-store modules re-export their EXACT historical public API as thin
- *  wrappers so every consumer stays untouched. Storage keys, defaults, and
- *  serialization are passed in verbatim so previously-persisted data keeps
- *  loading after the update.
- */
+/** @file Generic AsyncStorage-backed store factories (`createSetStore` for a Set<string> JSON array, `createValueStore` for a single serialized value) supplying the shared load/save/subscribe/hydrate boilerplate; per-store modules re-export their exact historical API as thin wrappers. */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { hydrateOnce, makeListeners } from './storeCore';

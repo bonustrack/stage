@@ -45,12 +45,7 @@ export interface MessengerBubbleProps {
   onSign?: () => void;
   /** True while this request's signature is being produced — shows a spinner. */
   signing?: boolean;
-  /**
-   * Whether the conversation's XMTP consent is `allowed`. `false` (an unknown /
-   *  stranger DM) DISABLES the Sign/Pay actions on request cards so a single tap
-   *  can't sign/pay for an unaccepted sender; `undefined` leaves them enabled
-   *  (allowed convs / not gated).
-   */
+  /** Whether the XMTP consent is `allowed`; `false` (stranger DM) disables Sign/Pay on request cards, `undefined` leaves them enabled. */
   consentAllowed?: boolean;
   /** When true, the body text renders in a selectable <Text> so the OS text-selection handles appear for partial copy. Set by the "Select" action in the long-press menu (parent tracks a selected message id). */
   selectable?: boolean;

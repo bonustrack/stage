@@ -1,8 +1,4 @@
-/**
- * @file Inline card for a DM-by-address link (metro://xmtp/user/<address>),
- * resolving each side's own local DM on tap via openDmWithAddress and pulling
- * name/avatar from peerProfiles keyed on the peer address.
- */
+/** @file Inline card for a DM-by-address link (metro://xmtp/user/<address>), resolving the local DM on tap via openDmWithAddress and pulling name/avatar from peerProfiles keyed on the peer address. */
 
 import { router } from 'expo-router';
 import { ChannelRow } from './ChannelRow';

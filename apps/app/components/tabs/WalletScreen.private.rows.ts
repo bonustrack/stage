@@ -1,6 +1,4 @@
-/**
- * @file Builds the always-present fixed set of private (Railgun-shielded) Tokens-tab rows in the public AssetRow shape, overlaying live snapshot amounts and reusing each token's public unit price by symbol.
- */
+/** @file Builds the always-present fixed set of private (Railgun-shielded) Tokens-tab rows in the public AssetRow shape, overlaying live snapshot amounts and reusing each token's public unit price by symbol. */
 
 import type { AssetRow } from './WalletScreen.assets';
 import type { PrivateSnapshot } from '../../lib/railgun/types';
@@ -10,12 +8,7 @@ import { stampTokenUrl } from '@metro-labs/kit/avatar';
 
 const NETS: readonly RailgunNet[] = ['mainnet', 'sepolia'];
 
-/**
- * Unit price (USD) + 24h change keyed by token symbol, derived from the
- *  already-fetched PUBLIC rows. Both networks share a symbol, so the latest
- *  non-null public price for ETH/USDC wins — letting Sepolia private rows reuse
- *  the mainnet unit price so the $ column stays populated.
- */
+/** Unit price (USD) + 24h change keyed by token symbol from the already-fetched public rows; the first non-null price per symbol wins so Sepolia private rows reuse the mainnet price and the $ column stays populated. */
 export type SymbolPrices = ReadonlyMap<string, { priceUsd: number | null; change24h: number | null }>;
 
 /** Build the symbol→price map from the public AssetRow[] (the same rows the public Tokens list + wallet total use). Prefers the first non-null price seen for each symbol so a testnet/zero-priced twin can't clobber it. */

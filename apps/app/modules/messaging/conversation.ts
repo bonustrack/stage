@@ -1,6 +1,4 @@
-/**
- * @file Adapters that summarise a raw XMTP `Conversation` into the facade's `ConversationView` / `ConversationRequestView` domain row shapes, so components consume domain types instead of leaking raw SDK handles into the component tree.
- */
+/** @file Adapters that summarise a raw XMTP `Conversation` into the facade's `ConversationView` / `ConversationRequestView` domain row shapes, so components consume domain types instead of leaking raw SDK handles into the component tree. */
 
 import type { Conversation, DecodedMessage } from '@xmtp/react-native-sdk';
 import {
@@ -184,12 +182,7 @@ export async function summarizeConversationRequest(
   };
 }
 
-/**
- * Lightweight avatar-only descriptor for a message request (the notifications
- *  preview pile). Moved UNCHANGED from useRequestPreviews.describe: resolves the
- *  DM peer / group image only - deliberately NO conv.sync()/messages() round-trip
- *  (the pile only needs avatars).
- */
+/** Lightweight avatar-only descriptor for a message request (the notifications preview pile): resolves the DM peer / group image only, deliberately skipping the conv.sync()/messages() round-trip since the pile only needs avatars. */
 export async function requestAvatarDescriptor(
   conv: Conversation,
 ): Promise<RequestAvatarDescriptor> {

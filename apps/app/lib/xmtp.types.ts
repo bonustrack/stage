@@ -1,8 +1,4 @@
-/**
- * @file Shared XMTP types and pure string helpers (line/conv-id encoding, address formatting) for
- *  the app's XMTP client lib, with no runtime deps on the other xmtp modules so any of them can
- *  import it; extracted from lib/xmtp.ts and re-exported from there.
- */
+/** @file Shared XMTP types and pure string helpers (line/conv-id encoding, address formatting) for the app's XMTP client lib, with no runtime deps on the other xmtp modules so any can import it; extracted from lib/xmtp.ts. */
 
 import type {
   DecodedMessage, ConversationVersion,

@@ -30,7 +30,7 @@ export function Title(props: TitleProps): React.ReactElement {
   const scheme = useKitScheme();
 
   const base: TextStyle = {
-    // Head colour === palette `link` (#ffffff/#000000), matching today exactly.
+    /** Head colour === palette `link` (#ffffff/#000000), matching today exactly. */
     color: color != null ? resolveColorToken(color, scheme) : palette.link,
     fontSize: LEVEL_SIZE[lvl],
     fontFamily: 'Calibre-Semibold',

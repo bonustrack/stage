@@ -1,22 +1,4 @@
-/**
- * @file Pure guardian/social-recovery rules (threshold math, request/approval protocol, encodings) for the ZeroDev smart account.
- */
-/**
- * Pure guardian / social-recovery rules for the ZeroDev smart-account wallet —
- *  framework-agnostic, viem-only. The host (apps/app/lib/zerodev/recovery) does
- *  the on-chain IO + XMTP handoff; the threshold math, the recovery-request /
- *  approval message protocol, and the canonical encodings live here so they have
- *  one source of truth (mirrors ./config + ./derive).
- *
- *  See docs/zerodev-wallet-spec.md §(d) + review items 2 & 3. Two locked
- *  decisions baked in here:
- *    - Anti-rounding threshold (review item 3): every guardian gets weight 1 and
- *      threshold = M (integer). No floor(100/N)/ceil math, so M honest guardians
- *      can never fall just short of an unreachable percentage threshold.
- *    - Native timelock (§(d) + the WeightedECDSAValidator `_delay` field): the
- *      delay is a config value here; the validator enforces the window on-chain.
- *      The owner cancels a pending rotation with `veto` during the window.
- */
+/** @file Framework-agnostic (viem-only) guardian/social-recovery rules for the ZeroDev smart account — threshold math, request/approval message protocol, and canonical encodings as the one source of truth; every guardian has weight 1 with integer threshold M (no rounding griefing), and the native timelock delay is config here while the validator enforces it on-chain. */
 
 /** A guardian = a friend's EOA address (lowercased for storage / comparison). */
 export type GuardianAddress = string;
@@ -66,12 +48,7 @@ export function dedupeGuardians(guardians: GuardianAddress[]): GuardianAddress[]
   return out;
 }
 
-/**
- * A recovery REQUEST — what the owner-being-recovered broadcasts to guardians
- *  over XMTP. Carries the wallet (Kernel) address being recovered + the NEW owner
- *  address the guardians are asked to approve. No secrets; guardians sign the
- *  on-chain rotation themselves (offchain signature collection, §(d)).
- */
+/** A recovery REQUEST broadcast over XMTP to guardians, carrying the Kernel wallet address being recovered and the new owner the guardians are asked to approve; no secrets, as guardians sign the on-chain rotation themselves. */
 export interface RecoveryRequest {
   kind: 'recovery.request';
   /** Counterfactual Kernel address (the wallet) being recovered. */
@@ -82,12 +59,7 @@ export interface RecoveryRequest {
   label?: string;
 }
 
-/**
- * A guardian APPROVAL — posted back into the recovery conversation. Carries the
- *  guardian's EIP-712 `Approve` signature over the rotation's callDataAndNonceHash
- *  (the validator's offchain-collected signature, §(d)); the initiator concatenates
- *  these into the one sponsored doRecovery userOp.
- */
+/** A guardian APPROVAL posted back into the recovery conversation, carrying the guardian's EIP-712 `Approve` signature over the rotation's callDataAndNonceHash; the initiator concatenates these into the one sponsored doRecovery userOp. */
 export interface RecoveryApproval {
   kind: 'recovery.approval';
   wallet: string;

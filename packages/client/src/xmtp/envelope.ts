@@ -1,19 +1,4 @@
-/**
- * @file Maps a decoded XMTP message onto the shared HistoryEntry envelope via a structural message view.
- */
-/**
- * Map a decoded XMTP message -> the app/daemon `HistoryEntry` envelope.
- *
- *  This is the framework-agnostic shaping that turns a decoded message into the
- *  same `HistoryEntry` shape the daemon-side train emits + the MessengerBubble
- *  renderer consumes, so the UI doesn't care which transport an event came from.
- *
- *  The native @xmtp/react-native-sdk `DecodedMessage` stays in apps/app. This
- *  module operates on a structural VIEW of it (`DecodedMessageView`) — the few
- *  fields the mapper reads — so the package never imports the native type. The
- *  app passes its native message straight in (it satisfies the view). ZERO @xmtp
- *  / react-native / expo imports.
- */
+/** @file Maps a decoded XMTP message onto the shared HistoryEntry envelope (the transport-agnostic shape the daemon train emits and MessengerBubble consumes) via a structural DecodedMessageView, so the package imports zero @xmtp/react-native/expo types. */
 
 import type { HistoryEntry } from '../types';
 import { humanizeGroupUpdated, type GroupUpdatedContent } from './humanize';

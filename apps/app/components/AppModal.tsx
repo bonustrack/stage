@@ -1,8 +1,4 @@
-/**
- * @file AppModal, the app's single reusable bottom-sheet modal: a bottom-anchored
- * sheet with rounded top corners, dim tap-to-close backdrop, optional title row,
- * scrollable content, and bottom safe-area handling.
- */
+/** @file AppModal: the app's reusable bottom-sheet modal with rounded top corners, tap-to-close backdrop, scrollable content, and safe-area handling. */
 
 import type { ReactNode } from 'react';
 import { Modal } from 'react-native';
@@ -24,18 +20,13 @@ export function AppModal({
 }): React.ReactElement {
   const insets = useSafeAreaInsets();
   const pal = usePalette();
-  const sheetBg = pal.bg; // sheet surface → bg token (editable)
-  // Sheets are "blocks" → top corners follow the border-radius token. Bumped up
-  // a touch (×1.4) so the sheet edge stays visibly rounder than inline cards,
-  // preserving the bottom-sheet look at the 12px default. No hard cap so the
-  // radius variable keeps applying when cranked up (channel-menu et al.).
+  const sheetBg = pal.bg; /** sheet surface → bg token (editable) */
+  /** Sheet top corners follow the border-radius token, bumped ×1.4 so the edge stays rounder than inline cards; no hard cap so the radius keeps applying when cranked up. */
   const sheetRadius = Math.round(useBlockRadius() * 1.4);
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      {/* RN <Modal> renders in its OWN native window the app-root
-          GestureHandlerRootView does NOT cover — without this wrapper every
-          GestureDetector inside (the ColorPicker sliders) is silently dead. */}
+      {/** RN Modal renders in its own native window the app-root GestureHandlerRootView doesn't cover; without this wrapper every inner GestureDetector is silently dead. */}
       <GestureHandlerRootView style={{ flex: 1 }}>
       <Pressable
         onPress={onClose}

@@ -24,12 +24,11 @@ function BubbleAttachment({ att, index, entryId, fg, sub, dark }: {
   att: Attachment; index: number; entryId: string; fg: string; sub: string; dark: boolean;
 }): React.ReactElement {
   const key = att.id ?? `${entryId}-att-${index}`;
-  // Multi-remote attachments carry encrypted bytes on IPFS — resolve lazily.
+  /** Multi-remote attachments carry encrypted bytes on IPFS — resolve lazily. */
   if (att.remote) {
     return <RemoteAttachmentResolver key={key} att={att} fg={fg} sub={sub} dark={dark} msgId={entryId} index={index} />;
   }
-  // XMTP inline attachments carry bytes in `dataB64` — render via data: URI;
-  // otherwise the url (local file:// for optimistic, http(s)/data: as-is).
+  /** XMTP inline attachments carry bytes in `dataB64` (render via data: URI); otherwise use the url as-is. */
   const fullUrl = att.dataB64
     ? `data:${att.mime ?? 'application/octet-stream'};base64,${att.dataB64}`
     : att.url ?? '';
@@ -66,9 +65,7 @@ export function BubbleBody({ text, fg, dark, selectable, highlight, markdownProp
   text: string; fg: string; dark: boolean; selectable?: boolean;
   highlight?: string; markdownProps: MarkdownProps;
 }): React.ReactElement {
-  // Repair line breaks delivered as the literal 2-char `\n` (escaped by a sender
-  // that JSON-stringified the body) so they render as real breaks. Lossless for
-  // normal messages (no-op fast path).
+  /** Repair line breaks delivered as the literal 2-char `\n` (escaped by a JSON-stringifying sender) into real breaks; no-op fast path for normal messages. */
   const body = unescapeBody(text);
   return (
     <Box style={{ alignSelf: 'stretch' }}>
@@ -131,7 +128,7 @@ export function TranscriptLine({ transcript, atts, entryTs, sub }: {
       <Text size="xs" color={sub} style={{ opacity: 0.85, fontStyle: 'italic', marginTop: atts.length ? 4 : 0 }}>“{transcript}”</Text>
     );
   }
-  // Fresh audio bubble + transcription still running; old audio gets nothing.
+  /** Fresh audio bubble + transcription still running; old audio gets nothing. */
   const transcribing = atts.some(a => a.kind === 'audio') && Date.now() - new Date(entryTs).getTime() < 30_000;
   if (!transcribing) return null;
   return (

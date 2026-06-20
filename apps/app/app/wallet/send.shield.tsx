@@ -1,8 +1,4 @@
-/**
- * @file Unified shield-flow form driving both shield (public to own private
- * 0zk balance) and shielded send (private 0zk-to-0zk transfer), sharing the
- * amount input, stepper, and footer wiring while differing by mode.
- */
+/** @file Unified shield-flow form driving both shield (public→own private 0zk) and shielded send (private 0zk→0zk), sharing amount input, stepper, and footer wiring, differing by mode. */
 import { useEffect, useState } from 'react';
 import { fontSize } from '@metro-labs/kit/tokens';
 import { Input } from '@metro-labs/kit/input';
@@ -90,15 +86,12 @@ function ShieldBody({ pal, dark, zkAddress, initialSymbol, initialChainId, onFoo
   const [chainId, setChainId] = useState<number>(initialChainId ?? 11155111);
   const balance = useSelectedBalance('public', { symbol, chainId });
   const [amount, setAmount] = useState('');
-  // Wall-clock of the latest submit; we track the shield pending row started at
-  // or after this, so the stepper follows THIS shield (not a stale prior one).
+  /** Wall-clock of the latest submit; the stepper follows the shield row started at/after this, not a stale prior one. */
   const [submittedAt, setSubmittedAt] = useState<number | null>(null);
   const [action, setAction] = useState<PendingAction | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
-  // Subscribe to the pending store and track this shield's row (newest `shield`
-  // action at/after submit) so the stepper reflects every phase - including the
-  // post-receipt `scanning` tail driven by the balance-landed watcher.
+  /** Subscribe to the pending store and track this shield's newest at/after-submit row so the stepper reflects every phase, including the post-receipt `scanning` tail from the balance-landed watcher. */
   useEffect(() => {
     if (submittedAt == null) return;
     let unsub: (() => void) | undefined;
@@ -132,8 +125,7 @@ function ShieldBody({ pal, dark, zkAddress, initialSymbol, initialChainId, onFoo
     })();
   };
 
-  // Report the primary-button state up so the page renders it in the pinned
-  // footer (keeps the form as the source of truth for label/disabled/loading).
+  /** Report the primary-button state up so the page renders it in the pinned footer, keeping the form as source of truth for label/disabled/loading. */
   const submitLabel = shieldSubmitLabel(busy, stage);
   useEffect(() => {
     onFooter?.({ submitLabel, onSubmit, submitDisabled: !canSubmit, submitLoading: busy });
@@ -175,13 +167,11 @@ function SendBody({ pal, dark, symbol = 'ETH', chainId = 1, balance = null, onFo
     setErr(null); setErrPhase(null); setTxHash(null); setStage('submitting');
     void (async (): Promise<void> => {
       try {
-        // proving runs first; flip to confirming once it broadcasts.
+        /** proving runs first; flip to confirming once it broadcasts. */
         const res = await sendShielded({ chainId, symbol, amount: amount.trim(), recipient: to.trim() });
         setTxHash(res.txHash); setStage('done');
       } catch (e) {
-        // Robustly extract a message: handle non-Error rejections, empty
-        // messages, and the wrapped { step } from sendShielded so the user
-        // ALWAYS sees real text instead of a bare red X.
+        /** Robustly extract a message (non-Error rejections, empty messages, the wrapped { step } from sendShielded) so the user ALWAYS sees real text instead of a bare red X. */
         const we = e as { message?: unknown; step?: unknown } | undefined;
         const raw = typeof we?.message === 'string' ? we.message : '';
         const msg = raw.trim() ? raw : `Send failed: ${String(e)}`;

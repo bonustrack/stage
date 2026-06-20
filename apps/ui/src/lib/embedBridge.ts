@@ -1,7 +1,4 @@
-/**
- * @file postMessage bridge between the embedded iframe widget and its host page (unread badge, close, theme).
- */
-/** When the messenger runs inside an iframe (the embed widget), notify the host page of inbound messages so it can badge its launcher button. No-op on the standalone metro.box site. */
+/** @file postMessage bridge between the embedded iframe widget and its host page (unread badge, close, theme); notifies the host of inbound messages to badge its launcher, no-op on the standalone metro.box site. */
 
 /** True when the messenger is running inside an iframe (the embed widget). */
 export function runningInIframe(): boolean {

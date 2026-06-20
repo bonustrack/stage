@@ -1,7 +1,4 @@
-/**
- * @file Label suggestions: surface labels the user has already used across their other groups,
- *  read purely from the in-memory channels-list cache (`getCachedRows`) with no per-group re-sync.
- */
+/** @file Label suggestions: surface labels the user has already used across their other groups, read purely from the in-memory channels-list cache (`getCachedRows`) with no per-group re-sync. */
 
 import { getCachedRows } from './channelsCache';
 
@@ -13,12 +10,7 @@ function rowLabels(row: unknown): string[] {
   return raw.filter((l): l is string => typeof l === 'string');
 }
 
-/**
- * The union of every label across ALL the user's groups, deduped
- *  case-insensitively (keeping the first-seen casing) and sorted A→Z. Built
- *  from the in-memory channels cache — no network / no sync. Returns [] before
- *  the channels list has populated the cache.
- */
+/** Union of every label across all the user's groups, deduped case-insensitively (first-seen casing) and sorted A→Z from the in-memory channels cache; returns [] before the list has populated it. */
 export function getAllKnownLabels(): string[] {
   const rows = getCachedRows();
   if (!rows) return [];
@@ -35,12 +27,7 @@ export function getAllKnownLabels(): string[] {
   return out.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 }
 
-/**
- * Suggestions for the add-label input on THIS group: all known labels minus
- *  the ones already applied here (case-insensitive), optionally filtered by the
- *  current input as a case-insensitive substring. Excludes an exact-match of
- *  the query itself (adding it verbatim is already the primary action).
- */
+/** Suggestions for this group's add-label input: known labels minus those already applied (case-insensitive), optionally substring-filtered by the input, excluding an exact match of the query itself. */
 export function suggestLabels(query: string, applied: string[]): string[] {
   const appliedKeys = new Set(applied.map((l) => l.toLowerCase()));
   const q = query.trim().toLowerCase();

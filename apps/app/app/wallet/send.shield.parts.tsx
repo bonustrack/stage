@@ -1,7 +1,4 @@
-/**
- * @file Presentational sub-parts for the Shield form: the locked own-0zk
- * recipient row and the phase/result status line.
- */
+/** @file Presentational sub-parts for the Shield form: locked own-0zk recipient row and phase/result status line. */
 import { Linking } from 'react-native';
 
 import { Pressable } from '@metro-labs/kit/pressable';
@@ -35,12 +32,7 @@ export function ShieldRecipient({ pal, zkAddress }: {
   );
 }
 
-/**
- * Result line shown alongside the stepper: the "needs latest build" notice when
- *  the bridge is absent, the chain-aware explorer tx link once broadcast, and a
- *  clear error message on failure. The per-phase progress text now lives in the
- *  <ShieldStepper>; this line carries only the link + error + bridge notice.
- */
+/** Result line beside the stepper: bridge-missing notice, explorer tx link once broadcast, and error on failure (per-phase progress lives in ShieldStepper). */
 export function ShieldPhaseLine({ pal, txHash, err, errPhase, bridgeOk, chainId }: {
   pal: Pal; txHash: string | null; err: string | null; errPhase?: string | null;
   bridgeOk: boolean; chainId: number;

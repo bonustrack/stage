@@ -1,6 +1,4 @@
-/**
- * @file In-conversation full-text search over the LOCAL XMTP message history only (no inbox-wide sync): pages the conversation's local MLS db in capped chunks, filters on a case-insensitive substring, and streams abortable partial results via an onResults callback.
- */
+/** @file In-conversation full-text search over the LOCAL XMTP message history only: pages the local MLS db in capped chunks, filters on a case-insensitive substring, and streams abortable partial results via an onResults callback. */
 
 import type { HistoryEntry } from '../../lib/types';
 import { isMetroControlBody } from '../../lib/push';
@@ -74,20 +72,12 @@ function shouldStopScan(
   capped: boolean, state: ScanState, pageLen: number, page: number,
 ): boolean {
   if (capped || state.truncated) return true;
-  if (pageLen < PAGE_SIZE) return true; // history exhausted
+  if (pageLen < PAGE_SIZE) return true; /** history exhausted */
   if (page === SEARCH_MAX_PAGES - 1) { state.truncated = true; return true; }
   return false;
 }
 
-/**
- * Scan the local history of `line` for `query`, off the critical path.
- *
- *  Pages oldest-ward from the newest message using a `beforeNs` cursor (the same
- *  cursor math as feedQuery.loadFeedOlderPage), filters by substring, and
- *  invokes `onResults` with the growing hit list after each page so the UI can
- *  render progressively. Resolves with the final result when the scan ends
- *  (history exhausted, a cap reached, or aborted). Never throws.
- */
+/** Scan the local history of `line` for `query` off the critical path, paging oldest-ward via a `beforeNs` cursor and invoking `onResults` after each page for progressive render; resolves on exhaustion/cap/abort and never throws. */
 export async function searchLocalHistory(
   line: string,
   query: string,
@@ -107,12 +97,12 @@ export async function searchLocalHistory(
   for (let page = 0; page < SEARCH_MAX_PAGES; page += 1) {
     if (shouldAbort()) break;
     const mapped = await readLocalSearchPage(conv, beforeNs, line);
-    if (mapped === null || mapped.length === 0) break; // read failed / exhausted
+    if (mapped === null || mapped.length === 0) break; /** read failed / exhausted */
 
     const capped = collectPageHits(mapped, needle, state);
     /** Advance the cursor to just-before the oldest message of this page. */
     const oldest = mapped[mapped.length - 1];
-    if (oldest === undefined) break; // empty page (batch was non-empty above)
+    if (oldest === undefined) break; /** empty page (batch was non-empty above) */
     beforeNs = new Date(oldest.ts).getTime() * 1_000_000;
 
     onResults({ hits: [...state.hits], truncated: state.truncated });
