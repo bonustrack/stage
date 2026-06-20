@@ -76,8 +76,6 @@
     "viem": "^2.51.0"
   },
   "devDependencies": {
-    "@expo/config-plugins": "~54.0.4",
-    "@expo/config-types": "~54.0.10",
     "@stage-labs/config": "workspace:*",
     "@types/react": "~19.1.0",
     "babel-preset-expo": "~54.0.10",
