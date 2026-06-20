@@ -7,30 +7,4 @@ on:
 
 jobs:
   ci:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.9
-      - run: bun install --frozen-lockfile
-      # Workspace-wide gates via turbo. `test` now fans out across
-      # packages/metro + packages/client + apps/app (was metro-only); a failure
-      # in any step fails the job and blocks the PR.
-      - name: Lint
-        run: bun run lint
-      - name: Typecheck
-        run: bun run typecheck
-      # Dead-code / dependency gate. `knip` exits non-zero on any finding
-      # (unused files/deps/exports, unlisted deps, unresolved imports) and
-      # `madge` (scripts/madge.mjs) exits non-zero on any circular dependency,
-      # so both fail the job and block the PR. These are blocking, not advisory:
-      # the non-fatal `report:deps` script is for local pre-flight only.
-      - name: Knip (unused files/deps/exports)
-        run: bun run knip
-      - name: Madge (circular dependencies)
-        run: bun run madge
-      - name: Build
-        run: bun run build
-      - name: Test
-        run: bun run test
+    uses: ./.github/workflows/ci-reusable.yml
