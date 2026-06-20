@@ -2,7 +2,7 @@
  * @file Shared token avatar for the Wallet list: a token logo with an overlaid round network badge and an optional top-right badge (e.g. a Railgun shield).
  */
 
-import { Image } from '@metro-labs/kit/image';
+import { Image } from '@stage-labs/kit/image';
 import { Box } from '../layout';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO } from './WalletScreen.assets';
 

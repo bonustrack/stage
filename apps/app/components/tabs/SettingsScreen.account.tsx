@@ -7,10 +7,10 @@ import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
-import { Text } from '@metro-labs/kit/text';
-import { Icon } from '@metro-labs/kit/icon';
-import { Card } from '@metro-labs/kit/card';
-import { ListView, ListViewItem } from '@metro-labs/kit/list-view';
+import { Text } from '@stage-labs/kit/text';
+import { Icon } from '@stage-labs/kit/icon';
+import { Card } from '@stage-labs/kit/card';
+import { ListView, ListViewItem } from '@stage-labs/kit/list-view';
 import { Box, Col } from '../layout';
 import { flash } from '../../lib/toast';
 import {

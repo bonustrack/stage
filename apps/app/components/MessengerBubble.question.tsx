@@ -1,9 +1,9 @@
 /** @file QuestionView and its option/other/submit sub-rows for MessengerBubble. */
 import { useState } from 'react';
-import { fontSize } from '@metro-labs/kit/tokens';
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Textarea } from '@metro-labs/kit/textarea';
-import { Text } from '@metro-labs/kit/text';
+import { fontSize } from '@stage-labs/kit/tokens';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Textarea } from '@stage-labs/kit/textarea';
+import { Text } from '@stage-labs/kit/text';
 import { Box } from './layout';
 import type { Question } from './MessengerBubble.helpers';
 import { usePalette } from '../lib/theme';

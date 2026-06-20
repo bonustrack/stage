@@ -2,9 +2,9 @@
 
 import { Linking } from 'react-native';
 
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Image } from '@metro-labs/kit/image';
-import { Text } from '@metro-labs/kit/text';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Image } from '@stage-labs/kit/image';
+import { Text } from '@stage-labs/kit/text';
 import { Box, Row } from './layout';
 import { domainOf } from '../lib/genericLinkDetect';
 import { useLinkPreview, isX402, type LinkPreviewResult } from '../lib/useLinkPreview';

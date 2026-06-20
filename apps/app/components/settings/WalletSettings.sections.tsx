@@ -1,9 +1,9 @@
 /** @file Smart-account detail sections (deploy/modules/identity/network/manage) for the Wallet settings screen. */
 
-import { Text } from '@metro-labs/kit/text';
-import { Icon } from '@metro-labs/kit/icon';
-import { Card } from '@metro-labs/kit/card';
-import { ListView, ListViewItem } from '@metro-labs/kit/list-view';
+import { Text } from '@stage-labs/kit/text';
+import { Icon } from '@stage-labs/kit/icon';
+import { Card } from '@stage-labs/kit/card';
+import { ListView, ListViewItem } from '@stage-labs/kit/list-view';
 import { Box, Col, Row } from '../layout';
 import { type DeployState, type ModuleRole, type useWalletModel } from './WalletSettings.parts';
 import { type useEnablePasskey } from '../../lib/useEnablePasskey';

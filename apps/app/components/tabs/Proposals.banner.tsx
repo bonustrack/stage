@@ -1,9 +1,9 @@
 /** @file Proposals.banner — the Home strip under the topnav showing the pending-poll count and linking to /proposals; hidden when the count (from the shared proposalsStore, session-skips filtered) is zero. */
 
 import { useRouter } from 'expo-router';
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Icon } from '@metro-labs/kit/icon';
-import { Text } from '@metro-labs/kit/text';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Icon } from '@stage-labs/kit/icon';
+import { Text } from '@stage-labs/kit/text';
 import { Row } from '../layout';
 import { usePalette } from '../../lib/theme';
 import { useProposalCount } from './Proposals.hook';

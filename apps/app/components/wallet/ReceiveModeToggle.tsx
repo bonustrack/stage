@@ -1,8 +1,8 @@
 /** @file Public | Private segmented pill for the Receive screen that toggles the shown address between the public EOA and the shielded Railgun 0zk address, disabling Private until it is ready. */
 
-import { Pressable } from '@metro-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/pressable';
 
-import { Text } from '@metro-labs/kit/text';
+import { Text } from '@stage-labs/kit/text';
 import { Row } from '../layout';
 import { usePalette } from '../../lib/theme';
 

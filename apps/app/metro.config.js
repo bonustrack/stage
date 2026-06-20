@@ -26,7 +26,7 @@ config.resolver.blockList = config.resolver.blockList
   ? [].concat(config.resolver.blockList, nodejsHostBlock)
   : nodejsHostBlock;
 
-/** Single instance of the React/RN runtime for every package (incl. @metro-labs/kit). */
+/** Single instance of the React/RN runtime for every package (incl. @stage-labs/kit). */
 const appNodeModules = path.resolve(projectRoot, 'node_modules');
 
 /** Map node-core names to pure-JS browser polyfills (or an empty shim) for the RAILGUN SDK on RN. */

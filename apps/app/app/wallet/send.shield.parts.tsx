@@ -1,8 +1,8 @@
 /** @file Presentational sub-parts for the Shield form: locked own-0zk recipient row and phase/result status line. */
 import { Linking } from 'react-native';
 
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Text } from '@metro-labs/kit/text';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Text } from '@stage-labs/kit/text';
 import { Box } from '../../components/layout';
 import { DANGER } from '../../lib/theme';
 import { explorerTxUrl } from '@stage-labs/client/xmtp/tx';

@@ -5,7 +5,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   BUTTON_RADIUS_DEFAULT, BLOCK_RADIUS_DEFAULT, RADIUS_MIN, RADIUS_MAX,
-} from '@metro-labs/kit/tokens';
+} from '@stage-labs/kit/tokens';
 
 const BUTTON_KEY = 'theme:radiusOverride'; /** legacy key kept → no migration needed */
 const BLOCK_KEY = 'theme:blockRadiusOverride';

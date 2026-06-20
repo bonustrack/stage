@@ -1,7 +1,7 @@
 /** @file SimulationBlock — pre-sign eth_simulateV1 dry-run view for a tx-request card, showing a SUCCESS/FAIL badge and predicted asset movement (loud on a predicted revert) without ever hard-blocking signing. */
 
-import { Text } from '@metro-labs/kit/text';
-import { Icon } from '@metro-labs/kit/icon';
+import { Text } from '@stage-labs/kit/text';
+import { Icon } from '@stage-labs/kit/icon';
 import { Row, Col, Box } from './layout';
 import { usePalette, withAlpha } from '../lib/theme';
 import type { SimulateResult, AssetMove } from '../lib/txSimulate';

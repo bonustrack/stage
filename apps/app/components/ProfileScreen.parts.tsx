@@ -1,13 +1,13 @@
 /** @file Presentational pieces and hooks (header, actions, palette/self-address) for the shared ProfileScreen. */
 
 import { useEffect, useState } from 'react';
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Text } from '@metro-labs/kit/text';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Text } from '@stage-labs/kit/text';
 import { Box, Row } from './layout';
 import { usePalette, type Palette } from '../lib/theme';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from '../modules/messaging';
-import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
-import { Button } from '@metro-labs/kit/button';
+import { Icon, type HeroIconName } from '@stage-labs/kit/icon';
+import { Button } from '@stage-labs/kit/button';
 import { TopnavIdentity } from './TopnavIdentity';
 
 export type ProfileColors = Palette;

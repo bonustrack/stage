@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@stage-labs/client": "workspace:*",
-    "@metro-labs/kit": "workspace:*",
+    "@stage-labs/kit": "workspace:*",
     "@tanstack/vue-query": "^5.100.14",
     "@xmtp/browser-sdk": "^7.0.0",
     "markdown-it": "^14.1.1",

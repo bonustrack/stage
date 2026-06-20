@@ -1,5 +1,5 @@
 /** @file Builds the react-native-markdown-display style map for the PR/issue body on the diff page (Calibre/Menlo, leaf-level font sizes). */
-import { fontSize } from '@metro-labs/kit/tokens';
+import { fontSize } from '@stage-labs/kit/tokens';
 /** Markdown styles for the diff-page PR/issue body, mirroring chat bubbles (Calibre, Menlo for code) at a larger reading size; heading/inline sizes must live here because react-native-markdown-display flattens them into leaf Text styles where the nearest fontSize wins. */
 
 interface DiffMdPalette {

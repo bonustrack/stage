@@ -1,6 +1,6 @@
 /** @file useComposerState hook: groups the MessengerComposer's local input/attachment/sheet state and setters. */
 import { useRef, useState, type ComponentRef } from 'react';
-import { Textarea } from '@metro-labs/kit/textarea';
+import { Textarea } from '@stage-labs/kit/textarea';
 import { type Attachment } from './MessengerComposer.helpers';
 
 /** All local state + setters + the input ref for the MessengerComposer. */

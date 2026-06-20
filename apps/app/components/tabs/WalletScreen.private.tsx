@@ -1,8 +1,8 @@
 /** @file Private (Railgun-shielded) Wallet tab view rendering the cached 0zk address, live pending-proof chips, and the dev bridge probe, while booting usePrivateWallet so the shared snapshot the Tokens tab reads gets populated. */
-import { Pressable } from '@metro-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/pressable';
 
 import * as Clipboard from 'expo-clipboard';
-import { Text } from '@metro-labs/kit/text';
+import { Text } from '@stage-labs/kit/text';
 import { Col, Row } from '../layout';
 import { flash } from '../../lib/toast';
 import { isRailgunAvailable } from '../../lib/railgun/native';

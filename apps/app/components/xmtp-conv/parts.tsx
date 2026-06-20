@@ -3,16 +3,16 @@
 import { useEffect, useState } from 'react';
 
 import { Dimensions, Modal } from 'react-native';
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
 import { useRouter } from 'expo-router';
-import { Text } from '@metro-labs/kit/text';
+import { Text } from '@stage-labs/kit/text';
 import { Box, Row } from '../layout';
-import { Icon } from '@metro-labs/kit/icon';
-import { Divider } from '@metro-labs/kit/divider';
+import { Icon } from '@stage-labs/kit/icon';
+import { Divider } from '@stage-labs/kit/divider';
 import { GithubLogo } from '../GithubLogo';
 import { Avatar } from '../Avatar';
-import { channelStampSeed } from '@metro-labs/kit/avatar';
+import { channelStampSeed } from '@stage-labs/kit/avatar';
 import { REACT_PRESETS } from '../MessengerBubble';
 import { usePalette } from '../../lib/theme';
 import type { HistoryEntry } from '../../lib/types';

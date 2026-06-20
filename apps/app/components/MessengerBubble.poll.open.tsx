@@ -1,10 +1,10 @@
 /** @file Open free-text answer block for a poll question (AskUserQuestion open type): a Kit input + send Button listing submitted answers, where an empty submission retracts the user's prior answer. */
 
 import { useState } from 'react';
-import { fontSize } from '@metro-labs/kit/tokens';
-import { Input } from '@metro-labs/kit/input';
-import { Text } from '@metro-labs/kit/text';
-import { Button } from '@metro-labs/kit/button';
+import { fontSize } from '@stage-labs/kit/tokens';
+import { Input } from '@stage-labs/kit/input';
+import { Text } from '@stage-labs/kit/text';
+import { Button } from '@stage-labs/kit/button';
 import { Row, Box } from './layout';
 import { usePalette, useBlockRadius, withAlpha } from '../lib/theme';
 

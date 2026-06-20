@@ -1,10 +1,10 @@
 /** @file Step screens (welcome / restore / passkey / setup) rendered by the Onboarding flow. */
 
-import { fontSize } from '@metro-labs/kit/tokens';
-import { Title } from '@metro-labs/kit/title';
-import { Text } from '@metro-labs/kit/text';
-import { Button } from '@metro-labs/kit/button';
-import { Textarea } from '@metro-labs/kit/textarea';
+import { fontSize } from '@stage-labs/kit/tokens';
+import { Title } from '@stage-labs/kit/title';
+import { Text } from '@stage-labs/kit/text';
+import { Button } from '@stage-labs/kit/button';
+import { Textarea } from '@stage-labs/kit/textarea';
 import { Col, Box } from '../layout';
 import { Spinner } from '../Spinner';
 import { usePalette, DANGER } from '../../lib/theme';

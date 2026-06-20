@@ -2,8 +2,8 @@
 
 import type { ReactNode } from 'react';
 import { Modal } from 'react-native';
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePalette, useBlockRadius } from '../lib/theme';

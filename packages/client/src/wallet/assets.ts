@@ -3,7 +3,7 @@
 import type { Hex, Chain } from 'viem';
 import { mainnet, sepolia, base } from 'viem/chains';
 
-/** Sentinel address Snapshot uses for native ETH on stamp.fyi. Matches sx-monorepo's `ETH_CONTRACT` (and kit's NATIVE_TOKEN_SENTINEL). Inlined here so packages/client stays standalone (no @metro-labs/kit dependency). */
+/** Sentinel address Snapshot uses for native ETH on stamp.fyi. Matches sx-monorepo's `ETH_CONTRACT` (and kit's NATIVE_TOKEN_SENTINEL). Inlined here so packages/client stays standalone (no @stage-labs/kit dependency). */
 export const NATIVE_TOKEN_SENTINEL = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
 
 export const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11' as const;

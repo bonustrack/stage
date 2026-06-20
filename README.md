@@ -23,7 +23,7 @@ apps/
 - [`app`](apps/app/README.md) — Expo / React Native companion. View live activity, filter lines, send replies from your phone via the daemon's bearer-token-gated monitor endpoints. Start with `bun --cwd apps/app start`.
 - [`ui`](apps/ui/README.md) — Vue 3 web companion with the same surface. `bun --cwd apps/ui dev` opens the dev server on `localhost:5173`; `bun --cwd apps/ui build` emits a static bundle in `apps/ui/dist/`.
 - [`@stage-labs/client`](packages/client/README.md) — pure shared logic for client apps.
-- [`@metro-labs/kit`](packages/kit/README.md) — shared visual tokens, icon data, and theme contracts.
+- [`@stage-labs/kit`](packages/kit/README.md) — shared visual tokens, icon data, and theme contracts.
 
 The monitor endpoints (`/api/state`, `/api/tail` SSE, `/api/call/<train>/<action>`) are documented in
 [`packages/metro/docs/monitor.md`](packages/metro/docs/monitor.md); enable them by

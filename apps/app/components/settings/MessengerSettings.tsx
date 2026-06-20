@@ -3,12 +3,12 @@
 import { useEffect, useState } from 'react';
 
 import { Alert, DevSettings } from 'react-native';
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
 import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Col } from '../layout';
-import { Text } from '@metro-labs/kit/text';
+import { Text } from '@stage-labs/kit/text';
 import { getOrCreateXmtpClient, resetXmtpClient, shortAddress, useActiveAccount } from '../../modules/messaging';
 import { resetAccount } from '../../lib/wallet';
 import { flash } from '../../lib/toast';

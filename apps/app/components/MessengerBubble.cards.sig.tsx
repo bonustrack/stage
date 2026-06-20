@@ -1,7 +1,7 @@
 /** @file Signature-request and signature-reference cards for MessengerBubble (split from cards). */
-import { Text } from '@metro-labs/kit/text';
-import { Icon } from '@metro-labs/kit/icon';
-import { Button } from '@metro-labs/kit/button';
+import { Text } from '@stage-labs/kit/text';
+import { Icon } from '@stage-labs/kit/icon';
+import { Button } from '@stage-labs/kit/button';
 import { Row, Col, Box } from './layout';
 import { shortAddress } from '../modules/messaging';
 import { fmtSigValue } from './MessengerBubble.helpers';

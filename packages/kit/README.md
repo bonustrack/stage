@@ -1,4 +1,4 @@
-# @metro-labs/kit
+# @stage-labs/kit
 
 > Shared design-system primitives for the Stage clients: tokens, icon data, and theme contracts.
 
@@ -6,7 +6,7 @@
 
 ## Overview
 
-`@metro-labs/kit` is the single source of truth for how Stage looks. It ships the colour and spacing tokens, HeroIcon path data, station icon definitions, avatar helpers, and the theme-preference contract shared by the Vue web app ([`apps/ui`](../../apps/ui)) and the React Native app ([`apps/app`](../../apps/app)).
+`@stage-labs/kit` is the single source of truth for how Stage looks. It ships the colour and spacing tokens, HeroIcon path data, station icon definitions, avatar helpers, and the theme-preference contract shared by the Vue web app ([`apps/ui`](../../apps/ui)) and the React Native app ([`apps/app`](../../apps/app)).
 
 Most of the package is framework-agnostic data so both clients stay visually identical from one place. The few primitive components it exports (`button`, `text`, `title`, `icon`) target React / React Native via peer dependencies; the web renderers stay in `apps/ui`.
 
@@ -20,21 +20,21 @@ bun install            # from the repo root
 
 ```jsonc
 // in a consuming workspace's package.json
-"dependencies": { "@metro-labs/kit": "workspace:*" }
+"dependencies": { "@stage-labs/kit": "workspace:*" }
 ```
 
 ## Usage
 
 ```ts
-import { colors, spacing } from '@metro-labs/kit/tokens';
-import { resolveTheme } from '@metro-labs/kit/theme';
-import { stationIcons } from '@metro-labs/kit/icons';
+import { colors, spacing } from '@stage-labs/kit/tokens';
+import { resolveTheme } from '@stage-labs/kit/theme';
+import { stationIcons } from '@stage-labs/kit/icons';
 ```
 
 ```tsx
 // React Native primitive components (peer deps: react, react-native, react-native-svg)
-import { Button } from '@metro-labs/kit/button';
-import { Text } from '@metro-labs/kit/text';
+import { Button } from '@stage-labs/kit/button';
+import { Text } from '@stage-labs/kit/text';
 ```
 
 ## Project structure

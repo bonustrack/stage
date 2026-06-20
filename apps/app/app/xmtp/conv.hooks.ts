@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { InteractionManager, Keyboard } from 'react-native';
-import type { Input } from '@metro-labs/kit/input';
+import type { Input } from '@stage-labs/kit/input';
 import { isArchived, loadArchivedIds, subscribeArchived } from '../../lib/archived';
 
 type InputRef = React.RefObject<React.ComponentRef<typeof Input> | null>;

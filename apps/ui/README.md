@@ -8,7 +8,7 @@
 
 `ui` is the web companion to the Stage mobile app. It is a Vue 3 + Vite single-page app that talks to XMTP directly via the browser SDK and renders the same channels, conversations, and Snapshot profiles as [`apps/app`](../app), so the two stay visually and functionally parallel.
 
-It shares all platform-neutral logic with the mobile client through [`@stage-labs/client`](../../packages/client) and its visual language through [`@metro-labs/kit`](../../packages/kit). The web-specific code is the Vue components, pages, router, and the composable hooks in `src/lib`.
+It shares all platform-neutral logic with the mobile client through [`@stage-labs/client`](../../packages/client) and its visual language through [`@stage-labs/kit`](../../packages/kit). The web-specific code is the Vue components, pages, router, and the composable hooks in `src/lib`.
 
 ## Setup
 
@@ -51,5 +51,5 @@ src/
 ## Links
 
 - Shared logic: [`@stage-labs/client`](../../packages/client)
-- Design tokens: [`@metro-labs/kit`](../../packages/kit)
+- Design tokens: [`@stage-labs/kit`](../../packages/kit)
 - Mobile counterpart: [`apps/app`](../app)

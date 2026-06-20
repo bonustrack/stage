@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { ImageStyle } from 'react-native';
-import { Image } from '@metro-labs/kit/image';
+import { Image } from '@stage-labs/kit/image';
 import { MediaCard } from './MediaCard';
 import { ImageViewer } from './ImageViewer';
 

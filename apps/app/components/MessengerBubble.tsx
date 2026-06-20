@@ -1,8 +1,8 @@
 /** @file Discord-style messenger row bubble: every message left-aligned, avatar at the start, no colored bubble even for the local user's own messages. */
 
 import { memo, useState } from 'react';
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Icon } from '@metro-labs/kit/icon';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Icon } from '@stage-labs/kit/icon';
 import { GestureDetector } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
 import { Avatar } from './Avatar';

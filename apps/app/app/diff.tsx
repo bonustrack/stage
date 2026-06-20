@@ -2,12 +2,12 @@
 
 import { ActivityIndicator, Linking } from 'react-native';
 
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
-import { Title } from '@metro-labs/kit/title';
-import { Text } from '@metro-labs/kit/text';
-import { Icon } from '@metro-labs/kit/icon';
-import { ListView } from '@metro-labs/kit/list-view';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
+import { Title } from '@stage-labs/kit/title';
+import { Text } from '@stage-labs/kit/text';
+import { Icon } from '@stage-labs/kit/icon';
+import { ListView } from '@stage-labs/kit/list-view';
 import { Box, Row, Col } from '../components/layout';
 import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { useLayoutEffect } from 'react';

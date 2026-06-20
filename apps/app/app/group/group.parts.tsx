@@ -1,13 +1,13 @@
 /** @file Group-detail sub-components: the member row plus the add-member and overflow modals. */
 
-import { Pressable } from '@metro-labs/kit/pressable';
-import { fontSize } from '@metro-labs/kit/tokens';
-import { Input } from '@metro-labs/kit/input';
-import { Text } from '@metro-labs/kit/text';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { fontSize } from '@stage-labs/kit/tokens';
+import { Input } from '@stage-labs/kit/input';
+import { Text } from '@stage-labs/kit/text';
 import { Box, Col } from '../../components/layout';
 import { shortAddress } from '../../modules/messaging';
-import { Icon } from '@metro-labs/kit/icon';
-import { Button } from '@metro-labs/kit/button';
+import { Icon } from '@stage-labs/kit/icon';
+import { Button } from '@stage-labs/kit/button';
 import { Avatar } from '../../components/Avatar';
 import { AppModal } from '../../components/AppModal';
 import { DANGER, usePalette } from '../../lib/theme';

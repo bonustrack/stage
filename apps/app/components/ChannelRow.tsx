@@ -4,12 +4,12 @@ import { memo } from 'react';
 
 /** Raw View (via the sanctioned layout/native escape hatch) needed as an INLINE element inside <Text>, which Box/Row/Col can't be. */
 import { View } from './layout/native';
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Text } from '@metro-labs/kit/text';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Text } from '@stage-labs/kit/text';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { Avatar } from './Avatar';
-import { Icon } from '@metro-labs/kit/icon';
-import { Spacer } from '@metro-labs/kit/spacer';
+import { Icon } from '@stage-labs/kit/icon';
+import { Spacer } from '@stage-labs/kit/spacer';
 import { Row, Col, Box } from './layout';
 import { highlightSegments } from './HighlightText';
 import { usePalette } from '../lib/theme';

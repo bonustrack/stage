@@ -1,28 +1,28 @@
-/** @file KitSections — direct render of the @metro-labs/kit primitives for the Kit page, each shown as a few representative variants with sample props and no controls. */
+/** @file KitSections — direct render of the @stage-labs/kit primitives for the Kit page, each shown as a few representative variants with sample props and no controls. */
 
 import { Box, Row, Col } from '../layout';
-import { Title } from '@metro-labs/kit/title';
-import { Text } from '@metro-labs/kit/text';
-import { Button } from '@metro-labs/kit/button';
-import { Icon } from '@metro-labs/kit/icon';
-import { Card } from '@metro-labs/kit/card';
-import { ListView, ListViewItem } from '@metro-labs/kit/list-view';
-import { Divider } from '@metro-labs/kit/divider';
-import { Caption } from '@metro-labs/kit/caption';
-import { Image } from '@metro-labs/kit/image';
-import { Spacer } from '@metro-labs/kit/spacer';
-import { Label } from '@metro-labs/kit/label';
-import { Input } from '@metro-labs/kit/input';
-import { Textarea } from '@metro-labs/kit/textarea';
-import { Checkbox } from '@metro-labs/kit/checkbox';
-import { RadioGroup } from '@metro-labs/kit/radio-group';
-import { Select } from '@metro-labs/kit/select';
-import { DatePicker } from '@metro-labs/kit/date-picker';
-import { Form } from '@metro-labs/kit/form';
-import { Markdown } from '@metro-labs/kit/markdown';
-import { Table } from '@metro-labs/kit/table';
-import { Scroll } from '@metro-labs/kit/scroll';
-import { Pressable } from '@metro-labs/kit/pressable';
+import { Title } from '@stage-labs/kit/title';
+import { Text } from '@stage-labs/kit/text';
+import { Button } from '@stage-labs/kit/button';
+import { Icon } from '@stage-labs/kit/icon';
+import { Card } from '@stage-labs/kit/card';
+import { ListView, ListViewItem } from '@stage-labs/kit/list-view';
+import { Divider } from '@stage-labs/kit/divider';
+import { Caption } from '@stage-labs/kit/caption';
+import { Image } from '@stage-labs/kit/image';
+import { Spacer } from '@stage-labs/kit/spacer';
+import { Label } from '@stage-labs/kit/label';
+import { Input } from '@stage-labs/kit/input';
+import { Textarea } from '@stage-labs/kit/textarea';
+import { Checkbox } from '@stage-labs/kit/checkbox';
+import { RadioGroup } from '@stage-labs/kit/radio-group';
+import { Select } from '@stage-labs/kit/select';
+import { DatePicker } from '@stage-labs/kit/date-picker';
+import { Form } from '@stage-labs/kit/form';
+import { Markdown } from '@stage-labs/kit/markdown';
+import { Table } from '@stage-labs/kit/table';
+import { Scroll } from '@stage-labs/kit/scroll';
+import { Pressable } from '@stage-labs/kit/pressable';
 import { GallerySection } from './GallerySection';
 import type { GalleryPalette } from './galleryPalette';
 

@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert } from 'react-native';
 
-import { Text } from '@metro-labs/kit/text';
-import { Icon } from '@metro-labs/kit/icon';
-import { Pressable } from '@metro-labs/kit/pressable';
+import { Text } from '@stage-labs/kit/text';
+import { Icon } from '@stage-labs/kit/icon';
+import { Pressable } from '@stage-labs/kit/pressable';
 import { Box, Col, Row } from '../layout';
 import {
   listXmtpInstallations, revokeXmtpInstallation, shortAddress, useActiveAccount,

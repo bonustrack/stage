@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Text } from '@metro-labs/kit/text';
-import { Icon } from '@metro-labs/kit/icon';
-import { ListView, ListViewItem } from '@metro-labs/kit/list-view';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Text } from '@stage-labs/kit/text';
+import { Icon } from '@stage-labs/kit/icon';
+import { ListView, ListViewItem } from '@stage-labs/kit/list-view';
 import * as Clipboard from 'expo-clipboard';
 import { Col } from '../layout';
 import { AppModal } from '../AppModal';

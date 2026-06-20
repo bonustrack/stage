@@ -1,8 +1,8 @@
 /** @file AccountsManager bottom sheets: the per-account manage sheet (switch/export/remove) and the private-key export-reveal sheet. */
 
-import { Text } from '@metro-labs/kit/text';
-import { Button } from '@metro-labs/kit/button';
-import { ListView } from '@metro-labs/kit/list-view';
+import { Text } from '@stage-labs/kit/text';
+import { Button } from '@stage-labs/kit/button';
+import { ListView } from '@stage-labs/kit/list-view';
 import * as Clipboard from 'expo-clipboard';
 import { flash } from '../lib/toast';
 import { canExportPrivateKey, type AccountRecord } from '../lib/accounts';

@@ -1,12 +1,12 @@
 /** @file The avatar + name intro header shown at the visual top of a conversation once all history is loaded, with distinct DM and group variants, rendered in ConversationFeed's inverted-list footer. */
 
-import { Pressable } from '@metro-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/pressable';
 
-import { Text } from '@metro-labs/kit/text';
+import { Text } from '@stage-labs/kit/text';
 import { Box, Row } from '../layout';
 import { Avatar } from '../Avatar';
 import { getPeerName } from '../../lib/peerProfiles';
-import { channelStampSeed } from '@metro-labs/kit/avatar';
+import { channelStampSeed } from '@stage-labs/kit/avatar';
 import { shortAddress } from '../../modules/messaging';
 
 /** Read-only label chips for the group intro — same rounded-pill look as the ChannelRow inline chips, just left-aligned under the name. Renders nothing for an empty list. */

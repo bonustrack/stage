@@ -2,14 +2,14 @@
 
 import { useState } from 'react';
 import { Alert, Pressable } from 'react-native';
-import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
+import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
 
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box, Col, Row } from '../layout';
-import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
-import { Text } from '@metro-labs/kit/text';
-import { ListView, ListViewItem } from '@metro-labs/kit/list-view';
+import { Icon, type HeroIconName } from '@stage-labs/kit/icon';
+import { Text } from '@stage-labs/kit/text';
+import { ListView, ListViewItem } from '@stage-labs/kit/list-view';
 import { useBlockRadius, useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { SystemHeader } from '../system/SystemHeader';
 import { resetForOnboarding } from '../../lib/wallet';

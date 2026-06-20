@@ -12,7 +12,7 @@ import { bumpAccountEpoch } from './accountEpoch';
 import { loadAccounts } from './accounts';
 import { hydrateCachedRows, setActiveAccountForCache, getCachedRows } from './channelsCache';
 
-/** Mirror of lib/theme.ts -> @metro-labs/kit THEME_STORAGE_KEY. */
+/** Mirror of lib/theme.ts -> @stage-labs/kit THEME_STORAGE_KEY. */
 const THEME_KEY = 'app.theme';
 /** Mirror of lib/xmtp.client.ts. */
 const LAST_READ_PREFIX = 'unread.lastRead.';

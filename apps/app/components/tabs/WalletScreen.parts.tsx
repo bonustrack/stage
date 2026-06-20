@@ -1,11 +1,11 @@
 /** @file Wallet sub-components + formatting helpers — the action button (Btn), the Tokens|NFTs|Activity|Railgun tabs, and re-exported value formatters. */
 
 import { memo } from 'react';
-import { Pressable } from '@metro-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/pressable';
 
-import { Text } from '@metro-labs/kit/text';
-import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
-import { Button } from '@metro-labs/kit/button';
+import { Text } from '@stage-labs/kit/text';
+import { Icon, type HeroIconName } from '@stage-labs/kit/icon';
+import { Button } from '@stage-labs/kit/button';
 import { Col, Row } from '../layout';
 import { type AssetRow } from './WalletScreen.assets';
 import { TokenAvatar } from './WalletScreen.tokenAvatar';

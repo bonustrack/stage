@@ -1,8 +1,8 @@
 /** @file KitPage — the Kit sub-page of Settings (/settings/kit): a back-arrow header plus theme switcher above the Kit primitives rendered directly via KitSections. */
 
 import { Linking } from 'react-native';
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Col } from '../layout';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
@@ -30,7 +30,7 @@ export function KitPage(): React.ReactElement {
             onPress={() => { void Linking.openURL(KIT_GITHUB_URL); }}
             hitSlop={8}
             style={{ padding: 4 }}
-            accessibilityLabel="View @metro-labs/kit on GitHub"
+            accessibilityLabel="View @stage-labs/kit on GitHub"
 >
             <GithubLogo size={22} color={fg}/>
           </Pressable>

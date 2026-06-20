@@ -1,12 +1,12 @@
 /** @file Proposals screen working through pending poll proposals oldest-first, one card at a time across all non-archived chats; opened as a pushed route from the Home banner, with count and queue from the shared proposalsStore via useProposals. */
 
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Icon } from '@metro-labs/kit/icon';
-import { Title } from '@metro-labs/kit/title';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Icon } from '@stage-labs/kit/icon';
+import { Title } from '@stage-labs/kit/title';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Text } from '@metro-labs/kit/text';
-import { Button } from '@metro-labs/kit/button';
+import { Text } from '@stage-labs/kit/text';
+import { Button } from '@stage-labs/kit/button';
 import { Col, Row, Box } from '../layout';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { useProposals } from './Proposals.hook';

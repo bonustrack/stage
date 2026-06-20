@@ -4,10 +4,10 @@
 
 import { useState } from 'react';
 
-import { Pressable } from '@metro-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/pressable';
 import { ScrollView } from 'react-native-gesture-handler';
 import type { SimultaneousRefs } from './SwipeTabs.types';
-import { Text } from '@metro-labs/kit/text';
+import { Text } from '@stage-labs/kit/text';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';

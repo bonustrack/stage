@@ -5,9 +5,9 @@ import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS, useSharedValue } from 'react-native-reanimated';
 
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
-import { Text } from '@metro-labs/kit/text';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
+import { Text } from '@stage-labs/kit/text';
 import { usePalette } from '../../lib/theme';
 import type { SimultaneousRefs } from '../SwipeTabs.types';
 

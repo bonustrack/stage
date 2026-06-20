@@ -3,7 +3,7 @@
  */
 
 import { Path, Svg } from 'react-native-svg';
-import { heroIconPaths, HERO_ICON_DEFAULTS, type HeroIconName } from '@metro-labs/kit/icons';
+import { heroIconPaths, HERO_ICON_DEFAULTS, type HeroIconName } from '@stage-labs/kit/icons';
 import { brandIconPath, type BrandIconName } from './brand-icons.data';
 
 export type { HeroIconName, BrandIconName };

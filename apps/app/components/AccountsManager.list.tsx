@@ -1,10 +1,10 @@
 /** @file AccountsManager list body rendering the Accounts section card (active account, other accounts in flat/collapsed/expanded modes, and the Add-account row). */
 
-import { Pressable } from '@metro-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/pressable';
 
 import { Box } from './layout';
-import { Text } from '@metro-labs/kit/text';
-import { Icon } from '@metro-labs/kit/icon';
+import { Text } from '@stage-labs/kit/text';
+import { Icon } from '@stage-labs/kit/icon';
 import { type AccountRecord } from '../lib/accounts';
 import { AccountRow } from './AccountsManager.parts';
 

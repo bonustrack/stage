@@ -8,12 +8,12 @@ import {
   type MutableRefObject,
   type SetStateAction,
 } from 'react';
-import { FlatList } from '@metro-labs/kit/flat-list';
+import { FlatList } from '@stage-labs/kit/flat-list';
 
-import { Pressable } from '@metro-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/pressable';
 import * as Clipboard from 'expo-clipboard';
-import { Text } from '@metro-labs/kit/text';
-import { Button } from '@metro-labs/kit/button';
+import { Text } from '@stage-labs/kit/text';
+import { Button } from '@stage-labs/kit/button';
 import { Col, Row } from '../layout';
 import { DANGER, SUCCESS, useEffectiveColorScheme } from '../../lib/theme';
 import { flash } from '../../lib/toast';

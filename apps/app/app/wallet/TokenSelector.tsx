@@ -1,10 +1,10 @@
 /** @file Shared token-selector field + bottom-sheet modal for Wallet action pages, listing public or Railgun-shielded balances as wallet-style rows and reporting the chosen token to the parent. */
 import { useEffect, useMemo, useState } from 'react';
 
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Image } from '@metro-labs/kit/image';
-import { Text } from '@metro-labs/kit/text';
-import { Icon } from '@metro-labs/kit/icon';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Image } from '@stage-labs/kit/image';
+import { Text } from '@stage-labs/kit/text';
+import { Icon } from '@stage-labs/kit/icon';
 import { Box, Row, Col } from '../../components/layout';
 import { AppModal } from '../../components/AppModal';
 import { Spinner } from '../../components/Spinner';

@@ -1,7 +1,7 @@
 /** @file Pure helpers, types, and shared module-scope constants (reaction presets, mention regex, content extractors/formatters) for MessengerBubble. */
 
 import type { HistoryEntry } from '../lib/types';
-import { fontSize } from '@metro-labs/kit/tokens';
+import { fontSize } from '@stage-labs/kit/tokens';
 import type { RemoteAttachmentInfo } from '@xmtp/react-native-sdk';
 import { normalizeQuestions, type PollContent } from '@stage-labs/client/xmtp/poll';
 import { formatEther } from 'viem';

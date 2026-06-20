@@ -1,12 +1,12 @@
 /** @file Shared member picker (useMemberPicker hook plus MemberPicker component) for new-group and add-members screens: staged-member list, address/.eth resolution, contact suggestions, removable chips. */
 
 import { useCallback, useMemo, useState } from 'react';
-import { fontSize } from '@metro-labs/kit/tokens';
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Input } from '@metro-labs/kit/input';
-import { Text } from '@metro-labs/kit/text';
-import { Button } from '@metro-labs/kit/button';
-import { Icon } from '@metro-labs/kit/icon';
+import { fontSize } from '@stage-labs/kit/tokens';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Input } from '@stage-labs/kit/input';
+import { Text } from '@stage-labs/kit/text';
+import { Button } from '@stage-labs/kit/button';
+import { Icon } from '@stage-labs/kit/icon';
 import { shortAddress } from '../../modules/messaging';
 import { resolveEnsName } from '../../lib/ens';
 import { flash } from '../../lib/toast';

@@ -1,16 +1,16 @@
 /** @file Presentational pieces of the XMTP conversation screen: topnav, composer footer, and the menu/overlay portals. */
 
 import { Share } from 'react-native';
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Text } from '@metro-labs/kit/text';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Text } from '@stage-labs/kit/text';
 import { Box, Row } from '../../components/layout';
-import type { Input } from '@metro-labs/kit/input';
+import type { Input } from '@stage-labs/kit/input';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import type { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { getPeerName } from '../../lib/peerProfiles';
 import { MessengerComposer } from '../../components/MessengerComposer';
-import { Icon } from '@metro-labs/kit/icon';
+import { Icon } from '@stage-labs/kit/icon';
 import { ChannelMenu } from '../../components/ChannelMenu';
 import { isPinned } from '../../lib/pins';
 import { shortAddress, getCachedRows } from '../../modules/messaging';

@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { openInBubbleLink } from '../lib/safeOpenLink';
 
-import { Text } from '@metro-labs/kit/text';
+import { Text } from '@stage-labs/kit/text';
 import Markdown from 'react-native-markdown-display';
 import { cardLinksOf } from '../lib/cardLinks';
 import { Box, Row } from './layout';

@@ -2,7 +2,7 @@
  * @file Theme-option list data (THEME_OPTIONS) split out of SettingsScreen.tsx to keep it under the line cap.
  */
 
-import { type HeroIconName } from '@metro-labs/kit/icon';
+import { type HeroIconName } from '@stage-labs/kit/icon';
 import { type ThemePreference } from '../../lib/theme';
 
 export const THEME_OPTIONS: { value: ThemePreference; label: string; icon: HeroIconName }[] = [

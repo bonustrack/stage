@@ -1,6 +1,6 @@
 /** @file Shared prop contract and pure CSS-style mapper for the Box/Row/Col layout primitives, kept in lock-step with the React Native implementation in apps/app. */
 
-import { colors, resolveBoxRadius, type RadiusValue } from '@metro-labs/kit';
+import { colors, resolveBoxRadius, type RadiusValue } from '@stage-labs/kit';
 
 type Direction = 'row' | 'col';
 type Size = number | string;

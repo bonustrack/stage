@@ -1,7 +1,7 @@
 /** @file Pure asset-resolution helpers mapping a `(chainId, token)` pair to its display logo URL and CoinGecko price key for the tx/sign cards + simulation, derived from the shared static registry (no React, network, or key material) so cards match the wallet token list. */
 
 import { ASSETS, NATIVE_TOKEN_SENTINEL } from '@stage-labs/client/wallet/assets';
-import { stampTokenUrl } from '@metro-labs/kit/avatar';
+import { stampTokenUrl } from '@stage-labs/kit/avatar';
 
 /** Find the registry row for `(chainId, token)`. `null`/native sentinel token => the chain's native (ETH) row. */
 function assetFor(chainId: number, token: string | null | undefined) {

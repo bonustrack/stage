@@ -1,6 +1,6 @@
 /** @file Best-effort fetch of private (0zk) RAILGUN fund movements (shields, unshields, 0zk transfers) for the Activity tab via the Node bridge's whitelisted `wallet.getTransactionHistory`; a per-leg shieldFee marker distinguishes shield-in from transfer-in, bigints arrive as decimal strings, and a chain that errors or has no history is skipped. */
 import { formatUnits } from 'viem';
-import { stampTokenUrl } from '@metro-labs/kit/avatar';
+import { stampTokenUrl } from '@stage-labs/kit/avatar';
 import { isBridgeAvailable, engineInit, walletInfo } from './bridge';
 import { sdk } from './bridge/sdk';
 import { deriveRailgunKeyMaterial } from './deriveKeys';

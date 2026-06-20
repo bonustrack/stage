@@ -2,11 +2,11 @@
 
 import { Linking } from 'react-native';
 
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Image } from '@metro-labs/kit/image';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Image } from '@stage-labs/kit/image';
 import { Spinner } from '../Spinner';
-import { Text } from '@metro-labs/kit/text';
-import { Icon } from '@metro-labs/kit/icon';
+import { Text } from '@stage-labs/kit/text';
+import { Icon } from '@stage-labs/kit/icon';
 import { Col, Row, Box } from '../layout';
 import { type Nft } from '../../lib/opensea';
 import { DANGER } from '../../lib/theme';

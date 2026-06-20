@@ -1,8 +1,8 @@
 /** @file Group-detail members section: the MEMBERS header with add button and the gesture-aware member FlatList. */
 
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Text } from '@metro-labs/kit/text';
-import { Icon } from '@metro-labs/kit/icon';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Text } from '@stage-labs/kit/text';
+import { Icon } from '@stage-labs/kit/icon';
 /** RNGH gesture-aware FlatList so vertical scroll composes with the native-stack edge swipe-back under GestureDetectorProvider (see xmtp/[convId] for rationale). */
 import { FlatList } from 'react-native-gesture-handler';
 import { Row } from '../../components/layout';

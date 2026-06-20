@@ -2,7 +2,7 @@
 
 import { fetchAssetRows as sdkFetchAssetRows } from '@stage-labs/client/wallet/balances';
 import { type AssetRow } from '@stage-labs/client/wallet/assets';
-import { stampTokenUrl } from '@metro-labs/kit/avatar';
+import { stampTokenUrl } from '@stage-labs/kit/avatar';
 
 /** Fetch every asset's on-chain balance + USD price for `addr` and return the ready-to-render AssetRow[]. */
 export async function fetchAssetRows(addr: string): Promise<AssetRow[]> {

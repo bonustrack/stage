@@ -1,5 +1,5 @@
 /** @file Presentational 4-stage shield-status stepper (submitting, confirming, scanning, shielded) that paints the active stage red on failure; the caller maps its phase to a ShieldStage. */
-import { Text } from '@metro-labs/kit/text';
+import { Text } from '@stage-labs/kit/text';
 
 import { Col, Row, Box } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';

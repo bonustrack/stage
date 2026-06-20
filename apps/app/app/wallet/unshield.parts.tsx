@@ -1,8 +1,8 @@
 /** @file Presentational sub-parts for the Unshield screen: the locked own-EOA public recipient card and the phase/result status line. */
 import { Linking } from 'react-native';
 
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Text } from '@metro-labs/kit/text';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Text } from '@stage-labs/kit/text';
 import { Box } from '../../components/layout';
 import { DANGER } from '../../lib/theme';
 import { explorerTxUrl } from '@stage-labs/client/xmtp/tx';

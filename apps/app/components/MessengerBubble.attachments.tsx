@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 
 import { Linking } from 'react-native';
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Text } from '@metro-labs/kit/text';
-import { Icon } from '@metro-labs/kit/icon';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Text } from '@stage-labs/kit/text';
+import { Icon } from '@stage-labs/kit/icon';
 import { Spinner } from './Spinner';
 import { VoiceMessage } from './VoiceMessage';
 import { MessengerImageAttachment } from './MessengerImageAttachment';
