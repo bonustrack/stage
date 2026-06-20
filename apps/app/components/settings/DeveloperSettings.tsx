@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react';
 
 import { Alert, Pressable, Switch } from 'react-native';
-import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
+import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box, Col, Row } from '../layout';
-import { Text } from '@metro-labs/kit/text';
+import { Text } from '@stage-labs/kit/text';
 import { useBlockRadius, useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { SystemHeader } from '../system/SystemHeader';
 import {

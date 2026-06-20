@@ -1,8 +1,8 @@
 /** @file Peer-profile "Channels" section: group conversations the local user and viewed peer share (via useCommonChannels), each a tappable ChannelRow mirroring the channels-tab list. */
 
-import { Pressable } from '@metro-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/pressable';
 
-import { Text } from '@metro-labs/kit/text';
+import { Text } from '@stage-labs/kit/text';
 import { Box, Row } from './layout';
 import { Spinner } from './Spinner';
 import { useRouter } from 'expo-router';

@@ -1,4 +1,4 @@
-/** @file Framework-agnostic wallet token-balance fetcher (viem + fetch only): Multicall3 reads per chain plus CoinGecko prices shaped into ready-to-render AssetRow[], with the token-logo URL injected so packages/client stays free of any @metro-labs/kit dependency. */
+/** @file Framework-agnostic wallet token-balance fetcher (viem + fetch only): Multicall3 reads per chain plus CoinGecko prices shaped into ready-to-render AssetRow[], with the token-logo URL injected so packages/client stays free of any @stage-labs/kit dependency. */
 
 import { formatEther, formatUnits, type Hex } from 'viem';
 import { getErc20UsdPrices, getSimplePrices } from '../api/coingecko';

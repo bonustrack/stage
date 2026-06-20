@@ -1,13 +1,13 @@
 /** @file Settings -> Display screen: switch the app theme between System/Light/Dark or pick Custom to edit palette color and radius tokens inline, backed by the shared lib/theme store. */
 
-import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
+import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box, Col } from '../layout';
-import { Icon } from '@metro-labs/kit/icon';
-import { Text } from '@metro-labs/kit/text';
-import { Card } from '@metro-labs/kit/card';
-import { ListView, ListViewItem } from '@metro-labs/kit/list-view';
+import { Icon } from '@stage-labs/kit/icon';
+import { Text } from '@stage-labs/kit/text';
+import { Card } from '@stage-labs/kit/card';
+import { ListView, ListViewItem } from '@stage-labs/kit/list-view';
 import {
   setThemePreference, setCustomTheme, useCustomTheme,
   useEffectiveColorScheme, usePalette, useThemePreference,

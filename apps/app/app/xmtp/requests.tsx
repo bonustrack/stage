@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-import { FlatList } from '@metro-labs/kit/flat-list';
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Text } from '@metro-labs/kit/text';
-import { Title } from '@metro-labs/kit/title';
+import { FlatList } from '@stage-labs/kit/flat-list';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Text } from '@stage-labs/kit/text';
+import { Title } from '@stage-labs/kit/title';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -16,7 +16,7 @@ import {
 import type { ConversationRequestView } from '../../modules/messaging';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
-import { Icon } from '@metro-labs/kit/icon';
+import { Icon } from '@stage-labs/kit/icon';
 import { ChannelRow } from '../../components/ChannelRow';
 import { Col, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';

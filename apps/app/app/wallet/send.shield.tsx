@@ -1,8 +1,8 @@
 /** @file Unified shield-flow form driving both shield (public→own private 0zk) and shielded send (private 0zk→0zk), sharing amount input, stepper, and footer wiring, differing by mode. */
 import { useEffect, useState } from 'react';
-import { fontSize } from '@metro-labs/kit/tokens';
-import { Input } from '@metro-labs/kit/input';
-import { Text } from '@metro-labs/kit/text';
+import { fontSize } from '@stage-labs/kit/tokens';
+import { Input } from '@stage-labs/kit/input';
+import { Text } from '@stage-labs/kit/text';
 import { Box } from '../../components/layout';
 import { shieldToPrivate } from '../../lib/railgun/shield';
 import { sendShielded } from '../../lib/railgun/send';

@@ -2,9 +2,9 @@
 
 import { Alert } from 'react-native';
 
-import { Text } from '@metro-labs/kit/text';
-import { Icon } from '@metro-labs/kit/icon';
-import { ListView, ListViewItem } from '@metro-labs/kit/list-view';
+import { Text } from '@stage-labs/kit/text';
+import { Icon } from '@stage-labs/kit/icon';
+import { ListView, ListViewItem } from '@stage-labs/kit/list-view';
 import { useRouter } from 'expo-router';
 import { Col } from './layout';
 import { AppModal } from './AppModal';

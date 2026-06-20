@@ -1,11 +1,11 @@
 /** @file ChatKit SEED theme editor for the Display settings page: the user sets color seeds plus density/radius/typography knobs and the whole palette is derived and written back to the seed so the app re-themes live. */
 
 import { useState } from 'react';
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Input } from '@metro-labs/kit/input';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Input } from '@stage-labs/kit/input';
 import { Box, Row, Col } from '../layout';
-import { Text } from '@metro-labs/kit/text';
-import { Button } from '@metro-labs/kit/button';
+import { Text } from '@stage-labs/kit/text';
+import { Button } from '@stage-labs/kit/button';
 import {
   usePalette, useEffectiveColorScheme, useThemeSeeds,
   setSeedColor, setSeedDensity, setSeedRadius, setSeedBaseSize, resetOverrides,
@@ -17,7 +17,7 @@ import { ColorPicker } from './ColorPicker';
 import { isHex } from '../../lib/colorOverrides';
 import {
   fontSize, type Density, type RadiusName, type BaseSize,
-} from '@metro-labs/kit/tokens';
+} from '@stage-labs/kit/tokens';
 
 /** The 4 editable seed colors in display order. `key` is the SeedColorKey. */
 const SEED_ROWS: readonly (readonly [label: string, key: SeedColorKey])[] = [

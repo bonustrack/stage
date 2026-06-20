@@ -1,8 +1,8 @@
 /** @file Recipient row and contacts picker for the Wallet send screen, resolving peer profiles and listing 1:1 DM peers so tapping one fills the recipient address. */
-import { Pressable } from '@metro-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/pressable';
 
-import { Text } from '@metro-labs/kit/text';
-import { Icon } from '@metro-labs/kit/icon';
+import { Text } from '@stage-labs/kit/text';
+import { Icon } from '@stage-labs/kit/icon';
 import { Avatar } from '../../components/Avatar';
 import { AppModal } from '../../components/AppModal';
 import { Row, Col } from '../../components/layout';

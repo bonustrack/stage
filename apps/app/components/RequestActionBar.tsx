@@ -1,8 +1,8 @@
 /** @file In-channel Approve/Reject action bar shown in place of the composer when the open conversation is still a pending XMTP message request, reusing the Requests list's consent handlers. */
 
 import { useCallback, useEffect, useState } from 'react';
-import { Text } from '@metro-labs/kit/text';
-import { Button } from '@metro-labs/kit/button';
+import { Text } from '@stage-labs/kit/text';
+import { Button } from '@stage-labs/kit/button';
 import { useRouter } from 'expo-router';
 import {
   getConvConsentState, acceptRequestConv, blockRequestConv,

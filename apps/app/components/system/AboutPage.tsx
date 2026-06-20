@@ -1,6 +1,6 @@
 /** @file About sub-page of the System menu: a back-arrow header wrapping the AboutPanel body, reached via /system/about. */
 
-import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
+import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Col } from '../layout';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';

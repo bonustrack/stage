@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Text } from '@metro-labs/kit/text';
+import { Text } from '@stage-labs/kit/text';
 import { Col } from '../../components/layout';
 import { usePalette, useEffectiveColorScheme, type Palette } from '../../lib/theme';
 import { ActionPage, WalletFooter, useFormPal, type FormPal } from './wallet.form';

@@ -1,8 +1,8 @@
 /** @file PaymentCard: the shared presentational payment bubble (token avatar, amount, recipient, balance row, primary action) used by both TxRequestCard and X402Card. */
 
-import { Text } from '@metro-labs/kit/text';
-import { Icon } from '@metro-labs/kit/icon';
-import { Button } from '@metro-labs/kit/button';
+import { Text } from '@stage-labs/kit/text';
+import { Icon } from '@stage-labs/kit/icon';
+import { Button } from '@stage-labs/kit/button';
 import { Row, Box } from './layout';
 import { TokenAvatar } from './tabs/WalletScreen.tokenAvatar';
 import { usePayerBalance, type PayerBalance } from './MessengerBubble.balance';

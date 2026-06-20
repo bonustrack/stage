@@ -1,11 +1,11 @@
 /** @file Settings -> Wallet screen: a read-only view of the active ZeroDev smart-account (address, signer, Kernel modules, deploy status, versions, XMTP address) with a link to recovery. */
 
-import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
+import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Text } from '@metro-labs/kit/text';
+import { Text } from '@stage-labs/kit/text';
 import { Col } from '../layout';
 import { SystemHeader } from '../system/SystemHeader';
 import { useBlockRadius, useEffectiveColorScheme, usePalette } from '../../lib/theme';

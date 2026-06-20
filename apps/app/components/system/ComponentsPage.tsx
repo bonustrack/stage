@@ -1,6 +1,6 @@
 /** @file Components sub-page of Settings: header plus theme switcher above app-level ComponentsSections rendered with sample data, mirroring KitPage but showcasing app components rather than kit primitives. */
 
-import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
+import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Col } from '../layout';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';

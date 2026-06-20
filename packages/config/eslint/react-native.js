@@ -115,7 +115,7 @@ export function reactNative() {
             selector:
               "Property[key.name='fontSize'] > Literal[value=type(number)]",
             message:
-              "use a named Kit size token (Text size=\"sm|md|lg|...\" prop, or fontSize('md')/FONT_SIZE.md from '@metro-labs/kit/tokens') instead of a raw fontSize number.",
+              "use a named Kit size token (Text size=\"sm|md|lg|...\" prop, or fontSize('md')/FONT_SIZE.md from '@stage-labs/kit/tokens') instead of a raw fontSize number.",
           },
           {
             selector:
@@ -170,31 +170,31 @@ export function reactNative() {
                 name: "react-native",
                 importNames: ["Image"],
                 message:
-                  "Import Image from '@metro-labs/kit/image' instead of react-native.",
+                  "Import Image from '@stage-labs/kit/image' instead of react-native.",
               },
               {
                 name: "react-native",
                 importNames: ["TextInput"],
                 message:
-                  "Use Input/Textarea from '@metro-labs/kit/input' | '@metro-labs/kit/textarea' instead of react-native TextInput.",
+                  "Use Input/Textarea from '@stage-labs/kit/input' | '@stage-labs/kit/textarea' instead of react-native TextInput.",
               },
               {
                 name: "react-native",
                 importNames: ["ScrollView"],
                 message:
-                  "Use Scroll from '@metro-labs/kit/scroll' instead of react-native ScrollView.",
+                  "Use Scroll from '@stage-labs/kit/scroll' instead of react-native ScrollView.",
               },
               {
                 name: "react-native",
                 importNames: ["Pressable"],
                 message:
-                  "Use Pressable from '@metro-labs/kit/pressable' (or Kit Button) instead of react-native Pressable.",
+                  "Use Pressable from '@stage-labs/kit/pressable' (or Kit Button) instead of react-native Pressable.",
               },
               {
                 name: "react-native",
                 importNames: ["FlatList"],
                 message:
-                  "Use FlatList from '@metro-labs/kit/flat-list' instead of react-native FlatList.",
+                  "Use FlatList from '@stage-labs/kit/flat-list' instead of react-native FlatList.",
               },
             ],
           },
@@ -207,7 +207,7 @@ export function reactNative() {
                 name: "react-native",
                 importNames: ["Text"],
                 message:
-                  "Prefer Text from '@metro-labs/kit/text' instead of react-native (Kit-only rollout).",
+                  "Prefer Text from '@stage-labs/kit/text' instead of react-native (Kit-only rollout).",
               },
             ],
           },
@@ -231,13 +231,13 @@ export function reactNative() {
                 name: "react-native",
                 importNames: ["Image"],
                 message:
-                  "Import Image from '@metro-labs/kit/image' instead of react-native.",
+                  "Import Image from '@stage-labs/kit/image' instead of react-native.",
               },
               {
                 name: "react-native",
                 importNames: ["TextInput"],
                 message:
-                  "Use Input/Textarea from '@metro-labs/kit/input' | '@metro-labs/kit/textarea' instead of react-native TextInput.",
+                  "Use Input/Textarea from '@stage-labs/kit/input' | '@stage-labs/kit/textarea' instead of react-native TextInput.",
               },
             ],
             patterns: [

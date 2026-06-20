@@ -3,15 +3,15 @@
 import { useState } from 'react';
 
 import { Alert, Modal, Platform } from 'react-native';
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Image } from '@metro-labs/kit/image';
-import { Text } from '@metro-labs/kit/text';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Image } from '@stage-labs/kit/image';
+import { Text } from '@stage-labs/kit/text';
 import { Box, Col } from './layout';
 import { Spinner } from './Spinner';
 import * as MediaLibrary from 'expo-media-library';
 import { Directory, File, Paths } from 'expo-file-system';
 import { Buffer } from 'buffer';
-import { Icon } from '@metro-labs/kit/icon';
+import { Icon } from '@stage-labs/kit/icon';
 import { flash } from '../lib/toast';
 
 /** Extension guessed from a `data:` URI mime or a URL path, used so the saved asset lands with a sensible suffix (the camera roll cares on some OSes). */

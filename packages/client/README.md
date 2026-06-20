@@ -66,4 +66,4 @@ src/
 ## Links
 
 - Consumed by [`apps/ui`](../../apps/ui) and [`apps/app`](../../apps/app)
-- Design tokens live in [`@metro-labs/kit`](../kit)
+- Design tokens live in [`@stage-labs/kit`](../kit)

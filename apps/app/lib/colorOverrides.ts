@@ -1,11 +1,11 @@
-/** @file AsyncStorage-backed ChatKit Custom-theme store: persists per-scheme seeds plus density/radius/typography, from which the full @metro-labs/kit palette is derived. */
+/** @file AsyncStorage-backed ChatKit Custom-theme store: persists per-scheme seeds plus density/radius/typography, from which the full @stage-labs/kit palette is derived. */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   DEFAULT_SEED, type ThemeSeed, type Scheme,
   type RadiusName, type Density, type BaseSize,
   RADIUS_NAME_DEFAULT, DENSITY_DEFAULT, BASE_SIZE_DEFAULT,
-} from '@metro-labs/kit';
+} from '@stage-labs/kit';
 
 export type { Scheme };
 

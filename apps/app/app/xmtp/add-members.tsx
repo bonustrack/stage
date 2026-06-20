@@ -2,11 +2,11 @@
 
 import { useCallback, useState } from 'react';
 
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
-import { Title } from '@metro-labs/kit/title';
-import { Icon } from '@metro-labs/kit/icon';
-import { Button } from '@metro-labs/kit/button';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
+import { Title } from '@stage-labs/kit/title';
+import { Icon } from '@stage-labs/kit/icon';
+import { Button } from '@stage-labs/kit/button';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { addGroupMembers } from '../../modules/messaging';

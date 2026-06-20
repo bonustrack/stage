@@ -8,7 +8,7 @@
 
 `app` is the Stage mobile client, built with Expo and React Native. It is an XMTP messenger with multi-account support, Snapshot profiles, group channels, search, and an onchain wallet (assets, balances, and Railgun shielded transfers). It is the mobile counterpart to the Vue web client in [`apps/ui`](../ui).
 
-All platform-neutral logic comes from [`@stage-labs/client`](../../packages/client) and the visual language from [`@metro-labs/kit`](../../packages/kit), so behaviour and design stay in step with the web app. The Railgun engine runs on-device through a `nodejs-mobile` bridge.
+All platform-neutral logic comes from [`@stage-labs/client`](../../packages/client) and the visual language from [`@stage-labs/kit`](../../packages/kit), so behaviour and design stay in step with the web app. The Railgun engine runs on-device through a `nodejs-mobile` bridge.
 
 ## Stack
 
@@ -62,5 +62,5 @@ eas.json      # EAS build profiles
 ## Links
 
 - Shared logic: [`@stage-labs/client`](../../packages/client)
-- Design tokens: [`@metro-labs/kit`](../../packages/kit)
+- Design tokens: [`@stage-labs/kit`](../../packages/kit)
 - Web counterpart: [`apps/ui`](../ui)

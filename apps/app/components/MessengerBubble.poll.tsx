@@ -1,8 +1,8 @@
 /** @file Interactive poll view for MessengerBubble: one block per AskUserQuestion with option lists, live vote counts, result bars, and an OpenAnswerBlock free-text input for open questions, themed via usePalette/withAlpha. */
 
-import { Pressable } from '@metro-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/pressable';
 
-import { Text } from '@metro-labs/kit/text';
+import { Text } from '@stage-labs/kit/text';
 import { Row, Box } from './layout';
 import type { Poll, PollQuestion } from './MessengerBubble.helpers';
 import { usePalette, useBlockRadius, withAlpha } from '../lib/theme';

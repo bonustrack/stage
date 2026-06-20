@@ -2,10 +2,10 @@
 
 import { Linking } from 'react-native';
 
-import { Pressable } from '@metro-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/pressable';
 import { Box, Row, Col } from '../layout';
-import { Icon } from '@metro-labs/kit/icon';
-import { Text } from '@metro-labs/kit/text';
+import { Icon } from '@stage-labs/kit/icon';
+import { Text } from '@stage-labs/kit/text';
 import { GithubLogo } from '../GithubLogo';
 
 /** Renders a tappable row linking to a GitHub URL. */

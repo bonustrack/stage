@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 
-import { Text } from '@metro-labs/kit/text';
-import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
+import { Text } from '@stage-labs/kit/text';
+import { Icon, type HeroIconName } from '@stage-labs/kit/icon';
 import { Spinner } from '../Spinner';
 import { Col, Row, Box } from '../layout';
 import { DANGER } from '../../lib/theme';

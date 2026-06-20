@@ -1,15 +1,15 @@
 /** @file ComposerEditor + attach menu for the MessengerComposer: the textarea / recording-waveform input row, the [+ / mic / send] buttons, and the attachment menu. */
 
 import type { RefObject } from 'react';
-import { fontSize } from '@metro-labs/kit/tokens';
+import { fontSize } from '@stage-labs/kit/tokens';
 import { Animated, type PanResponderInstance } from 'react-native';
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
-import { Textarea } from '@metro-labs/kit/textarea';
-import { Text } from '@metro-labs/kit/text';
-import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
-import { Button } from '@metro-labs/kit/button';
-import { Spacer } from '@metro-labs/kit/spacer';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
+import { Textarea } from '@stage-labs/kit/textarea';
+import { Text } from '@stage-labs/kit/text';
+import { Icon, type HeroIconName } from '@stage-labs/kit/icon';
+import { Button } from '@stage-labs/kit/button';
+import { Spacer } from '@stage-labs/kit/spacer';
 import { Box, Row, Col } from './layout';
 import { usePalette, useRadius } from '../lib/theme';
 import { RecordingBar } from './MessengerComposer.parts';

@@ -1,11 +1,11 @@
 /** @file Group labels section rendering add/remove label chips backed by the group's MLS-synced appData. */
 
 import { useEffect, useMemo, useState } from 'react';
-import { fontSize } from '@metro-labs/kit/tokens';
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Input } from '@metro-labs/kit/input';
-import { Text } from '@metro-labs/kit/text';
-import { Icon } from '@metro-labs/kit/icon';
+import { fontSize } from '@stage-labs/kit/tokens';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Input } from '@stage-labs/kit/input';
+import { Text } from '@stage-labs/kit/text';
+import { Icon } from '@stage-labs/kit/icon';
 import { Box, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 import { flash } from '../../lib/toast';

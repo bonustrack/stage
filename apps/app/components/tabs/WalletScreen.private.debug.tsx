@@ -1,7 +1,7 @@
 /** @file RailgunDebugPanel — on-screen diagnostic panel for the shielded-balance pipeline (readiness, refresh phase/error, row counts, last payload), subscribing to the balanceDebug store. */
 import { useEffect, useState } from 'react';
 
-import { Text } from '@metro-labs/kit/text';
+import { Text } from '@stage-labs/kit/text';
 import { Col, Row } from '../layout';
 import { DANGER } from '../../lib/theme';
 import {

@@ -6,16 +6,16 @@ import * as SecureStore from 'expo-secure-store';
 import {
   THEME_STORAGE_KEY as STORAGE_KEY, isThemePreference,
   type ThemePreference,
-} from '@metro-labs/kit/theme';
+} from '@stage-labs/kit/theme';
 import {
   semanticColors, semanticPalette,
-} from '@metro-labs/kit/tokens';
-import { setDefaultButtonRadius } from '@metro-labs/kit/button';
+} from '@stage-labs/kit/tokens';
+import { setDefaultButtonRadius } from '@stage-labs/kit/button';
 import {
   getSeeds, loadOverrides, isCustomTheme,
   subscribe as subscribeOverrides,
 } from './colorOverrides';
-import { derivePalette } from '@metro-labs/kit/theme-derive';
+import { derivePalette } from '@stage-labs/kit/theme-derive';
 import {
   getRadius, getBlockRadius, loadRadius,
   subscribe as subscribeRadius,

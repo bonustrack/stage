@@ -1,5 +1,5 @@
 /** @file PendingShieldRows — greyed "pending shield arriving" placeholder rows atop the Tokens tab, surfacing an in-flight shield until the note lands; styled like TokenRow but muted/non-tappable. */
-import { Text } from '@metro-labs/kit/text';
+import { Text } from '@stage-labs/kit/text';
 
 import { Col, Row, Box } from '../layout';
 import { Spinner } from '../Spinner';

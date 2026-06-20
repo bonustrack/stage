@@ -1,13 +1,13 @@
 /** @file Shared Wallet form primitives (page shell, footer button, palette and footer-reporter hooks) for the Send/Shield/Unshield action pages, styled with the canonical palette accent token. */
 import { useCallback, useRef, useState } from 'react';
-import { fontSize } from '@metro-labs/kit/tokens';
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
-import { Input } from '@metro-labs/kit/input';
-import { Text } from '@metro-labs/kit/text';
-import { Icon } from '@metro-labs/kit/icon';
+import { fontSize } from '@stage-labs/kit/tokens';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
+import { Input } from '@stage-labs/kit/input';
+import { Text } from '@stage-labs/kit/text';
+import { Icon } from '@stage-labs/kit/icon';
 import { Box, Row, Col } from '../../components/layout';
-import { Button } from '@metro-labs/kit/button';
+import { Button } from '@stage-labs/kit/button';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePalette } from '../../lib/theme';
 

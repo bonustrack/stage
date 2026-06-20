@@ -1,16 +1,16 @@
 /** @file Group-detail header editor components: image picker plus inline name and description editing. */
 
-import { Pressable } from '@metro-labs/kit/pressable';
-import { fontSize } from '@metro-labs/kit/tokens';
-import { Input } from '@metro-labs/kit/input';
-import { Textarea } from '@metro-labs/kit/textarea';
-import { Image } from '@metro-labs/kit/image';
-import { Text } from '@metro-labs/kit/text';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { fontSize } from '@stage-labs/kit/tokens';
+import { Input } from '@stage-labs/kit/input';
+import { Textarea } from '@stage-labs/kit/textarea';
+import { Image } from '@stage-labs/kit/image';
+import { Text } from '@stage-labs/kit/text';
 import { Box, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
-import { Button } from '@metro-labs/kit/button';
+import { Button } from '@stage-labs/kit/button';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
-import { channelStampSeed, stampAvatarUrl } from '@metro-labs/kit/avatar';
+import { channelStampSeed, stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { usePalette } from '../../lib/theme';
 
 /** Inline "Save" pill shared by the name + description editors. A small primary button matched to the prior bespoke pill: paddingHorizontal 14, the legacy 13px Calibre-Medium label, height ~32 (kit `sm`). */

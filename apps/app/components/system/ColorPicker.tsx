@@ -1,12 +1,12 @@
 /** @file Pure-JS visual color picker with three draggable HSV sliders, a live preview swatch, and a hex text field, driven by react-native-gesture-handler with no native module. */
 
 import { useMemo, useRef, useState } from 'react';
-import { fontSize } from '@metro-labs/kit/tokens';
-import { Input } from '@metro-labs/kit/input';
+import { fontSize } from '@stage-labs/kit/tokens';
+import { Input } from '@stage-labs/kit/input';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
 import { Box, Row, Col } from '../layout';
-import { Text } from '@metro-labs/kit/text';
+import { Text } from '@stage-labs/kit/text';
 import type { GalleryPalette } from './galleryPalette';
 import { isHex } from '../../lib/colorOverrides';
 import { hexToHsv, hsvToHex } from './colorMath';

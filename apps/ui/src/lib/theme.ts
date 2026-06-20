@@ -6,7 +6,7 @@ import { ref, onUnmounted, type Ref } from 'vue';
 import {
   THEME_STORAGE_KEY as STORAGE_KEY, isThemePreference,
   type ThemePreference,
-} from '@metro-labs/kit/theme';
+} from '@stage-labs/kit/theme';
 
 export type { ThemePreference };
 

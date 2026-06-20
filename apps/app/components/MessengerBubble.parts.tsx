@@ -1,6 +1,6 @@
 /** @file Sub-row components for MessengerBubble — @mention chips, mention body, and the question view — extracted to keep the bubble file under the lint cap. */
 
-import { Text } from '@metro-labs/kit/text';
+import { Text } from '@stage-labs/kit/text';
 import { useRouter } from 'expo-router';
 import { shortAddress } from '../modules/messaging';
 import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';

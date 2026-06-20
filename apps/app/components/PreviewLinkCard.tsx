@@ -4,8 +4,8 @@
 
 import { Linking } from 'react-native';
 
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Text } from '@metro-labs/kit/text';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Text } from '@stage-labs/kit/text';
 import { Box } from './layout';
 import { previewLinkOf } from '../lib/previewLinkDetect';
 import { usePalette, useBlockRadius } from '../lib/theme';

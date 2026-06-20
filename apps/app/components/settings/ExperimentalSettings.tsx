@@ -1,13 +1,13 @@
 /** @file Settings -> Experimental menu listing the not-yet-stable surfaces: the Kit gallery, the app Components gallery, and the Developer diagnostics console. */
 
-import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
+import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
 
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Col } from '../layout';
-import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
-import { Text } from '@metro-labs/kit/text';
-import { ListView, ListViewItem } from '@metro-labs/kit/list-view';
+import { Icon, type HeroIconName } from '@stage-labs/kit/icon';
+import { Text } from '@stage-labs/kit/text';
+import { ListView, ListViewItem } from '@stage-labs/kit/list-view';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { SystemHeader } from '../system/SystemHeader';
 

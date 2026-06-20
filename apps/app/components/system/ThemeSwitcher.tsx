@@ -1,9 +1,9 @@
 /** @file ThemeSwitcher — app-wide theme switcher rendered as a System/Light/Dark segmented pill that writes lib/theme's setThemePreference, re-theming the whole app instantly via its pub/sub. */
 
 import { Box, Row } from '../layout';
-import { Icon } from '@metro-labs/kit/icon';
-import { Title } from '@metro-labs/kit/title';
-import { Button } from '@metro-labs/kit/button';
+import { Icon } from '@stage-labs/kit/icon';
+import { Title } from '@stage-labs/kit/title';
+import { Button } from '@stage-labs/kit/button';
 import { setThemePreference, useThemePreference } from '../../lib/theme';
 import { THEME_OPTIONS } from '../tabs/SettingsScreen.parts';
 

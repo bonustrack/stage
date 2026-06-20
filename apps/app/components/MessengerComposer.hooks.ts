@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ComponentRef, type RefObject } from 'react';
 import { AppState, Keyboard } from 'react-native';
-import type { Textarea } from '@metro-labs/kit/textarea';
+import type { Textarea } from '@stage-labs/kit/textarea';
 import { loadDrafts, getDraft, setDraft } from '../lib/drafts';
 import { loadLastAttachment, getLastAttachment, subscribeLastAttachment } from '../lib/lastAttachment';
 

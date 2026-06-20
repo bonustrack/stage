@@ -3,7 +3,7 @@
 import { useCallback, useState } from 'react';
 
 import { Animated as RNAnimated } from 'react-native';
-import { Text } from '@metro-labs/kit/text';
+import { Text } from '@stage-labs/kit/text';
 import { Col } from '../../components/layout';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

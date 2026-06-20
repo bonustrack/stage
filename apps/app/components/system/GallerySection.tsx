@@ -2,7 +2,7 @@
 
 import { Box } from '../layout';
 
-import { Text } from '@metro-labs/kit/text';
+import { Text } from '@stage-labs/kit/text';
 import { useBlockRadius } from '../../lib/theme';
 
 /** Renders a labeled gallery section, optionally wrapped in a bordered card. */

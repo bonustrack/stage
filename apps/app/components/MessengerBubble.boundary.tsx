@@ -3,7 +3,7 @@
 import { Component } from 'react';
 
 import type { ReactNode } from 'react';
-import { Text } from '@metro-labs/kit/text';
+import { Text } from '@stage-labs/kit/text';
 import { Box } from './layout';
 
 interface Props {

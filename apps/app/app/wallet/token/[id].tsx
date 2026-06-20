@@ -1,17 +1,17 @@
 /** @file Wallet token-detail screen rendering one token's balance/price/logo from route params (no refetch), with Send/Shield or Send/Unshield buttons routing to the matching wallet pages with pre-fill params. */
 
-import { Pressable } from '@metro-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/pressable';
 
-import { Image } from '@metro-labs/kit/image';
-import { Text } from '@metro-labs/kit/text';
-import { Icon } from '@metro-labs/kit/icon';
+import { Image } from '@stage-labs/kit/image';
+import { Text } from '@stage-labs/kit/text';
+import { Icon } from '@stage-labs/kit/icon';
 import { Box, Col, Row } from '../../../components/layout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useEffectiveColorScheme, usePalette } from '../../../lib/theme';
 import { Btn, fmtUsd, fmtBalance } from '../../../components/tabs/WalletScreen.parts';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, type AssetRow } from '../../../components/tabs/WalletScreen.assets';
-import { withStampDisplayPx } from '@metro-labs/kit/avatar';
+import { withStampDisplayPx } from '@stage-labs/kit/avatar';
 
 const NETWORK_LABEL: Record<number, string> = { 1: 'Ethereum', 11155111: 'Sepolia' };
 

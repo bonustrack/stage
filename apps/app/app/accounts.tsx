@@ -1,14 +1,14 @@
 /** @file Full-screen account switcher screen hosting AccountsManager for viewing and switching the user's saved accounts in place. */
 
-import { Pressable } from '@metro-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/pressable';
 
-import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
-import { Title } from '@metro-labs/kit/title';
+import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
+import { Title } from '@stage-labs/kit/title';
 import { Row, Col } from '../components/layout';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
-import { Icon } from '@metro-labs/kit/icon';
+import { Icon } from '@stage-labs/kit/icon';
 import { AccountsManager } from '../components/AccountsManager';
 
 /** Screen for viewing and switching between the user's saved accounts. */

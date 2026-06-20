@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import { Alert, Linking } from 'react-native';
 
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Text } from '@metro-labs/kit/text';
-import { Icon } from '@metro-labs/kit/icon';
-import { stampTokenUrl } from '@metro-labs/kit/avatar';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Text } from '@stage-labs/kit/text';
+import { Icon } from '@stage-labs/kit/icon';
+import { stampTokenUrl } from '@stage-labs/kit/avatar';
 import { Row, Box } from './layout';
 import { PaymentCard } from './PaymentCard';
 import { shortAddress } from '../modules/messaging';

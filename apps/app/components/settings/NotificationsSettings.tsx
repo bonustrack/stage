@@ -3,12 +3,12 @@
 import { useEffect, useState } from 'react';
 
 import { Switch } from 'react-native';
-import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
+import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
 import * as Notifications from 'expo-notifications';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box, Col, Row } from '../layout';
-import { Text } from '@metro-labs/kit/text';
-import { Caption } from '@metro-labs/kit/caption';
+import { Text } from '@stage-labs/kit/text';
+import { Caption } from '@stage-labs/kit/caption';
 import { useBlockRadius, useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { SystemHeader } from '../system/SystemHeader';
 import { loadPushEnabled, setPushEnabled, subscribePushPref, isPushEnabledSync } from '../../lib/pushPref';

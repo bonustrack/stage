@@ -2,10 +2,10 @@
 
 import { Animated, StyleSheet } from 'react-native';
 
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Image } from '@metro-labs/kit/image';
-import { Text } from '@metro-labs/kit/text';
-import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Image } from '@stage-labs/kit/image';
+import { Text } from '@stage-labs/kit/text';
+import { Icon, type HeroIconName } from '@stage-labs/kit/icon';
 import { Avatar } from './Avatar';
 import { Box, Row, Col } from './layout';
 import { shortAddress } from '../modules/messaging';

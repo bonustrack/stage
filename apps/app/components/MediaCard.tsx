@@ -1,6 +1,6 @@
 /** @file Rounded, bordered "media bubble" wrapper giving every shared attachment (image, video, map, YouTube thumbnail) a consistent card-like frame. */
 
-import { Pressable } from '@metro-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/pressable';
 import { Box } from './layout';
 import { usePalette, useBlockRadius } from '../lib/theme';
 

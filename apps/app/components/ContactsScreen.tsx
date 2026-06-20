@@ -3,7 +3,7 @@
 import { useCallback, useState } from 'react';
 import { FlatList } from 'react-native-gesture-handler';
 import { useRouter } from 'expo-router';
-import { Text } from '@metro-labs/kit/text';
+import { Text } from '@stage-labs/kit/text';
 import type { SimultaneousRefs } from './SwipeTabs.types';
 import { Col } from './layout';
 import { ChannelRow } from './ChannelRow';

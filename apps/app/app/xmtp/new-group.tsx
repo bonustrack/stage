@@ -1,16 +1,16 @@
 /** @file Create-group screen: name a group, stage members by address/.eth via the shared MemberPicker, then call createGroup and open the new XMTP conversation. */
 
 import { useCallback, useState } from 'react';
-import { fontSize } from '@metro-labs/kit/tokens';
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
-import { Input } from '@metro-labs/kit/input';
-import { Image } from '@metro-labs/kit/image';
+import { fontSize } from '@stage-labs/kit/tokens';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
+import { Input } from '@stage-labs/kit/input';
+import { Image } from '@stage-labs/kit/image';
 import * as ImagePicker from 'expo-image-picker';
-import { Text } from '@metro-labs/kit/text';
-import { Title } from '@metro-labs/kit/title';
-import { Icon } from '@metro-labs/kit/icon';
-import { Button } from '@metro-labs/kit/button';
+import { Text } from '@stage-labs/kit/text';
+import { Title } from '@stage-labs/kit/title';
+import { Icon } from '@stage-labs/kit/icon';
+import { Button } from '@stage-labs/kit/button';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createGroup } from '../../modules/messaging';

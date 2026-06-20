@@ -17,7 +17,7 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { TransitionPresets, TransitionSpecs } from '@react-navigation/stack';
 import { NativeSwipeStack } from '../components/NativeSwipeStack';
 import { useEffectiveColorScheme, usePalette, useRadius } from '../lib/theme';
-import { KitThemeProvider } from '@metro-labs/kit/theme-context';
+import { KitThemeProvider } from '@stage-labs/kit/theme-context';
 import { useDeepLinks } from '../lib/deepLinks';
 import { useRestoreGate } from '../lib/lastRoute';
 import { usePushDeepLinks } from '../lib/push';

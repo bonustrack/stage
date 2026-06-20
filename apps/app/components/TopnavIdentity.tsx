@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Text } from '@metro-labs/kit/text';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Text } from '@stage-labs/kit/text';
 import { Avatar } from './Avatar';
 import { MenuSheet } from './MenuSheet';
 import { Row } from './layout';

@@ -2,7 +2,7 @@
  * @file MessengerComposer: the conversation message composer (input, attachments, mentions, replies, poll/signature/payment sheets, and send flows).
  */
 
-import { Text } from '@metro-labs/kit/text';
+import { Text } from '@stage-labs/kit/text';
 import { Col } from './layout';
 import { type Attachment } from './MessengerComposer.helpers';
 import { useComposerActions } from './MessengerComposer.actions';

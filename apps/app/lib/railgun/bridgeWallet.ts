@@ -1,6 +1,6 @@
 /** @file Bridge-backed private-wallet refresh (the real on-device path via the embedded Node host): derives keys, inits the engine, then reads the 0zk address + shielded balances into the UI's PrivateBalance shape; may be empty mid-scan and never throws. */
 import { formatUnits } from 'viem';
-import { stampTokenUrl } from '@metro-labs/kit/avatar';
+import { stampTokenUrl } from '@stage-labs/kit/avatar';
 import {
   isBridgeAvailable,
   engineInit,

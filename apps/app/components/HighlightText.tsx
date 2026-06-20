@@ -2,7 +2,7 @@
 
 /** Use a bare RN Text so the highlight span inherits surrounding typography and only adds a background; Kit Text would override font size/family. */
 import { Text as RNText } from './layout/native';
-import { Text } from '@metro-labs/kit/text';
+import { Text } from '@stage-labs/kit/text';
 
 /** Bright fluo-yellow highlight background; the match span only adds this colour and inherits all surrounding typography. */
 const HL_BG = '#FFF200';

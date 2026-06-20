@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { getCachedRows, hydrateCachedRows, getActiveAccountIdSync, type CachedRow } from './channelsCache';
 import { convOfLine, groupMemberEthAddresses, lineOfConv } from './xmtp';
-import { channelStampSeed } from '@metro-labs/kit/avatar';
+import { channelStampSeed } from '@stage-labs/kit/avatar';
 import { getAccountEpoch } from './accountEpoch';
 import { MemoryStore } from './cache';
 import { loadArchivedIds } from './archived';

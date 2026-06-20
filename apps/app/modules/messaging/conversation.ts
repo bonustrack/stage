@@ -9,7 +9,7 @@ import { labelsOfSyncedGroup } from '../../lib/xmtp.labels';
 import { githubOfSyncedGroup } from '../../lib/xmtp.github';
 import { isMetroControlBody } from '../../lib/push';
 import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
-import { channelStampSeed } from '@metro-labs/kit/avatar';
+import { channelStampSeed } from '@stage-labs/kit/avatar';
 import type {
   ConversationView, ConversationRequestView, RequestAvatarDescriptor,
 } from './conversation.types';

@@ -4,10 +4,10 @@ import { useCallback, useEffect, useState } from 'react';
 
 /** FlatList from gesture-handler (not RN): the plain RN list can be blocked from scrolling by the screen-root swipe-back pan handler. */
 import { FlatList } from 'react-native-gesture-handler';
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Text } from '@metro-labs/kit/text';
-import { Title } from '@metro-labs/kit/title';
-import { Icon } from '@metro-labs/kit/icon';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Text } from '@stage-labs/kit/text';
+import { Title } from '@stage-labs/kit/title';
+import { Icon } from '@stage-labs/kit/icon';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getCachedRows, subscribeCachedRows } from '../../modules/messaging';

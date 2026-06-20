@@ -6,7 +6,7 @@ import { DmPeerCard } from './ChannelCard.dm';
 import { Box } from './layout';
 import { useConvMeta } from '../modules/messaging';
 import { usePeerProfiles, getPeerName, isPeerResolved } from '../lib/peerProfiles';
-import { channelStampSeed } from '@metro-labs/kit/avatar';
+import { channelStampSeed } from '@stage-labs/kit/avatar';
 import { usePalette, useBlockRadius } from '../lib/theme';
 import { shortAddress } from '../modules/messaging';
 

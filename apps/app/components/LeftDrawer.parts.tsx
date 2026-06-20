@@ -3,9 +3,9 @@
 import { Box, Col } from './layout';
 
 import { Avatar } from './Avatar';
-import { Text } from '@metro-labs/kit/text';
-import { Icon, type HeroIconName } from '@metro-labs/kit/icon';
-import { ListViewItem } from '@metro-labs/kit/list-view';
+import { Text } from '@stage-labs/kit/text';
+import { Icon, type HeroIconName } from '@stage-labs/kit/icon';
+import { ListViewItem } from '@stage-labs/kit/list-view';
 import { getPeerName } from '../lib/peerProfiles';
 import { shortAddress } from '../modules/messaging';
 import { type AccountRecord } from '../lib/accounts';

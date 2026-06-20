@@ -1,9 +1,9 @@
 /** @file Unified mobile avatar with three canonical sizes, rendering a custom image, else a stamp.fyi address identicon, else a solid placeholder circle. */
 
-import { Pressable } from '@metro-labs/kit/pressable';
-import { AvatarView } from '@metro-labs/kit/avatar-view';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { AvatarView } from '@stage-labs/kit/avatar-view';
 import type { ImageStyle, StyleProp } from 'react-native';
-import { stampAvatarUrl, AVATAR_SIZES, type AvatarSize } from '@metro-labs/kit/avatar';
+import { stampAvatarUrl, AVATAR_SIZES, type AvatarSize } from '@stage-labs/kit/avatar';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 
 /** Fetch size (px) requested when an avatar is opened large — independent of the displayed size so the fullscreen viewer gets a crisp image. */

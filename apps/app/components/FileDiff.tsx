@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 
-import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
-import { Text } from '@metro-labs/kit/text';
-import { Icon } from '@metro-labs/kit/icon';
-import { ListViewItem } from '@metro-labs/kit/list-view';
+import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
+import { Text } from '@stage-labs/kit/text';
+import { Icon } from '@stage-labs/kit/icon';
+import { ListViewItem } from '@stage-labs/kit/list-view';
 import { Box, Row } from './layout';
 import type { Palette } from '../lib/theme';
 import type { DiffFile, DiffLine } from '../lib/diffParse';

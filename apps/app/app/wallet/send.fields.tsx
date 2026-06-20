@@ -1,16 +1,16 @@
 /** @file Presentational recipient/amount input fields and tx-status row for the Wallet send screen; all state and handlers are owned by the parent and passed in. */
 import { useState } from 'react';
-import { fontSize } from '@metro-labs/kit/tokens';
+import { fontSize } from '@stage-labs/kit/tokens';
 import { Linking } from 'react-native';
-import { Pressable } from '@metro-labs/kit/pressable';
-import { Input } from '@metro-labs/kit/input';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { Input } from '@stage-labs/kit/input';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Hex } from 'viem';
-import { Text } from '@metro-labs/kit/text';
+import { Text } from '@stage-labs/kit/text';
 import { Box, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
-import { Button } from '@metro-labs/kit/button';
-import { Icon } from '@metro-labs/kit/icon';
+import { Button } from '@stage-labs/kit/button';
+import { Icon } from '@stage-labs/kit/icon';
 import { DANGER, usePalette } from '../../lib/theme';
 import { explorerTxUrl } from '@stage-labs/client/xmtp/tx';
 import { RecipientRow, ContactsModal, ContactsButton } from './send.recipient';

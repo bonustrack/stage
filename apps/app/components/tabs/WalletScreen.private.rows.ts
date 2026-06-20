@@ -4,7 +4,7 @@ import type { AssetRow } from './WalletScreen.assets';
 import type { PrivateSnapshot } from '../../lib/railgun/types';
 import { RAILGUN_NETWORKS, type RailgunNet } from '../../lib/railgun/networks';
 import { RAILGUN_TOKENS } from '../../lib/railgun/tokens';
-import { stampTokenUrl } from '@metro-labs/kit/avatar';
+import { stampTokenUrl } from '@stage-labs/kit/avatar';
 
 const NETS: readonly RailgunNet[] = ['mainnet', 'sepolia'];
 

@@ -2,13 +2,13 @@
  * @file Builder bottom sheets for the MessengerComposer: poll, signature-request, and payment-request composition UIs.
  */
 
-import { Pressable } from '@metro-labs/kit/pressable';
-import { fontSize } from '@metro-labs/kit/tokens';
-import { Input } from '@metro-labs/kit/input';
-import { Textarea } from '@metro-labs/kit/textarea';
-import { Text } from '@metro-labs/kit/text';
-import { Icon } from '@metro-labs/kit/icon';
-import { Button } from '@metro-labs/kit/button';
+import { Pressable } from '@stage-labs/kit/pressable';
+import { fontSize } from '@stage-labs/kit/tokens';
+import { Input } from '@stage-labs/kit/input';
+import { Textarea } from '@stage-labs/kit/textarea';
+import { Text } from '@stage-labs/kit/text';
+import { Icon } from '@stage-labs/kit/icon';
+import { Button } from '@stage-labs/kit/button';
 import { Box, Row, Col } from './layout';
 import { AppModal } from './AppModal';
 import { usePalette, useBlockRadius } from '../lib/theme';

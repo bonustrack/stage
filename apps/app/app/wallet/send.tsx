@@ -1,6 +1,6 @@
 /** @file Unified Wallet send-token screen routing each held token to an on-chain or Railgun 0zk transfer per the combined TokenSelector pick. */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Scroll as ScrollView } from '@metro-labs/kit/scroll';
+import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
 import { Col } from '../../components/layout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
