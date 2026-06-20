@@ -68,7 +68,7 @@ else
   EAS=(npx --yes eas-cli)
 fi
 
-echo "==> Metro Play release  (track=$TRACK, profile=$SUBMIT_PROFILE)"
+echo "==> Stage Play release  (track=$TRACK, profile=$SUBMIT_PROFILE)"
 echo "==> repo:   $REPO_ROOT"
 echo "==> app:    $APP_DIR"
 

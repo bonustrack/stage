@@ -1,6 +1,6 @@
-# Embed wallet bridge — let the Metro widget use the host's wallet
+# Embed wallet bridge — let the Stage widget use the host's wallet
 
-When the Metro chat widget is embedded as an iframe, it can sign XMTP identity
+When the Stage chat widget is embedded as an iframe, it can sign XMTP identity
 operations with the **host page's already-connected wallet** instead of minting
 its own throwaway key. The widget never holds a key — it asks the parent window
 to sign over `postMessage`, and the host signs with its own provider (wagmi /
@@ -22,7 +22,7 @@ message — the local DB + installation key take over.
 
 `id` correlates a sign-request with its response. The widget only accepts
 messages whose `event.source` is the parent frame; the host should likewise
-verify `event.origin` is the Metro widget origin (e.g. `https://metro.box`).
+verify `event.origin` is the Stage widget origin (e.g. `https://metro.box`).
 
 ## Drop-in snippet (wagmi v2)
 

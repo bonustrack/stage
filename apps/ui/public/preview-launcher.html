@@ -35,8 +35,8 @@
 </head>
 <body>
   <div class="card">
-    <h1>Metro PR Preview</h1>
-    <p class="sub">Opening this PR's JS bundle in the Metro dev-client…</p>
+    <h1>Stage PR Preview</h1>
+    <p class="sub">Opening this PR's JS bundle in the Stage dev-client…</p>
     <div id="content">
       <p class="err">Loading…</p>
     </div>
@@ -59,7 +59,7 @@
     var deeplink = SCHEME + '://expo-development-client/?url=' + encodeURIComponent(manifest);
 
     content.innerHTML =
-      '<a class="btn" href="' + deeplink + '">Open in Metro</a>' +
+      '<a class="btn" href="' + deeplink + '">Open in Stage</a>' +
       '<div id="qr"></div>' +
       '<code>' + deeplink.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</code>';
 

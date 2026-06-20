@@ -73,7 +73,7 @@ async function copyAddress(): Promise<void> {
     </div>
 
     <div class="mt-6 mb-4 text-center text-[11px] text-metro-sub-light dark:text-metro-sub-dark">
-      Metro · v{{ APP_VERSION }}
+      Stage · v{{ APP_VERSION }}
     </div>
   </div>
 </template>
