@@ -1,6 +1,7 @@
 name: Publish @stage-labs/config
 
-# Manually-triggered publish of packages/config to npm.
+# Manually-triggered publish of packages/config to npm, always under the
+# `beta` dist-tag.
 #
 # Prerequisite: an `NPM_TOKEN` repository secret holding an npm automation
 # token with publish rights to the @stage-labs scope.
@@ -13,10 +14,6 @@ name: Publish @stage-labs/config
 on:
   workflow_dispatch:
     inputs:
-      tag:
-        description: npm dist-tag to publish under
-        required: true
-        default: beta
       dry_run:
         description: Dry run (pack only, do not publish)
         type: boolean
@@ -45,4 +42,4 @@ jobs:
         working-directory: packages/config
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish --tag "${{ inputs.tag }}" --access public
+        run: npm publish --tag beta --access public
