@@ -1,21 +1,11 @@
 #!/usr/bin/env node
-/**
- * eas-deeplink.mjs — turn `eas update --json` output into a dev-client deep link.
- *
- * The dev-client loads a specific EAS Update group via:
- *   <scheme>://expo-development-client/?url=https://u.expo.dev/<projectId>/group/<groupId>
- * (see docs.expo.dev/eas-update/expo-dev-client). We read the group id + project
- * id from the eas-cli JSON and emit `deeplink=<url>` for $GITHUB_OUTPUT.
- *
- * Usage: node eas-deeplink.mjs <eas-update.json>
- */
+/** @file Turns `eas update --json` output into a dev-client deep link emitted as `deeplink=<url>` for $GITHUB_OUTPUT. */
 import { readFileSync } from 'node:fs';
 
-const SCHEME = 'stage'; // dev variant scheme (app.config.js). Prod = 'stage'.
+const SCHEME = 'stage'; /** dev variant scheme (app.config.js); prod = 'stage'. */
 
 const raw = JSON.parse(readFileSync(process.argv[2], 'utf8'));
-// `eas update --json` emits an array of per-platform update records (one per
-// platform published). They share a groupId. Tolerate object or array shape.
+/** `eas update --json` emits per-platform records sharing a groupId; tolerate object or array shape. */
 const records = Array.isArray(raw) ? raw : raw.updates ?? [raw];
 const rec = records.find((r) => r?.group) ?? records[0];
 const group = rec?.group;

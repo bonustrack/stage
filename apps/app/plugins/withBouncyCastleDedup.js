@@ -1,7 +1,4 @@
-// One-off local-build fix: expo-updates pulls org.bouncycastle:bcprov-jdk15to18:1.78.1
-// while another native dep (transitive) pulls the legacy bcprov-jdk15on:1.68.
-// Both ship the same classes → :app:checkDebugDuplicateClasses fails. Exclude
-// the legacy artifact app-wide so only the 1.78.1 line survives.
+/** @file Expo plugin excluding legacy bcprov-jdk15on app-wide to fix duplicate-classes vs bcprov-jdk15to18 1.78.1. */
 const { withAppBuildGradle } = require('expo/config-plugins');
 
 const SNIPPET = `

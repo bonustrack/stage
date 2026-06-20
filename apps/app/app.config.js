@@ -1,18 +1,8 @@
+/** @file Expo app config with prod/dev variants and git-SHA stamping for the About page. */
+
 // @ts-check
-/**
- * Resolve the short git commit SHA for the About page.
- *
- * Priority (most authoritative first):
- *   1. EAS_BUILD_GIT_COMMIT_HASH - set automatically by EAS on cloud builds.
- *   2. GIT_HASH / GIT_COMMIT     - explicit env from CI (the PR-preview Action
- *                                  sets GIT_COMMIT to the PR head SHA before the
- *                                  expo export, so previews carry the right SHA).
- *   3. `git rev-parse --short HEAD` - local fallback so dev/local builds are
- *                                     stamped with the working-tree commit.
- *   4. 'dev' - last resort when none of the above resolve.
- *
- * Always normalised to a SHORT (7-char) sha so the About row stays compact.
- */
+
+/** Resolve the short (7-char) git commit SHA for the About page from EAS/CI env or git, else 'dev'. */
 function resolveGitHash() {
   const fromEnv =
     process.env.EAS_BUILD_GIT_COMMIT_HASH ||
@@ -27,49 +17,28 @@ function resolveGitHash() {
     }).trim();
     if (sha.length > 0) return sha;
   } catch {
-    // not a git checkout (e.g. shallow CI without .git) - fall through to 'dev'
+    /** Not a git checkout (e.g. shallow CI without .git) - fall through to 'dev'. */
   }
   return 'dev';
 }
 
-/**
- * Expo app config — TWO variants that install side-by-side on one device.
- *
- * Variant is selected by the APP_VARIANT env var:
- *   APP_VARIANT=prod   → "Stage"  / stage://  / stage.box  / box.stage  ids
- *   (unset / anything) → "Stage"  / stage://  / metro.box  / box.metro.monitor (dev, default)
- *
- * Only NATIVE config differs between variants (app name, scheme, bundle id /
- * package, associated domains, intent filters, Firebase file). The runtime
- * deep-link parser (lib/deepLinks.ts) is already scheme-agnostic — it parses
- * whatever custom scheme the OS hands it — so stage:// links work with no JS
- * change. Push-tap navigation (lib/pushRegister.ts) routes by convId in the
- * notification `data`, not by URL scheme, so it's variant-agnostic too.
- *
- * NOTE: these are native-build-time settings. Switching variant requires a NEW
- * native build (EAS or local); it has no effect on a running dev client or the
- * current installed bundle.
- */
+/** Expo config has TWO native-only variants (prod/dev via APP_VARIANT) that install side-by-side on one device. */
 
-// ─── Prod display name — ONE-LINE change if the user wants "State" instead. ───
+/** Prod display name — ONE-LINE change if the user wants "State" instead. */
 const PROD_NAME = 'Stage';
-// ──────────────────────────────────────────────────────────────────────────
 
 const IS_PROD = process.env.APP_VARIANT === 'prod';
 
-/** Per-variant native identity. Dev ids are UNCHANGED from the original
- *  app.json so existing installs/builds keep working. Prod mirrors dev's
- *  reverse-DNS-of-host structure: metro.box→box.metro.monitor, stage.box→box.stage. */
+/** Per-variant native identity; dev ids match the original app.json, prod mirrors its reverse-DNS-of-host structure. */
 const variant = IS_PROD
   ? {
       name: PROD_NAME,
-      slug: 'metro', // EAS project slug is fixed (same Expo project / projectId).
+      slug: 'metro', /** EAS project slug is fixed (same Expo project / projectId). */
       scheme: 'stage',
       host: 'stage.box',
       bundleId: 'box.stage',
       androidPackage: 'box.stage',
-      // Prod Firebase file — MUST be added before a prod Android build will
-      // succeed. See report: prod google-services.json is still MISSING.
+      /** Prod Firebase file — MUST be added before a prod Android build succeeds (still MISSING). */
       googleServicesFile: './google-services.prod.json',
     }
   : {
@@ -91,36 +60,16 @@ const config = {
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'automatic',
-  // reanimated 4.x + react-native-worklets are new-architecture-ONLY: their
-  // gradle assertNewArchitectureEnabledTask hard-fails when this is false. The
-  // nodejs-mobile launch crash is fixed by extractNativeLibs + jniLibs pickFirst
-  // (see plugins/withNodejsMobile.js), NOT by disabling the new architecture.
+  /** Required true: reanimated 4.x + worklets are new-architecture-ONLY (the launch crash is fixed elsewhere). */
   newArchEnabled: true,
-  // ── expo-updates: the native enabler for per-PR JS-bundle previews (#236) ──
-  // The PR-preview GitHub Action publishes each PR's `expo export` bundle and
-  // the installed dev-client loads it via the deep link
-  //   metro://expo-development-client/?url=<manifest-url>
-  // That "load from URL" flow REQUIRES the expo-updates library on-device, so
-  // these keys take effect only in a NEW dev-client APK. Until that build ships,
-  // PR previews can't be tapped to load (the dev-client has no updates client).
-  //
-  // `runtimeVersion` is a FIXED string (not a policy) so the manifest the Action
-  // generates always matches the installed app on JS-only changes — bump it only
-  // when a native/runtime-incompatible change ships in a new APK. `updates.url`
-  // is left to EAS Update's default endpoint (channel/branch previews via
-  // `eas update`); the self-hosted static-manifest variant overrides the manifest
-  // URL at load time via the deep link, so no `updates.url` is needed for it.
+  /** expo-updates enables per-PR JS-bundle previews (#236); runtimeVersion is a FIXED string for JS-only match. */
   runtimeVersion: '1.0.0',
   updates: {
-    // Keep auto-fetch off: previews are loaded on demand via the dev-launcher,
-    // not silently applied on cold start. The installed dev-client + EXPO_TOKEN
-    // EAS project (extra.eas.projectId) back the EAS Update preview path.
+    /** Keep auto-fetch off: previews are loaded on demand via the dev-launcher, not on cold start. */
     enabled: true,
     checkAutomatically: 'NEVER',
     fallbackToCacheTimeout: 0,
-    // EAS Update endpoint for this Expo project (extra.eas.projectId). The
-    // PR-preview deep link is u.expo.dev/<projectId>/group/<groupId>; this is
-    // the same host. Required for `eas update` previews to resolve on-device.
+    /** EAS Update endpoint for this Expo project; required for `eas update` previews to resolve on-device. */
     url: 'https://u.expo.dev/1707f2db-c2b8-4c91-9341-27b1d57d355f',
   },
   splash: {
@@ -131,35 +80,15 @@ const config = {
   ios: {
     supportsTablet: true,
     bundleIdentifier: variant.bundleId,
-    // `webcredentials:` enables WebAuthn passkeys (react-native-passkeys) bound
-    // to the hosted domain; requires the AASA at https://<host>/.well-known/
-    // apple-app-site-association to declare a `webcredentials` section (see the
-    // ZeroDev wallet PR). `applinks:` (deep links) stays alongside it.
+    /** `webcredentials:` enables WebAuthn passkeys bound to the host (needs an AASA); `applinks:` stays alongside. */
     associatedDomains: [`applinks:${variant.host}`, `webcredentials:${variant.host}`],
   },
   android: {
     package: variant.androidPackage,
     versionCode: 27,
-    // Google Play flagged READ_MEDIA_IMAGES as an undeclared/unjustified
-    // sensitive permission. We never READ the user's media library: photo
-    // attachments and avatar selection go through expo-image-picker's
-    // `launchImageLibraryAsync`, which on Android 13+ uses the system photo
-    // picker and needs NO permission. The only expo-media-library call we make
-    // is `saveToLibraryAsync` (ImageViewer "save to gallery"), which writes via
-    // MediaStore and needs no READ permission on our minSdk 30. expo-media-
-    // library's config plugin still injects these READ permissions, so we block
-    // them here. Takes effect only in a NEW native build / AAB.
+    /** Block READ_MEDIA/storage and FGS permissions Google Play flagged; we use the picker, never read media. */
     blockedPermissions: [
-      // Belt-and-suspenders for the media-playback FGS permission. The
-      // react-native-audio-api plugin entry above already disables its
-      // foreground service + this permission at the source (we only use
-      // decodeAudioData), but Google Play flagged it, so we also hard-block it
-      // here in case any transitive AAR re-injects it at gradle manifest-merge.
-      // The floating-overlay pill feature was removed, so the app no longer
-      // needs a microphone foreground service or the draw-over-other-apps
-      // permission. Hard-block both here so no transitive AAR can re-inject them
-      // at gradle manifest-merge and re-trigger Google Play's sensitive-
-      // permission review.
+      /** Hard-block media/mic/overlay perms so no transitive AAR re-injects them at gradle manifest-merge. */
       'android.permission.FOREGROUND_SERVICE_MICROPHONE',
       'android.permission.SYSTEM_ALERT_WINDOW',
       'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',
@@ -203,12 +132,7 @@ const config = {
     'expo-router',
     'expo-secure-store',
     'expo-font',
-    // Native cold-launch splash so the app shows the Metro logo on the themed
-    // dark background instead of a blank gray screen. The legacy top-level
-    // `splash` key above is deprecated under the new architecture; the
-    // expo-splash-screen plugin is the SDK-54 form that generates the native
-    // splash resources. Takes effect only in a NEW native build (EAS/local),
-    // not a running dev client or the current installed bundle.
+    /** SDK-54 native cold-launch splash (replaces the deprecated top-level `splash` key); needs a new build. */
     [
       'expo-splash-screen',
       {
@@ -265,21 +189,9 @@ const config = {
     './plugins/withMetroPill',
     './plugins/withGradleMemory',
     './plugins/withBouncyCastleDedup',
-    // Embedded Node runtime (nodejs-mobile-react-native) that hosts the RAILGUN
-    // engine + native Groth16 prover. Autolinking wires the module; this plugin
-    // adds packagingOptions.pickFirst for the duplicate native libs. The AGP-8
-    // namespace fix lives in patches/nodejs-mobile-react-native@18.20.4.patch
-    // (bun). Requires a NEW APK before the embedded runtime exists on-device.
+    /** Embedded Node runtime hosting the RAILGUN engine + prover; adds pickFirst for dup native libs (needs new APK). */
     './plugins/withNodejsMobile',
-    // Native audio-decode module — powers TRUE voice-message waveforms
-    // (decodeAudioData -> PCM). Requires a new dev-client build to take effect.
-    // We use ONLY decodeAudioData, never the library's background-audio playback
-    // path, so we disable the defaults it would otherwise inject: the
-    // CentralizedForegroundService (mediaPlayback FGS), its
-    // FOREGROUND_SERVICE_MEDIA_PLAYBACK permission, and the iOS `audio`
-    // UIBackgroundMode. Google Play flagged FOREGROUND_SERVICE_MEDIA_PLAYBACK as
-    // an undeclared/unused sensitive permission; this removes it at the source.
-    // We keep only FOREGROUND_SERVICE (also needed by the metro-pill mic FGS).
+    /** Native audio-decode (decodeAudioData only); disables its FGS/iOS audio defaults Google Play flagged. */
     [
       'react-native-audio-api',
       {
@@ -288,16 +200,7 @@ const config = {
         androidPermissions: ['android.permission.FOREGROUND_SERVICE'],
       },
     ],
-    // RAILGUN private wallet — the JS SDK (@railgun-community/wallet +
-    // shared-models + ethers) is autolinked as a normal JS dep. PROVING needs
-    // the C++ Groth16 prover `@railgun-community/native-prover`, a NATIVE
-    // module: it is NOT yet an npm package, so it must be added to package.json
-    // (git/tarball source) and will then autolink via Expo prebuild — NO config
-    // plugin entry is required for autolinking, but a NEW APK is REQUIRED before
-    // the Private wallet can prove. Until that build ships, lib/railgun gates on
-    // the prover's presence and the Private tab shows "needs the new app build"
-    // (see lib/railgun/native.ts). Add the native-prover dep + rebuild the APK
-    // to enable shield/transfer/unshield.
+    /** RAILGUN wallet JS SDK autolinks normally; proving needs the native prover dep + a new APK, no plugin entry. */
   ],
   notification: {
     icon: './assets/notification-icon.png',
@@ -310,12 +213,9 @@ const config = {
     eas: {
       projectId: '1707f2db-c2b8-4c91-9341-27b1d57d355f',
     },
-    // Git commit hash for the System -> About page. Resolved by resolveGitHash():
-    // EAS_BUILD_GIT_COMMIT_HASH (cloud builds) -> GIT_HASH / GIT_COMMIT (CI, incl.
-    // the PR-preview Action) -> local `git rev-parse --short HEAD` -> 'dev'.
+    /** Git commit hash for the System -> About page, resolved by resolveGitHash(). */
     gitHash: resolveGitHash(),
-    // Active EAS build profile (development | preview | production), surfaced
-    // on the About page when available.
+    /** Active EAS build profile (development | preview | production), surfaced on the About page. */
     buildProfile: process.env.EAS_BUILD_PROFILE || 'dev',
   },
   owner: 'bonustrack',

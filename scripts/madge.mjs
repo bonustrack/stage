@@ -1,10 +1,4 @@
-// Root madge runner — uses the shared @stage-labs/config/madge preset as the
-// single source of truth for scan options (madge's CLI has no generic --config
-// flag, and .madgerc is JSON-only, so we drive the programmatic API instead).
-//
-// Reports circular dependencies across the monorepo source roots. REPORTING
-// only: it prints what it finds and exits non-zero if cycles exist, but the
-// `report:deps` script swallows that so pre-existing findings never fail a build.
+/** @file Root madge runner; reports circular deps across monorepo source roots via the @stage-labs/config/madge preset. */
 import madge from "madge";
 import { madgeConfig } from "@stage-labs/config/madge";
 
@@ -15,8 +9,7 @@ const ROOTS = [
   "apps/app/modules",
   "packages/client/src",
   "packages/kit/src",
-  // apps/ui (Vue SFCs) is intentionally excluded: madge's detective can't parse
-  // .vue single-file components, and the original madge script never scanned it.
+  /** apps/ui (Vue SFCs) is excluded: madge's detective can't parse .vue files and it was never scanned. */
 ];
 
 const res = await madge(ROOTS, madgeConfig);

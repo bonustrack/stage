@@ -1,37 +1,5 @@
 #!/usr/bin/env node
-/**
- * generate-manifest.mjs — turn an `expo export` output dir into a STATIC,
- * expo-updates-v1-conformant manifest.json that the installed dev-client can
- * load directly from a URL (no live Metro server, no EAS Update, no dynamic
- * backend).
- *
- * WHY THIS EXISTS
- * ----------------
- * `expo export` emits `dist/` = `_expo/static/js/<platform>/<entry>.hbc`
- * (the JS/Hermes bundle) + `assets/<contenthash>` files + `metadata.json`
- * (an index of those). It does NOT emit a manifest the dev-client can load.
- *
- * The expo-updates "load from URL" flow (the `…/expo-development-client/?url=`
- * deep link) fetches a MANIFEST from that URL. Per the expo-updates-1 spec a
- * manifest MAY be a bare `application/json` body (multipart is optional), so we
- * can pre-generate it as a plain file and serve it from any static host — here
- * the daemon's python `http.server` behind apk.metro.box, which already maps
- * `.json` → `application/json`. No server-side logic required.
- *
- * This script reads metadata.json, hashes the bundle + each asset, and writes
- * `<dist>/manifest.json` with absolute URLs rooted at --base-url. The dev-client
- * then GETs the bundle + each asset from those same per-PR URLs.
- *
- * Usage:
- *   node generate-manifest.mjs \
- *     --dist <dir> --platform android \
- *     --base-url https://apk.metro.box/pr-preview/<pr>/ \
- *     --runtime-version <rv> [--out <dir>/manifest.json]
- *
- * HARD REQUIREMENT (native): the installed app must have `expo-updates` and its
- * `runtimeVersion` must equal --runtime-version, or the dev-client refuses the
- * manifest. JS-only — native changes still need a fresh APK. See docs.
- */
+/** @file Builds a static expo-updates-v1 manifest.json from an `expo export` dir, hashing the bundle and assets with --base-url URLs. */
 import { createHash, randomUUID } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -74,9 +42,10 @@ if (!fm) {
   process.exit(1);
 }
 
+/** Read a dist-relative file into a Buffer. */
 const readDist = (rel) => readFileSync(join(dist, rel));
 
-// launchAsset = the JS/Hermes bundle. fileExtension is omitted per spec.
+/** launchAsset = the JS/Hermes bundle; fileExtension is omitted per spec. */
 const bundleBuf = readDist(fm.bundle);
 const launchAsset = {
   key: md5hex(bundleBuf),
@@ -85,7 +54,7 @@ const launchAsset = {
   hash: sha256url(bundleBuf),
 };
 
-// assets = every bundled image/font. De-dupe (metadata.json repeats @Nx variants).
+/** assets = every bundled image/font, de-duped since metadata.json repeats @Nx variants. */
 const seen = new Set();
 const assets = [];
 for (const a of fm.assets ?? []) {

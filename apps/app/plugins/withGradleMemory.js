@@ -1,10 +1,6 @@
-// One-off build helper for the local EAS dev-client APK: the default Expo
-// template ships android/gradle.properties with org.gradle.jvmargs=-Xmx2048m,
-// which OOMs during R8/signing on this app (nodejs-mobile + railgun + many
-// native modules). Bump heap + metaspace so the local build completes.
+/** @file Expo plugin bumping gradle heap and metaspace so the local EAS dev-client APK build avoids R8/signing OOMs. */
 const { withGradleProperties } = require('expo/config-plugins');
-// Pure transform (testable without the expo runtime) — see nodejsMobileConfig.js
-// + test/railgunPluginConfig.test.ts.
+/** Pure transform testable without the expo runtime; see nodejsMobileConfig.js. */
 const { setGradleMemory } = require('./nodejsMobileConfig');
 
 module.exports = function withGradleMemory(config) {

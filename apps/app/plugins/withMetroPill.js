@@ -1,20 +1,4 @@
-/**
- * Config plugin for the local `metro-pill` native module.
- *
- * Because there is no committed `android/` dir (prebuild runs on EAS), the
- * manifest permissions + the foreground-service declaration must come from a
- * config plugin so they survive every prebuild. The local module under
- * `modules/metro-pill` is auto-linked by Expo autolinking — this plugin only
- * supplies the manifest bits the module needs.
- *
- * Adds:
- *   - POST_NOTIFICATIONS    (API 33+, for the bubble + FCM notifications)
- *   - <service> MetroFcmService (the single FirebaseMessagingService receiver)
- *   - android:resizeableActivity="true" on MainActivity — REQUIRED for Android
- *     Bubbles. The activity launched inside a bubble must be resizeable or the
- *     system silently refuses to float it (isBubblesSupported() can be true yet
- *     openAsBubble() shows nothing). Default RN/Expo manifests omit this.
- */
+/** @file Expo plugin supplying the metro-pill module's manifest bits: POST_NOTIFICATIONS, FCM service, resizeable MainActivity for Bubbles. */
 const { withAndroidManifest, AndroidConfig } = require('expo/config-plugins');
 
 const PERMISSIONS = [
@@ -23,21 +7,22 @@ const PERMISSIONS = [
 
 const FCM_SERVICE_NAME = 'box.metro.pill.MetroFcmService';
 
-/** @param {import('@expo/config-plugins').ExportedConfig} config */
+/** Expo's default FirebaseMessagingService, stripped from the merged manifest below. */
 const EXPO_FCM_SERVICE_NAME =
   'expo.modules.notifications.service.ExpoFirebaseMessagingService';
 
+/** Apply the metro-pill manifest edits (tools namespace, permissions, FCM service swap, resizeable activity). @param {import('@expo/config-plugins').ExportedConfig} config */
 function withMetroPill(config) {
   return withAndroidManifest(config, (cfg) => {
     const manifest = cfg.modResults.manifest;
 
-    // Ensure the `tools` namespace is available so we can use tools:node="remove".
+    /** Ensure the tools namespace is available so we can use tools:node="remove". */
     manifest.$ = manifest.$ || {};
     if (!manifest.$['xmlns:tools']) {
       manifest.$['xmlns:tools'] = 'http://schemas.android.com/tools';
     }
 
-    // --- permissions ---
+    /** Add required uses-permission entries. */
     manifest['uses-permission'] = manifest['uses-permission'] || [];
     for (const name of PERMISSIONS) {
       const exists = manifest['uses-permission'].some(
@@ -51,12 +36,7 @@ function withMetroPill(config) {
     const app = AndroidConfig.Manifest.getMainApplicationOrThrow(cfg.modResults);
     app.service = app.service || [];
 
-    // --- custom FCM service (the ONLY MESSAGING_EVENT receiver) ---
-    // MetroFcmService is the single FirebaseMessagingService that receives FCM
-    // messages. It renders avatar data-pushes natively (custom RemoteViews with
-    // the avatar on the left) and reflectively forwards every other push to an
-    // *instance* of ExpoFirebaseMessagingService (see MetroFcmService.kt) so all
-    // existing expo-notifications behaviour is preserved.
+    /** Register MetroFcmService as the single MESSAGING_EVENT receiver, forwarding non-avatar pushes to Expo's service. */
     const hasFcm = app.service.some(
       (s) => s.$ && s.$['android:name'] === FCM_SERVICE_NAME,
     );
@@ -74,15 +54,7 @@ function withMetroPill(config) {
       });
     }
 
-    // --- strip Expo's FCM receiver from the merged manifest ---
-    // The intent-filter priority trick does NOT make FCM route a data message to
-    // a single service: FCM dispatches to whichever FirebaseMessagingService is
-    // registered, and expo-notifications' ExpoFirebaseMessagingService is still a
-    // MESSAGING_EVENT receiver at priority 0 in the merged manifest — so BOTH
-    // services fire and the user gets two cards. We remove Expo's <service> via
-    // the manifest-merger tools:node="remove" marker. Delegation still works
-    // because MetroFcmService instantiates the Expo service class directly
-    // (reflection) — that path does not need the manifest receiver.
+    /** Strip Expo's FCM receiver via tools:node="remove" so only MetroFcmService fires (delegation still works via reflection). */
     const hasExpoRemoval = app.service.some(
       (s) =>
         s.$ &&
@@ -98,10 +70,7 @@ function withMetroPill(config) {
       });
     }
 
-    // --- MainActivity must be resizeable for Android Bubbles ---
-    // A bubble hosts the target activity in a floating, resizeable window; if the
-    // activity isn't resizeable the OS won't float it. Set it on every <activity>
-    // (there's only MainActivity in this app) so the bubble deep-link target qualifies.
+    /** Mark every activity resizeable so the bubble deep-link target qualifies for Android Bubbles. */
     for (const activity of app.activity || []) {
       if (activity.$) activity.$['android:resizeableActivity'] = 'true';
     }

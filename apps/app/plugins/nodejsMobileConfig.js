@@ -1,28 +1,13 @@
-/* PURE config transforms for the nodejs-mobile / Railgun native build.
- *
- *  Extracted from withNodejsMobile.js so they can be unit-tested WITHOUT the
- *  @expo/config-plugins runtime (the plugin wraps these; the tests import them
- *  directly). Each function is a pure data transform - string in/out for the
- *  groovy build.gradle, object mutation for the AndroidManifest + gradle props.
- *  See withNodejsMobile.js for the full on-device debugging rationale behind
- *  every one of these values; a silent edit reverts a multi-hour fix, so
- *  test/railgunPluginConfig.test.ts asserts them in CI. */
+/** @file Pure, unit-testable config transforms for the nodejs-mobile / Railgun native Android build. */
 'use strict';
 
-/** .so libraries nodejs-mobile + RN both ship; pickFirst resolves the clash.
- *  libc++_shared.so is DELIBERATELY excluded (the bun patch stops nodejs-mobile
- *  emitting its own NDK-24 one; blanket-picking could shadow the STL XMTP's Rust
- *  MLS lib was built against -> crash at XMTP.create). */
+/** .so files both nodejs-mobile and RN ship; pickFirst resolves the clash (libc++_shared.so excluded on purpose). */
 const PICK_FIRST = ['lib/**/libnode.so'];
 
-/** aapt ignoreAssetsPattern forced onto the WINNING androidResources block:
- *  ignore EXACTLY what nodejs-mobile's file.list excludes (dotfiles + *~) so
- *  every listed asset (incl. _-prefixed lodash files) is packaged + openable. */
+/** aapt ignoreAssetsPattern ignoring exactly what nodejs-mobile's file.list excludes so every listed asset is packaged. */
 const NODEJS_IGNORE_ASSETS_PATTERN = '.*:*~';
 
-/** Transform the emitted app build.gradle groovy: inject the libnode.so
- *  pickFirst block + force the winning aapt ignoreAssetsPattern. Idempotent
- *  (guarded by the // nodejs-mobile-pickFirst marker). Returns the new source. */
+/** Inject the libnode.so pickFirst block and force the winning aapt ignoreAssetsPattern into the groovy build.gradle. */
 function transformAppBuildGradle(src) {
   if (src.includes('// nodejs-mobile-pickFirst')) return src;
   const picks = PICK_FIRST.map((p) => `            pickFirst '${p}'`).join('\n');
@@ -57,9 +42,7 @@ function transformAppBuildGradle(src) {
   return out;
 }
 
-/** Force android:extractNativeLibs=true on the manifest's <application> so
- *  libnode.so is extracted (else System.loadLibrary("node") fails -> SIGABRT).
- *  Mutates + returns the manifest object (shape: { application: [ { $ } ] }). */
+/** Force android:extractNativeLibs=true on the manifest application so libnode.so is extracted at launch. */
 function setExtractNativeLibs(manifest) {
   const app = manifest && manifest.application && manifest.application[0];
   if (app) {
@@ -69,7 +52,7 @@ function setExtractNativeLibs(manifest) {
   return manifest;
 }
 
-/** The gradle heap args R8/signing needs (the default -Xmx2048m OOMs this app). */
+/** The gradle heap args R8 and signing need (the default -Xmx2048m OOMs this app). */
 const GRADLE_JVMARGS =
   '-Xmx6144m -XX:MaxMetaspaceSize=2048m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8';
 

@@ -1,20 +1,4 @@
-/* CODEGEN: emit the Railgun bridge method manifest the embedded Node host reads.
- *
- *  THE DESYNC FIX (phase 2): the bridge method names are enumerated ONCE in the
- *  pure client contract (packages/client/src/railgun/methods.ts SDK_METHODS).
- *  The Node host (nodejs-assets/nodejs-project) is a separate CJS project that
- *  CANNOT import the TS client at runtime, so we project the registry into a
- *  plain JSON manifest it can require. The host's sdkDispatch.js asserts its
- *  WHITELIST keys equal this manifest at load (assertWhitelistParity), and a
- *  test (test/railgunMethodParity.test.ts) re-asserts it in CI - so a method
- *  added to the contract but not the host (or vice-versa) FAILS the build
- *  instead of shipping a silent runtime gap on a real APK.
- *
- *  Run: `node apps/app/scripts/gen-railgun-methods.mjs`
- *  Output: apps/app/nodejs-assets/nodejs-project/railgun-methods.json
- *
- *  NOTE: this imports the TS source via a tiny inline re-export of the literal
- *  arrays so it needs no TS toolchain (the arrays are plain string literals). */
+/** @file Codegen projecting the client SDK_METHODS contract into railgun-methods.json so the CJS Node host stays in parity. */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
@@ -23,9 +7,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const methodsTs = resolve(here, '../../../packages/client/src/railgun/methods.ts');
 const outFile = resolve(here, '../nodejs-assets/nodejs-project/railgun-methods.json');
 
-/** Parse a `export const NAME = [ ... ] as const;` string-literal array out of
- *  the TS source by name. Pure-string-literal arrays only (no expressions), so a
- *  regex + literal extraction is safe and avoids needing a TS loader. */
+/** Extract a named export const string-literal array from the TS source via regex (literal arrays only, no TS loader). */
 function extractArray(src, name) {
   const re = new RegExp(`export const ${name} = \\[([\\s\\S]*?)\\] as const;`);
   const m = src.match(re);

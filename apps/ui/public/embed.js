@@ -1,17 +1,4 @@
-/** Metro embed loader — Intercom-style floating chat button + iframe panel.
- *
- *  Usage on a third-party site:
- *    <script
- *      src="https://metro.box/embed.js"
- *      data-conv-id="abc123..."
- *      data-title="Chat with us"
- *      data-metro-url="https://metro.box"
- *      defer
- *    ></script>
- *
- *  The script reads its own data-attributes from the executing <script> tag
- *  (`document.currentScript`), so consumers only paste one tag. Falls back
- *  to sensible defaults if attributes are omitted. */
+/** @file Metro embed loader; injects an Intercom-style floating chat button and iframe panel from one script tag. */
 
 (function () {
   var script = document.currentScript;
@@ -23,9 +10,7 @@
     return;
   }
 
-  /** Visual style is intentionally inline so the consumer site doesn't need
-   *  to load any extra CSS. The button + panel live in their own z-layer to
-   *  stay above page chrome. */
+  /** Styles are inlined (no extra CSS) and the widget lives in its own top z-layer above page chrome. */
   var WIDGET_ID = 'metro-embed-widget';
   if (document.getElementById(WIDGET_ID)) return;
 
@@ -65,13 +50,12 @@
   iframe.title = title;
   iframe.style.cssText = 'flex:1;width:100%;border:0;display:block';
   iframe.allow = 'clipboard-write; geolocation; microphone; camera';
-  /** Hash-routing → use a hash URL. Lazy: only set src when the panel is
-   *  first opened so the iframe doesn't boot XMTP for visitors who never
-   *  click the button. */
+  /** Lazy hash-routed src; set only when the panel first opens so the iframe defers booting XMTP. */
   iframe.dataset.src = metroUrl.replace(/\/$/, '') + '/#/embed/' + encodeURIComponent(convId);
   panel.appendChild(iframe);
 
   var open = false;
+  /** Toggle the panel open/closed, swap the button glyph, and lazy-load the iframe src on first open. */
   function toggle() {
     open = !open;
     panel.style.display = open ? 'flex' : 'none';
