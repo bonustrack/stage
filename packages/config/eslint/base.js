@@ -41,7 +41,7 @@ function countCommentContentLines(value) {
 const DIRECTIVE_LINE_COMMENT =
   /^(eslint\b|eslint-|@ts-|tslint:|prettier-ignore|istanbul\b|c8\b|v8\b|@jsxImportSource\b|\/\s*<)/;
 
-export const STAGE_PLUGIN = {
+export const COMMENT_PLUGIN = {
   rules: {
     "comment-max-lines": {
       meta: {
@@ -117,15 +117,15 @@ export const STAGE_PLUGIN = {
 
 export const jsdocPlugin = jsdoc;
 
-export const commentPlugins = { jsdoc, stage: STAGE_PLUGIN };
+export const commentPlugins = { jsdoc, comments: COMMENT_PLUGIN };
 
 export const COMMENT_RULES = {
   "jsdoc/require-jsdoc": REQUIRE_JSDOC,
   "jsdoc/require-file-overview": REQUIRE_FILE_OVERVIEW,
   "jsdoc/no-bad-blocks": "error",
-  "stage/comment-max-lines": ["error", { max: 1 }],
-  "stage/no-line-comments": "error",
-  "stage/no-consecutive-comments": "error",
+  "comments/comment-max-lines": ["error", { max: 1 }],
+  "comments/no-line-comments": "error",
+  "comments/no-consecutive-comments": "error",
 };
 
 export const MAX_LINES_PER_FUNCTION = ["error", { max: 100, skipBlankLines: true, skipComments: true, IIFEs: true }];

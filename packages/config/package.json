@@ -1,7 +1,7 @@
 {
   "name": "@stage-labs/config",
   "version": "0.1.0-beta.0",
-  "description": "Shared lint/TypeScript configuration for the Stage monorepo: a base ESLint flat-config preset plus react-native, vue, single-package and monorepo composers, and the matching tsconfig bases. Centralises the rules that were previously inlined in each package/app so they stay identical everywhere.",
+  "description": "Generic, repo-agnostic lint/TypeScript configuration: a base ESLint flat-config preset, a single-package composer, a parametric Vue preset, shared madge options, and the matching tsconfig bases. Consumers compose these; repo-specific topology (monorepo scoping, knip workspaces, app/kit rules) stays in the consuming repo.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -11,7 +11,6 @@
   "type": "module",
   "files": [
     "eslint",
-    "knip",
     "madge",
     "tsconfig"
   ],
@@ -20,11 +19,8 @@
   },
   "exports": {
     "./eslint/base": "./eslint/base.js",
-    "./eslint/react-native": "./eslint/react-native.js",
     "./eslint/vue": "./eslint/vue.js",
     "./eslint/single": "./eslint/single.js",
-    "./eslint/monorepo": "./eslint/monorepo.js",
-    "./knip": "./knip/index.js",
     "./madge": "./madge/index.js",
     "./tsconfig/base.json": "./tsconfig/base.json",
     "./tsconfig/react-native.json": "./tsconfig/react-native.json",
