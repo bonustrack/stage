@@ -50,7 +50,7 @@ export const signatureRequestSchema: ZodType<SignatureRequestContent> = z.object
   description: boundedString.optional(),
 }).refine(
   c => (c.kind === 'eip712' ? c.eip712 != null : typeof c.message === 'string'),
-  { message: "eip712 request needs `eip712`; personal request needs `message`" },
+  { message: 'eip712 request needs `eip712`; personal request needs `message`' },
 );
 
 /** SignatureReference (receipt) wire schema — a completed signature posted back. */

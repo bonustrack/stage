@@ -131,7 +131,7 @@ function highRiskMessage(s: SignConfirmSummary, senderNote: string): string {
   const who = s.counterparty ? ` to ${s.counterparty}` : '';
   const tok = s.token ? `\nToken/contract: ${s.token}` : '';
   return `⚠️ This signature grants a ${s.kindLabel}${who}.${tok}${domLine(s)}\n`
-    + `Signing it can let someone move your assets later. Only sign if you fully trust the sender.`
+    + 'Signing it can let someone move your assets later. Only sign if you fully trust the sender.'
     + senderNote;
 }
 
