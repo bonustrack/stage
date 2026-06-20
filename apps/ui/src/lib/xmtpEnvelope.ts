@@ -67,7 +67,7 @@ function replyEnvelope(base: HistoryEntry, typeId: string, decoded: object): His
   const innerText = typeof r.content === 'string' ? r.content : undefined;
   return {
     ...base,
-    text: innerText ?? `[reply]`,
+    text: innerText ?? '[reply]',
     replyTo: r.referenceId,
     payload: { contentType: typeId, replyTo: r.referenceId },
   };

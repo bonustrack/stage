@@ -28,7 +28,7 @@ let reachedTarget = false;
 function isRestorable(path: string): boolean {
   if (!path || path === '/') return false;
   if (path === '/accounts') return false;
-  if (path.startsWith("/(tabs)")) return false;
+  if (path.startsWith('/(tabs)')) return false;
   const TAB_ROOTS = ['/wallet', '/settings'];
   if (TAB_ROOTS.includes(path)) return false;
   return true;

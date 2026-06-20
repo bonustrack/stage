@@ -53,6 +53,7 @@ export default [
 
 - Type-aware **strict** + stylistic (`typescript-eslint` strict-type-checked + stylistic-type-checked)
 - No escape hatches: no `any`, no `@ts-ignore`/`@ts-nocheck`, no non-null assertions
+- Single quotes (`avoidEscape` — strings containing `'` may stay double)
 - Comment conventions: a `@file` header per file, JSDoc per function, one-line block comments only (no `//`)
 - Size caps: ≤ 400 lines/file, ≤ 100 lines/function, cyclomatic complexity ≤ 10
 

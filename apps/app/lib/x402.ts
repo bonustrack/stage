@@ -99,7 +99,7 @@ function isSpoofChar(c: number): boolean {
 
 /** Sanitise an attacker-controlled token-name hint (`extra.name`) before it goes in a user-facing label: strip control + bidi/RTL-override chars (which can visually reorder the amount line into a spoof) and clamp the length. */
 export function sanitizeTokenName(name: string): string {
-  let out = "";
+  let out = '';
   for (const ch of name) {
     const c = ch.codePointAt(0);
     if (c === undefined) continue;

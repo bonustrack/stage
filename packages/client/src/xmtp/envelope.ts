@@ -71,7 +71,7 @@ function replyEnvelope(base: HistoryEntry, typeId: string, decoded: unknown): Hi
   const r = decoded as ReplyContentView;
   return {
     ...base,
-    text: r.content?.text ?? `[reply]`,
+    text: r.content?.text ?? '[reply]',
     replyTo: r.reference,
     payload: { contentType: typeId, replyTo: r.reference },
   };
