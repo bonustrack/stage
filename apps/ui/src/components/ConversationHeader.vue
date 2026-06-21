@@ -3,7 +3,7 @@
 import { shortAddress, stampAvatarUrl } from '../lib/xmtp';
 import type { XmtpFeedStatus } from '../lib/xmtpFeed';
 import { runningInIframe, postCloseToParent } from '../lib/embedBridge';
-import { Row } from './layout';
+
 
 const props = defineProps<{
   peerAddress: string | null;
@@ -23,12 +23,13 @@ const embedded = runningInIframe();
   <Row align="stretch" class="h-[56px] box-border shrink-0
     bg-metro-bg-light dark:bg-metro-bg-dark
     border-b border-metro-border-light dark:border-metro-border-dark">
-    <button type="button" class="h-full pl-3 pr-1 flex items-center text-metro-fg-light dark:text-metro-fg-dark" @click="emit('back')">
-      <HeroIcon name="arrowLeft" :size="20" />
-    </button>
+    <Pressable tag="button" type="button" class="h-full pl-3 pr-1 flex items-center text-metro-fg-light dark:text-metro-fg-dark" @click="emit('back')">
+      <Icon name="arrowLeft" :size="20" />
+    </Pressable>
     <!-- Everything right of the back arrow opens the group/channel (or peer)
          profile — full height + edge-to-edge so 100% of the bar is clickable. -->
-    <button
+    <Pressable
+      tag="button"
       type="button"
       class="flex-1 h-full flex items-center justify-between min-w-0 gap-2 pr-3"
       @click="emit('open')"
@@ -64,16 +65,17 @@ const embedded = runningInIframe();
           +{{ overflow }}
         </div>
       </Row>
-    </button>
+    </Pressable>
     <!-- Widget only: close button at the very end of the (single) topnav. -->
-    <button
+    <Pressable
       v-if="embedded"
+      tag="button"
       type="button"
       class="h-full pr-3 pl-1 flex items-center text-metro-fg-light dark:text-metro-fg-dark"
       title="Close"
       @click="postCloseToParent"
     >
-      <HeroIcon name="x" :size="20" />
-    </button>
+      <Icon name="x" :size="20" />
+    </Pressable>
   </Row>
 </template>

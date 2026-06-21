@@ -1,10 +1,28 @@
 <script setup lang="ts">
+import { provide, reactive, watchEffect } from 'vue';
+import {
+  KitThemeKey,
+  defaultKitPalette,
+  type KitThemeValue,
+} from '@stage-labs/kit/vue/theme-context';
+import { useEffectiveScheme } from './lib/kitTheme';
 
 const route = useRoute();
 const isEmbedded = runningInIframe();
 const showTabs = computed(
   () => !isEmbedded && route.name !== 'xmtp' && route.name !== 'embed',
 );
+
+const scheme = useEffectiveScheme();
+const kitTheme = reactive<KitThemeValue>({
+  scheme: scheme.value,
+  palette: { ...defaultKitPalette(scheme.value) },
+});
+watchEffect(() => {
+  kitTheme.scheme = scheme.value;
+  Object.assign(kitTheme.palette, defaultKitPalette(scheme.value));
+});
+provide(KitThemeKey, kitTheme);
 </script>
 
 <template>

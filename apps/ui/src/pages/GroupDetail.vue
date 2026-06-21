@@ -13,9 +13,9 @@ const {
 <template>
   <div class="min-h-screen bg-metro-bg-light dark:bg-metro-bg-dark">
     <div class="flex items-center px-3 py-3">
-      <button type="button" class="p-1.5" @click="router.back()">
-        <HeroIcon name="arrowLeft" :size="22" />
-      </button>
+      <Pressable tag="button" type="button" class="p-1.5" @click="router.back()">
+        <Icon name="arrowLeft" :size="22" />
+      </Pressable>
     </div>
 
     <GroupAvatarEditor

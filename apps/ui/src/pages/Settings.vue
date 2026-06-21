@@ -36,10 +36,11 @@ async function copyAddress(): Promise<void> {
 <template>
   <div class="min-h-screen">
     <div class="px-4 pt-4 pb-2">
-      <h1 class="font-head text-xl text-metro-head-light dark:text-metro-head-dark">Settings</h1>
+      <Title :level="1" class="font-head text-xl text-metro-head-light dark:text-metro-head-dark">Settings</Title>
     </div>
 
-    <button
+    <Pressable
+      tag="button"
       v-if="myAddress"
       type="button"
       class="block w-[calc(100%-2rem)] mx-4 mt-2 p-3 rounded-xl text-left
@@ -53,12 +54,13 @@ async function copyAddress(): Promise<void> {
       <div class="text-[13px] text-metro-fg-light dark:text-metro-fg-dark mt-0.5">
         {{ shortAddress(myAddress) }}
       </div>
-    </button>
+    </Pressable>
 
     <div class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark px-4 pt-6 pb-2">THEME</div>
     <div class="mx-4 rounded-xl overflow-hidden border border-metro-border-light dark:border-metro-border-dark
       bg-metro-surface-light dark:bg-metro-surface-dark">
-      <button
+      <Pressable
+        tag="button"
         v-for="(opt, i) in THEME_OPTIONS"
         :key="opt.value"
         type="button"
@@ -69,7 +71,7 @@ async function copyAddress(): Promise<void> {
       >
         <span class="text-metro-fg-light dark:text-metro-fg-dark text-[15px]">{{ opt.label }}</span>
         <span v-if="pref === opt.value" class="text-metro-fg-light dark:text-metro-fg-dark text-lg">✓</span>
-      </button>
+      </Pressable>
     </div>
 
     <div class="mt-6 mb-4 text-center text-[11px] text-metro-sub-light dark:text-metro-sub-dark">

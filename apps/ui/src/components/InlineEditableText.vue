@@ -36,7 +36,11 @@ function onSave(): void {
       <div v-else class="text-sm text-metro-sub-light dark:text-metro-sub-dark font-sans">{{ props.emptyLabel }}</div>
     </div>
     <div v-else-if="editing" class="flex items-start gap-2 mt-1.5">
-      <textarea
+      <!-- kit-exception: no kit equivalent (inline-edit controls — kit Input/Textarea
+           force their own inline-style box (bg/border/padding/font) that would override
+           this Metro-surface themed styling, so bare elements preserve the look). -->
+      <component
+        :is="'textarea'"
         v-if="props.multiline"
         v-model="draft"
         :placeholder="props.placeholder"
@@ -47,7 +51,8 @@ function onSave(): void {
           rounded-lg px-3 py-2 text-sm text-metro-fg-light dark:text-metro-fg-dark
           outline-none resize-none font-sans"
       />
-      <input
+      <component
+        :is="'input'"
         v-else
         v-model="draft"
         type="text"
@@ -57,7 +62,8 @@ function onSave(): void {
           border border-metro-border-light dark:border-metro-border-dark
           rounded-lg px-3 py-2 text-base text-metro-fg-light dark:text-metro-fg-dark outline-none"
       />
-      <button
+      <Pressable
+        tag="button"
         type="button"
         :disabled="props.saving"
         class="px-3.5 py-2 rounded-full bg-metro-head-light dark:bg-metro-head-dark
@@ -65,9 +71,9 @@ function onSave(): void {
         @click="onSave"
       >
         {{ props.saving ? 'Saving…' : 'Save' }}
-      </button>
+      </Pressable>
     </div>
-    <button v-else type="button" class="mt-1.5 block text-left" @click="editing = true">
+    <Pressable v-else tag="button" type="button" class="mt-1.5 block text-left" @click="editing = true">
       <div :class="props.value.trim() ? props.valueClass : 'text-sm text-metro-sub-light dark:text-metro-sub-dark font-sans'">
         {{ props.value.trim() || props.emptyLabel }}
       </div>
@@ -75,6 +81,6 @@ function onSave(): void {
         class="text-xs text-metro-sub-light dark:text-metro-sub-dark mt-0.5 font-sans">
         Tap to edit
       </div>
-    </button>
+    </Pressable>
   </div>
 </template>

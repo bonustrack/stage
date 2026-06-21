@@ -23,7 +23,7 @@ function onChange(ev: Event): void {
 
 <template>
   <div class="flex flex-col items-center pt-1 pb-4">
-    <button type="button" :disabled="props.uploading || props.readonly" class="relative" @click="pick">
+    <Pressable tag="button" type="button" :disabled="props.uploading || props.readonly" class="relative" @click="pick">
       <img
         v-if="props.imageUrl"
         :src="avatarRenderUrl('', props.imageUrl, 240)"
@@ -37,9 +37,11 @@ function onChange(ev: Event): void {
           border border-metro-border-light dark:border-metro-border-dark
           text-metro-sub-light dark:text-metro-sub-dark"
         :class="{ 'opacity-50': props.uploading }"
-      ><HeroIcon :name="props.readonly ? 'users' : 'plus'" :size="28" /></div>
-    </button>
-    <input ref="input" type="file" accept="image/jpeg,image/png" class="hidden" @change="onChange" />
+      ><Icon :name="props.readonly ? 'users' : 'plus'" :size="28" /></div>
+    </Pressable>
+    <!-- kit-exception: no kit equivalent (native file input — kit Input has no 'file'
+         inputType; rendered via dynamic tag to keep bare <input> semantics). -->
+    <component :is="'input'" ref="input" type="file" accept="image/jpeg,image/png" class="hidden" @change="onChange" />
     <div v-if="!props.readonly" class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark mt-1.5 font-sans">
       {{ props.uploading ? 'Uploading…' : 'Tap to change image' }}
     </div>

@@ -4,7 +4,9 @@ import {
   getOrCreateXmtpClient, peerEthAddressOfDm, stampAvatarUrl, shortAddress,
 } from '../lib/xmtp';
 import { useSearchResolution } from '../lib/useSearchResolution';
-import { Col } from '../components/layout';
+import { useEffectiveScheme } from '@/lib/kitTheme';
+
+const scheme = useEffectiveScheme();
 
 interface Contact { address: string; convId: string }
 
@@ -48,12 +50,12 @@ onMounted(async () => {
 <template>
   <Col class="min-h-screen">
     <div class="px-4 pt-4 pb-2">
-      <h1 class="font-head text-xl text-metro-head-light dark:text-metro-head-dark">Contacts</h1>
+      <Title :level="1" class="font-head text-xl text-metro-head-light dark:text-metro-head-dark">Contacts</Title>
     </div>
     <div class="px-3 pb-2">
-      <input
+      <Input
         v-model="query"
-        type="text"
+        :dark="scheme === 'dark'"
         placeholder="Search contacts or paste 0x… / name.eth…"
         autocomplete="off"
         autocorrect="off"
@@ -81,7 +83,8 @@ onMounted(async () => {
         {{ query ? `No matches for "${query}"` : 'No contacts yet. Start a DM from Channels to populate this list.' }}
       </li>
       <li v-for="c in filtered ?? contacts" :key="c.address.toLowerCase()">
-        <button
+        <Pressable
+          tag="button"
           type="button"
           class="w-full text-left flex items-center gap-3 px-3.5 py-3
             bg-metro-surface-light dark:bg-metro-surface-dark
@@ -102,7 +105,7 @@ onMounted(async () => {
               {{ shortAddress(c.address) }}
             </div>
           </div>
-        </button>
+        </Pressable>
       </li>
     </ul>
   </Col>

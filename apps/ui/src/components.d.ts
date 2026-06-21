@@ -11,26 +11,28 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
-    Box: typeof import('./components/layout/Box.vue')['default']
     BubbleActionSheet: typeof import('./components/BubbleActionSheet.vue')['default']
     ChannelRow: typeof import('./components/ChannelRow.vue')['default']
-    Col: typeof import('./components/layout/Col.vue')['default']
+    Col: typeof import('@stage-labs/kit/vue/col')['default']
     Composer: typeof import('./components/Composer.vue')['default']
     ConversationHeader: typeof import('./components/ConversationHeader.vue')['default']
     GroupAvatarEditor: typeof import('./components/GroupAvatarEditor.vue')['default']
-    HeroIcon: typeof import('./components/HeroIcon.vue')['default']
+    Icon: typeof import('@stage-labs/kit/vue/icon')['default']
     InlineEditableText: typeof import('./components/InlineEditableText.vue')['default']
+    Input: typeof import('@stage-labs/kit/vue/input')['default']
     LocationEmbed: typeof import('./components/LocationEmbed.vue')['default']
     MediaCard: typeof import('./components/MediaCard.vue')['default']
     MemberAddForm: typeof import('./components/MemberAddForm.vue')['default']
     MemberRow: typeof import('./components/MemberRow.vue')['default']
     MessengerBubble: typeof import('./components/MessengerBubble.vue')['default']
+    Pressable: typeof import('@stage-labs/kit/vue/pressable')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
-    Row: typeof import('./components/layout/Row.vue')['default']
+    Row: typeof import('@stage-labs/kit/vue/row')['default']
     SearchResolution: typeof import('./components/SearchResolution.vue')['default']
     Spinner: typeof import('./components/Spinner.vue')['default']
     TabBar: typeof import('./components/TabBar.vue')['default']
+    Title: typeof import('@stage-labs/kit/vue/title')['default']
     YouTubeEmbed: typeof import('./components/YouTubeEmbed.vue')['default']
   }
 }
