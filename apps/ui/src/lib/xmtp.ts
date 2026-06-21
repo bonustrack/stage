@@ -110,6 +110,7 @@ export async function convOfLine(line: string): Promise<Conversation | null> {
 export {
   ASK_QUESTION_MEMBERS, METRO_API_URL,
   createAskQuestionGroup, openDmWithAddress,
+  createGroup, addGroupMembers,
 } from './xmtpGroups';
 
 export {
