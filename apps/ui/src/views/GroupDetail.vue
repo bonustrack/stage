@@ -11,12 +11,12 @@ const {
 </script>
 
 <template>
-  <div class="min-h-screen bg-metro-bg-light dark:bg-metro-bg-dark">
-    <div class="flex items-center px-3 py-3">
+  <Col class="min-h-screen bg-metro-bg-light dark:bg-metro-bg-dark">
+    <Row class="flex items-center px-3 py-3">
       <Pressable tag="button" type="button" class="p-1.5" @click="router.back()">
         <Icon name="arrowLeft" :size="22" />
       </Pressable>
-    </div>
+    </Row>
 
     <GroupAvatarEditor
       :image-url="imageUrl"
@@ -25,7 +25,7 @@ const {
       @pick="onPickImage"
     />
 
-    <div class="px-4 pt-1 pb-4">
+    <Col class="px-4 pt-1 pb-4">
       <InlineEditableText
         label="Group name"
         :value="name ?? ''"
@@ -35,8 +35,8 @@ const {
         :readonly="!selfIsAdmin"
         @save="onSaveName"
       />
-    </div>
-    <div class="px-4 pb-4">
+    </Col>
+    <Col class="px-4 pb-4">
       <InlineEditableText
         label="Description"
         :value="description"
@@ -48,13 +48,13 @@ const {
         :readonly="!selfIsAdmin"
         @save="onSaveDescription"
       />
-    </div>
+    </Col>
 
-    <div class="text-[11px] uppercase tracking-wide text-metro-sub-light dark:text-metro-sub-dark px-4 pb-1.5">
+    <Col class="text-[11px] uppercase tracking-wide text-metro-sub-light dark:text-metro-sub-dark px-4 pb-1.5">
       Members ({{ members.length }})
-    </div>
+    </Col>
     <MemberAddForm v-if="selfIsAdmin" :adding="adding" @add="onAddMember" />
-    <div v-if="errorMsg" class="px-4 pb-2 text-xs text-red-500">{{ errorMsg }}</div>
+    <Col v-if="errorMsg" class="px-4 pb-2 text-xs text-red-500">{{ errorMsg }}</Col>
 
     <ul class="flex flex-col">
       <MemberRow
@@ -70,5 +70,5 @@ const {
         @remove="removeMember(addr)"
       />
     </ul>
-  </div>
+  </Col>
 </template>

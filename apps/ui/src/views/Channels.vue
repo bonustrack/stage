@@ -66,12 +66,12 @@ const {
           />
         </Row>
       </Pressable>
-      <div v-if="error" class="text-xs text-metro-err mt-1">{{ error }}</div>
+      <Col v-if="error" class="text-xs text-metro-err mt-1">{{ error }}</Col>
     </Col>
 
     <!-- MESSAGES: search (standalone) + the channel list. -->
     <template v-else>
-      <div v-if="!embedded" class="shrink-0 px-4 pt-3 pb-2 bg-metro-bg-light dark:bg-metro-bg-dark">
+      <Col v-if="!embedded" class="shrink-0 px-4 pt-3 pb-2 bg-metro-bg-light dark:bg-metro-bg-dark">
         <Input
           v-model="query"
           inputType="text"
@@ -85,7 +85,7 @@ const {
             text-metro-fg-light dark:text-metro-fg-dark outline-none
             placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark"
         />
-      </div>
+      </Col>
       <SearchResolution
         :status="searchResolution.status"
         :address="searchResolution.address"
@@ -145,8 +145,8 @@ const {
 
     <!-- Per-row context menu: Mark as read / unread (cross-device via XMTP consent). -->
     <template v-if="rowMenu">
-      <div class="fixed inset-0 z-40" @click="closeRowMenu" @contextmenu.prevent="closeRowMenu" />
-      <div
+      <Col class="fixed inset-0 z-40" @click="closeRowMenu" @contextmenu.prevent="closeRowMenu" />
+      <Col
         class="fixed z-50 min-w-[180px] py-1 rounded-lg shadow-lg
           bg-metro-bg-light dark:bg-metro-surface-dark
           border border-metro-border-light dark:border-metro-border-dark"
@@ -162,7 +162,7 @@ const {
         >
           {{ rowMenu.isUnread ? 'Mark as read' : 'Mark as unread' }}
         </Pressable>
-      </div>
+      </Col>
     </template>
   </Col>
 </template>

@@ -26,7 +26,7 @@ provide(KitThemeKey, kitTheme);
 </script>
 
 <template>
-  <div class="min-h-screen bg-metro-bg-light dark:bg-metro-bg-dark
+  <Col class="min-h-screen bg-metro-bg-light dark:bg-metro-bg-dark
     text-metro-fg-light dark:text-metro-fg-dark no-scrollbar"
     :class="showTabs ? 'pb-[60px]' : ''">
     <RouterView />
@@ -34,7 +34,7 @@ provide(KitThemeKey, kitTheme);
       v-if="showTabs"
       class="fixed bottom-0 left-0 right-0 z-20"
     />
-  </div>
+  </Col>
 </template>
 
 <style>

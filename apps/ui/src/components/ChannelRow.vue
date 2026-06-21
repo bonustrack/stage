@@ -49,29 +49,29 @@ function fmtTs(ts: number | null): string {
         alt=""
         class="w-8 h-8 rounded-full bg-metro-border-dark shrink-0 object-cover"
       />
-      <div v-else class="w-8 h-8 rounded-full bg-metro-border-dark shrink-0" />
+      <Col v-else class="w-8 h-8 rounded-full bg-metro-border-dark shrink-0" />
       <Col class="flex-1 min-w-0">
       <Row align="baseline" :gap="8">
-        <div class="text-base text-metro-head-light dark:text-metro-head-dark truncate flex-1 font-head">
+        <Col class="text-base text-metro-head-light dark:text-metro-head-dark truncate flex-1 font-head">
           {{ props.title }}
-        </div>
-        <div class="text-xs text-metro-sub-light dark:text-metro-sub-dark shrink-0">
+        </Col>
+        <Col class="text-xs text-metro-sub-light dark:text-metro-sub-dark shrink-0">
           {{ fmtTs(props.lastTs) }}
-        </div>
+        </Col>
       </Row>
       <Row align="center" :gap="8" class="mt-1">
-        <div class="text-[15px] text-metro-sub-light dark:text-metro-sub-dark truncate flex-1">
+        <Col class="text-[15px] text-metro-sub-light dark:text-metro-sub-dark truncate flex-1">
           {{ props.lastPreview || '(no messages yet)' }}
-        </div>
-        <div v-if="props.unreadCount > 0"
+        </Col>
+        <Row v-if="props.unreadCount > 0"
           class="min-w-[22px] h-5 rounded-full px-1.5
             bg-metro-head-light dark:bg-metro-head-dark
             text-metro-bg-light dark:text-metro-bg-dark
             text-[11px] font-head flex items-center justify-center shrink-0">
           {{ props.unreadCount > 99 ? '99+' : props.unreadCount }}
-        </div>
+        </Row>
         <!-- Explicitly marked unread (cross-device) but no counted messages → dot. -->
-        <div v-else-if="props.markedUnread"
+        <Col v-else-if="props.markedUnread"
           class="w-3 h-3 rounded-full shrink-0 bg-metro-head-light dark:bg-metro-head-dark" />
       </Row>
       </Col>

@@ -49,10 +49,10 @@ onMounted(async () => {
 
 <template>
   <Col class="min-h-screen">
-    <div class="px-4 pt-4 pb-2">
+    <Col class="px-4 pt-4 pb-2">
       <Title :level="1" class="font-head text-xl text-metro-head-light dark:text-metro-head-dark">Contacts</Title>
-    </div>
-    <div class="px-3 pb-2">
+    </Col>
+    <Col class="px-3 pb-2">
       <Input
         v-model="query"
         :dark="scheme === 'dark'"
@@ -65,7 +65,7 @@ onMounted(async () => {
           text-metro-fg-light dark:text-metro-fg-dark outline-none
           placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark"
       />
-    </div>
+    </Col>
     <SearchResolution
       :status="searchResolution.status"
       :address="searchResolution.address"
@@ -97,14 +97,14 @@ onMounted(async () => {
             alt=""
             class="w-9 h-9 rounded-full bg-metro-border-dark shrink-0"
           />
-          <div class="flex-1 min-w-0">
-            <div class="text-sm text-metro-fg-light dark:text-metro-fg-dark truncate">
+          <Col class="flex-1 min-w-0">
+            <Col class="text-sm text-metro-fg-light dark:text-metro-fg-dark truncate">
               {{ c.address }}
-            </div>
-            <div class="text-xs text-metro-sub-light dark:text-metro-sub-dark mt-0.5">
+            </Col>
+            <Col class="text-xs text-metro-sub-light dark:text-metro-sub-dark mt-0.5">
               {{ shortAddress(c.address) }}
-            </div>
-          </div>
+            </Col>
+          </Col>
         </Pressable>
       </li>
     </ul>

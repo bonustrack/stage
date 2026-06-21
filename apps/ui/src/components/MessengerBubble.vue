@@ -82,7 +82,7 @@ function onAvatar(): void {
 </script>
 
 <template>
-  <div class="group relative flex items-start gap-2.5 px-4 py-1.5 transition-opacity"
+  <Row class="group relative flex items-start gap-2.5 px-4 py-1.5 transition-opacity"
     :class="{ 'opacity-50': isPending }"
     @contextmenu="onContext"
     @pointerdown="onPointerDown"
@@ -106,14 +106,14 @@ function onAvatar(): void {
         class="w-6 h-6 rounded-full bg-metro-border-dark"
       />
     </Pressable>
-    <div v-else class="shrink-0 mt-0.5 w-6 h-6 rounded-full bg-metro-border-dark" />
-    <div class="flex-1 min-w-0">
-      <div v-if="props.replyPreview"
+    <Col v-else class="shrink-0 mt-0.5 w-6 h-6 rounded-full bg-metro-border-dark" />
+    <Col class="flex-1 min-w-0">
+      <Col v-if="props.replyPreview"
         class="text-[11px] mb-1 opacity-70 border-l-2 border-current pl-1.5 italic font-sans"
         :class="isSystem ? 'text-metro-sub-light dark:text-metro-sub-dark' : 'text-metro-fg-light dark:text-metro-fg-dark'">
         {{ props.replyPreview.slice(0, 80) }}
-      </div>
-      <div v-for="(att, i) in attachments" :key="i" class="mb-1.5">
+      </Col>
+      <Col v-for="(att, i) in attachments" :key="i" class="mb-1.5">
         <MediaCard v-if="att.kind === 'image' && urlOf(att)">
           <img :src="urlOf(att) ?? undefined" :alt="att.name ?? 'image'" class="block w-full aspect-square object-cover" />
         </MediaCard>
@@ -125,11 +125,11 @@ function onAvatar(): void {
           <span>{{ att.name ?? `${att.kind} attachment` }}</span>
         </a>
         <span v-else class="text-xs opacity-70 font-sans">[{{ att.kind }}{{ att.name ? `: ${att.name}` : '' }}]</span>
-      </div>
+      </Col>
       <!-- Markdown-rendered (linkify + breaks) to match the mobile app: bare URLs
            become clickable links. v-html is safe — markdown-it escapes raw HTML
            and blocks javascript:/data: links. -->
-      <div v-if="props.entry.text"
+      <Col v-if="props.entry.text"
         class="break-words font-sans text-[17px] leading-snug select-text
           [&_p]:m-0 [&_p:not(:last-child)]:mb-1.5 [&_a]:underline [&_a]:break-words
           [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5
@@ -139,15 +139,15 @@ function onAvatar(): void {
           : 'text-metro-head-light dark:text-metro-head-dark'"
         v-html="renderMarkdown(props.entry.text)"
       />
-      <div v-if="youtubeId" class="mt-1.5">
+      <Col v-if="youtubeId" class="mt-1.5">
         <YouTubeEmbed :video-id="youtubeId" />
-      </div>
-      <div v-else-if="mapCoords" class="mt-1.5">
+      </Col>
+      <Col v-else-if="mapCoords" class="mt-1.5">
         <LocationEmbed :lat="mapCoords.lat" :lng="mapCoords.lng" :source-url="mapCoords.sourceUrl" />
-      </div>
+      </Col>
       <!-- Action row under the message — matches the mobile app: always-visible
            react + reply icons, then the timestamp (no hover required). -->
-      <div class="flex items-center gap-1.5 mt-1 text-metro-sub-light dark:text-metro-sub-dark">
+      <Row class="flex items-center gap-1.5 mt-1 text-metro-sub-light dark:text-metro-sub-dark">
         <Pressable tag="button" v-if="!isPending" type="button" title="React"
           class="hover:opacity-70" @click="pickerOpen = !pickerOpen">
           <Icon name="faceSmile" :size="14" />
@@ -157,9 +157,9 @@ function onAvatar(): void {
           <Icon name="reply" :size="14" />
         </Pressable>
         <span class="text-[12px] font-sans">{{ fmtTs(props.entry.ts) }}</span>
-      </div>
+      </Row>
       <!-- Inline emoji picker — toggled by the react icon, mirrors mobile. -->
-      <div v-if="pickerOpen"
+      <Row v-if="pickerOpen"
         class="inline-flex items-center gap-2 mt-1.5 px-2.5 py-1.5 rounded-full
           bg-metro-surface-light dark:bg-metro-surface-dark
           border border-metro-border-light dark:border-metro-border-dark shadow-sm">
@@ -168,9 +168,9 @@ function onAvatar(): void {
           @click="emit('react', { entry: props.entry, emoji: e }); pickerOpen = false">{{ e }}</Pressable>
         <Pressable tag="button" type="button" class="px-1 text-metro-sub-light dark:text-metro-sub-dark"
           @click="pickerOpen = false">✕</Pressable>
-      </div>
+      </Row>
       <!-- Reactions pills on their own row below (matches mobile). -->
-      <div v-if="props.reactions && props.reactions.size > 0" class="flex flex-wrap items-center gap-1 mt-1">
+      <Row v-if="props.reactions && props.reactions.size > 0" class="flex flex-wrap items-center gap-1 mt-1">
         <Pressable
           tag="button"
           v-for="[emoji, count] in props.reactions"
@@ -181,7 +181,7 @@ function onAvatar(): void {
             text-[12px] text-metro-fg-light dark:text-metro-fg-dark"
           @click="emit('react', { entry: props.entry, emoji })"
         >{{ emoji }} {{ count }}</Pressable>
-      </div>
-    </div>
-  </div>
+      </Row>
+    </Col>
+  </Row>
 </template>

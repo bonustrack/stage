@@ -58,12 +58,12 @@ const embedded = runningInIframe();
             border-metro-bg-light dark:border-metro-bg-dark"
           :class="i === 0 ? '' : '-ml-2'"
         />
-        <div v-if="overflow"
+        <Row v-if="overflow"
           class="w-6 h-6 -ml-2 rounded-full bg-metro-surface-light dark:bg-metro-surface-dark
             border-2 border-metro-bg-light dark:border-metro-bg-dark
             flex items-center justify-center text-[9px] text-metro-head-light dark:text-metro-head-dark">
           +{{ overflow }}
-        </div>
+        </Row>
       </Row>
     </Pressable>
     <!-- Widget only: close button at the very end of the (single) topnav. -->
