@@ -56,6 +56,7 @@ function uiKitOnly(vuePlugin) {
     { element: 'input', message: 'Use <Input>/<Checkbox> from @stage-labs/kit/vue/input | @stage-labs/kit/vue/checkbox instead of a raw <input>.' },
     { element: 'textarea', message: 'Use <Textarea> from @stage-labs/kit/vue/textarea instead of a raw <textarea>.' },
     { element: 'select', message: 'Use <Select> from @stage-labs/kit/vue/select instead of a raw <select>.' },
+    { element: 'div', message: 'Use <Row>/<Col>/<Scroll> from @stage-labs/kit/vue/{row,col,scroll} instead of a raw <div> (flex-row -> Row, flex-col/block -> Col, overflow/scroll -> Scroll). Genuine native cases use <component :is="\'div\'"> with a kit-exception comment.' },
   ];
   const RESTRICTED_IMPORTS = {
     paths: [

@@ -21,12 +21,12 @@ const emit = defineEmits<(e: 'open') => void>();
   >
     Open profile of {{ props.address.slice(0, 6) }}…{{ props.address.slice(-4) }}
   </Pressable>
-  <div v-else-if="props.status === 'resolving'"
+  <Col v-else-if="props.status === 'resolving'"
     class="mx-3 mb-2 px-3 py-2 text-xs text-metro-sub-light dark:text-metro-sub-dark">
     Resolving…
-  </div>
-  <div v-else-if="props.status === 'missed'"
+  </Col>
+  <Col v-else-if="props.status === 'missed'"
     class="mx-3 mb-2 px-3 py-2 text-xs text-metro-sub-light dark:text-metro-sub-dark">
     No address found for "{{ props.query }}"
-  </div>
+  </Col>
 </template>

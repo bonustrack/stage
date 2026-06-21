@@ -15,7 +15,7 @@ const {
 </script>
 
 <template>
-  <div class="fixed inset-0 flex flex-col bg-metro-bg-light dark:bg-metro-bg-dark">
+  <Col class="fixed inset-0 flex flex-col bg-metro-bg-light dark:bg-metro-bg-dark">
     <ConversationHeader
       :peer-address="peerAddress"
       :group-name="groupName"
@@ -27,18 +27,19 @@ const {
     />
 
     <!-- Gradient fades (no hard border) under the topnav + above the composer, like mobile. -->
-    <div class="relative flex-1 min-h-0">
-      <div class="pointer-events-none absolute top-0 inset-x-0 h-6 z-10 bg-gradient-to-b from-metro-bg-light dark:from-metro-bg-dark to-transparent" />
-      <div class="pointer-events-none absolute bottom-0 inset-x-0 h-6 z-10 bg-gradient-to-t from-metro-bg-light dark:from-metro-bg-dark to-transparent" />
-      <div ref="scroller" class="absolute inset-0 overflow-y-auto py-3 no-scrollbar">
-      <div v-if="allBubbles.length === 0 && feed.status.value === 'loading'"
+    <Col class="relative flex-1 min-h-0">
+      <Col class="pointer-events-none absolute top-0 inset-x-0 h-6 z-10 bg-gradient-to-b from-metro-bg-light dark:from-metro-bg-dark to-transparent" />
+      <Col class="pointer-events-none absolute bottom-0 inset-x-0 h-6 z-10 bg-gradient-to-t from-metro-bg-light dark:from-metro-bg-dark to-transparent" />
+      <!-- kit-exception: ref-measured scroll viewport; composable reads scrollTop/scrollHeight and needs absolute inset-0 + no-scrollbar, which kit Scroll cannot express -->
+      <component :is="'div'" ref="scroller" class="absolute inset-0 overflow-y-auto py-3 no-scrollbar">
+      <Row v-if="allBubbles.length === 0 && feed.status.value === 'loading'"
         class="h-full flex items-center justify-center text-metro-head-light dark:text-metro-head-dark">
         <Spinner :size="28" />
-      </div>
-      <div v-else-if="allBubbles.length === 0 && feed.status.value === 'open'"
+      </Row>
+      <Col v-else-if="allBubbles.length === 0 && feed.status.value === 'open'"
         class="p-8 text-center text-sm text-metro-sub-light dark:text-metro-sub-dark">
         Type a message below to start chatting.
-      </div>
+      </Col>
       <MessengerBubble
         v-for="entry in allBubbles"
         :key="entry.id"
@@ -56,8 +57,8 @@ const {
         @reply="onBubbleReply($event)"
         @open-avatar="router.push(`/user/${$event}`)"
       />
-      </div>
-    </div>
+      </component>
+    </Col>
 
     <Composer
       v-if="line"
@@ -76,7 +77,7 @@ const {
       @copy="onActionCopy"
       @copy-link="onActionCopyLink"
     />
-  </div>
+  </Col>
 </template>
 
 <style scoped>

@@ -22,7 +22,7 @@ function onChange(ev: Event): void {
 </script>
 
 <template>
-  <div class="flex flex-col items-center pt-1 pb-4">
+  <Col class="flex flex-col items-center pt-1 pb-4">
     <Pressable tag="button" type="button" :disabled="props.uploading || props.readonly" class="relative" @click="pick">
       <img
         v-if="props.imageUrl"
@@ -31,19 +31,19 @@ function onChange(ev: Event): void {
         class="w-24 h-24 rounded-full bg-metro-surface-light dark:bg-metro-surface-dark"
         :class="{ 'opacity-50': props.uploading }"
       />
-      <div v-else
+      <Row v-else
         class="w-24 h-24 rounded-full flex items-center justify-center
           bg-metro-surface-light dark:bg-metro-surface-dark
           border border-metro-border-light dark:border-metro-border-dark
           text-metro-sub-light dark:text-metro-sub-dark"
         :class="{ 'opacity-50': props.uploading }"
-      ><Icon :name="props.readonly ? 'users' : 'plus'" :size="28" /></div>
+      ><Icon :name="props.readonly ? 'users' : 'plus'" :size="28" /></Row>
     </Pressable>
     <!-- kit-exception: no kit equivalent (native file input — kit Input has no 'file'
          inputType; rendered via dynamic tag to keep bare <input> semantics). -->
     <component :is="'input'" ref="input" type="file" accept="image/jpeg,image/png" class="hidden" @change="onChange" />
-    <div v-if="!props.readonly" class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark mt-1.5 font-sans">
+    <Col v-if="!props.readonly" class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark mt-1.5 font-sans">
       {{ props.uploading ? 'Uploading…' : 'Tap to change image' }}
-    </div>
-  </div>
+    </Col>
+  </Col>
 </template>

@@ -44,12 +44,12 @@ async function copy(value: string, label: 'address' | 'inboxId'): Promise<void> 
 </script>
 
 <template>
-  <div class="min-h-screen">
-    <div class="flex items-center justify-between px-4 pt-4 pb-2">
+  <Col class="min-h-screen">
+    <Row class="flex items-center justify-between px-4 pt-4 pb-2">
       <Title :level="1" class="font-head text-xl text-metro-head-light dark:text-metro-head-dark">Profile</Title>
-    </div>
+    </Row>
 
-    <div class="flex flex-col items-center pt-6 pb-4">
+    <Col class="flex flex-col items-center pt-6 pb-4">
       <img v-if="address && loaded"
         :src="avatarRenderUrl(address, profile.avatar, AVATAR_SIZE * 2)"
         alt=""
@@ -57,15 +57,15 @@ async function copy(value: string, label: 'address' | 'inboxId'): Promise<void> 
         class="rounded-full bg-metro-border-dark object-cover"
         :style="{ width: `${AVATAR_SIZE}px`, height: `${AVATAR_SIZE}px` }"
       />
-      <div v-else class="rounded-full bg-metro-border-dark" :style="{ width: `${AVATAR_SIZE}px`, height: `${AVATAR_SIZE}px` }" />
-      <div class="font-head text-lg text-metro-head-light dark:text-metro-head-dark mt-3.5">
+      <Col v-else class="rounded-full bg-metro-border-dark" :style="{ width: `${AVATAR_SIZE}px`, height: `${AVATAR_SIZE}px` }" />
+      <Col class="font-head text-lg text-metro-head-light dark:text-metro-head-dark mt-3.5">
         {{ displayName }}
-      </div>
-      <div v-if="profile.about"
+      </Col>
+      <Col v-if="profile.about"
         class="text-[13px] text-metro-sub-light dark:text-metro-sub-dark mt-1.5 px-6 text-center max-w-md">
         {{ profile.about }}
-      </div>
-    </div>
+      </Col>
+    </Col>
 
     <Pressable
       tag="button"
@@ -75,12 +75,12 @@ async function copy(value: string, label: 'address' | 'inboxId'): Promise<void> 
         border border-metro-border-light dark:border-metro-border-dark"
       @click="copy(address, 'address')"
     >
-      <div class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">
+      <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">
         WALLET ADDRESS ({{ copyHint === 'address' ? 'copied!' : 'tap to copy' }})
-      </div>
-      <div class="text-[13px] text-metro-fg-light dark:text-metro-fg-dark mt-1 break-all">
+      </Col>
+      <Col class="text-[13px] text-metro-fg-light dark:text-metro-fg-dark mt-1 break-all">
         {{ address }}
-      </div>
+      </Col>
     </Pressable>
 
     <Pressable
@@ -91,12 +91,12 @@ async function copy(value: string, label: 'address' | 'inboxId'): Promise<void> 
         border border-metro-border-light dark:border-metro-border-dark"
       @click="copy(inboxId, 'inboxId')"
     >
-      <div class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">
+      <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">
         XMTP INBOX ID ({{ copyHint === 'inboxId' ? 'copied!' : 'tap to copy' }})
-      </div>
-      <div class="text-[13px] text-metro-fg-light dark:text-metro-fg-dark mt-1 truncate">
+      </Col>
+      <Col class="text-[13px] text-metro-fg-light dark:text-metro-fg-dark mt-1 truncate">
         {{ inboxId }}
-      </div>
+      </Col>
     </Pressable>
-  </div>
+  </Col>
 </template>

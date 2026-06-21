@@ -34,10 +34,10 @@ async function copyAddress(): Promise<void> {
 </script>
 
 <template>
-  <div class="min-h-screen">
-    <div class="px-4 pt-4 pb-2">
+  <Col class="min-h-screen">
+    <Col class="px-4 pt-4 pb-2">
       <Title :level="1" class="font-head text-xl text-metro-head-light dark:text-metro-head-dark">Settings</Title>
-    </div>
+    </Col>
 
     <Pressable
       tag="button"
@@ -48,16 +48,16 @@ async function copyAddress(): Promise<void> {
         border border-metro-border-light dark:border-metro-border-dark"
       @click="copyAddress"
     >
-      <div class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">
+      <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">
         YOUR XMTP ADDRESS ({{ copied ? 'copied!' : 'tap to copy' }})
-      </div>
-      <div class="text-[13px] text-metro-fg-light dark:text-metro-fg-dark mt-0.5">
+      </Col>
+      <Col class="text-[13px] text-metro-fg-light dark:text-metro-fg-dark mt-0.5">
         {{ shortAddress(myAddress) }}
-      </div>
+      </Col>
     </Pressable>
 
-    <div class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark px-4 pt-6 pb-2">THEME</div>
-    <div class="mx-4 rounded-xl overflow-hidden border border-metro-border-light dark:border-metro-border-dark
+    <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark px-4 pt-6 pb-2">THEME</Col>
+    <Col class="mx-4 rounded-xl overflow-hidden border border-metro-border-light dark:border-metro-border-dark
       bg-metro-surface-light dark:bg-metro-surface-dark">
       <Pressable
         tag="button"
@@ -72,10 +72,10 @@ async function copyAddress(): Promise<void> {
         <span class="text-metro-fg-light dark:text-metro-fg-dark text-[15px]">{{ opt.label }}</span>
         <span v-if="pref === opt.value" class="text-metro-fg-light dark:text-metro-fg-dark text-lg">✓</span>
       </Pressable>
-    </div>
+    </Col>
 
-    <div class="mt-6 mb-4 text-center text-[11px] text-metro-sub-light dark:text-metro-sub-dark">
+    <Col class="mt-6 mb-4 text-center text-[11px] text-metro-sub-light dark:text-metro-sub-dark">
       Stage · v{{ APP_VERSION }}
-    </div>
-  </div>
+    </Col>
+  </Col>
 </template>

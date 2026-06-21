@@ -39,28 +39,28 @@ async function copy(value: string): Promise<void> {
 </script>
 
 <template>
-  <div class="min-h-screen bg-metro-bg-light dark:bg-metro-bg-dark">
-    <div class="flex items-center px-3 py-3">
+  <Col class="min-h-screen bg-metro-bg-light dark:bg-metro-bg-dark">
+    <Row class="flex items-center px-3 py-3">
       <Pressable tag="button" type="button" class="p-1.5" @click="router.back()">
         <Icon name="arrowLeft" :size="22" />
       </Pressable>
-    </div>
-    <div class="px-6 pb-8">
-      <div class="flex flex-col items-center pt-2">
+    </Row>
+    <Col class="px-6 pb-8">
+      <Col class="flex flex-col items-center pt-2">
         <img v-if="loaded"
           :src="avatarRenderUrl(address, profile?.avatar ?? undefined, AVATAR_SIZE * 2)"
           alt=""
           :style="{ width: AVATAR_SIZE + 'px', height: AVATAR_SIZE + 'px' }"
           class="rounded-full bg-metro-border-dark object-cover"
         />
-        <div v-else class="rounded-full bg-metro-border-dark" :style="{ width: AVATAR_SIZE + 'px', height: AVATAR_SIZE + 'px' }" />
-        <div class="mt-3 text-lg font-head text-metro-head-light dark:text-metro-head-dark">
+        <Col v-else class="rounded-full bg-metro-border-dark" :style="{ width: AVATAR_SIZE + 'px', height: AVATAR_SIZE + 'px' }" />
+        <Col class="mt-3 text-lg font-head text-metro-head-light dark:text-metro-head-dark">
           {{ profile?.name?.trim() || shortAddress(address) }}
-        </div>
-        <div v-if="profile?.about?.trim()"
+        </Col>
+        <Col v-if="profile?.about?.trim()"
           class="mt-1 text-sm text-metro-sub-light dark:text-metro-sub-dark text-center max-w-prose">
           {{ profile.about }}
-        </div>
+        </Col>
         <Pressable
           tag="button"
           type="button"
@@ -72,9 +72,9 @@ async function copy(value: string): Promise<void> {
         >
           {{ openingDm ? 'Opening…' : 'Message' }}
         </Pressable>
-      </div>
+      </Col>
 
-      <div class="mt-6 space-y-2">
+      <Col class="mt-6 space-y-2">
         <Pressable
           tag="button"
           type="button"
@@ -83,28 +83,28 @@ async function copy(value: string): Promise<void> {
             bg-metro-surface-light dark:bg-metro-surface-dark"
           @click="copy(address)"
         >
-          <div class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark uppercase tracking-wide">
+          <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark uppercase tracking-wide">
             Wallet address ({{ copied ? 'copied!' : 'tap to copy' }})
-          </div>
-          <div class="text-sm mt-1 break-all font-mono">{{ address }}</div>
+          </Col>
+          <Col class="text-sm mt-1 break-all font-mono">{{ address }}</Col>
         </Pressable>
-        <div v-if="profile?.github?.trim()" class="p-3 rounded-xl border border-metro-border-light dark:border-metro-border-dark bg-metro-surface-light dark:bg-metro-surface-dark">
-          <div class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark uppercase tracking-wide">GitHub</div>
-          <div class="text-sm mt-1">{{ profile.github }}</div>
-        </div>
-        <div v-if="profile?.twitter?.trim()" class="p-3 rounded-xl border border-metro-border-light dark:border-metro-border-dark bg-metro-surface-light dark:bg-metro-surface-dark">
-          <div class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark uppercase tracking-wide">X (Twitter)</div>
-          <div class="text-sm mt-1">{{ profile.twitter }}</div>
-        </div>
-        <div v-if="profile?.lens?.trim()" class="p-3 rounded-xl border border-metro-border-light dark:border-metro-border-dark bg-metro-surface-light dark:bg-metro-surface-dark">
-          <div class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark uppercase tracking-wide">Lens</div>
-          <div class="text-sm mt-1">{{ profile.lens }}</div>
-        </div>
-        <div v-if="profile?.farcaster?.trim()" class="p-3 rounded-xl border border-metro-border-light dark:border-metro-border-dark bg-metro-surface-light dark:bg-metro-surface-dark">
-          <div class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark uppercase tracking-wide">Farcaster</div>
-          <div class="text-sm mt-1">{{ profile.farcaster }}</div>
-        </div>
-      </div>
-    </div>
-  </div>
+        <Col v-if="profile?.github?.trim()" class="p-3 rounded-xl border border-metro-border-light dark:border-metro-border-dark bg-metro-surface-light dark:bg-metro-surface-dark">
+          <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark uppercase tracking-wide">GitHub</Col>
+          <Col class="text-sm mt-1">{{ profile.github }}</Col>
+        </Col>
+        <Col v-if="profile?.twitter?.trim()" class="p-3 rounded-xl border border-metro-border-light dark:border-metro-border-dark bg-metro-surface-light dark:bg-metro-surface-dark">
+          <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark uppercase tracking-wide">X (Twitter)</Col>
+          <Col class="text-sm mt-1">{{ profile.twitter }}</Col>
+        </Col>
+        <Col v-if="profile?.lens?.trim()" class="p-3 rounded-xl border border-metro-border-light dark:border-metro-border-dark bg-metro-surface-light dark:bg-metro-surface-dark">
+          <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark uppercase tracking-wide">Lens</Col>
+          <Col class="text-sm mt-1">{{ profile.lens }}</Col>
+        </Col>
+        <Col v-if="profile?.farcaster?.trim()" class="p-3 rounded-xl border border-metro-border-light dark:border-metro-border-dark bg-metro-surface-light dark:bg-metro-surface-dark">
+          <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark uppercase tracking-wide">Farcaster</Col>
+          <Col class="text-sm mt-1">{{ profile.farcaster }}</Col>
+        </Col>
+      </Col>
+    </Col>
+  </Col>
 </template>

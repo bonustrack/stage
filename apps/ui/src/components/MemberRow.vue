@@ -26,14 +26,14 @@ const emit = defineEmits<{ open: []; remove: [] }>();
   >
     <Pressable tag="button" type="button" class="flex items-center gap-3 flex-1 min-w-0 text-left" @click="emit('open')">
       <img :src="stampAvatarUrl(props.address, 64)" alt="" class="w-8 h-8 rounded-full bg-metro-border-dark" />
-      <div class="flex-1 min-w-0">
-        <div class="text-sm text-metro-head-light dark:text-metro-head-dark truncate font-head">
+      <Col class="flex-1 min-w-0">
+        <Col class="text-sm text-metro-head-light dark:text-metro-head-dark truncate font-head">
           {{ props.name || shortAddress(props.address) }}{{ props.isSelf ? ' (you)' : '' }}
-        </div>
-        <div v-if="props.name" class="text-xs text-metro-sub-light dark:text-metro-sub-dark truncate mt-0.5">
+        </Col>
+        <Col v-if="props.name" class="text-xs text-metro-sub-light dark:text-metro-sub-dark truncate mt-0.5">
           {{ shortAddress(props.address) }}
-        </div>
-      </div>
+        </Col>
+      </Col>
     </Pressable>
     <span
       v-if="props.role && props.role !== 'member'"

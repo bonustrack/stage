@@ -29,13 +29,13 @@ function onSave(): void {
 </script>
 
 <template>
-  <div>
-    <div class="text-[11px] uppercase tracking-wide text-metro-sub-light dark:text-metro-sub-dark">{{ props.label }}</div>
-    <div v-if="props.readonly" class="mt-1.5">
-      <div v-if="props.value.trim()" :class="props.valueClass">{{ props.value.trim() }}</div>
-      <div v-else class="text-sm text-metro-sub-light dark:text-metro-sub-dark font-sans">{{ props.emptyLabel }}</div>
-    </div>
-    <div v-else-if="editing" class="flex items-start gap-2 mt-1.5">
+  <Col>
+    <Col class="text-[11px] uppercase tracking-wide text-metro-sub-light dark:text-metro-sub-dark">{{ props.label }}</Col>
+    <Col v-if="props.readonly" class="mt-1.5">
+      <Col v-if="props.value.trim()" :class="props.valueClass">{{ props.value.trim() }}</Col>
+      <Col v-else class="text-sm text-metro-sub-light dark:text-metro-sub-dark font-sans">{{ props.emptyLabel }}</Col>
+    </Col>
+    <Row v-else-if="editing" class="flex items-start gap-2 mt-1.5">
       <!-- kit-exception: no kit equivalent (inline-edit controls — kit Input/Textarea
            force their own inline-style box (bg/border/padding/font) that would override
            this Metro-surface themed styling, so bare elements preserve the look). -->
@@ -72,15 +72,15 @@ function onSave(): void {
       >
         {{ props.saving ? 'Saving…' : 'Save' }}
       </Pressable>
-    </div>
+    </Row>
     <Pressable v-else tag="button" type="button" class="mt-1.5 block text-left" @click="editing = true">
-      <div :class="props.value.trim() ? props.valueClass : 'text-sm text-metro-sub-light dark:text-metro-sub-dark font-sans'">
+      <Col :class="props.value.trim() ? props.valueClass : 'text-sm text-metro-sub-light dark:text-metro-sub-dark font-sans'">
         {{ props.value.trim() || props.emptyLabel }}
-      </div>
-      <div v-if="props.value.trim()"
+      </Col>
+      <Col v-if="props.value.trim()"
         class="text-xs text-metro-sub-light dark:text-metro-sub-dark mt-0.5 font-sans">
         Tap to edit
-      </div>
+      </Col>
     </Pressable>
-  </div>
+  </Col>
 </template>

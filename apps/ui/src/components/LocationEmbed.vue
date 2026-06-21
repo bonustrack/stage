@@ -12,13 +12,13 @@ function open(): void { window.open(props.sourceUrl, '_blank', 'noopener'); }
 
 <template>
   <MediaCard :on-press="open">
-    <div class="relative aspect-square bg-metro-bg-dark">
+    <Col class="relative aspect-square bg-metro-bg-dark">
       <img :src="tileUrl" :alt="`Map at ${label}`" class="w-full h-full object-cover" />
-      <div class="absolute inset-0 flex items-center justify-center text-3xl">📍</div>
-    </div>
-    <div class="px-2.5 py-1.5">
-      <div class="text-xs text-metro-head-light dark:text-metro-head-dark font-head">Location</div>
-      <div class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">{{ label }} · tap to open</div>
-    </div>
+      <Row class="absolute inset-0 flex items-center justify-center text-3xl">📍</Row>
+    </Col>
+    <Col class="px-2.5 py-1.5">
+      <Col class="text-xs text-metro-head-light dark:text-metro-head-dark font-head">Location</Col>
+      <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">{{ label }} · tap to open</Col>
+    </Col>
   </MediaCard>
 </template>

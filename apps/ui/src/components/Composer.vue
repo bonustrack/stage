@@ -88,24 +88,24 @@ async function send(): Promise<void> {
 </script>
 
 <template>
-  <div class="bg-metro-bg-light dark:bg-metro-bg-dark">
-    <div v-if="err" class="px-4 pt-2 text-xs text-metro-err">send failed: {{ err }}</div>
-    <div v-if="props.replyingTo"
+  <Col class="bg-metro-bg-light dark:bg-metro-bg-dark">
+    <Col v-if="err" class="px-4 pt-2 text-xs text-metro-err">send failed: {{ err }}</Col>
+    <Row v-if="props.replyingTo"
       class="flex items-center gap-2 px-4 pt-2 text-xs text-metro-sub-light dark:text-metro-sub-dark">
       <Icon name="reply" :size="14" />
       <span class="flex-1 truncate">Replying to: {{ props.replyingTo.preview }}</span>
       <Pressable tag="button" type="button" class="opacity-70 hover:opacity-100" @click="emit('clear-reply')">
         <Icon name="x" :size="14" />
       </Pressable>
-    </div>
+    </Row>
     <!-- kit-exception: no kit equivalent (native file input — kit Input has no 'file'
          inputType; rendered via dynamic tag to keep bare <input> semantics). -->
     <component :is="'input'" ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFileChange" />
     <!-- Mobile-style composer: textarea on top, [+ / spacer / send] row below,
          both inside one rounded surface. Mirrors MessengerComposer.tsx. -->
-    <div class="m-4 mt-0 px-3 pt-2.5 pb-1.5 rounded-2xl bg-metro-surface-light dark:bg-metro-surface-dark">
+    <Col class="m-4 mt-0 px-3 pt-2.5 pb-1.5 rounded-2xl bg-metro-surface-light dark:bg-metro-surface-dark">
       <!-- Pending pasted/selected image preview — removable, sent on Send. -->
-      <div v-if="pending" class="relative inline-block mb-2">
+      <Col v-if="pending" class="relative inline-block mb-2">
         <img :src="pending.url" alt="" class="max-h-32 rounded-lg" />
         <Pressable
           tag="button"
@@ -116,7 +116,7 @@ async function send(): Promise<void> {
         >
           <Icon name="x" :size="12" />
         </Pressable>
-      </div>
+      </Col>
       <!-- kit-exception: no kit equivalent (auto-grow textarea — needs a direct DOM ref
            for scrollHeight measurement, and kit Textarea forces its own boxed inline
            style (bg/border/padding/font) that would override this transparent surface). -->
@@ -134,7 +134,7 @@ async function send(): Promise<void> {
         @keydown.enter.exact.prevent="send"
         @paste="onPaste"
       />
-      <div class="flex items-center gap-1">
+      <Row class="flex items-center gap-1">
         <Pressable
           tag="button"
           type="button"
@@ -146,7 +146,7 @@ async function send(): Promise<void> {
         >
           <Icon :name="attachOpen ? 'x' : 'plus'" :size="20" />
         </Pressable>
-        <div class="flex-1" />
+        <Col class="flex-1" />
         <Pressable
           tag="button"
           type="button"
@@ -159,11 +159,11 @@ async function send(): Promise<void> {
         >
           <Icon name="send" :size="22" />
         </Pressable>
-      </div>
-    </div>
+      </Row>
+    </Col>
     <!-- Attach menu drops BELOW the composer row when open, matching mobile.
          Mobile uses box-style options stacked horizontally; mirror that. -->
-    <div v-if="attachOpen" class="flex gap-2 px-3 pb-3">
+    <Row v-if="attachOpen" class="flex gap-2 px-3 pb-3">
       <Pressable
         tag="button"
         type="button"
@@ -188,6 +188,6 @@ async function send(): Promise<void> {
       >
         <Icon name="mapPin" :size="16" /> Location
       </Pressable>
-    </div>
-  </div>
+    </Row>
+  </Col>
 </template>
