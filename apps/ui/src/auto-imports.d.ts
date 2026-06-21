@@ -47,6 +47,7 @@ declare global {
   const isRef: typeof import('vue').isRef
   const isShallow: typeof import('vue').isShallow
   const lineOfConv: typeof import('./lib/xmtp').lineOfConv
+  const lineOfDmPeer: typeof import('./lib/xmtp').lineOfDmPeer
   const loadCachedProfile: typeof import('./lib/profile').loadCachedProfile
   const lookupName: typeof import('./lib/stamp').lookupName
   const mapCoordsOf: typeof import('./lib/embedDetect').mapCoordsOf
@@ -56,6 +57,8 @@ declare global {
   const markConvUnreadSynced: typeof import('./lib/xmtpConsent').markConvUnreadSynced
   const markRaw: typeof import('vue').markRaw
   const memberInboxToAddressMap: typeof import('./lib/xmtpResolve').memberInboxToAddressMap
+  const metroConvIdOf: typeof import('./lib/xmtp').metroConvIdOf
+  const metroDmPeerOf: typeof import('./lib/xmtp').metroDmPeerOf
   const mutateMembers: typeof import('./lib/useGroupDetail.mutations').mutateMembers
   const nextTick: typeof import('vue').nextTick
   const onActivated: typeof import('vue').onActivated
@@ -246,6 +249,7 @@ declare module 'vue' {
     readonly isRef: UnwrapRef<typeof import('vue')['isRef']>
     readonly isShallow: UnwrapRef<typeof import('vue')['isShallow']>
     readonly lineOfConv: UnwrapRef<typeof import('./lib/xmtp')['lineOfConv']>
+    readonly lineOfDmPeer: UnwrapRef<typeof import('./lib/xmtp')['lineOfDmPeer']>
     readonly loadCachedProfile: UnwrapRef<typeof import('./lib/profile')['loadCachedProfile']>
     readonly mapCoordsOf: UnwrapRef<typeof import('./lib/embedDetect')['mapCoordsOf']>
     readonly markConvRead: UnwrapRef<typeof import('./lib/channelsCache')['markConvRead']>
@@ -254,6 +258,8 @@ declare module 'vue' {
     readonly markConvUnreadSynced: UnwrapRef<typeof import('./lib/xmtpConsent')['markConvUnreadSynced']>
     readonly markRaw: UnwrapRef<typeof import('vue')['markRaw']>
     readonly memberInboxToAddressMap: UnwrapRef<typeof import('./lib/xmtpResolve')['memberInboxToAddressMap']>
+    readonly metroConvIdOf: UnwrapRef<typeof import('./lib/xmtp')['metroConvIdOf']>
+    readonly metroDmPeerOf: UnwrapRef<typeof import('./lib/xmtp')['metroDmPeerOf']>
     readonly mutateMembers: UnwrapRef<typeof import('./lib/useGroupDetail.mutations')['mutateMembers']>
     readonly nextTick: UnwrapRef<typeof import('vue')['nextTick']>
     readonly onActivated: UnwrapRef<typeof import('vue')['onActivated']>

@@ -10,8 +10,17 @@ import {
 } from 'viem/accounts';
 import { hexToBytes, type Hex } from 'viem';
 import { getHostAccount, hostSigner } from './hostSigner';
+import {
+  XMTP_USER_PREFIX, lineOfConv, lineOfDmPeer, convIdOfLine, metroConvIdOf, metroDmPeerOf,
+} from '@stage-labs/client/xmtp/line';
+import { shortAddress } from '@stage-labs/client/identity/format';
 
 export type { XmtpEnv };
+
+export {
+  XMTP_USER_PREFIX, lineOfConv, lineOfDmPeer, convIdOfLine, metroConvIdOf, metroDmPeerOf,
+  shortAddress,
+};
 
 const PRIVATE_KEY_KEY = 'xmtp.privateKey';
 const ADDRESS_KEY = 'xmtp.address';
@@ -83,26 +92,12 @@ export async function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promis
 
 export function getCachedXmtpClient(): XmtpClient | null { return cachedClient; }
 
-export function lineOfConv(convId: string): string { return `metro://xmtp/${convId}`; }
-
-export function shortAddress(addr: string): string {
-  if (!addr) return '';
-  return addr.length > 10 ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : addr;
-}
-
 export function stampAvatarUrl(address: string, size = 120, cacheBust?: string): string {
   const base = `https://stamp.fyi/avatar/eth:${address.toLowerCase()}?s=${size}`;
   return cacheBust ? `${base}&cb=${encodeURIComponent(cacheBust)}` : base;
 }
 
 export { peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap } from './xmtpResolve';
-
-export const XMTP_USER_PREFIX = 'metro://xmtp/user/';
-
-export function convIdOfLine(line: string): string | null {
-  const m = /^metro:\/\/xmtp\/([^/]+)$/.exec(line);
-  return m?.[1] ?? null;
-}
 
 export async function convOfLine(line: string): Promise<Conversation | null> {
   const convId = convIdOfLine(line);

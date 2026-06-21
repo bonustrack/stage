@@ -1,10 +1,13 @@
 
 export * from './types';
 export * from './profile/snapshot';
+export * from './profile/upload';
 export * from './xmtp/humanize';
 export * from './xmtp/poll';
 export * from './xmtp/line';
 export * from './xmtp/envelope';
+export * from './xmtp/consent';
+export * from './xmtp/request';
 export * from './xmtp/builders';
 export * from './xmtp/codecs';
 export * from './xmtp/inboxCache';
