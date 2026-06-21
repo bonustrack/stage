@@ -1,5 +1,6 @@
 
 import { lookupName } from '@stage-labs/client/stamp/resolve';
+import { PINEAPPLE_UPLOAD_URL, parsePineappleResponse } from '@stage-labs/client/profile/upload';
 
 export interface SnapshotProfile {
   name?: string;
@@ -42,7 +43,6 @@ export async function readProfile(address: string): Promise<SnapshotProfile | nu
   }
 }
 
-const PINEAPPLE_UPLOAD_URL = 'https://pineapple.fyi/upload';
 const MAX_AVATAR_BYTES = 1024 * 1024;
 
 export async function uploadAvatar(file: File): Promise<string> {
@@ -55,11 +55,6 @@ export async function uploadAvatar(file: File): Promise<string> {
   const form = new FormData();
   form.append('file', file);
   const res = await fetch(PINEAPPLE_UPLOAD_URL, { method: 'POST', body: form });
-  const json = await res.json().catch(() => ({})) as {
-    result?: { cid?: string }; error?: { message?: string };
-  };
-  if (json.error?.message) throw new Error(json.error.message);
-  const cid = json.result?.cid;
-  if (!cid) throw new Error('Pineapple returned no CID');
-  return `ipfs://${cid}`;
+  const json: unknown = await res.json().catch(() => ({}));
+  return parsePineappleResponse(json);
 }
