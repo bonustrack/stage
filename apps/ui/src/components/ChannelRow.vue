@@ -16,8 +16,8 @@ const props = defineProps<{
 const emit = defineEmits<{ (e: 'open'): void; (e: 'menu', ev: MouseEvent): void }>();
 
 const renderedAvatar = computed(() => {
-  if (props.avatarUri) return avatarRenderUrl('', props.avatarUri, 64);
-  if (props.avatarAddress) return stampAvatarUrl(props.avatarAddress, 64);
+  if (props.avatarUri) return avatarRenderUrl('', props.avatarUri, 88);
+  if (props.avatarAddress) return stampAvatarUrl(props.avatarAddress, 88);
   return null;
 });
 
@@ -36,44 +36,46 @@ function fmtTs(ts: number | null): string {
   <Pressable
     tag="button"
     type="button"
-    class="w-full text-left px-4"
+    class="w-full text-left px-3.5
+      hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark
+      active:bg-metro-border-light dark:active:bg-metro-border-dark"
     @click="emit('open')"
     @contextmenu.prevent="emit('menu', $event)"
   >
-    <!-- Inner row carries the separator: it starts at the avatar's left edge
-         (inset from the screen by the card's px-3.5), not full width. -->
-    <Row align="center" :gap="12" class="py-3
-      border-b border-metro-border-light dark:border-metro-border-dark">
-      <img v-if="renderedAvatar"
-        :src="renderedAvatar"
-        alt=""
-        class="w-8 h-8 rounded-full bg-metro-border-dark shrink-0 object-cover"
-      />
-      <Col v-else class="w-8 h-8 rounded-full bg-metro-border-dark shrink-0" />
+    <Row align="center" :gap="12" class="min-h-[67px] py-[9px]">
+      <AvatarView :src="renderedAvatar" :size="44" />
       <Col class="flex-1 min-w-0">
-      <Row align="baseline" :gap="8">
-        <Col class="text-base text-metro-head-light dark:text-metro-head-dark truncate flex-1 font-head">
-          {{ props.title }}
-        </Col>
-        <Col class="text-xs text-metro-sub-light dark:text-metro-sub-dark shrink-0">
-          {{ fmtTs(props.lastTs) }}
-        </Col>
-      </Row>
-      <Row align="center" :gap="8" class="mt-1">
-        <Col class="text-[15px] text-metro-sub-light dark:text-metro-sub-dark truncate flex-1">
-          {{ props.lastPreview || '(no messages yet)' }}
-        </Col>
-        <Row v-if="props.unreadCount > 0"
-          class="min-w-[22px] h-5 rounded-full px-1.5
-            bg-metro-head-light dark:bg-metro-head-dark
-            text-metro-bg-light dark:text-metro-bg-dark
-            text-[11px] font-head flex items-center justify-center shrink-0">
-          {{ props.unreadCount > 99 ? '99+' : props.unreadCount }}
+        <Row align="center" :gap="6">
+          <Text
+            size="3xl"
+            weight="semibold"
+            color="link"
+            :truncate="true"
+            class="flex-1 min-w-0"
+          >{{ props.title }}</Text>
+          <Text v-if="fmtTs(props.lastTs)" size="sm" color="secondary" class="shrink-0">
+            {{ fmtTs(props.lastTs) }}
+          </Text>
         </Row>
-        <!-- Explicitly marked unread (cross-device) but no counted messages → dot. -->
-        <Col v-else-if="props.markedUnread"
-          class="w-3 h-3 rounded-full shrink-0 bg-metro-head-light dark:bg-metro-head-dark" />
-      </Row>
+        <Row align="start" :gap="7" class="mt-0.5">
+          <Text
+            size="lg"
+            color="secondary"
+            class="flex-1 min-w-0 leading-[21px] line-clamp-2"
+          >{{ props.lastPreview || '(no messages yet)' }}</Text>
+          <Row v-if="props.unreadCount > 0"
+            align="center" justify="center"
+            class="min-w-[22px] h-[22px] rounded-full px-[7px] shrink-0
+              bg-metro-link-light dark:bg-metro-link-dark">
+            <Text size="2xs" weight="semibold"
+              class="!text-metro-bg-light dark:!text-metro-bg-dark">
+              {{ props.unreadCount > 99 ? '99+' : props.unreadCount }}
+            </Text>
+          </Row>
+          <!-- Explicitly marked unread (cross-device) but no counted messages → dot. -->
+          <Col v-else-if="props.markedUnread"
+            class="w-3 h-3 rounded-full shrink-0 mt-1 bg-metro-link-light dark:bg-metro-link-dark" />
+        </Row>
       </Col>
     </Row>
   </Pressable>

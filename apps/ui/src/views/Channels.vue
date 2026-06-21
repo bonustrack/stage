@@ -19,12 +19,12 @@ const {
   <Col class="h-[100dvh] relative" :class="embedded ? '' : 'pb-[60px]'">
     <!-- Topnav: page title, refresh, and (embedded only) a close button at the
          end, so the channels homepage has a single topnav like conversations. -->
-    <Row align="center" :gap="4" class="h-[56px] box-border shrink-0 pl-2 pr-1
+    <Row align="center" :gap="4" class="h-[52px] box-border shrink-0 pl-2 pr-1
       bg-metro-bg-light dark:bg-metro-bg-dark
       border-b border-metro-border-light dark:border-metro-border-dark">
-      <span class="flex-1 font-head text-[17px] text-metro-head-light dark:text-metro-head-dark pl-2">
+      <Text size="4xl" weight="semibold" color="link" class="flex-1 pl-2">
         {{ embedded ? (view === 'messages' ? 'Messages' : 'Home') : 'Channels' }}
-      </span>
+      </Text>
       <template v-if="!embedded && view === 'messages'">
         <Pressable
           tag="button"
@@ -83,8 +83,8 @@ const {
     <!-- HOME: the "Ask a question" action card. Messages/Docs live in the footer nav. -->
     <Col v-if="view === 'home'" align="center" justify="center" :gap="12" class="flex-1 px-6">
       <Pressable tag="button" type="button" :disabled="creatingAsk" :class="cardClass" @click="onAskPress">
-        <Icon name="chat" :size="24" class="shrink-0 text-metro-fg-light dark:text-metro-fg-dark" />
-        <span class="flex-1 text-[17px] font-sans">{{ creatingAsk ? 'Creating group…' : 'Ask a question' }}</span>
+        <Icon name="chatBubble" :size="24" class="shrink-0 text-metro-fg-light dark:text-metro-fg-dark" />
+        <Text size="xl" color="link" class="flex-1">{{ creatingAsk ? 'Creating group…' : 'Ask a question' }}</Text>
         <Row align="center" class="shrink-0">
           <img
             v-for="(addr, i) in ASK_QUESTION_MEMBERS"
