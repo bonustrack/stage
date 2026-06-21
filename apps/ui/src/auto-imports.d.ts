@@ -10,7 +10,10 @@ declare global {
   const EffectScope: typeof import('vue').EffectScope
   const METRO_API_URL: typeof import('./lib/xmtpGroups').METRO_API_URL
   const XMTP_USER_PREFIX: typeof import('./lib/xmtp').XMTP_USER_PREFIX
+  const acceptRequestConv: typeof import('./lib/xmtpRequests').acceptRequestConv
+  const addGroupMembers: typeof import('./lib/xmtpGroups').addGroupMembers
   const applyConsentToRows: typeof import('./lib/channelsCache').applyConsentToRows
+  const blockRequestConv: typeof import('./lib/xmtpRequests').blockRequestConv
   const cachedRows: typeof import('./lib/channelsCache').cachedRows
   const computeMemberRoles: typeof import('./lib/useGroupDetailHelpers').computeMemberRoles
   const computed: typeof import('vue').computed
@@ -18,6 +21,7 @@ declare global {
   const convOfLine: typeof import('./lib/xmtp').convOfLine
   const createApp: typeof import('vue').createApp
   const createAskQuestionGroup: typeof import('./lib/xmtpGroups').createAskQuestionGroup
+  const createGroup: typeof import('./lib/xmtpGroups').createGroup
   const customRef: typeof import('vue').customRef
   const defineAsyncComponent: typeof import('vue').defineAsyncComponent
   const defineComponent: typeof import('vue').defineComponent
@@ -39,6 +43,7 @@ declare global {
   const installEmbedThemeBridge: typeof import('./lib/embedBridge').installEmbedThemeBridge
   const installThemeClassEffect: typeof import('./lib/theme').installThemeClassEffect
   const isAddressLike: typeof import('./lib/stamp').isAddressLike
+  const isArchived: typeof import('./lib/archived').isArchived
   const isDomainLike: typeof import('./lib/stamp').isDomainLike
   const isProxy: typeof import('vue').isProxy
   const isReactionEntry: typeof import('./lib/xmtpFeed').isReactionEntry
@@ -48,6 +53,8 @@ declare global {
   const isShallow: typeof import('vue').isShallow
   const lineOfConv: typeof import('./lib/xmtp').lineOfConv
   const lineOfDmPeer: typeof import('./lib/xmtp').lineOfDmPeer
+  const listRequestConvs: typeof import('./lib/xmtpRequests').listRequestConvs
+  const loadArchivedIds: typeof import('./lib/archived').loadArchivedIds
   const loadCachedProfile: typeof import('./lib/profile').loadCachedProfile
   const lookupName: typeof import('./lib/stamp').lookupName
   const mapCoordsOf: typeof import('./lib/embedDetect').mapCoordsOf
@@ -112,6 +119,7 @@ declare global {
   const stampAvatarUrl: typeof import('./lib/xmtp').stampAvatarUrl
   const startChannelStream: typeof import('./lib/useChannelStream').startChannelStream
   const streamConvConsent: typeof import('./lib/xmtpConsent').streamConvConsent
+  const subscribeArchived: typeof import('./lib/archived').subscribeArchived
   const summarizeConv: typeof import('./lib/channelsSummarize').summarizeConv
   const syncPreferences: typeof import('./lib/xmtpConsent').syncPreferences
   const systemScheme: typeof import('./lib/theme').systemScheme
@@ -119,6 +127,7 @@ declare global {
   const toRef: typeof import('vue').toRef
   const toRefs: typeof import('vue').toRefs
   const toValue: typeof import('vue').toValue
+  const toggleArchived: typeof import('./lib/archived').toggleArchived
   const triggerRef: typeof import('vue').triggerRef
   const unref: typeof import('vue').unref
   const uploadAvatar: typeof import('./lib/profile').uploadAvatar
@@ -212,7 +221,10 @@ declare module 'vue' {
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
     readonly METRO_API_URL: UnwrapRef<typeof import('./lib/xmtpGroups')['METRO_API_URL']>
     readonly XMTP_USER_PREFIX: UnwrapRef<typeof import('./lib/xmtp')['XMTP_USER_PREFIX']>
+    readonly acceptRequestConv: UnwrapRef<typeof import('./lib/xmtpRequests')['acceptRequestConv']>
+    readonly addGroupMembers: UnwrapRef<typeof import('./lib/xmtpGroups')['addGroupMembers']>
     readonly applyConsentToRows: UnwrapRef<typeof import('./lib/channelsCache')['applyConsentToRows']>
+    readonly blockRequestConv: UnwrapRef<typeof import('./lib/xmtpRequests')['blockRequestConv']>
     readonly cachedRows: UnwrapRef<typeof import('./lib/channelsCache')['cachedRows']>
     readonly computeMemberRoles: UnwrapRef<typeof import('./lib/useGroupDetailHelpers')['computeMemberRoles']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>
@@ -220,6 +232,7 @@ declare module 'vue' {
     readonly convOfLine: UnwrapRef<typeof import('./lib/xmtp')['convOfLine']>
     readonly createApp: UnwrapRef<typeof import('vue')['createApp']>
     readonly createAskQuestionGroup: UnwrapRef<typeof import('./lib/xmtpGroups')['createAskQuestionGroup']>
+    readonly createGroup: UnwrapRef<typeof import('./lib/xmtpGroups')['createGroup']>
     readonly customRef: UnwrapRef<typeof import('vue')['customRef']>
     readonly defineAsyncComponent: UnwrapRef<typeof import('vue')['defineAsyncComponent']>
     readonly defineComponent: UnwrapRef<typeof import('vue')['defineComponent']>
@@ -241,6 +254,7 @@ declare module 'vue' {
     readonly installEmbedThemeBridge: UnwrapRef<typeof import('./lib/embedBridge')['installEmbedThemeBridge']>
     readonly installThemeClassEffect: UnwrapRef<typeof import('./lib/theme')['installThemeClassEffect']>
     readonly isAddressLike: UnwrapRef<typeof import('./lib/stamp')['isAddressLike']>
+    readonly isArchived: UnwrapRef<typeof import('./lib/archived')['isArchived']>
     readonly isDomainLike: UnwrapRef<typeof import('./lib/stamp')['isDomainLike']>
     readonly isProxy: UnwrapRef<typeof import('vue')['isProxy']>
     readonly isReactionEntry: UnwrapRef<typeof import('./lib/xmtpFeed')['isReactionEntry']>
@@ -250,6 +264,8 @@ declare module 'vue' {
     readonly isShallow: UnwrapRef<typeof import('vue')['isShallow']>
     readonly lineOfConv: UnwrapRef<typeof import('./lib/xmtp')['lineOfConv']>
     readonly lineOfDmPeer: UnwrapRef<typeof import('./lib/xmtp')['lineOfDmPeer']>
+    readonly listRequestConvs: UnwrapRef<typeof import('./lib/xmtpRequests')['listRequestConvs']>
+    readonly loadArchivedIds: UnwrapRef<typeof import('./lib/archived')['loadArchivedIds']>
     readonly loadCachedProfile: UnwrapRef<typeof import('./lib/profile')['loadCachedProfile']>
     readonly mapCoordsOf: UnwrapRef<typeof import('./lib/embedDetect')['mapCoordsOf']>
     readonly markConvRead: UnwrapRef<typeof import('./lib/channelsCache')['markConvRead']>
@@ -311,6 +327,7 @@ declare module 'vue' {
     readonly stampAvatarUrl: UnwrapRef<typeof import('./lib/xmtp')['stampAvatarUrl']>
     readonly startChannelStream: UnwrapRef<typeof import('./lib/useChannelStream')['startChannelStream']>
     readonly streamConvConsent: UnwrapRef<typeof import('./lib/xmtpConsent')['streamConvConsent']>
+    readonly subscribeArchived: UnwrapRef<typeof import('./lib/archived')['subscribeArchived']>
     readonly summarizeConv: UnwrapRef<typeof import('./lib/channelsSummarize')['summarizeConv']>
     readonly syncPreferences: UnwrapRef<typeof import('./lib/xmtpConsent')['syncPreferences']>
     readonly systemScheme: UnwrapRef<typeof import('./lib/theme')['systemScheme']>
@@ -318,6 +335,7 @@ declare module 'vue' {
     readonly toRef: UnwrapRef<typeof import('vue')['toRef']>
     readonly toRefs: UnwrapRef<typeof import('vue')['toRefs']>
     readonly toValue: UnwrapRef<typeof import('vue')['toValue']>
+    readonly toggleArchived: UnwrapRef<typeof import('./lib/archived')['toggleArchived']>
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
     readonly unref: UnwrapRef<typeof import('vue')['unref']>
     readonly uploadAvatar: UnwrapRef<typeof import('./lib/profile')['uploadAvatar']>
