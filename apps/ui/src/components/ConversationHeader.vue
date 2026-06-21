@@ -44,7 +44,7 @@ const embedded = runningInIframe();
           :key="addr.toLowerCase()"
           :src="stampAvatarUrl(addr, 56)"
           alt=""
-          class="w-7 h-7 rounded-full bg-metro-border-dark border-2
+          class="w-7 h-7 rounded-full bg-metro-border-light dark:bg-metro-border-dark border-2
             border-metro-bg-light dark:border-metro-bg-dark"
           :class="i === 0 ? '' : '-ml-2'"
         />

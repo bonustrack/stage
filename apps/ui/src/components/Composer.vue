@@ -1,7 +1,10 @@
 <script setup lang="ts">
 
+import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import { xmtpSendText, xmtpReply } from '../lib/xmtpSend';
 import { useComposerAttach } from '../lib/useComposerAttach';
+
+const palette = useKitPalette();
 
 const props = defineProps<{
   line: string;
@@ -33,7 +36,7 @@ function autoGrow(): void {
   const el = textarea.value;
   if (!el) return;
   el.style.height = 'auto';
-  el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
+  el.style.height = `${Math.min(el.scrollHeight, 210)}px`;
 }
 
 async function shareLocation(): Promise<void> {
@@ -101,9 +104,10 @@ async function send(): Promise<void> {
     <!-- kit-exception: no kit equivalent (native file input — kit Input has no 'file'
          inputType; rendered via dynamic tag to keep bare <input> semantics). -->
     <component :is="'input'" ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFileChange" />
-    <!-- Mobile-style composer: textarea on top, [+ / spacer / send] row below,
-         both inside one rounded surface. Mirrors MessengerComposer.tsx. -->
-    <Col class="m-4 mt-0 px-3 pt-2.5 pb-1.5 rounded-2xl bg-metro-surface-light dark:bg-metro-surface-dark">
+    <!-- Full-bleed flat composer bar: textarea on top, [+ / spacer / send] row
+         below. Edge-to-edge surface=raised with uniform padding 10, mirroring
+         MessengerComposer.tsx ComposerEditor (Col padding={10} surface="raised"). -->
+    <Col surface="raised" :padding="10">
       <!-- Pending pasted/selected image preview — removable, sent on Send. -->
       <Col v-if="pending" class="relative inline-block mb-2">
         <img :src="pending.url" alt="" class="max-h-32 rounded-lg" />
@@ -126,8 +130,8 @@ async function send(): Promise<void> {
         v-model="text"
         placeholder="Message…"
         rows="1"
-        class="w-full resize-none min-h-[24px] max-h-[140px] font-sans
-          bg-transparent px-2 py-0 text-[17px] leading-snug outline-none
+        class="w-full resize-none min-h-[24px] max-h-[210px] font-sans
+          bg-transparent px-2 pt-1 pb-2 text-[17px] leading-[23px] outline-none
           text-metro-head-light dark:text-metro-head-dark
           placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark"
         @input="autoGrow"
@@ -147,18 +151,20 @@ async function send(): Promise<void> {
           <Icon :name="attachOpen ? 'x' : 'plus'" :size="20" />
         </Pressable>
         <Col class="flex-1" />
-        <Pressable
-          tag="button"
-          type="button"
+        <!-- Send: kit Button primary md pill, palette.primary bg / palette.bg fg,
+             arrowSmUp icon size 20. Mirrors MessengerComposer ComposerRightAction. -->
+        <Button
+          variant="primary"
+          size="md"
+          pill
+          :tint-bg="palette.primary"
+          :tint-fg="palette.bg"
           :disabled="sending || (!text.trim() && !pending)"
-          class="w-10 h-10 shrink-0 rounded-full flex items-center justify-center
-            bg-metro-head-light dark:bg-metro-head-dark text-metro-bg-light dark:text-metro-bg-dark
-            disabled:opacity-50"
           :title="sending ? 'Sending…' : 'Send'"
           @click="send"
         >
-          <Icon name="send" :size="22" />
-        </Pressable>
+          <Icon name="arrowSmUp" :size="20" :color="palette.bg" />
+        </Button>
       </Row>
     </Col>
     <!-- Attach menu drops BELOW the composer row when open, matching mobile.

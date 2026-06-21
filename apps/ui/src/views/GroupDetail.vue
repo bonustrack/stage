@@ -25,10 +25,13 @@ function goAddMembers(): void { void router.push(`/xmtp/${convId.value}/add-memb
       </Pressable>
     </Row>
 
+    <!-- Group hero avatar is a square with a soft radius (~11px, 12% of 88),
+         mirroring mobile group detail (not a circle). -->
     <GroupAvatarEditor
       :image-url="imageUrl"
       :uploading="uploadingImage"
       :readonly="!selfIsAdmin"
+      square
       @pick="onPickImage"
     />
 

@@ -4,10 +4,12 @@ import { openDmWithAddress, shortAddress } from '../lib/xmtp';
 import { readProfile } from '../lib/profile';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 import { useQuery } from '@tanstack/vue-query';
+import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 
 const route = useRoute();
 const router = useRouter();
-const AVATAR_SIZE = 120;
+const palette = useKitPalette();
+const AVATAR_SIZE = 88;
 
 const address = computed(() => (route.params.address as string) ?? '');
 const { data: profile, isSuccess: loaded } = useQuery({
@@ -45,35 +47,78 @@ async function copy(value: string): Promise<void> {
         <Icon name="arrowLeft" :size="22" />
       </Pressable>
     </Row>
-    <Col class="px-6 pb-8">
-      <Col class="flex flex-col items-center pt-2">
-        <img v-if="loaded"
-          :src="avatarRenderUrl(address, profile?.avatar ?? undefined, AVATAR_SIZE * 2)"
-          alt=""
-          :style="{ width: AVATAR_SIZE + 'px', height: AVATAR_SIZE + 'px' }"
-          class="rounded-full bg-metro-border-dark object-cover"
-        />
-        <Col v-else class="rounded-full bg-metro-border-dark" :style="{ width: AVATAR_SIZE + 'px', height: AVATAR_SIZE + 'px' }" />
-        <Col class="mt-3 text-lg font-head text-metro-head-light dark:text-metro-head-dark">
-          {{ profile?.name?.trim() || shortAddress(address) }}
-        </Col>
-        <Col v-if="profile?.about?.trim()"
-          class="mt-1 text-sm text-metro-sub-light dark:text-metro-sub-dark text-center max-w-prose">
-          {{ profile.about }}
-        </Col>
-        <Pressable
-          tag="button"
-          type="button"
-          :disabled="openingDm"
-          class="mt-4 px-6 py-2.5 rounded-full
-            bg-metro-head-light dark:bg-metro-head-dark text-metro-bg-light dark:text-metro-bg-dark
-            text-[18px] disabled:opacity-60 hover:opacity-90 transition-opacity"
-          @click="onMessage"
-        >
-          {{ openingDm ? 'Opening…' : 'Message' }}
-        </Pressable>
+    <!-- Identity: avatar overlaps a surface card via negative top margin, with a
+         3px bg-color border ring — mirroring mobile ProfileScreen ProfileIdentity
+         (surface card margin top -18, avatar 88 marginTop -70.4, borderWidth 3). -->
+    <Col
+      surface="surface"
+      class="px-4 pb-2 items-start"
+      :style="{ marginTop: '-18px', borderTopLeftRadius: '18px', borderTopRightRadius: '18px' }"
+    >
+      <img v-if="loaded"
+        :src="avatarRenderUrl(address, profile?.avatar ?? undefined, AVATAR_SIZE * 2)"
+        alt=""
+        :style="{
+          width: AVATAR_SIZE + 'px', height: AVATAR_SIZE + 'px',
+          marginTop: -(AVATAR_SIZE * 0.8) + 'px', zIndex: 1,
+          borderWidth: '3px', borderStyle: 'solid', borderColor: palette.bg,
+        }"
+        class="rounded-full bg-metro-border-light dark:bg-metro-border-dark object-cover"
+      />
+      <Col v-else
+        class="rounded-full bg-metro-border-light dark:bg-metro-border-dark"
+        :style="{
+          width: AVATAR_SIZE + 'px', height: AVATAR_SIZE + 'px',
+          marginTop: -(AVATAR_SIZE * 0.8) + 'px', zIndex: 1,
+          borderWidth: '3px', borderStyle: 'solid', borderColor: palette.bg,
+        }"
+      />
+      <Col class="mt-3.5 text-[20px] font-head font-semibold text-metro-head-light dark:text-metro-head-dark">
+        {{ profile?.name?.trim() || shortAddress(address) }}
+      </Col>
+      <Col class="mt-0.5 text-[15px] text-metro-fg-light dark:text-metro-fg-dark">
+        {{ shortAddress(address) }}
+      </Col>
+      <Col v-if="profile?.about?.trim()"
+        class="mt-1 text-sm text-metro-sub-light dark:text-metro-sub-dark max-w-prose">
+        {{ profile.about }}
       </Col>
 
+      <!-- Two icon-actions (Message + Send), variant=secondary size=xl (56px),
+           icon 22 + label below (md 15px semibold link), gap 12, mirroring
+           mobile ProfileActions. -->
+      <Row class="mt-[18px]" :gap="12" justify="start">
+        <Col align="center" :gap="6">
+          <Button
+            variant="secondary"
+            size="xl"
+            pill
+            :tint-bg="palette.border"
+            :disabled="openingDm"
+            @click="onMessage"
+          >
+            <Icon name="chatRect" :size="22" :color="palette.link" />
+          </Button>
+          <span class="text-[15px] font-semibold" :style="{ color: palette.link }">
+            {{ openingDm ? 'Opening…' : 'Message' }}
+          </span>
+        </Col>
+        <Col align="center" :gap="6">
+          <Button
+            variant="secondary"
+            size="xl"
+            pill
+            :tint-bg="palette.border"
+            @click="onMessage"
+          >
+            <Icon name="send" :size="22" :color="palette.link" />
+          </Button>
+          <span class="text-[15px] font-semibold" :style="{ color: palette.link }">Send</span>
+        </Col>
+      </Row>
+    </Col>
+
+    <Col class="px-6 pb-8">
       <Col class="mt-6 space-y-2">
         <Pressable
           tag="button"

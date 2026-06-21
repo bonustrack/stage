@@ -53,7 +53,7 @@ const THEME_OPTIONS: { value: ThemePreference; label: string; icon: HeroIconName
           @click="setThemePreference(opt.value)"
         >
           <Icon :name="opt.icon" :size="22" :color="palette.text" />
-          <span class="flex-1 text-[15px] text-metro-fg-light dark:text-metro-fg-dark">{{ opt.label }}</span>
+          <span class="flex-1 text-[17px] text-metro-head-light dark:text-metro-head-dark">{{ opt.label }}</span>
           <Icon v-if="pref === opt.value" name="check" :size="20" :color="palette.text" />
         </Pressable>
       </Col>
