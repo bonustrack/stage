@@ -1,0 +1,13 @@
+<script setup lang="ts">
+import Box from './Box.vue';
+import type { BoxBaseProps } from '../layout';
+import type { Surface } from './Box.vue';
+
+defineProps<Omit<BoxBaseProps, 'direction'> & { surface?: Surface; tag?: string }>();
+</script>
+
+<template>
+  <Box direction="row" v-bind="$props">
+    <slot />
+  </Box>
+</template>

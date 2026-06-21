@@ -1,6 +1,7 @@
 const madgeConfig = {
   fileExtensions: ['ts', 'tsx'],
-  excludeRegExp: ['node_modules', '/dist/', '\\.d\\.ts$'],
+  excludeRegExp: ['node_modules', '/dist/', '\\.d\\.ts$', '\\.vue$'],
+  dependencyFilter: (id) => !id.endsWith('.vue'),
   detectiveOptions: {
     ts: { skipAsyncImports: true },
     tsx: { skipAsyncImports: true },

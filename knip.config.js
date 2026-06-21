@@ -44,6 +44,7 @@ const knipConfig = {
     'packages/kit': {
       entry: ['eslint.js'],
       project: ['src/**'],
+      vue: true,
     },
     'packages/config': {
       entry: ['eslint/*.js'],

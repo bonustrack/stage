@@ -41,19 +41,33 @@
     "./table": "./src/table.tsx",
     "./scroll": "./src/scroll.tsx",
     "./pressable": "./src/pressable.tsx",
-    "./flat-list": "./src/flat-list.tsx"
+    "./flat-list": "./src/flat-list.tsx",
+    "./vue": "./src/vue/index.ts",
+    "./vue/theme-context": "./src/vue/theme-context.ts",
+    "./vue/box": "./src/vue/Box.vue",
+    "./vue/row": "./src/vue/Row.vue",
+    "./vue/col": "./src/vue/Col.vue",
+    "./vue/text": "./src/vue/Text.vue",
+    "./vue/title": "./src/vue/Title.vue",
+    "./vue/button": "./src/vue/Button.vue",
+    "./vue/icon": "./src/vue/Icon.vue",
+    "./vue/card": "./src/vue/Card.vue",
+    "./vue/input": "./src/vue/Input.vue"
   },
   "peerDependencies": {
     "react": "*",
     "react-native": "*",
     "react-native-svg": "*",
-    "react-native-markdown-display": "*"
+    "react-native-markdown-display": "*",
+    "vue": "*"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "vue-tsc --noEmit"
   },
   "devDependencies": {
     "@stage-labs/config": "workspace:*",
-    "@types/react": "~19.1.0"
+    "@types/react": "~19.1.0",
+    "vue": "^3.5.13",
+    "vue-tsc": "^2.2.0"
   }
 }

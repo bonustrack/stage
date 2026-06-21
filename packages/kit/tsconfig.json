@@ -9,5 +9,5 @@
       "react-native-markdown-display": ["../../apps/app/node_modules/react-native-markdown-display"]
     }
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"]
 }
