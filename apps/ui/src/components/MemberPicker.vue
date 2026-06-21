@@ -1,11 +1,13 @@
 <script setup lang="ts">
 
+import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import { stampAvatarUrl, shortAddress } from '../lib/xmtp';
 import { isAddressLike, isDomainLike, resolveDomain } from '../lib/stamp';
 import { useEffectiveScheme } from '@/lib/kitTheme';
 import type { PickedMember } from '../lib/memberPicker';
 
 const scheme = useEffectiveScheme();
+const palette = useKitPalette();
 
 const props = defineProps<{
   members: PickedMember[];
@@ -67,10 +69,10 @@ async function onAdd(): Promise<void> {
 </script>
 
 <template>
-  <Col :gap="12">
+  <Col :gap="16">
     <!-- Address / ENS entry, mirroring the mobile MemberPicker. -->
     <Col :gap="6">
-      <Label class="text-xs text-metro-sub-light dark:text-metro-sub-dark">Add members</Label>
+      <Text size="xs" role="secondary">Add members</Text>
       <Row :gap="8" align="center">
         <Input
           v-model="entry"
@@ -80,23 +82,20 @@ async function onAdd(): Promise<void> {
           autocomplete="off"
           autocorrect="off"
           autocapitalize="off"
-          class="flex-1 bg-metro-surface-light dark:bg-metro-surface-dark
-            border border-metro-border-light dark:border-metro-border-dark
-            rounded-lg px-3 py-2 text-sm text-metro-fg-light dark:text-metro-fg-dark outline-none font-sans"
-          @keydown.enter.exact.prevent="onAdd"
+          class="flex-1"
+          @submit="onAdd"
         />
-        <Pressable
-          tag="button"
-          type="button"
-          :disabled="adding || !entry.trim()"
-          class="px-3.5 py-2 rounded-full bg-metro-head-light dark:bg-metro-head-dark
-            text-metro-bg-light dark:text-metro-bg-dark text-sm font-head disabled:opacity-50"
+        <Button
+          variant="secondary"
+          size="md"
+          :dark="scheme === 'dark'"
+          :loading="adding"
+          :disabled="!entry.trim()"
+          label="Add"
           @click="onAdd"
-        >
-          {{ adding ? 'Adding…' : 'Add' }}
-        </Pressable>
+        />
       </Row>
-      <Col v-if="errorMsg" class="text-xs text-metro-err">{{ errorMsg }}</Col>
+      <Text v-if="errorMsg" size="xs" role="danger">{{ errorMsg }}</Text>
     </Col>
 
     <!-- Selected members list with per-row remove, mirroring mobile. -->
@@ -104,36 +103,31 @@ async function onAdd(): Promise<void> {
       <Row
         v-for="m in props.members"
         :key="m.address"
+        surface="raised"
+        radius="lg"
+        :padding="8"
         align="center"
         :gap="10"
-        class="p-2 rounded-lg border border-metro-border-light dark:border-metro-border-dark
-          bg-metro-surface-light dark:bg-metro-surface-dark"
+        :style="{ borderWidth: '1px', borderStyle: 'solid', borderColor: palette.border }"
       >
-        <img
-          :src="stampAvatarUrl(m.address, 64)"
-          alt=""
-          class="w-8 h-8 rounded-full bg-metro-border-dark shrink-0 object-cover"
-        />
-        <Col class="flex-1 min-w-0">
-          <Col class="text-sm text-metro-head-light dark:text-metro-head-dark truncate font-head">
-            {{ m.label }}
-          </Col>
-          <Col
+        <AvatarView :src="stampAvatarUrl(m.address, 64)" :size="32" :placeholder-color="palette.border" />
+        <Col class="flex-1 min-w-0" :gap="1">
+          <Text size="md" truncate>{{ m.label }}</Text>
+          <Text
             v-if="m.label !== shortAddress(m.address)"
-            class="text-xs text-metro-sub-light dark:text-metro-sub-dark truncate"
-          >
-            {{ shortAddress(m.address) }}
-          </Col>
+            size="xs"
+            role="secondary"
+            truncate
+          >{{ shortAddress(m.address) }}</Text>
         </Col>
         <Pressable
           tag="button"
           type="button"
-          class="w-7 h-7 rounded-full flex items-center justify-center
-            border border-metro-border-light dark:border-metro-border-dark
-            text-metro-sub-light dark:text-metro-sub-dark shrink-0"
+          class="flex items-center justify-center shrink-0"
+          :style="{ width: '30px', height: '30px', borderRadius: '15px', borderWidth: '1px', borderStyle: 'solid', borderColor: palette.border }"
           @click="emit('remove', m.address)"
         >
-          <Icon name="x" :size="16" />
+          <Icon name="x" :size="16" :color="palette.sub" />
         </Pressable>
       </Row>
     </Col>

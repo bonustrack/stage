@@ -1,13 +1,21 @@
 <script setup lang="ts">
 
-import { onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import { useEffectiveScheme } from '@/lib/kitTheme';
 import {
   listRequestConvs, acceptRequestConv, blockRequestConv,
 } from '../lib/xmtpRequests';
 import type { ConversationRequestView } from '@stage-labs/client/xmtp/request';
 
 const router = useRouter();
+const scheme = useEffectiveScheme();
+const palette = useKitPalette();
+
+const dark = computed(() => scheme.value === 'dark');
+const acceptBg = computed(() => (dark.value ? '#15321f' : '#dcf5e6'));
+const acceptFg = computed(() => (dark.value ? '#34d399' : '#15803d'));
 
 const rows = ref<ConversationRequestView[] | null>(null);
 
@@ -33,28 +41,29 @@ async function act(convId: string, accept: boolean): Promise<void> {
 </script>
 
 <template>
-  <Col class="h-[100dvh] bg-metro-bg-light dark:bg-metro-bg-dark">
-    <Row align="center" class="h-[56px] box-border shrink-0 px-2
-      border-b border-metro-border-light dark:border-metro-border-dark">
-      <Pressable tag="button" type="button" class="p-1.5" @click="router.back()">
-        <Icon name="arrowLeft" :size="22" />
+  <Col surface="surface" class="h-[100dvh]">
+    <Row
+      surface="toolbar"
+      align="center"
+      :gap="8"
+      :padding="{ x: 12, y: 10 }"
+      :style="{ borderBottomWidth: '1px', borderBottomStyle: 'solid', borderBottomColor: palette.border }"
+    >
+      <Pressable tag="button" type="button" class="p-1" @click="router.back()">
+        <Icon name="arrowLeft" :size="22" :color="palette.text" />
       </Pressable>
-      <Col class="flex-1 font-head text-[17px] text-metro-head-light dark:text-metro-head-dark pl-1">
-        Message requests
-      </Col>
+      <Title size="sm">Message requests</Title>
     </Row>
 
-    <Col v-if="rows === null" align="center" justify="center"
-      class="flex-1 text-metro-head-light dark:text-metro-head-dark">
+    <Col v-if="rows === null" align="center" justify="center" class="flex-1">
       <Spinner :size="28" />
     </Col>
-    <Col v-else-if="rows.length === 0" align="center" justify="center"
-      class="flex-1 text-sm text-metro-sub-light dark:text-metro-sub-dark px-6">
-      No message requests.
+    <Col v-else-if="rows.length === 0" align="center" justify="center" class="flex-1" :padding="32">
+      <Text role="secondary" text-align="center">No message requests.</Text>
     </Col>
     <ul v-else class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-6">
       <li v-for="r in rows" :key="r.convId">
-        <Row align="center" class="pr-3">
+        <Row align="center" :padding="{ right: 12 }">
           <Col class="flex-1 min-w-0">
             <ChannelRow
               :avatar-address="r.avatarAddress"
@@ -71,23 +80,21 @@ async function act(convId: string, accept: boolean): Promise<void> {
               tag="button"
               type="button"
               title="Block"
-              class="w-9 h-9 rounded-full flex items-center justify-center
-                border border-metro-border-light dark:border-metro-border-dark
-                text-metro-err"
+              class="flex items-center justify-center"
+              :style="{ width: '36px', height: '36px', borderRadius: '18px', borderWidth: '1px', borderStyle: 'solid', borderColor: palette.border }"
               @click="act(r.convId, false)"
             >
-              <Icon name="x" :size="18" />
+              <Icon name="x" :size="18" :color="palette.danger" />
             </Pressable>
             <Pressable
               tag="button"
               type="button"
               title="Accept"
-              class="w-9 h-9 rounded-full flex items-center justify-center
-                bg-metro-head-light dark:bg-metro-head-dark
-                text-metro-bg-light dark:text-metro-bg-dark"
+              class="flex items-center justify-center"
+              :style="{ width: '36px', height: '36px', borderRadius: '18px', backgroundColor: acceptBg }"
               @click="act(r.convId, true)"
             >
-              <Icon name="check" :size="18" />
+              <Icon name="check" :size="18" :color="acceptFg" />
             </Pressable>
           </Row>
         </Row>

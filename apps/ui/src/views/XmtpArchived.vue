@@ -2,10 +2,12 @@
 
 import { computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import { cachedRows, hydrateCachedRows, type CachedRow } from '../lib/channelsCache';
 import { loadArchivedIds, subscribeArchived } from '../lib/archived';
 
 const router = useRouter();
+const palette = useKitPalette();
 
 const archived = ref<Set<string>>(loadArchivedIds());
 let unsub: (() => void) | null = null;
@@ -33,20 +35,22 @@ function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
 </script>
 
 <template>
-  <Col class="h-[100dvh] bg-metro-bg-light dark:bg-metro-bg-dark">
-    <Row align="center" class="h-[56px] box-border shrink-0 px-2
-      border-b border-metro-border-light dark:border-metro-border-dark">
-      <Pressable tag="button" type="button" class="p-1.5" @click="router.back()">
-        <Icon name="arrowLeft" :size="22" />
+  <Col surface="surface" class="h-[100dvh]">
+    <Row
+      surface="toolbar"
+      align="center"
+      :gap="8"
+      :padding="{ x: 12, y: 10 }"
+      :style="{ borderBottomWidth: '1px', borderBottomStyle: 'solid', borderBottomColor: palette.border }"
+    >
+      <Pressable tag="button" type="button" class="p-1" @click="router.back()">
+        <Icon name="arrowLeft" :size="22" :color="palette.text" />
       </Pressable>
-      <Col class="flex-1 font-head text-[17px] text-metro-head-light dark:text-metro-head-dark pl-1">
-        Archived
-      </Col>
+      <Title size="sm">Archived</Title>
     </Row>
 
-    <Col v-if="rows.length === 0" align="center" justify="center"
-      class="flex-1 text-sm text-metro-sub-light dark:text-metro-sub-dark px-6">
-      No archived conversations.
+    <Col v-if="rows.length === 0" align="center" justify="center" class="flex-1" :padding="32">
+      <Text role="secondary" text-align="center">No archived conversations.</Text>
     </Col>
     <ul v-else class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-6">
       <li v-for="r in rows" :key="r.convId">
