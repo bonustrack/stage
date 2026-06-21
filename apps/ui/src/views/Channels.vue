@@ -11,7 +11,7 @@ const {
   embedded, rows, error, query, creatingAsk, refreshing,
   searchResolution, openSearchedProfile, filtered, view, cardClass, rowMenu,
   onAskPress, refreshFromNetwork, open, openRowMenu, closeRowMenu,
-  toggleRowUnread, openDocs,
+  toggleRowUnread, archiveRow, openDocs, goNewGroup, goArchived, goRequests,
 } = useChannels();
 </script>
 
@@ -25,18 +25,49 @@ const {
       <span class="flex-1 font-head text-[17px] text-metro-head-light dark:text-metro-head-dark pl-2">
         {{ embedded ? (view === 'messages' ? 'Messages' : 'Home') : 'Channels' }}
       </span>
-      <Pressable
-        tag="button"
-        v-if="!embedded && view === 'messages'"
-        type="button"
-        :disabled="refreshing"
-        class="p-2 rounded-lg text-metro-sub-light dark:text-metro-sub-dark
-          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark disabled:opacity-50"
-        :title="refreshing ? 'Refreshing…' : 'Refresh channels'"
-        @click="refreshFromNetwork"
-      >
-        <Icon name="arrowDown" :size="16" :class="refreshing ? 'animate-spin' : ''" />
-      </Pressable>
+      <template v-if="!embedded && view === 'messages'">
+        <Pressable
+          tag="button"
+          type="button"
+          class="p-2 rounded-lg text-metro-sub-light dark:text-metro-sub-dark
+            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
+          title="Message requests"
+          @click="goRequests"
+        >
+          <Icon name="inbox" :size="18" />
+        </Pressable>
+        <Pressable
+          tag="button"
+          type="button"
+          class="p-2 rounded-lg text-metro-sub-light dark:text-metro-sub-dark
+            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
+          title="Archived"
+          @click="goArchived"
+        >
+          <Icon name="archive" :size="18" />
+        </Pressable>
+        <Pressable
+          tag="button"
+          type="button"
+          class="p-2 rounded-lg text-metro-sub-light dark:text-metro-sub-dark
+            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
+          title="New group"
+          @click="goNewGroup"
+        >
+          <Icon name="plus" :size="18" />
+        </Pressable>
+        <Pressable
+          tag="button"
+          type="button"
+          :disabled="refreshing"
+          class="p-2 rounded-lg text-metro-sub-light dark:text-metro-sub-dark
+            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark disabled:opacity-50"
+          :title="refreshing ? 'Refreshing…' : 'Refresh channels'"
+          @click="refreshFromNetwork"
+        >
+          <Icon name="arrowDown" :size="16" :class="refreshing ? 'animate-spin' : ''" />
+        </Pressable>
+      </template>
       <Pressable
         tag="button"
         v-if="embedded"
@@ -161,6 +192,16 @@ const {
           @click="toggleRowUnread"
         >
           {{ rowMenu.isUnread ? 'Mark as read' : 'Mark as unread' }}
+        </Pressable>
+        <Pressable
+          tag="button"
+          type="button"
+          class="w-full text-left px-3 py-2 text-sm
+            text-metro-head-light dark:text-metro-head-dark
+            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
+          @click="archiveRow"
+        >
+          Archive
         </Pressable>
       </Col>
     </template>

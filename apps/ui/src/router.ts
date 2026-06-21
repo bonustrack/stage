@@ -8,6 +8,10 @@ const routes: RouteRecordRaw[] = [
   { path: '/profile',   name: 'profile',   component: () => import('./views/Profile.vue') },
   { path: '/user/:address', name: 'user',  component: () => import('./views/UserProfile.vue') },
   { path: '/group/:convId', name: 'group', component: () => import('./views/GroupDetail.vue') },
+  { path: '/xmtp/new-group', name: 'xmtp-new-group', component: () => import('./views/XmtpNewGroup.vue') },
+  { path: '/xmtp/archived',  name: 'xmtp-archived',  component: () => import('./views/XmtpArchived.vue') },
+  { path: '/xmtp/requests',  name: 'xmtp-requests',  component: () => import('./views/XmtpRequests.vue') },
+  { path: '/xmtp/:convId/add-members', name: 'xmtp-add-members', component: () => import('./views/XmtpAddMembers.vue') },
   { path: '/xmtp/:convId', name: 'xmtp',   component: () => import('./views/XmtpConversation.vue') },
   { path: '/embed/:convId', name: 'embed',  component: () => import('./views/XmtpConversation.vue') },
 ];

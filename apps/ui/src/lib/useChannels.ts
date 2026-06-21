@@ -3,6 +3,7 @@ import { ref, computed, watchEffect, onMounted, onUnmounted, type ComputedRef, t
 import { useRouter } from 'vue-router';
 import { getOrCreateXmtpClient, createAskQuestionGroup } from './xmtp';
 import { cachedRows, hydrateCachedRows, markConvRead, markConvUnread } from './channelsCache';
+import { toggleArchived, isArchived } from './archived';
 import { type ChannelRow as Row } from './channelsSummarize';
 import { startChannelStream, type ChannelStreamHandles } from './useChannelStream';
 import { useSearchResolution } from './useSearchResolution';
@@ -30,7 +31,11 @@ export interface ChannelsState {
   openRowMenu: (r: Row, ev: MouseEvent) => void;
   closeRowMenu: () => void;
   toggleRowUnread: () => void;
+  archiveRow: () => void;
   openDocs: () => void;
+  goNewGroup: () => void;
+  goArchived: () => void;
+  goRequests: () => void;
 }
 
 export function useChannels(): ChannelsState {
@@ -56,11 +61,19 @@ export function useChannels(): ChannelsState {
     } finally { creatingAsk.value = false; }
   }
 
-  const filtered = computed(() => {
+  const archivedTick = ref(0);
+  const visibleRows = computed(() => {
+    void archivedTick.value;
     if (!rows.value) return null;
+    return rows.value.filter(r => !isArchived(r.convId));
+  });
+
+  const filtered = computed(() => {
+    const base = visibleRows.value;
+    if (!base) return null;
     const q = query.value.trim().toLowerCase();
-    if (!q) return rows.value;
-    return rows.value.filter(r =>
+    if (!q) return base;
+    return base.filter(r =>
       r.title.toLowerCase().includes(q)
       || r.lastPreview.toLowerCase().includes(q)
       || (r.peerAddress?.toLowerCase().includes(q) ?? false)
@@ -109,6 +122,18 @@ export function useChannels(): ChannelsState {
     else markConvUnread(m.convId);
   }
 
+  function archiveRow(): void {
+    const m = rowMenu.value;
+    if (!m) return;
+    closeRowMenu();
+    toggleArchived(m.convId);
+    archivedTick.value += 1;
+  }
+
+  function goNewGroup(): void { void router.push('/xmtp/new-group'); }
+  function goArchived(): void { void router.push('/xmtp/archived'); }
+  function goRequests(): void { void router.push('/xmtp/requests'); }
+
   const view = ref<'home' | 'messages'>(embedded ? 'home' : 'messages');
   function openDocs(): void { window.open('https://docs.snapshot.box', '_blank', 'noopener,noreferrer'); }
   const cardClass = 'w-full max-w-sm flex items-center gap-3 px-4 py-4 rounded-2xl text-left '
@@ -120,6 +145,6 @@ export function useChannels(): ChannelsState {
     router, embedded, rows, error, query, creatingAsk, refreshing,
     searchResolution, openSearchedProfile, filtered, view, cardClass, rowMenu,
     onAskPress, refreshFromNetwork, open, openRowMenu, closeRowMenu,
-    toggleRowUnread, openDocs,
+    toggleRowUnread, archiveRow, openDocs, goNewGroup, goArchived, goRequests,
   };
 }
