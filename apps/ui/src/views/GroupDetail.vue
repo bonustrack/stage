@@ -1,5 +1,7 @@
 <script setup lang="ts">
 
+import { computed } from 'vue';
+import { useRoute } from 'vue-router';
 import { useGroupDetail } from '../lib/useGroupDetail';
 
 const {
@@ -8,6 +10,11 @@ const {
   savingDescription, selfIsAdmin, onSaveName, onSaveDescription,
   onAddMember, removeMember, openMember, onPickImage,
 } = useGroupDetail();
+
+const route = useRoute();
+const convId = computed(() => String(route.params.convId ?? ''));
+
+function goAddMembers(): void { void router.push(`/xmtp/${convId.value}/add-members`); }
 </script>
 
 <template>
@@ -50,9 +57,22 @@ const {
       />
     </Col>
 
-    <Col class="text-[11px] uppercase tracking-wide text-metro-sub-light dark:text-metro-sub-dark px-4 pb-1.5">
-      Members ({{ members.length }})
-    </Col>
+    <Row align="center" class="px-4 pb-1.5">
+      <Col class="flex-1 text-[11px] uppercase tracking-wide text-metro-sub-light dark:text-metro-sub-dark">
+        Members ({{ members.length }})
+      </Col>
+      <Pressable
+        v-if="selfIsAdmin"
+        tag="button"
+        type="button"
+        class="flex items-center gap-1 text-xs font-head
+          text-metro-head-light dark:text-metro-head-dark"
+        @click="goAddMembers"
+      >
+        <Icon name="plus" :size="14" />
+        Add members
+      </Pressable>
+    </Row>
     <MemberAddForm v-if="selfIsAdmin" :adding="adding" @add="onAddMember" />
     <Col v-if="errorMsg" class="px-4 pb-2 text-xs text-red-500">{{ errorMsg }}</Col>
 

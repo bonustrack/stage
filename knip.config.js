@@ -36,10 +36,6 @@ const knipConfig = {
       project: ['src/**'],
       vite: true,
       vue: true,
-      ignore: [
-        'src/lib/archived.ts',
-        'src/lib/xmtpRequests.ts',
-      ],
     },
     'packages/client': {
       entry: ['src/**/*.ts'],

@@ -172,6 +172,9 @@ declare global {
   export type { ChannelRow } from './lib/channelsSummarize'
   import('./lib/channelsSummarize')
   // @ts-ignore
+  export type { PickedMember } from './lib/memberPicker'
+  import('./lib/memberPicker')
+  // @ts-ignore
   export type { SnapshotProfile } from './lib/profile'
   import('./lib/profile')
   // @ts-ignore
