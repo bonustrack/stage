@@ -48,6 +48,16 @@ src/
 | `bun run typecheck`| Type-check without emitting.                  |
 | `bun run lint`     | Lint `src/`.                                 |
 
+## Kit-only enforcement & exceptions
+
+`apps/ui` must build its UI from [`@stage-labs/kit/vue/*`](../../packages/kit) components (`Layout`, `Icon`, `Button`, `Title`, `Text`, form controls, …) rather than raw HTML elements. This is enforced by the `uiKitOnly` ESLint rule in [`eslint.config.mjs`](../../eslint.config.mjs), and the kit theme is wired up at the root via `provideKitTheme`.
+
+A small number of native form controls have **no kit equivalent** and are rendered as bare elements via `<component :is="'input' | 'textarea'">` to satisfy the rule honestly. Each site carries a `<!-- kit-exception: … -->` HTML comment explaining why. The sanctioned exceptions are:
+
+- **Native file inputs** — kit `Input` has no `'file'` inputType, so `<input type="file">` is used directly in [`src/components/Composer.vue`](src/components/Composer.vue) (image picker) and [`src/components/GroupAvatarEditor.vue`](src/components/GroupAvatarEditor.vue) (avatar picker).
+- **Auto-grow composer textarea** — [`src/components/Composer.vue`](src/components/Composer.vue) needs a direct DOM `textarea` ref for `scrollHeight` measurement, and kit `Textarea` forces its own boxed inline style that would override the transparent composer surface.
+- **Inline-edit controls** — [`src/components/InlineEditableText.vue`](src/components/InlineEditableText.vue) renders bare `input`/`textarea` because kit `Input`/`Textarea` apply their own inline-style box (bg/border/padding/font) that would override the Metro-surface themed styling these controls rely on.
+
 ## Links
 
 - Shared logic: [`@stage-labs/client`](../../packages/client)

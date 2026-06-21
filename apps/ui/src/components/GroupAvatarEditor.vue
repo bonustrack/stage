@@ -39,6 +39,8 @@ function onChange(ev: Event): void {
         :class="{ 'opacity-50': props.uploading }"
       ><Icon :name="props.readonly ? 'users' : 'plus'" :size="28" /></div>
     </Pressable>
+    <!-- kit-exception: no kit equivalent (native file input — kit Input has no 'file'
+         inputType; rendered via dynamic tag to keep bare <input> semantics). -->
     <component :is="'input'" ref="input" type="file" accept="image/jpeg,image/png" class="hidden" @change="onChange" />
     <div v-if="!props.readonly" class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark mt-1.5 font-sans">
       {{ props.uploading ? 'Uploading…' : 'Tap to change image' }}

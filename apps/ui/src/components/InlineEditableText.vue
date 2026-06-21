@@ -36,9 +36,9 @@ function onSave(): void {
       <div v-else class="text-sm text-metro-sub-light dark:text-metro-sub-dark font-sans">{{ props.emptyLabel }}</div>
     </div>
     <div v-else-if="editing" class="flex items-start gap-2 mt-1.5">
-      <!-- Metro-surface themed boxes rendered via dynamic tag: kit Input/Textarea force
-           their own inline-style box (bg/border/padding/font) that overrides these
-           Tailwind classes, so a bare element preserves the existing look exactly. -->
+      <!-- kit-exception: no kit equivalent (inline-edit controls — kit Input/Textarea
+           force their own inline-style box (bg/border/padding/font) that would override
+           this Metro-surface themed styling, so bare elements preserve the look). -->
       <component
         :is="'textarea'"
         v-if="props.multiline"

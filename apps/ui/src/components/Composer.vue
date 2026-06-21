@@ -98,8 +98,8 @@ async function send(): Promise<void> {
         <Icon name="x" :size="14" />
       </Pressable>
     </div>
-    <!-- Native file picker rendered via dynamic tag: kit Input has no 'file' inputType
-         and Pressable would inject role=button/cursor. Keeps the bare <input> semantics. -->
+    <!-- kit-exception: no kit equivalent (native file input — kit Input has no 'file'
+         inputType; rendered via dynamic tag to keep bare <input> semantics). -->
     <component :is="'input'" ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFileChange" />
     <!-- Mobile-style composer: textarea on top, [+ / spacer / send] row below,
          both inside one rounded surface. Mirrors MessengerComposer.tsx. -->
@@ -117,9 +117,9 @@ async function send(): Promise<void> {
           <Icon name="x" :size="12" />
         </Pressable>
       </div>
-      <!-- Transparent, borderless, auto-growing composer rendered via dynamic tag:
-           relies on a direct DOM textarea ref for scrollHeight measurement, and kit
-           Textarea forces its own boxed inline style (bg/border/padding/font). -->
+      <!-- kit-exception: no kit equivalent (auto-grow textarea — needs a direct DOM ref
+           for scrollHeight measurement, and kit Textarea forces its own boxed inline
+           style (bg/border/padding/font) that would override this transparent surface). -->
       <component
         :is="'textarea'"
         ref="textarea"
