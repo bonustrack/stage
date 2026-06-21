@@ -82,7 +82,7 @@ function onAvatar(): void {
 </script>
 
 <template>
-  <Row class="group relative flex items-start gap-2.5 px-4 py-1.5 transition-opacity"
+  <Row class="group relative flex items-start gap-2.5 px-3 py-1.5 transition-opacity"
     :class="{ 'opacity-50': isPending }"
     @contextmenu="onContext"
     @pointerdown="onPointerDown"
@@ -108,6 +108,8 @@ function onAvatar(): void {
     </Pressable>
     <Col v-else class="shrink-0 mt-0.5 w-6 h-6 rounded-full bg-metro-border-dark" />
     <Col class="flex-1 min-w-0">
+      <!-- Timestamp sits at the TOP of the bubble column, mirroring mobile. -->
+      <Text size="3xs" color="secondary" class="mb-0.5">{{ isPending ? 'Sending' : fmtTs(props.entry.ts) }}</Text>
       <Col v-if="props.replyPreview"
         class="text-[11px] mb-1 opacity-70 border-l-2 border-current pl-1.5 italic font-sans"
         :class="isSystem ? 'text-metro-sub-light dark:text-metro-sub-dark' : 'text-metro-fg-light dark:text-metro-fg-dark'">
@@ -130,7 +132,7 @@ function onAvatar(): void {
            become clickable links. v-html is safe — markdown-it escapes raw HTML
            and blocks javascript:/data: links. -->
       <Col v-if="props.entry.text"
-        class="break-words font-sans text-[17px] leading-snug select-text
+        class="break-words font-sans text-[19px] leading-snug select-text
           [&_p]:m-0 [&_p:not(:last-child)]:mb-1.5 [&_a]:underline [&_a]:break-words
           [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5
           [&_code]:font-mono [&_code]:text-[15px] [&_pre]:whitespace-pre-wrap"
@@ -145,18 +147,19 @@ function onAvatar(): void {
       <Col v-else-if="mapCoords" class="mt-1.5">
         <LocationEmbed :lat="mapCoords.lat" :lng="mapCoords.lng" :source-url="mapCoords.sourceUrl" />
       </Col>
-      <!-- Action row under the message — matches the mobile app: always-visible
-           react + reply icons, then the timestamp (no hover required). -->
-      <Row class="flex items-center gap-1.5 mt-1 text-metro-sub-light dark:text-metro-sub-dark">
-        <Pressable tag="button" v-if="!isPending" type="button" title="React"
+      <!-- Action affordances: react + reply icons revealed on hover (web replaces
+           mobile's long-press gesture). The timestamp lives at the top of the column. -->
+      <Row v-if="!isPending"
+        class="flex items-center gap-1.5 mt-1 text-metro-sub-light dark:text-metro-sub-dark
+          opacity-0 group-hover:opacity-100 transition-opacity">
+        <Pressable tag="button" type="button" title="React"
           class="hover:opacity-70" @click="pickerOpen = !pickerOpen">
           <Icon name="faceSmile" :size="14" />
         </Pressable>
-        <Pressable tag="button" v-if="!isPending" type="button" title="Reply"
+        <Pressable tag="button" type="button" title="Reply"
           class="hover:opacity-70" @click="emit('reply', props.entry)">
           <Icon name="reply" :size="14" />
         </Pressable>
-        <span class="text-[12px] font-sans">{{ fmtTs(props.entry.ts) }}</span>
       </Row>
       <!-- Inline emoji picker — toggled by the react icon, mirrors mobile. -->
       <Row v-if="pickerOpen"

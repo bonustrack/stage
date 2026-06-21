@@ -11,16 +11,19 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AvatarView: typeof import('@stage-labs/kit/vue/avatar-view')['default']
+    Box: typeof import('@stage-labs/kit/vue/box')['default']
     BubbleActionSheet: typeof import('./components/BubbleActionSheet.vue')['default']
+    Button: typeof import('@stage-labs/kit/vue/button')['default']
     ChannelRow: typeof import('./components/ChannelRow.vue')['default']
     Col: typeof import('@stage-labs/kit/vue/col')['default']
     Composer: typeof import('./components/Composer.vue')['default']
     ConversationHeader: typeof import('./components/ConversationHeader.vue')['default']
     GroupAvatarEditor: typeof import('./components/GroupAvatarEditor.vue')['default']
     Icon: typeof import('@stage-labs/kit/vue/icon')['default']
+    Image: typeof import('@stage-labs/kit/vue/image')['default']
     InlineEditableText: typeof import('./components/InlineEditableText.vue')['default']
     Input: typeof import('@stage-labs/kit/vue/input')['default']
-    Label: typeof import('@stage-labs/kit/vue/label')['default']
     LocationEmbed: typeof import('./components/LocationEmbed.vue')['default']
     MediaCard: typeof import('./components/MediaCard.vue')['default']
     MemberAddForm: typeof import('./components/MemberAddForm.vue')['default']
@@ -34,6 +37,7 @@ declare module 'vue' {
     SearchResolution: typeof import('./components/SearchResolution.vue')['default']
     Spinner: typeof import('./components/Spinner.vue')['default']
     TabBar: typeof import('./components/TabBar.vue')['default']
+    Text: typeof import('@stage-labs/kit/vue/text')['default']
     Title: typeof import('@stage-labs/kit/vue/title')['default']
     YouTubeEmbed: typeof import('./components/YouTubeEmbed.vue')['default']
   }
