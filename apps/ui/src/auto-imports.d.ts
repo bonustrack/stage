@@ -35,6 +35,8 @@ declare global {
   const getHostAccount: typeof import('./lib/hostSigner').getHostAccount
   const getLastReadNs: typeof import('./lib/xmtpConsent').getLastReadNs
   const getOrCreateXmtpClient: typeof import('./lib/xmtp').getOrCreateXmtpClient
+  const getXmtpAccountInfo: typeof import('./lib/xmtp').getXmtpAccountInfo
+  const getXmtpEnv: typeof import('./lib/xmtp').getXmtpEnv
   const groupMemberEthAddresses: typeof import('./lib/xmtpResolve').groupMemberEthAddresses
   const h: typeof import('vue').h
   const hostSigner: typeof import('./lib/hostSigner').hostSigner
@@ -208,7 +210,7 @@ declare global {
   export type { XmtpConversation } from './lib/useXmtpConversation'
   import('./lib/useXmtpConversation')
   // @ts-ignore
-  export type { XmtpClient, XmtpEnv } from './lib/xmtp'
+  export type { XmtpClient, XmtpInstallationView, XmtpAccountInfo, XmtpEnv } from './lib/xmtp'
   import('./lib/xmtp')
   // @ts-ignore
   export type { XmtpFeedStatus, XmtpFeedHandle } from './lib/xmtpFeed'
@@ -249,6 +251,8 @@ declare module 'vue' {
     readonly getHostAccount: UnwrapRef<typeof import('./lib/hostSigner')['getHostAccount']>
     readonly getLastReadNs: UnwrapRef<typeof import('./lib/xmtpConsent')['getLastReadNs']>
     readonly getOrCreateXmtpClient: UnwrapRef<typeof import('./lib/xmtp')['getOrCreateXmtpClient']>
+    readonly getXmtpAccountInfo: UnwrapRef<typeof import('./lib/xmtp')['getXmtpAccountInfo']>
+    readonly getXmtpEnv: UnwrapRef<typeof import('./lib/xmtp')['getXmtpEnv']>
     readonly groupMemberEthAddresses: UnwrapRef<typeof import('./lib/xmtpResolve')['groupMemberEthAddresses']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
     readonly hostSigner: UnwrapRef<typeof import('./lib/hostSigner')['hostSigner']>

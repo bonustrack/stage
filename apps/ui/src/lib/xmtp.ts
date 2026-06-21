@@ -92,6 +92,45 @@ export async function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promis
 
 export function getCachedXmtpClient(): XmtpClient | null { return cachedClient; }
 
+export function getXmtpEnv(): XmtpEnv {
+  const saved = localStorage.getItem(ENV_KEY);
+  return (saved as XmtpEnv | null) ?? 'production';
+}
+
+export interface XmtpInstallationView {
+  id: string;
+  createdAtMs: number | null;
+  current: boolean;
+}
+
+export interface XmtpAccountInfo {
+  address: string;
+  inboxId: string;
+  installationId: string;
+  env: XmtpEnv;
+  installations: XmtpInstallationView[];
+}
+
+export async function getXmtpAccountInfo(): Promise<XmtpAccountInfo> {
+  const env = getXmtpEnv();
+  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient(env);
+  const address = client.accountIdentifier?.identifier ?? '';
+  const inboxId = client.inboxId ?? '';
+  const installationId = client.installationId ?? '';
+  let installations: XmtpInstallationView[] = [];
+  try {
+    const state = await client.preferences.inboxState();
+    installations = state.installations.map(inst => ({
+      id: inst.id,
+      createdAtMs: inst.clientTimestampNs != null
+        ? Number(inst.clientTimestampNs / 1_000_000n)
+        : null,
+      current: inst.id === installationId,
+    }));
+  } catch { }
+  return { address, inboxId, installationId, env, installations };
+}
+
 export function stampAvatarUrl(address: string, size = 120, cacheBust?: string): string {
   const base = `https://stamp.fyi/avatar/eth:${address.toLowerCase()}?s=${size}`;
   return cacheBust ? `${base}&cb=${encodeURIComponent(cacheBust)}` : base;
