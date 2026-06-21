@@ -2,13 +2,13 @@
 import { useEffect, useState } from 'react';
 
 import { Dimensions, Modal } from 'react-native';
-import { Pressable } from '@stage-labs/kit/pressable';
-import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { useRouter } from 'expo-router';
-import { Text } from '@stage-labs/kit/text';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Row } from '../layout';
-import { Icon } from '@stage-labs/kit/icon';
-import { Divider } from '@stage-labs/kit/divider';
+import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Divider } from '@stage-labs/kit/react-native/divider';
 import { GithubLogo } from '../GithubLogo';
 import { Avatar } from '../Avatar';
 import { channelStampSeed } from '@stage-labs/kit/avatar';

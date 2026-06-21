@@ -17,14 +17,14 @@ import {
   type ButtonControlVariant,
   type ButtonSize,
   type ButtonVariant,
-} from './button.styles';
+} from '../button.styles';
 
 export type {
   ButtonColor,
   ButtonControlVariant,
   ButtonSize,
   ButtonVariant,
-} from './button.styles';
+} from '../button.styles';
 
 const LEGACY_VARIANTS = new Set<ButtonVariant>(['primary', 'secondary', 'danger']);
 

@@ -2,9 +2,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert } from 'react-native';
 
-import { Text } from '@stage-labs/kit/text';
-import { Icon } from '@stage-labs/kit/icon';
-import { Pressable } from '@stage-labs/kit/pressable';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Box, Col, Row } from '../layout';
 import {
   listXmtpInstallations, revokeXmtpInstallation, shortAddress, useActiveAccount,

@@ -1,4 +1,4 @@
-import { Text } from '@stage-labs/kit/text';
+import { Text } from '@stage-labs/kit/react-native/text';
 
 import { Col, Row, Box } from '../layout';
 import { Spinner } from '../Spinner';

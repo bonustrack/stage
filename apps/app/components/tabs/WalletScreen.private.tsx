@@ -1,7 +1,7 @@
-import { Pressable } from '@stage-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
 
 import * as Clipboard from 'expo-clipboard';
-import { Text } from '@stage-labs/kit/text';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { Col, Row } from '../layout';
 import { flash } from '../../lib/toast';
 import { isRailgunAvailable } from '../../lib/railgun/native';

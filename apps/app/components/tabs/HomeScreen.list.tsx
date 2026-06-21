@@ -1,11 +1,11 @@
 
 import type { MutableRefObject, RefObject } from 'react';
 import { useMemo, useState } from 'react';
-import { Pressable } from '@stage-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { FlatList } from 'react-native-gesture-handler';
-import { Icon } from '@stage-labs/kit/icon';
+import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Box } from '../layout';
-import { Text } from '@stage-labs/kit/text';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { CHANNELS_SCROLL_KEY, saveScrollOffset } from '../../lib/scrollPos';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { CHANNEL_ROW_HEIGHT } from './HomeScreen.helpers';

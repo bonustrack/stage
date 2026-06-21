@@ -1,10 +1,10 @@
 
-import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
+import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Text } from '@stage-labs/kit/text';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { Col } from '../layout';
 import { SystemHeader } from '../system/SystemHeader';
 import { useBlockRadius, useEffectiveColorScheme, usePalette } from '../../lib/theme';

@@ -1,9 +1,9 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Title } from '@stage-labs/kit/title';
-import { Text } from '@stage-labs/kit/text';
-import { Button } from '@stage-labs/kit/button';
+import { Title } from '@stage-labs/kit/react-native/title';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Button } from '@stage-labs/kit/react-native/button';
 import { Col, Row, Box } from '../layout';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { flash } from '../../lib/toast';

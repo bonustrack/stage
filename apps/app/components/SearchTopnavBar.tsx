@@ -1,9 +1,9 @@
 
 import { forwardRef } from 'react';
 import { fontSize } from '@stage-labs/kit/tokens';
-import { Pressable } from '@stage-labs/kit/pressable';
-import { Icon } from '@stage-labs/kit/icon';
-import { Input } from '@stage-labs/kit/input';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Input } from '@stage-labs/kit/react-native/input';
 import { Row } from './layout';
 import { TOPNAV_HEIGHT } from './Topnav';
 

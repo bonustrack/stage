@@ -7,12 +7,12 @@ import {
   type MutableRefObject,
   type SetStateAction,
 } from 'react';
-import { FlatList } from '@stage-labs/kit/flat-list';
+import { FlatList } from '@stage-labs/kit/react-native/flat-list';
 
-import { Pressable } from '@stage-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import * as Clipboard from 'expo-clipboard';
-import { Text } from '@stage-labs/kit/text';
-import { Button } from '@stage-labs/kit/button';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Button } from '@stage-labs/kit/react-native/button';
 import { Col, Row } from '../layout';
 import { DANGER, SUCCESS, useEffectiveColorScheme } from '../../lib/theme';
 import { flash } from '../../lib/toast';

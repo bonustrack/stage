@@ -4,7 +4,7 @@ import {
   type TextProps as RNTextProps,
   type TextStyle,
 } from 'react-native';
-import { FONT_SIZE, type FontSizeName, resolveColorToken, type ColorToken } from './tokens';
+import { FONT_SIZE, type FontSizeName, resolveColorToken, type ColorToken } from '../tokens';
 import { useKitPalette, useKitScheme, type KitPalette } from './theme-context';
 
 export type TextVariant = 'body' | 'secondary' | 'caption' | 'mono';

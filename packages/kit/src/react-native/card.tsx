@@ -2,7 +2,7 @@
 import { type ReactNode } from 'react';
 import { Pressable, View, Text as RNText, type ViewStyle } from 'react-native';
 import { Button } from './button';
-import { BLOCK_RADIUS_DEFAULT, FONT_SIZE, schemePalette } from './tokens';
+import { BLOCK_RADIUS_DEFAULT, FONT_SIZE, schemePalette } from '../tokens';
 
 export type CardSize = 'sm' | 'md' | 'lg';
 

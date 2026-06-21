@@ -1,9 +1,9 @@
 
 import { Linking } from 'react-native';
 
-import { Pressable } from '@stage-labs/kit/pressable';
-import { Image } from '@stage-labs/kit/image';
-import { Text } from '@stage-labs/kit/text';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Image } from '@stage-labs/kit/react-native/image';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Row } from './layout';
 import { domainOf } from '../lib/genericLinkDetect';
 import { useLinkPreview, isX402, type LinkPreviewResult } from '../lib/useLinkPreview';

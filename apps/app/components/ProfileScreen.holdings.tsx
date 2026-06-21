@@ -1,8 +1,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import { Pressable } from '@stage-labs/kit/pressable';
-import { Text } from '@stage-labs/kit/text';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from './Spinner';
 import { Col, Row } from './layout';
 import { DANGER, usePalette } from '../lib/theme';

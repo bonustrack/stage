@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
+import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { Col } from '../../components/layout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';

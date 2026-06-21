@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator } from 'react-native';
 import { FlatList } from 'react-native-gesture-handler';
-import { Text } from '@stage-labs/kit/text';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Row } from '../layout';
 import type { HistoryEntry } from '../../lib/types';
 import { useFeedRenderItem } from './useFeedRenderItem';

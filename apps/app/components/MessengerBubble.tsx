@@ -1,7 +1,7 @@
 
 import { memo, useState } from 'react';
-import { Pressable } from '@stage-labs/kit/pressable';
-import { Icon } from '@stage-labs/kit/icon';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Icon } from '@stage-labs/kit/react-native/icon';
 import { GestureDetector } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
 import { Avatar } from './Avatar';

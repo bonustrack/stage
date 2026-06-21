@@ -1,6 +1,6 @@
-import { Text } from '@stage-labs/kit/text';
-import { Icon } from '@stage-labs/kit/icon';
-import { Button } from '@stage-labs/kit/button';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Button } from '@stage-labs/kit/react-native/button';
 import { Row, Col, Box } from './layout';
 import { shortAddress } from '../modules/messaging';
 import { fmtSigValue } from './MessengerBubble.helpers';

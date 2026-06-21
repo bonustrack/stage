@@ -1,7 +1,7 @@
 
 import { Children, isValidElement, type ReactNode } from 'react';
 import { Pressable, View, Text as RNText, type ViewStyle } from 'react-native';
-import { FONT_SIZE, schemePalette } from './tokens';
+import { FONT_SIZE, schemePalette } from '../tokens';
 
 export type ListItemAlign = 'start' | 'center' | 'end';
 

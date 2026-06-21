@@ -2,10 +2,10 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { FlatList } from 'react-native-gesture-handler';
-import { Pressable } from '@stage-labs/kit/pressable';
-import { Text } from '@stage-labs/kit/text';
-import { Title } from '@stage-labs/kit/title';
-import { Icon } from '@stage-labs/kit/icon';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Title } from '@stage-labs/kit/react-native/title';
+import { Icon } from '@stage-labs/kit/react-native/icon';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getCachedRows, subscribeCachedRows } from '../../modules/messaging';

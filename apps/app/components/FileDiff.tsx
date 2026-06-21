@@ -1,10 +1,10 @@
 
 import { useState } from 'react';
 
-import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
-import { Text } from '@stage-labs/kit/text';
-import { Icon } from '@stage-labs/kit/icon';
-import { ListViewItem } from '@stage-labs/kit/list-view';
+import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Icon } from '@stage-labs/kit/react-native/icon';
+import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Box, Row } from './layout';
 import type { Palette } from '../lib/theme';
 import type { DiffFile, DiffLine } from '../lib/diffParse';

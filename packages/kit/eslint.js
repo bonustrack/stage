@@ -69,10 +69,10 @@ export function kitEslint(vueOptions) {
     {
       files: [
         'src/button.styles.ts',
-        'src/card.tsx',
+        'src/react-native/card.tsx',
         'src/control.styles.ts',
-        'src/list-view.tsx',
-        'src/select.tsx',
+        'src/react-native/list-view.tsx',
+        'src/react-native/select.tsx',
       ],
       rules: {
         'no-restricted-syntax': [
@@ -86,7 +86,7 @@ export function kitEslint(vueOptions) {
       },
     },
     {
-      files: ['src/card.tsx', 'src/list-view.tsx'],
+      files: ['src/react-native/card.tsx', 'src/react-native/list-view.tsx'],
       rules: {
         'no-restricted-syntax': [
           'error',

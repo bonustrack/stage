@@ -15,8 +15,8 @@ import {
   controlTextStyle,
   type ControlSize,
   type ControlVariant,
-} from './control.styles';
-import { BLOCK_RADIUS_DEFAULT } from './tokens';
+} from '../control.styles';
+import { BLOCK_RADIUS_DEFAULT } from '../tokens';
 
 export type InputType = 'text' | 'email' | 'password' | 'number' | 'tel' | 'url';
 

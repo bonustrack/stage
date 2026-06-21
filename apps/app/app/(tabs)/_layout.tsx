@@ -3,7 +3,7 @@ import { Box, Col } from '../../components/layout';
 import { fontSize } from '@stage-labs/kit/tokens';
 import { Tabs, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Icon, type HeroIconName } from '@stage-labs/kit/icon';
+import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
 import { usePalette } from '../../lib/theme';
 import { TabsPager } from '../../components/SwipeTabs';
 import { HoistedTopnav } from '../../components/tabs/HoistedTopnav';

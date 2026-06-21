@@ -1,7 +1,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
-import { Text } from '@stage-labs/kit/text';
-import { Button } from '@stage-labs/kit/button';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Button } from '@stage-labs/kit/react-native/button';
 import { useRouter } from 'expo-router';
 import {
   getConvConsentState, acceptRequestConv, blockRequestConv,

@@ -1,6 +1,6 @@
 
 import { createContext, createElement, useContext, type ReactNode } from 'react';
-import { semanticPalette } from './tokens';
+import { semanticPalette } from '../tokens';
 
 export interface KitPalette {
   bg: string;

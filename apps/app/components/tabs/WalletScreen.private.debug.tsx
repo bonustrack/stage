@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { Text } from '@stage-labs/kit/text';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { Col, Row } from '../layout';
 import { DANGER } from '../../lib/theme';
 import {

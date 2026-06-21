@@ -1,13 +1,13 @@
 
-import { Pressable } from '@stage-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { fontSize } from '@stage-labs/kit/tokens';
-import { Input } from '@stage-labs/kit/input';
-import { Textarea } from '@stage-labs/kit/textarea';
-import { Image } from '@stage-labs/kit/image';
-import { Text } from '@stage-labs/kit/text';
+import { Input } from '@stage-labs/kit/react-native/input';
+import { Textarea } from '@stage-labs/kit/react-native/textarea';
+import { Image } from '@stage-labs/kit/react-native/image';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
-import { Button } from '@stage-labs/kit/button';
+import { Button } from '@stage-labs/kit/react-native/button';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 import { channelStampSeed, stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { usePalette } from '../../lib/theme';

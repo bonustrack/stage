@@ -1,10 +1,24 @@
 # `@stage-labs/kit/vue/*` — Vue renderers
 
-Vue.js renderers for the Stage design system, living alongside the React Native
-renderers in the same package. They reuse the framework-agnostic token, layout,
-icon, and style modules (`src/tokens.ts`, `src/layout.ts`, `src/icons.ts`,
+Vue.js renderers for the Stage design system. The package layout treats the two
+renderer families as symmetric siblings over a shared, framework-agnostic core:
+
+```
+packages/kit/src/
+  <shared framework-agnostic modules>   tokens.ts, layout.ts, icons.ts, theme.ts,
+                                        theme-derive.ts, avatar.ts, radius.ts,
+                                        button.styles.ts, control.styles.ts,
+                                        heroicons.data.ts, brand-icons.data.ts
+  react-native/   RN .tsx renderers + RN React-context theme-context.tsx
+  vue/            Vue .vue renderers + Vue theme-context.ts (this directory)
+```
+
+Both families reuse the framework-agnostic token, layout, icon, and style
+modules (`src/tokens.ts`, `src/layout.ts`, `src/icons.ts`,
 `src/button.styles.ts`, `src/control.styles.ts`) — never reimplement that logic,
-import it.
+import it. Vue SFCs reach the shared modules via `../<name>`; RN renderers under
+`react-native/` do the same. Public subpaths mirror each other:
+`@stage-labs/kit/react-native/<name>` and `@stage-labs/kit/vue/<name>`.
 
 Consumed as subpath imports:
 
@@ -30,7 +44,8 @@ import { provideKitTheme, useKitPalette } from '@stage-labs/kit/vue/theme-contex
    composable, and raw layout/colour comes from the shared modules.
 4. **Theme** is read with `useKitPalette()` / `useKitScheme()` from
    `./theme-context`. A host provides it once via `provideKitTheme({ scheme })`.
-   The shape (`KitPalette`) is identical to the RN `theme-context.tsx`.
+   The shape (`KitPalette`) is identical to the RN
+   `react-native/theme-context.tsx`.
 5. **Icons** use `currentColor` by default (see `Icon.vue`), so colour flows
    from CSS `color`, matching `apps/ui/src/components/HeroIcon.vue`.
 6. **No comments** in `.vue`/`.ts` script blocks — the repo's

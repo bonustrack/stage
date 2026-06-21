@@ -1,6 +1,6 @@
 
 import { Text as RNText } from './layout/native';
-import { Text } from '@stage-labs/kit/text';
+import { Text } from '@stage-labs/kit/react-native/text';
 
 const HL_BG = '#FFF200';
 

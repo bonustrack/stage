@@ -1,7 +1,7 @@
 
 import { View } from 'react-native';
 import { Image } from './image';
-import { AVATAR_SIZES, type AvatarSize } from './avatar';
+import { AVATAR_SIZES, type AvatarSize } from '../avatar';
 import type { ImageStyle, StyleProp } from 'react-native';
 
 export interface AvatarViewProps {

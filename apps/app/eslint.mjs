@@ -167,31 +167,31 @@ export function reactNative() {
                 name: 'react-native',
                 importNames: ['Image'],
                 message:
-                  "Import Image from '@stage-labs/kit/image' instead of react-native.",
+                  "Import Image from '@stage-labs/kit/react-native/image' instead of react-native.",
               },
               {
                 name: 'react-native',
                 importNames: ['TextInput'],
                 message:
-                  "Use Input/Textarea from '@stage-labs/kit/input' | '@stage-labs/kit/textarea' instead of react-native TextInput.",
+                  "Use Input/Textarea from '@stage-labs/kit/react-native/input' | '@stage-labs/kit/react-native/textarea' instead of react-native TextInput.",
               },
               {
                 name: 'react-native',
                 importNames: ['ScrollView'],
                 message:
-                  "Use Scroll from '@stage-labs/kit/scroll' instead of react-native ScrollView.",
+                  "Use Scroll from '@stage-labs/kit/react-native/scroll' instead of react-native ScrollView.",
               },
               {
                 name: 'react-native',
                 importNames: ['Pressable'],
                 message:
-                  "Use Pressable from '@stage-labs/kit/pressable' (or Kit Button) instead of react-native Pressable.",
+                  "Use Pressable from '@stage-labs/kit/react-native/pressable' (or Kit Button) instead of react-native Pressable.",
               },
               {
                 name: 'react-native',
                 importNames: ['FlatList'],
                 message:
-                  "Use FlatList from '@stage-labs/kit/flat-list' instead of react-native FlatList.",
+                  "Use FlatList from '@stage-labs/kit/react-native/flat-list' instead of react-native FlatList.",
               },
             ],
           },
@@ -204,7 +204,7 @@ export function reactNative() {
                 name: 'react-native',
                 importNames: ['Text'],
                 message:
-                  "Prefer Text from '@stage-labs/kit/text' instead of react-native (Kit-only rollout).",
+                  "Prefer Text from '@stage-labs/kit/react-native/text' instead of react-native (Kit-only rollout).",
               },
             ],
           },
@@ -228,13 +228,13 @@ export function reactNative() {
                 name: 'react-native',
                 importNames: ['Image'],
                 message:
-                  "Import Image from '@stage-labs/kit/image' instead of react-native.",
+                  "Import Image from '@stage-labs/kit/react-native/image' instead of react-native.",
               },
               {
                 name: 'react-native',
                 importNames: ['TextInput'],
                 message:
-                  "Use Input/Textarea from '@stage-labs/kit/input' | '@stage-labs/kit/textarea' instead of react-native TextInput.",
+                  "Use Input/Textarea from '@stage-labs/kit/react-native/input' | '@stage-labs/kit/react-native/textarea' instead of react-native TextInput.",
               },
             ],
             patterns: [

@@ -1,7 +1,7 @@
 
-import { Text } from '@stage-labs/kit/text';
-import { Button } from '@stage-labs/kit/button';
-import { ListView } from '@stage-labs/kit/list-view';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Button } from '@stage-labs/kit/react-native/button';
+import { ListView } from '@stage-labs/kit/react-native/list-view';
 import * as Clipboard from 'expo-clipboard';
 import { flash } from '../lib/toast';
 import { canExportPrivateKey, type AccountRecord } from '../lib/accounts';

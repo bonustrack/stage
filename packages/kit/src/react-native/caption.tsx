@@ -1,7 +1,7 @@
 
 import { Text as RNText, type TextStyle } from 'react-native';
 import { type ReactNode } from 'react';
-import { resolveColorToken, type ColorToken } from './tokens';
+import { resolveColorToken, type ColorToken } from '../tokens';
 import { useKitPalette, useKitScheme } from './theme-context';
 
 export type CaptionSize = 'sm' | 'md';

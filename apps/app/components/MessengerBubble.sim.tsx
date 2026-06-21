@@ -1,6 +1,6 @@
 
-import { Text } from '@stage-labs/kit/text';
-import { Icon } from '@stage-labs/kit/icon';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Row, Col, Box } from './layout';
 import { usePalette, withAlpha } from '../lib/theme';
 import type { SimulateResult, AssetMove } from '../lib/txSimulate';
