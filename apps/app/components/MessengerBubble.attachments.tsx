@@ -2,9 +2,9 @@
 import { useEffect, useState } from 'react';
 
 import { Linking } from 'react-native';
-import { Pressable } from '@stage-labs/kit/pressable';
-import { Text } from '@stage-labs/kit/text';
-import { Icon } from '@stage-labs/kit/icon';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Spinner } from './Spinner';
 import { VoiceMessage } from './VoiceMessage';
 import { MessengerImageAttachment } from './MessengerImageAttachment';

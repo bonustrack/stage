@@ -1,5 +1,5 @@
 
-import { type HeroIconName } from '@stage-labs/kit/icon';
+import { type HeroIconName } from '@stage-labs/kit/react-native/icon';
 import { type ThemePreference } from '../../lib/theme';
 
 export const THEME_OPTIONS: { value: ThemePreference; label: string; icon: HeroIconName }[] = [

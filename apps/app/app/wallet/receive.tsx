@@ -1,9 +1,9 @@
 
 import { useEffect, useState } from 'react';
 
-import { Pressable } from '@stage-labs/kit/pressable';
-import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
-import { Text } from '@stage-labs/kit/text';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Row, Col } from '../../components/layout';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
@@ -12,7 +12,7 @@ import QRCode from 'react-native-qrcode-svg';
 import { getOrCreateXmtpClient } from '../../modules/messaging';
 import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
 import { usePalette } from '../../lib/theme';
-import { Icon } from '@stage-labs/kit/icon';
+import { Icon } from '@stage-labs/kit/react-native/icon';
 import { flash } from '../../lib/toast';
 import { ReceiveModeToggle, type ReceiveMode } from '../../components/wallet/ReceiveModeToggle';
 

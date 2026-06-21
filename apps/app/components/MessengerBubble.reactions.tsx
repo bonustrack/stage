@@ -1,7 +1,7 @@
 
-import { Pressable } from '@stage-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
 
-import { Text } from '@stage-labs/kit/text';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { Row, Box } from './layout';
 import { REACT_PRESETS } from './MessengerBubble.helpers';
 import { usePalette } from '../lib/theme';

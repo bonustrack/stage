@@ -1,6 +1,6 @@
 
 import { Text as RNText, type TextProps as RNTextProps, type TextStyle } from 'react-native';
-import { resolveColorToken, type ColorToken } from './tokens';
+import { resolveColorToken, type ColorToken } from '../tokens';
 import { useKitPalette, useKitScheme } from './theme-context';
 
 export type TitleLevel = 1 | 2 | 3;

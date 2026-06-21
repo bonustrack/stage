@@ -1,12 +1,12 @@
 import { useCallback, useRef, useState } from 'react';
 import { fontSize } from '@stage-labs/kit/tokens';
-import { Pressable } from '@stage-labs/kit/pressable';
-import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
-import { Input } from '@stage-labs/kit/input';
-import { Text } from '@stage-labs/kit/text';
-import { Icon } from '@stage-labs/kit/icon';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
+import { Input } from '@stage-labs/kit/react-native/input';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Box, Row, Col } from '../../components/layout';
-import { Button } from '@stage-labs/kit/button';
+import { Button } from '@stage-labs/kit/react-native/button';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePalette } from '../../lib/theme';
 

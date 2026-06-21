@@ -1,8 +1,8 @@
 
 import { Linking } from 'react-native';
 
-import { Image } from '@stage-labs/kit/image';
-import { Text } from '@stage-labs/kit/text';
+import { Image } from '@stage-labs/kit/react-native/image';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { Box } from './layout';
 import { MediaCard } from './MediaCard';
 import { osmTileUrl } from '../lib/embedDetect';

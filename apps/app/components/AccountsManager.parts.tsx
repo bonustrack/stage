@@ -1,11 +1,11 @@
 
 import { Modal } from 'react-native';
 
-import { Pressable } from '@stage-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Box, Col } from './layout';
 import { Avatar } from './Avatar';
-import { Text } from '@stage-labs/kit/text';
-import { ListViewItem } from '@stage-labs/kit/list-view';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getPeerName } from '../lib/peerProfiles';
 import { shortAddress } from '../modules/messaging';

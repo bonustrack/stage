@@ -1,12 +1,12 @@
 
-import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
+import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box, Col } from '../layout';
-import { Icon } from '@stage-labs/kit/icon';
-import { Text } from '@stage-labs/kit/text';
-import { Card } from '@stage-labs/kit/card';
-import { ListView, ListViewItem } from '@stage-labs/kit/list-view';
+import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Card } from '@stage-labs/kit/react-native/card';
+import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import {
   setThemePreference, setCustomTheme, useCustomTheme,
   useEffectiveColorScheme, usePalette, useThemePreference,

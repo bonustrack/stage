@@ -16,8 +16,8 @@ import {
   controlTextStyle,
   type ControlSize,
   type ControlVariant,
-} from './control.styles';
-import { BLOCK_RADIUS_DEFAULT } from './tokens';
+} from '../control.styles';
+import { BLOCK_RADIUS_DEFAULT } from '../tokens';
 
 function lineHeight(size: ControlSize): number {
   return Math.round(CONTROL_SIZES[size].fontSize * 1.4);

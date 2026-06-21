@@ -2,12 +2,12 @@
 import { memo } from 'react';
 
 import { View } from './layout/native';
-import { Pressable } from '@stage-labs/kit/pressable';
-import { Text } from '@stage-labs/kit/text';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Text } from '@stage-labs/kit/react-native/text';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { Avatar } from './Avatar';
-import { Icon } from '@stage-labs/kit/icon';
-import { Spacer } from '@stage-labs/kit/spacer';
+import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Spacer } from '@stage-labs/kit/react-native/spacer';
 import { Row, Col, Box } from './layout';
 import { highlightSegments } from './HighlightText';
 import { usePalette } from '../lib/theme';

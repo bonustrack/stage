@@ -2,10 +2,10 @@
 import Constants from 'expo-constants';
 import * as Application from 'expo-application';
 import { Linking } from 'react-native';
-import { Pressable } from '@stage-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Box, Row } from '../layout';
-import { Title } from '@stage-labs/kit/title';
-import { Text } from '@stage-labs/kit/text';
+import { Title } from '@stage-labs/kit/react-native/title';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { GitHubLinkRow } from './GitHubLinkRow';
 
 const METRO_GITHUB_URL = 'https://github.com/bonustrack/stage';

@@ -1,8 +1,8 @@
 
 import { Linking } from 'react-native';
 
-import { Pressable } from '@stage-labs/kit/pressable';
-import { Text } from '@stage-labs/kit/text';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Row } from './layout';
 import { GithubLogo } from './GithubLogo';
 import { githubLinkOf } from '../lib/githubDetect';

@@ -1,8 +1,8 @@
 
-import { Pressable } from '@stage-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
 
-import { Text } from '@stage-labs/kit/text';
-import { Icon } from '@stage-labs/kit/icon';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Icon } from '@stage-labs/kit/react-native/icon';
 import { usePalette } from '../../lib/theme';
 import { shortAddress } from '../../modules/messaging';
 import type { Contact } from '../../lib/useContacts';

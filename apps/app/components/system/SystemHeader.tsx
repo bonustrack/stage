@@ -1,11 +1,11 @@
 
-import { Pressable } from '@stage-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
 
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box, Row, Col } from '../layout';
-import { Icon } from '@stage-labs/kit/icon';
-import { Title } from '@stage-labs/kit/title';
+import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Title } from '@stage-labs/kit/react-native/title';
 
 export function SystemHeader({ title, fg, head, border, right }: {
   title: string; dark: boolean; fg: string; head: string; border: string;

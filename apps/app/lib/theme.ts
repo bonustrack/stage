@@ -9,7 +9,7 @@ import {
 import {
   semanticColors, semanticPalette,
 } from '@stage-labs/kit/tokens';
-import { setDefaultButtonRadius } from '@stage-labs/kit/button';
+import { setDefaultButtonRadius } from '@stage-labs/kit/react-native/button';
 import {
   getSeeds, loadOverrides, isCustomTheme,
   subscribe as subscribeOverrides,

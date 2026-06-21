@@ -1,12 +1,12 @@
 
-import { Pressable } from '@stage-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { fontSize } from '@stage-labs/kit/tokens';
-import { Input } from '@stage-labs/kit/input';
-import { Text } from '@stage-labs/kit/text';
+import { Input } from '@stage-labs/kit/react-native/input';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Col } from '../../components/layout';
 import { shortAddress } from '../../modules/messaging';
-import { Icon } from '@stage-labs/kit/icon';
-import { Button } from '@stage-labs/kit/button';
+import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Button } from '@stage-labs/kit/react-native/button';
 import { Avatar } from '../../components/Avatar';
 import { AppModal } from '../../components/AppModal';
 import { DANGER, usePalette } from '../../lib/theme';

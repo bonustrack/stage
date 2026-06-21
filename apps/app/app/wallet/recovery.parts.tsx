@@ -1,11 +1,11 @@
 
 import { useState } from 'react';
 import { fontSize } from '@stage-labs/kit/tokens';
-import { Input } from '@stage-labs/kit/input';
-import { Text } from '@stage-labs/kit/text';
-import { Icon } from '@stage-labs/kit/icon';
-import { Button } from '@stage-labs/kit/button';
-import { Pressable } from '@stage-labs/kit/pressable';
+import { Input } from '@stage-labs/kit/react-native/input';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Button } from '@stage-labs/kit/react-native/button';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Box, Row, Col } from '../../components/layout';
 import type { FormPal } from './wallet.form';
 import { Segmented } from './wallet.form';

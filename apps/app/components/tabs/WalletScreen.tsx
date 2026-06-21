@@ -6,7 +6,7 @@ import { usePullToRefresh } from './PullToRefresh';
 import { RefreshButton } from './WalletScreen.refreshButton';
 import { Spinner } from '../Spinner';
 import type { SimultaneousRefs } from '../SwipeTabs.types';
-import { Text } from '@stage-labs/kit/text';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { useRouter } from 'expo-router';
 import { flash } from '../../lib/toast';
 import { usePeerProfiles } from '../../lib/peerProfiles';

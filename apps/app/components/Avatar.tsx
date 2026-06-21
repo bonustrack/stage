@@ -1,6 +1,6 @@
 
-import { Pressable } from '@stage-labs/kit/pressable';
-import { AvatarView } from '@stage-labs/kit/avatar-view';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { AvatarView } from '@stage-labs/kit/react-native/avatar-view';
 import type { ImageStyle, StyleProp } from 'react-native';
 import { stampAvatarUrl, AVATAR_SIZES, type AvatarSize } from '@stage-labs/kit/avatar';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';

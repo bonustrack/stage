@@ -12,8 +12,8 @@ import {
   controlColors,
   type ControlSize,
   type ControlVariant,
-} from './control.styles';
-import { BLOCK_RADIUS_DEFAULT } from './tokens';
+} from '../control.styles';
+import { BLOCK_RADIUS_DEFAULT } from '../tokens';
 import { Icon } from './icon';
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];

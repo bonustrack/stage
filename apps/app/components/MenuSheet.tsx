@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { useRouter } from 'expo-router';
-import { ListView } from '@stage-labs/kit/list-view';
+import { ListView } from '@stage-labs/kit/react-native/list-view';
 import { AppModal } from './AppModal';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { usePeerProfiles } from '../lib/peerProfiles';

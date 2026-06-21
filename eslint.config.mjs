@@ -35,14 +35,28 @@ function scopePreset(dir, preset) {
   return preset.map((block) => scopeBlock(dir, block));
 }
 
+async function loadVueToolchain() {
+  const [{ vue: vuePreset }, vueParser, vuePlugin] = await Promise.all([
+    import('@stage-labs/config/eslint/vue'),
+    import('vue-eslint-parser').then((m) => m.default ?? m),
+    import('eslint-plugin-vue').then((m) => m.default ?? m),
+  ]);
+  return { vuePreset, vueParser, vuePlugin };
+}
+
 async function buildConfig({ vue = true } = {}) {
+  const vueToolchain = vue ? await loadVueToolchain() : null;
+  const kitVueOptions = vueToolchain
+    ? { vueParser: vueToolchain.vueParser, vuePlugin: vueToolchain.vuePlugin, rootDir: ROOT_DIR, project: 'packages/kit/tsconfig.json' }
+    : undefined;
+
   const config = [
     { ignores: ['**/node_modules/**', '**/dist/**', '**/.expo/**', '**/.vite/**'] },
 
     typeAwareBlock('apps/app', 'apps/app/tsconfig.eslint.json'),
     ...scopePreset('apps/app', reactNative()),
     typeAwareBlock('packages/kit', 'packages/kit/tsconfig.json'),
-    ...scopePreset('packages/kit', kitEslint()),
+    ...scopePreset('packages/kit', kitEslint(kitVueOptions)),
 
     typeAwareBlock('apps/proxy', 'apps/proxy/tsconfig.eslint.json'),
     ...scopePreset('apps/proxy', [baseIgnores(), ...recommended, strictTsBlock({ tsconfigRootDir: ROOT_DIR, project: 'apps/proxy/tsconfig.eslint.json' })]),
@@ -51,12 +65,8 @@ async function buildConfig({ vue = true } = {}) {
 
   ];
 
-  if (vue) {
-    const [{ vue: vuePreset }, vueParser, vuePlugin] = await Promise.all([
-      import('@stage-labs/config/eslint/vue'),
-      import('vue-eslint-parser').then((m) => m.default ?? m),
-      import('eslint-plugin-vue').then((m) => m.default ?? m),
-    ]);
+  if (vueToolchain) {
+    const { vuePreset, vueParser, vuePlugin } = vueToolchain;
     config.push(typeAwareBlock('apps/ui', 'apps/ui/tsconfig.json'));
     config.push(...scopePreset('apps/ui', vuePreset({ vueParser, vuePlugin, rootDir: ROOT_DIR, project: 'apps/ui/tsconfig.json' })));
   }

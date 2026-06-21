@@ -1,10 +1,10 @@
 
 import { useState } from 'react';
-import { Pressable } from '@stage-labs/kit/pressable';
-import { Input } from '@stage-labs/kit/input';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Input } from '@stage-labs/kit/react-native/input';
 import { Box, Row, Col } from '../layout';
-import { Text } from '@stage-labs/kit/text';
-import { Button } from '@stage-labs/kit/button';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Button } from '@stage-labs/kit/react-native/button';
 import {
   usePalette, useEffectiveColorScheme, useThemeSeeds,
   setSeedColor, setSeedDensity, setSeedRadius, setSeedBaseSize, resetOverrides,

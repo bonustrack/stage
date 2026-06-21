@@ -1,5 +1,5 @@
 
-import { Image } from '@stage-labs/kit/image';
+import { Image } from '@stage-labs/kit/react-native/image';
 import { Box } from '../layout';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO } from './WalletScreen.assets';
 

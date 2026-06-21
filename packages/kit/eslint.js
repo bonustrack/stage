@@ -1,9 +1,46 @@
+import tseslint from 'typescript-eslint';
 import { MAX_LINES, recommended, NO_ESCAPE_HATCHES, commentPlugins, COMMENT_RULES, FUNCTION_SIZE_RULES } from '@stage-labs/config/eslint/base';
 
-export function kitEslint() {
+function kitVueBlock({ vueParser, vuePlugin, rootDir, project }) {
+  return {
+    files: ['src/**/*.vue'],
+    languageOptions: {
+      parser: vueParser,
+      parserOptions: {
+        parser: tseslint.parser,
+        project,
+        tsconfigRootDir: rootDir,
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        extraFileExtensions: ['.vue'],
+      },
+    },
+    plugins: { vue: vuePlugin, '@typescript-eslint': tseslint.plugin, ...commentPlugins },
+    rules: {
+      ...NO_ESCAPE_HATCHES,
+      ...COMMENT_RULES,
+      ...vuePlugin.configs['flat/recommended'][0].rules,
+      'vue/multi-word-component-names': 'off',
+      'vue/no-multiple-template-root': 'off',
+      'vue/max-attributes-per-line': 'off',
+      'vue/singleline-html-element-content-newline': 'off',
+      'vue/html-self-closing': 'off',
+      'vue/attributes-order': 'off',
+      'vue/html-indent': 'off',
+      'vue/html-closing-bracket-newline': 'off',
+      'vue/first-attribute-linebreak': 'off',
+      'vue/attribute-hyphenation': 'off',
+      'max-lines': MAX_LINES,
+      ...FUNCTION_SIZE_RULES,
+    },
+  };
+}
+
+export function kitEslint(vueOptions) {
   return [
     { ignores: ['node_modules/**', 'dist/**', 'src/heroicons.data.ts'] },
     ...recommended,
+    ...(vueOptions ? [kitVueBlock(vueOptions)] : []),
     {
       files: ['src/**/*.{ts,tsx}'],
       plugins: commentPlugins,
@@ -32,10 +69,10 @@ export function kitEslint() {
     {
       files: [
         'src/button.styles.ts',
-        'src/card.tsx',
+        'src/react-native/card.tsx',
         'src/control.styles.ts',
-        'src/list-view.tsx',
-        'src/select.tsx',
+        'src/react-native/list-view.tsx',
+        'src/react-native/select.tsx',
       ],
       rules: {
         'no-restricted-syntax': [
@@ -49,7 +86,7 @@ export function kitEslint() {
       },
     },
     {
-      files: ['src/card.tsx', 'src/list-view.tsx'],
+      files: ['src/react-native/card.tsx', 'src/react-native/list-view.tsx'],
       rules: {
         'no-restricted-syntax': [
           'error',

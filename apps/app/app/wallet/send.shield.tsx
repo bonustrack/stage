@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fontSize } from '@stage-labs/kit/tokens';
-import { Input } from '@stage-labs/kit/input';
-import { Text } from '@stage-labs/kit/text';
+import { Input } from '@stage-labs/kit/react-native/input';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { Box } from '../../components/layout';
 import { shieldToPrivate } from '../../lib/railgun/shield';
 import { sendShielded } from '../../lib/railgun/send';

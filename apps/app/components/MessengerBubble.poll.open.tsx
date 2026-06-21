@@ -1,9 +1,9 @@
 
 import { useState } from 'react';
 import { fontSize } from '@stage-labs/kit/tokens';
-import { Input } from '@stage-labs/kit/input';
-import { Text } from '@stage-labs/kit/text';
-import { Button } from '@stage-labs/kit/button';
+import { Input } from '@stage-labs/kit/react-native/input';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Button } from '@stage-labs/kit/react-native/button';
 import { Row, Box } from './layout';
 import { usePalette, useBlockRadius, withAlpha } from '../lib/theme';
 

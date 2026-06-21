@@ -1,10 +1,10 @@
 
 import { Linking } from 'react-native';
 
-import { Pressable } from '@stage-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Box, Row, Col } from '../layout';
-import { Icon } from '@stage-labs/kit/icon';
-import { Text } from '@stage-labs/kit/text';
+import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { GithubLogo } from '../GithubLogo';
 
 export function GitHubLinkRow({ head, sub, border, url, title, subtitle }: {

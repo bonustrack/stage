@@ -1,5 +1,5 @@
 import { useRef, useState, type ComponentRef } from 'react';
-import { Textarea } from '@stage-labs/kit/textarea';
+import { Textarea } from '@stage-labs/kit/react-native/textarea';
 import { type Attachment } from './MessengerComposer.helpers';
 
 export interface ComposerState {

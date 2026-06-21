@@ -1,5 +1,5 @@
 
-import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
+import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Col } from '../layout';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';

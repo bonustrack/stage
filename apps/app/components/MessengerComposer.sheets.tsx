@@ -1,11 +1,11 @@
 
-import { Pressable } from '@stage-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { fontSize } from '@stage-labs/kit/tokens';
-import { Input } from '@stage-labs/kit/input';
-import { Textarea } from '@stage-labs/kit/textarea';
-import { Text } from '@stage-labs/kit/text';
-import { Icon } from '@stage-labs/kit/icon';
-import { Button } from '@stage-labs/kit/button';
+import { Input } from '@stage-labs/kit/react-native/input';
+import { Textarea } from '@stage-labs/kit/react-native/textarea';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Button } from '@stage-labs/kit/react-native/button';
 import { Box, Row, Col } from './layout';
 import { AppModal } from './AppModal';
 import { usePalette, useBlockRadius } from '../lib/theme';

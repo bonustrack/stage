@@ -7,7 +7,7 @@ import {
   type ImageLoadEventData,
   type NativeSyntheticEvent,
 } from 'react-native';
-import { BLOCK_RADIUS_DEFAULT } from './tokens';
+import { BLOCK_RADIUS_DEFAULT } from '../tokens';
 
 export type ImageFit = 'none' | 'cover' | 'contain' | 'fill' | 'scale-down';
 export type ImagePosition =

@@ -1,5 +1,5 @@
 
-import { Text } from '@stage-labs/kit/text';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { Col } from './layout';
 import { type Attachment } from './MessengerComposer.helpers';
 import { useComposerActions } from './MessengerComposer.actions';

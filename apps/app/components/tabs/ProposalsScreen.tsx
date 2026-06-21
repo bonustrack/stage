@@ -1,11 +1,11 @@
 
-import { Pressable } from '@stage-labs/kit/pressable';
-import { Icon } from '@stage-labs/kit/icon';
-import { Title } from '@stage-labs/kit/title';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Title } from '@stage-labs/kit/react-native/title';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Text } from '@stage-labs/kit/text';
-import { Button } from '@stage-labs/kit/button';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Button } from '@stage-labs/kit/react-native/button';
 import { Col, Row, Box } from '../layout';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { useProposals } from './Proposals.hook';

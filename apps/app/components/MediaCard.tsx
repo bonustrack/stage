@@ -1,5 +1,5 @@
 
-import { Pressable } from '@stage-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Box } from './layout';
 import { usePalette, useBlockRadius } from '../lib/theme';
 

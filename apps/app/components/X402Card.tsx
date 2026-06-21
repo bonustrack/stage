@@ -2,9 +2,9 @@
 import { useState } from 'react';
 import { Alert, Linking } from 'react-native';
 
-import { Pressable } from '@stage-labs/kit/pressable';
-import { Text } from '@stage-labs/kit/text';
-import { Icon } from '@stage-labs/kit/icon';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Icon } from '@stage-labs/kit/react-native/icon';
 import { stampTokenUrl } from '@stage-labs/kit/avatar';
 import { Row, Box } from './layout';
 import { PaymentCard } from './PaymentCard';

@@ -1,7 +1,7 @@
 
-import { Pressable } from '@stage-labs/kit/pressable';
-import { Text } from '@stage-labs/kit/text';
-import { Icon } from '@stage-labs/kit/icon';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Icon } from '@stage-labs/kit/react-native/icon';
 import { FlatList } from 'react-native-gesture-handler';
 import { Row } from '../../components/layout';
 import { MemberRow } from './group.parts';

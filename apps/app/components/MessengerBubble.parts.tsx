@@ -1,5 +1,5 @@
 
-import { Text } from '@stage-labs/kit/text';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { useRouter } from 'expo-router';
 import { shortAddress } from '../modules/messaging';
 import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';

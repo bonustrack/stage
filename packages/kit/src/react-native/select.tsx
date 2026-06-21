@@ -13,8 +13,8 @@ import {
   controlColors,
   type ControlSize,
   type ControlVariant,
-} from './control.styles';
-import { BLOCK_RADIUS_DEFAULT, FONT_SIZE, schemePalette } from './tokens';
+} from '../control.styles';
+import { BLOCK_RADIUS_DEFAULT, FONT_SIZE, schemePalette } from '../tokens';
 import { Icon } from './icon';
 
 export interface SelectOption {

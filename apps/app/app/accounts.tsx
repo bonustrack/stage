@@ -1,13 +1,13 @@
 
-import { Pressable } from '@stage-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
 
-import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
-import { Title } from '@stage-labs/kit/title';
+import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
+import { Title } from '@stage-labs/kit/react-native/title';
 import { Row, Col } from '../components/layout';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
-import { Icon } from '@stage-labs/kit/icon';
+import { Icon } from '@stage-labs/kit/react-native/icon';
 import { AccountsManager } from '../components/AccountsManager';
 
 export default function Accounts(): React.ReactElement {

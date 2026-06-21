@@ -1,11 +1,11 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { fontSize } from '@stage-labs/kit/tokens';
-import { Pressable } from '@stage-labs/kit/pressable';
-import { Input } from '@stage-labs/kit/input';
-import { Text } from '@stage-labs/kit/text';
-import { Button } from '@stage-labs/kit/button';
-import { Icon } from '@stage-labs/kit/icon';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Input } from '@stage-labs/kit/react-native/input';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Button } from '@stage-labs/kit/react-native/button';
+import { Icon } from '@stage-labs/kit/react-native/icon';
 import { shortAddress } from '../../modules/messaging';
 import { resolveEnsName } from '../../lib/ens';
 import { flash } from '../../lib/toast';

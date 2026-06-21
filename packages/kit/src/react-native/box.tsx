@@ -5,8 +5,8 @@ import {
   type Align,
   type BoxBaseProps,
   type Justify,
-} from './layout';
-import { isColorToken, resolveColorToken } from './tokens';
+} from '../layout';
+import { isColorToken, resolveColorToken } from '../tokens';
 import { useKitPalette, useKitScheme, type KitPalette } from './theme-context';
 
 export type { Align, Justify };
