@@ -1,7 +1,7 @@
 <script setup lang="ts">
 
-import type { HeroIconName } from './HeroIcon.vue';
-import { Row } from './layout';
+import type { HeroIconName } from '@stage-labs/kit/icons';
+
 
 const TABS: { to: string; label: string; icon: HeroIconName }[] = [
   { to: '/channels', label: 'Channels', icon: 'send' },
@@ -12,7 +12,7 @@ const TABS: { to: string; label: string; icon: HeroIconName }[] = [
 </script>
 
 <template>
-  <Row as="nav" align="center" justify="around" class="border-t border-metro-border-light dark:border-metro-border-dark
+  <Row tag="nav" align="center" justify="around" class="border-t border-metro-border-light dark:border-metro-border-dark
     bg-metro-bg-light dark:bg-metro-bg-dark
     py-1.5
     safe-area-bottom">
@@ -26,7 +26,7 @@ const TABS: { to: string; label: string; icon: HeroIconName }[] = [
         hover:text-metro-head-light dark:hover:text-metro-head-dark"
       active-class="!text-metro-head-light dark:!text-metro-head-dark"
     >
-      <HeroIcon :name="tab.icon" :size="20" />
+      <Icon :name="tab.icon" :size="20" />
     </RouterLink>
   </Row>
 </template>

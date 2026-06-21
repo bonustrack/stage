@@ -111,6 +111,7 @@ declare global {
   const streamConvConsent: typeof import('./lib/xmtpConsent').streamConvConsent
   const summarizeConv: typeof import('./lib/channelsSummarize').summarizeConv
   const syncPreferences: typeof import('./lib/xmtpConsent').syncPreferences
+  const systemScheme: typeof import('./lib/theme').systemScheme
   const toRaw: typeof import('vue').toRaw
   const toRef: typeof import('vue').toRef
   const toRefs: typeof import('vue').toRefs
@@ -124,6 +125,7 @@ declare global {
   const useComposerAttach: typeof import('./lib/useComposerAttach').useComposerAttach
   const useCssModule: typeof import('vue').useCssModule
   const useCssVars: typeof import('vue').useCssVars
+  const useEffectiveScheme: typeof import('./lib/kitTheme').useEffectiveScheme
   const useGroupDetail: typeof import('./lib/useGroupDetail').useGroupDetail
   const useId: typeof import('vue').useId
   const useLink: typeof import('vue-router').useLink
@@ -305,6 +307,7 @@ declare module 'vue' {
     readonly streamConvConsent: UnwrapRef<typeof import('./lib/xmtpConsent')['streamConvConsent']>
     readonly summarizeConv: UnwrapRef<typeof import('./lib/channelsSummarize')['summarizeConv']>
     readonly syncPreferences: UnwrapRef<typeof import('./lib/xmtpConsent')['syncPreferences']>
+    readonly systemScheme: UnwrapRef<typeof import('./lib/theme')['systemScheme']>
     readonly toRaw: UnwrapRef<typeof import('vue')['toRaw']>
     readonly toRef: UnwrapRef<typeof import('vue')['toRef']>
     readonly toRefs: UnwrapRef<typeof import('vue')['toRefs']>
@@ -318,6 +321,7 @@ declare module 'vue' {
     readonly useComposerAttach: UnwrapRef<typeof import('./lib/useComposerAttach')['useComposerAttach']>
     readonly useCssModule: UnwrapRef<typeof import('vue')['useCssModule']>
     readonly useCssVars: UnwrapRef<typeof import('vue')['useCssVars']>
+    readonly useEffectiveScheme: UnwrapRef<typeof import('./lib/kitTheme')['useEffectiveScheme']>
     readonly useGroupDetail: UnwrapRef<typeof import('./lib/useGroupDetail')['useGroupDetail']>
     readonly useId: UnwrapRef<typeof import('vue')['useId']>
     readonly useLink: UnwrapRef<typeof import('vue-router')['useLink']>

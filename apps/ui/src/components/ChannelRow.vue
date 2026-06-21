@@ -2,7 +2,7 @@
 
 import { stampAvatarUrl } from '../lib/xmtp';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
-import { Row, Col } from './layout';
+
 
 const props = defineProps<{
   avatarAddress: string | null;
@@ -33,7 +33,8 @@ function fmtTs(ts: number | null): string {
 </script>
 
 <template>
-  <button
+  <Pressable
+    tag="button"
     type="button"
     class="w-full text-left px-4"
     @click="emit('open')"
@@ -75,5 +76,5 @@ function fmtTs(ts: number | null): string {
       </Row>
       </Col>
     </Row>
-  </button>
+  </Pressable>
 </template>

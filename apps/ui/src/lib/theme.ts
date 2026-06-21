@@ -1,5 +1,5 @@
 
-import { ref, onUnmounted, type Ref } from 'vue';
+import { ref, computed, onUnmounted, type Ref } from 'vue';
 import {
   THEME_STORAGE_KEY as STORAGE_KEY, isThemePreference,
   type ThemePreference,
@@ -44,6 +44,8 @@ if (typeof window !== 'undefined' && window.matchMedia) {
   const mq = window.matchMedia('(prefers-color-scheme: dark)');
   mq.addEventListener('change', e => { systemDark.value = e.matches; });
 }
+
+export const systemScheme = computed<'light' | 'dark'>(() => systemDark.value ? 'dark' : 'light');
 
 export function installThemeClassEffect(): void {
   const update = (): void => {

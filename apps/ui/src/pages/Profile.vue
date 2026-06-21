@@ -46,7 +46,7 @@ async function copy(value: string, label: 'address' | 'inboxId'): Promise<void> 
 <template>
   <div class="min-h-screen">
     <div class="flex items-center justify-between px-4 pt-4 pb-2">
-      <h1 class="font-head text-xl text-metro-head-light dark:text-metro-head-dark">Profile</h1>
+      <Title :level="1" class="font-head text-xl text-metro-head-light dark:text-metro-head-dark">Profile</Title>
     </div>
 
     <div class="flex flex-col items-center pt-6 pb-4">
@@ -67,7 +67,8 @@ async function copy(value: string, label: 'address' | 'inboxId'): Promise<void> 
       </div>
     </div>
 
-    <button
+    <Pressable
+      tag="button"
       v-if="address" type="button"
       class="block w-[calc(100%-2rem)] mx-4 mt-2 p-3 rounded-xl text-left
         bg-metro-surface-light dark:bg-metro-surface-dark
@@ -80,9 +81,10 @@ async function copy(value: string, label: 'address' | 'inboxId'): Promise<void> 
       <div class="text-[13px] text-metro-fg-light dark:text-metro-fg-dark mt-1 break-all">
         {{ address }}
       </div>
-    </button>
+    </Pressable>
 
-    <button
+    <Pressable
+      tag="button"
       v-if="inboxId" type="button"
       class="block w-[calc(100%-2rem)] mx-4 mt-3 p-3 rounded-xl text-left
         bg-metro-surface-light dark:bg-metro-surface-dark
@@ -95,6 +97,6 @@ async function copy(value: string, label: 'address' | 'inboxId'): Promise<void> 
       <div class="text-[13px] text-metro-fg-light dark:text-metro-fg-dark mt-1 truncate">
         {{ inboxId }}
       </div>
-    </button>
+    </Pressable>
   </div>
 </template>

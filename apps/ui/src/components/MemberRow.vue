@@ -1,7 +1,7 @@
 <script setup lang="ts">
 
 import { shortAddress, stampAvatarUrl } from '../lib/xmtp';
-import { Row } from './layout';
+
 
 const props = defineProps<{
   address: string;
@@ -16,7 +16,7 @@ const emit = defineEmits<{ open: []; remove: [] }>();
 
 <template>
   <Row
-    as="li"
+    tag="li"
     align="center"
     :gap="12"
     class="px-3.5 py-2.5
@@ -24,7 +24,7 @@ const emit = defineEmits<{ open: []; remove: [] }>();
       border-b border-metro-border-light dark:border-metro-border-dark"
     :class="{ 'opacity-50': props.removing }"
   >
-    <button type="button" class="flex items-center gap-3 flex-1 min-w-0 text-left" @click="emit('open')">
+    <Pressable tag="button" type="button" class="flex items-center gap-3 flex-1 min-w-0 text-left" @click="emit('open')">
       <img :src="stampAvatarUrl(props.address, 64)" alt="" class="w-8 h-8 rounded-full bg-metro-border-dark" />
       <div class="flex-1 min-w-0">
         <div class="text-sm text-metro-head-light dark:text-metro-head-dark truncate font-head">
@@ -34,7 +34,7 @@ const emit = defineEmits<{ open: []; remove: [] }>();
           {{ shortAddress(props.address) }}
         </div>
       </div>
-    </button>
+    </Pressable>
     <span
       v-if="props.role && props.role !== 'member'"
       class="shrink-0 px-2 py-0.5 rounded-full text-[11px] font-sans"
@@ -42,14 +42,15 @@ const emit = defineEmits<{ open: []; remove: [] }>();
         ? 'bg-teal-500/15 text-teal-600 dark:text-teal-400'
         : 'bg-metro-border-light dark:bg-metro-border-dark text-metro-sub-light dark:text-metro-sub-dark'"
     >{{ props.role === 'owner' ? 'Owner' : 'Admin' }}</span>
-    <button
+    <Pressable
+      tag="button"
       v-if="!props.isSelf && props.canRemove"
       type="button"
       :disabled="props.removing"
       class="p-1.5 rounded-full text-red-500 hover:bg-red-500/10 disabled:opacity-50"
       @click="emit('remove')"
     >
-      <HeroIcon name="trash" :size="18" />
-    </button>
+      <Icon name="trash" :size="18" />
+    </Pressable>
   </Row>
 </template>

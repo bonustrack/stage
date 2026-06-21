@@ -3,7 +3,9 @@
 import { ASK_QUESTION_MEMBERS, stampAvatarUrl } from '../lib/xmtp';
 import { postCloseToParent } from '../lib/embedBridge';
 import { useChannels } from '../lib/useChannels';
-import { Row as LayoutRow, Col } from '../components/layout';
+import { useEffectiveScheme } from '@/lib/kitTheme';
+
+const scheme = useEffectiveScheme();
 
 const {
   embedded, rows, error, query, creatingAsk, refreshing,
@@ -17,13 +19,14 @@ const {
   <Col class="h-[100dvh] relative" :class="embedded ? '' : 'pb-[60px]'">
     <!-- Topnav: page title, refresh, and (embedded only) a close button at the
          end, so the channels homepage has a single topnav like conversations. -->
-    <LayoutRow align="center" :gap="4" class="h-[56px] box-border shrink-0 pl-2 pr-1
+    <Row align="center" :gap="4" class="h-[56px] box-border shrink-0 pl-2 pr-1
       bg-metro-bg-light dark:bg-metro-bg-dark
       border-b border-metro-border-light dark:border-metro-border-dark">
       <span class="flex-1 font-head text-[17px] text-metro-head-light dark:text-metro-head-dark pl-2">
         {{ embedded ? (view === 'messages' ? 'Messages' : 'Home') : 'Channels' }}
       </span>
-      <button
+      <Pressable
+        tag="button"
         v-if="!embedded && view === 'messages'"
         type="button"
         :disabled="refreshing"
@@ -32,25 +35,26 @@ const {
         :title="refreshing ? 'Refreshing…' : 'Refresh channels'"
         @click="refreshFromNetwork"
       >
-        <HeroIcon name="arrowDown" :size="16" :class="refreshing ? 'animate-spin' : ''" />
-      </button>
-      <button
+        <Icon name="arrowDown" :size="16" :class="refreshing ? 'animate-spin' : ''" />
+      </Pressable>
+      <Pressable
+        tag="button"
         v-if="embedded"
         type="button"
         class="px-2 py-2 text-metro-fg-light dark:text-metro-fg-dark"
         title="Close"
         @click="postCloseToParent"
       >
-        <HeroIcon name="x" :size="20" />
-      </button>
-    </LayoutRow>
+        <Icon name="x" :size="20" />
+      </Pressable>
+    </Row>
 
     <!-- HOME: the "Ask a question" action card. Messages/Docs live in the footer nav. -->
     <Col v-if="view === 'home'" align="center" justify="center" :gap="12" class="flex-1 px-6">
-      <button type="button" :disabled="creatingAsk" :class="cardClass" @click="onAskPress">
-        <HeroIcon name="chat" :size="24" class="shrink-0 text-metro-fg-light dark:text-metro-fg-dark" />
+      <Pressable tag="button" type="button" :disabled="creatingAsk" :class="cardClass" @click="onAskPress">
+        <Icon name="chat" :size="24" class="shrink-0 text-metro-fg-light dark:text-metro-fg-dark" />
         <span class="flex-1 text-[17px] font-sans">{{ creatingAsk ? 'Creating group…' : 'Ask a question' }}</span>
-        <LayoutRow align="center" class="shrink-0">
+        <Row align="center" class="shrink-0">
           <img
             v-for="(addr, i) in ASK_QUESTION_MEMBERS"
             :key="addr"
@@ -60,17 +64,18 @@ const {
               border-2 border-metro-bg-light dark:border-metro-bg-dark"
             :class="i === 0 ? '' : '-ml-2'"
           />
-        </LayoutRow>
-      </button>
+        </Row>
+      </Pressable>
       <div v-if="error" class="text-xs text-metro-err mt-1">{{ error }}</div>
     </Col>
 
     <!-- MESSAGES: search (standalone) + the channel list. -->
     <template v-else>
       <div v-if="!embedded" class="shrink-0 px-4 pt-3 pb-2 bg-metro-bg-light dark:bg-metro-bg-dark">
-        <input
+        <Input
           v-model="query"
-          type="text"
+          inputType="text"
+          :dark="scheme === 'dark'"
           placeholder="Search channels or paste 0x… / name.eth…"
           autocomplete="off"
           autocorrect="off"
@@ -115,28 +120,28 @@ const {
 
     <!-- Footer nav (Intercom-style): Home / Messages / Docs — embedded widget only.
          The standalone site uses the app-wide TabBar instead (mobile-app UX). -->
-    <LayoutRow v-if="embedded" align="stretch" class="shrink-0 border-t border-metro-border-light dark:border-metro-border-dark
+    <Row v-if="embedded" align="stretch" class="shrink-0 border-t border-metro-border-light dark:border-metro-border-dark
       bg-metro-bg-light dark:bg-metro-bg-dark">
-      <Col as="button" type="button" align="center" :gap="4" class="flex-1 py-2.5 transition-colors"
+      <Col tag="button" type="button" align="center" :gap="4" class="flex-1 py-2.5 transition-colors"
         :class="view === 'home' ? 'text-metro-head-light dark:text-metro-head-dark' : 'text-metro-sub-light dark:text-metro-sub-dark'"
         @click="view = 'home'">
-        <HeroIcon name="home" :size="22" />
+        <Icon name="home" :size="22" />
         <span class="text-[15px] font-sans">Home</span>
       </Col>
-      <Col as="button" type="button" align="center" :gap="4" class="flex-1 py-2.5 transition-colors"
+      <Col tag="button" type="button" align="center" :gap="4" class="flex-1 py-2.5 transition-colors"
         :class="view === 'messages' ? 'text-metro-head-light dark:text-metro-head-dark' : 'text-metro-sub-light dark:text-metro-sub-dark'"
         @click="view = 'messages'">
-        <HeroIcon name="list" :size="22" />
+        <Icon name="list" :size="22" />
         <span class="text-[15px] font-sans">Messages</span>
       </Col>
-      <Col as="button" type="button" align="center" :gap="4"
+      <Col tag="button" type="button" align="center" :gap="4"
         class="flex-1 py-2.5 text-metro-sub-light dark:text-metro-sub-dark
           hover:text-metro-head-light dark:hover:text-metro-head-dark transition-colors"
         @click="openDocs">
-        <HeroIcon name="document" :size="22" />
+        <Icon name="document" :size="22" />
         <span class="text-[15px] font-sans">Docs</span>
       </Col>
-    </LayoutRow>
+    </Row>
 
     <!-- Per-row context menu: Mark as read / unread (cross-device via XMTP consent). -->
     <template v-if="rowMenu">
@@ -147,7 +152,8 @@ const {
           border border-metro-border-light dark:border-metro-border-dark"
         :style="{ left: rowMenu.x + 'px', top: rowMenu.y + 'px' }"
       >
-        <button
+        <Pressable
+          tag="button"
           type="button"
           class="w-full text-left px-3 py-2 text-sm
             text-metro-head-light dark:text-metro-head-dark
@@ -155,7 +161,7 @@ const {
           @click="toggleRowUnread"
         >
           {{ rowMenu.isUnread ? 'Mark as read' : 'Mark as unread' }}
-        </button>
+        </Pressable>
       </div>
     </template>
   </Col>

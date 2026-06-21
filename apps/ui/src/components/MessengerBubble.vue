@@ -93,7 +93,8 @@ function onAvatar(): void {
     <!-- 24px stamp.fyi avatar at the start of every row — neutral
          placeholder when the inbox→address mapping hasn't resolved yet
          so geometry doesn't shift. -->
-    <button
+    <Pressable
+      tag="button"
       v-if="senderAddress"
       type="button"
       class="shrink-0 mt-0.5"
@@ -104,7 +105,7 @@ function onAvatar(): void {
         alt=""
         class="w-6 h-6 rounded-full bg-metro-border-dark"
       />
-    </button>
+    </Pressable>
     <div v-else class="shrink-0 mt-0.5 w-6 h-6 rounded-full bg-metro-border-dark" />
     <div class="flex-1 min-w-0">
       <div v-if="props.replyPreview"
@@ -120,7 +121,7 @@ function onAvatar(): void {
           :href="urlOf(att) ?? undefined"
           :download="att.name ?? undefined"
           class="inline-flex items-center gap-2 underline text-sm font-sans">
-          <HeroIcon name="paperClip" :size="14" />
+          <Icon name="paperClip" :size="14" />
           <span>{{ att.name ?? `${att.kind} attachment` }}</span>
         </a>
         <span v-else class="text-xs opacity-70 font-sans">[{{ att.kind }}{{ att.name ? `: ${att.name}` : '' }}]</span>
@@ -147,14 +148,14 @@ function onAvatar(): void {
       <!-- Action row under the message — matches the mobile app: always-visible
            react + reply icons, then the timestamp (no hover required). -->
       <div class="flex items-center gap-1.5 mt-1 text-metro-sub-light dark:text-metro-sub-dark">
-        <button v-if="!isPending" type="button" title="React"
+        <Pressable tag="button" v-if="!isPending" type="button" title="React"
           class="hover:opacity-70" @click="pickerOpen = !pickerOpen">
-          <HeroIcon name="faceSmile" :size="14" />
-        </button>
-        <button v-if="!isPending" type="button" title="Reply"
+          <Icon name="faceSmile" :size="14" />
+        </Pressable>
+        <Pressable tag="button" v-if="!isPending" type="button" title="Reply"
           class="hover:opacity-70" @click="emit('reply', props.entry)">
-          <HeroIcon name="reply" :size="14" />
-        </button>
+          <Icon name="reply" :size="14" />
+        </Pressable>
         <span class="text-[12px] font-sans">{{ fmtTs(props.entry.ts) }}</span>
       </div>
       <!-- Inline emoji picker — toggled by the react icon, mirrors mobile. -->
@@ -162,15 +163,16 @@ function onAvatar(): void {
         class="inline-flex items-center gap-2 mt-1.5 px-2.5 py-1.5 rounded-full
           bg-metro-surface-light dark:bg-metro-surface-dark
           border border-metro-border-light dark:border-metro-border-dark shadow-sm">
-        <button v-for="e in REACT_PRESETS" :key="e" type="button"
+        <Pressable tag="button" v-for="e in REACT_PRESETS" :key="e" type="button"
           class="text-xl leading-none hover:scale-125 transition-transform"
-          @click="emit('react', { entry: props.entry, emoji: e }); pickerOpen = false">{{ e }}</button>
-        <button type="button" class="px-1 text-metro-sub-light dark:text-metro-sub-dark"
-          @click="pickerOpen = false">✕</button>
+          @click="emit('react', { entry: props.entry, emoji: e }); pickerOpen = false">{{ e }}</Pressable>
+        <Pressable tag="button" type="button" class="px-1 text-metro-sub-light dark:text-metro-sub-dark"
+          @click="pickerOpen = false">✕</Pressable>
       </div>
       <!-- Reactions pills on their own row below (matches mobile). -->
       <div v-if="props.reactions && props.reactions.size > 0" class="flex flex-wrap items-center gap-1 mt-1">
-        <button
+        <Pressable
+          tag="button"
           v-for="[emoji, count] in props.reactions"
           :key="emoji"
           type="button"
@@ -178,7 +180,7 @@ function onAvatar(): void {
             border border-metro-border-light dark:border-metro-border-dark
             text-[12px] text-metro-fg-light dark:text-metro-fg-dark"
           @click="emit('react', { entry: props.entry, emoji })"
-        >{{ emoji }} {{ count }}</button>
+        >{{ emoji }} {{ count }}</Pressable>
       </div>
     </div>
   </div>

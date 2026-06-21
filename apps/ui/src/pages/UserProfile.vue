@@ -41,9 +41,9 @@ async function copy(value: string): Promise<void> {
 <template>
   <div class="min-h-screen bg-metro-bg-light dark:bg-metro-bg-dark">
     <div class="flex items-center px-3 py-3">
-      <button type="button" class="p-1.5" @click="router.back()">
-        <HeroIcon name="arrowLeft" :size="22" />
-      </button>
+      <Pressable tag="button" type="button" class="p-1.5" @click="router.back()">
+        <Icon name="arrowLeft" :size="22" />
+      </Pressable>
     </div>
     <div class="px-6 pb-8">
       <div class="flex flex-col items-center pt-2">
@@ -61,7 +61,8 @@ async function copy(value: string): Promise<void> {
           class="mt-1 text-sm text-metro-sub-light dark:text-metro-sub-dark text-center max-w-prose">
           {{ profile.about }}
         </div>
-        <button
+        <Pressable
+          tag="button"
           type="button"
           :disabled="openingDm"
           class="mt-4 px-6 py-2.5 rounded-full
@@ -70,11 +71,12 @@ async function copy(value: string): Promise<void> {
           @click="onMessage"
         >
           {{ openingDm ? 'Opening…' : 'Message' }}
-        </button>
+        </Pressable>
       </div>
 
       <div class="mt-6 space-y-2">
-        <button
+        <Pressable
+          tag="button"
           type="button"
           class="w-full text-left p-3 rounded-xl border
             border-metro-border-light dark:border-metro-border-dark
@@ -85,7 +87,7 @@ async function copy(value: string): Promise<void> {
             Wallet address ({{ copied ? 'copied!' : 'tap to copy' }})
           </div>
           <div class="text-sm mt-1 break-all font-mono">{{ address }}</div>
-        </button>
+        </Pressable>
         <div v-if="profile?.github?.trim()" class="p-3 rounded-xl border border-metro-border-light dark:border-metro-border-dark bg-metro-surface-light dark:bg-metro-surface-dark">
           <div class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark uppercase tracking-wide">GitHub</div>
           <div class="text-sm mt-1">{{ profile.github }}</div>
