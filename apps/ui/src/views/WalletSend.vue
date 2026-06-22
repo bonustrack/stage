@@ -13,10 +13,12 @@ import { useWalletBalances } from '@/lib/useWalletBalances';
 import { buildSortedTokenRows } from '@/lib/walletSort';
 import { getTokenRow } from '../lib/tokenDetailStore';
 import { useSend } from '../lib/useSend';
+import { useEffectiveScheme } from '@/lib/kitTheme';
 
 const route = useRoute();
 const router = useRouter();
 const palette = useKitPalette();
+const scheme = useEffectiveScheme();
 
 const { rows } = useWalletBalances();
 
@@ -171,6 +173,7 @@ function openTx(hash: Hex): void {
         <Row surface="raised" align="center" :gap="6" class="rounded-xl px-3.5">
           <Input
             v-model="send.to.value"
+            :dark="scheme === 'dark'"
             placeholder="0x… or name.eth"
             autocapitalize="none"
             autocorrect="off"
@@ -206,6 +209,7 @@ function openTx(hash: Hex): void {
         <Row surface="raised" align="center" :gap="8" class="rounded-xl px-3.5 py-3">
           <Input
             v-model="send.amount.value"
+            :dark="scheme === 'dark'"
             placeholder="0.0"
             inputmode="decimal"
             class="flex-1 bg-transparent border-0 outline-none text-xl font-semibold"

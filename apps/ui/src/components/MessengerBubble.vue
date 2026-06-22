@@ -215,7 +215,7 @@ function onAvatar(): void {
         class="block break-words font-sans text-[19px] leading-[23px] select-text
           [&_p]:m-0 [&_p]:inline [&_a]:underline [&_a]:break-words
           [&_code]:font-mono [&_code]:text-[15px] [&_pre]:whitespace-pre-wrap
-          text-metro-fg-light dark:text-metro-fg-dark">
+          text-metro-link-light dark:text-metro-link-dark">
         <template v-for="(seg, i) in bodySegments" :key="i">
           <Pressable
             v-if="seg.type === 'mention'"
