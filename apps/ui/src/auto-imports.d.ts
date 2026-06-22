@@ -66,6 +66,7 @@ declare global {
   const isReadonly: typeof import('vue').isReadonly
   const isRef: typeof import('vue').isRef
   const isShallow: typeof import('vue').isShallow
+  const leaveGroup: typeof import('./lib/xmtpGroups').leaveGroup
   const lineOfConv: typeof import('./lib/xmtp').lineOfConv
   const lineOfDmPeer: typeof import('./lib/xmtp').lineOfDmPeer
   const listAccounts: typeof import('./lib/xmtp').listAccounts
@@ -333,6 +334,7 @@ declare module 'vue' {
     readonly isReadonly: UnwrapRef<typeof import('vue')['isReadonly']>
     readonly isRef: UnwrapRef<typeof import('vue')['isRef']>
     readonly isShallow: UnwrapRef<typeof import('vue')['isShallow']>
+    readonly leaveGroup: UnwrapRef<typeof import('./lib/xmtpGroups')['leaveGroup']>
     readonly lineOfConv: UnwrapRef<typeof import('./lib/xmtp')['lineOfConv']>
     readonly lineOfDmPeer: UnwrapRef<typeof import('./lib/xmtp')['lineOfDmPeer']>
     readonly listAccounts: UnwrapRef<typeof import('./lib/xmtp')['listAccounts']>

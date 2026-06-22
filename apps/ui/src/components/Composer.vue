@@ -20,6 +20,8 @@ const text = ref('');
 const sending = ref(false);
 const err = ref<string | null>(null);
 const attachOpen = ref(false);
+const imageInput = ref<HTMLInputElement | null>(null);
+const cameraInput = ref<HTMLInputElement | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
 const textarea = ref<HTMLTextAreaElement | null>(null);
 const { pending, clear: clearPending, onPaste, onFileChange, flush: flushPending } =
@@ -29,8 +31,25 @@ function toggleAttach(): void { attachOpen.value = !attachOpen.value; }
 
 function pickImage(): void {
   attachOpen.value = false;
+  imageInput.value?.click();
+}
+
+function pickCamera(): void {
+  attachOpen.value = false;
+  cameraInput.value?.click();
+}
+
+function pickFile(): void {
+  attachOpen.value = false;
   fileInput.value?.click();
 }
+
+const attachTiles = [
+  { icon: 'photo', label: 'Image', action: pickImage },
+  { icon: 'camera', label: 'Camera', action: pickCamera },
+  { icon: 'paperClip', label: 'File', action: pickFile },
+  { icon: 'mapPin', label: 'Location', action: () => { void shareLocation(); } },
+] as const;
 
 function autoGrow(): void {
   const el = textarea.value;
@@ -101,16 +120,36 @@ async function send(): Promise<void> {
         <Icon name="x" :size="14" />
       </Pressable>
     </Row>
-    <!-- kit-exception: no kit equivalent (native file input — kit Input has no 'file'
-         inputType; rendered via dynamic tag to keep bare <input> semantics). -->
-    <component :is="'input'" ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFileChange" />
+    <!-- kit-exception: no kit equivalent (native file inputs — kit Input has no 'file'
+         inputType; rendered via dynamic tag to keep bare <input> semantics). Three
+         hidden inputs back the attach tiles: Image (gallery), Camera (capture), File
+         (any type), mirroring mobile pickImage/takePhoto/pickFile. -->
+    <component :is="'input'" ref="imageInput" type="file" accept="image/*" class="hidden" @change="onFileChange" />
+    <component :is="'input'" ref="cameraInput" type="file" accept="image/*" capture="environment" class="hidden" @change="onFileChange" />
+    <component :is="'input'" ref="fileInput" type="file" class="hidden" @change="onFileChange" />
     <!-- Full-bleed flat composer bar: textarea on top, [+ / spacer / send] row
          below. Edge-to-edge surface=raised with uniform padding 10, mirroring
          MessengerComposer.tsx ComposerEditor (Col padding={10} surface="raised"). -->
     <Col surface="raised" :padding="10">
-      <!-- Pending pasted/selected image preview — removable, sent on Send. -->
+      <!-- Pending pasted/selected attachment preview — image thumbnail for image
+           types, a file chip otherwise. Removable, sent on Send. -->
       <Col v-if="pending" class="relative inline-block mb-2">
-        <img :src="pending.url" alt="" class="max-h-32 rounded-lg" />
+        <img
+          v-if="pending.file.type.startsWith('image/')"
+          :src="pending.url"
+          alt=""
+          class="max-h-32 rounded-lg"
+        />
+        <Row
+          v-else
+          class="flex items-center gap-2 px-3 py-2 rounded-lg
+            border border-metro-border-light dark:border-metro-border-dark
+            bg-metro-surface-light dark:bg-metro-surface-dark
+            text-sm text-metro-fg-light dark:text-metro-fg-dark font-sans"
+        >
+          <Icon name="paperClip" :size="16" />
+          <span class="truncate max-w-[200px]">{{ pending.file.name }}</span>
+        </Row>
         <Pressable
           tag="button"
           type="button"
@@ -168,32 +207,34 @@ async function send(): Promise<void> {
       </Row>
     </Col>
     <!-- Attach menu drops BELOW the composer row when open, matching mobile.
-         Mobile uses box-style options stacked horizontally; mirror that. -->
-    <Row v-if="attachOpen" class="flex gap-2 px-3 pb-3">
-      <Pressable
-        tag="button"
-        type="button"
-        class="flex items-center gap-2 px-3 py-2 rounded-xl
-          border border-metro-border-light dark:border-metro-border-dark
-          bg-metro-surface-light dark:bg-metro-surface-dark text-sm font-sans
-          text-metro-fg-light dark:text-metro-fg-dark
-          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
-        @click="pickImage"
+         Mobile (MessengerComposer.editor AttachMenu) renders labeled square tiles
+         in a horizontal scroll row; mirror that. Only the actions web can fulfil
+         are shown: Image, Camera, File, Location. Mobile's Poll/Sign/Payment tiles
+         are omitted — web has no create flow for those yet, so we don't ship dead
+         tiles. -->
+    <Row v-if="attachOpen" class="flex gap-4 px-3 pt-3 pb-3 overflow-x-auto no-scrollbar">
+      <Col
+        v-for="tile in attachTiles"
+        :key="tile.label"
+        class="flex flex-col items-center gap-1.5 shrink-0"
       >
-        <Icon name="photo" :size="16" /> Image
-      </Pressable>
-      <Pressable
-        tag="button"
-        type="button"
-        class="flex items-center gap-2 px-3 py-2 rounded-xl
-          border border-metro-border-light dark:border-metro-border-dark
-          bg-metro-surface-light dark:bg-metro-surface-dark text-sm font-sans
-          text-metro-fg-light dark:text-metro-fg-dark
-          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
-        @click="shareLocation"
-      >
-        <Icon name="mapPin" :size="16" /> Location
-      </Pressable>
+        <Pressable
+          tag="button"
+          type="button"
+          class="w-14 h-14 rounded-2xl flex items-center justify-center
+            border border-metro-border-light dark:border-metro-border-dark
+            bg-metro-surface-light dark:bg-metro-surface-dark
+            text-metro-head-light dark:text-metro-head-dark
+            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
+          :title="tile.label"
+          @click="tile.action"
+        >
+          <Icon :name="tile.icon" :size="26" />
+        </Pressable>
+        <span class="text-xs font-head text-metro-head-light dark:text-metro-head-dark">
+          {{ tile.label }}
+        </span>
+      </Col>
     </Row>
   </Col>
 </template>
