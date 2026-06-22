@@ -4,7 +4,7 @@ import { getOrCreateXmtpClient, shortAddress } from '../lib/xmtp';
 import { loadCachedProfile, readProfile, type SnapshotProfile } from '../lib/profile';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 
-const AVATAR_SIZE = 120;
+const AVATAR_SIZE = 88;
 
 const address = ref('');
 const inboxId = ref('');
@@ -58,9 +58,9 @@ async function copy(value: string, label: 'address' | 'inboxId'): Promise<void> 
         :style="{ width: `${AVATAR_SIZE}px`, height: `${AVATAR_SIZE}px` }"
       />
       <Col v-else class="rounded-full bg-metro-border-dark" :style="{ width: `${AVATAR_SIZE}px`, height: `${AVATAR_SIZE}px` }" />
-      <Col class="font-head text-lg text-metro-head-light dark:text-metro-head-dark mt-3.5">
+      <Text size="4xl" weight="semibold" class="mt-3.5 text-metro-head-light dark:text-metro-head-dark">
         {{ displayName }}
-      </Col>
+      </Text>
       <Col v-if="profile.about"
         class="text-[13px] text-metro-sub-light dark:text-metro-sub-dark mt-1.5 px-6 text-center max-w-md">
         {{ profile.about }}

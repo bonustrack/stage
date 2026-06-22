@@ -10,6 +10,7 @@ import {
   shortAddress, stampAvatarUrl, type AccountRecord,
 } from '../lib/xmtp';
 import { loadPk, canExportPrivateKey } from '../lib/accounts';
+import { readProfile, loadCachedProfile } from '../lib/profile';
 import AccountImportSheet from '../components/AccountImportSheet.vue';
 import AccountExportSheet from '../components/AccountExportSheet.vue';
 
@@ -32,10 +33,25 @@ const error = ref<string | null>(null);
 const showImport = ref(false);
 const exportPk = ref<string | null>(null);
 
+const peerNames = ref<Record<string, string>>({});
+function peerName(address: string): string | null {
+  return peerNames.value[address.toLowerCase()] ?? null;
+}
+function resolvePeerName(address: string): void {
+  const lower = address.toLowerCase();
+  if (peerNames.value[lower]) return;
+  const cached = loadCachedProfile(address)?.name;
+  if (cached) peerNames.value = { ...peerNames.value, [lower]: cached };
+  void readProfile(address).then((p) => {
+    if (p?.name) peerNames.value = { ...peerNames.value, [lower]: p.name };
+  });
+}
+
 async function refresh(): Promise<void> {
   const [list, active] = await Promise.all([listAccounts(), getActiveAccountId()]);
   accounts.value = list;
   activeId.value = active;
+  for (const a of list) resolvePeerName(a.address);
 }
 
 onMounted(() => { void refresh(); });
@@ -154,12 +170,14 @@ function onImported(): void {
             >
               <AvatarView :src="stampAvatarUrl(a.address, 56)" :size="28" />
               <span class="flex flex-col min-w-0 flex-1">
-                <span class="truncate text-[15px] font-semibold text-metro-head-light dark:text-metro-head-dark">
-                  {{ a.label ?? shortAddress(a.address) }}
-                </span>
-                <span class="truncate text-[11px] text-metro-sub-light dark:text-metro-sub-dark">
+                <Text size="md" weight="semibold" :truncate="true"
+                  class="text-metro-head-light dark:text-metro-head-dark">
+                  {{ a.label ?? peerName(a.address) ?? shortAddress(a.address) }}
+                </Text>
+                <Text size="xs" :truncate="true"
+                  class="text-metro-sub-light dark:text-metro-sub-dark">
                   {{ shortAddress(a.address) }} · {{ TYPE_LABEL[a.type] }}
-                </span>
+                </Text>
               </span>
             </Pressable>
             <Icon v-if="a.id === activeId" name="check" :size="20" :color="palette.text" />

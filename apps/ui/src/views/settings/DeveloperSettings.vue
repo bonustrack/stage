@@ -42,7 +42,7 @@ onMounted(async () => {
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-8 px-4 pt-4">
       <!-- DIAGNOSTICS: read-only env + build info, mirroring mobile DeveloperSettings
            (the Railgun debug toggle and reset/danger actions are mobile-only and deferred). -->
-      <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark pb-1">DIAGNOSTICS</Col>
+      <Text size="3xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark pb-1">DIAGNOSTICS</Text>
       <Col
         class="w-full rounded-xl overflow-hidden border bg-metro-surface-light dark:bg-metro-surface-dark"
         :style="{ borderColor: palette.border }"
@@ -57,8 +57,8 @@ onMounted(async () => {
           :class="i === 0 ? '' : 'border-t'"
           :style="i === 0 ? {} : { borderColor: palette.border }"
         >
-          <span class="text-[13px] text-metro-sub-light dark:text-metro-sub-dark">{{ row.label }}</span>
-          <span class="text-[14px] font-medium text-metro-fg-light dark:text-metro-fg-dark break-all text-right">{{ row.value }}</span>
+          <Text size="xs" class="text-metro-sub-light dark:text-metro-sub-dark">{{ row.label }}</Text>
+          <Text size="sm" weight="medium" class="text-metro-fg-light dark:text-metro-fg-dark break-all text-right">{{ row.value }}</Text>
         </Row>
       </Col>
     </Col>

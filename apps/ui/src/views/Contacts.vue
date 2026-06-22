@@ -1,9 +1,10 @@
 <script setup lang="ts">
 
 import {
-  getOrCreateXmtpClient, peerEthAddressOfDm, stampAvatarUrl, shortAddress,
+  getOrCreateXmtpClient, peerEthAddressOfDm, shortAddress,
 } from '../lib/xmtp';
 import { useSearchResolution } from '../lib/useSearchResolution';
+import { readProfile, loadCachedProfile } from '../lib/profile';
 import { useEffectiveScheme } from '@/lib/kitTheme';
 
 const scheme = useEffectiveScheme();
@@ -15,6 +16,20 @@ const contacts = ref<Contact[] | null>(null);
 const error = ref<string>('');
 const query = ref<string>('');
 const { searchResolution, openSearchedProfile } = useSearchResolution(query, router);
+
+const peerNames = ref<Record<string, string>>({});
+function peerName(address: string): string | null {
+  return peerNames.value[address.toLowerCase()] ?? null;
+}
+function resolvePeerName(address: string): void {
+  const lower = address.toLowerCase();
+  if (peerNames.value[lower]) return;
+  const cached = loadCachedProfile(address)?.name;
+  if (cached) peerNames.value = { ...peerNames.value, [lower]: cached };
+  void readProfile(address).then((p) => {
+    if (p?.name) peerNames.value = { ...peerNames.value, [lower]: p.name };
+  });
+}
 
 const filtered = computed(() => {
   if (!contacts.value) return null;
@@ -43,6 +58,7 @@ onMounted(async () => {
     }
     dedup.sort((a, b) => a.address.localeCompare(b.address));
     contacts.value = dedup;
+    for (const c of dedup) resolvePeerName(c.address);
   } catch (e) { error.value = (e as Error).message; }
 });
 </script>
@@ -83,29 +99,14 @@ onMounted(async () => {
         {{ query ? `No matches for "${query}"` : 'No contacts yet. Start a DM from Channels to populate this list.' }}
       </li>
       <li v-for="c in filtered ?? contacts" :key="c.address.toLowerCase()">
-        <Pressable
-          tag="button"
-          type="button"
-          class="w-full text-left flex items-center gap-3 px-3.5 py-3
-            bg-metro-surface-light dark:bg-metro-surface-dark
-            border-b border-metro-border-light dark:border-metro-border-dark
-            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark transition-colors"
-          @click="router.push(`/xmtp/${c.convId}`)"
-        >
-          <img
-            :src="stampAvatarUrl(c.address, 72)"
-            alt=""
-            class="w-9 h-9 rounded-full bg-metro-border-dark shrink-0"
-          />
-          <Col class="flex-1 min-w-0">
-            <Col class="text-sm text-metro-fg-light dark:text-metro-fg-dark truncate">
-              {{ c.address }}
-            </Col>
-            <Col class="text-xs text-metro-sub-light dark:text-metro-sub-dark mt-0.5">
-              {{ shortAddress(c.address) }}
-            </Col>
-          </Col>
-        </Pressable>
+        <ChannelRow
+          :avatar-address="c.address"
+          :title="peerName(c.address) ?? c.address"
+          :last-ts="null"
+          :last-preview="peerName(c.address) ? shortAddress(c.address) : ' '"
+          :unread-count="0"
+          @open="router.push(`/xmtp/${c.convId}`)"
+        />
       </li>
     </ul>
   </Col>

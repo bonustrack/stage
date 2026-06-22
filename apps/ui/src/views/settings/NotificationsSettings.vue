@@ -53,17 +53,17 @@ const statusLabel = computed<string>(() => {
            The web Notification API has no background push, so this drives the
            per-site permission instead of a daemon registration; the permission state
            is the web-appropriate equivalent of mobile's OS permission line. -->
-      <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark px-4 pt-5 pb-2">NOTIFICATIONS</Col>
+      <Text size="3xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark px-4 pt-5 pb-2">NOTIFICATIONS</Text>
       <Col
         class="w-[calc(100%-2rem)] mx-4 rounded-xl border bg-metro-surface-light dark:bg-metro-surface-dark p-3.5"
         :style="{ borderColor: palette.border }"
       >
         <Row align="center" :gap="12">
           <Col class="flex-1 min-w-0">
-            <span class="text-[14px] font-semibold text-metro-head-light dark:text-metro-head-dark">Browser notifications</span>
-            <Col class="text-[12px] text-metro-sub-light dark:text-metro-sub-dark mt-0.5">
+            <Text size="sm" weight="semibold" tag="div" class="text-metro-head-light dark:text-metro-head-dark">Browser notifications</Text>
+            <Text size="2xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark mt-0.5">
               Get notified about new messages while Stage is open in this browser.
-            </Col>
+            </Text>
           </Col>
           <span
             v-if="permission === 'granted'"
@@ -82,9 +82,9 @@ const statusLabel = computed<string>(() => {
           >Enable</Pressable>
         </Row>
       </Col>
-      <Col class="text-[12px] text-metro-sub-light dark:text-metro-sub-dark px-4 pt-3">
+      <Text size="2xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark px-4 pt-3">
         {{ statusLabel }}
-      </Col>
+      </Text>
     </Col>
   </Col>
 </template>

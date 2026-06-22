@@ -297,7 +297,7 @@ async function send(): Promise<void> {
         :is="'textarea'"
         ref="textarea"
         v-model="text"
-        placeholder="Message…"
+        placeholder="Message"
         rows="1"
         class="w-full resize-none min-h-[24px] max-h-[210px] font-sans
           bg-transparent px-2 pt-1 pb-2 text-[17px] leading-[23px] outline-none
@@ -314,7 +314,7 @@ async function send(): Promise<void> {
         <Pressable
           tag="button"
           type="button"
-          class="w-10 h-10 shrink-0 rounded-full flex items-center justify-center
+          class="w-[38px] h-[38px] shrink-0 rounded-full flex items-center justify-center
             text-metro-fg-light dark:text-metro-fg-dark
             hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
           :title="attachOpen ? 'Close attach menu' : 'Attach'"
@@ -354,7 +354,7 @@ async function send(): Promise<void> {
         <Pressable
           tag="button"
           type="button"
-          class="w-14 h-14 rounded-2xl flex items-center justify-center
+          class="w-14 h-14 rounded-[28px] flex items-center justify-center
             border border-metro-border-light dark:border-metro-border-dark
             bg-metro-surface-light dark:bg-metro-surface-dark
             text-metro-head-light dark:text-metro-head-dark

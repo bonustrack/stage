@@ -37,9 +37,9 @@ function tap(qi: number, oi: number): void {
 <template>
   <Col class="mt-2 gap-3 self-stretch">
     <Col v-for="(q, qi) in questions" :key="`q-${qi}`" class="gap-1.5 self-stretch">
-      <Text v-if="multiQuestion && qi > 0" size="xl" weight="semibold"
+      <Text v-if="multiQuestion && qi > 0" size="3xl" weight="semibold"
         class="text-metro-head-light dark:text-metro-head-dark">{{ q.question }}</Text>
-      <Text v-if="qi === 0" size="lg" weight="semibold"
+      <Text v-if="qi === 0" size="3xl" weight="semibold"
         class="text-metro-head-light dark:text-metro-head-dark">{{ q.question }}</Text>
       <Text v-if="q.header" size="xs" weight="semibold"
         class="uppercase tracking-wide text-metro-sub-light dark:text-metro-sub-dark">
