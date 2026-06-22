@@ -13,6 +13,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     AccountExportSheet: typeof import('./components/AccountExportSheet.vue')['default']
     AccountImportSheet: typeof import('./components/AccountImportSheet.vue')['default']
+    ActivityList: typeof import('./components/ActivityList.vue')['default']
     AvatarView: typeof import('@stage-labs/kit/vue/avatar-view')['default']
     Box: typeof import('@stage-labs/kit/vue/box')['default']
     BubbleActionSheet: typeof import('./components/BubbleActionSheet.vue')['default']
@@ -33,6 +34,7 @@ declare module 'vue' {
     MemberPicker: typeof import('./components/MemberPicker.vue')['default']
     MemberRow: typeof import('./components/MemberRow.vue')['default']
     MessengerBubble: typeof import('./components/MessengerBubble.vue')['default']
+    NftGrid: typeof import('./components/NftGrid.vue')['default']
     Pressable: typeof import('@stage-labs/kit/vue/pressable')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
@@ -44,6 +46,8 @@ declare module 'vue' {
     Textarea: typeof import('@stage-labs/kit/vue/textarea')['default']
     Title: typeof import('@stage-labs/kit/vue/title')['default']
     TokenRow: typeof import('./components/TokenRow.vue')['default']
+    TxRow: typeof import('./components/TxRow.vue')['default']
+    WalletTabs: typeof import('./components/WalletTabs.vue')['default']
     YouTubeEmbed: typeof import('./components/YouTubeEmbed.vue')['default']
   }
 }

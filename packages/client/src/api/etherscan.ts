@@ -1,10 +1,11 @@
 
 import { parseEtherscanResponse, type EtherscanResponse } from './etherscan.schema';
 import type { EtherscanTx } from './etherscan.types';
+import { readEnv } from './env';
 export type { EtherscanTx } from './etherscan.types';
 
 const DEFAULT_KEY =
-  process.env.EXPO_PUBLIC_ETHERSCAN_API_KEY ?? '2UAJBTBZRQTSZUF9JW953W9XMGDM3YAZWY';
+  readEnv('EXPO_PUBLIC_ETHERSCAN_API_KEY') ?? '2UAJBTBZRQTSZUF9JW953W9XMGDM3YAZWY';
 
 const V2_URL = 'https://api.etherscan.io/v2/api';
 

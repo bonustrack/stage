@@ -7,8 +7,10 @@
 export {}
 declare global {
   const ASK_QUESTION_MEMBERS: typeof import('./lib/xmtpGroups').ASK_QUESTION_MEMBERS
+  const DIR_ICON: typeof import('./lib/activityFormat').DIR_ICON
   const EffectScope: typeof import('vue').EffectScope
   const METRO_API_URL: typeof import('./lib/xmtpGroups').METRO_API_URL
+  const WALLET_TABS: typeof import('./lib/walletTab').WALLET_TABS
   const XMTP_USER_PREFIX: typeof import('./lib/xmtp').XMTP_USER_PREFIX
   const acceptRequestConv: typeof import('./lib/xmtpRequests').acceptRequestConv
   const accountEpoch: typeof import('./lib/xmtp').accountEpoch
@@ -42,6 +44,7 @@ declare global {
   const getHostAccount: typeof import('./lib/hostSigner').getHostAccount
   const getLastReadNs: typeof import('./lib/xmtpConsent').getLastReadNs
   const getOrCreateXmtpClient: typeof import('./lib/xmtp').getOrCreateXmtpClient
+  const getTokenRow: typeof import('./lib/tokenDetailStore').getTokenRow
   const getXmtpAccountInfo: typeof import('./lib/xmtp').getXmtpAccountInfo
   const getXmtpEnv: typeof import('./lib/xmtp').getXmtpEnv
   const groupMemberEthAddresses: typeof import('./lib/xmtpResolve').groupMemberEthAddresses
@@ -114,6 +117,8 @@ declare global {
   const readProfile: typeof import('./lib/profile').readProfile
   const readonly: typeof import('vue').readonly
   const ref: typeof import('vue').ref
+  const relTime: typeof import('./lib/activityFormat').relTime
+  const rememberTokenRow: typeof import('./lib/tokenDetailStore').rememberTokenRow
   const removeAccount: typeof import('./lib/xmtp').removeAccount
   const removeAccountRecord: typeof import('./lib/accounts').removeAccountRecord
   const removeMember: typeof import('./lib/useGroupDetail.mutations').removeMember
@@ -149,8 +154,13 @@ declare global {
   const toggleArchived: typeof import('./lib/archived').toggleArchived
   const tokenRowId: typeof import('./lib/walletSort').tokenRowId
   const triggerRef: typeof import('vue').triggerRef
+  const txPartyLabel: typeof import('./lib/activityFormat').txPartyLabel
+  const txTitle: typeof import('./lib/activityFormat').txTitle
+  const txValueColor: typeof import('./lib/activityFormat').txValueColor
+  const txValuePrefix: typeof import('./lib/activityFormat').txValuePrefix
   const unref: typeof import('vue').unref
   const uploadAvatar: typeof import('./lib/profile').uploadAvatar
+  const useActivity: typeof import('./lib/useActivity').useActivity
   const useAttrs: typeof import('vue').useAttrs
   const useBubbleActions: typeof import('./lib/useBubbleActions').useBubbleActions
   const useChannels: typeof import('./lib/useChannels').useChannels
@@ -163,6 +173,7 @@ declare global {
   const useId: typeof import('vue').useId
   const useLink: typeof import('vue-router').useLink
   const useModel: typeof import('vue').useModel
+  const useNfts: typeof import('./lib/useNfts').useNfts
   const useRoute: typeof import('vue-router').useRoute
   const useRouter: typeof import('vue-router').useRouter
   const useSearchResolution: typeof import('./lib/useSearchResolution').useSearchResolution
@@ -206,6 +217,9 @@ declare global {
   export type { HistoryEntry } from './lib/types'
   import('./lib/types')
   // @ts-ignore
+  export type { WalletActivity } from './lib/useActivity'
+  import('./lib/useActivity')
+  // @ts-ignore
   export type { BubbleActionsDeps, BubbleActions } from './lib/useBubbleActions'
   import('./lib/useBubbleActions')
   // @ts-ignore
@@ -224,6 +238,9 @@ declare global {
   export type { GroupShape } from './lib/useGroupDetailHelpers'
   import('./lib/useGroupDetailHelpers')
   // @ts-ignore
+  export type { WalletNfts } from './lib/useNfts'
+  import('./lib/useNfts')
+  // @ts-ignore
   export type { SearchResolution } from './lib/useSearchResolution'
   import('./lib/useSearchResolution')
   // @ts-ignore
@@ -232,6 +249,9 @@ declare global {
   // @ts-ignore
   export type { XmtpConversation } from './lib/useXmtpConversation'
   import('./lib/useXmtpConversation')
+  // @ts-ignore
+  export type { WalletTab } from './lib/walletTab'
+  import('./lib/walletTab')
   // @ts-ignore
   export type { XmtpClient, XmtpInstallationView, XmtpAccountInfo, XmtpEnv, AccountRecord } from './lib/xmtp'
   import('./lib/xmtp')
@@ -246,8 +266,10 @@ declare module 'vue' {
   interface GlobalComponents {}
   interface ComponentCustomProperties {
     readonly ASK_QUESTION_MEMBERS: UnwrapRef<typeof import('./lib/xmtpGroups')['ASK_QUESTION_MEMBERS']>
+    readonly DIR_ICON: UnwrapRef<typeof import('./lib/activityFormat')['DIR_ICON']>
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
     readonly METRO_API_URL: UnwrapRef<typeof import('./lib/xmtpGroups')['METRO_API_URL']>
+    readonly WALLET_TABS: UnwrapRef<typeof import('./lib/walletTab')['WALLET_TABS']>
     readonly XMTP_USER_PREFIX: UnwrapRef<typeof import('./lib/xmtp')['XMTP_USER_PREFIX']>
     readonly acceptRequestConv: UnwrapRef<typeof import('./lib/xmtpRequests')['acceptRequestConv']>
     readonly accountEpoch: UnwrapRef<typeof import('./lib/xmtp')['accountEpoch']>
@@ -281,6 +303,7 @@ declare module 'vue' {
     readonly getHostAccount: UnwrapRef<typeof import('./lib/hostSigner')['getHostAccount']>
     readonly getLastReadNs: UnwrapRef<typeof import('./lib/xmtpConsent')['getLastReadNs']>
     readonly getOrCreateXmtpClient: UnwrapRef<typeof import('./lib/xmtp')['getOrCreateXmtpClient']>
+    readonly getTokenRow: UnwrapRef<typeof import('./lib/tokenDetailStore')['getTokenRow']>
     readonly getXmtpAccountInfo: UnwrapRef<typeof import('./lib/xmtp')['getXmtpAccountInfo']>
     readonly getXmtpEnv: UnwrapRef<typeof import('./lib/xmtp')['getXmtpEnv']>
     readonly groupMemberEthAddresses: UnwrapRef<typeof import('./lib/xmtpResolve')['groupMemberEthAddresses']>
@@ -351,6 +374,8 @@ declare module 'vue' {
     readonly readProfile: UnwrapRef<typeof import('./lib/profile')['readProfile']>
     readonly readonly: UnwrapRef<typeof import('vue')['readonly']>
     readonly ref: UnwrapRef<typeof import('vue')['ref']>
+    readonly relTime: UnwrapRef<typeof import('./lib/activityFormat')['relTime']>
+    readonly rememberTokenRow: UnwrapRef<typeof import('./lib/tokenDetailStore')['rememberTokenRow']>
     readonly removeAccount: UnwrapRef<typeof import('./lib/xmtp')['removeAccount']>
     readonly removeAccountRecord: UnwrapRef<typeof import('./lib/accounts')['removeAccountRecord']>
     readonly removeMember: UnwrapRef<typeof import('./lib/useGroupDetail.mutations')['removeMember']>
@@ -385,8 +410,13 @@ declare module 'vue' {
     readonly toggleArchived: UnwrapRef<typeof import('./lib/archived')['toggleArchived']>
     readonly tokenRowId: UnwrapRef<typeof import('./lib/walletSort')['tokenRowId']>
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
+    readonly txPartyLabel: UnwrapRef<typeof import('./lib/activityFormat')['txPartyLabel']>
+    readonly txTitle: UnwrapRef<typeof import('./lib/activityFormat')['txTitle']>
+    readonly txValueColor: UnwrapRef<typeof import('./lib/activityFormat')['txValueColor']>
+    readonly txValuePrefix: UnwrapRef<typeof import('./lib/activityFormat')['txValuePrefix']>
     readonly unref: UnwrapRef<typeof import('vue')['unref']>
     readonly uploadAvatar: UnwrapRef<typeof import('./lib/profile')['uploadAvatar']>
+    readonly useActivity: UnwrapRef<typeof import('./lib/useActivity')['useActivity']>
     readonly useAttrs: UnwrapRef<typeof import('vue')['useAttrs']>
     readonly useBubbleActions: UnwrapRef<typeof import('./lib/useBubbleActions')['useBubbleActions']>
     readonly useChannels: UnwrapRef<typeof import('./lib/useChannels')['useChannels']>
@@ -399,6 +429,7 @@ declare module 'vue' {
     readonly useId: UnwrapRef<typeof import('vue')['useId']>
     readonly useLink: UnwrapRef<typeof import('vue-router')['useLink']>
     readonly useModel: UnwrapRef<typeof import('vue')['useModel']>
+    readonly useNfts: UnwrapRef<typeof import('./lib/useNfts')['useNfts']>
     readonly useRoute: UnwrapRef<typeof import('vue-router')['useRoute']>
     readonly useRouter: UnwrapRef<typeof import('vue-router')['useRouter']>
     readonly useSearchResolution: UnwrapRef<typeof import('./lib/useSearchResolution')['useSearchResolution']>
