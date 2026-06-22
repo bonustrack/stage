@@ -10,6 +10,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/settings/messenger', name: 'settings-messenger', component: () => import('./views/settings/MessengerSettings.vue') },
   { path: '/settings/developer', name: 'settings-developer', component: () => import('./views/settings/DeveloperSettings.vue') },
   { path: '/profile',   name: 'profile',   component: () => import('./views/Profile.vue') },
+  { path: '/accounts',  name: 'accounts',  component: () => import('./views/Accounts.vue') },
   { path: '/user/:address', name: 'user',  component: () => import('./views/UserProfile.vue') },
   { path: '/group/:convId', name: 'group', component: () => import('./views/GroupDetail.vue') },
   { path: '/xmtp/new-group', name: 'xmtp-new-group', component: () => import('./views/XmtpNewGroup.vue') },
