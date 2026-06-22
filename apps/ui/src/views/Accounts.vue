@@ -3,7 +3,6 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import { useEffectiveScheme } from '../lib/kitTheme';
 import {
   listAccounts, getActiveAccountId, addGeneratedAccount,
   switchToAccount, removeAccount,
@@ -16,7 +15,6 @@ import AccountExportSheet from '../components/AccountExportSheet.vue';
 
 const router = useRouter();
 const palette = useKitPalette();
-const scheme = useEffectiveScheme();
 
 const TYPE_LABEL: Record<AccountRecord['type'], string> = {
   generated: 'Generated',
@@ -32,6 +30,7 @@ const error = ref<string | null>(null);
 
 const showImport = ref(false);
 const exportPk = ref<string | null>(null);
+const manageId = ref<string | null>(null);
 
 const peerNames = ref<Record<string, string>>({});
 function peerName(address: string): string | null {
@@ -55,6 +54,11 @@ async function refresh(): Promise<void> {
 }
 
 onMounted(() => { void refresh(); });
+
+function manageRec(): AccountRecord | null {
+  return accounts.value.find(a => a.id === manageId.value) ?? null;
+}
+function closeManage(): void { manageId.value = null; }
 
 async function onSwitch(id: string): Promise<void> {
   if (id === activeId.value || busy.value) return;
@@ -118,6 +122,22 @@ async function onRemove(rec: AccountRecord): Promise<void> {
   }
 }
 
+function onManageSwitch(): void {
+  const rec = manageRec();
+  closeManage();
+  if (rec) void onSwitch(rec.id);
+}
+function onManageExport(): void {
+  const rec = manageRec();
+  closeManage();
+  if (rec) onExport(rec);
+}
+function onManageRemove(): void {
+  const rec = manageRec();
+  closeManage();
+  if (rec) void onRemove(rec);
+}
+
 function onImported(): void {
   showImport.value = false;
   void refresh();
@@ -141,7 +161,8 @@ function onImported(): void {
     </Row>
 
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-6">
-      <!-- Account list: each row mirrors mobile AccountRow (avatar, name, type, active check). -->
+      <!-- Account list + add/import rows mirror mobile AccountList: each row has a
+           single ⋯ overflow opening a manage sheet, and dashed-plus rows inside the card. -->
       <ul
         class="w-[calc(100%-2rem)] mx-4 mt-4 rounded-xl overflow-hidden border bg-metro-surface-light dark:bg-metro-surface-dark"
         :style="{ borderColor: palette.border }"
@@ -182,50 +203,128 @@ function onImported(): void {
             </Pressable>
             <Icon v-if="a.id === activeId" name="check" :size="20" :color="palette.text" />
             <Pressable
-              v-if="canExportPrivateKey(a)"
               tag="button"
               type="button"
               class="p-1"
-              title="Export private key"
+              title="Manage account"
               :disabled="busy"
-              @click="onExport(a)"
+              @click="manageId = a.id"
             >
-              <Icon name="key" :size="18" :color="palette.sub" />
-            </Pressable>
-            <Pressable
-              tag="button"
-              type="button"
-              class="p-1"
-              title="Remove account"
-              :disabled="busy"
-              @click="onRemove(a)"
-            >
-              <Icon name="trash" :size="18" :color="palette.sub" />
+              <Icon name="dotsHorizontal" :size="20" :color="palette.sub" />
             </Pressable>
           </Row>
         </li>
-      </ul>
 
-      <!-- Add / import actions mirror mobile's "Add account" row + import sheet entry. -->
-      <Col class="w-[calc(100%-2rem)] mx-4 mt-4" :gap="10">
-        <Button label="Add account" :loading="busy" :dark="scheme === 'dark'" full-width @click="onAdd" />
-        <Button
-          label="Import account"
-          variant="soft"
-          :disabled="busy"
-          :dark="scheme === 'dark'"
-          full-width
-          @click="showImport = true"
-        />
-      </Col>
+        <!-- In-card add/import rows with dashed-plus circles, mirroring mobile AddSection. -->
+        <li class="border-t" :style="{ borderColor: palette.border }">
+          <Pressable
+            tag="button"
+            type="button"
+            class="flex w-full items-center gap-3 px-3.5 py-3 text-left
+              hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
+            :disabled="busy"
+            @click="onAdd"
+          >
+            <span
+              class="flex h-7 w-7 items-center justify-center rounded-full border border-dashed"
+              :style="{ borderColor: palette.sub }"
+            >
+              <Icon name="plus" :size="16" :color="palette.sub" />
+            </span>
+            <Text size="md" weight="semibold" class="text-metro-head-light dark:text-metro-head-dark">
+              Add account
+            </Text>
+          </Pressable>
+        </li>
+        <li class="border-t" :style="{ borderColor: palette.border }">
+          <Pressable
+            tag="button"
+            type="button"
+            class="flex w-full items-center gap-3 px-3.5 py-3 text-left
+              hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
+            :disabled="busy"
+            @click="showImport = true"
+          >
+            <span
+              class="flex h-7 w-7 items-center justify-center rounded-full border border-dashed"
+              :style="{ borderColor: palette.sub }"
+            >
+              <Icon name="key" :size="14" :color="palette.sub" />
+            </span>
+            <Text size="md" weight="semibold" class="text-metro-head-light dark:text-metro-head-dark">
+              Import account
+            </Text>
+          </Pressable>
+        </li>
+      </ul>
 
       <Text v-if="error" class="px-4 mt-3 text-[12px]" :style="{ color: '#ef4444' }">{{ error }}</Text>
 
       <Text class="px-4 mt-4 text-[11px]" role="secondary">
-        Tap an account to switch. Private keys are stored unencrypted in this browser — only import keys
-        you are comfortable keeping here.
+        Tap an account to switch, or ⋯ for options. Private keys are stored unencrypted in this browser —
+        only import keys you are comfortable keeping here.
       </Text>
     </Col>
+
+    <!-- Per-row manage sheet — mirrors mobile ManageSheet (Switch / Export / Remove). -->
+    <Row
+      v-if="manageId"
+      class="fixed inset-0 z-40 flex items-end bg-black/45"
+      @click.self="closeManage"
+    >
+      <Col
+        class="w-full rounded-t-2xl px-4 pt-3 pb-7 border-t bg-metro-surface-light dark:bg-metro-surface-dark"
+        :style="{ borderColor: palette.border }"
+      >
+        <Col class="mx-auto mb-3 h-1 w-9 rounded-full" :style="{ backgroundColor: palette.border }" />
+        <Col
+          class="rounded-xl overflow-hidden border"
+          :style="{ borderColor: palette.border }"
+        >
+          <Pressable
+            v-if="manageRec() && manageRec()!.id !== activeId"
+            tag="button"
+            type="button"
+            class="w-full text-left px-4 py-3.5
+              hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
+            @click="onManageSwitch"
+          >
+            <Text size="md" weight="medium" class="text-metro-head-light dark:text-metro-head-dark">
+              Switch to this account
+            </Text>
+          </Pressable>
+          <Pressable
+            v-if="manageRec() && canExportPrivateKey(manageRec()!)"
+            tag="button"
+            type="button"
+            class="w-full text-left px-4 py-3.5 border-t
+              hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
+            :style="{ borderColor: palette.border }"
+            @click="onManageExport"
+          >
+            <Col :gap="2">
+              <Text size="md" weight="medium" class="text-metro-head-light dark:text-metro-head-dark">
+                Export private key
+              </Text>
+              <Text size="xs" role="secondary">Reveal + copy this account's key</Text>
+            </Col>
+          </Pressable>
+          <Pressable
+            tag="button"
+            type="button"
+            class="w-full text-left px-4 py-3.5 border-t
+              hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
+            :style="{ borderColor: palette.border }"
+            @click="onManageRemove"
+          >
+            <Col :gap="2">
+              <Text size="md" weight="medium" :style="{ color: palette.danger }">Remove account</Text>
+              <Text size="xs" role="secondary">Delete from this browser</Text>
+            </Col>
+          </Pressable>
+        </Col>
+      </Col>
+    </Row>
 
     <AccountImportSheet v-if="showImport" @close="showImport = false" @imported="onImported" />
     <AccountExportSheet v-if="exportPk" :private-key="exportPk" @close="exportPk = null" />

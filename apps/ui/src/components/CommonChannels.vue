@@ -51,6 +51,7 @@ function open(convId: string): void {
       :avatar-address="ch.avatarUri ? null : ch.avatarAddress"
       :last-ts="ch.lastTs"
       :last-preview="ch.lastPreview"
+      :subtitle="`${ch.memberCount} member${ch.memberCount === 1 ? '' : 's'}`"
       :unread-count="ch.unreadCount"
       :marked-unread="ch.markedUnread"
       @open="open(ch.convId)"

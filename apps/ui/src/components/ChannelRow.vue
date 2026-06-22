@@ -10,6 +10,7 @@ const props = defineProps<{
   title: string;
   lastTs: number | null;
   lastPreview: string;
+  subtitle?: string | null;
   unreadCount: number;
   markedUnread?: boolean;
 }>();
@@ -61,7 +62,7 @@ function fmtTs(ts: number | null): string {
             size="lg"
             color="secondary"
             class="flex-1 min-w-0 leading-[21px] line-clamp-2"
-          >{{ props.lastPreview || '(no messages yet)' }}</Text>
+          >{{ props.lastPreview || props.subtitle || '(no messages yet)' }}</Text>
           <Row v-if="props.unreadCount > 0"
             align="center" justify="center"
             class="min-w-[22px] h-[22px] rounded-full px-[7px] shrink-0

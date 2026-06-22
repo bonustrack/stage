@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import { useEffectiveScheme } from '@/lib/kitTheme';
@@ -24,6 +24,31 @@ const KIND_LABEL: Record<RequestKind, string> = {
   signing: 'Signing request',
   message: 'Message request',
 };
+
+const skipped = ref<Set<string>>(new Set());
+const seen = ref(0);
+
+const pending = computed(() => (requests.value ?? []).filter(r => !skipped.value.has(r.key)));
+const current = computed<QueuedRequest | null>(() => pending.value[0] ?? null);
+const total = computed(() => seen.value + pending.value.length);
+const position = computed(() => (pending.value.length === 0 ? 0 : seen.value + 1));
+
+watch(requests, () => { skipped.value = new Set(); seen.value = 0; });
+
+function advance(): void {
+  const cur = current.value;
+  if (!cur) return;
+  const next = new Set(skipped.value);
+  next.add(cur.key);
+  skipped.value = next;
+  seen.value += 1;
+}
+
+function onRefresh(): void {
+  skipped.value = new Set();
+  seen.value = 0;
+  void refresh();
+}
 
 function detailOf(req: QueuedRequest): ProposalDetail | undefined {
   return details.value.get(req.key);
@@ -65,18 +90,13 @@ async function onVote(
   const poll = detailOf(req)?.poll;
   if (!poll || !req.msgId) return;
   await xmtpVote(poll.line, req.msgId, optionIndex, action, questionIndex).catch(() => undefined);
-  await refresh();
+  advance();
 }
 
 async function onMessageAct(req: QueuedRequest, accept: boolean): Promise<void> {
-  const prev = requests.value;
-  requests.value = (requests.value ?? []).filter(r => r.key !== req.key);
-  try {
-    if (accept) await acceptRequestConv(req.convId);
-    else await blockRequestConv(req.convId);
-  } catch {
-    requests.value = prev;
-  }
+  advance();
+  if (accept) await acceptRequestConv(req.convId).catch(() => undefined);
+  else await blockRequestConv(req.convId).catch(() => undefined);
 }
 </script>
 
@@ -101,7 +121,7 @@ async function onMessageAct(req: QueuedRequest, accept: boolean): Promise<void> 
         label="Refresh"
         :dark="dark"
         :loading="loading"
-        @click="refresh()"
+        @click="onRefresh()"
       />
     </Row>
 
@@ -111,34 +131,45 @@ async function onMessageAct(req: QueuedRequest, accept: boolean): Promise<void> 
     <Col v-else-if="error" align="center" justify="center" class="flex-1" :padding="32">
       <Text role="secondary" text-align="center">{{ error }}</Text>
     </Col>
-    <Col v-else-if="requests.length === 0" align="center" justify="center" class="flex-1" :padding="32" :gap="6">
+    <Col v-else-if="current === null" align="center" justify="center" class="flex-1" :padding="32" :gap="6">
       <Text size="3xl" weight="semibold" color="text">No pending requests</Text>
       <Text role="secondary" text-align="center">Polls, payments, signatures, and message requests will show up here.</Text>
     </Col>
 
-    <ul v-else class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-6">
-      <li
-        v-for="req in requests"
-        :key="req.key"
-        class="px-4 py-4 border-b border-metro-border-light dark:border-metro-border-dark"
-      >
+    <!-- Stepper: one request at a time with an "X of Y" counter, mirroring mobile ProposalsScreen. -->
+    <Col v-else class="flex-1 min-h-0 overflow-y-auto no-scrollbar">
+      <Row align="center" :gap="8" class="px-4 pt-4">
+        <Text size="xs" role="secondary">{{ position }} of {{ total }}</Text>
+        <Col class="flex-1" />
+        <Pressable
+          tag="button"
+          type="button"
+          class="px-2 py-1"
+          title="Skip"
+          @click="advance()"
+        >
+          <Text size="sm" color="link">Skip</Text>
+        </Pressable>
+      </Row>
+
+      <Col :key="current.key" class="px-4 py-4">
         <Text
           size="2xs"
           weight="semibold"
           role="secondary"
           class="uppercase tracking-wide"
-        >{{ KIND_LABEL[req.kind] }}</Text>
+        >{{ KIND_LABEL[current.kind] }}</Text>
 
-        <template v-if="req.kind === 'message'">
+        <template v-if="current.kind === 'message'">
           <Col class="mt-2" :gap="10">
             <ChannelRow
-              :avatar-address="req.request?.avatarAddress ?? null"
-              :avatar-uri="req.request?.avatarUri ?? null"
-              :title="req.request?.title ?? ''"
+              :avatar-address="current.request?.avatarAddress ?? null"
+              :avatar-uri="current.request?.avatarUri ?? null"
+              :title="current.request?.title ?? ''"
               :last-ts="null"
-              :last-preview="messagePreview(req)"
+              :last-preview="messagePreview(current)"
               :unread-count="0"
-              @open="openConversation(req)"
+              @open="openConversation(current)"
             />
             <Row :gap="8">
               <Pressable
@@ -147,7 +178,7 @@ async function onMessageAct(req: QueuedRequest, accept: boolean): Promise<void> 
                 class="flex items-center justify-center"
                 title="Block"
                 :style="{ width: '36px', height: '36px', borderRadius: '18px', borderWidth: '1px', borderStyle: 'solid', borderColor: palette.border }"
-                @click="onMessageAct(req, false)"
+                @click="onMessageAct(current, false)"
               >
                 <Icon name="x" :size="18" :color="palette.danger" />
               </Pressable>
@@ -157,7 +188,7 @@ async function onMessageAct(req: QueuedRequest, accept: boolean): Promise<void> 
                 class="flex items-center justify-center"
                 title="Accept"
                 :style="{ width: '36px', height: '36px', borderRadius: '18px', backgroundColor: acceptBg }"
-                @click="onMessageAct(req, true)"
+                @click="onMessageAct(current, true)"
               >
                 <Icon name="check" :size="18" :color="acceptFg" />
               </Pressable>
@@ -165,18 +196,18 @@ async function onMessageAct(req: QueuedRequest, accept: boolean): Promise<void> 
           </Col>
         </template>
 
-        <template v-else-if="req.kind === 'poll' && detailOf(req)?.poll">
+        <template v-else-if="current.kind === 'poll' && detailOf(current)?.poll">
           <PollCard
-            :poll="detailOf(req)!.poll!.poll"
-            :votes="detailOf(req)!.poll!.votes"
-            :own-votes="detailOf(req)!.poll!.ownVotes"
-            @vote="onVote(req, $event.questionIndex, $event.optionIndex, $event.action)"
+            :poll="detailOf(current)!.poll!.poll"
+            :votes="detailOf(current)!.poll!.votes"
+            :own-votes="detailOf(current)!.poll!.ownVotes"
+            @vote="onVote(current, $event.questionIndex, $event.optionIndex, $event.action)"
           />
           <Pressable
             tag="button"
             type="button"
             class="mt-3 text-left"
-            @click="openConversation(req)"
+            @click="openConversation(current)"
           >
             <Text size="sm" color="link">Open in conversation</Text>
           </Pressable>
@@ -185,20 +216,20 @@ async function onMessageAct(req: QueuedRequest, accept: boolean): Promise<void> 
         <template v-else>
           <Col class="mt-2" :gap="10">
             <Text size="lg" weight="medium" :style="{ color: palette.text }">
-              {{ req.kind === 'payment' ? paymentPreview(req) : signingPreview(req) }}
+              {{ current.kind === 'payment' ? paymentPreview(current) : signingPreview(current) }}
             </Text>
             <Pressable
               tag="button"
               type="button"
               class="self-start px-3 py-2 rounded-lg border text-left"
               :style="{ borderColor: palette.border }"
-              @click="openConversation(req)"
+              @click="openConversation(current)"
             >
               <Text size="sm" color="link">Open in conversation</Text>
             </Pressable>
           </Col>
         </template>
-      </li>
-    </ul>
+      </Col>
+    </Col>
   </Col>
 </template>
