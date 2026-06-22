@@ -11,6 +11,7 @@ export * from './xmtp/request';
 export * from './xmtp/builders';
 export * from './xmtp/codecs';
 export * from './xmtp/inboxCache';
+export * from './xmtp/commonChannels';
 export * from './embed/detect';
 export * from './stamp/resolve';
 export * from './x402/challenge';
@@ -25,5 +26,6 @@ export * from './wallet/balances';
 export * from './accounts/types';
 export * from './accounts/keys';
 export * from './accounts/registry';
+export * from './accounts/store';
 
 export * from './railgun';
