@@ -6,7 +6,7 @@ import { envelopeOfXmtpMessage } from './xmtpEnvelope';
 import type { HistoryEntry } from './types';
 
 export {
-  reactionsByMessage, isReactionEntry, envelopeOfXmtpMessage,
+  reactionsByMessage, ownEmojisByMessage, isReactionEntry, envelopeOfXmtpMessage,
 } from './xmtpEnvelope';
 
 export type XmtpFeedStatus = 'idle' | 'loading' | 'open' | 'error';

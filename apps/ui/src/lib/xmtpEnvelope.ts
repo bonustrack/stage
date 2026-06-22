@@ -34,6 +34,31 @@ export function reactionsByMessage(events: HistoryEntry[]): Map<string, Map<stri
   return out;
 }
 
+function latestOwnReactionStates(events: HistoryEntry[], myUri: string): Map<string, { ts: string; removed: boolean }> {
+  const latest = new Map<string, { ts: string; removed: boolean }>();
+  for (const e of events) {
+    const p = e.payload as { reactTo?: string; emoji?: string; removed?: boolean } | undefined;
+    if (!p?.reactTo || !p.emoji || e.from !== myUri) continue;
+    const k = `${p.reactTo} ${p.emoji}`;
+    const cur = latest.get(k);
+    if (!cur || cur.ts < e.ts) latest.set(k, { ts: e.ts, removed: !!p.removed });
+  }
+  return latest;
+}
+
+export function ownEmojisByMessage(events: HistoryEntry[], myUri: string): Map<string, Set<string>> {
+  const out = new Map<string, Set<string>>();
+  for (const [k, v] of latestOwnReactionStates(events, myUri)) {
+    if (v.removed) continue;
+    const [msgId, emoji] = k.split(' ');
+    if (msgId === undefined || emoji === undefined) continue;
+    let s = out.get(msgId);
+    if (!s) { s = new Set(); out.set(msgId, s); }
+    s.add(emoji);
+  }
+  return out;
+}
+
 export function isReactionEntry(e: HistoryEntry): boolean {
   return Boolean((e.payload as { reactTo?: string } | undefined)?.reactTo);
 }
