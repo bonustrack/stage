@@ -1,49 +1,72 @@
 # Stage
 
-Monorepo for **Stage** — an event-interception wire. The daemon supervises train
-subprocesses in `~/.metro/trains/`, multiplexes their JSON event streams onto stdout,
-and forwards outbound action calls back into the matching train's stdin. Per-platform
-code lives in train scripts outside this repo, written on demand by the user or agent.
+Stage is an XMTP messenger with multi-account support, Snapshot profiles, group
+channels, and an onchain wallet (assets, balances, and Railgun shielded
+transfers). It ships as two clients that stay visually and functionally
+parallel — a Vue 3 web app and an Expo / React Native mobile app — backed by a
+shared framework-agnostic TypeScript core, a shared design-system kit, and a
+Cloudflare Worker that resolves link previews.
 
-## Layout
+## Monorepo layout
 
 ```
 packages/
-  metro/        # @metro-labs/metro — the daemon + CLI (see packages/metro/README.md)
-  client/       # framework-neutral client logic shared by mobile + web
-  kit/          # design tokens, icon data, theme contracts
+  client/   # @stage-labs/client — framework-agnostic shared logic (XMTP, Snapshot
+            #   profiles, embeds, wallet/balances, account keys, Railgun, API clients)
+  kit/      # @stage-labs/kit — shared design system: tokens, icon data, theme
+            #   contracts + a few React Native primitive components
+  config/   # @stage-labs/config — shared ESLint and TypeScript config presets
 apps/
-  app/          # app — mobile activity monitor + composer (Expo + RN)
-  ui/           # ui — web activity monitor + composer (Vue 3 + Vite)
+  app/      # app — Expo + React Native mobile client (XMTP messenger + wallet)
+  ui/       # ui — Vue 3 + Vite web client (channels, conversations, profiles)
+  proxy/    # proxy — Cloudflare Worker for link-preview / image / x402 proxying
 ```
 
-## Packages
+Each workspace has its own README with details.
 
-- [`@metro-labs/metro`](packages/metro/README.md) — install with `npm i -g @metro-labs/metro`. Run `metro` to multiplex train events onto stdout, act on conversations with the standardized verbs (`metro send`/`reply`/`react`/`unreact`/`edit`/`delete`/`read`, routed by the line's station), or use the low-level `metro call <train> <action> <args>` / `POST /api/call/<train>/<action>` escape hatch.
-- [`app`](apps/app/README.md) — Expo / React Native companion. View live activity, filter lines, send replies from your phone via the daemon's bearer-token-gated monitor endpoints. Start with `bun --cwd apps/app start`.
-- [`ui`](apps/ui/README.md) — Vue 3 web companion with the same surface. `bun --cwd apps/ui dev` opens the dev server on `localhost:5173`; `bun --cwd apps/ui build` emits a static bundle in `apps/ui/dist/`.
-- [`@stage-labs/client`](packages/client/README.md) — pure shared logic for client apps.
-- [`@stage-labs/kit`](packages/kit/README.md) — shared visual tokens, icon data, and theme contracts.
+## Prerequisites
 
-The monitor endpoints (`/api/state`, `/api/tail` SSE, `/api/call/<train>/<action>`) are documented in
-[`packages/metro/docs/monitor.md`](packages/metro/docs/monitor.md); enable them by
-setting `METRO_MONITOR_TOKEN` in `~/.config/metro/.env`. Broker semantics (claims,
-multi-user fan-out) are in
-[`packages/metro/docs/broker.md`](packages/metro/docs/broker.md); the `metro://` URI
-scheme is in
-[`packages/metro/docs/uri-scheme.md`](packages/metro/docs/uri-scheme.md).
+- [Bun](https://bun.sh) `1.3.9` (pinned via the `packageManager` field)
+- Node.js `>= 22` (per the `engines` field)
 
-## Development
+## Install
 
 ```sh
 bun install
+```
+
+## Common commands
+
+Run from the repo root:
+
+```sh
 bun run build       # turbo run build
 bun run test        # turbo run test
 bun run typecheck   # turbo run typecheck
-bun run lint        # turbo run lint
+bun run lint        # eslint .
+bun run lint:fix    # eslint . --fix
+bun run check       # lint + typecheck
+bun run knip        # unused files / deps / exports
+bun run madge       # circular-dependency check
 ```
 
-Tasks are orchestrated by [Turbo](https://turbo.build). See `turbo.json` for the pipeline.
+Tasks are orchestrated by [Turbo](https://turbo.build); see `turbo.json` for the
+pipeline (`build`, `test`, `typecheck`).
+
+Per-app dev servers:
+
+```sh
+bun --cwd apps/ui dev       # Vue web dev server (Vite)
+bun --cwd apps/app start    # Expo bundler for the mobile app
+bun --cwd apps/proxy dev    # Cloudflare Worker (wrangler dev)
+```
+
+## CI / quality gates
+
+CI runs on every push to `main` and on pull requests (`.github/workflows/ci.yml`),
+delegating to the reusable `.github/workflows/_ci.yml` workflow. The gates, in
+order, are: **lint → typecheck → knip → madge → build → test**, all on Bun
+`1.3.9` with a frozen lockfile.
 
 ## License
 
