@@ -6,6 +6,9 @@ import {
   type KitThemeValue,
 } from '@stage-labs/kit/vue/theme-context';
 import { useEffectiveScheme } from './lib/kitTheme';
+import {
+  useCustomTheme, customPalette, radiusPx, densityScale, useBaseSize,
+} from './lib/theme';
 
 const route = useRoute();
 const isEmbedded = runningInIframe();
@@ -15,15 +18,31 @@ const showTabs = computed(
 );
 
 const scheme = useEffectiveScheme();
+const custom = useCustomTheme();
+const baseSize = useBaseSize();
 const kitTheme = reactive<KitThemeValue>({
   scheme: scheme.value,
   palette: { ...defaultKitPalette(scheme.value) },
 });
 watchEffect(() => {
   kitTheme.scheme = scheme.value;
-  Object.assign(kitTheme.palette, defaultKitPalette(scheme.value));
+  const next = custom.value
+    ? { ...defaultKitPalette(scheme.value), ...customPalette(scheme.value) }
+    : defaultKitPalette(scheme.value);
+  Object.assign(kitTheme.palette, next);
 });
 provide(KitThemeKey, kitTheme);
+
+watchEffect(() => {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+  const active = custom.value;
+  root.style.setProperty('--kit-block-radius', active ? `${radiusPx.value}px` : '');
+  const d = densityScale.value;
+  root.style.setProperty('--kit-density-x', active ? `${d.paddingX}px` : '');
+  root.style.setProperty('--kit-density-y', active ? `${d.paddingY}px` : '');
+  root.style.fontSize = active ? `${baseSize.value}px` : '';
+});
 </script>
 
 <template>

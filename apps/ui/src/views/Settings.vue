@@ -11,10 +11,12 @@ const palette = useKitPalette();
 const APP_VERSION = pkg.version;
 
 const ROWS: { icon: HeroIconName; label: string; to: string }[] = [
-  { icon: 'users', label: 'Accounts', to: '/accounts' },
   { icon: 'sun', label: 'Display', to: '/settings/display' },
   { icon: 'chat', label: 'Messenger', to: '/settings/messenger' },
-  { icon: 'beaker', label: 'Developer', to: '/settings/developer' },
+  { icon: 'bell', label: 'Notifications', to: '/settings/notifications' },
+  { icon: 'wallet', label: 'Wallet', to: '/settings/wallet' },
+  { icon: 'key', label: 'Security', to: '/settings/security' },
+  { icon: 'beaker', label: 'Experimental', to: '/settings/experimental' },
   { icon: 'questionMarkCircle', label: 'About', to: '/settings/about' },
 ];
 </script>
@@ -26,7 +28,9 @@ const ROWS: { icon: HeroIconName; label: string; to: string }[] = [
       <Title :level="1" class="font-head text-xl text-metro-head-light dark:text-metro-head-dark">Settings</Title>
     </Col>
 
-    <!-- Category list: each row links to a subpage, mirroring mobile's ListView of ListViewItems. -->
+    <!-- Category list: row order / icons / labels mirror the mobile SettingsMenu
+         (apps/app components/settings/SettingsMenu.tsx) 1:1 — each row links to a
+         subpage, mirroring mobile's ListView of ListViewItems. -->
     <Col
       class="w-[calc(100%-2rem)] mx-4 mt-2 rounded-xl overflow-hidden border bg-metro-surface-light dark:bg-metro-surface-dark"
       :style="{ borderColor: palette.border }"
