@@ -11,6 +11,7 @@ const palette = useKitPalette();
 const APP_VERSION = pkg.version;
 
 const ROWS: { icon: HeroIconName; label: string; to: string }[] = [
+  { icon: 'users', label: 'Accounts', to: '/accounts' },
   { icon: 'sun', label: 'Display', to: '/settings/display' },
   { icon: 'chat', label: 'Messenger', to: '/settings/messenger' },
   { icon: 'beaker', label: 'Developer', to: '/settings/developer' },

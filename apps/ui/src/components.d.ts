@@ -11,6 +11,8 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AccountExportSheet: typeof import('./components/AccountExportSheet.vue')['default']
+    AccountImportSheet: typeof import('./components/AccountImportSheet.vue')['default']
     AvatarView: typeof import('@stage-labs/kit/vue/avatar-view')['default']
     Box: typeof import('@stage-labs/kit/vue/box')['default']
     BubbleActionSheet: typeof import('./components/BubbleActionSheet.vue')['default']
@@ -39,6 +41,7 @@ declare module 'vue' {
     Spinner: typeof import('./components/Spinner.vue')['default']
     TabBar: typeof import('./components/TabBar.vue')['default']
     Text: typeof import('@stage-labs/kit/vue/text')['default']
+    Textarea: typeof import('@stage-labs/kit/vue/textarea')['default']
     Title: typeof import('@stage-labs/kit/vue/title')['default']
     YouTubeEmbed: typeof import('./components/YouTubeEmbed.vue')['default']
   }
