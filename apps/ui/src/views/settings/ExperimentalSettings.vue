@@ -44,7 +44,7 @@ const ROWS: { icon: HeroIconName; label: string; to: string }[] = [
           @click="router.push(row.to)"
         >
           <Icon :name="row.icon" :size="22" :color="palette.text" />
-          <span class="flex-1 text-[17px] text-metro-head-light dark:text-metro-head-dark">{{ row.label }}</span>
+          <Text size="xl" class="flex-1 text-metro-head-light dark:text-metro-head-dark">{{ row.label }}</Text>
           <Icon name="chevronRight" :size="18" :color="palette.sub" />
         </Pressable>
       </Col>

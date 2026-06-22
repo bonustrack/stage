@@ -61,26 +61,26 @@ async function copy(key: string, value: string): Promise<void> {
       <template v-else-if="account">
         <!-- ACCOUNT: identity rows grouped into one card, mirroring mobile
              WalletSettings' ACCOUNT section (Name / Type). -->
-        <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark px-4 pt-5 pb-1">ACCOUNT</Col>
+        <Text size="3xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark px-4 pt-5 pb-1">ACCOUNT</Text>
         <Col
           class="w-[calc(100%-2rem)] mx-4 mt-2 rounded-xl overflow-hidden border bg-metro-surface-light dark:bg-metro-surface-dark"
           :style="{ borderColor: palette.border }"
         >
           <Row align="center" justify="between" :gap="16" class="px-4 py-3">
-            <span class="text-[13px] text-metro-sub-light dark:text-metro-sub-dark">Name</span>
-            <span class="text-[14px] font-medium text-metro-fg-light dark:text-metro-fg-dark">{{ account.label ?? shortAddress(account.address) }}</span>
+            <Text size="xs" class="text-metro-sub-light dark:text-metro-sub-dark">Name</Text>
+            <Text size="sm" weight="medium" class="text-metro-fg-light dark:text-metro-fg-dark">{{ account.label ?? shortAddress(account.address) }}</Text>
           </Row>
           <Row
             align="center" justify="between" :gap="16" class="px-4 py-3 border-t"
             :style="{ borderColor: palette.border }"
           >
-            <span class="text-[13px] text-metro-sub-light dark:text-metro-sub-dark">Type</span>
-            <span class="text-[14px] font-medium text-metro-fg-light dark:text-metro-fg-dark">{{ TYPE_LABEL[account.type] ?? account.type }}</span>
+            <Text size="xs" class="text-metro-sub-light dark:text-metro-sub-dark">Type</Text>
+            <Text size="sm" weight="medium" class="text-metro-fg-light dark:text-metro-fg-dark">{{ TYPE_LABEL[account.type] ?? account.type }}</Text>
           </Row>
         </Col>
 
         <!-- ADDRESS: copy-able address row, mirroring mobile WalletSettings ADDRESS. -->
-        <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark px-4 pt-6 pb-1">ADDRESS</Col>
+        <Text size="3xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark px-4 pt-6 pb-1">ADDRESS</Text>
         <Col
           class="w-[calc(100%-2rem)] mx-4 mt-2 rounded-xl overflow-hidden border bg-metro-surface-light dark:bg-metro-surface-dark"
           :style="{ borderColor: palette.border }"
@@ -91,10 +91,10 @@ async function copy(key: string, value: string): Promise<void> {
             class="block w-full p-3 text-left hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark transition-colors"
             @click="copy('addr', account.address)"
           >
-            <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">
+            <Text size="3xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark">
               ADDRESS ({{ copiedKey === 'addr' ? 'copied!' : 'tap to copy' }})
-            </Col>
-            <Col class="text-[13px] text-metro-fg-light dark:text-metro-fg-dark mt-0.5 break-all">{{ account.address }}</Col>
+            </Text>
+            <Text size="xs" tag="div" class="text-metro-fg-light dark:text-metro-fg-dark mt-0.5 break-all">{{ account.address }}</Text>
           </Pressable>
         </Col>
 
@@ -110,7 +110,7 @@ async function copy(key: string, value: string): Promise<void> {
           @click="router.push('/accounts')"
         >
           <Icon name="users" :size="22" :color="palette.text" />
-          <span class="flex-1 text-left text-[17px] text-metro-head-light dark:text-metro-head-dark">Manage accounts</span>
+          <Text size="xl" class="flex-1 text-left text-metro-head-light dark:text-metro-head-dark">Manage accounts</Text>
           <Icon name="chevronRight" :size="18" :color="palette.sub" />
         </Pressable>
       </template>

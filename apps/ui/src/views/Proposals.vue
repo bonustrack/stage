@@ -94,17 +94,15 @@ async function onMessageAct(req: QueuedRequest, accept: boolean): Promise<void> 
       </Pressable>
       <Title size="sm">Pending requests</Title>
       <Col class="flex-1" />
-      <Pressable
+      <Button
         v-if="requests !== null"
-        tag="button"
-        type="button"
-        class="p-2 rounded-lg hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
-        :disabled="loading"
-        title="Refresh"
+        variant="secondary"
+        size="md"
+        label="Refresh"
+        :dark="dark"
+        :loading="loading"
         @click="refresh()"
-      >
-        <Icon name="arrowDown" :size="16" :color="palette.sub" :class="loading ? 'animate-spin' : ''" />
-      </Pressable>
+      />
     </Row>
 
     <Col v-if="requests === null" align="center" justify="center" class="flex-1">
@@ -114,7 +112,7 @@ async function onMessageAct(req: QueuedRequest, accept: boolean): Promise<void> 
       <Text role="secondary" text-align="center">{{ error }}</Text>
     </Col>
     <Col v-else-if="requests.length === 0" align="center" justify="center" class="flex-1" :padding="32" :gap="6">
-      <Text size="2xl" weight="semibold" color="link">No pending requests</Text>
+      <Text size="3xl" weight="semibold" color="text">No pending requests</Text>
       <Text role="secondary" text-align="center">Polls, payments, signatures, and message requests will show up here.</Text>
     </Col>
 

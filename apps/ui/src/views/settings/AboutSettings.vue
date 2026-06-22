@@ -49,8 +49,8 @@ const ROWS: { label: string; value: string }[] = [
           :class="i === 0 ? '' : 'border-t'"
           :style="i === 0 ? {} : { borderColor: palette.border }"
         >
-          <span class="text-[13px] text-metro-sub-light dark:text-metro-sub-dark">{{ row.label }}</span>
-          <span class="text-[14px] font-medium text-metro-fg-light dark:text-metro-fg-dark">{{ row.value }}</span>
+          <Text size="xs" class="text-metro-sub-light dark:text-metro-sub-dark">{{ row.label }}</Text>
+          <Text size="sm" weight="medium" class="text-metro-fg-light dark:text-metro-fg-dark">{{ row.value }}</Text>
         </Row>
       </Col>
 
@@ -66,8 +66,8 @@ const ROWS: { label: string; value: string }[] = [
       >
         <Icon name="code" :size="22" :color="palette.text" />
         <Col class="flex-1 min-w-0">
-          <span class="text-[17px] text-metro-head-light dark:text-metro-head-dark">View Stage on GitHub</span>
-          <span class="text-[12px] text-metro-sub-light dark:text-metro-sub-dark">bonustrack/stage</span>
+          <Text size="xl" class="text-metro-head-light dark:text-metro-head-dark">View Stage on GitHub</Text>
+          <Text size="2xs" class="text-metro-sub-light dark:text-metro-sub-dark">bonustrack/stage</Text>
         </Col>
         <Icon name="externalLink" :size="18" :color="palette.sub" />
       </a>

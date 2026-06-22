@@ -22,7 +22,7 @@ function open(): void { void router.push('/proposals'); }
     @click="open"
   >
     <Icon name="statusOnline" :size="20" :color="palette.link" />
-    <Text size="lg" weight="semibold" color="link" class="flex-1">
+    <Text size="2xl" weight="semibold" color="link" class="flex-1">
       {{ count === 1 ? '1 pending request' : `${count} pending requests` }}
     </Text>
     <Icon name="chevronRight" :size="18" :color="palette.text" />

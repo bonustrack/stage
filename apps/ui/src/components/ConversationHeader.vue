@@ -37,20 +37,20 @@ const embedded = runningInIframe();
       class="flex-1 h-full flex items-center min-w-0 gap-2.5 pr-3.5"
       @click="emit('open')"
     >
-      <AvatarView v-if="props.peerAddress" :src="stampAvatarUrl(props.peerAddress, 56)" :size="28" />
+      <AvatarView v-if="props.peerAddress" :src="stampAvatarUrl(props.peerAddress, 56)" :size="32" />
       <Row v-else-if="visibleMembers.length" align="center" class="shrink-0">
         <img
           v-for="(addr, i) in visibleMembers"
           :key="addr.toLowerCase()"
           :src="stampAvatarUrl(addr, 56)"
           alt=""
-          class="w-7 h-7 rounded-full bg-metro-border-light dark:bg-metro-border-dark border-2
+          class="w-8 h-8 rounded-full bg-metro-border-light dark:bg-metro-border-dark border-2
             border-metro-bg-light dark:border-metro-bg-dark"
           :class="i === 0 ? '' : '-ml-2'"
         />
         <Row v-if="overflow"
           align="center" justify="center"
-          class="w-7 h-7 -ml-2 rounded-full bg-metro-surface-light dark:bg-metro-surface-dark
+          class="w-8 h-8 -ml-2 rounded-full bg-metro-surface-light dark:bg-metro-surface-dark
             border-2 border-metro-bg-light dark:border-metro-bg-dark">
           <Text size="3xs" color="link">+{{ overflow }}</Text>
         </Row>

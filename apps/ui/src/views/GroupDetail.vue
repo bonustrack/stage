@@ -133,7 +133,7 @@ async function onLeaveGroup(): Promise<void> {
     <template v-if="overflowOpen">
       <Col class="fixed inset-0 z-40" @click="overflowOpen = false" />
       <Col
-        class="fixed right-2 top-[52px] z-50 min-w-[200px] py-1 rounded-lg shadow-lg
+        class="fixed right-2 top-[48px] z-50 min-w-[200px] py-1 rounded-lg shadow-lg
           bg-metro-bg-light dark:bg-metro-surface-dark
           border border-metro-border-light dark:border-metro-border-dark"
       >

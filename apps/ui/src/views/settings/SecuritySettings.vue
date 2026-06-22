@@ -48,17 +48,17 @@ onMounted(async () => {
         <Row align="center" :gap="12">
           <Icon name="shieldExclamation" :size="22" :color="palette.danger" />
           <Col class="flex-1 min-w-0">
-            <span class="text-[14px] font-semibold" :style="{ color: palette.danger }">Key stored unencrypted</span>
-            <Col class="text-[12px] text-metro-sub-light dark:text-metro-sub-dark mt-0.5">
+            <Text size="sm" weight="semibold" :style="{ color: palette.danger }">Key stored unencrypted</Text>
+            <Text size="2xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark mt-0.5">
               This account's private key lives in browser storage without a passcode or biometric lock. Back up your key and avoid using Stage on shared devices.
-            </Col>
+            </Text>
           </Col>
         </Row>
       </Col>
 
       <!-- ACCOUNT SECURITY: key management entry point, mirroring mobile's
            AccountSecuritySection. Links to the Accounts screen for export / backup. -->
-      <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark px-4 pt-6 pb-1">ACCOUNT SECURITY</Col>
+      <Text size="3xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark px-4 pt-6 pb-1">ACCOUNT SECURITY</Text>
       <Pressable
         tag="button"
         type="button"
@@ -70,8 +70,8 @@ onMounted(async () => {
       >
         <Icon name="key" :size="22" :color="palette.text" />
         <Col class="flex-1 min-w-0 text-left">
-          <span class="text-[17px] text-metro-head-light dark:text-metro-head-dark">Manage keys &amp; accounts</span>
-          <Col class="text-[12px] text-metro-sub-light dark:text-metro-sub-dark">Import, export and switch accounts.</Col>
+          <Text size="xl" tag="div" class="text-metro-head-light dark:text-metro-head-dark">Manage keys &amp; accounts</Text>
+          <Text size="2xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark">Import, export and switch accounts.</Text>
         </Col>
         <Icon name="chevronRight" :size="18" :color="palette.sub" />
       </Pressable>

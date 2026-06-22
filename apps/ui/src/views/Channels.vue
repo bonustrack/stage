@@ -27,7 +27,7 @@ function runOverflow(fn: () => void): void { overflowOpen.value = false; fn(); }
     <Row align="center" :gap="4" class="h-[52px] box-border shrink-0 pl-2 pr-1
       bg-metro-bg-light dark:bg-metro-bg-dark
       border-b border-metro-border-light dark:border-metro-border-dark">
-      <Text size="4xl" weight="semibold" color="link" class="flex-1 pl-2">
+      <Text size="4xl" weight="semibold" class="flex-1 pl-2 text-metro-head-light dark:text-metro-head-dark">
         {{ embedded ? (view === 'messages' ? 'Messages' : 'Home') : 'Channels' }}
       </Text>
       <template v-if="!embedded && view === 'messages'">

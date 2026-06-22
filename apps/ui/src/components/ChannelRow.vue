@@ -49,9 +49,8 @@ function fmtTs(ts: number | null): string {
           <Text
             size="3xl"
             weight="semibold"
-            color="link"
             :truncate="true"
-            class="flex-1 min-w-0"
+            class="flex-1 min-w-0 text-metro-head-light dark:text-metro-head-dark"
           >{{ props.title }}</Text>
           <Text v-if="fmtTs(props.lastTs)" size="sm" color="secondary" class="shrink-0">
             {{ fmtTs(props.lastTs) }}
