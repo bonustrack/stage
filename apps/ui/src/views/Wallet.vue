@@ -47,7 +47,7 @@ const sortedRows = computed(() => (rows.value ? buildSortedTokenRows(rows.value)
           hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark disabled:opacity-50"
         @click="refresh"
       >
-        <Icon name="arrowDown" :size="18" :class="loading ? 'animate-spin' : ''" />
+        <Icon name="refresh" :size="18" :class="loading ? 'animate-spin' : ''" />
       </Pressable>
       </Row>
     </Row>
@@ -60,6 +60,35 @@ const sortedRows = computed(() => (rows.value ? buildSortedTokenRows(rows.value)
           {{ totalParts.int }}<Text tag="span" size="7xl" weight="semibold" color="secondary">{{ totalParts.dec }}</Text>
         </Text>
       </Col>
+
+      <Row justify="start" :gap="12" class="pb-5">
+        <Col align="center" :gap="6">
+          <Pressable
+            tag="button"
+            type="button"
+            aria-label="Send"
+            class="w-14 h-14 rounded-full flex items-center justify-center
+              bg-metro-border-light dark:bg-metro-border-dark hover:opacity-80"
+            @click="router.push('/wallet/send')"
+          >
+            <Icon name="send" :size="26" class="text-metro-link-light dark:text-metro-link-dark" />
+          </Pressable>
+          <Text size="md" weight="semibold" color="link">Send</Text>
+        </Col>
+        <Col align="center" :gap="6">
+          <Pressable
+            tag="button"
+            type="button"
+            aria-label="Receive"
+            class="w-14 h-14 rounded-full flex items-center justify-center
+              bg-metro-border-light dark:bg-metro-border-dark hover:opacity-80"
+            @click="router.push('/wallet/receive')"
+          >
+            <Icon name="arrowDown" :size="26" class="text-metro-link-light dark:text-metro-link-dark" />
+          </Pressable>
+          <Text size="md" weight="semibold" color="link">Receive</Text>
+        </Col>
+      </Row>
 
       <WalletTabs v-model="tab" class="-mx-4" />
 
