@@ -10,6 +10,8 @@ declare global {
   const DIR_ICON: typeof import('./lib/activityFormat').DIR_ICON
   const EffectScope: typeof import('vue').EffectScope
   const METRO_API_URL: typeof import('./lib/xmtpGroups').METRO_API_URL
+  const POLL_CODEC: typeof import('./lib/xmtpPollCodec').POLL_CODEC
+  const PollCodec: typeof import('./lib/xmtpPollCodec').PollCodec
   const WALLET_TABS: typeof import('./lib/walletTab').WALLET_TABS
   const XMTP_USER_PREFIX: typeof import('./lib/xmtp').XMTP_USER_PREFIX
   const acceptRequestConv: typeof import('./lib/xmtpRequests').acceptRequestConv
@@ -209,7 +211,9 @@ declare global {
   const xmtpReact: typeof import('./lib/xmtpSend').xmtpReact
   const xmtpReply: typeof import('./lib/xmtpSend').xmtpReply
   const xmtpSendAttachment: typeof import('./lib/xmtpSend').xmtpSendAttachment
+  const xmtpSendPoll: typeof import('./lib/xmtpSend').xmtpSendPoll
   const xmtpSendText: typeof import('./lib/xmtpSend').xmtpSendText
+  const xmtpVote: typeof import('./lib/xmtpSend').xmtpVote
   const youtubeIdOf: typeof import('./lib/embedDetect').youtubeIdOf
 }
 // for type re-export
@@ -283,6 +287,9 @@ declare global {
   // @ts-ignore
   export type { XmtpFeedStatus, XmtpFeedHandle } from './lib/xmtpFeed'
   import('./lib/xmtpFeed')
+  // @ts-ignore
+  export type { PollCodec } from './lib/xmtpPollCodec'
+  import('./lib/xmtpPollCodec')
 }
 
 // for vue template auto import
@@ -294,6 +301,8 @@ declare module 'vue' {
     readonly DIR_ICON: UnwrapRef<typeof import('./lib/activityFormat')['DIR_ICON']>
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
     readonly METRO_API_URL: UnwrapRef<typeof import('./lib/xmtpGroups')['METRO_API_URL']>
+    readonly POLL_CODEC: UnwrapRef<typeof import('./lib/xmtpPollCodec')['POLL_CODEC']>
+    readonly PollCodec: UnwrapRef<typeof import('./lib/xmtpPollCodec')['PollCodec']>
     readonly WALLET_TABS: UnwrapRef<typeof import('./lib/walletTab')['WALLET_TABS']>
     readonly XMTP_USER_PREFIX: UnwrapRef<typeof import('./lib/xmtp')['XMTP_USER_PREFIX']>
     readonly acceptRequestConv: UnwrapRef<typeof import('./lib/xmtpRequests')['acceptRequestConv']>
@@ -490,7 +499,9 @@ declare module 'vue' {
     readonly xmtpReact: UnwrapRef<typeof import('./lib/xmtpSend')['xmtpReact']>
     readonly xmtpReply: UnwrapRef<typeof import('./lib/xmtpSend')['xmtpReply']>
     readonly xmtpSendAttachment: UnwrapRef<typeof import('./lib/xmtpSend')['xmtpSendAttachment']>
+    readonly xmtpSendPoll: UnwrapRef<typeof import('./lib/xmtpSend')['xmtpSendPoll']>
     readonly xmtpSendText: UnwrapRef<typeof import('./lib/xmtpSend')['xmtpSendText']>
+    readonly xmtpVote: UnwrapRef<typeof import('./lib/xmtpSend')['xmtpVote']>
     readonly youtubeIdOf: UnwrapRef<typeof import('./lib/embedDetect')['youtubeIdOf']>
   }
 }

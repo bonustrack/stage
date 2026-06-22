@@ -3,9 +3,11 @@ import {
   ReactionAction, ReactionSchema, encodeText,
   type Reaction, type Reply, type Attachment as AttachmentContent,
 } from '@xmtp/browser-sdk';
+import { type PollContent, mintPollId, voteKey } from '@stage-labs/client/xmtp/poll';
 import {
   convOfLine, getCachedXmtpClient, getOrCreateXmtpClient,
 } from './xmtp';
+import { POLL_CODEC } from './xmtpPollCodec';
 
 function base64ToBytes(b64: string): Uint8Array {
   const bin = atob(b64);
@@ -42,6 +44,40 @@ export async function xmtpReply(line: string, replyTo: string, text: string): Pr
   const encoded = await encodeText(text);
   const reply: Reply = { content: encoded, reference: replyTo };
   return await conv.sendReply(reply);
+}
+
+export async function xmtpSendPoll(
+  line: string, question: string, options: string[], opts?: { header?: string; multiSelect?: boolean },
+): Promise<{ messageId: string; poll: PollContent }> {
+  const conv = await convOfLine(line);
+  if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
+  const poll: PollContent = {
+    pollId: mintPollId(),
+    question,
+    ...(opts?.header?.trim() ? { header: opts.header.trim() } : {}),
+    options: options.map(label => ({ label })),
+    ...(opts?.multiSelect ? { multiSelect: true } : {}),
+  };
+  const encoded = POLL_CODEC.encode(poll);
+  const messageId = await conv.send(encoded);
+  return { messageId, poll };
+}
+
+export async function xmtpVote(
+  line: string, pollMessageId: string, optionIndex: number,
+  action: 'added' | 'removed' = 'added', questionIndex = 0,
+): Promise<string> {
+  const conv = await convOfLine(line);
+  if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
+  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const payload: Reaction = {
+    reference: pollMessageId,
+    referenceInboxId: client.inboxId ?? '',
+    action: action === 'added' ? ReactionAction.Added : ReactionAction.Removed,
+    content: voteKey(questionIndex, optionIndex),
+    schema: ReactionSchema.Custom,
+  };
+  return await conv.sendReaction(payload);
 }
 
 export async function xmtpSendAttachment(

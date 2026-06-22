@@ -1,7 +1,8 @@
 <script setup lang="ts">
 
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import { xmtpSendText, xmtpReply } from '../lib/xmtpSend';
+import { xmtpSendText, xmtpReply, xmtpSendPoll } from '../lib/xmtpSend';
+import { pollFallbackText } from '@stage-labs/client/xmtp/poll';
 import { useComposerAttach } from '../lib/useComposerAttach';
 import { stampAvatarUrl } from '../lib/xmtp';
 import { shortAddress } from '@stage-labs/client/identity/format';
@@ -24,6 +25,7 @@ const text = ref('');
 const sending = ref(false);
 const err = ref<string | null>(null);
 const attachOpen = ref(false);
+const pollOpen = ref(false);
 const imageInput = ref<HTMLInputElement | null>(null);
 const cameraInput = ref<HTMLInputElement | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
@@ -99,12 +101,34 @@ function pickFile(): void {
   fileInput.value?.click();
 }
 
+function openPoll(): void {
+  attachOpen.value = false;
+  pollOpen.value = true;
+}
+
 const attachTiles = [
   { icon: 'photo', label: 'Image', action: pickImage },
   { icon: 'camera', label: 'Camera', action: pickCamera },
   { icon: 'paperClip', label: 'File', action: pickFile },
+  { icon: 'chartBar', label: 'Poll', action: openPoll },
   { icon: 'mapPin', label: 'Location', action: () => { void shareLocation(); } },
 ] as const;
+
+async function createPoll(payload: { question: string; options: string[]; multiSelect: boolean }): Promise<void> {
+  pollOpen.value = false;
+  err.value = null;
+  const localId = `tmp_${Math.random().toString(36).slice(2, 10)}`;
+  emit('optimistic', {
+    localId,
+    text: pollFallbackText({ pollId: localId, question: payload.question, options: payload.options.map(label => ({ label })) }),
+  });
+  try {
+    await xmtpSendPoll(props.line, payload.question, payload.options, { multiSelect: payload.multiSelect });
+    emit('sent', localId);
+  } catch (e) {
+    err.value = (e as Error).message;
+  }
+}
 
 function autoGrow(): void {
   const el = textarea.value;
@@ -294,10 +318,10 @@ async function send(): Promise<void> {
     </Col>
     <!-- Attach menu drops BELOW the composer row when open, matching mobile.
          Mobile (MessengerComposer.editor AttachMenu) renders labeled square tiles
-         in a horizontal scroll row; mirror that. Only the actions web can fulfil
-         are shown: Image, Camera, File, Location. Mobile's Poll/Sign/Payment tiles
-         are omitted — web has no create flow for those yet, so we don't ship dead
-         tiles. -->
+         in a horizontal scroll row; mirror that. Shows the actions web can fulfil:
+         Image, Camera, File, Poll, Location. Poll opens the poll-compose sheet
+         (PollComposeSheet) and sends via the shared poll codec, interoperating with
+         mobile. Sign/Payment tiles remain omitted — no web create flow yet. -->
     <Row v-if="attachOpen" class="flex gap-4 px-3 pt-3 pb-3 overflow-x-auto no-scrollbar">
       <Col
         v-for="tile in attachTiles"
@@ -322,5 +346,10 @@ async function send(): Promise<void> {
         </span>
       </Col>
     </Row>
+    <PollComposeSheet
+      v-if="pollOpen"
+      @close="pollOpen = false"
+      @create="createPoll"
+    />
   </Col>
 </template>

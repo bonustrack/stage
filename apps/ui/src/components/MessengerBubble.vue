@@ -7,6 +7,7 @@ import { renderMarkdown } from '../lib/renderMarkdown';
 import { parseMentions } from '@stage-labs/client/xmtp/mentions';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { readProfile, loadCachedProfile } from '../lib/profile';
+import type { PollContent } from '@stage-labs/client/xmtp/poll';
 
 interface AttachmentLike {
   kind: string; mime?: string; name?: string; dataB64?: string; url?: string;
@@ -20,16 +21,24 @@ const props = defineProps<{
   replyTarget?: boolean;
   replyPreview?: string;
   inboxToAddr?: Record<string, string>;
+  pollVotes?: Map<number, Map<number, Set<string>>>;
+  ownPollVotes?: Map<number, Set<number>>;
 }>();
 const emit = defineEmits<{
   (e: 'request-actions' | 'reply', entry: HistoryEntry): void;
   (e: 'react', payload: { entry: HistoryEntry; emoji: string }): void;
   (e: 'open-avatar', address: string): void;
+  (e: 'vote', payload: { entry: HistoryEntry; questionIndex: number; optionIndex: number; action: 'added' | 'removed' }): void;
 }>();
 
 const attachments = computed<AttachmentLike[]>(() => {
   const p = props.entry.payload as { attachments?: AttachmentLike[] } | undefined;
   return Array.isArray(p?.attachments) ? p.attachments : [];
+});
+
+const poll = computed<PollContent | null>(() => {
+  const p = props.entry.payload as { contentType?: string; poll?: PollContent } | undefined;
+  return p?.contentType === 'poll' && p.poll ? p.poll : null;
 });
 
 const router = useRouter();
@@ -165,12 +174,21 @@ function onAvatar(): void {
         </a>
         <span v-else class="text-xs opacity-70 font-sans">[{{ att.kind }}{{ att.name ? `: ${att.name}` : '' }}]</span>
       </Col>
+      <!-- Poll card: question, options with tally bars + percentages + counts,
+           tap-to-vote, voted state. Reuses the shared poll codec/tally. The poll's
+           fallback text is suppressed in favor of the rendered card. -->
+      <PollCard v-if="poll"
+        :poll="poll"
+        :votes="props.pollVotes"
+        :own-votes="props.ownPollVotes"
+        @vote="emit('vote', { entry: props.entry, ...$event })"
+      />
       <!-- Markdown-rendered (linkify + breaks) to match the mobile app: bare URLs
            become clickable links. v-html is safe — markdown-it escapes raw HTML
            and blocks javascript:/data: links. When the body carries @0x mentions
            the text is split into segments (shared parseMentions); each non-mention
            run keeps full markdown, and each mention renders as a tappable link. -->
-      <Col v-if="props.entry.text && !hasMentions"
+      <Col v-else-if="props.entry.text && !hasMentions"
         class="break-words font-sans text-[19px] leading-[23px] select-text
           [&_p]:m-0 [&_p:not(:last-child)]:mb-1.5 [&_a]:underline [&_a]:break-words
           [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5
