@@ -1,11 +1,14 @@
 <script setup lang="ts">
 
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useWalletBalances } from '@/lib/useWalletBalances';
 import { buildSortedTokenRows } from '@/lib/walletSort';
 import { fmtUsd, splitUsd } from '@stage-labs/client/wallet/format';
+import type { WalletTab } from '@/lib/walletTab';
 
 const { rows, loading, error, refresh } = useWalletBalances();
+
+const tab = ref<WalletTab>('tokens');
 
 const totalUsd = computed(() =>
   (rows.value
@@ -44,29 +47,37 @@ const sortedRows = computed(() => (rows.value ? buildSortedTokenRows(rows.value)
         </Text>
       </Col>
 
-      <Col
-        v-if="error"
-        align="center"
-        class="py-10"
-      >
-        <Text size="md" color="danger">Couldn’t load tokens</Text>
-      </Col>
+      <WalletTabs v-model="tab" class="-mx-4" />
 
-      <Col
-        v-else-if="rows === null"
-        align="center"
-        class="py-10 text-metro-link-light dark:text-metro-link-dark"
-      >
-        <Spinner :size="28" />
-      </Col>
+      <template v-if="tab === 'tokens'">
+        <Col
+          v-if="error"
+          align="center"
+          class="py-10"
+        >
+          <Text size="md" color="danger">Couldn’t load tokens</Text>
+        </Col>
 
-      <Col v-else-if="sortedRows.length === 0" align="center" class="py-10">
-        <Text size="md" color="secondary">No tokens yet</Text>
-      </Col>
+        <Col
+          v-else-if="rows === null"
+          align="center"
+          class="py-10 text-metro-link-light dark:text-metro-link-dark"
+        >
+          <Spinner :size="28" />
+        </Col>
 
-      <Col v-else>
-        <TokenRow v-for="row in sortedRows" :key="row.id" :r="row.r" />
-      </Col>
+        <Col v-else-if="sortedRows.length === 0" align="center" class="py-10">
+          <Text size="md" color="secondary">No tokens yet</Text>
+        </Col>
+
+        <Col v-else>
+          <TokenRow v-for="row in sortedRows" :key="row.id" :r="row.r" />
+        </Col>
+      </template>
+
+      <ActivityList v-else-if="tab === 'activity'" class="-mx-4" />
+
+      <NftGrid v-else class="-mx-4" />
     </Col>
   </Col>
 </template>

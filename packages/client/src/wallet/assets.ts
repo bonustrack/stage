@@ -38,6 +38,13 @@ export const NETWORK_LOGO: Record<number, string> = {
   11155111: SEPOLIA_NETWORK_LOGO,
 };
 
+export const NETWORK_LABEL: Record<number, string> = {
+  1: 'Ethereum',
+  8453: 'Base',
+  84532: 'Base Sepolia',
+  11155111: 'Sepolia',
+};
+
 export const VIEM_CHAINS: Record<number, Chain> = { 1: mainnet, 8453: base, 11155111: sepolia };
 
 export const erc20Abi = [{

@@ -1,10 +1,11 @@
 
 import { parseOpenseaResponse } from './opensea.schema';
 import type { ApiNft } from './opensea.types';
+import { readEnv } from './env';
 export type { ApiNft } from './opensea.types';
 
 const DEFAULT_KEY =
-  process.env.EXPO_PUBLIC_OPENSEA_API_KEY ?? '51754bb53b324552ba4741c5b7298096';
+  readEnv('EXPO_PUBLIC_OPENSEA_API_KEY') ?? '51754bb53b324552ba4741c5b7298096';
 
 interface ChainItem {
   name: string;
