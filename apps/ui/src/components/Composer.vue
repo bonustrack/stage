@@ -4,6 +4,7 @@ import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import { xmtpSendText, xmtpReply, xmtpSendPoll } from '../lib/xmtpSend';
 import { pollFallbackText } from '@stage-labs/client/xmtp/poll';
 import { useComposerAttach } from '../lib/useComposerAttach';
+import { useVoiceRecorder } from '../lib/useVoiceRecorder';
 import { stampAvatarUrl } from '../lib/xmtp';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { computeMentionQuery, applyMention, type MentionCandidate } from '@stage-labs/client/xmtp/mentions';
@@ -32,6 +33,10 @@ const fileInput = ref<HTMLInputElement | null>(null);
 const textarea = ref<HTMLTextAreaElement | null>(null);
 const { pending, clear: clearPending, onPaste, onFileChange, flush: flushPending } =
   useComposerAttach(() => props.line, m => { err.value = m; });
+const {
+  recording, seconds: recordSecs, levels: recordLevels,
+  start: startRecording, stopAndSend: stopRecording, cancel: cancelRecording,
+} = useVoiceRecorder(() => props.line, m => { err.value = m; });
 
 const mentionMatches = ref<MentionCandidate[]>([]);
 const mentionRange = ref<{ start: number; end: number } | null>(null);
@@ -106,10 +111,16 @@ function openPoll(): void {
   pollOpen.value = true;
 }
 
+function recordVoice(): void {
+  attachOpen.value = false;
+  void startRecording();
+}
+
 const attachTiles = [
   { icon: 'photo', label: 'Image', action: pickImage },
   { icon: 'camera', label: 'Camera', action: pickCamera },
   { icon: 'paperClip', label: 'File', action: pickFile },
+  { icon: 'microphone', label: 'Voice', action: recordVoice },
   { icon: 'chartBar', label: 'Poll', action: openPoll },
   { icon: 'mapPin', label: 'Location', action: () => { void shareLocation(); } },
 ] as const;
@@ -237,7 +248,19 @@ async function send(): Promise<void> {
         <span class="text-xs text-metro-sub-light dark:text-metro-sub-dark shrink-0">{{ shortAddress(c.address) }}</span>
       </Pressable>
     </Col>
-    <Col surface="raised" :padding="10">
+    <!-- Voice recording bar replaces the composer input while a MediaRecorder
+         capture is in progress: pulsing dot, live level waveform, elapsed
+         duration, cancel and send, mirroring the mobile press-to-record voice
+         UX. On send the recorder encodes the blob to an audio/* static
+         attachment, matching the mobile wire format. -->
+    <VoiceRecordBar
+      v-if="recording"
+      :seconds="recordSecs"
+      :levels="recordLevels"
+      @send="stopRecording"
+      @cancel="cancelRecording"
+    />
+    <Col v-else surface="raised" :padding="10">
       <!-- Pending pasted/selected attachment preview — image thumbnail for image
            types, a file chip otherwise. Removable, sent on Send. -->
       <Col v-if="pending" class="relative inline-block mb-2">

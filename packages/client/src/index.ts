@@ -10,6 +10,7 @@ export * from './xmtp/envelope';
 export * from './xmtp/consent';
 export * from './xmtp/request';
 export * from './xmtp/builders';
+export * from './xmtp/voice';
 export * from './xmtp/codecs';
 export * from './xmtp/inboxCache';
 export * from './xmtp/commonChannels';

@@ -26,6 +26,7 @@
     "./xmtp/consent": "./src/xmtp/consent.ts",
     "./xmtp/request": "./src/xmtp/request.ts",
     "./xmtp/builders": "./src/xmtp/builders.ts",
+    "./xmtp/voice": "./src/xmtp/voice.ts",
     "./xmtp/codecs": "./src/xmtp/codecs.ts",
     "./xmtp/inboxCache": "./src/xmtp/inboxCache.ts",
     "./xmtp/commonChannels": "./src/xmtp/commonChannels.ts",

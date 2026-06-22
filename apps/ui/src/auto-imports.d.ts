@@ -201,6 +201,7 @@ declare global {
   const useTemplateRef: typeof import('vue').useTemplateRef
   const useThemePreference: typeof import('./lib/theme').useThemePreference
   const useThemeSeeds: typeof import('./lib/theme').useThemeSeeds
+  const useVoiceRecorder: typeof import('./lib/useVoiceRecorder').useVoiceRecorder
   const useWalletBalances: typeof import('./lib/useWalletBalances').useWalletBalances
   const useXmtpConversation: typeof import('./lib/useXmtpConversation').useXmtpConversation
   const useXmtpFeed: typeof import('./lib/xmtpFeed').useXmtpFeed
@@ -489,6 +490,7 @@ declare module 'vue' {
     readonly useTemplateRef: UnwrapRef<typeof import('vue')['useTemplateRef']>
     readonly useThemePreference: UnwrapRef<typeof import('./lib/theme')['useThemePreference']>
     readonly useThemeSeeds: UnwrapRef<typeof import('./lib/theme')['useThemeSeeds']>
+    readonly useVoiceRecorder: UnwrapRef<typeof import('./lib/useVoiceRecorder')['useVoiceRecorder']>
     readonly useWalletBalances: UnwrapRef<typeof import('./lib/useWalletBalances')['useWalletBalances']>
     readonly useXmtpConversation: UnwrapRef<typeof import('./lib/useXmtpConversation')['useXmtpConversation']>
     readonly useXmtpFeed: UnwrapRef<typeof import('./lib/xmtpFeed')['useXmtpFeed']>

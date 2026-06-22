@@ -165,6 +165,7 @@ function onAvatar(): void {
         <MediaCard v-if="att.kind === 'image' && urlOf(att)">
           <img :src="urlOf(att) ?? undefined" :alt="att.name ?? 'image'" class="block w-full aspect-square object-cover" />
         </MediaCard>
+        <VoiceMessage v-else-if="att.kind === 'audio' && urlOf(att)" :src="urlOf(att) ?? ''" />
         <a v-else-if="urlOf(att)"
           :href="urlOf(att) ?? undefined"
           :download="att.name ?? undefined"
