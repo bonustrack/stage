@@ -43,6 +43,7 @@ declare module 'vue' {
     Text: typeof import('@stage-labs/kit/vue/text')['default']
     Textarea: typeof import('@stage-labs/kit/vue/textarea')['default']
     Title: typeof import('@stage-labs/kit/vue/title')['default']
+    TokenRow: typeof import('./components/TokenRow.vue')['default']
     YouTubeEmbed: typeof import('./components/YouTubeEmbed.vue')['default']
   }
 }

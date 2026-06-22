@@ -9,7 +9,7 @@ import { useEffectiveScheme } from './lib/kitTheme';
 
 const route = useRoute();
 const isEmbedded = runningInIframe();
-const TAB_ROUTES = new Set(['channels', 'contacts', 'settings', 'profile']);
+const TAB_ROUTES = new Set(['channels', 'contacts', 'wallet', 'settings', 'profile']);
 const showTabs = computed(
   () => !isEmbedded && typeof route.name === 'string' && TAB_ROUTES.has(route.name),
 );
