@@ -19,6 +19,9 @@ message — the local DB + installation key take over.
 | widget → host | `{ type: 'metro:sign-request', id, message }` | `personal_sign` this UTF-8 string |
 | host → widget | `{ type: 'metro:sign-response', id, signature }` | `0x…` hex signature |
 | host → widget | `{ type: 'metro:sign-response', id, error }` | user rejected / failed |
+| widget → host | `{ type: 'metro:tx-request', id, chainId, to, value, data? }` | send this transaction from the connected wallet (`value`/`data` are `0x…` hex) |
+| host → widget | `{ type: 'metro:tx-response', id, hash }` | submitted tx hash (`0x…`, 32 bytes) |
+| host → widget | `{ type: 'metro:tx-response', id, error }` | user rejected / failed |
 
 `id` correlates a sign-request with its response. The widget only accepts
 messages whose `event.source` is the parent frame; the host should likewise
@@ -68,8 +71,10 @@ keyed to the returned address, reuse across reloads without re-signing).
 
 ## Notes
 
-- **Security:** both sides pin origins. The host signs only `personal_sign` of
-  short XMTP identity strings — never transactions.
+- **Security:** both sides pin origins. The host signs `personal_sign` of short
+  XMTP identity strings, and (only for the explicit wallet send flow) submits the
+  user-initiated `metro:tx-request` transaction with its own provider. The host
+  should surface its own confirmation UI before signing or broadcasting.
 - **Wallet switch:** when the host posts a new `metro:account` address, the
   widget rebuilds its XMTP client for that identity (re-prompting once for the
   new wallet).

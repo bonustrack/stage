@@ -31,6 +31,11 @@ function back(): void {
   if (window.history.length > 1) router.back();
   else void router.push('/wallet');
 }
+
+function send(): void {
+  if (!id.value) return;
+  void router.push({ path: '/wallet/send', query: { token: id.value } });
+}
 </script>
 
 <template>
@@ -99,10 +104,11 @@ function back(): void {
             <Pressable
               tag="button"
               type="button"
-              disabled
               aria-label="Send"
-              class="w-14 h-14 rounded-full flex items-center justify-center opacity-50
-                bg-metro-border-light dark:bg-metro-border-dark cursor-not-allowed"
+              class="w-14 h-14 rounded-full flex items-center justify-center
+                bg-metro-border-light dark:bg-metro-border-dark
+                hover:opacity-80"
+              @click="send"
             >
               <Icon name="send" :size="26" class="text-metro-link-light dark:text-metro-link-dark" />
             </Pressable>

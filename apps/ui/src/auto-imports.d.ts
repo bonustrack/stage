@@ -49,6 +49,7 @@ declare global {
   const getXmtpEnv: typeof import('./lib/xmtp').getXmtpEnv
   const groupMemberEthAddresses: typeof import('./lib/xmtpResolve').groupMemberEthAddresses
   const h: typeof import('vue').h
+  const hostSendTransaction: typeof import('./lib/hostSigner').hostSendTransaction
   const hostSigner: typeof import('./lib/hostSigner').hostSigner
   const hydrateCachedRows: typeof import('./lib/channelsCache').hydrateCachedRows
   const importFromSeed: typeof import('./lib/xmtp').importFromSeed
@@ -177,6 +178,7 @@ declare global {
   const useRoute: typeof import('vue-router').useRoute
   const useRouter: typeof import('vue-router').useRouter
   const useSearchResolution: typeof import('./lib/useSearchResolution').useSearchResolution
+  const useSend: typeof import('./lib/useSend').useSend
   const useSlots: typeof import('vue').useSlots
   const useTemplateRef: typeof import('vue').useTemplateRef
   const useThemePreference: typeof import('./lib/theme').useThemePreference
@@ -204,6 +206,9 @@ declare global {
   // @ts-ignore
   export type { ChannelRow } from './lib/channelsSummarize'
   import('./lib/channelsSummarize')
+  // @ts-ignore
+  export type { HostTxRequest } from './lib/hostSigner'
+  import('./lib/hostSigner')
   // @ts-ignore
   export type { PickedMember } from './lib/memberPicker'
   import('./lib/memberPicker')
@@ -243,6 +248,9 @@ declare global {
   // @ts-ignore
   export type { SearchResolution } from './lib/useSearchResolution'
   import('./lib/useSearchResolution')
+  // @ts-ignore
+  export type { SendTxState, FeePreview, UseSend } from './lib/useSend'
+  import('./lib/useSend')
   // @ts-ignore
   export type { WalletBalances } from './lib/useWalletBalances'
   import('./lib/useWalletBalances')
@@ -308,6 +316,7 @@ declare module 'vue' {
     readonly getXmtpEnv: UnwrapRef<typeof import('./lib/xmtp')['getXmtpEnv']>
     readonly groupMemberEthAddresses: UnwrapRef<typeof import('./lib/xmtpResolve')['groupMemberEthAddresses']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
+    readonly hostSendTransaction: UnwrapRef<typeof import('./lib/hostSigner')['hostSendTransaction']>
     readonly hostSigner: UnwrapRef<typeof import('./lib/hostSigner')['hostSigner']>
     readonly hydrateCachedRows: UnwrapRef<typeof import('./lib/channelsCache')['hydrateCachedRows']>
     readonly importFromSeed: UnwrapRef<typeof import('./lib/xmtp')['importFromSeed']>
@@ -433,6 +442,7 @@ declare module 'vue' {
     readonly useRoute: UnwrapRef<typeof import('vue-router')['useRoute']>
     readonly useRouter: UnwrapRef<typeof import('vue-router')['useRouter']>
     readonly useSearchResolution: UnwrapRef<typeof import('./lib/useSearchResolution')['useSearchResolution']>
+    readonly useSend: UnwrapRef<typeof import('./lib/useSend')['useSend']>
     readonly useSlots: UnwrapRef<typeof import('vue')['useSlots']>
     readonly useTemplateRef: UnwrapRef<typeof import('vue')['useTemplateRef']>
     readonly useThemePreference: UnwrapRef<typeof import('./lib/theme')['useThemePreference']>

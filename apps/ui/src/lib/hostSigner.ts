@@ -53,6 +53,46 @@ export function getHostAccount(timeoutMs = 4000): Promise<string | null> {
   });
 }
 
+const txPending = new Map<string, { resolve: (h: string) => void; reject: (e: Error) => void; timer: ReturnType<typeof setTimeout> }>();
+let txListening = false;
+
+function ensureTxListener(): void {
+  if (txListening) return;
+  txListening = true;
+  window.addEventListener('message', (e: MessageEvent) => {
+    if (!fromParent(e)) return;
+    const d = e.data as { type?: string; id?: string; hash?: string; error?: string } | null;
+    if (d?.type !== 'metro:tx-response' || !d.id) return;
+    const p = txPending.get(d.id);
+    if (!p) return;
+    txPending.delete(d.id);
+    clearTimeout(p.timer);
+    if (d.error) p.reject(new Error(d.error));
+    else if (typeof d.hash === 'string' && /^0x[0-9a-fA-F]{64}$/.test(d.hash)) p.resolve(d.hash);
+    else p.reject(new Error('host returned no transaction hash'));
+  });
+}
+
+export interface HostTxRequest {
+  chainId: number;
+  to: string;
+  value: string;
+  data?: string;
+}
+
+export function hostSendTransaction(req: HostTxRequest, timeoutMs = 180_000): Promise<Hex> {
+  ensureTxListener();
+  const id = `tx_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  return new Promise<Hex>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      txPending.delete(id);
+      reject(new Error('host transaction request timed out'));
+    }, timeoutMs);
+    txPending.set(id, { resolve: (h) => { resolve(h as Hex); }, reject, timer });
+    window.parent.postMessage({ type: 'metro:tx-request', id, ...req }, '*');
+  });
+}
+
 function hostSignMessage(message: string, timeoutMs = 120_000): Promise<string> {
   ensureSignListener();
   const id = `sig_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
