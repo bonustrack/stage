@@ -35,6 +35,7 @@ const HOST_ACCOUNT_ID = 'host';
 export {
   listAccounts, bumpAccountEpoch,
   addGeneratedAccount, importPrivateKey, importFromSeed, accountEpoch,
+  addSmartAccount, smartAccountsConfigured,
 } from './accounts';
 export { getActiveAccount };
 export type { AccountRecord };
@@ -60,6 +61,32 @@ function signerForAccount(account: PrivateKeyAccount): Signer {
   };
 }
 
+async function smartSignerForRecord(rec: AccountRecord): Promise<Signer> {
+  if (rec.hdIndex == null) throw new Error('Smart account is missing its HD index.');
+  const { smartOwnerSigner } = await import('./accounts');
+  const { makePublicClient, makeKernelClient } = await import('./zerodev');
+  const { createEcdsaKernel } = await import('@stage-labs/client/zerodev/account');
+  const { SCW_CHAIN_ID_BIGINT } = await import('@stage-labs/client/zerodev/config');
+  const owner = smartOwnerSigner(rec.hdIndex);
+  const publicClient = makePublicClient();
+  const account = await createEcdsaKernel(publicClient, owner, rec.hdIndex);
+  const kernelClient = makeKernelClient(account, publicClient);
+  return {
+    type: 'SCW',
+    getIdentifier: () => ({
+      identifier: rec.address.toLowerCase(),
+      identifierKind: IdentifierKind.Ethereum,
+    }),
+    getChainId: () => SCW_CHAIN_ID_BIGINT,
+    signMessage: async (message: string): Promise<Uint8Array> => {
+      const sigHex = await kernelClient.signMessage(
+        { message } as Parameters<typeof kernelClient.signMessage>[0],
+      );
+      return hexToBytes(sigHex);
+    },
+  };
+}
+
 export type XmtpClient = Client<unknown>;
 let cachedClient: XmtpClient | null = null;
 let buildingClient: Promise<XmtpClient> | null = null;
@@ -80,10 +107,17 @@ async function resolveIdentity(): Promise<ResolvedIdentity> {
     const { addGeneratedAccount } = await import('./accounts');
     active = await addGeneratedAccount();
   }
+  await setActiveAccountId(active.id);
+  if (active.type === 'smart') {
+    return {
+      id: active.id,
+      address: active.address.toLowerCase(),
+      signer: await smartSignerForRecord(active),
+    };
+  }
   const pk = loadPk(active.id);
   if (!pk) throw new Error('Active account has no stored key.');
   const account = privateKeyToAccount(pk);
-  await setActiveAccountId(active.id);
   return { id: active.id, address: account.address.toLowerCase(), signer: signerForAccount(account) };
 }
 

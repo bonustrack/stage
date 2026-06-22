@@ -4,7 +4,8 @@ import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import {
-  listAccounts, getActiveAccountId, addGeneratedAccount,
+  listAccounts, getActiveAccountId,
+  addSmartAccount, smartAccountsConfigured,
   switchToAccount, removeAccount,
   shortAddress, stampAvatarUrl, type AccountRecord,
 } from '../lib/xmtp';
@@ -31,6 +32,7 @@ const error = ref<string | null>(null);
 const showImport = ref(false);
 const exportPk = ref<string | null>(null);
 const manageId = ref<string | null>(null);
+const smartReady = smartAccountsConfigured();
 
 const peerNames = ref<Record<string, string>>({});
 function peerName(address: string): string | null {
@@ -77,10 +79,14 @@ async function onSwitch(id: string): Promise<void> {
 
 async function onAdd(): Promise<void> {
   if (busy.value) return;
+  if (!smartReady) {
+    error.value = 'Smart accounts are unavailable — ZeroDev is not configured for this build.';
+    return;
+  }
   busy.value = true;
   error.value = null;
   try {
-    const rec = await addGeneratedAccount();
+    const rec = await addSmartAccount();
     await switchToAccount(rec.id);
     await refresh();
     void router.push('/channels');
@@ -231,9 +237,14 @@ function onImported(): void {
             >
               <Icon name="plus" :size="16" :color="palette.sub" />
             </span>
-            <Text size="md" weight="semibold" class="text-metro-head-light dark:text-metro-head-dark">
-              Add account
-            </Text>
+            <Col :gap="1" class="min-w-0">
+              <Text size="md" weight="semibold" class="text-metro-head-light dark:text-metro-head-dark">
+                Add account
+              </Text>
+              <Text size="xs" role="secondary">
+                {{ smartReady ? 'Creates a smart wallet' : 'Smart wallet unavailable — ZeroDev not configured' }}
+              </Text>
+            </Col>
           </Pressable>
         </li>
         <li class="border-t" :style="{ borderColor: palette.border }">

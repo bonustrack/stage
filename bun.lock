@@ -109,6 +109,7 @@
         "@stage-labs/kit": "workspace:*",
         "@tanstack/vue-query": "^5.100.14",
         "@xmtp/browser-sdk": "^7.0.0",
+        "@zerodev/sdk": "5.5.10",
         "markdown-it": "^14.1.1",
         "qrcode": "^1.5.4",
         "viem": "^2.51.0",
@@ -134,6 +135,8 @@
       "name": "@stage-labs/client",
       "version": "0.1.0-beta.0",
       "dependencies": {
+        "@zerodev/ecdsa-validator": "5.4.9",
+        "@zerodev/sdk": "5.5.10",
         "viem": "^2.51.0",
         "zod": "^3.25.76",
       },
