@@ -1,0 +1,35 @@
+# Netlify build config for the Stage web app (apps/ui), deployed to the
+# stage-livenet site (stage.box). The build runs from the repo root so Bun
+# workspace dependencies resolve; publish points at the app's Vite output.
+
+[build]
+  command = "bun install && bun run --filter ./apps/ui build"
+  publish = "apps/ui/dist"
+
+# Cross-origin isolation: the app uses @xmtp/browser-sdk, which needs
+# SharedArrayBuffer. COEP credentialless (not require-corp) keeps cross-origin
+# avatars / IPFS images loading without per-resource CORP headers.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cross-Origin-Opener-Policy = "same-origin"
+    Cross-Origin-Embedder-Policy = "credentialless"
+
+# Apple App Site Association and Android assetlinks must be served as JSON
+# (AASA has no file extension, so the content type is not inferred).
+[[headers]]
+  for = "/.well-known/apple-app-site-association"
+  [headers.values]
+    Content-Type = "application/json"
+
+[[headers]]
+  for = "/.well-known/assetlinks.json"
+  [headers.values]
+    Content-Type = "application/json"
+
+# The app uses hash routing (createWebHashHistory), so deep links live under
+# "#/...". This SPA fallback is harmless and covers any non-hash deep link.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
