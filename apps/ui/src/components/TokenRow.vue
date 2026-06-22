@@ -1,11 +1,20 @@
 <script setup lang="ts">
 
 import { computed } from 'vue';
+import { useRouter } from 'vue-router';
 import type { AssetRow } from '@stage-labs/client/wallet/assets';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO } from '@stage-labs/client/wallet/assets';
 import { fmtUsd, fmtBalance } from '@stage-labs/client/wallet/format';
+import { rememberTokenRow } from '@/lib/tokenDetailStore';
 
 const props = defineProps<{ r: AssetRow }>();
+
+const router = useRouter();
+
+function open(): void {
+  const id = rememberTokenRow(props.r);
+  void router.push(`/wallet/token/${encodeURIComponent(id)}`);
+}
 
 const valueUsd = computed(() =>
   (props.r.priceUsd === null ? null : props.r.priceUsd * Number(props.r.balance)));
@@ -27,6 +36,12 @@ const networkLogo = computed(() => NETWORK_LOGO[props.r.chainId] ?? MAINNET_NETW
 </script>
 
 <template>
+  <Pressable
+    tag="button"
+    type="button"
+    class="block w-full text-left active:opacity-60"
+    @click="open"
+  >
   <Row align="center" :gap="12" class="py-3.5">
     <Box class="relative w-8 h-8 shrink-0">
       <Image
@@ -61,4 +76,5 @@ const networkLogo = computed(() => NETWORK_LOGO[props.r.chainId] ?? MAINNET_NETW
       </Text>
     </Col>
   </Row>
+  </Pressable>
 </template>
