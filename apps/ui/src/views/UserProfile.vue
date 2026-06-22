@@ -2,6 +2,7 @@
 
 import { openDmWithAddress, shortAddress } from '../lib/xmtp';
 import { readProfile } from '../lib/profile';
+import { resolveSelfAddress } from '../lib/useGroupDetailHelpers';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 import { useQuery } from '@tanstack/vue-query';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
@@ -17,6 +18,14 @@ const { data: profile, isSuccess: loaded } = useQuery({
   queryFn: () => readProfile(address.value),
   enabled: computed(() => !!address.value),
 });
+const { data: selfAddress } = useQuery({
+  queryKey: ['selfAddress'],
+  queryFn: () => resolveSelfAddress(),
+});
+const notSelf = computed(() =>
+  !!address.value
+  && address.value.toLowerCase() !== (selfAddress.value ?? '').toLowerCase());
+
 const openingDm = ref(false);
 const copied = ref(false);
 
@@ -117,6 +126,10 @@ async function copy(value: string): Promise<void> {
         </Col>
       </Row>
     </Col>
+
+    <!-- Common channels: mutual group memberships with this peer (not-self only),
+         placed below the profile actions to mirror mobile ProfileScreen. -->
+    <CommonChannels :peer-address="address" :enabled="notSelf" />
 
     <Col class="px-6 pb-8">
       <Col class="mt-6 space-y-2">

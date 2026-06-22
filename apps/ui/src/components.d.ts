@@ -17,6 +17,7 @@ declare module 'vue' {
     Button: typeof import('@stage-labs/kit/vue/button')['default']
     ChannelRow: typeof import('./components/ChannelRow.vue')['default']
     Col: typeof import('@stage-labs/kit/vue/col')['default']
+    CommonChannels: typeof import('./components/CommonChannels.vue')['default']
     Composer: typeof import('./components/Composer.vue')['default']
     ConversationHeader: typeof import('./components/ConversationHeader.vue')['default']
     GroupAvatarEditor: typeof import('./components/GroupAvatarEditor.vue')['default']
