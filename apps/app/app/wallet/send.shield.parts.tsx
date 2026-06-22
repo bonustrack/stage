@@ -1,7 +1,7 @@
 import { Linking } from 'react-native';
 
-import { Pressable } from '@stage-labs/kit/pressable';
-import { Text } from '@stage-labs/kit/text';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { Box } from '../../components/layout';
 import { DANGER } from '../../lib/theme';
 import { explorerTxUrl } from '@stage-labs/client/xmtp/tx';

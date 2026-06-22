@@ -1,2 +1,2 @@
 
-export { Box, Row, Col } from '@stage-labs/kit/box';
+export { Box, Row, Col } from '@stage-labs/kit/react-native/box';

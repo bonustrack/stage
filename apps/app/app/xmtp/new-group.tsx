@@ -1,15 +1,15 @@
 
 import { useCallback, useState } from 'react';
 import { fontSize } from '@stage-labs/kit/tokens';
-import { Pressable } from '@stage-labs/kit/pressable';
-import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
-import { Input } from '@stage-labs/kit/input';
-import { Image } from '@stage-labs/kit/image';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
+import { Input } from '@stage-labs/kit/react-native/input';
+import { Image } from '@stage-labs/kit/react-native/image';
 import * as ImagePicker from 'expo-image-picker';
-import { Text } from '@stage-labs/kit/text';
-import { Title } from '@stage-labs/kit/title';
-import { Icon } from '@stage-labs/kit/icon';
-import { Button } from '@stage-labs/kit/button';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Title } from '@stage-labs/kit/react-native/title';
+import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Button } from '@stage-labs/kit/react-native/button';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createGroup } from '../../modules/messaging';

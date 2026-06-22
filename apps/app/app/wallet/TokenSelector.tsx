@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { Pressable } from '@stage-labs/kit/pressable';
-import { Image } from '@stage-labs/kit/image';
-import { Text } from '@stage-labs/kit/text';
-import { Icon } from '@stage-labs/kit/icon';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Image } from '@stage-labs/kit/react-native/image';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Box, Row, Col } from '../../components/layout';
 import { AppModal } from '../../components/AppModal';
 import { Spinner } from '../../components/Spinner';

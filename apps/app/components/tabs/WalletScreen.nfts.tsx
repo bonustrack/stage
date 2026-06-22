@@ -1,11 +1,11 @@
 
 import { Linking } from 'react-native';
 
-import { Pressable } from '@stage-labs/kit/pressable';
-import { Image } from '@stage-labs/kit/image';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Image } from '@stage-labs/kit/react-native/image';
 import { Spinner } from '../Spinner';
-import { Text } from '@stage-labs/kit/text';
-import { Icon } from '@stage-labs/kit/icon';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Col, Row, Box } from '../layout';
 import { type Nft } from '../../lib/opensea';
 import { DANGER } from '../../lib/theme';

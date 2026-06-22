@@ -2,8 +2,8 @@
 import { useCallback } from 'react';
 
 import { DevSettings, Vibration } from 'react-native';
-import { Pressable } from '@stage-labs/kit/pressable';
-import { Text } from '@stage-labs/kit/text';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { Col } from '../layout';
 import { Spinner } from '../Spinner';
 import { ChannelRow } from '../ChannelRow';

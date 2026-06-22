@@ -1,8 +1,8 @@
 
 import { useEffect, useState } from 'react';
 
-import { Text } from '@stage-labs/kit/text';
-import { Icon, type HeroIconName } from '@stage-labs/kit/icon';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
 import { Col, Row, Box } from '../layout';
 import { TokenAvatar } from './WalletScreen.tokenAvatar';
 import {

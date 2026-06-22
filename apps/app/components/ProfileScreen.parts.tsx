@@ -1,12 +1,12 @@
 
 import { useEffect, useState } from 'react';
-import { Pressable } from '@stage-labs/kit/pressable';
-import { Text } from '@stage-labs/kit/text';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Row } from './layout';
 import { usePalette, type Palette } from '../lib/theme';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from '../modules/messaging';
-import { Icon, type HeroIconName } from '@stage-labs/kit/icon';
-import { Button } from '@stage-labs/kit/button';
+import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
+import { Button } from '@stage-labs/kit/react-native/button';
 import { TopnavIdentity } from './TopnavIdentity';
 
 export type ProfileColors = Palette;

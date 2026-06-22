@@ -1,10 +1,10 @@
 
 import { useState } from 'react';
 
-import { Pressable } from '@stage-labs/kit/pressable';
-import { Text } from '@stage-labs/kit/text';
-import { Icon } from '@stage-labs/kit/icon';
-import { ListView, ListViewItem } from '@stage-labs/kit/list-view';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Icon } from '@stage-labs/kit/react-native/icon';
+import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import * as Clipboard from 'expo-clipboard';
 import { Col } from '../layout';
 import { AppModal } from '../AppModal';

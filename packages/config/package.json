@@ -1,6 +1,6 @@
 {
   "name": "@stage-labs/config",
-  "version": "0.1.0-beta.0",
+  "version": "0.1.0-beta.1",
   "description": "Shared ESLint and TypeScript config presets.",
   "license": "MIT",
   "repository": {

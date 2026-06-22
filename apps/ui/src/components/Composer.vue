@@ -1,7 +1,10 @@
 <script setup lang="ts">
 
+import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import { xmtpSendText, xmtpReply } from '../lib/xmtpSend';
 import { useComposerAttach } from '../lib/useComposerAttach';
+
+const palette = useKitPalette();
 
 const props = defineProps<{
   line: string;
@@ -33,7 +36,7 @@ function autoGrow(): void {
   const el = textarea.value;
   if (!el) return;
   el.style.height = 'auto';
-  el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
+  el.style.height = `${Math.min(el.scrollHeight, 210)}px`;
 }
 
 async function shareLocation(): Promise<void> {
@@ -88,47 +91,56 @@ async function send(): Promise<void> {
 </script>
 
 <template>
-  <div class="bg-metro-bg-light dark:bg-metro-bg-dark">
-    <div v-if="err" class="px-4 pt-2 text-xs text-metro-err">send failed: {{ err }}</div>
-    <div v-if="props.replyingTo"
+  <Col class="bg-metro-bg-light dark:bg-metro-bg-dark">
+    <Col v-if="err" class="px-4 pt-2 text-xs text-metro-err">send failed: {{ err }}</Col>
+    <Row v-if="props.replyingTo"
       class="flex items-center gap-2 px-4 pt-2 text-xs text-metro-sub-light dark:text-metro-sub-dark">
-      <HeroIcon name="reply" :size="14" />
+      <Icon name="reply" :size="14" />
       <span class="flex-1 truncate">Replying to: {{ props.replyingTo.preview }}</span>
-      <button type="button" class="opacity-70 hover:opacity-100" @click="emit('clear-reply')">
-        <HeroIcon name="x" :size="14" />
-      </button>
-    </div>
-    <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFileChange" />
-    <!-- Mobile-style composer: textarea on top, [+ / spacer / send] row below,
-         both inside one rounded surface. Mirrors MessengerComposer.tsx. -->
-    <div class="m-4 mt-0 px-3 pt-2.5 pb-1.5 rounded-2xl bg-metro-surface-light dark:bg-metro-surface-dark">
+      <Pressable tag="button" type="button" class="opacity-70 hover:opacity-100" @click="emit('clear-reply')">
+        <Icon name="x" :size="14" />
+      </Pressable>
+    </Row>
+    <!-- kit-exception: no kit equivalent (native file input — kit Input has no 'file'
+         inputType; rendered via dynamic tag to keep bare <input> semantics). -->
+    <component :is="'input'" ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFileChange" />
+    <!-- Full-bleed flat composer bar: textarea on top, [+ / spacer / send] row
+         below. Edge-to-edge surface=raised with uniform padding 10, mirroring
+         MessengerComposer.tsx ComposerEditor (Col padding={10} surface="raised"). -->
+    <Col surface="raised" :padding="10">
       <!-- Pending pasted/selected image preview — removable, sent on Send. -->
-      <div v-if="pending" class="relative inline-block mb-2">
+      <Col v-if="pending" class="relative inline-block mb-2">
         <img :src="pending.url" alt="" class="max-h-32 rounded-lg" />
-        <button
+        <Pressable
+          tag="button"
           type="button"
           class="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-black/70 text-white flex items-center justify-center"
           title="Remove"
           @click="clearPending"
         >
-          <HeroIcon name="x" :size="12" />
-        </button>
-      </div>
-      <textarea
+          <Icon name="x" :size="12" />
+        </Pressable>
+      </Col>
+      <!-- kit-exception: no kit equivalent (auto-grow textarea — needs a direct DOM ref
+           for scrollHeight measurement, and kit Textarea forces its own boxed inline
+           style (bg/border/padding/font) that would override this transparent surface). -->
+      <component
+        :is="'textarea'"
         ref="textarea"
         v-model="text"
         placeholder="Message…"
         rows="1"
-        class="w-full resize-none min-h-[24px] max-h-[140px] font-sans
-          bg-transparent px-2 py-0 text-[17px] leading-snug outline-none
+        class="w-full resize-none min-h-[24px] max-h-[210px] font-sans
+          bg-transparent px-2 pt-1 pb-2 text-[17px] leading-[23px] outline-none
           text-metro-head-light dark:text-metro-head-dark
           placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark"
         @input="autoGrow"
         @keydown.enter.exact.prevent="send"
         @paste="onPaste"
       />
-      <div class="flex items-center gap-1">
-        <button
+      <Row class="flex items-center gap-1">
+        <Pressable
+          tag="button"
           type="button"
           class="w-10 h-10 shrink-0 rounded-full flex items-center justify-center
             text-metro-fg-light dark:text-metro-fg-dark
@@ -136,26 +148,30 @@ async function send(): Promise<void> {
           :title="attachOpen ? 'Close attach menu' : 'Attach'"
           @click="toggleAttach"
         >
-          <HeroIcon :name="attachOpen ? 'x' : 'plus'" :size="20" />
-        </button>
-        <div class="flex-1" />
-        <button
-          type="button"
+          <Icon :name="attachOpen ? 'x' : 'plus'" :size="20" />
+        </Pressable>
+        <Col class="flex-1" />
+        <!-- Send: kit Button primary md pill, palette.primary bg / palette.bg fg,
+             arrowSmUp icon size 20. Mirrors MessengerComposer ComposerRightAction. -->
+        <Button
+          variant="primary"
+          size="md"
+          pill
+          :tint-bg="palette.primary"
+          :tint-fg="palette.bg"
           :disabled="sending || (!text.trim() && !pending)"
-          class="w-10 h-10 shrink-0 rounded-full flex items-center justify-center
-            bg-metro-head-light dark:bg-metro-head-dark text-metro-bg-light dark:text-metro-bg-dark
-            disabled:opacity-50"
           :title="sending ? 'Sending…' : 'Send'"
           @click="send"
         >
-          <HeroIcon name="send" :size="22" />
-        </button>
-      </div>
-    </div>
+          <Icon name="arrowSmUp" :size="20" :color="palette.bg" />
+        </Button>
+      </Row>
+    </Col>
     <!-- Attach menu drops BELOW the composer row when open, matching mobile.
          Mobile uses box-style options stacked horizontally; mirror that. -->
-    <div v-if="attachOpen" class="flex gap-2 px-3 pb-3">
-      <button
+    <Row v-if="attachOpen" class="flex gap-2 px-3 pb-3">
+      <Pressable
+        tag="button"
         type="button"
         class="flex items-center gap-2 px-3 py-2 rounded-xl
           border border-metro-border-light dark:border-metro-border-dark
@@ -164,9 +180,10 @@ async function send(): Promise<void> {
           hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
         @click="pickImage"
       >
-        <HeroIcon name="photo" :size="16" /> Image
-      </button>
-      <button
+        <Icon name="photo" :size="16" /> Image
+      </Pressable>
+      <Pressable
+        tag="button"
         type="button"
         class="flex items-center gap-2 px-3 py-2 rounded-xl
           border border-metro-border-light dark:border-metro-border-dark
@@ -175,8 +192,8 @@ async function send(): Promise<void> {
           hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
         @click="shareLocation"
       >
-        <HeroIcon name="mapPin" :size="16" /> Location
-      </button>
-    </div>
-  </div>
+        <Icon name="mapPin" :size="16" /> Location
+      </Pressable>
+    </Row>
+  </Col>
 </template>

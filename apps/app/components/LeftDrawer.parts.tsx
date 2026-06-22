@@ -2,9 +2,9 @@
 import { Box, Col } from './layout';
 
 import { Avatar } from './Avatar';
-import { Text } from '@stage-labs/kit/text';
-import { Icon, type HeroIconName } from '@stage-labs/kit/icon';
-import { ListViewItem } from '@stage-labs/kit/list-view';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
+import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { getPeerName } from '../lib/peerProfiles';
 import { shortAddress } from '../modules/messaging';
 import { type AccountRecord } from '../lib/accounts';

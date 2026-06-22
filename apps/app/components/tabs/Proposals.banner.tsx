@@ -1,8 +1,8 @@
 
 import { useRouter } from 'expo-router';
-import { Pressable } from '@stage-labs/kit/pressable';
-import { Icon } from '@stage-labs/kit/icon';
-import { Text } from '@stage-labs/kit/text';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { Row } from '../layout';
 import { usePalette } from '../../lib/theme';
 import { useProposalCount } from './Proposals.hook';

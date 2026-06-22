@@ -4,28 +4,45 @@ import {
   IdentifierKind,
   type Conversation, type Signer, type XmtpEnv,
 } from '@xmtp/browser-sdk';
-import {
-  generatePrivateKey, privateKeyToAccount,
-  type PrivateKeyAccount,
-} from 'viem/accounts';
-import { hexToBytes, type Hex } from 'viem';
+import { privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
+import { hexToBytes } from 'viem';
 import { getHostAccount, hostSigner } from './hostSigner';
+import {
+  getActiveAccount, getActiveAccountId as getActiveAccountIdRaw,
+  setActiveAccountId, removeAccountRecord, loadPk, bumpAccountEpoch,
+  type AccountRecord,
+} from './accounts';
+import { dbDirFor } from '@stage-labs/client/accounts/registry';
+import {
+  XMTP_USER_PREFIX, lineOfConv, lineOfDmPeer, convIdOfLine, metroConvIdOf, metroDmPeerOf,
+} from '@stage-labs/client/xmtp/line';
+import { shortAddress } from '@stage-labs/client/identity/format';
 
 export type { XmtpEnv };
 
-const PRIVATE_KEY_KEY = 'xmtp.privateKey';
-const ADDRESS_KEY = 'xmtp.address';
-const ENV_KEY = 'xmtp.env';
+export {
+  XMTP_USER_PREFIX, lineOfConv, lineOfDmPeer, convIdOfLine, metroConvIdOf, metroDmPeerOf,
+  shortAddress,
+};
 
-function loadOrCreateAccount(): PrivateKeyAccount {
-  const stored = localStorage.getItem(PRIVATE_KEY_KEY);
-  if (stored && /^0x[0-9a-fA-F]{64}$/.test(stored)) {
-    return privateKeyToAccount(stored as Hex);
-  }
-  const fresh = generatePrivateKey();
-  localStorage.setItem(PRIVATE_KEY_KEY, fresh);
-  return privateKeyToAccount(fresh);
+const ADDRESS_PREFIX = 'xmtp.address.';
+const ENV_PREFIX = 'xmtp.env.';
+const GLOBAL_ENV_KEY = 'xmtp.env';
+const HOST_ACCOUNT_ID = 'host';
+
+export {
+  listAccounts, bumpAccountEpoch,
+  addGeneratedAccount, importPrivateKey, importFromSeed, accountEpoch,
+} from './accounts';
+export { getActiveAccount };
+export type { AccountRecord };
+
+export function getActiveAccountId(): Promise<string | null> {
+  return getActiveAccountIdRaw();
 }
+
+function addressKeyFor(id: string): string { return ADDRESS_PREFIX + id; }
+function envKeyFor(id: string): string { return ENV_PREFIX + id; }
 
 function signerForAccount(account: PrivateKeyAccount): Signer {
   return {
@@ -45,49 +62,132 @@ export type XmtpClient = Client<unknown>;
 let cachedClient: XmtpClient | null = null;
 let buildingClient: Promise<XmtpClient> | null = null;
 
+interface ResolvedIdentity {
+  id: string;
+  address: string;
+  signer: Signer;
+}
+
+async function resolveIdentity(): Promise<ResolvedIdentity> {
+  const hostAddress = await getHostAccount().catch(() => null);
+  if (hostAddress) {
+    return { id: HOST_ACCOUNT_ID, address: hostAddress, signer: hostSigner(hostAddress) };
+  }
+  let active = await getActiveAccount();
+  if (!active) {
+    const { addGeneratedAccount } = await import('./accounts');
+    active = await addGeneratedAccount();
+  }
+  const pk = loadPk(active.id);
+  if (!pk) throw new Error('Active account has no stored key.');
+  const account = privateKeyToAccount(pk);
+  await setActiveAccountId(active.id);
+  return { id: active.id, address: account.address.toLowerCase(), signer: signerForAccount(account) };
+}
+
+async function buildClientForIdentity(ident: ResolvedIdentity, env: XmtpEnv): Promise<XmtpClient> {
+  const dbPath = `${dbDirFor(ident.id)}-${env}.db3`;
+  const opts = { env, dbPath } as Parameters<typeof Client.create>[1];
+  const savedAddress = localStorage.getItem(addressKeyFor(ident.id));
+  const savedEnv = localStorage.getItem(envKeyFor(ident.id));
+  if (savedAddress?.toLowerCase() === ident.address && savedEnv === env) {
+    try {
+      return await Client.build(
+        { identifier: ident.address, identifierKind: IdentifierKind.Ethereum },
+        opts,
+      );
+    } catch { }
+  }
+  const client = await Client.create(ident.signer, opts);
+  localStorage.setItem(addressKeyFor(ident.id), ident.address);
+  localStorage.setItem(envKeyFor(ident.id), env);
+  localStorage.setItem(GLOBAL_ENV_KEY, env);
+  return client;
+}
+
 export async function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promise<XmtpClient> {
   if (cachedClient) return cachedClient;
   if (buildingClient) return buildingClient;
   buildingClient = (async (): Promise<XmtpClient> => {
-    const hostAddress = await getHostAccount().catch(() => null);
-    let signer: Signer;
-    let address: string;
-    if (hostAddress) {
-      signer = hostSigner(hostAddress);
-      address = hostAddress;
-    } else {
-      const account = loadOrCreateAccount();
-      signer = signerForAccount(account);
-      address = account.address.toLowerCase();
-    }
-    const savedAddress = localStorage.getItem(ADDRESS_KEY);
-    const savedEnv = localStorage.getItem(ENV_KEY);
-    const opts = { env } as Parameters<typeof Client.create>[1];
-    if (savedAddress?.toLowerCase() === address && savedEnv === env) {
-      try {
-        cachedClient = await Client.build(
-          { identifier: address, identifierKind: IdentifierKind.Ethereum },
-          opts,
-        );
-        return cachedClient;
-      } catch { }
-    }
-    cachedClient = await Client.create(signer, opts);
-    localStorage.setItem(ADDRESS_KEY, address);
-    localStorage.setItem(ENV_KEY, env);
+    const ident = await resolveIdentity();
+    cachedClient = await buildClientForIdentity(ident, env);
     return cachedClient;
   })();
   try { return await buildingClient; }
   finally { buildingClient = null; }
 }
 
+function disposeCachedClient(): void {
+  const client = cachedClient;
+  cachedClient = null;
+  buildingClient = null;
+  if (client) { try { client.close(); } catch { } }
+}
+
+export async function switchToAccount(id: string, env: XmtpEnv = getXmtpEnv()): Promise<XmtpClient> {
+  await setActiveAccountId(id);
+  disposeCachedClient();
+  const { resetClientScopedState } = await import('./xmtpClientState');
+  resetClientScopedState();
+  bumpAccountEpoch();
+  return getOrCreateXmtpClient(env);
+}
+
+export async function removeAccount(id: string): Promise<AccountRecord[]> {
+  const wasActive = (await getActiveAccountIdRaw()) === id;
+  const next = await removeAccountRecord(id);
+  localStorage.removeItem(addressKeyFor(id));
+  localStorage.removeItem(envKeyFor(id));
+  if (wasActive) {
+    disposeCachedClient();
+    const { resetClientScopedState } = await import('./xmtpClientState');
+    resetClientScopedState();
+    bumpAccountEpoch();
+  }
+  return next;
+}
+
 export function getCachedXmtpClient(): XmtpClient | null { return cachedClient; }
 
-export function lineOfConv(convId: string): string { return `metro://xmtp/${convId}`; }
+export function getXmtpEnv(): XmtpEnv {
+  const saved = localStorage.getItem(GLOBAL_ENV_KEY);
+  return (saved as XmtpEnv | null) ?? 'production';
+}
 
-export function shortAddress(addr: string): string {
-  if (!addr) return '';
-  return addr.length > 10 ? `${addr.slice(0, 6)}…${addr.slice(-4)}` : addr;
+export interface XmtpInstallationView {
+  id: string;
+  createdAtMs: number | null;
+  current: boolean;
+}
+
+export interface XmtpAccountInfo {
+  accountId: string | null;
+  address: string;
+  inboxId: string;
+  installationId: string;
+  env: XmtpEnv;
+  installations: XmtpInstallationView[];
+}
+
+export async function getXmtpAccountInfo(): Promise<XmtpAccountInfo> {
+  const env = getXmtpEnv();
+  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient(env);
+  const accountId = await getActiveAccountIdRaw();
+  const address = client.accountIdentifier?.identifier ?? '';
+  const inboxId = client.inboxId ?? '';
+  const installationId = client.installationId ?? '';
+  let installations: XmtpInstallationView[] = [];
+  try {
+    const state = await client.preferences.inboxState();
+    installations = state.installations.map(inst => ({
+      id: inst.id,
+      createdAtMs: inst.clientTimestampNs != null
+        ? Number(inst.clientTimestampNs / 1_000_000n)
+        : null,
+      current: inst.id === installationId,
+    }));
+  } catch { }
+  return { accountId, address, inboxId, installationId, env, installations };
 }
 
 export function stampAvatarUrl(address: string, size = 120, cacheBust?: string): string {
@@ -96,13 +196,6 @@ export function stampAvatarUrl(address: string, size = 120, cacheBust?: string):
 }
 
 export { peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap } from './xmtpResolve';
-
-export const XMTP_USER_PREFIX = 'metro://xmtp/user/';
-
-export function convIdOfLine(line: string): string | null {
-  const m = /^metro:\/\/xmtp\/([^/]+)$/.exec(line);
-  return m?.[1] ?? null;
-}
 
 export async function convOfLine(line: string): Promise<Conversation | null> {
   const convId = convIdOfLine(line);
@@ -115,6 +208,7 @@ export async function convOfLine(line: string): Promise<Conversation | null> {
 export {
   ASK_QUESTION_MEMBERS, METRO_API_URL,
   createAskQuestionGroup, openDmWithAddress,
+  createGroup, addGroupMembers,
 } from './xmtpGroups';
 
 export {

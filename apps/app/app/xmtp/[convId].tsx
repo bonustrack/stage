@@ -2,7 +2,7 @@
 import { useCallback, useState } from 'react';
 
 import { Animated as RNAnimated } from 'react-native';
-import { Text } from '@stage-labs/kit/text';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { Col } from '../../components/layout';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

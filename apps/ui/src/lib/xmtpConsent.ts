@@ -5,6 +5,7 @@ import {
   type Consent,
 } from '@xmtp/browser-sdk';
 import { getCachedXmtpClient, convOfLine, lineOfConv } from './xmtp';
+import { type XmtpConsent, consentStateToString } from '@stage-labs/client/xmtp/consent';
 
 const LAST_READ_PREFIX = 'unread.lastRead.';
 export function getLastReadNs(convId: string): number {
@@ -19,12 +20,7 @@ export function setLastReadNs(convId: string, ns: number): void {
 }
 
 
-function consentStateToString(s: ConsentState): 'allowed' | 'denied' | 'unknown' {
-  return s === ConsentState.Allowed ? 'allowed'
-    : s === ConsentState.Denied ? 'denied' : 'unknown';
-}
-
-export async function getConvConsent(convId: string): Promise<'allowed' | 'denied' | 'unknown'> {
+export async function getConvConsent(convId: string): Promise<XmtpConsent> {
   try {
     const conv = await convOfLine(lineOfConv(convId));
     if (!conv) return 'unknown';
@@ -58,7 +54,7 @@ export async function syncPreferences(): Promise<void> {
 }
 
 export async function streamConvConsent(
-  onChange: (convId: string, state: 'allowed' | 'denied' | 'unknown') => void,
+  onChange: (convId: string, state: XmtpConsent) => void,
 ): Promise<() => Promise<void>> {
   const client = getCachedXmtpClient();
   if (!client) return () => Promise.resolve();

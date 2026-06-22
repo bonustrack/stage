@@ -1,7 +1,7 @@
 
 import { Box } from '../layout';
 
-import { Text } from '@stage-labs/kit/text';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { useBlockRadius } from '../../lib/theme';
 
 export function GallerySection({ name, note, head, sub, border, framed = true, innerPadH, innerPadV, children }: {

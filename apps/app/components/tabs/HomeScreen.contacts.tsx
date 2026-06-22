@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { isAddress } from 'viem';
-import { Text } from '@stage-labs/kit/text';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { Box } from '../layout';
 import { ChannelRow } from '../ChannelRow';
 import { openDmWithAddress, shortAddress } from '../../modules/messaging';

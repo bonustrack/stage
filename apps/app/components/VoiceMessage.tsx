@@ -1,9 +1,9 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { Pressable } from '@stage-labs/kit/pressable';
-import { Text } from '@stage-labs/kit/text';
-import { Icon } from '@stage-labs/kit/icon';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Audio, AVPlaybackStatus } from 'expo-av';
 import { Row, Col } from './layout';
 import { waveformBars } from './VoiceMessage.bars';

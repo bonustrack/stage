@@ -1,8 +1,8 @@
 
 import { Box, Row } from '../layout';
-import { Icon } from '@stage-labs/kit/icon';
-import { Title } from '@stage-labs/kit/title';
-import { Button } from '@stage-labs/kit/button';
+import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Title } from '@stage-labs/kit/react-native/title';
+import { Button } from '@stage-labs/kit/react-native/button';
 import { setThemePreference, useThemePreference } from '../../lib/theme';
 import { THEME_OPTIONS } from '../tabs/SettingsScreen.parts';
 

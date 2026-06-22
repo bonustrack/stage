@@ -1,9 +1,9 @@
 
 import { fontSize } from '@stage-labs/kit/tokens';
-import { Title } from '@stage-labs/kit/title';
-import { Text } from '@stage-labs/kit/text';
-import { Button } from '@stage-labs/kit/button';
-import { Textarea } from '@stage-labs/kit/textarea';
+import { Title } from '@stage-labs/kit/react-native/title';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Button } from '@stage-labs/kit/react-native/button';
+import { Textarea } from '@stage-labs/kit/react-native/textarea';
 import { Col, Box } from '../layout';
 import { Spinner } from '../Spinner';
 import { usePalette, DANGER } from '../../lib/theme';

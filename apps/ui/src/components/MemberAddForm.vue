@@ -1,6 +1,8 @@
 <script setup lang="ts">
 
-import { Row } from './layout';
+import { useEffectiveScheme } from '@/lib/kitTheme';
+
+const scheme = useEffectiveScheme();
 
 const props = defineProps<{ adding: boolean }>();
 const emit = defineEmits<(e: 'add', address: string) => void>();
@@ -17,10 +19,11 @@ function onAdd(): void {
 
 <template>
   <Row :gap="8" class="px-4 pb-3">
-    <input
+    <Input
       v-model="draft"
-      type="text"
+      inputType="text"
       placeholder="0x… Ethereum address"
+      :dark="scheme === 'dark'"
       autocomplete="off"
       autocorrect="off"
       autocapitalize="off"
@@ -29,7 +32,8 @@ function onAdd(): void {
         rounded-lg px-3 py-2 text-sm text-metro-fg-light dark:text-metro-fg-dark outline-none font-sans"
       @keydown.enter.exact.prevent="onAdd"
     />
-    <button
+    <Pressable
+      tag="button"
       type="button"
       :disabled="props.adding || !valid"
       class="px-3.5 py-2 rounded-full bg-metro-head-light dark:bg-metro-head-dark
@@ -37,6 +41,6 @@ function onAdd(): void {
       @click="onAdd"
     >
       {{ props.adding ? 'Adding…' : 'Add' }}
-    </button>
+    </Pressable>
   </Row>
 </template>

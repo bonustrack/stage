@@ -2,15 +2,15 @@
 import { useState } from 'react';
 
 import { Alert, Modal, Platform } from 'react-native';
-import { Pressable } from '@stage-labs/kit/pressable';
-import { Image } from '@stage-labs/kit/image';
-import { Text } from '@stage-labs/kit/text';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Image } from '@stage-labs/kit/react-native/image';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Col } from './layout';
 import { Spinner } from './Spinner';
 import * as MediaLibrary from 'expo-media-library';
 import { Directory, File, Paths } from 'expo-file-system';
 import { Buffer } from 'buffer';
-import { Icon } from '@stage-labs/kit/icon';
+import { Icon } from '@stage-labs/kit/react-native/icon';
 import { flash } from '../lib/toast';
 
 function extOf(uri: string): string {

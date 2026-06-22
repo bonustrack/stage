@@ -2,14 +2,14 @@
 import { useEffect, useState } from 'react';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { Pressable } from '@stage-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Row, Col } from '../../components/layout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getCachedXmtpClient, getOrCreateXmtpClient, lineOfConv } from '../../modules/messaging';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { Icon } from '@stage-labs/kit/icon';
+import { Icon } from '@stage-labs/kit/react-native/icon';
 import { ImageViewer } from '../../components/ImageViewer';
 import { AddMemberModal, OverflowModal } from './group.parts';
 import { GroupMembersList } from './group.members';

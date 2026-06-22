@@ -1,7 +1,7 @@
 
-import { Pressable } from '@stage-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
 
-import { Text } from '@stage-labs/kit/text';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { Row, Box } from './layout';
 import type { Poll, PollQuestion } from './MessengerBubble.helpers';
 import { usePalette, useBlockRadius, withAlpha } from '../lib/theme';

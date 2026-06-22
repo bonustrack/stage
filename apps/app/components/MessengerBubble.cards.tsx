@@ -1,10 +1,10 @@
 import { Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { Pressable } from '@stage-labs/kit/pressable';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Avatar } from './Avatar';
-import { Text } from '@stage-labs/kit/text';
-import { Icon } from '@stage-labs/kit/icon';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Row, Col, Box } from './layout';
 import { shortAddress } from '../modules/messaging';
 import { ethFromWeiHex } from './MessengerBubble.helpers';

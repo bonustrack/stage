@@ -1,0 +1,16 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Self-adapting Stage diamond favicon: black squares in light mode,
+       white squares in dark mode (transparent background) via the embedded
+       prefers-color-scheme media query. Falls back to /favicon.png on
+       browsers without SVG favicon support. -->
+  <style>
+    rect { fill: #000000; }
+    @media (prefers-color-scheme: dark) {
+      rect { fill: #ffffff; }
+    }
+  </style>
+  <rect x="8.33331" y="15.6667" width="7.33333" height="7.33333" />
+  <rect x="1" y="8.33334" width="7.33333" height="7.33333" />
+  <rect x="8.33331" y="1" width="7.33333" height="7.33333" />
+  <rect x="15.6667" y="8.33334" width="7.33333" height="7.33333" />
+</svg>

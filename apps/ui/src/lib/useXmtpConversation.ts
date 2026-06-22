@@ -7,7 +7,7 @@ import { useRoute, useRouter } from 'vue-router';
 import {
   XMTP_USER_PREFIX, convOfLine, lineOfConv, peerEthAddressOfDm, memberInboxToAddressMap,
 } from './xmtp';
-import { useXmtpFeed, reactionsByMessage, isReactionEntry, type XmtpFeedHandle } from './xmtpFeed';
+import { useXmtpFeed, reactionsByMessage, ownEmojisByMessage, isReactionEntry, type XmtpFeedHandle } from './xmtpFeed';
 import { useBubbleActions } from './useBubbleActions';
 import { markConvRead } from './channelsCache';
 import { postUnreadToParent } from './embedBridge';
@@ -27,6 +27,7 @@ export interface XmtpConversation {
   inboxToAddr: Ref<Record<string, string>>;
   memberAddresses: ComputedRef<string[]>;
   reactions: ComputedRef<Map<string, Map<string, number>>>;
+  ownEmojis: ComputedRef<Map<string, Set<string>>>;
   allBubbles: ComputedRef<HistoryEntry[]>;
   highlightId: Ref<string | null>;
   openHeader: () => void;
@@ -123,6 +124,7 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
   }
 
   const reactions = computed(() => reactionsByMessage(feed.events.value));
+  const ownEmojis = computed(() => ownEmojisByMessage(feed.events.value, myUri.value));
   const liveBubbles = computed(() => feed.events.value.filter(e => !isReactionEntry(e)));
 
   const allBubbles = computed(() => {
@@ -181,7 +183,7 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
   return {
     router, convId, line, feed, myUri, replyingTo, actionTarget,
     peerAddress, groupName, isGroup, inboxToAddr, memberAddresses,
-    reactions, allBubbles, highlightId, openHeader, previewOf,
+    reactions, ownEmojis, allBubbles, highlightId, openHeader, previewOf,
     onReact, onOptimistic, onSent, onActionReply, onBubbleReply,
     onActionCopy, onActionCopyLink,
   };

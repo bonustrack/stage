@@ -1,0 +1,46 @@
+# Netlify build config for the Stage web app (apps/ui), deployed to the
+# stage-livenet site (stage.box). The build runs from the repo root so Bun
+# workspace dependencies resolve; publish points at the app's Vite output.
+
+# The site's build runs with base = apps/ui (set in the Netlify UI), so the build
+# command and publish path are resolved relative to apps/ui. `bun install` still
+# installs the whole workspace (Bun walks up to the root), `bun run build` runs
+# this package's build, and the Vite output lands in apps/ui/dist -> publish "dist".
+# (A previous attempt used `--filter ./apps/ui` + publish "apps/ui/dist", which from
+# the apps/ui base resolved to apps/ui/apps/ui -> "No packages matched the filter".)
+[build]
+  command = "bun install && bun run build"
+  publish = "dist"
+
+# Pin the toolchain to the repo's packageManager / engines so CI matches local.
+[build.environment]
+  BUN_VERSION = "1.3.9"
+  NODE_VERSION = "22"
+
+# Cross-origin isolation: the app uses @xmtp/browser-sdk, which needs
+# SharedArrayBuffer. COEP credentialless (not require-corp) keeps cross-origin
+# avatars / IPFS images loading without per-resource CORP headers.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cross-Origin-Opener-Policy = "same-origin"
+    Cross-Origin-Embedder-Policy = "credentialless"
+
+# Apple App Site Association and Android assetlinks must be served as JSON
+# (AASA has no file extension, so the content type is not inferred).
+[[headers]]
+  for = "/.well-known/apple-app-site-association"
+  [headers.values]
+    Content-Type = "application/json"
+
+[[headers]]
+  for = "/.well-known/assetlinks.json"
+  [headers.values]
+    Content-Type = "application/json"
+
+# The app uses hash routing (createWebHashHistory), so deep links live under
+# "#/...". This SPA fallback is harmless and covers any non-hash deep link.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

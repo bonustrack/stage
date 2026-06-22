@@ -1,11 +1,11 @@
 
 import { useCallback, useState } from 'react';
 
-import { Pressable } from '@stage-labs/kit/pressable';
-import { Scroll as ScrollView } from '@stage-labs/kit/scroll';
-import { Title } from '@stage-labs/kit/title';
-import { Icon } from '@stage-labs/kit/icon';
-import { Button } from '@stage-labs/kit/button';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
+import { Title } from '@stage-labs/kit/react-native/title';
+import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Button } from '@stage-labs/kit/react-native/button';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { addGroupMembers } from '../../modules/messaging';
