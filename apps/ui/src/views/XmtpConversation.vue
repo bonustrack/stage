@@ -7,7 +7,7 @@ const scroller = ref<HTMLElement | null>(null);
 
 const {
   router, line, feed, myUri, replyingTo, actionTarget,
-  peerAddress, groupName, isGroup, inboxToAddr, memberAddresses,
+  peerAddress, groupName, isGroup, inboxToAddr, memberAddresses, mentionCandidates,
   reactions, ownEmojis, allBubbles, highlightId, openHeader, previewOf,
   onReact, onOptimistic, onSent, onActionReply, onBubbleReply,
   onActionCopy, onActionCopyLink,
@@ -65,6 +65,7 @@ const {
     <Composer
       v-if="line"
       :line="line"
+      :mention-candidates="mentionCandidates"
       :replying-to="replyingTo"
       @clear-reply="replyingTo = null"
       @optimistic="onOptimistic"

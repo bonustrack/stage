@@ -12,6 +12,9 @@ import { useBubbleActions } from './useBubbleActions';
 import { markConvRead } from './channelsCache';
 import { postUnreadToParent } from './embedBridge';
 import type { HistoryEntry } from './types';
+import { readProfile, loadCachedProfile } from './profile';
+import { shortAddress } from '@stage-labs/client/identity/format';
+import type { MentionCandidate } from '@stage-labs/client/xmtp/mentions';
 
 export interface XmtpConversation {
   router: ReturnType<typeof useRouter>;
@@ -26,6 +29,7 @@ export interface XmtpConversation {
   isGroup: ComputedRef<boolean>;
   inboxToAddr: Ref<Record<string, string>>;
   memberAddresses: ComputedRef<string[]>;
+  mentionCandidates: ComputedRef<MentionCandidate[]>;
   reactions: ComputedRef<Map<string, Map<string, number>>>;
   ownEmojis: ComputedRef<Map<string, Set<string>>>;
   allBubbles: ComputedRef<HistoryEntry[]>;
@@ -39,6 +43,32 @@ export interface XmtpConversation {
   onBubbleReply: (entry: HistoryEntry) => void;
   onActionCopy: () => void;
   onActionCopyLink: () => void;
+}
+
+function useMentionCandidates(
+  memberAddresses: ComputedRef<string[]>,
+  isGroup: ComputedRef<boolean>,
+): { mentionCandidates: ComputedRef<MentionCandidate[]> } {
+  const memberNames = ref<Record<string, string>>({});
+  const remember = (addr: string, name: string | undefined): void => {
+    if (name) memberNames.value = { ...memberNames.value, [addr.toLowerCase()]: name };
+  };
+  watch(memberAddresses, (addrs) => {
+    for (const addr of addrs) {
+      if (memberNames.value[addr.toLowerCase()]) continue;
+      remember(addr, loadCachedProfile(addr)?.name);
+      void readProfile(addr).then(p => { remember(addr, p?.name); });
+    }
+  }, { immediate: true });
+  const mentionCandidates = computed<MentionCandidate[]>(() =>
+    isGroup.value
+      ? memberAddresses.value.map(addr => ({
+          address: addr,
+          name: memberNames.value[addr.toLowerCase()] ?? shortAddress(addr),
+        }))
+      : [],
+  );
+  return { mentionCandidates };
 }
 
 interface ConvMeta { peerAddress: string | null; groupName: string; inboxToAddr: Record<string, string> }
@@ -91,11 +121,9 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
   const groupName = ref<string>('');
   const isGroup = computed(() => peerAddress.value === null && groupName.value !== '');
   const inboxToAddr = ref<Record<string, string>>({});
-  const memberAddresses = computed(() =>
-    Object.entries(inboxToAddr.value)
-      .filter(([id]) => id !== feed.inboxId.value)
-      .map(([, addr]) => addr),
-  );
+  const memberAddresses = computed(() => Object.entries(inboxToAddr.value)
+    .filter(([id]) => id !== feed.inboxId.value).map(([, addr]) => addr));
+  const { mentionCandidates } = useMentionCandidates(memberAddresses, isGroup);
 
   async function refreshConvMeta(): Promise<void> {
     if (!convId.value || !line.value) return;
@@ -182,7 +210,7 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
 
   return {
     router, convId, line, feed, myUri, replyingTo, actionTarget,
-    peerAddress, groupName, isGroup, inboxToAddr, memberAddresses,
+    peerAddress, groupName, isGroup, inboxToAddr, memberAddresses, mentionCandidates,
     reactions, ownEmojis, allBubbles, highlightId, openHeader, previewOf,
     onReact, onOptimistic, onSent, onActionReply, onBubbleReply,
     onActionCopy, onActionCopyLink,

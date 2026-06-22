@@ -8,8 +8,7 @@ import { formatEther } from 'viem';
 export const REACT_PRESETS = ['👍', '🔥', '👀', '🙏', '😁', '💯', '🫡'];
 
 export { mdParser } from '../lib/mdParser';
-
-export const MENTION_RE = /@(0x[0-9a-fA-F]{40})\b/g;
+export { MENTION_RE, hasMention } from '@stage-labs/client/xmtp/mentions';
 
 const CODE_SPAN_RE = /```[\s\S]*?```|`[^`\n]*`/g;
 
@@ -27,14 +26,6 @@ export function unescapeBody(text: string): string {
   }
   out += unescapeRun(text.slice(last));
   return out;
-}
-
-export function hasMention(text: string): boolean {
-  if (!text.includes('@0x')) return false;
-  MENTION_RE.lastIndex = 0;
-  const found = MENTION_RE.test(text);
-  MENTION_RE.lastIndex = 0;
-  return found;
 }
 
 export interface Attachment {
