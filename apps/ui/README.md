@@ -61,6 +61,10 @@ A small number of native form controls have **no kit equivalent** and are render
 - **Inline-edit controls** — [`src/components/InlineEditableText.vue`](src/components/InlineEditableText.vue) renders bare `input`/`textarea` because kit `Input`/`Textarea` apply their own inline-style box (bg/border/padding/font) that would override the Metro-surface themed styling these controls rely on.
 - **Ref-measured scroll viewport** — [`src/views/XmtpConversation.vue`](src/views/XmtpConversation.vue) keeps a native `<div>` (via `<component :is="'div'">`) for the conversation scroll container: it is `ref`-measured by `useXmtpConversation` (reads `scrollTop`/`scrollHeight` for auto-scroll), needs `absolute inset-0` + `no-scrollbar`, and kit `Scroll` forces its own inline `display:flex`/overflow styles and does not forward a ref to its inner node.
 
+## Wallet (web-lite)
+
+The web wallet is **public-only by design**. It supports public send/receive of assets; shielded/Railgun (private) transfers are **mobile-only** ([`apps/app`](../app)). Deferred shielded affordances (e.g. a "Shield" action) are intentionally not shipped on web, so nothing non-functional is rendered.
+
 ## Links
 
 - Shared logic: [`@stage-labs/client`](../../packages/client)

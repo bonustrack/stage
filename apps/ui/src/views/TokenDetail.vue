@@ -114,20 +114,6 @@ function send(): void {
             </Pressable>
             <Text size="md" weight="semibold" color="link">Send</Text>
           </Col>
-
-          <Col align="center" :gap="6">
-            <Pressable
-              tag="button"
-              type="button"
-              disabled
-              aria-label="Shield"
-              class="w-14 h-14 rounded-full flex items-center justify-center opacity-50
-                bg-metro-border-light dark:bg-metro-border-dark cursor-not-allowed"
-            >
-              <Icon name="eyeOff" :size="26" class="text-metro-link-light dark:text-metro-link-dark" />
-            </Pressable>
-            <Text size="md" weight="semibold" color="link">Shield</Text>
-          </Col>
         </Row>
       </template>
     </Col>
