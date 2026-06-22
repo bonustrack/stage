@@ -152,6 +152,7 @@ declare global {
   const useAttrs: typeof import('vue').useAttrs
   const useBubbleActions: typeof import('./lib/useBubbleActions').useBubbleActions
   const useChannels: typeof import('./lib/useChannels').useChannels
+  const useCommonChannels: typeof import('./lib/useCommonChannels').useCommonChannels
   const useComposerAttach: typeof import('./lib/useComposerAttach').useComposerAttach
   const useCssModule: typeof import('vue').useCssModule
   const useCssVars: typeof import('vue').useCssVars
@@ -381,6 +382,7 @@ declare module 'vue' {
     readonly useAttrs: UnwrapRef<typeof import('vue')['useAttrs']>
     readonly useBubbleActions: UnwrapRef<typeof import('./lib/useBubbleActions')['useBubbleActions']>
     readonly useChannels: UnwrapRef<typeof import('./lib/useChannels')['useChannels']>
+    readonly useCommonChannels: UnwrapRef<typeof import('./lib/useCommonChannels')['useCommonChannels']>
     readonly useComposerAttach: UnwrapRef<typeof import('./lib/useComposerAttach')['useComposerAttach']>
     readonly useCssModule: UnwrapRef<typeof import('vue')['useCssModule']>
     readonly useCssVars: UnwrapRef<typeof import('vue')['useCssVars']>
