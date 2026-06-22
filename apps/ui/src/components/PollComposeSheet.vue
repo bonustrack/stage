@@ -57,7 +57,8 @@ function create(): void {
       <!-- kit-exception: bare inputs — kit Input/Textarea force boxed styling that
            clashes with this surface; mirrors mobile poll-compose sheet inputs. -->
       <component :is="'input'"
-        v-model="question"
+        :value="question"
+        @input="question = ($event.target as HTMLInputElement).value"
         placeholder="Ask a question…"
         class="w-full rounded-lg px-3 py-2 font-sans text-[16px] outline-none
           border border-metro-border-light dark:border-metro-border-dark

@@ -296,14 +296,14 @@ async function send(): Promise<void> {
       <component
         :is="'textarea'"
         ref="textarea"
-        v-model="text"
+        :value="text"
         placeholder="Message"
         rows="1"
         class="w-full resize-none min-h-[24px] max-h-[210px] font-sans
           bg-transparent px-2 pt-1 pb-2 text-[17px] leading-[23px] outline-none
           text-metro-head-light dark:text-metro-head-dark
           placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark"
-        @input="autoGrow(); refreshMentions()"
+        @input="text = ($event.target as HTMLTextAreaElement).value; autoGrow(); refreshMentions()"
         @keydown="onComposerKeydown"
         @keyup="refreshMentions"
         @click="refreshMentions"
