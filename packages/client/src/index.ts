@@ -23,6 +23,7 @@ export * from './identity/peerProfiles';
 export * from './wallet/format';
 export * from './wallet/assets';
 export * from './wallet/balances';
+export * from './wallet/send';
 export * from './accounts/types';
 export * from './accounts/keys';
 export * from './accounts/registry';
