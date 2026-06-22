@@ -83,7 +83,6 @@ async function onSubmit(): Promise<void> {
         variant="primary"
         size="lg"
         full-width
-        pill
         :dark="scheme === 'dark'"
         :loading="submitting"
         :disabled="members.length === 0"
