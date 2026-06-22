@@ -1,6 +1,6 @@
 {
   "name": "@stage-labs/config",
-  "version": "0.1.0-beta.1",
+  "version": "0.1.0-beta.2",
   "description": "Shared ESLint and TypeScript config presets.",
   "license": "MIT",
   "repository": {
@@ -10,11 +10,15 @@
   },
   "type": "module",
   "files": [
+    "bin",
     "eslint",
     "madge",
     "tsconfig",
     "README.md"
   ],
+  "bin": {
+    "stage-madge": "./bin/madge-check.js"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -29,11 +33,15 @@
   },
   "peerDependencies": {
     "eslint": "*",
+    "madge": "*",
     "typescript": "*",
     "typescript-eslint": "*"
   },
   "peerDependenciesMeta": {
     "eslint-plugin-vue": {
+      "optional": true
+    },
+    "madge": {
       "optional": true
     },
     "vue-eslint-parser": {
