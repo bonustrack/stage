@@ -2,15 +2,15 @@
 # stage-livenet site (stage.box). The build runs from the repo root so Bun
 # workspace dependencies resolve; publish points at the app's Vite output.
 
-# base must be the repo root: the site's UI config set base to "apps/ui", which
-# made the build run from there, so `--filter ./apps/ui` resolved to apps/ui/apps/ui
-# ("No packages matched the filter") and publish doubled to apps/ui/apps/ui/dist.
-# Setting base here overrides the UI so Bun workspace resolution and the publish
-# path both work from the monorepo root.
+# The site's build runs with base = apps/ui (set in the Netlify UI), so the build
+# command and publish path are resolved relative to apps/ui. `bun install` still
+# installs the whole workspace (Bun walks up to the root), `bun run build` runs
+# this package's build, and the Vite output lands in apps/ui/dist -> publish "dist".
+# (A previous attempt used `--filter ./apps/ui` + publish "apps/ui/dist", which from
+# the apps/ui base resolved to apps/ui/apps/ui -> "No packages matched the filter".)
 [build]
-  base = "/"
-  command = "bun install && bun run --filter ./apps/ui build"
-  publish = "apps/ui/dist"
+  command = "bun install && bun run build"
+  publish = "dist"
 
 # Pin the toolchain to the repo's packageManager / engines so CI matches local.
 [build.environment]
