@@ -74,7 +74,7 @@ export function useBubbleActions(deps: BubbleActionsDeps): BubbleActions {
   function onActionCopyLink(): void {
     const msg = actionTarget.value;
     if (msg && navigator.clipboard) {
-      void navigator.clipboard.writeText(`https://metro.box/#/xmtp/${convId.value}?m=${msg.id}`);
+      void navigator.clipboard.writeText(`https://stage.box/#/xmtp/${convId.value}?m=${msg.id}`);
     }
     actionTarget.value = null;
   }

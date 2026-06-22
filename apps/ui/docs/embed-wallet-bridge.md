@@ -22,17 +22,17 @@ message — the local DB + installation key take over.
 
 `id` correlates a sign-request with its response. The widget only accepts
 messages whose `event.source` is the parent frame; the host should likewise
-verify `event.origin` is the Stage widget origin (e.g. `https://metro.box`).
+verify `event.origin` is the Stage widget origin (e.g. `https://stage.box`).
 
 ## Drop-in snippet (wagmi v2)
 
-Paste alongside wherever you mount the `<iframe src="https://metro.box/…">`:
+Paste alongside wherever you mount the `<iframe src="https://stage.box/…">`:
 
 ```ts
 import { getAccount, signMessage } from '@wagmi/core';
 import { wagmiConfig } from './your-wagmi-config';
 
-const METRO_ORIGIN = 'https://metro.box';
+const METRO_ORIGIN = 'https://stage.box';
 
 function postToMetro(iframe: HTMLIFrameElement, msg: unknown) {
   iframe.contentWindow?.postMessage(msg, METRO_ORIGIN);
