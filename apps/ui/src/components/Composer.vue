@@ -3,11 +3,15 @@
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import { xmtpSendText, xmtpReply } from '../lib/xmtpSend';
 import { useComposerAttach } from '../lib/useComposerAttach';
+import { stampAvatarUrl } from '../lib/xmtp';
+import { shortAddress } from '@stage-labs/client/identity/format';
+import { computeMentionQuery, applyMention, type MentionCandidate } from '@stage-labs/client/xmtp/mentions';
 
 const palette = useKitPalette();
 
 const props = defineProps<{
   line: string;
+  mentionCandidates?: MentionCandidate[];
   replyingTo?: { id: string; preview: string } | null;
 }>();
 const emit = defineEmits<{
@@ -26,6 +30,57 @@ const fileInput = ref<HTMLInputElement | null>(null);
 const textarea = ref<HTMLTextAreaElement | null>(null);
 const { pending, clear: clearPending, onPaste, onFileChange, flush: flushPending } =
   useComposerAttach(() => props.line, m => { err.value = m; });
+
+const mentionMatches = ref<MentionCandidate[]>([]);
+const mentionRange = ref<{ start: number; end: number } | null>(null);
+const mentionActive = ref(0);
+
+function refreshMentions(): void {
+  const el = textarea.value;
+  if (!el) { mentionRange.value = null; return; }
+  const { matches, range } = computeMentionQuery(el.value, el.selectionStart, props.mentionCandidates);
+  mentionMatches.value = matches;
+  mentionRange.value = matches.length > 0 ? range : null;
+  if (mentionActive.value >= matches.length) mentionActive.value = 0;
+}
+
+function pickMention(c: MentionCandidate): void {
+  const range = mentionRange.value;
+  const el = textarea.value;
+  if (!range || !el) return;
+  const { next, cursor } = applyMention(el.value, range, c.address);
+  text.value = next;
+  mentionRange.value = null;
+  void nextTick(() => {
+    const el = textarea.value;
+    if (el) { el.focus(); el.setSelectionRange(cursor, cursor); }
+    autoGrow();
+  });
+}
+
+function moveMentionActive(delta: number): void {
+  const n = mentionMatches.value.length;
+  mentionActive.value = (mentionActive.value + delta + n) % n;
+}
+
+function onMentionKeydown(ev: KeyboardEvent): boolean {
+  if (ev.key === 'ArrowDown') { ev.preventDefault(); moveMentionActive(1); return true; }
+  if (ev.key === 'ArrowUp') { ev.preventDefault(); moveMentionActive(-1); return true; }
+  if (ev.key === 'Enter' || ev.key === 'Tab') {
+    ev.preventDefault();
+    const pick = mentionMatches.value[mentionActive.value];
+    if (pick) pickMention(pick);
+    return true;
+  }
+  if (ev.key === 'Escape') { ev.preventDefault(); mentionRange.value = null; return true; }
+  return false;
+}
+
+function onComposerKeydown(ev: KeyboardEvent): void {
+  const open = mentionRange.value !== null && mentionMatches.value.length > 0;
+  if (open && onMentionKeydown(ev)) return;
+  if (!open && ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); void send(); }
+}
 
 function toggleAttach(): void { attachOpen.value = !attachOpen.value; }
 
@@ -130,6 +185,34 @@ async function send(): Promise<void> {
     <!-- Full-bleed flat composer bar: textarea on top, [+ / spacer / send] row
          below. Edge-to-edge surface=raised with uniform padding 10, mirroring
          MessengerComposer.tsx ComposerEditor (Col padding={10} surface="raised"). -->
+    <!-- @mention autocomplete: opens above the composer when the caret sits in an
+         "@query" token and matches group members. Mirrors mobile MentionPopup
+         (MessengerComposer.parts.tsx) — avatar + semibold name + short address rows.
+         Group-only: mentionCandidates is empty for DMs. -->
+    <Col v-if="mentionRange && mentionMatches.length > 0"
+      surface="raised"
+      class="mx-1.5 mb-2 rounded-lg overflow-hidden
+        border border-metro-border-light dark:border-metro-border-dark">
+      <Pressable
+        tag="button"
+        v-for="(c, i) in mentionMatches"
+        :key="c.address"
+        type="button"
+        class="flex flex-row items-center gap-2.5 px-3 py-2 text-left
+          border-metro-border-light dark:border-metro-border-dark"
+        :class="[
+          i === 0 ? '' : 'border-t',
+          i === mentionActive ? 'bg-metro-hover-light dark:bg-metro-hover-dark' : '',
+        ]"
+        @mousedown.prevent="pickMention(c)"
+        @mouseenter="mentionActive = i"
+      >
+        <img :src="stampAvatarUrl(c.address, 48)" alt="" class="w-6 h-6 rounded-full bg-metro-border-dark shrink-0" />
+        <span class="flex-1 min-w-0 truncate text-sm font-head
+          text-metro-head-light dark:text-metro-head-dark">{{ c.name }}</span>
+        <span class="text-xs text-metro-sub-light dark:text-metro-sub-dark shrink-0">{{ shortAddress(c.address) }}</span>
+      </Pressable>
+    </Col>
     <Col surface="raised" :padding="10">
       <!-- Pending pasted/selected attachment preview — image thumbnail for image
            types, a file chip otherwise. Removable, sent on Send. -->
@@ -173,8 +256,11 @@ async function send(): Promise<void> {
           bg-transparent px-2 pt-1 pb-2 text-[17px] leading-[23px] outline-none
           text-metro-head-light dark:text-metro-head-dark
           placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark"
-        @input="autoGrow"
-        @keydown.enter.exact.prevent="send"
+        @input="autoGrow(); refreshMentions()"
+        @keydown="onComposerKeydown"
+        @keyup="refreshMentions"
+        @click="refreshMentions"
+        @blur="mentionRange = null"
         @paste="onPaste"
       />
       <Row class="flex items-center gap-1">

@@ -4,6 +4,9 @@ import { stampAvatarUrl, XMTP_USER_PREFIX } from '../lib/xmtp';
 import type { HistoryEntry } from '../lib/types';
 import { mapCoordsOf, youtubeIdOf } from '../lib/embedDetect';
 import { renderMarkdown } from '../lib/renderMarkdown';
+import { parseMentions } from '@stage-labs/client/xmtp/mentions';
+import { shortAddress } from '@stage-labs/client/identity/format';
+import { readProfile, loadCachedProfile } from '../lib/profile';
 
 interface AttachmentLike {
   kind: string; mime?: string; name?: string; dataB64?: string; url?: string;
@@ -28,6 +31,31 @@ const attachments = computed<AttachmentLike[]>(() => {
   const p = props.entry.payload as { attachments?: AttachmentLike[] } | undefined;
   return Array.isArray(p?.attachments) ? p.attachments : [];
 });
+
+const router = useRouter();
+
+const bodySegments = computed(() => parseMentions(props.entry.text ?? ''));
+const hasMentions = computed(() => bodySegments.value.some(s => s.type === 'mention'));
+
+const mentionNames = ref<Record<string, string>>({});
+function mentionLabel(address: string): string {
+  return mentionNames.value[address.toLowerCase()] ?? shortAddress(address);
+}
+watchEffect(() => {
+  for (const seg of bodySegments.value) {
+    if (seg.type !== 'mention') continue;
+    const lower = seg.address.toLowerCase();
+    if (mentionNames.value[lower]) continue;
+    const cached = loadCachedProfile(seg.address)?.name;
+    if (cached) mentionNames.value = { ...mentionNames.value, [lower]: cached };
+    void readProfile(seg.address).then((p) => {
+      if (p?.name) mentionNames.value = { ...mentionNames.value, [lower]: p.name };
+    });
+  }
+});
+function openMention(address: string): void {
+  void router.push(`/user/${address}`);
+}
 
 const youtubeId = computed(() => youtubeIdOf(props.entry.text));
 const mapCoords = computed(() => mapCoordsOf(props.entry.text));
@@ -139,8 +167,10 @@ function onAvatar(): void {
       </Col>
       <!-- Markdown-rendered (linkify + breaks) to match the mobile app: bare URLs
            become clickable links. v-html is safe — markdown-it escapes raw HTML
-           and blocks javascript:/data: links. -->
-      <Col v-if="props.entry.text"
+           and blocks javascript:/data: links. When the body carries @0x mentions
+           the text is split into segments (shared parseMentions); each non-mention
+           run keeps full markdown, and each mention renders as a tappable link. -->
+      <Col v-if="props.entry.text && !hasMentions"
         class="break-words font-sans text-[19px] leading-[23px] select-text
           [&_p]:m-0 [&_p:not(:last-child)]:mb-1.5 [&_a]:underline [&_a]:break-words
           [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5
@@ -150,6 +180,24 @@ function onAvatar(): void {
           : 'text-metro-link-light dark:text-metro-link-dark'"
         v-html="renderMarkdown(props.entry.text)"
       />
+      <Col v-else-if="props.entry.text"
+        class="break-words font-sans text-[19px] leading-[23px] select-text
+          [&_p]:m-0 [&_p]:inline [&_a]:underline [&_a]:break-words
+          [&_code]:font-mono [&_code]:text-[15px] [&_pre]:whitespace-pre-wrap"
+        :class="isSystem
+          ? 'text-metro-fg-light dark:text-metro-fg-dark'
+          : 'text-metro-link-light dark:text-metro-link-dark'">
+        <template v-for="(seg, i) in bodySegments" :key="i">
+          <Pressable
+            v-if="seg.type === 'mention'"
+            tag="button"
+            type="button"
+            class="font-head font-semibold text-metro-link-light dark:text-metro-link-dark hover:underline"
+            @click="openMention(seg.address)"
+          >@{{ mentionLabel(seg.address) }}</Pressable>
+          <span v-else v-html="renderMarkdown(seg.text)" />
+        </template>
+      </Col>
       <Col v-if="youtubeId" class="mt-1.5">
         <YouTubeEmbed :video-id="youtubeId" />
       </Col>

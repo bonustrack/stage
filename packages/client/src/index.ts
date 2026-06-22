@@ -12,6 +12,7 @@ export * from './xmtp/builders';
 export * from './xmtp/codecs';
 export * from './xmtp/inboxCache';
 export * from './xmtp/commonChannels';
+export * from './xmtp/mentions';
 export * from './embed/detect';
 export * from './stamp/resolve';
 export * from './x402/challenge';

@@ -4,6 +4,7 @@ import { AppState, Keyboard } from 'react-native';
 import type { Textarea } from '@stage-labs/kit/react-native/textarea';
 import { loadDrafts, getDraft, setDraft } from '../lib/drafts';
 import { loadLastAttachment, getLastAttachment, subscribeLastAttachment } from '../lib/lastAttachment';
+import { computeMentionQuery, matchMembers } from '@stage-labs/client/xmtp/mentions';
 
 export function useLastAttachment(): string | undefined {
   const [label, setLabel] = useState<string | undefined>(getLastAttachment);
@@ -72,24 +73,10 @@ export function computeMentions(
   cursor: number,
   candidates: MentionCandidate[] | undefined,
 ): { matches: MentionCandidate[]; range: { start: number; end: number } | null } {
-  if (!candidates || candidates.length === 0) return { matches: [], range: null };
-  const before = text.slice(0, cursor);
-  const m = /(^|\s)@(\S*)$/.exec(before);
-  if (!m) return { matches: [], range: null };
-  const query = (m[2] ?? '').toLowerCase();
-  const start = cursor - query.length - 1;
-  const matches = candidates
-    .filter(c => !query || c.name.toLowerCase().includes(query) || c.address.toLowerCase().includes(query))
-    .slice(0, 6);
-  return { matches, range: { start, end: cursor } };
+  const { range } = computeMentionQuery(text, cursor, candidates);
+  if (!range || !candidates) return { matches: [], range: null };
+  const query = text.slice(range.start + 1, range.end);
+  return { matches: matchMembers(candidates, query), range };
 }
 
-export function applyMention(
-  text: string,
-  range: { start: number; end: number },
-  address: string,
-): { next: string; cursor: number } {
-  const insert = `@${address.toLowerCase()} `;
-  const next = text.slice(0, range.start) + insert + text.slice(range.end);
-  return { next, cursor: range.start + insert.length };
-}
+export { applyMention } from '@stage-labs/client/xmtp/mentions';
