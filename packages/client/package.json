@@ -17,6 +17,7 @@
     "./xmtp/humanize": "./src/xmtp/humanize.ts",
     "./xmtp/poll": "./src/xmtp/poll.ts",
     "./xmtp/poll-feed": "./src/xmtp/poll-feed.ts",
+    "./xmtp/requests-queue": "./src/xmtp/requests-queue.ts",
     "./xmtp/sign": "./src/xmtp/sign.ts",
     "./xmtp/sign.schema": "./src/xmtp/sign.schema.ts",
     "./xmtp/tx": "./src/xmtp/tx.ts",

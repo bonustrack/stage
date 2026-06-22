@@ -7,6 +7,8 @@ import {
 import { XMTP_USER_PREFIX } from './xmtp';
 import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 import { type PollContent, pollFallbackText } from '@stage-labs/client/xmtp/poll';
+import { type WalletSendCallsContent, walletSendCallsFallbackText } from '@stage-labs/client/xmtp/tx';
+import { type SignatureRequestContent, signatureRequestFallbackText } from '@stage-labs/client/xmtp/sign';
 import type { HistoryEntry } from './types';
 
 function latestReactionStates(events: HistoryEntry[]): Map<string, { ts: string; removed: boolean }> {
@@ -99,6 +101,24 @@ function pollEnvelope(base: HistoryEntry, typeId: string, decoded: object): Hist
   };
 }
 
+function walletSendCallsEnvelope(base: HistoryEntry, typeId: string, decoded: object): HistoryEntry {
+  const wsc = decoded as WalletSendCallsContent;
+  return {
+    ...base,
+    text: walletSendCallsFallbackText(wsc),
+    payload: { contentType: typeId, walletSendCalls: wsc },
+  };
+}
+
+function signatureRequestEnvelope(base: HistoryEntry, typeId: string, decoded: object): HistoryEntry {
+  const sig = decoded as SignatureRequestContent;
+  return {
+    ...base,
+    text: signatureRequestFallbackText(sig),
+    payload: { contentType: typeId, signatureRequest: sig },
+  };
+}
+
 function replyEnvelope(base: HistoryEntry, typeId: string, decoded: object): HistoryEntry {
   const r = decoded as { referenceId: string; content: unknown };
   const innerText = typeof r.content === 'string' ? r.content : undefined;
@@ -156,6 +176,8 @@ export function envelopeOfXmtpMessage(msg: DecodedMessage, line: string): Histor
     if (typeId === 'reply') return replyEnvelope(base, typeId, decoded);
     if (typeId === 'attachment') return attachmentEnvelope(base, typeId, decoded);
     if (typeId === 'poll') return pollEnvelope(base, typeId, decoded);
+    if (typeId === 'walletSendCalls') return walletSendCallsEnvelope(base, typeId, decoded);
+    if (typeId === 'signatureRequest') return signatureRequestEnvelope(base, typeId, decoded);
   }
   return fallbackEnvelope(base, typeId, decoded, msg.fallback);
 }
