@@ -13,6 +13,8 @@ const props = defineProps<{
   entry: HistoryEntry;
   mine: boolean;
   reactions?: Map<string, number>;
+  ownEmojis?: Set<string>;
+  replyTarget?: boolean;
   replyPreview?: string;
   inboxToAddr?: Record<string, string>;
 }>();
@@ -82,8 +84,12 @@ function onAvatar(): void {
 </script>
 
 <template>
+  <!-- Reply-target / unread row tint mirrors mobile's rowBackground(). -->
   <Row class="group relative flex items-start gap-2.5 px-3 py-1.5 transition-opacity"
-    :class="{ 'opacity-50': isPending }"
+    :class="{
+      'opacity-50': isPending,
+      'bg-black/5 dark:bg-white/[0.09]': props.replyTarget,
+    }"
     @contextmenu="onContext"
     @pointerdown="onPointerDown"
     @pointermove="onPointerMove"
@@ -110,6 +116,9 @@ function onAvatar(): void {
     <Col class="flex-1 min-w-0">
       <!-- Timestamp sits at the TOP of the bubble column, mirroring mobile. -->
       <Text size="3xs" color="secondary" class="mb-0.5">{{ isPending ? 'Sending' : fmtTs(props.entry.ts) }}</Text>
+      <!-- 1.5px border around the user's own message column — mirrors mobile's
+           borderWidth on own/unread bubbles. -->
+      <Col :class="props.mine ? 'border-[1.5px] border-black dark:border-white rounded' : ''">
       <Col v-if="props.replyPreview"
         class="text-[11px] mb-1 opacity-70 border-l-2 border-current pl-1.5 italic font-sans"
         :class="isSystem ? 'text-metro-sub-light dark:text-metro-sub-dark' : 'text-metro-fg-light dark:text-metro-fg-dark'">
@@ -132,13 +141,13 @@ function onAvatar(): void {
            become clickable links. v-html is safe — markdown-it escapes raw HTML
            and blocks javascript:/data: links. -->
       <Col v-if="props.entry.text"
-        class="break-words font-sans text-[19px] leading-snug select-text
+        class="break-words font-sans text-[19px] leading-[23px] select-text
           [&_p]:m-0 [&_p:not(:last-child)]:mb-1.5 [&_a]:underline [&_a]:break-words
           [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5
           [&_code]:font-mono [&_code]:text-[15px] [&_pre]:whitespace-pre-wrap"
         :class="isSystem
           ? 'text-metro-fg-light dark:text-metro-fg-dark'
-          : 'text-metro-head-light dark:text-metro-head-dark'"
+          : 'text-metro-link-light dark:text-metro-link-dark'"
         v-html="renderMarkdown(props.entry.text)"
       />
       <Col v-if="youtubeId" class="mt-1.5">
@@ -146,6 +155,7 @@ function onAvatar(): void {
       </Col>
       <Col v-else-if="mapCoords" class="mt-1.5">
         <LocationEmbed :lat="mapCoords.lat" :lng="mapCoords.lng" :source-url="mapCoords.sourceUrl" />
+      </Col>
       </Col>
       <!-- Action affordances: react + reply icons revealed on hover (web replaces
            mobile's long-press gesture). The timestamp lives at the top of the column. -->
@@ -162,26 +172,32 @@ function onAvatar(): void {
         </Pressable>
       </Row>
       <!-- Inline emoji picker — toggled by the react icon, mirrors mobile. -->
+      <!-- Shadowed (no-border) rounded sheet with large emoji — mirrors mobile's
+           ReactionPicker (size="5xl" emoji, shadow not border). -->
       <Row v-if="pickerOpen"
         class="inline-flex items-center gap-2 mt-1.5 px-2.5 py-1.5 rounded-full
-          bg-metro-surface-light dark:bg-metro-surface-dark
-          border border-metro-border-light dark:border-metro-border-dark shadow-sm">
+          bg-metro-surface-light dark:bg-metro-surface-dark shadow-lg">
         <Pressable tag="button" v-for="e in REACT_PRESETS" :key="e" type="button"
-          class="text-xl leading-none hover:scale-125 transition-transform"
+          class="text-4xl leading-none hover:scale-125 transition-transform"
           @click="emit('react', { entry: props.entry, emoji: e }); pickerOpen = false">{{ e }}</Pressable>
         <Pressable tag="button" type="button" class="px-1 text-metro-sub-light dark:text-metro-sub-dark"
           @click="pickerOpen = false">✕</Pressable>
       </Row>
       <!-- Reactions pills on their own row below (matches mobile). -->
       <Row v-if="props.reactions && props.reactions.size > 0" class="flex flex-wrap items-center gap-1 mt-1">
+        <!-- Pill bg = mobile's pal.border; a border is drawn ONLY on the user's
+             own reactions (mobile: borderWidth mine?1, borderColor link). -->
         <Pressable
           tag="button"
           v-for="[emoji, count] in props.reactions"
           :key="emoji"
           type="button"
-          class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-metro-surface-light dark:bg-metro-surface-dark
-            border border-metro-border-light dark:border-metro-border-dark
+          class="flex items-center gap-1 px-2 py-0.5 rounded-full
+            bg-metro-border-light dark:bg-metro-border-dark
             text-[12px] text-metro-fg-light dark:text-metro-fg-dark"
+          :class="props.ownEmojis?.has(emoji)
+            ? 'border border-metro-link-light dark:border-metro-link-dark'
+            : ''"
           @click="emit('react', { entry: props.entry, emoji })"
         >{{ emoji }} {{ count }}</Pressable>
       </Row>

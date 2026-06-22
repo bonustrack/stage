@@ -8,7 +8,7 @@ const scroller = ref<HTMLElement | null>(null);
 const {
   router, line, feed, myUri, replyingTo, actionTarget,
   peerAddress, groupName, isGroup, inboxToAddr, memberAddresses,
-  reactions, allBubbles, highlightId, openHeader, previewOf,
+  reactions, ownEmojis, allBubbles, highlightId, openHeader, previewOf,
   onReact, onOptimistic, onSent, onActionReply, onBubbleReply,
   onActionCopy, onActionCopyLink,
 } = useXmtpConversation(scroller);
@@ -49,6 +49,8 @@ const {
         :mine="entry.from === myUri"
         :inbox-to-addr="inboxToAddr"
         :reactions="reactions.get(entry.id)"
+        :own-emojis="ownEmojis.get(entry.id)"
+        :reply-target="entry.id === highlightId"
         :reply-preview="entry.replyTo
           ? previewOf(feed.events.value.find(e => e.id === entry.replyTo) ?? entry)
           : undefined"

@@ -93,6 +93,7 @@ declare global {
   const openDmWithAddress: typeof import('./lib/xmtpGroups').openDmWithAddress
   const osmTileUrl: typeof import('./lib/embedDetect').osmTileUrl
   const osmTileXY: typeof import('./lib/embedDetect').osmTileXY
+  const ownEmojisByMessage: typeof import('./lib/xmtpFeed').ownEmojisByMessage
   const peerEthAddressOfDm: typeof import('./lib/xmtpResolve').peerEthAddressOfDm
   const postCloseToParent: typeof import('./lib/embedBridge').postCloseToParent
   const postUnreadToParent: typeof import('./lib/embedBridge').postUnreadToParent
@@ -307,6 +308,7 @@ declare module 'vue' {
     readonly onWatcherCleanup: UnwrapRef<typeof import('vue')['onWatcherCleanup']>
     readonly openDmWithAddress: UnwrapRef<typeof import('./lib/xmtpGroups')['openDmWithAddress']>
     readonly osmTileUrl: UnwrapRef<typeof import('./lib/embedDetect')['osmTileUrl']>
+    readonly ownEmojisByMessage: UnwrapRef<typeof import('./lib/xmtpFeed')['ownEmojisByMessage']>
     readonly peerEthAddressOfDm: UnwrapRef<typeof import('./lib/xmtpResolve')['peerEthAddressOfDm']>
     readonly postCloseToParent: UnwrapRef<typeof import('./lib/embedBridge')['postCloseToParent']>
     readonly postUnreadToParent: UnwrapRef<typeof import('./lib/embedBridge')['postUnreadToParent']>
