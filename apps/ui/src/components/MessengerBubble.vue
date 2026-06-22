@@ -66,6 +66,9 @@ function openMention(address: string): void {
   void router.push(`/user/${address}`);
 }
 
+const hasAudio = computed(() => attachments.value.some(a => a.kind === 'audio'));
+const showBodyText = computed(() => !hasAudio.value);
+
 const youtubeId = computed(() => youtubeIdOf(props.entry.text));
 const mapCoords = computed(() => mapCoordsOf(props.entry.text));
 const isSystem = computed(() => (props.entry.payload as { system?: boolean } | undefined)?.system === true);
@@ -153,9 +156,10 @@ function onAvatar(): void {
     <Col class="flex-1 min-w-0">
       <!-- Timestamp sits at the TOP of the bubble column, mirroring mobile. -->
       <Text size="3xs" color="secondary" class="mb-0.5">{{ isPending ? 'Sending' : fmtTs(props.entry.ts) }}</Text>
-      <!-- 1.5px border around the user's own message column — mirrors mobile's
-           borderWidth on own/unread bubbles. -->
-      <Col :class="props.mine ? 'border-[1.5px] border-black dark:border-white rounded' : ''">
+      <!-- Mobile draws the 1.5px border only on UNREAD bubbles (borderWidth:
+           unread ? 1.5 : 0). Web has no per-message unread signal yet, so read
+           messages — the common case — render WITHOUT the box. -->
+      <Col>
       <Col v-if="props.replyPreview"
         class="text-[11px] mb-1 opacity-70 border-l-2 border-current pl-1.5 italic font-sans"
         :class="isSystem ? 'text-metro-sub-light dark:text-metro-sub-dark' : 'text-metro-fg-light dark:text-metro-fg-dark'">
@@ -189,7 +193,7 @@ function onAvatar(): void {
            and blocks javascript:/data: links. When the body carries @0x mentions
            the text is split into segments (shared parseMentions); each non-mention
            run keeps full markdown, and each mention renders as a tappable link. -->
-      <Col v-else-if="props.entry.text && !hasMentions"
+      <Col v-else-if="props.entry.text && showBodyText && !hasMentions"
         class="break-words font-sans text-[19px] leading-[23px] select-text
           [&_p]:m-0 [&_p:not(:last-child)]:mb-1.5 [&_a]:underline [&_a]:break-words
           [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5
@@ -199,24 +203,30 @@ function onAvatar(): void {
           : 'text-metro-link-light dark:text-metro-link-dark'"
         v-html="renderMarkdown(props.entry.text)"
       />
-      <Col v-else-if="props.entry.text"
-        class="break-words font-sans text-[19px] leading-[23px] select-text
+      <!-- Mention body: segments flow INLINE as one paragraph (mirrors mobile's
+           MentionBody single Text run). Body text uses fg; each mention is an
+           inline semibold link in the explicit link color (#2f6feb / #7aa2ff),
+           distinct from the body fg. -->
+      <!-- kit-exception: a normal block (not a kit Col, which forces
+           display:flex/column and would stack each segment vertically). Inline
+           flow is required so the mention link + surrounding text read as one
+           paragraph, matching mobile's MentionBody single Text run. -->
+      <component :is="'div'" v-else-if="props.entry.text && showBodyText"
+        class="block break-words font-sans text-[19px] leading-[23px] select-text
           [&_p]:m-0 [&_p]:inline [&_a]:underline [&_a]:break-words
-          [&_code]:font-mono [&_code]:text-[15px] [&_pre]:whitespace-pre-wrap"
-        :class="isSystem
-          ? 'text-metro-fg-light dark:text-metro-fg-dark'
-          : 'text-metro-link-light dark:text-metro-link-dark'">
+          [&_code]:font-mono [&_code]:text-[15px] [&_pre]:whitespace-pre-wrap
+          text-metro-fg-light dark:text-metro-fg-dark">
         <template v-for="(seg, i) in bodySegments" :key="i">
           <Pressable
             v-if="seg.type === 'mention'"
-            tag="button"
-            type="button"
-            class="font-head font-semibold text-metro-link-light dark:text-metro-link-dark hover:underline"
+            tag="span"
+            role="link"
+            class="inline font-semibold text-[#2f6feb] dark:text-[#7aa2ff] hover:underline"
             @click="openMention(seg.address)"
           >@{{ mentionLabel(seg.address) }}</Pressable>
-          <span v-else v-html="renderMarkdown(seg.text)" />
+          <span v-else class="inline" v-html="renderMarkdown(seg.text)" />
         </template>
-      </Col>
+      </component>
       <Col v-if="youtubeId" class="mt-1.5">
         <YouTubeEmbed :video-id="youtubeId" />
       </Col>

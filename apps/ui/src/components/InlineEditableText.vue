@@ -42,7 +42,8 @@ function onSave(): void {
       <component
         :is="'textarea'"
         v-if="props.multiline"
-        v-model="draft"
+        :value="draft"
+        @input="draft = ($event.target as HTMLTextAreaElement).value"
         :placeholder="props.placeholder"
         rows="3"
         autofocus
@@ -54,7 +55,8 @@ function onSave(): void {
       <component
         :is="'input'"
         v-else
-        v-model="draft"
+        :value="draft"
+        @input="draft = ($event.target as HTMLInputElement).value"
         type="text"
         :placeholder="props.placeholder"
         autofocus
