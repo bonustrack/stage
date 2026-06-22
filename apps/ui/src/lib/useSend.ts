@@ -4,6 +4,7 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { ASSETS, type Asset } from '@stage-labs/client/wallet/assets';
 import { publicClientFor, broviderTransport, chainFor } from '@stage-labs/client/wallet/client';
 import { buildPublicTransfer, parseSendAmount, looksLikeEns } from '@stage-labs/client/wallet/send';
+import { friendlyTxError } from '@stage-labs/client/wallet/txError';
 import { resolveEnsName } from '@stage-labs/client/api/ens';
 import { getActiveAccount, loadPk, accountEpoch } from './accounts';
 import { getHostAccount, hostSendTransaction } from './hostSigner';
@@ -181,7 +182,7 @@ export function useSend(symbolRef: Ref<string>, chainIdRef: Ref<number>, balance
         const next = await estimateFee(call, a.chainId, account);
         if (mine === feeSeq) fee.value = next;
       } catch (e) {
-        if (mine === feeSeq) { fee.value = null; feeErr.value = (e as Error).message; }
+        if (mine === feeSeq) { fee.value = null; feeErr.value = friendlyTxError(e, 'Could not estimate network fee'); }
       }
     })();
   });
@@ -204,7 +205,7 @@ export function useSend(symbolRef: Ref<string>, chainIdRef: Ref<number>, balance
         txState.value = 'confirmed';
       } catch (e) {
         txState.value = 'idle';
-        txErr.value = (e as Error).message ?? 'Transaction failed';
+        txErr.value = friendlyTxError(e, 'Transaction failed');
       }
     })();
   }
