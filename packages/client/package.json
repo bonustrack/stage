@@ -47,6 +47,7 @@
     "./wallet/balances": "./src/wallet/balances.ts",
     "./wallet/client": "./src/wallet/client.ts",
     "./wallet/send": "./src/wallet/send.ts",
+    "./wallet/txError": "./src/wallet/txError.ts",
     "./accounts/types": "./src/accounts/types.ts",
     "./accounts/keys": "./src/accounts/keys.ts",
     "./accounts/registry": "./src/accounts/registry.ts",

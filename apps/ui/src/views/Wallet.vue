@@ -27,17 +27,6 @@ const sortedRows = computed(() => (rows.value ? buildSortedTokenRows(rows.value)
   <Col surface="surface" class="h-[100dvh] relative pb-[60px]">
     <Row align="center" class="h-[52px] box-border shrink-0 px-4 shrink-0" justify="between">
       <Text size="4xl" weight="semibold" color="link">Wallet</Text>
-      <Row align="center" :gap="4">
-      <Pressable
-        tag="button"
-        type="button"
-        aria-label="Receive"
-        class="p-2 rounded-lg text-metro-sub-light dark:text-metro-sub-dark
-          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
-        @click="router.push('/wallet/receive')"
-      >
-        <Icon name="arrowDown" :size="18" />
-      </Pressable>
       <Pressable
         tag="button"
         type="button"
@@ -49,7 +38,6 @@ const sortedRows = computed(() => (rows.value ? buildSortedTokenRows(rows.value)
       >
         <Icon name="refresh" :size="18" :class="loading ? 'animate-spin' : ''" />
       </Pressable>
-      </Row>
     </Row>
 
     <Col class="flex-1 overflow-y-auto px-4 pb-6">
