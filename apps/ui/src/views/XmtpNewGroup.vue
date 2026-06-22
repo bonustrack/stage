@@ -104,7 +104,6 @@ async function onCreate(): Promise<void> {
         variant="primary"
         size="lg"
         full-width
-        pill
         :dark="scheme === 'dark'"
         :loading="creating"
         :disabled="members.length === 0"

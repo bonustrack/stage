@@ -12,7 +12,12 @@ const {
   searchResolution, openSearchedProfile, filtered, view, cardClass, rowMenu,
   onAskPress, refreshFromNetwork, open, openRowMenu, closeRowMenu,
   toggleRowUnread, archiveRow, openDocs, goNewGroup, goArchived, goRequests,
+  goProfile, goSettings,
 } = useChannels();
+
+const overflowOpen = ref(false);
+function closeOverflow(): void { overflowOpen.value = false; }
+function runOverflow(fn: () => void): void { overflowOpen.value = false; fn(); }
 </script>
 
 <template>
@@ -39,26 +44,6 @@ const {
         <Pressable
           tag="button"
           type="button"
-          class="p-2 rounded-lg text-metro-sub-light dark:text-metro-sub-dark
-            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
-          title="Archived"
-          @click="goArchived"
-        >
-          <Icon name="archive" :size="18" />
-        </Pressable>
-        <Pressable
-          tag="button"
-          type="button"
-          class="p-2 rounded-lg text-metro-sub-light dark:text-metro-sub-dark
-            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
-          title="New group"
-          @click="goNewGroup"
-        >
-          <Icon name="plus" :size="18" />
-        </Pressable>
-        <Pressable
-          tag="button"
-          type="button"
           :disabled="refreshing"
           class="p-2 rounded-lg text-metro-sub-light dark:text-metro-sub-dark
             hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark disabled:opacity-50"
@@ -66,6 +51,16 @@ const {
           @click="refreshFromNetwork"
         >
           <Icon name="arrowDown" :size="16" :class="refreshing ? 'animate-spin' : ''" />
+        </Pressable>
+        <Pressable
+          tag="button"
+          type="button"
+          class="p-2 rounded-lg text-metro-sub-light dark:text-metro-sub-dark
+            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
+          title="More"
+          @click="overflowOpen = true"
+        >
+          <Icon name="dotsVertical" :size="18" />
         </Pressable>
       </template>
       <Pressable
@@ -202,6 +197,62 @@ const {
           @click="archiveRow"
         >
           Archive
+        </Pressable>
+      </Col>
+    </template>
+
+    <!-- Home topnav overflow menu — mirrors mobile HomeOverflowMenu
+         (New group / Archived / Profile / Settings). -->
+    <template v-if="overflowOpen">
+      <Col class="fixed inset-0 z-40" @click="closeOverflow" />
+      <Col
+        class="fixed right-2 top-[52px] z-50 min-w-[200px] py-1 rounded-lg shadow-lg
+          bg-metro-bg-light dark:bg-metro-surface-dark
+          border border-metro-border-light dark:border-metro-border-dark"
+      >
+        <Pressable
+          tag="button"
+          type="button"
+          class="w-full flex items-center gap-3 text-left px-3 py-2.5 text-sm
+            text-metro-head-light dark:text-metro-head-dark
+            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
+          @click="runOverflow(goNewGroup)"
+        >
+          <Icon name="plus" :size="20" />
+          New group
+        </Pressable>
+        <Pressable
+          tag="button"
+          type="button"
+          class="w-full flex items-center gap-3 text-left px-3 py-2.5 text-sm
+            text-metro-head-light dark:text-metro-head-dark
+            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
+          @click="runOverflow(goArchived)"
+        >
+          <Icon name="archive" :size="20" />
+          Archived
+        </Pressable>
+        <Pressable
+          tag="button"
+          type="button"
+          class="w-full flex items-center gap-3 text-left px-3 py-2.5 text-sm
+            text-metro-head-light dark:text-metro-head-dark
+            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
+          @click="runOverflow(goProfile)"
+        >
+          <Icon name="user" :size="20" />
+          Profile
+        </Pressable>
+        <Pressable
+          tag="button"
+          type="button"
+          class="w-full flex items-center gap-3 text-left px-3 py-2.5 text-sm
+            text-metro-head-light dark:text-metro-head-dark
+            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
+          @click="runOverflow(goSettings)"
+        >
+          <Icon name="cog" :size="20" />
+          Settings
         </Pressable>
       </Col>
     </template>

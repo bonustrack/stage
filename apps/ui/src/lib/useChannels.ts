@@ -36,6 +36,8 @@ export interface ChannelsState {
   goNewGroup: () => void;
   goArchived: () => void;
   goRequests: () => void;
+  goProfile: () => void;
+  goSettings: () => void;
 }
 
 export function useChannels(): ChannelsState {
@@ -133,6 +135,8 @@ export function useChannels(): ChannelsState {
   function goNewGroup(): void { void router.push('/xmtp/new-group'); }
   function goArchived(): void { void router.push('/xmtp/archived'); }
   function goRequests(): void { void router.push('/xmtp/requests'); }
+  function goProfile(): void { void router.push('/profile'); }
+  function goSettings(): void { void router.push('/settings'); }
 
   const view = ref<'home' | 'messages'>(embedded ? 'home' : 'messages');
   function openDocs(): void { window.open('https://docs.snapshot.box', '_blank', 'noopener,noreferrer'); }
@@ -146,5 +150,6 @@ export function useChannels(): ChannelsState {
     searchResolution, openSearchedProfile, filtered, view, cardClass, rowMenu,
     onAskPress, refreshFromNetwork, open, openRowMenu, closeRowMenu,
     toggleRowUnread, archiveRow, openDocs, goNewGroup, goArchived, goRequests,
+    goProfile, goSettings,
   };
 }
