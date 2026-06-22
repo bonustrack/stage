@@ -29,9 +29,12 @@ declare global {
   const createApp: typeof import('vue').createApp
   const createAskQuestionGroup: typeof import('./lib/xmtpGroups').createAskQuestionGroup
   const createGroup: typeof import('./lib/xmtpGroups').createGroup
+  const customDisplay: typeof import('./lib/theme').customDisplay
+  const customPalette: typeof import('./lib/theme').customPalette
   const customRef: typeof import('vue').customRef
   const defineAsyncComponent: typeof import('vue').defineAsyncComponent
   const defineComponent: typeof import('vue').defineComponent
+  const densityScale: typeof import('./lib/theme').densityScale
   const effectScope: typeof import('vue').effectScope
   const envelopeOfXmtpMessage: typeof import('./lib/xmtpFeed').envelopeOfXmtpMessage
   const getActiveAccount: typeof import('./lib/xmtp').getActiveAccount
@@ -114,6 +117,7 @@ declare global {
   const postCloseToParent: typeof import('./lib/embedBridge').postCloseToParent
   const postUnreadToParent: typeof import('./lib/embedBridge').postUnreadToParent
   const provide: typeof import('vue').provide
+  const radiusPx: typeof import('./lib/theme').radiusPx
   const reactionsByMessage: typeof import('./lib/xmtpFeed').reactionsByMessage
   const reactive: typeof import('vue').reactive
   const readProfile: typeof import('./lib/profile').readProfile
@@ -126,6 +130,7 @@ declare global {
   const removeMember: typeof import('./lib/useGroupDetail.mutations').removeMember
   const renderMarkdown: typeof import('./lib/renderMarkdown').renderMarkdown
   const resetClientScopedState: typeof import('./lib/xmtpClientState').resetClientScopedState
+  const resetDisplayOverrides: typeof import('./lib/theme').resetDisplayOverrides
   const resolveComponent: typeof import('vue').resolveComponent
   const resolveDomain: typeof import('./lib/stamp').resolveDomain
   const resolveMemberNames: typeof import('./lib/useGroupDetailHelpers').resolveMemberNames
@@ -133,9 +138,15 @@ declare global {
   const resolveSelfAddress: typeof import('./lib/useGroupDetailHelpers').resolveSelfAddress
   const runGroupDetailEffect: typeof import('./lib/useGroupDetail.mutations').runGroupDetailEffect
   const runningInIframe: typeof import('./lib/embedBridge').runningInIframe
+  const seedColorValue: typeof import('./lib/theme').seedColorValue
   const setActiveAccountId: typeof import('./lib/accounts').setActiveAccountId
+  const setBaseSize: typeof import('./lib/theme').setBaseSize
   const setCachedRows: typeof import('./lib/channelsCache').setCachedRows
+  const setCustomTheme: typeof import('./lib/theme').setCustomTheme
+  const setDensity: typeof import('./lib/theme').setDensity
   const setLastReadNs: typeof import('./lib/xmtpConsent').setLastReadNs
+  const setRadius: typeof import('./lib/theme').setRadius
+  const setSeedColor: typeof import('./lib/theme').setSeedColor
   const setThemePreference: typeof import('./lib/theme').setThemePreference
   const shallowReactive: typeof import('vue').shallowReactive
   const shallowReadonly: typeof import('vue').shallowReadonly
@@ -164,18 +175,22 @@ declare global {
   const uploadAvatar: typeof import('./lib/profile').uploadAvatar
   const useActivity: typeof import('./lib/useActivity').useActivity
   const useAttrs: typeof import('vue').useAttrs
+  const useBaseSize: typeof import('./lib/theme').useBaseSize
   const useBubbleActions: typeof import('./lib/useBubbleActions').useBubbleActions
   const useChannels: typeof import('./lib/useChannels').useChannels
   const useCommonChannels: typeof import('./lib/useCommonChannels').useCommonChannels
   const useComposerAttach: typeof import('./lib/useComposerAttach').useComposerAttach
   const useCssModule: typeof import('vue').useCssModule
   const useCssVars: typeof import('vue').useCssVars
+  const useCustomTheme: typeof import('./lib/theme').useCustomTheme
+  const useDensity: typeof import('./lib/theme').useDensity
   const useEffectiveScheme: typeof import('./lib/kitTheme').useEffectiveScheme
   const useGroupDetail: typeof import('./lib/useGroupDetail').useGroupDetail
   const useId: typeof import('vue').useId
   const useLink: typeof import('vue-router').useLink
   const useModel: typeof import('vue').useModel
   const useNfts: typeof import('./lib/useNfts').useNfts
+  const useRadius: typeof import('./lib/theme').useRadius
   const useRoute: typeof import('vue-router').useRoute
   const useRouter: typeof import('vue-router').useRouter
   const useSearchResolution: typeof import('./lib/useSearchResolution').useSearchResolution
@@ -183,6 +198,7 @@ declare global {
   const useSlots: typeof import('vue').useSlots
   const useTemplateRef: typeof import('vue').useTemplateRef
   const useThemePreference: typeof import('./lib/theme').useThemePreference
+  const useThemeSeeds: typeof import('./lib/theme').useThemeSeeds
   const useWalletBalances: typeof import('./lib/useWalletBalances').useWalletBalances
   const useXmtpConversation: typeof import('./lib/useXmtpConversation').useXmtpConversation
   const useXmtpFeed: typeof import('./lib/xmtpFeed').useXmtpFeed
@@ -217,7 +233,7 @@ declare global {
   export type { SnapshotProfile } from './lib/profile'
   import('./lib/profile')
   // @ts-ignore
-  export type { ThemePreference } from './lib/theme'
+  export type { SeedColorKey, ThemePreference, Density, RadiusName, BaseSize, Scheme, ThemeSeed, DerivedPalette } from './lib/theme'
   import('./lib/theme')
   // @ts-ignore
   export type { HistoryEntry } from './lib/types'
@@ -297,9 +313,12 @@ declare module 'vue' {
     readonly createApp: UnwrapRef<typeof import('vue')['createApp']>
     readonly createAskQuestionGroup: UnwrapRef<typeof import('./lib/xmtpGroups')['createAskQuestionGroup']>
     readonly createGroup: UnwrapRef<typeof import('./lib/xmtpGroups')['createGroup']>
+    readonly customDisplay: UnwrapRef<typeof import('./lib/theme')['customDisplay']>
+    readonly customPalette: UnwrapRef<typeof import('./lib/theme')['customPalette']>
     readonly customRef: UnwrapRef<typeof import('vue')['customRef']>
     readonly defineAsyncComponent: UnwrapRef<typeof import('vue')['defineAsyncComponent']>
     readonly defineComponent: UnwrapRef<typeof import('vue')['defineComponent']>
+    readonly densityScale: UnwrapRef<typeof import('./lib/theme')['densityScale']>
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
     readonly envelopeOfXmtpMessage: UnwrapRef<typeof import('./lib/xmtpFeed')['envelopeOfXmtpMessage']>
     readonly getActiveAccount: UnwrapRef<typeof import('./lib/xmtp')['getActiveAccount']>
@@ -380,6 +399,7 @@ declare module 'vue' {
     readonly postCloseToParent: UnwrapRef<typeof import('./lib/embedBridge')['postCloseToParent']>
     readonly postUnreadToParent: UnwrapRef<typeof import('./lib/embedBridge')['postUnreadToParent']>
     readonly provide: UnwrapRef<typeof import('vue')['provide']>
+    readonly radiusPx: UnwrapRef<typeof import('./lib/theme')['radiusPx']>
     readonly reactionsByMessage: UnwrapRef<typeof import('./lib/xmtpFeed')['reactionsByMessage']>
     readonly reactive: UnwrapRef<typeof import('vue')['reactive']>
     readonly readProfile: UnwrapRef<typeof import('./lib/profile')['readProfile']>
@@ -392,15 +412,22 @@ declare module 'vue' {
     readonly removeMember: UnwrapRef<typeof import('./lib/useGroupDetail.mutations')['removeMember']>
     readonly renderMarkdown: UnwrapRef<typeof import('./lib/renderMarkdown')['renderMarkdown']>
     readonly resetClientScopedState: UnwrapRef<typeof import('./lib/xmtpClientState')['resetClientScopedState']>
+    readonly resetDisplayOverrides: UnwrapRef<typeof import('./lib/theme')['resetDisplayOverrides']>
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
     readonly resolveDomain: UnwrapRef<typeof import('./lib/stamp')['resolveDomain']>
     readonly resolveMemberNames: UnwrapRef<typeof import('./lib/useGroupDetailHelpers')['resolveMemberNames']>
     readonly resolveSelfAddress: UnwrapRef<typeof import('./lib/useGroupDetailHelpers')['resolveSelfAddress']>
     readonly runGroupDetailEffect: UnwrapRef<typeof import('./lib/useGroupDetail.mutations')['runGroupDetailEffect']>
     readonly runningInIframe: UnwrapRef<typeof import('./lib/embedBridge')['runningInIframe']>
+    readonly seedColorValue: UnwrapRef<typeof import('./lib/theme')['seedColorValue']>
     readonly setActiveAccountId: UnwrapRef<typeof import('./lib/accounts')['setActiveAccountId']>
+    readonly setBaseSize: UnwrapRef<typeof import('./lib/theme')['setBaseSize']>
     readonly setCachedRows: UnwrapRef<typeof import('./lib/channelsCache')['setCachedRows']>
+    readonly setCustomTheme: UnwrapRef<typeof import('./lib/theme')['setCustomTheme']>
+    readonly setDensity: UnwrapRef<typeof import('./lib/theme')['setDensity']>
     readonly setLastReadNs: UnwrapRef<typeof import('./lib/xmtpConsent')['setLastReadNs']>
+    readonly setRadius: UnwrapRef<typeof import('./lib/theme')['setRadius']>
+    readonly setSeedColor: UnwrapRef<typeof import('./lib/theme')['setSeedColor']>
     readonly setThemePreference: UnwrapRef<typeof import('./lib/theme')['setThemePreference']>
     readonly shallowReactive: UnwrapRef<typeof import('vue')['shallowReactive']>
     readonly shallowReadonly: UnwrapRef<typeof import('vue')['shallowReadonly']>
@@ -429,18 +456,22 @@ declare module 'vue' {
     readonly uploadAvatar: UnwrapRef<typeof import('./lib/profile')['uploadAvatar']>
     readonly useActivity: UnwrapRef<typeof import('./lib/useActivity')['useActivity']>
     readonly useAttrs: UnwrapRef<typeof import('vue')['useAttrs']>
+    readonly useBaseSize: UnwrapRef<typeof import('./lib/theme')['useBaseSize']>
     readonly useBubbleActions: UnwrapRef<typeof import('./lib/useBubbleActions')['useBubbleActions']>
     readonly useChannels: UnwrapRef<typeof import('./lib/useChannels')['useChannels']>
     readonly useCommonChannels: UnwrapRef<typeof import('./lib/useCommonChannels')['useCommonChannels']>
     readonly useComposerAttach: UnwrapRef<typeof import('./lib/useComposerAttach')['useComposerAttach']>
     readonly useCssModule: UnwrapRef<typeof import('vue')['useCssModule']>
     readonly useCssVars: UnwrapRef<typeof import('vue')['useCssVars']>
+    readonly useCustomTheme: UnwrapRef<typeof import('./lib/theme')['useCustomTheme']>
+    readonly useDensity: UnwrapRef<typeof import('./lib/theme')['useDensity']>
     readonly useEffectiveScheme: UnwrapRef<typeof import('./lib/kitTheme')['useEffectiveScheme']>
     readonly useGroupDetail: UnwrapRef<typeof import('./lib/useGroupDetail')['useGroupDetail']>
     readonly useId: UnwrapRef<typeof import('vue')['useId']>
     readonly useLink: UnwrapRef<typeof import('vue-router')['useLink']>
     readonly useModel: UnwrapRef<typeof import('vue')['useModel']>
     readonly useNfts: UnwrapRef<typeof import('./lib/useNfts')['useNfts']>
+    readonly useRadius: UnwrapRef<typeof import('./lib/theme')['useRadius']>
     readonly useRoute: UnwrapRef<typeof import('vue-router')['useRoute']>
     readonly useRouter: UnwrapRef<typeof import('vue-router')['useRouter']>
     readonly useSearchResolution: UnwrapRef<typeof import('./lib/useSearchResolution')['useSearchResolution']>
@@ -448,6 +479,7 @@ declare module 'vue' {
     readonly useSlots: UnwrapRef<typeof import('vue')['useSlots']>
     readonly useTemplateRef: UnwrapRef<typeof import('vue')['useTemplateRef']>
     readonly useThemePreference: UnwrapRef<typeof import('./lib/theme')['useThemePreference']>
+    readonly useThemeSeeds: UnwrapRef<typeof import('./lib/theme')['useThemeSeeds']>
     readonly useWalletBalances: UnwrapRef<typeof import('./lib/useWalletBalances')['useWalletBalances']>
     readonly useXmtpConversation: UnwrapRef<typeof import('./lib/useXmtpConversation')['useXmtpConversation']>
     readonly useXmtpFeed: UnwrapRef<typeof import('./lib/xmtpFeed')['useXmtpFeed']>

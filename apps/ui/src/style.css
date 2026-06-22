@@ -28,3 +28,10 @@
     font-family: 'Calibre-Medium', system-ui, sans-serif;
   }
 }
+
+/** Settings cards opt into the live radius control: when a custom theme sets
+ *  --kit-block-radius (App.vue) these follow it, otherwise they fall back to the
+ *  default rounded-xl (0.75rem). Mirrors mobile's useBlockRadius on cards. */
+.kit-block {
+  border-radius: var(--kit-block-radius, 0.75rem);
+}
