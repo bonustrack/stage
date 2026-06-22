@@ -9,8 +9,9 @@ import { useEffectiveScheme } from './lib/kitTheme';
 
 const route = useRoute();
 const isEmbedded = runningInIframe();
+const TAB_ROUTES = new Set(['channels', 'contacts', 'settings', 'profile']);
 const showTabs = computed(
-  () => !isEmbedded && route.name !== 'xmtp' && route.name !== 'embed',
+  () => !isEmbedded && typeof route.name === 'string' && TAB_ROUTES.has(route.name),
 );
 
 const scheme = useEffectiveScheme();
@@ -30,6 +31,9 @@ provide(KitThemeKey, kitTheme);
     text-metro-fg-light dark:text-metro-fg-dark no-scrollbar"
     :class="showTabs ? 'pb-[60px]' : ''">
     <RouterView />
+    <!-- The TabBar only shows on the top-level tab routes (channels, contacts,
+         settings hub, profile); mobile pushes conversation, group detail, user
+         profile, new-group and settings subpages full-screen WITHOUT it. -->
     <TabBar
       v-if="showTabs"
       class="fixed bottom-0 left-0 right-0 z-20"

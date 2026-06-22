@@ -66,7 +66,7 @@ const ROWS: { label: string; value: string }[] = [
       >
         <Icon name="code" :size="22" :color="palette.text" />
         <Col class="flex-1 min-w-0">
-          <span class="text-[15px] text-metro-fg-light dark:text-metro-fg-dark">View Stage on GitHub</span>
+          <span class="text-[17px] text-metro-head-light dark:text-metro-head-dark">View Stage on GitHub</span>
           <span class="text-[12px] text-metro-sub-light dark:text-metro-sub-dark">bonustrack/stage</span>
         </Col>
         <Icon name="externalLink" :size="18" :color="palette.sub" />

@@ -63,62 +63,68 @@ function whenLabel(ms: number | null): string {
     </Row>
 
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-8">
-      <!-- XMTP ACCOUNT: copy-able identity rows, mirroring mobile MessengerSettings CopyRows. -->
+      <!-- XMTP ACCOUNT: copy-able identity rows grouped into ONE card with internal
+           1px dividers, mirroring mobile MessengerSettings' single ListView of rows
+           (not one floating card per row). -->
       <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark px-4 pt-5 pb-1">XMTP ACCOUNT</Col>
 
-      <Pressable
-        v-if="address"
-        tag="button"
-        type="button"
-        class="block w-[calc(100%-2rem)] mx-4 mt-2 p-3 rounded-xl text-left border
-          bg-metro-surface-light dark:bg-metro-surface-dark"
-        :style="{ borderColor: palette.border }"
-        @click="copy('addr', address)"
-      >
-        <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">
-          ADDRESS ({{ copiedKey === 'addr' ? 'copied!' : 'tap to copy' }})
-        </Col>
-        <Col class="text-[13px] text-metro-fg-light dark:text-metro-fg-dark mt-0.5">{{ shortAddress(address) }}</Col>
-      </Pressable>
-
-      <Pressable
-        v-if="inboxId"
-        tag="button"
-        type="button"
-        class="block w-[calc(100%-2rem)] mx-4 mt-2 p-3 rounded-xl text-left border
-          bg-metro-surface-light dark:bg-metro-surface-dark"
-        :style="{ borderColor: palette.border }"
-        @click="copy('inbox', inboxId)"
-      >
-        <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">
-          INBOX ID ({{ copiedKey === 'inbox' ? 'copied!' : 'tap to copy' }})
-        </Col>
-        <Col class="text-[13px] text-metro-fg-light dark:text-metro-fg-dark mt-0.5 break-all">{{ inboxId }}</Col>
-      </Pressable>
-
-      <Pressable
-        v-if="installationId"
-        tag="button"
-        type="button"
-        class="block w-[calc(100%-2rem)] mx-4 mt-2 p-3 rounded-xl text-left border
-          bg-metro-surface-light dark:bg-metro-surface-dark"
-        :style="{ borderColor: palette.border }"
-        @click="copy('install', installationId)"
-      >
-        <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">
-          INSTALLATION ID ({{ copiedKey === 'install' ? 'copied!' : 'tap to copy' }})
-        </Col>
-        <Col class="text-[13px] text-metro-fg-light dark:text-metro-fg-dark mt-0.5">{{ shortAddress(installationId) }}</Col>
-      </Pressable>
-
       <Col
-        v-if="env"
-        class="w-[calc(100%-2rem)] mx-4 mt-2 p-3 rounded-xl border
+        class="w-[calc(100%-2rem)] mx-4 mt-2 rounded-xl overflow-hidden border
           bg-metro-surface-light dark:bg-metro-surface-dark"
         :style="{ borderColor: palette.border }"
       >
-        <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">ENVIRONMENT</Col>
-        <Col class="text-[13px] text-metro-fg-light dark:text-metro-fg-dark mt-0.5">{{ env }}</Col>
+        <Pressable
+          v-if="address"
+          tag="button"
+          type="button"
+          class="block w-full p-3 text-left
+            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark transition-colors"
+          @click="copy('addr', address)"
+        >
+          <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">
+            ADDRESS ({{ copiedKey === 'addr' ? 'copied!' : 'tap to copy' }})
+          </Col>
+          <Col class="text-[13px] text-metro-fg-light dark:text-metro-fg-dark mt-0.5">{{ shortAddress(address) }}</Col>
+        </Pressable>
+
+        <Pressable
+          v-if="inboxId"
+          tag="button"
+          type="button"
+          class="block w-full p-3 text-left border-t
+            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark transition-colors"
+          :style="{ borderColor: palette.border }"
+          @click="copy('inbox', inboxId)"
+        >
+          <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">
+            INBOX ID ({{ copiedKey === 'inbox' ? 'copied!' : 'tap to copy' }})
+          </Col>
+          <Col class="text-[13px] text-metro-fg-light dark:text-metro-fg-dark mt-0.5 break-all">{{ inboxId }}</Col>
+        </Pressable>
+
+        <Pressable
+          v-if="installationId"
+          tag="button"
+          type="button"
+          class="block w-full p-3 text-left border-t
+            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark transition-colors"
+          :style="{ borderColor: palette.border }"
+          @click="copy('install', installationId)"
+        >
+          <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">
+            INSTALLATION ID ({{ copiedKey === 'install' ? 'copied!' : 'tap to copy' }})
+          </Col>
+          <Col class="text-[13px] text-metro-fg-light dark:text-metro-fg-dark mt-0.5">{{ shortAddress(installationId) }}</Col>
+        </Pressable>
+
+        <Col
+          v-if="env"
+          class="p-3 border-t"
+          :style="{ borderColor: palette.border }"
+        >
+          <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">ENVIRONMENT</Col>
+          <Col class="text-[13px] text-metro-fg-light dark:text-metro-fg-dark mt-0.5">{{ env }}</Col>
+        </Col>
       </Col>
 
       <!-- ACTIVE SESSIONS: installation list, mirroring mobile MessengerSessions.
@@ -137,15 +143,20 @@ function whenLabel(ms: number | null): string {
       <Col v-else-if="installations && installations.length === 0" class="px-4 pt-2">
         <Text size="sm" role="secondary">No active sessions.</Text>
       </Col>
-      <template v-else>
+      <Col
+        v-else
+        class="w-[calc(100%-2rem)] mx-4 mt-2 rounded-xl overflow-hidden border
+          bg-metro-surface-light dark:bg-metro-surface-dark"
+        :style="{ borderColor: palette.border }"
+      >
         <Row
-          v-for="inst in installations ?? []"
+          v-for="(inst, i) in installations ?? []"
           :key="inst.id"
           align="center"
           :gap="12"
-          class="w-[calc(100%-2rem)] mx-4 mt-2 p-3 rounded-xl border
-            bg-metro-surface-light dark:bg-metro-surface-dark"
-          :style="{ borderColor: palette.border }"
+          class="p-3"
+          :class="i === 0 ? '' : 'border-t'"
+          :style="i === 0 ? {} : { borderColor: palette.border }"
         >
           <Icon name="deviceTablet" :size="22" :color="palette.text" />
           <Col class="flex-1 min-w-0">
@@ -160,7 +171,7 @@ function whenLabel(ms: number | null): string {
             <span class="text-[12px] text-metro-sub-light dark:text-metro-sub-dark">Added {{ whenLabel(inst.createdAtMs) }}</span>
           </Col>
         </Row>
-      </template>
+      </Col>
     </Col>
   </Col>
 </template>
