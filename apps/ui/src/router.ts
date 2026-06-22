@@ -5,6 +5,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/channels',  name: 'channels',  component: () => import('./views/Channels.vue') },
   { path: '/contacts',  name: 'contacts',  component: () => import('./views/Contacts.vue') },
   { path: '/wallet',    name: 'wallet',    component: () => import('./views/Wallet.vue') },
+  { path: '/wallet/receive', name: 'wallet-receive', component: () => import('./views/WalletReceive.vue') },
   { path: '/settings',  name: 'settings',  component: () => import('./views/Settings.vue') },
   { path: '/settings/display',   name: 'settings-display',   component: () => import('./views/settings/DisplaySettings.vue') },
   { path: '/settings/about',     name: 'settings-about',     component: () => import('./views/settings/AboutSettings.vue') },
