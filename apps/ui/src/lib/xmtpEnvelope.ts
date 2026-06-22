@@ -1,11 +1,12 @@
 
 import {
-  ReactionAction,
+  ReactionAction, ReactionSchema,
   type DecodedMessage,
   type Reaction, type Attachment as AttachmentContent,
 } from '@xmtp/browser-sdk';
 import { XMTP_USER_PREFIX } from './xmtp';
 import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
+import { type PollContent, pollFallbackText } from '@stage-labs/client/xmtp/poll';
 import type { HistoryEntry } from './types';
 
 function latestReactionStates(events: HistoryEntry[]): Map<string, { ts: string; removed: boolean }> {
@@ -72,10 +73,29 @@ function bytesToBase64(bytes: Uint8Array): string {
 function reactionEnvelope(base: HistoryEntry, typeId: string, decoded: object): HistoryEntry {
   const r = decoded as Reaction;
   const removed = r.action === ReactionAction.Removed;
+  if (r.schema === ReactionSchema.Custom) {
+    return {
+      ...base,
+      text: `[vote ${r.content}${removed ? ' (removed)' : ''}]`,
+      payload: {
+        contentType: typeId, reactTo: r.reference, emoji: r.content,
+        schema: 'custom', removed,
+      },
+    };
+  }
   return {
     ...base,
     text: `[react ${r.content}${removed ? ' (removed)' : ''}]`,
     payload: { contentType: typeId, reactTo: r.reference, emoji: r.content, removed },
+  };
+}
+
+function pollEnvelope(base: HistoryEntry, typeId: string, decoded: object): HistoryEntry {
+  const poll = decoded as PollContent;
+  return {
+    ...base,
+    text: pollFallbackText(poll),
+    payload: { contentType: typeId, poll },
   };
 }
 
@@ -135,6 +155,7 @@ export function envelopeOfXmtpMessage(msg: DecodedMessage, line: string): Histor
     if (typeId === 'reaction') return reactionEnvelope(base, typeId, decoded);
     if (typeId === 'reply') return replyEnvelope(base, typeId, decoded);
     if (typeId === 'attachment') return attachmentEnvelope(base, typeId, decoded);
+    if (typeId === 'poll') return pollEnvelope(base, typeId, decoded);
   }
   return fallbackEnvelope(base, typeId, decoded, msg.fallback);
 }

@@ -35,6 +35,8 @@ declare module 'vue' {
     MemberRow: typeof import('./components/MemberRow.vue')['default']
     MessengerBubble: typeof import('./components/MessengerBubble.vue')['default']
     NftGrid: typeof import('./components/NftGrid.vue')['default']
+    PollCard: typeof import('./components/PollCard.vue')['default']
+    PollComposeSheet: typeof import('./components/PollComposeSheet.vue')['default']
     Pressable: typeof import('@stage-labs/kit/vue/pressable')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']

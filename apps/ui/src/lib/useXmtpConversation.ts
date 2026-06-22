@@ -8,6 +8,8 @@ import {
   XMTP_USER_PREFIX, convOfLine, lineOfConv, peerEthAddressOfDm, memberInboxToAddressMap,
 } from './xmtp';
 import { useXmtpFeed, reactionsByMessage, ownEmojisByMessage, isReactionEntry, type XmtpFeedHandle } from './xmtpFeed';
+import { votesByMessage, ownVotesByMessage } from '@stage-labs/client/xmtp/poll-feed';
+import { xmtpVote } from './xmtpSend';
 import { useBubbleActions } from './useBubbleActions';
 import { markConvRead } from './channelsCache';
 import { postUnreadToParent } from './embedBridge';
@@ -32,6 +34,9 @@ export interface XmtpConversation {
   mentionCandidates: ComputedRef<MentionCandidate[]>;
   reactions: ComputedRef<Map<string, Map<string, number>>>;
   ownEmojis: ComputedRef<Map<string, Set<string>>>;
+  pollVotes: ComputedRef<Map<string, Map<number, Map<number, Set<string>>>>>;
+  ownPollVotes: ComputedRef<Map<string, Map<number, Set<number>>>>;
+  onVote: (pollId: string, questionIndex: number, optionIndex: number, action: 'added' | 'removed') => void;
   allBubbles: ComputedRef<HistoryEntry[]>;
   highlightId: Ref<string | null>;
   openHeader: () => void;
@@ -103,6 +108,58 @@ function scrollToBottom(scroller: Ref<HTMLElement | null>): void {
   if (scroller.value) scroller.value.scrollTop = scroller.value.scrollHeight;
 }
 
+interface PollPayload { poll?: { multiSelect?: boolean; questions?: { multiSelect?: boolean }[] } }
+
+function isMultiSelect(events: HistoryEntry[], pollMessageId: string, questionIndex: number): boolean {
+  const poll = (events.find(e => e.id === pollMessageId)?.payload as PollPayload | undefined)?.poll;
+  return (poll?.questions?.[questionIndex]?.multiSelect ?? poll?.multiSelect) === true;
+}
+
+interface CastVoteArgs {
+  line: string | null;
+  events: HistoryEntry[];
+  ownVotes: Map<string, Map<number, Set<number>>>;
+  pollMessageId: string;
+  questionIndex: number;
+  optionIndex: number;
+  action: 'added' | 'removed';
+}
+
+function castVote(a: CastVoteArgs): void {
+  if (!a.line) return;
+  if (a.action === 'added' && !isMultiSelect(a.events, a.pollMessageId, a.questionIndex)) {
+    const prev = a.ownVotes.get(a.pollMessageId)?.get(a.questionIndex);
+    for (const prevIdx of prev ?? []) {
+      if (prevIdx !== a.optionIndex) {
+        void xmtpVote(a.line, a.pollMessageId, prevIdx, 'removed', a.questionIndex).catch(() => undefined);
+      }
+    }
+  }
+  void xmtpVote(a.line, a.pollMessageId, a.optionIndex, a.action, a.questionIndex).catch(() => undefined);
+}
+
+interface PollVotesHandle {
+  pollVotes: ComputedRef<Map<string, Map<number, Map<number, Set<string>>>>>;
+  ownPollVotes: ComputedRef<Map<string, Map<number, Set<number>>>>;
+  onVote: (pollMessageId: string, questionIndex: number, optionIndex: number, action: 'added' | 'removed') => void;
+}
+
+function usePollVotes(
+  feed: XmtpFeedHandle, myUri: ComputedRef<string>, line: ComputedRef<string | null>,
+): PollVotesHandle {
+  const pollVotes = computed(() => votesByMessage(feed.events.value));
+  const ownPollVotes = computed(() => ownVotesByMessage(feed.events.value, myUri.value));
+  const onVote = (
+    pollMessageId: string, questionIndex: number, optionIndex: number, action: 'added' | 'removed',
+  ): void => {
+    castVote({
+      line: line.value, events: feed.events.value, ownVotes: ownPollVotes.value,
+      pollMessageId, questionIndex, optionIndex, action,
+    });
+  };
+  return { pollVotes, ownPollVotes, onVote };
+}
+
 export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConversation {
   const route = useRoute();
   const router = useRouter();
@@ -153,6 +210,8 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
 
   const reactions = computed(() => reactionsByMessage(feed.events.value));
   const ownEmojis = computed(() => ownEmojisByMessage(feed.events.value, myUri.value));
+  const { pollVotes, ownPollVotes, onVote } = usePollVotes(feed, myUri, line);
+
   const liveBubbles = computed(() => feed.events.value.filter(e => !isReactionEntry(e)));
 
   const allBubbles = computed(() => {
@@ -211,7 +270,8 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
   return {
     router, convId, line, feed, myUri, replyingTo, actionTarget,
     peerAddress, groupName, isGroup, inboxToAddr, memberAddresses, mentionCandidates,
-    reactions, ownEmojis, allBubbles, highlightId, openHeader, previewOf,
+    reactions, ownEmojis, pollVotes, ownPollVotes, onVote,
+    allBubbles, highlightId, openHeader, previewOf,
     onReact, onOptimistic, onSent, onActionReply, onBubbleReply,
     onActionCopy, onActionCopyLink,
   };
