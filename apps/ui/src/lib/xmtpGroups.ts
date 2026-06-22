@@ -1,5 +1,5 @@
 
-import { IdentifierKind, type Identifier } from '@xmtp/browser-sdk';
+import { IdentifierKind, ConsentState, type Identifier } from '@xmtp/browser-sdk';
 import { getCachedXmtpClient, getOrCreateXmtpClient, convOfLine, lineOfConv } from './xmtp';
 
 export const ASK_QUESTION_MEMBERS = [
@@ -85,6 +85,28 @@ export async function createGroup(
     }
     throw new Error(`Couldn't create the group: ${msg}`);
   }
+}
+
+export async function leaveGroup(convId: string): Promise<'left' | 'hidden'> {
+  const conv = await convOfLine(lineOfConv(convId));
+  if (!conv) throw new Error('Conversation not found');
+  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const selfInboxId = client.inboxId;
+  const group = conv as unknown as {
+    removeMembers?: (inboxIds: string[]) => Promise<void>;
+    updateConsentState?: (state: ConsentState) => Promise<void>;
+  };
+  if (selfInboxId && group.removeMembers) {
+    try {
+      await group.removeMembers([selfInboxId]);
+      await group.updateConsentState?.(ConsentState.Denied).catch(() => undefined);
+      return 'left';
+    } catch {
+    }
+  }
+  if (!group.updateConsentState) throw new Error('Not a group conversation');
+  await group.updateConsentState(ConsentState.Denied);
+  return 'hidden';
 }
 
 export async function addGroupMembers(convId: string, addresses: string[]): Promise<void> {
