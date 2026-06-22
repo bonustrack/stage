@@ -16,6 +16,7 @@ declare global {
   const addGroupMembers: typeof import('./lib/xmtpGroups').addGroupMembers
   const applyConsentToRows: typeof import('./lib/channelsCache').applyConsentToRows
   const blockRequestConv: typeof import('./lib/xmtpRequests').blockRequestConv
+  const buildSortedTokenRows: typeof import('./lib/walletSort').buildSortedTokenRows
   const bumpAccountEpoch: typeof import('./lib/xmtp').bumpAccountEpoch
   const cachedRows: typeof import('./lib/channelsCache').cachedRows
   const canExportPrivateKey: typeof import('./lib/accounts').canExportPrivateKey
@@ -146,6 +147,7 @@ declare global {
   const toRefs: typeof import('vue').toRefs
   const toValue: typeof import('vue').toValue
   const toggleArchived: typeof import('./lib/archived').toggleArchived
+  const tokenRowId: typeof import('./lib/walletSort').tokenRowId
   const triggerRef: typeof import('vue').triggerRef
   const unref: typeof import('vue').unref
   const uploadAvatar: typeof import('./lib/profile').uploadAvatar
@@ -167,6 +169,7 @@ declare global {
   const useSlots: typeof import('vue').useSlots
   const useTemplateRef: typeof import('vue').useTemplateRef
   const useThemePreference: typeof import('./lib/theme').useThemePreference
+  const useWalletBalances: typeof import('./lib/useWalletBalances').useWalletBalances
   const useXmtpConversation: typeof import('./lib/useXmtpConversation').useXmtpConversation
   const useXmtpFeed: typeof import('./lib/xmtpFeed').useXmtpFeed
   const watch: typeof import('vue').watch
@@ -224,6 +227,9 @@ declare global {
   export type { SearchResolution } from './lib/useSearchResolution'
   import('./lib/useSearchResolution')
   // @ts-ignore
+  export type { WalletBalances } from './lib/useWalletBalances'
+  import('./lib/useWalletBalances')
+  // @ts-ignore
   export type { XmtpConversation } from './lib/useXmtpConversation'
   import('./lib/useXmtpConversation')
   // @ts-ignore
@@ -249,6 +255,7 @@ declare module 'vue' {
     readonly addGroupMembers: UnwrapRef<typeof import('./lib/xmtpGroups')['addGroupMembers']>
     readonly applyConsentToRows: UnwrapRef<typeof import('./lib/channelsCache')['applyConsentToRows']>
     readonly blockRequestConv: UnwrapRef<typeof import('./lib/xmtpRequests')['blockRequestConv']>
+    readonly buildSortedTokenRows: UnwrapRef<typeof import('./lib/walletSort')['buildSortedTokenRows']>
     readonly bumpAccountEpoch: UnwrapRef<typeof import('./lib/xmtp')['bumpAccountEpoch']>
     readonly cachedRows: UnwrapRef<typeof import('./lib/channelsCache')['cachedRows']>
     readonly canExportPrivateKey: UnwrapRef<typeof import('./lib/accounts')['canExportPrivateKey']>
@@ -376,6 +383,7 @@ declare module 'vue' {
     readonly toRefs: UnwrapRef<typeof import('vue')['toRefs']>
     readonly toValue: UnwrapRef<typeof import('vue')['toValue']>
     readonly toggleArchived: UnwrapRef<typeof import('./lib/archived')['toggleArchived']>
+    readonly tokenRowId: UnwrapRef<typeof import('./lib/walletSort')['tokenRowId']>
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
     readonly unref: UnwrapRef<typeof import('vue')['unref']>
     readonly uploadAvatar: UnwrapRef<typeof import('./lib/profile')['uploadAvatar']>
@@ -397,6 +405,7 @@ declare module 'vue' {
     readonly useSlots: UnwrapRef<typeof import('vue')['useSlots']>
     readonly useTemplateRef: UnwrapRef<typeof import('vue')['useTemplateRef']>
     readonly useThemePreference: UnwrapRef<typeof import('./lib/theme')['useThemePreference']>
+    readonly useWalletBalances: UnwrapRef<typeof import('./lib/useWalletBalances')['useWalletBalances']>
     readonly useXmtpConversation: UnwrapRef<typeof import('./lib/useXmtpConversation')['useXmtpConversation']>
     readonly useXmtpFeed: UnwrapRef<typeof import('./lib/xmtpFeed')['useXmtpFeed']>
     readonly watch: UnwrapRef<typeof import('vue')['watch']>
