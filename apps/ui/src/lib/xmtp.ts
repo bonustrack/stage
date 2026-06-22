@@ -18,6 +18,7 @@ import {
 } from '@stage-labs/client/xmtp/line';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { POLL_CODEC } from './xmtpPollCodec';
+import { WALLET_SEND_CALLS_CODEC, SIGNATURE_REQUEST_CODEC } from './xmtpRequestCodecs';
 
 export type { XmtpEnv };
 
@@ -88,7 +89,7 @@ async function resolveIdentity(): Promise<ResolvedIdentity> {
 
 async function buildClientForIdentity(ident: ResolvedIdentity, env: XmtpEnv): Promise<XmtpClient> {
   const dbPath = `${dbDirFor(ident.id)}-${env}.db3`;
-  const opts = { env, dbPath, codecs: [POLL_CODEC] } as Parameters<typeof Client.create>[1];
+  const opts = { env, dbPath, codecs: [POLL_CODEC, WALLET_SEND_CALLS_CODEC, SIGNATURE_REQUEST_CODEC] } as Parameters<typeof Client.create>[1];
   const savedAddress = localStorage.getItem(addressKeyFor(ident.id));
   const savedEnv = localStorage.getItem(envKeyFor(ident.id));
   if (savedAddress?.toLowerCase() === ident.address && savedEnv === env) {

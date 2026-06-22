@@ -38,6 +38,7 @@ declare module 'vue' {
     PollCard: typeof import('./components/PollCard.vue')['default']
     PollComposeSheet: typeof import('./components/PollComposeSheet.vue')['default']
     Pressable: typeof import('@stage-labs/kit/vue/pressable')['default']
+    ProposalsBanner: typeof import('./components/ProposalsBanner.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     Row: typeof import('@stage-labs/kit/vue/row')['default']

@@ -12,7 +12,11 @@ declare global {
   const METRO_API_URL: typeof import('./lib/xmtpGroups').METRO_API_URL
   const POLL_CODEC: typeof import('./lib/xmtpPollCodec').POLL_CODEC
   const PollCodec: typeof import('./lib/xmtpPollCodec').PollCodec
+  const SIGNATURE_REQUEST_CODEC: typeof import('./lib/xmtpRequestCodecs').SIGNATURE_REQUEST_CODEC
+  const SignatureRequestCodec: typeof import('./lib/xmtpRequestCodecs').SignatureRequestCodec
+  const WALLET_SEND_CALLS_CODEC: typeof import('./lib/xmtpRequestCodecs').WALLET_SEND_CALLS_CODEC
   const WALLET_TABS: typeof import('./lib/walletTab').WALLET_TABS
+  const WalletSendCallsCodec: typeof import('./lib/xmtpRequestCodecs').WalletSendCallsCodec
   const XMTP_USER_PREFIX: typeof import('./lib/xmtp').XMTP_USER_PREFIX
   const acceptRequestConv: typeof import('./lib/xmtpRequests').acceptRequestConv
   const accountEpoch: typeof import('./lib/xmtp').accountEpoch
@@ -192,6 +196,8 @@ declare global {
   const useLink: typeof import('vue-router').useLink
   const useModel: typeof import('vue').useModel
   const useNfts: typeof import('./lib/useNfts').useNfts
+  const useProposalCount: typeof import('./lib/useProposals').useProposalCount
+  const useProposals: typeof import('./lib/useProposals').useProposals
   const useRadius: typeof import('./lib/theme').useRadius
   const useRoute: typeof import('vue-router').useRoute
   const useRouter: typeof import('vue-router').useRouter
@@ -268,6 +274,9 @@ declare global {
   export type { WalletNfts } from './lib/useNfts'
   import('./lib/useNfts')
   // @ts-ignore
+  export type { PollDetail, ProposalDetail, ProposalsState } from './lib/useProposals'
+  import('./lib/useProposals')
+  // @ts-ignore
   export type { SearchResolution } from './lib/useSearchResolution'
   import('./lib/useSearchResolution')
   // @ts-ignore
@@ -291,6 +300,9 @@ declare global {
   // @ts-ignore
   export type { PollCodec } from './lib/xmtpPollCodec'
   import('./lib/xmtpPollCodec')
+  // @ts-ignore
+  export type { WalletSendCallsCodec, SignatureRequestCodec } from './lib/xmtpRequestCodecs'
+  import('./lib/xmtpRequestCodecs')
 }
 
 // for vue template auto import
@@ -304,7 +316,11 @@ declare module 'vue' {
     readonly METRO_API_URL: UnwrapRef<typeof import('./lib/xmtpGroups')['METRO_API_URL']>
     readonly POLL_CODEC: UnwrapRef<typeof import('./lib/xmtpPollCodec')['POLL_CODEC']>
     readonly PollCodec: UnwrapRef<typeof import('./lib/xmtpPollCodec')['PollCodec']>
+    readonly SIGNATURE_REQUEST_CODEC: UnwrapRef<typeof import('./lib/xmtpRequestCodecs')['SIGNATURE_REQUEST_CODEC']>
+    readonly SignatureRequestCodec: UnwrapRef<typeof import('./lib/xmtpRequestCodecs')['SignatureRequestCodec']>
+    readonly WALLET_SEND_CALLS_CODEC: UnwrapRef<typeof import('./lib/xmtpRequestCodecs')['WALLET_SEND_CALLS_CODEC']>
     readonly WALLET_TABS: UnwrapRef<typeof import('./lib/walletTab')['WALLET_TABS']>
+    readonly WalletSendCallsCodec: UnwrapRef<typeof import('./lib/xmtpRequestCodecs')['WalletSendCallsCodec']>
     readonly XMTP_USER_PREFIX: UnwrapRef<typeof import('./lib/xmtp')['XMTP_USER_PREFIX']>
     readonly acceptRequestConv: UnwrapRef<typeof import('./lib/xmtpRequests')['acceptRequestConv']>
     readonly accountEpoch: UnwrapRef<typeof import('./lib/xmtp')['accountEpoch']>
@@ -481,6 +497,8 @@ declare module 'vue' {
     readonly useLink: UnwrapRef<typeof import('vue-router')['useLink']>
     readonly useModel: UnwrapRef<typeof import('vue')['useModel']>
     readonly useNfts: UnwrapRef<typeof import('./lib/useNfts')['useNfts']>
+    readonly useProposalCount: UnwrapRef<typeof import('./lib/useProposals')['useProposalCount']>
+    readonly useProposals: UnwrapRef<typeof import('./lib/useProposals')['useProposals']>
     readonly useRadius: UnwrapRef<typeof import('./lib/theme')['useRadius']>
     readonly useRoute: UnwrapRef<typeof import('vue-router')['useRoute']>
     readonly useRouter: UnwrapRef<typeof import('vue-router')['useRouter']>
