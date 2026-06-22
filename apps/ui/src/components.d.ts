@@ -49,6 +49,8 @@ declare module 'vue' {
     Title: typeof import('@stage-labs/kit/vue/title')['default']
     TokenRow: typeof import('./components/TokenRow.vue')['default']
     TxRow: typeof import('./components/TxRow.vue')['default']
+    VoiceMessage: typeof import('./components/VoiceMessage.vue')['default']
+    VoiceRecordBar: typeof import('./components/VoiceRecordBar.vue')['default']
     WalletTabs: typeof import('./components/WalletTabs.vue')['default']
     YouTubeEmbed: typeof import('./components/YouTubeEmbed.vue')['default']
   }
