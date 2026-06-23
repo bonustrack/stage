@@ -1,4 +1,4 @@
-// Build cache-bust: rebuild preview to bake VITE_ZERODEV_PROJECT_ID (2026-06-23).
+
 import { http, createPublicClient, type Chain, type PublicClient } from 'viem';
 import { base } from 'viem/chains';
 import {
