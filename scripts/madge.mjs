@@ -6,7 +6,10 @@ const ROOTS = [
   'apps/app/components',
   'apps/app/lib',
   'apps/app/modules',
+  'apps/ui/src',
+  'apps/proxy/src',
   'packages/client/src',
+  'packages/config',
   'packages/kit/src',
 ];
 

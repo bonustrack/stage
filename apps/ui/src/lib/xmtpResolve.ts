@@ -1,6 +1,6 @@
 
 import { IdentifierKind, type Conversation } from '@xmtp/browser-sdk';
-import { getCachedXmtpClient, getOrCreateXmtpClient } from './xmtp';
+import { getCachedXmtpClient, getOrCreateXmtpClient } from './xmtpClient';
 
 export async function peerEthAddressOfDm(conv: Conversation): Promise<string | null> {
   const dm = conv as unknown as { peerInboxId?: () => Promise<string> };

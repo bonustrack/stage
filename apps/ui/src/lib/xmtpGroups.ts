@@ -1,6 +1,7 @@
 
 import { IdentifierKind, ConsentState, type Identifier } from '@xmtp/browser-sdk';
-import { getCachedXmtpClient, getOrCreateXmtpClient, convOfLine, lineOfConv } from './xmtp';
+import { getCachedXmtpClient, getOrCreateXmtpClient, convOfLine } from './xmtpClient';
+import { lineOfConv } from '@stage-labs/client/xmtp/line';
 
 export const ASK_QUESTION_MEMBERS = [
   '0x0bA043c6F25085C68042bad079c29bD8f16a651A',

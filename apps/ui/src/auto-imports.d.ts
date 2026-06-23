@@ -35,7 +35,7 @@ declare global {
   const computeMemberRoles: typeof import('./lib/useGroupDetailHelpers').computeMemberRoles
   const computed: typeof import('vue').computed
   const convIdOfLine: typeof import('./lib/xmtp').convIdOfLine
-  const convOfLine: typeof import('./lib/xmtp').convOfLine
+  const convOfLine: typeof import('./lib/xmtpClient').convOfLine
   const createApp: typeof import('vue').createApp
   const createAskQuestionGroup: typeof import('./lib/xmtpGroups').createAskQuestionGroup
   const createGroup: typeof import('./lib/xmtpGroups').createGroup
@@ -50,18 +50,18 @@ declare global {
   const executeTxRequest: typeof import('./lib/executeTxRequest').executeTxRequest
   const getActiveAccount: typeof import('./lib/xmtp').getActiveAccount
   const getActiveAccountId: typeof import('./lib/xmtp').getActiveAccountId
-  const getCachedXmtpClient: typeof import('./lib/xmtp').getCachedXmtpClient
+  const getCachedXmtpClient: typeof import('./lib/xmtpClient').getCachedXmtpClient
   const getConvConsent: typeof import('./lib/xmtpConsent').getConvConsent
   const getCurrentInstance: typeof import('vue').getCurrentInstance
   const getCurrentScope: typeof import('vue').getCurrentScope
   const getCurrentWatcher: typeof import('vue').getCurrentWatcher
   const getHostAccount: typeof import('./lib/hostSigner').getHostAccount
   const getLastReadNs: typeof import('./lib/xmtpConsent').getLastReadNs
-  const getOrCreateXmtpClient: typeof import('./lib/xmtp').getOrCreateXmtpClient
+  const getOrCreateXmtpClient: typeof import('./lib/xmtpClient').getOrCreateXmtpClient
   const getTokenRow: typeof import('./lib/tokenDetailStore').getTokenRow
   const getWalletMnemonic: typeof import('./lib/xmtp').getWalletMnemonic
-  const getXmtpAccountInfo: typeof import('./lib/xmtp').getXmtpAccountInfo
-  const getXmtpEnv: typeof import('./lib/xmtp').getXmtpEnv
+  const getXmtpAccountInfo: typeof import('./lib/xmtpClient').getXmtpAccountInfo
+  const getXmtpEnv: typeof import('./lib/xmtpClient').getXmtpEnv
   const groupMemberEthAddresses: typeof import('./lib/xmtpResolve').groupMemberEthAddresses
   const h: typeof import('vue').h
   const hasWalletMnemonic: typeof import('./lib/xmtp').hasWalletMnemonic
@@ -142,7 +142,7 @@ declare global {
   const ref: typeof import('vue').ref
   const relTime: typeof import('./lib/activityFormat').relTime
   const rememberTokenRow: typeof import('./lib/tokenDetailStore').rememberTokenRow
-  const removeAccount: typeof import('./lib/xmtp').removeAccount
+  const removeAccount: typeof import('./lib/xmtpClient').removeAccount
   const removeAccountRecord: typeof import('./lib/accounts').removeAccountRecord
   const removeMember: typeof import('./lib/useGroupDetail.mutations').removeMember
   const renderMarkdown: typeof import('./lib/renderMarkdown').renderMarkdown
@@ -178,7 +178,7 @@ declare global {
   const streamConvConsent: typeof import('./lib/xmtpConsent').streamConvConsent
   const subscribeArchived: typeof import('./lib/archived').subscribeArchived
   const summarizeConv: typeof import('./lib/channelsSummarize').summarizeConv
-  const switchToAccount: typeof import('./lib/xmtp').switchToAccount
+  const switchToAccount: typeof import('./lib/xmtpClient').switchToAccount
   const syncPreferences: typeof import('./lib/xmtpConsent').syncPreferences
   const systemScheme: typeof import('./lib/theme').systemScheme
   const toRaw: typeof import('vue').toRaw
@@ -318,8 +318,11 @@ declare global {
   export type { WalletTab } from './lib/walletTab'
   import('./lib/walletTab')
   // @ts-ignore
-  export type { XmtpClient, XmtpInstallationView, XmtpAccountInfo, XmtpEnv, AccountRecord } from './lib/xmtp'
+  export type { AccountRecord } from './lib/xmtp'
   import('./lib/xmtp')
+  // @ts-ignore
+  export type { XmtpClient, XmtpInstallationView, XmtpAccountInfo, XmtpEnv } from './lib/xmtpClient'
+  import('./lib/xmtpClient')
   // @ts-ignore
   export type { XmtpFeedStatus, XmtpFeedHandle } from './lib/xmtpFeed'
   import('./lib/xmtpFeed')
@@ -364,7 +367,7 @@ declare module 'vue' {
     readonly computeMemberRoles: UnwrapRef<typeof import('./lib/useGroupDetailHelpers')['computeMemberRoles']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>
     readonly convIdOfLine: UnwrapRef<typeof import('./lib/xmtp')['convIdOfLine']>
-    readonly convOfLine: UnwrapRef<typeof import('./lib/xmtp')['convOfLine']>
+    readonly convOfLine: UnwrapRef<typeof import('./lib/xmtpClient')['convOfLine']>
     readonly createApp: UnwrapRef<typeof import('vue')['createApp']>
     readonly createAskQuestionGroup: UnwrapRef<typeof import('./lib/xmtpGroups')['createAskQuestionGroup']>
     readonly createGroup: UnwrapRef<typeof import('./lib/xmtpGroups')['createGroup']>
@@ -379,18 +382,18 @@ declare module 'vue' {
     readonly executeTxRequest: UnwrapRef<typeof import('./lib/executeTxRequest')['executeTxRequest']>
     readonly getActiveAccount: UnwrapRef<typeof import('./lib/xmtp')['getActiveAccount']>
     readonly getActiveAccountId: UnwrapRef<typeof import('./lib/xmtp')['getActiveAccountId']>
-    readonly getCachedXmtpClient: UnwrapRef<typeof import('./lib/xmtp')['getCachedXmtpClient']>
+    readonly getCachedXmtpClient: UnwrapRef<typeof import('./lib/xmtpClient')['getCachedXmtpClient']>
     readonly getConvConsent: UnwrapRef<typeof import('./lib/xmtpConsent')['getConvConsent']>
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>
     readonly getCurrentWatcher: UnwrapRef<typeof import('vue')['getCurrentWatcher']>
     readonly getHostAccount: UnwrapRef<typeof import('./lib/hostSigner')['getHostAccount']>
     readonly getLastReadNs: UnwrapRef<typeof import('./lib/xmtpConsent')['getLastReadNs']>
-    readonly getOrCreateXmtpClient: UnwrapRef<typeof import('./lib/xmtp')['getOrCreateXmtpClient']>
+    readonly getOrCreateXmtpClient: UnwrapRef<typeof import('./lib/xmtpClient')['getOrCreateXmtpClient']>
     readonly getTokenRow: UnwrapRef<typeof import('./lib/tokenDetailStore')['getTokenRow']>
     readonly getWalletMnemonic: UnwrapRef<typeof import('./lib/xmtp')['getWalletMnemonic']>
-    readonly getXmtpAccountInfo: UnwrapRef<typeof import('./lib/xmtp')['getXmtpAccountInfo']>
-    readonly getXmtpEnv: UnwrapRef<typeof import('./lib/xmtp')['getXmtpEnv']>
+    readonly getXmtpAccountInfo: UnwrapRef<typeof import('./lib/xmtpClient')['getXmtpAccountInfo']>
+    readonly getXmtpEnv: UnwrapRef<typeof import('./lib/xmtpClient')['getXmtpEnv']>
     readonly groupMemberEthAddresses: UnwrapRef<typeof import('./lib/xmtpResolve')['groupMemberEthAddresses']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
     readonly hasWalletMnemonic: UnwrapRef<typeof import('./lib/xmtp')['hasWalletMnemonic']>
@@ -469,7 +472,7 @@ declare module 'vue' {
     readonly ref: UnwrapRef<typeof import('vue')['ref']>
     readonly relTime: UnwrapRef<typeof import('./lib/activityFormat')['relTime']>
     readonly rememberTokenRow: UnwrapRef<typeof import('./lib/tokenDetailStore')['rememberTokenRow']>
-    readonly removeAccount: UnwrapRef<typeof import('./lib/xmtp')['removeAccount']>
+    readonly removeAccount: UnwrapRef<typeof import('./lib/xmtpClient')['removeAccount']>
     readonly removeAccountRecord: UnwrapRef<typeof import('./lib/accounts')['removeAccountRecord']>
     readonly removeMember: UnwrapRef<typeof import('./lib/useGroupDetail.mutations')['removeMember']>
     readonly renderMarkdown: UnwrapRef<typeof import('./lib/renderMarkdown')['renderMarkdown']>
@@ -504,7 +507,7 @@ declare module 'vue' {
     readonly streamConvConsent: UnwrapRef<typeof import('./lib/xmtpConsent')['streamConvConsent']>
     readonly subscribeArchived: UnwrapRef<typeof import('./lib/archived')['subscribeArchived']>
     readonly summarizeConv: UnwrapRef<typeof import('./lib/channelsSummarize')['summarizeConv']>
-    readonly switchToAccount: UnwrapRef<typeof import('./lib/xmtp')['switchToAccount']>
+    readonly switchToAccount: UnwrapRef<typeof import('./lib/xmtpClient')['switchToAccount']>
     readonly syncPreferences: UnwrapRef<typeof import('./lib/xmtpConsent')['syncPreferences']>
     readonly systemScheme: UnwrapRef<typeof import('./lib/theme')['systemScheme']>
     readonly toRaw: UnwrapRef<typeof import('vue')['toRaw']>
