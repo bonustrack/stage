@@ -13,6 +13,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     AccountExportSheet: typeof import('./components/AccountExportSheet.vue')['default']
     AccountImportSheet: typeof import('./components/AccountImportSheet.vue')['default']
+    AccountSwitcher: typeof import('./components/AccountSwitcher.vue')['default']
     ActivityList: typeof import('./components/ActivityList.vue')['default']
     AvatarView: typeof import('@stage-labs/kit/vue/avatar-view')['default']
     Box: typeof import('@stage-labs/kit/vue/box')['default']
@@ -35,6 +36,8 @@ declare module 'vue' {
     MemberRow: typeof import('./components/MemberRow.vue')['default']
     MessengerBubble: typeof import('./components/MessengerBubble.vue')['default']
     NftGrid: typeof import('./components/NftGrid.vue')['default']
+    OverflowItem: typeof import('./components/OverflowItem.vue')['default']
+    OverflowMenu: typeof import('./components/OverflowMenu.vue')['default']
     PollCard: typeof import('./components/PollCard.vue')['default']
     PollComposeSheet: typeof import('./components/PollComposeSheet.vue')['default']
     Pressable: typeof import('@stage-labs/kit/vue/pressable')['default']
