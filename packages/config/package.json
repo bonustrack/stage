@@ -1,6 +1,6 @@
 {
   "name": "@stage-labs/config",
-  "version": "0.1.0-beta.1",
+  "version": "0.2.0-beta.1",
   "description": "Shared ESLint and TypeScript config presets.",
   "license": "MIT",
   "repository": {
@@ -10,11 +10,16 @@
   },
   "type": "module",
   "files": [
+    "bin",
     "eslint",
+    "knip",
     "madge",
     "tsconfig",
     "README.md"
   ],
+  "bin": {
+    "stage-madge": "./bin/stage-madge.js"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -22,6 +27,7 @@
     "./eslint/base": "./eslint/base.js",
     "./eslint/vue": "./eslint/vue.js",
     "./eslint/single": "./eslint/single.js",
+    "./knip": "./knip/index.js",
     "./madge": "./madge/index.js",
     "./tsconfig/base.json": "./tsconfig/base.json",
     "./tsconfig/react-native.json": "./tsconfig/react-native.json",
@@ -29,11 +35,19 @@
   },
   "peerDependencies": {
     "eslint": "*",
+    "knip": "*",
+    "madge": "*",
     "typescript": "*",
     "typescript-eslint": "*"
   },
   "peerDependenciesMeta": {
     "eslint-plugin-vue": {
+      "optional": true
+    },
+    "knip": {
+      "optional": true
+    },
+    "madge": {
       "optional": true
     },
     "vue-eslint-parser": {

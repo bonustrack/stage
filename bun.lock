@@ -147,12 +147,21 @@
     },
     "packages/config": {
       "name": "@stage-labs/config",
-      "version": "0.1.0-beta.1",
+      "version": "0.2.0-beta.1",
+      "bin": {
+        "stage-madge": "./bin/stage-madge.js",
+      },
       "peerDependencies": {
         "eslint": "*",
+        "knip": "*",
+        "madge": "*",
         "typescript": "*",
         "typescript-eslint": "*",
       },
+      "optionalPeers": [
+        "knip",
+        "madge",
+      ],
     },
     "packages/kit": {
       "name": "@stage-labs/kit",

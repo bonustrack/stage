@@ -19,7 +19,7 @@
     "typecheck": "turbo run typecheck",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "madge": "node scripts/madge.mjs",
+    "madge": "stage-madge apps/app/app apps/app/components apps/app/lib apps/app/modules apps/ui/src apps/proxy/src packages/client/src packages/config packages/kit/src",
     "knip": "knip",
     "check": "bun run lint && turbo run typecheck",
     "report:deps": "bun run madge || true; bun run knip || true",
