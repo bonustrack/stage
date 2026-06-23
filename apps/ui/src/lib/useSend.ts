@@ -6,15 +6,20 @@ import { publicClientFor, broviderTransport, chainFor } from '@stage-labs/client
 import { buildPublicTransfer, parseSendAmount, looksLikeEns } from '@stage-labs/client/wallet/send';
 import { friendlyTxError } from '@stage-labs/client/wallet/txError';
 import { resolveEnsName } from '@stage-labs/client/api/ens';
-import { getActiveAccount, loadPk, accountEpoch } from './accounts';
+import { SCW_CHAIN_ID } from '@stage-labs/client/zerodev/config';
+import type { AccountRecord } from '@stage-labs/client/accounts/types';
+import { getActiveAccount, loadPk, accountEpoch, smartOwnerSigner } from './accounts';
 import { getHostAccount, hostSendTransaction } from './hostSigner';
 import { runningInIframe } from './embedBridge';
 
 export type SendTxState = 'idle' | 'submitting' | 'pending' | 'confirmed';
 
+const SCW_CHAIN_ONLY = 'Smart accounts can only send on Base. Switch to a Base token to continue.';
+
 export interface FeePreview {
   feeWei: bigint;
   feeEth: string;
+  sponsored?: boolean;
 }
 
 interface PublicCall { to: Hex; value: bigint; data?: Hex }
@@ -63,7 +68,25 @@ async function sendLocal(id: string, call: PublicCall, chainId: number): Promise
   });
 }
 
+async function sendSmart(active: AccountRecord, call: PublicCall): Promise<Hex> {
+  if (active.hdIndex == null) throw new Error('Smart account is missing its key index.');
+  const { makePublicClient, makeKernelClient } = await import('./zerodev');
+  const { createEcdsaKernel } = await import('@stage-labs/client/zerodev/account');
+  const owner = smartOwnerSigner(active.hdIndex);
+  const publicClient = makePublicClient();
+  const account = await createEcdsaKernel(publicClient, owner, active.hdIndex);
+  const kernel = makeKernelClient(account, publicClient);
+  return kernel.sendTransaction({
+    to: call.to, value: call.value, ...(call.data ? { data: call.data } : {}),
+  } as Parameters<typeof kernel.sendTransaction>[0]);
+}
+
 async function submitTransfer(call: PublicCall, chainId: number): Promise<Hex> {
+  const active = await getActiveAccount();
+  if (active?.type === 'smart') {
+    if (chainId !== SCW_CHAIN_ID) throw new Error(SCW_CHAIN_ONLY);
+    return sendSmart(active, call);
+  }
   if (runningInIframe()) {
     const host = await getHostAccount();
     if (host) {
@@ -73,7 +96,6 @@ async function submitTransfer(call: PublicCall, chainId: number): Promise<Hex> {
       });
     }
   }
-  const active = await getActiveAccount();
   if (!active) throw new Error('No active wallet');
   return sendLocal(active.id, call, chainId);
 }
@@ -177,8 +199,14 @@ export function useSend(symbolRef: Ref<string>, chainIdRef: Ref<number>, balance
     const mine = ++feeSeq;
     void (async (): Promise<void> => {
       try {
+        const active = await getActiveAccount();
+        if (active?.type === 'smart') {
+          if (a.chainId !== SCW_CHAIN_ID) throw new Error(SCW_CHAIN_ONLY);
+          if (mine === feeSeq) fee.value = { feeWei: 0n, feeEth: '0', sponsored: true };
+          return;
+        }
         const call = buildPublicTransfer({ recipient: rcpt, amount: amount.value, asset: a });
-        const account = (await getActiveAccount())?.address as Hex | undefined;
+        const account = active?.address as Hex | undefined;
         const next = await estimateFee(call, a.chainId, account);
         if (mine === feeSeq) fee.value = next;
       } catch (e) {
