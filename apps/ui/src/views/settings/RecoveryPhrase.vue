@@ -4,7 +4,7 @@ import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import { mnemonicWords } from '@stage-labs/client/zerodev/derive';
-import { getWalletMnemonic, hasWalletMnemonic } from '../../lib/accounts';
+import { getWalletMnemonic, hasWalletMnemonic, markWalletBackedUp } from '../../lib/accounts';
 
 const router = useRouter();
 const palette = useKitPalette();
@@ -42,6 +42,7 @@ async function copy(): Promise<void> {
 }
 
 function done(): void {
+  markWalletBackedUp();
   hide();
   router.back();
 }

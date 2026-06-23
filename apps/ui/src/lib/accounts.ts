@@ -19,6 +19,7 @@ export { canExportPrivateKey };
 
 const LEGACY_PK_KEY = 'xmtp.privateKey';
 const MNEMONIC_KEY = 'wallet.mnemonic';
+const BACKED_UP_KEY = 'wallet.backedUp';
 
 const kv: KeyValueStore = {
   get: (key) => localStorage.getItem(key),
@@ -134,6 +135,16 @@ export function getWalletMnemonic(): string | null {
 
 export function hasWalletMnemonic(): boolean {
   return readMnemonic() != null;
+}
+
+export function isWalletBackedUp(): boolean {
+  const raw = localStorage.getItem(BACKED_UP_KEY);
+  return raw === '1' || raw === 'true';
+}
+
+export function markWalletBackedUp(): void {
+  localStorage.setItem(BACKED_UP_KEY, '1');
+  bumpAccountEpoch();
 }
 
 function ensureMnemonic(): string {
