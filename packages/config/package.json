@@ -15,15 +15,21 @@
     "knip",
     "madge",
     "tsconfig",
+    "define.js",
+    "lint.js",
     "README.md"
   ],
   "bin": {
+    "stage": "./bin/stage.js",
     "stage-madge": "./bin/stage-madge.js"
   },
   "publishConfig": {
     "access": "public"
   },
   "exports": {
+    ".": "./define.js",
+    "./define": "./define.js",
+    "./lint": "./lint.js",
     "./eslint/base": "./eslint/base.js",
     "./eslint/vue": "./eslint/vue.js",
     "./eslint/single": "./eslint/single.js",

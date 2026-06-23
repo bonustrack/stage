@@ -47,4 +47,25 @@ const workspaces = (map) => ({ ...base, workspaces: map });
 
 const single = (opts) => ({ ...base, ...library(opts) });
 
-export { base, library, vueApp, rnApp, cloudflareWorker, scriptsWorkspace, workspaces, single };
+const KNIP_HELPERS = {
+  library,
+  vue: vueApp,
+  'react-native': rnApp,
+  worker: cloudflareWorker,
+  scripts: scriptsWorkspace,
+};
+
+const buildKnipConfig = (stageConfig) => {
+  const map = {};
+  for (const [path, workspace] of Object.entries(stageConfig.workspaces)) {
+    const overrides = workspace.knip ?? {};
+    const kind = overrides.kind ?? workspace.type;
+    const helper = KNIP_HELPERS[kind] ?? library;
+    const { kind: _kind, ...opts } = overrides;
+    map[path] = helper(opts);
+  }
+  const repoKnip = stageConfig.knip ?? {};
+  return { ...base, ...repoKnip, workspaces: map };
+};
+
+export { base, library, vueApp, rnApp, cloudflareWorker, scriptsWorkspace, workspaces, single, buildKnipConfig };
