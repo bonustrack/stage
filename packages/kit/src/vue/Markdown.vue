@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import MarkdownIt from 'markdown-it';
+import { useKitScheme } from './theme-context';
 
 const props = withDefaults(
   defineProps<{
@@ -10,12 +11,15 @@ const props = withDefaults(
     linkColor?: string;
     dark?: boolean;
   }>(),
-  { dark: false },
+  {},
 );
 
-const fg = computed(() => props.color ?? (props.dark ? '#ffffff' : '#000000'));
+const scheme = useKitScheme();
+const isDark = computed(() => props.dark ?? scheme === 'dark');
+
+const fg = computed(() => props.color ?? (isDark.value ? '#ffffff' : '#000000'));
 const link = computed(() => props.linkColor ?? '#2cc6c6');
-const codeBg = computed(() => (props.dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'));
+const codeBg = computed(() => (isDark.value ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'));
 
 const md = new MarkdownIt({ html: false, linkify: true, breaks: true, typographer: false });
 

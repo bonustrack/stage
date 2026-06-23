@@ -8,6 +8,7 @@ import {
 } from '../control.styles';
 import { BLOCK_RADIUS_DEFAULT } from '../tokens';
 import Icon from './Icon.vue';
+import { useKitScheme } from './theme-context';
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const MONTHS = [
@@ -58,9 +59,11 @@ const props = withDefaults(
     placeholder: 'Select date...',
     variant: 'soft',
     size: 'md',
-    dark: false,
   },
 );
+
+const scheme = useKitScheme();
+const isDark = computed(() => props.dark ?? scheme === 'dark');
 
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>();
 
@@ -72,14 +75,14 @@ watch(open, (isOpen) => {
   if (isOpen) view.value = selDate.value ?? new Date();
 });
 
-const ctrlColors = computed(() => controlColors(props.variant, props.dark));
+const ctrlColors = computed(() => controlColors(props.variant, isDark.value));
 const corner = computed(() => props.radius ?? (props.pill ? 999 : BLOCK_RADIUS_DEFAULT));
 
 const sheetColors = computed(() => ({
-  head: props.dark ? '#ffffff' : '#000000',
-  sub: props.dark ? '#7a7a7e' : '#8a929d',
-  sheetBg: props.dark ? '#1b1c1e' : '#ffffff',
-  accent: props.dark ? '#4f9cf9' : '#2f6fed',
+  head: isDark.value ? '#ffffff' : '#000000',
+  sub: isDark.value ? '#7a7a7e' : '#8a929d',
+  sheetBg: isDark.value ? '#1b1c1e' : '#ffffff',
+  accent: isDark.value ? '#4f9cf9' : '#2f6fed',
 }));
 
 const minD = computed(() => parseISO(props.min));

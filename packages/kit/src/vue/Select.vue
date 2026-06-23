@@ -8,6 +8,7 @@ import {
 } from '../control.styles';
 import { BLOCK_RADIUS_DEFAULT, FONT_SIZE, schemePalette } from '../tokens';
 import Icon from './Icon.vue';
+import { useKitScheme } from './theme-context';
 
 export interface SelectOption {
   label: string;
@@ -34,18 +35,20 @@ const props = withDefaults(
     placeholder: 'Select...',
     variant: 'soft',
     size: 'md',
-    dark: false,
   },
 );
+
+const scheme = useKitScheme();
+const isDark = computed(() => props.dark ?? scheme === 'dark');
 
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>();
 
 const open = ref(false);
 
-const colors = computed(() => controlColors(props.variant, props.dark));
+const colors = computed(() => controlColors(props.variant, isDark.value));
 const corner = computed(() => props.radius ?? (props.pill ? 999 : BLOCK_RADIUS_DEFAULT));
-const p = computed(() => schemePalette(props.dark));
-const sheetBg = computed(() => (props.dark ? '#1b1c1e' : '#ffffff'));
+const p = computed(() => schemePalette(isDark.value));
+const sheetBg = computed(() => (isDark.value ? '#1b1c1e' : '#ffffff'));
 
 const current = computed(() => props.options.find((o) => o.value === props.modelValue));
 

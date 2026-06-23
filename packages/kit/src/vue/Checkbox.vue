@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import Icon from './Icon.vue';
+import { useKitScheme } from './theme-context';
 
 const props = withDefaults(
   defineProps<{
@@ -12,8 +13,11 @@ const props = withDefaults(
     size?: number;
     dark?: boolean;
   }>(),
-  { size: 20, dark: false },
+  { size: 20 },
 );
+
+const scheme = useKitScheme();
+const isDark = computed(() => props.dark ?? scheme === 'dark');
 
 const emit = defineEmits<{ 'update:modelValue': [checked: boolean] }>();
 
@@ -25,7 +29,7 @@ function checkboxColors(dark: boolean): { head: string; bg: string; border: stri
   };
 }
 
-const colors = computed(() => checkboxColors(props.dark));
+const colors = computed(() => checkboxColors(isDark.value));
 const checked = computed(() => props.modelValue ?? false);
 
 const rootStyle = computed<Record<string, string>>(() => ({

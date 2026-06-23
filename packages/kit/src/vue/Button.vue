@@ -10,6 +10,7 @@ import {
   type ButtonVariant,
   type VariantColors,
 } from '../button.styles';
+import { useKitScheme } from './theme-context';
 
 export type {
   ButtonColor,
@@ -36,8 +37,11 @@ const props = withDefaults(
     tintFg?: string;
     radius?: number;
   }>(),
-  { size: 'md', disabled: false, loading: false, dark: false },
+  { size: 'md', disabled: false, loading: false },
 );
+
+const scheme = useKitScheme();
+const isDark = computed(() => props.dark ?? scheme === 'dark');
 
 const emit = defineEmits<{ click: [event: MouseEvent] }>();
 
@@ -62,7 +66,7 @@ function resolveModel(
 
 const colors = computed<VariantColors>(() => {
   const model = resolveModel(props.color, props.variant, props.styleColor);
-  const base = resolveColors(model.color, model.variant, props.dark);
+  const base = resolveColors(model.color, model.variant, isDark.value);
   return { ...base, bg: props.tintBg ?? base.bg, text: props.tintFg ?? base.text };
 });
 

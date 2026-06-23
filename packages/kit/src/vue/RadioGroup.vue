@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useKitScheme } from './theme-context';
 
 export interface RadioOption {
   label: string;
@@ -19,13 +20,16 @@ const props = withDefaults(
     size?: number;
     dark?: boolean;
   }>(),
-  { options: () => [], direction: 'col', size: 20, dark: false },
+  { options: () => [], direction: 'col', size: 20 },
 );
+
+const scheme = useKitScheme();
+const isDark = computed(() => props.dark ?? scheme === 'dark');
 
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>();
 
-const head = computed(() => (props.dark ? '#ffffff' : '#000000'));
-const border = computed(() => (props.dark ? '#282a2d' : '#e4e4e5'));
+const head = computed(() => (isDark.value ? '#ffffff' : '#000000'));
+const border = computed(() => (isDark.value ? '#282a2d' : '#e4e4e5'));
 
 const groupStyle = computed<Record<string, string>>(() => ({
   display: 'flex',

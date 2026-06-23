@@ -1,6 +1,7 @@
 <script setup lang="ts" generic="T">
 import { computed } from 'vue';
 import { FONT_SIZE, schemePalette } from '../tokens';
+import { useKitScheme } from './theme-context';
 
 const ROW_INSET = 16;
 
@@ -9,14 +10,17 @@ const props = withDefaults(
     items?: T[];
     limit?: number;
     status?: { text: string };
-    dark: boolean;
+    dark?: boolean;
     keyField?: keyof T;
   }>(),
   { items: () => [] },
 );
 
+const scheme = useKitScheme();
+const isDark = computed(() => props.dark ?? scheme === 'dark');
+
 const c = computed(() => {
-  const p = schemePalette(props.dark);
+  const p = schemePalette(isDark.value);
   return { border: p.border, sub: p.sub };
 });
 

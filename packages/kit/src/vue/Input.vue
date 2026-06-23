@@ -8,6 +8,7 @@ import {
   type ControlVariant,
 } from '../control.styles';
 import { BLOCK_RADIUS_DEFAULT } from '../tokens';
+import { useKitScheme } from './theme-context';
 
 export type InputType = 'text' | 'email' | 'password' | 'number' | 'tel' | 'url';
 
@@ -25,8 +26,11 @@ const props = withDefaults(
     radius?: number;
     dark?: boolean;
   }>(),
-  { variant: 'soft', size: 'md', inputType: 'text', dark: false },
+  { variant: 'soft', size: 'md', inputType: 'text' },
 );
+
+const scheme = useKitScheme();
+const isDark = computed(() => props.dark ?? scheme === 'dark');
 
 const emit = defineEmits<{
   'update:modelValue': [value: string];
@@ -35,7 +39,7 @@ const emit = defineEmits<{
 
 const focused = ref(false);
 
-const colors = computed(() => controlColors(props.variant, props.dark));
+const colors = computed(() => controlColors(props.variant, isDark.value));
 const corner = computed(() => props.radius ?? (props.pill ? 999 : BLOCK_RADIUS_DEFAULT));
 
 function toCss(entries: Record<string, string | number>): Record<string, string> {
