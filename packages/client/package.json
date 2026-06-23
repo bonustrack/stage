@@ -54,6 +54,7 @@
     "./accounts/store": "./src/accounts/store.ts",
     "./railgun": "./src/railgun/index.ts",
     "./zerodev/config": "./src/zerodev/config.ts",
+    "./zerodev/account": "./src/zerodev/account.ts",
     "./zerodev/derive": "./src/zerodev/derive.ts",
     "./zerodev/recovery": "./src/zerodev/recovery.ts"
   },
@@ -62,6 +63,8 @@
     "test": "bun test test/"
   },
   "dependencies": {
+    "@zerodev/ecdsa-validator": "5.4.9",
+    "@zerodev/sdk": "5.5.10",
     "viem": "^2.51.0",
     "zod": "^3.25.76"
   },

@@ -2,34 +2,10 @@ import '../cryptoShim';
 import type { PublicClient } from 'viem';
 import type { HDAccount } from 'viem/accounts';
 import { createKernelAccount, type CreateKernelAccountReturnType, type KernelValidator } from '@zerodev/sdk';
-import { signerToEcdsaValidator } from '@zerodev/ecdsa-validator';
 import { ENTRY_POINT, KERNEL_VERSION } from './config';
 import { passkeysAvailable } from './native';
 
-export async function ecdsaValidatorForOwner(
-  publicClient: PublicClient,
-  owner: HDAccount,
-): Promise<Awaited<ReturnType<typeof signerToEcdsaValidator>>> {
-  return signerToEcdsaValidator(publicClient, {
-    signer: owner,
-    entryPoint: ENTRY_POINT,
-    kernelVersion: KERNEL_VERSION,
-  });
-}
-
-export async function createEcdsaKernel(
-  publicClient: PublicClient,
-  owner: HDAccount,
-  hdIndex: number,
-): Promise<CreateKernelAccountReturnType> {
-  const ecdsaValidator = await ecdsaValidatorForOwner(publicClient, owner);
-  return createKernelAccount(publicClient, {
-    plugins: { sudo: ecdsaValidator },
-    entryPoint: ENTRY_POINT,
-    kernelVersion: KERNEL_VERSION,
-    index: BigInt(hdIndex),
-  });
-}
+export { createEcdsaKernel, ecdsaValidatorForOwner } from '@stage-labs/client/zerodev/account';
 
 
 interface WebAuthnKey {

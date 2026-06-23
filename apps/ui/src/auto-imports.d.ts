@@ -14,6 +14,7 @@ declare global {
   const PollCodec: typeof import('./lib/xmtpPollCodec').PollCodec
   const SIGNATURE_REQUEST_CODEC: typeof import('./lib/xmtpRequestCodecs').SIGNATURE_REQUEST_CODEC
   const SignatureRequestCodec: typeof import('./lib/xmtpRequestCodecs').SignatureRequestCodec
+  const SmartAccountUnconfiguredError: typeof import('./lib/xmtp').SmartAccountUnconfiguredError
   const WALLET_SEND_CALLS_CODEC: typeof import('./lib/xmtpRequestCodecs').WALLET_SEND_CALLS_CODEC
   const WALLET_TABS: typeof import('./lib/walletTab').WALLET_TABS
   const WalletSendCallsCodec: typeof import('./lib/xmtpRequestCodecs').WalletSendCallsCodec
@@ -22,6 +23,7 @@ declare global {
   const accountEpoch: typeof import('./lib/xmtp').accountEpoch
   const addGeneratedAccount: typeof import('./lib/xmtp').addGeneratedAccount
   const addGroupMembers: typeof import('./lib/xmtpGroups').addGroupMembers
+  const addSmartAccount: typeof import('./lib/xmtp').addSmartAccount
   const applyConsentToRows: typeof import('./lib/channelsCache').applyConsentToRows
   const blockRequestConv: typeof import('./lib/xmtpRequests').blockRequestConv
   const buildSortedTokenRows: typeof import('./lib/walletSort').buildSortedTokenRows
@@ -84,6 +86,8 @@ declare global {
   const loadCachedProfile: typeof import('./lib/profile').loadCachedProfile
   const loadPk: typeof import('./lib/accounts').loadPk
   const lookupName: typeof import('./lib/stamp').lookupName
+  const makeKernelClient: typeof import('./lib/zerodev').makeKernelClient
+  const makePublicClient: typeof import('./lib/zerodev').makePublicClient
   const mapCoordsOf: typeof import('./lib/embedDetect').mapCoordsOf
   const markConvRead: typeof import('./lib/channelsCache').markConvRead
   const markConvReadSynced: typeof import('./lib/xmtpConsent').markConvReadSynced
@@ -158,6 +162,8 @@ declare global {
   const shallowReadonly: typeof import('vue').shallowReadonly
   const shallowRef: typeof import('vue').shallowRef
   const shortAddress: typeof import('./lib/xmtp').shortAddress
+  const smartAccountsConfigured: typeof import('./lib/xmtp').smartAccountsConfigured
+  const smartOwnerSigner: typeof import('./lib/accounts').smartOwnerSigner
   const stampAvatarUrl: typeof import('./lib/xmtp').stampAvatarUrl
   const startChannelStream: typeof import('./lib/useChannelStream').startChannelStream
   const streamConvConsent: typeof import('./lib/xmtpConsent').streamConvConsent
@@ -326,6 +332,7 @@ declare module 'vue' {
     readonly accountEpoch: UnwrapRef<typeof import('./lib/xmtp')['accountEpoch']>
     readonly addGeneratedAccount: UnwrapRef<typeof import('./lib/xmtp')['addGeneratedAccount']>
     readonly addGroupMembers: UnwrapRef<typeof import('./lib/xmtpGroups')['addGroupMembers']>
+    readonly addSmartAccount: UnwrapRef<typeof import('./lib/xmtp')['addSmartAccount']>
     readonly applyConsentToRows: UnwrapRef<typeof import('./lib/channelsCache')['applyConsentToRows']>
     readonly blockRequestConv: UnwrapRef<typeof import('./lib/xmtpRequests')['blockRequestConv']>
     readonly buildSortedTokenRows: UnwrapRef<typeof import('./lib/walletSort')['buildSortedTokenRows']>
@@ -387,6 +394,8 @@ declare module 'vue' {
     readonly loadArchivedIds: UnwrapRef<typeof import('./lib/archived')['loadArchivedIds']>
     readonly loadCachedProfile: UnwrapRef<typeof import('./lib/profile')['loadCachedProfile']>
     readonly loadPk: UnwrapRef<typeof import('./lib/accounts')['loadPk']>
+    readonly makeKernelClient: UnwrapRef<typeof import('./lib/zerodev')['makeKernelClient']>
+    readonly makePublicClient: UnwrapRef<typeof import('./lib/zerodev')['makePublicClient']>
     readonly mapCoordsOf: UnwrapRef<typeof import('./lib/embedDetect')['mapCoordsOf']>
     readonly markConvRead: UnwrapRef<typeof import('./lib/channelsCache')['markConvRead']>
     readonly markConvReadSynced: UnwrapRef<typeof import('./lib/xmtpConsent')['markConvReadSynced']>
@@ -459,6 +468,8 @@ declare module 'vue' {
     readonly shallowReadonly: UnwrapRef<typeof import('vue')['shallowReadonly']>
     readonly shallowRef: UnwrapRef<typeof import('vue')['shallowRef']>
     readonly shortAddress: UnwrapRef<typeof import('./lib/xmtp')['shortAddress']>
+    readonly smartAccountsConfigured: UnwrapRef<typeof import('./lib/xmtp')['smartAccountsConfigured']>
+    readonly smartOwnerSigner: UnwrapRef<typeof import('./lib/accounts')['smartOwnerSigner']>
     readonly stampAvatarUrl: UnwrapRef<typeof import('./lib/xmtp')['stampAvatarUrl']>
     readonly startChannelStream: UnwrapRef<typeof import('./lib/useChannelStream')['startChannelStream']>
     readonly streamConvConsent: UnwrapRef<typeof import('./lib/xmtpConsent')['streamConvConsent']>

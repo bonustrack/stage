@@ -1,6 +1,7 @@
 
 import { ref, type Ref } from 'vue';
 import type { Hex } from 'viem';
+import type { HDAccount } from 'viem/accounts';
 import {
   createAccountStore, type KeyValueStore, type AccountStore,
 } from '@stage-labs/client/accounts/store';
@@ -8,11 +9,16 @@ import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import {
   PK_PREFIX, normalizePk, privateKeyFromMnemonic, accountIdFromPk, canExportPrivateKey,
 } from '@stage-labs/client/accounts/keys';
+import {
+  generateWalletMnemonic, normalizeMnemonic, isValidMnemonic, deriveOwner,
+} from '@stage-labs/client/zerodev/derive';
+import { dbDirFor } from '@stage-labs/client/accounts/registry';
 
 export type { AccountRecord };
 export { canExportPrivateKey };
 
 const LEGACY_PK_KEY = 'xmtp.privateKey';
+const MNEMONIC_KEY = 'wallet.mnemonic';
 
 const kv: KeyValueStore = {
   get: (key) => localStorage.getItem(key),
@@ -113,4 +119,103 @@ export async function removeAccountRecord(id: string): Promise<AccountRecord[]> 
   const next = await store.removeAccount(id);
   deletePk(id);
   return next;
+}
+
+function readMnemonic(): string | null {
+  const raw = localStorage.getItem(MNEMONIC_KEY);
+  if (!raw) return null;
+  const phrase = normalizeMnemonic(raw);
+  return isValidMnemonic(phrase) ? phrase : null;
+}
+
+function ensureMnemonic(): string {
+  const existing = readMnemonic();
+  if (existing) return existing;
+  const minted = generateWalletMnemonic();
+  localStorage.setItem(MNEMONIC_KEY, minted);
+  return minted;
+}
+
+const ownerCache = new Map<number, HDAccount>();
+
+export function smartOwnerSigner(hdIndex: number): HDAccount {
+  const cached = ownerCache.get(hdIndex);
+  if (cached) return cached;
+  const mnemonic = readMnemonic();
+  if (!mnemonic) throw new Error('Recovery phrase unavailable for this smart account.');
+  const owner = deriveOwner(mnemonic, hdIndex);
+  ownerCache.set(hdIndex, owner);
+  return owner;
+}
+
+async function nextSmartHdIndex(): Promise<number> {
+  const list = await store.loadAccounts();
+  let max = -1;
+  for (const a of list) {
+    if (a.type === 'smart' && typeof a.hdIndex === 'number' && a.hdIndex > max) max = a.hdIndex;
+  }
+  return max + 1;
+}
+
+async function persistSmartAccount(rec: AccountRecord): Promise<AccountRecord> {
+  const id = rec.id.toLowerCase();
+  const list = await store.loadAccounts();
+  const existing = list.find(a => a.id === id);
+  if (existing) {
+    Object.assign(existing, rec, { id });
+    await store.persist(list);
+    await store.setActiveAccountId(id);
+    return existing;
+  }
+  const created: AccountRecord = { ...rec, id };
+  await store.persist([...list, created]);
+  await store.setActiveAccountId(id);
+  return created;
+}
+
+async function prepareSmartAccount(): Promise<{ hdIndex: number; owner: HDAccount }> {
+  ensureMnemonic();
+  const hdIndex = await nextSmartHdIndex();
+  const owner = smartOwnerSigner(hdIndex);
+  return { hdIndex, owner };
+}
+
+function buildSmartAccountRecord(
+  address: string,
+  hdIndex: number,
+  owner: HDAccount,
+): AccountRecord {
+  const lower = address.toLowerCase();
+  return {
+    id: lower,
+    address,
+    type: 'smart',
+    dbDir: dbDirFor(lower),
+    registered: false,
+    createdAt: Date.now(),
+    hdIndex,
+    ownerAddress: owner.address.toLowerCase(),
+    deployed: false,
+    scwXmtp: true,
+  };
+}
+
+const SMART_UNCONFIGURED_MESSAGE =
+  'Smart accounts are unavailable — ZeroDev is not configured for this build.';
+
+export function smartAccountsConfigured(): boolean {
+  return !!((import.meta.env.VITE_ZERODEV_PROJECT_ID as string | undefined)?.trim())
+    || !!((import.meta.env.VITE_ZERODEV_RPC as string | undefined)?.trim());
+}
+
+export async function addSmartAccount(): Promise<AccountRecord> {
+  if (!smartAccountsConfigured()) throw new Error(SMART_UNCONFIGURED_MESSAGE);
+  await ensureMigrated();
+  const { hdIndex, owner } = await prepareSmartAccount();
+  const { makePublicClient } = await import('./zerodev');
+  const { createEcdsaKernel } = await import('@stage-labs/client/zerodev/account');
+  const publicClient = makePublicClient();
+  const account = await createEcdsaKernel(publicClient, owner, hdIndex);
+  const record = buildSmartAccountRecord(account.address, hdIndex, owner);
+  return persistSmartAccount(record);
 }
