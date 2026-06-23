@@ -7,8 +7,9 @@ import { useEffectiveScheme } from '@/lib/kitTheme';
 import { useProposals, type ProposalDetail } from '../lib/useProposals';
 import type { QueuedRequest, RequestKind } from '@stage-labs/client/xmtp/requests-queue';
 import { acceptRequestConv, blockRequestConv } from '../lib/xmtpRequests';
-import { xmtpVote, xmtpSendText } from '../lib/xmtpSend';
+import { xmtpVote, xmtpSendText, xmtpSendSignatureReference } from '../lib/xmtpSend';
 import { executeTxRequest } from '../lib/executeTxRequest';
+import { signRequest } from '../lib/signRequest';
 import { explorerTxUrl } from '@stage-labs/client/xmtp/tx';
 import { friendlyTxError } from '@stage-labs/client/wallet/txError';
 import { lineOfConv } from '../lib/xmtp';
@@ -112,7 +113,41 @@ const payErr = ref<string | null>(null);
 const payExplorerUrl = computed(() =>
   (payHash.value ? explorerTxUrl(8453, payHash.value) : ''));
 
-watch(current, () => { payState.value = 'idle'; payHash.value = null; payErr.value = null; });
+type SignState = 'idle' | 'confirm' | 'pending' | 'done' | 'error';
+const signState = ref<SignState>('idle');
+const signErr = ref<string | null>(null);
+
+watch(current, () => {
+  payState.value = 'idle';
+  payHash.value = null;
+  payErr.value = null;
+  signState.value = 'idle';
+  signErr.value = null;
+});
+
+function startSignConfirm(): void {
+  signErr.value = null;
+  signState.value = 'confirm';
+}
+
+function cancelSignConfirm(): void {
+  signState.value = 'idle';
+}
+
+async function onSign(req: QueuedRequest): Promise<void> {
+  const content = detailOf(req)?.signing;
+  if (!content) return;
+  signState.value = 'pending';
+  signErr.value = null;
+  try {
+    const ref = await signRequest(content);
+    await xmtpSendSignatureReference(lineOfConv(req.convId), ref);
+    signState.value = 'done';
+  } catch (e) {
+    signErr.value = friendlyTxError(e, 'Signing failed');
+    signState.value = 'error';
+  }
+}
 
 function startConfirm(): void {
   payErr.value = null;
@@ -298,6 +333,44 @@ async function onExecute(req: QueuedRequest): Promise<void> {
                   :dark="dark"
                   class="self-start"
                   @click="startConfirm()"
+                />
+              </Col>
+            </template>
+
+            <template v-if="current.kind === 'signing' && detailOf(current)?.signing">
+              <Text size="xs" role="secondary">Sign this with your active account.</Text>
+
+              <Col v-if="signState === 'done'" :gap="6">
+                <Row align="center" :gap="8">
+                  <Icon name="check" :size="18" :color="acceptFg" />
+                  <Text size="md" weight="semibold" :style="{ color: palette.text }">Signed</Text>
+                </Row>
+              </Col>
+
+              <Col v-else-if="signState === 'pending'" :gap="6">
+                <Row align="center" :gap="8">
+                  <Spinner :size="18" />
+                  <Text size="sm" role="secondary">Signing…</Text>
+                </Row>
+              </Col>
+
+              <Col v-else-if="signState === 'confirm'" :gap="8">
+                <Text size="sm" role="secondary">Approve and sign this request with your active account?</Text>
+                <Row :gap="8">
+                  <Button variant="secondary" size="md" label="Cancel" :dark="dark" @click="cancelSignConfirm()" />
+                  <Button variant="primary" size="md" label="Sign" :dark="dark" @click="onSign(current)" />
+                </Row>
+              </Col>
+
+              <Col v-else :gap="8">
+                <Text v-if="signState === 'error' && signErr" size="sm" :style="{ color: palette.danger }">{{ signErr }}</Text>
+                <Button
+                  variant="primary"
+                  size="md"
+                  :label="signState === 'error' ? 'Retry' : 'Approve'"
+                  :dark="dark"
+                  class="self-start"
+                  @click="startSignConfirm()"
                 />
               </Col>
             </template>

@@ -12,7 +12,9 @@ declare global {
   const METRO_API_URL: typeof import('./lib/xmtpGroups').METRO_API_URL
   const POLL_CODEC: typeof import('./lib/xmtpPollCodec').POLL_CODEC
   const PollCodec: typeof import('./lib/xmtpPollCodec').PollCodec
+  const SIGNATURE_REFERENCE_CODEC: typeof import('./lib/xmtpRequestCodecs').SIGNATURE_REFERENCE_CODEC
   const SIGNATURE_REQUEST_CODEC: typeof import('./lib/xmtpRequestCodecs').SIGNATURE_REQUEST_CODEC
+  const SignatureReferenceCodec: typeof import('./lib/xmtpRequestCodecs').SignatureReferenceCodec
   const SignatureRequestCodec: typeof import('./lib/xmtpRequestCodecs').SignatureRequestCodec
   const SmartAccountUnconfiguredError: typeof import('./lib/xmtp').SmartAccountUnconfiguredError
   const WALLET_SEND_CALLS_CODEC: typeof import('./lib/xmtpRequestCodecs').WALLET_SEND_CALLS_CODEC
@@ -168,6 +170,7 @@ declare global {
   const shallowReadonly: typeof import('vue').shallowReadonly
   const shallowRef: typeof import('vue').shallowRef
   const shortAddress: typeof import('./lib/xmtp').shortAddress
+  const signRequest: typeof import('./lib/signRequest').signRequest
   const smartAccountsConfigured: typeof import('./lib/xmtp').smartAccountsConfigured
   const smartOwnerSigner: typeof import('./lib/accounts').smartOwnerSigner
   const stampAvatarUrl: typeof import('./lib/xmtp').stampAvatarUrl
@@ -232,6 +235,7 @@ declare global {
   const xmtpReply: typeof import('./lib/xmtpSend').xmtpReply
   const xmtpSendAttachment: typeof import('./lib/xmtpSend').xmtpSendAttachment
   const xmtpSendPoll: typeof import('./lib/xmtpSend').xmtpSendPoll
+  const xmtpSendSignatureReference: typeof import('./lib/xmtpSend').xmtpSendSignatureReference
   const xmtpSendText: typeof import('./lib/xmtpSend').xmtpSendText
   const xmtpVote: typeof import('./lib/xmtpSend').xmtpVote
   const youtubeIdOf: typeof import('./lib/embedDetect').youtubeIdOf
@@ -317,7 +321,7 @@ declare global {
   export type { PollCodec } from './lib/xmtpPollCodec'
   import('./lib/xmtpPollCodec')
   // @ts-ignore
-  export type { WalletSendCallsCodec, SignatureRequestCodec } from './lib/xmtpRequestCodecs'
+  export type { WalletSendCallsCodec, SignatureRequestCodec, SignatureReferenceCodec } from './lib/xmtpRequestCodecs'
   import('./lib/xmtpRequestCodecs')
 }
 
@@ -332,7 +336,9 @@ declare module 'vue' {
     readonly METRO_API_URL: UnwrapRef<typeof import('./lib/xmtpGroups')['METRO_API_URL']>
     readonly POLL_CODEC: UnwrapRef<typeof import('./lib/xmtpPollCodec')['POLL_CODEC']>
     readonly PollCodec: UnwrapRef<typeof import('./lib/xmtpPollCodec')['PollCodec']>
+    readonly SIGNATURE_REFERENCE_CODEC: UnwrapRef<typeof import('./lib/xmtpRequestCodecs')['SIGNATURE_REFERENCE_CODEC']>
     readonly SIGNATURE_REQUEST_CODEC: UnwrapRef<typeof import('./lib/xmtpRequestCodecs')['SIGNATURE_REQUEST_CODEC']>
+    readonly SignatureReferenceCodec: UnwrapRef<typeof import('./lib/xmtpRequestCodecs')['SignatureReferenceCodec']>
     readonly SignatureRequestCodec: UnwrapRef<typeof import('./lib/xmtpRequestCodecs')['SignatureRequestCodec']>
     readonly WALLET_SEND_CALLS_CODEC: UnwrapRef<typeof import('./lib/xmtpRequestCodecs')['WALLET_SEND_CALLS_CODEC']>
     readonly WALLET_TABS: UnwrapRef<typeof import('./lib/walletTab')['WALLET_TABS']>
@@ -484,6 +490,7 @@ declare module 'vue' {
     readonly shallowReadonly: UnwrapRef<typeof import('vue')['shallowReadonly']>
     readonly shallowRef: UnwrapRef<typeof import('vue')['shallowRef']>
     readonly shortAddress: UnwrapRef<typeof import('./lib/xmtp')['shortAddress']>
+    readonly signRequest: UnwrapRef<typeof import('./lib/signRequest')['signRequest']>
     readonly smartAccountsConfigured: UnwrapRef<typeof import('./lib/xmtp')['smartAccountsConfigured']>
     readonly smartOwnerSigner: UnwrapRef<typeof import('./lib/accounts')['smartOwnerSigner']>
     readonly stampAvatarUrl: UnwrapRef<typeof import('./lib/xmtp')['stampAvatarUrl']>
@@ -548,6 +555,7 @@ declare module 'vue' {
     readonly xmtpReply: UnwrapRef<typeof import('./lib/xmtpSend')['xmtpReply']>
     readonly xmtpSendAttachment: UnwrapRef<typeof import('./lib/xmtpSend')['xmtpSendAttachment']>
     readonly xmtpSendPoll: UnwrapRef<typeof import('./lib/xmtpSend')['xmtpSendPoll']>
+    readonly xmtpSendSignatureReference: UnwrapRef<typeof import('./lib/xmtpSend')['xmtpSendSignatureReference']>
     readonly xmtpSendText: UnwrapRef<typeof import('./lib/xmtpSend')['xmtpSendText']>
     readonly xmtpVote: UnwrapRef<typeof import('./lib/xmtpSend')['xmtpVote']>
     readonly youtubeIdOf: UnwrapRef<typeof import('./lib/embedDetect')['youtubeIdOf']>
