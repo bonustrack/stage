@@ -1,6 +1,3 @@
-/** Boundary tests for the JSON codec wire round-trip + the optional zod schema
- *  guard on decode. These are the seam every Metro custom content type crosses;
- *  a regression here silently corrupts every poll / signature / tx bubble. */
 
 import { describe, expect, test } from 'bun:test';
 import { encodeJsonContent, decodeJsonContent, POLL_CONTENT_TYPE } from '../src/xmtp/codecs';
@@ -37,8 +34,6 @@ describe('decode with zod schema boundary', () => {
   });
 
   test('drifted body THROWS (not silently cast)', () => {
-    // A poll missing `options` is wire drift; without the schema this would be
-    // an `as PollContent` cast handing the renderer a broken object.
     const bad = encodeJsonContent(POLL_CONTENT_TYPE, { pollId: 'x', question: 'q' });
     expect(() => decodeJsonContent(bad.content, pollContentSchema)).toThrow(/boundary:xmtp.codec/);
   });
@@ -78,7 +73,6 @@ describe('open (free-text) question type', () => {
     const text = 'edge: 1:2:3 café 🚀';
     const key = openVoteKey(2, text);
     expect(parseOpenVote(key)).toEqual({ q: 2, text });
-    // An open key must NOT decode as a choice vote (distinct namespaces).
     expect(parseVoteKey(key)).toBeNull();
   });
 

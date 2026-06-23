@@ -1,7 +1,0 @@
-{
-  "extends": ["./tsconfig.json", "@stage-labs/config/tsconfig/eslint.json"],
-  "compilerOptions": {
-    "types": ["bun"]
-  },
-  "include": ["src/**/*", "test/**/*"]
-}

@@ -1,8 +1,3 @@
-/** Tests for the x402 `exact` X-PAYMENT header construction. The wire format
- *  (coinbase/x402 v1: base64(JSON {x402Version,scheme,network,payload:
- *  {signature,authorization}})) is what a resource server's facilitator parses,
- *  so a silent drift here breaks every payment. We pin it with a fixture
- *  challenge + fixed nonce/now (everything but the signature is deterministic). */
 
 import { afterEach, describe, expect, test } from 'bun:test';
 import {
@@ -16,8 +11,8 @@ import type { X402Accept } from '../lib/useLinkPreview';
 const FIXTURE_ACCEPT: X402Accept = {
   scheme: 'exact',
   network: 'eip155:8453',
-  asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', // USDC on Base
-  amount: '10000', // 0.01 USDC (6 decimals)
+  asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+  amount: '10000',
   payTo: '0x1234567890123456789012345678901234567890',
   description: 'API access',
   maxTimeoutSeconds: 600,
@@ -65,7 +60,6 @@ describe('buildTypedData', () => {
       chainId: 8453,
       verifyingContract: FIXTURE_ACCEPT.asset,
     });
-    // bigint-coerced message fields
     expect((td.message).value).toBe(BigInt(10000));
     expect((td.message).validAfter).toBe(BigInt(0));
     expect((td.message).nonce).toBe(NONCE);

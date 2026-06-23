@@ -1,7 +1,3 @@
-/** Boundary tests for the in-chat SIGNATURE + TRANSACTION codec zod schemas
- *  (audit HIGH/#1). A malformed / hostile wire body must THROW at decode (so the
- *  bubble renders unsupported and the signer/pay path never sees it), never an
- *  `as`-cast. */
 
 import { describe, expect, test } from 'bun:test';
 import { encodeJsonContent, decodeJsonContent } from '../src/xmtp/codecs';

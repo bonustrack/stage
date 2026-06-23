@@ -1,6 +1,3 @@
-/** Tests for the unified-diff parser behind the in-app PR diff viewer. Pure
- *  string work (no RN / network), runs every render on GitHub `patch` bodies -
- *  high traffic, was untested. Fixture is a real-shaped multi-hunk patch. */
 
 import { describe, expect, test } from 'bun:test';
 import { parsePatch, toDiffFile } from '../lib/diffParse';

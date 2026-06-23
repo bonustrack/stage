@@ -1,6 +1,3 @@
-/** Tests for GitHub-link detection in message bubbles. Pure regex parsing run
- *  on every bubble render to decide whether to show a rich preview card -
- *  high traffic, previously untested. */
 
 import { describe, expect, test } from 'bun:test';
 import { githubLinkOf } from '../lib/githubDetect';

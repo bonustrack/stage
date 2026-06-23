@@ -1,7 +1,3 @@
-/** Tests for the in-bubble link-scheme allowlist. Peer messages render
- *  untrusted markdown links, so only http/https/mailto + our own metro://,
- *  stage:// schemes may be opened; everything else (file:, tel:, intent:,
- *  javascript:, other app schemes) must be rejected. */
 
 import { describe, expect, test } from 'bun:test';
 import { isAllowedLinkScheme } from '../lib/safeOpenLink';

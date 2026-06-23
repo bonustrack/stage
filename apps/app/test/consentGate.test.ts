@@ -1,8 +1,3 @@
-/** Tests for the in-chat Sign/Pay consent gate (audit HIGH/#2).
- *
- *  A stranger (unknown-consent) DM can post a live Sign/Pay request card, so the
- *  card ACTIONS must be blocked until the user accepts the conversation. The
- *  cards render the Sign/Pay button only when `isCardActionBlocked` is false. */
 
 import { describe, expect, test } from 'bun:test';
 import { isCardActionBlocked } from '../lib/consentGate';

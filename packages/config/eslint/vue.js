@@ -1,5 +1,5 @@
 import tseslint from 'typescript-eslint';
-import { MAX_LINES, recommended, NO_ESCAPE_HATCHES, commentPlugins, COMMENT_RULES, FUNCTION_SIZE_RULES } from './base.js';
+import { MAX_LINES, recommended, NO_ESCAPE_HATCHES, commentPlugins, COMMENT_RULES, FUNCTION_SIZE_RULES, typeCheckedLanguageOptions } from './base.js';
 
 export function vue({ vueParser, vuePlugin, rootDir, project }) {
   return [
@@ -12,6 +12,7 @@ export function vue({ vueParser, vuePlugin, rootDir, project }) {
         'src/components.d.ts',
       ],
     },
+    { files: ['src/**/*.{ts,tsx}'], languageOptions: typeCheckedLanguageOptions(rootDir) },
     ...recommended,
     {
       files: ['src/**/*.{ts,tsx}'],
@@ -29,7 +30,7 @@ export function vue({ vueParser, vuePlugin, rootDir, project }) {
         parser: vueParser,
         parserOptions: {
           parser: tseslint.parser,
-          project,
+          ...(project ? { project } : { projectService: true }),
           tsconfigRootDir: rootDir,
           ecmaVersion: 'latest',
           sourceType: 'module',

@@ -1,8 +1,3 @@
-/** Boundary tests for the OpenSea response schema. `getNfts` is network-bound;
- *  we test the pure seam `parseOpenseaResponse`. Unlike etherscan this degrades
- *  gracefully (returns null on drift, so the caller shows an empty grid) - the
- *  test asserts BOTH that valid bodies pass and that drift returns null rather
- *  than vanishing into a wrong-but-typed value. */
 
 import { describe, expect, test } from 'bun:test';
 import { parseOpenseaResponse } from '../src/api/opensea.schema';

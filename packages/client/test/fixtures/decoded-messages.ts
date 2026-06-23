@@ -1,13 +1,7 @@
-/** Recorded sample XMTP DecodedMessage VIEWS, captured to mirror the structural
- *  subset the envelope mapper reads off the native RN SDK `DecodedMessage`.
- *  These stand in for live device payloads so the mapper is testable off-device.
- *
- *  `content` is a function (the SDK decodes lazily + may throw); each fixture
- *  closes over its decoded value, and `throwing` simulates an unavailable codec. */
 
 import type { DecodedMessageView } from '../../src/xmtp/envelope';
 
-const NS = 1_717_000_000_000 * 1_000_000; // a fixed sentNs (ms -> ns)
+const NS = 1_717_000_000_000 * 1_000_000;
 
 export const textMessage: DecodedMessageView = {
   id: 'msg-text-1',
@@ -33,8 +27,6 @@ export const voteReaction: DecodedMessageView = {
   content: () => ({ reference: 'poll-msg-1', action: 'added', content: '1', schema: 'custom' }),
 };
 
-/** A message whose codec is unavailable on this client: `content()` throws.
- *  The mapper must produce a typed-payload fallback, NOT crash. */
 export const throwingCodec: DecodedMessageView = {
   id: 'msg-unknown-1',
   senderInboxId: 'inbox-carol',

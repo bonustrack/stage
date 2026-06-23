@@ -1,5 +1,3 @@
-/** Tests for the pure USD-format helper (lib/txPrices.fmtUsdValue): amount ×
- *  price -> "~$X", null when there's no price (amount only, never a fake $). */
 
 import { describe, expect, test } from 'bun:test';
 import { fmtUsdValue } from '../lib/txPrices';

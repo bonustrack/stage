@@ -25,7 +25,6 @@ void test('parseSettleBody rejects non-objects', () => {
   assert.equal(parseSettleBody(42), null);
 });
 
-// ---- SEC6/BUG5: don't replay the signed X-PAYMENT across cross-origin redirects ----
 
 interface FetchCall { url: string; payment: string | null; }
 
@@ -67,9 +66,9 @@ void test('SEC6: does NOT replay X-PAYMENT across a cross-origin redirect', asyn
     const [first, second] = calls;
     assert.ok(first);
     assert.ok(second);
-    assert.equal(first.payment, 'SIGNED-HEADER'); // first hop, same origin
+    assert.equal(first.payment, 'SIGNED-HEADER');
     assert.ok(second.url.startsWith('https://evil.attacker.com'));
-    assert.equal(second.payment, null); // cross-origin: header dropped
+    assert.equal(second.payment, null);
   } finally {
     restore();
   }

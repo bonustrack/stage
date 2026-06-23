@@ -8,7 +8,7 @@ function kitVueBlock({ vueParser, vuePlugin, rootDir, project }) {
       parser: vueParser,
       parserOptions: {
         parser: tseslint.parser,
-        project,
+        ...(project ? { project } : { projectService: true }),
         tsconfigRootDir: rootDir,
         ecmaVersion: 'latest',
         sourceType: 'module',

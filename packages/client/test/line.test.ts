@@ -1,8 +1,3 @@
-/** Tests for the brand- and scheme-agnostic line helpers. A channel/DM link must
- *  resolve identically whether it arrives as the Metro or Stage app scheme
- *  (metro:// / stage://) or as an https permalink on either host (metro.box /
- *  stage.box, path- or hash-routed). These detectors back the inline message
- *  cards, so they run on every bubble render. */
 
 import { describe, expect, test } from 'bun:test';
 import { metroConvIdOf, metroDmPeerOf } from '../src/xmtp/line';

@@ -1,10 +1,3 @@
-/** Tests for the anti-spoof confirm-summary derivation (audit HIGH/#1).
- *
- *  The confirm sheet for an in-chat payment request must be built from the
- *  ACTUAL broadcast bytes (call.to / call.data / call.value), never from the
- *  peer-supplied metadata. These tests pin that: a transfer's recipient/amount
- *  come from the decoded calldata, a native send from call.to/value, and an
- *  undecodable/unrecognised call yields an explicit `unverified` summary. */
 
 import { describe, expect, test } from 'bun:test';
 import { encodeFunctionData } from 'viem';
@@ -33,7 +26,6 @@ function transferData(to: string, amount: bigint): string {
 
 describe('deriveConfirmSummary - native send', () => {
   test('recipient = call.to, amount = call.value (wei), verified', () => {
-    // 0.01 ETH = 10000000000000000 wei = 0x2386f26fc10000
     const s = deriveConfirmSummary({ to: RECIPIENT, value: '0x2386f26fc10000' });
     expect(s.verified).toBe(true);
     expect(s.recipient).toBe(RECIPIENT);
@@ -52,13 +44,11 @@ describe('deriveConfirmSummary - ERC-20 transfer (anti-spoof core)', () => {
     const s = deriveConfirmSummary({ to: USDC_BASE, value: '0x0', data: transferData(RECIPIENT, 10000n) });
     expect(s.verified).toBe(true);
     expect(s.recipient).toBe(RECIPIENT);
-    expect(s.amount).toBe('0.01'); // 10000 atomic / 1e6
+    expect(s.amount).toBe('0.01');
     expect(s.symbol).toBe('USDC');
   });
 
   test('SPOOF: calldata sends to attacker -> summary shows the ATTACKER, not the metadata recipient', () => {
-    // A malicious request would display metadata.toAddress = friend while
-    // call.data drains to the attacker. We only look at the bytes.
     const s = deriveConfirmSummary({ to: USDC_BASE, value: '0x0', data: transferData(ATTACKER, 999999999n) });
     expect(s.verified).toBe(true);
     expect(s.recipient).toBe(ATTACKER);

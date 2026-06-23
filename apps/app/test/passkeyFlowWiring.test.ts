@@ -1,29 +1,3 @@
-/** PASSKEY FLOW WIRING INVARIANTS (source-level, pure-JS CI).
- *
- *  The behavioral derivation facts are pinned in passkeyKernelDerivation.test.ts
- *  and the SDK callback contract in passkeyCallbackContract.test.ts. This file
- *  pins the GLUE so the happy path for a passkey-at-create account cannot silently
- *  regress, and the enable-upgrade / key-only / fail-closed branches stay correct.
- *  These are the wiring points that drifted in the iterative patching Less hit.
- *
- *  Covered:
- *    A. create.ts — create is passkey-AGNOSTIC (ECDSA-owner only, no passkey
- *       registration / on-chain swap inside it). The CALLERS install the passkey
- *       (WebAuthn CREATE + deploy-and-swap sudo) BEFORE bringing XMTP online, so the
- *       FIRST inbox registration is signed by the deployed PASSKEY Kernel (ERC-1271),
- *       not the ECDSA key (Less: the key must never sign the XMTP identity). WebAuthn
- *       CREATE needs no prior credential, so installing it before the inbox can't pop
- *       the empty OS picker ("No available sign-in for Metro").
- *    B. kernelForRecord.ts — passkeySudo accounts rebuild with NO address override;
- *       enable-upgraded (ECDSA-derived) accounts pin to rec.address.
- *    C. enablePasskey.ts — the upgrade deploys via the ECDSA initCode then swaps
- *       sudo on-chain, persists only after the receipt succeeds, and keeps the
- *       ECDSA-derived address.
- *    D. xmtp.codecs.ts — a smart account routes XMTP signing through the single
- *       scwSigner factory + kernelClientForRecord (so the passkey signs the inbox
- *       registration via ERC-1271/6492).
- *    E. useTxSignLayer.ts — a smart account routes tx (onPay) + message/typedData
- *       (onSign) through kernelClientForRecord (so the passkey signs them). */
 
 import { describe, expect, test } from 'bun:test';
 import { readFileSync } from 'fs';
@@ -31,7 +5,6 @@ import { join } from 'path';
 
 const APP_ROOT = join(import.meta.dir, '..');
 const read = (...p: string[]) => readFileSync(join(APP_ROOT, ...p), 'utf8');
-/** Strip comments so prose can't false-match against code assertions. */
 const code = (src: string) =>
   src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
 
@@ -51,8 +24,6 @@ const removeHookSrc = code(read('lib', 'useRemovePasskey.ts'));
 describe('A. create.ts — create is passkey-AGNOSTIC (ECDSA-owner only)', () => {
   test('builds the ECDSA (deployable) Kernel and never touches the passkey path', () => {
     expect(createSrc).toContain('const account = await createEcdsaKernel(publicClient, owner, hdIndex)');
-    // No passkey registration / on-chain swap happens INSIDE create: those would
-    // make the first XMTP inbox registration sign via a WebAuthn get() (the bug).
     expect(createSrc).not.toContain('registerPasskeyCredential');
     expect(createSrc).not.toContain('deployAndSwapToPasskey');
     expect(createSrc).not.toContain('passkey,');
@@ -65,11 +36,6 @@ describe('A. create.ts — create is passkey-AGNOSTIC (ECDSA-owner only)', () =>
 });
 
 describe('A2. callers install the passkey BEFORE messaging (passkey signs the inbox)', () => {
-  // Each create/restore/add path: createSmartAccount() -> enablePasskeyForRecord
-  // (WebAuthn CREATE + deploy-and-swap sudo to passkey) -> bring XMTP online. The
-  // passkey is the active SCW signer BEFORE the first inbox registration, so the
-  // PASSKEY signs the XMTP identity (Less: the ECDSA key must NEVER sign it). The
-  // WebAuthn CREATE needs no prior credential, so it can't pop the empty picker.
   test('onboarding create/restore: createSmartAccount, enable, THEN bringMessagingOnline', () => {
     const create = onboardSrc.indexOf('createSmartAccount()');
     const enable = onboardSrc.indexOf('enablePasskeyForRecord(rec)');
@@ -128,8 +94,6 @@ describe('C. enablePasskey.ts — deploy-via-ECDSA-initcode then swap sudo on-ch
   test('persists rec.passkey only AFTER the userOp receipt succeeds', () => {
     const swapIdx = enableSrc.indexOf('changeSudoValidator');
     const waitIdx = enableSrc.indexOf('waitForUserOperationReceipt');
-    // updateSmartAccount also appears in the import line; we want the CALL, which
-    // is the last occurrence (inside the success branch).
     const persistIdx = enableSrc.lastIndexOf('updateSmartAccount(');
     expect(swapIdx).toBeGreaterThanOrEqual(0);
     expect(waitIdx).toBeGreaterThan(swapIdx);
@@ -162,9 +126,7 @@ describe('E. useTxSignLayer.ts — smart account tx + signatures go through the 
 
 describe('F. disablePasskey.ts — revert swaps root back to ECDSA, clears state fail-closed', () => {
   test('builds the CURRENT (passkey-sudo) Kernel as the signer of the revert userOp', () => {
-    // The passkey is the current root; it must sign the swap (proof of possession).
     expect(disableSrc).toContain('passkeyKernelFromStored');
-    // Same address-override rule as kernelForRecord (ECDSA-derived address pinned).
     expect(disableSrc).toContain('rec.passkeySudo ? undefined : (rec.address as `0x${string}`)');
   });
   test('swaps sudo BACK to the ECDSA validator via changeSudoValidator (one userOp)', () => {
@@ -180,7 +142,6 @@ describe('F. disablePasskey.ts — revert swaps root back to ECDSA, clears state
     expect(waitIdx).toBeGreaterThan(swapIdx);
     expect(clearIdx).toBeGreaterThan(waitIdx);
     expect(disableSrc).toContain('if (!receipt?.success)');
-    // The clear sets the passkey fields to undefined (JSON.stringify drops them).
     expect(disableSrc).toContain('passkey: undefined');
     expect(disableSrc).toContain('passkeyCredId: undefined');
     expect(disableSrc).toContain('passkeySudo: undefined');

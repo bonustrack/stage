@@ -1,5 +1,3 @@
-/** Tests for pure asset-resolution (lib/txAssets): the tx-card logo URL + the
- *  CoinGecko price descriptor, both derived from the static registry. No RPC. */
 
 import { describe, expect, test } from 'bun:test';
 import { tokenLogoUrl, priceKeyFor, priceKeyId, isUnknownToken } from '../lib/txAssets';
