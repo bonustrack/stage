@@ -7,9 +7,17 @@ import { type PollContent, mintPollId, voteKey } from '@stage-labs/client/xmtp/p
 import {
   convOfLine, getCachedXmtpClient, getOrCreateXmtpClient,
 } from './xmtp';
-import type { SignatureReferenceContent } from '@stage-labs/client/xmtp/sign';
+import type { SignatureReferenceContent, SignatureRequestContent } from '@stage-labs/client/xmtp/sign';
+import type { WalletSendCallsContent } from '@stage-labs/client/xmtp/tx';
+import { buildPublicTransfer } from '@stage-labs/client/xmtp/tx';
+import {
+  buildPersonalSignatureRequest, buildEip712SignatureRequest,
+} from '@stage-labs/client/xmtp/sign';
+import { getActiveAccount } from './xmtp';
 import { POLL_CODEC } from './xmtpPollCodec';
-import { SIGNATURE_REFERENCE_CODEC } from './xmtpRequestCodecs';
+import {
+  SIGNATURE_REFERENCE_CODEC, WALLET_SEND_CALLS_CODEC, SIGNATURE_REQUEST_CODEC,
+} from './xmtpRequestCodecs';
 
 function base64ToBytes(b64: string): Uint8Array {
   const bin = atob(b64);
@@ -80,6 +88,36 @@ export async function xmtpVote(
     schema: ReactionSchema.Custom,
   };
   return await conv.sendReaction(payload);
+}
+
+export async function xmtpSendPayment(
+  line: string, params: { to: string; amount: string; note?: string },
+): Promise<{ messageId: string; content: WalletSendCallsContent }> {
+  const conv = await convOfLine(line);
+  if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
+  const acct = await getActiveAccount();
+  if (!acct) throw new Error('No active account');
+  const content = buildPublicTransfer({
+    from: acct.address, to: params.to, amount: params.amount, ...(params.note ? { note: params.note } : {}),
+  });
+  const encoded = WALLET_SEND_CALLS_CODEC.encode(content);
+  const messageId = await conv.send(encoded);
+  return { messageId, content };
+}
+
+export async function xmtpSendSignRequest(
+  line: string,
+  params: { kind: 'personal'; message: string; description?: string }
+    | { kind: 'eip712'; json: string; description?: string },
+): Promise<{ messageId: string; content: SignatureRequestContent }> {
+  const conv = await convOfLine(line);
+  if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
+  const content = params.kind === 'personal'
+    ? buildPersonalSignatureRequest(params.message, params.description)
+    : buildEip712SignatureRequest(params.json, params.description);
+  const encoded = SIGNATURE_REQUEST_CODEC.encode(content);
+  const messageId = await conv.send(encoded);
+  return { messageId, content };
 }
 
 export async function xmtpSendSignatureReference(

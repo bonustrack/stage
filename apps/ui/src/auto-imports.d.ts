@@ -215,6 +215,7 @@ declare global {
   const useProposalCount: typeof import('./lib/useProposals').useProposalCount
   const useProposals: typeof import('./lib/useProposals').useProposals
   const useRadius: typeof import('./lib/theme').useRadius
+  const useRequestCompose: typeof import('./lib/useRequestCompose').useRequestCompose
   const useRoute: typeof import('vue-router').useRoute
   const useRouter: typeof import('vue-router').useRouter
   const useSearchResolution: typeof import('./lib/useSearchResolution').useSearchResolution
@@ -234,7 +235,9 @@ declare global {
   const xmtpReact: typeof import('./lib/xmtpSend').xmtpReact
   const xmtpReply: typeof import('./lib/xmtpSend').xmtpReply
   const xmtpSendAttachment: typeof import('./lib/xmtpSend').xmtpSendAttachment
+  const xmtpSendPayment: typeof import('./lib/xmtpSend').xmtpSendPayment
   const xmtpSendPoll: typeof import('./lib/xmtpSend').xmtpSendPoll
+  const xmtpSendSignRequest: typeof import('./lib/xmtpSend').xmtpSendSignRequest
   const xmtpSendSignatureReference: typeof import('./lib/xmtpSend').xmtpSendSignatureReference
   const xmtpSendText: typeof import('./lib/xmtpSend').xmtpSendText
   const xmtpVote: typeof import('./lib/xmtpSend').xmtpVote
@@ -296,6 +299,9 @@ declare global {
   // @ts-ignore
   export type { PollDetail, ProposalDetail, ProposalsState } from './lib/useProposals'
   import('./lib/useProposals')
+  // @ts-ignore
+  export type { PaymentPayload, SignPayload } from './lib/useRequestCompose'
+  import('./lib/useRequestCompose')
   // @ts-ignore
   export type { SearchResolution } from './lib/useSearchResolution'
   import('./lib/useSearchResolution')
@@ -535,6 +541,7 @@ declare module 'vue' {
     readonly useProposalCount: UnwrapRef<typeof import('./lib/useProposals')['useProposalCount']>
     readonly useProposals: UnwrapRef<typeof import('./lib/useProposals')['useProposals']>
     readonly useRadius: UnwrapRef<typeof import('./lib/theme')['useRadius']>
+    readonly useRequestCompose: UnwrapRef<typeof import('./lib/useRequestCompose')['useRequestCompose']>
     readonly useRoute: UnwrapRef<typeof import('vue-router')['useRoute']>
     readonly useRouter: UnwrapRef<typeof import('vue-router')['useRouter']>
     readonly useSearchResolution: UnwrapRef<typeof import('./lib/useSearchResolution')['useSearchResolution']>
@@ -554,7 +561,9 @@ declare module 'vue' {
     readonly xmtpReact: UnwrapRef<typeof import('./lib/xmtpSend')['xmtpReact']>
     readonly xmtpReply: UnwrapRef<typeof import('./lib/xmtpSend')['xmtpReply']>
     readonly xmtpSendAttachment: UnwrapRef<typeof import('./lib/xmtpSend')['xmtpSendAttachment']>
+    readonly xmtpSendPayment: UnwrapRef<typeof import('./lib/xmtpSend')['xmtpSendPayment']>
     readonly xmtpSendPoll: UnwrapRef<typeof import('./lib/xmtpSend')['xmtpSendPoll']>
+    readonly xmtpSendSignRequest: UnwrapRef<typeof import('./lib/xmtpSend')['xmtpSendSignRequest']>
     readonly xmtpSendSignatureReference: UnwrapRef<typeof import('./lib/xmtpSend')['xmtpSendSignatureReference']>
     readonly xmtpSendText: UnwrapRef<typeof import('./lib/xmtpSend')['xmtpSendText']>
     readonly xmtpVote: UnwrapRef<typeof import('./lib/xmtpSend')['xmtpVote']>
