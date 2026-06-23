@@ -3,6 +3,7 @@
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import { xmtpSendText, xmtpReply, xmtpSendPoll } from '../lib/xmtpSend';
 import { pollFallbackText } from '@stage-labs/client/xmtp/poll';
+import { useRequestCompose, type PaymentPayload, type SignPayload } from '../lib/useRequestCompose';
 import { useComposerAttach } from '../lib/useComposerAttach';
 import { useVoiceRecorder } from '../lib/useVoiceRecorder';
 import { stampAvatarUrl } from '../lib/xmtp';
@@ -27,6 +28,8 @@ const sending = ref(false);
 const err = ref<string | null>(null);
 const attachOpen = ref(false);
 const pollOpen = ref(false);
+const paymentOpen = ref(false);
+const signOpen = ref(false);
 const imageInput = ref<HTMLInputElement | null>(null);
 const cameraInput = ref<HTMLInputElement | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
@@ -123,6 +126,8 @@ const attachTiles = [
   { icon: 'microphone', label: 'Voice', action: recordVoice },
   { icon: 'chartBar', label: 'Poll', action: openPoll },
   { icon: 'mapPin', label: 'Location', action: () => { void shareLocation(); } },
+  { icon: 'wallet', label: 'Payment', action: () => { attachOpen.value = false; paymentOpen.value = true; } },
+  { icon: 'pencil', label: 'Sign', action: () => { attachOpen.value = false; signOpen.value = true; } },
 ] as const;
 
 async function createPoll(payload: { question: string; options: string[]; multiSelect: boolean }): Promise<void> {
@@ -140,6 +145,13 @@ async function createPoll(payload: { question: string; options: string[]; multiS
     err.value = (e as Error).message;
   }
 }
+
+const { sendPayment, sendSignRequest } = useRequestCompose(
+  () => props.line,
+  (localId, t) => { emit('optimistic', { localId, text: t }); },
+  localId => { emit('sent', localId); },
+  m => { err.value = m; },
+);
 
 function autoGrow(): void {
   const el = textarea.value;
@@ -342,9 +354,9 @@ async function send(): Promise<void> {
     <!-- Attach menu drops BELOW the composer row when open, matching mobile.
          Mobile (MessengerComposer.editor AttachMenu) renders labeled square tiles
          in a horizontal scroll row; mirror that. Shows the actions web can fulfil:
-         Image, Camera, File, Poll, Location. Poll opens the poll-compose sheet
-         (PollComposeSheet) and sends via the shared poll codec, interoperating with
-         mobile. Sign/Payment tiles remain omitted — no web create flow yet. -->
+         Image, Camera, File, Poll, Location, Payment, Sign. Poll/Payment/Sign open
+         their compose sheets and send via the shared codecs, interoperating with
+         mobile; Payment builds a walletSendCalls request, Sign a signatureRequest. -->
     <Row v-if="attachOpen" class="flex gap-4 px-3 pt-3 pb-3 overflow-x-auto no-scrollbar">
       <Col
         v-for="tile in attachTiles"
@@ -373,6 +385,16 @@ async function send(): Promise<void> {
       v-if="pollOpen"
       @close="pollOpen = false"
       @create="createPoll"
+    />
+    <PaymentComposeSheet
+      v-if="paymentOpen"
+      @close="paymentOpen = false"
+      @create="(p: PaymentPayload) => { paymentOpen = false; err = null; void sendPayment(p); }"
+    />
+    <SignRequestComposeSheet
+      v-if="signOpen"
+      @close="signOpen = false"
+      @create="(p: SignPayload) => { signOpen = false; err = null; void sendSignRequest(p); }"
     />
   </Col>
 </template>

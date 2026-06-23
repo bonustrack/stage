@@ -1,4 +1,5 @@
 
+import { isAddress, parseUnits, toHex } from 'viem';
 
 export interface WalletSendCallMetadata {
   description?: string;
@@ -56,6 +57,45 @@ export function walletSendCallsFallbackText(c: WalletSendCallsContent): string {
 
 export function transactionReferenceFallbackText(c: TransactionReferenceContent): string {
   return c?.reference ? `[Transaction] ${c.reference}` : '[Transaction]';
+}
+
+export interface PublicTransferInput {
+  from: string;
+  to: string;
+  amount: string;
+  note?: string;
+  chainId?: string;
+  currency?: string;
+  decimals?: number;
+}
+
+function transferDescription(note: string | undefined, amount: string, currency: string): string {
+  const trimmed = note?.trim();
+  return trimmed && trimmed.length > 0 ? trimmed : `Send ${amount} ${currency}`;
+}
+
+export function buildPublicTransfer(input: PublicTransferInput): WalletSendCallsContent {
+  const from = input.from.trim();
+  const to = input.to.trim();
+  const amount = input.amount.trim();
+  if (!isAddress(from)) throw new Error('Enter a valid sender address');
+  if (!isAddress(to)) throw new Error('Enter a valid recipient address');
+  const n = Number(amount);
+  if (!Number.isFinite(n) || n <= 0) throw new Error('Enter a valid amount');
+  const decimals = input.decimals ?? 18;
+  const currency = input.currency ?? 'ETH';
+  const description = transferDescription(input.note, amount, currency);
+  const valueHex = toHex(parseUnits(amount, decimals));
+  return {
+    version: '1.0',
+    chainId: input.chainId ?? '0x1',
+    from,
+    calls: [{
+      to,
+      value: valueHex,
+      metadata: { description, transactionType: 'transfer', currency, amount: n, decimals, toAddress: to },
+    }],
+  };
 }
 
 export function walletSendCallsPreviewText(c: WalletSendCallsContent): string {
