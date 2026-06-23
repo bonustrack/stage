@@ -4,7 +4,8 @@ import {
   ConsentEntityType,
   type Consent,
 } from '@xmtp/browser-sdk';
-import { getCachedXmtpClient, convOfLine, lineOfConv } from './xmtp';
+import { getCachedXmtpClient, convOfLine } from './xmtpClient';
+import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { type XmtpConsent, consentStateToString } from '@stage-labs/client/xmtp/consent';
 
 const LAST_READ_PREFIX = 'unread.lastRead.';

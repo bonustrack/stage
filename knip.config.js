@@ -37,6 +37,9 @@ const knipConfig = {
       vite: true,
       vue: true,
     },
+    'apps/proxy': {
+      project: ['src/**'],
+    },
     'packages/client': {
       entry: ['src/**/*.ts'],
       project: ['src/**'],
