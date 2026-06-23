@@ -3,11 +3,13 @@
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import { useEffectiveScheme } from '@/lib/kitTheme';
 import { mnemonicWords } from '@stage-labs/client/zerodev/derive';
 import { getWalletMnemonic, hasWalletMnemonic, markWalletBackedUp } from '../../lib/accounts';
 
 const router = useRouter();
 const palette = useKitPalette();
+const scheme = useEffectiveScheme();
 
 const present = ref(hasWalletMnemonic());
 const revealed = ref(false);
@@ -79,6 +81,7 @@ function done(): void {
           variant="soft"
           full-width
           class="mt-4"
+          :dark="scheme === 'dark'"
           @click="router.push('/accounts')"
         />
       </template>
@@ -110,7 +113,7 @@ function done(): void {
               Make sure no one is watching your screen.
             </Text>
           </Col>
-          <Button label="Reveal recovery phrase" full-width class="mt-4" @click="reveal" />
+          <Button label="Reveal recovery phrase" full-width class="mt-4" :dark="scheme === 'dark'" @click="reveal" />
         </template>
 
         <template v-else>
@@ -132,10 +135,11 @@ function done(): void {
               :label="copied ? 'Copied' : 'Copy to clipboard'"
               variant="soft"
               full-width
+              :dark="scheme === 'dark'"
               @click="copy"
             />
-            <Button label="I've written it down" full-width @click="done" />
-            <Button label="Hide" variant="soft" full-width @click="hide" />
+            <Button label="I've written it down" full-width :dark="scheme === 'dark'" @click="done" />
+            <Button label="Hide" variant="soft" full-width :dark="scheme === 'dark'" @click="hide" />
           </Col>
         </template>
       </template>

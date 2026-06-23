@@ -3,10 +3,12 @@
 import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import { useEffectiveScheme } from '@/lib/kitTheme';
 import { accountEpoch, hasWalletMnemonic, isWalletBackedUp } from '../lib/accounts';
 
 const router = useRouter();
 const palette = useKitPalette();
+const scheme = useEffectiveScheme();
 
 const dismissed = ref(false);
 
@@ -42,8 +44,8 @@ function dismiss(): void { dismissed.value = true; }
       </Col>
     </Row>
     <Col :gap="8" class="mt-3">
-      <Button label="Back up recovery phrase" full-width @click="backUp" />
-      <Button label="Not now" variant="soft" full-width @click="dismiss" />
+      <Button label="Back up recovery phrase" full-width :dark="scheme === 'dark'" @click="backUp" />
+      <Button label="Not now" variant="soft" full-width :dark="scheme === 'dark'" @click="dismiss" />
     </Col>
   </Col>
 </template>
