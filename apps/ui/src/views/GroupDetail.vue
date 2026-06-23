@@ -17,12 +17,10 @@ const convId = computed(() => String(route.params.convId ?? ''));
 
 function goAddMembers(): void { void router.push(`/xmtp/${convId.value}/add-members`); }
 
-const overflowOpen = ref(false);
 const leaving = ref(false);
 const leaveError = ref<string | null>(null);
 
 async function onLeaveGroup(): Promise<void> {
-  overflowOpen.value = false;
   if (!window.confirm('Leave group? You’ll stop receiving messages from this group. '
     + 'You can be re-added by a member later.')) return;
   leaving.value = true;
@@ -45,16 +43,17 @@ async function onLeaveGroup(): Promise<void> {
         <Icon name="arrowLeft" :size="22" />
       </Pressable>
       <Col class="flex-1" />
-      <Pressable
-        tag="button"
-        type="button"
-        class="p-1.5 rounded-full
-          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
-        title="More"
-        @click="overflowOpen = true"
-      >
-        <Icon name="dotsHorizontal" :size="22" />
-      </Pressable>
+      <OverflowMenu>
+        <template #default="{ run }">
+          <OverflowItem
+            icon="logout"
+            :label="leaving ? 'Leaving…' : 'Leave group'"
+            danger
+            :disabled="leaving"
+            @select="run(onLeaveGroup)"
+          />
+        </template>
+      </OverflowMenu>
     </Row>
 
     <Col v-if="leaveError" class="px-4 pb-2 text-xs text-red-500">{{ leaveError }}</Col>
@@ -127,29 +126,5 @@ async function onLeaveGroup(): Promise<void> {
         @remove="removeMember(addr)"
       />
     </ul>
-
-    <!-- Group-detail header overflow menu — mirrors mobile OverflowModal
-         (Leave group). -->
-    <template v-if="overflowOpen">
-      <Col class="fixed inset-0 z-40" @click="overflowOpen = false" />
-      <Col
-        class="fixed right-2 top-[48px] z-50 min-w-[200px] py-1 rounded-lg shadow-lg
-          bg-metro-bg-light dark:bg-metro-surface-dark
-          border border-metro-border-light dark:border-metro-border-dark"
-      >
-        <Pressable
-          tag="button"
-          type="button"
-          :disabled="leaving"
-          class="w-full flex items-center gap-3 text-left px-3 py-2.5 text-sm
-            text-red-500 disabled:opacity-50
-            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
-          @click="onLeaveGroup"
-        >
-          <Icon name="logout" :size="20" />
-          {{ leaving ? 'Leaving…' : 'Leave group' }}
-        </Pressable>
-      </Col>
-    </template>
   </Col>
 </template>

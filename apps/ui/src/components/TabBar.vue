@@ -7,7 +7,6 @@ const TABS: { to: string; label: string; icon: HeroIconName }[] = [
   { to: '/channels', label: 'Channels', icon: 'chatBubble' },
   { to: '/contacts', label: 'Contacts', icon: 'users' },
   { to: '/wallet',   label: 'Wallet',   icon: 'wallet' },
-  { to: '/settings', label: 'Settings', icon: 'cog' },
 ];
 </script>
 

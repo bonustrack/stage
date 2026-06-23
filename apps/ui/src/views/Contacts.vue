@@ -65,9 +65,12 @@ onMounted(async () => {
 
 <template>
   <Col class="min-h-screen">
-    <Col class="px-4 pt-4 pb-2">
-      <Title :level="1" class="font-head text-xl text-metro-head-light dark:text-metro-head-dark">Contacts</Title>
-    </Col>
+    <Row align="center" :gap="4" class="h-[52px] box-border shrink-0 pl-2 pr-1">
+      <AccountSwitcher />
+      <Text size="4xl" weight="semibold" class="flex-1 pl-2 text-metro-head-light dark:text-metro-head-dark">
+        Contacts
+      </Text>
+    </Row>
     <Col class="px-3 pb-2">
       <Input
         v-model="query"

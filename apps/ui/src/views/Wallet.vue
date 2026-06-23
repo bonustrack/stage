@@ -25,8 +25,11 @@ const sortedRows = computed(() => (rows.value ? buildSortedTokenRows(rows.value)
 
 <template>
   <Col surface="surface" class="h-[100dvh] relative pb-[60px]">
-    <Row align="center" class="h-[52px] box-border shrink-0 px-4 shrink-0" justify="between">
-      <Text size="4xl" weight="semibold" color="link">Wallet</Text>
+    <Row align="center" class="h-[52px] box-border shrink-0 pl-2 pr-4" justify="between">
+      <Row align="center" :gap="4">
+        <AccountSwitcher />
+        <Text size="4xl" weight="semibold" color="link" class="pl-2">Wallet</Text>
+      </Row>
       <Pressable
         tag="button"
         type="button"
