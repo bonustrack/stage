@@ -241,6 +241,21 @@ export async function restoreWalletMnemonic(mnemonic: string): Promise<AccountRe
   localStorage.setItem(MNEMONIC_KEY, phrase);
   ownerCache.clear();
   if (!smartAccountsConfigured()) throw new Error(SMART_UNCONFIGURED_MESSAGE);
-  const owner = smartOwnerSigner(0);
-  return createSmartAccountAt(0, owner);
+
+  const { makePublicClient } = await import('./zerodev');
+  const { restoreSmartAccounts } = await import('@stage-labs/client/zerodev/scan');
+  const publicClient = makePublicClient();
+  const scanned = await restoreSmartAccounts(publicClient, phrase);
+
+  let first: AccountRecord | null = null;
+  for (const acct of scanned) {
+    const owner = smartOwnerSigner(acct.hdIndex);
+    const record = buildSmartAccountRecord(acct.address, acct.hdIndex, owner);
+    record.deployed = acct.deployed;
+    const persisted = await persistSmartAccount(record);
+    first ??= persisted;
+  }
+  if (first) await store.setActiveAccountId(first.id);
+  if (!first) throw new Error('Restore failed — no smart accounts derived.');
+  return first;
 }
