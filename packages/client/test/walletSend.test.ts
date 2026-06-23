@@ -41,4 +41,10 @@ describe('buildPublicTransfer', () => {
   it('rejects invalid recipient', () => {
     expect(() => buildPublicTransfer({ recipient: 'nope', amount: '1', asset: ETH })).toThrow();
   });
+  it('produces a kernel-sendable call shape (to/value/optional data only)', () => {
+    const native = buildPublicTransfer({ recipient: RCPT, amount: '1', asset: ETH });
+    expect(Object.keys(native).sort()).toEqual(['to', 'value']);
+    const erc20 = buildPublicTransfer({ recipient: RCPT, amount: '1', asset: USDC });
+    expect(Object.keys(erc20).sort()).toEqual(['data', 'to', 'value']);
+  });
 });

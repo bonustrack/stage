@@ -242,7 +242,9 @@ function openTx(hash: Hex): void {
         <Row align="center">
           <Text size="xs" color="secondary" class="flex-1">NETWORK FEE</Text>
           <Text size="xs" color="link">
-            {{ send.fee.value ? `≈ ${Number(send.fee.value.feeEth).toFixed(6)} ETH` : '—' }}
+            {{ send.fee.value
+              ? (send.fee.value.sponsored ? 'Gas sponsored' : `≈ ${Number(send.fee.value.feeEth).toFixed(6)} ETH`)
+              : '—' }}
           </Text>
         </Row>
         <Text v-if="send.feeErr.value" size="xs" color="secondary" class="break-all">
