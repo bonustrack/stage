@@ -1,6 +1,5 @@
 {
-  "_comment": "Lint-only TS project: extends the app tsconfig and additionally includes the bun:test suite so type-aware ESLint (projectService) has type information for test files too. Not used by `tsc --noEmit` (the typecheck task), which keeps its tighter src include.",
-  "extends": "./tsconfig.json",
+  "extends": ["./tsconfig.json", "@stage-labs/config/tsconfig/eslint.json"],
   "compilerOptions": {
     "types": ["react", "react-native", "bun"]
   },
