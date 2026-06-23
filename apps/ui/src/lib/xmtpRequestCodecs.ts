@@ -3,10 +3,12 @@ import {
   type WalletSendCallsContent, walletSendCallsFallbackText,
 } from '@stage-labs/client/xmtp/tx';
 import {
-  type SignatureRequestContent, signatureRequestFallbackText,
+  type SignatureRequestContent, type SignatureReferenceContent,
+  signatureRequestFallbackText, signatureReferenceFallbackText,
 } from '@stage-labs/client/xmtp/sign';
 import {
   WALLET_SEND_CALLS_CONTENT_TYPE, SIGNATURE_REQUEST_CONTENT_TYPE,
+  SIGNATURE_REFERENCE_CONTENT_TYPE,
   encodeJsonContent, decodeJsonContent,
   type XmtpContentTypeId, type EncodedJsonContent,
 } from '@stage-labs/client/xmtp/codecs';
@@ -51,5 +53,26 @@ export class SignatureRequestCodec {
   }
 }
 
+export class SignatureReferenceCodec {
+  contentType: XmtpContentTypeId = SIGNATURE_REFERENCE_CONTENT_TYPE;
+
+  encode(content: SignatureReferenceContent): EncodedJsonContent {
+    return encodeJsonContent(this.contentType, content, signatureReferenceFallbackText(content));
+  }
+
+  decode(encoded: { content: Uint8Array }): SignatureReferenceContent {
+    return decodeJsonContent<SignatureReferenceContent>(encoded.content);
+  }
+
+  fallback(content: SignatureReferenceContent): string | undefined {
+    return signatureReferenceFallbackText(content);
+  }
+
+  shouldPush(): boolean {
+    return true;
+  }
+}
+
 export const WALLET_SEND_CALLS_CODEC = new WalletSendCallsCodec();
 export const SIGNATURE_REQUEST_CODEC = new SignatureRequestCodec();
+export const SIGNATURE_REFERENCE_CODEC = new SignatureReferenceCodec();

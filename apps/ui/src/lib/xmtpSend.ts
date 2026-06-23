@@ -7,7 +7,9 @@ import { type PollContent, mintPollId, voteKey } from '@stage-labs/client/xmtp/p
 import {
   convOfLine, getCachedXmtpClient, getOrCreateXmtpClient,
 } from './xmtp';
+import type { SignatureReferenceContent } from '@stage-labs/client/xmtp/sign';
 import { POLL_CODEC } from './xmtpPollCodec';
+import { SIGNATURE_REFERENCE_CODEC } from './xmtpRequestCodecs';
 
 function base64ToBytes(b64: string): Uint8Array {
   const bin = atob(b64);
@@ -78,6 +80,15 @@ export async function xmtpVote(
     schema: ReactionSchema.Custom,
   };
   return await conv.sendReaction(payload);
+}
+
+export async function xmtpSendSignatureReference(
+  line: string, ref: SignatureReferenceContent,
+): Promise<string> {
+  const conv = await convOfLine(line);
+  if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
+  const encoded = SIGNATURE_REFERENCE_CODEC.encode(ref);
+  return await conv.send(encoded);
 }
 
 export async function xmtpSendAttachment(

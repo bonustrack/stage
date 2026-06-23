@@ -51,3 +51,33 @@ export function signatureRequestPreviewText(c: SignatureRequestContent): string 
 export function signatureReferencePreviewText(): string {
   return 'Signature';
 }
+
+export interface SignTypedDataInput {
+  domain: Record<string, unknown>;
+  types: Record<string, { name: string; type: string }[]>;
+  primaryType: string;
+  message: Record<string, unknown>;
+}
+
+export function typedDataForRequest(req: SignatureRequestContent): SignTypedDataInput {
+  const td = req.eip712;
+  if (!td) throw new Error('Malformed typed-data request');
+  const types = { ...td.types };
+  delete types.EIP712Domain;
+  return { domain: td.domain, types, primaryType: td.primaryType, message: td.message };
+}
+
+export function personalMessageForRequest(req: SignatureRequestContent): string {
+  const message = req.message ?? '';
+  if (!message) throw new Error('Empty message to sign');
+  return message;
+}
+
+export function buildSignatureReference(
+  requestId: string, signature: string, signer: string,
+): SignatureReferenceContent {
+  if (!requestId) throw new Error('Signature reference is missing its request id');
+  if (!signature) throw new Error('Signature reference is missing the signature');
+  if (!signer) throw new Error('Signature reference is missing the signer address');
+  return { requestId, signature, signer };
+}
