@@ -146,6 +146,10 @@ function onManageRemove(): void {
   closeManage();
   if (rec) void onRemove(rec);
 }
+function onManageBackup(): void {
+  closeManage();
+  void router.push('/settings/recovery-phrase');
+}
 
 function onImported(): void {
   showImport.value = false;
@@ -325,6 +329,22 @@ function onImported(): void {
                 Export private key
               </Text>
               <Text size="xs" role="secondary">Reveal + copy this account's key</Text>
+            </Col>
+          </Pressable>
+          <Pressable
+            v-if="manageRec() && manageRec()!.type === 'smart'"
+            tag="button"
+            type="button"
+            class="w-full text-left px-4 py-3.5 border-t
+              hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
+            :style="{ borderColor: palette.border }"
+            @click="onManageBackup"
+          >
+            <Col :gap="2">
+              <Text size="md" weight="medium" class="text-metro-head-light dark:text-metro-head-dark">
+                Back up recovery phrase
+              </Text>
+              <Text size="xs" role="secondary">Smart accounts derive from your recovery phrase</Text>
             </Col>
           </Pressable>
           <Pressable
