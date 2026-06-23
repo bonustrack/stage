@@ -36,6 +36,7 @@ export {
   listAccounts, bumpAccountEpoch,
   addGeneratedAccount, importPrivateKey, importFromSeed, accountEpoch,
   addSmartAccount, smartAccountsConfigured,
+  getWalletMnemonic, hasWalletMnemonic, restoreWalletMnemonic,
 } from './accounts';
 export { getActiveAccount };
 export type { AccountRecord };

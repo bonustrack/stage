@@ -3,7 +3,7 @@
 import { computed, ref } from 'vue';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import { useEffectiveScheme } from '../lib/kitTheme';
-import { importFromSeed, importPrivateKey } from '../lib/xmtp';
+import { importFromSeed, importPrivateKey, restoreWalletMnemonic, smartAccountsConfigured } from '../lib/xmtp';
 
 const emit = defineEmits<{ close: []; imported: [] }>();
 
@@ -22,8 +22,11 @@ async function submit(): Promise<void> {
   busy.value = true;
   error.value = null;
   try {
-    if (mode.value === 'seed') await importFromSeed(seed.value.trim());
-    else await importPrivateKey(pk.value.trim());
+    if (mode.value === 'seed') {
+      const phrase = seed.value.trim();
+      if (smartAccountsConfigured()) await restoreWalletMnemonic(phrase);
+      else await importFromSeed(phrase);
+    } else await importPrivateKey(pk.value.trim());
     emit('imported');
   } catch (e) {
     error.value = (e as Error).message;

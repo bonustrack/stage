@@ -56,10 +56,12 @@ declare global {
   const getLastReadNs: typeof import('./lib/xmtpConsent').getLastReadNs
   const getOrCreateXmtpClient: typeof import('./lib/xmtp').getOrCreateXmtpClient
   const getTokenRow: typeof import('./lib/tokenDetailStore').getTokenRow
+  const getWalletMnemonic: typeof import('./lib/xmtp').getWalletMnemonic
   const getXmtpAccountInfo: typeof import('./lib/xmtp').getXmtpAccountInfo
   const getXmtpEnv: typeof import('./lib/xmtp').getXmtpEnv
   const groupMemberEthAddresses: typeof import('./lib/xmtpResolve').groupMemberEthAddresses
   const h: typeof import('vue').h
+  const hasWalletMnemonic: typeof import('./lib/xmtp').hasWalletMnemonic
   const hostSendTransaction: typeof import('./lib/hostSigner').hostSendTransaction
   const hostSigner: typeof import('./lib/hostSigner').hostSigner
   const hydrateCachedRows: typeof import('./lib/channelsCache').hydrateCachedRows
@@ -146,6 +148,7 @@ declare global {
   const resolveMemberNames: typeof import('./lib/useGroupDetailHelpers').resolveMemberNames
   const resolveSearchInputToAddress: typeof import('./lib/stamp').resolveSearchInputToAddress
   const resolveSelfAddress: typeof import('./lib/useGroupDetailHelpers').resolveSelfAddress
+  const restoreWalletMnemonic: typeof import('./lib/xmtp').restoreWalletMnemonic
   const runGroupDetailEffect: typeof import('./lib/useGroupDetail.mutations').runGroupDetailEffect
   const runningInIframe: typeof import('./lib/embedBridge').runningInIframe
   const seedColorValue: typeof import('./lib/theme').seedColorValue
@@ -365,10 +368,12 @@ declare module 'vue' {
     readonly getLastReadNs: UnwrapRef<typeof import('./lib/xmtpConsent')['getLastReadNs']>
     readonly getOrCreateXmtpClient: UnwrapRef<typeof import('./lib/xmtp')['getOrCreateXmtpClient']>
     readonly getTokenRow: UnwrapRef<typeof import('./lib/tokenDetailStore')['getTokenRow']>
+    readonly getWalletMnemonic: UnwrapRef<typeof import('./lib/xmtp')['getWalletMnemonic']>
     readonly getXmtpAccountInfo: UnwrapRef<typeof import('./lib/xmtp')['getXmtpAccountInfo']>
     readonly getXmtpEnv: UnwrapRef<typeof import('./lib/xmtp')['getXmtpEnv']>
     readonly groupMemberEthAddresses: UnwrapRef<typeof import('./lib/xmtpResolve')['groupMemberEthAddresses']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
+    readonly hasWalletMnemonic: UnwrapRef<typeof import('./lib/xmtp')['hasWalletMnemonic']>
     readonly hostSendTransaction: UnwrapRef<typeof import('./lib/hostSigner')['hostSendTransaction']>
     readonly hostSigner: UnwrapRef<typeof import('./lib/hostSigner')['hostSigner']>
     readonly hydrateCachedRows: UnwrapRef<typeof import('./lib/channelsCache')['hydrateCachedRows']>
@@ -452,6 +457,7 @@ declare module 'vue' {
     readonly resolveDomain: UnwrapRef<typeof import('./lib/stamp')['resolveDomain']>
     readonly resolveMemberNames: UnwrapRef<typeof import('./lib/useGroupDetailHelpers')['resolveMemberNames']>
     readonly resolveSelfAddress: UnwrapRef<typeof import('./lib/useGroupDetailHelpers')['resolveSelfAddress']>
+    readonly restoreWalletMnemonic: UnwrapRef<typeof import('./lib/xmtp')['restoreWalletMnemonic']>
     readonly runGroupDetailEffect: UnwrapRef<typeof import('./lib/useGroupDetail.mutations')['runGroupDetailEffect']>
     readonly runningInIframe: UnwrapRef<typeof import('./lib/embedBridge')['runningInIframe']>
     readonly seedColorValue: UnwrapRef<typeof import('./lib/theme')['seedColorValue']>

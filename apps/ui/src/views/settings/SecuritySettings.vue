@@ -3,13 +3,14 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import { listAccounts, getActiveAccountId, loadPk, canExportPrivateKey, type AccountRecord } from '../../lib/accounts';
+import { listAccounts, getActiveAccountId, loadPk, canExportPrivateKey, hasWalletMnemonic, type AccountRecord } from '../../lib/accounts';
 
 const router = useRouter();
 const palette = useKitPalette();
 
 const account = ref<AccountRecord | null>(null);
 const hasLocalKey = ref(false);
+const hasMnemonic = ref(hasWalletMnemonic());
 
 onMounted(async () => {
   try {
@@ -72,6 +73,27 @@ onMounted(async () => {
         <Col class="flex-1 min-w-0 text-left">
           <Text size="xl" tag="div" class="text-metro-head-light dark:text-metro-head-dark">Manage keys &amp; accounts</Text>
           <Text size="2xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark">Import, export and switch accounts.</Text>
+        </Col>
+        <Icon name="chevronRight" :size="18" :color="palette.sub" />
+      </Pressable>
+
+      <!-- RECOVERY PHRASE: back up the BIP-39 mnemonic every smart account derives
+           from (mobile's SecureWalletNudge "Back up recovery phrase" equivalent). -->
+      <Pressable
+        tag="button"
+        type="button"
+        class="w-[calc(100%-2rem)] mx-4 mt-3 flex items-center gap-3 px-4 py-3.5 rounded-xl border
+          bg-metro-surface-light dark:bg-metro-surface-dark
+          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark transition-colors"
+        :style="{ borderColor: palette.border }"
+        @click="router.push('/settings/recovery-phrase')"
+      >
+        <Icon name="shieldExclamation" :size="22" :color="palette.text" />
+        <Col class="flex-1 min-w-0 text-left">
+          <Text size="xl" tag="div" class="text-metro-head-light dark:text-metro-head-dark">Recovery phrase</Text>
+          <Text size="2xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark">
+            {{ hasMnemonic ? 'Back up the phrase your smart accounts derive from.' : 'Available once you create a smart account.' }}
+          </Text>
         </Col>
         <Icon name="chevronRight" :size="18" :color="palette.sub" />
       </Pressable>
