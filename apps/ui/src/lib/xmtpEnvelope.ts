@@ -72,10 +72,18 @@ function bytesToBase64(bytes: Uint8Array): string {
   return btoa(s);
 }
 
+function isRemovedAction(action: Reaction['action']): boolean {
+  return action === ReactionAction.Removed || (action as unknown) === 'removed';
+}
+
+function isCustomSchema(schema: Reaction['schema']): boolean {
+  return schema === ReactionSchema.Custom || (schema as unknown) === 'custom';
+}
+
 function reactionEnvelope(base: HistoryEntry, typeId: string, decoded: object): HistoryEntry {
   const r = decoded as Reaction;
-  const removed = r.action === ReactionAction.Removed;
-  if (r.schema === ReactionSchema.Custom) {
+  const removed = isRemovedAction(r.action);
+  if (isCustomSchema(r.schema)) {
     return {
       ...base,
       text: `[vote ${r.content}${removed ? ' (removed)' : ''}]`,

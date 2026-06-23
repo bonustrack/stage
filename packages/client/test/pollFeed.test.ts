@@ -109,6 +109,25 @@ describe('poll-feed shared tally helpers', () => {
     expect(own?.has(0)).toBe(false);
   });
 
+  test('web-shaped vote (SDK string schema/action) is counted', () => {
+    const sdkReaction = { reference: 'p1', referenceInboxId: 'inbox-me', action: 'added', content: voteKey(0, 0), schema: 'custom' };
+    const isCustom = sdkReaction.schema === 'custom';
+    const removed = sdkReaction.action === 'removed';
+    const mapped: HistoryEntry = {
+      id: `v-web-${++seq}`, ts: ts(), station: 'xmtp', line: LINE, from: 'metro:user/me', to: LINE,
+      text: `[vote ${sdkReaction.content}]`,
+      payload: {
+        contentType: 'reaction', reactTo: sdkReaction.reference, emoji: sdkReaction.content,
+        ...(isCustom ? { schema: 'custom' } : {}), removed,
+      },
+    };
+    expect(isCustom).toBe(true);
+    const feed = [pollEntry('p1', 'Lunch?', ['Pizza', 'Sushi']), mapped];
+    expect(voteEventsOf(feed)).toHaveLength(1);
+    expect(votesByMessage(feed).get('p1')?.get(0)?.get(0)?.size).toBe(1);
+    expect(ownVotesByMessage(feed, 'metro:user/me').get('p1')?.get(0)?.has(0)).toBe(true);
+  });
+
   test('open answers are decoded from open-vote custom reactions', () => {
     const feed = [
       pollEntry('p1', 'Favorite?', ['A', 'B'], { open: true }),
