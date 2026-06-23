@@ -7,7 +7,12 @@ import { useEffectiveScheme } from '@/lib/kitTheme';
 import { useProposals, type ProposalDetail } from '../lib/useProposals';
 import type { QueuedRequest, RequestKind } from '@stage-labs/client/xmtp/requests-queue';
 import { acceptRequestConv, blockRequestConv } from '../lib/xmtpRequests';
-import { xmtpVote } from '../lib/xmtpSend';
+import { xmtpVote, xmtpSendText } from '../lib/xmtpSend';
+import { executeTxRequest } from '../lib/executeTxRequest';
+import { explorerTxUrl } from '@stage-labs/client/xmtp/tx';
+import { friendlyTxError } from '@stage-labs/client/wallet/txError';
+import { lineOfConv } from '../lib/xmtp';
+import type { Hex } from 'viem';
 
 const router = useRouter();
 const scheme = useEffectiveScheme();
@@ -97,6 +102,43 @@ async function onMessageAct(req: QueuedRequest, accept: boolean): Promise<void> 
   advance();
   if (accept) await acceptRequestConv(req.convId).catch(() => undefined);
   else await blockRequestConv(req.convId).catch(() => undefined);
+}
+
+type PayState = 'idle' | 'confirm' | 'pending' | 'done' | 'error';
+const payState = ref<PayState>('idle');
+const payHash = ref<Hex | null>(null);
+const payErr = ref<string | null>(null);
+
+const payExplorerUrl = computed(() =>
+  (payHash.value ? explorerTxUrl(8453, payHash.value) : ''));
+
+watch(current, () => { payState.value = 'idle'; payHash.value = null; payErr.value = null; });
+
+function startConfirm(): void {
+  payErr.value = null;
+  payState.value = 'confirm';
+}
+
+function cancelConfirm(): void {
+  payState.value = 'idle';
+}
+
+async function onExecute(req: QueuedRequest): Promise<void> {
+  const content = detailOf(req)?.payment;
+  if (!content) return;
+  payState.value = 'pending';
+  payErr.value = null;
+  try {
+    const { txHash } = await executeTxRequest(content);
+    payHash.value = txHash;
+    payState.value = 'done';
+    const desc = paymentPreview(req);
+    await xmtpSendText(lineOfConv(req.convId), `Sent transaction: ${desc} (${txHash})`)
+      .catch(() => undefined);
+  } catch (e) {
+    payErr.value = friendlyTxError(e, 'Transaction failed');
+    payState.value = 'error';
+  }
 }
 </script>
 
@@ -218,6 +260,48 @@ async function onMessageAct(req: QueuedRequest, accept: boolean): Promise<void> 
             <Text size="lg" weight="medium" :style="{ color: palette.text }">
               {{ current.kind === 'payment' ? paymentPreview(current) : signingPreview(current) }}
             </Text>
+
+            <template v-if="current.kind === 'payment' && detailOf(current)?.payment">
+              <Text size="xs" role="secondary">Gas sponsored on Base.</Text>
+
+              <Col v-if="payState === 'done'" :gap="6">
+                <Row align="center" :gap="8">
+                  <Icon name="check" :size="18" :color="acceptFg" />
+                  <Text size="md" weight="semibold" :style="{ color: palette.text }">Sent</Text>
+                </Row>
+                <Pressable tag="a" :href="payExplorerUrl" target="_blank" rel="noreferrer">
+                  <Text size="sm" color="link">View on explorer</Text>
+                </Pressable>
+              </Col>
+
+              <Col v-else-if="payState === 'pending'" :gap="6">
+                <Row align="center" :gap="8">
+                  <Spinner :size="18" />
+                  <Text size="sm" role="secondary">Executing sponsored transaction…</Text>
+                </Row>
+              </Col>
+
+              <Col v-else-if="payState === 'confirm'" :gap="8">
+                <Text size="sm" role="secondary">Approve and execute this transaction with your smart account?</Text>
+                <Row :gap="8">
+                  <Button variant="secondary" size="md" label="Cancel" :dark="dark" @click="cancelConfirm()" />
+                  <Button variant="primary" size="md" label="Confirm" :dark="dark" @click="onExecute(current)" />
+                </Row>
+              </Col>
+
+              <Col v-else :gap="8">
+                <Text v-if="payState === 'error' && payErr" size="sm" :style="{ color: palette.danger }">{{ payErr }}</Text>
+                <Button
+                  variant="primary"
+                  size="md"
+                  :label="payState === 'error' ? 'Retry' : 'Approve'"
+                  :dark="dark"
+                  class="self-start"
+                  @click="startConfirm()"
+                />
+              </Col>
+            </template>
+
             <Pressable
               tag="button"
               type="button"

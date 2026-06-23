@@ -45,6 +45,7 @@ declare global {
   const densityScale: typeof import('./lib/theme').densityScale
   const effectScope: typeof import('vue').effectScope
   const envelopeOfXmtpMessage: typeof import('./lib/xmtpFeed').envelopeOfXmtpMessage
+  const executeTxRequest: typeof import('./lib/executeTxRequest').executeTxRequest
   const getActiveAccount: typeof import('./lib/xmtp').getActiveAccount
   const getActiveAccountId: typeof import('./lib/xmtp').getActiveAccountId
   const getCachedXmtpClient: typeof import('./lib/xmtp').getCachedXmtpClient
@@ -185,6 +186,7 @@ declare global {
   const tokenRowId: typeof import('./lib/walletSort').tokenRowId
   const triggerRef: typeof import('vue').triggerRef
   const txPartyLabel: typeof import('./lib/activityFormat').txPartyLabel
+  const txRequestChainId: typeof import('./lib/executeTxRequest').txRequestChainId
   const txTitle: typeof import('./lib/activityFormat').txTitle
   const txValueColor: typeof import('./lib/activityFormat').txValueColor
   const txValuePrefix: typeof import('./lib/activityFormat').txValuePrefix
@@ -245,6 +247,9 @@ declare global {
   // @ts-ignore
   export type { ChannelRow } from './lib/channelsSummarize'
   import('./lib/channelsSummarize')
+  // @ts-ignore
+  export type { ExecuteTxResult } from './lib/executeTxRequest'
+  import('./lib/executeTxRequest')
   // @ts-ignore
   export type { HostTxRequest } from './lib/hostSigner'
   import('./lib/hostSigner')
@@ -359,6 +364,7 @@ declare module 'vue' {
     readonly densityScale: UnwrapRef<typeof import('./lib/theme')['densityScale']>
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
     readonly envelopeOfXmtpMessage: UnwrapRef<typeof import('./lib/xmtpFeed')['envelopeOfXmtpMessage']>
+    readonly executeTxRequest: UnwrapRef<typeof import('./lib/executeTxRequest')['executeTxRequest']>
     readonly getActiveAccount: UnwrapRef<typeof import('./lib/xmtp')['getActiveAccount']>
     readonly getActiveAccountId: UnwrapRef<typeof import('./lib/xmtp')['getActiveAccountId']>
     readonly getCachedXmtpClient: UnwrapRef<typeof import('./lib/xmtp')['getCachedXmtpClient']>
@@ -496,6 +502,7 @@ declare module 'vue' {
     readonly tokenRowId: UnwrapRef<typeof import('./lib/walletSort')['tokenRowId']>
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
     readonly txPartyLabel: UnwrapRef<typeof import('./lib/activityFormat')['txPartyLabel']>
+    readonly txRequestChainId: UnwrapRef<typeof import('./lib/executeTxRequest')['txRequestChainId']>
     readonly txTitle: UnwrapRef<typeof import('./lib/activityFormat')['txTitle']>
     readonly txValueColor: UnwrapRef<typeof import('./lib/activityFormat')['txValueColor']>
     readonly txValuePrefix: UnwrapRef<typeof import('./lib/activityFormat')['txValuePrefix']>
