@@ -5,6 +5,15 @@ import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 
 const palette = useKitPalette();
 
+const tintBg = computed(() => {
+  const hex = palette.primary.replace('#', '');
+  if (hex.length !== 6) return 'rgba(192,160,110,0.15)';
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, 0.15)`;
+});
+
 const emit = defineEmits<{
   (e: 'close'): void;
   (e: 'create', payload:
@@ -57,20 +66,23 @@ function create(): void {
         </Pressable>
       </Row>
 
+      <!-- Active toggle tints with the brand accent (translucent fill + accent text),
+           mirroring mobile SignatureSheet (#c0a06e). Avoids the link-on-link
+           invisibility that a solid link bg + white text caused in dark mode. -->
       <Row class="flex items-center gap-2">
         <Pressable tag="button" type="button"
-          class="flex-1 rounded-lg px-3 py-2 text-sm text-center font-head
-            border border-metro-border-light dark:border-metro-border-dark"
-          :class="kind === 'personal'
-            ? 'bg-metro-link-light dark:bg-metro-link-dark text-white'
-            : 'text-metro-fg-light dark:text-metro-fg-dark'"
+          class="flex-1 rounded-lg px-3 py-2 text-sm text-center font-head border"
+          :style="kind === 'personal'
+            ? { borderColor: palette.primary, backgroundColor: tintBg, color: palette.primary }
+            : { borderColor: palette.border }"
+          :class="kind === 'personal' ? '' : 'text-metro-fg-light dark:text-metro-fg-dark'"
           @click="kind = 'personal'">Message</Pressable>
         <Pressable tag="button" type="button"
-          class="flex-1 rounded-lg px-3 py-2 text-sm text-center font-head
-            border border-metro-border-light dark:border-metro-border-dark"
-          :class="kind === 'eip712'
-            ? 'bg-metro-link-light dark:bg-metro-link-dark text-white'
-            : 'text-metro-fg-light dark:text-metro-fg-dark'"
+          class="flex-1 rounded-lg px-3 py-2 text-sm text-center font-head border"
+          :style="kind === 'eip712'
+            ? { borderColor: palette.primary, backgroundColor: tintBg, color: palette.primary }
+            : { borderColor: palette.border }"
+          :class="kind === 'eip712' ? '' : 'text-metro-fg-light dark:text-metro-fg-dark'"
           @click="kind = 'eip712'">Typed data</Pressable>
       </Row>
 
