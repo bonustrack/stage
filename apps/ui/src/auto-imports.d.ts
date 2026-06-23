@@ -79,6 +79,7 @@ declare global {
   const isReadonly: typeof import('vue').isReadonly
   const isRef: typeof import('vue').isRef
   const isShallow: typeof import('vue').isShallow
+  const isWalletBackedUp: typeof import('./lib/accounts').isWalletBackedUp
   const leaveGroup: typeof import('./lib/xmtpGroups').leaveGroup
   const lineOfConv: typeof import('./lib/xmtp').lineOfConv
   const lineOfDmPeer: typeof import('./lib/xmtp').lineOfDmPeer
@@ -96,6 +97,7 @@ declare global {
   const markConvUnread: typeof import('./lib/channelsCache').markConvUnread
   const markConvUnreadSynced: typeof import('./lib/xmtpConsent').markConvUnreadSynced
   const markRaw: typeof import('vue').markRaw
+  const markWalletBackedUp: typeof import('./lib/accounts').markWalletBackedUp
   const memberInboxToAddressMap: typeof import('./lib/xmtpResolve').memberInboxToAddressMap
   const metroConvIdOf: typeof import('./lib/xmtp').metroConvIdOf
   const metroDmPeerOf: typeof import('./lib/xmtp').metroDmPeerOf
@@ -391,6 +393,7 @@ declare module 'vue' {
     readonly isReadonly: UnwrapRef<typeof import('vue')['isReadonly']>
     readonly isRef: UnwrapRef<typeof import('vue')['isRef']>
     readonly isShallow: UnwrapRef<typeof import('vue')['isShallow']>
+    readonly isWalletBackedUp: UnwrapRef<typeof import('./lib/accounts')['isWalletBackedUp']>
     readonly leaveGroup: UnwrapRef<typeof import('./lib/xmtpGroups')['leaveGroup']>
     readonly lineOfConv: UnwrapRef<typeof import('./lib/xmtp')['lineOfConv']>
     readonly lineOfDmPeer: UnwrapRef<typeof import('./lib/xmtp')['lineOfDmPeer']>
@@ -407,6 +410,7 @@ declare module 'vue' {
     readonly markConvUnread: UnwrapRef<typeof import('./lib/channelsCache')['markConvUnread']>
     readonly markConvUnreadSynced: UnwrapRef<typeof import('./lib/xmtpConsent')['markConvUnreadSynced']>
     readonly markRaw: UnwrapRef<typeof import('vue')['markRaw']>
+    readonly markWalletBackedUp: UnwrapRef<typeof import('./lib/accounts')['markWalletBackedUp']>
     readonly memberInboxToAddressMap: UnwrapRef<typeof import('./lib/xmtpResolve')['memberInboxToAddressMap']>
     readonly metroConvIdOf: UnwrapRef<typeof import('./lib/xmtp')['metroConvIdOf']>
     readonly metroDmPeerOf: UnwrapRef<typeof import('./lib/xmtp')['metroDmPeerOf']>

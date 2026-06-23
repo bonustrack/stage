@@ -38,6 +38,7 @@ onMounted(async () => {
     </Row>
 
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-8">
+      <BackupNudge />
       <!-- Unencrypted-key warning: the web build keeps wallet keys in the browser's
            localStorage with no OS keychain / biometric gate (mobile's SecureWalletNudge
            equivalent). Honest, web-appropriate state in place of biometrics. -->

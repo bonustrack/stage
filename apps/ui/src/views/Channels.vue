@@ -115,6 +115,7 @@ const {
         @open="openSearchedProfile"
       />
       <ProposalsBanner v-if="!embedded" />
+      <BackupNudge v-if="!embedded" />
       <Col v-if="error" align="center" justify="center" class="flex-1 text-sm text-metro-fg-light dark:text-metro-fg-dark px-6">
         {{ error }}
       </Col>

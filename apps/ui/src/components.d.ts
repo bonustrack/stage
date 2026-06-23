@@ -16,6 +16,7 @@ declare module 'vue' {
     AccountSwitcher: typeof import('./components/AccountSwitcher.vue')['default']
     ActivityList: typeof import('./components/ActivityList.vue')['default']
     AvatarView: typeof import('@stage-labs/kit/vue/avatar-view')['default']
+    BackupNudge: typeof import('./components/BackupNudge.vue')['default']
     Box: typeof import('@stage-labs/kit/vue/box')['default']
     BubbleActionSheet: typeof import('./components/BubbleActionSheet.vue')['default']
     Button: typeof import('@stage-labs/kit/vue/button')['default']
