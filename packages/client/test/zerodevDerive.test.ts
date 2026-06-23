@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
   deriveOwner, ownerAddress, ownerDerivationPath, isValidMnemonic, normalizeMnemonic,
+  mnemonicWords,
 } from '../src/zerodev/derive';
 
 const TEST_MNEMONIC = 'test test test test test test test test test test test junk';
@@ -49,5 +50,12 @@ describe('zerodev/derive', () => {
     expect(isValidMnemonic(TEST_MNEMONIC)).toBe(true);
     expect(isValidMnemonic('not a real seed phrase at all nope nope nope')).toBe(false);
     expect(() => deriveOwner('garbage phrase', 0)).toThrow();
+  });
+
+  test('mnemonicWords splits a normalized phrase into its words', () => {
+    expect(mnemonicWords(TEST_MNEMONIC)).toEqual(TEST_MNEMONIC.split(' '));
+    expect(mnemonicWords('  TEST  test  ').length).toBe(2);
+    expect(mnemonicWords('')).toEqual([]);
+    expect(mnemonicWords('   ')).toEqual([]);
   });
 });

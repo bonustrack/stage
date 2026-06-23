@@ -16,6 +16,11 @@ export function normalizeMnemonic(phrase: string): string {
   return phrase.trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
+export function mnemonicWords(phrase: string): string[] {
+  const normalized = normalizeMnemonic(phrase);
+  return normalized ? normalized.split(' ') : [];
+}
+
 export function isValidMnemonic(phrase: string): boolean {
   const words = normalizeMnemonic(phrase).split(' ');
   if (![12, 15, 18, 21, 24].includes(words.length)) return false;

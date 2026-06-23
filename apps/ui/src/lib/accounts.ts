@@ -128,6 +128,14 @@ function readMnemonic(): string | null {
   return isValidMnemonic(phrase) ? phrase : null;
 }
 
+export function getWalletMnemonic(): string | null {
+  return readMnemonic();
+}
+
+export function hasWalletMnemonic(): boolean {
+  return readMnemonic() != null;
+}
+
 function ensureMnemonic(): string {
   const existing = readMnemonic();
   if (existing) return existing;
@@ -208,14 +216,31 @@ export function smartAccountsConfigured(): boolean {
     || !!((import.meta.env.VITE_ZERODEV_RPC as string | undefined)?.trim());
 }
 
-export async function addSmartAccount(): Promise<AccountRecord> {
-  if (!smartAccountsConfigured()) throw new Error(SMART_UNCONFIGURED_MESSAGE);
-  await ensureMigrated();
-  const { hdIndex, owner } = await prepareSmartAccount();
+async function createSmartAccountAt(hdIndex: number, owner: HDAccount): Promise<AccountRecord> {
   const { makePublicClient } = await import('./zerodev');
   const { createEcdsaKernel } = await import('@stage-labs/client/zerodev/account');
   const publicClient = makePublicClient();
   const account = await createEcdsaKernel(publicClient, owner, hdIndex);
   const record = buildSmartAccountRecord(account.address, hdIndex, owner);
   return persistSmartAccount(record);
+}
+
+export async function addSmartAccount(): Promise<AccountRecord> {
+  if (!smartAccountsConfigured()) throw new Error(SMART_UNCONFIGURED_MESSAGE);
+  await ensureMigrated();
+  const { hdIndex, owner } = await prepareSmartAccount();
+  return createSmartAccountAt(hdIndex, owner);
+}
+
+export async function restoreWalletMnemonic(mnemonic: string): Promise<AccountRecord> {
+  const phrase = normalizeMnemonic(mnemonic);
+  if (!isValidMnemonic(phrase)) {
+    throw new Error('Invalid recovery phrase — failed BIP-39 check.');
+  }
+  await ensureMigrated();
+  localStorage.setItem(MNEMONIC_KEY, phrase);
+  ownerCache.clear();
+  if (!smartAccountsConfigured()) throw new Error(SMART_UNCONFIGURED_MESSAGE);
+  const owner = smartOwnerSigner(0);
+  return createSmartAccountAt(0, owner);
 }

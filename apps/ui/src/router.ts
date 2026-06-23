@@ -14,6 +14,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/settings/notifications', name: 'settings-notifications', component: () => import('./views/settings/NotificationsSettings.vue') },
   { path: '/settings/wallet',        name: 'settings-wallet',        component: () => import('./views/settings/WalletSettings.vue') },
   { path: '/settings/security',      name: 'settings-security',      component: () => import('./views/settings/SecuritySettings.vue') },
+  { path: '/settings/recovery-phrase', name: 'settings-recovery-phrase', component: () => import('./views/settings/RecoveryPhrase.vue') },
   { path: '/settings/experimental',  name: 'settings-experimental',  component: () => import('./views/settings/ExperimentalSettings.vue') },
   { path: '/settings/developer',     name: 'settings-developer',     component: () => import('./views/settings/DeveloperSettings.vue') },
   { path: '/settings/about',         name: 'settings-about',         component: () => import('./views/settings/AboutSettings.vue') },
