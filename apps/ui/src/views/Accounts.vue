@@ -27,6 +27,7 @@ const TYPE_LABEL: Record<AccountRecord['type'], string> = {
 const accounts = ref<AccountRecord[]>([]);
 const activeId = ref<string | null>(null);
 const busy = ref(false);
+const creating = ref(false);
 const error = ref<string | null>(null);
 
 const showImport = ref(false);
@@ -84,6 +85,7 @@ async function onAdd(): Promise<void> {
     return;
   }
   busy.value = true;
+  creating.value = true;
   error.value = null;
   try {
     const rec = await addSmartAccount();
@@ -94,6 +96,7 @@ async function onAdd(): Promise<void> {
     error.value = (e as Error).message;
   } finally {
     busy.value = false;
+    creating.value = false;
   }
 }
 
@@ -232,17 +235,21 @@ function onImported(): void {
             @click="onAdd"
           >
             <span
-              class="flex h-7 w-7 items-center justify-center rounded-full border border-dashed"
-              :style="{ borderColor: palette.sub }"
+              class="flex h-7 w-7 items-center justify-center rounded-full"
+              :class="creating ? '' : 'border border-dashed'"
+              :style="creating ? {} : { borderColor: palette.sub }"
             >
-              <Icon name="plus" :size="16" :color="palette.sub" />
+              <Spinner v-if="creating" :size="18" class="text-metro-head-light dark:text-metro-head-dark" />
+              <Icon v-else name="plus" :size="16" :color="palette.sub" />
             </span>
             <Col :gap="1" class="min-w-0">
               <Text size="md" weight="semibold" class="text-metro-head-light dark:text-metro-head-dark">
-                Add account
+                {{ creating ? 'Creating smart wallet…' : 'Add account' }}
               </Text>
               <Text size="xs" role="secondary">
-                {{ smartReady ? 'Creates a smart wallet' : 'Smart wallet unavailable — ZeroDev not configured' }}
+                {{ creating
+                  ? 'Setting up your smart account — this can take a moment'
+                  : smartReady ? 'Creates a smart wallet' : 'Smart wallet unavailable — ZeroDev not configured' }}
               </Text>
             </Col>
           </Pressable>
