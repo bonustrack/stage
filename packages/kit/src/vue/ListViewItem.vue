@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { schemePalette } from '../tokens';
+import { useKitScheme } from './theme-context';
 
 export type ListItemAlign = 'start' | 'center' | 'end';
 
@@ -17,7 +18,7 @@ const props = withDefaults(
     pressable?: boolean;
     gap?: number;
     align?: ListItemAlign;
-    dark: boolean;
+    dark?: boolean;
   }>(),
   { gap: 12, align: 'center' },
 );
@@ -25,7 +26,9 @@ const props = withDefaults(
 const emit = defineEmits<{ press: [] }>();
 
 const pressed = ref(false);
-const c = computed(() => schemePalette(props.dark));
+const scheme = useKitScheme();
+const isDark = computed(() => props.dark ?? scheme === 'dark');
+const c = computed(() => schemePalette(isDark.value));
 
 const style = computed<Record<string, string>>(() => ({
   display: 'flex',

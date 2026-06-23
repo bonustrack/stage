@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useKitScheme } from './theme-context';
 
 export type LabelSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 export type LabelWeight = 'normal' | 'medium' | 'semibold' | 'bold';
@@ -28,8 +29,11 @@ const props = withDefaults(
     color?: string;
     dark?: boolean;
   }>(),
-  { size: 'md', weight: 'medium', textAlign: 'start', dark: false },
+  { size: 'md', weight: 'medium', textAlign: 'start' },
 );
+
+const scheme = useKitScheme();
+const isDark = computed(() => props.dark ?? scheme === 'dark');
 
 function headColor(dark: boolean): string {
   return dark ? '#ffffff' : '#000000';
@@ -38,7 +42,7 @@ function headColor(dark: boolean): string {
 const labelId = computed(() => (props.fieldName ? `label-${props.fieldName}` : undefined));
 
 const style = computed<Record<string, string>>(() => ({
-  color: props.color ?? headColor(props.dark),
+  color: props.color ?? headColor(isDark.value),
   fontSize: `${SIZE[props.size]}px`,
   fontFamily: FONT[props.weight],
   textAlign: ALIGN[props.textAlign],

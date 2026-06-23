@@ -9,6 +9,7 @@ import {
   type ControlVariant,
 } from '../control.styles';
 import { BLOCK_RADIUS_DEFAULT } from '../tokens';
+import { useKitScheme } from './theme-context';
 
 function lineHeight(size: ControlSize): number {
   return Math.round(CONTROL_SIZES[size].fontSize * 1.4);
@@ -30,15 +31,18 @@ const props = withDefaults(
     radius?: number;
     dark?: boolean;
   }>(),
-  { variant: 'soft', size: 'md', rows: 3, autoResize: true, dark: false },
+  { variant: 'soft', size: 'md', rows: 3, autoResize: true },
 );
+
+const scheme = useKitScheme();
+const isDark = computed(() => props.dark ?? scheme === 'dark');
 
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>();
 
 const focused = ref(false);
 const fieldId = computed(() => (props.name ? `input-${props.name}` : undefined));
 
-const colors = computed(() => controlColors(props.variant, props.dark));
+const colors = computed(() => controlColors(props.variant, isDark.value));
 const corner = computed(() => props.radius ?? BLOCK_RADIUS_DEFAULT);
 
 function toCss(entries: Record<string, string | number>): Record<string, string> {

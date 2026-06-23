@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import Button from './Button.vue';
 import { BLOCK_RADIUS_DEFAULT, FONT_SIZE, schemePalette } from '../tokens';
+import { useKitScheme } from './theme-context';
 
 export type CardSize = 'sm' | 'md' | 'lg';
 
@@ -24,10 +25,13 @@ const props = withDefaults(
     confirm?: CardAction;
     cancel?: CardAction;
     pressable?: boolean;
-    dark: boolean;
+    dark?: boolean;
   }>(),
   { size: 'md', collapsed: false },
 );
+
+const scheme = useKitScheme();
+const isDark = computed(() => props.dark ?? scheme === 'dark');
 
 const emit = defineEmits<{ press: []; confirm: []; cancel: [] }>();
 
@@ -38,7 +42,7 @@ const STATUS_SIZE: Record<CardSize, number> = {
   lg: FONT_SIZE.sm,
 };
 
-const c = computed(() => schemePalette(props.dark));
+const c = computed(() => schemePalette(isDark.value));
 const pad = computed(() => props.padding ?? PADDING[props.size]);
 
 const style = computed<Record<string, string>>(() => ({
@@ -83,7 +87,7 @@ const hasFoot = computed(() => Boolean(props.confirm) || Boolean(props.cancel));
         variant="secondary"
         size="sm"
         :label="cancel.label"
-        :dark="dark"
+        :dark="isDark"
         @click="emit('cancel')"
       />
       <Button
@@ -91,7 +95,7 @@ const hasFoot = computed(() => Boolean(props.confirm) || Boolean(props.cancel));
         variant="primary"
         size="sm"
         :label="confirm.label"
-        :dark="dark"
+        :dark="isDark"
         @click="emit('confirm')"
       />
     </div>
