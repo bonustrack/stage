@@ -123,7 +123,7 @@ function ShieldBody({ pal, dark, zkAddress, initialSymbol, initialChainId, onFoo
         balance={balance} symbol={symbol} dark={dark} />
 
       <ShieldStepper stage={stage} pal={pal} />
-      <ShieldPhaseLine pal={pal} txHash={txHash} err={err} bridgeOk={isBridgeAvailable()} chainId={chainId} />
+      <ShieldPhaseLine txHash={txHash} err={err} bridgeOk={isBridgeAvailable()} chainId={chainId} />
     </Box>
   );
 }
@@ -168,7 +168,7 @@ function SendBody({ pal, dark, symbol = 'ETH', chainId = 1, balance = null, onFo
   return (
     <Box gap={16}>
       <Box gap={6}>
-        <Text size="xs" color={sub}>RECIPIENT (0zk ADDRESS)</Text>
+        <Text size="xs" role="secondary">RECIPIENT (0zk ADDRESS)</Text>
         <Input value={to} onChangeText={setTo} placeholder="0zk…" placeholderTextColor={sub}
           disabled={busy} dark={dark}
           inputProps={{ autoCapitalize: 'none', autoCorrect: false }}
@@ -180,7 +180,7 @@ function SendBody({ pal, dark, symbol = 'ETH', chainId = 1, balance = null, onFo
         balance={balance} symbol={symbol} dark={dark} />
 
       <ShieldStepper stage={stage} pal={pal} />
-      <ShieldPhaseLine pal={pal} txHash={txHash} err={err} errPhase={errPhase}
+      <ShieldPhaseLine txHash={txHash} err={err} errPhase={errPhase}
         bridgeOk={isBridgeAvailable()} chainId={chainId} />
     </Box>
   );

@@ -38,8 +38,8 @@ export function AttachmentView({ att, fullUrl, fg, dark }: {
   );
 }
 
-export function RemoteAttachmentResolver({ att, fg, sub, dark, msgId, index }: {
-  att: Attachment; fg: string; sub: string; dark: boolean;
+export function RemoteAttachmentResolver({ att, fg, dark, msgId, index }: {
+  att: Attachment; fg: string; dark: boolean;
   msgId?: string; index?: number;
 }): React.ReactElement {
   const local = useLocalAttachment(msgId, index);
@@ -81,7 +81,7 @@ export function RemoteAttachmentResolver({ att, fg, sub, dark, msgId, index }: {
     return (
       <Row padding={{ x: 10, y: 8 }} margin={{ bottom: 6 }} align="center" gap={8} radius="sm" background="rgba(0,0,0,0.12)">
         <Spinner size={20} color={fg}/>
-        <Text size="xs" color={sub} numberOfLines={1}>
+        <Text size="xs" role="secondary" numberOfLines={1}>
           {att.name ?? 'attachment'}
         </Text>
       </Row>

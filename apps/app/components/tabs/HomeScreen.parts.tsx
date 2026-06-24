@@ -124,10 +124,10 @@ export function HomeSpinner({ head }: { head: string; bg: string }): React.React
   );
 }
 
-export function HomeEmpty({ sub, message }: { sub: string; message?: string }): React.ReactElement {
+export function HomeEmpty({ message }: { message?: string }): React.ReactElement {
   return (
     <Col padding={32} align="center">
-      <Text color={sub} style={{ textAlign: 'center' }}>
+      <Text role="secondary" style={{ textAlign: 'center' }}>
         {message ?? 'No conversations yet. Share your address from Settings to start one.'}
       </Text>
     </Col>

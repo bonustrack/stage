@@ -157,7 +157,7 @@ function TxRequestDetail({ m, sub }: { m: TxCardModel; sub: string }): React.Rea
       ) : null}
       {m.sendsNativeWithCall && m.eth ? <TxNativeValueRow eth={m.eth} chainId={m.chainNum} /> : null}
       {m.recipient ? <TxToRow address={m.recipient} /> : null}
-      <Text size="xs" color={sub}>On {VIEM_CHAINS[m.chainNum]?.name ?? `chain ${m.chainNum}`}</Text>
+      <Text size="xs" role="secondary">On {VIEM_CHAINS[m.chainNum]?.name ?? `chain ${m.chainNum}`}</Text>
     </Col>
   );
 }
@@ -209,7 +209,7 @@ function DecodedCallBlock({ decoded, pending, target, sub, selector }: {
     <Col radius="md" background={detailBg} padding={10} gap={6} style={{ alignSelf: 'stretch' }}>
       <Row align="center" gap={6}>
         <Icon name="code" size={14} color={sub}/>
-        <Text size="xs" color={sub}>This transaction calls</Text>
+        <Text size="xs" role="secondary">This transaction calls</Text>
       </Row>
       <Text variant="mono" weight="semibold" size="sm" numberOfLines={2}>
         {pending ? 'Decoding…' : fnLabel}
@@ -217,17 +217,17 @@ function DecodedCallBlock({ decoded, pending, target, sub, selector }: {
       {decoded?.args.map((a, i) => (
         <Row key={`${a.name}-${i}`} align="start" gap={8}>
           {}
-          <Text size="xs" color={sub} style={{ minWidth: 80, flexShrink: 0 }} numberOfLines={2}>
+          <Text size="xs" role="secondary" style={{ minWidth: 80, flexShrink: 0 }} numberOfLines={2}>
             {a.name}{a.type ? ` (${a.type})` : ''}
           </Text>
           <Text variant="mono" size="xs" numberOfLines={4} style={{ flexShrink: 1, flex: 1 }}>{fmtArgValue(a.value)}</Text>
         </Row>
       ))}
       {!pending && decoded?.note && decoded.source !== 'mismatch' ? (
-        <Text size="xs" color={sub}>{decoded.note}</Text>
+        <Text size="xs" role="secondary">{decoded.note}</Text>
       ) : null}
       {target ? (
-        <Text size="xs" color={sub} numberOfLines={1}>Contract: {shortAddress(target)}</Text>
+        <Text size="xs" role="secondary" numberOfLines={1}>Contract: {shortAddress(target)}</Text>
       ) : null}
     </Col>
   );

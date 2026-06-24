@@ -25,7 +25,7 @@ export function GitHubLinkRow({ head, sub, border, url, title, subtitle }: {
             <Text weight="semibold" size="md" color={head}>
               {title}
             </Text>
-            <Text color={sub} variant="caption" weight="medium"
+            <Text role="secondary" variant="caption" weight="medium"
               style={{ marginTop: 2 }}>
               {subtitle}
             </Text>

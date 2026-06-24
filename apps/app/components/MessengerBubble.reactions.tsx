@@ -7,13 +7,13 @@ import { REACT_PRESETS } from './MessengerBubble.helpers';
 import { usePalette } from '../lib/theme';
 
 export function ReactionsRow({
-  reactions, pendingReactions, pendingRemovals, ownEmojis, sub, pillBg, onReact,
+  reactions, pendingReactions, pendingRemovals, ownEmojis, pillBg, onReact,
 }: {
   reactions?: Map<string, number>;
   pendingReactions?: string[];
   pendingRemovals?: string[];
   ownEmojis?: Set<string>;
-  sub: string; pillBg: string;
+  pillBg: string;
   onReact?: (emoji: string) => void;
 }): React.ReactElement | null {
   const { link } = usePalette();
@@ -31,7 +31,7 @@ export function ReactionsRow({
         const inner = (
           <>
             <Text size="xs">{emoji}</Text>
-            <Text size="3xs" color={sub}>{count}</Text>
+            <Text size="3xs" role="secondary">{count}</Text>
           </>
         );
         const pillStyle = {
@@ -60,15 +60,15 @@ export function ReactionsRow({
           opacity: 0.45,
         }}>
           <Text size="xs">{emoji}</Text>
-          <Text size="3xs" color={sub}>1</Text>
+          <Text size="3xs" role="secondary">1</Text>
         </Row>
       ))}
     </Row>
   );
 }
 
-export function ReactionPicker({ dark, sub, onPick, onClose }: {
-  dark: boolean; sub: string; onPick: (emoji: string) => void; onClose: () => void;
+export function ReactionPicker({ dark, onPick, onClose }: {
+  dark: boolean; onPick: (emoji: string) => void; onClose: () => void;
 }): React.ReactElement {
   return (
     <Row padding={{ x: 10, y: 6 }} margin={{ top: 6 }} gap={8} radius="full" background={dark ? '#282a2d' : '#ffffff'} style={{
@@ -81,7 +81,7 @@ export function ReactionPicker({ dark, sub, onPick, onClose }: {
         </Pressable>
       ))}
       <Pressable onPress={onClose}>
-        <Text size="lg" color={sub} style={{ paddingHorizontal: 4 }}>✕</Text>
+        <Text size="lg" role="secondary" style={{ paddingHorizontal: 4 }}>✕</Text>
       </Pressable>
     </Row>
   );

@@ -43,7 +43,7 @@ export default function XmtpConversation(): React.ReactElement {
   if (!convId) {
     return (
       <Col surface="surface" flex={1} align="center" justify="center">
-        <Text color={sub}>Missing conversation id.</Text>
+        <Text role="secondary">Missing conversation id.</Text>
       </Col>
     );
   }

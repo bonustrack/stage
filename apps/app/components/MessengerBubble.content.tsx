@@ -73,9 +73,9 @@ function BubbleCards({ d, p }: { d: ReturnType<typeof descriptorsOf>; p: BubbleC
         />
       ) : null}
       {d.sigReq ? (
-        <SigRequestCard req={d.sigReq} dark={p.dark} sub={p.sub} signing={p.signing} onSign={p.onSign} consentAllowed={p.consentAllowed} />
+        <SigRequestCard req={d.sigReq} dark={p.dark} signing={p.signing} onSign={p.onSign} consentAllowed={p.consentAllowed} />
       ) : null}
-      {d.sigRef ? <SigReferenceCard ref={d.sigRef} dark={p.dark} sub={p.sub} /> : null}
+      {d.sigRef ? <SigReferenceCard ref={d.sigRef} dark={p.dark} /> : null}
       {d.txReq ? (
         <TxRequestCard req={d.txReq} dark={p.dark} sub={p.sub} paying={p.paying} onPay={p.onPay} consentAllowed={p.consentAllowed} />
       ) : null}
@@ -97,14 +97,14 @@ export function BubbleContent(props: BubbleContentProps): React.ReactElement {
   return (
     <>
       <Row align="center" justify="start" style={{ alignSelf: 'stretch' }}>
-        <Text size="3xs" color={sub}>{pending ? 'Sending' : fmtTs(entry.ts)}</Text>
+        <Text size="3xs" role="secondary">{pending ? 'Sending' : fmtTs(entry.ts)}</Text>
       </Row>
       <ReplyPreview preview={replyPreview} fg={fg} sub={sub} onPress={onReplyPreviewPress} />
-      <BubbleAttachments atts={d.atts} entryId={entry.id} fg={fg} sub={sub} dark={dark} />
+      <BubbleAttachments atts={d.atts} entryId={entry.id} fg={fg} dark={dark} />
       <BubbleMain d={d} entry={entry} fg={fg} dark={dark} selectable={selectable} highlight={highlight} markdownProps={markdownProps} />
       <BubbleEmbeds cardLinks={cardLinks} dark={dark} />
       <BubbleCards d={d} p={props} />
-      <TranscriptLine transcript={transcript} atts={d.atts} entryTs={entry.ts} sub={sub} />
+      <TranscriptLine transcript={transcript} atts={d.atts} entryTs={entry.ts} />
     </>
   );
 }

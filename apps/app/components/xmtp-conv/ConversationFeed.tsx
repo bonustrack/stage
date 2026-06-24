@@ -34,15 +34,15 @@ function restoreFeedScroll(c: ConvState, h: number): void {
   });
 }
 
-function FeedIntro({ c, convId, head, sub, fg, border, rowBg, router }: {
-  c: ConvState; convId: string; head: string; sub: string; fg: string; border: string; rowBg: string;
+function FeedIntro({ c, convId, head, fg, border, rowBg, router }: {
+  c: ConvState; convId: string; head: string; fg: string; border: string; rowBg: string;
   router: { push: (h: { pathname: '/user/[address]'; params: { address: string } }) => void };
 }): React.ReactElement {
   return (
     <ConversationIntro
       isGroup={c.isGroup} peerAddr={c.peerAddr} groupName={c.groupName} groupImage={c.groupImage}
       groupDescription={c.groupDescription} groupLabels={c.groupLabels} convId={convId}
-      head={head} sub={sub} fg={fg} border={border} rowBg={rowBg}
+      head={head} fg={fg} border={border} rowBg={rowBg}
       onPressPeer={(address) => { router.push({ pathname: '/user/[address]', params: { address } }); }}
     />
   );
@@ -61,7 +61,7 @@ export function ConversationFeed({
 }): React.ReactElement {
   const { loadOlder, hasMore, loadingOlder, status, listEpoch, listRef, allBubbles } = c;
   const { renderItem, extraData } = useFeedRenderItem(c, dark, router);
-  const intro = <FeedIntro c={c} convId={convId} head={head} sub={sub} fg={fg} border={border} rowBg={rowBg} router={router} />;
+  const intro = <FeedIntro c={c} convId={convId} head={head} fg={fg} border={border} rowBg={rowBg} router={router} />;
   const spinner = <Box padding={32} align="center"><Spinner size={28} color={head} /></Box>;
 
   if (searchSlot !== undefined) {

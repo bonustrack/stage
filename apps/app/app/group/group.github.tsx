@@ -51,7 +51,7 @@ export function GroupGithubSection({ line, p }: { line: string; p: Pal }): React
     <Box padding={{ x: 16, bottom: 16 }}>
       <Row align="center" gap={6}>
         <Icon name="code" size={13} color={sub} />
-        <Text size="xs" color={sub}>GITHUB</Text>
+        <Text size="xs" role="secondary">GITHUB</Text>
       </Row>
 
       {url && !editing ? (

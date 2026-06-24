@@ -130,7 +130,7 @@ function RequestBody({ proposal, c, msgId, dark, sub, onPayPress, onSignPress }:
     );
   }
   if (tx) return <TxRequestCard req={tx} dark={dark} sub={sub} paying={c.payingIds.has(msgId)} onPay={onPayPress} />;
-  if (sig) return <SigRequestCard req={sig} dark={dark} sub={sub} signing={c.signingIds.has(msgId)} onSign={onSignPress} />;
+  if (sig) return <SigRequestCard req={sig} dark={dark} signing={c.signingIds.has(msgId)} onSign={onSignPress} />;
   return <Text role="secondary" style={{ marginTop: 12 }}>Loading {kindLabel}…</Text>;
 }
 

@@ -32,7 +32,7 @@ export function DisplaySettings(): React.ReactElement {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 + insets.bottom }}
 >
-        <Text size="xs" color={sub} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
+        <Text size="xs" role="secondary" style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
           THEME
         </Text>
         <Box margin={{ x: 16 }} style={{ overflow: 'hidden' }}>
@@ -69,7 +69,7 @@ export function DisplaySettings(): React.ReactElement {
 
         {custom ? (
           <Box padding={{ x: 16, top: 24 }}>
-            <Text size="xs" color={sub} style={{ paddingBottom: 4 }}>
+            <Text size="xs" role="secondary" style={{ paddingBottom: 4 }}>
               CUSTOM COLORS
             </Text>
             <ColorTokens p={{ dark, head, sub, border, rowBg }}/>

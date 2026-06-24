@@ -24,7 +24,7 @@ export function PrivateView({ head, sub, border }: {
     return (
       <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center" gap={6}>
         <Text weight="semibold" size="md" color={head}>Private balances</Text>
-        <Text size="md" color={sub} style={{ textAlign: 'center' }}>
+        <Text size="md" role="secondary" style={{ textAlign: 'center' }}>
           Shielded transfers arrive in the next app build.
         </Text>
         {}
@@ -42,7 +42,7 @@ export function PrivateView({ head, sub, border }: {
         }}
         style={{ paddingVertical: 10 }}
       >
-        <Text size="xs" color={sub}>PRIVATE ADDRESS</Text>
+        <Text size="xs" role="secondary">PRIVATE ADDRESS</Text>
         <Text weight="semibold" size="md" color={head} style={{ marginTop: 2 }}>
           {snapshot?.zkAddress ? short0zk(snapshot.zkAddress) : '…'}
         </Text>
@@ -54,7 +54,7 @@ export function PrivateView({ head, sub, border }: {
           <Text weight="semibold" size="md" color={head}>
             {p.kind === 'shield' ? 'Shielding' : p.kind === 'unshield' ? 'Unshielding' : 'Sending'} {p.symbol}
           </Text>
-          <Text size="xs" color={sub}>
+          <Text size="xs" role="secondary">
             {p.phase === 'proving' ? 'generating proof…' : 'broadcasting…'}
           </Text>
         </Row>

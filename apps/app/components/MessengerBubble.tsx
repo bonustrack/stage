@@ -57,12 +57,12 @@ function BubbleColumn({ p, fg, sub, pillBg }: {
       {pending ? null : (
         <ReactionsRow
           reactions={p.reactions} pendingReactions={p.pendingReactions} pendingRemovals={p.pendingRemovals}
-          ownEmojis={p.ownEmojis} sub={sub} pillBg={pillBg} onReact={p.onReact}
+          ownEmojis={p.ownEmojis} pillBg={pillBg} onReact={p.onReact}
         />
       )}
       {pickerOpen && !pending ? (
         <ReactionPicker
-          dark={dark} sub={sub}
+          dark={dark}
           onPick={e => { p.onReact?.(e); setPickerOpen(false); }}
           onClose={() => { setPickerOpen(false); }}
         />

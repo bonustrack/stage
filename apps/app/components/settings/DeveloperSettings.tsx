@@ -33,7 +33,6 @@ function DangerAction({ onPress, busy, label, description, danger, blockRadius, 
 export function DeveloperSettings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head, border, danger } = usePalette();
-  const sub = fg;
   const insets = useSafeAreaInsets();
   const blockRadius = useBlockRadius();
   const [enabled, setEnabled] = useState(isDebugConsoleEnabled());
@@ -94,7 +93,7 @@ export function DeveloperSettings(): React.ReactElement {
     <Col surface="surface" flex={1}>
       <SystemHeader title="Developer" dark={dark} fg={fg} head={head} border={border}/>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
-        <Text size="xs" color={sub} style={{ paddingHorizontal: 16, paddingTop: 20 }}>
+        <Text size="xs" role="secondary" style={{ paddingHorizontal: 16, paddingTop: 20 }}>
           DIAGNOSTICS
         </Text>
         <Box radius={blockRadius} surface="raised" padding={14} margin={{ x: 16, top: 8 }}
@@ -103,7 +102,7 @@ export function DeveloperSettings(): React.ReactElement {
           <Row align="center" gap={12}>
             <Col minWidth={0} flex={1}>
               <Text weight="semibold" size="md" color={head}>Railgun debug console</Text>
-              <Text size="xs" color={sub} style={{ marginTop: 2 }}>
+              <Text size="xs" role="secondary" style={{ marginTop: 2 }}>
                 Show the live Railgun bridge logs + balance-pipeline diagnostics on the Private wallet tab. Off by default - leaving it on can slow the app down.
               </Text>
             </Col>

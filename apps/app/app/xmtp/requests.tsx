@@ -26,7 +26,6 @@ export default function Requests(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head, border, danger } = usePalette();
-  const sub = fg;
   const insets = useSafeAreaInsets();
   const [rows, setRows] = useState<ReqRow[] | null>(null);
 
@@ -107,7 +106,7 @@ export default function Requests(): React.ReactElement {
           contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}
           ListEmptyComponent={
             <Col padding={32} align="center">
-              <Text color={sub} style={{ textAlign: 'center' }}>
+              <Text role="secondary" style={{ textAlign: 'center' }}>
                 No message requests.
               </Text>
             </Col>

@@ -73,7 +73,7 @@ export default function GroupDetail(): React.ReactElement {
 
       <GroupProfileHeader
         insetTop={insets.top} imageUrl={imageUrl} channelId={convId ?? ''} uploadingImage={uploadingImage}
-        fg={fg} sub={sub} bg={bg} rowBg={rowBg}
+        fg={fg} bg={bg} rowBg={rowBg}
         onTap={() => { if (imageUrl) setViewerOpen(true); else void pickImage(); }}
         onPick={() => { void pickImage(); }}
 />

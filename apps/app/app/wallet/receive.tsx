@@ -19,7 +19,6 @@ import { ReceiveModeToggle, type ReceiveMode } from '../../components/wallet/Rec
 export default function WalletReceive(): React.ReactElement {
   const router = useRouter();
   const { text: fg, link: head, border } = usePalette();
-  const sub = fg;
   const card = border;
   const insets = useSafeAreaInsets();
 
@@ -83,7 +82,7 @@ export default function WalletReceive(): React.ReactElement {
           )}
         </Box>
 
-        <Text size="xs" color={sub} style={{ marginTop: 4 }}>
+        <Text size="xs" role="secondary" style={{ marginTop: 4 }}>
           {activeMode === 'private' ? 'SHIELDED 0ZK ADDRESS (tap to copy)' : 'WALLET ADDRESS (tap to copy)'}
         </Text>
         <Pressable
@@ -99,7 +98,7 @@ export default function WalletReceive(): React.ReactElement {
           </Text>
         </Pressable>
 
-        <Text size="xs" color={sub} style={{ textAlign: 'center', paddingHorizontal: 16, marginTop: 8 }}>
+        <Text size="xs" role="secondary" style={{ textAlign: 'center', paddingHorizontal: 16, marginTop: 8 }}>
           {hint}
         </Text>
       </ScrollView>

@@ -108,7 +108,7 @@ export function ProfileHoldings({ address }: { address: string }): React.ReactEl
         </Col>
       ) : rows.filter(r => Number(r.balance) > 0).length === 0 ? (
         <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center">
-          <Text size="md" color={sub}>
+          <Text size="md" role="secondary">
             There are no tokens in this wallet.
           </Text>
         </Col>

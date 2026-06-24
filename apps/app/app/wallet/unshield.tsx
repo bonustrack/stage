@@ -71,7 +71,7 @@ export default function WalletUnshield(): React.ReactElement {
       <AmountBox pal={pal} amount={amount} setAmount={setAmount} busy={busy}
         balance={balance} symbol={symbol} dark={dark} />
 
-      <UnshieldPhaseLine pal={pal} phase={phase} txHash={txHash} err={err} bridgeOk={isBridgeAvailable()} chainId={chainId} />
+      <UnshieldPhaseLine phase={phase} txHash={txHash} err={err} bridgeOk={isBridgeAvailable()} chainId={chainId} />
     </ActionPage>
   );
 }

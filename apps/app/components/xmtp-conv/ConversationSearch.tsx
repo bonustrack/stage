@@ -63,7 +63,7 @@ export function ConversationSearch({
       contentContainerStyle={{ paddingTop: 12, paddingBottom: 12 }}
       ListEmptyComponent={
         showEmpty
-          ? <Box padding={{ y: 28 }} align="center"><Text size="sm" color={sub}>No matches</Text></Box>
+          ? <Box padding={{ y: 28 }} align="center"><Text size="sm" role="secondary">No matches</Text></Box>
           : null
       }
       ListFooterComponent={
@@ -71,11 +71,11 @@ export function ConversationSearch({
           {scanning ? (
             <Row align="center" justify="center" gap={8} padding={{ y: 14 }}>
               <ActivityIndicator size="small" color={sub} />
-              <Text size="sm" color={sub}>Searching…</Text>
+              <Text size="sm" role="secondary">Searching…</Text>
             </Row>
           ) : null}
           {!scanning && result.truncated && result.hits.length > 0 ? (
-            <Box padding={{ x: 16, y: 10 }}><Text size="xs" color={sub}>Showing first matches in recent history.</Text></Box>
+            <Box padding={{ x: 16, y: 10 }}><Text size="xs" role="secondary">Showing first matches in recent history.</Text></Box>
           ) : null}
         </>
       }

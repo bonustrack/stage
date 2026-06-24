@@ -45,16 +45,16 @@ export function PrivateActivitySection({ head, sub, border, bg }: {
     <Col>
       <Row padding={{ top: 14, bottom: 4 }} align="center" gap={6}>
         <Icon name="lockClosed" size={13} color={sub}/>
-        <Text weight="semibold" size="xs" color={sub} style={{ letterSpacing: 0.5, textTransform: 'uppercase' }}>
+        <Text weight="semibold" size="xs" role="secondary" style={{ letterSpacing: 0.5, textTransform: 'uppercase' }}>
           Private activity
         </Text>
       </Row>
       {status === 'loading' ? (
-        <Text size="md" color={sub} style={{ paddingVertical: 14 }}>
+        <Text size="md" role="secondary" style={{ paddingVertical: 14 }}>
           Loading private activity…
         </Text>
       ) : rows.length === 0 ? (
-        <Text size="md" color={sub} style={{ paddingVertical: 14 }}>
+        <Text size="md" role="secondary" style={{ paddingVertical: 14 }}>
           No private activity yet
         </Text>
       ) : (
@@ -95,18 +95,18 @@ function PrivateTxRow({ r, head, sub, border, bg }: {
           </Text>
           <Row radius="xs" background={border} padding={{ x: 6, y: 1 }} align="center" gap={3}>
             <Icon name={SHIELD_ICON} size={10} color={sub}/>
-            <Text weight="semibold" size="3xs" color={sub}>
+            <Text weight="semibold" size="3xs" role="secondary">
               Private
             </Text>
           </Row>
         </Row>
         <Row margin={{ top: 2 }} align="center" gap={6}>
           <Box radius="xs" background={border} padding={{ x: 6, y: 1 }}>
-            <Text size="xs" color={sub} numberOfLines={1}>
+            <Text size="xs" role="secondary" numberOfLines={1}>
               {r.chainLabel}
             </Text>
           </Box>
-          <Text size="md" color={sub} style={{ flex: 1 }} numberOfLines={1}>
+          <Text size="md" role="secondary" style={{ flex: 1 }} numberOfLines={1}>
             {r.timestamp> 0 ? relTime(r.timestamp) : 'Confirmed'}
           </Text>
         </Row>

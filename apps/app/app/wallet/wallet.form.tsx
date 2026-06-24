@@ -64,10 +64,9 @@ export function Segmented<T extends string | number>({ label, value, options, on
   options: readonly (readonly [T, string])[];
   onChange: (v: T) => void;
 }): React.ReactElement {
-  const { sub } = useFormPal();
   return (
     <Box gap={6}>
-      {label ? <Text size="xs" color={sub}>{label}</Text> : null}
+      {label ? <Text size="xs" role="secondary">{label}</Text> : null}
       <Row gap={8}>
         {options.map(([id, text]) => (
           <Button key={String(id)} variant={value === id ? 'primary' : 'secondary'}
@@ -88,7 +87,7 @@ export function AmountBox({ pal, amount, setAmount, busy, balance, symbol, dark 
   return (
     <Box gap={6}>
       <Row align="center">
-        <Text size="xs" color={sub} style={{ flex: 1 }}>AMOUNT</Text>
+        <Text size="xs" role="secondary" style={{ flex: 1 }}>AMOUNT</Text>
         {balance != null ? (
           <Button variant="ghost" size="sm" dark={!!dark} disabled={!hasBal || busy}
             onPress={() => { if (hasBal) setAmount(balance); }}
@@ -104,7 +103,7 @@ export function AmountBox({ pal, amount, setAmount, busy, balance, symbol, dark 
             backgroundColor: 'transparent', minHeight: 0, paddingHorizontal: 0, paddingVertical: 0, borderWidth: 0 }}/>
       </Box>
       {balance != null ? (
-        <Text size="xs" color={sub} style={{ paddingHorizontal: 4 }}>
+        <Text size="xs" role="secondary" style={{ paddingHorizontal: 4 }}>
           Balance: {Number(balance).toLocaleString(undefined, { maximumFractionDigits: 6 })}{symbol ? ` ${symbol}` : ''}
         </Text>
       ) : null}
@@ -115,13 +114,13 @@ export function AmountBox({ pal, amount, setAmount, busy, balance, symbol, dark 
 export function LockedRecipient({ pal, label, value, hint }: {
   pal: FormPal; label: string; value: string; hint: string;
 }): React.ReactElement {
-  const { head, sub, border } = pal;
+  const { head, border } = pal;
   return (
     <Box gap={6}>
-      <Text size="xs" color={sub}>{label}</Text>
+      <Text size="xs" role="secondary">{label}</Text>
       <Box surface="raised" radius="lg" padding={{ x: 14, y: 12 }} style={{ borderWidth: 1, borderColor: border }}>
         <Text weight="semibold" size="md" color={head}>{value}</Text>
-        <Text size="xs" color={sub} style={{ marginTop: 2 }}>{hint}</Text>
+        <Text size="xs" role="secondary" style={{ marginTop: 2 }}>{hint}</Text>
       </Box>
     </Box>
   );

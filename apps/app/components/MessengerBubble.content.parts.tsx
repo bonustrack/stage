@@ -17,12 +17,12 @@ import { HighlightText } from './HighlightText';
 
 export type MarkdownProps = Pick<ComponentProps<typeof Markdown>, 'markdownit' | 'onLinkPress' | 'style'>;
 
-function BubbleAttachment({ att, index, entryId, fg, sub, dark }: {
-  att: Attachment; index: number; entryId: string; fg: string; sub: string; dark: boolean;
+function BubbleAttachment({ att, index, entryId, fg, dark }: {
+  att: Attachment; index: number; entryId: string; fg: string; dark: boolean;
 }): React.ReactElement {
   const key = att.id ?? `${entryId}-att-${index}`;
   if (att.remote) {
-    return <RemoteAttachmentResolver key={key} att={att} fg={fg} sub={sub} dark={dark} msgId={entryId} index={index} />;
+    return <RemoteAttachmentResolver key={key} att={att} fg={fg} dark={dark} msgId={entryId} index={index} />;
   }
   const fullUrl = att.dataB64
     ? `data:${att.mime ?? 'application/octet-stream'};base64,${att.dataB64}`
@@ -30,14 +30,14 @@ function BubbleAttachment({ att, index, entryId, fg, sub, dark }: {
   return <AttachmentView key={key} att={att} fg={fg} fullUrl={fullUrl} dark={dark} />;
 }
 
-export function BubbleAttachments({ atts, entryId, fg, sub, dark }: {
-  atts: Attachment[]; entryId: string; fg: string; sub: string; dark: boolean;
+export function BubbleAttachments({ atts, entryId, fg, dark }: {
+  atts: Attachment[]; entryId: string; fg: string; dark: boolean;
 }): React.ReactElement | null {
   if (atts.length === 0) return null;
   return (
     <Box style={{ alignSelf: 'stretch' }}>
       {atts.map((a, i) => (
-        <BubbleAttachment key={a.id ?? `${entryId}-att-${i}`} att={a} index={i} entryId={entryId} fg={fg} sub={sub} dark={dark} />
+        <BubbleAttachment key={a.id ?? `${entryId}-att-${i}`} att={a} index={i} entryId={entryId} fg={fg} dark={dark} />
       ))}
     </Box>
   );
@@ -107,18 +107,18 @@ export function ReplyPreview({ preview, fg, sub, onPress }: {
   );
 }
 
-export function TranscriptLine({ transcript, atts, entryTs, sub }: {
-  transcript?: string; atts: Attachment[]; entryTs: string; sub: string;
+export function TranscriptLine({ transcript, atts, entryTs }: {
+  transcript?: string; atts: Attachment[]; entryTs: string;
 }): React.ReactElement | null {
   if (transcript) {
     return (
-      <Text size="xs" color={sub} style={{ opacity: 0.85, fontStyle: 'italic', marginTop: atts.length ? 4 : 0 }}>“{transcript}”</Text>
+      <Text size="xs" role="secondary" style={{ opacity: 0.85, fontStyle: 'italic', marginTop: atts.length ? 4 : 0 }}>“{transcript}”</Text>
     );
   }
   const transcribing = atts.some(a => a.kind === 'audio') && Date.now() - new Date(entryTs).getTime() < 30_000;
   if (!transcribing) return null;
   return (
-    <Text size="xs" color={sub} style={{ opacity: 0.6, fontStyle: 'italic', marginTop: 4 }}>
+    <Text size="xs" role="secondary" style={{ opacity: 0.6, fontStyle: 'italic', marginTop: 4 }}>
       transcribing…
     </Text>
   );

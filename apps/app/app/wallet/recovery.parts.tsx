@@ -50,7 +50,7 @@ export function GuardianEditor({
   return (
     <Col gap={16}>
       <Box gap={6}>
-        <Text size="xs" color={sub}>GUARDIAN ADDRESS OR ENS</Text>
+        <Text size="xs" role="secondary">GUARDIAN ADDRESS OR ENS</Text>
         <Row gap={8} align="center">
           <Col surface="raised" radius="lg" padding={{ x: 14, y: 12 }} flex={1}>
             <Input value={entry} onChangeText={setEntry} placeholder="0x… or name.eth" placeholderTextColor={sub}
@@ -64,7 +64,7 @@ export function GuardianEditor({
 
       {n > 0 ? (
         <Col gap={8}>
-          <Text size="xs" color={sub}>GUARDIANS ({n})</Text>
+          <Text size="xs" role="secondary">GUARDIANS ({n})</Text>
           {guardians.map(addr => (
             <Row key={addr} surface="raised" radius="lg" padding={{ x: 14, y: 10 }} align="center" gap={8}>
               <Text size="sm" color={head} style={{ flex: 1 }} numberOfLines={1} ellipsizeMode="middle">{addr}</Text>
@@ -75,7 +75,7 @@ export function GuardianEditor({
           ))}
         </Col>
       ) : (
-        <Text size="sm" color={sub}>
+        <Text size="sm" role="secondary">
           Add friends as guardians. If you lose this device, a threshold of them can restore your wallet — they never gain access to your funds.
         </Text>
       )}
@@ -85,7 +85,7 @@ export function GuardianEditor({
           value={threshold} options={thresholdOptions} onChange={onThreshold}/>
       ) : null}
 
-      <Text size="xs" color={sub}>
+      <Text size="xs" role="secondary">
         A recovery opens a {formatDelay(delaySeconds)} cancel window. You are notified and can cancel with your key before it takes effect.{' '}
         <Text size="xs" color={link}>Funds can never move during recovery.</Text>
       </Text>
@@ -100,17 +100,17 @@ export function PendingRecoveryCard({
   newOwner: string; finalizeAfterLabel: string;
   onCancel: () => void; cancelling: boolean;
 }): React.ReactElement {
-  const { head, sub, border } = pal;
+  const { head, border } = pal;
   return (
     <Box surface="raised" radius="lg" padding={{ x: 14, y: 12 }} gap={10} style={{ borderWidth: 1, borderColor: border }}>
       <Row align="center" gap={8}>
         <Icon name="exclamationCircle" size={18} color={head}/>
         <Text weight="semibold" size="md" color={head} style={{ flex: 1 }}>Recovery in progress</Text>
       </Row>
-      <Text size="sm" color={sub}>
+      <Text size="sm" role="secondary">
         Your wallet is being rotated to a new owner. It takes effect {finalizeAfterLabel} unless you cancel.
       </Text>
-      <Text size="xs" color={sub} numberOfLines={1} ellipsizeMode="middle">New owner: {newOwner}</Text>
+      <Text size="xs" role="secondary" numberOfLines={1} ellipsizeMode="middle">New owner: {newOwner}</Text>
       <Button variant="primary" size="md" pill dark={dark} loading={cancelling} onPress={onCancel}
         label="Cancel recovery"/>
     </Box>
@@ -124,13 +124,13 @@ export function ApprovalCard({
   wallet: string; newOwner: string;
   onApprove: () => void; approving: boolean; approved: boolean;
 }): React.ReactElement {
-  const { head, sub, border } = pal;
+  const { head, border } = pal;
   return (
     <Box surface="raised" radius="lg" padding={{ x: 14, y: 12 }} gap={10} style={{ borderWidth: 1, borderColor: border }}>
       <Text weight="semibold" size="md" color={head}>A friend asked you to help recover their wallet</Text>
-      <Text size="xs" color={sub} numberOfLines={1} ellipsizeMode="middle">Wallet: {wallet}</Text>
-      <Text size="xs" color={sub} numberOfLines={1} ellipsizeMode="middle">New owner: {newOwner}</Text>
-      <Text size="sm" color={sub}>
+      <Text size="xs" role="secondary" numberOfLines={1} ellipsizeMode="middle">Wallet: {wallet}</Text>
+      <Text size="xs" role="secondary" numberOfLines={1} ellipsizeMode="middle">New owner: {newOwner}</Text>
+      <Text size="sm" role="secondary">
         Only approve if you trust this is them. Approving is free and only helps rotate their owner key — it never moves their funds.
       </Text>
       <Button variant="primary" size="md" pill dark={dark} disabled={approved} loading={approving}

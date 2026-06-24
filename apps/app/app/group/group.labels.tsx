@@ -141,7 +141,7 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
     <Box padding={{ x: 16, bottom: 16 }}>
       <Row align="center" gap={6}>
         <Icon name="tag" size={13} color={sub}/>
-        <Text size="xs" color={sub}>LABELS</Text>
+        <Text size="xs" role="secondary">LABELS</Text>
       </Row>
 
       {labels.length> 0 ? (
@@ -161,7 +161,7 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
       {!atCap ? (
         <LabelAddRow draft={draft} setDraft={setDraft} busy={busy} onAdd={() => { void add(draft); }} p={p}/>
       ) : (
-        <Text size="xs" color={sub} style={{ marginTop: 8 }}>
+        <Text size="xs" role="secondary" style={{ marginTop: 8 }}>
           Label limit reached ({MAX_LABELS}).
         </Text>
       )}

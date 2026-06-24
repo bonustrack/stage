@@ -17,7 +17,7 @@ export function RecipientRow({ address, pal, right, onPress }: {
   right?: React.ReactNode;
   onPress?: () => void;
 }): React.ReactElement {
-  const { head, sub, border } = pal;
+  const { head, border } = pal;
   usePeerProfiles([address]);
   const name = getPeerName(address) ?? shortAddress(address);
   const showAddrLine = name !== shortAddress(address);
@@ -34,7 +34,7 @@ export function RecipientRow({ address, pal, right, onPress }: {
           {name}
         </Text>
         {showAddrLine ? (
-          <Text size="xs" color={sub} style={{ marginTop: 2 }} numberOfLines={1}>
+          <Text size="xs" role="secondary" style={{ marginTop: 2 }} numberOfLines={1}>
             {shortAddress(address)}
           </Text>
         ) : null}
@@ -70,7 +70,7 @@ export function ContactsModal({ visible, onClose, onPick, pal }: {
   onPick: (address: string) => void;
   pal: RowPalette & { head: string };
 }): React.ReactElement {
-  const { head, sub } = pal;
+  const { head } = pal;
   const contacts = useContacts([], '');
 
   return (
@@ -79,7 +79,7 @@ export function ContactsModal({ visible, onClose, onPick, pal }: {
         Contacts
       </Text>
       {contacts.length === 0 ? (
-        <Text size="md" color={sub} style={{ paddingVertical: 16 }}>
+        <Text size="md" role="secondary" style={{ paddingVertical: 16 }}>
           No contacts yet — start a DM to build your list.
         </Text>
       ) : (

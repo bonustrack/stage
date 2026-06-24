@@ -2,8 +2,6 @@
 
 > Vue 3 web client for Stage: channels, conversations, and profiles in the browser.
 
-[![lines of code](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.codetabs.com%2Fv1%2Floc%2F%3Fgithub%3Dbonustrack%2Fstage&query=%24%5B%3F(%40.language%3D%3D%27Total%27)%5D.linesOfCode&label=lines%20of%20code&color=blue)](https://github.com/bonustrack/stage)
-
 ## Overview
 
 `ui` is the web companion to the Stage mobile app. It is a Vue 3 + Vite single-page app that talks to XMTP directly via the browser SDK and renders the same channels, conversations, and Snapshot profiles as [`apps/app`](../app), so the two stay visually and functionally parallel.
@@ -50,7 +48,7 @@ src/
 
 ## Kit-only enforcement & exceptions
 
-`apps/ui` must build its UI from [`@stage-labs/kit/vue/*`](../../packages/kit) components (`Row`, `Col`, `Scroll`, `Icon`, `Button`, `Title`, `Text`, form controls, …) rather than raw HTML elements. This is enforced by the `uiKitOnly` ESLint rule in [`eslint.config.mjs`](../../eslint.config.mjs), and the kit theme is wired up at the root via `provideKitTheme`.
+`apps/ui` must build its UI from [`@stage-labs/kit/vue/*`](../../packages/kit) components (`Row`, `Col`, `Scroll`, `Icon`, `Button`, `Title`, `Text`, form controls, …) rather than raw HTML elements. This is enforced by the `uiKitOnly` ESLint rule defined in [`apps/ui/eslint.js`](eslint.js) and wired into the central [`stage.config.js`](../../stage.config.js), which the `stage` CLI from [`@stage-labs/config`](../../packages/config) reads to build the repo-wide ESLint flat config. The kit theme is wired up at the root via `provideKitTheme`.
 
 Raw `<div>` is banned: use the precise kit layout primitive — `<Row>` for flex rows (`flex` / `flex-row`), `<Col>` for flex columns and plain block stacks (`flex flex-col` and bare block `<div>`), and `<Scroll>` for overflow/scroll containers. `Row`/`Col`/`Scroll` are globally registered via the apps/ui Vite tag resolver (no per-file import). Never use `<Box direction="…">`.
 

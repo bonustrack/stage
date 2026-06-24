@@ -78,14 +78,14 @@ function TitleLine({ title, pinned, timestamp, highlightQuery, head, sub }: {
       </Text>
       {}
       <Spacer/>
-      {timestamp ? <Text size="sm" color={sub}>{timestamp}</Text> : null}
+      {timestamp ? <Text size="sm" role="secondary">{timestamp}</Text> : null}
     </Row>
   );
 }
 
-function TrailingBadge({ unreadCount, markedUnread, showChevron, head, bg, sub }: {
+function TrailingBadge({ unreadCount, markedUnread, showChevron, head, bg }: {
   unreadCount: number; markedUnread?: boolean; showChevron?: boolean;
-  head: string; bg: string; sub: string;
+  head: string; bg: string;
 }): React.ReactElement | null {
   if (unreadCount> 0) {
     return (
@@ -95,7 +95,7 @@ function TrailingBadge({ unreadCount, markedUnread, showChevron, head, bg, sub }
     );
   }
   if (markedUnread) return <Box width={12} height={12} radius="full" background={head}/>;
-  if (showChevron) return <Text size="2xl" color={sub}>›</Text>;
+  if (showChevron) return <Text size="2xl" role="secondary">›</Text>;
   return null;
 }
 
@@ -111,7 +111,7 @@ function PreviewLine({ draft, labels, previewText, highlightQuery, fg, rowBg, su
           <Icon name="pencil" size={14} color={sub}/>
         </Box>
       ) : null}
-      <Text size="lg" color={sub} style={{ lineHeight: 21, flex: 1 }}
+      <Text size="lg" role="secondary" style={{ lineHeight: 21, flex: 1 }}
         numberOfLines={2}
         ellipsizeMode="tail">
         {!draft && labels && labels.length> 0 ? buildLabelChips({ labels, fg, rowBg }) : null}
@@ -170,7 +170,7 @@ function ChannelRowBase({
             <PreviewLine draft={draft} labels={labels} previewText={previewText}
               highlightQuery={highlightQuery} fg={sub} rowBg={border} sub={sub} />
             <TrailingBadge unreadCount={unreadCount} markedUnread={markedUnread}
-              showChevron={showChevron} head={head} bg={bg} sub={sub} />
+              showChevron={showChevron} head={head} bg={bg} />
           </Row>
         </Col>
       </Row>

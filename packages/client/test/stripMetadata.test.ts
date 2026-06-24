@@ -1,6 +1,6 @@
 
 import { describe, expect, test } from 'bun:test';
-import { stripMetadataBytes, isStrippableImage } from '../lib/stripMetadata';
+import { stripMetadataBytes, isStrippableImage } from '../src/image/stripMetadata';
 
 function contains(buf: Uint8Array, ascii: string): boolean {
   const needle = Array.from(ascii).map((c) => c.charCodeAt(0));

@@ -31,7 +31,7 @@ export function RecipientField(props: {
   const rowPal = { head, sub, border };
   return (
     <Box gap={6}>
-      <Text size="xs" color={sub}>RECIPIENT</Text>
+      <Text size="xs" role="secondary">RECIPIENT</Text>
       {}
       <Row surface="raised" radius="lg" padding={{ x: 6, left: 14 }} align="center" gap={4}>
         <Input
@@ -53,7 +53,7 @@ export function RecipientField(props: {
       {props.resolving ? (
         <Row padding={{ x: 4 }} align="center" gap={8}>
           <Spinner size={20} color={fg}/>
-          <Text size="xs" color={sub}>Resolving…</Text>
+          <Text size="xs" role="secondary">Resolving…</Text>
         </Row>
       ) : props.resolved ? (
         <RecipientRow address={props.resolved} pal={rowPal}/>
@@ -92,7 +92,7 @@ export function AmountField(props: {
   return (
     <Box gap={6}>
       <Row align="center">
-        <Text size="xs" color={sub} style={{ flex: 1 }}>AMOUNT</Text>
+        <Text size="xs" role="secondary" style={{ flex: 1 }}>AMOUNT</Text>
         <Button
           variant="ghost"
           size="sm"
@@ -147,12 +147,12 @@ export function AmountField(props: {
       </Row>
 
       {props.secondaryLabel ? (
-        <Text size="xs" color={sub} style={{ paddingHorizontal: 4 }}>
+        <Text size="xs" role="secondary" style={{ paddingHorizontal: 4 }}>
           {props.secondaryLabel}
         </Text>
       ) : null}
       {ethBalance ? (
-        <Text size="xs" color={sub} style={{ paddingHorizontal: 4 }}>
+        <Text size="xs" role="secondary" style={{ paddingHorizontal: 4 }}>
           Balance: {Number(ethBalance).toLocaleString(undefined, { maximumFractionDigits: 6 })} {props.symbol}
         </Text>
       ) : null}
@@ -202,16 +202,16 @@ export function SubmitButton(props: {
 }
 
 export function TxStatus(props: {
-  sub: string; txState: TxState; txHash: Hex | null; txErr: string | null;
+  txState: TxState; txHash: Hex | null; txErr: string | null;
 }): React.ReactElement {
-  const { sub, txState, txHash, txErr } = props;
+  const { txState, txHash, txErr } = props;
   const { link } = usePalette();
   return (
     <>
       {}
       {txHash ? (
         <Box padding={{ x: 4 }} gap={4}>
-          <Text size="xs" color={sub}>
+          <Text size="xs" role="secondary">
             {txState === 'confirmed' ? 'Confirmed' : 'Pending'}
           </Text>
           <Pressable onPress={() => { void Linking.openURL(explorerTxUrl(PUBLIC_SEND_CHAIN, txHash)); }} hitSlop={6}>
