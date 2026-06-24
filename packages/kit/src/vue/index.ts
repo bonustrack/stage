@@ -29,6 +29,7 @@ export { default as FlatList } from './FlatList.vue';
 export { default as ListView } from './ListView.vue';
 export { default as ListViewItem } from './ListViewItem.vue';
 export { default as Markdown } from './Markdown.vue';
+export { default as ChatKitRenderer } from './ChatKitRenderer.vue';
 export {
   provideKitTheme,
   useKitPalette,

@@ -17,6 +17,7 @@
     "./react-native/theme-context": "./src/react-native/theme-context.tsx",
     "./avatar": "./src/avatar.ts",
     "./layout": "./src/layout.ts",
+    "./chatkit": "./src/chatkit/index.ts",
     "./react-native/button": "./src/react-native/button.tsx",
     "./react-native/text": "./src/react-native/text.tsx",
     "./react-native/title": "./src/react-native/title.tsx",
@@ -35,6 +36,7 @@
     "./react-native/select": "./src/react-native/select.tsx",
     "./react-native/date-picker": "./src/react-native/date-picker.tsx",
     "./react-native/form": "./src/react-native/form.tsx",
+    "./react-native/chatkit-renderer": "./src/react-native/chatkit-renderer.tsx",
     "./react-native/box": "./src/react-native/box.tsx",
     "./react-native/avatar-view": "./src/react-native/avatar.view.tsx",
     "./react-native/markdown": "./src/react-native/markdown.tsx",
@@ -74,7 +76,8 @@
     "./vue/flat-list": "./src/vue/FlatList.vue",
     "./vue/list-view": "./src/vue/ListView.vue",
     "./vue/list-view-item": "./src/vue/ListViewItem.vue",
-    "./vue/markdown": "./src/vue/Markdown.vue"
+    "./vue/markdown": "./src/vue/Markdown.vue",
+    "./vue/chatkit-renderer": "./src/vue/ChatKitRenderer.vue"
   },
   "peerDependencies": {
     "react": "*",
