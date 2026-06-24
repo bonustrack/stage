@@ -38,7 +38,7 @@ export default function TokenDetail(): React.ReactElement {
       <Col surface="surface" flex={1}>
         <Header head={head} border={border} onBack={() => { router.back(); }} title="Token"/>
         <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center">
-          <Text size="md" color={sub}>Token not found</Text>
+          <Text size="md" role="secondary">Token not found</Text>
         </Col>
       </Col>
     );
@@ -75,7 +75,7 @@ export default function TokenDetail(): React.ReactElement {
 
         {}
         <Box radius="full" padding={{ x: 10, y: 3 }} style={{ borderWidth: 1, borderColor: border }}>
-          <Text size="xs" color={sub}>
+          <Text size="xs" role="secondary">
             {NETWORK_LABEL[r.chainId] ?? `Chain ${r.chainId}`}
           </Text>
         </Box>
@@ -83,7 +83,7 @@ export default function TokenDetail(): React.ReactElement {
         <Text weight="semibold" size="6xl" color={head} style={{ marginTop: 14 }}>
           {`${fmtBalance(r.balance)} ${r.symbol}`}
         </Text>
-        <Text size="md" color={sub}>
+        <Text size="md" role="secondary">
           {valueUsd === null ? '—' : fmtUsd(valueUsd)}
         </Text>
       </Col>

@@ -13,15 +13,15 @@ const short0zk = (a: string): string => (a.length> 18 ? `${a.slice(0, 10)}…${a
 export function ShieldRecipient({ pal, zkAddress }: {
   pal: Pal; zkAddress: string | null;
 }): React.ReactElement {
-  const { head, sub, border } = pal;
+  const { head, border } = pal;
   return (
     <Box gap={6}>
-      <Text size="xs" color={sub}>TO YOUR PRIVATE WALLET</Text>
+      <Text size="xs" role="secondary">TO YOUR PRIVATE WALLET</Text>
       <Box surface="raised" radius="lg" padding={{ x: 14, y: 12 }} style={{ borderWidth: 1, borderColor: border }}>
         <Text weight="semibold" size="md" color={head}>
           {zkAddress ? short0zk(zkAddress) : 'Loading 0zk address…'}
         </Text>
-        <Text size="xs" color={sub} style={{ marginTop: 2 }}>
+        <Text size="xs" role="secondary" style={{ marginTop: 2 }}>
           Locked — shields deposit to your own shielded balance.
         </Text>
       </Box>
@@ -29,14 +29,13 @@ export function ShieldRecipient({ pal, zkAddress }: {
   );
 }
 
-export function ShieldPhaseLine({ pal, txHash, err, errPhase, bridgeOk, chainId }: {
-  pal: Pal; txHash: string | null; err: string | null; errPhase?: string | null;
+export function ShieldPhaseLine({ txHash, err, errPhase, bridgeOk, chainId }: {
+  txHash: string | null; err: string | null; errPhase?: string | null;
   bridgeOk: boolean; chainId: number;
 }): React.ReactElement | null {
-  const { sub } = pal;
   if (!bridgeOk) {
     return (
-      <Text size="xs" color={sub} style={{ paddingHorizontal: 4 }}>
+      <Text size="xs" role="secondary" style={{ paddingHorizontal: 4 }}>
         Shielding needs the latest app build.
       </Text>
     );
@@ -55,7 +54,7 @@ export function ShieldPhaseLine({ pal, txHash, err, errPhase, bridgeOk, chainId 
         <>
           <Text size="xs" color={DANGER} selectable>{err}</Text>
           {errPhase ? (
-            <Text size="3xs" color={sub}>Failed at: {errPhase}</Text>
+            <Text size="3xs" role="secondary">Failed at: {errPhase}</Text>
           ) : null}
         </>
       ) : null}

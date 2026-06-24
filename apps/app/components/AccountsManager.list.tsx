@@ -23,12 +23,12 @@ function manageTrailing(p: AccountListProps, id: string): React.ReactElement {
   );
 }
 
-function EmptyAccounts({ sub }: { sub: string }): React.ReactElement {
-  return <Text size="xs" color={sub} style={{ padding: 14 }}>No accounts yet.</Text>;
+function EmptyAccounts(): React.ReactElement {
+  return <Text size="xs" role="secondary" style={{ padding: 14 }}>No accounts yet.</Text>;
 }
 
 function FlatAccounts(p: AccountListProps): React.ReactElement {
-  if (p.accounts.length === 0) return <EmptyAccounts sub={p.sub} />;
+  if (p.accounts.length === 0) return <EmptyAccounts />;
   return (
     <>
       {p.accounts.map((a, i) => (
@@ -37,7 +37,7 @@ function FlatAccounts(p: AccountListProps): React.ReactElement {
             rec={a} topBorder={i > 0}
             onPress={() => { p.onSwitch(a.id); }}
             onLongPress={() => { p.setManageId(a.id); }}
-            head={p.head} sub={p.sub} border={p.border}
+            head={p.head} border={p.border}
             trailing={a.id === p.activeId ? <Icon name="check" size={20} color={p.head}/> : manageTrailing(p, a.id)}
 />
         </Box>
@@ -54,12 +54,12 @@ function CollapsedHeader(p: AccountListProps): React.ReactElement | null {
         rec={active} topBorder={false}
         onPress={() => { p.setExpanded(e => !e); }}
         onLongPress={() => { p.setManageId(active.id); }}
-        head={p.head} sub={p.sub} border={p.border}
+        head={p.head} border={p.border}
         trailing={<Icon name={p.expanded ? 'chevronUp' : 'chevronDown'} size={20} color={p.sub} />}
 />
     );
   }
-  if (p.accounts.length === 0) return <EmptyAccounts sub={p.sub} />;
+  if (p.accounts.length === 0) return <EmptyAccounts />;
   return null;
 }
 
@@ -71,7 +71,7 @@ function AddSection(p: AccountListProps): React.ReactElement {
           key={a.id} rec={a} topBorder
           onPress={() => { p.onSwitch(a.id); }}
           onLongPress={() => { p.setManageId(a.id); }}
-          head={p.head} sub={p.sub} border={p.border}
+          head={p.head} border={p.border}
           trailing={manageTrailing(p, a.id)}
 />
       )) : null}

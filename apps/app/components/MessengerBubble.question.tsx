@@ -53,9 +53,9 @@ function optionBg(isOn: boolean, pressed: boolean, dark: boolean): string {
   return dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)';
 }
 
-function OptionRow({ opt, isOn, multi, dark, sub, fg, onPress }: {
+function OptionRow({ opt, isOn, multi, dark, fg, onPress }: {
   opt: Question['options'][number]; isOn: boolean; multi: boolean;
-  dark: boolean; sub: string; fg: string; onPress: () => void;
+  dark: boolean; fg: string; onPress: () => void;
 }): React.ReactElement {
   return (
     <Pressable
@@ -69,13 +69,13 @@ function OptionRow({ opt, isOn, multi, dark, sub, fg, onPress }: {
     >
       <Text size="md" color={fg}>{multi ? (isOn ? '☑︎  ' : '☐  ') : ''}{opt.label}</Text>
       {opt.description ? (
-        <Text size="2xs" color={sub} style={{ marginTop: 2 }}>{opt.description}</Text>
+        <Text size="2xs" role="secondary" style={{ marginTop: 2 }}>{opt.description}</Text>
       ) : null}
     </Pressable>
   );
 }
 
-function OtherToggle({ dark, sub, onPress }: { dark: boolean; sub: string; onPress: () => void }): React.ReactElement {
+function OtherToggle({ dark, onPress }: { dark: boolean; onPress: () => void }): React.ReactElement {
   return (
     <Pressable
       onPress={onPress}
@@ -88,7 +88,7 @@ function OtherToggle({ dark, sub, onPress }: { dark: boolean; sub: string; onPre
         borderColor: dark ? 'rgba(255,255,255,0.20)' : 'rgba(0,0,0,0.18)',
       })}
     >
-      <Text size="md" color={sub}>Other…</Text>
+      <Text size="md" role="secondary">Other…</Text>
     </Pressable>
   );
 }
@@ -148,18 +148,18 @@ export function QuestionView({ question, dark, sub, onAnswer }: {
   return (
     <Box margin={{ top: 8 }} gap={6} style={{ alignSelf: 'stretch' }}>
       {question.header ? (
-        <Text weight="semibold" size="3xs" color={sub} style={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+        <Text weight="semibold" size="3xs" role="secondary" style={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
           {question.header}{s.multi ? ' · multi-select' : ''}
         </Text>
       ) : null}
       {question.options.map((opt, i) => (
         <OptionRow
           key={`${i}-${opt.label}`} opt={opt} isOn={s.selected.has(opt.label)}
-          multi={s.multi} dark={dark} sub={sub} fg={fg} onPress={() => { s.toggle(opt.label); }}
+          multi={s.multi} dark={dark} fg={fg} onPress={() => { s.toggle(opt.label); }}
         />
       ))}
       {s.allowOther && !s.otherOpen ? (
-        <OtherToggle dark={dark} sub={sub} onPress={() => { s.setOtherOpen(true); }} />
+        <OtherToggle dark={dark} onPress={() => { s.setOtherOpen(true); }} />
       ) : null}
       {s.otherOpen ? (
         <OtherField value={s.otherText} onChange={s.setOtherText} onSubmit={s.submit} dark={dark} sub={sub} fg={fg} />

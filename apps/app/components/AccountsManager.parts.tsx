@@ -13,10 +13,10 @@ import { type AccountRecord } from '../lib/accounts';
 import { TYPE_LABEL } from './AccountsManager.helpers';
 import { DANGER } from '../lib/theme';
 
-export function AccountRow({ rec, onPress, onLongPress, topBorder, trailing, head, sub, border }: {
+export function AccountRow({ rec, onPress, onLongPress, topBorder, trailing, head, border }: {
   rec: AccountRecord; onPress: () => void; onLongPress: () => void;
   topBorder: boolean; trailing: React.ReactNode;
-  head: string; sub: string; border: string;
+  head: string; border: string;
 }): React.ReactElement {
   return (
     <Pressable
@@ -35,7 +35,7 @@ export function AccountRow({ rec, onPress, onLongPress, topBorder, trailing, hea
         <Text weight="semibold" size="md" numberOfLines={1} color={head}>
           {getPeerName(rec.address) ?? rec.label ?? shortAddress(rec.address)}
         </Text>
-        <Text size="xs" numberOfLines={1} color={sub} style={{ marginTop: 1 }}>
+        <Text size="xs" numberOfLines={1} role="secondary" style={{ marginTop: 1 }}>
           {shortAddress(rec.address)} · {TYPE_LABEL[rec.type]}
         </Text>
       </Col>
@@ -61,16 +61,16 @@ export function SheetModal({ visible, onClose, children, bg, border }: {
   );
 }
 
-export function SheetRow({ label, desc, onPress, head, sub, danger, dark }: {
+export function SheetRow({ label, desc, onPress, head, danger, dark }: {
   label: string; desc?: string; onPress: () => void;
-  head: string; sub: string; danger?: boolean; dark: boolean;
+  head: string; danger?: boolean; dark: boolean;
 }): React.ReactElement {
   const labelColor = danger ? DANGER : head;
   return (
     <ListViewItem dark={dark} onPress={onPress}>
       <Col flex={1}>
         <Text weight="semibold" size="md" color={labelColor}>{label}</Text>
-        {desc ? <Text size="xs" color={sub} style={{ marginTop: 2 }}>{desc}</Text> : null}
+        {desc ? <Text size="xs" role="secondary" style={{ marginTop: 2 }}>{desc}</Text> : null}
       </Col>
     </ListViewItem>
   );

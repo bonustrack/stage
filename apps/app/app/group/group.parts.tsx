@@ -79,7 +79,7 @@ export function MemberRow({
           {displayName}{isSelf ? ' (you)' : ''}
         </Text>
         {name ? (
-          <Text size="xs" color={sub} style={{ marginTop: 2 }} numberOfLines={1}>
+          <Text size="xs" role="secondary" style={{ marginTop: 2 }} numberOfLines={1}>
             {shortAddress(item)}
           </Text>
         ) : null}

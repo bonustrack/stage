@@ -8,12 +8,12 @@ import { MemberRow } from './group.parts';
 
 interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }
 
-function MembersHeader({ count, fg, sub, border, onAdd }: {
-  count: number; fg: string; sub: string; border: string; onAdd: () => void;
+function MembersHeader({ count, fg, border, onAdd }: {
+  count: number; fg: string; border: string; onAdd: () => void;
 }): React.ReactElement {
   return (
     <Row padding={{ x: 16, bottom: 8 }} align="center" justify="between">
-      <Text size="xs" color={sub}>
+      <Text size="xs" role="secondary">
         MEMBERS ({count})
       </Text>
       <Pressable
@@ -45,7 +45,7 @@ export function GroupMembersList({
 }): React.ReactElement {
   return (
     <>
-      <MembersHeader count={members.length} fg={p.fg} sub={p.sub} border={p.border} onAdd={onAdd}/>
+      <MembersHeader count={members.length} fg={p.fg} border={p.border} onAdd={onAdd}/>
       <FlatList
         data={members}
         extraData={memberNames}

@@ -149,7 +149,7 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
         removeClippedSubviews
         contentContainerStyle={{ paddingBottom: 24 }}
         ListHeaderComponent={<ChannelsListHeader p={props} />}
-        ListEmptyComponent={query.trim() ? null : <HomeEmpty sub={sub} />}
+        ListEmptyComponent={query.trim() ? null : <HomeEmpty />}
         ListFooterComponent={
           query.trim()
             ? <HomeContactResults query={query} c={{ fg, head, sub, border }} noChannels={sortedRows.length === 0}/>

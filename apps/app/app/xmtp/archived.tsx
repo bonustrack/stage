@@ -20,7 +20,6 @@ import { Col, Row } from '../../components/layout';
 export default function Archived(): React.ReactElement {
   const router = useRouter();
   const { text: fg, link: head, border } = usePalette();
-  const sub = fg;
   const insets = useSafeAreaInsets();
   const [archived, setArchived] = useState<Set<string>>(new Set());
   const [rows, setRows] = useState<RowT[]>((getCachedRows() as RowT[] | null) ?? []);
@@ -69,7 +68,7 @@ export default function Archived(): React.ReactElement {
         contentContainerStyle={data.length === 0 ? { flexGrow: 1 } : { paddingBottom: 24 + insets.bottom }}
         ListEmptyComponent={
           <Col padding={32} align="center">
-            <Text color={sub} style={{ textAlign: 'center' }}>No archived conversations.</Text>
+            <Text role="secondary" style={{ textAlign: 'center' }}>No archived conversations.</Text>
           </Col>
         }
 />

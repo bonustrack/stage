@@ -202,6 +202,7 @@ declare global {
   const useChannels: typeof import('./lib/useChannels').useChannels
   const useCommonChannels: typeof import('./lib/useCommonChannels').useCommonChannels
   const useComposerAttach: typeof import('./lib/useComposerAttach').useComposerAttach
+  const useComposerMentions: typeof import('./lib/useComposerMentions').useComposerMentions
   const useCssModule: typeof import('vue').useCssModule
   const useCssVars: typeof import('vue').useCssVars
   const useCustomTheme: typeof import('./lib/theme').useCustomTheme
@@ -531,6 +532,7 @@ declare module 'vue' {
     readonly useChannels: UnwrapRef<typeof import('./lib/useChannels')['useChannels']>
     readonly useCommonChannels: UnwrapRef<typeof import('./lib/useCommonChannels')['useCommonChannels']>
     readonly useComposerAttach: UnwrapRef<typeof import('./lib/useComposerAttach')['useComposerAttach']>
+    readonly useComposerMentions: UnwrapRef<typeof import('./lib/useComposerMentions')['useComposerMentions']>
     readonly useCssModule: UnwrapRef<typeof import('vue')['useCssModule']>
     readonly useCssVars: UnwrapRef<typeof import('vue')['useCssVars']>
     readonly useCustomTheme: UnwrapRef<typeof import('./lib/theme')['useCustomTheme']>

@@ -34,9 +34,9 @@ function SaveButton({ saving, disabled, onSave, dark }: {
 
 interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }
 
-export function GroupProfileHeader({ imageUrl, channelId, uploadingImage, insetTop, fg, sub, bg, rowBg, onTap, onPick }: {
+export function GroupProfileHeader({ imageUrl, channelId, uploadingImage, insetTop, fg, bg, rowBg, onTap, onPick }: {
   imageUrl: string; channelId: string; uploadingImage: boolean; insetTop: number;
-  fg: string; sub: string; bg: string; rowBg: string;
+  fg: string; bg: string; rowBg: string;
   onTap: () => void; onPick: () => void;
 }): React.ReactElement {
   const fallbackUri = channelId ? stampAvatarUrl(channelStampSeed(channelId), 88) : '';
@@ -61,7 +61,7 @@ export function GroupProfileHeader({ imageUrl, channelId, uploadingImage, insetT
             </Box>
           ) : null}
         </Pressable>
-        <Text size="xs" color={sub} style={{ marginTop: 6 }}>
+        <Text size="xs" role="secondary" style={{ marginTop: 6 }}>
           {uploadingImage ? 'Uploading…' : imageUrl ? 'Tap to view · hold to change' : 'Tap to add image'}
         </Text>
       </Box>
@@ -99,7 +99,7 @@ export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, sa
           <Text weight="semibold" size="5xl" color={head} style={{ textAlign: 'left' }}>
             {name?.trim() ? name : 'Untitled group'}
           </Text>
-          <Text size="xs" color={sub} style={{ marginTop: 4 }}>Tap to rename</Text>
+          <Text size="xs" role="secondary" style={{ marginTop: 4 }}>Tap to rename</Text>
         </Pressable>
       )}
     </Box>
@@ -114,7 +114,7 @@ export function GroupDescriptionEditor({ description, descriptionDraft, setDescr
   const { fg, sub, border, inputBg } = p;
   return (
     <Box padding={{ x: 16, bottom: 16 }}>
-      <Text size="xs" color={sub}>DESCRIPTION</Text>
+      <Text size="xs" role="secondary">DESCRIPTION</Text>
       {editing ? (
         <Row margin={{ top: 6 }} align="start" gap={8}>
           <Textarea

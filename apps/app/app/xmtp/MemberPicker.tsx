@@ -107,7 +107,7 @@ export function MemberPicker({ state, dark, exclude = [] }: {
     <>
       {}
       <Col gap={6}>
-        <Text size="xs" color={sub}>
+        <Text size="xs" role="secondary">
           Add members
         </Text>
         <Row gap={8} align="center">
@@ -160,7 +160,7 @@ export function MemberPicker({ state, dark, exclude = [] }: {
                   {m.label}
                 </Text>
                 {m.label !== shortAddress(m.address) && (
-                  <Text size="xs" numberOfLines={1} color={sub}>
+                  <Text size="xs" numberOfLines={1} role="secondary">
                     {shortAddress(m.address)}
                   </Text>
                 )}

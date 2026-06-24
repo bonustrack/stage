@@ -30,23 +30,23 @@ function SenderNote({ note, bg, border }: { note: string; bg: string; border: st
   );
 }
 
-function Eip712DomainLine({ domain, sub }: {
-  domain: { name?: unknown; chainId?: unknown } | undefined; sub: string;
+function Eip712DomainLine({ domain }: {
+  domain: { name?: unknown; chainId?: unknown } | undefined;
 }): React.ReactElement | null {
   const domainName = stringifyPrimitive(domain?.name);
   const chainId = stringifyPrimitive(domain?.chainId);
   if (!domainName && !chainId) return null;
   return (
-    <Text size="xs" color={sub}>
+    <Text size="xs" role="secondary">
       {domainName ?? 'Domain'}{chainId ? ` · chain ${chainId}` : ''}
     </Text>
   );
 }
 
-function Eip712FieldRow({ name, value, sub }: { name: string; value: unknown; sub: string }): React.ReactElement {
+function Eip712FieldRow({ name, value }: { name: string; value: unknown }): React.ReactElement {
   return (
     <Row align="start" gap={8}>
-      <Text size="xs" color={sub} style={{ minWidth: 80, flexShrink: 0 }}>{name}</Text>
+      <Text size="xs" role="secondary" style={{ minWidth: 80, flexShrink: 0 }}>{name}</Text>
       <Text variant="mono" size="xs" numberOfLines={4} style={{ flexShrink: 1, flex: 1 }}>
         {fmtSigValue(value)}
       </Text>
@@ -54,17 +54,17 @@ function Eip712FieldRow({ name, value, sub }: { name: string; value: unknown; su
   );
 }
 
-function Eip712Detail({ req, sub, bg, border }: {
-  req: SigRequest; sub: string; bg: string; border: string;
+function Eip712Detail({ req, bg, border }: {
+  req: SigRequest; bg: string; border: string;
 }): React.ReactElement {
   const domain = req.eip712?.domain as { name?: unknown; chainId?: unknown } | undefined;
   const primaryType = req.eip712?.primaryType;
   const fields = req.eip712?.message ? Object.entries(req.eip712.message) : [];
   return (
     <Col radius="md" background={bg} padding={10} gap={6} style={{ borderWidth: 1, borderColor: border }}>
-      <Eip712DomainLine domain={domain} sub={sub} />
+      <Eip712DomainLine domain={domain} />
       {primaryType ? <Text weight="semibold" size="xs">{primaryType}</Text> : null}
-      {fields.map(([k, v]) => <Eip712FieldRow key={k} name={k} value={v} sub={sub} />)}
+      {fields.map(([k, v]) => <Eip712FieldRow key={k} name={k} value={v} />)}
     </Col>
   );
 }
@@ -97,8 +97,8 @@ function SigAction({ gated, dark, signing, onSign }: {
   );
 }
 
-export function SigRequestCard({ req, dark, sub, signing, onSign, consentAllowed }: {
-  req: SigRequest; dark: boolean; sub: string; signing?: boolean;
+export function SigRequestCard({ req, dark, signing, onSign, consentAllowed }: {
+  req: SigRequest; dark: boolean; signing?: boolean;
   onSign?: () => void;
   consentAllowed?: boolean;
 }): React.ReactElement {
@@ -116,7 +116,7 @@ export function SigRequestCard({ req, dark, sub, signing, onSign, consentAllowed
       </Row>
       {senderNote ? <SenderNote note={senderNote} bg={bg} border={border} /> : null}
       {req.kind === 'eip712' ? (
-        <Eip712Detail req={req} sub={sub} bg={bg} border={border} />
+        <Eip712Detail req={req} bg={bg} border={border} />
       ) : req.message ? (
         <MessageDetail message={req.message} bg={bg} border={border} />
       ) : null}
@@ -125,8 +125,8 @@ export function SigRequestCard({ req, dark, sub, signing, onSign, consentAllowed
   );
 }
 
-export function SigReferenceCard({ ref, dark, sub }: {
-  ref: SigReference; dark: boolean; sub: string;
+export function SigReferenceCard({ ref, dark }: {
+  ref: SigReference; dark: boolean;
 }): React.ReactElement {
   const short = (h?: string): string => (h && h.length > 14 ? `${h.slice(0, 8)}…${h.slice(-4)}` : (h ?? '')); const blockRadius = useBlockRadius();
   return (
@@ -135,8 +135,8 @@ export function SigReferenceCard({ ref, dark, sub }: {
         <Icon name="check" size={18} color={dark ? '#7fd07f' : '#2f9e44'}/>
         <Text weight="semibold" size="md" color={dark ? '#ffffff' : '#000000'}>Signed ✓</Text>
       </Row>
-      {ref.signer ? <Text size="xs" color={sub}>by {shortAddress(ref.signer)}</Text> : null}
-      <Text size="xs" color={sub}>{short(ref.signature)}</Text>
+      {ref.signer ? <Text size="xs" role="secondary">by {shortAddress(ref.signer)}</Text> : null}
+      <Text size="xs" role="secondary">{short(ref.signature)}</Text>
     </Box>
   );
 }

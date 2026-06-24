@@ -5,10 +5,11 @@ import { xmtpSendText, xmtpReply, xmtpSendPoll } from '../lib/xmtpSend';
 import { pollFallbackText } from '@stage-labs/client/xmtp/poll';
 import { useRequestCompose, type PaymentPayload, type SignPayload } from '../lib/useRequestCompose';
 import { useComposerAttach } from '../lib/useComposerAttach';
+import { useComposerMentions } from '../lib/useComposerMentions';
 import { useVoiceRecorder } from '../lib/useVoiceRecorder';
 import { stampAvatarUrl } from '../lib/xmtp';
 import { shortAddress } from '@stage-labs/client/identity/format';
-import { computeMentionQuery, applyMention, type MentionCandidate } from '@stage-labs/client/xmtp/mentions';
+import { type MentionCandidate } from '@stage-labs/client/xmtp/mentions';
 
 const palette = useKitPalette();
 
@@ -41,53 +42,19 @@ const {
   start: startRecording, stopAndSend: stopRecording, cancel: cancelRecording,
 } = useVoiceRecorder(() => props.line, m => { err.value = m; });
 
-const mentionMatches = ref<MentionCandidate[]>([]);
-const mentionRange = ref<{ start: number; end: number } | null>(null);
-const mentionActive = ref(0);
-
-function refreshMentions(): void {
-  const el = textarea.value;
-  if (!el) { mentionRange.value = null; return; }
-  const { matches, range } = computeMentionQuery(el.value, el.selectionStart, props.mentionCandidates);
-  mentionMatches.value = matches;
-  mentionRange.value = matches.length > 0 ? range : null;
-  if (mentionActive.value >= matches.length) mentionActive.value = 0;
-}
-
-function pickMention(c: MentionCandidate): void {
-  const range = mentionRange.value;
-  const el = textarea.value;
-  if (!range || !el) return;
-  const { next, cursor } = applyMention(el.value, range, c.address);
-  text.value = next;
-  mentionRange.value = null;
-  void nextTick(() => {
-    const el = textarea.value;
-    if (el) { el.focus(); el.setSelectionRange(cursor, cursor); }
-    autoGrow();
-  });
-}
-
-function moveMentionActive(delta: number): void {
-  const n = mentionMatches.value.length;
-  mentionActive.value = (mentionActive.value + delta + n) % n;
-}
-
-function onMentionKeydown(ev: KeyboardEvent): boolean {
-  if (ev.key === 'ArrowDown') { ev.preventDefault(); moveMentionActive(1); return true; }
-  if (ev.key === 'ArrowUp') { ev.preventDefault(); moveMentionActive(-1); return true; }
-  if (ev.key === 'Enter' || ev.key === 'Tab') {
-    ev.preventDefault();
-    const pick = mentionMatches.value[mentionActive.value];
-    if (pick) pickMention(pick);
-    return true;
-  }
-  if (ev.key === 'Escape') { ev.preventDefault(); mentionRange.value = null; return true; }
-  return false;
-}
+const {
+  matches: mentionMatches, range: mentionRange, active: mentionActive,
+  refresh: refreshMentions, pick: pickMention, onKeydown: onMentionKeydown,
+  isOpen: mentionsOpen, close: closeMentions,
+} = useComposerMentions(
+  () => textarea.value,
+  () => props.mentionCandidates,
+  next => { text.value = next; },
+  autoGrow,
+);
 
 function onComposerKeydown(ev: KeyboardEvent): void {
-  const open = mentionRange.value !== null && mentionMatches.value.length > 0;
+  const open = mentionsOpen();
   if (open && onMentionKeydown(ev)) return;
   if (!open && ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); void send(); }
 }
@@ -319,7 +286,7 @@ async function send(): Promise<void> {
         @keydown="onComposerKeydown"
         @keyup="refreshMentions"
         @click="refreshMentions"
-        @blur="mentionRange = null"
+        @blur="closeMentions"
         @paste="onPaste"
       />
       <Row class="flex items-center gap-1">

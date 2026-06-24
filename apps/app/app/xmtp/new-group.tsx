@@ -22,9 +22,9 @@ import { MemberPicker, useMemberPicker } from './MemberPicker';
 
 interface PickedImage { uri: string; mime: string; name: string }
 
-function GroupImageField({ image, creating, fg, sub, border, rowBg, onPick }: {
+function GroupImageField({ image, creating, fg, border, rowBg, onPick }: {
   image: PickedImage | null; creating: boolean;
-  fg: string; sub: string; border: string; rowBg: string; onPick: () => void;
+  fg: string; border: string; rowBg: string; onPick: () => void;
 }): React.ReactElement {
   return (
     <Box align="center" gap={8}>
@@ -39,7 +39,7 @@ function GroupImageField({ image, creating, fg, sub, border, rowBg, onPick }: {
 />
         ) : (
           <Box width={88} height={88} radius={Math.round(88 * 0.12)} surface="raised" align="center" justify="center" style={{ borderWidth: 1, borderColor: border }}>
-            <Text size="6xl" color={sub}>＋</Text>
+            <Text size="6xl" role="secondary">＋</Text>
           </Box>
         )}
         {creating && image ? (
@@ -48,7 +48,7 @@ function GroupImageField({ image, creating, fg, sub, border, rowBg, onPick }: {
           </Box>
         ) : null}
       </Pressable>
-      <Text size="xs" color={sub}>
+      <Text size="xs" role="secondary">
         {image ? 'Tap to change image' : 'Tap to add a group image'}
       </Text>
     </Box>
@@ -117,12 +117,12 @@ export default function NewGroup(): React.ReactElement {
         keyboardShouldPersistTaps="handled"
 >
         {}
-        <GroupImageField image={image} creating={creating} fg={fg} sub={sub} border={border} rowBg={rowBg}
+        <GroupImageField image={image} creating={creating} fg={fg} border={border} rowBg={rowBg}
           onPick={() => { void pickImage(); }}/>
 
         {}
         <Col gap={6}>
-          <Text size="xs" color={sub}>
+          <Text size="xs" role="secondary">
             Group name (optional)
           </Text>
           <Input

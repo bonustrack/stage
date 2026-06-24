@@ -16,12 +16,12 @@ export function ContactSuggestions({
   selected: Set<string>;
   onToggle: (contact: Contact) => void;
 }): React.ReactElement | null {
-  const { link: head, text: sub, border } = usePalette();
+  const { link: head, border } = usePalette();
   if (contacts.length === 0) return null;
 
   return (
     <Col gap={6}>
-      <Text size="xs" color={sub}>
+      <Text size="xs" role="secondary">
         Suggested contacts
       </Text>
       <Col gap={2}>
@@ -47,7 +47,7 @@ export function ContactSuggestions({
                   {c.name}
                 </Text>
                 {c.name !== shortAddress(c.address) && (
-                  <Text size="xs" numberOfLines={1} color={sub}>
+                  <Text size="xs" numberOfLines={1} role="secondary">
                     {shortAddress(c.address)}
                   </Text>
                 )}

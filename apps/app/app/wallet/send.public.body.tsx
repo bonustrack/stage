@@ -56,7 +56,7 @@ export function PublicSendBody({ token, initialTo, onFooter }: {
         onMax={p.onMax}
       />
 
-      <TxStatus sub={sub} txState={p.txState} txHash={p.txHash} txErr={p.txErr} />
+      <TxStatus txState={p.txState} txHash={p.txHash} txErr={p.txErr} />
     </>
   );
 }

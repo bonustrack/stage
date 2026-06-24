@@ -41,8 +41,8 @@ function TypographySections({ dark, head, sub, border }: GalleryPalette): React.
 
       <GallerySection name="Text" note="ChatKit value / size / weight / textAlign" {...sec} innerPadH={14} innerPadV={12}>
         <Text value="Body text - the default paragraph style."/>
-        <Text color={sub} value="Secondary text - muted supporting copy."/>
-        <Text color={sub} size="xs" value="Caption text - smallest label."/>
+        <Text role="secondary" value="Secondary text - muted supporting copy."/>
+        <Text role="secondary" size="xs" value="Caption text - smallest label."/>
         <Text weight="semibold" textAlign="center" value="Semibold, centered."/>
         <Text italic lineThrough value="Italic + line-through."/>
         <Text variant="mono" value="0xabc...1234"/>
@@ -137,7 +137,7 @@ function SurfaceSections({ dark, head, sub, border }: GalleryPalette): React.Rea
         <Row align="center">
           <Text color={head}>Start</Text>
           <Spacer/>
-          <Text color={sub}>End</Text>
+          <Text role="secondary">End</Text>
         </Row>
       </GallerySection>
     </>

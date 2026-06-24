@@ -14,15 +14,15 @@ const shortAddr = (a: string): string => (a.length> 12 ? `${a.slice(0, 6)}…${a
 export function UnshieldRecipient({ pal, eoa, network }: {
   pal: Pal; eoa: string | null; network: string;
 }): React.ReactElement {
-  const { head, sub, border } = pal;
+  const { head, border } = pal;
   return (
     <Box gap={6}>
-      <Text size="xs" color={sub}>TO YOUR PUBLIC WALLET</Text>
+      <Text size="xs" role="secondary">TO YOUR PUBLIC WALLET</Text>
       <Box surface="raised" radius="lg" padding={{ x: 14, y: 12 }} style={{ borderWidth: 1, borderColor: border }}>
         <Text weight="semibold" size="md" color={head}>
           {eoa ? shortAddr(eoa) : 'Loading address…'}
         </Text>
-        <Text size="xs" color={sub} style={{ marginTop: 2 }}>
+        <Text size="xs" role="secondary" style={{ marginTop: 2 }}>
           {`Unshields to your own ${network} address.`}
         </Text>
       </Box>
@@ -30,13 +30,12 @@ export function UnshieldRecipient({ pal, eoa, network }: {
   );
 }
 
-export function UnshieldPhaseLine({ pal, phase, txHash, err, bridgeOk, chainId }: {
-  pal: Pal; phase: Phase; txHash: string | null; err: string | null; bridgeOk: boolean; chainId: number;
+export function UnshieldPhaseLine({ phase, txHash, err, bridgeOk, chainId }: {
+  phase: Phase; txHash: string | null; err: string | null; bridgeOk: boolean; chainId: number;
 }): React.ReactElement | null {
-  const { sub } = pal;
   if (!bridgeOk) {
     return (
-      <Text size="xs" color={sub} style={{ paddingHorizontal: 4 }}>
+      <Text size="xs" role="secondary" style={{ paddingHorizontal: 4 }}>
         Unshielding needs the latest app build.
       </Text>
     );
@@ -44,9 +43,9 @@ export function UnshieldPhaseLine({ pal, phase, txHash, err, bridgeOk, chainId }
   return (
     <Box padding={{ x: 4 }} gap={4}>
       {phase === 'proving' ? (
-        <Text size="xs" color={sub}>Generating proof… (this can take ~10-30s)</Text>
+        <Text size="xs" role="secondary">Generating proof… (this can take ~10-30s)</Text>
       ) : phase === 'broadcasting' ? (
-        <Text size="xs" color={sub}>Broadcasting…</Text>
+        <Text size="xs" role="secondary">Broadcasting…</Text>
       ) : null}
       {txHash ? (
         <Pressable onPress={() => { void Linking.openURL(explorerTxUrl(chainId, txHash)); }} hitSlop={6}>

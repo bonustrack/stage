@@ -47,7 +47,7 @@ function PollOption({ opt, isOn, count, pct, multi, dark, sub, onPress }: {
         </Text>
       </Row>
       {opt.description ? (
-        <Text size="sm" color={sub} style={{ marginTop: 2 }}>
+        <Text size="sm" role="secondary" style={{ marginTop: 2 }}>
 
         </Text>
       ) : null}
@@ -71,7 +71,7 @@ function PollQuestionBlock({ q, qi, sub, dark, votes, own, onVote, openAnswers, 
   return (
     <Box gap={6} style={{ alignSelf: 'stretch' }}>
       {q.header ? (
-        <Text weight="semibold" size="xs" color={sub} style={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+        <Text weight="semibold" size="xs" role="secondary" style={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
           {q.header}{multi ? ' · multi-select' : ''}{q.open ? ' · open' : ''}
         </Text>
       ) : null}
@@ -87,7 +87,7 @@ function PollQuestionBlock({ q, qi, sub, dark, votes, own, onVote, openAnswers, 
         );
       })}
       {options.length > 0 ? (
-        <Text size="xs" color={sub} style={{ marginTop: 2 }}>
+        <Text size="xs" role="secondary" style={{ marginTop: 2 }}>
           {total} vote{total === 1 ? '' : 's'}{q.open ? ' · or type your own' : ''}
         </Text>
       ) : null}

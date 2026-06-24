@@ -33,7 +33,7 @@ export function ReplyBanner({
           {}
           <Icon name="reply" size={16} color={sub}/>
           <Text size="xl" numberOfLines={1} style={{ flex: 1 }}>
-            <Text size="xl" color={sub}>Replying to </Text>
+            <Text size="xl" role="secondary">Replying to </Text>
             <Text size="xl" color={nameColor}>
               {(sender ? getPeerName(sender) : undefined) ?? (sender ? shortAddress(sender) : 'message')}
             </Text>
@@ -49,9 +49,9 @@ export function ReplyBanner({
 }
 
 export function MentionPopup({
-  dark, head, sub, matches, onPick,
+  dark, head, matches, onPick,
 }: {
-  dark: boolean; head: string; sub: string;
+  dark: boolean; head: string;
   matches: { address: string; name: string; cacheBuster?: number }[];
   onPick: (c: { address: string; name: string }) => void;
 }): React.ReactElement {
@@ -76,7 +76,7 @@ export function MentionPopup({
           <Text weight="semibold" size="md" color={head} style={{ flex: 1 }} numberOfLines={1}>
             {c.name}
           </Text>
-          <Text size="2xs" color={sub} numberOfLines={1}>
+          <Text size="2xs" role="secondary" numberOfLines={1}>
             {shortAddress(c.address)}
           </Text>
         </Pressable>
@@ -146,7 +146,7 @@ export function RecordingBar({
         }),
       }}>
         <Icon name="arrowLeft" size={14} color={sub}/>
-        <Text size="xs" color={sub}>
+        <Text size="xs" role="secondary">
           Slide to cancel
         </Text>
       </Animated.View>
@@ -155,7 +155,7 @@ export function RecordingBar({
           <Box width={3} radius="2xs" height={Math.max(3, Math.round(lvl * 26))} background={head} margin={{ x: 1 }} key={i} style={{ opacity: 0.85 }}/>
         ))}
       </Row>
-      <Text size="xs" color={sub} style={{ minWidth: 40, textAlign: 'center' }}>
+      <Text size="xs" role="secondary" style={{ minWidth: 40, textAlign: 'center' }}>
         {Math.floor(recordSecs / 60)}:{(recordSecs % 60).toString().padStart(2, '0')}
       </Text>
     </Row>

@@ -36,7 +36,7 @@ export function NftsView({
   if (!nfts || nfts.length === 0) {
     return (
       <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center">
-        <Text size="md" color={sub}>
+        <Text size="md" role="secondary">
           There are no NFTs in this wallet.
         </Text>
       </Col>
@@ -68,7 +68,7 @@ export function NftsView({
               {nft.title}
             </Text>
             {nft.collection ? (
-              <Text size="xs" numberOfLines={1} color={sub}>
+              <Text size="xs" numberOfLines={1} role="secondary">
                 {nft.collection}
               </Text>
             ) : null}

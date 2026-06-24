@@ -4,8 +4,8 @@ import { Box } from '../layout';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useBlockRadius } from '../../lib/theme';
 
-export function GallerySection({ name, note, head, sub, border, framed = true, innerPadH, innerPadV, children }: {
-  name: string; note?: string; head: string; sub: string; border: string;
+export function GallerySection({ name, note, head, border, framed = true, innerPadH, innerPadV, children }: {
+  name: string; note?: string; head: string; border: string;
   framed?: boolean; innerPadH?: number; innerPadV?: number; children: React.ReactNode;
 }): React.ReactElement {
   const blockRadius = useBlockRadius();
@@ -13,7 +13,7 @@ export function GallerySection({ name, note, head, sub, border, framed = true, i
     <Box padding={{ x: 16, top: 22 }}>
       <Text weight="semibold" size="xl" color={head}>{name}</Text>
       {note ? (
-        <Text size="xs" color={sub} style={{ marginTop: 1 }}>{note}</Text>
+        <Text size="xs" role="secondary" style={{ marginTop: 1 }}>{note}</Text>
       ) : null}
       <Box padding={{ x: innerPadH, y: innerPadV }} margin={{ top: 12 }}
         

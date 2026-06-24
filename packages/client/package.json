@@ -35,6 +35,7 @@
     "./embed/detect": "./src/embed/detect.ts",
     "./stamp/resolve": "./src/stamp/resolve.ts",
     "./x402": "./src/x402/challenge.ts",
+    "./image/stripMetadata": "./src/image/stripMetadata.ts",
     "./api": "./src/api/index.ts",
     "./api/ens": "./src/api/ens.ts",
     "./api/etherscan": "./src/api/etherscan.ts",

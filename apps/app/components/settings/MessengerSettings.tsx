@@ -64,7 +64,7 @@ export function MessengerSettings(): React.ReactElement {
     <Col surface="surface" flex={1}>
       <SystemHeader title="Messenger" dark={dark} fg={fg} head={head} border={border}/>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
-        <Text size="xs" color={sub} style={{ paddingHorizontal: 16, paddingTop: 20 }}>
+        <Text size="xs" role="secondary" style={{ paddingHorizontal: 16, paddingTop: 20 }}>
           XMTP ACCOUNT
         </Text>
         {addr ? <CopyRow label="Your XMTP address" value={addr} display={shortAddress(addr)} c={c} /> : null}

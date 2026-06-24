@@ -62,7 +62,7 @@ function ComposerHeader(p: {
         />
       ) : null}
       {p.mentionRange && p.mentionMatches.length > 0 ? (
-        <MentionPopup dark={p.dark} head={p.head} sub={p.sub} matches={p.mentionMatches} onPick={p.onPickMention}/>
+        <MentionPopup dark={p.dark} head={p.head} matches={p.mentionMatches} onPick={p.onPickMention}/>
       ) : null}
       {p.pending.length > 0 ? (
         <PendingRow fg={p.fg} sub={p.sub} chipBg={p.chipBg} pending={p.pending} onRemove={p.onRemovePending} />

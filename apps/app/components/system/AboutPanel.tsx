@@ -93,7 +93,7 @@ export function AboutPanel({ dark, head, sub, border, rowBg }: {
         head={head}
       />
       <AboutRow label="Build profile" value={buildProfile} dark={dark} border={border} />
-      <Text color={sub} variant="caption" weight="medium" style={{ marginTop: 14 }}>
+      <Text role="secondary" variant="caption" weight="medium" style={{ marginTop: 14 }}>
         Commit shows "dev" only when the build could not resolve a git SHA. Tap it to open the commit on GitHub.
       </Text>
       </Box>

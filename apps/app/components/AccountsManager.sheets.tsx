@@ -25,13 +25,13 @@ export function ManageSheet({ manageRec, activeId, onClose, onSwitch, onExport, 
       {}
       <ListView dark={dark} style={{ marginHorizontal: -16 }}>
         {manageRec && manageRec.id !== activeId ? (
-          <SheetRow label="Switch to this account" head={p.head} sub={p.sub} dark={dark} onPress={() => { const id = manageRec.id; onClose(); onSwitch(id); }} />
+          <SheetRow label="Switch to this account" head={p.head} dark={dark} onPress={() => { const id = manageRec.id; onClose(); onSwitch(id); }} />
         ) : null}
         {manageRec && canExportPrivateKey(manageRec) ? (
-          <SheetRow label="Export private key" desc="Reveal + copy this account's key" head={p.head} sub={p.sub} dark={dark} onPress={() => { const id = manageRec.id; onClose(); onExport(id); }} />
+          <SheetRow label="Export private key" desc="Reveal + copy this account's key" head={p.head} dark={dark} onPress={() => { const id = manageRec.id; onClose(); onExport(id); }} />
         ) : null}
         {manageRec ? (
-          <SheetRow label="Remove account" desc="Delete from this device" danger head={p.head} sub={p.sub} dark={dark} onPress={() => { onRemove(manageRec); }} />
+          <SheetRow label="Remove account" desc="Delete from this device" danger head={p.head} dark={dark} onPress={() => { onRemove(manageRec); }} />
         ) : null}
       </ListView>
     </SheetModal>

@@ -28,7 +28,7 @@ function IntroLabelChips({ labels, fg }: {
 
 export function ConversationIntro({
   isGroup, peerAddr, groupName, groupImage, groupDescription, groupLabels,
-  convId, head, sub, fg, border, rowBg, onPressPeer,
+  convId, head, fg, border, rowBg, onPressPeer,
 }: {
   isGroup: boolean;
   peerAddr: string | null;
@@ -37,7 +37,7 @@ export function ConversationIntro({
   groupDescription: string;
   groupLabels: string[];
   convId: string;
-  head: string; sub: string; fg: string; border: string; rowBg: string;
+  head: string; fg: string; border: string; rowBg: string;
   onPressPeer: (address: string) => void;
 }): React.ReactElement | null {
   if (isGroup) {
@@ -57,7 +57,7 @@ export function ConversationIntro({
         </Text>
         <IntroLabelChips labels={groupLabels} fg={fg} rowBg={rowBg}/>
         {desc ? (
-          <Text size="4xl" color={sub} style={{ marginTop: 10, textAlign: 'left', lineHeight: 23 }}>
+          <Text size="4xl" role="secondary" style={{ marginTop: 10, textAlign: 'left', lineHeight: 23 }}>
             {desc}
           </Text>
         ) : null}
@@ -75,7 +75,7 @@ export function ConversationIntro({
       <Text weight="semibold" size="5xl" color={head} style={{ lineHeight: 30, marginTop: 12, flexShrink: 1 }}>
         {getPeerName(peerAddr) ?? shortAddress(peerAddr)}
       </Text>
-      <Text size="xs" color={sub} style={{ marginTop: 2 }} numberOfLines={1}>
+      <Text size="xs" role="secondary" style={{ marginTop: 2 }} numberOfLines={1}>
         {shortAddress(peerAddr)}
       </Text>
     </Pressable>

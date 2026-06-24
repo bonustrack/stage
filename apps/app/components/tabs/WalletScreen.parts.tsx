@@ -97,7 +97,7 @@ export const TokenRow = memo(function TokenRow({ r, head, sub, border, bg, onPre
           <Text weight="semibold" size="4xl" color={head} numberOfLines={1}>{r.name}</Text>
         </Row>
         <Row margin={{ top: 2 }} align="center" gap={6}>
-          <Text size="md" color={sub}>
+          <Text size="md" role="secondary">
             {r.priceUsd === null ? r.symbol : fmtUsd(r.priceUsd, r.priceUsd < 1 ? 4 : 2)}
           </Text>
           {changeText ? (
@@ -112,7 +112,7 @@ export const TokenRow = memo(function TokenRow({ r, head, sub, border, bg, onPre
         <Text weight="semibold" size="4xl" color={head}>
           {valueUsd === null ? '—' : fmtUsd(valueUsd)}
         </Text>
-        <Text size="md" color={sub} style={{ marginTop: 2 }}>
+        <Text size="md" role="secondary" style={{ marginTop: 2 }}>
           {`${fmtBalance(r.balance)} ${r.symbol}`}
         </Text>
       </Col>

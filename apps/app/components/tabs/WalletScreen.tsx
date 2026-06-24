@@ -81,8 +81,8 @@ function WalletTabBody({ tab, nftState, address, rows, privateRows, pending, err
   return <TokensList rows={rows} privateRows={privateRows} pending={pending} head={c.head} sub={c.sub} border={c.border} bg={c.bg}/>;
 }
 
-function WalletBalanceCard({ err, totalUsd, head, sub }: {
-  err: boolean; totalUsd: number | null; head: string; sub: string;
+function WalletBalanceCard({ err, totalUsd, head }: {
+  err: boolean; totalUsd: number | null; head: string;
 }): React.ReactElement {
   return (
     <Col padding={{ top: 4, bottom: 16 }} margin={{ x: 16 }} align="start">
@@ -93,7 +93,7 @@ function WalletBalanceCard({ err, totalUsd, head, sub }: {
       ) : (
         <Text weight="semibold" size="7xl" color={head}>
           {splitUsd(fmtUsd(totalUsd)).int}
-          <Text weight="semibold" size="7xl" color={sub}>{splitUsd(fmtUsd(totalUsd)).dec}</Text>
+          <Text weight="semibold" size="7xl" role="secondary">{splitUsd(fmtUsd(totalUsd)).dec}</Text>
         </Text>
       )}
     </Col>
@@ -146,7 +146,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
         <RefreshButton refreshing={refreshing} onRefresh={onRefresh} color={head}/>
       </Row>
       {}
-      <WalletBalanceCard err={!!err} totalUsd={totalUsd} head={head} sub={sub} />
+      <WalletBalanceCard err={!!err} totalUsd={totalUsd} head={head} />
 
       {}
       <Row margin={{ x: 16, top: 12 }} justify="start" gap={12}>

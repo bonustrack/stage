@@ -67,7 +67,7 @@ export function ActivityView({ address, head, sub, border, bg }: {
       <Col margin={{ x: 16 }}>
         {priv}
         <Col padding={{ y: 40 }} align="center">
-          <Text size="md" color={sub}>
+          <Text size="md" role="secondary">
             No transactions yet
           </Text>
         </Col>
@@ -124,11 +124,11 @@ function TxRow({ r, head, sub, border, bg }: {
         </Text>
         <Row margin={{ top: 2 }} align="center" gap={6}>
           <Box radius="xs" background={border} padding={{ x: 6, y: 1 }}>
-            <Text size="xs" color={sub} numberOfLines={1}>
+            <Text size="xs" role="secondary" numberOfLines={1}>
               {r.chainLabel}
             </Text>
           </Box>
-          <Text size="md" color={sub} style={{ flex: 1 }} numberOfLines={1}>
+          <Text size="md" role="secondary" style={{ flex: 1 }} numberOfLines={1}>
             {`${partyLabel} · ${relTime(r.timestamp)}`}
           </Text>
         </Row>

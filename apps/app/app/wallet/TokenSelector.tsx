@@ -89,7 +89,7 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
 
   return (
     <Box gap={6}>
-      <Text size="xs" color={sub}>{label}</Text>
+      <Text size="xs" role="secondary">{label}</Text>
       <Pressable
         onPress={() => { setOpen(true); }}
         style={({ pressed }) => ({
@@ -118,7 +118,7 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
               {value.symbol}
             </Text>
           </Row>
-          <Text size="xs" color={sub} numberOfLines={1}>
+          <Text size="xs" role="secondary" numberOfLines={1}>
             {selected ? `Balance: ${selected.balance}` : '—'}
           </Text>
         </Col>
@@ -134,7 +134,7 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
             <Spinner size={28} color={fg}/>
           </Row>
         ) : rows.length === 0 ? (
-          <Text size="md" color={sub} style={{ paddingVertical: 16 }}>
+          <Text size="md" role="secondary" style={{ paddingVertical: 16 }}>
             No tokens.
           </Text>
         ) : (
