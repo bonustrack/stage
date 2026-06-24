@@ -15,6 +15,7 @@
   "dependencies": {
     "@stage-labs/client": "workspace:*",
     "@stage-labs/kit": "workspace:*",
+    "@stage-labs/views": "workspace:*",
     "@zerodev/sdk": "5.5.10",
     "@zerodev/ecdsa-validator": "5.4.9",
     "@zerodev/weighted-ecdsa-validator": "5.4.4",

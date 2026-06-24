@@ -53,6 +53,29 @@ function as<T extends WidgetNode['type']>(node: WidgetNode): NodeOf<T> {
   return node as NodeOf<T>;
 }
 
+type LeafRenderer = (node: WidgetNode, ctx: RenderCtx) => ReactNode;
+
+const LEAF_RENDERERS: Partial<Record<WidgetNode['type'], LeafRenderer>> = {
+  Text: (node, ctx) => renderText(as<'Text'>(node), ctx),
+  Title: (node, ctx) => renderTitle(as<'Title'>(node), ctx),
+  Caption: (node, ctx) => renderCaption(as<'Caption'>(node), ctx),
+  Label: (node, ctx) => renderLabel(as<'Label'>(node), ctx),
+  Markdown: (node, ctx) => renderMarkdown(as<'Markdown'>(node), ctx),
+  Badge: (node) => renderBadge(as<'Badge'>(node)),
+  Icon: (node, ctx) => renderIcon(as<'Icon'>(node), ctx),
+  Image: (node) => renderImage(as<'Image'>(node)),
+  Divider: (node, ctx) => renderDivider(as<'Divider'>(node), ctx),
+  Spacer: (node) => renderSpacer(as<'Spacer'>(node)),
+  Button: (node, ctx) => renderButton(as<'Button'>(node), ctx),
+  Input: (node, ctx) => renderInput(as<'Input'>(node), ctx),
+  Textarea: (node, ctx) => renderTextarea(as<'Textarea'>(node), ctx),
+  Select: (node, ctx) => renderSelect(as<'Select'>(node), ctx),
+  Checkbox: (node, ctx) => renderCheckbox(as<'Checkbox'>(node), ctx),
+  RadioGroup: (node, ctx) => renderRadioGroup(as<'RadioGroup'>(node), ctx),
+  DatePicker: (node, ctx) => renderDatePicker(as<'DatePicker'>(node), ctx),
+  Chart: (node, ctx) => renderChart(as<'Chart'>(node), ctx),
+};
+
 function renderNode(node: WidgetNode, ctx: RenderCtx): ReactNode {
   if (isLayout(node)) return renderBox(node, ctx, renderNode);
   switch (node.type) {
@@ -64,46 +87,12 @@ function renderNode(node: WidgetNode, ctx: RenderCtx): ReactNode {
       return <Box>{renderList(basicChildren(node), ctx, renderNode)}</Box>;
     case 'Form':
       return renderFormNode(as<'Form'>(node), ctx);
-    case 'Text':
-      return renderText(as<'Text'>(node), ctx);
-    case 'Title':
-      return renderTitle(as<'Title'>(node), ctx);
-    case 'Caption':
-      return renderCaption(as<'Caption'>(node), ctx);
-    case 'Label':
-      return renderLabel(as<'Label'>(node), ctx);
-    case 'Markdown':
-      return renderMarkdown(as<'Markdown'>(node), ctx);
-    case 'Badge':
-      return renderBadge(as<'Badge'>(node));
-    case 'Icon':
-      return renderIcon(as<'Icon'>(node), ctx);
-    case 'Image':
-      return renderImage(as<'Image'>(node));
-    case 'Divider':
-      return renderDivider(as<'Divider'>(node), ctx);
-    case 'Spacer':
-      return renderSpacer(as<'Spacer'>(node));
-    case 'Button':
-      return renderButton(as<'Button'>(node), ctx);
-    case 'Input':
-      return renderInput(as<'Input'>(node), ctx);
-    case 'Textarea':
-      return renderTextarea(as<'Textarea'>(node), ctx);
-    case 'Select':
-      return renderSelect(as<'Select'>(node), ctx);
-    case 'Checkbox':
-      return renderCheckbox(as<'Checkbox'>(node), ctx);
-    case 'RadioGroup':
-      return renderRadioGroup(as<'RadioGroup'>(node), ctx);
-    case 'DatePicker':
-      return renderDatePicker(as<'DatePicker'>(node), ctx);
-    case 'Chart':
-      return renderChart(as<'Chart'>(node), ctx);
     case 'Transition':
       return renderTransition(as<'Transition'>(node), ctx);
-    default:
-      return renderUnknown(node, ctx);
+    default: {
+      const leaf = LEAF_RENDERERS[node.type];
+      return leaf ? leaf(node, ctx) : renderUnknown(node, ctx);
+    }
   }
 }
 
@@ -153,7 +142,9 @@ function FormHost(props: { node: FormNode; ctx: RenderCtx }): ReactNode {
       justify={resolveJustify(node.justify)}
       wrap={resolveWrap(node.wrap)}
       padding={node.padding}
-      onSubmit={() => submitForm(node.onSubmitAction, formCtx)}
+      onSubmit={() => {
+        submitForm(node.onSubmitAction, formCtx);
+      }}
     >
       {renderList(node.children, formCtx, renderNode)}
     </Form>

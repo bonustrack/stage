@@ -1,14 +1,20 @@
 
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { Col, Row } from '../layout';
+import { ChatKitRenderer } from '@stage-labs/kit/react-native/chatkit-renderer';
+import type {
+  BasicNode,
+  WidgetActionRegistry,
+  WidgetRoot,
+} from '@stage-labs/kit/chatkit';
+import { tokenRowBody, WALLET_TOKEN_PRESS } from '@stage-labs/views';
+import { Box, Col, Row } from '../layout';
 import { type AssetRow } from './WalletScreen.assets';
 import { TokenAvatar } from './WalletScreen.tokenAvatar';
-import { DANGER } from '../../lib/theme';
 
 import { fmtUsd, splitUsd, fmtBalance } from '@stage-labs/client/wallet/format';
 export { fmtUsd, splitUsd, fmtBalance };
@@ -67,56 +73,44 @@ export function WalletTabs({ tab, setTab, head, sub, border }: {
   );
 }
 
-function PrivateBadge({ sub }: { sub: string }): React.ReactElement {
-  const name: HeroIconName = 'shieldCheck';
-  return <Icon name={name} size={15} color={sub} />;
-}
-
-function tokenRowFields(r: AssetRow, sub: string): {
-  valueUsd: number | null; changeColor: string; changeText: string;
-} {
+function tokenRowNode(r: AssetRow): WidgetRoot {
   const valueUsd = r.priceUsd === null ? null : r.priceUsd * Number(r.balance);
-  const changeColor = r.change24h === null ? sub : r.change24h >= 0 ? '#22c55e' : DANGER;
+  const priceText = r.priceUsd === null ? r.symbol : fmtUsd(r.priceUsd, r.priceUsd < 1 ? 4 : 2);
   const changeText = r.change24h === null ? '' : `${r.change24h >= 0 ? '+' : ''}${r.change24h.toFixed(2)}%`;
-  return { valueUsd, changeColor, changeText };
+  const body: BasicNode = {
+    type: 'Basic',
+    children: [
+      tokenRowBody({
+        tokenId: `${r.chainId}:${r.symbol}`,
+        symbol: r.name,
+        name: priceText,
+        priceUsd: `${fmtBalance(r.balance)} ${r.symbol}`,
+        balance: valueUsd === null ? '—' : fmtUsd(valueUsd),
+        change24h: changeText,
+        logoUri: r.logoUrl,
+        isPrivate: r.isPrivate,
+        showAvatar: false,
+        trailingChevron: false,
+      }),
+    ],
+  };
+  return body;
 }
 
-export const TokenRow = memo(function TokenRow({ r, head, sub, border, bg, onPress }: { r: AssetRow; onPress?: () => void } & Omit<Palette, 'card'>): React.ReactElement {
-  const { valueUsd, changeColor, changeText } = tokenRowFields(r, sub);
+export const TokenRow = memo(function TokenRow({ r, border, bg, onPress }: { r: AssetRow; onPress?: () => void } & Omit<Palette, 'card'>): React.ReactElement {
+  const node = useMemo(() => tokenRowNode(r), [r]);
+  const registry: WidgetActionRegistry = useMemo(
+    () => ({ [WALLET_TOKEN_PRESS]: () => { onPress?.(); } }),
+    [onPress],
+  );
   return (
     <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}>
-    <Row padding={{ y: 14 }}
-      align="center" gap={12} 
->
-      {}
-      <TokenAvatar logoUrl={r.logoUrl} chainId={r.chainId} bg={bg} border={border}/>
-      {}
-      <Col minWidth={0} flex={1}>
-        <Row minWidth={0} align="center" gap={6}>
-          {r.isPrivate ? <PrivateBadge sub={sub} /> : null}
-          <Text weight="semibold" size="4xl" color={head} numberOfLines={1}>{r.name}</Text>
-        </Row>
-        <Row margin={{ top: 2 }} align="center" gap={6}>
-          <Text size="md" role="secondary">
-            {r.priceUsd === null ? r.symbol : fmtUsd(r.priceUsd, r.priceUsd < 1 ? 4 : 2)}
-          </Text>
-          {changeText ? (
-            <Text size="md" color={changeColor}>
-              {changeText}
-            </Text>
-          ) : null}
-        </Row>
-      </Col>
-      {}
-      <Col align="end">
-        <Text weight="semibold" size="4xl" color={head}>
-          {valueUsd === null ? '—' : fmtUsd(valueUsd)}
-        </Text>
-        <Text size="md" role="secondary" style={{ marginTop: 2 }}>
-          {`${fmtBalance(r.balance)} ${r.symbol}`}
-        </Text>
-      </Col>
-    </Row>
+      <Row padding={{ y: 14 }} align="center" gap={12}>
+        <TokenAvatar logoUrl={r.logoUrl} chainId={r.chainId} bg={bg} border={border} />
+        <Box flex={1}>
+          <ChatKitRenderer node={node} registry={registry} />
+        </Box>
+      </Row>
     </Pressable>
   );
 });

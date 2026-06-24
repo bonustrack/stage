@@ -265,7 +265,13 @@ function ListViewItemRow(props: {
       gap={toNumber(node.gap)}
       align={resolveItemAlign(node.align)}
       dark={ctx.dark}
-      onPress={node.onClickAction ? () => dispatch(node.onClickAction, ctx) : undefined}
+      onPress={
+        node.onClickAction
+          ? () => {
+              dispatch(node.onClickAction, ctx);
+            }
+          : undefined
+      }
     >
       {renderList(node.children, ctx, render)}
     </ListViewItem>
@@ -308,7 +314,12 @@ function cardAction(
   ctx: RenderCtx,
 ): { label: string; onPress: () => void } | undefined {
   if (value === undefined) return undefined;
-  return { label: value.label, onPress: () => dispatch(value.action, ctx) };
+  return {
+    label: value.label,
+    onPress: () => {
+      dispatch(value.action, ctx);
+    },
+  };
 }
 
 export function renderChart(node: ChartNode, ctx: RenderCtx): ReactNode {

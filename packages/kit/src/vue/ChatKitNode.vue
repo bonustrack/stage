@@ -43,6 +43,7 @@ import {
   type TextareaNode,
   type TextNode,
   type TitleNode,
+  type TransitionNode,
   type WidgetNode,
 } from '../chatkit';
 import {
@@ -91,9 +92,8 @@ function changeBool(name: string, value: boolean, action?: ActionConfig): void {
 }
 
 const children = computed<WidgetNode[]>(() => {
-  const node = props.node;
-  if ('children' in node && Array.isArray(node.children)) return node.children;
-  return [];
+  const maybe = (props.node as { children?: unknown }).children;
+  return Array.isArray(maybe) ? (maybe as WidgetNode[]) : [];
 });
 
 const boxNode = computed(
@@ -122,7 +122,7 @@ const listItemNode = computed(() => props.node as ListViewItemNode);
 const transitionChild = computed<WidgetNode | undefined>(() => {
   const node = props.node;
   if (node.type !== 'Transition') return undefined;
-  return Array.isArray(node.children) ? node.children[0] : node.children;
+  return (node as TransitionNode).children;
 });
 </script>
 

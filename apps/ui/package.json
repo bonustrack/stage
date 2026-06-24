@@ -12,6 +12,7 @@
   "dependencies": {
     "@stage-labs/client": "workspace:*",
     "@stage-labs/kit": "workspace:*",
+    "@stage-labs/views": "workspace:*",
     "@tanstack/vue-query": "^5.100.14",
     "@xmtp/browser-sdk": "^7.0.0",
     "@zerodev/sdk": "5.5.10",

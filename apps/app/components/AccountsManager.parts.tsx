@@ -2,44 +2,49 @@
 import { Modal } from 'react-native';
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Box, Col } from './layout';
-import { Avatar } from './Avatar';
+import { Box, Col, Row } from './layout';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
+import { ChatKitRenderer } from '@stage-labs/kit/react-native/chatkit-renderer';
+import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/chatkit';
+import { accountRow, ACCOUNT_PRESS } from '@stage-labs/views';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getPeerName } from '../lib/peerProfiles';
 import { shortAddress } from '../modules/messaging';
 import { type AccountRecord } from '../lib/accounts';
+import { stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { TYPE_LABEL } from './AccountsManager.helpers';
 import { DANGER } from '../lib/theme';
 
-export function AccountRow({ rec, onPress, onLongPress, topBorder, trailing, head, border }: {
+export function AccountRow({ rec, onPress, onLongPress, topBorder, trailing, border }: {
   rec: AccountRecord; onPress: () => void; onLongPress: () => void;
   topBorder: boolean; trailing: React.ReactNode;
-  head: string; border: string;
+  border: string;
 }): React.ReactElement {
+  const node: WidgetRoot = {
+    type: 'ListView',
+    children: [
+      accountRow({
+        accountId: rec.address,
+        avatarUri: stampAvatarUrl(rec.address, 40),
+        name: getPeerName(rec.address) ?? rec.label ?? shortAddress(rec.address),
+        address: `${shortAddress(rec.address)} · ${TYPE_LABEL[rec.type]}`,
+      }),
+    ],
+  };
+  const registry: WidgetActionRegistry = { [ACCOUNT_PRESS]: () => { onPress(); } };
   return (
     <Pressable
-      onPress={onPress}
       onLongPress={onLongPress}
       delayLongPress={300}
-      style={({ pressed }) => ({
-        paddingHorizontal: 14, paddingVertical: 12,
-        flexDirection: 'row', alignItems: 'center', gap: 12,
-        borderTopWidth: topBorder ? 1 : 0, borderTopColor: border,
-        backgroundColor: pressed ? border : 'transparent',
-      })}
+      style={{ borderTopWidth: topBorder ? 1 : 0, borderTopColor: border }}
 >
-      <Avatar address={rec.address} size={28} style={{ backgroundColor: border }}/>
-      <Col minWidth={0} flex={1}>
-        <Text weight="semibold" size="md" numberOfLines={1} color={head}>
-          {getPeerName(rec.address) ?? rec.label ?? shortAddress(rec.address)}
-        </Text>
-        <Text size="xs" numberOfLines={1} role="secondary" style={{ marginTop: 1 }}>
-          {shortAddress(rec.address)} · {TYPE_LABEL[rec.type]}
-        </Text>
-      </Col>
-      {trailing}
+      <Row align="center">
+        <Box flex={1}>
+          <ChatKitRenderer node={node} registry={registry} />
+        </Box>
+        {trailing}
+      </Row>
     </Pressable>
   );
 }

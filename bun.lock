@@ -26,6 +26,7 @@
         "@react-navigation/stack": "^7.9.3",
         "@stage-labs/client": "workspace:*",
         "@stage-labs/kit": "workspace:*",
+        "@stage-labs/views": "workspace:*",
         "@tanstack/react-query": "^5.100.14",
         "@xmtp/react-native-sdk": "^5.7.0",
         "@zerodev/ecdsa-validator": "5.4.9",
@@ -107,6 +108,7 @@
       "dependencies": {
         "@stage-labs/client": "workspace:*",
         "@stage-labs/kit": "workspace:*",
+        "@stage-labs/views": "workspace:*",
         "@tanstack/vue-query": "^5.100.14",
         "@xmtp/browser-sdk": "^7.0.0",
         "@zerodev/sdk": "5.5.10",
@@ -181,6 +183,16 @@
         "react-native-markdown-display": "*",
         "react-native-svg": "*",
         "vue": "*",
+      },
+    },
+    "packages/views": {
+      "name": "@stage-labs/views",
+      "version": "0.1.0-beta.0",
+      "dependencies": {
+        "@stage-labs/kit": "workspace:*",
+      },
+      "devDependencies": {
+        "@stage-labs/config": "workspace:*",
       },
     },
   },
@@ -1057,6 +1069,8 @@
     "@stage-labs/config": ["@stage-labs/config@workspace:packages/config"],
 
     "@stage-labs/kit": ["@stage-labs/kit@workspace:packages/kit"],
+
+    "@stage-labs/views": ["@stage-labs/views@workspace:packages/views"],
 
     "@szmarczak/http-timer": ["@szmarczak/http-timer@5.0.1", "", { "dependencies": { "defer-to-connect": "^2.0.1" } }, "sha512-+PmQX0PiAYPMeVYe237LJAYvOMYW1j2rH5YROyS3b4CTVJum34HfRvKvAzozHAQG0TnHNdUfY9nCeUyRAs//cw=="],
 

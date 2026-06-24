@@ -80,7 +80,7 @@ function numeric(value: number | string | undefined): number | undefined {
 type BoxSpacing = number | string | Spacing | undefined;
 
 function spacing(value: BoxLayoutBase['padding']): BoxSpacing {
-  return value as BoxSpacing;
+  return value;
 }
 
 export function boxProps(
