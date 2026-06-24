@@ -1,6 +1,3 @@
-/** Tests for the pre-sign simulation parse logic (lib/txSimulate). Pure log →
- *  asset-delta math (no RPC): given eth_simulateV1 call results, parseAssetChanges
- *  nets ERC-20 + native Transfer logs relative to the sender into in/out lists. */
 
 import { describe, expect, test } from 'bun:test';
 import {
@@ -8,20 +5,18 @@ import {
 } from '../lib/txSimulate.parse';
 
 const BASE = 8453;
-const USDC = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'; // 6 decimals on Base
+const USDC = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
 const ME = '0x20FE51A9229EEf2cF8Ad9E89d91CAb9312cF3b7A';
 const PEER = '0x0000000000000000000000000000000000000abc';
 const TRANSFER =
   '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 
-/** 32-byte left-padded address topic. */
 const topic = (a: string) => '0x' + a.toLowerCase().replace(/^0x/, '').padStart(64, '0');
-/** 32-byte uint data. */
 const u256 = (n: bigint) => '0x' + n.toString(16).padStart(64, '0');
 
 describe('formatAmount', () => {
   test('scales by decimals and trims zeros', () => {
-    expect(formatAmount(1_000_000n, 6)).toBe('1'); // 1 USDC
+    expect(formatAmount(1_000_000n, 6)).toBe('1');
     expect(formatAmount(1_500_000n, 6)).toBe('1.5');
     expect(formatAmount(0n, 18)).toBe('0');
   });
@@ -47,7 +42,6 @@ describe('humanizeRevert', () => {
 
 describe('decodeRevert', () => {
   test('Error(string) payload decodes + humanizes', () => {
-    // abi.encode("ERC20: transfer amount exceeds balance") with the Error selector
     const reason = 'ERC20: transfer amount exceeds balance';
     const len = reason.length;
     const hex = Buffer.from(reason, 'utf8').toString('hex').padEnd(64, '0');
@@ -61,7 +55,7 @@ describe('decodeRevert', () => {
 
 describe('insufficientEthReason', () => {
   test('have/need formatted with the native symbol', () => {
-    const r = insufficientEthReason(0n, 10n ** 17n, BASE); // have 0, need 0.1 ETH
+    const r = insufficientEthReason(0n, 10n ** 17n, BASE);
     expect(r).toBe('insufficient ETH (have 0, need 0.1)');
   });
 });
@@ -105,7 +99,7 @@ describe('parseAssetChanges', () => {
 
   test('plain native send folds top-level value as ETH OUT', () => {
     const calls = [{ status: '0x1', logs: [] }];
-    const { out } = parseAssetChanges(calls, ME, BASE, '0xde0b6b3a7640000'); // 1 ETH
+    const { out } = parseAssetChanges(calls, ME, BASE, '0xde0b6b3a7640000');
     expect(out).toHaveLength(1);
     expect(out[0]).toMatchObject({ symbol: 'ETH', amount: '1', decimals: 18 });
   });

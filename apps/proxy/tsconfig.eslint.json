@@ -1,7 +1,0 @@
-{
-  "extends": ["./tsconfig.json", "@stage-labs/config/tsconfig/eslint.json"],
-  "compilerOptions": {
-    "types": ["@cloudflare/workers-types", "node"]
-  },
-  "include": ["src/**/*.ts", "test/**/*.ts"]
-}

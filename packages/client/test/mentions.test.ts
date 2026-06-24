@@ -1,8 +1,3 @@
-/** Tests for the shared @mention parser. The wire format is a bare `@0x<40 hex>`
- *  token (an `@` directly followed by a full lowercase ETH address); web and
- *  mobile both encode/decode through these helpers so mentions interop. Covers
- *  body → segments parsing, mention formatting, member prefix/substring matching,
- *  and caret-driven query/insertion in the composer. */
 
 import { describe, expect, test } from 'bun:test';
 import {

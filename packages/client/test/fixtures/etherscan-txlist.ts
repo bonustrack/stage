@@ -1,7 +1,4 @@
-/** Recorded Etherscan v2 `txlist` response samples (trimmed to the rendered
- *  fields). Captured from real /v2/api?module=account&action=txlist bodies. */
 
-/** A normal success response with one outbound contract call. */
 export const okResponse = {
   status: '1',
   message: 'OK',
@@ -22,13 +19,10 @@ export const okResponse = {
   ],
 };
 
-/** The "no history" response: status 0, result is the message string. */
 export const emptyResponse = {
   status: '0',
   message: 'No transactions found',
   result: 'No transactions found',
 };
 
-/** A drifted/garbage envelope (e.g. an HTML error page parsed, or a proxy 200
- *  with a wrong body) - NOT the documented shape at all. */
 export const garbageResponse = { error: 'gateway timeout', code: 504 };

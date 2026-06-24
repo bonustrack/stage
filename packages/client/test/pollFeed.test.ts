@@ -1,7 +1,3 @@
-/** Unit tests for the shared poll-feed tally helpers (poll-feed.ts) that both
- *  the web app and the mobile app consume to turn a HistoryEntry feed into
- *  per-message poll tallies. Pins the codec/tally contract so polls interop
- *  across clients. */
 
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '../src/types';

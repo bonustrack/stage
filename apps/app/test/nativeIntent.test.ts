@@ -1,6 +1,3 @@
-/** Tests for the expo-router native-intent redirect that keeps dev-client /
- *  Expo-Go launch URLs off the +not-found ("unmatched route") screen while
- *  leaving every real deep link untouched. */
 
 import { describe, expect, test } from 'bun:test';
 import { redirectSystemPath } from '../app/+native-intent';

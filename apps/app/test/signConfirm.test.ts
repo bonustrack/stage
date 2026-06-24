@@ -1,9 +1,3 @@
-/** Tests for the in-chat SIGNATURE confirm/risk-decode (audit HIGH/#1).
- *
- *  The confirm sheet for a signature request must surface an explicit warning
- *  for a high-risk typed-data primaryType (Permit/Permit2/EIP-3009/Seaport),
- *  decode the empowered spender from the typed-data STRUCTURE, and NEVER present
- *  the peer-supplied `description` as the trusted summary. */
 
 import { describe, expect, test } from 'bun:test';
 import { deriveSignSummary, signConfirmMessage } from '../lib/signConfirm';
@@ -85,14 +79,11 @@ describe('signConfirmMessage - never trusts description', () => {
   test('high-risk message warns + names the spender, NOT the description as summary', () => {
     const s = deriveSignSummary(permit2Request('Sign in to claim your airdrop'));
     const msg = signConfirmMessage(s, 'Sign in to claim your airdrop');
-    // The trusted summary names the real authorization + spender.
     expect(msg).toMatch(/⚠️|grants/i);
     expect(msg).toMatch(/Permit2/);
     expect(msg).toContain(SPENDER);
-    // The phishing description is present ONLY behind an "untrusted" label.
     expect(msg).toMatch(/untrusted/i);
     expect(msg).toContain('Sign in to claim your airdrop');
-    // It must NOT lead with the phishing text as the headline.
     expect(msg.startsWith('Sign in to claim')).toBe(false);
   });
 
@@ -100,7 +91,7 @@ describe('signConfirmMessage - never trusts description', () => {
     const s = deriveSignSummary({ id: 's', kind: 'personal', message: 'gm' });
     const msg = signConfirmMessage(s, 'totally safe trust me');
     expect(msg).toMatch(/Sign this message/);
-    expect(msg).toMatch(/"gm"/); // the literal content being signed, not just a label
+    expect(msg).toMatch(/"gm"/);
     expect(msg).toMatch(/untrusted/i);
   });
 });

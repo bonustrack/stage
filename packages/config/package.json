@@ -36,7 +36,6 @@
     "./knip": "./knip/index.js",
     "./madge": "./madge/index.js",
     "./tsconfig/base.json": "./tsconfig/base.json",
-    "./tsconfig/eslint.json": "./tsconfig/eslint.json",
     "./tsconfig/react-native.json": "./tsconfig/react-native.json",
     "./tsconfig/vue.json": "./tsconfig/vue.json"
   },

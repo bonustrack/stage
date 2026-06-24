@@ -1,9 +1,21 @@
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from '@stage-labs/config';
+import { reactNative } from './apps/app/eslint.js';
+import { kitEslint } from './packages/kit/eslint.js';
+import { uiKitOnly } from './apps/ui/eslint.js';
+
+const ROOT_DIR = fileURLToPath(new URL('.', import.meta.url));
+
+const vuePlugin = await import('eslint-plugin-vue').then((m) => m.default ?? m);
+const vueParser = await import('vue-eslint-parser').then((m) => m.default ?? m);
+
+const kitVueOptions = { vueParser, vuePlugin, rootDir: ROOT_DIR };
 
 export default defineConfig({
   workspaces: {
     '.': {
       type: 'library',
+      eslint: { preset: 'none' },
       knip: {
         kind: 'scripts',
         entry: ['scripts/**/*.{mjs,js,sh}'],
@@ -12,9 +24,10 @@ export default defineConfig({
     },
     'apps/app': {
       type: 'react-native',
+      eslint: { preset: 'none', extends: reactNative() },
       knip: {
         entry: [
-          'eslint.mjs',
+          'eslint.js',
           'app/**/*.{ts,tsx}',
           'babel.config.js',
           'modules/**/*.{ts,tsx}',
@@ -40,6 +53,7 @@ export default defineConfig({
     },
     'apps/ui': {
       type: 'vue',
+      eslint: { extends: uiKitOnly(vuePlugin) },
     },
     'apps/proxy': {
       type: 'worker',
@@ -52,10 +66,12 @@ export default defineConfig({
     'packages/kit': {
       type: 'library',
       vue: true,
+      eslint: { preset: 'none', extends: kitEslint(kitVueOptions) },
       knip: { entry: ['eslint.js'], vue: true },
     },
     'packages/config': {
       type: 'library',
+      eslint: { preset: 'none' },
       knip: {
         entry: ['eslint/*.js', 'knip/*.js', 'bin/*.js'],
         project: ['**/*.js'],

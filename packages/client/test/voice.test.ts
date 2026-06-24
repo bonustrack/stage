@@ -1,7 +1,3 @@
-/** Unit tests for the shared voice-note helpers (voice.ts) consumed by both the
- *  web app and the mobile app. Pins the wire-format details (MIME/extension
- *  mapping, filename shape) and the waveform-bar math so voice notes render
- *  consistently across clients. */
 
 import { describe, expect, test } from 'bun:test';
 import {

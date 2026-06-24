@@ -1,6 +1,3 @@
-/** Tests for multi-link card extraction in message bubbles. The bubble renders
- *  one card per card-generating link; this pure helper drives that, so it's run
- *  on every bubble render and must stay correct + bounded. */
 
 import { describe, expect, test } from 'bun:test';
 import { cardLinksOf, MAX_CARDS } from '../lib/cardLinks';
@@ -46,8 +43,6 @@ describe('cardLinksOf', () => {
     expect(cardLinksOf(links)).toHaveLength(MAX_CARDS);
   });
 
-  /** Scheme links (metro:// and stage://) must yield the SAME card as their https
-   *  equivalents — the app ships under both brands and both schemes. */
   test('stage:// and metro:// channel links each render a channel card', () => {
     const cards = cardLinksOf(
       'stage://xmtp/47bf58a8f56cad829b2263797a7e25e4 and metro://xmtp/47bf58a8f56cad829b2263797a7e25e4',
@@ -61,7 +56,6 @@ describe('cardLinksOf', () => {
     expect(cardLinksOf(`https://metro.box/user/${addr}`)[0]).toMatchObject({ kind: 'dm' });
   });
 
-  /** A user link mid-sentence (not the whole body) still produces its card. */
   test('detects a stage.box user link surrounded by text', () => {
     const addr = '0x0bA043c6F25085C68042bad079c29bD8f16a651A';
     const cards = cardLinksOf(`check out https://stage.box/user/${addr} when you have a sec`);
@@ -69,7 +63,6 @@ describe('cardLinksOf', () => {
     expect(cards[0]).toMatchObject({ kind: 'dm' });
   });
 
-  /** Newline-separated multi-link body: each link on its own line is its own card. */
   test('handles newline-separated links (two github + a user link)', () => {
     const text = [
       'Test 1 - two GitHub links + a user link:',
@@ -80,8 +73,6 @@ describe('cardLinksOf', () => {
     expect(cardLinksOf(text).map(c => c.kind)).toEqual(['github', 'github', 'dm']);
   });
 
-  /** The https preview-launcher form (?u=<encoded expo url>) is a preview card,
-   *  same as the metro:// expo-development-client deep link. */
   test('detects the https preview-launcher deep link', () => {
     const text = [
       'Test 2 - mixed: deployment + channel + GitHub:',
@@ -92,25 +83,17 @@ describe('cardLinksOf', () => {
     expect(cardLinksOf(text).map(c => c.kind)).toEqual(['preview', 'channel', 'github']);
   });
 
-  /** A plain http(s) link with no special detector match becomes a generic
-   *  OpenGraph preview card (metadata fetched client-side via the proxy). */
   test('a plain web link is a generic preview card', () => {
     const cards = cardLinksOf('read this https://www.bbc.com/news/article-123 great piece');
     expect(cards).toHaveLength(1);
     expect(cards[0]).toMatchObject({ kind: 'generic', url: 'https://www.bbc.com/news/article-123' });
   });
 
-  /** Trailing sentence punctuation the greedy token match swallows is stripped
-   *  from the generic card url so the preview fetch + tap target are clean. */
   test('strips trailing punctuation from a generic link url', () => {
     const cards = cardLinksOf('see (https://example.com/page).');
     expect(cards[0]).toMatchObject({ kind: 'generic', url: 'https://example.com/page' });
   });
 
-  /** Generic cards coexist with special cards under the same MAX_CARDS cap and
-   *  appearance order. */
-  /** Angle-bracket-wrapped links produce NO card (Discord/Slack convention for
-   *  "linkify but suppress preview"). They stay as plain tappable text. */
   test('suppresses a card for an angle-bracket-wrapped generic link', () => {
     expect(cardLinksOf('look at <https://example.com/page> ok')).toEqual([]);
     expect(cardLinksOf('<https://www.bbc.com/news/article-123>')).toEqual([]);
@@ -121,7 +104,6 @@ describe('cardLinksOf', () => {
     expect(cardLinksOf('<metro://xmtp/47bf58a8f56cad829b2263797a7e25e4>')).toEqual([]);
   });
 
-  /** A bracketed link is skipped but a bare link in the same message still cards. */
   test('mixed <bracketed> + bare link: only the bare link cards', () => {
     const text = 'hide <https://example.com/secret> but show https://github.com/bonustrack/metro';
     const cards = cardLinksOf(text);
@@ -129,8 +111,6 @@ describe('cardLinksOf', () => {
     expect(cards[0]).toMatchObject({ kind: 'github', url: 'https://github.com/bonustrack/metro' });
   });
 
-  /** Only a fully-wrapped link is suppressed: a leading `<` without a trailing
-   *  `>` (or vice versa) is not the suppression convention, so the card stays. */
   test('a lone leading or trailing angle bracket does not suppress', () => {
     expect(cardLinksOf('x <https://example.com/page ok')[0]).toMatchObject({ kind: 'generic' });
     expect(cardLinksOf('x https://example.com/page> ok')[0]).toMatchObject({ kind: 'generic' });

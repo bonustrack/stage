@@ -1,5 +1,3 @@
-/** Tx-request card wording: transfer vs contract-call action labels + the
- *  humanizer. Pure, no network — mirrors what TxRequestCard renders. */
 import { describe, expect, test } from 'bun:test';
 import {
   isTransferRequest, humanizeAction, txActionLabel,

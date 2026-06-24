@@ -1,6 +1,3 @@
-/** Unit tests for the framework-agnostic signature-request payload helpers
- *  used by both web and mobile fulfillment: typed-data construction (strip
- *  EIP712Domain), personal-message extraction, and reference validation. */
 
 import { describe, expect, test } from 'bun:test';
 import {

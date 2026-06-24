@@ -1,34 +1,13 @@
-/** Plugin-config assertion tests for the Railgun / nodejs-mobile native build.
- *
- *  WHY: the embedded Node runtime only boots on a device if five build-config
- *  details are EXACTLY right, and each was a multi-hour on-device debugging saga
- *  (see plugins/withNodejsMobile.js + nodejsMobileConfig.js comments):
- *    1. packagingOptions.jniLibs.pickFirst 'lib/**​/libnode.so' - else the per-ABI
- *       merge fails on the duplicate libnode.so the module bundles.
- *    2. libc++_shared.so is NOT pick-first - picking it could shadow the STL
- *       XMTP's Rust MLS lib was built against -> instant crash at XMTP.create.
- *    3. aapt ignoreAssetsPattern '.*:*~' - else aapt drops _-prefixed assets the
- *       file.list references -> "Node assets copy failed" launch crash.
- *    4. android:extractNativeLibs=true - else libnode.so stays compressed and
- *       System.loadLibrary("node") fails -> SIGABRT on launch.
- *    5. gradle org.gradle.jvmargs -Xmx6144m - else R8/signing OOMs the build.
- *
- *  A silent edit to any of these reverts a fix. We test the PURE transforms
- *  (plugins/nodejsMobileConfig.js - no @expo/config-plugins runtime needed) so
- *  CI catches a regression instead of a fresh APK. */
 
 import { createRequire } from 'node:module';
 import { describe, expect, test } from 'bun:test';
 
-/** The Expo config-plugin helper module's public surface (plain CJS). */
 interface NodejsMobileConfig {
   transformAppBuildGradle(src: string): string;
   setExtractNativeLibs(m: { application?: { $?: Record<string, string> }[] }): unknown;
   setGradleMemory(p: { type: string; key: string; value: string }[]): unknown;
 }
 
-// Plain CJS config-plugin helper; load it from this ESM test via createRequire
-// instead of the banned bare `require`.
 const requireCjs = createRequire(import.meta.url);
 const cfg = requireCjs('../plugins/nodejsMobileConfig.js') as NodejsMobileConfig;
 
@@ -64,7 +43,6 @@ describe('app build.gradle transform', () => {
   });
 
   test('falls back to appending androidResources when template has none', () => {
-    // real prebuild output ends with a trailing newline after the android{} close
     const bare = ['android {', '    namespace "x"', '}', ''].join('\n');
     const o = cfg.transformAppBuildGradle(bare);
     expect(o).toContain("ignoreAssetsPattern '.*:*~'");

@@ -1,6 +1,3 @@
-/** Tests for on-chain send amount validation. This guards the signing path:
- *  the value we validate MUST be the value we sign, and confusing forms must be
- *  rejected cleanly before a tx is ever broadcast. */
 
 import { describe, expect, test } from 'bun:test';
 import { parseUnits } from 'viem';
@@ -14,7 +11,6 @@ describe('parseAmount', () => {
   });
 
   test('handles high-precision / tiny values exactly (no float rounding)', () => {
-    // A value Number() cannot represent precisely; guard + signed value agree.
     expect(parseAmount('0.000000000000000001', 18)).toBe(1n);
     expect(parseAmount('123456789.123456789', 18)).toBe(parseUnits('123456789.123456789', 18));
   });
@@ -42,7 +38,6 @@ describe('parseAmount', () => {
   });
 
   test('rejects more fraction digits than token decimals', () => {
-    // parseUnits throws on excess precision; we surface a clean error.
     expect(() => parseAmount('1.1234567', 6)).toThrow('Invalid amount');
   });
 });

@@ -1,7 +1,3 @@
-/** Tests for expo dev-client preview deep-link detection. The PR-preview link
- *  arrives either as an app-scheme dev-client link (metro:// or stage://) or as
- *  the https preview-launcher form (?u=<encoded expo url>); both must surface the
- *  same "Open preview build" card with the wrapped EAS Update group id. */
 
 import { describe, expect, test } from 'bun:test';
 import { previewLinkOf } from '../lib/previewLinkDetect';

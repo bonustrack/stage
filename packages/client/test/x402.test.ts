@@ -1,12 +1,7 @@
-/** Tests for the shared x402 challenge parser (SIMP1). This is the single
- *  source of truth imported by both the link-preview proxy and the app, so it
- *  must accept both v1 (`maxAmountRequired`) and v2 (`amount`) wire shapes and
- *  degrade gracefully on junk. */
 
 import { describe, expect, test } from 'bun:test';
 import { parseX402Challenge, normaliseAccept } from '../src/x402/challenge';
 
-/** Assert non-null and narrow for the type checker (mirrors the toBeNull check). */
 function assertPresent<T>(value: T | null | undefined): T {
   if (value === null || value === undefined) throw new Error('expected a value, got null/undefined');
   return value;

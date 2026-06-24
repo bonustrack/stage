@@ -1,7 +1,3 @@
-/** Boundary tests for the Etherscan response schema. The live `fetchActivity`
- *  is network-bound, so we test the PURE seam it now routes through:
- *  `parseEtherscanResponse`. Asserts the documented success + empty shapes pass,
- *  and a garbage envelope THROWS loudly instead of being cast through. */
 
 import { describe, expect, test } from 'bun:test';
 import { parseEtherscanResponse } from '../src/api/etherscan.schema';

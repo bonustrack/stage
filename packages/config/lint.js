@@ -9,6 +9,8 @@ import {
   QUOTES,
 } from './eslint/base.js';
 
+const DEFAULT_TEST_FILES = ['**/test/**', '**/*.{test,spec}.{ts,tsx}', '**/*.test.*'];
+
 function prefixGlob(dir, glob) {
   if (dir === '.') return glob;
   if (glob.startsWith('!')) return '!' + prefixGlob(dir, glob.slice(1));
@@ -23,6 +25,8 @@ function scopeBlock(dir, block) {
   }
   if (Array.isArray(block.files)) {
     out.files = block.files.map((g) => prefixGlob(dir, g));
+  } else if (!Array.isArray(block.ignores)) {
+    out.files = [prefixGlob(dir, '**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs,vue}')];
   }
   return out;
 }
@@ -43,7 +47,7 @@ async function loadVueToolchain() {
 function libraryPreset(rootDir, files) {
   return [
     baseIgnores(),
-    { files, languageOptions: typeCheckedLanguageOptions(rootDir) },
+    { files: ['**/*.{ts,tsx}'], languageOptions: typeCheckedLanguageOptions(rootDir) },
     ...recommended,
     strictTsBlock({ files, tsconfigRootDir: rootDir }),
   ];
@@ -72,8 +76,27 @@ export async function buildLintConfig(stageConfig, cwd) {
   }
 
   for (const [path, workspace] of entries) {
-    const preset = await presetFor(workspace, rootDir, vueToolchain);
-    config.push(...scopePreset(path, preset));
+    const wsEslint = workspace.eslint ?? {};
+    if (Array.isArray(wsEslint.ignores) && wsEslint.ignores.length > 0) {
+      config.push({ ignores: wsEslint.ignores.map((g) => prefixGlob(path, g)) });
+    }
+    const hasExtends = Array.isArray(wsEslint.extends) && wsEslint.extends.length > 0;
+    if (wsEslint.preset === 'none') {
+      if (hasExtends && path !== '.') {
+        config.push(
+          scopeBlock(path, { files: ['**/*.{ts,tsx}'], languageOptions: typeCheckedLanguageOptions(rootDir) }),
+        );
+      }
+    } else {
+      const preset = await presetFor(workspace, rootDir, vueToolchain);
+      config.push(...scopePreset(path, preset));
+    }
+    if (Array.isArray(wsEslint.extends) && wsEslint.extends.length > 0) {
+      config.push(...scopePreset(path, wsEslint.extends));
+    }
+    if (wsEslint.rules && typeof wsEslint.rules === 'object') {
+      config.push(scopeBlock(path, { files: ['**/*.{ts,tsx,vue}'], rules: wsEslint.rules }));
+    }
   }
 
   if (Array.isArray(repoEslint.extends)) {
@@ -90,6 +113,17 @@ export async function buildLintConfig(stageConfig, cwd) {
   if (repoEslint.rules && typeof repoEslint.rules === 'object') {
     config.push({ rules: repoEslint.rules });
   }
+
+  const testFiles =
+    Array.isArray(repoEslint.testFiles) && repoEslint.testFiles.length > 0
+      ? repoEslint.testFiles
+      : DEFAULT_TEST_FILES;
+  config.push({
+    files: testFiles,
+    languageOptions: { parserOptions: { projectService: false, project: false } },
+    plugins: commentPlugins,
+    rules: { ...tseslint.configs.disableTypeChecked.rules, ...COMMENT_RULES, quotes: QUOTES },
+  });
 
   return config;
 }

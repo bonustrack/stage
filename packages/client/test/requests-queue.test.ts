@@ -1,8 +1,3 @@
-/** Unit tests for the shared requests-queue aggregation (requests-queue.ts)
- *  consumed by both the web app and the mobile app. Pins how the unified
- *  /proposals inbox is derived from conversation feeds + message-request
- *  views: which content types map to which RequestKind, that already-voted
- *  polls drop out of the queue, and that the queue is sorted newest-first. */
 
 import { describe, expect, test } from 'bun:test';
 import {

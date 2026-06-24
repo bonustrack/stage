@@ -1,5 +1,0 @@
-{
-  "$schema": "https://json.schemastore.org/tsconfig",
-  "_comment": "Base for lint-only TS projects. A tsconfig.eslint.json extends this together with the package's own tsconfig.json so type-aware ESLint (parserOptions.project) has type information for the test suite too, not just src. It is NOT used by `tsc --noEmit` (the typecheck task), which keeps the tighter src-only include. Each project must restate its full `include` (src + test/**) here because, with an extends array, a config's own `include` REPLACES the inherited one rather than merging.",
-  "include": ["test/**/*.ts", "test/**/*.tsx"]
-}

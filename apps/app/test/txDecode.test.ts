@@ -1,10 +1,4 @@
-/** Anti-spoof warning logic for the decoded-call card (txDecode.spoofWarning).
- *  Pure + synchronous — exercises the trust-the-decode-not-the-description rules
- *  without any network.
- *
- *  Plus decodeCall (async, network-backed) with a mocked fetch — covers the
- *  selector-not-in-ABI mismatch detection that is the core of this card's safety. */
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
+import { afterEach, describe, expect, test } from 'bun:test';
 import { encodeFunctionData, parseAbi } from 'viem';
 import { decodeCall, spoofWarning, type DecodedCall } from '../lib/txDecode';
 
@@ -52,26 +46,18 @@ describe('spoofWarning', () => {
   });
 });
 
-// --- decodeCall: selector-not-in-ABI detection -------------------------------
-// Gnosis Guild Poster: deployed contract only has post(string,string). A tx using
-// the post(string) selector (0x8ee93cf3) must be flagged as a mismatch, NOT decoded
-// calmly via 4byte (which knows post(string) generically) - that tx reverts on-chain.
 const POSTER_ABI = parseAbi([
   'function post(string content, string tag)',
 ]);
 const postStringStringData = encodeFunctionData({
   abi: POSTER_ABI, functionName: 'post', args: ['hello', 'metro'],
 });
-// 0x8ee93cf3 = selector of post(string); valid ABI-encoded calldata for that sig.
 const postStringData = encodeFunctionData({
   abi: parseAbi(['function post(string content)']), functionName: 'post', args: ['hello'],
 });
 
 type FetchMock = (url: string) => { ok: boolean; json: () => Promise<unknown> };
 function mockFetch(impl: FetchMock): void {
-  // Build a value with fetch's real signature, narrowing the request input to
-  // the URL string the decoder always passes, and widening the partial mock
-  // result to Response (only `ok`/`json` are read by the code under test).
   const mocked: typeof globalThis.fetch = (input) => {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
     return Promise.resolve(impl(url) as unknown as Response);
@@ -88,7 +74,6 @@ const sourcifyHit = (url: string) => ({
 });
 
 describe('decodeCall selector mismatch detection', () => {
-  beforeEach(() => { /* fresh module caches via unique addresses per test */ });
   afterEach(() => { globalThis.fetch = realFetch; });
 
   test('(a) verified contract + valid selector -> decoded sourcify, no warning', async () => {
@@ -104,8 +89,8 @@ describe('decodeCall selector mismatch detection', () => {
     mockFetch(sourcifyHit);
     const r = await decodeCall('0x000000000000000000000000000000000000aaa2', postStringData, 1);
     expect(r.source).toBe('mismatch');
-    expect(r.decoded).toBe(false); // NOT a confident decode
-    expect(r.args).toHaveLength(0); // no fabricated args
+    expect(r.decoded).toBe(false);
+    expect(r.args).toHaveLength(0);
     expect(r.selector).toBe('0x8ee93cf3');
     const w = spoofWarning(r, 'post a message');
     expect(w).toMatch(/does not exist on this verified contract/i);

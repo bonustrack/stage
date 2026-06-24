@@ -27,10 +27,9 @@ void test('rejects IPv4-mapped IPv6 - dotted-quad form', () => {
 });
 
 void test('rejects IPv4-mapped IPv6 - packed hex form', () => {
-  // ::ffff:7f00:1 == 127.0.0.1 ; ::ffff:a00:1 == 10.0.0.1
   assert.equal(isPrivateIp('::ffff:7f00:1'), true);
   assert.equal(isPrivateIp('::ffff:a00:1'), true);
-  assert.equal(isPrivateIp('::ffff:c0a8:1'), true); // 192.168.0.1
+  assert.equal(isPrivateIp('::ffff:c0a8:1'), true);
   assert.throws(() => assertPublicUrl('http://[::ffff:7f00:1]/'), SsrfError);
 });
 
@@ -43,6 +42,5 @@ void test('rejects other private IPv6', () => {
 void test('allows a normal public URL', () => {
   const u = assertPublicUrl('https://example.com/page?a=1');
   assert.equal(u.hostname, 'example.com');
-  // a public IPv4-mapped address should NOT be flagged private
-  assert.equal(isPrivateIp('::ffff:0808:0808'), false); // 8.8.8.8
+  assert.equal(isPrivateIp('::ffff:0808:0808'), false);
 });

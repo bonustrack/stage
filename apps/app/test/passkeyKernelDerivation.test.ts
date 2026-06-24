@@ -1,38 +1,3 @@
-/** PASSKEY KERNEL DERIVATION + DEPLOY-INITCODE INVARIANTS (behavioral, pure-JS CI).
- *
- *  These tests build REAL @zerodev Kernel accounts (passkey-sudo and ECDSA-sudo)
- *  and assert the on-chain address-derivation facts the whole passkey-wallet
- *  design rests on. They run offline: createKernelAccount with `index` computes
- *  the counterfactual CREATE2 address locally (no getSenderAddress RPC), and the
- *  passkey/ECDSA validators only call getChainId, which viem serves from the
- *  chain config. The on-device WebAuthn assertion is stubbed (signMessageCallback)
- *  and never invoked during construction.
- *
- *  WHAT THESE LOCK (against the regressions Less hit):
- *    1. The passkey-sudo Kernel address is DETERMINISTIC for a given stored
- *       pubkey + index (so a record's rec.address is reproducible on every launch
- *       without re-registering the credential).
- *    2. The passkey-sudo address DIFFERS from the ECDSA-sudo address at the SAME
- *       index. This is the root fact behind two design choices:
- *         - at CREATE, the passkey IS the sudo, so the address is passkey-derived
- *           and rec.address == the deploy initCode address (no override, first
- *           userOp deploys correctly, NO enable step).
- *         - on ENABLE (passkey added to an ECDSA-derived account), pinning a
- *           passkey-sudo Kernel to the ECDSA address is UNSATISFIABLE: its deploy
- *           initCode would CREATE2 to a different address -> meta-factory
- *           `Unauthorized`. So enable deploys with the ECDSA initCode (address
- *           matches) then swaps sudo on-chain.
- *    3. A passkey-sudo Kernel pinned (address override) to a foreign address STILL
- *       emits passkey initCode in getFactoryArgs -> proves the "pin a passkey
- *       Kernel to the ECDSA address" shortcut is broken (it would deploy at the
- *       wrong address). kernelForRecord therefore only pins for an ALREADY-DEPLOYED
- *       enable-upgraded account (signing-only, never deploys).
- *
- *  What this canNOT cover (off-device only): the real WebAuthn create()/get()
- *  prompt and the actual on-chain deploy receipt. The signMessageCallback contract
- *  ((message, rpID, chainId, allowCredentials)) is asserted in
- *  passkeyCallbackContract.test.ts; the source-level signer routing in
- *  passkeyOnlySigner.test.ts. */
 
 import { beforeAll, describe, expect, test } from 'bun:test';
 import { createPublicClient, http } from 'viem';
@@ -44,22 +9,14 @@ import { PasskeyValidatorContractVersion, toPasskeyValidator } from '@zerodev/pa
 import { mnemonicToAccount } from 'viem/accounts';
 
 const ENTRY_POINT = getEntryPoint('0.7');
-/** @zerodev's createKernelAccount resolves the counterfactual address via an
- *  on-chain `getSenderAddress` eth_call (there is no local CREATE2 path), so a
- *  Base RPC is required to derive an address. We use the public Base endpoint
- *  (override with EXPO_PUBLIC_ZERODEV_RPC). If the network is unreachable in CI
- *  the suite SKIPS (rather than false-failing); when it responds, every
- *  derivation invariant is asserted hard. */
 const RPC_ENV: unknown = process.env.EXPO_PUBLIC_ZERODEV_RPC;
 const RPC = typeof RPC_ENV === 'string' && RPC_ENV.trim() !== '' ? RPC_ENV.trim() : 'https://mainnet.base.org';
 const publicClient = createPublicClient({ chain: base, transport: http(RPC) });
 
-/** Whether the Base RPC answered — gates the network-dependent assertions. */
 let online = false;
 beforeAll(async () => {
   try {
     await publicClient.getChainId();
-    // A trivial eth_call to confirm getSenderAddress-style calls will work.
     await publicClient.getBytecode({ address: '0x0000000000000000000000000000000000000000' });
     online = true;
   } catch {
@@ -67,10 +24,8 @@ beforeAll(async () => {
   }
 });
 
-/** Deterministic test mnemonic (NOT a real wallet) for the ECDSA owner. */
 const MNEMONIC = 'test test test test test test test test test test test junk';
 
-/** Realistic StoredPasskey material (pubX/pubY hex, 32-byte idHash). */
 const STORED = {
   pubX: '0x' + 'a3'.repeat(32),
   pubY: '0x' + 'b7'.repeat(32),
@@ -86,7 +41,6 @@ function liveWebAuthnKey(stored: typeof STORED) {
     authenticatorId: stored.authenticatorId,
     authenticatorIdHash: stored.authenticatorIdHash,
     rpID: stored.rpID,
-    // Stubbed: building the account never calls this; only sign-time does.
     signMessageCallback: () => Promise.resolve('0x' as `0x${string}`),
   };
 }
@@ -96,9 +50,6 @@ async function passkeyKernel(index: bigint, address?: `0x${string}`) {
     webAuthnKey: liveWebAuthnKey(STORED),
     entryPoint: ENTRY_POINT,
     kernelVersion: KERNEL_V3_1,
-    // 0.0.3 (V0_0_3_PATCHED) is the PATCHED validator the ZeroDev paymaster will
-    // sponsor; 0.0.2 is unpatched and 403s the sponsored deploy userOp. Mirrors
-    // passkeyContractVersion() in lib/zerodev/account.ts.
     validatorContractVersion: PasskeyValidatorContractVersion.V0_0_3_PATCHED,
   });
   return createKernelAccount(publicClient, {
@@ -124,12 +75,6 @@ async function ecdsaKernel(index: bigint) {
   });
 }
 
-/** Resolve a Kernel address, tolerating transient public-RPC flakiness. The
- *  address is derived via an on-chain getSenderAddress eth_call; some public Base
- *  endpoints return a revert shape the SDK's error parser throws on. We treat any
- *  such failure as "RPC unavailable" (returns null -> the test skips) so the
- *  suite never false-fails on infra, while still asserting the invariant whenever
- *  the RPC behaves. */
 async function tryAddress(build: () => Promise<{ address: string }>): Promise<string | null> {
   try {
     return (await build()).address;
@@ -143,7 +88,7 @@ describe('passkey-sudo Kernel address derivation', () => {
     if (!online) return;
     const a = await tryAddress(() => passkeyKernel(0n));
     const b = await tryAddress(() => passkeyKernel(0n));
-    if (a == null || b == null) return; // transient RPC flake -> skip
+    if (a == null || b == null) return;
     expect(a).toMatch(/^0x[0-9a-fA-F]{40}$/);
     expect(a).toBe(b);
   });
@@ -157,11 +102,6 @@ describe('passkey-sudo Kernel address derivation', () => {
   });
 
   test('DIFFERS from the ECDSA-sudo address at the same index (sudo is in the CREATE2 salt)', async () => {
-    // This is the load-bearing fact: the sudo validator is part of the Kernel
-    // salt, so a passkey-sudo and an ECDSA-sudo account at the same index are
-    // DIFFERENT addresses. => at create, the passkey address must be the record
-    // address (no override); on enable you cannot pin a passkey Kernel to the
-    // ECDSA address.
     if (!online) return;
     const passkey = await tryAddress(() => passkeyKernel(0n));
     const ecdsa = await tryAddress(() => ecdsaKernel(0n));
@@ -172,15 +112,12 @@ describe('passkey-sudo Kernel address derivation', () => {
 
 describe('deploy initCode matches the counterfactual address at CREATE (no override)', () => {
   test('a passkey-sudo Kernel built with `index` emits factory + factoryData (deploys at its own address)', async () => {
-    // The create path passes NO address override, so account.address IS the
-    // passkey-sudo CREATE2 address and the deploy initCode targets exactly it ->
-    // the first sponsored userOp deploys correctly with no enable step.
     if (!online) return;
     let account: Awaited<ReturnType<typeof passkeyKernel>>;
     try {
       account = await passkeyKernel(0n);
     } catch {
-      return; // transient RPC flake -> skip
+      return;
     }
     const fa = await account.getFactoryArgs();
     expect(fa.factory).toMatch(/^0x[0-9a-fA-F]{40}$/);
@@ -190,13 +127,6 @@ describe('deploy initCode matches the counterfactual address at CREATE (no overr
 
 describe('address-override is unsatisfiable for a passkey-sudo deploy (why enable swaps on-chain)', () => {
   test('pinning a passkey-sudo Kernel to a foreign address still emits passkey initCode', async () => {
-    // getFactoryArgs returns the passkey-sudo initCode even when address is pinned
-    // to someone else. That initCode CREATE2s to the passkey address, NOT the
-    // pinned one -> the meta-factory `Unauthorized` revert if it ever deployed.
-    // Hence kernelForRecord only pins for an ALREADY-DEPLOYED enable-upgraded
-    // account (signing-only, never deploys), and enablePasskey deploys via the
-    // ECDSA initCode (address matches) then swaps. Pinning the address means NO
-    // getSenderAddress RPC is needed, so this is robust offline.
     const foreign = '0x00000000000000000000000000000000DeaDBeef' as `0x${string}`;
     let pinned: Awaited<ReturnType<typeof passkeyKernel>>;
     try {
@@ -206,8 +136,6 @@ describe('address-override is unsatisfiable for a passkey-sudo deploy (why enabl
     }
     expect(pinned.address.toLowerCase()).toBe(foreign.toLowerCase());
     const fa = await pinned.getFactoryArgs();
-    // It emits passkey-sudo initCode -> would deploy at the natural passkey
-    // address, not `foreign`: the whole reason the address-pin shortcut is broken.
     expect(fa.factoryData).toMatch(/^0x[0-9a-fA-F]+$/);
   });
 });
@@ -224,9 +152,6 @@ describe('ECDSA-sudo Kernel (key-only account, no passkey)', () => {
 });
 
 describe('passkey validator contract version resolves to the PATCHED 0.0.3 (paymaster-sponsorable)', () => {
-  // Mirrors passkeyContractVersion() in lib/zerodev/account.ts: resolve the
-  // version by VALUE "0.0.3" off the installed enum (no untyped `.V0_0_2` typo).
-  // 0.0.3 is the only validator the ZeroDev paymaster sponsors; 0.0.2 = 403.
   function resolveVersion(): string {
     const byValue = Object.values(PasskeyValidatorContractVersion as Record<string, string>).find(
       (v) => v === '0.0.3',
