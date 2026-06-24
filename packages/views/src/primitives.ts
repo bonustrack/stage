@@ -1,5 +1,6 @@
 import type {
   BadgeNode,
+  ButtonNode,
   CaptionNode,
   CardNode,
   ColNode,
@@ -20,6 +21,7 @@ type CaptionProps = Omit<CaptionNode, 'type' | 'value'>;
 type BadgeProps = Omit<BadgeNode, 'type' | 'label'>;
 type ImageProps = Omit<ImageNode, 'type' | 'src'>;
 type IconProps = Omit<IconNode, 'type' | 'name'>;
+type ButtonProps = Omit<ButtonNode, 'type'>;
 
 export function row(children: WidgetNode[], props: RowProps = {}): RowNode {
   return { type: 'Row', children, ...props };
@@ -55,4 +57,8 @@ export function image(src: string, props: ImageProps = {}): ImageNode {
 
 export function icon(name: string, props: IconProps = {}): IconNode {
   return { type: 'Icon', name, ...props };
+}
+
+export function button(props: ButtonProps = {}): ButtonNode {
+  return { type: 'Button', ...props };
 }
