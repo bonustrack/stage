@@ -147,7 +147,7 @@
     },
     "packages/config": {
       "name": "@stage-labs/config",
-      "version": "0.2.0-beta.1",
+      "version": "0.1.0-beta.2",
       "bin": {
         "stage": "./bin/stage.js",
         "stage-madge": "./bin/stage-madge.js",
