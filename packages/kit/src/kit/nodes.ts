@@ -107,7 +107,6 @@ export interface BoxLayoutBase extends NodeBase, PositionFields {
   background?: Color;
   aspectRatio?: Dimension;
 }
-
 export interface CardNode extends NodeBase {
   type: 'Card';
   children: WidgetNode[];
@@ -121,7 +120,6 @@ export interface CardNode extends NodeBase {
   cancel?: CardAction;
   theme?: Theme;
 }
-
 export interface ListViewNode extends NodeBase {
   type: 'ListView';
   children: ListViewItemNode[];
@@ -129,41 +127,34 @@ export interface ListViewNode extends NodeBase {
   status?: WidgetStatus;
   theme?: Theme;
 }
-
 export interface BasicNode extends NodeBase {
   type: 'Basic';
   children?: WidgetNode | WidgetNode[];
   [extra: string]: unknown;
 }
-
 export interface BoxNode extends BoxLayoutBase {
   type: 'Box';
   children?: WidgetNode[];
   direction?: FlexDirection;
 }
-
 export interface RowNode extends BoxLayoutBase {
   type: 'Row';
   children?: WidgetNode[];
 }
-
 export interface ColNode extends BoxLayoutBase {
   type: 'Col';
   children?: WidgetNode[];
 }
-
 export interface FormNode extends BoxLayoutBase {
   type: 'Form';
   children?: WidgetNode[];
   direction?: FlexDirection;
   onSubmitAction?: ActionConfig;
 }
-
 export interface SpacerNode extends NodeBase {
   type: 'Spacer';
   minSize?: Dimension;
 }
-
 export interface DividerNode extends NodeBase {
   type: 'Divider';
   color?: Color;
@@ -171,7 +162,6 @@ export interface DividerNode extends NodeBase {
   spacing?: Dimension;
   flush?: boolean;
 }
-
 export interface TextNode extends NodeBase {
   type: 'Text';
   value: string;
@@ -191,7 +181,6 @@ export interface TextNode extends NodeBase {
   width?: Dimension;
   editable?: false | EditableProps;
 }
-
 export interface TitleNode extends NodeBase {
   type: 'Title';
   value: string;
@@ -202,7 +191,6 @@ export interface TitleNode extends NodeBase {
   maxLines?: number;
   size?: TitleSize;
 }
-
 export interface CaptionNode extends NodeBase {
   type: 'Caption';
   value: string;
@@ -213,13 +201,11 @@ export interface CaptionNode extends NodeBase {
   maxLines?: number;
   size?: CaptionSize;
 }
-
 export interface MarkdownNode extends NodeBase {
   type: 'Markdown';
   value: string;
   streaming?: boolean;
 }
-
 export interface LabelNode extends NodeBase {
   type: 'Label';
   value: string;
@@ -229,7 +215,6 @@ export interface LabelNode extends NodeBase {
   textAlign?: TextAlign;
   color?: Color;
 }
-
 export interface ImageNode extends NodeBase {
   type: 'Image';
   src: string;
@@ -253,7 +238,6 @@ export interface ImageNode extends NodeBase {
   aspectRatio?: Dimension;
   flex?: Dimension;
 }
-
 export interface IconNode extends NodeBase {
   type: 'Icon';
   name: string;
@@ -341,6 +325,21 @@ export interface DialogNode extends NodeBase {
   backdrop?: boolean;
   side?: 'center' | 'bottom';
   dismissable?: boolean;
+  animationType?: 'slide' | 'fade' | 'none';
+  backdropColor?: Color;
+  gestureRoot?: boolean;
+  safeAreaBottom?: boolean;
+  panelBackground?: Color;
+  panelRadius?: RadiusValue | number;
+  panelMaxHeight?: Dimension;
+  panelPadding?: SpacingValue;
+  panelBorderColor?: Color;
+  handle?: boolean;
+  handleColor?: Color;
+  scroll?: boolean;
+  keyboardPersistTaps?: boolean;
+  scrollPadding?: SpacingValue;
+  fullBleedPanel?: boolean;
 }
 export interface PressableNode extends NodeBase {
   type: 'Pressable';
