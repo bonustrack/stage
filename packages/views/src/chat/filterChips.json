@@ -1,0 +1,28 @@
+{
+  "type": "Row",
+  "gap": 8,
+  "align": "center",
+  "wrap": "wrap",
+  "children": [
+    {
+      "$repeat": "chips",
+      "$item": {
+        "type": "Pressable",
+        "onClickAction": { "type": "{{selectType}}", "payload": { "value": "{{item.value}}" } },
+        "children": [
+          {
+            "type": "Row",
+            "height": 26,
+            "radius": "full",
+            "padding": { "x": 9, "y": 2 },
+            "align": "center",
+            "background": "{{item.background}}",
+            "children": [
+              { "type": "Text", "value": "{{item.label}}", "size": "md", "color": "{{item.labelColor}}", "truncate": true }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

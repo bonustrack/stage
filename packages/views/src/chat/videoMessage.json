@@ -1,0 +1,14 @@
+{
+  "type": "Box",
+  "width": "{{width}}",
+  "radius": "md",
+  "background": "#000",
+  "children": [
+    {
+      "type": "VideoPlayer",
+      "src": "{{src}}",
+      "poster": "{{poster}}",
+      "controls": true
+    }
+  ]
+}

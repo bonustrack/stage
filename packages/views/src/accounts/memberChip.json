@@ -1,0 +1,21 @@
+{
+  "type": "Row",
+  "align": "center",
+  "gap": 6,
+  "radius": "full",
+  "background": "{{background}}",
+  "padding": { "y": 4, "left": 6, "right": 8 },
+  "children": [
+    { "type": "Image", "src": "{{avatarUri}}", "size": 22, "radius": "full" },
+    { "type": "Text", "value": "{{name}}", "size": "sm", "weight": "medium", "truncate": true },
+    {
+      "$if": "removable",
+      "type": "Button",
+      "iconStart": "x",
+      "variant": "ghost",
+      "size": "sm",
+      "color": "secondary",
+      "onClickAction": { "type": "{{removeType}}", "payload": { "id": "{{id}}" } }
+    }
+  ]
+}

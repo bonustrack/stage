@@ -1,17 +1,14 @@
 
-import { Video, ResizeMode } from 'expo-av';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import type { WidgetRoot } from '@stage-labs/kit/kit';
+import { videoMessage } from '@stage-labs/views';
 import { Box } from './layout';
 
 export function MessengerVideoAttachment({ uri }: { uri: string }): React.ReactElement {
+  const node: WidgetRoot = { type: 'Basic', children: [videoMessage({ src: uri })] };
   return (
-    <Box width={220} radius="md" background={'#000'} margin={{ bottom: 6 }} style={{ overflow: 'hidden' }}>
-      <Video
-        source={{ uri }}
-        style={{ width: '100%', height: 280 }}
-        useNativeControls
-        resizeMode={ResizeMode.CONTAIN}
-        shouldPlay={false}
-/>
+    <Box margin={{ bottom: 6 }}>
+      <KitRenderer node={node} />
     </Box>
   );
 }

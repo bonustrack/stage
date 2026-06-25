@@ -65,3 +65,21 @@ export const BANNER_PRESS = 'banner.press';
 export const ONBOARDING_ACTION_PRESS = 'onboarding.action.press';
 
 export const LABEL_REMOVE = 'group.label.remove';
+
+export const VOICE_PLAY = 'chat.voice.play';
+
+export const VIDEO_PLAY = 'chat.video.play';
+
+export const COMPOSER_CHANGE = 'chat.composer.change';
+
+export const COMPOSER_MENTION_PICK = 'chat.composer.mentionPick';
+
+export const COMPOSER_ATTACH_PICK = 'chat.composer.attachPick';
+
+export const COMPOSER_PENDING_REMOVE = 'chat.composer.pendingRemove';
+
+export const MEMBER_CHIP_REMOVE = 'accounts.memberChip.remove';
+
+export const SUGGESTION_TOGGLE = 'contacts.suggestion.toggle';
+
+export const FILTER_SELECT = 'chat.filter.select';

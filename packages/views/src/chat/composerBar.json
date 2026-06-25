@@ -1,9 +1,7 @@
 {
-  "type": "Form",
-  "direction": "row",
+  "type": "Row",
   "align": "center",
   "gap": 8,
-  "onSubmitAction": { "type": "{{sendAction}}", "payload": {} },
   "children": [
     {
       "$if": "hasAttach",
@@ -14,20 +12,22 @@
       "onClickAction": { "type": "{{attachAction}}", "payload": {} }
     },
     {
-      "type": "Input",
+      "type": "TextField",
       "name": "{{fieldName}}",
+      "value": "{{value}}",
       "placeholder": "{{placeholder}}",
-      "defaultValue": "{{defaultValue}}",
-      "variant": "soft",
-      "pill": true
+      "multiline": true,
+      "autoGrow": true,
+      "onChangeAction": { "type": "{{changeAction}}", "payload": {} }
     },
     {
+      "$if": "hasSend",
       "type": "Button",
       "iconStart": "{{sendIcon}}",
       "variant": "solid",
       "size": "sm",
-      "submit": true,
-      "disabled": "{{sendDisabled}}"
+      "disabled": "{{sendDisabled}}",
+      "onClickAction": { "type": "{{sendAction}}", "payload": {} }
     }
   ]
 }
