@@ -2,7 +2,8 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import {
-  type GroupHandlersCtx, makeAddMember, makeRemoveMember, makePickImage,
+  type GroupHandlersCtx, type GroupPickedFile,
+  makeAddMember, makeRemoveMember, makeUploadGroupImage,
   makeSaveDescription, makeLeaveGroup, makeSaveName,
 } from './group.actions.handlers';
 
@@ -17,7 +18,8 @@ export function useGroupActions(line: string, invalidateConvMeta: () => void): {
   members: string[]; setMembers: (m: string[]) => void;
   addDraft: string; setAddDraft: (s: string) => void; adding: boolean; addMember: (onSuccess?: () => void) => Promise<void>;
   removing: string | null; removeMember: (addr: string) => void;
-  imageUrl: string; setImageUrl: (s: string) => void; uploadingImage: boolean; pickImage: () => Promise<void>;
+  imageUrl: string; setImageUrl: (s: string) => void; uploadingImage: boolean;
+  pickImage: () => void; pickNonce: number; onPickedImage: (file: GroupPickedFile) => Promise<void>;
   leaving: boolean; leaveGroup: (onClose: () => void) => void;
 } {
   const router = useRouter();
@@ -31,6 +33,7 @@ export function useGroupActions(line: string, invalidateConvMeta: () => void): {
   const [removing, setRemoving] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string>('');
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [pickNonce, setPickNonce] = useState(0);
   const [description, setDescription] = useState<string>('');
   const [descriptionDraft, setDescriptionDraft] = useState('');
   const [editingDescription, setEditingDescription] = useState(false);
@@ -47,7 +50,8 @@ export function useGroupActions(line: string, invalidateConvMeta: () => void): {
   };
   const addMember = makeAddMember(ctx);
   const removeMember = makeRemoveMember(ctx);
-  const pickImage = makePickImage(ctx);
+  const onPickedImage = makeUploadGroupImage(ctx);
+  const pickImage = (): void => { if (!uploadingImage) setPickNonce(n => n + 1); };
   const saveDescription = makeSaveDescription(ctx);
   const leaveGroup = makeLeaveGroup(ctx);
   const saveName = makeSaveName(ctx);
@@ -57,7 +61,8 @@ export function useGroupActions(line: string, invalidateConvMeta: () => void): {
     description, setDescription, descriptionDraft, setDescriptionDraft,
     editingDescription, setEditingDescription, savingDescription, saveDescription,
     members, setMembers, addDraft, setAddDraft, adding, addMember,
-    removing, removeMember, imageUrl, setImageUrl, uploadingImage, pickImage,
+    removing, removeMember, imageUrl, setImageUrl, uploadingImage,
+    pickImage, pickNonce, onPickedImage,
     leaving, leaveGroup,
   };
 }

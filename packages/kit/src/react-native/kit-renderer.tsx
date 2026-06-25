@@ -45,6 +45,7 @@ import {
   renderAudioPlayer,
   renderAvatarStack,
   renderColorPicker,
+  renderFilePicker,
   renderPopover,
   renderPressable,
   renderQRCode,
@@ -97,6 +98,7 @@ const LEAF_RENDERERS: Partial<Record<WidgetNode['type'], LeafRenderer>> = {
   QRCode: (node, ctx) => renderQRCode(as<'QRCode'>(node), ctx),
   AudioPlayer: (node, ctx) => renderAudioPlayer(as<'AudioPlayer'>(node), ctx),
   VideoPlayer: (node) => renderVideoPlayer(as<'VideoPlayer'>(node)),
+  FilePicker: (node, ctx) => renderFilePicker(as<'FilePicker'>(node), ctx),
 };
 
 function renderContainer(node: WidgetNode, ctx: RenderCtx): ReactNode | undefined {

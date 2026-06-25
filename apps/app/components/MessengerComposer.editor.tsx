@@ -156,8 +156,8 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
 export type AttachAction = [HeroIconName, string, () => void | Promise<void>];
 
 export function buildAttachActions(a: {
-  pickImage: () => Promise<void>; takePhoto: () => Promise<void>;
-  pickFile: () => Promise<void>; pickLocation: () => Promise<void>;
+  pickImage: () => void; takePhoto: () => void;
+  pickFile: () => void; pickLocation: () => Promise<void>;
   openPoll: () => void; openSig: () => void; openTx: () => void;
 }): AttachAction[] {
   return [

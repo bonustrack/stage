@@ -4,6 +4,7 @@ import type {
   AudioPlayerNode,
   AvatarStackNode,
   ColorPickerNode,
+  FilePickerNode,
   PopoverNode,
   PressableNode,
   QRCodeNode,
@@ -22,6 +23,7 @@ import {
 import { AudioPlayer } from './audio-player';
 import { AvatarStack } from './avatar-stack';
 import { ColorPicker } from './color-picker';
+import { FilePicker } from './file-picker';
 import { GesturePressable, type SwipeDir } from './gesture-pressable';
 import { Popover, type PopoverItemView } from './popover';
 import { QrCode } from './qr-code';
@@ -199,6 +201,27 @@ export function renderAudioPlayer(node: AudioPlayerNode, ctx: RenderCtx): ReactN
       onAccent={resolveOptionalColor(node.onAccent, ctx.scheme)}
       onPlay={() => {
         dispatch(node.onPlayAction, ctx);
+      }}
+    />
+  );
+}
+
+export function renderFilePicker(node: FilePickerNode, ctx: RenderCtx): ReactNode {
+  return (
+    <FilePicker
+      openNonce={node.openNonce}
+      source={node.source}
+      mediaTypes={node.mediaTypes}
+      multiple={node.multiple}
+      selectionLimit={node.selectionLimit}
+      quality={node.quality}
+      allowsEditing={node.allowsEditing}
+      aspect={node.aspect}
+      onPick={(files) => {
+        dispatch(node.onPickAction, ctx, { files });
+      }}
+      onCancel={() => {
+        dispatch(node.onCancelAction, ctx);
       }}
     />
   );

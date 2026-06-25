@@ -3,6 +3,9 @@ import { useEffect, useState } from 'react';
 
 import { useQueryClient } from '@tanstack/react-query';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
+import type { GroupPickedFile } from './group.actions.handlers';
 import { Row, Col } from '../../components/layout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,6 +22,37 @@ import { useGroupDetail } from './group.detail';
 import { GroupLabelsSection } from './group.labels';
 import { GroupGithubSection } from './group.github';
 import { useGroupActions } from './group.actions';
+
+function groupImagePickerNode(openNonce: number): WidgetRoot {
+  return {
+    type: 'Basic',
+    children: [
+      {
+        type: 'FilePicker',
+        openNonce,
+        source: 'library',
+        mediaTypes: ['images'],
+        quality: 0.85,
+        multiple: false,
+        allowsEditing: true,
+        aspect: [1, 1],
+        onPickAction: { type: 'group_image_pick', handler: 'client' },
+      },
+    ],
+  };
+}
+
+function groupImagePickerRegistry(
+  onPicked: (file: GroupPickedFile) => Promise<void>,
+): WidgetActionRegistry {
+  return {
+    group_image_pick: (a) => {
+      const files = a.payload.files;
+      const file = Array.isArray(files) ? files[0] as GroupPickedFile | undefined : undefined;
+      if (file !== undefined) void onPicked(file);
+    },
+  };
+}
 
 export default function GroupDetail(): React.ReactElement {
   const router = useRouter();
@@ -41,7 +75,8 @@ export default function GroupDetail(): React.ReactElement {
     description, descriptionDraft, setDescriptionDraft,
     editingDescription, setEditingDescription, savingDescription, saveDescription,
     members, addDraft, setAddDraft, adding, addMember,
-    removing, removeMember, imageUrl, uploadingImage, pickImage,
+    removing, removeMember, imageUrl, uploadingImage,
+    pickImage, pickNonce, onPickedImage,
     leaving, leaveGroup,
   } = a;
 
@@ -74,9 +109,10 @@ export default function GroupDetail(): React.ReactElement {
       <GroupProfileHeader
         insetTop={insets.top} imageUrl={imageUrl} channelId={convId ?? ''} uploadingImage={uploadingImage}
         fg={fg} bg={bg} rowBg={rowBg}
-        onTap={() => { if (imageUrl) setViewerOpen(true); else void pickImage(); }}
-        onPick={() => { void pickImage(); }}
+        onTap={() => { if (imageUrl) setViewerOpen(true); else pickImage(); }}
+        onPick={() => { pickImage(); }}
 />
+      <KitRenderer node={groupImagePickerNode(pickNonce)} registry={groupImagePickerRegistry(onPickedImage)} />
 
       <GroupNameEditor
         name={name} draft={draft} setDraft={setDraft}

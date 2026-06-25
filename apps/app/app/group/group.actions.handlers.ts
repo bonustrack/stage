@@ -1,6 +1,5 @@
 
 import { Alert } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
 import { leaveGroupConv, shortAddress } from '../../modules/messaging';
 import { flash } from '../../lib/toast';
 import { uploadAvatar } from '../../lib/profile';
@@ -67,18 +66,14 @@ async function runRemoveMember(c: GroupHandlersCtx, addr: string): Promise<void>
   } finally { c.setRemoving(null); }
 }
 
-export function makePickImage(c: GroupHandlersCtx): () => Promise<void> {
-  return async (): Promise<void> => {
+export interface GroupPickedFile { uri: string; mime: string; name?: string }
+
+export function makeUploadGroupImage(c: GroupHandlersCtx): (file: GroupPickedFile) => Promise<void> {
+  return async (file: GroupPickedFile): Promise<void> => {
     if (c.uploadingImage) return;
-    const r = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: 'images', quality: 0.85, allowsMultipleSelection: false,
-      allowsEditing: true, aspect: [1, 1],
-    });
-    const a = r.canceled ? undefined : r.assets[0];
-    if (a === undefined) return;
     c.setUploadingImage(true);
     try {
-      const url = await uploadAvatar(a.uri, a.mimeType ?? 'image/jpeg', a.fileName ?? 'group-avatar');
+      const url = await uploadAvatar(file.uri, file.mime, file.name ?? 'group-avatar');
       await updateGroupImage(c.line, url);
       c.setImageUrl(url);
       c.invalidateConvMeta();

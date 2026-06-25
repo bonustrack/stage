@@ -46,3 +46,23 @@ export interface VideoPlayerNode extends NodeBase {
   poster?: string;
   controls?: boolean;
 }
+
+export type FilePickerSource = 'library' | 'camera' | 'document';
+
+export type FilePickerMediaType = 'images' | 'videos';
+
+export interface FilePickerNode extends NodeBase {
+  type: 'FilePicker';
+  source?: FilePickerSource;
+  openNonce?: number;
+  onPickAction?: ActionConfig;
+  onCancelAction?: ActionConfig;
+  mediaTypes?: FilePickerMediaType[];
+  multiple?: boolean;
+  selectionLimit?: number;
+  quality?: number;
+  allowsEditing?: boolean;
+  aspect?: [number, number];
+  accept?: string;
+  capture?: 'user' | 'environment';
+}

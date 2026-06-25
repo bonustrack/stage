@@ -69,6 +69,7 @@ const EXTENSION_TYPES = new Set([
   'QRCode',
   'AudioPlayer',
   'VideoPlayer',
+  'FilePicker',
   'Pressable',
   'Popover',
   'Stack',

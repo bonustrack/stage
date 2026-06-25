@@ -1,15 +1,24 @@
 
+import { useState } from 'react';
 import { useVoiceRecorder, SLIDE_CANCEL_THRESHOLD_PX } from './MessengerComposer.voice';
 import { sendPoll, sendSignatureRequest, sendTxRequest } from './MessengerComposer.builders';
 import type { ComposerActionsArgs } from './MessengerComposer.types';
 import {
-  uploadAttachment, pickImage, takePhoto, pickFile, pickLocation, performSend,
+  uploadAttachment, pickLocation, performSend, requestCameraPermission,
+  onPickedImages, onPickedCamera, onPickedFile, type ComposerPickedFile,
 } from './MessengerComposer.actions.helpers';
 
 export type { ComposerActionsArgs } from './MessengerComposer.types';
 
 export function useComposerActions(a: ComposerActionsArgs) {
   const upload = (uri: string, mime: string, name?: string): Promise<void> => uploadAttachment(a, uri, mime, name);
+  const [imageNonce, setImageNonce] = useState(0);
+  const [cameraNonce, setCameraNonce] = useState(0);
+  const [fileNonce, setFileNonce] = useState(0);
+
+  const takePhoto = async (): Promise<void> => {
+    if (await requestCameraPermission(a)) setCameraNonce(n => n + 1);
+  };
 
   const voice = useVoiceRecorder({
     upload, setErr: a.setErr, setRecording: a.setRecording,
@@ -25,10 +34,14 @@ export function useComposerActions(a: ComposerActionsArgs) {
   return {
     slideX: voice.slideX, micPanResponder: voice.micPanResponder, SLIDE_CANCEL_THRESHOLD_PX,
     cancelRec: voice.cancelRec, stopRec: voice.stopRec,
-    pickImage: () => pickImage(upload),
-    takePhoto: () => takePhoto(a, upload),
-    pickFile: () => pickFile(upload),
+    pickImage: () => { setImageNonce(n => n + 1); },
+    takePhoto: () => { void takePhoto(); },
+    pickFile: () => { setFileNonce(n => n + 1); },
     pickLocation: () => pickLocation(a),
+    imageNonce, cameraNonce, fileNonce,
+    onPickedImages: (files: ComposerPickedFile[]) => onPickedImages(upload, files),
+    onPickedCamera: (files: ComposerPickedFile[]) => onPickedCamera(upload, files),
+    onPickedFile: (files: ComposerPickedFile[]) => onPickedFile(upload, files),
     sendPoll: () => sendPoll(a),
     sendSignatureRequest: () => sendSignatureRequest(a),
     sendTxRequest: () => sendTxRequest(a),

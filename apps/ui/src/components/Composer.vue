@@ -1,7 +1,10 @@
 <script setup lang="ts">
 
+import { computed } from 'vue';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import { fontFamily } from '@stage-labs/kit/tokens';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
 import { xmtpSendText, xmtpReply, xmtpSendPoll } from '../lib/xmtpSend';
 import { pollFallbackText } from '@stage-labs/client/xmtp/poll';
 import { useRequestCompose, type PaymentPayload, type SignPayload } from '../lib/useRequestCompose';
@@ -33,14 +36,31 @@ const attachOpen = ref(false);
 const pollOpen = ref(false);
 const paymentOpen = ref(false);
 const signOpen = ref(false);
-const imageInput = ref<HTMLInputElement | null>(null);
-const cameraInput = ref<HTMLInputElement | null>(null);
-const fileInput = ref<HTMLInputElement | null>(null);
+const imageNonce = ref(0);
+const cameraNonce = ref(0);
+const fileNonce = ref(0);
 const selStart = ref(0);
 const selection = ref<{ start: number; end: number }>({ start: 0, end: 0 });
 const focusNonce = ref(0);
-const { pending, clear: clearPending, onPaste, onFileChange, flush: flushPending } =
+const { pending, clear: clearPending, onPaste, stageFile, flush: flushPending } =
   useComposerAttach(() => props.line, m => { err.value = m; });
+
+const filePickerNode = computed<WidgetRoot>(() => ({
+  type: 'Basic',
+  children: [
+    { type: 'FilePicker', openNonce: imageNonce.value, accept: 'image/*', onPickAction: { type: 'attach_file', handler: 'client' } },
+    { type: 'FilePicker', openNonce: cameraNonce.value, accept: 'image/*', capture: 'environment', onPickAction: { type: 'attach_file', handler: 'client' } },
+    { type: 'FilePicker', openNonce: fileNonce.value, onPickAction: { type: 'attach_file', handler: 'client' } },
+  ],
+}));
+
+const filePickerRegistry: WidgetActionRegistry = {
+  attach_file: (a) => {
+    const files = a.payload.files;
+    const file = Array.isArray(files) ? (files[0] as File | undefined) : undefined;
+    if (file) stageFile(file);
+  },
+};
 const {
   recording, seconds: recordSecs, levels: recordLevels,
   start: startRecording, stopAndSend: stopRecording, cancel: cancelRecording,
@@ -79,17 +99,17 @@ function toggleAttach(): void { attachOpen.value = !attachOpen.value; }
 
 function pickImage(): void {
   attachOpen.value = false;
-  imageInput.value?.click();
+  imageNonce.value += 1;
 }
 
 function pickCamera(): void {
   attachOpen.value = false;
-  cameraInput.value?.click();
+  cameraNonce.value += 1;
 }
 
 function pickFile(): void {
   attachOpen.value = false;
-  fileInput.value?.click();
+  fileNonce.value += 1;
 }
 
 function openPoll(): void {
@@ -197,13 +217,7 @@ async function send(): Promise<void> {
         <Icon name="x" :size="14" />
       </Pressable>
     </Row>
-    <!-- kit-exception: no kit equivalent (native file inputs — kit Input has no 'file'
-         inputType; rendered via dynamic tag to keep bare <input> semantics). Three
-         hidden inputs back the attach tiles: Image (gallery), Camera (capture), File
-         (any type), mirroring mobile pickImage/takePhoto/pickFile. -->
-    <component :is="'input'" ref="imageInput" type="file" accept="image/*" class="hidden" @change="onFileChange" />
-    <component :is="'input'" ref="cameraInput" type="file" accept="image/*" capture="environment" class="hidden" @change="onFileChange" />
-    <component :is="'input'" ref="fileInput" type="file" class="hidden" @change="onFileChange" />
+    <KitRenderer :node="filePickerNode" :registry="filePickerRegistry" />
     <!-- Full-bleed flat composer bar: textarea on top, [+ / spacer / send] row
          below. Edge-to-edge surface=raised with uniform padding 10, mirroring
          MessengerComposer.tsx ComposerEditor (Col padding={10} surface="raised"). -->

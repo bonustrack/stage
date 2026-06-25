@@ -65,6 +65,7 @@ export type {
 import type {
   AudioPlayerNode,
   AvatarStackNode,
+  FilePickerNode,
   QRCodeNode,
   SpinnerNode,
   VideoPlayerNode,
@@ -74,6 +75,9 @@ export type {
   AudioPlayerNode,
   AvatarStackItem,
   AvatarStackNode,
+  FilePickerMediaType,
+  FilePickerNode,
+  FilePickerSource,
   QRCodeNode,
   SpinnerNode,
   VideoPlayerNode,
@@ -366,6 +370,6 @@ export type WidgetNode =
   | InputNode | TextareaNode | SelectNode | CheckboxNode | RadioGroupNode
   | DatePickerNode | SwitchNode | TabsNode | TextFieldNode | ColorPickerNode
   | SpinnerNode | StackNode | ScrollRowNode | AvatarStackNode | QRCodeNode
-  | AudioPlayerNode | VideoPlayerNode | PressableNode | PopoverNode
+  | AudioPlayerNode | VideoPlayerNode | FilePickerNode | PressableNode | PopoverNode
   | ListViewItemNode | TransitionNode | ChartNode | UnknownNode;
 export type WidgetRoot = CardNode | ListViewNode | BasicNode;

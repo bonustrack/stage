@@ -8,6 +8,7 @@ import AvatarStack from './AvatarStack.vue';
 import QRCode from './QRCode.vue';
 import AudioPlayer from './AudioPlayer.vue';
 import VideoPlayer from './VideoPlayer.vue';
+import FilePicker from './FilePicker.vue';
 import TextField from './TextField.vue';
 import ColorPicker from './ColorPicker.vue';
 import Stack from './Stack.vue';
@@ -24,6 +25,7 @@ import {
   type AudioPlayerNode,
   type AvatarStackNode,
   type ColorPickerNode,
+  type FilePickerNode,
   type PopoverNode,
   type PressableNode,
   type QRCodeNode,
@@ -64,6 +66,7 @@ const avatarNode = computed(() => props.node as AvatarStackNode);
 const qrNode = computed(() => props.node as QRCodeNode);
 const audioNode = computed(() => props.node as AudioPlayerNode);
 const videoNode = computed(() => props.node as VideoPlayerNode);
+const fileNode = computed(() => props.node as FilePickerNode);
 const pressableNode = computed(() => props.node as PressableNode);
 const popoverNode = computed(() => props.node as PopoverNode);
 const stackNode = computed(() => props.node as StackNode);
@@ -183,6 +186,16 @@ function onSwipe(direction: SwipeDirection): void {
     :src="videoNode.src"
     :poster="videoNode.poster"
     :controls="videoNode.controls"
+  />
+
+  <FilePicker
+    v-else-if="node.type === 'FilePicker'"
+    :open-nonce="fileNode.openNonce"
+    :accept="fileNode.accept"
+    :multiple="fileNode.multiple"
+    :capture="fileNode.capture"
+    @pick="fire(fileNode.onPickAction, { files: $event })"
+    @cancel="fire(fileNode.onCancelAction)"
   />
 
   <Stack v-else-if="node.type === 'Stack'" :node="stackNode" />

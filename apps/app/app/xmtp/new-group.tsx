@@ -4,8 +4,8 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
 import { basicRoot, memberTextField, MEMBER_FIELD_CHANGE } from '@stage-labs/views';
-import * as ImagePicker from 'expo-image-picker';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Title } from '@stage-labs/kit/react-native/title';
 import { Icon } from '@stage-labs/kit/react-native/icon';
@@ -21,6 +21,36 @@ import { Spinner } from '../../components/Spinner';
 import { MemberPicker, useMemberPicker } from './MemberPicker';
 
 interface PickedImage { uri: string; mime: string; name: string }
+
+function imagePickerNode(openNonce: number): WidgetRoot {
+  return {
+    type: 'Basic',
+    children: [
+      {
+        type: 'FilePicker',
+        openNonce,
+        source: 'library',
+        mediaTypes: ['images'],
+        quality: 0.85,
+        multiple: false,
+        allowsEditing: true,
+        aspect: [1, 1],
+        onPickAction: { type: 'group_image_pick', handler: 'client' },
+      },
+    ],
+  };
+}
+
+function imagePickerRegistry(setImage: (img: PickedImage) => void): WidgetActionRegistry {
+  return {
+    group_image_pick: (a) => {
+      const files = a.payload.files;
+      const file = Array.isArray(files) ? files[0] as { uri: string; mime: string; name?: string } | undefined : undefined;
+      if (file === undefined) return;
+      setImage({ uri: file.uri, mime: file.mime, name: file.name ?? 'group-avatar' });
+    },
+  };
+}
 
 function GroupImageField({ image, creating, fg, border, rowBg, onPick }: {
   image: PickedImage | null; creating: boolean;
@@ -99,16 +129,11 @@ export default function NewGroup(): React.ReactElement {
   const { members } = picker;
   const [creating, setCreating] = useState(false);
   const [image, setImage] = useState<PickedImage | null>(null);
+  const [pickNonce, setPickNonce] = useState(0);
 
-  const pickImage = useCallback(async (): Promise<void> => {
+  const pickImage = useCallback((): void => {
     if (creating) return;
-    const r = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: 'images', quality: 0.85, allowsMultipleSelection: false,
-      allowsEditing: true, aspect: [1, 1],
-    });
-    const a = r.canceled ? undefined : r.assets[0];
-    if (a === undefined) return;
-    setImage({ uri: a.uri, mime: a.mimeType ?? 'image/jpeg', name: a.fileName ?? 'group-avatar' });
+    setPickNonce(n => n + 1);
   }, [creating]);
 
   const onCreate = useCallback(async (): Promise<void> => {
@@ -149,7 +174,8 @@ export default function NewGroup(): React.ReactElement {
 >
         {}
         <GroupImageField image={image} creating={creating} fg={fg} border={border} rowBg={rowBg}
-          onPick={() => { void pickImage(); }}/>
+          onPick={() => { pickImage(); }}/>
+        <KitRenderer node={imagePickerNode(pickNonce)} registry={imagePickerRegistry(setImage)} />
 
         {}
         <GroupNameField

@@ -1,5 +1,4 @@
 import { Alert } from 'react-native';
-import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { xmtpSendText } from '../modules/messaging';
@@ -31,36 +30,35 @@ export async function uploadAttachment(a: ComposerActionsArgs, uri: string, mime
 
 type Upload = (uri: string, mime: string, name?: string) => Promise<void>;
 
-export async function pickImage(upload: Upload): Promise<void> {
-  const r = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ['images', 'videos'], quality: 0.5, allowsMultipleSelection: true, selectionLimit: 10,
-  });
-  if (r.canceled || !r.assets?.length) return;
+export interface ComposerPickedFile { uri: string; mime: string; name?: string; type?: 'image' | 'video' }
+
+export async function onPickedImages(upload: Upload, files: ComposerPickedFile[]): Promise<void> {
+  if (files.length === 0) return;
   setLastAttachment('Image');
-  for (const asset of r.assets) {
-    const fallbackMime = asset.type === 'video' ? 'video/mp4' : 'image/jpeg';
-    await upload(asset.uri, asset.mimeType ?? fallbackMime, asset.fileName ?? undefined);
+  for (const file of files) {
+    await upload(file.uri, file.mime, file.name);
   }
 }
 
-export async function takePhoto(a: ComposerActionsArgs, upload: Upload): Promise<void> {
+export async function requestCameraPermission(a: ComposerActionsArgs): Promise<boolean> {
   a.setErr(null);
   const perm = await ImagePicker.requestCameraPermissionsAsync();
-  if (!perm.granted) { Alert.alert('Camera permission denied'); return; }
-  const r = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.5 });
-  const asset = r.canceled ? undefined : r.assets[0];
-  if (asset === undefined) return;
-  setLastAttachment('Camera');
-  await upload(asset.uri, asset.mimeType ?? 'image/jpeg', asset.fileName ?? undefined);
+  if (!perm.granted) { Alert.alert('Camera permission denied'); return false; }
+  return true;
 }
 
-export async function pickFile(upload: Upload): Promise<void> {
-  const r = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true });
-  if (r.canceled) return;
-  const asset = r.assets[0];
-  if (asset === undefined) return;
+export async function onPickedCamera(upload: Upload, files: ComposerPickedFile[]): Promise<void> {
+  const file = files[0];
+  if (file === undefined) return;
+  setLastAttachment('Camera');
+  await upload(file.uri, file.mime, file.name);
+}
+
+export async function onPickedFile(upload: Upload, files: ComposerPickedFile[]): Promise<void> {
+  const file = files[0];
+  if (file === undefined) return;
   setLastAttachment('File');
-  await upload(asset.uri, asset.mimeType ?? 'application/octet-stream', asset.name);
+  await upload(file.uri, file.mime, file.name);
 }
 
 export async function pickLocation(a: ComposerActionsArgs): Promise<void> {

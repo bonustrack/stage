@@ -231,6 +231,18 @@ export const EXTENSION_WIDGET: WidgetRoot = {
     },
     { type: 'Spacer', minSize: 12 },
     {
+      type: 'Button',
+      label: 'Pick a file',
+      onClickAction: { type: 'demo_pick', handler: 'client' },
+    },
+    {
+      type: 'FilePicker',
+      source: 'document',
+      openNonce: 0,
+      onPickAction: { type: 'demo_file', handler: 'client' },
+    },
+    { type: 'Spacer', minSize: 12 },
+    {
       type: 'ListView',
       children: [
         {

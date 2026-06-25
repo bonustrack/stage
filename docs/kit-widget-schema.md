@@ -439,6 +439,15 @@ Color picker with two modes.
 - `swatches`: array of hex strings (swatches mode only; falls back to a default palette)
 - `headColor` · `subColor` · `borderColor` · `rowBg`: `Color` — optional palette overrides for HSV mode (label/value text, secondary text, track/preview border, hex-input background); each falls back to the kit theme palette when unset.
 
+#### FilePicker — `"type": "FilePicker"`
+Invisible native-picker bridge. Renders nothing on screen; when `openNonce` changes to a new value it opens the platform picker and dispatches the chosen file(s). Pair it with any visible trigger (Button/Pressable) whose click bumps `openNonce`. The container keeps the trigger UI and the result-handling in its `onPickAction` handler.
+- `source`: `"library" | "camera" | "document"` — default `"library"`. RN uses `expo-image-picker` (`launchImageLibraryAsync`/`launchCameraAsync`) for library/camera and `expo-document-picker` (`getDocumentAsync`) for document; Vue uses a hidden `<input type="file">` for all sources.
+- `openNonce`: number — bump to open the picker (initial mount never auto-opens).
+- `onPickAction`: `ActionConfig` — dispatched with `{ files: PickedFile[] }`, where each `PickedFile` is `{ uri, mime, name?, type? }` on RN and the browser `File` on Vue.
+- `onCancelAction`: `ActionConfig` — dispatched when the picker is dismissed / permission denied / nothing chosen.
+- `mediaTypes`: `("images" | "videos")[]` · `multiple`: boolean · `selectionLimit`: number · `quality`: number · `allowsEditing`: boolean · `aspect`: `[number, number]` — RN `expo-image-picker` options (library/camera).
+- `accept`: string · `capture`: `"user" | "environment"` — Vue `<input>` attributes.
+
 #### Stack — `"type": "Stack"`
 Z-axis overlay container: children are painted in document order, so the **last child is on top**. Enables poll % fill-bars behind text, avatar overlap, and badge-on-avatar overlays.
 - `children`: array of nodes — **required**
