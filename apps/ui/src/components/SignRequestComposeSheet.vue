@@ -1,9 +1,65 @@
 <script setup lang="ts">
 
 import { ref, computed } from 'vue';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import { composeField } from '@/lib/composeField';
+import { basicRoot } from '@/lib/kitRow';
 
 const palette = useKitPalette();
+
+const DESC_CHANGE = 'sign.desc.change';
+const MESSAGE_CHANGE = 'sign.message.change';
+const JSON_CHANGE = 'sign.json.change';
+
+const descNode = computed(() =>
+  basicRoot(composeField({
+    name: 'desc',
+    value: desc.value,
+    placeholder: 'Description (e.g. Sign in to dapp)',
+    fontSize: 15,
+    changeType: DESC_CHANGE,
+  })));
+
+const messageNode = computed(() =>
+  basicRoot(composeField({
+    name: 'message',
+    value: message.value,
+    placeholder: 'Message to sign',
+    fontSize: 15,
+    multiline: true,
+    rows: 4,
+    changeType: MESSAGE_CHANGE,
+  })));
+
+const jsonNode = computed(() =>
+  basicRoot(composeField({
+    name: 'json',
+    value: json.value,
+    placeholder: eip712Placeholder,
+    fontSize: 13,
+    multiline: true,
+    rows: 8,
+    mono: true,
+    autoCorrect: false,
+    changeType: JSON_CHANGE,
+  })));
+
+const registry: WidgetActionRegistry = {
+  [DESC_CHANGE]: (action) => {
+    const next = action.payload.desc;
+    if (typeof next === 'string') desc.value = next;
+  },
+  [MESSAGE_CHANGE]: (action) => {
+    const next = action.payload.message;
+    if (typeof next === 'string') message.value = next;
+  },
+  [JSON_CHANGE]: (action) => {
+    const next = action.payload.json;
+    if (typeof next === 'string') json.value = next;
+  },
+};
 
 const tintBg = computed(() => {
   const hex = palette.primary.replace('#', '');
@@ -83,40 +139,11 @@ function create(): void {
           @click="kind = 'eip712'">Typed data</Pressable>
       </Row>
 
-      <!-- kit-exception: bare inputs — kit Input/Textarea force boxed styling that
-           clashes with this surface; mirrors PollComposeSheet + mobile fields. -->
-      <component :is="'input'"
-        :value="desc"
-        @input="desc = ($event.target as HTMLInputElement).value"
-        placeholder="Description (e.g. Sign in to dapp)"
-        class="w-full rounded-lg px-3 py-2 font-sans text-[15px] outline-none
-          border border-metro-border-light dark:border-metro-border-dark
-          bg-metro-surface-light dark:bg-metro-surface-dark
-          text-metro-head-light dark:text-metro-head-dark
-          placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark" />
+      <KitRenderer :node="descNode" :registry="registry" />
 
-      <component v-if="kind === 'personal'" :is="'textarea'"
-        :value="message"
-        @input="message = ($event.target as HTMLTextAreaElement).value"
-        placeholder="Message to sign"
-        rows="4"
-        class="w-full resize-none rounded-lg px-3 py-2 font-sans text-[15px] outline-none
-          border border-metro-border-light dark:border-metro-border-dark
-          bg-metro-surface-light dark:bg-metro-surface-dark
-          text-metro-head-light dark:text-metro-head-dark
-          placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark" />
+      <KitRenderer v-if="kind === 'personal'" :node="messageNode" :registry="registry" />
 
-      <component v-else :is="'textarea'"
-        :value="json"
-        @input="json = ($event.target as HTMLTextAreaElement).value"
-        :placeholder="eip712Placeholder"
-        rows="8"
-        spellcheck="false"
-        class="w-full resize-none rounded-lg px-3 py-2 font-mono text-[13px] outline-none
-          border border-metro-border-light dark:border-metro-border-dark
-          bg-metro-surface-light dark:bg-metro-surface-dark
-          text-metro-head-light dark:text-metro-head-dark
-          placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark" />
+      <KitRenderer v-else :node="jsonNode" :registry="registry" />
 
       <Button
         variant="primary"
