@@ -1,5 +1,8 @@
 
 import { IdentifierKind, ConsentState, type Identifier } from '@xmtp/browser-sdk';
+import {
+  createGroupWith, addGroupMembersWith, requireValidMembers,
+} from '@stage-labs/client/xmtp/groups';
 import { getCachedXmtpClient, getOrCreateXmtpClient, convOfLine } from './xmtpClient';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 
@@ -36,21 +39,11 @@ export async function openDmWithAddress(address: string): Promise<string> {
   return dm.id;
 }
 
-function validMemberAddresses(addresses: string[]): string[] {
-  return addresses
-    .map(a => a.trim())
-    .filter(a => /^0x[0-9a-fA-F]{40}$/.test(a));
-}
-
 function identitiesOf(addresses: string[]): Identifier[] {
   return addresses.map(a => ({
     identifier: a.toLowerCase(),
     identifierKind: IdentifierKind.Ethereum,
   }));
-}
-
-function isNoInboxError(msg: string): boolean {
-  return /inbox|identity|not.*regist|cannot.*find/i.test(msg);
 }
 
 function buildCreateGroupOptions(
@@ -69,23 +62,13 @@ export async function createGroup(
   name?: string,
   imageUrl?: string,
 ): Promise<{ line: string; id: string }> {
-  const members = validMemberAddresses(addresses);
-  if (members.length === 0) throw new Error('Add at least one valid member address.');
-
+  requireValidMembers(addresses);
   const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
-  try {
-    const group = await client.conversations.createGroupWithIdentifiers(
+  return createGroupWith(addresses, lineOfConv, async (members) =>
+    await client.conversations.createGroupWithIdentifiers(
       identitiesOf(members),
       buildCreateGroupOptions(name, imageUrl),
-    );
-    return { line: lineOfConv(group.id), id: group.id };
-  } catch (err) {
-    const msg = (err as Error)?.message ?? String(err);
-    if (isNoInboxError(msg)) {
-      throw new Error("One or more addresses aren't on XMTP yet, so they can't be added.");
-    }
-    throw new Error(`Couldn't create the group: ${msg}`);
-  }
+    ));
 }
 
 export async function leaveGroup(convId: string): Promise<'left' | 'hidden'> {
@@ -111,26 +94,15 @@ export async function leaveGroup(convId: string): Promise<'left' | 'hidden'> {
 }
 
 export async function addGroupMembers(convId: string, addresses: string[]): Promise<void> {
-  const members = validMemberAddresses(addresses);
-  if (members.length === 0) throw new Error('Add at least one valid member address.');
-
+  requireValidMembers(addresses);
   const conv = await convOfLine(lineOfConv(convId));
   if (!conv) throw new Error('Conversation not found');
   const group = conv as unknown as {
     addMembersByIdentifiers?: (identifiers: Identifier[]) => Promise<unknown>;
   };
   if (!group.addMembersByIdentifiers) throw new Error('Not a group conversation');
+  const addMembers = group.addMembersByIdentifiers.bind(group);
 
-  try {
-    await group.addMembersByIdentifiers(identitiesOf(members));
-  } catch (err) {
-    const msg = (err as Error)?.message ?? String(err);
-    if (isNoInboxError(msg)) {
-      throw new Error("One or more addresses aren't on XMTP yet, so they can't be added.");
-    }
-    if (/permission|admin|not.*allow|denied|unauthor/i.test(msg)) {
-      throw new Error('Only a group admin can add members.');
-    }
-    throw new Error(`Couldn't add members: ${msg}`);
-  }
+  await addGroupMembersWith(addresses, async (members) =>
+    await addMembers(identitiesOf(members)));
 }

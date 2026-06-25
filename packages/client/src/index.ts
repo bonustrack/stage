@@ -8,6 +8,7 @@ export * from './xmtp/poll-feed';
 export * from './xmtp/line';
 export * from './xmtp/envelope';
 export * from './xmtp/consent';
+export * from './xmtp/groups';
 export * from './image/stripMetadata';
 export * from './xmtp/request';
 export * from './xmtp/builders';

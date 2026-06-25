@@ -26,6 +26,7 @@
     "./xmtp/line": "./src/xmtp/line.ts",
     "./xmtp/envelope": "./src/xmtp/envelope.ts",
     "./xmtp/consent": "./src/xmtp/consent.ts",
+    "./xmtp/groups": "./src/xmtp/groups.ts",
     "./xmtp/request": "./src/xmtp/request.ts",
     "./xmtp/builders": "./src/xmtp/builders.ts",
     "./xmtp/voice": "./src/xmtp/voice.ts",
