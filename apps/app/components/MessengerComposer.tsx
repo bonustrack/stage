@@ -127,7 +127,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
 
   const s = useComposerState();
   const actions = useComposerActions(actionsArgs(props, s));
-  const { slideX, micPanResponder, SLIDE_CANCEL_THRESHOLD_PX } = actions;
+  const { SLIDE_CANCEL_THRESHOLD_PX } = actions;
 
   const convId = xmtpLine.replace('metro://xmtp/', '');
   useComposerDrafts(convId, s.text, s.setText);
@@ -163,7 +163,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
       <ComposerEditor
         dark={dark} fg={fg} head={head} bg={bg} sub={sub} inputBg={inputBg} chipBg={chipBg}
         recording={s.recording} levels={s.levels} recordSecs={s.recordSecs}
-        slideX={slideX} slideThresholdPx={SLIDE_CANCEL_THRESHOLD_PX} micPanResponder={micPanResponder}
+        slideThresholdPx={SLIDE_CANCEL_THRESHOLD_PX}
         text={s.text} setText={s.setText}
         selection={s.selection} setSelection={s.setSelection}
         focusNonce={s.focusNonce} blurNonce={s.blurNonce}
@@ -171,6 +171,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
         quickIcon={quick?.[0]}
         onQuick={quick ? () => void quick[2]() : undefined}
         hasContent={hasContent}
+        onStartRec={() => void actions.startRec()}
         onCancelRec={() => void actions.cancelRec()}
         onStopRec={() => void actions.stopRec()}
         onSend={() => void actions.send()}

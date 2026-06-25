@@ -243,6 +243,22 @@ export const EXTENSION_WIDGET: WidgetRoot = {
     },
     { type: 'Spacer', minSize: 12 },
     {
+      type: 'VoiceRecorder',
+      recording: false,
+      fg: { dark: '#ffffff', light: '#111114' },
+      head: { dark: '#ffffff', light: '#111114' },
+      sub: { dark: '#9a9a9f', light: '#71717a' },
+      bg: { dark: '#0b0b0d', light: '#ffffff' },
+      chipBg: { dark: '#1c1c1e', light: '#f0f0f2' },
+      primary: { dark: '#2f6df6', light: '#2f6df6' },
+      inputSlot: { type: 'Text', value: 'Press and hold the mic to record' },
+      leftControls: { type: 'Icon', name: 'plus' },
+      onStartAction: { type: 'demo_rec_start', handler: 'client' },
+      onCancelAction: { type: 'demo_rec_cancel', handler: 'client' },
+      onCompleteAction: { type: 'demo_rec_done', handler: 'client' },
+    },
+    { type: 'Spacer', minSize: 12 },
+    {
       type: 'ListView',
       children: [
         {

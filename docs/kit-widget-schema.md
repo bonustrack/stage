@@ -448,6 +448,15 @@ Invisible native-picker bridge. Renders nothing on screen; when `openNonce` chan
 - `mediaTypes`: `("images" | "videos")[]` · `multiple`: boolean · `selectionLimit`: number · `quality`: number · `allowsEditing`: boolean · `aspect`: `[number, number]` — RN `expo-image-picker` options (library/camera).
 - `accept`: string · `capture`: `"user" | "environment"` — Vue `<input>` attributes.
 
+#### VoiceRecorder — `"type": "VoiceRecorder"` (RN-only)
+Press-and-hold voice-record control with slide-to-cancel. The RN renderer hosts the `PanResponder` + `Animated` slide gesture, the slide-to-cancel hint (opacity-interpolated on slide distance), the live audio-level meter, and the elapsed timer — all moved verbatim from the mobile composer. It renders the idle layout from the supplied slots and, while `recording`, swaps to the recording layout (level bar + cancel + mic + send) sharing one `Animated.Value`. The container keeps the expo-av recording/upload/timer state and wires it via the actions. **No Vue equivalent** — the web composer uses a different tap-to-record bar with no slide gesture, so this node is RN-only.
+- `recording`: boolean — **required**. Drives idle-vs-recording rendering and the mic tint.
+- `levels`: number[] · `recordSecs`: number — live meter samples and elapsed seconds (recording state).
+- `slideToCancel`: number — slide distance (px) past which release cancels (default 80).
+- `fg` · `head` · `sub` · `bg` · `chipBg` · `primary`: `Color` — **required** palette colors (mic/icon, meter bars, secondary text, send-icon fg, pressed bg, send-button tint).
+- `inputSlot` · `leftControls`: `WidgetNode` — **required** idle slots (composer input; plus/quick buttons). `rightAction`: `WidgetNode` — optional idle send button.
+- `onStartAction` — dispatched on press-down when idle (start recording). `onCancelAction` — dispatched on slide-past-threshold release or the cancel button. `onCompleteAction` — dispatched on press-down while recording, on hold-release ≥350ms, or the send button.
+
 #### Stack — `"type": "Stack"`
 Z-axis overlay container: children are painted in document order, so the **last child is on top**. Enables poll % fill-bars behind text, avatar overlap, and badge-on-avatar overlays.
 - `children`: array of nodes — **required**

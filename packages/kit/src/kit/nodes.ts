@@ -358,6 +358,26 @@ export interface PopoverNode extends NodeBase {
   title?: string;
 }
 
+export interface VoiceRecorderNode extends NodeBase {
+  type: 'VoiceRecorder';
+  recording: boolean;
+  levels?: number[];
+  recordSecs?: number;
+  slideToCancel?: number;
+  fg: Color;
+  head: Color;
+  sub: Color;
+  bg: Color;
+  chipBg: Color;
+  primary: Color;
+  inputSlot: WidgetNode;
+  leftControls: WidgetNode;
+  rightAction?: WidgetNode;
+  onStartAction?: ActionConfig;
+  onCancelAction?: ActionConfig;
+  onCompleteAction?: ActionConfig;
+}
+
 export interface UnknownNode extends NodeBase {
   type: string;
   [extra: string]: unknown;
@@ -371,5 +391,5 @@ export type WidgetNode =
   | DatePickerNode | SwitchNode | TabsNode | TextFieldNode | ColorPickerNode
   | SpinnerNode | StackNode | ScrollRowNode | AvatarStackNode | QRCodeNode
   | AudioPlayerNode | VideoPlayerNode | FilePickerNode | PressableNode | PopoverNode
-  | ListViewItemNode | TransitionNode | ChartNode | UnknownNode;
+  | VoiceRecorderNode | ListViewItemNode | TransitionNode | ChartNode | UnknownNode;
 export type WidgetRoot = CardNode | ListViewNode | BasicNode;

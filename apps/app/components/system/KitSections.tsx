@@ -305,7 +305,7 @@ function ExtensionSections({ head, sub, border }: GalleryPalette): React.ReactEl
   return (
     <GallerySection
       name="Extension nodes"
-      note="Spinner / Switch / Tabs / AvatarStack / QRCode / TextField / ColorPicker / Pressable / Audio / Video / FilePicker - all JSON, via KitRenderer"
+      note="Spinner / Switch / Tabs / AvatarStack / QRCode / TextField / ColorPicker / Pressable / Audio / Video / FilePicker / VoiceRecorder - all JSON, via KitRenderer"
       {...sec}
       framed={false}
     >

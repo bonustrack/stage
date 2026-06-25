@@ -32,8 +32,8 @@ export function useComposerActions(a: ComposerActionsArgs) {
   };
 
   return {
-    slideX: voice.slideX, micPanResponder: voice.micPanResponder, SLIDE_CANCEL_THRESHOLD_PX,
-    cancelRec: voice.cancelRec, stopRec: voice.stopRec,
+    SLIDE_CANCEL_THRESHOLD_PX,
+    startRec: voice.startRec, cancelRec: voice.cancelRec, stopRec: voice.stopRec,
     pickImage: () => { setImageNonce(n => n + 1); },
     takePhoto: () => { void takePhoto(); },
     pickFile: () => { setFileNonce(n => n + 1); },

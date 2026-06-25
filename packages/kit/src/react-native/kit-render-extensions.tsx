@@ -13,8 +13,10 @@ import type {
   TabsNode,
   TextFieldNode,
   VideoPlayerNode,
+  VoiceRecorderNode,
 } from '../kit';
 import {
+  resolveColor,
   resolveOptionalColor,
   resolveRadius,
   resolveSpinnerSize,
@@ -24,6 +26,7 @@ import { AudioPlayer } from './audio-player';
 import { AvatarStack } from './avatar-stack';
 import { ColorPicker } from './color-picker';
 import { FilePicker } from './file-picker';
+import { VoiceRecorder } from './voice-recorder';
 import { GesturePressable, type SwipeDir } from './gesture-pressable';
 import { Popover, type PopoverItemView } from './popover';
 import { QrCode } from './qr-code';
@@ -261,6 +264,40 @@ export function renderPopover(
       align={node.align}
       dark={ctx.dark}
       trigger={render(node.trigger, ctx)}
+    />
+  );
+}
+
+export function renderVoiceRecorder(
+  node: VoiceRecorderNode,
+  ctx: RenderCtx,
+  render: NodeRenderer,
+): ReactNode {
+  return (
+    <VoiceRecorder
+      recording={node.recording}
+      levels={node.levels}
+      recordSecs={node.recordSecs}
+      slideThresholdPx={node.slideToCancel}
+      fg={resolveColor(node.fg, ctx.scheme)}
+      head={resolveColor(node.head, ctx.scheme)}
+      sub={resolveColor(node.sub, ctx.scheme)}
+      bg={resolveColor(node.bg, ctx.scheme)}
+      chipBg={resolveColor(node.chipBg, ctx.scheme)}
+      primary={resolveColor(node.primary, ctx.scheme)}
+      dark={ctx.dark}
+      inputSlot={render(node.inputSlot, ctx)}
+      leftControls={render(node.leftControls, ctx)}
+      rightAction={node.rightAction === undefined ? null : render(node.rightAction, ctx)}
+      onStart={() => {
+        dispatch(node.onStartAction, ctx);
+      }}
+      onCancel={() => {
+        dispatch(node.onCancelAction, ctx);
+      }}
+      onComplete={() => {
+        dispatch(node.onCompleteAction, ctx);
+      }}
     />
   );
 }

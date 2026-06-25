@@ -54,6 +54,7 @@ import {
   renderTabs,
   renderTextField,
   renderVideoPlayer,
+  renderVoiceRecorder,
 } from './kit-render-extensions';
 import {
   renderList,
@@ -107,6 +108,8 @@ function renderContainer(node: WidgetNode, ctx: RenderCtx): ReactNode | undefine
       return renderPressable(as<'Pressable'>(node), ctx, renderNode);
     case 'Popover':
       return renderPopover(as<'Popover'>(node), ctx, renderNode);
+    case 'VoiceRecorder':
+      return renderVoiceRecorder(as<'VoiceRecorder'>(node), ctx, renderNode);
     case 'Stack':
       return renderStack(as<'Stack'>(node), ctx, renderNode);
     case 'ScrollRow':
