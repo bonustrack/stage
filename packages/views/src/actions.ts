@@ -33,3 +33,13 @@ export const SETTINGS_BUTTON_PRESS = 'settings.button.press';
 export const SETTINGS_THEME_SELECT = 'settings.theme.select';
 
 export const SETTINGS_ACTION_PRESS = 'settings.action.press';
+
+export const POLL_OPTION_PRESS = 'chat.poll.optionPress';
+
+export const MENU_ITEM_PRESS = 'chat.menu.itemPress';
+
+export const COMPOSER_SEND = 'chat.composer.send';
+
+export const COMPOSER_ATTACH = 'chat.composer.attach';
+
+export const EMPTY_STATE_PRESS = 'chat.emptyState.press';

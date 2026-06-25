@@ -6,6 +6,7 @@ import type {
   ColNode,
   IconNode,
   ImageNode,
+  MarkdownNode,
   RowNode,
   TextNode,
   TitleNode,
@@ -45,6 +46,10 @@ export function title(value: string, props: TitleProps = {}): TitleNode {
 
 export function caption(value: string, props: CaptionProps = {}): CaptionNode {
   return { type: 'Caption', value, ...props };
+}
+
+export function markdown(value: string): MarkdownNode {
+  return { type: 'Markdown', value };
 }
 
 export function badge(label: string, props: BadgeProps = {}): BadgeNode {
