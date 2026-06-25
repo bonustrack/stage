@@ -14,7 +14,7 @@ import { useWalletModel } from './WalletSettings.parts';
 import { useEnablePasskey } from '../../lib/useEnablePasskey';
 import { useRemovePasskey } from '../../lib/useRemovePasskey';
 import {
-  type C, CopyRow, InfoRow, SectionLabel, makeCard, SmartAccountSections,
+  type C, accountNode, addressNode, buildWalletRegistry, SectionLabel, makeCard, SmartAccountSections,
 } from './WalletSettings.sections';
 
 export function WalletSettings(): React.ReactElement {
@@ -30,10 +30,13 @@ export function WalletSettings(): React.ReactElement {
   const passkey = useEnablePasskey(epoch);
   const removePasskey = useRemovePasskey(epoch);
 
-  const card = makeCard(dark, c.rowBg, blockRadius);
   const onCopy = (label: string, value: string): void => {
     void Clipboard.setStringAsync(value); flash(`${label} copied`);
   };
+  const onRecovery = (): void => { router.push('/wallet/recovery'); };
+
+  const registry = buildWalletRegistry({ onCopy, onRecovery, passkey, removePasskey });
+  const card = makeCard(dark, c.rowBg, blockRadius, registry);
 
   return (
     <Col surface="surface" flex={1}>
@@ -43,32 +46,16 @@ export function WalletSettings(): React.ReactElement {
           <Text size="md" color={c.sub} style={{ padding: 24 }}>No active account.</Text>
         ) : (
           <>
-            <SectionLabel c={c}>ACCOUNT</SectionLabel>
-            {card(
-              <>
-                <InfoRow label="Name" value={model.label} dark={dark} c={c} />
-                {model.hdIndex != null ? (
-                  <InfoRow label="HD index" value={`#${model.hdIndex}`} dark={dark} c={c} />
-                ) : null}
-                <InfoRow
-                  label="Type"
-                  value={model.isSmart ? 'Smart account (ZeroDev Kernel)' : `Legacy (${model.rec.type})`}
-                  dark={dark} c={c}
-                />
-                {model.isSmart ? (
-                  <InfoRow label="Active signer" value={model.activeSigner} dark={dark} c={c} />
-                ) : null}
-              </>,
-            )}
+            <SectionLabel>ACCOUNT</SectionLabel>
+            {card(accountNode(model))}
 
-            <SectionLabel c={c}>{model.isSmart ? 'SMART ACCOUNT ADDRESS' : 'ADDRESS'}</SectionLabel>
-            {card(<CopyRow label="Address" value={model.address} dark={dark} c={c} onCopy={onCopy} />)}
+            <SectionLabel>{model.isSmart ? 'SMART ACCOUNT ADDRESS' : 'ADDRESS'}</SectionLabel>
+            {card(addressNode(model))}
 
             {model.isSmart ? (
               <SmartAccountSections
-                model={model} deploy={deploy} dark={dark} c={c} card={card}
-                passkey={passkey} removePasskey={removePasskey} onCopy={onCopy}
-                onRecovery={() => { router.push('/wallet/recovery'); }}
+                model={model} deploy={deploy} card={card}
+                passkey={passkey} removePasskey={removePasskey}
               />
             ) : null}
           </>

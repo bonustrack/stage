@@ -4,6 +4,13 @@ import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import type { HeroIconName } from '@stage-labs/kit/icons';
+import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
+import type {
+  ListViewNode, ListViewItemNode, WidgetActionRegistry,
+} from '@stage-labs/kit/chatkit';
+import {
+  col, icon, text, settingsRowSelectedIcon, SETTINGS_THEME_SELECT,
+} from '@stage-labs/views';
 import { useEffectiveScheme } from '../../lib/kitTheme';
 import {
   setThemePreference, useThemePreference, type ThemePreference,
@@ -53,6 +60,41 @@ function onSeedInput(key: SeedColorKey, v: string): void {
 }
 
 const selectedTheme = computed<ThemePreference | 'custom'>(() => custom.value ? 'custom' : pref.value);
+
+const THEME_ROWS: { value: ThemePreference | 'custom'; label: string; icon: HeroIconName }[] = [
+  ...THEME_OPTIONS,
+  { value: 'custom', label: 'Custom', icon: 'colorSwatch' },
+];
+
+function themeItem(
+  row: { value: ThemePreference | 'custom'; label: string; icon: HeroIconName },
+): ListViewItemNode {
+  const trailing = settingsRowSelectedIcon(selectedTheme.value === row.value);
+  return {
+    type: 'ListViewItem',
+    align: 'center',
+    gap: 12,
+    onClickAction: { type: SETTINGS_THEME_SELECT, payload: { value: row.value } },
+    children: [
+      icon(row.icon, { color: 'text', size: 'xl' }),
+      col([text(row.label, { size: 'xl', color: 'text', truncate: true })], { flex: 1 }),
+      ...(trailing ? [trailing] : []),
+    ],
+  };
+}
+
+const themeNode = computed<ListViewNode>(() => ({
+  type: 'ListView',
+  children: THEME_ROWS.map(themeItem),
+}));
+
+const registry: WidgetActionRegistry = {
+  [SETTINGS_THEME_SELECT]: (action) => {
+    const value = action.payload.value;
+    if (value === 'custom') { setCustomTheme(true); return; }
+    if (value === 'system' || value === 'light' || value === 'dark') pickTheme(value);
+  },
+};
 </script>
 
 <template>
@@ -74,37 +116,8 @@ const selectedTheme = computed<ThemePreference | 'custom'>(() => custom.value ? 
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-8">
       <!-- THEME: light/dark/system + custom, mirroring mobile's DisplaySettings list. -->
       <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark px-4 pt-5 pb-2">THEME</Col>
-      <Col
-        class="kit-block w-[calc(100%-2rem)] mx-4 overflow-hidden border bg-metro-surface-light dark:bg-metro-surface-dark"
-        :style="{ borderColor: palette.border }"
-      >
-        <Pressable
-          v-for="(opt, i) in THEME_OPTIONS"
-          :key="opt.value"
-          tag="button"
-          type="button"
-          class="w-full flex items-center gap-3 px-4 py-3.5 text-left
-            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark transition-colors"
-          :class="i === 0 ? '' : 'border-t'"
-          :style="i === 0 ? {} : { borderColor: palette.border }"
-          @click="pickTheme(opt.value)"
-        >
-          <Icon :name="opt.icon" :size="22" :color="palette.text" />
-          <span class="flex-1 text-[17px] text-metro-head-light dark:text-metro-head-dark">{{ opt.label }}</span>
-          <Icon v-if="selectedTheme === opt.value" name="check" :size="20" :color="palette.text" />
-        </Pressable>
-        <Pressable
-          tag="button"
-          type="button"
-          class="w-full flex items-center gap-3 px-4 py-3.5 text-left border-t
-            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark transition-colors"
-          :style="{ borderColor: palette.border }"
-          @click="setCustomTheme(true)"
-        >
-          <Icon name="colorSwatch" :size="22" :color="palette.text" />
-          <span class="flex-1 text-[17px] text-metro-head-light dark:text-metro-head-dark">Custom</span>
-          <Icon v-if="selectedTheme === 'custom'" name="check" :size="20" :color="palette.text" />
-        </Pressable>
+      <Col class="w-[calc(100%-2rem)] mx-4">
+        <ChatKitRenderer :node="themeNode" :registry="registry" />
       </Col>
 
       <!-- CUSTOM COLORS / DENSITY / RADIUS / TEXT SIZE: live seed editor, mirroring

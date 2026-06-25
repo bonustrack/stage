@@ -21,3 +21,15 @@ export const REACTION_PRESS = 'chat.reaction.press';
 export const MEDIA_PRESS = 'chat.media.press';
 
 export const CONVERSATION_PRESS = 'chat.conversation.press';
+
+export const SETTINGS_NAV_PRESS = 'settings.nav.press';
+
+export const SETTINGS_TOGGLE_CHANGE = 'settings.toggle.change';
+
+export const SETTINGS_COPY = 'settings.copy';
+
+export const SETTINGS_BUTTON_PRESS = 'settings.button.press';
+
+export const SETTINGS_THEME_SELECT = 'settings.theme.select';
+
+export const SETTINGS_ACTION_PRESS = 'settings.action.press';

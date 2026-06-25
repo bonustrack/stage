@@ -1,8 +1,11 @@
 <script setup lang="ts">
 
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
+import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/chatkit';
+import { settingsValueRow } from '@stage-labs/views';
 import pkg from '../../../package.json';
 import { getXmtpEnv } from '../../lib/xmtp';
 import { getHostAccount } from '../../lib/hostSigner';
@@ -21,6 +24,13 @@ onMounted(async () => {
   const host = await getHostAccount().catch(() => null);
   if (host) rows.value[3] = { label: 'Signer', value: 'host wallet' };
 });
+
+const node = computed<ListViewNode>(() => ({
+  type: 'ListView',
+  children: rows.value.map(r => settingsValueRow({ label: r.label, value: r.value })),
+}));
+
+const registry: WidgetActionRegistry = {};
 </script>
 
 <template>
@@ -43,24 +53,7 @@ onMounted(async () => {
       <!-- DIAGNOSTICS: read-only env + build info, mirroring mobile DeveloperSettings
            (the Railgun debug toggle and reset/danger actions are mobile-only and deferred). -->
       <Text size="3xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark pb-1">DIAGNOSTICS</Text>
-      <Col
-        class="w-full rounded-xl overflow-hidden border bg-metro-surface-light dark:bg-metro-surface-dark"
-        :style="{ borderColor: palette.border }"
-      >
-        <Row
-          v-for="(row, i) in rows"
-          :key="row.label"
-          align="center"
-          justify="between"
-          :gap="16"
-          class="px-4 py-3.5"
-          :class="i === 0 ? '' : 'border-t'"
-          :style="i === 0 ? {} : { borderColor: palette.border }"
-        >
-          <Text size="xs" class="text-metro-sub-light dark:text-metro-sub-dark">{{ row.label }}</Text>
-          <Text size="sm" weight="medium" class="text-metro-fg-light dark:text-metro-fg-dark break-all text-right">{{ row.value }}</Text>
-        </Row>
-      </Col>
+      <ChatKitRenderer :node="node" :registry="registry" />
     </Col>
   </Col>
 </template>

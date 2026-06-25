@@ -1,8 +1,11 @@
 <script setup lang="ts">
 
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
+import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/chatkit';
+import { settingsNavRow, SETTINGS_NAV_PRESS } from '@stage-labs/views';
 import { listAccounts, getActiveAccountId, loadPk, canExportPrivateKey, hasWalletMnemonic, type AccountRecord } from '../../lib/accounts';
 
 const router = useRouter();
@@ -20,6 +23,37 @@ onMounted(async () => {
     if (acc && canExportPrivateKey(acc)) hasLocalKey.value = loadPk(acc.id) != null;
   } catch { }
 });
+
+const manageNode = computed<ListViewNode>(() => ({
+  type: 'ListView',
+  children: [settingsNavRow({
+    label: 'Manage keys & accounts',
+    value: 'Import, export and switch accounts.',
+    iconStart: 'key',
+    pressType: SETTINGS_NAV_PRESS,
+    payload: { to: '/accounts' },
+  })],
+}));
+
+const recoveryNode = computed<ListViewNode>(() => ({
+  type: 'ListView',
+  children: [settingsNavRow({
+    label: 'Recovery phrase',
+    value: hasMnemonic.value
+      ? 'Back up the phrase your smart accounts derive from.'
+      : 'Available once you create a smart account.',
+    iconStart: 'shieldExclamation',
+    pressType: SETTINGS_NAV_PRESS,
+    payload: { to: '/settings/recovery-phrase' },
+  })],
+}));
+
+const registry: WidgetActionRegistry = {
+  [SETTINGS_NAV_PRESS]: (action) => {
+    const to = action.payload.to;
+    if (typeof to === 'string') void router.push(to);
+  },
+};
 </script>
 
 <template>
@@ -58,46 +92,13 @@ onMounted(async () => {
         </Row>
       </Col>
 
-      <!-- ACCOUNT SECURITY: key management entry point, mirroring mobile's
-           AccountSecuritySection. Links to the Accounts screen for export / backup. -->
       <Text size="3xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark px-4 pt-6 pb-1">ACCOUNT SECURITY</Text>
-      <Pressable
-        tag="button"
-        type="button"
-        class="w-[calc(100%-2rem)] mx-4 mt-2 flex items-center gap-3 px-4 py-3.5 rounded-xl border
-          bg-metro-surface-light dark:bg-metro-surface-dark
-          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark transition-colors"
-        :style="{ borderColor: palette.border }"
-        @click="router.push('/accounts')"
-      >
-        <Icon name="key" :size="22" :color="palette.text" />
-        <Col class="flex-1 min-w-0 text-left">
-          <Text size="xl" tag="div" class="text-metro-head-light dark:text-metro-head-dark">Manage keys &amp; accounts</Text>
-          <Text size="2xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark">Import, export and switch accounts.</Text>
-        </Col>
-        <Icon name="chevronRight" :size="18" :color="palette.sub" />
-      </Pressable>
-
-      <!-- RECOVERY PHRASE: back up the BIP-39 mnemonic every smart account derives
-           from (mobile's SecureWalletNudge "Back up recovery phrase" equivalent). -->
-      <Pressable
-        tag="button"
-        type="button"
-        class="w-[calc(100%-2rem)] mx-4 mt-3 flex items-center gap-3 px-4 py-3.5 rounded-xl border
-          bg-metro-surface-light dark:bg-metro-surface-dark
-          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark transition-colors"
-        :style="{ borderColor: palette.border }"
-        @click="router.push('/settings/recovery-phrase')"
-      >
-        <Icon name="shieldExclamation" :size="22" :color="palette.text" />
-        <Col class="flex-1 min-w-0 text-left">
-          <Text size="xl" tag="div" class="text-metro-head-light dark:text-metro-head-dark">Recovery phrase</Text>
-          <Text size="2xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark">
-            {{ hasMnemonic ? 'Back up the phrase your smart accounts derive from.' : 'Available once you create a smart account.' }}
-          </Text>
-        </Col>
-        <Icon name="chevronRight" :size="18" :color="palette.sub" />
-      </Pressable>
+      <Col class="w-[calc(100%-2rem)] mx-4 mt-2">
+        <ChatKitRenderer :node="manageNode" :registry="registry" />
+      </Col>
+      <Col class="w-[calc(100%-2rem)] mx-4 mt-3">
+        <ChatKitRenderer :node="recoveryNode" :registry="registry" />
+      </Col>
     </Col>
   </Col>
 </template>

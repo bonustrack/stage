@@ -3,17 +3,49 @@ import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box, Col } from '../layout';
-import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Card } from '@stage-labs/kit/react-native/card';
-import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
+import { ChatKitRenderer } from '@stage-labs/kit/react-native/chatkit-renderer';
+import type {
+  ListViewItemNode,
+  ListViewNode,
+  WidgetActionRegistry,
+} from '@stage-labs/kit/chatkit';
+import {
+  col,
+  icon,
+  text,
+  SETTINGS_THEME_SELECT,
+} from '@stage-labs/views';
 import {
   setThemePreference, setCustomTheme, useCustomTheme,
   useEffectiveColorScheme, usePalette, useThemePreference,
+  type ThemePreference,
 } from '../../lib/theme';
 import { THEME_OPTIONS } from '../tabs/SettingsScreen.parts';
 import { SystemHeader } from '../system/SystemHeader';
 import { ColorTokens } from '../system/ColorTokens';
+
+type ThemeValue = ThemePreference | 'custom';
+
+function themeRow(
+  value: ThemeValue,
+  label: string,
+  iconName: string,
+  selected: boolean,
+): ListViewItemNode {
+  const trailing = selected ? [icon('check', { color: 'link', size: 'lg' })] : [];
+  return {
+    type: 'ListViewItem',
+    align: 'center',
+    gap: 12,
+    onClickAction: { type: SETTINGS_THEME_SELECT, payload: { value } },
+    children: [
+      icon(iconName, { color: 'link', size: 'xl' }),
+      col([text(label, { size: 'xl', color: 'text', truncate: true })], { flex: 1 }),
+      ...trailing,
+    ],
+  };
+}
 
 export function DisplaySettings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
@@ -23,6 +55,27 @@ export function DisplaySettings(): React.ReactElement {
   const sub = fg;
   const rowBg = border;
   const insets = useSafeAreaInsets();
+
+  const node: ListViewNode = {
+    type: 'ListView',
+    children: [
+      ...THEME_OPTIONS.map((opt) =>
+        themeRow(opt.value, opt.label, opt.icon, !custom && pref === opt.value),
+      ),
+      themeRow('custom', 'Custom', 'colorSwatch', custom),
+    ],
+  };
+
+  const registry: WidgetActionRegistry = {
+    [SETTINGS_THEME_SELECT]: (action) => {
+      const value = action.payload.value;
+      if (value === 'custom') { setCustomTheme(true); return; }
+      if (value === 'system' || value === 'light' || value === 'dark') {
+        setCustomTheme(false);
+        void setThemePreference(value);
+      }
+    },
+  };
 
   return (
     <Col surface="surface" flex={1}>
@@ -35,37 +88,7 @@ export function DisplaySettings(): React.ReactElement {
         <Text size="xs" role="secondary" style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
           THEME
         </Text>
-        <Box margin={{ x: 16 }} style={{ overflow: 'hidden' }}>
-          <Card dark={dark} background={rowBg} padding={0}>
-            <ListView dark={dark}>
-              {THEME_OPTIONS.map((opt) => {
-                const selected = !custom && pref === opt.value;
-                return (
-                  <ListViewItem
-                    key={opt.value}
-                    dark={dark}
-                    onPress={() => { setCustomTheme(false); void setThemePreference(opt.value); }}
-                    style={{ paddingHorizontal: 14, paddingVertical: 14 }}
->
-                    <Icon name={opt.icon} size={22} color={head}/>
-                    <Text size="xl" color={fg} style={{ flex: 1 }}>{opt.label}</Text>
-                    {selected ? <Icon name="check" size={20} color={head} /> : null}
-                  </ListViewItem>
-                );
-              })}
-              <ListViewItem
-                key="custom"
-                dark={dark}
-                onPress={() => { setCustomTheme(true); }}
-                style={{ paddingHorizontal: 14, paddingVertical: 14 }}
->
-                <Icon name="colorSwatch" size={22} color={head}/>
-                <Text size="xl" color={fg} style={{ flex: 1 }}>Custom</Text>
-                {custom ? <Icon name="check" size={20} color={head} /> : null}
-              </ListViewItem>
-            </ListView>
-          </Card>
-        </Box>
+        <ChatKitRenderer node={node} registry={registry}/>
 
         {custom ? (
           <Box padding={{ x: 16, top: 24 }}>

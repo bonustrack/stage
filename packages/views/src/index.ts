@@ -11,3 +11,4 @@ export * from './chat/conversationHeader';
 export * from './accounts/accountRow';
 export * from './accounts/memberRow';
 export * from './activity/txRow';
+export * from './settings/index';
