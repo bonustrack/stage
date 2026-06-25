@@ -1,12 +1,22 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import type { SwipeDirection } from '../kit';
 
 const props = defineProps<{
   clickable?: boolean;
   longPressable?: boolean;
   swipeable?: boolean;
+  hitSlop?: number;
 }>();
+
+const hitSlopStyle = computed<Record<string, string>>(() => {
+  const css: Record<string, string> = {};
+  if (props.hitSlop !== undefined) {
+    css.padding = `${props.hitSlop}px`;
+    css.margin = `-${props.hitSlop}px`;
+  }
+  return css;
+});
 
 const emit = defineEmits<{
   press: [];
@@ -74,7 +84,7 @@ function onPointerMove(event: PointerEvent): void {
 
 <template>
   <div
-    :style="{ touchAction: swipeable ? 'pan-y' : 'auto' }"
+    :style="{ touchAction: swipeable ? 'pan-y' : 'auto', ...hitSlopStyle }"
     @pointerdown="onPointerDown"
     @pointermove="onPointerMove"
     @pointerup="onPointerUp"

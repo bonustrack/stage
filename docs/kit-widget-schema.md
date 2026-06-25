@@ -181,6 +181,9 @@ Same as `BoxBase` (vertical). No `direction` field. `children` array.
 - `streaming`: bool (value is being streamed in)
 - `italic`: bool · `lineThrough`: bool
 - `color`: string | ThemeColor
+- `background`: string | ThemeColor — fills the text run's background (RN `TextStyle.backgroundColor`; Vue CSS `background-color`). Used for the search-match highlight (`#FFF200` yellow) in `highlightText`/channel-row titles, restoring the original highlight exactly.
+- `lineHeight`: number (px) — explicit line height (RN `TextStyle.lineHeight`; Vue CSS `line-height`).
+- `fontSize`: number (px) — explicit font-size override beyond the `size` token range (e.g. `19` for the `3xl` search-highlight body, which `size` cannot express since `TextSize` caps at `xl`).
 - `weight`: normal|medium|semibold|bold
 - `size`: TextSize (`xs`..`xl`)
 - `textAlign`: start|center|end
@@ -387,8 +390,13 @@ QR code rendered as SVG (shared matrix builder, `qrcode` lib, error-correction l
 #### AudioPlayer — `"type": "AudioPlayer"`
 - `src`: string — **required**
 - `duration`: number (seconds) · `onPlayAction`: `ActionConfig` (fired on first play)
+- `waveform`: bool — switches to the **voice-message** presentation: a circular play/pause button, a tap/click-to-seek amplitude waveform, and a time label, instead of the default chrome. Used by `voiceMessage`.
+- `bars`: number[] — per-bar normalized amplitudes (0..1) for the waveform. The container decodes the audio (RN `react-native-audio-api`, Vue `AudioContext`) into `VOICE_BAR_COUNT` (34) buckets and passes them; while decoding it passes a synthetic deterministic fallback (`voiceWaveformBars`). When absent the node renders flat half-height bars.
+- `barCount`: number — bar count when `bars` is omitted (default 34).
+- `accent`: string | ThemeColor — waveform play-icon color (the bubble accent, e.g. `#0a7cff`).
+- `onAccent`: string | ThemeColor — waveform foreground (button fill, bars, label, e.g. `#ffffff`).
 
-RN uses `expo-av` (`Audio.Sound`) with a custom transport; Vue uses a native `<audio controls>` element.
+Default chrome: RN uses `expo-av` (`Audio.Sound`); Vue uses a native `<audio controls>` element. Waveform mode: RN/Vue both seek by tap/click X-fraction across the bar track. Active (played) bars render at full opacity; remaining bars at `0.45`. Continuous drag-to-scrub is not declarative — tap/click-to-seek is the exact-parity affordance (the original supported tap-to-seek; pointer-drag was not a distinct gesture).
 
 #### VideoPlayer — `"type": "VideoPlayer"`
 - `src`: string — **required**
@@ -452,6 +460,7 @@ Generic gesture-aware wrapper around arbitrary children.
 - `onClickAction`: `ActionConfig` (tap)
 - `onLongPressAction`: `ActionConfig` (long-press)
 - `onSwipeAction`: `ActionConfig` — dispatched with `{ direction: "left" | "right" | "up" | "down" }`
+- `hitSlop`: number (px) — expands the tap target symmetrically without affecting layout. RN sets the gesture-handler `Tap.hitSlop` and the wrapper `View.hitSlop`; Vue adds `padding: Npx; margin: -Npx` to the pointer element. Used by the profile short-address copy-row (`hitSlop: 8`).
 
 RN wires gestures via `react-native-gesture-handler` (`Tap`/`LongPress`/`Pan`); Vue uses pointer events.
 

@@ -11,6 +11,7 @@ export interface GesturePressableProps {
   onPress?: () => void;
   onLongPress?: () => void;
   onSwipe?: (direction: SwipeDir) => void;
+  hitSlop?: number;
 }
 
 const SWIPE_THRESHOLD = 40;
@@ -22,12 +23,13 @@ function pickDirection(dx: number, dy: number): SwipeDir | undefined {
 }
 
 export function GesturePressable(props: GesturePressableProps): React.ReactElement {
-  const { children, onPress, onLongPress, onSwipe } = props;
+  const { children, onPress, onLongPress, onSwipe, hitSlop } = props;
 
   const gesture = useMemo(() => {
     const tap = Gesture.Tap().onEnd((_e, success) => {
       if (success && onPress) runOnJS(onPress)();
     });
+    if (hitSlop !== undefined) tap.hitSlop(hitSlop);
     const long = Gesture.LongPress()
       .minDuration(350)
       .onStart(() => {
@@ -39,11 +41,11 @@ export function GesturePressable(props: GesturePressableProps): React.ReactEleme
       if (dir) runOnJS(onSwipe)(dir);
     });
     return Gesture.Exclusive(long, pan, tap);
-  }, [onPress, onLongPress, onSwipe]);
+  }, [onPress, onLongPress, onSwipe, hitSlop]);
 
   return (
     <GestureDetector gesture={gesture}>
-      <View>{children}</View>
+      <View hitSlop={hitSlop}>{children}</View>
     </GestureDetector>
   );
 }
