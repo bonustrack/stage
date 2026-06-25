@@ -197,5 +197,6 @@ function onSwipe(direction: SwipeDirection): void {
     :items="popoverNode.items"
     :side="popoverNode.side"
     :align="popoverNode.align"
+    :title="popoverNode.title"
   />
 </template>

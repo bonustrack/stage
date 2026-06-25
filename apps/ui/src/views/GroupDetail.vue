@@ -2,6 +2,10 @@
 
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import { overflowMenu, OVERFLOW_MENU_PRESS } from '@stage-labs/views';
+import { basicRoot } from '@/lib/kitRow';
 import { useGroupDetail } from '../lib/useGroupDetail';
 import { leaveGroup } from '../lib/xmtpGroups';
 
@@ -34,6 +38,28 @@ async function onLeaveGroup(): Promise<void> {
     leaving.value = false;
   }
 }
+
+const leaveMenuNode = computed(() =>
+  basicRoot(
+    overflowMenu({
+      items: [
+        {
+          id: 'leave',
+          label: leaving.value ? 'Leaving…' : 'Leave group',
+          icon: 'logout',
+          danger: true,
+          disabled: leaving.value,
+        },
+      ],
+    }),
+  ),
+);
+
+const menuRegistry: WidgetActionRegistry = {
+  [OVERFLOW_MENU_PRESS]: (action) => {
+    if (action.payload.id === 'leave') void onLeaveGroup();
+  },
+};
 </script>
 
 <template>
@@ -43,17 +69,7 @@ async function onLeaveGroup(): Promise<void> {
         <Icon name="arrowLeft" :size="22" />
       </Pressable>
       <Col class="flex-1" />
-      <OverflowMenu>
-        <template #default="{ run }">
-          <OverflowItem
-            icon="logout"
-            :label="leaving ? 'Leaving…' : 'Leave group'"
-            danger
-            :disabled="leaving"
-            @select="run(onLeaveGroup)"
-          />
-        </template>
-      </OverflowMenu>
+      <KitRenderer :node="leaveMenuNode" :registry="menuRegistry" />
     </Row>
 
     <Col v-if="leaveError" class="px-4 pb-2 text-xs text-red-500">{{ leaveError }}</Col>

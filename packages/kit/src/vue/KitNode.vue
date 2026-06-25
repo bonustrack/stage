@@ -246,6 +246,7 @@ function fireWith(action: ActionConfig | undefined, payload: Record<string, unkn
   <Icon
     v-else-if="node.type === 'Icon'"
     :name="resolveIconName(iconNode.name)"
+    :size="typeof iconNode.size === 'number' ? iconNode.size : undefined"
     :color="iconNode.color === undefined ? undefined : String(iconNode.color)"
   />
 

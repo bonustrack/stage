@@ -66,6 +66,8 @@ export const POLL_OPTION_PRESS = 'chat.poll.optionPress';
 
 export const MENU_ITEM_PRESS = 'chat.menu.itemPress';
 
+export const OVERFLOW_MENU_PRESS = 'chat.overflowMenu.itemPress';
+
 export const COMPOSER_SEND = 'chat.composer.send';
 
 export const COMPOSER_ATTACH = 'chat.composer.attach';

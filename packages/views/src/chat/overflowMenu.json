@@ -1,0 +1,20 @@
+{
+  "type": "Popover",
+  "side": "bottom",
+  "align": "{{align}}",
+  "title": "{{title}}",
+  "trigger": { "type": "Icon", "name": "{{icon}}", "size": "{{iconSize}}" },
+  "items": [
+    {
+      "$repeat": "items",
+      "$item": {
+        "id": "{{item.id}}",
+        "label": "{{item.label}}",
+        "icon": "{{item.icon}}",
+        "danger": "{{item.danger}}",
+        "disabled": "{{item.disabled}}",
+        "pressType": "{{pressType}}"
+      }
+    }
+  ]
+}

@@ -22,6 +22,7 @@ export * from './chat/previewLinkCard';
 export * from './chat/conversationHeader';
 export * from './chat/pollCard';
 export * from './chat/menuSheet';
+export * from './chat/overflowMenu';
 export * from './chat/emptyState';
 export * from './chat/composerBar';
 export * from './chat/messageBubble';

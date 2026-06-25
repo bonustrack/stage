@@ -14,12 +14,16 @@ import { useKitRender } from './kit-form-context';
 
 const POPOVER_ITEM_PRESS = 'popover.item.press';
 
-defineProps<{
-  trigger: WidgetNode;
-  items: PopoverItem[];
-  side?: 'top' | 'bottom';
-  align?: 'start' | 'end';
-}>();
+withDefaults(
+  defineProps<{
+    trigger: WidgetNode;
+    items: PopoverItem[];
+    side?: 'top' | 'bottom';
+    align?: 'start' | 'end';
+    title?: string;
+  }>(),
+  { title: 'More' },
+);
 
 const render = useKitRender();
 const open = ref(false);
@@ -39,7 +43,14 @@ function run(item: PopoverItem): void {
 </script>
 
 <template>
-  <Pressable tag="button" type="button" @click="open = true">
+  <Pressable
+    tag="button"
+    type="button"
+    class="p-2 rounded-lg text-metro-sub-light dark:text-metro-sub-dark
+      hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
+    :title="title"
+    @click="open = true"
+  >
     <KitNode :node="trigger" />
   </Pressable>
 

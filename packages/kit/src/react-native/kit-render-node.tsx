@@ -177,7 +177,12 @@ export function renderMarkdown(node: MarkdownNode, ctx: RenderCtx): ReactNode {
 export function renderIcon(node: IconNode, ctx: RenderCtx): ReactNode {
   const name = resolveIconName(node.name);
   if (name === undefined) return null;
-  const px = node.size === undefined ? 22 : (ICON_PX[node.size] ?? 22);
+  const px =
+    typeof node.size === 'number'
+      ? node.size
+      : node.size === undefined
+        ? 22
+        : (ICON_PX[node.size] ?? 22);
   return <Icon name={name} size={px} color={resolveOptionalColor(node.color, ctx.scheme)} dark={ctx.dark} />;
 }
 

@@ -251,7 +251,7 @@ export interface IconNode extends NodeBase {
   type: 'Icon';
   name: string;
   color?: Color;
-  size?: IconSize;
+  size?: IconSize | number;
 }
 
 export interface BadgeNode extends NodeBase {
@@ -347,6 +347,7 @@ export interface PopoverNode extends NodeBase {
   items: PopoverItem[];
   side?: 'top' | 'bottom';
   align?: 'start' | 'end';
+  title?: string;
 }
 
 export interface UnknownNode extends NodeBase {
@@ -396,5 +397,4 @@ export type WidgetNode =
   | TransitionNode
   | ChartNode
   | UnknownNode;
-
 export type WidgetRoot = CardNode | ListViewNode | BasicNode;

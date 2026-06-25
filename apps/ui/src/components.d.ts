@@ -37,8 +37,6 @@ declare module 'vue' {
     MemberRow: typeof import('./components/MemberRow.vue')['default']
     MessengerBubble: typeof import('./components/MessengerBubble.vue')['default']
     NftGrid: typeof import('./components/NftGrid.vue')['default']
-    OverflowItem: typeof import('./components/OverflowItem.vue')['default']
-    OverflowMenu: typeof import('./components/OverflowMenu.vue')['default']
     PaymentComposeSheet: typeof import('./components/PaymentComposeSheet.vue')['default']
     PollCard: typeof import('./components/PollCard.vue')['default']
     PollComposeSheet: typeof import('./components/PollComposeSheet.vue')['default']

@@ -2,7 +2,8 @@
 
 import { computed } from 'vue';
 import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import { emptyState } from '@stage-labs/views';
+import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import { emptyState, overflowMenu, OVERFLOW_MENU_PRESS } from '@stage-labs/views';
 import { basicRoot } from '@/lib/kitRow';
 import { ASK_QUESTION_MEMBERS, stampAvatarUrl } from '../lib/xmtp';
 import { postCloseToParent } from '../lib/embedBridge';
@@ -30,6 +31,30 @@ const {
   toggleRowUnread, archiveRow, openDocs, goNewGroup, goArchived, goRequests,
   goProfile, goSettings,
 } = useChannels();
+
+const overflowNode = computed(() =>
+  basicRoot(
+    overflowMenu({
+      iconSize: 18,
+      items: [
+        { id: 'new', label: 'New group', icon: 'plus' },
+        { id: 'archived', label: 'Archived', icon: 'archive' },
+        { id: 'profile', label: 'Profile', icon: 'user' },
+        { id: 'settings', label: 'Settings', icon: 'cog' },
+      ],
+    }),
+  ),
+);
+
+const overflowRegistry: WidgetActionRegistry = {
+  [OVERFLOW_MENU_PRESS]: (action) => {
+    const id = action.payload.id;
+    if (id === 'new') goNewGroup();
+    else if (id === 'archived') goArchived();
+    else if (id === 'profile') goProfile();
+    else if (id === 'settings') goSettings();
+  },
+};
 
 </script>
 
@@ -66,14 +91,7 @@ const {
         >
           <Icon name="arrowDown" :size="16" :class="refreshing ? 'animate-spin' : ''" />
         </Pressable>
-        <OverflowMenu :size="18">
-          <template #default="{ run }">
-            <OverflowItem icon="plus" label="New group" @select="run(goNewGroup)" />
-            <OverflowItem icon="archive" label="Archived" @select="run(goArchived)" />
-            <OverflowItem icon="user" label="Profile" @select="run(goProfile)" />
-            <OverflowItem icon="cog" label="Settings" @select="run(goSettings)" />
-          </template>
-        </OverflowMenu>
+        <KitRenderer :node="overflowNode" :registry="overflowRegistry" />
       </template>
       <Pressable
         tag="button"
