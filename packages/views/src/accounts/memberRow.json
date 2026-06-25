@@ -27,21 +27,26 @@
           ]
         },
         {
-          "$if": "hasRole",
+          "$if": "badge",
           "type": "Badge",
-          "label": "{{roleLabel}}",
-          "color": "{{roleColor}}",
+          "label": "{{badge.label}}",
+          "background": "{{badge.background}}",
+          "color": "{{badge.color}}",
           "variant": "soft",
-          "size": "sm",
+          "size": "3xs",
+          "weight": "medium",
           "pill": true
         },
         {
           "$if": "removable",
           "type": "Button",
           "iconStart": "trash",
-          "color": "danger",
           "variant": "ghost",
-          "size": "sm",
+          "uniform": true,
+          "size": "xs",
+          "radius": "full",
+          "foreground": "{{dangerColor}}",
+          "pressedBackground": "{{removePressedBg}}",
           "onClickAction": { "type": "{{memberRemoveType}}", "payload": { "memberId": "{{memberId}}" } }
         }
       ]

@@ -4,6 +4,7 @@ import { computed } from 'vue';
 import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
 import { memberRow, MEMBER_PRESS, MEMBER_REMOVE } from '@stage-labs/views';
+import { useKitPalette, useKitScheme } from '@stage-labs/kit/vue/theme-context';
 import { listRoot } from '@/lib/kitRow';
 import { shortAddress, stampAvatarUrl } from '../lib/xmtp';
 
@@ -27,13 +28,14 @@ const registry: WidgetActionRegistry = {
   },
 };
 
+const palette = useKitPalette();
+const scheme = useKitScheme();
+
 const displayName = computed(() =>
   `${props.name ?? shortAddress(props.address)}${props.isSelf ? ' (you)' : ''}`);
 
-const roleLabel = computed(() => {
-  if (!props.role || props.role === 'member') return undefined;
-  return props.role === 'owner' ? 'Owner' : 'Admin';
-});
+const badgeRole = computed<'owner' | 'admin' | undefined>(() =>
+  props.role === 'owner' || props.role === 'admin' ? props.role : undefined);
 
 const node = computed(() =>
   listRoot(
@@ -42,9 +44,13 @@ const node = computed(() =>
       avatarUri: stampAvatarUrl(props.address, 64),
       name: displayName.value,
       address: props.name ? shortAddress(props.address) : undefined,
-      roleLabel: roleLabel.value,
-      roleColor: 'discovery',
+      role: badgeRole.value,
       removable: !props.isSelf && (props.canRemove ?? false) && !props.removing,
+      dark: scheme === 'dark',
+      borderColor: palette.border,
+      subColor: palette.sub,
+      dangerColor: palette.danger,
+      removePressedBg: scheme === 'dark' ? '#3a1820' : '#fbe3e8',
     }),
   ),
 );

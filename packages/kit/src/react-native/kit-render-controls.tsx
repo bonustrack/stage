@@ -15,6 +15,7 @@ import {
   resolveControlSize,
   resolveDirection,
   resolveFieldVariant,
+  resolveOptionalColor,
   resolveRadius,
 } from '../kit';
 import { Button } from './button';
@@ -38,10 +39,14 @@ function fieldVariant(value: KitControlVariant | undefined): FieldControlVariant
   return value === 'outline' || value === 'solid' ? 'outline' : 'soft';
 }
 
-function iconNode(name: string | undefined, ctx: RenderCtx): ReactNode {
+function iconNode(
+  name: string | undefined,
+  ctx: RenderCtx,
+  color?: string,
+): ReactNode {
   const resolved = resolveIconName(name);
   if (resolved === undefined) return undefined;
-  return <Icon name={resolved} size={18} dark={ctx.dark} />;
+  return <Icon name={resolved} size={18} color={color} dark={ctx.dark} />;
 }
 
 export function renderButton(node: ButtonNode, ctx: RenderCtx): ReactNode {
@@ -57,6 +62,10 @@ export function renderButton(node: ButtonNode, ctx: RenderCtx): ReactNode {
     foreground: node.foreground,
   });
   const radius = resolveRadius(node.radius);
+  const iconColor =
+    node.foreground === undefined
+      ? undefined
+      : resolveOptionalColor(node.foreground, ctx.scheme);
   return (
     <Button
       label={node.label}
@@ -72,8 +81,8 @@ export function renderButton(node: ButtonNode, ctx: RenderCtx): ReactNode {
       block={node.block}
       disabled={node.disabled}
       dark={ctx.dark}
-      iconStart={iconNode(node.iconStart, ctx)}
-      iconEnd={iconNode(node.iconEnd, ctx)}
+      iconStart={iconNode(node.iconStart, ctx, iconColor)}
+      iconEnd={iconNode(node.iconEnd, ctx, iconColor)}
       onPress={onPress}
     />
   );
