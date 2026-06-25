@@ -1,5 +1,6 @@
 import type { Color, FontWeight, RowNode, TextSize } from '@stage-labs/kit/kit';
-import { row, text } from '../primitives';
+import view from './highlightText.json';
+import { buildView } from '../buildView';
 
 export interface HighlightTextParams {
   text: string;
@@ -37,15 +38,12 @@ export function highlightSegments(value: string, query: string): Segment[] {
 }
 
 export function highlightText(params: HighlightTextParams): RowNode {
-  const segments = highlightSegments(params.text, params.query);
-  return row(
-    segments.map((segment) =>
-      text(segment.value, {
-        size: params.size,
-        color: segment.match ? (params.matchColor ?? 'warning') : params.color,
-        weight: segment.match ? (params.matchWeight ?? 'bold') : undefined,
-      }),
-    ),
-    { wrap: 'wrap', align: 'baseline' },
+  const segments = highlightSegments(params.text, params.query).map(
+    (segment) => ({
+      value: segment.value,
+      color: segment.match ? params.matchColor ?? 'warning' : params.color,
+      weight: segment.match ? params.matchWeight ?? 'bold' : undefined,
+    }),
   );
+  return (buildView(view, { segments, size: params.size }) as RowNode);
 }

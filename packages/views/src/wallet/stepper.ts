@@ -1,6 +1,7 @@
-import type { ColNode, WidgetNode } from '@stage-labs/kit/kit';
+import type { ColNode, ThemeColor } from '@stage-labs/kit/kit';
+import view from './stepper.json';
+import { buildView } from '../buildView';
 import { DANGER_COLOR, SUCCESS_COLOR } from '../colors';
-import { caption, col, icon, row, text } from '../primitives';
 
 export type StepState = 'done' | 'active' | 'pending' | 'error';
 
@@ -22,29 +23,29 @@ const STATE_ICON: Record<StepState, string> = {
   error: 'x-circle',
 };
 
-function stepIcon(state: StepState): WidgetNode {
-  if (state === 'done') return icon(STATE_ICON.done, { color: SUCCESS_COLOR, size: 'sm' });
-  if (state === 'error') return icon(STATE_ICON.error, { color: DANGER_COLOR, size: 'sm' });
-  if (state === 'active') return icon(STATE_ICON.active, { color: 'link', size: 'sm' });
-  return icon(STATE_ICON.pending, { color: 'secondary', size: 'sm' });
+function stepIconColor(state: StepState): ThemeColor | string {
+  if (state === 'done') return SUCCESS_COLOR;
+  if (state === 'error') return DANGER_COLOR;
+  if (state === 'active') return 'link';
+  return 'secondary';
 }
 
-function stepLabelColor(state: StepState): 'link' | 'text' | 'secondary' | typeof DANGER_COLOR {
+function stepLabelColor(state: StepState): ThemeColor | string {
   if (state === 'done') return 'link';
   if (state === 'error') return DANGER_COLOR;
   if (state === 'active') return 'text';
   return 'secondary';
 }
 
-function stepNode(step: StepperStep): WidgetNode {
-  const head = row(
-    [stepIcon(step.state), text(step.label, { weight: 'semibold', size: 'md', color: stepLabelColor(step.state) })],
-    { align: 'center', gap: 10 },
-  );
-  if (step.hint === undefined) return head;
-  return col([head, caption(step.hint, { color: 'secondary' })], { gap: 2 });
-}
-
 export function stepper(params: StepperParams): ColNode {
-  return col(params.steps.map(stepNode), { gap: params.gap ?? 12 });
+  const steps = params.steps.map((step) => ({
+    label: step.label,
+    icon: STATE_ICON[step.state],
+    iconColor: stepIconColor(step.state),
+    labelColor: stepLabelColor(step.state),
+    hint: step.hint,
+    useHead: step.hint === undefined || undefined,
+    useCol: step.hint !== undefined || undefined,
+  }));
+  return (buildView(view, { steps, gap: params.gap ?? 12 }) as ColNode);
 }

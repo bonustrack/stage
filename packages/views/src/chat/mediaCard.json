@@ -1,0 +1,22 @@
+[
+  {
+    "$if": "hasAction",
+    "type": "ListViewItem",
+    "onClickAction": "{{action}}",
+    "children": [
+      {
+        "type": "Box",
+        "radius": "lg",
+        "maxWidth": "{{width}}",
+        "children": "{{mediaChildren}}"
+      }
+    ]
+  },
+  {
+    "$if": "noAction",
+    "type": "Box",
+    "radius": "lg",
+    "maxWidth": "{{width}}",
+    "children": "{{mediaChildren}}"
+  }
+]

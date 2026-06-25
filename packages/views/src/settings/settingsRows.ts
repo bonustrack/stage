@@ -1,10 +1,15 @@
 import type {
-  CheckboxNode,
   ColNode,
   ListViewItemNode,
   TitleNode,
   WidgetNode,
 } from '@stage-labs/kit/kit';
+import sectionView from './settingsSection.json';
+import navRowView from './settingsNavRow.json';
+import toggleRowView from './settingsToggleRow.json';
+import valueRowView from './settingsValueRow.json';
+import buttonRowView from './settingsButtonRow.json';
+import { buildView } from '../buildView';
 import { caption, col, icon, row, text, title } from '../primitives';
 
 export interface SettingsSectionParams {
@@ -15,16 +20,14 @@ export interface SettingsSectionParams {
 }
 
 export function settingsSection(params: SettingsSectionParams): ColNode {
-  const header: WidgetNode[] = [];
-  if (params.title !== undefined) {
-    header.push(
-      caption(params.title.toUpperCase(), { color: 'secondary', size: 'sm' }),
-    );
-  }
-  if (params.caption !== undefined) {
-    header.push(caption(params.caption, { color: 'secondary' }));
-  }
-  return col([...header, ...params.children], { gap: params.gap ?? 8 });
+  return (buildView(sectionView, {
+    gap: params.gap ?? 8,
+    hasTitle: params.title !== undefined || undefined,
+    titleUpper: params.title?.toUpperCase(),
+    hasCaption: params.caption !== undefined || undefined,
+    caption: params.caption,
+    children: params.children,
+  }) as ColNode);
 }
 
 export interface SettingsNavRowParams {
@@ -37,34 +40,17 @@ export interface SettingsNavRowParams {
 }
 
 export function settingsNavRow(params: SettingsNavRowParams): ListViewItemNode {
-  const lead: WidgetNode[] = [];
-  if (params.iconStart !== undefined) {
-    lead.push(icon(params.iconStart, { color: 'link', size: 'xl' }));
-  }
-  const trailing: WidgetNode[] = [];
-  if (params.value !== undefined) {
-    trailing.push(text(params.value, { color: 'secondary', truncate: true }));
-  }
-  trailing.push(
-    icon(params.iconEnd ?? 'chevron-right', { color: 'secondary', size: 'lg' }),
-  );
-
-  const item: ListViewItemNode = {
-    type: 'ListViewItem',
-    align: 'center',
-    gap: 12,
-    children: [
-      ...lead,
-      col([text(params.label, { size: 'xl', color: 'link', truncate: true })], {
-        flex: 1,
-      }),
-      ...trailing,
-    ],
-  };
-  if (params.pressType !== undefined) {
-    item.onClickAction = { type: params.pressType, payload: params.payload ?? {} };
-  }
-  return item;
+  return (buildView(navRowView, {
+    label: params.label,
+    value: params.value,
+    iconStart: params.iconStart,
+    iconEnd: params.iconEnd ?? 'chevron-right',
+    hasValue: params.value !== undefined || undefined,
+    clickAction:
+      params.pressType !== undefined
+        ? { type: params.pressType, payload: params.payload ?? {} }
+        : undefined,
+  }) as ListViewItemNode);
 }
 
 export interface SettingsToggleRowParams {
@@ -78,29 +64,17 @@ export interface SettingsToggleRowParams {
 export function settingsToggleRow(
   params: SettingsToggleRowParams,
 ): ListViewItemNode {
-  const checkbox: CheckboxNode = {
-    type: 'Checkbox',
+  return (buildView(toggleRowView, {
+    label: params.label,
     name: params.name,
-    defaultChecked: params.checked,
-  };
-  if (params.changeType !== undefined) {
-    checkbox.onChangeAction = {
-      type: params.changeType,
-      payload: { name: params.name },
-    };
-  }
-  const labelCol: WidgetNode[] = [
-    text(params.label, { weight: 'semibold', size: 'md', color: 'text' }),
-  ];
-  if (params.description !== undefined) {
-    labelCol.push(caption(params.description, { color: 'secondary' }));
-  }
-  return {
-    type: 'ListViewItem',
-    align: 'center',
-    gap: 12,
-    children: [col(labelCol, { gap: 2, flex: 1 }), checkbox],
-  };
+    checked: params.checked,
+    description: params.description,
+    hasDescription: params.description !== undefined || undefined,
+    changeAction:
+      params.changeType !== undefined
+        ? { type: params.changeType, payload: { name: params.name } }
+        : undefined,
+  }) as ListViewItemNode);
 }
 
 export interface SettingsValueRowParams {
@@ -113,25 +87,18 @@ export interface SettingsValueRowParams {
 export function settingsValueRow(
   params: SettingsValueRowParams,
 ): ListViewItemNode {
-  const item: ListViewItemNode = {
-    type: 'ListViewItem',
-    align: 'center',
-    gap: 12,
-    children: [
-      col([text(params.label, { size: 'md', color: 'secondary' })], { flex: 1 }),
-      text(params.value, { size: 'md', color: 'text', truncate: true }),
-      ...(params.copyType !== undefined
-        ? [icon('copy', { color: 'secondary', size: 'sm' })]
-        : []),
-    ],
-  };
-  if (params.copyType !== undefined) {
-    item.onClickAction = {
-      type: params.copyType,
-      payload: { label: params.label, value: params.value, ...params.payload },
-    };
-  }
-  return item;
+  return (buildView(valueRowView, {
+    label: params.label,
+    value: params.value,
+    hasCopy: params.copyType !== undefined || undefined,
+    clickAction:
+      params.copyType !== undefined
+        ? {
+            type: params.copyType,
+            payload: { label: params.label, value: params.value, ...params.payload },
+          }
+        : undefined,
+  }) as ListViewItemNode);
 }
 
 export interface SettingsButtonRowParams {
@@ -146,24 +113,16 @@ export interface SettingsButtonRowParams {
 export function settingsButtonRow(
   params: SettingsButtonRowParams,
 ): ListViewItemNode {
-  const tone = params.danger === true ? 'danger' : 'link';
-  const lead: WidgetNode[] = [];
-  if (params.iconStart !== undefined) {
-    lead.push(icon(params.iconStart, { color: tone, size: 'xl' }));
-  }
-  const labelCol: WidgetNode[] = [
-    text(params.label, { size: 'md', weight: 'semibold', color: tone }),
-  ];
-  if (params.description !== undefined) {
-    labelCol.push(caption(params.description, { color: 'secondary' }));
-  }
-  return {
-    type: 'ListViewItem',
+  return (buildView(buttonRowView, {
+    label: params.label,
+    description: params.description,
+    iconStart: params.iconStart,
+    clickType: params.clickType,
+    payload: params.payload ?? {},
+    tone: params.danger === true ? 'danger' : 'link',
     align: params.description !== undefined ? 'start' : 'center',
-    gap: 12,
-    onClickAction: { type: params.clickType, payload: params.payload ?? {} },
-    children: [...lead, col(labelCol, { gap: 2, flex: 1 })],
-  };
+    hasDescription: params.description !== undefined || undefined,
+  }) as ListViewItemNode);
 }
 
 export function settingsSectionTitle(value: string): TitleNode {

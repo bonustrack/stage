@@ -1,6 +1,6 @@
-import type { ColNode, WidgetNode } from '@stage-labs/kit/kit';
-import type { ThemeColor } from '@stage-labs/kit/kit';
-import { button, caption, col, icon, row, text } from '../primitives';
+import type { ColNode, ThemeColor } from '@stage-labs/kit/kit';
+import view from './noticeCard.json';
+import { buildView } from '../buildView';
 
 export interface NoticeAction {
   label: string;
@@ -19,33 +19,24 @@ export interface NoticeCardParams {
   gap?: number;
 }
 
-function actionButton(action: NoticeAction): WidgetNode {
-  return button({
-    label: action.label,
-    block: true,
-    variant: action.variant,
-    onClickAction: { type: action.pressType, payload: action.payload ?? {} },
-  });
-}
-
 export function noticeCard(params: NoticeCardParams): ColNode {
-  const titleNode = text(params.title, { weight: 'semibold', size: 'md', color: params.titleColor });
-  const labelCol: WidgetNode[] = [titleNode];
-  if (params.description !== undefined) {
-    labelCol.push(caption(params.description, { color: 'secondary' }));
-  }
-  const head = row(
-    [
-      ...(params.icon !== undefined
-        ? [icon(params.icon, { color: params.iconColor, size: 'lg' })]
-        : []),
-      col(labelCol, { gap: 2, flex: 1 }),
-    ],
-    { align: 'start', gap: 12 },
-  );
-  const children: WidgetNode[] = [head];
-  if (params.actions && params.actions.length > 0) {
-    children.push(col(params.actions.map(actionButton), { gap: 8 }));
-  }
-  return col(children, { gap: params.gap ?? 12 });
+  const actions = (params.actions ?? []).map((action) => ({
+    label: action.label,
+    pressType: action.pressType,
+    variant: action.variant,
+    payload: action.payload ?? {},
+  }));
+  return (buildView(view, {
+    icon: params.icon,
+    iconColor: params.iconColor,
+    title: params.title,
+    titleColor: params.titleColor,
+    description: params.description,
+    gap: params.gap ?? 12,
+    actions,
+    hasActions:
+      params.actions !== undefined && params.actions.length > 0
+        ? true
+        : undefined,
+  }) as ColNode);
 }

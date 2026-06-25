@@ -1,0 +1,29 @@
+{
+  "type": "Col",
+  "gap": 2,
+  "align": "{{align}}",
+  "children": [
+    {
+      "$if": "hasAuthor",
+      "type": "Caption",
+      "value": "{{authorName}}",
+      "color": "{{metaColor}}",
+      "weight": "semibold"
+    },
+    {
+      "$repeat": "body",
+      "$item": "{{item}}"
+    },
+    {
+      "$if": "hasMeta",
+      "type": "Col",
+      "align": "{{align}}",
+      "children": [
+        {
+          "$repeat": "meta",
+          "$item": { "type": "Caption", "value": "{{item}}", "color": "{{metaTextColor}}" }
+        }
+      ]
+    }
+  ]
+}

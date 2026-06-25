@@ -1,5 +1,7 @@
 import type { Color, ColNode, WidgetNode } from '@stage-labs/kit/kit';
-import { caption, col, markdown, text } from '../primitives';
+import view from './messageBubble.json';
+import { buildView } from '../buildView';
+import { markdown, text } from '../primitives';
 
 export interface BubbleSegment {
   text: string;
@@ -33,28 +35,30 @@ function bodyNodes(params: MessageBubbleParams): WidgetNode[] {
   return [text(params.text ?? '', { color: params.textColor })];
 }
 
-function metaNodes(params: MessageBubbleParams): WidgetNode[] {
-  const color = params.metaColor ?? 'secondary';
-  const meta: WidgetNode[] = [];
+function metaValues(params: MessageBubbleParams): string[] {
+  const meta: string[] = [];
   if (params.timestamp !== undefined && params.timestamp !== '') {
-    meta.push(caption(params.timestamp, { color }));
+    meta.push(params.timestamp);
   }
   if (params.status !== undefined && params.status !== '') {
-    meta.push(caption(params.status, { color }));
+    meta.push(params.status);
   }
   return meta;
 }
 
 export function messageBubble(params: MessageBubbleParams): ColNode {
   const align = params.align === 'end' ? 'end' : 'start';
-  const children: WidgetNode[] = [];
-  if (params.authorName !== undefined && params.authorName !== '') {
-    children.push(
-      caption(params.authorName, { color: params.metaColor ?? 'secondary', weight: 'semibold' }),
-    );
-  }
-  children.push(...bodyNodes(params));
-  const meta = metaNodes(params);
-  if (meta.length > 0) children.push(col(meta, { align }));
-  return col(children, { gap: 2, align });
+  const metaColor = params.metaColor ?? 'secondary';
+  const meta = metaValues(params);
+  return (buildView(view, {
+    align,
+    metaColor,
+    metaTextColor: metaColor,
+    authorName: params.authorName,
+    hasAuthor:
+      (params.authorName !== undefined && params.authorName !== '') || undefined,
+    body: bodyNodes(params),
+    meta,
+    hasMeta: meta.length > 0 || undefined,
+  }) as ColNode);
 }

@@ -1,0 +1,17 @@
+{
+  "type": "Row",
+  "wrap": "wrap",
+  "align": "baseline",
+  "children": [
+    {
+      "$repeat": "segments",
+      "$item": {
+        "type": "Text",
+        "value": "{{item.value}}",
+        "size": "{{size}}",
+        "color": "{{item.color}}",
+        "weight": "{{item.weight}}"
+      }
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+{
+  "type": "Col",
+  "gap": 12,
+  "children": [
+    {
+      "$repeat": "questions",
+      "$item": {
+        "type": "Col",
+        "gap": 6,
+        "children": [
+          { "type": "Text", "value": "{{item.question}}", "weight": "semibold", "size": "lg" },
+          {
+            "$if": "item.hasHeader",
+            "type": "Caption",
+            "value": "{{item.headerLabel}}",
+            "color": "secondary",
+            "weight": "semibold"
+          },
+          {
+            "$repeat": "item.options",
+            "$item": [
+              {
+                "$if": "item.bare",
+                "type": "Row",
+                "align": "center",
+                "justify": "between",
+                "gap": 8,
+                "padding": { "x": 12, "y": 8 },
+                "radius": "lg",
+                "background": "{{item.background}}",
+                "border": { "size": 1, "color": "{{item.borderColor}}" },
+                "children": [
+                  {
+                    "type": "Col",
+                    "flex": 1,
+                    "children": [{ "type": "Text", "value": "{{item.label}}", "truncate": true }]
+                  },
+                  { "type": "Caption", "value": "{{item.stats}}", "color": "secondary", "weight": "semibold" }
+                ]
+              },
+              {
+                "$if": "item.pressable",
+                "type": "ListViewItem",
+                "onClickAction": {
+                  "type": "{{pollPressType}}",
+                  "payload": { "questionIndex": "{{item.qi}}", "optionIndex": "{{item.oi}}", "selected": "{{item.selected}}" }
+                },
+                "children": [
+                  {
+                    "type": "Row",
+                    "align": "center",
+                    "justify": "between",
+                    "gap": 8,
+                    "padding": { "x": 12, "y": 8 },
+                    "radius": "lg",
+                    "background": "{{item.background}}",
+                    "border": { "size": 1, "color": "{{item.borderColor}}" },
+                    "children": [
+                      {
+                        "type": "Col",
+                        "flex": 1,
+                        "children": [{ "type": "Text", "value": "{{item.label}}", "truncate": true }]
+                      },
+                      { "type": "Caption", "value": "{{item.stats}}", "color": "secondary", "weight": "semibold" }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          { "type": "Caption", "value": "{{item.totalLabel}}", "color": "secondary" }
+        ]
+      }
+    }
+  ]
+}

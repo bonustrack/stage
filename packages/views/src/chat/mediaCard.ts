@@ -5,6 +5,8 @@ import type {
   ListViewItemNode,
   WidgetNode,
 } from '@stage-labs/kit/kit';
+import view from './mediaCard.json';
+import { buildViewList } from '../buildView';
 import { MEDIA_PRESS } from '../actions';
 
 export interface MediaCardParams {
@@ -22,26 +24,12 @@ export function mediaCard(
     (params.mediaId !== undefined
       ? { type: MEDIA_PRESS, payload: { mediaId: params.mediaId } }
       : undefined);
-
-  if (action !== undefined) {
-    return {
-      type: 'ListViewItem',
-      onClickAction: action,
-      children: [
-        {
-          type: 'Box',
-          radius: 'lg',
-          maxWidth: params.width ?? 280,
-          children: params.children,
-        },
-      ],
-    };
-  }
-
-  return {
-    type: 'Box',
-    radius: 'lg',
-    maxWidth: params.width ?? 280,
-    children: params.children,
-  };
+  const [node] = buildViewList(view, {
+    hasAction: action !== undefined ? true : undefined,
+    noAction: action === undefined ? true : undefined,
+    action,
+    width: params.width ?? 280,
+    mediaChildren: params.children,
+  });
+  return node as ListViewItemNode | BoxNode;
 }

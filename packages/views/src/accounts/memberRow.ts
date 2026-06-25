@@ -1,10 +1,7 @@
-import type {
-  BadgeColor,
-  ListViewItemNode,
-  WidgetNode,
-} from '@stage-labs/kit/kit';
+import type { BadgeColor, ListViewItemNode } from '@stage-labs/kit/kit';
+import view from './memberRow.json';
+import { buildView } from '../buildView';
 import { MEMBER_PRESS, MEMBER_REMOVE } from '../actions';
-import { badge, button, caption, col, image, row, text } from '../primitives';
 
 export interface MemberRowParams {
   memberId: string;
@@ -17,51 +14,19 @@ export interface MemberRowParams {
 }
 
 export function memberRow(params: MemberRowParams): ListViewItemNode {
-  const lines: WidgetNode[] = [text(params.name, { weight: 'semibold', truncate: true })];
-  if (params.address !== undefined && params.address !== '') {
-    lines.push(caption(params.address, { color: 'secondary', truncate: true }));
-  }
-  const body = col(lines, { gap: 2, flex: 1 });
-
-  const trailing: WidgetNode[] = [];
-  if (params.roleLabel !== undefined && params.roleLabel !== '') {
-    trailing.push(
-      badge(params.roleLabel, {
-        color: params.roleColor ?? 'discovery',
-        variant: 'soft',
-        size: 'sm',
-        pill: true,
-      }),
-    );
-  }
-  if (params.removable === true) {
-    trailing.push(
-      button({
-        iconStart: 'trash',
-        color: 'danger',
-        variant: 'ghost',
-        size: 'sm',
-        onClickAction: {
-          type: MEMBER_REMOVE,
-          payload: { memberId: params.memberId },
-        },
-      }),
-    );
-  }
-
-  return {
-    type: 'ListViewItem',
-    onClickAction: {
-      type: MEMBER_PRESS,
-      payload: { memberId: params.memberId },
-    },
-    align: 'center',
-    gap: 12,
-    children: [
-      row(
-        [image(params.avatarUri, { size: 40, radius: 'full' }), body, ...trailing],
-        { align: 'center', gap: 12, flex: 1 },
-      ),
-    ],
-  };
+  return (buildView(view, {
+    memberId: params.memberId,
+    avatarUri: params.avatarUri,
+    name: params.name,
+    address: params.address,
+    roleLabel: params.roleLabel,
+    roleColor: params.roleColor ?? 'discovery',
+    memberPressType: MEMBER_PRESS,
+    memberRemoveType: MEMBER_REMOVE,
+    hasAddress:
+      (params.address !== undefined && params.address !== '') || undefined,
+    hasRole:
+      (params.roleLabel !== undefined && params.roleLabel !== '') || undefined,
+    removable: params.removable === true || undefined,
+  }) as ListViewItemNode);
 }

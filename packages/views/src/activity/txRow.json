@@ -1,0 +1,42 @@
+{
+  "type": "Row",
+  "align": "center",
+  "gap": 12,
+  "children": [
+    { "type": "Icon", "name": "{{dirIcon}}", "color": "{{iconColor}}", "size": "sm" },
+    {
+      "type": "Col",
+      "gap": 2,
+      "flex": 1,
+      "children": [
+        { "type": "Text", "value": "{{title}}", "weight": "semibold", "color": "link", "truncate": true },
+        {
+          "type": "Row",
+          "align": "center",
+          "gap": 6,
+          "flex": 1,
+          "children": [
+            {
+              "$if": "chainLabel",
+              "type": "Badge",
+              "label": "{{chainLabel}}",
+              "color": "secondary",
+              "variant": "soft",
+              "size": "sm"
+            },
+            { "type": "Caption", "value": "{{counterparty}}", "color": "secondary", "truncate": true }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Col",
+      "gap": 2,
+      "align": "end",
+      "children": [
+        { "type": "Text", "value": "{{amountLabel}}", "weight": "semibold", "textAlign": "end", "color": "{{amountColor}}" },
+        { "type": "Caption", "value": "{{subValue}}", "color": "{{subColor}}", "textAlign": "end" }
+      ]
+    }
+  ]
+}

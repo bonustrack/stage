@@ -1,6 +1,7 @@
-import type { ActionConfig, RowNode, WidgetNode } from '@stage-labs/kit/kit';
+import type { ActionConfig, RowNode } from '@stage-labs/kit/kit';
+import view from './conversationHeader.json';
+import { buildView } from '../buildView';
 import { CONVERSATION_PRESS } from '../actions';
-import { button, caption, col, image, row, text } from '../primitives';
 
 export interface ConversationHeaderAction {
   icon: string;
@@ -17,36 +18,19 @@ export interface ConversationHeaderParams {
 }
 
 export function conversationHeader(params: ConversationHeaderParams): RowNode {
-  const lines: WidgetNode[] = [text(params.title, { weight: 'semibold', truncate: true })];
-  if (params.subtitle !== undefined && params.subtitle !== '') {
-    lines.push(caption(params.subtitle, { color: 'secondary', truncate: true }));
-  }
-
-  const lead: WidgetNode[] = [];
-  if (params.avatarUri !== undefined && params.avatarUri !== '') {
-    lead.push(image(params.avatarUri, { size: 32, radius: 'full' }));
-  }
-
-  const titleBlock = col(lines, { gap: 2, flex: 1 });
-
-  const inner = row([...lead, titleBlock], { align: 'center', gap: 10, flex: 1 });
-
-  const main: WidgetNode =
-    params.pressable === true
-      ? {
-          type: 'ListViewItem',
-          onClickAction: {
-            type: CONVERSATION_PRESS,
-            payload: { conversationId: params.conversationId },
-          },
-          align: 'center',
-          children: [inner],
-        }
-      : inner;
-
-  const trailing = (params.trailingActions ?? []).map((entry) =>
-    button({ iconStart: entry.icon, variant: 'ghost', size: 'sm', onClickAction: entry.action }),
-  );
-
-  return row([main, ...trailing], { align: 'center', gap: 8 });
+  const pressable = params.pressable === true;
+  return (buildView(view, {
+    conversationPressType: CONVERSATION_PRESS,
+    conversationId: params.conversationId,
+    avatarUri: params.avatarUri,
+    title: params.title,
+    subtitle: params.subtitle,
+    pressable: pressable || undefined,
+    static: !pressable || undefined,
+    hasAvatar:
+      (params.avatarUri !== undefined && params.avatarUri !== '') || undefined,
+    hasSubtitle:
+      (params.subtitle !== undefined && params.subtitle !== '') || undefined,
+    trailing: params.trailingActions ?? [],
+  }) as RowNode);
 }

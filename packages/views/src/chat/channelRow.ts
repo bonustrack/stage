@@ -2,14 +2,14 @@ import type {
   BadgeColor,
   ListViewItemNode,
   RowNode,
-  WidgetNode,
 } from '@stage-labs/kit/kit';
+import view from './channelRow.json';
+import { buildView } from '../buildView';
 import {
   CHANNEL_LABEL_PRESS,
   CHANNEL_LONG_PRESS,
   CHANNEL_PRESS,
 } from '../actions';
-import { badge, caption, col, icon, image, row, text } from '../primitives';
 
 export interface ChannelLabelChip {
   label: string;
@@ -38,65 +38,62 @@ export interface ChannelRowParams {
   interactive?: boolean;
 }
 
-function titleNodes(params: ChannelRowParams): WidgetNode[] {
+function titleScope(params: ChannelRowParams): Record<string, unknown>[] {
   if (params.titleSegments && params.titleSegments.length > 0) {
-    return params.titleSegments.map((segment) =>
-      text(segment.text, {
-        weight: segment.emphasized ? 'bold' : 'semibold',
-        color: segment.emphasized ? 'info' : undefined,
-        truncate: true,
-      }),
-    );
+    return params.titleSegments.map((segment) => ({
+      text: segment.text,
+      weight: segment.emphasized ? 'bold' : 'semibold',
+      color: segment.emphasized ? 'info' : undefined,
+    }));
   }
-  return [text(params.title, { weight: 'semibold', truncate: true })];
+  return [{ text: params.title, weight: 'semibold' }];
 }
 
-function titleRow(params: ChannelRowParams): WidgetNode {
-  const nodes: WidgetNode[] = [];
-  if (params.pinned === true) nodes.push(icon('map-pin', { size: 'xs', color: 'secondary' }));
-  nodes.push(...titleNodes(params));
-  return row(nodes, { align: 'center', gap: 4, flex: 1 });
-}
-
-function previewNodes(params: ChannelRowParams): WidgetNode[] {
-  const nodes: WidgetNode[] = [];
-  if (params.previewPrefix !== undefined && params.previewPrefix !== '') {
-    nodes.push(caption(params.previewPrefix, { color: 'info', weight: 'semibold' }));
-  }
-  nodes.push(
-    caption(params.preview, { color: 'secondary', truncate: true, maxLines: 1 }),
-  );
-  return nodes;
-}
-
-function chipNodes(params: ChannelRowParams): WidgetNode[] {
+function chipScope(params: ChannelRowParams): Record<string, unknown>[] {
   if (params.chips === undefined || params.chips.length === 0) return [];
-  return params.chips.map((chip) => {
-    const node = badge(chip.label, {
-      color: chip.color ?? 'secondary',
-      variant: 'soft',
-      size: 'sm',
-    });
-    if (params.labelPressable !== true) return node;
-    return {
-      type: 'ListViewItem',
-      onClickAction: {
-        type: CHANNEL_LABEL_PRESS,
-        payload: { convId: params.convId, label: chip.label },
-      },
-      children: [node],
-    } satisfies ListViewItemNode;
-  });
+  const pressable = params.labelPressable === true;
+  return params.chips.map((chip) => ({
+    label: chip.label,
+    color: chip.color ?? 'secondary',
+    bare: !pressable || undefined,
+    pressable: pressable || undefined,
+  }));
 }
 
-function metaNodes(params: ChannelRowParams): WidgetNode[] {
-  const nodes: WidgetNode[] = [caption(params.timestamp, { color: 'secondary' })];
-  if (params.unreadBadge !== undefined && params.unreadBadge !== '') {
-    nodes.push(badge(params.unreadBadge, { color: 'info', size: 'sm', pill: true }));
-  } else if (params.unreadDot === true) {
-    nodes.push(badge(' ', { color: 'info', size: 'sm', pill: true }));
-  }
-  return nodes;
+function flag(value: boolean): true | undefined {
+  return value ? true : undefined;
+}
+
+function channelFlags(params: ChannelRowParams): Record<string, unknown> {
+  const hasUnreadBadge =
+    params.unreadBadge !== undefined && params.unreadBadge !== '';
+  return {
+    showAvatar: flag(params.omitAvatar !== true),
+    pinned: flag(params.pinned === true),
+    hasPreviewPrefix: flag(
+      params.previewPrefix !== undefined && params.previewPrefix !== '',
+    ),
+    hasChips: flag(params.chips !== undefined && params.chips.length > 0),
+    hasUnreadBadge: flag(hasUnreadBadge),
+    showUnreadDot: flag(!hasUnreadBadge && params.unreadDot === true),
+  };
+}
+
+function channelScope(params: ChannelRowParams): Record<string, unknown> {
+  return {
+    convId: params.convId,
+    avatarUri: params.avatarUri,
+    preview: params.preview,
+    timestamp: params.timestamp,
+    pressAction: CHANNEL_PRESS,
+    longPressType: CHANNEL_LONG_PRESS,
+    labelPressType: CHANNEL_LABEL_PRESS,
+    titles: titleScope(params),
+    previewPrefix: params.previewPrefix,
+    chips: chipScope(params),
+    unreadBadge: params.unreadBadge,
+    ...channelFlags(params),
+  };
 }
 
 export function channelRow(
@@ -106,45 +103,7 @@ export function channelRow(
   params: ChannelRowParams,
 ): ListViewItemNode | RowNode;
 export function channelRow(params: ChannelRowParams): ListViewItemNode | RowNode {
-  const meta = col(metaNodes(params), { gap: 4, align: 'end' });
-
-  const previewRow = row(previewNodes(params), { align: 'center', gap: 4 });
-  const chips = chipNodes(params);
-
-  const body = col(
-    [
-      titleRow(params),
-      previewRow,
-      ...(chips.length > 0 ? [row(chips, { gap: 4, wrap: 'wrap' })] : []),
-    ],
-    { gap: 2, flex: 1 },
-  );
-
-  const inner = row(
-    [
-      ...(params.omitAvatar === true
-        ? []
-        : [image(params.avatarUri, { size: 44, radius: 'full' })]),
-      body,
-      meta,
-    ],
-    { align: 'center', gap: 12, flex: 1 },
-  );
-
-  if (params.interactive === false) return inner;
-
-  return {
-    type: 'ListViewItem',
-    onClickAction: {
-      type: CHANNEL_PRESS,
-      payload: {
-        convId: params.convId,
-        longPressType: CHANNEL_LONG_PRESS,
-        labelPressType: CHANNEL_LABEL_PRESS,
-      },
-    },
-    align: 'center',
-    gap: 12,
-    children: [inner],
-  };
+  const built = buildView(view, channelScope(params)) as ListViewItemNode;
+  if (params.interactive === false) return built.children[0] as RowNode;
+  return built;
 }

@@ -1,0 +1,47 @@
+{
+  "type": "Col",
+  "gap": 12,
+  "children": [
+    {
+      "type": "Row",
+      "align": "end",
+      "children": [
+        { "type": "Title", "value": "{{total}}", "weight": "semibold", "size": "5xl" },
+        {
+          "$if": "totalDecimals",
+          "type": "Title",
+          "value": "{{totalDecimals}}",
+          "weight": "semibold",
+          "size": "5xl",
+          "color": "secondary"
+        }
+      ]
+    },
+    {
+      "$if": "subtitle",
+      "type": "Caption",
+      "value": "{{subtitle}}",
+      "color": "secondary"
+    },
+    {
+      "$if": "hasActions",
+      "type": "Row",
+      "gap": 12,
+      "justify": "start",
+      "children": [
+        {
+          "$repeat": "actions",
+          "$item": {
+            "type": "Col",
+            "gap": 6,
+            "align": "center",
+            "children": [
+              { "type": "Icon", "name": "{{item.icon}}", "color": "link", "size": "xl" },
+              { "type": "Caption", "value": "{{item.label}}", "weight": "semibold" }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

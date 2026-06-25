@@ -1,6 +1,7 @@
-import type { Color, ListViewNode, WidgetNode } from '@stage-labs/kit/kit';
+import type { ListViewNode } from '@stage-labs/kit/kit';
+import view from './menuSheet.json';
+import { buildView } from '../buildView';
 import { MENU_ITEM_PRESS } from '../actions';
-import { icon, row, text } from '../primitives';
 
 export interface MenuSheetItem {
   id: string;
@@ -15,28 +16,17 @@ export interface MenuSheetParams {
 }
 
 export function menuSheet(params: MenuSheetParams): ListViewNode {
-  return {
-    type: 'ListView',
-    children: params.items.map((item) => {
-      const color: Color | undefined = item.danger === true ? 'danger' : undefined;
-      const lead: WidgetNode[] =
-        item.icon !== undefined ? [icon(item.icon, { color: color ?? 'secondary' })] : [];
-      return {
-        type: 'ListViewItem',
-        onClickAction: {
-          type: item.pressType ?? MENU_ITEM_PRESS,
-          payload: { id: item.id },
-        },
-        align: 'center',
-        gap: 12,
-        children: [
-          row([...lead, text(item.label, { color, weight: 'medium' })], {
-            align: 'center',
-            gap: 12,
-            flex: 1,
-          }),
-        ],
-      };
-    }),
-  };
+  const items = params.items.map((item) => {
+    const color = item.danger === true ? 'danger' : undefined;
+    return {
+      id: item.id,
+      label: item.label,
+      icon: item.icon,
+      hasIcon: item.icon !== undefined || undefined,
+      iconColor: color ?? 'secondary',
+      labelColor: color,
+      pressType: item.pressType ?? MENU_ITEM_PRESS,
+    };
+  });
+  return (buildView(view, { items }) as ListViewNode);
 }

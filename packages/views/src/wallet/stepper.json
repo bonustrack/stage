@@ -1,0 +1,38 @@
+{
+  "type": "Col",
+  "gap": "{{gap}}",
+  "children": [
+    {
+      "$repeat": "steps",
+      "$item": [
+        {
+          "$if": "item.useHead",
+          "type": "Row",
+          "align": "center",
+          "gap": 10,
+          "children": [
+            { "type": "Icon", "name": "{{item.icon}}", "color": "{{item.iconColor}}", "size": "sm" },
+            { "type": "Text", "value": "{{item.label}}", "weight": "semibold", "size": "md", "color": "{{item.labelColor}}" }
+          ]
+        },
+        {
+          "$if": "item.useCol",
+          "type": "Col",
+          "gap": 2,
+          "children": [
+            {
+              "type": "Row",
+              "align": "center",
+              "gap": 10,
+              "children": [
+                { "type": "Icon", "name": "{{item.icon}}", "color": "{{item.iconColor}}", "size": "sm" },
+                { "type": "Text", "value": "{{item.label}}", "weight": "semibold", "size": "md", "color": "{{item.labelColor}}" }
+              ]
+            },
+            { "type": "Caption", "value": "{{item.hint}}", "color": "secondary" }
+          ]
+        }
+      ]
+    }
+  ]
+}

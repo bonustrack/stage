@@ -1,0 +1,50 @@
+{
+  "type": "ListViewItem",
+  "onClickAction": { "type": "{{memberPressType}}", "payload": { "memberId": "{{memberId}}" } },
+  "align": "center",
+  "gap": 12,
+  "children": [
+    {
+      "type": "Row",
+      "align": "center",
+      "gap": 12,
+      "flex": 1,
+      "children": [
+        { "type": "Image", "src": "{{avatarUri}}", "size": 40, "radius": "full" },
+        {
+          "type": "Col",
+          "gap": 2,
+          "flex": 1,
+          "children": [
+            { "type": "Text", "value": "{{name}}", "weight": "semibold", "truncate": true },
+            {
+              "$if": "hasAddress",
+              "type": "Caption",
+              "value": "{{address}}",
+              "color": "secondary",
+              "truncate": true
+            }
+          ]
+        },
+        {
+          "$if": "hasRole",
+          "type": "Badge",
+          "label": "{{roleLabel}}",
+          "color": "{{roleColor}}",
+          "variant": "soft",
+          "size": "sm",
+          "pill": true
+        },
+        {
+          "$if": "removable",
+          "type": "Button",
+          "iconStart": "trash",
+          "color": "danger",
+          "variant": "ghost",
+          "size": "sm",
+          "onClickAction": { "type": "{{memberRemoveType}}", "payload": { "memberId": "{{memberId}}" } }
+        }
+      ]
+    }
+  ]
+}

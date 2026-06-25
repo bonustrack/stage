@@ -1,6 +1,7 @@
-import type { ColNode, WidgetNode } from '@stage-labs/kit/kit';
+import type { ColNode } from '@stage-labs/kit/kit';
+import view from './pollCard.json';
+import { buildView } from '../buildView';
 import { POLL_OPTION_PRESS } from '../actions';
-import { caption, col, row, text } from '../primitives';
 
 export interface PollOption {
   label: string;
@@ -26,81 +27,55 @@ export interface PollCardParams {
   dispatchPress?: boolean;
 }
 
-function optionNode(
+function optionScope(
   params: PollCardParams,
   qi: number,
   oi: number,
   option: PollOption,
   multiSelect: boolean,
-): WidgetNode {
+): Record<string, unknown> {
   const selected = option.selected === true;
   const prefix = selected ? '✓ ' : multiSelect ? '☐ ' : '';
-  const content = row(
-    [
-      col([text(`${prefix}${option.label}`, { truncate: true })], { flex: 1 }),
-      caption(`${option.pct}% · ${option.votes}`, {
-        color: 'secondary',
-        weight: 'semibold',
-      }),
-    ],
-    {
-      align: 'center',
-      justify: 'between',
-      gap: 8,
-      padding: { x: 12, y: 8 },
-      radius: 'lg',
-      background: selected ? params.selectedBackground : undefined,
-      border: {
-        size: 1,
-        color:
-          selected && params.selectedBorderColor !== undefined
-            ? params.selectedBorderColor
-            : (params.borderColor ?? 'transparent'),
-      },
-    },
-  );
-  if (params.dispatchPress !== true) return content;
+  const pressable = params.dispatchPress === true;
   return {
-    type: 'ListViewItem',
-    onClickAction: {
-      type: POLL_OPTION_PRESS,
-      payload: { questionIndex: qi, optionIndex: oi, selected },
-    },
-    children: [content],
+    label: `${prefix}${option.label}`,
+    stats: `${option.pct}% · ${option.votes}`,
+    background: selected ? params.selectedBackground : undefined,
+    borderColor:
+      selected && params.selectedBorderColor !== undefined
+        ? params.selectedBorderColor
+        : params.borderColor ?? 'transparent',
+    qi,
+    oi,
+    selected,
+    bare: !pressable || undefined,
+    pressable: pressable || undefined,
   };
 }
 
-function questionNode(
+function questionScope(
   params: PollCardParams,
   question: PollQuestion,
   qi: number,
-): WidgetNode {
-  const lines: WidgetNode[] = [
-    text(question.question, { weight: 'semibold', size: 'lg' }),
-  ];
-  if (question.header !== undefined && question.header !== '') {
-    const suffix = question.multiSelect === true ? ' · multi-select' : '';
-    lines.push(
-      caption(`${question.header}${suffix}`, {
-        color: 'secondary',
-        weight: 'semibold',
-      }),
-    );
-  }
-  question.options.forEach((option, oi) =>
-    lines.push(optionNode(params, qi, oi, option, question.multiSelect === true)),
-  );
-  lines.push(
-    caption(`${question.total} vote${question.total === 1 ? '' : 's'}`, {
-      color: 'secondary',
-    }),
-  );
-  return col(lines, { gap: 6 });
+): Record<string, unknown> {
+  const suffix = question.multiSelect === true ? ' · multi-select' : '';
+  return {
+    question: question.question,
+    hasHeader:
+      (question.header !== undefined && question.header !== '') || undefined,
+    headerLabel: `${question.header ?? ''}${suffix}`,
+    options: question.options.map((option, oi) =>
+      optionScope(params, qi, oi, option, question.multiSelect === true),
+    ),
+    totalLabel: `${question.total} vote${question.total === 1 ? '' : 's'}`,
+  };
 }
 
 export function pollCard(params: PollCardParams): ColNode {
-  return col(
-    params.questions.map((question, qi) => questionNode(params, question, qi)),
-    { gap: 12 },
-  );
+  return (buildView(view, {
+    pollPressType: POLL_OPTION_PRESS,
+    questions: params.questions.map((question, qi) =>
+      questionScope(params, question, qi),
+    ),
+  }) as ColNode);
 }

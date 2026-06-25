@@ -1,6 +1,7 @@
-import type { RowNode, WidgetNode } from '@stage-labs/kit/kit';
+import type { RowNode } from '@stage-labs/kit/kit';
+import view from './reactionsRow.json';
+import { buildView } from '../buildView';
 import { REACTION_PRESS } from '../actions';
-import { caption, row, text } from '../primitives';
 
 export interface ReactionPill {
   emoji: string;
@@ -16,42 +17,25 @@ export interface ReactionsRowParams {
   ownBorderColor?: string;
 }
 
-function pill(
-  params: ReactionsRowParams,
-  reaction: ReactionPill,
-): WidgetNode {
-  const own = reaction.own === true;
-  const content = row(
-    [
-      text(reaction.emoji, { size: 'xs' }),
-      caption(String(reaction.count), { color: 'secondary' }),
-    ],
-    {
-      align: 'center',
-      gap: 4,
-      padding: { x: 8, y: 2 },
-      radius: 'full',
+export function reactionsRow(params: ReactionsRowParams): RowNode {
+  const pressable = params.dispatchPress === true;
+  const reactions = params.reactions.map((reaction) => {
+    const own = reaction.own === true;
+    return {
+      emoji: reaction.emoji,
+      count: String(reaction.count),
       background: params.pillBackground,
       border:
         own && params.ownBorderColor !== undefined
           ? { size: 1, color: params.ownBorderColor }
           : undefined,
-    },
-  );
-  if (params.dispatchPress !== true) return content;
-  return {
-    type: 'ListViewItem',
-    onClickAction: {
-      type: REACTION_PRESS,
-      payload: { messageId: params.messageId, emoji: reaction.emoji },
-    },
-    children: [content],
-  };
-}
-
-export function reactionsRow(params: ReactionsRowParams): RowNode {
-  return row(
-    params.reactions.map((reaction) => pill(params, reaction)),
-    { gap: 4, wrap: 'wrap', align: 'center' },
-  );
+      bare: !pressable || undefined,
+      pressable: pressable || undefined,
+    };
+  });
+  return (buildView(view, {
+    reactions,
+    messageId: params.messageId,
+    reactionPressType: REACTION_PRESS,
+  }) as RowNode);
 }

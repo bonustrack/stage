@@ -1,6 +1,7 @@
-import type { ListViewItemNode, WidgetNode } from '@stage-labs/kit/kit';
+import type { ListViewItemNode } from '@stage-labs/kit/kit';
+import view from './previewLinkCard.json';
+import { buildView } from '../buildView';
 import { LINK_OPEN } from '../actions';
-import { caption, col, image, text } from '../primitives';
 
 export interface PreviewLinkCardParams {
   url: string;
@@ -10,23 +11,15 @@ export interface PreviewLinkCardParams {
 }
 
 export function previewLinkCard(params: PreviewLinkCardParams): ListViewItemNode {
-  const body: WidgetNode[] = [text(params.title, { weight: 'semibold', truncate: true })];
-  if (params.subtitle !== undefined && params.subtitle !== '') {
-    body.push(caption(params.subtitle, { color: 'secondary', maxLines: 2 }));
-  }
-
-  const children: WidgetNode[] = [];
-  if (params.imageUri !== undefined && params.imageUri !== '') {
-    children.push(image(params.imageUri, { radius: 'md', maxHeight: 160, fit: 'cover' }));
-  }
-  children.push(col(body, { gap: 2, padding: { x: 12, y: 10 } }));
-
-  return {
-    type: 'ListViewItem',
-    onClickAction: {
-      type: LINK_OPEN,
-      payload: { url: params.url },
-    },
-    children: [col(children, { radius: 'lg', gap: 0 })],
-  };
+  return (buildView(view, {
+    linkAction: LINK_OPEN,
+    url: params.url,
+    title: params.title,
+    subtitle: params.subtitle,
+    imageUri: params.imageUri,
+    hasSubtitle:
+      (params.subtitle !== undefined && params.subtitle !== '') || undefined,
+    hasImage:
+      (params.imageUri !== undefined && params.imageUri !== '') || undefined,
+  }) as ListViewItemNode);
 }

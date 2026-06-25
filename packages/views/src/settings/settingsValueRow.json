@@ -1,0 +1,21 @@
+{
+  "type": "ListViewItem",
+  "onClickAction": "{{clickAction}}",
+  "align": "center",
+  "gap": 12,
+  "children": [
+    {
+      "type": "Col",
+      "flex": 1,
+      "children": [{ "type": "Text", "value": "{{label}}", "size": "md", "color": "secondary" }]
+    },
+    { "type": "Text", "value": "{{value}}", "size": "md", "color": "text", "truncate": true },
+    {
+      "$if": "hasCopy",
+      "type": "Icon",
+      "name": "copy",
+      "color": "secondary",
+      "size": "sm"
+    }
+  ]
+}

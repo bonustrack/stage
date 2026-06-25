@@ -1,0 +1,85 @@
+{
+  "type": "ListViewItem",
+  "onClickAction": { "type": "{{action}}", "payload": { "tokenId": "{{tokenId}}" } },
+  "align": "center",
+  "gap": 12,
+  "children": [
+    {
+      "type": "Row",
+      "align": "center",
+      "gap": 12,
+      "flex": 1,
+      "children": [
+        {
+          "$if": "avatarStacked",
+          "type": "Col",
+          "children": [
+            { "type": "Image", "src": "{{logoUri}}", "size": 40, "radius": "full" },
+            { "type": "Image", "src": "{{chainBadgeUri}}", "size": 16, "radius": "full" }
+          ]
+        },
+        {
+          "$if": "avatarPlain",
+          "type": "Image",
+          "src": "{{logoUri}}",
+          "size": 40,
+          "radius": "full"
+        },
+        {
+          "type": "Col",
+          "gap": 2,
+          "children": [
+            {
+              "type": "Row",
+              "align": "center",
+              "gap": 6,
+              "children": [
+                {
+                  "$if": "isPrivate",
+                  "type": "Icon",
+                  "name": "shield-check",
+                  "color": "secondary",
+                  "size": "sm"
+                },
+                { "type": "Text", "value": "{{symbol}}", "weight": "semibold", "truncate": true }
+              ]
+            },
+            { "type": "Caption", "value": "{{name}}", "color": "secondary" }
+          ]
+        },
+        { "type": "Spacer" },
+        {
+          "type": "Col",
+          "gap": 2,
+          "align": "end",
+          "children": [
+            { "type": "Text", "value": "{{balance}}", "weight": "semibold", "textAlign": "end" },
+            {
+              "type": "Row",
+              "gap": 4,
+              "justify": "end",
+              "align": "center",
+              "children": [
+                { "type": "Caption", "value": "{{priceUsd}}", "color": "secondary" },
+                {
+                  "type": "Badge",
+                  "label": "{{change24h}}",
+                  "variant": "soft",
+                  "size": "sm",
+                  "color": "{{changeBadgeColor}}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "$if": "showChevron",
+          "type": "Icon",
+          "name": "chevron-right",
+          "color": "{{chevronColor}}",
+          "size": "sm"
+        }
+      ]
+    }
+  ]
+}

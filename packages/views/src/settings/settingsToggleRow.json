@@ -1,0 +1,27 @@
+{
+  "type": "ListViewItem",
+  "align": "center",
+  "gap": 12,
+  "children": [
+    {
+      "type": "Col",
+      "gap": 2,
+      "flex": 1,
+      "children": [
+        { "type": "Text", "value": "{{label}}", "weight": "semibold", "size": "md", "color": "text" },
+        {
+          "$if": "hasDescription",
+          "type": "Caption",
+          "value": "{{description}}",
+          "color": "secondary"
+        }
+      ]
+    },
+    {
+      "type": "Checkbox",
+      "name": "{{name}}",
+      "defaultChecked": "{{checked}}",
+      "onChangeAction": "{{changeAction}}"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "type": "Form",
+  "direction": "row",
+  "align": "center",
+  "gap": 8,
+  "onSubmitAction": { "type": "{{sendAction}}", "payload": {} },
+  "children": [
+    {
+      "$if": "hasAttach",
+      "type": "Button",
+      "iconStart": "{{attachIcon}}",
+      "variant": "ghost",
+      "size": "sm",
+      "onClickAction": { "type": "{{attachAction}}", "payload": {} }
+    },
+    {
+      "type": "Input",
+      "name": "{{fieldName}}",
+      "placeholder": "{{placeholder}}",
+      "defaultValue": "{{defaultValue}}",
+      "variant": "soft",
+      "pill": true
+    },
+    {
+      "type": "Button",
+      "iconStart": "{{sendIcon}}",
+      "variant": "solid",
+      "size": "sm",
+      "submit": true,
+      "disabled": "{{sendDisabled}}"
+    }
+  ]
+}

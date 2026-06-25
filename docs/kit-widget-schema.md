@@ -4,7 +4,7 @@ A precise reference for the widget JSON format the Kit renderer emits/consumes, 
 
 This document is derived primarily from the canonical Pydantic widget models and their JS type definitions. The Python models serialize to the exact JSON shape the client renders, and each model carries a literal `type` discriminator field that becomes `"type": "..."` in JSON.
 
-> Provenance: the widget JSON format documented here originates from the upstream OpenAI ChatKit Python/JS SDKs (`widgets.py`, `actions.py`, JS `widgets.d.ts`); this reference tracks that JSON shape so we can render it in our own design system.
+> Provenance: the widget JSON format documented here is derived from upstream Python/JS widget SDKs (`widgets.py`, `actions.py`, JS `widgets.d.ts`); this reference tracks that JSON shape so we can render it in our own design system.
 
 > Note: the format is evolving. The upstream Python SDK marks direct construction of named widget classes as deprecated in favor of `.widget` template files (Jinja2), but the **serialized JSON shape is identical** — templates simply produce these same nodes. Build the renderer against the JSON shape below.
 

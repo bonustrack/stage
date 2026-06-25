@@ -1,0 +1,31 @@
+{
+  "type": "ListView",
+  "children": [
+    {
+      "$repeat": "items",
+      "$item": {
+        "type": "ListViewItem",
+        "onClickAction": { "type": "{{item.pressType}}", "payload": { "id": "{{item.id}}" } },
+        "align": "center",
+        "gap": 12,
+        "children": [
+          {
+            "type": "Row",
+            "align": "center",
+            "gap": 12,
+            "flex": 1,
+            "children": [
+              {
+                "$if": "item.hasIcon",
+                "type": "Icon",
+                "name": "{{item.icon}}",
+                "color": "{{item.iconColor}}"
+              },
+              { "type": "Text", "value": "{{item.label}}", "color": "{{item.labelColor}}", "weight": "medium" }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

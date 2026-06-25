@@ -1,6 +1,8 @@
 import type { ColNode, WidgetNode } from '@stage-labs/kit/kit';
+import view from './emptyState.json';
+import { buildView } from '../buildView';
 import { EMPTY_STATE_PRESS } from '../actions';
-import { button, caption, col, icon, text } from '../primitives';
+import { caption } from '../primitives';
 
 export interface EmptyStateParams {
   icon?: string;
@@ -11,28 +13,20 @@ export interface EmptyStateParams {
 }
 
 export function emptyState(params: EmptyStateParams): ColNode {
-  const children: WidgetNode[] = [];
-  if (params.icon !== undefined && params.icon !== '') {
-    children.push(icon(params.icon, { size: '3xl', color: 'secondary' }));
-  }
-  children.push(text(params.title, { weight: 'semibold', textAlign: 'center' }));
-  if (params.caption !== undefined && params.caption !== '') {
-    children.push(caption(params.caption, { color: 'secondary', textAlign: 'center' }));
-  }
-  if (params.actionLabel !== undefined && params.actionLabel !== '') {
-    children.push(
-      button({
-        label: params.actionLabel,
-        variant: 'soft',
-        size: 'sm',
-        onClickAction: {
-          type: EMPTY_STATE_PRESS,
-          payload: { id: params.actionId },
-        },
-      }),
-    );
-  }
-  return col(children, { align: 'center', justify: 'center', gap: 8, padding: 24 });
+  return (buildView(view, {
+    emptyPressType: EMPTY_STATE_PRESS,
+    icon: params.icon,
+    title: params.title,
+    caption: params.caption,
+    actionLabel: params.actionLabel,
+    actionId: params.actionId,
+    hasIcon: (params.icon !== undefined && params.icon !== '') || undefined,
+    hasCaption:
+      (params.caption !== undefined && params.caption !== '') || undefined,
+    hasAction:
+      (params.actionLabel !== undefined && params.actionLabel !== '') ||
+      undefined,
+  }) as ColNode);
 }
 
 export function sectionHeader(params: { title: string }): WidgetNode {
