@@ -35,6 +35,7 @@ const props = withDefaults(
     dark?: boolean;
     tintBg?: string;
     tintFg?: string;
+    tintPressedBg?: string;
     radius?: number;
   }>(),
   { size: 'md', disabled: false, loading: false },
@@ -104,6 +105,15 @@ const style = computed<Record<string, string>>(() => {
   return css;
 });
 
+const hasPressedBg = computed(() => props.tintPressedBg !== undefined);
+
+const rootStyle = computed<Record<string, string>>(() => {
+  const pressed = props.tintPressedBg;
+  return pressed === undefined
+    ? style.value
+    : { ...style.value, '--kit-btn-pressed-bg': pressed };
+});
+
 function onClick(event: MouseEvent): void {
   if (isDisabled.value) return;
   emit('click', event);
@@ -111,9 +121,21 @@ function onClick(event: MouseEvent): void {
 </script>
 
 <template>
-  <button type="button" :style="style" :disabled="isDisabled" @click="onClick">
+  <button
+    type="button"
+    :style="rootStyle"
+    :class="{ 'kit-btn-pressable': hasPressedBg }"
+    :disabled="isDisabled"
+    @click="onClick"
+  >
     <slot name="iconStart" />
     <slot>{{ label }}</slot>
     <slot name="iconEnd" />
   </button>
 </template>
+
+<style scoped>
+.kit-btn-pressable:active:not(:disabled) {
+  background-color: var(--kit-btn-pressed-bg) !important;
+}
+</style>

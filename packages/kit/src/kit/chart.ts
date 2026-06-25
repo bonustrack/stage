@@ -1,4 +1,4 @@
-import type { ChartNode } from './nodes';
+import type { ChartNode } from './chart-node';
 import type { ChartSeries, XAxisConfig } from './node-fields';
 import { resolveColor, type Scheme } from './resolve';
 import { resolveColorToken } from '../tokens';

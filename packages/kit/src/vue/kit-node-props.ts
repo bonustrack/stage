@@ -2,6 +2,7 @@ import { HERO_ICON_PATHS, type HeroIconName } from '../icons';
 import type { Spacing } from '../layout';
 import {
   resolveAlign,
+  resolveBadgeStyle,
   resolveBorder,
   resolveButtonStyle,
   resolveColor,
@@ -14,10 +15,13 @@ import {
   type Scheme,
 } from '../kit';
 import type {
+  BadgeFontToken,
+  BadgeNode,
   BoxLayoutBase,
   ButtonNode,
   CardNode,
   Color,
+  FontWeight,
   ImageNode,
   ListViewItemNode,
 } from '../kit';
@@ -156,12 +160,18 @@ export function buttonProps(
   node: ButtonNode,
   scheme: Scheme,
 ): Record<string, unknown> {
-  const styled = resolveButtonStyle(node.color, node.background, scheme);
+  const styled = resolveButtonStyle(node.color, node.background, scheme, {
+    pressedBackground: node.pressedBackground,
+    foreground: node.foreground,
+  });
+  const radius = resolveRadius(node.radius);
   return {
     label: node.label,
     color: styled.color,
     tintBg: styled.tintBg,
     tintFg: styled.tintFg,
+    tintPressedBg: styled.tintPressedBg,
+    radius: typeof radius === 'number' ? radius : undefined,
     variant: node.variant,
     styleColor: node.style,
     size: node.size,
@@ -169,6 +179,33 @@ export function buttonProps(
     uniform: node.uniform,
     block: node.block,
     disabled: node.disabled,
+  };
+}
+
+export interface BadgeBindings {
+  box: Record<string, unknown>;
+  text: {
+    value: string;
+    size: BadgeFontToken;
+    weight: FontWeight;
+    color: string;
+  };
+}
+
+export function badgeProps(node: BadgeNode, scheme: Scheme): BadgeBindings {
+  const styled = resolveBadgeStyle(node.color, node.background, node.size, scheme);
+  return {
+    box: {
+      padding: { x: 8, y: 2 },
+      radius: node.pill === true ? 'full' : 'sm',
+      background: styled.background,
+    },
+    text: {
+      value: node.label,
+      size: styled.fontToken,
+      weight: node.weight ?? 'semibold',
+      color: styled.foreground,
+    },
   };
 }
 

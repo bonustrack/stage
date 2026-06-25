@@ -230,9 +230,11 @@ A form-field label bound to an input.
 
 #### Badge — `"type": "Badge"`
 - `label`: string — **required**
-- `color`: `"secondary" | "success" | "danger" | "warning" | "info" | "discovery"`
+- `color`: semantic enum (`"secondary" | "success" | "danger" | "warning" | "info" | "discovery"`) **or** an arbitrary color value (hex/token/`ThemeColor`). A custom color is treated as the badge background with an auto-computed readable foreground (luminance-based), exactly like `Button`.
+- `background`: arbitrary color value (hex/token/`ThemeColor`) — sets the badge background explicitly. When `background` is set, `color` (if a non-semantic color value) becomes the **foreground** text color, so background and text can be chosen independently (used by the member Owner/Admin badges).
+- `weight`: `FontWeight` — label weight (defaults to `semibold`; member badges use `medium`).
 - `variant`: `"solid" | "soft" | "outline"`
-- `size`: `"sm" | "md" | "lg"`
+- `size`: `"3xs" | "2xs" | "sm" | "md" | "lg"` — `3xs` = 11px label, `2xs` = 12px, `sm`/`md`/`lg` = 13px. Matches the `Text` size tokens.
 - `pill`: bool
 
 ### Interactive controls
@@ -244,10 +246,16 @@ A form-field label bound to an input.
 - `iconStart` / `iconEnd`: `WidgetIcon`
 - `style`: `"primary" | "secondary"`
 - `iconSize`: `"sm" | "md" | "lg" | "xl" | "2xl"`
-- `color`: `"primary" | "secondary" | "info" | "discovery" | "success" | "caution" | "warning" | "danger"`
+- `color`: `"primary" | "secondary" | "info" | "discovery" | "success" | "caution" | "warning" | "danger"` (or an arbitrary color value — see notes)
+- `background`: arbitrary color value (hex/token/`ThemeColor`) — custom solid background.
+- `pressedBackground`: arbitrary color value — background shown while the button is pressed (RN `pressed`, web `:active`). Lets a `ghost`/`uniform` icon button reproduce a custom pressed-fill (e.g. the member remove control's pink pressed background).
+- `foreground`: arbitrary color value — overrides the label/icon color (e.g. a fixed `danger` token for the trash icon).
+- `radius`: RadiusValue — overrides the default pill radius (e.g. `"full"` for a round icon button).
 - `variant`: ControlVariant (`solid | soft | outline | ghost`)
 - `size`: ControlSize (`3xs`..`3xl`)
 - `pill`: bool · `uniform`: bool (square/icon button) · `block`: bool (full width) · `disabled`: bool
+
+The **member remove control** (round trash icon, transparent until pressed, pink pressed-fill, 18px danger icon) is expressed as a `Button` with `variant: "ghost"`, `uniform: true`, `radius: "full"`, `iconStart: "trash"`, `foreground` set to the danger token, and `pressedBackground` set to the per-theme pink.
 
 #### Input — `"type": "Input"`
 - `name`: string — **required** (payload key on submit)
@@ -388,6 +396,16 @@ Controlled live text input — dispatches `onChangeAction` on **every keystroke*
 - `placeholder`: string · `multiline`: bool · `autoFocus`: bool · `autoGrow`: bool · `disabled`: bool
 - `onSelectionChangeAction`: `ActionConfig` — dispatched with `{ start, end }` (caret/selection character offsets) on every caret move or selection change. Unblocks @-mention range detection so the composer input can be a `TextField`.
 - `selection`: `{ start, end }` — optional controlled caret/selection range.
+- `onSubmitAction`: `ActionConfig` — dispatched with `{ [name]: value }` on submit/done (RN `onSubmitEditing`; web Enter on a single-line field).
+- `returnKeyType`: `"done" | "go" | "next" | "search" | "send"` — keyboard return key (RN `returnKeyType`; web `enterkeyhint`).
+- `maxLength`: number · `maxHeight`: number | string (caps a `multiline` field's height for scroll).
+- `autoFocus`: bool (focus on mount) · `focusNonce`: number — declarative imperative-focus: whenever the value **changes**, the input is re-focused. Replaces an imperative focus ref.
+
+Styling (all optional; defaults reproduce the current outline field exactly):
+- `variant`: `"outline"` (default — bordered, filled) | `"plain"` (transparent background, no border — for the composer).
+- `background` / `borderColor` / `color` / `placeholderColor`: arbitrary color value (hex/token/`ThemeColor`).
+- `radius`: RadiusValue · `paddingX` / `paddingY`: number | string (box padding).
+- `fontSize`: number (px) · `fontWeight`: `FontWeight` (resolves to the Calibre family, like other text nodes).
 
 RN renders a `TextInput` (selection via `onSelectionChange`/`selection` props); Vue renders an `<input>` or `<textarea>` (when `multiline`) reading `selectionStart`/`selectionEnd` on `input`/`select`/`keyup`/`click`.
 

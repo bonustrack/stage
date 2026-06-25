@@ -1,10 +1,15 @@
 
-import { useState } from 'react';
-import { TextInput, type TextStyle } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
 import {
-  controlBoxStyle,
+  TextInput,
+  type DimensionValue,
+  type ReturnKeyTypeOptions,
+  type TextStyle,
+} from 'react-native';
+import {
   controlColors,
-  controlTextStyle,
+  textFieldStyle,
+  type TextFieldVariant,
 } from '../control.styles';
 import { BLOCK_RADIUS_DEFAULT } from '../tokens';
 
@@ -19,6 +24,21 @@ export interface TextFieldProps {
   onChangeText?: (text: string) => void;
   selection?: { start: number; end: number };
   onSelectionChange?: (range: { start: number; end: number }) => void;
+  onSubmit?: () => void;
+  focusNonce?: number;
+  variant?: TextFieldVariant;
+  background?: string;
+  borderColor?: string;
+  radius?: number | string;
+  paddingX?: number | string;
+  paddingY?: number | string;
+  fontSize?: number;
+  fontFamily?: string;
+  color?: string;
+  placeholderColor?: string;
+  maxLength?: number;
+  maxHeight?: number | string;
+  returnKeyType?: ReturnKeyTypeOptions;
   dark?: boolean;
 }
 
@@ -33,25 +53,72 @@ export function TextField(props: TextFieldProps): React.ReactElement {
     onChangeText,
     selection,
     onSelectionChange,
+    onSubmit,
+    focusNonce,
+    variant,
+    background,
+    borderColor,
+    radius,
+    paddingX,
+    paddingY,
+    fontSize,
+    fontFamily,
+    color,
+    placeholderColor,
+    maxLength,
+    maxHeight,
+    returnKeyType,
     dark = false,
   } = props;
   const [focused, setFocused] = useState(false);
-  const colors = controlColors('outline', dark);
-  const box = controlBoxStyle('md', 'outline', colors, BLOCK_RADIUS_DEFAULT, focused);
-  const text = controlTextStyle('md', colors);
+  const ref = useRef<TextInput>(null);
+
+  useEffect(() => {
+    if (focusNonce === undefined) return;
+    ref.current?.focus();
+  }, [focusNonce]);
+
+  const baseColors = controlColors(
+    variant === 'plain' ? 'soft' : 'outline',
+    dark,
+  );
+  const styled = textFieldStyle({
+    variant,
+    focused,
+    defaultRadius: BLOCK_RADIUS_DEFAULT,
+    baseColors,
+    background,
+    borderColor,
+    radius,
+    paddingX,
+    paddingY,
+    fontSize,
+    fontFamily,
+    color,
+  });
+  const maxH = maxHeight as DimensionValue | undefined;
   const grow: TextStyle = multiline
-    ? { minHeight: autoGrow ? 44 : 88, height: undefined, textAlignVertical: 'top' }
-    : {};
+    ? {
+        minHeight: autoGrow ? 44 : 88,
+        maxHeight: maxH,
+        height: undefined,
+        textAlignVertical: 'top',
+      }
+    : { maxHeight: maxH };
 
   return (
     <TextInput
+      ref={ref}
       value={value}
       placeholder={placeholder}
-      placeholderTextColor={colors.placeholder}
+      placeholderTextColor={placeholderColor ?? styled.placeholder}
       editable={!disabled}
       autoFocus={autoFocus}
       multiline={multiline}
+      maxLength={maxLength}
+      returnKeyType={returnKeyType}
       onChangeText={onChangeText}
+      onSubmitEditing={onSubmit}
       selection={selection}
       onSelectionChange={
         onSelectionChange === undefined
@@ -66,7 +133,7 @@ export function TextField(props: TextFieldProps): React.ReactElement {
       onBlur={() => {
         setFocused(false);
       }}
-      style={[box, text, grow, disabled ? { opacity: 0.5 } : null]}
+      style={[styled.box, styled.text, grow, disabled ? { opacity: 0.5 } : null]}
     />
   );
 }

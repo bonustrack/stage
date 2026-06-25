@@ -88,7 +88,13 @@ export type BadgeColor =
 
 export type BadgeVariant = 'solid' | 'soft' | 'outline';
 
-export type BadgeSize = 'sm' | 'md' | 'lg';
+export type BadgeSize = '3xs' | '2xs' | 'sm' | 'md' | 'lg';
+
+export type BadgeColorValue = Color;
+
+export type TextFieldVariant = 'outline' | 'plain';
+
+export type ReturnKeyType = 'done' | 'go' | 'next' | 'search' | 'send';
 
 export type ButtonColor =
   | 'primary'

@@ -23,7 +23,7 @@ import type {
 } from '../kit';
 import {
   resolveAlign,
-  resolveBadgeColor,
+  resolveBadgeStyle,
   resolveBorder,
   resolveHeroTitlePx,
   resolveJustify,
@@ -180,27 +180,22 @@ export function renderIcon(node: IconNode, ctx: RenderCtx): ReactNode {
   return <Icon name={name} size={px} color={resolveOptionalColor(node.color, ctx.scheme)} dark={ctx.dark} />;
 }
 
-const BADGE_BG: Record<string, string> = {
-  secondary: '#8a929d',
-  success: '#1f9d55',
-  danger: '#e3342f',
-  warning: '#f6993f',
-  info: '#3490dc',
-  discovery: '#7e5bef',
-};
-
-export function renderBadge(node: BadgeNode): ReactNode {
-  const tone = resolveBadgeColor(node.color);
-  const bg = BADGE_BG[tone] ?? BADGE_BG.secondary;
+export function renderBadge(node: BadgeNode, ctx: RenderCtx): ReactNode {
+  const styled = resolveBadgeStyle(node.color, node.background, node.size, ctx.scheme);
   return (
     <Box
       direction="row"
       align="center"
       padding={{ x: 8, y: 2 }}
       radius={node.pill === true ? 'full' : 'sm'}
-      background={bg}
+      background={styled.background}
     >
-      <Text value={node.label} size="xs" weight="semibold" color="#ffffff" />
+      <Text
+        value={node.label}
+        size={styled.fontToken}
+        weight={node.weight ?? 'semibold'}
+        color={styled.foreground}
+      />
     </Box>
   );
 }

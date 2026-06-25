@@ -1,4 +1,5 @@
 
+import { FONT_SIZE } from '@stage-labs/kit/tokens';
 import type { WidgetRoot } from '@stage-labs/kit/kit';
 
 const SAMPLE_IMAGE =
@@ -66,6 +67,25 @@ export const EXTENSION_WIDGET: WidgetRoot = {
     },
     { type: 'Spacer', minSize: 12 },
     {
+      type: 'TextField',
+      name: 'demoPlainField',
+      value: 'Message',
+      placeholder: 'Message',
+      variant: 'plain',
+      fontSize: FONT_SIZE['3xl'],
+      fontWeight: 'medium',
+      color: { dark: '#e8e8ea', light: '#1c1c1e' },
+      paddingX: 8,
+      paddingY: 4,
+      maxHeight: 210,
+      returnKeyType: 'send',
+      autoFocus: true,
+      focusNonce: 1,
+      onChangeAction: { type: 'demo_plain_text', handler: 'client' },
+      onSubmitAction: { type: 'demo_plain_submit', handler: 'client' },
+    },
+    { type: 'Spacer', minSize: 12 },
+    {
       type: 'Stack',
       width: '100%',
       height: 28,
@@ -111,6 +131,15 @@ export const EXTENSION_WIDGET: WidgetRoot = {
         { type: 'Badge', label: 'Governance', pill: true, color: 'success' },
         { type: 'Badge', label: 'Social', pill: true, color: 'warning' },
         { type: 'Badge', label: 'Gaming', pill: true, color: 'danger' },
+        {
+          type: 'Badge',
+          label: 'Owner',
+          pill: true,
+          size: '3xs',
+          weight: 'medium',
+          background: { dark: 'rgba(45,212,191,0.18)', light: 'rgba(13,148,136,0.12)' },
+          color: { dark: '#2dd4bf', light: '#0d9488' },
+        },
       ],
     },
     { type: 'Spacer', minSize: 12 },

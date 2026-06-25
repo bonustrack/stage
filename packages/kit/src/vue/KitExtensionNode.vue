@@ -16,7 +16,9 @@ import GesturePressable from './GesturePressable.vue';
 import {
   dispatchAction,
   resolveOptionalColor,
+  resolveRadius,
   resolveSpinnerSize,
+  resolveWeight,
   type ActionConfig,
   type AudioPlayerNode,
   type AvatarStackNode,
@@ -107,8 +109,23 @@ function onSwipe(direction: SwipeDirection): void {
     :auto-grow="textFieldNode.autoGrow"
     :disabled="textFieldNode.disabled"
     :selection="textFieldNode.selection"
+    :focus-nonce="textFieldNode.focusNonce"
+    :variant="textFieldNode.variant"
+    :background="resolveOptionalColor(textFieldNode.background, scheme)"
+    :border-color="resolveOptionalColor(textFieldNode.borderColor, scheme)"
+    :radius="resolveRadius(textFieldNode.radius)"
+    :padding-x="textFieldNode.paddingX"
+    :padding-y="textFieldNode.paddingY"
+    :font-size="textFieldNode.fontSize"
+    :font-family="resolveWeight(textFieldNode.fontWeight)"
+    :color="resolveOptionalColor(textFieldNode.color, scheme)"
+    :placeholder-color="resolveOptionalColor(textFieldNode.placeholderColor, scheme)"
+    :max-length="textFieldNode.maxLength"
+    :max-height="textFieldNode.maxHeight"
+    :enter-key-hint="textFieldNode.returnKeyType"
     @update:value="emitChange(textFieldNode.name, $event, textFieldNode.onChangeAction)"
     @selection-change="fire(textFieldNode.onSelectionChangeAction, $event)"
+    @submit="fire(textFieldNode.onSubmitAction, { [textFieldNode.name]: textFieldNode.value })"
   />
 
   <ColorPicker

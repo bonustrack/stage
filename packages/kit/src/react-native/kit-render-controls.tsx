@@ -15,6 +15,7 @@ import {
   resolveControlSize,
   resolveDirection,
   resolveFieldVariant,
+  resolveRadius,
 } from '../kit';
 import { Button } from './button';
 import { Checkbox } from './checkbox';
@@ -51,13 +52,19 @@ export function renderButton(node: ButtonNode, ctx: RenderCtx): ReactNode {
     }
     dispatch(node.onClickAction, ctx);
   };
-  const styled = resolveButtonStyle(node.color, node.background, ctx.scheme);
+  const styled = resolveButtonStyle(node.color, node.background, ctx.scheme, {
+    pressedBackground: node.pressedBackground,
+    foreground: node.foreground,
+  });
+  const radius = resolveRadius(node.radius);
   return (
     <Button
       label={node.label}
       color={styled.color}
       tintBg={styled.tintBg}
       tintFg={styled.tintFg}
+      tintPressedBg={styled.tintPressedBg}
+      radius={typeof radius === 'number' ? radius : undefined}
       variant={resolveButtonVariant(node.variant)}
       size={resolveControlSize(node.size)}
       pill={node.pill}

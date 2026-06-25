@@ -61,9 +61,10 @@ export interface ResolvedButtonStyle {
   color: ButtonColor;
   tintBg?: string;
   tintFg?: string;
+  tintPressedBg?: string;
 }
 
-function readableForeground(hex: string): string {
+export function readableForeground(hex: string): string {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
   const group = m?.[1];
   if (group === undefined) return '#ffffff';
@@ -75,18 +76,35 @@ function readableForeground(hex: string): string {
   return luminance > 0.6 ? '#000000' : '#ffffff';
 }
 
+export interface ButtonStyleExtras {
+  pressedBackground?: Color;
+  foreground?: Color;
+}
+
 export function resolveButtonStyle(
   color: ButtonColorValue | undefined,
   background: Color | undefined,
   scheme: Scheme,
+  extras?: ButtonStyleExtras,
 ): ResolvedButtonStyle {
+  const tintPressedBg = resolveOptionalColor(extras?.pressedBackground, scheme);
+  const tintFgOverride = resolveOptionalColor(extras?.foreground, scheme);
   const fallback = isSemanticButtonColor(color) ? undefined : color;
   const custom = background ?? fallback;
   if (custom === undefined) {
-    return { color: isSemanticButtonColor(color) ? color : 'primary' };
+    return {
+      color: isSemanticButtonColor(color) ? color : 'primary',
+      tintFg: tintFgOverride,
+      tintPressedBg,
+    };
   }
   const bg = resolveColor(custom, scheme);
-  return { color: 'primary', tintBg: bg, tintFg: readableForeground(bg) };
+  return {
+    color: 'primary',
+    tintBg: bg,
+    tintFg: tintFgOverride ?? readableForeground(bg),
+    tintPressedBg,
+  };
 }
 
 const HERO_TITLE_PX: Record<string, number> = { '6xl': 44, '7xl': 60 };

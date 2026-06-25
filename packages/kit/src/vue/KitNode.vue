@@ -51,6 +51,7 @@ import {
   type ChartNode,
 } from '../kit';
 import {
+  badgeProps,
   boxProps,
   buttonProps,
   captionSize,
@@ -111,6 +112,7 @@ const captionNode = computed(() => props.node as CaptionNode);
 const labelNode = computed(() => props.node as LabelNode);
 const markdownNode = computed(() => props.node as MarkdownNode);
 const badgeNode = computed(() => props.node as BadgeNode);
+const badge = computed(() => badgeProps(badgeNode.value, scheme.value));
 const buttonNode = computed(() => props.node as ButtonNode);
 const iconNode = computed(() => props.node as IconNode);
 const imageNode = computed(() => props.node as ImageNode);
@@ -224,11 +226,8 @@ function fireWith(action: ActionConfig | undefined, payload: Record<string, unkn
     :streaming="markdownNode.streaming"
   />
 
-  <Box
-    v-else-if="node.type === 'Badge'"
-    v-bind="{ padding: 4, radius: badgeNode.pill ? 'full' : 'sm' }"
-  >
-    <Text :value="badgeNode.label" size="xs" weight="medium" />
+  <Box v-else-if="node.type === 'Badge'" v-bind="badge.box">
+    <Text v-bind="badge.text" />
   </Box>
 
   <Button

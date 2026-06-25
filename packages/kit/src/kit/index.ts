@@ -3,6 +3,7 @@ export * from './node-fields';
 export * from './nodes';
 export * from './validate';
 export * from './resolve';
+export * from './badge';
 export * from './actions';
 export * from './chart';
 export * from './qr';

@@ -1,10 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import {
-  controlBoxStyle,
-  controlColors,
-  controlTextStyle,
-} from '../control.styles';
+import { computed, ref, watch } from 'vue';
+import { controlColors, textFieldSpec } from '../control.styles';
 import { BLOCK_RADIUS_DEFAULT } from '../tokens';
 import { useKitScheme } from './theme-context';
 
@@ -18,6 +14,20 @@ const props = withDefaults(
     autoGrow?: boolean;
     disabled?: boolean;
     selection?: { start: number; end: number };
+    focusNonce?: number;
+    variant?: 'outline' | 'plain';
+    background?: string;
+    borderColor?: string;
+    radius?: number | string;
+    paddingX?: number | string;
+    paddingY?: number | string;
+    fontSize?: number;
+    fontFamily?: string;
+    color?: string;
+    placeholderColor?: string;
+    maxLength?: number;
+    maxHeight?: number | string;
+    enterKeyHint?: 'done' | 'go' | 'next' | 'search' | 'send';
     dark?: boolean;
   }>(),
   {},
@@ -26,37 +36,87 @@ const props = withDefaults(
 const emit = defineEmits<{
   'update:value': [value: string];
   selectionChange: [range: { start: number; end: number }];
+  submit: [];
 }>();
 
 const scheme = useKitScheme();
 const isDark = computed(() => props.dark ?? scheme === 'dark');
 const focused = ref(false);
+const inputEl = ref<HTMLInputElement | HTMLTextAreaElement | null>(null);
 
-const colors = computed(() => controlColors('outline', isDark.value));
+watch(
+  () => props.focusNonce,
+  (next, prev) => {
+    if (next === undefined || next === prev) return;
+    inputEl.value?.focus();
+  },
+);
 
-function toCss(entries: Record<string, string | number>): Record<string, string> {
-  const css: Record<string, string> = {};
-  for (const [k, v] of Object.entries(entries)) {
-    css[k] = typeof v === 'number' ? `${v}px` : v;
-  }
-  return css;
+function px(v: number | string | undefined): string | undefined {
+  if (v === undefined) return undefined;
+  return typeof v === 'number' ? `${v}px` : v;
 }
 
+const spec = computed(() => {
+  const baseColors = controlColors(
+    props.variant === 'plain' ? 'soft' : 'outline',
+    isDark.value,
+  );
+  return textFieldSpec({
+    variant: props.variant,
+    focused: focused.value,
+    defaultRadius: BLOCK_RADIUS_DEFAULT,
+    baseColors,
+    background: props.background,
+    borderColor: props.borderColor,
+    radius: props.radius,
+    paddingX: props.paddingX,
+    paddingY: props.paddingY,
+    fontSize: props.fontSize,
+    fontFamily: props.fontFamily,
+    color: props.color,
+  });
+});
+
 const style = computed<Record<string, string>>(() => {
-  const box = controlBoxStyle('md', 'outline', colors.value, BLOCK_RADIUS_DEFAULT, focused.value);
-  const text = controlTextStyle('md', colors.value);
-  const css = {
-    ...toCss(box as Record<string, string | number>),
-    ...toCss(text as Record<string, string | number>),
+  const s = spec.value;
+  const padX = px(s.paddingX) ?? '0';
+  const padY = px(s.paddingY) ?? '0';
+  const css: Record<string, string> = {
+    minHeight: props.multiline
+      ? props.autoGrow
+        ? '44px'
+        : '88px'
+      : `${s.minHeight}px`,
+    paddingLeft: padX,
+    paddingRight: padX,
+    paddingTop: padY,
+    paddingBottom: padY,
+    backgroundColor: s.background,
+    borderRadius: px(s.radius) ?? '0',
+    borderWidth: `${s.borderWidth}px`,
+    borderColor: s.borderColor,
+    color: s.color,
+    fontSize: `${s.fontSize}px`,
+    fontFamily: s.fontFamily,
+    borderStyle: 'solid',
+    outline: 'none',
+    width: '100%',
+    boxSizing: 'border-box',
   };
-  css.borderStyle = 'solid';
-  css.outline = 'none';
-  css.width = '100%';
-  css.fontFamily = 'Calibre-Medium';
-  css.boxSizing = 'border-box';
-  if (props.multiline) css.minHeight = props.autoGrow ? '44px' : '88px';
+  if (props.multiline) {
+    css.textAlign = 'left';
+    css.resize = 'none';
+  }
+  const maxH = px(props.maxHeight);
+  if (maxH !== undefined) css.maxHeight = maxH;
   if (props.disabled) css.opacity = '0.5';
   return css;
+});
+
+const placeholderColor = computed(() => {
+  if (props.placeholderColor !== undefined) return props.placeholderColor;
+  return controlColors('outline', isDark.value).placeholder;
 });
 
 function onInput(event: Event): void {
@@ -75,37 +135,55 @@ function emitSelection(target: HTMLInputElement | HTMLTextAreaElement): void {
 function onSelect(event: Event): void {
   emitSelection(event.target as HTMLInputElement | HTMLTextAreaElement);
 }
+
+function onKeyup(event: KeyboardEvent): void {
+  onSelect(event);
+  if (!props.multiline && event.key === 'Enter') emit('submit');
+}
 </script>
 
 <template>
   <textarea
     v-if="multiline"
+    ref="inputEl"
     :name="name"
     :value="value"
     :placeholder="placeholder"
     :disabled="disabled"
     :autofocus="autoFocus"
-    :style="style"
+    :maxlength="maxLength"
+    :enterkeyhint="enterKeyHint"
+    :style="{ ...style, '--kit-placeholder': placeholderColor }"
     @input="onInput"
     @select="onSelect"
-    @keyup="onSelect"
+    @keyup="onKeyup"
     @click="onSelect"
     @focus="focused = true"
     @blur="focused = false"
   />
   <input
     v-else
+    ref="inputEl"
     :name="name"
     :value="value"
     :placeholder="placeholder"
     :disabled="disabled"
     :autofocus="autoFocus"
-    :style="style"
+    :maxlength="maxLength"
+    :enterkeyhint="enterKeyHint"
+    :style="{ ...style, '--kit-placeholder': placeholderColor }"
     @input="onInput"
     @select="onSelect"
-    @keyup="onSelect"
+    @keyup="onKeyup"
     @click="onSelect"
     @focus="focused = true"
     @blur="focused = false"
   />
 </template>
+
+<style scoped>
+input::placeholder,
+textarea::placeholder {
+  color: var(--kit-placeholder);
+}
+</style>

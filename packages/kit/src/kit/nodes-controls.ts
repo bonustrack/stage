@@ -1,18 +1,24 @@
 
 import type {
   ActionConfig,
+  Color,
   ControlSize,
   ControlVariant,
+  Dimension,
   FieldVariant,
   FlexDirection,
+  FontWeight,
   GutterSize,
   InputType,
   NodeBase,
   PopoverSide,
   RadioOption,
+  RadiusValue,
+  ReturnKeyType,
   SelectOption,
   TabsVariant,
   TextAlign,
+  TextFieldVariant,
 } from './node-fields';
 
 export interface SwitchNode extends NodeBase {
@@ -56,6 +62,21 @@ export interface TextFieldNode extends NodeBase {
   disabled?: boolean;
   onSelectionChangeAction?: ActionConfig;
   selection?: SelectionRange;
+  focusNonce?: number;
+  variant?: TextFieldVariant;
+  background?: Color;
+  borderColor?: Color;
+  radius?: RadiusValue;
+  paddingX?: Dimension;
+  paddingY?: Dimension;
+  fontSize?: number;
+  fontWeight?: FontWeight;
+  color?: Color;
+  placeholderColor?: Color;
+  maxLength?: number;
+  maxHeight?: Dimension;
+  returnKeyType?: ReturnKeyType;
+  onSubmitAction?: ActionConfig;
 }
 
 export interface ColorPickerNode extends NodeBase {

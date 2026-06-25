@@ -14,7 +14,9 @@ import type {
 } from '../kit';
 import {
   resolveOptionalColor,
+  resolveRadius,
   resolveSpinnerSize,
+  resolveWeight,
 } from '../kit';
 import { AudioPlayer } from './audio-player';
 import { AvatarStack } from './avatar-stack';
@@ -92,11 +94,32 @@ export function renderTextField(node: TextFieldNode, ctx: RenderCtx): ReactNode 
       autoGrow={node.autoGrow}
       disabled={node.disabled}
       selection={node.selection}
+      focusNonce={node.focusNonce}
+      variant={node.variant}
+      background={resolveOptionalColor(node.background, ctx.scheme)}
+      borderColor={resolveOptionalColor(node.borderColor, ctx.scheme)}
+      radius={resolveRadius(node.radius)}
+      paddingX={node.paddingX}
+      paddingY={node.paddingY}
+      fontSize={node.fontSize}
+      fontFamily={resolveWeight(node.fontWeight)}
+      color={resolveOptionalColor(node.color, ctx.scheme)}
+      placeholderColor={resolveOptionalColor(node.placeholderColor, ctx.scheme)}
+      maxLength={node.maxLength}
+      maxHeight={node.maxHeight}
+      returnKeyType={node.returnKeyType}
       dark={ctx.dark}
       onChangeText={(text) => {
         ctx.form?.set(node.name, text);
         dispatch(node.onChangeAction, ctx, { [node.name]: text });
       }}
+      onSubmit={
+        node.onSubmitAction === undefined
+          ? undefined
+          : () => {
+              dispatch(node.onSubmitAction, ctx, { [node.name]: node.value });
+            }
+      }
       onSelectionChange={
         node.onSelectionChangeAction === undefined
           ? undefined

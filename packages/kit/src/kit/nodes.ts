@@ -2,7 +2,7 @@
 import type {
   ActionConfig,
   Alignment,
-  BadgeColor,
+  BadgeColorValue,
   BadgeSize,
   BadgeVariant,
   BorderValue,
@@ -12,8 +12,6 @@ import type {
   CaptionSize,
   CardAction,
   CardSize,
-  ChartDataRow,
-  ChartSeries,
   Color,
   ControlSize,
   ControlVariant,
@@ -35,7 +33,6 @@ import type {
   Theme,
   TitleSize,
   WidgetStatus,
-  XAxisConfig,
 } from './node-fields';
 import type {
   CheckboxNode,
@@ -260,7 +257,9 @@ export interface IconNode extends NodeBase {
 export interface BadgeNode extends NodeBase {
   type: 'Badge';
   label: string;
-  color?: BadgeColor;
+  color?: BadgeColorValue;
+  background?: BadgeColorValue;
+  weight?: FontWeight;
   variant?: BadgeVariant;
   size?: BadgeSize;
   pill?: boolean;
@@ -277,6 +276,9 @@ export interface ButtonNode extends NodeBase {
   iconSize?: ButtonIconSize;
   color?: ButtonColorValue;
   background?: Color;
+  pressedBackground?: Color;
+  foreground?: Color;
+  radius?: RadiusValue;
   variant?: ControlVariant;
   size?: ControlSize;
   pill?: boolean;
@@ -325,28 +327,8 @@ export interface TransitionNode extends NodeBase {
   children?: WidgetNode;
 }
 
-export interface ChartNode extends NodeBase {
-  type: 'Chart';
-  data: ChartDataRow[];
-  series: ChartSeries[];
-  xAxis: string | XAxisConfig;
-  showYAxis?: boolean;
-  showLegend?: boolean;
-  showTooltip?: boolean;
-  barGap?: number;
-  barCategoryGap?: number;
-  flex?: Dimension;
-  width?: Dimension;
-  height?: Dimension;
-  size?: Dimension;
-  minWidth?: Dimension;
-  minHeight?: Dimension;
-  minSize?: Dimension;
-  maxWidth?: Dimension;
-  maxHeight?: Dimension;
-  maxSize?: Dimension;
-  aspectRatio?: Dimension;
-}
+import type { ChartNode } from './chart-node';
+export type { ChartNode } from './chart-node';
 
 export interface UnknownNode extends NodeBase {
   type: string;
