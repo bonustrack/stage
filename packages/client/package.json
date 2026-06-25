@@ -44,6 +44,7 @@
     "./api/etherscan": "./src/api/etherscan.ts",
     "./api/opensea": "./src/api/opensea.ts",
     "./api/coingecko": "./src/api/coingecko.ts",
+    "./text/markdown": "./src/text/markdown.ts",
     "./identity/format": "./src/identity/format.ts",
     "./identity/peerProfiles": "./src/identity/peerProfiles.ts",
     "./wallet/format": "./src/wallet/format.ts",
