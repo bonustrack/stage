@@ -17,6 +17,7 @@ const KIT_VUE_COMPONENTS: Record<string, string> = {
   Image: 'image', AvatarView: 'avatar-view', Markdown: 'markdown',
   ListView: 'list-view', ListViewItem: 'list-view-item', FlatList: 'flat-list',
   Table: 'table', TableRow: 'table-row', TableCell: 'table-cell', DatePicker: 'date-picker',
+  Dialog: 'dialog',
 };
 
 function kitVueResolver(): ComponentResolver {

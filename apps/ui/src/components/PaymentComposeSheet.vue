@@ -27,14 +27,11 @@ function create(): void {
 </script>
 
 <template>
-  <!-- kit-exception: fixed modal overlay backdrop — kit has no overlay/Dialog
-       primitive; rendered as a fixed positioned Col with a click-to-dismiss scrim.
-       Mirrors PollComposeSheet + mobile PaymentSheet (MessengerComposer.sheets). -->
-  <Col class="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
-    @click.self="emit('close')">
-    <Col class="absolute inset-0 bg-black/50" @click="emit('close')" />
+  <Dialog open side="bottom" animation-type="slide"
+    overlay-class="flex items-end sm:items-center justify-center"
+    @close="emit('close')">
     <Col surface="raised"
-      class="relative w-full sm:max-w-md max-h-[85vh] overflow-y-auto no-scrollbar
+      class="w-full sm:max-w-md max-h-[85vh] overflow-y-auto no-scrollbar
         rounded-t-2xl sm:rounded-2xl p-4 gap-3
         bg-metro-bg-light dark:bg-metro-bg-dark">
       <Row class="flex items-center justify-between">
@@ -92,5 +89,5 @@ function create(): void {
         Send request
       </Button>
     </Col>
-  </Col>
+  </Dialog>
 </template>
