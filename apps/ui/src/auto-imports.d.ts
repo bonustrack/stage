@@ -10,6 +10,7 @@ declare global {
   const DIR_ICON: typeof import('./lib/activityFormat').DIR_ICON
   const EffectScope: typeof import('vue').EffectScope
   const METRO_API_URL: typeof import('./lib/xmtpGroups').METRO_API_URL
+  const METRO_MONO_FAMILY: typeof import('./lib/metroFieldColors').METRO_MONO_FAMILY
   const POLL_CODEC: typeof import('./lib/xmtpPollCodec').POLL_CODEC
   const PollCodec: typeof import('./lib/xmtpPollCodec').PollCodec
   const SIGNATURE_REFERENCE_CODEC: typeof import('./lib/xmtpRequestCodecs').SIGNATURE_REFERENCE_CODEC
@@ -33,6 +34,7 @@ declare global {
   const bumpAccountEpoch: typeof import('./lib/xmtp').bumpAccountEpoch
   const cachedRows: typeof import('./lib/channelsCache').cachedRows
   const canExportPrivateKey: typeof import('./lib/accounts').canExportPrivateKey
+  const composeField: typeof import('./lib/composeField').composeField
   const computeMemberRoles: typeof import('./lib/useGroupDetailHelpers').computeMemberRoles
   const computed: typeof import('vue').computed
   const convIdOfLine: typeof import('./lib/xmtp').convIdOfLine
@@ -106,6 +108,7 @@ declare global {
   const memberInboxToAddressMap: typeof import('./lib/xmtpResolve').memberInboxToAddressMap
   const metroConvIdOf: typeof import('./lib/xmtp').metroConvIdOf
   const metroDmPeerOf: typeof import('./lib/xmtp').metroDmPeerOf
+  const metroFieldColors: typeof import('./lib/metroFieldColors').metroFieldColors
   const mutateMembers: typeof import('./lib/useGroupDetail.mutations').mutateMembers
   const nextTick: typeof import('vue').nextTick
   const onActivated: typeof import('vue').onActivated
@@ -258,6 +261,9 @@ declare global {
   export type { ChannelRow } from './lib/channelsSummarize'
   import('./lib/channelsSummarize')
   // @ts-ignore
+  export type { ComposeFieldOptions } from './lib/composeField'
+  import('./lib/composeField')
+  // @ts-ignore
   export type { ExecuteTxResult } from './lib/executeTxRequest'
   import('./lib/executeTxRequest')
   // @ts-ignore
@@ -345,6 +351,7 @@ declare module 'vue' {
     readonly ASK_QUESTION_MEMBERS: UnwrapRef<typeof import('./lib/xmtpGroups')['ASK_QUESTION_MEMBERS']>
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
     readonly METRO_API_URL: UnwrapRef<typeof import('./lib/xmtpGroups')['METRO_API_URL']>
+    readonly METRO_MONO_FAMILY: UnwrapRef<typeof import('./lib/metroFieldColors')['METRO_MONO_FAMILY']>
     readonly POLL_CODEC: UnwrapRef<typeof import('./lib/xmtpPollCodec')['POLL_CODEC']>
     readonly PollCodec: UnwrapRef<typeof import('./lib/xmtpPollCodec')['PollCodec']>
     readonly SIGNATURE_REFERENCE_CODEC: UnwrapRef<typeof import('./lib/xmtpRequestCodecs')['SIGNATURE_REFERENCE_CODEC']>
@@ -367,6 +374,7 @@ declare module 'vue' {
     readonly bumpAccountEpoch: UnwrapRef<typeof import('./lib/xmtp')['bumpAccountEpoch']>
     readonly cachedRows: UnwrapRef<typeof import('./lib/channelsCache')['cachedRows']>
     readonly canExportPrivateKey: UnwrapRef<typeof import('./lib/accounts')['canExportPrivateKey']>
+    readonly composeField: UnwrapRef<typeof import('./lib/composeField')['composeField']>
     readonly computeMemberRoles: UnwrapRef<typeof import('./lib/useGroupDetailHelpers')['computeMemberRoles']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>
     readonly convIdOfLine: UnwrapRef<typeof import('./lib/xmtp')['convIdOfLine']>
@@ -439,6 +447,7 @@ declare module 'vue' {
     readonly memberInboxToAddressMap: UnwrapRef<typeof import('./lib/xmtpResolve')['memberInboxToAddressMap']>
     readonly metroConvIdOf: UnwrapRef<typeof import('./lib/xmtp')['metroConvIdOf']>
     readonly metroDmPeerOf: UnwrapRef<typeof import('./lib/xmtp')['metroDmPeerOf']>
+    readonly metroFieldColors: UnwrapRef<typeof import('./lib/metroFieldColors')['metroFieldColors']>
     readonly mutateMembers: UnwrapRef<typeof import('./lib/useGroupDetail.mutations')['mutateMembers']>
     readonly nextTick: UnwrapRef<typeof import('vue')['nextTick']>
     readonly onActivated: UnwrapRef<typeof import('vue')['onActivated']>
