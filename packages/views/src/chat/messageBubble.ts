@@ -1,6 +1,5 @@
 import type { Color, ColNode, WidgetNode } from '@stage-labs/kit/kit';
-import view from './messageBubble.json';
-import { buildView } from '../buildView';
+import { compactList } from '../node';
 import { markdown, text } from '../primitives';
 
 export interface BubbleSegment {
@@ -50,15 +49,28 @@ export function messageBubble(params: MessageBubbleParams): ColNode {
   const align = params.align === 'end' ? 'end' : 'start';
   const metaColor = params.metaColor ?? 'secondary';
   const meta = metaValues(params);
-  return (buildView(view, {
-    align,
-    metaColor,
-    metaTextColor: metaColor,
-    authorName: params.authorName,
-    hasAuthor:
-      (params.authorName !== undefined && params.authorName !== '') || undefined,
-    body: bodyNodes(params),
-    meta,
-    hasMeta: meta.length > 0 || undefined,
-  }) as ColNode);
+  const hasAuthor = params.authorName !== undefined && params.authorName !== '';
+  const children = compactList<WidgetNode>([
+    hasAuthor
+      ? {
+          type: 'Caption',
+          value: params.authorName ?? '',
+          color: metaColor,
+          weight: 'semibold',
+        }
+      : undefined,
+    ...bodyNodes(params),
+    meta.length > 0
+      ? {
+          type: 'Col',
+          align,
+          children: meta.map((value) => ({
+            type: 'Caption',
+            value,
+            color: metaColor,
+          })),
+        }
+      : undefined,
+  ]);
+  return { type: 'Col', gap: 2, align, children };
 }

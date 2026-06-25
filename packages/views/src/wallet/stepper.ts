@@ -1,6 +1,4 @@
-import type { ColNode, ThemeColor } from '@stage-labs/kit/kit';
-import view from './stepper.json';
-import { buildView } from '../buildView';
+import type { ColNode, ThemeColor, WidgetNode } from '@stage-labs/kit/kit';
 import { DANGER_COLOR, SUCCESS_COLOR } from '../colors';
 
 export type StepState = 'done' | 'active' | 'pending' | 'error';
@@ -38,16 +36,44 @@ function stepLabelColor(state: StepState): ThemeColor | string {
 }
 
 export function stepper(params: StepperParams): ColNode {
-  const steps = params.steps.map((step) => ({
-    label: step.label,
-    icon: STATE_ICON[step.state],
-    iconColor: stepIconColor(step.state),
-    labelColor: stepLabelColor(step.state),
-    hint: step.hint,
-    useHead: step.hint === undefined || undefined,
-    useCol: step.hint !== undefined || undefined,
-    useSpinner: step.state === 'active' || undefined,
-    useIcon: step.state !== 'active' || undefined,
-  }));
-  return (buildView(view, { steps, gap: params.gap ?? 12 }) as ColNode);
+  const children = params.steps.map((step): WidgetNode => {
+    const iconColor = stepIconColor(step.state);
+    const labelColor = stepLabelColor(step.state);
+    const icon: WidgetNode =
+      step.state === 'active'
+        ? { type: 'Spinner', size: 14, color: iconColor }
+        : { type: 'Icon', name: STATE_ICON[step.state], color: iconColor, size: 'sm' };
+    const head: WidgetNode = {
+      type: 'Row',
+      align: 'center',
+      gap: 10,
+      children: [
+        {
+          type: 'Box',
+          width: 18,
+          height: 18,
+          align: 'center',
+          justify: 'center',
+          children: [icon],
+        },
+        {
+          type: 'Text',
+          value: step.label,
+          weight: 'semibold',
+          size: 'md',
+          color: labelColor,
+        },
+      ],
+    };
+    if (step.hint === undefined) return head;
+    return {
+      type: 'Col',
+      gap: 2,
+      children: [
+        head,
+        { type: 'Caption', value: step.hint, color: 'secondary', textAlign: 'start' },
+      ],
+    };
+  });
+  return { type: 'Col', gap: params.gap ?? 12, children };
 }

@@ -1,6 +1,5 @@
-import type { Color, RowNode } from '@stage-labs/kit/kit';
-import view from './groupFieldEditor.json';
-import { buildView } from '../buildView';
+import type { Color, RadiusValue, RowNode, TextFieldNode } from '@stage-labs/kit/kit';
+import { compact } from '../node';
 import { GROUP_EDIT_CHANGE, GROUP_EDIT_SAVE } from '../actions';
 
 export interface GroupFieldEditorParams {
@@ -22,22 +21,44 @@ export interface GroupFieldEditorParams {
 }
 
 export function groupFieldEditor(params: GroupFieldEditorParams): RowNode {
-  return buildView(view, {
-    field: params.field,
+  const changeType = params.changeType ?? GROUP_EDIT_CHANGE;
+  const saveType = params.saveType ?? GROUP_EDIT_SAVE;
+  const field = compact<TextFieldNode>({
+    type: 'TextField',
+    name: params.field,
     value: params.value,
     placeholder: params.placeholder,
-    label: params.label,
-    disabled: params.disabled ? true : undefined,
-    align: params.multiline === true ? 'start' : 'center',
+    variant: 'outline',
     multiline: params.multiline === true ? true : undefined,
     minHeight: params.minHeight,
-    primary: params.primary,
-    bg: params.bg,
-    fg: params.fg,
-    sub: params.sub,
-    border: params.border,
-    inputBg: params.inputBg,
-    changeType: params.changeType ?? GROUP_EDIT_CHANGE,
-    saveType: params.saveType ?? GROUP_EDIT_SAVE,
-  }) as RowNode;
+    autoFocus: true,
+    background: params.inputBg,
+    borderColor: params.border,
+    color: params.fg,
+    placeholderColor: params.sub,
+    radius: 10 as unknown as RadiusValue,
+    paddingX: 10,
+    paddingY: 8,
+    onChangeAction: { type: changeType, payload: { field: params.field } },
+  });
+  const button = compact({
+    type: 'Button' as const,
+    label: params.label,
+    variant: 'solid' as const,
+    size: 'sm' as const,
+    background: params.primary,
+    foreground: params.bg,
+    paddingX: 14,
+    fontSize: 13,
+    fontFamily: 'Calibre-Medium',
+    disabled: params.disabled ? true : undefined,
+    onClickAction: { type: saveType },
+  });
+  return {
+    type: 'Row',
+    align: params.multiline === true ? 'start' : 'center',
+    gap: 8,
+    padding: { top: 6 },
+    children: [{ type: 'Box', flex: 1, children: [field] }, button],
+  };
 }

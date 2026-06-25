@@ -1,6 +1,5 @@
-import type { Color, RowNode } from '@stage-labs/kit/kit';
-import view from './voiceMessage.json';
-import { buildView } from '../buildView';
+import type { AudioPlayerNode, Color, RowNode } from '@stage-labs/kit/kit';
+import { compact } from '../node';
 import { VOICE_PLAY } from '../actions';
 
 export interface VoiceMessageParams {
@@ -13,13 +12,26 @@ export interface VoiceMessageParams {
 }
 
 export function voiceMessage(params: VoiceMessageParams): RowNode {
-  return buildView(view, {
+  const background = params.background ?? '#0a7cff';
+  const player = compact<AudioPlayerNode>({
+    type: 'AudioPlayer',
     src: params.src,
     duration: params.duration,
-    background: params.background ?? '#0a7cff',
-    onAccent: params.onAccent ?? '#ffffff',
+    waveform: true,
     bars: params.bars,
     barCount: params.barCount,
-    playType: VOICE_PLAY,
-  }) as RowNode;
+    accent: background,
+    onAccent: params.onAccent ?? '#ffffff',
+    onPlayAction: { type: VOICE_PLAY, payload: { src: params.src } },
+  });
+  return {
+    type: 'Row',
+    radius: '2xl',
+    background,
+    maxWidth: 280,
+    minWidth: 200,
+    padding: { x: 9, y: 7 },
+    align: 'center',
+    children: [player],
+  };
 }

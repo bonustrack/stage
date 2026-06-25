@@ -1,6 +1,5 @@
-import type { RowNode } from '@stage-labs/kit/kit';
-import view from './composerBar.json';
-import { buildView } from '../buildView';
+import type { RowNode, WidgetNode } from '@stage-labs/kit/kit';
+import { compact, compactList } from '../node';
 import { COMPOSER_ATTACH, COMPOSER_CHANGE, COMPOSER_SEND } from '../actions';
 
 export interface ComposerBarParams {
@@ -14,18 +13,37 @@ export interface ComposerBarParams {
 }
 
 export function composerBar(params: ComposerBarParams): RowNode {
-  return buildView(view, {
-    sendAction: COMPOSER_SEND,
-    attachAction: COMPOSER_ATTACH,
-    changeAction: COMPOSER_CHANGE,
-    hasAttach:
-      (params.attachIcon !== undefined && params.attachIcon !== '') || undefined,
-    hasSend: params.showSend !== false || undefined,
-    attachIcon: params.attachIcon,
-    fieldName: params.fieldName ?? 'message',
-    placeholder: params.placeholder ?? 'Message',
-    value: params.value ?? '',
-    sendIcon: params.sendIcon ?? 'arrow-up',
-    sendDisabled: params.sendDisabled,
-  }) as RowNode;
+  const hasAttach = params.attachIcon !== undefined && params.attachIcon !== '';
+  const hasSend = params.showSend !== false;
+  const children = compactList<WidgetNode>([
+    hasAttach
+      ? {
+          type: 'Button',
+          iconStart: params.attachIcon ?? '',
+          variant: 'ghost',
+          size: 'sm',
+          onClickAction: { type: COMPOSER_ATTACH, payload: {} },
+        }
+      : undefined,
+    {
+      type: 'TextField',
+      name: params.fieldName ?? 'message',
+      value: params.value ?? '',
+      placeholder: params.placeholder ?? 'Message',
+      multiline: true,
+      autoGrow: true,
+      onChangeAction: { type: COMPOSER_CHANGE, payload: {} },
+    },
+    hasSend
+      ? compact({
+          type: 'Button' as const,
+          iconStart: params.sendIcon ?? 'arrow-up',
+          variant: 'solid' as const,
+          size: 'sm' as const,
+          disabled: params.sendDisabled,
+          onClickAction: { type: COMPOSER_SEND, payload: {} },
+        })
+      : undefined,
+  ]);
+  return { type: 'Row', align: 'center', gap: 8, children };
 }

@@ -1,6 +1,4 @@
-import type { Color, RowNode } from '@stage-labs/kit/kit';
-import view from './filterChips.json';
-import { buildView } from '../buildView';
+import type { Color, RowNode, WidgetNode } from '@stage-labs/kit/kit';
 import { FILTER_SELECT } from '../actions';
 
 export interface FilterChip {
@@ -19,14 +17,32 @@ export interface FilterChipsParams {
 }
 
 export function filterChips(params: FilterChipsParams): RowNode {
-  const chips = params.chips.map((chip) => ({
-    value: chip.value,
-    label: chip.label,
-    background: chip.selected === true ? params.selectedBackground : params.restBackground,
-    labelColor: chip.selected === true ? params.selectedLabelColor : params.restLabelColor,
-  }));
-  return buildView(view, {
-    chips,
-    selectType: params.selectType ?? FILTER_SELECT,
-  }) as RowNode;
+  const selectType = params.selectType ?? FILTER_SELECT;
+  const children = params.chips.map((chip): WidgetNode => {
+    const selected = chip.selected === true;
+    return {
+      type: 'Pressable',
+      onClickAction: { type: selectType, payload: { value: chip.value } },
+      children: [
+        {
+          type: 'Row',
+          height: 26,
+          radius: 'full',
+          padding: { x: 9, y: 2 },
+          align: 'center',
+          background: selected ? params.selectedBackground : params.restBackground,
+          children: [
+            {
+              type: 'Text',
+              value: chip.label,
+              size: 'md',
+              color: selected ? params.selectedLabelColor : params.restLabelColor,
+              truncate: true,
+            },
+          ],
+        },
+      ],
+    };
+  });
+  return { type: 'Row', gap: 8, align: 'center', wrap: 'wrap', children };
 }

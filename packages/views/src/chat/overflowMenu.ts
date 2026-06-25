@@ -1,6 +1,5 @@
 import type { PopoverNode } from '@stage-labs/kit/kit';
-import view from './overflowMenu.json';
-import { buildView } from '../buildView';
+import { compact } from '../node';
 import { OVERFLOW_MENU_PRESS } from '../actions';
 
 export interface OverflowMenuItem {
@@ -21,19 +20,27 @@ export interface OverflowMenuParams {
 }
 
 export function overflowMenu(params: OverflowMenuParams): PopoverNode {
-  const items = params.items.map((item) => ({
-    id: item.id,
-    label: item.label,
-    icon: item.icon,
-    danger: item.danger === true ? true : undefined,
-    disabled: item.disabled === true ? true : undefined,
-  }));
-  return buildView(view, {
-    items,
-    icon: params.icon ?? 'dotsHorizontal',
-    iconSize: params.iconSize ?? 22,
+  const pressType = params.pressType ?? OVERFLOW_MENU_PRESS;
+  const items = params.items.map((item) =>
+    compact({
+      id: item.id,
+      label: item.label,
+      icon: item.icon,
+      danger: item.danger === true ? true : undefined,
+      disabled: item.disabled === true ? true : undefined,
+      pressType,
+    }),
+  );
+  return {
+    type: 'Popover',
+    side: 'bottom',
     align: params.align ?? 'end',
     title: params.title ?? 'More',
-    pressType: params.pressType ?? OVERFLOW_MENU_PRESS,
-  }) as PopoverNode;
+    trigger: {
+      type: 'Icon',
+      name: params.icon ?? 'dotsHorizontal',
+      size: params.iconSize ?? 22,
+    },
+    items,
+  };
 }

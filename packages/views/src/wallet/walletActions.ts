@@ -1,6 +1,4 @@
-import type { RowNode, ThemeColor } from '@stage-labs/kit/kit';
-import view from './walletActions.json';
-import { buildView } from '../buildView';
+import type { RowNode, ThemeColor, WidgetNode } from '@stage-labs/kit/kit';
 
 export interface WalletActionButton {
   label: string;
@@ -16,14 +14,24 @@ export interface WalletActionsParams {
 }
 
 export function walletActions(params: WalletActionsParams): RowNode {
-  return (buildView(view, {
-    gap: params.gap ?? 12,
-    actions: params.actions.map((a) => ({
-      label: a.label,
-      icon: a.icon,
-      pressType: a.pressType,
-      bg: a.bg,
-      payload: a.payload ?? {},
-    })),
-  }) as RowNode);
+  const children = params.actions.map((a): WidgetNode => ({
+    type: 'Col',
+    gap: 6,
+    align: 'center',
+    children: [
+      {
+        type: 'Button',
+        uniform: true,
+        pill: true,
+        size: 'xl',
+        iconStart: a.icon,
+        iconSize: 'xl',
+        color: a.bg,
+        background: a.bg,
+        onClickAction: { type: a.pressType, payload: a.payload ?? {} },
+      },
+      { type: 'Caption', value: a.label, weight: 'semibold' },
+    ],
+  }));
+  return { type: 'Row', gap: params.gap ?? 12, justify: 'start', children };
 }

@@ -1,6 +1,4 @@
 import type { Color, TextFieldNode } from '@stage-labs/kit/kit';
-import view from './composerInput.json';
-import { buildView } from '../buildView';
 import { COMPOSER_CHANGE, COMPOSER_SELECTION } from '../actions';
 
 export interface ComposerInputParams {
@@ -17,16 +15,29 @@ export interface ComposerInputParams {
 }
 
 export function composerInput(params: ComposerInputParams): TextFieldNode {
-  return buildView(view, {
+  return {
+    type: 'TextField',
+    name: 'composer',
     value: params.value,
-    color: params.color,
-    placeholderColor: params.placeholderColor,
+    variant: 'plain',
+    multiline: true,
+    autoGrow: true,
     fontSize: params.fontSize,
-    selStart: params.selStart,
-    selEnd: params.selEnd,
+    fontWeight: 'medium',
+    color: params.color,
+    paddingX: 8,
+    paddingTop: 4,
+    paddingBottom: 8,
+    lineHeight: 23,
+    minHeight: 24,
+    maxHeight: 210,
+    autoCapitalize: 'sentences',
+    placeholder: 'Message',
+    placeholderColor: params.placeholderColor,
     focusNonce: params.focusNonce,
     blurNonce: params.blurNonce,
-    changeType: params.changeType ?? COMPOSER_CHANGE,
-    selectionType: params.selectionType ?? COMPOSER_SELECTION,
-  }) as TextFieldNode;
+    selection: { start: params.selStart, end: params.selEnd },
+    onChangeAction: { type: params.changeType ?? COMPOSER_CHANGE },
+    onSelectionChangeAction: { type: params.selectionType ?? COMPOSER_SELECTION },
+  };
 }

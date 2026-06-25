@@ -1,6 +1,5 @@
-import type { ColNode, ThemeColor } from '@stage-labs/kit/kit';
-import view from './balanceHeader.json';
-import { buildView } from '../buildView';
+import type { ColNode, ThemeColor, WidgetNode } from '@stage-labs/kit/kit';
+import { compactList } from '../node';
 
 export interface BalanceAction {
   label: string;
@@ -19,21 +18,51 @@ export interface BalanceHeaderParams {
 }
 
 export function balanceHeader(params: BalanceHeaderParams): ColNode {
-  return (buildView(view, {
-    total: params.total,
-    totalDecimals: params.totalDecimals,
-    subtitle: params.subtitle,
-    heroSize: params.heroSize ?? '5xl',
-    actions: (params.actions ?? []).map((a) => ({
-      label: a.label,
-      icon: a.icon,
-      pressType: a.pressType,
-      bg: a.bg,
-      payload: a.payload ?? {},
-    })),
-    hasActions:
-      params.actions !== undefined && params.actions.length > 0
-        ? true
-        : undefined,
-  }) as ColNode);
+  const heroSize = params.heroSize ?? '5xl';
+  const actions = params.actions ?? [];
+  const heroChildren = compactList<WidgetNode>([
+    { type: 'Title', value: params.total, weight: 'semibold', size: heroSize },
+    params.totalDecimals !== undefined
+      ? {
+          type: 'Title',
+          value: params.totalDecimals,
+          weight: 'semibold',
+          size: heroSize,
+          color: 'secondary',
+        }
+      : undefined,
+  ]);
+  const children = compactList<WidgetNode>([
+    { type: 'Row', align: 'end', children: heroChildren },
+    params.subtitle !== undefined
+      ? { type: 'Caption', value: params.subtitle, color: 'secondary' }
+      : undefined,
+    actions.length > 0
+      ? {
+          type: 'Row',
+          gap: 12,
+          justify: 'start',
+          children: actions.map((a) => ({
+            type: 'Col',
+            gap: 6,
+            align: 'center',
+            children: [
+              {
+                type: 'Button',
+                uniform: true,
+                pill: true,
+                size: 'xl',
+                iconStart: a.icon,
+                iconSize: 'xl',
+                color: a.bg,
+                background: a.bg,
+                onClickAction: { type: a.pressType, payload: a.payload ?? {} },
+              },
+              { type: 'Caption', value: a.label, weight: 'semibold' },
+            ],
+          })),
+        }
+      : undefined,
+  ]);
+  return { type: 'Col', gap: 12, children };
 }

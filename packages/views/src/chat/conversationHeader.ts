@@ -1,6 +1,5 @@
-import type { ActionConfig, RowNode } from '@stage-labs/kit/kit';
-import view from './conversationHeader.json';
-import { buildView } from '../buildView';
+import type { ActionConfig, RowNode, WidgetNode } from '@stage-labs/kit/kit';
+import { compactList } from '../node';
 import { CONVERSATION_PRESS } from '../actions';
 
 export interface ConversationHeaderAction {
@@ -19,18 +18,53 @@ export interface ConversationHeaderParams {
 
 export function conversationHeader(params: ConversationHeaderParams): RowNode {
   const pressable = params.pressable === true;
-  return (buildView(view, {
-    conversationPressType: CONVERSATION_PRESS,
-    conversationId: params.conversationId,
-    avatarUri: params.avatarUri,
-    title: params.title,
-    subtitle: params.subtitle,
-    pressable: pressable || undefined,
-    static: !pressable || undefined,
-    hasAvatar:
-      (params.avatarUri !== undefined && params.avatarUri !== '') || undefined,
-    hasSubtitle:
-      (params.subtitle !== undefined && params.subtitle !== '') || undefined,
-    trailing: params.trailingActions ?? [],
-  }) as RowNode);
+  const hasAvatar = params.avatarUri !== undefined && params.avatarUri !== '';
+  const hasSubtitle = params.subtitle !== undefined && params.subtitle !== '';
+  const innerChildren = compactList<WidgetNode>([
+    hasAvatar
+      ? { type: 'Image', src: params.avatarUri ?? '', size: 32, radius: 'full' }
+      : undefined,
+    {
+      type: 'Col',
+      gap: 2,
+      flex: 1,
+      children: compactList<WidgetNode>([
+        { type: 'Text', value: params.title, weight: 'semibold', truncate: true },
+        hasSubtitle
+          ? {
+              type: 'Caption',
+              value: params.subtitle ?? '',
+              color: 'secondary',
+              truncate: true,
+            }
+          : undefined,
+      ]),
+    },
+  ]);
+  const titleBlock: WidgetNode = pressable
+    ? {
+        type: 'ListViewItem',
+        onClickAction: {
+          type: CONVERSATION_PRESS,
+          payload: { conversationId: params.conversationId },
+        },
+        align: 'center',
+        children: [
+          { type: 'Row', align: 'center', gap: 10, flex: 1, children: innerChildren },
+        ],
+      }
+    : { type: 'Row', align: 'center', gap: 10, flex: 1, children: innerChildren };
+  const trailing = (params.trailingActions ?? []).map((action): WidgetNode => ({
+    type: 'Button',
+    iconStart: action.icon,
+    variant: 'ghost',
+    size: 'sm',
+    onClickAction: action.action,
+  }));
+  return {
+    type: 'Row',
+    align: 'center',
+    gap: 8,
+    children: [titleBlock, ...trailing],
+  };
 }

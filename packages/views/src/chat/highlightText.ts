@@ -1,6 +1,5 @@
-import type { Color, RowNode, TextSize } from '@stage-labs/kit/kit';
-import view from './highlightText.json';
-import { buildView } from '../buildView';
+import type { Color, RowNode, TextSize, WidgetNode } from '@stage-labs/kit/kit';
+import { compact } from '../node';
 
 const HL_BG = '#FFF200';
 
@@ -41,17 +40,17 @@ export function highlightSegments(value: string, query: string): Segment[] {
 }
 
 export function highlightText(params: HighlightTextParams): RowNode {
-  const segments = highlightSegments(params.text, params.query).map(
-    (segment) => ({
-      value: segment.value,
-      color: params.color,
-      background: segment.match ? params.matchBackground ?? HL_BG : undefined,
-    }),
+  const children = highlightSegments(params.text, params.query).map(
+    (segment): WidgetNode =>
+      compact({
+        type: 'Text' as const,
+        value: segment.value,
+        size: params.size,
+        color: params.color,
+        background: segment.match ? params.matchBackground ?? HL_BG : undefined,
+        fontSize: params.fontSize,
+        lineHeight: params.lineHeight,
+      }),
   );
-  return buildView(view, {
-    segments,
-    size: params.size,
-    fontSize: params.fontSize,
-    lineHeight: params.lineHeight,
-  }) as RowNode;
+  return { type: 'Row', wrap: 'wrap', align: 'baseline', children };
 }

@@ -1,6 +1,4 @@
 import type { TabsNode, TabsOption } from '@stage-labs/kit/kit';
-import view from './walletTabs.json';
-import { buildView } from '../buildView';
 import { WALLET_TAB_CHANGE } from '../actions';
 
 export interface WalletTabsParams {
@@ -10,9 +8,12 @@ export interface WalletTabsParams {
 }
 
 export function walletTabs(params: WalletTabsParams): TabsNode {
-  return (buildView(view, {
+  return {
+    type: 'Tabs',
+    name: 'walletTab',
     value: params.value,
+    variant: 'underline',
     options: params.options,
-    changeType: params.changeType ?? WALLET_TAB_CHANGE,
-  }) as TabsNode);
+    onChangeAction: { type: params.changeType ?? WALLET_TAB_CHANGE, payload: {} },
+  };
 }

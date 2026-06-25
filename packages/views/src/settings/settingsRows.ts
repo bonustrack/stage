@@ -4,12 +4,7 @@ import type {
   TitleNode,
   WidgetNode,
 } from '@stage-labs/kit/kit';
-import sectionView from './settingsSection.json';
-import navRowView from './settingsNavRow.json';
-import toggleRowView from './settingsToggleRow.json';
-import valueRowView from './settingsValueRow.json';
-import buttonRowView from './settingsButtonRow.json';
-import { buildView } from '../buildView';
+import { compact, compactList } from '../node';
 import { caption, col, icon, row, text, title } from '../primitives';
 
 export interface SettingsSectionParams {
@@ -20,14 +15,21 @@ export interface SettingsSectionParams {
 }
 
 export function settingsSection(params: SettingsSectionParams): ColNode {
-  return (buildView(sectionView, {
-    gap: params.gap ?? 8,
-    hasTitle: params.title !== undefined || undefined,
-    titleUpper: params.title?.toUpperCase(),
-    hasCaption: params.caption !== undefined || undefined,
-    caption: params.caption,
-    children: params.children,
-  }) as ColNode);
+  const children = compactList<WidgetNode>([
+    params.title !== undefined
+      ? {
+          type: 'Caption',
+          value: params.title.toUpperCase(),
+          color: 'secondary',
+          size: 'sm',
+        }
+      : undefined,
+    params.caption !== undefined
+      ? { type: 'Caption', value: params.caption, color: 'secondary' }
+      : undefined,
+    ...params.children,
+  ]);
+  return { type: 'Col', gap: params.gap ?? 8, children };
 }
 
 export interface SettingsNavRowParams {
@@ -40,17 +42,32 @@ export interface SettingsNavRowParams {
 }
 
 export function settingsNavRow(params: SettingsNavRowParams): ListViewItemNode {
-  return (buildView(navRowView, {
-    label: params.label,
-    value: params.value,
-    iconStart: params.iconStart,
-    iconEnd: params.iconEnd ?? 'chevron-right',
-    hasValue: params.value !== undefined || undefined,
-    clickAction:
+  const children = compactList<WidgetNode>([
+    params.iconStart !== undefined
+      ? { type: 'Icon', name: params.iconStart, color: 'link', size: 'xl' }
+      : undefined,
+    {
+      type: 'Col',
+      flex: 1,
+      children: [
+        { type: 'Text', value: params.label, size: 'xl', color: 'link', truncate: true },
+      ],
+    },
+    params.value !== undefined
+      ? { type: 'Text', value: params.value, color: 'secondary', truncate: true }
+      : undefined,
+    { type: 'Icon', name: params.iconEnd ?? 'chevron-right', color: 'secondary', size: 'lg' },
+  ]);
+  return compact<ListViewItemNode>({
+    type: 'ListViewItem',
+    onClickAction:
       params.pressType !== undefined
         ? { type: params.pressType, payload: params.payload ?? {} }
         : undefined,
-  }) as ListViewItemNode);
+    align: 'center',
+    gap: 12,
+    children,
+  });
 }
 
 export interface SettingsToggleRowParams {
@@ -66,19 +83,36 @@ export function settingsToggleRow(
   params: SettingsToggleRowParams,
 ): ListViewItemNode {
   const useSwitch = params.control === 'switch';
-  return (buildView(toggleRowView, {
-    label: params.label,
-    name: params.name,
-    checked: params.checked,
-    description: params.description,
-    hasDescription: params.description !== undefined || undefined,
-    useSwitch: useSwitch || undefined,
-    useCheckbox: useSwitch ? undefined : true,
-    changeAction:
-      params.changeType !== undefined
-        ? { type: params.changeType, payload: { name: params.name } }
-        : undefined,
-  }) as ListViewItemNode);
+  const changeAction =
+    params.changeType !== undefined
+      ? { type: params.changeType, payload: { name: params.name } }
+      : undefined;
+  const colChildren = compactList<WidgetNode>([
+    { type: 'Text', value: params.label, weight: 'semibold', size: 'md', color: 'text' },
+    params.description !== undefined
+      ? { type: 'Caption', value: params.description, color: 'secondary' }
+      : undefined,
+  ]);
+  const children = compactList<WidgetNode>([
+    { type: 'Col', gap: 2, flex: 1, children: colChildren },
+    useSwitch
+      ? compact({
+          type: 'Switch' as const,
+          name: params.name,
+          checked: params.checked,
+          onChangeAction: changeAction,
+        })
+      : undefined,
+    !useSwitch
+      ? compact({
+          type: 'Checkbox' as const,
+          name: params.name,
+          defaultChecked: params.checked,
+          onChangeAction: changeAction,
+        })
+      : undefined,
+  ]);
+  return { type: 'ListViewItem', align: 'center', gap: 12, children };
 }
 
 export interface SettingsValueRowParams {
@@ -91,18 +125,32 @@ export interface SettingsValueRowParams {
 export function settingsValueRow(
   params: SettingsValueRowParams,
 ): ListViewItemNode {
-  return (buildView(valueRowView, {
-    label: params.label,
-    value: params.value,
-    hasCopy: params.copyType !== undefined || undefined,
-    clickAction:
+  const children = compactList<WidgetNode>([
+    {
+      type: 'Col',
+      flex: 1,
+      children: [
+        { type: 'Text', value: params.label, size: 'md', color: 'secondary' },
+      ],
+    },
+    { type: 'Text', value: params.value, size: 'md', color: 'text', truncate: true },
+    params.copyType !== undefined
+      ? { type: 'Icon', name: 'copy', color: 'secondary', size: 'sm' }
+      : undefined,
+  ]);
+  return compact<ListViewItemNode>({
+    type: 'ListViewItem',
+    onClickAction:
       params.copyType !== undefined
         ? {
             type: params.copyType,
             payload: { label: params.label, value: params.value, ...params.payload },
           }
         : undefined,
-  }) as ListViewItemNode);
+    align: 'center',
+    gap: 12,
+    children,
+  });
 }
 
 export interface SettingsButtonRowParams {
@@ -117,16 +165,26 @@ export interface SettingsButtonRowParams {
 export function settingsButtonRow(
   params: SettingsButtonRowParams,
 ): ListViewItemNode {
-  return (buildView(buttonRowView, {
-    label: params.label,
-    description: params.description,
-    iconStart: params.iconStart,
-    clickType: params.clickType,
-    payload: params.payload ?? {},
-    tone: params.danger === true ? 'danger' : 'link',
+  const tone = params.danger === true ? 'danger' : 'link';
+  const colChildren = compactList<WidgetNode>([
+    { type: 'Text', value: params.label, size: 'md', weight: 'semibold', color: tone },
+    params.description !== undefined
+      ? { type: 'Caption', value: params.description, color: 'secondary' }
+      : undefined,
+  ]);
+  const children = compactList<WidgetNode>([
+    params.iconStart !== undefined
+      ? { type: 'Icon', name: params.iconStart, color: tone, size: 'xl' }
+      : undefined,
+    { type: 'Col', gap: 2, flex: 1, children: colChildren },
+  ]);
+  return {
+    type: 'ListViewItem',
     align: params.description !== undefined ? 'start' : 'center',
-    hasDescription: params.description !== undefined || undefined,
-  }) as ListViewItemNode);
+    gap: 12,
+    onClickAction: { type: params.clickType, payload: params.payload ?? {} },
+    children,
+  };
 }
 
 export function settingsSectionTitle(value: string): TitleNode {

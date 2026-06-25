@@ -1,6 +1,4 @@
 import type { Color, PressableNode } from '@stage-labs/kit/kit';
-import view from './profileAddressRow.json';
-import { buildView } from '../buildView';
 import { PROFILE_ADDRESS_COPY } from '../actions';
 
 export interface ProfileAddressRowParams {
@@ -11,10 +9,13 @@ export interface ProfileAddressRowParams {
 }
 
 export function profileAddressRow(params: ProfileAddressRowParams): PressableNode {
-  return buildView(view, {
-    address: params.address,
-    label: params.label,
-    color: params.color,
-    pressType: params.pressType ?? PROFILE_ADDRESS_COPY,
-  }) as PressableNode;
+  return {
+    type: 'Pressable',
+    hitSlop: 8,
+    onClickAction: {
+      type: params.pressType ?? PROFILE_ADDRESS_COPY,
+      payload: { address: params.address },
+    },
+    children: [{ type: 'Text', value: params.label, size: 'md', color: params.color }],
+  };
 }

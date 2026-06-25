@@ -1,6 +1,4 @@
-import type { Color, RowNode } from '@stage-labs/kit/kit';
-import view from './memberChip.json';
-import { buildView } from '../buildView';
+import type { Color, RowNode, WidgetNode } from '@stage-labs/kit/kit';
 import { MEMBER_CHIP_REMOVE } from '../actions';
 
 export interface MemberChipParams {
@@ -13,12 +11,30 @@ export interface MemberChipParams {
 }
 
 export function memberChip(params: MemberChipParams): RowNode {
-  return buildView(view, {
-    id: params.id,
-    name: params.name,
-    avatarUri: params.avatarUri,
+  const children: WidgetNode[] = [
+    { type: 'Image', src: params.avatarUri, size: 22, radius: 'full' },
+    { type: 'Text', value: params.name, size: 'sm', weight: 'medium', truncate: true },
+  ];
+  if (params.removable === true) {
+    children.push({
+      type: 'Button',
+      iconStart: 'x',
+      variant: 'ghost',
+      size: 'sm',
+      color: 'secondary',
+      onClickAction: {
+        type: params.removeType ?? MEMBER_CHIP_REMOVE,
+        payload: { id: params.id },
+      },
+    });
+  }
+  return {
+    type: 'Row',
+    align: 'center',
+    gap: 6,
+    radius: 'full',
     background: params.background ?? 'rgba(0,0,0,0.06)',
-    removable: params.removable === true || undefined,
-    removeType: params.removeType ?? MEMBER_CHIP_REMOVE,
-  }) as RowNode;
+    padding: { y: 4, left: 6, right: 8 },
+    children,
+  };
 }

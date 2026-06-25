@@ -1,6 +1,4 @@
 import type { ChartNode, Color } from '@stage-labs/kit/kit';
-import view from './priceChart.json';
-import { buildView } from '../buildView';
 
 export interface PricePoint {
   t: string | number;
@@ -15,10 +13,19 @@ export interface PriceChartParams {
 }
 
 export function priceChart(params: PriceChartParams): ChartNode {
-  return buildView(view, {
-    points: params.points,
-    seriesType: params.area === true ? 'area' : 'line',
-    color: params.color ?? 'link',
+  return {
+    type: 'Chart',
     height: params.height ?? 160,
-  }) as ChartNode;
+    showYAxis: false,
+    showLegend: false,
+    xAxis: { dataKey: 't', hide: true },
+    series: [
+      {
+        type: params.area === true ? 'area' : 'line',
+        dataKey: 'price',
+        color: params.color ?? 'link',
+      },
+    ],
+    data: params.points.map((point) => ({ t: point.t, price: point.price })),
+  };
 }

@@ -1,6 +1,5 @@
-import type { BoxNode } from '@stage-labs/kit/kit';
-import view from './videoMessage.json';
-import { buildView } from '../buildView';
+import type { BoxNode, WidgetNode } from '@stage-labs/kit/kit';
+import { compact } from '../node';
 
 export interface VideoMessageParams {
   src: string;
@@ -9,9 +8,17 @@ export interface VideoMessageParams {
 }
 
 export function videoMessage(params: VideoMessageParams): BoxNode {
-  return buildView(view, {
+  const player: WidgetNode = compact({
+    type: 'VideoPlayer' as const,
     src: params.src,
     poster: params.poster,
+    controls: true,
+  });
+  return {
+    type: 'Box',
     width: params.width ?? 220,
-  }) as BoxNode;
+    radius: 'md',
+    background: '#000',
+    children: [player],
+  };
 }

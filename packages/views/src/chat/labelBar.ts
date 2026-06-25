@@ -1,6 +1,4 @@
-import type { Color, ScrollRowNode } from '@stage-labs/kit/kit';
-import view from './labelBar.json';
-import { buildView } from '../buildView';
+import type { Color, ScrollRowNode, WidgetNode } from '@stage-labs/kit/kit';
 import { LABEL_CHIP_PRESS } from '../actions';
 
 export interface LabelBarChip {
@@ -19,16 +17,37 @@ export interface LabelBarParams {
 }
 
 export function labelBar(params: LabelBarParams): ScrollRowNode {
-  const chips = params.chips.map((chip) => ({
-    value: chip.value,
-    label: chip.label,
-    background:
-      chip.selected === true ? params.selectedBackground : params.restBackground,
-    labelColor:
-      chip.selected === true ? params.selectedLabelColor : params.restLabelColor,
-  }));
-  return buildView(view, {
-    chips,
-    pressType: params.pressType ?? LABEL_CHIP_PRESS,
-  }) as ScrollRowNode;
+  const pressType = params.pressType ?? LABEL_CHIP_PRESS;
+  const children = params.chips.map((chip): WidgetNode => {
+    const selected = chip.selected === true;
+    return {
+      type: 'Pressable',
+      onClickAction: { type: pressType, payload: { value: chip.value } },
+      children: [
+        {
+          type: 'Row',
+          height: 26,
+          radius: 'full',
+          padding: { x: 9, y: 2 },
+          align: 'center',
+          background: selected ? params.selectedBackground : params.restBackground,
+          children: [
+            {
+              type: 'Text',
+              value: chip.label,
+              size: 'md',
+              color: selected ? params.selectedLabelColor : params.restLabelColor,
+              truncate: true,
+            },
+          ],
+        },
+      ],
+    };
+  });
+  return {
+    type: 'ScrollRow',
+    gap: 8,
+    padding: { x: 16, top: 14, bottom: 7 },
+    children,
+  };
 }

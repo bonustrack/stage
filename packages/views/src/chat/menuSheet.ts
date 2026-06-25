@@ -1,6 +1,5 @@
-import type { ListViewNode } from '@stage-labs/kit/kit';
-import view from './menuSheet.json';
-import { buildView } from '../buildView';
+import type { ListViewItemNode, ListViewNode, WidgetNode } from '@stage-labs/kit/kit';
+import { compactList } from '../node';
 import { MENU_ITEM_PRESS } from '../actions';
 
 export interface MenuSheetItem {
@@ -16,17 +15,29 @@ export interface MenuSheetParams {
 }
 
 export function menuSheet(params: MenuSheetParams): ListViewNode {
-  const items = params.items.map((item) => {
+  const children = params.items.map((item): ListViewItemNode => {
     const color = item.danger === true ? 'danger' : undefined;
+    const rowChildren = compactList<WidgetNode>([
+      item.icon !== undefined
+        ? { type: 'Icon', name: item.icon, color: color ?? 'secondary' }
+        : undefined,
+      {
+        type: 'Text',
+        value: item.label,
+        ...(color !== undefined ? { color } : {}),
+        weight: 'medium',
+      },
+    ]);
     return {
-      id: item.id,
-      label: item.label,
-      icon: item.icon,
-      hasIcon: item.icon !== undefined || undefined,
-      iconColor: color ?? 'secondary',
-      labelColor: color,
-      pressType: item.pressType ?? MENU_ITEM_PRESS,
+      type: 'ListViewItem',
+      onClickAction: {
+        type: item.pressType ?? MENU_ITEM_PRESS,
+        payload: { id: item.id },
+      },
+      align: 'center',
+      gap: 12,
+      children: [{ type: 'Row', align: 'center', gap: 12, flex: 1, children: rowChildren }],
     };
   });
-  return (buildView(view, { items }) as ListViewNode);
+  return { type: 'ListView', children };
 }

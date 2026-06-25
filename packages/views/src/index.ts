@@ -1,7 +1,6 @@
 export * from './actions';
 export * from './colors';
 export * from './primitives';
-export * from './buildView';
 export * from './wallet/tokenRow';
 export * from './wallet/addressCard';
 export * from './wallet/balanceHeader';

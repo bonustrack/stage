@@ -1,6 +1,5 @@
-import type { ColNode, ControlVariant } from '@stage-labs/kit/kit';
-import view from './onboardingStep.json';
-import { buildView } from '../buildView';
+import type { ColNode, ControlVariant, WidgetNode } from '@stage-labs/kit/kit';
+import { compact, compactList } from '../node';
 import { ONBOARDING_ACTION_PRESS } from '../actions';
 
 export interface OnboardingAction {
@@ -21,20 +20,46 @@ export interface OnboardingStepParams {
 }
 
 export function onboardingStep(params: OnboardingStepParams): ColNode {
-  const actions = (params.actions ?? []).map((action) => ({
-    id: action.id,
-    label: action.label,
-    variant: action.variant ?? 'solid',
-    disabled: action.disabled === true ? true : undefined,
-  }));
-  return buildView(view, {
-    title: params.title,
-    caption: params.caption,
-    imageUri: params.imageUri,
-    topPadding: params.topPadding ?? 8,
-    captionSize: params.captionSize ?? 'sm',
-    actions,
-    hasActions: actions.length > 0 ? true : undefined,
-    actionPressType: params.actionPressType ?? ONBOARDING_ACTION_PRESS,
-  }) as ColNode;
+  const actionPressType = params.actionPressType ?? ONBOARDING_ACTION_PRESS;
+  const actions = params.actions ?? [];
+  const topChildren = compactList<WidgetNode>([
+    params.imageUri !== undefined
+      ? { type: 'Image', src: params.imageUri, size: 96, radius: 'lg' }
+      : undefined,
+    { type: 'Title', value: params.title },
+    params.caption !== undefined
+      ? {
+          type: 'Text',
+          value: params.caption,
+          size: params.captionSize ?? 'sm',
+          color: 'secondary',
+        }
+      : undefined,
+  ]);
+  const children: WidgetNode[] = [
+    {
+      type: 'Col',
+      gap: 10,
+      padding: { top: params.topPadding ?? 8 },
+      children: topChildren,
+    },
+  ];
+  if (actions.length > 0) {
+    children.push({
+      type: 'Col',
+      gap: 10,
+      children: actions.map((action) =>
+        compact({
+          type: 'Button' as const,
+          label: action.label,
+          block: true,
+          size: 'lg' as const,
+          variant: action.variant ?? 'solid',
+          disabled: action.disabled === true ? true : undefined,
+          onClickAction: { type: actionPressType, payload: { id: action.id } },
+        }),
+      ),
+    });
+  }
+  return { type: 'Col', flex: 1, justify: 'between', children };
 }

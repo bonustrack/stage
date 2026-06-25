@@ -1,6 +1,5 @@
-import type { Color, RowNode } from '@stage-labs/kit/kit';
-import view from './labelRow.json';
-import { buildView } from '../buildView';
+import type { Color, RowNode, WidgetNode } from '@stage-labs/kit/kit';
+import { compactList } from '../node';
 import { LABEL_REMOVE } from '../actions';
 
 export interface LabelChip {
@@ -15,13 +14,30 @@ export interface LabelRowParams {
 }
 
 export function labelRow(params: LabelRowParams): RowNode {
-  const labels = params.labels.map((chip) => ({
-    label: chip.label,
-    removable: chip.removable === true ? true : undefined,
-  }));
-  return buildView(view, {
-    labels,
-    background: params.background,
-    removeType: params.removeType ?? LABEL_REMOVE,
-  }) as RowNode;
+  const removeType = params.removeType ?? LABEL_REMOVE;
+  const children = params.labels.map((chip): WidgetNode => {
+    const inner = compactList<WidgetNode>([
+      { type: 'Text', value: chip.label, size: 'xs' },
+      chip.removable === true
+        ? {
+            type: 'Button',
+            iconStart: 'x',
+            variant: 'ghost',
+            size: 'sm',
+            color: 'secondary',
+            onClickAction: { type: removeType, payload: { label: chip.label } },
+          }
+        : undefined,
+    ]);
+    return {
+      type: 'Row',
+      align: 'center',
+      gap: 6,
+      radius: 'full',
+      background: params.background,
+      padding: { y: 6, left: 12, right: 8 },
+      children: inner,
+    };
+  });
+  return { type: 'Row', gap: 8, wrap: 'wrap', align: 'center', children };
 }

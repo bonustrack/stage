@@ -1,6 +1,5 @@
-import type { ColNode, ThemeColor } from '@stage-labs/kit/kit';
-import view from './noticeCard.json';
-import { buildView } from '../buildView';
+import type { ColNode, TextNode, ThemeColor, WidgetNode } from '@stage-labs/kit/kit';
+import { compact, compactList } from '../node';
 
 export interface NoticeAction {
   label: string;
@@ -20,23 +19,47 @@ export interface NoticeCardParams {
 }
 
 export function noticeCard(params: NoticeCardParams): ColNode {
-  const actions = (params.actions ?? []).map((action) => ({
-    label: action.label,
-    pressType: action.pressType,
-    variant: action.variant,
-    payload: action.payload ?? {},
-  }));
-  return (buildView(view, {
-    icon: params.icon,
-    iconColor: params.iconColor,
-    title: params.title,
-    titleColor: params.titleColor,
-    description: params.description,
-    gap: params.gap ?? 12,
-    actions,
-    hasActions:
-      params.actions !== undefined && params.actions.length > 0
-        ? true
-        : undefined,
-  }) as ColNode);
+  const actions = params.actions ?? [];
+  const colChildren = compactList<WidgetNode>([
+    compact<TextNode>({
+      type: 'Text',
+      value: params.title,
+      weight: 'semibold',
+      size: 'md',
+      color: params.titleColor,
+    }),
+    params.description !== undefined
+      ? { type: 'Caption', value: params.description, color: 'secondary' }
+      : undefined,
+  ]);
+  const rowChildren = compactList<WidgetNode>([
+    params.icon !== undefined
+      ? compact({
+          type: 'Icon' as const,
+          name: params.icon,
+          color: params.iconColor,
+          size: 'lg' as const,
+        })
+      : undefined,
+    { type: 'Col', gap: 2, flex: 1, children: colChildren },
+  ]);
+  const children = compactList<WidgetNode>([
+    { type: 'Row', align: 'start', gap: 12, children: rowChildren },
+    actions.length > 0
+      ? {
+          type: 'Col',
+          gap: 8,
+          children: actions.map((action) =>
+            compact({
+              type: 'Button' as const,
+              label: action.label,
+              block: true,
+              variant: action.variant,
+              onClickAction: { type: action.pressType, payload: action.payload ?? {} },
+            }),
+          ),
+        }
+      : undefined,
+  ]);
+  return { type: 'Col', gap: params.gap ?? 12, children };
 }

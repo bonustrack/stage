@@ -1,6 +1,5 @@
 import type { Color, RadiusValue, TextFieldNode } from '@stage-labs/kit/kit';
-import view from './memberTextField.json';
-import { buildView } from '../buildView';
+import { compact } from '../node';
 import { MEMBER_FIELD_CHANGE } from '../actions';
 
 export interface MemberTextFieldParams {
@@ -22,21 +21,28 @@ export interface MemberTextFieldParams {
 }
 
 export function memberTextField(params: MemberTextFieldParams): TextFieldNode {
-  return buildView(view, {
+  return compact<TextFieldNode>({
+    type: 'TextField',
+    name: 'field',
     value: params.value,
     placeholder: params.placeholder,
+    variant: 'outline',
+    autoFocus: params.autoFocus === true ? true : undefined,
+    background: params.inputBg,
+    borderColor: params.border,
     color: params.color,
     placeholderColor: params.placeholderColor,
-    inputBg: params.inputBg,
-    border: params.border,
-    radius: params.radius,
+    radius: params.radius as RadiusValue,
     paddingX: params.paddingX,
     paddingY: params.paddingY,
-    autoFocus: params.autoFocus === true ? true : undefined,
+    fontSize: 15,
+    fontWeight: 'medium',
+    minHeight: 0,
     autoCapitalize: params.autoCapitalize,
     autoCorrect: params.autoCorrect === false ? false : params.autoCorrect,
     returnKeyType: params.returnKeyType,
-    changeType: params.changeType ?? MEMBER_FIELD_CHANGE,
-    submitType: params.submitType,
-  }) as TextFieldNode;
+    onChangeAction: { type: params.changeType ?? MEMBER_FIELD_CHANGE },
+    onSubmitAction:
+      params.submitType !== undefined ? { type: params.submitType } : undefined,
+  });
 }
