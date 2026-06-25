@@ -165,6 +165,11 @@ function onSwipe(direction: SwipeDirection): void {
     v-else-if="node.type === 'AudioPlayer'"
     :src="audioNode.src"
     :duration="audioNode.duration"
+    :waveform="audioNode.waveform"
+    :bars="audioNode.bars"
+    :bar-count="audioNode.barCount"
+    :accent="resolveOptionalColor(audioNode.accent, scheme)"
+    :on-accent="resolveOptionalColor(audioNode.onAccent, scheme)"
     @play="fire(audioNode.onPlayAction)"
   />
 
@@ -184,6 +189,7 @@ function onSwipe(direction: SwipeDirection): void {
     :clickable="pressableNode.onClickAction !== undefined"
     :long-pressable="pressableNode.onLongPressAction !== undefined"
     :swipeable="pressableNode.onSwipeAction !== undefined"
+    :hit-slop="pressableNode.hitSlop"
     @press="fire(pressableNode.onClickAction)"
     @longpress="fire(pressableNode.onLongPressAction)"
     @swipe="onSwipe"

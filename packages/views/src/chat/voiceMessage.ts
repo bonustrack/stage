@@ -7,6 +7,9 @@ export interface VoiceMessageParams {
   src: string;
   duration?: number;
   background?: Color;
+  onAccent?: Color;
+  bars?: number[];
+  barCount?: number;
 }
 
 export function voiceMessage(params: VoiceMessageParams): RowNode {
@@ -14,6 +17,9 @@ export function voiceMessage(params: VoiceMessageParams): RowNode {
     src: params.src,
     duration: params.duration,
     background: params.background ?? '#0a7cff',
+    onAccent: params.onAccent ?? '#ffffff',
+    bars: params.bars,
+    barCount: params.barCount,
     playType: VOICE_PLAY,
   }) as RowNode;
 }

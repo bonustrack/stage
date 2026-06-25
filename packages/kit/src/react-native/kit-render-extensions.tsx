@@ -187,6 +187,11 @@ export function renderAudioPlayer(node: AudioPlayerNode, ctx: RenderCtx): ReactN
       src={node.src}
       duration={node.duration}
       dark={ctx.dark}
+      waveform={node.waveform}
+      bars={node.bars}
+      barCount={node.barCount}
+      accent={resolveOptionalColor(node.accent, ctx.scheme)}
+      onAccent={resolveOptionalColor(node.onAccent, ctx.scheme)}
       onPlay={() => {
         dispatch(node.onPlayAction, ctx);
       }}
@@ -251,6 +256,7 @@ export function renderPressable(
       onPress={node.onClickAction ? press : undefined}
       onLongPress={node.onLongPressAction ? longPress : undefined}
       onSwipe={node.onSwipeAction ? swipe : undefined}
+      hitSlop={node.hitSlop}
     >
       {renderList(node.children, ctx, render)}
     </GesturePressable>

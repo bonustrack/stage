@@ -11,6 +11,11 @@
       "type": "AudioPlayer",
       "src": "{{src}}",
       "duration": "{{duration}}",
+      "waveform": true,
+      "bars": "{{bars}}",
+      "barCount": "{{barCount}}",
+      "accent": "{{background}}",
+      "onAccent": "{{onAccent}}",
       "onPlayAction": { "type": "{{playType}}", "payload": { "src": "{{src}}" } }
     }
   ]

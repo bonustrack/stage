@@ -33,6 +33,11 @@ export interface AudioPlayerNode extends NodeBase {
   src: string;
   duration?: number;
   onPlayAction?: ActionConfig;
+  waveform?: boolean;
+  bars?: number[];
+  barCount?: number;
+  accent?: Color;
+  onAccent?: Color;
 }
 
 export interface VideoPlayerNode extends NodeBase {
