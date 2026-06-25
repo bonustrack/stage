@@ -260,7 +260,6 @@ export interface IconNode extends NodeBase {
   color?: Color;
   size?: IconSize | number;
 }
-
 export interface BadgeNode extends NodeBase {
   type: 'Badge';
   label: string;
@@ -271,7 +270,6 @@ export interface BadgeNode extends NodeBase {
   size?: BadgeSize;
   pill?: boolean;
 }
-
 export interface ButtonNode extends NodeBase {
   type: 'Button';
   label?: string;
@@ -298,7 +296,6 @@ export interface ButtonNode extends NodeBase {
   fontSize?: number;
   iconPx?: number;
 }
-
 export interface ListViewItemNode extends NodeBase {
   type: 'ListViewItem';
   children: WidgetNode[];
@@ -315,7 +312,6 @@ export interface ListViewItemNode extends NodeBase {
   pressedBorderColor?: Color;
   showDivider?: boolean;
 }
-
 export interface StackNode extends NodeBase {
   type: 'Stack';
   children: WidgetNode[];
@@ -325,14 +321,27 @@ export interface StackNode extends NodeBase {
   align?: Alignment;
   justify?: Justification;
 }
-
 export interface ScrollRowNode extends NodeBase {
   type: 'ScrollRow';
   children: WidgetNode[];
   gap?: Dimension;
   padding?: SpacingValue;
 }
-
+export interface ScrollNode extends NodeBase {
+  type: 'Scroll';
+  children: WidgetNode[];
+  gap?: Dimension;
+  padding?: SpacingValue;
+}
+export interface DialogNode extends NodeBase {
+  type: 'Dialog';
+  open: boolean;
+  children: WidgetNode[];
+  onCloseAction?: ActionConfig;
+  backdrop?: boolean;
+  side?: 'center' | 'bottom';
+  dismissable?: boolean;
+}
 export interface PressableNode extends NodeBase {
   type: 'Pressable';
   children: WidgetNode[];
@@ -341,12 +350,10 @@ export interface PressableNode extends NodeBase {
   onSwipeAction?: ActionConfig;
   hitSlop?: number;
 }
-
 export interface TransitionNode extends NodeBase {
   type: 'Transition';
   children?: WidgetNode;
 }
-
 import type { ChartNode } from './chart-node';
 export type { ChartNode } from './chart-node';
 export interface PopoverNode extends NodeBase {
@@ -357,7 +364,6 @@ export interface PopoverNode extends NodeBase {
   align?: 'start' | 'end';
   title?: string;
 }
-
 export interface VoiceRecorderNode extends NodeBase {
   type: 'VoiceRecorder';
   recording: boolean;
@@ -377,19 +383,18 @@ export interface VoiceRecorderNode extends NodeBase {
   onCancelAction?: ActionConfig;
   onCompleteAction?: ActionConfig;
 }
-
 export interface UnknownNode extends NodeBase {
   type: string;
   [extra: string]: unknown;
 }
-
 export type WidgetNode =
   | CardNode | ListViewNode | BasicNode | BoxNode | RowNode | ColNode
   | FormNode | SpacerNode | DividerNode | TextNode | TitleNode | CaptionNode
   | MarkdownNode | LabelNode | ImageNode | IconNode | BadgeNode | ButtonNode
   | InputNode | TextareaNode | SelectNode | CheckboxNode | RadioGroupNode
   | DatePickerNode | SwitchNode | TabsNode | TextFieldNode | ColorPickerNode
-  | SpinnerNode | StackNode | ScrollRowNode | AvatarStackNode | QRCodeNode
-  | AudioPlayerNode | VideoPlayerNode | FilePickerNode | PressableNode | PopoverNode
-  | VoiceRecorderNode | ListViewItemNode | TransitionNode | ChartNode | UnknownNode;
+  | SpinnerNode | StackNode | ScrollRowNode | ScrollNode | DialogNode
+  | AvatarStackNode | QRCodeNode | AudioPlayerNode | VideoPlayerNode | FilePickerNode
+  | PressableNode | PopoverNode | VoiceRecorderNode | ListViewItemNode
+  | TransitionNode | ChartNode | UnknownNode;
 export type WidgetRoot = CardNode | ListViewNode | BasicNode;

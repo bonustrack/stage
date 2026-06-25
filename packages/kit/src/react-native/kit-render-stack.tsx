@@ -1,7 +1,7 @@
 
 import type { ReactNode } from 'react';
 import { ScrollView, View, type ViewStyle } from 'react-native';
-import type { ScrollRowNode, StackNode, WidgetNode } from '../kit';
+import type { ScrollNode, ScrollRowNode, StackNode, WidgetNode } from '../kit';
 import { resolvePosition } from '../kit';
 import { Box } from './box';
 import {
@@ -95,6 +95,21 @@ export function renderScrollRow(
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
       <Box direction="row" gap={gap} padding={node.padding}>
+        {renderList(node.children, ctx, render)}
+      </Box>
+    </ScrollView>
+  );
+}
+
+export function renderScroll(
+  node: ScrollNode,
+  ctx: RenderCtx,
+  render: NodeRenderer,
+): ReactNode {
+  const gap = toNumber(node.gap);
+  return (
+    <ScrollView showsVerticalScrollIndicator={false}>
+      <Box direction="col" gap={gap} padding={node.padding}>
         {renderList(node.children, ctx, render)}
       </Box>
     </ScrollView>

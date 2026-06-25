@@ -13,6 +13,8 @@ import TextField from './TextField.vue';
 import ColorPicker from './ColorPicker.vue';
 import Stack from './Stack.vue';
 import ScrollRow from './ScrollRow.vue';
+import ScrollCol from './ScrollCol.vue';
+import Dialog from './Dialog.vue';
 import GesturePressable from './GesturePressable.vue';
 import Popover from './Popover.vue';
 import {
@@ -29,7 +31,9 @@ import {
   type PopoverNode,
   type PressableNode,
   type QRCodeNode,
+  type ScrollNode,
   type ScrollRowNode,
+  type DialogNode,
   type SpinnerNode,
   type StackNode,
   type SwipeDirection,
@@ -71,6 +75,8 @@ const pressableNode = computed(() => props.node as PressableNode);
 const popoverNode = computed(() => props.node as PopoverNode);
 const stackNode = computed(() => props.node as StackNode);
 const scrollRowNode = computed(() => props.node as ScrollRowNode);
+const scrollNode = computed(() => props.node as ScrollNode);
+const dialogNode = computed(() => props.node as DialogNode);
 
 const pressableChildren = computed<WidgetNode[]>(() =>
   props.node.type === 'Pressable' ? pressableNode.value.children : [],
@@ -201,6 +207,10 @@ function onSwipe(direction: SwipeDirection): void {
   <Stack v-else-if="node.type === 'Stack'" :node="stackNode" />
 
   <ScrollRow v-else-if="node.type === 'ScrollRow'" :node="scrollRowNode" />
+
+  <ScrollCol v-else-if="node.type === 'Scroll'" :node="scrollNode" />
+
+  <Dialog v-else-if="node.type === 'Dialog'" :node="dialogNode" />
 
   <GesturePressable
     v-else-if="node.type === 'Pressable'"

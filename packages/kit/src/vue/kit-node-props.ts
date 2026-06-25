@@ -74,6 +74,8 @@ const EXTENSION_TYPES = new Set([
   'Popover',
   'Stack',
   'ScrollRow',
+  'Scroll',
+  'Dialog',
 ]);
 
 export function isExtensionType(type: string): boolean {

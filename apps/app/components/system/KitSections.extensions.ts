@@ -302,5 +302,34 @@ export const EXTENSION_WIDGET: WidgetRoot = {
         },
       ],
     },
+    { type: 'Spacer', minSize: 12 },
+    { type: 'Title', value: 'Scroll', size: 'lg' },
+    {
+      type: 'Scroll',
+      gap: 8,
+      padding: 8,
+      children: [
+        { type: 'Text', value: 'Row one' },
+        { type: 'Text', value: 'Row two' },
+        { type: 'Text', value: 'Row three' },
+      ],
+    },
+    { type: 'Spacer', minSize: 12 },
+    { type: 'Title', value: 'Dialog', size: 'lg' },
+    {
+      type: 'Dialog',
+      open: false,
+      side: 'center',
+      onCloseAction: { type: 'demo_dialog_close', handler: 'client' },
+      children: [
+        {
+          type: 'Card',
+          children: [
+            { type: 'Title', value: 'Modal title', size: 'md' },
+            { type: 'Text', value: 'Dialog content rendered from JSON.' },
+          ],
+        },
+      ],
+    },
   ],
 };

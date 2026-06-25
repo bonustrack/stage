@@ -31,7 +31,8 @@ import {
   renderText,
   renderTitle,
 } from './kit-render-node';
-import { renderScrollRow, renderStack } from './kit-render-stack';
+import { renderScroll, renderScrollRow, renderStack } from './kit-render-stack';
+import { renderDialog } from './kit-render-dialog';
 import {
   renderButton,
   renderCheckbox,
@@ -114,6 +115,10 @@ function renderContainer(node: WidgetNode, ctx: RenderCtx): ReactNode | undefine
       return renderStack(as<'Stack'>(node), ctx, renderNode);
     case 'ScrollRow':
       return renderScrollRow(as<'ScrollRow'>(node), ctx, renderNode);
+    case 'Scroll':
+      return renderScroll(as<'Scroll'>(node), ctx, renderNode);
+    case 'Dialog':
+      return renderDialog(as<'Dialog'>(node), ctx, renderNode);
     default:
       return undefined;
   }

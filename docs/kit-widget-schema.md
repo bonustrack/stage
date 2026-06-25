@@ -474,6 +474,24 @@ Horizontally scrolling container for chip/tab strips.
 
 RN renders a horizontal `ScrollView` (`showsHorizontalScrollIndicator={false}`) around a row `Box`; Vue renders an `overflow-x:auto` flex-row `div` using native scroll.
 
+#### Scroll — `"type": "Scroll"`
+Vertically scrolling container (the vertical analog of `ScrollRow`).
+- `children`: array of nodes — **required**
+- `gap`: `Dimension` (space between children) · `padding`: `SpacingValue`
+
+RN renders a vertical `ScrollView` (`showsVerticalScrollIndicator={false}`) around a col `Box`; Vue renders an `overflow-y:auto` flex-column `div` using native scroll.
+
+#### Dialog — `"type": "Dialog"`
+Modal/overlay host: a dismissable scrim plus a positioned panel of child nodes. The container owns the `open` state and the content nodes.
+- `open`: bool — **required** (panel is only mounted/visible when true).
+- `children`: array of nodes — **required** (the panel content).
+- `onCloseAction`: `ActionConfig` — dispatched on backdrop press / request-close when dismissable.
+- `backdrop`: bool (default `true`) — render the dimmed scrim behind the panel.
+- `side`: `"center"` (default — vertically centered) | `"bottom"` (sheet pinned to the bottom edge).
+- `dismissable`: bool (default `true`) — when `false`, backdrop press and request-close are ignored (no `onCloseAction`).
+
+RN renders a transparent `Modal` (`animationType="fade"`, `onRequestClose` → close) with an overlay `View` (`justifyContent` `center`/`flex-end` by `side`), an absolute-fill `Pressable` backdrop (`rgba(0,0,0,0.5)`), and the child panel above it; Vue renders a `fixed inset-0 z-50` flex overlay (`justify-content` `center`/`flex-end` by `side`) with an `absolute inset-0` `rgba(0,0,0,0.5)` outside-click backdrop and a `position:relative` panel holding the children.
+
 #### Pressable — `"type": "Pressable"`
 Generic gesture-aware wrapper around arbitrary children.
 - `children`: array of nodes — **required**
@@ -498,7 +516,7 @@ Pressing an item dispatches `{ type: pressType, payload: { ...payload, id } }` t
 - **`Title.size`** additionally accepts `"6xl"` and `"7xl"` for large hero text (RN/Vue render at 44px / 60px respectively).
 - **`Button.color`** additionally accepts an arbitrary color **string** or a `ThemeColor` (`{dark, light}`) on top of the semantic enum (`primary`…`danger`). A **`Button.background`** field is also accepted. When a custom color/background is supplied, the button is rendered solid with that background and an automatically-contrasting foreground.
 - **`ListViewItem`** additionally accepts `onLongPressAction` and `onSwipeAction` (same direction payload as `Pressable`).
-- **Overlay positioning fields** are accepted on any layout node (`Box`/`Row`/`Col`/`Form`/`Stack`/`ScrollRow`) and take effect when the node is a direct child of a `Stack`: `position` (`"absolute" | "relative"`), `top`/`right`/`bottom`/`left` (`Dimension` — number px, string, or `"%"`), `inset` (shorthand applying to all four sides), and `zIndex` (number). Any of these (other than `position: "relative"`) implies `position: "absolute"`. Outside a `Stack` they are ignored.
+- **Overlay positioning fields** are accepted on any layout node (`Box`/`Row`/`Col`/`Form`/`Stack`/`ScrollRow`/`Scroll`) and take effect when the node is a direct child of a `Stack`: `position` (`"absolute" | "relative"`), `top`/`right`/`bottom`/`left` (`Dimension` — number px, string, or `"%"`), `inset` (shorthand applying to all four sides), and `zIndex` (number). Any of these (other than `position: "relative"`) implies `position: "absolute"`. Outside a `Stack` they are ignored.
 
 ---
 
