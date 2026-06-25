@@ -107,6 +107,7 @@ export function renderTextField(node: TextFieldNode, ctx: RenderCtx): ReactNode 
       placeholderColor={resolveOptionalColor(node.placeholderColor, ctx.scheme)}
       maxLength={node.maxLength}
       maxHeight={node.maxHeight}
+      minHeight={node.minHeight}
       returnKeyType={node.returnKeyType}
       autoCapitalize={node.autoCapitalize}
       autoCorrect={node.autoCorrect}

@@ -75,6 +75,7 @@ export interface TextFieldNode extends NodeBase {
   placeholderColor?: Color;
   maxLength?: number;
   maxHeight?: Dimension;
+  minHeight?: Dimension;
   returnKeyType?: ReturnKeyType;
   onSubmitAction?: ActionConfig;
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';

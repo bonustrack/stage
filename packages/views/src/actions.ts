@@ -95,3 +95,7 @@ export const LABEL_CHIP_PRESS = 'chat.labelBar.chipPress';
 export const MEMBER_ADD_CHANGE = 'accounts.memberAdd.change';
 
 export const MEMBER_ADD_SUBMIT = 'accounts.memberAdd.submit';
+
+export const GROUP_EDIT_CHANGE = 'group.edit.change';
+
+export const GROUP_EDIT_SAVE = 'group.edit.save';

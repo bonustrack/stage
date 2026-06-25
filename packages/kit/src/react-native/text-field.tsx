@@ -38,6 +38,7 @@ export interface TextFieldProps {
   placeholderColor?: string;
   maxLength?: number;
   maxHeight?: number | string;
+  minHeight?: number | string;
   returnKeyType?: ReturnKeyTypeOptions;
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   autoCorrect?: boolean;
@@ -69,6 +70,7 @@ export function TextField(props: TextFieldProps): React.ReactElement {
     placeholderColor,
     maxLength,
     maxHeight,
+    minHeight,
     returnKeyType,
     autoCapitalize,
     autoCorrect,
@@ -101,9 +103,10 @@ export function TextField(props: TextFieldProps): React.ReactElement {
     color,
   });
   const maxH = maxHeight as DimensionValue | undefined;
+  const minH = minHeight as DimensionValue | undefined;
   const grow: TextStyle = multiline
     ? {
-        minHeight: autoGrow ? 44 : 88,
+        minHeight: minH ?? (autoGrow ? 44 : 88),
         maxHeight: maxH,
         height: undefined,
         textAlignVertical: 'top',

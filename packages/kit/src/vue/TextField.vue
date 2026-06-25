@@ -27,6 +27,7 @@ const props = withDefaults(
     placeholderColor?: string;
     maxLength?: number;
     maxHeight?: number | string;
+    minHeight?: number | string;
     enterKeyHint?: 'done' | 'go' | 'next' | 'search' | 'send';
     autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
     autoCorrect?: boolean;
@@ -59,6 +60,11 @@ function px(v: number | string | undefined): string | undefined {
   return typeof v === 'number' ? `${v}px` : v;
 }
 
+function multilineMinHeight(): string {
+  if (!props.multiline) return `${spec.value.minHeight}px`;
+  return props.autoGrow ? '44px' : '88px';
+}
+
 const spec = computed(() => {
   const baseColors = controlColors(
     props.variant === 'plain' ? 'soft' : 'outline',
@@ -85,11 +91,7 @@ const style = computed<Record<string, string>>(() => {
   const padX = px(s.paddingX) ?? '0';
   const padY = px(s.paddingY) ?? '0';
   const css: Record<string, string> = {
-    minHeight: props.multiline
-      ? props.autoGrow
-        ? '44px'
-        : '88px'
-      : `${s.minHeight}px`,
+    minHeight: px(props.minHeight) ?? multilineMinHeight(),
     paddingLeft: padX,
     paddingRight: padX,
     paddingTop: padY,

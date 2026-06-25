@@ -122,6 +122,7 @@ function onSwipe(direction: SwipeDirection): void {
     :placeholder-color="resolveOptionalColor(textFieldNode.placeholderColor, scheme)"
     :max-length="textFieldNode.maxLength"
     :max-height="textFieldNode.maxHeight"
+    :min-height="textFieldNode.minHeight"
     :enter-key-hint="textFieldNode.returnKeyType"
     :auto-capitalize="textFieldNode.autoCapitalize"
     :auto-correct="textFieldNode.autoCorrect"

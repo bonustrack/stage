@@ -41,4 +41,5 @@ export * from './proposals/banner';
 export * from './proposals/proposalCard';
 export * from './onboarding/onboardingStep';
 export * from './group/labelRow';
+export * from './group/groupFieldEditor';
 export * from './settings/index';

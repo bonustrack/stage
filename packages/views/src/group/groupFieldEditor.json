@@ -1,0 +1,45 @@
+{
+  "type": "Row",
+  "align": "{{align}}",
+  "gap": 8,
+  "padding": { "top": 6 },
+  "children": [
+    {
+      "type": "Box",
+      "flex": 1,
+      "children": [
+        {
+          "type": "TextField",
+          "name": "{{field}}",
+          "value": "{{value}}",
+          "placeholder": "{{placeholder}}",
+          "variant": "outline",
+          "multiline": "{{multiline}}",
+          "minHeight": "{{minHeight}}",
+          "autoFocus": true,
+          "background": "{{inputBg}}",
+          "borderColor": "{{border}}",
+          "color": "{{fg}}",
+          "placeholderColor": "{{sub}}",
+          "radius": 10,
+          "paddingX": 10,
+          "paddingY": 8,
+          "onChangeAction": { "type": "{{changeType}}", "payload": { "field": "{{field}}" } }
+        }
+      ]
+    },
+    {
+      "type": "Button",
+      "label": "{{label}}",
+      "variant": "solid",
+      "size": "sm",
+      "background": "{{primary}}",
+      "foreground": "{{bg}}",
+      "paddingX": 14,
+      "fontSize": 13,
+      "fontFamily": "Calibre-Medium",
+      "disabled": "{{disabled}}",
+      "onClickAction": { "type": "{{saveType}}" }
+    }
+  ]
+}
