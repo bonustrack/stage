@@ -32,6 +32,7 @@
     "./xmtp/inboxCache": "./src/xmtp/inboxCache.ts",
     "./xmtp/commonChannels": "./src/xmtp/commonChannels.ts",
     "./xmtp/archived": "./src/xmtp/archived.ts",
+    "./routing/deepLinks": "./src/routing/deepLinks.ts",
     "./xmtp/mentions": "./src/xmtp/mentions.ts",
     "./embed/detect": "./src/embed/detect.ts",
     "./stamp/resolve": "./src/stamp/resolve.ts",
