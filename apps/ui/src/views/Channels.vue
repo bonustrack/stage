@@ -1,11 +1,27 @@
 <script setup lang="ts">
 
+import { computed } from 'vue';
+import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
+import { emptyState } from '@stage-labs/views';
+import { basicRoot } from '@/lib/chatkitRow';
 import { ASK_QUESTION_MEMBERS, stampAvatarUrl } from '../lib/xmtp';
 import { postCloseToParent } from '../lib/embedBridge';
 import { useChannels } from '../lib/useChannels';
 import { useEffectiveScheme } from '@/lib/kitTheme';
 
 const scheme = useEffectiveScheme();
+
+const emptyNode = computed(() =>
+  basicRoot(
+    emptyState({
+      icon: 'chatBubble',
+      title: query.value ? `No matches for "${query.value}"` : 'No conversations yet',
+      caption: query.value
+        ? undefined
+        : 'Share your address from Settings to start one.',
+    }),
+  ),
+);
 
 const {
   embedded, rows, error, query, creatingAsk, refreshing,
@@ -123,8 +139,8 @@ const {
         <Spinner :size="28" />
       </Col>
       <ul v-else class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-6">
-        <li v-if="filtered && filtered.length === 0" class="p-8 text-center text-sm text-metro-sub-light dark:text-metro-sub-dark">
-          {{ query ? `No matches for "${query}"` : 'No conversations yet. Share your address from Settings to start one.' }}
+        <li v-if="filtered && filtered.length === 0">
+          <ChatKitRenderer :node="emptyNode" />
         </li>
         <li v-for="r in filtered ?? rows" :key="r.convId">
           <ChannelRow

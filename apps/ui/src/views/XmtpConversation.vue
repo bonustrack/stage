@@ -1,9 +1,14 @@
 <script setup lang="ts">
 
 import { ref } from 'vue';
+import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
+import { emptyState } from '@stage-labs/views';
+import { basicRoot } from '@/lib/chatkitRow';
 import { useXmtpConversation } from '../lib/useXmtpConversation';
 
 const scroller = ref<HTMLElement | null>(null);
+
+const emptyNode = basicRoot(emptyState({ title: 'Type a message below to start chatting.' }));
 
 const {
   router, line, feed, myUri, replyingTo, actionTarget,
@@ -37,9 +42,8 @@ const {
         class="h-full flex items-center justify-center text-metro-head-light dark:text-metro-head-dark">
         <Spinner :size="28" />
       </Row>
-      <Col v-else-if="allBubbles.length === 0 && feed.status.value === 'open'"
-        class="p-8 text-center text-sm text-metro-sub-light dark:text-metro-sub-dark">
-        Type a message below to start chatting.
+      <Col v-else-if="allBubbles.length === 0 && feed.status.value === 'open'">
+        <ChatKitRenderer :node="emptyNode" />
       </Col>
       <MessengerBubble
         v-for="entry in allBubbles"

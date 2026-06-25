@@ -3,6 +3,9 @@
 import { computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
+import { emptyState } from '@stage-labs/views';
+import { basicRoot } from '@/lib/chatkitRow';
 import { useEffectiveScheme } from '@/lib/kitTheme';
 import {
   listRequestConvs, acceptRequestConv, blockRequestConv,
@@ -27,6 +30,8 @@ async function load(): Promise<void> {
 onMounted(() => { void load(); });
 
 function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
+
+const emptyNode = basicRoot(emptyState({ title: 'No message requests.' }));
 
 async function act(convId: string, accept: boolean): Promise<void> {
   const prev = rows.value;
@@ -58,8 +63,8 @@ async function act(convId: string, accept: boolean): Promise<void> {
     <Col v-if="rows === null" align="center" justify="center" class="flex-1">
       <Spinner :size="28" />
     </Col>
-    <Col v-else-if="rows.length === 0" align="center" justify="center" class="flex-1" :padding="32">
-      <Text role="secondary" text-align="center">No message requests.</Text>
+    <Col v-else-if="rows.length === 0" align="center" justify="center" class="flex-1">
+      <ChatKitRenderer :node="emptyNode" />
     </Col>
     <ul v-else class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-6">
       <li v-for="r in rows" :key="r.convId">

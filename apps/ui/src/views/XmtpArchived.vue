@@ -3,6 +3,9 @@
 import { computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
+import { emptyState } from '@stage-labs/views';
+import { basicRoot } from '@/lib/chatkitRow';
 import { cachedRows, hydrateCachedRows, type CachedRow } from '../lib/channelsCache';
 import { loadArchivedIds, subscribeArchived } from '../lib/archived';
 
@@ -32,6 +35,8 @@ const rows = computed<ArchivedRow[]>(() => {
 });
 
 function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
+
+const emptyNode = basicRoot(emptyState({ title: 'No archived conversations.' }));
 </script>
 
 <template>
@@ -49,8 +54,8 @@ function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
       <Title size="sm">Archived</Title>
     </Row>
 
-    <Col v-if="rows.length === 0" align="center" justify="center" class="flex-1" :padding="32">
-      <Text role="secondary" text-align="center">No archived conversations.</Text>
+    <Col v-if="rows.length === 0" align="center" justify="center" class="flex-1">
+      <ChatKitRenderer :node="emptyNode" />
     </Col>
     <ul v-else class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-6">
       <li v-for="r in rows" :key="r.convId">

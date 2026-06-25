@@ -1,5 +1,11 @@
 <script setup lang="ts">
 
+import { computed } from 'vue';
+import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
+import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import type { WidgetActionRegistry } from '@stage-labs/kit/chatkit';
+import { reactionsRow, type ReactionPill, REACTION_PRESS } from '@stage-labs/views';
+import { basicRoot } from '@/lib/chatkitRow';
 import { stampAvatarUrl, XMTP_USER_PREFIX } from '../lib/xmtp';
 import type { HistoryEntry } from '../lib/types';
 import { mapCoordsOf, youtubeIdOf } from '../lib/embedDetect';
@@ -121,6 +127,36 @@ function onPointerMove(ev: PointerEvent): void {
 function onAvatar(): void {
   if (senderAddress.value) emit('open-avatar', senderAddress.value);
 }
+
+const reactionPills = computed<ReactionPill[]>(() =>
+  props.reactions
+    ? Array.from(props.reactions.entries()).map(([emoji, count]) => ({
+        emoji,
+        count,
+        own: props.ownEmojis?.has(emoji) ?? false,
+      }))
+    : [],
+);
+
+const palette = useKitPalette();
+
+const reactionsNode = computed(() =>
+  basicRoot(
+    reactionsRow({
+      reactions: reactionPills.value,
+      dispatchPress: true,
+      pillBackground: palette.border,
+      ownBorderColor: palette.link,
+    }),
+  ),
+);
+
+const reactionsRegistry: WidgetActionRegistry = {
+  [REACTION_PRESS]: (action) => {
+    const emoji = action.payload.emoji;
+    if (typeof emoji === 'string') emit('react', { entry: props.entry, emoji });
+  },
+};
 </script>
 
 <template>
@@ -260,24 +296,11 @@ function onAvatar(): void {
         <Pressable tag="button" type="button" class="px-1 text-metro-sub-light dark:text-metro-sub-dark"
           @click="pickerOpen = false">✕</Pressable>
       </Row>
-      <!-- Reactions pills on their own row below (matches mobile). -->
-      <Row v-if="props.reactions && props.reactions.size > 0" class="flex flex-wrap items-center gap-1 mt-1">
-        <!-- Pill bg = mobile's pal.border; a border is drawn ONLY on the user's
-             own reactions (mobile: borderWidth mine?1, borderColor link). -->
-        <Pressable
-          tag="button"
-          v-for="[emoji, count] in props.reactions"
-          :key="emoji"
-          type="button"
-          class="flex items-center gap-1 px-2 py-0.5 rounded-full
-            bg-metro-border-light dark:bg-metro-border-dark
-            text-[12px] text-metro-fg-light dark:text-metro-fg-dark"
-          :class="props.ownEmojis?.has(emoji)
-            ? 'border border-metro-link-light dark:border-metro-link-dark'
-            : ''"
-          @click="emit('react', { entry: props.entry, emoji })"
-        >{{ emoji }} {{ count }}</Pressable>
-      </Row>
+      <!-- Reactions pills on their own row below (matches mobile), rendered from
+           ChatKit JSON via the shared reactionsRow builder. -->
+      <Col v-if="reactionPills.length > 0" class="mt-1">
+        <ChatKitRenderer :node="reactionsNode" :registry="reactionsRegistry" />
+      </Col>
     </Col>
   </Row>
 </template>

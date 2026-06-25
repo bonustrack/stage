@@ -1,5 +1,10 @@
 <script setup lang="ts">
 
+import { computed } from 'vue';
+import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
+import type { WidgetActionRegistry } from '@stage-labs/kit/chatkit';
+import { menuSheet, type MenuSheetItem, MENU_ITEM_PRESS } from '@stage-labs/views';
+
 import type { HistoryEntry } from '../lib/types';
 
 const ACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '🔥', '🎉'];
@@ -9,10 +14,30 @@ const emit = defineEmits<{
   (e: 'close' | 'reply' | 'copy' | 'copy-link'): void;
   (e: 'react', emoji: string): void;
 }>();
-void props;
+
+const items = computed<MenuSheetItem[]>(() => {
+  const list: MenuSheetItem[] = [{ id: 'reply', label: 'Reply', icon: 'reply' }];
+  if (props.target?.text) list.push({ id: 'copy', label: 'Copy text', icon: 'copy' });
+  list.push({ id: 'copy-link', label: 'Copy link', icon: 'send' });
+  return list;
+});
+
+const node = computed(() => menuSheet({ items: items.value }));
+
+const registry: WidgetActionRegistry = {
+  [MENU_ITEM_PRESS]: (action) => {
+    const id = action.payload.id;
+    if (id === 'reply') emit('reply');
+    else if (id === 'copy') emit('copy');
+    else if (id === 'copy-link') emit('copy-link');
+  },
+};
 </script>
 
 <template>
+  <!-- Fixed bottom-sheet overlay + tap-to-dismiss gesture and the emoji
+       quick-reaction row stay in template (no ChatKit overlay/reaction-picker
+       node). The actionable item list renders from ChatKit JSON via menuSheet. -->
   <Row v-if="props.target"
     class="fixed inset-0 z-30 bg-black/45 flex items-end"
     @click.self="emit('close')"
@@ -22,24 +47,7 @@ void props;
         <Pressable v-for="e in ACTION_EMOJIS" :key="e" tag="button" type="button" class="text-3xl"
           @click="emit('react', e)">{{ e }}</Pressable>
       </Row>
-      <Pressable tag="button" type="button"
-        class="w-full flex items-center gap-3 py-3 text-metro-fg-light dark:text-metro-fg-dark"
-        @click="emit('reply')">
-        <Icon name="reply" :size="20" />
-        <span class="text-base">Reply</span>
-      </Pressable>
-      <Pressable tag="button" v-if="props.target.text" type="button"
-        class="w-full flex items-center gap-3 py-3 text-metro-fg-light dark:text-metro-fg-dark"
-        @click="emit('copy')">
-        <Icon name="copy" :size="20" />
-        <span class="text-base">Copy text</span>
-      </Pressable>
-      <Pressable tag="button" type="button"
-        class="w-full flex items-center gap-3 py-3 text-metro-fg-light dark:text-metro-fg-dark"
-        @click="emit('copy-link')">
-        <Icon name="send" :size="20" />
-        <span class="text-base">Copy link</span>
-      </Pressable>
+      <ChatKitRenderer :node="node" :registry="registry" />
       <Pressable tag="button" type="button"
         class="w-full py-2.5 text-center text-sm text-metro-sub-light dark:text-metro-sub-dark"
         @click="emit('close')">Cancel</Pressable>
