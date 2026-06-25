@@ -2,9 +2,62 @@
 
 import { ref, computed } from 'vue';
 import { isAddress } from 'viem';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import { composeField } from '@/lib/composeField';
+import { basicRoot } from '@/lib/kitRow';
 
 const palette = useKitPalette();
+
+const TO_CHANGE = 'payment.to.change';
+const AMOUNT_CHANGE = 'payment.amount.change';
+const NOTE_CHANGE = 'payment.note.change';
+
+const toNode = computed(() =>
+  basicRoot(composeField({
+    name: 'to',
+    value: to.value,
+    placeholder: 'Recipient address (0x…)',
+    fontSize: 16,
+    autoCapitalize: 'none',
+    autoCorrect: false,
+    changeType: TO_CHANGE,
+  })));
+
+const amountNode = computed(() =>
+  basicRoot(composeField({
+    name: 'amount',
+    value: amount.value,
+    placeholder: 'Amount (ETH)',
+    fontSize: 16,
+    inputMode: 'decimal',
+    changeType: AMOUNT_CHANGE,
+  })));
+
+const noteNode = computed(() =>
+  basicRoot(composeField({
+    name: 'note',
+    value: note.value,
+    placeholder: 'Note (optional)',
+    fontSize: 15,
+    changeType: NOTE_CHANGE,
+  })));
+
+const registry: WidgetActionRegistry = {
+  [TO_CHANGE]: (action) => {
+    const next = action.payload.to;
+    if (typeof next === 'string') to.value = next;
+  },
+  [AMOUNT_CHANGE]: (action) => {
+    const next = action.payload.amount;
+    if (typeof next === 'string') amount.value = next;
+  },
+  [NOTE_CHANGE]: (action) => {
+    const next = action.payload.note;
+    if (typeof next === 'string') note.value = next;
+  },
+};
 
 const emit = defineEmits<{
   (e: 'close'): void;
@@ -43,39 +96,9 @@ function create(): void {
         </Pressable>
       </Row>
 
-      <!-- kit-exception: bare inputs — kit Input/Textarea force boxed styling that
-           clashes with this surface; mirrors PollComposeSheet + mobile fields. -->
-      <component :is="'input'"
-        :value="to"
-        @input="to = ($event.target as HTMLInputElement).value"
-        placeholder="Recipient address (0x…)"
-        autocapitalize="none" autocomplete="off" spellcheck="false"
-        class="w-full rounded-lg px-3 py-2 font-sans text-[16px] outline-none
-          border border-metro-border-light dark:border-metro-border-dark
-          bg-metro-surface-light dark:bg-metro-surface-dark
-          text-metro-head-light dark:text-metro-head-dark
-          placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark" />
-
-      <component :is="'input'"
-        :value="amount"
-        @input="amount = ($event.target as HTMLInputElement).value"
-        placeholder="Amount (ETH)"
-        inputmode="decimal"
-        class="w-full rounded-lg px-3 py-2 font-sans text-[16px] outline-none
-          border border-metro-border-light dark:border-metro-border-dark
-          bg-metro-surface-light dark:bg-metro-surface-dark
-          text-metro-head-light dark:text-metro-head-dark
-          placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark" />
-
-      <component :is="'input'"
-        :value="note"
-        @input="note = ($event.target as HTMLInputElement).value"
-        placeholder="Note (optional)"
-        class="w-full rounded-lg px-3 py-2 font-sans text-[15px] outline-none
-          border border-metro-border-light dark:border-metro-border-dark
-          bg-metro-surface-light dark:bg-metro-surface-dark
-          text-metro-head-light dark:text-metro-head-dark
-          placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark" />
+      <KitRenderer :node="toNode" :registry="registry" />
+      <KitRenderer :node="amountNode" :registry="registry" />
+      <KitRenderer :node="noteNode" :registry="registry" />
 
       <Button
         variant="primary"

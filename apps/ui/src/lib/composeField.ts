@@ -1,4 +1,4 @@
-import type { TextFieldNode } from '@stage-labs/kit/kit';
+import type { Color, TextFieldNode } from '@stage-labs/kit/kit';
 import { metroFieldColors, METRO_MONO_FAMILY } from './metroFieldColors';
 
 export interface ComposeFieldOptions {
@@ -10,10 +10,13 @@ export interface ComposeFieldOptions {
   rows?: number;
   minHeight?: number;
   mono?: boolean;
+  textColor?: Color;
+  autoFocus?: boolean;
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   autoCorrect?: boolean;
   inputMode?: 'text' | 'decimal' | 'numeric' | 'tel' | 'search' | 'email' | 'url' | 'none';
   changeType: string;
+  submitType?: string;
 }
 
 export function composeField(options: ComposeFieldOptions): TextFieldNode {
@@ -26,9 +29,10 @@ export function composeField(options: ComposeFieldOptions): TextFieldNode {
     rows: options.rows,
     variant: 'outline',
     noFocusBorder: true,
+    autoFocus: options.autoFocus,
     background: metroFieldColors.surface,
     borderColor: metroFieldColors.border,
-    color: metroFieldColors.head,
+    color: options.textColor ?? metroFieldColors.head,
     placeholderColor: metroFieldColors.sub,
     radius: 'sm',
     paddingX: 12,
@@ -40,5 +44,6 @@ export function composeField(options: ComposeFieldOptions): TextFieldNode {
     autoCorrect: options.autoCorrect,
     inputMode: options.inputMode,
     onChangeAction: { type: options.changeType },
+    onSubmitAction: options.submitType === undefined ? undefined : { type: options.submitType },
   };
 }
