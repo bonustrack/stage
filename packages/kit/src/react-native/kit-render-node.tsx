@@ -24,6 +24,7 @@ import type {
 import {
   resolveAlign,
   resolveBadgeColor,
+  resolveBorder,
   resolveHeroTitlePx,
   resolveJustify,
   resolveOptionalColor,
@@ -78,6 +79,7 @@ function boxProps(node: BoxLayoutBase, ctx: RenderCtx): Record<string, unknown> 
     padding: node.padding,
     margin: node.margin,
     radius: resolveRadius(node.radius),
+    border: resolveBorder(node.border, ctx.scheme),
     background: resolveOptionalColor(node.background, ctx.scheme),
     width: node.width,
     height: node.height,

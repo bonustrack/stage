@@ -28,6 +28,19 @@ export interface Spacing {
   y?: number | string;
 }
 
+export interface ResolvedBoxBorderSide {
+  width?: number | string;
+  color?: string;
+  style?: string;
+}
+
+export interface ResolvedBoxBorder {
+  top?: ResolvedBoxBorderSide;
+  right?: ResolvedBoxBorderSide;
+  bottom?: ResolvedBoxBorderSide;
+  left?: ResolvedBoxBorderSide;
+}
+
 export interface BoxBaseProps {
   direction?: 'row' | 'col';
   gap?: number;
@@ -47,6 +60,7 @@ export interface BoxBaseProps {
   maxWidth?: Size;
   maxHeight?: Size;
   aspectRatio?: number | string;
+  border?: ResolvedBoxBorder;
 }
 
 const ALIGN: Record<Align, string> = {
@@ -134,11 +148,37 @@ function applySizing(s: BoxStyleEntries, props: BoxBaseProps): void {
   setIf(s, 'aspectRatio', props.aspectRatio);
 }
 
+function applyBorderSide(
+  s: BoxStyleEntries,
+  side: ResolvedBoxBorderSide | undefined,
+  widthKey: string,
+  colorKey: string,
+): void {
+  if (side === undefined) return;
+  setIf(s, widthKey, side.width);
+  setIf(s, colorKey, side.color);
+}
+
+function applyBorder(s: BoxStyleEntries, border: ResolvedBoxBorder | undefined): void {
+  if (border === undefined) return;
+  applyBorderSide(s, border.top, 'borderTopWidth', 'borderTopColor');
+  applyBorderSide(s, border.right, 'borderRightWidth', 'borderRightColor');
+  applyBorderSide(s, border.bottom, 'borderBottomWidth', 'borderBottomColor');
+  applyBorderSide(s, border.left, 'borderLeftWidth', 'borderLeftColor');
+  const style =
+    border.top?.style ??
+    border.right?.style ??
+    border.bottom?.style ??
+    border.left?.style;
+  setIf(s, 'borderStyle', style);
+}
+
 export function boxStyleEntries(props: BoxBaseProps): BoxStyleEntries {
   const s: BoxStyleEntries = {};
   applyFlex(s, props);
   applySpacing(s, 'padding', props.padding);
   applySpacing(s, 'margin', props.margin);
   applySizing(s, props);
+  applyBorder(s, props.border);
   return s;
 }

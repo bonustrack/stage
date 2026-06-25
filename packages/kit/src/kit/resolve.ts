@@ -1,5 +1,10 @@
 
-import type { Align, Justify } from '../layout';
+import type {
+  Align,
+  Justify,
+  ResolvedBoxBorder,
+  ResolvedBoxBorderSide,
+} from '../layout';
 import { resolveColorToken } from '../tokens';
 import { isRadiusValue, resolveBoxRadius } from '../radius';
 import type {
@@ -194,21 +199,19 @@ export function resolveSpacing(
   return s;
 }
 
-function borderSide(side: number | Border, scheme: Scheme): StyleEntries {
+function borderSide(
+  side: number | Border,
+  scheme: Scheme,
+): ResolvedBoxBorderSide {
   if (typeof side === 'number') return { width: side };
-  const s: StyleEntries = {};
+  const s: ResolvedBoxBorderSide = {};
   if (side.size !== undefined) s.width = side.size;
   if (side.color !== undefined) s.color = resolveColor(side.color, scheme);
   if (side.style !== undefined) s.style = side.style;
   return s;
 }
 
-export interface ResolvedBorders {
-  top?: StyleEntries;
-  right?: StyleEntries;
-  bottom?: StyleEntries;
-  left?: StyleEntries;
-}
+export type ResolvedBorders = ResolvedBoxBorder;
 
 function isBorder(value: Border | Borders): value is Border {
   return 'size' in value || 'color' in value || 'style' in value;

@@ -2,6 +2,7 @@ import { HERO_ICON_PATHS, type HeroIconName } from '../icons';
 import type { Spacing } from '../layout';
 import {
   resolveAlign,
+  resolveBorder,
   resolveButtonStyle,
   resolveColor,
   resolveDirection,
@@ -130,6 +131,7 @@ export function boxProps(
     padding: spacing(node.padding),
     margin: spacing(node.margin),
     radius: resolveRadius(node.radius),
+    border: resolveBorder(node.border, scheme),
     background: resolveOptionalColor(node.background, scheme),
   };
 }

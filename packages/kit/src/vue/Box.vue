@@ -67,6 +67,7 @@ const style = computed<Record<string, string>>(() => {
     maxWidth: props.maxWidth,
     maxHeight: props.maxHeight,
     aspectRatio: props.aspectRatio,
+    border: props.border,
   });
 
   const css: Record<string, string> = { display: 'flex' };

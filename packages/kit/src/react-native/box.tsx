@@ -53,6 +53,7 @@ export function Box({
   maxWidth,
   maxHeight,
   aspectRatio,
+  border,
   style,
   children,
   ...rest
@@ -85,6 +86,7 @@ export function Box({
     maxWidth,
     maxHeight,
     aspectRatio,
+    border,
   }) as ViewStyle;
 
   return (
