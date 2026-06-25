@@ -6,13 +6,13 @@
       "type": "Row",
       "align": "end",
       "children": [
-        { "type": "Title", "value": "{{total}}", "weight": "semibold", "size": "5xl" },
+        { "type": "Title", "value": "{{total}}", "weight": "semibold", "size": "{{heroSize}}" },
         {
           "$if": "totalDecimals",
           "type": "Title",
           "value": "{{totalDecimals}}",
           "weight": "semibold",
-          "size": "5xl",
+          "size": "{{heroSize}}",
           "color": "secondary"
         }
       ]
@@ -36,7 +36,17 @@
             "gap": 6,
             "align": "center",
             "children": [
-              { "type": "Icon", "name": "{{item.icon}}", "color": "link", "size": "xl" },
+              {
+                "type": "Button",
+                "uniform": true,
+                "pill": true,
+                "size": "xl",
+                "iconStart": "{{item.icon}}",
+                "iconSize": "xl",
+                "color": "{{item.bg}}",
+                "background": "{{item.bg}}",
+                "onClickAction": { "type": "{{item.pressType}}", "payload": "{{item.payload}}" }
+              },
               { "type": "Caption", "value": "{{item.label}}", "weight": "semibold" }
             ]
           }

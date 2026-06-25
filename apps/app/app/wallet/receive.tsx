@@ -7,11 +7,10 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
 import type { BasicNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
 import { addressCard, WALLET_ADDRESS_COPY } from '@stage-labs/views';
-import { Box, Row, Col } from '../../components/layout';
+import { Row, Col } from '../../components/layout';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import QRCode from 'react-native-qrcode-svg';
 import { getOrCreateXmtpClient } from '../../modules/messaging';
 import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
 import { usePalette } from '../../lib/theme';
@@ -58,16 +57,35 @@ export default function WalletReceive(): React.ReactElement {
     () => ({
       type: 'Basic',
       children: [
-        addressCard({
-          label: activeMode === 'private'
-            ? 'Shielded 0zk address (tap to copy)'
-            : 'Wallet address (tap to copy)',
-          address: address || '—',
-          hint,
-        }),
+        {
+          type: 'Col',
+          align: 'center',
+          gap: 16,
+          children: [
+            {
+              type: 'Box',
+              background: '#ffffff',
+              radius: 'xl',
+              padding: 16,
+              align: 'center',
+              justify: 'center',
+              border: { size: 1, color: border },
+              children: address
+                ? [{ type: 'QRCode', value: address, size: 240, color: '#000000', background: '#ffffff' }]
+                : [{ type: 'Box', width: 240, height: 240, background: '#f4f4f5' }],
+            },
+            addressCard({
+              label: activeMode === 'private'
+                ? 'Shielded 0zk address (tap to copy)'
+                : 'Wallet address (tap to copy)',
+              address: address || '—',
+              hint,
+            }),
+          ],
+        },
       ],
     }),
-    [activeMode, address, hint],
+    [activeMode, address, hint, border],
   );
   const addressRegistry: WidgetActionRegistry = {
     [WALLET_ADDRESS_COPY]: () => { copy(); },
@@ -89,23 +107,9 @@ export default function WalletReceive(): React.ReactElement {
           privateReady={privateReady}
 />
 
-        {}
-        <Box background={'#ffffff'} radius="xl" padding={16} align="center" justify="center" style={{ borderWidth: 1, borderColor: border }}>
-          {address ? (
-            <QRCode
-              value={address}
-              size={240}
-              color="#000000"
-              backgroundColor="#ffffff"
-/>
-          ) : (
-            <Box width={240} height={240} background={'#f4f4f5'}/>
-          )}
-        </Box>
-
-        <Box width="100%">
+        <Col width="100%">
           <KitRenderer node={addressNode} registry={addressRegistry} />
-        </Box>
+        </Col>
       </ScrollView>
     </Col>
   );

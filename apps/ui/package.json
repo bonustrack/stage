@@ -17,7 +17,6 @@
     "@xmtp/browser-sdk": "^7.0.0",
     "@zerodev/sdk": "5.5.10",
     "markdown-it": "^14.1.1",
-    "qrcode": "^1.5.4",
     "viem": "^2.51.0",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0"
@@ -25,7 +24,6 @@
   "devDependencies": {
     "@stage-labs/config": "workspace:*",
     "@types/markdown-it": "^14.1.2",
-    "@types/qrcode": "^1.5.5",
     "@vitejs/plugin-vue": "^5.2.1",
     "@vue/tsconfig": "^0.7.0",
     "autoprefixer": "^10.4.20",

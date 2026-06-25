@@ -8,6 +8,12 @@ export const WALLET_ACTION_PRESS = 'wallet.action.press';
 
 export const WALLET_SEND_SUBMIT = 'wallet.send.submit';
 
+export const WALLET_TAB_CHANGE = 'wallet.tab.change';
+
+export const WALLET_SEND_FIELD_CHANGE = 'wallet.send.fieldChange';
+
+export const WALLET_SEND_FIELD_ACTION = 'wallet.send.fieldAction';
+
 export const WALLET_NOTICE_PRESS = 'wallet.notice.press';
 
 export const CHANNEL_PRESS = 'chat.channel.press';

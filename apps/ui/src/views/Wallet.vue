@@ -2,12 +2,18 @@
 
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import { balanceHeader, WALLET_ACTION_PRESS } from '@stage-labs/views';
+import { basicRoot } from '@/lib/kitRow';
 import { useWalletBalances } from '@/lib/useWalletBalances';
 import { buildSortedTokenRows } from '@/lib/walletSort';
 import { fmtUsd, splitUsd } from '@stage-labs/client/wallet/format';
 import type { WalletTab } from '@/lib/walletTab';
 
 const router = useRouter();
+const palette = useKitPalette();
 const { rows, loading, error, refresh } = useWalletBalances();
 
 const tab = ref<WalletTab>('tokens');
@@ -21,6 +27,26 @@ const totalParts = computed(() =>
   (totalUsd.value === null ? null : splitUsd(fmtUsd(totalUsd.value))));
 
 const sortedRows = computed(() => (rows.value ? buildSortedTokenRows(rows.value) : []));
+
+const heroNode = computed(() => {
+  const parts = totalParts.value;
+  return basicRoot(balanceHeader({
+    total: error.value || !parts ? '…' : parts.int,
+    totalDecimals: error.value || !parts ? undefined : parts.dec,
+    heroSize: '7xl',
+    actions: [
+      { label: 'Send', icon: 'send', pressType: WALLET_ACTION_PRESS, bg: palette.border, payload: { action: 'send' } },
+      { label: 'Receive', icon: 'arrowDown', pressType: WALLET_ACTION_PRESS, bg: palette.border, payload: { action: 'receive' } },
+    ],
+  }));
+});
+
+const heroRegistry: WidgetActionRegistry = {
+  [WALLET_ACTION_PRESS]: (action) => {
+    if (action.payload.action === 'send') void router.push('/wallet/send');
+    else if (action.payload.action === 'receive') void router.push('/wallet/receive');
+  },
+};
 </script>
 
 <template>
@@ -44,42 +70,10 @@ const sortedRows = computed(() => (rows.value ? buildSortedTokenRows(rows.value)
     </Row>
 
     <Col class="flex-1 overflow-y-auto px-4 pb-6">
-      <Col align="start" class="pt-1 pb-4">
-        <Text v-if="error" size="md" color="danger">Couldn’t load balances</Text>
-        <Text v-else-if="totalParts === null" size="7xl" weight="semibold" color="link">…</Text>
-        <Text v-else size="7xl" weight="semibold" color="link">
-          {{ totalParts.int }}<Text tag="span" size="7xl" weight="semibold" color="secondary">{{ totalParts.dec }}</Text>
-        </Text>
+      <Col class="pt-1 pb-5">
+        <Text v-if="error" size="md" color="danger" class="pb-4">Couldn’t load balances</Text>
+        <KitRenderer :node="heroNode" :registry="heroRegistry" />
       </Col>
-
-      <Row justify="start" :gap="12" class="pb-5">
-        <Col align="center" :gap="6">
-          <Pressable
-            tag="button"
-            type="button"
-            aria-label="Send"
-            class="w-14 h-14 rounded-full flex items-center justify-center
-              bg-metro-border-light dark:bg-metro-border-dark hover:opacity-80"
-            @click="router.push('/wallet/send')"
-          >
-            <Icon name="send" :size="26" class="text-metro-link-light dark:text-metro-link-dark" />
-          </Pressable>
-          <Text size="md" weight="semibold" color="link">Send</Text>
-        </Col>
-        <Col align="center" :gap="6">
-          <Pressable
-            tag="button"
-            type="button"
-            aria-label="Receive"
-            class="w-14 h-14 rounded-full flex items-center justify-center
-              bg-metro-border-light dark:bg-metro-border-dark hover:opacity-80"
-            @click="router.push('/wallet/receive')"
-          >
-            <Icon name="arrowDown" :size="26" class="text-metro-link-light dark:text-metro-link-dark" />
-          </Pressable>
-          <Text size="md" weight="semibold" color="link">Receive</Text>
-        </Col>
-      </Row>
 
       <WalletTabs v-model="tab" class="-mx-4" />
 

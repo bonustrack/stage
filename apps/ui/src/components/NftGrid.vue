@@ -1,8 +1,33 @@
 <script setup lang="ts">
 
+import { computed } from 'vue';
+import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import { nftGrid, LINK_OPEN } from '@stage-labs/views';
+import { basicRoot } from '@/lib/kitRow';
 import { useNfts } from '@/lib/useNfts';
 
+const palette = useKitPalette();
 const { nfts, loading, error } = useNfts();
+
+const node = computed(() =>
+  basicRoot(nftGrid({
+    cardBg: palette.border,
+    items: (nfts.value ?? []).map((n) => ({
+      title: n.title,
+      collection: n.collection || undefined,
+      image: n.image || undefined,
+      url: n.openseaUrl || undefined,
+    })),
+  })));
+
+const registry: WidgetActionRegistry = {
+  [LINK_OPEN]: (action) => {
+    const url = action.payload.url;
+    if (typeof url === 'string' && url) window.open(url, '_blank', 'noopener,noreferrer');
+  },
+};
 </script>
 
 <template>
@@ -23,38 +48,8 @@ const { nfts, loading, error } = useNfts();
       <Text size="md" color="secondary">There are no NFTs in this wallet.</Text>
     </Col>
 
-    <Row v-else class="flex-wrap pt-1.5 -mx-1.5">
-      <Box v-for="nft in nfts" :key="`${nft.chainId}:${nft.id}`" class="w-1/2 p-1.5">
-        <Pressable
-          tag="a"
-          :href="nft.openseaUrl || undefined"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="block active:opacity-70"
-        >
-          <Image
-            v-if="nft.image"
-            :src="nft.image"
-            fit="cover"
-            width="100%"
-            :radius="12"
-            class="aspect-square bg-metro-border-light dark:bg-metro-border-dark"
-          />
-          <Box
-            v-else
-            class="w-full aspect-square rounded-xl flex items-center justify-center
-              bg-metro-border-light dark:bg-metro-border-dark"
-          >
-            <Icon name="photo" :size="28" class="text-metro-sub-light dark:text-metro-sub-dark" />
-          </Box>
-          <Text size="md" weight="semibold" color="link" class="mt-1.5" :truncate="true">
-            {{ nft.title }}
-          </Text>
-          <Text v-if="nft.collection" size="xs" color="secondary" :truncate="true">
-            {{ nft.collection }}
-          </Text>
-        </Pressable>
-      </Box>
-    </Row>
+    <Col v-else class="pt-1.5 -mx-1.5">
+      <KitRenderer :node="node" :registry="registry" />
+    </Col>
   </Col>
 </template>

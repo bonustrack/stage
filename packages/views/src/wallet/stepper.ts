@@ -46,6 +46,8 @@ export function stepper(params: StepperParams): ColNode {
     hint: step.hint,
     useHead: step.hint === undefined || undefined,
     useCol: step.hint !== undefined || undefined,
+    useSpinner: step.state === 'active' || undefined,
+    useIcon: step.state !== 'active' || undefined,
   }));
   return (buildView(view, { steps, gap: params.gap ?? 12 }) as ColNode);
 }

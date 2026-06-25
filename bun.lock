@@ -71,7 +71,6 @@
         "react-native-keyboard-controller": "^1.21.8",
         "react-native-markdown-display": "^7.0.2",
         "react-native-passkeys": "0.3.1",
-        "react-native-qrcode-svg": "^6",
         "react-native-reanimated": "^4.3.1",
         "react-native-safe-area-context": "~5.6.0",
         "react-native-screens": "~4.16.0",
@@ -113,7 +112,6 @@
         "@xmtp/browser-sdk": "^7.0.0",
         "@zerodev/sdk": "5.5.10",
         "markdown-it": "^14.1.1",
-        "qrcode": "^1.5.4",
         "viem": "^2.51.0",
         "vue": "^3.5.13",
         "vue-router": "^4.5.0",
@@ -121,7 +119,6 @@
       "devDependencies": {
         "@stage-labs/config": "workspace:*",
         "@types/markdown-it": "^14.1.2",
-        "@types/qrcode": "^1.5.5",
         "@vitejs/plugin-vue": "^5.2.1",
         "@vue/tsconfig": "^0.7.0",
         "autoprefixer": "^10.4.20",
@@ -2728,8 +2725,6 @@
     "react-native-passkeys": ["react-native-passkeys@0.3.1", "", { "peerDependencies": { "expo": "*", "react": "*", "react-native": "*" } }, "sha512-3M9/V/IJeCXBLcQsIul7BX0x4YJC1X0yID9k9b7gfy1uf9N1JRZIKmndpWs2MVsnE0XnVk2TGVXt0aL0u3xfkw=="],
 
     "react-native-path": ["react-native-path@0.0.5", "", {}, "sha512-WJr256xBquk7X2O83QYWKqgLg43Zg3SrgjPc/kr0gCD2LoXA+2L72BW4cmstH12GbGeutqs/eXk3jgDQ2iCSvQ=="],
-
-    "react-native-qrcode-svg": ["react-native-qrcode-svg@6.3.21", "", { "dependencies": { "prop-types": "^15.8.0", "qrcode": "^1.5.4", "text-encoding": "^0.7.0" }, "peerDependencies": { "react": "*", "react-native": ">=0.63.4", "react-native-svg": ">=14.0.0" } }, "sha512-6vcj4rcdpWedvphDR+NSJcudJykNuLgNGFwm2p4xYjR8RdyTzlrELKI5LkO4ANS9cQUbqsfkpippPv64Q2tUtA=="],
 
     "react-native-reanimated": ["react-native-reanimated@4.3.1", "", { "dependencies": { "react-native-is-edge-to-edge": "^1.3.1", "semver": "^7.7.3" }, "peerDependencies": { "react": "*", "react-native": "0.81 - 0.85", "react-native-worklets": "0.8.x" } }, "sha512-KhGsS0YkCA+gusgyzlf9hnqzVPIR398KTpqXyqq/+yYJJPAvyEEPKcxlB0xtOOXSMrR2A9uRKVARVQhZwrOh+Q=="],
 

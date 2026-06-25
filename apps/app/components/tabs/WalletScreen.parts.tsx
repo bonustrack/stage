@@ -2,17 +2,20 @@
 import { memo, useMemo } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 
-import { Text } from '@stage-labs/kit/react-native/text';
-import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
-import { Button } from '@stage-labs/kit/react-native/button';
 import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
 import type {
   BasicNode,
   WidgetActionRegistry,
   WidgetRoot,
 } from '@stage-labs/kit/kit';
-import { tokenRowBody, WALLET_TOKEN_PRESS } from '@stage-labs/views';
-import { Box, Col, Row } from '../layout';
+import {
+  basicRoot,
+  tokenRowBody,
+  walletTabs,
+  WALLET_TAB_CHANGE,
+  WALLET_TOKEN_PRESS,
+} from '@stage-labs/views';
+import { Box, Row } from '../layout';
 import { type AssetRow } from './WalletScreen.assets';
 import { TokenAvatar } from './WalletScreen.tokenAvatar';
 
@@ -21,54 +24,33 @@ export { fmtUsd, splitUsd, fmtBalance };
 
 interface Palette { head: string; sub: string; border: string; bg: string; card: string; }
 
-export function Btn({ icon, label, onPress, head, border, dark }: {
-  icon: HeroIconName; label: string; onPress: () => void;
-  head: string; border: string; dark: boolean;
-}): React.ReactElement {
-  return (
-    <Col align="center" gap={6}>
-      <Button
-        variant="secondary"
-        size="xl"
-        pill
-        dark={dark}
-        onPress={onPress}
-        icon={<Icon name={icon} size={26} color={head} />}
-        style={{ backgroundColor: border, borderColor: border }}
-/>
-      <Text weight="semibold" size="md" color={head} numberOfLines={1}>{label}</Text>
-    </Col>
-  );
-}
-
 export type WalletTab = 'tokens' | 'nfts' | 'activity' | 'private';
 const TAB_LABEL: Record<WalletTab, string> = { tokens: 'Tokens', nfts: 'NFTs', activity: 'Activity', private: 'Railgun' };
+const WALLET_TAB_IDS: WalletTab[] = ['tokens', 'nfts', 'activity', 'private'];
 
-export function WalletTabs({ tab, setTab, head, sub, border }: {
+export function WalletTabs({ tab, setTab, border }: {
   tab: WalletTab; setTab: (t: WalletTab) => void; head: string; sub: string; border: string;
 }): React.ReactElement {
+  const node = useMemo(
+    () => basicRoot(walletTabs({
+      value: tab,
+      options: WALLET_TAB_IDS.map((t) => ({ value: t, label: TAB_LABEL[t] })),
+    })),
+    [tab],
+  );
+  const registry: WidgetActionRegistry = useMemo(
+    () => ({
+      [WALLET_TAB_CHANGE]: (action) => {
+        const next = action.payload.walletTab;
+        if (typeof next === 'string') setTab(next as WalletTab);
+      },
+    }),
+    [setTab],
+  );
   return (
-    <Row margin={{ x: 16, top: 22, bottom: 6 }} justify="start" gap={24} 
+    <Row margin={{ x: 16, top: 22, bottom: 6 }} justify="start"
       style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-      {(['tokens', 'nfts', 'activity', 'private'] as const).map(t => {
-        const active = tab === t;
-        return (
-          <Pressable
-            key={t}
-            onPress={() => { setTab(t); }}
-            style={{
-              paddingVertical: 10,
-              marginBottom: -1,
-              borderBottomWidth: 2,
-              borderBottomColor: active ? head : 'transparent',
-            }}
->
-            <Text weight="semibold" size="3xl" color={active ? head : sub}>
-              {TAB_LABEL[t]}
-            </Text>
-          </Pressable>
-        );
-      })}
+      <KitRenderer node={node} registry={registry} />
     </Row>
   );
 }

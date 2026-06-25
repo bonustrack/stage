@@ -4,6 +4,13 @@ import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import type { Hex } from 'viem';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import {
+  sendFields, sendReviewList,
+  WALLET_SEND_FIELD_CHANGE, WALLET_SEND_FIELD_ACTION,
+} from '@stage-labs/views';
+import { basicRoot } from '@/lib/kitRow';
 import type { AssetRow } from '@stage-labs/client/wallet/assets';
 import { NETWORK_LABEL, NETWORK_LOGO, MAINNET_NETWORK_LOGO } from '@stage-labs/client/wallet/assets';
 import { fmtBalance } from '@stage-labs/client/wallet/format';
@@ -13,12 +20,10 @@ import { useWalletBalances } from '@/lib/useWalletBalances';
 import { buildSortedTokenRows } from '@/lib/walletSort';
 import { getTokenRow } from '../lib/tokenDetailStore';
 import { useSend } from '../lib/useSend';
-import { useEffectiveScheme } from '@/lib/kitTheme';
 
 const route = useRoute();
 const router = useRouter();
 const palette = useKitPalette();
-const scheme = useEffectiveScheme();
 
 const { rows } = useWalletBalances();
 
@@ -109,6 +114,44 @@ function back(): void {
 function openTx(hash: Hex): void {
   window.open(explorerTxUrl(chainIdRef.value, hash), '_blank', 'noopener');
 }
+
+const fieldsNode = computed(() =>
+  basicRoot(sendFields({
+    recipient: send.to.value,
+    resolving: send.resolving.value,
+    resolvedText: send.resolved.value ? shortAddress(send.resolved.value) : undefined,
+    recipientError: send.resolveErr.value ?? undefined,
+    amount: send.amount.value,
+    unitLabel: mode.value === 'token' ? send.symbol.value : 'USD',
+    secondaryLabel: secondaryLabel.value || undefined,
+    amountError: send.amountErr.value ?? undefined,
+    balanceLabel: send.balance.value != null
+      ? `Balance: ${fmtBalance(send.balance.value)} ${send.symbol.value}`
+      : undefined,
+    maxDisabled: send.balance.value == null,
+  })));
+
+const feeNode = computed(() => {
+  const fee = send.fee.value;
+  const value = fee
+    ? (fee.sponsored ? 'Gas sponsored' : `≈ ${Number(fee.feeEth).toFixed(6)} ETH`)
+    : '—';
+  return basicRoot(sendReviewList([{ label: 'Network fee', value }]));
+});
+
+const fieldsRegistry: WidgetActionRegistry = {
+  [WALLET_SEND_FIELD_CHANGE]: (action) => {
+    if (action.payload.field === 'recipient' && typeof action.payload.recipient === 'string') {
+      send.to.value = action.payload.recipient;
+    } else if (action.payload.field === 'amount' && typeof action.payload.amount === 'string') {
+      send.amount.value = action.payload.amount;
+    }
+  },
+  [WALLET_SEND_FIELD_ACTION]: (action) => {
+    if (action.payload.action === 'max') { mode.value = 'token'; send.onMax(); }
+    else if (action.payload.action === 'toggleUnit') toggleMode();
+  },
+};
 </script>
 
 <template>
@@ -167,90 +210,14 @@ function openTx(hash: Hex): void {
         <Text size="xs" color="secondary">{{ networkLabel }}</Text>
       </Box>
 
-      <!-- Recipient -->
-      <Col :gap="6">
-        <Text size="xs" color="secondary">RECIPIENT</Text>
-        <Row surface="raised" align="center" :gap="6" class="rounded-xl px-3.5">
-          <Input
-            v-model="send.to.value"
-            :dark="scheme === 'dark'"
-            placeholder="0x… or name.eth"
-            autocapitalize="none"
-            autocorrect="off"
-            spellcheck="false"
-            class="flex-1 bg-transparent border-0 py-3 outline-none"
-          />
-        </Row>
-        <Row v-if="send.resolving.value" align="center" :gap="8" class="px-1">
-          <Text size="xs" color="secondary">Resolving…</Text>
-        </Row>
-        <Text v-else-if="send.resolved.value" size="xs" color="secondary" class="px-1 break-all">
-          {{ shortAddress(send.resolved.value) }}
-        </Text>
-        <Text v-else-if="send.resolveErr.value" size="xs" class="px-1" :style="{ color: palette.danger }">
-          {{ send.resolveErr.value }}
-        </Text>
-      </Col>
+      <!-- Recipient + amount inputs via Kit TextField nodes. -->
+      <KitRenderer :node="fieldsNode" :registry="fieldsRegistry" />
 
-      <!-- Amount -->
-      <Col :gap="6">
-        <Row align="center">
-          <Text size="xs" color="secondary" class="flex-1">AMOUNT</Text>
-          <Pressable
-            tag="button"
-            type="button"
-            :disabled="send.balance.value == null"
-            class="px-2 py-0.5 rounded"
-            @click="mode = 'token'; send.onMax()"
-          >
-            <Text size="xs" :color="send.balance.value == null ? 'secondary' : 'link'">MAX</Text>
-          </Pressable>
-        </Row>
-        <Row surface="raised" align="center" :gap="8" class="rounded-xl px-3.5 py-3">
-          <Input
-            v-model="send.amount.value"
-            :dark="scheme === 'dark'"
-            placeholder="0.0"
-            inputmode="decimal"
-            class="flex-1 bg-transparent border-0 outline-none text-xl font-semibold"
-          />
-          <Pressable
-            tag="button"
-            type="button"
-            class="rounded-full hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
-            @click="toggleMode"
-          >
-            <Row align="center" :gap="4" class="px-2 py-1">
-              <Text weight="semibold" size="md" color="link">
-                {{ mode === 'token' ? send.symbol.value : 'USD' }}
-              </Text>
-              <Icon name="arrowDown" :size="14" :color="palette.text" />
-            </Row>
-          </Pressable>
-        </Row>
-        <Text v-if="secondaryLabel" size="xs" color="secondary" class="px-1">{{ secondaryLabel }}</Text>
-        <Text v-if="send.amountErr.value" size="xs" class="px-1" :style="{ color: palette.danger }">
-          {{ send.amountErr.value }}
-        </Text>
-        <Text v-if="send.balance.value != null" size="xs" color="secondary" class="px-1">
-          Balance: {{ fmtBalance(send.balance.value) }} {{ send.symbol.value }}
-        </Text>
-      </Col>
-
-      <!-- Fee preview -->
-      <Col surface="raised" :gap="6" class="rounded-xl px-3.5 py-3">
-        <Row align="center">
-          <Text size="xs" color="secondary" class="flex-1">NETWORK FEE</Text>
-          <Text size="xs" color="link">
-            {{ send.fee.value
-              ? (send.fee.value.sponsored ? 'Gas sponsored' : `≈ ${Number(send.fee.value.feeEth).toFixed(6)} ETH`)
-              : '—' }}
-          </Text>
-        </Row>
-        <Text v-if="send.feeErr.value" size="xs" color="secondary" class="break-all">
-          {{ send.feeErr.value }}
-        </Text>
-      </Col>
+      <!-- Network fee row via sendReviewList. -->
+      <KitRenderer :node="feeNode" :registry="fieldsRegistry" />
+      <Text v-if="send.feeErr.value" size="xs" color="secondary" class="px-1 break-all">
+        {{ send.feeErr.value }}
+      </Text>
 
       <Col v-if="send.txHash.value" :gap="4" class="px-1">
         <Text size="xs" color="secondary">

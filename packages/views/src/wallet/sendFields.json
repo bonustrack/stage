@@ -1,0 +1,71 @@
+{
+  "type": "Col",
+  "gap": 16,
+  "children": [
+    {
+      "type": "Col",
+      "gap": 6,
+      "children": [
+        { "type": "Caption", "value": "RECIPIENT", "color": "secondary", "size": "sm" },
+        {
+          "type": "TextField",
+          "name": "recipient",
+          "value": "{{recipient}}",
+          "placeholder": "{{recipientPlaceholder}}",
+          "onChangeAction": { "type": "{{fieldChange}}", "payload": { "field": "recipient" } }
+        },
+        { "$if": "resolving", "type": "Caption", "value": "Resolving…", "color": "secondary" },
+        { "$if": "resolvedText", "type": "Caption", "value": "{{resolvedText}}", "color": "secondary" },
+        { "$if": "recipientError", "type": "Caption", "value": "{{recipientError}}", "color": "{{dangerColor}}" }
+      ]
+    },
+    {
+      "type": "Col",
+      "gap": 6,
+      "children": [
+        {
+          "type": "Row",
+          "align": "center",
+          "justify": "between",
+          "children": [
+            { "type": "Caption", "value": "AMOUNT", "color": "secondary", "size": "sm" },
+            {
+              "type": "Row",
+              "align": "center",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "Button",
+                  "label": "{{unitLabel}}",
+                  "iconEnd": "arrowDown",
+                  "variant": "soft",
+                  "size": "sm",
+                  "pill": true,
+                  "onClickAction": { "type": "{{fieldAction}}", "payload": { "action": "toggleUnit" } }
+                },
+                {
+                  "type": "Button",
+                  "label": "MAX",
+                  "variant": "ghost",
+                  "size": "sm",
+                  "disabled": "{{maxDisabled}}",
+                  "onClickAction": { "type": "{{fieldAction}}", "payload": { "action": "max" } }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "TextField",
+          "name": "amount",
+          "value": "{{amount}}",
+          "placeholder": "0.0",
+          "onChangeAction": { "type": "{{fieldChange}}", "payload": { "field": "amount" } }
+        },
+        { "$if": "secondaryLabel", "type": "Caption", "value": "{{secondaryLabel}}", "color": "secondary" },
+        { "$if": "amountError", "type": "Caption", "value": "{{amountError}}", "color": "{{dangerColor}}" },
+        { "$if": "balanceLabel", "type": "Caption", "value": "{{balanceLabel}}", "color": "secondary" }
+      ]
+    }
+  ]
+}

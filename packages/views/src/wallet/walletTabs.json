@@ -1,0 +1,8 @@
+{
+  "type": "Tabs",
+  "name": "walletTab",
+  "value": "{{value}}",
+  "variant": "underline",
+  "options": "{{options}}",
+  "onChangeAction": { "type": "{{changeType}}", "payload": {} }
+}

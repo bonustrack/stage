@@ -4,13 +4,16 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
+import { tokenRow, WALLET_TOKEN_PRESS } from '@stage-labs/views';
+import { fmtUsd, fmtBalance } from '@stage-labs/client/wallet/format';
 import { Box, Row, Col } from '../../components/layout';
 import { AppModal } from '../../components/AppModal';
 import { Spinner } from '../../components/Spinner';
 import { usePalette } from '../../lib/theme';
 import { getActiveAccount } from '../../lib/accounts';
 import { fetchAssetRows } from '../../components/tabs/WalletScreen.data';
-import { TokenRow } from '../../components/tabs/WalletScreen.parts';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, type AssetRow } from '../../components/tabs/WalletScreen.assets';
 import { privateBalancesToRows, symbolPricesFromPublic } from '../../components/tabs/WalletScreen.private.rows';
 import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
@@ -87,6 +90,35 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
   const { rows, loading } = useSelectorRows(mode);
   const selected = findRow(rows, value);
 
+  const rowKey = (r: AssetRow): string => `${r.isPrivate ? 'priv' : 'pub'}:${r.chainId}:${r.symbol}`;
+  const listNode = useMemo<ListViewNode>(() => ({
+    type: 'ListView',
+    children: rows.map((r) => {
+      const change = r.change24h === null ? '' : `${r.change24h >= 0 ? '+' : ''}${r.change24h.toFixed(2)}%`;
+      const price = r.priceUsd === null ? r.symbol : fmtUsd(r.priceUsd, r.priceUsd < 1 ? 4 : 2);
+      return tokenRow({
+        tokenId: rowKey(r),
+        symbol: r.symbol,
+        name: price,
+        priceUsd: price,
+        balance: `${fmtBalance(r.balance)} ${r.symbol}`,
+        change24h: change,
+        logoUri: r.logoUrl,
+        chainBadgeUri: NETWORK_LOGO[r.chainId] ?? MAINNET_NETWORK_LOGO,
+        isPrivate: r.isPrivate,
+        showAvatar: true,
+        trailingChevron: false,
+      });
+    }),
+  }), [rows]);
+  const listRegistry: WidgetActionRegistry = useMemo(() => ({
+    [WALLET_TOKEN_PRESS]: (a) => {
+      const key = a.payload.tokenId;
+      const r = rows.find((row) => rowKey(row) === key);
+      if (r) { onChange({ symbol: r.symbol, chainId: r.chainId, isPrivate: r.isPrivate }); setOpen(false); }
+    },
+  }), [rows, onChange]);
+
   return (
     <Box gap={6}>
       <Text size="xs" role="secondary">{label}</Text>
@@ -138,13 +170,7 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
             No tokens.
           </Text>
         ) : (
-          rows.map((r) => (
-            <TokenRow
-              key={`${r.isPrivate ? 'priv' : 'pub'}:${r.chainId}:${r.symbol}`}
-              r={r} head={head} sub={sub} border={border} bg={bg}
-              onPress={() => { onChange({ symbol: r.symbol, chainId: r.chainId, isPrivate: r.isPrivate }); setOpen(false); }}
-/>
-          ))
+          <KitRenderer node={listNode} registry={listRegistry} />
         )}
       </AppModal>
     </Box>

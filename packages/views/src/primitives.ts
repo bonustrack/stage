@@ -1,5 +1,6 @@
 import type {
   BadgeNode,
+  BasicNode,
   ButtonNode,
   CaptionNode,
   CardNode,
@@ -12,6 +13,10 @@ import type {
   TitleNode,
   WidgetNode,
 } from '@stage-labs/kit/kit';
+
+export function basicRoot(...children: WidgetNode[]): BasicNode {
+  return { type: 'Basic', children };
+}
 
 type RowProps = Omit<RowNode, 'type' | 'children'>;
 type ColProps = Omit<ColNode, 'type' | 'children'>;
