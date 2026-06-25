@@ -1,6 +1,7 @@
 <script setup lang="ts">
 
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import { fontFamily } from '@stage-labs/kit/tokens';
 import { xmtpSendText, xmtpReply, xmtpSendPoll } from '../lib/xmtpSend';
 import { pollFallbackText } from '@stage-labs/client/xmtp/poll';
 import { useRequestCompose, type PaymentPayload, type SignPayload } from '../lib/useRequestCompose';
@@ -12,6 +13,7 @@ import { shortAddress } from '@stage-labs/client/identity/format';
 import { type MentionCandidate } from '@stage-labs/client/xmtp/mentions';
 
 const palette = useKitPalette();
+const composerFont = fontFamily.sans.join(', ');
 
 const props = defineProps<{
   line: string;
@@ -34,7 +36,9 @@ const signOpen = ref(false);
 const imageInput = ref<HTMLInputElement | null>(null);
 const cameraInput = ref<HTMLInputElement | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
-const textarea = ref<HTMLTextAreaElement | null>(null);
+const selStart = ref(0);
+const selection = ref<{ start: number; end: number }>({ start: 0, end: 0 });
+const focusNonce = ref(0);
 const { pending, clear: clearPending, onPaste, onFileChange, flush: flushPending } =
   useComposerAttach(() => props.line, m => { err.value = m; });
 const {
@@ -47,11 +51,23 @@ const {
   refresh: refreshMentions, pick: pickMention, onKeydown: onMentionKeydown,
   isOpen: mentionsOpen, close: closeMentions,
 } = useComposerMentions(
-  () => textarea.value,
+  () => text.value,
+  () => selStart.value,
   () => props.mentionCandidates,
   next => { text.value = next; },
-  autoGrow,
+  cursor => { selection.value = { start: cursor, end: cursor }; focusNonce.value += 1; },
+  () => { refreshMentions(); },
 );
+
+function onInput(value: string): void {
+  text.value = value;
+  refreshMentions();
+}
+
+function onSelection(range: { start: number; end: number }): void {
+  selStart.value = range.start;
+  refreshMentions();
+}
 
 function onComposerKeydown(ev: KeyboardEvent): void {
   const open = mentionsOpen();
@@ -120,13 +136,6 @@ const { sendPayment, sendSignRequest } = useRequestCompose(
   m => { err.value = m; },
 );
 
-function autoGrow(): void {
-  const el = textarea.value;
-  if (!el) return;
-  el.style.height = 'auto';
-  el.style.height = `${Math.min(el.scrollHeight, 210)}px`;
-}
-
 async function shareLocation(): Promise<void> {
   attachOpen.value = false;
   if (!navigator.geolocation) {
@@ -164,7 +173,6 @@ async function send(): Promise<void> {
       const replyTo = props.replyingTo?.id;
       emit('optimistic', { localId, text: body, ...(replyTo ? { replyTo } : {}) });
       text.value = '';
-      void nextTick(autoGrow);
       if (replyTo) await xmtpReply(props.line, replyTo, body);
       else await xmtpSendText(props.line, body);
       emit('clear-reply');
@@ -269,26 +277,33 @@ async function send(): Promise<void> {
           <Icon name="x" :size="12" />
         </Pressable>
       </Col>
-      <!-- kit-exception: no kit equivalent (auto-grow textarea — needs a direct DOM ref
-           for scrollHeight measurement, and kit Textarea forces its own boxed inline
-           style (bg/border/padding/font) that would override this transparent surface). -->
-      <component
-        :is="'textarea'"
-        ref="textarea"
-        :value="text"
-        placeholder="Message"
-        rows="1"
-        class="w-full resize-none min-h-[24px] max-h-[210px] font-sans
-          bg-transparent px-2 pt-1 pb-2 text-[17px] leading-[23px] outline-none
-          text-metro-head-light dark:text-metro-head-dark
-          placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark"
-        @input="text = ($event.target as HTMLTextAreaElement).value; autoGrow(); refreshMentions()"
-        @keydown="onComposerKeydown"
-        @keyup="refreshMentions"
-        @click="refreshMentions"
-        @blur="closeMentions"
-        @paste="onPaste"
-      />
+      <!-- Composer input renders via the kit TextField (variant plain: transparent
+           bg, no border) so the box/font/padding come from Kit. Keydown (mention
+           nav + Enter-to-send), focusout (close mentions) and paste are captured on
+           this wrapper since TextField exposes no keydown/blur/paste; selection +
+           value flow through the kit selection-change / update:value events. -->
+      <Col @keydown.capture="onComposerKeydown" @focusout="closeMentions" @paste="onPaste">
+        <TextField
+          :value="text"
+          placeholder="Message"
+          variant="plain"
+          multiline
+          auto-grow
+          auto-capitalize="sentences"
+          :selection="selection"
+          :focus-nonce="focusNonce"
+          :font-size="17"
+          :font-family="composerFont"
+          :padding-x="8"
+          :padding-top="4"
+          :padding-bottom="8"
+          :line-height="23"
+          :min-height="24"
+          :max-height="210"
+          @update:value="onInput"
+          @selection-change="onSelection"
+        />
+      </Col>
       <Row class="flex items-center gap-1">
         <Pressable
           tag="button"
