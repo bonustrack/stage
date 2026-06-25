@@ -28,6 +28,8 @@ const props = withDefaults(
     maxLength?: number;
     maxHeight?: number | string;
     enterKeyHint?: 'done' | 'go' | 'next' | 'search' | 'send';
+    autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+    autoCorrect?: boolean;
     dark?: boolean;
   }>(),
   {},
@@ -119,6 +121,16 @@ const placeholderColor = computed(() => {
   return controlColors('outline', isDark.value).placeholder;
 });
 
+const autocorrectAttr = computed<'on' | 'off' | undefined>(() => {
+  if (props.autoCorrect === undefined) return undefined;
+  return props.autoCorrect ? 'on' : 'off';
+});
+
+const spellcheckAttr = computed<boolean | undefined>(() => {
+  if (props.autoCorrect === undefined) return undefined;
+  return props.autoCorrect;
+});
+
 function onInput(event: Event): void {
   const target = event.target as HTMLInputElement | HTMLTextAreaElement;
   emit('update:value', target.value);
@@ -153,6 +165,9 @@ function onKeyup(event: KeyboardEvent): void {
     :autofocus="autoFocus"
     :maxlength="maxLength"
     :enterkeyhint="enterKeyHint"
+    :autocapitalize="autoCapitalize"
+    :autocorrect="autocorrectAttr"
+    :spellcheck="spellcheckAttr"
     :style="{ ...style, '--kit-placeholder': placeholderColor }"
     @input="onInput"
     @select="onSelect"
@@ -171,6 +186,9 @@ function onKeyup(event: KeyboardEvent): void {
     :autofocus="autoFocus"
     :maxlength="maxLength"
     :enterkeyhint="enterKeyHint"
+    :autocapitalize="autoCapitalize"
+    :autocorrect="autocorrectAttr"
+    :spellcheck="spellcheckAttr"
     :style="{ ...style, '--kit-placeholder': placeholderColor }"
     @input="onInput"
     @select="onSelect"

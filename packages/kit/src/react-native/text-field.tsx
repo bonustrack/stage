@@ -39,6 +39,8 @@ export interface TextFieldProps {
   maxLength?: number;
   maxHeight?: number | string;
   returnKeyType?: ReturnKeyTypeOptions;
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  autoCorrect?: boolean;
   dark?: boolean;
 }
 
@@ -68,6 +70,8 @@ export function TextField(props: TextFieldProps): React.ReactElement {
     maxLength,
     maxHeight,
     returnKeyType,
+    autoCapitalize,
+    autoCorrect,
     dark = false,
   } = props;
   const [focused, setFocused] = useState(false);
@@ -117,6 +121,8 @@ export function TextField(props: TextFieldProps): React.ReactElement {
       multiline={multiline}
       maxLength={maxLength}
       returnKeyType={returnKeyType}
+      autoCapitalize={autoCapitalize}
+      autoCorrect={autoCorrect}
       onChangeText={onChangeText}
       onSubmitEditing={onSubmit}
       selection={selection}

@@ -123,6 +123,8 @@ function onSwipe(direction: SwipeDirection): void {
     :max-length="textFieldNode.maxLength"
     :max-height="textFieldNode.maxHeight"
     :enter-key-hint="textFieldNode.returnKeyType"
+    :auto-capitalize="textFieldNode.autoCapitalize"
+    :auto-correct="textFieldNode.autoCorrect"
     @update:value="emitChange(textFieldNode.name, $event, textFieldNode.onChangeAction)"
     @selection-change="fire(textFieldNode.onSelectionChangeAction, $event)"
     @submit="fire(textFieldNode.onSubmitAction, { [textFieldNode.name]: textFieldNode.value })"

@@ -108,6 +108,8 @@ export function renderTextField(node: TextFieldNode, ctx: RenderCtx): ReactNode 
       maxLength={node.maxLength}
       maxHeight={node.maxHeight}
       returnKeyType={node.returnKeyType}
+      autoCapitalize={node.autoCapitalize}
+      autoCorrect={node.autoCorrect}
       dark={ctx.dark}
       onChangeText={(text) => {
         ctx.form?.set(node.name, text);

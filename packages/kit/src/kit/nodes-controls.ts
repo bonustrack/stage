@@ -77,6 +77,8 @@ export interface TextFieldNode extends NodeBase {
   maxHeight?: Dimension;
   returnKeyType?: ReturnKeyType;
   onSubmitAction?: ActionConfig;
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  autoCorrect?: boolean;
 }
 
 export interface ColorPickerNode extends NodeBase {
