@@ -1,5 +1,4 @@
-import { useRef, useState, type ComponentRef } from 'react';
-import { Textarea } from '@stage-labs/kit/react-native/textarea';
+import { useState } from 'react';
 import { type Attachment } from './MessengerComposer.helpers';
 
 export interface ComposerState {
@@ -9,7 +8,6 @@ export interface ComposerState {
   pending: Attachment[]; setPending: React.Dispatch<React.SetStateAction<Attachment[]>>;
   setSending: (v: boolean) => void;
   uploading: boolean; setUploading: (v: boolean) => void;
-  textareaH: number; setTextareaH: (h: number) => void;
   err: string | null; setErr: (v: string | null) => void;
   recording: boolean; setRecording: (v: boolean) => void;
   recordSecs: number; setRecordSecs: React.Dispatch<React.SetStateAction<number>>;
@@ -29,7 +27,8 @@ export interface ComposerState {
   txTo: string; setTxTo: (v: string) => void;
   txAmount: string; setTxAmount: (v: string) => void;
   txNote: string; setTxNote: (v: string) => void;
-  inputRef: React.RefObject<ComponentRef<typeof Textarea> | null>;
+  focusNonce: number; bumpFocus: () => void;
+  blurNonce: number; bumpBlur: () => void;
 }
 
 export function useComposerState(): ComposerState {
@@ -38,7 +37,6 @@ export function useComposerState(): ComposerState {
   const [pending, setPending] = useState<Attachment[]>([]);
   const [, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [textareaH, setTextareaH] = useState(0);
   const [err, setErr] = useState<string | null>(null);
   const [recording, setRecording] = useState(false);
   const [recordSecs, setRecordSecs] = useState(0);
@@ -58,10 +56,13 @@ export function useComposerState(): ComposerState {
   const [txTo, setTxTo] = useState('');
   const [txAmount, setTxAmount] = useState('');
   const [txNote, setTxNote] = useState('');
-  const inputRef = useRef<ComponentRef<typeof Textarea>>(null);
+  const [focusNonce, setFocusNonce] = useState(0);
+  const [blurNonce, setBlurNonce] = useState(0);
+  const bumpFocus = (): void => { setFocusNonce((n) => n + 1); };
+  const bumpBlur = (): void => { setBlurNonce((n) => n + 1); };
   return {
     text, setText, selection, setSelection, pending, setPending, setSending,
-    uploading, setUploading, textareaH, setTextareaH, err, setErr,
+    uploading, setUploading, err, setErr,
     recording, setRecording, recordSecs, setRecordSecs, levels, setLevels,
     attachMenuOpen, setAttachMenuOpen,
     pollOpen, setPollOpen, pollQuestion, setPollQuestion, pollHeader, setPollHeader,
@@ -69,6 +70,6 @@ export function useComposerState(): ComposerState {
     sigOpen, setSigOpen, sigKind, setSigKind, sigDesc, setSigDesc,
     sigMessage, setSigMessage, sigJson, setSigJson,
     txOpen, setTxOpen, txTo, setTxTo, txAmount, setTxAmount, txNote, setTxNote,
-    inputRef,
+    focusNonce, bumpFocus, blurNonce, bumpBlur,
   };
 }

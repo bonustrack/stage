@@ -86,6 +86,8 @@ export const VIDEO_PLAY = 'chat.video.play';
 
 export const COMPOSER_CHANGE = 'chat.composer.change';
 
+export const COMPOSER_SELECTION = 'chat.composer.selection';
+
 export const COMPOSER_MENTION_PICK = 'chat.composer.mentionPick';
 
 export const COMPOSER_ATTACH_PICK = 'chat.composer.attachPick';

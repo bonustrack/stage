@@ -1,14 +1,15 @@
 
-import type { RefObject } from 'react';
 import { fontSize } from '@stage-labs/kit/tokens';
 import { Animated, type PanResponderInstance } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
-import { Textarea } from '@stage-labs/kit/react-native/textarea';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Spacer } from '@stage-labs/kit/react-native/spacer';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
+import { composerInput, COMPOSER_CHANGE, COMPOSER_SELECTION } from '@stage-labs/views';
 import { Box, Row, Col } from './layout';
 import { usePalette, useRadius } from '../lib/theme';
 import { RecordingBar } from './MessengerComposer.parts';
@@ -20,12 +21,44 @@ interface EditorProps {
   text: string; setText: (v: string) => void;
   selection: { start: number; end: number };
   setSelection: (s: { start: number; end: number }) => void;
-  textareaH: number; setTextareaH: (h: number) => void;
-  inputRef: RefObject<React.ComponentRef<typeof Textarea> | null>;
+  focusNonce: number; blurNonce: number;
   attachMenuOpen: boolean; setAttachMenuOpen: (fn: (o: boolean) => boolean) => void;
   quickIcon?: HeroIconName; onQuick?: () => void;
   hasContent: boolean;
   onCancelRec: () => void; onStopRec: () => void; onSend: () => void;
+}
+
+function composerInputNode(p: EditorProps): WidgetRoot {
+  return {
+    type: 'Basic',
+    children: [
+      composerInput({
+        value: p.text,
+        color: p.head,
+        placeholderColor: p.sub,
+        fontSize: fontSize('3xl'),
+        selStart: p.selection.start,
+        selEnd: p.selection.end,
+        focusNonce: p.focusNonce,
+        blurNonce: p.blurNonce,
+      }),
+    ],
+  };
+}
+
+function composerInputRegistry(p: EditorProps): WidgetActionRegistry {
+  return {
+    [COMPOSER_CHANGE]: (a) => {
+      const next = a.payload.composer;
+      if (typeof next === 'string') p.setText(next);
+    },
+    [COMPOSER_SELECTION]: (a) => {
+      const { start, end } = a.payload;
+      if (typeof start === 'number' && typeof end === 'number') {
+        p.setSelection({ start, end });
+      }
+    },
+  };
 }
 
 function ComposerBtn({ icon, onPress, fg, chipBg, mr }: {
@@ -42,7 +75,7 @@ function ComposerBtn({ icon, onPress, fg, chipBg, mr }: {
 }
 
 function ComposerInputSlot({ p }: { p: EditorProps }): React.ReactElement {
-  const { dark, head, sub } = p;
+  const { head, sub } = p;
   if (p.recording) {
     return (
       <RecordingBar
@@ -53,17 +86,7 @@ function ComposerInputSlot({ p }: { p: EditorProps }): React.ReactElement {
   }
   return (
     <Box style={{ position: 'relative' }}>
-      <Textarea
-        ref={p.inputRef}
-        value={p.text} onChangeText={p.setText} placeholder="Message" placeholderTextColor={sub}
-        autoResize={false} dark={dark}
-        inputProps={{
-          onContentSizeChange: (e) => { p.setTextareaH(e.nativeEvent.contentSize.height); },
-          selection: p.selection,
-          onSelectionChange: (e) => { p.setSelection(e.nativeEvent.selection); },
-        }}
-        style={{ color: head, fontFamily: 'Calibre-Medium', fontSize: fontSize('3xl'), lineHeight: 23, minHeight: 24, maxHeight: 210, height: undefined, paddingHorizontal: 8, paddingTop: 4, paddingBottom: 8, textAlignVertical: 'top', backgroundColor: 'transparent', borderWidth: 0 }}
-      />
+      <KitRenderer node={composerInputNode(p)} registry={composerInputRegistry(p)} />
     </Box>
   );
 }

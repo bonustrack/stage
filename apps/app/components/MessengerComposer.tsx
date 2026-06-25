@@ -89,7 +89,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
 
   const convId = xmtpLine.replace('metro://xmtp/', '');
   useComposerDrafts(convId, s.text, s.setText);
-  useComposerFocus(s.inputRef, replyingTo?.id, replyingTo?.nonce, autoFocusNonce);
+  useComposerFocus(s.bumpFocus, s.bumpBlur, replyingTo?.id, replyingTo?.nonce, autoFocusNonce);
 
   const hasContent = s.text.trim().length > 0 || s.pending.length > 0;
 
@@ -124,8 +124,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
         slideX={slideX} slideThresholdPx={SLIDE_CANCEL_THRESHOLD_PX} micPanResponder={micPanResponder}
         text={s.text} setText={s.setText}
         selection={s.selection} setSelection={s.setSelection}
-        textareaH={s.textareaH} setTextareaH={s.setTextareaH}
-        inputRef={s.inputRef}
+        focusNonce={s.focusNonce} blurNonce={s.blurNonce}
         attachMenuOpen={s.attachMenuOpen} setAttachMenuOpen={s.setAttachMenuOpen}
         quickIcon={quick?.[0]}
         onQuick={quick ? () => void quick[2]() : undefined}
