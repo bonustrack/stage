@@ -21,5 +21,8 @@ export * from './chat/composerBar';
 export * from './chat/messageBubble';
 export * from './accounts/accountRow';
 export * from './accounts/memberRow';
+export * from './accounts/contactRow';
+export * from './profile/profileHeader';
+export * from './profile/infoRow';
 export * from './activity/txRow';
 export * from './settings/index';

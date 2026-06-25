@@ -14,6 +14,9 @@ import { useEffectiveColorScheme } from '../lib/theme';
 import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
 import { Avatar } from './Avatar';
 import { Box, Col } from './layout';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import type { WidgetRoot } from '@stage-labs/kit/kit';
+import { profileHeader } from '@stage-labs/views';
 import { ImageViewer } from './ImageViewer';
 import {
   ProfileActions, ProfileHeader, useProfileColors, useSelfAddress,
@@ -26,6 +29,10 @@ export type ProfileScreenVariant = 'tab' | 'route';
 function profileDisplayName(addr: string): string {
   if (!addr) return 'Loading…';
   return getPeerName(addr) ?? shortAddress(addr);
+}
+
+function nameNode(name: string): WidgetRoot {
+  return { type: 'Basic', children: [profileHeader({ name })] };
 }
 
 function ProfileIdentity({ addr, isSelf, dark, opening, c, variant, insetTop, displayName, onAvatar, onCopy, onMessage, onSend }: {
@@ -49,9 +56,9 @@ function ProfileIdentity({ addr, isSelf, dark, opening, c, variant, insetTop, di
           }}
           onPress={onAvatar}
 />
-        <Text weight="semibold" size="4xl" color={c.link} style={{ marginTop: 14 }}>
-          {displayName}
-        </Text>
+        <Box margin={{ top: 14 }} style={{ alignSelf: 'stretch' }}>
+          <KitRenderer node={nameNode(displayName)} />
+        </Box>
         {addr ? (
           <Pressable onPress={onCopy} hitSlop={8} style={{ marginTop: 2 }}>
             <Text size="md" color={c.text}>{shortAddress(addr)}</Text>

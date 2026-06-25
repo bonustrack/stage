@@ -6,6 +6,13 @@ import { resolveSelfAddress } from '../lib/useGroupDetailHelpers';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 import { useQuery } from '@tanstack/vue-query';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type {
+  BasicNode, ListViewItemNode, ListViewNode, WidgetActionRegistry,
+} from '@stage-labs/kit/kit';
+import {
+  profileHeader, infoRow, PROFILE_ACTION_PRESS, PROFILE_INFO_PRESS,
+} from '@stage-labs/views';
 
 const route = useRoute();
 const router = useRouter();
@@ -47,6 +54,72 @@ async function copy(value: string): Promise<void> {
     setTimeout(() => { copied.value = false; }, 1500);
   } catch { }
 }
+
+function nonEmpty(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed !== undefined && trimmed !== '' ? trimmed : undefined;
+}
+
+const headerNode = computed<BasicNode>(() => ({
+  type: 'Basic',
+  children: [
+    profileHeader({
+      name: nonEmpty(profile.value?.name) ?? shortAddress(address.value),
+      handle: shortAddress(address.value),
+      bio: nonEmpty(profile.value?.about),
+      actions: notSelf.value
+        ? [
+            {
+              label: openingDm.value ? 'Opening…' : 'Message',
+              icon: 'chatRect',
+              payload: { kind: 'message' },
+            },
+            { label: 'Send', icon: 'send', payload: { kind: 'send' } },
+          ]
+        : undefined,
+    }),
+  ],
+}));
+
+const headerRegistry: WidgetActionRegistry = {
+  [PROFILE_ACTION_PRESS]: (action) => {
+    if (action.payload.kind === 'message' || action.payload.kind === 'send') {
+      void onMessage();
+    }
+  },
+};
+
+const profileLinks = computed<[string, string | undefined][]>(() => {
+  const p = profile.value;
+  return [
+    ['GitHub', nonEmpty(p?.github)],
+    ['X (Twitter)', nonEmpty(p?.twitter)],
+    ['Lens', nonEmpty(p?.lens)],
+    ['Farcaster', nonEmpty(p?.farcaster)],
+  ];
+});
+
+const infoNode = computed<ListViewNode>(() => {
+  const items: ListViewItemNode[] = [];
+  if (address.value) {
+    items.push(infoRow({
+      label: `Wallet address (${copied.value ? 'copied!' : 'tap to copy'})`,
+      value: address.value,
+      copyType: PROFILE_INFO_PRESS,
+    }));
+  }
+  for (const [label, val] of profileLinks.value) {
+    if (val !== undefined) items.push(infoRow({ label, value: val }));
+  }
+  return { type: 'ListView', children: items };
+});
+
+const infoRegistry: WidgetActionRegistry = {
+  [PROFILE_INFO_PRESS]: (action) => {
+    const value = action.payload.value;
+    if (typeof value === 'string') void copy(value);
+  },
+};
 </script>
 
 <template>
@@ -82,49 +155,9 @@ async function copy(value: string): Promise<void> {
           borderWidth: '3px', borderStyle: 'solid', borderColor: palette.bg,
         }"
       />
-      <Col class="mt-3.5 text-[20px] font-head font-semibold text-metro-head-light dark:text-metro-head-dark">
-        {{ profile?.name?.trim() || shortAddress(address) }}
+      <Col class="mt-3.5 w-full">
+        <KitRenderer :node="headerNode" :registry="headerRegistry" />
       </Col>
-      <Col class="mt-0.5 text-[15px] text-metro-fg-light dark:text-metro-fg-dark">
-        {{ shortAddress(address) }}
-      </Col>
-      <Col v-if="profile?.about?.trim()"
-        class="mt-1 text-sm text-metro-sub-light dark:text-metro-sub-dark max-w-prose">
-        {{ profile.about }}
-      </Col>
-
-      <!-- Two icon-actions (Message + Send), variant=secondary size=xl (56px),
-           icon 22 + label below (md 15px semibold link), gap 12, mirroring
-           mobile ProfileActions. -->
-      <Row class="mt-[18px]" :gap="12" justify="start">
-        <Col align="center" :gap="6">
-          <Button
-            variant="secondary"
-            size="xl"
-            pill
-            :tint-bg="palette.border"
-            :disabled="openingDm"
-            @click="onMessage"
-          >
-            <Icon name="chatRect" :size="22" :color="palette.link" />
-          </Button>
-          <span class="text-[15px] font-semibold" :style="{ color: palette.link }">
-            {{ openingDm ? 'Opening…' : 'Message' }}
-          </span>
-        </Col>
-        <Col align="center" :gap="6">
-          <Button
-            variant="secondary"
-            size="xl"
-            pill
-            :tint-bg="palette.border"
-            @click="onMessage"
-          >
-            <Icon name="send" :size="22" :color="palette.link" />
-          </Button>
-          <span class="text-[15px] font-semibold" :style="{ color: palette.link }">Send</span>
-        </Col>
-      </Row>
     </Col>
 
     <!-- Common channels: mutual group memberships with this peer (not-self only),
@@ -132,36 +165,8 @@ async function copy(value: string): Promise<void> {
     <CommonChannels :peer-address="address" :enabled="notSelf" />
 
     <Col class="px-6 pb-8">
-      <Col class="mt-6 space-y-2">
-        <Pressable
-          tag="button"
-          type="button"
-          class="w-full text-left p-3 rounded-xl border
-            border-metro-border-light dark:border-metro-border-dark
-            bg-metro-surface-light dark:bg-metro-surface-dark"
-          @click="copy(address)"
-        >
-          <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark uppercase tracking-wide">
-            Wallet address ({{ copied ? 'copied!' : 'tap to copy' }})
-          </Col>
-          <Col class="text-sm mt-1 break-all font-mono">{{ address }}</Col>
-        </Pressable>
-        <Col v-if="profile?.github?.trim()" class="p-3 rounded-xl border border-metro-border-light dark:border-metro-border-dark bg-metro-surface-light dark:bg-metro-surface-dark">
-          <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark uppercase tracking-wide">GitHub</Col>
-          <Col class="text-sm mt-1">{{ profile.github }}</Col>
-        </Col>
-        <Col v-if="profile?.twitter?.trim()" class="p-3 rounded-xl border border-metro-border-light dark:border-metro-border-dark bg-metro-surface-light dark:bg-metro-surface-dark">
-          <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark uppercase tracking-wide">X (Twitter)</Col>
-          <Col class="text-sm mt-1">{{ profile.twitter }}</Col>
-        </Col>
-        <Col v-if="profile?.lens?.trim()" class="p-3 rounded-xl border border-metro-border-light dark:border-metro-border-dark bg-metro-surface-light dark:bg-metro-surface-dark">
-          <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark uppercase tracking-wide">Lens</Col>
-          <Col class="text-sm mt-1">{{ profile.lens }}</Col>
-        </Col>
-        <Col v-if="profile?.farcaster?.trim()" class="p-3 rounded-xl border border-metro-border-light dark:border-metro-border-dark bg-metro-surface-light dark:bg-metro-surface-dark">
-          <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark uppercase tracking-wide">Farcaster</Col>
-          <Col class="text-sm mt-1">{{ profile.farcaster }}</Col>
-        </Col>
+      <Col class="mt-6">
+        <KitRenderer :node="infoNode" :registry="infoRegistry" />
       </Col>
     </Col>
   </Col>

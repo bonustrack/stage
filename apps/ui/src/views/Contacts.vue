@@ -1,11 +1,14 @@
 <script setup lang="ts">
 
 import {
-  getOrCreateXmtpClient, peerEthAddressOfDm, shortAddress,
+  getOrCreateXmtpClient, peerEthAddressOfDm, shortAddress, stampAvatarUrl,
 } from '../lib/xmtp';
 import { useSearchResolution } from '../lib/useSearchResolution';
 import { readProfile, loadCachedProfile } from '../lib/profile';
 import { useEffectiveScheme } from '@/lib/kitTheme';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
+import { contactRow, CONTACT_PRESS } from '@stage-labs/views';
 
 const scheme = useEffectiveScheme();
 
@@ -61,6 +64,25 @@ onMounted(async () => {
     for (const c of dedup) resolvePeerName(c.address);
   } catch (e) { error.value = (e as Error).message; }
 });
+
+const listNode = computed<ListViewNode>(() => ({
+  type: 'ListView',
+  children: (filtered.value ?? contacts.value ?? []).map(c =>
+    contactRow({
+      name: peerName(c.address) ?? c.address,
+      avatarUri: stampAvatarUrl(c.address, 80),
+      handle: peerName(c.address) ? shortAddress(c.address) : undefined,
+      payload: { convId: c.convId },
+    }),
+  ),
+}));
+
+const registry: WidgetActionRegistry = {
+  [CONTACT_PRESS]: (action) => {
+    const convId = action.payload.convId;
+    if (typeof convId === 'string') void router.push(`/xmtp/${convId}`);
+  },
+};
 </script>
 
 <template>
@@ -97,20 +119,11 @@ onMounted(async () => {
     <Col v-else-if="!contacts" align="center" justify="center" class="flex-1 text-xs text-metro-sub-light dark:text-metro-sub-dark">
       Loading contacts…
     </Col>
-    <ul v-else class="flex-1">
-      <li v-if="filtered && filtered.length === 0" class="p-8 text-center text-sm text-metro-sub-light dark:text-metro-sub-dark">
+    <Col v-else class="flex-1">
+      <Col v-if="filtered && filtered.length === 0" class="p-8 text-center text-sm text-metro-sub-light dark:text-metro-sub-dark">
         {{ query ? `No matches for "${query}"` : 'No contacts yet. Start a DM from Channels to populate this list.' }}
-      </li>
-      <li v-for="c in filtered ?? contacts" :key="c.address.toLowerCase()">
-        <ChannelRow
-          :avatar-address="c.address"
-          :title="peerName(c.address) ?? c.address"
-          :last-ts="null"
-          :last-preview="peerName(c.address) ? shortAddress(c.address) : ' '"
-          :unread-count="0"
-          @open="router.push(`/xmtp/${c.convId}`)"
-        />
-      </li>
-    </ul>
+      </Col>
+      <KitRenderer v-else :node="listNode" :registry="registry" />
+    </Col>
   </Col>
 </template>

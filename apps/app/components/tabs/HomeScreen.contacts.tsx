@@ -3,14 +3,14 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { isAddress } from 'viem';
 import { Box } from '../layout';
-import { ChannelRow } from '../ChannelRow';
 import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { WidgetRoot } from '@stage-labs/kit/kit';
-import { emptyState, sectionHeader } from '@stage-labs/views';
+import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
+import { contactRow, emptyState, sectionHeader, CONTACT_PRESS } from '@stage-labs/views';
 import { openDmWithAddress, shortAddress } from '../../modules/messaging';
 import { resolveEnsName } from '../../lib/ens';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { getCachedRows } from '../../modules/messaging';
+import { stampAvatarUrl } from '@stage-labs/kit/avatar';
 
 const NO_MATCH_NODE: WidgetRoot = {
   type: 'Basic',
@@ -104,30 +104,51 @@ export function HomeContactResults(
     return <KitRenderer node={NO_MATCH_NODE} />;
   }
 
+  const rows = [
+    ...(showResolved
+      ? [{
+          address: resolved.address,
+          convId: undefined,
+          title: getPeerName(resolved.address) ?? (resolved.source === 'ens' ? q : shortAddress(resolved.address)),
+          subtitle: 'Start chat',
+        }]
+      : []),
+    ...filtered.map(p => ({
+      address: p.address,
+      convId: p.convId,
+      title: getPeerName(p.address) ?? shortAddress(p.address),
+      subtitle: getPeerName(p.address) ? shortAddress(p.address) : undefined,
+    })),
+  ];
+
+  const listNode: WidgetRoot = {
+    type: 'ListView',
+    children: rows.map(r =>
+      contactRow({
+        name: r.title,
+        avatarUri: stampAvatarUrl(r.address, 80),
+        handle: r.subtitle,
+        payload: { address: r.address, convId: r.convId ?? '' },
+      }),
+    ),
+  };
+
+  const registry: WidgetActionRegistry = {
+    [CONTACT_PRESS]: (action) => {
+      const address = action.payload.address;
+      const convId = action.payload.convId;
+      if (typeof address === 'string') {
+        open(address, typeof convId === 'string' && convId !== '' ? convId : undefined);
+      }
+    },
+  };
+
   return (
     <Box>
       <Box padding={{ x: 16, top: 16, bottom: 6 }}>
         <KitRenderer node={PEOPLE_HEADER_NODE} />
       </Box>
-      {showResolved ? (
-        <ChannelRow
-          title={getPeerName(resolved.address) ?? (resolved.source === 'ens' ? q : shortAddress(resolved.address))}
-          avatarAddress={resolved.address}
-          square={false}
-          subtitle="Start chat"
-          onPress={() => { open(resolved.address); }}
-        />
-      ) : null}
-      {filtered.map(p => (
-        <ChannelRow
-          key={p.address.toLowerCase()}
-          title={getPeerName(p.address) ?? shortAddress(p.address)}
-          avatarAddress={p.address}
-          square={false}
-          subtitle={getPeerName(p.address) ? shortAddress(p.address) : null}
-          onPress={() => { open(p.address, p.convId); }}
-        />
-      ))}
+      <KitRenderer node={listNode} registry={registry} />
     </Box>
   );
 }

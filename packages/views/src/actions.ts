@@ -26,6 +26,12 @@ export const MEMBER_PRESS = 'accounts.member.press';
 
 export const MEMBER_REMOVE = 'accounts.member.remove';
 
+export const CONTACT_PRESS = 'contacts.contact.press';
+
+export const PROFILE_ACTION_PRESS = 'profile.action.press';
+
+export const PROFILE_INFO_PRESS = 'profile.info.press';
+
 export const REACTION_PRESS = 'chat.reaction.press';
 
 export const MEDIA_PRESS = 'chat.media.press';

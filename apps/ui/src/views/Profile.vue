@@ -3,6 +3,11 @@
 import { getOrCreateXmtpClient, shortAddress } from '../lib/xmtp';
 import { loadCachedProfile, readProfile, type SnapshotProfile } from '../lib/profile';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type {
+  BasicNode, ListViewItemNode, ListViewNode, WidgetActionRegistry,
+} from '@stage-labs/kit/kit';
+import { profileHeader, infoRow, PROFILE_INFO_PRESS } from '@stage-labs/views';
 
 const AVATAR_SIZE = 88;
 
@@ -41,6 +46,53 @@ async function copy(value: string, label: 'address' | 'inboxId'): Promise<void> 
     setTimeout(() => { copyHint.value = null; }, 1500);
   } catch { }
 }
+
+function nonEmpty(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed !== undefined && trimmed !== '' ? trimmed : undefined;
+}
+
+const headerNode = computed<BasicNode>(() => ({
+  type: 'Basic',
+  children: [
+    profileHeader({
+      name: displayName.value,
+      bio: nonEmpty(profile.value.about),
+      align: 'center',
+    }),
+  ],
+}));
+
+const infoNode = computed<ListViewNode>(() => {
+  const items: ListViewItemNode[] = [];
+  if (address.value) {
+    items.push(infoRow({
+      label: `WALLET ADDRESS (${copyHint.value === 'address' ? 'copied!' : 'tap to copy'})`,
+      value: address.value,
+      copyType: PROFILE_INFO_PRESS,
+      payload: { kind: 'address' },
+    }));
+  }
+  if (inboxId.value) {
+    items.push(infoRow({
+      label: `XMTP INBOX ID (${copyHint.value === 'inboxId' ? 'copied!' : 'tap to copy'})`,
+      value: inboxId.value,
+      copyType: PROFILE_INFO_PRESS,
+      payload: { kind: 'inboxId' },
+    }));
+  }
+  return { type: 'ListView', children: items };
+});
+
+const infoRegistry: WidgetActionRegistry = {
+  [PROFILE_INFO_PRESS]: (action) => {
+    const value = action.payload.value;
+    const kind = action.payload.kind;
+    if (typeof value === 'string' && (kind === 'address' || kind === 'inboxId')) {
+      void copy(value, kind);
+    }
+  },
+};
 </script>
 
 <template>
@@ -58,45 +110,13 @@ async function copy(value: string, label: 'address' | 'inboxId'): Promise<void> 
         :style="{ width: `${AVATAR_SIZE}px`, height: `${AVATAR_SIZE}px` }"
       />
       <Col v-else class="rounded-full bg-metro-border-dark" :style="{ width: `${AVATAR_SIZE}px`, height: `${AVATAR_SIZE}px` }" />
-      <Text size="4xl" weight="semibold" class="mt-3.5 text-metro-head-light dark:text-metro-head-dark">
-        {{ displayName }}
-      </Text>
-      <Col v-if="profile.about"
-        class="text-[13px] text-metro-sub-light dark:text-metro-sub-dark mt-1.5 px-6 text-center max-w-md">
-        {{ profile.about }}
+      <Col class="mt-3.5 w-full px-6 items-center">
+        <KitRenderer :node="headerNode" />
       </Col>
     </Col>
 
-    <Pressable
-      tag="button"
-      v-if="address" type="button"
-      class="block w-[calc(100%-2rem)] mx-4 mt-2 p-3 rounded-xl text-left
-        bg-metro-surface-light dark:bg-metro-surface-dark
-        border border-metro-border-light dark:border-metro-border-dark"
-      @click="copy(address, 'address')"
-    >
-      <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">
-        WALLET ADDRESS ({{ copyHint === 'address' ? 'copied!' : 'tap to copy' }})
-      </Col>
-      <Col class="text-[13px] text-metro-fg-light dark:text-metro-fg-dark mt-1 break-all">
-        {{ address }}
-      </Col>
-    </Pressable>
-
-    <Pressable
-      tag="button"
-      v-if="inboxId" type="button"
-      class="block w-[calc(100%-2rem)] mx-4 mt-3 p-3 rounded-xl text-left
-        bg-metro-surface-light dark:bg-metro-surface-dark
-        border border-metro-border-light dark:border-metro-border-dark"
-      @click="copy(inboxId, 'inboxId')"
-    >
-      <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">
-        XMTP INBOX ID ({{ copyHint === 'inboxId' ? 'copied!' : 'tap to copy' }})
-      </Col>
-      <Col class="text-[13px] text-metro-fg-light dark:text-metro-fg-dark mt-1 truncate">
-        {{ inboxId }}
-      </Col>
-    </Pressable>
+    <Col class="w-[calc(100%-2rem)] mx-4 mt-2">
+      <KitRenderer :node="infoNode" :registry="infoRegistry" />
+    </Col>
   </Col>
 </template>
