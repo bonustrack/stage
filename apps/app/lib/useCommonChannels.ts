@@ -4,10 +4,10 @@ import { getCachedRows, hydrateCachedRows, getActiveAccountIdSync, type CachedRo
 import { convOfLine, groupMemberEthAddresses, lineOfConv } from './xmtp';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
 import { getAccountEpoch } from './accountEpoch';
-import { MemoryStore } from './cache';
+import { createMemberSetCache } from '@stage-labs/client/xmtp/commonChannels';
 import { loadArchivedIds } from './archived';
 
-const memberSetCache = new MemoryStore<string, string[]>();
+const memberSetCache = createMemberSetCache();
 
 export interface CommonChannel {
   convId: string;
@@ -23,15 +23,14 @@ export interface CommonChannel {
   markedUnread: boolean;
 }
 
-async function memberSetOf(convId: string): Promise<string[]> {
-  const key = `${convId}:${getAccountEpoch()}`;
-  const cached = memberSetCache.get(key);
-  if (cached) return cached;
+async function fetchMembers(convId: string): Promise<string[]> {
   const conv = await convOfLine(lineOfConv(convId));
   if (!conv) return [];
-  const members = await groupMemberEthAddresses(conv);
-  memberSetCache.set(key, members);
-  return members;
+  return groupMemberEthAddresses(conv);
+}
+
+function memberSetOf(convId: string): Promise<string[]> {
+  return memberSetCache.resolver(getAccountEpoch(), fetchMembers)(convId);
 }
 
 function commonChannelFromRow(row: CachedRow, members: string[]): CommonChannel {

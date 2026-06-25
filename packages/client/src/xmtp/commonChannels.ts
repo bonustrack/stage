@@ -48,6 +48,27 @@ export function commonChannelFromRow(row: CommonChannelRow, members: string[]): 
   };
 }
 
+export interface MemberSetCache {
+  resolver(epoch: number, fetchMembers: (convId: string) => Promise<string[]>):
+    (convId: string) => Promise<string[]>;
+}
+
+export function createMemberSetCache(): MemberSetCache {
+  const cache = new Map<string, string[]>();
+  return {
+    resolver(epoch, fetchMembers) {
+      return async (convId: string): Promise<string[]> => {
+        const key = `${convId}:${epoch}`;
+        const cached = cache.get(key);
+        if (cached) return cached;
+        const members = await fetchMembers(convId);
+        cache.set(key, members);
+        return members;
+      };
+    },
+  };
+}
+
 export async function resolveCommonChannels(
   peerAddress: string,
   rows: CommonChannelRow[],
