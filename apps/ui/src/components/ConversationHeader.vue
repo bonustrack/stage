@@ -3,8 +3,10 @@
 import { computed } from 'vue';
 import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import type { AvatarStackNode } from '@stage-labs/kit/kit';
 import { conversationHeader, CONVERSATION_PRESS } from '@stage-labs/views';
 import { basicRoot } from '@/lib/kitRow';
+import { metroFieldColors } from '@/lib/metroFieldColors';
 import { shortAddress, stampAvatarUrl } from '../lib/xmtp';
 import type { XmtpFeedStatus } from '../lib/xmtpFeed';
 import { runningInIframe, postCloseToParent } from '../lib/embedBridge';
@@ -22,8 +24,7 @@ const emit = defineEmits<{ back: []; open: [] }>();
 const title = computed(() =>
   props.peerAddress ? shortAddress(props.peerAddress) : (props.groupName || 'Conversation'),
 );
-const visibleMembers = computed(() => props.memberAddresses.slice(0, 3));
-const overflow = computed(() => Math.max(0, props.memberAddresses.length - 3));
+const hasMembers = computed(() => props.memberAddresses.length > 0);
 const embedded = runningInIframe();
 
 const statusLabel = computed(() => {
@@ -49,6 +50,23 @@ const registry: WidgetActionRegistry = {
     emit('open');
   },
 };
+
+const avatarStackNode = computed(() => {
+  const node: AvatarStackNode = {
+    type: 'AvatarStack',
+    items: props.memberAddresses.map(addr => ({ src: stampAvatarUrl(addr, 56) })),
+    size: 32,
+    max: 3,
+    overlap: 8,
+    ring: metroFieldColors.bg,
+    fallbackBackground: metroFieldColors.border,
+    moreBackground: metroFieldColors.surface,
+    moreColor: metroFieldColors.link,
+    moreFontSize: 11,
+    moreFontFamily: 'Calibre-Medium',
+  };
+  return basicRoot(node);
+});
 </script>
 
 <template>
@@ -58,23 +76,8 @@ const registry: WidgetActionRegistry = {
     <Pressable tag="button" type="button" class="h-full pl-3.5 pr-2 flex items-center text-metro-fg-light dark:text-metro-fg-dark" @click="emit('back')">
       <Icon name="arrowLeft" :size="22" />
     </Pressable>
-    <!-- kit-exception: overlapping avatar stack is absolute-positioned, not expressible in Kit JSON -->
-    <Row v-if="!props.peerAddress && visibleMembers.length" align="center" class="shrink-0 pl-2">
-      <img
-        v-for="(addr, i) in visibleMembers"
-        :key="addr.toLowerCase()"
-        :src="stampAvatarUrl(addr, 56)"
-        alt=""
-        class="w-8 h-8 rounded-full bg-metro-border-light dark:bg-metro-border-dark border-2
-          border-metro-bg-light dark:border-metro-bg-dark"
-        :class="i === 0 ? '' : '-ml-2'"
-      />
-      <Row v-if="overflow"
-        align="center" justify="center"
-        class="w-8 h-8 -ml-2 rounded-full bg-metro-surface-light dark:bg-metro-surface-dark
-          border-2 border-metro-bg-light dark:border-metro-bg-dark">
-        <Text size="3xs" color="link">+{{ overflow }}</Text>
-      </Row>
+    <Row v-if="!props.peerAddress && hasMembers" align="center" class="shrink-0 pl-2">
+      <KitRenderer :node="avatarStackNode" />
     </Row>
     <Col class="flex-1 min-w-0 justify-center">
       <KitRenderer :node="node" :registry="registry" />

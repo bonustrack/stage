@@ -9,6 +9,7 @@ export const metroFieldColors = {
   surface: pair('surface-light', 'surface-dark'),
   border: pair('border-light', 'border-dark'),
   head: pair('head-light', 'head-dark'),
+  fg: pair('fg-light', 'fg-dark'),
   sub: pair('sub-light', 'sub-dark'),
   bg: pair('bg-light', 'bg-dark'),
   link: pair('link-light', 'link-dark'),
