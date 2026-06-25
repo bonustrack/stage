@@ -1,7 +1,10 @@
 <script setup lang="ts">
 
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
+import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/chatkit';
+import { accountRow, ACCOUNT_PRESS } from '@stage-labs/views';
 import { listAccounts, getActiveAccount, accountEpoch, type AccountRecord } from '../lib/accounts';
 import { switchToAccount, stampAvatarUrl, shortAddress } from '../lib/xmtp';
 import { loadCachedProfile, readProfile } from '../lib/profile';
@@ -55,6 +58,26 @@ function goManage(): void {
   open.value = false;
   void router.push('/accounts');
 }
+
+const listNode = computed<ListViewNode>(() => ({
+  type: 'ListView',
+  children: accounts.value.map((a) =>
+    accountRow({
+      accountId: a.id,
+      avatarUri: stampAvatarUrl(a.address, 56),
+      name: label(a),
+      address: shortAddress(a.address),
+      typeLabel: a.id === activeId.value ? 'Active' : undefined,
+    }),
+  ),
+}));
+
+const registry: WidgetActionRegistry = {
+  [ACCOUNT_PRESS]: (action) => {
+    const id = action.payload.accountId;
+    if (typeof id === 'string') void onSwitch(id);
+  },
+};
 </script>
 
 <template>
@@ -78,29 +101,7 @@ function goManage(): void {
         bg-metro-bg-light dark:bg-metro-surface-dark
         border border-metro-border-light dark:border-metro-border-dark"
     >
-      <Pressable
-        v-for="a in accounts"
-        :key="a.id"
-        tag="button"
-        type="button"
-        :disabled="switching !== null"
-        class="w-full flex items-center gap-3 text-left px-3 py-2.5
-          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark disabled:opacity-50"
-        @click="onSwitch(a.id)"
-      >
-        <AvatarView :src="stampAvatarUrl(a.address, 56)" :size="30" />
-        <Col class="flex-1 min-w-0">
-          <Text size="md" weight="semibold" :truncate="true"
-            class="text-metro-head-light dark:text-metro-head-dark">
-            {{ label(a) }}
-          </Text>
-          <Text size="xs" :truncate="true" class="text-metro-sub-light dark:text-metro-sub-dark">
-            {{ shortAddress(a.address) }}
-          </Text>
-        </Col>
-        <Icon v-if="a.id === activeId" name="check" :size="20"
-          class="text-metro-head-light dark:text-metro-head-dark" />
-      </Pressable>
+      <ChatKitRenderer :node="listNode" :registry="registry" />
 
       <Col class="border-t border-metro-border-light dark:border-metro-border-dark my-1" />
 

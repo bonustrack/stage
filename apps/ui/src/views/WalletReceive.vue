@@ -1,9 +1,13 @@
 <script setup lang="ts">
 
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import QRCode from 'qrcode';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
+import type { WidgetActionRegistry } from '@stage-labs/kit/chatkit';
+import { addressCard, WALLET_ADDRESS_COPY } from '@stage-labs/views';
+import { basicRoot } from '@/lib/chatkitRow';
 import { getActiveAccount } from '../lib/accounts';
 import { shortAddress, stampAvatarUrl } from '../lib/xmtp';
 
@@ -39,6 +43,22 @@ async function copy(): Promise<void> {
   copied.value = true;
   window.setTimeout(() => { copied.value = false; }, 1500);
 }
+
+const addressNode = computed(() =>
+  basicRoot(
+    addressCard({
+      label: 'Wallet address (tap to copy)',
+      address: address.value || '—',
+      hint: copied.value
+        ? 'Address copied'
+        : 'Scan or share this address to receive ETH or tokens on Ethereum mainnet.',
+    }),
+  ),
+);
+
+const registry: WidgetActionRegistry = {
+  [WALLET_ADDRESS_COPY]: () => { void copy(); },
+};
 </script>
 
 <template>
@@ -77,24 +97,9 @@ async function copy(): Promise<void> {
         <Box v-else :width="240" :height="240" background="#f4f4f5" />
       </Box>
 
-      <Text size="xs" color="secondary" class="mt-1">WALLET ADDRESS (tap to copy)</Text>
-
-      <Pressable
-        tag="button"
-        type="button"
-        class="w-[calc(100%-2rem)] mx-4 px-4 py-3.5 rounded-xl border text-center break-all
-          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
-        :style="{ borderColor: palette.border }"
-        @click="copy"
-      >
-        <Text size="md" color="link">{{ address || '—' }}</Text>
-      </Pressable>
-
-      <Text size="xs" color="secondary" class="text-center px-4 mt-2 pb-6">
-        {{ copied
-          ? 'Address copied'
-          : 'Scan or share this address to receive ETH or tokens on Ethereum mainnet.' }}
-      </Text>
+      <Col class="w-[calc(100%-2rem)] mx-4 pb-6">
+        <ChatKitRenderer :node="addressNode" :registry="registry" />
+      </Col>
     </Col>
   </Col>
 </template>

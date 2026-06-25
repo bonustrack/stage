@@ -1,9 +1,12 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { Text } from '@stage-labs/kit/react-native/text';
+import { ChatKitRenderer } from '@stage-labs/kit/react-native/chatkit-renderer';
+import type { BasicNode, WidgetActionRegistry } from '@stage-labs/kit/chatkit';
+import { addressCard, WALLET_ADDRESS_COPY } from '@stage-labs/views';
 import { Box, Row, Col } from '../../components/layout';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
@@ -19,7 +22,6 @@ import { ReceiveModeToggle, type ReceiveMode } from '../../components/wallet/Rec
 export default function WalletReceive(): React.ReactElement {
   const router = useRouter();
   const { text: fg, link: head, border } = usePalette();
-  const card = border;
   const insets = useSafeAreaInsets();
 
   const [mode, setMode] = useState<ReceiveMode>('public');
@@ -52,6 +54,25 @@ export default function WalletReceive(): React.ReactElement {
     ? 'Shielded address. Funds sent here are private — the sender shields into Railgun.'
     : 'Scan or share this address to receive ETH or tokens on Ethereum mainnet.';
 
+  const addressNode = useMemo<BasicNode>(
+    () => ({
+      type: 'Basic',
+      children: [
+        addressCard({
+          label: activeMode === 'private'
+            ? 'Shielded 0zk address (tap to copy)'
+            : 'Wallet address (tap to copy)',
+          address: address || '—',
+          hint,
+        }),
+      ],
+    }),
+    [activeMode, address, hint],
+  );
+  const addressRegistry: WidgetActionRegistry = {
+    [WALLET_ADDRESS_COPY]: () => { copy(); },
+  };
+
   return (
     <Col surface="surface" flex={1}>
       <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
@@ -82,25 +103,9 @@ export default function WalletReceive(): React.ReactElement {
           )}
         </Box>
 
-        <Text size="xs" role="secondary" style={{ marginTop: 4 }}>
-          {activeMode === 'private' ? 'SHIELDED 0ZK ADDRESS (tap to copy)' : 'WALLET ADDRESS (tap to copy)'}
-        </Text>
-        <Pressable
-          onPress={copy}
-          style={({ pressed }) => ({
-            width: '100%', padding: 14, borderRadius: 12,
-            backgroundColor: pressed ? border : card,
-            borderWidth: 1, borderColor: border,
-          })}
->
-          <Text size="md" color={head} style={{ textAlign: 'center' }} selectable>
-            {address || '—'}
-          </Text>
-        </Pressable>
-
-        <Text size="xs" role="secondary" style={{ textAlign: 'center', paddingHorizontal: 16, marginTop: 8 }}>
-          {hint}
-        </Text>
+        <Box width="100%">
+          <ChatKitRenderer node={addressNode} registry={addressRegistry} />
+        </Box>
       </ScrollView>
     </Col>
   );
