@@ -117,18 +117,20 @@ function done(): void {
         </template>
 
         <template v-else>
-          <ol class="mt-6 grid grid-cols-2 gap-2">
-            <li
+          <Row :wrap="true" :gap="8" class="mt-6">
+            <Row
               v-for="(w, i) in words"
               :key="i"
-              class="flex items-center gap-2 rounded-lg border px-3 py-2
+              align="center"
+              :gap="8"
+              class="w-[calc(50%-0.25rem)] rounded-lg border px-3 py-2
                 bg-metro-surface-light dark:bg-metro-surface-dark"
               :style="{ borderColor: palette.border }"
             >
               <Text size="2xs" class="w-4 text-right text-metro-sub-light dark:text-metro-sub-dark tabular-nums">{{ i + 1 }}</Text>
               <Text size="sm" weight="semibold" class="font-mono text-metro-head-light dark:text-metro-head-dark">{{ w }}</Text>
-            </li>
-          </ol>
+            </Row>
+          </Row>
 
           <Col :gap="8" class="mt-5">
             <Button

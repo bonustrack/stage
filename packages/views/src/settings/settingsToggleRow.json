@@ -18,6 +18,14 @@
       ]
     },
     {
+      "$if": "useSwitch",
+      "type": "Switch",
+      "name": "{{name}}",
+      "checked": "{{checked}}",
+      "onChangeAction": "{{changeAction}}"
+    },
+    {
+      "$if": "useCheckbox",
       "type": "Checkbox",
       "name": "{{name}}",
       "defaultChecked": "{{checked}}",

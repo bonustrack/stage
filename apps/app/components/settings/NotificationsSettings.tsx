@@ -63,6 +63,7 @@ export function NotificationsSettings(): React.ReactElement {
         checked: enabled,
         description: 'Get notified about new messages even when Metro is closed.',
         changeType: SETTINGS_TOGGLE_CHANGE,
+        control: 'switch',
       }),
     ],
   };

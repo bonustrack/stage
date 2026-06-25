@@ -59,17 +59,21 @@ export interface SettingsToggleRowParams {
   checked: boolean;
   description?: string;
   changeType?: string;
+  control?: 'switch' | 'checkbox';
 }
 
 export function settingsToggleRow(
   params: SettingsToggleRowParams,
 ): ListViewItemNode {
+  const useSwitch = params.control === 'switch';
   return (buildView(toggleRowView, {
     label: params.label,
     name: params.name,
     checked: params.checked,
     description: params.description,
     hasDescription: params.description !== undefined || undefined,
+    useSwitch: useSwitch || undefined,
+    useCheckbox: useSwitch ? undefined : true,
     changeAction:
       params.changeType !== undefined
         ? { type: params.changeType, payload: { name: params.name } }
