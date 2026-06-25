@@ -1,14 +1,17 @@
-import type { Color, FontWeight, RowNode, TextSize } from '@stage-labs/kit/kit';
+import type { Color, RowNode, TextSize } from '@stage-labs/kit/kit';
 import view from './highlightText.json';
 import { buildView } from '../buildView';
+
+const HL_BG = '#FFF200';
 
 export interface HighlightTextParams {
   text: string;
   query: string;
   color?: Color;
-  matchColor?: Color;
-  matchWeight?: FontWeight;
+  matchBackground?: Color;
   size?: TextSize;
+  fontSize?: number;
+  lineHeight?: number;
 }
 
 interface Segment {
@@ -41,9 +44,14 @@ export function highlightText(params: HighlightTextParams): RowNode {
   const segments = highlightSegments(params.text, params.query).map(
     (segment) => ({
       value: segment.value,
-      color: segment.match ? params.matchColor ?? 'warning' : params.color,
-      weight: segment.match ? params.matchWeight ?? 'bold' : undefined,
+      color: params.color,
+      background: segment.match ? params.matchBackground ?? HL_BG : undefined,
     }),
   );
-  return (buildView(view, { segments, size: params.size }) as RowNode);
+  return buildView(view, {
+    segments,
+    size: params.size,
+    fontSize: params.fontSize,
+    lineHeight: params.lineHeight,
+  }) as RowNode;
 }

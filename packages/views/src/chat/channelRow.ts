@@ -42,8 +42,8 @@ function titleScope(params: ChannelRowParams): Record<string, unknown>[] {
   if (params.titleSegments && params.titleSegments.length > 0) {
     return params.titleSegments.map((segment) => ({
       text: segment.text,
-      weight: segment.emphasized ? 'bold' : 'semibold',
-      color: segment.emphasized ? 'info' : undefined,
+      weight: 'semibold',
+      background: segment.emphasized ? '#FFF200' : undefined,
     }));
   }
   return [{ text: params.title, weight: 'semibold' }];

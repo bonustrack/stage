@@ -27,7 +27,7 @@ function bodyNodes(params: MessageBubbleParams): WidgetNode[] {
   if (params.segments !== undefined && params.segments.length > 0) {
     return params.segments.map((segment) =>
       text(segment.text, {
-        weight: segment.emphasized === true ? 'bold' : undefined,
+        background: segment.emphasized === true ? '#FFF200' : undefined,
         color: params.textColor,
       }),
     );

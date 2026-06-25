@@ -10,7 +10,9 @@
         "value": "{{item.value}}",
         "size": "{{size}}",
         "color": "{{item.color}}",
-        "weight": "{{item.weight}}"
+        "background": "{{item.background}}",
+        "fontSize": "{{fontSize}}",
+        "lineHeight": "{{lineHeight}}"
       }
     }
   ]

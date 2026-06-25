@@ -197,6 +197,9 @@ function fireWith(action: ActionConfig | undefined, payload: Record<string, unkn
     :text-align="textNode.textAlign"
     :truncate="textNode.truncate"
     :color="textNode.color === undefined ? undefined : String(textNode.color)"
+    :background="textNode.background === undefined ? undefined : String(textNode.background)"
+    :font-size="textNode.fontSize"
+    :line-height="textNode.lineHeight"
   />
 
   <Caption

@@ -49,6 +49,7 @@
                     "value": "{{item.text}}",
                     "weight": "{{item.weight}}",
                     "color": "{{item.color}}",
+                    "background": "{{item.background}}",
                     "truncate": true
                   }
                 }

@@ -33,6 +33,9 @@ const props = withDefaults(
     size?: TextSizeToken;
     weight?: TextWeight;
     color?: ColorToken | (string & {});
+    background?: ColorToken | (string & {});
+    fontSize?: number;
+    lineHeight?: number;
     textAlign?: TextAlign;
     italic?: boolean;
     lineThrough?: boolean;
@@ -97,6 +100,12 @@ const ALIGN_MAP: Record<TextAlign, string> = {
 const palette = useKitPalette();
 const scheme = useKitScheme();
 
+function applyOverrides(css: Record<string, string>): void {
+  if (props.background != null) css.backgroundColor = resolveColorToken(props.background, scheme);
+  if (props.fontSize != null) css.fontSize = `${props.fontSize}px`;
+  if (props.lineHeight != null) css.lineHeight = `${props.lineHeight}px`;
+}
+
 const style = computed<Record<string, string>>(() => {
   const effectiveRole: TextRole = props.role ?? variantRole(props.variant);
   const weightKey = normalizeWeight(props.weight);
@@ -109,6 +118,7 @@ const style = computed<Record<string, string>>(() => {
     fontFamily: props.variant === 'mono' ? 'Menlo' : FONTS[weightKey],
     fontWeight: WEIGHT_NUM[weightKey],
   };
+  applyOverrides(css);
   if (props.textAlign) css.textAlign = ALIGN_MAP[props.textAlign];
   if (props.italic) css.fontStyle = 'italic';
   if (props.lineThrough) css.textDecorationLine = 'line-through';

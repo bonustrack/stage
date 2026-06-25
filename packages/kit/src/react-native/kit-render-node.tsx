@@ -114,6 +114,17 @@ export function renderBox(
 }
 
 export function renderText(node: TextNode, ctx: RenderCtx): ReactNode {
+  const background = resolveOptionalColor(node.background, ctx.scheme);
+  const extraStyle =
+    background === undefined &&
+    node.lineHeight === undefined &&
+    node.fontSize === undefined
+      ? undefined
+      : {
+          ...(background === undefined ? {} : { backgroundColor: background }),
+          ...(node.lineHeight === undefined ? {} : { lineHeight: node.lineHeight }),
+          ...(node.fontSize === undefined ? {} : { fontSize: node.fontSize }),
+        };
   return (
     <Text
       value={node.value}
@@ -125,6 +136,7 @@ export function renderText(node: TextNode, ctx: RenderCtx): ReactNode {
       lineThrough={node.lineThrough}
       truncate={node.truncate}
       maxLines={node.maxLines}
+      style={extraStyle}
     />
   );
 }

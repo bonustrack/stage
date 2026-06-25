@@ -175,6 +175,9 @@ export interface TextNode extends NodeBase {
   italic?: boolean;
   lineThrough?: boolean;
   color?: Color;
+  background?: Color;
+  lineHeight?: number;
+  fontSize?: number;
   weight?: FontWeight;
   size?: TextSize;
   textAlign?: TextAlign;
@@ -332,6 +335,7 @@ export interface PressableNode extends NodeBase {
   onClickAction?: ActionConfig;
   onLongPressAction?: ActionConfig;
   onSwipeAction?: ActionConfig;
+  hitSlop?: number;
 }
 
 export interface TransitionNode extends NodeBase {
@@ -356,45 +360,12 @@ export interface UnknownNode extends NodeBase {
 }
 
 export type WidgetNode =
-  | CardNode
-  | ListViewNode
-  | BasicNode
-  | BoxNode
-  | RowNode
-  | ColNode
-  | FormNode
-  | SpacerNode
-  | DividerNode
-  | TextNode
-  | TitleNode
-  | CaptionNode
-  | MarkdownNode
-  | LabelNode
-  | ImageNode
-  | IconNode
-  | BadgeNode
-  | ButtonNode
-  | InputNode
-  | TextareaNode
-  | SelectNode
-  | CheckboxNode
-  | RadioGroupNode
-  | DatePickerNode
-  | SwitchNode
-  | TabsNode
-  | TextFieldNode
-  | ColorPickerNode
-  | SpinnerNode
-  | StackNode
-  | ScrollRowNode
-  | AvatarStackNode
-  | QRCodeNode
-  | AudioPlayerNode
-  | VideoPlayerNode
-  | PressableNode
-  | PopoverNode
-  | ListViewItemNode
-  | TransitionNode
-  | ChartNode
-  | UnknownNode;
+  | CardNode | ListViewNode | BasicNode | BoxNode | RowNode | ColNode
+  | FormNode | SpacerNode | DividerNode | TextNode | TitleNode | CaptionNode
+  | MarkdownNode | LabelNode | ImageNode | IconNode | BadgeNode | ButtonNode
+  | InputNode | TextareaNode | SelectNode | CheckboxNode | RadioGroupNode
+  | DatePickerNode | SwitchNode | TabsNode | TextFieldNode | ColorPickerNode
+  | SpinnerNode | StackNode | ScrollRowNode | AvatarStackNode | QRCodeNode
+  | AudioPlayerNode | VideoPlayerNode | PressableNode | PopoverNode
+  | ListViewItemNode | TransitionNode | ChartNode | UnknownNode;
 export type WidgetRoot = CardNode | ListViewNode | BasicNode;
