@@ -25,6 +25,7 @@ export * from './api';
 export * from './identity/format';
 export * from './identity/peerProfiles';
 export * from './wallet/format';
+export * from './wallet/activityFormat';
 export * from './wallet/assets';
 export * from './wallet/balances';
 export * from './wallet/send';
