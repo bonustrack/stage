@@ -17,6 +17,7 @@ export interface AvatarStackProps {
   moreBackground?: string;
   moreColor?: string;
   moreFontSize?: number;
+  moreFontFamily?: string;
   dark?: boolean;
 }
 
@@ -58,6 +59,7 @@ function MoreBadge(input: {
   background: string;
   color: string;
   fontSize: number;
+  fontFamily: string;
 }): React.ReactElement {
   return (
     <View
@@ -77,7 +79,7 @@ function MoreBadge(input: {
         style={{
           color: input.color,
           fontSize: input.fontSize,
-          fontFamily: 'Calibre-Semibold',
+          fontFamily: input.fontFamily,
         }}
       >
         {`+${input.extra}`}
@@ -143,6 +145,7 @@ export function AvatarStack(props: AvatarStackProps): React.ReactElement {
           background={moreBg}
           color={moreFg}
           fontSize={moreSize}
+          fontFamily={props.moreFontFamily ?? 'Calibre-Semibold'}
         />
       ) : null}
     </View>

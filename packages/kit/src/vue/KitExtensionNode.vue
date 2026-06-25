@@ -173,6 +173,7 @@ function onSwipe(direction: SwipeDirection): void {
     :more-background="resolveOptionalColor(avatarNode.moreBackground, scheme)"
     :more-color="resolveOptionalColor(avatarNode.moreColor, scheme)"
     :more-font-size="avatarNode.moreFontSize"
+    :more-font-family="avatarNode.moreFontFamily"
   />
 
   <QRCode

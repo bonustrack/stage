@@ -23,6 +23,7 @@ export interface AvatarStackNode extends NodeBase {
   moreBackground?: Color;
   moreColor?: Color;
   moreFontSize?: number;
+  moreFontFamily?: string;
 }
 
 export interface QRCodeNode extends NodeBase {

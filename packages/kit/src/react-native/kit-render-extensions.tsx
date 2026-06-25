@@ -183,6 +183,7 @@ export function renderAvatarStack(node: AvatarStackNode, ctx: RenderCtx): ReactN
       moreBackground={resolveOptionalColor(node.moreBackground, ctx.scheme)}
       moreColor={resolveOptionalColor(node.moreColor, ctx.scheme)}
       moreFontSize={node.moreFontSize}
+      moreFontFamily={node.moreFontFamily}
       dark={ctx.dark}
     />
   );

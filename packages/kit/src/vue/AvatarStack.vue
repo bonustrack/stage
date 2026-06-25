@@ -14,6 +14,7 @@ const props = withDefaults(
     moreBackground?: string;
     moreColor?: string;
     moreFontSize?: number;
+    moreFontFamily?: string;
     dark?: boolean;
   }>(),
   { size: 32, max: 4, overlap: 10 },
@@ -56,7 +57,7 @@ const moreStyle = computed<Record<string, string>>(() => ({
   justifyContent: 'center',
   backgroundColor: props.moreBackground ?? (isDark.value ? '#1c1c1e' : '#f0f0f2'),
   color: props.moreColor ?? (isDark.value ? '#ffffff' : '#000000'),
-  fontFamily: 'Calibre-Semibold',
+  fontFamily: props.moreFontFamily ?? 'Calibre-Semibold',
   fontSize: `${props.moreFontSize ?? props.size * 0.34}px`,
   boxSizing: 'border-box',
 }));
