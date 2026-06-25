@@ -3,7 +3,6 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { FlatList } from '@stage-labs/kit/react-native/flat-list';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Text } from '@stage-labs/kit/react-native/text';
 import { Title } from '@stage-labs/kit/react-native/title';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,6 +18,14 @@ import { Icon } from '@stage-labs/kit/react-native/icon';
 import { ChannelRow } from '../../components/ChannelRow';
 import { Col, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
+import { ChatKitRenderer } from '@stage-labs/kit/react-native/chatkit-renderer';
+import type { WidgetRoot } from '@stage-labs/kit/chatkit';
+import { emptyState } from '@stage-labs/views';
+
+const EMPTY_NODE: WidgetRoot = {
+  type: 'Basic',
+  children: [emptyState({ title: 'No message requests.' })],
+};
 
 type ReqRow = ConversationRequestView;
 
@@ -104,13 +111,7 @@ export default function Requests(): React.ReactElement {
           keyExtractor={r => r.convId}
           renderItem={renderRow}
           contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}
-          ListEmptyComponent={
-            <Col padding={32} align="center">
-              <Text role="secondary" style={{ textAlign: 'center' }}>
-                No message requests.
-              </Text>
-            </Col>
-          }
+          ListEmptyComponent={<ChatKitRenderer node={EMPTY_NODE} />}
 />
       )}
     </Col>

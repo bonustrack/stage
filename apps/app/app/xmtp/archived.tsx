@@ -3,9 +3,11 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { FlatList } from 'react-native-gesture-handler';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Text } from '@stage-labs/kit/react-native/text';
 import { Title } from '@stage-labs/kit/react-native/title';
 import { Icon } from '@stage-labs/kit/react-native/icon';
+import { ChatKitRenderer } from '@stage-labs/kit/react-native/chatkit-renderer';
+import type { WidgetRoot } from '@stage-labs/kit/chatkit';
+import { emptyState } from '@stage-labs/views';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getCachedRows, subscribeCachedRows } from '../../modules/messaging';
@@ -16,6 +18,11 @@ import { usePalette } from '../../lib/theme';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { ChannelRow } from '../../components/ChannelRow';
 import { Col, Row } from '../../components/layout';
+
+const EMPTY_NODE: WidgetRoot = {
+  type: 'Basic',
+  children: [emptyState({ title: 'No archived conversations.' })],
+};
 
 export default function Archived(): React.ReactElement {
   const router = useRouter();
@@ -66,11 +73,7 @@ export default function Archived(): React.ReactElement {
         keyExtractor={r => r.convId}
         renderItem={renderRow}
         contentContainerStyle={data.length === 0 ? { flexGrow: 1 } : { paddingBottom: 24 + insets.bottom }}
-        ListEmptyComponent={
-          <Col padding={32} align="center">
-            <Text role="secondary" style={{ textAlign: 'center' }}>No archived conversations.</Text>
-          </Col>
-        }
+        ListEmptyComponent={<ChatKitRenderer node={EMPTY_NODE} />}
 />
     </Col>
   );

@@ -2,13 +2,27 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { isAddress } from 'viem';
-import { Text } from '@stage-labs/kit/react-native/text';
 import { Box } from '../layout';
 import { ChannelRow } from '../ChannelRow';
+import { ChatKitRenderer } from '@stage-labs/kit/react-native/chatkit-renderer';
+import type { WidgetRoot } from '@stage-labs/kit/chatkit';
+import { emptyState, sectionHeader } from '@stage-labs/views';
 import { openDmWithAddress, shortAddress } from '../../modules/messaging';
 import { resolveEnsName } from '../../lib/ens';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { getCachedRows } from '../../modules/messaging';
+
+const NO_MATCH_NODE: WidgetRoot = {
+  type: 'Basic',
+  children: [
+    emptyState({ title: 'No matches. Paste a full address or a name.eth to start a chat.' }),
+  ],
+};
+
+const PEOPLE_HEADER_NODE: WidgetRoot = {
+  type: 'Basic',
+  children: [sectionHeader({ title: 'People' })],
+};
 
 function looksLikeEns(s: string): boolean {
   return /^[a-z0-9-]+(\.[a-z0-9-]+)*\.eth$/i.test(s.trim());
@@ -33,7 +47,7 @@ function getExistingPeers(): { address: string; convId: string }[] {
 interface Colors { fg: string; head: string; sub: string; border: string }
 
 export function HomeContactResults(
-  { query, c, noChannels }: { query: string; c: Colors; noChannels: boolean },
+  { query, noChannels }: { query: string; c: Colors; noChannels: boolean },
 ): React.ReactElement | null {
   const q = query.trim();
   const [resolved, setResolved] = useState<{ address: string; source: 'address' | 'ens' } | null>(null);
@@ -87,18 +101,14 @@ export function HomeContactResults(
   if (!q) return null;
   if (!showResolved && filtered.length === 0) {
     if (!noChannels) return null;
-    return (
-      <Text size="xs" color={c.sub} style={{ textAlign: 'center', paddingVertical: 24, paddingHorizontal: 24 }}>
-        No matches. Paste a full address or a {'name.eth'} to start a chat.
-      </Text>
-    );
+    return <ChatKitRenderer node={NO_MATCH_NODE} />;
   }
 
   return (
     <Box>
-      <Text size="xs" color={c.sub} style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 6 }}>
-        PEOPLE
-      </Text>
+      <Box padding={{ x: 16, top: 16, bottom: 6 }}>
+        <ChatKitRenderer node={PEOPLE_HEADER_NODE} />
+      </Box>
       {showResolved ? (
         <ChannelRow
           title={getPeerName(resolved.address) ?? (resolved.source === 'ens' ? q : shortAddress(resolved.address))}
