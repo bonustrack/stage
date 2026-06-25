@@ -39,6 +39,7 @@ export * from './accounts/suggestionRow';
 export * from './profile/profileHeader';
 export * from './profile/infoRow';
 export * from './profile/profileActionsRow';
+export * from './profile/profileAddressRow';
 export * from './activity/txRow';
 export * from './proposals/banner';
 export * from './proposals/proposalCard';

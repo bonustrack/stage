@@ -1,0 +1,7 @@
+{
+  "type": "Pressable",
+  "onClickAction": { "type": "{{pressType}}", "payload": { "address": "{{address}}" } },
+  "children": [
+    { "type": "Text", "value": "{{label}}", "size": "md", "color": "{{color}}" }
+  ]
+}

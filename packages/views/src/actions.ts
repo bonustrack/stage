@@ -40,6 +40,8 @@ export const PROFILE_INFO_PRESS = 'profile.info.press';
 
 export const PROFILE_ROUND_PRESS = 'profile.round.press';
 
+export const PROFILE_ADDRESS_COPY = 'profile.address.copy';
+
 export const REACTION_PRESS = 'chat.reaction.press';
 
 export const REACTION_EMOJI_PRESS = 'chat.reaction.emojiPress';
