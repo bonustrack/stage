@@ -46,6 +46,7 @@
     "./identity/peerProfiles": "./src/identity/peerProfiles.ts",
     "./wallet/format": "./src/wallet/format.ts",
     "./wallet/assets": "./src/wallet/assets.ts",
+    "./wallet/tokens": "./src/wallet/tokens.ts",
     "./wallet/balances": "./src/wallet/balances.ts",
     "./wallet/client": "./src/wallet/client.ts",
     "./wallet/send": "./src/wallet/send.ts",
