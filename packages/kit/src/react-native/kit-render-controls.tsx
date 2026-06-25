@@ -9,6 +9,7 @@ import type {
   SelectNode,
   TextareaNode,
 } from '../kit';
+import type { DimensionValue, TextStyle, ViewStyle } from 'react-native';
 import {
   resolveButtonStyle,
   resolveButtonVariant,
@@ -49,6 +50,22 @@ function iconNode(
   return <Icon name={resolved} size={18} color={color} dark={ctx.dark} />;
 }
 
+function buttonOverrideStyle(node: ButtonNode): ViewStyle | undefined {
+  if (node.paddingX === undefined && node.paddingY === undefined) return undefined;
+  const out: ViewStyle = {};
+  if (node.paddingX !== undefined) out.paddingHorizontal = node.paddingX as DimensionValue;
+  if (node.paddingY !== undefined) out.paddingVertical = node.paddingY as DimensionValue;
+  return out;
+}
+
+function buttonOverrideTextStyle(node: ButtonNode): TextStyle | undefined {
+  if (node.fontFamily === undefined && node.fontSize === undefined) return undefined;
+  const out: TextStyle = {};
+  if (node.fontFamily !== undefined) out.fontFamily = node.fontFamily;
+  if (node.fontSize !== undefined) out.fontSize = node.fontSize;
+  return out;
+}
+
 export function renderButton(node: ButtonNode, ctx: RenderCtx): ReactNode {
   const onPress = (): void => {
     if (node.submit === true && ctx.form !== undefined) {
@@ -66,6 +83,8 @@ export function renderButton(node: ButtonNode, ctx: RenderCtx): ReactNode {
     node.foreground === undefined
       ? undefined
       : resolveOptionalColor(node.foreground, ctx.scheme);
+  const overrideStyle = buttonOverrideStyle(node);
+  const overrideTextStyle = buttonOverrideTextStyle(node);
   return (
     <Button
       label={node.label}
@@ -81,6 +100,8 @@ export function renderButton(node: ButtonNode, ctx: RenderCtx): ReactNode {
       block={node.block}
       disabled={node.disabled}
       dark={ctx.dark}
+      style={overrideStyle}
+      textStyle={overrideTextStyle}
       iconStart={iconNode(node.iconStart, ctx, iconColor)}
       iconEnd={iconNode(node.iconEnd, ctx, iconColor)}
       onPress={onPress}

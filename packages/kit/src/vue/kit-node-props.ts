@@ -180,6 +180,10 @@ export function buttonProps(
     uniform: node.uniform,
     block: node.block,
     disabled: node.disabled,
+    paddingX: node.paddingX,
+    paddingY: node.paddingY,
+    fontFamily: node.fontFamily,
+    fontSize: node.fontSize,
   };
 }
 

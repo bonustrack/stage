@@ -285,6 +285,10 @@ export interface ButtonNode extends NodeBase {
   uniform?: boolean;
   block?: boolean;
   disabled?: boolean;
+  paddingX?: Dimension;
+  paddingY?: Dimension;
+  fontFamily?: string;
+  fontSize?: number;
 }
 
 export interface ListViewItemNode extends NodeBase {
