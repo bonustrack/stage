@@ -57,6 +57,7 @@ export interface TextFieldNode extends NodeBase {
   onChangeAction: ActionConfig;
   placeholder?: string;
   multiline?: boolean;
+  rows?: number;
   autoFocus?: boolean;
   autoGrow?: boolean;
   disabled?: boolean;
@@ -75,8 +76,10 @@ export interface TextFieldNode extends NodeBase {
   lineHeight?: number;
   fontSize?: number;
   fontWeight?: FontWeight;
+  fontFamily?: string;
   color?: Color;
   placeholderColor?: Color;
+  noFocusBorder?: boolean;
   maxLength?: number;
   maxHeight?: Dimension;
   minHeight?: Dimension;
@@ -84,6 +87,7 @@ export interface TextFieldNode extends NodeBase {
   onSubmitAction?: ActionConfig;
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   autoCorrect?: boolean;
+  inputMode?: 'text' | 'decimal' | 'numeric' | 'tel' | 'search' | 'email' | 'url' | 'none';
 }
 
 export interface ColorPickerNode extends NodeBase {

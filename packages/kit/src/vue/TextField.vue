@@ -10,6 +10,7 @@ const props = withDefaults(
     value: string;
     placeholder?: string;
     multiline?: boolean;
+    rows?: number;
     autoFocus?: boolean;
     autoGrow?: boolean;
     disabled?: boolean;
@@ -29,12 +30,14 @@ const props = withDefaults(
     fontFamily?: string;
     color?: string;
     placeholderColor?: string;
+    noFocusBorder?: boolean;
     maxLength?: number;
     maxHeight?: number | string;
     minHeight?: number | string;
     enterKeyHint?: 'done' | 'go' | 'next' | 'search' | 'send';
     autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
     autoCorrect?: boolean;
+    inputMode?: 'text' | 'decimal' | 'numeric' | 'tel' | 'search' | 'email' | 'url' | 'none';
     dark?: boolean;
   }>(),
   {},
@@ -114,6 +117,7 @@ const spec = computed(() => {
     fontSize: props.fontSize,
     fontFamily: props.fontFamily,
     color: props.color,
+    noFocusBorder: props.noFocusBorder,
   });
 });
 
@@ -202,6 +206,7 @@ function onKeyup(event: KeyboardEvent): void {
     v-if="multiline"
     ref="inputEl"
     :name="name"
+    :rows="rows"
     :value="value"
     :placeholder="placeholder"
     :disabled="disabled"
@@ -211,6 +216,7 @@ function onKeyup(event: KeyboardEvent): void {
     :autocapitalize="autoCapitalize"
     :autocorrect="autocorrectAttr"
     :spellcheck="spellcheckAttr"
+    :inputmode="inputMode"
     :style="{ ...style, '--kit-placeholder': placeholderColor }"
     @input="onInput"
     @select="onSelect"
@@ -232,6 +238,7 @@ function onKeyup(event: KeyboardEvent): void {
     :autocapitalize="autoCapitalize"
     :autocorrect="autocorrectAttr"
     :spellcheck="spellcheckAttr"
+    :inputmode="inputMode"
     :style="{ ...style, '--kit-placeholder': placeholderColor }"
     @input="onInput"
     @select="onSelect"

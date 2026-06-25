@@ -97,6 +97,7 @@ export function renderTextField(node: TextFieldNode, ctx: RenderCtx): ReactNode 
       value={node.value}
       placeholder={node.placeholder}
       multiline={node.multiline}
+      rows={node.rows}
       autoFocus={node.autoFocus}
       autoGrow={node.autoGrow}
       disabled={node.disabled}
@@ -113,15 +114,17 @@ export function renderTextField(node: TextFieldNode, ctx: RenderCtx): ReactNode 
       paddingBottom={node.paddingBottom}
       lineHeight={node.lineHeight}
       fontSize={node.fontSize}
-      fontFamily={resolveWeight(node.fontWeight)}
+      fontFamily={node.fontFamily ?? resolveWeight(node.fontWeight)}
       color={resolveOptionalColor(node.color, ctx.scheme)}
       placeholderColor={resolveOptionalColor(node.placeholderColor, ctx.scheme)}
+      noFocusBorder={node.noFocusBorder}
       maxLength={node.maxLength}
       maxHeight={node.maxHeight}
       minHeight={node.minHeight}
       returnKeyType={node.returnKeyType}
       autoCapitalize={node.autoCapitalize}
       autoCorrect={node.autoCorrect}
+      inputMode={node.inputMode}
       dark={ctx.dark}
       onChangeText={(text) => {
         ctx.form?.set(node.name, text);
@@ -175,6 +178,11 @@ export function renderAvatarStack(node: AvatarStackNode, ctx: RenderCtx): ReactN
       size={node.size}
       max={node.max}
       overlap={node.overlap}
+      ring={resolveOptionalColor(node.ring, ctx.scheme)}
+      fallbackBackground={resolveOptionalColor(node.fallbackBackground, ctx.scheme)}
+      moreBackground={resolveOptionalColor(node.moreBackground, ctx.scheme)}
+      moreColor={resolveOptionalColor(node.moreColor, ctx.scheme)}
+      moreFontSize={node.moreFontSize}
       dark={ctx.dark}
     />
   );

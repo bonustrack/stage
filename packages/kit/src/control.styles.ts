@@ -92,6 +92,7 @@ export interface TextFieldStyleInput {
   fontSize?: number;
   fontFamily?: string;
   color?: string;
+  noFocusBorder?: boolean;
 }
 
 export interface ResolvedTextFieldSpec {
@@ -121,7 +122,7 @@ function fieldBorder(
 ): { width: number; color: string } {
   const plain = input.variant === 'plain';
   const width = plain && input.borderColor === undefined ? 0 : 1;
-  const color = input.focused
+  const color = input.focused && input.noFocusBorder !== true
     ? c.focusBorder
     : (input.borderColor ?? c.border);
   return { width, color };

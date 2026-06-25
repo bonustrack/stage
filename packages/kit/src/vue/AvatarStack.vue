@@ -9,6 +9,11 @@ const props = withDefaults(
     size?: number;
     max?: number;
     overlap?: number;
+    ring?: string;
+    fallbackBackground?: string;
+    moreBackground?: string;
+    moreColor?: string;
+    moreFontSize?: number;
     dark?: boolean;
   }>(),
   { size: 32, max: 4, overlap: 10 },
@@ -19,7 +24,7 @@ const isDark = computed(() => props.dark ?? scheme === 'dark');
 
 const shown = computed(() => props.items.slice(0, props.max));
 const extra = computed(() => props.items.length - shown.value.length);
-const ring = computed(() => (isDark.value ? '#000000' : '#ffffff'));
+const ring = computed(() => props.ring ?? (isDark.value ? '#000000' : '#ffffff'));
 
 function cellStyle(index: number): Record<string, string> {
   return {
@@ -32,7 +37,7 @@ function cellStyle(index: number): Record<string, string> {
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    backgroundColor: isDark.value ? '#3a3c40' : '#d8d8da',
+    backgroundColor: props.fallbackBackground ?? (isDark.value ? '#3a3c40' : '#d8d8da'),
     color: isDark.value ? '#ffffff' : '#000000',
     fontFamily: 'Calibre-Semibold',
     fontSize: `${props.size * 0.4}px`,
@@ -49,10 +54,10 @@ const moreStyle = computed<Record<string, string>>(() => ({
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  backgroundColor: isDark.value ? '#1c1c1e' : '#f0f0f2',
-  color: isDark.value ? '#ffffff' : '#000000',
+  backgroundColor: props.moreBackground ?? (isDark.value ? '#1c1c1e' : '#f0f0f2'),
+  color: props.moreColor ?? (isDark.value ? '#ffffff' : '#000000'),
   fontFamily: 'Calibre-Semibold',
-  fontSize: `${props.size * 0.34}px`,
+  fontSize: `${props.moreFontSize ?? props.size * 0.34}px`,
   boxSizing: 'border-box',
 }));
 </script>

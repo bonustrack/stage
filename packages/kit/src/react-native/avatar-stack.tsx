@@ -12,14 +12,104 @@ export interface AvatarStackProps {
   size?: number;
   max?: number;
   overlap?: number;
+  ring?: string;
+  fallbackBackground?: string;
+  moreBackground?: string;
+  moreColor?: string;
+  moreFontSize?: number;
   dark?: boolean;
+}
+
+function FallbackCell(input: {
+  label: string;
+  size: number;
+  background: string;
+  color: string;
+}): React.ReactElement {
+  return (
+    <View
+      style={{
+        width: input.size,
+        height: input.size,
+        borderRadius: input.size / 2,
+        backgroundColor: input.background,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <RNText
+        style={{
+          color: input.color,
+          fontSize: input.size * 0.4,
+          fontFamily: 'Calibre-Semibold',
+        }}
+      >
+        {input.label.slice(0, 2)}
+      </RNText>
+    </View>
+  );
+}
+
+function MoreBadge(input: {
+  extra: number;
+  size: number;
+  overlap: number;
+  ring: string;
+  background: string;
+  color: string;
+  fontSize: number;
+}): React.ReactElement {
+  return (
+    <View
+      style={{
+        marginLeft: -input.overlap,
+        width: input.size,
+        height: input.size,
+        borderRadius: input.size / 2,
+        borderWidth: 2,
+        borderColor: input.ring,
+        backgroundColor: input.background,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <RNText
+        style={{
+          color: input.color,
+          fontSize: input.fontSize,
+          fontFamily: 'Calibre-Semibold',
+        }}
+      >
+        {`+${input.extra}`}
+      </RNText>
+    </View>
+  );
+}
+
+interface StackColors {
+  ring: string;
+  fallbackBg: string;
+  fallbackFg: string;
+  moreBg: string;
+  moreFg: string;
+}
+
+function stackColors(props: AvatarStackProps, dark: boolean): StackColors {
+  return {
+    ring: props.ring ?? (dark ? '#000000' : '#ffffff'),
+    fallbackBg: props.fallbackBackground ?? (dark ? '#3a3c40' : '#d8d8da'),
+    fallbackFg: dark ? '#ffffff' : '#000000',
+    moreBg: props.moreBackground ?? (dark ? '#1c1c1e' : '#f0f0f2'),
+    moreFg: props.moreColor ?? (dark ? '#ffffff' : '#000000'),
+  };
 }
 
 export function AvatarStack(props: AvatarStackProps): React.ReactElement {
   const { items, size = 32, max = 4, overlap = 10, dark = false } = props;
   const shown = items.slice(0, max);
   const extra = items.length - shown.length;
-  const ring = dark ? '#000000' : '#ffffff';
+  const { ring, fallbackBg, fallbackFg, moreBg, moreFg } = stackColors(props, dark);
+  const moreSize = props.moreFontSize ?? size * 0.34;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
       {shown.map((item, index) => (
@@ -35,53 +125,25 @@ export function AvatarStack(props: AvatarStackProps): React.ReactElement {
           {item.src ? (
             <AvatarView src={item.src} size={size} />
           ) : (
-            <View
-              style={{
-                width: size,
-                height: size,
-                borderRadius: size / 2,
-                backgroundColor: dark ? '#3a3c40' : '#d8d8da',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <RNText
-                style={{
-                  color: dark ? '#ffffff' : '#000000',
-                  fontSize: size * 0.4,
-                  fontFamily: 'Calibre-Semibold',
-                }}
-              >
-                {(item.fallback ?? '?').slice(0, 2)}
-              </RNText>
-            </View>
+            <FallbackCell
+              label={item.fallback ?? '?'}
+              size={size}
+              background={fallbackBg}
+              color={fallbackFg}
+            />
           )}
         </View>
       ))}
       {extra > 0 ? (
-        <View
-          style={{
-            marginLeft: -overlap,
-            width: size,
-            height: size,
-            borderRadius: size / 2,
-            borderWidth: 2,
-            borderColor: ring,
-            backgroundColor: dark ? '#1c1c1e' : '#f0f0f2',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <RNText
-            style={{
-              color: dark ? '#ffffff' : '#000000',
-              fontSize: size * 0.34,
-              fontFamily: 'Calibre-Semibold',
-            }}
-          >
-            {`+${extra}`}
-          </RNText>
-        </View>
+        <MoreBadge
+          extra={extra}
+          size={size}
+          overlap={overlap}
+          ring={ring}
+          background={moreBg}
+          color={moreFg}
+          fontSize={moreSize}
+        />
       ) : null}
     </View>
   );

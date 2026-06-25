@@ -9,6 +9,7 @@ import {
 import {
   controlColors,
   textFieldStyle,
+  type ResolvedTextFieldStyle,
   type TextFieldVariant,
 } from '../control.styles';
 import { BLOCK_RADIUS_DEFAULT } from '../tokens';
@@ -18,6 +19,7 @@ export interface TextFieldProps {
   value: string;
   placeholder?: string;
   multiline?: boolean;
+  rows?: number;
   autoFocus?: boolean;
   autoGrow?: boolean;
   disabled?: boolean;
@@ -40,12 +42,14 @@ export interface TextFieldProps {
   fontFamily?: string;
   color?: string;
   placeholderColor?: string;
+  noFocusBorder?: boolean;
   maxLength?: number;
   maxHeight?: number | string;
   minHeight?: number | string;
   returnKeyType?: ReturnKeyTypeOptions;
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   autoCorrect?: boolean;
+  inputMode?: 'text' | 'decimal' | 'numeric' | 'tel' | 'search' | 'email' | 'url' | 'none';
   dark?: boolean;
 }
 
@@ -91,13 +95,38 @@ function overrideStyle(input: {
   };
 }
 
+function resolveStyled(
+  props: TextFieldProps,
+  focused: boolean,
+): ResolvedTextFieldStyle {
+  const baseColors = controlColors(
+    props.variant === 'plain' ? 'soft' : 'outline',
+    props.dark ?? false,
+  );
+  return textFieldStyle({
+    variant: props.variant,
+    focused,
+    defaultRadius: BLOCK_RADIUS_DEFAULT,
+    baseColors,
+    background: props.background,
+    borderColor: props.borderColor,
+    radius: props.radius,
+    paddingX: props.paddingX,
+    paddingY: props.paddingY,
+    fontSize: props.fontSize,
+    fontFamily: props.fontFamily,
+    color: props.color,
+    noFocusBorder: props.noFocusBorder,
+  });
+}
+
 export function TextField(props: TextFieldProps): React.ReactElement {
   const {
     value,
     placeholder,
     multiline,
+    rows,
     autoFocus,
-    autoGrow,
     disabled,
     onChangeText,
     selection,
@@ -105,52 +134,30 @@ export function TextField(props: TextFieldProps): React.ReactElement {
     onSubmit,
     focusNonce,
     blurNonce,
-    variant,
-    background,
-    borderColor,
-    radius,
-    paddingX,
-    paddingY,
-    paddingTop,
-    paddingBottom,
-    lineHeight,
-    fontSize,
-    fontFamily,
-    color,
     placeholderColor,
     maxLength,
-    maxHeight,
-    minHeight,
     returnKeyType,
     autoCapitalize,
     autoCorrect,
-    dark = false,
+    inputMode,
   } = props;
   const [focused, setFocused] = useState(false);
   const ref = useRef<TextInput>(null);
   useNonce(focusNonce, () => ref.current?.focus());
   useNonce(blurNonce, () => ref.current?.blur());
 
-  const baseColors = controlColors(
-    variant === 'plain' ? 'soft' : 'outline',
-    dark,
-  );
-  const styled = textFieldStyle({
-    variant,
-    focused,
-    defaultRadius: BLOCK_RADIUS_DEFAULT,
-    baseColors,
-    background,
-    borderColor,
-    radius,
-    paddingX,
-    paddingY,
-    fontSize,
-    fontFamily,
-    color,
+  const styled = resolveStyled(props, focused);
+  const extra = sizeStyle({
+    multiline,
+    autoGrow: props.autoGrow,
+    maxHeight: props.maxHeight,
+    minHeight: props.minHeight,
   });
-  const extra = sizeStyle({ multiline, autoGrow, maxHeight, minHeight });
-  const overrides = overrideStyle({ paddingTop, paddingBottom, lineHeight });
+  const overrides = overrideStyle({
+    paddingTop: props.paddingTop,
+    paddingBottom: props.paddingBottom,
+    lineHeight: props.lineHeight,
+  });
 
   return (
     <TextInput
@@ -161,10 +168,12 @@ export function TextField(props: TextFieldProps): React.ReactElement {
       editable={!disabled}
       autoFocus={autoFocus}
       multiline={multiline}
+      numberOfLines={rows}
       maxLength={maxLength}
       returnKeyType={returnKeyType}
       autoCapitalize={autoCapitalize}
       autoCorrect={autoCorrect}
+      inputMode={inputMode}
       onChangeText={onChangeText}
       onSubmitEditing={onSubmit}
       selection={selection}

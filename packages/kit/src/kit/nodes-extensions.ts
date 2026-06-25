@@ -18,6 +18,11 @@ export interface AvatarStackNode extends NodeBase {
   size?: number;
   max?: number;
   overlap?: number;
+  ring?: Color;
+  fallbackBackground?: Color;
+  moreBackground?: Color;
+  moreColor?: Color;
+  moreFontSize?: number;
 }
 
 export interface QRCodeNode extends NodeBase {
