@@ -51,3 +51,7 @@ export function hexToHsv(hex: string): { h: number; s: number; v: number } {
   const s = max === 0 ? 0 : d / max;
   return { h: rgbToHue(r, g, b, max, d), s, v: max };
 }
+
+const HEX_RE = /^#([0-9a-fA-F]{6})$/;
+
+export function isHexColor(v: string): boolean { return HEX_RE.test(v.trim()); }

@@ -90,8 +90,13 @@ export interface ColorPickerNode extends NodeBase {
   type: 'ColorPicker';
   name: string;
   value: string;
+  mode?: 'swatches' | 'hsv';
   onChangeAction?: ActionConfig;
   swatches?: string[];
+  headColor?: Color;
+  subColor?: Color;
+  borderColor?: Color;
+  rowBg?: Color;
 }
 
 export interface InputNode extends NodeBase {

@@ -431,11 +431,13 @@ Styling (all optional; defaults reproduce the current outline field exactly):
 RN renders a `TextInput` (selection via `onSelectionChange`/`selection` props); Vue renders an `<input>` or `<textarea>` (when `multiline`) reading `selectionStart`/`selectionEnd` on `input`/`select`/`keyup`/`click`.
 
 #### ColorPicker — `"type": "ColorPicker"`
-Swatch-based color picker.
+Color picker with two modes.
 - `name`: string — **required**
 - `value`: string — **required** (current hex)
+- `mode`: `"swatches" | "hsv"` — default `"swatches"`. `"swatches"` renders the tap-to-pick swatch grid; `"hsv"` renders the full continuous HSV picker (live-preview chip, draggable Hue/Saturation/Value gradient tracks, and a hex `Input`). RN hosts the gesture tracks via `react-native-gesture-handler` (`Gesture.Pan` + `runOnJS`); Vue hosts them via pointer-capture drag on gradient `div`s.
 - `onChangeAction`: `ActionConfig` — dispatched with `{ [name]: hex }`
-- `swatches`: array of hex strings (falls back to a default palette)
+- `swatches`: array of hex strings (swatches mode only; falls back to a default palette)
+- `headColor` · `subColor` · `borderColor` · `rowBg`: `Color` — optional palette overrides for HSV mode (label/value text, secondary text, track/preview border, hex-input background); each falls back to the kit theme palette when unset.
 
 #### Stack — `"type": "Stack"`
 Z-axis overlay container: children are painted in document order, so the **last child is on top**. Enables poll % fill-bars behind text, avatar overlap, and badge-on-avatar overlays.

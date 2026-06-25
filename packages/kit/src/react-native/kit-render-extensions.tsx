@@ -148,7 +148,12 @@ export function renderColorPicker(node: ColorPickerNode, ctx: RenderCtx): ReactN
   return (
     <ColorPicker
       value={node.value}
+      mode={node.mode}
       swatches={node.swatches}
+      headColor={resolveOptionalColor(node.headColor, ctx.scheme)}
+      subColor={resolveOptionalColor(node.subColor, ctx.scheme)}
+      borderColor={resolveOptionalColor(node.borderColor, ctx.scheme)}
+      rowBg={resolveOptionalColor(node.rowBg, ctx.scheme)}
       dark={ctx.dark}
       onChange={(value) => {
         ctx.form?.set(node.name, value);

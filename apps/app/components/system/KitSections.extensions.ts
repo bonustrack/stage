@@ -187,6 +187,14 @@ export const EXTENSION_WIDGET: WidgetRoot = {
     },
     { type: 'Spacer', minSize: 12 },
     {
+      type: 'ColorPicker',
+      name: 'demoColorHsv',
+      mode: 'hsv',
+      value: '#2f6df6',
+      onChangeAction: { type: 'demo_color', handler: 'client' },
+    },
+    { type: 'Spacer', minSize: 12 },
+    {
       type: 'Button',
       label: 'Custom color button',
       color: '#8b5cf6',

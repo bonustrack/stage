@@ -141,7 +141,12 @@ function onSwipe(direction: SwipeDirection): void {
   <ColorPicker
     v-else-if="node.type === 'ColorPicker'"
     :value="colorNode.value"
+    :mode="colorNode.mode"
     :swatches="colorNode.swatches"
+    :head-color="resolveOptionalColor(colorNode.headColor, scheme)"
+    :sub-color="resolveOptionalColor(colorNode.subColor, scheme)"
+    :border-color="resolveOptionalColor(colorNode.borderColor, scheme)"
+    :row-bg="resolveOptionalColor(colorNode.rowBg, scheme)"
     @update:value="emitChange(colorNode.name, $event, colorNode.onChangeAction)"
   />
 
