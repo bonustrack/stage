@@ -1,0 +1,44 @@
+{
+  "type": "ListViewItem",
+  "onClickAction": { "type": "{{pressType}}", "payload": "{{payload}}" },
+  "align": "center",
+  "gap": 10,
+  "children": [
+    {
+      "type": "Row",
+      "align": "center",
+      "gap": 10,
+      "flex": 1,
+      "children": [
+        {
+          "$if": "icon",
+          "type": "Icon",
+          "name": "{{icon}}",
+          "color": "{{iconColor}}",
+          "size": "md"
+        },
+        {
+          "type": "Col",
+          "flex": 1,
+          "children": [
+            {
+              "type": "Text",
+              "value": "{{label}}",
+              "weight": "semibold",
+              "size": "lg",
+              "color": "{{labelColor}}",
+              "truncate": true
+            }
+          ]
+        },
+        {
+          "$if": "showChevron",
+          "type": "Icon",
+          "name": "chevron-right",
+          "color": "secondary",
+          "size": "sm"
+        }
+      ]
+    }
+  ]
+}

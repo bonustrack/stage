@@ -59,3 +59,9 @@ export const COMPOSER_SEND = 'chat.composer.send';
 export const COMPOSER_ATTACH = 'chat.composer.attach';
 
 export const EMPTY_STATE_PRESS = 'chat.emptyState.press';
+
+export const BANNER_PRESS = 'banner.press';
+
+export const ONBOARDING_ACTION_PRESS = 'onboarding.action.press';
+
+export const LABEL_REMOVE = 'group.label.remove';

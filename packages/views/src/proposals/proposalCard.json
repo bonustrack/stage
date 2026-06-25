@@ -1,0 +1,55 @@
+{
+  "type": "Col",
+  "gap": 0,
+  "children": [
+    {
+      "type": "Caption",
+      "value": "{{eyebrow}}",
+      "color": "secondary",
+      "weight": "semibold"
+    },
+    {
+      "type": "Title",
+      "value": "{{title}}",
+      "color": "link",
+      "truncate": true
+    },
+    {
+      "$if": "question",
+      "type": "Col",
+      "padding": { "top": 6 },
+      "children": [
+        { "type": "Title", "value": "{{question}}" }
+      ]
+    },
+    {
+      "$if": "hasAuthor",
+      "type": "Row",
+      "gap": 6,
+      "align": "center",
+      "padding": { "top": 8 },
+      "children": [
+        {
+          "$if": "authorAvatarUri",
+          "type": "Image",
+          "src": "{{authorAvatarUri}}",
+          "size": 22,
+          "radius": "full"
+        },
+        {
+          "type": "Text",
+          "value": "{{authorName}}",
+          "weight": "medium",
+          "size": "sm",
+          "truncate": true
+        },
+        {
+          "$if": "postedAt",
+          "type": "Caption",
+          "value": "{{postedAt}}",
+          "color": "secondary"
+        }
+      ]
+    }
+  ]
+}

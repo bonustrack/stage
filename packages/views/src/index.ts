@@ -25,4 +25,8 @@ export * from './accounts/contactRow';
 export * from './profile/profileHeader';
 export * from './profile/infoRow';
 export * from './activity/txRow';
+export * from './proposals/banner';
+export * from './proposals/proposalCard';
+export * from './onboarding/onboardingStep';
+export * from './group/labelRow';
 export * from './settings/index';
