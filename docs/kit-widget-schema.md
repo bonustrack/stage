@@ -754,3 +754,20 @@ On submit, the server receives `action.type == "book_meeting"` with
 - **Constrained color enums** differ: `Badge.color` and `Button.color` are fixed semantic enums, while generic `color`/`background` fields are free strings or ThemeColor. Map the semantic enums to your design tokens.
 - **Inputs only meaningfully submit inside a `Form` or `asForm` Card.** A bare input outside a form has no submission path; its value reaches the server only when an enclosing form/card submits, keyed by `name`.
 - **Actions**: respect `handler` (`server` vs `client`) and `loadingBehavior`. For our renderer, `onClickAction`/`onChangeAction`/`onSubmitAction` should be surfaced to our action-dispatch layer carrying `{type, payload}` (plus merged form values for submits).
+
+---
+
+## 9. Architecture boundary — JSON coverage & sanctioned shells
+
+This section records the rendering boundary established on branch `refactor/chatkit-json-renderer` (PR #636).
+
+**Every visual component and leaf renders from Kit JSON.** Across both clients, visual trees are authored as the OpenAI-compatible widget JSON documented above, loaded by `buildView` from `.json` view files in `@stage-labs/views` (53 JSON views, paired 1:1 with their `.ts` loaders), and rendered by a single `KitRenderer` (parallel React Native + Vue implementations). 89 components across `apps/app` and `apps/ui` render their visual content through `KitRenderer`. Interactivity flows through the shared `WidgetActionRegistry`, so the JSON `{type, payload}` actions resolve to native handlers on both platforms.
+
+**The remaining non-JSON code is a small set of sanctioned shells**, not visual leaves. Per the repo `CLAUDE.md` native-exception convention (the kit-only rules explicitly sanction `<component :is="…">` with a `kit-exception` comment in Vue, and kit RN primitives + a thin layout layer in React Native), the following are accepted as-is to preserve exact UI/UX. A shell hosts or drives JSON-rendered leaves; it is not itself a visual leaf:
+
+- **Root / layout / provider shells** — `apps/app/app/_layout.tsx` and the expo-router/vue-router route+layout files. Reason: they wire providers (theme, query, gesture, keyboard) and the navigation stack; they own no pixels, they mount the trees that do.
+- **Modal / overlay shells** — e.g. `AppModal.tsx`, `MenuSheet.tsx`, `ChannelMenu.tsx`, `ImageViewer.tsx`, the wallet `TokenSelector`/sheet bodies, and the Vue `*ComposeSheet.vue` (`PollComposeSheet`, `PaymentComposeSheet`, `SignRequestComposeSheet`). Reason: fixed/portal overlay positioning, backdrop, and dismiss gestures have no Kit JSON node (Kit has no free overlay/portal primitive); the sheet *contents* are still JSON-rendered leaves.
+- **Continuous-animation drivers** — `Spinner.tsx`, `SwipeTabs.tsx`, `PullToRefresh.tsx`, `MessengerBubble.tsx` (highlight background), `WalletScreen.refreshButton.tsx`, and the conversation screen's reanimated scroll. Reason: per-frame `Animated`/reanimated shared values (voice waveform, highlight fade, pull/refresh, swipe) cannot be expressed as a static JSON tree; the driver animates around JSON leaves.
+- **Native form-control exceptions (Vue)** — the 12 `kit-exception` sites in `apps/ui`: bare `<input>`/`<textarea>` where Kit's boxed Input/Textarea would alter styling, the overlapping absolute avatar stack in `ConversationHeader`, inline-edit controls in `InlineEditableText`, and the ref-measured scroll viewport in `XmtpConversation`. Reason: each is a native affordance Kit JSON cannot express losslessly; each carries an inline `<!-- kit-exception: … -->` justification.
+
+**Node coverage.** The renderer implements 44 node types: 37 base nodes (Section 4, including the newer `VoiceRecorder`, `ColorPicker` in hsv mode, `Dialog`, and `Scroll`), 6 Stage-extension nodes (Section 4b: `AudioPlayer`, `AvatarStack`, `FilePicker`, `QRCode`, `Spinner`, `VideoPlayer`), and the `Chart` node (`chart-node.ts`). Unknown `type` values are rendered defensively (Section 8), so forward-compatible additions never crash a client.
