@@ -42,6 +42,7 @@
     "./image/stripMetadata": "./src/image/stripMetadata.ts",
     "./api": "./src/api/index.ts",
     "./api/ens": "./src/api/ens.ts",
+    "./api/search": "./src/api/search.ts",
     "./api/etherscan": "./src/api/etherscan.ts",
     "./api/opensea": "./src/api/opensea.ts",
     "./api/coingecko": "./src/api/coingecko.ts",
