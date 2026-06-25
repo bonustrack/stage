@@ -3,6 +3,9 @@
   "onClickAction": { "type": "{{memberPressType}}", "payload": { "memberId": "{{memberId}}" } },
   "align": "center",
   "gap": 12,
+  "padding": { "x": 14, "y": 14 },
+  "pressedBackground": "{{borderColor}}",
+  "border": { "bottom": { "size": 1, "color": "{{borderColor}}" } },
   "children": [
     {
       "type": "Row",
@@ -10,7 +13,7 @@
       "gap": 12,
       "flex": 1,
       "children": [
-        { "type": "Image", "src": "{{avatarUri}}", "size": 40, "radius": "full" },
+        { "type": "Image", "src": "{{avatarUri}}", "size": 40, "radius": "full", "background": "{{borderColor}}" },
         {
           "type": "Col",
           "gap": 2,

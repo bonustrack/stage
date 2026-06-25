@@ -46,6 +46,7 @@ export function memberRow(params: MemberRowParams): ListViewItemNode {
     name: params.name,
     address: params.address,
     badge: memberBadge(params),
+    borderColor: params.borderColor,
     dangerColor: params.dangerColor,
     removePressedBg: params.removePressedBg,
     memberPressType: MEMBER_PRESS,
