@@ -16,6 +16,7 @@ export * from './xmtp/codecs';
 export * from './xmtp/inboxCache';
 export * from './xmtp/commonChannels';
 export * from './xmtp/mentions';
+export * from './xmtp/labels';
 export * from './embed/detect';
 export * from './text/markdown';
 export * from './stamp/resolve';

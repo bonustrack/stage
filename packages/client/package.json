@@ -35,6 +35,7 @@
     "./xmtp/archived": "./src/xmtp/archived.ts",
     "./routing/deepLinks": "./src/routing/deepLinks.ts",
     "./xmtp/mentions": "./src/xmtp/mentions.ts",
+    "./xmtp/labels": "./src/xmtp/labels.ts",
     "./embed/detect": "./src/embed/detect.ts",
     "./stamp/resolve": "./src/stamp/resolve.ts",
     "./x402": "./src/x402/challenge.ts",
