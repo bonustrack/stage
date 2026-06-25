@@ -243,11 +243,7 @@ const reactionsRegistry: WidgetActionRegistry = {
            MentionBody single Text run). Body text uses fg; each mention is an
            inline semibold link in the explicit link color (#2f6feb / #7aa2ff),
            distinct from the body fg. -->
-      <!-- kit-exception: a normal block (not a kit Col, which forces
-           display:flex/column and would stack each segment vertically). Inline
-           flow is required so the mention link + surrounding text read as one
-           paragraph, matching mobile's MentionBody single Text run. -->
-      <component :is="'div'" v-else-if="props.entry.text && showBodyText"
+      <Paragraph v-else-if="props.entry.text && showBodyText"
         class="block break-words font-sans text-[19px] leading-[23px] select-text
           [&_p]:m-0 [&_p]:inline [&_a]:underline [&_a]:break-words
           [&_code]:font-mono [&_code]:text-[15px] [&_pre]:whitespace-pre-wrap
@@ -262,7 +258,7 @@ const reactionsRegistry: WidgetActionRegistry = {
           >@{{ mentionLabel(seg.address) }}</Pressable>
           <span v-else class="inline" v-html="renderMarkdown(seg.text)" />
         </template>
-      </component>
+      </Paragraph>
       <Col v-if="youtubeId" class="mt-1.5">
         <YouTubeEmbed :video-id="youtubeId" />
       </Col>
