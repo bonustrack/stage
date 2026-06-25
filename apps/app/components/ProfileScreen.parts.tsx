@@ -1,12 +1,13 @@
 
 import { useEffect, useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Text } from '@stage-labs/kit/react-native/text';
-import { Box, Row } from './layout';
+import { Row } from './layout';
 import { usePalette, type Palette } from '../lib/theme';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from '../modules/messaging';
-import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
-import { Button } from '@stage-labs/kit/react-native/button';
+import { Icon } from '@stage-labs/kit/react-native/icon';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
+import { profileActionsRow, PROFILE_ROUND_PRESS } from '@stage-labs/views';
 import { TopnavIdentity } from './TopnavIdentity';
 
 export type ProfileColors = Palette;
@@ -57,30 +58,27 @@ export function ProfileHeader({ variant, insetTop, onBack, c }: {
   );
 }
 
-export function ProfileActions({ dark, opening, onMessage, onSend, c }: {
+export function ProfileActions({ opening, onMessage, onSend, c }: {
   dark: boolean; opening: boolean; onMessage: () => void; onSend: () => void; c: ProfileColors;
 }): React.ReactElement {
-  const Btn = ({ icon, label, onPress, disabled }: {
-    icon: HeroIconName; label: string; onPress: () => void; disabled?: boolean;
-  }): React.ReactElement => (
-    <Box align="center" gap={6}>
-      <Button
-        variant="secondary"
-        size="xl"
-        pill
-        dark={dark}
-        onPress={onPress}
-        disabled={disabled}
-        icon={<Icon name={icon} size={22} color={c.link} />}
-        style={{ backgroundColor: c.border, borderColor: c.border }}
-/>
-      <Text weight="semibold" size="md" color={c.link} numberOfLines={1}>{label}</Text>
-    </Box>
-  );
-  return (
-    <Row margin={{ top: 18 }} gap={12} justify="start">
-      <Btn icon="chatRect" label={opening ? 'Opening…' : 'Message'} onPress={onMessage} disabled={opening}/>
-      <Btn icon="send" label="Send" onPress={onSend}/>
-    </Row>
-  );
+  const node: WidgetRoot = {
+    type: 'Basic',
+    children: [
+      profileActionsRow({
+        border: c.border,
+        fg: c.link,
+        actions: [
+          { action: 'message', icon: 'chatRect', label: opening ? 'Opening…' : 'Message', disabled: opening },
+          { action: 'send', icon: 'send', label: 'Send' },
+        ],
+      }),
+    ],
+  };
+  const registry: WidgetActionRegistry = {
+    [PROFILE_ROUND_PRESS]: (a) => {
+      if (a.payload.action === 'message') { if (!opening) onMessage(); }
+      else if (a.payload.action === 'send') onSend();
+    },
+  };
+  return <KitRenderer node={node} registry={registry} />;
 }

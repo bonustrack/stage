@@ -236,10 +236,10 @@ function fireWith(action: ActionConfig | undefined, payload: Record<string, unkn
     @click="fire(buttonNode.submit && !buttonNode.onClickAction ? undefined : buttonNode.onClickAction)"
   >
     <template v-if="buttonNode.iconStart" #iconStart>
-      <Icon :name="resolveIconName(buttonNode.iconStart)" :size="16" />
+      <Icon :name="resolveIconName(buttonNode.iconStart)" :size="buttonNode.iconPx ?? 16" />
     </template>
     <template v-if="buttonNode.iconEnd" #iconEnd>
-      <Icon :name="resolveIconName(buttonNode.iconEnd)" :size="16" />
+      <Icon :name="resolveIconName(buttonNode.iconEnd)" :size="buttonNode.iconPx ?? 16" />
     </template>
   </Button>
 

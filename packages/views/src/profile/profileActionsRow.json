@@ -1,0 +1,31 @@
+{
+  "type": "Row",
+  "gap": 12,
+  "justify": "start",
+  "padding": { "top": 18 },
+  "children": [
+    {
+      "$repeat": "actions",
+      "$item": {
+        "type": "Col",
+        "align": "center",
+        "gap": 6,
+        "children": [
+          {
+            "type": "Button",
+            "iconStart": "{{item.icon}}",
+            "iconPx": 22,
+            "variant": "solid",
+            "size": "xl",
+            "pill": true,
+            "background": "{{border}}",
+            "foreground": "{{fg}}",
+            "disabled": "{{item.disabled}}",
+            "onClickAction": { "type": "{{pressType}}", "payload": { "action": "{{item.action}}" } }
+          },
+          { "type": "Text", "value": "{{item.label}}", "weight": "semibold", "size": "md", "color": "{{fg}}", "truncate": true }
+        ]
+      }
+    }
+  ]
+}

@@ -44,10 +44,11 @@ function iconNode(
   name: string | undefined,
   ctx: RenderCtx,
   color?: string,
+  size = 18,
 ): ReactNode {
   const resolved = resolveIconName(name);
   if (resolved === undefined) return undefined;
-  return <Icon name={resolved} size={18} color={color} dark={ctx.dark} />;
+  return <Icon name={resolved} size={size} color={color} dark={ctx.dark} />;
 }
 
 function buttonOverrideStyle(node: ButtonNode): ViewStyle | undefined {
@@ -102,8 +103,8 @@ export function renderButton(node: ButtonNode, ctx: RenderCtx): ReactNode {
       dark={ctx.dark}
       style={overrideStyle}
       textStyle={overrideTextStyle}
-      iconStart={iconNode(node.iconStart, ctx, iconColor)}
-      iconEnd={iconNode(node.iconEnd, ctx, iconColor)}
+      iconStart={iconNode(node.iconStart, ctx, iconColor, node.iconPx)}
+      iconEnd={iconNode(node.iconEnd, ctx, iconColor, node.iconPx)}
       onPress={onPress}
     />
   );

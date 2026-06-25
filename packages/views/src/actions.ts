@@ -38,6 +38,8 @@ export const PROFILE_ACTION_PRESS = 'profile.action.press';
 
 export const PROFILE_INFO_PRESS = 'profile.info.press';
 
+export const PROFILE_ROUND_PRESS = 'profile.round.press';
+
 export const REACTION_PRESS = 'chat.reaction.press';
 
 export const MEDIA_PRESS = 'chat.media.press';

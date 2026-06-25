@@ -289,6 +289,7 @@ export interface ButtonNode extends NodeBase {
   paddingY?: Dimension;
   fontFamily?: string;
   fontSize?: number;
+  iconPx?: number;
 }
 
 export interface ListViewItemNode extends NodeBase {
