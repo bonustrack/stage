@@ -6,7 +6,7 @@ import type {
   BadgeSize,
   BadgeVariant,
   BorderValue,
-  ButtonColor,
+  ButtonColorValue,
   ButtonIconSize,
   ButtonStyle,
   CaptionSize,
@@ -38,21 +38,47 @@ import type {
 } from './node-fields';
 import type {
   CheckboxNode,
+  ColorPickerNode,
   DatePickerNode,
   InputNode,
   RadioGroupNode,
   SelectNode,
+  SwitchNode,
+  TabsNode,
   TextareaNode,
+  TextFieldNode,
 } from './nodes-controls';
 
 export type {
   CheckboxNode,
+  ColorPickerNode,
   DatePickerNode,
   InputNode,
   RadioGroupNode,
   SelectNode,
+  SwitchNode,
+  TabsNode,
+  TabsOption,
   TextareaNode,
-};
+  TextFieldNode,
+} from './nodes-controls';
+
+import type {
+  AudioPlayerNode,
+  AvatarStackNode,
+  QRCodeNode,
+  SpinnerNode,
+  VideoPlayerNode,
+} from './nodes-extensions';
+
+export type {
+  AudioPlayerNode,
+  AvatarStackItem,
+  AvatarStackNode,
+  QRCodeNode,
+  SpinnerNode,
+  VideoPlayerNode,
+} from './nodes-extensions';
 
 export type { NodeBase };
 
@@ -247,7 +273,8 @@ export interface ButtonNode extends NodeBase {
   iconEnd?: string;
   style?: ButtonStyle;
   iconSize?: ButtonIconSize;
-  color?: ButtonColor;
+  color?: ButtonColorValue;
+  background?: Color;
   variant?: ControlVariant;
   size?: ControlSize;
   pill?: boolean;
@@ -260,8 +287,18 @@ export interface ListViewItemNode extends NodeBase {
   type: 'ListViewItem';
   children: WidgetNode[];
   onClickAction?: ActionConfig;
+  onLongPressAction?: ActionConfig;
+  onSwipeAction?: ActionConfig;
   gap?: Dimension;
   align?: Alignment;
+}
+
+export interface PressableNode extends NodeBase {
+  type: 'Pressable';
+  children: WidgetNode[];
+  onClickAction?: ActionConfig;
+  onLongPressAction?: ActionConfig;
+  onSwipeAction?: ActionConfig;
 }
 
 export interface TransitionNode extends NodeBase {
@@ -322,6 +359,16 @@ export type WidgetNode =
   | CheckboxNode
   | RadioGroupNode
   | DatePickerNode
+  | SwitchNode
+  | TabsNode
+  | TextFieldNode
+  | ColorPickerNode
+  | SpinnerNode
+  | AvatarStackNode
+  | QRCodeNode
+  | AudioPlayerNode
+  | VideoPlayerNode
+  | PressableNode
   | ListViewItemNode
   | TransitionNode
   | ChartNode

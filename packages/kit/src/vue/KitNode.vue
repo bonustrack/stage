@@ -22,6 +22,8 @@ import RadioGroup from './RadioGroup.vue';
 import DatePicker from './DatePicker.vue';
 import ListViewItem from './ListViewItem.vue';
 import KitChart from './KitChart.vue';
+import KitExtensionNode from './KitExtensionNode.vue';
+import GesturePressable from './GesturePressable.vue';
 import {
   dispatchAction,
   type ActionConfig,
@@ -55,7 +57,9 @@ import {
   captionWeight,
   dividerColor,
   fieldVariant,
+  heroTitlePx,
   imageProps,
+  isExtensionType,
   listItemProps,
   resolveIconName,
   titleSize,
@@ -127,6 +131,19 @@ const transitionChild = computed<WidgetNode | undefined>(() => {
   if (node.type !== 'Transition') return undefined;
   return (node as TransitionNode).children;
 });
+
+const isExtension = computed(() => isExtensionType(props.node.type));
+
+const itemHasGesture = computed(
+  () =>
+    listItemNode.value.onLongPressAction !== undefined ||
+    listItemNode.value.onSwipeAction !== undefined,
+);
+
+function fireWith(action: ActionConfig | undefined, payload: Record<string, unknown>): void {
+  if (action === undefined) return;
+  void dispatchAction(render.registry, action, payload);
+}
 </script>
 
 <template>
@@ -162,6 +179,7 @@ const transitionChild = computed<WidgetNode | undefined>(() => {
   <Title
     v-else-if="node.type === 'Title'"
     :size="titleSize(titleNode.size)"
+    :font-size-px="heroTitlePx(titleNode.size)"
     :color="titleNode.color === undefined ? undefined : String(titleNode.color)"
   >
     {{ titleNode.value }}
@@ -215,7 +233,7 @@ const transitionChild = computed<WidgetNode | undefined>(() => {
 
   <Button
     v-else-if="node.type === 'Button'"
-    v-bind="buttonProps(buttonNode)"
+    v-bind="buttonProps(buttonNode, scheme)"
     @click="fire(buttonNode.submit && !buttonNode.onClickAction ? undefined : buttonNode.onClickAction)"
   >
     <template v-if="buttonNode.iconStart" #iconStart>
@@ -333,6 +351,21 @@ const transitionChild = computed<WidgetNode | undefined>(() => {
     @update:model-value="changeText(dateNode.name, $event, dateNode.onChangeAction)"
   />
 
+  <GesturePressable
+    v-else-if="node.type === 'ListViewItem' && itemHasGesture"
+    :long-pressable="listItemNode.onLongPressAction !== undefined"
+    :swipeable="listItemNode.onSwipeAction !== undefined"
+    @longpress="fire(listItemNode.onLongPressAction)"
+    @swipe="fireWith(listItemNode.onSwipeAction, { direction: $event })"
+  >
+    <ListViewItem
+      v-bind="listItemProps(listItemNode)"
+      @press="fire(listItemNode.onClickAction)"
+    >
+      <KitNode v-for="(c, i) in children" :key="i" :node="c" />
+    </ListViewItem>
+  </GesturePressable>
+
   <ListViewItem
     v-else-if="node.type === 'ListViewItem'"
     v-bind="listItemProps(listItemNode)"
@@ -351,6 +384,8 @@ const transitionChild = computed<WidgetNode | undefined>(() => {
     :node="chartNode"
     :scheme="scheme"
   />
+
+  <KitExtensionNode v-else-if="isExtension" :node="node" />
 
   <template v-else-if="children.length">
     <KitNode v-for="(c, i) in children" :key="i" :node="c" />

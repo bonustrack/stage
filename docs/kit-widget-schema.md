@@ -330,6 +330,89 @@ Series objects (discriminated by `type`):
 
 ---
 
+## 4b. Extension nodes (Stage additions)
+
+These node types are **Stage extensions** to the base widget schema — authored as JSON, rendered by `KitRenderer` in BOTH the React Native and Vue renderers. They are not part of the upstream SDK; they cover widgets the base schema cannot express. Like every node they accept `id?`/`key?`.
+
+#### Spinner — `"type": "Spinner"`
+Indeterminate activity indicator.
+- `size`: `"sm" | "md" | "lg"` **or** a number (px) — default `md` (24px)
+- `color`: string | ThemeColor
+
+RN renders an animated `react-native-svg` ring; Vue renders an SVG ring with a CSS `@keyframes` rotation.
+
+#### Switch — `"type": "Switch"`
+Controlled on/off toggle (distinct from the form-only `Checkbox`).
+- `name`: string — **required** (form payload key)
+- `checked`: bool — **required** (controlled)
+- `onChangeAction`: `ActionConfig` — dispatched with `{ [name]: boolean }`
+- `disabled`: bool · `label`: string
+
+RN renders a `Pressable` track+knob; Vue renders a `role="switch"` button.
+
+#### Tabs — `"type": "Tabs"`
+Segmented control / tab switcher.
+- `name`: string — **required**
+- `value`: string — **required** (selected option value)
+- `options`: array of `{ value, label, icon? }` — **required**
+- `onChangeAction`: `ActionConfig` — dispatched with `{ [name]: value }`
+- `variant`: `"segmented"` (default) | `"underline"`
+
+#### AvatarStack — `"type": "AvatarStack"`
+Overlapping avatar cluster with a `+N` overflow chip.
+- `items`: array of `{ src?, fallback? }` — **required**
+- `size`: number (px, default 32) · `max`: number (default 4) · `overlap`: number (px, default 10)
+
+#### QRCode — `"type": "QRCode"`
+QR code rendered as SVG (shared matrix builder, `qrcode` lib, error-correction level M).
+- `value`: string — **required**
+- `size`: number (px, default 160) · `color`: string | ThemeColor · `background`: string | ThemeColor
+
+#### AudioPlayer — `"type": "AudioPlayer"`
+- `src`: string — **required**
+- `duration`: number (seconds) · `onPlayAction`: `ActionConfig` (fired on first play)
+
+RN uses `expo-av` (`Audio.Sound`) with a custom transport; Vue uses a native `<audio controls>` element.
+
+#### VideoPlayer — `"type": "VideoPlayer"`
+- `src`: string — **required**
+- `poster`: string · `controls`: bool (default true)
+
+RN uses `expo-av` `Video`; Vue uses a native `<video>` element.
+
+#### TextField — `"type": "TextField"`
+Controlled live text input — dispatches `onChangeAction` on **every keystroke** (distinct from the form-only `Input`, whose value only reaches the server on form submit).
+- `name`: string — **required**
+- `value`: string — **required** (controlled)
+- `onChangeAction`: `ActionConfig` — **required** — dispatched with `{ [name]: text }`
+- `placeholder`: string · `multiline`: bool · `autoFocus`: bool · `autoGrow`: bool · `disabled`: bool
+
+RN renders a `TextInput`; Vue renders an `<input>` or `<textarea>` (when `multiline`).
+
+#### ColorPicker — `"type": "ColorPicker"`
+Swatch-based color picker.
+- `name`: string — **required**
+- `value`: string — **required** (current hex)
+- `onChangeAction`: `ActionConfig` — dispatched with `{ [name]: hex }`
+- `swatches`: array of hex strings (falls back to a default palette)
+
+#### Pressable — `"type": "Pressable"`
+Generic gesture-aware wrapper around arbitrary children.
+- `children`: array of nodes — **required**
+- `onClickAction`: `ActionConfig` (tap)
+- `onLongPressAction`: `ActionConfig` (long-press)
+- `onSwipeAction`: `ActionConfig` — dispatched with `{ direction: "left" | "right" | "up" | "down" }`
+
+RN wires gestures via `react-native-gesture-handler` (`Tap`/`LongPress`/`Pan`); Vue uses pointer events.
+
+### Field extensions (no new node)
+
+- **`Title.size`** additionally accepts `"6xl"` and `"7xl"` for large hero text (RN/Vue render at 44px / 60px respectively).
+- **`Button.color`** additionally accepts an arbitrary color **string** or a `ThemeColor` (`{dark, light}`) on top of the semantic enum (`primary`…`danger`). A **`Button.background`** field is also accepted. When a custom color/background is supplied, the button is rendered solid with that background and an automatically-contrasting foreground.
+- **`ListViewItem`** additionally accepts `onLongPressAction` and `onSwipeAction` (same direction payload as `Pressable`).
+
+---
+
 ## 5. Supporting object types
 
 ```jsonc

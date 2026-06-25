@@ -10,7 +10,7 @@ import type {
   TextareaNode,
 } from '../kit';
 import {
-  resolveButtonColor,
+  resolveButtonStyle,
   resolveButtonVariant,
   resolveControlSize,
   resolveDirection,
@@ -51,10 +51,13 @@ export function renderButton(node: ButtonNode, ctx: RenderCtx): ReactNode {
     }
     dispatch(node.onClickAction, ctx);
   };
+  const styled = resolveButtonStyle(node.color, node.background, ctx.scheme);
   return (
     <Button
       label={node.label}
-      color={resolveButtonColor(node.color)}
+      color={styled.color}
+      tintBg={styled.tintBg}
+      tintFg={styled.tintFg}
       variant={resolveButtonVariant(node.variant)}
       size={resolveControlSize(node.size)}
       pill={node.pill}

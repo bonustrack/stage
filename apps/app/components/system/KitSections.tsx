@@ -24,6 +24,7 @@ import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
 import type { WidgetRoot } from '@stage-labs/kit/kit';
+import { EXTENSION_WIDGET } from './KitSections.extensions';
 import { GallerySection } from './GallerySection';
 import type { GalleryPalette } from './galleryPalette';
 
@@ -299,6 +300,20 @@ function ContentSections({ dark, head, sub, border }: GalleryPalette): React.Rea
   );
 }
 
+function ExtensionSections({ head, sub, border }: GalleryPalette): React.ReactElement {
+  const sec = { head, sub, border };
+  return (
+    <GallerySection
+      name="Extension nodes"
+      note="Spinner / Switch / Tabs / AvatarStack / QRCode / TextField / ColorPicker / Pressable / Audio / Video - all JSON, via KitRenderer"
+      {...sec}
+      framed={false}
+    >
+      <KitRenderer node={EXTENSION_WIDGET} />
+    </GallerySection>
+  );
+}
+
 export function KitSections(p: GalleryPalette): React.ReactElement {
   return (
     <Box>
@@ -306,6 +321,7 @@ export function KitSections(p: GalleryPalette): React.ReactElement {
       <SurfaceSections {...p} />
       <FormSections {...p} />
       <ContentSections {...p} />
+      <ExtensionSections {...p} />
     </Box>
   );
 }

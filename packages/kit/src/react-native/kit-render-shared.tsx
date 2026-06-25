@@ -79,6 +79,8 @@ const TITLE_SIZE: Record<TitleSize, 'sm' | 'md' | 'lg'> = {
   '3xl': 'lg',
   '4xl': 'lg',
   '5xl': 'lg',
+  '6xl': 'lg',
+  '7xl': 'lg',
 };
 
 export function titleSize(value: TitleSize | undefined): 'sm' | 'md' | 'lg' | undefined {

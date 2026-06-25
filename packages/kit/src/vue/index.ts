@@ -30,6 +30,16 @@ export { default as ListView } from './ListView.vue';
 export { default as ListViewItem } from './ListViewItem.vue';
 export { default as Markdown } from './Markdown.vue';
 export { default as KitRenderer } from './KitRenderer.vue';
+export { default as Spinner } from './Spinner.vue';
+export { default as Switch } from './Switch.vue';
+export { default as Tabs } from './Tabs.vue';
+export { default as AvatarStack } from './AvatarStack.vue';
+export { default as QRCode } from './QRCode.vue';
+export { default as AudioPlayer } from './AudioPlayer.vue';
+export { default as VideoPlayer } from './VideoPlayer.vue';
+export { default as TextField } from './TextField.vue';
+export { default as ColorPicker } from './ColorPicker.vue';
+export { default as GesturePressable } from './GesturePressable.vue';
 export {
   provideKitTheme,
   useKitPalette,

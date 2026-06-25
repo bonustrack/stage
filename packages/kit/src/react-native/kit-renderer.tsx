@@ -41,6 +41,18 @@ import {
   renderTextarea,
 } from './kit-render-controls';
 import {
+  renderAudioPlayer,
+  renderAvatarStack,
+  renderColorPicker,
+  renderPressable,
+  renderQRCode,
+  renderSpinner,
+  renderSwitch,
+  renderTabs,
+  renderTextField,
+  renderVideoPlayer,
+} from './kit-render-extensions';
+import {
   renderList,
   submitForm,
   type FormScope,
@@ -74,6 +86,15 @@ const LEAF_RENDERERS: Partial<Record<WidgetNode['type'], LeafRenderer>> = {
   RadioGroup: (node, ctx) => renderRadioGroup(as<'RadioGroup'>(node), ctx),
   DatePicker: (node, ctx) => renderDatePicker(as<'DatePicker'>(node), ctx),
   Chart: (node, ctx) => renderChart(as<'Chart'>(node), ctx),
+  Spinner: (node, ctx) => renderSpinner(as<'Spinner'>(node), ctx),
+  Switch: (node, ctx) => renderSwitch(as<'Switch'>(node), ctx),
+  Tabs: (node, ctx) => renderTabs(as<'Tabs'>(node), ctx),
+  TextField: (node, ctx) => renderTextField(as<'TextField'>(node), ctx),
+  ColorPicker: (node, ctx) => renderColorPicker(as<'ColorPicker'>(node), ctx),
+  AvatarStack: (node, ctx) => renderAvatarStack(as<'AvatarStack'>(node), ctx),
+  QRCode: (node, ctx) => renderQRCode(as<'QRCode'>(node), ctx),
+  AudioPlayer: (node, ctx) => renderAudioPlayer(as<'AudioPlayer'>(node), ctx),
+  VideoPlayer: (node) => renderVideoPlayer(as<'VideoPlayer'>(node)),
 };
 
 function renderNode(node: WidgetNode, ctx: RenderCtx): ReactNode {
@@ -89,6 +110,8 @@ function renderNode(node: WidgetNode, ctx: RenderCtx): ReactNode {
       return renderFormNode(as<'Form'>(node), ctx);
     case 'Transition':
       return renderTransition(as<'Transition'>(node), ctx);
+    case 'Pressable':
+      return renderPressable(as<'Pressable'>(node), ctx, renderNode);
     default: {
       const leaf = LEAF_RENDERERS[node.type];
       return leaf ? leaf(node, ctx) : renderUnknown(node, ctx);

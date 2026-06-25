@@ -11,8 +11,53 @@ import type {
   PopoverSide,
   RadioOption,
   SelectOption,
+  TabsVariant,
   TextAlign,
 } from './node-fields';
+
+export interface SwitchNode extends NodeBase {
+  type: 'Switch';
+  name: string;
+  checked: boolean;
+  onChangeAction?: ActionConfig;
+  disabled?: boolean;
+  label?: string;
+}
+
+export interface TabsOption {
+  value: string;
+  label: string;
+  icon?: string;
+}
+
+export interface TabsNode extends NodeBase {
+  type: 'Tabs';
+  name: string;
+  value: string;
+  options: TabsOption[];
+  onChangeAction?: ActionConfig;
+  variant?: TabsVariant;
+}
+
+export interface TextFieldNode extends NodeBase {
+  type: 'TextField';
+  name: string;
+  value: string;
+  onChangeAction: ActionConfig;
+  placeholder?: string;
+  multiline?: boolean;
+  autoFocus?: boolean;
+  autoGrow?: boolean;
+  disabled?: boolean;
+}
+
+export interface ColorPickerNode extends NodeBase {
+  type: 'ColorPicker';
+  name: string;
+  value: string;
+  onChangeAction?: ActionConfig;
+  swatches?: string[];
+}
 
 export interface InputNode extends NodeBase {
   type: 'Input';

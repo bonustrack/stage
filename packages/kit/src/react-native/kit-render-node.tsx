@@ -24,6 +24,7 @@ import type {
 import {
   resolveAlign,
   resolveBadgeColor,
+  resolveHeroTitlePx,
   resolveJustify,
   resolveOptionalColor,
   resolveRadius,
@@ -34,6 +35,7 @@ import { Box } from './box';
 import { Caption } from './caption';
 import { Card } from './card';
 import { Divider } from './divider';
+import { GesturePressable } from './gesture-pressable';
 import { Icon } from './icon';
 import { KitChart } from './kit-render-chart';
 import { Image } from './image';
@@ -125,8 +127,13 @@ export function renderText(node: TextNode, ctx: RenderCtx): ReactNode {
 }
 
 export function renderTitle(node: TitleNode, ctx: RenderCtx): ReactNode {
+  const heroPx = resolveHeroTitlePx(node.size);
   return (
-    <Title size={titleSize(node.size)} color={resolveOptionalColor(node.color, ctx.scheme)}>
+    <Title
+      size={titleSize(node.size)}
+      color={resolveOptionalColor(node.color, ctx.scheme)}
+      style={heroPx === undefined ? undefined : { fontSize: heroPx, lineHeight: heroPx * 1.05 }}
+    >
       {node.value}
     </Title>
   );
@@ -261,7 +268,7 @@ function ListViewItemRow(props: {
   render: NodeRenderer;
 }): ReactNode {
   const { node, ctx, render } = props;
-  return (
+  const row = (
     <ListViewItem
       gap={toNumber(node.gap)}
       align={resolveItemAlign(node.align)}
@@ -276,6 +283,23 @@ function ListViewItemRow(props: {
     >
       {renderList(node.children, ctx, render)}
     </ListViewItem>
+  );
+  if (node.onLongPressAction === undefined && node.onSwipeAction === undefined) {
+    return row;
+  }
+  const longPress = (): void => {
+    dispatch(node.onLongPressAction, ctx);
+  };
+  const swipe = (direction: string): void => {
+    dispatch(node.onSwipeAction, ctx, { direction });
+  };
+  return (
+    <GesturePressable
+      onLongPress={node.onLongPressAction ? longPress : undefined}
+      onSwipe={node.onSwipeAction ? swipe : undefined}
+    >
+      {row}
+    </GesturePressable>
   );
 }
 

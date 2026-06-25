@@ -2,8 +2,10 @@ import { HERO_ICON_PATHS, type HeroIconName } from '../icons';
 import type { Spacing } from '../layout';
 import {
   resolveAlign,
+  resolveButtonStyle,
   resolveColor,
   resolveDirection,
+  resolveHeroTitlePx,
   resolveJustify,
   resolveOptionalColor,
   resolveRadius,
@@ -45,6 +47,27 @@ const TITLE_SIZE: Record<string, TitleToken> = {
 
 export function titleSize(value: string | undefined): TitleToken | undefined {
   return value === undefined ? undefined : (TITLE_SIZE[value] ?? 'md');
+}
+
+export function heroTitlePx(value: string | undefined): number | undefined {
+  return resolveHeroTitlePx(value);
+}
+
+const EXTENSION_TYPES = new Set([
+  'Spinner',
+  'Switch',
+  'Tabs',
+  'TextField',
+  'ColorPicker',
+  'AvatarStack',
+  'QRCode',
+  'AudioPlayer',
+  'VideoPlayer',
+  'Pressable',
+]);
+
+export function isExtensionType(type: string): boolean {
+  return EXTENSION_TYPES.has(type);
 }
 
 export function captionSize(value: string | undefined): CaptionToken | undefined {
@@ -125,10 +148,16 @@ export function cardProps(
   };
 }
 
-export function buttonProps(node: ButtonNode): Record<string, unknown> {
+export function buttonProps(
+  node: ButtonNode,
+  scheme: Scheme,
+): Record<string, unknown> {
+  const styled = resolveButtonStyle(node.color, node.background, scheme);
   return {
     label: node.label,
-    color: node.color,
+    color: styled.color,
+    tintBg: styled.tintBg,
+    tintFg: styled.tintFg,
     variant: node.variant,
     styleColor: node.style,
     size: node.size,

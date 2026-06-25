@@ -17,6 +17,7 @@ import type {
   Borders,
   BorderValue,
   ButtonColor,
+  ButtonColorValue,
   Color,
   ControlVariant,
   FieldVariant,
@@ -26,8 +27,71 @@ import type {
   Justification,
   RadiusValue,
   SpacingValue,
+  SpinnerSize,
   ThemeColor,
 } from './node-fields';
+
+const BUTTON_COLOR_NAMES = new Set<ButtonColor>([
+  'primary',
+  'secondary',
+  'info',
+  'discovery',
+  'success',
+  'caution',
+  'warning',
+  'danger',
+]);
+
+export function isSemanticButtonColor(
+  value: ButtonColorValue | undefined,
+): value is ButtonColor {
+  return typeof value === 'string' && BUTTON_COLOR_NAMES.has(value as ButtonColor);
+}
+
+export interface ResolvedButtonStyle {
+  color: ButtonColor;
+  tintBg?: string;
+  tintFg?: string;
+}
+
+function readableForeground(hex: string): string {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  const group = m?.[1];
+  if (group === undefined) return '#ffffff';
+  const n = Number.parseInt(group, 16);
+  const r = (n >> 16) & 0xff;
+  const g = (n >> 8) & 0xff;
+  const b = n & 0xff;
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.6 ? '#000000' : '#ffffff';
+}
+
+export function resolveButtonStyle(
+  color: ButtonColorValue | undefined,
+  background: Color | undefined,
+  scheme: Scheme,
+): ResolvedButtonStyle {
+  const fallback = isSemanticButtonColor(color) ? undefined : color;
+  const custom = background ?? fallback;
+  if (custom === undefined) {
+    return { color: isSemanticButtonColor(color) ? color : 'primary' };
+  }
+  const bg = resolveColor(custom, scheme);
+  return { color: 'primary', tintBg: bg, tintFg: readableForeground(bg) };
+}
+
+const HERO_TITLE_PX: Record<string, number> = { '6xl': 44, '7xl': 60 };
+
+export function resolveHeroTitlePx(value: string | undefined): number | undefined {
+  return value === undefined ? undefined : HERO_TITLE_PX[value];
+}
+
+const SPINNER_PX: Record<SpinnerSize, number> = { sm: 16, md: 24, lg: 36 };
+
+export function resolveSpinnerSize(value: SpinnerSize | number | undefined): number {
+  if (typeof value === 'number') return value;
+  return value === undefined ? 24 : SPINNER_PX[value];
+}
 
 export type Scheme = 'light' | 'dark';
 export type StyleEntries = Record<string, string | number>;

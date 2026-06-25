@@ -9,7 +9,9 @@ export type TitleSize =
   | '2xl'
   | '3xl'
   | '4xl'
-  | '5xl';
+  | '5xl'
+  | '6xl'
+  | '7xl';
 
 export type CaptionSize = 'sm' | 'md' | 'lg';
 
@@ -99,6 +101,14 @@ export type ButtonColor =
   | 'danger';
 
 export type ButtonStyle = 'primary' | 'secondary';
+
+export type ButtonColorValue = Color;
+
+export type SwipeDirection = 'left' | 'right' | 'up' | 'down';
+
+export type SpinnerSize = 'sm' | 'md' | 'lg';
+
+export type TabsVariant = 'segmented' | 'underline';
 
 export type ButtonIconSize = 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 

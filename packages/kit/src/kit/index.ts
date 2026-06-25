@@ -5,3 +5,4 @@ export * from './validate';
 export * from './resolve';
 export * from './actions';
 export * from './chart';
+export * from './qr';

@@ -44,6 +44,16 @@
     "./react-native/scroll": "./src/react-native/scroll.tsx",
     "./react-native/pressable": "./src/react-native/pressable.tsx",
     "./react-native/flat-list": "./src/react-native/flat-list.tsx",
+    "./react-native/spinner": "./src/react-native/spinner.tsx",
+    "./react-native/switch": "./src/react-native/switch.tsx",
+    "./react-native/tabs": "./src/react-native/tabs.tsx",
+    "./react-native/avatar-stack": "./src/react-native/avatar-stack.tsx",
+    "./react-native/qr-code": "./src/react-native/qr-code.tsx",
+    "./react-native/audio-player": "./src/react-native/audio-player.tsx",
+    "./react-native/video-player": "./src/react-native/video-player.tsx",
+    "./react-native/text-field": "./src/react-native/text-field.tsx",
+    "./react-native/color-picker": "./src/react-native/color-picker.tsx",
+    "./react-native/gesture-pressable": "./src/react-native/gesture-pressable.tsx",
     "./vue": "./src/vue/index.ts",
     "./vue/theme-context": "./src/vue/theme-context.ts",
     "./vue/box": "./src/vue/Box.vue",
@@ -77,13 +87,29 @@
     "./vue/list-view": "./src/vue/ListView.vue",
     "./vue/list-view-item": "./src/vue/ListViewItem.vue",
     "./vue/markdown": "./src/vue/Markdown.vue",
-    "./vue/kit-renderer": "./src/vue/KitRenderer.vue"
+    "./vue/kit-renderer": "./src/vue/KitRenderer.vue",
+    "./vue/spinner": "./src/vue/Spinner.vue",
+    "./vue/switch": "./src/vue/Switch.vue",
+    "./vue/tabs": "./src/vue/Tabs.vue",
+    "./vue/avatar-stack": "./src/vue/AvatarStack.vue",
+    "./vue/qr-code": "./src/vue/QRCode.vue",
+    "./vue/audio-player": "./src/vue/AudioPlayer.vue",
+    "./vue/video-player": "./src/vue/VideoPlayer.vue",
+    "./vue/text-field": "./src/vue/TextField.vue",
+    "./vue/color-picker": "./src/vue/ColorPicker.vue",
+    "./vue/gesture-pressable": "./src/vue/GesturePressable.vue"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4"
   },
   "peerDependencies": {
     "react": "*",
     "react-native": "*",
     "react-native-svg": "*",
     "react-native-markdown-display": "*",
+    "react-native-gesture-handler": "*",
+    "react-native-reanimated": "*",
+    "expo-av": "*",
     "vue": "*"
   },
   "scripts": {
@@ -92,6 +118,7 @@
   "devDependencies": {
     "@stage-labs/config": "workspace:*",
     "@types/markdown-it": "^14.1.2",
+    "@types/qrcode": "^1.5.5",
     "@types/react": "~19.1.0",
     "markdown-it": "^14.1.1",
     "vue": "^3.5.13",
