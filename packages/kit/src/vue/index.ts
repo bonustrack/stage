@@ -24,6 +24,7 @@ export { default as Table } from './Table.vue';
 export { default as TableRow } from './TableRow.vue';
 export { default as TableCell } from './TableCell.vue';
 export { default as Scroll } from './Scroll.vue';
+export { default as Paragraph } from './Paragraph.vue';
 export { default as Dialog } from './Dialog.vue';
 export { default as Pressable } from './Pressable.vue';
 export { default as FlatList } from './FlatList.vue';

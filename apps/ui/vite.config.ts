@@ -9,7 +9,7 @@ import { fileURLToPath, URL } from 'node:url';
 // their @stage-labs/kit/vue/* subpath modules so apps/ui templates consume the
 // shared kit renderers without per-file imports.
 const KIT_VUE_COMPONENTS: Record<string, string> = {
-  Box: 'box', Row: 'row', Col: 'col', Scroll: 'scroll', Spacer: 'spacer',
+  Box: 'box', Row: 'row', Col: 'col', Scroll: 'scroll', Paragraph: 'paragraph', Spacer: 'spacer',
   Text: 'text', Title: 'title', Caption: 'caption', Label: 'label',
   Button: 'button', Pressable: 'pressable', Icon: 'icon', BrandIcon: 'brand-icon',
   Input: 'input', Textarea: 'textarea', Select: 'select', Checkbox: 'checkbox',

@@ -48,18 +48,9 @@ import type {
 } from './nodes-controls';
 
 export type {
-  CheckboxNode,
-  ColorPickerNode,
-  DatePickerNode,
-  InputNode,
-  RadioGroupNode,
-  SelectionRange,
-  SelectNode,
-  SwitchNode,
-  TabsNode,
-  TabsOption,
-  TextareaNode,
-  TextFieldNode,
+  CheckboxNode, ColorPickerNode, DatePickerNode, InputNode, RadioGroupNode,
+  SelectionRange, SelectNode, SwitchNode, TabsNode, TabsOption,
+  TextareaNode, TextFieldNode,
 } from './nodes-controls';
 
 import type {
@@ -72,15 +63,8 @@ import type {
 } from './nodes-extensions';
 
 export type {
-  AudioPlayerNode,
-  AvatarStackItem,
-  AvatarStackNode,
-  FilePickerMediaType,
-  FilePickerNode,
-  FilePickerSource,
-  QRCodeNode,
-  SpinnerNode,
-  VideoPlayerNode,
+  AudioPlayerNode, AvatarStackItem, AvatarStackNode, FilePickerMediaType,
+  FilePickerNode, FilePickerSource, QRCodeNode, SpinnerNode, VideoPlayerNode,
 } from './nodes-extensions';
 
 export type { NodeBase };
@@ -316,6 +300,16 @@ export interface ScrollNode extends NodeBase {
   children: WidgetNode[];
   gap?: Dimension;
   padding?: SpacingValue;
+  stickToBottom?: boolean;
+  atBottomThreshold?: number;
+  scrollToNonce?: number;
+  scrollToId?: string;
+  fillAbsolute?: boolean;
+  hideScrollbar?: boolean;
+}
+export interface ParagraphNode extends NodeBase {
+  type: 'Paragraph';
+  children: WidgetNode[];
 }
 export interface DialogNode extends NodeBase {
   type: 'Dialog';
@@ -392,7 +386,7 @@ export type WidgetNode =
   | MarkdownNode | LabelNode | ImageNode | IconNode | BadgeNode | ButtonNode
   | InputNode | TextareaNode | SelectNode | CheckboxNode | RadioGroupNode
   | DatePickerNode | SwitchNode | TabsNode | TextFieldNode | ColorPickerNode
-  | SpinnerNode | StackNode | ScrollRowNode | ScrollNode | DialogNode
+  | SpinnerNode | StackNode | ScrollRowNode | ScrollNode | ParagraphNode | DialogNode
   | AvatarStackNode | QRCodeNode | AudioPlayerNode | VideoPlayerNode | FilePickerNode
   | PressableNode | PopoverNode | VoiceRecorderNode | ListViewItemNode
   | TransitionNode | ChartNode | UnknownNode;

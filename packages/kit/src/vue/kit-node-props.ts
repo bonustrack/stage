@@ -75,6 +75,7 @@ const EXTENSION_TYPES = new Set([
   'Stack',
   'ScrollRow',
   'Scroll',
+  'Paragraph',
   'Dialog',
 ]);
 

@@ -1,7 +1,7 @@
 
 import type { ReactNode } from 'react';
-import { ScrollView, View, type ViewStyle } from 'react-native';
-import type { ScrollNode, ScrollRowNode, StackNode, WidgetNode } from '../kit';
+import { ScrollView, Text, View, type ViewStyle } from 'react-native';
+import type { ParagraphNode, ScrollNode, ScrollRowNode, StackNode, WidgetNode } from '../kit';
 import { resolvePosition } from '../kit';
 import { Box } from './box';
 import {
@@ -101,14 +101,29 @@ export function renderScrollRow(
   );
 }
 
+export function renderParagraph(
+  node: ParagraphNode,
+  ctx: RenderCtx,
+  render: NodeRenderer,
+): ReactNode {
+  return <Text>{renderList(node.children, ctx, render)}</Text>;
+}
+
 export function renderScroll(
   node: ScrollNode,
   ctx: RenderCtx,
   render: NodeRenderer,
 ): ReactNode {
   const gap = toNumber(node.gap);
+  const containerStyle: ViewStyle | undefined = node.fillAbsolute
+    ? { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 }
+    : undefined;
   return (
-    <ScrollView showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={containerStyle}
+      showsVerticalScrollIndicator={!node.hideScrollbar}
+      maintainVisibleContentPosition={node.stickToBottom ? { minIndexForVisible: 0 } : undefined}
+    >
       <Box direction="col" gap={gap} padding={node.padding}>
         {renderList(node.children, ctx, render)}
       </Box>

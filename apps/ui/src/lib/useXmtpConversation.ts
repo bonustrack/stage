@@ -1,6 +1,6 @@
 
 import {
-  ref, computed, watch, watchEffect, nextTick, onMounted,
+  ref, computed, watch, watchEffect,
   type ComputedRef, type Ref,
 } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -39,6 +39,9 @@ export interface XmtpConversation {
   onVote: (pollId: string, questionIndex: number, optionIndex: number, action: 'added' | 'removed') => void;
   allBubbles: ComputedRef<HistoryEntry[]>;
   highlightId: Ref<string | null>;
+  scrollStickToBottom: ComputedRef<boolean>;
+  scrollToNonce: Ref<number>;
+  scrollToId: ComputedRef<string | undefined>;
   openHeader: () => void;
   previewOf: (e: HistoryEntry) => string;
   onReact: (messageId: string, emoji: string) => void;
@@ -104,10 +107,6 @@ function pendingOptimistic(
   return optimisticEntries.filter(o => !live.some(e => isOptimisticTwin(e, o, myUri)));
 }
 
-function scrollToBottom(scroller: Ref<HTMLElement | null>): void {
-  if (scroller.value) scroller.value.scrollTop = scroller.value.scrollHeight;
-}
-
 interface PollPayload { poll?: { multiSelect?: boolean; questions?: { multiSelect?: boolean }[] } }
 
 function isMultiSelect(events: HistoryEntry[], pollMessageId: string, questionIndex: number): boolean {
@@ -160,7 +159,7 @@ function usePollVotes(
   return { pollVotes, ownPollVotes, onVote };
 }
 
-export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConversation {
+export function useXmtpConversation(): XmtpConversation {
   const route = useRoute();
   const router = useRouter();
   const convId = computed(() => (route.params.convId as string | undefined) ?? '');
@@ -230,37 +229,17 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
     return (Array.isArray(m) ? m[0] : m) ?? null;
   });
   const highlightId = ref<string | null>(null);
-  const scrolledToTarget = ref(false);
+  const scrollToNonce = ref(0);
+  const scrollToId = computed(() => targetMsgId.value ? `msg-${targetMsgId.value}` : undefined);
+  const scrollStickToBottom = computed(() => true);
 
-  function scrollToTargetMessage(): boolean {
+  watch([convId, targetMsgId], () => {
     const id = targetMsgId.value;
-    if (!id || scrolledToTarget.value) return false;
-    const el = document.getElementById(`msg-${id}`);
-    if (!el) return false;
-    el.scrollIntoView({ block: 'center' });
+    if (!id) return;
+    scrollToNonce.value += 1;
     highlightId.value = id;
-    scrolledToTarget.value = true;
     window.setTimeout(() => { if (highlightId.value === id) highlightId.value = null; }, 2200);
-    return true;
-  }
-
-  watch([convId, targetMsgId], () => { scrolledToTarget.value = false; });
-
-  watch(allBubbles, () => {
-    void nextTick(() => {
-      if (targetMsgId.value && !scrolledToTarget.value) {
-        if (scrollToTargetMessage()) return;
-        return;
-      }
-      scrollToBottom(scroller);
-    });
-  }, { flush: 'post' });
-  onMounted(() => {
-    void nextTick(() => {
-      if (targetMsgId.value && scrollToTargetMessage()) return;
-      scrollToBottom(scroller);
-    });
-  });
+  }, { immediate: true });
 
   const {
     previewOf, onReact, onOptimistic, onSent, onActionReply,
@@ -271,7 +250,7 @@ export function useXmtpConversation(scroller: Ref<HTMLElement | null>): XmtpConv
     router, convId, line, feed, myUri, replyingTo, actionTarget,
     peerAddress, groupName, isGroup, inboxToAddr, memberAddresses, mentionCandidates,
     reactions, ownEmojis, pollVotes, ownPollVotes, onVote,
-    allBubbles, highlightId, openHeader, previewOf,
+    allBubbles, highlightId, scrollStickToBottom, scrollToNonce, scrollToId, openHeader, previewOf,
     onReact, onOptimistic, onSent, onActionReply, onBubbleReply,
     onActionCopy, onActionCopyLink,
   };
