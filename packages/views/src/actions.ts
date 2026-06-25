@@ -91,3 +91,7 @@ export const SUGGESTION_TOGGLE = 'contacts.suggestion.toggle';
 export const FILTER_SELECT = 'chat.filter.select';
 
 export const LABEL_CHIP_PRESS = 'chat.labelBar.chipPress';
+
+export const MEMBER_ADD_CHANGE = 'accounts.memberAdd.change';
+
+export const MEMBER_ADD_SUBMIT = 'accounts.memberAdd.submit';

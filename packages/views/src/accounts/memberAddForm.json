@@ -1,0 +1,48 @@
+{
+  "type": "Row",
+  "align": "center",
+  "gap": 8,
+  "padding": { "x": 16, "bottom": 12 },
+  "children": [
+    {
+      "type": "Box",
+      "flex": 1,
+      "children": [
+        {
+          "type": "TextField",
+          "name": "draft",
+          "value": "{{draft}}",
+          "placeholder": "0x… Ethereum address",
+          "variant": "outline",
+          "background": "{{surface}}",
+          "borderColor": "{{border}}",
+          "color": "{{fg}}",
+          "placeholderColor": "{{fg}}",
+          "radius": 8,
+          "paddingX": 12,
+          "paddingY": 8,
+          "fontSize": 14,
+          "fontWeight": "medium",
+          "autoCapitalize": "none",
+          "autoCorrect": false,
+          "returnKeyType": "done",
+          "onChangeAction": { "type": "{{changeType}}" },
+          "onSubmitAction": { "type": "{{submitType}}" }
+        }
+      ]
+    },
+    {
+      "type": "Button",
+      "label": "{{label}}",
+      "background": "{{head}}",
+      "foreground": "{{bg}}",
+      "radius": "full",
+      "size": "sm",
+      "fontSize": 14,
+      "paddingX": 14,
+      "paddingY": 8,
+      "disabled": "{{disabled}}",
+      "onClickAction": { "type": "{{submitType}}" }
+    }
+  ]
+}
