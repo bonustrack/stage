@@ -40,6 +40,8 @@ function optionScope(
   return {
     label: `${prefix}${option.label}`,
     stats: `${option.pct}% · ${option.votes}`,
+    fillWidth: `${Math.max(0, Math.min(100, option.pct))}%`,
+    fillBackground: params.fillBackground ?? 'transparent',
     background: selected ? params.selectedBackground : undefined,
     borderColor:
       selected && params.selectedBorderColor !== undefined
@@ -61,6 +63,8 @@ function questionScope(
   const suffix = question.multiSelect === true ? ' · multi-select' : '';
   return {
     question: question.question,
+    hasQuestion:
+      (question.question !== undefined && question.question !== '') || undefined,
     hasHeader:
       (question.header !== undefined && question.header !== '') || undefined,
     headerLabel: `${question.header ?? ''}${suffix}`,

@@ -83,3 +83,5 @@ export const MEMBER_CHIP_REMOVE = 'accounts.memberChip.remove';
 export const SUGGESTION_TOGGLE = 'contacts.suggestion.toggle';
 
 export const FILTER_SELECT = 'chat.filter.select';
+
+export const LABEL_CHIP_PRESS = 'chat.labelBar.chipPress';

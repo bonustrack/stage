@@ -23,6 +23,7 @@ export * from './chat/messageBubble';
 export * from './chat/voiceMessage';
 export * from './chat/videoMessage';
 export * from './chat/filterChips';
+export * from './chat/labelBar';
 export * from './accounts/accountRow';
 export * from './accounts/memberRow';
 export * from './accounts/memberChip';
