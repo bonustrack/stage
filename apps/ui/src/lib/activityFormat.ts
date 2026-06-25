@@ -1,11 +1,6 @@
 import type { ActivityRow } from '@stage-labs/client/api/etherscan';
-import type { HeroIconName } from '@stage-labs/kit/icons';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { getPeerName } from '@stage-labs/client/identity/peerProfiles';
-
-export const DIR_ICON: Record<ActivityRow['direction'], HeroIconName> = {
-  send: 'arrowUp', receive: 'arrowDown', self: 'switchHorizontal',
-};
 
 export function txTitle(r: ActivityRow): string {
   if (r.isContract) return r.functionName || 'Contract';
@@ -17,15 +12,6 @@ export function txTitle(r: ActivityRow): string {
 export function txPartyLabel(r: ActivityRow): string {
   const name = getPeerName(r.counterparty) ?? shortAddress(r.counterparty);
   return r.direction === 'receive' ? `From ${name}` : `To ${name}`;
-}
-
-export function txValuePrefix(r: ActivityRow): string {
-  return r.direction === 'receive' ? '+' : r.direction === 'send' ? '−' : '';
-}
-
-export function txValueColor(r: ActivityRow): 'link' | 'success' | 'danger' {
-  if (r.failed) return 'danger';
-  return r.direction === 'receive' ? 'success' : 'link';
 }
 
 export function relTime(ts: number): string {

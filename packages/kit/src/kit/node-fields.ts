@@ -279,3 +279,8 @@ export interface ChartSeriesArea {
 }
 
 export type ChartSeries = ChartSeriesBar | ChartSeriesLine | ChartSeriesArea;
+
+export interface NodeBase {
+  id?: string;
+  key?: string;
+}

@@ -27,6 +27,7 @@ declare global {
   const addGroupMembers: typeof import('./lib/xmtpGroups').addGroupMembers
   const addSmartAccount: typeof import('./lib/xmtp').addSmartAccount
   const applyConsentToRows: typeof import('./lib/channelsCache').applyConsentToRows
+  const basicRoot: typeof import('./lib/kitRow').basicRoot
   const blockRequestConv: typeof import('./lib/xmtpRequests').blockRequestConv
   const buildSortedTokenRows: typeof import('./lib/walletSort').buildSortedTokenRows
   const bumpAccountEpoch: typeof import('./lib/xmtp').bumpAccountEpoch
@@ -88,6 +89,7 @@ declare global {
   const lineOfDmPeer: typeof import('./lib/xmtp').lineOfDmPeer
   const listAccounts: typeof import('./lib/xmtp').listAccounts
   const listRequestConvs: typeof import('./lib/xmtpRequests').listRequestConvs
+  const listRoot: typeof import('./lib/kitRow').listRoot
   const loadArchivedIds: typeof import('./lib/archived').loadArchivedIds
   const loadCachedProfile: typeof import('./lib/profile').loadCachedProfile
   const loadPk: typeof import('./lib/accounts').loadPk
@@ -341,7 +343,6 @@ declare module 'vue' {
   interface GlobalComponents {}
   interface ComponentCustomProperties {
     readonly ASK_QUESTION_MEMBERS: UnwrapRef<typeof import('./lib/xmtpGroups')['ASK_QUESTION_MEMBERS']>
-    readonly DIR_ICON: UnwrapRef<typeof import('./lib/activityFormat')['DIR_ICON']>
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
     readonly METRO_API_URL: UnwrapRef<typeof import('./lib/xmtpGroups')['METRO_API_URL']>
     readonly POLL_CODEC: UnwrapRef<typeof import('./lib/xmtpPollCodec')['POLL_CODEC']>
@@ -360,6 +361,7 @@ declare module 'vue' {
     readonly addGroupMembers: UnwrapRef<typeof import('./lib/xmtpGroups')['addGroupMembers']>
     readonly addSmartAccount: UnwrapRef<typeof import('./lib/xmtp')['addSmartAccount']>
     readonly applyConsentToRows: UnwrapRef<typeof import('./lib/channelsCache')['applyConsentToRows']>
+    readonly basicRoot: UnwrapRef<typeof import('./lib/kitRow')['basicRoot']>
     readonly blockRequestConv: UnwrapRef<typeof import('./lib/xmtpRequests')['blockRequestConv']>
     readonly buildSortedTokenRows: UnwrapRef<typeof import('./lib/walletSort')['buildSortedTokenRows']>
     readonly bumpAccountEpoch: UnwrapRef<typeof import('./lib/xmtp')['bumpAccountEpoch']>
@@ -421,6 +423,7 @@ declare module 'vue' {
     readonly lineOfDmPeer: UnwrapRef<typeof import('./lib/xmtp')['lineOfDmPeer']>
     readonly listAccounts: UnwrapRef<typeof import('./lib/xmtp')['listAccounts']>
     readonly listRequestConvs: UnwrapRef<typeof import('./lib/xmtpRequests')['listRequestConvs']>
+    readonly listRoot: UnwrapRef<typeof import('./lib/kitRow')['listRoot']>
     readonly loadArchivedIds: UnwrapRef<typeof import('./lib/archived')['loadArchivedIds']>
     readonly loadCachedProfile: UnwrapRef<typeof import('./lib/profile')['loadCachedProfile']>
     readonly loadPk: UnwrapRef<typeof import('./lib/accounts')['loadPk']>
@@ -521,8 +524,6 @@ declare module 'vue' {
     readonly txPartyLabel: UnwrapRef<typeof import('./lib/activityFormat')['txPartyLabel']>
     readonly txRequestChainId: UnwrapRef<typeof import('./lib/executeTxRequest')['txRequestChainId']>
     readonly txTitle: UnwrapRef<typeof import('./lib/activityFormat')['txTitle']>
-    readonly txValueColor: UnwrapRef<typeof import('./lib/activityFormat')['txValueColor']>
-    readonly txValuePrefix: UnwrapRef<typeof import('./lib/activityFormat')['txValuePrefix']>
     readonly unref: UnwrapRef<typeof import('vue')['unref']>
     readonly uploadAvatar: UnwrapRef<typeof import('./lib/profile')['uploadAvatar']>
     readonly useActivity: UnwrapRef<typeof import('./lib/useActivity')['useActivity']>

@@ -7,12 +7,12 @@ import type {
   FlexDirection,
   GutterSize,
   InputType,
+  NodeBase,
   PopoverSide,
   RadioOption,
   SelectOption,
   TextAlign,
 } from './node-fields';
-import type { NodeBase } from './nodes';
 
 export interface InputNode extends NodeBase {
   type: 'Input';

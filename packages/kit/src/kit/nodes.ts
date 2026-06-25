@@ -26,6 +26,7 @@ import type {
   ImageFit,
   ImagePosition,
   Justification,
+  NodeBase,
   RadiusValue,
   SpacingValue,
   TextAlign,
@@ -53,10 +54,7 @@ export type {
   TextareaNode,
 };
 
-export interface NodeBase {
-  id?: string;
-  key?: string;
-}
+export type { NodeBase };
 
 export interface BoxLayoutBase extends NodeBase {
   align?: Alignment;
