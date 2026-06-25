@@ -16,6 +16,7 @@ export * from './wallet/noticeCard';
 export * from './chat/channelRow';
 export * from './chat/mediaCard';
 export * from './chat/reactionsRow';
+export * from './chat/emojiReactionRow';
 export * from './chat/highlightText';
 export * from './chat/previewLinkCard';
 export * from './chat/conversationHeader';

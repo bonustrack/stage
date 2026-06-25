@@ -42,6 +42,8 @@ export const PROFILE_ROUND_PRESS = 'profile.round.press';
 
 export const REACTION_PRESS = 'chat.reaction.press';
 
+export const REACTION_EMOJI_PRESS = 'chat.reaction.emojiPress';
+
 export const MEDIA_PRESS = 'chat.media.press';
 
 export const CONVERSATION_PRESS = 'chat.conversation.press';

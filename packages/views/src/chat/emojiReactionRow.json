@@ -1,0 +1,20 @@
+{
+  "type": "Row",
+  "justify": "around",
+  "align": "center",
+  "padding": { "bottom": 8 },
+  "children": [
+    {
+      "$repeat": "emojis",
+      "$item": {
+        "type": "Button",
+        "label": "{{item}}",
+        "variant": "ghost",
+        "paddingX": 0,
+        "paddingY": 0,
+        "fontSize": 30,
+        "onClickAction": { "type": "{{pressType}}", "payload": { "emoji": "{{item}}" } }
+      }
+    }
+  ]
+}

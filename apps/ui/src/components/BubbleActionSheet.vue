@@ -3,7 +3,11 @@
 import { computed } from 'vue';
 import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { menuSheet, type MenuSheetItem, MENU_ITEM_PRESS } from '@stage-labs/views';
+import {
+  menuSheet, type MenuSheetItem, MENU_ITEM_PRESS,
+  emojiReactionRow, REACTION_EMOJI_PRESS,
+} from '@stage-labs/views';
+import { basicRoot } from '@/lib/kitRow';
 
 import type { HistoryEntry } from '../lib/types';
 
@@ -23,6 +27,7 @@ const items = computed<MenuSheetItem[]>(() => {
 });
 
 const node = computed(() => menuSheet({ items: items.value }));
+const emojiNode = computed(() => basicRoot(emojiReactionRow({ emojis: ACTION_EMOJIS })));
 
 const registry: WidgetActionRegistry = {
   [MENU_ITEM_PRESS]: (action) => {
@@ -31,22 +36,22 @@ const registry: WidgetActionRegistry = {
     else if (id === 'copy') emit('copy');
     else if (id === 'copy-link') emit('copy-link');
   },
+  [REACTION_EMOJI_PRESS]: (action) => {
+    if (typeof action.payload.emoji === 'string') emit('react', action.payload.emoji);
+  },
 };
 </script>
 
 <template>
-  <!-- Fixed bottom-sheet overlay + tap-to-dismiss gesture and the emoji
-       quick-reaction row stay in template (no Kit overlay/reaction-picker
-       node). The actionable item list renders from Kit JSON via menuSheet. -->
+  <!-- Fixed bottom-sheet overlay + tap-to-dismiss gesture stay in template
+       (no Kit overlay node). The emoji quick-reaction row and the actionable
+       item list render from Kit JSON via emojiReactionRow + menuSheet. -->
   <Row v-if="props.target"
     class="fixed inset-0 z-30 bg-black/45 flex items-end"
     @click.self="emit('close')"
   >
     <Col class="w-full rounded-t-2xl p-4 pb-6 bg-metro-surface-light dark:bg-metro-surface-dark">
-      <Row class="flex justify-around pb-2">
-        <Pressable v-for="e in ACTION_EMOJIS" :key="e" tag="button" type="button" class="text-3xl"
-          @click="emit('react', e)">{{ e }}</Pressable>
-      </Row>
+      <KitRenderer :node="emojiNode" :registry="registry" />
       <KitRenderer :node="node" :registry="registry" />
       <Pressable tag="button" type="button"
         class="w-full py-2.5 text-center text-sm text-metro-sub-light dark:text-metro-sub-dark"
