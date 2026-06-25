@@ -3,8 +3,8 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
-import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/chatkit';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
 import { settingsNavRow, SETTINGS_NAV_PRESS } from '@stage-labs/views';
 import { listAccounts, getActiveAccountId, loadPk, canExportPrivateKey, hasWalletMnemonic, type AccountRecord } from '../../lib/accounts';
 
@@ -94,10 +94,10 @@ const registry: WidgetActionRegistry = {
 
       <Text size="3xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark px-4 pt-6 pb-1">ACCOUNT SECURITY</Text>
       <Col class="w-[calc(100%-2rem)] mx-4 mt-2">
-        <ChatKitRenderer :node="manageNode" :registry="registry" />
+        <KitRenderer :node="manageNode" :registry="registry" />
       </Col>
       <Col class="w-[calc(100%-2rem)] mx-4 mt-3">
-        <ChatKitRenderer :node="recoveryNode" :registry="registry" />
+        <KitRenderer :node="recoveryNode" :registry="registry" />
       </Col>
     </Col>
   </Col>

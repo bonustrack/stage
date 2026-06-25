@@ -4,10 +4,10 @@ import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import type { HeroIconName } from '@stage-labs/kit/icons';
-import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import type {
   ListViewNode, ListViewItemNode, WidgetActionRegistry,
-} from '@stage-labs/kit/chatkit';
+} from '@stage-labs/kit/kit';
 import {
   col, icon, text, settingsRowSelectedIcon, SETTINGS_THEME_SELECT,
 } from '@stage-labs/views';
@@ -117,7 +117,7 @@ const registry: WidgetActionRegistry = {
       <!-- THEME: light/dark/system + custom, mirroring mobile's DisplaySettings list. -->
       <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark px-4 pt-5 pb-2">THEME</Col>
       <Col class="w-[calc(100%-2rem)] mx-4">
-        <ChatKitRenderer :node="themeNode" :registry="registry" />
+        <KitRenderer :node="themeNode" :registry="registry" />
       </Col>
 
       <!-- CUSTOM COLORS / DENSITY / RADIUS / TEXT SIZE: live seed editor, mirroring

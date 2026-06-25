@@ -39,7 +39,7 @@ function TypographySections({ dark, head, sub, border }: GalleryPalette): React.
         <Title level={3} color={head}>Level 3 title</Title>
       </GallerySection>
 
-      <GallerySection name="Text" note="ChatKit value / size / weight / textAlign" {...sec} innerPadH={14} innerPadV={12}>
+      <GallerySection name="Text" note="Kit value / size / weight / textAlign" {...sec} innerPadH={14} innerPadV={12}>
         <Text value="Body text - the default paragraph style."/>
         <Text role="secondary" value="Secondary text - muted supporting copy."/>
         <Text role="secondary" size="xs" value="Caption text - smallest label."/>
@@ -48,7 +48,7 @@ function TypographySections({ dark, head, sub, border }: GalleryPalette): React.
         <Text variant="mono" value="0xabc...1234"/>
       </GallerySection>
 
-      <GallerySection name="Button" note="ChatKit color + variant + size + iconStart/iconEnd" {...sec} innerPadH={14} innerPadV={12}>
+      <GallerySection name="Button" note="Kit color + variant + size + iconStart/iconEnd" {...sec} innerPadH={14} innerPadV={12}>
         <Row gap={8} style={{ flexWrap: 'wrap' }}>
           <Button dark={dark} color="primary" label="Primary"/>
           <Button dark={dark} color="secondary" label="Secondary"/>
@@ -87,7 +87,7 @@ function SurfaceSections({ dark, head, sub, border }: GalleryPalette): React.Rea
   const sec = { head, sub, border };
   return (
     <>
-      <GallerySection name="Card" note="ChatKit surface with status + actions" {...sec} framed={false}>
+      <GallerySection name="Card" note="Kit surface with status + actions" {...sec} framed={false}>
         <Card dark={dark}
           status={{ text: 'Pending confirmation' }}
           confirm={{ label: 'Confirm', onPress: () => undefined }}
@@ -225,12 +225,12 @@ function ContentSections({ dark, head, sub, border }: GalleryPalette): React.Rea
   const sec = { head, sub, border };
   return (
     <>
-      <GallerySection name="Markdown" note="ChatKit value - headings / code / links" {...sec} innerPadH={14} innerPadV={12}>
+      <GallerySection name="Markdown" note="Kit value - headings / code / links" {...sec} innerPadH={14} innerPadV={12}>
         <Markdown dark={dark}
           value={'## Markdown\nRenders **bold**, _italic_, `inline code`, and [links](https://metro.box).\n\n- Bulleted item\n- Second item\n\n```\ncode fence\n```'}/>
       </GallerySection>
 
-      <GallerySection name="Table" note="ChatKit Table / Row / Cell - header + data" {...sec} framed={false}>
+      <GallerySection name="Table" note="Kit Table / Row / Cell - header + data" {...sec} framed={false}>
         <Table dark={dark}>
           <Table.Row header>
             <Table.Cell><Text weight="semibold">Token</Text></Table.Cell>

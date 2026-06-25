@@ -20,7 +20,7 @@ import type {
   TextNode,
   TitleNode,
   WidgetNode,
-} from '../chatkit';
+} from '../kit';
 import {
   resolveAlign,
   resolveBadgeColor,
@@ -28,8 +28,8 @@ import {
   resolveOptionalColor,
   resolveRadius,
   resolveWrap,
-} from '../chatkit';
-import type { SpacingValue } from '../chatkit';
+} from '../kit';
+import type { SpacingValue } from '../kit';
 import { Box } from './box';
 import { Caption } from './caption';
 import { Card } from './card';
@@ -53,7 +53,7 @@ import {
   toNumber,
   type NodeRenderer,
   type RenderCtx,
-} from './chatkit-render-shared';
+} from './kit-render-shared';
 
 const ICON_PX: Record<string, number> = {
   xs: 14,

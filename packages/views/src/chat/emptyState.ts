@@ -1,4 +1,4 @@
-import type { ColNode, WidgetNode } from '@stage-labs/kit/chatkit';
+import type { ColNode, WidgetNode } from '@stage-labs/kit/kit';
 import { EMPTY_STATE_PRESS } from '../actions';
 import { button, caption, col, icon, text } from '../primitives';
 

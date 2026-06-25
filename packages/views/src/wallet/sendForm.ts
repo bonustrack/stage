@@ -3,7 +3,7 @@ import type {
   ListViewNode,
   SelectOption,
   WidgetNode,
-} from '@stage-labs/kit/chatkit';
+} from '@stage-labs/kit/kit';
 import { WALLET_SEND_SUBMIT } from '../actions';
 import { button, caption, col, text } from '../primitives';
 

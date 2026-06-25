@@ -3,8 +3,8 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Row } from './layout';
-import { ChatKitRenderer } from '@stage-labs/kit/react-native/chatkit-renderer';
-import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/chatkit';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
 import { reactionsRow, REACTION_PRESS, type ReactionPill } from '@stage-labs/views';
 import { REACT_PRESETS } from './MessengerBubble.helpers';
 import { usePalette } from '../lib/theme';
@@ -51,7 +51,7 @@ export function ReactionsRow({
 
   return (
     <Row margin={{ top: 4 }} wrap gap={4}>
-      {hasConfirmed ? <ChatKitRenderer node={node} registry={registry} /> : null}
+      {hasConfirmed ? <KitRenderer node={node} registry={registry} /> : null}
       {pendingEmojis.map(emoji => (
         <Row padding={{ x: 8, y: 2 }} key={`pending-${emoji}`} align="center" gap={4} radius="full" background={pillBg} style={{
           opacity: 0.45,

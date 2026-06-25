@@ -6,7 +6,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { Avatar } from './Avatar';
 import { Row, Col, Box } from './layout';
-import { ChatKitRenderer } from '@stage-labs/kit/react-native/chatkit-renderer';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
 import type {
   ChannelLabelChip,
   ChannelTitleSegment,
@@ -16,7 +16,7 @@ import {
   highlightSegments,
   CHANNEL_LABEL_PRESS,
 } from '@stage-labs/views';
-import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/chatkit';
+import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
 import { usePalette } from '../lib/theme';
 
 export interface ChannelRowProps {
@@ -165,7 +165,7 @@ function ChannelRowBase({
           style={{ backgroundColor: border }}
 />
         <Col minWidth={0} flex={1}>
-          <ChatKitRenderer node={node} registry={registry} />
+          <KitRenderer node={node} registry={registry} />
         </Col>
         <TrailingBadge unreadCount={unreadCount} markedUnread={markedUnread}
           showChevron={showChevron} head={head} bg={bg} />

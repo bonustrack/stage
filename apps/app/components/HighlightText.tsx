@@ -1,6 +1,6 @@
 
-import { ChatKitRenderer } from '@stage-labs/kit/react-native/chatkit-renderer';
-import type { WidgetRoot } from '@stage-labs/kit/chatkit';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import type { WidgetRoot } from '@stage-labs/kit/kit';
 import { highlightText } from '@stage-labs/views';
 
 export function HighlightText({ text, query, fg }: {
@@ -14,5 +14,5 @@ export function HighlightText({ text, query, fg }: {
       highlightText({ text, query: query.trim(), color: fg, matchColor: 'warning', size: 'xl' }),
     ],
   };
-  return <ChatKitRenderer node={node} />;
+  return <KitRenderer node={node} />;
 }

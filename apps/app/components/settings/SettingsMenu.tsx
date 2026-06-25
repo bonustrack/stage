@@ -8,11 +8,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Col, Box } from '../layout';
 import type { HeroIconName } from '@stage-labs/kit/react-native/icon';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { ChatKitRenderer } from '@stage-labs/kit/react-native/chatkit-renderer';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
 import type {
   ListViewNode,
   WidgetActionRegistry,
-} from '@stage-labs/kit/chatkit';
+} from '@stage-labs/kit/kit';
 import {
   settingsNavRow,
   settingsButtonRow,
@@ -143,12 +143,12 @@ export function SettingsMenu(): React.ReactElement {
     <Col surface="surface" flex={1}>
       <SystemHeader title="Settings" dark={dark} fg={fg} head={head} border={border}/>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
-        <ChatKitRenderer node={navNode} registry={registry}/>
+        <KitRenderer node={navNode} registry={registry}/>
         <Text size="xs" role="secondary" style={{ paddingHorizontal: 16, paddingTop: 28 }}>
           DANGER ZONE
         </Text>
         <Box padding={{ top: 8 }}>
-          <ChatKitRenderer node={dangerNode(resetting, nuking)} registry={registry}/>
+          <KitRenderer node={dangerNode(resetting, nuking)} registry={registry}/>
         </Box>
       </ScrollView>
     </Col>

@@ -4,7 +4,7 @@ import type {
   ListViewItemNode,
   TitleNode,
   WidgetNode,
-} from '@stage-labs/kit/chatkit';
+} from '@stage-labs/kit/kit';
 import { caption, col, icon, row, text, title } from '../primitives';
 
 export interface SettingsSectionParams {

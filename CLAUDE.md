@@ -102,7 +102,7 @@ Single client test: `bun test test/codecs.test.ts` (from `packages/client`).
 - **Size caps:** max 400 lines/file, max 100 lines/function, cyclomatic complexity <= 10. Split early.
 - **Kit-only UI (Vue):** templates MUST use `@stage-labs/kit/vue/*` (Box/Row/Col/Scroll/Text/Title/Button/Icon/Input/Card). Raw `<div>/<button>/<input>/<textarea>/<select>/<h1-6>` are ESLint-banned. `<Row>` for flex rows, `<Col>` for columns/stacks, `<Scroll>` for overflow — never `<Box direction=...>`. Do not import removed local layout/HeroIcon components.
 - **Sanctioned native exceptions (Vue):** rendered via `<component :is="'input'|'textarea'|'div'">` and MUST carry an `<!-- kit-exception: … -->` comment (file inputs, auto-grow composer, inline-edit, ref-measured scroll viewport).
-- **Kit-only UI (RN):** use kit RN primitives + `components/layout` Box/Col/Row with ChatKit layout params (align/justify/gap/padding/background/radius/sizing), not raw style objects.
+- **Kit-only UI (RN):** use kit RN primitives + `components/layout` Box/Col/Row with Kit layout params (align/justify/gap/padding/background/radius/sizing), not raw style objects.
 - **No circular deps** (madge) and **no unused files/deps/exports** (knip). Adding a workspace requires adding an entry under `workspaces` in `stage.config.js` (picking a `type` preset + knip `entry`/`project`) and, for madge coverage, listing its source root under `madge.roots`.
 - File naming: Vue views/components PascalCase `.vue`; lib helpers camelCase `.ts`; RN screens lowercase (expo-router). Kit Vue SFCs are PascalCase files but kebab-case subpath exports.
 

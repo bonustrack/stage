@@ -2,8 +2,8 @@
 
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
-import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
-import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/chatkit';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
 import { settingsNavRow, SETTINGS_NAV_PRESS } from '@stage-labs/views';
 import pkg from '../../package.json';
 
@@ -47,7 +47,7 @@ const registry: WidgetActionRegistry = {
     </Col>
 
     <Col class="w-[calc(100%-2rem)] mx-4 mt-2">
-      <ChatKitRenderer :node="node" :registry="registry" />
+      <KitRenderer :node="node" :registry="registry" />
     </Col>
 
     <Col class="mt-6 mb-4 text-center">

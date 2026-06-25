@@ -3,8 +3,8 @@
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
-import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/chatkit';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
 import { settingsNavRow, SETTINGS_NAV_PRESS } from '@stage-labs/views';
 
 const router = useRouter();
@@ -45,7 +45,7 @@ const registry: WidgetActionRegistry = {
 
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-8">
       <Col class="w-[calc(100%-2rem)] mx-4 mt-5">
-        <ChatKitRenderer :node="node" :registry="registry" />
+        <KitRenderer :node="node" :registry="registry" />
       </Col>
     </Col>
   </Col>

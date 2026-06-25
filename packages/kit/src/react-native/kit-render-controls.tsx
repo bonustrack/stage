@@ -8,14 +8,14 @@ import type {
   RadioGroupNode,
   SelectNode,
   TextareaNode,
-} from '../chatkit';
+} from '../kit';
 import {
   resolveButtonColor,
   resolveButtonVariant,
   resolveControlSize,
   resolveDirection,
   resolveFieldVariant,
-} from '../chatkit';
+} from '../kit';
 import { Button } from './button';
 import { Checkbox } from './checkbox';
 import { DatePicker } from './date-picker';
@@ -24,16 +24,16 @@ import { Input } from './input';
 import { RadioGroup } from './radio-group';
 import { Select } from './select';
 import { Textarea } from './textarea';
-import type { ControlVariant as ChatKitControlVariant } from '../chatkit';
+import type { ControlVariant as KitControlVariant } from '../kit';
 import type { ControlVariant as FieldControlVariant } from '../control.styles';
 import {
   dispatch,
   resolveIconName,
   submitForm,
   type RenderCtx,
-} from './chatkit-render-shared';
+} from './kit-render-shared';
 
-function fieldVariant(value: ChatKitControlVariant | undefined): FieldControlVariant {
+function fieldVariant(value: KitControlVariant | undefined): FieldControlVariant {
   return value === 'outline' || value === 'solid' ? 'outline' : 'soft';
 }
 

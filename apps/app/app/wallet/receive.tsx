@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { ChatKitRenderer } from '@stage-labs/kit/react-native/chatkit-renderer';
-import type { BasicNode, WidgetActionRegistry } from '@stage-labs/kit/chatkit';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import type { BasicNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
 import { addressCard, WALLET_ADDRESS_COPY } from '@stage-labs/views';
 import { Box, Row, Col } from '../../components/layout';
 import * as Clipboard from 'expo-clipboard';
@@ -104,7 +104,7 @@ export default function WalletReceive(): React.ReactElement {
         </Box>
 
         <Box width="100%">
-          <ChatKitRenderer node={addressNode} registry={addressRegistry} />
+          <KitRenderer node={addressNode} registry={addressRegistry} />
         </Box>
       </ScrollView>
     </Col>

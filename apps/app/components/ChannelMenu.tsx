@@ -2,8 +2,8 @@
 import { Alert } from 'react-native';
 
 import { useRouter } from 'expo-router';
-import { ChatKitRenderer } from '@stage-labs/kit/react-native/chatkit-renderer';
-import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/chatkit';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
 import { Box } from './layout';
 import type { MenuSheetItem } from '@stage-labs/views';
 import { menuSheet, MENU_ITEM_PRESS } from '@stage-labs/views';
@@ -129,7 +129,7 @@ export function ChannelMenu({
     <AppModal visible={visible} onClose={onClose}>
       {}
       <Box margin={{ x: -16 }}>
-        <ChatKitRenderer node={node} registry={registry} />
+        <KitRenderer node={node} registry={registry} />
       </Box>
     </AppModal>
   );

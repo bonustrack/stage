@@ -5,11 +5,11 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Col } from '../layout';
 import type { HeroIconName } from '@stage-labs/kit/react-native/icon';
-import { ChatKitRenderer } from '@stage-labs/kit/react-native/chatkit-renderer';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
 import type {
   ListViewNode,
   WidgetActionRegistry,
-} from '@stage-labs/kit/chatkit';
+} from '@stage-labs/kit/kit';
 import { settingsNavRow, SETTINGS_NAV_PRESS } from '@stage-labs/views';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { SystemHeader } from '../system/SystemHeader';
@@ -50,7 +50,7 @@ export function ExperimentalSettings(): React.ReactElement {
     <Col surface="surface" flex={1}>
       <SystemHeader title="Experimental" dark={dark} fg={fg} head={head} border={border}/>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
-        <ChatKitRenderer node={node} registry={registry}/>
+        <KitRenderer node={node} registry={registry}/>
       </ScrollView>
     </Col>
   );

@@ -2,7 +2,7 @@ import type {
   BadgeColor,
   ListViewItemNode,
   WidgetNode,
-} from '@stage-labs/kit/chatkit';
+} from '@stage-labs/kit/kit';
 import { MEMBER_PRESS, MEMBER_REMOVE } from '../actions';
 import { badge, button, caption, col, image, row, text } from '../primitives';
 

@@ -1,4 +1,4 @@
-import type { Color, FontWeight, RowNode, TextSize } from '@stage-labs/kit/chatkit';
+import type { Color, FontWeight, RowNode, TextSize } from '@stage-labs/kit/kit';
 import { row, text } from '../primitives';
 
 export interface HighlightTextParams {

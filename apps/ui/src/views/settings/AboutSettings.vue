@@ -3,8 +3,8 @@
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
-import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/chatkit';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
 import { settingsValueRow, settingsNavRow, SETTINGS_ACTION_PRESS } from '@stage-labs/views';
 import pkg from '../../../package.json';
 
@@ -63,9 +63,9 @@ const registry: WidgetActionRegistry = {
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-8 px-4 pt-4">
       <!-- Build + runtime metadata, mirroring the mobile About panel's metadata rows. -->
       <Text variant="secondary" weight="medium" size="xs" class="mb-2">Build + runtime metadata for this install.</Text>
-      <ChatKitRenderer :node="metaNode" :registry="registry" />
+      <KitRenderer :node="metaNode" :registry="registry" />
       <Col class="mt-4">
-        <ChatKitRenderer :node="githubNode" :registry="registry" />
+        <KitRenderer :node="githubNode" :registry="registry" />
       </Col>
     </Col>
   </Col>

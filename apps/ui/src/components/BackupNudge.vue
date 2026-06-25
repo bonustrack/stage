@@ -3,10 +3,10 @@
 import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/chatkit';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
 import { noticeCard, WALLET_NOTICE_PRESS } from '@stage-labs/views';
-import { basicRoot } from '@/lib/chatkitRow';
+import { basicRoot } from '@/lib/kitRow';
 import { accountEpoch, hasWalletMnemonic, isWalletBackedUp } from '../lib/accounts';
 
 const router = useRouter();
@@ -58,6 +58,6 @@ const registry: WidgetActionRegistry = {
     class="w-[calc(100%-2rem)] mx-4 mt-3 mb-1 shrink-0 rounded-xl border p-3.5"
     :style="{ borderColor: palette.danger }"
   >
-    <ChatKitRenderer :node="node" :registry="registry" />
+    <KitRenderer :node="node" :registry="registry" />
   </Col>
 </template>

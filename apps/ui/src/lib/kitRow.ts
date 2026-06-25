@@ -3,7 +3,7 @@ import type {
   ListViewItemNode,
   ListViewNode,
   WidgetNode,
-} from '@stage-labs/kit/chatkit';
+} from '@stage-labs/kit/kit';
 
 export function basicRoot(child: WidgetNode): BasicNode {
   return { type: 'Basic', children: [child] };

@@ -1,4 +1,4 @@
-import type { ListViewItemNode, WidgetNode } from '@stage-labs/kit/chatkit';
+import type { ListViewItemNode, WidgetNode } from '@stage-labs/kit/kit';
 import { WALLET_TOKEN_PRESS } from '../actions';
 import { changeColor } from '../colors';
 import { badge, caption, col, icon, image, row, text } from '../primitives';

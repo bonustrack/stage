@@ -1,4 +1,4 @@
-import type { FormNode, WidgetNode } from '@stage-labs/kit/chatkit';
+import type { FormNode, WidgetNode } from '@stage-labs/kit/kit';
 import { COMPOSER_ATTACH, COMPOSER_SEND } from '../actions';
 import { button } from '../primitives';
 

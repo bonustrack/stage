@@ -1,4 +1,4 @@
-import type { ThemeColor } from '@stage-labs/kit/chatkit';
+import type { ThemeColor } from '@stage-labs/kit/kit';
 
 export const DANGER_COLOR: ThemeColor = { dark: '#eb4c5b', light: '#eb4c5b' };
 

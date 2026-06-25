@@ -3,8 +3,8 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
-import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/chatkit';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
 import {
   settingsValueRow, settingsNavRow, SETTINGS_COPY, SETTINGS_NAV_PRESS,
 } from '@stage-labs/views';
@@ -114,16 +114,16 @@ const registry: WidgetActionRegistry = {
       <template v-else-if="account">
         <Text size="3xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark px-4 pt-5 pb-1">ACCOUNT</Text>
         <Col class="w-[calc(100%-2rem)] mx-4 mt-2">
-          <ChatKitRenderer :node="accountNode" :registry="registry" />
+          <KitRenderer :node="accountNode" :registry="registry" />
         </Col>
 
         <Text size="3xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark px-4 pt-6 pb-1">ADDRESS</Text>
         <Col class="w-[calc(100%-2rem)] mx-4 mt-2">
-          <ChatKitRenderer :node="addressNode" :registry="registry" />
+          <KitRenderer :node="addressNode" :registry="registry" />
         </Col>
 
         <Col class="w-[calc(100%-2rem)] mx-4 mt-6">
-          <ChatKitRenderer :node="manageNode" :registry="registry" />
+          <KitRenderer :node="manageNode" :registry="registry" />
         </Col>
       </template>
     </Col>

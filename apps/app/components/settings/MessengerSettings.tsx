@@ -7,11 +7,11 @@ import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box, Col } from '../layout';
 import { Caption } from '@stage-labs/kit/react-native/caption';
-import { ChatKitRenderer } from '@stage-labs/kit/react-native/chatkit-renderer';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
 import type {
   ListViewNode,
   WidgetActionRegistry,
-} from '@stage-labs/kit/chatkit';
+} from '@stage-labs/kit/kit';
 import {
   settingsValueRow,
   settingsButtonRow,
@@ -109,14 +109,14 @@ export function MessengerSettings(): React.ReactElement {
         </Caption>
         {rows.length ? (
           <Box>
-            <ChatKitRenderer node={accountNode} registry={registry}/>
+            <KitRenderer node={accountNode} registry={registry}/>
           </Box>
         ) : null}
 
         <MessengerSessions />
 
         <Box padding={{ top: 28 }}>
-          <ChatKitRenderer node={dangerNode} registry={registry}/>
+          <KitRenderer node={dangerNode} registry={registry}/>
         </Box>
       </ScrollView>
     </Col>

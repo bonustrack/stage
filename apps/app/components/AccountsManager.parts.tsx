@@ -5,8 +5,8 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Box, Col, Row } from './layout';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
-import { ChatKitRenderer } from '@stage-labs/kit/react-native/chatkit-renderer';
-import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/chatkit';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
 import { accountRow, ACCOUNT_PRESS } from '@stage-labs/views';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getPeerName } from '../lib/peerProfiles';
@@ -41,7 +41,7 @@ export function AccountRow({ rec, onPress, onLongPress, topBorder, trailing, bor
 >
       <Row align="center">
         <Box flex={1}>
-          <ChatKitRenderer node={node} registry={registry} />
+          <KitRenderer node={node} registry={registry} />
         </Box>
         {trailing}
       </Row>

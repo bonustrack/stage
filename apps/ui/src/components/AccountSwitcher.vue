@@ -2,8 +2,8 @@
 
 import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
-import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/chatkit';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
 import { accountRow, ACCOUNT_PRESS } from '@stage-labs/views';
 import { listAccounts, getActiveAccount, accountEpoch, type AccountRecord } from '../lib/accounts';
 import { switchToAccount, stampAvatarUrl, shortAddress } from '../lib/xmtp';
@@ -101,7 +101,7 @@ const registry: WidgetActionRegistry = {
         bg-metro-bg-light dark:bg-metro-surface-dark
         border border-metro-border-light dark:border-metro-border-dark"
     >
-      <ChatKitRenderer :node="listNode" :registry="registry" />
+      <KitRenderer :node="listNode" :registry="registry" />
 
       <Col class="border-t border-metro-border-light dark:border-metro-border-dark my-1" />
 

@@ -1,8 +1,8 @@
 
 import { Linking } from 'react-native';
 
-import { ChatKitRenderer } from '@stage-labs/kit/react-native/chatkit-renderer';
-import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/chatkit';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
 import { previewLinkCard, LINK_OPEN } from '@stage-labs/views';
 import { previewLinkOf } from '../lib/previewLinkDetect';
 
@@ -28,5 +28,5 @@ export function PreviewLinkCard({ url }: {
       if (typeof target === 'string') void Linking.openURL(target);
     },
   };
-  return <ChatKitRenderer node={node} registry={registry} />;
+  return <KitRenderer node={node} registry={registry} />;
 }

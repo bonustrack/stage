@@ -1,4 +1,4 @@
-import type { ColNode, WidgetNode } from '@stage-labs/kit/chatkit';
+import type { ColNode, WidgetNode } from '@stage-labs/kit/kit';
 import { DANGER_COLOR, SUCCESS_COLOR } from '../colors';
 import { caption, col, icon, row, text } from '../primitives';
 

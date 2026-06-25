@@ -3,9 +3,9 @@
 import { computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import { emptyState } from '@stage-labs/views';
-import { basicRoot } from '@/lib/chatkitRow';
+import { basicRoot } from '@/lib/kitRow';
 import { useEffectiveScheme } from '@/lib/kitTheme';
 import {
   listRequestConvs, acceptRequestConv, blockRequestConv,
@@ -64,7 +64,7 @@ async function act(convId: string, accept: boolean): Promise<void> {
       <Spinner :size="28" />
     </Col>
     <Col v-else-if="rows.length === 0" align="center" justify="center" class="flex-1">
-      <ChatKitRenderer :node="emptyNode" />
+      <KitRenderer :node="emptyNode" />
     </Col>
     <ul v-else class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-6">
       <li v-for="r in rows" :key="r.convId">

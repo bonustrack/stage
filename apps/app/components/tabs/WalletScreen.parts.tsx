@@ -5,12 +5,12 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { ChatKitRenderer } from '@stage-labs/kit/react-native/chatkit-renderer';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
 import type {
   BasicNode,
   WidgetActionRegistry,
   WidgetRoot,
-} from '@stage-labs/kit/chatkit';
+} from '@stage-labs/kit/kit';
 import { tokenRowBody, WALLET_TOKEN_PRESS } from '@stage-labs/views';
 import { Box, Col, Row } from '../layout';
 import { type AssetRow } from './WalletScreen.assets';
@@ -108,7 +108,7 @@ export const TokenRow = memo(function TokenRow({ r, border, bg, onPress }: { r: 
       <Row padding={{ y: 14 }} align="center" gap={12}>
         <TokenAvatar logoUrl={r.logoUrl} chainId={r.chainId} bg={bg} border={border} />
         <Box flex={1}>
-          <ChatKitRenderer node={node} registry={registry} />
+          <KitRenderer node={node} registry={registry} />
         </Box>
       </Row>
     </Pressable>

@@ -1,4 +1,4 @@
-import type { Color, ListViewNode, WidgetNode } from '@stage-labs/kit/chatkit';
+import type { Color, ListViewNode, WidgetNode } from '@stage-labs/kit/kit';
 import { MENU_ITEM_PRESS } from '../actions';
 import { icon, row, text } from '../primitives';
 

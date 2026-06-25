@@ -5,11 +5,11 @@ import { Linking } from 'react-native';
 import { Box } from '../layout';
 import { Title } from '@stage-labs/kit/react-native/title';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { ChatKitRenderer } from '@stage-labs/kit/react-native/chatkit-renderer';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
 import type {
   ListViewNode,
   WidgetActionRegistry,
-} from '@stage-labs/kit/chatkit';
+} from '@stage-labs/kit/kit';
 import {
   settingsValueRow,
   SETTINGS_ACTION_PRESS,
@@ -84,7 +84,7 @@ export function AboutPanel({ dark, head, sub, border, rowBg }: {
           Build + runtime metadata for this install.
         </Text>
       </Box>
-      <ChatKitRenderer node={node} registry={registry}/>
+      <KitRenderer node={node} registry={registry}/>
       <Box padding={{ x: 16 }}>
         <Text role="secondary" variant="caption" weight="medium" style={{ marginTop: 14 }}>
           Commit shows "dev" only when the build could not resolve a git SHA. Tap it to open the commit on GitHub.

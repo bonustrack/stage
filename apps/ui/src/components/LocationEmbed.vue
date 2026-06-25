@@ -1,10 +1,10 @@
 <script setup lang="ts">
 
 import { computed } from 'vue';
-import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/chatkit';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
 import { previewLinkCard, LINK_OPEN } from '@stage-labs/views';
-import { listRoot } from '@/lib/chatkitRow';
+import { listRoot } from '@/lib/kitRow';
 import { osmTileUrl } from '../lib/embedDetect';
 
 const props = defineProps<{ lat: number; lng: number; sourceUrl: string }>();
@@ -32,8 +32,8 @@ const registry: WidgetActionRegistry = {
 
 <template>
   <!-- Static OSM map tile thumbnail + caption + tap-to-open, rendered from
-       ChatKit JSON via previewLinkCard (static Image + Text + LINK_OPEN). The
+       Kit JSON via previewLinkCard (static Image + Text + LINK_OPEN). The
        decorative centered 📍 overlay is dropped (an absolute overlay is not
-       expressible in ChatKit JSON). -->
-  <ChatKitRenderer :node="node" :registry="registry" />
+       expressible in Kit JSON). -->
+  <KitRenderer :node="node" :registry="registry" />
 </template>

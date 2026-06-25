@@ -11,7 +11,7 @@ import type {
   TextNode,
   TitleNode,
   WidgetNode,
-} from '@stage-labs/kit/chatkit';
+} from '@stage-labs/kit/kit';
 
 type RowProps = Omit<RowNode, 'type' | 'children'>;
 type ColProps = Omit<ColNode, 'type' | 'children'>;

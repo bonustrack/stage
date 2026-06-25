@@ -4,8 +4,8 @@ import { useCallback } from 'react';
 import { DevSettings, Vibration } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { ChatKitRenderer } from '@stage-labs/kit/react-native/chatkit-renderer';
-import type { WidgetRoot } from '@stage-labs/kit/chatkit';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import type { WidgetRoot } from '@stage-labs/kit/kit';
 import { emptyState } from '@stage-labs/views';
 import { Col } from '../layout';
 import { Spinner } from '../Spinner';
@@ -136,5 +136,5 @@ export function HomeEmpty({ message }: { message?: string }): React.ReactElement
       }),
     ],
   };
-  return <ChatKitRenderer node={node} />;
+  return <KitRenderer node={node} />;
 }

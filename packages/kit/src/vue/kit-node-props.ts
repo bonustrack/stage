@@ -9,7 +9,7 @@ import {
   resolveRadius,
   resolveWrap,
   type Scheme,
-} from '../chatkit';
+} from '../kit';
 import type {
   BoxLayoutBase,
   ButtonNode,
@@ -17,7 +17,7 @@ import type {
   Color,
   ImageNode,
   ListViewItemNode,
-} from '../chatkit';
+} from '../kit';
 
 const FALLBACK_ICON: HeroIconName = 'questionMarkCircle';
 

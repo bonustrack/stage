@@ -3,8 +3,8 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
-import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/chatkit';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
 import {
   settingsValueRow, SETTINGS_COPY,
 } from '@stage-labs/views';
@@ -118,7 +118,7 @@ const registry: WidgetActionRegistry = {
       <Text size="3xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark px-4 pt-5 pb-1">XMTP ACCOUNT</Text>
 
       <Col class="w-[calc(100%-2rem)] mx-4 mt-2">
-        <ChatKitRenderer :node="accountNode" :registry="registry" />
+        <KitRenderer :node="accountNode" :registry="registry" />
       </Col>
 
       <!-- ACTIVE SESSIONS: installation list, mirroring mobile MessengerSessions.

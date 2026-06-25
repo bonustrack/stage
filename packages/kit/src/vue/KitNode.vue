@@ -45,7 +45,7 @@ import {
   type TitleNode,
   type TransitionNode,
   type WidgetNode,
-} from '../chatkit';
+} from '../kit';
 import {
   boxProps,
   buttonProps,
@@ -57,13 +57,13 @@ import {
   listItemProps,
   resolveIconName,
   titleSize,
-} from './chatkit-node-props';
-import { useChatKitForm, useChatKitRender } from './chatkit-form-context';
+} from './kit-node-props';
+import { useKitForm, useKitRender } from './kit-form-context';
 
 const props = defineProps<{ node: WidgetNode }>();
 
-const render = useChatKitRender();
-const form = useChatKitForm();
+const render = useKitRender();
+const form = useKitForm();
 
 const scheme = computed(() => render.scheme);
 
@@ -131,21 +131,21 @@ const transitionChild = computed<WidgetNode | undefined>(() => {
     v-if="node.type === 'Row'"
     v-bind="boxProps(boxNode, scheme)"
   >
-    <ChatKitNode v-for="(c, i) in children" :key="i" :node="c" />
+    <KitNode v-for="(c, i) in children" :key="i" :node="c" />
   </Row>
 
   <Col
     v-else-if="node.type === 'Col'"
     v-bind="boxProps(boxNode, scheme)"
   >
-    <ChatKitNode v-for="(c, i) in children" :key="i" :node="c" />
+    <KitNode v-for="(c, i) in children" :key="i" :node="c" />
   </Col>
 
   <Box
     v-else-if="node.type === 'Box'"
     v-bind="boxProps(boxNode, scheme)"
   >
-    <ChatKitNode v-for="(c, i) in children" :key="i" :node="c" />
+    <KitNode v-for="(c, i) in children" :key="i" :node="c" />
   </Box>
 
   <Form
@@ -153,7 +153,7 @@ const transitionChild = computed<WidgetNode | undefined>(() => {
     v-bind="boxProps(boxNode, scheme)"
     @submit="onSubmitForm(formNode.onSubmitAction)"
   >
-    <ChatKitNode v-for="(c, i) in children" :key="i" :node="c" />
+    <KitNode v-for="(c, i) in children" :key="i" :node="c" />
   </Form>
 
   <Title
@@ -335,10 +335,10 @@ const transitionChild = computed<WidgetNode | undefined>(() => {
     v-bind="listItemProps(listItemNode)"
     @press="fire(listItemNode.onClickAction)"
   >
-    <ChatKitNode v-for="(c, i) in children" :key="i" :node="c" />
+    <KitNode v-for="(c, i) in children" :key="i" :node="c" />
   </ListViewItem>
 
-  <ChatKitNode
+  <KitNode
     v-else-if="node.type === 'Transition' && transitionChild"
     :node="transitionChild"
   />
@@ -348,6 +348,6 @@ const transitionChild = computed<WidgetNode | undefined>(() => {
   </Box>
 
   <template v-else-if="children.length">
-    <ChatKitNode v-for="(c, i) in children" :key="i" :node="c" />
+    <KitNode v-for="(c, i) in children" :key="i" :node="c" />
   </template>
 </template>

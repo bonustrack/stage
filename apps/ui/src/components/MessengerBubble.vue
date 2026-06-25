@@ -1,11 +1,11 @@
 <script setup lang="ts">
 
 import { computed } from 'vue';
-import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import type { WidgetActionRegistry } from '@stage-labs/kit/chatkit';
+import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
 import { reactionsRow, type ReactionPill, REACTION_PRESS } from '@stage-labs/views';
-import { basicRoot } from '@/lib/chatkitRow';
+import { basicRoot } from '@/lib/kitRow';
 import { stampAvatarUrl, XMTP_USER_PREFIX } from '../lib/xmtp';
 import type { HistoryEntry } from '../lib/types';
 import { mapCoordsOf, youtubeIdOf } from '../lib/embedDetect';
@@ -297,9 +297,9 @@ const reactionsRegistry: WidgetActionRegistry = {
           @click="pickerOpen = false">✕</Pressable>
       </Row>
       <!-- Reactions pills on their own row below (matches mobile), rendered from
-           ChatKit JSON via the shared reactionsRow builder. -->
+           Kit JSON via the shared reactionsRow builder. -->
       <Col v-if="reactionPills.length > 0" class="mt-1">
-        <ChatKitRenderer :node="reactionsNode" :registry="reactionsRegistry" />
+        <KitRenderer :node="reactionsNode" :registry="reactionsRegistry" />
       </Col>
     </Col>
   </Row>

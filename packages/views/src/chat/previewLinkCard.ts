@@ -1,4 +1,4 @@
-import type { ListViewItemNode, WidgetNode } from '@stage-labs/kit/chatkit';
+import type { ListViewItemNode, WidgetNode } from '@stage-labs/kit/kit';
 import { LINK_OPEN } from '../actions';
 import { caption, col, image, text } from '../primitives';
 

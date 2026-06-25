@@ -4,7 +4,7 @@ import type {
   CardNode,
   ListViewItemNode,
   WidgetNode,
-} from '@stage-labs/kit/chatkit';
+} from '@stage-labs/kit/kit';
 import { MEDIA_PRESS } from '../actions';
 
 export interface MediaCardParams {

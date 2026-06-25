@@ -1,4 +1,4 @@
-import type { ColNode, WidgetNode } from '@stage-labs/kit/chatkit';
+import type { ColNode, WidgetNode } from '@stage-labs/kit/kit';
 import { POLL_OPTION_PRESS } from '../actions';
 import { caption, col, row, text } from '../primitives';
 

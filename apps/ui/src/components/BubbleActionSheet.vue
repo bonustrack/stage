@@ -1,8 +1,8 @@
 <script setup lang="ts">
 
 import { computed } from 'vue';
-import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/chatkit';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
 import { menuSheet, type MenuSheetItem, MENU_ITEM_PRESS } from '@stage-labs/views';
 
 import type { HistoryEntry } from '../lib/types';
@@ -36,8 +36,8 @@ const registry: WidgetActionRegistry = {
 
 <template>
   <!-- Fixed bottom-sheet overlay + tap-to-dismiss gesture and the emoji
-       quick-reaction row stay in template (no ChatKit overlay/reaction-picker
-       node). The actionable item list renders from ChatKit JSON via menuSheet. -->
+       quick-reaction row stay in template (no Kit overlay/reaction-picker
+       node). The actionable item list renders from Kit JSON via menuSheet. -->
   <Row v-if="props.target"
     class="fixed inset-0 z-30 bg-black/45 flex items-end"
     @click.self="emit('close')"
@@ -47,7 +47,7 @@ const registry: WidgetActionRegistry = {
         <Pressable v-for="e in ACTION_EMOJIS" :key="e" tag="button" type="button" class="text-3xl"
           @click="emit('react', e)">{{ e }}</Pressable>
       </Row>
-      <ChatKitRenderer :node="node" :registry="registry" />
+      <KitRenderer :node="node" :registry="registry" />
       <Pressable tag="button" type="button"
         class="w-full py-2.5 text-center text-sm text-metro-sub-light dark:text-metro-sub-dark"
         @click="emit('close')">Cancel</Pressable>

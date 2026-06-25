@@ -1,13 +1,13 @@
 
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Card } from '@stage-labs/kit/react-native/card';
-import { ChatKitRenderer } from '@stage-labs/kit/react-native/chatkit-renderer';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
 import type {
   BadgeColor,
   ListViewItemNode,
   ListViewNode,
   WidgetActionRegistry,
-} from '@stage-labs/kit/chatkit';
+} from '@stage-labs/kit/kit';
 import {
   badge,
   col,
@@ -136,7 +136,7 @@ export function makeCard(
   return (node) => (
     <Box margin={{ x: 16 }} radius={blockRadius} style={{ overflow: 'hidden' }}>
       <Card dark={dark} background={rowBg} padding={0}>
-        <ChatKitRenderer node={node} registry={registry}/>
+        <KitRenderer node={node} registry={registry}/>
       </Card>
     </Box>
   );

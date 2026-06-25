@@ -8,12 +8,12 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Card } from '@stage-labs/kit/react-native/card';
 import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
-import { ChatKitRenderer } from '@stage-labs/kit/react-native/chatkit-renderer';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
 import type {
   ListViewItemNode,
   ListViewNode,
   WidgetActionRegistry,
-} from '@stage-labs/kit/chatkit';
+} from '@stage-labs/kit/kit';
 import {
   settingsNavRow,
   settingsButtonRow,
@@ -153,7 +153,7 @@ export function AccountSecuritySection(
               <RevealedKeyRow c={c} dark={dark} revealed={revealed} />
             </ListView>
           ) : null}
-          <ChatKitRenderer node={node} registry={registry}/>
+          <KitRenderer node={node} registry={registry}/>
         </Card>
       </Box>
     </>

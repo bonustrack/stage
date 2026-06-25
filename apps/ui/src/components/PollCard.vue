@@ -2,10 +2,10 @@
 
 import { computed } from 'vue';
 import { normalizeQuestions, type PollContent } from '@stage-labs/client/xmtp/poll';
-import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/chatkit';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
 import { pollCard, type PollQuestion, POLL_OPTION_PRESS } from '@stage-labs/views';
-import { basicRoot } from '@/lib/chatkitRow';
+import { basicRoot } from '@/lib/kitRow';
 
 const props = defineProps<{
   poll: PollContent;
@@ -67,5 +67,5 @@ const registry: WidgetActionRegistry = {
 </script>
 
 <template>
-  <ChatKitRenderer :node="node" :registry="registry" />
+  <KitRenderer :node="node" :registry="registry" />
 </template>

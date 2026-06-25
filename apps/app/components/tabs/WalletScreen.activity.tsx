@@ -2,8 +2,8 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { Text } from '@stage-labs/kit/react-native/text';
-import { ChatKitRenderer } from '@stage-labs/kit/react-native/chatkit-renderer';
-import type { BasicNode } from '@stage-labs/kit/chatkit';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import type { BasicNode } from '@stage-labs/kit/kit';
 import { txRow, type TxDirection } from '@stage-labs/views';
 import { Spinner } from '../Spinner';
 import { Col, Box } from '../layout';
@@ -124,7 +124,7 @@ function TxRow({ r, border }: {
   const node = useMemo(() => txRowNode(r), [r]);
   return (
     <Box padding={{ y: 14 }} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-      <ChatKitRenderer node={node} />
+      <KitRenderer node={node} />
     </Box>
   );
 }

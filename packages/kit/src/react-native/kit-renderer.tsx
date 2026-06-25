@@ -9,8 +9,8 @@ import type {
   WidgetFormValues,
   WidgetNode,
   WidgetRoot,
-} from '../chatkit';
-import { resolveAlign, resolveBindings, resolveJustify, resolveWrap } from '../chatkit';
+} from '../kit';
+import { resolveAlign, resolveBindings, resolveJustify, resolveWrap } from '../kit';
 import { useKitScheme } from './theme-context';
 import { Box } from './box';
 import { Form } from './form';
@@ -30,7 +30,7 @@ import {
   renderSpacer,
   renderText,
   renderTitle,
-} from './chatkit-render-node';
+} from './kit-render-node';
 import {
   renderButton,
   renderCheckbox,
@@ -39,13 +39,13 @@ import {
   renderRadioGroup,
   renderSelect,
   renderTextarea,
-} from './chatkit-render-controls';
+} from './kit-render-controls';
 import {
   renderList,
   submitForm,
   type FormScope,
   type RenderCtx,
-} from './chatkit-render-shared';
+} from './kit-render-shared';
 
 type NodeOf<T extends WidgetNode['type']> = Extract<WidgetNode, { type: T }>;
 
@@ -165,13 +165,13 @@ function CardFormHost(props: { node: CardNode; ctx: RenderCtx }): ReactNode {
   return renderCard(node, formCtx, children);
 }
 
-export interface ChatKitRendererProps {
+export interface KitRendererProps {
   node: WidgetRoot;
   registry?: WidgetActionRegistry;
   data?: WidgetDataContext;
 }
 
-export function ChatKitRenderer(props: ChatKitRendererProps): ReactNode {
+export function KitRenderer(props: KitRendererProps): ReactNode {
   const { node, registry, data } = props;
   const scheme = useKitScheme();
   const resolved = useMemo(

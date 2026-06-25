@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { isAddress } from 'viem';
 import { Box } from '../layout';
 import { ChannelRow } from '../ChannelRow';
-import { ChatKitRenderer } from '@stage-labs/kit/react-native/chatkit-renderer';
-import type { WidgetRoot } from '@stage-labs/kit/chatkit';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import type { WidgetRoot } from '@stage-labs/kit/kit';
 import { emptyState, sectionHeader } from '@stage-labs/views';
 import { openDmWithAddress, shortAddress } from '../../modules/messaging';
 import { resolveEnsName } from '../../lib/ens';
@@ -101,13 +101,13 @@ export function HomeContactResults(
   if (!q) return null;
   if (!showResolved && filtered.length === 0) {
     if (!noChannels) return null;
-    return <ChatKitRenderer node={NO_MATCH_NODE} />;
+    return <KitRenderer node={NO_MATCH_NODE} />;
   }
 
   return (
     <Box>
       <Box padding={{ x: 16, top: 16, bottom: 6 }}>
-        <ChatKitRenderer node={PEOPLE_HEADER_NODE} />
+        <KitRenderer node={PEOPLE_HEADER_NODE} />
       </Box>
       {showResolved ? (
         <ChannelRow

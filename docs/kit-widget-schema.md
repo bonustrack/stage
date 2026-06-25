@@ -1,22 +1,12 @@
-# ChatKit Widget JSON Schema — Reference
+# Kit Widget JSON Schema — Reference
 
-A precise reference for the widget JSON that OpenAI ChatKit emits/consumes, written so we can build a faithful renderer in our own design system.
+A precise reference for the widget JSON format the Kit renderer emits/consumes, written so we can build a faithful renderer in our own design system.
 
-This document is derived primarily from the **canonical source of truth**: the Pydantic models in the ChatKit Python SDK (`chatkit/widgets.py`, `chatkit/actions.py`), cross-checked against the JS type definitions and the OpenAI developer docs. The Python models serialize to the exact JSON shape the client renders, and each model carries a literal `type` discriminator field that becomes `"type": "..."` in JSON.
+This document is derived primarily from the canonical Pydantic widget models and their JS type definitions. The Python models serialize to the exact JSON shape the client renders, and each model carries a literal `type` discriminator field that becomes `"type": "..."` in JSON.
 
-## Sources
+> Provenance: the widget JSON format documented here originates from the upstream OpenAI ChatKit Python/JS SDKs (`widgets.py`, `actions.py`, JS `widgets.d.ts`); this reference tracks that JSON shape so we can render it in our own design system.
 
-- ChatKit Widgets guide: https://developers.openai.com/api/docs/guides/chatkit-widgets
-- ChatKit Actions guide: https://developers.openai.com/api/docs/guides/chatkit-actions
-- ChatKit Themes guide: https://platform.openai.com/docs/guides/chatkit-themes
-- Python SDK widgets (source of truth): https://github.com/openai/chatkit-python/blob/main/chatkit/widgets.py (raw: https://raw.githubusercontent.com/openai/chatkit-python/main/chatkit/widgets.py)
-- Python SDK actions: https://github.com/openai/chatkit-python/blob/main/chatkit/actions.py
-- Python SDK API docs: https://openai.github.io/chatkit-python/api/chatkit/widgets/
-- JS widget types: https://github.com/openai/chatkit-js/blob/main/packages/chatkit/types/widgets.d.ts
-- JS WidgetComponent: https://openai.github.io/chatkit-js/api/openai/chatkit/namespaces/widgets/type-aliases/widgetcomponent/
-- Advanced samples app: https://github.com/openai/openai-chatkit-advanced-samples
-
-> Note: ChatKit is evolving. The Python SDK marks direct construction of named widget classes as deprecated in favor of `.widget` template files (Jinja2), but the **serialized JSON shape is identical** — templates simply produce these same nodes. Build the renderer against the JSON shape below.
+> Note: the format is evolving. The upstream Python SDK marks direct construction of named widget classes as deprecated in favor of `.widget` template files (Jinja2), but the **serialized JSON shape is identical** — templates simply produce these same nodes. Build the renderer against the JSON shape below.
 
 ---
 
@@ -61,7 +51,7 @@ A rendered widget's top node (`WidgetRoot`) is one of:
 
 **Identify the root by its `type` field.** A renderer should switch on `type` at the top level: `Card` and `ListView` are the two you will see in practice. Everything else (`Box`, `Text`, ...) is a non-root node that appears nested inside a root.
 
-In the ChatKit data model the widget is delivered inside a thread item (a `WidgetItem`) whose `widget` field holds this root node. Streaming updates patch the tree by `id`/`key`.
+In the widget data model the widget is delivered inside a thread item (a `WidgetItem`) whose `widget` field holds this root node. Streaming updates patch the tree by `id`/`key`.
 
 ---
 
@@ -236,7 +226,7 @@ A form-field label bound to an input.
 - `color`: string | ThemeColor
 - `size`: IconSize (`xs`..`3xl`)
 
-> `WidgetIcon`/`IconName` is a large enum of named glyphs defined in `chatkit/icons.py` (e.g. `"check"`, `"chevron-right"`, etc.). Map these to our own icon set; fall back gracefully on unknown names.
+> `WidgetIcon`/`IconName` is a large enum of named glyphs defined in the upstream `icons.py` (e.g. `"check"`, `"chevron-right"`, etc.). Map these to our own icon set; fall back gracefully on unknown names.
 
 #### Badge — `"type": "Badge"`
 - `label`: string — **required**
@@ -393,7 +383,7 @@ Actions are how widget interactions reach your server (or are handled client-sid
 }
 ```
 
-- `handler: "server"` → ChatKit POSTs the action to your backend's `action()` method.
+- `handler: "server"` → the host POSTs the action to your backend's `action()` method.
 - `handler: "client"` → the host app's `onAction` callback handles it in the browser (no round trip).
 - `loadingBehavior`: `auto` adapts to context; `self` highlights the triggering control; `container` fades the whole widget; `none` shows no feedback.
 
@@ -413,7 +403,7 @@ When a `Form` (or `Card` with `asForm: true`) submits, every contained input con
 ### Imperative client trigger
 The host app can also dispatch actions directly (no widget interaction):
 ```javascript
-await chatKit.sendAction({ type: "example", payload: { id: 123 } });
+await kit.sendAction({ type: "example", payload: { id: 123 } });
 ```
 
 ### Server handler shape (Python, for context)

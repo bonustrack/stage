@@ -6,11 +6,11 @@ import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box, Col } from '../layout';
 import { Caption } from '@stage-labs/kit/react-native/caption';
-import { ChatKitRenderer } from '@stage-labs/kit/react-native/chatkit-renderer';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
 import type {
   ListViewNode,
   WidgetActionRegistry,
-} from '@stage-labs/kit/chatkit';
+} from '@stage-labs/kit/kit';
 import {
   settingsToggleRow,
   settingsButtonRow,
@@ -144,13 +144,13 @@ export function DeveloperSettings(): React.ReactElement {
           DIAGNOSTICS
         </Caption>
         <Box>
-          <ChatKitRenderer node={diagnosticsNode(enabled)} registry={registry}/>
+          <KitRenderer node={diagnosticsNode(enabled)} registry={registry}/>
         </Box>
         <Caption color={sub} style={{ paddingHorizontal: 16, paddingTop: 28, paddingBottom: 8 }}>
           DANGER ZONE
         </Caption>
         <Box>
-          <ChatKitRenderer node={dangerNode(resetting, nuking)} registry={registry}/>
+          <KitRenderer node={dangerNode(resetting, nuking)} registry={registry}/>
         </Box>
       </ScrollView>
     </Col>

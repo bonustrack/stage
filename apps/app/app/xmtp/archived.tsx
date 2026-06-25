@@ -5,8 +5,8 @@ import { FlatList } from 'react-native-gesture-handler';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Title } from '@stage-labs/kit/react-native/title';
 import { Icon } from '@stage-labs/kit/react-native/icon';
-import { ChatKitRenderer } from '@stage-labs/kit/react-native/chatkit-renderer';
-import type { WidgetRoot } from '@stage-labs/kit/chatkit';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import type { WidgetRoot } from '@stage-labs/kit/kit';
 import { emptyState } from '@stage-labs/views';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -73,7 +73,7 @@ export default function Archived(): React.ReactElement {
         keyExtractor={r => r.convId}
         renderItem={renderRow}
         contentContainerStyle={data.length === 0 ? { flexGrow: 1 } : { paddingBottom: 24 + insets.bottom }}
-        ListEmptyComponent={<ChatKitRenderer node={EMPTY_NODE} />}
+        ListEmptyComponent={<KitRenderer node={EMPTY_NODE} />}
 />
     </Col>
   );

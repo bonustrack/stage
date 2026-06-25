@@ -2,7 +2,7 @@
   "name": "@stage-labs/views",
   "version": "0.1.0-beta.0",
   "private": true,
-  "description": "Framework-agnostic ChatKit-JSON view builders shared by the Stage clients (web + mobile). Pure functions that construct ChatKit WidgetNode objects with interactivity routed through the action-dispatch registry. No build step.",
+  "description": "Framework-agnostic Kit-JSON view builders shared by the Stage clients (web + mobile). Pure functions that construct Kit WidgetNode objects with interactivity routed through the action-dispatch registry. No build step.",
   "license": "MIT",
   "type": "module",
   "types": "./src/index.ts",

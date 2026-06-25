@@ -1,4 +1,4 @@
-import type { ListViewItemNode } from '@stage-labs/kit/chatkit';
+import type { ListViewItemNode } from '@stage-labs/kit/kit';
 import { ACCOUNT_PRESS } from '../actions';
 import { badge, caption, col, image, row, text } from '../primitives';
 

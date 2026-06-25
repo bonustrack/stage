@@ -3,8 +3,8 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
-import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/chatkit';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
 import { settingsValueRow } from '@stage-labs/views';
 import pkg from '../../../package.json';
 import { getXmtpEnv } from '../../lib/xmtp';
@@ -53,7 +53,7 @@ const registry: WidgetActionRegistry = {};
       <!-- DIAGNOSTICS: read-only env + build info, mirroring mobile DeveloperSettings
            (the Railgun debug toggle and reset/danger actions are mobile-only and deferred). -->
       <Text size="3xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark pb-1">DIAGNOSTICS</Text>
-      <ChatKitRenderer :node="node" :registry="registry" />
+      <KitRenderer :node="node" :registry="registry" />
     </Col>
   </Col>
 </template>

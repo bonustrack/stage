@@ -4,10 +4,10 @@ import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import QRCode from 'qrcode';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/chatkit';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
 import { addressCard, WALLET_ADDRESS_COPY } from '@stage-labs/views';
-import { basicRoot } from '@/lib/chatkitRow';
+import { basicRoot } from '@/lib/kitRow';
 import { getActiveAccount } from '../lib/accounts';
 import { shortAddress, stampAvatarUrl } from '../lib/xmtp';
 
@@ -98,7 +98,7 @@ const registry: WidgetActionRegistry = {
       </Box>
 
       <Col class="w-[calc(100%-2rem)] mx-4 pb-6">
-        <ChatKitRenderer :node="addressNode" :registry="registry" />
+        <KitRenderer :node="addressNode" :registry="registry" />
       </Col>
     </Col>
   </Col>

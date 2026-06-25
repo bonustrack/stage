@@ -10,8 +10,8 @@ import type {
   WidgetDataContext,
   WidgetFormValues,
   WidgetNode,
-} from '../chatkit';
-import type { Scheme } from '../chatkit';
+} from '../kit';
+import type { Scheme } from '../kit';
 import type { HeroIconName } from '@stage-labs/kit/icons';
 import { HERO_ICON_PATHS } from '@stage-labs/kit/icons';
 

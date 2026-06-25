@@ -4,12 +4,12 @@ import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box, Col } from '../layout';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { ChatKitRenderer } from '@stage-labs/kit/react-native/chatkit-renderer';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
 import type {
   ListViewItemNode,
   ListViewNode,
   WidgetActionRegistry,
-} from '@stage-labs/kit/chatkit';
+} from '@stage-labs/kit/kit';
 import {
   col,
   icon,
@@ -88,7 +88,7 @@ export function DisplaySettings(): React.ReactElement {
         <Text size="xs" role="secondary" style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
           THEME
         </Text>
-        <ChatKitRenderer node={node} registry={registry}/>
+        <KitRenderer node={node} registry={registry}/>
 
         {custom ? (
           <Box padding={{ x: 16, top: 24 }}>

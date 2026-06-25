@@ -1,9 +1,9 @@
 <script setup lang="ts">
 
 import { computed } from 'vue';
-import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import { emptyState } from '@stage-labs/views';
-import { basicRoot } from '@/lib/chatkitRow';
+import { basicRoot } from '@/lib/kitRow';
 import { ASK_QUESTION_MEMBERS, stampAvatarUrl } from '../lib/xmtp';
 import { postCloseToParent } from '../lib/embedBridge';
 import { useChannels } from '../lib/useChannels';
@@ -140,7 +140,7 @@ const {
       </Col>
       <ul v-else class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-6">
         <li v-if="filtered && filtered.length === 0">
-          <ChatKitRenderer :node="emptyNode" />
+          <KitRenderer :node="emptyNode" />
         </li>
         <li v-for="r in filtered ?? rows" :key="r.convId">
           <ChannelRow

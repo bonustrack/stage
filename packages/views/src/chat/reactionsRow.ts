@@ -1,4 +1,4 @@
-import type { RowNode, WidgetNode } from '@stage-labs/kit/chatkit';
+import type { RowNode, WidgetNode } from '@stage-labs/kit/kit';
 import { REACTION_PRESS } from '../actions';
 import { caption, row, text } from '../primitives';
 

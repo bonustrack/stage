@@ -1,4 +1,4 @@
-import type { RowNode, ThemeColor } from '@stage-labs/kit/chatkit';
+import type { RowNode, ThemeColor } from '@stage-labs/kit/kit';
 import { DANGER_COLOR, SUCCESS_COLOR } from '../colors';
 import { badge, caption, col, icon, row, text } from '../primitives';
 

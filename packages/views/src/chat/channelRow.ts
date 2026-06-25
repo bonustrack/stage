@@ -3,7 +3,7 @@ import type {
   ListViewItemNode,
   RowNode,
   WidgetNode,
-} from '@stage-labs/kit/chatkit';
+} from '@stage-labs/kit/kit';
 import {
   CHANNEL_LABEL_PRESS,
   CHANNEL_LONG_PRESS,

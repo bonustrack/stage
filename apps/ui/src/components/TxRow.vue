@@ -1,10 +1,10 @@
 <script setup lang="ts">
 
 import { computed } from 'vue';
-import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import type { ActivityRow } from '@stage-labs/client/api/etherscan';
 import { txRow, type TxDirection } from '@stage-labs/views';
-import { basicRoot } from '@/lib/chatkitRow';
+import { basicRoot } from '@/lib/kitRow';
 import { txTitle, txPartyLabel, relTime } from '@/lib/activityFormat';
 
 const props = defineProps<{ r: ActivityRow; profileVersion: number }>();
@@ -33,6 +33,6 @@ const node = computed(() => {
 
 <template>
   <Box class="py-3.5 border-b border-metro-border-light dark:border-metro-border-dark">
-    <ChatKitRenderer :node="node" />
+    <KitRenderer :node="node" />
   </Box>
 </template>

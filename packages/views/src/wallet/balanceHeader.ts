@@ -1,4 +1,4 @@
-import type { ColNode, WidgetNode } from '@stage-labs/kit/chatkit';
+import type { ColNode, WidgetNode } from '@stage-labs/kit/kit';
 import { caption, col, icon, row, title } from '../primitives';
 
 export interface BalanceAction {

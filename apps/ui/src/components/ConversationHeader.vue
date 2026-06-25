@@ -1,10 +1,10 @@
 <script setup lang="ts">
 
 import { computed } from 'vue';
-import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/chatkit';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
 import { conversationHeader, CONVERSATION_PRESS } from '@stage-labs/views';
-import { basicRoot } from '@/lib/chatkitRow';
+import { basicRoot } from '@/lib/kitRow';
 import { shortAddress, stampAvatarUrl } from '../lib/xmtp';
 import type { XmtpFeedStatus } from '../lib/xmtpFeed';
 import { runningInIframe, postCloseToParent } from '../lib/embedBridge';
@@ -58,7 +58,7 @@ const registry: WidgetActionRegistry = {
     <Pressable tag="button" type="button" class="h-full pl-3.5 pr-2 flex items-center text-metro-fg-light dark:text-metro-fg-dark" @click="emit('back')">
       <Icon name="arrowLeft" :size="22" />
     </Pressable>
-    <!-- kit-exception: overlapping avatar stack is absolute-positioned, not expressible in ChatKit JSON -->
+    <!-- kit-exception: overlapping avatar stack is absolute-positioned, not expressible in Kit JSON -->
     <Row v-if="!props.peerAddress && visibleMembers.length" align="center" class="shrink-0 pl-2">
       <img
         v-for="(addr, i) in visibleMembers"
@@ -77,7 +77,7 @@ const registry: WidgetActionRegistry = {
       </Row>
     </Row>
     <Col class="flex-1 min-w-0 justify-center">
-      <ChatKitRenderer :node="node" :registry="registry" />
+      <KitRenderer :node="node" :registry="registry" />
     </Col>
     <!-- Widget only: close button at the very end of the (single) topnav. -->
     <Pressable

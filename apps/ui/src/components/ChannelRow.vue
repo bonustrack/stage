@@ -1,10 +1,10 @@
 <script setup lang="ts">
 
 import { computed } from 'vue';
-import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/chatkit';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
 import { channelRow, CHANNEL_PRESS } from '@stage-labs/views';
-import { listRoot } from '@/lib/chatkitRow';
+import { listRoot } from '@/lib/kitRow';
 import { stampAvatarUrl } from '../lib/xmtp';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 
@@ -75,6 +75,6 @@ const node = computed(() =>
       active:bg-metro-border-light dark:active:bg-metro-border-dark"
     @contextmenu.prevent="emit('menu', $event)"
   >
-    <ChatKitRenderer :node="node" :registry="registry" />
+    <KitRenderer :node="node" :registry="registry" />
   </Box>
 </template>

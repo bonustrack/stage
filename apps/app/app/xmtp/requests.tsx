@@ -18,8 +18,8 @@ import { Icon } from '@stage-labs/kit/react-native/icon';
 import { ChannelRow } from '../../components/ChannelRow';
 import { Col, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
-import { ChatKitRenderer } from '@stage-labs/kit/react-native/chatkit-renderer';
-import type { WidgetRoot } from '@stage-labs/kit/chatkit';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import type { WidgetRoot } from '@stage-labs/kit/kit';
 import { emptyState } from '@stage-labs/views';
 
 const EMPTY_NODE: WidgetRoot = {
@@ -111,7 +111,7 @@ export default function Requests(): React.ReactElement {
           keyExtractor={r => r.convId}
           renderItem={renderRow}
           contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}
-          ListEmptyComponent={<ChatKitRenderer node={EMPTY_NODE} />}
+          ListEmptyComponent={<KitRenderer node={EMPTY_NODE} />}
 />
       )}
     </Col>

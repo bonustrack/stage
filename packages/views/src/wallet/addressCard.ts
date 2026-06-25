@@ -1,4 +1,4 @@
-import type { ColNode, ListViewItemNode } from '@stage-labs/kit/chatkit';
+import type { ColNode, ListViewItemNode } from '@stage-labs/kit/kit';
 import { WALLET_ADDRESS_COPY, WALLET_ADDRESS_SHARE } from '../actions';
 import { caption, col, icon, text } from '../primitives';
 

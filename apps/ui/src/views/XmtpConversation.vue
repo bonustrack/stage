@@ -1,9 +1,9 @@
 <script setup lang="ts">
 
 import { ref } from 'vue';
-import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import { emptyState } from '@stage-labs/views';
-import { basicRoot } from '@/lib/chatkitRow';
+import { basicRoot } from '@/lib/kitRow';
 import { useXmtpConversation } from '../lib/useXmtpConversation';
 
 const scroller = ref<HTMLElement | null>(null);
@@ -43,7 +43,7 @@ const {
         <Spinner :size="28" />
       </Row>
       <Col v-else-if="allBubbles.length === 0 && feed.status.value === 'open'">
-        <ChatKitRenderer :node="emptyNode" />
+        <KitRenderer :node="emptyNode" />
       </Col>
       <MessengerBubble
         v-for="entry in allBubbles"

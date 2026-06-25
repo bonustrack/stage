@@ -2,13 +2,13 @@
 
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
-import ChatKitRenderer from '@stage-labs/kit/vue/chatkit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/chatkit';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
 import type { AssetRow } from '@stage-labs/client/wallet/assets';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO } from '@stage-labs/client/wallet/assets';
 import { fmtUsd, fmtBalance } from '@stage-labs/client/wallet/format';
 import { tokenRow, WALLET_TOKEN_PRESS } from '@stage-labs/views';
-import { listRoot } from '@/lib/chatkitRow';
+import { listRoot } from '@/lib/kitRow';
 import { rememberTokenRow } from '@/lib/tokenDetailStore';
 
 const props = defineProps<{ r: AssetRow }>();
@@ -58,5 +58,5 @@ const node = computed(() =>
 </script>
 
 <template>
-  <ChatKitRenderer :node="node" :registry="registry" />
+  <KitRenderer :node="node" :registry="registry" />
 </template>

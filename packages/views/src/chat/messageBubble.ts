@@ -1,4 +1,4 @@
-import type { Color, ColNode, WidgetNode } from '@stage-labs/kit/chatkit';
+import type { Color, ColNode, WidgetNode } from '@stage-labs/kit/kit';
 import { caption, col, markdown, text } from '../primitives';
 
 export interface BubbleSegment {

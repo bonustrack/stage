@@ -6,11 +6,11 @@ import * as Notifications from 'expo-notifications';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box, Col } from '../layout';
 import { Caption } from '@stage-labs/kit/react-native/caption';
-import { ChatKitRenderer } from '@stage-labs/kit/react-native/chatkit-renderer';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
 import type {
   ListViewNode,
   WidgetActionRegistry,
-} from '@stage-labs/kit/chatkit';
+} from '@stage-labs/kit/kit';
 import {
   settingsToggleRow,
   SETTINGS_TOGGLE_CHANGE,
@@ -82,7 +82,7 @@ export function NotificationsSettings(): React.ReactElement {
           PUSH NOTIFICATIONS
         </Caption>
         <Box>
-          <ChatKitRenderer node={node} registry={registry}/>
+          <KitRenderer node={node} registry={registry}/>
         </Box>
         <Caption color={sub} style={{ paddingHorizontal: 16, paddingTop: 12 }}>
           {permLabel}

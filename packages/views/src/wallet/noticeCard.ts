@@ -1,5 +1,5 @@
-import type { ColNode, WidgetNode } from '@stage-labs/kit/chatkit';
-import type { ThemeColor } from '@stage-labs/kit/chatkit';
+import type { ColNode, WidgetNode } from '@stage-labs/kit/kit';
+import type { ThemeColor } from '@stage-labs/kit/kit';
 import { button, caption, col, icon, row, text } from '../primitives';
 
 export interface NoticeAction {

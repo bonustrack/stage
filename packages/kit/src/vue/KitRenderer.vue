@@ -3,7 +3,7 @@ import { computed, reactive } from 'vue';
 import Card from './Card.vue';
 import Col from './Col.vue';
 import ListView from './ListView.vue';
-import ChatKitNode from './ChatKitNode.vue';
+import KitNode from './KitNode.vue';
 import { useKitScheme } from './theme-context';
 import {
   dispatchAction,
@@ -12,12 +12,12 @@ import {
   type WidgetDataContext,
   type WidgetNode,
   type WidgetRoot,
-} from '../chatkit';
-import { cardProps } from './chatkit-node-props';
+} from '../kit';
+import { cardProps } from './kit-node-props';
 import {
-  provideChatKitForm,
-  provideChatKitRender,
-} from './chatkit-form-context';
+  provideKitForm,
+  provideKitRender,
+} from './kit-form-context';
 
 const props = defineProps<{
   node: WidgetRoot;
@@ -33,7 +33,7 @@ const resolved = computed<WidgetRoot>(() =>
   resolveBindings(props.node, data.value),
 );
 
-provideChatKitRender({
+provideKitRender({
   get registry() {
     return registry.value;
   },
@@ -47,7 +47,7 @@ provideChatKitRender({
 
 const formValues = reactive<Record<string, unknown>>({});
 
-provideChatKitForm({
+provideKitForm({
   setValue(name, value) {
     formValues[name] = value;
   },
@@ -93,7 +93,7 @@ function cancelCard(): void {
     @confirm="confirmCard"
     @cancel="cancelCard"
   >
-    <ChatKitNode v-for="(c, i) in childNodes" :key="i" :node="c" />
+    <KitNode v-for="(c, i) in childNodes" :key="i" :node="c" />
   </Card>
 
   <ListView
@@ -104,11 +104,11 @@ function cancelCard(): void {
     :dark="listView.theme === 'dark' ? true : undefined"
   >
     <template #item="{ item }">
-      <ChatKitNode :node="item" />
+      <KitNode :node="item" />
     </template>
   </ListView>
 
   <Col v-else>
-    <ChatKitNode v-for="(c, i) in childNodes" :key="i" :node="c" />
+    <KitNode v-for="(c, i) in childNodes" :key="i" :node="c" />
   </Col>
 </template>
