@@ -6,6 +6,7 @@ export * from './wallet/tokenRow';
 export * from './wallet/addressCard';
 export * from './wallet/balanceHeader';
 export * from './wallet/stepper';
+export * from './wallet/priceChart';
 export * from './wallet/sendForm';
 export * from './wallet/noticeCard';
 export * from './chat/channelRow';
