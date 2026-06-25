@@ -1,10 +1,10 @@
 
 import { useCallback, useState } from 'react';
-import { fontSize } from '@stage-labs/kit/tokens';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
-import { Input } from '@stage-labs/kit/react-native/input';
 import { Image } from '@stage-labs/kit/react-native/image';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import { basicRoot, memberTextField, MEMBER_FIELD_CHANGE } from '@stage-labs/views';
 import * as ImagePicker from 'expo-image-picker';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Title } from '@stage-labs/kit/react-native/title';
@@ -52,6 +52,37 @@ function GroupImageField({ image, creating, fg, border, rowBg, onPick }: {
         {image ? 'Tap to change image' : 'Tap to add a group image'}
       </Text>
     </Box>
+  );
+}
+
+function GroupNameField({ name, setName, head, sub, inputBg, border }: {
+  name: string; setName: (s: string) => void;
+  head: string; sub: string; inputBg: string; border: string;
+}): React.ReactElement {
+  return (
+    <Col gap={6}>
+      <Text size="xs" role="secondary">
+        Group name (optional)
+      </Text>
+      <KitRenderer
+        node={basicRoot(memberTextField({
+          value: name,
+          placeholder: 'e.g. Metro builders',
+          color: head,
+          placeholderColor: sub,
+          inputBg,
+          border,
+          radius: 12,
+          paddingX: 14,
+          paddingY: 12,
+        }))}
+        registry={{
+          [MEMBER_FIELD_CHANGE]: (a) => {
+            if (typeof a.payload.field === 'string') setName(a.payload.field);
+          },
+        }}
+/>
+    </Col>
   );
 }
 
@@ -121,23 +152,9 @@ export default function NewGroup(): React.ReactElement {
           onPick={() => { void pickImage(); }}/>
 
         {}
-        <Col gap={6}>
-          <Text size="xs" role="secondary">
-            Group name (optional)
-          </Text>
-          <Input
-            value={name}
-            onChangeText={setName}
-            placeholder="e.g. Metro builders"
-            placeholderTextColor={sub}
-            dark={dark}
-            style={{
-              color: head, fontSize: fontSize('md'), fontFamily: 'Calibre-Medium',
-              backgroundColor: inputBg, borderRadius: 12, paddingHorizontal: 14,
-              paddingVertical: 12, borderWidth: 1, borderColor: border, minHeight: 0,
-            }}
+        <GroupNameField
+          name={name} setName={setName} head={head} sub={sub} inputBg={inputBg} border={border}
 />
-        </Col>
 
         <MemberPicker state={picker} dark={dark}/>
       </ScrollView>

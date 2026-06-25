@@ -111,7 +111,7 @@ export function TextField(props: TextFieldProps): React.ReactElement {
         height: undefined,
         textAlignVertical: 'top',
       }
-    : { maxHeight: maxH };
+    : { maxHeight: maxH, ...(minH === undefined ? null : { minHeight: minH }) };
 
   return (
     <TextInput

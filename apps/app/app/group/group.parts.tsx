@@ -1,7 +1,5 @@
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { fontSize } from '@stage-labs/kit/tokens';
-import { Input } from '@stage-labs/kit/react-native/input';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box } from '../../components/layout';
 import { shortAddress } from '../../modules/messaging';
@@ -9,7 +7,10 @@ import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
 import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
-import { memberRow, MEMBER_PRESS, MEMBER_REMOVE } from '@stage-labs/views';
+import {
+  basicRoot, memberRow, memberTextField,
+  MEMBER_PRESS, MEMBER_REMOVE, MEMBER_FIELD_CHANGE,
+} from '@stage-labs/views';
 import { stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { AppModal } from '../../components/AppModal';
 import { DANGER, usePalette } from '../../lib/theme';
@@ -76,20 +77,29 @@ export function AddMemberModal({
   return (
     <AppModal visible={visible} onClose={onClose}>
       <Box>
-        <Input
-          value={addDraft}
-          onChangeText={setAddDraft}
-          placeholder="0x… Ethereum address"
-          placeholderTextColor={sub}
-          autoFocus
-          dark={dark}
-          inputProps={{ autoCorrect: false, autoCapitalize: 'none' }}
-          style={{
-            color: fg, backgroundColor: inputBg,
-            borderWidth: 1, borderColor: border, borderRadius: 10,
-            paddingHorizontal: 12, paddingVertical: 10, fontSize: fontSize('md'), marginBottom: 10,
-          }}
-/>
+        <Box margin={{ bottom: 10 }}>
+          <KitRenderer
+            node={basicRoot(memberTextField({
+              value: addDraft,
+              placeholder: '0x… Ethereum address',
+              color: fg,
+              placeholderColor: sub,
+              inputBg,
+              border,
+              radius: 10,
+              paddingX: 12,
+              paddingY: 10,
+              autoFocus: true,
+              autoCapitalize: 'none',
+              autoCorrect: false,
+            }))}
+            registry={{
+              [MEMBER_FIELD_CHANGE]: (a) => {
+                if (typeof a.payload.field === 'string') setAddDraft(a.payload.field);
+              },
+            }}
+          />
+        </Box>
         <Button
           variant="primary"
           size="md"

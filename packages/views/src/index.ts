@@ -32,6 +32,7 @@ export * from './accounts/accountRow';
 export * from './accounts/memberRow';
 export * from './accounts/memberChip';
 export * from './accounts/memberAddForm';
+export * from './accounts/memberTextField';
 export * from './accounts/contactRow';
 export * from './accounts/suggestionRow';
 export * from './profile/profileHeader';

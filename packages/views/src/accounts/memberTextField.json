@@ -1,0 +1,23 @@
+{
+  "type": "TextField",
+  "name": "field",
+  "value": "{{value}}",
+  "placeholder": "{{placeholder}}",
+  "variant": "outline",
+  "autoFocus": "{{autoFocus}}",
+  "background": "{{inputBg}}",
+  "borderColor": "{{border}}",
+  "color": "{{color}}",
+  "placeholderColor": "{{placeholderColor}}",
+  "radius": "{{radius}}",
+  "paddingX": "{{paddingX}}",
+  "paddingY": "{{paddingY}}",
+  "fontSize": 15,
+  "fontWeight": "medium",
+  "minHeight": 0,
+  "autoCapitalize": "{{autoCapitalize}}",
+  "autoCorrect": "{{autoCorrect}}",
+  "returnKeyType": "{{returnKeyType}}",
+  "onChangeAction": { "type": "{{changeType}}" },
+  "onSubmitAction": { "$if": "submitType", "type": "{{submitType}}" }
+}

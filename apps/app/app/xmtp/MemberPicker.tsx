@@ -1,17 +1,18 @@
 
 import { useCallback, useMemo, useState } from 'react';
-import { fontSize } from '@stage-labs/kit/tokens';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Input } from '@stage-labs/kit/react-native/input';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Icon } from '@stage-labs/kit/react-native/icon';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import { basicRoot, memberTextField, MEMBER_FIELD_CHANGE, MEMBER_FIELD_SUBMIT } from '@stage-labs/views';
 import { shortAddress } from '../../modules/messaging';
 import { resolveEnsName } from '../../lib/ens';
 import { flash } from '../../lib/toast';
 import { usePalette } from '../../lib/theme';
 import { Avatar } from '../../components/Avatar';
-import { Col, Row } from '../../components/layout';
+import { Box, Col, Row } from '../../components/layout';
 import { useContacts, type Contact } from '../../lib/useContacts';
 import { ContactSuggestions } from './ContactSuggestions';
 
@@ -103,6 +104,13 @@ export function MemberPicker({ state, dark, exclude = [] }: {
   } = state;
   const contacts = useContacts(exclude, entry);
 
+  const resolverRegistry: WidgetActionRegistry = {
+    [MEMBER_FIELD_CHANGE]: (a) => {
+      if (typeof a.payload.field === 'string') setEntry(a.payload.field);
+    },
+    [MEMBER_FIELD_SUBMIT]: () => { void addMember(); },
+  };
+
   return (
     <>
       {}
@@ -111,20 +119,26 @@ export function MemberPicker({ state, dark, exclude = [] }: {
           Add members
         </Text>
         <Row gap={8} align="center">
-          <Input
-            value={entry}
-            onChangeText={setEntry}
-            onSubmit={() => { void addMember(); }}
-            placeholder="0x… or name.eth"
-            placeholderTextColor={sub}
-            dark={dark}
-            inputProps={{ autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'done' }}
-            style={{
-              flex: 1, color: head, fontSize: fontSize('md'), fontFamily: 'Calibre-Medium',
-              backgroundColor: inputBg, borderRadius: 12, paddingHorizontal: 14,
-              paddingVertical: 12, borderWidth: 1, borderColor: border, minHeight: 0,
-            }}
-/>
+          <Box flex={1}>
+            <KitRenderer
+              node={basicRoot(memberTextField({
+                value: entry,
+                placeholder: '0x… or name.eth',
+                color: head,
+                placeholderColor: sub,
+                inputBg,
+                border,
+                radius: 12,
+                paddingX: 14,
+                paddingY: 12,
+                autoCapitalize: 'none',
+                autoCorrect: false,
+                returnKeyType: 'done',
+                submitType: MEMBER_FIELD_SUBMIT,
+              }))}
+              registry={resolverRegistry}
+            />
+          </Box>
           <Button
             variant="secondary"
             size="md"
