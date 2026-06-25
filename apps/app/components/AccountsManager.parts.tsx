@@ -1,14 +1,12 @@
 
-import { Modal } from 'react-native';
-
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Dialog } from '@stage-labs/kit/react-native/dialog';
 import { Box, Col, Row } from './layout';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
 import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
 import { accountRow, ACCOUNT_PRESS } from '@stage-labs/views';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getPeerName } from '../lib/peerProfiles';
 import { shortAddress } from '../modules/messaging';
 import { type AccountRecord } from '../lib/accounts';
@@ -53,16 +51,23 @@ export function SheetModal({ visible, onClose, children, bg, border }: {
   visible: boolean; onClose: () => void; children: React.ReactNode;
   bg: string; border: string; title?: string; head?: string;
 }): React.ReactElement {
-  const insets = useSafeAreaInsets();
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
-        <Pressable onPress={(e) => { e.stopPropagation(); }} style={{ backgroundColor: bg, borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 16, paddingBottom: 28 + insets.bottom, borderTopWidth: 1, borderColor: border }}>
-          <Box width={36} height={4} radius="2xs" background={border} margin={{ bottom: 12 }} style={{ alignSelf: 'center' }}/>
-          {children}
-        </Pressable>
-      </Pressable>
-    </Modal>
+    <Dialog
+      open={visible}
+      onClose={onClose}
+      side="bottom"
+      animationType="slide"
+      backdropColor="rgba(0,0,0,0.45)"
+      panelBackground={bg}
+      panelRadius={18}
+      panelPadding={{ x: 16, top: 16, bottom: 28 }}
+      panelBorderColor={border}
+      safeAreaBottom
+      handle
+      handleColor={border}
+    >
+      {children}
+    </Dialog>
   );
 }
 
