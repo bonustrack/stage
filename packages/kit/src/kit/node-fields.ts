@@ -290,6 +290,18 @@ export interface ChartSeriesArea {
 
 export type ChartSeries = ChartSeriesBar | ChartSeriesLine | ChartSeriesArea;
 
+export type Position = 'absolute' | 'relative';
+
+export interface PositionFields {
+  position?: Position;
+  top?: Dimension;
+  right?: Dimension;
+  bottom?: Dimension;
+  left?: Dimension;
+  inset?: Dimension;
+  zIndex?: number;
+}
+
 export interface NodeBase {
   id?: string;
   key?: string;

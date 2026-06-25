@@ -27,6 +27,7 @@ import type {
   ImagePosition,
   Justification,
   NodeBase,
+  PositionFields,
   RadiusValue,
   SpacingValue,
   TextAlign,
@@ -55,6 +56,7 @@ export type {
   DatePickerNode,
   InputNode,
   RadioGroupNode,
+  SelectionRange,
   SelectNode,
   SwitchNode,
   TabsNode,
@@ -82,7 +84,7 @@ export type {
 
 export type { NodeBase };
 
-export interface BoxLayoutBase extends NodeBase {
+export interface BoxLayoutBase extends NodeBase, PositionFields {
   align?: Alignment;
   justify?: Justification;
   wrap?: FlexWrap;
@@ -293,6 +295,23 @@ export interface ListViewItemNode extends NodeBase {
   align?: Alignment;
 }
 
+export interface StackNode extends NodeBase {
+  type: 'Stack';
+  children: WidgetNode[];
+  width?: Dimension;
+  height?: Dimension;
+  size?: Dimension;
+  align?: Alignment;
+  justify?: Justification;
+}
+
+export interface ScrollRowNode extends NodeBase {
+  type: 'ScrollRow';
+  children: WidgetNode[];
+  gap?: Dimension;
+  padding?: SpacingValue;
+}
+
 export interface PressableNode extends NodeBase {
   type: 'Pressable';
   children: WidgetNode[];
@@ -364,6 +383,8 @@ export type WidgetNode =
   | TextFieldNode
   | ColorPickerNode
   | SpinnerNode
+  | StackNode
+  | ScrollRowNode
   | AvatarStackNode
   | QRCodeNode
   | AudioPlayerNode

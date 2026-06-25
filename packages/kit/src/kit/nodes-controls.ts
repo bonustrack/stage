@@ -39,6 +39,11 @@ export interface TabsNode extends NodeBase {
   variant?: TabsVariant;
 }
 
+export interface SelectionRange {
+  start: number;
+  end: number;
+}
+
 export interface TextFieldNode extends NodeBase {
   type: 'TextField';
   name: string;
@@ -49,6 +54,8 @@ export interface TextFieldNode extends NodeBase {
   autoFocus?: boolean;
   autoGrow?: boolean;
   disabled?: boolean;
+  onSelectionChangeAction?: ActionConfig;
+  selection?: SelectionRange;
 }
 
 export interface ColorPickerNode extends NodeBase {

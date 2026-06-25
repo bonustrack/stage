@@ -10,6 +10,8 @@ import AudioPlayer from './AudioPlayer.vue';
 import VideoPlayer from './VideoPlayer.vue';
 import TextField from './TextField.vue';
 import ColorPicker from './ColorPicker.vue';
+import Stack from './Stack.vue';
+import ScrollRow from './ScrollRow.vue';
 import GesturePressable from './GesturePressable.vue';
 import {
   dispatchAction,
@@ -21,7 +23,9 @@ import {
   type ColorPickerNode,
   type PressableNode,
   type QRCodeNode,
+  type ScrollRowNode,
   type SpinnerNode,
+  type StackNode,
   type SwipeDirection,
   type SwitchNode,
   type TabsNode,
@@ -57,6 +61,8 @@ const qrNode = computed(() => props.node as QRCodeNode);
 const audioNode = computed(() => props.node as AudioPlayerNode);
 const videoNode = computed(() => props.node as VideoPlayerNode);
 const pressableNode = computed(() => props.node as PressableNode);
+const stackNode = computed(() => props.node as StackNode);
+const scrollRowNode = computed(() => props.node as ScrollRowNode);
 
 const pressableChildren = computed<WidgetNode[]>(() =>
   props.node.type === 'Pressable' ? pressableNode.value.children : [],
@@ -100,7 +106,9 @@ function onSwipe(direction: SwipeDirection): void {
     :auto-focus="textFieldNode.autoFocus"
     :auto-grow="textFieldNode.autoGrow"
     :disabled="textFieldNode.disabled"
+    :selection="textFieldNode.selection"
     @update:value="emitChange(textFieldNode.name, $event, textFieldNode.onChangeAction)"
+    @selection-change="fire(textFieldNode.onSelectionChangeAction, $event)"
   />
 
   <ColorPicker
@@ -139,6 +147,10 @@ function onSwipe(direction: SwipeDirection): void {
     :poster="videoNode.poster"
     :controls="videoNode.controls"
   />
+
+  <Stack v-else-if="node.type === 'Stack'" :node="stackNode" />
+
+  <ScrollRow v-else-if="node.type === 'ScrollRow'" :node="scrollRowNode" />
 
   <GesturePressable
     v-else-if="node.type === 'Pressable'"

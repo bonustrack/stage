@@ -17,6 +17,8 @@ export interface TextFieldProps {
   autoGrow?: boolean;
   disabled?: boolean;
   onChangeText?: (text: string) => void;
+  selection?: { start: number; end: number };
+  onSelectionChange?: (range: { start: number; end: number }) => void;
   dark?: boolean;
 }
 
@@ -29,6 +31,8 @@ export function TextField(props: TextFieldProps): React.ReactElement {
     autoGrow,
     disabled,
     onChangeText,
+    selection,
+    onSelectionChange,
     dark = false,
   } = props;
   const [focused, setFocused] = useState(false);
@@ -48,6 +52,14 @@ export function TextField(props: TextFieldProps): React.ReactElement {
       autoFocus={autoFocus}
       multiline={multiline}
       onChangeText={onChangeText}
+      selection={selection}
+      onSelectionChange={
+        onSelectionChange === undefined
+          ? undefined
+          : (event) => {
+              onSelectionChange(event.nativeEvent.selection);
+            }
+      }
       onFocus={() => {
         setFocused(true);
       }}

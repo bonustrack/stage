@@ -20,16 +20,20 @@ import type {
   ButtonColorValue,
   Color,
   ControlVariant,
+  Dimension,
   FieldVariant,
   FlexDirection,
   FlexWrap,
   FontWeight,
   Justification,
+  Position,
+  PositionFields,
   RadiusValue,
   SpacingValue,
   SpinnerSize,
   ThemeColor,
 } from './node-fields';
+import type { WidgetNode } from './nodes';
 
 const BUTTON_COLOR_NAMES = new Set<ButtonColor>([
   'primary',
@@ -290,4 +294,66 @@ export function resolveFieldVariant(
   value: FieldVariant | undefined,
 ): KitControlVariant {
   return value ?? 'outline';
+}
+
+export interface ResolvedPosition {
+  position: Position;
+  top?: Dimension;
+  right?: Dimension;
+  bottom?: Dimension;
+  left?: Dimension;
+  zIndex?: number;
+}
+
+export interface PositionLike {
+  position?: unknown;
+  top?: Dimension;
+  right?: Dimension;
+  bottom?: Dimension;
+  left?: Dimension;
+  inset?: Dimension;
+  zIndex?: number;
+}
+
+function readPositionFields(node: WidgetNode): PositionFields {
+  const fields = node as PositionLike;
+  const position =
+    fields.position === 'absolute' || fields.position === 'relative'
+      ? fields.position
+      : undefined;
+  return {
+    position,
+    top: fields.top,
+    right: fields.right,
+    bottom: fields.bottom,
+    left: fields.left,
+    inset: fields.inset,
+    zIndex: fields.zIndex,
+  };
+}
+
+export function hasPositioning(node: WidgetNode): boolean {
+  const p = readPositionFields(node);
+  return (
+    p.position !== undefined ||
+    p.top !== undefined ||
+    p.right !== undefined ||
+    p.bottom !== undefined ||
+    p.left !== undefined ||
+    p.inset !== undefined ||
+    p.zIndex !== undefined
+  );
+}
+
+export function resolvePosition(node: WidgetNode): ResolvedPosition {
+  const p = readPositionFields(node);
+  const inset = p.inset;
+  return {
+    position: p.position ?? (hasPositioning(node) ? 'absolute' : 'relative'),
+    top: p.top ?? inset,
+    right: p.right ?? inset,
+    bottom: p.bottom ?? inset,
+    left: p.left ?? inset,
+    zIndex: p.zIndex,
+  };
 }

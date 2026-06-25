@@ -17,12 +17,16 @@ const props = withDefaults(
     autoFocus?: boolean;
     autoGrow?: boolean;
     disabled?: boolean;
+    selection?: { start: number; end: number };
     dark?: boolean;
   }>(),
   {},
 );
 
-const emit = defineEmits<{ 'update:value': [value: string] }>();
+const emit = defineEmits<{
+  'update:value': [value: string];
+  selectionChange: [range: { start: number; end: number }];
+}>();
 
 const scheme = useKitScheme();
 const isDark = computed(() => props.dark ?? scheme === 'dark');
@@ -56,7 +60,20 @@ const style = computed<Record<string, string>>(() => {
 });
 
 function onInput(event: Event): void {
-  emit('update:value', (event.target as HTMLInputElement | HTMLTextAreaElement).value);
+  const target = event.target as HTMLInputElement | HTMLTextAreaElement;
+  emit('update:value', target.value);
+  emitSelection(target);
+}
+
+function emitSelection(target: HTMLInputElement | HTMLTextAreaElement): void {
+  const start = target.selectionStart;
+  const end = target.selectionEnd;
+  if (start === null || end === null) return;
+  emit('selectionChange', { start, end });
+}
+
+function onSelect(event: Event): void {
+  emitSelection(event.target as HTMLInputElement | HTMLTextAreaElement);
 }
 </script>
 
@@ -70,6 +87,9 @@ function onInput(event: Event): void {
     :autofocus="autoFocus"
     :style="style"
     @input="onInput"
+    @select="onSelect"
+    @keyup="onSelect"
+    @click="onSelect"
     @focus="focused = true"
     @blur="focused = false"
   />
@@ -82,6 +102,9 @@ function onInput(event: Event): void {
     :autofocus="autoFocus"
     :style="style"
     @input="onInput"
+    @select="onSelect"
+    @keyup="onSelect"
+    @click="onSelect"
     @focus="focused = true"
     @blur="focused = false"
   />

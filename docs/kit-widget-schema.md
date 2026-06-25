@@ -386,8 +386,10 @@ Controlled live text input — dispatches `onChangeAction` on **every keystroke*
 - `value`: string — **required** (controlled)
 - `onChangeAction`: `ActionConfig` — **required** — dispatched with `{ [name]: text }`
 - `placeholder`: string · `multiline`: bool · `autoFocus`: bool · `autoGrow`: bool · `disabled`: bool
+- `onSelectionChangeAction`: `ActionConfig` — dispatched with `{ start, end }` (caret/selection character offsets) on every caret move or selection change. Unblocks @-mention range detection so the composer input can be a `TextField`.
+- `selection`: `{ start, end }` — optional controlled caret/selection range.
 
-RN renders a `TextInput`; Vue renders an `<input>` or `<textarea>` (when `multiline`).
+RN renders a `TextInput` (selection via `onSelectionChange`/`selection` props); Vue renders an `<input>` or `<textarea>` (when `multiline`) reading `selectionStart`/`selectionEnd` on `input`/`select`/`keyup`/`click`.
 
 #### ColorPicker — `"type": "ColorPicker"`
 Swatch-based color picker.
@@ -395,6 +397,23 @@ Swatch-based color picker.
 - `value`: string — **required** (current hex)
 - `onChangeAction`: `ActionConfig` — dispatched with `{ [name]: hex }`
 - `swatches`: array of hex strings (falls back to a default palette)
+
+#### Stack — `"type": "Stack"`
+Z-axis overlay container: children are painted in document order, so the **last child is on top**. Enables poll % fill-bars behind text, avatar overlap, and badge-on-avatar overlays.
+- `children`: array of nodes — **required**
+- `width` · `height` · `size` (sets both): `Dimension` (number px or string, e.g. `"100%"`)
+- `align`: `"start" | "center" | "end" | "stretch" | "baseline"` · `justify`: `"start" | "center" | "end" | "between" | "around" | "evenly"`
+
+**Overlay positioning** — any child *inside a Stack* may carry the optional position fields (see *Field extensions*). A child with `position: "absolute"` (or any of `top/right/bottom/left/inset/zIndex` set, which implies `absolute`) is taken out of flow and positioned against the Stack box; otherwise it stacks `relative` in normal flow. Example fill-bar: a full-size `Box` with `inset: 0`, then an absolute `Box` with `left: 0, top: 0, bottom: 0, width: "62%"`, then a centered `Box` (`inset: 0`) holding the `Text`.
+
+RN renders a `position:'relative'` `View` wrapping each child in an absolutely/relatively-positioned `View`; Vue renders a `position:relative` flex `div` with each child wrapped in a positioned `div`.
+
+#### ScrollRow — `"type": "ScrollRow"`
+Horizontally scrolling container for chip/tab strips.
+- `children`: array of nodes — **required**
+- `gap`: `Dimension` (space between children) · `padding`: `SpacingValue`
+
+RN renders a horizontal `ScrollView` (`showsHorizontalScrollIndicator={false}`) around a row `Box`; Vue renders an `overflow-x:auto` flex-row `div` using native scroll.
 
 #### Pressable — `"type": "Pressable"`
 Generic gesture-aware wrapper around arbitrary children.
@@ -410,6 +429,7 @@ RN wires gestures via `react-native-gesture-handler` (`Tap`/`LongPress`/`Pan`); 
 - **`Title.size`** additionally accepts `"6xl"` and `"7xl"` for large hero text (RN/Vue render at 44px / 60px respectively).
 - **`Button.color`** additionally accepts an arbitrary color **string** or a `ThemeColor` (`{dark, light}`) on top of the semantic enum (`primary`…`danger`). A **`Button.background`** field is also accepted. When a custom color/background is supplied, the button is rendered solid with that background and an automatically-contrasting foreground.
 - **`ListViewItem`** additionally accepts `onLongPressAction` and `onSwipeAction` (same direction payload as `Pressable`).
+- **Overlay positioning fields** are accepted on any layout node (`Box`/`Row`/`Col`/`Form`/`Stack`/`ScrollRow`) and take effect when the node is a direct child of a `Stack`: `position` (`"absolute" | "relative"`), `top`/`right`/`bottom`/`left` (`Dimension` — number px, string, or `"%"`), `inset` (shorthand applying to all four sides), and `zIndex` (number). Any of these (other than `position: "relative"`) implies `position: "absolute"`. Outside a `Stack` they are ignored.
 
 ---
 

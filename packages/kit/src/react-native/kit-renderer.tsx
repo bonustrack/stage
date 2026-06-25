@@ -31,6 +31,7 @@ import {
   renderText,
   renderTitle,
 } from './kit-render-node';
+import { renderScrollRow, renderStack } from './kit-render-stack';
 import {
   renderButton,
   renderCheckbox,
@@ -97,8 +98,23 @@ const LEAF_RENDERERS: Partial<Record<WidgetNode['type'], LeafRenderer>> = {
   VideoPlayer: (node) => renderVideoPlayer(as<'VideoPlayer'>(node)),
 };
 
+function renderContainer(node: WidgetNode, ctx: RenderCtx): ReactNode | undefined {
+  switch (node.type) {
+    case 'Pressable':
+      return renderPressable(as<'Pressable'>(node), ctx, renderNode);
+    case 'Stack':
+      return renderStack(as<'Stack'>(node), ctx, renderNode);
+    case 'ScrollRow':
+      return renderScrollRow(as<'ScrollRow'>(node), ctx, renderNode);
+    default:
+      return undefined;
+  }
+}
+
 function renderNode(node: WidgetNode, ctx: RenderCtx): ReactNode {
   if (isLayout(node)) return renderBox(node, ctx, renderNode);
+  const container = renderContainer(node, ctx);
+  if (container !== undefined) return container;
   switch (node.type) {
     case 'Card':
       return renderCardNode(as<'Card'>(node), ctx);
@@ -110,8 +126,6 @@ function renderNode(node: WidgetNode, ctx: RenderCtx): ReactNode {
       return renderFormNode(as<'Form'>(node), ctx);
     case 'Transition':
       return renderTransition(as<'Transition'>(node), ctx);
-    case 'Pressable':
-      return renderPressable(as<'Pressable'>(node), ctx, renderNode);
     default: {
       const leaf = LEAF_RENDERERS[node.type];
       return leaf ? leaf(node, ctx) : renderUnknown(node, ctx);

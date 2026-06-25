@@ -91,11 +91,22 @@ export function renderTextField(node: TextFieldNode, ctx: RenderCtx): ReactNode 
       autoFocus={node.autoFocus}
       autoGrow={node.autoGrow}
       disabled={node.disabled}
+      selection={node.selection}
       dark={ctx.dark}
       onChangeText={(text) => {
         ctx.form?.set(node.name, text);
         dispatch(node.onChangeAction, ctx, { [node.name]: text });
       }}
+      onSelectionChange={
+        node.onSelectionChangeAction === undefined
+          ? undefined
+          : (range) => {
+              dispatch(node.onSelectionChangeAction, ctx, {
+                start: range.start,
+                end: range.end,
+              });
+            }
+      }
     />
   );
 }

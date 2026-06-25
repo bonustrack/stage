@@ -64,6 +64,8 @@ const EXTENSION_TYPES = new Set([
   'AudioPlayer',
   'VideoPlayer',
   'Pressable',
+  'Stack',
+  'ScrollRow',
 ]);
 
 export function isExtensionType(type: string): boolean {
