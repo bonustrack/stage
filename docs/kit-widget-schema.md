@@ -408,11 +408,16 @@ Controlled live text input — dispatches `onChangeAction` on **every keystroke*
 - `returnKeyType`: `"done" | "go" | "next" | "search" | "send"` — keyboard return key (RN `returnKeyType`; web `enterkeyhint`).
 - `maxLength`: number · `maxHeight`: number | string (caps a `multiline` field's height for scroll).
 - `autoFocus`: bool (focus on mount) · `focusNonce`: number — declarative imperative-focus: whenever the value **changes**, the input is re-focused. Replaces an imperative focus ref.
+- `blurNonce`: number — declarative imperative-blur: whenever the value **changes**, the input is blurred (RN `ref.blur()`; Vue `el.blur()`). Pairs with `focusNonce` so a container can drive focus AND blur purely with incrementing nonces — e.g. the composer's blur-on-background and blur-then-refocus-on-reply, with no input ref.
+- `autoGrow` (multiline): the field grows with content up to `maxHeight`. RN reads `onContentSizeChange`; **Vue** measures `scrollHeight` (`height='auto'` then `min(scrollHeight, maxHeight)`) on input, on value change, and on mount — matching the app's JS auto-grow.
+- `autoCapitalize`: `"none" | "sentences" | "words" | "characters"` · `autoCorrect`: bool.
 
 Styling (all optional; defaults reproduce the current outline field exactly):
 - `variant`: `"outline"` (default — bordered, filled) | `"plain"` (transparent background, no border — for the composer).
 - `background` / `borderColor` / `color` / `placeholderColor`: arbitrary color value (hex/token/`ThemeColor`).
 - `radius`: RadiusValue · `paddingX` / `paddingY`: number | string (box padding).
+- `paddingTop` / `paddingBottom`: number | string — override the top/bottom padding per side (takes precedence over `paddingY`). The composer uses `paddingTop: 4`, `paddingBottom: 8`.
+- `lineHeight`: number (px) — explicit line height (RN `TextStyle.lineHeight`; Vue CSS `line-height`). The composer uses `23`.
 - `fontSize`: number (px) · `fontWeight`: `FontWeight` (resolves to the Calibre family, like other text nodes).
 
 RN renders a `TextInput` (selection via `onSelectionChange`/`selection` props); Vue renders an `<input>` or `<textarea>` (when `multiline`) reading `selectionStart`/`selectionEnd` on `input`/`select`/`keyup`/`click`.
@@ -449,6 +454,15 @@ Generic gesture-aware wrapper around arbitrary children.
 - `onSwipeAction`: `ActionConfig` — dispatched with `{ direction: "left" | "right" | "up" | "down" }`
 
 RN wires gestures via `react-native-gesture-handler` (`Tap`/`LongPress`/`Pan`); Vue uses pointer events.
+
+#### Popover — `"type": "Popover"`
+Tap-to-open menu: a trigger child plus a positioned panel of item rows. Opens on trigger press, dismisses on outside-click (and after an item runs). Replaces the bespoke `OverflowMenu` popover at identical position/overlay/styling.
+- `trigger`: a single node — **required** (the button/icon that opens the menu).
+- `items`: array — **required**. Each item: `id` (string, **required**), `label` (string, **required**), `icon?` (HeroIcon name), `danger?` (bool — red label/icon), `disabled?` (bool — dimmed, non-pressable), `pressType?` (string — the `ActionConfig.type` dispatched on press; defaults to `"popover.item.press"`), `payload?` (object merged into the dispatched payload).
+- `side`: `"bottom"` (default — panel below the trigger) | `"top"` (panel above).
+- `align`: `"end"` (default — right-aligned) | `"start"` (left-aligned).
+
+Pressing an item dispatches `{ type: pressType, payload: { ...payload, id } }` through the action registry, then closes the panel. RN renders a `Pressable` trigger + a `Modal` overlay with an absolutely-positioned panel (top/bottom `52`, left/right `8`, `minWidth 200`, rounded surface with border + shadow); Vue renders the trigger + a `fixed inset-0` outside-click catcher + a `fixed` positioned panel (`top-[52px]`/`bottom-[52px]`, `right-2`/`left-2`, `min-w-[200px]`, `rounded-lg shadow-lg`, surface bg + border) — matching the former `OverflowMenu` exactly.
 
 ### Field extensions (no new node)
 

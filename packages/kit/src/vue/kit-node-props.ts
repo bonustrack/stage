@@ -70,6 +70,7 @@ const EXTENSION_TYPES = new Set([
   'AudioPlayer',
   'VideoPlayer',
   'Pressable',
+  'Popover',
   'Stack',
   'ScrollRow',
 ]);

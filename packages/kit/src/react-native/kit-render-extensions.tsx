@@ -4,6 +4,7 @@ import type {
   AudioPlayerNode,
   AvatarStackNode,
   ColorPickerNode,
+  PopoverNode,
   PressableNode,
   QRCodeNode,
   SpinnerNode,
@@ -22,6 +23,7 @@ import { AudioPlayer } from './audio-player';
 import { AvatarStack } from './avatar-stack';
 import { ColorPicker } from './color-picker';
 import { GesturePressable, type SwipeDir } from './gesture-pressable';
+import { Popover, type PopoverItemView } from './popover';
 import { QrCode } from './qr-code';
 import { Spinner } from './spinner';
 import { Switch } from './switch';
@@ -95,12 +97,16 @@ export function renderTextField(node: TextFieldNode, ctx: RenderCtx): ReactNode 
       disabled={node.disabled}
       selection={node.selection}
       focusNonce={node.focusNonce}
+      blurNonce={node.blurNonce}
       variant={node.variant}
       background={resolveOptionalColor(node.background, ctx.scheme)}
       borderColor={resolveOptionalColor(node.borderColor, ctx.scheme)}
       radius={resolveRadius(node.radius)}
       paddingX={node.paddingX}
       paddingY={node.paddingY}
+      paddingTop={node.paddingTop}
+      paddingBottom={node.paddingBottom}
+      lineHeight={node.lineHeight}
       fontSize={node.fontSize}
       fontFamily={resolveWeight(node.fontWeight)}
       color={resolveOptionalColor(node.color, ctx.scheme)}
@@ -191,6 +197,38 @@ export function renderAudioPlayer(node: AudioPlayerNode, ctx: RenderCtx): ReactN
 export function renderVideoPlayer(node: VideoPlayerNode): ReactNode {
   return (
     <VideoPlayer src={node.src} poster={node.poster} controls={node.controls} />
+  );
+}
+
+export const POPOVER_ITEM_PRESS = 'popover.item.press';
+
+export function renderPopover(
+  node: PopoverNode,
+  ctx: RenderCtx,
+  render: NodeRenderer,
+): ReactNode {
+  const items: PopoverItemView[] = node.items.map((item) => ({
+    id: item.id,
+    label: item.label,
+    icon: resolveIconName(item.icon),
+    danger: item.danger,
+    disabled: item.disabled,
+    onPress: () => {
+      dispatch(
+        { type: item.pressType ?? POPOVER_ITEM_PRESS, payload: item.payload },
+        ctx,
+        { id: item.id },
+      );
+    },
+  }));
+  return (
+    <Popover
+      items={items}
+      side={node.side}
+      align={node.align}
+      dark={ctx.dark}
+      trigger={render(node.trigger, ctx)}
+    />
   );
 }
 

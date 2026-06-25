@@ -45,6 +45,7 @@ import {
   renderAudioPlayer,
   renderAvatarStack,
   renderColorPicker,
+  renderPopover,
   renderPressable,
   renderQRCode,
   renderSpinner,
@@ -102,6 +103,8 @@ function renderContainer(node: WidgetNode, ctx: RenderCtx): ReactNode | undefine
   switch (node.type) {
     case 'Pressable':
       return renderPressable(as<'Pressable'>(node), ctx, renderNode);
+    case 'Popover':
+      return renderPopover(as<'Popover'>(node), ctx, renderNode);
     case 'Stack':
       return renderStack(as<'Stack'>(node), ctx, renderNode);
     case 'ScrollRow':

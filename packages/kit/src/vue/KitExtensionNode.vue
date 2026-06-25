@@ -13,6 +13,7 @@ import ColorPicker from './ColorPicker.vue';
 import Stack from './Stack.vue';
 import ScrollRow from './ScrollRow.vue';
 import GesturePressable from './GesturePressable.vue';
+import Popover from './Popover.vue';
 import {
   dispatchAction,
   resolveOptionalColor,
@@ -23,6 +24,7 @@ import {
   type AudioPlayerNode,
   type AvatarStackNode,
   type ColorPickerNode,
+  type PopoverNode,
   type PressableNode,
   type QRCodeNode,
   type ScrollRowNode,
@@ -63,6 +65,7 @@ const qrNode = computed(() => props.node as QRCodeNode);
 const audioNode = computed(() => props.node as AudioPlayerNode);
 const videoNode = computed(() => props.node as VideoPlayerNode);
 const pressableNode = computed(() => props.node as PressableNode);
+const popoverNode = computed(() => props.node as PopoverNode);
 const stackNode = computed(() => props.node as StackNode);
 const scrollRowNode = computed(() => props.node as ScrollRowNode);
 
@@ -110,12 +113,16 @@ function onSwipe(direction: SwipeDirection): void {
     :disabled="textFieldNode.disabled"
     :selection="textFieldNode.selection"
     :focus-nonce="textFieldNode.focusNonce"
+    :blur-nonce="textFieldNode.blurNonce"
     :variant="textFieldNode.variant"
     :background="resolveOptionalColor(textFieldNode.background, scheme)"
     :border-color="resolveOptionalColor(textFieldNode.borderColor, scheme)"
     :radius="resolveRadius(textFieldNode.radius)"
     :padding-x="textFieldNode.paddingX"
     :padding-y="textFieldNode.paddingY"
+    :padding-top="textFieldNode.paddingTop"
+    :padding-bottom="textFieldNode.paddingBottom"
+    :line-height="textFieldNode.lineHeight"
     :font-size="textFieldNode.fontSize"
     :font-family="resolveWeight(textFieldNode.fontWeight)"
     :color="resolveOptionalColor(textFieldNode.color, scheme)"
@@ -183,4 +190,12 @@ function onSwipe(direction: SwipeDirection): void {
   >
     <KitNode v-for="(c, i) in pressableChildren" :key="i" :node="c" />
   </GesturePressable>
+
+  <Popover
+    v-else-if="node.type === 'Popover'"
+    :trigger="popoverNode.trigger"
+    :items="popoverNode.items"
+    :side="popoverNode.side"
+    :align="popoverNode.align"
+  />
 </template>

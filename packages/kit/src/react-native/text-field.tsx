@@ -26,12 +26,16 @@ export interface TextFieldProps {
   onSelectionChange?: (range: { start: number; end: number }) => void;
   onSubmit?: () => void;
   focusNonce?: number;
+  blurNonce?: number;
   variant?: TextFieldVariant;
   background?: string;
   borderColor?: string;
   radius?: number | string;
   paddingX?: number | string;
   paddingY?: number | string;
+  paddingTop?: number | string;
+  paddingBottom?: number | string;
+  lineHeight?: number;
   fontSize?: number;
   fontFamily?: string;
   color?: string;
@@ -43,6 +47,48 @@ export interface TextFieldProps {
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   autoCorrect?: boolean;
   dark?: boolean;
+}
+
+function useNonce(nonce: number | undefined, run: () => void): void {
+  useEffect(() => {
+    if (nonce === undefined) return;
+    run();
+  }, [nonce]);
+}
+
+function sizeStyle(input: {
+  multiline?: boolean;
+  autoGrow?: boolean;
+  maxHeight?: number | string;
+  minHeight?: number | string;
+}): TextStyle {
+  const maxH = input.maxHeight as DimensionValue | undefined;
+  const minH = input.minHeight as DimensionValue | undefined;
+  if (input.multiline === true) {
+    return {
+      minHeight: minH ?? (input.autoGrow === true ? 44 : 88),
+      maxHeight: maxH,
+      height: undefined,
+      textAlignVertical: 'top',
+    };
+  }
+  return { maxHeight: maxH, ...(minH === undefined ? null : { minHeight: minH }) };
+}
+
+function overrideStyle(input: {
+  paddingTop?: number | string;
+  paddingBottom?: number | string;
+  lineHeight?: number;
+}): TextStyle {
+  return {
+    ...(input.paddingTop === undefined
+      ? null
+      : { paddingTop: input.paddingTop as DimensionValue }),
+    ...(input.paddingBottom === undefined
+      ? null
+      : { paddingBottom: input.paddingBottom as DimensionValue }),
+    ...(input.lineHeight === undefined ? null : { lineHeight: input.lineHeight }),
+  };
 }
 
 export function TextField(props: TextFieldProps): React.ReactElement {
@@ -58,12 +104,16 @@ export function TextField(props: TextFieldProps): React.ReactElement {
     onSelectionChange,
     onSubmit,
     focusNonce,
+    blurNonce,
     variant,
     background,
     borderColor,
     radius,
     paddingX,
     paddingY,
+    paddingTop,
+    paddingBottom,
+    lineHeight,
     fontSize,
     fontFamily,
     color,
@@ -78,11 +128,8 @@ export function TextField(props: TextFieldProps): React.ReactElement {
   } = props;
   const [focused, setFocused] = useState(false);
   const ref = useRef<TextInput>(null);
-
-  useEffect(() => {
-    if (focusNonce === undefined) return;
-    ref.current?.focus();
-  }, [focusNonce]);
+  useNonce(focusNonce, () => ref.current?.focus());
+  useNonce(blurNonce, () => ref.current?.blur());
 
   const baseColors = controlColors(
     variant === 'plain' ? 'soft' : 'outline',
@@ -102,16 +149,8 @@ export function TextField(props: TextFieldProps): React.ReactElement {
     fontFamily,
     color,
   });
-  const maxH = maxHeight as DimensionValue | undefined;
-  const minH = minHeight as DimensionValue | undefined;
-  const grow: TextStyle = multiline
-    ? {
-        minHeight: minH ?? (autoGrow ? 44 : 88),
-        maxHeight: maxH,
-        height: undefined,
-        textAlignVertical: 'top',
-      }
-    : { maxHeight: maxH, ...(minH === undefined ? null : { minHeight: minH }) };
+  const extra = sizeStyle({ multiline, autoGrow, maxHeight, minHeight });
+  const overrides = overrideStyle({ paddingTop, paddingBottom, lineHeight });
 
   return (
     <TextInput
@@ -142,7 +181,13 @@ export function TextField(props: TextFieldProps): React.ReactElement {
       onBlur={() => {
         setFocused(false);
       }}
-      style={[styled.box, styled.text, grow, disabled ? { opacity: 0.5 } : null]}
+      style={[
+        styled.box,
+        styled.text,
+        extra,
+        overrides,
+        disabled ? { opacity: 0.5 } : null,
+      ]}
     />
   );
 }

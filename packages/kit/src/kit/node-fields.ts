@@ -312,3 +312,13 @@ export interface NodeBase {
   id?: string;
   key?: string;
 }
+
+export interface PopoverItem {
+  id: string;
+  label: string;
+  icon?: string;
+  danger?: boolean;
+  disabled?: boolean;
+  pressType?: string;
+  payload?: Record<string, unknown>;
+}

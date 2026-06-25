@@ -1,4 +1,3 @@
-
 import type {
   ActionConfig,
   Alignment,
@@ -25,6 +24,7 @@ import type {
   ImagePosition,
   Justification,
   NodeBase,
+  PopoverItem,
   PositionFields,
   RadiusValue,
   SpacingValue,
@@ -341,6 +341,13 @@ export interface TransitionNode extends NodeBase {
 
 import type { ChartNode } from './chart-node';
 export type { ChartNode } from './chart-node';
+export interface PopoverNode extends NodeBase {
+  type: 'Popover';
+  trigger: WidgetNode;
+  items: PopoverItem[];
+  side?: 'top' | 'bottom';
+  align?: 'start' | 'end';
+}
 
 export interface UnknownNode extends NodeBase {
   type: string;
@@ -384,6 +391,7 @@ export type WidgetNode =
   | AudioPlayerNode
   | VideoPlayerNode
   | PressableNode
+  | PopoverNode
   | ListViewItemNode
   | TransitionNode
   | ChartNode

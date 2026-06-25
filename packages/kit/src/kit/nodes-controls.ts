@@ -63,12 +63,16 @@ export interface TextFieldNode extends NodeBase {
   onSelectionChangeAction?: ActionConfig;
   selection?: SelectionRange;
   focusNonce?: number;
+  blurNonce?: number;
   variant?: TextFieldVariant;
   background?: Color;
   borderColor?: Color;
   radius?: RadiusValue;
   paddingX?: Dimension;
   paddingY?: Dimension;
+  paddingTop?: Dimension;
+  paddingBottom?: Dimension;
+  lineHeight?: number;
   fontSize?: number;
   fontWeight?: FontWeight;
   color?: Color;

@@ -40,6 +40,7 @@ export { default as VideoPlayer } from './VideoPlayer.vue';
 export { default as TextField } from './TextField.vue';
 export { default as ColorPicker } from './ColorPicker.vue';
 export { default as GesturePressable } from './GesturePressable.vue';
+export { default as Popover } from './Popover.vue';
 export {
   provideKitTheme,
   useKitPalette,
