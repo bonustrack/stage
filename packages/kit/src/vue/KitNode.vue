@@ -358,7 +358,7 @@ function fireWith(action: ActionConfig | undefined, payload: Record<string, unkn
     @swipe="fireWith(listItemNode.onSwipeAction, { direction: $event })"
   >
     <ListViewItem
-      v-bind="listItemProps(listItemNode)"
+      v-bind="listItemProps(listItemNode, scheme)"
       @press="fire(listItemNode.onClickAction)"
     >
       <KitNode v-for="(c, i) in children" :key="i" :node="c" />
@@ -367,7 +367,7 @@ function fireWith(action: ActionConfig | undefined, payload: Record<string, unkn
 
   <ListViewItem
     v-else-if="node.type === 'ListViewItem'"
-    v-bind="listItemProps(listItemNode)"
+    v-bind="listItemProps(listItemNode, scheme)"
     @press="fire(listItemNode.onClickAction)"
   >
     <KitNode v-for="(c, i) in children" :key="i" :node="c" />

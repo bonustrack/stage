@@ -315,6 +315,14 @@ A row inside a `ListView`.
 - `onClickAction`: `ActionConfig` (makes the whole row clickable)
 - `gap`: number | string
 - `align`: Alignment
+- `padding`: SpacingValue — overrides the default row padding (`16` vertical / `16` horizontal). Accepts a number/string (all sides) or `{ x, y, top, right, bottom, left }`.
+- `paddingX` · `paddingY`: number | string — override only the horizontal / vertical padding (applied after `padding`).
+- `border`: BorderValue — same shape as `Box.border` (number, `{ size, color, style }`, or per-side `{ top, right, bottom, left, x, y }`). Useful to reserve a transparent border that `pressedBorderColor` colors on press without shifting layout.
+- `pressedBackground`: Color — overrides the palette-derived pressed background.
+- `pressedBorderColor`: Color — on press, colors the row border instead of filling a background (border-pressed highlight). Takes precedence over `pressedBackground` while pressed.
+- `showDivider`: bool — draws a bottom hairline divider (1px, theme border color, inset by 16) inside the row content.
+
+All of the above default to the current behavior, so existing rows are unchanged unless a field is set explicitly.
 
 ### Misc
 

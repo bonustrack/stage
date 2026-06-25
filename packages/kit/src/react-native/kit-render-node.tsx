@@ -27,6 +27,7 @@ import {
   resolveBorder,
   resolveHeroTitlePx,
   resolveJustify,
+  resolveListItemStyle,
   resolveOptionalColor,
   resolveRadius,
   resolveWrap,
@@ -265,11 +266,17 @@ function ListViewItemRow(props: {
   render: NodeRenderer;
 }): ReactNode {
   const { node, ctx, render } = props;
+  const itemStyle = resolveListItemStyle(node, ctx.scheme);
   const row = (
     <ListViewItem
       gap={toNumber(node.gap)}
       align={resolveItemAlign(node.align)}
       dark={ctx.dark}
+      padding={itemStyle.padding}
+      border={itemStyle.border}
+      pressedBackground={itemStyle.pressedBackground}
+      pressedBorderColor={itemStyle.pressedBorderColor}
+      showDivider={itemStyle.showDivider}
       onPress={
         node.onClickAction
           ? () => {

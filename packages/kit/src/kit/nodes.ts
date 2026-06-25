@@ -295,6 +295,13 @@ export interface ListViewItemNode extends NodeBase {
   onSwipeAction?: ActionConfig;
   gap?: Dimension;
   align?: Alignment;
+  padding?: SpacingValue;
+  paddingX?: Dimension;
+  paddingY?: Dimension;
+  border?: BorderValue;
+  pressedBackground?: Color;
+  pressedBorderColor?: Color;
+  showDivider?: boolean;
 }
 
 export interface StackNode extends NodeBase {

@@ -173,6 +173,14 @@ function applyBorder(s: BoxStyleEntries, border: ResolvedBoxBorder | undefined):
   setIf(s, 'borderStyle', style);
 }
 
+export function borderStyleEntries(
+  border: ResolvedBoxBorder | undefined,
+): BoxStyleEntries {
+  const s: BoxStyleEntries = {};
+  applyBorder(s, border);
+  return s;
+}
+
 export function boxStyleEntries(props: BoxBaseProps): BoxStyleEntries {
   const s: BoxStyleEntries = {};
   applyFlex(s, props);

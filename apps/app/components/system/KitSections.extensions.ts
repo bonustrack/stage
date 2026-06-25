@@ -185,5 +185,50 @@ export const EXTENSION_WIDGET: WidgetRoot = {
       src: 'https://cdn.metro.box/sample.mp4',
       controls: true,
     },
+    { type: 'Spacer', minSize: 12 },
+    {
+      type: 'ListView',
+      children: [
+        {
+          type: 'ListViewItem',
+          padding: { x: 14, y: 14 },
+          showDivider: true,
+          border: { size: 1, color: { dark: '#00000000', light: '#00000000' } },
+          pressedBorderColor: { dark: '#2f6df6', light: '#2f6df6' },
+          onClickAction: { type: 'demo_list_item', handler: 'client' },
+          children: [
+            { type: 'Image', src: SAMPLE_IMAGE, size: 36, radius: 'full' },
+            {
+              type: 'Col',
+              gap: 2,
+              flex: 1,
+              children: [
+                { type: 'Text', value: 'Custom row', weight: 'semibold' },
+                { type: 'Caption', value: 'padding 14, border-pressed, divider' },
+              ],
+            },
+            { type: 'Icon', name: 'chevronRight' },
+          ],
+        },
+        {
+          type: 'ListViewItem',
+          padding: { x: 14, y: 14 },
+          onClickAction: { type: 'demo_list_item', handler: 'client' },
+          children: [
+            { type: 'Image', src: SAMPLE_IMAGE, size: 36, radius: 'full' },
+            {
+              type: 'Col',
+              gap: 2,
+              flex: 1,
+              children: [
+                { type: 'Text', value: 'Second row', weight: 'semibold' },
+                { type: 'Caption', value: 'no divider on the last row' },
+              ],
+            },
+            { type: 'Icon', name: 'chevronRight' },
+          ],
+        },
+      ],
+    },
   ],
 };

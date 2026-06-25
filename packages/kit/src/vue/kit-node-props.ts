@@ -9,6 +9,7 @@ import {
   resolveDirection,
   resolveHeroTitlePx,
   resolveJustify,
+  resolveListItemStyle,
   resolveOptionalColor,
   resolveRadius,
   resolveWrap,
@@ -236,11 +237,20 @@ export function imageProps(node: ImageNode, scheme: Scheme): ImageBindings {
   };
 }
 
-export function listItemProps(node: ListViewItemNode): Record<string, unknown> {
+export function listItemProps(
+  node: ListViewItemNode,
+  scheme: Scheme,
+): Record<string, unknown> {
+  const style = resolveListItemStyle(node, scheme);
   return {
     pressable: node.onClickAction !== undefined,
     gap: numeric(node.gap),
     align: node.align,
+    padding: style.padding,
+    border: style.border,
+    pressedBackground: style.pressedBackground,
+    pressedBorderColor: style.pressedBorderColor,
+    showDivider: style.showDivider,
   };
 }
 
