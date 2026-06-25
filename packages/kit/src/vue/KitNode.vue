@@ -21,6 +21,7 @@ import Checkbox from './Checkbox.vue';
 import RadioGroup from './RadioGroup.vue';
 import DatePicker from './DatePicker.vue';
 import ListViewItem from './ListViewItem.vue';
+import KitChart from './KitChart.vue';
 import {
   dispatchAction,
   type ActionConfig,
@@ -45,6 +46,7 @@ import {
   type TitleNode,
   type TransitionNode,
   type WidgetNode,
+  type ChartNode,
 } from '../kit';
 import {
   boxProps,
@@ -118,6 +120,7 @@ const checkboxNode = computed(() => props.node as CheckboxNode);
 const radioNode = computed(() => props.node as RadioGroupNode);
 const dateNode = computed(() => props.node as DatePickerNode);
 const listItemNode = computed(() => props.node as ListViewItemNode);
+const chartNode = computed(() => props.node as ChartNode);
 
 const transitionChild = computed<WidgetNode | undefined>(() => {
   const node = props.node;
@@ -343,9 +346,11 @@ const transitionChild = computed<WidgetNode | undefined>(() => {
     :node="transitionChild"
   />
 
-  <Box v-else-if="node.type === 'Chart'" v-bind="{ padding: 8 }">
-    <Caption value="Chart" />
-  </Box>
+  <KitChart
+    v-else-if="node.type === 'Chart'"
+    :node="chartNode"
+    :scheme="scheme"
+  />
 
   <template v-else-if="children.length">
     <KitNode v-for="(c, i) in children" :key="i" :node="c" />

@@ -22,8 +22,35 @@ import { Markdown } from '@stage-labs/kit/react-native/markdown';
 import { Table } from '@stage-labs/kit/react-native/table';
 import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import type { WidgetRoot } from '@stage-labs/kit/kit';
 import { GallerySection } from './GallerySection';
 import type { GalleryPalette } from './galleryPalette';
+
+const CHART_WIDGET: WidgetRoot = {
+  type: 'Card',
+  children: [
+    { type: 'Title', value: 'Weekly volume', size: 'md' },
+    {
+      type: 'Chart',
+      height: 200,
+      showYAxis: true,
+      showLegend: true,
+      xAxis: { dataKey: 'day' },
+      data: [
+        { day: 'Mon', sent: 12, received: 8 },
+        { day: 'Tue', sent: 18, received: 14 },
+        { day: 'Wed', sent: 9, received: 20 },
+        { day: 'Thu', sent: 22, received: 11 },
+        { day: 'Fri', sent: 16, received: 19 },
+      ],
+      series: [
+        { type: 'bar', dataKey: 'sent', label: 'Sent' },
+        { type: 'bar', dataKey: 'received', label: 'Received' },
+      ],
+    },
+  ],
+};
 
 const SAMPLE_ICONS = ['cog', 'bell', 'wallet', 'chat', 'user', 'check'] as const;
 const LIST_ROWS = ['Display', 'Messenger', 'Notifications', 'Security'];
@@ -245,6 +272,10 @@ function ContentSections({ dark, head, sub, border }: GalleryPalette): React.Rea
             <Table.Cell align="end"><Text variant="mono">980.00</Text></Table.Cell>
           </Table.Row>
         </Table>
+      </GallerySection>
+
+      <GallerySection name="Chart" note="JSON widget - bar/line/area series, SVG renderer" {...sec} framed={false}>
+        <KitRenderer node={CHART_WIDGET} />
       </GallerySection>
 
       <GallerySection name="Scroll" note="Kit ScrollView wrapper - padding / gap shorthands" {...sec} innerPadH={14} innerPadV={12}>

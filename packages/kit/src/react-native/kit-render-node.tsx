@@ -35,6 +35,7 @@ import { Caption } from './caption';
 import { Card } from './card';
 import { Divider } from './divider';
 import { Icon } from './icon';
+import { KitChart } from './kit-render-chart';
 import { Image } from './image';
 import { Label } from './label';
 import { ListView, ListViewItem } from './list-view';
@@ -323,17 +324,7 @@ function cardAction(
 }
 
 export function renderChart(node: ChartNode, ctx: RenderCtx): ReactNode {
-  return (
-    <Box
-      padding={12}
-      radius="md"
-      align="center"
-      justify="center"
-      background={resolveOptionalColor(node.series[0]?.color, ctx.scheme)}
-    >
-      <Caption value={`Chart (${node.series.length} series)`} />
-    </Box>
-  );
+  return <KitChart node={node} ctx={ctx} />;
 }
 
 export function isLayout(node: WidgetNode): node is BoxNode | RowNode | ColNode {
