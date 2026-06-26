@@ -1,5 +1,5 @@
 
-import type { HistoryEntry } from '../lib/types';
+import type { HistoryEntry } from '@stage-labs/client/types';
 import { fontSize } from '@stage-labs/kit/tokens';
 import type { RemoteAttachmentInfo } from '@xmtp/react-native-sdk';
 import { normalizeQuestions, type PollContent } from '@stage-labs/client/xmtp/poll';

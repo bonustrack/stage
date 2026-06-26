@@ -3,7 +3,7 @@ import {
   erc20Abi, encodeFunctionData, parseUnits, createPublicClient, type Hex,
 } from 'viem';
 import { base } from 'viem/chains';
-import { resolveEnsName } from '../../lib/ens';
+import { resolveEnsName } from '@stage-labs/client/api/ens';
 import { sendNativeOrToken } from '../../lib/tx';
 import { getActiveAccount } from '../../lib/accounts';
 import { kernelClientForRecord } from '../../lib/zerodev';

@@ -6,7 +6,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import Markdown from 'react-native-markdown-display';
 import { cardLinksOf } from '../lib/cardLinks';
 import { Box, Row } from './layout';
-import type { HistoryEntry } from '../lib/types';
+import type { HistoryEntry } from '@stage-labs/client/types';
 import {
   fmtTs, attachmentsOf, mdParser, markdownStyles,
   questionOf, pollOf, sigRequestOf, sigReferenceOf, txRequestOf, txReceiptOf,

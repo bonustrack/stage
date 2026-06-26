@@ -1,6 +1,6 @@
 
 import type { Client } from '@xmtp/react-native-sdk';
-import type { HistoryEntry } from './types';
+import type { HistoryEntry } from '@stage-labs/client/types';
 import { MemoryStore } from './cache';
 
 let cachedClient: Client | null = null;

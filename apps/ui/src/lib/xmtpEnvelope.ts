@@ -6,7 +6,7 @@ import {
 } from '@xmtp/browser-sdk';
 import { XMTP_USER_PREFIX } from './xmtp';
 import { envelopeFromContent, type EnvelopeOptions } from '@stage-labs/client/xmtp/envelope';
-import type { HistoryEntry } from './types';
+import type { HistoryEntry } from '@stage-labs/client/types';
 
 function latestReactionStates(events: HistoryEntry[]): Map<string, { ts: string; removed: boolean }> {
   const latest = new Map<string, { ts: string; removed: boolean }>();

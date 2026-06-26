@@ -7,7 +7,7 @@ import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
 import { reactionsRow, type ReactionPill, REACTION_PRESS } from '@stage-labs/views';
 import { basicRoot } from '@/lib/kitRow';
 import { stampAvatarUrl, XMTP_USER_PREFIX } from '../lib/xmtp';
-import type { HistoryEntry } from '../lib/types';
+import type { HistoryEntry } from '@stage-labs/client/types';
 import { mapCoordsOf, youtubeIdOf } from '../lib/embedDetect';
 import { renderMarkdown } from '../lib/renderMarkdown';
 import { parseMentions } from '@stage-labs/client/xmtp/mentions';

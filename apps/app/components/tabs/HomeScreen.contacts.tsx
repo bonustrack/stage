@@ -7,7 +7,7 @@ import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
 import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
 import { contactRow, emptyState, sectionHeader, CONTACT_PRESS } from '@stage-labs/views';
 import { openDmWithAddress, shortAddress } from '../../modules/messaging';
-import { resolveEnsName } from '../../lib/ens';
+import { resolveEnsName } from '@stage-labs/client/api/ens';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { getCachedRows } from '../../modules/messaging';
 import { stampAvatarUrl } from '@stage-labs/kit/avatar';

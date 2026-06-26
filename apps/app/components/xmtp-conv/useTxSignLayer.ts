@@ -13,7 +13,7 @@ import { sendCall } from '../../lib/tx';
 import { deriveConfirmSummary, confirmMessage } from '../../lib/txConfirm';
 import { deriveSignSummary, signConfirmMessage } from '../../lib/signConfirm';
 import { flash } from '../../lib/toast';
-import { txErrorMessage } from '../../lib/txError';
+import { txErrorMessage } from '@stage-labs/client/wallet/txError';
 import type { TypedDataDefinition } from 'viem';
 import { base } from 'viem/chains';
 import { getActiveAccount, getActiveViemAccount, type AccountRecord } from '../../lib/accounts';

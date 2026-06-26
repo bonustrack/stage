@@ -7,7 +7,6 @@
 export {}
 declare global {
   const ASK_QUESTION_MEMBERS: typeof import('./lib/xmtpGroups').ASK_QUESTION_MEMBERS
-  const DIR_ICON: typeof import('./lib/activityFormat').DIR_ICON
   const EffectScope: typeof import('vue').EffectScope
   const METRO_API_URL: typeof import('./lib/xmtpGroups').METRO_API_URL
   const METRO_MONO_FAMILY: typeof import('./lib/metroFieldColors').METRO_MONO_FAMILY
@@ -30,7 +29,6 @@ declare global {
   const applyConsentToRows: typeof import('./lib/channelsCache').applyConsentToRows
   const basicRoot: typeof import('./lib/kitRow').basicRoot
   const blockRequestConv: typeof import('./lib/xmtpRequests').blockRequestConv
-  const buildSortedTokenRows: typeof import('./lib/walletSort').buildSortedTokenRows
   const bumpAccountEpoch: typeof import('./lib/xmtp').bumpAccountEpoch
   const cachedRows: typeof import('./lib/channelsCache').cachedRows
   const canExportPrivateKey: typeof import('./lib/accounts').canExportPrivateKey
@@ -145,7 +143,6 @@ declare global {
   const readProfile: typeof import('./lib/profile').readProfile
   const readonly: typeof import('vue').readonly
   const ref: typeof import('vue').ref
-  const relTime: typeof import('./lib/activityFormat').relTime
   const rememberTokenRow: typeof import('./lib/tokenDetailStore').rememberTokenRow
   const removeAccount: typeof import('./lib/xmtpClient').removeAccount
   const removeAccountRecord: typeof import('./lib/accounts').removeAccountRecord
@@ -191,13 +188,8 @@ declare global {
   const toRefs: typeof import('vue').toRefs
   const toValue: typeof import('vue').toValue
   const toggleArchived: typeof import('./lib/archived').toggleArchived
-  const tokenRowId: typeof import('./lib/walletSort').tokenRowId
   const triggerRef: typeof import('vue').triggerRef
-  const txPartyLabel: typeof import('./lib/activityFormat').txPartyLabel
   const txRequestChainId: typeof import('./lib/executeTxRequest').txRequestChainId
-  const txTitle: typeof import('./lib/activityFormat').txTitle
-  const txValueColor: typeof import('./lib/activityFormat').txValueColor
-  const txValuePrefix: typeof import('./lib/activityFormat').txValuePrefix
   const unref: typeof import('vue').unref
   const uploadAvatar: typeof import('./lib/profile').uploadAvatar
   const useActivity: typeof import('./lib/useActivity').useActivity
@@ -278,9 +270,6 @@ declare global {
   // @ts-ignore
   export type { SeedColorKey, ThemePreference, Density, RadiusName, BaseSize, Scheme, ThemeSeed, DerivedPalette } from './lib/theme'
   import('./lib/theme')
-  // @ts-ignore
-  export type { HistoryEntry } from './lib/types'
-  import('./lib/types')
   // @ts-ignore
   export type { WalletActivity } from './lib/useActivity'
   import('./lib/useActivity')
@@ -370,7 +359,6 @@ declare module 'vue' {
     readonly applyConsentToRows: UnwrapRef<typeof import('./lib/channelsCache')['applyConsentToRows']>
     readonly basicRoot: UnwrapRef<typeof import('./lib/kitRow')['basicRoot']>
     readonly blockRequestConv: UnwrapRef<typeof import('./lib/xmtpRequests')['blockRequestConv']>
-    readonly buildSortedTokenRows: UnwrapRef<typeof import('./lib/walletSort')['buildSortedTokenRows']>
     readonly bumpAccountEpoch: UnwrapRef<typeof import('./lib/xmtp')['bumpAccountEpoch']>
     readonly cachedRows: UnwrapRef<typeof import('./lib/channelsCache')['cachedRows']>
     readonly canExportPrivateKey: UnwrapRef<typeof import('./lib/accounts')['canExportPrivateKey']>
@@ -483,7 +471,6 @@ declare module 'vue' {
     readonly readProfile: UnwrapRef<typeof import('./lib/profile')['readProfile']>
     readonly readonly: UnwrapRef<typeof import('vue')['readonly']>
     readonly ref: UnwrapRef<typeof import('vue')['ref']>
-    readonly relTime: UnwrapRef<typeof import('./lib/activityFormat')['relTime']>
     readonly rememberTokenRow: UnwrapRef<typeof import('./lib/tokenDetailStore')['rememberTokenRow']>
     readonly removeAccount: UnwrapRef<typeof import('./lib/xmtpClient')['removeAccount']>
     readonly removeAccountRecord: UnwrapRef<typeof import('./lib/accounts')['removeAccountRecord']>
@@ -528,11 +515,8 @@ declare module 'vue' {
     readonly toRefs: UnwrapRef<typeof import('vue')['toRefs']>
     readonly toValue: UnwrapRef<typeof import('vue')['toValue']>
     readonly toggleArchived: UnwrapRef<typeof import('./lib/archived')['toggleArchived']>
-    readonly tokenRowId: UnwrapRef<typeof import('./lib/walletSort')['tokenRowId']>
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
-    readonly txPartyLabel: UnwrapRef<typeof import('./lib/activityFormat')['txPartyLabel']>
     readonly txRequestChainId: UnwrapRef<typeof import('./lib/executeTxRequest')['txRequestChainId']>
-    readonly txTitle: UnwrapRef<typeof import('./lib/activityFormat')['txTitle']>
     readonly unref: UnwrapRef<typeof import('vue')['unref']>
     readonly uploadAvatar: UnwrapRef<typeof import('./lib/profile')['uploadAvatar']>
     readonly useActivity: UnwrapRef<typeof import('./lib/useActivity')['useActivity']>

@@ -8,7 +8,7 @@ import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
 import { balanceHeader, WALLET_ACTION_PRESS } from '@stage-labs/views';
 import { basicRoot } from '@/lib/kitRow';
 import { useWalletBalances } from '@/lib/useWalletBalances';
-import { buildSortedTokenRows } from '@/lib/walletSort';
+import { buildSortedTokenRows } from '@stage-labs/client/wallet/tokens';
 import { fmtUsd, splitUsd } from '@stage-labs/client/wallet/format';
 import type { WalletTab } from '@/lib/walletTab';
 

@@ -13,7 +13,7 @@ import { xmtpVote } from './xmtpSend';
 import { useBubbleActions } from './useBubbleActions';
 import { markConvRead } from './channelsCache';
 import { postUnreadToParent } from './embedBridge';
-import type { HistoryEntry } from './types';
+import type { HistoryEntry } from '@stage-labs/client/types';
 import { readProfile, loadCachedProfile } from './profile';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import type { MentionCandidate } from '@stage-labs/client/xmtp/mentions';

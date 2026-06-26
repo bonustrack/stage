@@ -15,7 +15,7 @@ import { Avatar } from '../Avatar';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
 import { REACT_PRESETS } from '../MessengerBubble';
 import { usePalette } from '../../lib/theme';
-import type { HistoryEntry } from '../../lib/types';
+import type { HistoryEntry } from '@stage-labs/client/types';
 import { useBlockRadius } from '../../lib/theme';
 
 export function GithubNavButton({ url, color }: { url: string; color: string }): React.ReactElement {

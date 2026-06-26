@@ -1,6 +1,6 @@
 import { formatEther, type Hex } from 'viem';
 import { getOrCreateXmtpClient } from '../../modules/messaging';
-import { getSimplePrices } from '../../lib/coingecko';
+import { getSimplePrices } from '@stage-labs/client/api/coingecko';
 import type { CgPrice } from '@stage-labs/client/api/coingecko';
 import { publicClientFor } from '@stage-labs/client/wallet/client';
 

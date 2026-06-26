@@ -1,7 +1,7 @@
 
 import { useCallback } from 'react';
 import { Alert } from 'react-native';
-import { resolveEnsName } from '../../lib/ens';
+import { resolveEnsName } from '@stage-labs/client/api/ens';
 import { getActiveAccount, type AccountRecord } from '../../lib/accounts';
 import {
   installGuardians, updateGuardians, cancelRecovery,

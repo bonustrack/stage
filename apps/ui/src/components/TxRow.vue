@@ -5,7 +5,7 @@ import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import type { ActivityRow } from '@stage-labs/client/api/etherscan';
 import { txRow, type TxDirection } from '@stage-labs/views';
 import { basicRoot } from '@/lib/kitRow';
-import { txTitle, txPartyLabel, relTime } from '@/lib/activityFormat';
+import { txTitle, txPartyLabel, relTime } from '@stage-labs/client/wallet/activityFormat';
 
 const props = defineProps<{ r: ActivityRow; profileVersion: number }>();
 

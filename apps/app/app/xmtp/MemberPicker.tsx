@@ -8,7 +8,7 @@ import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
 import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
 import { basicRoot, memberTextField, MEMBER_FIELD_CHANGE, MEMBER_FIELD_SUBMIT } from '@stage-labs/views';
 import { shortAddress } from '../../modules/messaging';
-import { resolveEnsName } from '../../lib/ens';
+import { resolveEnsName } from '@stage-labs/client/api/ens';
 import { flash } from '../../lib/toast';
 import { usePalette } from '../../lib/theme';
 import { Avatar } from '../../components/Avatar';

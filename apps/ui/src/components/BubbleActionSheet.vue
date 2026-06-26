@@ -9,7 +9,7 @@ import {
 } from '@stage-labs/views';
 import { basicRoot } from '@/lib/kitRow';
 
-import type { HistoryEntry } from '../lib/types';
+import type { HistoryEntry } from '@stage-labs/client/types';
 
 const ACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '🔥', '🎉'];
 

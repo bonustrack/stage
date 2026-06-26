@@ -1,5 +1,5 @@
 import type { AssetRow } from '@stage-labs/client/wallet/assets';
-import { tokenRowId } from './walletSort';
+import { tokenRowId } from '@stage-labs/client/wallet/tokens';
 
 const store = new Map<string, AssetRow>();
 

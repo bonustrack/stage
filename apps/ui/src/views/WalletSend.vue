@@ -17,7 +17,7 @@ import { fmtBalance } from '@stage-labs/client/wallet/format';
 import { explorerTxUrl } from '@stage-labs/client/xmtp/tx';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { useWalletBalances } from '@/lib/useWalletBalances';
-import { buildSortedTokenRows } from '@/lib/walletSort';
+import { buildSortedTokenRows } from '@stage-labs/client/wallet/tokens';
 import { getTokenRow } from '../lib/tokenDetailStore';
 import { useSend } from '../lib/useSend';
 
