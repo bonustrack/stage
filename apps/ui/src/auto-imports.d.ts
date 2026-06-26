@@ -168,6 +168,7 @@ declare global {
   const setRadius: typeof import('./lib/theme').setRadius
   const setSeedColor: typeof import('./lib/theme').setSeedColor
   const setThemePreference: typeof import('./lib/theme').setThemePreference
+  const setTopnavOverride: typeof import('./lib/topnavSlots').setTopnavOverride
   const shallowReactive: typeof import('vue').shallowReactive
   const shallowReadonly: typeof import('vue').shallowReadonly
   const shallowRef: typeof import('vue').shallowRef
@@ -196,6 +197,8 @@ declare global {
   const useAttrs: typeof import('vue').useAttrs
   const useBaseSize: typeof import('./lib/theme').useBaseSize
   const useBubbleActions: typeof import('./lib/useBubbleActions').useBubbleActions
+  const useChannelFilters: typeof import('./lib/useChannelFilters').useChannelFilters
+  const useChannelRowMenu: typeof import('./lib/useChannelFilters').useChannelRowMenu
   const useChannels: typeof import('./lib/useChannels').useChannels
   const useCommonChannels: typeof import('./lib/useCommonChannels').useCommonChannels
   const useComposerAttach: typeof import('./lib/useComposerAttach').useComposerAttach
@@ -212,6 +215,7 @@ declare global {
   const useNfts: typeof import('./lib/useNfts').useNfts
   const useProposalCount: typeof import('./lib/useProposals').useProposalCount
   const useProposals: typeof import('./lib/useProposals').useProposals
+  const usePublishTopnav: typeof import('./lib/topnavSlots').usePublishTopnav
   const useRadius: typeof import('./lib/theme').useRadius
   const useRequestCompose: typeof import('./lib/useRequestCompose').useRequestCompose
   const useRoute: typeof import('vue-router').useRoute
@@ -222,6 +226,7 @@ declare global {
   const useTemplateRef: typeof import('vue').useTemplateRef
   const useThemePreference: typeof import('./lib/theme').useThemePreference
   const useThemeSeeds: typeof import('./lib/theme').useThemeSeeds
+  const useTopnavOverride: typeof import('./lib/topnavSlots').useTopnavOverride
   const useVoiceRecorder: typeof import('./lib/useVoiceRecorder').useVoiceRecorder
   const useWalletBalances: typeof import('./lib/useWalletBalances').useWalletBalances
   const useXmtpConversation: typeof import('./lib/useXmtpConversation').useXmtpConversation
@@ -276,6 +281,9 @@ declare global {
   // @ts-ignore
   export type { BubbleActionsDeps, BubbleActions } from './lib/useBubbleActions'
   import('./lib/useBubbleActions')
+  // @ts-ignore
+  export type { RowMenu, ChannelRowMenu, ChannelFilters } from './lib/useChannelFilters'
+  import('./lib/useChannelFilters')
   // @ts-ignore
   export type { ChannelStreamHandles } from './lib/useChannelStream'
   import('./lib/useChannelStream')
@@ -495,6 +503,7 @@ declare module 'vue' {
     readonly setRadius: UnwrapRef<typeof import('./lib/theme')['setRadius']>
     readonly setSeedColor: UnwrapRef<typeof import('./lib/theme')['setSeedColor']>
     readonly setThemePreference: UnwrapRef<typeof import('./lib/theme')['setThemePreference']>
+    readonly setTopnavOverride: UnwrapRef<typeof import('./lib/topnavSlots')['setTopnavOverride']>
     readonly shallowReactive: UnwrapRef<typeof import('vue')['shallowReactive']>
     readonly shallowReadonly: UnwrapRef<typeof import('vue')['shallowReadonly']>
     readonly shallowRef: UnwrapRef<typeof import('vue')['shallowRef']>
@@ -523,6 +532,8 @@ declare module 'vue' {
     readonly useAttrs: UnwrapRef<typeof import('vue')['useAttrs']>
     readonly useBaseSize: UnwrapRef<typeof import('./lib/theme')['useBaseSize']>
     readonly useBubbleActions: UnwrapRef<typeof import('./lib/useBubbleActions')['useBubbleActions']>
+    readonly useChannelFilters: UnwrapRef<typeof import('./lib/useChannelFilters')['useChannelFilters']>
+    readonly useChannelRowMenu: UnwrapRef<typeof import('./lib/useChannelFilters')['useChannelRowMenu']>
     readonly useChannels: UnwrapRef<typeof import('./lib/useChannels')['useChannels']>
     readonly useCommonChannels: UnwrapRef<typeof import('./lib/useCommonChannels')['useCommonChannels']>
     readonly useComposerAttach: UnwrapRef<typeof import('./lib/useComposerAttach')['useComposerAttach']>
@@ -539,6 +550,7 @@ declare module 'vue' {
     readonly useNfts: UnwrapRef<typeof import('./lib/useNfts')['useNfts']>
     readonly useProposalCount: UnwrapRef<typeof import('./lib/useProposals')['useProposalCount']>
     readonly useProposals: UnwrapRef<typeof import('./lib/useProposals')['useProposals']>
+    readonly usePublishTopnav: UnwrapRef<typeof import('./lib/topnavSlots')['usePublishTopnav']>
     readonly useRadius: UnwrapRef<typeof import('./lib/theme')['useRadius']>
     readonly useRequestCompose: UnwrapRef<typeof import('./lib/useRequestCompose')['useRequestCompose']>
     readonly useRoute: UnwrapRef<typeof import('vue-router')['useRoute']>
@@ -549,6 +561,7 @@ declare module 'vue' {
     readonly useTemplateRef: UnwrapRef<typeof import('vue')['useTemplateRef']>
     readonly useThemePreference: UnwrapRef<typeof import('./lib/theme')['useThemePreference']>
     readonly useThemeSeeds: UnwrapRef<typeof import('./lib/theme')['useThemeSeeds']>
+    readonly useTopnavOverride: UnwrapRef<typeof import('./lib/topnavSlots')['useTopnavOverride']>
     readonly useVoiceRecorder: UnwrapRef<typeof import('./lib/useVoiceRecorder')['useVoiceRecorder']>
     readonly useWalletBalances: UnwrapRef<typeof import('./lib/useWalletBalances')['useWalletBalances']>
     readonly useXmtpConversation: UnwrapRef<typeof import('./lib/useXmtpConversation')['useXmtpConversation']>

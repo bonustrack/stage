@@ -1,16 +1,36 @@
 <script setup lang="ts">
 
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { emptyState, overflowMenu, OVERFLOW_MENU_PRESS } from '@stage-labs/views';
+import {
+  emptyState, overflowMenu, OVERFLOW_MENU_PRESS,
+  labelBar, LABEL_CHIP_PRESS, type LabelBarChip,
+} from '@stage-labs/views';
 import { basicRoot } from '@/lib/kitRow';
+import { metroFieldColors } from '@/lib/metroFieldColors';
 import { ASK_QUESTION_MEMBERS, stampAvatarUrl } from '../lib/xmtp';
 import { postCloseToParent } from '../lib/embedBridge';
 import { useChannels } from '../lib/useChannels';
-import { useEffectiveScheme } from '@/lib/kitTheme';
+import { usePublishTopnav } from '../lib/topnavSlots';
+import HoistedTopnav from '../components/HoistedTopnav.vue';
+import ChannelsSearchBar from '../components/ChannelsSearchBar.vue';
 
-const scheme = useEffectiveScheme();
+const {
+  embedded, rows, error, query, creatingAsk,
+  searchResolution, openSearchedProfile, filtered, view, cardClass, rowMenu,
+  barLabels, enabledLabels, unreadOnly, toggleLabel, toggleUnread, clearAllFilters,
+  onAskPress, open, openRowMenu, closeRowMenu,
+  toggleRowUnread, archiveRow, openDocs, goNewGroup, goArchived, goRequests,
+  goProfile, goSettings,
+} = useChannels();
+
+const UNREAD_VALUE = '__unread__';
+
+const searchOpen = ref(false);
+const { setOverride } = usePublishTopnav();
+function openSearch(): void { searchOpen.value = true; setOverride(true); }
+function closeSearch(): void { searchOpen.value = false; setOverride(false); query.value = ''; }
 
 const emptyNode = computed(() =>
   basicRoot(
@@ -24,18 +44,10 @@ const emptyNode = computed(() =>
   ),
 );
 
-const {
-  embedded, rows, error, query, creatingAsk, refreshing,
-  searchResolution, openSearchedProfile, filtered, view, cardClass, rowMenu,
-  onAskPress, refreshFromNetwork, open, openRowMenu, closeRowMenu,
-  toggleRowUnread, archiveRow, openDocs, goNewGroup, goArchived, goRequests,
-  goProfile, goSettings,
-} = useChannels();
-
 const overflowNode = computed(() =>
   basicRoot(
     overflowMenu({
-      iconSize: 18,
+      iconSize: 24,
       items: [
         { id: 'new', label: 'New group', icon: 'plus' },
         { id: 'archived', label: 'Archived', icon: 'archive' },
@@ -56,46 +68,56 @@ const overflowRegistry: WidgetActionRegistry = {
   },
 };
 
+const labelBarNode = computed(() => {
+  const allSelected = !unreadOnly.value && enabledLabels.value.size === 0;
+  const chips: LabelBarChip[] = [
+    { value: '', label: 'All', selected: allSelected },
+    { value: UNREAD_VALUE, label: 'Unread', selected: unreadOnly.value },
+    ...barLabels.value.map((label) => ({
+      value: label,
+      label,
+      selected: enabledLabels.value.has(label.toLowerCase()),
+    })),
+  ];
+  return basicRoot(
+    labelBar({
+      chips,
+      selectedBackground: metroFieldColors.link,
+      selectedLabelColor: metroFieldColors.bg,
+      restBackground: metroFieldColors.border,
+      restLabelColor: metroFieldColors.fg,
+    }),
+  );
+});
+
+const labelBarRegistry: WidgetActionRegistry = {
+  [LABEL_CHIP_PRESS]: (action) => {
+    const value = action.payload.value;
+    if (typeof value !== 'string') return;
+    if (value === '') { clearAllFilters(); return; }
+    if (value === UNREAD_VALUE) { toggleUnread(); return; }
+    toggleLabel(value);
+  },
+};
+
 </script>
 
 <template>
   <Col class="h-[100dvh] relative" :class="embedded ? '' : 'pb-[60px]'">
-    <!-- Topnav: page title, refresh, and (embedded only) a close button at the
-         end, so the channels homepage has a single topnav like conversations. -->
-    <Row align="center" :gap="4" class="h-[52px] box-border shrink-0 pl-2 pr-1
-      bg-metro-bg-light dark:bg-metro-bg-dark
-      border-b border-metro-border-light dark:border-metro-border-dark">
-      <AccountSwitcher v-if="!embedded" />
+    <!-- Embedded widget keeps its own compact header (Home/Messages title + close). -->
+    <Row
+      v-if="embedded"
+      align="center"
+      :gap="4"
+      class="h-[52px] box-border shrink-0 pl-2 pr-1
+        bg-metro-bg-light dark:bg-metro-bg-dark
+        border-b border-metro-border-light dark:border-metro-border-dark"
+    >
       <Text size="4xl" weight="semibold" class="flex-1 pl-2 text-metro-head-light dark:text-metro-head-dark">
-        {{ embedded ? (view === 'messages' ? 'Messages' : 'Home') : 'Channels' }}
+        {{ view === 'messages' ? 'Messages' : 'Home' }}
       </Text>
-      <template v-if="!embedded && view === 'messages'">
-        <Pressable
-          tag="button"
-          type="button"
-          class="p-2 rounded-lg text-metro-sub-light dark:text-metro-sub-dark
-            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
-          title="Message requests"
-          @click="goRequests"
-        >
-          <Icon name="inbox" :size="18" />
-        </Pressable>
-        <Pressable
-          tag="button"
-          type="button"
-          :disabled="refreshing"
-          class="p-2 rounded-lg text-metro-sub-light dark:text-metro-sub-dark
-            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark disabled:opacity-50"
-          :title="refreshing ? 'Refreshing…' : 'Refresh channels'"
-          @click="refreshFromNetwork"
-        >
-          <Icon name="arrowDown" :size="16" :class="refreshing ? 'animate-spin' : ''" />
-        </Pressable>
-        <KitRenderer :node="overflowNode" :registry="overflowRegistry" />
-      </template>
       <Pressable
         tag="button"
-        v-if="embedded"
         type="button"
         class="px-2 py-2 text-metro-fg-light dark:text-metro-fg-dark"
         title="Close"
@@ -104,6 +126,25 @@ const overflowRegistry: WidgetActionRegistry = {
         <Icon name="x" :size="20" />
       </Pressable>
     </Row>
+
+    <!-- Standalone (mobile-parity) hoisted topnav: identity (avatar + name) on the
+         left, search/inbox/overflow icons on the right, search toggles an override
+         bar, and a label filter bar sits below the topnav. -->
+    <template v-else>
+      <HoistedTopnav />
+      <Teleport v-if="searchOpen" to="#topnav-override">
+        <ChannelsSearchBar v-model="query" placeholder="Search channels or paste 0x… / name.eth…" @close="closeSearch" />
+      </Teleport>
+      <Teleport to="#topnav-right">
+        <Pressable tag="button" type="button" title="Search" @click="openSearch">
+          <Icon name="search" :size="24" class="text-metro-head-light dark:text-metro-head-dark" />
+        </Pressable>
+        <Pressable tag="button" type="button" title="Message requests" class="relative" @click="goRequests">
+          <Icon name="inbox" :size="24" class="text-metro-head-light dark:text-metro-head-dark" />
+        </Pressable>
+        <KitRenderer :node="overflowNode" :registry="overflowRegistry" />
+      </Teleport>
+    </template>
 
     <!-- HOME: the "Ask a question" action card. Messages/Docs live in the footer nav. -->
     <Col v-if="view === 'home'" align="center" justify="center" :gap="12" class="flex-1 px-6">
@@ -125,23 +166,9 @@ const overflowRegistry: WidgetActionRegistry = {
       <Col v-if="error" class="text-xs text-metro-err mt-1">{{ error }}</Col>
     </Col>
 
-    <!-- MESSAGES: search (standalone) + the channel list. -->
+    <!-- MESSAGES: label filter bar + the channel list. -->
     <template v-else>
-      <Col v-if="!embedded" class="shrink-0 px-4 pt-3 pb-2 bg-metro-bg-light dark:bg-metro-bg-dark">
-        <Input
-          v-model="query"
-          inputType="text"
-          :dark="scheme === 'dark'"
-          placeholder="Search channels or paste 0x… / name.eth…"
-          autocomplete="off"
-          autocorrect="off"
-          autocapitalize="off"
-          class="w-full bg-metro-surface-light dark:bg-metro-surface-dark
-            border border-metro-border-light dark:border-metro-border-dark rounded-lg px-3 py-2 text-sm
-            text-metro-fg-light dark:text-metro-fg-dark outline-none
-            placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark"
-        />
-      </Col>
+      <KitRenderer v-if="!embedded" :node="labelBarNode" :registry="labelBarRegistry" />
       <SearchResolution
         :status="searchResolution.status"
         :address="searchResolution.address"
