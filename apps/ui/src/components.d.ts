@@ -13,7 +13,6 @@ declare module 'vue' {
   export interface GlobalComponents {
     AccountExportSheet: typeof import('./components/AccountExportSheet.vue')['default']
     AccountImportSheet: typeof import('./components/AccountImportSheet.vue')['default']
-    AccountSwitcher: typeof import('./components/AccountSwitcher.vue')['default']
     ActivityList: typeof import('./components/ActivityList.vue')['default']
     AvatarView: typeof import('@stage-labs/kit/vue/avatar-view')['default']
     BackupNudge: typeof import('./components/BackupNudge.vue')['default']
