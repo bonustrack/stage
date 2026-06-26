@@ -12,7 +12,6 @@ export interface TokenDetailCardParams {
   borderColor: string | ThemeColor;
   bgColor: string | ThemeColor;
   actions: WalletActionButton[];
-  actionsGap?: number;
   actionsPadTop: number;
   isPrivate?: boolean;
   privateIconColor?: string | ThemeColor;
@@ -74,7 +73,6 @@ export function tokenDetailCard(params: TokenDetailCardParams): BasicNode {
     borderColor,
     bgColor,
     actions,
-    actionsGap,
     actionsPadTop,
     isPrivate,
     privateIconColor,
@@ -151,7 +149,7 @@ export function tokenDetailCard(params: TokenDetailCardParams): BasicNode {
           {
             type: 'Box',
             padding: { top: actionsPadTop },
-            children: [walletActions({ gap: actionsGap ?? 36, actions })],
+            children: [walletActions({ gap: 36, actions })],
           },
         ],
       },
