@@ -34,8 +34,6 @@ export const MEMBER_REMOVE = 'accounts.member.remove';
 
 export const CONTACT_PRESS = 'contacts.contact.press';
 
-export const PROFILE_ACTION_PRESS = 'profile.action.press';
-
 export const PROFILE_INFO_PRESS = 'profile.info.press';
 
 export const PROFILE_ROUND_PRESS = 'profile.round.press';
