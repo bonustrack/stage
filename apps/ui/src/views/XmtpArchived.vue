@@ -64,7 +64,7 @@ const emptyNode = basicRoot(emptyState({ title: 'No archived conversations.' }))
           :avatar-uri="r.avatarUri"
           :title="r.title"
           :last-ts="r.lastTs"
-          :last-preview="r.lastPreview"
+          :last-preview="r.lastPreview || '(no messages yet)'"
           :unread-count="0"
           @open="open(r.convId)"
         />

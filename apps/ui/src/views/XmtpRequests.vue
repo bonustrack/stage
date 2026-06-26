@@ -75,7 +75,7 @@ async function act(convId: string, accept: boolean): Promise<void> {
               :avatar-uri="r.avatarUri"
               :title="r.title"
               :last-ts="null"
-              :last-preview="r.preview"
+              :last-preview="r.preview || '(no messages yet)'"
               :unread-count="0"
               @open="open(r.convId)"
             />
