@@ -2,12 +2,14 @@
 
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
 import { settingsNavRow, SETTINGS_NAV_PRESS } from '@stage-labs/views';
 import pkg from '../../package.json';
 
 const router = useRouter();
+const palette = useKitPalette();
 
 const APP_VERSION = pkg.version;
 
@@ -40,20 +42,32 @@ const registry: WidgetActionRegistry = {
 </script>
 
 <template>
-  <Col surface="surface" class="min-h-screen">
-    <!-- Hub header mirrors the mobile SettingsMenu title bar. -->
-    <Col class="px-4 pt-4 pb-2">
-      <Title :level="1" class="font-head text-xl text-metro-head-light dark:text-metro-head-dark">Settings</Title>
-    </Col>
+  <Col surface="surface" class="h-[100dvh]">
+    <!-- Mobile parity (components/settings/SettingsMenu.tsx -> SystemHeader):
+         back arrow + small title, matching every settings subpage header. -->
+    <Row
+      surface="toolbar"
+      align="center"
+      :gap="8"
+      :padding="{ x: 12, y: 10 }"
+      :style="{ borderBottomWidth: '1px', borderBottomStyle: 'solid', borderBottomColor: palette.border }"
+    >
+      <Pressable tag="button" type="button" class="p-1" @click="router.back()">
+        <Icon name="arrowLeft" :size="22" :color="palette.text" />
+      </Pressable>
+      <Title size="sm">Settings</Title>
+    </Row>
 
-    <Col class="w-[calc(100%-2rem)] mx-4 mt-2">
-      <KitRenderer :node="node" :registry="registry" />
-    </Col>
+    <Scroll class="flex-1 min-h-0 no-scrollbar pb-8">
+      <Col class="w-[calc(100%-2rem)] mx-4 mt-2">
+        <KitRenderer :node="node" :registry="registry" />
+      </Col>
 
-    <Col class="mt-6 mb-4 text-center">
-      <Text size="3xs" class="text-metro-sub-light dark:text-metro-sub-dark">
-        Stage · v{{ APP_VERSION }}
-      </Text>
-    </Col>
+      <Col class="mt-6 mb-4 text-center">
+        <Text size="3xs" class="text-metro-sub-light dark:text-metro-sub-dark">
+          Stage · v{{ APP_VERSION }}
+        </Text>
+      </Col>
+    </Scroll>
   </Col>
 </template>
