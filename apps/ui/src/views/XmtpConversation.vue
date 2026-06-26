@@ -8,7 +8,7 @@ import { useXmtpConversation } from '../lib/useXmtpConversation';
 const emptyNode = basicRoot(emptyState({ title: 'Type a message below to start chatting.' }));
 
 const {
-  router, line, feed, myUri, replyingTo, actionTarget,
+  router, convId, line, feed, myUri, replyingTo, actionTarget,
   peerAddress, groupName, isGroup, inboxToAddr, memberAddresses, mentionCandidates,
   reactions, ownEmojis, pollVotes, ownPollVotes, onVote,
   allBubbles, highlightId, scrollStickToBottom, scrollToNonce, scrollToId, openHeader, previewOf,
@@ -20,6 +20,7 @@ const {
 <template>
   <Col class="fixed inset-0 flex flex-col bg-metro-bg-light dark:bg-metro-bg-dark">
     <ConversationHeader
+      :conversation-id="convId"
       :peer-address="peerAddress"
       :group-name="groupName"
       :is-group="isGroup"

@@ -3,16 +3,16 @@
 import { computed } from 'vue';
 import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
-import type { AvatarStackNode } from '@stage-labs/kit/kit';
 import { conversationHeader, CONVERSATION_PRESS } from '@stage-labs/views';
+import { channelStampSeed } from '@stage-labs/kit/avatar';
 import { basicRoot } from '@/lib/kitRow';
-import { metroFieldColors } from '@/lib/metroFieldColors';
 import { shortAddress, stampAvatarUrl } from '../lib/xmtp';
 import type { XmtpFeedStatus } from '../lib/xmtpFeed';
 import { runningInIframe, postCloseToParent } from '../lib/embedBridge';
 
 
 const props = defineProps<{
+  conversationId: string;
   peerAddress: string | null;
   groupName: string;
   isGroup: boolean;
@@ -22,24 +22,26 @@ const props = defineProps<{
 const emit = defineEmits<{ back: []; open: [] }>();
 
 const title = computed(() =>
-  props.peerAddress ? shortAddress(props.peerAddress) : (props.groupName || 'Conversation'),
+  props.peerAddress ? shortAddress(props.peerAddress) : (props.groupName || 'Untitled group'),
 );
-const hasMembers = computed(() => props.memberAddresses.length > 0);
-const embedded = runningInIframe();
 
-const statusLabel = computed(() => {
-  if (props.status === 'open') return undefined;
-  if (props.status === 'loading') return 'Connecting…';
-  if (props.status === 'error') return 'Connection error';
-  return 'Idle';
+const avatarUri = computed(() => {
+  if (props.peerAddress) return stampAvatarUrl(props.peerAddress, 48);
+  if (props.isGroup && props.conversationId) {
+    return stampAvatarUrl(channelStampSeed(props.conversationId), 48);
+  }
+  return undefined;
 });
+
+const embedded = runningInIframe();
 
 const node = computed(() =>
   basicRoot(
     conversationHeader({
-      avatarUri: props.peerAddress ? stampAvatarUrl(props.peerAddress, 56) : undefined,
+      conversationId: props.conversationId,
+      avatarUri: avatarUri.value,
+      avatarSquare: props.isGroup,
       title: title.value,
-      subtitle: statusLabel.value,
       pressable: true,
     }),
   ),
@@ -50,23 +52,6 @@ const registry: WidgetActionRegistry = {
     emit('open');
   },
 };
-
-const avatarStackNode = computed(() => {
-  const node: AvatarStackNode = {
-    type: 'AvatarStack',
-    items: props.memberAddresses.map(addr => ({ src: stampAvatarUrl(addr, 56) })),
-    size: 32,
-    max: 3,
-    overlap: 8,
-    ring: metroFieldColors.bg,
-    fallbackBackground: metroFieldColors.border,
-    moreBackground: metroFieldColors.surface,
-    moreColor: metroFieldColors.link,
-    moreFontSize: 11,
-    moreFontFamily: 'Calibre-Medium',
-  };
-  return basicRoot(node);
-});
 </script>
 
 <template>
@@ -76,10 +61,7 @@ const avatarStackNode = computed(() => {
     <Pressable tag="button" type="button" class="h-full pl-3.5 pr-2 flex items-center text-metro-fg-light dark:text-metro-fg-dark" @click="emit('back')">
       <Icon name="arrowLeft" :size="22" />
     </Pressable>
-    <Row v-if="!props.peerAddress && hasMembers" align="center" class="shrink-0 pl-2">
-      <KitRenderer :node="avatarStackNode" />
-    </Row>
-    <Col class="flex-1 min-w-0 justify-center">
+    <Col class="flex-1 min-w-0 justify-center pr-3.5">
       <KitRenderer :node="node" :registry="registry" />
     </Col>
     <!-- Widget only: close button at the very end of the (single) topnav. -->

@@ -10,6 +10,7 @@ export interface ConversationHeaderAction {
 export interface ConversationHeaderParams {
   conversationId?: string;
   avatarUri?: string;
+  avatarSquare?: boolean;
   title: string;
   subtitle?: string;
   pressable?: boolean;
@@ -22,14 +23,14 @@ export function conversationHeader(params: ConversationHeaderParams): RowNode {
   const hasSubtitle = params.subtitle !== undefined && params.subtitle !== '';
   const innerChildren = compactList<WidgetNode>([
     hasAvatar
-      ? { type: 'Image', src: params.avatarUri ?? '', size: 32, radius: 'full' }
+      ? { type: 'Image', src: params.avatarUri ?? '', size: 24, radius: params.avatarSquare === true ? 'md' : 'full' }
       : undefined,
     {
       type: 'Col',
       gap: 2,
       flex: 1,
       children: compactList<WidgetNode>([
-        { type: 'Text', value: params.title, weight: 'semibold', truncate: true },
+        { type: 'Text', value: params.title, size: '4xl', weight: 'semibold', truncate: true },
         hasSubtitle
           ? {
               type: 'Caption',
