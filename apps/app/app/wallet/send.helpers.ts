@@ -11,10 +11,6 @@ export const multicall3Abi = [{
   outputs: [{ name: 'b', type: 'uint256' }],
 }] as const;
 
-export function looksLikeEns(s: string): boolean {
-  return /^[a-z0-9-]+(\.[a-z0-9-]+)+\.eth$|^[a-z0-9-]+\.eth$/i.test(s.trim());
-}
-
 export async function fetchBalanceAndPrice(): Promise<{
   ethBalance: string | null;
   ethPriceUsd: number | null;

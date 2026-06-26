@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  isAddress, erc20Abi, encodeFunctionData, parseUnits, createPublicClient, type Hex,
+  erc20Abi, encodeFunctionData, parseUnits, createPublicClient, type Hex,
 } from 'viem';
 import { base } from 'viem/chains';
 import { resolveEnsName } from '../../lib/ens';
@@ -8,9 +8,10 @@ import { sendNativeOrToken } from '../../lib/tx';
 import { getActiveAccount } from '../../lib/accounts';
 import { kernelClientForRecord } from '../../lib/zerodev';
 import { broviderTransport } from '@stage-labs/client/wallet/client';
+import { classifyRecipientInput, noAddressSetError } from '@stage-labs/client/wallet/send';
 import { ASSETS } from '../../components/tabs/WalletScreen.assets';
 import type { TokenChoice } from './TokenSelector';
-import { fetchBalanceAndPrice, looksLikeEns } from './send.helpers';
+import { fetchBalanceAndPrice } from './send.helpers';
 
 export type SendTxState = 'idle' | 'submitting' | 'pending' | 'confirmed';
 
@@ -92,20 +93,20 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
     : token.symbol === 'USDC' ? 1 : null;
 
   useEffect(() => {
-    const q = to.trim();
+    const c = classifyRecipientInput(to);
     setResolveErr(null);
-    if (!q) { setResolved(null); setResolving(false); return; }
-    if (isAddress(q)) { setResolved(q.toLowerCase()); setResolving(false); return; }
-    if (!looksLikeEns(q)) { setResolved(null); setResolving(false); return; }
+    if (c.kind === 'empty' || c.kind === 'invalid') { setResolved(null); setResolving(false); return; }
+    if (c.kind === 'address') { setResolved(c.resolved); setResolving(false); return; }
+    const q = to.trim();
     setResolving(true);
     let cancelled = false;
     const t = setTimeout(() => {
       void (async (): Promise<void> => {
         try {
-          const addr = await resolveEnsName(q.toLowerCase());
+          const addr = await resolveEnsName(c.query);
           if (cancelled) return;
           if (addr) setResolved(addr.toLowerCase());
-          else { setResolved(null); setResolveErr(`No address set for ${q}`); }
+          else { setResolved(null); setResolveErr(noAddressSetError(q)); }
         } catch (e) {
           if (!cancelled) { setResolved(null); setResolveErr((e as Error).message); }
         } finally { if (!cancelled) setResolving(false); }
