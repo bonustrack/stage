@@ -1,4 +1,4 @@
-import { HERO_ICON_PATHS, type HeroIconName } from '../icons';
+import type { HeroIconName } from '../icons';
 import type { Spacing } from '../layout';
 import {
   resolveAlign,
@@ -8,6 +8,7 @@ import {
   resolveColor,
   resolveDirection,
   resolveHeroTitlePx,
+  resolveIconName as resolveIconNameCore,
   resolveJustify,
   resolveListItemStyle,
   resolveOptionalColor,
@@ -28,12 +29,6 @@ import type {
 } from '../kit';
 
 const FALLBACK_ICON: HeroIconName = 'questionMarkCircle';
-
-function toCamel(name: string): string {
-  return name.replace(/-([a-z0-9])/g, (_match, ch: string) =>
-    ch.toUpperCase(),
-  );
-}
 
 export type TitleToken = 'sm' | 'md' | 'lg';
 export type CaptionToken = 'sm' | 'md';
@@ -103,10 +98,7 @@ export function fieldVariant(
 }
 
 export function resolveIconName(name: string): HeroIconName {
-  const camel = toCamel(name);
-  if (camel in HERO_ICON_PATHS) return camel as HeroIconName;
-  if (name in HERO_ICON_PATHS) return name as HeroIconName;
-  return FALLBACK_ICON;
+  return resolveIconNameCore(name) ?? FALLBACK_ICON;
 }
 
 function numeric(value: number | string | undefined): number | undefined {

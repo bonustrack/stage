@@ -12,8 +12,9 @@ import type {
   WidgetNode,
 } from '../kit';
 import type { Scheme } from '../kit';
-import type { HeroIconName } from '@stage-labs/kit/icons';
-import { HERO_ICON_PATHS } from '@stage-labs/kit/icons';
+import { resolveIconName } from '../kit';
+
+export { resolveIconName };
 
 export interface FormScope {
   values: WidgetFormValues;
@@ -58,16 +59,6 @@ function mergePayload(
 export function submitForm(action: ActionConfig | undefined, ctx: RenderCtx): void {
   if (action === undefined) return;
   dispatch(action, ctx, ctx.form?.values);
-}
-
-const ICON_NAMES = new Set(Object.keys(HERO_ICON_PATHS));
-
-export function resolveIconName(name: string | undefined): HeroIconName | undefined {
-  if (name === undefined) return undefined;
-  const camel = name.replace(/-([a-z0-9])/g, (_m, c: string) => c.toUpperCase());
-  if (ICON_NAMES.has(camel)) return camel as HeroIconName;
-  if (ICON_NAMES.has(name)) return name as HeroIconName;
-  return undefined;
 }
 
 const TITLE_SIZE: Record<TitleSize, 'sm' | 'md' | 'lg'> = {
