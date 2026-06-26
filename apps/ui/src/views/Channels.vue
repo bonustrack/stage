@@ -13,7 +13,6 @@ import { ASK_QUESTION_MEMBERS, stampAvatarUrl } from '../lib/xmtp';
 import { postCloseToParent } from '../lib/embedBridge';
 import { useChannels } from '../lib/useChannels';
 import { usePublishTopnav } from '../lib/topnavSlots';
-import HoistedTopnav from '../components/HoistedTopnav.vue';
 import ChannelsSearchBar from '../components/ChannelsSearchBar.vue';
 
 const {
@@ -103,7 +102,7 @@ const labelBarRegistry: WidgetActionRegistry = {
 </script>
 
 <template>
-  <Col class="h-[100dvh] relative" :class="embedded ? '' : 'pb-[60px]'">
+  <Col class="relative" :class="embedded ? 'h-[100dvh]' : 'flex-1 min-h-0 h-[calc(100dvh-52px-60px)]'">
     <!-- Embedded widget keeps its own compact header (Home/Messages title + close). -->
     <Row
       v-if="embedded"
@@ -127,11 +126,10 @@ const labelBarRegistry: WidgetActionRegistry = {
       </Pressable>
     </Row>
 
-    <!-- Standalone (mobile-parity) hoisted topnav: identity (avatar + name) on the
-         left, search/inbox/overflow icons on the right, search toggles an override
-         bar, and a label filter bar sits below the topnav. -->
+    <!-- Standalone (mobile-parity): the identity topnav is hoisted app-wide in
+         App.vue; this view only publishes its right slot (search/inbox/overflow)
+         and a search override bar via teleports into the hoisted bar. -->
     <template v-else>
-      <HoistedTopnav />
       <Teleport v-if="searchOpen" to="#topnav-override">
         <ChannelsSearchBar v-model="query" placeholder="Search channels or paste 0x… / name.eth…" @close="closeSearch" />
       </Teleport>
