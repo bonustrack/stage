@@ -220,7 +220,7 @@ const rowRegistry: WidgetActionRegistry = {
             <Col class="flex-1 min-w-0">
               <KitRenderer :node="rowNode(a)" :registry="rowRegistry" />
             </Col>
-            <Icon v-if="a.id === activeId" name="check" :size="20" :color="palette.text" />
+            <Icon v-if="a.id === activeId" name="check" :size="20" :color="palette.link" />
             <Pressable
               tag="button"
               type="button"
@@ -229,7 +229,7 @@ const rowRegistry: WidgetActionRegistry = {
               :disabled="busy"
               @click="manageId = a.id"
             >
-              <Icon name="dotsHorizontal" :size="20" :color="palette.sub" />
+              <Text size="4xl" weight="semibold" :style="{ color: palette.sub, paddingInline: '4px' }">⋯</Text>
             </Pressable>
           </Row>
         </li>
