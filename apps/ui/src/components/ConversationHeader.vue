@@ -42,7 +42,6 @@ const node = computed(() =>
       avatarUri: avatarUri.value,
       avatarSquare: props.isGroup,
       title: title.value,
-      pressable: true,
     }),
   ),
 );

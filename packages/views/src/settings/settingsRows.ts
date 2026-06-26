@@ -194,7 +194,6 @@ export interface SettingsThemeRowParams {
   iconName: string;
   selected: boolean;
   iconColor?: string;
-  selectType?: string;
 }
 
 export function settingsThemeRow(
@@ -208,7 +207,7 @@ export function settingsThemeRow(
     align: 'center',
     gap: 12,
     onClickAction: {
-      type: params.selectType ?? SETTINGS_THEME_SELECT,
+      type: SETTINGS_THEME_SELECT,
       payload: { value: params.value },
     },
     children: [
