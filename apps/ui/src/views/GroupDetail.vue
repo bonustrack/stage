@@ -3,6 +3,7 @@
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
 import { overflowMenu, OVERFLOW_MENU_PRESS } from '@stage-labs/views';
 import { basicRoot } from '@/lib/kitRow';
@@ -17,6 +18,7 @@ const {
 } = useGroupDetail();
 
 const route = useRoute();
+const palette = useKitPalette();
 const convId = computed(() => String(route.params.convId ?? ''));
 
 function goAddMembers(): void { void router.push(`/xmtp/${convId.value}/add-members`); }
@@ -109,20 +111,18 @@ const menuRegistry: WidgetActionRegistry = {
       />
     </Col>
 
-    <Row align="center" class="px-4 pb-1.5">
-      <Col class="flex-1 text-[11px] uppercase tracking-wide text-metro-sub-light dark:text-metro-sub-dark">
-        Members ({{ members.length }})
-      </Col>
+    <Row align="center" justify="between" class="px-4 pb-2">
+      <Text size="xs" role="secondary">MEMBERS ({{ members.length }})</Text>
       <Pressable
         v-if="selfIsAdmin"
         tag="button"
         type="button"
-        class="flex items-center gap-1 text-xs font-head
-          text-metro-head-light dark:text-metro-head-dark"
+        class="flex items-center gap-[5px] px-2.5 py-1.5 rounded-full border"
+        :style="{ borderColor: palette.border }"
         @click="goAddMembers"
       >
+        <Icon name="users" :size="16" />
         <Icon name="plus" :size="14" />
-        Add members
       </Pressable>
     </Row>
     <MemberAddForm v-if="selfIsAdmin" :adding="adding" @add="onAddMember" />
