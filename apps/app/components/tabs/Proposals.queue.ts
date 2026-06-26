@@ -1,32 +1,27 @@
 
 import {
   loadFeedFirstPage, lineOfConv, listRequestConvs,
-  summarizeConversationRequest, type CachedRow, type ConversationRequestView,
+  summarizeConversationRequest, type CachedRow,
 } from '../../modules/messaging';
 import { pollOf, txRequestOf, sigRequestOf } from '../MessengerBubble.helpers';
 import { isArchived } from '../../lib/archived';
+import {
+  detectFeedRequest, assembleRequestsQueue, messageRequestToQueued,
+  type FeedDetectors, type QueuedRequest, type RequestKind,
+} from '@stage-labs/client/xmtp/requests-queue';
 
-export type RequestKind = 'poll' | 'payment' | 'signing' | 'message';
+export type { RequestKind, QueuedRequest };
 
-export interface QueuedRequest {
-  key: string;
-  kind: RequestKind;
-  convId: string;
-  msgId?: string;
-  request?: ConversationRequestView;
-  ts: number;
-}
+const detectors: FeedDetectors = {
+  hasPoll: (latest) => pollOf(latest) !== undefined,
+  hasTxRequest: (latest) => txRequestOf(latest) !== undefined,
+  hasSigRequest: (latest) => sigRequestOf(latest) !== undefined,
+};
 
 async function detectOne(convId: string): Promise<QueuedRequest | null> {
   try {
     const events = await loadFeedFirstPage(lineOfConv(convId));
-    const latest = events[0];
-    if (!latest) return null;
-    const ts = latest.ts ? new Date(latest.ts).getTime() : 0;
-    if (pollOf(latest)) return { key: `poll:${convId}`, kind: 'poll', convId, msgId: latest.id, ts };
-    if (txRequestOf(latest)) return { key: `payment:${convId}`, kind: 'payment', convId, msgId: latest.id, ts };
-    if (sigRequestOf(latest)) return { key: `signing:${convId}`, kind: 'signing', convId, msgId: latest.id, ts };
-    return null;
+    return detectFeedRequest({ convId, events }, '', { detectors, filterVotedPolls: false });
   } catch {
     return null;
   }
@@ -54,7 +49,7 @@ async function detectMessageRequests(): Promise<QueuedRequest[]> {
       try {
         const view = await summarizeConversationRequest(conv);
         const ts = await requestTs(conv);
-        return { key: `message:${view.convId}`, kind: 'message', convId: view.convId, request: view, ts };
+        return messageRequestToQueued({ view, ts });
       } catch {
         return null;
       }
@@ -80,6 +75,8 @@ export async function buildProposalQueue(rows: CachedRow[]): Promise<QueuedReque
     mapLimit(candidates, 6, detectOne),
     detectMessageRequests(),
   ]);
-  return [...detected.filter((p): p is QueuedRequest => p !== null), ...messageReqs]
-    .sort((a, b) => b.ts - a.ts);
+  return assembleRequestsQueue(
+    detected.filter((p): p is QueuedRequest => p !== null),
+    messageReqs,
+  );
 }
