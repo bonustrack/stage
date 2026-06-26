@@ -7,11 +7,10 @@ import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 import { useQuery } from '@tanstack/vue-query';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type {
-  BasicNode, ListViewItemNode, ListViewNode, WidgetActionRegistry,
-} from '@stage-labs/kit/kit';
+import type { BasicNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
 import {
-  profileHeader, infoRow, PROFILE_ACTION_PRESS, PROFILE_INFO_PRESS,
+  profileHeader, profileActionsRow, profileAddressRow,
+  PROFILE_ROUND_PRESS, PROFILE_ADDRESS_COPY,
 } from '@stage-labs/views';
 
 const route = useRoute();
@@ -34,7 +33,12 @@ const notSelf = computed(() =>
   && address.value.toLowerCase() !== (selfAddress.value ?? '').toLowerCase());
 
 const openingDm = ref(false);
-const copied = ref(false);
+
+const displayName = computed(() => {
+  const trimmed = profile.value?.name?.trim();
+  if (trimmed !== undefined && trimmed !== '') return trimmed;
+  return address.value ? shortAddress(address.value) : 'Loading…';
+});
 
 async function onMessage(): Promise<void> {
   if (!address.value || openingDm.value) return;
@@ -47,88 +51,74 @@ async function onMessage(): Promise<void> {
   } finally { openingDm.value = false; }
 }
 
-async function copy(value: string): Promise<void> {
+function onSend(): void {
+  void router.push({ path: '/wallet/send', query: { to: address.value } });
+}
+
+async function copyAddress(): Promise<void> {
+  if (!address.value) return;
   try {
-    await navigator.clipboard.writeText(value);
-    copied.value = true;
-    setTimeout(() => { copied.value = false; }, 1500);
+    await navigator.clipboard.writeText(address.value);
   } catch { }
 }
 
-function nonEmpty(value: string | undefined): string | undefined {
-  const trimmed = value?.trim();
-  return trimmed !== undefined && trimmed !== '' ? trimmed : undefined;
-}
+const nameNode = computed<BasicNode>(() => ({
+  type: 'Basic',
+  children: [profileHeader({ name: displayName.value })],
+}));
 
-const headerNode = computed<BasicNode>(() => ({
+const addressNode = computed<BasicNode>(() => ({
   type: 'Basic',
   children: [
-    profileHeader({
-      name: nonEmpty(profile.value?.name) ?? shortAddress(address.value),
-      handle: shortAddress(address.value),
-      bio: nonEmpty(profile.value?.about),
-      actions: notSelf.value
-        ? [
-            {
-              label: openingDm.value ? 'Opening…' : 'Message',
-              icon: 'chatRect',
-              payload: { kind: 'message' },
-            },
-            { label: 'Send', icon: 'send', payload: { kind: 'send' } },
-          ]
-        : undefined,
+    profileAddressRow({
+      address: address.value,
+      label: shortAddress(address.value),
+      color: palette.text,
     }),
   ],
 }));
 
-const headerRegistry: WidgetActionRegistry = {
-  [PROFILE_ACTION_PRESS]: (action) => {
-    if (action.payload.kind === 'message' || action.payload.kind === 'send') {
-      void onMessage();
-    }
-  },
-};
+const actionsNode = computed<BasicNode>(() => ({
+  type: 'Basic',
+  children: [
+    profileActionsRow({
+      border: palette.border,
+      fg: palette.link,
+      actions: [
+        {
+          action: 'message',
+          icon: 'chatRect',
+          label: openingDm.value ? 'Opening…' : 'Message',
+          disabled: openingDm.value,
+        },
+        { action: 'send', icon: 'send', label: 'Send' },
+      ],
+    }),
+  ],
+}));
 
-const profileLinks = computed<[string, string | undefined][]>(() => {
-  const p = profile.value;
-  return [
-    ['GitHub', nonEmpty(p?.github)],
-    ['X (Twitter)', nonEmpty(p?.twitter)],
-    ['Lens', nonEmpty(p?.lens)],
-    ['Farcaster', nonEmpty(p?.farcaster)],
-  ];
-});
-
-const infoNode = computed<ListViewNode>(() => {
-  const items: ListViewItemNode[] = [];
-  if (address.value) {
-    items.push(infoRow({
-      label: `Wallet address (${copied.value ? 'copied!' : 'tap to copy'})`,
-      value: address.value,
-      copyType: PROFILE_INFO_PRESS,
-    }));
-  }
-  for (const [label, val] of profileLinks.value) {
-    if (val !== undefined) items.push(infoRow({ label, value: val }));
-  }
-  return { type: 'ListView', children: items };
-});
-
-const infoRegistry: WidgetActionRegistry = {
-  [PROFILE_INFO_PRESS]: (action) => {
-    const value = action.payload.value;
-    if (typeof value === 'string') void copy(value);
+const registry: WidgetActionRegistry = {
+  [PROFILE_ADDRESS_COPY]: () => { void copyAddress(); },
+  [PROFILE_ROUND_PRESS]: (action) => {
+    if (action.payload.action === 'message') { if (!openingDm.value) void onMessage(); }
+    else if (action.payload.action === 'send') onSend();
   },
 };
 </script>
 
 <template>
-  <Col class="min-h-screen bg-metro-bg-light dark:bg-metro-bg-dark">
-    <Row class="flex items-center px-3 py-3">
+  <Col class="min-h-screen" surface="surface">
+    <!-- Route header: back button, absolutely positioned over the banner,
+         mirroring mobile ProfileScreen ProfileHeader (variant route). -->
+    <Row class="flex items-center px-3 py-3 absolute top-0 left-0 right-0 z-20">
       <Pressable tag="button" type="button" class="p-1.5" @click="router.back()">
-        <Icon name="arrowLeft" :size="22" />
+        <Icon name="arrowLeft" :size="22" color="link" />
       </Pressable>
     </Row>
+
+    <!-- Banner: 140px tall, border-colored, behind the surface card. -->
+    <Col :style="{ height: '140px', backgroundColor: palette.border }" />
+
     <!-- Identity: avatar overlaps a surface card via negative top margin, with a
          3px bg-color border ring — mirroring mobile ProfileScreen ProfileIdentity
          (surface card margin top -18, avatar 88 marginTop -70.4, borderWidth 3). -->
@@ -156,18 +146,18 @@ const infoRegistry: WidgetActionRegistry = {
         }"
       />
       <Col class="mt-3.5 w-full">
-        <KitRenderer :node="headerNode" :registry="headerRegistry" />
+        <KitRenderer :node="nameNode" />
+      </Col>
+      <Col v-if="address" class="mt-0.5">
+        <KitRenderer :node="addressNode" :registry="registry" />
+      </Col>
+      <Col v-if="notSelf && address" class="w-full">
+        <KitRenderer :node="actionsNode" :registry="registry" />
       </Col>
     </Col>
 
     <!-- Common channels: mutual group memberships with this peer (not-self only),
          placed below the profile actions to mirror mobile ProfileScreen. -->
     <CommonChannels :peer-address="address" :enabled="notSelf" />
-
-    <Col class="px-6 pb-8">
-      <Col class="mt-6">
-        <KitRenderer :node="infoNode" :registry="infoRegistry" />
-      </Col>
-    </Col>
   </Col>
 </template>
