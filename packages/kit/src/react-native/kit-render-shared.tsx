@@ -2,7 +2,6 @@
 import type { ReactElement, ReactNode } from 'react';
 import type {
   ActionConfig,
-  CaptionSize,
   Dimension,
   TextSize,
   TitleSize,
@@ -12,9 +11,11 @@ import type {
   WidgetNode,
 } from '../kit';
 import type { Scheme } from '../kit';
-import { resolveIconName } from '../kit';
+import { resolveCaptionSize, resolveIconName } from '../kit';
 
 export { resolveIconName };
+
+export const captionSize = resolveCaptionSize;
 
 export interface FormScope {
   values: WidgetFormValues;
@@ -78,15 +79,6 @@ export function titleSize(value: TitleSize | undefined): 'sm' | 'md' | 'lg' | un
   return value === undefined ? undefined : TITLE_SIZE[value];
 }
 
-const CAPTION_SIZE: Record<CaptionSize, 'sm' | 'md'> = {
-  sm: 'sm',
-  md: 'md',
-  lg: 'md',
-};
-
-export function captionSize(value: CaptionSize | undefined): 'sm' | 'md' | undefined {
-  return value === undefined ? undefined : CAPTION_SIZE[value];
-}
 
 export function textSize(value: TextSize | undefined): TextSize | undefined {
   return value;

@@ -6,6 +6,7 @@ import {
   resolveBorder,
   resolveButtonStyle,
   resolveColor,
+  resolveCaptionSize,
   resolveDirection,
   resolveHeroTitlePx,
   resolveIconName as resolveIconNameCore,
@@ -21,6 +22,7 @@ import type {
   BadgeNode,
   BoxLayoutBase,
   ButtonNode,
+  CaptionSize,
   CardNode,
   Color,
   FontWeight,
@@ -78,9 +80,10 @@ export function isExtensionType(type: string): boolean {
   return EXTENSION_TYPES.has(type);
 }
 
-export function captionSize(value: string | undefined): CaptionToken | undefined {
-  if (value === undefined) return undefined;
-  return value === 'sm' ? 'sm' : 'md';
+export function captionSize(
+  value: CaptionSize | undefined,
+): CaptionToken | undefined {
+  return resolveCaptionSize(value);
 }
 
 export function captionWeight(
