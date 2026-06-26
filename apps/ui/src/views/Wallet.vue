@@ -50,26 +50,28 @@ const heroRegistry: WidgetActionRegistry = {
 </script>
 
 <template>
-  <Col surface="surface" class="h-[100dvh] relative pb-[60px]">
-    <Row align="center" class="h-[52px] box-border shrink-0 pl-2 pr-4" justify="between">
-      <Row align="center" :gap="4">
-        <AccountSwitcher />
-        <Text size="4xl" weight="semibold" color="link" class="pl-2">Wallet</Text>
-      </Row>
-      <Pressable
-        tag="button"
-        type="button"
-        aria-label="Refresh balances"
-        :disabled="loading"
-        class="p-2 rounded-lg text-metro-sub-light dark:text-metro-sub-dark
-          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark disabled:opacity-50"
-        @click="refresh"
-      >
-        <Icon name="refresh" :size="18" :class="loading ? 'animate-spin' : ''" />
-      </Pressable>
-    </Row>
-
+  <!-- Mobile parity (components/tabs/WalletScreen.tsx): identity-only hoisted
+       topnav (no title, no header actions); the refresh button lives in the scroll
+       body top-right (size 22, spinning while refreshing), above the balance hero. -->
+  <Col surface="surface" class="flex-1 min-h-0 relative">
     <Col class="flex-1 overflow-y-auto px-4 pb-6">
+      <Row justify="end" align="center" :gap="18" class="pt-2">
+        <Pressable
+          tag="button"
+          type="button"
+          aria-label="Refresh balances"
+          :disabled="loading"
+          class="disabled:opacity-50"
+          @click="refresh"
+        >
+          <Icon
+            name="refresh"
+            :size="22"
+            class="text-metro-link-light dark:text-metro-link-dark"
+            :class="loading ? 'animate-spin' : ''"
+          />
+        </Pressable>
+      </Row>
       <Col class="pt-1 pb-5">
         <Text v-if="error" size="md" color="danger" class="pb-4">Couldn’t load balances</Text>
         <KitRenderer :node="heroNode" :registry="heroRegistry" />
