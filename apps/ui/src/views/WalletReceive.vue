@@ -4,8 +4,8 @@ import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { BasicNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { addressCard, WALLET_ADDRESS_COPY } from '@stage-labs/views';
+import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import { receiveView, WALLET_ADDRESS_COPY } from '@stage-labs/views';
 import { getActiveAccount } from '../lib/accounts';
 import { shortAddress, stampAvatarUrl } from '../lib/xmtp';
 
@@ -28,37 +28,16 @@ async function copy(): Promise<void> {
   window.setTimeout(() => { copied.value = false; }, 1500);
 }
 
-const addressNode = computed<BasicNode>(() => ({
-  type: 'Basic',
-  children: [
-    {
-      type: 'Col',
-      align: 'center',
-      gap: 16,
-      children: [
-        {
-          type: 'Box',
-          background: '#ffffff',
-          radius: 'xl',
-          padding: 16,
-          align: 'center',
-          justify: 'center',
-          border: { size: 1, color: palette.border },
-          children: address.value
-            ? [{ type: 'QRCode', value: address.value, size: 240, color: '#000000', background: '#ffffff' }]
-            : [{ type: 'Box', width: 240, height: 240, background: '#f4f4f5' }],
-        },
-        addressCard({
-          label: 'Wallet address (tap to copy)',
-          address: address.value || '—',
-          hint: copied.value
-            ? 'Address copied'
-            : 'Scan or share this address to receive ETH or tokens on Ethereum mainnet.',
-        }),
-      ],
-    },
-  ],
-}));
+const addressNode = computed(() =>
+  receiveView({
+    address: address.value,
+    label: 'Wallet address (tap to copy)',
+    hint: copied.value
+      ? 'Address copied'
+      : 'Scan or share this address to receive ETH or tokens on Ethereum mainnet.',
+    borderColor: palette.border,
+  }),
+);
 
 const registry: WidgetActionRegistry = {
   [WALLET_ADDRESS_COPY]: () => { void copy(); },

@@ -9,7 +9,7 @@ import type {
   ListViewNode, ListViewItemNode, WidgetActionRegistry,
 } from '@stage-labs/kit/kit';
 import {
-  col, icon, text, settingsRowSelectedIcon, SETTINGS_THEME_SELECT,
+  settingsThemeRow, SETTINGS_THEME_SELECT,
 } from '@stage-labs/views';
 import { useEffectiveScheme } from '../../lib/kitTheme';
 import {
@@ -69,18 +69,13 @@ const THEME_ROWS: { value: ThemePreference | 'custom'; label: string; icon: Hero
 function themeItem(
   row: { value: ThemePreference | 'custom'; label: string; icon: HeroIconName },
 ): ListViewItemNode {
-  const trailing = settingsRowSelectedIcon(selectedTheme.value === row.value);
-  return {
-    type: 'ListViewItem',
-    align: 'center',
-    gap: 12,
-    onClickAction: { type: SETTINGS_THEME_SELECT, payload: { value: row.value } },
-    children: [
-      icon(row.icon, { color: 'text', size: 'xl' }),
-      col([text(row.label, { size: 'xl', color: 'text', truncate: true })], { flex: 1 }),
-      ...(trailing ? [trailing] : []),
-    ],
-  };
+  return settingsThemeRow({
+    value: row.value,
+    label: row.label,
+    iconName: row.icon,
+    selected: selectedTheme.value === row.value,
+    iconColor: 'text',
+  });
 }
 
 const themeNode = computed<ListViewNode>(() => ({

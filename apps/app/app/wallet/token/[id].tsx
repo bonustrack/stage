@@ -6,7 +6,7 @@ import { Icon } from '@stage-labs/kit/react-native/icon';
 import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
 import type { BasicNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
 import {
-  walletActions,
+  tokenDetailCard,
   WALLET_ACTION_PRESS, type WalletActionButton,
 } from '@stage-labs/views';
 import { fmtUsd, fmtBalance } from '@stage-labs/client/wallet/format';
@@ -43,64 +43,22 @@ function detailActions(r: AssetRow, symbol: 'ETH' | 'USDC' | undefined, border: 
 
 function detailNode(r: AssetRow, symbol: 'ETH' | 'USDC' | undefined, palette: { sub: string; bg: string; border: string }): BasicNode {
   const valueUsd = r.priceUsd === null ? null : r.priceUsd * Number(r.balance);
-  return {
-    type: 'Basic',
-    children: [
-      {
-        type: 'Col',
-        align: 'start',
-        gap: 6,
-        children: [
-          {
-            type: 'Stack',
-            width: 72,
-            height: 72,
-            children: [
-              { type: 'Image', src: withStampDisplayPx(r.logoUrl, 72), size: 72, radius: 'full', background: palette.border },
-              {
-                type: 'Box',
-                position: 'absolute',
-                right: -2,
-                bottom: -2,
-                width: 30,
-                height: 30,
-                radius: 'full',
-                background: palette.border,
-                border: { size: 3, color: palette.bg },
-                children: [
-                  { type: 'Image', src: NETWORK_LOGO[r.chainId] ?? MAINNET_NETWORK_LOGO, fit: 'cover', width: '100%', height: '100%', radius: 'full' },
-                ],
-              },
-            ],
-          },
-          {
-            type: 'Row',
-            align: 'center',
-            gap: 6,
-            margin: { top: 10 },
-            children: [
-              ...(r.isPrivate ? [{ type: 'Icon' as const, name: 'eyeOff', color: palette.sub, size: 'md' as const }] : []),
-              { type: 'Title', value: r.name, size: '5xl', weight: 'semibold', color: 'link' },
-            ],
-          },
-          {
-            type: 'Box',
-            radius: 'full',
-            padding: { x: 10, y: 3 },
-            border: { size: 1, color: palette.border },
-            children: [{ type: 'Caption', value: NETWORK_LABEL[r.chainId] ?? `Chain ${r.chainId}`, color: 'secondary', size: 'sm' }],
-          },
-          { type: 'Title', value: `${fmtBalance(r.balance)} ${r.symbol}`, size: '6xl', weight: 'semibold', color: 'link', margin: { top: 14 } },
-          { type: 'Text', value: valueUsd === null ? '—' : fmtUsd(valueUsd), size: 'md', color: 'secondary' },
-          {
-            type: 'Box',
-            padding: { top: 18 },
-            children: [walletActions({ gap: 36, actions: detailActions(r, symbol, palette.border) })],
-          },
-        ],
-      },
-    ],
-  };
+  return tokenDetailCard({
+    logoSrc: withStampDisplayPx(r.logoUrl, 72),
+    networkLogo: NETWORK_LOGO[r.chainId] ?? MAINNET_NETWORK_LOGO,
+    networkLabel: NETWORK_LABEL[r.chainId] ?? `Chain ${r.chainId}`,
+    name: r.name,
+    balanceLabel: `${fmtBalance(r.balance)} ${r.symbol}`,
+    usdLabel: valueUsd === null ? '—' : fmtUsd(valueUsd),
+    borderColor: palette.border,
+    bgColor: palette.bg,
+    actions: detailActions(r, symbol, palette.border),
+    actionsPadTop: 18,
+    isPrivate: r.isPrivate,
+    privateIconColor: palette.sub,
+    nameRowMarginTop: 10,
+    balanceMarginTop: 14,
+  });
 }
 
 export default function TokenDetail(): React.ReactElement {

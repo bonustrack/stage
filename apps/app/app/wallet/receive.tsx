@@ -5,8 +5,8 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { BasicNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { addressCard, WALLET_ADDRESS_COPY } from '@stage-labs/views';
+import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import { receiveView, WALLET_ADDRESS_COPY } from '@stage-labs/views';
 import { Row, Col } from '../../components/layout';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
@@ -53,38 +53,16 @@ export default function WalletReceive(): React.ReactElement {
     ? 'Shielded address. Funds sent here are private — the sender shields into Railgun.'
     : 'Scan or share this address to receive ETH or tokens on Ethereum mainnet.';
 
-  const addressNode = useMemo<BasicNode>(
-    () => ({
-      type: 'Basic',
-      children: [
-        {
-          type: 'Col',
-          align: 'center',
-          gap: 16,
-          children: [
-            {
-              type: 'Box',
-              background: '#ffffff',
-              radius: 'xl',
-              padding: 16,
-              align: 'center',
-              justify: 'center',
-              border: { size: 1, color: border },
-              children: address
-                ? [{ type: 'QRCode', value: address, size: 240, color: '#000000', background: '#ffffff' }]
-                : [{ type: 'Box', width: 240, height: 240, background: '#f4f4f5' }],
-            },
-            addressCard({
-              label: activeMode === 'private'
-                ? 'Shielded 0zk address (tap to copy)'
-                : 'Wallet address (tap to copy)',
-              address: address || '—',
-              hint,
-            }),
-          ],
-        },
-      ],
-    }),
+  const addressNode = useMemo(
+    () =>
+      receiveView({
+        address,
+        label: activeMode === 'private'
+          ? 'Shielded 0zk address (tap to copy)'
+          : 'Wallet address (tap to copy)',
+        hint,
+        borderColor: border,
+      }),
     [activeMode, address, hint, border],
   );
   const addressRegistry: WidgetActionRegistry = {

@@ -3,6 +3,8 @@ export * from './colors';
 export * from './primitives';
 export * from './wallet/tokenRow';
 export * from './wallet/addressCard';
+export * from './wallet/receiveView';
+export * from './wallet/tokenDetailCard';
 export * from './wallet/balanceHeader';
 export * from './wallet/stepper';
 export * from './wallet/priceChart';

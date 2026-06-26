@@ -6,46 +6,20 @@ import { Box, Col } from '../layout';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
 import type {
-  ListViewItemNode,
   ListViewNode,
   WidgetActionRegistry,
 } from '@stage-labs/kit/kit';
 import {
-  col,
-  icon,
-  text,
+  settingsThemeRow,
   SETTINGS_THEME_SELECT,
 } from '@stage-labs/views';
 import {
   setThemePreference, setCustomTheme, useCustomTheme,
   useEffectiveColorScheme, usePalette, useThemePreference,
-  type ThemePreference,
 } from '../../lib/theme';
 import { THEME_OPTIONS } from '../tabs/SettingsScreen.parts';
 import { SystemHeader } from '../system/SystemHeader';
 import { ColorTokens } from '../system/ColorTokens';
-
-type ThemeValue = ThemePreference | 'custom';
-
-function themeRow(
-  value: ThemeValue,
-  label: string,
-  iconName: string,
-  selected: boolean,
-): ListViewItemNode {
-  const trailing = selected ? [icon('check', { color: 'link', size: 'lg' })] : [];
-  return {
-    type: 'ListViewItem',
-    align: 'center',
-    gap: 12,
-    onClickAction: { type: SETTINGS_THEME_SELECT, payload: { value } },
-    children: [
-      icon(iconName, { color: 'link', size: 'xl' }),
-      col([text(label, { size: 'xl', color: 'text', truncate: true })], { flex: 1 }),
-      ...trailing,
-    ],
-  };
-}
 
 export function DisplaySettings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
@@ -60,9 +34,19 @@ export function DisplaySettings(): React.ReactElement {
     type: 'ListView',
     children: [
       ...THEME_OPTIONS.map((opt) =>
-        themeRow(opt.value, opt.label, opt.icon, !custom && pref === opt.value),
+        settingsThemeRow({
+          value: opt.value,
+          label: opt.label,
+          iconName: opt.icon,
+          selected: !custom && pref === opt.value,
+        }),
       ),
-      themeRow('custom', 'Custom', 'colorSwatch', custom),
+      settingsThemeRow({
+        value: 'custom',
+        label: 'Custom',
+        iconName: 'colorSwatch',
+        selected: custom,
+      }),
     ],
   };
 

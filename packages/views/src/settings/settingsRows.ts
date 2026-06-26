@@ -6,6 +6,7 @@ import type {
 } from '@stage-labs/kit/kit';
 import { compact, compactList } from '../node';
 import { caption, col, icon, row, text, title } from '../primitives';
+import { SETTINGS_THEME_SELECT } from '../actions';
 
 export interface SettingsSectionParams {
   title?: string;
@@ -184,6 +185,39 @@ export function settingsButtonRow(
     gap: 12,
     onClickAction: { type: params.clickType, payload: params.payload ?? {} },
     children,
+  };
+}
+
+export interface SettingsThemeRowParams {
+  value: string;
+  label: string;
+  iconName: string;
+  selected: boolean;
+  iconColor?: string;
+  selectType?: string;
+}
+
+export function settingsThemeRow(
+  params: SettingsThemeRowParams,
+): ListViewItemNode {
+  const trailing = params.selected
+    ? [icon('check', { color: 'link', size: 'lg' })]
+    : [];
+  return {
+    type: 'ListViewItem',
+    align: 'center',
+    gap: 12,
+    onClickAction: {
+      type: params.selectType ?? SETTINGS_THEME_SELECT,
+      payload: { value: params.value },
+    },
+    children: [
+      icon(params.iconName, { color: params.iconColor ?? 'link', size: 'xl' }),
+      col([text(params.label, { size: 'xl', color: 'text', truncate: true })], {
+        flex: 1,
+      }),
+      ...trailing,
+    ],
   };
 }
 

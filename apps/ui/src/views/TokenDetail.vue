@@ -5,7 +5,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import type { BasicNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { walletActions, WALLET_ACTION_PRESS } from '@stage-labs/views';
+import { tokenDetailCard, WALLET_ACTION_PRESS } from '@stage-labs/views';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, NETWORK_LABEL } from '@stage-labs/client/wallet/assets';
 import { fmtUsd, fmtBalance } from '@stage-labs/client/wallet/format';
 import { getTokenRow } from '@/lib/tokenDetailStore';
@@ -46,62 +46,20 @@ const detailNode = computed<BasicNode | null>(() => {
   const r = row.value;
   if (!r) return null;
   const usd = valueUsd.value;
-  return {
-    type: 'Basic',
-    children: [
-      {
-        type: 'Col',
-        align: 'start',
-        gap: 6,
-        children: [
-          {
-            type: 'Stack',
-            width: 72,
-            height: 72,
-            children: [
-              { type: 'Image', src: r.logoUrl, size: 72, radius: 'full', background: palette.border },
-              {
-                type: 'Box',
-                position: 'absolute',
-                right: -2,
-                bottom: -2,
-                width: 30,
-                height: 30,
-                radius: 'full',
-                background: palette.border,
-                border: { size: 3, color: palette.bg },
-                children: [
-                  { type: 'Image', src: networkLogo.value, fit: 'cover', width: '100%', height: '100%', radius: 'full' },
-                ],
-              },
-            ],
-          },
-          { type: 'Title', value: r.name, size: '5xl', weight: 'semibold', color: 'link' },
-          {
-            type: 'Box',
-            radius: 'full',
-            padding: { x: 10, y: 3 },
-            border: { size: 1, color: palette.border },
-            children: [{ type: 'Caption', value: networkLabel.value, color: 'secondary', size: 'sm' }],
-          },
-          { type: 'Title', value: `${fmtBalance(r.balance)} ${r.symbol}`, size: '6xl', weight: 'semibold', color: 'link' },
-          { type: 'Text', value: usd === null ? '—' : fmtUsd(usd), size: 'md', color: 'secondary' },
-          {
-            type: 'Box',
-            padding: { top: 26 },
-            children: [
-              walletActions({
-                gap: 36,
-                actions: [
-                  { label: 'Send', icon: 'send', pressType: WALLET_ACTION_PRESS, bg: palette.border, payload: { action: 'send' } },
-                ],
-              }),
-            ],
-          },
-        ],
-      },
+  return tokenDetailCard({
+    logoSrc: r.logoUrl,
+    networkLogo: networkLogo.value,
+    networkLabel: networkLabel.value,
+    name: r.name,
+    balanceLabel: `${fmtBalance(r.balance)} ${r.symbol}`,
+    usdLabel: usd === null ? '—' : fmtUsd(usd),
+    borderColor: palette.border,
+    bgColor: palette.bg,
+    actions: [
+      { label: 'Send', icon: 'send', pressType: WALLET_ACTION_PRESS, bg: palette.border, payload: { action: 'send' } },
     ],
-  };
+    actionsPadTop: 26,
+  });
 });
 
 const registry: WidgetActionRegistry = {
