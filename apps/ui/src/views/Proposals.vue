@@ -187,19 +187,9 @@ async function onExecute(req: QueuedRequest): Promise<void> {
       :style="{ borderBottomWidth: '1px', borderBottomStyle: 'solid', borderBottomColor: palette.border }"
     >
       <Pressable tag="button" type="button" class="p-1" @click="router.back()">
-        <Icon name="arrowLeft" :size="22" :color="palette.text" />
+        <Icon name="arrowLeft" :size="22" :color="palette.link" />
       </Pressable>
       <Title size="sm">Pending requests</Title>
-      <Col class="flex-1" />
-      <Button
-        v-if="requests !== null"
-        variant="secondary"
-        size="md"
-        label="Refresh"
-        :dark="dark"
-        :loading="loading"
-        @click="onRefresh()"
-      />
     </Row>
 
     <Col v-if="requests === null" align="center" justify="center" class="flex-1">
@@ -208,9 +198,9 @@ async function onExecute(req: QueuedRequest): Promise<void> {
     <Col v-else-if="error" align="center" justify="center" class="flex-1" :padding="32">
       <Text role="secondary" text-align="center">{{ error }}</Text>
     </Col>
-    <Col v-else-if="current === null" align="center" justify="center" class="flex-1" :padding="32" :gap="6">
-      <Text size="3xl" weight="semibold" color="text">No pending requests</Text>
-      <Text role="secondary" text-align="center">Polls, payments, signatures, and message requests will show up here.</Text>
+    <Col v-else-if="current === null" align="center" justify="center" class="flex-1" :padding="24" :gap="12">
+      <Text size="3xl" color="text" :style="{ opacity: '0.85' }">{{ loading ? 'Loading requests…' : 'No pending requests' }}</Text>
+      <Button v-if="!loading" variant="secondary" size="md" label="Refresh" :dark="dark" @click="onRefresh()" />
     </Col>
 
     <!-- Stepper: one request at a time with an "X of Y" counter, mirroring mobile ProposalsScreen. -->
