@@ -5,10 +5,7 @@ import {
   type Reaction, type Attachment as AttachmentContent,
 } from '@xmtp/browser-sdk';
 import { XMTP_USER_PREFIX } from './xmtp';
-import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
-import { type PollContent, pollFallbackText } from '@stage-labs/client/xmtp/poll';
-import { type WalletSendCallsContent, walletSendCallsFallbackText } from '@stage-labs/client/xmtp/tx';
-import { type SignatureRequestContent, signatureRequestFallbackText } from '@stage-labs/client/xmtp/sign';
+import { envelopeFromContent, type EnvelopeOptions } from '@stage-labs/client/xmtp/envelope';
 import type { HistoryEntry } from './types';
 
 function latestReactionStates(events: HistoryEntry[]): Map<string, { ts: string; removed: boolean }> {
@@ -80,89 +77,25 @@ function isCustomSchema(schema: Reaction['schema']): boolean {
   return schema === ReactionSchema.Custom || (schema as unknown) === 'custom';
 }
 
-function reactionEnvelope(base: HistoryEntry, typeId: string, decoded: object): HistoryEntry {
-  const r = decoded as Reaction;
-  const removed = isRemovedAction(r.action);
-  if (isCustomSchema(r.schema)) {
-    return {
-      ...base,
-      text: `[vote ${r.content}${removed ? ' (removed)' : ''}]`,
-      payload: {
-        contentType: typeId, reactTo: r.reference, emoji: r.content,
-        schema: 'custom', removed,
-      },
-    };
-  }
-  return {
-    ...base,
-    text: `[react ${r.content}${removed ? ' (removed)' : ''}]`,
-    payload: { contentType: typeId, reactTo: r.reference, emoji: r.content, removed },
-  };
-}
+const UI_HANDLERS = new Set([
+  'reaction', 'reply', 'attachment', 'poll', 'walletSendCalls', 'signatureRequest',
+]);
 
-function pollEnvelope(base: HistoryEntry, typeId: string, decoded: object): HistoryEntry {
-  const poll = decoded as PollContent;
-  return {
-    ...base,
-    text: pollFallbackText(poll),
-    payload: { contentType: typeId, poll },
-  };
-}
-
-function walletSendCallsEnvelope(base: HistoryEntry, typeId: string, decoded: object): HistoryEntry {
-  const wsc = decoded as WalletSendCallsContent;
-  return {
-    ...base,
-    text: walletSendCallsFallbackText(wsc),
-    payload: { contentType: typeId, walletSendCalls: wsc },
-  };
-}
-
-function signatureRequestEnvelope(base: HistoryEntry, typeId: string, decoded: object): HistoryEntry {
-  const sig = decoded as SignatureRequestContent;
-  return {
-    ...base,
-    text: signatureRequestFallbackText(sig),
-    payload: { contentType: typeId, signatureRequest: sig },
-  };
-}
-
-function replyEnvelope(base: HistoryEntry, typeId: string, decoded: object): HistoryEntry {
-  const r = decoded as { referenceId: string; content: unknown };
-  const innerText = typeof r.content === 'string' ? r.content : undefined;
-  return {
-    ...base,
-    text: innerText ?? '[reply]',
-    replyTo: r.referenceId,
-    payload: { contentType: typeId, replyTo: r.referenceId },
-  };
-}
-
-function attachmentKind(mime: string | undefined): 'image' | 'audio' | 'video' | 'file' {
-  if (mime?.startsWith('image/')) return 'image';
-  if (mime?.startsWith('audio/')) return 'audio';
-  if (mime?.startsWith('video/')) return 'video';
-  return 'file';
-}
-
-function attachmentEnvelope(base: HistoryEntry, typeId: string, decoded: object): HistoryEntry {
-  const a = decoded as AttachmentContent;
-  const kind = attachmentKind(a.mimeType);
-  return {
-    ...base,
-    text: `[${kind}: ${a.filename ?? 'attachment'}]`,
-    payload: {
-      contentType: typeId,
-      attachments: [{ kind, mime: a.mimeType, name: a.filename, dataB64: bytesToBase64(a.content) }],
-    },
-  };
-}
-
-function fallbackEnvelope(base: HistoryEntry, typeId: string, decoded: unknown, fallback?: string): HistoryEntry {
-  const isGroupUpdate = typeId === 'group_updated' || typeId === 'groupUpdated';
-  const text = isGroupUpdate ? previewOfXmtpContent(decoded, typeId) : (fallback ?? `[${typeId} payload]`);
-  return { ...base, text, payload: { contentType: typeId, ...(isGroupUpdate ? { system: true } : {}) } };
-}
+const uiEnvelopeOptions: EnvelopeOptions = {
+  reactionRemoved: (action) => isRemovedAction(action as Reaction['action']),
+  reactionCustom: (schema) => isCustomSchema(schema as Reaction['schema']),
+  reactionCustomPayloadExtras: false,
+  replyReferenceOf: (decoded) => (decoded as { referenceId: string }).referenceId,
+  replyTextOf: (decoded) => {
+    const c = (decoded as { content: unknown }).content;
+    return typeof c === 'string' ? c : undefined;
+  },
+  attachmentNameOf: (decoded) => (decoded as AttachmentContent).filename,
+  attachmentLabelOf: (decoded) => (decoded as AttachmentContent).filename ?? 'attachment',
+  attachmentDataB64Of: (decoded) => bytesToBase64((decoded as AttachmentContent).content),
+  handlers: UI_HANDLERS,
+  requireObjectForHandlers: true,
+};
 
 export function envelopeOfXmtpMessage(msg: DecodedMessage, line: string): HistoryEntry {
   const base: HistoryEntry = {
@@ -175,17 +108,5 @@ export function envelopeOfXmtpMessage(msg: DecodedMessage, line: string): Histor
     messageId: msg.id,
   };
   const typeId = msg.contentType.typeId;
-  const decoded: unknown = msg.content;
-  if (typeof decoded === 'string') {
-    return { ...base, text: decoded, payload: { contentType: typeId } };
-  }
-  if (decoded && typeof decoded === 'object') {
-    if (typeId === 'reaction') return reactionEnvelope(base, typeId, decoded);
-    if (typeId === 'reply') return replyEnvelope(base, typeId, decoded);
-    if (typeId === 'attachment') return attachmentEnvelope(base, typeId, decoded);
-    if (typeId === 'poll') return pollEnvelope(base, typeId, decoded);
-    if (typeId === 'walletSendCalls') return walletSendCallsEnvelope(base, typeId, decoded);
-    if (typeId === 'signatureRequest') return signatureRequestEnvelope(base, typeId, decoded);
-  }
-  return fallbackEnvelope(base, typeId, decoded, msg.fallback);
+  return envelopeFromContent(base, typeId, msg.content, msg.fallback, uiEnvelopeOptions);
 }

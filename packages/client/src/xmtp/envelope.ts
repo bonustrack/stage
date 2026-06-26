@@ -33,16 +33,53 @@ interface MultiRemoteAttachmentView {
   attachments?: ({ filename?: string } & Record<string, unknown>)[];
 }
 
-function reactionEnvelope(base: HistoryEntry, typeId: string, decoded: unknown): HistoryEntry {
+export type AttachmentKind = 'image' | 'audio' | 'video' | 'file';
+
+export interface EnvelopeOptions {
+  reactionRemoved(action: unknown): boolean;
+  reactionCustom(schema: unknown): boolean;
+  reactionCustomPayloadExtras: boolean;
+  replyReferenceOf(decoded: unknown): string;
+  replyTextOf(decoded: unknown): string | undefined;
+  attachmentNameOf(decoded: unknown): string | undefined;
+  attachmentLabelOf(decoded: unknown): string;
+  attachmentDataB64Of(decoded: unknown): string;
+  handlers: ReadonlySet<string>;
+  requireObjectForHandlers: boolean;
+}
+
+const ALL_HANDLERS = new Set([
+  'reaction', 'poll', 'signatureRequest', 'signatureReference', 'walletSendCalls',
+  'transactionReference', 'reply', 'group_updated', 'groupUpdated', 'attachment',
+  'multiRemoteStaticAttachment', 'multiRemoteAttachment',
+]);
+
+export const defaultEnvelopeOptions: EnvelopeOptions = {
+  reactionRemoved: (action) => action === 'removed',
+  reactionCustom: (schema) => schema === 'custom',
+  reactionCustomPayloadExtras: true,
+  replyReferenceOf: (decoded) => (decoded as ReplyContentView).reference,
+  replyTextOf: (decoded) => (decoded as ReplyContentView).content?.text,
+  attachmentNameOf: (decoded) => (decoded as StaticAttachmentView).filename,
+  attachmentLabelOf: (decoded) => (decoded as StaticAttachmentView).filename,
+  attachmentDataB64Of: (decoded) => (decoded as StaticAttachmentView).data,
+  handlers: ALL_HANDLERS,
+  requireObjectForHandlers: false,
+};
+
+function reactionEnvelope(base: HistoryEntry, typeId: string, decoded: unknown, opts: EnvelopeOptions): HistoryEntry {
   const r = decoded as ReactionContentView;
-  const removed = r.action === 'removed';
-  if (r.schema === 'custom') {
+  const removed = opts.reactionRemoved(r.action);
+  if (opts.reactionCustom(r.schema)) {
+    const extras = opts.reactionCustomPayloadExtras
+      ? { voteFor: r.reference, optionIndex: Number(r.content) }
+      : {};
     return {
       ...base,
       text: `[vote ${r.content}${removed ? ' (removed)' : ''}]`,
       payload: {
         contentType: typeId, reactTo: r.reference, emoji: r.content,
-        schema: 'custom', voteFor: r.reference, optionIndex: Number(r.content), removed,
+        schema: 'custom', ...extras, removed,
       },
     };
   }
@@ -53,24 +90,24 @@ function reactionEnvelope(base: HistoryEntry, typeId: string, decoded: unknown):
   };
 }
 
-function replyEnvelope(base: HistoryEntry, typeId: string, decoded: unknown): HistoryEntry {
-  const r = decoded as ReplyContentView;
+function replyEnvelope(base: HistoryEntry, typeId: string, decoded: unknown, opts: EnvelopeOptions): HistoryEntry {
+  const reference = opts.replyReferenceOf(decoded);
   return {
     ...base,
-    text: r.content?.text ?? '[reply]',
-    replyTo: r.reference,
-    payload: { contentType: typeId, replyTo: r.reference },
+    text: opts.replyTextOf(decoded) ?? '[reply]',
+    replyTo: reference,
+    payload: { contentType: typeId, replyTo: reference },
   };
 }
 
-function kindFromMime(mime?: string): 'image' | 'audio' | 'video' | 'file' {
+function kindFromMime(mime?: string): AttachmentKind {
   if (mime?.startsWith('image/')) return 'image';
   if (mime?.startsWith('audio/')) return 'audio';
   if (mime?.startsWith('video/')) return 'video';
   return 'file';
 }
 
-function kindFromExt(name: string): 'image' | 'audio' | 'video' | 'file' {
+function kindFromExt(name: string): AttachmentKind {
   const ext = name.split('.').pop()?.toLowerCase() ?? '';
   if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic'].includes(ext)) return 'image';
   if (['m4a', 'mp3', 'wav', 'aac', 'ogg'].includes(ext)) return 'audio';
@@ -78,15 +115,19 @@ function kindFromExt(name: string): 'image' | 'audio' | 'video' | 'file' {
   return 'file';
 }
 
-function attachmentEnvelope(base: HistoryEntry, typeId: string, decoded: unknown): HistoryEntry {
+function attachmentEnvelope(base: HistoryEntry, typeId: string, decoded: unknown, opts: EnvelopeOptions): HistoryEntry {
   const a = decoded as StaticAttachmentView;
   const kind = kindFromMime(a.mimeType);
   return {
     ...base,
-    text: `[${kind}: ${a.filename}]`,
+    text: `[${kind}: ${opts.attachmentLabelOf(decoded)}]`,
     payload: {
       contentType: typeId,
-      attachments: [{ kind, mime: a.mimeType, name: a.filename, dataB64: a.data }],
+      attachments: [{
+        kind, mime: a.mimeType,
+        name: opts.attachmentNameOf(decoded),
+        dataB64: opts.attachmentDataB64Of(decoded),
+      }],
     },
   };
 }
@@ -104,10 +145,9 @@ function multiRemoteEnvelope(base: HistoryEntry, typeId: string, decoded: unknow
   return { ...base, text: summary, payload: { contentType: typeId, attachments } };
 }
 
-const ENVELOPE_HANDLERS: Record<
-  string,
-  (base: HistoryEntry, typeId: string, decoded: unknown) => HistoryEntry
-> = {
+type Handler = (base: HistoryEntry, typeId: string, decoded: unknown, opts: EnvelopeOptions) => HistoryEntry;
+
+const ENVELOPE_HANDLERS: Record<string, Handler> = {
   reaction: reactionEnvelope,
   poll: (base, typeId, decoded) => ({
     ...base, text: pollFallbackText(decoded as PollContent),
@@ -143,6 +183,34 @@ const ENVELOPE_HANDLERS: Record<
   multiRemoteAttachment: multiRemoteEnvelope,
 };
 
+function isGroupUpdate(typeId: string): boolean {
+  return typeId === 'group_updated' || typeId === 'groupUpdated';
+}
+
+export function envelopeFromContent(
+  base: HistoryEntry,
+  typeId: string,
+  decoded: unknown,
+  fallback: string | undefined,
+  options: EnvelopeOptions = defaultEnvelopeOptions,
+): HistoryEntry {
+  if (typeof decoded === 'string') {
+    return { ...base, text: decoded, payload: { contentType: typeId } };
+  }
+  const objectOk = !options.requireObjectForHandlers || (decoded !== null && typeof decoded === 'object');
+  if (objectOk && options.handlers.has(typeId)) {
+    const handler = ENVELOPE_HANDLERS[typeId];
+    if (handler) return handler(base, typeId, decoded, options);
+  }
+  if (isGroupUpdate(typeId)) {
+    return {
+      ...base, text: humanizeGroupUpdated(decoded as GroupUpdatedContent),
+      payload: { contentType: typeId, system: true },
+    };
+  }
+  return { ...base, text: fallback ?? `[${typeId} payload]`, payload: { contentType: typeId } };
+}
+
 export function mapDecodedToEnvelope(msg: DecodedMessageView, line: string): HistoryEntry {
   const ts = new Date(Math.floor(msg.sentNs / 1_000_000)).toISOString();
   const base: HistoryEntry = {
@@ -154,10 +222,5 @@ export function mapDecodedToEnvelope(msg: DecodedMessageView, line: string): His
   try { decoded = msg.content(); }
   catch { return { ...base, text: `[${typeId} payload]`, payload: { contentType: typeId } }; }
 
-  if (typeof decoded === 'string') {
-    return { ...base, text: decoded, payload: { contentType: typeId } };
-  }
-  const handler = ENVELOPE_HANDLERS[typeId];
-  if (handler) return handler(base, typeId, decoded);
-  return { ...base, text: msg.fallback ?? `[${typeId} payload]`, payload: { contentType: typeId } };
+  return envelopeFromContent(base, typeId, decoded, msg.fallback);
 }
