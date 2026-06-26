@@ -1,14 +1,12 @@
 
 import { PersistentStore } from './cache';
 import { markConvReadSynced, markConvUnreadSynced } from './xmtp';
+import {
+  applyRead, applyUnread, applySentPatch,
+  type CachedChannelRow,
+} from '@stage-labs/client/xmtp/channelsCache';
 
-export interface CachedRow {
-  convId: string;
-  unreadCount: number;
-  lastReadNs: number;
-  markedUnread?: boolean;
-  [key: string]: unknown;
-}
+export type CachedRow = CachedChannelRow;
 
 const stores = new Map<string, PersistentStore<CachedRow[]>>();
 
@@ -82,11 +80,8 @@ export async function markConvRead(convId: string): Promise<void> {
   await markConvReadSynced(convId);
   const rows = currentRows();
   if (!rows) return;
-  const idx = rows.findIndex(r => r.convId === convId);
-  const cur = rows[idx];
-  if (cur === undefined) return;
-  const next = [...rows];
-  next[idx] = { ...cur, unreadCount: 0, lastReadNs: nowNs, markedUnread: false };
+  const next = applyRead(rows, convId, nowNs);
+  if (next === null) return;
   setCachedRows(next);
 }
 
@@ -94,28 +89,15 @@ export async function markConvUnread(convId: string): Promise<void> {
   await markConvUnreadSynced(convId);
   const rows = currentRows();
   if (!rows) return;
-  const idx = rows.findIndex(r => r.convId === convId);
-  const cur = rows[idx];
-  if (cur === undefined) return;
-  const next = [...rows];
-  next[idx] = { ...cur, unreadCount: Math.max(1, cur.unreadCount), lastReadNs: 0, markedUnread: true };
+  const next = applyUnread(rows, convId);
+  if (next === null) return;
   setCachedRows(next);
 }
 
 export function patchRowSent(convId: string, preview: string): void {
   const rows = currentRows();
   if (!rows) return;
-  const idx = rows.findIndex(r => r.convId === convId);
-  const cur = rows[idx];
-  if (cur === undefined) return;
-  const updated: CachedRow = {
-    ...cur,
-    lastTs: Date.now(),
-    lastPreview: preview.slice(0, 80),
-    lastFromSelf: true,
-    unreadCount: 0,
-    markedUnread: false,
-  };
-  const next = [updated, ...rows.slice(0, idx), ...rows.slice(idx + 1)];
+  const next = applySentPatch(rows, convId, preview, Date.now());
+  if (next === null) return;
   setCachedRows(next);
 }

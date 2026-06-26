@@ -1,14 +1,12 @@
 
 import { ref, type Ref } from 'vue';
 import { markConvReadSynced, markConvUnreadSynced } from './xmtp';
+import {
+  applyRead, applyUnread, applyConsent,
+  type CachedChannelRow,
+} from '@stage-labs/client/xmtp/channelsCache';
 
-export interface CachedRow {
-  convId: string;
-  unreadCount: number;
-  lastReadNs: number;
-  markedUnread?: boolean;
-  [key: string]: unknown;
-}
+export type CachedRow = CachedChannelRow;
 
 const STORAGE_KEY = 'metro.channels.cache.v1';
 
@@ -39,34 +37,22 @@ export function markConvRead(convId: string): void {
   const nowNs = Date.now() * 1_000_000;
   void markConvReadSynced(convId);
   if (!cachedRows.value) return;
-  const idx = cachedRows.value.findIndex(r => r.convId === convId);
-  const cur = idx === -1 ? undefined : cachedRows.value[idx];
-  if (cur === undefined) return;
-  const next = [...cachedRows.value];
-  next[idx] = { ...cur, unreadCount: 0, lastReadNs: nowNs, markedUnread: false };
+  const next = applyRead(cachedRows.value, convId, nowNs);
+  if (next === null) return;
   setCachedRows(next);
 }
 
 export function markConvUnread(convId: string): void {
   void markConvUnreadSynced(convId);
   if (!cachedRows.value) return;
-  const idx = cachedRows.value.findIndex(r => r.convId === convId);
-  const cur = idx === -1 ? undefined : cachedRows.value[idx];
-  if (cur === undefined) return;
-  const next = [...cachedRows.value];
-  next[idx] = { ...cur, unreadCount: Math.max(1, cur.unreadCount), lastReadNs: 0, markedUnread: true };
+  const next = applyUnread(cachedRows.value, convId);
+  if (next === null) return;
   setCachedRows(next);
 }
 
 export function applyConsentToRows(convId: string, markedUnread: boolean): void {
   if (!cachedRows.value) return;
-  const idx = cachedRows.value.findIndex(r => r.convId === convId);
-  const cur = idx === -1 ? undefined : cachedRows.value[idx];
-  if (cur === undefined) return;
-  if (cur.markedUnread === markedUnread) return;
-  const next = [...cachedRows.value];
-  next[idx] = markedUnread
-    ? { ...cur, markedUnread: true, unreadCount: Math.max(1, cur.unreadCount) }
-    : { ...cur, markedUnread: false, unreadCount: 0 };
+  const next = applyConsent(cachedRows.value, convId, markedUnread);
+  if (next === null) return;
   setCachedRows(next);
 }
