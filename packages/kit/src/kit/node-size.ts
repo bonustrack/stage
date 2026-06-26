@@ -1,5 +1,5 @@
 import { HERO_ICON_PATHS, type HeroIconName } from '../icons';
-import type { CaptionSize } from './node-fields';
+import type { CaptionSize, FontWeight } from './node-fields';
 
 const ICON_NAMES = new Set(Object.keys(HERO_ICON_PATHS));
 
@@ -23,4 +23,10 @@ export function resolveCaptionSize(
   value: CaptionSize | undefined,
 ): 'sm' | 'md' | undefined {
   return value === undefined ? undefined : CAPTION_SIZE[value];
+}
+
+export function resolveCaptionWeight(
+  value: FontWeight | undefined,
+): 'normal' | 'medium' | 'semibold' | undefined {
+  return value === 'bold' ? 'semibold' : value;
 }

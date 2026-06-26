@@ -7,6 +7,7 @@ import {
   resolveButtonStyle,
   resolveColor,
   resolveCaptionSize,
+  resolveCaptionWeight,
   resolveDirection,
   resolveHeroTitlePx,
   resolveIconName as resolveIconNameCore,
@@ -87,10 +88,9 @@ export function captionSize(
 }
 
 export function captionWeight(
-  value: string | undefined,
+  value: FontWeight | undefined,
 ): CaptionWeightToken | undefined {
-  if (value === undefined) return undefined;
-  return value === 'bold' ? 'semibold' : (value as CaptionWeightToken);
+  return resolveCaptionWeight(value);
 }
 
 export function fieldVariant(

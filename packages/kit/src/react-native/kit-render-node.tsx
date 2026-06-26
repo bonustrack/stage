@@ -25,6 +25,7 @@ import {
   resolveAlign,
   resolveBadgeStyle,
   resolveBorder,
+  resolveCaptionWeight,
   resolveHeroTitlePx,
   resolveJustify,
   resolveListItemStyle,
@@ -159,7 +160,7 @@ export function renderCaption(node: CaptionNode, ctx: RenderCtx): ReactNode {
     <Caption
       value={node.value}
       size={captionSize(node.size)}
-      weight={node.weight === 'bold' ? 'semibold' : node.weight}
+      weight={resolveCaptionWeight(node.weight)}
       textAlign={node.textAlign}
       color={resolveOptionalColor(node.color, ctx.scheme)}
       truncate={node.truncate}
