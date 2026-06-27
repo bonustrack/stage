@@ -6,6 +6,7 @@ import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
 import { basicRoot, receiveView, screenHeader, SCREEN_BACK, WALLET_ADDRESS_COPY } from '@stage-labs/views';
+import { receiveViewModel } from '@stage-labs/client/wallet/receive';
 import { getActiveAccount } from '../lib/accounts';
 import { shortAddress, stampAvatarUrl } from '../lib/xmtp';
 
@@ -28,13 +29,17 @@ async function copy(): Promise<void> {
   window.setTimeout(() => { copied.value = false; }, 1500);
 }
 
+const vm = computed(() =>
+  receiveViewModel({
+    mode: 'public', publicAddress: address.value, privateAddress: '', privateReady: false,
+  }),
+);
+
 const addressNode = computed(() =>
   receiveView({
     address: address.value,
-    label: 'Wallet address (tap to copy)',
-    hint: copied.value
-      ? 'Address copied'
-      : 'Scan or share this address to receive ETH or tokens on Ethereum mainnet.',
+    label: vm.value.label,
+    hint: copied.value ? 'Address copied' : vm.value.hint,
     borderColor: palette.border,
   }),
 );

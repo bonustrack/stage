@@ -14,6 +14,7 @@ import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
 import { usePalette } from '../../lib/theme';
 import { flash } from '../../lib/toast';
 import { ReceiveModeToggle, type ReceiveMode } from '../../components/wallet/ReceiveModeToggle';
+import { receiveViewModel } from '@stage-labs/client/wallet/receive';
 
 export default function WalletReceive(): React.ReactElement {
   const router = useRouter();
@@ -37,8 +38,9 @@ export default function WalletReceive(): React.ReactElement {
     return () => { cancelled = true; };
   }, []);
 
-  const activeMode: ReceiveMode = mode === 'private' && !privateReady ? 'public' : mode;
-  const address = activeMode === 'private' ? privateAddress : publicAddress;
+  const { activeMode, address, label, hint } = receiveViewModel({
+    mode, publicAddress, privateAddress, privateReady,
+  });
 
   const copy = (): void => {
     if (!address) return;
@@ -46,21 +48,9 @@ export default function WalletReceive(): React.ReactElement {
     flash(activeMode === 'private' ? '0zk address copied' : 'Address copied');
   };
 
-  const hint = activeMode === 'private'
-    ? 'Shielded address. Funds sent here are private — the sender shields into Railgun.'
-    : 'Scan or share this address to receive ETH or tokens on Ethereum mainnet.';
-
   const addressNode = useMemo(
-    () =>
-      receiveView({
-        address,
-        label: activeMode === 'private'
-          ? 'Shielded 0zk address (tap to copy)'
-          : 'Wallet address (tap to copy)',
-        hint,
-        borderColor: border,
-      }),
-    [activeMode, address, hint, border],
+    () => receiveView({ address, label, hint, borderColor: border }),
+    [address, label, hint, border],
   );
   const headerNode = basicRoot(screenHeader({
     title: 'Receive',
