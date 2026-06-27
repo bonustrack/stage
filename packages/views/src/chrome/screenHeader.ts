@@ -10,8 +10,23 @@ import { SCREEN_BACK } from '../actions';
 import { compactList } from '../node';
 
 export type ScreenHeaderTitle =
-  | { kind: 'text'; size?: TextSize; weight?: FontWeight; color?: Color }
-  | { kind: 'title'; size?: TitleSize; weight?: FontWeight; color?: Color };
+  | {
+      kind: 'text';
+      size?: TextSize;
+      weight?: FontWeight;
+      color?: Color;
+      truncate?: boolean;
+      maxLines?: number;
+    }
+  | {
+      kind: 'title';
+      size?: TitleSize;
+      weight?: FontWeight;
+      color?: Color;
+      truncate?: boolean;
+      maxLines?: number;
+      flex?: boolean;
+    };
 
 export interface ScreenHeaderParams {
   title: string;
@@ -35,6 +50,9 @@ function titleNode(label: string, style: ScreenHeaderTitle): WidgetNode {
       size: style.size,
       weight: style.weight,
       color: style.color,
+      truncate: style.truncate,
+      maxLines: style.maxLines,
+      flex: style.flex ? 1 : undefined,
     };
   }
   return {
@@ -43,6 +61,8 @@ function titleNode(label: string, style: ScreenHeaderTitle): WidgetNode {
     size: style.size,
     weight: style.weight,
     color: style.color,
+    truncate: style.truncate,
+    maxLines: style.maxLines,
     flex: 1,
   };
 }
