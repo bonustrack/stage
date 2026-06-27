@@ -5,10 +5,8 @@ import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
 import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
-import { basicRoot, memberTextField, MEMBER_FIELD_CHANGE } from '@stage-labs/views';
+import { basicRoot, memberTextField, screenHeader, MEMBER_FIELD_CHANGE, SCREEN_BACK } from '@stage-labs/views';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Title } from '@stage-labs/kit/react-native/title';
-import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,7 +14,7 @@ import { createGroup } from '../../modules/messaging';
 import { uploadAvatar } from '../../lib/profile';
 import { flash } from '../../lib/toast';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { Box, Col, Row } from '../../components/layout';
+import { Box, Col } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 import { MemberPicker, useMemberPicker } from './MemberPicker';
 
@@ -119,10 +117,21 @@ function GroupNameField({ name, setName, head, sub, inputBg, border }: {
 export default function NewGroup(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border, primary, inputBg } = usePalette();
+  const { text: fg, link: head, bg, border, primary, inputBg, toolbarBg } = usePalette();
   const sub = fg;
   const rowBg = border;
   const insets = useSafeAreaInsets();
+  const headerNode = basicRoot(screenHeader({
+    title: 'New group',
+    titleStyle: { kind: 'title', size: 'sm', color: head },
+    backColor: fg,
+    safeTop: insets.top,
+    surface: toolbarBg,
+    borderColor: border,
+  }));
+  const headerRegistry: WidgetActionRegistry = {
+    [SCREEN_BACK]: () => { router.back(); },
+  };
 
   const [name, setName] = useState('');
   const picker = useMemberPicker();
@@ -159,14 +168,7 @@ export default function NewGroup(): React.ReactElement {
   return (
     <Col surface="surface" flex={1}>
       {}
-      <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-        <Pressable onPress={() => { router.back(); }} hitSlop={8} style={{ padding: 4 }}>
-          <Icon name="arrowLeft" size={22} color={fg}/>
-        </Pressable>
-        <Title size="sm" color={head}>
-          New group
-        </Title>
-      </Row>
+      <KitRenderer node={headerNode} registry={headerRegistry} />
 
       <ScrollView
         contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 24 + insets.bottom }}

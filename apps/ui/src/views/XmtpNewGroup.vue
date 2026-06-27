@@ -1,7 +1,12 @@
 <script setup lang="ts">
 
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import { screenHeader, SCREEN_BACK } from '@stage-labs/views';
+import { basicRoot } from '@/lib/kitRow';
 import { useEffectiveScheme } from '@/lib/kitTheme';
 import { createGroup } from '../lib/xmtpGroups';
 import { uploadAvatar } from '../lib/profile';
@@ -17,6 +22,20 @@ const imageFile = ref<File | null>(null);
 const imagePreview = ref('');
 const creating = ref(false);
 const errorMsg = ref('');
+
+const headerNode = computed(() =>
+  basicRoot(screenHeader({
+    title: 'New group',
+    titleStyle: { kind: 'title', size: 'sm', color: palette.link },
+    backColor: palette.text,
+    safeTop: 0,
+    surface: palette.toolbarBg,
+    borderColor: palette.border,
+  })),
+);
+const headerRegistry: WidgetActionRegistry = {
+  [SCREEN_BACK]: () => { router.back(); },
+};
 
 function onPickImage(file: File): void {
   imageFile.value = file;
@@ -53,18 +72,7 @@ async function onCreate(): Promise<void> {
 
 <template>
   <Col surface="surface" class="min-h-screen pb-[88px]">
-    <Row
-      surface="toolbar"
-      align="center"
-      :gap="8"
-      :padding="{ x: 12, y: 10 }"
-      :style="{ borderBottomWidth: '1px', borderBottomStyle: 'solid', borderBottomColor: palette.border }"
-    >
-      <Pressable tag="button" type="button" class="p-1" @click="router.back()">
-        <Icon name="arrowLeft" :size="22" :color="palette.text" />
-      </Pressable>
-      <Title size="sm">New group</Title>
-    </Row>
+    <KitRenderer :node="headerNode" :registry="headerRegistry" />
 
     <Col class="flex-1 overflow-y-auto no-scrollbar" :padding="16" :gap="16">
       <GroupAvatarEditor
