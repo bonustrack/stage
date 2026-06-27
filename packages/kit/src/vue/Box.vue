@@ -18,6 +18,7 @@ const props = withDefaults(
     BoxBaseProps & {
       surface?: Surface;
       tag?: string;
+      positionStyle?: Record<string, string>;
     }
   >(),
   { surface: 'none', tag: 'div' },
@@ -74,6 +75,7 @@ const style = computed<Record<string, string>>(() => {
   for (const [k, v] of Object.entries(entries)) {
     css[k] = typeof v === 'number' ? `${v}px` : v;
   }
+  if (props.positionStyle !== undefined) Object.assign(css, props.positionStyle);
   return css;
 });
 </script>

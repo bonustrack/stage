@@ -14,8 +14,10 @@ import {
   resolveJustify,
   resolveListItemStyle,
   resolveOptionalColor,
+  resolvePosition,
   resolveRadius,
   resolveWrap,
+  hasPositioning,
   type Scheme,
 } from '../kit';
 import type {
@@ -29,6 +31,7 @@ import type {
   FontWeight,
   ImageNode,
   ListViewItemNode,
+  WidgetNode,
 } from '../kit';
 
 const FALLBACK_ICON: HeroIconName = 'questionMarkCircle';
@@ -114,11 +117,34 @@ function spacing(value: BoxLayoutBase['padding']): BoxSpacing {
   return value;
 }
 
+function dimCss(value: number | string | undefined): string | undefined {
+  if (value === undefined) return undefined;
+  return typeof value === 'number' ? `${value}px` : value;
+}
+
+function positionStyle(box: BoxLayoutBase): Record<string, string> | undefined {
+  const node = box as WidgetNode;
+  if (!hasPositioning(node)) return undefined;
+  const pos = resolvePosition(node);
+  const css: Record<string, string> = { position: pos.position };
+  const top = dimCss(pos.top);
+  const right = dimCss(pos.right);
+  const bottom = dimCss(pos.bottom);
+  const left = dimCss(pos.left);
+  if (top !== undefined) css.top = top;
+  if (right !== undefined) css.right = right;
+  if (bottom !== undefined) css.bottom = bottom;
+  if (left !== undefined) css.left = left;
+  if (pos.zIndex !== undefined) css.zIndex = String(pos.zIndex);
+  return css;
+}
+
 export function boxProps(
   node: BoxLayoutBase & { direction?: 'row' | 'col' },
   scheme: Scheme,
 ): Record<string, unknown> {
   return {
+    positionStyle: positionStyle(node),
     direction: resolveDirection(node.direction),
     align: resolveAlign(node.align),
     justify: resolveJustify(node.justify),

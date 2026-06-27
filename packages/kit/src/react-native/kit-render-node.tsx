@@ -1,5 +1,6 @@
 
 import type { ReactNode } from 'react';
+import type { ViewStyle } from 'react-native';
 import type {
   BadgeNode,
   BoxLayoutBase,
@@ -22,6 +23,7 @@ import type {
   WidgetNode,
 } from '../kit';
 import {
+  hasPositioning,
   resolveAlign,
   resolveBadgeStyle,
   resolveBorder,
@@ -30,6 +32,7 @@ import {
   resolveJustify,
   resolveListItemStyle,
   resolveOptionalColor,
+  resolvePosition,
   resolveRadius,
   resolveWrap,
 } from '../kit';
@@ -71,8 +74,22 @@ const ICON_PX: Record<string, number> = {
   '3xl': 40,
 };
 
+function positionStyle(box: BoxLayoutBase): ViewStyle | undefined {
+  const node = box as WidgetNode;
+  if (!hasPositioning(node)) return undefined;
+  const pos = resolvePosition(node);
+  const style: ViewStyle = { position: pos.position };
+  if (pos.top !== undefined) style.top = pos.top as ViewStyle['top'];
+  if (pos.right !== undefined) style.right = pos.right as ViewStyle['right'];
+  if (pos.bottom !== undefined) style.bottom = pos.bottom as ViewStyle['bottom'];
+  if (pos.left !== undefined) style.left = pos.left as ViewStyle['left'];
+  if (pos.zIndex !== undefined) style.zIndex = pos.zIndex;
+  return style;
+}
+
 function boxProps(node: BoxLayoutBase, ctx: RenderCtx): Record<string, unknown> {
   return {
+    style: positionStyle(node),
     align: resolveAlign(node.align),
     justify: resolveJustify(node.justify),
     wrap: resolveWrap(node.wrap),
