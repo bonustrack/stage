@@ -4,7 +4,7 @@ import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { accountRow, ACCOUNT_PRESS } from '@stage-labs/views';
+import { accountRow, basicRoot, topnavIdentity, ACCOUNT_PRESS } from '@stage-labs/views';
 import { listAccounts, getActiveAccount, accountEpoch, type AccountRecord } from '../lib/accounts';
 import { switchToAccount, stampAvatarUrl, shortAddress } from '../lib/xmtp';
 import { loadCachedProfile, readProfile } from '../lib/profile';
@@ -61,6 +61,16 @@ function goManage(): void {
   void router.push('/accounts');
 }
 
+const identityNode = computed(() =>
+  basicRoot(
+    topnavIdentity({
+      avatarUri: activeAvatar.value,
+      avatarBackground: '#282a2d',
+      name: activeName.value,
+    }),
+  ),
+);
+
 const listNode = computed<ListViewNode>(() => ({
   type: 'ListView',
   children: accounts.value.map((a) =>
@@ -90,16 +100,7 @@ const registry: WidgetActionRegistry = {
     title="Accounts"
     @click="open = true"
   >
-    <AvatarView :src="activeAvatar" :size="28" />
-    <Text
-      v-if="activeName"
-      size="4xl"
-      weight="semibold"
-      :truncate="true"
-      class="max-w-[200px] text-metro-head-light dark:text-metro-head-dark"
-    >
-      {{ activeName }}
-    </Text>
+    <KitRenderer :node="identityNode" />
   </Pressable>
 
   <template v-if="open">
