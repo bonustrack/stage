@@ -7,7 +7,7 @@ import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import type { BasicNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
 import { tokenDetailCard, WALLET_ACTION_PRESS } from '@stage-labs/views';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, NETWORK_LABEL } from '@stage-labs/client/wallet/assets';
-import { fmtUsd, fmtBalance } from '@stage-labs/client/wallet/format';
+import { tokenDetailViewModel } from '@stage-labs/client/wallet/tokenDetail';
 import { getTokenRow } from '@/lib/tokenDetailStore';
 
 const route = useRoute();
@@ -17,20 +17,11 @@ const palette = useKitPalette();
 const id = computed(() => String(route.params.id ?? ''));
 const row = computed(() => getTokenRow(id.value));
 
-const valueUsd = computed(() => {
-  const r = row.value;
-  if (r?.priceUsd == null) return null;
-  return r.priceUsd * Number(r.balance);
-});
+const vm = computed(() =>
+  (row.value ? tokenDetailViewModel(row.value, { networkLabels: NETWORK_LABEL }) : null));
 
 const networkLogo = computed(() =>
   (row.value ? NETWORK_LOGO[row.value.chainId] ?? MAINNET_NETWORK_LOGO : MAINNET_NETWORK_LOGO));
-
-const networkLabel = computed(() => {
-  const r = row.value;
-  if (!r) return '';
-  return NETWORK_LABEL[r.chainId] ?? `Chain ${r.chainId}`;
-});
 
 function back(): void {
   if (window.history.length > 1) router.back();
@@ -44,15 +35,15 @@ function send(): void {
 
 const detailNode = computed<BasicNode | null>(() => {
   const r = row.value;
-  if (!r) return null;
-  const usd = valueUsd.value;
+  const data = vm.value;
+  if (!r || !data) return null;
   return tokenDetailCard({
     logoSrc: r.logoUrl,
     networkLogo: networkLogo.value,
-    networkLabel: networkLabel.value,
-    name: r.name,
-    balanceLabel: `${fmtBalance(r.balance)} ${r.symbol}`,
-    usdLabel: usd === null ? '—' : fmtUsd(usd),
+    networkLabel: data.networkLabel,
+    name: data.name,
+    balanceLabel: data.balanceLabel,
+    usdLabel: data.usdLabel,
     borderColor: palette.border,
     bgColor: palette.bg,
     actions: [

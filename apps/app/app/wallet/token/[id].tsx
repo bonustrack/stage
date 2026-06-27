@@ -8,7 +8,7 @@ import {
   tokenDetailCard,
   WALLET_ACTION_PRESS, type WalletActionButton,
 } from '@stage-labs/views';
-import { fmtUsd, fmtBalance } from '@stage-labs/client/wallet/format';
+import { tokenDetailViewModel } from '@stage-labs/client/wallet/tokenDetail';
 import { Col } from '../../../components/layout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -41,14 +41,14 @@ function detailActions(r: AssetRow, symbol: 'ETH' | 'USDC' | undefined, border: 
 }
 
 function detailNode(r: AssetRow, symbol: 'ETH' | 'USDC' | undefined, palette: { sub: string; bg: string; border: string }): BasicNode {
-  const valueUsd = r.priceUsd === null ? null : r.priceUsd * Number(r.balance);
+  const vm = tokenDetailViewModel(r, { networkLabels: NETWORK_LABEL });
   return tokenDetailCard({
     logoSrc: withStampDisplayPx(r.logoUrl, 72),
     networkLogo: NETWORK_LOGO[r.chainId] ?? MAINNET_NETWORK_LOGO,
-    networkLabel: NETWORK_LABEL[r.chainId] ?? `Chain ${r.chainId}`,
-    name: r.name,
-    balanceLabel: `${fmtBalance(r.balance)} ${r.symbol}`,
-    usdLabel: valueUsd === null ? '—' : fmtUsd(valueUsd),
+    networkLabel: vm.networkLabel,
+    name: vm.name,
+    balanceLabel: vm.balanceLabel,
+    usdLabel: vm.usdLabel,
     borderColor: palette.border,
     bgColor: palette.bg,
     actions: detailActions(r, symbol, palette.border),
