@@ -1,17 +1,17 @@
 
 import { useCallback, useState } from 'react';
 
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
-import { Title } from '@stage-labs/kit/react-native/title';
-import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Button } from '@stage-labs/kit/react-native/button';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import { basicRoot, screenHeader, SCREEN_BACK } from '@stage-labs/views';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { addGroupMembers } from '../../modules/messaging';
 import { flash } from '../../lib/toast';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { Box, Row, Col } from '../../components/layout';
+import { Box, Col } from '../../components/layout';
 import { useConvMeta } from '../../modules/messaging';
 import { MemberPicker, useMemberPicker } from './MemberPicker';
 
@@ -19,8 +19,19 @@ export default function AddMembers(): React.ReactElement {
   const router = useRouter();
   const { convId } = useLocalSearchParams<{ convId: string }>();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border, primary } = usePalette();
+  const { text: fg, link: head, bg, border, primary, toolbarBg } = usePalette();
   const insets = useSafeAreaInsets();
+  const headerNode = basicRoot(screenHeader({
+    title: 'Add members',
+    titleStyle: { kind: 'title', size: 'sm', color: head },
+    backColor: fg,
+    safeTop: insets.top,
+    surface: toolbarBg,
+    borderColor: border,
+  }));
+  const headerRegistry: WidgetActionRegistry = {
+    [SCREEN_BACK]: () => { router.back(); },
+  };
 
   const picker = useMemberPicker();
   const { members } = picker;
@@ -43,14 +54,7 @@ export default function AddMembers(): React.ReactElement {
   return (
     <Col surface="surface" flex={1}>
       {}
-      <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-        <Pressable onPress={() => { router.back(); }} hitSlop={8} style={{ padding: 4 }}>
-          <Icon name="arrowLeft" size={22} color={fg}/>
-        </Pressable>
-        <Title size="sm" color={head}>
-          Add members
-        </Title>
-      </Row>
+      <KitRenderer node={headerNode} registry={headerRegistry} />
 
       <ScrollView
         contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 24 + insets.bottom }}

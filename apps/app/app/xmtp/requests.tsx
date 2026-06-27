@@ -3,8 +3,6 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { FlatList } from '@stage-labs/kit/react-native/flat-list';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Text } from '@stage-labs/kit/react-native/text';
-import { Title } from '@stage-labs/kit/react-native/title';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -19,15 +17,34 @@ import { Icon } from '@stage-labs/kit/react-native/icon';
 import { ChannelRow } from '../../components/ChannelRow';
 import { Col, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
+import { basicRoot, emptyState, screenHeader, SCREEN_BACK } from '@stage-labs/views';
+
+const EMPTY_NODE: WidgetRoot = {
+  type: 'Basic',
+  children: [emptyState({ title: 'No message requests.' })],
+};
 
 type ReqRow = ConversationRequestView;
 
 export default function Requests(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, border, danger } = usePalette();
+  const { text: fg, link: head, border, danger, toolbarBg } = usePalette();
   const insets = useSafeAreaInsets();
   const [rows, setRows] = useState<ReqRow[] | null>(null);
+  const headerNode = basicRoot(screenHeader({
+    title: 'Message requests',
+    titleStyle: { kind: 'title', size: 'sm', color: head },
+    backColor: fg,
+    safeTop: insets.top,
+    surface: toolbarBg,
+    borderColor: border,
+  }));
+  const headerRegistry: WidgetActionRegistry = {
+    [SCREEN_BACK]: () => { router.back(); },
+  };
 
   const load = useCallback(async (): Promise<void> => {
     const convs = await listRequestConvs();
@@ -85,14 +102,7 @@ export default function Requests(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-        <Pressable onPress={() => { router.back(); }} hitSlop={8} style={{ padding: 4 }}>
-          <Icon name="arrowLeft" size={22} color={fg}/>
-        </Pressable>
-        <Title size="sm" color={head}>
-          Message requests
-        </Title>
-      </Row>
+      <KitRenderer node={headerNode} registry={headerRegistry} />
 
       {!rows ? (
         <Col flex={1} align="center" justify="center">
@@ -104,13 +114,7 @@ export default function Requests(): React.ReactElement {
           keyExtractor={r => r.convId}
           renderItem={renderRow}
           contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}
-          ListEmptyComponent={
-            <Col padding={32} align="center">
-              <Text role="secondary" style={{ textAlign: 'center' }}>
-                No message requests.
-              </Text>
-            </Col>
-          }
+          ListEmptyComponent={<KitRenderer node={EMPTY_NODE} />}
 />
       )}
     </Col>

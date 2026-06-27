@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { xmtpVote, xmtpOpenAnswer } from '../../modules/messaging';
-import type { HistoryEntry } from '../../lib/types';
+import type { HistoryEntry } from '@stage-labs/client/types';
 import { pollQuestionsInFeed } from './feed-helpers';
 
 type Votes = Map<string, Map<number, Map<number, Set<string>>>>;

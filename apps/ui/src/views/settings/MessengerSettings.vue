@@ -1,8 +1,13 @@
 <script setup lang="ts">
 
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
+import {
+  settingsValueRow, SETTINGS_COPY,
+} from '@stage-labs/views';
 import {
   getXmtpAccountInfo, shortAddress, type XmtpInstallationView,
 } from '../../lib/xmtp';
@@ -44,6 +49,50 @@ function whenLabel(ms: number | null): string {
   if (ms == null) return 'unknown date';
   return new Date(ms).toLocaleDateString();
 }
+
+function copyLabel(key: string, base: string): string {
+  return `${base} (${copiedKey.value === key ? 'copied!' : 'tap to copy'})`;
+}
+
+const accountNode = computed<ListViewNode>(() => {
+  const children = [];
+  if (address.value) {
+    children.push(settingsValueRow({
+      label: copyLabel('addr', 'ADDRESS'),
+      value: shortAddress(address.value),
+      copyType: SETTINGS_COPY,
+      payload: { key: 'addr', copyValue: address.value },
+    }));
+  }
+  if (inboxId.value) {
+    children.push(settingsValueRow({
+      label: copyLabel('inbox', 'INBOX ID'),
+      value: inboxId.value,
+      copyType: SETTINGS_COPY,
+      payload: { key: 'inbox', copyValue: inboxId.value },
+    }));
+  }
+  if (installationId.value) {
+    children.push(settingsValueRow({
+      label: copyLabel('install', 'INSTALLATION ID'),
+      value: shortAddress(installationId.value),
+      copyType: SETTINGS_COPY,
+      payload: { key: 'install', copyValue: installationId.value },
+    }));
+  }
+  if (env.value) {
+    children.push(settingsValueRow({ label: 'ENVIRONMENT', value: env.value }));
+  }
+  return { type: 'ListView', children };
+});
+
+const registry: WidgetActionRegistry = {
+  [SETTINGS_COPY]: (action) => {
+    const key = action.payload.key;
+    const copyValue = action.payload.copyValue;
+    if (typeof key === 'string' && typeof copyValue === 'string') void copy(key, copyValue);
+  },
+};
 </script>
 
 <template>
@@ -68,63 +117,8 @@ function whenLabel(ms: number | null): string {
            (not one floating card per row). -->
       <Text size="3xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark px-4 pt-5 pb-1">XMTP ACCOUNT</Text>
 
-      <Col
-        class="w-[calc(100%-2rem)] mx-4 mt-2 rounded-xl overflow-hidden border
-          bg-metro-surface-light dark:bg-metro-surface-dark"
-        :style="{ borderColor: palette.border }"
-      >
-        <Pressable
-          v-if="address"
-          tag="button"
-          type="button"
-          class="block w-full p-3 text-left
-            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark transition-colors"
-          @click="copy('addr', address)"
-        >
-          <Text size="3xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark">
-            ADDRESS ({{ copiedKey === 'addr' ? 'copied!' : 'tap to copy' }})
-          </Text>
-          <Text size="xs" tag="div" class="text-metro-fg-light dark:text-metro-fg-dark mt-0.5">{{ shortAddress(address) }}</Text>
-        </Pressable>
-
-        <Pressable
-          v-if="inboxId"
-          tag="button"
-          type="button"
-          class="block w-full p-3 text-left border-t
-            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark transition-colors"
-          :style="{ borderColor: palette.border }"
-          @click="copy('inbox', inboxId)"
-        >
-          <Text size="3xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark">
-            INBOX ID ({{ copiedKey === 'inbox' ? 'copied!' : 'tap to copy' }})
-          </Text>
-          <Text size="xs" tag="div" class="text-metro-fg-light dark:text-metro-fg-dark mt-0.5 break-all">{{ inboxId }}</Text>
-        </Pressable>
-
-        <Pressable
-          v-if="installationId"
-          tag="button"
-          type="button"
-          class="block w-full p-3 text-left border-t
-            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark transition-colors"
-          :style="{ borderColor: palette.border }"
-          @click="copy('install', installationId)"
-        >
-          <Text size="3xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark">
-            INSTALLATION ID ({{ copiedKey === 'install' ? 'copied!' : 'tap to copy' }})
-          </Text>
-          <Text size="xs" tag="div" class="text-metro-fg-light dark:text-metro-fg-dark mt-0.5">{{ shortAddress(installationId) }}</Text>
-        </Pressable>
-
-        <Col
-          v-if="env"
-          class="p-3 border-t"
-          :style="{ borderColor: palette.border }"
-        >
-          <Text size="3xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark">ENVIRONMENT</Text>
-          <Text size="xs" tag="div" class="text-metro-fg-light dark:text-metro-fg-dark mt-0.5">{{ env }}</Text>
-        </Col>
+      <Col class="w-[calc(100%-2rem)] mx-4 mt-2">
+        <KitRenderer :node="accountNode" :registry="registry" />
       </Col>
 
       <!-- ACTIVE SESSIONS: installation list, mirroring mobile MessengerSessions.

@@ -2,6 +2,7 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from '@stage-labs/config';
 import { reactNative } from './apps/app/eslint.js';
 import { kitEslint } from './packages/kit/eslint.js';
+import { viewsEslint } from './packages/views/eslint.js';
 import { uiKitOnly } from './apps/ui/eslint.js';
 
 const ROOT_DIR = fileURLToPath(new URL('.', import.meta.url));
@@ -48,6 +49,7 @@ export default defineConfig({
           'expo-system-ui',
           '@railgun-privacy/native-prover',
           'node-gyp-build-mobile',
+          'expo-document-picker',
         ],
       },
     },
@@ -68,6 +70,11 @@ export default defineConfig({
       vue: true,
       eslint: { preset: 'none', extends: kitEslint(kitVueOptions) },
       knip: { entry: ['eslint.js'], vue: true },
+    },
+    'packages/views': {
+      type: 'library',
+      eslint: { preset: 'none', extends: viewsEslint() },
+      knip: { entry: ['eslint.js', 'src/index.ts'] },
     },
     'packages/config': {
       type: 'library',
@@ -90,6 +97,7 @@ export default defineConfig({
       'packages/client/src',
       'packages/config',
       'packages/kit/src',
+      'packages/views/src',
     ],
   },
 });

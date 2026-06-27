@@ -1,5 +1,8 @@
 <script setup lang="ts">
 
+import { computed, ref } from 'vue';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 
@@ -12,19 +15,32 @@ const props = defineProps<{
 const emit = defineEmits<(e: 'pick', file: File) => void>();
 
 const palette = useKitPalette();
-const input = ref<HTMLInputElement | null>(null);
 
 const SIZE = 88;
 const SQUARE_RADIUS = Math.round(SIZE * 0.12);
 
-function pick(): void { input.value?.click(); }
+const openNonce = ref(0);
+function pick(): void { openNonce.value += 1; }
 
-function onChange(ev: Event): void {
-  const el = ev.target as HTMLInputElement;
-  const file = el.files?.[0];
-  el.value = '';
-  if (file) emit('pick', file);
-}
+const pickerNode = computed<WidgetRoot>(() => ({
+  type: 'Basic',
+  children: [
+    {
+      type: 'FilePicker',
+      openNonce: openNonce.value,
+      accept: 'image/jpeg,image/png',
+      onPickAction: { type: 'avatar_pick', handler: 'client' },
+    },
+  ],
+}));
+
+const pickerRegistry: WidgetActionRegistry = {
+  avatar_pick: (a) => {
+    const files = a.payload.files;
+    const file = Array.isArray(files) ? (files[0] as File | undefined) : undefined;
+    if (file) emit('pick', file);
+  },
+};
 </script>
 
 <template>
@@ -52,9 +68,7 @@ function onChange(ev: Event): void {
         <Icon v-else :name="props.readonly ? 'users' : 'plus'" :size="28" :color="palette.sub" />
       </Box>
     </Pressable>
-    <!-- kit-exception: no kit equivalent (native file input — kit Input has no 'file'
-         inputType; rendered via dynamic tag to keep bare <input> semantics). -->
-    <component :is="'input'" ref="input" type="file" accept="image/jpeg,image/png" class="hidden" @change="onChange" />
+    <KitRenderer :node="pickerNode" :registry="pickerRegistry" />
     <Text v-if="!props.readonly" size="xs" role="secondary">
       {{ props.uploading ? 'Uploading…' : (props.imageUrl ? 'Tap to change image' : 'Tap to add a group image') }}
     </Text>

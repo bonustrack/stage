@@ -1,9 +1,11 @@
 import { ref, computed, watch, onUnmounted, type Ref, type ComputedRef } from 'vue';
-import { isAddress, createWalletClient, formatUnits, type Hex } from 'viem';
+import { createWalletClient, type Hex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { ASSETS, type Asset } from '@stage-labs/client/wallet/assets';
 import { publicClientFor, broviderTransport, chainFor } from '@stage-labs/client/wallet/client';
-import { buildPublicTransfer, parseSendAmount, looksLikeEns } from '@stage-labs/client/wallet/send';
+import {
+  buildPublicTransfer, parseSendAmount, classifyRecipientInput, noAddressSetError, publicSendFee,
+} from '@stage-labs/client/wallet/send';
 import { friendlyTxError } from '@stage-labs/client/wallet/txError';
 import { resolveEnsName } from '@stage-labs/client/api/ens';
 import { SCW_CHAIN_ID } from '@stage-labs/client/zerodev/config';
@@ -106,9 +108,7 @@ async function estimateFee(call: PublicCall, chainId: number, account?: Hex): Pr
     pub.estimateGas({ account, to: call.to, value: call.value, ...(call.data ? { data: call.data } : {}) }),
     pub.estimateFeesPerGas(),
   ]);
-  const perGas = fees.maxFeePerGas ?? fees.gasPrice ?? 0n;
-  const feeWei = gas * perGas;
-  return { feeWei, feeEth: formatUnits(feeWei, 18) };
+  return publicSendFee({ gas, maxFeePerGas: fees.maxFeePerGas, gasPrice: fees.gasPrice });
 }
 
 function useRecipient(to: Ref<string>): {
@@ -121,21 +121,21 @@ function useRecipient(to: Ref<string>): {
   let seq = 0;
 
   const stop = watch(to, (raw) => {
-    const q = raw.trim();
+    const c = classifyRecipientInput(raw);
     resolveErr.value = null;
     if (timer) { clearTimeout(timer); timer = null; }
-    if (!q) { resolved.value = null; resolving.value = false; return; }
-    if (isAddress(q)) { resolved.value = q.toLowerCase(); resolving.value = false; return; }
-    if (!looksLikeEns(q)) { resolved.value = null; resolving.value = false; return; }
+    if (c.kind === 'empty' || c.kind === 'invalid') { resolved.value = null; resolving.value = false; return; }
+    if (c.kind === 'address') { resolved.value = c.resolved; resolving.value = false; return; }
+    const q = raw.trim();
     resolving.value = true;
     const mine = ++seq;
     timer = setTimeout(() => {
       void (async (): Promise<void> => {
         try {
-          const addr = await resolveEnsName(q.toLowerCase());
+          const addr = await resolveEnsName(c.query);
           if (mine !== seq) return;
           if (addr) resolved.value = addr.toLowerCase();
-          else { resolved.value = null; resolveErr.value = `No address set for ${q}`; }
+          else { resolved.value = null; resolveErr.value = noAddressSetError(q); }
         } catch (e) {
           if (mine === seq) { resolved.value = null; resolveErr.value = (e as Error).message; }
         } finally {

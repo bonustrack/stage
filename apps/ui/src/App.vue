@@ -49,6 +49,11 @@ watchEffect(() => {
   <Col class="min-h-screen bg-metro-bg-light dark:bg-metro-bg-dark
     text-metro-fg-light dark:text-metro-fg-dark no-scrollbar"
     :class="showTabs ? 'pb-[60px]' : ''">
+    <!-- Mobile parity: app/(tabs)/_layout mounts a single HoistedTopnav above the
+         tab pager for index/contacts/wallet. We hoist it here for the same routes
+         so identity (avatar + name) lives in one 52px bar and each tab view
+         publishes its own right slot / search override via usePublishTopnav(). -->
+    <HoistedTopnav v-if="showTabs" />
     <RouterView />
     <!-- The TabBar only shows on the top-level tab routes (channels, contacts,
          settings hub, profile); mobile pushes conversation, group detail, user

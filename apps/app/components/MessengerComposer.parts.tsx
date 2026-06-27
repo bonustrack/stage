@@ -1,5 +1,5 @@
 
-import { Animated, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Image } from '@stage-labs/kit/react-native/image';
@@ -127,37 +127,3 @@ export function PendingRow({
   );
 }
 
-export function RecordingBar({
-  head, sub, levels, recordSecs, slideX, slideThresholdPx,
-}: {
-  head: string; sub: string; levels: number[]; recordSecs: number;
-  slideX: Animated.Value; slideThresholdPx: number;
-}): React.ReactElement {
-  return (
-    <Row height={28} padding={{ x: 4 }} align="center">
-      {}
-      <Animated.View style={{
-        flexDirection: 'row', alignItems: 'center', gap: 6,
-        transform: [{ translateX: slideX }],
-        opacity: slideX.interpolate({
-          inputRange: [-slideThresholdPx, -16, 0],
-          outputRange: [1, 0.7, 0.4],
-          extrapolate: 'clamp',
-        }),
-      }}>
-        <Icon name="arrowLeft" size={14} color={sub}/>
-        <Text size="xs" role="secondary">
-          Slide to cancel
-        </Text>
-      </Animated.View>
-      <Row height={28} flex={1} align="center" justify="end" style={{ overflow: 'hidden' }}>
-        {[...(Array<number>(Math.max(0, 40 - levels.length)).fill(0.05)), ...levels].slice(-40).map((lvl, i) => (
-          <Box width={3} radius="2xs" height={Math.max(3, Math.round(lvl * 26))} background={head} margin={{ x: 1 }} key={i} style={{ opacity: 0.85 }}/>
-        ))}
-      </Row>
-      <Text size="xs" role="secondary" style={{ minWidth: 40, textAlign: 'center' }}>
-        {Math.floor(recordSecs / 60)}:{(recordSecs % 60).toString().padStart(2, '0')}
-      </Text>
-    </Row>
-  );
-}

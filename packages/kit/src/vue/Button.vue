@@ -35,7 +35,12 @@ const props = withDefaults(
     dark?: boolean;
     tintBg?: string;
     tintFg?: string;
+    tintPressedBg?: string;
     radius?: number;
+    paddingX?: number | string;
+    paddingY?: number | string;
+    fontFamily?: string;
+    fontSize?: number;
   }>(),
   { size: 'md', disabled: false, loading: false },
 );
@@ -75,14 +80,34 @@ const square = computed(() => props.pill || props.uniform);
 const isDisabled = computed(() => props.disabled || props.loading);
 const spec = computed(() => SIZES[props.size]);
 
-const style = computed<Record<string, string>>(() => {
-  const c = colors.value;
-  const s = spec.value;
-  const css: Record<string, string> = {
-    height: `${s.height}px`,
-    paddingLeft: square.value ? '0' : `${s.paddingHorizontal}px`,
-    paddingRight: square.value ? '0' : `${s.paddingHorizontal}px`,
+function dim(value: number | string | undefined): string | undefined {
+  if (value === undefined) return undefined;
+  return typeof value === 'number' ? `${value}px` : value;
+}
+
+function buttonTypography(
+  s: (typeof SIZES)[ButtonSize],
+): { borderRadius: string; fontSize: string; fontFamily: string } {
+  return {
     borderRadius: `${props.radius ?? DEFAULT_RADIUS}px`,
+    fontSize: `${props.fontSize ?? s.fontSize}px`,
+    fontFamily: props.fontFamily ?? 'Calibre-Semibold',
+  };
+}
+
+function buildButtonCss(
+  c: VariantColors,
+  s: (typeof SIZES)[ButtonSize],
+  disabled: boolean,
+): Record<string, string> {
+  const padY = dim(props.paddingY);
+  const t = buttonTypography(s);
+  const padX = square.value ? '0' : dim(props.paddingX) ?? `${s.paddingHorizontal}px`;
+  const css: Record<string, string> = {
+    height: padY === undefined ? `${s.height}px` : 'auto',
+    paddingLeft: padX,
+    paddingRight: padX,
+    borderRadius: t.borderRadius,
     display: 'inline-flex',
     flexDirection: 'row',
     alignItems: 'center',
@@ -90,18 +115,42 @@ const style = computed<Record<string, string>>(() => {
     gap: `${s.gap}px`,
     backgroundColor: c.bg,
     color: c.text,
-    fontSize: `${s.fontSize}px`,
-    fontFamily: 'Calibre-Semibold',
+    fontSize: t.fontSize,
+    fontFamily: t.fontFamily,
     fontWeight: '600',
     borderWidth: c.borderColor ? '1px' : '0',
     borderStyle: 'solid',
     borderColor: c.borderColor ?? 'transparent',
-    cursor: isDisabled.value ? 'default' : 'pointer',
-    opacity: isDisabled.value ? '0.4' : '1',
+    cursor: disabled ? 'default' : 'pointer',
+    opacity: disabled ? '0.4' : '1',
   };
-  if (square.value) css.width = `${s.height}px`;
-  else if (stretch.value) css.width = '100%';
+  applyButtonExtras(css, { padY, square: square.value, stretch: stretch.value, height: s.height });
   return css;
+}
+
+const style = computed<Record<string, string>>(() =>
+  buildButtonCss(colors.value, spec.value, isDisabled.value),
+);
+
+function applyButtonExtras(
+  css: Record<string, string>,
+  o: { padY: string | undefined; square: boolean; stretch: boolean; height: number },
+): void {
+  if (o.padY !== undefined) {
+    css.paddingTop = o.padY;
+    css.paddingBottom = o.padY;
+  }
+  if (o.square) css.width = `${o.height}px`;
+  else if (o.stretch) css.width = '100%';
+}
+
+const hasPressedBg = computed(() => props.tintPressedBg !== undefined);
+
+const rootStyle = computed<Record<string, string>>(() => {
+  const pressed = props.tintPressedBg;
+  return pressed === undefined
+    ? style.value
+    : { ...style.value, '--kit-btn-pressed-bg': pressed };
 });
 
 function onClick(event: MouseEvent): void {
@@ -111,9 +160,21 @@ function onClick(event: MouseEvent): void {
 </script>
 
 <template>
-  <button type="button" :style="style" :disabled="isDisabled" @click="onClick">
+  <button
+    type="button"
+    :style="rootStyle"
+    :class="{ 'kit-btn-pressable': hasPressedBg }"
+    :disabled="isDisabled"
+    @click="onClick"
+  >
     <slot name="iconStart" />
     <slot>{{ label }}</slot>
     <slot name="iconEnd" />
   </button>
 </template>
+
+<style scoped>
+.kit-btn-pressable:active:not(:disabled) {
+  background-color: var(--kit-btn-pressed-bg) !important;
+}
+</style>

@@ -1,13 +1,11 @@
 <script setup lang="ts">
 
-import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import { stampAvatarUrl, shortAddress } from '../lib/xmtp';
+import { shortAddress } from '../lib/xmtp';
 import { isAddressLike, isDomainLike, resolveDomain } from '../lib/stamp';
 import { useEffectiveScheme } from '@/lib/kitTheme';
 import type { PickedMember } from '../lib/memberPicker';
 
 const scheme = useEffectiveScheme();
-const palette = useKitPalette();
 
 const props = defineProps<{
   members: PickedMember[];
@@ -98,38 +96,19 @@ async function onAdd(): Promise<void> {
       <Text v-if="errorMsg" size="xs" role="danger">{{ errorMsg }}</Text>
     </Col>
 
-    <!-- Selected members list with per-row remove, mirroring mobile. -->
+    <!-- Selected members list with per-row remove, mirroring mobile. Each row
+         renders from Kit JSON via the shared memberRow builder (MemberRow.vue). -->
     <Col v-if="props.members.length > 0" :gap="8">
-      <Row
+      <MemberRow
         v-for="m in props.members"
         :key="m.address"
-        surface="raised"
-        radius="lg"
-        :padding="8"
-        align="center"
-        :gap="10"
-        :style="{ borderWidth: '1px', borderStyle: 'solid', borderColor: palette.border }"
-      >
-        <AvatarView :src="stampAvatarUrl(m.address, 64)" :size="32" :placeholder-color="palette.border" />
-        <Col class="flex-1 min-w-0" :gap="1">
-          <Text size="md" truncate>{{ m.label }}</Text>
-          <Text
-            v-if="m.label !== shortAddress(m.address)"
-            size="xs"
-            role="secondary"
-            truncate
-          >{{ shortAddress(m.address) }}</Text>
-        </Col>
-        <Pressable
-          tag="button"
-          type="button"
-          class="flex items-center justify-center shrink-0"
-          :style="{ width: '30px', height: '30px', borderRadius: '15px', borderWidth: '1px', borderStyle: 'solid', borderColor: palette.border }"
-          @click="emit('remove', m.address)"
-        >
-          <Icon name="x" :size="16" :color="palette.sub" />
-        </Pressable>
-      </Row>
+        :address="m.address"
+        :name="m.label !== shortAddress(m.address) ? m.label : null"
+        :is-self="false"
+        :removing="false"
+        :can-remove="true"
+        @remove="emit('remove', m.address)"
+      />
     </Col>
   </Col>
 </template>

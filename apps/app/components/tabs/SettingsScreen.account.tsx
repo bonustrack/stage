@@ -8,6 +8,18 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Card } from '@stage-labs/kit/react-native/card';
 import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import type {
+  ListViewItemNode,
+  ListViewNode,
+  WidgetActionRegistry,
+} from '@stage-labs/kit/kit';
+import {
+  settingsNavRow,
+  settingsButtonRow,
+  SETTINGS_NAV_PRESS,
+  SETTINGS_BUTTON_PRESS,
+} from '@stage-labs/views';
 import { Box, Col } from '../layout';
 import { flash } from '../../lib/toast';
 import {
@@ -49,38 +61,22 @@ function confirmRemove(rec: AccountRecord): void {
   );
 }
 
-function ExportKeyRow({ c, dark, rec, revealed, setRevealed }: {
-  c: SectionColors; dark: boolean; rec: AccountRecord; revealed: string | null; setRevealed: (pk: string) => void;
+function RevealedKeyRow({ c, dark, revealed }: {
+  c: SectionColors; dark: boolean; revealed: string;
 }): React.ReactElement {
   return (
     <ListViewItem
       dark={dark}
-      align={revealed ? 'start' : 'center'}
-      onPress={revealed
-        ? () => { void Clipboard.setStringAsync(revealed); flash('Private key copied'); }
-        : () => { confirmExport(rec, setRevealed); }}
+      align="start"
+      onPress={() => { void Clipboard.setStringAsync(revealed); flash('Private key copied'); }}
       style={{ paddingHorizontal: 14, paddingVertical: 14 }}
     >
       <Icon name="wallet" size={22} color={c.head} />
       <Col flex={1}>
-        <Text size="xl" color={c.fg}>{revealed ? 'Tap to copy private key' : 'Export private key'}</Text>
-        {revealed ? <Text size="xs" selectable color={c.sub} style={{ marginTop: 4 }}>{revealed}</Text> : null}
+        <Text size="xl" color={c.fg}>Tap to copy private key</Text>
+        <Text size="xs" selectable color={c.sub} style={{ marginTop: 4 }}>{revealed}</Text>
       </Col>
-      <Icon name={revealed ? 'copy' : 'chevronDown'} size={20} color={c.head} />
-    </ListViewItem>
-  );
-}
-
-function RecoveryRow({ c, dark, rec, onPress }: {
-  c: SectionColors; dark: boolean; rec: AccountRecord; onPress: () => void;
-}): React.ReactElement {
-  return (
-    <ListViewItem dark={dark} onPress={onPress} style={{ paddingHorizontal: 14, paddingVertical: 14 }}>
-      <Icon name="userGroup" size={22} color={c.head} />
-      <Text size="xl" color={c.fg} style={{ flex: 1 }}>
-        {(rec.guardians ?? []).length ? 'Guardian recovery' : 'Set up guardian recovery'}
-      </Text>
-      <Icon name="chevronRight" size={20} color={c.head} />
+      <Icon name="copy" size={20} color={c.head} />
     </ListViewItem>
   );
 }
@@ -100,30 +96,64 @@ function useActiveRecord(epoch: number): [AccountRecord | null, string | null, R
 }
 
 export function AccountSecuritySection(
-  { c, danger, dark }: { c: SectionColors; danger: string; dark: boolean },
+  { c, dark }: { c: SectionColors; danger?: string; dark: boolean },
 ): React.ReactElement | null {
   const epoch = useActiveAccount();
   const router = useRouter();
   const [rec, revealed, setRevealed] = useActiveRecord(epoch);
 
   if (!rec) return null;
+
+  const rows: ListViewItemNode[] = [];
+  if (canExportPrivateKey(rec) && !revealed) {
+    rows.push(settingsNavRow({
+      label: 'Export private key',
+      iconStart: 'wallet',
+      iconEnd: 'chevronDown',
+      pressType: SETTINGS_BUTTON_PRESS,
+      payload: { action: 'export' },
+    }));
+  }
+  if (rec.type === 'smart') {
+    rows.push(settingsNavRow({
+      label: (rec.guardians ?? []).length ? 'Guardian recovery' : 'Set up guardian recovery',
+      iconStart: 'userGroup',
+      pressType: SETTINGS_NAV_PRESS,
+      payload: { href: '/wallet/recovery' },
+    }));
+  }
+  rows.push(settingsButtonRow({
+    label: 'Remove account',
+    iconStart: 'trash',
+    clickType: SETTINGS_BUTTON_PRESS,
+    payload: { action: 'remove' },
+    danger: true,
+  }));
+
+  const node: ListViewNode = { type: 'ListView', children: rows };
+
+  const registry: WidgetActionRegistry = {
+    [SETTINGS_NAV_PRESS]: (action) => {
+      const href = action.payload.href;
+      if (typeof href === 'string') router.push(href);
+    },
+    [SETTINGS_BUTTON_PRESS]: (action) => {
+      if (action.payload.action === 'export') confirmExport(rec, setRevealed);
+      else if (action.payload.action === 'remove') confirmRemove(rec);
+    },
+  };
+
   return (
     <>
       <Text size="xs" color={c.sub} style={{ paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8 }}>ACCOUNT</Text>
       <Box margin={{ x: 16 }} style={{ overflow: 'hidden' }}>
         <Card dark={dark} background={c.rowBg} padding={0}>
-          <ListView dark={dark}>
-            {canExportPrivateKey(rec)
-              ? <ExportKeyRow c={c} dark={dark} rec={rec} revealed={revealed} setRevealed={setRevealed} />
-              : null}
-            {rec.type === 'smart'
-              ? <RecoveryRow c={c} dark={dark} rec={rec} onPress={() => { router.push('/wallet/recovery'); }} />
-              : null}
-            <ListViewItem dark={dark} onPress={() => { confirmRemove(rec); }} style={{ paddingHorizontal: 14, paddingVertical: 14 }}>
-              <Icon name="trash" size={22} color={danger} />
-              <Text size="xl" color={danger} style={{ flex: 1 }}>Remove account</Text>
-            </ListViewItem>
-          </ListView>
+          {revealed && canExportPrivateKey(rec) ? (
+            <ListView dark={dark}>
+              <RevealedKeyRow c={c} dark={dark} revealed={revealed} />
+            </ListView>
+          ) : null}
+          <KitRenderer node={node} registry={registry}/>
         </Card>
       </Box>
     </>

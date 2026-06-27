@@ -1,101 +1,42 @@
 
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
+import { pollCard, POLL_OPTION_PRESS, type PollQuestion as ViewPollQuestion } from '@stage-labs/views';
 
-import { Text } from '@stage-labs/kit/react-native/text';
-import { Row, Box } from './layout';
+import { Box } from './layout';
 import type { Poll, PollQuestion } from './MessengerBubble.helpers';
-import { usePalette, useBlockRadius, withAlpha } from '../lib/theme';
+import { usePalette, withAlpha } from '../lib/theme';
 import { OpenAnswerBlock } from './MessengerBubble.poll.open';
 
 type PollVotes = Map<number, Map<number, Set<string>>>;
 type PollOwn = Map<number, Set<number>>;
 type OpenByQ = Map<number, Map<string, { text: string; ts: string }>>;
 
-function pollOptionBg(isOn: boolean, pressed: boolean, dark: boolean, linkColor: string): string {
-  if (isOn) return withAlpha(linkColor, dark ? 0.22 : 0.16);
-  if (pressed) return dark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.08)';
-  return dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
-}
-
-function PollOption({ opt, isOn, count, pct, multi, dark, sub, onPress }: {
-  opt: PollQuestion['options'][number]; isOn: boolean; count: number; pct: number;
-  multi: boolean; dark: boolean; sub: string; onPress: () => void;
-}): React.ReactElement {
-  const pal = usePalette();
-  const radius = useBlockRadius();
-  const restBorder = dark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)';
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius, overflow: 'hidden',
-        backgroundColor: pollOptionBg(isOn, pressed, dark, pal.link),
-        borderWidth: 1,
-        borderColor: isOn ? pal.link : restBorder,
-      })}
-    >
-      <Box width={`${pct}%`} background={withAlpha(pal.link, dark ? 0.16 : 0.12)}
-        pointerEvents="none"
-        style={{ position: 'absolute', left: 0, top: 0, bottom: 0 }}
-      />
-      <Row align="center" justify="between">
-        <Text size="xl" color={isOn ? '#fff' : pal.text} style={{ flexShrink: 1 }}>
-          {isOn ? '✓  ' : (multi ? '☐  ' : '')}{opt.label}
-        </Text>
-        <Text weight="semibold" size="md" color={isOn ? '#fff' : sub} style={{ marginLeft: 8 }}>
-          {count}
-        </Text>
-      </Row>
-      {opt.description ? (
-        <Text size="sm" role="secondary" style={{ marginTop: 2 }}>
-
-        </Text>
-      ) : null}
-    </Pressable>
-  );
-}
-
-function PollQuestionBlock({ q, qi, sub, dark, votes, own, onVote, openAnswers, mine, onOpenAnswer }: {
-  q: PollQuestion; qi: number; sub: string; dark: boolean;
-  votes?: Map<number, Set<string>>;
-  own?: Set<number>;
-  onVote: (optionIndex: number, action: 'added' | 'removed') => void;
-  openAnswers?: Map<string, { text: string; ts: string }>;
-  mine?: string;
-  onOpenAnswer?: (text: string) => void;
-}): React.ReactElement {
-  const multi = q.multiSelect === true;
+function buildQuestion(
+  q: PollQuestion,
+  votes: Map<number, Set<string>> | undefined,
+  own: Set<number> | undefined,
+  showQuestion: boolean,
+): ViewPollQuestion {
   const options = Array.isArray(q.options) ? q.options : [];
   const total = options.reduce((n, _o, i) => n + (votes?.get(i)?.size ?? 0), 0);
-  const tap = (idx: number): void => { onVote(idx, (own?.has(idx) ?? false) ? 'removed' : 'added'); };
-  return (
-    <Box gap={6} style={{ alignSelf: 'stretch' }}>
-      {q.header ? (
-        <Text weight="semibold" size="xs" role="secondary" style={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
-          {q.header}{multi ? ' · multi-select' : ''}{q.open ? ' · open' : ''}
-        </Text>
-      ) : null}
-      {options.map((opt, i) => {
-        const count = votes?.get(i)?.size ?? 0;
-        const isOn = own?.has(i) ?? false;
-        const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-        return (
-          <PollOption
-            key={`${i}-${opt.label}`} opt={opt} isOn={isOn} count={count} pct={pct}
-            multi={multi} dark={dark} sub={sub} onPress={() => { tap(i); }}
-          />
-        );
-      })}
-      {options.length > 0 ? (
-        <Text size="xs" role="secondary" style={{ marginTop: 2 }}>
-          {total} vote{total === 1 ? '' : 's'}{q.open ? ' · or type your own' : ''}
-        </Text>
-      ) : null}
-      {q.open && onOpenAnswer ? (
-        <OpenAnswerBlock qi={qi} sub={sub} dark={dark} answers={openAnswers} mine={mine} onSubmit={onOpenAnswer}/>
-      ) : null}
-    </Box>
-  );
+  const multi = q.multiSelect === true;
+  const suffix = q.open === true ? ' · open' : '';
+  return {
+    question: showQuestion ? q.question : '',
+    header: q.header !== undefined ? `${q.header}${suffix}` : undefined,
+    multiSelect: multi,
+    total,
+    options: options.map((opt, i) => {
+      const votesN = votes?.get(i)?.size ?? 0;
+      return {
+        label: opt.label,
+        votes: votesN,
+        pct: total > 0 ? Math.round((votesN / total) * 100) : 0,
+        selected: own?.has(i) ?? false,
+      };
+    }),
+  };
 }
 
 export function PollView({ poll, dark, sub, votes, ownVotes, onVote, openAnswers, onOpenAnswer, myUri }: {
@@ -107,24 +48,44 @@ export function PollView({ poll, dark, sub, votes, ownVotes, onVote, openAnswers
   onOpenAnswer?: (questionIndex: number, text: string) => void;
   myUri?: string;
 }): React.ReactElement {
-  const multiQuestion = poll.questions.length> 1;
+  const pal = usePalette();
+  const multiQuestion = poll.questions.length > 1;
+  const questions = poll.questions.map((q, qi) =>
+    buildQuestion(q, votes?.get(qi), ownVotes?.get(qi), multiQuestion && qi > 0),
+  );
+  const node: WidgetRoot = {
+    type: 'Basic',
+    children: [
+      pollCard({
+        questions,
+        dispatchPress: true,
+        fillBackground: withAlpha(pal.link, dark ? 0.16 : 0.12),
+        selectedBackground: withAlpha(pal.link, dark ? 0.22 : 0.16),
+        selectedBorderColor: pal.link,
+        borderColor: dark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)',
+      }),
+    ],
+  };
+  const registry: WidgetActionRegistry = {
+    [POLL_OPTION_PRESS]: (action) => {
+      const qi = Number(action.payload.questionIndex);
+      const oi = Number(action.payload.optionIndex);
+      const selected = action.payload.selected === true || action.payload.selected === 'true';
+      if (Number.isNaN(qi) || Number.isNaN(oi)) return;
+      onVote(qi, oi, selected ? 'removed' : 'added');
+    },
+  };
   return (
     <Box margin={{ top: 8 }} gap={12} style={{ alignSelf: 'stretch' }}>
+      <KitRenderer node={node} registry={registry} />
       {poll.questions.map((q, qi) => (
-        <Box key={`q-${qi}`} gap={6} style={{ alignSelf: 'stretch' }}>
-          {multiQuestion && qi> 0 ? (
-            <Text weight="semibold" size="3xl">{q.question}</Text>
-          ) : null}
-          <PollQuestionBlock
-            q={q} qi={qi} sub={sub} dark={dark}
-            votes={votes?.get(qi)}
-            own={ownVotes?.get(qi)}
-            onVote={(o, a) => { onVote(qi, o, a); }}
-            openAnswers={openAnswers?.get(qi)}
-            mine={myUri}
-            onOpenAnswer={onOpenAnswer ? (text) => { onOpenAnswer(qi, text); } : undefined}
-/>
-        </Box>
+        q.open === true && onOpenAnswer ? (
+          <OpenAnswerBlock
+            key={`open-${qi}`} qi={qi} sub={sub} dark={dark}
+            answers={openAnswers?.get(qi)} mine={myUri}
+            onSubmit={(text) => { onOpenAnswer(qi, text); }}
+          />
+        ) : null
       ))}
     </Box>
   );

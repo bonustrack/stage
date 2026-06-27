@@ -1,5 +1,10 @@
 <script setup lang="ts">
 
+import { computed } from 'vue';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import { previewLinkCard, LINK_OPEN } from '@stage-labs/views';
+import { listRoot } from '@/lib/kitRow';
 import { osmTileUrl } from '../lib/embedDetect';
 
 const props = defineProps<{ lat: number; lng: number; sourceUrl: string }>();
@@ -7,18 +12,28 @@ const props = defineProps<{ lat: number; lng: number; sourceUrl: string }>();
 const tileUrl = computed(() => osmTileUrl(props.lat, props.lng, 14));
 const label = computed(() => `${props.lat.toFixed(4)}, ${props.lng.toFixed(4)}`);
 
-function open(): void { window.open(props.sourceUrl, '_blank', 'noopener'); }
+const node = computed(() =>
+  listRoot(
+    previewLinkCard({
+      url: props.sourceUrl,
+      title: 'Location',
+      subtitle: `${label.value} · tap to open`,
+      imageUri: tileUrl.value,
+    }),
+  ),
+);
+
+const registry: WidgetActionRegistry = {
+  [LINK_OPEN]: () => {
+    window.open(props.sourceUrl, '_blank', 'noopener');
+  },
+};
 </script>
 
 <template>
-  <MediaCard :on-press="open">
-    <Col class="relative aspect-square bg-metro-bg-dark">
-      <img :src="tileUrl" :alt="`Map at ${label}`" class="w-full h-full object-cover" />
-      <Row class="absolute inset-0 flex items-center justify-center text-3xl">📍</Row>
-    </Col>
-    <Col class="px-2.5 py-1.5">
-      <Col class="text-xs text-metro-head-light dark:text-metro-head-dark font-head">Location</Col>
-      <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">{{ label }} · tap to open</Col>
-    </Col>
-  </MediaCard>
+  <!-- Static OSM map tile thumbnail + caption + tap-to-open, rendered from
+       Kit JSON via previewLinkCard (static Image + Text + LINK_OPEN). The
+       decorative centered 📍 overlay is dropped (an absolute overlay is not
+       expressible in Kit JSON). -->
+  <KitRenderer :node="node" :registry="registry" />
 </template>

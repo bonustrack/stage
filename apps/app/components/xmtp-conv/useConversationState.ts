@@ -9,7 +9,7 @@ import { markConvRead } from '../../modules/messaging';
 import { getGithubLink } from '../../modules/messaging';
 import { useCachedGroupString } from './useCachedGroupString';
 import { markConvAtBottom } from '../../lib/scrollPos';
-import type { HistoryEntry } from '../../lib/types';
+import type { HistoryEntry } from '@stage-labs/client/types';
 import { useReactionsLayer } from './useReactionsLayer';
 import { useVotesLayer } from './useVotesLayer';
 import { useTxSignLayer } from './useTxSignLayer';

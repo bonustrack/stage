@@ -3,14 +3,17 @@
 import { getOrCreateXmtpClient, shortAddress } from '../lib/xmtp';
 import { loadCachedProfile, readProfile, type SnapshotProfile } from '../lib/profile';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
+import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { BasicNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
+import { profileHeader, profileAddressRow, PROFILE_ADDRESS_COPY } from '@stage-labs/views';
 
+const palette = useKitPalette();
 const AVATAR_SIZE = 88;
 
 const address = ref('');
-const inboxId = ref('');
 const profile = ref<SnapshotProfile>({});
 const loaded = ref(false);
-const copyHint = ref<'address' | 'inboxId' | null>(null);
 
 const displayName = computed(() => {
   const trimmed = profile.value.name?.trim();
@@ -22,7 +25,6 @@ onMounted(async () => {
   try {
     const client = await getOrCreateXmtpClient('production');
     address.value = client.accountIdentifier?.identifier ?? '';
-    inboxId.value = client.inboxId ?? '';
     const cached = address.value ? loadCachedProfile(address.value) : null;
     if (cached) profile.value = cached;
     loaded.value = true;
@@ -33,70 +35,72 @@ onMounted(async () => {
   } catch { }
 });
 
-async function copy(value: string, label: 'address' | 'inboxId'): Promise<void> {
-  if (!value) return;
+async function copyAddress(): Promise<void> {
+  if (!address.value) return;
   try {
-    await navigator.clipboard.writeText(value);
-    copyHint.value = label;
-    setTimeout(() => { copyHint.value = null; }, 1500);
+    await navigator.clipboard.writeText(address.value);
   } catch { }
 }
+
+const nameNode = computed<BasicNode>(() => ({
+  type: 'Basic',
+  children: [profileHeader({ name: displayName.value })],
+}));
+
+const addressNode = computed<BasicNode>(() => ({
+  type: 'Basic',
+  children: [
+    profileAddressRow({
+      address: address.value,
+      label: shortAddress(address.value),
+      color: palette.text,
+    }),
+  ],
+}));
+
+const registry: WidgetActionRegistry = {
+  [PROFILE_ADDRESS_COPY]: () => { void copyAddress(); },
+};
 </script>
 
 <template>
-  <Col class="min-h-screen">
-    <Row class="flex items-center justify-between px-4 pt-4 pb-2">
-      <Title :level="1" class="font-head text-xl text-metro-head-light dark:text-metro-head-dark">Profile</Title>
-    </Row>
+  <Col class="min-h-screen" surface="surface">
+    <!-- Banner: 140px tall, border-colored, behind the surface card —
+         mirroring mobile ProfileScreen ProfileIdentity. -->
+    <Col :style="{ height: '140px', backgroundColor: palette.border }" />
 
-    <Col class="flex flex-col items-center pt-6 pb-4">
+    <!-- Identity: avatar overlaps a surface card via negative top margin, with a
+         3px bg-color border ring (mobile surface card margin top -18, avatar 88
+         marginTop -70.4, borderWidth 3). Self view: no actions, no channels. -->
+    <Col
+      surface="surface"
+      class="px-4 pb-2 items-start"
+      :style="{ marginTop: '-18px', borderTopLeftRadius: '18px', borderTopRightRadius: '18px' }"
+    >
       <img v-if="address && loaded"
         :src="avatarRenderUrl(address, profile.avatar, AVATAR_SIZE * 2)"
         alt=""
-        :width="AVATAR_SIZE" :height="AVATAR_SIZE"
-        class="rounded-full bg-metro-border-dark object-cover"
-        :style="{ width: `${AVATAR_SIZE}px`, height: `${AVATAR_SIZE}px` }"
+        :style="{
+          width: AVATAR_SIZE + 'px', height: AVATAR_SIZE + 'px',
+          marginTop: -(AVATAR_SIZE * 0.8) + 'px', zIndex: 1,
+          borderWidth: '3px', borderStyle: 'solid', borderColor: palette.bg,
+        }"
+        class="rounded-full bg-metro-border-light dark:bg-metro-border-dark object-cover"
       />
-      <Col v-else class="rounded-full bg-metro-border-dark" :style="{ width: `${AVATAR_SIZE}px`, height: `${AVATAR_SIZE}px` }" />
-      <Text size="4xl" weight="semibold" class="mt-3.5 text-metro-head-light dark:text-metro-head-dark">
-        {{ displayName }}
-      </Text>
-      <Col v-if="profile.about"
-        class="text-[13px] text-metro-sub-light dark:text-metro-sub-dark mt-1.5 px-6 text-center max-w-md">
-        {{ profile.about }}
+      <Col v-else
+        class="rounded-full bg-metro-border-light dark:bg-metro-border-dark"
+        :style="{
+          width: AVATAR_SIZE + 'px', height: AVATAR_SIZE + 'px',
+          marginTop: -(AVATAR_SIZE * 0.8) + 'px', zIndex: 1,
+          borderWidth: '3px', borderStyle: 'solid', borderColor: palette.bg,
+        }"
+      />
+      <Col class="mt-3.5 w-full">
+        <KitRenderer :node="nameNode" />
+      </Col>
+      <Col v-if="address" class="mt-0.5">
+        <KitRenderer :node="addressNode" :registry="registry" />
       </Col>
     </Col>
-
-    <Pressable
-      tag="button"
-      v-if="address" type="button"
-      class="block w-[calc(100%-2rem)] mx-4 mt-2 p-3 rounded-xl text-left
-        bg-metro-surface-light dark:bg-metro-surface-dark
-        border border-metro-border-light dark:border-metro-border-dark"
-      @click="copy(address, 'address')"
-    >
-      <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">
-        WALLET ADDRESS ({{ copyHint === 'address' ? 'copied!' : 'tap to copy' }})
-      </Col>
-      <Col class="text-[13px] text-metro-fg-light dark:text-metro-fg-dark mt-1 break-all">
-        {{ address }}
-      </Col>
-    </Pressable>
-
-    <Pressable
-      tag="button"
-      v-if="inboxId" type="button"
-      class="block w-[calc(100%-2rem)] mx-4 mt-3 p-3 rounded-xl text-left
-        bg-metro-surface-light dark:bg-metro-surface-dark
-        border border-metro-border-light dark:border-metro-border-dark"
-      @click="copy(inboxId, 'inboxId')"
-    >
-      <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark">
-        XMTP INBOX ID ({{ copyHint === 'inboxId' ? 'copied!' : 'tap to copy' }})
-      </Col>
-      <Col class="text-[13px] text-metro-fg-light dark:text-metro-fg-dark mt-1 truncate">
-        {{ inboxId }}
-      </Col>
-    </Pressable>
   </Col>
 </template>

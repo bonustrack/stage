@@ -24,11 +24,25 @@ export { default as Table } from './Table.vue';
 export { default as TableRow } from './TableRow.vue';
 export { default as TableCell } from './TableCell.vue';
 export { default as Scroll } from './Scroll.vue';
+export { default as Paragraph } from './Paragraph.vue';
+export { default as Dialog } from './Dialog.vue';
 export { default as Pressable } from './Pressable.vue';
 export { default as FlatList } from './FlatList.vue';
 export { default as ListView } from './ListView.vue';
 export { default as ListViewItem } from './ListViewItem.vue';
 export { default as Markdown } from './Markdown.vue';
+export { default as KitRenderer } from './KitRenderer.vue';
+export { default as Spinner } from './Spinner.vue';
+export { default as Switch } from './Switch.vue';
+export { default as Tabs } from './Tabs.vue';
+export { default as AvatarStack } from './AvatarStack.vue';
+export { default as QRCode } from './QRCode.vue';
+export { default as AudioPlayer } from './AudioPlayer.vue';
+export { default as VideoPlayer } from './VideoPlayer.vue';
+export { default as TextField } from './TextField.vue';
+export { default as ColorPicker } from './ColorPicker.vue';
+export { default as GesturePressable } from './GesturePressable.vue';
+export { default as Popover } from './Popover.vue';
 export {
   provideKitTheme,
   useKitPalette,

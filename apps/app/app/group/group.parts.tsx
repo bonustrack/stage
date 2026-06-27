@@ -1,13 +1,17 @@
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { fontSize } from '@stage-labs/kit/tokens';
-import { Input } from '@stage-labs/kit/react-native/input';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Box, Col } from '../../components/layout';
+import { Box } from '../../components/layout';
 import { shortAddress } from '../../modules/messaging';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { Avatar } from '../../components/Avatar';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
+import {
+  basicRoot, memberRow, memberTextField,
+  MEMBER_PRESS, MEMBER_REMOVE, MEMBER_FIELD_CHANGE,
+} from '@stage-labs/views';
+import { stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { AppModal } from '../../components/AppModal';
 import { DANGER, usePalette } from '../../lib/theme';
 
@@ -15,37 +19,8 @@ interface Pal { fg: string; head: string; sub: string; border: string; rowBg: st
 
 type MemberRole = 'owner' | 'admin' | 'member' | undefined;
 
-function MemberRoleBadge({ role, sub, border, dark }: {
-  role: MemberRole; sub: string; border: string; dark: boolean;
-}): React.ReactElement | null {
-  if (!role || role === 'member') return null;
-  const isOwner = role === 'owner';
-  const background = isOwner ? (dark ? 'rgba(45,212,191,0.18)' : 'rgba(13,148,136,0.12)') : border;
-  const color = isOwner ? (dark ? '#2dd4bf' : '#0d9488') : sub;
-  return (
-    <Box radius="full" background={background} padding={{ x: 8, y: 2 }}>
-      <Text size="3xs" color={color}>{isOwner ? 'Owner' : 'Admin'}</Text>
-    </Box>
-  );
-}
-
-function MemberRemoveButton({ isSelf, isRemovingThis, dark, onRemove }: {
-  isSelf: boolean; isRemovingThis: boolean; dark: boolean; onRemove: () => void;
-}): React.ReactElement | null {
-  if (isSelf) return null;
-  return (
-    <Pressable
-      onPress={onRemove}
-      disabled={isRemovingThis}
-      hitSlop={10}
-      style={({ pressed }) => ({
-        padding: 6, borderRadius: 999,
-        backgroundColor: pressed ? (dark ? '#3a1820' : '#fbe3e8') : 'transparent',
-      })}
->
-      <Icon name="trash" size={18} color={DANGER}/>
-    </Pressable>
-  );
+function memberBadgeRole(role: MemberRole): 'owner' | 'admin' | undefined {
+  return role === 'owner' || role === 'admin' ? role : undefined;
 }
 
 export function MemberRow({
@@ -55,38 +30,38 @@ export function MemberRow({
   role: MemberRole; name: string | null | undefined;
   dark: boolean; p: Pal; onPress: () => void; onRemove: () => void;
 }): React.ReactElement {
-  const { head, sub, border } = p;
+  const { sub, border } = p;
   const displayName = name == null || name === '' ? shortAddress(item) : name;
+  const node: WidgetRoot = {
+    type: 'ListView',
+    children: [
+      memberRow({
+        memberId: item,
+        avatarUri: stampAvatarUrl(item, 40),
+        name: `${displayName}${isSelf ? ' (you)' : ''}`,
+        address: name ? shortAddress(item) : undefined,
+        role: memberBadgeRole(role),
+        removable: !isSelf,
+        dark,
+        borderColor: border,
+        subColor: sub,
+        dangerColor: DANGER,
+        removePressedBg: dark ? '#3a1820' : '#fbe3e8',
+      }),
+    ],
+  };
+  const registry: WidgetActionRegistry = {
+    [MEMBER_PRESS]: () => {
+      if (!isRemovingThis) onPress();
+    },
+    [MEMBER_REMOVE]: () => {
+      if (!isRemovingThis) onRemove();
+    },
+  };
   return (
-    <Pressable
-      onPress={onPress}
-      disabled={isRemovingThis}
-      style={({ pressed }) => ({
-        backgroundColor: pressed ? border : 'transparent',
-        flexDirection: 'row', alignItems: 'center', gap: 12,
-        paddingHorizontal: 14, paddingVertical: 14,
-        borderBottomWidth: 1, borderBottomColor: border,
-        opacity: isRemovingThis ? 0.5 : 1,
-      })}
->
-      <Avatar
-        address={item}
-        size="md"
-        style={{ backgroundColor: border }}
-/>
-      <Col minWidth={0} flex={1}>
-        <Text weight="semibold" size="md" color={head} numberOfLines={1}>
-          {displayName}{isSelf ? ' (you)' : ''}
-        </Text>
-        {name ? (
-          <Text size="xs" role="secondary" style={{ marginTop: 2 }} numberOfLines={1}>
-            {shortAddress(item)}
-          </Text>
-        ) : null}
-      </Col>
-      <MemberRoleBadge role={role} sub={sub} border={border} dark={dark}/>
-      <MemberRemoveButton isSelf={isSelf} isRemovingThis={isRemovingThis} dark={dark} onRemove={onRemove}/>
-    </Pressable>
+    <Box style={{ opacity: isRemovingThis ? 0.5 : 1 }}>
+      <KitRenderer node={node} registry={registry} />
+    </Box>
   );
 }
 
@@ -102,20 +77,29 @@ export function AddMemberModal({
   return (
     <AppModal visible={visible} onClose={onClose}>
       <Box>
-        <Input
-          value={addDraft}
-          onChangeText={setAddDraft}
-          placeholder="0x… Ethereum address"
-          placeholderTextColor={sub}
-          autoFocus
-          dark={dark}
-          inputProps={{ autoCorrect: false, autoCapitalize: 'none' }}
-          style={{
-            color: fg, backgroundColor: inputBg,
-            borderWidth: 1, borderColor: border, borderRadius: 10,
-            paddingHorizontal: 12, paddingVertical: 10, fontSize: fontSize('md'), marginBottom: 10,
-          }}
-/>
+        <Box margin={{ bottom: 10 }}>
+          <KitRenderer
+            node={basicRoot(memberTextField({
+              value: addDraft,
+              placeholder: '0x… Ethereum address',
+              color: fg,
+              placeholderColor: sub,
+              inputBg,
+              border,
+              radius: 10,
+              paddingX: 12,
+              paddingY: 10,
+              autoFocus: true,
+              autoCapitalize: 'none',
+              autoCorrect: false,
+            }))}
+            registry={{
+              [MEMBER_FIELD_CHANGE]: (a) => {
+                if (typeof a.payload.field === 'string') setAddDraft(a.payload.field);
+              },
+            }}
+          />
+        </Box>
         <Button
           variant="primary"
           size="md"

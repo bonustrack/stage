@@ -1,6 +1,6 @@
 import { formatEther, type Hex } from 'viem';
 import { getOrCreateXmtpClient } from '../../modules/messaging';
-import { getSimplePrices } from '../../lib/coingecko';
+import { getSimplePrices } from '@stage-labs/client/api/coingecko';
 import type { CgPrice } from '@stage-labs/client/api/coingecko';
 import { publicClientFor } from '@stage-labs/client/wallet/client';
 
@@ -10,10 +10,6 @@ export const multicall3Abi = [{
   inputs: [{ name: 'a', type: 'address' }],
   outputs: [{ name: 'b', type: 'uint256' }],
 }] as const;
-
-export function looksLikeEns(s: string): boolean {
-  return /^[a-z0-9-]+(\.[a-z0-9-]+)+\.eth$|^[a-z0-9-]+\.eth$/i.test(s.trim());
-}
 
 export async function fetchBalanceAndPrice(): Promise<{
   ethBalance: string | null;

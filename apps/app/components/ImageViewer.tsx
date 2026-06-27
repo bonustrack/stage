@@ -1,8 +1,9 @@
 
 import { useState } from 'react';
 
-import { Alert, Modal, Platform } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Dialog } from '@stage-labs/kit/react-native/dialog';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Col } from './layout';
@@ -70,7 +71,7 @@ export function ImageViewer({ uri, visible, onClose }: {
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Dialog open={visible} onClose={onClose} animationType="fade" backdrop={false} fullBleedPanel>
       <Col background={'rgba(0,0,0,0.97)'} flex={1}>
         {}
         <Pressable
@@ -112,6 +113,6 @@ export function ImageViewer({ uri, visible, onClose }: {
           </Pressable>
         </Box>
       </Col>
-    </Modal>
+    </Dialog>
   );
 }

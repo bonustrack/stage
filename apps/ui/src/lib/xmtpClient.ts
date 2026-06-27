@@ -12,7 +12,9 @@ import {
   setActiveAccountId, removeAccountRecord, loadPk, bumpAccountEpoch,
   type AccountRecord,
 } from './accounts';
-import { dbDirFor } from '@stage-labs/client/accounts/registry';
+import {
+  webXmtpDbPath, canReuseSavedClient, installationCreatedAtMs,
+} from '@stage-labs/client/xmtp/clientConfig';
 import { convIdOfLine } from '@stage-labs/client/xmtp/line';
 import { POLL_CODEC } from './xmtpPollCodec';
 import {
@@ -104,11 +106,11 @@ async function resolveIdentity(): Promise<ResolvedIdentity> {
 }
 
 async function buildClientForIdentity(ident: ResolvedIdentity, env: XmtpEnv): Promise<XmtpClient> {
-  const dbPath = `${dbDirFor(ident.id)}-${env}.db3`;
+  const dbPath = webXmtpDbPath(ident.id, env);
   const opts = { env, dbPath, codecs: [POLL_CODEC, WALLET_SEND_CALLS_CODEC, SIGNATURE_REQUEST_CODEC, SIGNATURE_REFERENCE_CODEC] } as Parameters<typeof Client.create>[1];
   const savedAddress = localStorage.getItem(addressKeyFor(ident.id));
   const savedEnv = localStorage.getItem(envKeyFor(ident.id));
-  if (savedAddress?.toLowerCase() === ident.address && savedEnv === env) {
+  if (canReuseSavedClient(savedAddress, savedEnv, ident.address, env)) {
     try {
       return await Client.build(
         { identifier: ident.address, identifierKind: IdentifierKind.Ethereum },
@@ -199,9 +201,7 @@ export async function getXmtpAccountInfo(): Promise<XmtpAccountInfo> {
     const state = await client.preferences.inboxState();
     installations = state.installations.map(inst => ({
       id: inst.id,
-      createdAtMs: inst.clientTimestampNs != null
-        ? Number(inst.clientTimestampNs / 1_000_000n)
-        : null,
+      createdAtMs: installationCreatedAtMs(inst.clientTimestampNs),
       current: inst.id === installationId,
     }));
   } catch { }

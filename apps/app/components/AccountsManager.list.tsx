@@ -37,7 +37,7 @@ function FlatAccounts(p: AccountListProps): React.ReactElement {
             rec={a} topBorder={i > 0}
             onPress={() => { p.onSwitch(a.id); }}
             onLongPress={() => { p.setManageId(a.id); }}
-            head={p.head} border={p.border}
+            border={p.border}
             trailing={a.id === p.activeId ? <Icon name="check" size={20} color={p.head}/> : manageTrailing(p, a.id)}
 />
         </Box>
@@ -54,7 +54,7 @@ function CollapsedHeader(p: AccountListProps): React.ReactElement | null {
         rec={active} topBorder={false}
         onPress={() => { p.setExpanded(e => !e); }}
         onLongPress={() => { p.setManageId(active.id); }}
-        head={p.head} border={p.border}
+        border={p.border}
         trailing={<Icon name={p.expanded ? 'chevronUp' : 'chevronDown'} size={20} color={p.sub} />}
 />
     );
@@ -71,7 +71,7 @@ function AddSection(p: AccountListProps): React.ReactElement {
           key={a.id} rec={a} topBorder
           onPress={() => { p.onSwitch(a.id); }}
           onLongPress={() => { p.setManageId(a.id); }}
-          head={p.head} border={p.border}
+          border={p.border}
           trailing={manageTrailing(p, a.id)}
 />
       )) : null}

@@ -5,7 +5,7 @@ import { setActiveConversation } from '../../modules/metro-pill';
 import { setActiveConvId } from '../../lib/activeConv';
 import { getCachedRows, getConvConsentState, streamConvConsent, getGroupLabels } from '../../modules/messaging';
 import { convScrollKey, getScrollOffset, flushScrollOffset } from '../../lib/scrollPos';
-import type { HistoryEntry } from '../../lib/types';
+import type { HistoryEntry } from '@stage-labs/client/types';
 import {
   reactionsByMessage, ownReactionsByMessage,
   pollOptionCountsInFeed, votesByMessage, ownVotesByMessage, openAnswersByMessage,

@@ -1,27 +1,19 @@
 <script setup lang="ts">
 
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import { voiceMessage, VOICE_PLAY } from '@stage-labs/views';
 import {
-  VOICE_BAR_COUNT, formatVoiceDuration, voiceWaveformBars, voiceBucketRms,
+  VOICE_BAR_COUNT, voiceWaveformBars, voiceBucketRms,
 } from '@stage-labs/client/xmtp/voice';
+import { basicRoot } from '@/lib/kitRow';
 
 const props = defineProps<{ src: string }>();
 
-const ACCENT = '#0a7cff';
-const ON_ACCENT = '#ffffff';
-
-const audio = ref<HTMLAudioElement | null>(null);
-const playing = ref(false);
-const position = ref(0);
-const duration = ref(0);
 const decoded = ref<number[] | null>(null);
-
 const synthetic = computed(() => voiceWaveformBars(props.src, VOICE_BAR_COUNT));
 const bars = computed(() => decoded.value ?? synthetic.value);
-const progress = computed(() => (duration.value > 0 ? Math.min(position.value / duration.value, 1) : 0));
-const label = computed(() =>
-  playing.value || position.value > 0 ? formatVoiceDuration(position.value * 1000) : formatVoiceDuration(duration.value * 1000),
-);
 
 watch(() => props.src, () => { void decodeBars(); }, { immediate: true });
 
@@ -39,78 +31,15 @@ async function decodeBars(): Promise<void> {
   } catch { decoded.value = null; }
 }
 
-function toggle(): void {
-  const el = audio.value;
-  if (!el) return;
-  if (el.paused) void el.play().catch(() => undefined);
-  else el.pause();
-}
+const node = computed(() =>
+  basicRoot(voiceMessage({ src: props.src, bars: bars.value, barCount: VOICE_BAR_COUNT })),
+);
 
-function onTime(): void {
-  const el = audio.value;
-  if (!el) return;
-  position.value = el.currentTime;
-  if (Number.isFinite(el.duration)) duration.value = el.duration;
-}
-
-function onEnded(): void { playing.value = false; position.value = 0; }
-
-function seek(ev: MouseEvent): void {
-  const el = audio.value;
-  if (!el || duration.value <= 0) return;
-  const target = ev.currentTarget as HTMLElement;
-  const rect = target.getBoundingClientRect();
-  const fraction = Math.max(0, Math.min(1, (ev.clientX - rect.left) / rect.width));
-  el.currentTime = fraction * duration.value;
-  position.value = el.currentTime;
-}
-
-onBeforeUnmount(() => { audio.value?.pause(); });
+const registry: WidgetActionRegistry = {
+  [VOICE_PLAY]: () => undefined,
+};
 </script>
 
 <template>
-  <Row
-    class="items-center gap-2.5 rounded-2xl px-2.5 py-1.5 max-w-[280px] min-w-[200px]"
-    :style="{ backgroundColor: ACCENT }"
-  >
-    <audio
-      ref="audio"
-      :src="props.src"
-      preload="metadata"
-      class="hidden"
-      @play="playing = true"
-      @pause="playing = false"
-      @timeupdate="onTime"
-      @loadedmetadata="onTime"
-      @ended="onEnded"
-    />
-    <Pressable
-      tag="button"
-      type="button"
-      class="w-[34px] h-[34px] shrink-0 rounded-full flex items-center justify-center"
-      :style="{ backgroundColor: ON_ACCENT }"
-      :title="playing ? 'Pause' : 'Play'"
-      @click="toggle"
-    >
-      <Icon :name="playing ? 'pause' : 'play'" :size="18" :color="ACCENT" />
-    </Pressable>
-    <Pressable
-      tag="button"
-      type="button"
-      class="flex-1 h-[26px] flex items-center gap-[2px] cursor-pointer bg-transparent border-0 p-0"
-      @click="seek"
-    >
-      <span
-        v-for="(h, i) in bars"
-        :key="i"
-        class="flex-1 rounded-[1px]"
-        :style="{
-          height: `${Math.max(3, h * 26)}px`,
-          backgroundColor: ON_ACCENT,
-          opacity: i / bars.length <= progress ? 1 : 0.45,
-        }"
-      />
-    </Pressable>
-    <span class="text-xs min-w-[34px] text-right font-sans" :style="{ color: ON_ACCENT }">{{ label }}</span>
-  </Row>
+  <KitRenderer :node="node" :registry="registry" />
 </template>

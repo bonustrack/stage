@@ -1,6 +1,6 @@
 
 import { File, Paths } from 'expo-file-system';
-import { stripMetadataBytes, isStrippableImage } from './stripMetadata';
+import { stripMetadataBytes, isStrippableImage } from '@stage-labs/client/image/stripMetadata';
 
 declare const sanitizedBrand: unique symbol;
 export type SanitizedFileUri = string & { readonly [sanitizedBrand]: true };

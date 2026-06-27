@@ -1,14 +1,12 @@
 
 import { useCallback, useState } from 'react';
-import { fontSize } from '@stage-labs/kit/tokens';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
-import { Input } from '@stage-labs/kit/react-native/input';
 import { Image } from '@stage-labs/kit/react-native/image';
-import * as ImagePicker from 'expo-image-picker';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
+import { basicRoot, memberTextField, screenHeader, MEMBER_FIELD_CHANGE, SCREEN_BACK } from '@stage-labs/views';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Title } from '@stage-labs/kit/react-native/title';
-import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,11 +14,41 @@ import { createGroup } from '../../modules/messaging';
 import { uploadAvatar } from '../../lib/profile';
 import { flash } from '../../lib/toast';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { Box, Col, Row } from '../../components/layout';
+import { Box, Col } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 import { MemberPicker, useMemberPicker } from './MemberPicker';
 
 interface PickedImage { uri: string; mime: string; name: string }
+
+function imagePickerNode(openNonce: number): WidgetRoot {
+  return {
+    type: 'Basic',
+    children: [
+      {
+        type: 'FilePicker',
+        openNonce,
+        source: 'library',
+        mediaTypes: ['images'],
+        quality: 0.85,
+        multiple: false,
+        allowsEditing: true,
+        aspect: [1, 1],
+        onPickAction: { type: 'group_image_pick', handler: 'client' },
+      },
+    ],
+  };
+}
+
+function imagePickerRegistry(setImage: (img: PickedImage) => void): WidgetActionRegistry {
+  return {
+    group_image_pick: (a) => {
+      const files = a.payload.files;
+      const file = Array.isArray(files) ? files[0] as { uri: string; mime: string; name?: string } | undefined : undefined;
+      if (file === undefined) return;
+      setImage({ uri: file.uri, mime: file.mime, name: file.name ?? 'group-avatar' });
+    },
+  };
+}
 
 function GroupImageField({ image, creating, fg, border, rowBg, onPick }: {
   image: PickedImage | null; creating: boolean;
@@ -55,29 +83,66 @@ function GroupImageField({ image, creating, fg, border, rowBg, onPick }: {
   );
 }
 
+function GroupNameField({ name, setName, head, sub, inputBg, border }: {
+  name: string; setName: (s: string) => void;
+  head: string; sub: string; inputBg: string; border: string;
+}): React.ReactElement {
+  return (
+    <Col gap={6}>
+      <Text size="xs" role="secondary">
+        Group name (optional)
+      </Text>
+      <KitRenderer
+        node={basicRoot(memberTextField({
+          value: name,
+          placeholder: 'e.g. Metro builders',
+          color: head,
+          placeholderColor: sub,
+          inputBg,
+          border,
+          radius: 12,
+          paddingX: 14,
+          paddingY: 12,
+        }))}
+        registry={{
+          [MEMBER_FIELD_CHANGE]: (a) => {
+            if (typeof a.payload.field === 'string') setName(a.payload.field);
+          },
+        }}
+/>
+    </Col>
+  );
+}
+
 export default function NewGroup(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border, primary, inputBg } = usePalette();
+  const { text: fg, link: head, bg, border, primary, inputBg, toolbarBg } = usePalette();
   const sub = fg;
   const rowBg = border;
   const insets = useSafeAreaInsets();
+  const headerNode = basicRoot(screenHeader({
+    title: 'New group',
+    titleStyle: { kind: 'title', size: 'sm', color: head },
+    backColor: fg,
+    safeTop: insets.top,
+    surface: toolbarBg,
+    borderColor: border,
+  }));
+  const headerRegistry: WidgetActionRegistry = {
+    [SCREEN_BACK]: () => { router.back(); },
+  };
 
   const [name, setName] = useState('');
   const picker = useMemberPicker();
   const { members } = picker;
   const [creating, setCreating] = useState(false);
   const [image, setImage] = useState<PickedImage | null>(null);
+  const [pickNonce, setPickNonce] = useState(0);
 
-  const pickImage = useCallback(async (): Promise<void> => {
+  const pickImage = useCallback((): void => {
     if (creating) return;
-    const r = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: 'images', quality: 0.85, allowsMultipleSelection: false,
-      allowsEditing: true, aspect: [1, 1],
-    });
-    const a = r.canceled ? undefined : r.assets[0];
-    if (a === undefined) return;
-    setImage({ uri: a.uri, mime: a.mimeType ?? 'image/jpeg', name: a.fileName ?? 'group-avatar' });
+    setPickNonce(n => n + 1);
   }, [creating]);
 
   const onCreate = useCallback(async (): Promise<void> => {
@@ -103,14 +168,7 @@ export default function NewGroup(): React.ReactElement {
   return (
     <Col surface="surface" flex={1}>
       {}
-      <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-        <Pressable onPress={() => { router.back(); }} hitSlop={8} style={{ padding: 4 }}>
-          <Icon name="arrowLeft" size={22} color={fg}/>
-        </Pressable>
-        <Title size="sm" color={head}>
-          New group
-        </Title>
-      </Row>
+      <KitRenderer node={headerNode} registry={headerRegistry} />
 
       <ScrollView
         contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 24 + insets.bottom }}
@@ -118,26 +176,13 @@ export default function NewGroup(): React.ReactElement {
 >
         {}
         <GroupImageField image={image} creating={creating} fg={fg} border={border} rowBg={rowBg}
-          onPick={() => { void pickImage(); }}/>
+          onPick={() => { pickImage(); }}/>
+        <KitRenderer node={imagePickerNode(pickNonce)} registry={imagePickerRegistry(setImage)} />
 
         {}
-        <Col gap={6}>
-          <Text size="xs" role="secondary">
-            Group name (optional)
-          </Text>
-          <Input
-            value={name}
-            onChangeText={setName}
-            placeholder="e.g. Metro builders"
-            placeholderTextColor={sub}
-            dark={dark}
-            style={{
-              color: head, fontSize: fontSize('md'), fontFamily: 'Calibre-Medium',
-              backgroundColor: inputBg, borderRadius: 12, paddingHorizontal: 14,
-              paddingVertical: 12, borderWidth: 1, borderColor: border, minHeight: 0,
-            }}
+        <GroupNameField
+          name={name} setName={setName} head={head} sub={sub} inputBg={inputBg} border={border}
 />
-        </Col>
 
         <MemberPicker state={picker} dark={dark}/>
       </ScrollView>

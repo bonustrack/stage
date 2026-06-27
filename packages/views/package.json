@@ -1,0 +1,29 @@
+{
+  "name": "@stage-labs/views",
+  "version": "0.1.0-beta.0",
+  "private": true,
+  "description": "Framework-agnostic Kit-JSON view builders shared by the Stage clients (web + mobile). Pure functions that construct Kit WidgetNode objects with interactivity routed through the action-dispatch registry. No build step.",
+  "license": "MIT",
+  "type": "module",
+  "types": "./src/index.ts",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./actions": "./src/actions.ts",
+    "./primitives": "./src/primitives.ts",
+    "./wallet/token-row": "./src/wallet/tokenRow.ts",
+    "./chat/channel-row": "./src/chat/channelRow.ts",
+    "./accounts/account-row": "./src/accounts/accountRow.ts",
+    "./activity/tx-row": "./src/activity/txRow.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@stage-labs/kit": "workspace:*"
+  },
+  "devDependencies": {
+    "@stage-labs/config": "workspace:*"
+  }
+}

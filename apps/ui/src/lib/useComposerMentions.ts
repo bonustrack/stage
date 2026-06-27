@@ -1,11 +1,13 @@
 
-import { ref, nextTick } from 'vue';
+import { ref } from 'vue';
 import { computeMentionQuery, applyMention, type MentionCandidate } from '@stage-labs/client/xmtp/mentions';
 
 export function useComposerMentions(
-  getTextarea: () => HTMLTextAreaElement | null,
+  getText: () => string,
+  getSelStart: () => number,
   getCandidates: () => MentionCandidate[] | undefined,
   setText: (next: string) => void,
+  setCaret: (cursor: number) => void,
   afterPick: () => void,
 ) {
   const matches = ref<MentionCandidate[]>([]);
@@ -13,9 +15,7 @@ export function useComposerMentions(
   const active = ref(0);
 
   function refresh(): void {
-    const el = getTextarea();
-    if (!el) { range.value = null; return; }
-    const res = computeMentionQuery(el.value, el.selectionStart, getCandidates());
+    const res = computeMentionQuery(getText(), getSelStart(), getCandidates());
     matches.value = res.matches;
     range.value = res.matches.length > 0 ? res.range : null;
     if (active.value >= res.matches.length) active.value = 0;
@@ -23,16 +23,12 @@ export function useComposerMentions(
 
   function pick(c: MentionCandidate): void {
     const r = range.value;
-    const el = getTextarea();
-    if (!r || !el) return;
-    const { next, cursor } = applyMention(el.value, r, c.address);
+    if (!r) return;
+    const { next, cursor } = applyMention(getText(), r, c.address);
     setText(next);
     range.value = null;
-    void nextTick(() => {
-      const e = getTextarea();
-      if (e) { e.focus(); e.setSelectionRange(cursor, cursor); }
-      afterPick();
-    });
+    setCaret(cursor);
+    afterPick();
   }
 
   function move(delta: number): void {

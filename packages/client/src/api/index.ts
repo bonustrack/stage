@@ -1,6 +1,12 @@
 
 export { resolveEnsName } from './ens';
 export {
+  resolveSearchStep,
+  IDLE_RESOLUTION,
+  type SearchResolution,
+  type SearchResolutionStep,
+} from './search';
+export {
   fetchActivity,
   fetchActivityAllChains,
   ACTIVITY_CHAINS,

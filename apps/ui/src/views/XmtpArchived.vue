@@ -3,6 +3,10 @@
 import { computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import { emptyState, screenHeader, SCREEN_BACK } from '@stage-labs/views';
+import { basicRoot } from '@/lib/kitRow';
 import { cachedRows, hydrateCachedRows, type CachedRow } from '../lib/channelsCache';
 import { loadArchivedIds, subscribeArchived } from '../lib/archived';
 
@@ -32,25 +36,30 @@ const rows = computed<ArchivedRow[]>(() => {
 });
 
 function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
+
+const emptyNode = basicRoot(emptyState({ title: 'No archived conversations.' }));
+
+const headerNode = computed(() =>
+  basicRoot(screenHeader({
+    title: 'Archived',
+    titleStyle: { kind: 'title', size: 'sm', color: palette.link },
+    backColor: palette.text,
+    safeTop: 0,
+    surface: palette.toolbarBg,
+    borderColor: palette.border,
+  })),
+);
+const headerRegistry: WidgetActionRegistry = {
+  [SCREEN_BACK]: () => { router.back(); },
+};
 </script>
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <Row
-      surface="toolbar"
-      align="center"
-      :gap="8"
-      :padding="{ x: 12, y: 10 }"
-      :style="{ borderBottomWidth: '1px', borderBottomStyle: 'solid', borderBottomColor: palette.border }"
-    >
-      <Pressable tag="button" type="button" class="p-1" @click="router.back()">
-        <Icon name="arrowLeft" :size="22" :color="palette.text" />
-      </Pressable>
-      <Title size="sm">Archived</Title>
-    </Row>
+    <KitRenderer :node="headerNode" :registry="headerRegistry" />
 
-    <Col v-if="rows.length === 0" align="center" justify="center" class="flex-1" :padding="32">
-      <Text role="secondary" text-align="center">No archived conversations.</Text>
+    <Col v-if="rows.length === 0" align="center" justify="center" class="flex-1">
+      <KitRenderer :node="emptyNode" />
     </Col>
     <ul v-else class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-6">
       <li v-for="r in rows" :key="r.convId">
@@ -59,7 +68,7 @@ function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
           :avatar-uri="r.avatarUri"
           :title="r.title"
           :last-ts="r.lastTs"
-          :last-preview="r.lastPreview"
+          :last-preview="r.lastPreview || '(no messages yet)'"
           :unread-count="0"
           @open="open(r.convId)"
         />

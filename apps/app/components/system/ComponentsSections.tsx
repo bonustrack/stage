@@ -6,7 +6,7 @@ import { TokenRow } from '../tabs/WalletScreen.parts';
 import type { AssetRow } from '../tabs/WalletScreen.assets';
 import { MessengerBubble } from '../MessengerBubble';
 import { MessengerComposer } from '../MessengerComposer';
-import type { HistoryEntry } from '../../lib/types';
+import type { HistoryEntry } from '@stage-labs/client/types';
 import { usePalette } from '../../lib/theme';
 import type { GalleryPalette } from './galleryPalette';
 

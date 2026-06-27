@@ -1,5 +1,5 @@
 
-import type { HistoryEntry } from '../../lib/types';
+import type { HistoryEntry } from '@stage-labs/client/types';
 import { isMetroControlBody } from '../../lib/push';
 import { convOfLine } from '../../lib/xmtp.client';
 import { envelopeOfXmtpMessage } from '../../lib/xmtp.messages';

@@ -4,10 +4,17 @@ import { Title } from '@stage-labs/kit/react-native/title';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Textarea } from '@stage-labs/kit/react-native/textarea';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
+import { onboardingStep, ONBOARDING_ACTION_PRESS } from '@stage-labs/views';
 import { Col, Box } from '../layout';
 import { Spinner } from '../Spinner';
 import { usePalette, DANGER } from '../../lib/theme';
 import { type Stage } from './flow';
+
+function stepRoot(node: ReturnType<typeof onboardingStep>): WidgetRoot {
+  return { type: 'Basic', children: [node] };
+}
 
 export interface SetupErr { message: string; accountId?: string }
 
@@ -19,25 +26,28 @@ const STAGE_LABELS: Record<Stage, string> = {
 
 type Pal = ReturnType<typeof usePalette>;
 
-export function WelcomeStep({ pal, dark, busy, onCreate, onRestore }: {
+export function WelcomeStep({ busy, onCreate, onRestore }: {
   pal: Pal; dark: boolean; busy: boolean; onCreate: () => void; onRestore: () => void;
 }): React.ReactElement {
-  return (
-    <Col flex={1} justify="between">
-      <Box padding={{ top: 48 }}>
-        <Title level={1} color={pal.text}>Stage</Title>
-        <Text size="md" color={pal.sub} style={{ marginTop: 10 }}>
-          Your wallet, your messages, your governance. One gasless smart account.
-        </Text>
-      </Box>
-      <Col gap={10}>
-        <Button dark={dark} variant="primary" size="lg" fullWidth tintBg={pal.primary} tintFg={pal.bg}
-          label="Create new wallet" disabled={busy} onPress={onCreate} />
-        <Button dark={dark} variant="secondary" size="lg" fullWidth
-          label="I have a recovery phrase" disabled={busy} onPress={onRestore} />
-      </Col>
-    </Col>
+  const node = stepRoot(
+    onboardingStep({
+      title: 'Stage',
+      caption: 'Your wallet, your messages, your governance. One gasless smart account.',
+      captionSize: 'md',
+      topPadding: 48,
+      actions: [
+        { id: 'create', label: 'Create new wallet', variant: 'solid', disabled: busy },
+        { id: 'restore', label: 'I have a recovery phrase', variant: 'soft', disabled: busy },
+      ],
+    }),
   );
+  const registry: WidgetActionRegistry = {
+    [ONBOARDING_ACTION_PRESS]: (action) => {
+      if (action.payload.id === 'create') onCreate();
+      else onRestore();
+    },
+  };
+  return <KitRenderer node={node} registry={registry} />;
 }
 
 export function RestoreStep({ pal, dark, busy, phrase, err, onChange, onNext, onBack }: {
@@ -77,26 +87,29 @@ export function RestoreStep({ pal, dark, busy, phrase, err, onChange, onNext, on
   );
 }
 
-export function PasskeyStep({ pal, dark, busy, onAdd, onSkip }: {
+export function PasskeyStep({ busy, onAdd, onSkip }: {
   pal: Pal; dark: boolean; busy: boolean; onAdd: () => void; onSkip: () => void;
 }): React.ReactElement {
-  return (
-    <Col flex={1} justify="between">
-      <Box padding={{ top: 8 }}>
-        <Title level={2} color={pal.text}>Add a passkey</Title>
-        <Text size="sm" color={pal.sub} style={{ marginTop: 8 }}>
-          Add a passkey so this device can approve transactions without your
-          recovery phrase. You will only be asked for it when you sign. You can
-          add one later.
-        </Text>
-      </Box>
-      <Col gap={10}>
-        <Button dark={dark} variant="primary" size="lg" fullWidth tintBg={pal.primary} tintFg={pal.bg}
-          label="Add a passkey" disabled={busy} onPress={onAdd} />
-        <Button dark={dark} variant="ghost" size="lg" fullWidth label="Skip for now" disabled={busy} onPress={onSkip} />
-      </Col>
-    </Col>
+  const node = stepRoot(
+    onboardingStep({
+      title: 'Add a passkey',
+      caption:
+        'Add a passkey so this device can approve transactions without your ' +
+        'recovery phrase. You will only be asked for it when you sign. You can ' +
+        'add one later.',
+      actions: [
+        { id: 'add', label: 'Add a passkey', variant: 'solid', disabled: busy },
+        { id: 'skip', label: 'Skip for now', variant: 'ghost', disabled: busy },
+      ],
+    }),
   );
+  const registry: WidgetActionRegistry = {
+    [ONBOARDING_ACTION_PRESS]: (action) => {
+      if (action.payload.id === 'add') onAdd();
+      else onSkip();
+    },
+  };
+  return <KitRenderer node={node} registry={registry} />;
 }
 
 function StageProgress({ pal, stage }: { pal: Pal; stage: Stage }): React.ReactElement {

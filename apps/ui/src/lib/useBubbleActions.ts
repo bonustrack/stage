@@ -1,7 +1,7 @@
 
 import type { ComputedRef, Ref } from 'vue';
 import { xmtpReact } from './xmtpSend';
-import type { HistoryEntry } from './types';
+import type { HistoryEntry } from '@stage-labs/client/types';
 
 export interface BubbleActionsDeps {
   convId: ComputedRef<string>;
