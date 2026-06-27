@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import {
@@ -15,8 +15,8 @@ import AccountImportSheet from '../components/AccountImportSheet.vue';
 import AccountExportSheet from '../components/AccountExportSheet.vue';
 import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { accountRow, ACCOUNT_PRESS } from '@stage-labs/views';
-import { listRoot } from '@/lib/kitRow';
+import { accountRow, screenHeader, ACCOUNT_PRESS, SCREEN_BACK } from '@stage-labs/views';
+import { basicRoot, listRoot } from '@/lib/kitRow';
 
 const router = useRouter();
 const palette = useKitPalette();
@@ -177,23 +177,25 @@ const rowRegistry: WidgetActionRegistry = {
     if (typeof id === 'string') void onSwitch(id);
   },
 };
+
+const headerNode = computed(() =>
+  basicRoot(screenHeader({
+    title: 'Accounts',
+    titleStyle: { kind: 'title', size: 'sm', color: palette.link },
+    backColor: palette.text,
+    safeTop: 0,
+    surface: palette.toolbarBg,
+    borderColor: palette.border,
+  })),
+);
+const headerRegistry: WidgetActionRegistry = {
+  [SCREEN_BACK]: () => { router.back(); },
+};
 </script>
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <!-- Toolbar header mirrors the mobile Accounts screen title bar. -->
-    <Row
-      surface="toolbar"
-      align="center"
-      :gap="8"
-      :padding="{ x: 12, y: 10 }"
-      :style="{ borderBottomWidth: '1px', borderBottomStyle: 'solid', borderBottomColor: palette.border }"
-    >
-      <Pressable tag="button" type="button" class="p-1" @click="router.back()">
-        <Icon name="arrowLeft" :size="22" :color="palette.text" />
-      </Pressable>
-      <Title size="sm">Accounts</Title>
-    </Row>
+    <KitRenderer :node="headerNode" :registry="headerRegistry" />
 
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-6">
       <!-- Account list + add/import rows mirror mobile AccountList: each row has a
