@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { receiveView, WALLET_ADDRESS_COPY } from '@stage-labs/views';
+import { basicRoot, receiveView, screenHeader, SCREEN_BACK, WALLET_ADDRESS_COPY } from '@stage-labs/views';
 import { getActiveAccount } from '../lib/accounts';
 import { shortAddress, stampAvatarUrl } from '../lib/xmtp';
 
@@ -39,26 +39,27 @@ const addressNode = computed(() =>
   }),
 );
 
+const headerNode = computed(() =>
+  basicRoot(screenHeader({
+    title: 'Receive',
+    titleStyle: { kind: 'title', size: 'sm' },
+    backColor: palette.text,
+    safeTop: 0,
+    padTop: 10,
+    surface: palette.toolbarBg,
+    borderColor: palette.border,
+  })),
+);
+
 const registry: WidgetActionRegistry = {
+  [SCREEN_BACK]: () => { router.back(); },
   [WALLET_ADDRESS_COPY]: () => { void copy(); },
 };
 </script>
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <!-- Toolbar header mirrors the mobile wallet Receive title bar. -->
-    <Row
-      surface="toolbar"
-      align="center"
-      :gap="8"
-      :padding="{ x: 12, y: 10 }"
-      :style="{ borderBottomWidth: '1px', borderBottomStyle: 'solid', borderBottomColor: palette.border }"
-    >
-      <Pressable tag="button" type="button" class="p-1" @click="router.back()">
-        <Icon name="arrowLeft" :size="22" :color="palette.text" />
-      </Pressable>
-      <Title size="sm">Receive</Title>
-    </Row>
+    <KitRenderer :node="headerNode" :registry="registry" />
 
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar" align="center" :gap="16">
       <!-- Active account identity mirrors mobile's avatar + address header. -->

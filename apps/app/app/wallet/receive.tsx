@@ -1,26 +1,23 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
-import { Text } from '@stage-labs/kit/react-native/text';
 import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
 import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { receiveView, WALLET_ADDRESS_COPY } from '@stage-labs/views';
-import { Row, Col } from '../../components/layout';
+import { basicRoot, receiveView, screenHeader, SCREEN_BACK, WALLET_ADDRESS_COPY } from '@stage-labs/views';
+import { Col } from '../../components/layout';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getOrCreateXmtpClient } from '../../modules/messaging';
 import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
 import { usePalette } from '../../lib/theme';
-import { Icon } from '@stage-labs/kit/react-native/icon';
 import { flash } from '../../lib/toast';
 import { ReceiveModeToggle, type ReceiveMode } from '../../components/wallet/ReceiveModeToggle';
 
 export default function WalletReceive(): React.ReactElement {
   const router = useRouter();
-  const { text: fg, link: head, border } = usePalette();
+  const { text: fg, link: head, border, toolbarBg } = usePalette();
   const insets = useSafeAreaInsets();
 
   const [mode, setMode] = useState<ReceiveMode>('public');
@@ -65,18 +62,23 @@ export default function WalletReceive(): React.ReactElement {
       }),
     [activeMode, address, hint, border],
   );
-  const addressRegistry: WidgetActionRegistry = {
+  const headerNode = basicRoot(screenHeader({
+    title: 'Receive',
+    titleStyle: { kind: 'text', size: 'xl', weight: 'semibold', color: head },
+    backColor: fg,
+    safeTop: insets.top,
+    surface: toolbarBg,
+    borderColor: border,
+  }));
+
+  const registry: WidgetActionRegistry = {
+    [SCREEN_BACK]: () => { router.back(); },
     [WALLET_ADDRESS_COPY]: () => { copy(); },
   };
 
   return (
     <Col surface="surface" flex={1}>
-      <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-        <Pressable onPress={() => { router.back(); }} hitSlop={8} style={{ padding: 4 }}>
-          <Icon name="arrowLeft" size={22} color={fg}/>
-        </Pressable>
-        <Text weight="semibold" size="xl" color={head} style={{ flex: 1 }}>Receive</Text>
-      </Row>
+      <KitRenderer node={headerNode} registry={registry} />
 
       <ScrollView contentContainerStyle={{ padding: 16, alignItems: 'center', gap: 16 }}>
         <ReceiveModeToggle
@@ -86,7 +88,7 @@ export default function WalletReceive(): React.ReactElement {
 />
 
         <Col width="100%">
-          <KitRenderer node={addressNode} registry={addressRegistry} />
+          <KitRenderer node={addressNode} registry={registry} />
         </Col>
       </ScrollView>
     </Col>

@@ -198,6 +198,48 @@ Group (`src/group/*`): `groupFieldEditor`, `labelRow`.
 
 Onboarding (`src/onboarding/*`): `onboardingStep`.
 
+Chrome (`src/chrome/*`): `screenHeader` — the shared back-arrow + title toolbar
+(see SLIM SCREEN below).
+
+## SLIM SCREEN pattern
+
+The goal of the views layer is to keep `apps/app` and `apps/ui` screens as thin
+as possible: a screen = **compute params → build view nodes → KitRenderer +
+registry**. All view-rendering lives here; all logic lives in `@stage-labs/client`.
+
+A slim screen keeps ONLY:
+
+- **hooks/state** (data, mode flags, loading),
+- the **registry handlers** (the imperative side-effects: router.back, copy,
+  setMode, …),
+- the **platform safe-area read** (`useSafeAreaInsets()` on mobile) — passed into
+  the view as a plain `safeTop` number, never read inside the view.
+
+Everything visual becomes builder nodes:
+
+- the toolbar → `screenHeader({ title, titleStyle, backColor, safeTop, surface,
+  borderColor })`. The two apps **diverge** on the title: mobile uses
+  `titleStyle: { kind: 'text', size: 'xl', weight: 'semibold' }`, web uses
+  `{ kind: 'title', size: 'sm' }`; web also passes `padTop: 10` (mobile defaults
+  to `8 + safeTop`). `surface`/`borderColor` are concrete palette colors the
+  screen reads (`toolbarBg`, `border`) and passes in, since JSON nodes carry a
+  `background` color, not the `surface="toolbar"` component prop.
+- the body → existing builders (`receiveView`, …).
+- interactive controls → nodes wired via the registry. A control's press becomes
+  an `onClickAction` / `onChangeAction` whose `type` is an action constant
+  (`SCREEN_BACK`, `WALLET_ADDRESS_COPY`, …) the screen's registry maps to a
+  handler. Back navigation uses the shared `SCREEN_BACK` action.
+
+The `screenHeader` builder returns a bare `RowNode` (composable into a larger
+node tree); wrap it in `basicRoot(...)` when handing it straight to a renderer.
+
+**Thin-element exception.** When a control has visuals the available Kit nodes
+cannot reproduce pixel-identically, keep ONLY that control as a thin framework
+element and convert the rest. Example: the mobile `ReceiveModeToggle` stays a
+thin RN component because the Kit `Tabs` node is locked to a different segmented
+palette/typography and has no per-segment opacity for the disabled
+"Private (loading…)" state. Pixel/behavior parity always wins over purity.
+
 Settings (`src/settings/*`): `settingsSection`, `settingsNavRow`,
 `settingsToggleRow`, `settingsValueRow`, `settingsButtonRow`, `settingsThemeRow`,
 `settingsSectionTitle`, `settingsListRow`, `settingsRowSelectedIcon`.
