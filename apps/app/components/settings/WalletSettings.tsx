@@ -5,8 +5,9 @@ import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@stage-labs/kit/react-native/text';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import { settingsHeader, SCREEN_BACK } from '@stage-labs/views';
 import { Col } from '../layout';
-import { SystemHeader } from '../system/SystemHeader';
 import { useBlockRadius, useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { useActiveAccount } from '../../modules/messaging/account';
 import { flash } from '../../lib/toast';
@@ -21,7 +22,7 @@ export function WalletSettings(): React.ReactElement {
   const epoch = useActiveAccount();
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, border } = usePalette();
+  const { text: fg, link: head, border, toolbarBg } = usePalette();
   const blockRadius = useBlockRadius();
   const insets = useSafeAreaInsets();
   const c: C = { fg, head, sub: fg, border, rowBg: border };
@@ -35,12 +36,24 @@ export function WalletSettings(): React.ReactElement {
   };
   const onRecovery = (): void => { router.push('/wallet/recovery'); };
 
-  const registry = buildWalletRegistry({ onCopy, onRecovery, passkey, removePasskey });
+  const registry = {
+    ...buildWalletRegistry({ onCopy, onRecovery, passkey, removePasskey }),
+    [SCREEN_BACK]: () => { router.back(); },
+  };
   const card = makeCard(dark, c.rowBg, blockRadius, registry);
+
+  const headerNode = settingsHeader({
+    title: 'Wallet',
+    backColor: fg,
+    titleColor: head,
+    surface: toolbarBg,
+    borderColor: border,
+    safeTop: insets.top,
+  });
 
   return (
     <Col surface="surface" flex={1}>
-      <SystemHeader title="Wallet" dark={dark} fg={fg} head={head} border={border} />
+      <KitRenderer node={headerNode} registry={registry} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         {!model ? (
           <Text size="md" color={c.sub} style={{ padding: 24 }}>No active account.</Text>

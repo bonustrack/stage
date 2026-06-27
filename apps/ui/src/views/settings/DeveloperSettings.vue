@@ -5,13 +5,21 @@ import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { settingsValueRow } from '@stage-labs/views';
+import { settingsHeader, settingsValueRow, SCREEN_BACK } from '@stage-labs/views';
 import pkg from '../../../package.json';
 import { getXmtpEnv } from '../../lib/xmtp';
 import { getHostAccount } from '../../lib/hostSigner';
 
 const router = useRouter();
 const palette = useKitPalette();
+
+const headerNode = computed(() => settingsHeader({
+  title: 'Developer',
+  backColor: palette.text,
+  surface: palette.toolbarBg,
+  borderColor: palette.border,
+  safeTop: 0,
+}));
 
 const rows = ref<{ label: string; value: string }[]>([
   { label: 'XMTP env', value: getXmtpEnv() },
@@ -30,24 +38,14 @@ const node = computed<ListViewNode>(() => ({
   children: rows.value.map(r => settingsValueRow({ label: r.label, value: r.value })),
 }));
 
-const registry: WidgetActionRegistry = {};
+const registry: WidgetActionRegistry = {
+  [SCREEN_BACK]: () => { router.back(); },
+};
 </script>
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <!-- Toolbar header matches the XMTP screens: back arrow + small title. -->
-    <Row
-      surface="toolbar"
-      align="center"
-      :gap="8"
-      :padding="{ x: 12, y: 10 }"
-      :style="{ borderBottomWidth: '1px', borderBottomStyle: 'solid', borderBottomColor: palette.border }"
-    >
-      <Pressable tag="button" type="button" class="p-1" @click="router.back()">
-        <Icon name="arrowLeft" :size="22" :color="palette.text" />
-      </Pressable>
-      <Title size="sm">Developer</Title>
-    </Row>
+    <KitRenderer :node="headerNode" :registry="registry" />
 
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-8 px-4 pt-4">
       <!-- DIAGNOSTICS: read-only env + build info, mirroring mobile DeveloperSettings

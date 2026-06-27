@@ -5,10 +5,18 @@ import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { settingsNavRow, SETTINGS_NAV_PRESS } from '@stage-labs/views';
+import { settingsHeader, settingsNavRow, SCREEN_BACK, SETTINGS_NAV_PRESS } from '@stage-labs/views';
 
 const router = useRouter();
 const palette = useKitPalette();
+
+const headerNode = computed(() => settingsHeader({
+  title: 'Experimental',
+  backColor: palette.text,
+  surface: palette.toolbarBg,
+  borderColor: palette.border,
+  safeTop: 0,
+}));
 
 const node = computed<ListViewNode>(() => ({
   type: 'ListView',
@@ -21,6 +29,7 @@ const node = computed<ListViewNode>(() => ({
 }));
 
 const registry: WidgetActionRegistry = {
+  [SCREEN_BACK]: () => { router.back(); },
   [SETTINGS_NAV_PRESS]: (action) => {
     const to = action.payload.to;
     if (typeof to === 'string') void router.push(to);
@@ -30,18 +39,7 @@ const registry: WidgetActionRegistry = {
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <Row
-      surface="toolbar"
-      align="center"
-      :gap="8"
-      :padding="{ x: 12, y: 10 }"
-      :style="{ borderBottomWidth: '1px', borderBottomStyle: 'solid', borderBottomColor: palette.border }"
-    >
-      <Pressable tag="button" type="button" class="p-1" @click="router.back()">
-        <Icon name="arrowLeft" :size="22" :color="palette.text" />
-      </Pressable>
-      <Title size="sm">Experimental</Title>
-    </Row>
+    <KitRenderer :node="headerNode" :registry="registry" />
 
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-8">
       <Col class="w-[calc(100%-2rem)] mx-4 mt-5">

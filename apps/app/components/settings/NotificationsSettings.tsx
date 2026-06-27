@@ -12,18 +12,20 @@ import type {
   WidgetActionRegistry,
 } from '@stage-labs/kit/kit';
 import {
+  settingsHeader,
   settingsToggleRow,
+  SCREEN_BACK,
   SETTINGS_TOGGLE_CHANGE,
 } from '@stage-labs/views';
-import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { SystemHeader } from '../system/SystemHeader';
+import { useRouter } from 'expo-router';
+import { usePalette } from '../../lib/theme';
 import { loadPushEnabled, setPushEnabled, subscribePushPref, isPushEnabledSync } from '../../lib/pushPref';
 import { getOrCreateXmtpClient } from '../../modules/messaging';
 import { registerPushWithDaemon, unregisterPushFromDaemon } from '../../lib/push';
 
 export function NotificationsSettings(): React.ReactElement {
-  const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, border } = usePalette();
+  const router = useRouter();
+  const { text: fg, link: head, border, toolbarBg } = usePalette();
   const sub = fg;
   const insets = useSafeAreaInsets();
   const [enabled, setEnabled] = useState(isPushEnabledSync());
@@ -68,7 +70,17 @@ export function NotificationsSettings(): React.ReactElement {
     ],
   };
 
+  const headerNode = settingsHeader({
+    title: 'Notifications',
+    backColor: fg,
+    titleColor: head,
+    surface: toolbarBg,
+    borderColor: border,
+    safeTop: insets.top,
+  });
+
   const registry: WidgetActionRegistry = {
+    [SCREEN_BACK]: () => { router.back(); },
     [SETTINGS_TOGGLE_CHANGE]: (action) => {
       const next = action.payload.push;
       if (typeof next === 'boolean') onToggle(next);
@@ -77,7 +89,7 @@ export function NotificationsSettings(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <SystemHeader title="Notifications" dark={dark} fg={fg} head={head} border={border}/>
+      <KitRenderer node={headerNode} registry={registry}/>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <Caption color={sub} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
           PUSH NOTIFICATIONS

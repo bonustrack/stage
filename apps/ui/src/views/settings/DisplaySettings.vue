@@ -9,7 +9,7 @@ import type {
   ListViewNode, ListViewItemNode, WidgetActionRegistry,
 } from '@stage-labs/kit/kit';
 import {
-  settingsThemeRow, SETTINGS_THEME_SELECT,
+  settingsHeader, settingsThemeRow, SCREEN_BACK, SETTINGS_THEME_SELECT,
 } from '@stage-labs/views';
 import { useEffectiveScheme } from '../../lib/kitTheme';
 import {
@@ -22,6 +22,14 @@ import {
 
 const router = useRouter();
 const palette = useKitPalette();
+
+const headerNode = computed(() => settingsHeader({
+  title: 'Display',
+  backColor: palette.text,
+  surface: palette.toolbarBg,
+  borderColor: palette.border,
+  safeTop: 0,
+}));
 const pref = useThemePreference();
 const custom = useCustomTheme();
 const scheme = useEffectiveScheme();
@@ -84,6 +92,7 @@ const themeNode = computed<ListViewNode>(() => ({
 }));
 
 const registry: WidgetActionRegistry = {
+  [SCREEN_BACK]: () => { router.back(); },
   [SETTINGS_THEME_SELECT]: (action) => {
     const value = action.payload.value;
     if (value === 'custom') { setCustomTheme(true); return; }
@@ -94,19 +103,7 @@ const registry: WidgetActionRegistry = {
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <!-- Toolbar header matches the XMTP screens: back arrow + small title. -->
-    <Row
-      surface="toolbar"
-      align="center"
-      :gap="8"
-      :padding="{ x: 12, y: 10 }"
-      :style="{ borderBottomWidth: '1px', borderBottomStyle: 'solid', borderBottomColor: palette.border }"
-    >
-      <Pressable tag="button" type="button" class="p-1" @click="router.back()">
-        <Icon name="arrowLeft" :size="22" :color="palette.text" />
-      </Pressable>
-      <Title size="sm">Display</Title>
-    </Row>
+    <KitRenderer :node="headerNode" :registry="registry" />
 
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-8">
       <!-- THEME: light/dark/system + custom, mirroring mobile's DisplaySettings list. -->

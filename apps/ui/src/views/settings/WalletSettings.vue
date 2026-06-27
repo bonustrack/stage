@@ -6,13 +6,21 @@ import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
 import {
-  settingsValueRow, settingsNavRow, SETTINGS_COPY, SETTINGS_NAV_PRESS,
+  settingsHeader, settingsValueRow, settingsNavRow, SCREEN_BACK, SETTINGS_COPY, SETTINGS_NAV_PRESS,
 } from '@stage-labs/views';
 import { listAccounts, getActiveAccountId, type AccountRecord } from '../../lib/accounts';
 import { shortAddress } from '../../lib/xmtp';
 
 const router = useRouter();
 const palette = useKitPalette();
+
+const headerNode = computed(() => settingsHeader({
+  title: 'Wallet',
+  backColor: palette.text,
+  surface: palette.toolbarBg,
+  borderColor: palette.border,
+  safeTop: 0,
+}));
 
 const account = ref<AccountRecord | null>(null);
 const loaded = ref(false);
@@ -79,6 +87,7 @@ const manageNode = computed<ListViewNode>(() => ({
 }));
 
 const registry: WidgetActionRegistry = {
+  [SCREEN_BACK]: () => { router.back(); },
   [SETTINGS_COPY]: (action) => {
     const value = action.payload.value;
     const key = action.payload.key;
@@ -93,18 +102,7 @@ const registry: WidgetActionRegistry = {
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <Row
-      surface="toolbar"
-      align="center"
-      :gap="8"
-      :padding="{ x: 12, y: 10 }"
-      :style="{ borderBottomWidth: '1px', borderBottomStyle: 'solid', borderBottomColor: palette.border }"
-    >
-      <Pressable tag="button" type="button" class="p-1" @click="router.back()">
-        <Icon name="arrowLeft" :size="22" :color="palette.text" />
-      </Pressable>
-      <Title size="sm">Wallet</Title>
-    </Row>
+    <KitRenderer :node="headerNode" :registry="registry" />
 
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-8">
       <Col v-if="loaded && !account" class="px-4 pt-6">

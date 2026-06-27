@@ -6,11 +6,19 @@ import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
 import {
-  settingsButtonRow, settingsValueRow, SETTINGS_BUTTON_PRESS,
+  settingsHeader, settingsButtonRow, settingsValueRow, SCREEN_BACK, SETTINGS_BUTTON_PRESS,
 } from '@stage-labs/views';
 
 const router = useRouter();
 const palette = useKitPalette();
+
+const headerNode = computed(() => settingsHeader({
+  title: 'Notifications',
+  backColor: palette.text,
+  surface: palette.toolbarBg,
+  borderColor: palette.border,
+  safeTop: 0,
+}));
 
 const supported = typeof window !== 'undefined' && 'Notification' in window;
 const permission = ref<NotificationPermission>(supported ? Notification.permission : 'denied');
@@ -51,24 +59,14 @@ const node = computed<ListViewNode>(() => ({
 }));
 
 const registry: WidgetActionRegistry = {
+  [SCREEN_BACK]: () => { router.back(); },
   [SETTINGS_BUTTON_PRESS]: () => { void requestPermission(); },
 };
 </script>
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <Row
-      surface="toolbar"
-      align="center"
-      :gap="8"
-      :padding="{ x: 12, y: 10 }"
-      :style="{ borderBottomWidth: '1px', borderBottomStyle: 'solid', borderBottomColor: palette.border }"
-    >
-      <Pressable tag="button" type="button" class="p-1" @click="router.back()">
-        <Icon name="arrowLeft" :size="22" :color="palette.text" />
-      </Pressable>
-      <Title size="sm">Notifications</Title>
-    </Row>
+    <KitRenderer :node="headerNode" :registry="registry" />
 
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-8">
       <!-- PUSH NOTIFICATIONS: mirrors mobile NotificationsSettings' single toggle card.

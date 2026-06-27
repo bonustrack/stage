@@ -5,13 +5,21 @@ import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { settingsNavRow, SETTINGS_NAV_PRESS } from '@stage-labs/views';
+import { settingsHeader, settingsNavRow, SCREEN_BACK, SETTINGS_NAV_PRESS } from '@stage-labs/views';
 import pkg from '../../package.json';
 
 const router = useRouter();
 const palette = useKitPalette();
 
 const APP_VERSION = pkg.version;
+
+const headerNode = computed(() => settingsHeader({
+  title: 'Settings',
+  backColor: palette.text,
+  surface: palette.toolbarBg,
+  borderColor: palette.border,
+  safeTop: 0,
+}));
 
 const ROWS: { icon: string; label: string; to: string }[] = [
   { icon: 'sun', label: 'Display', to: '/settings/display' },
@@ -34,6 +42,7 @@ const node = computed<ListViewNode>(() => ({
 }));
 
 const registry: WidgetActionRegistry = {
+  [SCREEN_BACK]: () => { router.back(); },
   [SETTINGS_NAV_PRESS]: (action) => {
     const to = action.payload.to;
     if (typeof to === 'string') void router.push(to);
@@ -43,20 +52,7 @@ const registry: WidgetActionRegistry = {
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <!-- Mobile parity (components/settings/SettingsMenu.tsx -> SystemHeader):
-         back arrow + small title, matching every settings subpage header. -->
-    <Row
-      surface="toolbar"
-      align="center"
-      :gap="8"
-      :padding="{ x: 12, y: 10 }"
-      :style="{ borderBottomWidth: '1px', borderBottomStyle: 'solid', borderBottomColor: palette.border }"
-    >
-      <Pressable tag="button" type="button" class="p-1" @click="router.back()">
-        <Icon name="arrowLeft" :size="22" :color="palette.text" />
-      </Pressable>
-      <Title size="sm">Settings</Title>
-    </Row>
+    <KitRenderer :node="headerNode" :registry="registry" />
 
     <Scroll class="flex-1 min-h-0 no-scrollbar pb-8">
       <Col class="w-[calc(100%-2rem)] mx-4 mt-2">

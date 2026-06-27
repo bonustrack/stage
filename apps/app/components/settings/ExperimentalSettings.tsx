@@ -10,9 +10,8 @@ import type {
   ListViewNode,
   WidgetActionRegistry,
 } from '@stage-labs/kit/kit';
-import { settingsNavRow, SETTINGS_NAV_PRESS } from '@stage-labs/views';
-import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { SystemHeader } from '../system/SystemHeader';
+import { settingsHeader, settingsNavRow, SCREEN_BACK, SETTINGS_NAV_PRESS } from '@stage-labs/views';
+import { usePalette } from '../../lib/theme';
 
 type Href = '/settings/kit' | '/settings/components' | '/settings/developer';
 const ROWS: { href: Href; label: string; icon: HeroIconName }[] = [
@@ -23,8 +22,7 @@ const ROWS: { href: Href; label: string; icon: HeroIconName }[] = [
 
 export function ExperimentalSettings(): React.ReactElement {
   const router = useRouter();
-  const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, border } = usePalette();
+  const { text: fg, link: head, border, toolbarBg } = usePalette();
   const insets = useSafeAreaInsets();
 
   const node: ListViewNode = {
@@ -39,7 +37,17 @@ export function ExperimentalSettings(): React.ReactElement {
     ),
   };
 
+  const headerNode = settingsHeader({
+    title: 'Experimental',
+    backColor: fg,
+    titleColor: head,
+    surface: toolbarBg,
+    borderColor: border,
+    safeTop: insets.top,
+  });
+
   const registry: WidgetActionRegistry = {
+    [SCREEN_BACK]: () => { router.back(); },
     [SETTINGS_NAV_PRESS]: (action) => {
       const href = action.payload.href;
       if (typeof href === 'string') router.push(href);
@@ -48,7 +56,7 @@ export function ExperimentalSettings(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <SystemHeader title="Experimental" dark={dark} fg={fg} head={head} border={border}/>
+      <KitRenderer node={headerNode} registry={registry}/>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <KitRenderer node={node} registry={registry}/>
       </ScrollView>

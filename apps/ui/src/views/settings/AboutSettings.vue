@@ -5,11 +5,19 @@ import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { settingsValueRow, settingsNavRow, SETTINGS_ACTION_PRESS } from '@stage-labs/views';
+import { settingsHeader, settingsValueRow, settingsNavRow, SCREEN_BACK, SETTINGS_ACTION_PRESS } from '@stage-labs/views';
 import pkg from '../../../package.json';
 
 const router = useRouter();
 const palette = useKitPalette();
+
+const headerNode = computed(() => settingsHeader({
+  title: 'About',
+  backColor: palette.text,
+  surface: palette.toolbarBg,
+  borderColor: palette.border,
+  safeTop: 0,
+}));
 
 const GITHUB_URL = 'https://github.com/bonustrack/stage';
 
@@ -37,6 +45,7 @@ const githubNode = computed<ListViewNode>(() => ({
 }));
 
 const registry: WidgetActionRegistry = {
+  [SCREEN_BACK]: () => { router.back(); },
   [SETTINGS_ACTION_PRESS]: (action) => {
     const url = action.payload.url;
     if (typeof url === 'string') window.open(url, '_blank', 'noopener,noreferrer');
@@ -46,19 +55,7 @@ const registry: WidgetActionRegistry = {
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <!-- Toolbar header matches the XMTP screens: back arrow + small title. -->
-    <Row
-      surface="toolbar"
-      align="center"
-      :gap="8"
-      :padding="{ x: 12, y: 10 }"
-      :style="{ borderBottomWidth: '1px', borderBottomStyle: 'solid', borderBottomColor: palette.border }"
-    >
-      <Pressable tag="button" type="button" class="p-1" @click="router.back()">
-        <Icon name="arrowLeft" :size="22" :color="palette.text" />
-      </Pressable>
-      <Title size="sm">About</Title>
-    </Row>
+    <KitRenderer :node="headerNode" :registry="registry" />
 
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-8 px-4 pt-4">
       <!-- Build + runtime metadata, mirroring the mobile About panel's metadata rows. -->

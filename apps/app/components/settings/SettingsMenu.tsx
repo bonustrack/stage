@@ -14,13 +14,14 @@ import type {
   WidgetActionRegistry,
 } from '@stage-labs/kit/kit';
 import {
+  settingsHeader,
   settingsNavRow,
   settingsButtonRow,
+  SCREEN_BACK,
   SETTINGS_NAV_PRESS,
   SETTINGS_BUTTON_PRESS,
 } from '@stage-labs/views';
-import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { SystemHeader } from '../system/SystemHeader';
+import { usePalette } from '../../lib/theme';
 import { resetForOnboarding } from '../../lib/wallet';
 import { resetEverything } from '../../lib/resetEverything';
 
@@ -121,14 +122,23 @@ function dangerNode(resetting: boolean, nuking: boolean): ListViewNode {
 
 export function SettingsMenu(): React.ReactElement {
   const router = useRouter();
-  const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, border } = usePalette();
+  const { text: fg, link: head, border, toolbarBg } = usePalette();
   const insets = useSafeAreaInsets();
 
   const [resetting, setResetting] = useState(false);
   const [nuking, setNuking] = useState(false);
 
+  const headerNode = settingsHeader({
+    title: 'Settings',
+    backColor: fg,
+    titleColor: head,
+    surface: toolbarBg,
+    borderColor: border,
+    safeTop: insets.top,
+  });
+
   const registry: WidgetActionRegistry = {
+    [SCREEN_BACK]: () => { router.back(); },
     [SETTINGS_NAV_PRESS]: (action) => {
       const href = action.payload.href;
       if (typeof href === 'string') router.push(href);
@@ -141,7 +151,7 @@ export function SettingsMenu(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <SystemHeader title="Settings" dark={dark} fg={fg} head={head} border={border}/>
+      <KitRenderer node={headerNode} registry={registry}/>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <KitRenderer node={navNode} registry={registry}/>
         <Text size="xs" role="secondary" style={{ paddingHorizontal: 16, paddingTop: 28 }}>

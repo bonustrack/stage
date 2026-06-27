@@ -13,21 +13,23 @@ import type {
   WidgetActionRegistry,
 } from '@stage-labs/kit/kit';
 import {
+  settingsHeader,
   settingsValueRow,
   settingsButtonRow,
+  SCREEN_BACK,
   SETTINGS_COPY,
   SETTINGS_BUTTON_PRESS,
 } from '@stage-labs/views';
+import { useRouter } from 'expo-router';
 import { getOrCreateXmtpClient, resetXmtpClient, shortAddress, useActiveAccount } from '../../modules/messaging';
 import { resetAccount } from '../../lib/wallet';
 import { flash } from '../../lib/toast';
-import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { SystemHeader } from '../system/SystemHeader';
+import { usePalette } from '../../lib/theme';
 import { MessengerSessions } from './MessengerSessions';
 
 export function MessengerSettings(): React.ReactElement {
-  const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, border } = usePalette();
+  const router = useRouter();
+  const { text: fg, link: head, border, toolbarBg } = usePalette();
   const sub = fg;
   const insets = useSafeAreaInsets();
   const epoch = useActiveAccount();
@@ -86,7 +88,17 @@ export function MessengerSettings(): React.ReactElement {
     ],
   };
 
+  const headerNode = settingsHeader({
+    title: 'Messenger',
+    backColor: fg,
+    titleColor: head,
+    surface: toolbarBg,
+    borderColor: border,
+    safeTop: insets.top,
+  });
+
   const registry: WidgetActionRegistry = {
+    [SCREEN_BACK]: () => { router.back(); },
     [SETTINGS_COPY]: (action) => {
       const value = action.payload.copy ?? action.payload.value;
       const label = action.payload.label;
@@ -102,7 +114,7 @@ export function MessengerSettings(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <SystemHeader title="Messenger" dark={dark} fg={fg} head={head} border={border}/>
+      <KitRenderer node={headerNode} registry={registry}/>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <Caption color={sub} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
           XMTP ACCOUNT
