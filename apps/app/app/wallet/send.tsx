@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
+import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import { basicRoot, screenHeader, SCREEN_BACK } from '@stage-labs/views';
 import { Col } from '../../components/layout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
-import { SendHeader } from './send.fields';
 import { WalletFooter, useFooterReporter, useFormPal } from './wallet.form';
 import { PublicSendBody } from './send.public.body';
 import { ShieldFlowForm } from './send.shield';
@@ -12,7 +15,8 @@ import { TokenSelector, useSelectedBalance, useTopToken, type TokenChoice } from
 export default function WalletSend(): React.ReactElement {
   const router = useRouter();
   const params = useLocalSearchParams<{ to?: string; symbol?: string; chainId?: string; private?: string }>();
-  const { text: fg, link: head, border } = usePalette();
+  const { text: fg, link: head, border, toolbarBg } = usePalette();
+  const insets = useSafeAreaInsets();
   const dark = useEffectiveColorScheme() === 'dark';
   const formPal = useFormPal();
 
@@ -43,9 +47,21 @@ export default function WalletSend(): React.ReactElement {
 
   const { footer, report: reportFooter, onSubmit: footerSubmit } = useFooterReporter();
 
+  const headerNode = basicRoot(screenHeader({
+    title: 'Send token',
+    titleStyle: { kind: 'text', size: 'xl', weight: 'semibold', color: head },
+    backColor: fg,
+    safeTop: insets.top,
+    surface: toolbarBg,
+    borderColor: border,
+  }));
+  const registry: WidgetActionRegistry = {
+    [SCREEN_BACK]: () => { router.back(); },
+  };
+
   return (
     <Col surface="surface" flex={1}>
-      <SendHeader fg={fg} head={head} border={border} onBack={() => { router.back(); }}/>
+      <KitRenderer node={headerNode} registry={registry} />
 
       <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ padding: 16, gap: 16 }}>

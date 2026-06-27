@@ -7,7 +7,7 @@ import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
 import {
-  sendFields, sendReviewList,
+  sendFields, sendReviewList, screenHeader, SCREEN_BACK,
   WALLET_SEND_FIELD_CHANGE, WALLET_SEND_FIELD_ACTION,
 } from '@stage-labs/views';
 import { basicRoot } from '@/lib/kitRow';
@@ -115,6 +115,18 @@ function openTx(hash: Hex): void {
   window.open(explorerTxUrl(chainIdRef.value, hash), '_blank', 'noopener');
 }
 
+const headerNode = computed(() =>
+  basicRoot(screenHeader({
+    title: 'Send token',
+    titleStyle: { kind: 'title', size: 'sm' },
+    backColor: palette.text,
+    safeTop: 0,
+    padTop: 10,
+    surface: palette.toolbarBg,
+    borderColor: palette.border,
+  })),
+);
+
 const fieldsNode = computed(() =>
   basicRoot(sendFields({
     recipient: send.to.value,
@@ -140,6 +152,7 @@ const feeNode = computed(() => {
 });
 
 const fieldsRegistry: WidgetActionRegistry = {
+  [SCREEN_BACK]: () => { back(); },
   [WALLET_SEND_FIELD_CHANGE]: (action) => {
     if (action.payload.field === 'recipient' && typeof action.payload.recipient === 'string') {
       send.to.value = action.payload.recipient;
@@ -156,18 +169,7 @@ const fieldsRegistry: WidgetActionRegistry = {
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <Row
-      surface="toolbar"
-      align="center"
-      :gap="8"
-      :padding="{ x: 12, y: 10 }"
-      :style="{ borderBottomWidth: '1px', borderBottomStyle: 'solid', borderBottomColor: palette.border }"
-    >
-      <Pressable tag="button" type="button" class="p-1" aria-label="Back" @click="back">
-        <Icon name="arrowLeft" :size="22" :color="palette.text" />
-      </Pressable>
-      <Title size="sm">Send token</Title>
-    </Row>
+    <KitRenderer :node="headerNode" :registry="fieldsRegistry" />
 
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar" :gap="16" :padding="{ x: 16, y: 16 }">
       <!-- Token selector mirrors mobile's TokenSelector. -->
