@@ -3,6 +3,10 @@
 import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import { screenHeader, SCREEN_BACK } from '@stage-labs/views';
+import { basicRoot } from '@/lib/kitRow';
 import { useEffectiveScheme } from '@/lib/kitTheme';
 import { useProposals, type ProposalDetail } from '../lib/useProposals';
 import type { QueuedRequest, RequestKind } from '@stage-labs/client/xmtp/requests-queue';
@@ -23,6 +27,20 @@ const acceptBg = computed(() => (dark.value ? '#15321f' : '#dcf5e6'));
 const acceptFg = computed(() => (dark.value ? '#34d399' : '#15803d'));
 
 const { requests, details, loading, error, refresh } = useProposals();
+
+const headerNode = computed(() =>
+  basicRoot(screenHeader({
+    title: 'Pending requests',
+    titleStyle: { kind: 'title', size: 'sm' },
+    backColor: palette.link,
+    safeTop: 0,
+    surface: palette.toolbarBg,
+    borderColor: palette.border,
+  })),
+);
+const headerRegistry: WidgetActionRegistry = {
+  [SCREEN_BACK]: () => { router.back(); },
+};
 
 const KIND_LABEL: Record<RequestKind, string> = {
   poll: 'Poll',
@@ -179,18 +197,7 @@ async function onExecute(req: QueuedRequest): Promise<void> {
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <Row
-      surface="toolbar"
-      align="center"
-      :gap="8"
-      :padding="{ x: 12, y: 10 }"
-      :style="{ borderBottomWidth: '1px', borderBottomStyle: 'solid', borderBottomColor: palette.border }"
-    >
-      <Pressable tag="button" type="button" class="p-1" @click="router.back()">
-        <Icon name="arrowLeft" :size="22" :color="palette.link" />
-      </Pressable>
-      <Title size="sm">Pending requests</Title>
-    </Row>
+    <KitRenderer :node="headerNode" :registry="headerRegistry" />
 
     <Col v-if="requests === null" align="center" justify="center" class="flex-1">
       <Spinner :size="28" />
