@@ -111,3 +111,5 @@ export const GROUP_EDIT_SAVE = 'group.edit.save';
 export const MEMBER_FIELD_CHANGE = 'accounts.memberField.change';
 
 export const MEMBER_FIELD_SUBMIT = 'accounts.memberField.submit';
+
+export const SCREEN_BACK = 'screen.back';
