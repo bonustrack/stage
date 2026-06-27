@@ -1,12 +1,13 @@
-import type { ButtonNode, RowNode, ThemeColor } from '@stage-labs/kit/kit';
+import type { ButtonNode, RowNode } from '@stage-labs/kit/kit';
 import { compact } from '../node';
 import { MEMBER_ADD_CHANGE, MEMBER_ADD_SUBMIT } from '../actions';
-
-const SURFACE: ThemeColor = { dark: '#282a2d', light: '#e4e4e5' };
-const BORDER: ThemeColor = { dark: '#282a2d', light: '#e4e4e5' };
-const FG: ThemeColor = { dark: '#9f9fa3', light: '#57606a' };
-const HEAD: ThemeColor = { dark: '#ffffff', light: '#000000' };
-const BG: ThemeColor = { dark: '#0e0f10', light: '#ffffff' };
+import {
+  BG_COLOR as BG,
+  BORDER_COLOR as BORDER,
+  FG_COLOR as FG,
+  HEAD_COLOR as HEAD,
+  SURFACE_COLOR as SURFACE,
+} from '../colors';
 
 export interface MemberAddFormParams {
   draft: string;

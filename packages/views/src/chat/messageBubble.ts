@@ -1,6 +1,7 @@
 import type { Color, ColNode, WidgetNode } from '@stage-labs/kit/kit';
 import { compactList } from '../node';
 import { markdown, text } from '../primitives';
+import { HIGHLIGHT_BG } from '../colors';
 
 export interface BubbleSegment {
   text: string;
@@ -26,7 +27,7 @@ function bodyNodes(params: MessageBubbleParams): WidgetNode[] {
   if (params.segments !== undefined && params.segments.length > 0) {
     return params.segments.map((segment) =>
       text(segment.text, {
-        background: segment.emphasized === true ? '#FFF200' : undefined,
+        background: segment.emphasized === true ? HIGHLIGHT_BG : undefined,
         color: params.textColor,
       }),
     );

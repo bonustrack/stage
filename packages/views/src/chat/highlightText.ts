@@ -1,7 +1,6 @@
 import type { Color, RowNode, TextSize, WidgetNode } from '@stage-labs/kit/kit';
 import { compact } from '../node';
-
-const HL_BG = '#FFF200';
+import { HIGHLIGHT_BG } from '../colors';
 
 export interface HighlightTextParams {
   text: string;
@@ -47,7 +46,7 @@ export function highlightText(params: HighlightTextParams): RowNode {
         value: segment.value,
         size: params.size,
         color: params.color,
-        background: segment.match ? params.matchBackground ?? HL_BG : undefined,
+        background: segment.match ? params.matchBackground ?? HIGHLIGHT_BG : undefined,
         fontSize: params.fontSize,
         lineHeight: params.lineHeight,
       }),

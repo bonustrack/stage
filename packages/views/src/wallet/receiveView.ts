@@ -1,6 +1,10 @@
 import type { BasicNode, ThemeColor, WidgetNode } from '@stage-labs/kit/kit';
 import { addressCard } from './addressCard';
 
+const QR_FIXED_FOREGROUND = '#000000';
+const QR_FIXED_BACKGROUND = '#ffffff';
+const QR_PLACEHOLDER_BACKGROUND = '#f4f4f5';
+
 export interface ReceiveViewParams {
   address: string;
   label: string;
@@ -16,11 +20,11 @@ export function receiveView(params: ReceiveViewParams): BasicNode {
           type: 'QRCode',
           value: address,
           size: 240,
-          color: '#000000',
-          background: '#ffffff',
+          color: QR_FIXED_FOREGROUND,
+          background: QR_FIXED_BACKGROUND,
         },
       ]
-    : [{ type: 'Box', width: 240, height: 240, background: '#f4f4f5' }];
+    : [{ type: 'Box', width: 240, height: 240, background: QR_PLACEHOLDER_BACKGROUND }];
   return {
     type: 'Basic',
     children: [
@@ -31,7 +35,7 @@ export function receiveView(params: ReceiveViewParams): BasicNode {
         children: [
           {
             type: 'Box',
-            background: '#ffffff',
+            background: QR_FIXED_BACKGROUND,
             radius: 'xl',
             padding: 16,
             align: 'center',

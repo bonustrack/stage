@@ -1,6 +1,7 @@
 import type { AudioPlayerNode, Color, RowNode } from '@stage-labs/kit/kit';
 import { compact } from '../node';
 import { VOICE_PLAY } from '../actions';
+import { VOICE_ACCENT, VOICE_ON_ACCENT } from '../colors';
 
 export interface VoiceMessageParams {
   src: string;
@@ -12,7 +13,7 @@ export interface VoiceMessageParams {
 }
 
 export function voiceMessage(params: VoiceMessageParams): RowNode {
-  const background = params.background ?? '#0a7cff';
+  const background = params.background ?? VOICE_ACCENT;
   const player = compact<AudioPlayerNode>({
     type: 'AudioPlayer',
     src: params.src,
@@ -21,7 +22,7 @@ export function voiceMessage(params: VoiceMessageParams): RowNode {
     bars: params.bars,
     barCount: params.barCount,
     accent: background,
-    onAccent: params.onAccent ?? '#ffffff',
+    onAccent: params.onAccent ?? VOICE_ON_ACCENT,
     onPlayAction: { type: VOICE_PLAY, payload: { src: params.src } },
   });
   return {

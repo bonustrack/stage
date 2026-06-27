@@ -1,6 +1,8 @@
 import type { BoxNode, WidgetNode } from '@stage-labs/kit/kit';
 import { compact } from '../node';
 
+const VIDEO_LETTERBOX_FIXED = '#000';
+
 export interface VideoMessageParams {
   src: string;
   poster?: string;
@@ -18,7 +20,7 @@ export function videoMessage(params: VideoMessageParams): BoxNode {
     type: 'Box',
     width: params.width ?? 220,
     radius: 'md',
-    background: '#000',
+    background: VIDEO_LETTERBOX_FIXED,
     children: [player],
   };
 }

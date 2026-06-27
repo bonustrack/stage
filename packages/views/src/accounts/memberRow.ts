@@ -1,13 +1,14 @@
-import type { ListViewItemNode, WidgetNode } from '@stage-labs/kit/kit';
+import type { Color, ListViewItemNode, WidgetNode } from '@stage-labs/kit/kit';
 import { compactList } from '../node';
 import { MEMBER_PRESS, MEMBER_REMOVE } from '../actions';
+import { MEMBER_OWNER_BG, MEMBER_OWNER_FG } from '../colors';
 
 export type MemberBadgeRole = 'owner' | 'admin';
 
 interface MemberBadge {
   label: string;
-  background: string;
-  color: string;
+  background: Color;
+  color: Color;
 }
 
 export interface MemberRowParams {
@@ -26,11 +27,7 @@ export interface MemberRowParams {
 
 function memberBadge(params: MemberRowParams): MemberBadge | undefined {
   if (params.role === 'owner') {
-    return {
-      label: 'Owner',
-      background: params.dark ? 'rgba(45,212,191,0.18)' : 'rgba(13,148,136,0.12)',
-      color: params.dark ? '#2dd4bf' : '#0d9488',
-    };
+    return { label: 'Owner', background: MEMBER_OWNER_BG, color: MEMBER_OWNER_FG };
   }
   if (params.role === 'admin') {
     return { label: 'Admin', background: params.borderColor, color: params.subColor };

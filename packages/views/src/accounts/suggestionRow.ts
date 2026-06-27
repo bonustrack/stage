@@ -1,6 +1,7 @@
 import type { Color, ListViewItemNode, WidgetNode } from '@stage-labs/kit/kit';
 import { compactList } from '../node';
 import { SUGGESTION_TOGGLE } from '../actions';
+import { ON_PRIMARY_COLOR } from '../colors';
 
 export interface SuggestionRowParams {
   address: string;
@@ -39,7 +40,7 @@ export function suggestionRow(params: SuggestionRowParams): ListViewItemNode {
           background: checkBackground,
           align: 'center',
           justify: 'center',
-          children: [{ type: 'Icon', name: 'check', size: 14, color: '#fff' }],
+          children: [{ type: 'Icon', name: 'check', size: 14, color: ON_PRIMARY_COLOR }],
         }
       : undefined,
     !selected

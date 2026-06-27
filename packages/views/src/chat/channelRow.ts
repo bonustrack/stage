@@ -1,10 +1,12 @@
 import type {
   BadgeColor,
+  Color,
   ListViewItemNode,
   RowNode,
   WidgetNode,
 } from '@stage-labs/kit/kit';
 import { compact, compactList } from '../node';
+import { HIGHLIGHT_BG } from '../colors';
 import {
   CHANNEL_LABEL_PRESS,
   CHANNEL_LONG_PRESS,
@@ -41,7 +43,7 @@ export interface ChannelRowParams {
 interface TitleSeg {
   text: string;
   weight: string;
-  background?: string;
+  background?: Color;
 }
 
 function titleSegs(params: ChannelRowParams): TitleSeg[] {
@@ -49,7 +51,7 @@ function titleSegs(params: ChannelRowParams): TitleSeg[] {
     return params.titleSegments.map((segment) => ({
       text: segment.text,
       weight: 'semibold',
-      background: segment.emphasized === true ? '#FFF200' : undefined,
+      background: segment.emphasized === true ? HIGHLIGHT_BG : undefined,
     }));
   }
   return [{ text: params.title, weight: 'semibold' }];
