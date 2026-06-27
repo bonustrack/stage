@@ -1,13 +1,14 @@
 
 import { useEffect, useState } from 'react';
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Row } from './layout';
 import { usePalette, type Palette } from '../lib/theme';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from '../modules/messaging';
-import { Icon } from '@stage-labs/kit/react-native/icon';
 import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
 import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
-import { profileActionsRow, PROFILE_ROUND_PRESS } from '@stage-labs/views';
+import {
+  basicRoot, profileActionsRow, screenHeader,
+  PROFILE_ROUND_PRESS, SCREEN_BACK,
+} from '@stage-labs/views';
 import { TopnavIdentity } from './TopnavIdentity';
 
 export type ProfileColors = Palette;
@@ -37,23 +38,26 @@ export function ProfileHeader({ variant, insetTop, onBack, c }: {
   variant: 'tab' | 'route'; insetTop: number;
   onBack: () => void; c: ProfileColors;
 }): React.ReactElement {
-  const headerStyle = {
-    position: 'absolute' as const, top: 0, left: 0, right: 0, zIndex: 2,
-    height: 44 + insetTop, paddingTop: insetTop, paddingHorizontal: 14,
-  };
+  if (variant === 'route') {
+    const node = basicRoot(screenHeader({
+      variant: 'overlay',
+      backColor: c.link,
+      backHitSlop: 10,
+      backPadding: 6,
+      safeTop: insetTop,
+    }));
+    const registry: WidgetActionRegistry = { [SCREEN_BACK]: () => { onBack(); } };
+    return <KitRenderer node={node} registry={registry} />;
+  }
   return (
     <Row
       align="center"
       justify="between"
-      style={headerStyle}
+      height={44 + insetTop}
+      padding={{ top: insetTop, x: 14 }}
+      style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2 }}
 >
-      {variant === 'route' ? (
-        <Pressable onPress={onBack} hitSlop={10} style={{ padding: 6 }}>
-          <Icon name="arrowLeft" size={22} color={c.link}/>
-        </Pressable>
-      ) : (
-        <TopnavIdentity/>
-      )}
+      <TopnavIdentity/>
     </Row>
   );
 }

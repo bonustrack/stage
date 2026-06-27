@@ -9,8 +9,8 @@ import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import type { BasicNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
 import {
-  profileHeader, profileActionsRow, profileAddressRow,
-  PROFILE_ROUND_PRESS, PROFILE_ADDRESS_COPY,
+  basicRoot, profileHeader, profileActionsRow, profileAddressRow, screenHeader,
+  PROFILE_ROUND_PRESS, PROFILE_ADDRESS_COPY, SCREEN_BACK,
 } from '@stage-labs/views';
 
 const route = useRoute();
@@ -97,12 +97,20 @@ const actionsNode = computed<BasicNode>(() => ({
   ],
 }));
 
+const headerNode = computed<BasicNode>(() => basicRoot(screenHeader({
+  variant: 'overlay',
+  backColor: palette.link,
+  backHitSlop: 10,
+  backPadding: 6,
+})));
+
 const registry: WidgetActionRegistry = {
   [PROFILE_ADDRESS_COPY]: () => { void copyAddress(); },
   [PROFILE_ROUND_PRESS]: (action) => {
     if (action.payload.action === 'message') { if (!openingDm.value) void onMessage(); }
     else if (action.payload.action === 'send') onSend();
   },
+  [SCREEN_BACK]: () => { router.back(); },
 };
 </script>
 
@@ -110,11 +118,7 @@ const registry: WidgetActionRegistry = {
   <Col class="min-h-screen" surface="surface">
     <!-- Route header: back button, absolutely positioned over the banner,
          mirroring mobile ProfileScreen ProfileHeader (variant route). -->
-    <Row class="flex items-center px-3 py-3 absolute top-0 left-0 right-0 z-20">
-      <Pressable tag="button" type="button" class="p-1.5" @click="router.back()">
-        <Icon name="arrowLeft" :size="22" color="link" />
-      </Pressable>
-    </Row>
+    <KitRenderer :node="headerNode" :registry="registry" />
 
     <!-- Banner: 140px tall, border-colored, behind the surface card. -->
     <Col :style="{ height: '140px', backgroundColor: palette.border }" />

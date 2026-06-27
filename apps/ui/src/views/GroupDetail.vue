@@ -4,8 +4,8 @@ import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { overflowMenu, OVERFLOW_MENU_PRESS } from '@stage-labs/views';
+import type { BasicNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
+import { overflowMenu, screenHeader, OVERFLOW_MENU_PRESS, SCREEN_BACK } from '@stage-labs/views';
 import { basicRoot } from '@/lib/kitRow';
 import { useGroupDetail } from '../lib/useGroupDetail';
 import { leaveGroup } from '../lib/xmtpGroups';
@@ -41,23 +41,29 @@ async function onLeaveGroup(): Promise<void> {
   }
 }
 
-const leaveMenuNode = computed(() =>
+const headerNode = computed<BasicNode>(() =>
   basicRoot(
-    overflowMenu({
-      items: [
-        {
-          id: 'leave',
-          label: leaving.value ? 'Leaving…' : 'Leave group',
-          icon: 'logout',
-          danger: true,
-          disabled: leaving.value,
-        },
+    screenHeader({
+      backColor: palette.text,
+      trailing: [
+        overflowMenu({
+          items: [
+            {
+              id: 'leave',
+              label: leaving.value ? 'Leaving…' : 'Leave group',
+              icon: 'logout',
+              danger: true,
+              disabled: leaving.value,
+            },
+          ],
+        }),
       ],
     }),
   ),
 );
 
 const menuRegistry: WidgetActionRegistry = {
+  [SCREEN_BACK]: () => { router.back(); },
   [OVERFLOW_MENU_PRESS]: (action) => {
     if (action.payload.id === 'leave') void onLeaveGroup();
   },
@@ -66,13 +72,7 @@ const menuRegistry: WidgetActionRegistry = {
 
 <template>
   <Col class="min-h-screen bg-metro-bg-light dark:bg-metro-bg-dark">
-    <Row class="flex items-center px-3 py-3">
-      <Pressable tag="button" type="button" class="p-1.5" @click="router.back()">
-        <Icon name="arrowLeft" :size="22" />
-      </Pressable>
-      <Col class="flex-1" />
-      <KitRenderer :node="leaveMenuNode" :registry="menuRegistry" />
-    </Row>
+    <KitRenderer :node="headerNode" :registry="menuRegistry" />
 
     <Col v-if="leaveError" class="px-4 pb-2 text-xs text-red-500">{{ leaveError }}</Col>
 

@@ -2,17 +2,16 @@
 import { useEffect, useState } from 'react';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
+import type { WidgetActionRegistry, WidgetNode, WidgetRoot } from '@stage-labs/kit/kit';
+import { basicRoot, screenHeader, SCREEN_BACK } from '@stage-labs/views';
 import type { GroupPickedFile } from './group.actions.handlers';
-import { Row, Col } from '../../components/layout';
+import { Col } from '../../components/layout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getCachedXmtpClient, getOrCreateXmtpClient, lineOfConv } from '../../modules/messaging';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { Icon } from '@stage-labs/kit/react-native/icon';
 import { ImageViewer } from '../../components/ImageViewer';
 import { AddMemberModal, OverflowModal } from './group.parts';
 import { GroupMembersList } from './group.members';
@@ -22,6 +21,23 @@ import { useGroupDetail } from './group.detail';
 import { GroupLabelsSection } from './group.labels';
 import { GroupGithubSection } from './group.github';
 import { useGroupActions } from './group.actions';
+
+const GROUP_OVERFLOW_PRESS = 'group_overflow_press';
+
+function overflowTrailing(color: string): WidgetNode {
+  return {
+    type: 'Pressable',
+    hitSlop: 10,
+    onClickAction: { type: GROUP_OVERFLOW_PRESS },
+    children: [
+      {
+        type: 'Box',
+        padding: 6,
+        children: [{ type: 'Icon', name: 'dotsHorizontal', size: 22, color }],
+      },
+    ],
+  };
+}
 
 function groupImagePickerNode(openNonce: number): WidgetRoot {
   return {
@@ -94,17 +110,22 @@ export default function GroupDetail(): React.ReactElement {
     }).catch(() => undefined);
   }, []);
 
+  const headerNode = basicRoot(screenHeader({
+    variant: 'overlay',
+    backColor: fg,
+    backHitSlop: 10,
+    backPadding: 6,
+    safeTop: insets.top,
+    trailing: [overflowTrailing(fg)],
+  }));
+  const headerRegistry: WidgetActionRegistry = {
+    [SCREEN_BACK]: () => { router.back(); },
+    [GROUP_OVERFLOW_PRESS]: () => { setOverflowOpen(true); },
+  };
+
   return (
     <Col surface="surface" flex={1}>
-      {}
-      <Row height={44 + insets.top} padding={{ x: 14, top: insets.top }} align="center" justify="between" style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2 }}>
-        <Pressable onPress={() => { router.back(); }} hitSlop={10} style={{ padding: 6 }}>
-          <Icon name="arrowLeft" size={22} color={fg}/>
-        </Pressable>
-        <Pressable onPress={() => { setOverflowOpen(true); }} hitSlop={10} style={{ padding: 6 }}>
-          <Icon name="dotsHorizontal" size={22} color={fg}/>
-        </Pressable>
-      </Row>
+      <KitRenderer node={headerNode} registry={headerRegistry} />
 
       <GroupProfileHeader
         insetTop={insets.top} imageUrl={imageUrl} channelId={convId ?? ''} uploadingImage={uploadingImage}
