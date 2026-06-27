@@ -5,6 +5,7 @@ import {
   basicRoot, sendFields,
   WALLET_SEND_FIELD_ACTION, WALLET_SEND_FIELD_CHANGE,
 } from '@stage-labs/views';
+import { toggleAmountUnit } from '@stage-labs/client/wallet/sendAmount';
 import { usePalette } from '../../lib/theme';
 import { Col } from '../../components/layout';
 import { TxStatus } from './send.fields';
@@ -17,18 +18,10 @@ function toggleAmount(
   amount: string, mode: 'eth' | 'usd', priceUsd: number | null,
   setAmount: (v: string) => void, setMode: (fn: (m: 'eth' | 'usd') => 'eth' | 'usd') => void,
 ): void {
-  const n = Number(amount);
-  if (!amount.trim() || !priceUsd || !isFinite(n) || n <= 0) {
-    setMode((m) => (m === 'eth' ? 'usd' : 'eth'));
-    return;
-  }
-  if (mode === 'eth') {
-    setAmount((n * priceUsd).toFixed(2));
-    setMode(() => 'usd');
-  } else {
-    setAmount((n / priceUsd).toFixed(6).replace(/0+$/, '').replace(/\.$/, ''));
-    setMode(() => 'eth');
-  }
+  const next = toggleAmountUnit(amount, mode === 'eth' ? 'primary' : 'usd', priceUsd);
+  const nextMode: 'eth' | 'usd' = next.unit === 'primary' ? 'eth' : 'usd';
+  if (next.amount !== amount) setAmount(next.amount);
+  setMode(() => nextMode);
 }
 
 export function PublicSendBody({ token, initialTo, onFooter }: {

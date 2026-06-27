@@ -9,6 +9,7 @@ import { getActiveAccount } from '../../lib/accounts';
 import { kernelClientForRecord } from '../../lib/zerodev';
 import { broviderTransport } from '@stage-labs/client/wallet/client';
 import { classifyRecipientInput, noAddressSetError } from '@stage-labs/client/wallet/send';
+import { tokenAmountFromInput } from '@stage-labs/client/wallet/sendAmount';
 import { ASSETS } from '../../components/tabs/WalletScreen.assets';
 import type { TokenChoice } from './TokenSelector';
 import { fetchBalanceAndPrice } from './send.helpers';
@@ -115,13 +116,10 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
     return () => { cancelled = true; clearTimeout(t); };
   }, [to]);
 
-  const tokenAmount = useMemo(() => {
-    const n = Number(amount);
-    if (!isFinite(n) || n <= 0) return 0;
-    if (mode === 'eth') return n;
-    if (!tokenPriceUsd) return 0;
-    return n / tokenPriceUsd;
-  }, [amount, mode, tokenPriceUsd]);
+  const tokenAmount = useMemo(
+    () => tokenAmountFromInput(amount, mode === 'eth' ? 'primary' : 'usd', tokenPriceUsd),
+    [amount, mode, tokenPriceUsd],
+  );
 
   const secondaryLabel = useMemo(
     () => secondaryLabelOf(amount, mode, tokenPriceUsd, token.symbol),

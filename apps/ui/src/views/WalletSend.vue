@@ -18,6 +18,7 @@ import { explorerTxUrl } from '@stage-labs/client/xmtp/tx';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { useWalletBalances } from '@/lib/useWalletBalances';
 import { buildSortedTokenRows } from '@stage-labs/client/wallet/tokens';
+import { toggleAmountUnit } from '@stage-labs/client/wallet/sendAmount';
 import { getTokenRow } from '../lib/tokenDetailStore';
 import { useSend } from '../lib/useSend';
 
@@ -77,24 +78,11 @@ const secondaryLabel = computed(() => {
 });
 
 function toggleMode(): void {
-  const price = priceUsd.value;
-  const raw = send.amount.value.trim();
-  if (!price || !raw) {
-    mode.value = mode.value === 'token' ? 'usd' : 'token';
-    return;
-  }
-  const n = Number(raw);
-  if (!isFinite(n) || n <= 0) {
-    mode.value = mode.value === 'token' ? 'usd' : 'token';
-    return;
-  }
-  if (mode.value === 'token') {
-    send.amount.value = (n * price).toFixed(2);
-    mode.value = 'usd';
-  } else {
-    send.amount.value = (n / price).toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
-    mode.value = 'token';
-  }
+  const next = toggleAmountUnit(
+    send.amount.value, mode.value === 'token' ? 'primary' : 'usd', priceUsd.value,
+  );
+  send.amount.value = next.amount;
+  mode.value = next.unit === 'primary' ? 'token' : 'usd';
 }
 
 const submitLabel = computed(() => {
