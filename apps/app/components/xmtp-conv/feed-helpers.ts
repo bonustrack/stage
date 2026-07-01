@@ -1,6 +1,6 @@
 
 import { humanizeMentions, attachmentEmojiPreview } from '@stage-labs/client/xmtp/humanize';
-import type { HistoryEntry } from '../../lib/types';
+import type { HistoryEntry } from '@stage-labs/client/types';
 
 export {
   pollOptionCountsInFeed, pollQuestionsInFeed,

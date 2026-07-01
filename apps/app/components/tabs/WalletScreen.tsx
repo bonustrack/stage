@@ -1,5 +1,5 @@
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { ScrollView } from 'react-native-gesture-handler';
 import { usePullToRefresh } from './PullToRefresh';
@@ -7,13 +7,21 @@ import { RefreshButton } from './WalletScreen.refreshButton';
 import { Spinner } from '../Spinner';
 import type { SimultaneousRefs } from '../SwipeTabs.types';
 import { Text } from '@stage-labs/kit/react-native/text';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers } from '@stage-labs/kit/kit';
+import {
+  balanceHeader,
+  basicRoot,
+  WALLET_ACTION_PRESS,
+  type BalanceAction,
+} from '@stage-labs/views';
 import { useRouter } from 'expo-router';
 import { flash } from '../../lib/toast';
 import { usePeerProfiles } from '../../lib/peerProfiles';
-import { DANGER, useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { DANGER, usePalette } from '../../lib/theme';
 import { Col, Row } from '../layout';
 import { getNftsAcrossChains, type Nft } from '../../lib/opensea';
-import { Btn, WalletTabs, NftsView, fmtUsd, splitUsd, type WalletTab } from './WalletScreen.parts';
+import { WalletTabs, NftsView, fmtUsd, splitUsd, type WalletTab } from './WalletScreen.parts';
 import { PrivateView } from './WalletScreen.private';
 import { privateBalancesToRows, symbolPricesFromPublic } from './WalletScreen.private.rows';
 import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
@@ -81,21 +89,39 @@ function WalletTabBody({ tab, nftState, address, rows, privateRows, pending, err
   return <TokensList rows={rows} privateRows={privateRows} pending={pending} head={c.head} sub={c.sub} border={c.border} bg={c.bg}/>;
 }
 
-function WalletBalanceCard({ err, totalUsd, head }: {
-  err: boolean; totalUsd: number | null; head: string;
+function WalletBalanceCard({ err, totalUsd, border, onAction }: {
+  err: boolean; totalUsd: number | null; border: string;
+  onAction: (action: string) => void;
 }): React.ReactElement {
+  const node = useMemo(() => {
+    const parts = totalUsd === null ? null : splitUsd(fmtUsd(totalUsd));
+    const mk = (label: string, icon: string, action: string): BalanceAction => ({
+      label, icon, pressType: WALLET_ACTION_PRESS, bg: border, payload: { action },
+    });
+    return basicRoot(balanceHeader({
+      total: err || !parts ? '…' : parts.int,
+      totalDecimals: err || !parts ? undefined : parts.dec,
+      subtitle: err ? 'Couldn’t load balances' : undefined,
+      heroSize: '7xl',
+      actions: [
+        mk('Send', 'send', 'send'),
+        mk('Receive', 'arrowDown', 'receive'),
+        mk('Swap', 'switchHorizontal', 'swap'),
+        mk('Buy', 'creditCard', 'buy'),
+      ],
+    }));
+  }, [err, totalUsd, border]);
+  const actions: PayloadHandlers = useMemo(
+    () => ({
+      [WALLET_ACTION_PRESS]: (payload) => {
+        if (typeof payload.action === 'string') onAction(payload.action);
+      },
+    }),
+    [onAction],
+  );
   return (
     <Col padding={{ top: 4, bottom: 16 }} margin={{ x: 16 }} align="start">
-      {err ? (
-        <Text size="xs" color={DANGER}>Couldn’t load balances</Text>
-      ) : totalUsd === null ? (
-        <Text weight="semibold" size="7xl" color={head}>…</Text>
-      ) : (
-        <Text weight="semibold" size="7xl" color={head}>
-          {splitUsd(fmtUsd(totalUsd)).int}
-          <Text weight="semibold" size="7xl" role="secondary">{splitUsd(fmtUsd(totalUsd)).dec}</Text>
-        </Text>
-      )}
+      <ViewHost node={node} actions={actions} />
     </Col>
   );
 }
@@ -103,7 +129,6 @@ function WalletBalanceCard({ err, totalUsd, head }: {
 export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const router = useRouter();
   const { link: head, text: sub, bg, border } = usePalette();
-  const dark = useEffectiveColorScheme() === 'dark';
   const focused = useWalletFocused();
 
   const { snapshot: privSnapshot, accountId: privAccountId, pending } = usePrivateWallet(focused);
@@ -123,6 +148,13 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
     ? rows.reduce((s, r) => s + (r.priceUsd ?? 0) * Number(r.balance), 0)
     : null;
   const c = { head, sub, border, bg };
+
+  const onWalletAction = useCallback((action: string): void => {
+    if (action === 'send') router.push('/wallet/send');
+    else if (action === 'receive') router.push('/wallet/receive');
+    else if (action === 'swap') flash('Swap — coming soon');
+    else if (action === 'buy') flash('Buy — coming soon');
+  }, [router]);
 
   return (
     <Col surface="surface" flex={1}>
@@ -146,15 +178,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
         <RefreshButton refreshing={refreshing} onRefresh={onRefresh} color={head}/>
       </Row>
       {}
-      <WalletBalanceCard err={!!err} totalUsd={totalUsd} head={head} />
-
-      {}
-      <Row margin={{ x: 16, top: 12 }} justify="start" gap={12}>
-        <Btn icon="send" label="Send" onPress={() => { router.push('/wallet/send'); }} head={head} border={border} dark={dark}/>
-        <Btn icon="arrowDown" label="Receive" onPress={() => { router.push('/wallet/receive'); }} head={head} border={border} dark={dark}/>
-        <Btn icon="switchHorizontal" label="Swap" onPress={() => { flash('Swap — coming soon'); }} head={head} border={border} dark={dark}/>
-        <Btn icon="creditCard" label="Buy" onPress={() => { flash('Buy — coming soon'); }} head={head} border={border} dark={dark}/>
-      </Row>
+      <WalletBalanceCard err={!!err} totalUsd={totalUsd} border={border} onAction={onWalletAction} />
 
       <WalletTabs tab={tab} setTab={setTab} head={head} sub={sub} border={border}/>
 

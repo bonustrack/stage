@@ -13,14 +13,14 @@ import { useLayoutEffect } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { openInBubbleLink } from '../lib/safeOpenLink';
-import { githubLinkOf } from '../lib/githubDetect';
+import { githubLinkOf } from '@stage-labs/client/api/github';
 import { useGithubDiff } from '../lib/useGithubDiff';
 import { FileDiff } from '../components/FileDiff';
 import Markdown from 'react-native-markdown-display';
 import { mdParser } from '../lib/mdParser';
 import { diffMarkdownStyles } from '../lib/diffMarkdownStyles';
 import type { GithubDiff } from '../lib/useGithubDiff';
-import type { GithubRef } from '../lib/githubDetect';
+import type { GithubRef } from '@stage-labs/client/api/github';
 import type { Palette } from '../lib/theme';
 
 interface MdProps {

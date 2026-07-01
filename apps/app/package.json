@@ -15,6 +15,7 @@
   "dependencies": {
     "@stage-labs/client": "workspace:*",
     "@stage-labs/kit": "workspace:*",
+    "@stage-labs/views": "workspace:*",
     "@zerodev/sdk": "5.5.10",
     "@zerodev/ecdsa-validator": "5.4.9",
     "@zerodev/weighted-ecdsa-validator": "5.4.4",
@@ -63,7 +64,6 @@
     "react-native-get-random-values": "~1.11.0",
     "react-native-keyboard-controller": "^1.21.8",
     "react-native-markdown-display": "^7.0.2",
-    "react-native-qrcode-svg": "^6",
     "react-native-reanimated": "^4.3.1",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",

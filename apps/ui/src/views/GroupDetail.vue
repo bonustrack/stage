@@ -2,6 +2,10 @@
 
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import type { BasicNode } from '@stage-labs/kit/kit';
+import { basicRoot, overflowMenu, screenHeader, OVERFLOW_MENU_PRESS, SCREEN_BACK } from '@stage-labs/views';
 import { useGroupDetail } from '../lib/useGroupDetail';
 import { leaveGroup } from '../lib/xmtpGroups';
 
@@ -13,6 +17,7 @@ const {
 } = useGroupDetail();
 
 const route = useRoute();
+const palette = useKitPalette();
 const convId = computed(() => String(route.params.convId ?? ''));
 
 function goAddMembers(): void { void router.push(`/xmtp/${convId.value}/add-members`); }
@@ -34,27 +39,39 @@ async function onLeaveGroup(): Promise<void> {
     leaving.value = false;
   }
 }
+
+const headerNode = computed<BasicNode>(() =>
+  basicRoot(
+    screenHeader({
+      backColor: palette.text,
+      trailing: [
+        overflowMenu({
+          items: [
+            {
+              id: 'leave',
+              label: leaving.value ? 'Leaving…' : 'Leave group',
+              icon: 'logout',
+              danger: true,
+              disabled: leaving.value,
+            },
+          ],
+        }),
+      ],
+    }),
+  ),
+);
+
+const menuActions = {
+  [SCREEN_BACK]: (): void => { router.back(); },
+  [OVERFLOW_MENU_PRESS]: (payload: Record<string, unknown>): void => {
+    if (payload.id === 'leave') void onLeaveGroup();
+  },
+};
 </script>
 
 <template>
   <Col class="min-h-screen bg-metro-bg-light dark:bg-metro-bg-dark">
-    <Row class="flex items-center px-3 py-3">
-      <Pressable tag="button" type="button" class="p-1.5" @click="router.back()">
-        <Icon name="arrowLeft" :size="22" />
-      </Pressable>
-      <Col class="flex-1" />
-      <OverflowMenu>
-        <template #default="{ run }">
-          <OverflowItem
-            icon="logout"
-            :label="leaving ? 'Leaving…' : 'Leave group'"
-            danger
-            :disabled="leaving"
-            @select="run(onLeaveGroup)"
-          />
-        </template>
-      </OverflowMenu>
-    </Row>
+    <ViewHost :node="headerNode" :actions="menuActions" />
 
     <Col v-if="leaveError" class="px-4 pb-2 text-xs text-red-500">{{ leaveError }}</Col>
 
@@ -93,20 +110,18 @@ async function onLeaveGroup(): Promise<void> {
       />
     </Col>
 
-    <Row align="center" class="px-4 pb-1.5">
-      <Col class="flex-1 text-[11px] uppercase tracking-wide text-metro-sub-light dark:text-metro-sub-dark">
-        Members ({{ members.length }})
-      </Col>
+    <Row align="center" justify="between" class="px-4 pb-2">
+      <Text size="xs" role="secondary">MEMBERS ({{ members.length }})</Text>
       <Pressable
         v-if="selfIsAdmin"
         tag="button"
         type="button"
-        class="flex items-center gap-1 text-xs font-head
-          text-metro-head-light dark:text-metro-head-dark"
+        class="flex items-center gap-[5px] px-2.5 py-1.5 rounded-full border"
+        :style="{ borderColor: palette.border }"
         @click="goAddMembers"
       >
+        <Icon name="users" :size="16" />
         <Icon name="plus" :size="14" />
-        Add members
       </Pressable>
     </Row>
     <MemberAddForm v-if="selfIsAdmin" :adding="adding" @add="onAddMember" />

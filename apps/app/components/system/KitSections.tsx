@@ -22,8 +22,36 @@ import { Markdown } from '@stage-labs/kit/react-native/markdown';
 import { Table } from '@stage-labs/kit/react-native/table';
 import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { WidgetRoot } from '@stage-labs/kit/kit';
+import { EXTENSION_WIDGET } from './KitSections.extensions';
 import { GallerySection } from './GallerySection';
 import type { GalleryPalette } from './galleryPalette';
+
+const CHART_WIDGET: WidgetRoot = {
+  type: 'Card',
+  children: [
+    { type: 'Title', value: 'Weekly volume', size: 'md' },
+    {
+      type: 'Chart',
+      height: 200,
+      showYAxis: true,
+      showLegend: true,
+      xAxis: { dataKey: 'day' },
+      data: [
+        { day: 'Mon', sent: 12, received: 8 },
+        { day: 'Tue', sent: 18, received: 14 },
+        { day: 'Wed', sent: 9, received: 20 },
+        { day: 'Thu', sent: 22, received: 11 },
+        { day: 'Fri', sent: 16, received: 19 },
+      ],
+      series: [
+        { type: 'bar', dataKey: 'sent', label: 'Sent' },
+        { type: 'bar', dataKey: 'received', label: 'Received' },
+      ],
+    },
+  ],
+};
 
 const SAMPLE_ICONS = ['cog', 'bell', 'wallet', 'chat', 'user', 'check'] as const;
 const LIST_ROWS = ['Display', 'Messenger', 'Notifications', 'Security'];
@@ -39,7 +67,7 @@ function TypographySections({ dark, head, sub, border }: GalleryPalette): React.
         <Title level={3} color={head}>Level 3 title</Title>
       </GallerySection>
 
-      <GallerySection name="Text" note="ChatKit value / size / weight / textAlign" {...sec} innerPadH={14} innerPadV={12}>
+      <GallerySection name="Text" note="Kit value / size / weight / textAlign" {...sec} innerPadH={14} innerPadV={12}>
         <Text value="Body text - the default paragraph style."/>
         <Text role="secondary" value="Secondary text - muted supporting copy."/>
         <Text role="secondary" size="xs" value="Caption text - smallest label."/>
@@ -48,7 +76,7 @@ function TypographySections({ dark, head, sub, border }: GalleryPalette): React.
         <Text variant="mono" value="0xabc...1234"/>
       </GallerySection>
 
-      <GallerySection name="Button" note="ChatKit color + variant + size + iconStart/iconEnd" {...sec} innerPadH={14} innerPadV={12}>
+      <GallerySection name="Button" note="Kit color + variant + size + iconStart/iconEnd" {...sec} innerPadH={14} innerPadV={12}>
         <Row gap={8} style={{ flexWrap: 'wrap' }}>
           <Button dark={dark} color="primary" label="Primary"/>
           <Button dark={dark} color="secondary" label="Secondary"/>
@@ -87,7 +115,7 @@ function SurfaceSections({ dark, head, sub, border }: GalleryPalette): React.Rea
   const sec = { head, sub, border };
   return (
     <>
-      <GallerySection name="Card" note="ChatKit surface with status + actions" {...sec} framed={false}>
+      <GallerySection name="Card" note="Kit surface with status + actions" {...sec} framed={false}>
         <Card dark={dark}
           status={{ text: 'Pending confirmation' }}
           confirm={{ label: 'Confirm', onPress: () => undefined }}
@@ -225,12 +253,12 @@ function ContentSections({ dark, head, sub, border }: GalleryPalette): React.Rea
   const sec = { head, sub, border };
   return (
     <>
-      <GallerySection name="Markdown" note="ChatKit value - headings / code / links" {...sec} innerPadH={14} innerPadV={12}>
+      <GallerySection name="Markdown" note="Kit value - headings / code / links" {...sec} innerPadH={14} innerPadV={12}>
         <Markdown dark={dark}
           value={'## Markdown\nRenders **bold**, _italic_, `inline code`, and [links](https://metro.box).\n\n- Bulleted item\n- Second item\n\n```\ncode fence\n```'}/>
       </GallerySection>
 
-      <GallerySection name="Table" note="ChatKit Table / Row / Cell - header + data" {...sec} framed={false}>
+      <GallerySection name="Table" note="Kit Table / Row / Cell - header + data" {...sec} framed={false}>
         <Table dark={dark}>
           <Table.Row header>
             <Table.Cell><Text weight="semibold">Token</Text></Table.Cell>
@@ -245,6 +273,10 @@ function ContentSections({ dark, head, sub, border }: GalleryPalette): React.Rea
             <Table.Cell align="end"><Text variant="mono">980.00</Text></Table.Cell>
           </Table.Row>
         </Table>
+      </GallerySection>
+
+      <GallerySection name="Chart" note="JSON widget - bar/line/area series, SVG renderer" {...sec} framed={false}>
+        <ViewHost node={CHART_WIDGET} />
       </GallerySection>
 
       <GallerySection name="Scroll" note="Kit ScrollView wrapper - padding / gap shorthands" {...sec} innerPadH={14} innerPadV={12}>
@@ -268,6 +300,20 @@ function ContentSections({ dark, head, sub, border }: GalleryPalette): React.Rea
   );
 }
 
+function ExtensionSections({ head, sub, border }: GalleryPalette): React.ReactElement {
+  const sec = { head, sub, border };
+  return (
+    <GallerySection
+      name="Extension nodes"
+      note="Spinner / Switch / Tabs / AvatarStack / QRCode / TextField / ColorPicker / Pressable / Audio / Video / FilePicker / VoiceRecorder - all JSON, via ViewHost"
+      {...sec}
+      framed={false}
+    >
+      <ViewHost node={EXTENSION_WIDGET} />
+    </GallerySection>
+  );
+}
+
 export function KitSections(p: GalleryPalette): React.ReactElement {
   return (
     <Box>
@@ -275,6 +321,7 @@ export function KitSections(p: GalleryPalette): React.ReactElement {
       <SurfaceSections {...p} />
       <FormSections {...p} />
       <ContentSections {...p} />
+      <ExtensionSections {...p} />
     </Box>
   );
 }

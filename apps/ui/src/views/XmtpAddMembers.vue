@@ -1,8 +1,10 @@
 <script setup lang="ts">
 
-import { onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import { basicRoot, screenHeader, SCREEN_BACK } from '@stage-labs/views';
 import { useEffectiveScheme } from '@/lib/kitTheme';
 import { addGroupMembers } from '../lib/xmtpGroups';
 import { convOfLine, lineOfConv, groupMemberEthAddresses } from '../lib/xmtp';
@@ -34,6 +36,20 @@ function removeMember(address: string): void {
   members.value = members.value.filter(m => m.address.toLowerCase() !== lower);
 }
 
+const headerNode = computed(() =>
+  basicRoot(screenHeader({
+    title: 'Add members',
+    titleStyle: { kind: 'title', size: 'sm', color: palette.link },
+    backColor: palette.text,
+    safeTop: 0,
+    surface: palette.toolbarBg,
+    borderColor: palette.border,
+  })),
+);
+const headerActions = {
+  [SCREEN_BACK]: (): void => { router.back(); },
+};
+
 async function onSubmit(): Promise<void> {
   if (members.value.length === 0 || submitting.value || !convId) return;
   submitting.value = true;
@@ -50,18 +66,7 @@ async function onSubmit(): Promise<void> {
 
 <template>
   <Col surface="surface" class="min-h-screen pb-[88px]">
-    <Row
-      surface="toolbar"
-      align="center"
-      :gap="8"
-      :padding="{ x: 12, y: 10 }"
-      :style="{ borderBottomWidth: '1px', borderBottomStyle: 'solid', borderBottomColor: palette.border }"
-    >
-      <Pressable tag="button" type="button" class="p-1" @click="router.back()">
-        <Icon name="arrowLeft" :size="22" :color="palette.text" />
-      </Pressable>
-      <Title size="sm">Add members</Title>
-    </Row>
+    <ViewHost :node="headerNode" :actions="headerActions" />
 
     <Col class="flex-1 overflow-y-auto no-scrollbar" :padding="16" :gap="16">
       <MemberPicker

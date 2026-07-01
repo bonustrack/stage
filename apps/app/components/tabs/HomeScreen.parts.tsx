@@ -4,6 +4,8 @@ import { useCallback } from 'react';
 import { DevSettings, Vibration } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import { basicRoot, emptyState } from '@stage-labs/views';
 import { Col } from '../layout';
 import { Spinner } from '../Spinner';
 import { ChannelRow } from '../ChannelRow';
@@ -14,7 +16,7 @@ import { hasDraft, getDraft } from '../../lib/drafts';
 import { isPinned } from '../../lib/pins';
 import { requestLabelFilter } from '../../lib/labelFilterRequest';
 import type { Row as RowT } from './HomeScreen.helpers';
-import { fmtTs } from './HomeScreen.helpers';
+import { channelTimestamp } from '@stage-labs/views';
 import { DANGER } from '../../lib/theme';
 
 interface RowMenu { convId: string; title: string; isUnread: boolean; isGroup: boolean; peerAddress: string | null }
@@ -55,7 +57,7 @@ function ChannelRowItem({ item, router, setRowMenu, query }: {
       avatarAddress={rowAvatarAddress(item, isGroup)}
       square={!item.peerAddress}
       lastPreview={rowPreview(item)}
-      timestamp={fmtTs(item.lastTs)}
+      timestamp={channelTimestamp(item.lastTs)}
       unreadCount={item.unreadCount}
       markedUnread={item.markedUnread}
       pinned={isPinned(item.convId)}
@@ -125,11 +127,10 @@ export function HomeSpinner({ head }: { head: string; bg: string }): React.React
 }
 
 export function HomeEmpty({ message }: { message?: string }): React.ReactElement {
-  return (
-    <Col padding={32} align="center">
-      <Text role="secondary" style={{ textAlign: 'center' }}>
-        {message ?? 'No conversations yet. Share your address from Settings to start one.'}
-      </Text>
-    </Col>
+  const node = basicRoot(
+    emptyState({
+      title: message ?? 'No conversations yet. Share your address from Settings to start one.',
+    }),
   );
+  return <ViewHost node={node} />;
 }

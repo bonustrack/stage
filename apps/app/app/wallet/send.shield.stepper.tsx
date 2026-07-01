@@ -1,14 +1,11 @@
-import { Text } from '@stage-labs/kit/react-native/text';
-
-import { Col, Row, Box } from '../../components/layout';
-import { Spinner } from '../../components/Spinner';
-import { DANGER } from '../../lib/theme';
+import { useMemo } from 'react';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import { basicRoot, stepper, type StepperStep } from '@stage-labs/views';
+import { Col } from '../../components/layout';
 
 interface Pal { sub: string; head: string; link: string }
 
 export type ShieldStage = 'idle' | 'submitting' | 'confirming' | 'scanning' | 'done' | 'error';
-
-const ERR = DANGER;
 
 const STEPS: readonly (readonly [ShieldStage, string])[] = [
   ['submitting', 'Submitting transaction'],
@@ -22,48 +19,34 @@ function stageIndex(s: ShieldStage): number {
   return s === 'idle' || s === 'error' ? -1 : ORDER.indexOf(s);
 }
 
-function Step({ label, state, hint, pal }: {
-  label: string; state: 'done' | 'active' | 'pending' | 'error'; hint?: string; pal: Pal;
-}): React.ReactElement {
-  const color = state === 'done' ? pal.link : state === 'error' ? ERR
-    : state === 'active' ? pal.head : pal.sub;
-  return (
-    <Col gap={2}>
-      <Row align="center" gap={10}>
-        <Box width={18} height={18} align="center" justify="center">
-          {state === 'active' ? <Spinner size={14} color={pal.link}/>
-            : state === 'done' ? <Text weight="semibold" size="md">✓</Text>
-            : state === 'error' ? <Text weight="semibold" size="md" color={ERR}>✕</Text>
-            : <Box width={8} height={8} radius="xs" background={pal.sub} style={{ opacity: 0.5 }} />}
-        </Box>
-        <Text weight="semibold" size="md" color={color}>{label}</Text>
-      </Row>
-      {hint ? (
-        <Text size="xs" color={pal.sub} style={{ paddingLeft: 28 }}>{hint}</Text>
-      ) : null}
-    </Col>
-  );
+function stepState(
+  idx: number, cur: number, stage: ShieldStage, errorAt: number,
+): StepperStep['state'] {
+  if (stage === 'error') return idx < errorAt ? 'done' : idx === errorAt ? 'error' : 'pending';
+  if (stage === 'done') return 'done';
+  if (idx < cur) return 'done';
+  if (idx === cur) return 'active';
+  return 'pending';
 }
 
-export function ShieldStepper({ stage, pal, errorAt = 0 }: {
+export function ShieldStepper({ stage, errorAt = 0 }: {
   stage: ShieldStage; pal: Pal; errorAt?: number;
 }): React.ReactElement | null {
+  const node = useMemo(() => {
+    const cur = stageIndex(stage);
+    const steps: StepperStep[] = STEPS.map(([id, label]) => {
+      const idx = ORDER.indexOf(id);
+      const state = stepState(idx, cur, stage, errorAt);
+      const hint = state === 'active' && id === 'scanning'
+        ? 'This can take a few minutes…' : undefined;
+      return { label, state, hint } satisfies StepperStep;
+    });
+    return basicRoot(stepper({ steps }));
+  }, [stage, errorAt]);
   if (stage === 'idle') return null;
-  const cur = stageIndex(stage);
   return (
-    <Col padding={{ x: 4, top: 4 }} gap={12}>
-      {STEPS.map(([id, label]) => {
-        const idx = ORDER.indexOf(id);
-        let state: 'done' | 'active' | 'pending' | 'error';
-        if (stage === 'error') state = idx < errorAt ? 'done' : idx === errorAt ? 'error' : 'pending';
-        else if (stage === 'done') state = 'done';
-        else if (idx < cur) state = 'done';
-        else if (idx === cur) state = 'active';
-        else state = 'pending';
-        const hint = state === 'active' && id === 'scanning'
-          ? 'This can take a few minutes…' : undefined;
-        return <Step key={id} label={label} state={state} hint={hint} pal={pal} />;
-      })}
+    <Col padding={{ x: 4, top: 4 }}>
+      <ViewHost node={node} />
     </Col>
   );
 }

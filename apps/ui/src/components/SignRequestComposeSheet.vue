@@ -1,9 +1,64 @@
 <script setup lang="ts">
 
 import { ref, computed } from 'vue';
+import ViewHost from '@stage-labs/kit/vue/view-host';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import { composeField } from '@/lib/composeField';
+import { basicRoot } from '@stage-labs/views';
 
 const palette = useKitPalette();
+
+const DESC_CHANGE = 'sign.desc.change';
+const MESSAGE_CHANGE = 'sign.message.change';
+const JSON_CHANGE = 'sign.json.change';
+
+const descNode = computed(() =>
+  basicRoot(composeField({
+    name: 'desc',
+    value: desc.value,
+    placeholder: 'Description (e.g. Sign in to dapp)',
+    fontSize: 15,
+    changeType: DESC_CHANGE,
+  })));
+
+const messageNode = computed(() =>
+  basicRoot(composeField({
+    name: 'message',
+    value: message.value,
+    placeholder: 'Message to sign',
+    fontSize: 15,
+    multiline: true,
+    rows: 4,
+    changeType: MESSAGE_CHANGE,
+  })));
+
+const jsonNode = computed(() =>
+  basicRoot(composeField({
+    name: 'json',
+    value: json.value,
+    placeholder: eip712Placeholder,
+    fontSize: 13,
+    multiline: true,
+    rows: 8,
+    mono: true,
+    autoCorrect: false,
+    changeType: JSON_CHANGE,
+  })));
+
+const actions = {
+  [DESC_CHANGE]: (payload: Record<string, unknown>): void => {
+    const next = payload.desc;
+    if (typeof next === 'string') desc.value = next;
+  },
+  [MESSAGE_CHANGE]: (payload: Record<string, unknown>): void => {
+    const next = payload.message;
+    if (typeof next === 'string') message.value = next;
+  },
+  [JSON_CHANGE]: (payload: Record<string, unknown>): void => {
+    const next = payload.json;
+    if (typeof next === 'string') json.value = next;
+  },
+};
 
 const tintBg = computed(() => {
   const hex = palette.primary.replace('#', '');
@@ -47,14 +102,11 @@ function create(): void {
 </script>
 
 <template>
-  <!-- kit-exception: fixed modal overlay backdrop — kit has no overlay/Dialog
-       primitive; rendered as a fixed positioned Col with a click-to-dismiss scrim.
-       Mirrors PollComposeSheet + mobile SignatureSheet (MessengerComposer.sheets). -->
-  <Col class="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
-    @click.self="emit('close')">
-    <Col class="absolute inset-0 bg-black/50" @click="emit('close')" />
+  <Dialog open side="bottom" animation-type="slide"
+    overlay-class="flex items-end sm:items-center justify-center"
+    @close="emit('close')">
     <Col surface="raised"
-      class="relative w-full sm:max-w-md max-h-[85vh] overflow-y-auto no-scrollbar
+      class="w-full sm:max-w-md max-h-[85vh] overflow-y-auto no-scrollbar
         rounded-t-2xl sm:rounded-2xl p-4 gap-3
         bg-metro-bg-light dark:bg-metro-bg-dark">
       <Row class="flex items-center justify-between">
@@ -86,40 +138,11 @@ function create(): void {
           @click="kind = 'eip712'">Typed data</Pressable>
       </Row>
 
-      <!-- kit-exception: bare inputs — kit Input/Textarea force boxed styling that
-           clashes with this surface; mirrors PollComposeSheet + mobile fields. -->
-      <component :is="'input'"
-        :value="desc"
-        @input="desc = ($event.target as HTMLInputElement).value"
-        placeholder="Description (e.g. Sign in to dapp)"
-        class="w-full rounded-lg px-3 py-2 font-sans text-[15px] outline-none
-          border border-metro-border-light dark:border-metro-border-dark
-          bg-metro-surface-light dark:bg-metro-surface-dark
-          text-metro-head-light dark:text-metro-head-dark
-          placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark" />
+      <ViewHost :node="descNode" :actions="actions" />
 
-      <component v-if="kind === 'personal'" :is="'textarea'"
-        :value="message"
-        @input="message = ($event.target as HTMLTextAreaElement).value"
-        placeholder="Message to sign"
-        rows="4"
-        class="w-full resize-none rounded-lg px-3 py-2 font-sans text-[15px] outline-none
-          border border-metro-border-light dark:border-metro-border-dark
-          bg-metro-surface-light dark:bg-metro-surface-dark
-          text-metro-head-light dark:text-metro-head-dark
-          placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark" />
+      <ViewHost v-if="kind === 'personal'" :node="messageNode" :actions="actions" />
 
-      <component v-else :is="'textarea'"
-        :value="json"
-        @input="json = ($event.target as HTMLTextAreaElement).value"
-        :placeholder="eip712Placeholder"
-        rows="8"
-        spellcheck="false"
-        class="w-full resize-none rounded-lg px-3 py-2 font-mono text-[13px] outline-none
-          border border-metro-border-light dark:border-metro-border-dark
-          bg-metro-surface-light dark:bg-metro-surface-dark
-          text-metro-head-light dark:text-metro-head-dark
-          placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark" />
+      <ViewHost v-else :node="jsonNode" :actions="actions" />
 
       <Button
         variant="primary"
@@ -133,5 +156,5 @@ function create(): void {
         Send request
       </Button>
     </Col>
-  </Col>
+  </Dialog>
 </template>

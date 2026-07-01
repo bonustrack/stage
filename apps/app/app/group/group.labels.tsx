@@ -5,6 +5,9 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Input } from '@stage-labs/kit/react-native/input';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers } from '@stage-labs/kit/kit';
+import { basicRoot, labelRow, LABEL_REMOVE } from '@stage-labs/views';
 import { Box, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 import { flash } from '../../lib/toast';
@@ -39,17 +42,20 @@ function SuggestionChip({ label, busy, onAdd, p }: {
 
 interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }
 
-function LabelChip({ label, busy, onRemove, p }: {
-  label: string; busy: boolean; onRemove: () => void; p: Pal;
+function LabelChips({ labels, onRemove, p }: {
+  labels: string[]; onRemove: (label: string) => void; p: Pal;
 }): React.ReactElement {
-  return (
-    <Row radius="full" surface="raised" padding={{ y: 6, right: 8, left: 12 }} align="center" gap={6} style={{ opacity: busy ? 0.5 : 1 }}>
-      <Text size="xs" color={p.fg}>{label}</Text>
-      <Pressable onPress={onRemove} disabled={busy} hitSlop={8} style={{ padding: 2 }}>
-        <Icon name="x" size={14} color={p.sub}/>
-      </Pressable>
-    </Row>
-  );
+  const node = basicRoot(labelRow({
+    labels: labels.map((label) => ({ label, removable: true })),
+    background: p.rowBg,
+  }));
+  const actions: PayloadHandlers = {
+    [LABEL_REMOVE]: (payload) => {
+      const label = payload.label;
+      if (typeof label === 'string') onRemove(label);
+    },
+  };
+  return <ViewHost node={node} actions={actions} />;
 }
 
 function LabelAddRow({ draft, setDraft, busy, onAdd, p }: {
@@ -145,17 +151,9 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
       </Row>
 
       {labels.length> 0 ? (
-        <Row margin={{ top: 10 }} gap={8} style={{ flexWrap: 'wrap' }}>
-          {labels.map((label) => (
-            <LabelChip
-              key={label.toLowerCase()}
-              label={label}
-              busy={removing === label}
-              onRemove={() => { void remove(label); }}
-              p={p}
-/>
-          ))}
-        </Row>
+        <Box margin={{ top: 10 }}>
+          <LabelChips labels={labels} onRemove={(label) => { void remove(label); }} p={p} />
+        </Box>
       ) : null}
 
       {!atCap ? (

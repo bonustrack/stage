@@ -18,6 +18,7 @@ import { HomeContactResults } from './HomeScreen.contacts';
 import { HomeOverflowMenu } from './HomeScreen.overflow';
 import { usePublishTopnavSlot } from './topnavSlots';
 import { getActiveAccount } from '../../lib/accounts';
+import { unreadBadgeLabel } from '@stage-labs/views';
 
 interface ChannelsListProps {
   panRef?: import('../SwipeTabs.types').SimultaneousRefs;
@@ -62,7 +63,7 @@ function HomeTopnavRight({ head, requestCount, router, onOpenSearch }: {
         {requestCount > 0 ? (
           <Box minWidth={16} height={16} padding={{ x: 5 }} radius="full" background={badgeBg}
             align="center" justify="center" style={{ position: 'absolute', top: -6, right: -8 }}>
-            <Text weight="semibold" size="3xs" color={badgeFg}>{requestCount > 99 ? '99+' : requestCount}</Text>
+            <Text weight="semibold" size="3xs" color={badgeFg}>{unreadBadgeLabel(requestCount)}</Text>
           </Box>
         ) : null}
       </Pressable>

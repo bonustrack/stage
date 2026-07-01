@@ -1,13 +1,13 @@
 
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
-
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers, WidgetRoot } from '@stage-labs/kit/kit';
+import { stampAvatarUrl } from '@stage-labs/kit/avatar';
+import { suggestionRow, SUGGESTION_TOGGLE } from '@stage-labs/views';
 import { usePalette } from '../../lib/theme';
 import { shortAddress } from '../../modules/messaging';
 import type { Contact } from '../../lib/useContacts';
-import { Avatar } from '../../components/Avatar';
-import { Col, Row } from '../../components/layout';
+import { Col } from '../../components/layout';
 
 export function ContactSuggestions({
   contacts, selected, onToggle,
@@ -16,53 +16,37 @@ export function ContactSuggestions({
   selected: Set<string>;
   onToggle: (contact: Contact) => void;
 }): React.ReactElement | null {
-  const { link: head, border } = usePalette();
+  const { link: head } = usePalette();
   if (contacts.length === 0) return null;
+
+  const node: WidgetRoot = {
+    type: 'ListView',
+    children: contacts.map((c) =>
+      suggestionRow({
+        address: c.address,
+        name: c.name,
+        avatarUri: stampAvatarUrl(c.address, 80),
+        handle: c.name !== shortAddress(c.address) ? shortAddress(c.address) : undefined,
+        selected: selected.has(c.address),
+        checkBackground: head,
+      }),
+    ),
+  };
+
+  const actions: PayloadHandlers = {
+    [SUGGESTION_TOGGLE]: (payload) => {
+      const address = payload.address;
+      const contact = contacts.find((c) => c.address === address);
+      if (contact) onToggle(contact);
+    },
+  };
 
   return (
     <Col gap={6}>
       <Text size="xs" role="secondary">
         Suggested contacts
       </Text>
-      <Col gap={2}>
-        {contacts.map(c => {
-          const isSelected = selected.has(c.address);
-          return (
-            <Pressable
-              key={c.address}
-              onPress={() => { onToggle(c); }}
-              style={({ pressed }) => ({
-                flexDirection: 'row', alignItems: 'center', gap: 10,
-                borderRadius: 12, paddingHorizontal: 8, paddingVertical: 8,
-                backgroundColor: pressed ? border : 'transparent',
-              })}
->
-              <Avatar
-                address={c.address}
-                size="md"
-                style={{ backgroundColor: border }}
-/>
-              <Col flex={1} gap={1}>
-                <Text weight="semibold" size="md" numberOfLines={1} color={head}>
-                  {c.name}
-                </Text>
-                {c.name !== shortAddress(c.address) && (
-                  <Text size="xs" numberOfLines={1} role="secondary">
-                    {shortAddress(c.address)}
-                  </Text>
-                )}
-              </Col>
-              <Row width={24} height={24} radius="lg" background={isSelected ? head : 'transparent'}
-                align="center"
-                justify="center"
-                style={{ borderWidth: 2, borderColor: isSelected ? head : border }}
->
-                {isSelected && <Icon name="check" size={14} color="#fff" />}
-              </Row>
-            </Pressable>
-          );
-        })}
-      </Col>
+      <ViewHost node={node} actions={actions} />
     </Col>
   );
 }

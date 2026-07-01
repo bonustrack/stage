@@ -3,6 +3,8 @@
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import { settingsHeader, SCREEN_BACK } from '@stage-labs/views';
 import { useEffectiveScheme } from '@/lib/kitTheme';
 import { mnemonicWords } from '@stage-labs/client/zerodev/derive';
 import { getWalletMnemonic, hasWalletMnemonic, markWalletBackedUp } from '../../lib/accounts';
@@ -10,6 +12,18 @@ import { getWalletMnemonic, hasWalletMnemonic, markWalletBackedUp } from '../../
 const router = useRouter();
 const palette = useKitPalette();
 const scheme = useEffectiveScheme();
+
+const headerNode = computed(() => settingsHeader({
+  title: 'Recovery phrase',
+  backColor: palette.text,
+  surface: palette.toolbarBg,
+  borderColor: palette.border,
+  safeTop: 0,
+}));
+
+const actions = {
+  [SCREEN_BACK]: (): void => { router.back(); },
+};
 
 const present = ref(hasWalletMnemonic());
 const revealed = ref(false);
@@ -52,18 +66,7 @@ function done(): void {
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <Row
-      surface="toolbar"
-      align="center"
-      :gap="8"
-      :padding="{ x: 12, y: 10 }"
-      :style="{ borderBottomWidth: '1px', borderBottomStyle: 'solid', borderBottomColor: palette.border }"
-    >
-      <Pressable tag="button" type="button" class="p-1" @click="router.back()">
-        <Icon name="arrowLeft" :size="22" :color="palette.text" />
-      </Pressable>
-      <Title size="sm">Recovery phrase</Title>
-    </Row>
+    <ViewHost :node="headerNode" :actions="actions" />
 
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 pb-8">
       <template v-if="!present">
@@ -117,18 +120,20 @@ function done(): void {
         </template>
 
         <template v-else>
-          <ol class="mt-6 grid grid-cols-2 gap-2">
-            <li
+          <Row :wrap="true" :gap="8" class="mt-6">
+            <Row
               v-for="(w, i) in words"
               :key="i"
-              class="flex items-center gap-2 rounded-lg border px-3 py-2
+              align="center"
+              :gap="8"
+              class="w-[calc(50%-0.25rem)] rounded-lg border px-3 py-2
                 bg-metro-surface-light dark:bg-metro-surface-dark"
               :style="{ borderColor: palette.border }"
             >
               <Text size="2xs" class="w-4 text-right text-metro-sub-light dark:text-metro-sub-dark tabular-nums">{{ i + 1 }}</Text>
               <Text size="sm" weight="semibold" class="font-mono text-metro-head-light dark:text-metro-head-dark">{{ w }}</Text>
-            </li>
-          </ol>
+            </Row>
+          </Row>
 
           <Col :gap="8" class="mt-5">
             <Button

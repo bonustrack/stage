@@ -1,8 +1,9 @@
 
 import { useEffect, useState } from 'react';
 
-import { Dimensions, Modal } from 'react-native';
+import { Dimensions } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Dialog } from '@stage-labs/kit/react-native/dialog';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { useRouter } from 'expo-router';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -14,7 +15,7 @@ import { Avatar } from '../Avatar';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
 import { REACT_PRESETS } from '../MessengerBubble';
 import { usePalette } from '../../lib/theme';
-import type { HistoryEntry } from '../../lib/types';
+import type { HistoryEntry } from '@stage-labs/client/types';
 import { useBlockRadius } from '../../lib/theme';
 
 export function GithubNavButton({ url, color }: { url: string; color: string }): React.ReactElement {
@@ -145,18 +146,21 @@ export function BubbleActionMenu({
   const reactAndClose = (e: string): void => { onReact(e); onClose(); };
 
   return (
-    <Modal visible={!!target} transparent animationType="none" onRequestClose={onClose}>
-      <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }}>
-        {}
-        <Box align="start" style={{ position: 'absolute', left: 12, right: 12, top: stripTop }} pointerEvents="box-none">
-          <ReactionStrip expanded={expanded} setExpanded={setExpanded} dark={dark} sub={pal.sub} stripBg={pal.bg} onReact={reactAndClose} />
-          <Box height={6} pointerEvents="none"/>
-          <ActionDropdown
-            target={target} dark={dark} fg={pal.text} divider={pal.border} cardBg={pal.bg} blockRadius={blockRadius}
-            on={{ reply: onReply, copy: onCopy, select: onSelect, shareLink: onShareLink }}
-          />
-        </Box>
-      </Pressable>
-    </Modal>
+    <Dialog
+      open={!!target}
+      onClose={onClose}
+      animationType="none"
+      backdropColor="rgba(0,0,0,0.45)"
+      fullBleedPanel
+    >
+      <Box align="start" style={{ position: 'absolute', left: 12, right: 12, top: stripTop }} pointerEvents="box-none">
+        <ReactionStrip expanded={expanded} setExpanded={setExpanded} dark={dark} sub={pal.sub} stripBg={pal.bg} onReact={reactAndClose} />
+        <Box height={6} pointerEvents="none"/>
+        <ActionDropdown
+          target={target} dark={dark} fg={pal.text} divider={pal.border} cardBg={pal.bg} blockRadius={blockRadius}
+          on={{ reply: onReply, copy: onCopy, select: onSelect, shareLink: onShareLink }}
+        />
+      </Box>
+    </Dialog>
   );
 }

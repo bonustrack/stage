@@ -1,0 +1,204 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`labelRow minimal 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "align": "center",
+      "background": "#eeeeee",
+      "children": [
+        {
+          "size": "xs",
+          "type": "Text",
+          "value": "work",
+        },
+      ],
+      "gap": 6,
+      "padding": {
+        "left": 12,
+        "right": 8,
+        "y": 6,
+      },
+      "radius": "full",
+      "type": "Row",
+    },
+  ],
+  "gap": 8,
+  "type": "Row",
+  "wrap": "wrap",
+}
+`;
+
+exports[`labelRow full 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "align": "center",
+      "background": "#eeeeee",
+      "children": [
+        {
+          "size": "xs",
+          "type": "Text",
+          "value": "work",
+        },
+        {
+          "color": "secondary",
+          "iconStart": "x",
+          "onClickAction": {
+            "payload": {
+              "label": "work",
+            },
+            "type": "custom.remove",
+          },
+          "size": "sm",
+          "type": "Button",
+          "variant": "ghost",
+        },
+      ],
+      "gap": 6,
+      "padding": {
+        "left": 12,
+        "right": 8,
+        "y": 6,
+      },
+      "radius": "full",
+      "type": "Row",
+    },
+    {
+      "align": "center",
+      "background": "#eeeeee",
+      "children": [
+        {
+          "size": "xs",
+          "type": "Text",
+          "value": "dao",
+        },
+      ],
+      "gap": 6,
+      "padding": {
+        "left": 12,
+        "right": 8,
+        "y": 6,
+      },
+      "radius": "full",
+      "type": "Row",
+    },
+  ],
+  "gap": 8,
+  "type": "Row",
+  "wrap": "wrap",
+}
+`;
+
+exports[`groupFieldEditor minimal (single-line name) 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "children": [
+        {
+          "autoFocus": true,
+          "background": "#f7f7f7",
+          "borderColor": "#dddddd",
+          "color": "#111111",
+          "name": "name",
+          "onChangeAction": {
+            "payload": {
+              "field": "name",
+            },
+            "type": "group.edit.change",
+          },
+          "paddingX": 10,
+          "paddingY": 8,
+          "placeholder": "Group name",
+          "placeholderColor": "#666666",
+          "radius": 10,
+          "type": "TextField",
+          "value": "DAO Ops",
+          "variant": "outline",
+        },
+      ],
+      "flex": 1,
+      "type": "Box",
+    },
+    {
+      "background": "#0a7cff",
+      "fontFamily": "Calibre-Medium",
+      "fontSize": 13,
+      "foreground": "#ffffff",
+      "label": "Save",
+      "onClickAction": {
+        "type": "group.edit.save",
+      },
+      "paddingX": 14,
+      "size": "sm",
+      "type": "Button",
+      "variant": "solid",
+    },
+  ],
+  "gap": 8,
+  "padding": {
+    "top": 6,
+  },
+  "type": "Row",
+}
+`;
+
+exports[`groupFieldEditor full (multiline description, disabled save, custom types) 1`] = `
+{
+  "align": "start",
+  "children": [
+    {
+      "children": [
+        {
+          "autoFocus": true,
+          "background": "#f7f7f7",
+          "borderColor": "#dddddd",
+          "color": "#111111",
+          "minHeight": 80,
+          "multiline": true,
+          "name": "description",
+          "onChangeAction": {
+            "payload": {
+              "field": "description",
+            },
+            "type": "custom.change",
+          },
+          "paddingX": 10,
+          "paddingY": 8,
+          "placeholder": "Group description",
+          "placeholderColor": "#666666",
+          "radius": 10,
+          "type": "TextField",
+          "value": "What we do",
+          "variant": "outline",
+        },
+      ],
+      "flex": 1,
+      "type": "Box",
+    },
+    {
+      "background": "#0a7cff",
+      "disabled": true,
+      "fontFamily": "Calibre-Medium",
+      "fontSize": 13,
+      "foreground": "#ffffff",
+      "label": "Save",
+      "onClickAction": {
+        "type": "custom.save",
+      },
+      "paddingX": 14,
+      "size": "sm",
+      "type": "Button",
+      "variant": "solid",
+    },
+  ],
+  "gap": 8,
+  "padding": {
+    "top": 6,
+  },
+  "type": "Row",
+}
+`;

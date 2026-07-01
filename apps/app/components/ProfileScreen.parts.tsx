@@ -1,12 +1,14 @@
 
 import { useEffect, useState } from 'react';
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Text } from '@stage-labs/kit/react-native/text';
-import { Box, Row } from './layout';
+import { Row } from './layout';
 import { usePalette, type Palette } from '../lib/theme';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from '../modules/messaging';
-import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
-import { Button } from '@stage-labs/kit/react-native/button';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers } from '@stage-labs/kit/kit';
+import {
+  basicRoot, profileActionsRow, screenHeader,
+  PROFILE_ROUND_PRESS, SCREEN_BACK,
+} from '@stage-labs/views';
 import { TopnavIdentity } from './TopnavIdentity';
 
 export type ProfileColors = Palette;
@@ -36,51 +38,48 @@ export function ProfileHeader({ variant, insetTop, onBack, c }: {
   variant: 'tab' | 'route'; insetTop: number;
   onBack: () => void; c: ProfileColors;
 }): React.ReactElement {
-  const headerStyle = {
-    position: 'absolute' as const, top: 0, left: 0, right: 0, zIndex: 2,
-    height: 44 + insetTop, paddingTop: insetTop, paddingHorizontal: 14,
-  };
+  if (variant === 'route') {
+    const node = basicRoot(screenHeader({
+      variant: 'overlay',
+      backColor: c.link,
+      backHitSlop: 10,
+      backPadding: 6,
+      safeTop: insetTop,
+    }));
+    const actions: PayloadHandlers = { [SCREEN_BACK]: () => { onBack(); } };
+    return <ViewHost node={node} actions={actions} />;
+  }
   return (
     <Row
       align="center"
       justify="between"
-      style={headerStyle}
+      height={44 + insetTop}
+      padding={{ top: insetTop, x: 14 }}
+      style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2 }}
 >
-      {variant === 'route' ? (
-        <Pressable onPress={onBack} hitSlop={10} style={{ padding: 6 }}>
-          <Icon name="arrowLeft" size={22} color={c.link}/>
-        </Pressable>
-      ) : (
-        <TopnavIdentity/>
-      )}
+      <TopnavIdentity/>
     </Row>
   );
 }
 
-export function ProfileActions({ dark, opening, onMessage, onSend, c }: {
+export function ProfileActions({ opening, onMessage, onSend, c }: {
   dark: boolean; opening: boolean; onMessage: () => void; onSend: () => void; c: ProfileColors;
 }): React.ReactElement {
-  const Btn = ({ icon, label, onPress, disabled }: {
-    icon: HeroIconName; label: string; onPress: () => void; disabled?: boolean;
-  }): React.ReactElement => (
-    <Box align="center" gap={6}>
-      <Button
-        variant="secondary"
-        size="xl"
-        pill
-        dark={dark}
-        onPress={onPress}
-        disabled={disabled}
-        icon={<Icon name={icon} size={22} color={c.link} />}
-        style={{ backgroundColor: c.border, borderColor: c.border }}
-/>
-      <Text weight="semibold" size="md" color={c.link} numberOfLines={1}>{label}</Text>
-    </Box>
+  const node = basicRoot(
+    profileActionsRow({
+      border: c.border,
+      fg: c.link,
+      actions: [
+        { action: 'message', icon: 'chatRect', label: opening ? 'Opening…' : 'Message', disabled: opening },
+        { action: 'send', icon: 'send', label: 'Send' },
+      ],
+    }),
   );
-  return (
-    <Row margin={{ top: 18 }} gap={12} justify="start">
-      <Btn icon="chatRect" label={opening ? 'Opening…' : 'Message'} onPress={onMessage} disabled={opening}/>
-      <Btn icon="send" label="Send" onPress={onSend}/>
-    </Row>
-  );
+  const actions: PayloadHandlers = {
+    [PROFILE_ROUND_PRESS]: (payload) => {
+      if (payload.action === 'message') { if (!opening) onMessage(); }
+      else if (payload.action === 'send') onSend();
+    },
+  };
+  return <ViewHost node={node} actions={actions} />;
 }

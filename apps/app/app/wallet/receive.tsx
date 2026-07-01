@@ -1,25 +1,24 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
-import { Text } from '@stage-labs/kit/react-native/text';
-import { Box, Row, Col } from '../../components/layout';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers } from '@stage-labs/kit/kit';
+import { basicRoot, receiveView, screenHeader, SCREEN_BACK, WALLET_ADDRESS_COPY } from '@stage-labs/views';
+import { Col } from '../../components/layout';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import QRCode from 'react-native-qrcode-svg';
 import { getOrCreateXmtpClient } from '../../modules/messaging';
 import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
 import { usePalette } from '../../lib/theme';
-import { Icon } from '@stage-labs/kit/react-native/icon';
 import { flash } from '../../lib/toast';
 import { ReceiveModeToggle, type ReceiveMode } from '../../components/wallet/ReceiveModeToggle';
+import { receiveViewModel } from '@stage-labs/client/wallet/receive';
 
 export default function WalletReceive(): React.ReactElement {
   const router = useRouter();
-  const { text: fg, link: head, border } = usePalette();
-  const card = border;
+  const { text: fg, link: head, border, toolbarBg } = usePalette();
   const insets = useSafeAreaInsets();
 
   const [mode, setMode] = useState<ReceiveMode>('public');
@@ -39,8 +38,9 @@ export default function WalletReceive(): React.ReactElement {
     return () => { cancelled = true; };
   }, []);
 
-  const activeMode: ReceiveMode = mode === 'private' && !privateReady ? 'public' : mode;
-  const address = activeMode === 'private' ? privateAddress : publicAddress;
+  const { activeMode, address, label, hint } = receiveViewModel({
+    mode, publicAddress, privateAddress, privateReady,
+  });
 
   const copy = (): void => {
     if (!address) return;
@@ -48,18 +48,27 @@ export default function WalletReceive(): React.ReactElement {
     flash(activeMode === 'private' ? '0zk address copied' : 'Address copied');
   };
 
-  const hint = activeMode === 'private'
-    ? 'Shielded address. Funds sent here are private — the sender shields into Railgun.'
-    : 'Scan or share this address to receive ETH or tokens on Ethereum mainnet.';
+  const addressNode = useMemo(
+    () => receiveView({ address, label, hint, borderColor: border }),
+    [address, label, hint, border],
+  );
+  const headerNode = basicRoot(screenHeader({
+    title: 'Receive',
+    titleStyle: { kind: 'text', size: 'xl', weight: 'semibold', color: head },
+    backColor: fg,
+    safeTop: insets.top,
+    surface: toolbarBg,
+    borderColor: border,
+  }));
+
+  const actions: PayloadHandlers = {
+    [SCREEN_BACK]: () => { router.back(); },
+    [WALLET_ADDRESS_COPY]: () => { copy(); },
+  };
 
   return (
     <Col surface="surface" flex={1}>
-      <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-        <Pressable onPress={() => { router.back(); }} hitSlop={8} style={{ padding: 4 }}>
-          <Icon name="arrowLeft" size={22} color={fg}/>
-        </Pressable>
-        <Text weight="semibold" size="xl" color={head} style={{ flex: 1 }}>Receive</Text>
-      </Row>
+      <ViewHost node={headerNode} actions={actions} />
 
       <ScrollView contentContainerStyle={{ padding: 16, alignItems: 'center', gap: 16 }}>
         <ReceiveModeToggle
@@ -68,39 +77,9 @@ export default function WalletReceive(): React.ReactElement {
           privateReady={privateReady}
 />
 
-        {}
-        <Box background={'#ffffff'} radius="xl" padding={16} align="center" justify="center" style={{ borderWidth: 1, borderColor: border }}>
-          {address ? (
-            <QRCode
-              value={address}
-              size={240}
-              color="#000000"
-              backgroundColor="#ffffff"
-/>
-          ) : (
-            <Box width={240} height={240} background={'#f4f4f5'}/>
-          )}
-        </Box>
-
-        <Text size="xs" role="secondary" style={{ marginTop: 4 }}>
-          {activeMode === 'private' ? 'SHIELDED 0ZK ADDRESS (tap to copy)' : 'WALLET ADDRESS (tap to copy)'}
-        </Text>
-        <Pressable
-          onPress={copy}
-          style={({ pressed }) => ({
-            width: '100%', padding: 14, borderRadius: 12,
-            backgroundColor: pressed ? border : card,
-            borderWidth: 1, borderColor: border,
-          })}
->
-          <Text size="md" color={head} style={{ textAlign: 'center' }} selectable>
-            {address || '—'}
-          </Text>
-        </Pressable>
-
-        <Text size="xs" role="secondary" style={{ textAlign: 'center', paddingHorizontal: 16, marginTop: 8 }}>
-          {hint}
-        </Text>
+        <Col width="100%">
+          <ViewHost node={addressNode} actions={actions} />
+        </Col>
       </ScrollView>
     </Col>
   );

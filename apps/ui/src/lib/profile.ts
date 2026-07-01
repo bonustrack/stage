@@ -1,34 +1,21 @@
-
 import { lookupName } from '@stage-labs/client/stamp/resolve';
 import { PINEAPPLE_UPLOAD_URL, parsePineappleResponse } from '@stage-labs/client/profile/upload';
+import {
+  profileCacheKey, parseProfile, serializeProfile, type SnapshotProfile,
+} from '@stage-labs/client/profile/cache';
 
-export interface SnapshotProfile {
-  name?: string;
-  about?: string;
-  avatar?: string;
-  github?: string;
-  twitter?: string;
-  lens?: string;
-  farcaster?: string;
-}
-
-const PROFILE_CACHE_PREFIX = 'profile.cache.';
-
-function cacheKey(address: string): string {
-  return PROFILE_CACHE_PREFIX + address.toLowerCase();
-}
+export type { SnapshotProfile };
 
 export function loadCachedProfile(address: string): SnapshotProfile | null {
   if (!address) return null;
   try {
-    const raw = localStorage.getItem(cacheKey(address));
-    return raw ? JSON.parse(raw) as SnapshotProfile : null;
+    return parseProfile(localStorage.getItem(profileCacheKey(address)));
   } catch { return null; }
 }
 
 function storeCachedProfile(address: string, profile: SnapshotProfile): void {
   if (!address) return;
-  try { localStorage.setItem(cacheKey(address), JSON.stringify(profile)); }
+  try { localStorage.setItem(profileCacheKey(address), serializeProfile(profile)); }
   catch { }
 }
 

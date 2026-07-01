@@ -2,13 +2,21 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { isAddress } from 'viem';
-import { Text } from '@stage-labs/kit/react-native/text';
 import { Box } from '../layout';
-import { ChannelRow } from '../ChannelRow';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers, WidgetRoot } from '@stage-labs/kit/kit';
+import { basicRoot, contactRow, emptyState, sectionHeader, CONTACT_PRESS } from '@stage-labs/views';
 import { openDmWithAddress, shortAddress } from '../../modules/messaging';
-import { resolveEnsName } from '../../lib/ens';
+import { resolveEnsName } from '@stage-labs/client/api/ens';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { getCachedRows } from '../../modules/messaging';
+import { stampAvatarUrl } from '@stage-labs/kit/avatar';
+
+const NO_MATCH_NODE = basicRoot(
+  emptyState({ title: 'No matches. Paste a full address or a name.eth to start a chat.' }),
+);
+
+const PEOPLE_HEADER_NODE = basicRoot(sectionHeader({ title: 'People' }));
 
 function looksLikeEns(s: string): boolean {
   return /^[a-z0-9-]+(\.[a-z0-9-]+)*\.eth$/i.test(s.trim());
@@ -33,7 +41,7 @@ function getExistingPeers(): { address: string; convId: string }[] {
 interface Colors { fg: string; head: string; sub: string; border: string }
 
 export function HomeContactResults(
-  { query, c, noChannels }: { query: string; c: Colors; noChannels: boolean },
+  { query, noChannels }: { query: string; c: Colors; noChannels: boolean },
 ): React.ReactElement | null {
   const q = query.trim();
   const [resolved, setResolved] = useState<{ address: string; source: 'address' | 'ens' } | null>(null);
@@ -87,37 +95,54 @@ export function HomeContactResults(
   if (!q) return null;
   if (!showResolved && filtered.length === 0) {
     if (!noChannels) return null;
-    return (
-      <Text size="xs" color={c.sub} style={{ textAlign: 'center', paddingVertical: 24, paddingHorizontal: 24 }}>
-        No matches. Paste a full address or a {'name.eth'} to start a chat.
-      </Text>
-    );
+    return <ViewHost node={NO_MATCH_NODE} />;
   }
+
+  const rows = [
+    ...(showResolved
+      ? [{
+          address: resolved.address,
+          convId: undefined,
+          title: getPeerName(resolved.address) ?? (resolved.source === 'ens' ? q : shortAddress(resolved.address)),
+          subtitle: 'Start chat',
+        }]
+      : []),
+    ...filtered.map(p => ({
+      address: p.address,
+      convId: p.convId,
+      title: getPeerName(p.address) ?? shortAddress(p.address),
+      subtitle: getPeerName(p.address) ? shortAddress(p.address) : undefined,
+    })),
+  ];
+
+  const listNode: WidgetRoot = {
+    type: 'ListView',
+    children: rows.map(r =>
+      contactRow({
+        name: r.title,
+        avatarUri: stampAvatarUrl(r.address, 80),
+        handle: r.subtitle,
+        payload: { address: r.address, convId: r.convId ?? '' },
+      }),
+    ),
+  };
+
+  const actions: PayloadHandlers = {
+    [CONTACT_PRESS]: (payload) => {
+      const address = payload.address;
+      const convId = payload.convId;
+      if (typeof address === 'string') {
+        open(address, typeof convId === 'string' && convId !== '' ? convId : undefined);
+      }
+    },
+  };
 
   return (
     <Box>
-      <Text size="xs" color={c.sub} style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 6 }}>
-        PEOPLE
-      </Text>
-      {showResolved ? (
-        <ChannelRow
-          title={getPeerName(resolved.address) ?? (resolved.source === 'ens' ? q : shortAddress(resolved.address))}
-          avatarAddress={resolved.address}
-          square={false}
-          subtitle="Start chat"
-          onPress={() => { open(resolved.address); }}
-        />
-      ) : null}
-      {filtered.map(p => (
-        <ChannelRow
-          key={p.address.toLowerCase()}
-          title={getPeerName(p.address) ?? shortAddress(p.address)}
-          avatarAddress={p.address}
-          square={false}
-          subtitle={getPeerName(p.address) ? shortAddress(p.address) : null}
-          onPress={() => { open(p.address, p.convId); }}
-        />
-      ))}
+      <Box padding={{ x: 16, top: 16, bottom: 6 }}>
+        <ViewHost node={PEOPLE_HEADER_NODE} />
+      </Box>
+      <ViewHost node={listNode} actions={actions} />
     </Box>
   );
 }

@@ -1,5 +1,5 @@
 
-import type { HistoryEntry } from '../lib/types';
+import type { HistoryEntry } from '@stage-labs/client/types';
 import { fontSize } from '@stage-labs/kit/tokens';
 import type { RemoteAttachmentInfo } from '@xmtp/react-native-sdk';
 import { normalizeQuestions, type PollContent } from '@stage-labs/client/xmtp/poll';
@@ -31,11 +31,6 @@ export function unescapeBody(text: string): string {
 export interface Attachment {
   id?: string; url?: string; dataB64?: string; remote?: RemoteAttachmentInfo;
   kind: string; mime?: string; size?: number; name?: string;
-}
-
-export function fmtTs(ts: string): string {
-  try { return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }); }
-  catch { return ts.slice(11, 16); }
 }
 
 export function attachmentsOf(entry: HistoryEntry): Attachment[] {

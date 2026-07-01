@@ -18,7 +18,8 @@ const acctMgrSrc = code(read('components', 'AccountsManager.hook.ts'));
 const drawerSrc = code(read('components', 'LeftDrawer.accounts.tsx'));
 const disableSrc = code(read('lib', 'zerodev', 'disablePasskey.ts'));
 const walletSettingsSrc = code(read('components', 'settings', 'WalletSettings.tsx'))
-  + code(read('components', 'settings', 'WalletSettings.sections.tsx'));
+  + code(read('components', 'settings', 'WalletSettings.sections.tsx'))
+  + code(read('..', '..', 'packages', 'views', 'src', 'settings', 'walletSections.ts'));
 const removeHookSrc = code(read('lib', 'useRemovePasskey.ts'));
 
 describe('A. create.ts — create is passkey-AGNOSTIC (ECDSA-owner only)', () => {

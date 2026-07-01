@@ -5,7 +5,7 @@ import { getPeerName } from '../../lib/peerProfiles';
 import { isActiveConv } from '../../lib/activeConv';
 import { shortAddress, getConvConsentState } from '../../modules/messaging';
 import type { Row as RowT } from './HomeScreen.helpers';
-import { convIdFromTopic } from './HomeScreen.helpers';
+import { convIdFromTopic } from '@stage-labs/client/xmtp/clientErrors';
 
 interface StreamedMsg {
   id?: string;

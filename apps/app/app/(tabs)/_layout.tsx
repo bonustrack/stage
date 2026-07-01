@@ -8,6 +8,7 @@ import { usePalette } from '../../lib/theme';
 import { TabsPager } from '../../components/SwipeTabs';
 import { HoistedTopnav } from '../../components/tabs/HoistedTopnav';
 import { useTotalUnread } from '../../lib/useTotalUnread';
+import { unreadBadgeLabel } from '@stage-labs/views';
 
 function PagerOverlay({ insetTop, tabBarHeight }: { insetTop: number; tabBarHeight: number }): React.ReactElement {
   return (
@@ -34,7 +35,7 @@ function PagerOverlay({ insetTop, tabBarHeight }: { insetTop: number; tabBarHeig
 export default function TabsLayout(): React.ReactElement {
   const pathname = usePathname();
   const unread = useTotalUnread();
-  const unreadBadge = unread > 0 ? (unread > 99 ? '99+' : String(unread)) : undefined;
+  const unreadBadge = unreadBadgeLabel(unread);
   const pagerVisible = !pathname.startsWith('/settings');
   const insets = useSafeAreaInsets();
   const pal = usePalette();

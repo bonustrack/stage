@@ -5,7 +5,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Row } from './layout';
 import { GithubLogo } from './GithubLogo';
-import { githubLinkOf } from '../lib/githubDetect';
+import { githubLinkOf } from '@stage-labs/client/api/github';
 import { useGithubMeta } from '../lib/useGithubMeta';
 import { DANGER, SUCCESS, usePalette, useBlockRadius } from '../lib/theme';
 

@@ -1,9 +1,51 @@
 <script setup lang="ts">
 
 import { ref, computed } from 'vue';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import type { PayloadHandlers } from '@stage-labs/kit/kit';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import { composeField } from '@/lib/composeField';
+import { basicRoot } from '@stage-labs/views';
 
 const palette = useKitPalette();
+
+const QUESTION_CHANGE = 'poll.question.change';
+const OPTION_CHANGE = 'poll.option.change';
+
+const questionNode = computed(() =>
+  basicRoot(composeField({
+    name: 'question',
+    value: question.value,
+    placeholder: 'Ask a question…',
+    fontSize: 16,
+    changeType: QUESTION_CHANGE,
+  })));
+
+function optionNode(value: string, index: number) {
+  return basicRoot(composeField({
+    name: 'option',
+    value,
+    placeholder: `Option ${index + 1}`,
+    fontSize: 15,
+    changeType: OPTION_CHANGE,
+  }));
+}
+
+const questionActions = {
+  [QUESTION_CHANGE]: (payload: Record<string, unknown>): void => {
+    const next = payload.question;
+    if (typeof next === 'string') question.value = next;
+  },
+};
+
+function optionActions(index: number): PayloadHandlers {
+  return {
+    [OPTION_CHANGE]: (payload: Record<string, unknown>): void => {
+      const next = payload.option;
+      if (typeof next === 'string') setOption(index, next);
+    },
+  };
+}
 
 const emit = defineEmits<{
   (e: 'close'): void;
@@ -36,13 +78,11 @@ function create(): void {
 </script>
 
 <template>
-  <!-- kit-exception: fixed modal overlay backdrop — kit has no overlay/Dialog
-       primitive; rendered as a fixed positioned Col with a click-to-dismiss scrim. -->
-  <Col class="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
-    @click.self="emit('close')">
-    <Col class="absolute inset-0 bg-black/50" @click="emit('close')" />
+  <Dialog open side="bottom" animation-type="slide"
+    overlay-class="flex items-end sm:items-center justify-center"
+    @close="emit('close')">
     <Col surface="raised"
-      class="relative w-full sm:max-w-md max-h-[85vh] overflow-y-auto no-scrollbar
+      class="w-full sm:max-w-md max-h-[85vh] overflow-y-auto no-scrollbar
         rounded-t-2xl sm:rounded-2xl p-4 gap-3
         bg-metro-bg-light dark:bg-metro-bg-dark">
       <Row class="flex items-center justify-between">
@@ -54,29 +94,13 @@ function create(): void {
         </Pressable>
       </Row>
 
-      <!-- kit-exception: bare inputs — kit Input/Textarea force boxed styling that
-           clashes with this surface; mirrors mobile poll-compose sheet inputs. -->
-      <component :is="'input'"
-        :value="question"
-        @input="question = ($event.target as HTMLInputElement).value"
-        placeholder="Ask a question…"
-        class="w-full rounded-lg px-3 py-2 font-sans text-[16px] outline-none
-          border border-metro-border-light dark:border-metro-border-dark
-          bg-metro-surface-light dark:bg-metro-surface-dark
-          text-metro-head-light dark:text-metro-head-dark
-          placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark" />
+      <ViewHost :node="questionNode" :actions="questionActions" />
 
       <Col class="gap-2">
         <Row v-for="(opt, i) in options" :key="i" class="flex items-center gap-2">
-          <component :is="'input'"
-            :value="opt"
-            :placeholder="`Option ${i + 1}`"
-            class="flex-1 rounded-lg px-3 py-2 font-sans text-[15px] outline-none
-              border border-metro-border-light dark:border-metro-border-dark
-              bg-metro-surface-light dark:bg-metro-surface-dark
-              text-metro-head-light dark:text-metro-head-dark
-              placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark"
-            @input="setOption(i, ($event.target as HTMLInputElement).value)" />
+          <Col class="flex-1 min-w-0">
+            <ViewHost :node="optionNode(opt, i)" :actions="optionActions(i)" />
+          </Col>
           <Pressable tag="button" type="button"
             v-if="options.length > 2"
             class="shrink-0 opacity-60 hover:opacity-100" title="Remove option"
@@ -114,5 +138,5 @@ function create(): void {
         Create poll
       </Button>
     </Col>
-  </Col>
+  </Dialog>
 </template>

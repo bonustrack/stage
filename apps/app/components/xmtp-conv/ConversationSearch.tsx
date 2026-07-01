@@ -4,7 +4,7 @@ import { ActivityIndicator } from 'react-native';
 import { FlatList } from 'react-native-gesture-handler';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Row } from '../layout';
-import type { HistoryEntry } from '../../lib/types';
+import type { HistoryEntry } from '@stage-labs/client/types';
 import { useFeedRenderItem } from './useFeedRenderItem';
 import { searchLocalHistory, type SearchScanResult } from '../../modules/messaging/searchLocal';
 import type { useConversationState } from './useConversationState';

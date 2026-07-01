@@ -73,21 +73,49 @@ export interface FeedRequestInput {
   events: HistoryEntry[];
 }
 
-function detectInFeed(input: FeedRequestInput, myUri: string): QueuedRequest | null {
+export interface FeedDetectors {
+  hasPoll(latest: HistoryEntry): boolean;
+  hasTxRequest(latest: HistoryEntry): boolean;
+  hasSigRequest(latest: HistoryEntry): boolean;
+}
+
+export interface DetectFeedOptions {
+  detectors?: FeedDetectors;
+  filterVotedPolls?: boolean;
+}
+
+const defaultDetectors: FeedDetectors = {
+  hasPoll: (latest) => pollOf(latest) !== undefined,
+  hasTxRequest: (latest) => txRequestOf(latest) !== undefined,
+  hasSigRequest: (latest) => sigRequestOf(latest) !== undefined,
+};
+
+function queued(kind: RequestKind, convId: string, msgId: string, ts: number): QueuedRequest {
+  return { key: `${kind}:${convId}`, kind, convId, msgId, ts };
+}
+
+function pollPending(input: FeedRequestInput, latest: HistoryEntry, filterVotedPolls: boolean, myUri: string): boolean {
+  if (!filterVotedPolls) return true;
+  const poll = pollOf(latest);
+  return !poll || pollAwaitingVote(poll, latest.id, input.events, myUri);
+}
+
+export function detectFeedRequest(
+  input: FeedRequestInput,
+  myUri: string,
+  options?: DetectFeedOptions,
+): QueuedRequest | null {
+  const detectors = options?.detectors ?? defaultDetectors;
+  const filterVotedPolls = options?.filterVotedPolls ?? true;
   const latest = input.events[0];
   if (!latest) return null;
   const ts = entryTs(latest);
-  const poll = pollOf(latest);
-  if (poll) {
-    if (!pollAwaitingVote(poll, latest.id, input.events, myUri)) return null;
-    return { key: `poll:${input.convId}`, kind: 'poll', convId: input.convId, msgId: latest.id, ts };
+  const { convId } = input;
+  if (detectors.hasPoll(latest)) {
+    return pollPending(input, latest, filterVotedPolls, myUri) ? queued('poll', convId, latest.id, ts) : null;
   }
-  if (txRequestOf(latest)) {
-    return { key: `payment:${input.convId}`, kind: 'payment', convId: input.convId, msgId: latest.id, ts };
-  }
-  if (sigRequestOf(latest)) {
-    return { key: `signing:${input.convId}`, kind: 'signing', convId: input.convId, msgId: latest.id, ts };
-  }
+  if (detectors.hasTxRequest(latest)) return queued('payment', convId, latest.id, ts);
+  if (detectors.hasSigRequest(latest)) return queued('signing', convId, latest.id, ts);
   return null;
 }
 
@@ -100,20 +128,32 @@ export interface BuildRequestsQueueInput {
   feeds: FeedRequestInput[];
   messageRequests: MessageRequestInput[];
   myUri: string;
+  options?: DetectFeedOptions;
 }
 
-export function buildRequestsQueue(input: BuildRequestsQueueInput): QueuedRequest[] {
-  const detected: QueuedRequest[] = [];
-  for (const feed of input.feeds) {
-    const item = detectInFeed(feed, input.myUri);
-    if (item) detected.push(item);
-  }
-  const messages: QueuedRequest[] = input.messageRequests.map(m => ({
+export function messageRequestToQueued(m: MessageRequestInput): QueuedRequest {
+  return {
     key: `message:${m.view.convId}`,
     kind: 'message',
     convId: m.view.convId,
     request: m.view,
     ts: m.ts,
-  }));
+  };
+}
+
+export function assembleRequestsQueue(
+  detected: QueuedRequest[],
+  messages: QueuedRequest[],
+): QueuedRequest[] {
   return [...detected, ...messages].sort((a, b) => b.ts - a.ts);
+}
+
+export function buildRequestsQueue(input: BuildRequestsQueueInput): QueuedRequest[] {
+  const detected: QueuedRequest[] = [];
+  for (const feed of input.feeds) {
+    const item = detectFeedRequest(feed, input.myUri, input.options);
+    if (item) detected.push(item);
+  }
+  const messages = input.messageRequests.map(messageRequestToQueued);
+  return assembleRequestsQueue(detected, messages);
 }

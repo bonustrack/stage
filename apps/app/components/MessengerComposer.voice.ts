@@ -1,7 +1,9 @@
 
-import { useMemo, useRef } from 'react';
-import { Alert, Animated, PanResponder } from 'react-native';
+import { useRef } from 'react';
+import { Alert } from 'react-native';
 import { Audio } from 'expo-av';
+
+export { SLIDE_CANCEL_THRESHOLD_PX } from '@stage-labs/kit/react-native/voice-recorder';
 
 export interface VoiceArgs {
   upload: (uri: string, mime: string, name?: string) => Promise<void>;
@@ -11,16 +13,11 @@ export interface VoiceArgs {
   setLevels: React.Dispatch<React.SetStateAction<number[]>>;
 }
 
-export const SLIDE_CANCEL_THRESHOLD_PX = 80;
-
 export function useVoiceRecorder(args: VoiceArgs) {
   const { upload, setErr, setRecording, setRecordSecs, setLevels } = args;
   const recRef = useRef<Audio.Recording | null>(null);
   const recTimerRef = useRef<number | null>(null);
-  const micPressStart = useRef(0);
   const recordingRef = useRef(false);
-  const slideX = useRef(new Animated.Value(0)).current;
-  const slideXRef = useRef(0);
   const pendingStop = useRef<null | 'send' | 'cancel'>(null);
 
   const startRec = async (): Promise<void> => {
@@ -74,36 +71,5 @@ export function useVoiceRecorder(args: VoiceArgs) {
     await upload(uri, 'audio/m4a', `voice-${Date.now()}.m4a`);
   };
 
-  const micPanResponder = useMemo(() => PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: () => true,
-    onPanResponderGrant: () => {
-      micPressStart.current = Date.now();
-      slideXRef.current = 0;
-      slideX.setValue(0);
-      if (recordingRef.current) { void stopRec(); return; }
-      void startRec();
-    },
-    onPanResponderMove: (_, g) => {
-      const dx = Math.max(-120, Math.min(0, g.dx));
-      slideXRef.current = dx;
-      slideX.setValue(dx);
-    },
-    onPanResponderRelease: () => {
-      const dx = slideXRef.current;
-      const held = Date.now() - micPressStart.current;
-      Animated.spring(slideX, { toValue: 0, useNativeDriver: true, speed: 24, bounciness: 6 }).start();
-      slideXRef.current = 0;
-      if (!recordingRef.current) return;
-      if (dx <= -SLIDE_CANCEL_THRESHOLD_PX) { void cancelRec(); return; }
-      if (held >= 350) void stopRec();
-    },
-    onPanResponderTerminate: () => {
-      Animated.spring(slideX, { toValue: 0, useNativeDriver: true, speed: 24, bounciness: 6 }).start();
-      slideXRef.current = 0;
-    },
-    onPanResponderTerminationRequest: () => false,
-  }), []);
-
-  return { slideX, micPanResponder, cancelRec, stopRec };
+  return { startRec, cancelRec, stopRec };
 }

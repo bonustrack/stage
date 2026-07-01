@@ -1,17 +1,13 @@
 
-import { Video, ResizeMode } from 'expo-av';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import { basicRoot, videoMessage } from '@stage-labs/views';
 import { Box } from './layout';
 
 export function MessengerVideoAttachment({ uri }: { uri: string }): React.ReactElement {
+  const node = basicRoot(videoMessage({ src: uri }));
   return (
-    <Box width={220} radius="md" background={'#000'} margin={{ bottom: 6 }} style={{ overflow: 'hidden' }}>
-      <Video
-        source={{ uri }}
-        style={{ width: '100%', height: 280 }}
-        useNativeControls
-        resizeMode={ResizeMode.CONTAIN}
-        shouldPlay={false}
-/>
+    <Box margin={{ bottom: 6 }}>
+      <ViewHost node={node} />
     </Box>
   );
 }

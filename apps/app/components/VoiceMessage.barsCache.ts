@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { decodeWaveformBars } from './VoiceMessage.decode';
 
@@ -13,7 +12,11 @@ function decodeOnce(uri: string, count: number): Promise<Entry> {
   const p = decodeWaveformBars(uri, count)
     .then((bars): Entry => bars)
     .catch((): Entry => false)
-    .then((entry) => { cache.set(uri, entry); inflight.delete(uri); return entry; });
+    .then((entry) => {
+      cache.set(uri, entry);
+      inflight.delete(uri);
+      return entry;
+    });
   inflight.set(uri, p);
   return p;
 }
@@ -27,13 +30,21 @@ export function useDecodedBars(uri: string, count: number): number[] | null {
   useEffect(() => {
     let cancelled = false;
     const hit = cache.get(uri);
-    if (Array.isArray(hit)) { setBars(hit); return; }
-    if (hit === false) { setBars(null); return; }
+    if (Array.isArray(hit)) {
+      setBars(hit);
+      return;
+    }
+    if (hit === false) {
+      setBars(null);
+      return;
+    }
     setBars(null);
     void decodeOnce(uri, count).then((entry) => {
       if (!cancelled) setBars(Array.isArray(entry) ? entry : null);
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [uri, count]);
 
   return bars;

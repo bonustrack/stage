@@ -1,5 +1,11 @@
 <script setup lang="ts">
 
+import { computed, ref, watchEffect } from 'vue';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import { composeField } from '@/lib/composeField';
+import { metroFieldColors } from '@/lib/metroFieldColors';
+import { basicRoot } from '@stage-labs/views';
+
 const props = withDefaults(defineProps<{
   label: string;
   value: string;
@@ -26,6 +32,28 @@ watchEffect(() => { if (!editing.value) draft.value = props.value; });
 function onSave(): void {
   emit('save', draft.value.trim());
 }
+
+const DRAFT_CHANGE = 'inlineEdit.draft.change';
+
+const editNode = computed(() =>
+  basicRoot(composeField({
+    name: 'draft',
+    value: draft.value,
+    placeholder: props.placeholder,
+    fontSize: props.multiline ? 14 : 16,
+    multiline: props.multiline,
+    rows: props.multiline ? 3 : undefined,
+    textColor: metroFieldColors.fg,
+    autoFocus: true,
+    changeType: DRAFT_CHANGE,
+  })));
+
+const editActions = {
+  [DRAFT_CHANGE]: (payload: Record<string, unknown>): void => {
+    const next = payload.draft;
+    if (typeof next === 'string') draft.value = next;
+  },
+};
 </script>
 
 <template>
@@ -36,34 +64,9 @@ function onSave(): void {
       <Col v-else class="text-sm text-metro-sub-light dark:text-metro-sub-dark font-sans">{{ props.emptyLabel }}</Col>
     </Col>
     <Row v-else-if="editing" class="flex items-start gap-2 mt-1.5">
-      <!-- kit-exception: no kit equivalent (inline-edit controls — kit Input/Textarea
-           force their own inline-style box (bg/border/padding/font) that would override
-           this Metro-surface themed styling, so bare elements preserve the look). -->
-      <component
-        :is="'textarea'"
-        v-if="props.multiline"
-        :value="draft"
-        @input="draft = ($event.target as HTMLTextAreaElement).value"
-        :placeholder="props.placeholder"
-        rows="3"
-        autofocus
-        class="flex-1 bg-metro-surface-light dark:bg-metro-surface-dark
-          border border-metro-border-light dark:border-metro-border-dark
-          rounded-lg px-3 py-2 text-sm text-metro-fg-light dark:text-metro-fg-dark
-          outline-none resize-none font-sans"
-      />
-      <component
-        :is="'input'"
-        v-else
-        :value="draft"
-        @input="draft = ($event.target as HTMLInputElement).value"
-        type="text"
-        :placeholder="props.placeholder"
-        autofocus
-        class="flex-1 bg-metro-surface-light dark:bg-metro-surface-dark
-          border border-metro-border-light dark:border-metro-border-dark
-          rounded-lg px-3 py-2 text-base text-metro-fg-light dark:text-metro-fg-dark outline-none"
-      />
+      <Col class="flex-1 min-w-0">
+        <ViewHost :node="editNode" :actions="editActions" />
+      </Col>
       <Pressable
         tag="button"
         type="button"

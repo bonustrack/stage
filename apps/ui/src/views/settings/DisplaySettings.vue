@@ -4,6 +4,11 @@ import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import type { HeroIconName } from '@stage-labs/kit/icons';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import type { ListViewNode, ListViewItemNode } from '@stage-labs/kit/kit';
+import {
+  settingsHeader, settingsThemeRow, SCREEN_BACK, SETTINGS_THEME_SELECT,
+} from '@stage-labs/views';
 import { useEffectiveScheme } from '../../lib/kitTheme';
 import {
   setThemePreference, useThemePreference, type ThemePreference,
@@ -15,6 +20,14 @@ import {
 
 const router = useRouter();
 const palette = useKitPalette();
+
+const headerNode = computed(() => settingsHeader({
+  title: 'Display',
+  backColor: palette.text,
+  surface: palette.toolbarBg,
+  borderColor: palette.border,
+  safeTop: 0,
+}));
 const pref = useThemePreference();
 const custom = useCustomTheme();
 const scheme = useEffectiveScheme();
@@ -53,58 +66,48 @@ function onSeedInput(key: SeedColorKey, v: string): void {
 }
 
 const selectedTheme = computed<ThemePreference | 'custom'>(() => custom.value ? 'custom' : pref.value);
+
+const THEME_ROWS: { value: ThemePreference | 'custom'; label: string; icon: HeroIconName }[] = [
+  ...THEME_OPTIONS,
+  { value: 'custom', label: 'Custom', icon: 'colorSwatch' },
+];
+
+function themeItem(
+  row: { value: ThemePreference | 'custom'; label: string; icon: HeroIconName },
+): ListViewItemNode {
+  return settingsThemeRow({
+    value: row.value,
+    label: row.label,
+    iconName: row.icon,
+    selected: selectedTheme.value === row.value,
+    iconColor: 'text',
+  });
+}
+
+const themeNode = computed<ListViewNode>(() => ({
+  type: 'ListView',
+  children: THEME_ROWS.map(themeItem),
+}));
+
+const actions = {
+  [SCREEN_BACK]: (): void => { router.back(); },
+  [SETTINGS_THEME_SELECT]: (payload: Record<string, unknown>): void => {
+    const value = payload.value;
+    if (value === 'custom') { setCustomTheme(true); return; }
+    if (value === 'system' || value === 'light' || value === 'dark') pickTheme(value);
+  },
+};
 </script>
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <!-- Toolbar header matches the XMTP screens: back arrow + small title. -->
-    <Row
-      surface="toolbar"
-      align="center"
-      :gap="8"
-      :padding="{ x: 12, y: 10 }"
-      :style="{ borderBottomWidth: '1px', borderBottomStyle: 'solid', borderBottomColor: palette.border }"
-    >
-      <Pressable tag="button" type="button" class="p-1" @click="router.back()">
-        <Icon name="arrowLeft" :size="22" :color="palette.text" />
-      </Pressable>
-      <Title size="sm">Display</Title>
-    </Row>
+    <ViewHost :node="headerNode" :actions="actions" />
 
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-8">
       <!-- THEME: light/dark/system + custom, mirroring mobile's DisplaySettings list. -->
       <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark px-4 pt-5 pb-2">THEME</Col>
-      <Col
-        class="kit-block w-[calc(100%-2rem)] mx-4 overflow-hidden border bg-metro-surface-light dark:bg-metro-surface-dark"
-        :style="{ borderColor: palette.border }"
-      >
-        <Pressable
-          v-for="(opt, i) in THEME_OPTIONS"
-          :key="opt.value"
-          tag="button"
-          type="button"
-          class="w-full flex items-center gap-3 px-4 py-3.5 text-left
-            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark transition-colors"
-          :class="i === 0 ? '' : 'border-t'"
-          :style="i === 0 ? {} : { borderColor: palette.border }"
-          @click="pickTheme(opt.value)"
-        >
-          <Icon :name="opt.icon" :size="22" :color="palette.text" />
-          <span class="flex-1 text-[17px] text-metro-head-light dark:text-metro-head-dark">{{ opt.label }}</span>
-          <Icon v-if="selectedTheme === opt.value" name="check" :size="20" :color="palette.text" />
-        </Pressable>
-        <Pressable
-          tag="button"
-          type="button"
-          class="w-full flex items-center gap-3 px-4 py-3.5 text-left border-t
-            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark transition-colors"
-          :style="{ borderColor: palette.border }"
-          @click="setCustomTheme(true)"
-        >
-          <Icon name="colorSwatch" :size="22" :color="palette.text" />
-          <span class="flex-1 text-[17px] text-metro-head-light dark:text-metro-head-dark">Custom</span>
-          <Icon v-if="selectedTheme === 'custom'" name="check" :size="20" :color="palette.text" />
-        </Pressable>
+      <Col class="w-[calc(100%-2rem)] mx-4">
+        <ViewHost :node="themeNode" :actions="actions" />
       </Col>
 
       <!-- CUSTOM COLORS / DENSITY / RADIUS / TEXT SIZE: live seed editor, mirroring

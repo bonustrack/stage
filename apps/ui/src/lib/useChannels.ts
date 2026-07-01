@@ -2,14 +2,13 @@
 import { ref, computed, watchEffect, onMounted, onUnmounted, type ComputedRef, type Ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { getOrCreateXmtpClient, createAskQuestionGroup } from './xmtp';
-import { cachedRows, hydrateCachedRows, markConvRead, markConvUnread } from './channelsCache';
-import { toggleArchived, isArchived } from './archived';
+import { cachedRows, hydrateCachedRows } from './channelsCache';
+import { isArchived } from './archived';
 import { type ChannelRow as Row } from './channelsSummarize';
 import { startChannelStream, type ChannelStreamHandles } from './useChannelStream';
 import { useSearchResolution } from './useSearchResolution';
+import { useChannelFilters, useChannelRowMenu, type RowMenu } from './useChannelFilters';
 import { runningInIframe } from './embedBridge';
-
-interface RowMenu { convId: string; title: string; isUnread: boolean; x: number; y: number }
 
 export interface ChannelsState {
   router: ReturnType<typeof useRouter>;
@@ -22,6 +21,12 @@ export interface ChannelsState {
   searchResolution: ReturnType<typeof useSearchResolution>['searchResolution'];
   openSearchedProfile: ReturnType<typeof useSearchResolution>['openSearchedProfile'];
   filtered: ComputedRef<Row[] | null>;
+  barLabels: ComputedRef<string[]>;
+  enabledLabels: Ref<Set<string>>;
+  unreadOnly: Ref<boolean>;
+  toggleLabel: (label: string) => void;
+  toggleUnread: () => void;
+  clearAllFilters: () => void;
   view: Ref<'home' | 'messages'>;
   cardClass: string;
   rowMenu: Ref<RowMenu | null>;
@@ -70,8 +75,13 @@ export function useChannels(): ChannelsState {
     return rows.value.filter(r => !isArchived(r.convId));
   });
 
+  const {
+    barLabels, enabledLabels, unreadOnly, toggleLabel, toggleUnread, clearAllFilters,
+    labelFilteredRows,
+  } = useChannelFilters(visibleRows);
+
   const filtered = computed(() => {
-    const base = visibleRows.value;
+    const base = labelFilteredRows.value;
     if (!base) return null;
     const q = query.value.trim().toLowerCase();
     if (!q) return base;
@@ -104,33 +114,7 @@ export function useChannels(): ChannelsState {
 
   function open(convId: string): void { void router.push(`/xmtp/${convId}`); }
 
-  const rowMenu = ref<RowMenu | null>(null);
-  function openRowMenu(r: Row, ev: MouseEvent): void {
-    const maxX = (typeof window !== 'undefined' ? window.innerWidth : 9999) - 200;
-    rowMenu.value = {
-      convId: r.convId,
-      title: r.title,
-      isUnread: r.unreadCount > 0 || r.markedUnread,
-      x: Math.max(8, Math.min(ev.clientX, maxX)),
-      y: ev.clientY,
-    };
-  }
-  function closeRowMenu(): void { rowMenu.value = null; }
-  function toggleRowUnread(): void {
-    const m = rowMenu.value;
-    if (!m) return;
-    closeRowMenu();
-    if (m.isUnread) markConvRead(m.convId);
-    else markConvUnread(m.convId);
-  }
-
-  function archiveRow(): void {
-    const m = rowMenu.value;
-    if (!m) return;
-    closeRowMenu();
-    toggleArchived(m.convId);
-    archivedTick.value += 1;
-  }
+  const { rowMenu, openRowMenu, closeRowMenu, toggleRowUnread, archiveRow } = useChannelRowMenu(archivedTick);
 
   function goNewGroup(): void { void router.push('/xmtp/new-group'); }
   function goArchived(): void { void router.push('/xmtp/archived'); }
@@ -148,6 +132,7 @@ export function useChannels(): ChannelsState {
   return {
     router, embedded, rows, error, query, creatingAsk, refreshing,
     searchResolution, openSearchedProfile, filtered, view, cardClass, rowMenu,
+    barLabels, enabledLabels, unreadOnly, toggleLabel, toggleUnread, clearAllFilters,
     onAskPress, refreshFromNetwork, open, openRowMenu, closeRowMenu,
     toggleRowUnread, archiveRow, openDocs, goNewGroup, goArchived, goRequests,
     goProfile, goSettings,

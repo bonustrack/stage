@@ -1,12 +1,12 @@
 
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Icon } from '@stage-labs/kit/react-native/icon';
-import { Title } from '@stage-labs/kit/react-native/title';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { Col, Row, Box } from '../layout';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers } from '@stage-labs/kit/kit';
+import { basicRoot, screenHeader, SCREEN_BACK } from '@stage-labs/views';
+import { Col, Box } from '../layout';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { useProposals } from './Proposals.hook';
 import { ProposalCard } from './Proposals.card';
@@ -19,18 +19,22 @@ export function ProposalsScreen(): React.ReactElement {
   const head = pal.link;
   const border = pal.border;
   const { current, loading, position, total, advance, refresh } = useProposals();
+  const headerNode = basicRoot(screenHeader({
+    title: 'Pending requests',
+    titleStyle: { kind: 'title', size: 'sm' },
+    backColor: head,
+    safeTop: insets.top,
+    surface: pal.toolbarBg,
+    borderColor: border,
+  }));
+  const headerActions: PayloadHandlers = {
+    [SCREEN_BACK]: () => { router.back(); },
+  };
 
   return (
     <Col flex={1} surface="surface">
       {}
-      <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-        <Pressable onPress={() => { router.back(); }} hitSlop={8} style={{ padding: 4 }}>
-          <Icon name="arrowLeft" size={22} color={head}/>
-        </Pressable>
-        <Title size="sm">
-          Pending requests
-        </Title>
-      </Row>
+      <ViewHost node={headerNode} actions={headerActions} />
 
       {current ? (
         <Col flex={1} surface="surface">

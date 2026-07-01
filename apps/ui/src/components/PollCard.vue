@@ -2,6 +2,8 @@
 
 import { computed } from 'vue';
 import { normalizeQuestions, type PollContent } from '@stage-labs/client/xmtp/poll';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import { basicRoot, pollCard, type PollQuestion, POLL_OPTION_PRESS } from '@stage-labs/views';
 
 const props = defineProps<{
   poll: PollContent;
@@ -12,7 +14,6 @@ interface VotePayload { questionIndex: number; optionIndex: number; action: 'add
 const emit = defineEmits<{ vote: [payload: VotePayload] }>();
 
 const questions = computed(() => normalizeQuestions(props.poll));
-const multiQuestion = computed(() => questions.value.length > 1);
 
 function votersFor(qi: number, oi: number): number {
   return props.votes?.get(qi)?.get(oi)?.size ?? 0;
@@ -29,51 +30,40 @@ function pctFor(qi: number, oi: number): number {
 function isOn(qi: number, oi: number): boolean {
   return props.ownVotes?.get(qi)?.has(oi) ?? false;
 }
-function tap(qi: number, oi: number): void {
-  emit('vote', { questionIndex: qi, optionIndex: oi, action: isOn(qi, oi) ? 'removed' : 'added' });
-}
+
+const model = computed<PollQuestion[]>(() =>
+  questions.value.map((q, qi) => ({
+    question: q.question,
+    header: q.header ?? undefined,
+    multiSelect: q.multiSelect,
+    total: totalFor(qi),
+    options: q.options.map((opt, oi) => ({
+      label: opt.label,
+      votes: votersFor(qi, oi),
+      pct: pctFor(qi, oi),
+      selected: isOn(qi, oi),
+    })),
+  })),
+);
+
+const node = computed(() =>
+  basicRoot(pollCard({ questions: model.value, dispatchPress: true })),
+);
+
+const actions = {
+  [POLL_OPTION_PRESS]: (payload: Record<string, unknown>): void => {
+    const qi = payload.questionIndex;
+    const oi = payload.optionIndex;
+    if (typeof qi !== 'number' || typeof oi !== 'number') return;
+    emit('vote', {
+      questionIndex: qi,
+      optionIndex: oi,
+      action: isOn(qi, oi) ? 'removed' : 'added',
+    });
+  },
+};
 </script>
 
 <template>
-  <Col class="mt-2 gap-3 self-stretch">
-    <Col v-for="(q, qi) in questions" :key="`q-${qi}`" class="gap-1.5 self-stretch">
-      <Text v-if="multiQuestion && qi > 0" size="3xl" weight="semibold"
-        class="text-metro-head-light dark:text-metro-head-dark">{{ q.question }}</Text>
-      <Text v-if="qi === 0" size="3xl" weight="semibold"
-        class="text-metro-head-light dark:text-metro-head-dark">{{ q.question }}</Text>
-      <Text v-if="q.header" size="xs" weight="semibold"
-        class="uppercase tracking-wide text-metro-sub-light dark:text-metro-sub-dark">
-        {{ q.header }}{{ q.multiSelect ? ' · multi-select' : '' }}
-      </Text>
-      <Pressable
-        tag="button"
-        v-for="(opt, oi) in q.options"
-        :key="`o-${oi}-${opt.label}`"
-        type="button"
-        class="relative overflow-hidden flex flex-row items-center justify-between gap-2
-          px-3 py-2 rounded-lg border text-left"
-        :class="isOn(qi, oi)
-          ? 'border-metro-link-light dark:border-metro-link-dark bg-metro-link-light/15 dark:bg-metro-link-dark/20'
-          : 'border-metro-border-light dark:border-metro-border-dark hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark'"
-        @click="tap(qi, oi)"
-      >
-        <Col class="absolute left-0 top-0 bottom-0 pointer-events-none
-            bg-metro-link-light/10 dark:bg-metro-link-dark/15"
-          :style="{ width: `${pctFor(qi, oi)}%` }" />
-        <span class="relative z-10 flex-1 min-w-0 truncate font-sans text-[17px]
-          text-metro-head-light dark:text-metro-head-dark">
-          <template v-if="isOn(qi, oi)">✓ </template>
-          <template v-else-if="q.multiSelect">☐ </template>{{ opt.label }}
-        </span>
-        <span class="relative z-10 shrink-0 text-sm font-semibold tabular-nums
-          text-metro-sub-light dark:text-metro-sub-dark">
-          {{ pctFor(qi, oi) }}% · {{ votersFor(qi, oi) }}
-        </span>
-      </Pressable>
-      <Text v-if="q.options.length > 0" size="xs"
-        class="text-metro-sub-light dark:text-metro-sub-dark">
-        {{ totalFor(qi) }} vote{{ totalFor(qi) === 1 ? '' : 's' }}
-      </Text>
-    </Col>
-  </Col>
+  <ViewHost :node="node" :actions="actions" />
 </template>

@@ -3,7 +3,7 @@ import { ref, watch, onUnmounted, type Ref } from 'vue';
 import type { DecodedMessage } from '@xmtp/browser-sdk';
 import { getOrCreateXmtpClient, convOfLine } from './xmtp';
 import { envelopeOfXmtpMessage } from './xmtpEnvelope';
-import type { HistoryEntry } from './types';
+import type { HistoryEntry } from '@stage-labs/client/types';
 
 export {
   reactionsByMessage, ownEmojisByMessage, isReactionEntry, envelopeOfXmtpMessage,

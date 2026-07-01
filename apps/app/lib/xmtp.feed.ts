@@ -1,7 +1,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import type { HistoryEntry } from './types';
+import type { HistoryEntry } from '@stage-labs/client/types';
 import { useAccountEpoch } from './accountEpoch';
 import { getOrCreateXmtpClient } from './xmtp.client';
 import { feedCache, activeFeedLines } from './xmtp.state';

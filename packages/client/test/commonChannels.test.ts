@@ -28,6 +28,15 @@ describe('commonChannelFromRow', () => {
       { convId: 'c1', avatarAddress: '0xSeed' }, []);
     expect(withSeed.avatarAddress).toBe('0xSeed');
   });
+
+  test('injected avatarSeedOf overrides avatarAddress when no avatarUri (app parity)', () => {
+    const seedOf = (r: CommonChannelRow): string => `seed:${r.convId}`;
+    const withSeed = commonChannelFromRow({ convId: 'c1', avatarAddress: '0xSeed' }, [], seedOf);
+    expect(withSeed.avatarAddress).toBe('seed:c1');
+    const withUri = commonChannelFromRow(
+      { convId: 'c1', avatarUri: 'ipfs://x', avatarAddress: '0xSeed' }, [], seedOf);
+    expect(withUri.avatarAddress).toBeNull();
+  });
 });
 
 describe('resolveCommonChannels', () => {

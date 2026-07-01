@@ -9,7 +9,7 @@ import { votesByMessage, ownVotesByMessage } from '@stage-labs/client/xmtp/poll-
 import type { PollContent } from '@stage-labs/client/xmtp/poll';
 import type { WalletSendCallsContent } from '@stage-labs/client/xmtp/tx';
 import type { SignatureRequestContent } from '@stage-labs/client/xmtp/sign';
-import type { HistoryEntry } from './types';
+import type { HistoryEntry } from '@stage-labs/client/types';
 import { XMTP_USER_PREFIX, getOrCreateXmtpClient, getCachedXmtpClient, lineOfConv } from './xmtp';
 import { envelopeOfXmtpMessage } from './xmtpEnvelope';
 import { listRequestConvs } from './xmtpRequests';

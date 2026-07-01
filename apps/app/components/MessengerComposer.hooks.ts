@@ -1,7 +1,6 @@
 
-import { useEffect, useRef, useState, type ComponentRef, type RefObject } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AppState, Keyboard } from 'react-native';
-import type { Textarea } from '@stage-labs/kit/react-native/textarea';
 import { loadDrafts, getDraft, setDraft } from '../lib/drafts';
 import { loadLastAttachment, getLastAttachment, subscribeLastAttachment } from '../lib/lastAttachment';
 import { computeMentionQuery, matchMembers } from '@stage-labs/client/xmtp/mentions';
@@ -37,22 +36,27 @@ export function useComposerDrafts(convId: string, text: string, setText: (v: str
 }
 
 export function useComposerFocus(
-  inputRef: RefObject<ComponentRef<typeof Textarea> | null>,
+  bumpFocus: () => void,
+  bumpBlur: () => void,
   replyTargetId: string | undefined,
   replyNonce: number | undefined,
   autoFocusNonce: number | undefined,
 ): void {
+  const innerRaf = useRef<number | null>(null);
   useEffect(() => {
     if (!replyTargetId) return;
     const raf = requestAnimationFrame(() => {
-      inputRef.current?.blur();
-      inputRef.current?.focus();
+      bumpBlur();
+      innerRaf.current = requestAnimationFrame(() => { bumpFocus(); });
     });
-    return () => { cancelAnimationFrame(raf); };
+    return () => {
+      cancelAnimationFrame(raf);
+      if (innerRaf.current !== null) cancelAnimationFrame(innerRaf.current);
+    };
   }, [replyTargetId, replyNonce]);
   useEffect(() => {
     if (!autoFocusNonce) return;
-    const t = setTimeout(() => inputRef.current?.focus(), 0);
+    const t = setTimeout(() => { bumpFocus(); }, 0);
     return () => { clearTimeout(t); };
   }, [autoFocusNonce]);
   useEffect(() => {
@@ -60,7 +64,7 @@ export function useComposerFocus(
     const showSub = Keyboard.addListener('keyboardDidShow', () => { keyboardVisible = true; });
     const hideSub = Keyboard.addListener('keyboardDidHide', () => { keyboardVisible = false; });
     const appSub = AppState.addEventListener('change', (s) => {
-      if (s !== 'active' && !keyboardVisible) inputRef.current?.blur();
+      if (s !== 'active' && !keyboardVisible) bumpBlur();
     });
     return () => { showSub.remove(); hideSub.remove(); appSub.remove(); };
   }, []);

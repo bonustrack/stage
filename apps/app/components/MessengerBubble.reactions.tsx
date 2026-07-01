@@ -2,7 +2,10 @@
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Row, Box } from './layout';
+import { Row } from './layout';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers } from '@stage-labs/kit/kit';
+import { basicRoot, reactionsRow, REACTION_PRESS, type ReactionPill } from '@stage-labs/views';
 import { REACT_PRESETS } from './MessengerBubble.helpers';
 import { usePalette } from '../lib/theme';
 
@@ -24,37 +27,28 @@ export function ReactionsRow({
     : [];
   const hasConfirmed = confirmedEntries.length> 0;
   if (!hasConfirmed && pendingEmojis.length === 0) return null;
+
+  const pills: ReactionPill[] = confirmedEntries.map(([emoji, count]) => ({
+    emoji, count, own: !!ownEmojis?.has(emoji),
+  }));
+  const node = basicRoot(
+    reactionsRow({
+      reactions: pills,
+      dispatchPress: !!onReact,
+      pillBackground: pillBg,
+      ownBorderColor: link,
+    }),
+  );
+  const actions: PayloadHandlers = {
+    [REACTION_PRESS]: (payload) => {
+      const emoji = payload.emoji;
+      if (onReact && typeof emoji === 'string') onReact(emoji);
+    },
+  };
+
   return (
     <Row margin={{ top: 4 }} wrap gap={4}>
-      {confirmedEntries.map(([emoji, count]) => {
-        const mine = !!ownEmojis?.has(emoji);
-        const inner = (
-          <>
-            <Text size="xs">{emoji}</Text>
-            <Text size="3xs" role="secondary">{count}</Text>
-          </>
-        );
-        const pillStyle = {
-          flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4,
-          paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: pillBg,
-          borderWidth: mine ? 1 : 0,
-          borderColor: mine ? link : 'transparent',
-        };
-        return onReact ? (
-          <Pressable
-            key={emoji}
-            onPress={() => { onReact(emoji); }}
-            onLongPress={() => { onReact(emoji); }}
-            delayLongPress={300}
-            hitSlop={6}
-            style={pillStyle}
->
-            {inner}
-          </Pressable>
-        ) : (
-          <Box key={emoji} style={pillStyle}>{inner}</Box>
-        );
-      })}
+      {hasConfirmed ? <ViewHost node={node} actions={actions} /> : null}
       {pendingEmojis.map(emoji => (
         <Row padding={{ x: 8, y: 2 }} key={`pending-${emoji}`} align="center" gap={4} radius="full" background={pillBg} style={{
           opacity: 0.45,

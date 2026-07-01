@@ -7,15 +7,15 @@ const setActiveAccountForCache = async (id: string | null): Promise<void> => {
   const { setActiveAccountForCache: fn } = await import('./channelsCache');
   fn(id);
 };
-import { getViemAccount } from './accounts.keys';
-import { adoptLegacyKey, deleteKey, clearLegacyKey } from './zerodev/keyring';
+import { getViemAccount, adoptLegacyKey, deleteKey, clearLegacyKey } from './zerodev/keyring';
 import { LEGACY_DB_DIR } from '@stage-labs/client/accounts/keys';
 import { resolveActiveAccount } from '@stage-labs/client/accounts/registry';
 
-export { canExportPrivateKey, getPrivateKey, getViemAccount } from './accounts.keys';
+export { canExportPrivateKey } from '@stage-labs/client/accounts/keys';
+export { getViemAccount, revealPrivateKey as getPrivateKey } from './zerodev/keyring';
 
-export type { AccountRecord } from './accounts.types';
-import type { AccountRecord } from './accounts.types';
+export type { AccountRecord } from '@stage-labs/client/accounts/types';
+import type { AccountRecord } from '@stage-labs/client/accounts/types';
 
 const LIST_KEY = 'accounts.list';
 const ACTIVE_KEY = 'accounts.active';

@@ -12,7 +12,9 @@ import {
 } from '../../lib/theme';
 import type { GalleryPalette } from './galleryPalette';
 import { AppModal } from '../AppModal';
-import { ColorPicker } from './ColorPicker';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers, WidgetRoot } from '@stage-labs/kit/kit';
+import { basicRoot } from '@stage-labs/views';
 import { isHex } from '../../lib/colorOverrides';
 import {
   fontSize, type Density, type RadiusName, type BaseSize,
@@ -28,6 +30,29 @@ const SEED_ROWS: readonly (readonly [label: string, key: SeedColorKey])[] = [
 const DENSITY_OPTS: readonly Density[] = ['compact', 'normal', 'spacious'];
 const RADIUS_OPTS: readonly RadiusName[] = ['pill', 'round', 'soft', 'sharp'];
 const BASE_SIZE_OPTS: readonly BaseSize[] = [14, 15, 16, 17, 18];
+
+function pickerNode(value: string, p: GalleryPalette): WidgetRoot {
+  return basicRoot({
+    type: 'ColorPicker',
+    name: 'seed',
+    mode: 'hsv',
+    value,
+    headColor: p.head,
+    subColor: p.sub,
+    borderColor: p.border,
+    rowBg: p.rowBg,
+    onChangeAction: { type: 'seed_color', handler: 'client' },
+  });
+}
+
+function pickerActions(setPending: (hex: string) => void): PayloadHandlers {
+  return {
+    seed_color: (payload) => {
+      const next = payload.seed;
+      if (typeof next === 'string') setPending(next);
+    },
+  };
+}
 
 function SeedSwatch({ name, seedKey, value, scheme, p }: {
   name: string; seedKey: SeedColorKey; value: string;
@@ -65,7 +90,7 @@ function SeedSwatch({ name, seedKey, value, scheme, p }: {
 />
       </Col>
       <AppModal visible={picking} onClose={closePicker}>
-        <ColorPicker value={pending ?? value} onChange={setPending} p={p}/>
+        <ViewHost node={pickerNode(pending ?? value, p)} actions={pickerActions(setPending)} />
         <Row margin={{ top: 20 }} gap={12} align="center">
           <Button variant="secondary" dark={p.dark} onPress={closePicker} label="Cancel" style={{ flex: 1 }}/>
           <Button

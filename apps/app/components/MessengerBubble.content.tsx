@@ -6,14 +6,15 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import Markdown from 'react-native-markdown-display';
 import { cardLinksOf } from '../lib/cardLinks';
 import { Box, Row } from './layout';
-import type { HistoryEntry } from '../lib/types';
+import type { HistoryEntry } from '@stage-labs/client/types';
 import {
-  fmtTs, attachmentsOf, mdParser, markdownStyles,
+  attachmentsOf, mdParser, markdownStyles,
   questionOf, pollOf, sigRequestOf, sigReferenceOf, txRequestOf, txReceiptOf,
 } from './MessengerBubble.helpers';
 import { QuestionView } from './MessengerBubble.parts';
 import { PollView } from './MessengerBubble.poll';
 import { SigRequestCard, SigReferenceCard, TxRequestCard, TxReceiptCard } from './MessengerBubble.cards';
+import { bubbleTimestamp } from '@stage-labs/views';
 import {
   BubbleAttachments, BubbleBody, BubbleEmbeds, ReplyPreview, TranscriptLine, type MarkdownProps,
 } from './MessengerBubble.content.parts';
@@ -97,7 +98,7 @@ export function BubbleContent(props: BubbleContentProps): React.ReactElement {
   return (
     <>
       <Row align="center" justify="start" style={{ alignSelf: 'stretch' }}>
-        <Text size="3xs" role="secondary">{pending ? 'Sending' : fmtTs(entry.ts)}</Text>
+        <Text size="3xs" role="secondary">{pending ? 'Sending' : bubbleTimestamp(entry.ts)}</Text>
       </Row>
       <ReplyPreview preview={replyPreview} fg={fg} sub={sub} onPress={onReplyPreviewPress} />
       <BubbleAttachments atts={d.atts} entryId={entry.id} fg={fg} dark={dark} />

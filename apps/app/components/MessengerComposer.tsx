@@ -1,6 +1,10 @@
 
 import { Text } from '@stage-labs/kit/react-native/text';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers, WidgetRoot } from '@stage-labs/kit/kit';
+import { basicRoot } from '@stage-labs/views';
 import { Col } from './layout';
+import type { ComposerPickedFile } from './MessengerComposer.actions.helpers';
 import { type Attachment } from './MessengerComposer.helpers';
 import { useComposerActions } from './MessengerComposer.actions';
 import { useComposerDrafts, useComposerFocus, computeMentions, applyMention, useLastAttachment } from './MessengerComposer.hooks';
@@ -9,6 +13,42 @@ import { ComposerEditor, AttachMenu, buildAttachActions } from './MessengerCompo
 import { DANGER, usePalette } from '../lib/theme';
 import { useComposerState } from './MessengerComposer.state';
 import { ComposerSheets } from './MessengerComposer.sheets.bound';
+
+function composerPickersNode(n: { imageNonce: number; cameraNonce: number; fileNonce: number }): WidgetRoot {
+  return basicRoot(
+    {
+      type: 'FilePicker', openNonce: n.imageNonce, source: 'library',
+      mediaTypes: ['images', 'videos'], quality: 0.5, multiple: true, selectionLimit: 10,
+      onPickAction: { type: 'composer_pick_image', handler: 'client' },
+    },
+    {
+      type: 'FilePicker', openNonce: n.cameraNonce, source: 'camera',
+      mediaTypes: ['images'], quality: 0.5,
+      onPickAction: { type: 'composer_pick_camera', handler: 'client' },
+    },
+    {
+      type: 'FilePicker', openNonce: n.fileNonce, source: 'document',
+      onPickAction: { type: 'composer_pick_file', handler: 'client' },
+    },
+  );
+}
+
+function pickedFiles(payload: Record<string, unknown>): ComposerPickedFile[] {
+  const files = payload.files;
+  return Array.isArray(files) ? files as ComposerPickedFile[] : [];
+}
+
+function composerPickersActions(h: {
+  onPickedImages: (f: ComposerPickedFile[]) => Promise<void>;
+  onPickedCamera: (f: ComposerPickedFile[]) => Promise<void>;
+  onPickedFile: (f: ComposerPickedFile[]) => Promise<void>;
+}): PayloadHandlers {
+  return {
+    composer_pick_image: (payload) => { void h.onPickedImages(pickedFiles(payload)); },
+    composer_pick_camera: (payload) => { void h.onPickedCamera(pickedFiles(payload)); },
+    composer_pick_file: (payload) => { void h.onPickedFile(pickedFiles(payload)); },
+  };
+}
 
 interface Props {
   dark: boolean;
@@ -85,11 +125,11 @@ export function MessengerComposer(props: Props): React.ReactElement {
 
   const s = useComposerState();
   const actions = useComposerActions(actionsArgs(props, s));
-  const { slideX, micPanResponder, SLIDE_CANCEL_THRESHOLD_PX } = actions;
+  const { SLIDE_CANCEL_THRESHOLD_PX } = actions;
 
   const convId = xmtpLine.replace('metro://xmtp/', '');
   useComposerDrafts(convId, s.text, s.setText);
-  useComposerFocus(s.inputRef, replyingTo?.id, replyingTo?.nonce, autoFocusNonce);
+  useComposerFocus(s.bumpFocus, s.bumpBlur, replyingTo?.id, replyingTo?.nonce, autoFocusNonce);
 
   const hasContent = s.text.trim().length > 0 || s.pending.length > 0;
 
@@ -121,15 +161,15 @@ export function MessengerComposer(props: Props): React.ReactElement {
       <ComposerEditor
         dark={dark} fg={fg} head={head} bg={bg} sub={sub} inputBg={inputBg} chipBg={chipBg}
         recording={s.recording} levels={s.levels} recordSecs={s.recordSecs}
-        slideX={slideX} slideThresholdPx={SLIDE_CANCEL_THRESHOLD_PX} micPanResponder={micPanResponder}
+        slideThresholdPx={SLIDE_CANCEL_THRESHOLD_PX}
         text={s.text} setText={s.setText}
         selection={s.selection} setSelection={s.setSelection}
-        textareaH={s.textareaH} setTextareaH={s.setTextareaH}
-        inputRef={s.inputRef}
+        focusNonce={s.focusNonce} blurNonce={s.blurNonce}
         attachMenuOpen={s.attachMenuOpen} setAttachMenuOpen={s.setAttachMenuOpen}
         quickIcon={quick?.[0]}
         onQuick={quick ? () => void quick[2]() : undefined}
         hasContent={hasContent}
+        onStartRec={() => void actions.startRec()}
         onCancelRec={() => void actions.cancelRec()}
         onStopRec={() => void actions.stopRec()}
         onSend={() => void actions.send()}
@@ -143,6 +183,14 @@ export function MessengerComposer(props: Props): React.ReactElement {
         />
       ) : null}
       <ComposerSheets s={s} palette={palette} dark={dark} actions={actions} />
+      <ViewHost
+        node={composerPickersNode({ imageNonce: actions.imageNonce, cameraNonce: actions.cameraNonce, fileNonce: actions.fileNonce })}
+        actions={composerPickersActions({
+          onPickedImages: actions.onPickedImages,
+          onPickedCamera: actions.onPickedCamera,
+          onPickedFile: actions.onPickedFile,
+        })}
+      />
     </Col>
   );
 }

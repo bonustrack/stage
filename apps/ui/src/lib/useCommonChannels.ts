@@ -2,33 +2,28 @@
 import { computed, type ComputedRef, type Ref } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
 import {
-  resolveCommonChannels, type CommonChannel, type CommonChannelRow,
+  resolveCommonChannels, createMemberSetCache,
+  type CommonChannel, type CommonChannelRow,
 } from '@stage-labs/client/xmtp/commonChannels';
 import { convOfLine, lineOfConv, groupMemberEthAddresses } from './xmtp';
 import { cachedRows, hydrateCachedRows } from './channelsCache';
 import { loadArchivedIds } from './archived';
 import { accountEpoch } from './accounts';
 
-const memberSetByConvAndEpoch = new Map<string, string[]>();
+const memberSetCache = createMemberSetCache();
 
-function memberSetOf(epoch: number): (convId: string) => Promise<string[]> {
-  return async (convId: string): Promise<string[]> => {
-    const key = `${convId}:${epoch}`;
-    const cached = memberSetByConvAndEpoch.get(key);
-    if (cached) return cached;
-    const conv = await convOfLine(lineOfConv(convId));
-    if (!conv) return [];
-    const members = await groupMemberEthAddresses(conv);
-    memberSetByConvAndEpoch.set(key, members);
-    return members;
-  };
+async function fetchMembers(convId: string): Promise<string[]> {
+  const conv = await convOfLine(lineOfConv(convId));
+  if (!conv) return [];
+  return groupMemberEthAddresses(conv);
 }
 
 async function resolve(peerAddress: string, epoch: number): Promise<CommonChannel[]> {
   hydrateCachedRows();
   const rows = (cachedRows.value ?? []) as CommonChannelRow[];
   const archived = loadArchivedIds();
-  return resolveCommonChannels(peerAddress, rows, memberSetOf(epoch), archived);
+  const memberSetOf = memberSetCache.resolver(epoch, fetchMembers);
+  return resolveCommonChannels(peerAddress, rows, memberSetOf, archived);
 }
 
 export function useCommonChannels(

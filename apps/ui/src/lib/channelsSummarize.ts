@@ -5,6 +5,7 @@ import {
   getLastReadNs, getConvConsent, shortAddress,
 } from './xmtp';
 import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
+import { labelsOfSyncedGroup } from '@stage-labs/client/xmtp/labels';
 
 export interface ChannelRow {
   convId: string;
@@ -20,6 +21,7 @@ export interface ChannelRow {
   selfInboxId: string;
   peerAddress: string | null;
   memberAddresses: string[];
+  labels: string[];
   [key: string]: unknown;
 }
 
@@ -80,6 +82,7 @@ export async function summarizeConv(
   const preview = last ? previewOfXmtpContent(last.content, last.contentType?.typeId) : '';
   const peerAddress = await peerEthAddressOfDm(conv);
   const memberAddresses = peerAddress ? [] : await groupMemberEthAddresses(conv);
+  const labels = peerAddress ? [] : await labelsOfSyncedGroup(conv).catch(() => []);
   const inboxToAddr = await memberInboxToAddressMap(conv);
   const groupMeta = conv as unknown as { name?: string; imageUrl?: string };
   const resolvedName = (groupMeta.name ?? '').trim();
@@ -107,5 +110,6 @@ export async function summarizeConv(
     selfInboxId,
     peerAddress,
     memberAddresses,
+    labels,
   };
 }

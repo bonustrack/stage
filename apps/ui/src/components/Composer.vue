@@ -1,6 +1,10 @@
 <script setup lang="ts">
 
+import { computed } from 'vue';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import { fontFamily } from '@stage-labs/kit/tokens';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import type { WidgetRoot } from '@stage-labs/kit/kit';
 import { xmtpSendText, xmtpReply, xmtpSendPoll } from '../lib/xmtpSend';
 import { pollFallbackText } from '@stage-labs/client/xmtp/poll';
 import { useRequestCompose, type PaymentPayload, type SignPayload } from '../lib/useRequestCompose';
@@ -12,6 +16,7 @@ import { shortAddress } from '@stage-labs/client/identity/format';
 import { type MentionCandidate } from '@stage-labs/client/xmtp/mentions';
 
 const palette = useKitPalette();
+const composerFont = fontFamily.sans.join(', ');
 
 const props = defineProps<{
   line: string;
@@ -31,12 +36,31 @@ const attachOpen = ref(false);
 const pollOpen = ref(false);
 const paymentOpen = ref(false);
 const signOpen = ref(false);
-const imageInput = ref<HTMLInputElement | null>(null);
-const cameraInput = ref<HTMLInputElement | null>(null);
-const fileInput = ref<HTMLInputElement | null>(null);
-const textarea = ref<HTMLTextAreaElement | null>(null);
-const { pending, clear: clearPending, onPaste, onFileChange, flush: flushPending } =
+const imageNonce = ref(0);
+const cameraNonce = ref(0);
+const fileNonce = ref(0);
+const selStart = ref(0);
+const selection = ref<{ start: number; end: number }>({ start: 0, end: 0 });
+const focusNonce = ref(0);
+const { pending, clear: clearPending, onPaste, stageFile, flush: flushPending } =
   useComposerAttach(() => props.line, m => { err.value = m; });
+
+const filePickerNode = computed<WidgetRoot>(() => ({
+  type: 'Basic',
+  children: [
+    { type: 'FilePicker', openNonce: imageNonce.value, accept: 'image/*', onPickAction: { type: 'attach_file', handler: 'client' } },
+    { type: 'FilePicker', openNonce: cameraNonce.value, accept: 'image/*', capture: 'environment', onPickAction: { type: 'attach_file', handler: 'client' } },
+    { type: 'FilePicker', openNonce: fileNonce.value, onPickAction: { type: 'attach_file', handler: 'client' } },
+  ],
+}));
+
+const filePickerActions = {
+  attach_file: (payload: Record<string, unknown>): void => {
+    const files = payload.files;
+    const file = Array.isArray(files) ? (files[0] as File | undefined) : undefined;
+    if (file) stageFile(file);
+  },
+};
 const {
   recording, seconds: recordSecs, levels: recordLevels,
   start: startRecording, stopAndSend: stopRecording, cancel: cancelRecording,
@@ -47,11 +71,23 @@ const {
   refresh: refreshMentions, pick: pickMention, onKeydown: onMentionKeydown,
   isOpen: mentionsOpen, close: closeMentions,
 } = useComposerMentions(
-  () => textarea.value,
+  () => text.value,
+  () => selStart.value,
   () => props.mentionCandidates,
   next => { text.value = next; },
-  autoGrow,
+  cursor => { selection.value = { start: cursor, end: cursor }; focusNonce.value += 1; },
+  () => { refreshMentions(); },
 );
+
+function onInput(value: string): void {
+  text.value = value;
+  refreshMentions();
+}
+
+function onSelection(range: { start: number; end: number }): void {
+  selStart.value = range.start;
+  refreshMentions();
+}
 
 function onComposerKeydown(ev: KeyboardEvent): void {
   const open = mentionsOpen();
@@ -63,17 +99,17 @@ function toggleAttach(): void { attachOpen.value = !attachOpen.value; }
 
 function pickImage(): void {
   attachOpen.value = false;
-  imageInput.value?.click();
+  imageNonce.value += 1;
 }
 
 function pickCamera(): void {
   attachOpen.value = false;
-  cameraInput.value?.click();
+  cameraNonce.value += 1;
 }
 
 function pickFile(): void {
   attachOpen.value = false;
-  fileInput.value?.click();
+  fileNonce.value += 1;
 }
 
 function openPoll(): void {
@@ -120,13 +156,6 @@ const { sendPayment, sendSignRequest } = useRequestCompose(
   m => { err.value = m; },
 );
 
-function autoGrow(): void {
-  const el = textarea.value;
-  if (!el) return;
-  el.style.height = 'auto';
-  el.style.height = `${Math.min(el.scrollHeight, 210)}px`;
-}
-
 async function shareLocation(): Promise<void> {
   attachOpen.value = false;
   if (!navigator.geolocation) {
@@ -164,7 +193,6 @@ async function send(): Promise<void> {
       const replyTo = props.replyingTo?.id;
       emit('optimistic', { localId, text: body, ...(replyTo ? { replyTo } : {}) });
       text.value = '';
-      void nextTick(autoGrow);
       if (replyTo) await xmtpReply(props.line, replyTo, body);
       else await xmtpSendText(props.line, body);
       emit('clear-reply');
@@ -189,13 +217,7 @@ async function send(): Promise<void> {
         <Icon name="x" :size="14" />
       </Pressable>
     </Row>
-    <!-- kit-exception: no kit equivalent (native file inputs — kit Input has no 'file'
-         inputType; rendered via dynamic tag to keep bare <input> semantics). Three
-         hidden inputs back the attach tiles: Image (gallery), Camera (capture), File
-         (any type), mirroring mobile pickImage/takePhoto/pickFile. -->
-    <component :is="'input'" ref="imageInput" type="file" accept="image/*" class="hidden" @change="onFileChange" />
-    <component :is="'input'" ref="cameraInput" type="file" accept="image/*" capture="environment" class="hidden" @change="onFileChange" />
-    <component :is="'input'" ref="fileInput" type="file" class="hidden" @change="onFileChange" />
+    <ViewHost :node="filePickerNode" :actions="filePickerActions" />
     <!-- Full-bleed flat composer bar: textarea on top, [+ / spacer / send] row
          below. Edge-to-edge surface=raised with uniform padding 10, mirroring
          MessengerComposer.tsx ComposerEditor (Col padding={10} surface="raised"). -->
@@ -269,26 +291,33 @@ async function send(): Promise<void> {
           <Icon name="x" :size="12" />
         </Pressable>
       </Col>
-      <!-- kit-exception: no kit equivalent (auto-grow textarea — needs a direct DOM ref
-           for scrollHeight measurement, and kit Textarea forces its own boxed inline
-           style (bg/border/padding/font) that would override this transparent surface). -->
-      <component
-        :is="'textarea'"
-        ref="textarea"
-        :value="text"
-        placeholder="Message"
-        rows="1"
-        class="w-full resize-none min-h-[24px] max-h-[210px] font-sans
-          bg-transparent px-2 pt-1 pb-2 text-[17px] leading-[23px] outline-none
-          text-metro-head-light dark:text-metro-head-dark
-          placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark"
-        @input="text = ($event.target as HTMLTextAreaElement).value; autoGrow(); refreshMentions()"
-        @keydown="onComposerKeydown"
-        @keyup="refreshMentions"
-        @click="refreshMentions"
-        @blur="closeMentions"
-        @paste="onPaste"
-      />
+      <!-- Composer input renders via the kit TextField (variant plain: transparent
+           bg, no border) so the box/font/padding come from Kit. Keydown (mention
+           nav + Enter-to-send), focusout (close mentions) and paste are captured on
+           this wrapper since TextField exposes no keydown/blur/paste; selection +
+           value flow through the kit selection-change / update:value events. -->
+      <Col @keydown.capture="onComposerKeydown" @focusout="closeMentions" @paste="onPaste">
+        <TextField
+          :value="text"
+          placeholder="Message"
+          variant="plain"
+          multiline
+          auto-grow
+          auto-capitalize="sentences"
+          :selection="selection"
+          :focus-nonce="focusNonce"
+          :font-size="17"
+          :font-family="composerFont"
+          :padding-x="8"
+          :padding-top="4"
+          :padding-bottom="8"
+          :line-height="23"
+          :min-height="24"
+          :max-height="210"
+          @update:value="onInput"
+          @selection-change="onSelection"
+        />
+      </Col>
       <Row class="flex items-center gap-1">
         <Pressable
           tag="button"

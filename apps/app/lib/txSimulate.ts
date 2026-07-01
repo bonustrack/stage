@@ -6,9 +6,9 @@ import { getActiveAccount } from './accounts';
 import {
   parseAssetChanges, decodeRevert, insufficientEthReason,
   type AssetMove, type SimCall,
-} from './txSimulate.parse';
+} from '@stage-labs/client/wallet/txSimulate';
 
-export type { AssetMove } from './txSimulate.parse';
+export type { AssetMove } from '@stage-labs/client/wallet/txSimulate';
 
 export interface SimulateResult {
   success: boolean | 'unknown';

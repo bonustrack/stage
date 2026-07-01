@@ -6,6 +6,12 @@ import { resolveSelfAddress } from '../lib/useGroupDetailHelpers';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 import { useQuery } from '@tanstack/vue-query';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import type { BasicNode } from '@stage-labs/kit/kit';
+import {
+  basicRoot, profileHeader, profileActionsRow, profileAddressRow, screenHeader,
+  PROFILE_ROUND_PRESS, PROFILE_ADDRESS_COPY, SCREEN_BACK,
+} from '@stage-labs/views';
 
 const route = useRoute();
 const router = useRouter();
@@ -27,7 +33,12 @@ const notSelf = computed(() =>
   && address.value.toLowerCase() !== (selfAddress.value ?? '').toLowerCase());
 
 const openingDm = ref(false);
-const copied = ref(false);
+
+const displayName = computed(() => {
+  const trimmed = profile.value?.name?.trim();
+  if (trimmed !== undefined && trimmed !== '') return trimmed;
+  return address.value ? shortAddress(address.value) : 'Loading…';
+});
 
 async function onMessage(): Promise<void> {
   if (!address.value || openingDm.value) return;
@@ -40,22 +51,78 @@ async function onMessage(): Promise<void> {
   } finally { openingDm.value = false; }
 }
 
-async function copy(value: string): Promise<void> {
+function onSend(): void {
+  void router.push({ path: '/wallet/send', query: { to: address.value } });
+}
+
+async function copyAddress(): Promise<void> {
+  if (!address.value) return;
   try {
-    await navigator.clipboard.writeText(value);
-    copied.value = true;
-    setTimeout(() => { copied.value = false; }, 1500);
+    await navigator.clipboard.writeText(address.value);
   } catch { }
 }
+
+const nameNode = computed<BasicNode>(() => ({
+  type: 'Basic',
+  children: [profileHeader({ name: displayName.value })],
+}));
+
+const addressNode = computed<BasicNode>(() => ({
+  type: 'Basic',
+  children: [
+    profileAddressRow({
+      address: address.value,
+      label: shortAddress(address.value),
+      color: palette.text,
+    }),
+  ],
+}));
+
+const actionsNode = computed<BasicNode>(() => ({
+  type: 'Basic',
+  children: [
+    profileActionsRow({
+      border: palette.border,
+      fg: palette.link,
+      actions: [
+        {
+          action: 'message',
+          icon: 'chatRect',
+          label: openingDm.value ? 'Opening…' : 'Message',
+          disabled: openingDm.value,
+        },
+        { action: 'send', icon: 'send', label: 'Send' },
+      ],
+    }),
+  ],
+}));
+
+const headerNode = computed<BasicNode>(() => basicRoot(screenHeader({
+  variant: 'overlay',
+  backColor: palette.link,
+  backHitSlop: 10,
+  backPadding: 6,
+})));
+
+const actions = {
+  [PROFILE_ADDRESS_COPY]: (): void => { void copyAddress(); },
+  [PROFILE_ROUND_PRESS]: (payload: Record<string, unknown>): void => {
+    if (payload.action === 'message') { if (!openingDm.value) void onMessage(); }
+    else if (payload.action === 'send') onSend();
+  },
+  [SCREEN_BACK]: (): void => { router.back(); },
+};
 </script>
 
 <template>
-  <Col class="min-h-screen bg-metro-bg-light dark:bg-metro-bg-dark">
-    <Row class="flex items-center px-3 py-3">
-      <Pressable tag="button" type="button" class="p-1.5" @click="router.back()">
-        <Icon name="arrowLeft" :size="22" />
-      </Pressable>
-    </Row>
+  <Col class="min-h-screen" surface="surface">
+    <!-- Route header: back button, absolutely positioned over the banner,
+         mirroring mobile ProfileScreen ProfileHeader (variant route). -->
+    <ViewHost :node="headerNode" :actions="actions" />
+
+    <!-- Banner: 140px tall, border-colored, behind the surface card. -->
+    <Col :style="{ height: '140px', backgroundColor: palette.border }" />
+
     <!-- Identity: avatar overlaps a surface card via negative top margin, with a
          3px bg-color border ring — mirroring mobile ProfileScreen ProfileIdentity
          (surface card margin top -18, avatar 88 marginTop -70.4, borderWidth 3). -->
@@ -82,87 +149,19 @@ async function copy(value: string): Promise<void> {
           borderWidth: '3px', borderStyle: 'solid', borderColor: palette.bg,
         }"
       />
-      <Col class="mt-3.5 text-[20px] font-head font-semibold text-metro-head-light dark:text-metro-head-dark">
-        {{ profile?.name?.trim() || shortAddress(address) }}
+      <Col class="mt-3.5 w-full">
+        <ViewHost :node="nameNode" />
       </Col>
-      <Col class="mt-0.5 text-[15px] text-metro-fg-light dark:text-metro-fg-dark">
-        {{ shortAddress(address) }}
+      <Col v-if="address" class="mt-0.5">
+        <ViewHost :node="addressNode" :actions="actions" />
       </Col>
-      <Col v-if="profile?.about?.trim()"
-        class="mt-1 text-sm text-metro-sub-light dark:text-metro-sub-dark max-w-prose">
-        {{ profile.about }}
+      <Col v-if="notSelf && address" class="w-full">
+        <ViewHost :node="actionsNode" :actions="actions" />
       </Col>
-
-      <!-- Two icon-actions (Message + Send), variant=secondary size=xl (56px),
-           icon 22 + label below (md 15px semibold link), gap 12, mirroring
-           mobile ProfileActions. -->
-      <Row class="mt-[18px]" :gap="12" justify="start">
-        <Col align="center" :gap="6">
-          <Button
-            variant="secondary"
-            size="xl"
-            pill
-            :tint-bg="palette.border"
-            :disabled="openingDm"
-            @click="onMessage"
-          >
-            <Icon name="chatRect" :size="22" :color="palette.link" />
-          </Button>
-          <span class="text-[15px] font-semibold" :style="{ color: palette.link }">
-            {{ openingDm ? 'Opening…' : 'Message' }}
-          </span>
-        </Col>
-        <Col align="center" :gap="6">
-          <Button
-            variant="secondary"
-            size="xl"
-            pill
-            :tint-bg="palette.border"
-            @click="onMessage"
-          >
-            <Icon name="send" :size="22" :color="palette.link" />
-          </Button>
-          <span class="text-[15px] font-semibold" :style="{ color: palette.link }">Send</span>
-        </Col>
-      </Row>
     </Col>
 
     <!-- Common channels: mutual group memberships with this peer (not-self only),
          placed below the profile actions to mirror mobile ProfileScreen. -->
     <CommonChannels :peer-address="address" :enabled="notSelf" />
-
-    <Col class="px-6 pb-8">
-      <Col class="mt-6 space-y-2">
-        <Pressable
-          tag="button"
-          type="button"
-          class="w-full text-left p-3 rounded-xl border
-            border-metro-border-light dark:border-metro-border-dark
-            bg-metro-surface-light dark:bg-metro-surface-dark"
-          @click="copy(address)"
-        >
-          <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark uppercase tracking-wide">
-            Wallet address ({{ copied ? 'copied!' : 'tap to copy' }})
-          </Col>
-          <Col class="text-sm mt-1 break-all font-mono">{{ address }}</Col>
-        </Pressable>
-        <Col v-if="profile?.github?.trim()" class="p-3 rounded-xl border border-metro-border-light dark:border-metro-border-dark bg-metro-surface-light dark:bg-metro-surface-dark">
-          <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark uppercase tracking-wide">GitHub</Col>
-          <Col class="text-sm mt-1">{{ profile.github }}</Col>
-        </Col>
-        <Col v-if="profile?.twitter?.trim()" class="p-3 rounded-xl border border-metro-border-light dark:border-metro-border-dark bg-metro-surface-light dark:bg-metro-surface-dark">
-          <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark uppercase tracking-wide">X (Twitter)</Col>
-          <Col class="text-sm mt-1">{{ profile.twitter }}</Col>
-        </Col>
-        <Col v-if="profile?.lens?.trim()" class="p-3 rounded-xl border border-metro-border-light dark:border-metro-border-dark bg-metro-surface-light dark:bg-metro-surface-dark">
-          <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark uppercase tracking-wide">Lens</Col>
-          <Col class="text-sm mt-1">{{ profile.lens }}</Col>
-        </Col>
-        <Col v-if="profile?.farcaster?.trim()" class="p-3 rounded-xl border border-metro-border-light dark:border-metro-border-dark bg-metro-surface-light dark:bg-metro-surface-dark">
-          <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark uppercase tracking-wide">Farcaster</Col>
-          <Col class="text-sm mt-1">{{ profile.farcaster }}</Col>
-        </Col>
-      </Col>
-    </Col>
   </Col>
 </template>

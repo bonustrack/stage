@@ -1,8 +1,12 @@
 <script setup lang="ts">
 
+import { computed } from 'vue';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import { basicRoot, reactionsRow, bubbleTimestamp, type ReactionPill, REACTION_PRESS } from '@stage-labs/views';
 import { stampAvatarUrl, XMTP_USER_PREFIX } from '../lib/xmtp';
-import type { HistoryEntry } from '../lib/types';
-import { mapCoordsOf, youtubeIdOf } from '../lib/embedDetect';
+import type { HistoryEntry } from '@stage-labs/client/types';
+import { mapCoordsOf, youtubeIdOf } from '@stage-labs/client/embed/detect';
 import { renderMarkdown } from '../lib/renderMarkdown';
 import { parseMentions } from '@stage-labs/client/xmtp/mentions';
 import { shortAddress } from '@stage-labs/client/identity/format';
@@ -86,11 +90,6 @@ const senderAddress = computed(() => {
   return id && props.inboxToAddr ? props.inboxToAddr[id] ?? null : null;
 });
 
-function fmtTs(ts: string): string {
-  try { return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }); }
-  catch { return ts.slice(11, 16); }
-}
-
 function urlOf(att: AttachmentLike): string | null {
   if (att.url) return att.url;
   if (att.dataB64 && att.mime) return `data:${att.mime};base64,${att.dataB64}`;
@@ -121,6 +120,36 @@ function onPointerMove(ev: PointerEvent): void {
 function onAvatar(): void {
   if (senderAddress.value) emit('open-avatar', senderAddress.value);
 }
+
+const reactionPills = computed<ReactionPill[]>(() =>
+  props.reactions
+    ? Array.from(props.reactions.entries()).map(([emoji, count]) => ({
+        emoji,
+        count,
+        own: props.ownEmojis?.has(emoji) ?? false,
+      }))
+    : [],
+);
+
+const palette = useKitPalette();
+
+const reactionsNode = computed(() =>
+  basicRoot(
+    reactionsRow({
+      reactions: reactionPills.value,
+      dispatchPress: true,
+      pillBackground: palette.border,
+      ownBorderColor: palette.link,
+    }),
+  ),
+);
+
+const reactionsActions = {
+  [REACTION_PRESS]: (payload: Record<string, unknown>): void => {
+    const emoji = payload.emoji;
+    if (typeof emoji === 'string') emit('react', { entry: props.entry, emoji });
+  },
+};
 </script>
 
 <template>
@@ -155,7 +184,7 @@ function onAvatar(): void {
     <Col v-else class="shrink-0 mt-0.5 w-6 h-6 rounded-full bg-metro-border-dark" />
     <Col class="flex-1 min-w-0">
       <!-- Timestamp sits at the TOP of the bubble column, mirroring mobile. -->
-      <Text size="3xs" color="secondary" class="mb-0.5">{{ isPending ? 'Sending' : fmtTs(props.entry.ts) }}</Text>
+      <Text size="3xs" color="secondary" class="mb-0.5">{{ isPending ? 'Sending' : bubbleTimestamp(props.entry.ts) }}</Text>
       <!-- Mobile draws the 1.5px border only on UNREAD bubbles (borderWidth:
            unread ? 1.5 : 0). Web has no per-message unread signal yet, so read
            messages — the common case — render WITHOUT the box. -->
@@ -207,11 +236,7 @@ function onAvatar(): void {
            MentionBody single Text run). Body text uses fg; each mention is an
            inline semibold link in the explicit link color (#2f6feb / #7aa2ff),
            distinct from the body fg. -->
-      <!-- kit-exception: a normal block (not a kit Col, which forces
-           display:flex/column and would stack each segment vertically). Inline
-           flow is required so the mention link + surrounding text read as one
-           paragraph, matching mobile's MentionBody single Text run. -->
-      <component :is="'div'" v-else-if="props.entry.text && showBodyText"
+      <Paragraph v-else-if="props.entry.text && showBodyText"
         class="block break-words font-sans text-[19px] leading-[23px] select-text
           [&_p]:m-0 [&_p]:inline [&_a]:underline [&_a]:break-words
           [&_code]:font-mono [&_code]:text-[15px] [&_pre]:whitespace-pre-wrap
@@ -226,7 +251,7 @@ function onAvatar(): void {
           >@{{ mentionLabel(seg.address) }}</Pressable>
           <span v-else class="inline" v-html="renderMarkdown(seg.text)" />
         </template>
-      </component>
+      </Paragraph>
       <Col v-if="youtubeId" class="mt-1.5">
         <YouTubeEmbed :video-id="youtubeId" />
       </Col>
@@ -260,24 +285,11 @@ function onAvatar(): void {
         <Pressable tag="button" type="button" class="px-1 text-metro-sub-light dark:text-metro-sub-dark"
           @click="pickerOpen = false">✕</Pressable>
       </Row>
-      <!-- Reactions pills on their own row below (matches mobile). -->
-      <Row v-if="props.reactions && props.reactions.size > 0" class="flex flex-wrap items-center gap-1 mt-1">
-        <!-- Pill bg = mobile's pal.border; a border is drawn ONLY on the user's
-             own reactions (mobile: borderWidth mine?1, borderColor link). -->
-        <Pressable
-          tag="button"
-          v-for="[emoji, count] in props.reactions"
-          :key="emoji"
-          type="button"
-          class="flex items-center gap-1 px-2 py-0.5 rounded-full
-            bg-metro-border-light dark:bg-metro-border-dark
-            text-[12px] text-metro-fg-light dark:text-metro-fg-dark"
-          :class="props.ownEmojis?.has(emoji)
-            ? 'border border-metro-link-light dark:border-metro-link-dark'
-            : ''"
-          @click="emit('react', { entry: props.entry, emoji })"
-        >{{ emoji }} {{ count }}</Pressable>
-      </Row>
+      <!-- Reactions pills on their own row below (matches mobile), rendered from
+           Kit JSON via the shared reactionsRow builder. -->
+      <Col v-if="reactionPills.length > 0" class="mt-1">
+        <ViewHost :node="reactionsNode" :actions="reactionsActions" />
+      </Col>
     </Col>
   </Row>
 </template>

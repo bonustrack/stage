@@ -1,17 +1,18 @@
 
 import { useEffect, useState } from 'react';
 import { KERNEL_VERSION_STRING, ENTRY_POINT_VERSION, SCW_CHAIN_ID } from '@stage-labs/client/zerodev/config';
+import type { WalletDeployState, WalletModuleRole } from '@stage-labs/views';
 import { getActiveAccount, type AccountRecord } from '../../lib/accounts';
 import { makePublicClient } from '../../lib/zerodev/client';
 
-export type ModuleRole = 'sudo' | 'backup' | 'recovery' | 'session';
+export type ModuleRole = WalletModuleRole;
 interface WalletModule {
   name: string;
   role: ModuleRole;
   status: string;
 }
 
-export type DeployState = 'loading' | 'deployed' | 'counterfactual' | 'unknown';
+export type DeployState = WalletDeployState;
 
 export interface WalletModel {
   rec: AccountRecord;

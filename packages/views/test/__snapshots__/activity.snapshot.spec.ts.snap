@@ -1,0 +1,272 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`txRow minimal incoming 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "name": "arrow-down",
+      "size": "sm",
+      "type": "Icon",
+    },
+    {
+      "children": [
+        {
+          "color": "link",
+          "truncate": true,
+          "type": "Text",
+          "value": "Received",
+          "weight": "semibold",
+        },
+        {
+          "align": "center",
+          "children": [
+            {
+              "color": "secondary",
+              "truncate": true,
+              "type": "Caption",
+              "value": "vitalik.eth",
+            },
+          ],
+          "flex": 1,
+          "gap": 6,
+          "type": "Row",
+        },
+      ],
+      "flex": 1,
+      "gap": 2,
+      "type": "Col",
+    },
+    {
+      "align": "end",
+      "children": [
+        {
+          "color": {
+            "dark": "#57b375",
+            "light": "#57b375",
+          },
+          "textAlign": "end",
+          "type": "Text",
+          "value": "+0.5 ETH",
+          "weight": "semibold",
+        },
+        {
+          "color": "secondary",
+          "textAlign": "end",
+          "type": "Caption",
+          "value": "Jun 4",
+        },
+      ],
+      "gap": 2,
+      "type": "Col",
+    },
+  ],
+  "gap": 12,
+  "type": "Row",
+}
+`;
+
+exports[`txRow full outgoing failed 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "color": {
+        "dark": "#eb4c5b",
+        "light": "#eb4c5b",
+      },
+      "name": "arrow-up",
+      "size": "sm",
+      "type": "Icon",
+    },
+    {
+      "children": [
+        {
+          "color": "link",
+          "truncate": true,
+          "type": "Text",
+          "value": "Sent",
+          "weight": "semibold",
+        },
+        {
+          "align": "center",
+          "children": [
+            {
+              "color": "secondary",
+              "label": "Base",
+              "size": "sm",
+              "type": "Badge",
+              "variant": "soft",
+            },
+            {
+              "color": "secondary",
+              "truncate": true,
+              "type": "Caption",
+              "value": "vitalik.eth",
+            },
+          ],
+          "flex": 1,
+          "gap": 6,
+          "type": "Row",
+        },
+      ],
+      "flex": 1,
+      "gap": 2,
+      "type": "Col",
+    },
+    {
+      "align": "end",
+      "children": [
+        {
+          "color": {
+            "dark": "#eb4c5b",
+            "light": "#eb4c5b",
+          },
+          "textAlign": "end",
+          "type": "Text",
+          "value": "−0.5 ETH",
+          "weight": "semibold",
+        },
+        {
+          "color": "danger",
+          "textAlign": "end",
+          "type": "Caption",
+          "value": "Failed",
+        },
+      ],
+      "gap": 2,
+      "type": "Col",
+    },
+  ],
+  "gap": 12,
+  "type": "Row",
+}
+`;
+
+exports[`txRow self transfer 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "name": "switch-horizontal",
+      "size": "sm",
+      "type": "Icon",
+    },
+    {
+      "children": [
+        {
+          "color": "link",
+          "truncate": true,
+          "type": "Text",
+          "value": "Shielded",
+          "weight": "semibold",
+        },
+        {
+          "align": "center",
+          "children": [
+            {
+              "color": "secondary",
+              "truncate": true,
+              "type": "Caption",
+              "value": "vitalik.eth",
+            },
+          ],
+          "flex": 1,
+          "gap": 6,
+          "type": "Row",
+        },
+      ],
+      "flex": 1,
+      "gap": 2,
+      "type": "Col",
+    },
+    {
+      "align": "end",
+      "children": [
+        {
+          "textAlign": "end",
+          "type": "Text",
+          "value": "0.5 ETH",
+          "weight": "semibold",
+        },
+        {
+          "color": "secondary",
+          "textAlign": "end",
+          "type": "Caption",
+          "value": "Jun 4",
+        },
+      ],
+      "gap": 2,
+      "type": "Col",
+    },
+  ],
+  "gap": 12,
+  "type": "Row",
+}
+`;
+
+exports[`txRow zero amount renders a dash 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "name": "arrow-down",
+      "size": "sm",
+      "type": "Icon",
+    },
+    {
+      "children": [
+        {
+          "color": "link",
+          "truncate": true,
+          "type": "Text",
+          "value": "Received",
+          "weight": "semibold",
+        },
+        {
+          "align": "center",
+          "children": [
+            {
+              "color": "secondary",
+              "truncate": true,
+              "type": "Caption",
+              "value": "vitalik.eth",
+            },
+          ],
+          "flex": 1,
+          "gap": 6,
+          "type": "Row",
+        },
+      ],
+      "flex": 1,
+      "gap": 2,
+      "type": "Col",
+    },
+    {
+      "align": "end",
+      "children": [
+        {
+          "color": {
+            "dark": "#57b375",
+            "light": "#57b375",
+          },
+          "textAlign": "end",
+          "type": "Text",
+          "value": "—",
+          "weight": "semibold",
+        },
+        {
+          "color": "secondary",
+          "textAlign": "end",
+          "type": "Caption",
+          "value": "Jun 4",
+        },
+      ],
+      "gap": 2,
+      "type": "Col",
+    },
+  ],
+  "gap": 12,
+  "type": "Row",
+}
+`;

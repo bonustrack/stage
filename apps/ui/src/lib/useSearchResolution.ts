@@ -1,12 +1,9 @@
 
 import { ref, watch, type Ref } from 'vue';
 import type { Router } from 'vue-router';
-import { isAddressLike, isDomainLike, resolveDomain } from './stamp';
+import { resolveSearchStep, type SearchResolution } from '@stage-labs/client/api/search';
 
-export interface SearchResolution {
-  status: 'idle' | 'resolving' | 'resolved' | 'missed';
-  address: string | null;
-}
+export type { SearchResolution };
 
 export function useSearchResolution(query: Ref<string>, router: Router): {
   searchResolution: Ref<SearchResolution>;
@@ -15,16 +12,12 @@ export function useSearchResolution(query: Ref<string>, router: Router): {
   const searchResolution = ref<SearchResolution>({ status: 'idle', address: null });
 
   watch(query, (q) => {
-    const v = q.trim();
-    if (!v) { searchResolution.value = { status: 'idle', address: null }; return; }
-    if (isAddressLike(v)) { searchResolution.value = { status: 'resolved', address: v }; return; }
-    if (!isDomainLike(v)) { searchResolution.value = { status: 'idle', address: null }; return; }
+    const step = resolveSearchStep(q);
+    if (step.kind === 'sync') { searchResolution.value = step.resolution; return; }
     searchResolution.value = { status: 'resolving', address: null };
-    void resolveDomain(v).then(addr => {
-      if (query.value.trim() !== v) return;
-      searchResolution.value = addr
-        ? { status: 'resolved', address: addr }
-        : { status: 'missed', address: null };
+    void step.resolve().then(res => {
+      if (query.value.trim() !== step.query) return;
+      searchResolution.value = res;
     });
   }, { flush: 'post' });
 

@@ -1,12 +1,23 @@
 <script setup lang="ts">
 
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import type { ListViewNode } from '@stage-labs/kit/kit';
+import { settingsHeader, settingsNavRow, SCREEN_BACK, SETTINGS_NAV_PRESS } from '@stage-labs/views';
 import { listAccounts, getActiveAccountId, loadPk, canExportPrivateKey, hasWalletMnemonic, type AccountRecord } from '../../lib/accounts';
 
 const router = useRouter();
 const palette = useKitPalette();
+
+const headerNode = computed(() => settingsHeader({
+  title: 'Security',
+  backColor: palette.text,
+  surface: palette.toolbarBg,
+  borderColor: palette.border,
+  safeTop: 0,
+}));
 
 const account = ref<AccountRecord | null>(null);
 const hasLocalKey = ref(false);
@@ -20,22 +31,43 @@ onMounted(async () => {
     if (acc && canExportPrivateKey(acc)) hasLocalKey.value = loadPk(acc.id) != null;
   } catch { }
 });
+
+const manageNode = computed<ListViewNode>(() => ({
+  type: 'ListView',
+  children: [settingsNavRow({
+    label: 'Manage keys & accounts',
+    value: 'Import, export and switch accounts.',
+    iconStart: 'key',
+    pressType: SETTINGS_NAV_PRESS,
+    payload: { to: '/accounts' },
+  })],
+}));
+
+const recoveryNode = computed<ListViewNode>(() => ({
+  type: 'ListView',
+  children: [settingsNavRow({
+    label: 'Recovery phrase',
+    value: hasMnemonic.value
+      ? 'Back up the phrase your smart accounts derive from.'
+      : 'Available once you create a smart account.',
+    iconStart: 'shieldExclamation',
+    pressType: SETTINGS_NAV_PRESS,
+    payload: { to: '/settings/recovery-phrase' },
+  })],
+}));
+
+const actions = {
+  [SCREEN_BACK]: (): void => { router.back(); },
+  [SETTINGS_NAV_PRESS]: (payload: Record<string, unknown>): void => {
+    const to = payload.to;
+    if (typeof to === 'string') void router.push(to);
+  },
+};
 </script>
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <Row
-      surface="toolbar"
-      align="center"
-      :gap="8"
-      :padding="{ x: 12, y: 10 }"
-      :style="{ borderBottomWidth: '1px', borderBottomStyle: 'solid', borderBottomColor: palette.border }"
-    >
-      <Pressable tag="button" type="button" class="p-1" @click="router.back()">
-        <Icon name="arrowLeft" :size="22" :color="palette.text" />
-      </Pressable>
-      <Title size="sm">Security</Title>
-    </Row>
+    <ViewHost :node="headerNode" :actions="actions" />
 
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-8">
       <BackupNudge />
@@ -58,46 +90,13 @@ onMounted(async () => {
         </Row>
       </Col>
 
-      <!-- ACCOUNT SECURITY: key management entry point, mirroring mobile's
-           AccountSecuritySection. Links to the Accounts screen for export / backup. -->
       <Text size="3xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark px-4 pt-6 pb-1">ACCOUNT SECURITY</Text>
-      <Pressable
-        tag="button"
-        type="button"
-        class="w-[calc(100%-2rem)] mx-4 mt-2 flex items-center gap-3 px-4 py-3.5 rounded-xl border
-          bg-metro-surface-light dark:bg-metro-surface-dark
-          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark transition-colors"
-        :style="{ borderColor: palette.border }"
-        @click="router.push('/accounts')"
-      >
-        <Icon name="key" :size="22" :color="palette.text" />
-        <Col class="flex-1 min-w-0 text-left">
-          <Text size="xl" tag="div" class="text-metro-head-light dark:text-metro-head-dark">Manage keys &amp; accounts</Text>
-          <Text size="2xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark">Import, export and switch accounts.</Text>
-        </Col>
-        <Icon name="chevronRight" :size="18" :color="palette.sub" />
-      </Pressable>
-
-      <!-- RECOVERY PHRASE: back up the BIP-39 mnemonic every smart account derives
-           from (mobile's SecureWalletNudge "Back up recovery phrase" equivalent). -->
-      <Pressable
-        tag="button"
-        type="button"
-        class="w-[calc(100%-2rem)] mx-4 mt-3 flex items-center gap-3 px-4 py-3.5 rounded-xl border
-          bg-metro-surface-light dark:bg-metro-surface-dark
-          hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark transition-colors"
-        :style="{ borderColor: palette.border }"
-        @click="router.push('/settings/recovery-phrase')"
-      >
-        <Icon name="shieldExclamation" :size="22" :color="palette.text" />
-        <Col class="flex-1 min-w-0 text-left">
-          <Text size="xl" tag="div" class="text-metro-head-light dark:text-metro-head-dark">Recovery phrase</Text>
-          <Text size="2xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark">
-            {{ hasMnemonic ? 'Back up the phrase your smart accounts derive from.' : 'Available once you create a smart account.' }}
-          </Text>
-        </Col>
-        <Icon name="chevronRight" :size="18" :color="palette.sub" />
-      </Pressable>
+      <Col class="w-[calc(100%-2rem)] mx-4 mt-2">
+        <ViewHost :node="manageNode" :actions="actions" />
+      </Col>
+      <Col class="w-[calc(100%-2rem)] mx-4 mt-3">
+        <ViewHost :node="recoveryNode" :actions="actions" />
+      </Col>
     </Col>
   </Col>
 </template>

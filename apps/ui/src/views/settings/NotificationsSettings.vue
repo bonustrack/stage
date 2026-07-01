@@ -3,9 +3,22 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import type { ListViewNode } from '@stage-labs/kit/kit';
+import {
+  settingsHeader, settingsButtonRow, settingsValueRow, SCREEN_BACK, SETTINGS_BUTTON_PRESS,
+} from '@stage-labs/views';
 
 const router = useRouter();
 const palette = useKitPalette();
+
+const headerNode = computed(() => settingsHeader({
+  title: 'Notifications',
+  backColor: palette.text,
+  surface: palette.toolbarBg,
+  borderColor: palette.border,
+  safeTop: 0,
+}));
 
 const supported = typeof window !== 'undefined' && 'Notification' in window;
 const permission = ref<NotificationPermission>(supported ? Notification.permission : 'denied');
@@ -31,22 +44,29 @@ const statusLabel = computed<string>(() => {
   if (permission.value === 'denied') return 'Blocked in browser settings — enable notifications for this site to receive them.';
   return 'Allow browser notifications to be alerted about new messages while Stage is open.';
 });
+
+const DESC = 'Get notified about new messages while Stage is open in this browser.';
+
+const node = computed<ListViewNode>(() => ({
+  type: 'ListView',
+  children: [permission.value === 'granted'
+    ? settingsValueRow({ label: 'Browser notifications', value: 'Allowed' })
+    : settingsButtonRow({
+      label: 'Enable',
+      description: DESC,
+      clickType: SETTINGS_BUTTON_PRESS,
+    })],
+}));
+
+const actions = {
+  [SCREEN_BACK]: (): void => { router.back(); },
+  [SETTINGS_BUTTON_PRESS]: (): void => { void requestPermission(); },
+};
 </script>
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <Row
-      surface="toolbar"
-      align="center"
-      :gap="8"
-      :padding="{ x: 12, y: 10 }"
-      :style="{ borderBottomWidth: '1px', borderBottomStyle: 'solid', borderBottomColor: palette.border }"
-    >
-      <Pressable tag="button" type="button" class="p-1" @click="router.back()">
-        <Icon name="arrowLeft" :size="22" :color="palette.text" />
-      </Pressable>
-      <Title size="sm">Notifications</Title>
-    </Row>
+    <ViewHost :node="headerNode" :actions="actions" />
 
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-8">
       <!-- PUSH NOTIFICATIONS: mirrors mobile NotificationsSettings' single toggle card.
@@ -54,33 +74,8 @@ const statusLabel = computed<string>(() => {
            per-site permission instead of a daemon registration; the permission state
            is the web-appropriate equivalent of mobile's OS permission line. -->
       <Text size="3xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark px-4 pt-5 pb-2">NOTIFICATIONS</Text>
-      <Col
-        class="w-[calc(100%-2rem)] mx-4 rounded-xl border bg-metro-surface-light dark:bg-metro-surface-dark p-3.5"
-        :style="{ borderColor: palette.border }"
-      >
-        <Row align="center" :gap="12">
-          <Col class="flex-1 min-w-0">
-            <Text size="sm" weight="semibold" tag="div" class="text-metro-head-light dark:text-metro-head-dark">Browser notifications</Text>
-            <Text size="2xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark mt-0.5">
-              Get notified about new messages while Stage is open in this browser.
-            </Text>
-          </Col>
-          <span
-            v-if="permission === 'granted'"
-            class="text-[11px] uppercase shrink-0"
-            :style="{ color: palette.success }"
-          >Allowed</span>
-          <Pressable
-            v-else
-            tag="button"
-            type="button"
-            class="shrink-0 px-3 py-1.5 rounded-full border text-[13px] transition-colors disabled:opacity-50
-              hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
-            :style="{ borderColor: palette.border, color: palette.text }"
-            :disabled="!supported || permission === 'denied' || busy"
-            @click="requestPermission()"
-          >Enable</Pressable>
-        </Row>
+      <Col class="w-[calc(100%-2rem)] mx-4">
+        <ViewHost :node="node" :actions="actions" />
       </Col>
       <Text size="2xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark px-4 pt-3">
         {{ statusLabel }}

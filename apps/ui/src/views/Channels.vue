@@ -1,67 +1,121 @@
 <script setup lang="ts">
 
+import { computed, ref } from 'vue';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import {
+  basicRoot,
+  emptyState, overflowMenu, OVERFLOW_MENU_PRESS,
+  labelBar, LABEL_CHIP_PRESS, type LabelBarChip,
+} from '@stage-labs/views';
+import { metroFieldColors } from '@/lib/metroFieldColors';
 import { ASK_QUESTION_MEMBERS, stampAvatarUrl } from '../lib/xmtp';
 import { postCloseToParent } from '../lib/embedBridge';
 import { useChannels } from '../lib/useChannels';
-import { useEffectiveScheme } from '@/lib/kitTheme';
-
-const scheme = useEffectiveScheme();
+import { usePublishTopnav } from '../lib/topnavSlots';
+import ChannelsSearchBar from '../components/ChannelsSearchBar.vue';
 
 const {
-  embedded, rows, error, query, creatingAsk, refreshing,
+  embedded, rows, error, query, creatingAsk,
   searchResolution, openSearchedProfile, filtered, view, cardClass, rowMenu,
-  onAskPress, refreshFromNetwork, open, openRowMenu, closeRowMenu,
+  barLabels, enabledLabels, unreadOnly, toggleLabel, toggleUnread, clearAllFilters,
+  onAskPress, open, openRowMenu, closeRowMenu,
   toggleRowUnread, archiveRow, openDocs, goNewGroup, goArchived, goRequests,
   goProfile, goSettings,
 } = useChannels();
 
+const UNREAD_VALUE = '__unread__';
+
+const searchOpen = ref(false);
+const { setOverride } = usePublishTopnav();
+function openSearch(): void { searchOpen.value = true; setOverride(true); }
+function closeSearch(): void { searchOpen.value = false; setOverride(false); query.value = ''; }
+
+const emptyNode = computed(() =>
+  basicRoot(
+    emptyState({
+      icon: 'chatBubble',
+      title: query.value ? `No matches for "${query.value}"` : 'No conversations yet',
+      caption: query.value
+        ? undefined
+        : 'Share your address from Settings to start one.',
+    }),
+  ),
+);
+
+const overflowNode = computed(() =>
+  basicRoot(
+    overflowMenu({
+      iconSize: 24,
+      items: [
+        { id: 'new', label: 'New group', icon: 'plus' },
+        { id: 'archived', label: 'Archived', icon: 'archive' },
+        { id: 'profile', label: 'Profile', icon: 'user' },
+        { id: 'settings', label: 'Settings', icon: 'cog' },
+      ],
+    }),
+  ),
+);
+
+const overflowActions = {
+  [OVERFLOW_MENU_PRESS]: (payload: Record<string, unknown>): void => {
+    const id = payload.id;
+    if (id === 'new') goNewGroup();
+    else if (id === 'archived') goArchived();
+    else if (id === 'profile') goProfile();
+    else if (id === 'settings') goSettings();
+  },
+};
+
+const labelBarNode = computed(() => {
+  const allSelected = !unreadOnly.value && enabledLabels.value.size === 0;
+  const chips: LabelBarChip[] = [
+    { value: '', label: 'All', selected: allSelected },
+    { value: UNREAD_VALUE, label: 'Unread', selected: unreadOnly.value },
+    ...barLabels.value.map((label) => ({
+      value: label,
+      label,
+      selected: enabledLabels.value.has(label.toLowerCase()),
+    })),
+  ];
+  return basicRoot(
+    labelBar({
+      chips,
+      selectedBackground: metroFieldColors.link,
+      selectedLabelColor: metroFieldColors.bg,
+      restBackground: metroFieldColors.border,
+      restLabelColor: metroFieldColors.fg,
+    }),
+  );
+});
+
+const labelBarActions = {
+  [LABEL_CHIP_PRESS]: (payload: Record<string, unknown>): void => {
+    const value = payload.value;
+    if (typeof value !== 'string') return;
+    if (value === '') { clearAllFilters(); return; }
+    if (value === UNREAD_VALUE) { toggleUnread(); return; }
+    toggleLabel(value);
+  },
+};
+
 </script>
 
 <template>
-  <Col class="h-[100dvh] relative" :class="embedded ? '' : 'pb-[60px]'">
-    <!-- Topnav: page title, refresh, and (embedded only) a close button at the
-         end, so the channels homepage has a single topnav like conversations. -->
-    <Row align="center" :gap="4" class="h-[52px] box-border shrink-0 pl-2 pr-1
-      bg-metro-bg-light dark:bg-metro-bg-dark
-      border-b border-metro-border-light dark:border-metro-border-dark">
-      <AccountSwitcher v-if="!embedded" />
+  <Col class="relative" :class="embedded ? 'h-[100dvh]' : 'flex-1 min-h-0 h-[calc(100dvh-52px-60px)]'">
+    <!-- Embedded widget keeps its own compact header (Home/Messages title + close). -->
+    <Row
+      v-if="embedded"
+      align="center"
+      :gap="4"
+      class="h-[52px] box-border shrink-0 pl-2 pr-1
+        bg-metro-bg-light dark:bg-metro-bg-dark
+        border-b border-metro-border-light dark:border-metro-border-dark"
+    >
       <Text size="4xl" weight="semibold" class="flex-1 pl-2 text-metro-head-light dark:text-metro-head-dark">
-        {{ embedded ? (view === 'messages' ? 'Messages' : 'Home') : 'Channels' }}
+        {{ view === 'messages' ? 'Messages' : 'Home' }}
       </Text>
-      <template v-if="!embedded && view === 'messages'">
-        <Pressable
-          tag="button"
-          type="button"
-          class="p-2 rounded-lg text-metro-sub-light dark:text-metro-sub-dark
-            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
-          title="Message requests"
-          @click="goRequests"
-        >
-          <Icon name="inbox" :size="18" />
-        </Pressable>
-        <Pressable
-          tag="button"
-          type="button"
-          :disabled="refreshing"
-          class="p-2 rounded-lg text-metro-sub-light dark:text-metro-sub-dark
-            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark disabled:opacity-50"
-          :title="refreshing ? 'Refreshing…' : 'Refresh channels'"
-          @click="refreshFromNetwork"
-        >
-          <Icon name="arrowDown" :size="16" :class="refreshing ? 'animate-spin' : ''" />
-        </Pressable>
-        <OverflowMenu :size="18">
-          <template #default="{ run }">
-            <OverflowItem icon="plus" label="New group" @select="run(goNewGroup)" />
-            <OverflowItem icon="archive" label="Archived" @select="run(goArchived)" />
-            <OverflowItem icon="user" label="Profile" @select="run(goProfile)" />
-            <OverflowItem icon="cog" label="Settings" @select="run(goSettings)" />
-          </template>
-        </OverflowMenu>
-      </template>
       <Pressable
         tag="button"
-        v-if="embedded"
         type="button"
         class="px-2 py-2 text-metro-fg-light dark:text-metro-fg-dark"
         title="Close"
@@ -70,6 +124,24 @@ const {
         <Icon name="x" :size="20" />
       </Pressable>
     </Row>
+
+    <!-- Standalone (mobile-parity): the identity topnav is hoisted app-wide in
+         App.vue; this view only publishes its right slot (search/inbox/overflow)
+         and a search override bar via teleports into the hoisted bar. -->
+    <template v-else>
+      <Teleport v-if="searchOpen" to="#topnav-override">
+        <ChannelsSearchBar v-model="query" placeholder="Search channels or paste 0x… / name.eth…" @close="closeSearch" />
+      </Teleport>
+      <Teleport to="#topnav-right">
+        <Pressable tag="button" type="button" title="Search" @click="openSearch">
+          <Icon name="search" :size="24" class="text-metro-head-light dark:text-metro-head-dark" />
+        </Pressable>
+        <Pressable tag="button" type="button" title="Message requests" class="relative" @click="goRequests">
+          <Icon name="inbox" :size="24" class="text-metro-head-light dark:text-metro-head-dark" />
+        </Pressable>
+        <ViewHost :node="overflowNode" :actions="overflowActions" />
+      </Teleport>
+    </template>
 
     <!-- HOME: the "Ask a question" action card. Messages/Docs live in the footer nav. -->
     <Col v-if="view === 'home'" align="center" justify="center" :gap="12" class="flex-1 px-6">
@@ -91,23 +163,9 @@ const {
       <Col v-if="error" class="text-xs text-metro-err mt-1">{{ error }}</Col>
     </Col>
 
-    <!-- MESSAGES: search (standalone) + the channel list. -->
+    <!-- MESSAGES: label filter bar + the channel list. -->
     <template v-else>
-      <Col v-if="!embedded" class="shrink-0 px-4 pt-3 pb-2 bg-metro-bg-light dark:bg-metro-bg-dark">
-        <Input
-          v-model="query"
-          inputType="text"
-          :dark="scheme === 'dark'"
-          placeholder="Search channels or paste 0x… / name.eth…"
-          autocomplete="off"
-          autocorrect="off"
-          autocapitalize="off"
-          class="w-full bg-metro-surface-light dark:bg-metro-surface-dark
-            border border-metro-border-light dark:border-metro-border-dark rounded-lg px-3 py-2 text-sm
-            text-metro-fg-light dark:text-metro-fg-dark outline-none
-            placeholder:text-metro-sub-light dark:placeholder:text-metro-sub-dark"
-        />
-      </Col>
+      <ViewHost v-if="!embedded" :node="labelBarNode" :actions="labelBarActions" />
       <SearchResolution
         :status="searchResolution.status"
         :address="searchResolution.address"
@@ -123,8 +181,8 @@ const {
         <Spinner :size="28" />
       </Col>
       <ul v-else class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-6">
-        <li v-if="filtered && filtered.length === 0" class="p-8 text-center text-sm text-metro-sub-light dark:text-metro-sub-dark">
-          {{ query ? `No matches for "${query}"` : 'No conversations yet. Share your address from Settings to start one.' }}
+        <li v-if="filtered && filtered.length === 0">
+          <ViewHost :node="emptyNode" />
         </li>
         <li v-for="r in filtered ?? rows" :key="r.convId">
           <ChannelRow

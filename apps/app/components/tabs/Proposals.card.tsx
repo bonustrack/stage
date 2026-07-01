@@ -5,6 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import { proposalHeaderRoot } from '@stage-labs/views';
 import type { SignatureRequestContent } from '@stage-labs/client/xmtp/sign';
 import type { WalletSendCallsContent } from '@stage-labs/client/xmtp/tx';
 import { Box, Row, Col } from '../layout';
@@ -12,29 +14,14 @@ import { Avatar } from '../Avatar';
 import { ChannelRow } from '../ChannelRow';
 import { MessengerComposer } from '../MessengerComposer';
 import { useConversationState } from '../xmtp-conv/useConversationState';
-import { pollOf, txRequestOf, sigRequestOf, fmtTs } from '../MessengerBubble.helpers';
+import { pollOf, txRequestOf, sigRequestOf } from '../MessengerBubble.helpers';
+import { bubbleTimestamp } from '@stage-labs/views';
 import { PollView } from '../MessengerBubble.poll';
 import { TxRequestCard, SigRequestCard } from '../MessengerBubble.cards';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { getPeerName } from '../../lib/peerProfiles';
 import { shortAddress, acceptRequestConv, blockRequestConv, getCachedXmtpClient } from '../../modules/messaging';
 import type { QueuedRequest, RequestKind } from './Proposals.queue';
-
-const KIND_LABEL: Record<RequestKind, string> = {
-  poll: 'Poll',
-  payment: 'Payment request',
-  signing: 'Signing request',
-  message: 'Message request',
-};
-
-function KindEyebrow({ kind }: { kind: RequestKind }): React.ReactElement {
-  return (
-    <Text role="secondary" size="2xs" weight="semibold"
-      style={{ textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 4 }}>
-      {KIND_LABEL[kind]}
-    </Text>
-  );
-}
 
 export function ProposalCard({ proposal, onAdvance }: {
   proposal: QueuedRequest;
@@ -48,13 +35,9 @@ function CardHeader({ kind, title, authorAddr, authorName, postedAt, fg }: {
   kind: RequestKind; title: string; authorAddr: string | null; authorName: string | null;
   postedAt: string | null; fg: string;
 }): React.ReactElement {
-  const pal = usePalette();
   return (
     <>
-      <KindEyebrow kind={kind}/>
-      <Text weight="semibold" size="4xl" color={pal.link} numberOfLines={1}>
-        {title}
-      </Text>
+      <ViewHost node={proposalHeaderRoot(kind, title)} />
       {authorName ? (
         <Row gap={6} align="center" margin={{ top: 8 }}>
           <Avatar address={authorAddr} size="sm"/>
@@ -91,7 +74,7 @@ function ControlRow({ onSkip, onOpen, dark, hint }: {
 function headerFields(authorAddr: string | null, ts: string | undefined): { authorName: string | null; postedAt: string | null } {
   return {
     authorName: authorAddr ? (getPeerName(authorAddr) ?? shortAddress(authorAddr)) : null,
-    postedAt: ts ? fmtTs(ts) : null,
+    postedAt: ts ? bubbleTimestamp(ts) : null,
   };
 }
 
@@ -218,10 +201,7 @@ function MessageRequestCard({ request, onAdvance }: {
   return (
     <Col flex={1} surface="surface">
       <Box flex={1} padding={{ x: 16, top: 16 }} style={{ alignSelf: 'stretch' }}>
-        <KindEyebrow kind="message"/>
-        <Text weight="semibold" size="4xl" color={pal.link} numberOfLines={1}>
-          Message request
-        </Text>
+        <ViewHost node={proposalHeaderRoot('message', 'Message request')} />
         <Box margin={{ top: 12 }} style={{ alignSelf: 'stretch' }}>
           <ChannelRow
             title={displayTitle}

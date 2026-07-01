@@ -1,0 +1,46 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`derivePalette default seed returns the LEGACY palette (dark) — snapshot 1`] = `
+{
+  "bg": "#0e0f10",
+  "border": "#282a2d",
+  "danger": "#eb4c5b",
+  "inputBg": "#1c1d1f",
+  "link": "#ffffff",
+  "primary": "#ffffff",
+  "sub": "#7a7a7e",
+  "success": "#57b375",
+  "text": "#9f9fa3",
+  "toolbarBg": "#0e0f10",
+}
+`;
+
+exports[`derivePalette default seed returns the LEGACY palette (light) — snapshot 1`] = `
+{
+  "bg": "#ffffff",
+  "border": "#e4e4e5",
+  "danger": "#eb4c5b",
+  "inputBg": "#f2f2f3",
+  "link": "#000000",
+  "primary": "#000000",
+  "sub": "#8a929d",
+  "success": "#57b375",
+  "text": "#57606a",
+  "toolbarBg": "#ffffff",
+}
+`;
+
+exports[`derivePalette custom seed derives a palette — snapshot 1`] = `
+{
+  "bg": "#101820",
+  "border": "#334455",
+  "danger": "#eb4c5b",
+  "inputBg": "#222e3b",
+  "link": "#ff6600",
+  "primary": "#ff6600",
+  "sub": "#7a8693",
+  "success": "#57b375",
+  "text": "#c0c8d0",
+  "toolbarBg": "#101820",
+}
+`;

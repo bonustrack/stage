@@ -3,6 +3,8 @@
 import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import { basicRoot, screenHeader, SCREEN_BACK } from '@stage-labs/views';
 import { useEffectiveScheme } from '@/lib/kitTheme';
 import { useProposals, type ProposalDetail } from '../lib/useProposals';
 import type { QueuedRequest, RequestKind } from '@stage-labs/client/xmtp/requests-queue';
@@ -23,6 +25,20 @@ const acceptBg = computed(() => (dark.value ? '#15321f' : '#dcf5e6'));
 const acceptFg = computed(() => (dark.value ? '#34d399' : '#15803d'));
 
 const { requests, details, loading, error, refresh } = useProposals();
+
+const headerNode = computed(() =>
+  basicRoot(screenHeader({
+    title: 'Pending requests',
+    titleStyle: { kind: 'title', size: 'sm' },
+    backColor: palette.link,
+    safeTop: 0,
+    surface: palette.toolbarBg,
+    borderColor: palette.border,
+  })),
+);
+const headerActions = {
+  [SCREEN_BACK]: (): void => { router.back(); },
+};
 
 const KIND_LABEL: Record<RequestKind, string> = {
   poll: 'Poll',
@@ -179,28 +195,7 @@ async function onExecute(req: QueuedRequest): Promise<void> {
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <Row
-      surface="toolbar"
-      align="center"
-      :gap="8"
-      :padding="{ x: 12, y: 10 }"
-      :style="{ borderBottomWidth: '1px', borderBottomStyle: 'solid', borderBottomColor: palette.border }"
-    >
-      <Pressable tag="button" type="button" class="p-1" @click="router.back()">
-        <Icon name="arrowLeft" :size="22" :color="palette.text" />
-      </Pressable>
-      <Title size="sm">Pending requests</Title>
-      <Col class="flex-1" />
-      <Button
-        v-if="requests !== null"
-        variant="secondary"
-        size="md"
-        label="Refresh"
-        :dark="dark"
-        :loading="loading"
-        @click="onRefresh()"
-      />
-    </Row>
+    <ViewHost :node="headerNode" :actions="headerActions" />
 
     <Col v-if="requests === null" align="center" justify="center" class="flex-1">
       <Spinner :size="28" />
@@ -208,9 +203,9 @@ async function onExecute(req: QueuedRequest): Promise<void> {
     <Col v-else-if="error" align="center" justify="center" class="flex-1" :padding="32">
       <Text role="secondary" text-align="center">{{ error }}</Text>
     </Col>
-    <Col v-else-if="current === null" align="center" justify="center" class="flex-1" :padding="32" :gap="6">
-      <Text size="3xl" weight="semibold" color="text">No pending requests</Text>
-      <Text role="secondary" text-align="center">Polls, payments, signatures, and message requests will show up here.</Text>
+    <Col v-else-if="current === null" align="center" justify="center" class="flex-1" :padding="24" :gap="12">
+      <Text size="3xl" color="text" :style="{ opacity: '0.85' }">{{ loading ? 'Loading requests…' : 'No pending requests' }}</Text>
+      <Button v-if="!loading" variant="secondary" size="md" label="Refresh" :dark="dark" @click="onRefresh()" />
     </Col>
 
     <!-- Stepper: one request at a time with an "X of Y" counter, mirroring mobile ProposalsScreen. -->

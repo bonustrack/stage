@@ -1,15 +1,18 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { BasicNode } from '@stage-labs/kit/kit';
+import { basicRoot, txRow, type TxDirection } from '@stage-labs/views';
 import { Spinner } from '../Spinner';
-import { Col, Row, Box } from '../layout';
+import { Col, Box } from '../layout';
 import { DANGER } from '../../lib/theme';
 import { shortAddress } from '../../modules/messaging';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { fetchActivityAllChains, type ActivityRow } from '../../lib/etherscan';
 import { PrivateActivitySection } from './WalletScreen.privateActivity';
+import { relTime } from '@stage-labs/client/wallet/activityFormat';
 
 type Status = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -84,8 +87,8 @@ export function ActivityView({ address, head, sub, border, bg }: {
   );
 }
 
-const DIR_ICON: Record<ActivityRow['direction'], HeroIconName> = {
-  send: 'arrowUp', receive: 'arrowDown', self: 'switchHorizontal',
+const DIR_MAP: Record<ActivityRow['direction'], TxDirection> = {
+  send: 'out', receive: 'in', self: 'self',
 };
 
 function txTitle(r: ActivityRow): string {
@@ -95,61 +98,29 @@ function txTitle(r: ActivityRow): string {
   return 'Sent';
 }
 
-function txRowFields(r: ActivityRow, head: string): {
-  title: string; prefix: string; valueColor: string; partyLabel: string;
-} {
+function txRowNode(r: ActivityRow): BasicNode {
   const name = getPeerName(r.counterparty) ?? shortAddress(r.counterparty);
-  const prefix = r.direction === 'receive' ? '+' : r.direction === 'send' ? '−' : '';
-  const valueColor = r.failed ? DANGER : r.direction === 'receive' ? '#22c55e' : head;
-  return {
-    title: txTitle(r), prefix, valueColor,
-    partyLabel: r.direction === 'receive' ? `From ${name}` : `To ${name}`,
-  };
+  const partyLabel = r.direction === 'receive' ? `From ${name}` : `To ${name}`;
+  return basicRoot(txRow({
+    direction: DIR_MAP[r.direction],
+    title: txTitle(r),
+    amount: r.valueEth,
+    token: 'ETH',
+    timestamp: `${partyLabel} · ${relTime(r.timestamp)}`,
+    counterparty: `${partyLabel} · ${relTime(r.timestamp)}`,
+    chainLabel: r.chainLabel,
+    subText: r.failed ? 'Failed' : `#${r.nonce}`,
+    failed: r.failed,
+  }));
 }
 
-function TxRow({ r, head, sub, border, bg }: {
+function TxRow({ r, border }: {
   r: ActivityRow; head: string; sub: string; border: string; bg: string;
 }): React.ReactElement {
-  void bg;
-  const { title, prefix, valueColor, partyLabel } = txRowFields(r, head);
+  const node = useMemo(() => txRowNode(r), [r]);
   return (
-    <Row padding={{ y: 14 }} align="center" gap={12} 
-      style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-      <Box width={32} height={32} radius="full" background={border} align="center" justify="center">
-        <Icon name={DIR_ICON[r.direction]} size={18} color={r.failed ? DANGER : head}/>
-      </Box>
-      <Col minWidth={0} flex={1}>
-        <Text weight="semibold" size="xl" color={head} numberOfLines={1}>
-          {title}
-        </Text>
-        <Row margin={{ top: 2 }} align="center" gap={6}>
-          <Box radius="xs" background={border} padding={{ x: 6, y: 1 }}>
-            <Text size="xs" role="secondary" numberOfLines={1}>
-              {r.chainLabel}
-            </Text>
-          </Box>
-          <Text size="md" role="secondary" style={{ flex: 1 }} numberOfLines={1}>
-            {`${partyLabel} · ${relTime(r.timestamp)}`}
-          </Text>
-        </Row>
-      </Col>
-      <Col align="end">
-        <Text weight="semibold" size="xl" color={valueColor}>
-          {r.valueEth === '0' ? '—' : `${prefix}${r.valueEth} ETH`}
-        </Text>
-        <Text size="md" color={r.failed ? DANGER : sub} style={{ marginTop: 2 }}>
-          {r.failed ? 'Failed' : `#${r.nonce}`}
-        </Text>
-      </Col>
-    </Row>
+    <Box padding={{ y: 14 }} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
+      <ViewHost node={node} />
+    </Box>
   );
-}
-
-function relTime(ts: number): string {
-  const s = Math.max(0, Math.floor(Date.now() / 1000 - ts));
-  if (s < 60) return 'now';
-  if (s < 3600) return `${Math.floor(s / 60)}m`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h`;
-  if (s < 86400 * 30) return `${Math.floor(s / 86400)}d`;
-  return new Date(ts * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }

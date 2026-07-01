@@ -10,6 +10,7 @@ const props = defineProps<{
   level?: TitleLevel;
   size?: TitleSizeToken;
   color?: ColorToken | (string & {});
+  fontSizePx?: number;
 }>();
 
 const LEVEL_SIZE: Record<TitleLevel, number> = { 1: 30, 2: 24, 3: 21 };
@@ -26,7 +27,8 @@ const tag = computed(() => `h${level.value}`);
 
 const style = computed<Record<string, string>>(() => ({
   color: props.color != null ? resolveColorToken(props.color, scheme) : palette.link,
-  fontSize: `${LEVEL_SIZE[level.value]}px`,
+  fontSize: `${props.fontSizePx ?? LEVEL_SIZE[level.value]}px`,
+  lineHeight: props.fontSizePx != null ? `${Math.round(props.fontSizePx * 1.05)}px` : 'normal',
   fontFamily: 'Calibre-Semibold',
   fontWeight: '600',
   margin: '0',

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import {
@@ -13,6 +13,9 @@ import { loadPk, canExportPrivateKey } from '../lib/accounts';
 import { readProfile, loadCachedProfile } from '../lib/profile';
 import AccountImportSheet from '../components/AccountImportSheet.vue';
 import AccountExportSheet from '../components/AccountExportSheet.vue';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import type { ListViewNode } from '@stage-labs/kit/kit';
+import { basicRoot, listRoot, accountRow, screenHeader, ACCOUNT_PRESS, SCREEN_BACK } from '@stage-labs/views';
 
 const router = useRouter();
 const palette = useKitPalette();
@@ -155,23 +158,43 @@ function onImported(): void {
   showImport.value = false;
   void refresh();
 }
+
+function rowNode(a: AccountRecord): ListViewNode {
+  return listRoot(
+    accountRow({
+      accountId: a.id,
+      avatarUri: stampAvatarUrl(a.address, 56),
+      name: a.label ?? peerName(a.address) ?? shortAddress(a.address),
+      address: `${shortAddress(a.address)} · ${TYPE_LABEL[a.type]}`,
+    }),
+  );
+}
+
+const rowActions = {
+  [ACCOUNT_PRESS]: (payload: Record<string, unknown>): void => {
+    const id = payload.accountId;
+    if (typeof id === 'string') void onSwitch(id);
+  },
+};
+
+const headerNode = computed(() =>
+  basicRoot(screenHeader({
+    title: 'Accounts',
+    titleStyle: { kind: 'title', size: 'sm', color: palette.link },
+    backColor: palette.text,
+    safeTop: 0,
+    surface: palette.toolbarBg,
+    borderColor: palette.border,
+  })),
+);
+const headerActions = {
+  [SCREEN_BACK]: (): void => { router.back(); },
+};
 </script>
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <!-- Toolbar header mirrors the mobile Accounts screen title bar. -->
-    <Row
-      surface="toolbar"
-      align="center"
-      :gap="8"
-      :padding="{ x: 12, y: 10 }"
-      :style="{ borderBottomWidth: '1px', borderBottomStyle: 'solid', borderBottomColor: palette.border }"
-    >
-      <Pressable tag="button" type="button" class="p-1" @click="router.back()">
-        <Icon name="arrowLeft" :size="22" :color="palette.text" />
-      </Pressable>
-      <Title size="sm">Accounts</Title>
-    </Row>
+    <ViewHost :node="headerNode" :actions="headerActions" />
 
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-6">
       <!-- Account list + add/import rows mirror mobile AccountList: each row has a
@@ -191,30 +214,14 @@ function onImported(): void {
         >
           <Row
             align="center"
-            :gap="12"
-            class="px-3.5 py-3"
+            :gap="4"
+            class="pr-2"
             :style="a.id === activeId ? { backgroundColor: palette.border } : {}"
           >
-            <Pressable
-              tag="button"
-              type="button"
-              class="flex flex-1 min-w-0 items-center gap-3 text-left"
-              :disabled="busy"
-              @click="onSwitch(a.id)"
-            >
-              <AvatarView :src="stampAvatarUrl(a.address, 56)" :size="28" />
-              <span class="flex flex-col min-w-0 flex-1">
-                <Text size="md" weight="semibold" :truncate="true"
-                  class="text-metro-head-light dark:text-metro-head-dark">
-                  {{ a.label ?? peerName(a.address) ?? shortAddress(a.address) }}
-                </Text>
-                <Text size="xs" :truncate="true"
-                  class="text-metro-sub-light dark:text-metro-sub-dark">
-                  {{ shortAddress(a.address) }} · {{ TYPE_LABEL[a.type] }}
-                </Text>
-              </span>
-            </Pressable>
-            <Icon v-if="a.id === activeId" name="check" :size="20" :color="palette.text" />
+            <Col class="flex-1 min-w-0">
+              <ViewHost :node="rowNode(a)" :actions="rowActions" />
+            </Col>
+            <Icon v-if="a.id === activeId" name="check" :size="20" :color="palette.link" />
             <Pressable
               tag="button"
               type="button"
@@ -223,7 +230,7 @@ function onImported(): void {
               :disabled="busy"
               @click="manageId = a.id"
             >
-              <Icon name="dotsHorizontal" :size="20" :color="palette.sub" />
+              <Text size="4xl" weight="semibold" :style="{ color: palette.sub, paddingInline: '4px' }">⋯</Text>
             </Pressable>
           </Row>
         </li>

@@ -1,0 +1,276 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`banner minimal 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "children": [
+            {
+              "color": "link",
+              "size": "lg",
+              "truncate": true,
+              "type": "Text",
+              "value": "New proposal",
+              "weight": "semibold",
+            },
+          ],
+          "flex": 1,
+          "type": "Col",
+        },
+        {
+          "color": "secondary",
+          "name": "chevron-right",
+          "size": "sm",
+          "type": "Icon",
+        },
+      ],
+      "flex": 1,
+      "gap": 10,
+      "type": "Row",
+    },
+  ],
+  "gap": 10,
+  "onClickAction": {
+    "payload": {},
+    "type": "banner.press",
+  },
+  "type": "ListViewItem",
+}
+`;
+
+exports[`banner full 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "color": "danger",
+          "name": "pencil",
+          "size": "md",
+          "type": "Icon",
+        },
+        {
+          "children": [
+            {
+              "color": {
+                "dark": "#ffffff",
+                "light": "#000000",
+              },
+              "size": "lg",
+              "truncate": true,
+              "type": "Text",
+              "value": "Signature required",
+              "weight": "semibold",
+            },
+          ],
+          "flex": 1,
+          "type": "Col",
+        },
+      ],
+      "flex": 1,
+      "gap": 10,
+      "type": "Row",
+    },
+  ],
+  "gap": 10,
+  "onClickAction": {
+    "payload": {
+      "id": "sig-1",
+    },
+    "type": "custom.banner",
+  },
+  "type": "ListViewItem",
+}
+`;
+
+exports[`proposalCard minimal 1`] = `
+{
+  "children": [
+    {
+      "color": "secondary",
+      "type": "Caption",
+      "value": "POLL",
+      "weight": "semibold",
+    },
+    {
+      "color": "link",
+      "truncate": true,
+      "type": "Title",
+      "value": "Treasury allocation",
+    },
+  ],
+  "gap": 0,
+  "type": "Col",
+}
+`;
+
+exports[`proposalCard full 1`] = `
+{
+  "children": [
+    {
+      "color": "secondary",
+      "type": "Caption",
+      "value": "POLL",
+      "weight": "semibold",
+    },
+    {
+      "color": "link",
+      "truncate": true,
+      "type": "Title",
+      "value": "Treasury allocation",
+    },
+    {
+      "children": [
+        {
+          "type": "Title",
+          "value": "Fund the grants program?",
+        },
+      ],
+      "padding": {
+        "top": 6,
+      },
+      "type": "Col",
+    },
+    {
+      "align": "center",
+      "children": [
+        {
+          "radius": "full",
+          "size": 22,
+          "src": "https://img.example/a.png",
+          "type": "Image",
+        },
+        {
+          "size": "sm",
+          "truncate": true,
+          "type": "Text",
+          "value": "alice.eth",
+          "weight": "medium",
+        },
+        {
+          "color": "secondary",
+          "type": "Caption",
+          "value": "Jun 4",
+        },
+      ],
+      "gap": 6,
+      "padding": {
+        "top": 8,
+      },
+      "type": "Row",
+    },
+  ],
+  "gap": 0,
+  "type": "Col",
+}
+`;
+
+exports[`proposalHeaderRoot poll 1`] = `
+{
+  "children": [
+    {
+      "children": [
+        {
+          "color": "secondary",
+          "type": "Caption",
+          "value": "POLL",
+          "weight": "semibold",
+        },
+        {
+          "color": "link",
+          "truncate": true,
+          "type": "Title",
+          "value": "Treasury allocation",
+        },
+      ],
+      "gap": 0,
+      "type": "Col",
+    },
+  ],
+  "type": "Basic",
+}
+`;
+
+exports[`proposalHeaderRoot payment 1`] = `
+{
+  "children": [
+    {
+      "children": [
+        {
+          "color": "secondary",
+          "type": "Caption",
+          "value": "PAYMENT REQUEST",
+          "weight": "semibold",
+        },
+        {
+          "color": "link",
+          "truncate": true,
+          "type": "Title",
+          "value": "Invoice #42",
+        },
+      ],
+      "gap": 0,
+      "type": "Col",
+    },
+  ],
+  "type": "Basic",
+}
+`;
+
+exports[`proposalHeaderRoot signing 1`] = `
+{
+  "children": [
+    {
+      "children": [
+        {
+          "color": "secondary",
+          "type": "Caption",
+          "value": "SIGNING REQUEST",
+          "weight": "semibold",
+        },
+        {
+          "color": "link",
+          "truncate": true,
+          "type": "Title",
+          "value": "Sign the manifest",
+        },
+      ],
+      "gap": 0,
+      "type": "Col",
+    },
+  ],
+  "type": "Basic",
+}
+`;
+
+exports[`proposalHeaderRoot message 1`] = `
+{
+  "children": [
+    {
+      "children": [
+        {
+          "color": "secondary",
+          "type": "Caption",
+          "value": "MESSAGE REQUEST",
+          "weight": "semibold",
+        },
+        {
+          "color": "link",
+          "truncate": true,
+          "type": "Title",
+          "value": "Broadcast update",
+        },
+      ],
+      "gap": 0,
+      "type": "Col",
+    },
+  ],
+  "type": "Basic",
+}
+`;

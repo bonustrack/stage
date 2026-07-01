@@ -1,14 +1,25 @@
 <script setup lang="ts">
 
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import type { ListViewNode } from '@stage-labs/kit/kit';
+import { settingsHeader, settingsValueRow, SCREEN_BACK } from '@stage-labs/views';
 import pkg from '../../../package.json';
 import { getXmtpEnv } from '../../lib/xmtp';
 import { getHostAccount } from '../../lib/hostSigner';
 
 const router = useRouter();
 const palette = useKitPalette();
+
+const headerNode = computed(() => settingsHeader({
+  title: 'Developer',
+  backColor: palette.text,
+  surface: palette.toolbarBg,
+  borderColor: palette.border,
+  safeTop: 0,
+}));
 
 const rows = ref<{ label: string; value: string }[]>([
   { label: 'XMTP env', value: getXmtpEnv() },
@@ -21,46 +32,26 @@ onMounted(async () => {
   const host = await getHostAccount().catch(() => null);
   if (host) rows.value[3] = { label: 'Signer', value: 'host wallet' };
 });
+
+const node = computed<ListViewNode>(() => ({
+  type: 'ListView',
+  children: rows.value.map(r => settingsValueRow({ label: r.label, value: r.value })),
+}));
+
+const actions = {
+  [SCREEN_BACK]: (): void => { router.back(); },
+};
 </script>
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <!-- Toolbar header matches the XMTP screens: back arrow + small title. -->
-    <Row
-      surface="toolbar"
-      align="center"
-      :gap="8"
-      :padding="{ x: 12, y: 10 }"
-      :style="{ borderBottomWidth: '1px', borderBottomStyle: 'solid', borderBottomColor: palette.border }"
-    >
-      <Pressable tag="button" type="button" class="p-1" @click="router.back()">
-        <Icon name="arrowLeft" :size="22" :color="palette.text" />
-      </Pressable>
-      <Title size="sm">Developer</Title>
-    </Row>
+    <ViewHost :node="headerNode" :actions="actions" />
 
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-8 px-4 pt-4">
       <!-- DIAGNOSTICS: read-only env + build info, mirroring mobile DeveloperSettings
            (the Railgun debug toggle and reset/danger actions are mobile-only and deferred). -->
       <Text size="3xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark pb-1">DIAGNOSTICS</Text>
-      <Col
-        class="w-full rounded-xl overflow-hidden border bg-metro-surface-light dark:bg-metro-surface-dark"
-        :style="{ borderColor: palette.border }"
-      >
-        <Row
-          v-for="(row, i) in rows"
-          :key="row.label"
-          align="center"
-          justify="between"
-          :gap="16"
-          class="px-4 py-3.5"
-          :class="i === 0 ? '' : 'border-t'"
-          :style="i === 0 ? {} : { borderColor: palette.border }"
-        >
-          <Text size="xs" class="text-metro-sub-light dark:text-metro-sub-dark">{{ row.label }}</Text>
-          <Text size="sm" weight="medium" class="text-metro-fg-light dark:text-metro-fg-dark break-all text-right">{{ row.value }}</Text>
-        </Row>
-      </Col>
+      <ViewHost :node="node" :actions="actions" />
     </Col>
   </Col>
 </template>

@@ -1,24 +1,35 @@
 <script setup lang="ts">
 
+import { computed } from 'vue';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import { listRoot, previewLinkCard, LINK_OPEN } from '@stage-labs/views';
+
 const props = defineProps<{ videoId: string }>();
 const watchUrl = computed(() => `https://www.youtube.com/watch?v=${props.videoId}`);
 const thumbUrl = computed(() => `https://i.ytimg.com/vi/${props.videoId}/hqdefault.jpg`);
 
-function open(): void { window.open(watchUrl.value, '_blank', 'noopener'); }
+const node = computed(() =>
+  listRoot(
+    previewLinkCard({
+      url: watchUrl.value,
+      title: 'YouTube',
+      subtitle: 'Tap to watch',
+      imageUri: thumbUrl.value,
+    }),
+  ),
+);
+
+const actions = {
+  [LINK_OPEN]: (): void => {
+    window.open(watchUrl.value, '_blank', 'noopener');
+  },
+};
 </script>
 
 <template>
-  <MediaCard :on-press="open">
-    <Col class="relative aspect-video bg-black">
-      <img :src="thumbUrl" :alt="`YouTube video ${props.videoId}`" class="w-full h-full object-cover" />
-      <Row class="absolute inset-0 flex items-center justify-center bg-black/25">
-        <Row class="w-12 h-12 rounded-full bg-black/70 flex items-center justify-center text-white text-xl pl-0.5">
-          ▶
-        </Row>
-      </Row>
-    </Col>
-    <Col class="px-2.5 py-1.5 text-[11px] text-metro-sub-light dark:text-metro-sub-dark">
-      YouTube
-    </Col>
-  </MediaCard>
+  <!-- Static YouTube thumbnail + caption + tap-to-open, rendered from Kit
+       JSON via previewLinkCard (static Image + Text + LINK_OPEN). The decorative
+       centered ▶ play overlay is dropped (an absolute overlay is not expressible
+       in Kit JSON); a live iframe player is intentionally not used. -->
+  <ViewHost :node="node" :actions="actions" />
 </template>

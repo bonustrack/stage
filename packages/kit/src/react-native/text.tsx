@@ -4,25 +4,22 @@ import {
   type TextProps as RNTextProps,
   type TextStyle,
 } from 'react-native';
-import { FONT_SIZE, type FontSizeName, resolveColorToken, type ColorToken } from '../tokens';
+import { resolveColorToken, type ColorToken } from '../tokens';
+import {
+  TEXT_ALIGN_MAP,
+  textFontFamily,
+  textRoleColor,
+  textVariantRole,
+  resolveTextSize,
+  type TextAlign,
+  type TextRole,
+  type TextSizeToken,
+  type TextVariant,
+  type TextWeight,
+} from '../text.styles';
 import { useKitPalette, useKitScheme, type KitPalette } from './theme-context';
 
-export type TextVariant = 'body' | 'secondary' | 'caption' | 'mono';
-
-export type TextRole =
-  | 'default'
-  | 'secondary'
-  | 'muted'
-  | 'link'
-  | 'primary'
-  | 'danger'
-  | 'success';
-
-export type TextWeight = 'normal' | 'medium' | 'semibold' | 'bold' | 'regular';
-
-export type TextSizeToken = FontSizeName;
-
-export type TextAlign = 'start' | 'center' | 'end';
+export type { TextAlign, TextRole, TextSizeToken, TextVariant, TextWeight };
 
 export interface TextProps extends Omit<RNTextProps, 'style' | 'role'> {
   value?: string;
@@ -39,63 +36,13 @@ export interface TextProps extends Omit<RNTextProps, 'style' | 'role'> {
   style?: TextStyle | TextStyle[];
 }
 
-const SIZE_TOKENS = FONT_SIZE;
-
-const FONTS: Record<'normal' | 'medium' | 'semibold' | 'bold', string> = {
-  normal: 'Calibre-Medium',
-  medium: 'Calibre-Medium',
-  semibold: 'Calibre-Semibold',
-  bold: 'Calibre-Semibold',
-};
-
-function normalizeWeight(w: TextWeight): keyof typeof FONTS {
-  return w === 'regular' ? 'normal' : w;
-}
-
-function resolveSize(
-  size: TextSizeToken | undefined,
-  variant: TextVariant | undefined,
-): number {
-  if (size) return SIZE_TOKENS[size];
-  return variant === 'caption' ? SIZE_TOKENS.xs : SIZE_TOKENS.md;
-}
-
-function variantRole(variant: TextVariant | undefined): TextRole {
-  if (variant === 'secondary' || variant === 'caption') return 'secondary';
-  return 'default';
-}
-
-function roleColor(role: TextRole, palette: KitPalette): string {
-  switch (role) {
-    case 'secondary':
-    case 'muted':
-      return palette.sub;
-    case 'link':
-      return palette.link;
-    case 'primary':
-      return palette.primary;
-    case 'danger':
-      return palette.danger;
-    case 'success':
-      return palette.success;
-    default:
-      return palette.link;
-  }
-}
-
-const ALIGN_MAP: Record<TextAlign, TextStyle['textAlign']> = {
-  start: 'left',
-  center: 'center',
-  end: 'right',
-};
-
 function textColor(
   color: ColorToken | (string & {}) | undefined,
   scheme: 'light' | 'dark',
   role: TextRole,
   palette: KitPalette,
 ): string {
-  return color != null ? resolveColorToken(color, scheme) : roleColor(role, palette);
+  return color != null ? resolveColorToken(color, scheme) : textRoleColor(role, palette);
 }
 
 type StyleProps = Pick<
@@ -109,13 +56,13 @@ function buildBaseStyle(
   palette: KitPalette,
 ): TextStyle {
   const { color, role, variant, size, weight = 'normal', textAlign, italic, lineThrough } = p;
-  const effectiveRole: TextRole = role ?? variantRole(variant);
+  const effectiveRole: TextRole = role ?? textVariantRole(variant);
   const base: TextStyle = {
     color: textColor(color, scheme, effectiveRole, palette),
-    fontSize: resolveSize(size, variant),
-    fontFamily: variant === 'mono' ? 'Menlo' : FONTS[normalizeWeight(weight)],
+    fontSize: resolveTextSize(size, variant),
+    fontFamily: textFontFamily(variant, weight),
   };
-  if (textAlign) base.textAlign = ALIGN_MAP[textAlign];
+  if (textAlign) base.textAlign = TEXT_ALIGN_MAP[textAlign];
   if (italic) base.fontStyle = 'italic';
   if (lineThrough) base.textDecorationLine = 'line-through';
   return base;

@@ -1,13 +1,13 @@
 
 import { Alert } from 'react-native';
 
-import { Text } from '@stage-labs/kit/react-native/text';
-import { Icon } from '@stage-labs/kit/react-native/icon';
-import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { useRouter } from 'expo-router';
-import { Col } from './layout';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers, WidgetRoot } from '@stage-labs/kit/kit';
+import { Box } from './layout';
+import type { MenuSheetItem } from '@stage-labs/views';
+import { menuSheet, MENU_ITEM_PRESS } from '@stage-labs/views';
 import { AppModal } from './AppModal';
-import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { markConvRead, markConvUnread } from '../modules/messaging';
 import { togglePin } from '../lib/pins';
 import { toggleArchived } from '../lib/archived';
@@ -57,23 +57,35 @@ function confirmLeaveGroup(
   );
 }
 
-function InfoRow({ isGroup, peerAddress, head, dark, run, router, convId }: {
-  isGroup: boolean; peerAddress?: string | null; head: string; dark: boolean;
-  run: (fn: () => void) => void; router: ReturnType<typeof useRouter>; convId: string;
-}): React.ReactElement | null {
-  if (isGroup) {
-    return (
-      <MenuRow icon="users" label="Group info" color={head} dark={dark}
-        onPress={() => { run(() => { router.push({ pathname: '/group/[convId]', params: { convId } }); }); }} />
-    );
-  }
-  if (peerAddress) {
-    return (
-      <MenuRow icon="user" label="Profile" color={head} dark={dark}
-        onPress={() => { run(() => { router.push({ pathname: '/user/[address]', params: { address: peerAddress } }); }); }} />
-    );
-  }
+function infoItem(p: { isGroup: boolean; peerAddress?: string | null }): MenuSheetItem | null {
+  if (p.isGroup) return { id: 'info', label: 'Group info', icon: 'users' };
+  if (p.peerAddress) return { id: 'info', label: 'Profile', icon: 'user' };
   return null;
+}
+
+function buildItems(p: {
+  isGroup: boolean; peerAddress?: string | null; isUnread: boolean;
+  isPinned: boolean; isArchived: boolean; onSearch?: () => void;
+}): MenuSheetItem[] {
+  const info = infoItem(p);
+  return [
+    p.onSearch ? { id: 'search', label: 'Search', icon: 'search' } : null,
+    p.isGroup ? { id: 'add-members', label: 'Add members', icon: 'plus' } : null,
+    {
+      id: 'toggle-read',
+      label: p.isUnread ? 'Mark as read' : 'Mark as unread',
+      icon: p.isUnread ? 'check' : 'envelope',
+    },
+    { id: 'toggle-pin', label: p.isPinned ? 'Unpin' : 'Pin', icon: 'mapPin' },
+    info,
+    {
+      id: 'toggle-archive',
+      label: p.isArchived ? 'Unarchive' : 'Archive',
+      icon: p.isArchived ? 'arrowUp' : 'archive',
+      danger: true,
+    },
+    p.isGroup ? { id: 'leave', label: 'Leave group', icon: 'arrowLeft', danger: true } : null,
+  ].filter((item): item is MenuSheetItem => item !== null);
 }
 
 export function ChannelMenu({
@@ -81,10 +93,6 @@ export function ChannelMenu({
   visible, onClose, context = 'list', onAfterLeave, onAfterArchive, onSearch,
 }: ChannelMenuProps): React.ReactElement {
   const router = useRouter();
-  const pal = usePalette();
-  const dark = useEffectiveColorScheme() === 'dark';
-  const head = pal.link;
-  const danger = pal.danger;
 
   const run = (fn: () => void): void => { onClose(); fn(); };
 
@@ -94,51 +102,35 @@ export function ChannelMenu({
     if (!isArchived && context === 'view') router.replace('/');
   }); };
 
+  const handlers: Record<string, () => void> = {
+    search: () => { onClose(); setTimeout(() => onSearch?.(), 0); },
+    'add-members': () => { run(() => { router.push({ pathname: '/xmtp/add-members', params: { convId } }); }); },
+    'toggle-read': () => { run(() => { void (isUnread ? markConvRead(convId) : markConvUnread(convId)); }); },
+    'toggle-pin': () => { run(() => { void togglePin(convId); }); },
+    info: () => { run(() => {
+      if (isGroup) router.push({ pathname: '/group/[convId]', params: { convId } });
+      else if (peerAddress) router.push({ pathname: '/user/[address]', params: { address: peerAddress } });
+    }); },
+    'toggle-archive': onToggleArchive,
+    leave: () => { confirmLeaveGroup(convId, context, router, onClose, onAfterLeave); },
+  };
+
+  const node: WidgetRoot = menuSheet({
+    items: buildItems({ isGroup, peerAddress, isUnread, isPinned, isArchived, onSearch }),
+  });
+  const actions: PayloadHandlers = {
+    [MENU_ITEM_PRESS]: (payload) => {
+      const id = payload.id;
+      if (typeof id === 'string') handlers[id]?.();
+    },
+  };
+
   return (
     <AppModal visible={visible} onClose={onClose}>
       {}
-      <ListView dark={dark} style={{ marginHorizontal: -16 }}>
-        {onSearch ? (
-          <MenuRow icon="search" label="Search" color={head} dark={dark}
-            onPress={() => { onClose(); setTimeout(onSearch, 0); }} />
-        ) : null}
-        {isGroup ? (
-          <MenuRow icon="plus" label="Add members" color={head} dark={dark}
-            onPress={() => { run(() => { router.push({ pathname: '/xmtp/add-members', params: { convId } }); }); }} />
-        ) : null}
-        <MenuRow icon={isUnread ? 'check' : 'envelope'}
-          label={isUnread ? 'Mark as read' : 'Mark as unread'} color={head} dark={dark}
-          onPress={() => { run(() => { void (isUnread ? markConvRead(convId) : markConvUnread(convId)); }); }} />
-        <MenuRow icon="mapPin" label={isPinned ? 'Unpin' : 'Pin'} color={head} dark={dark}
-          onPress={() => { run(() => { void togglePin(convId); }); }} />
-        <InfoRow isGroup={isGroup} peerAddress={peerAddress} head={head} dark={dark}
-          run={run} router={router} convId={convId} />
-        {}
-        <MenuRow icon={isArchived ? 'arrowUp' : 'archive'}
-          label={isArchived ? 'Unarchive' : 'Archive'} color={danger} dark={dark}
-          onPress={onToggleArchive} />
-        {isGroup ? (
-          <MenuRow icon="arrowLeft" label="Leave group" color={danger} dark={dark}
-            onPress={() => { confirmLeaveGroup(convId, context, router, onClose, onAfterLeave); }} />
-        ) : null}
-      </ListView>
+      <Box margin={{ x: -16 }}>
+        <ViewHost node={node} actions={actions} />
+      </Box>
     </AppModal>
-  );
-}
-
-function MenuRow({ icon, label, color, dark, onPress }: {
-  icon: React.ComponentProps<typeof Icon>['name'];
-  label: string;
-  color: string;
-  dark: boolean;
-  onPress: () => void;
-}): React.ReactElement {
-  return (
-    <ListViewItem dark={dark} onPress={onPress}>
-      <Icon name={icon} size={20} color={color} />
-      <Col flex={1}>
-        <Text size="xl" color={color}>{label}</Text>
-      </Col>
-    </ListViewItem>
   );
 }

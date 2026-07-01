@@ -10,12 +10,12 @@ import { XMTP_CODECS, signerForRecord } from './xmtp.codecs';
 import { setCachedXmtpClient } from './xmtp.state';
 import { type XmtpEnv } from './xmtp.types';
 import { loadOrCreateDbKey, ensureDbDir, wipeXmtpStore } from './xmtp.dbkey';
+import {
+  INSTALLATION_LIMIT_MESSAGE, isInstallationLimit,
+  isStoreCorruption as isStoreCorruptionCore,
+} from '@stage-labs/client/xmtp/clientErrors';
 
 const ENV_KEY = 'xmtp.env';
-
-const INSTALLATION_LIMIT_MESSAGE =
-  'This wallet already has XMTP set up on too many devices (installation limit reached). ' +
-  'Messaging is unavailable for this account — wallet features still work.';
 
 export interface CreateOpts {
   env: XmtpEnv;
@@ -34,12 +34,8 @@ export async function ensureActiveAccount(): Promise<void> {
 
 const CREATE_TIMEOUT_MESSAGE = 'XMTP.create timed out (native handshake hang)';
 
-const STORE_CORRUPTION = [
-  'PRAGMA key', 'StorageError', 'incorrect value', CREATE_TIMEOUT_MESSAGE,
-];
 export function isStoreCorruption(err: unknown): boolean {
-  const msg = err instanceof Error ? err.message : String(err);
-  return STORE_CORRUPTION.some(sig => msg.includes(sig));
+  return isStoreCorruptionCore(err, [CREATE_TIMEOUT_MESSAGE]);
 }
 
 const CREATE_TIMEOUT_MS = 30_000;
@@ -58,18 +54,6 @@ async function createWithTimeout(
   } finally {
     if (timer) clearTimeout(timer);
   }
-}
-
-const INSTALLATION_LIMIT = [
-  '10/10',
-  'has already registered',
-  'already registered',
-  'Please revoke existing installations',
-  'Cannot register a new installation',
-];
-function isInstallationLimit(err: unknown): boolean {
-  const msg = err instanceof Error ? err.message : String(err);
-  return INSTALLATION_LIMIT.some(sig => msg.toLowerCase().includes(sig.toLowerCase()));
 }
 
 async function tryFreeInstallationSlot(rec: AccountRecord, env: XmtpEnv): Promise<boolean> {

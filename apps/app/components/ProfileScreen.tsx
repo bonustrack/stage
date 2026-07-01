@@ -1,10 +1,8 @@
 
 import { useState } from 'react';
 
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { ScrollView } from 'react-native-gesture-handler';
 import type { SimultaneousRefs } from './SwipeTabs.types';
-import { Text } from '@stage-labs/kit/react-native/text';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
@@ -14,6 +12,9 @@ import { useEffectiveColorScheme } from '../lib/theme';
 import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
 import { Avatar } from './Avatar';
 import { Box, Col } from './layout';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers, WidgetRoot } from '@stage-labs/kit/kit';
+import { basicRoot, profileAddressRow, profileHeader, PROFILE_ADDRESS_COPY } from '@stage-labs/views';
 import { ImageViewer } from './ImageViewer';
 import {
   ProfileActions, ProfileHeader, useProfileColors, useSelfAddress,
@@ -26,6 +27,18 @@ export type ProfileScreenVariant = 'tab' | 'route';
 function profileDisplayName(addr: string): string {
   if (!addr) return 'Loading…';
   return getPeerName(addr) ?? shortAddress(addr);
+}
+
+function nameNode(name: string): WidgetRoot {
+  return basicRoot(profileHeader({ name }));
+}
+
+function addressNode(address: string, color: string): WidgetRoot {
+  return basicRoot(profileAddressRow({ address, label: shortAddress(address), color }));
+}
+
+function copyActions(onCopy: () => void): PayloadHandlers {
+  return { [PROFILE_ADDRESS_COPY]: () => { onCopy(); } };
 }
 
 function ProfileIdentity({ addr, isSelf, dark, opening, c, variant, insetTop, displayName, onAvatar, onCopy, onMessage, onSend }: {
@@ -49,13 +62,13 @@ function ProfileIdentity({ addr, isSelf, dark, opening, c, variant, insetTop, di
           }}
           onPress={onAvatar}
 />
-        <Text weight="semibold" size="4xl" color={c.link} style={{ marginTop: 14 }}>
-          {displayName}
-        </Text>
+        <Box margin={{ top: 14 }} style={{ alignSelf: 'stretch' }}>
+          <ViewHost node={nameNode(displayName)} />
+        </Box>
         {addr ? (
-          <Pressable onPress={onCopy} hitSlop={8} style={{ marginTop: 2 }}>
-            <Text size="md" color={c.text}>{shortAddress(addr)}</Text>
-          </Pressable>
+          <Box margin={{ top: 2 }}>
+            <ViewHost node={addressNode(addr, c.text)} actions={copyActions(onCopy)} />
+          </Box>
         ) : null}
         {}
         {!isSelf && addr ? (

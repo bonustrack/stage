@@ -1,0 +1,978 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`accountRow minimal 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "radius": "full",
+          "size": 40,
+          "src": "https://img.example/a.png",
+          "type": "Image",
+        },
+        {
+          "children": [
+            {
+              "truncate": true,
+              "type": "Text",
+              "value": "Main",
+              "weight": "semibold",
+            },
+            {
+              "color": "secondary",
+              "truncate": true,
+              "type": "Caption",
+              "value": "0xabc0000000000000000000000000000000000001",
+            },
+          ],
+          "flex": 1,
+          "gap": 2,
+          "type": "Col",
+        },
+      ],
+      "flex": 1,
+      "gap": 12,
+      "type": "Row",
+    },
+  ],
+  "gap": 12,
+  "onClickAction": {
+    "payload": {
+      "accountId": "acc-1",
+    },
+    "type": "accounts.account.press",
+  },
+  "type": "ListViewItem",
+}
+`;
+
+exports[`accountRow full 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "radius": "full",
+          "size": 40,
+          "src": "https://img.example/a.png",
+          "type": "Image",
+        },
+        {
+          "children": [
+            {
+              "truncate": true,
+              "type": "Text",
+              "value": "Main",
+              "weight": "semibold",
+            },
+            {
+              "color": "secondary",
+              "truncate": true,
+              "type": "Caption",
+              "value": "0xabc0000000000000000000000000000000000001",
+            },
+          ],
+          "flex": 1,
+          "gap": 2,
+          "type": "Col",
+        },
+        {
+          "color": "secondary",
+          "label": "Smart",
+          "size": "sm",
+          "type": "Badge",
+          "variant": "soft",
+        },
+      ],
+      "flex": 1,
+      "gap": 12,
+      "type": "Row",
+    },
+  ],
+  "gap": 12,
+  "onClickAction": {
+    "payload": {
+      "accountId": "acc-1",
+    },
+    "type": "accounts.account.press",
+  },
+  "type": "ListViewItem",
+}
+`;
+
+exports[`topnavIdentity minimal (no avatar) 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "background": undefined,
+      "radius": "full",
+      "size": 28,
+      "type": "Col",
+    },
+    {
+      "children": [
+        {
+          "color": "link",
+          "size": "4xl",
+          "truncate": true,
+          "type": "Text",
+          "value": "Alice",
+          "weight": "semibold",
+        },
+      ],
+      "maxWidth": 200,
+      "type": "Row",
+    },
+  ],
+  "gap": 8,
+  "type": "Row",
+}
+`;
+
+exports[`topnavIdentity full 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "background": "#eeeeee",
+      "radius": "full",
+      "size": 28,
+      "src": "https://img.example/a.png",
+      "type": "Image",
+    },
+    {
+      "children": [
+        {
+          "color": "link",
+          "size": "4xl",
+          "truncate": true,
+          "type": "Text",
+          "value": "Alice",
+          "weight": "semibold",
+        },
+      ],
+      "maxWidth": 200,
+      "type": "Row",
+    },
+  ],
+  "gap": 8,
+  "type": "Row",
+}
+`;
+
+exports[`topnavIdentity empty name renders avatar only 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "background": "#eeeeee",
+      "radius": "full",
+      "size": 28,
+      "type": "Col",
+    },
+  ],
+  "gap": 8,
+  "type": "Row",
+}
+`;
+
+exports[`memberRow minimal 1`] = `
+{
+  "align": "center",
+  "border": {
+    "bottom": {
+      "color": "#dddddd",
+      "size": 1,
+    },
+  },
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "background": "#dddddd",
+          "radius": "full",
+          "size": 40,
+          "src": "https://img.example/m.png",
+          "type": "Image",
+        },
+        {
+          "children": [
+            {
+              "truncate": true,
+              "type": "Text",
+              "value": "Bob",
+              "weight": "semibold",
+            },
+          ],
+          "flex": 1,
+          "gap": 2,
+          "type": "Col",
+        },
+      ],
+      "flex": 1,
+      "gap": 12,
+      "type": "Row",
+    },
+  ],
+  "gap": 12,
+  "onClickAction": {
+    "payload": {
+      "memberId": "mem-1",
+    },
+    "type": "accounts.member.press",
+  },
+  "padding": {
+    "x": 14,
+    "y": 14,
+  },
+  "pressedBackground": "#dddddd",
+  "type": "ListViewItem",
+}
+`;
+
+exports[`memberRow full with owner badge and remove button 1`] = `
+{
+  "align": "center",
+  "border": {
+    "bottom": {
+      "color": "#dddddd",
+      "size": 1,
+    },
+  },
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "background": "#dddddd",
+          "radius": "full",
+          "size": 40,
+          "src": "https://img.example/m.png",
+          "type": "Image",
+        },
+        {
+          "children": [
+            {
+              "truncate": true,
+              "type": "Text",
+              "value": "Bob",
+              "weight": "semibold",
+            },
+            {
+              "color": "secondary",
+              "truncate": true,
+              "type": "Caption",
+              "value": "0xabc0000000000000000000000000000000000001",
+            },
+          ],
+          "flex": 1,
+          "gap": 2,
+          "type": "Col",
+        },
+        {
+          "background": {
+            "dark": "rgba(45,212,191,0.18)",
+            "light": "rgba(13,148,136,0.12)",
+          },
+          "color": {
+            "dark": "#2dd4bf",
+            "light": "#0d9488",
+          },
+          "label": "Owner",
+          "pill": true,
+          "size": "3xs",
+          "type": "Badge",
+          "variant": "soft",
+          "weight": "medium",
+        },
+        {
+          "foreground": "#ff0000",
+          "iconStart": "trash",
+          "onClickAction": {
+            "payload": {
+              "memberId": "mem-1",
+            },
+            "type": "accounts.member.remove",
+          },
+          "pressedBackground": "#ffeeee",
+          "radius": "full",
+          "size": "xs",
+          "type": "Button",
+          "uniform": true,
+          "variant": "ghost",
+        },
+      ],
+      "flex": 1,
+      "gap": 12,
+      "type": "Row",
+    },
+  ],
+  "gap": 12,
+  "onClickAction": {
+    "payload": {
+      "memberId": "mem-1",
+    },
+    "type": "accounts.member.press",
+  },
+  "padding": {
+    "x": 14,
+    "y": 14,
+  },
+  "pressedBackground": "#dddddd",
+  "type": "ListViewItem",
+}
+`;
+
+exports[`memberRow admin badge variant 1`] = `
+{
+  "align": "center",
+  "border": {
+    "bottom": {
+      "color": "#dddddd",
+      "size": 1,
+    },
+  },
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "background": "#dddddd",
+          "radius": "full",
+          "size": 40,
+          "src": "https://img.example/m.png",
+          "type": "Image",
+        },
+        {
+          "children": [
+            {
+              "truncate": true,
+              "type": "Text",
+              "value": "Bob",
+              "weight": "semibold",
+            },
+          ],
+          "flex": 1,
+          "gap": 2,
+          "type": "Col",
+        },
+        {
+          "background": "#dddddd",
+          "color": "#666666",
+          "label": "Admin",
+          "pill": true,
+          "size": "3xs",
+          "type": "Badge",
+          "variant": "soft",
+          "weight": "medium",
+        },
+      ],
+      "flex": 1,
+      "gap": 12,
+      "type": "Row",
+    },
+  ],
+  "gap": 12,
+  "onClickAction": {
+    "payload": {
+      "memberId": "mem-1",
+    },
+    "type": "accounts.member.press",
+  },
+  "padding": {
+    "x": 14,
+    "y": 14,
+  },
+  "pressedBackground": "#dddddd",
+  "type": "ListViewItem",
+}
+`;
+
+exports[`memberChip minimal 1`] = `
+{
+  "align": "center",
+  "background": "rgba(0,0,0,0.06)",
+  "children": [
+    {
+      "radius": "full",
+      "size": 22,
+      "src": "https://img.example/m.png",
+      "type": "Image",
+    },
+    {
+      "size": "sm",
+      "truncate": true,
+      "type": "Text",
+      "value": "Bob",
+      "weight": "medium",
+    },
+  ],
+  "gap": 6,
+  "padding": {
+    "left": 6,
+    "right": 8,
+    "y": 4,
+  },
+  "radius": "full",
+  "type": "Row",
+}
+`;
+
+exports[`memberChip full 1`] = `
+{
+  "align": "center",
+  "background": "#f0f0f0",
+  "children": [
+    {
+      "radius": "full",
+      "size": 22,
+      "src": "https://img.example/m.png",
+      "type": "Image",
+    },
+    {
+      "size": "sm",
+      "truncate": true,
+      "type": "Text",
+      "value": "Bob",
+      "weight": "medium",
+    },
+    {
+      "color": "secondary",
+      "iconStart": "x",
+      "onClickAction": {
+        "payload": {
+          "id": "mem-1",
+        },
+        "type": "custom.remove",
+      },
+      "size": "sm",
+      "type": "Button",
+      "variant": "ghost",
+    },
+  ],
+  "gap": 6,
+  "padding": {
+    "left": 6,
+    "right": 8,
+    "y": 4,
+  },
+  "radius": "full",
+  "type": "Row",
+}
+`;
+
+exports[`memberAddForm minimal (idle, invalid) 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "children": [
+        {
+          "autoCapitalize": "none",
+          "autoCorrect": false,
+          "background": {
+            "dark": "#282a2d",
+            "light": "#e4e4e5",
+          },
+          "borderColor": {
+            "dark": "#282a2d",
+            "light": "#e4e4e5",
+          },
+          "color": {
+            "dark": "#9f9fa3",
+            "light": "#57606a",
+          },
+          "fontSize": 14,
+          "fontWeight": "medium",
+          "name": "draft",
+          "onChangeAction": {
+            "type": "accounts.memberAdd.change",
+          },
+          "onSubmitAction": {
+            "type": "accounts.memberAdd.submit",
+          },
+          "paddingX": 12,
+          "paddingY": 8,
+          "placeholder": "0x… Ethereum address",
+          "placeholderColor": {
+            "dark": "#9f9fa3",
+            "light": "#57606a",
+          },
+          "radius": 8,
+          "returnKeyType": "done",
+          "type": "TextField",
+          "value": "",
+          "variant": "outline",
+        },
+      ],
+      "flex": 1,
+      "type": "Box",
+    },
+    {
+      "background": {
+        "dark": "#ffffff",
+        "light": "#000000",
+      },
+      "disabled": true,
+      "fontSize": 14,
+      "foreground": {
+        "dark": "#0e0f10",
+        "light": "#ffffff",
+      },
+      "label": "Add",
+      "onClickAction": {
+        "type": "accounts.memberAdd.submit",
+      },
+      "paddingX": 14,
+      "paddingY": 8,
+      "radius": "full",
+      "size": "sm",
+      "type": "Button",
+    },
+  ],
+  "gap": 8,
+  "padding": {
+    "bottom": 12,
+    "x": 16,
+  },
+  "type": "Row",
+}
+`;
+
+exports[`memberAddForm full (adding with custom types) 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "children": [
+        {
+          "autoCapitalize": "none",
+          "autoCorrect": false,
+          "background": {
+            "dark": "#282a2d",
+            "light": "#e4e4e5",
+          },
+          "borderColor": {
+            "dark": "#282a2d",
+            "light": "#e4e4e5",
+          },
+          "color": {
+            "dark": "#9f9fa3",
+            "light": "#57606a",
+          },
+          "fontSize": 14,
+          "fontWeight": "medium",
+          "name": "draft",
+          "onChangeAction": {
+            "type": "custom.change",
+          },
+          "onSubmitAction": {
+            "type": "custom.submit",
+          },
+          "paddingX": 12,
+          "paddingY": 8,
+          "placeholder": "0x… Ethereum address",
+          "placeholderColor": {
+            "dark": "#9f9fa3",
+            "light": "#57606a",
+          },
+          "radius": 8,
+          "returnKeyType": "done",
+          "type": "TextField",
+          "value": "0xabc0000000000000000000000000000000000001",
+          "variant": "outline",
+        },
+      ],
+      "flex": 1,
+      "type": "Box",
+    },
+    {
+      "background": {
+        "dark": "#ffffff",
+        "light": "#000000",
+      },
+      "disabled": true,
+      "fontSize": 14,
+      "foreground": {
+        "dark": "#0e0f10",
+        "light": "#ffffff",
+      },
+      "label": "Adding…",
+      "onClickAction": {
+        "type": "custom.submit",
+      },
+      "paddingX": 14,
+      "paddingY": 8,
+      "radius": "full",
+      "size": "sm",
+      "type": "Button",
+    },
+  ],
+  "gap": 8,
+  "padding": {
+    "bottom": 12,
+    "x": 16,
+  },
+  "type": "Row",
+}
+`;
+
+exports[`memberAddForm valid draft enables the button 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "children": [
+        {
+          "autoCapitalize": "none",
+          "autoCorrect": false,
+          "background": {
+            "dark": "#282a2d",
+            "light": "#e4e4e5",
+          },
+          "borderColor": {
+            "dark": "#282a2d",
+            "light": "#e4e4e5",
+          },
+          "color": {
+            "dark": "#9f9fa3",
+            "light": "#57606a",
+          },
+          "fontSize": 14,
+          "fontWeight": "medium",
+          "name": "draft",
+          "onChangeAction": {
+            "type": "accounts.memberAdd.change",
+          },
+          "onSubmitAction": {
+            "type": "accounts.memberAdd.submit",
+          },
+          "paddingX": 12,
+          "paddingY": 8,
+          "placeholder": "0x… Ethereum address",
+          "placeholderColor": {
+            "dark": "#9f9fa3",
+            "light": "#57606a",
+          },
+          "radius": 8,
+          "returnKeyType": "done",
+          "type": "TextField",
+          "value": "0xabc",
+          "variant": "outline",
+        },
+      ],
+      "flex": 1,
+      "type": "Box",
+    },
+    {
+      "background": {
+        "dark": "#ffffff",
+        "light": "#000000",
+      },
+      "fontSize": 14,
+      "foreground": {
+        "dark": "#0e0f10",
+        "light": "#ffffff",
+      },
+      "label": "Add",
+      "onClickAction": {
+        "type": "accounts.memberAdd.submit",
+      },
+      "paddingX": 14,
+      "paddingY": 8,
+      "radius": "full",
+      "size": "sm",
+      "type": "Button",
+    },
+  ],
+  "gap": 8,
+  "padding": {
+    "bottom": 12,
+    "x": 16,
+  },
+  "type": "Row",
+}
+`;
+
+exports[`memberTextField minimal 1`] = `
+{
+  "background": "#ffffff",
+  "borderColor": "#dddddd",
+  "color": "#111111",
+  "fontSize": 15,
+  "fontWeight": "medium",
+  "minHeight": 0,
+  "name": "field",
+  "onChangeAction": {
+    "type": "accounts.memberField.change",
+  },
+  "paddingX": 12,
+  "paddingY": 8,
+  "placeholder": "Address",
+  "placeholderColor": "#999999",
+  "radius": 8,
+  "type": "TextField",
+  "value": "0xabc",
+  "variant": "outline",
+}
+`;
+
+exports[`memberTextField full 1`] = `
+{
+  "autoCapitalize": "none",
+  "autoCorrect": false,
+  "autoFocus": true,
+  "background": "#ffffff",
+  "borderColor": "#dddddd",
+  "color": "#111111",
+  "fontSize": 15,
+  "fontWeight": "medium",
+  "minHeight": 0,
+  "name": "field",
+  "onChangeAction": {
+    "type": "custom.change",
+  },
+  "onSubmitAction": {
+    "type": "custom.submit",
+  },
+  "paddingX": 12,
+  "paddingY": 8,
+  "placeholder": "Address",
+  "placeholderColor": "#999999",
+  "radius": 8,
+  "returnKeyType": "done",
+  "type": "TextField",
+  "value": "0xabc",
+  "variant": "outline",
+}
+`;
+
+exports[`contactRow minimal 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "radius": "full",
+          "size": 40,
+          "src": "https://img.example/c.png",
+          "type": "Image",
+        },
+        {
+          "children": [
+            {
+              "truncate": true,
+              "type": "Text",
+              "value": "Carol",
+              "weight": "semibold",
+            },
+          ],
+          "flex": 1,
+          "gap": 2,
+          "type": "Col",
+        },
+      ],
+      "flex": 1,
+      "gap": 12,
+      "type": "Row",
+    },
+  ],
+  "gap": 12,
+  "onClickAction": {
+    "payload": {},
+    "type": "contacts.contact.press",
+  },
+  "type": "ListViewItem",
+}
+`;
+
+exports[`contactRow full 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "radius": "full",
+          "size": 40,
+          "src": "https://img.example/c.png",
+          "type": "Image",
+        },
+        {
+          "children": [
+            {
+              "truncate": true,
+              "type": "Text",
+              "value": "Carol",
+              "weight": "semibold",
+            },
+            {
+              "color": "secondary",
+              "truncate": true,
+              "type": "Caption",
+              "value": "carol.eth",
+            },
+          ],
+          "flex": 1,
+          "gap": 2,
+          "type": "Col",
+        },
+        {
+          "color": "secondary",
+          "label": "Agent",
+          "pill": true,
+          "size": "sm",
+          "type": "Badge",
+          "variant": "soft",
+        },
+      ],
+      "flex": 1,
+      "gap": 12,
+      "type": "Row",
+    },
+  ],
+  "gap": 12,
+  "onClickAction": {
+    "payload": {
+      "address": "0xabc",
+    },
+    "type": "custom.contact",
+  },
+  "type": "ListViewItem",
+}
+`;
+
+exports[`suggestionRow minimal (unselected) 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "radius": "full",
+          "size": 36,
+          "src": "https://img.example/d.png",
+          "type": "Image",
+        },
+        {
+          "children": [
+            {
+              "truncate": true,
+              "type": "Text",
+              "value": "Dave",
+              "weight": "semibold",
+            },
+          ],
+          "flex": 1,
+          "gap": 1,
+          "type": "Col",
+        },
+        {
+          "align": "center",
+          "border": {
+            "color": "primary",
+            "size": 2,
+          },
+          "children": [],
+          "height": 24,
+          "justify": "center",
+          "radius": "lg",
+          "type": "Row",
+          "width": 24,
+        },
+      ],
+      "flex": 1,
+      "gap": 10,
+      "type": "Row",
+    },
+  ],
+  "gap": 10,
+  "onClickAction": {
+    "payload": {
+      "address": "0xabc0000000000000000000000000000000000001",
+    },
+    "type": "contacts.suggestion.toggle",
+  },
+  "type": "ListViewItem",
+}
+`;
+
+exports[`suggestionRow full (selected) 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "radius": "full",
+          "size": 36,
+          "src": "https://img.example/d.png",
+          "type": "Image",
+        },
+        {
+          "children": [
+            {
+              "truncate": true,
+              "type": "Text",
+              "value": "Dave",
+              "weight": "semibold",
+            },
+            {
+              "color": "secondary",
+              "truncate": true,
+              "type": "Caption",
+              "value": "dave.eth",
+            },
+          ],
+          "flex": 1,
+          "gap": 1,
+          "type": "Col",
+        },
+        {
+          "align": "center",
+          "background": "#00aa00",
+          "children": [
+            {
+              "color": {
+                "dark": "#000000",
+                "light": "#ffffff",
+              },
+              "name": "check",
+              "size": 14,
+              "type": "Icon",
+            },
+          ],
+          "height": 24,
+          "justify": "center",
+          "radius": "lg",
+          "type": "Row",
+          "width": 24,
+        },
+      ],
+      "flex": 1,
+      "gap": 10,
+      "type": "Row",
+    },
+  ],
+  "gap": 10,
+  "onClickAction": {
+    "payload": {
+      "address": "0xabc0000000000000000000000000000000000001",
+    },
+    "type": "custom.toggle",
+  },
+  "type": "ListViewItem",
+}
+`;

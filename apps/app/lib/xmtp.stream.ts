@@ -10,6 +10,7 @@ import {
   STREAM_CONSENT_STATES, pushToFeedSlice, resyncActiveFeeds, syncInboxOnce,
 } from './xmtp.resync';
 import { lineOfConv, type StreamMsg } from './xmtp.types';
+import { convIdFromTopic } from '@stage-labs/client/xmtp/clientErrors';
 import { reconcileOnArrival, feedLatestNs } from '../modules/messaging/feedReconcile';
 
 export { PAGE_SIZE, syncInboxOnce } from './xmtp.resync';
@@ -100,7 +101,7 @@ function routeMessageToFeed(convId: string, msg: StreamCbMsg): void {
 function handleStreamMessage(msg: StreamCbMsg): Promise<void> {
   if (!msg) return Promise.resolve();
   noteStreamDelivery();
-  const convId = convIdFromTopicStr((msg as unknown as { topic?: string }).topic)
+  const convId = convIdFromTopic((msg as unknown as { topic?: string }).topic)
     ?? (msg as unknown as { conversationId?: string }).conversationId;
   fanOutToSubscribers(convId, msg);
   if (!convId) {
@@ -161,9 +162,3 @@ function teardownGlobalStream(): void {
   setAppForeground(false);
 }
 registerGlobalStreamTeardown(teardownGlobalStream);
-
-function convIdFromTopicStr(topic: string | undefined): string | null {
-  if (!topic) return null;
-  const m = /\/g-([0-9a-fA-F]+)\//.exec(topic);
-  return m?.[1] ?? null;
-}

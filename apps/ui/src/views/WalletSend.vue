@@ -4,21 +4,26 @@ import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import type { Hex } from 'viem';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import {
+  basicRoot,
+  sendFields, sendReviewList, screenHeader, SCREEN_BACK,
+  WALLET_SEND_FIELD_CHANGE, WALLET_SEND_FIELD_ACTION,
+} from '@stage-labs/views';
 import type { AssetRow } from '@stage-labs/client/wallet/assets';
 import { NETWORK_LABEL, NETWORK_LOGO, MAINNET_NETWORK_LOGO } from '@stage-labs/client/wallet/assets';
 import { fmtBalance } from '@stage-labs/client/wallet/format';
 import { explorerTxUrl } from '@stage-labs/client/xmtp/tx';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { useWalletBalances } from '@/lib/useWalletBalances';
-import { buildSortedTokenRows } from '@/lib/walletSort';
+import { buildSortedTokenRows } from '@stage-labs/client/wallet/tokens';
+import { toggleAmountUnit } from '@stage-labs/client/wallet/sendAmount';
 import { getTokenRow } from '../lib/tokenDetailStore';
 import { useSend } from '../lib/useSend';
-import { useEffectiveScheme } from '@/lib/kitTheme';
 
 const route = useRoute();
 const router = useRouter();
 const palette = useKitPalette();
-const scheme = useEffectiveScheme();
 
 const { rows } = useWalletBalances();
 
@@ -72,24 +77,11 @@ const secondaryLabel = computed(() => {
 });
 
 function toggleMode(): void {
-  const price = priceUsd.value;
-  const raw = send.amount.value.trim();
-  if (!price || !raw) {
-    mode.value = mode.value === 'token' ? 'usd' : 'token';
-    return;
-  }
-  const n = Number(raw);
-  if (!isFinite(n) || n <= 0) {
-    mode.value = mode.value === 'token' ? 'usd' : 'token';
-    return;
-  }
-  if (mode.value === 'token') {
-    send.amount.value = (n * price).toFixed(2);
-    mode.value = 'usd';
-  } else {
-    send.amount.value = (n / price).toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
-    mode.value = 'token';
-  }
+  const next = toggleAmountUnit(
+    send.amount.value, mode.value === 'token' ? 'primary' : 'usd', priceUsd.value,
+  );
+  send.amount.value = next.amount;
+  mode.value = next.unit === 'primary' ? 'token' : 'usd';
 }
 
 const submitLabel = computed(() => {
@@ -109,22 +101,62 @@ function back(): void {
 function openTx(hash: Hex): void {
   window.open(explorerTxUrl(chainIdRef.value, hash), '_blank', 'noopener');
 }
+
+const headerNode = computed(() =>
+  basicRoot(screenHeader({
+    title: 'Send token',
+    titleStyle: { kind: 'title', size: 'sm' },
+    backColor: palette.text,
+    safeTop: 0,
+    padTop: 10,
+    surface: palette.toolbarBg,
+    borderColor: palette.border,
+  })),
+);
+
+const fieldsNode = computed(() =>
+  basicRoot(sendFields({
+    recipient: send.to.value,
+    resolving: send.resolving.value,
+    resolvedText: send.resolved.value ? shortAddress(send.resolved.value) : undefined,
+    recipientError: send.resolveErr.value ?? undefined,
+    amount: send.amount.value,
+    unitLabel: mode.value === 'token' ? send.symbol.value : 'USD',
+    secondaryLabel: secondaryLabel.value || undefined,
+    amountError: send.amountErr.value ?? undefined,
+    balanceLabel: send.balance.value != null
+      ? `Balance: ${fmtBalance(send.balance.value)} ${send.symbol.value}`
+      : undefined,
+    maxDisabled: send.balance.value == null,
+  })));
+
+const feeNode = computed(() => {
+  const fee = send.fee.value;
+  const value = fee
+    ? (fee.sponsored ? 'Gas sponsored' : `≈ ${Number(fee.feeEth).toFixed(6)} ETH`)
+    : '—';
+  return basicRoot(sendReviewList([{ label: 'Network fee', value }]));
+});
+
+const fieldsActions = {
+  [SCREEN_BACK]: (): void => { back(); },
+  [WALLET_SEND_FIELD_CHANGE]: (payload: Record<string, unknown>): void => {
+    if (payload.field === 'recipient' && typeof payload.recipient === 'string') {
+      send.to.value = payload.recipient;
+    } else if (payload.field === 'amount' && typeof payload.amount === 'string') {
+      send.amount.value = payload.amount;
+    }
+  },
+  [WALLET_SEND_FIELD_ACTION]: (payload: Record<string, unknown>): void => {
+    if (payload.action === 'max') { mode.value = 'token'; send.onMax(); }
+    else if (payload.action === 'toggleUnit') toggleMode();
+  },
+};
 </script>
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <Row
-      surface="toolbar"
-      align="center"
-      :gap="8"
-      :padding="{ x: 12, y: 10 }"
-      :style="{ borderBottomWidth: '1px', borderBottomStyle: 'solid', borderBottomColor: palette.border }"
-    >
-      <Pressable tag="button" type="button" class="p-1" aria-label="Back" @click="back">
-        <Icon name="arrowLeft" :size="22" :color="palette.text" />
-      </Pressable>
-      <Title size="sm">Send token</Title>
-    </Row>
+    <ViewHost :node="headerNode" :actions="fieldsActions" />
 
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar" :gap="16" :padding="{ x: 16, y: 16 }">
       <!-- Token selector mirrors mobile's TokenSelector. -->
@@ -167,90 +199,14 @@ function openTx(hash: Hex): void {
         <Text size="xs" color="secondary">{{ networkLabel }}</Text>
       </Box>
 
-      <!-- Recipient -->
-      <Col :gap="6">
-        <Text size="xs" color="secondary">RECIPIENT</Text>
-        <Row surface="raised" align="center" :gap="6" class="rounded-xl px-3.5">
-          <Input
-            v-model="send.to.value"
-            :dark="scheme === 'dark'"
-            placeholder="0x… or name.eth"
-            autocapitalize="none"
-            autocorrect="off"
-            spellcheck="false"
-            class="flex-1 bg-transparent border-0 py-3 outline-none"
-          />
-        </Row>
-        <Row v-if="send.resolving.value" align="center" :gap="8" class="px-1">
-          <Text size="xs" color="secondary">Resolving…</Text>
-        </Row>
-        <Text v-else-if="send.resolved.value" size="xs" color="secondary" class="px-1 break-all">
-          {{ shortAddress(send.resolved.value) }}
-        </Text>
-        <Text v-else-if="send.resolveErr.value" size="xs" class="px-1" :style="{ color: palette.danger }">
-          {{ send.resolveErr.value }}
-        </Text>
-      </Col>
+      <!-- Recipient + amount inputs via Kit TextField nodes. -->
+      <ViewHost :node="fieldsNode" :actions="fieldsActions" />
 
-      <!-- Amount -->
-      <Col :gap="6">
-        <Row align="center">
-          <Text size="xs" color="secondary" class="flex-1">AMOUNT</Text>
-          <Pressable
-            tag="button"
-            type="button"
-            :disabled="send.balance.value == null"
-            class="px-2 py-0.5 rounded"
-            @click="mode = 'token'; send.onMax()"
-          >
-            <Text size="xs" :color="send.balance.value == null ? 'secondary' : 'link'">MAX</Text>
-          </Pressable>
-        </Row>
-        <Row surface="raised" align="center" :gap="8" class="rounded-xl px-3.5 py-3">
-          <Input
-            v-model="send.amount.value"
-            :dark="scheme === 'dark'"
-            placeholder="0.0"
-            inputmode="decimal"
-            class="flex-1 bg-transparent border-0 outline-none text-xl font-semibold"
-          />
-          <Pressable
-            tag="button"
-            type="button"
-            class="rounded-full hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
-            @click="toggleMode"
-          >
-            <Row align="center" :gap="4" class="px-2 py-1">
-              <Text weight="semibold" size="md" color="link">
-                {{ mode === 'token' ? send.symbol.value : 'USD' }}
-              </Text>
-              <Icon name="arrowDown" :size="14" :color="palette.text" />
-            </Row>
-          </Pressable>
-        </Row>
-        <Text v-if="secondaryLabel" size="xs" color="secondary" class="px-1">{{ secondaryLabel }}</Text>
-        <Text v-if="send.amountErr.value" size="xs" class="px-1" :style="{ color: palette.danger }">
-          {{ send.amountErr.value }}
-        </Text>
-        <Text v-if="send.balance.value != null" size="xs" color="secondary" class="px-1">
-          Balance: {{ fmtBalance(send.balance.value) }} {{ send.symbol.value }}
-        </Text>
-      </Col>
-
-      <!-- Fee preview -->
-      <Col surface="raised" :gap="6" class="rounded-xl px-3.5 py-3">
-        <Row align="center">
-          <Text size="xs" color="secondary" class="flex-1">NETWORK FEE</Text>
-          <Text size="xs" color="link">
-            {{ send.fee.value
-              ? (send.fee.value.sponsored ? 'Gas sponsored' : `≈ ${Number(send.fee.value.feeEth).toFixed(6)} ETH`)
-              : '—' }}
-          </Text>
-        </Row>
-        <Text v-if="send.feeErr.value" size="xs" color="secondary" class="break-all">
-          {{ send.feeErr.value }}
-        </Text>
-      </Col>
+      <!-- Network fee row via sendReviewList. -->
+      <ViewHost :node="feeNode" :actions="fieldsActions" />
+      <Text v-if="send.feeErr.value" size="xs" color="secondary" class="px-1 break-all">
+        {{ send.feeErr.value }}
+      </Text>
 
       <Col v-if="send.txHash.value" :gap="4" class="px-1">
         <Text size="xs" color="secondary">

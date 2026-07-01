@@ -1,0 +1,1913 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`channelRow minimal 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "radius": "full",
+          "size": 44,
+          "src": "https://img.example/a.png",
+          "type": "Image",
+        },
+        {
+          "children": [
+            {
+              "align": "center",
+              "children": [
+                {
+                  "truncate": true,
+                  "type": "Text",
+                  "value": "General",
+                  "weight": "semibold",
+                },
+              ],
+              "flex": 1,
+              "gap": 4,
+              "type": "Row",
+            },
+            {
+              "align": "center",
+              "children": [
+                {
+                  "color": "secondary",
+                  "maxLines": 1,
+                  "truncate": true,
+                  "type": "Caption",
+                  "value": "hello there",
+                },
+              ],
+              "gap": 4,
+              "type": "Row",
+            },
+          ],
+          "flex": 1,
+          "gap": 2,
+          "type": "Col",
+        },
+        {
+          "align": "end",
+          "children": [
+            {
+              "color": "secondary",
+              "type": "Caption",
+              "value": "12:30",
+            },
+          ],
+          "gap": 4,
+          "type": "Col",
+        },
+      ],
+      "flex": 1,
+      "gap": 12,
+      "type": "Row",
+    },
+  ],
+  "gap": 12,
+  "onClickAction": {
+    "payload": {
+      "convId": "conv-1",
+      "labelPressType": "chat.channel.labelPress",
+      "longPressType": "chat.channel.longPress",
+    },
+    "type": "chat.channel.press",
+  },
+  "type": "ListViewItem",
+}
+`;
+
+exports[`channelRow full 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "children": [
+            {
+              "align": "center",
+              "children": [
+                {
+                  "color": "secondary",
+                  "name": "map-pin",
+                  "size": "xs",
+                  "type": "Icon",
+                },
+                {
+                  "truncate": true,
+                  "type": "Text",
+                  "value": "Gen",
+                  "weight": "semibold",
+                },
+                {
+                  "background": {
+                    "dark": "#fde047",
+                    "light": "#FFF200",
+                  },
+                  "truncate": true,
+                  "type": "Text",
+                  "value": "eral",
+                  "weight": "semibold",
+                },
+              ],
+              "flex": 1,
+              "gap": 4,
+              "type": "Row",
+            },
+            {
+              "align": "center",
+              "children": [
+                {
+                  "color": "info",
+                  "type": "Caption",
+                  "value": "You: ",
+                  "weight": "semibold",
+                },
+                {
+                  "color": "secondary",
+                  "maxLines": 1,
+                  "truncate": true,
+                  "type": "Caption",
+                  "value": "hello there",
+                },
+              ],
+              "gap": 4,
+              "type": "Row",
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "color": "secondary",
+                      "label": "work",
+                      "size": "sm",
+                      "type": "Badge",
+                      "variant": "soft",
+                    },
+                  ],
+                  "onClickAction": {
+                    "payload": {
+                      "convId": "conv-1",
+                      "label": "work",
+                    },
+                    "type": "chat.channel.labelPress",
+                  },
+                  "type": "ListViewItem",
+                },
+                {
+                  "children": [
+                    {
+                      "color": "info",
+                      "label": "dao",
+                      "size": "sm",
+                      "type": "Badge",
+                      "variant": "soft",
+                    },
+                  ],
+                  "onClickAction": {
+                    "payload": {
+                      "convId": "conv-1",
+                      "label": "dao",
+                    },
+                    "type": "chat.channel.labelPress",
+                  },
+                  "type": "ListViewItem",
+                },
+              ],
+              "gap": 4,
+              "type": "Row",
+              "wrap": "wrap",
+            },
+          ],
+          "flex": 1,
+          "gap": 2,
+          "type": "Col",
+        },
+        {
+          "align": "end",
+          "children": [
+            {
+              "color": "secondary",
+              "type": "Caption",
+              "value": "Jun 4",
+            },
+            {
+              "color": "info",
+              "label": "3",
+              "pill": true,
+              "size": "sm",
+              "type": "Badge",
+            },
+          ],
+          "gap": 4,
+          "type": "Col",
+        },
+      ],
+      "flex": 1,
+      "gap": 12,
+      "type": "Row",
+    },
+  ],
+  "gap": 12,
+  "onClickAction": {
+    "payload": {
+      "convId": "conv-1",
+      "labelPressType": "chat.channel.labelPress",
+      "longPressType": "chat.channel.longPress",
+    },
+    "type": "chat.channel.press",
+  },
+  "type": "ListViewItem",
+}
+`;
+
+exports[`channelRow non-interactive with unread dot only 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "radius": "full",
+      "size": 44,
+      "src": "https://img.example/b.png",
+      "type": "Image",
+    },
+    {
+      "children": [
+        {
+          "align": "center",
+          "children": [
+            {
+              "truncate": true,
+              "type": "Text",
+              "value": "Quiet",
+              "weight": "semibold",
+            },
+          ],
+          "flex": 1,
+          "gap": 4,
+          "type": "Row",
+        },
+        {
+          "align": "center",
+          "children": [
+            {
+              "color": "secondary",
+              "maxLines": 1,
+              "truncate": true,
+              "type": "Caption",
+              "value": "psst",
+            },
+          ],
+          "gap": 4,
+          "type": "Row",
+        },
+        {
+          "children": [
+            {
+              "color": "secondary",
+              "label": "muted",
+              "size": "sm",
+              "type": "Badge",
+              "variant": "soft",
+            },
+          ],
+          "gap": 4,
+          "type": "Row",
+          "wrap": "wrap",
+        },
+      ],
+      "flex": 1,
+      "gap": 2,
+      "type": "Col",
+    },
+    {
+      "align": "end",
+      "children": [
+        {
+          "color": "secondary",
+          "type": "Caption",
+          "value": "09:01",
+        },
+        {
+          "color": "info",
+          "label": " ",
+          "pill": true,
+          "size": "sm",
+          "type": "Badge",
+        },
+      ],
+      "gap": 4,
+      "type": "Col",
+    },
+  ],
+  "flex": 1,
+  "gap": 12,
+  "type": "Row",
+}
+`;
+
+exports[`mediaCard minimal (plain box, no action) 1`] = `
+{
+  "children": [
+    {
+      "src": "https://img.example/m.png",
+      "type": "Image",
+    },
+  ],
+  "maxWidth": 280,
+  "radius": "lg",
+  "type": "Box",
+}
+`;
+
+exports[`mediaCard with mediaId derives the press action 1`] = `
+{
+  "children": [
+    {
+      "children": [
+        {
+          "src": "https://img.example/m.png",
+          "type": "Image",
+        },
+      ],
+      "maxWidth": 280,
+      "radius": "lg",
+      "type": "Box",
+    },
+  ],
+  "onClickAction": {
+    "payload": {
+      "mediaId": "m1",
+    },
+    "type": "chat.media.press",
+  },
+  "type": "ListViewItem",
+}
+`;
+
+exports[`mediaCard full with explicit clickAction and width 1`] = `
+{
+  "children": [
+    {
+      "children": [
+        {
+          "src": "https://img.example/m.png",
+          "type": "Image",
+        },
+      ],
+      "maxWidth": 320,
+      "radius": "lg",
+      "type": "Box",
+    },
+  ],
+  "onClickAction": {
+    "payload": {
+      "k": "v",
+    },
+    "type": "custom.press",
+  },
+  "type": "ListViewItem",
+}
+`;
+
+exports[`reactionsRow minimal 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "size": "xs",
+          "type": "Text",
+          "value": "👍",
+        },
+        {
+          "color": "secondary",
+          "type": "Caption",
+          "value": "2",
+        },
+      ],
+      "gap": 4,
+      "padding": {
+        "x": 8,
+        "y": 2,
+      },
+      "radius": "full",
+      "type": "Row",
+    },
+  ],
+  "gap": 4,
+  "type": "Row",
+  "wrap": "wrap",
+}
+`;
+
+exports[`reactionsRow full 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "children": [
+        {
+          "align": "center",
+          "background": "#111111",
+          "border": {
+            "color": "#222222",
+            "size": 1,
+          },
+          "children": [
+            {
+              "size": "xs",
+              "type": "Text",
+              "value": "👍",
+            },
+            {
+              "color": "secondary",
+              "type": "Caption",
+              "value": "2",
+            },
+          ],
+          "gap": 4,
+          "padding": {
+            "x": 8,
+            "y": 2,
+          },
+          "radius": "full",
+          "type": "Row",
+        },
+      ],
+      "onClickAction": {
+        "payload": {
+          "emoji": "👍",
+          "messageId": "msg-1",
+        },
+        "type": "chat.reaction.press",
+      },
+      "type": "ListViewItem",
+    },
+    {
+      "children": [
+        {
+          "align": "center",
+          "background": "#111111",
+          "children": [
+            {
+              "size": "xs",
+              "type": "Text",
+              "value": "❤️",
+            },
+            {
+              "color": "secondary",
+              "type": "Caption",
+              "value": "1",
+            },
+          ],
+          "gap": 4,
+          "padding": {
+            "x": 8,
+            "y": 2,
+          },
+          "radius": "full",
+          "type": "Row",
+        },
+      ],
+      "onClickAction": {
+        "payload": {
+          "emoji": "❤️",
+          "messageId": "msg-1",
+        },
+        "type": "chat.reaction.press",
+      },
+      "type": "ListViewItem",
+    },
+  ],
+  "gap": 4,
+  "type": "Row",
+  "wrap": "wrap",
+}
+`;
+
+exports[`emojiReactionRow minimal 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "fontSize": 30,
+      "label": "👍",
+      "onClickAction": {
+        "payload": {
+          "emoji": "👍",
+        },
+        "type": "chat.reaction.emojiPress",
+      },
+      "paddingX": 0,
+      "paddingY": 0,
+      "type": "Button",
+      "variant": "ghost",
+    },
+    {
+      "fontSize": 30,
+      "label": "❤️",
+      "onClickAction": {
+        "payload": {
+          "emoji": "❤️",
+        },
+        "type": "chat.reaction.emojiPress",
+      },
+      "paddingX": 0,
+      "paddingY": 0,
+      "type": "Button",
+      "variant": "ghost",
+    },
+  ],
+  "justify": "around",
+  "padding": {
+    "bottom": 8,
+  },
+  "type": "Row",
+}
+`;
+
+exports[`emojiReactionRow full 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "fontSize": 30,
+      "label": "🔥",
+      "onClickAction": {
+        "payload": {
+          "emoji": "🔥",
+        },
+        "type": "custom.emoji",
+      },
+      "paddingX": 0,
+      "paddingY": 0,
+      "type": "Button",
+      "variant": "ghost",
+    },
+  ],
+  "justify": "around",
+  "padding": {
+    "bottom": 8,
+  },
+  "type": "Row",
+}
+`;
+
+exports[`highlightText minimal 1`] = `
+{
+  "align": "baseline",
+  "children": [
+    {
+      "type": "Text",
+      "value": "plain text",
+    },
+  ],
+  "type": "Row",
+  "wrap": "wrap",
+}
+`;
+
+exports[`highlightText full 1`] = `
+{
+  "align": "baseline",
+  "children": [
+    {
+      "color": "secondary",
+      "fontSize": 14,
+      "lineHeight": 18,
+      "size": "sm",
+      "type": "Text",
+      "value": "find the ",
+    },
+    {
+      "background": "#fff200",
+      "color": "secondary",
+      "fontSize": 14,
+      "lineHeight": 18,
+      "size": "sm",
+      "type": "Text",
+      "value": "Needle",
+    },
+    {
+      "color": "secondary",
+      "fontSize": 14,
+      "lineHeight": 18,
+      "size": "sm",
+      "type": "Text",
+      "value": " here",
+    },
+  ],
+  "type": "Row",
+  "wrap": "wrap",
+}
+`;
+
+exports[`previewLinkCard minimal 1`] = `
+{
+  "children": [
+    {
+      "children": [
+        {
+          "children": [
+            {
+              "truncate": true,
+              "type": "Text",
+              "value": "Example",
+              "weight": "semibold",
+            },
+          ],
+          "gap": 2,
+          "padding": {
+            "x": 12,
+            "y": 10,
+          },
+          "type": "Col",
+        },
+      ],
+      "gap": 0,
+      "radius": "lg",
+      "type": "Col",
+    },
+  ],
+  "onClickAction": {
+    "payload": {
+      "url": "https://example.com",
+    },
+    "type": "link.open",
+  },
+  "type": "ListViewItem",
+}
+`;
+
+exports[`previewLinkCard full 1`] = `
+{
+  "children": [
+    {
+      "children": [
+        {
+          "fit": "cover",
+          "maxHeight": 160,
+          "radius": "md",
+          "src": "https://img.example/preview.png",
+          "type": "Image",
+        },
+        {
+          "children": [
+            {
+              "truncate": true,
+              "type": "Text",
+              "value": "Example",
+              "weight": "semibold",
+            },
+            {
+              "color": "secondary",
+              "maxLines": 2,
+              "type": "Caption",
+              "value": "An example site",
+            },
+          ],
+          "gap": 2,
+          "padding": {
+            "x": 12,
+            "y": 10,
+          },
+          "type": "Col",
+        },
+      ],
+      "gap": 0,
+      "radius": "lg",
+      "type": "Col",
+    },
+  ],
+  "onClickAction": {
+    "payload": {
+      "url": "https://example.com",
+    },
+    "type": "link.open",
+  },
+  "type": "ListViewItem",
+}
+`;
+
+exports[`conversationHeader minimal 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "align": "center",
+          "children": [
+            {
+              "children": [
+                {
+                  "size": "4xl",
+                  "truncate": true,
+                  "type": "Text",
+                  "value": "Alice",
+                  "weight": "semibold",
+                },
+              ],
+              "flex": 1,
+              "gap": 2,
+              "type": "Col",
+            },
+          ],
+          "flex": 1,
+          "gap": 10,
+          "type": "Row",
+        },
+      ],
+      "onClickAction": {
+        "payload": {
+          "conversationId": undefined,
+        },
+        "type": "chat.conversation.press",
+      },
+      "type": "ListViewItem",
+    },
+  ],
+  "gap": 8,
+  "type": "Row",
+}
+`;
+
+exports[`conversationHeader full 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "align": "center",
+          "children": [
+            {
+              "radius": "md",
+              "size": 24,
+              "src": "https://img.example/a.png",
+              "type": "Image",
+            },
+            {
+              "children": [
+                {
+                  "size": "4xl",
+                  "truncate": true,
+                  "type": "Text",
+                  "value": "DAO Ops",
+                  "weight": "semibold",
+                },
+              ],
+              "flex": 1,
+              "gap": 2,
+              "type": "Col",
+            },
+          ],
+          "flex": 1,
+          "gap": 10,
+          "type": "Row",
+        },
+      ],
+      "onClickAction": {
+        "payload": {
+          "conversationId": "conv-1",
+        },
+        "type": "chat.conversation.press",
+      },
+      "type": "ListViewItem",
+    },
+  ],
+  "gap": 8,
+  "type": "Row",
+}
+`;
+
+exports[`pollCard minimal 1`] = `
+{
+  "children": [
+    {
+      "children": [
+        {
+          "size": "3xl",
+          "type": "Text",
+          "value": "Ship it?",
+          "weight": "semibold",
+        },
+        {
+          "children": [
+            {
+              "border": {
+                "color": "transparent",
+                "size": 1,
+              },
+              "inset": 0,
+              "radius": "lg",
+              "type": "Box",
+            },
+            {
+              "background": "transparent",
+              "bottom": 0,
+              "left": 0,
+              "position": "absolute",
+              "radius": "lg",
+              "top": 0,
+              "type": "Box",
+              "width": "75%",
+            },
+            {
+              "align": "center",
+              "children": [
+                {
+                  "children": [
+                    {
+                      "truncate": true,
+                      "type": "Text",
+                      "value": "Yes",
+                    },
+                  ],
+                  "flex": 1,
+                  "type": "Col",
+                },
+                {
+                  "color": "secondary",
+                  "type": "Caption",
+                  "value": "75% · 3",
+                  "weight": "semibold",
+                },
+              ],
+              "gap": 8,
+              "justify": "between",
+              "padding": {
+                "x": 12,
+                "y": 8,
+              },
+              "type": "Row",
+            },
+          ],
+          "type": "Stack",
+        },
+        {
+          "children": [
+            {
+              "border": {
+                "color": "transparent",
+                "size": 1,
+              },
+              "inset": 0,
+              "radius": "lg",
+              "type": "Box",
+            },
+            {
+              "background": "transparent",
+              "bottom": 0,
+              "left": 0,
+              "position": "absolute",
+              "radius": "lg",
+              "top": 0,
+              "type": "Box",
+              "width": "25%",
+            },
+            {
+              "align": "center",
+              "children": [
+                {
+                  "children": [
+                    {
+                      "truncate": true,
+                      "type": "Text",
+                      "value": "No",
+                    },
+                  ],
+                  "flex": 1,
+                  "type": "Col",
+                },
+                {
+                  "color": "secondary",
+                  "type": "Caption",
+                  "value": "25% · 1",
+                  "weight": "semibold",
+                },
+              ],
+              "gap": 8,
+              "justify": "between",
+              "padding": {
+                "x": 12,
+                "y": 8,
+              },
+              "type": "Row",
+            },
+          ],
+          "type": "Stack",
+        },
+        {
+          "color": "secondary",
+          "type": "Caption",
+          "value": "4 votes",
+        },
+      ],
+      "gap": 6,
+      "type": "Col",
+    },
+  ],
+  "gap": 12,
+  "type": "Col",
+}
+`;
+
+exports[`pollCard full 1`] = `
+{
+  "children": [
+    {
+      "children": [
+        {
+          "size": "3xl",
+          "type": "Text",
+          "value": "Pick toppings",
+          "weight": "semibold",
+        },
+        {
+          "color": "secondary",
+          "type": "Caption",
+          "value": "Lunch poll · multi-select",
+          "weight": "semibold",
+        },
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "background": "#d0ffd0",
+                  "border": {
+                    "color": "#00aa00",
+                    "size": 1,
+                  },
+                  "inset": 0,
+                  "radius": "lg",
+                  "type": "Box",
+                },
+                {
+                  "background": "#e0e0ff",
+                  "bottom": 0,
+                  "left": 0,
+                  "position": "absolute",
+                  "radius": "lg",
+                  "top": 0,
+                  "type": "Box",
+                  "width": "100%",
+                },
+                {
+                  "align": "center",
+                  "children": [
+                    {
+                      "children": [
+                        {
+                          "truncate": true,
+                          "type": "Text",
+                          "value": "✓ Cheese",
+                        },
+                      ],
+                      "flex": 1,
+                      "type": "Col",
+                    },
+                    {
+                      "color": "secondary",
+                      "type": "Caption",
+                      "value": "100% · 1",
+                      "weight": "semibold",
+                    },
+                  ],
+                  "gap": 8,
+                  "justify": "between",
+                  "padding": {
+                    "x": 12,
+                    "y": 8,
+                  },
+                  "type": "Row",
+                },
+              ],
+              "type": "Stack",
+            },
+          ],
+          "onClickAction": {
+            "payload": {
+              "optionIndex": 0,
+              "questionIndex": 0,
+              "selected": true,
+            },
+            "type": "chat.poll.optionPress",
+          },
+          "type": "Pressable",
+        },
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "border": {
+                    "color": "#cccccc",
+                    "size": 1,
+                  },
+                  "inset": 0,
+                  "radius": "lg",
+                  "type": "Box",
+                },
+                {
+                  "background": "#e0e0ff",
+                  "bottom": 0,
+                  "left": 0,
+                  "position": "absolute",
+                  "radius": "lg",
+                  "top": 0,
+                  "type": "Box",
+                  "width": "0%",
+                },
+                {
+                  "align": "center",
+                  "children": [
+                    {
+                      "children": [
+                        {
+                          "truncate": true,
+                          "type": "Text",
+                          "value": "☐ Olives",
+                        },
+                      ],
+                      "flex": 1,
+                      "type": "Col",
+                    },
+                    {
+                      "color": "secondary",
+                      "type": "Caption",
+                      "value": "0% · 0",
+                      "weight": "semibold",
+                    },
+                  ],
+                  "gap": 8,
+                  "justify": "between",
+                  "padding": {
+                    "x": 12,
+                    "y": 8,
+                  },
+                  "type": "Row",
+                },
+              ],
+              "type": "Stack",
+            },
+          ],
+          "onClickAction": {
+            "payload": {
+              "optionIndex": 1,
+              "questionIndex": 0,
+              "selected": false,
+            },
+            "type": "chat.poll.optionPress",
+          },
+          "type": "Pressable",
+        },
+        {
+          "color": "secondary",
+          "type": "Caption",
+          "value": "1 vote",
+        },
+      ],
+      "gap": 6,
+      "type": "Col",
+    },
+  ],
+  "gap": 12,
+  "type": "Col",
+}
+`;
+
+exports[`menuSheet minimal 1`] = `
+{
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "align": "center",
+          "children": [
+            {
+              "type": "Text",
+              "value": "Copy",
+              "weight": "medium",
+            },
+          ],
+          "flex": 1,
+          "gap": 12,
+          "type": "Row",
+        },
+      ],
+      "gap": 12,
+      "onClickAction": {
+        "payload": {
+          "id": "copy",
+        },
+        "type": "chat.menu.itemPress",
+      },
+      "type": "ListViewItem",
+    },
+  ],
+  "type": "ListView",
+}
+`;
+
+exports[`menuSheet full 1`] = `
+{
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "align": "center",
+          "children": [
+            {
+              "color": "secondary",
+              "name": "reply",
+              "type": "Icon",
+            },
+            {
+              "type": "Text",
+              "value": "Reply",
+              "weight": "medium",
+            },
+          ],
+          "flex": 1,
+          "gap": 12,
+          "type": "Row",
+        },
+      ],
+      "gap": 12,
+      "onClickAction": {
+        "payload": {
+          "id": "reply",
+        },
+        "type": "chat.menu.itemPress",
+      },
+      "type": "ListViewItem",
+    },
+    {
+      "align": "center",
+      "children": [
+        {
+          "align": "center",
+          "children": [
+            {
+              "color": "danger",
+              "name": "trash",
+              "type": "Icon",
+            },
+            {
+              "color": "danger",
+              "type": "Text",
+              "value": "Delete",
+              "weight": "medium",
+            },
+          ],
+          "flex": 1,
+          "gap": 12,
+          "type": "Row",
+        },
+      ],
+      "gap": 12,
+      "onClickAction": {
+        "payload": {
+          "id": "delete",
+        },
+        "type": "custom.item",
+      },
+      "type": "ListViewItem",
+    },
+  ],
+  "type": "ListView",
+}
+`;
+
+exports[`overflowMenu minimal 1`] = `
+{
+  "align": "end",
+  "items": [
+    {
+      "id": "a",
+      "label": "A",
+      "pressType": "chat.overflowMenu.itemPress",
+    },
+  ],
+  "side": "bottom",
+  "title": "More",
+  "trigger": {
+    "name": "dotsHorizontal",
+    "size": 22,
+    "type": "Icon",
+  },
+  "type": "Popover",
+}
+`;
+
+exports[`overflowMenu full 1`] = `
+{
+  "align": "start",
+  "items": [
+    {
+      "icon": "pencil",
+      "id": "edit",
+      "label": "Edit",
+      "pressType": "custom.overflow",
+    },
+    {
+      "danger": true,
+      "disabled": true,
+      "icon": "trash",
+      "id": "remove",
+      "label": "Remove",
+      "pressType": "custom.overflow",
+    },
+  ],
+  "side": "bottom",
+  "title": "Options",
+  "trigger": {
+    "name": "menu",
+    "size": 18,
+    "type": "Icon",
+  },
+  "type": "Popover",
+}
+`;
+
+exports[`composerInput minimal 1`] = `
+{
+  "autoCapitalize": "sentences",
+  "autoGrow": true,
+  "blurNonce": 0,
+  "color": "#111111",
+  "focusNonce": 1,
+  "fontSize": 16,
+  "fontWeight": "medium",
+  "lineHeight": 23,
+  "maxHeight": 210,
+  "minHeight": 24,
+  "multiline": true,
+  "name": "composer",
+  "onChangeAction": {
+    "type": "chat.composer.change",
+  },
+  "onSelectionChangeAction": {
+    "type": "chat.composer.selection",
+  },
+  "paddingBottom": 8,
+  "paddingTop": 4,
+  "paddingX": 8,
+  "placeholder": "Message",
+  "placeholderColor": "#999999",
+  "selection": {
+    "end": 5,
+    "start": 0,
+  },
+  "type": "TextField",
+  "value": "draft",
+  "variant": "plain",
+}
+`;
+
+exports[`composerInput full 1`] = `
+{
+  "autoCapitalize": "sentences",
+  "autoGrow": true,
+  "blurNonce": 1,
+  "color": "#111111",
+  "focusNonce": 3,
+  "fontSize": 16,
+  "fontWeight": "medium",
+  "lineHeight": 23,
+  "maxHeight": 210,
+  "minHeight": 24,
+  "multiline": true,
+  "name": "composer",
+  "onChangeAction": {
+    "type": "custom.change",
+  },
+  "onSelectionChangeAction": {
+    "type": "custom.selection",
+  },
+  "paddingBottom": 8,
+  "paddingTop": 4,
+  "paddingX": 8,
+  "placeholder": "Message",
+  "placeholderColor": "#999999",
+  "selection": {
+    "end": 2,
+    "start": 2,
+  },
+  "type": "TextField",
+  "value": "draft",
+  "variant": "plain",
+}
+`;
+
+exports[`emptyState minimal 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "textAlign": "center",
+      "type": "Text",
+      "value": "No messages",
+      "weight": "semibold",
+    },
+  ],
+  "gap": 8,
+  "justify": "center",
+  "padding": 24,
+  "type": "Col",
+}
+`;
+
+exports[`emptyState full 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "color": "secondary",
+      "name": "inbox",
+      "size": "3xl",
+      "type": "Icon",
+    },
+    {
+      "textAlign": "center",
+      "type": "Text",
+      "value": "No messages",
+      "weight": "semibold",
+    },
+    {
+      "color": "secondary",
+      "textAlign": "center",
+      "type": "Caption",
+      "value": "Start a conversation",
+    },
+    {
+      "label": "New chat",
+      "onClickAction": {
+        "payload": {
+          "id": "new-chat",
+        },
+        "type": "chat.emptyState.press",
+      },
+      "size": "sm",
+      "type": "Button",
+      "variant": "soft",
+    },
+  ],
+  "gap": 8,
+  "justify": "center",
+  "padding": 24,
+  "type": "Col",
+}
+`;
+
+exports[`sectionHeader uppercases the title 1`] = `
+{
+  "color": "secondary",
+  "type": "Caption",
+  "value": "TODAY",
+  "weight": "semibold",
+}
+`;
+
+exports[`composerBar minimal 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "autoGrow": true,
+      "multiline": true,
+      "name": "message",
+      "onChangeAction": {
+        "payload": {},
+        "type": "chat.composer.change",
+      },
+      "placeholder": "Message",
+      "type": "TextField",
+      "value": "",
+    },
+    {
+      "iconStart": "arrow-up",
+      "onClickAction": {
+        "payload": {},
+        "type": "chat.composer.send",
+      },
+      "size": "sm",
+      "type": "Button",
+      "variant": "solid",
+    },
+  ],
+  "gap": 8,
+  "type": "Row",
+}
+`;
+
+exports[`composerBar full 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "iconStart": "paperclip",
+      "onClickAction": {
+        "payload": {},
+        "type": "chat.composer.attach",
+      },
+      "size": "sm",
+      "type": "Button",
+      "variant": "ghost",
+    },
+    {
+      "autoGrow": true,
+      "multiline": true,
+      "name": "reply",
+      "onChangeAction": {
+        "payload": {},
+        "type": "chat.composer.change",
+      },
+      "placeholder": "Reply…",
+      "type": "TextField",
+      "value": "hello",
+    },
+    {
+      "disabled": true,
+      "iconStart": "paper-plane",
+      "onClickAction": {
+        "payload": {},
+        "type": "chat.composer.send",
+      },
+      "size": "sm",
+      "type": "Button",
+      "variant": "solid",
+    },
+  ],
+  "gap": 8,
+  "type": "Row",
+}
+`;
+
+exports[`composerBar hides send button when showSend is false 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "autoGrow": true,
+      "multiline": true,
+      "name": "message",
+      "onChangeAction": {
+        "payload": {},
+        "type": "chat.composer.change",
+      },
+      "placeholder": "Message",
+      "type": "TextField",
+      "value": "",
+    },
+  ],
+  "gap": 8,
+  "type": "Row",
+}
+`;
+
+exports[`messageBubble minimal 1`] = `
+{
+  "align": "start",
+  "children": [
+    {
+      "color": undefined,
+      "type": "Text",
+      "value": "hi",
+    },
+  ],
+  "gap": 2,
+  "type": "Col",
+}
+`;
+
+exports[`messageBubble full with markdown body 1`] = `
+{
+  "align": "end",
+  "children": [
+    {
+      "color": "#666666",
+      "type": "Caption",
+      "value": "Alice",
+      "weight": "semibold",
+    },
+    {
+      "type": "Markdown",
+      "value": "**bold** move",
+    },
+    {
+      "align": "end",
+      "children": [
+        {
+          "color": "#666666",
+          "type": "Caption",
+          "value": "12:30",
+        },
+        {
+          "color": "#666666",
+          "type": "Caption",
+          "value": "sent",
+        },
+      ],
+      "type": "Col",
+    },
+  ],
+  "gap": 2,
+  "type": "Col",
+}
+`;
+
+exports[`messageBubble segments body with emphasis 1`] = `
+{
+  "align": "start",
+  "children": [
+    {
+      "background": undefined,
+      "color": "#222222",
+      "type": "Text",
+      "value": "plain ",
+    },
+    {
+      "background": {
+        "dark": "#fde047",
+        "light": "#FFF200",
+      },
+      "color": "#222222",
+      "type": "Text",
+      "value": "match",
+    },
+    {
+      "align": "start",
+      "children": [
+        {
+          "color": "secondary",
+          "type": "Caption",
+          "value": "08:00",
+        },
+      ],
+      "type": "Col",
+    },
+  ],
+  "gap": 2,
+  "type": "Col",
+}
+`;
+
+exports[`voiceMessage minimal 1`] = `
+{
+  "align": "center",
+  "background": {
+    "dark": "#3b9bff",
+    "light": "#0a7cff",
+  },
+  "children": [
+    {
+      "accent": {
+        "dark": "#3b9bff",
+        "light": "#0a7cff",
+      },
+      "onAccent": {
+        "dark": "#ffffff",
+        "light": "#ffffff",
+      },
+      "onPlayAction": {
+        "payload": {
+          "src": "https://media.example/v.mp3",
+        },
+        "type": "chat.voice.play",
+      },
+      "src": "https://media.example/v.mp3",
+      "type": "AudioPlayer",
+      "waveform": true,
+    },
+  ],
+  "maxWidth": 280,
+  "minWidth": 200,
+  "padding": {
+    "x": 9,
+    "y": 7,
+  },
+  "radius": "2xl",
+  "type": "Row",
+}
+`;
+
+exports[`voiceMessage full 1`] = `
+{
+  "align": "center",
+  "background": "#123456",
+  "children": [
+    {
+      "accent": "#123456",
+      "barCount": 3,
+      "bars": [
+        1,
+        4,
+        2,
+      ],
+      "duration": 12,
+      "onAccent": "#ffffff",
+      "onPlayAction": {
+        "payload": {
+          "src": "https://media.example/v.mp3",
+        },
+        "type": "chat.voice.play",
+      },
+      "src": "https://media.example/v.mp3",
+      "type": "AudioPlayer",
+      "waveform": true,
+    },
+  ],
+  "maxWidth": 280,
+  "minWidth": 200,
+  "padding": {
+    "x": 9,
+    "y": 7,
+  },
+  "radius": "2xl",
+  "type": "Row",
+}
+`;
+
+exports[`videoMessage minimal 1`] = `
+{
+  "background": "#000",
+  "children": [
+    {
+      "controls": true,
+      "src": "https://media.example/v.mp4",
+      "type": "VideoPlayer",
+    },
+  ],
+  "radius": "md",
+  "type": "Box",
+  "width": 220,
+}
+`;
+
+exports[`videoMessage full 1`] = `
+{
+  "background": "#000",
+  "children": [
+    {
+      "controls": true,
+      "poster": "https://img.example/poster.png",
+      "src": "https://media.example/v.mp4",
+      "type": "VideoPlayer",
+    },
+  ],
+  "radius": "md",
+  "type": "Box",
+  "width": 300,
+}
+`;
+
+exports[`filterChips minimal 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "children": [
+        {
+          "align": "center",
+          "background": "#eeeeee",
+          "children": [
+            {
+              "color": "#333333",
+              "size": "md",
+              "truncate": true,
+              "type": "Text",
+              "value": "All",
+            },
+          ],
+          "height": 26,
+          "padding": {
+            "x": 9,
+            "y": 2,
+          },
+          "radius": "full",
+          "type": "Row",
+        },
+      ],
+      "onClickAction": {
+        "payload": {
+          "value": "all",
+        },
+        "type": "chat.filter.select",
+      },
+      "type": "Pressable",
+    },
+  ],
+  "gap": 8,
+  "type": "Row",
+  "wrap": "wrap",
+}
+`;
+
+exports[`filterChips full 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "children": [
+        {
+          "align": "center",
+          "background": "#000000",
+          "children": [
+            {
+              "color": "#ffffff",
+              "size": "md",
+              "truncate": true,
+              "type": "Text",
+              "value": "All",
+            },
+          ],
+          "height": 26,
+          "padding": {
+            "x": 9,
+            "y": 2,
+          },
+          "radius": "full",
+          "type": "Row",
+        },
+      ],
+      "onClickAction": {
+        "payload": {
+          "value": "all",
+        },
+        "type": "custom.filter",
+      },
+      "type": "Pressable",
+    },
+    {
+      "children": [
+        {
+          "align": "center",
+          "background": "#eeeeee",
+          "children": [
+            {
+              "color": "#333333",
+              "size": "md",
+              "truncate": true,
+              "type": "Text",
+              "value": "Unread",
+            },
+          ],
+          "height": 26,
+          "padding": {
+            "x": 9,
+            "y": 2,
+          },
+          "radius": "full",
+          "type": "Row",
+        },
+      ],
+      "onClickAction": {
+        "payload": {
+          "value": "unread",
+        },
+        "type": "custom.filter",
+      },
+      "type": "Pressable",
+    },
+  ],
+  "gap": 8,
+  "type": "Row",
+  "wrap": "wrap",
+}
+`;
+
+exports[`labelBar minimal 1`] = `
+{
+  "children": [
+    {
+      "children": [
+        {
+          "align": "center",
+          "background": "#eeeeee",
+          "children": [
+            {
+              "color": "#333333",
+              "size": "md",
+              "truncate": true,
+              "type": "Text",
+              "value": "Work",
+            },
+          ],
+          "height": 26,
+          "padding": {
+            "x": 9,
+            "y": 2,
+          },
+          "radius": "full",
+          "type": "Row",
+        },
+      ],
+      "onClickAction": {
+        "payload": {
+          "value": "work",
+        },
+        "type": "chat.labelBar.chipPress",
+      },
+      "type": "Pressable",
+    },
+  ],
+  "gap": 8,
+  "padding": {
+    "bottom": 7,
+    "top": 14,
+    "x": 16,
+  },
+  "type": "ScrollRow",
+}
+`;
+
+exports[`labelBar full 1`] = `
+{
+  "children": [
+    {
+      "children": [
+        {
+          "align": "center",
+          "background": "#000000",
+          "children": [
+            {
+              "color": "#ffffff",
+              "size": "md",
+              "truncate": true,
+              "type": "Text",
+              "value": "Work",
+            },
+          ],
+          "height": 26,
+          "padding": {
+            "x": 9,
+            "y": 2,
+          },
+          "radius": "full",
+          "type": "Row",
+        },
+      ],
+      "onClickAction": {
+        "payload": {
+          "value": "work",
+        },
+        "type": "custom.label",
+      },
+      "type": "Pressable",
+    },
+    {
+      "children": [
+        {
+          "align": "center",
+          "background": "#eeeeee",
+          "children": [
+            {
+              "color": "#333333",
+              "size": "md",
+              "truncate": true,
+              "type": "Text",
+              "value": "DAO",
+            },
+          ],
+          "height": 26,
+          "padding": {
+            "x": 9,
+            "y": 2,
+          },
+          "radius": "full",
+          "type": "Row",
+        },
+      ],
+      "onClickAction": {
+        "payload": {
+          "value": "dao",
+        },
+        "type": "custom.label",
+      },
+      "type": "Pressable",
+    },
+  ],
+  "gap": 8,
+  "padding": {
+    "bottom": 7,
+    "top": 14,
+    "x": 16,
+  },
+  "type": "ScrollRow",
+}
+`;

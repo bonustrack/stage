@@ -23,13 +23,6 @@ export function useComposerAttach(getLine: () => string, onError: (m: string) =>
     stage(file);
   }
 
-  function onFileChange(ev: Event): void {
-    const input = ev.target as HTMLInputElement;
-    const file = input.files?.[0];
-    input.value = '';
-    if (file) stage(file);
-  }
-
   async function flush(): Promise<void> {
     const staged = pending.value;
     if (!staged) return;
@@ -50,5 +43,5 @@ export function useComposerAttach(getLine: () => string, onError: (m: string) =>
     } catch (e) { onError((e as Error).message); }
   }
 
-  return { pending, clear, onPaste, onFileChange, flush };
+  return { pending, clear, onPaste, stageFile: stage, flush };
 }
