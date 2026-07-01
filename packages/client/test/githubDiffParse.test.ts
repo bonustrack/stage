@@ -1,6 +1,6 @@
 
 import { describe, expect, test } from 'bun:test';
-import { parsePatch, toDiffFile } from '../lib/diffParse';
+import { parsePatch, toDiffFile } from '../src/api/github';
 
 const patch = [
   '@@ -1,3 +1,4 @@',

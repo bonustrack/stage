@@ -1,6 +1,6 @@
 
 import { useQuery } from '@tanstack/react-query';
-import type { GithubRef } from './githubDetect';
+import type { GithubRef } from '@stage-labs/client/api/github';
 
 export interface GithubMeta {
   kind: GithubRef['kind'];

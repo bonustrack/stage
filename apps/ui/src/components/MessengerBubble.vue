@@ -8,7 +8,7 @@ import { reactionsRow, type ReactionPill, REACTION_PRESS } from '@stage-labs/vie
 import { basicRoot } from '@/lib/kitRow';
 import { stampAvatarUrl, XMTP_USER_PREFIX } from '../lib/xmtp';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { mapCoordsOf, youtubeIdOf } from '../lib/embedDetect';
+import { mapCoordsOf, youtubeIdOf } from '@stage-labs/client/embed/detect';
 import { renderMarkdown } from '../lib/renderMarkdown';
 import { parseMentions } from '@stage-labs/client/xmtp/mentions';
 import { shortAddress } from '@stage-labs/client/identity/format';

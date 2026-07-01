@@ -74,9 +74,7 @@ declare global {
   const inject: typeof import('vue').inject
   const installEmbedThemeBridge: typeof import('./lib/embedBridge').installEmbedThemeBridge
   const installThemeClassEffect: typeof import('./lib/theme').installThemeClassEffect
-  const isAddressLike: typeof import('./lib/stamp').isAddressLike
   const isArchived: typeof import('./lib/archived').isArchived
-  const isDomainLike: typeof import('./lib/stamp').isDomainLike
   const isProxy: typeof import('vue').isProxy
   const isReactionEntry: typeof import('./lib/xmtpFeed').isReactionEntry
   const isReactive: typeof import('vue').isReactive
@@ -93,10 +91,8 @@ declare global {
   const loadArchivedIds: typeof import('./lib/archived').loadArchivedIds
   const loadCachedProfile: typeof import('./lib/profile').loadCachedProfile
   const loadPk: typeof import('./lib/accounts').loadPk
-  const lookupName: typeof import('./lib/stamp').lookupName
   const makeKernelClient: typeof import('./lib/zerodev').makeKernelClient
   const makePublicClient: typeof import('./lib/zerodev').makePublicClient
-  const mapCoordsOf: typeof import('./lib/embedDetect').mapCoordsOf
   const markConvRead: typeof import('./lib/channelsCache').markConvRead
   const markConvReadSynced: typeof import('./lib/xmtpConsent').markConvReadSynced
   const markConvUnread: typeof import('./lib/channelsCache').markConvUnread
@@ -130,8 +126,6 @@ declare global {
   const onUpdated: typeof import('vue').onUpdated
   const onWatcherCleanup: typeof import('vue').onWatcherCleanup
   const openDmWithAddress: typeof import('./lib/xmtpGroups').openDmWithAddress
-  const osmTileUrl: typeof import('./lib/embedDetect').osmTileUrl
-  const osmTileXY: typeof import('./lib/embedDetect').osmTileXY
   const ownEmojisByMessage: typeof import('./lib/xmtpFeed').ownEmojisByMessage
   const peerEthAddressOfDm: typeof import('./lib/xmtpResolve').peerEthAddressOfDm
   const postCloseToParent: typeof import('./lib/embedBridge').postCloseToParent
@@ -151,9 +145,7 @@ declare global {
   const resetClientScopedState: typeof import('./lib/xmtpClientState').resetClientScopedState
   const resetDisplayOverrides: typeof import('./lib/theme').resetDisplayOverrides
   const resolveComponent: typeof import('vue').resolveComponent
-  const resolveDomain: typeof import('./lib/stamp').resolveDomain
   const resolveMemberNames: typeof import('./lib/useGroupDetailHelpers').resolveMemberNames
-  const resolveSearchInputToAddress: typeof import('./lib/stamp').resolveSearchInputToAddress
   const resolveSelfAddress: typeof import('./lib/useGroupDetailHelpers').resolveSelfAddress
   const restoreWalletMnemonic: typeof import('./lib/xmtp').restoreWalletMnemonic
   const runGroupDetailEffect: typeof import('./lib/useGroupDetail.mutations').runGroupDetailEffect
@@ -244,7 +236,6 @@ declare global {
   const xmtpSendSignatureReference: typeof import('./lib/xmtpSend').xmtpSendSignatureReference
   const xmtpSendText: typeof import('./lib/xmtpSend').xmtpSendText
   const xmtpVote: typeof import('./lib/xmtpSend').xmtpVote
-  const youtubeIdOf: typeof import('./lib/embedDetect').youtubeIdOf
 }
 // for type re-export
 declare global {
@@ -412,9 +403,7 @@ declare module 'vue' {
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly installEmbedThemeBridge: UnwrapRef<typeof import('./lib/embedBridge')['installEmbedThemeBridge']>
     readonly installThemeClassEffect: UnwrapRef<typeof import('./lib/theme')['installThemeClassEffect']>
-    readonly isAddressLike: UnwrapRef<typeof import('./lib/stamp')['isAddressLike']>
     readonly isArchived: UnwrapRef<typeof import('./lib/archived')['isArchived']>
-    readonly isDomainLike: UnwrapRef<typeof import('./lib/stamp')['isDomainLike']>
     readonly isProxy: UnwrapRef<typeof import('vue')['isProxy']>
     readonly isReactionEntry: UnwrapRef<typeof import('./lib/xmtpFeed')['isReactionEntry']>
     readonly isReactive: UnwrapRef<typeof import('vue')['isReactive']>
@@ -433,7 +422,6 @@ declare module 'vue' {
     readonly loadPk: UnwrapRef<typeof import('./lib/accounts')['loadPk']>
     readonly makeKernelClient: UnwrapRef<typeof import('./lib/zerodev')['makeKernelClient']>
     readonly makePublicClient: UnwrapRef<typeof import('./lib/zerodev')['makePublicClient']>
-    readonly mapCoordsOf: UnwrapRef<typeof import('./lib/embedDetect')['mapCoordsOf']>
     readonly markConvRead: UnwrapRef<typeof import('./lib/channelsCache')['markConvRead']>
     readonly markConvReadSynced: UnwrapRef<typeof import('./lib/xmtpConsent')['markConvReadSynced']>
     readonly markConvUnread: UnwrapRef<typeof import('./lib/channelsCache')['markConvUnread']>
@@ -467,7 +455,6 @@ declare module 'vue' {
     readonly onUpdated: UnwrapRef<typeof import('vue')['onUpdated']>
     readonly onWatcherCleanup: UnwrapRef<typeof import('vue')['onWatcherCleanup']>
     readonly openDmWithAddress: UnwrapRef<typeof import('./lib/xmtpGroups')['openDmWithAddress']>
-    readonly osmTileUrl: UnwrapRef<typeof import('./lib/embedDetect')['osmTileUrl']>
     readonly ownEmojisByMessage: UnwrapRef<typeof import('./lib/xmtpFeed')['ownEmojisByMessage']>
     readonly peerEthAddressOfDm: UnwrapRef<typeof import('./lib/xmtpResolve')['peerEthAddressOfDm']>
     readonly postCloseToParent: UnwrapRef<typeof import('./lib/embedBridge')['postCloseToParent']>
@@ -487,7 +474,6 @@ declare module 'vue' {
     readonly resetClientScopedState: UnwrapRef<typeof import('./lib/xmtpClientState')['resetClientScopedState']>
     readonly resetDisplayOverrides: UnwrapRef<typeof import('./lib/theme')['resetDisplayOverrides']>
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
-    readonly resolveDomain: UnwrapRef<typeof import('./lib/stamp')['resolveDomain']>
     readonly resolveMemberNames: UnwrapRef<typeof import('./lib/useGroupDetailHelpers')['resolveMemberNames']>
     readonly resolveSelfAddress: UnwrapRef<typeof import('./lib/useGroupDetailHelpers')['resolveSelfAddress']>
     readonly restoreWalletMnemonic: UnwrapRef<typeof import('./lib/xmtp')['restoreWalletMnemonic']>
@@ -579,6 +565,5 @@ declare module 'vue' {
     readonly xmtpSendSignatureReference: UnwrapRef<typeof import('./lib/xmtpSend')['xmtpSendSignatureReference']>
     readonly xmtpSendText: UnwrapRef<typeof import('./lib/xmtpSend')['xmtpSendText']>
     readonly xmtpVote: UnwrapRef<typeof import('./lib/xmtpSend')['xmtpVote']>
-    readonly youtubeIdOf: UnwrapRef<typeof import('./lib/embedDetect')['youtubeIdOf']>
   }
 }

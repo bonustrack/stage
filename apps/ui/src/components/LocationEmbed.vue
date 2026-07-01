@@ -5,7 +5,7 @@ import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
 import { previewLinkCard, LINK_OPEN } from '@stage-labs/views';
 import { listRoot } from '@/lib/kitRow';
-import { osmTileUrl } from '../lib/embedDetect';
+import { osmTileUrl } from '@stage-labs/client/embed/detect';
 
 const props = defineProps<{ lat: number; lng: number; sourceUrl: string }>();
 

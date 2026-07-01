@@ -24,3 +24,13 @@ export {
   getSimplePrices,
   type CgPrice,
 } from './coingecko';
+export {
+  githubLinkOf,
+  parsePatch,
+  toDiffFile,
+  fetchGithubDiff,
+  type GithubRef,
+  type DiffLine,
+  type DiffFile,
+  type GithubDiff,
+} from './github';

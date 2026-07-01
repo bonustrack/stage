@@ -1,6 +1,6 @@
 
-import { youtubeIdOf, mapCoordsOf } from './embedDetect';
-import { githubLinkOf } from './githubDetect';
+import { youtubeIdOf, mapCoordsOf } from '@stage-labs/client/embed/detect';
+import { githubLinkOf } from '@stage-labs/client/api/github';
 import { previewLinkOf } from './previewLinkDetect';
 import { metroConvIdOf, metroDmPeerOf } from '@stage-labs/client/xmtp/line';
 

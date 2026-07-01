@@ -1,6 +1,6 @@
 
 import { describe, expect, test } from 'bun:test';
-import { fmtUsdValue } from '../lib/txPrices';
+import { fmtUsdValue } from '../src/wallet/prices';
 
 describe('fmtUsdValue', () => {
   test('null price -> null (amount only)', () => {

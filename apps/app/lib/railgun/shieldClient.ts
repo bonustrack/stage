@@ -5,7 +5,7 @@ import {
 } from 'viem';
 import { mainnet, sepolia } from 'viem/chains';
 import { getActiveAccountId } from '../accounts';
-import { getViemAccount } from '../accounts.keys';
+import { getViemAccount } from '../zerodev/keyring';
 import { RAILGUN_NETWORKS, type RailgunNetworkConfig } from './networks';
 import { shieldPrivateKeyMessage } from './bridge/shieldCalls';
 

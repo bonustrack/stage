@@ -1,7 +1,7 @@
 <script setup lang="ts">
 
 import { shortAddress } from '../lib/xmtp';
-import { isAddressLike, isDomainLike, resolveDomain } from '../lib/stamp';
+import { isAddressLike, isDomainLike, resolveDomain } from '@stage-labs/client/stamp/resolve';
 import { useEffectiveScheme } from '@/lib/kitTheme';
 import type { PickedMember } from '../lib/memberPicker';
 

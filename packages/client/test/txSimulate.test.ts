@@ -2,7 +2,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
   parseAssetChanges, formatAmount, humanizeRevert, insufficientEthReason, decodeRevert,
-} from '../lib/txSimulate.parse';
+} from '../src/wallet/txSimulate';
 
 const BASE = 8453;
 const USDC = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';

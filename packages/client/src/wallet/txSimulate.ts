@@ -1,5 +1,4 @@
-
-import { ASSETS, NATIVE_TOKEN_SENTINEL } from '@stage-labs/client/wallet/assets';
+import { ASSETS, NATIVE_TOKEN_SENTINEL } from './assets';
 import { decodeAbiParameters, type Hex } from 'viem';
 
 const TRANSFER_TOPIC =

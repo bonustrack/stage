@@ -5,7 +5,7 @@ import { Image } from '@stage-labs/kit/react-native/image';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box } from './layout';
 import { MediaCard } from './MediaCard';
-import { osmTileUrl } from '../lib/embedDetect';
+import { osmTileUrl } from '@stage-labs/client/embed/detect';
 import { usePalette } from '../lib/theme';
 
 export function YouTubeEmbed({ videoId, dark }: {

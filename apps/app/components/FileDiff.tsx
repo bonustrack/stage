@@ -7,7 +7,7 @@ import { Icon } from '@stage-labs/kit/react-native/icon';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Box, Row } from './layout';
 import type { Palette } from '../lib/theme';
-import type { DiffFile, DiffLine } from '../lib/diffParse';
+import type { DiffFile, DiffLine } from '@stage-labs/client/api/github';
 
 
 function lineBg(kind: DiffLine['kind'], dark: boolean): string {

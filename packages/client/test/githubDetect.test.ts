@@ -1,6 +1,6 @@
 
 import { describe, expect, test } from 'bun:test';
-import { githubLinkOf } from '../lib/githubDetect';
+import { githubLinkOf } from '../src/api/github';
 
 describe('githubLinkOf', () => {
   test('detects a bare repo link', () => {

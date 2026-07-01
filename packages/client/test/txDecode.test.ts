@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 import { encodeFunctionData, parseAbi } from 'viem';
-import { decodeCall, spoofWarning, type DecodedCall } from '../lib/txDecode';
+import { decodeCall, spoofWarning, type DecodedCall } from '../src/wallet/txDecode';
 
 const verified = (functionName: string): DecodedCall => ({
   decoded: true, verified: true, source: 'sourcify', functionName, signature: `${functionName}()`, args: [],
