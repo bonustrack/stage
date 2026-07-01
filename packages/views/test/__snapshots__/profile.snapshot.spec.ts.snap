@@ -1,0 +1,257 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`profileHeader minimal 1`] = `
+{
+  "align": "start",
+  "children": [
+    {
+      "size": "4xl",
+      "textAlign": "start",
+      "type": "Text",
+      "value": "Alice",
+      "weight": "semibold",
+    },
+  ],
+  "gap": 6,
+  "type": "Col",
+}
+`;
+
+exports[`infoRow minimal 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "children": [
+        {
+          "color": "secondary",
+          "type": "Caption",
+          "value": "ENS",
+        },
+        {
+          "size": "sm",
+          "truncate": true,
+          "type": "Text",
+          "value": "alice.eth",
+        },
+      ],
+      "flex": 1,
+      "gap": 4,
+      "type": "Col",
+    },
+  ],
+  "gap": 12,
+  "onClickAction": {
+    "payload": {
+      "label": "ENS",
+      "value": "alice.eth",
+    },
+    "type": "profile.info.press",
+  },
+  "type": "ListViewItem",
+}
+`;
+
+exports[`infoRow full 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "children": [
+        {
+          "color": "secondary",
+          "type": "Caption",
+          "value": "Address",
+        },
+        {
+          "size": "sm",
+          "truncate": true,
+          "type": "Text",
+          "value": "0xabc0000000000000000000000000000000000001",
+        },
+      ],
+      "flex": 1,
+      "gap": 4,
+      "type": "Col",
+    },
+    {
+      "color": "secondary",
+      "name": "copy",
+      "size": "sm",
+      "type": "Icon",
+    },
+  ],
+  "gap": 12,
+  "onClickAction": {
+    "payload": {
+      "kind": "address",
+      "label": "Address",
+      "value": "0xabc0000000000000000000000000000000000001",
+    },
+    "type": "custom.copy",
+  },
+  "type": "ListViewItem",
+}
+`;
+
+exports[`profileActionsRow minimal 1`] = `
+{
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "background": "#dddddd",
+          "foreground": "#111111",
+          "iconPx": 22,
+          "iconStart": "chat",
+          "onClickAction": {
+            "payload": {
+              "action": "message",
+            },
+            "type": "profile.round.press",
+          },
+          "pill": true,
+          "size": "xl",
+          "type": "Button",
+          "variant": "solid",
+        },
+        {
+          "color": "#111111",
+          "size": "md",
+          "truncate": true,
+          "type": "Text",
+          "value": "Message",
+          "weight": "semibold",
+        },
+      ],
+      "gap": 6,
+      "type": "Col",
+    },
+  ],
+  "gap": 12,
+  "justify": "start",
+  "padding": {
+    "top": 18,
+  },
+  "type": "Row",
+}
+`;
+
+exports[`profileActionsRow full 1`] = `
+{
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "background": "#dddddd",
+          "foreground": "#111111",
+          "iconPx": 22,
+          "iconStart": "chat",
+          "onClickAction": {
+            "payload": {
+              "action": "message",
+            },
+            "type": "custom.round",
+          },
+          "pill": true,
+          "size": "xl",
+          "type": "Button",
+          "variant": "solid",
+        },
+        {
+          "color": "#111111",
+          "size": "md",
+          "truncate": true,
+          "type": "Text",
+          "value": "Message",
+          "weight": "semibold",
+        },
+      ],
+      "gap": 6,
+      "type": "Col",
+    },
+    {
+      "align": "center",
+      "children": [
+        {
+          "background": "#dddddd",
+          "disabled": true,
+          "foreground": "#111111",
+          "iconPx": 22,
+          "iconStart": "banknotes",
+          "onClickAction": {
+            "payload": {
+              "action": "pay",
+            },
+            "type": "custom.round",
+          },
+          "pill": true,
+          "size": "xl",
+          "type": "Button",
+          "variant": "solid",
+        },
+        {
+          "color": "#111111",
+          "size": "md",
+          "truncate": true,
+          "type": "Text",
+          "value": "Pay",
+          "weight": "semibold",
+        },
+      ],
+      "gap": 6,
+      "type": "Col",
+    },
+  ],
+  "gap": 12,
+  "justify": "start",
+  "padding": {
+    "top": 18,
+  },
+  "type": "Row",
+}
+`;
+
+exports[`profileAddressRow minimal 1`] = `
+{
+  "children": [
+    {
+      "color": "#666666",
+      "size": "md",
+      "type": "Text",
+      "value": "0xabc0…0001",
+    },
+  ],
+  "hitSlop": 8,
+  "onClickAction": {
+    "payload": {
+      "address": "0xabc0000000000000000000000000000000000001",
+    },
+    "type": "profile.address.copy",
+  },
+  "type": "Pressable",
+}
+`;
+
+exports[`profileAddressRow full 1`] = `
+{
+  "children": [
+    {
+      "color": "#666666",
+      "size": "md",
+      "type": "Text",
+      "value": "0xabc0…0001",
+    },
+  ],
+  "hitSlop": 8,
+  "onClickAction": {
+    "payload": {
+      "address": "0xabc0000000000000000000000000000000000001",
+    },
+    "type": "custom.copy",
+  },
+  "type": "Pressable",
+}
+`;

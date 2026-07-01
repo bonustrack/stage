@@ -18,7 +18,8 @@
     "./activity/tx-row": "./src/activity/txRow.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test test/"
   },
   "dependencies": {
     "@stage-labs/kit": "workspace:*"

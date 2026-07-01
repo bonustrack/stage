@@ -1,0 +1,228 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`basicRoot minimal 1`] = `
+{
+  "children": [],
+  "type": "Basic",
+}
+`;
+
+exports[`basicRoot full 1`] = `
+{
+  "children": [
+    {
+      "type": "Text",
+      "value": "hello",
+    },
+    {
+      "type": "Caption",
+      "value": "world",
+    },
+  ],
+  "type": "Basic",
+}
+`;
+
+exports[`row minimal 1`] = `
+{
+  "children": [],
+  "type": "Row",
+}
+`;
+
+exports[`row full 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "type": "Text",
+      "value": "a",
+    },
+    {
+      "type": "Text",
+      "value": "b",
+    },
+  ],
+  "flex": 1,
+  "gap": 8,
+  "padding": {
+    "x": 12,
+    "y": 4,
+  },
+  "type": "Row",
+}
+`;
+
+exports[`col minimal 1`] = `
+{
+  "children": [],
+  "type": "Col",
+}
+`;
+
+exports[`col full 1`] = `
+{
+  "align": "start",
+  "children": [
+    {
+      "type": "Text",
+      "value": "a",
+    },
+  ],
+  "flex": 1,
+  "gap": 6,
+  "type": "Col",
+}
+`;
+
+exports[`card minimal 1`] = `
+{
+  "children": [],
+  "type": "Card",
+}
+`;
+
+exports[`card full 1`] = `
+{
+  "children": [
+    {
+      "type": "Text",
+      "value": "inside",
+    },
+  ],
+  "padding": 16,
+  "type": "Card",
+}
+`;
+
+exports[`text minimal 1`] = `
+{
+  "type": "Text",
+  "value": "hello",
+}
+`;
+
+exports[`text full 1`] = `
+{
+  "color": "secondary",
+  "size": "md",
+  "truncate": true,
+  "type": "Text",
+  "value": "hello",
+  "weight": "semibold",
+}
+`;
+
+exports[`title minimal 1`] = `
+{
+  "type": "Title",
+  "value": "Heading",
+}
+`;
+
+exports[`title full 1`] = `
+{
+  "color": "link",
+  "size": "lg",
+  "type": "Title",
+  "value": "Heading",
+  "weight": "semibold",
+}
+`;
+
+exports[`caption minimal 1`] = `
+{
+  "type": "Caption",
+  "value": "small print",
+}
+`;
+
+exports[`caption full 1`] = `
+{
+  "color": "secondary",
+  "size": "sm",
+  "type": "Caption",
+  "value": "small print",
+  "weight": "semibold",
+}
+`;
+
+exports[`markdown minimal 1`] = `
+{
+  "type": "Markdown",
+  "value": "**bold** and _italic_",
+}
+`;
+
+exports[`badge minimal 1`] = `
+{
+  "label": "NEW",
+  "type": "Badge",
+}
+`;
+
+exports[`badge full 1`] = `
+{
+  "color": "info",
+  "label": "NEW",
+  "pill": true,
+  "size": "sm",
+  "type": "Badge",
+  "variant": "soft",
+}
+`;
+
+exports[`image minimal 1`] = `
+{
+  "src": "https://img.example/pic.png",
+  "type": "Image",
+}
+`;
+
+exports[`image full 1`] = `
+{
+  "fit": "cover",
+  "radius": "full",
+  "size": 40,
+  "src": "https://img.example/pic.png",
+  "type": "Image",
+}
+`;
+
+exports[`icon minimal 1`] = `
+{
+  "name": "check",
+  "type": "Icon",
+}
+`;
+
+exports[`icon full 1`] = `
+{
+  "color": "link",
+  "name": "check",
+  "size": "lg",
+  "type": "Icon",
+}
+`;
+
+exports[`button minimal 1`] = `
+{
+  "type": "Button",
+}
+`;
+
+exports[`button full 1`] = `
+{
+  "disabled": true,
+  "label": "Send",
+  "onClickAction": {
+    "payload": {
+      "id": "b1",
+    },
+    "type": "test.press",
+  },
+  "size": "sm",
+  "type": "Button",
+  "variant": "solid",
+}
+`;

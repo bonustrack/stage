@@ -1,0 +1,295 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`screenHeader minimal (bar, back only) 1`] = `
+{
+  "align": "center",
+  "background": undefined,
+  "border": undefined,
+  "children": [
+    {
+      "children": [
+        {
+          "children": [
+            {
+              "color": "#111111",
+              "name": "arrowLeft",
+              "size": 22,
+              "type": "Icon",
+            },
+          ],
+          "padding": 4,
+          "type": "Box",
+        },
+      ],
+      "hitSlop": 8,
+      "onClickAction": {
+        "payload": undefined,
+        "type": "screen.back",
+      },
+      "type": "Pressable",
+    },
+  ],
+  "gap": 8,
+  "justify": "between",
+  "padding": {
+    "bottom": 10,
+    "top": 8,
+    "x": 12,
+  },
+  "type": "Row",
+}
+`;
+
+exports[`screenHeader full bar with text title 1`] = `
+{
+  "align": "center",
+  "background": "#ffffff",
+  "border": {
+    "bottom": {
+      "color": "#eeeeee",
+      "size": 1,
+    },
+  },
+  "children": [
+    {
+      "children": [
+        {
+          "children": [
+            {
+              "color": "#111111",
+              "name": "arrowLeft",
+              "size": 22,
+              "type": "Icon",
+            },
+          ],
+          "padding": 6,
+          "type": "Box",
+        },
+      ],
+      "hitSlop": 12,
+      "onClickAction": {
+        "payload": {
+          "from": "details",
+        },
+        "type": "custom.back",
+      },
+      "type": "Pressable",
+    },
+    {
+      "color": "#222222",
+      "flex": 1,
+      "maxLines": 1,
+      "size": "lg",
+      "truncate": true,
+      "type": "Text",
+      "value": "Details",
+      "weight": "semibold",
+    },
+    {
+      "color": "#111111",
+      "name": "dotsHorizontal",
+      "size": 22,
+      "type": "Icon",
+    },
+  ],
+  "gap": 8,
+  "justify": undefined,
+  "padding": {
+    "bottom": 12,
+    "top": 54,
+    "x": 12,
+  },
+  "type": "Row",
+}
+`;
+
+exports[`screenHeader full bar with title-kind title and flex 1`] = `
+{
+  "align": "center",
+  "background": undefined,
+  "border": undefined,
+  "children": [
+    {
+      "children": [
+        {
+          "children": [
+            {
+              "color": "#111111",
+              "name": "arrowLeft",
+              "size": 22,
+              "type": "Icon",
+            },
+          ],
+          "padding": 4,
+          "type": "Box",
+        },
+      ],
+      "hitSlop": 8,
+      "onClickAction": {
+        "payload": undefined,
+        "type": "screen.back",
+      },
+      "type": "Pressable",
+    },
+    {
+      "color": "#000000",
+      "flex": 1,
+      "maxLines": 2,
+      "size": "sm",
+      "truncate": true,
+      "type": "Title",
+      "value": "Wallet",
+      "weight": "semibold",
+    },
+  ],
+  "gap": 8,
+  "justify": undefined,
+  "padding": {
+    "bottom": 10,
+    "top": 8,
+    "x": 12,
+  },
+  "type": "Row",
+}
+`;
+
+exports[`screenHeader bar without titleStyle omits the title node 1`] = `
+{
+  "align": "center",
+  "background": undefined,
+  "border": undefined,
+  "children": [
+    {
+      "children": [
+        {
+          "children": [
+            {
+              "color": "#111111",
+              "name": "arrowLeft",
+              "size": 22,
+              "type": "Icon",
+            },
+          ],
+          "padding": 4,
+          "type": "Box",
+        },
+      ],
+      "hitSlop": 8,
+      "onClickAction": {
+        "payload": undefined,
+        "type": "screen.back",
+      },
+      "type": "Pressable",
+    },
+  ],
+  "gap": 8,
+  "justify": "between",
+  "padding": {
+    "bottom": 10,
+    "top": 8,
+    "x": 12,
+  },
+  "type": "Row",
+}
+`;
+
+exports[`screenHeader minimal overlay 1`] = `
+{
+  "align": "center",
+  "background": undefined,
+  "border": undefined,
+  "children": [
+    {
+      "children": [
+        {
+          "children": [
+            {
+              "color": "#ffffff",
+              "name": "arrowLeft",
+              "size": 22,
+              "type": "Icon",
+            },
+          ],
+          "padding": 4,
+          "type": "Box",
+        },
+      ],
+      "hitSlop": 8,
+      "onClickAction": {
+        "payload": undefined,
+        "type": "screen.back",
+      },
+      "type": "Pressable",
+    },
+  ],
+  "height": 44,
+  "justify": "between",
+  "left": 0,
+  "padding": {
+    "top": 0,
+    "x": 14,
+  },
+  "position": "absolute",
+  "right": 0,
+  "top": 0,
+  "type": "Row",
+  "zIndex": 2,
+}
+`;
+
+exports[`screenHeader full overlay 1`] = `
+{
+  "align": "center",
+  "background": "rgba(0,0,0,0.4)",
+  "border": {
+    "bottom": {
+      "color": "#333333",
+      "size": 1,
+    },
+  },
+  "children": [
+    {
+      "children": [
+        {
+          "children": [
+            {
+              "color": "#ffffff",
+              "name": "arrowLeft",
+              "size": 22,
+              "type": "Icon",
+            },
+          ],
+          "padding": 4,
+          "type": "Box",
+        },
+      ],
+      "hitSlop": 8,
+      "onClickAction": {
+        "payload": {
+          "from": "overlay",
+        },
+        "type": "custom.back",
+      },
+      "type": "Pressable",
+    },
+    {
+      "color": "#ffffff",
+      "name": "share",
+      "size": 20,
+      "type": "Icon",
+    },
+  ],
+  "height": 96,
+  "justify": "between",
+  "left": 0,
+  "padding": {
+    "top": 47,
+    "x": 14,
+  },
+  "position": "absolute",
+  "right": 0,
+  "top": 0,
+  "type": "Row",
+  "zIndex": 5,
+}
+`;

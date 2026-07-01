@@ -1,0 +1,1211 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`settingsSection minimal 1`] = `
+{
+  "children": [
+    {
+      "type": "Text",
+      "value": "content",
+    },
+  ],
+  "gap": 8,
+  "type": "Col",
+}
+`;
+
+exports[`settingsSection full 1`] = `
+{
+  "children": [
+    {
+      "color": "secondary",
+      "size": "sm",
+      "type": "Caption",
+      "value": "APPEARANCE",
+    },
+    {
+      "color": "secondary",
+      "type": "Caption",
+      "value": "Theme and display options",
+    },
+    {
+      "type": "Text",
+      "value": "content",
+    },
+  ],
+  "gap": 12,
+  "type": "Col",
+}
+`;
+
+exports[`settingsNavRow minimal 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "children": [
+        {
+          "color": "link",
+          "size": "xl",
+          "truncate": true,
+          "type": "Text",
+          "value": "Notifications",
+        },
+      ],
+      "flex": 1,
+      "type": "Col",
+    },
+    {
+      "color": "secondary",
+      "name": "chevron-right",
+      "size": "lg",
+      "type": "Icon",
+    },
+  ],
+  "gap": 12,
+  "type": "ListViewItem",
+}
+`;
+
+exports[`settingsNavRow full 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "color": "link",
+      "name": "bell",
+      "size": "xl",
+      "type": "Icon",
+    },
+    {
+      "children": [
+        {
+          "color": "link",
+          "size": "xl",
+          "truncate": true,
+          "type": "Text",
+          "value": "Notifications",
+        },
+      ],
+      "flex": 1,
+      "type": "Col",
+    },
+    {
+      "color": "secondary",
+      "truncate": true,
+      "type": "Text",
+      "value": "On",
+    },
+    {
+      "color": "secondary",
+      "name": "arrow-right",
+      "size": "lg",
+      "type": "Icon",
+    },
+  ],
+  "gap": 12,
+  "onClickAction": {
+    "payload": {
+      "screen": "notifications",
+    },
+    "type": "custom.nav",
+  },
+  "type": "ListViewItem",
+}
+`;
+
+exports[`settingsToggleRow minimal (checkbox) 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "children": [
+        {
+          "color": "text",
+          "size": "md",
+          "type": "Text",
+          "value": "Read receipts",
+          "weight": "semibold",
+        },
+      ],
+      "flex": 1,
+      "gap": 2,
+      "type": "Col",
+    },
+    {
+      "defaultChecked": false,
+      "name": "readReceipts",
+      "type": "Checkbox",
+    },
+  ],
+  "gap": 12,
+  "type": "ListViewItem",
+}
+`;
+
+exports[`settingsToggleRow full (switch) 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "children": [
+        {
+          "color": "text",
+          "size": "md",
+          "type": "Text",
+          "value": "Read receipts",
+          "weight": "semibold",
+        },
+        {
+          "color": "secondary",
+          "type": "Caption",
+          "value": "Let others see when you read messages",
+        },
+      ],
+      "flex": 1,
+      "gap": 2,
+      "type": "Col",
+    },
+    {
+      "checked": true,
+      "name": "readReceipts",
+      "onChangeAction": {
+        "payload": {
+          "name": "readReceipts",
+        },
+        "type": "custom.toggle",
+      },
+      "type": "Switch",
+    },
+  ],
+  "gap": 12,
+  "type": "ListViewItem",
+}
+`;
+
+exports[`settingsValueRow minimal 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "children": [
+        {
+          "color": "secondary",
+          "size": "md",
+          "type": "Text",
+          "value": "Version",
+        },
+      ],
+      "flex": 1,
+      "type": "Col",
+    },
+    {
+      "color": "text",
+      "size": "md",
+      "truncate": true,
+      "type": "Text",
+      "value": "1.2.3",
+    },
+  ],
+  "gap": 12,
+  "type": "ListViewItem",
+}
+`;
+
+exports[`settingsValueRow full 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "children": [
+        {
+          "color": "secondary",
+          "size": "md",
+          "type": "Text",
+          "value": "Inbox ID",
+        },
+      ],
+      "flex": 1,
+      "type": "Col",
+    },
+    {
+      "color": "text",
+      "size": "md",
+      "truncate": true,
+      "type": "Text",
+      "value": "inbox-123",
+    },
+    {
+      "color": "secondary",
+      "name": "copy",
+      "size": "sm",
+      "type": "Icon",
+    },
+  ],
+  "gap": 12,
+  "onClickAction": {
+    "payload": {
+      "kind": "inbox",
+      "label": "Inbox ID",
+      "value": "inbox-123",
+    },
+    "type": "custom.copy",
+  },
+  "type": "ListViewItem",
+}
+`;
+
+exports[`settingsButtonRow minimal 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "children": [
+        {
+          "color": "link",
+          "size": "md",
+          "type": "Text",
+          "value": "Export logs",
+          "weight": "semibold",
+        },
+      ],
+      "flex": 1,
+      "gap": 2,
+      "type": "Col",
+    },
+  ],
+  "gap": 12,
+  "onClickAction": {
+    "payload": {},
+    "type": "settings.button.press",
+  },
+  "type": "ListViewItem",
+}
+`;
+
+exports[`settingsButtonRow full (danger) 1`] = `
+{
+  "align": "start",
+  "children": [
+    {
+      "color": "danger",
+      "name": "trash",
+      "size": "xl",
+      "type": "Icon",
+    },
+    {
+      "children": [
+        {
+          "color": "danger",
+          "size": "md",
+          "type": "Text",
+          "value": "Delete account",
+          "weight": "semibold",
+        },
+        {
+          "color": "secondary",
+          "type": "Caption",
+          "value": "This cannot be undone",
+        },
+      ],
+      "flex": 1,
+      "gap": 2,
+      "type": "Col",
+    },
+  ],
+  "gap": 12,
+  "onClickAction": {
+    "payload": {
+      "id": "delete",
+    },
+    "type": "settings.button.press",
+  },
+  "type": "ListViewItem",
+}
+`;
+
+exports[`settingsThemeRow minimal (unselected) 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "color": "link",
+      "name": "sun",
+      "size": "xl",
+      "type": "Icon",
+    },
+    {
+      "children": [
+        {
+          "color": "text",
+          "size": "xl",
+          "truncate": true,
+          "type": "Text",
+          "value": "Light",
+        },
+      ],
+      "flex": 1,
+      "type": "Col",
+    },
+  ],
+  "gap": 12,
+  "onClickAction": {
+    "payload": {
+      "value": "light",
+    },
+    "type": "settings.theme.select",
+  },
+  "type": "ListViewItem",
+}
+`;
+
+exports[`settingsThemeRow full (selected with icon color) 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "color": "#8888ff",
+      "name": "moon",
+      "size": "xl",
+      "type": "Icon",
+    },
+    {
+      "children": [
+        {
+          "color": "text",
+          "size": "xl",
+          "truncate": true,
+          "type": "Text",
+          "value": "Dark",
+        },
+      ],
+      "flex": 1,
+      "type": "Col",
+    },
+    {
+      "color": "link",
+      "name": "check",
+      "size": "lg",
+      "type": "Icon",
+    },
+  ],
+  "gap": 12,
+  "onClickAction": {
+    "payload": {
+      "value": "dark",
+    },
+    "type": "settings.theme.select",
+  },
+  "type": "ListViewItem",
+}
+`;
+
+exports[`settingsSectionTitle renders a lg title 1`] = `
+{
+  "size": "lg",
+  "type": "Title",
+  "value": "Appearance",
+}
+`;
+
+exports[`settingsListRow wraps an item in a ListView 1`] = `
+{
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "children": [
+            {
+              "color": "link",
+              "size": "xl",
+              "truncate": true,
+              "type": "Text",
+              "value": "About",
+            },
+          ],
+          "flex": 1,
+          "type": "Col",
+        },
+        {
+          "color": "secondary",
+          "name": "chevron-right",
+          "size": "lg",
+          "type": "Icon",
+        },
+      ],
+      "gap": 12,
+      "type": "ListViewItem",
+    },
+  ],
+  "type": "ListView",
+}
+`;
+
+exports[`settingsRowSelectedIcon returns a check icon when selected 1`] = `
+{
+  "color": "link",
+  "name": "check",
+  "size": "lg",
+  "type": "Icon",
+}
+`;
+
+exports[`settingsHeader minimal 1`] = `
+{
+  "children": [
+    {
+      "align": "center",
+      "background": undefined,
+      "border": undefined,
+      "children": [
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "color": "#111111",
+                  "name": "arrowLeft",
+                  "size": 22,
+                  "type": "Icon",
+                },
+              ],
+              "padding": 4,
+              "type": "Box",
+            },
+          ],
+          "hitSlop": 8,
+          "onClickAction": {
+            "payload": undefined,
+            "type": "screen.back",
+          },
+          "type": "Pressable",
+        },
+        {
+          "color": undefined,
+          "flex": undefined,
+          "maxLines": undefined,
+          "size": "sm",
+          "truncate": undefined,
+          "type": "Title",
+          "value": "Settings",
+          "weight": undefined,
+        },
+      ],
+      "gap": 8,
+      "justify": undefined,
+      "padding": {
+        "bottom": 10,
+        "top": 8,
+        "x": 12,
+      },
+      "type": "Row",
+    },
+  ],
+  "type": "Basic",
+}
+`;
+
+exports[`settingsHeader full 1`] = `
+{
+  "children": [
+    {
+      "align": "center",
+      "background": "#ffffff",
+      "border": {
+        "bottom": {
+          "color": "#eeeeee",
+          "size": 1,
+        },
+      },
+      "children": [
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "color": "#111111",
+                  "name": "arrowLeft",
+                  "size": 22,
+                  "type": "Icon",
+                },
+              ],
+              "padding": 4,
+              "type": "Box",
+            },
+          ],
+          "hitSlop": 8,
+          "onClickAction": {
+            "payload": undefined,
+            "type": "screen.back",
+          },
+          "type": "Pressable",
+        },
+        {
+          "color": "#000000",
+          "flex": undefined,
+          "maxLines": undefined,
+          "size": "sm",
+          "truncate": undefined,
+          "type": "Title",
+          "value": "Settings",
+          "weight": undefined,
+        },
+      ],
+      "gap": 8,
+      "justify": undefined,
+      "padding": {
+        "bottom": 10,
+        "top": 52,
+        "x": 12,
+      },
+      "type": "Row",
+    },
+  ],
+  "type": "Basic",
+}
+`;
+
+exports[`walletInfoRow label and value 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "children": [
+        {
+          "color": "secondary",
+          "size": "md",
+          "type": "Text",
+          "value": "Name",
+        },
+      ],
+      "flex": 1,
+      "type": "Col",
+    },
+    {
+      "color": "text",
+      "size": "md",
+      "type": "Text",
+      "value": "Main",
+    },
+  ],
+  "gap": 12,
+  "type": "ListViewItem",
+}
+`;
+
+exports[`walletCopyRow label and value with copy action 1`] = `
+{
+  "align": "start",
+  "children": [
+    {
+      "children": [
+        {
+          "color": "secondary",
+          "size": "xs",
+          "type": "Text",
+          "value": "Address",
+        },
+        {
+          "color": "text",
+          "size": "md",
+          "type": "Text",
+          "value": "0xabc0000000000000000000000000000000000001",
+        },
+      ],
+      "flex": 1,
+      "gap": 4,
+      "type": "Col",
+    },
+    {
+      "color": "link",
+      "name": "copy",
+      "size": "sm",
+      "type": "Icon",
+    },
+  ],
+  "gap": 12,
+  "onClickAction": {
+    "payload": {
+      "label": "Address",
+      "value": "0xabc0000000000000000000000000000000000001",
+    },
+    "type": "settings.copy",
+  },
+  "type": "ListViewItem",
+}
+`;
+
+exports[`walletModuleRow sudo role 1`] = `
+{
+  "align": "start",
+  "children": [
+    {
+      "children": [
+        {
+          "align": "center",
+          "children": [
+            {
+              "color": "text",
+              "size": "md",
+              "type": "Text",
+              "value": "Passkey signer",
+            },
+            {
+              "color": "success",
+              "label": "SUDO",
+              "size": "sm",
+              "type": "Badge",
+              "variant": "soft",
+            },
+          ],
+          "gap": 8,
+          "type": "Row",
+        },
+        {
+          "color": "secondary",
+          "size": "xs",
+          "type": "Text",
+          "value": "Active",
+        },
+      ],
+      "flex": 1,
+      "gap": 3,
+      "type": "Col",
+    },
+  ],
+  "gap": 12,
+  "type": "ListViewItem",
+}
+`;
+
+exports[`walletModuleRow recovery role 1`] = `
+{
+  "align": "start",
+  "children": [
+    {
+      "children": [
+        {
+          "align": "center",
+          "children": [
+            {
+              "color": "text",
+              "size": "md",
+              "type": "Text",
+              "value": "Guardian module",
+            },
+            {
+              "color": "info",
+              "label": "RECOVERY",
+              "size": "sm",
+              "type": "Badge",
+              "variant": "soft",
+            },
+          ],
+          "gap": 8,
+          "type": "Row",
+        },
+        {
+          "color": "secondary",
+          "size": "xs",
+          "type": "Text",
+          "value": "Installed",
+        },
+      ],
+      "flex": 1,
+      "gap": 3,
+      "type": "Col",
+    },
+  ],
+  "gap": 12,
+  "type": "ListViewItem",
+}
+`;
+
+exports[`walletDeployRow deployed 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "color": "link",
+      "name": "checkCircle",
+      "size": "lg",
+      "type": "Icon",
+    },
+    {
+      "children": [
+        {
+          "color": "text",
+          "size": "md",
+          "type": "Text",
+          "value": "Deployed on-chain",
+        },
+      ],
+      "flex": 1,
+      "type": "Col",
+    },
+  ],
+  "gap": 12,
+  "type": "ListViewItem",
+}
+`;
+
+exports[`walletDeployRow loading 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "color": "secondary",
+      "name": "clock",
+      "size": "lg",
+      "type": "Icon",
+    },
+    {
+      "children": [
+        {
+          "color": "text",
+          "size": "md",
+          "type": "Text",
+          "value": "Checking…",
+        },
+      ],
+      "flex": 1,
+      "type": "Col",
+    },
+  ],
+  "gap": 12,
+  "type": "ListViewItem",
+}
+`;
+
+exports[`walletDeployRow counterfactual 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "color": "secondary",
+      "name": "clock",
+      "size": "lg",
+      "type": "Icon",
+    },
+    {
+      "children": [
+        {
+          "color": "text",
+          "size": "md",
+          "type": "Text",
+          "value": "Counterfactual (not yet deployed)",
+        },
+      ],
+      "flex": 1,
+      "type": "Col",
+    },
+  ],
+  "gap": 12,
+  "type": "ListViewItem",
+}
+`;
+
+exports[`walletDeployRow unknown 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "color": "secondary",
+      "name": "clock",
+      "size": "lg",
+      "type": "Icon",
+    },
+    {
+      "children": [
+        {
+          "color": "text",
+          "size": "md",
+          "type": "Text",
+          "value": "Unknown",
+        },
+      ],
+      "flex": 1,
+      "type": "Col",
+    },
+  ],
+  "gap": 12,
+  "type": "ListViewItem",
+}
+`;
+
+exports[`walletManageNode minimal (recovery row only) 1`] = `
+{
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "color": "link",
+          "name": "userGroup",
+          "size": "xl",
+          "type": "Icon",
+        },
+        {
+          "children": [
+            {
+              "color": "text",
+              "size": "md",
+              "type": "Text",
+              "value": "Set up recovery & backup phrase",
+            },
+          ],
+          "flex": 1,
+          "type": "Col",
+        },
+        {
+          "color": "link",
+          "name": "chevronRight",
+          "size": "lg",
+          "type": "Icon",
+        },
+      ],
+      "gap": 12,
+      "onClickAction": {
+        "payload": {
+          "action": "recovery",
+        },
+        "type": "settings.action.press",
+      },
+      "type": "ListViewItem",
+    },
+  ],
+  "type": "ListView",
+}
+`;
+
+exports[`walletManageNode full (busy passkey, removable, guardians set) 1`] = `
+{
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "color": "link",
+          "name": "fingerPrint",
+          "size": "xl",
+          "type": "Icon",
+        },
+        {
+          "children": [
+            {
+              "color": "text",
+              "size": "md",
+              "type": "Text",
+              "value": "Enabling passkey…",
+            },
+          ],
+          "flex": 1,
+          "type": "Col",
+        },
+        {
+          "color": "link",
+          "name": "chevronRight",
+          "size": "lg",
+          "type": "Icon",
+        },
+      ],
+      "gap": 12,
+      "onClickAction": {
+        "payload": {
+          "action": "passkey",
+        },
+        "type": "settings.action.press",
+      },
+      "type": "ListViewItem",
+    },
+    {
+      "align": "center",
+      "children": [
+        {
+          "color": "link",
+          "name": "fingerPrint",
+          "size": "xl",
+          "type": "Icon",
+        },
+        {
+          "children": [
+            {
+              "color": "text",
+              "size": "md",
+              "type": "Text",
+              "value": "Remove passkey",
+            },
+          ],
+          "flex": 1,
+          "type": "Col",
+        },
+        {
+          "color": "link",
+          "name": "chevronRight",
+          "size": "lg",
+          "type": "Icon",
+        },
+      ],
+      "gap": 12,
+      "onClickAction": {
+        "payload": {
+          "action": "removePasskey",
+        },
+        "type": "settings.action.press",
+      },
+      "type": "ListViewItem",
+    },
+    {
+      "align": "center",
+      "children": [
+        {
+          "color": "link",
+          "name": "userGroup",
+          "size": "xl",
+          "type": "Icon",
+        },
+        {
+          "children": [
+            {
+              "color": "text",
+              "size": "md",
+              "type": "Text",
+              "value": "Guardian recovery & backup phrase",
+            },
+          ],
+          "flex": 1,
+          "type": "Col",
+        },
+        {
+          "color": "link",
+          "name": "chevronRight",
+          "size": "lg",
+          "type": "Icon",
+        },
+      ],
+      "gap": 12,
+      "onClickAction": {
+        "payload": {
+          "action": "recovery",
+        },
+        "type": "settings.action.press",
+      },
+      "type": "ListViewItem",
+    },
+  ],
+  "type": "ListView",
+}
+`;
+
+exports[`walletAccountNode legacy account 1`] = `
+{
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "children": [
+            {
+              "color": "secondary",
+              "size": "md",
+              "type": "Text",
+              "value": "Name",
+            },
+          ],
+          "flex": 1,
+          "type": "Col",
+        },
+        {
+          "color": "text",
+          "size": "md",
+          "type": "Text",
+          "value": "Main",
+        },
+      ],
+      "gap": 12,
+      "type": "ListViewItem",
+    },
+    {
+      "align": "center",
+      "children": [
+        {
+          "children": [
+            {
+              "color": "secondary",
+              "size": "md",
+              "type": "Text",
+              "value": "Type",
+            },
+          ],
+          "flex": 1,
+          "type": "Col",
+        },
+        {
+          "color": "text",
+          "size": "md",
+          "type": "Text",
+          "value": "Legacy (seed)",
+        },
+      ],
+      "gap": 12,
+      "type": "ListViewItem",
+    },
+  ],
+  "type": "ListView",
+}
+`;
+
+exports[`walletAccountNode smart account with hd index and signer 1`] = `
+{
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "children": [
+            {
+              "color": "secondary",
+              "size": "md",
+              "type": "Text",
+              "value": "Name",
+            },
+          ],
+          "flex": 1,
+          "type": "Col",
+        },
+        {
+          "color": "text",
+          "size": "md",
+          "type": "Text",
+          "value": "Main",
+        },
+      ],
+      "gap": 12,
+      "type": "ListViewItem",
+    },
+    {
+      "align": "center",
+      "children": [
+        {
+          "children": [
+            {
+              "color": "secondary",
+              "size": "md",
+              "type": "Text",
+              "value": "HD index",
+            },
+          ],
+          "flex": 1,
+          "type": "Col",
+        },
+        {
+          "color": "text",
+          "size": "md",
+          "type": "Text",
+          "value": "#0",
+        },
+      ],
+      "gap": 12,
+      "type": "ListViewItem",
+    },
+    {
+      "align": "center",
+      "children": [
+        {
+          "children": [
+            {
+              "color": "secondary",
+              "size": "md",
+              "type": "Text",
+              "value": "Type",
+            },
+          ],
+          "flex": 1,
+          "type": "Col",
+        },
+        {
+          "color": "text",
+          "size": "md",
+          "type": "Text",
+          "value": "Smart account (ZeroDev Kernel)",
+        },
+      ],
+      "gap": 12,
+      "type": "ListViewItem",
+    },
+    {
+      "align": "center",
+      "children": [
+        {
+          "children": [
+            {
+              "color": "secondary",
+              "size": "md",
+              "type": "Text",
+              "value": "Active signer",
+            },
+          ],
+          "flex": 1,
+          "type": "Col",
+        },
+        {
+          "color": "text",
+          "size": "md",
+          "type": "Text",
+          "value": "passkey",
+        },
+      ],
+      "gap": 12,
+      "type": "ListViewItem",
+    },
+  ],
+  "type": "ListView",
+}
+`;
+
+exports[`walletAddressNode wraps the address copy row 1`] = `
+{
+  "children": [
+    {
+      "align": "start",
+      "children": [
+        {
+          "children": [
+            {
+              "color": "secondary",
+              "size": "xs",
+              "type": "Text",
+              "value": "Address",
+            },
+            {
+              "color": "text",
+              "size": "md",
+              "type": "Text",
+              "value": "0xabc0000000000000000000000000000000000001",
+            },
+          ],
+          "flex": 1,
+          "gap": 4,
+          "type": "Col",
+        },
+        {
+          "color": "link",
+          "name": "copy",
+          "size": "sm",
+          "type": "Icon",
+        },
+      ],
+      "gap": 12,
+      "onClickAction": {
+        "payload": {
+          "label": "Address",
+          "value": "0xabc0000000000000000000000000000000000001",
+        },
+        "type": "settings.copy",
+      },
+      "type": "ListViewItem",
+    },
+  ],
+  "type": "ListView",
+}
+`;

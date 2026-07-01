@@ -1,0 +1,92 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`onboardingStep minimal 1`] = `
+{
+  "children": [
+    {
+      "children": [
+        {
+          "type": "Title",
+          "value": "Welcome to Stage",
+        },
+      ],
+      "gap": 10,
+      "padding": {
+        "top": 8,
+      },
+      "type": "Col",
+    },
+  ],
+  "flex": 1,
+  "justify": "between",
+  "type": "Col",
+}
+`;
+
+exports[`onboardingStep full 1`] = `
+{
+  "children": [
+    {
+      "children": [
+        {
+          "radius": "lg",
+          "size": 96,
+          "src": "https://img.example/onboarding.png",
+          "type": "Image",
+        },
+        {
+          "type": "Title",
+          "value": "Create your account",
+        },
+        {
+          "color": "secondary",
+          "size": "md",
+          "type": "Text",
+          "value": "Your keys stay on this device.",
+        },
+      ],
+      "gap": 10,
+      "padding": {
+        "top": 24,
+      },
+      "type": "Col",
+    },
+    {
+      "children": [
+        {
+          "block": true,
+          "label": "Create account",
+          "onClickAction": {
+            "payload": {
+              "id": "create",
+            },
+            "type": "custom.action",
+          },
+          "size": "lg",
+          "type": "Button",
+          "variant": "solid",
+        },
+        {
+          "block": true,
+          "disabled": true,
+          "label": "Import",
+          "onClickAction": {
+            "payload": {
+              "id": "import",
+            },
+            "type": "custom.action",
+          },
+          "size": "lg",
+          "type": "Button",
+          "variant": "soft",
+        },
+      ],
+      "gap": 10,
+      "type": "Col",
+    },
+  ],
+  "flex": 1,
+  "justify": "between",
+  "type": "Col",
+}
+`;

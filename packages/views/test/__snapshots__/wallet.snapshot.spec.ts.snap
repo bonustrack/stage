@@ -1,0 +1,2234 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`tokenRow minimal 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "radius": "full",
+          "size": 40,
+          "src": "https://img.example/eth.png",
+          "type": "Image",
+        },
+        {
+          "children": [
+            {
+              "align": "center",
+              "children": [
+                {
+                  "truncate": true,
+                  "type": "Text",
+                  "value": "ETH",
+                  "weight": "semibold",
+                },
+              ],
+              "gap": 6,
+              "type": "Row",
+            },
+            {
+              "color": "secondary",
+              "type": "Caption",
+              "value": "Ethereum",
+            },
+          ],
+          "gap": 2,
+          "type": "Col",
+        },
+        {
+          "type": "Spacer",
+        },
+        {
+          "align": "end",
+          "children": [
+            {
+              "textAlign": "end",
+              "type": "Text",
+              "value": "1.2345",
+              "weight": "semibold",
+            },
+            {
+              "align": "center",
+              "children": [
+                {
+                  "color": "secondary",
+                  "type": "Caption",
+                  "value": "$3,000.00",
+                },
+                {
+                  "color": "success",
+                  "label": "+2.4%",
+                  "size": "sm",
+                  "type": "Badge",
+                  "variant": "soft",
+                },
+              ],
+              "gap": 4,
+              "justify": "end",
+              "type": "Row",
+            },
+          ],
+          "gap": 2,
+          "type": "Col",
+        },
+        {
+          "color": {
+            "dark": "#57b375",
+            "light": "#57b375",
+          },
+          "name": "chevron-right",
+          "size": "sm",
+          "type": "Icon",
+        },
+      ],
+      "flex": 1,
+      "gap": 12,
+      "type": "Row",
+    },
+  ],
+  "gap": 12,
+  "onClickAction": {
+    "payload": {
+      "tokenId": "eth-mainnet",
+    },
+    "type": "wallet.token.press",
+  },
+  "type": "ListViewItem",
+}
+`;
+
+exports[`tokenRow full with chain badge, private and negative change 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "children": [
+            {
+              "radius": "full",
+              "size": 40,
+              "src": "https://img.example/eth.png",
+              "type": "Image",
+            },
+            {
+              "radius": "full",
+              "size": 16,
+              "src": "https://img.example/base.png",
+              "type": "Image",
+            },
+          ],
+          "type": "Col",
+        },
+        {
+          "children": [
+            {
+              "align": "center",
+              "children": [
+                {
+                  "color": "secondary",
+                  "name": "shield-check",
+                  "size": "sm",
+                  "type": "Icon",
+                },
+                {
+                  "truncate": true,
+                  "type": "Text",
+                  "value": "ETH",
+                  "weight": "semibold",
+                },
+              ],
+              "gap": 6,
+              "type": "Row",
+            },
+            {
+              "color": "secondary",
+              "type": "Caption",
+              "value": "Ethereum",
+            },
+          ],
+          "gap": 2,
+          "type": "Col",
+        },
+        {
+          "type": "Spacer",
+        },
+        {
+          "align": "end",
+          "children": [
+            {
+              "textAlign": "end",
+              "type": "Text",
+              "value": "1.2345",
+              "weight": "semibold",
+            },
+            {
+              "align": "center",
+              "children": [
+                {
+                  "color": "secondary",
+                  "type": "Caption",
+                  "value": "$3,000.00",
+                },
+                {
+                  "color": "danger",
+                  "label": "-1.2%",
+                  "size": "sm",
+                  "type": "Badge",
+                  "variant": "soft",
+                },
+              ],
+              "gap": 4,
+              "justify": "end",
+              "type": "Row",
+            },
+          ],
+          "gap": 2,
+          "type": "Col",
+        },
+        {
+          "color": {
+            "dark": "#eb4c5b",
+            "light": "#eb4c5b",
+          },
+          "name": "chevron-right",
+          "size": "sm",
+          "type": "Icon",
+        },
+      ],
+      "flex": 1,
+      "gap": 12,
+      "type": "Row",
+    },
+  ],
+  "gap": 12,
+  "onClickAction": {
+    "payload": {
+      "tokenId": "eth-mainnet",
+    },
+    "type": "wallet.token.press",
+  },
+  "type": "ListViewItem",
+}
+`;
+
+exports[`tokenRow no avatar and no chevron 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "children": [
+            {
+              "align": "center",
+              "children": [
+                {
+                  "truncate": true,
+                  "type": "Text",
+                  "value": "ETH",
+                  "weight": "semibold",
+                },
+              ],
+              "gap": 6,
+              "type": "Row",
+            },
+            {
+              "color": "secondary",
+              "type": "Caption",
+              "value": "Ethereum",
+            },
+          ],
+          "gap": 2,
+          "type": "Col",
+        },
+        {
+          "type": "Spacer",
+        },
+        {
+          "align": "end",
+          "children": [
+            {
+              "textAlign": "end",
+              "type": "Text",
+              "value": "1.2345",
+              "weight": "semibold",
+            },
+            {
+              "align": "center",
+              "children": [
+                {
+                  "color": "secondary",
+                  "type": "Caption",
+                  "value": "$3,000.00",
+                },
+                {
+                  "color": "success",
+                  "label": "+2.4%",
+                  "size": "sm",
+                  "type": "Badge",
+                  "variant": "soft",
+                },
+              ],
+              "gap": 4,
+              "justify": "end",
+              "type": "Row",
+            },
+          ],
+          "gap": 2,
+          "type": "Col",
+        },
+      ],
+      "flex": 1,
+      "gap": 12,
+      "type": "Row",
+    },
+  ],
+  "gap": 12,
+  "onClickAction": {
+    "payload": {
+      "tokenId": "eth-mainnet",
+    },
+    "type": "wallet.token.press",
+  },
+  "type": "ListViewItem",
+}
+`;
+
+exports[`tokenRowBody returns the inner row of tokenRow 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "radius": "full",
+      "size": 40,
+      "src": "https://img.example/eth.png",
+      "type": "Image",
+    },
+    {
+      "children": [
+        {
+          "align": "center",
+          "children": [
+            {
+              "truncate": true,
+              "type": "Text",
+              "value": "ETH",
+              "weight": "semibold",
+            },
+          ],
+          "gap": 6,
+          "type": "Row",
+        },
+        {
+          "color": "secondary",
+          "type": "Caption",
+          "value": "Ethereum",
+        },
+      ],
+      "gap": 2,
+      "type": "Col",
+    },
+    {
+      "type": "Spacer",
+    },
+    {
+      "align": "end",
+      "children": [
+        {
+          "textAlign": "end",
+          "type": "Text",
+          "value": "1.2345",
+          "weight": "semibold",
+        },
+        {
+          "align": "center",
+          "children": [
+            {
+              "color": "secondary",
+              "type": "Caption",
+              "value": "$3,000.00",
+            },
+            {
+              "color": "success",
+              "label": "+2.4%",
+              "size": "sm",
+              "type": "Badge",
+              "variant": "soft",
+            },
+          ],
+          "gap": 4,
+          "justify": "end",
+          "type": "Row",
+        },
+      ],
+      "gap": 2,
+      "type": "Col",
+    },
+    {
+      "color": {
+        "dark": "#57b375",
+        "light": "#57b375",
+      },
+      "name": "chevron-right",
+      "size": "sm",
+      "type": "Icon",
+    },
+  ],
+  "flex": 1,
+  "gap": 12,
+  "type": "Row",
+}
+`;
+
+exports[`addressCopyRow minimal 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "children": [
+        {
+          "size": "md",
+          "truncate": true,
+          "type": "Text",
+          "value": "0xabc0000000000000000000000000000000000001",
+        },
+      ],
+      "flex": 1,
+      "type": "Col",
+    },
+    {
+      "color": "secondary",
+      "name": "copy",
+      "size": "sm",
+      "type": "Icon",
+    },
+  ],
+  "gap": 12,
+  "onClickAction": {
+    "payload": {
+      "address": "0xabc0000000000000000000000000000000000001",
+    },
+    "type": "wallet.address.copy",
+  },
+  "type": "ListViewItem",
+}
+`;
+
+exports[`addressCopyRow empty address renders a dash 1`] = `
+{
+  "align": "center",
+  "children": [
+    {
+      "children": [
+        {
+          "size": "md",
+          "truncate": true,
+          "type": "Text",
+          "value": "—",
+        },
+      ],
+      "flex": 1,
+      "type": "Col",
+    },
+    {
+      "color": "secondary",
+      "name": "copy",
+      "size": "sm",
+      "type": "Icon",
+    },
+  ],
+  "gap": 12,
+  "onClickAction": {
+    "payload": {
+      "address": "",
+    },
+    "type": "wallet.address.copy",
+  },
+  "type": "ListViewItem",
+}
+`;
+
+exports[`addressCard minimal 1`] = `
+{
+  "children": [
+    {
+      "color": "secondary",
+      "size": "sm",
+      "type": "Caption",
+      "value": "PUBLIC ADDRESS",
+    },
+    {
+      "align": "center",
+      "children": [
+        {
+          "children": [
+            {
+              "size": "md",
+              "truncate": true,
+              "type": "Text",
+              "value": "0xabc0000000000000000000000000000000000001",
+            },
+          ],
+          "flex": 1,
+          "type": "Col",
+        },
+        {
+          "color": "secondary",
+          "name": "copy",
+          "size": "sm",
+          "type": "Icon",
+        },
+      ],
+      "gap": 12,
+      "onClickAction": {
+        "payload": {
+          "address": "0xabc0000000000000000000000000000000000001",
+        },
+        "type": "wallet.address.copy",
+      },
+      "type": "ListViewItem",
+    },
+  ],
+  "gap": 8,
+  "type": "Col",
+}
+`;
+
+exports[`addressCard full 1`] = `
+{
+  "children": [
+    {
+      "color": "secondary",
+      "size": "sm",
+      "type": "Caption",
+      "value": "PUBLIC ADDRESS",
+    },
+    {
+      "align": "center",
+      "children": [
+        {
+          "children": [
+            {
+              "size": "md",
+              "truncate": true,
+              "type": "Text",
+              "value": "0xabc0000000000000000000000000000000000001",
+            },
+          ],
+          "flex": 1,
+          "type": "Col",
+        },
+        {
+          "color": "secondary",
+          "name": "copy",
+          "size": "sm",
+          "type": "Icon",
+        },
+        {
+          "color": "secondary",
+          "name": "share",
+          "size": "sm",
+          "type": "Icon",
+        },
+      ],
+      "gap": 12,
+      "onClickAction": {
+        "payload": {
+          "address": "0xabc0000000000000000000000000000000000001",
+          "kind": "public",
+        },
+        "type": "custom.copy",
+      },
+      "type": "ListViewItem",
+    },
+    {
+      "color": "secondary",
+      "textAlign": "center",
+      "type": "Caption",
+      "value": "Only send assets on Base",
+    },
+  ],
+  "gap": 8,
+  "type": "Col",
+}
+`;
+
+exports[`addressShareAction minimal uses the default share type 1`] = `
+{
+  "payload": {
+    "address": "0xabc",
+  },
+  "type": "wallet.address.share",
+}
+`;
+
+exports[`addressShareAction full uses the override and merges the payload 1`] = `
+{
+  "payload": {
+    "address": "0xabc",
+    "kind": "private",
+  },
+  "type": "custom.share",
+}
+`;
+
+exports[`receiveView with address renders a QR code 1`] = `
+{
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "align": "center",
+          "background": "#ffffff",
+          "border": {
+            "color": "#dddddd",
+            "size": 1,
+          },
+          "children": [
+            {
+              "background": "#ffffff",
+              "color": "#000000",
+              "size": 240,
+              "type": "QRCode",
+              "value": "0xabc0000000000000000000000000000000000001",
+            },
+          ],
+          "justify": "center",
+          "padding": 16,
+          "radius": "xl",
+          "type": "Box",
+        },
+        {
+          "children": [
+            {
+              "color": "secondary",
+              "size": "sm",
+              "type": "Caption",
+              "value": "PUBLIC ADDRESS",
+            },
+            {
+              "align": "center",
+              "children": [
+                {
+                  "children": [
+                    {
+                      "size": "md",
+                      "truncate": true,
+                      "type": "Text",
+                      "value": "0xabc0000000000000000000000000000000000001",
+                    },
+                  ],
+                  "flex": 1,
+                  "type": "Col",
+                },
+                {
+                  "color": "secondary",
+                  "name": "copy",
+                  "size": "sm",
+                  "type": "Icon",
+                },
+              ],
+              "gap": 12,
+              "onClickAction": {
+                "payload": {
+                  "address": "0xabc0000000000000000000000000000000000001",
+                },
+                "type": "wallet.address.copy",
+              },
+              "type": "ListViewItem",
+            },
+            {
+              "color": "secondary",
+              "textAlign": "center",
+              "type": "Caption",
+              "value": "Scan to send",
+            },
+          ],
+          "gap": 8,
+          "type": "Col",
+        },
+      ],
+      "gap": 16,
+      "type": "Col",
+    },
+  ],
+  "type": "Basic",
+}
+`;
+
+exports[`receiveView without address renders a placeholder box 1`] = `
+{
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "align": "center",
+          "background": "#ffffff",
+          "border": {
+            "color": "#dddddd",
+            "size": 1,
+          },
+          "children": [
+            {
+              "background": "#f4f4f5",
+              "height": 240,
+              "type": "Box",
+              "width": 240,
+            },
+          ],
+          "justify": "center",
+          "padding": 16,
+          "radius": "xl",
+          "type": "Box",
+        },
+        {
+          "children": [
+            {
+              "color": "secondary",
+              "size": "sm",
+              "type": "Caption",
+              "value": "PUBLIC ADDRESS",
+            },
+            {
+              "align": "center",
+              "children": [
+                {
+                  "children": [
+                    {
+                      "size": "md",
+                      "truncate": true,
+                      "type": "Text",
+                      "value": "—",
+                    },
+                  ],
+                  "flex": 1,
+                  "type": "Col",
+                },
+                {
+                  "color": "secondary",
+                  "name": "copy",
+                  "size": "sm",
+                  "type": "Icon",
+                },
+              ],
+              "gap": 12,
+              "onClickAction": {
+                "payload": {
+                  "address": "—",
+                },
+                "type": "wallet.address.copy",
+              },
+              "type": "ListViewItem",
+            },
+            {
+              "color": "secondary",
+              "textAlign": "center",
+              "type": "Caption",
+              "value": "Loading…",
+            },
+          ],
+          "gap": 8,
+          "type": "Col",
+        },
+      ],
+      "gap": 16,
+      "type": "Col",
+    },
+  ],
+  "type": "Basic",
+}
+`;
+
+exports[`tokenDetailCard minimal 1`] = `
+{
+  "children": [
+    {
+      "align": "start",
+      "children": [
+        {
+          "children": [
+            {
+              "background": "#dddddd",
+              "radius": "full",
+              "size": 72,
+              "src": "https://img.example/eth.png",
+              "type": "Image",
+            },
+            {
+              "background": "#dddddd",
+              "border": {
+                "color": "#ffffff",
+                "size": 3,
+              },
+              "bottom": -2,
+              "children": [
+                {
+                  "fit": "cover",
+                  "height": "100%",
+                  "radius": "full",
+                  "src": "https://img.example/base.png",
+                  "type": "Image",
+                  "width": "100%",
+                },
+              ],
+              "height": 30,
+              "position": "absolute",
+              "radius": "full",
+              "right": -2,
+              "type": "Box",
+              "width": 30,
+            },
+          ],
+          "height": 72,
+          "type": "Stack",
+          "width": 72,
+        },
+        {
+          "color": "link",
+          "size": "5xl",
+          "type": "Title",
+          "value": "Ethereum",
+          "weight": "semibold",
+        },
+        {
+          "border": {
+            "color": "#dddddd",
+            "size": 1,
+          },
+          "children": [
+            {
+              "color": "secondary",
+              "size": "sm",
+              "type": "Caption",
+              "value": "Base",
+            },
+          ],
+          "padding": {
+            "x": 10,
+            "y": 3,
+          },
+          "radius": "full",
+          "type": "Box",
+        },
+        {
+          "color": "link",
+          "size": "6xl",
+          "type": "Title",
+          "value": "1.2345 ETH",
+          "weight": "semibold",
+        },
+        {
+          "color": "secondary",
+          "size": "md",
+          "type": "Text",
+          "value": "$3,703.50",
+        },
+        {
+          "children": [
+            {
+              "children": [],
+              "gap": 36,
+              "justify": "start",
+              "type": "Row",
+            },
+          ],
+          "padding": {
+            "top": 12,
+          },
+          "type": "Box",
+        },
+      ],
+      "gap": 6,
+      "type": "Col",
+    },
+  ],
+  "type": "Basic",
+}
+`;
+
+exports[`tokenDetailCard full 1`] = `
+{
+  "children": [
+    {
+      "align": "start",
+      "children": [
+        {
+          "children": [
+            {
+              "background": "#dddddd",
+              "radius": "full",
+              "size": 72,
+              "src": "https://img.example/eth.png",
+              "type": "Image",
+            },
+            {
+              "background": "#dddddd",
+              "border": {
+                "color": "#ffffff",
+                "size": 3,
+              },
+              "bottom": -2,
+              "children": [
+                {
+                  "fit": "cover",
+                  "height": "100%",
+                  "radius": "full",
+                  "src": "https://img.example/base.png",
+                  "type": "Image",
+                  "width": "100%",
+                },
+              ],
+              "height": 30,
+              "position": "absolute",
+              "radius": "full",
+              "right": -2,
+              "type": "Box",
+              "width": 30,
+            },
+          ],
+          "height": 72,
+          "type": "Stack",
+          "width": 72,
+        },
+        {
+          "align": "center",
+          "children": [
+            {
+              "color": "#888888",
+              "name": "eyeOff",
+              "size": "md",
+              "type": "Icon",
+            },
+            {
+              "color": "link",
+              "size": "5xl",
+              "type": "Title",
+              "value": "Ethereum",
+              "weight": "semibold",
+            },
+          ],
+          "gap": 6,
+          "margin": {
+            "top": 8,
+          },
+          "type": "Row",
+        },
+        {
+          "border": {
+            "color": "#dddddd",
+            "size": 1,
+          },
+          "children": [
+            {
+              "color": "secondary",
+              "size": "sm",
+              "type": "Caption",
+              "value": "Base",
+            },
+          ],
+          "padding": {
+            "x": 10,
+            "y": 3,
+          },
+          "radius": "full",
+          "type": "Box",
+        },
+        {
+          "color": "link",
+          "margin": {
+            "top": 4,
+          },
+          "size": "6xl",
+          "type": "Title",
+          "value": "1.2345 ETH",
+          "weight": "semibold",
+        },
+        {
+          "color": "secondary",
+          "size": "md",
+          "type": "Text",
+          "value": "$3,703.50",
+        },
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "align": "center",
+                  "children": [
+                    {
+                      "background": "#f0f0f0",
+                      "color": "#f0f0f0",
+                      "iconSize": "xl",
+                      "iconStart": "arrow-up",
+                      "onClickAction": {
+                        "payload": {
+                          "action": "send",
+                        },
+                        "type": "wallet.action.press",
+                      },
+                      "pill": true,
+                      "size": "xl",
+                      "type": "Button",
+                      "uniform": true,
+                    },
+                    {
+                      "type": "Caption",
+                      "value": "Send",
+                      "weight": "semibold",
+                    },
+                  ],
+                  "gap": 6,
+                  "type": "Col",
+                },
+              ],
+              "gap": 36,
+              "justify": "start",
+              "type": "Row",
+            },
+          ],
+          "padding": {
+            "top": 12,
+          },
+          "type": "Box",
+        },
+      ],
+      "gap": 6,
+      "type": "Col",
+    },
+  ],
+  "type": "Basic",
+}
+`;
+
+exports[`balanceHeader minimal 1`] = `
+{
+  "children": [
+    {
+      "align": "end",
+      "children": [
+        {
+          "size": "5xl",
+          "type": "Title",
+          "value": "$1,234",
+          "weight": "semibold",
+        },
+      ],
+      "type": "Row",
+    },
+  ],
+  "gap": 12,
+  "type": "Col",
+}
+`;
+
+exports[`balanceHeader full 1`] = `
+{
+  "children": [
+    {
+      "align": "end",
+      "children": [
+        {
+          "size": "6xl",
+          "type": "Title",
+          "value": "$1,234",
+          "weight": "semibold",
+        },
+        {
+          "color": "secondary",
+          "size": "6xl",
+          "type": "Title",
+          "value": ".56",
+          "weight": "semibold",
+        },
+      ],
+      "type": "Row",
+    },
+    {
+      "color": "secondary",
+      "type": "Caption",
+      "value": "Across 3 accounts",
+    },
+    {
+      "children": [
+        {
+          "align": "center",
+          "children": [
+            {
+              "background": "#f0f0f0",
+              "color": "#f0f0f0",
+              "iconSize": "xl",
+              "iconStart": "arrow-up",
+              "onClickAction": {
+                "payload": {
+                  "action": "send",
+                },
+                "type": "wallet.action.press",
+              },
+              "pill": true,
+              "size": "xl",
+              "type": "Button",
+              "uniform": true,
+            },
+            {
+              "type": "Caption",
+              "value": "Send",
+              "weight": "semibold",
+            },
+          ],
+          "gap": 6,
+          "type": "Col",
+        },
+        {
+          "align": "center",
+          "children": [
+            {
+              "background": "#f0f0f0",
+              "color": "#f0f0f0",
+              "iconSize": "xl",
+              "iconStart": "arrow-down",
+              "onClickAction": {
+                "payload": {},
+                "type": "wallet.action.press",
+              },
+              "pill": true,
+              "size": "xl",
+              "type": "Button",
+              "uniform": true,
+            },
+            {
+              "type": "Caption",
+              "value": "Receive",
+              "weight": "semibold",
+            },
+          ],
+          "gap": 6,
+          "type": "Col",
+        },
+      ],
+      "gap": 12,
+      "justify": "start",
+      "type": "Row",
+    },
+  ],
+  "gap": 12,
+  "type": "Col",
+}
+`;
+
+exports[`stepper minimal 1`] = `
+{
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "align": "center",
+          "children": [
+            {
+              "color": "secondary",
+              "name": "circle",
+              "size": "sm",
+              "type": "Icon",
+            },
+          ],
+          "height": 18,
+          "justify": "center",
+          "type": "Box",
+          "width": 18,
+        },
+        {
+          "color": "secondary",
+          "size": "md",
+          "type": "Text",
+          "value": "Prepare",
+          "weight": "semibold",
+        },
+      ],
+      "gap": 10,
+      "type": "Row",
+    },
+  ],
+  "gap": 12,
+  "type": "Col",
+}
+`;
+
+exports[`stepper full with every state and hints 1`] = `
+{
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "align": "center",
+          "children": [
+            {
+              "color": {
+                "dark": "#57b375",
+                "light": "#57b375",
+              },
+              "name": "check-circle",
+              "size": "sm",
+              "type": "Icon",
+            },
+          ],
+          "height": 18,
+          "justify": "center",
+          "type": "Box",
+          "width": 18,
+        },
+        {
+          "color": "link",
+          "size": "md",
+          "type": "Text",
+          "value": "Prepare",
+          "weight": "semibold",
+        },
+      ],
+      "gap": 10,
+      "type": "Row",
+    },
+    {
+      "children": [
+        {
+          "align": "center",
+          "children": [
+            {
+              "align": "center",
+              "children": [
+                {
+                  "color": "link",
+                  "size": 14,
+                  "type": "Spinner",
+                },
+              ],
+              "height": 18,
+              "justify": "center",
+              "type": "Box",
+              "width": 18,
+            },
+            {
+              "color": "text",
+              "size": "md",
+              "type": "Text",
+              "value": "Prove",
+              "weight": "semibold",
+            },
+          ],
+          "gap": 10,
+          "type": "Row",
+        },
+        {
+          "color": "secondary",
+          "textAlign": "start",
+          "type": "Caption",
+          "value": "Generating proof",
+        },
+      ],
+      "gap": 2,
+      "type": "Col",
+    },
+    {
+      "align": "center",
+      "children": [
+        {
+          "align": "center",
+          "children": [
+            {
+              "color": "secondary",
+              "name": "circle",
+              "size": "sm",
+              "type": "Icon",
+            },
+          ],
+          "height": 18,
+          "justify": "center",
+          "type": "Box",
+          "width": 18,
+        },
+        {
+          "color": "secondary",
+          "size": "md",
+          "type": "Text",
+          "value": "Broadcast",
+          "weight": "semibold",
+        },
+      ],
+      "gap": 10,
+      "type": "Row",
+    },
+    {
+      "children": [
+        {
+          "align": "center",
+          "children": [
+            {
+              "align": "center",
+              "children": [
+                {
+                  "color": {
+                    "dark": "#eb4c5b",
+                    "light": "#eb4c5b",
+                  },
+                  "name": "x-circle",
+                  "size": "sm",
+                  "type": "Icon",
+                },
+              ],
+              "height": 18,
+              "justify": "center",
+              "type": "Box",
+              "width": 18,
+            },
+            {
+              "color": {
+                "dark": "#eb4c5b",
+                "light": "#eb4c5b",
+              },
+              "size": "md",
+              "type": "Text",
+              "value": "Confirm",
+              "weight": "semibold",
+            },
+          ],
+          "gap": 10,
+          "type": "Row",
+        },
+        {
+          "color": "secondary",
+          "textAlign": "start",
+          "type": "Caption",
+          "value": "Transaction reverted",
+        },
+      ],
+      "gap": 2,
+      "type": "Col",
+    },
+  ],
+  "gap": 8,
+  "type": "Col",
+}
+`;
+
+exports[`priceChart minimal 1`] = `
+{
+  "data": [
+    {
+      "price": 10,
+      "t": 1,
+    },
+    {
+      "price": 12,
+      "t": 2,
+    },
+  ],
+  "height": 160,
+  "series": [
+    {
+      "color": "link",
+      "dataKey": "price",
+      "type": "line",
+    },
+  ],
+  "showLegend": false,
+  "showYAxis": false,
+  "type": "Chart",
+  "xAxis": {
+    "dataKey": "t",
+    "hide": true,
+  },
+}
+`;
+
+exports[`priceChart full 1`] = `
+{
+  "data": [
+    {
+      "price": 10,
+      "t": "2024-01-01",
+    },
+    {
+      "price": 9,
+      "t": "2024-01-02",
+    },
+  ],
+  "height": 120,
+  "series": [
+    {
+      "color": "#00aa00",
+      "dataKey": "price",
+      "type": "area",
+    },
+  ],
+  "showLegend": false,
+  "showYAxis": false,
+  "type": "Chart",
+  "xAxis": {
+    "dataKey": "t",
+    "hide": true,
+  },
+}
+`;
+
+exports[`sendReviewList empty 1`] = `
+{
+  "children": [],
+  "type": "ListView",
+}
+`;
+
+exports[`sendReviewList with rows 1`] = `
+{
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "children": [
+            {
+              "color": "secondary",
+              "size": "md",
+              "type": "Text",
+              "value": "To",
+            },
+          ],
+          "flex": 1,
+          "type": "Col",
+        },
+        {
+          "size": "md",
+          "truncate": true,
+          "type": "Text",
+          "value": "0xabc",
+        },
+      ],
+      "gap": 12,
+      "type": "ListViewItem",
+    },
+    {
+      "align": "center",
+      "children": [
+        {
+          "children": [
+            {
+              "color": "secondary",
+              "size": "md",
+              "type": "Text",
+              "value": "Network fee",
+            },
+          ],
+          "flex": 1,
+          "type": "Col",
+        },
+        {
+          "size": "md",
+          "truncate": true,
+          "type": "Text",
+          "value": "0.0001 ETH",
+        },
+      ],
+      "gap": 12,
+      "type": "ListViewItem",
+    },
+  ],
+  "type": "ListView",
+}
+`;
+
+exports[`sendForm minimal 1`] = `
+{
+  "children": [
+    {
+      "color": "secondary",
+      "size": "sm",
+      "type": "Caption",
+      "value": "RECIPIENT",
+    },
+    {
+      "name": "to",
+      "placeholder": "Address, ENS, or 0zk",
+      "type": "Input",
+    },
+    {
+      "color": "secondary",
+      "size": "sm",
+      "type": "Caption",
+      "value": "AMOUNT",
+    },
+    {
+      "inputType": "number",
+      "name": "amount",
+      "placeholder": "0",
+      "type": "Input",
+    },
+    {
+      "block": true,
+      "color": "primary",
+      "label": "Send",
+      "onClickAction": {
+        "payload": {},
+        "type": "wallet.send.submit",
+      },
+      "submit": true,
+      "type": "Button",
+    },
+  ],
+  "direction": "col",
+  "gap": 8,
+  "onSubmitAction": {
+    "payload": {},
+    "type": "wallet.send.submit",
+  },
+  "type": "Form",
+}
+`;
+
+exports[`sendForm full 1`] = `
+{
+  "children": [
+    {
+      "color": "secondary",
+      "size": "sm",
+      "type": "Caption",
+      "value": "RECIPIENT",
+    },
+    {
+      "defaultValue": "vitalik.eth",
+      "name": "to",
+      "placeholder": "Recipient",
+      "type": "Input",
+    },
+    {
+      "color": "secondary",
+      "size": "sm",
+      "type": "Caption",
+      "value": "AMOUNT",
+    },
+    {
+      "defaultValue": "0.5",
+      "inputType": "number",
+      "name": "amount",
+      "placeholder": "0.00",
+      "type": "Input",
+    },
+    {
+      "color": "secondary",
+      "size": "sm",
+      "type": "Caption",
+      "value": "TOKEN",
+    },
+    {
+      "defaultValue": "eth",
+      "name": "token",
+      "options": [
+        {
+          "label": "ETH",
+          "value": "eth",
+        },
+        {
+          "label": "USDC",
+          "value": "usdc",
+        },
+      ],
+      "type": "Select",
+    },
+    {
+      "children": [
+        {
+          "align": "center",
+          "children": [
+            {
+              "children": [
+                {
+                  "color": "secondary",
+                  "size": "md",
+                  "type": "Text",
+                  "value": "Fee",
+                },
+              ],
+              "flex": 1,
+              "type": "Col",
+            },
+            {
+              "size": "md",
+              "truncate": true,
+              "type": "Text",
+              "value": "0.0001 ETH",
+            },
+          ],
+          "gap": 12,
+          "type": "ListViewItem",
+        },
+      ],
+      "type": "ListView",
+    },
+    {
+      "block": true,
+      "color": "primary",
+      "disabled": true,
+      "label": "Review",
+      "onClickAction": {
+        "payload": {},
+        "type": "custom.submit",
+      },
+      "submit": true,
+      "type": "Button",
+    },
+  ],
+  "direction": "col",
+  "gap": 8,
+  "onSubmitAction": {
+    "payload": {},
+    "type": "custom.submit",
+  },
+  "type": "Form",
+}
+`;
+
+exports[`sendFields minimal 1`] = `
+{
+  "children": [
+    {
+      "children": [
+        {
+          "color": "secondary",
+          "size": "sm",
+          "type": "Caption",
+          "value": "RECIPIENT",
+        },
+        {
+          "name": "recipient",
+          "onChangeAction": {
+            "payload": {
+              "field": "recipient",
+            },
+            "type": "wallet.send.fieldChange",
+          },
+          "placeholder": "0x… or name.eth",
+          "type": "TextField",
+          "value": "",
+        },
+      ],
+      "gap": 6,
+      "type": "Col",
+    },
+    {
+      "children": [
+        {
+          "align": "center",
+          "children": [
+            {
+              "color": "secondary",
+              "size": "sm",
+              "type": "Caption",
+              "value": "AMOUNT",
+            },
+            {
+              "align": "center",
+              "children": [
+                {
+                  "iconEnd": "arrowDown",
+                  "label": "ETH",
+                  "onClickAction": {
+                    "payload": {
+                      "action": "toggleUnit",
+                    },
+                    "type": "wallet.send.fieldAction",
+                  },
+                  "pill": true,
+                  "size": "sm",
+                  "type": "Button",
+                  "variant": "soft",
+                },
+                {
+                  "label": "MAX",
+                  "onClickAction": {
+                    "payload": {
+                      "action": "max",
+                    },
+                    "type": "wallet.send.fieldAction",
+                  },
+                  "size": "sm",
+                  "type": "Button",
+                  "variant": "ghost",
+                },
+              ],
+              "gap": 8,
+              "type": "Row",
+            },
+          ],
+          "justify": "between",
+          "type": "Row",
+        },
+        {
+          "name": "amount",
+          "onChangeAction": {
+            "payload": {
+              "field": "amount",
+            },
+            "type": "wallet.send.fieldChange",
+          },
+          "placeholder": "0.0",
+          "type": "TextField",
+          "value": "",
+        },
+      ],
+      "gap": 6,
+      "type": "Col",
+    },
+  ],
+  "gap": 16,
+  "type": "Col",
+}
+`;
+
+exports[`sendFields full 1`] = `
+{
+  "children": [
+    {
+      "children": [
+        {
+          "color": "secondary",
+          "size": "sm",
+          "type": "Caption",
+          "value": "RECIPIENT",
+        },
+        {
+          "name": "recipient",
+          "onChangeAction": {
+            "payload": {
+              "field": "recipient",
+            },
+            "type": "custom.change",
+          },
+          "placeholder": "Recipient",
+          "type": "TextField",
+          "value": "vitalik.eth",
+        },
+        {
+          "color": "secondary",
+          "type": "Caption",
+          "value": "Resolving…",
+        },
+        {
+          "color": "secondary",
+          "type": "Caption",
+          "value": "0xd8dA…6045",
+        },
+        {
+          "color": {
+            "dark": "#eb4c5b",
+            "light": "#eb4c5b",
+          },
+          "type": "Caption",
+          "value": "Not found",
+        },
+      ],
+      "gap": 6,
+      "type": "Col",
+    },
+    {
+      "children": [
+        {
+          "align": "center",
+          "children": [
+            {
+              "color": "secondary",
+              "size": "sm",
+              "type": "Caption",
+              "value": "AMOUNT",
+            },
+            {
+              "align": "center",
+              "children": [
+                {
+                  "iconEnd": "arrowDown",
+                  "label": "ETH",
+                  "onClickAction": {
+                    "payload": {
+                      "action": "toggleUnit",
+                    },
+                    "type": "custom.action",
+                  },
+                  "pill": true,
+                  "size": "sm",
+                  "type": "Button",
+                  "variant": "soft",
+                },
+                {
+                  "disabled": true,
+                  "label": "MAX",
+                  "onClickAction": {
+                    "payload": {
+                      "action": "max",
+                    },
+                    "type": "custom.action",
+                  },
+                  "size": "sm",
+                  "type": "Button",
+                  "variant": "ghost",
+                },
+              ],
+              "gap": 8,
+              "type": "Row",
+            },
+          ],
+          "justify": "between",
+          "type": "Row",
+        },
+        {
+          "name": "amount",
+          "onChangeAction": {
+            "payload": {
+              "field": "amount",
+            },
+            "type": "custom.change",
+          },
+          "placeholder": "0.0",
+          "type": "TextField",
+          "value": "0.5",
+        },
+        {
+          "color": "secondary",
+          "type": "Caption",
+          "value": "≈ $1,500",
+        },
+        {
+          "color": {
+            "dark": "#eb4c5b",
+            "light": "#eb4c5b",
+          },
+          "type": "Caption",
+          "value": "Insufficient balance",
+        },
+        {
+          "color": "secondary",
+          "type": "Caption",
+          "value": "Balance: 0.1 ETH",
+        },
+      ],
+      "gap": 6,
+      "type": "Col",
+    },
+  ],
+  "gap": 16,
+  "type": "Col",
+}
+`;
+
+exports[`walletActions minimal 1`] = `
+{
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "background": "#f0f0f0",
+          "color": "#f0f0f0",
+          "iconSize": "xl",
+          "iconStart": "arrow-up",
+          "onClickAction": {
+            "payload": {},
+            "type": "wallet.action.press",
+          },
+          "pill": true,
+          "size": "xl",
+          "type": "Button",
+          "uniform": true,
+        },
+        {
+          "type": "Caption",
+          "value": "Send",
+          "weight": "semibold",
+        },
+      ],
+      "gap": 6,
+      "type": "Col",
+    },
+  ],
+  "gap": 12,
+  "justify": "start",
+  "type": "Row",
+}
+`;
+
+exports[`walletActions full 1`] = `
+{
+  "children": [
+    {
+      "align": "center",
+      "children": [
+        {
+          "background": "#f0f0f0",
+          "color": "#f0f0f0",
+          "iconSize": "xl",
+          "iconStart": "arrow-up",
+          "onClickAction": {
+            "payload": {
+              "action": "send",
+            },
+            "type": "wallet.action.press",
+          },
+          "pill": true,
+          "size": "xl",
+          "type": "Button",
+          "uniform": true,
+        },
+        {
+          "type": "Caption",
+          "value": "Send",
+          "weight": "semibold",
+        },
+      ],
+      "gap": 6,
+      "type": "Col",
+    },
+    {
+      "align": "center",
+      "children": [
+        {
+          "background": {
+            "dark": "#222222",
+            "light": "#eeeeee",
+          },
+          "color": {
+            "dark": "#222222",
+            "light": "#eeeeee",
+          },
+          "iconSize": "xl",
+          "iconStart": "shield",
+          "onClickAction": {
+            "payload": {},
+            "type": "wallet.action.press",
+          },
+          "pill": true,
+          "size": "xl",
+          "type": "Button",
+          "uniform": true,
+        },
+        {
+          "type": "Caption",
+          "value": "Shield",
+          "weight": "semibold",
+        },
+      ],
+      "gap": 6,
+      "type": "Col",
+    },
+  ],
+  "gap": 36,
+  "justify": "start",
+  "type": "Row",
+}
+`;
+
+exports[`walletTabs minimal 1`] = `
+{
+  "name": "walletTab",
+  "onChangeAction": {
+    "payload": {},
+    "type": "wallet.tab.change",
+  },
+  "options": [
+    {
+      "label": "Tokens",
+      "value": "tokens",
+    },
+  ],
+  "type": "Tabs",
+  "value": "tokens",
+  "variant": "underline",
+}
+`;
+
+exports[`walletTabs full 1`] = `
+{
+  "name": "walletTab",
+  "onChangeAction": {
+    "payload": {},
+    "type": "custom.tab",
+  },
+  "options": [
+    {
+      "label": "Tokens",
+      "value": "tokens",
+    },
+    {
+      "label": "NFTs",
+      "value": "nfts",
+    },
+  ],
+  "type": "Tabs",
+  "value": "nfts",
+  "variant": "underline",
+}
+`;
+
+exports[`nftGrid minimal (placeholder tile) 1`] = `
+{
+  "children": [
+    {
+      "children": [
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "align": "center",
+                  "aspectRatio": 1,
+                  "background": "#eeeeee",
+                  "children": [
+                    {
+                      "color": "secondary",
+                      "name": "photo",
+                      "size": "2xl",
+                      "type": "Icon",
+                    },
+                  ],
+                  "justify": "center",
+                  "radius": "xl",
+                  "type": "Box",
+                  "width": "100%",
+                },
+                {
+                  "color": "link",
+                  "truncate": true,
+                  "type": "Text",
+                  "value": "Punk",
+                  "weight": "semibold",
+                },
+              ],
+              "gap": 6,
+              "type": "Col",
+            },
+          ],
+          "onClickAction": {
+            "payload": {
+              "url": "",
+            },
+            "type": "link.open",
+          },
+          "type": "Pressable",
+        },
+      ],
+      "padding": 6,
+      "type": "Box",
+      "width": "50%",
+    },
+  ],
+  "type": "Row",
+  "wrap": "wrap",
+}
+`;
+
+exports[`nftGrid full 1`] = `
+{
+  "children": [
+    {
+      "children": [
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "aspectRatio": 1,
+                  "background": "#eeeeee",
+                  "fit": "cover",
+                  "radius": "xl",
+                  "src": "https://img.example/punk.png",
+                  "type": "Image",
+                  "width": "100%",
+                },
+                {
+                  "color": "link",
+                  "truncate": true,
+                  "type": "Text",
+                  "value": "Punk",
+                  "weight": "semibold",
+                },
+                {
+                  "color": "secondary",
+                  "truncate": true,
+                  "type": "Caption",
+                  "value": "CryptoPunks",
+                },
+              ],
+              "gap": 6,
+              "type": "Col",
+            },
+          ],
+          "onClickAction": {
+            "payload": {
+              "url": "https://opensea.example/punk",
+            },
+            "type": "custom.open",
+          },
+          "type": "Pressable",
+        },
+      ],
+      "padding": 6,
+      "type": "Box",
+      "width": "50%",
+    },
+    {
+      "children": [
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "align": "center",
+                  "aspectRatio": 1,
+                  "background": "#eeeeee",
+                  "children": [
+                    {
+                      "color": "secondary",
+                      "name": "photo",
+                      "size": "2xl",
+                      "type": "Icon",
+                    },
+                  ],
+                  "justify": "center",
+                  "radius": "xl",
+                  "type": "Box",
+                  "width": "100%",
+                },
+                {
+                  "color": "link",
+                  "truncate": true,
+                  "type": "Text",
+                  "value": "Blank",
+                  "weight": "semibold",
+                },
+              ],
+              "gap": 6,
+              "type": "Col",
+            },
+          ],
+          "onClickAction": {
+            "payload": {
+              "url": "",
+            },
+            "type": "custom.open",
+          },
+          "type": "Pressable",
+        },
+      ],
+      "padding": 6,
+      "type": "Box",
+      "width": "50%",
+    },
+  ],
+  "type": "Row",
+  "wrap": "wrap",
+}
+`;
+
+exports[`noticeCard minimal 1`] = `
+{
+  "children": [
+    {
+      "align": "start",
+      "children": [
+        {
+          "children": [
+            {
+              "size": "md",
+              "type": "Text",
+              "value": "Heads up",
+              "weight": "semibold",
+            },
+          ],
+          "flex": 1,
+          "gap": 2,
+          "type": "Col",
+        },
+      ],
+      "gap": 12,
+      "type": "Row",
+    },
+  ],
+  "gap": 12,
+  "type": "Col",
+}
+`;
+
+exports[`noticeCard full 1`] = `
+{
+  "children": [
+    {
+      "align": "start",
+      "children": [
+        {
+          "color": {
+            "dark": "#ffcc00",
+            "light": "#aa8800",
+          },
+          "name": "exclamation",
+          "size": "lg",
+          "type": "Icon",
+        },
+        {
+          "children": [
+            {
+              "color": "danger",
+              "size": "md",
+              "type": "Text",
+              "value": "Backup required",
+              "weight": "semibold",
+            },
+            {
+              "color": "secondary",
+              "type": "Caption",
+              "value": "Save your recovery phrase before continuing.",
+            },
+          ],
+          "flex": 1,
+          "gap": 2,
+          "type": "Col",
+        },
+      ],
+      "gap": 12,
+      "type": "Row",
+    },
+    {
+      "children": [
+        {
+          "block": true,
+          "label": "Backup now",
+          "onClickAction": {
+            "payload": {
+              "id": "backup",
+            },
+            "type": "wallet.notice.press",
+          },
+          "type": "Button",
+          "variant": "solid",
+        },
+        {
+          "block": true,
+          "label": "Later",
+          "onClickAction": {
+            "payload": {},
+            "type": "wallet.notice.press",
+          },
+          "type": "Button",
+          "variant": "ghost",
+        },
+      ],
+      "gap": 8,
+      "type": "Col",
+    },
+  ],
+  "gap": 16,
+  "type": "Col",
+}
+`;
