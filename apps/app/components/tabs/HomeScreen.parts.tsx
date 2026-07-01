@@ -17,7 +17,7 @@ import { hasDraft, getDraft } from '../../lib/drafts';
 import { isPinned } from '../../lib/pins';
 import { requestLabelFilter } from '../../lib/labelFilterRequest';
 import type { Row as RowT } from './HomeScreen.helpers';
-import { fmtTs } from './HomeScreen.helpers';
+import { channelTimestamp } from '@stage-labs/views';
 import { DANGER } from '../../lib/theme';
 
 interface RowMenu { convId: string; title: string; isUnread: boolean; isGroup: boolean; peerAddress: string | null }
@@ -58,7 +58,7 @@ function ChannelRowItem({ item, router, setRowMenu, query }: {
       avatarAddress={rowAvatarAddress(item, isGroup)}
       square={!item.peerAddress}
       lastPreview={rowPreview(item)}
-      timestamp={fmtTs(item.lastTs)}
+      timestamp={channelTimestamp(item.lastTs)}
       unreadCount={item.unreadCount}
       markedUnread={item.markedUnread}
       pinned={isPinned(item.convId)}

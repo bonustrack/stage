@@ -14,6 +14,7 @@ import type {
 import {
   channelRow,
   highlightSegments,
+  unreadBadgeLabel,
   CHANNEL_LABEL_PRESS,
 } from '@stage-labs/views';
 import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
@@ -120,7 +121,7 @@ function TrailingBadge({ unreadCount, markedUnread, showChevron, head, bg }: {
   if (unreadCount > 0) {
     return (
       <Row minWidth={22} height={22} padding={{ x: 7 }} align="center" justify="center" radius="full" background={head}>
-        <Text weight="semibold" size="2xs" color={bg}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
+        <Text weight="semibold" size="2xs" color={bg}>{unreadBadgeLabel(unreadCount)}</Text>
       </Row>
     );
   }

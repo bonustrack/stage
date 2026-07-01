@@ -4,7 +4,7 @@ import { computed } from 'vue';
 import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { reactionsRow, type ReactionPill, REACTION_PRESS } from '@stage-labs/views';
+import { reactionsRow, bubbleTimestamp, type ReactionPill, REACTION_PRESS } from '@stage-labs/views';
 import { basicRoot } from '@/lib/kitRow';
 import { stampAvatarUrl, XMTP_USER_PREFIX } from '../lib/xmtp';
 import type { HistoryEntry } from '@stage-labs/client/types';
@@ -91,11 +91,6 @@ const senderAddress = computed(() => {
   const id = senderInboxId.value;
   return id && props.inboxToAddr ? props.inboxToAddr[id] ?? null : null;
 });
-
-function fmtTs(ts: string): string {
-  try { return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }); }
-  catch { return ts.slice(11, 16); }
-}
 
 function urlOf(att: AttachmentLike): string | null {
   if (att.url) return att.url;
@@ -191,7 +186,7 @@ const reactionsRegistry: WidgetActionRegistry = {
     <Col v-else class="shrink-0 mt-0.5 w-6 h-6 rounded-full bg-metro-border-dark" />
     <Col class="flex-1 min-w-0">
       <!-- Timestamp sits at the TOP of the bubble column, mirroring mobile. -->
-      <Text size="3xs" color="secondary" class="mb-0.5">{{ isPending ? 'Sending' : fmtTs(props.entry.ts) }}</Text>
+      <Text size="3xs" color="secondary" class="mb-0.5">{{ isPending ? 'Sending' : bubbleTimestamp(props.entry.ts) }}</Text>
       <!-- Mobile draws the 1.5px border only on UNREAD bubbles (borderWidth:
            unread ? 1.5 : 0). Web has no per-message unread signal yet, so read
            messages — the common case — render WITHOUT the box. -->

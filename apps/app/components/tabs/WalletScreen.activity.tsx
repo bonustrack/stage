@@ -12,6 +12,7 @@ import { shortAddress } from '../../modules/messaging';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { fetchActivityAllChains, type ActivityRow } from '../../lib/etherscan';
 import { PrivateActivitySection } from './WalletScreen.privateActivity';
+import { relTime } from '@stage-labs/client/wallet/activityFormat';
 
 type Status = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -127,13 +128,4 @@ function TxRow({ r, border }: {
       <KitRenderer node={node} />
     </Box>
   );
-}
-
-function relTime(ts: number): string {
-  const s = Math.max(0, Math.floor(Date.now() / 1000 - ts));
-  if (s < 60) return 'now';
-  if (s < 3600) return `${Math.floor(s / 60)}m`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h`;
-  if (s < 86400 * 30) return `${Math.floor(s / 86400)}d`;
-  return new Date(ts * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }

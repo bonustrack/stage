@@ -15,7 +15,8 @@ import { Avatar } from '../Avatar';
 import { ChannelRow } from '../ChannelRow';
 import { MessengerComposer } from '../MessengerComposer';
 import { useConversationState } from '../xmtp-conv/useConversationState';
-import { pollOf, txRequestOf, sigRequestOf, fmtTs } from '../MessengerBubble.helpers';
+import { pollOf, txRequestOf, sigRequestOf } from '../MessengerBubble.helpers';
+import { bubbleTimestamp } from '@stage-labs/views';
 import { PollView } from '../MessengerBubble.poll';
 import { TxRequestCard, SigRequestCard } from '../MessengerBubble.cards';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
@@ -88,7 +89,7 @@ function ControlRow({ onSkip, onOpen, dark, hint }: {
 function headerFields(authorAddr: string | null, ts: string | undefined): { authorName: string | null; postedAt: string | null } {
   return {
     authorName: authorAddr ? (getPeerName(authorAddr) ?? shortAddress(authorAddr)) : null,
-    postedAt: ts ? fmtTs(ts) : null,
+    postedAt: ts ? bubbleTimestamp(ts) : null,
   };
 }
 

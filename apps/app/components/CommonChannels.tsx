@@ -12,16 +12,7 @@ import { shortAddress } from '../modules/messaging';
 import { hasDraft, getDraft } from '../lib/drafts';
 import { isPinned } from '../lib/pins';
 import type { ProfileColors } from './ProfileScreen.parts';
-
-function fmtTs(ts: number | null): string {
-  if (!ts) return '';
-  const d = new Date(ts);
-  const today = new Date();
-  if (d.toDateString() === today.toDateString()) {
-    return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-  }
-  return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
-}
+import { channelTimestamp } from '@stage-labs/views';
 
 export function CommonChannels({ peerAddress, enabled, c }: {
   peerAddress: string | null;
@@ -62,7 +53,7 @@ export function CommonChannels({ peerAddress, enabled, c }: {
             square
             lastPreview={preview}
             subtitle={`${ch.memberCount} member${ch.memberCount === 1 ? '' : 's'}`}
-            timestamp={fmtTs(ch.lastTs)}
+            timestamp={channelTimestamp(ch.lastTs)}
             unreadCount={ch.unreadCount}
             markedUnread={ch.markedUnread}
             pinned={isPinned(ch.convId)}

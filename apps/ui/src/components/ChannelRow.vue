@@ -3,7 +3,7 @@
 import { computed } from 'vue';
 import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
 import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { channelRow, CHANNEL_PRESS } from '@stage-labs/views';
+import { channelRow, channelTimestamp, unreadBadgeLabel, CHANNEL_PRESS } from '@stage-labs/views';
 import { listRoot } from '@/lib/kitRow';
 import { stampAvatarUrl } from '../lib/xmtp';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
@@ -27,21 +27,7 @@ const renderedAvatar = computed(() => {
   return '';
 });
 
-function fmtTs(ts: number | null): string {
-  if (!ts) return '';
-  const d = new Date(ts);
-  const today = new Date();
-  if (d.toDateString() === today.toDateString()) {
-    return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-  }
-  return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
-}
-
-const unreadBadge = computed(() => {
-  if (props.unreadCount > 0) return props.unreadCount > 99 ? '99+' : String(props.unreadCount);
-  if (props.markedUnread) return '·';
-  return undefined;
-});
+const unreadBadge = computed(() => unreadBadgeLabel(props.unreadCount, props.markedUnread));
 
 const registry: WidgetActionRegistry = {
   [CHANNEL_PRESS]: () => {
@@ -62,7 +48,7 @@ const node = computed(() =>
       avatarUri: renderedAvatar.value,
       title: props.title,
       preview: preview.value,
-      timestamp: fmtTs(props.lastTs),
+      timestamp: channelTimestamp(props.lastTs),
       unreadBadge: unreadBadge.value,
     }),
   ),

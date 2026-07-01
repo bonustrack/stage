@@ -33,11 +33,6 @@ export interface Attachment {
   kind: string; mime?: string; size?: number; name?: string;
 }
 
-export function fmtTs(ts: string): string {
-  try { return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }); }
-  catch { return ts.slice(11, 16); }
-}
-
 export function attachmentsOf(entry: HistoryEntry): Attachment[] {
   const p = entry.payload as { attachments?: Attachment[] } | undefined;
   return Array.isArray(p?.attachments) ? p.attachments : [];

@@ -5,6 +5,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
 import { Col, Row, Box } from '../layout';
 import { TokenAvatar } from './WalletScreen.tokenAvatar';
+import { relTime } from '@stage-labs/client/wallet/activityFormat';
 import {
   fetchPrivateActivity,
   type PrivateActivityRow,
@@ -118,13 +119,4 @@ function PrivateTxRow({ r, head, sub, border, bg }: {
       </Col>
     </Row>
   );
-}
-
-function relTime(ts: number): string {
-  const s = Math.max(0, Math.floor(Date.now() / 1000 - ts));
-  if (s < 60) return 'now';
-  if (s < 3600) return `${Math.floor(s / 60)}m`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h`;
-  if (s < 86400 * 30) return `${Math.floor(s / 86400)}d`;
-  return new Date(ts * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
