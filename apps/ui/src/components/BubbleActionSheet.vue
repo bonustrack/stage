@@ -1,13 +1,12 @@
 <script setup lang="ts">
 
 import { computed } from 'vue';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import ViewHost from '@stage-labs/kit/vue/view-host';
 import {
+  basicRoot,
   menuSheet, type MenuSheetItem, MENU_ITEM_PRESS,
   emojiReactionRow, REACTION_EMOJI_PRESS,
 } from '@stage-labs/views';
-import { basicRoot } from '@/lib/kitRow';
 
 import type { HistoryEntry } from '@stage-labs/client/types';
 
@@ -29,15 +28,15 @@ const items = computed<MenuSheetItem[]>(() => {
 const node = computed(() => menuSheet({ items: items.value }));
 const emojiNode = computed(() => basicRoot(emojiReactionRow({ emojis: ACTION_EMOJIS })));
 
-const registry: WidgetActionRegistry = {
-  [MENU_ITEM_PRESS]: (action) => {
-    const id = action.payload.id;
+const actions = {
+  [MENU_ITEM_PRESS]: (payload: Record<string, unknown>): void => {
+    const id = payload.id;
     if (id === 'reply') emit('reply');
     else if (id === 'copy') emit('copy');
     else if (id === 'copy-link') emit('copy-link');
   },
-  [REACTION_EMOJI_PRESS]: (action) => {
-    if (typeof action.payload.emoji === 'string') emit('react', action.payload.emoji);
+  [REACTION_EMOJI_PRESS]: (payload: Record<string, unknown>): void => {
+    if (typeof payload.emoji === 'string') emit('react', payload.emoji);
   },
 };
 </script>
@@ -51,8 +50,8 @@ const registry: WidgetActionRegistry = {
     @click.self="emit('close')"
   >
     <Col class="w-full rounded-t-2xl p-4 pb-6 bg-metro-surface-light dark:bg-metro-surface-dark">
-      <KitRenderer :node="emojiNode" :registry="registry" />
-      <KitRenderer :node="node" :registry="registry" />
+      <ViewHost :node="emojiNode" :actions="actions" />
+      <ViewHost :node="node" :actions="actions" />
       <Pressable tag="button" type="button"
         class="w-full py-2.5 text-center text-sm text-metro-sub-light dark:text-metro-sub-dark"
         @click="emit('close')">Cancel</Pressable>

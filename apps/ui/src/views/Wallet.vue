@@ -3,10 +3,8 @@
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { balanceHeader, WALLET_ACTION_PRESS } from '@stage-labs/views';
-import { basicRoot } from '@/lib/kitRow';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import { basicRoot, balanceHeader, WALLET_ACTION_PRESS } from '@stage-labs/views';
 import { useWalletBalances } from '@/lib/useWalletBalances';
 import { buildSortedTokenRows } from '@stage-labs/client/wallet/tokens';
 import { fmtUsd, splitUsd } from '@stage-labs/client/wallet/format';
@@ -41,10 +39,10 @@ const heroNode = computed(() => {
   }));
 });
 
-const heroRegistry: WidgetActionRegistry = {
-  [WALLET_ACTION_PRESS]: (action) => {
-    if (action.payload.action === 'send') void router.push('/wallet/send');
-    else if (action.payload.action === 'receive') void router.push('/wallet/receive');
+const heroActions = {
+  [WALLET_ACTION_PRESS]: (payload: Record<string, unknown>): void => {
+    if (payload.action === 'send') void router.push('/wallet/send');
+    else if (payload.action === 'receive') void router.push('/wallet/receive');
   },
 };
 </script>
@@ -74,7 +72,7 @@ const heroRegistry: WidgetActionRegistry = {
       </Row>
       <Col class="pt-1 pb-5">
         <Text v-if="error" size="md" color="danger" class="pb-4">Couldn’t load balances</Text>
-        <KitRenderer :node="heroNode" :registry="heroRegistry" />
+        <ViewHost :node="heroNode" :actions="heroActions" />
       </Col>
 
       <WalletTabs v-model="tab" class="-mx-4" />

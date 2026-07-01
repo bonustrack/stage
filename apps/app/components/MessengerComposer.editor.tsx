@@ -5,10 +5,10 @@ import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import { VoiceRecorder } from '@stage-labs/kit/react-native/voice-recorder';
-import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
-import { composerInput, COMPOSER_CHANGE, COMPOSER_SELECTION } from '@stage-labs/views';
+import type { PayloadHandlers, WidgetRoot } from '@stage-labs/kit/kit';
+import { basicRoot, composerInput, COMPOSER_CHANGE, COMPOSER_SELECTION } from '@stage-labs/views';
 import { Box, Col } from './layout';
 import { usePalette, useRadius } from '../lib/theme';
 
@@ -27,31 +27,28 @@ interface EditorProps {
 }
 
 function composerInputNode(p: EditorProps): WidgetRoot {
-  return {
-    type: 'Basic',
-    children: [
-      composerInput({
-        value: p.text,
-        color: p.head,
-        placeholderColor: p.sub,
-        fontSize: fontSize('3xl'),
-        selStart: p.selection.start,
-        selEnd: p.selection.end,
-        focusNonce: p.focusNonce,
-        blurNonce: p.blurNonce,
-      }),
-    ],
-  };
+  return basicRoot(
+    composerInput({
+      value: p.text,
+      color: p.head,
+      placeholderColor: p.sub,
+      fontSize: fontSize('3xl'),
+      selStart: p.selection.start,
+      selEnd: p.selection.end,
+      focusNonce: p.focusNonce,
+      blurNonce: p.blurNonce,
+    }),
+  );
 }
 
-function composerInputRegistry(p: EditorProps): WidgetActionRegistry {
+function composerInputActions(p: EditorProps): PayloadHandlers {
   return {
-    [COMPOSER_CHANGE]: (a) => {
-      const next = a.payload.composer;
+    [COMPOSER_CHANGE]: (payload) => {
+      const next = payload.composer;
       if (typeof next === 'string') p.setText(next);
     },
-    [COMPOSER_SELECTION]: (a) => {
-      const { start, end } = a.payload;
+    [COMPOSER_SELECTION]: (payload) => {
+      const { start, end } = payload;
       if (typeof start === 'number' && typeof end === 'number') {
         p.setSelection({ start, end });
       }
@@ -75,7 +72,7 @@ function ComposerBtn({ icon, onPress, fg, chipBg, mr }: {
 function ComposerInputSlot({ p }: { p: EditorProps }): React.ReactElement {
   return (
     <Box style={{ position: 'relative' }}>
-      <KitRenderer node={composerInputNode(p)} registry={composerInputRegistry(p)} />
+      <ViewHost node={composerInputNode(p)} actions={composerInputActions(p)} />
     </Box>
   );
 }

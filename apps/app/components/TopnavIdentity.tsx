@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import { stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { basicRoot, topnavIdentity } from '@stage-labs/views';
 import { MenuSheet } from './MenuSheet';
@@ -31,7 +31,7 @@ export function TopnavIdentity(): React.ReactElement {
   return (
     <>
       <Pressable onPress={() => { setMenuOpen(true); }} hitSlop={8}>
-        <KitRenderer
+        <ViewHost
           node={basicRoot(topnavIdentity({
             avatarUri: myAddress ? stampAvatarUrl(myAddress, 28) : '',
             avatarBackground: border,

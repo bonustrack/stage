@@ -3,8 +3,8 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import type { ListViewNode } from '@stage-labs/kit/kit';
 import { settingsHeader, settingsNavRow, SCREEN_BACK, SETTINGS_NAV_PRESS } from '@stage-labs/views';
 import { listAccounts, getActiveAccountId, loadPk, canExportPrivateKey, hasWalletMnemonic, type AccountRecord } from '../../lib/accounts';
 
@@ -56,10 +56,10 @@ const recoveryNode = computed<ListViewNode>(() => ({
   })],
 }));
 
-const registry: WidgetActionRegistry = {
-  [SCREEN_BACK]: () => { router.back(); },
-  [SETTINGS_NAV_PRESS]: (action) => {
-    const to = action.payload.to;
+const actions = {
+  [SCREEN_BACK]: (): void => { router.back(); },
+  [SETTINGS_NAV_PRESS]: (payload: Record<string, unknown>): void => {
+    const to = payload.to;
     if (typeof to === 'string') void router.push(to);
   },
 };
@@ -67,7 +67,7 @@ const registry: WidgetActionRegistry = {
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <KitRenderer :node="headerNode" :registry="registry" />
+    <ViewHost :node="headerNode" :actions="actions" />
 
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-8">
       <BackupNudge />
@@ -92,10 +92,10 @@ const registry: WidgetActionRegistry = {
 
       <Text size="3xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark px-4 pt-6 pb-1">ACCOUNT SECURITY</Text>
       <Col class="w-[calc(100%-2rem)] mx-4 mt-2">
-        <KitRenderer :node="manageNode" :registry="registry" />
+        <ViewHost :node="manageNode" :actions="actions" />
       </Col>
       <Col class="w-[calc(100%-2rem)] mx-4 mt-3">
-        <KitRenderer :node="recoveryNode" :registry="registry" />
+        <ViewHost :node="recoveryNode" :actions="actions" />
       </Col>
     </Col>
   </Col>

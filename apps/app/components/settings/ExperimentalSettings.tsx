@@ -5,10 +5,10 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Col } from '../layout';
 import type { HeroIconName } from '@stage-labs/kit/react-native/icon';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type {
   ListViewNode,
-  WidgetActionRegistry,
+  PayloadHandlers,
 } from '@stage-labs/kit/kit';
 import { settingsHeader, settingsNavRow, SCREEN_BACK, SETTINGS_NAV_PRESS } from '@stage-labs/views';
 import { usePalette } from '../../lib/theme';
@@ -46,19 +46,19 @@ export function ExperimentalSettings(): React.ReactElement {
     safeTop: insets.top,
   });
 
-  const registry: WidgetActionRegistry = {
+  const actions: PayloadHandlers = {
     [SCREEN_BACK]: () => { router.back(); },
-    [SETTINGS_NAV_PRESS]: (action) => {
-      const href = action.payload.href;
+    [SETTINGS_NAV_PRESS]: (payload) => {
+      const href = payload.href;
       if (typeof href === 'string') router.push(href);
     },
   };
 
   return (
     <Col surface="surface" flex={1}>
-      <KitRenderer node={headerNode} registry={registry}/>
+      <ViewHost node={headerNode} actions={actions}/>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
-        <KitRenderer node={node} registry={registry}/>
+        <ViewHost node={node} actions={actions}/>
       </ScrollView>
     </Col>
   );

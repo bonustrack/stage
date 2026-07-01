@@ -2,12 +2,8 @@
 import { memo, useMemo } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type {
-  BasicNode,
-  WidgetActionRegistry,
-  WidgetRoot,
-} from '@stage-labs/kit/kit';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers, WidgetRoot } from '@stage-labs/kit/kit';
 import {
   basicRoot,
   tokenRowBody,
@@ -38,10 +34,10 @@ export function WalletTabs({ tab, setTab, border }: {
     })),
     [tab],
   );
-  const registry: WidgetActionRegistry = useMemo(
+  const actions: PayloadHandlers = useMemo(
     () => ({
-      [WALLET_TAB_CHANGE]: (action) => {
-        const next = action.payload.walletTab;
+      [WALLET_TAB_CHANGE]: (payload) => {
+        const next = payload.walletTab;
         if (typeof next === 'string') setTab(next as WalletTab);
       },
     }),
@@ -50,7 +46,7 @@ export function WalletTabs({ tab, setTab, border }: {
   return (
     <Row margin={{ x: 16, top: 22, bottom: 6 }} justify="start"
       style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-      <KitRenderer node={node} registry={registry} />
+      <ViewHost node={node} actions={actions} />
     </Row>
   );
 }
@@ -59,29 +55,23 @@ function tokenRowNode(r: AssetRow): WidgetRoot {
   const valueUsd = r.priceUsd === null ? null : r.priceUsd * Number(r.balance);
   const priceText = r.priceUsd === null ? r.symbol : fmtUsd(r.priceUsd, r.priceUsd < 1 ? 4 : 2);
   const changeText = r.change24h === null ? '' : `${r.change24h >= 0 ? '+' : ''}${r.change24h.toFixed(2)}%`;
-  const body: BasicNode = {
-    type: 'Basic',
-    children: [
-      tokenRowBody({
-        tokenId: `${r.chainId}:${r.symbol}`,
-        symbol: r.name,
-        name: priceText,
-        priceUsd: `${fmtBalance(r.balance)} ${r.symbol}`,
-        balance: valueUsd === null ? '—' : fmtUsd(valueUsd),
-        change24h: changeText,
-        logoUri: r.logoUrl,
-        isPrivate: r.isPrivate,
-        showAvatar: false,
-        trailingChevron: false,
-      }),
-    ],
-  };
-  return body;
+  return basicRoot(tokenRowBody({
+    tokenId: `${r.chainId}:${r.symbol}`,
+    symbol: r.name,
+    name: priceText,
+    priceUsd: `${fmtBalance(r.balance)} ${r.symbol}`,
+    balance: valueUsd === null ? '—' : fmtUsd(valueUsd),
+    change24h: changeText,
+    logoUri: r.logoUrl,
+    isPrivate: r.isPrivate,
+    showAvatar: false,
+    trailingChevron: false,
+  }));
 }
 
 export const TokenRow = memo(function TokenRow({ r, border, bg, onPress }: { r: AssetRow; onPress?: () => void } & Omit<Palette, 'card'>): React.ReactElement {
   const node = useMemo(() => tokenRowNode(r), [r]);
-  const registry: WidgetActionRegistry = useMemo(
+  const actions: PayloadHandlers = useMemo(
     () => ({ [WALLET_TOKEN_PRESS]: () => { onPress?.(); } }),
     [onPress],
   );
@@ -90,7 +80,7 @@ export const TokenRow = memo(function TokenRow({ r, border, bg, onPress }: { r: 
       <Row padding={{ y: 14 }} align="center" gap={12}>
         <TokenAvatar logoUrl={r.logoUrl} chainId={r.chainId} bg={bg} border={border} />
         <Box flex={1}>
-          <KitRenderer node={node} registry={registry} />
+          <ViewHost node={node} actions={actions} />
         </Box>
       </Row>
     </Pressable>

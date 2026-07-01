@@ -3,8 +3,8 @@
 import { computed } from 'vue';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import { fontFamily } from '@stage-labs/kit/tokens';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import type { WidgetRoot } from '@stage-labs/kit/kit';
 import { xmtpSendText, xmtpReply, xmtpSendPoll } from '../lib/xmtpSend';
 import { pollFallbackText } from '@stage-labs/client/xmtp/poll';
 import { useRequestCompose, type PaymentPayload, type SignPayload } from '../lib/useRequestCompose';
@@ -54,9 +54,9 @@ const filePickerNode = computed<WidgetRoot>(() => ({
   ],
 }));
 
-const filePickerRegistry: WidgetActionRegistry = {
-  attach_file: (a) => {
-    const files = a.payload.files;
+const filePickerActions = {
+  attach_file: (payload: Record<string, unknown>): void => {
+    const files = payload.files;
     const file = Array.isArray(files) ? (files[0] as File | undefined) : undefined;
     if (file) stageFile(file);
   },
@@ -217,7 +217,7 @@ async function send(): Promise<void> {
         <Icon name="x" :size="14" />
       </Pressable>
     </Row>
-    <KitRenderer :node="filePickerNode" :registry="filePickerRegistry" />
+    <ViewHost :node="filePickerNode" :actions="filePickerActions" />
     <!-- Full-bleed flat composer bar: textarea on top, [+ / spacer / send] row
          below. Edge-to-edge surface=raised with uniform padding 10, mirroring
          MessengerComposer.tsx ComposerEditor (Col padding={10} surface="raised"). -->

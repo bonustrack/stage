@@ -2,11 +2,10 @@
 
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import ViewHost from '@stage-labs/kit/vue/view-host';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import type { BasicNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { overflowMenu, screenHeader, OVERFLOW_MENU_PRESS, SCREEN_BACK } from '@stage-labs/views';
-import { basicRoot } from '@/lib/kitRow';
+import type { BasicNode } from '@stage-labs/kit/kit';
+import { basicRoot, overflowMenu, screenHeader, OVERFLOW_MENU_PRESS, SCREEN_BACK } from '@stage-labs/views';
 import { useGroupDetail } from '../lib/useGroupDetail';
 import { leaveGroup } from '../lib/xmtpGroups';
 
@@ -62,17 +61,17 @@ const headerNode = computed<BasicNode>(() =>
   ),
 );
 
-const menuRegistry: WidgetActionRegistry = {
-  [SCREEN_BACK]: () => { router.back(); },
-  [OVERFLOW_MENU_PRESS]: (action) => {
-    if (action.payload.id === 'leave') void onLeaveGroup();
+const menuActions = {
+  [SCREEN_BACK]: (): void => { router.back(); },
+  [OVERFLOW_MENU_PRESS]: (payload: Record<string, unknown>): void => {
+    if (payload.id === 'leave') void onLeaveGroup();
   },
 };
 </script>
 
 <template>
   <Col class="min-h-screen bg-metro-bg-light dark:bg-metro-bg-dark">
-    <KitRenderer :node="headerNode" :registry="menuRegistry" />
+    <ViewHost :node="headerNode" :actions="menuActions" />
 
     <Col v-if="leaveError" class="px-4 pb-2 text-xs text-red-500">{{ leaveError }}</Col>
 

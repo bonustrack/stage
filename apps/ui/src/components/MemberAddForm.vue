@@ -1,10 +1,8 @@
 <script setup lang="ts">
 
 import { computed, ref } from 'vue';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { memberAddForm, MEMBER_ADD_CHANGE, MEMBER_ADD_SUBMIT } from '@stage-labs/views';
-import { basicRoot } from '@/lib/kitRow';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import { basicRoot, memberAddForm, MEMBER_ADD_CHANGE, MEMBER_ADD_SUBMIT } from '@stage-labs/views';
 
 const props = defineProps<{ adding: boolean }>();
 const emit = defineEmits<(e: 'add', address: string) => void>();
@@ -21,17 +19,17 @@ function onAdd(): void {
 const node = computed(() =>
   basicRoot(memberAddForm({ draft: draft.value, adding: props.adding, valid: valid.value })));
 
-const registry: WidgetActionRegistry = {
-  [MEMBER_ADD_CHANGE]: (action) => {
-    const next = action.payload.draft;
+const actions = {
+  [MEMBER_ADD_CHANGE]: (payload: Record<string, unknown>): void => {
+    const next = payload.draft;
     if (typeof next === 'string') draft.value = next;
   },
-  [MEMBER_ADD_SUBMIT]: () => {
+  [MEMBER_ADD_SUBMIT]: (): void => {
     onAdd();
   },
 };
 </script>
 
 <template>
-  <KitRenderer :node="node" :registry="registry" />
+  <ViewHost :node="node" :actions="actions" />
 </template>

@@ -1,7 +1,7 @@
 
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
-import { pollCard, POLL_OPTION_PRESS, type PollQuestion as ViewPollQuestion } from '@stage-labs/views';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers } from '@stage-labs/kit/kit';
+import { basicRoot, pollCard, POLL_OPTION_PRESS, type PollQuestion as ViewPollQuestion } from '@stage-labs/views';
 
 import { Box } from './layout';
 import type { Poll, PollQuestion } from './MessengerBubble.helpers';
@@ -53,31 +53,28 @@ export function PollView({ poll, dark, sub, votes, ownVotes, onVote, openAnswers
   const questions = poll.questions.map((q, qi) =>
     buildQuestion(q, votes?.get(qi), ownVotes?.get(qi), multiQuestion && qi > 0),
   );
-  const node: WidgetRoot = {
-    type: 'Basic',
-    children: [
-      pollCard({
-        questions,
-        dispatchPress: true,
-        fillBackground: withAlpha(pal.link, dark ? 0.16 : 0.12),
-        selectedBackground: withAlpha(pal.link, dark ? 0.22 : 0.16),
-        selectedBorderColor: pal.link,
-        borderColor: dark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)',
-      }),
-    ],
-  };
-  const registry: WidgetActionRegistry = {
-    [POLL_OPTION_PRESS]: (action) => {
-      const qi = Number(action.payload.questionIndex);
-      const oi = Number(action.payload.optionIndex);
-      const selected = action.payload.selected === true || action.payload.selected === 'true';
+  const node = basicRoot(
+    pollCard({
+      questions,
+      dispatchPress: true,
+      fillBackground: withAlpha(pal.link, dark ? 0.16 : 0.12),
+      selectedBackground: withAlpha(pal.link, dark ? 0.22 : 0.16),
+      selectedBorderColor: pal.link,
+      borderColor: dark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)',
+    }),
+  );
+  const actions: PayloadHandlers = {
+    [POLL_OPTION_PRESS]: (payload) => {
+      const qi = Number(payload.questionIndex);
+      const oi = Number(payload.optionIndex);
+      const selected = payload.selected === true || payload.selected === 'true';
       if (Number.isNaN(qi) || Number.isNaN(oi)) return;
       onVote(qi, oi, selected ? 'removed' : 'added');
     },
   };
   return (
     <Box margin={{ top: 8 }} gap={12} style={{ alignSelf: 'stretch' }}>
-      <KitRenderer node={node} registry={registry} />
+      <ViewHost node={node} actions={actions} />
       {poll.questions.map((q, qi) => (
         q.open === true && onOpenAnswer ? (
           <OpenAnswerBlock

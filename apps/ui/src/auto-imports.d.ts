@@ -27,7 +27,6 @@ declare global {
   const addGroupMembers: typeof import('./lib/xmtpGroups').addGroupMembers
   const addSmartAccount: typeof import('./lib/xmtp').addSmartAccount
   const applyConsentToRows: typeof import('./lib/channelsCache').applyConsentToRows
-  const basicRoot: typeof import('./lib/kitRow').basicRoot
   const blockRequestConv: typeof import('./lib/xmtpRequests').blockRequestConv
   const bumpAccountEpoch: typeof import('./lib/xmtp').bumpAccountEpoch
   const cachedRows: typeof import('./lib/channelsCache').cachedRows
@@ -87,7 +86,6 @@ declare global {
   const lineOfDmPeer: typeof import('./lib/xmtp').lineOfDmPeer
   const listAccounts: typeof import('./lib/xmtp').listAccounts
   const listRequestConvs: typeof import('./lib/xmtpRequests').listRequestConvs
-  const listRoot: typeof import('./lib/kitRow').listRoot
   const loadArchivedIds: typeof import('./lib/archived').loadArchivedIds
   const loadCachedProfile: typeof import('./lib/profile').loadCachedProfile
   const loadPk: typeof import('./lib/accounts').loadPk
@@ -356,7 +354,6 @@ declare module 'vue' {
     readonly addGroupMembers: UnwrapRef<typeof import('./lib/xmtpGroups')['addGroupMembers']>
     readonly addSmartAccount: UnwrapRef<typeof import('./lib/xmtp')['addSmartAccount']>
     readonly applyConsentToRows: UnwrapRef<typeof import('./lib/channelsCache')['applyConsentToRows']>
-    readonly basicRoot: UnwrapRef<typeof import('./lib/kitRow')['basicRoot']>
     readonly blockRequestConv: UnwrapRef<typeof import('./lib/xmtpRequests')['blockRequestConv']>
     readonly bumpAccountEpoch: UnwrapRef<typeof import('./lib/xmtp')['bumpAccountEpoch']>
     readonly cachedRows: UnwrapRef<typeof import('./lib/channelsCache')['cachedRows']>
@@ -416,7 +413,6 @@ declare module 'vue' {
     readonly lineOfDmPeer: UnwrapRef<typeof import('./lib/xmtp')['lineOfDmPeer']>
     readonly listAccounts: UnwrapRef<typeof import('./lib/xmtp')['listAccounts']>
     readonly listRequestConvs: UnwrapRef<typeof import('./lib/xmtpRequests')['listRequestConvs']>
-    readonly listRoot: UnwrapRef<typeof import('./lib/kitRow')['listRoot']>
     readonly loadArchivedIds: UnwrapRef<typeof import('./lib/archived')['loadArchivedIds']>
     readonly loadCachedProfile: UnwrapRef<typeof import('./lib/profile')['loadCachedProfile']>
     readonly loadPk: UnwrapRef<typeof import('./lib/accounts')['loadPk']>

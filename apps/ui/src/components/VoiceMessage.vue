@@ -1,13 +1,11 @@
 <script setup lang="ts">
 
 import { computed, ref, watch } from 'vue';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { voiceMessage, VOICE_PLAY } from '@stage-labs/views';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import { basicRoot, voiceMessage, VOICE_PLAY } from '@stage-labs/views';
 import {
   VOICE_BAR_COUNT, voiceWaveformBars, voiceBucketRms,
 } from '@stage-labs/client/xmtp/voice';
-import { basicRoot } from '@/lib/kitRow';
 
 const props = defineProps<{ src: string }>();
 
@@ -35,11 +33,11 @@ const node = computed(() =>
   basicRoot(voiceMessage({ src: props.src, bars: bars.value, barCount: VOICE_BAR_COUNT })),
 );
 
-const registry: WidgetActionRegistry = {
-  [VOICE_PLAY]: () => undefined,
+const actions = {
+  [VOICE_PLAY]: (): void => undefined,
 };
 </script>
 
 <template>
-  <KitRenderer :node="node" :registry="registry" />
+  <ViewHost :node="node" :actions="actions" />
 </template>

@@ -13,10 +13,9 @@ import { loadPk, canExportPrivateKey } from '../lib/accounts';
 import { readProfile, loadCachedProfile } from '../lib/profile';
 import AccountImportSheet from '../components/AccountImportSheet.vue';
 import AccountExportSheet from '../components/AccountExportSheet.vue';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { accountRow, screenHeader, ACCOUNT_PRESS, SCREEN_BACK } from '@stage-labs/views';
-import { basicRoot, listRoot } from '@/lib/kitRow';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import type { ListViewNode } from '@stage-labs/kit/kit';
+import { basicRoot, listRoot, accountRow, screenHeader, ACCOUNT_PRESS, SCREEN_BACK } from '@stage-labs/views';
 
 const router = useRouter();
 const palette = useKitPalette();
@@ -171,9 +170,9 @@ function rowNode(a: AccountRecord): ListViewNode {
   );
 }
 
-const rowRegistry: WidgetActionRegistry = {
-  [ACCOUNT_PRESS]: (action) => {
-    const id = action.payload.accountId;
+const rowActions = {
+  [ACCOUNT_PRESS]: (payload: Record<string, unknown>): void => {
+    const id = payload.accountId;
     if (typeof id === 'string') void onSwitch(id);
   },
 };
@@ -188,14 +187,14 @@ const headerNode = computed(() =>
     borderColor: palette.border,
   })),
 );
-const headerRegistry: WidgetActionRegistry = {
-  [SCREEN_BACK]: () => { router.back(); },
+const headerActions = {
+  [SCREEN_BACK]: (): void => { router.back(); },
 };
 </script>
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <KitRenderer :node="headerNode" :registry="headerRegistry" />
+    <ViewHost :node="headerNode" :actions="headerActions" />
 
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-6">
       <!-- Account list + add/import rows mirror mobile AccountList: each row has a
@@ -220,7 +219,7 @@ const headerRegistry: WidgetActionRegistry = {
             :style="a.id === activeId ? { backgroundColor: palette.border } : {}"
           >
             <Col class="flex-1 min-w-0">
-              <KitRenderer :node="rowNode(a)" :registry="rowRegistry" />
+              <ViewHost :node="rowNode(a)" :actions="rowActions" />
             </Col>
             <Icon v-if="a.id === activeId" name="check" :size="20" :color="palette.link" />
             <Pressable

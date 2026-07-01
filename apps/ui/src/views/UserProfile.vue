@@ -6,8 +6,8 @@ import { resolveSelfAddress } from '../lib/useGroupDetailHelpers';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 import { useQuery } from '@tanstack/vue-query';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { BasicNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import type { BasicNode } from '@stage-labs/kit/kit';
 import {
   basicRoot, profileHeader, profileActionsRow, profileAddressRow, screenHeader,
   PROFILE_ROUND_PRESS, PROFILE_ADDRESS_COPY, SCREEN_BACK,
@@ -104,13 +104,13 @@ const headerNode = computed<BasicNode>(() => basicRoot(screenHeader({
   backPadding: 6,
 })));
 
-const registry: WidgetActionRegistry = {
-  [PROFILE_ADDRESS_COPY]: () => { void copyAddress(); },
-  [PROFILE_ROUND_PRESS]: (action) => {
-    if (action.payload.action === 'message') { if (!openingDm.value) void onMessage(); }
-    else if (action.payload.action === 'send') onSend();
+const actions = {
+  [PROFILE_ADDRESS_COPY]: (): void => { void copyAddress(); },
+  [PROFILE_ROUND_PRESS]: (payload: Record<string, unknown>): void => {
+    if (payload.action === 'message') { if (!openingDm.value) void onMessage(); }
+    else if (payload.action === 'send') onSend();
   },
-  [SCREEN_BACK]: () => { router.back(); },
+  [SCREEN_BACK]: (): void => { router.back(); },
 };
 </script>
 
@@ -118,7 +118,7 @@ const registry: WidgetActionRegistry = {
   <Col class="min-h-screen" surface="surface">
     <!-- Route header: back button, absolutely positioned over the banner,
          mirroring mobile ProfileScreen ProfileHeader (variant route). -->
-    <KitRenderer :node="headerNode" :registry="registry" />
+    <ViewHost :node="headerNode" :actions="actions" />
 
     <!-- Banner: 140px tall, border-colored, behind the surface card. -->
     <Col :style="{ height: '140px', backgroundColor: palette.border }" />
@@ -150,13 +150,13 @@ const registry: WidgetActionRegistry = {
         }"
       />
       <Col class="mt-3.5 w-full">
-        <KitRenderer :node="nameNode" />
+        <ViewHost :node="nameNode" />
       </Col>
       <Col v-if="address" class="mt-0.5">
-        <KitRenderer :node="addressNode" :registry="registry" />
+        <ViewHost :node="addressNode" :actions="actions" />
       </Col>
       <Col v-if="notSelf && address" class="w-full">
-        <KitRenderer :node="actionsNode" :registry="registry" />
+        <ViewHost :node="actionsNode" :actions="actions" />
       </Col>
     </Col>
 

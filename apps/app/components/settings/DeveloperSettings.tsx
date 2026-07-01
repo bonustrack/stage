@@ -6,12 +6,13 @@ import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box, Col } from '../layout';
 import { Caption } from '@stage-labs/kit/react-native/caption';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type {
   ListViewNode,
-  WidgetActionRegistry,
+  PayloadHandlers,
 } from '@stage-labs/kit/kit';
 import {
+  listRoot,
   settingsHeader,
   settingsToggleRow,
   settingsButtonRow,
@@ -67,18 +68,15 @@ function onNuke(setNuking: (v: boolean) => void): void {
 }
 
 function diagnosticsNode(enabled: boolean): ListViewNode {
-  return {
-    type: 'ListView',
-    children: [
-      settingsToggleRow({
-        label: 'Railgun debug console',
-        name: 'debugConsole',
-        checked: enabled,
-        description: 'Show the live Railgun bridge logs + balance-pipeline diagnostics on the Private wallet tab. Off by default - leaving it on can slow the app down.',
-        changeType: SETTINGS_TOGGLE_CHANGE,
-      }),
-    ],
-  };
+  return listRoot(
+    settingsToggleRow({
+      label: 'Railgun debug console',
+      name: 'debugConsole',
+      checked: enabled,
+      description: 'Show the live Railgun bridge logs + balance-pipeline diagnostics on the Private wallet tab. Off by default - leaving it on can slow the app down.',
+      changeType: SETTINGS_TOGGLE_CHANGE,
+    }),
+  );
 }
 
 function dangerNode(resetting: boolean, nuking: boolean): ListViewNode {
@@ -136,33 +134,33 @@ export function DeveloperSettings(): React.ReactElement {
     safeTop: insets.top,
   });
 
-  const registry: WidgetActionRegistry = {
+  const actions: PayloadHandlers = {
     [SCREEN_BACK]: () => { router.back(); },
-    [SETTINGS_TOGGLE_CHANGE]: (action) => {
-      const next = action.payload.debugConsole;
+    [SETTINGS_TOGGLE_CHANGE]: (payload) => {
+      const next = payload.debugConsole;
       if (typeof next === 'boolean') onToggle(next);
     },
-    [SETTINGS_BUTTON_PRESS]: (action) => {
-      if (action.payload.action === 'reset') onReset(setResetting);
-      else if (action.payload.action === 'nuke') onNuke(setNuking);
+    [SETTINGS_BUTTON_PRESS]: (payload) => {
+      if (payload.action === 'reset') onReset(setResetting);
+      else if (payload.action === 'nuke') onNuke(setNuking);
     },
   };
 
   return (
     <Col surface="surface" flex={1}>
-      <KitRenderer node={headerNode} registry={registry}/>
+      <ViewHost node={headerNode} actions={actions}/>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <Caption color={sub} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
           DIAGNOSTICS
         </Caption>
         <Box>
-          <KitRenderer node={diagnosticsNode(enabled)} registry={registry}/>
+          <ViewHost node={diagnosticsNode(enabled)} actions={actions}/>
         </Box>
         <Caption color={sub} style={{ paddingHorizontal: 16, paddingTop: 28, paddingBottom: 8 }}>
           DANGER ZONE
         </Caption>
         <Box>
-          <KitRenderer node={dangerNode(resetting, nuking)} registry={registry}/>
+          <ViewHost node={dangerNode(resetting, nuking)} actions={actions}/>
         </Box>
       </ScrollView>
     </Col>

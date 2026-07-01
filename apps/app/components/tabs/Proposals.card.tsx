@@ -5,9 +5,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { WidgetRoot } from '@stage-labs/kit/kit';
-import { proposalCard } from '@stage-labs/views';
+import { basicRoot, proposalCard } from '@stage-labs/views';
 import type { SignatureRequestContent } from '@stage-labs/client/xmtp/sign';
 import type { WalletSendCallsContent } from '@stage-labs/client/xmtp/tx';
 import { Box, Row, Col } from '../layout';
@@ -32,10 +32,7 @@ const KIND_LABEL: Record<RequestKind, string> = {
 };
 
 function proposalHeaderRoot(kind: RequestKind, title: string): WidgetRoot {
-  return {
-    type: 'Basic',
-    children: [proposalCard({ eyebrow: KIND_LABEL[kind], title })],
-  };
+  return basicRoot(proposalCard({ eyebrow: KIND_LABEL[kind], title }));
 }
 
 export function ProposalCard({ proposal, onAdvance }: {
@@ -52,7 +49,7 @@ function CardHeader({ kind, title, authorAddr, authorName, postedAt, fg }: {
 }): React.ReactElement {
   return (
     <>
-      <KitRenderer node={proposalHeaderRoot(kind, title)} />
+      <ViewHost node={proposalHeaderRoot(kind, title)} />
       {authorName ? (
         <Row gap={6} align="center" margin={{ top: 8 }}>
           <Avatar address={authorAddr} size="sm"/>
@@ -216,7 +213,7 @@ function MessageRequestCard({ request, onAdvance }: {
   return (
     <Col flex={1} surface="surface">
       <Box flex={1} padding={{ x: 16, top: 16 }} style={{ alignSelf: 'stretch' }}>
-        <KitRenderer node={proposalHeaderRoot('message', 'Message request')} />
+        <ViewHost node={proposalHeaderRoot('message', 'Message request')} />
         <Box margin={{ top: 12 }} style={{ alignSelf: 'stretch' }}>
           <ChannelRow
             title={displayTitle}

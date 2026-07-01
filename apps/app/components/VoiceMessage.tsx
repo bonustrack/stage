@@ -1,8 +1,8 @@
 
 import { useMemo } from 'react';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
-import { voiceMessage, VOICE_PLAY } from '@stage-labs/views';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers } from '@stage-labs/kit/kit';
+import { basicRoot, voiceMessage, VOICE_PLAY } from '@stage-labs/views';
 import { VOICE_BAR_COUNT, voiceWaveformBars } from '@stage-labs/client/xmtp/voice';
 import { Box } from './layout';
 import { useDecodedBars } from './VoiceMessage.barsCache';
@@ -14,14 +14,11 @@ export function VoiceMessage({ uri }: Props): React.ReactElement {
   const decoded = useDecodedBars(uri, VOICE_BAR_COUNT);
   const bars = decoded ?? synthetic;
 
-  const node: WidgetRoot = {
-    type: 'Basic',
-    children: [voiceMessage({ src: uri, bars, barCount: VOICE_BAR_COUNT })],
-  };
-  const registry: WidgetActionRegistry = { [VOICE_PLAY]: () => undefined };
+  const node = basicRoot(voiceMessage({ src: uri, bars, barCount: VOICE_BAR_COUNT }));
+  const actions: PayloadHandlers = { [VOICE_PLAY]: () => undefined };
   return (
     <Box margin={{ bottom: 6 }} style={{ alignSelf: 'flex-start' }}>
-      <KitRenderer node={node} registry={registry} />
+      <ViewHost node={node} actions={actions} />
     </Box>
   );
 }

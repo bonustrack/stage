@@ -1,7 +1,7 @@
 
 import { Text } from '@stage-labs/kit/react-native/text';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers, WidgetRoot } from '@stage-labs/kit/kit';
 import { stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { suggestionRow, SUGGESTION_TOGGLE } from '@stage-labs/views';
 import { usePalette } from '../../lib/theme';
@@ -33,9 +33,9 @@ export function ContactSuggestions({
     ),
   };
 
-  const registry: WidgetActionRegistry = {
-    [SUGGESTION_TOGGLE]: (action) => {
-      const address = action.payload.address;
+  const actions: PayloadHandlers = {
+    [SUGGESTION_TOGGLE]: (payload) => {
+      const address = payload.address;
       const contact = contacts.find((c) => c.address === address);
       if (contact) onToggle(contact);
     },
@@ -46,7 +46,7 @@ export function ContactSuggestions({
       <Text size="xs" role="secondary">
         Suggested contacts
       </Text>
-      <KitRenderer node={node} registry={registry} />
+      <ViewHost node={node} actions={actions} />
     </Col>
   );
 }

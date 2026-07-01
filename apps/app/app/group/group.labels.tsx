@@ -5,9 +5,9 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Input } from '@stage-labs/kit/react-native/input';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
-import { labelRow, LABEL_REMOVE } from '@stage-labs/views';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers } from '@stage-labs/kit/kit';
+import { basicRoot, labelRow, LABEL_REMOVE } from '@stage-labs/views';
 import { Box, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 import { flash } from '../../lib/toast';
@@ -45,22 +45,17 @@ interface Pal { fg: string; head: string; sub: string; border: string; rowBg: st
 function LabelChips({ labels, onRemove, p }: {
   labels: string[]; onRemove: (label: string) => void; p: Pal;
 }): React.ReactElement {
-  const node: WidgetRoot = {
-    type: 'Basic',
-    children: [
-      labelRow({
-        labels: labels.map((label) => ({ label, removable: true })),
-        background: p.rowBg,
-      }),
-    ],
-  };
-  const registry: WidgetActionRegistry = {
-    [LABEL_REMOVE]: (action) => {
-      const label = action.payload.label;
+  const node = basicRoot(labelRow({
+    labels: labels.map((label) => ({ label, removable: true })),
+    background: p.rowBg,
+  }));
+  const actions: PayloadHandlers = {
+    [LABEL_REMOVE]: (payload) => {
+      const label = payload.label;
       if (typeof label === 'string') onRemove(label);
     },
   };
-  return <KitRenderer node={node} registry={registry} />;
+  return <ViewHost node={node} actions={actions} />;
 }
 
 function LabelAddRow({ draft, setDraft, busy, onAdd, p }: {

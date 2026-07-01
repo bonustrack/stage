@@ -22,7 +22,7 @@ import { Markdown } from '@stage-labs/kit/react-native/markdown';
 import { Table } from '@stage-labs/kit/react-native/table';
 import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { WidgetRoot } from '@stage-labs/kit/kit';
 import { EXTENSION_WIDGET } from './KitSections.extensions';
 import { GallerySection } from './GallerySection';
@@ -276,7 +276,7 @@ function ContentSections({ dark, head, sub, border }: GalleryPalette): React.Rea
       </GallerySection>
 
       <GallerySection name="Chart" note="JSON widget - bar/line/area series, SVG renderer" {...sec} framed={false}>
-        <KitRenderer node={CHART_WIDGET} />
+        <ViewHost node={CHART_WIDGET} />
       </GallerySection>
 
       <GallerySection name="Scroll" note="Kit ScrollView wrapper - padding / gap shorthands" {...sec} innerPadH={14} innerPadV={12}>
@@ -305,11 +305,11 @@ function ExtensionSections({ head, sub, border }: GalleryPalette): React.ReactEl
   return (
     <GallerySection
       name="Extension nodes"
-      note="Spinner / Switch / Tabs / AvatarStack / QRCode / TextField / ColorPicker / Pressable / Audio / Video / FilePicker / VoiceRecorder - all JSON, via KitRenderer"
+      note="Spinner / Switch / Tabs / AvatarStack / QRCode / TextField / ColorPicker / Pressable / Audio / Video / FilePicker / VoiceRecorder - all JSON, via ViewHost"
       {...sec}
       framed={false}
     >
-      <KitRenderer node={EXTENSION_WIDGET} />
+      <ViewHost node={EXTENSION_WIDGET} />
     </GallerySection>
   );
 }

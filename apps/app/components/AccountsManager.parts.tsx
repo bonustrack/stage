@@ -4,9 +4,9 @@ import { Dialog } from '@stage-labs/kit/react-native/dialog';
 import { Box, Col, Row } from './layout';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
-import { accountRow, ACCOUNT_PRESS } from '@stage-labs/views';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers } from '@stage-labs/kit/kit';
+import { accountRow, listRoot, ACCOUNT_PRESS } from '@stage-labs/views';
 import { getPeerName } from '../lib/peerProfiles';
 import { shortAddress } from '../modules/messaging';
 import { type AccountRecord } from '../lib/accounts';
@@ -19,18 +19,15 @@ export function AccountRow({ rec, onPress, onLongPress, topBorder, trailing, bor
   topBorder: boolean; trailing: React.ReactNode;
   border: string;
 }): React.ReactElement {
-  const node: WidgetRoot = {
-    type: 'ListView',
-    children: [
-      accountRow({
-        accountId: rec.address,
-        avatarUri: stampAvatarUrl(rec.address, 40),
-        name: getPeerName(rec.address) ?? rec.label ?? shortAddress(rec.address),
-        address: `${shortAddress(rec.address)} · ${TYPE_LABEL[rec.type]}`,
-      }),
-    ],
-  };
-  const registry: WidgetActionRegistry = { [ACCOUNT_PRESS]: () => { onPress(); } };
+  const node = listRoot(
+    accountRow({
+      accountId: rec.address,
+      avatarUri: stampAvatarUrl(rec.address, 40),
+      name: getPeerName(rec.address) ?? rec.label ?? shortAddress(rec.address),
+      address: `${shortAddress(rec.address)} · ${TYPE_LABEL[rec.type]}`,
+    }),
+  );
+  const actions: PayloadHandlers = { [ACCOUNT_PRESS]: () => { onPress(); } };
   return (
     <Pressable
       onLongPress={onLongPress}
@@ -39,7 +36,7 @@ export function AccountRow({ rec, onPress, onLongPress, topBorder, trailing, bor
 >
       <Row align="center">
         <Box flex={1}>
-          <KitRenderer node={node} registry={registry} />
+          <ViewHost node={node} actions={actions} />
         </Box>
         {trailing}
       </Row>

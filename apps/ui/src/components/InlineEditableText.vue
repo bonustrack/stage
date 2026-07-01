@@ -1,11 +1,10 @@
 <script setup lang="ts">
 
 import { computed, ref, watchEffect } from 'vue';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import ViewHost from '@stage-labs/kit/vue/view-host';
 import { composeField } from '@/lib/composeField';
 import { metroFieldColors } from '@/lib/metroFieldColors';
-import { basicRoot } from '@/lib/kitRow';
+import { basicRoot } from '@stage-labs/views';
 
 const props = withDefaults(defineProps<{
   label: string;
@@ -49,9 +48,9 @@ const editNode = computed(() =>
     changeType: DRAFT_CHANGE,
   })));
 
-const editRegistry: WidgetActionRegistry = {
-  [DRAFT_CHANGE]: (action) => {
-    const next = action.payload.draft;
+const editActions = {
+  [DRAFT_CHANGE]: (payload: Record<string, unknown>): void => {
+    const next = payload.draft;
     if (typeof next === 'string') draft.value = next;
   },
 };
@@ -66,7 +65,7 @@ const editRegistry: WidgetActionRegistry = {
     </Col>
     <Row v-else-if="editing" class="flex items-start gap-2 mt-1.5">
       <Col class="flex-1 min-w-0">
-        <KitRenderer :node="editNode" :registry="editRegistry" />
+        <ViewHost :node="editNode" :actions="editActions" />
       </Col>
       <Pressable
         tag="button"

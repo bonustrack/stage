@@ -2,8 +2,8 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers } from '@stage-labs/kit/kit';
 import { basicRoot, receiveView, screenHeader, SCREEN_BACK, WALLET_ADDRESS_COPY } from '@stage-labs/views';
 import { Col } from '../../components/layout';
 import * as Clipboard from 'expo-clipboard';
@@ -61,14 +61,14 @@ export default function WalletReceive(): React.ReactElement {
     borderColor: border,
   }));
 
-  const registry: WidgetActionRegistry = {
+  const actions: PayloadHandlers = {
     [SCREEN_BACK]: () => { router.back(); },
     [WALLET_ADDRESS_COPY]: () => { copy(); },
   };
 
   return (
     <Col surface="surface" flex={1}>
-      <KitRenderer node={headerNode} registry={registry} />
+      <ViewHost node={headerNode} actions={actions} />
 
       <ScrollView contentContainerStyle={{ padding: 16, alignItems: 'center', gap: 16 }}>
         <ReceiveModeToggle
@@ -78,7 +78,7 @@ export default function WalletReceive(): React.ReactElement {
 />
 
         <Col width="100%">
-          <KitRenderer node={addressNode} registry={registry} />
+          <ViewHost node={addressNode} actions={actions} />
         </Col>
       </ScrollView>
     </Col>

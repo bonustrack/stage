@@ -4,9 +4,8 @@ import { useCallback } from 'react';
 import { DevSettings, Vibration } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { WidgetRoot } from '@stage-labs/kit/kit';
-import { emptyState } from '@stage-labs/views';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import { basicRoot, emptyState } from '@stage-labs/views';
 import { Col } from '../layout';
 import { Spinner } from '../Spinner';
 import { ChannelRow } from '../ChannelRow';
@@ -128,13 +127,10 @@ export function HomeSpinner({ head }: { head: string; bg: string }): React.React
 }
 
 export function HomeEmpty({ message }: { message?: string }): React.ReactElement {
-  const node: WidgetRoot = {
-    type: 'Basic',
-    children: [
-      emptyState({
-        title: message ?? 'No conversations yet. Share your address from Settings to start one.',
-      }),
-    ],
-  };
-  return <KitRenderer node={node} />;
+  const node = basicRoot(
+    emptyState({
+      title: message ?? 'No conversations yet. Share your address from Settings to start one.',
+    }),
+  );
+  return <ViewHost node={node} />;
 }

@@ -2,11 +2,10 @@
 
 import { ref, computed } from 'vue';
 import { isAddress } from 'viem';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import ViewHost from '@stage-labs/kit/vue/view-host';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import { composeField } from '@/lib/composeField';
-import { basicRoot } from '@/lib/kitRow';
+import { basicRoot } from '@stage-labs/views';
 
 const palette = useKitPalette();
 
@@ -44,17 +43,17 @@ const noteNode = computed(() =>
     changeType: NOTE_CHANGE,
   })));
 
-const registry: WidgetActionRegistry = {
-  [TO_CHANGE]: (action) => {
-    const next = action.payload.to;
+const actions = {
+  [TO_CHANGE]: (payload: Record<string, unknown>): void => {
+    const next = payload.to;
     if (typeof next === 'string') to.value = next;
   },
-  [AMOUNT_CHANGE]: (action) => {
-    const next = action.payload.amount;
+  [AMOUNT_CHANGE]: (payload: Record<string, unknown>): void => {
+    const next = payload.amount;
     if (typeof next === 'string') amount.value = next;
   },
-  [NOTE_CHANGE]: (action) => {
-    const next = action.payload.note;
+  [NOTE_CHANGE]: (payload: Record<string, unknown>): void => {
+    const next = payload.note;
     if (typeof next === 'string') note.value = next;
   },
 };
@@ -96,9 +95,9 @@ function create(): void {
         </Pressable>
       </Row>
 
-      <KitRenderer :node="toNode" :registry="registry" />
-      <KitRenderer :node="amountNode" :registry="registry" />
-      <KitRenderer :node="noteNode" :registry="registry" />
+      <ViewHost :node="toNode" :actions="actions" />
+      <ViewHost :node="amountNode" :actions="actions" />
+      <ViewHost :node="noteNode" :actions="actions" />
 
       <Button
         variant="primary"

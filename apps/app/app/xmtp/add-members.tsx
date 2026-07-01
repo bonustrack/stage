@@ -3,8 +3,8 @@ import { useCallback, useState } from 'react';
 
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers } from '@stage-labs/kit/kit';
 import { basicRoot, screenHeader, SCREEN_BACK } from '@stage-labs/views';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -29,7 +29,7 @@ export default function AddMembers(): React.ReactElement {
     surface: toolbarBg,
     borderColor: border,
   }));
-  const headerRegistry: WidgetActionRegistry = {
+  const headerActions: PayloadHandlers = {
     [SCREEN_BACK]: () => { router.back(); },
   };
 
@@ -54,7 +54,7 @@ export default function AddMembers(): React.ReactElement {
   return (
     <Col surface="surface" flex={1}>
       {}
-      <KitRenderer node={headerNode} registry={headerRegistry} />
+      <ViewHost node={headerNode} actions={headerActions} />
 
       <ScrollView
         contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 24 + insets.bottom }}

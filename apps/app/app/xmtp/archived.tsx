@@ -2,8 +2,8 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { FlatList } from 'react-native-gesture-handler';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers } from '@stage-labs/kit/kit';
 import { basicRoot, emptyState, screenHeader, SCREEN_BACK } from '@stage-labs/views';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,10 +16,7 @@ import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { ChannelRow } from '../../components/ChannelRow';
 import { Col } from '../../components/layout';
 
-const EMPTY_NODE: WidgetRoot = {
-  type: 'Basic',
-  children: [emptyState({ title: 'No archived conversations.' })],
-};
+const EMPTY_NODE = basicRoot(emptyState({ title: 'No archived conversations.' }));
 
 export default function Archived(): React.ReactElement {
   const router = useRouter();
@@ -33,7 +30,7 @@ export default function Archived(): React.ReactElement {
     surface: toolbarBg,
     borderColor: border,
   }));
-  const headerRegistry: WidgetActionRegistry = {
+  const headerActions: PayloadHandlers = {
     [SCREEN_BACK]: () => { router.back(); },
   };
   const [archived, setArchived] = useState<Set<string>>(new Set());
@@ -69,14 +66,14 @@ export default function Archived(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <KitRenderer node={headerNode} registry={headerRegistry} />
+      <ViewHost node={headerNode} actions={headerActions} />
       <FlatList
         style={{ flex: 1 }}
         data={data}
         keyExtractor={r => r.convId}
         renderItem={renderRow}
         contentContainerStyle={data.length === 0 ? { flexGrow: 1 } : { paddingBottom: 24 + insets.bottom }}
-        ListEmptyComponent={<KitRenderer node={EMPTY_NODE} />}
+        ListEmptyComponent={<ViewHost node={EMPTY_NODE} />}
 />
     </Col>
   );

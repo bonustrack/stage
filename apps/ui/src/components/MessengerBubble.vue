@@ -1,11 +1,9 @@
 <script setup lang="ts">
 
 import { computed } from 'vue';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import ViewHost from '@stage-labs/kit/vue/view-host';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { reactionsRow, bubbleTimestamp, type ReactionPill, REACTION_PRESS } from '@stage-labs/views';
-import { basicRoot } from '@/lib/kitRow';
+import { basicRoot, reactionsRow, bubbleTimestamp, type ReactionPill, REACTION_PRESS } from '@stage-labs/views';
 import { stampAvatarUrl, XMTP_USER_PREFIX } from '../lib/xmtp';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { mapCoordsOf, youtubeIdOf } from '@stage-labs/client/embed/detect';
@@ -146,9 +144,9 @@ const reactionsNode = computed(() =>
   ),
 );
 
-const reactionsRegistry: WidgetActionRegistry = {
-  [REACTION_PRESS]: (action) => {
-    const emoji = action.payload.emoji;
+const reactionsActions = {
+  [REACTION_PRESS]: (payload: Record<string, unknown>): void => {
+    const emoji = payload.emoji;
     if (typeof emoji === 'string') emit('react', { entry: props.entry, emoji });
   },
 };
@@ -290,7 +288,7 @@ const reactionsRegistry: WidgetActionRegistry = {
       <!-- Reactions pills on their own row below (matches mobile), rendered from
            Kit JSON via the shared reactionsRow builder. -->
       <Col v-if="reactionPills.length > 0" class="mt-1">
-        <KitRenderer :node="reactionsNode" :registry="reactionsRegistry" />
+        <ViewHost :node="reactionsNode" :actions="reactionsActions" />
       </Col>
     </Col>
   </Row>

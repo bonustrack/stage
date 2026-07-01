@@ -2,8 +2,8 @@
 import { Alert } from 'react-native';
 
 import { useRouter } from 'expo-router';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers, WidgetRoot } from '@stage-labs/kit/kit';
 import { Box } from './layout';
 import type { MenuSheetItem } from '@stage-labs/views';
 import { menuSheet, MENU_ITEM_PRESS } from '@stage-labs/views';
@@ -118,9 +118,9 @@ export function ChannelMenu({
   const node: WidgetRoot = menuSheet({
     items: buildItems({ isGroup, peerAddress, isUnread, isPinned, isArchived, onSearch }),
   });
-  const registry: WidgetActionRegistry = {
-    [MENU_ITEM_PRESS]: (action) => {
-      const id = action.payload.id;
+  const actions: PayloadHandlers = {
+    [MENU_ITEM_PRESS]: (payload) => {
+      const id = payload.id;
       if (typeof id === 'string') handlers[id]?.();
     },
   };
@@ -129,7 +129,7 @@ export function ChannelMenu({
     <AppModal visible={visible} onClose={onClose}>
       {}
       <Box margin={{ x: -16 }}>
-        <KitRenderer node={node} registry={registry} />
+        <ViewHost node={node} actions={actions} />
       </Box>
     </AppModal>
   );

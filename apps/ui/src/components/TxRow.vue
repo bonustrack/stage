@@ -1,10 +1,9 @@
 <script setup lang="ts">
 
 import { computed } from 'vue';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
+import ViewHost from '@stage-labs/kit/vue/view-host';
 import type { ActivityRow } from '@stage-labs/client/api/etherscan';
-import { txRow, type TxDirection } from '@stage-labs/views';
-import { basicRoot } from '@/lib/kitRow';
+import { basicRoot, txRow, type TxDirection } from '@stage-labs/views';
 import { txTitle, txPartyLabel, relTime } from '@stage-labs/client/wallet/activityFormat';
 
 const props = defineProps<{ r: ActivityRow; profileVersion: number }>();
@@ -33,6 +32,6 @@ const node = computed(() => {
 
 <template>
   <Box class="py-3.5 border-b border-metro-border-light dark:border-metro-border-dark">
-    <KitRenderer :node="node" />
+    <ViewHost :node="node" />
   </Box>
 </template>

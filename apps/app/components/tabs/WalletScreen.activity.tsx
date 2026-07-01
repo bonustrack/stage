@@ -2,9 +2,9 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { Text } from '@stage-labs/kit/react-native/text';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { BasicNode } from '@stage-labs/kit/kit';
-import { txRow, type TxDirection } from '@stage-labs/views';
+import { basicRoot, txRow, type TxDirection } from '@stage-labs/views';
 import { Spinner } from '../Spinner';
 import { Col, Box } from '../layout';
 import { DANGER } from '../../lib/theme';
@@ -101,22 +101,17 @@ function txTitle(r: ActivityRow): string {
 function txRowNode(r: ActivityRow): BasicNode {
   const name = getPeerName(r.counterparty) ?? shortAddress(r.counterparty);
   const partyLabel = r.direction === 'receive' ? `From ${name}` : `To ${name}`;
-  return {
-    type: 'Basic',
-    children: [
-      txRow({
-        direction: DIR_MAP[r.direction],
-        title: txTitle(r),
-        amount: r.valueEth,
-        token: 'ETH',
-        timestamp: `${partyLabel} · ${relTime(r.timestamp)}`,
-        counterparty: `${partyLabel} · ${relTime(r.timestamp)}`,
-        chainLabel: r.chainLabel,
-        subText: r.failed ? 'Failed' : `#${r.nonce}`,
-        failed: r.failed,
-      }),
-    ],
-  };
+  return basicRoot(txRow({
+    direction: DIR_MAP[r.direction],
+    title: txTitle(r),
+    amount: r.valueEth,
+    token: 'ETH',
+    timestamp: `${partyLabel} · ${relTime(r.timestamp)}`,
+    counterparty: `${partyLabel} · ${relTime(r.timestamp)}`,
+    chainLabel: r.chainLabel,
+    subText: r.failed ? 'Failed' : `#${r.nonce}`,
+    failed: r.failed,
+  }));
 }
 
 function TxRow({ r, border }: {
@@ -125,7 +120,7 @@ function TxRow({ r, border }: {
   const node = useMemo(() => txRowNode(r), [r]);
   return (
     <Box padding={{ y: 14 }} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-      <KitRenderer node={node} />
+      <ViewHost node={node} />
     </Box>
   );
 }

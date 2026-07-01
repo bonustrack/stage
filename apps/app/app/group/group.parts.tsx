@@ -5,10 +5,10 @@ import { Box } from '../../components/layout';
 import { shortAddress } from '../../modules/messaging';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers } from '@stage-labs/kit/kit';
 import {
-  basicRoot, memberRow, memberTextField,
+  basicRoot, listRoot, memberRow, memberTextField,
   MEMBER_PRESS, MEMBER_REMOVE, MEMBER_FIELD_CHANGE,
 } from '@stage-labs/views';
 import { stampAvatarUrl } from '@stage-labs/kit/avatar';
@@ -32,25 +32,20 @@ export function MemberRow({
 }): React.ReactElement {
   const { sub, border } = p;
   const displayName = name == null || name === '' ? shortAddress(item) : name;
-  const node: WidgetRoot = {
-    type: 'ListView',
-    children: [
-      memberRow({
-        memberId: item,
-        avatarUri: stampAvatarUrl(item, 40),
-        name: `${displayName}${isSelf ? ' (you)' : ''}`,
-        address: name ? shortAddress(item) : undefined,
-        role: memberBadgeRole(role),
-        removable: !isSelf,
-        dark,
-        borderColor: border,
-        subColor: sub,
-        dangerColor: DANGER,
-        removePressedBg: dark ? '#3a1820' : '#fbe3e8',
-      }),
-    ],
-  };
-  const registry: WidgetActionRegistry = {
+  const node = listRoot(memberRow({
+    memberId: item,
+    avatarUri: stampAvatarUrl(item, 40),
+    name: `${displayName}${isSelf ? ' (you)' : ''}`,
+    address: name ? shortAddress(item) : undefined,
+    role: memberBadgeRole(role),
+    removable: !isSelf,
+    dark,
+    borderColor: border,
+    subColor: sub,
+    dangerColor: DANGER,
+    removePressedBg: dark ? '#3a1820' : '#fbe3e8',
+  }));
+  const actions: PayloadHandlers = {
     [MEMBER_PRESS]: () => {
       if (!isRemovingThis) onPress();
     },
@@ -60,7 +55,7 @@ export function MemberRow({
   };
   return (
     <Box style={{ opacity: isRemovingThis ? 0.5 : 1 }}>
-      <KitRenderer node={node} registry={registry} />
+      <ViewHost node={node} actions={actions} />
     </Box>
   );
 }
@@ -78,7 +73,7 @@ export function AddMemberModal({
     <AppModal visible={visible} onClose={onClose}>
       <Box>
         <Box margin={{ bottom: 10 }}>
-          <KitRenderer
+          <ViewHost
             node={basicRoot(memberTextField({
               value: addDraft,
               placeholder: '0x… Ethereum address',
@@ -93,9 +88,9 @@ export function AddMemberModal({
               autoCapitalize: 'none',
               autoCorrect: false,
             }))}
-            registry={{
-              [MEMBER_FIELD_CHANGE]: (a) => {
-                if (typeof a.payload.field === 'string') setAddDraft(a.payload.field);
+            actions={{
+              [MEMBER_FIELD_CHANGE]: (payload) => {
+                if (typeof payload.field === 'string') setAddDraft(payload.field);
               },
             }}
           />

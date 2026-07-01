@@ -3,8 +3,8 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import type { ListViewNode } from '@stage-labs/kit/kit';
 import {
   settingsValueRow, SETTINGS_COPY,
 } from '@stage-labs/views';
@@ -86,10 +86,10 @@ const accountNode = computed<ListViewNode>(() => {
   return { type: 'ListView', children };
 });
 
-const registry: WidgetActionRegistry = {
-  [SETTINGS_COPY]: (action) => {
-    const key = action.payload.key;
-    const copyValue = action.payload.copyValue;
+const actions = {
+  [SETTINGS_COPY]: (payload: Record<string, unknown>): void => {
+    const key = payload.key;
+    const copyValue = payload.copyValue;
     if (typeof key === 'string' && typeof copyValue === 'string') void copy(key, copyValue);
   },
 };
@@ -118,7 +118,7 @@ const registry: WidgetActionRegistry = {
       <Text size="3xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark px-4 pt-5 pb-1">XMTP ACCOUNT</Text>
 
       <Col class="w-[calc(100%-2rem)] mx-4 mt-2">
-        <KitRenderer :node="accountNode" :registry="registry" />
+        <ViewHost :node="accountNode" :actions="actions" />
       </Col>
 
       <!-- ACTIVE SESSIONS: installation list, mirroring mobile MessengerSessions.

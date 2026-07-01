@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 
 import { Text } from '@stage-labs/kit/react-native/text';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { BasicNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { BasicNode, PayloadHandlers } from '@stage-labs/kit/kit';
 import {
   basicRoot, screenHeader, SCREEN_BACK,
   tokenDetailCard,
@@ -77,14 +77,14 @@ export default function TokenDetail(): React.ReactElement {
     surface: toolbarBg,
     borderColor: border,
   }));
-  const headerRegistry: WidgetActionRegistry = {
+  const headerActions: PayloadHandlers = {
     [SCREEN_BACK]: () => { router.back(); },
   };
 
   if (!r) {
     return (
       <Col surface="surface" flex={1}>
-        <KitRenderer node={headerNode} registry={headerRegistry} />
+        <ViewHost node={headerNode} actions={headerActions} />
         <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center">
           <Text size="md" role="secondary">Token not found</Text>
         </Col>
@@ -97,7 +97,7 @@ export default function TokenDetail(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <KitRenderer node={headerNode} registry={headerRegistry} />
+      <ViewHost node={headerNode} actions={headerActions} />
       <TokenDetailBody r={r} symbol={symbol} sub={sub} bg={bg} border={border} />
     </Col>
   );
@@ -108,24 +108,24 @@ function TokenDetailBody({ r, symbol, sub, bg, border }: {
 }): React.ReactElement {
   const router = useRouter();
   const node = useMemo(() => detailNode(r, symbol, { sub, bg, border }), [r, symbol, sub, bg, border]);
-  const registry: WidgetActionRegistry = useMemo(() => ({
-    [WALLET_ACTION_PRESS]: (a) => {
-      const sym = typeof a.payload.symbol === 'string' ? a.payload.symbol : r.symbol;
-      const chainId = typeof a.payload.chainId === 'string' ? a.payload.chainId : String(r.chainId);
-      if (a.payload.action === 'send-private') {
+  const actions: PayloadHandlers = useMemo(() => ({
+    [WALLET_ACTION_PRESS]: (payload) => {
+      const sym = typeof payload.symbol === 'string' ? payload.symbol : r.symbol;
+      const chainId = typeof payload.chainId === 'string' ? payload.chainId : String(r.chainId);
+      if (payload.action === 'send-private') {
         router.push({ pathname: '/wallet/send', params: { symbol: sym, chainId, private: '1' } });
-      } else if (a.payload.action === 'unshield') {
+      } else if (payload.action === 'unshield') {
         router.push({ pathname: '/wallet/unshield', params: { symbol: sym, chainId } });
-      } else if (a.payload.action === 'shield') {
+      } else if (payload.action === 'shield') {
         router.push({ pathname: '/wallet/shield', params: { symbol: sym, chainId } });
-      } else if (a.payload.action === 'send') {
+      } else if (payload.action === 'send') {
         router.push({ pathname: '/wallet/send', params: { symbol: r.symbol, chainId } });
       }
     },
   }), [router, r]);
   return (
     <Col padding={{ top: 28 }} margin={{ x: 16 }}>
-      <KitRenderer node={node} registry={registry} />
+      <ViewHost node={node} actions={actions} />
     </Col>
   );
 }

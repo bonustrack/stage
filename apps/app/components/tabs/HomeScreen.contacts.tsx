@@ -3,26 +3,20 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { isAddress } from 'viem';
 import { Box } from '../layout';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
-import { contactRow, emptyState, sectionHeader, CONTACT_PRESS } from '@stage-labs/views';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers, WidgetRoot } from '@stage-labs/kit/kit';
+import { basicRoot, contactRow, emptyState, sectionHeader, CONTACT_PRESS } from '@stage-labs/views';
 import { openDmWithAddress, shortAddress } from '../../modules/messaging';
 import { resolveEnsName } from '@stage-labs/client/api/ens';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { getCachedRows } from '../../modules/messaging';
 import { stampAvatarUrl } from '@stage-labs/kit/avatar';
 
-const NO_MATCH_NODE: WidgetRoot = {
-  type: 'Basic',
-  children: [
-    emptyState({ title: 'No matches. Paste a full address or a name.eth to start a chat.' }),
-  ],
-};
+const NO_MATCH_NODE = basicRoot(
+  emptyState({ title: 'No matches. Paste a full address or a name.eth to start a chat.' }),
+);
 
-const PEOPLE_HEADER_NODE: WidgetRoot = {
-  type: 'Basic',
-  children: [sectionHeader({ title: 'People' })],
-};
+const PEOPLE_HEADER_NODE = basicRoot(sectionHeader({ title: 'People' }));
 
 function looksLikeEns(s: string): boolean {
   return /^[a-z0-9-]+(\.[a-z0-9-]+)*\.eth$/i.test(s.trim());
@@ -101,7 +95,7 @@ export function HomeContactResults(
   if (!q) return null;
   if (!showResolved && filtered.length === 0) {
     if (!noChannels) return null;
-    return <KitRenderer node={NO_MATCH_NODE} />;
+    return <ViewHost node={NO_MATCH_NODE} />;
   }
 
   const rows = [
@@ -133,10 +127,10 @@ export function HomeContactResults(
     ),
   };
 
-  const registry: WidgetActionRegistry = {
-    [CONTACT_PRESS]: (action) => {
-      const address = action.payload.address;
-      const convId = action.payload.convId;
+  const actions: PayloadHandlers = {
+    [CONTACT_PRESS]: (payload) => {
+      const address = payload.address;
+      const convId = payload.convId;
       if (typeof address === 'string') {
         open(address, typeof convId === 'string' && convId !== '' ? convId : undefined);
       }
@@ -146,9 +140,9 @@ export function HomeContactResults(
   return (
     <Box>
       <Box padding={{ x: 16, top: 16, bottom: 6 }}>
-        <KitRenderer node={PEOPLE_HEADER_NODE} />
+        <ViewHost node={PEOPLE_HEADER_NODE} />
       </Box>
-      <KitRenderer node={listNode} registry={registry} />
+      <ViewHost node={listNode} actions={actions} />
     </Box>
   );
 }

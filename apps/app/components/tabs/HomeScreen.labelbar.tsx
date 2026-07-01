@@ -2,9 +2,9 @@
 import { useMemo, useState } from 'react';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
-import { labelBar, LABEL_CHIP_PRESS, type LabelBarChip } from '@stage-labs/views';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers } from '@stage-labs/kit/kit';
+import { basicRoot, labelBar, LABEL_CHIP_PRESS, type LabelBarChip } from '@stage-labs/views';
 import { Box } from '../layout';
 import { usePalette } from '../../lib/theme';
 import type { SimultaneousRefs } from '../SwipeTabs.types';
@@ -63,21 +63,18 @@ export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggle
     })),
   ];
 
-  const node: WidgetRoot = {
-    type: 'Basic',
-    children: [
-      labelBar({
-        chips,
-        selectedBackground: link,
-        selectedLabelColor: bg,
-        restBackground: rowBg,
-        restLabelColor: fg,
-      }),
-    ],
-  };
-  const registry: WidgetActionRegistry = {
-    [LABEL_CHIP_PRESS]: (action) => {
-      const value = action.payload.value;
+  const node = basicRoot(
+    labelBar({
+      chips,
+      selectedBackground: link,
+      selectedLabelColor: bg,
+      restBackground: rowBg,
+      restLabelColor: fg,
+    }),
+  );
+  const actions: PayloadHandlers = {
+    [LABEL_CHIP_PRESS]: (payload) => {
+      const value = payload.value;
       if (typeof value !== 'string') return;
       if (value === '') { onClearAll(); return; }
       if (value === UNREAD_VALUE) { onToggleUnread(); return; }
@@ -93,7 +90,7 @@ export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggle
   return (
     <GestureDetector gesture={gesture}>
       <Box style={{ alignSelf: 'stretch' }}>
-        <KitRenderer node={node} registry={registry} />
+        <ViewHost node={node} actions={actions} />
       </Box>
     </GestureDetector>
   );

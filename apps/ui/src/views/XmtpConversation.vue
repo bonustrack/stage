@@ -1,8 +1,7 @@
 <script setup lang="ts">
 
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import { emptyState } from '@stage-labs/views';
-import { basicRoot } from '@/lib/kitRow';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import { basicRoot, emptyState } from '@stage-labs/views';
 import { useXmtpConversation } from '../lib/useXmtpConversation';
 
 const emptyNode = basicRoot(emptyState({ title: 'Type a message below to start chatting.' }));
@@ -46,7 +45,7 @@ const {
         <Spinner :size="28" />
       </Row>
       <Col v-else-if="allBubbles.length === 0 && feed.status.value === 'open'">
-        <KitRenderer :node="emptyNode" />
+        <ViewHost :node="emptyNode" />
       </Col>
       <MessengerBubble
         v-for="entry in allBubbles"

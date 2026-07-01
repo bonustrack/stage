@@ -2,10 +2,8 @@
 
 import { computed } from 'vue';
 import { normalizeQuestions, type PollContent } from '@stage-labs/client/xmtp/poll';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { pollCard, type PollQuestion, POLL_OPTION_PRESS } from '@stage-labs/views';
-import { basicRoot } from '@/lib/kitRow';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import { basicRoot, pollCard, type PollQuestion, POLL_OPTION_PRESS } from '@stage-labs/views';
 
 const props = defineProps<{
   poll: PollContent;
@@ -52,10 +50,10 @@ const node = computed(() =>
   basicRoot(pollCard({ questions: model.value, dispatchPress: true })),
 );
 
-const registry: WidgetActionRegistry = {
-  [POLL_OPTION_PRESS]: (action) => {
-    const qi = action.payload.questionIndex;
-    const oi = action.payload.optionIndex;
+const actions = {
+  [POLL_OPTION_PRESS]: (payload: Record<string, unknown>): void => {
+    const qi = payload.questionIndex;
+    const oi = payload.optionIndex;
     if (typeof qi !== 'number' || typeof oi !== 'number') return;
     emit('vote', {
       questionIndex: qi,
@@ -67,5 +65,5 @@ const registry: WidgetActionRegistry = {
 </script>
 
 <template>
-  <KitRenderer :node="node" :registry="registry" />
+  <ViewHost :node="node" :actions="actions" />
 </template>

@@ -2,10 +2,8 @@
 
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { banner, BANNER_PRESS } from '@stage-labs/views';
-import { listRoot } from '@/lib/kitRow';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import { listRoot, banner, BANNER_PRESS } from '@stage-labs/views';
 import { useProposalCount } from '../lib/useProposals';
 
 const router = useRouter();
@@ -20,8 +18,8 @@ const node = computed(() =>
   ),
 );
 
-const registry: WidgetActionRegistry = {
-  [BANNER_PRESS]: () => { void router.push('/proposals'); },
+const actions = {
+  [BANNER_PRESS]: (): void => { void router.push('/proposals'); },
 };
 </script>
 
@@ -30,6 +28,6 @@ const registry: WidgetActionRegistry = {
     v-if="count > 0"
     class="w-full shrink-0 border-b border-metro-border-light dark:border-metro-border-dark"
   >
-    <KitRenderer :node="node" :registry="registry" />
+    <ViewHost :node="node" :actions="actions" />
   </Box>
 </template>

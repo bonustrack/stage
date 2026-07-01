@@ -17,14 +17,11 @@ import { Icon } from '@stage-labs/kit/react-native/icon';
 import { ChannelRow } from '../../components/ChannelRow';
 import { Col, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers } from '@stage-labs/kit/kit';
 import { basicRoot, emptyState, screenHeader, SCREEN_BACK } from '@stage-labs/views';
 
-const EMPTY_NODE: WidgetRoot = {
-  type: 'Basic',
-  children: [emptyState({ title: 'No message requests.' })],
-};
+const EMPTY_NODE = basicRoot(emptyState({ title: 'No message requests.' }));
 
 type ReqRow = ConversationRequestView;
 
@@ -42,7 +39,7 @@ export default function Requests(): React.ReactElement {
     surface: toolbarBg,
     borderColor: border,
   }));
-  const headerRegistry: WidgetActionRegistry = {
+  const headerActions: PayloadHandlers = {
     [SCREEN_BACK]: () => { router.back(); },
   };
 
@@ -102,7 +99,7 @@ export default function Requests(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <KitRenderer node={headerNode} registry={headerRegistry} />
+      <ViewHost node={headerNode} actions={headerActions} />
 
       {!rows ? (
         <Col flex={1} align="center" justify="center">
@@ -114,7 +111,7 @@ export default function Requests(): React.ReactElement {
           keyExtractor={r => r.convId}
           renderItem={renderRow}
           contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}
-          ListEmptyComponent={<KitRenderer node={EMPTY_NODE} />}
+          ListEmptyComponent={<ViewHost node={EMPTY_NODE} />}
 />
       )}
     </Col>

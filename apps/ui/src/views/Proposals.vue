@@ -3,10 +3,8 @@
 import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { screenHeader, SCREEN_BACK } from '@stage-labs/views';
-import { basicRoot } from '@/lib/kitRow';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import { basicRoot, screenHeader, SCREEN_BACK } from '@stage-labs/views';
 import { useEffectiveScheme } from '@/lib/kitTheme';
 import { useProposals, type ProposalDetail } from '../lib/useProposals';
 import type { QueuedRequest, RequestKind } from '@stage-labs/client/xmtp/requests-queue';
@@ -38,8 +36,8 @@ const headerNode = computed(() =>
     borderColor: palette.border,
   })),
 );
-const headerRegistry: WidgetActionRegistry = {
-  [SCREEN_BACK]: () => { router.back(); },
+const headerActions = {
+  [SCREEN_BACK]: (): void => { router.back(); },
 };
 
 const KIND_LABEL: Record<RequestKind, string> = {
@@ -197,7 +195,7 @@ async function onExecute(req: QueuedRequest): Promise<void> {
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <KitRenderer :node="headerNode" :registry="headerRegistry" />
+    <ViewHost :node="headerNode" :actions="headerActions" />
 
     <Col v-if="requests === null" align="center" justify="center" class="flex-1">
       <Spinner :size="28" />

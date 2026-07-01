@@ -2,8 +2,8 @@
 import { useEffect, useState } from 'react';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { WidgetActionRegistry, WidgetNode, WidgetRoot } from '@stage-labs/kit/kit';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers, WidgetNode, WidgetRoot } from '@stage-labs/kit/kit';
 import { basicRoot, screenHeader, SCREEN_BACK } from '@stage-labs/views';
 import type { GroupPickedFile } from './group.actions.handlers';
 import { Col } from '../../components/layout';
@@ -40,30 +40,25 @@ function overflowTrailing(color: string): WidgetNode {
 }
 
 function groupImagePickerNode(openNonce: number): WidgetRoot {
-  return {
-    type: 'Basic',
-    children: [
-      {
-        type: 'FilePicker',
-        openNonce,
-        source: 'library',
-        mediaTypes: ['images'],
-        quality: 0.85,
-        multiple: false,
-        allowsEditing: true,
-        aspect: [1, 1],
-        onPickAction: { type: 'group_image_pick', handler: 'client' },
-      },
-    ],
-  };
+  return basicRoot({
+    type: 'FilePicker',
+    openNonce,
+    source: 'library',
+    mediaTypes: ['images'],
+    quality: 0.85,
+    multiple: false,
+    allowsEditing: true,
+    aspect: [1, 1],
+    onPickAction: { type: 'group_image_pick', handler: 'client' },
+  });
 }
 
-function groupImagePickerRegistry(
+function groupImagePickerActions(
   onPicked: (file: GroupPickedFile) => Promise<void>,
-): WidgetActionRegistry {
+): PayloadHandlers {
   return {
-    group_image_pick: (a) => {
-      const files = a.payload.files;
+    group_image_pick: (payload) => {
+      const files = payload.files;
       const file = Array.isArray(files) ? files[0] as GroupPickedFile | undefined : undefined;
       if (file !== undefined) void onPicked(file);
     },
@@ -118,14 +113,14 @@ export default function GroupDetail(): React.ReactElement {
     safeTop: insets.top,
     trailing: [overflowTrailing(fg)],
   }));
-  const headerRegistry: WidgetActionRegistry = {
+  const headerActions: PayloadHandlers = {
     [SCREEN_BACK]: () => { router.back(); },
     [GROUP_OVERFLOW_PRESS]: () => { setOverflowOpen(true); },
   };
 
   return (
     <Col surface="surface" flex={1}>
-      <KitRenderer node={headerNode} registry={headerRegistry} />
+      <ViewHost node={headerNode} actions={headerActions} />
 
       <GroupProfileHeader
         insetTop={insets.top} imageUrl={imageUrl} channelId={convId ?? ''} uploadingImage={uploadingImage}
@@ -133,7 +128,7 @@ export default function GroupDetail(): React.ReactElement {
         onTap={() => { if (imageUrl) setViewerOpen(true); else pickImage(); }}
         onPick={() => { pickImage(); }}
 />
-      <KitRenderer node={groupImagePickerNode(pickNonce)} registry={groupImagePickerRegistry(onPickedImage)} />
+      <ViewHost node={groupImagePickerNode(pickNonce)} actions={groupImagePickerActions(onPickedImage)} />
 
       <GroupNameEditor
         name={name} draft={draft} setDraft={setDraft}

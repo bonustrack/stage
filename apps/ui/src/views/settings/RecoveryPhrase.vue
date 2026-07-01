@@ -3,8 +3,7 @@
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import ViewHost from '@stage-labs/kit/vue/view-host';
 import { settingsHeader, SCREEN_BACK } from '@stage-labs/views';
 import { useEffectiveScheme } from '@/lib/kitTheme';
 import { mnemonicWords } from '@stage-labs/client/zerodev/derive';
@@ -22,8 +21,8 @@ const headerNode = computed(() => settingsHeader({
   safeTop: 0,
 }));
 
-const registry: WidgetActionRegistry = {
-  [SCREEN_BACK]: () => { router.back(); },
+const actions = {
+  [SCREEN_BACK]: (): void => { router.back(); },
 };
 
 const present = ref(hasWalletMnemonic());
@@ -67,7 +66,7 @@ function done(): void {
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <KitRenderer :node="headerNode" :registry="registry" />
+    <ViewHost :node="headerNode" :actions="actions" />
 
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar px-4 pb-8">
       <template v-if="!present">

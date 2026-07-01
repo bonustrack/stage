@@ -1,12 +1,12 @@
 
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Card } from '@stage-labs/kit/react-native/card';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type {
   BadgeColor,
   ListViewItemNode,
   ListViewNode,
-  WidgetActionRegistry,
+  PayloadHandlers,
 } from '@stage-labs/kit/kit';
 import {
   badge,
@@ -131,31 +131,31 @@ function manageNode(
 export type CardFn = (node: ListViewNode) => React.ReactElement;
 
 export function makeCard(
-  dark: boolean, rowBg: string, blockRadius: number, registry: WidgetActionRegistry,
+  dark: boolean, rowBg: string, blockRadius: number, actions: PayloadHandlers,
 ): CardFn {
   return (node) => (
     <Box margin={{ x: 16 }} radius={blockRadius} style={{ overflow: 'hidden' }}>
       <Card dark={dark} background={rowBg} padding={0}>
-        <KitRenderer node={node} registry={registry}/>
+        <ViewHost node={node} actions={actions}/>
       </Card>
     </Box>
   );
 }
 
-export function buildWalletRegistry({ onCopy, onRecovery, passkey, removePasskey }: {
+export function buildWalletActions({ onCopy, onRecovery, passkey, removePasskey }: {
   onCopy: (label: string, value: string) => void;
   onRecovery: () => void;
   passkey: Passkey;
   removePasskey: RemovePasskey;
-}): WidgetActionRegistry {
+}): PayloadHandlers {
   return {
-    [SETTINGS_COPY]: (action) => {
-      const label = action.payload.label;
-      const value = action.payload.value;
+    [SETTINGS_COPY]: (payload) => {
+      const label = payload.label;
+      const value = payload.value;
       if (typeof label === 'string' && typeof value === 'string') onCopy(label, value);
     },
-    [SETTINGS_ACTION_PRESS]: (action) => {
-      const a = action.payload.action;
+    [SETTINGS_ACTION_PRESS]: (payload) => {
+      const a = payload.action;
       if (a === 'recovery') onRecovery();
       else if (a === 'passkey') { if (!passkey.busy) passkey.run(); }
       else if (a === 'removePasskey') { if (!removePasskey.busy) removePasskey.run(); }

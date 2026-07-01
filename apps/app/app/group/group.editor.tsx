@@ -2,7 +2,7 @@
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import { basicRoot, groupFieldEditor, GROUP_EDIT_CHANGE, GROUP_EDIT_SAVE } from '@stage-labs/views';
 import { Box } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
@@ -57,7 +57,7 @@ export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, sa
   return (
     <Box padding={{ x: 16, bottom: 16 }}>
       {editing ? (
-        <KitRenderer
+        <ViewHost
           node={basicRoot(groupFieldEditor({
             field: 'name',
             value: draft,
@@ -66,9 +66,9 @@ export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, sa
             disabled: saving || !draft.trim(),
             primary, bg, fg, sub, border, inputBg,
           }))}
-          registry={{
-            [GROUP_EDIT_CHANGE]: (a) => {
-              if (typeof a.payload.name === 'string') setDraft(a.payload.name);
+          actions={{
+            [GROUP_EDIT_CHANGE]: (payload) => {
+              if (typeof payload.name === 'string') setDraft(payload.name);
             },
             [GROUP_EDIT_SAVE]: () => { onSave(); },
           }}
@@ -96,7 +96,7 @@ export function GroupDescriptionEditor({ description, descriptionDraft, setDescr
     <Box padding={{ x: 16, bottom: 16 }}>
       <Text size="xs" role="secondary">DESCRIPTION</Text>
       {editing ? (
-        <KitRenderer
+        <ViewHost
           node={basicRoot(groupFieldEditor({
             field: 'description',
             value: descriptionDraft,
@@ -107,9 +107,9 @@ export function GroupDescriptionEditor({ description, descriptionDraft, setDescr
             minHeight: 60,
             primary, bg, fg, sub, border, inputBg,
           }))}
-          registry={{
-            [GROUP_EDIT_CHANGE]: (a) => {
-              if (typeof a.payload.description === 'string') setDescriptionDraft(a.payload.description);
+          actions={{
+            [GROUP_EDIT_CHANGE]: (payload) => {
+              if (typeof payload.description === 'string') setDescriptionDraft(payload.description);
             },
             [GROUP_EDIT_SAVE]: () => { onSave(); },
           }}

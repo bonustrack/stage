@@ -1,7 +1,7 @@
 
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers } from '@stage-labs/kit/kit';
 import { basicRoot, screenHeader, SCREEN_BACK } from '@stage-labs/views';
 import { Col } from '../components/layout';
 import { useRouter } from 'expo-router';
@@ -22,14 +22,14 @@ export default function Accounts(): React.ReactElement {
     surface: toolbarBg,
     borderColor: border,
   }));
-  const headerRegistry: WidgetActionRegistry = {
+  const headerActions: PayloadHandlers = {
     [SCREEN_BACK]: () => { router.back(); },
   };
 
   return (
     <Col surface="surface" flex={1}>
       {}
-      <KitRenderer node={headerNode} registry={headerRegistry} />
+      <ViewHost node={headerNode} actions={headerActions} />
 
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}>
         <AccountsManager dark={dark} flat onSwitched={() => { router.back(); }}/>

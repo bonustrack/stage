@@ -1,11 +1,11 @@
 <script setup lang="ts">
 
 import { ref, computed } from 'vue';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import type { PayloadHandlers } from '@stage-labs/kit/kit';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import { composeField } from '@/lib/composeField';
-import { basicRoot } from '@/lib/kitRow';
+import { basicRoot } from '@stage-labs/views';
 
 const palette = useKitPalette();
 
@@ -31,17 +31,17 @@ function optionNode(value: string, index: number) {
   }));
 }
 
-const questionRegistry: WidgetActionRegistry = {
-  [QUESTION_CHANGE]: (action) => {
-    const next = action.payload.question;
+const questionActions = {
+  [QUESTION_CHANGE]: (payload: Record<string, unknown>): void => {
+    const next = payload.question;
     if (typeof next === 'string') question.value = next;
   },
 };
 
-function optionRegistry(index: number): WidgetActionRegistry {
+function optionActions(index: number): PayloadHandlers {
   return {
-    [OPTION_CHANGE]: (action) => {
-      const next = action.payload.option;
+    [OPTION_CHANGE]: (payload: Record<string, unknown>): void => {
+      const next = payload.option;
       if (typeof next === 'string') setOption(index, next);
     },
   };
@@ -94,12 +94,12 @@ function create(): void {
         </Pressable>
       </Row>
 
-      <KitRenderer :node="questionNode" :registry="questionRegistry" />
+      <ViewHost :node="questionNode" :actions="questionActions" />
 
       <Col class="gap-2">
         <Row v-for="(opt, i) in options" :key="i" class="flex items-center gap-2">
           <Col class="flex-1 min-w-0">
-            <KitRenderer :node="optionNode(opt, i)" :registry="optionRegistry(i)" />
+            <ViewHost :node="optionNode(opt, i)" :actions="optionActions(i)" />
           </Col>
           <Pressable tag="button" type="button"
             v-if="options.length > 2"

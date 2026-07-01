@@ -6,12 +6,10 @@ import * as Notifications from 'expo-notifications';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box, Col } from '../layout';
 import { Caption } from '@stage-labs/kit/react-native/caption';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type {
-  ListViewNode,
-  WidgetActionRegistry,
-} from '@stage-labs/kit/kit';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers } from '@stage-labs/kit/kit';
 import {
+  listRoot,
   settingsHeader,
   settingsToggleRow,
   SCREEN_BACK,
@@ -56,19 +54,16 @@ export function NotificationsSettings(): React.ReactElement {
       ? 'Blocked in system settings — enable notifications for Metro in your OS settings.'
       : 'System permission will be requested when you enable push.';
 
-  const node: ListViewNode = {
-    type: 'ListView',
-    children: [
-      settingsToggleRow({
-        label: 'Push notifications',
-        name: 'push',
-        checked: enabled,
-        description: 'Get notified about new messages even when Metro is closed.',
-        changeType: SETTINGS_TOGGLE_CHANGE,
-        control: 'switch',
-      }),
-    ],
-  };
+  const node = listRoot(
+    settingsToggleRow({
+      label: 'Push notifications',
+      name: 'push',
+      checked: enabled,
+      description: 'Get notified about new messages even when Metro is closed.',
+      changeType: SETTINGS_TOGGLE_CHANGE,
+      control: 'switch',
+    }),
+  );
 
   const headerNode = settingsHeader({
     title: 'Notifications',
@@ -79,23 +74,23 @@ export function NotificationsSettings(): React.ReactElement {
     safeTop: insets.top,
   });
 
-  const registry: WidgetActionRegistry = {
+  const actions: PayloadHandlers = {
     [SCREEN_BACK]: () => { router.back(); },
-    [SETTINGS_TOGGLE_CHANGE]: (action) => {
-      const next = action.payload.push;
+    [SETTINGS_TOGGLE_CHANGE]: (payload) => {
+      const next = payload.push;
       if (typeof next === 'boolean') onToggle(next);
     },
   };
 
   return (
     <Col surface="surface" flex={1}>
-      <KitRenderer node={headerNode} registry={registry}/>
+      <ViewHost node={headerNode} actions={actions}/>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <Caption color={sub} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
           PUSH NOTIFICATIONS
         </Caption>
         <Box>
-          <KitRenderer node={node} registry={registry}/>
+          <ViewHost node={node} actions={actions}/>
         </Box>
         <Caption color={sub} style={{ paddingHorizontal: 16, paddingTop: 12 }}>
           {permLabel}

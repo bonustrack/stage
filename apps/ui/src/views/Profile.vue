@@ -4,8 +4,8 @@ import { getOrCreateXmtpClient, shortAddress } from '../lib/xmtp';
 import { loadCachedProfile, readProfile, type SnapshotProfile } from '../lib/profile';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { BasicNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import type { BasicNode } from '@stage-labs/kit/kit';
 import { profileHeader, profileAddressRow, PROFILE_ADDRESS_COPY } from '@stage-labs/views';
 
 const palette = useKitPalette();
@@ -58,8 +58,8 @@ const addressNode = computed<BasicNode>(() => ({
   ],
 }));
 
-const registry: WidgetActionRegistry = {
-  [PROFILE_ADDRESS_COPY]: () => { void copyAddress(); },
+const actions = {
+  [PROFILE_ADDRESS_COPY]: (): void => { void copyAddress(); },
 };
 </script>
 
@@ -96,10 +96,10 @@ const registry: WidgetActionRegistry = {
         }"
       />
       <Col class="mt-3.5 w-full">
-        <KitRenderer :node="nameNode" />
+        <ViewHost :node="nameNode" />
       </Col>
       <Col v-if="address" class="mt-0.5">
-        <KitRenderer :node="addressNode" :registry="registry" />
+        <ViewHost :node="addressNode" :actions="actions" />
       </Col>
     </Col>
   </Col>

@@ -1,11 +1,9 @@
 <script setup lang="ts">
 
 import { computed } from 'vue';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { conversationHeader, CONVERSATION_PRESS } from '@stage-labs/views';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import { basicRoot, conversationHeader, CONVERSATION_PRESS } from '@stage-labs/views';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
-import { basicRoot } from '@/lib/kitRow';
 import { shortAddress, stampAvatarUrl } from '../lib/xmtp';
 import type { XmtpFeedStatus } from '../lib/xmtpFeed';
 import { runningInIframe, postCloseToParent } from '../lib/embedBridge';
@@ -46,8 +44,8 @@ const node = computed(() =>
   ),
 );
 
-const registry: WidgetActionRegistry = {
-  [CONVERSATION_PRESS]: () => {
+const actions = {
+  [CONVERSATION_PRESS]: (): void => {
     emit('open');
   },
 };
@@ -61,7 +59,7 @@ const registry: WidgetActionRegistry = {
       <Icon name="arrowLeft" :size="22" />
     </Pressable>
     <Col class="flex-1 min-w-0 justify-center pr-3.5">
-      <KitRenderer :node="node" :registry="registry" />
+      <ViewHost :node="node" :actions="actions" />
     </Col>
     <!-- Widget only: close button at the very end of the (single) topnav. -->
     <Pressable

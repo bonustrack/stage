@@ -7,8 +7,8 @@ import { RefreshButton } from './WalletScreen.refreshButton';
 import { Spinner } from '../Spinner';
 import type { SimultaneousRefs } from '../SwipeTabs.types';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers } from '@stage-labs/kit/kit';
 import {
   balanceHeader,
   basicRoot,
@@ -111,17 +111,17 @@ function WalletBalanceCard({ err, totalUsd, border, onAction }: {
       ],
     }));
   }, [err, totalUsd, border]);
-  const registry: WidgetActionRegistry = useMemo(
+  const actions: PayloadHandlers = useMemo(
     () => ({
-      [WALLET_ACTION_PRESS]: (a) => {
-        if (typeof a.payload.action === 'string') onAction(a.payload.action);
+      [WALLET_ACTION_PRESS]: (payload) => {
+        if (typeof payload.action === 'string') onAction(payload.action);
       },
     }),
     [onAction],
   );
   return (
     <Col padding={{ top: 4, bottom: 16 }} margin={{ x: 16 }} align="start">
-      <KitRenderer node={node} registry={registry} />
+      <ViewHost node={node} actions={actions} />
     </Col>
   );
 }

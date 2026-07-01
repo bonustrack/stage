@@ -7,12 +7,13 @@ import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box, Col } from '../layout';
 import { Caption } from '@stage-labs/kit/react-native/caption';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type {
   ListViewNode,
-  WidgetActionRegistry,
+  PayloadHandlers,
 } from '@stage-labs/kit/kit';
 import {
+  listRoot,
   settingsHeader,
   settingsValueRow,
   settingsButtonRow,
@@ -76,17 +77,14 @@ export function MessengerSettings(): React.ReactElement {
 
   const accountNode: ListViewNode = { type: 'ListView', children: rows };
 
-  const dangerNode: ListViewNode = {
-    type: 'ListView',
-    children: [
-      settingsButtonRow({
-        label: 'Reset XMTP identity',
-        clickType: SETTINGS_BUTTON_PRESS,
-        payload: { action: 'reset' },
-        danger: true,
-      }),
-    ],
-  };
+  const dangerNode = listRoot(
+    settingsButtonRow({
+      label: 'Reset XMTP identity',
+      clickType: SETTINGS_BUTTON_PRESS,
+      payload: { action: 'reset' },
+      danger: true,
+    }),
+  );
 
   const headerNode = settingsHeader({
     title: 'Messenger',
@@ -97,38 +95,38 @@ export function MessengerSettings(): React.ReactElement {
     safeTop: insets.top,
   });
 
-  const registry: WidgetActionRegistry = {
+  const actions: PayloadHandlers = {
     [SCREEN_BACK]: () => { router.back(); },
-    [SETTINGS_COPY]: (action) => {
-      const value = action.payload.copy ?? action.payload.value;
-      const label = action.payload.label;
+    [SETTINGS_COPY]: (payload) => {
+      const value = payload.copy ?? payload.value;
+      const label = payload.label;
       if (typeof value === 'string') {
         void Clipboard.setStringAsync(value);
         flash(`${typeof label === 'string' ? label : 'Value'} copied`);
       }
     },
-    [SETTINGS_BUTTON_PRESS]: (action) => {
-      if (action.payload.action === 'reset') onResetIdentity();
+    [SETTINGS_BUTTON_PRESS]: (payload) => {
+      if (payload.action === 'reset') onResetIdentity();
     },
   };
 
   return (
     <Col surface="surface" flex={1}>
-      <KitRenderer node={headerNode} registry={registry}/>
+      <ViewHost node={headerNode} actions={actions}/>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <Caption color={sub} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
           XMTP ACCOUNT
         </Caption>
         {rows.length ? (
           <Box>
-            <KitRenderer node={accountNode} registry={registry}/>
+            <ViewHost node={accountNode} actions={actions}/>
           </Box>
         ) : null}
 
         <MessengerSessions />
 
         <Box padding={{ top: 28 }}>
-          <KitRenderer node={dangerNode} registry={registry}/>
+          <ViewHost node={dangerNode} actions={actions}/>
         </Box>
       </ScrollView>
     </Col>

@@ -3,10 +3,8 @@
 import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { noticeCard, WALLET_NOTICE_PRESS } from '@stage-labs/views';
-import { basicRoot } from '@/lib/kitRow';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import { basicRoot, noticeCard, WALLET_NOTICE_PRESS } from '@stage-labs/views';
 import { accountEpoch, hasWalletMnemonic, isWalletBackedUp } from '../lib/accounts';
 
 const router = useRouter();
@@ -44,9 +42,9 @@ const node = computed(() =>
   ),
 );
 
-const registry: WidgetActionRegistry = {
-  [WALLET_NOTICE_PRESS]: (action) => {
-    if (action.payload.action === 'backup') backUp();
+const actions = {
+  [WALLET_NOTICE_PRESS]: (payload: Record<string, unknown>): void => {
+    if (payload.action === 'backup') backUp();
     else dismiss();
   },
 };
@@ -58,6 +56,6 @@ const registry: WidgetActionRegistry = {
     class="w-[calc(100%-2rem)] mx-4 mt-3 mb-1 shrink-0 rounded-xl border p-3.5"
     :style="{ borderColor: palette.danger }"
   >
-    <KitRenderer :node="node" :registry="registry" />
+    <ViewHost :node="node" :actions="actions" />
   </Col>
 </template>

@@ -3,9 +3,9 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Row } from './layout';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
-import { reactionsRow, REACTION_PRESS, type ReactionPill } from '@stage-labs/views';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers } from '@stage-labs/kit/kit';
+import { basicRoot, reactionsRow, REACTION_PRESS, type ReactionPill } from '@stage-labs/views';
 import { REACT_PRESETS } from './MessengerBubble.helpers';
 import { usePalette } from '../lib/theme';
 
@@ -31,27 +31,24 @@ export function ReactionsRow({
   const pills: ReactionPill[] = confirmedEntries.map(([emoji, count]) => ({
     emoji, count, own: !!ownEmojis?.has(emoji),
   }));
-  const node: WidgetRoot = {
-    type: 'Basic',
-    children: [
-      reactionsRow({
-        reactions: pills,
-        dispatchPress: !!onReact,
-        pillBackground: pillBg,
-        ownBorderColor: link,
-      }),
-    ],
-  };
-  const registry: WidgetActionRegistry = {
-    [REACTION_PRESS]: (action) => {
-      const emoji = action.payload.emoji;
+  const node = basicRoot(
+    reactionsRow({
+      reactions: pills,
+      dispatchPress: !!onReact,
+      pillBackground: pillBg,
+      ownBorderColor: link,
+    }),
+  );
+  const actions: PayloadHandlers = {
+    [REACTION_PRESS]: (payload) => {
+      const emoji = payload.emoji;
       if (onReact && typeof emoji === 'string') onReact(emoji);
     },
   };
 
   return (
     <Row margin={{ top: 4 }} wrap gap={4}>
-      {hasConfirmed ? <KitRenderer node={node} registry={registry} /> : null}
+      {hasConfirmed ? <ViewHost node={node} actions={actions} /> : null}
       {pendingEmojis.map(emoji => (
         <Row padding={{ x: 8, y: 2 }} key={`pending-${emoji}`} align="center" gap={4} radius="full" background={pillBg} style={{
           opacity: 0.45,

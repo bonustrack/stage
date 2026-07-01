@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import { basicRoot, stepper, type StepperStep } from '@stage-labs/views';
 import { Col } from '../../components/layout';
 
@@ -46,7 +46,7 @@ export function ShieldStepper({ stage, errorAt = 0 }: {
   if (stage === 'idle') return null;
   return (
     <Col padding={{ x: 4, top: 4 }}>
-      <KitRenderer node={node} registry={{}} />
+      <ViewHost node={node} />
     </Col>
   );
 }

@@ -3,8 +3,8 @@
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { BasicNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import type { BasicNode } from '@stage-labs/kit/kit';
 import { tokenDetailCard, WALLET_ACTION_PRESS } from '@stage-labs/views';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, NETWORK_LABEL } from '@stage-labs/client/wallet/assets';
 import { tokenDetailViewModel } from '@stage-labs/client/wallet/tokenDetail';
@@ -53,9 +53,9 @@ const detailNode = computed<BasicNode | null>(() => {
   });
 });
 
-const registry: WidgetActionRegistry = {
-  [WALLET_ACTION_PRESS]: (action) => {
-    if (action.payload.action === 'send') send();
+const actions = {
+  [WALLET_ACTION_PRESS]: (payload: Record<string, unknown>): void => {
+    if (payload.action === 'send') send();
   },
 };
 </script>
@@ -88,7 +88,7 @@ const registry: WidgetActionRegistry = {
       </Col>
 
       <Col v-else-if="detailNode" class="pt-7 px-4">
-        <KitRenderer :node="detailNode" :registry="registry" />
+        <ViewHost :node="detailNode" :actions="actions" />
       </Col>
     </Col>
   </Col>

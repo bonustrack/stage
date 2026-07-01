@@ -12,9 +12,9 @@ import { useEffectiveColorScheme } from '../lib/theme';
 import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
 import { Avatar } from './Avatar';
 import { Box, Col } from './layout';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
-import { profileAddressRow, profileHeader, PROFILE_ADDRESS_COPY } from '@stage-labs/views';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers, WidgetRoot } from '@stage-labs/kit/kit';
+import { basicRoot, profileAddressRow, profileHeader, PROFILE_ADDRESS_COPY } from '@stage-labs/views';
 import { ImageViewer } from './ImageViewer';
 import {
   ProfileActions, ProfileHeader, useProfileColors, useSelfAddress,
@@ -30,17 +30,14 @@ function profileDisplayName(addr: string): string {
 }
 
 function nameNode(name: string): WidgetRoot {
-  return { type: 'Basic', children: [profileHeader({ name })] };
+  return basicRoot(profileHeader({ name }));
 }
 
 function addressNode(address: string, color: string): WidgetRoot {
-  return {
-    type: 'Basic',
-    children: [profileAddressRow({ address, label: shortAddress(address), color })],
-  };
+  return basicRoot(profileAddressRow({ address, label: shortAddress(address), color }));
 }
 
-function copyRegistry(onCopy: () => void): WidgetActionRegistry {
+function copyActions(onCopy: () => void): PayloadHandlers {
   return { [PROFILE_ADDRESS_COPY]: () => { onCopy(); } };
 }
 
@@ -66,11 +63,11 @@ function ProfileIdentity({ addr, isSelf, dark, opening, c, variant, insetTop, di
           onPress={onAvatar}
 />
         <Box margin={{ top: 14 }} style={{ alignSelf: 'stretch' }}>
-          <KitRenderer node={nameNode(displayName)} />
+          <ViewHost node={nameNode(displayName)} />
         </Box>
         {addr ? (
           <Box margin={{ top: 2 }}>
-            <KitRenderer node={addressNode(addr, c.text)} registry={copyRegistry(onCopy)} />
+            <ViewHost node={addressNode(addr, c.text)} actions={copyActions(onCopy)} />
           </Box>
         ) : null}
         {}

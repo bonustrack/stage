@@ -1,11 +1,9 @@
 <script setup lang="ts">
 
 import { computed } from 'vue';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { memberRow, MEMBER_PRESS, MEMBER_REMOVE } from '@stage-labs/views';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import { listRoot, memberRow, MEMBER_PRESS, MEMBER_REMOVE } from '@stage-labs/views';
 import { useKitPalette, useKitScheme } from '@stage-labs/kit/vue/theme-context';
-import { listRoot } from '@/lib/kitRow';
 import { shortAddress, stampAvatarUrl } from '../lib/xmtp';
 
 
@@ -19,11 +17,11 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{ open: []; remove: [] }>();
 
-const registry: WidgetActionRegistry = {
-  [MEMBER_PRESS]: () => {
+const actions = {
+  [MEMBER_PRESS]: (): void => {
     emit('open');
   },
-  [MEMBER_REMOVE]: () => {
+  [MEMBER_REMOVE]: (): void => {
     emit('remove');
   },
 };
@@ -58,6 +56,6 @@ const node = computed(() =>
 
 <template>
   <Box :class="{ 'opacity-50': props.removing }">
-    <KitRenderer :node="node" :registry="registry" />
+    <ViewHost :node="node" :actions="actions" />
   </Box>
 </template>

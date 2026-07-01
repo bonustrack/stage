@@ -4,8 +4,8 @@ import {
   getOrCreateXmtpClient, peerEthAddressOfDm, shortAddress, stampAvatarUrl,
 } from '../lib/xmtp';
 import { readProfile, loadCachedProfile } from '../lib/profile';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import type { ListViewNode } from '@stage-labs/kit/kit';
 import { contactRow, CONTACT_PRESS } from '@stage-labs/views';
 
 interface Contact { address: string; convId: string }
@@ -66,9 +66,9 @@ const listNode = computed<ListViewNode>(() => ({
   ),
 }));
 
-const registry: WidgetActionRegistry = {
-  [CONTACT_PRESS]: (action) => {
-    const convId = action.payload.convId;
+const actions = {
+  [CONTACT_PRESS]: (payload: Record<string, unknown>): void => {
+    const convId = payload.convId;
     if (typeof convId === 'string') void router.push(`/xmtp/${convId}`);
   },
 };
@@ -88,7 +88,7 @@ const registry: WidgetActionRegistry = {
       </Text>
     </Col>
     <Scroll v-else class="flex-1 min-h-0">
-      <KitRenderer :node="listNode" :registry="registry" />
+      <ViewHost :node="listNode" :actions="actions" />
     </Scroll>
   </Col>
 </template>

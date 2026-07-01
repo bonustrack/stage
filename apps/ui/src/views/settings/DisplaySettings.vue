@@ -4,10 +4,8 @@ import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import type { HeroIconName } from '@stage-labs/kit/icons';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type {
-  ListViewNode, ListViewItemNode, WidgetActionRegistry,
-} from '@stage-labs/kit/kit';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import type { ListViewNode, ListViewItemNode } from '@stage-labs/kit/kit';
 import {
   settingsHeader, settingsThemeRow, SCREEN_BACK, SETTINGS_THEME_SELECT,
 } from '@stage-labs/views';
@@ -91,10 +89,10 @@ const themeNode = computed<ListViewNode>(() => ({
   children: THEME_ROWS.map(themeItem),
 }));
 
-const registry: WidgetActionRegistry = {
-  [SCREEN_BACK]: () => { router.back(); },
-  [SETTINGS_THEME_SELECT]: (action) => {
-    const value = action.payload.value;
+const actions = {
+  [SCREEN_BACK]: (): void => { router.back(); },
+  [SETTINGS_THEME_SELECT]: (payload: Record<string, unknown>): void => {
+    const value = payload.value;
     if (value === 'custom') { setCustomTheme(true); return; }
     if (value === 'system' || value === 'light' || value === 'dark') pickTheme(value);
   },
@@ -103,13 +101,13 @@ const registry: WidgetActionRegistry = {
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <KitRenderer :node="headerNode" :registry="registry" />
+    <ViewHost :node="headerNode" :actions="actions" />
 
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-8">
       <!-- THEME: light/dark/system + custom, mirroring mobile's DisplaySettings list. -->
       <Col class="text-[11px] text-metro-sub-light dark:text-metro-sub-dark px-4 pt-5 pb-2">THEME</Col>
       <Col class="w-[calc(100%-2rem)] mx-4">
-        <KitRenderer :node="themeNode" :registry="registry" />
+        <ViewHost :node="themeNode" :actions="actions" />
       </Col>
 
       <!-- CUSTOM COLORS / DENSITY / RADIUS / TEXT SIZE: live seed editor, mirroring

@@ -4,8 +4,8 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { ListViewNode, PayloadHandlers } from '@stage-labs/kit/kit';
 import { tokenRow, WALLET_TOKEN_PRESS } from '@stage-labs/views';
 import { fmtUsd, fmtBalance } from '@stage-labs/client/wallet/format';
 import { Box, Row, Col } from '../../components/layout';
@@ -111,9 +111,9 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
       });
     }),
   }), [rows]);
-  const listRegistry: WidgetActionRegistry = useMemo(() => ({
-    [WALLET_TOKEN_PRESS]: (a) => {
-      const key = a.payload.tokenId;
+  const listActions: PayloadHandlers = useMemo(() => ({
+    [WALLET_TOKEN_PRESS]: (payload) => {
+      const key = payload.tokenId;
       const r = rows.find((row) => rowKey(row) === key);
       if (r) { onChange({ symbol: r.symbol, chainId: r.chainId, isPrivate: r.isPrivate }); setOpen(false); }
     },
@@ -170,7 +170,7 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
             No tokens.
           </Text>
         ) : (
-          <KitRenderer node={listNode} registry={listRegistry} />
+          <ViewHost node={listNode} actions={listActions} />
         )}
       </AppModal>
     </Box>

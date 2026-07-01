@@ -1,8 +1,8 @@
 <script setup lang="ts">
 
 import { computed, ref } from 'vue';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import type { WidgetRoot } from '@stage-labs/kit/kit';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 
@@ -34,9 +34,9 @@ const pickerNode = computed<WidgetRoot>(() => ({
   ],
 }));
 
-const pickerRegistry: WidgetActionRegistry = {
-  avatar_pick: (a) => {
-    const files = a.payload.files;
+const pickerActions = {
+  avatar_pick: (payload: Record<string, unknown>): void => {
+    const files = payload.files;
     const file = Array.isArray(files) ? (files[0] as File | undefined) : undefined;
     if (file) emit('pick', file);
   },
@@ -68,7 +68,7 @@ const pickerRegistry: WidgetActionRegistry = {
         <Icon v-else :name="props.readonly ? 'users' : 'plus'" :size="28" :color="palette.sub" />
       </Box>
     </Pressable>
-    <KitRenderer :node="pickerNode" :registry="pickerRegistry" />
+    <ViewHost :node="pickerNode" :actions="pickerActions" />
     <Text v-if="!props.readonly" size="xs" role="secondary">
       {{ props.uploading ? 'Uploading…' : (props.imageUrl ? 'Tap to change image' : 'Tap to add a group image') }}
     </Text>

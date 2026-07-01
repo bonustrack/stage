@@ -1,11 +1,10 @@
 <script setup lang="ts">
 
 import { ref, computed } from 'vue';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import ViewHost from '@stage-labs/kit/vue/view-host';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import { composeField } from '@/lib/composeField';
-import { basicRoot } from '@/lib/kitRow';
+import { basicRoot } from '@stage-labs/views';
 
 const palette = useKitPalette();
 
@@ -46,17 +45,17 @@ const jsonNode = computed(() =>
     changeType: JSON_CHANGE,
   })));
 
-const registry: WidgetActionRegistry = {
-  [DESC_CHANGE]: (action) => {
-    const next = action.payload.desc;
+const actions = {
+  [DESC_CHANGE]: (payload: Record<string, unknown>): void => {
+    const next = payload.desc;
     if (typeof next === 'string') desc.value = next;
   },
-  [MESSAGE_CHANGE]: (action) => {
-    const next = action.payload.message;
+  [MESSAGE_CHANGE]: (payload: Record<string, unknown>): void => {
+    const next = payload.message;
     if (typeof next === 'string') message.value = next;
   },
-  [JSON_CHANGE]: (action) => {
-    const next = action.payload.json;
+  [JSON_CHANGE]: (payload: Record<string, unknown>): void => {
+    const next = payload.json;
     if (typeof next === 'string') json.value = next;
   },
 };
@@ -139,11 +138,11 @@ function create(): void {
           @click="kind = 'eip712'">Typed data</Pressable>
       </Row>
 
-      <KitRenderer :node="descNode" :registry="registry" />
+      <ViewHost :node="descNode" :actions="actions" />
 
-      <KitRenderer v-if="kind === 'personal'" :node="messageNode" :registry="registry" />
+      <ViewHost v-if="kind === 'personal'" :node="messageNode" :actions="actions" />
 
-      <KitRenderer v-else :node="jsonNode" :registry="registry" />
+      <ViewHost v-else :node="jsonNode" :actions="actions" />
 
       <Button
         variant="primary"

@@ -3,8 +3,8 @@
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import type { ListViewNode } from '@stage-labs/kit/kit';
 import { settingsHeader, settingsNavRow, SCREEN_BACK, SETTINGS_NAV_PRESS } from '@stage-labs/views';
 import pkg from '../../package.json';
 
@@ -41,10 +41,10 @@ const node = computed<ListViewNode>(() => ({
   })),
 }));
 
-const registry: WidgetActionRegistry = {
-  [SCREEN_BACK]: () => { router.back(); },
-  [SETTINGS_NAV_PRESS]: (action) => {
-    const to = action.payload.to;
+const actions = {
+  [SCREEN_BACK]: (): void => { router.back(); },
+  [SETTINGS_NAV_PRESS]: (payload: Record<string, unknown>): void => {
+    const to = payload.to;
     if (typeof to === 'string') void router.push(to);
   },
 };
@@ -52,11 +52,11 @@ const registry: WidgetActionRegistry = {
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <KitRenderer :node="headerNode" :registry="registry" />
+    <ViewHost :node="headerNode" :actions="actions" />
 
     <Scroll class="flex-1 min-h-0 no-scrollbar pb-8">
       <Col class="w-[calc(100%-2rem)] mx-4 mt-2">
-        <KitRenderer :node="node" :registry="registry" />
+        <ViewHost :node="node" :actions="actions" />
       </Col>
 
       <Col class="mt-6 mb-4 text-center">

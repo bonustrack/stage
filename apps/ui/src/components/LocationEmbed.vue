@@ -1,10 +1,8 @@
 <script setup lang="ts">
 
 import { computed } from 'vue';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { previewLinkCard, LINK_OPEN } from '@stage-labs/views';
-import { listRoot } from '@/lib/kitRow';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import { listRoot, previewLinkCard, LINK_OPEN } from '@stage-labs/views';
 import { osmTileUrl } from '@stage-labs/client/embed/detect';
 
 const props = defineProps<{ lat: number; lng: number; sourceUrl: string }>();
@@ -23,8 +21,8 @@ const node = computed(() =>
   ),
 );
 
-const registry: WidgetActionRegistry = {
-  [LINK_OPEN]: () => {
+const actions = {
+  [LINK_OPEN]: (): void => {
     window.open(props.sourceUrl, '_blank', 'noopener');
   },
 };
@@ -35,5 +33,5 @@ const registry: WidgetActionRegistry = {
        Kit JSON via previewLinkCard (static Image + Text + LINK_OPEN). The
        decorative centered 📍 overlay is dropped (an absolute overlay is not
        expressible in Kit JSON). -->
-  <KitRenderer :node="node" :registry="registry" />
+  <ViewHost :node="node" :actions="actions" />
 </template>

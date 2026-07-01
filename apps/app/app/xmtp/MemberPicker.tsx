@@ -4,8 +4,8 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Icon } from '@stage-labs/kit/react-native/icon';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers } from '@stage-labs/kit/kit';
 import { basicRoot, memberTextField, MEMBER_FIELD_CHANGE, MEMBER_FIELD_SUBMIT } from '@stage-labs/views';
 import { shortAddress } from '../../modules/messaging';
 import { resolveEnsName } from '@stage-labs/client/api/ens';
@@ -104,9 +104,9 @@ export function MemberPicker({ state, dark, exclude = [] }: {
   } = state;
   const contacts = useContacts(exclude, entry);
 
-  const resolverRegistry: WidgetActionRegistry = {
-    [MEMBER_FIELD_CHANGE]: (a) => {
-      if (typeof a.payload.field === 'string') setEntry(a.payload.field);
+  const resolverActions: PayloadHandlers = {
+    [MEMBER_FIELD_CHANGE]: (payload) => {
+      if (typeof payload.field === 'string') setEntry(payload.field);
     },
     [MEMBER_FIELD_SUBMIT]: () => { void addMember(); },
   };
@@ -120,7 +120,7 @@ export function MemberPicker({ state, dark, exclude = [] }: {
         </Text>
         <Row gap={8} align="center">
           <Box flex={1}>
-            <KitRenderer
+            <ViewHost
               node={basicRoot(memberTextField({
                 value: entry,
                 placeholder: '0x… or name.eth',
@@ -136,7 +136,7 @@ export function MemberPicker({ state, dark, exclude = [] }: {
                 returnKeyType: 'done',
                 submitType: MEMBER_FIELD_SUBMIT,
               }))}
-              registry={resolverRegistry}
+              actions={resolverActions}
             />
           </Box>
           <Button

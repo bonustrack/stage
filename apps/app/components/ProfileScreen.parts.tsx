@@ -3,8 +3,8 @@ import { useEffect, useState } from 'react';
 import { Row } from './layout';
 import { usePalette, type Palette } from '../lib/theme';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from '../modules/messaging';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers } from '@stage-labs/kit/kit';
 import {
   basicRoot, profileActionsRow, screenHeader,
   PROFILE_ROUND_PRESS, SCREEN_BACK,
@@ -46,8 +46,8 @@ export function ProfileHeader({ variant, insetTop, onBack, c }: {
       backPadding: 6,
       safeTop: insetTop,
     }));
-    const registry: WidgetActionRegistry = { [SCREEN_BACK]: () => { onBack(); } };
-    return <KitRenderer node={node} registry={registry} />;
+    const actions: PayloadHandlers = { [SCREEN_BACK]: () => { onBack(); } };
+    return <ViewHost node={node} actions={actions} />;
   }
   return (
     <Row
@@ -65,24 +65,21 @@ export function ProfileHeader({ variant, insetTop, onBack, c }: {
 export function ProfileActions({ opening, onMessage, onSend, c }: {
   dark: boolean; opening: boolean; onMessage: () => void; onSend: () => void; c: ProfileColors;
 }): React.ReactElement {
-  const node: WidgetRoot = {
-    type: 'Basic',
-    children: [
-      profileActionsRow({
-        border: c.border,
-        fg: c.link,
-        actions: [
-          { action: 'message', icon: 'chatRect', label: opening ? 'Opening…' : 'Message', disabled: opening },
-          { action: 'send', icon: 'send', label: 'Send' },
-        ],
-      }),
-    ],
-  };
-  const registry: WidgetActionRegistry = {
-    [PROFILE_ROUND_PRESS]: (a) => {
-      if (a.payload.action === 'message') { if (!opening) onMessage(); }
-      else if (a.payload.action === 'send') onSend();
+  const node = basicRoot(
+    profileActionsRow({
+      border: c.border,
+      fg: c.link,
+      actions: [
+        { action: 'message', icon: 'chatRect', label: opening ? 'Opening…' : 'Message', disabled: opening },
+        { action: 'send', icon: 'send', label: 'Send' },
+      ],
+    }),
+  );
+  const actions: PayloadHandlers = {
+    [PROFILE_ROUND_PRESS]: (payload) => {
+      if (payload.action === 'message') { if (!opening) onMessage(); }
+      else if (payload.action === 'send') onSend();
     },
   };
-  return <KitRenderer node={node} registry={registry} />;
+  return <ViewHost node={node} actions={actions} />;
 }

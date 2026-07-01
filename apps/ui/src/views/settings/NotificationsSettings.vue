@@ -3,8 +3,8 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import type { ListViewNode } from '@stage-labs/kit/kit';
 import {
   settingsHeader, settingsButtonRow, settingsValueRow, SCREEN_BACK, SETTINGS_BUTTON_PRESS,
 } from '@stage-labs/views';
@@ -58,15 +58,15 @@ const node = computed<ListViewNode>(() => ({
     })],
 }));
 
-const registry: WidgetActionRegistry = {
-  [SCREEN_BACK]: () => { router.back(); },
-  [SETTINGS_BUTTON_PRESS]: () => { void requestPermission(); },
+const actions = {
+  [SCREEN_BACK]: (): void => { router.back(); },
+  [SETTINGS_BUTTON_PRESS]: (): void => { void requestPermission(); },
 };
 </script>
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <KitRenderer :node="headerNode" :registry="registry" />
+    <ViewHost :node="headerNode" :actions="actions" />
 
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-8">
       <!-- PUSH NOTIFICATIONS: mirrors mobile NotificationsSettings' single toggle card.
@@ -75,7 +75,7 @@ const registry: WidgetActionRegistry = {
            is the web-appropriate equivalent of mobile's OS permission line. -->
       <Text size="3xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark px-4 pt-5 pb-2">NOTIFICATIONS</Text>
       <Col class="w-[calc(100%-2rem)] mx-4">
-        <KitRenderer :node="node" :registry="registry" />
+        <ViewHost :node="node" :actions="actions" />
       </Col>
       <Text size="2xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark px-4 pt-3">
         {{ statusLabel }}

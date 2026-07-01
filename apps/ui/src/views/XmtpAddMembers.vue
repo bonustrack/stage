@@ -3,10 +3,8 @@
 import { computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { screenHeader, SCREEN_BACK } from '@stage-labs/views';
-import { basicRoot } from '@/lib/kitRow';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import { basicRoot, screenHeader, SCREEN_BACK } from '@stage-labs/views';
 import { useEffectiveScheme } from '@/lib/kitTheme';
 import { addGroupMembers } from '../lib/xmtpGroups';
 import { convOfLine, lineOfConv, groupMemberEthAddresses } from '../lib/xmtp';
@@ -48,8 +46,8 @@ const headerNode = computed(() =>
     borderColor: palette.border,
   })),
 );
-const headerRegistry: WidgetActionRegistry = {
-  [SCREEN_BACK]: () => { router.back(); },
+const headerActions = {
+  [SCREEN_BACK]: (): void => { router.back(); },
 };
 
 async function onSubmit(): Promise<void> {
@@ -68,7 +66,7 @@ async function onSubmit(): Promise<void> {
 
 <template>
   <Col surface="surface" class="min-h-screen pb-[88px]">
-    <KitRenderer :node="headerNode" :registry="headerRegistry" />
+    <ViewHost :node="headerNode" :actions="headerActions" />
 
     <Col class="flex-1 overflow-y-auto no-scrollbar" :padding="16" :gap="16">
       <MemberPicker

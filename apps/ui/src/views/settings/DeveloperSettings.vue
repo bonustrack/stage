@@ -3,8 +3,8 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import type { ListViewNode } from '@stage-labs/kit/kit';
 import { settingsHeader, settingsValueRow, SCREEN_BACK } from '@stage-labs/views';
 import pkg from '../../../package.json';
 import { getXmtpEnv } from '../../lib/xmtp';
@@ -38,20 +38,20 @@ const node = computed<ListViewNode>(() => ({
   children: rows.value.map(r => settingsValueRow({ label: r.label, value: r.value })),
 }));
 
-const registry: WidgetActionRegistry = {
-  [SCREEN_BACK]: () => { router.back(); },
+const actions = {
+  [SCREEN_BACK]: (): void => { router.back(); },
 };
 </script>
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <KitRenderer :node="headerNode" :registry="registry" />
+    <ViewHost :node="headerNode" :actions="actions" />
 
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-8 px-4 pt-4">
       <!-- DIAGNOSTICS: read-only env + build info, mirroring mobile DeveloperSettings
            (the Railgun debug toggle and reset/danger actions are mobile-only and deferred). -->
       <Text size="3xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark pb-1">DIAGNOSTICS</Text>
-      <KitRenderer :node="node" :registry="registry" />
+      <ViewHost :node="node" :actions="actions" />
     </Col>
   </Col>
 </template>

@@ -1,13 +1,12 @@
 <script setup lang="ts">
 
 import { computed, ref } from 'vue';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import ViewHost from '@stage-labs/kit/vue/view-host';
 import {
+  basicRoot,
   emptyState, overflowMenu, OVERFLOW_MENU_PRESS,
   labelBar, LABEL_CHIP_PRESS, type LabelBarChip,
 } from '@stage-labs/views';
-import { basicRoot } from '@/lib/kitRow';
 import { metroFieldColors } from '@/lib/metroFieldColors';
 import { ASK_QUESTION_MEMBERS, stampAvatarUrl } from '../lib/xmtp';
 import { postCloseToParent } from '../lib/embedBridge';
@@ -57,9 +56,9 @@ const overflowNode = computed(() =>
   ),
 );
 
-const overflowRegistry: WidgetActionRegistry = {
-  [OVERFLOW_MENU_PRESS]: (action) => {
-    const id = action.payload.id;
+const overflowActions = {
+  [OVERFLOW_MENU_PRESS]: (payload: Record<string, unknown>): void => {
+    const id = payload.id;
     if (id === 'new') goNewGroup();
     else if (id === 'archived') goArchived();
     else if (id === 'profile') goProfile();
@@ -89,9 +88,9 @@ const labelBarNode = computed(() => {
   );
 });
 
-const labelBarRegistry: WidgetActionRegistry = {
-  [LABEL_CHIP_PRESS]: (action) => {
-    const value = action.payload.value;
+const labelBarActions = {
+  [LABEL_CHIP_PRESS]: (payload: Record<string, unknown>): void => {
+    const value = payload.value;
     if (typeof value !== 'string') return;
     if (value === '') { clearAllFilters(); return; }
     if (value === UNREAD_VALUE) { toggleUnread(); return; }
@@ -140,7 +139,7 @@ const labelBarRegistry: WidgetActionRegistry = {
         <Pressable tag="button" type="button" title="Message requests" class="relative" @click="goRequests">
           <Icon name="inbox" :size="24" class="text-metro-head-light dark:text-metro-head-dark" />
         </Pressable>
-        <KitRenderer :node="overflowNode" :registry="overflowRegistry" />
+        <ViewHost :node="overflowNode" :actions="overflowActions" />
       </Teleport>
     </template>
 
@@ -166,7 +165,7 @@ const labelBarRegistry: WidgetActionRegistry = {
 
     <!-- MESSAGES: label filter bar + the channel list. -->
     <template v-else>
-      <KitRenderer v-if="!embedded" :node="labelBarNode" :registry="labelBarRegistry" />
+      <ViewHost v-if="!embedded" :node="labelBarNode" :actions="labelBarActions" />
       <SearchResolution
         :status="searchResolution.status"
         :address="searchResolution.address"
@@ -183,7 +182,7 @@ const labelBarRegistry: WidgetActionRegistry = {
       </Col>
       <ul v-else class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-6">
         <li v-if="filtered && filtered.length === 0">
-          <KitRenderer :node="emptyNode" />
+          <ViewHost :node="emptyNode" />
         </li>
         <li v-for="r in filtered ?? rows" :key="r.convId">
           <ChannelRow

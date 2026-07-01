@@ -3,8 +3,8 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers } from '@stage-labs/kit/kit';
 import { basicRoot, screenHeader, SCREEN_BACK } from '@stage-labs/views';
 import { Col, Box } from '../layout';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
@@ -27,14 +27,14 @@ export function ProposalsScreen(): React.ReactElement {
     surface: pal.toolbarBg,
     borderColor: border,
   }));
-  const headerRegistry: WidgetActionRegistry = {
+  const headerActions: PayloadHandlers = {
     [SCREEN_BACK]: () => { router.back(); },
   };
 
   return (
     <Col flex={1} surface="surface">
       {}
-      <KitRenderer node={headerNode} registry={headerRegistry} />
+      <ViewHost node={headerNode} actions={headerActions} />
 
       {current ? (
         <Col flex={1} surface="surface">

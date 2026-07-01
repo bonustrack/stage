@@ -3,8 +3,8 @@ import { useCallback, useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { Image } from '@stage-labs/kit/react-native/image';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers, WidgetRoot } from '@stage-labs/kit/kit';
 import { basicRoot, memberTextField, screenHeader, MEMBER_FIELD_CHANGE, SCREEN_BACK } from '@stage-labs/views';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
@@ -21,28 +21,23 @@ import { MemberPicker, useMemberPicker } from './MemberPicker';
 interface PickedImage { uri: string; mime: string; name: string }
 
 function imagePickerNode(openNonce: number): WidgetRoot {
-  return {
-    type: 'Basic',
-    children: [
-      {
-        type: 'FilePicker',
-        openNonce,
-        source: 'library',
-        mediaTypes: ['images'],
-        quality: 0.85,
-        multiple: false,
-        allowsEditing: true,
-        aspect: [1, 1],
-        onPickAction: { type: 'group_image_pick', handler: 'client' },
-      },
-    ],
-  };
+  return basicRoot({
+    type: 'FilePicker',
+    openNonce,
+    source: 'library',
+    mediaTypes: ['images'],
+    quality: 0.85,
+    multiple: false,
+    allowsEditing: true,
+    aspect: [1, 1],
+    onPickAction: { type: 'group_image_pick', handler: 'client' },
+  });
 }
 
-function imagePickerRegistry(setImage: (img: PickedImage) => void): WidgetActionRegistry {
+function imagePickerActions(setImage: (img: PickedImage) => void): PayloadHandlers {
   return {
-    group_image_pick: (a) => {
-      const files = a.payload.files;
+    group_image_pick: (payload) => {
+      const files = payload.files;
       const file = Array.isArray(files) ? files[0] as { uri: string; mime: string; name?: string } | undefined : undefined;
       if (file === undefined) return;
       setImage({ uri: file.uri, mime: file.mime, name: file.name ?? 'group-avatar' });
@@ -92,7 +87,7 @@ function GroupNameField({ name, setName, head, sub, inputBg, border }: {
       <Text size="xs" role="secondary">
         Group name (optional)
       </Text>
-      <KitRenderer
+      <ViewHost
         node={basicRoot(memberTextField({
           value: name,
           placeholder: 'e.g. Metro builders',
@@ -104,9 +99,9 @@ function GroupNameField({ name, setName, head, sub, inputBg, border }: {
           paddingX: 14,
           paddingY: 12,
         }))}
-        registry={{
-          [MEMBER_FIELD_CHANGE]: (a) => {
-            if (typeof a.payload.field === 'string') setName(a.payload.field);
+        actions={{
+          [MEMBER_FIELD_CHANGE]: (payload) => {
+            if (typeof payload.field === 'string') setName(payload.field);
           },
         }}
 />
@@ -129,7 +124,7 @@ export default function NewGroup(): React.ReactElement {
     surface: toolbarBg,
     borderColor: border,
   }));
-  const headerRegistry: WidgetActionRegistry = {
+  const headerActions: PayloadHandlers = {
     [SCREEN_BACK]: () => { router.back(); },
   };
 
@@ -168,7 +163,7 @@ export default function NewGroup(): React.ReactElement {
   return (
     <Col surface="surface" flex={1}>
       {}
-      <KitRenderer node={headerNode} registry={headerRegistry} />
+      <ViewHost node={headerNode} actions={headerActions} />
 
       <ScrollView
         contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 24 + insets.bottom }}
@@ -177,7 +172,7 @@ export default function NewGroup(): React.ReactElement {
         {}
         <GroupImageField image={image} creating={creating} fg={fg} border={border} rowBg={rowBg}
           onPick={() => { pickImage(); }}/>
-        <KitRenderer node={imagePickerNode(pickNonce)} registry={imagePickerRegistry(setImage)} />
+        <ViewHost node={imagePickerNode(pickNonce)} actions={imagePickerActions(setImage)} />
 
         {}
         <GroupNameField

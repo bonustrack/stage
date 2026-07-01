@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers } from '@stage-labs/kit/kit';
 import {
   basicRoot, sendFields,
   WALLET_SEND_FIELD_ACTION, WALLET_SEND_FIELD_CHANGE,
@@ -58,20 +58,20 @@ export function PublicSendBody({ token, initialTo, onFooter }: {
     maxDisabled: !p.ethBalance,
   })), [p.to, p.amount, p.mode, p.resolving, p.resolveErr, p.secondaryLabel, p.ethBalance, token.symbol]);
 
-  const registry: WidgetActionRegistry = useMemo(() => ({
-    [WALLET_SEND_FIELD_CHANGE]: (a) => {
-      if (a.payload.field === 'recipient' && typeof a.payload.recipient === 'string') p.setTo(a.payload.recipient);
-      else if (a.payload.field === 'amount' && typeof a.payload.amount === 'string') p.setAmount(a.payload.amount);
+  const actions: PayloadHandlers = useMemo(() => ({
+    [WALLET_SEND_FIELD_CHANGE]: (payload) => {
+      if (payload.field === 'recipient' && typeof payload.recipient === 'string') p.setTo(payload.recipient);
+      else if (payload.field === 'amount' && typeof payload.amount === 'string') p.setAmount(payload.amount);
     },
-    [WALLET_SEND_FIELD_ACTION]: (a) => {
-      if (a.payload.action === 'max') p.onMax();
-      else if (a.payload.action === 'toggleUnit') toggleAmount(p.amount, p.mode, p.ethPriceUsd, p.setAmount, p.setMode);
+    [WALLET_SEND_FIELD_ACTION]: (payload) => {
+      if (payload.action === 'max') p.onMax();
+      else if (payload.action === 'toggleUnit') toggleAmount(p.amount, p.mode, p.ethPriceUsd, p.setAmount, p.setMode);
     },
   }), [p]);
 
   return (
     <Col gap={8}>
-      <KitRenderer node={node} registry={registry} />
+      <ViewHost node={node} actions={actions} />
 
       {p.resolved ? (
         <RecipientRow address={p.resolved} pal={{ head, sub: fg, border }} />

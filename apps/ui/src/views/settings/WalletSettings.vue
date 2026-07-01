@@ -3,8 +3,8 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import type { ListViewNode } from '@stage-labs/kit/kit';
 import {
   settingsHeader, settingsValueRow, settingsNavRow, SCREEN_BACK, SETTINGS_COPY, SETTINGS_NAV_PRESS,
 } from '@stage-labs/views';
@@ -86,15 +86,15 @@ const manageNode = computed<ListViewNode>(() => ({
   })],
 }));
 
-const registry: WidgetActionRegistry = {
-  [SCREEN_BACK]: () => { router.back(); },
-  [SETTINGS_COPY]: (action) => {
-    const value = action.payload.value;
-    const key = action.payload.key;
+const actions = {
+  [SCREEN_BACK]: (): void => { router.back(); },
+  [SETTINGS_COPY]: (payload: Record<string, unknown>): void => {
+    const value = payload.value;
+    const key = payload.key;
     if (typeof value === 'string' && typeof key === 'string') void copy(key, value);
   },
-  [SETTINGS_NAV_PRESS]: (action) => {
-    const to = action.payload.to;
+  [SETTINGS_NAV_PRESS]: (payload: Record<string, unknown>): void => {
+    const to = payload.to;
     if (typeof to === 'string') void router.push(to);
   },
 };
@@ -102,7 +102,7 @@ const registry: WidgetActionRegistry = {
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <KitRenderer :node="headerNode" :registry="registry" />
+    <ViewHost :node="headerNode" :actions="actions" />
 
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-8">
       <Col v-if="loaded && !account" class="px-4 pt-6">
@@ -112,16 +112,16 @@ const registry: WidgetActionRegistry = {
       <template v-else-if="account">
         <Text size="3xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark px-4 pt-5 pb-1">ACCOUNT</Text>
         <Col class="w-[calc(100%-2rem)] mx-4 mt-2">
-          <KitRenderer :node="accountNode" :registry="registry" />
+          <ViewHost :node="accountNode" :actions="actions" />
         </Col>
 
         <Text size="3xs" tag="div" class="text-metro-sub-light dark:text-metro-sub-dark px-4 pt-6 pb-1">ADDRESS</Text>
         <Col class="w-[calc(100%-2rem)] mx-4 mt-2">
-          <KitRenderer :node="addressNode" :registry="registry" />
+          <ViewHost :node="addressNode" :actions="actions" />
         </Col>
 
         <Col class="w-[calc(100%-2rem)] mx-4 mt-6">
-          <KitRenderer :node="manageNode" :registry="registry" />
+          <ViewHost :node="manageNode" :actions="actions" />
         </Col>
       </template>
     </Col>

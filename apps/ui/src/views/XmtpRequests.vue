@@ -3,10 +3,8 @@
 import { computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { emptyState, screenHeader, SCREEN_BACK } from '@stage-labs/views';
-import { basicRoot } from '@/lib/kitRow';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import { basicRoot, emptyState, screenHeader, SCREEN_BACK } from '@stage-labs/views';
 import { useEffectiveScheme } from '@/lib/kitTheme';
 import {
   listRequestConvs, acceptRequestConv, blockRequestConv,
@@ -44,8 +42,8 @@ const headerNode = computed(() =>
     borderColor: palette.border,
   })),
 );
-const headerRegistry: WidgetActionRegistry = {
-  [SCREEN_BACK]: () => { router.back(); },
+const headerActions = {
+  [SCREEN_BACK]: (): void => { router.back(); },
 };
 
 async function act(convId: string, accept: boolean): Promise<void> {
@@ -62,13 +60,13 @@ async function act(convId: string, accept: boolean): Promise<void> {
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <KitRenderer :node="headerNode" :registry="headerRegistry" />
+    <ViewHost :node="headerNode" :actions="headerActions" />
 
     <Col v-if="rows === null" align="center" justify="center" class="flex-1">
       <Spinner :size="28" />
     </Col>
     <Col v-else-if="rows.length === 0" align="center" justify="center" class="flex-1">
-      <KitRenderer :node="emptyNode" />
+      <ViewHost :node="emptyNode" />
     </Col>
     <ul v-else class="flex-1 min-h-0 overflow-y-auto no-scrollbar pb-6">
       <li v-for="r in rows" :key="r.convId">

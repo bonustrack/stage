@@ -2,10 +2,8 @@
 
 import { computed } from 'vue';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { nftGrid, LINK_OPEN } from '@stage-labs/views';
-import { basicRoot } from '@/lib/kitRow';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import { basicRoot, nftGrid, LINK_OPEN } from '@stage-labs/views';
 import { useNfts } from '@/lib/useNfts';
 
 const palette = useKitPalette();
@@ -22,9 +20,9 @@ const node = computed(() =>
     })),
   })));
 
-const registry: WidgetActionRegistry = {
-  [LINK_OPEN]: (action) => {
-    const url = action.payload.url;
+const actions = {
+  [LINK_OPEN]: (payload: Record<string, unknown>): void => {
+    const url = payload.url;
     if (typeof url === 'string' && url) window.open(url, '_blank', 'noopener,noreferrer');
   },
 };
@@ -49,7 +47,7 @@ const registry: WidgetActionRegistry = {
     </Col>
 
     <Col v-else class="pt-1.5 -mx-1.5">
-      <KitRenderer :node="node" :registry="registry" />
+      <ViewHost :node="node" :actions="actions" />
     </Col>
   </Col>
 </template>

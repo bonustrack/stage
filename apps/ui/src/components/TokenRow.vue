@@ -2,13 +2,11 @@
 
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import ViewHost from '@stage-labs/kit/vue/view-host';
 import type { AssetRow } from '@stage-labs/client/wallet/assets';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO } from '@stage-labs/client/wallet/assets';
 import { fmtUsd, fmtBalance } from '@stage-labs/client/wallet/format';
-import { tokenRow, WALLET_TOKEN_PRESS } from '@stage-labs/views';
-import { listRoot } from '@/lib/kitRow';
+import { listRoot, tokenRow, WALLET_TOKEN_PRESS } from '@stage-labs/views';
 import { rememberTokenRow } from '@/lib/tokenDetailStore';
 
 const props = defineProps<{ r: AssetRow }>();
@@ -20,8 +18,8 @@ function open(): void {
   void router.push(`/wallet/token/${encodeURIComponent(id)}`);
 }
 
-const registry: WidgetActionRegistry = {
-  [WALLET_TOKEN_PRESS]: () => {
+const actions = {
+  [WALLET_TOKEN_PRESS]: (): void => {
     open();
   },
 };
@@ -58,5 +56,5 @@ const node = computed(() =>
 </script>
 
 <template>
-  <KitRenderer :node="node" :registry="registry" />
+  <ViewHost :node="node" :actions="actions" />
 </template>

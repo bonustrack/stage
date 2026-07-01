@@ -2,8 +2,8 @@
 
 import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { ListViewNode, WidgetActionRegistry } from '@stage-labs/kit/kit';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import type { ListViewNode } from '@stage-labs/kit/kit';
 import { accountRow, basicRoot, topnavIdentity, ACCOUNT_PRESS } from '@stage-labs/views';
 import { listAccounts, getActiveAccount, accountEpoch, type AccountRecord } from '../lib/accounts';
 import { switchToAccount, stampAvatarUrl, shortAddress } from '../lib/xmtp';
@@ -84,9 +84,9 @@ const listNode = computed<ListViewNode>(() => ({
   ),
 }));
 
-const registry: WidgetActionRegistry = {
-  [ACCOUNT_PRESS]: (action) => {
-    const id = action.payload.accountId;
+const actions = {
+  [ACCOUNT_PRESS]: (payload: Record<string, unknown>): void => {
+    const id = payload.accountId;
     if (typeof id === 'string') void onSwitch(id);
   },
 };
@@ -100,7 +100,7 @@ const registry: WidgetActionRegistry = {
     title="Accounts"
     @click="open = true"
   >
-    <KitRenderer :node="identityNode" />
+    <ViewHost :node="identityNode" />
   </Pressable>
 
   <template v-if="open">
@@ -110,7 +110,7 @@ const registry: WidgetActionRegistry = {
         bg-metro-bg-light dark:bg-metro-surface-dark
         border border-metro-border-light dark:border-metro-border-dark"
     >
-      <KitRenderer :node="listNode" :registry="registry" />
+      <ViewHost :node="listNode" :actions="actions" />
 
       <Col class="border-t border-metro-border-light dark:border-metro-border-dark my-1" />
 

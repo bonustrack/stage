@@ -4,17 +4,13 @@ import { Title } from '@stage-labs/kit/react-native/title';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Textarea } from '@stage-labs/kit/react-native/textarea';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
-import { onboardingStep, ONBOARDING_ACTION_PRESS } from '@stage-labs/views';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers } from '@stage-labs/kit/kit';
+import { basicRoot, onboardingStep, ONBOARDING_ACTION_PRESS } from '@stage-labs/views';
 import { Col, Box } from '../layout';
 import { Spinner } from '../Spinner';
 import { usePalette, DANGER } from '../../lib/theme';
 import { type Stage } from './flow';
-
-function stepRoot(node: ReturnType<typeof onboardingStep>): WidgetRoot {
-  return { type: 'Basic', children: [node] };
-}
 
 export interface SetupErr { message: string; accountId?: string }
 
@@ -29,7 +25,7 @@ type Pal = ReturnType<typeof usePalette>;
 export function WelcomeStep({ busy, onCreate, onRestore }: {
   pal: Pal; dark: boolean; busy: boolean; onCreate: () => void; onRestore: () => void;
 }): React.ReactElement {
-  const node = stepRoot(
+  const node = basicRoot(
     onboardingStep({
       title: 'Stage',
       caption: 'Your wallet, your messages, your governance. One gasless smart account.',
@@ -41,13 +37,13 @@ export function WelcomeStep({ busy, onCreate, onRestore }: {
       ],
     }),
   );
-  const registry: WidgetActionRegistry = {
-    [ONBOARDING_ACTION_PRESS]: (action) => {
-      if (action.payload.id === 'create') onCreate();
+  const actions: PayloadHandlers = {
+    [ONBOARDING_ACTION_PRESS]: (payload) => {
+      if (payload.id === 'create') onCreate();
       else onRestore();
     },
   };
-  return <KitRenderer node={node} registry={registry} />;
+  return <ViewHost node={node} actions={actions} />;
 }
 
 export function RestoreStep({ pal, dark, busy, phrase, err, onChange, onNext, onBack }: {
@@ -90,7 +86,7 @@ export function RestoreStep({ pal, dark, busy, phrase, err, onChange, onNext, on
 export function PasskeyStep({ busy, onAdd, onSkip }: {
   pal: Pal; dark: boolean; busy: boolean; onAdd: () => void; onSkip: () => void;
 }): React.ReactElement {
-  const node = stepRoot(
+  const node = basicRoot(
     onboardingStep({
       title: 'Add a passkey',
       caption:
@@ -103,13 +99,13 @@ export function PasskeyStep({ busy, onAdd, onSkip }: {
       ],
     }),
   );
-  const registry: WidgetActionRegistry = {
-    [ONBOARDING_ACTION_PRESS]: (action) => {
-      if (action.payload.id === 'add') onAdd();
+  const actions: PayloadHandlers = {
+    [ONBOARDING_ACTION_PRESS]: (payload) => {
+      if (payload.id === 'add') onAdd();
       else onSkip();
     },
   };
-  return <KitRenderer node={node} registry={registry} />;
+  return <ViewHost node={node} actions={actions} />;
 }
 
 function StageProgress({ pal, stage }: { pal: Pal; stage: Stage }): React.ReactElement {

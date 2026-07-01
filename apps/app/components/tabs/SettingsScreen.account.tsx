@@ -8,11 +8,11 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Card } from '@stage-labs/kit/react-native/card';
 import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type {
   ListViewItemNode,
   ListViewNode,
-  WidgetActionRegistry,
+  PayloadHandlers,
 } from '@stage-labs/kit/kit';
 import {
   settingsNavRow,
@@ -132,14 +132,14 @@ export function AccountSecuritySection(
 
   const node: ListViewNode = { type: 'ListView', children: rows };
 
-  const registry: WidgetActionRegistry = {
-    [SETTINGS_NAV_PRESS]: (action) => {
-      const href = action.payload.href;
+  const actions: PayloadHandlers = {
+    [SETTINGS_NAV_PRESS]: (payload) => {
+      const href = payload.href;
       if (typeof href === 'string') router.push(href);
     },
-    [SETTINGS_BUTTON_PRESS]: (action) => {
-      if (action.payload.action === 'export') confirmExport(rec, setRevealed);
-      else if (action.payload.action === 'remove') confirmRemove(rec);
+    [SETTINGS_BUTTON_PRESS]: (payload) => {
+      if (payload.action === 'export') confirmExport(rec, setRevealed);
+      else if (payload.action === 'remove') confirmRemove(rec);
     },
   };
 
@@ -153,7 +153,7 @@ export function AccountSecuritySection(
               <RevealedKeyRow c={c} dark={dark} revealed={revealed} />
             </ListView>
           ) : null}
-          <KitRenderer node={node} registry={registry}/>
+          <ViewHost node={node} actions={actions}/>
         </Card>
       </Box>
     </>

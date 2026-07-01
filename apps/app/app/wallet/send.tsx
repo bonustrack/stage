@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import type { PayloadHandlers } from '@stage-labs/kit/kit';
 import { basicRoot, screenHeader, SCREEN_BACK } from '@stage-labs/views';
 import { Col } from '../../components/layout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -55,13 +55,13 @@ export default function WalletSend(): React.ReactElement {
     surface: toolbarBg,
     borderColor: border,
   }));
-  const registry: WidgetActionRegistry = {
+  const actions: PayloadHandlers = {
     [SCREEN_BACK]: () => { router.back(); },
   };
 
   return (
     <Col surface="surface" flex={1}>
-      <KitRenderer node={headerNode} registry={registry} />
+      <ViewHost node={headerNode} actions={actions} />
 
       <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ padding: 16, gap: 16 }}>

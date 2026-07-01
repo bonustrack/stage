@@ -5,7 +5,7 @@ import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@stage-labs/kit/react-native/text';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import { settingsHeader, SCREEN_BACK } from '@stage-labs/views';
 import { Col } from '../layout';
 import { useBlockRadius, useEffectiveColorScheme, usePalette } from '../../lib/theme';
@@ -15,7 +15,7 @@ import { useWalletModel } from './WalletSettings.parts';
 import { useEnablePasskey } from '../../lib/useEnablePasskey';
 import { useRemovePasskey } from '../../lib/useRemovePasskey';
 import {
-  type C, accountNode, addressNode, buildWalletRegistry, SectionLabel, makeCard, SmartAccountSections,
+  type C, accountNode, addressNode, buildWalletActions, SectionLabel, makeCard, SmartAccountSections,
 } from './WalletSettings.sections';
 
 export function WalletSettings(): React.ReactElement {
@@ -36,11 +36,11 @@ export function WalletSettings(): React.ReactElement {
   };
   const onRecovery = (): void => { router.push('/wallet/recovery'); };
 
-  const registry = {
-    ...buildWalletRegistry({ onCopy, onRecovery, passkey, removePasskey }),
+  const actions = {
+    ...buildWalletActions({ onCopy, onRecovery, passkey, removePasskey }),
     [SCREEN_BACK]: () => { router.back(); },
   };
-  const card = makeCard(dark, c.rowBg, blockRadius, registry);
+  const card = makeCard(dark, c.rowBg, blockRadius, actions);
 
   const headerNode = settingsHeader({
     title: 'Wallet',
@@ -53,7 +53,7 @@ export function WalletSettings(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <KitRenderer node={headerNode} registry={registry} />
+      <ViewHost node={headerNode} actions={actions} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         {!model ? (
           <Text size="md" color={c.sub} style={{ padding: 24 }}>No active account.</Text>

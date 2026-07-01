@@ -4,10 +4,10 @@ import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box, Col } from '../layout';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type {
   ListViewNode,
-  WidgetActionRegistry,
+  PayloadHandlers,
 } from '@stage-labs/kit/kit';
 import {
   settingsHeader,
@@ -62,10 +62,10 @@ export function DisplaySettings(): React.ReactElement {
     safeTop: insets.top,
   });
 
-  const registry: WidgetActionRegistry = {
+  const actions: PayloadHandlers = {
     [SCREEN_BACK]: () => { router.back(); },
-    [SETTINGS_THEME_SELECT]: (action) => {
-      const value = action.payload.value;
+    [SETTINGS_THEME_SELECT]: (payload) => {
+      const value = payload.value;
       if (value === 'custom') { setCustomTheme(true); return; }
       if (value === 'system' || value === 'light' || value === 'dark') {
         setCustomTheme(false);
@@ -76,7 +76,7 @@ export function DisplaySettings(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <KitRenderer node={headerNode} registry={registry}/>
+      <ViewHost node={headerNode} actions={actions}/>
       <ScrollView
         style={{ flex: 1 }}
         keyboardShouldPersistTaps="handled"
@@ -85,7 +85,7 @@ export function DisplaySettings(): React.ReactElement {
         <Text size="xs" role="secondary" style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
           THEME
         </Text>
-        <KitRenderer node={node} registry={registry}/>
+        <ViewHost node={node} actions={actions}/>
 
         {custom ? (
           <Box padding={{ x: 16, top: 24 }}>

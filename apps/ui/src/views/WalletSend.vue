@@ -4,13 +4,12 @@ import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import type { Hex } from 'viem';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import ViewHost from '@stage-labs/kit/vue/view-host';
 import {
+  basicRoot,
   sendFields, sendReviewList, screenHeader, SCREEN_BACK,
   WALLET_SEND_FIELD_CHANGE, WALLET_SEND_FIELD_ACTION,
 } from '@stage-labs/views';
-import { basicRoot } from '@/lib/kitRow';
 import type { AssetRow } from '@stage-labs/client/wallet/assets';
 import { NETWORK_LABEL, NETWORK_LOGO, MAINNET_NETWORK_LOGO } from '@stage-labs/client/wallet/assets';
 import { fmtBalance } from '@stage-labs/client/wallet/format';
@@ -139,25 +138,25 @@ const feeNode = computed(() => {
   return basicRoot(sendReviewList([{ label: 'Network fee', value }]));
 });
 
-const fieldsRegistry: WidgetActionRegistry = {
-  [SCREEN_BACK]: () => { back(); },
-  [WALLET_SEND_FIELD_CHANGE]: (action) => {
-    if (action.payload.field === 'recipient' && typeof action.payload.recipient === 'string') {
-      send.to.value = action.payload.recipient;
-    } else if (action.payload.field === 'amount' && typeof action.payload.amount === 'string') {
-      send.amount.value = action.payload.amount;
+const fieldsActions = {
+  [SCREEN_BACK]: (): void => { back(); },
+  [WALLET_SEND_FIELD_CHANGE]: (payload: Record<string, unknown>): void => {
+    if (payload.field === 'recipient' && typeof payload.recipient === 'string') {
+      send.to.value = payload.recipient;
+    } else if (payload.field === 'amount' && typeof payload.amount === 'string') {
+      send.amount.value = payload.amount;
     }
   },
-  [WALLET_SEND_FIELD_ACTION]: (action) => {
-    if (action.payload.action === 'max') { mode.value = 'token'; send.onMax(); }
-    else if (action.payload.action === 'toggleUnit') toggleMode();
+  [WALLET_SEND_FIELD_ACTION]: (payload: Record<string, unknown>): void => {
+    if (payload.action === 'max') { mode.value = 'token'; send.onMax(); }
+    else if (payload.action === 'toggleUnit') toggleMode();
   },
 };
 </script>
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <KitRenderer :node="headerNode" :registry="fieldsRegistry" />
+    <ViewHost :node="headerNode" :actions="fieldsActions" />
 
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar" :gap="16" :padding="{ x: 16, y: 16 }">
       <!-- Token selector mirrors mobile's TokenSelector. -->
@@ -201,10 +200,10 @@ const fieldsRegistry: WidgetActionRegistry = {
       </Box>
 
       <!-- Recipient + amount inputs via Kit TextField nodes. -->
-      <KitRenderer :node="fieldsNode" :registry="fieldsRegistry" />
+      <ViewHost :node="fieldsNode" :actions="fieldsActions" />
 
       <!-- Network fee row via sendReviewList. -->
-      <KitRenderer :node="feeNode" :registry="fieldsRegistry" />
+      <ViewHost :node="feeNode" :actions="fieldsActions" />
       <Text v-if="send.feeErr.value" size="xs" color="secondary" class="px-1 break-all">
         {{ send.feeErr.value }}
       </Text>

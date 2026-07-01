@@ -8,10 +8,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Col, Box } from '../layout';
 import type { HeroIconName } from '@stage-labs/kit/react-native/icon';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type {
   ListViewNode,
-  WidgetActionRegistry,
+  PayloadHandlers,
 } from '@stage-labs/kit/kit';
 import {
   settingsHeader,
@@ -137,28 +137,28 @@ export function SettingsMenu(): React.ReactElement {
     safeTop: insets.top,
   });
 
-  const registry: WidgetActionRegistry = {
+  const actions: PayloadHandlers = {
     [SCREEN_BACK]: () => { router.back(); },
-    [SETTINGS_NAV_PRESS]: (action) => {
-      const href = action.payload.href;
+    [SETTINGS_NAV_PRESS]: (payload) => {
+      const href = payload.href;
       if (typeof href === 'string') router.push(href);
     },
-    [SETTINGS_BUTTON_PRESS]: (action) => {
-      if (action.payload.action === 'reset') onReset(setResetting);
-      else if (action.payload.action === 'nuke') onNuke(setNuking);
+    [SETTINGS_BUTTON_PRESS]: (payload) => {
+      if (payload.action === 'reset') onReset(setResetting);
+      else if (payload.action === 'nuke') onNuke(setNuking);
     },
   };
 
   return (
     <Col surface="surface" flex={1}>
-      <KitRenderer node={headerNode} registry={registry}/>
+      <ViewHost node={headerNode} actions={actions}/>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
-        <KitRenderer node={navNode} registry={registry}/>
+        <ViewHost node={navNode} actions={actions}/>
         <Text size="xs" role="secondary" style={{ paddingHorizontal: 16, paddingTop: 28 }}>
           DANGER ZONE
         </Text>
         <Box padding={{ top: 8 }}>
-          <KitRenderer node={dangerNode(resetting, nuking)} registry={registry}/>
+          <ViewHost node={dangerNode(resetting, nuking)} actions={actions}/>
         </Box>
       </ScrollView>
     </Col>

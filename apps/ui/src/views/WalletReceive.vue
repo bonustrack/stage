@@ -3,8 +3,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
+import ViewHost from '@stage-labs/kit/vue/view-host';
 import { basicRoot, receiveView, screenHeader, SCREEN_BACK, WALLET_ADDRESS_COPY } from '@stage-labs/views';
 import { receiveViewModel } from '@stage-labs/client/wallet/receive';
 import { getActiveAccount } from '../lib/accounts';
@@ -56,15 +55,15 @@ const headerNode = computed(() =>
   })),
 );
 
-const registry: WidgetActionRegistry = {
-  [SCREEN_BACK]: () => { router.back(); },
-  [WALLET_ADDRESS_COPY]: () => { void copy(); },
+const actions = {
+  [SCREEN_BACK]: (): void => { router.back(); },
+  [WALLET_ADDRESS_COPY]: (): void => { void copy(); },
 };
 </script>
 
 <template>
   <Col surface="surface" class="h-[100dvh]">
-    <KitRenderer :node="headerNode" :registry="registry" />
+    <ViewHost :node="headerNode" :actions="actions" />
 
     <Col class="flex-1 min-h-0 overflow-y-auto no-scrollbar" align="center" :gap="16">
       <!-- Active account identity mirrors mobile's avatar + address header. -->
@@ -74,7 +73,7 @@ const registry: WidgetActionRegistry = {
       </Row>
 
       <Col class="w-[calc(100%-2rem)] mx-4 pb-6">
-        <KitRenderer :node="addressNode" :registry="registry" />
+        <ViewHost :node="addressNode" :actions="actions" />
       </Col>
     </Col>
   </Col>
