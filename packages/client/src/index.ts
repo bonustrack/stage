@@ -18,6 +18,7 @@ export * from './xmtp/inboxCache';
 export * from './xmtp/commonChannels';
 export * from './xmtp/mentions';
 export * from './xmtp/labels';
+export * from './xmtp/clientErrors';
 export * from './embed/detect';
 export * from './text/markdown';
 export * from './stamp/resolve';
