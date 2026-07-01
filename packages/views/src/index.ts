@@ -1,5 +1,6 @@
 export * from './actions';
 export * from './format';
+export * from './node';
 export * from './colors';
 export * from './primitives';
 export * from './chrome/screenHeader';

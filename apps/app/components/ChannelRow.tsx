@@ -6,18 +6,19 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { Avatar } from './Avatar';
 import { Row, Col, Box } from './layout';
-import { KitRenderer } from '@stage-labs/kit/react-native/kit-renderer';
+import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type {
   ChannelLabelChip,
   ChannelTitleSegment,
 } from '@stage-labs/views';
 import {
+  basicRoot,
   channelRow,
   highlightSegments,
   unreadBadgeLabel,
   CHANNEL_LABEL_PRESS,
 } from '@stage-labs/views';
-import type { WidgetActionRegistry, WidgetRoot } from '@stage-labs/kit/kit';
+import type { WidgetRoot } from '@stage-labs/kit/kit';
 import { usePalette } from '../lib/theme';
 
 export interface ChannelRowProps {
@@ -80,38 +81,26 @@ function labelChipsOf(draft: string | null, labels?: string[]): ChannelLabelChip
   return buildChips(labels);
 }
 
-function labelRegistry(onLabelPress?: (label: string) => void): WidgetActionRegistry {
-  return {
-    [CHANNEL_LABEL_PRESS]: (action) => {
-      const label = action.payload.label;
-      if (onLabelPress && typeof label === 'string') onLabelPress(label);
-    },
-  };
-}
-
 function buildBodyNode(args: {
   title: string; highlightQuery?: string; previewText: string; draft: string | null;
   timestamp?: string | null; pinned?: boolean; chips?: ChannelLabelChip[]; onLabelPress?: (label: string) => void;
 }): WidgetRoot {
-  return {
-    type: 'Basic',
-    children: [
-      channelRow({
-        convId: '',
-        avatarUri: '',
-        omitAvatar: true,
-        interactive: false,
-        title: args.title,
-        titleSegments: titleSegmentsOf(args.title, args.highlightQuery),
-        preview: args.previewText,
-        previewPrefix: args.draft ? 'You:' : undefined,
-        timestamp: args.timestamp ?? '',
-        pinned: args.pinned,
-        chips: args.chips,
-        labelPressable: !!args.onLabelPress,
-      }),
-    ],
-  };
+  return basicRoot(
+    channelRow({
+      convId: '',
+      avatarUri: '',
+      omitAvatar: true,
+      interactive: false,
+      title: args.title,
+      titleSegments: titleSegmentsOf(args.title, args.highlightQuery),
+      preview: args.previewText,
+      previewPrefix: args.draft ? 'You:' : undefined,
+      timestamp: args.timestamp ?? '',
+      pinned: args.pinned,
+      chips: args.chips,
+      labelPressable: !!args.onLabelPress,
+    }),
+  );
 }
 
 function TrailingBadge({ unreadCount, markedUnread, showChevron, head, bg }: {
@@ -143,7 +132,6 @@ function ChannelRowBase({
   const node = buildBodyNode({
     title, highlightQuery, previewText, draft, timestamp, pinned, chips, onLabelPress,
   });
-  const registry = labelRegistry(onLabelPress);
 
   return (
     <Pressable
@@ -166,7 +154,15 @@ function ChannelRowBase({
           style={{ backgroundColor: border }}
 />
         <Col minWidth={0} flex={1}>
-          <KitRenderer node={node} registry={registry} />
+          <ViewHost
+            node={node}
+            actions={{
+              [CHANNEL_LABEL_PRESS]: (payload) => {
+                const label = payload.label;
+                if (onLabelPress && typeof label === 'string') onLabelPress(label);
+              },
+            }}
+          />
         </Col>
         <TrailingBadge unreadCount={unreadCount} markedUnread={markedUnread}
           showChevron={showChevron} head={head} bg={bg} />

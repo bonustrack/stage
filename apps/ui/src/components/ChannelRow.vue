@@ -1,10 +1,8 @@
 <script setup lang="ts">
 
 import { computed } from 'vue';
-import KitRenderer from '@stage-labs/kit/vue/kit-renderer';
-import type { WidgetActionRegistry } from '@stage-labs/kit/kit';
-import { channelRow, channelTimestamp, unreadBadgeLabel, CHANNEL_PRESS } from '@stage-labs/views';
-import { listRoot } from '@/lib/kitRow';
+import ViewHost from '@stage-labs/kit/vue/view-host';
+import { channelRow, channelTimestamp, unreadBadgeLabel, listRoot, CHANNEL_PRESS } from '@stage-labs/views';
 import { stampAvatarUrl } from '../lib/xmtp';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 
@@ -29,8 +27,8 @@ const renderedAvatar = computed(() => {
 
 const unreadBadge = computed(() => unreadBadgeLabel(props.unreadCount, props.markedUnread));
 
-const registry: WidgetActionRegistry = {
-  [CHANNEL_PRESS]: () => {
+const actions = {
+  [CHANNEL_PRESS]: (): void => {
     emit('open');
   },
 };
@@ -61,6 +59,6 @@ const node = computed(() =>
       active:bg-metro-border-light dark:active:bg-metro-border-dark"
     @contextmenu.prevent="emit('menu', $event)"
   >
-    <KitRenderer :node="node" :registry="registry" />
+    <ViewHost :node="node" :actions="actions" />
   </Box>
 </template>

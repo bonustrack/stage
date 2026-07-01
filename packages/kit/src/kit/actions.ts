@@ -97,3 +97,19 @@ function resolveRecord(
 export function resolveBindings<T>(node: T, data: WidgetDataContext): T {
   return resolveValue(node, data) as T;
 }
+
+export type PayloadHandler = (
+  payload: Record<string, unknown>,
+) => void | Promise<void>;
+
+export type PayloadHandlers = Record<string, PayloadHandler>;
+
+export function payloadRegistry(handlers: PayloadHandlers): WidgetActionRegistry {
+  const registry: WidgetActionRegistry = {};
+  for (const type of Object.keys(handlers)) {
+    const handler = handlers[type];
+    if (handler === undefined) continue;
+    registry[type] = (action) => handler(action.payload);
+  }
+  return registry;
+}
