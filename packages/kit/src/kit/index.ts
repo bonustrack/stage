@@ -7,5 +7,6 @@ export * from './node-size';
 export * from './list-item';
 export * from './badge';
 export * from './actions';
+export * from './node-registry';
 export * from './chart';
 export * from './qr';
