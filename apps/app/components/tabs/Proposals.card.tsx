@@ -6,8 +6,7 @@ import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import type { WidgetRoot } from '@stage-labs/kit/kit';
-import { basicRoot, proposalCard } from '@stage-labs/views';
+import { proposalHeaderRoot } from '@stage-labs/views';
 import type { SignatureRequestContent } from '@stage-labs/client/xmtp/sign';
 import type { WalletSendCallsContent } from '@stage-labs/client/xmtp/tx';
 import { Box, Row, Col } from '../layout';
@@ -23,17 +22,6 @@ import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { getPeerName } from '../../lib/peerProfiles';
 import { shortAddress, acceptRequestConv, blockRequestConv, getCachedXmtpClient } from '../../modules/messaging';
 import type { QueuedRequest, RequestKind } from './Proposals.queue';
-
-const KIND_LABEL: Record<RequestKind, string> = {
-  poll: 'Poll',
-  payment: 'Payment request',
-  signing: 'Signing request',
-  message: 'Message request',
-};
-
-function proposalHeaderRoot(kind: RequestKind, title: string): WidgetRoot {
-  return basicRoot(proposalCard({ eyebrow: KIND_LABEL[kind], title }));
-}
 
 export function ProposalCard({ proposal, onAdvance }: {
   proposal: QueuedRequest;

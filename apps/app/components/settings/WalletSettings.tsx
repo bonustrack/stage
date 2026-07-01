@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@stage-labs/kit/react-native/text';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import { settingsHeader, SCREEN_BACK } from '@stage-labs/views';
+import { settingsHeader, walletAccountNode, walletAddressNode, SCREEN_BACK } from '@stage-labs/views';
 import { Col } from '../layout';
 import { useBlockRadius, useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { useActiveAccount } from '../../modules/messaging/account';
@@ -15,7 +15,7 @@ import { useWalletModel } from './WalletSettings.parts';
 import { useEnablePasskey } from '../../lib/useEnablePasskey';
 import { useRemovePasskey } from '../../lib/useRemovePasskey';
 import {
-  type C, accountNode, addressNode, buildWalletActions, SectionLabel, makeCard, SmartAccountSections,
+  type C, buildWalletActions, SectionLabel, makeCard, SmartAccountSections,
 } from './WalletSettings.sections';
 
 export function WalletSettings(): React.ReactElement {
@@ -60,10 +60,10 @@ export function WalletSettings(): React.ReactElement {
         ) : (
           <>
             <SectionLabel>ACCOUNT</SectionLabel>
-            {card(accountNode(model))}
+            {card(walletAccountNode(model))}
 
             <SectionLabel>{model.isSmart ? 'SMART ACCOUNT ADDRESS' : 'ADDRESS'}</SectionLabel>
-            {card(addressNode(model))}
+            {card(walletAddressNode(model))}
 
             {model.isSmart ? (
               <SmartAccountSections
