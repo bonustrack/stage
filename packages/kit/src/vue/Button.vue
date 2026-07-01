@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import {
-  legacyVariantToColor,
   resolveColors,
+  resolveModel,
   SIZES,
   type ButtonColor,
   type ButtonControlVariant,
@@ -50,24 +50,7 @@ const isDark = computed(() => props.dark ?? scheme === 'dark');
 
 const emit = defineEmits<{ click: [event: MouseEvent] }>();
 
-const LEGACY_VARIANTS = new Set<ButtonVariant>(['primary', 'secondary', 'danger']);
 const DEFAULT_RADIUS = 999;
-
-function resolveModel(
-  color: ButtonColor | undefined,
-  variant: ButtonControlVariant | ButtonVariant | undefined,
-  styleColor: 'primary' | 'secondary' | undefined,
-): { color: ButtonColor; variant: ButtonControlVariant } {
-  if (variant && LEGACY_VARIANTS.has(variant as ButtonVariant) && !color) {
-    return legacyVariantToColor(variant as ButtonVariant);
-  }
-  const baseColor: ButtonColor = color ?? styleColor ?? 'primary';
-  const treatment: ButtonControlVariant =
-    variant && (['solid', 'soft', 'outline', 'ghost'] as string[]).includes(variant)
-      ? (variant as ButtonControlVariant)
-      : 'solid';
-  return { color: baseColor, variant: treatment };
-}
 
 const colors = computed<VariantColors>(() => {
   const model = resolveModel(props.color, props.variant, props.styleColor);

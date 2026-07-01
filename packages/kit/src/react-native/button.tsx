@@ -9,8 +9,8 @@ import {
   type ViewStyle,
 } from 'react-native';
 import {
-  legacyVariantToColor,
   resolveColors,
+  resolveModel,
   SIZES,
   textLabelStyle,
   type ButtonColor,
@@ -25,8 +25,6 @@ export type {
   ButtonSize,
   ButtonVariant,
 } from '../button.styles';
-
-const LEGACY_VARIANTS = new Set<ButtonVariant>(['primary', 'secondary', 'danger']);
 
 let defaultButtonRadius = 999;
 export function setDefaultButtonRadius(r: number): void {
@@ -61,22 +59,6 @@ export interface ButtonProps
   tintPressedBg?: string;
   radius?: number;
   textStyle?: TextStyle;
-}
-
-function resolveModel(
-  color: ButtonColor | undefined,
-  variant: ButtonControlVariant | ButtonVariant | undefined,
-  styleColor: 'primary' | 'secondary' | undefined,
-): { color: ButtonColor; variant: ButtonControlVariant } {
-  if (variant && LEGACY_VARIANTS.has(variant as ButtonVariant) && !color) {
-    return legacyVariantToColor(variant as ButtonVariant);
-  }
-  const baseColor: ButtonColor = color ?? styleColor ?? 'primary';
-  const treatment: ButtonControlVariant =
-    variant && (['solid', 'soft', 'outline', 'ghost'] as string[]).includes(variant)
-      ? (variant as ButtonControlVariant)
-      : 'solid';
-  return { color: baseColor, variant: treatment };
 }
 
 type ResolvedColors = ReturnType<typeof resolveColors>;

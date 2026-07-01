@@ -2,16 +2,18 @@
 import { computed } from 'vue';
 import {
   boxStyleEntries,
+  surfaceColor,
   type Align,
   type BoxBaseProps,
   type Justify,
+  type Surface,
 } from '../layout';
 import { isColorToken, resolveColorToken } from '../tokens';
-import { useKitPalette, useKitScheme, type KitPalette } from './theme-context';
+import { useKitPalette, useKitScheme } from './theme-context';
 
 export type { Align, Justify };
 
-export type Surface = 'none' | 'surface' | 'raised' | 'sunken' | 'toolbar';
+export type { Surface };
 
 const props = withDefaults(
   defineProps<
@@ -23,21 +25,6 @@ const props = withDefaults(
   >(),
   { surface: 'none', tag: 'div' },
 );
-
-function surfaceColor(surface: Surface, palette: KitPalette): string | undefined {
-  switch (surface) {
-    case 'surface':
-      return palette.bg;
-    case 'raised':
-      return palette.inputBg;
-    case 'sunken':
-      return palette.bg;
-    case 'toolbar':
-      return palette.toolbarBg;
-    default:
-      return undefined;
-  }
-}
 
 const palette = useKitPalette();
 const scheme = useKitScheme();

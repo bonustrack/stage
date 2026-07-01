@@ -171,3 +171,21 @@ export function textLabelStyle(spec: SizeSpec, color: string): TextStyle {
     textAlign: 'center',
   };
 }
+
+const LEGACY_VARIANTS = new Set<ButtonVariant>(['primary', 'secondary', 'danger']);
+
+export function resolveModel(
+  color: ButtonColor | undefined,
+  variant: ButtonControlVariant | ButtonVariant | undefined,
+  styleColor: 'primary' | 'secondary' | undefined,
+): { color: ButtonColor; variant: ButtonControlVariant } {
+  if (variant && LEGACY_VARIANTS.has(variant as ButtonVariant) && !color) {
+    return legacyVariantToColor(variant as ButtonVariant);
+  }
+  const baseColor: ButtonColor = color ?? styleColor ?? 'primary';
+  const treatment: ButtonControlVariant =
+    variant && (['solid', 'soft', 'outline', 'ghost'] as string[]).includes(variant)
+      ? (variant as ButtonControlVariant)
+      : 'solid';
+  return { color: baseColor, variant: treatment };
+}

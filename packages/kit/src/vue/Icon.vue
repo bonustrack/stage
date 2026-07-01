@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { heroIconPaths, HERO_ICON_DEFAULTS, type HeroIconName } from '../icons';
+import { heroIconPaths, iconStroke, iconStrokeWidth, HERO_ICON_DEFAULTS, type HeroIconName } from '../icons';
 
 export type { HeroIconName };
 
@@ -15,13 +15,9 @@ const props = withDefaults(
   { size: 22 },
 );
 
-const stroke = computed(() =>
-  props.color ?? (props.dark === undefined ? 'currentColor' : props.dark ? '#ffffff' : '#000000'),
-);
+const stroke = computed(() => iconStroke(props.color, props.dark));
 
-const strokeWidth = computed(() =>
-  props.focused ? 2.4 : HERO_ICON_DEFAULTS.strokeWidth,
-);
+const strokeWidth = computed(() => iconStrokeWidth(props.focused));
 
 const paths = computed(() => heroIconPaths(props.name));
 </script>

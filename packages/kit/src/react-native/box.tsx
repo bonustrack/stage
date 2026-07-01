@@ -2,36 +2,23 @@
 import { View, type ViewProps, type ViewStyle } from 'react-native';
 import {
   boxStyleEntries,
+  surfaceColor,
   type Align,
   type BoxBaseProps,
   type Justify,
+  type Surface,
 } from '../layout';
 import { isColorToken, resolveColorToken } from '../tokens';
-import { useKitPalette, useKitScheme, type KitPalette } from './theme-context';
+import { useKitPalette, useKitScheme } from './theme-context';
 
 export type { Align, Justify };
 
-export type Surface = 'none' | 'surface' | 'raised' | 'sunken' | 'toolbar';
+export type { Surface };
 
 export type BoxProps = ViewProps &
   BoxBaseProps & {
     surface?: Surface;
   };
-
-function surfaceColor(surface: Surface, palette: KitPalette): string | undefined {
-  switch (surface) {
-    case 'surface':
-      return palette.bg;
-    case 'raised':
-      return palette.inputBg;
-    case 'sunken':
-      return palette.bg;
-    case 'toolbar':
-      return palette.toolbarBg;
-    default:
-      return undefined;
-  }
-}
 
 export function Box({
   direction,

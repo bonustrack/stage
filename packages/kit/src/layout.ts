@@ -190,3 +190,26 @@ export function boxStyleEntries(props: BoxBaseProps): BoxStyleEntries {
   applyBorder(s, props.border);
   return s;
 }
+
+export type Surface = 'none' | 'surface' | 'raised' | 'sunken' | 'toolbar';
+
+export interface SurfacePalette {
+  bg: string;
+  inputBg: string;
+  toolbarBg: string;
+}
+
+export function surfaceColor(surface: Surface, palette: SurfacePalette): string | undefined {
+  switch (surface) {
+    case 'surface':
+      return palette.bg;
+    case 'raised':
+      return palette.inputBg;
+    case 'sunken':
+      return palette.bg;
+    case 'toolbar':
+      return palette.toolbarBg;
+    default:
+      return undefined;
+  }
+}
