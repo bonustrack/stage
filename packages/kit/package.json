@@ -122,7 +122,8 @@
     "vue": "*"
   },
   "scripts": {
-    "typecheck": "vue-tsc --noEmit"
+    "typecheck": "vue-tsc --noEmit",
+    "test": "bun test test/"
   },
   "devDependencies": {
     "@stage-labs/config": "workspace:*",
