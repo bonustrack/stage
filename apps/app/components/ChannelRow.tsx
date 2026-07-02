@@ -7,18 +7,13 @@ import type { StyleProp, ViewStyle } from 'react-native';
 import { Avatar } from './Avatar';
 import { Row, Col, Box } from './layout';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import type {
-  ChannelLabelChip,
-  ChannelTitleSegment,
-} from '@stage-labs/views';
 import {
   basicRoot,
   channelRow,
-  highlightSegments,
+  channelRowModel,
   unreadBadgeLabel,
   CHANNEL_LABEL_PRESS,
 } from '@stage-labs/views';
-import type { WidgetRoot } from '@stage-labs/kit/kit';
 import { usePalette } from '../lib/theme';
 
 export interface ChannelRowProps {
@@ -47,61 +42,7 @@ export interface ChannelRowProps {
   highlightQuery?: string;
 }
 
-const MAX_VISIBLE_LABELS = 2;
-
 const ROW_CONTENT_HEIGHT = 67;
-
-function buildChips(labels: string[]): ChannelLabelChip[] {
-  const visible = labels.slice(0, MAX_VISIBLE_LABELS);
-  const overflow = labels.length - visible.length;
-  const all = overflow > 0 ? [...visible, `+${overflow}`] : visible;
-  return all.map((label) => ({ label }));
-}
-
-function titleSegmentsOf(title: string, query?: string): ChannelTitleSegment[] | undefined {
-  if (query === undefined || query.trim() === '') return undefined;
-  return highlightSegments(title, query.trim()).map((s) => ({
-    text: s.value,
-    emphasized: s.match,
-  }));
-}
-
-function resolveDraft(hasDraft?: boolean, draftText?: string | null): string | null {
-  return hasDraft && draftText && draftText.trim().length > 0 ? draftText.trim() : null;
-}
-
-function resolvePreviewText(draft: string | null, lastPreview?: string | null, subtitle?: string | null): string {
-  if (draft) return draft;
-  if (lastPreview && lastPreview.length > 0) return lastPreview;
-  return subtitle ?? '';
-}
-
-function labelChipsOf(draft: string | null, labels?: string[]): ChannelLabelChip[] | undefined {
-  if (draft || labels === undefined || labels.length === 0) return undefined;
-  return buildChips(labels);
-}
-
-function buildBodyNode(args: {
-  title: string; highlightQuery?: string; previewText: string; draft: string | null;
-  timestamp?: string | null; pinned?: boolean; chips?: ChannelLabelChip[]; onLabelPress?: (label: string) => void;
-}): WidgetRoot {
-  return basicRoot(
-    channelRow({
-      convId: '',
-      avatarUri: '',
-      omitAvatar: true,
-      interactive: false,
-      title: args.title,
-      titleSegments: titleSegmentsOf(args.title, args.highlightQuery),
-      preview: args.previewText,
-      previewPrefix: args.draft ? 'You:' : undefined,
-      timestamp: args.timestamp ?? '',
-      pinned: args.pinned,
-      chips: args.chips,
-      labelPressable: !!args.onLabelPress,
-    }),
-  );
-}
 
 function TrailingBadge({ unreadCount, markedUnread, showChevron, head, bg }: {
   unreadCount: number; markedUnread?: boolean; showChevron?: boolean;
@@ -126,12 +67,22 @@ function ChannelRowBase({
   onPress, onPressIn, onLongPress, containerStyle, labels, onLabelPress, highlightQuery,
 }: ChannelRowProps): React.ReactElement {
   const { link: head, bg, border } = usePalette();
-  const draft = resolveDraft(hasDraft, draftText);
-  const previewText = resolvePreviewText(draft, lastPreview, subtitle);
-  const chips = labelChipsOf(draft, labels);
-  const node = buildBodyNode({
-    title, highlightQuery, previewText, draft, timestamp, pinned, chips, onLabelPress,
-  });
+  const node = basicRoot(channelRow(channelRowModel({
+    convId: '',
+    avatarUri: '',
+    omitAvatar: true,
+    interactive: false,
+    title,
+    highlightQuery,
+    lastPreview,
+    subtitle,
+    hasDraft,
+    draftText,
+    labels,
+    labelPressable: !!onLabelPress,
+    pinned,
+    timestampLabel: timestamp ?? '',
+  })));
 
   return (
     <Pressable

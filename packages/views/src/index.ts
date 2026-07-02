@@ -18,6 +18,7 @@ export * from './wallet/walletTabs';
 export * from './wallet/nftGrid';
 export * from './wallet/noticeCard';
 export * from './chat/channelRow';
+export * from './chat/channelRowModel';
 export * from './chat/mediaCard';
 export * from './chat/reactionsRow';
 export * from './chat/emojiReactionRow';

@@ -2,7 +2,7 @@
 
 import { computed } from 'vue';
 import ViewHost from '@stage-labs/kit/vue/view-host';
-import { channelRow, channelTimestamp, unreadBadgeLabel, listRoot, CHANNEL_PRESS } from '@stage-labs/views';
+import { channelRow, channelRowModel, listRoot, CHANNEL_PRESS } from '@stage-labs/views';
 import { stampAvatarUrl } from '../lib/xmtp';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 
@@ -25,30 +25,25 @@ const renderedAvatar = computed(() => {
   return '';
 });
 
-const unreadBadge = computed(() => unreadBadgeLabel(props.unreadCount, props.markedUnread));
-
 const actions = {
   [CHANNEL_PRESS]: (): void => {
     emit('open');
   },
 };
 
-const preview = computed(() => {
-  if (props.lastPreview) return props.lastPreview;
-  if (props.subtitle) return props.subtitle;
-  return '(no messages yet)';
-});
-
 const node = computed(() =>
   listRoot(
-    channelRow({
+    channelRow({ ...channelRowModel({
       convId: props.title,
       avatarUri: renderedAvatar.value,
       title: props.title,
-      preview: preview.value,
-      timestamp: channelTimestamp(props.lastTs),
-      unreadBadge: unreadBadge.value,
-    }),
+      lastPreview: props.lastPreview,
+      subtitle: props.subtitle,
+      lastTs: props.lastTs,
+      unreadCount: props.unreadCount,
+      markedUnread: props.markedUnread,
+      emptyPreview: '(no messages yet)',
+    }), interactive: true }),
   ),
 );
 </script>
