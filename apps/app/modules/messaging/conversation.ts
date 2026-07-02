@@ -9,6 +9,7 @@ import { githubOfSyncedGroup } from '../../lib/xmtp.github';
 import { isMetroControlBody } from '../../lib/push';
 import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
+import { channelRowTitle, countUnreadEntries, initialMarkedUnread } from '@stage-labs/client/xmtp/summarizeRow';
 import type {
   ConversationView, ConversationRequestView, RequestAvatarDescriptor,
 } from './conversation.types';
@@ -39,26 +40,6 @@ async function readGroupNameImage(
     g.imageUrl?.().catch(() => '') ?? Promise.resolve(''),
   ]);
   return { name: n ?? '', imageUrl: img ?? '' };
-}
-
-function computeTitle(
-  conv: Conversation, peerAddress: string | null, groupName: string,
-  memberAddresses: string[], totalMembers: number,
-): string {
-  if (peerAddress) return shortAddress(peerAddress);
-  if (groupName.trim()) return groupName.trim();
-  if (memberAddresses.length > 0) return `${totalMembers} member${totalMembers === 1 ? '' : 's'}`;
-  return conv.topic.replace(/^.*\//, '').slice(0, 12);
-}
-
-function countUnread(msgs: DecodedMessage[], lastReadNs: number, selfInboxId: string): number {
-  let unreadCount = 0;
-  for (const m of msgs) {
-    if (!m.sentNs || m.sentNs <= lastReadNs) break;
-    if (m.senderInboxId === selfInboxId) continue;
-    unreadCount += 1;
-  }
-  return unreadCount;
 }
 
 interface GroupRowData {
@@ -99,17 +80,21 @@ export async function summarizeConversation(
   const peerAddress = await peerEthAddressOfDm(conv);
   const inboxToAddr = await memberInboxToAddressMap(conv);
   const { memberAddresses, groupMeta, labels, github } = await gatherGroupRowData(conv, peerAddress);
-  const totalMembers = memberAddresses.length + 1;
-  const title = computeTitle(conv, peerAddress, groupMeta.name, memberAddresses, totalMembers);
+  const title = channelRowTitle({
+    peerAddress, groupName: groupMeta.name,
+    memberCount: memberAddresses.length,
+    fallbackId: conv.topic.replace(/^.*\//, ''),
+  });
   const lastSenderAddress = last?.senderInboxId
     ? inboxToAddr[last.senderInboxId] ?? null
     : null;
   const lastFromSelf = !!last && last.senderInboxId === selfInboxId;
   const { avatarUri, avatarAddress } = rowAvatar(conv, peerAddress, groupMeta.imageUrl);
   const lastReadNs = await getLastReadNs(conv.id);
-  const unreadCount = countUnread(msgs, lastReadNs, selfInboxId);
-  const markedUnread = lastReadNs === 0
-    && unreadCount === 0 && !!last && !lastFromSelf;
+  const unreadCount = countUnreadEntries(msgs, lastReadNs, selfInboxId);
+  const markedUnread = initialMarkedUnread({
+    lastReadNs, unreadCount, hasLast: !!last, lastFromSelf,
+  });
   return {
     convId: conv.id,
     title,

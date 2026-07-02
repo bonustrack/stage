@@ -2,10 +2,11 @@
 import type { Conversation } from '@xmtp/browser-sdk';
 import {
   peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
-  getLastReadNs, getConvConsent, shortAddress,
+  getLastReadNs, getConvConsent,
 } from './xmtp';
 import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 import { labelsOfSyncedGroup } from '@stage-labs/client/xmtp/labels';
+import { channelRowTitle, countUnreadEntries, initialMarkedUnread } from '@stage-labs/client/xmtp/summarizeRow';
 
 export interface ChannelRow {
   convId: string;
@@ -27,29 +28,6 @@ export interface ChannelRow {
 
 interface RecentMsg { content: unknown; contentType?: { typeId?: string }; senderInboxId?: string; sentAtNs: bigint }
 
-function resolveTitle(
-  peerAddress: string | null, resolvedName: string, memberAddresses: string[], convId: string,
-): string {
-  if (peerAddress) return shortAddress(peerAddress);
-  if (resolvedName) return resolvedName;
-  if (memberAddresses.length > 0) {
-    const totalMembers = memberAddresses.length + 1;
-    return `${totalMembers} member${totalMembers === 1 ? '' : 's'}`;
-  }
-  return convId.slice(0, 12);
-}
-
-function countUnread(recent: RecentMsg[], lastReadNs: number, selfInboxId: string): number {
-  let unreadCount = 0;
-  for (const m of recent) {
-    const sentNs = Number(m.sentAtNs);
-    if (!sentNs || sentNs <= lastReadNs) break;
-    if (m.senderInboxId === selfInboxId) continue;
-    unreadCount += 1;
-  }
-  return unreadCount;
-}
-
 function resolveAvatarAddress(
   peerAddress: string | null, lastSenderAddress: string | null, memberAddresses: string[],
 ): string | null {
@@ -70,7 +48,10 @@ async function resolveMarkedUnread(
   convId: string, lastReadNs: number, unreadCount: number, hasLast: boolean, lastFromSelf: boolean,
 ): Promise<boolean> {
   const consent = await getConvConsent(convId).catch(() => 'unknown' as const);
-  return consent === 'unknown' && lastReadNs === 0 && unreadCount === 0 && hasLast && !lastFromSelf;
+  return initialMarkedUnread({
+    lastReadNs, unreadCount, hasLast, lastFromSelf,
+    consentUnknown: consent === 'unknown',
+  });
 }
 
 export async function summarizeConv(
@@ -86,12 +67,15 @@ export async function summarizeConv(
   const inboxToAddr = await memberInboxToAddressMap(conv);
   const groupMeta = conv as unknown as { name?: string; imageUrl?: string };
   const resolvedName = (groupMeta.name ?? '').trim();
-  const title = resolveTitle(peerAddress, resolvedName, memberAddresses, conv.id);
+  const title = channelRowTitle({
+    peerAddress, groupName: resolvedName,
+    memberCount: memberAddresses.length, fallbackId: conv.id,
+  });
   const lastSenderAddress = senderAddressOf(last, inboxToAddr);
   const avatarAddress = resolveAvatarAddress(peerAddress, lastSenderAddress, memberAddresses);
   const avatarUri = resolveAvatarUri(peerAddress, groupMeta.imageUrl);
   const lastReadNs = getLastReadNs(conv.id);
-  const unreadCount = countUnread(recent, lastReadNs, selfInboxId);
+  const unreadCount = countUnreadEntries(recent.map(m => ({ sentNs: Number(m.sentAtNs), senderInboxId: m.senderInboxId })), lastReadNs, selfInboxId);
   const lastFromSelf = !!last && last.senderInboxId === selfInboxId;
   const markedUnread = await resolveMarkedUnread(
     conv.id, lastReadNs, unreadCount, !!last, lastFromSelf,
