@@ -139,11 +139,19 @@ function positionStyle(box: BoxLayoutBase): Record<string, string> | undefined {
   return css;
 }
 
+function definedProps<T extends Record<string, unknown>>(props: T): Partial<T> {
+  const out: Record<string, unknown> = {};
+  for (const key of Object.keys(props)) {
+    if (props[key] !== undefined) out[key] = props[key];
+  }
+  return out as Partial<T>;
+}
+
 export function boxProps(
   node: BoxLayoutBase & { direction?: 'row' | 'col' },
   scheme: Scheme,
 ): Record<string, unknown> {
-  return {
+  return definedProps({
     positionStyle: positionStyle(node),
     direction: resolveDirection(node.direction),
     align: resolveAlign(node.align),
@@ -164,7 +172,7 @@ export function boxProps(
     radius: resolveRadius(node.radius),
     border: resolveBorder(node.border, scheme),
     background: resolveOptionalColor(node.background, scheme),
-  };
+  });
 }
 
 export function cardProps(
