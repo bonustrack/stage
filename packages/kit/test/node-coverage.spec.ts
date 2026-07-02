@@ -26,7 +26,7 @@ function referencesType(source: string, type: string): boolean {
   return source.includes(`'${type}'`) || source.includes(`"${type}"`);
 }
 
-const KNOWN_RN_GAPS = ['ListViewItem'];
+const KNOWN_RN_GAPS: string[] = [];
 const KNOWN_VUE_GAPS = ['VoiceRecorder'];
 
 describe('node type coverage parity', () => {

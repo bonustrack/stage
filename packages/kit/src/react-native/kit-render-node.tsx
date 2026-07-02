@@ -13,8 +13,6 @@ import type {
   IconNode,
   ImageNode,
   LabelNode,
-  ListViewItemNode,
-  ListViewNode,
   MarkdownNode,
   RowNode,
   SpacerNode,
@@ -30,7 +28,6 @@ import {
   resolveCaptionWeight,
   resolveHeroTitlePx,
   resolveJustify,
-  resolveListItemStyle,
   resolveOptionalColor,
   resolvePosition,
   resolveRadius,
@@ -41,12 +38,10 @@ import { Box } from './box';
 import { Caption } from './caption';
 import { Card } from './card';
 import { Divider } from './divider';
-import { GesturePressable } from './gesture-pressable';
 import { Icon } from './icon';
 import { KitChart } from './kit-render-chart';
 import { Image } from './image';
 import { Label } from './label';
-import { ListView, ListViewItem } from './list-view';
 import { Markdown } from './markdown';
 import { Spacer } from './spacer';
 import { Text } from './text';
@@ -54,7 +49,6 @@ import { Title } from './title';
 import {
   captionSize,
   dispatch,
-  nodeKey,
   renderList,
   resolveIconName,
   textSize,
@@ -275,76 +269,6 @@ export function renderSpacer(node: SpacerNode): ReactNode {
 
 function scalarPadding(value: SpacingValue | undefined): number | undefined {
   return typeof value === 'number' ? value : undefined;
-}
-
-export function renderListView(
-  node: ListViewNode,
-  ctx: RenderCtx,
-  render: NodeRenderer,
-): ReactNode {
-  return (
-    <ListView
-      limit={typeof node.limit === 'number' ? node.limit : undefined}
-      status={node.status}
-      dark={ctx.dark}
-    >
-      {node.children.map((child, index) => (
-        <ListViewItemRow key={nodeKey(child, index)} node={child} ctx={ctx} render={render} />
-      ))}
-    </ListView>
-  );
-}
-
-function ListViewItemRow(props: {
-  node: ListViewItemNode;
-  ctx: RenderCtx;
-  render: NodeRenderer;
-}): ReactNode {
-  const { node, ctx, render } = props;
-  const itemStyle = resolveListItemStyle(node, ctx.scheme);
-  const row = (
-    <ListViewItem
-      gap={toNumber(node.gap)}
-      align={resolveItemAlign(node.align)}
-      dark={ctx.dark}
-      padding={itemStyle.padding}
-      border={itemStyle.border}
-      pressedBackground={itemStyle.pressedBackground}
-      pressedBorderColor={itemStyle.pressedBorderColor}
-      showDivider={itemStyle.showDivider}
-      onPress={
-        node.onClickAction
-          ? () => {
-              dispatch(node.onClickAction, ctx);
-            }
-          : undefined
-      }
-    >
-      {renderList(node.children, ctx, render)}
-    </ListViewItem>
-  );
-  if (node.onLongPressAction === undefined && node.onSwipeAction === undefined) {
-    return row;
-  }
-  const longPress = (): void => {
-    dispatch(node.onLongPressAction, ctx);
-  };
-  const swipe = (direction: string): void => {
-    dispatch(node.onSwipeAction, ctx, { direction });
-  };
-  return (
-    <GesturePressable
-      onLongPress={node.onLongPressAction ? longPress : undefined}
-      onSwipe={node.onSwipeAction ? swipe : undefined}
-    >
-      {row}
-    </GesturePressable>
-  );
-}
-
-function resolveItemAlign(value: ListViewItemNode['align']): 'start' | 'center' | 'end' | undefined {
-  if (value === 'start' || value === 'center' || value === 'end') return value;
-  return undefined;
 }
 
 export function renderCard(

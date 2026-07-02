@@ -49,7 +49,6 @@ export default defineConfig({
           'expo-system-ui',
           '@railgun-privacy/native-prover',
           'node-gyp-build-mobile',
-          'expo-document-picker',
         ],
       },
     },
@@ -74,7 +73,7 @@ export default defineConfig({
     'packages/views': {
       type: 'library',
       eslint: { preset: 'none', extends: viewsEslint() },
-      knip: { entry: ['eslint.js', 'src/index.ts'] },
+      knip: { entry: ['eslint.js'] },
     },
     'packages/config': {
       type: 'library',

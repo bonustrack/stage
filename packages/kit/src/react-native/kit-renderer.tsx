@@ -25,12 +25,12 @@ import {
   renderIcon,
   renderImage,
   renderLabel,
-  renderListView,
   renderMarkdown,
   renderSpacer,
   renderText,
   renderTitle,
 } from './kit-render-node';
+import { renderListView, renderListViewItem } from './kit-render-list';
 import { renderParagraph, renderScroll, renderScrollRow, renderStack } from './kit-render-stack';
 import { renderDialog } from './kit-render-dialog';
 import {
@@ -135,6 +135,8 @@ function renderNode(node: WidgetNode, ctx: RenderCtx): ReactNode {
       return renderCardNode(as<'Card'>(node), ctx);
     case 'ListView':
       return renderListView(as<'ListView'>(node), ctx, renderNode);
+    case 'ListViewItem':
+      return renderListViewItem(as<'ListViewItem'>(node), ctx, renderNode);
     case 'Basic':
       return <Box>{renderList(basicChildren(node), ctx, renderNode)}</Box>;
     case 'Form':
