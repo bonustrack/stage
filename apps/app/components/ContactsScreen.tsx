@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 import { FlatList } from 'react-native-gesture-handler';
 import { useRouter } from 'expo-router';
 import { Text } from '@stage-labs/kit/react-native/text';
+import { contactNameModel, contactsEmptyLabel } from '@stage-labs/views';
 import type { SimultaneousRefs } from './SwipeTabs.types';
 import { Col } from './layout';
 import { ChannelRow } from './ChannelRow';
@@ -29,14 +30,17 @@ export function ContactsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): 
   }, [opening, router]);
 
   const renderItem = useCallback(({ item }: { item: Contact }): React.ReactElement => {
-    const name = getPeerName(item.address) ?? item.name;
-    const hasName = !!getPeerName(item.address);
+    const model = contactNameModel({
+      resolvedName: getPeerName(item.address) ?? null,
+      fallbackName: item.name,
+      shortAddress: shortAddress(item.address),
+    });
     return (
       <ChannelRow
-        title={name}
+        title={model.name}
         avatarAddress={item.address}
         square={false}
-        subtitle={hasName ? shortAddress(item.address) : null}
+        subtitle={model.handle ?? null}
         onPress={() => { open(item.address); }}
       />
     );
@@ -55,7 +59,7 @@ export function ContactsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): 
         ListEmptyComponent={
           <Col flex={1} align="center" justify="center" padding={{ x: 24, y: 48 }}>
             <Text size="md" role="secondary" style={{ textAlign: 'center' }}>
-              {loading ? 'Loading contacts…' : 'No contacts yet. Start a chat to add one.'}
+              {contactsEmptyLabel(loading)}
             </Text>
           </Col>
         }

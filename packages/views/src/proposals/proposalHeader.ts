@@ -11,6 +11,10 @@ const KIND_LABEL: Record<ProposalRequestKind, string> = {
   message: 'Message request',
 };
 
+export function proposalKindLabel(kind: ProposalRequestKind): string {
+  return KIND_LABEL[kind];
+}
+
 export function proposalHeaderRoot(kind: ProposalRequestKind, title: string): WidgetRoot {
-  return basicRoot(proposalCard({ eyebrow: KIND_LABEL[kind], title }));
+  return basicRoot(proposalCard({ eyebrow: proposalKindLabel(kind), title }));
 }

@@ -4,7 +4,12 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import { backAction, basicRoot, screenHeader } from '@stage-labs/views';
+import {
+  backAction,
+  proposalsEmptyLabel,
+  proposalsHeaderNode,
+  proposalsPositionLabel,
+} from '@stage-labs/views';
 import { capabilities } from '../../lib/capabilities';
 import { Col, Box } from '../layout';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
@@ -18,14 +23,12 @@ export function ProposalsScreen(): React.ReactElement {
   const head = pal.link;
   const border = pal.border;
   const { current, loading, position, total, advance, refresh } = useProposals();
-  const headerNode = basicRoot(screenHeader({
-    title: 'Pending requests',
-    titleStyle: { kind: 'title', size: 'sm' },
+  const headerNode = proposalsHeaderNode({
     backColor: head,
     safeTop: insets.top,
     surface: pal.toolbarBg,
     borderColor: border,
-  }));
+  });
   const headerActions: PayloadHandlers = {
     ...backAction(capabilities),
   };
@@ -39,7 +42,7 @@ export function ProposalsScreen(): React.ReactElement {
         <Col flex={1} surface="surface">
           <Box padding={{ x: 16, top: 12 }}>
             <Text size="xs" color={pal.text} style={{ opacity: 0.6 }}>
-              {position} of {total}
+              {proposalsPositionLabel(position, total)}
             </Text>
           </Box>
           <ProposalCard key={current.key} proposal={current} onAdvance={advance}/>
@@ -48,7 +51,7 @@ export function ProposalsScreen(): React.ReactElement {
         <Col flex={1} surface="surface" align="center" justify="center" padding={{ x: 24 }}>
           <Box align="center" gap={12}>
             <Text size="3xl" color={pal.text} style={{ opacity: 0.85 }}>
-              {loading ? 'Loading requests…' : 'No pending requests'}
+              {proposalsEmptyLabel(loading)}
             </Text>
             {!loading ? (
               <Button variant="secondary" size="md" dark={dark} onPress={refresh} label="Refresh"/>

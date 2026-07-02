@@ -4,11 +4,17 @@ import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import ViewHost from '@stage-labs/kit/vue/view-host';
-import { backAction, basicRoot, screenHeader } from '@stage-labs/views';
+import {
+  backAction,
+  proposalKindLabel,
+  proposalsEmptyLabel,
+  proposalsHeaderNode,
+  proposalsPositionLabel,
+} from '@stage-labs/views';
 import { capabilities } from '@/lib/capabilities';
 import { useEffectiveScheme } from '@/lib/kitTheme';
 import { useProposals, type ProposalDetail } from '../lib/useProposals';
-import type { QueuedRequest, RequestKind } from '@stage-labs/client/xmtp/requests-queue';
+import type { QueuedRequest } from '@stage-labs/client/xmtp/requests-queue';
 import { acceptRequestConv, blockRequestConv } from '../lib/xmtpRequests';
 import { xmtpVote, xmtpSendText, xmtpSendSignatureReference } from '../lib/xmtpSend';
 import { executeTxRequest } from '../lib/executeTxRequest';
@@ -28,24 +34,15 @@ const acceptFg = computed(() => (dark.value ? '#34d399' : '#15803d'));
 const { requests, details, loading, error, refresh } = useProposals();
 
 const headerNode = computed(() =>
-  basicRoot(screenHeader({
-    title: 'Pending requests',
-    titleStyle: { kind: 'title', size: 'sm' },
+  proposalsHeaderNode({
     backColor: palette.link,
     safeTop: 0,
     surface: palette.toolbarBg,
     borderColor: palette.border,
-  })),
+  }),
 );
 const headerActions = {
   ...backAction(capabilities),
-};
-
-const KIND_LABEL: Record<RequestKind, string> = {
-  poll: 'Poll',
-  payment: 'Payment request',
-  signing: 'Signing request',
-  message: 'Message request',
 };
 
 const skipped = ref<Set<string>>(new Set());
@@ -205,14 +202,14 @@ async function onExecute(req: QueuedRequest): Promise<void> {
       <Text role="secondary" text-align="center">{{ error }}</Text>
     </Col>
     <Col v-else-if="current === null" align="center" justify="center" class="flex-1" :padding="24" :gap="12">
-      <Text size="3xl" color="text" :style="{ opacity: '0.85' }">{{ loading ? 'Loading requests…' : 'No pending requests' }}</Text>
+      <Text size="3xl" color="text" :style="{ opacity: '0.85' }">{{ proposalsEmptyLabel(loading) }}</Text>
       <Button v-if="!loading" variant="secondary" size="md" label="Refresh" :dark="dark" @click="onRefresh()" />
     </Col>
 
     <!-- Stepper: one request at a time with an "X of Y" counter, mirroring mobile ProposalsScreen. -->
     <Col v-else class="flex-1 min-h-0 overflow-y-auto no-scrollbar">
       <Row align="center" :gap="8" class="px-4 pt-4">
-        <Text size="xs" role="secondary">{{ position }} of {{ total }}</Text>
+        <Text size="xs" role="secondary">{{ proposalsPositionLabel(position, total) }}</Text>
         <Col class="flex-1" />
         <Pressable
           tag="button"
@@ -231,7 +228,7 @@ async function onExecute(req: QueuedRequest): Promise<void> {
           weight="semibold"
           role="secondary"
           class="uppercase tracking-wide"
-        >{{ KIND_LABEL[current.kind] }}</Text>
+        >{{ proposalKindLabel(current.kind) }}</Text>
 
         <template v-if="current.kind === 'message'">
           <Col class="mt-2" :gap="10">

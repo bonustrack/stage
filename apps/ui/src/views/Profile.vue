@@ -6,7 +6,9 @@ import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import ViewHost from '@stage-labs/kit/vue/view-host';
 import type { BasicNode } from '@stage-labs/kit/kit';
-import { copyAction, profileHeader, profileAddressRow, PROFILE_ADDRESS_COPY } from '@stage-labs/views';
+import {
+  copyAction, profileAddressNode, profileDisplayName, profileNameNode, PROFILE_ADDRESS_COPY,
+} from '@stage-labs/views';
 import { capabilities } from '@/lib/capabilities';
 
 const palette = useKitPalette();
@@ -16,11 +18,8 @@ const address = ref('');
 const profile = ref<SnapshotProfile>({});
 const loaded = ref(false);
 
-const displayName = computed(() => {
-  const trimmed = profile.value.name?.trim();
-  if (trimmed !== undefined && trimmed !== '') return trimmed;
-  return address.value ? shortAddress(address.value) : 'Loading…';
-});
+const displayName = computed(() =>
+  profileDisplayName(address.value, profile.value.name, shortAddress(address.value)));
 
 onMounted(async () => {
   try {
@@ -36,20 +35,12 @@ onMounted(async () => {
   } catch { }
 });
 
-const nameNode = computed<BasicNode>(() => ({
-  type: 'Basic',
-  children: [profileHeader({ name: displayName.value })],
-}));
+const nameNode = computed<BasicNode>(() => profileNameNode(displayName.value));
 
-const addressNode = computed<BasicNode>(() => ({
-  type: 'Basic',
-  children: [
-    profileAddressRow({
-      address: address.value,
-      label: shortAddress(address.value),
-      color: palette.text,
-    }),
-  ],
+const addressNode = computed<BasicNode>(() => profileAddressNode({
+  address: address.value,
+  label: shortAddress(address.value),
+  color: palette.text,
 }));
 
 const actions = {

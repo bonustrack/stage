@@ -6,7 +6,7 @@ import { getCachedXmtpClient, getOrCreateXmtpClient } from '../modules/messaging
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers } from '@stage-labs/kit/kit';
 import {
-  backAction, basicRoot, profileActionsRow, screenHeader,
+  backAction, profileMessageSendNode, profileOverlayHeaderNode,
   PROFILE_ROUND_PRESS,
 } from '@stage-labs/views';
 import { capabilities } from '../lib/capabilities';
@@ -40,13 +40,7 @@ export function ProfileHeader({ variant, insetTop, c }: {
   c: ProfileColors;
 }): React.ReactElement {
   if (variant === 'route') {
-    const node = basicRoot(screenHeader({
-      variant: 'overlay',
-      backColor: c.link,
-      backHitSlop: 10,
-      backPadding: 6,
-      safeTop: insetTop,
-    }));
+    const node = profileOverlayHeaderNode(c.link, insetTop);
     const actions: PayloadHandlers = { ...backAction(capabilities) };
     return <ViewHost node={node} actions={actions} />;
   }
@@ -66,16 +60,7 @@ export function ProfileHeader({ variant, insetTop, c }: {
 export function ProfileActions({ opening, onMessage, onSend, c }: {
   dark: boolean; opening: boolean; onMessage: () => void; onSend: () => void; c: ProfileColors;
 }): React.ReactElement {
-  const node = basicRoot(
-    profileActionsRow({
-      border: c.border,
-      fg: c.link,
-      actions: [
-        { action: 'message', icon: 'chatRect', label: opening ? 'Opening…' : 'Message', disabled: opening },
-        { action: 'send', icon: 'send', label: 'Send' },
-      ],
-    }),
-  );
+  const node = profileMessageSendNode({ border: c.border, fg: c.link }, opening);
   const actions: PayloadHandlers = {
     [PROFILE_ROUND_PRESS]: (payload) => {
       if (payload.action === 'message') { if (!opening) onMessage(); }

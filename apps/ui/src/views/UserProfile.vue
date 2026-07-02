@@ -9,7 +9,9 @@ import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import ViewHost from '@stage-labs/kit/vue/view-host';
 import type { BasicNode } from '@stage-labs/kit/kit';
 import {
-  backAction, basicRoot, copyAction, profileHeader, profileActionsRow, profileAddressRow, screenHeader,
+  backAction, copyAction,
+  profileAddressNode, profileDisplayName, profileMessageSendNode, profileNameNode,
+  profileOverlayHeaderNode,
   PROFILE_ROUND_PRESS, PROFILE_ADDRESS_COPY,
 } from '@stage-labs/views';
 import { capabilities } from '@/lib/capabilities';
@@ -35,11 +37,8 @@ const notSelf = computed(() =>
 
 const openingDm = ref(false);
 
-const displayName = computed(() => {
-  const trimmed = profile.value?.name?.trim();
-  if (trimmed !== undefined && trimmed !== '') return trimmed;
-  return address.value ? shortAddress(address.value) : 'Loading…';
-});
+const displayName = computed(() =>
+  profileDisplayName(address.value, profile.value?.name, shortAddress(address.value)));
 
 async function onMessage(): Promise<void> {
   if (!address.value || openingDm.value) return;
@@ -56,47 +55,18 @@ function onSend(): void {
   void router.push({ path: '/wallet/send', query: { to: address.value } });
 }
 
-const nameNode = computed<BasicNode>(() => ({
-  type: 'Basic',
-  children: [profileHeader({ name: displayName.value })],
+const nameNode = computed<BasicNode>(() => profileNameNode(displayName.value));
+
+const addressNode = computed<BasicNode>(() => profileAddressNode({
+  address: address.value,
+  label: shortAddress(address.value),
+  color: palette.text,
 }));
 
-const addressNode = computed<BasicNode>(() => ({
-  type: 'Basic',
-  children: [
-    profileAddressRow({
-      address: address.value,
-      label: shortAddress(address.value),
-      color: palette.text,
-    }),
-  ],
-}));
+const actionsNode = computed<BasicNode>(() =>
+  profileMessageSendNode({ border: palette.border, fg: palette.link }, openingDm.value));
 
-const actionsNode = computed<BasicNode>(() => ({
-  type: 'Basic',
-  children: [
-    profileActionsRow({
-      border: palette.border,
-      fg: palette.link,
-      actions: [
-        {
-          action: 'message',
-          icon: 'chatRect',
-          label: openingDm.value ? 'Opening…' : 'Message',
-          disabled: openingDm.value,
-        },
-        { action: 'send', icon: 'send', label: 'Send' },
-      ],
-    }),
-  ],
-}));
-
-const headerNode = computed<BasicNode>(() => basicRoot(screenHeader({
-  variant: 'overlay',
-  backColor: palette.link,
-  backHitSlop: 10,
-  backPadding: 6,
-})));
+const headerNode = computed<BasicNode>(() => profileOverlayHeaderNode(palette.link));
 
 const actions = {
   ...copyAction(PROFILE_ADDRESS_COPY, capabilities, () => address.value),

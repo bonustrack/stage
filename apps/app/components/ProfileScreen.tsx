@@ -11,8 +11,14 @@ import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
 import { Avatar } from './Avatar';
 import { Box, Col } from './layout';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import type { PayloadHandlers, WidgetRoot } from '@stage-labs/kit/kit';
-import { basicRoot, copyAction, profileAddressRow, profileHeader, PROFILE_ADDRESS_COPY } from '@stage-labs/views';
+import type { PayloadHandlers } from '@stage-labs/kit/kit';
+import {
+  copyAction,
+  profileAddressNode,
+  profileDisplayName,
+  profileNameNode,
+  PROFILE_ADDRESS_COPY,
+} from '@stage-labs/views';
 import { capabilities } from '../lib/capabilities';
 import { ImageViewer } from './ImageViewer';
 import {
@@ -22,19 +28,6 @@ import { CommonChannels } from './CommonChannels';
 import { ProfileHoldings } from './ProfileScreen.holdings';
 
 export type ProfileScreenVariant = 'tab' | 'route';
-
-function profileDisplayName(addr: string): string {
-  if (!addr) return 'Loading…';
-  return getPeerName(addr) ?? shortAddress(addr);
-}
-
-function nameNode(name: string): WidgetRoot {
-  return basicRoot(profileHeader({ name }));
-}
-
-function addressNode(address: string, color: string): WidgetRoot {
-  return basicRoot(profileAddressRow({ address, label: shortAddress(address), color }));
-}
 
 function copyActions(getAddress: () => string): PayloadHandlers {
   return copyAction(PROFILE_ADDRESS_COPY, capabilities, getAddress, 'Address copied');
@@ -62,11 +55,14 @@ function ProfileIdentity({ addr, isSelf, dark, opening, c, variant, insetTop, di
           onPress={onAvatar}
 />
         <Box margin={{ top: 14 }} style={{ alignSelf: 'stretch' }}>
-          <ViewHost node={nameNode(displayName)} />
+          <ViewHost node={profileNameNode(displayName)} />
         </Box>
         {addr ? (
           <Box margin={{ top: 2 }}>
-            <ViewHost node={addressNode(addr, c.text)} actions={copyActions(() => addr)} />
+            <ViewHost
+              node={profileAddressNode({ address: addr, label: shortAddress(addr), color: c.text })}
+              actions={copyActions(() => addr)}
+            />
           </Box>
         ) : null}
         {}
@@ -108,7 +104,7 @@ export function ProfileScreen({ address, variant, panRef }: {
     } finally { setOpeningDm(false); }
   };
 
-  const displayName = profileDisplayName(addr);
+  const displayName = profileDisplayName(addr, getPeerName(addr), shortAddress(addr));
 
   return (
     <Col flex={1} surface="surface">

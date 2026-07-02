@@ -6,7 +6,7 @@ import {
 import { readProfile, loadCachedProfile } from '../lib/profile';
 import ViewHost from '@stage-labs/kit/vue/view-host';
 import type { ListViewNode } from '@stage-labs/kit/kit';
-import { contactRow, CONTACT_PRESS } from '@stage-labs/views';
+import { contactNameModel, contactRow, contactsEmptyLabel, CONTACT_PRESS } from '@stage-labs/views';
 
 interface Contact { address: string; convId: string }
 
@@ -58,9 +58,12 @@ const listNode = computed<ListViewNode>(() => ({
   type: 'ListView',
   children: (contacts.value ?? []).map(c =>
     contactRow({
-      name: peerName(c.address) ?? c.address,
+      ...contactNameModel({
+        resolvedName: peerName(c.address),
+        fallbackName: c.address,
+        shortAddress: shortAddress(c.address),
+      }),
       avatarUri: stampAvatarUrl(c.address, 80),
-      handle: peerName(c.address) ? shortAddress(c.address) : undefined,
       payload: { convId: c.convId },
     }),
   ),
@@ -84,7 +87,7 @@ const actions = {
     </Col>
     <Col v-else-if="!contacts || contacts.length === 0" :flex="1" align="center" justify="center" class="px-6 py-12">
       <Text size="md" color="secondary" class="text-center">
-        {{ loading ? 'Loading contacts…' : 'No contacts yet. Start a chat to add one.' }}
+        {{ contactsEmptyLabel(loading) }}
       </Text>
     </Col>
     <Scroll v-else class="flex-1 min-h-0">
