@@ -1,15 +1,14 @@
 <script setup lang="ts">
 
 import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import ViewHost from '@stage-labs/kit/vue/view-host';
 import type { ListViewNode } from '@stage-labs/kit/kit';
 import {
-  settingsHeader, settingsButtonRow, settingsValueRow, SCREEN_BACK, SETTINGS_BUTTON_PRESS,
+  backAction, settingsHeader, settingsButtonRow, settingsValueRow, SETTINGS_BUTTON_PRESS,
 } from '@stage-labs/views';
+import { capabilities } from '@/lib/capabilities';
 
-const router = useRouter();
 const palette = useKitPalette();
 
 const headerNode = computed(() => settingsHeader({
@@ -59,7 +58,7 @@ const node = computed<ListViewNode>(() => ({
 }));
 
 const actions = {
-  [SCREEN_BACK]: (): void => { router.back(); },
+  ...backAction(capabilities),
   [SETTINGS_BUTTON_PRESS]: (): void => { void requestPermission(); },
 };
 </script>

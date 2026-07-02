@@ -19,7 +19,8 @@ import { Col, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import { basicRoot, emptyState, screenHeader, SCREEN_BACK } from '@stage-labs/views';
+import { backAction, basicRoot, emptyState, screenHeader } from '@stage-labs/views';
+import { capabilities } from '../../lib/capabilities';
 
 const EMPTY_NODE = basicRoot(emptyState({ title: 'No message requests.' }));
 
@@ -40,7 +41,7 @@ export default function Requests(): React.ReactElement {
     borderColor: border,
   }));
   const headerActions: PayloadHandlers = {
-    [SCREEN_BACK]: () => { router.back(); },
+    ...backAction(capabilities),
   };
 
   const load = useCallback(async (): Promise<void> => {

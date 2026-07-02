@@ -2,16 +2,15 @@
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Col } from '../layout';
-import { settingsHeader, SCREEN_BACK } from '@stage-labs/views';
+import { backAction, settingsHeader } from '@stage-labs/views';
+import { capabilities } from '../../lib/capabilities';
 import { DANGER, useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { AccountSecuritySection } from '../tabs/SettingsScreen.account';
 import { SecureWalletNudge } from '../onboarding/SecureWalletNudge';
 
 export function SecuritySettings(): React.ReactElement {
-  const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head, border, toolbarBg } = usePalette();
   const sub = fg;
@@ -27,7 +26,7 @@ export function SecuritySettings(): React.ReactElement {
     safeTop: insets.top,
   });
   const actions: PayloadHandlers = {
-    [SCREEN_BACK]: () => { router.back(); },
+    ...backAction(capabilities),
   };
 
   return (

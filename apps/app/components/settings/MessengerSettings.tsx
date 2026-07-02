@@ -13,15 +13,15 @@ import type {
   PayloadHandlers,
 } from '@stage-labs/kit/kit';
 import {
+  backAction,
   listRoot,
   settingsHeader,
   settingsValueRow,
   settingsButtonRow,
-  SCREEN_BACK,
   SETTINGS_COPY,
   SETTINGS_BUTTON_PRESS,
 } from '@stage-labs/views';
-import { useRouter } from 'expo-router';
+import { capabilities } from '../../lib/capabilities';
 import { getOrCreateXmtpClient, resetXmtpClient, shortAddress, useActiveAccount } from '../../modules/messaging';
 import { resetAccount } from '../../lib/wallet';
 import { flash } from '../../lib/toast';
@@ -29,7 +29,6 @@ import { usePalette } from '../../lib/theme';
 import { MessengerSessions } from './MessengerSessions';
 
 export function MessengerSettings(): React.ReactElement {
-  const router = useRouter();
   const { text: fg, link: head, border, toolbarBg } = usePalette();
   const sub = fg;
   const insets = useSafeAreaInsets();
@@ -96,7 +95,7 @@ export function MessengerSettings(): React.ReactElement {
   });
 
   const actions: PayloadHandlers = {
-    [SCREEN_BACK]: () => { router.back(); },
+    ...backAction(capabilities),
     [SETTINGS_COPY]: (payload) => {
       const value = payload.copy ?? payload.value;
       const label = payload.label;

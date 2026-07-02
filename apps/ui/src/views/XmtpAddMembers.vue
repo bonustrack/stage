@@ -4,7 +4,8 @@ import { computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import ViewHost from '@stage-labs/kit/vue/view-host';
-import { basicRoot, screenHeader, SCREEN_BACK } from '@stage-labs/views';
+import { backAction, basicRoot, screenHeader } from '@stage-labs/views';
+import { capabilities } from '@/lib/capabilities';
 import { useEffectiveScheme } from '@/lib/kitTheme';
 import { addGroupMembers } from '../lib/xmtpGroups';
 import { convOfLine, lineOfConv, groupMemberEthAddresses } from '../lib/xmtp';
@@ -47,7 +48,7 @@ const headerNode = computed(() =>
   })),
 );
 const headerActions = {
-  [SCREEN_BACK]: (): void => { router.back(); },
+  ...backAction(capabilities),
 };
 
 async function onSubmit(): Promise<void> {

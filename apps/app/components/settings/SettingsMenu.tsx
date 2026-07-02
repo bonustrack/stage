@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { Alert } from 'react-native';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 
-import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Col, Box } from '../layout';
 import type { HeroIconName } from '@stage-labs/kit/react-native/icon';
@@ -14,13 +13,15 @@ import type {
   PayloadHandlers,
 } from '@stage-labs/kit/kit';
 import {
+  backAction,
   settingsHeader,
+  settingsNavAction,
   settingsNavRow,
   settingsButtonRow,
-  SCREEN_BACK,
   SETTINGS_NAV_PRESS,
   SETTINGS_BUTTON_PRESS,
 } from '@stage-labs/views';
+import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import { resetForOnboarding } from '../../lib/wallet';
 import { resetEverything } from '../../lib/resetEverything';
@@ -121,7 +122,6 @@ function dangerNode(resetting: boolean, nuking: boolean): ListViewNode {
 }
 
 export function SettingsMenu(): React.ReactElement {
-  const router = useRouter();
   const { text: fg, link: head, border, toolbarBg } = usePalette();
   const insets = useSafeAreaInsets();
 
@@ -138,11 +138,8 @@ export function SettingsMenu(): React.ReactElement {
   });
 
   const actions: PayloadHandlers = {
-    [SCREEN_BACK]: () => { router.back(); },
-    [SETTINGS_NAV_PRESS]: (payload) => {
-      const href = payload.href;
-      if (typeof href === 'string') router.push(href);
-    },
+    ...backAction(capabilities),
+    ...settingsNavAction(capabilities),
     [SETTINGS_BUTTON_PRESS]: (payload) => {
       if (payload.action === 'reset') onReset(setResetting);
       else if (payload.action === 'nuke') onNuke(setNuking);

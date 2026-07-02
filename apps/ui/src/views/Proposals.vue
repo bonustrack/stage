@@ -4,7 +4,8 @@ import { computed, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import ViewHost from '@stage-labs/kit/vue/view-host';
-import { basicRoot, screenHeader, SCREEN_BACK } from '@stage-labs/views';
+import { backAction, basicRoot, screenHeader } from '@stage-labs/views';
+import { capabilities } from '@/lib/capabilities';
 import { useEffectiveScheme } from '@/lib/kitTheme';
 import { useProposals, type ProposalDetail } from '../lib/useProposals';
 import type { QueuedRequest, RequestKind } from '@stage-labs/client/xmtp/requests-queue';
@@ -37,7 +38,7 @@ const headerNode = computed(() =>
   })),
 );
 const headerActions = {
-  [SCREEN_BACK]: (): void => { router.back(); },
+  ...backAction(capabilities),
 };
 
 const KIND_LABEL: Record<RequestKind, string> = {

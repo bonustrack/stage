@@ -4,7 +4,8 @@ import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import ViewHost from '@stage-labs/kit/vue/view-host';
-import { settingsHeader, SCREEN_BACK } from '@stage-labs/views';
+import { backAction, settingsHeader } from '@stage-labs/views';
+import { capabilities } from '@/lib/capabilities';
 import { useEffectiveScheme } from '@/lib/kitTheme';
 import { mnemonicWords } from '@stage-labs/client/zerodev/derive';
 import { getWalletMnemonic, hasWalletMnemonic, markWalletBackedUp } from '../../lib/accounts';
@@ -22,7 +23,7 @@ const headerNode = computed(() => settingsHeader({
 }));
 
 const actions = {
-  [SCREEN_BACK]: (): void => { router.back(); },
+  ...backAction(capabilities),
 };
 
 const present = ref(hasWalletMnemonic());

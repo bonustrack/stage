@@ -1,12 +1,11 @@
 <script setup lang="ts">
 
 import { computed } from 'vue';
-import { useRouter } from 'vue-router';
 import ViewHost from '@stage-labs/kit/vue/view-host';
-import { listRoot, banner, BANNER_PRESS } from '@stage-labs/views';
+import { listRoot, banner, navigateAction, BANNER_PRESS } from '@stage-labs/views';
+import { capabilities } from '@/lib/capabilities';
 import { useProposalCount } from '../lib/useProposals';
 
-const router = useRouter();
 const { count } = useProposalCount();
 
 const node = computed(() =>
@@ -19,7 +18,7 @@ const node = computed(() =>
 );
 
 const actions = {
-  [BANNER_PRESS]: (): void => { void router.push('/proposals'); },
+  ...navigateAction(BANNER_PRESS, capabilities, () => '/proposals'),
 };
 </script>
 

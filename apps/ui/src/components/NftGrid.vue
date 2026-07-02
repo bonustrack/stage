@@ -3,7 +3,8 @@
 import { computed } from 'vue';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import ViewHost from '@stage-labs/kit/vue/view-host';
-import { basicRoot, nftGrid, LINK_OPEN } from '@stage-labs/views';
+import { basicRoot, nftGrid, openUrlAction } from '@stage-labs/views';
+import { capabilities } from '@/lib/capabilities';
 import { useNfts } from '@/lib/useNfts';
 
 const palette = useKitPalette();
@@ -21,10 +22,7 @@ const node = computed(() =>
   })));
 
 const actions = {
-  [LINK_OPEN]: (payload: Record<string, unknown>): void => {
-    const url = payload.url;
-    if (typeof url === 'string' && url) window.open(url, '_blank', 'noopener,noreferrer');
-  },
+  ...openUrlAction(capabilities),
 };
 </script>
 

@@ -1,17 +1,16 @@
 <script setup lang="ts">
 
 import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import ViewHost from '@stage-labs/kit/vue/view-host';
 import type { ListViewNode } from '@stage-labs/kit/kit';
 import {
-  settingsHeader, settingsValueRow, settingsNavRow, SCREEN_BACK, SETTINGS_COPY, SETTINGS_NAV_PRESS,
+  backAction, settingsHeader, settingsNavAction, settingsValueRow, settingsNavRow, SETTINGS_COPY, SETTINGS_NAV_PRESS,
 } from '@stage-labs/views';
+import { capabilities } from '@/lib/capabilities';
 import { listAccounts, getActiveAccountId, type AccountRecord } from '../../lib/accounts';
 import { shortAddress } from '../../lib/xmtp';
 
-const router = useRouter();
 const palette = useKitPalette();
 
 const headerNode = computed(() => settingsHeader({
@@ -87,16 +86,13 @@ const manageNode = computed<ListViewNode>(() => ({
 }));
 
 const actions = {
-  [SCREEN_BACK]: (): void => { router.back(); },
+  ...backAction(capabilities),
   [SETTINGS_COPY]: (payload: Record<string, unknown>): void => {
     const value = payload.value;
     const key = payload.key;
     if (typeof value === 'string' && typeof key === 'string') void copy(key, value);
   },
-  [SETTINGS_NAV_PRESS]: (payload: Record<string, unknown>): void => {
-    const to = payload.to;
-    if (typeof to === 'string') void router.push(to);
-  },
+  ...settingsNavAction(capabilities),
 };
 </script>
 

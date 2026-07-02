@@ -31,6 +31,7 @@ declare global {
   const bumpAccountEpoch: typeof import('./lib/xmtp').bumpAccountEpoch
   const cachedRows: typeof import('./lib/channelsCache').cachedRows
   const canExportPrivateKey: typeof import('./lib/accounts').canExportPrivateKey
+  const capabilities: typeof import('./lib/capabilities').capabilities
   const composeField: typeof import('./lib/composeField').composeField
   const computeMemberRoles: typeof import('./lib/useGroupDetailHelpers').computeMemberRoles
   const computed: typeof import('vue').computed
@@ -358,6 +359,7 @@ declare module 'vue' {
     readonly bumpAccountEpoch: UnwrapRef<typeof import('./lib/xmtp')['bumpAccountEpoch']>
     readonly cachedRows: UnwrapRef<typeof import('./lib/channelsCache')['cachedRows']>
     readonly canExportPrivateKey: UnwrapRef<typeof import('./lib/accounts')['canExportPrivateKey']>
+    readonly capabilities: UnwrapRef<typeof import('./lib/capabilities')['capabilities']>
     readonly composeField: UnwrapRef<typeof import('./lib/composeField')['composeField']>
     readonly computeMemberRoles: UnwrapRef<typeof import('./lib/useGroupDetailHelpers')['computeMemberRoles']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>

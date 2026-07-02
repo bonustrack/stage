@@ -1,15 +1,14 @@
 <script setup lang="ts">
 
 import { computed, onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import ViewHost from '@stage-labs/kit/vue/view-host';
-import { basicRoot, receiveView, screenHeader, SCREEN_BACK, WALLET_ADDRESS_COPY } from '@stage-labs/views';
+import { backAction, basicRoot, receiveView, screenHeader, WALLET_ADDRESS_COPY } from '@stage-labs/views';
+import { capabilities } from '@/lib/capabilities';
 import { receiveViewModel } from '@stage-labs/client/wallet/receive';
 import { getActiveAccount } from '../lib/accounts';
 import { shortAddress, stampAvatarUrl } from '../lib/xmtp';
 
-const router = useRouter();
 const palette = useKitPalette();
 
 const address = ref('');
@@ -56,7 +55,7 @@ const headerNode = computed(() =>
 );
 
 const actions = {
-  [SCREEN_BACK]: (): void => { router.back(); },
+  ...backAction(capabilities),
   [WALLET_ADDRESS_COPY]: (): void => { void copy(); },
 };
 </script>

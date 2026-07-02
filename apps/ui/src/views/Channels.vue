@@ -3,7 +3,7 @@
 import { computed, ref } from 'vue';
 import ViewHost from '@stage-labs/kit/vue/view-host';
 import {
-  basicRoot,
+  basicRoot, channelMenuItems,
   emptyState, overflowMenu, OVERFLOW_MENU_PRESS,
   labelBar, LABEL_CHIP_PRESS, type LabelBarChip,
 } from '@stage-labs/views';
@@ -24,6 +24,16 @@ const {
 } = useChannels();
 
 const UNREAD_VALUE = '__unread__';
+
+const rowMenuItems = computed(() =>
+  rowMenu.value
+    ? channelMenuItems({ isGroup: false, isUnread: rowMenu.value.isUnread })
+    : [],
+);
+function onRowMenuItem(id: string): void {
+  if (id === 'toggle-read') toggleRowUnread();
+  if (id === 'toggle-archive') archiveRow();
+}
 
 const searchOpen = ref(false);
 const { setOverride } = usePublishTopnav();
@@ -235,24 +245,16 @@ const labelBarActions = {
         :style="{ left: rowMenu.x + 'px', top: rowMenu.y + 'px' }"
       >
         <Pressable
+          v-for="item in rowMenuItems"
+          :key="item.id"
           tag="button"
           type="button"
           class="w-full text-left px-3 py-2 text-sm
             text-metro-head-light dark:text-metro-head-dark
             hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
-          @click="toggleRowUnread"
+          @click="onRowMenuItem(item.id)"
         >
-          {{ rowMenu.isUnread ? 'Mark as read' : 'Mark as unread' }}
-        </Pressable>
-        <Pressable
-          tag="button"
-          type="button"
-          class="w-full text-left px-3 py-2 text-sm
-            text-metro-head-light dark:text-metro-head-dark
-            hover:bg-metro-hover-light dark:hover:bg-metro-hover-dark"
-          @click="archiveRow"
-        >
-          Archive
+          {{ item.label }}
         </Pressable>
       </Col>
     </template>

@@ -9,20 +9,19 @@ import { Caption } from '@stage-labs/kit/react-native/caption';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers } from '@stage-labs/kit/kit';
 import {
+  backAction,
   listRoot,
   settingsHeader,
   settingsToggleRow,
-  SCREEN_BACK,
   SETTINGS_TOGGLE_CHANGE,
 } from '@stage-labs/views';
-import { useRouter } from 'expo-router';
+import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import { loadPushEnabled, setPushEnabled, subscribePushPref, isPushEnabledSync } from '../../lib/pushPref';
 import { getOrCreateXmtpClient } from '../../modules/messaging';
 import { registerPushWithDaemon, unregisterPushFromDaemon } from '../../lib/push';
 
 export function NotificationsSettings(): React.ReactElement {
-  const router = useRouter();
   const { text: fg, link: head, border, toolbarBg } = usePalette();
   const sub = fg;
   const insets = useSafeAreaInsets();
@@ -75,7 +74,7 @@ export function NotificationsSettings(): React.ReactElement {
   });
 
   const actions: PayloadHandlers = {
-    [SCREEN_BACK]: () => { router.back(); },
+    ...backAction(capabilities),
     [SETTINGS_TOGGLE_CHANGE]: (payload) => {
       const next = payload.push;
       if (typeof next === 'boolean') onToggle(next);

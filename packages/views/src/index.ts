@@ -1,4 +1,6 @@
 export * from './actions';
+export * from './actionHandlers';
+export * from './capabilities';
 export * from './format';
 export * from './node';
 export * from './colors';
@@ -19,6 +21,7 @@ export * from './wallet/nftGrid';
 export * from './wallet/noticeCard';
 export * from './chat/channelRow';
 export * from './chat/channelRowModel';
+export * from './chat/channelMenu';
 export * from './chat/mediaCard';
 export * from './chat/reactionsRow';
 export * from './chat/emojiReactionRow';

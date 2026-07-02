@@ -2,7 +2,8 @@
 
 import { computed } from 'vue';
 import ViewHost from '@stage-labs/kit/vue/view-host';
-import { listRoot, previewLinkCard, LINK_OPEN } from '@stage-labs/views';
+import { listRoot, openUrlAction, previewLinkCard } from '@stage-labs/views';
+import { capabilities } from '@/lib/capabilities';
 import { osmTileUrl } from '@stage-labs/client/embed/detect';
 
 const props = defineProps<{ lat: number; lng: number; sourceUrl: string }>();
@@ -22,9 +23,7 @@ const node = computed(() =>
 );
 
 const actions = {
-  [LINK_OPEN]: (): void => {
-    window.open(props.sourceUrl, '_blank', 'noopener');
-  },
+  ...openUrlAction(capabilities),
 };
 </script>
 

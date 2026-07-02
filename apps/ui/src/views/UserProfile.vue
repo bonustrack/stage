@@ -9,9 +9,10 @@ import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import ViewHost from '@stage-labs/kit/vue/view-host';
 import type { BasicNode } from '@stage-labs/kit/kit';
 import {
-  basicRoot, profileHeader, profileActionsRow, profileAddressRow, screenHeader,
-  PROFILE_ROUND_PRESS, PROFILE_ADDRESS_COPY, SCREEN_BACK,
+  backAction, basicRoot, copyAction, profileHeader, profileActionsRow, profileAddressRow, screenHeader,
+  PROFILE_ROUND_PRESS, PROFILE_ADDRESS_COPY,
 } from '@stage-labs/views';
+import { capabilities } from '@/lib/capabilities';
 
 const route = useRoute();
 const router = useRouter();
@@ -53,13 +54,6 @@ async function onMessage(): Promise<void> {
 
 function onSend(): void {
   void router.push({ path: '/wallet/send', query: { to: address.value } });
-}
-
-async function copyAddress(): Promise<void> {
-  if (!address.value) return;
-  try {
-    await navigator.clipboard.writeText(address.value);
-  } catch { }
 }
 
 const nameNode = computed<BasicNode>(() => ({
@@ -105,12 +99,12 @@ const headerNode = computed<BasicNode>(() => basicRoot(screenHeader({
 })));
 
 const actions = {
-  [PROFILE_ADDRESS_COPY]: (): void => { void copyAddress(); },
+  ...copyAction(PROFILE_ADDRESS_COPY, capabilities, () => address.value),
   [PROFILE_ROUND_PRESS]: (payload: Record<string, unknown>): void => {
     if (payload.action === 'message') { if (!openingDm.value) void onMessage(); }
     else if (payload.action === 'send') onSend();
   },
-  [SCREEN_BACK]: (): void => { router.back(); },
+  ...backAction(capabilities),
 };
 </script>
 

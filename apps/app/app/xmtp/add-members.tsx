@@ -5,7 +5,8 @@ import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import { basicRoot, screenHeader, SCREEN_BACK } from '@stage-labs/views';
+import { backAction, basicRoot, screenHeader } from '@stage-labs/views';
+import { capabilities } from '../../lib/capabilities';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { addGroupMembers } from '../../modules/messaging';
@@ -30,7 +31,7 @@ export default function AddMembers(): React.ReactElement {
     borderColor: border,
   }));
   const headerActions: PayloadHandlers = {
-    [SCREEN_BACK]: () => { router.back(); },
+    ...backAction(capabilities),
   };
 
   const picker = useMemberPicker();

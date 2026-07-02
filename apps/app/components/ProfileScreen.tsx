@@ -5,16 +5,15 @@ import { ScrollView } from 'react-native-gesture-handler';
 import type { SimultaneousRefs } from './SwipeTabs.types';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Clipboard from 'expo-clipboard';
 import { openDmWithAddress, shortAddress } from '../modules/messaging';
-import { flash } from '../lib/toast';
 import { useEffectiveColorScheme } from '../lib/theme';
 import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
 import { Avatar } from './Avatar';
 import { Box, Col } from './layout';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers, WidgetRoot } from '@stage-labs/kit/kit';
-import { basicRoot, profileAddressRow, profileHeader, PROFILE_ADDRESS_COPY } from '@stage-labs/views';
+import { basicRoot, copyAction, profileAddressRow, profileHeader, PROFILE_ADDRESS_COPY } from '@stage-labs/views';
+import { capabilities } from '../lib/capabilities';
 import { ImageViewer } from './ImageViewer';
 import {
   ProfileActions, ProfileHeader, useProfileColors, useSelfAddress,
@@ -37,14 +36,14 @@ function addressNode(address: string, color: string): WidgetRoot {
   return basicRoot(profileAddressRow({ address, label: shortAddress(address), color }));
 }
 
-function copyActions(onCopy: () => void): PayloadHandlers {
-  return { [PROFILE_ADDRESS_COPY]: () => { onCopy(); } };
+function copyActions(getAddress: () => string): PayloadHandlers {
+  return copyAction(PROFILE_ADDRESS_COPY, capabilities, getAddress, 'Address copied');
 }
 
-function ProfileIdentity({ addr, isSelf, dark, opening, c, variant, insetTop, displayName, onAvatar, onCopy, onMessage, onSend }: {
+function ProfileIdentity({ addr, isSelf, dark, opening, c, variant, insetTop, displayName, onAvatar, onMessage, onSend }: {
   addr: string; isSelf: boolean; dark: boolean; opening: boolean;
   c: ReturnType<typeof useProfileColors>; variant: ProfileScreenVariant; insetTop: number;
-  displayName: string; onAvatar: (uri: string | null) => void; onCopy: () => void;
+  displayName: string; onAvatar: (uri: string | null) => void;
   onMessage: () => void; onSend: () => void;
 }): React.ReactElement {
   return (
@@ -67,7 +66,7 @@ function ProfileIdentity({ addr, isSelf, dark, opening, c, variant, insetTop, di
         </Box>
         {addr ? (
           <Box margin={{ top: 2 }}>
-            <ViewHost node={addressNode(addr, c.text)} actions={copyActions(onCopy)} />
+            <ViewHost node={addressNode(addr, c.text)} actions={copyActions(() => addr)} />
           </Box>
         ) : null}
         {}
@@ -109,26 +108,17 @@ export function ProfileScreen({ address, variant, panRef }: {
     } finally { setOpeningDm(false); }
   };
 
-  const copy = (value: string, label = 'Address'): void => {
-    void Clipboard.setStringAsync(value);
-    flash(`${label} copied`);
-  };
-
   const displayName = profileDisplayName(addr);
 
   return (
     <Col flex={1} surface="surface">
-      <ProfileHeader
-        variant={variant} insetTop={insets.top} c={c}
-        onBack={() => { router.back(); }}
-      />
+      <ProfileHeader variant={variant} insetTop={insets.top} c={c} />
 
       <ScrollView simultaneousHandlers={panRef} style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 32 }}>
         <ProfileIdentity
           addr={addr} isSelf={isSelf} dark={dark} opening={openingDm} c={c}
           variant={variant} insetTop={insets.top} displayName={displayName}
           onAvatar={uri => { if (uri) setViewerUri(uri); }}
-          onCopy={() => { copy(addr, 'Address'); }}
           onMessage={() => { void onMessage(); }}
           onSend={() => { router.push({ pathname: '/wallet/send', params: { to: addr } }); }}
         />

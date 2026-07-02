@@ -6,7 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@stage-labs/kit/react-native/text';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import { settingsHeader, walletAccountNode, walletAddressNode, SCREEN_BACK } from '@stage-labs/views';
+import { backAction, settingsHeader, walletAccountNode, walletAddressNode } from '@stage-labs/views';
+import { capabilities } from '../../lib/capabilities';
 import { Col } from '../layout';
 import { useBlockRadius, useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { useActiveAccount } from '../../modules/messaging/account';
@@ -38,7 +39,7 @@ export function WalletSettings(): React.ReactElement {
 
   const actions = {
     ...buildWalletActions({ onCopy, onRecovery, passkey, removePasskey }),
-    [SCREEN_BACK]: () => { router.back(); },
+    ...backAction(capabilities),
   };
   const card = makeCard(dark, c.rowBg, blockRadius, actions);
 

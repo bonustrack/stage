@@ -10,12 +10,12 @@ import type {
   PayloadHandlers,
 } from '@stage-labs/kit/kit';
 import {
+  backAction,
   settingsHeader,
   settingsThemeRow,
-  SCREEN_BACK,
   SETTINGS_THEME_SELECT,
 } from '@stage-labs/views';
-import { useRouter } from 'expo-router';
+import { capabilities } from '../../lib/capabilities';
 import {
   setThemePreference, setCustomTheme, useCustomTheme,
   useEffectiveColorScheme, usePalette, useThemePreference,
@@ -24,7 +24,6 @@ import { THEME_OPTIONS } from '../tabs/SettingsScreen.parts';
 import { ColorTokens } from '../system/ColorTokens';
 
 export function DisplaySettings(): React.ReactElement {
-  const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
   const pref = useThemePreference();
   const custom = useCustomTheme();
@@ -63,7 +62,7 @@ export function DisplaySettings(): React.ReactElement {
   });
 
   const actions: PayloadHandlers = {
-    [SCREEN_BACK]: () => { router.back(); },
+    ...backAction(capabilities),
     [SETTINGS_THEME_SELECT]: (payload) => {
       const value = payload.value;
       if (value === 'custom') { setCustomTheme(true); return; }

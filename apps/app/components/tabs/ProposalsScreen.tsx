@@ -1,11 +1,11 @@
 
-import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import { basicRoot, screenHeader, SCREEN_BACK } from '@stage-labs/views';
+import { backAction, basicRoot, screenHeader } from '@stage-labs/views';
+import { capabilities } from '../../lib/capabilities';
 import { Col, Box } from '../layout';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { useProposals } from './Proposals.hook';
@@ -14,7 +14,6 @@ import { ProposalCard } from './Proposals.card';
 export function ProposalsScreen(): React.ReactElement {
   const pal = usePalette();
   const dark = useEffectiveColorScheme() === 'dark';
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const head = pal.link;
   const border = pal.border;
@@ -28,7 +27,7 @@ export function ProposalsScreen(): React.ReactElement {
     borderColor: border,
   }));
   const headerActions: PayloadHandlers = {
-    [SCREEN_BACK]: () => { router.back(); },
+    ...backAction(capabilities),
   };
 
   return (

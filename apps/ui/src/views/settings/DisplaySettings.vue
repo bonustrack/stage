@@ -1,14 +1,14 @@
 <script setup lang="ts">
 
 import { computed } from 'vue';
-import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import type { HeroIconName } from '@stage-labs/kit/icons';
 import ViewHost from '@stage-labs/kit/vue/view-host';
 import type { ListViewNode, ListViewItemNode } from '@stage-labs/kit/kit';
 import {
-  settingsHeader, settingsThemeRow, SCREEN_BACK, SETTINGS_THEME_SELECT,
+  backAction, settingsHeader, settingsThemeRow, SETTINGS_THEME_SELECT,
 } from '@stage-labs/views';
+import { capabilities } from '@/lib/capabilities';
 import { useEffectiveScheme } from '../../lib/kitTheme';
 import {
   setThemePreference, useThemePreference, type ThemePreference,
@@ -18,7 +18,6 @@ import {
   type SeedColorKey, type Density, type RadiusName, type BaseSize,
 } from '../../lib/theme';
 
-const router = useRouter();
 const palette = useKitPalette();
 
 const headerNode = computed(() => settingsHeader({
@@ -90,7 +89,7 @@ const themeNode = computed<ListViewNode>(() => ({
 }));
 
 const actions = {
-  [SCREEN_BACK]: (): void => { router.back(); },
+  ...backAction(capabilities),
   [SETTINGS_THEME_SELECT]: (payload: Record<string, unknown>): void => {
     const value = payload.value;
     if (value === 'custom') { setCustomTheme(true); return; }

@@ -6,9 +6,10 @@ import { getCachedXmtpClient, getOrCreateXmtpClient } from '../modules/messaging
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers } from '@stage-labs/kit/kit';
 import {
-  basicRoot, profileActionsRow, screenHeader,
-  PROFILE_ROUND_PRESS, SCREEN_BACK,
+  backAction, basicRoot, profileActionsRow, screenHeader,
+  PROFILE_ROUND_PRESS,
 } from '@stage-labs/views';
+import { capabilities } from '../lib/capabilities';
 import { TopnavIdentity } from './TopnavIdentity';
 
 export type ProfileColors = Palette;
@@ -34,9 +35,9 @@ export function useSelfAddress(): string {
   return self;
 }
 
-export function ProfileHeader({ variant, insetTop, onBack, c }: {
+export function ProfileHeader({ variant, insetTop, c }: {
   variant: 'tab' | 'route'; insetTop: number;
-  onBack: () => void; c: ProfileColors;
+  c: ProfileColors;
 }): React.ReactElement {
   if (variant === 'route') {
     const node = basicRoot(screenHeader({
@@ -46,7 +47,7 @@ export function ProfileHeader({ variant, insetTop, onBack, c }: {
       backPadding: 6,
       safeTop: insetTop,
     }));
-    const actions: PayloadHandlers = { [SCREEN_BACK]: () => { onBack(); } };
+    const actions: PayloadHandlers = { ...backAction(capabilities) };
     return <ViewHost node={node} actions={actions} />;
   }
   return (

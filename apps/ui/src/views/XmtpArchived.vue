@@ -4,7 +4,8 @@ import { computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import ViewHost from '@stage-labs/kit/vue/view-host';
-import { basicRoot, emptyState, screenHeader, SCREEN_BACK } from '@stage-labs/views';
+import { backAction, basicRoot, emptyState, screenHeader } from '@stage-labs/views';
+import { capabilities } from '@/lib/capabilities';
 import { cachedRows, hydrateCachedRows, type CachedRow } from '../lib/channelsCache';
 import { loadArchivedIds, subscribeArchived } from '../lib/archived';
 
@@ -48,7 +49,7 @@ const headerNode = computed(() =>
   })),
 );
 const headerActions = {
-  [SCREEN_BACK]: (): void => { router.back(); },
+  ...backAction(capabilities),
 };
 </script>
 

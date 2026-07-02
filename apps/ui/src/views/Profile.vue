@@ -6,7 +6,8 @@ import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import ViewHost from '@stage-labs/kit/vue/view-host';
 import type { BasicNode } from '@stage-labs/kit/kit';
-import { profileHeader, profileAddressRow, PROFILE_ADDRESS_COPY } from '@stage-labs/views';
+import { copyAction, profileHeader, profileAddressRow, PROFILE_ADDRESS_COPY } from '@stage-labs/views';
+import { capabilities } from '@/lib/capabilities';
 
 const palette = useKitPalette();
 const AVATAR_SIZE = 88;
@@ -35,13 +36,6 @@ onMounted(async () => {
   } catch { }
 });
 
-async function copyAddress(): Promise<void> {
-  if (!address.value) return;
-  try {
-    await navigator.clipboard.writeText(address.value);
-  } catch { }
-}
-
 const nameNode = computed<BasicNode>(() => ({
   type: 'Basic',
   children: [profileHeader({ name: displayName.value })],
@@ -59,7 +53,7 @@ const addressNode = computed<BasicNode>(() => ({
 }));
 
 const actions = {
-  [PROFILE_ADDRESS_COPY]: (): void => { void copyAddress(); },
+  ...copyAction(PROFILE_ADDRESS_COPY, capabilities, () => address.value),
 };
 </script>
 

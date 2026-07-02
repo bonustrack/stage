@@ -4,7 +4,8 @@ import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import ViewHost from '@stage-labs/kit/vue/view-host';
-import { basicRoot, screenHeader, SCREEN_BACK } from '@stage-labs/views';
+import { backAction, basicRoot, screenHeader } from '@stage-labs/views';
+import { capabilities } from '@/lib/capabilities';
 import { useEffectiveScheme } from '@/lib/kitTheme';
 import { createGroup } from '../lib/xmtpGroups';
 import { uploadAvatar } from '../lib/profile';
@@ -32,7 +33,7 @@ const headerNode = computed(() =>
   })),
 );
 const headerActions = {
-  [SCREEN_BACK]: (): void => { router.back(); },
+  ...backAction(capabilities),
 };
 
 function onPickImage(file: File): void {

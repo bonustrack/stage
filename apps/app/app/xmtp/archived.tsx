@@ -4,7 +4,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { FlatList } from 'react-native-gesture-handler';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import { basicRoot, emptyState, screenHeader, SCREEN_BACK } from '@stage-labs/views';
+import { backAction, basicRoot, emptyState, screenHeader } from '@stage-labs/views';
+import { capabilities } from '../../lib/capabilities';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getCachedRows, subscribeCachedRows } from '../../modules/messaging';
@@ -31,7 +32,7 @@ export default function Archived(): React.ReactElement {
     borderColor: border,
   }));
   const headerActions: PayloadHandlers = {
-    [SCREEN_BACK]: () => { router.back(); },
+    ...backAction(capabilities),
   };
   const [archived, setArchived] = useState<Set<string>>(new Set());
   const [rows, setRows] = useState<RowT[]>((getCachedRows() as RowT[] | null) ?? []);

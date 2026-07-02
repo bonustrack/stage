@@ -1,7 +1,6 @@
 
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 
-import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Col } from '../layout';
 import type { HeroIconName } from '@stage-labs/kit/react-native/icon';
@@ -10,7 +9,8 @@ import type {
   ListViewNode,
   PayloadHandlers,
 } from '@stage-labs/kit/kit';
-import { settingsHeader, settingsNavRow, SCREEN_BACK, SETTINGS_NAV_PRESS } from '@stage-labs/views';
+import { backAction, settingsHeader, settingsNavAction, settingsNavRow, SETTINGS_NAV_PRESS } from '@stage-labs/views';
+import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 
 type Href = '/settings/kit' | '/settings/components' | '/settings/developer';
@@ -21,7 +21,6 @@ const ROWS: { href: Href; label: string; icon: HeroIconName }[] = [
 ];
 
 export function ExperimentalSettings(): React.ReactElement {
-  const router = useRouter();
   const { text: fg, link: head, border, toolbarBg } = usePalette();
   const insets = useSafeAreaInsets();
 
@@ -47,11 +46,8 @@ export function ExperimentalSettings(): React.ReactElement {
   });
 
   const actions: PayloadHandlers = {
-    [SCREEN_BACK]: () => { router.back(); },
-    [SETTINGS_NAV_PRESS]: (payload) => {
-      const href = payload.href;
-      if (typeof href === 'string') router.push(href);
-    },
+    ...backAction(capabilities),
+    ...settingsNavAction(capabilities),
   };
 
   return (

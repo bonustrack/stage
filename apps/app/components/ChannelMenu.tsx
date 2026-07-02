@@ -5,8 +5,7 @@ import { useRouter } from 'expo-router';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers, WidgetRoot } from '@stage-labs/kit/kit';
 import { Box } from './layout';
-import type { MenuSheetItem } from '@stage-labs/views';
-import { menuSheet, MENU_ITEM_PRESS } from '@stage-labs/views';
+import { channelMenuItems, menuSheet, MENU_ITEM_PRESS } from '@stage-labs/views';
 import { AppModal } from './AppModal';
 import { markConvRead, markConvUnread } from '../modules/messaging';
 import { togglePin } from '../lib/pins';
@@ -57,37 +56,6 @@ function confirmLeaveGroup(
   );
 }
 
-function infoItem(p: { isGroup: boolean; peerAddress?: string | null }): MenuSheetItem | null {
-  if (p.isGroup) return { id: 'info', label: 'Group info', icon: 'users' };
-  if (p.peerAddress) return { id: 'info', label: 'Profile', icon: 'user' };
-  return null;
-}
-
-function buildItems(p: {
-  isGroup: boolean; peerAddress?: string | null; isUnread: boolean;
-  isPinned: boolean; isArchived: boolean; onSearch?: () => void;
-}): MenuSheetItem[] {
-  const info = infoItem(p);
-  return [
-    p.onSearch ? { id: 'search', label: 'Search', icon: 'search' } : null,
-    p.isGroup ? { id: 'add-members', label: 'Add members', icon: 'plus' } : null,
-    {
-      id: 'toggle-read',
-      label: p.isUnread ? 'Mark as read' : 'Mark as unread',
-      icon: p.isUnread ? 'check' : 'envelope',
-    },
-    { id: 'toggle-pin', label: p.isPinned ? 'Unpin' : 'Pin', icon: 'mapPin' },
-    info,
-    {
-      id: 'toggle-archive',
-      label: p.isArchived ? 'Unarchive' : 'Archive',
-      icon: p.isArchived ? 'arrowUp' : 'archive',
-      danger: true,
-    },
-    p.isGroup ? { id: 'leave', label: 'Leave group', icon: 'arrowLeft', danger: true } : null,
-  ].filter((item): item is MenuSheetItem => item !== null);
-}
-
 export function ChannelMenu({
   convId, isGroup, peerAddress, isUnread, isPinned, isArchived,
   visible, onClose, context = 'list', onAfterLeave, onAfterArchive, onSearch,
@@ -116,7 +84,10 @@ export function ChannelMenu({
   };
 
   const node: WidgetRoot = menuSheet({
-    items: buildItems({ isGroup, peerAddress, isUnread, isPinned, isArchived, onSearch }),
+    items: channelMenuItems(
+      { isGroup, hasPeer: !!peerAddress, isUnread, isPinned, isArchived },
+      { search: !!onSearch, addMembers: true, pin: true, info: true, leaveGroup: true },
+    ),
   });
   const actions: PayloadHandlers = {
     [MENU_ITEM_PRESS]: (payload) => {

@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers, WidgetNode, WidgetRoot } from '@stage-labs/kit/kit';
-import { basicRoot, screenHeader, SCREEN_BACK } from '@stage-labs/views';
+import { backAction, basicRoot, screenHeader } from '@stage-labs/views';
+import { capabilities } from '../../lib/capabilities';
 import type { GroupPickedFile } from './group.actions.handlers';
 import { Col } from '../../components/layout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -114,7 +115,7 @@ export default function GroupDetail(): React.ReactElement {
     trailing: [overflowTrailing(fg)],
   }));
   const headerActions: PayloadHandlers = {
-    [SCREEN_BACK]: () => { router.back(); },
+    ...backAction(capabilities),
     [GROUP_OVERFLOW_PRESS]: () => { setOverflowOpen(true); },
   };
 

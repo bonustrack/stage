@@ -12,15 +12,15 @@ import type {
   PayloadHandlers,
 } from '@stage-labs/kit/kit';
 import {
+  backAction,
   listRoot,
   settingsHeader,
   settingsToggleRow,
   settingsButtonRow,
-  SCREEN_BACK,
   SETTINGS_TOGGLE_CHANGE,
   SETTINGS_BUTTON_PRESS,
 } from '@stage-labs/views';
-import { useRouter } from 'expo-router';
+import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import {
   isDebugConsoleEnabled, loadDebugConsole, setDebugConsole, subscribeDebugConsole,
@@ -106,7 +106,6 @@ function dangerNode(resetting: boolean, nuking: boolean): ListViewNode {
 }
 
 export function DeveloperSettings(): React.ReactElement {
-  const router = useRouter();
   const { text: fg, link: head, border, toolbarBg } = usePalette();
   const sub = fg;
   const insets = useSafeAreaInsets();
@@ -135,7 +134,7 @@ export function DeveloperSettings(): React.ReactElement {
   });
 
   const actions: PayloadHandlers = {
-    [SCREEN_BACK]: () => { router.back(); },
+    ...backAction(capabilities),
     [SETTINGS_TOGGLE_CHANGE]: (payload) => {
       const next = payload.debugConsole;
       if (typeof next === 'boolean') onToggle(next);

@@ -1,14 +1,13 @@
 
-import { useRouter } from 'expo-router';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import { banner, listRoot, BANNER_PRESS } from '@stage-labs/views';
+import { banner, listRoot, navigateAction, BANNER_PRESS } from '@stage-labs/views';
+import { capabilities } from '../../lib/capabilities';
 import { Box } from '../layout';
 import { usePalette } from '../../lib/theme';
 import { useProposalCount } from './Proposals.hook';
 
 export function ProposalsBanner(): React.ReactElement | null {
-  const router = useRouter();
   const pal = usePalette();
   const count = useProposalCount();
 
@@ -19,7 +18,7 @@ export function ProposalsBanner(): React.ReactElement | null {
     label: count === 1 ? '1 pending request' : `${count} pending requests`,
   }));
   const actions: PayloadHandlers = {
-    [BANNER_PRESS]: () => { router.push('/proposals'); },
+    ...navigateAction(BANNER_PRESS, capabilities, () => '/proposals'),
   };
 
   return (

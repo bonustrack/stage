@@ -5,7 +5,8 @@ import { useRoute } from 'vue-router';
 import ViewHost from '@stage-labs/kit/vue/view-host';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import type { BasicNode } from '@stage-labs/kit/kit';
-import { basicRoot, overflowMenu, screenHeader, OVERFLOW_MENU_PRESS, SCREEN_BACK } from '@stage-labs/views';
+import { backAction, basicRoot, overflowMenu, screenHeader, OVERFLOW_MENU_PRESS } from '@stage-labs/views';
+import { capabilities } from '@/lib/capabilities';
 import { useGroupDetail } from '../lib/useGroupDetail';
 import { leaveGroup } from '../lib/xmtpGroups';
 
@@ -62,7 +63,7 @@ const headerNode = computed<BasicNode>(() =>
 );
 
 const menuActions = {
-  [SCREEN_BACK]: (): void => { router.back(); },
+  ...backAction(capabilities),
   [OVERFLOW_MENU_PRESS]: (payload: Record<string, unknown>): void => {
     if (payload.id === 'leave') void onLeaveGroup();
   },

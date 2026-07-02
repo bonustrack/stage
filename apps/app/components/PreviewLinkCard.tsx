@@ -1,9 +1,8 @@
 
-import { Linking } from 'react-native';
-
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import { listRoot, previewLinkCard, LINK_OPEN } from '@stage-labs/views';
+import { listRoot, openUrlAction, previewLinkCard } from '@stage-labs/views';
+import { capabilities } from '../lib/capabilities';
 import { previewLinkOf } from '../lib/previewLinkDetect';
 
 export function PreviewLinkCard({ url }: {
@@ -20,10 +19,7 @@ export function PreviewLinkCard({ url }: {
     }),
   );
   const actions: PayloadHandlers = {
-    [LINK_OPEN]: (payload) => {
-      const target = payload.url;
-      if (typeof target === 'string') void Linking.openURL(target);
-    },
+    ...openUrlAction(capabilities),
   };
   return <ViewHost node={node} actions={actions} />;
 }

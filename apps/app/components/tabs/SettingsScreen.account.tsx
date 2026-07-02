@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react';
 
 import { Alert } from 'react-native';
-import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
@@ -15,11 +14,13 @@ import type {
   PayloadHandlers,
 } from '@stage-labs/kit/kit';
 import {
+  settingsNavAction,
   settingsNavRow,
   settingsButtonRow,
   SETTINGS_NAV_PRESS,
   SETTINGS_BUTTON_PRESS,
 } from '@stage-labs/views';
+import { capabilities } from '../../lib/capabilities';
 import { Box, Col } from '../layout';
 import { flash } from '../../lib/toast';
 import {
@@ -99,7 +100,6 @@ export function AccountSecuritySection(
   { c, dark }: { c: SectionColors; danger?: string; dark: boolean },
 ): React.ReactElement | null {
   const epoch = useActiveAccount();
-  const router = useRouter();
   const [rec, revealed, setRevealed] = useActiveRecord(epoch);
 
   if (!rec) return null;
@@ -133,10 +133,7 @@ export function AccountSecuritySection(
   const node: ListViewNode = { type: 'ListView', children: rows };
 
   const actions: PayloadHandlers = {
-    [SETTINGS_NAV_PRESS]: (payload) => {
-      const href = payload.href;
-      if (typeof href === 'string') router.push(href);
-    },
+    ...settingsNavAction(capabilities),
     [SETTINGS_BUTTON_PRESS]: (payload) => {
       if (payload.action === 'export') confirmExport(rec, setRevealed);
       else if (payload.action === 'remove') confirmRemove(rec);

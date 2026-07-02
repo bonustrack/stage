@@ -15,7 +15,8 @@ import AccountImportSheet from '../components/AccountImportSheet.vue';
 import AccountExportSheet from '../components/AccountExportSheet.vue';
 import ViewHost from '@stage-labs/kit/vue/view-host';
 import type { ListViewNode } from '@stage-labs/kit/kit';
-import { basicRoot, listRoot, accountRow, screenHeader, ACCOUNT_PRESS, SCREEN_BACK } from '@stage-labs/views';
+import { backAction, basicRoot, listRoot, accountRow, screenHeader, ACCOUNT_PRESS } from '@stage-labs/views';
+import { capabilities } from '@/lib/capabilities';
 
 const router = useRouter();
 const palette = useKitPalette();
@@ -188,7 +189,7 @@ const headerNode = computed(() =>
   })),
 );
 const headerActions = {
-  [SCREEN_BACK]: (): void => { router.back(); },
+  ...backAction(capabilities),
 };
 </script>
 

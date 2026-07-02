@@ -1,7 +1,6 @@
 
 import Constants from 'expo-constants';
 import * as Application from 'expo-application';
-import { Linking } from 'react-native';
 import { Box } from '../layout';
 import { Title } from '@stage-labs/kit/react-native/title';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -11,9 +10,11 @@ import type {
   PayloadHandlers,
 } from '@stage-labs/kit/kit';
 import {
+  openUrlAction,
   settingsValueRow,
   SETTINGS_ACTION_PRESS,
 } from '@stage-labs/views';
+import { capabilities } from '../../lib/capabilities';
 import { GitHubLinkRow } from './GitHubLinkRow';
 
 const METRO_GITHUB_URL = 'https://github.com/bonustrack/stage';
@@ -70,10 +71,7 @@ export function AboutPanel({ dark, head, sub, border, rowBg }: {
   };
 
   const actions: PayloadHandlers = {
-    [SETTINGS_ACTION_PRESS]: (payload) => {
-      const url = payload.url;
-      if (typeof url === 'string') void Linking.openURL(url);
-    },
+    ...openUrlAction(capabilities, SETTINGS_ACTION_PRESS),
   };
 
   return (

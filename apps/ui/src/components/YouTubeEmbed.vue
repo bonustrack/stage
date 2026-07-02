@@ -2,7 +2,8 @@
 
 import { computed } from 'vue';
 import ViewHost from '@stage-labs/kit/vue/view-host';
-import { listRoot, previewLinkCard, LINK_OPEN } from '@stage-labs/views';
+import { listRoot, openUrlAction, previewLinkCard } from '@stage-labs/views';
+import { capabilities } from '@/lib/capabilities';
 
 const props = defineProps<{ videoId: string }>();
 const watchUrl = computed(() => `https://www.youtube.com/watch?v=${props.videoId}`);
@@ -20,9 +21,7 @@ const node = computed(() =>
 );
 
 const actions = {
-  [LINK_OPEN]: (): void => {
-    window.open(watchUrl.value, '_blank', 'noopener');
-  },
+  ...openUrlAction(capabilities),
 };
 </script>
 

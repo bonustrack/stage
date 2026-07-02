@@ -1,14 +1,13 @@
 <script setup lang="ts">
 
 import { computed } from 'vue';
-import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import ViewHost from '@stage-labs/kit/vue/view-host';
 import type { ListViewNode } from '@stage-labs/kit/kit';
-import { settingsHeader, settingsValueRow, settingsNavRow, SCREEN_BACK, SETTINGS_ACTION_PRESS } from '@stage-labs/views';
+import { backAction, openUrlAction, settingsHeader, settingsValueRow, settingsNavRow, SETTINGS_ACTION_PRESS } from '@stage-labs/views';
+import { capabilities } from '@/lib/capabilities';
 import pkg from '../../../package.json';
 
-const router = useRouter();
 const palette = useKitPalette();
 
 const headerNode = computed(() => settingsHeader({
@@ -45,11 +44,8 @@ const githubNode = computed<ListViewNode>(() => ({
 }));
 
 const actions = {
-  [SCREEN_BACK]: (): void => { router.back(); },
-  [SETTINGS_ACTION_PRESS]: (payload: Record<string, unknown>): void => {
-    const url = payload.url;
-    if (typeof url === 'string') window.open(url, '_blank', 'noopener,noreferrer');
-  },
+  ...backAction(capabilities),
+  ...openUrlAction(capabilities, SETTINGS_ACTION_PRESS),
 };
 </script>
 

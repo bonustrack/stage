@@ -1,16 +1,15 @@
 <script setup lang="ts">
 
 import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import ViewHost from '@stage-labs/kit/vue/view-host';
 import type { ListViewNode } from '@stage-labs/kit/kit';
-import { settingsHeader, settingsValueRow, SCREEN_BACK } from '@stage-labs/views';
+import { backAction, settingsHeader, settingsValueRow } from '@stage-labs/views';
+import { capabilities } from '@/lib/capabilities';
 import pkg from '../../../package.json';
 import { getXmtpEnv } from '../../lib/xmtp';
 import { getHostAccount } from '../../lib/hostSigner';
 
-const router = useRouter();
 const palette = useKitPalette();
 
 const headerNode = computed(() => settingsHeader({
@@ -39,7 +38,7 @@ const node = computed<ListViewNode>(() => ({
 }));
 
 const actions = {
-  [SCREEN_BACK]: (): void => { router.back(); },
+  ...backAction(capabilities),
 };
 </script>
 

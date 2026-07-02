@@ -4,10 +4,11 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { BasicNode, PayloadHandlers } from '@stage-labs/kit/kit';
 import {
-  basicRoot, screenHeader, SCREEN_BACK,
+  backAction, basicRoot, screenHeader,
   tokenDetailCard,
   WALLET_ACTION_PRESS, type WalletActionButton,
 } from '@stage-labs/views';
+import { capabilities } from '../../../lib/capabilities';
 import { tokenDetailViewModel } from '@stage-labs/client/wallet/tokenDetail';
 import { Col } from '../../../components/layout';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -61,7 +62,6 @@ function detailNode(r: AssetRow, symbol: 'ETH' | 'USDC' | undefined, palette: { 
 }
 
 export default function TokenDetail(): React.ReactElement {
-  const router = useRouter();
   const params = useLocalSearchParams<{ id?: string; row?: string }>();
   const { link: head, text: sub, bg, border, toolbarBg } = usePalette();
   const insets = useSafeAreaInsets();
@@ -78,7 +78,7 @@ export default function TokenDetail(): React.ReactElement {
     borderColor: border,
   }));
   const headerActions: PayloadHandlers = {
-    [SCREEN_BACK]: () => { router.back(); },
+    ...backAction(capabilities),
   };
 
   if (!r) {
