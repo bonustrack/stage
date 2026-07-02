@@ -3,6 +3,7 @@ import { computed, ref, type ComputedRef, type Ref } from 'vue';
 import { type ChannelRow as Row } from './channelsSummarize';
 import { markConvRead, markConvUnread } from './channelsCache';
 import { toggleArchived } from './archived';
+import { deriveBarLabels, filterChannelRows } from '@stage-labs/client/xmtp/channelsFilter';
 
 export interface RowMenu { convId: string; title: string; isUnread: boolean; x: number; y: number }
 
@@ -67,27 +68,15 @@ export function useChannelFilters(visibleRows: ComputedRef<Row[] | null>): Chann
   function toggleUnread(): void { unreadOnly.value = !unreadOnly.value; }
   function clearAllFilters(): void { enabledLabels.value = new Set(); unreadOnly.value = false; }
 
-  const barLabels = computed<string[]>(() => {
-    const base = visibleRows.value ?? [];
-    const seen = new Map<string, string>();
-    for (const r of base) {
-      for (const label of r.labels ?? []) {
-        const key = label.toLowerCase();
-        if (!seen.has(key)) seen.set(key, label);
-      }
-    }
-    return [...seen.values()].sort((a, b) => a.localeCompare(b));
-  });
+  const barLabels = computed<string[]>(() => deriveBarLabels(visibleRows.value ?? []));
 
   const labelFilteredRows = computed<Row[] | null>(() => {
     const base = visibleRows.value;
     if (!base) return null;
-    let out = base;
-    if (unreadOnly.value) out = out.filter(r => r.unreadCount > 0 || r.markedUnread);
-    if (enabledLabels.value.size > 0) {
-      out = out.filter(r => (r.labels ?? []).some(l => enabledLabels.value.has(l.toLowerCase())));
-    }
-    return out;
+    return filterChannelRows(base, {
+      unreadOnly: unreadOnly.value,
+      enabledLabels: enabledLabels.value,
+    });
   });
 
   return { barLabels, enabledLabels, unreadOnly, toggleLabel, toggleUnread, clearAllFilters, labelFilteredRows };

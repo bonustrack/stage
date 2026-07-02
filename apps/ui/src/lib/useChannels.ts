@@ -9,6 +9,7 @@ import { startChannelStream, type ChannelStreamHandles } from './useChannelStrea
 import { useSearchResolution } from './useSearchResolution';
 import { useChannelFilters, useChannelRowMenu, type RowMenu } from './useChannelFilters';
 import { runningInIframe } from './embedBridge';
+import { filterChannelRows } from '@stage-labs/client/xmtp/channelsFilter';
 
 export interface ChannelsState {
   router: ReturnType<typeof useRouter>;
@@ -85,12 +86,7 @@ export function useChannels(): ChannelsState {
     if (!base) return null;
     const q = query.value.trim().toLowerCase();
     if (!q) return base;
-    return base.filter(r =>
-      r.title.toLowerCase().includes(q)
-      || r.lastPreview.toLowerCase().includes(q)
-      || (r.peerAddress?.toLowerCase().includes(q) ?? false)
-      || r.memberAddresses.some(a => a.toLowerCase().includes(q)),
-    );
+    return filterChannelRows(base, { query: q });
   });
 
   let stream: ChannelStreamHandles | null = null;

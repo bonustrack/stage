@@ -35,6 +35,7 @@
     "./xmtp/channelsCache": "./src/xmtp/channelsCache.ts",
     "./xmtp/clientConfig": "./src/xmtp/clientConfig.ts",
     "./xmtp/clientErrors": "./src/xmtp/clientErrors.ts",
+    "./xmtp/channelsFilter": "./src/xmtp/channelsFilter.ts",
     "./xmtp/commonChannels": "./src/xmtp/commonChannels.ts",
     "./xmtp/archived": "./src/xmtp/archived.ts",
     "./routing/deepLinks": "./src/routing/deepLinks.ts",

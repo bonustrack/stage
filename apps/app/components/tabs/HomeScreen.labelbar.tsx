@@ -30,16 +30,7 @@ export function useHomeFilters(): {
   return { enabledLabels, toggleLabel, unreadOnly, toggleUnread, clearAllFilters };
 }
 
-export function deriveLabels(rows: { labels?: string[] }[]): string[] {
-  const seen = new Map<string, string>();
-  for (const r of rows) {
-    for (const label of r.labels ?? []) {
-      const key = label.toLowerCase();
-      if (!seen.has(key)) seen.set(key, label);
-    }
-  }
-  return [...seen.values()].sort((a, b) => a.localeCompare(b));
-}
+export { deriveBarLabels as deriveLabels } from '@stage-labs/client/xmtp/channelsFilter';
 
 export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggleUnread, onClearAll, panRef }: {
   labels: string[];
