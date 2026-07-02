@@ -7,6 +7,8 @@ import type { PayloadHandlers, WidgetRoot } from '@stage-labs/kit/kit';
 import {
   basicRoot,
   tokenRowBody,
+  tokenRowModel,
+  walletTabOptions,
   walletTabs,
   WALLET_TAB_CHANGE,
   WALLET_TOKEN_PRESS,
@@ -21,8 +23,6 @@ export { fmtUsd, splitUsd, fmtBalance };
 interface Palette { head: string; sub: string; border: string; bg: string; card: string; }
 
 export type WalletTab = 'tokens' | 'nfts' | 'activity' | 'private';
-const TAB_LABEL: Record<WalletTab, string> = { tokens: 'Tokens', nfts: 'NFTs', activity: 'Activity', private: 'Railgun' };
-const WALLET_TAB_IDS: WalletTab[] = ['tokens', 'nfts', 'activity', 'private'];
 
 export function WalletTabs({ tab, setTab, border }: {
   tab: WalletTab; setTab: (t: WalletTab) => void; head: string; sub: string; border: string;
@@ -30,7 +30,7 @@ export function WalletTabs({ tab, setTab, border }: {
   const node = useMemo(
     () => basicRoot(walletTabs({
       value: tab,
-      options: WALLET_TAB_IDS.map((t) => ({ value: t, label: TAB_LABEL[t] })),
+      options: walletTabOptions({ privateTab: true }),
     })),
     [tab],
   );
@@ -52,18 +52,8 @@ export function WalletTabs({ tab, setTab, border }: {
 }
 
 function tokenRowNode(r: AssetRow): WidgetRoot {
-  const valueUsd = r.priceUsd === null ? null : r.priceUsd * Number(r.balance);
-  const priceText = r.priceUsd === null ? r.symbol : fmtUsd(r.priceUsd, r.priceUsd < 1 ? 4 : 2);
-  const changeText = r.change24h === null ? '' : `${r.change24h >= 0 ? '+' : ''}${r.change24h.toFixed(2)}%`;
   return basicRoot(tokenRowBody({
-    tokenId: `${r.chainId}:${r.symbol}`,
-    symbol: r.name,
-    name: priceText,
-    priceUsd: `${fmtBalance(r.balance)} ${r.symbol}`,
-    balance: valueUsd === null ? '—' : fmtUsd(valueUsd),
-    change24h: changeText,
-    logoUri: r.logoUrl,
-    isPrivate: r.isPrivate,
+    ...tokenRowModel(r, { fmtUsd, fmtBalance }),
     showAvatar: false,
     trailingChevron: false,
   }));

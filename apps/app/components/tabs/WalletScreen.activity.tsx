@@ -4,15 +4,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { BasicNode } from '@stage-labs/kit/kit';
-import { basicRoot, txRow, type TxDirection } from '@stage-labs/views';
+import { basicRoot, txRow, txRowModel } from '@stage-labs/views';
 import { Spinner } from '../Spinner';
 import { Col, Box } from '../layout';
 import { DANGER } from '../../lib/theme';
-import { shortAddress } from '../../modules/messaging';
-import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
+import { usePeerProfiles } from '../../lib/peerProfiles';
 import { fetchActivityAllChains, type ActivityRow } from '../../lib/etherscan';
 import { PrivateActivitySection } from './WalletScreen.privateActivity';
-import { relTime } from '@stage-labs/client/wallet/activityFormat';
+import { relTime, txPartyLabel, txTitle } from '@stage-labs/client/wallet/activityFormat';
 
 type Status = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -87,31 +86,17 @@ export function ActivityView({ address, head, sub, border, bg }: {
   );
 }
 
-const DIR_MAP: Record<ActivityRow['direction'], TxDirection> = {
-  send: 'out', receive: 'in', self: 'self',
-};
-
-function txTitle(r: ActivityRow): string {
-  if (r.isContract) return r.functionName || 'Contract';
-  if (r.direction === 'receive') return 'Received';
-  if (r.direction === 'self') return 'Self';
-  return 'Sent';
-}
-
 function txRowNode(r: ActivityRow): BasicNode {
-  const name = getPeerName(r.counterparty) ?? shortAddress(r.counterparty);
-  const partyLabel = r.direction === 'receive' ? `From ${name}` : `To ${name}`;
-  return basicRoot(txRow({
-    direction: DIR_MAP[r.direction],
+  return basicRoot(txRow(txRowModel({
+    direction: r.direction,
     title: txTitle(r),
-    amount: r.valueEth,
-    token: 'ETH',
-    timestamp: `${partyLabel} · ${relTime(r.timestamp)}`,
-    counterparty: `${partyLabel} · ${relTime(r.timestamp)}`,
+    partyLabel: txPartyLabel(r),
+    timeLabel: relTime(r.timestamp),
+    valueEth: r.valueEth,
     chainLabel: r.chainLabel,
-    subText: r.failed ? 'Failed' : `#${r.nonce}`,
+    nonce: r.nonce,
     failed: r.failed,
-  }));
+  }, { metaTime: true })));
 }
 
 function TxRow({ r, border }: {

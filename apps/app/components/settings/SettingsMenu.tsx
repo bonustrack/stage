@@ -5,7 +5,6 @@ import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Col, Box } from '../layout';
-import type { HeroIconName } from '@stage-labs/kit/react-native/icon';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type {
@@ -15,34 +14,15 @@ import type {
 import {
   backAction,
   settingsHeader,
+  settingsMenuNode,
   settingsNavAction,
-  settingsNavRow,
   settingsButtonRow,
-  SETTINGS_NAV_PRESS,
   SETTINGS_BUTTON_PRESS,
 } from '@stage-labs/views';
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import { resetForOnboarding } from '../../lib/wallet';
 import { resetEverything } from '../../lib/resetEverything';
-
-type Href =
-  | '/settings/display'
-  | '/settings/messenger'
-  | '/settings/notifications'
-  | '/settings/wallet'
-  | '/settings/security'
-  | '/settings/experimental'
-  | '/settings/about';
-const ROWS: { href: Href; label: string; icon: HeroIconName }[] = [
-  { href: '/settings/display', label: 'Display', icon: 'sun' },
-  { href: '/settings/messenger', label: 'Messenger', icon: 'chat' },
-  { href: '/settings/notifications', label: 'Notifications', icon: 'bell' },
-  { href: '/settings/wallet', label: 'Wallet', icon: 'wallet' },
-  { href: '/settings/security', label: 'Security', icon: 'key' },
-  { href: '/settings/experimental', label: 'Experimental', icon: 'beaker' },
-  { href: '/settings/about', label: 'About', icon: 'questionMarkCircle' },
-];
 
 function onReset(setResetting: (v: boolean) => void): void {
   Alert.alert(
@@ -83,17 +63,7 @@ function onNuke(setNuking: (v: boolean) => void): void {
   );
 }
 
-const navNode: ListViewNode = {
-  type: 'ListView',
-  children: ROWS.map((row) =>
-    settingsNavRow({
-      label: row.label,
-      iconStart: row.icon,
-      pressType: SETTINGS_NAV_PRESS,
-      payload: { href: row.href },
-    }),
-  ),
-};
+const navNode: ListViewNode = settingsMenuNode();
 
 function dangerNode(resetting: boolean, nuking: boolean): ListViewNode {
   return {

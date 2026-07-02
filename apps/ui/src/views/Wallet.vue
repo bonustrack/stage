@@ -4,7 +4,7 @@ import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import ViewHost from '@stage-labs/kit/vue/view-host';
-import { basicRoot, balanceHeader, WALLET_ACTION_PRESS } from '@stage-labs/views';
+import { walletBalanceHeroNode, walletTotalUsd, WALLET_ACTION_PRESS } from '@stage-labs/views';
 import { useWalletBalances } from '@/lib/useWalletBalances';
 import { buildSortedTokenRows } from '@stage-labs/client/wallet/tokens';
 import { fmtUsd, splitUsd } from '@stage-labs/client/wallet/format';
@@ -16,28 +16,15 @@ const { rows, loading, error, refresh } = useWalletBalances();
 
 const tab = ref<WalletTab>('tokens');
 
-const totalUsd = computed(() =>
-  (rows.value
-    ? rows.value.reduce((s, r) => s + (r.priceUsd ?? 0) * Number(r.balance), 0)
-    : null));
+const totalUsd = computed(() => walletTotalUsd(rows.value));
 
 const totalParts = computed(() =>
   (totalUsd.value === null ? null : splitUsd(fmtUsd(totalUsd.value))));
 
 const sortedRows = computed(() => (rows.value ? buildSortedTokenRows(rows.value) : []));
 
-const heroNode = computed(() => {
-  const parts = totalParts.value;
-  return basicRoot(balanceHeader({
-    total: error.value || !parts ? '…' : parts.int,
-    totalDecimals: error.value || !parts ? undefined : parts.dec,
-    heroSize: '7xl',
-    actions: [
-      { label: 'Send', icon: 'send', pressType: WALLET_ACTION_PRESS, bg: palette.border, payload: { action: 'send' } },
-      { label: 'Receive', icon: 'arrowDown', pressType: WALLET_ACTION_PRESS, bg: palette.border, payload: { action: 'receive' } },
-    ],
-  }));
-});
+const heroNode = computed(() =>
+  walletBalanceHeroNode({ parts: totalParts.value, error: !!error.value }, palette.border));
 
 const heroActions = {
   [WALLET_ACTION_PRESS]: (payload: Record<string, unknown>): void => {

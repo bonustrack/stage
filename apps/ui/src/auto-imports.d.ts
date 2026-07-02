@@ -18,7 +18,6 @@ declare global {
   const SignatureRequestCodec: typeof import('./lib/xmtpRequestCodecs').SignatureRequestCodec
   const SmartAccountUnconfiguredError: typeof import('./lib/xmtp').SmartAccountUnconfiguredError
   const WALLET_SEND_CALLS_CODEC: typeof import('./lib/xmtpRequestCodecs').WALLET_SEND_CALLS_CODEC
-  const WALLET_TABS: typeof import('./lib/walletTab').WALLET_TABS
   const WalletSendCallsCodec: typeof import('./lib/xmtpRequestCodecs').WalletSendCallsCodec
   const XMTP_USER_PREFIX: typeof import('./lib/xmtp').XMTP_USER_PREFIX
   const acceptRequestConv: typeof import('./lib/xmtpRequests').acceptRequestConv
@@ -346,7 +345,6 @@ declare module 'vue' {
     readonly SignatureReferenceCodec: UnwrapRef<typeof import('./lib/xmtpRequestCodecs')['SignatureReferenceCodec']>
     readonly SignatureRequestCodec: UnwrapRef<typeof import('./lib/xmtpRequestCodecs')['SignatureRequestCodec']>
     readonly WALLET_SEND_CALLS_CODEC: UnwrapRef<typeof import('./lib/xmtpRequestCodecs')['WALLET_SEND_CALLS_CODEC']>
-    readonly WALLET_TABS: UnwrapRef<typeof import('./lib/walletTab')['WALLET_TABS']>
     readonly WalletSendCallsCodec: UnwrapRef<typeof import('./lib/xmtpRequestCodecs')['WalletSendCallsCodec']>
     readonly XMTP_USER_PREFIX: UnwrapRef<typeof import('./lib/xmtp')['XMTP_USER_PREFIX']>
     readonly acceptRequestConv: UnwrapRef<typeof import('./lib/xmtpRequests')['acceptRequestConv']>

@@ -4,7 +4,7 @@ import { computed } from 'vue';
 import { useKitPalette } from '@stage-labs/kit/vue/theme-context';
 import ViewHost from '@stage-labs/kit/vue/view-host';
 import type { ListViewNode } from '@stage-labs/kit/kit';
-import { backAction, settingsHeader, settingsNavAction, settingsNavRow, SETTINGS_NAV_PRESS } from '@stage-labs/views';
+import { backAction, settingsHeader, settingsMenuNode, settingsNavAction } from '@stage-labs/views';
 import { capabilities } from '@/lib/capabilities';
 import pkg from '../../package.json';
 
@@ -20,25 +20,7 @@ const headerNode = computed(() => settingsHeader({
   safeTop: 0,
 }));
 
-const ROWS: { icon: string; label: string; to: string }[] = [
-  { icon: 'sun', label: 'Display', to: '/settings/display' },
-  { icon: 'chat', label: 'Messenger', to: '/settings/messenger' },
-  { icon: 'bell', label: 'Notifications', to: '/settings/notifications' },
-  { icon: 'wallet', label: 'Wallet', to: '/settings/wallet' },
-  { icon: 'key', label: 'Security', to: '/settings/security' },
-  { icon: 'beaker', label: 'Experimental', to: '/settings/experimental' },
-  { icon: 'questionMarkCircle', label: 'About', to: '/settings/about' },
-];
-
-const node = computed<ListViewNode>(() => ({
-  type: 'ListView',
-  children: ROWS.map(r => settingsNavRow({
-    label: r.label,
-    iconStart: r.icon,
-    pressType: SETTINGS_NAV_PRESS,
-    payload: { to: r.to },
-  })),
-}));
+const node = computed<ListViewNode>(() => settingsMenuNode());
 
 const actions = {
   ...backAction(capabilities),

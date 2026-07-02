@@ -10,10 +10,9 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers } from '@stage-labs/kit/kit';
 import {
-  balanceHeader,
-  basicRoot,
+  walletBalanceHeroNode,
+  walletTotalUsd,
   WALLET_ACTION_PRESS,
-  type BalanceAction,
 } from '@stage-labs/views';
 import { useRouter } from 'expo-router';
 import { flash } from '../../lib/toast';
@@ -95,21 +94,11 @@ function WalletBalanceCard({ err, totalUsd, border, onAction }: {
 }): React.ReactElement {
   const node = useMemo(() => {
     const parts = totalUsd === null ? null : splitUsd(fmtUsd(totalUsd));
-    const mk = (label: string, icon: string, action: string): BalanceAction => ({
-      label, icon, pressType: WALLET_ACTION_PRESS, bg: border, payload: { action },
-    });
-    return basicRoot(balanceHeader({
-      total: err || !parts ? '…' : parts.int,
-      totalDecimals: err || !parts ? undefined : parts.dec,
-      subtitle: err ? 'Couldn’t load balances' : undefined,
-      heroSize: '7xl',
-      actions: [
-        mk('Send', 'send', 'send'),
-        mk('Receive', 'arrowDown', 'receive'),
-        mk('Swap', 'switchHorizontal', 'swap'),
-        mk('Buy', 'creditCard', 'buy'),
-      ],
-    }));
+    return walletBalanceHeroNode(
+      { parts, error: err },
+      border,
+      { swapBuy: true, errorSubtitle: true },
+    );
   }, [err, totalUsd, border]);
   const actions: PayloadHandlers = useMemo(
     () => ({
@@ -144,9 +133,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
   const [tab, setTab] = useState<WalletTab>('tokens');
   const nftState = useWalletNfts(tab, address);
 
-  const totalUsd = rows
-    ? rows.reduce((s, r) => s + (r.priceUsd ?? 0) * Number(r.balance), 0)
-    : null;
+  const totalUsd = walletTotalUsd(rows);
   const c = { head, sub, border, bg };
 
   const onWalletAction = useCallback((action: string): void => {
