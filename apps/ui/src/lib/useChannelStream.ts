@@ -4,6 +4,7 @@ import { type XmtpClient, syncPreferences, streamConvConsent } from './xmtp';
 import { cachedRows, setCachedRows, applyConsentToRows } from './channelsCache';
 import { summarizeConv, type ChannelRow } from './channelsSummarize';
 import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
+import { applyInbound } from '@stage-labs/client/xmtp/channelsCache';
 
 interface StreamHandle { end: () => Promise<unknown> }
 
@@ -17,18 +18,18 @@ interface InboundMsg {
 
 function rowsWithInbound(prev: ChannelRow[], msg: InboundMsg): ChannelRow[] | null {
   const preview = previewOfXmtpContent(msg.content, msg.contentType?.typeId);
-  const lastTs = Number(msg.sentAtNs / 1_000_000n);
-  const lastPreview = preview.slice(0, 80);
-  const idx = prev.findIndex(r => r.convId === msg.conversationId);
-  const cur = idx === -1 ? undefined : prev[idx];
-  if (cur === undefined) return null;
-  const newAvatar = cur.inboxToAddr[msg.senderInboxId ?? ''] ?? cur.avatarAddress;
-  const sentNs = Number(msg.sentAtNs);
-  const isUnread = sentNs > cur.lastReadNs && msg.senderInboxId !== cur.selfInboxId;
-  const unreadCount = isUnread ? cur.unreadCount + 1 : cur.unreadCount;
-  const updated: ChannelRow = { ...cur, lastTs, lastPreview, avatarAddress: newAvatar, unreadCount };
-  if (isUnread) updated.markedUnread = false;
-  return [updated, ...prev.slice(0, idx), ...prev.slice(idx + 1)];
+  const result = applyInbound(
+    prev,
+    {
+      convId: msg.conversationId ?? null,
+      senderInboxId: msg.senderInboxId,
+      sentNs: Number(msg.sentAtNs),
+      lastTs: Number(msg.sentAtNs / 1_000_000n),
+      lastPreview: preview.slice(0, 80),
+    },
+    cur => ({ avatarAddress: cur.inboxToAddr[msg.senderInboxId ?? ''] ?? cur.avatarAddress }),
+  );
+  return result === null ? null : result.next;
 }
 
 export interface ChannelStreamHandles {

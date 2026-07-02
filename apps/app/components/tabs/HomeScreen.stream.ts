@@ -6,6 +6,7 @@ import { isActiveConv } from '../../lib/activeConv';
 import { shortAddress, getConvConsentState } from '../../modules/messaging';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { convIdFromTopic } from '@stage-labs/client/xmtp/clientErrors';
+import { applyInbound } from '@stage-labs/client/xmtp/channelsCache';
 
 interface StreamedMsg {
   id?: string;
@@ -97,19 +98,6 @@ export function makeMsgStreamHandler({ isCancelled, setRows, refresh, refreshReq
   };
 }
 
-function updatedRow(cur: RowT, msg: StreamedMsg, lastTs: number, lastPreview: string, senderAddr: string | null): RowT {
-  const newAvatar = cur.peerAddress ?? cur.avatarAddress;
-  const lastFromSelf = msg.senderInboxId === cur.selfInboxId;
-  const isUnread = (msg.sentNs ?? 0) > cur.lastReadNs && msg.senderInboxId !== cur.selfInboxId;
-  const unreadCount = isUnread ? cur.unreadCount + 1 : cur.unreadCount;
-  const updated: RowT = {
-    ...cur, lastTs, lastPreview, avatarAddress: newAvatar,
-    lastSenderAddress: senderAddr, lastFromSelf, unreadCount,
-  };
-  if (isUnread) updated.markedUnread = false;
-  return updated;
-}
-
 function applyToRows(
   msgConvId: string | null, msg: StreamedMsg, lastTs: number, lastPreview: string,
   setRows: MsgHandlerDeps['setRows'],
@@ -118,16 +106,28 @@ function applyToRows(
   let notify: NotifyCtx | null = null;
   setRows(prev => {
     if (!prev) return prev;
-    const idx = msgConvId ? prev.findIndex(r => r.convId === msgConvId) : -1;
-    const cur = idx === -1 ? undefined : prev[idx];
-    if (cur === undefined) { needsRefresh = true; return prev; }
-    const senderAddr = cur.inboxToAddr[msg.senderInboxId ?? ''] ?? null;
+    const result = applyInbound(
+      prev,
+      {
+        convId: msgConvId,
+        senderInboxId: msg.senderInboxId,
+        sentNs: msg.sentNs ?? 0,
+        lastTs,
+        lastPreview,
+      },
+      cur => ({
+        avatarAddress: cur.peerAddress ?? cur.avatarAddress,
+        lastSenderAddress: cur.inboxToAddr[msg.senderInboxId ?? ''] ?? null,
+        lastFromSelf: msg.senderInboxId === cur.selfInboxId,
+      }),
+    );
+    if (result === null) { needsRefresh = true; return prev; }
+    const senderAddr = result.current.inboxToAddr[msg.senderInboxId ?? ''] ?? null;
     notify = {
-      title: cur.title, senderAddr,
-      isGroup: cur.peerAddress == null, fromSelf: msg.senderInboxId === cur.selfInboxId,
+      title: result.current.title, senderAddr,
+      isGroup: result.current.peerAddress == null, fromSelf: msg.senderInboxId === result.current.selfInboxId,
     };
-    const updated = updatedRow(cur, msg, lastTs, lastPreview, senderAddr);
-    return [updated, ...prev.slice(0, idx), ...prev.slice(idx + 1)];
+    return result.next;
   });
   return { needsRefresh, notify };
 }

@@ -74,3 +74,43 @@ export function applySentPatch<R extends CachedChannelRow>(
   } as R;
   return [updated, ...rows.slice(0, idx), ...rows.slice(idx + 1)];
 }
+
+export interface InboundRowUpdate {
+  convId: string | null;
+  senderInboxId?: string;
+  sentNs: number;
+  lastTs: number;
+  lastPreview: string;
+}
+
+export interface InboundApplyResult<R> {
+  next: R[];
+  current: R;
+  wasUnread: boolean;
+}
+
+export function applyInbound<R extends CachedChannelRow & { selfInboxId: string }>(
+  rows: readonly R[],
+  update: InboundRowUpdate,
+  patch?: (current: R) => Partial<R>,
+): InboundApplyResult<R> | null {
+  const idx = update.convId === null ? -1 : findRowIndex(rows, update.convId);
+  const cur = idx === -1 ? undefined : rows[idx];
+  if (cur === undefined) return null;
+  const wasUnread =
+    update.sentNs > cur.lastReadNs && update.senderInboxId !== cur.selfInboxId;
+  const unreadCount = wasUnread ? cur.unreadCount + 1 : cur.unreadCount;
+  const updated: R = {
+    ...cur,
+    lastTs: update.lastTs,
+    lastPreview: update.lastPreview,
+    unreadCount,
+    ...(patch ? patch(cur) : {}),
+  };
+  if (wasUnread) updated.markedUnread = false;
+  return {
+    next: [updated, ...rows.slice(0, idx), ...rows.slice(idx + 1)],
+    current: cur,
+    wasUnread,
+  };
+}
