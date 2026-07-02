@@ -3,13 +3,11 @@ import { useMemo, useState } from 'react';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import { basicRoot, labelBar, LABEL_CHIP_PRESS, type LabelBarChip } from '@stage-labs/views';
+import { channelsLabelBarActions, channelsLabelBarNode } from '@stage-labs/views';
 import { Box } from '../layout';
 import { usePalette } from '../../lib/theme';
 import type { SimultaneousRefs } from '../SwipeTabs.types';
 
-const UNREAD_VALUE = '__unread__';
 
 export function useHomeFilters(): {
   enabledLabels: Set<string>;
@@ -42,36 +40,15 @@ export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggle
   panRef?: SimultaneousRefs;
 }): React.ReactElement {
   const { link, text: fg, bg, border: rowBg } = usePalette();
-  const allSelected = !unreadOnly && enabled.size === 0;
-
-  const chips: LabelBarChip[] = [
-    { value: '', label: 'All', selected: allSelected },
-    { value: UNREAD_VALUE, label: 'Unread', selected: unreadOnly },
-    ...labels.map(label => ({
-      value: label,
-      label,
-      selected: enabled.has(label.toLowerCase()),
-    })),
-  ];
-
-  const node = basicRoot(
-    labelBar({
-      chips,
-      selectedBackground: link,
-      selectedLabelColor: bg,
-      restBackground: rowBg,
-      restLabelColor: fg,
-    }),
+  const node = channelsLabelBarNode(
+    { barLabels: labels, enabledLabels: enabled, unreadOnly },
+    { selectedBackground: link, selectedLabelColor: bg, restBackground: rowBg, restLabelColor: fg },
   );
-  const actions: PayloadHandlers = {
-    [LABEL_CHIP_PRESS]: (payload) => {
-      const value = payload.value;
-      if (typeof value !== 'string') return;
-      if (value === '') { onClearAll(); return; }
-      if (value === UNREAD_VALUE) { onToggleUnread(); return; }
-      onToggle(value);
-    },
-  };
+  const actions = channelsLabelBarActions({
+    onClearAll,
+    onToggleUnread,
+    onToggleLabel: onToggle,
+  });
 
   const gesture = useMemo(
     () => (panRef ? Gesture.Native().simultaneousWithExternalGesture(panRef) : Gesture.Native()),

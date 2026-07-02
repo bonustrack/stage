@@ -3,7 +3,8 @@ import { useState } from 'react';
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
+import { channelsOverflowItems } from '@stage-labs/views';
 import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import * as Clipboard from 'expo-clipboard';
 import { Col } from '../layout';
@@ -32,6 +33,13 @@ export function HomeOverflowMenu({ color, onArchived, onNewGroup, onProfile, onS
       flash('Address copied');
     });
   }); };
+  const handlers: Record<string, () => void> = {
+    new: () => { run(onNewGroup); },
+    archived: () => { run(onArchived); },
+    'copy-address': onCopyAddress,
+    profile: () => { run(onProfile); },
+    settings: () => { run(onSettings); },
+  };
 
   return (
     <>
@@ -41,11 +49,16 @@ export function HomeOverflowMenu({ color, onArchived, onNewGroup, onProfile, onS
       <AppModal visible={open} onClose={close}>
         {}
         <ListView dark={dark} style={{ marginHorizontal: -16 }}>
-          <OverflowRow icon="plus" label="New group" color={color} dark={dark} onPress={() => { run(onNewGroup); }} />
-          <OverflowRow icon="archive" label="Archived" color={color} dark={dark} onPress={() => { run(onArchived); }} />
-          <OverflowRow icon="copy" label="Copy address" color={color} dark={dark} onPress={onCopyAddress} />
-          <OverflowRow icon="user" label="Profile" color={color} dark={dark} onPress={() => { run(onProfile); }} />
-          <OverflowRow icon="cog" label="Settings" color={color} dark={dark} onPress={() => { run(onSettings); }} />
+          {channelsOverflowItems({ copyAddress: true }).map(item => (
+            <OverflowRow
+              key={item.id}
+              icon={item.icon as HeroIconName}
+              label={item.label}
+              color={color}
+              dark={dark}
+              onPress={handlers[item.id] ?? close}
+            />
+          ))}
         </ListView>
       </AppModal>
     </>

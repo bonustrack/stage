@@ -22,6 +22,7 @@ export * from './wallet/noticeCard';
 export * from './chat/channelRow';
 export * from './chat/channelRowModel';
 export * from './chat/channelMenu';
+export * from './chat/channelsScreen';
 export * from './chat/mediaCard';
 export * from './chat/reactionsRow';
 export * from './chat/emojiReactionRow';

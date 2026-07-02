@@ -3,9 +3,8 @@
 import { computed, ref } from 'vue';
 import ViewHost from '@stage-labs/kit/vue/view-host';
 import {
-  basicRoot, channelMenuItems,
+  basicRoot, channelMenuItems, channelsLabelBarActions, channelsLabelBarNode, channelsOverflowItems,
   emptyState, overflowMenu, OVERFLOW_MENU_PRESS,
-  labelBar, LABEL_CHIP_PRESS, type LabelBarChip,
 } from '@stage-labs/views';
 import { metroFieldColors } from '@/lib/metroFieldColors';
 import { ASK_QUESTION_MEMBERS, stampAvatarUrl } from '../lib/xmtp';
@@ -22,8 +21,6 @@ const {
   toggleRowUnread, archiveRow, openDocs, goNewGroup, goArchived, goRequests,
   goProfile, goSettings,
 } = useChannels();
-
-const UNREAD_VALUE = '__unread__';
 
 const rowMenuItems = computed(() =>
   rowMenu.value
@@ -56,12 +53,7 @@ const overflowNode = computed(() =>
   basicRoot(
     overflowMenu({
       iconSize: 24,
-      items: [
-        { id: 'new', label: 'New group', icon: 'plus' },
-        { id: 'archived', label: 'Archived', icon: 'archive' },
-        { id: 'profile', label: 'Profile', icon: 'user' },
-        { id: 'settings', label: 'Settings', icon: 'cog' },
-      ],
+      items: channelsOverflowItems(),
     }),
   ),
 );
@@ -76,37 +68,23 @@ const overflowActions = {
   },
 };
 
-const labelBarNode = computed(() => {
-  const allSelected = !unreadOnly.value && enabledLabels.value.size === 0;
-  const chips: LabelBarChip[] = [
-    { value: '', label: 'All', selected: allSelected },
-    { value: UNREAD_VALUE, label: 'Unread', selected: unreadOnly.value },
-    ...barLabels.value.map((label) => ({
-      value: label,
-      label,
-      selected: enabledLabels.value.has(label.toLowerCase()),
-    })),
-  ];
-  return basicRoot(
-    labelBar({
-      chips,
+const labelBarNode = computed(() =>
+  channelsLabelBarNode(
+    { barLabels: barLabels.value, enabledLabels: enabledLabels.value, unreadOnly: unreadOnly.value },
+    {
       selectedBackground: metroFieldColors.link,
       selectedLabelColor: metroFieldColors.bg,
       restBackground: metroFieldColors.border,
       restLabelColor: metroFieldColors.fg,
-    }),
-  );
-});
+    },
+  ),
+);
 
-const labelBarActions = {
-  [LABEL_CHIP_PRESS]: (payload: Record<string, unknown>): void => {
-    const value = payload.value;
-    if (typeof value !== 'string') return;
-    if (value === '') { clearAllFilters(); return; }
-    if (value === UNREAD_VALUE) { toggleUnread(); return; }
-    toggleLabel(value);
-  },
-};
+const labelBarActions = channelsLabelBarActions({
+  onClearAll: clearAllFilters,
+  onToggleUnread: toggleUnread,
+  onToggleLabel: toggleLabel,
+});
 
 </script>
 
