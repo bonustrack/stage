@@ -10,7 +10,7 @@ name: Play release
 #
 # TRIGGERS:
 #   - push to main      : the primary path, BUT only when the app version
-#       actually changes. The push is filtered to apps/app/app.config.js, and a
+#       actually changes. The push is filtered to apps/stage/app.config.js, and a
 #       `guard` job then diffs the `version` VALUE (HEAD vs HEAD^) and only lets
 #       the build run if it really changed. So a release = a version bump landing
 #       on main, not every merge (merges are frequent + EAS builds cost money).
@@ -39,7 +39,7 @@ on:
     # This is a first-pass filter; the `guard` job below confirms the version
     # VALUE actually changed (an unrelated edit to this file should not ship).
     paths:
-      - 'apps/app/app.config.js'
+      - 'apps/stage/app.config.js'
     tags: ['v*']
   workflow_dispatch:
     inputs:
@@ -77,7 +77,7 @@ jobs:
         id: check
         run: |
           set -euo pipefail
-          FILE="apps/app/app.config.js"
+          FILE="apps/stage/app.config.js"
           extract() {
             # Print the version string value, or empty if absent. Reads from a
             # git blob ($1 = ref) so we can compare HEAD vs HEAD^ without checkout.
@@ -115,7 +115,7 @@ jobs:
     timeout-minutes: 60
     defaults:
       run:
-        working-directory: apps/app
+        working-directory: apps/stage
     env:
       APP_VARIANT: prod
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}

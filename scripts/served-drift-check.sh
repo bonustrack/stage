@@ -25,7 +25,7 @@ SERVED="${2:-origin/served-main}"
 # Keep this EMPTY for a pure fresh-from-main model. Add globs here only if you
 # intentionally carry a served-only override (and document why in the PR).
 ALLOWLIST_GLOBS=(
-  # e.g. "apps/app/app.config.served.ts"
+  # e.g. "apps/stage/app.config.served.ts"
 )
 
 for ref in "$BASE" "$SERVED"; do

@@ -110,7 +110,7 @@ jobs:
           NATIVE=false
           if [ -n "$RANGE" ]; then
             CHANGED="$(git diff --name-only $RANGE || true)"
-            if echo "$CHANGED" | grep -Eq '^(android/|ios/|apps/app/app\.config\.js$|apps/app/package\.json$|package\.json$)'; then
+            if echo "$CHANGED" | grep -Eq '^(android/|ios/|apps/stage/app\.config\.js$|apps/stage/package\.json$|package\.json$)'; then
               NATIVE=true
             fi
           fi
@@ -148,7 +148,7 @@ jobs:
 
       - name: Publish EAS Update for this branch
         id: update
-        working-directory: apps/app
+        working-directory: apps/stage
         # Stamp the preview bundle with the pushed commit so the About page shows
         # the exact previewed SHA. app.config.js (resolveGitHash) reads GIT_COMMIT.
         env:
@@ -297,7 +297,7 @@ jobs:
           bun-version: 1.3.9
 
       - name: Delete this branch's EAS preview channel + branch
-        working-directory: apps/app
+        working-directory: apps/stage
         run: |
           set -euo pipefail
           # Sanitise the deleted ref the SAME way the publish job does

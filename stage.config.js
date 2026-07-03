@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from '@stage-labs/config';
-import { reactNative } from './apps/app/eslint.js';
+import { reactNative } from './apps/stage/eslint.js';
 import { kitEslint } from './packages/kit/eslint.js';
 import { viewsEslint } from './packages/views/eslint.js';
 
@@ -19,7 +19,7 @@ export default defineConfig({
         project: ['scripts/**/*.{mjs,js}'],
       },
     },
-    'apps/app': {
+    'apps/stage': {
       type: 'react-native',
       eslint: { preset: 'none', extends: reactNative() },
       knip: {
@@ -80,11 +80,11 @@ export default defineConfig({
   },
   madge: {
     roots: [
-      'apps/app/app',
-      'apps/app/components',
-      'apps/app/lib',
-      'apps/app/modules',
-      'apps/app/platform',
+      'apps/stage/app',
+      'apps/stage/components',
+      'apps/stage/lib',
+      'apps/stage/modules',
+      'apps/stage/platform',
       'apps/proxy/src',
       'packages/client/src',
       'packages/config',

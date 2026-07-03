@@ -1,5 +1,5 @@
-# Candidate Netlify config for the UNIVERSAL web app (apps/app via expo web).
-# To cut over: point the Netlify site base at apps/app (Netlify UI) and rename
+# Candidate Netlify config for the UNIVERSAL web app (apps/stage via expo web).
+# To cut over: point the Netlify site base at apps/stage (Netlify UI) and rename
 # this file to netlify.toml, or create a second site for side-by-side QA.
 [build]
   command = "bun install && bun run build:web"
