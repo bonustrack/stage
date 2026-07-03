@@ -1,6 +1,7 @@
 const RAW_ENV: Record<string, string | undefined> = {
-  EXPO_PUBLIC_ZERODEV_PROJECT_ID: process.env.EXPO_PUBLIC_ZERODEV_PROJECT_ID,
-  EXPO_PUBLIC_ZERODEV_RPC: process.env.EXPO_PUBLIC_ZERODEV_RPC,
+  EXPO_PUBLIC_ZERODEV_PROJECT_ID: process.env.EXPO_PUBLIC_ZERODEV_PROJECT_ID as string | undefined,
+  EXPO_PUBLIC_ZERODEV_RPC: process.env.EXPO_PUBLIC_ZERODEV_RPC as string | undefined,
+  EXPO_PUBLIC_ZERODEV_RP_ID: process.env.EXPO_PUBLIC_ZERODEV_RP_ID as string | undefined,
 };
 
 function envString(name: string): string | undefined {
@@ -21,4 +22,8 @@ export function zerodevRpcUrl(): string | null {
 
 export function zerodevConfigured(): boolean {
   return zerodevRpcUrl() != null;
+}
+
+export function zerodevRpId(): string {
+  return envString('EXPO_PUBLIC_ZERODEV_RP_ID') ?? 'metro.box';
 }
