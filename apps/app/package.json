@@ -10,7 +10,8 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "test": "bun test test/",
-    "eas-build-post-install": "node ./scripts/install-nodejs-project.js"
+    "eas-build-post-install": "node ./scripts/install-nodejs-project.js",
+    "build:web": "expo export --platform web --output-dir dist"
   },
   "dependencies": {
     "@railgun-community/shared-models": "7.6.1",

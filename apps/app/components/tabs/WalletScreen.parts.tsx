@@ -1,4 +1,5 @@
 
+import { Platform } from 'react-native';
 import { memo, useMemo } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 
@@ -30,7 +31,7 @@ export function WalletTabs({ tab, setTab, border }: {
   const node = useMemo(
     () => basicRoot(walletTabs({
       value: tab,
-      options: walletTabOptions({ privateTab: true }),
+      options: walletTabOptions({ privateTab: Platform.OS !== 'web' }),
     })),
     [tab],
   );

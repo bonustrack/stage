@@ -1,0 +1,16 @@
+# Candidate Netlify config for the UNIVERSAL web app (apps/app via expo web).
+# To cut over: point the Netlify site base at apps/app (Netlify UI) and rename
+# this file to netlify.toml, or create a second site for side-by-side QA.
+[build]
+  command = "bun install && bun run build:web"
+  publish = "dist"
+
+[build.environment]
+  BUN_VERSION = "1.3.9"
+  NODE_VERSION = "22"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cross-Origin-Opener-Policy = "same-origin"
+    Cross-Origin-Embedder-Policy = "credentialless"
