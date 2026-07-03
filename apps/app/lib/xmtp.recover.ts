@@ -1,5 +1,5 @@
 
-import * as SecureStore from 'expo-secure-store';
+import { secureStorage } from '../platform/storage';
 import { Client, PublicIdentity } from '@xmtp/react-native-sdk';
 import {
   getActiveAccount, markRegistered, setActiveAccountId,
@@ -82,7 +82,7 @@ async function finalizeClient(created: Client, rec: AccountRecord, env: XmtpEnv)
   setCachedXmtpClient(created);
   await markRegistered(rec.id);
   await setActiveAccountId(rec.id);
-  await SecureStore.setItemAsync(ENV_KEY, env);
+  await secureStorage.set(ENV_KEY, env);
   void registerPushWithDaemon(created);
   return created;
 }

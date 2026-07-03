@@ -98,7 +98,7 @@ export function reactNative() {
     { ignores: ['node_modules/**', '.expo/**', 'dist/**', 'nodejs-assets/**'] },
     ...recommended,
     {
-      files: ['app/**/*.{ts,tsx}', 'components/**/*.{ts,tsx}', 'lib/**/*.{ts,tsx}', 'modules/**/*.{ts,tsx}'],
+      files: ['app/**/*.{ts,tsx}', 'components/**/*.{ts,tsx}', 'lib/**/*.{ts,tsx}', 'modules/**/*.{ts,tsx}', 'platform/**/*.{ts,tsx}'],
       plugins: { metro: { rules: { ...metroThemeNative.rules, ...keyringGuardRule } }, ...commentPlugins },
       rules: {
         ...COMMENT_RULES,

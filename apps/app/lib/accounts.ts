@@ -1,7 +1,7 @@
 
 
 import './cryptoShim';
-import * as SecureStore from 'expo-secure-store';
+import { secureStorage } from '../platform/storage';
 import type { PrivateKeyAccount } from 'viem/accounts';
 const setActiveAccountForCache = async (id: string | null): Promise<void> => {
   const { setActiveAccountForCache: fn } = await import('./channelsCache');
@@ -24,12 +24,12 @@ let cache: AccountRecord[] | null = null;
 
 async function persist(list: AccountRecord[]): Promise<void> {
   cache = list;
-  await SecureStore.setItemAsync(LIST_KEY, JSON.stringify(list));
+  await secureStorage.set(LIST_KEY, JSON.stringify(list));
 }
 
 export async function loadAccounts(): Promise<AccountRecord[]> {
   if (cache) return cache;
-  const raw = await SecureStore.getItemAsync(LIST_KEY).catch(() => null);
+  const raw = await secureStorage.get(LIST_KEY).catch(() => null);
   if (raw) {
     try { cache = JSON.parse(raw) as AccountRecord[]; return cache; }
     catch { }
@@ -41,20 +41,20 @@ export async function loadAccounts(): Promise<AccountRecord[]> {
       id: adopted.id, address: adopted.address, type: 'generated',
       dbDir: LEGACY_DB_DIR, registered: true, createdAt: Date.now(),
     });
-    await SecureStore.setItemAsync(ACTIVE_KEY, adopted.id);
+    await secureStorage.set(ACTIVE_KEY, adopted.id);
   }
   await persist(list);
   return list;
 }
 
 export async function getActiveAccountId(): Promise<string | null> {
-  const id = await SecureStore.getItemAsync(ACTIVE_KEY).catch(() => null);
+  const id = await secureStorage.get(ACTIVE_KEY).catch(() => null);
   if (id) await setActiveAccountForCache(id);
   return id;
 }
 
 export async function setActiveAccountId(id: string): Promise<void> {
-  await SecureStore.setItemAsync(ACTIVE_KEY, id);
+  await secureStorage.set(ACTIVE_KEY, id);
   await setActiveAccountForCache(id);
 }
 
@@ -118,7 +118,7 @@ export async function removeAccount(id: string): Promise<AccountRecord[]> {
   if (active === id) {
     const first = next[0];
     if (first) await setActiveAccountId(first.id);
-    else await SecureStore.deleteItemAsync(ACTIVE_KEY).catch(() => undefined);
+    else await secureStorage.delete(ACTIVE_KEY).catch(() => undefined);
   }
   return next;
 }
@@ -126,8 +126,8 @@ export async function removeAccount(id: string): Promise<AccountRecord[]> {
 export async function clearAllAccounts(): Promise<AccountRecord[]> {
   const list = await loadAccounts();
   for (const a of list) await deleteKey(a.id);
-  await SecureStore.deleteItemAsync(LIST_KEY).catch(() => undefined);
-  await SecureStore.deleteItemAsync(ACTIVE_KEY).catch(() => undefined);
+  await secureStorage.delete(LIST_KEY).catch(() => undefined);
+  await secureStorage.delete(ACTIVE_KEY).catch(() => undefined);
   await clearLegacyKey();
   cache = null;
   return list;

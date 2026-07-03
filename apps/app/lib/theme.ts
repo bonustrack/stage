@@ -1,7 +1,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useColorScheme } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
+import { secureStorage } from '../platform/storage';
 import {
   THEME_STORAGE_KEY as STORAGE_KEY, isThemePreference,
   type ThemePreference,
@@ -56,7 +56,7 @@ async function ensureLoaded(): Promise<void> {
   if (loaded) return;
   loaded = true;
   try {
-    const v = await SecureStore.getItemAsync(STORAGE_KEY);
+    const v = await secureStorage.get(STORAGE_KEY);
     if (isThemePreference(v)) emit(v);
   } catch { }
 }
@@ -64,7 +64,7 @@ async function ensureLoaded(): Promise<void> {
 export async function setThemePreference(p: ThemePreference): Promise<void> {
   if (!isThemePreference(p)) return;
   emit(p);
-  try { await SecureStore.setItemAsync(STORAGE_KEY, p); } catch { }
+  try { await secureStorage.set(STORAGE_KEY, p); } catch { }
 }
 
 export function useThemePreference(): ThemePreference {

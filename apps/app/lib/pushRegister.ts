@@ -2,7 +2,7 @@
 
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { appStorage } from '../platform/storage';
 import type { Client } from '@xmtp/react-native-sdk';
 import { PublicIdentity } from '@xmtp/react-native-sdk';
 import { ensureNotificationReady, getDeviceFcmToken } from './push.device';
@@ -25,7 +25,7 @@ function platformTag(): 'android' | 'ios' | null {
 type PushClient = Pick<Client, 'inboxId' | 'publicIdentity' | 'conversations'>;
 
 async function isRecentlyRegistered(stateKey: string, token: string): Promise<boolean> {
-  const prev = await AsyncStorage.getItem(stateKey).catch(() => null);
+  const prev = await appStorage.get(stateKey).catch(() => null);
   if (!prev) return false;
   try {
     const { token: prevToken, at } = JSON.parse(prev) as { token: string; at: number };
@@ -44,7 +44,7 @@ async function sendRegisterControlDm(
     token: args.token, platform: args.platform, address: args.address, inboxId: args.inboxId,
   });
   await dm.send(body);
-  await AsyncStorage.setItem(args.stateKey, JSON.stringify({ token: args.token, at: Date.now() }))
+  await appStorage.set(args.stateKey, JSON.stringify({ token: args.token, at: Date.now() }))
     .catch(() => undefined);
 }
 
@@ -80,8 +80,8 @@ export async function unregisterPushFromDaemon(client: PushClient): Promise<void
     const inboxId = client.inboxId;
     if (!address || !inboxId) return;
     const account = address.toLowerCase();
-    const prev = await AsyncStorage.getItem(lastRegisterKey(account)).catch(() => null);
-    await AsyncStorage.removeItem(lastRegisterKey(account)).catch(() => undefined);
+    const prev = await appStorage.get(lastRegisterKey(account)).catch(() => null);
+    await appStorage.delete(lastRegisterKey(account)).catch(() => undefined);
     let token: string | null = null;
     if (prev) { try { token = (JSON.parse(prev) as { token?: string }).token ?? null; } catch { } }
     if (!token) return;

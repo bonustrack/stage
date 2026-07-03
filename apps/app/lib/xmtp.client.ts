@@ -1,5 +1,5 @@
 
-import * as SecureStore from 'expo-secure-store';
+import { secureStorage } from '../platform/storage';
 import { Client, PublicIdentity, type Conversation } from '@xmtp/react-native-sdk';
 import {
   getActiveAccount,
@@ -56,7 +56,7 @@ async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<
       if (built) {
         setCachedXmtpClient(built);
         await setActiveAccountId(rec.id);
-        await SecureStore.setItemAsync(ENV_KEY, env);
+        await secureStorage.set(ENV_KEY, env);
         void registerPushWithDaemon(built);
         return built;
       }
@@ -99,7 +99,7 @@ export async function deleteAccount(id: string): Promise<void> {
 
 export async function resetXmtpClient(): Promise<void> {
   resetClientScopedState();
-  await SecureStore.deleteItemAsync(ENV_KEY).catch(() => undefined);
+  await secureStorage.delete(ENV_KEY).catch(() => undefined);
   const removed = await clearAllAccounts();
   await Promise.all(removed.map(a => deleteDbKey(a.id)));
   await deleteLegacyDbKey();

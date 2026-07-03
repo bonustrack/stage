@@ -1,6 +1,6 @@
 
 import { useSyncExternalStore } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { appStorage } from '../../platform/storage';
 
 const STORAGE_KEY = 'railgun.debugConsole.enabled';
 
@@ -18,7 +18,7 @@ function notify(): void {
 export async function loadDebugConsole(): Promise<boolean> {
   if (loaded) return cache;
   try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
+    const raw = await appStorage.get(STORAGE_KEY);
     cache = raw === '1' || raw === 'true';
   } catch { }
   loaded = true;
@@ -35,7 +35,7 @@ export async function setDebugConsole(enabled: boolean): Promise<void> {
   loaded = true;
   notify();
   try {
-    await AsyncStorage.setItem(STORAGE_KEY, enabled ? '1' : '0');
+    await appStorage.set(STORAGE_KEY, enabled ? '1' : '0');
   } catch { }
 }
 

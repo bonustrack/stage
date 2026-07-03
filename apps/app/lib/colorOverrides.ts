@@ -1,5 +1,5 @@
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { appStorage } from '../platform/storage';
 import {
   DEFAULT_SEED, type ThemeSeed, type Scheme,
   type RadiusName, type Density, type BaseSize,
@@ -40,13 +40,13 @@ const listeners = new Set<() => void>();
 function emit(): void { for (const l of listeners) l(); }
 
 function persist(): void {
-  void AsyncStorage.setItem(SEED_KEY, JSON.stringify(cache)).catch(() => undefined);
+  void appStorage.set(SEED_KEY, JSON.stringify(cache)).catch(() => undefined);
 }
 
 export function loadOverrides(): void {
   if (loaded) return;
   loaded = true;
-  void AsyncStorage.multiGet([SEED_KEY, CUSTOM_KEY])
+  void appStorage.multiGet([SEED_KEY, CUSTOM_KEY])
     .then((pairs) => {
       let changed = false;
       const map = new Map(pairs);
@@ -73,7 +73,7 @@ export function setCustomTheme(on: boolean): void {
   if (customEnabled === on) return;
   customEnabled = on;
   emit();
-  void AsyncStorage.setItem(CUSTOM_KEY, on ? '1' : '0').catch(() => undefined);
+  void appStorage.set(CUSTOM_KEY, on ? '1' : '0').catch(() => undefined);
 }
 
 export type SeedColorKey = 'grayscale' | 'accent' | 'background' | 'foreground';

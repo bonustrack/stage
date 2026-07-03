@@ -1,8 +1,8 @@
 
 import { AppState } from 'react-native';
 import { Directory, File, Paths } from 'expo-file-system';
-import * as SecureStore from 'expo-secure-store';
 import { hydrateOnce, makeListeners } from './storeCore';
+import { secureStorage } from '../platform/storage';
 
 const FLUSH_DEBOUNCE_MS = 1_500;
 
@@ -141,8 +141,8 @@ export class MemoryStore<K, V> {
 }
 
 export async function getSecure(key: string): Promise<string | null> {
-  try { return await SecureStore.getItemAsync(key); } catch { return null; }
+  try { return await secureStorage.get(key); } catch { return null; }
 }
 export async function setSecure(key: string, value: string): Promise<void> {
-  try { await SecureStore.setItemAsync(key, value); } catch { }
+  try { await secureStorage.set(key, value); } catch { }
 }

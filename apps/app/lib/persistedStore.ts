@@ -1,5 +1,5 @@
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { appStorage } from '../platform/storage';
 import { hydrateOnce, makeListeners } from './storeCore';
 
 export interface SetStore {
@@ -16,7 +16,7 @@ export function createSetStore(key: string): SetStore {
   const { listeners, notify } = makeListeners();
   const hydration = hydrateOnce(async (): Promise<Set<string>> => {
     try {
-      const raw = await AsyncStorage.getItem(key);
+      const raw = await appStorage.get(key);
       const ids: unknown = raw ? JSON.parse(raw) : [];
       if (Array.isArray(ids)) cache = new Set(ids.filter((x): x is string => typeof x === 'string'));
     } catch { }
@@ -25,7 +25,7 @@ export function createSetStore(key: string): SetStore {
 
   async function persist(): Promise<void> {
     try {
-      await AsyncStorage.setItem(key, JSON.stringify([...cache]));
+      await appStorage.set(key, JSON.stringify([...cache]));
     } catch { }
   }
 
@@ -91,12 +91,12 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
   }
 
   const hydration = hydrateOnce(async (): Promise<boolean> => {
-    try { return apply(await AsyncStorage.getItem(opts.key)); }
+    try { return apply(await appStorage.get(opts.key)); }
     catch { return false; }
   });
 
   function persist(): void {
-    void AsyncStorage.setItem(opts.key, serialize(cache)).catch(() => undefined);
+    void appStorage.set(opts.key, serialize(cache)).catch(() => undefined);
   }
 
   async function load(): Promise<T> {
@@ -123,7 +123,7 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
     cache = value;
     hydration.markDone();
     notify();
-    try { await AsyncStorage.setItem(opts.key, serialize(cache)); }
+    try { await appStorage.set(opts.key, serialize(cache)); }
     catch { }
   }
 

@@ -24,6 +24,7 @@
         "@railgun-community/wallet": "10.4.0",
         "@react-native-async-storage/async-storage": "2.2.0",
         "@react-navigation/stack": "^7.9.3",
+        "@xmtp/browser-sdk": "^7.0.0",
         "@stage-labs/client": "workspace:*",
         "@stage-labs/kit": "workspace:*",
         "@stage-labs/views": "workspace:*",

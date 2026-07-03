@@ -1,8 +1,7 @@
 
 import { DevSettings } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as SecureStore from 'expo-secure-store';
 import { Directory, Paths } from 'expo-file-system';
+import { appStorage, secureStorage } from '../platform/storage';
 
 import { resetXmtpClient } from './xmtp.client';
 import { clearMnemonic } from './zerodev/keyring';
@@ -28,7 +27,7 @@ async function clearLastReadMarkers(): Promise<void> {
   } catch { }
   await Promise.all(
     [...convIds].map(id =>
-      SecureStore.deleteItemAsync(LAST_READ_PREFIX + id).catch(() => undefined),
+      secureStorage.delete(LAST_READ_PREFIX + id).catch(() => undefined),
     ),
   );
 }
@@ -47,9 +46,9 @@ export async function resetEverything(): Promise<void> {
   await clearMnemonic();
   await setWalletBackedUp(false);
 
-  await SecureStore.deleteItemAsync(THEME_KEY).catch(() => undefined);
+  await secureStorage.delete(THEME_KEY).catch(() => undefined);
 
-  await AsyncStorage.clear().catch(() => undefined);
+  await appStorage.clear().catch(() => undefined);
 
   deleteDocDir('metro');
   deleteDocDir('railgun-artifacts');

@@ -1,5 +1,5 @@
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { appStorage } from '../platform/storage';
 
 export const CHANNELS_SCROLL_KEY = 'scroll:channels';
 export function convScrollKey(convId: string): string { return `scroll:conv:${convId}`; }
@@ -14,7 +14,7 @@ export const AT_BOTTOM_THRESHOLD_PX = 24;
 export async function getScrollOffset(key: string): Promise<number | undefined> {
   if (cache.has(key)) return cache.get(key);
   try {
-    const raw = await AsyncStorage.getItem(key);
+    const raw = await appStorage.get(key);
     if (raw == null) return undefined;
     const n = Number(raw);
     if (!Number.isFinite(n) || n < 0) return undefined;
@@ -30,7 +30,7 @@ export function saveScrollOffset(key: string, offset: number): void {
   if (existing) clearTimeout(existing);
   timers.set(key, setTimeout(() => {
     timers.delete(key);
-    void AsyncStorage.setItem(key, String(cache.get(key) ?? offset)).catch(() => undefined);
+    void appStorage.set(key, String(cache.get(key) ?? offset)).catch(() => undefined);
   }, WRITE_DEBOUNCE_MS));
 }
 
@@ -59,10 +59,10 @@ export function flushScrollOffset(key: string, override?: number): void {
   if (t) { clearTimeout(t); timers.delete(key); }
   if (override != null && Number.isFinite(override) && override >= 0) {
     cache.set(key, override);
-    void AsyncStorage.setItem(key, String(override)).catch(() => undefined);
+    void appStorage.set(key, String(override)).catch(() => undefined);
     return;
   }
   if (!t) return;
   const v = cache.get(key);
-  if (v != null) void AsyncStorage.setItem(key, String(v)).catch(() => undefined);
+  if (v != null) void appStorage.set(key, String(v)).catch(() => undefined);
 }

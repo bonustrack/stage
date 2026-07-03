@@ -1,6 +1,7 @@
 
 import '../cryptoShim';
-import * as SecureStore from 'expo-secure-store';
+import { secureStorage } from '../../platform/storage';
+import type { SecureAccessOptions } from '../../platform/types';
 import {
   privateKeyToAccount,
   type PrivateKeyAccount, type HDAccount,
@@ -16,28 +17,28 @@ import {
 
 const MNEMONIC_KEY = 'wallet.mnemonic';
 
-const STORE_OPTS: SecureStore.SecureStoreOptions = {
-  keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+const STORE_OPTS: SecureAccessOptions = {
+  thisDeviceOnly: true,
 };
 
 const AUTH_SENTINEL_KEY = 'wallet.authGate';
 
-const SENTINEL_OPTS: SecureStore.SecureStoreOptions = {
+const SENTINEL_OPTS: SecureAccessOptions = {
   requireAuthentication: true,
-  keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+  thisDeviceOnly: true,
   authenticationPrompt: 'Verify it is you to reveal this secret',
 };
 
 async function requireDeviceAuth(): Promise<boolean> {
-  const existing = await SecureStore.getItemAsync(AUTH_SENTINEL_KEY, SENTINEL_OPTS).catch(() => 'DENIED');
+  const existing = await secureStorage.get(AUTH_SENTINEL_KEY, SENTINEL_OPTS).catch(() => 'DENIED');
   if (existing === 'DENIED') return false;
   if (existing !== null) return true;
   try {
-    await SecureStore.setItemAsync(AUTH_SENTINEL_KEY, '1', SENTINEL_OPTS);
+    await secureStorage.set(AUTH_SENTINEL_KEY, '1', SENTINEL_OPTS);
   } catch {
     return true;
   }
-  return (await SecureStore.getItemAsync(AUTH_SENTINEL_KEY, SENTINEL_OPTS).catch(() => null)) !== null;
+  return (await secureStorage.get(AUTH_SENTINEL_KEY, SENTINEL_OPTS).catch(() => null)) !== null;
 }
 
 async function requireRevealAuth(id?: string): Promise<boolean> {
@@ -63,7 +64,7 @@ async function requireRevealAuth(id?: string): Promise<boolean> {
 let sessionMnemonic: string | null = null;
 
 async function readMnemonic(): Promise<string | null> {
-  const raw = await SecureStore.getItemAsync(MNEMONIC_KEY, STORE_OPTS).catch(() => null);
+  const raw = await secureStorage.get(MNEMONIC_KEY, STORE_OPTS).catch(() => null);
   if (!raw) return null;
   const phrase = normalizeMnemonic(raw);
   return isValidMnemonic(phrase) ? phrase : null;
@@ -79,7 +80,7 @@ async function unlockMnemonic(): Promise<string | null> {
 export async function restoreMnemonic(phrase: string): Promise<void> {
   const norm = normalizeMnemonic(phrase);
   if (!isValidMnemonic(norm)) throw new Error('Invalid recovery phrase — failed BIP-39 check.');
-  await SecureStore.setItemAsync(MNEMONIC_KEY, norm, STORE_OPTS);
+  await secureStorage.set(MNEMONIC_KEY, norm, STORE_OPTS);
   sessionMnemonic = norm;
   ownerCache.clear();
 }
@@ -87,14 +88,14 @@ export async function restoreMnemonic(phrase: string): Promise<void> {
 export async function clearMnemonic(): Promise<void> {
   sessionMnemonic = null;
   ownerCache.clear();
-  await SecureStore.deleteItemAsync(MNEMONIC_KEY).catch(() => undefined);
+  await secureStorage.delete(MNEMONIC_KEY).catch(() => undefined);
 }
 
 export async function ensureMnemonic(): Promise<void> {
   const existing = await unlockMnemonic();
   if (existing) return;
   const minted = generateWalletMnemonic();
-  await SecureStore.setItemAsync(MNEMONIC_KEY, minted, STORE_OPTS);
+  await secureStorage.set(MNEMONIC_KEY, minted, STORE_OPTS);
   sessionMnemonic = minted;
   ownerCache.clear();
 }
@@ -127,14 +128,14 @@ export async function signOwnerMessage(hdIndex: number, message: string): Promis
 
 
 async function loadPrivateKey(id: string): Promise<Hex | null> {
-  const pk = await SecureStore.getItemAsync(PK_PREFIX + id, STORE_OPTS).catch(() => null);
+  const pk = await secureStorage.get(PK_PREFIX + id, STORE_OPTS).catch(() => null);
   if (pk && /^0x[0-9a-f]{64}$/.test(pk)) return pk as Hex;
-  const legacy = await SecureStore.getItemAsync(LEGACY_PK_KEY, STORE_OPTS).catch(() => null);
+  const legacy = await secureStorage.get(LEGACY_PK_KEY, STORE_OPTS).catch(() => null);
   if (legacy && /^0x[0-9a-fA-F]{64}$/.test(legacy)) {
     const norm = ('0x' + legacy.slice(2).toLowerCase()) as Hex;
     try {
       if (privateKeyToAccount(norm).address.toLowerCase() === id.toLowerCase()) {
-        await SecureStore.setItemAsync(PK_PREFIX + id, norm, STORE_OPTS).catch(() => undefined);
+        await secureStorage.set(PK_PREFIX + id, norm, STORE_OPTS).catch(() => undefined);
         return norm;
       }
     } catch { }
@@ -143,7 +144,7 @@ async function loadPrivateKey(id: string): Promise<Hex | null> {
 }
 
 async function storePrivateKey(id: string, pk: Hex): Promise<void> {
-  await SecureStore.setItemAsync(PK_PREFIX + id, pk, STORE_OPTS);
+  await secureStorage.set(PK_PREFIX + id, pk, STORE_OPTS);
 }
 
 export async function getViemAccount(id: string): Promise<PrivateKeyAccount | null> {
@@ -152,7 +153,7 @@ export async function getViemAccount(id: string): Promise<PrivateKeyAccount | nu
 }
 
 export async function adoptLegacyKey(): Promise<{ id: string; address: string } | null> {
-  const legacy = await SecureStore.getItemAsync(LEGACY_PK_KEY, STORE_OPTS).catch(() => null);
+  const legacy = await secureStorage.get(LEGACY_PK_KEY, STORE_OPTS).catch(() => null);
   if (!legacy || !/^0x[0-9a-fA-F]{64}$/.test(legacy)) return null;
   const pk = ('0x' + legacy.slice(2).toLowerCase()) as Hex;
   const acct = privateKeyToAccount(pk);
@@ -162,11 +163,11 @@ export async function adoptLegacyKey(): Promise<{ id: string; address: string } 
 }
 
 export async function deleteKey(id: string): Promise<void> {
-  await SecureStore.deleteItemAsync(PK_PREFIX + id).catch(() => undefined);
+  await secureStorage.delete(PK_PREFIX + id).catch(() => undefined);
 }
 
 export async function clearLegacyKey(): Promise<void> {
-  await SecureStore.deleteItemAsync(LEGACY_PK_KEY).catch(() => undefined);
+  await secureStorage.delete(LEGACY_PK_KEY).catch(() => undefined);
 }
 
 

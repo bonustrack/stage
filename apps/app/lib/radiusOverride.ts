@@ -1,6 +1,6 @@
 
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { appStorage } from '../platform/storage';
 import {
   BUTTON_RADIUS_DEFAULT, BLOCK_RADIUS_DEFAULT, RADIUS_MIN, RADIUS_MAX,
 } from '@stage-labs/kit/tokens';
@@ -25,7 +25,7 @@ function emit(): void { for (const l of listeners) l(); }
 export function loadRadius(): void {
   if (loaded) return;
   loaded = true;
-  void AsyncStorage.multiGet([BUTTON_KEY, BLOCK_KEY])
+  void appStorage.multiGet([BUTTON_KEY, BLOCK_KEY])
     .then((pairs) => {
       let changed = false;
       for (const [key, raw] of pairs) {

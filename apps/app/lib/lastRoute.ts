@@ -1,9 +1,9 @@
 
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
 import { router, usePathname, useRootNavigationState } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { appStorage } from '../platform/storage';
 
 const STORAGE_KEY = 'metro:lastRoute:v1';
 
@@ -27,7 +27,7 @@ function isRestorable(path: string): boolean {
 }
 
 function persist(path: string): void {
-  void AsyncStorage.setItem(STORAGE_KEY, path).catch(() => undefined);
+  void appStorage.set(STORAGE_KEY, path).catch(() => undefined);
 }
 
 function hasColdStartDeepLink(url: string | null): boolean {
@@ -55,10 +55,10 @@ export function useRestoreGate(): RestoreGate {
     void (async (): Promise<void> => {
       try {
         const [saved, initialUrl] = await Promise.all([
-          AsyncStorage.getItem(STORAGE_KEY),
+          appStorage.get(STORAGE_KEY),
           Linking.getInitialURL().catch(() => null),
         ]);
-        if (saved) void AsyncStorage.removeItem(STORAGE_KEY).catch(() => undefined);
+        if (saved) void appStorage.delete(STORAGE_KEY).catch(() => undefined);
         const deepLink = hasColdStartDeepLink(initialUrl);
         const restorable = !!saved && isRestorable(saved);
         const willRestore = !!saved && restorable && !deepLink;

@@ -72,7 +72,6 @@ const WEB_NATIVE_STUBS = new Set([
   '@railgun-privacy/native-prover',
 ]);
 const webNativeStub = path.resolve(projectRoot, 'metro.shims', 'web', 'native-stub.js');
-const webSecureStore = path.resolve(projectRoot, 'metro.shims', 'web', 'secure-store.js');
 
 const upstreamResolveRequest = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (context, moduleName, platform) => {
@@ -80,9 +79,6 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
     const bare = moduleName.split('/').slice(0, moduleName.startsWith('@') ? 2 : 1).join('/');
     if (WEB_NATIVE_STUBS.has(bare)) {
       return { type: 'sourceFile', filePath: webNativeStub };
-    }
-    if (bare === 'expo-secure-store') {
-      return { type: 'sourceFile', filePath: webSecureStore };
     }
   }
   const resolved = upstreamResolveRequest

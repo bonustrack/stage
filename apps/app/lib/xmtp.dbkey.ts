@@ -1,9 +1,10 @@
 
-import * as SecureStore from 'expo-secure-store';
 import { Directory, File, Paths } from 'expo-file-system';
+import { secureStorage } from '../platform/storage';
+import type { SecureAccessOptions } from '../platform/types';
 
-const STORE_OPTS: SecureStore.SecureStoreOptions = {
-  keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+const STORE_OPTS: SecureAccessOptions = {
+  thisDeviceOnly: true,
 };
 
 const LEGACY_DB_ENCRYPTION_KEY = 'xmtp.dbEncryptionKey';
@@ -36,32 +37,32 @@ function randomKey(): Uint8Array {
 
 export async function loadOrCreateDbKey(accountId: string): Promise<Uint8Array> {
   const id = dbKeyId(accountId);
-  const existing = await SecureStore.getItemAsync(id, STORE_OPTS).catch(() => null);
+  const existing = await secureStorage.get(id, STORE_OPTS).catch(() => null);
   if (existing) return decodeKey(existing);
 
-  const legacy = await SecureStore.getItemAsync(LEGACY_DB_ENCRYPTION_KEY, STORE_OPTS).catch(() => null);
+  const legacy = await secureStorage.get(LEGACY_DB_ENCRYPTION_KEY, STORE_OPTS).catch(() => null);
   if (legacy) {
-    await SecureStore.setItemAsync(id, legacy, STORE_OPTS).catch(() => undefined);
+    await secureStorage.set(id, legacy, STORE_OPTS).catch(() => undefined);
     return decodeKey(legacy);
   }
 
   const fresh = randomKey();
-  await SecureStore.setItemAsync(id, encodeKey(fresh), STORE_OPTS);
+  await secureStorage.set(id, encodeKey(fresh), STORE_OPTS);
   return fresh;
 }
 
 export async function deleteDbKey(accountId: string): Promise<void> {
-  await SecureStore.deleteItemAsync(dbKeyId(accountId)).catch(() => undefined);
+  await secureStorage.delete(dbKeyId(accountId)).catch(() => undefined);
 }
 
 export async function deleteLegacyDbKey(): Promise<void> {
-  await SecureStore.deleteItemAsync(LEGACY_DB_ENCRYPTION_KEY).catch(() => undefined);
+  await secureStorage.delete(LEGACY_DB_ENCRYPTION_KEY).catch(() => undefined);
 }
 
 export async function wipeXmtpStore(accountId: string, dbDirName: string): Promise<void> {
   deleteDbFiles(dbDirName);
-  const accountKey = await SecureStore.getItemAsync(dbKeyId(accountId), STORE_OPTS).catch(() => null);
-  const legacyKey = await SecureStore.getItemAsync(LEGACY_DB_ENCRYPTION_KEY, STORE_OPTS).catch(() => null);
+  const accountKey = await secureStorage.get(dbKeyId(accountId), STORE_OPTS).catch(() => null);
+  const legacyKey = await secureStorage.get(LEGACY_DB_ENCRYPTION_KEY, STORE_OPTS).catch(() => null);
   await deleteDbKey(accountId);
   if (legacyKey && (accountKey === legacyKey || accountKey === null)) {
     await deleteLegacyDbKey();
