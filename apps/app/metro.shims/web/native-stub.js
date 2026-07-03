@@ -1,14 +1,15 @@
 function makeStub(name) {
-  function Stub() {}
-  Stub.displayName = String(name);
+  function Stub() {
+    this.stubName = String(name);
+  }
   const handler = {
     get(target, prop) {
       if (prop === 'prototype') return target.prototype;
       if (prop === Symbol.toPrimitive || prop === 'toString') {
-        return () => `[web-stub ${String(name)}.${''}]`;
+        return () => `[web-stub ${String(name)}]`;
       }
       if (!(prop in target)) {
-        target[prop] = (...args) =>
+        target[prop] = () =>
           Promise.reject(new Error(`native-only API ${String(name)}.${String(prop)} called on web`));
       }
       return target[prop];
