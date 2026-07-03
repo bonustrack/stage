@@ -1,12 +1,38 @@
 {
-  "extends": ["expo/tsconfig.base", "@stage-labs/config/tsconfig/react-native.json"],
+  "extends": [
+    "expo/tsconfig.base",
+    "@stage-labs/config/tsconfig/react-native.json"
+  ],
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "react-native": ["./node_modules/react-native"],
-      "react-native-svg": ["./node_modules/react-native-svg"],
-      "react-native-markdown-display": ["./node_modules/react-native-markdown-display"]
+      "react-native": [
+        "./node_modules/react-native"
+      ],
+      "react-native-svg": [
+        "./node_modules/react-native-svg"
+      ],
+      "react-native-markdown-display": [
+        "./node_modules/react-native-markdown-display"
+      ],
+      "@views": [
+        "./views/index"
+      ],
+      "@views/*": [
+        "./views/*"
+      ]
     }
   },
-  "include": ["app/**/*.ts", "app/**/*.tsx", "components/**/*.ts", "components/**/*.tsx", "lib/**/*.ts", "lib/**/*.tsx", "modules/**/*.ts", "modules/**/*.tsx", "platform/**/*.ts"]
+  "include": [
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "components/**/*.ts",
+    "components/**/*.tsx",
+    "lib/**/*.ts",
+    "lib/**/*.tsx",
+    "modules/**/*.ts",
+    "modules/**/*.tsx",
+    "platform/**/*.ts",
+    "views/**/*.ts"
+  ]
 }

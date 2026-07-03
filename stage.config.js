@@ -2,7 +2,6 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from '@stage-labs/config';
 import { reactNative } from './apps/stage/eslint.js';
 import { kitEslint } from './packages/kit/eslint.js';
-import { viewsEslint } from './packages/views/eslint.js';
 
 const ROOT_DIR = fileURLToPath(new URL('.', import.meta.url));
 
@@ -63,11 +62,6 @@ export default defineConfig({
       eslint: { preset: 'none', extends: kitEslint() },
       knip: { entry: ['eslint.js'] },
     },
-    'packages/views': {
-      type: 'library',
-      eslint: { preset: 'none', extends: viewsEslint() },
-      knip: { entry: ['eslint.js'] },
-    },
     'packages/config': {
       type: 'library',
       eslint: { preset: 'none' },
@@ -85,11 +79,11 @@ export default defineConfig({
       'apps/stage/lib',
       'apps/stage/modules',
       'apps/stage/platform',
+      'apps/stage/views',
       'apps/proxy/src',
       'packages/client/src',
       'packages/config',
       'packages/kit/src',
-      'packages/views/src',
     ],
   },
 });

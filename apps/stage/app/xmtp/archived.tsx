@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { FlatList } from 'react-native-gesture-handler';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import { backAction, basicRoot, emptyState, screenHeader } from '@stage-labs/views';
+import { backAction, basicRoot, emptyState, screenHeader } from '@views';
 import { capabilities } from '../../lib/capabilities';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

@@ -18,7 +18,7 @@ import {
   profileDisplayName,
   profileNameNode,
   PROFILE_ADDRESS_COPY,
-} from '@stage-labs/views';
+} from '@views';
 import { capabilities } from '../lib/capabilities';
 import { ImageViewer } from './ImageViewer';
 import {

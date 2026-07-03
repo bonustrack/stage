@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { channelRowModel } from '../src/chat/channelRowModel';
+import { channelRowModel } from '../views/chat/channelRowModel';
 
 describe('channelRowModel', () => {
   test('minimal domain maps to empty-preview params', () => {

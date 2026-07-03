@@ -20,7 +20,7 @@ import {
   settingsButtonRow,
   SETTINGS_COPY,
   SETTINGS_BUTTON_PRESS,
-} from '@stage-labs/views';
+} from '@views';
 import { capabilities } from '../../lib/capabilities';
 import { getOrCreateXmtpClient, resetXmtpClient, shortAddress, useActiveAccount } from '../../modules/messaging';
 import { resetAccount } from '../../lib/wallet';

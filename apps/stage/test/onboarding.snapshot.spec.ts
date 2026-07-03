@@ -1,5 +1,5 @@
 import { describe, test } from 'bun:test';
-import { onboardingStep } from '../src/onboarding/onboardingStep';
+import { onboardingStep } from '../views/onboarding/onboardingStep';
 import { snap } from './helpers';
 
 describe('onboardingStep', () => {

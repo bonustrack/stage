@@ -12,7 +12,7 @@ import {
   row,
   text,
   title,
-} from '../src/primitives';
+} from '../views/primitives';
 import { snap } from './helpers';
 
 describe('basicRoot', () => {

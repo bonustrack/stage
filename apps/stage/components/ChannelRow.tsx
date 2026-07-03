@@ -13,7 +13,7 @@ import {
   channelRowModel,
   unreadBadgeLabel,
   CHANNEL_LABEL_PRESS,
-} from '@stage-labs/views';
+} from '@views';
 import { usePalette } from '../lib/theme';
 
 export interface ChannelRowProps {

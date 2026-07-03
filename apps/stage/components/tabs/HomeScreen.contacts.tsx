@@ -5,7 +5,7 @@ import { isAddress } from 'viem';
 import { Box } from '../layout';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers, WidgetRoot } from '@stage-labs/kit/kit';
-import { basicRoot, contactRow, emptyState, sectionHeader, CONTACT_PRESS } from '@stage-labs/views';
+import { basicRoot, contactRow, emptyState, sectionHeader, CONTACT_PRESS } from '@views';
 import { openDmWithAddress, shortAddress } from '../../modules/messaging';
 import { resolveEnsName } from '@stage-labs/client/api/ens';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
-import { channelsOverflowItems } from '@stage-labs/views';
+import { channelsOverflowItems } from '@views';
 import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import * as Clipboard from 'expo-clipboard';
 import { Col } from '../layout';

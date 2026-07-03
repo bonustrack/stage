@@ -5,8 +5,8 @@ import {
   profileMessageSendNode,
   profileNameNode,
   profileOverlayHeaderNode,
-} from '../src/profile/profileScreenModel';
-import { PROFILE_ADDRESS_COPY, PROFILE_ROUND_PRESS } from '../src/actions';
+} from '../views/profile/profileScreenModel';
+import { PROFILE_ADDRESS_COPY, PROFILE_ROUND_PRESS } from '../views/actions';
 
 describe('profileDisplayName', () => {
   test('empty address shows loading placeholder', () => {

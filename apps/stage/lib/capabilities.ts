@@ -2,7 +2,7 @@
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import { Alert, Linking, Share } from 'react-native';
-import type { Capabilities, ConfirmOptions } from '@stage-labs/views';
+import type { Capabilities, ConfirmOptions } from '@views';
 import { flash } from './toast';
 
 function confirmWithAlert(options: ConfirmOptions): Promise<boolean> {

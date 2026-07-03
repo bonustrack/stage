@@ -2,7 +2,7 @@
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import { backAction, basicRoot, screenHeader } from '@stage-labs/views';
+import { backAction, basicRoot, screenHeader } from '@views';
 import { capabilities } from '../lib/capabilities';
 import { Col } from '../components/layout';
 import { useRouter } from 'expo-router';

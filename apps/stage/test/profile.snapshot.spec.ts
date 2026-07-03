@@ -1,8 +1,8 @@
 import { describe, test } from 'bun:test';
-import { infoRow } from '../src/profile/infoRow';
-import { profileActionsRow } from '../src/profile/profileActionsRow';
-import { profileAddressRow } from '../src/profile/profileAddressRow';
-import { profileHeader } from '../src/profile/profileHeader';
+import { infoRow } from '../views/profile/infoRow';
+import { profileActionsRow } from '../views/profile/profileActionsRow';
+import { profileAddressRow } from '../views/profile/profileAddressRow';
+import { profileHeader } from '../views/profile/profileHeader';
 import { snap } from './helpers';
 
 describe('profileHeader', () => {

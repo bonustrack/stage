@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import { backAction, basicRoot, copyAction, receiveView, screenHeader, WALLET_ADDRESS_COPY } from '@stage-labs/views';
+import { backAction, basicRoot, copyAction, receiveView, screenHeader, WALLET_ADDRESS_COPY } from '@views';
 import { capabilities } from '../../lib/capabilities';
 import { Col } from '../../components/layout';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

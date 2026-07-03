@@ -1,6 +1,6 @@
 import { describe, test } from 'bun:test';
-import { groupFieldEditor } from '../src/group/groupFieldEditor';
-import { labelRow } from '../src/group/labelRow';
+import { groupFieldEditor } from '../views/group/groupFieldEditor';
+import { labelRow } from '../views/group/labelRow';
 import { snap } from './helpers';
 
 describe('labelRow', () => {

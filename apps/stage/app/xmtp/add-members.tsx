@@ -5,7 +5,7 @@ import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import { backAction, basicRoot, screenHeader } from '@stage-labs/views';
+import { backAction, basicRoot, screenHeader } from '@views';
 import { capabilities } from '../../lib/capabilities';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

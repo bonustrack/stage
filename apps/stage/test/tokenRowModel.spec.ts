@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { tokenRowModel, type TokenRowFormat } from '../src/wallet/tokenRowModel';
+import { tokenRowModel, type TokenRowFormat } from '../views/wallet/tokenRowModel';
 
 const fmt: TokenRowFormat = {
   fmtUsd: (v, maxFrac = 2) => `$${v.toFixed(maxFrac)}`,

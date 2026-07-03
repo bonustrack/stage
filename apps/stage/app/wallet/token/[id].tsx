@@ -7,7 +7,7 @@ import {
   backAction, basicRoot, screenHeader,
   tokenDetailCard,
   WALLET_ACTION_PRESS, type WalletActionButton,
-} from '@stage-labs/views';
+} from '@views';
 import { capabilities } from '../../../lib/capabilities';
 import { tokenDetailViewModel } from '@stage-labs/client/wallet/tokenDetail';
 import { Col } from '../../../components/layout';

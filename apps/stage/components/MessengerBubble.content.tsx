@@ -14,7 +14,7 @@ import {
 import { QuestionView } from './MessengerBubble.parts';
 import { PollView } from './MessengerBubble.poll';
 import { SigRequestCard, SigReferenceCard, TxRequestCard, TxReceiptCard } from './MessengerBubble.cards';
-import { bubbleTimestamp } from '@stage-labs/views';
+import { bubbleTimestamp } from '@views';
 import {
   BubbleAttachments, BubbleBody, BubbleEmbeds, ReplyPreview, TranscriptLine, type MarkdownProps,
 } from './MessengerBubble.content.parts';

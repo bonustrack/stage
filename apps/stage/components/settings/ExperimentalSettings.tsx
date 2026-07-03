@@ -9,7 +9,7 @@ import type {
   ListViewNode,
   PayloadHandlers,
 } from '@stage-labs/kit/kit';
-import { backAction, settingsHeader, settingsNavAction, settingsNavRow, SETTINGS_NAV_PRESS } from '@stage-labs/views';
+import { backAction, settingsHeader, settingsNavAction, settingsNavRow, SETTINGS_NAV_PRESS } from '@views';
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 

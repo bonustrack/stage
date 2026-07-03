@@ -5,7 +5,7 @@ import { DevSettings, Vibration } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import { basicRoot, emptyState } from '@stage-labs/views';
+import { basicRoot, emptyState } from '@views';
 import { Col } from '../layout';
 import { Spinner } from '../Spinner';
 import { ChannelRow } from '../ChannelRow';
@@ -16,7 +16,7 @@ import { hasDraft, getDraft } from '../../lib/drafts';
 import { isPinned } from '../../lib/pins';
 import { requestLabelFilter } from '../../lib/labelFilterRequest';
 import type { Row as RowT } from './HomeScreen.helpers';
-import { channelTimestamp } from '@stage-labs/views';
+import { channelTimestamp } from '@views';
 import { DANGER } from '../../lib/theme';
 
 interface RowMenu { convId: string; title: string; isUnread: boolean; isGroup: boolean; peerAddress: string | null }

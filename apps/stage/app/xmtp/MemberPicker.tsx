@@ -6,7 +6,7 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import { basicRoot, memberTextField, MEMBER_FIELD_CHANGE, MEMBER_FIELD_SUBMIT } from '@stage-labs/views';
+import { basicRoot, memberTextField, MEMBER_FIELD_CHANGE, MEMBER_FIELD_SUBMIT } from '@views';
 import { shortAddress } from '../../modules/messaging';
 import { resolveEnsName } from '@stage-labs/client/api/ens';
 import { flash } from '../../lib/toast';

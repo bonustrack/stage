@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers, WidgetNode, WidgetRoot } from '@stage-labs/kit/kit';
-import { backAction, basicRoot, screenHeader } from '@stage-labs/views';
+import { backAction, basicRoot, screenHeader } from '@views';
 import { capabilities } from '../../lib/capabilities';
 import type { GroupPickedFile } from './group.actions.handlers';
 import { Col } from '../../components/layout';

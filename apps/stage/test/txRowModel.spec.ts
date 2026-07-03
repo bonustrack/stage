@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { txRowModel } from '../src/activity/txRowModel';
+import { txRowModel } from '../views/activity/txRowModel';
 
 const base = {
   direction: 'receive' as const,

@@ -18,7 +18,7 @@ import {
   settingsNavAction,
   settingsButtonRow,
   SETTINGS_BUTTON_PRESS,
-} from '@stage-labs/views';
+} from '@views';
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import { resetForOnboarding } from '../../lib/wallet';

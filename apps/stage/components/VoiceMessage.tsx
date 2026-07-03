@@ -2,7 +2,7 @@
 import { useMemo } from 'react';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import { basicRoot, voiceMessage, VOICE_PLAY } from '@stage-labs/views';
+import { basicRoot, voiceMessage, VOICE_PLAY } from '@views';
 import { VOICE_BAR_COUNT, voiceWaveformBars } from '@stage-labs/client/xmtp/voice';
 import { Box } from './layout';
 import { useDecodedBars } from './VoiceMessage.barsCache';

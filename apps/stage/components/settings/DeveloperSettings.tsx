@@ -19,7 +19,7 @@ import {
   settingsButtonRow,
   SETTINGS_TOGGLE_CHANGE,
   SETTINGS_BUTTON_PRESS,
-} from '@stage-labs/views';
+} from '@views';
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { settingsHeader } from '../src/settings/settingsHeader';
+import { settingsHeader } from '../views/settings/settingsHeader';
 import {
   settingsButtonRow,
   settingsListRow,
@@ -10,7 +10,7 @@ import {
   settingsThemeRow,
   settingsToggleRow,
   settingsValueRow,
-} from '../src/settings/settingsRows';
+} from '../views/settings/settingsRows';
 import {
   walletAccountNode,
   walletAddressNode,
@@ -19,7 +19,7 @@ import {
   walletInfoRow,
   walletManageNode,
   walletModuleRow,
-} from '../src/settings/walletSections';
+} from '../views/settings/walletSections';
 import { snap } from './helpers';
 
 describe('settingsSection', () => {

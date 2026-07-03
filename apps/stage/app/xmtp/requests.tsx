@@ -19,7 +19,7 @@ import { Col, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import { backAction, basicRoot, emptyState, screenHeader } from '@stage-labs/views';
+import { backAction, basicRoot, emptyState, screenHeader } from '@views';
 import { capabilities } from '../../lib/capabilities';
 
 const EMPTY_NODE = basicRoot(emptyState({ title: 'No message requests.' }));

@@ -8,7 +8,7 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import { VoiceRecorder } from '@stage-labs/kit/react-native/voice-recorder';
 import type { PayloadHandlers, WidgetRoot } from '@stage-labs/kit/kit';
-import { basicRoot, composerInput, COMPOSER_CHANGE, COMPOSER_SELECTION } from '@stage-labs/views';
+import { basicRoot, composerInput, COMPOSER_CHANGE, COMPOSER_SELECTION } from '@views';
 import { Box, Col } from './layout';
 import { usePalette, useRadius } from '../lib/theme';
 

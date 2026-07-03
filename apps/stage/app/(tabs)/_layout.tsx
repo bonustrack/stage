@@ -8,7 +8,7 @@ import { usePalette } from '../../lib/theme';
 import { TabsPager } from '../../components/SwipeTabs';
 import { HoistedTopnav } from '../../components/tabs/HoistedTopnav';
 import { useTotalUnread } from '../../lib/useTotalUnread';
-import { unreadBadgeLabel } from '@stage-labs/views';
+import { unreadBadgeLabel } from '@views';
 
 function PagerOverlay({ insetTop, tabBarHeight }: { insetTop: number; tabBarHeight: number }): React.ReactElement {
   return (

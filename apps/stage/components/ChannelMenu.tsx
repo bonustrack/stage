@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers, WidgetRoot } from '@stage-labs/kit/kit';
 import { Box } from './layout';
-import { channelMenuItems, menuSheet, MENU_ITEM_PRESS } from '@stage-labs/views';
+import { channelMenuItems, menuSheet, MENU_ITEM_PRESS } from '@views';
 import { AppModal } from './AppModal';
 import { markConvRead, markConvUnread } from '../modules/messaging';
 import { togglePin } from '../lib/pins';

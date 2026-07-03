@@ -6,7 +6,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import { accountRow, listRoot, ACCOUNT_PRESS } from '@stage-labs/views';
+import { accountRow, listRoot, ACCOUNT_PRESS } from '@views';
 import { getPeerName } from '../lib/peerProfiles';
 import { shortAddress } from '../modules/messaging';
 import { type AccountRecord } from '../lib/accounts';

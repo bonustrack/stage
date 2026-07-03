@@ -4,7 +4,7 @@ import type { PayloadHandlers } from '@stage-labs/kit/kit';
 import {
   basicRoot, sendFields,
   WALLET_SEND_FIELD_ACTION, WALLET_SEND_FIELD_CHANGE,
-} from '@stage-labs/views';
+} from '@views';
 import { toggleAmountUnit } from '@stage-labs/client/wallet/sendAmount';
 import { usePalette } from '../../lib/theme';
 import { Col } from '../../components/layout';

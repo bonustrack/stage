@@ -6,7 +6,7 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { Textarea } from '@stage-labs/kit/react-native/textarea';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import { basicRoot, onboardingStep, ONBOARDING_ACTION_PRESS } from '@stage-labs/views';
+import { basicRoot, onboardingStep, ONBOARDING_ACTION_PRESS } from '@views';
 import { Col, Box } from '../layout';
 import { Spinner } from '../Spinner';
 import { usePalette, DANGER } from '../../lib/theme';

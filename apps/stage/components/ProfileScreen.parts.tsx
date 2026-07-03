@@ -8,7 +8,7 @@ import type { PayloadHandlers } from '@stage-labs/kit/kit';
 import {
   backAction, profileMessageSendNode, profileOverlayHeaderNode,
   PROFILE_ROUND_PRESS,
-} from '@stage-labs/views';
+} from '@views';
 import { capabilities } from '../lib/capabilities';
 import { TopnavIdentity } from './TopnavIdentity';
 

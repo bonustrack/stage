@@ -3,7 +3,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import { basicRoot, groupFieldEditor, GROUP_EDIT_CHANGE, GROUP_EDIT_SAVE } from '@stage-labs/views';
+import { basicRoot, groupFieldEditor, GROUP_EDIT_CHANGE, GROUP_EDIT_SAVE } from '@views';
 import { Box } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';

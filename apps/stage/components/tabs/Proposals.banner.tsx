@@ -1,7 +1,7 @@
 
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import { banner, listRoot, navigateAction, BANNER_PRESS } from '@stage-labs/views';
+import { banner, listRoot, navigateAction, BANNER_PRESS } from '@views';
 import { capabilities } from '../../lib/capabilities';
 import { Box } from '../layout';
 import { usePalette } from '../../lib/theme';

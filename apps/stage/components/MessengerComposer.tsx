@@ -2,7 +2,7 @@
 import { Text } from '@stage-labs/kit/react-native/text';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers, WidgetRoot } from '@stage-labs/kit/kit';
-import { basicRoot } from '@stage-labs/views';
+import { basicRoot } from '@views';
 import { Col } from './layout';
 import type { ComposerPickedFile } from './MessengerComposer.actions.helpers';
 import { type Attachment } from './MessengerComposer.helpers';

@@ -1,6 +1,6 @@
 
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import { basicRoot, videoMessage } from '@stage-labs/views';
+import { basicRoot, videoMessage } from '@views';
 import { Box } from './layout';
 
 export function MessengerVideoAttachment({ uri }: { uri: string }): React.ReactElement {

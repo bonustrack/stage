@@ -14,7 +14,7 @@ import {
   settingsHeader,
   settingsToggleRow,
   SETTINGS_TOGGLE_CHANGE,
-} from '@stage-labs/views';
+} from '@views';
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import { loadPushEnabled, setPushEnabled, subscribePushPref, isPushEnabledSync } from '../../lib/pushPref';

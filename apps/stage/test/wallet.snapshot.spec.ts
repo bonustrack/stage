@@ -1,17 +1,17 @@
 import { describe, expect, test } from 'bun:test';
-import { addressCard, addressCopyRow, addressShareAction } from '../src/wallet/addressCard';
-import { balanceHeader } from '../src/wallet/balanceHeader';
-import { nftGrid } from '../src/wallet/nftGrid';
-import { noticeCard } from '../src/wallet/noticeCard';
-import { priceChart } from '../src/wallet/priceChart';
-import { receiveView } from '../src/wallet/receiveView';
-import { sendFields } from '../src/wallet/sendFields';
-import { sendForm, sendReviewList } from '../src/wallet/sendForm';
-import { stepper } from '../src/wallet/stepper';
-import { tokenDetailCard } from '../src/wallet/tokenDetailCard';
-import { tokenRow, tokenRowBody } from '../src/wallet/tokenRow';
-import { walletActions } from '../src/wallet/walletActions';
-import { walletTabs } from '../src/wallet/walletTabs';
+import { addressCard, addressCopyRow, addressShareAction } from '../views/wallet/addressCard';
+import { balanceHeader } from '../views/wallet/balanceHeader';
+import { nftGrid } from '../views/wallet/nftGrid';
+import { noticeCard } from '../views/wallet/noticeCard';
+import { priceChart } from '../views/wallet/priceChart';
+import { receiveView } from '../views/wallet/receiveView';
+import { sendFields } from '../views/wallet/sendFields';
+import { sendForm, sendReviewList } from '../views/wallet/sendForm';
+import { stepper } from '../views/wallet/stepper';
+import { tokenDetailCard } from '../views/wallet/tokenDetailCard';
+import { tokenRow, tokenRowBody } from '../views/wallet/tokenRow';
+import { walletActions } from '../views/wallet/walletActions';
+import { walletTabs } from '../views/wallet/walletTabs';
 import { snap } from './helpers';
 
 const TOKEN_BASE = {

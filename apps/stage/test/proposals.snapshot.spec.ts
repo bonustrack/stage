@@ -1,7 +1,7 @@
 import { describe, test } from 'bun:test';
-import { banner } from '../src/proposals/banner';
-import { proposalCard } from '../src/proposals/proposalCard';
-import { proposalHeaderRoot } from '../src/proposals/proposalHeader';
+import { banner } from '../views/proposals/banner';
+import { proposalCard } from '../views/proposals/proposalCard';
+import { proposalHeaderRoot } from '../views/proposals/proposalHeader';
 import { snap } from './helpers';
 
 describe('banner', () => {

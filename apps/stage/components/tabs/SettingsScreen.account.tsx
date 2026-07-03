@@ -19,7 +19,7 @@ import {
   settingsButtonRow,
   SETTINGS_NAV_PRESS,
   SETTINGS_BUTTON_PRESS,
-} from '@stage-labs/views';
+} from '@views';
 import { capabilities } from '../../lib/capabilities';
 import { Box, Col } from '../layout';
 import { flash } from '../../lib/toast';

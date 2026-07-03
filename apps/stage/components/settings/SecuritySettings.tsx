@@ -4,7 +4,7 @@ import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers } from '@stage-labs/kit/kit';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Col } from '../layout';
-import { backAction, settingsHeader } from '@stage-labs/views';
+import { backAction, settingsHeader } from '@views';
 import { capabilities } from '../../lib/capabilities';
 import { DANGER, useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { AccountSecuritySection } from '../tabs/SettingsScreen.account';

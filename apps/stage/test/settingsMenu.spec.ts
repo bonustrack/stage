@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { SETTINGS_MENU_ITEMS, settingsMenuNode } from '../src/settings/settingsMenu';
-import { SETTINGS_NAV_PRESS } from '../src/actions';
+import { SETTINGS_MENU_ITEMS, settingsMenuNode } from '../views/settings/settingsMenu';
+import { SETTINGS_NAV_PRESS } from '../views/actions';
 
 describe('settingsMenu', () => {
   test('menu items list the seven settings sections in order', () => {

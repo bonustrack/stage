@@ -3,8 +3,8 @@ import {
   proposalsEmptyLabel,
   proposalsHeaderNode,
   proposalsPositionLabel,
-} from '../src/proposals/proposalsScreen';
-import { proposalKindLabel } from '../src/proposals/proposalHeader';
+} from '../views/proposals/proposalsScreen';
+import { proposalKindLabel } from '../views/proposals/proposalHeader';
 
 describe('proposalsScreen', () => {
   test('header node titles the screen Pending requests with injected colors', () => {

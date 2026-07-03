@@ -6,7 +6,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import { basicRoot } from '@stage-labs/views';
+import { basicRoot } from '@views';
 import { Box, Col, Row } from '../layout';
 import {
   listXmtpInstallations, revokeXmtpInstallation, shortAddress, useActiveAccount,

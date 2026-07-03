@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { compact, compactList, listRoot } from '../src/node';
+import { compact, compactList, listRoot } from '../views/node';
 import { snap } from './helpers';
 
 describe('compact', () => {

@@ -1,7 +1,7 @@
 
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import { basicRoot, pollCard, POLL_OPTION_PRESS, type PollQuestion as ViewPollQuestion } from '@stage-labs/views';
+import { basicRoot, pollCard, POLL_OPTION_PRESS, type PollQuestion as ViewPollQuestion } from '@views';
 
 import { Box } from './layout';
 import type { Poll, PollQuestion } from './MessengerBubble.helpers';

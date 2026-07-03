@@ -10,7 +10,7 @@ import type { PayloadHandlers } from '@stage-labs/kit/kit';
 import {
   basicRoot, listRoot, memberRow, memberTextField,
   MEMBER_PRESS, MEMBER_REMOVE, MEMBER_FIELD_CHANGE,
-} from '@stage-labs/views';
+} from '@views';
 import { stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { AppModal } from '../../components/AppModal';
 import { DANGER, usePalette } from '../../lib/theme';

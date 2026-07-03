@@ -5,7 +5,7 @@ import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers, WidgetRoot } from '@stage-labs/kit/kit';
-import { backAction, basicRoot, memberTextField, screenHeader, MEMBER_FIELD_CHANGE } from '@stage-labs/views';
+import { backAction, basicRoot, memberTextField, screenHeader, MEMBER_FIELD_CHANGE } from '@views';
 import { capabilities } from '../../lib/capabilities';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';

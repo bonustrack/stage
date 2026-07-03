@@ -3,8 +3,8 @@ import {
   walletBalanceHeroNode,
   walletTabOptions,
   walletTotalUsd,
-} from '../src/wallet/walletScreenModel';
-import { WALLET_ACTION_PRESS } from '../src/actions';
+} from '../views/wallet/walletScreenModel';
+import { WALLET_ACTION_PRESS } from '../views/actions';
 
 describe('walletTabOptions', () => {
   test('defaults to the web three-tab list', () => {

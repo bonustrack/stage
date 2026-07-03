@@ -13,7 +13,7 @@ import {
   openUrlAction,
   settingsValueRow,
   SETTINGS_ACTION_PRESS,
-} from '@stage-labs/views';
+} from '@views';
 import { capabilities } from '../../lib/capabilities';
 import { GitHubLinkRow } from './GitHubLinkRow';
 

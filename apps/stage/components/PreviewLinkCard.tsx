@@ -1,7 +1,7 @@
 
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import { listRoot, openUrlAction, previewLinkCard } from '@stage-labs/views';
+import { listRoot, openUrlAction, previewLinkCard } from '@views';
 import { capabilities } from '../lib/capabilities';
 import { previewLinkOf } from '../lib/previewLinkDetect';
 

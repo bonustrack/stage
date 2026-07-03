@@ -13,7 +13,7 @@ import {
   walletBalanceHeroNode,
   walletTotalUsd,
   WALLET_ACTION_PRESS,
-} from '@stage-labs/views';
+} from '@views';
 import { useRouter } from 'expo-router';
 import { flash } from '../../lib/toast';
 import { usePeerProfiles } from '../../lib/peerProfiles';

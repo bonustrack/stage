@@ -6,7 +6,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { ListViewNode, PayloadHandlers } from '@stage-labs/kit/kit';
-import { tokenRow, WALLET_TOKEN_PRESS } from '@stage-labs/views';
+import { tokenRow, WALLET_TOKEN_PRESS } from '@views';
 import { fmtUsd, fmtBalance } from '@stage-labs/client/wallet/format';
 import { Box, Row, Col } from '../../components/layout';
 import { AppModal } from '../../components/AppModal';

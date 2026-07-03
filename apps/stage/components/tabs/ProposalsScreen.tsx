@@ -9,7 +9,7 @@ import {
   proposalsEmptyLabel,
   proposalsHeaderNode,
   proposalsPositionLabel,
-} from '@stage-labs/views';
+} from '@views';
 import { capabilities } from '../../lib/capabilities';
 import { Col, Box } from '../layout';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';

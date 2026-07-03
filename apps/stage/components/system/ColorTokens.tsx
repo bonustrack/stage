@@ -14,7 +14,7 @@ import type { GalleryPalette } from './galleryPalette';
 import { AppModal } from '../AppModal';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers, WidgetRoot } from '@stage-labs/kit/kit';
-import { basicRoot } from '@stage-labs/views';
+import { basicRoot } from '@views';
 import { isHex } from '../../lib/colorOverrides';
 import {
   fontSize, type Density, type RadiusName, type BaseSize,

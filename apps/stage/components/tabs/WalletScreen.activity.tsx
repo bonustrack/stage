@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { BasicNode } from '@stage-labs/kit/kit';
-import { basicRoot, txRow, txRowModel } from '@stage-labs/views';
+import { basicRoot, txRow, txRowModel } from '@views';
 import { Spinner } from '../Spinner';
 import { Col, Box } from '../layout';
 import { DANGER } from '../../lib/theme';

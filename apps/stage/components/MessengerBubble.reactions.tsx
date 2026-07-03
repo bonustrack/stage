@@ -5,7 +5,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Row } from './layout';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import { basicRoot, reactionsRow, REACTION_PRESS, type ReactionPill } from '@stage-labs/views';
+import { basicRoot, reactionsRow, REACTION_PRESS, type ReactionPill } from '@views';
 import { REACT_PRESETS } from './MessengerBubble.helpers';
 import { usePalette } from '../lib/theme';
 

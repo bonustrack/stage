@@ -7,7 +7,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import { basicRoot, labelRow, LABEL_REMOVE } from '@stage-labs/views';
+import { basicRoot, labelRow, LABEL_REMOVE } from '@views';
 import { Box, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 import { flash } from '../../lib/toast';

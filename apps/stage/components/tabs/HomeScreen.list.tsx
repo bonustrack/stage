@@ -18,7 +18,7 @@ import { HomeContactResults } from './HomeScreen.contacts';
 import { HomeOverflowMenu } from './HomeScreen.overflow';
 import { usePublishTopnavSlot } from './topnavSlots';
 import { getActiveAccount } from '../../lib/accounts';
-import { unreadBadgeLabel } from '@stage-labs/views';
+import { unreadBadgeLabel } from '@views';
 
 interface ChannelsListProps {
   panRef?: import('../SwipeTabs.types').SimultaneousRefs;

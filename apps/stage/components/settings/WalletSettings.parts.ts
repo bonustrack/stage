@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { KERNEL_VERSION_STRING, ENTRY_POINT_VERSION, SCW_CHAIN_ID } from '@stage-labs/client/zerodev/config';
-import type { WalletDeployState, WalletModuleRole } from '@stage-labs/views';
+import type { WalletDeployState, WalletModuleRole } from '@views';
 import { getActiveAccount, type AccountRecord } from '../../lib/accounts';
 import { makePublicClient } from '../../lib/zerodev/client';
 

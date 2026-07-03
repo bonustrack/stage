@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@stage-labs/kit/react-native/text';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import { backAction, settingsHeader, walletAccountNode, walletAddressNode } from '@stage-labs/views';
+import { backAction, settingsHeader, walletAccountNode, walletAddressNode } from '@views';
 import { capabilities } from '../../lib/capabilities';
 import { Col } from '../layout';
 import { useBlockRadius, useEffectiveColorScheme, usePalette } from '../../lib/theme';

@@ -1,5 +1,5 @@
 import { describe, test } from 'bun:test';
-import { screenHeader } from '../src/chrome/screenHeader';
+import { screenHeader } from '../views/chrome/screenHeader';
 import { snap } from './helpers';
 
 describe('screenHeader', () => {

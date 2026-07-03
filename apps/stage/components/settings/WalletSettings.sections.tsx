@@ -15,7 +15,7 @@ import {
   walletModuleRow,
   SETTINGS_ACTION_PRESS,
   SETTINGS_COPY,
-} from '@stage-labs/views';
+} from '@views';
 import { Box } from '../layout';
 import { usePalette } from '../../lib/theme';
 import { type DeployState, type useWalletModel } from './WalletSettings.parts';

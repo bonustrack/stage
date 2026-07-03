@@ -14,7 +14,7 @@ import {
   settingsHeader,
   settingsThemeRow,
   SETTINGS_THEME_SELECT,
-} from '@stage-labs/views';
+} from '@views';
 import { capabilities } from '../../lib/capabilities';
 import {
   setThemePreference, setCustomTheme, useCustomTheme,

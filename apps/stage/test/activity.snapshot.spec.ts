@@ -1,5 +1,5 @@
 import { describe, test } from 'bun:test';
-import { txRow } from '../src/activity/txRow';
+import { txRow } from '../views/activity/txRow';
 import { snap } from './helpers';
 
 const TX_BASE = {

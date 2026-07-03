@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import { channelsLabelBarActions, channelsLabelBarNode } from '@stage-labs/views';
+import { channelsLabelBarActions, channelsLabelBarNode } from '@views';
 import { Box } from '../layout';
 import { usePalette } from '../../lib/theme';
 import type { SimultaneousRefs } from '../SwipeTabs.types';

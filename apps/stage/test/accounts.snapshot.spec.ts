@@ -1,12 +1,12 @@
 import { describe, test } from 'bun:test';
-import { accountRow } from '../src/accounts/accountRow';
-import { contactRow } from '../src/accounts/contactRow';
-import { memberAddForm } from '../src/accounts/memberAddForm';
-import { memberChip } from '../src/accounts/memberChip';
-import { memberRow } from '../src/accounts/memberRow';
-import { memberTextField } from '../src/accounts/memberTextField';
-import { suggestionRow } from '../src/accounts/suggestionRow';
-import { topnavIdentity } from '../src/accounts/topnavIdentity';
+import { accountRow } from '../views/accounts/accountRow';
+import { contactRow } from '../views/accounts/contactRow';
+import { memberAddForm } from '../views/accounts/memberAddForm';
+import { memberChip } from '../views/accounts/memberChip';
+import { memberRow } from '../views/accounts/memberRow';
+import { memberTextField } from '../views/accounts/memberTextField';
+import { suggestionRow } from '../views/accounts/suggestionRow';
+import { topnavIdentity } from '../views/accounts/topnavIdentity';
 import { snap } from './helpers';
 
 describe('accountRow', () => {

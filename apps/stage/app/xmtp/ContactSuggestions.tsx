@@ -3,7 +3,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import type { PayloadHandlers, WidgetRoot } from '@stage-labs/kit/kit';
 import { stampAvatarUrl } from '@stage-labs/kit/avatar';
-import { suggestionRow, SUGGESTION_TOGGLE } from '@stage-labs/views';
+import { suggestionRow, SUGGESTION_TOGGLE } from '@views';
 import { usePalette } from '../../lib/theme';
 import { shortAddress } from '../../modules/messaging';
 import type { Contact } from '../../lib/useContacts';

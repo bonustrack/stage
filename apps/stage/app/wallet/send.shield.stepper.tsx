@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import { basicRoot, stepper, type StepperStep } from '@stage-labs/views';
+import { basicRoot, stepper, type StepperStep } from '@views';
 import { Col } from '../../components/layout';
 
 interface Pal { sub: string; head: string; link: string }

@@ -13,7 +13,7 @@ import {
   walletTabs,
   WALLET_TAB_CHANGE,
   WALLET_TOKEN_PRESS,
-} from '@stage-labs/views';
+} from '@views';
 import { Box, Row } from '../layout';
 import { type AssetRow } from './WalletScreen.assets';
 import { TokenAvatar } from './WalletScreen.tokenAvatar';
