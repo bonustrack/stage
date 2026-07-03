@@ -2,7 +2,7 @@
 import { Client, ConsentState, IdentifierKind, type Conversation } from '@xmtp/browser-sdk';
 import { secureStorage } from '../platform/storage';
 import {
-  getActiveAccount, markRegistered,
+  getActiveAccount,
   loadAccounts, setActiveAccountId, removeAccount, clearAllAccounts,
   type AccountRecord,
 } from './accounts';
@@ -14,15 +14,13 @@ import {
 } from './xmtp.state.web';
 import { type XmtpEnv, convIdOfLine, lineOfConv } from './xmtp.types';
 import { deleteDbKey, deleteLegacyDbKey, deleteDbFiles } from './xmtp.dbkey.web';
+import { createClientForAccount } from './xmtp.recover.web';
 import {
   webXmtpDbPath, canReuseSavedClient, installationCreatedAtMs,
 } from '@stage-labs/client/xmtp/clientConfig';
 
 export { getCachedXmtpClient, waitForXmtpReady } from './xmtp.state.web';
-
-export async function ensureActiveAccount(): Promise<void> {
-  await getActiveAccount();
-}
+export { ensureActiveAccount } from './xmtp.recover.web';
 
 export class NoAccountError extends Error {
   constructor() { super('No account — onboarding not completed yet.'); this.name = 'NoAccountError'; }
@@ -74,12 +72,10 @@ async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<
       return await finalizeClient(built, rec, env);
     } catch { }
   }
-  const signer = await signerForRecord(rec);
-  const created = await Client.create(signer, opts);
+  const created = await createClientForAccount(rec, env, { env, dbPath, codecs: XMTP_CODECS });
   await setSecure(addressKeyFor(rec.id), address);
   await setSecure(envKeyFor(rec.id), env);
-  await markRegistered(rec.id);
-  return finalizeClient(created, rec, env);
+  return created;
 }
 
 function disposeCachedClient(): void {
