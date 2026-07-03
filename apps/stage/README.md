@@ -4,7 +4,7 @@
 
 ## Overview
 
-`app` is the Stage mobile client, built with Expo and React Native. It is an XMTP messenger with multi-account support, Snapshot profiles, group channels, search, and an onchain wallet (assets, balances, and Railgun shielded transfers). It is the mobile counterpart to the Vue web client in [`apps/ui`](../ui).
+`stage` is the universal Stage app, built with Expo and React Native, serving Android, iOS, and the web (via react-native-web) from one codebase. It is an XMTP messenger with multi-account support, Snapshot profiles, group channels, search, and an onchain wallet (assets, balances, and Railgun shielded transfers; the web wallet is public-only by design). Per-platform code lives solely in Metro platform extensions (`x.ts` native / `x.web.ts` web) under `platform/` and `lib/`.
 
 All platform-neutral logic comes from [`@stage-labs/client`](../../packages/client) and the visual language from [`@stage-labs/kit`](../../packages/kit), so behaviour and design stay in step with the web app. The Railgun engine runs on-device through a `nodejs-mobile` bridge.
 
@@ -18,19 +18,20 @@ All platform-neutral logic comes from [`@stage-labs/client`](../../packages/clie
 ## Setup
 
 ```sh
-bun install                 # from the repo root, installs apps/app too
+bun install                 # from the repo root, installs apps/stage too
 ```
 
 ## Usage
 
 ```sh
-bun --cwd apps/app start    # launch the Expo bundler
-bun --cwd apps/app android  # build + run on Android
-bun --cwd apps/app ios      # build + run on iOS
-bun --cwd apps/app web      # run in the browser (limited)
+bun --cwd apps/stage start    # launch the Expo bundler
+bun --cwd apps/stage android  # build + run on Android
+bun --cwd apps/stage ios      # build + run on iOS
+bun --cwd apps/stage web      # run in the browser
+bun --cwd apps/stage run build:web  # static web export (Netlify publishes dist/)
 ```
 
-> Note: Expo's RN bundler is itself called Metro, a naming collision with the Metro chat/orchestrator product. The bundler here is `bun --cwd apps/app start`. New native modules require a fresh dev-client / APK build, not just a JS reload.
+> Note: Expo's RN bundler is itself called Metro, a naming collision with the Metro chat/orchestrator product. The bundler here is `bun --cwd apps/stage start`. New native modules require a fresh dev-client / APK build, not just a JS reload.
 
 ## Project structure
 
@@ -61,4 +62,3 @@ eas.json      # EAS build profiles
 
 - Shared logic: [`@stage-labs/client`](../../packages/client)
 - Design tokens: [`@stage-labs/kit`](../../packages/kit)
-- Web counterpart: [`apps/ui`](../ui)

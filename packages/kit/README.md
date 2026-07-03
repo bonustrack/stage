@@ -4,9 +4,9 @@
 
 ## Overview
 
-`@stage-labs/kit` is the single source of truth for how Stage looks. It ships the colour and spacing tokens, HeroIcon path data, station icon definitions, avatar helpers, and the theme-preference contract shared by the Vue web app ([`apps/ui`](../../apps/ui)) and the React Native app ([`apps/app`](../../apps/app)).
+`@stage-labs/kit` is the single source of truth for how Stage looks. It ships the colour and spacing tokens, HeroIcon path data, station icon definitions, avatar helpers, the theme-preference contract, one React Native component family (rendering on web via react-native-web), and the JSON `KitRenderer`/`ViewHost` (45 node types, registry-enforced) consumed by the universal app ([`apps/stage`](../../apps/stage)).
 
-Most of the package is framework-agnostic data so both clients stay visually identical from one place. The few primitive components it exports (`button`, `text`, `title`, `icon`) target React / React Native via peer dependencies; the web renderers stay in `apps/ui`.
+Style logic lives in framework-free core modules (`text.styles.ts`, `button.styles.ts`, `control.styles.ts`, `layout.ts`); components target React Native via peer dependencies and render on every platform, web included.
 
 ## Install
 
@@ -59,5 +59,5 @@ src/
 
 ## Links
 
-- Consumed by [`apps/ui`](../../apps/ui) and [`apps/app`](../../apps/app)
+- Consumed by [`apps/stage`](../../apps/stage)
 - Shared logic lives in [`@stage-labs/client`](../client)
