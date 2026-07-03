@@ -31,6 +31,7 @@ export default defineConfig({
           'eslint.js',
           'app/**/*.{ts,tsx}',
           'babel.config.js',
+          'lib/**/*.web.ts',
           'modules/**/*.{ts,tsx}',
           'platform/**/*.ts',
           'plugins/**/*.{js,ts}',
@@ -39,7 +40,6 @@ export default defineConfig({
         ],
         project: ['app/**', 'components/**', 'lib/**', 'modules/**', 'platform/**'],
         ignoreDependencies: [
-          '@xmtp/browser-sdk',
           'buffer',
           'crypto-browserify',
           'path-browserify',
