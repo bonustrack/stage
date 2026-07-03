@@ -65,8 +65,26 @@ config.resolver.extraNodeModules = {
   ...Object.fromEntries(emptyShimNames.map((name) => [name, emptyShim])),
 };
 
+const WEB_NATIVE_STUBS = new Set([
+  '@xmtp/react-native-sdk',
+  'nodejs-mobile-react-native',
+  'react-native-passkeys',
+  '@railgun-privacy/native-prover',
+]);
+const webNativeStub = path.resolve(projectRoot, 'metro.shims', 'web', 'native-stub.js');
+const webSecureStore = path.resolve(projectRoot, 'metro.shims', 'web', 'secure-store.js');
+
 const upstreamResolveRequest = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (platform === 'web') {
+    const bare = moduleName.split('/').slice(0, moduleName.startsWith('@') ? 2 : 1).join('/');
+    if (WEB_NATIVE_STUBS.has(bare)) {
+      return { type: 'sourceFile', filePath: webNativeStub };
+    }
+    if (bare === 'expo-secure-store') {
+      return { type: 'sourceFile', filePath: webSecureStore };
+    }
+  }
   const resolved = upstreamResolveRequest
     ? upstreamResolveRequest(context, moduleName, platform)
     : context.resolveRequest(context, moduleName, platform);
