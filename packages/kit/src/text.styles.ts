@@ -34,13 +34,6 @@ export const TEXT_FONTS: Record<'normal' | 'medium' | 'semibold' | 'bold', strin
   bold: 'Calibre-Semibold',
 };
 
-export const TEXT_WEIGHT_NUM: Record<'normal' | 'medium' | 'semibold' | 'bold', string> = {
-  normal: '500',
-  medium: '500',
-  semibold: '600',
-  bold: '600',
-};
-
 export function normalizeTextWeight(w: TextWeight): keyof typeof TEXT_FONTS {
   return w === 'regular' ? 'normal' : w;
 }

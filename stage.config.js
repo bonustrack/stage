@@ -6,10 +6,7 @@ import { viewsEslint } from './packages/views/eslint.js';
 
 const ROOT_DIR = fileURLToPath(new URL('.', import.meta.url));
 
-const vuePlugin = await import('eslint-plugin-vue').then((m) => m.default ?? m);
-const vueParser = await import('vue-eslint-parser').then((m) => m.default ?? m);
 
-const kitVueOptions = { vueParser, vuePlugin, rootDir: ROOT_DIR };
 
 export default defineConfig({
   workspaces: {
@@ -63,9 +60,8 @@ export default defineConfig({
     },
     'packages/kit': {
       type: 'library',
-      vue: true,
-      eslint: { preset: 'none', extends: kitEslint(kitVueOptions) },
-      knip: { entry: ['eslint.js'], vue: true },
+      eslint: { preset: 'none', extends: kitEslint() },
+      knip: { entry: ['eslint.js'] },
     },
     'packages/views': {
       type: 'library',
@@ -78,7 +74,7 @@ export default defineConfig({
       knip: {
         entry: ['eslint/*.js', 'knip/*.js', 'bin/*.js'],
         project: ['**/*.js'],
-        ignoreDependencies: ['madge'],
+        ignoreDependencies: ['madge', 'eslint-plugin-vue', 'vue-eslint-parser'],
       },
     },
   },

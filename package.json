@@ -2,7 +2,7 @@
   "name": "stage-monorepo",
   "private": true,
   "version": "0.0.0",
-  "description": "Stage — an XMTP messenger with multi-account support, Snapshot profiles, group channels, and an onchain wallet, with parallel Vue web and Expo mobile clients.",
+  "description": "Stage \u2014 an XMTP messenger with multi-account support, Snapshot profiles, group channels, and an onchain wallet, with parallel Vue web and Expo mobile clients.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -30,13 +30,11 @@
   "devDependencies": {
     "@stage-labs/config": "workspace:*",
     "eslint": "^10.3.0",
-    "eslint-plugin-vue": "^10.0.0",
     "knip": "^6.15.0",
     "madge": "^8.0.0",
     "turbo": "^2.3.3",
     "typescript": "~5.9.2",
-    "typescript-eslint": "^8.59.2",
-    "vue-eslint-parser": "^10.0.0"
+    "typescript-eslint": "^8.59.2"
   },
   "packageManager": "bun@1.3.9",
   "engines": {
