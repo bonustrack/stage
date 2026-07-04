@@ -1,7 +1,8 @@
 
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
-import { highlightSegments, HIGHLIGHT_BG } from '@views';
+import { highlightSegments } from './HighlightText.model';
+import { HIGHLIGHT_BG } from '../lib/uiColors';
 import { Row } from './layout';
 
 export function HighlightText({ text, query, fg }: {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { bubbleTimestamp, channelTimestamp, unreadBadgeLabel } from '../views/format';
+import { bubbleTimestamp, channelTimestamp, unreadBadgeLabel } from '../lib/format';
 
 describe('unreadBadgeLabel', () => {
   test('returns undefined when count is zero and not marked unread', () => {

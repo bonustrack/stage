@@ -80,7 +80,6 @@ export default defineConfig({
       'apps/stage/lib',
       'apps/stage/modules',
       'apps/stage/platform',
-      'apps/stage/views',
       'apps/proxy/src',
       'packages/client/src',
       'packages/config',

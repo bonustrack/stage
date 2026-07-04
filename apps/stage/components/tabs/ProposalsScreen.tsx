@@ -2,7 +2,7 @@
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { proposalsEmptyLabel, proposalsPositionLabel } from '@views';
+import { proposalsEmptyLabel, proposalsPositionLabel } from './ProposalsScreen.model';
 import { capabilities } from '../../lib/capabilities';
 import { Col, Box } from '../layout';
 import { ScreenHeader } from '../chrome/ScreenHeader';

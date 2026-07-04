@@ -12,7 +12,7 @@ import { shortAddress } from '../modules/messaging';
 import { hasDraft, getDraft } from '../lib/drafts';
 import { isPinned } from '../lib/pins';
 import type { ProfileColors } from './ProfileScreen.parts';
-import { channelTimestamp } from '@views';
+import { channelTimestamp } from '../lib/format';
 
 export function CommonChannels({ peerAddress, enabled, c }: {
   peerAddress: string | null;

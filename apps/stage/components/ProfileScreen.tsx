@@ -12,7 +12,7 @@ import { Avatar } from './Avatar';
 import { Box, Col } from './layout';
 import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { profileDisplayName } from '@views';
+import { profileDisplayName } from './ProfileScreen.model';
 import { capabilities } from '../lib/capabilities';
 import { ImageViewer } from './ImageViewer';
 import {

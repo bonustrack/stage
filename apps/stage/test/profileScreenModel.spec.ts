@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { profileDisplayName } from '../views/profile/profileScreenModel';
+import { profileDisplayName } from '../components/ProfileScreen.model';
 
 describe('profileDisplayName', () => {
   test('empty address shows loading placeholder', () => {

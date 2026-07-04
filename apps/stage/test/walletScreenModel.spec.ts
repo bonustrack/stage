@@ -3,7 +3,7 @@ import {
   walletHeroDisplay,
   walletTabOptions,
   walletTotalUsd,
-} from '../views/wallet/walletScreenModel';
+} from '../components/tabs/WalletScreen.model';
 
 describe('walletTabOptions', () => {
   test('defaults to the web three-tab list', () => {

@@ -12,12 +12,9 @@ import { resolveColorToken } from '@stage-labs/kit/tokens';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { Avatar } from './Avatar';
 import { Row, Col, Box } from './layout';
-import {
-  channelRowModel,
-  unreadBadgeLabel,
-  HIGHLIGHT_BG,
-  type ChannelRowParams,
-} from '@views';
+import { channelRowModel, type ChannelRowParams } from './ChannelRow.model';
+import { unreadBadgeLabel } from '../lib/format';
+import { HIGHLIGHT_BG } from '../lib/uiColors';
 import { usePalette } from '../lib/theme';
 
 export interface ChannelRowProps {

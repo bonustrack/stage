@@ -6,7 +6,7 @@ import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { stampAvatarUrl } from '@stage-labs/kit/avatar';
-import { ON_PRIMARY_COLOR } from '@views';
+import { ON_PRIMARY_COLOR } from '../../lib/uiColors';
 import { usePalette } from '../../lib/theme';
 import { shortAddress } from '../../modules/messaging';
 import type { Contact } from '../../lib/useContacts';

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { channelMenuItems } from '../views/chat/channelMenu';
+import { channelMenuItems } from '../components/ChannelMenu.model';
 
 describe('channelMenuItems', () => {
   test('full mobile feature set for a group matches the legacy item list', () => {

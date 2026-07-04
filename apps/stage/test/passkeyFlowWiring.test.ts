@@ -19,7 +19,7 @@ const drawerSrc = code(read('components', 'LeftDrawer.accounts.tsx'));
 const disableSrc = code(read('lib', 'zerodev', 'disablePasskey.ts'));
 const walletSettingsSrc = code(read('components', 'settings', 'WalletSettings.tsx'))
   + code(read('components', 'settings', 'WalletSettings.sections.tsx'))
-  + code(read('views', 'settings', 'walletSections.ts'));
+  + code(read('components', 'settings', 'WalletSettings.model.ts'));
 const removeHookSrc = code(read('lib', 'useRemovePasskey.ts'));
 
 describe('A. create.ts — create is passkey-AGNOSTIC (ECDSA-owner only)', () => {

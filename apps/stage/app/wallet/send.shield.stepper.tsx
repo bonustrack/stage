@@ -5,10 +5,11 @@ import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { resolveColorToken } from '@stage-labs/kit/tokens';
+import { DANGER_COLOR, SUCCESS_COLOR } from '../../lib/uiColors';
 import {
-  DANGER_COLOR, SUCCESS_COLOR, shieldStepperSteps,
+  shieldStepperSteps,
   type ShieldStage, type StepState, type StepperStep,
-} from '@views';
+} from './send.shield.stepper.model';
 import { Box, Col, Row } from '../../components/layout';
 
 export type { ShieldStage };

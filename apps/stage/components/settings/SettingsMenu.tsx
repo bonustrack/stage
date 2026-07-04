@@ -6,7 +6,7 @@ import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Col, Box } from '../layout';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { SETTINGS_MENU_ITEMS } from '@views';
+import { SETTINGS_MENU_ITEMS } from './SettingsMenu.model';
 import { capabilities } from '../../lib/capabilities';
 import { resetForOnboarding } from '../../lib/wallet';
 import { resetEverything } from '../../lib/resetEverything';

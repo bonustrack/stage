@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { txRowModel } from '../views/activity/txRowModel';
+import { txRowModel } from '../components/tabs/WalletScreen.activity.model';
 
 const base = {
   direction: 'receive' as const,

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { SETTINGS_MENU_ITEMS } from '../views/settings/settingsMenu';
+import { SETTINGS_MENU_ITEMS } from '../components/settings/SettingsMenu.model';
 
 describe('settingsMenu', () => {
   test('menu items list the seven settings sections in order', () => {

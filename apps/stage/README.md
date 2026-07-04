@@ -6,7 +6,7 @@
 
 `stage` is the universal Stage app, built with Expo and React Native, serving Android, iOS, and the web (via react-native-web) from one codebase. It is an XMTP messenger with multi-account support, Snapshot profiles, group channels, search, and an onchain wallet (assets, balances, and Railgun shielded transfers; the web wallet is public-only by design). Per-platform code lives solely in Metro platform extensions (`x.ts` native / `x.web.ts` web) under `platform/` and `lib/`.
 
-All platform-neutral logic comes from [`@stage-labs/client`](../../packages/client) and the visual language from [`@stage-labs/kit`](../../packages/kit). Screens and chat message content are direct kit JSX fed by pure models from `views/` (`@views`). The Railgun engine runs on-device through a `nodejs-mobile` bridge (mobile only).
+All platform-neutral logic comes from [`@stage-labs/client`](../../packages/client) and the visual language from [`@stage-labs/kit`](../../packages/kit). Screens and chat message content are direct kit JSX fed by pure `.model.ts` files colocated with their components. The Railgun engine runs on-device through a `nodejs-mobile` bridge (mobile only).
 
 ## Stack
 
@@ -37,8 +37,7 @@ bun --cwd apps/stage run build:web  # static web export (Netlify publishes dist/
 
 ```
 app/          # expo-router routes (tabs, group, user, wallet, settings, xmtp, accounts)
-components/   # screen + UI components in kit JSX (chrome/, settings/, wallet/, ...)
-views/        # pure screen models + chat-widget builders, imported as @views
+components/   # screen + UI components in kit JSX (chrome/, settings/, wallet/, ...) with colocated *.model.ts files
 platform/     # per-platform seams (x.ts native / x.web.ts web overrides)
 lib/          # accounts, caches, XMTP glue (incl. xmtp.*.web adapters), wallet helpers
 modules/      # local Expo native modules (metro-pill)

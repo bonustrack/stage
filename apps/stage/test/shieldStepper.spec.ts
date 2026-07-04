@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { shieldStepperSteps } from '../views/wallet/shieldStepper';
+import { shieldStepperSteps } from '../app/wallet/send.shield.stepper.model';
 
 const LABELS = [
   'Submitting transaction',

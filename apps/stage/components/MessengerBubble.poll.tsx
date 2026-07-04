@@ -2,7 +2,7 @@
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { pollQuestionBlocks, type PollOptionRow, type PollQuestionBlock } from '@views';
+import { pollQuestionBlocks, type PollOptionRow, type PollQuestionBlock } from './MessengerBubble.poll.model';
 import { Box, Col, Row } from './layout';
 import type { Poll } from './MessengerBubble.helpers';
 import { usePalette, withAlpha } from '../lib/theme';

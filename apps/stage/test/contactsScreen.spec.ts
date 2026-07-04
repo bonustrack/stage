@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { contactNameModel, contactsEmptyLabel } from '../views/accounts/contactsScreen';
+import { contactNameModel, contactsEmptyLabel } from '../components/ContactsScreen.model';
 
 describe('contactNameModel', () => {
   test('resolved name shows with short address handle', () => {

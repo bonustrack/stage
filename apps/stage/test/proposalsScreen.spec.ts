@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { proposalsEmptyLabel, proposalsPositionLabel } from '../views/proposals/proposalsScreen';
-import { proposalKindLabel } from '../views/proposals/proposalHeader';
+import { proposalKindLabel, proposalsEmptyLabel, proposalsPositionLabel } from '../components/tabs/ProposalsScreen.model';
 
 describe('proposalsScreen', () => {
   test('empty label switches between loading and empty copy', () => {

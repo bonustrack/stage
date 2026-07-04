@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { highlightSegments } from '../views/chat/highlightText';
+import { highlightSegments } from '../components/HighlightText.model';
 
 describe('highlightSegments', () => {
   test('empty query yields one non-match segment', () => {

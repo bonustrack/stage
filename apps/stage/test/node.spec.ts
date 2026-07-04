@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { compactList } from '../views/node';
+import { compactList } from '../components/ChannelMenu.model';
 
 describe('compactList', () => {
   test('filters undefined and null entries', () => {

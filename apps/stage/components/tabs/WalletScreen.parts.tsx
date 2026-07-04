@@ -4,7 +4,7 @@ import { memo } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Tabs } from '@stage-labs/kit/react-native/tabs';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
-import { tokenRowModel, walletTabOptions } from '@views';
+import { tokenRowModel, walletTabOptions } from './WalletScreen.model';
 import { Box, Row } from '../layout';
 import { type AssetRow } from './WalletScreen.assets';
 import { TokenAvatar } from './WalletScreen.tokenAvatar';

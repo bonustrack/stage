@@ -5,7 +5,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
 import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { channelsLabelChips, selectChannelsFilter } from '@views';
+import { channelsLabelChips, selectChannelsFilter } from './HomeScreen.model';
 import { Box, Row } from '../layout';
 import { usePalette } from '../../lib/theme';
 import type { SimultaneousRefs } from '../SwipeTabs.types';

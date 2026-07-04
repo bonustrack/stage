@@ -4,7 +4,7 @@ import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { TextField } from '@stage-labs/kit/react-native/text-field';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
-import { DANGER_COLOR } from '@views';
+import { DANGER_COLOR } from '../../lib/uiColors';
 import { toggleAmountUnit } from '@stage-labs/client/wallet/sendAmount';
 import { usePalette } from '../../lib/theme';
 import { Col, Row } from '../../components/layout';

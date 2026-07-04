@@ -2,7 +2,7 @@
 import { useMemo } from 'react';
 import { AudioPlayer } from '@stage-labs/kit/react-native/audio-player';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
-import { VOICE_ACCENT, VOICE_ON_ACCENT } from '@views';
+import { VOICE_ACCENT, VOICE_ON_ACCENT } from '../lib/uiColors';
 import { VOICE_BAR_COUNT, voiceWaveformBars } from '@stage-labs/client/xmtp/voice';
 import { Box, Row } from './layout';
 import { useDecodedBars } from './VoiceMessage.barsCache';

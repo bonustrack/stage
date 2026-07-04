@@ -9,7 +9,7 @@ import type { SimultaneousRefs } from '../SwipeTabs.types';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Title } from '@stage-labs/kit/react-native/title';
-import { walletHeroDisplay, walletTotalUsd } from '@views';
+import { walletHeroDisplay, walletTotalUsd } from './WalletScreen.model';
 import { WalletActionButton } from '../wallet/widgets';
 import { useRouter } from 'expo-router';
 import { flash } from '../../lib/toast';

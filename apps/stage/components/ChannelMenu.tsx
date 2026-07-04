@@ -9,7 +9,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { resolveColorToken } from '@stage-labs/kit/tokens';
 import { Box, Row } from './layout';
-import { channelMenuItems, type MenuSheetItem } from '@views';
+import { channelMenuItems, type MenuSheetItem } from './ChannelMenu.model';
 import { AppModal } from './AppModal';
 import { markConvRead, markConvUnread } from '../modules/messaging';
 import { togglePin } from '../lib/pins';

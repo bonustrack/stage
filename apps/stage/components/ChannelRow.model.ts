@@ -1,6 +1,6 @@
 import type { BadgeColor } from '@stage-labs/kit/kit';
-import { channelTimestamp, unreadBadgeLabel } from '../format';
-import { highlightSegments } from './highlightText';
+import { channelTimestamp, unreadBadgeLabel } from '../lib/format';
+import { highlightSegments } from './HighlightText.model';
 
 export interface ChannelLabelChip {
   label: string;

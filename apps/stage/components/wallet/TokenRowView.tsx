@@ -4,7 +4,7 @@ import { Image } from '@stage-labs/kit/react-native/image';
 import { Spacer } from '@stage-labs/kit/react-native/spacer';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
-import { changeColor } from '@views';
+import { changeColor } from '../../lib/uiColors';
 import { Col, Row } from '../layout';
 import { SoftBadge, WalletIcon } from './widgets';
 

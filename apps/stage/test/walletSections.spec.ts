@@ -4,7 +4,7 @@ import {
   walletAccountRows,
   walletDeployLabel,
   walletManageItems,
-} from '../views/settings/walletSections';
+} from '../components/settings/WalletSettings.model';
 
 describe('walletDeployLabel', () => {
   test('maps every deploy state to its label', () => {

@@ -13,7 +13,7 @@ import {
   type WalletManageAction,
   type WalletModuleRole,
   type WalletPasskeyAction,
-} from '@views';
+} from './WalletSettings.model';
 import { Box, Col, Row } from '../layout';
 import { usePalette } from '../../lib/theme';
 import { type DeployState, type useWalletModel } from './WalletSettings.parts';

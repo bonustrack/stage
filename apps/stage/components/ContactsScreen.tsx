@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import { FlatList } from 'react-native-gesture-handler';
 import { useRouter } from 'expo-router';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { contactNameModel, contactsEmptyLabel } from '@views';
+import { contactNameModel, contactsEmptyLabel } from './ContactsScreen.model';
 import type { SimultaneousRefs } from './SwipeTabs.types';
 import { Col } from './layout';
 import { ChannelRow } from './ChannelRow';

@@ -4,10 +4,8 @@ import { useEffect, useState } from 'react';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
-import {
-  DANGER_COLOR, SUCCESS_COLOR, txRowModel,
-  type TxDirection, type TxRowParams,
-} from '@views';
+import { DANGER_COLOR, SUCCESS_COLOR } from '../../lib/uiColors';
+import { txRowModel, type TxDirection, type TxRowParams } from './WalletScreen.activity.model';
 import { Spinner } from '../Spinner';
 import { Col, Box, Row } from '../layout';
 import { DANGER } from '../../lib/theme';
