@@ -10,10 +10,6 @@ export const CHANNEL_LABEL_PRESS = 'chat.channel.labelPress';
 
 export const CHANNEL_PIN = 'chat.channel.pin';
 
-export const MEMBER_PRESS = 'accounts.member.press';
-
-export const MEMBER_REMOVE = 'accounts.member.remove';
-
 export const CONTACT_PRESS = 'contacts.contact.press';
 
 export const PROFILE_INFO_PRESS = 'profile.info.press';
@@ -46,8 +42,6 @@ export const BANNER_PRESS = 'banner.press';
 
 export const ONBOARDING_ACTION_PRESS = 'onboarding.action.press';
 
-export const LABEL_REMOVE = 'group.label.remove';
-
 export const VOICE_PLAY = 'chat.voice.play';
 
 export const VIDEO_PLAY = 'chat.video.play';
@@ -64,8 +58,6 @@ export const COMPOSER_PENDING_REMOVE = 'chat.composer.pendingRemove';
 
 export const MEMBER_CHIP_REMOVE = 'accounts.memberChip.remove';
 
-export const SUGGESTION_TOGGLE = 'contacts.suggestion.toggle';
-
 export const FILTER_SELECT = 'chat.filter.select';
 
 export const LABEL_CHIP_PRESS = 'chat.labelBar.chipPress';
@@ -73,13 +65,5 @@ export const LABEL_CHIP_PRESS = 'chat.labelBar.chipPress';
 export const MEMBER_ADD_CHANGE = 'accounts.memberAdd.change';
 
 export const MEMBER_ADD_SUBMIT = 'accounts.memberAdd.submit';
-
-export const GROUP_EDIT_CHANGE = 'group.edit.change';
-
-export const GROUP_EDIT_SAVE = 'group.edit.save';
-
-export const MEMBER_FIELD_CHANGE = 'accounts.memberField.change';
-
-export const MEMBER_FIELD_SUBMIT = 'accounts.memberField.submit';
 
 export const SCREEN_BACK = 'screen.back';

@@ -1,26 +1,44 @@
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Box } from '../../components/layout';
+import { Caption } from '@stage-labs/kit/react-native/caption';
+import { Image } from '@stage-labs/kit/react-native/image';
+import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
+import { Box, Col, Row } from '../../components/layout';
 import { shortAddress } from '../../modules/messaging';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import {
-  basicRoot, listRoot, memberRow, memberTextField,
-  MEMBER_PRESS, MEMBER_REMOVE, MEMBER_FIELD_CHANGE,
-} from '@views';
+import { memberRowModel, MEMBER_OWNER_BG, MEMBER_OWNER_FG, type MemberRowBadge } from '@views';
 import { stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { AppModal } from '../../components/AppModal';
+import { MemberField } from '../../components/MemberField';
 import { DANGER, usePalette } from '../../lib/theme';
 
 interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }
 
 type MemberRole = 'owner' | 'admin' | 'member' | undefined;
 
-function memberBadgeRole(role: MemberRole): 'owner' | 'admin' | undefined {
-  return role === 'owner' || role === 'admin' ? role : undefined;
+function MemberBadge({ badge, border, sub, dark }: {
+  badge: MemberRowBadge; border: string; sub: string; dark: boolean;
+}): React.ReactElement {
+  const scheme = dark ? 'dark' : 'light';
+  const owner = badge.role === 'owner';
+  return (
+    <Box
+      direction="row"
+      align="center"
+      padding={{ x: 8, y: 2 }}
+      radius="full"
+      background={owner ? MEMBER_OWNER_BG[scheme] : border}
+    >
+      <Text
+        value={badge.label}
+        size="3xs"
+        weight="medium"
+        color={owner ? MEMBER_OWNER_FG[scheme] : sub}
+      />
+    </Box>
+  );
 }
 
 export function MemberRow({
@@ -31,31 +49,49 @@ export function MemberRow({
   dark: boolean; p: Pal; onPress: () => void; onRemove: () => void;
 }): React.ReactElement {
   const { sub, border } = p;
-  const displayName = name == null || name === '' ? shortAddress(item) : name;
-  const node = listRoot(memberRow({
-    memberId: item,
-    avatarUri: stampAvatarUrl(item, 40),
-    name: `${displayName}${isSelf ? ' (you)' : ''}`,
-    address: name ? shortAddress(item) : undefined,
-    role: memberBadgeRole(role),
-    removable: !isSelf,
-    dark,
-    borderColor: border,
-    subColor: sub,
-    dangerColor: DANGER,
-    removePressedBg: dark ? '#3a1820' : '#fbe3e8',
-  }));
-  const actions: PayloadHandlers = {
-    [MEMBER_PRESS]: () => {
-      if (!isRemovingThis) onPress();
-    },
-    [MEMBER_REMOVE]: () => {
-      if (!isRemovingThis) onRemove();
-    },
-  };
+  const model = memberRowModel({ shortAddress: shortAddress(item), name, isSelf, role });
   return (
     <Box style={{ opacity: isRemovingThis ? 0.5 : 1 }}>
-      <ViewHost node={node} actions={actions} />
+      <ListViewItem
+        align="center"
+        gap={12}
+        dark={dark}
+        padding={{ paddingTop: 14, paddingRight: 14, paddingBottom: 14, paddingLeft: 14 }}
+        border={{ bottom: { width: 1, color: border } }}
+        pressedBackground={border}
+        onPress={() => {
+          if (!isRemovingThis) onPress();
+        }}
+      >
+        <Row align="center" gap={12} flex={1}>
+          <Image src={stampAvatarUrl(item, 40)} size={40} radius="full" background={border} />
+          <Col gap={2} flex={1}>
+            <Text value={model.displayName} weight="semibold" truncate />
+            {model.addressLine === undefined ? null : (
+              <Caption value={model.addressLine} color="secondary" truncate />
+            )}
+          </Col>
+          {model.badge === undefined ? null : (
+            <MemberBadge badge={model.badge} border={border} sub={sub} dark={dark} />
+          )}
+          {isSelf ? null : (
+            <Button
+              color="primary"
+              variant="ghost"
+              uniform
+              size="xs"
+              radius={999}
+              dark={dark}
+              tintFg={DANGER}
+              tintPressedBg={dark ? '#3a1820' : '#fbe3e8'}
+              iconStart={<Icon name="trash" size={18} color={DANGER} dark={dark} />}
+              onPress={() => {
+                if (!isRemovingThis) onRemove();
+              }}
+            />
+          )}
+        </Row>
+      </ListViewItem>
     </Box>
   );
 }
@@ -73,26 +109,20 @@ export function AddMemberModal({
     <AppModal visible={visible} onClose={onClose}>
       <Box>
         <Box margin={{ bottom: 10 }}>
-          <ViewHost
-            node={basicRoot(memberTextField({
-              value: addDraft,
-              placeholder: '0x… Ethereum address',
-              color: fg,
-              placeholderColor: sub,
-              inputBg,
-              border,
-              radius: 10,
-              paddingX: 12,
-              paddingY: 10,
-              autoFocus: true,
-              autoCapitalize: 'none',
-              autoCorrect: false,
-            }))}
-            actions={{
-              [MEMBER_FIELD_CHANGE]: (payload) => {
-                if (typeof payload.field === 'string') setAddDraft(payload.field);
-              },
-            }}
+          <MemberField
+            value={addDraft}
+            placeholder="0x… Ethereum address"
+            color={fg}
+            placeholderColor={sub}
+            inputBg={inputBg}
+            border={border}
+            radius={10}
+            paddingX={12}
+            paddingY={10}
+            autoFocus
+            autoCapitalize="none"
+            autoCorrect={false}
+            onChangeText={setAddDraft}
           />
         </Box>
         <Button

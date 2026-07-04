@@ -5,9 +5,8 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Input } from '@stage-labs/kit/react-native/input';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import { basicRoot, labelRow, LABEL_REMOVE } from '@views';
+import { Button } from '@stage-labs/kit/react-native/button';
+import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { Box, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 import { flash } from '../../lib/toast';
@@ -45,17 +44,33 @@ interface Pal { fg: string; head: string; sub: string; border: string; rowBg: st
 function LabelChips({ labels, onRemove, p }: {
   labels: string[]; onRemove: (label: string) => void; p: Pal;
 }): React.ReactElement {
-  const node = basicRoot(labelRow({
-    labels: labels.map((label) => ({ label, removable: true })),
-    background: p.rowBg,
-  }));
-  const actions: PayloadHandlers = {
-    [LABEL_REMOVE]: (payload) => {
-      const label = payload.label;
-      if (typeof label === 'string') onRemove(label);
-    },
-  };
-  return <ViewHost node={node} actions={actions} />;
+  const dark = useKitScheme() === 'dark';
+  return (
+    <Row gap={8} wrap align="center">
+      {labels.map((label) => (
+        <Row
+          key={label}
+          align="center"
+          gap={6}
+          radius="full"
+          background={p.rowBg}
+          padding={{ y: 6, left: 12, right: 8 }}
+        >
+          <Text value={label} size="xs" />
+          <Button
+            color="secondary"
+            variant="ghost"
+            size="sm"
+            dark={dark}
+            iconStart={<Icon name="x" size={18} dark={dark} />}
+            onPress={() => {
+              onRemove(label);
+            }}
+          />
+        </Row>
+      ))}
+    </Row>
+  );
 }
 
 function LabelAddRow({ draft, setDraft, busy, onAdd, p }: {

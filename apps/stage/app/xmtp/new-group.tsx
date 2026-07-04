@@ -3,10 +3,6 @@ import { useCallback, useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { Image } from '@stage-labs/kit/react-native/image';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import type { PayloadHandlers, WidgetRoot } from '@stage-labs/kit/kit';
-import { backAction, basicRoot, memberTextField, screenHeader, MEMBER_FIELD_CHANGE } from '@views';
-import { capabilities } from '../../lib/capabilities';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { useRouter } from 'expo-router';
@@ -15,36 +11,14 @@ import { createGroup } from '../../modules/messaging';
 import { uploadAvatar } from '../../lib/profile';
 import { flash } from '../../lib/toast';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { StackHeader } from '../../components/chrome/StackHeader';
+import { GroupImagePicker } from '../../components/GroupImagePicker';
 import { Box, Col } from '../../components/layout';
+import { MemberField } from '../../components/MemberField';
 import { Spinner } from '../../components/Spinner';
 import { MemberPicker, useMemberPicker } from './MemberPicker';
 
 interface PickedImage { uri: string; mime: string; name: string }
-
-function imagePickerNode(openNonce: number): WidgetRoot {
-  return basicRoot({
-    type: 'FilePicker',
-    openNonce,
-    source: 'library',
-    mediaTypes: ['images'],
-    quality: 0.85,
-    multiple: false,
-    allowsEditing: true,
-    aspect: [1, 1],
-    onPickAction: { type: 'group_image_pick', handler: 'client' },
-  });
-}
-
-function imagePickerActions(setImage: (img: PickedImage) => void): PayloadHandlers {
-  return {
-    group_image_pick: (payload) => {
-      const files = payload.files;
-      const file = Array.isArray(files) ? files[0] as { uri: string; mime: string; name?: string } | undefined : undefined;
-      if (file === undefined) return;
-      setImage({ uri: file.uri, mime: file.mime, name: file.name ?? 'group-avatar' });
-    },
-  };
-}
 
 function GroupImageField({ image, creating, fg, border, rowBg, onPick }: {
   image: PickedImage | null; creating: boolean;
@@ -88,24 +62,18 @@ function GroupNameField({ name, setName, head, sub, inputBg, border }: {
       <Text size="xs" role="secondary">
         Group name (optional)
       </Text>
-      <ViewHost
-        node={basicRoot(memberTextField({
-          value: name,
-          placeholder: 'e.g. Metro builders',
-          color: head,
-          placeholderColor: sub,
-          inputBg,
-          border,
-          radius: 12,
-          paddingX: 14,
-          paddingY: 12,
-        }))}
-        actions={{
-          [MEMBER_FIELD_CHANGE]: (payload) => {
-            if (typeof payload.field === 'string') setName(payload.field);
-          },
-        }}
-/>
+      <MemberField
+        value={name}
+        placeholder="e.g. Metro builders"
+        color={head}
+        placeholderColor={sub}
+        inputBg={inputBg}
+        border={border}
+        radius={12}
+        paddingX={14}
+        paddingY={12}
+        onChangeText={setName}
+      />
     </Col>
   );
 }
@@ -113,22 +81,10 @@ function GroupNameField({ name, setName, head, sub, inputBg, border }: {
 export default function NewGroup(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border, primary, inputBg, toolbarBg } = usePalette();
+  const { text: fg, link: head, bg, border, primary, inputBg } = usePalette();
   const sub = fg;
   const rowBg = border;
   const insets = useSafeAreaInsets();
-  const headerNode = basicRoot(screenHeader({
-    title: 'New group',
-    titleStyle: { kind: 'title', size: 'sm', color: head },
-    backColor: fg,
-    safeTop: insets.top,
-    surface: toolbarBg,
-    borderColor: border,
-  }));
-  const headerActions: PayloadHandlers = {
-    ...backAction(capabilities),
-  };
-
   const [name, setName] = useState('');
   const picker = useMemberPicker();
   const { members } = picker;
@@ -164,7 +120,7 @@ export default function NewGroup(): React.ReactElement {
   return (
     <Col surface="surface" flex={1}>
       {}
-      <ViewHost node={headerNode} actions={headerActions} />
+      <StackHeader title="New group" />
 
       <ScrollView
         contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 24 + insets.bottom }}
@@ -173,7 +129,12 @@ export default function NewGroup(): React.ReactElement {
         {}
         <GroupImageField image={image} creating={creating} fg={fg} border={border} rowBg={rowBg}
           onPick={() => { pickImage(); }}/>
-        <ViewHost node={imagePickerNode(pickNonce)} actions={imagePickerActions(setImage)} />
+        <GroupImagePicker
+          openNonce={pickNonce}
+          onPick={(file) => {
+            setImage({ uri: file.uri, mime: file.mime, name: file.name ?? 'group-avatar' });
+          }}
+        />
 
         {}
         <GroupNameField

@@ -3,15 +3,12 @@ import { useCallback, useState } from 'react';
 
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import { backAction, basicRoot, screenHeader } from '@views';
-import { capabilities } from '../../lib/capabilities';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { addGroupMembers } from '../../modules/messaging';
 import { flash } from '../../lib/toast';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { StackHeader } from '../../components/chrome/StackHeader';
 import { Box, Col } from '../../components/layout';
 import { useConvMeta } from '../../modules/messaging';
 import { MemberPicker, useMemberPicker } from './MemberPicker';
@@ -20,19 +17,8 @@ export default function AddMembers(): React.ReactElement {
   const router = useRouter();
   const { convId } = useLocalSearchParams<{ convId: string }>();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border, primary, toolbarBg } = usePalette();
+  const { bg, border, primary } = usePalette();
   const insets = useSafeAreaInsets();
-  const headerNode = basicRoot(screenHeader({
-    title: 'Add members',
-    titleStyle: { kind: 'title', size: 'sm', color: head },
-    backColor: fg,
-    safeTop: insets.top,
-    surface: toolbarBg,
-    borderColor: border,
-  }));
-  const headerActions: PayloadHandlers = {
-    ...backAction(capabilities),
-  };
 
   const picker = useMemberPicker();
   const { members } = picker;
@@ -55,7 +41,7 @@ export default function AddMembers(): React.ReactElement {
   return (
     <Col surface="surface" flex={1}>
       {}
-      <ViewHost node={headerNode} actions={headerActions} />
+      <StackHeader title="Add members" />
 
       <ScrollView
         contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 24 + insets.bottom }}

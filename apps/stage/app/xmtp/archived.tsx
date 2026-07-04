@@ -2,38 +2,21 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { FlatList } from 'react-native-gesture-handler';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import { backAction, basicRoot, emptyState, screenHeader } from '@views';
-import { capabilities } from '../../lib/capabilities';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getCachedRows, subscribeCachedRows } from '../../modules/messaging';
 import type { Row as RowT } from '../../components/tabs/HomeScreen.helpers';
 import { loadArchivedIds, subscribeArchived } from '../../lib/archived';
 import { shortAddress } from '../../modules/messaging';
-import { usePalette } from '../../lib/theme';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { ChannelRow } from '../../components/ChannelRow';
+import { EmptyState } from '../../components/chrome/EmptyState';
+import { StackHeader } from '../../components/chrome/StackHeader';
 import { Col } from '../../components/layout';
-
-const EMPTY_NODE = basicRoot(emptyState({ title: 'No archived conversations.' }));
 
 export default function Archived(): React.ReactElement {
   const router = useRouter();
-  const { text: fg, link: head, border, toolbarBg } = usePalette();
   const insets = useSafeAreaInsets();
-  const headerNode = basicRoot(screenHeader({
-    title: 'Archived',
-    titleStyle: { kind: 'title', size: 'sm', color: head },
-    backColor: fg,
-    safeTop: insets.top,
-    surface: toolbarBg,
-    borderColor: border,
-  }));
-  const headerActions: PayloadHandlers = {
-    ...backAction(capabilities),
-  };
   const [archived, setArchived] = useState<Set<string>>(new Set());
   const [rows, setRows] = useState<RowT[]>((getCachedRows() as RowT[] | null) ?? []);
 
@@ -67,14 +50,14 @@ export default function Archived(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <ViewHost node={headerNode} actions={headerActions} />
+      <StackHeader title="Archived" />
       <FlatList
         style={{ flex: 1 }}
         data={data}
         keyExtractor={r => r.convId}
         renderItem={renderRow}
         contentContainerStyle={data.length === 0 ? { flexGrow: 1 } : { paddingBottom: 24 + insets.bottom }}
-        ListEmptyComponent={<ViewHost node={EMPTY_NODE} />}
+        ListEmptyComponent={<EmptyState title="No archived conversations." />}
 />
     </Col>
   );

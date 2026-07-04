@@ -4,15 +4,13 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Icon } from '@stage-labs/kit/react-native/icon';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import { basicRoot, memberTextField, MEMBER_FIELD_CHANGE, MEMBER_FIELD_SUBMIT } from '@views';
 import { shortAddress } from '../../modules/messaging';
 import { resolveEnsName } from '@stage-labs/client/api/ens';
 import { flash } from '../../lib/toast';
 import { usePalette } from '../../lib/theme';
 import { Avatar } from '../../components/Avatar';
 import { Box, Col, Row } from '../../components/layout';
+import { MemberField } from '../../components/MemberField';
 import { useContacts, type Contact } from '../../lib/useContacts';
 import { ContactSuggestions } from './ContactSuggestions';
 
@@ -104,13 +102,6 @@ export function MemberPicker({ state, dark, exclude = [] }: {
   } = state;
   const contacts = useContacts(exclude, entry);
 
-  const resolverActions: PayloadHandlers = {
-    [MEMBER_FIELD_CHANGE]: (payload) => {
-      if (typeof payload.field === 'string') setEntry(payload.field);
-    },
-    [MEMBER_FIELD_SUBMIT]: () => { void addMember(); },
-  };
-
   return (
     <>
       {}
@@ -120,23 +111,21 @@ export function MemberPicker({ state, dark, exclude = [] }: {
         </Text>
         <Row gap={8} align="center">
           <Box flex={1}>
-            <ViewHost
-              node={basicRoot(memberTextField({
-                value: entry,
-                placeholder: '0x… or name.eth',
-                color: head,
-                placeholderColor: sub,
-                inputBg,
-                border,
-                radius: 12,
-                paddingX: 14,
-                paddingY: 12,
-                autoCapitalize: 'none',
-                autoCorrect: false,
-                returnKeyType: 'done',
-                submitType: MEMBER_FIELD_SUBMIT,
-              }))}
-              actions={resolverActions}
+            <MemberField
+              value={entry}
+              placeholder="0x… or name.eth"
+              color={head}
+              placeholderColor={sub}
+              inputBg={inputBg}
+              border={border}
+              radius={12}
+              paddingX={14}
+              paddingY={12}
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="done"
+              onChangeText={setEntry}
+              onSubmit={() => { void addMember(); }}
             />
           </Box>
           <Button

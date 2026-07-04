@@ -15,34 +15,19 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { ChannelRow } from '../../components/ChannelRow';
+import { EmptyState } from '../../components/chrome/EmptyState';
+import { StackHeader } from '../../components/chrome/StackHeader';
 import { Col, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import { backAction, basicRoot, emptyState, screenHeader } from '@views';
-import { capabilities } from '../../lib/capabilities';
-
-const EMPTY_NODE = basicRoot(emptyState({ title: 'No message requests.' }));
 
 type ReqRow = ConversationRequestView;
 
 export default function Requests(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, border, danger, toolbarBg } = usePalette();
+  const { link: head, border, danger } = usePalette();
   const insets = useSafeAreaInsets();
   const [rows, setRows] = useState<ReqRow[] | null>(null);
-  const headerNode = basicRoot(screenHeader({
-    title: 'Message requests',
-    titleStyle: { kind: 'title', size: 'sm', color: head },
-    backColor: fg,
-    safeTop: insets.top,
-    surface: toolbarBg,
-    borderColor: border,
-  }));
-  const headerActions: PayloadHandlers = {
-    ...backAction(capabilities),
-  };
 
   const load = useCallback(async (): Promise<void> => {
     const convs = await listRequestConvs();
@@ -100,7 +85,7 @@ export default function Requests(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <ViewHost node={headerNode} actions={headerActions} />
+      <StackHeader title="Message requests" />
 
       {!rows ? (
         <Col flex={1} align="center" justify="center">
@@ -112,7 +97,7 @@ export default function Requests(): React.ReactElement {
           keyExtractor={r => r.convId}
           renderItem={renderRow}
           contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}
-          ListEmptyComponent={<ViewHost node={EMPTY_NODE} />}
+          ListEmptyComponent={<EmptyState title="No message requests." />}
 />
       )}
     </Col>

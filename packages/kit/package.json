@@ -56,7 +56,8 @@
     "./react-native/video-player": "./src/react-native/video-player.tsx",
     "./react-native/text-field": "./src/react-native/text-field.tsx",
     "./react-native/color-picker": "./src/react-native/color-picker.tsx",
-    "./react-native/gesture-pressable": "./src/react-native/gesture-pressable.tsx"
+    "./react-native/gesture-pressable": "./src/react-native/gesture-pressable.tsx",
+    "./react-native/file-picker": "./src/react-native/file-picker.tsx"
   },
   "dependencies": {
     "qrcode": "^1.5.4"

@@ -2,12 +2,12 @@
 import { useEffect, useState } from 'react';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import type { PayloadHandlers, WidgetNode, WidgetRoot } from '@stage-labs/kit/kit';
-import { backAction, basicRoot, screenHeader } from '@views';
+import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
+import { Icon } from '@stage-labs/kit/react-native/icon';
 import { capabilities } from '../../lib/capabilities';
-import type { GroupPickedFile } from './group.actions.handlers';
-import { Col } from '../../components/layout';
+import { Box, Col } from '../../components/layout';
+import { GroupImagePicker } from '../../components/GroupImagePicker';
+import { OverlayHeader } from '../../components/chrome/OverlayHeader';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getCachedXmtpClient, getOrCreateXmtpClient, lineOfConv } from '../../modules/messaging';
@@ -23,47 +23,16 @@ import { GroupLabelsSection } from './group.labels';
 import { GroupGithubSection } from './group.github';
 import { useGroupActions } from './group.actions';
 
-const GROUP_OVERFLOW_PRESS = 'group_overflow_press';
-
-function overflowTrailing(color: string): WidgetNode {
-  return {
-    type: 'Pressable',
-    hitSlop: 10,
-    onClickAction: { type: GROUP_OVERFLOW_PRESS },
-    children: [
-      {
-        type: 'Box',
-        padding: 6,
-        children: [{ type: 'Icon', name: 'dotsHorizontal', size: 22, color }],
-      },
-    ],
-  };
-}
-
-function groupImagePickerNode(openNonce: number): WidgetRoot {
-  return basicRoot({
-    type: 'FilePicker',
-    openNonce,
-    source: 'library',
-    mediaTypes: ['images'],
-    quality: 0.85,
-    multiple: false,
-    allowsEditing: true,
-    aspect: [1, 1],
-    onPickAction: { type: 'group_image_pick', handler: 'client' },
-  });
-}
-
-function groupImagePickerActions(
-  onPicked: (file: GroupPickedFile) => Promise<void>,
-): PayloadHandlers {
-  return {
-    group_image_pick: (payload) => {
-      const files = payload.files;
-      const file = Array.isArray(files) ? files[0] as GroupPickedFile | undefined : undefined;
-      if (file !== undefined) void onPicked(file);
-    },
-  };
+function OverflowTrailing({ color, dark, onPress }: {
+  color: string; dark: boolean; onPress: () => void;
+}): React.ReactElement {
+  return (
+    <GesturePressable onPress={onPress} hitSlop={10}>
+      <Box padding={6}>
+        <Icon name="dotsHorizontal" size={22} color={color} dark={dark} />
+      </Box>
+    </GesturePressable>
+  );
 }
 
 export default function GroupDetail(): React.ReactElement {
@@ -106,22 +75,16 @@ export default function GroupDetail(): React.ReactElement {
     }).catch(() => undefined);
   }, []);
 
-  const headerNode = basicRoot(screenHeader({
-    variant: 'overlay',
-    backColor: fg,
-    backHitSlop: 10,
-    backPadding: 6,
-    safeTop: insets.top,
-    trailing: [overflowTrailing(fg)],
-  }));
-  const headerActions: PayloadHandlers = {
-    ...backAction(capabilities),
-    [GROUP_OVERFLOW_PRESS]: () => { setOverflowOpen(true); },
-  };
-
   return (
     <Col surface="surface" flex={1}>
-      <ViewHost node={headerNode} actions={headerActions} />
+      <OverlayHeader
+        onBack={() => { capabilities.back(); }}
+        backColor={fg}
+        safeTop={insets.top}
+        trailing={
+          <OverflowTrailing color={fg} dark={dark} onPress={() => { setOverflowOpen(true); }} />
+        }
+      />
 
       <GroupProfileHeader
         insetTop={insets.top} imageUrl={imageUrl} channelId={convId ?? ''} uploadingImage={uploadingImage}
@@ -129,7 +92,7 @@ export default function GroupDetail(): React.ReactElement {
         onTap={() => { if (imageUrl) setViewerOpen(true); else pickImage(); }}
         onPick={() => { pickImage(); }}
 />
-      <ViewHost node={groupImagePickerNode(pickNonce)} actions={groupImagePickerActions(onPickedImage)} />
+      <GroupImagePicker openNonce={pickNonce} onPick={(file) => { void onPickedImage(file); }} />
 
       <GroupNameEditor
         name={name} draft={draft} setDraft={setDraft}
