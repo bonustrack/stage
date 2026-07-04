@@ -8,6 +8,11 @@ name: Dev client APK
 
 on:
   workflow_dispatch:
+  # workflow_dispatch only works once this file reaches the default branch;
+  # until then a push touching this file on the PR branch triggers the build.
+  push:
+    branches: ['claude/large-refactoring-pr-3rcl0d']
+    paths: ['.github/workflows/dev-client.yml']
 
 concurrency:
   group: dev-client-${{ github.ref }}
