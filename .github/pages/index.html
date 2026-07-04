@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Stage dev hub</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --fg: #16171d;
+        --bg: #ffffff;
+        --muted: #6b7280;
+        --border: #e5e7eb;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --fg: #f4f4f5;
+          --bg: #16171d;
+          --muted: #9ca3af;
+          --border: #34363f;
+        }
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: -apple-system, system-ui, sans-serif;
+        line-height: 1.5;
+      }
+      main {
+        max-width: 560px;
+        margin: 0 auto;
+        padding: 40px 24px 64px;
+      }
+      h1 {
+        font-size: 24px;
+        margin: 0 0 4px;
+      }
+      .sub {
+        color: var(--muted);
+        margin: 0 0 32px;
+      }
+      section {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+      h2 {
+        font-size: 16px;
+        margin: 0 0 8px;
+      }
+      p {
+        color: var(--muted);
+        font-size: 14px;
+        margin: 0 0 14px;
+      }
+      a.button {
+        display: inline-block;
+        background: var(--fg);
+        color: var(--bg);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 15px;
+        padding: 12px 22px;
+        border-radius: 12px;
+      }
+      a {
+        color: inherit;
+      }
+      img.qr {
+        display: block;
+        margin: 16px 0 0;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 8px;
+        background: #fff;
+        width: 180px;
+        height: 180px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Stage dev hub</h1>
+      <p class="sub">Install the dev client once, then load any branch over the air.</p>
+
+      <section>
+        <h2>1 · Install the dev client (Android)</h2>
+        <p>The rolling APK — always the latest native build. Open on the phone, or scan.</p>
+        <a
+          class="button"
+          href="https://github.com/bonustrack/stage/releases/download/dev-client/stage-dev-client.apk"
+          >Download APK</a
+        >
+        <img
+          class="qr"
+          alt="QR code for APK download"
+          src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https%3A%2F%2Fgithub.com%2Fbonustrack%2Fstage%2Freleases%2Fdownload%2Fdev-client%2Fstage-dev-client.apk"
+        />
+      </section>
+
+      <section>
+        <h2>2 · Load a branch preview</h2>
+        <p>
+          Every push publishes a JS preview. Open the branch's PR and tap the
+          <strong>Preview</strong> check on the latest commit, or find the run in
+          <a href="https://github.com/bonustrack/stage/actions/workflows/pr-preview.yml"
+            >App preview actions</a
+          >
+          — its summary carries the deep link and QR.
+        </p>
+      </section>
+
+      <section>
+        <h2>Manual launcher</h2>
+        <p>
+          Have a manifest URL (<code>u.expo.dev/…</code>)? Build the dev-client deep link with the
+          <a href="/preview-launcher.html">preview launcher</a>.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
