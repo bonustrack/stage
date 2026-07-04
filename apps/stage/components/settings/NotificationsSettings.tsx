@@ -6,23 +6,15 @@ import * as Notifications from 'expo-notifications';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box, Col } from '../layout';
 import { Caption } from '@stage-labs/kit/react-native/caption';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import {
-  backAction,
-  listRoot,
-  settingsHeader,
-  settingsToggleRow,
-  SETTINGS_TOGGLE_CHANGE,
-} from '@views';
-import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import { loadPushEnabled, setPushEnabled, subscribePushPref, isPushEnabledSync } from '../../lib/pushPref';
 import { getOrCreateXmtpClient } from '../../modules/messaging';
 import { registerPushWithDaemon, unregisterPushFromDaemon } from '../../lib/push';
+import { SettingsHeader } from './SettingsHeader';
+import { SettingsList, SettingsToggleRow } from './rows';
 
 export function NotificationsSettings(): React.ReactElement {
-  const { text: fg, link: head, border, toolbarBg } = usePalette();
+  const { text: fg } = usePalette();
   const sub = fg;
   const insets = useSafeAreaInsets();
   const [enabled, setEnabled] = useState(isPushEnabledSync());
@@ -53,43 +45,24 @@ export function NotificationsSettings(): React.ReactElement {
       ? 'Blocked in system settings — enable notifications for Metro in your OS settings.'
       : 'System permission will be requested when you enable push.';
 
-  const node = listRoot(
-    settingsToggleRow({
-      label: 'Push notifications',
-      name: 'push',
-      checked: enabled,
-      description: 'Get notified about new messages even when Metro is closed.',
-      changeType: SETTINGS_TOGGLE_CHANGE,
-      control: 'switch',
-    }),
-  );
-
-  const headerNode = settingsHeader({
-    title: 'Notifications',
-    backColor: fg,
-    titleColor: head,
-    surface: toolbarBg,
-    borderColor: border,
-    safeTop: insets.top,
-  });
-
-  const actions: PayloadHandlers = {
-    ...backAction(capabilities),
-    [SETTINGS_TOGGLE_CHANGE]: (payload) => {
-      const next = payload.push;
-      if (typeof next === 'boolean') onToggle(next);
-    },
-  };
-
   return (
     <Col surface="surface" flex={1}>
-      <ViewHost node={headerNode} actions={actions}/>
+      <SettingsHeader title="Notifications"/>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <Caption color={sub} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
           PUSH NOTIFICATIONS
         </Caption>
         <Box>
-          <ViewHost node={node} actions={actions}/>
+          <SettingsList>
+            <SettingsToggleRow
+              label="Push notifications"
+              name="push"
+              checked={enabled}
+              description="Get notified about new messages even when Metro is closed."
+              control="switch"
+              onChange={onToggle}
+            />
+          </SettingsList>
         </Box>
         <Caption color={sub} style={{ paddingHorizontal: 16, paddingTop: 12 }}>
           {permLabel}

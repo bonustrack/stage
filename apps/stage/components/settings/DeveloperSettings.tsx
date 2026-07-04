@@ -6,27 +6,14 @@ import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box, Col } from '../layout';
 import { Caption } from '@stage-labs/kit/react-native/caption';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import type {
-  ListViewNode,
-  PayloadHandlers,
-} from '@stage-labs/kit/kit';
-import {
-  backAction,
-  listRoot,
-  settingsHeader,
-  settingsToggleRow,
-  settingsButtonRow,
-  SETTINGS_TOGGLE_CHANGE,
-  SETTINGS_BUTTON_PRESS,
-} from '@views';
-import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import {
   isDebugConsoleEnabled, loadDebugConsole, setDebugConsole, subscribeDebugConsole,
 } from '../../lib/railgun/debugConsole';
 import { resetForOnboarding } from '../../lib/wallet';
 import { resetEverything } from '../../lib/resetEverything';
+import { SettingsHeader } from './SettingsHeader';
+import { SettingsButtonRow, SettingsList, SettingsToggleRow } from './rows';
 
 function onReset(setResetting: (v: boolean) => void): void {
   Alert.alert(
@@ -67,46 +54,34 @@ function onNuke(setNuking: (v: boolean) => void): void {
   );
 }
 
-function diagnosticsNode(enabled: boolean): ListViewNode {
-  return listRoot(
-    settingsToggleRow({
-      label: 'Railgun debug console',
-      name: 'debugConsole',
-      checked: enabled,
-      description: 'Show the live Railgun bridge logs + balance-pipeline diagnostics on the Private wallet tab. Off by default - leaving it on can slow the app down.',
-      changeType: SETTINGS_TOGGLE_CHANGE,
-    }),
+function DangerRows({ resetting, nuking, setResetting, setNuking }: {
+  resetting: boolean;
+  nuking: boolean;
+  setResetting: (v: boolean) => void;
+  setNuking: (v: boolean) => void;
+}): React.ReactElement {
+  return (
+    <SettingsList>
+      <SettingsButtonRow
+        label={resetting ? 'Resetting…' : 'Reset accounts (dev)'}
+        description="Wipe all local accounts, wallet keys, the recovery phrase and XMTP message stores, then return to onboarding. Cannot be undone."
+        iconStart="refresh"
+        danger
+        onPress={() => { onReset(setResetting); }}
+      />
+      <SettingsButtonRow
+        label={nuking ? 'Erasing…' : 'Reset everything (dev)'}
+        description="Full nuke: everything above PLUS all settings, preferences, pins, read markers and cached data. Restarts the app as a fresh install. Cannot be undone."
+        iconStart="trash"
+        danger
+        onPress={() => { onNuke(setNuking); }}
+      />
+    </SettingsList>
   );
 }
 
-function dangerNode(resetting: boolean, nuking: boolean): ListViewNode {
-  return {
-    type: 'ListView',
-    children: [
-      settingsButtonRow({
-        label: resetting ? 'Resetting…' : 'Reset accounts (dev)',
-        description:
-          'Wipe all local accounts, wallet keys, the recovery phrase and XMTP message stores, then return to onboarding. Cannot be undone.',
-        iconStart: 'refresh',
-        clickType: SETTINGS_BUTTON_PRESS,
-        payload: { action: 'reset' },
-        danger: true,
-      }),
-      settingsButtonRow({
-        label: nuking ? 'Erasing…' : 'Reset everything (dev)',
-        description:
-          'Full nuke: everything above PLUS all settings, preferences, pins, read markers and cached data. Restarts the app as a fresh install. Cannot be undone.',
-        iconStart: 'trash',
-        clickType: SETTINGS_BUTTON_PRESS,
-        payload: { action: 'nuke' },
-        danger: true,
-      }),
-    ],
-  };
-}
-
 export function DeveloperSettings(): React.ReactElement {
-  const { text: fg, link: head, border, toolbarBg } = usePalette();
+  const { text: fg } = usePalette();
   const sub = fg;
   const insets = useSafeAreaInsets();
   const [enabled, setEnabled] = useState(isDebugConsoleEnabled());
@@ -124,42 +99,34 @@ export function DeveloperSettings(): React.ReactElement {
     void setDebugConsole(next);
   };
 
-  const headerNode = settingsHeader({
-    title: 'Developer',
-    backColor: fg,
-    titleColor: head,
-    surface: toolbarBg,
-    borderColor: border,
-    safeTop: insets.top,
-  });
-
-  const actions: PayloadHandlers = {
-    ...backAction(capabilities),
-    [SETTINGS_TOGGLE_CHANGE]: (payload) => {
-      const next = payload.debugConsole;
-      if (typeof next === 'boolean') onToggle(next);
-    },
-    [SETTINGS_BUTTON_PRESS]: (payload) => {
-      if (payload.action === 'reset') onReset(setResetting);
-      else if (payload.action === 'nuke') onNuke(setNuking);
-    },
-  };
-
   return (
     <Col surface="surface" flex={1}>
-      <ViewHost node={headerNode} actions={actions}/>
+      <SettingsHeader title="Developer"/>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <Caption color={sub} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
           DIAGNOSTICS
         </Caption>
         <Box>
-          <ViewHost node={diagnosticsNode(enabled)} actions={actions}/>
+          <SettingsList>
+            <SettingsToggleRow
+              label="Railgun debug console"
+              name="debugConsole"
+              checked={enabled}
+              description="Show the live Railgun bridge logs + balance-pipeline diagnostics on the Private wallet tab. Off by default - leaving it on can slow the app down."
+              onChange={onToggle}
+            />
+          </SettingsList>
         </Box>
         <Caption color={sub} style={{ paddingHorizontal: 16, paddingTop: 28, paddingBottom: 8 }}>
           DANGER ZONE
         </Caption>
         <Box>
-          <ViewHost node={dangerNode(resetting, nuking)} actions={actions}/>
+          <DangerRows
+            resetting={resetting}
+            nuking={nuking}
+            setResetting={setResetting}
+            setNuking={setNuking}
+          />
         </Box>
       </ScrollView>
     </Col>

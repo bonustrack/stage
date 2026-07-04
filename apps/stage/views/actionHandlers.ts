@@ -1,6 +1,6 @@
 import type { PayloadHandlers } from '@stage-labs/kit/kit';
 import type { Capabilities } from './capabilities';
-import { LINK_OPEN, SCREEN_BACK, SETTINGS_NAV_PRESS } from './actions';
+import { LINK_OPEN, SCREEN_BACK } from './actions';
 
 function payloadString(payload: Record<string, unknown>, key: string): string | undefined {
   const value = payload[key];
@@ -28,10 +28,6 @@ export function navigateAction(
       if (to) caps.navigate(to);
     },
   };
-}
-
-export function settingsNavAction(caps: Capabilities): PayloadHandlers {
-  return navigateAction(SETTINGS_NAV_PRESS, caps);
 }
 
 export function openUrlAction(

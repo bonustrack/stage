@@ -4,78 +4,27 @@ import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box, Col } from '../layout';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import type {
-  ListViewNode,
-  PayloadHandlers,
-} from '@stage-labs/kit/kit';
-import {
-  backAction,
-  settingsHeader,
-  settingsThemeRow,
-  SETTINGS_THEME_SELECT,
-} from '@views';
-import { capabilities } from '../../lib/capabilities';
 import {
   setThemePreference, setCustomTheme, useCustomTheme,
   useEffectiveColorScheme, usePalette, useThemePreference,
 } from '../../lib/theme';
 import { THEME_OPTIONS } from '../tabs/SettingsScreen.parts';
 import { ColorTokens } from '../system/ColorTokens';
+import { SettingsHeader } from './SettingsHeader';
+import { SettingsList, SettingsThemeRow } from './rows';
 
 export function DisplaySettings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const pref = useThemePreference();
   const custom = useCustomTheme();
-  const { text: fg, link: head, border, toolbarBg } = usePalette();
+  const { text: fg, link: head, border } = usePalette();
   const sub = fg;
   const rowBg = border;
   const insets = useSafeAreaInsets();
 
-  const node: ListViewNode = {
-    type: 'ListView',
-    children: [
-      ...THEME_OPTIONS.map((opt) =>
-        settingsThemeRow({
-          value: opt.value,
-          label: opt.label,
-          iconName: opt.icon,
-          selected: !custom && pref === opt.value,
-        }),
-      ),
-      settingsThemeRow({
-        value: 'custom',
-        label: 'Custom',
-        iconName: 'colorSwatch',
-        selected: custom,
-      }),
-    ],
-  };
-
-  const headerNode = settingsHeader({
-    title: 'Display',
-    backColor: fg,
-    titleColor: head,
-    surface: toolbarBg,
-    borderColor: border,
-    safeTop: insets.top,
-  });
-
-  const actions: PayloadHandlers = {
-    ...backAction(capabilities),
-    [SETTINGS_THEME_SELECT]: (payload) => {
-      const value = payload.value;
-      if (value === 'custom') { setCustomTheme(true); return; }
-      if (value === 'system' || value === 'light' || value === 'dark') {
-        setCustomTheme(false);
-        void setThemePreference(value);
-      }
-    },
-  };
-
   return (
     <Col surface="surface" flex={1}>
-      <ViewHost node={headerNode} actions={actions}/>
+      <SettingsHeader title="Display"/>
       <ScrollView
         style={{ flex: 1 }}
         keyboardShouldPersistTaps="handled"
@@ -84,7 +33,26 @@ export function DisplaySettings(): React.ReactElement {
         <Text size="xs" role="secondary" style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
           THEME
         </Text>
-        <ViewHost node={node} actions={actions}/>
+        <SettingsList>
+          {THEME_OPTIONS.map((opt) => (
+            <SettingsThemeRow
+              key={opt.value}
+              label={opt.label}
+              iconName={opt.icon}
+              selected={!custom && pref === opt.value}
+              onPress={() => {
+                setCustomTheme(false);
+                void setThemePreference(opt.value);
+              }}
+            />
+          ))}
+          <SettingsThemeRow
+            label="Custom"
+            iconName="colorSwatch"
+            selected={custom}
+            onPress={() => { setCustomTheme(true); }}
+          />
+        </SettingsList>
 
         {custom ? (
           <Box padding={{ x: 16, top: 24 }}>

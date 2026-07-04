@@ -5,8 +5,7 @@ import { ActivityIndicator, Alert } from 'react-native';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import { basicRoot } from '@views';
+import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { Box, Col, Row } from '../layout';
 import {
   listXmtpInstallations, revokeXmtpInstallation, shortAddress, useActiveAccount,
@@ -96,7 +95,7 @@ export function MessengerSessions(): React.ReactElement {
       </Text>
       {list === null ? (
         <Row padding={{ x: 16, top: 12 }} gap={8} align="center">
-          <ViewHost node={basicRoot({ type: 'Spinner', size: 20, color: fg })} />
+          <Spinner size={20} color={fg} />
           <Text size="sm" color={c.sub}>Loading sessions…</Text>
         </Row>
       ) : error ? (

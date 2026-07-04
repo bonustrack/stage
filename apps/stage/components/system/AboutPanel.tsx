@@ -4,18 +4,9 @@ import * as Application from 'expo-application';
 import { Box } from '../layout';
 import { Title } from '@stage-labs/kit/react-native/title';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import type {
-  ListViewNode,
-  PayloadHandlers,
-} from '@stage-labs/kit/kit';
-import {
-  openUrlAction,
-  settingsValueRow,
-  SETTINGS_ACTION_PRESS,
-} from '@views';
 import { capabilities } from '../../lib/capabilities';
 import { GitHubLinkRow } from './GitHubLinkRow';
+import { SettingsList, SettingsValueRow } from '../settings/rows';
 
 const METRO_GITHUB_URL = 'https://github.com/bonustrack/stage';
 
@@ -55,25 +46,6 @@ export function AboutPanel({ dark, head, sub, border, rowBg }: {
   const { pkgName, versionLabel, gitHash, shortHash, buildProfile } = resolveAboutMeta();
   const commitUrl = gitHash === 'dev' ? undefined : `${METRO_GITHUB_URL}/commit/${gitHash}`;
 
-  const node: ListViewNode = {
-    type: 'ListView',
-    children: [
-      settingsValueRow({ label: 'App', value: pkgName }),
-      settingsValueRow({ label: 'Version', value: versionLabel }),
-      settingsValueRow({
-        label: 'Commit',
-        value: shortHash,
-        copyType: commitUrl ? SETTINGS_ACTION_PRESS : undefined,
-        payload: commitUrl ? { url: commitUrl } : undefined,
-      }),
-      settingsValueRow({ label: 'Build profile', value: buildProfile }),
-    ],
-  };
-
-  const actions: PayloadHandlers = {
-    ...openUrlAction(capabilities, SETTINGS_ACTION_PRESS),
-  };
-
   return (
     <Box padding={{ top: 18 }}>
       <Box padding={{ x: 16 }}>
@@ -82,7 +54,16 @@ export function AboutPanel({ dark, head, sub, border, rowBg }: {
           Build + runtime metadata for this install.
         </Text>
       </Box>
-      <ViewHost node={node} actions={actions}/>
+      <SettingsList>
+        <SettingsValueRow label="App" value={pkgName} />
+        <SettingsValueRow label="Version" value={versionLabel} />
+        <SettingsValueRow
+          label="Commit"
+          value={shortHash}
+          onPress={commitUrl ? () => { capabilities.openUrl(commitUrl); } : undefined}
+        />
+        <SettingsValueRow label="Build profile" value={buildProfile} />
+      </SettingsList>
       <Box padding={{ x: 16 }}>
         <Text role="secondary" variant="caption" weight="medium" style={{ marginTop: 14 }}>
           Commit shows "dev" only when the build could not resolve a git SHA. Tap it to open the commit on GitHub.

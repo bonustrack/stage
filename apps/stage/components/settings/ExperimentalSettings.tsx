@@ -4,14 +4,9 @@ import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Col } from '../layout';
 import type { HeroIconName } from '@stage-labs/kit/react-native/icon';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import type {
-  ListViewNode,
-  PayloadHandlers,
-} from '@stage-labs/kit/kit';
-import { backAction, settingsHeader, settingsNavAction, settingsNavRow, SETTINGS_NAV_PRESS } from '@views';
 import { capabilities } from '../../lib/capabilities';
-import { usePalette } from '../../lib/theme';
+import { SettingsHeader } from './SettingsHeader';
+import { SettingsList, SettingsNavRow } from './rows';
 
 type Href = '/settings/kit' | '/settings/components' | '/settings/developer';
 const ROWS: { href: Href; label: string; icon: HeroIconName }[] = [
@@ -21,40 +16,22 @@ const ROWS: { href: Href; label: string; icon: HeroIconName }[] = [
 ];
 
 export function ExperimentalSettings(): React.ReactElement {
-  const { text: fg, link: head, border, toolbarBg } = usePalette();
   const insets = useSafeAreaInsets();
-
-  const node: ListViewNode = {
-    type: 'ListView',
-    children: ROWS.map((row) =>
-      settingsNavRow({
-        label: row.label,
-        iconStart: row.icon,
-        pressType: SETTINGS_NAV_PRESS,
-        payload: { href: row.href },
-      }),
-    ),
-  };
-
-  const headerNode = settingsHeader({
-    title: 'Experimental',
-    backColor: fg,
-    titleColor: head,
-    surface: toolbarBg,
-    borderColor: border,
-    safeTop: insets.top,
-  });
-
-  const actions: PayloadHandlers = {
-    ...backAction(capabilities),
-    ...settingsNavAction(capabilities),
-  };
 
   return (
     <Col surface="surface" flex={1}>
-      <ViewHost node={headerNode} actions={actions}/>
+      <SettingsHeader title="Experimental"/>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
-        <ViewHost node={node} actions={actions}/>
+        <SettingsList>
+          {ROWS.map((row) => (
+            <SettingsNavRow
+              key={row.href}
+              label={row.label}
+              iconStart={row.icon}
+              onPress={() => { capabilities.navigate(row.href); }}
+            />
+          ))}
+        </SettingsList>
       </ScrollView>
     </Col>
   );

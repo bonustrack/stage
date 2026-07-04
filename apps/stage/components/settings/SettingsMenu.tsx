@@ -6,23 +6,12 @@ import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Col, Box } from '../layout';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import type {
-  ListViewNode,
-  PayloadHandlers,
-} from '@stage-labs/kit/kit';
-import {
-  backAction,
-  settingsHeader,
-  settingsMenuNode,
-  settingsNavAction,
-  settingsButtonRow,
-  SETTINGS_BUTTON_PRESS,
-} from '@views';
+import { SETTINGS_MENU_ITEMS } from '@views';
 import { capabilities } from '../../lib/capabilities';
-import { usePalette } from '../../lib/theme';
 import { resetForOnboarding } from '../../lib/wallet';
 import { resetEverything } from '../../lib/resetEverything';
+import { SettingsHeader } from './SettingsHeader';
+import { SettingsButtonRow, SettingsList, SettingsNavRow } from './rows';
 
 function onReset(setResetting: (v: boolean) => void): void {
   Alert.alert(
@@ -63,69 +52,62 @@ function onNuke(setNuking: (v: boolean) => void): void {
   );
 }
 
-const navNode: ListViewNode = settingsMenuNode();
-
-function dangerNode(resetting: boolean, nuking: boolean): ListViewNode {
-  return {
-    type: 'ListView',
-    children: [
-      settingsButtonRow({
-        label: resetting ? 'Resetting…' : 'Reset accounts',
-        description:
-          'Wipe all local accounts, wallet keys, the recovery phrase and XMTP message stores, then return to onboarding.',
-        iconStart: 'refresh',
-        clickType: SETTINGS_BUTTON_PRESS,
-        payload: { action: 'reset' },
-        danger: true,
-      }),
-      settingsButtonRow({
-        label: nuking ? 'Erasing…' : 'Reset everything',
-        description:
-          'Full nuke: everything above PLUS all settings, pins, read markers and cached data. Restarts the app as a fresh install.',
-        iconStart: 'trash',
-        clickType: SETTINGS_BUTTON_PRESS,
-        payload: { action: 'nuke' },
-        danger: true,
-      }),
-    ],
-  };
+function DangerRows({ resetting, nuking, setResetting, setNuking }: {
+  resetting: boolean;
+  nuking: boolean;
+  setResetting: (v: boolean) => void;
+  setNuking: (v: boolean) => void;
+}): React.ReactElement {
+  return (
+    <SettingsList>
+      <SettingsButtonRow
+        label={resetting ? 'Resetting…' : 'Reset accounts'}
+        description="Wipe all local accounts, wallet keys, the recovery phrase and XMTP message stores, then return to onboarding."
+        iconStart="refresh"
+        danger
+        onPress={() => { onReset(setResetting); }}
+      />
+      <SettingsButtonRow
+        label={nuking ? 'Erasing…' : 'Reset everything'}
+        description="Full nuke: everything above PLUS all settings, pins, read markers and cached data. Restarts the app as a fresh install."
+        iconStart="trash"
+        danger
+        onPress={() => { onNuke(setNuking); }}
+      />
+    </SettingsList>
+  );
 }
 
 export function SettingsMenu(): React.ReactElement {
-  const { text: fg, link: head, border, toolbarBg } = usePalette();
   const insets = useSafeAreaInsets();
 
   const [resetting, setResetting] = useState(false);
   const [nuking, setNuking] = useState(false);
 
-  const headerNode = settingsHeader({
-    title: 'Settings',
-    backColor: fg,
-    titleColor: head,
-    surface: toolbarBg,
-    borderColor: border,
-    safeTop: insets.top,
-  });
-
-  const actions: PayloadHandlers = {
-    ...backAction(capabilities),
-    ...settingsNavAction(capabilities),
-    [SETTINGS_BUTTON_PRESS]: (payload) => {
-      if (payload.action === 'reset') onReset(setResetting);
-      else if (payload.action === 'nuke') onNuke(setNuking);
-    },
-  };
-
   return (
     <Col surface="surface" flex={1}>
-      <ViewHost node={headerNode} actions={actions}/>
+      <SettingsHeader title="Settings"/>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
-        <ViewHost node={navNode} actions={actions}/>
+        <SettingsList>
+          {SETTINGS_MENU_ITEMS.map((item) => (
+            <SettingsNavRow
+              key={item.href}
+              label={item.label}
+              iconStart={item.icon}
+              onPress={() => { capabilities.navigate(item.href); }}
+            />
+          ))}
+        </SettingsList>
         <Text size="xs" role="secondary" style={{ paddingHorizontal: 16, paddingTop: 28 }}>
           DANGER ZONE
         </Text>
         <Box padding={{ top: 8 }}>
-          <ViewHost node={dangerNode(resetting, nuking)} actions={actions}/>
+          <DangerRows
+            resetting={resetting}
+            nuking={nuking}
+            setResetting={setResetting}
+            setNuking={setNuking}
+          />
         </Box>
       </ScrollView>
     </Col>

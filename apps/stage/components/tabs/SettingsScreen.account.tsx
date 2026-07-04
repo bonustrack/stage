@@ -7,19 +7,6 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Card } from '@stage-labs/kit/react-native/card';
 import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import type {
-  ListViewItemNode,
-  ListViewNode,
-  PayloadHandlers,
-} from '@stage-labs/kit/kit';
-import {
-  settingsNavAction,
-  settingsNavRow,
-  settingsButtonRow,
-  SETTINGS_NAV_PRESS,
-  SETTINGS_BUTTON_PRESS,
-} from '@views';
 import { capabilities } from '../../lib/capabilities';
 import { Box, Col } from '../layout';
 import { flash } from '../../lib/toast';
@@ -28,6 +15,7 @@ import {
 } from '../../lib/accounts';
 import { deleteAccount, shortAddress, useActiveAccount } from '../../modules/messaging';
 import { reloadApp } from '../AccountsManager.helpers';
+import { SettingsButtonRow, SettingsList, SettingsNavRow } from '../settings/rows';
 
 interface SectionColors { fg: string; head: string; sub: string; border: string; rowBg: string }
 
@@ -104,42 +92,6 @@ export function AccountSecuritySection(
 
   if (!rec) return null;
 
-  const rows: ListViewItemNode[] = [];
-  if (canExportPrivateKey(rec) && !revealed) {
-    rows.push(settingsNavRow({
-      label: 'Export private key',
-      iconStart: 'wallet',
-      iconEnd: 'chevronDown',
-      pressType: SETTINGS_BUTTON_PRESS,
-      payload: { action: 'export' },
-    }));
-  }
-  if (rec.type === 'smart') {
-    rows.push(settingsNavRow({
-      label: (rec.guardians ?? []).length ? 'Guardian recovery' : 'Set up guardian recovery',
-      iconStart: 'userGroup',
-      pressType: SETTINGS_NAV_PRESS,
-      payload: { href: '/wallet/recovery' },
-    }));
-  }
-  rows.push(settingsButtonRow({
-    label: 'Remove account',
-    iconStart: 'trash',
-    clickType: SETTINGS_BUTTON_PRESS,
-    payload: { action: 'remove' },
-    danger: true,
-  }));
-
-  const node: ListViewNode = { type: 'ListView', children: rows };
-
-  const actions: PayloadHandlers = {
-    ...settingsNavAction(capabilities),
-    [SETTINGS_BUTTON_PRESS]: (payload) => {
-      if (payload.action === 'export') confirmExport(rec, setRevealed);
-      else if (payload.action === 'remove') confirmRemove(rec);
-    },
-  };
-
   return (
     <>
       <Text size="xs" color={c.sub} style={{ paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8 }}>ACCOUNT</Text>
@@ -150,7 +102,29 @@ export function AccountSecuritySection(
               <RevealedKeyRow c={c} dark={dark} revealed={revealed} />
             </ListView>
           ) : null}
-          <ViewHost node={node} actions={actions}/>
+          <SettingsList>
+            {canExportPrivateKey(rec) && !revealed ? (
+              <SettingsNavRow
+                label="Export private key"
+                iconStart="wallet"
+                iconEnd="chevronDown"
+                onPress={() => { confirmExport(rec, setRevealed); }}
+              />
+            ) : null}
+            {rec.type === 'smart' ? (
+              <SettingsNavRow
+                label={(rec.guardians ?? []).length ? 'Guardian recovery' : 'Set up guardian recovery'}
+                iconStart="userGroup"
+                onPress={() => { capabilities.navigate('/wallet/recovery'); }}
+              />
+            ) : null}
+            <SettingsButtonRow
+              label="Remove account"
+              iconStart="trash"
+              danger
+              onPress={() => { confirmRemove(rec); }}
+            />
+          </SettingsList>
         </Card>
       </Box>
     </>
