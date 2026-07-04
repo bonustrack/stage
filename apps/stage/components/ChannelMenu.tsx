@@ -2,10 +2,14 @@
 import { Alert } from 'react-native';
 
 import { useRouter } from 'expo-router';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import type { PayloadHandlers, WidgetRoot } from '@stage-labs/kit/kit';
-import { Box } from './layout';
-import { channelMenuItems, menuSheet, MENU_ITEM_PRESS } from '@views';
+import { resolveIconName } from '@stage-labs/kit/kit';
+import { Icon } from '@stage-labs/kit/react-native/icon';
+import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
+import { resolveColorToken } from '@stage-labs/kit/tokens';
+import { Box, Row } from './layout';
+import { channelMenuItems, type MenuSheetItem } from '@views';
 import { AppModal } from './AppModal';
 import { markConvRead, markConvUnread } from '../modules/messaging';
 import { togglePin } from '../lib/pins';
@@ -56,11 +60,35 @@ function confirmLeaveGroup(
   );
 }
 
+function MenuRow({ item, dark, onPress }: {
+  item: MenuSheetItem; dark: boolean; onPress: () => void;
+}): React.ReactElement {
+  const scheme = dark ? 'dark' : 'light';
+  const iconName = item.icon === undefined ? undefined : resolveIconName(item.icon);
+  const danger = item.danger === true;
+  return (
+    <ListViewItem dark={dark} align="center" gap={12} onPress={onPress}>
+      <Row align="center" gap={12} flex={1}>
+        {iconName === undefined ? null : (
+          <Icon
+            name={iconName}
+            size={22}
+            color={resolveColorToken(danger ? 'danger' : 'secondary', scheme)}
+            dark={dark}
+          />
+        )}
+        <Text value={item.label} color={danger ? 'danger' : undefined} weight="medium" />
+      </Row>
+    </ListViewItem>
+  );
+}
+
 export function ChannelMenu({
   convId, isGroup, peerAddress, isUnread, isPinned, isArchived,
   visible, onClose, context = 'list', onAfterLeave, onAfterArchive, onSearch,
 }: ChannelMenuProps): React.ReactElement {
   const router = useRouter();
+  const dark = useKitScheme() === 'dark';
 
   const run = (fn: () => void): void => { onClose(); fn(); };
 
@@ -83,24 +111,20 @@ export function ChannelMenu({
     leave: () => { confirmLeaveGroup(convId, context, router, onClose, onAfterLeave); },
   };
 
-  const node: WidgetRoot = menuSheet({
-    items: channelMenuItems(
-      { isGroup, hasPeer: !!peerAddress, isUnread, isPinned, isArchived },
-      { search: !!onSearch, addMembers: true, pin: true, info: true, leaveGroup: true },
-    ),
-  });
-  const actions: PayloadHandlers = {
-    [MENU_ITEM_PRESS]: (payload) => {
-      const id = payload.id;
-      if (typeof id === 'string') handlers[id]?.();
-    },
-  };
+  const items = channelMenuItems(
+    { isGroup, hasPeer: !!peerAddress, isUnread, isPinned, isArchived },
+    { search: !!onSearch, addMembers: true, pin: true, info: true, leaveGroup: true },
+  );
 
   return (
     <AppModal visible={visible} onClose={onClose}>
       {}
       <Box margin={{ x: -16 }}>
-        <ViewHost node={node} actions={actions} />
+        <ListView dark={dark}>
+          {items.map((item) => (
+            <MenuRow key={item.id} item={item} dark={dark} onPress={() => { handlers[item.id]?.(); }} />
+          ))}
+        </ListView>
       </Box>
     </AppModal>
   );

@@ -1,7 +1,8 @@
-import type { Color, PayloadHandlers, WidgetRoot } from '@stage-labs/kit/kit';
-import { basicRoot } from '../primitives';
-import { LABEL_CHIP_PRESS } from '../actions';
-import { labelBar, type LabelBarChip } from './labelBar';
+export interface LabelBarChip {
+  value: string;
+  label: string;
+  selected?: boolean;
+}
 
 export const UNREAD_FILTER_VALUE = '__unread__';
 
@@ -24,36 +25,16 @@ export function channelsLabelChips(m: ChannelsFilterModel): LabelBarChip[] {
   ];
 }
 
-export interface LabelBarColors {
-  selectedBackground: Color;
-  selectedLabelColor: Color;
-  restBackground: Color;
-  restLabelColor: Color;
-}
-
-export function channelsLabelBarNode(
-  m: ChannelsFilterModel,
-  colors: LabelBarColors,
-): WidgetRoot {
-  return basicRoot(labelBar({ chips: channelsLabelChips(m), ...colors }));
-}
-
 export interface ChannelsFilterHandlers {
   onClearAll: () => void;
   onToggleUnread: () => void;
   onToggleLabel: (label: string) => void;
 }
 
-export function channelsLabelBarActions(h: ChannelsFilterHandlers): PayloadHandlers {
-  return {
-    [LABEL_CHIP_PRESS]: (payload): void => {
-      const value = payload.value;
-      if (typeof value !== 'string') return;
-      if (value === '') { h.onClearAll(); return; }
-      if (value === UNREAD_FILTER_VALUE) { h.onToggleUnread(); return; }
-      h.onToggleLabel(value);
-    },
-  };
+export function selectChannelsFilter(h: ChannelsFilterHandlers, value: string): void {
+  if (value === '') { h.onClearAll(); return; }
+  if (value === UNREAD_FILTER_VALUE) { h.onToggleUnread(); return; }
+  h.onToggleLabel(value);
 }
 
 export interface ChannelsOverflowItem {

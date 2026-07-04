@@ -4,9 +4,8 @@ import { useCallback } from 'react';
 import { DevSettings, Vibration } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import { basicRoot, emptyState } from '@views';
 import { Col } from '../layout';
+import { EmptyState } from '../chrome/EmptyState';
 import { Spinner } from '../Spinner';
 import { ChannelRow } from '../ChannelRow';
 import { resetXmtpClient, shortAddress, prefetchFeed, lineOfConv } from '../../modules/messaging';
@@ -127,10 +126,7 @@ export function HomeSpinner({ head }: { head: string; bg: string }): React.React
 }
 
 export function HomeEmpty({ message }: { message?: string }): React.ReactElement {
-  const node = basicRoot(
-    emptyState({
-      title: message ?? 'No conversations yet. Share your address from Settings to start one.',
-    }),
+  return (
+    <EmptyState title={message ?? 'No conversations yet. Share your address from Settings to start one.'} />
   );
-  return <ViewHost node={node} />;
 }

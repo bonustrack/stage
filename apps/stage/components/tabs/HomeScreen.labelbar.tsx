@@ -2,9 +2,11 @@
 import { useMemo, useState } from 'react';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import { channelsLabelBarActions, channelsLabelBarNode } from '@views';
-import { Box } from '../layout';
+import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
+import { Scroll } from '@stage-labs/kit/react-native/scroll';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { channelsLabelChips, selectChannelsFilter } from '@views';
+import { Box, Row } from '../layout';
 import { usePalette } from '../../lib/theme';
 import type { SimultaneousRefs } from '../SwipeTabs.types';
 
@@ -40,15 +42,10 @@ export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggle
   panRef?: SimultaneousRefs;
 }): React.ReactElement {
   const { link, text: fg, bg, border: rowBg } = usePalette();
-  const node = channelsLabelBarNode(
-    { barLabels: labels, enabledLabels: enabled, unreadOnly },
-    { selectedBackground: link, selectedLabelColor: bg, restBackground: rowBg, restLabelColor: fg },
-  );
-  const actions = channelsLabelBarActions({
-    onClearAll,
-    onToggleUnread,
-    onToggleLabel: onToggle,
-  });
+  const chips = channelsLabelChips({ barLabels: labels, enabledLabels: enabled, unreadOnly });
+  const select = (value: string): void => {
+    selectChannelsFilter({ onClearAll, onToggleUnread, onToggleLabel: onToggle }, value);
+  };
 
   const gesture = useMemo(
     () => (panRef ? Gesture.Native().simultaneousWithExternalGesture(panRef) : Gesture.Native()),
@@ -58,7 +55,26 @@ export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggle
   return (
     <GestureDetector gesture={gesture}>
       <Box style={{ alignSelf: 'stretch' }}>
-        <ViewHost node={node} actions={actions} />
+        <Scroll horizontal showsHorizontalScrollIndicator={false}>
+          <Row gap={8} padding={{ x: 16, top: 14, bottom: 7 }}>
+            {chips.map((chip) => {
+              const selected = chip.selected === true;
+              return (
+                <GesturePressable key={chip.value === '' ? '__all__' : chip.value} onPress={() => { select(chip.value); }}>
+                  <Row
+                    height={26}
+                    radius="full"
+                    padding={{ x: 9, y: 2 }}
+                    align="center"
+                    background={selected ? link : rowBg}
+                  >
+                    <Text value={chip.label} size="md" color={selected ? bg : fg} truncate />
+                  </Row>
+                </GesturePressable>
+              );
+            })}
+          </Row>
+        </Scroll>
       </Box>
     </GestureDetector>
   );

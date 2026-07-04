@@ -3,12 +3,11 @@ import { fontSize } from '@stage-labs/kit/tokens';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { Text } from '@stage-labs/kit/react-native/text';
+import { TextField } from '@stage-labs/kit/react-native/text-field';
 import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { VoiceRecorder } from '@stage-labs/kit/react-native/voice-recorder';
-import type { PayloadHandlers, WidgetRoot } from '@stage-labs/kit/kit';
-import { basicRoot, composerInput, COMPOSER_CHANGE, COMPOSER_SELECTION } from '@views';
 import { Box, Col } from './layout';
 import { usePalette, useRadius } from '../lib/theme';
 
@@ -26,36 +25,6 @@ interface EditorProps {
   onStartRec: () => void; onCancelRec: () => void; onStopRec: () => void; onSend: () => void;
 }
 
-function composerInputNode(p: EditorProps): WidgetRoot {
-  return basicRoot(
-    composerInput({
-      value: p.text,
-      color: p.head,
-      placeholderColor: p.sub,
-      fontSize: fontSize('3xl'),
-      selStart: p.selection.start,
-      selEnd: p.selection.end,
-      focusNonce: p.focusNonce,
-      blurNonce: p.blurNonce,
-    }),
-  );
-}
-
-function composerInputActions(p: EditorProps): PayloadHandlers {
-  return {
-    [COMPOSER_CHANGE]: (payload) => {
-      const next = payload.composer;
-      if (typeof next === 'string') p.setText(next);
-    },
-    [COMPOSER_SELECTION]: (payload) => {
-      const { start, end } = payload;
-      if (typeof start === 'number' && typeof end === 'number') {
-        p.setSelection({ start, end });
-      }
-    },
-  };
-}
-
 function ComposerBtn({ icon, onPress, fg, chipBg, mr }: {
   icon: HeroIconName; onPress: () => void; fg: string; chipBg: string; mr?: number;
 }): React.ReactElement {
@@ -70,9 +39,34 @@ function ComposerBtn({ icon, onPress, fg, chipBg, mr }: {
 }
 
 function ComposerInputSlot({ p }: { p: EditorProps }): React.ReactElement {
+  const dark = useKitScheme() === 'dark';
   return (
     <Box style={{ position: 'relative' }}>
-      <ViewHost node={composerInputNode(p)} actions={composerInputActions(p)} />
+      <TextField
+        name="composer"
+        value={p.text}
+        placeholder="Message"
+        variant="plain"
+        multiline
+        autoGrow
+        fontSize={fontSize('3xl')}
+        fontFamily="Calibre-Medium"
+        color={p.head}
+        placeholderColor={p.sub}
+        paddingX={8}
+        paddingTop={4}
+        paddingBottom={8}
+        lineHeight={23}
+        minHeight={24}
+        maxHeight={210}
+        autoCapitalize="sentences"
+        focusNonce={p.focusNonce}
+        blurNonce={p.blurNonce}
+        selection={p.selection}
+        dark={dark}
+        onChangeText={(text) => { p.setText(text); }}
+        onSelectionChange={(range) => { p.setSelection({ start: range.start, end: range.end }); }}
+      />
     </Box>
   );
 }

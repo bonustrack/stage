@@ -1,18 +1,22 @@
 
 import { memo } from 'react';
 
+import { resolveBadgeStyle, type Scheme } from '@stage-labs/kit/kit';
+import { Caption } from '@stage-labs/kit/react-native/caption';
+import { Icon } from '@stage-labs/kit/react-native/icon';
+import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
+import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
+import { resolveColorToken } from '@stage-labs/kit/tokens';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { Avatar } from './Avatar';
 import { Row, Col, Box } from './layout';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
 import {
-  basicRoot,
-  channelRow,
   channelRowModel,
   unreadBadgeLabel,
-  CHANNEL_LABEL_PRESS,
+  HIGHLIGHT_BG,
+  type ChannelRowParams,
 } from '@views';
 import { usePalette } from '../lib/theme';
 
@@ -60,6 +64,105 @@ function TrailingBadge({ unreadCount, markedUnread, showChevron, head, bg }: {
   return null;
 }
 
+function TitleLine({ params, scheme }: {
+  params: ChannelRowParams; scheme: Scheme;
+}): React.ReactElement {
+  const segments = params.titleSegments && params.titleSegments.length > 0
+    ? params.titleSegments
+    : [{ text: params.title, emphasized: false }];
+  return (
+    <Row align="center" gap={4} flex={1}>
+      {params.pinned === true
+        ? <Icon name="mapPin" size={14} color={resolveColorToken('secondary', scheme)} dark={scheme === 'dark'} />
+        : null}
+      {segments.map((seg, i) => (
+        <Text
+          key={`${seg.text}-${i}`}
+          value={seg.text}
+          weight="semibold"
+          truncate
+          style={seg.emphasized === true ? { backgroundColor: HIGHLIGHT_BG[scheme] } : undefined}
+        />
+      ))}
+    </Row>
+  );
+}
+
+function LabelChips({ params, scheme, onLabelPress }: {
+  params: ChannelRowParams; scheme: Scheme; onLabelPress?: (label: string) => void;
+}): React.ReactElement | null {
+  const chips = params.chips;
+  if (chips === undefined || chips.length === 0) return null;
+  const pressable = params.labelPressable === true && onLabelPress !== undefined;
+  return (
+    <Row gap={4} wrap>
+      {chips.map((chip, i) => {
+        const styled = resolveBadgeStyle(chip.color ?? 'secondary', undefined, 'sm', scheme);
+        const badge = (
+          <Box
+            key={`${chip.label}-${i}`}
+            direction="row"
+            align="center"
+            padding={{ x: 8, y: 2 }}
+            radius="sm"
+            background={styled.background}
+          >
+            <Text value={chip.label} size={styled.fontToken} weight="semibold" color={styled.foreground} />
+          </Box>
+        );
+        if (!pressable) return badge;
+        return (
+          <ListViewItem
+            key={`${chip.label}-${i}`}
+            dark={scheme === 'dark'}
+            onPress={() => { onLabelPress(chip.label); }}
+          >
+            {badge}
+          </ListViewItem>
+        );
+      })}
+    </Row>
+  );
+}
+
+function MetaColumn({ params, scheme }: {
+  params: ChannelRowParams; scheme: Scheme;
+}): React.ReactElement {
+  const hasUnreadBadge = params.unreadBadge !== undefined && params.unreadBadge !== '';
+  const showUnreadDot = !hasUnreadBadge && params.unreadDot === true;
+  const styled = resolveBadgeStyle('info', undefined, 'sm', scheme);
+  return (
+    <Col gap={4} align="end">
+      <Caption value={params.timestamp} color="secondary" />
+      {hasUnreadBadge || showUnreadDot ? (
+        <Box direction="row" align="center" padding={{ x: 8, y: 2 }} radius="full" background={styled.background}>
+          <Text value={hasUnreadBadge ? params.unreadBadge : ' '} size={styled.fontToken} weight="semibold" color={styled.foreground} />
+        </Box>
+      ) : null}
+    </Col>
+  );
+}
+
+function ChannelRowBody({ params, onLabelPress }: {
+  params: ChannelRowParams; onLabelPress?: (label: string) => void;
+}): React.ReactElement {
+  const scheme = useKitScheme();
+  const hasPrefix = params.previewPrefix !== undefined && params.previewPrefix !== '';
+  return (
+    <Row align="center" gap={12} flex={1}>
+      <Col gap={2} flex={1}>
+        <TitleLine params={params} scheme={scheme} />
+        <Row align="center" gap={4}>
+          {hasPrefix ? <Caption value={params.previewPrefix ?? ''} color="info" weight="semibold" /> : null}
+          <Caption value={params.preview} color="secondary" truncate maxLines={1} />
+        </Row>
+        <LabelChips params={params} scheme={scheme} onLabelPress={onLabelPress} />
+      </Col>
+      <MetaColumn params={params} scheme={scheme} />
+    </Row>
+  );
+}
+
 function ChannelRowBase({
   title, avatarAddress, avatarUri, cacheBuster, square,
   lastPreview, timestamp, subtitle, unreadCount = 0, markedUnread,
@@ -67,11 +170,9 @@ function ChannelRowBase({
   onPress, onPressIn, onLongPress, containerStyle, labels, onLabelPress, highlightQuery,
 }: ChannelRowProps): React.ReactElement {
   const { link: head, bg, border } = usePalette();
-  const node = basicRoot(channelRow(channelRowModel({
+  const params = channelRowModel({
     convId: '',
     avatarUri: '',
-    omitAvatar: true,
-    interactive: false,
     title,
     highlightQuery,
     lastPreview,
@@ -82,7 +183,7 @@ function ChannelRowBase({
     labelPressable: !!onLabelPress,
     pinned,
     timestampLabel: timestamp ?? '',
-  })));
+  });
 
   return (
     <Pressable
@@ -105,15 +206,7 @@ function ChannelRowBase({
           style={{ backgroundColor: border }}
 />
         <Col minWidth={0} flex={1}>
-          <ViewHost
-            node={node}
-            actions={{
-              [CHANNEL_LABEL_PRESS]: (payload) => {
-                const label = payload.label;
-                if (onLabelPress && typeof label === 'string') onLabelPress(label);
-              },
-            }}
-          />
+          <ChannelRowBody params={params} onLabelPress={onLabelPress} />
         </Col>
         <TrailingBadge unreadCount={unreadCount} markedUnread={markedUnread}
           showChevron={showChevron} head={head} bg={bg} />

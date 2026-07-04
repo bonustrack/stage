@@ -1,10 +1,33 @@
+import type { BadgeColor } from '@stage-labs/kit/kit';
 import { channelTimestamp, unreadBadgeLabel } from '../format';
 import { highlightSegments } from './highlightText';
-import type {
-  ChannelLabelChip,
-  ChannelRowParams,
-  ChannelTitleSegment,
-} from './channelRow';
+
+export interface ChannelLabelChip {
+  label: string;
+  color?: BadgeColor;
+}
+
+export interface ChannelTitleSegment {
+  text: string;
+  emphasized?: boolean;
+}
+
+export interface ChannelRowParams {
+  convId: string;
+  avatarUri: string;
+  title: string;
+  preview: string;
+  timestamp: string;
+  unreadBadge?: string;
+  titleSegments?: ChannelTitleSegment[];
+  previewPrefix?: string;
+  chips?: ChannelLabelChip[];
+  pinned?: boolean;
+  unreadDot?: boolean;
+  omitAvatar?: boolean;
+  labelPressable?: boolean;
+  interactive?: boolean;
+}
 
 const MAX_VISIBLE_LABELS = 2;
 

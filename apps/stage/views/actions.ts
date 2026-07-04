@@ -1,24 +1,12 @@
-export const CHANNEL_PRESS = 'chat.channel.press';
-
-export const CHANNEL_LONG_PRESS = 'chat.channel.longPress';
-
 export const ACCOUNT_PRESS = 'accounts.account.press';
 
 export const LINK_OPEN = 'link.open';
-
-export const CHANNEL_LABEL_PRESS = 'chat.channel.labelPress';
-
-export const CHANNEL_PIN = 'chat.channel.pin';
-
-export const CONTACT_PRESS = 'contacts.contact.press';
 
 export const PROFILE_INFO_PRESS = 'profile.info.press';
 
 export const PROFILE_ROUND_PRESS = 'profile.round.press';
 
 export const PROFILE_ADDRESS_COPY = 'profile.address.copy';
-
-export const REACTION_PRESS = 'chat.reaction.press';
 
 export const REACTION_EMOJI_PRESS = 'chat.reaction.emojiPress';
 
@@ -28,15 +16,11 @@ export const CONVERSATION_PRESS = 'chat.conversation.press';
 
 export const POLL_OPTION_PRESS = 'chat.poll.optionPress';
 
-export const MENU_ITEM_PRESS = 'chat.menu.itemPress';
-
 export const OVERFLOW_MENU_PRESS = 'chat.overflowMenu.itemPress';
 
 export const COMPOSER_SEND = 'chat.composer.send';
 
 export const COMPOSER_ATTACH = 'chat.composer.attach';
-
-export const EMPTY_STATE_PRESS = 'chat.emptyState.press';
 
 export const BANNER_PRESS = 'banner.press';
 
@@ -48,8 +32,6 @@ export const VIDEO_PLAY = 'chat.video.play';
 
 export const COMPOSER_CHANGE = 'chat.composer.change';
 
-export const COMPOSER_SELECTION = 'chat.composer.selection';
-
 export const COMPOSER_MENTION_PICK = 'chat.composer.mentionPick';
 
 export const COMPOSER_ATTACH_PICK = 'chat.composer.attachPick';
@@ -59,8 +41,6 @@ export const COMPOSER_PENDING_REMOVE = 'chat.composer.pendingRemove';
 export const MEMBER_CHIP_REMOVE = 'accounts.memberChip.remove';
 
 export const FILTER_SELECT = 'chat.filter.select';
-
-export const LABEL_CHIP_PRESS = 'chat.labelBar.chipPress';
 
 export const MEMBER_ADD_CHANGE = 'accounts.memberAdd.change';
 

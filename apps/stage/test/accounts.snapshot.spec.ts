@@ -1,9 +1,7 @@
 import { describe, test } from 'bun:test';
 import { accountRow } from '../views/accounts/accountRow';
-import { contactRow } from '../views/accounts/contactRow';
 import { memberAddForm } from '../views/accounts/memberAddForm';
 import { memberChip } from '../views/accounts/memberChip';
-import { topnavIdentity } from '../views/accounts/topnavIdentity';
 import { snap } from './helpers';
 
 describe('accountRow', () => {
@@ -28,26 +26,6 @@ describe('accountRow', () => {
         typeLabel: 'Smart',
       }),
     );
-  });
-});
-
-describe('topnavIdentity', () => {
-  test('minimal (no avatar)', () => {
-    snap(topnavIdentity({ name: 'Alice' }));
-  });
-
-  test('full', () => {
-    snap(
-      topnavIdentity({
-        avatarUri: 'https://img.example/a.png',
-        avatarBackground: '#eeeeee',
-        name: 'Alice',
-      }),
-    );
-  });
-
-  test('empty name renders avatar only', () => {
-    snap(topnavIdentity({ name: '', avatarBackground: '#eeeeee' }));
   });
 });
 
@@ -92,21 +70,3 @@ describe('memberAddForm', () => {
   });
 });
 
-describe('contactRow', () => {
-  test('minimal', () => {
-    snap(contactRow({ name: 'Carol', avatarUri: 'https://img.example/c.png' }));
-  });
-
-  test('full', () => {
-    snap(
-      contactRow({
-        name: 'Carol',
-        avatarUri: 'https://img.example/c.png',
-        handle: 'carol.eth',
-        trailingBadge: 'Agent',
-        pressType: 'custom.contact',
-        payload: { address: '0xabc' },
-      }),
-    );
-  });
-});

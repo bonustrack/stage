@@ -1,5 +1,11 @@
 import { compactList } from '../node';
-import type { MenuSheetItem } from './menuSheet';
+
+export interface MenuSheetItem {
+  id: string;
+  label: string;
+  icon?: string;
+  danger?: boolean;
+}
 
 export interface ChannelMenuState {
   isGroup: boolean;

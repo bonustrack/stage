@@ -1,73 +1,17 @@
 import { describe, expect, test } from 'bun:test';
-import { channelRow } from '../views/chat/channelRow';
 import { composerBar } from '../views/chat/composerBar';
-import { composerInput } from '../views/chat/composerInput';
 import { conversationHeader } from '../views/chat/conversationHeader';
 import { emojiReactionRow } from '../views/chat/emojiReactionRow';
-import { emptyState, sectionHeader } from '../views/chat/emptyState';
 import { filterChips } from '../views/chat/filterChips';
 import { highlightSegments, highlightText } from '../views/chat/highlightText';
-import { labelBar } from '../views/chat/labelBar';
 import { mediaCard } from '../views/chat/mediaCard';
-import { menuSheet } from '../views/chat/menuSheet';
 import { messageBubble } from '../views/chat/messageBubble';
 import { overflowMenu } from '../views/chat/overflowMenu';
 import { pollCard } from '../views/chat/pollCard';
 import { previewLinkCard } from '../views/chat/previewLinkCard';
-import { reactionsRow } from '../views/chat/reactionsRow';
 import { videoMessage } from '../views/chat/videoMessage';
 import { voiceMessage } from '../views/chat/voiceMessage';
 import { snap } from './helpers';
-
-describe('channelRow', () => {
-  test('minimal', () => {
-    snap(
-      channelRow({
-        convId: 'conv-1',
-        avatarUri: 'https://img.example/a.png',
-        title: 'General',
-        preview: 'hello there',
-        timestamp: '12:30',
-      }),
-    );
-  });
-
-  test('full', () => {
-    snap(
-      channelRow({
-        convId: 'conv-1',
-        avatarUri: 'https://img.example/a.png',
-        title: 'General',
-        preview: 'hello there',
-        timestamp: 'Jun 4',
-        unreadBadge: '3',
-        titleSegments: [{ text: 'Gen' }, { text: 'eral', emphasized: true }],
-        previewPrefix: 'You: ',
-        chips: [{ label: 'work' }, { label: 'dao', color: 'info' }],
-        pinned: true,
-        unreadDot: true,
-        omitAvatar: true,
-        labelPressable: true,
-        interactive: true,
-      }),
-    );
-  });
-
-  test('non-interactive with unread dot only', () => {
-    const tree = channelRow({
-      convId: 'conv-2',
-      avatarUri: 'https://img.example/b.png',
-      title: 'Quiet',
-      preview: 'psst',
-      timestamp: '09:01',
-      unreadDot: true,
-      chips: [{ label: 'muted' }],
-      interactive: false,
-    });
-    expect(tree.type).toBe('Row');
-    snap(tree);
-  });
-});
 
 describe('mediaCard', () => {
   test('minimal (plain box, no action)', () => {
@@ -87,27 +31,6 @@ describe('mediaCard', () => {
         width: 320,
         clickAction: { type: 'custom.press', payload: { k: 'v' } },
         children: [{ type: 'Image', src: 'https://img.example/m.png' }],
-      }),
-    );
-  });
-});
-
-describe('reactionsRow', () => {
-  test('minimal', () => {
-    snap(reactionsRow({ reactions: [{ emoji: '👍', count: 2 }] }));
-  });
-
-  test('full', () => {
-    snap(
-      reactionsRow({
-        messageId: 'msg-1',
-        dispatchPress: true,
-        pillBackground: '#111111',
-        ownBorderColor: '#222222',
-        reactions: [
-          { emoji: '👍', count: 2, own: true },
-          { emoji: '❤️', count: 1 },
-        ],
       }),
     );
   });
@@ -235,23 +158,6 @@ describe('pollCard', () => {
   });
 });
 
-describe('menuSheet', () => {
-  test('minimal', () => {
-    snap(menuSheet({ items: [{ id: 'copy', label: 'Copy' }] }));
-  });
-
-  test('full', () => {
-    snap(
-      menuSheet({
-        items: [
-          { id: 'reply', label: 'Reply', icon: 'reply' },
-          { id: 'delete', label: 'Delete', icon: 'trash', danger: true, pressType: 'custom.item' },
-        ],
-      }),
-    );
-  });
-});
-
 describe('overflowMenu', () => {
   test('minimal', () => {
     snap(overflowMenu({ items: [{ id: 'a', label: 'A' }] }));
@@ -271,64 +177,6 @@ describe('overflowMenu', () => {
         pressType: 'custom.overflow',
       }),
     );
-  });
-});
-
-describe('composerInput', () => {
-  test('minimal', () => {
-    snap(
-      composerInput({
-        value: 'draft',
-        color: '#111111',
-        placeholderColor: '#999999',
-        fontSize: 16,
-        selStart: 0,
-        selEnd: 5,
-        focusNonce: 1,
-        blurNonce: 0,
-      }),
-    );
-  });
-
-  test('full', () => {
-    snap(
-      composerInput({
-        value: 'draft',
-        color: '#111111',
-        placeholderColor: '#999999',
-        fontSize: 16,
-        selStart: 2,
-        selEnd: 2,
-        focusNonce: 3,
-        blurNonce: 1,
-        changeType: 'custom.change',
-        selectionType: 'custom.selection',
-      }),
-    );
-  });
-});
-
-describe('emptyState', () => {
-  test('minimal', () => {
-    snap(emptyState({ title: 'No messages' }));
-  });
-
-  test('full', () => {
-    snap(
-      emptyState({
-        icon: 'inbox',
-        title: 'No messages',
-        caption: 'Start a conversation',
-        actionLabel: 'New chat',
-        actionId: 'new-chat',
-      }),
-    );
-  });
-});
-
-describe('sectionHeader', () => {
-  test('uppercases the title', () => {
-    snap(sectionHeader({ title: 'today' }));
   });
 });
 
@@ -452,32 +300,3 @@ describe('filterChips', () => {
   });
 });
 
-describe('labelBar', () => {
-  test('minimal', () => {
-    snap(
-      labelBar({
-        chips: [{ value: 'work', label: 'Work' }],
-        selectedBackground: '#000000',
-        selectedLabelColor: '#ffffff',
-        restBackground: '#eeeeee',
-        restLabelColor: '#333333',
-      }),
-    );
-  });
-
-  test('full', () => {
-    snap(
-      labelBar({
-        chips: [
-          { value: 'work', label: 'Work', selected: true },
-          { value: 'dao', label: 'DAO' },
-        ],
-        selectedBackground: '#000000',
-        selectedLabelColor: '#ffffff',
-        restBackground: '#eeeeee',
-        restLabelColor: '#333333',
-        pressType: 'custom.label',
-      }),
-    );
-  });
-});

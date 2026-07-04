@@ -1,10 +1,11 @@
 
 import { useEffect, useState } from 'react';
 
+import { Image } from '@stage-labs/kit/react-native/image';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { stampAvatarUrl } from '@stage-labs/kit/avatar';
-import { basicRoot, topnavIdentity } from '@views';
+import { Row, Col } from './layout';
 import { MenuSheet } from './MenuSheet';
 import { usePalette } from '../lib/theme';
 import { useActiveAccount } from '../modules/messaging';
@@ -31,13 +32,18 @@ export function TopnavIdentity(): React.ReactElement {
   return (
     <>
       <Pressable onPress={() => { setMenuOpen(true); }} hitSlop={8}>
-        <ViewHost
-          node={basicRoot(topnavIdentity({
-            avatarUri: myAddress ? stampAvatarUrl(myAddress, 28) : '',
-            avatarBackground: border,
-            name: myName,
-          }))}
-        />
+        <Row align="center" gap={8}>
+          {myAddress ? (
+            <Image src={stampAvatarUrl(myAddress, 28)} size={28} radius="full" background={border} />
+          ) : (
+            <Col size={28} radius="full" background={border} />
+          )}
+          {myName !== '' ? (
+            <Row maxWidth={200}>
+              <Text value={myName} size="4xl" weight="semibold" color="link" truncate />
+            </Row>
+          ) : null}
+        </Row>
       </Pressable>
       <MenuSheet visible={menuOpen} onClose={() => { setMenuOpen(false); }} />
     </>

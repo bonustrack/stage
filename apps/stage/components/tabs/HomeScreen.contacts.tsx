@@ -2,21 +2,18 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { isAddress } from 'viem';
-import { Box } from '../layout';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import type { PayloadHandlers, WidgetRoot } from '@stage-labs/kit/kit';
-import { basicRoot, contactRow, emptyState, sectionHeader, CONTACT_PRESS } from '@views';
+import { Caption } from '@stage-labs/kit/react-native/caption';
+import { Image } from '@stage-labs/kit/react-native/image';
+import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
+import { Box, Row, Col } from '../layout';
+import { EmptyState } from '../chrome/EmptyState';
 import { openDmWithAddress, shortAddress } from '../../modules/messaging';
 import { resolveEnsName } from '@stage-labs/client/api/ens';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { getCachedRows } from '../../modules/messaging';
 import { stampAvatarUrl } from '@stage-labs/kit/avatar';
-
-const NO_MATCH_NODE = basicRoot(
-  emptyState({ title: 'No matches. Paste a full address or a name.eth to start a chat.' }),
-);
-
-const PEOPLE_HEADER_NODE = basicRoot(sectionHeader({ title: 'People' }));
 
 function looksLikeEns(s: string): boolean {
   return /^[a-z0-9-]+(\.[a-z0-9-]+)*\.eth$/i.test(s.trim());
@@ -40,10 +37,29 @@ function getExistingPeers(): { address: string; convId: string }[] {
 
 interface Colors { fg: string; head: string; sub: string; border: string }
 
+function ContactResultRow({ title, subtitle, address, dark, onPress }: {
+  title: string; subtitle?: string; address: string; dark: boolean; onPress: () => void;
+}): React.ReactElement {
+  return (
+    <ListViewItem dark={dark} align="center" gap={12} onPress={onPress}>
+      <Row align="center" gap={12} flex={1}>
+        <Image src={stampAvatarUrl(address, 80)} size={40} radius="full" />
+        <Col gap={2} flex={1}>
+          <Text value={title} weight="semibold" truncate />
+          {subtitle === undefined || subtitle === '' ? null : (
+            <Caption value={subtitle} color="secondary" truncate />
+          )}
+        </Col>
+      </Row>
+    </ListViewItem>
+  );
+}
+
 export function HomeContactResults(
   { query, noChannels }: { query: string; c: Colors; noChannels: boolean },
 ): React.ReactElement | null {
   const q = query.trim();
+  const dark = useKitScheme() === 'dark';
   const [resolved, setResolved] = useState<{ address: string; source: 'address' | 'ens' } | null>(null);
   const [opening, setOpening] = useState<string | null>(null);
 
@@ -95,7 +111,7 @@ export function HomeContactResults(
   if (!q) return null;
   if (!showResolved && filtered.length === 0) {
     if (!noChannels) return null;
-    return <ViewHost node={NO_MATCH_NODE} />;
+    return <EmptyState title="No matches. Paste a full address or a name.eth to start a chat." />;
   }
 
   const rows = [
@@ -115,34 +131,23 @@ export function HomeContactResults(
     })),
   ];
 
-  const listNode: WidgetRoot = {
-    type: 'ListView',
-    children: rows.map(r =>
-      contactRow({
-        name: r.title,
-        avatarUri: stampAvatarUrl(r.address, 80),
-        handle: r.subtitle,
-        payload: { address: r.address, convId: r.convId ?? '' },
-      }),
-    ),
-  };
-
-  const actions: PayloadHandlers = {
-    [CONTACT_PRESS]: (payload) => {
-      const address = payload.address;
-      const convId = payload.convId;
-      if (typeof address === 'string') {
-        open(address, typeof convId === 'string' && convId !== '' ? convId : undefined);
-      }
-    },
-  };
-
   return (
     <Box>
       <Box padding={{ x: 16, top: 16, bottom: 6 }}>
-        <ViewHost node={PEOPLE_HEADER_NODE} />
+        <Caption value="PEOPLE" color="secondary" weight="semibold" />
       </Box>
-      <ViewHost node={listNode} actions={actions} />
+      <ListView dark={dark}>
+        {rows.map((r) => (
+          <ContactResultRow
+            key={`${r.address}-${r.convId ?? ''}`}
+            title={r.title}
+            subtitle={r.subtitle}
+            address={r.address}
+            dark={dark}
+            onPress={() => { open(r.address, r.convId); }}
+          />
+        ))}
+      </ListView>
     </Box>
   );
 }

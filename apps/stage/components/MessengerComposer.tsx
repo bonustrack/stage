@@ -1,10 +1,7 @@
 
 import { Text } from '@stage-labs/kit/react-native/text';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import type { PayloadHandlers, WidgetRoot } from '@stage-labs/kit/kit';
-import { basicRoot } from '@views';
+import { FilePicker } from '@stage-labs/kit/react-native/file-picker';
 import { Col } from './layout';
-import type { ComposerPickedFile } from './MessengerComposer.actions.helpers';
 import { type Attachment } from './MessengerComposer.helpers';
 import { useComposerActions } from './MessengerComposer.actions';
 import { useComposerDrafts, useComposerFocus, computeMentions, applyMention, useLastAttachment } from './MessengerComposer.hooks';
@@ -13,42 +10,6 @@ import { ComposerEditor, AttachMenu, buildAttachActions } from './MessengerCompo
 import { DANGER, usePalette } from '../lib/theme';
 import { useComposerState } from './MessengerComposer.state';
 import { ComposerSheets } from './MessengerComposer.sheets.bound';
-
-function composerPickersNode(n: { imageNonce: number; cameraNonce: number; fileNonce: number }): WidgetRoot {
-  return basicRoot(
-    {
-      type: 'FilePicker', openNonce: n.imageNonce, source: 'library',
-      mediaTypes: ['images', 'videos'], quality: 0.5, multiple: true, selectionLimit: 10,
-      onPickAction: { type: 'composer_pick_image', handler: 'client' },
-    },
-    {
-      type: 'FilePicker', openNonce: n.cameraNonce, source: 'camera',
-      mediaTypes: ['images'], quality: 0.5,
-      onPickAction: { type: 'composer_pick_camera', handler: 'client' },
-    },
-    {
-      type: 'FilePicker', openNonce: n.fileNonce, source: 'document',
-      onPickAction: { type: 'composer_pick_file', handler: 'client' },
-    },
-  );
-}
-
-function pickedFiles(payload: Record<string, unknown>): ComposerPickedFile[] {
-  const files = payload.files;
-  return Array.isArray(files) ? files as ComposerPickedFile[] : [];
-}
-
-function composerPickersActions(h: {
-  onPickedImages: (f: ComposerPickedFile[]) => Promise<void>;
-  onPickedCamera: (f: ComposerPickedFile[]) => Promise<void>;
-  onPickedFile: (f: ComposerPickedFile[]) => Promise<void>;
-}): PayloadHandlers {
-  return {
-    composer_pick_image: (payload) => { void h.onPickedImages(pickedFiles(payload)); },
-    composer_pick_camera: (payload) => { void h.onPickedCamera(pickedFiles(payload)); },
-    composer_pick_file: (payload) => { void h.onPickedFile(pickedFiles(payload)); },
-  };
-}
 
 interface Props {
   dark: boolean;
@@ -183,13 +144,26 @@ export function MessengerComposer(props: Props): React.ReactElement {
         />
       ) : null}
       <ComposerSheets s={s} palette={palette} dark={dark} actions={actions} />
-      <ViewHost
-        node={composerPickersNode({ imageNonce: actions.imageNonce, cameraNonce: actions.cameraNonce, fileNonce: actions.fileNonce })}
-        actions={composerPickersActions({
-          onPickedImages: actions.onPickedImages,
-          onPickedCamera: actions.onPickedCamera,
-          onPickedFile: actions.onPickedFile,
-        })}
+      <FilePicker
+        openNonce={actions.imageNonce}
+        source="library"
+        mediaTypes={['images', 'videos']}
+        quality={0.5}
+        multiple
+        selectionLimit={10}
+        onPick={(files) => { void actions.onPickedImages(files); }}
+      />
+      <FilePicker
+        openNonce={actions.cameraNonce}
+        source="camera"
+        mediaTypes={['images']}
+        quality={0.5}
+        onPick={(files) => { void actions.onPickedCamera(files); }}
+      />
+      <FilePicker
+        openNonce={actions.fileNonce}
+        source="document"
+        onPick={(files) => { void actions.onPickedFile(files); }}
       />
     </Col>
   );
