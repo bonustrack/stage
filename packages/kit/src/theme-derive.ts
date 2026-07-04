@@ -1,5 +1,6 @@
 
-export type Scheme = 'light' | 'dark';
+export type { Scheme } from './tokens';
+import type { Scheme } from './tokens';
 
 export interface ThemeSeed {
   grayscale: string;

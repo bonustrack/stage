@@ -1,6 +1,6 @@
 
 import type { ReactElement, ReactNode } from 'react';
-import { resolveBadgeStyle } from '@stage-labs/kit/kit';
+import { resolveBadgeStyle } from '@stage-labs/kit/badge';
 import { Card } from '@stage-labs/kit/react-native/card';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Text } from '@stage-labs/kit/react-native/text';

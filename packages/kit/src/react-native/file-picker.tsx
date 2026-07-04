@@ -2,7 +2,10 @@
 import { useEffect, useRef } from 'react';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
-import type { FilePickerMediaType, FilePickerSource } from '../kit';
+
+export type FilePickerSource = 'library' | 'camera' | 'document';
+
+export type FilePickerMediaType = 'images' | 'videos';
 
 export interface PickedFile {
   uri: string;

@@ -1,6 +1,17 @@
 
-import type { BadgeColor, BadgeColorValue, BadgeSize } from './node-fields';
-import { readableForeground, resolveColor, type Scheme } from './resolve';
+import { readableForeground, resolveColor, type Color, type Scheme } from './tokens';
+
+export type BadgeColor =
+  | 'secondary'
+  | 'success'
+  | 'danger'
+  | 'warning'
+  | 'info'
+  | 'discovery';
+
+export type BadgeColorValue = Color;
+
+export type BadgeSize = '3xs' | '2xs' | 'sm' | 'md' | 'lg';
 
 const BADGE_SEMANTIC_BG: Record<BadgeColor, string> = {
   secondary: '#8a929d',

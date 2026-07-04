@@ -2,7 +2,7 @@
 import { Alert } from 'react-native';
 
 import { useRouter } from 'expo-router';
-import { resolveIconName } from '@stage-labs/kit/kit';
+import { resolveIconName } from '@stage-labs/kit/icons';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Text } from '@stage-labs/kit/react-native/text';

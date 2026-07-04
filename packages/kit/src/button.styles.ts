@@ -25,8 +25,6 @@ export type ButtonSize =
   | '2xl'
   | '3xl';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
-
 export interface SizeSpec {
   height: number;
   paddingHorizontal: number;
@@ -147,22 +145,6 @@ export function resolveColors(
   }
 }
 
-export function legacyVariantToColor(v: ButtonVariant): {
-  color: ButtonColor;
-  variant: ButtonControlVariant;
-} {
-  switch (v) {
-    case 'primary':
-      return { color: 'primary', variant: 'solid' };
-    case 'secondary':
-      return { color: 'secondary', variant: 'solid' };
-    case 'ghost':
-      return { color: 'primary', variant: 'ghost' };
-    case 'danger':
-      return { color: 'danger', variant: 'solid' };
-  }
-}
-
 export function textLabelStyle(spec: SizeSpec, color: string): TextStyle {
   return {
     color,
@@ -170,22 +152,4 @@ export function textLabelStyle(spec: SizeSpec, color: string): TextStyle {
     fontFamily: 'Calibre-Semibold',
     textAlign: 'center',
   };
-}
-
-const LEGACY_VARIANTS = new Set<ButtonVariant>(['primary', 'secondary', 'danger']);
-
-export function resolveModel(
-  color: ButtonColor | undefined,
-  variant: ButtonControlVariant | ButtonVariant | undefined,
-  styleColor: 'primary' | 'secondary' | undefined,
-): { color: ButtonColor; variant: ButtonControlVariant } {
-  if (variant && LEGACY_VARIANTS.has(variant as ButtonVariant) && !color) {
-    return legacyVariantToColor(variant as ButtonVariant);
-  }
-  const baseColor: ButtonColor = color ?? styleColor ?? 'primary';
-  const treatment: ButtonControlVariant =
-    variant && (['solid', 'soft', 'outline', 'ghost'] as string[]).includes(variant)
-      ? (variant as ButtonControlVariant)
-      : 'solid';
-  return { color: baseColor, variant: treatment };
 }

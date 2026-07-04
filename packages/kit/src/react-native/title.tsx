@@ -1,6 +1,5 @@
 
 import { Text as RNText, type TextProps as RNTextProps, type TextStyle } from 'react-native';
-import { resolveHeroTitlePx } from '../kit/resolve';
 import { resolveColorToken, type ColorToken } from '../tokens';
 import { useKitPalette, useKitScheme } from './theme-context';
 
@@ -18,6 +17,11 @@ export interface TitleProps extends Omit<RNTextProps, 'style'> {
 
 const LEVEL_SIZE: Record<TitleLevel, number> = { 1: 30, 2: 24, 3: 21 };
 const TOKEN_LEVEL: Record<TitleSizeToken, TitleLevel> = { lg: 1, md: 2, sm: 3 };
+const HERO_PX: Record<TitleHeroSize, number> = { '6xl': 44, '7xl': 60 };
+
+function resolveHeroTitlePx(value: TitleHeroSize | undefined): number | undefined {
+  return value === undefined ? undefined : HERO_PX[value];
+}
 
 export function Title(props: TitleProps): React.ReactElement {
   const { level, size, hero, color, style, children, ...rest } = props;

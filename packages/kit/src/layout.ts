@@ -28,6 +28,8 @@ export interface Spacing {
   y?: number | string;
 }
 
+export type SpacingValue = number | string | Spacing;
+
 export interface ResolvedBoxBorderSide {
   width?: number | string;
   color?: string;
@@ -171,6 +173,15 @@ function applyBorder(s: BoxStyleEntries, border: ResolvedBoxBorder | undefined):
     border.bottom?.style ??
     border.left?.style;
   setIf(s, 'borderStyle', style);
+}
+
+export function spacingEntries(
+  prefix: 'padding' | 'margin',
+  value: SpacingValue | undefined,
+): BoxStyleEntries {
+  const s: BoxStyleEntries = {};
+  applySpacing(s, prefix, value);
+  return s;
 }
 
 export function borderStyleEntries(

@@ -1,6 +1,6 @@
 
 import type { ReactNode } from 'react';
-import { resolveIconName } from '@stage-labs/kit/kit';
+import { resolveIconName } from '@stage-labs/kit/icons';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Checkbox } from '@stage-labs/kit/react-native/checkbox';
 import { Icon } from '@stage-labs/kit/react-native/icon';

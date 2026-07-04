@@ -1,7 +1,7 @@
 
 import { View } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
-import { buildQrMatrix } from '../kit/qr';
+import { buildQrMatrix } from '../qr';
 
 export interface QrCodeProps {
   value: string;

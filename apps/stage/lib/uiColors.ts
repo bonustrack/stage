@@ -1,4 +1,4 @@
-import type { ThemeColor } from '@stage-labs/kit/kit';
+import type { ThemeColor } from '@stage-labs/kit/tokens';
 
 export const DANGER_COLOR: ThemeColor = { dark: '#eb4c5b', light: '#eb4c5b' };
 

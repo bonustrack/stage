@@ -1,11 +1,11 @@
-import type { TabsOption } from '@stage-labs/kit/kit';
+import type { TabsOptionView } from '@stage-labs/kit/react-native/tabs';
 
 export interface WalletScreenFeatures {
   privateTab?: boolean;
 }
 
-export function walletTabOptions(features: WalletScreenFeatures = {}): TabsOption[] {
-  const options: TabsOption[] = [
+export function walletTabOptions(features: WalletScreenFeatures = {}): TabsOptionView[] {
+  const options: TabsOptionView[] = [
     { value: 'tokens', label: 'Tokens' },
     { value: 'nfts', label: 'NFTs' },
     { value: 'activity', label: 'Activity' },

@@ -1,7 +1,8 @@
 
 import { memo } from 'react';
 
-import { resolveBadgeStyle, type Scheme } from '@stage-labs/kit/kit';
+import { resolveBadgeStyle } from '@stage-labs/kit/badge';
+import type { Scheme } from '@stage-labs/kit/tokens';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';

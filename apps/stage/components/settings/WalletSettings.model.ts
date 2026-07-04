@@ -1,4 +1,4 @@
-import type { BadgeColor } from '@stage-labs/kit/kit';
+import type { BadgeColor } from '@stage-labs/kit/badge';
 
 export type WalletModuleRole = 'sudo' | 'backup' | 'recovery' | 'session';
 

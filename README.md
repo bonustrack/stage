@@ -4,23 +4,24 @@ Stage is an XMTP messenger with multi-account support, Snapshot profiles, group
 channels, and an onchain wallet (assets, balances, and Railgun shielded
 transfers). It ships as **one universal Expo app** serving Android, iOS, and the
 web from the same React Native codebase (web via react-native-web), backed by a
-framework-agnostic TypeScript core, a design-system kit with a JSON widget
-renderer, and a Cloudflare Worker that resolves link previews.
+framework-agnostic TypeScript core, a design-system kit, and a Cloudflare
+Worker that resolves link previews.
 
 ## Monorepo layout
 
 ```
 apps/
   stage/    # stage — the universal Expo + React Native app (android · ios · web)
-            #   views/     screen models + chat-widget builders (imported as @views)
-            #   platform/  per-platform seams (.ts native / .web.ts overrides)
-            #   lib/       state + SDK orchestration (incl. xmtp.*.web adapters)
+            #   app/        expo-router file routes
+            #   components/ kit-JSX screens + colocated *.model.ts pure models
+            #   platform/   per-platform seams (.ts native / .web.ts overrides)
+            #   lib/        state + SDK orchestration (incl. xmtp.*.web adapters)
   proxy/    # proxy — Cloudflare Worker for link-preview / image / x402 proxying
 packages/
   client/   # @stage-labs/client — framework-agnostic shared logic (XMTP cores,
             #   Snapshot profiles, embeds, wallet, account keys, Railgun, APIs)
   kit/      # @stage-labs/kit — design system: tokens, icons, theme contracts,
-            #   React Native primitives + the JSON KitRenderer/ViewHost
+            #   and one React Native component family (renders on web via RNW)
   config/   # @stage-labs/config — shared ESLint/TS/knip/madge presets + stage CLI
 ```
 

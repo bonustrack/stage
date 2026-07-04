@@ -1,11 +1,12 @@
 
-import { readableForeground, resolveBadgeStyle, resolveIconName } from '@stage-labs/kit/kit';
+import { resolveBadgeStyle } from '@stage-labs/kit/badge';
+import { resolveIconName } from '@stage-labs/kit/icons';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
-import { resolveColorToken } from '@stage-labs/kit/tokens';
+import { readableForeground, resolveColorToken } from '@stage-labs/kit/tokens';
 import { Box, Col } from '../layout';
 
 export function WalletIcon({ name, color, size }: {

@@ -1,4 +1,4 @@
-import type { BadgeColor } from '@stage-labs/kit/kit';
+import type { BadgeColor } from '@stage-labs/kit/badge';
 import { channelTimestamp, unreadBadgeLabel } from '../lib/format';
 import { highlightSegments } from './HighlightText.model';
 

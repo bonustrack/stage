@@ -1,4 +1,5 @@
-import { resolveIconName, type Scheme } from '@stage-labs/kit/kit';
+import { resolveIconName } from '@stage-labs/kit/icons';
+import type { Scheme } from '@stage-labs/kit/tokens';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
