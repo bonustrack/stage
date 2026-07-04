@@ -1,11 +1,8 @@
 
 import { useCallback, useMemo } from 'react';
-import { MessengerBubble } from '../MessengerBubble';
-import { BubbleErrorBoundary } from '../MessengerBubble.boundary';
+import { FeedBubbleItem } from './FeedBubbleItem';
 import { usePalette } from '../../lib/theme';
 import { previewOf } from './feed-helpers';
-import type { SignatureRequestContent } from '@stage-labs/client/xmtp/sign';
-import type { WalletSendCallsContent } from '@stage-labs/client/xmtp/tx';
 import type { useConversationState } from './useConversationState';
 
 type ConvState = ReturnType<typeof useConversationState>;
@@ -30,10 +27,11 @@ export function useFeedRenderItem(
   } = c;
 
   const sub = usePalette().text;
+  const replyingToId = replyingTo?.id;
 
   const extraData = useMemo(
-    () => [profilesVersion, optimisticReactions, reactions, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, confirmedIds, selectedForCopy, groupDescription, groupLabels, consentAllowed],
-    [profilesVersion, optimisticReactions, reactions, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, confirmedIds, selectedForCopy, groupDescription, groupLabels, consentAllowed],
+    () => [profilesVersion, optimisticReactions, reactions, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, confirmedIds, selectedForCopy, groupDescription, groupLabels, consentAllowed, signingIds, payingIds, replyingToId, jumpHighlightId],
+    [profilesVersion, optimisticReactions, reactions, optimisticRemovals, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, confirmedIds, selectedForCopy, groupDescription, groupLabels, consentAllowed, signingIds, payingIds, replyingToId, jumpHighlightId],
   );
 
   const eventsById = useMemo(() => {
@@ -42,55 +40,51 @@ export function useFeedRenderItem(
     return m;
   }, [events]);
 
+  const onAvatarPress = useCallback((address: string) => {
+    router.push({ pathname: '/user/[address]', params: { address } });
+  }, [router]);
+
   const renderItem = useCallback(({ item }: { item: Bubble }) => (
-    <BubbleErrorBoundary sub={sub}>
-    <MessengerBubble
-      entry={item}
+    <FeedBubbleItem
+      item={item}
       dark={dark}
       myUri={myUri}
+      sub={sub}
       senderEthAddress={senderEthOf(item.from)}
-      onAvatarPress={(addr) => { router.push({ pathname: '/user/[address]', params: { address: addr } }); }}
-      unread={false}
       pending={item.id.startsWith('tmp_') && !confirmedIds.has(item.id)}
-      replyTarget={replyingTo?.id === item.id || jumpHighlightId === item.id}
+      replyTarget={replyingToId === item.id || jumpHighlightId === item.id}
       reactions={reactions.get(item.id)}
       pendingReactions={optimisticReactions.get(item.id)}
       pendingRemovals={optimisticRemovals.get(item.id)}
       ownEmojis={ownReactions.get(item.id)}
       replyPreview={item.replyTo ? previewOf(eventsById.get(item.replyTo) ?? item) : undefined}
-      onReplyPreviewPress={item.replyTo ? () => { const target = item.replyTo; if (target) jumpToMessage(target); } : undefined}
       votes={displayVotes.get(item.id)}
       ownVotes={displayOwnVotes.get(item.id)}
-      onVote={(qIdx, idx, action) => { onVote(item.id, qIdx, idx, action); }}
       openAnswers={displayOpenAnswers.get(item.id)}
-      onOpenAnswer={(qIdx, text) => { onOpenAnswer(item.id, qIdx, text); }}
       signing={signingIds.has(item.id)}
-      consentAllowed={consentAllowed}
-      onSign={(() => {
-        const req = (item.payload as { signatureRequest?: SignatureRequestContent } | undefined)?.signatureRequest;
-        if (!req || item.from === myUri) return undefined;
-        return () => { onSign(item.id, req); };
-      })()}
       paying={payingIds.has(item.id)}
-      onPay={(() => {
-        const wsc = (item.payload as { walletSendCalls?: WalletSendCallsContent } | undefined)?.walletSendCalls;
-        if (!wsc || item.from === myUri) return undefined;
-        return () => { onPay(item.id, wsc); };
-      })()}
-      onReact={(emoji) => { onReact(item.id, emoji); }}
-      onReply={() => { setReplyTarget(item.id, previewOf(item), senderEthOf(item.from)); }}
-      onOpenMenu={(anchor) => { setMenuAnchor(anchor); setMenuFor(item); }}
-      onCloseMenu={() => { setMenuFor(null); }}
+      consentAllowed={consentAllowed}
       selectable={selectedForCopy === item.id}
-      onAnswer={(label) => { onAnswer(item.id, label); }}
       highlight={highlight}
+      onAvatarPress={onAvatarPress}
+      jumpToMessage={jumpToMessage}
+      onVote={onVote}
+      onOpenAnswer={onOpenAnswer}
+      onSign={onSign}
+      onPay={onPay}
+      onReact={onReact}
+      setReplyTarget={setReplyTarget}
+      setMenuAnchor={setMenuAnchor}
+      setMenuFor={setMenuFor}
+      onAnswer={onAnswer}
     />
-    </BubbleErrorBoundary>
   ), [
-    dark, myUri, senderEthOf, router, confirmedIds, replyingTo?.id, jumpHighlightId,
-    reactions, optimisticReactions, optimisticRemovals, ownReactions, eventsById, jumpToMessage,
-    displayVotes, displayOwnVotes, displayOpenAnswers, onVote, onOpenAnswer, signingIds, onSign, payingIds, onPay, onReact,
-    setReplyTarget, setMenuAnchor, setMenuFor, selectedForCopy, onAnswer, sub, highlight, consentAllowed,
+    dark, myUri, sub, senderEthOf, confirmedIds, replyingToId, jumpHighlightId,
+    reactions, optimisticReactions, optimisticRemovals, ownReactions, eventsById,
+    displayVotes, displayOwnVotes, displayOpenAnswers, signingIds, payingIds,
+    consentAllowed, selectedForCopy, highlight,
+    onAvatarPress, jumpToMessage, onVote, onOpenAnswer, onSign, onPay, onReact,
+    setReplyTarget, setMenuAnchor, setMenuFor, onAnswer,
   ]);
 
   return { renderItem, extraData };

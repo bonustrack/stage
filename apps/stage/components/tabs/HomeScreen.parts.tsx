@@ -1,5 +1,5 @@
 
-import { useCallback } from 'react';
+import { memo, useCallback } from 'react';
 
 import { DevSettings, Vibration } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
@@ -11,8 +11,7 @@ import { ChannelRow } from '../ChannelRow';
 import { resetXmtpClient, shortAddress, prefetchFeed, lineOfConv } from '../../modules/messaging';
 import { resetAccount } from '../../lib/wallet';
 import { getPeerName, isPeerResolved } from '../../lib/peerProfiles';
-import { hasDraft, getDraft } from '../../lib/drafts';
-import { isPinned } from '../../lib/pins';
+import { getDraft } from '../../lib/drafts';
 import { requestLabelFilter } from '../../lib/labelFilterRequest';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { channelTimestamp } from '@views';
@@ -41,27 +40,36 @@ function rowAvatarAddress(item: RowT, isGroup: boolean): string | null {
   return null;
 }
 
-function ChannelRowItem({ item, router, setRowMenu, query }: {
+interface ChannelRowItemProps {
   item: RowT;
   router: { push: (to: { pathname: string; params: { convId: string } }) => void };
   setRowMenu: (m: RowMenu) => void;
   query?: string;
-}): React.ReactElement {
+  title: string;
+  preview: string;
+  avatarAddress: string | null;
+  pinned: boolean;
+  draftText: string;
+}
+
+function ChannelRowItemBase({
+  item, router, setRowMenu, query, title, preview, avatarAddress, pinned, draftText,
+}: ChannelRowItemProps): React.ReactElement {
   const isGroup = !item.peerAddress;
   return (
     <ChannelRow
-      title={rowTitle(item)}
+      title={title}
       highlightQuery={query}
       avatarUri={item.avatarUri}
-      avatarAddress={rowAvatarAddress(item, isGroup)}
-      square={!item.peerAddress}
-      lastPreview={rowPreview(item)}
+      avatarAddress={avatarAddress}
+      square={isGroup}
+      lastPreview={preview}
       timestamp={channelTimestamp(item.lastTs)}
       unreadCount={item.unreadCount}
       markedUnread={item.markedUnread}
-      pinned={isPinned(item.convId)}
-      hasDraft={hasDraft(item.convId)}
-      draftText={getDraft(item.convId)}
+      pinned={pinned}
+      hasDraft={draftText.trim().length > 0}
+      draftText={draftText}
       labels={isGroup ? item.labels : undefined}
       onLabelPress={isGroup ? requestLabelFilter : undefined}
       onPressIn={() => { prefetchFeed(lineOfConv(item.convId)); }}
@@ -69,14 +77,16 @@ function ChannelRowItem({ item, router, setRowMenu, query }: {
       onLongPress={() => {
         Vibration.vibrate(10);
         setRowMenu({
-          convId: item.convId, title: rowTitle(item),
+          convId: item.convId, title,
           isUnread: item.unreadCount > 0 || item.markedUnread,
-          isGroup: !item.peerAddress, peerAddress: item.peerAddress,
+          isGroup, peerAddress: item.peerAddress,
         });
       }}
     />
   );
 }
+
+const ChannelRowItem = memo(ChannelRowItemBase);
 
 export function useChannelRowRenderer(
   router: { push: (to: { pathname: string; params: { convId: string } }) => void },
@@ -85,7 +95,17 @@ export function useChannelRowRenderer(
 ): ({ item }: { item: RowT }) => React.ReactElement {
   const { channelProfilesVersion, draftsVersion, pinned, query } = deps;
   return useCallback(({ item }: { item: RowT }): React.ReactElement => (
-    <ChannelRowItem item={item} router={router} setRowMenu={setRowMenu} query={query} />
+    <ChannelRowItem
+      item={item}
+      router={router}
+      setRowMenu={setRowMenu}
+      query={query}
+      title={rowTitle(item)}
+      preview={rowPreview(item)}
+      avatarAddress={rowAvatarAddress(item, !item.peerAddress)}
+      pinned={pinned.has(item.convId)}
+      draftText={getDraft(item.convId)}
+    />
   ), [router, setRowMenu, channelProfilesVersion, draftsVersion, pinned, query]);
 }
 

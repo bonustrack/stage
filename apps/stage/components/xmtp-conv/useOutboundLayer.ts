@@ -5,6 +5,7 @@ import { patchRowSent } from '../../modules/messaging';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import type { FlatList } from 'react-native-gesture-handler';
 import { hasAttachments, isReaction } from './feed-helpers';
+import { useStableCallback } from '../../lib/useStableCallback';
 
 function matchConfirmed(
   optimistic: HistoryEntry[], liveBubbles: HistoryEntry[],
@@ -91,7 +92,7 @@ export function useOutboundLayer(
   }, [liveBubbles, optimistic, confirmedOptimisticIds]);
   useOptimisticCleanup(optimistic, confirmedOptimisticIds, setOptimistic, setConfirmedIds);
   useStickyBottom(allBubbles.length, showJump, setShowJump, setListEpoch);
-  const jumpToMessage = useCallback((messageId: string) => {
+  const jumpToMessage = useStableCallback((messageId: string) => {
     const idx = allBubbles.findIndex(b => b.id === messageId);
     setJumpHighlightId(messageId);
     if (jumpClearTimer.current) clearTimeout(jumpClearTimer.current);
@@ -100,7 +101,7 @@ export function useOutboundLayer(
     try {
       listRef.current?.scrollToIndex({ index: idx, animated: false, viewPosition: 0.5 });
     } catch { }
-  }, [allBubbles]);
+  });
   useEffect(() => () => { if (jumpClearTimer.current) clearTimeout(jumpClearTimer.current); }, []);
 
   const onOptimistic = useCallback(({ localId, text, attachments, replyTo, payload }: {

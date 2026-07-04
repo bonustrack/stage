@@ -1,6 +1,7 @@
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { xmtpReact } from '../../modules/messaging';
+import { useStableCallback } from '../../lib/useStableCallback';
 
 export function useReactionsLayer(
   activeLine: string,
@@ -19,7 +20,7 @@ export function useReactionsLayer(
         const confirmed = reactions.get(msgId);
         const left = emojis.filter(e => !confirmed?.has(e));
         if (left.length !== emojis.length) changed = true;
-        if (left.length) next.set(msgId, left);
+        if (left.length) next.set(msgId, left.length === emojis.length ? emojis : left);
       }
       return changed ? next : prev;
     });
@@ -31,13 +32,13 @@ export function useReactionsLayer(
         const confirmed = reactions.get(msgId);
         const left = emojis.filter(e => confirmed?.has(e));
         if (left.length !== emojis.length) changed = true;
-        if (left.length) next.set(msgId, left);
+        if (left.length) next.set(msgId, left.length === emojis.length ? emojis : left);
       }
       return changed ? next : prev;
     });
   }, [reactions]);
 
-  const onReact = useCallback((messageId: string, emoji: string) => {
+  const onReact = useStableCallback((messageId: string, emoji: string) => {
     const alreadyOwned = !!ownReactions.get(messageId)?.has(emoji)
       && !(optimisticRemovals.get(messageId)?.includes(emoji));
     const action: 'added' | 'removed' = alreadyOwned ? 'removed' : 'added';
@@ -88,7 +89,7 @@ export function useReactionsLayer(
     }); };
     void xmtpReact(activeLine, messageId, emoji, 'added')
       .catch((e: unknown) => { console.warn('xmtp react failed', e); dropPending(); });
-  }, [activeLine, ownReactions, optimisticRemovals]);
+  });
 
   return { optimisticReactions, optimisticRemovals, onReact };
 }

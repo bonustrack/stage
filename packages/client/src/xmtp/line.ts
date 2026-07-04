@@ -13,9 +13,12 @@ const LINK_PREFIX =
   '(?:(?:metro|stage):\\/\\/' +
   '|https?:\\/\\/(?:metro|stage)\\.box\\/(?:#\\/)?)';
 
+const DM_PEER_RE = new RegExp(LINK_PREFIX + '(?:xmtp\\/)?user\\/(0x[a-fA-F0-9]{40})');
+const CONV_ID_RE = new RegExp(LINK_PREFIX + 'xmtp\\/(?!user\\/)([^\\s/?#]+)');
+
 export function metroDmPeerOf(text?: string | null): string | null {
   if (!text) return null;
-  const m = new RegExp(LINK_PREFIX + '(?:xmtp\\/)?user\\/(0x[a-fA-F0-9]{40})').exec(text);
+  const m = DM_PEER_RE.exec(text);
   return m?.[1] ?? null;
 }
 
@@ -26,6 +29,6 @@ export function convIdOfLine(line: string): string | null {
 
 export function metroConvIdOf(text?: string | null): string | null {
   if (!text) return null;
-  const m = new RegExp(LINK_PREFIX + 'xmtp\\/(?!user\\/)([^\\s/?#]+)').exec(text);
+  const m = CONV_ID_RE.exec(text);
   return m?.[1] ?? null;
 }

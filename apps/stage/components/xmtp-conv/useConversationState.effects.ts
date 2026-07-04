@@ -10,6 +10,7 @@ import {
   reactionsByMessage, ownReactionsByMessage,
   pollOptionCountsInFeed, votesByMessage, ownVotesByMessage, openAnswersByMessage,
 } from './feed-helpers';
+import { useReconciledMap } from '../../lib/mapReconcile';
 
 export function useActiveConvSuppression(convId: string | undefined): void {
   const activeConvId = useMemo(() => convId?.toLowerCase(), [convId]);
@@ -90,10 +91,10 @@ export function useConvScrollPersistence(convId: string | undefined): ScrollPers
 
 export function useFeedDerivations(events: HistoryEntry[], myUri: string) {
   const pollOptionCounts = useMemo(() => pollOptionCountsInFeed(events), [events]);
-  const reactions = useMemo(() => reactionsByMessage(events, pollOptionCounts), [events, pollOptionCounts]);
-  const ownReactions = useMemo(() => ownReactionsByMessage(events, myUri, pollOptionCounts), [events, myUri, pollOptionCounts]);
-  const votes = useMemo(() => votesByMessage(events), [events]);
-  const ownVotes = useMemo(() => ownVotesByMessage(events, myUri), [events, myUri]);
-  const openAnswers = useMemo(() => openAnswersByMessage(events), [events]);
+  const reactions = useReconciledMap(useMemo(() => reactionsByMessage(events, pollOptionCounts), [events, pollOptionCounts]));
+  const ownReactions = useReconciledMap(useMemo(() => ownReactionsByMessage(events, myUri, pollOptionCounts), [events, myUri, pollOptionCounts]));
+  const votes = useReconciledMap(useMemo(() => votesByMessage(events), [events]));
+  const ownVotes = useReconciledMap(useMemo(() => ownVotesByMessage(events, myUri), [events, myUri]));
+  const openAnswers = useReconciledMap(useMemo(() => openAnswersByMessage(events), [events]));
   return { reactions, ownReactions, votes, ownVotes, openAnswers };
 }

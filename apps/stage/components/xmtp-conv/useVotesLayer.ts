@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { xmtpVote, xmtpOpenAnswer } from '../../modules/messaging';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { pollQuestionsInFeed } from './feed-helpers';
+import { useReconciledMap } from '../../lib/mapReconcile';
+import { useStableCallback } from '../../lib/useStableCallback';
 
 type Votes = Map<string, Map<number, Map<number, Set<string>>>>;
 type Own = Map<string, Map<number, Set<number>>>;
@@ -72,7 +74,7 @@ function useOptimisticVotes(
     });
   }, [ownVotes]);
 
-  const displayOwnVotes = useMemo<Own>(() => {
+  const displayOwnVotes = useReconciledMap(useMemo<Own>(() => {
     if (optimistic.size === 0) return ownVotes;
     const merged: Own = new Map([...ownVotes].map(([p, byQ]) => [p, new Map(byQ)]));
     for (const [key, sel] of optimistic) {
@@ -82,9 +84,9 @@ function useOptimisticVotes(
       byQ.set(q, sel);
     }
     return merged;
-  }, [ownVotes, optimistic]);
+  }, [ownVotes, optimistic]));
 
-  const displayVotes = useMemo<Votes>(() => {
+  const displayVotes = useReconciledMap(useMemo<Votes>(() => {
     if (optimistic.size === 0) return votes;
     const merged = cloneVotes(votes);
     for (const [key, sel] of optimistic) {
@@ -93,9 +95,9 @@ function useOptimisticVotes(
       applyOptimisticVote(tally, confirmedOwn(pollId, q), sel, myUri);
     }
     return merged;
-  }, [votes, optimistic, confirmedOwn, myUri]);
+  }, [votes, optimistic, confirmedOwn, myUri]));
 
-  const onVote = useCallback((pollId: string, q: number, optionIndex: number, action: 'added' | 'removed') => {
+  const onVote = useStableCallback((pollId: string, q: number, optionIndex: number, action: 'added' | 'removed') => {
     const multi = pollsInFeed.get(pollId)?.[q]?.multiSelect === true;
     const key = ck(pollId, q);
     const current = optimistic.get(key) ?? confirmedOwn(pollId, q);
@@ -116,7 +118,7 @@ function useOptimisticVotes(
     }
     void xmtpVote(activeLine, pollId, optionIndex, action, q)
       .catch((e: unknown) => { console.warn('xmtp vote failed', e); undo(); });
-  }, [activeLine, pollsInFeed, optimistic, confirmedOwn]);
+  });
 
   return { displayVotes, displayOwnVotes, onVote };
 }
@@ -138,7 +140,7 @@ function useOptimisticOpenAnswers(activeLine: string, openAnswers: OpenAnswers, 
     });
   }, [openAnswers, myUri]);
 
-  const displayOpenAnswers = useMemo<OpenAnswers>(() => {
+  const displayOpenAnswers = useReconciledMap(useMemo<OpenAnswers>(() => {
     if (optimisticOpen.size === 0) return openAnswers;
     const merged: OpenAnswers = new Map(
       [...openAnswers].map(([p, byQ]) => [p, new Map([...byQ].map(([qi, m]) => [qi, new Map(m)]))]),
@@ -153,7 +155,7 @@ function useOptimisticOpenAnswers(activeLine: string, openAnswers: OpenAnswers, 
       else m.delete(myUri);
     }
     return merged;
-  }, [openAnswers, optimisticOpen, myUri]);
+  }, [openAnswers, optimisticOpen, myUri]));
 
   const onOpenAnswer = useCallback((pollId: string, q: number, text: string) => {
     const key = ck(pollId, q);
