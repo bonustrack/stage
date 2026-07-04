@@ -12,7 +12,7 @@ renderer, and a Cloudflare Worker that resolves link previews.
 ```
 apps/
   stage/    # stage — the universal Expo + React Native app (android · ios · web)
-            #   views/     widget builders + screen models (imported as @views)
+            #   views/     screen models + chat-widget builders (imported as @views)
             #   platform/  per-platform seams (.ts native / .web.ts overrides)
             #   lib/       state + SDK orchestration (incl. xmtp.*.web adapters)
   proxy/    # proxy — Cloudflare Worker for link-preview / image / x402 proxying

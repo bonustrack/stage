@@ -8,7 +8,7 @@ It ships **one universal Expo app** (`apps/stage`) serving **android, ios, and w
 
 | Path | Package | What it is |
 |---|---|---|
-| `apps/stage` | `stage` | THE app: Expo + React Native 0.81 (new arch), expo-router, all three platforms. Contains `views/` (widget builders + screen models, imported as `@views`), `platform/` (the only per-platform code, via Metro `.native.ts`/`.web.ts` resolution), `lib/` (state + SDK orchestration), `components/`, `app/` (routes), `test/` (incl. builder snapshots). Runs Railgun on-device via embedded Node (mobile only). |
+| `apps/stage` | `stage` | THE app: Expo + React Native 0.81 (new arch), expo-router, all three platforms. Contains `views/` (screen models + chat-widget builders, imported as `@views`), `platform/` (the only per-platform code, via Metro `.native.ts`/`.web.ts` resolution), `lib/` (state + SDK orchestration), `components/`, `app/` (routes), `test/` (incl. builder snapshots). Runs Railgun on-device via embedded Node (mobile only). |
 | `packages/client` | `@stage-labs/client` | Framework- AND runtime-agnostic TS core. XMTP content/codecs/cores, accounts/zerodev, Railgun wire protocol, wallet, read-only APIs, profile/identity. No React/RN imports, no build step. |
 | `packages/kit` | `@stage-labs/kit` | Design system: tokens, theme, icons, layout, ONE React Native component family (renders on web via RNW), and the JSON `KitRenderer`/`ViewHost` (45 node types). No build step. |
 | `packages/config` | `@stage-labs/config` | Publishable ESLint/TS/knip/madge presets + the `stage` CLI (`bin/stage.js`) driven by root `stage.config.js`. |
@@ -46,8 +46,8 @@ Per-app:
 - **One codebase, three platforms.** Web is react-native-web (`app.config.js` web `output: 'single'` — static SSG would execute native imports at build time). Platform divergence lives ONLY in Metro platform extensions: `x.ts` (native/default, typechecked) + `x.web.ts` (web override, identical export surface). A small `Platform.OS === 'web'` check is fine for feature gates (e.g. the Railgun tab is hidden — **the web wallet is public-only by design**).
 - **Platform seams:** `platform/storage(.web).ts` (SecureStorage/AppStorage contracts in `platform/types.ts`), and the `lib/xmtp.*.web.ts` family implementing the native modules' surfaces against `@xmtp/browser-sdk` (client/codecs/dbkey/state/types/conv/identity/groups/envelope/attachments/resync/stream/recover). Web variants cross-import each other with explicit `./xmtp.X.web` specifiers. Native-only packages are stubbed for web in `metro.config.js` (`metro.shims/web/native-stub.js`).
 - **Env vars must be read as literal `process.env.EXPO_PUBLIC_X` member expressions** (see `lib/zerodev/env.ts` RAW_ENV pattern) — dynamic `process.env[name]` defeats the Expo inliner on web.
-- **Views layer** (`views/`, imported as `@views` via tsconfig paths): pure widget-tree builders, presenters (`channelRowModel`, screen derivations), `format.ts` display helpers, `capabilities.ts` (navigate/back/copy/toast/confirm/openUrl/share contract) + `actionHandlers.ts` factories. Framework-free — no React imports. All builders are snapshot-tested (`test/*.snapshot.spec.ts`, 179 snapshots): builder output changes surface as snapshot diffs.
-- **UI composition: state hook -> builder/model from `@views` -> `<ViewHost node actions/>`** (kit). Actions are plain payload-handler maps; platform effects go through `lib/capabilities.ts` (the app's Capabilities implementation).
+- **Views layer** (`views/`, imported as `@views` via tsconfig paths): pure presenters/models (`channelRowModel`, screen derivations), `format.ts` display helpers, `capabilities.ts` (navigate/back/copy/toast/confirm/openUrl/share contract), and JSON widget-tree builders ONLY for chat/agent message content (pollCard, mediaCard, previewLinkCard, voice/video, messageBubble, highlightText). Framework-free — no React imports. Chat-widget builders are snapshot-tested (`test/*.snapshot.spec.ts`): builder output changes surface as snapshot diffs.
+- **UI composition — static screens are direct kit JSX:** state hook -> model from `@views` -> kit components (shared chrome in `components/chrome/` — ScreenHeader/StackHeader/OverlayHeader/EmptyState — plus domain families like `components/settings/rows.tsx`, `components/wallet/widgets.tsx`). Platform effects go through `lib/capabilities.ts`. **`<ViewHost node actions/>` is reserved for runtime-dynamic chat/agent message content** (and the kit gallery demos); do not put new static screens on the JSON path. When replacing a widget with JSX, transliterate the renderer's mapping (`kit-render-node.tsx` + `resolve.ts`) — node props (`color: 'text'`) differ from component props (`role`/`palette`).
 - expo-router file routes in `app/`; `_layout.tsx` imports `lib/jsPolyfills` + `lib/cryptoShim` FIRST (order matters). Hand-rolled stores (`lib/storeCore.ts`, `lib/persistedStore.ts` over `platform/storage`) + react-query. App variants via `APP_VARIANT` (prod = Stage/stage.box, dev = metro.box).
 
 ### Shared core (`packages/client`)
@@ -66,7 +66,7 @@ Per-app:
 - **NO COMMENTS IN CODE** — `comments/no-comments` bans non-directive comments across `.ts/.tsx/.js` including config files AND test files (the built config spreads COMMENT_RULES into the test block). Express intent in names/types. Markdown is exempt.
 - **No TS escape hatches:** no-explicit-any, no-non-null-assertion, ban-ts-comment are errors; `noUncheckedIndexedAccess` is on — null-guard, never assert.
 - **Single quotes**; max 400 lines/file, 100 lines/function, cyclomatic complexity <= 10.
-- **Kit-only UI:** build screens from kit primitives + `@views` builders via ViewHost, not raw RN style objects; `usePalette`/`useEffectiveColorScheme` for the few native-styled shells.
+- **Kit-only UI:** build screens from kit primitives in JSX fed by `@views` models, not raw RN style objects; ViewHost/JSON only for chat/agent widgets; `usePalette`/`useEffectiveColorScheme` for the few native-styled shells.
 - **No circular deps** (madge) and **no unused files/deps/exports** (knip). New workspace => `stage.config.js` entry + `madge.roots`.
 - Snapshot-bearing test files are `*.spec.ts` (bun writes `*.test.ts.snap` files that the `**/*.test.*` lint glob would pick up and always fail).
 
@@ -94,8 +94,9 @@ Per-app:
 | `apps/stage/metro.config.js` | node-core polyfills, web native-stubs, monorepo resolution, nodejs-assets blockList |
 | `apps/stage/platform/*` | the platform seams (storage contracts + impls) |
 | `apps/stage/lib/xmtp.*.web.ts` | the web XMTP adapter family |
-| `apps/stage/views/*` | builders, presenters, capabilities, action handlers (`@views`) |
-| `apps/stage/test/*.snapshot.spec.ts` | builder snapshot suite (179 snapshots) |
+| `apps/stage/views/*` | models/presenters, capabilities, chat-widget builders (`@views`) |
+| `apps/stage/components/chrome/*` | shared JSX screen chrome (headers, empty state) |
+| `apps/stage/test/*.snapshot.spec.ts` | chat-widget builder snapshot suite |
 | `apps/stage/app/_layout.tsx` | root providers, polyfill order, font patch |
 | `packages/kit/src/kit/node-registry.ts` | canonical node-type registry (compiler-enforced) |
 | `packages/kit/src/react-native/{kit-renderer,view-host}.tsx` | the JSON renderer + host |
