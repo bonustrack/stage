@@ -6,9 +6,6 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "react-native": [
-        "./node_modules/react-native"
-      ],
       "react-native-svg": [
         "./node_modules/react-native-svg"
       ],
