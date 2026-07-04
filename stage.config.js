@@ -46,6 +46,7 @@ export default defineConfig({
           'expo-system-ui',
           '@railgun-privacy/native-prover',
           'node-gyp-build-mobile',
+          '@types/markdown-it',
         ],
       },
     },
