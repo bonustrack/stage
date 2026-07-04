@@ -1,5 +1,4 @@
 import type { ThemeColor } from '@stage-labs/kit/kit';
-import { colors } from '@stage-labs/kit/tokens';
 
 export const DANGER_COLOR: ThemeColor = { dark: '#eb4c5b', light: '#eb4c5b' };
 
@@ -24,18 +23,3 @@ export const MEMBER_OWNER_BG: ThemeColor = {
   light: 'rgba(13,148,136,0.12)',
 };
 
-export const SURFACE_COLOR: ThemeColor = {
-  dark: colors['surface-dark'],
-  light: colors['surface-light'],
-};
-
-export const BORDER_COLOR: ThemeColor = {
-  dark: colors['border-dark'],
-  light: colors['border-light'],
-};
-
-export const FG_COLOR: ThemeColor = { dark: colors['fg-dark'], light: colors['fg-light'] };
-
-export const HEAD_COLOR: ThemeColor = { dark: colors['head-dark'], light: colors['head-light'] };
-
-export const BG_COLOR: ThemeColor = { dark: colors['bg-dark'], light: colors['bg-light'] };

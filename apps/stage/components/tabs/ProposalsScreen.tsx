@@ -2,16 +2,10 @@
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import {
-  backAction,
-  proposalsEmptyLabel,
-  proposalsHeaderNode,
-  proposalsPositionLabel,
-} from '@views';
+import { proposalsEmptyLabel, proposalsPositionLabel } from '@views';
 import { capabilities } from '../../lib/capabilities';
 import { Col, Box } from '../layout';
+import { ScreenHeader } from '../chrome/ScreenHeader';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { useProposals } from './Proposals.hook';
 import { ProposalCard } from './Proposals.card';
@@ -23,20 +17,18 @@ export function ProposalsScreen(): React.ReactElement {
   const head = pal.link;
   const border = pal.border;
   const { current, loading, position, total, advance, refresh } = useProposals();
-  const headerNode = proposalsHeaderNode({
-    backColor: head,
-    safeTop: insets.top,
-    surface: pal.toolbarBg,
-    borderColor: border,
-  });
-  const headerActions: PayloadHandlers = {
-    ...backAction(capabilities),
-  };
 
   return (
     <Col flex={1} surface="surface">
-      {}
-      <ViewHost node={headerNode} actions={headerActions} />
+      <ScreenHeader
+        title="Pending requests"
+        titleStyle={{ kind: 'title', size: 'sm' }}
+        onBack={() => { capabilities.back(); }}
+        backColor={head}
+        safeTop={insets.top}
+        surface={pal.toolbarBg}
+        borderColor={border}
+      />
 
       {current ? (
         <Col flex={1} surface="surface">

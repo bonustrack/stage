@@ -4,9 +4,10 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { Button } from '@stage-labs/kit/react-native/button';
+import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import { proposalHeaderRoot } from '@views';
+import { Title } from '@stage-labs/kit/react-native/title';
+import { proposalKindLabel } from '@views';
 import type { SignatureRequestContent } from '@stage-labs/client/xmtp/sign';
 import type { WalletSendCallsContent } from '@stage-labs/client/xmtp/tx';
 import { Box, Row, Col } from '../layout';
@@ -31,13 +32,24 @@ export function ProposalCard({ proposal, onAdvance }: {
   return <ConversationRequestCard proposal={proposal} onAdvance={onAdvance}/>;
 }
 
+function CardEyebrow({ kind, title }: {
+  kind: RequestKind; title: string;
+}): React.ReactElement {
+  return (
+    <Col gap={0}>
+      <Caption value={proposalKindLabel(kind).toUpperCase()} color="secondary" weight="semibold" />
+      <Title color="link">{title}</Title>
+    </Col>
+  );
+}
+
 function CardHeader({ kind, title, authorAddr, authorName, postedAt, fg }: {
   kind: RequestKind; title: string; authorAddr: string | null; authorName: string | null;
   postedAt: string | null; fg: string;
 }): React.ReactElement {
   return (
     <>
-      <ViewHost node={proposalHeaderRoot(kind, title)} />
+      <CardEyebrow kind={kind} title={title} />
       {authorName ? (
         <Row gap={6} align="center" margin={{ top: 8 }}>
           <Avatar address={authorAddr} size="sm"/>
@@ -201,7 +213,7 @@ function MessageRequestCard({ request, onAdvance }: {
   return (
     <Col flex={1} surface="surface">
       <Box flex={1} padding={{ x: 16, top: 16 }} style={{ alignSelf: 'stretch' }}>
-        <ViewHost node={proposalHeaderRoot('message', 'Message request')} />
+        <CardEyebrow kind="message" title="Message request" />
         <Box margin={{ top: 12 }} style={{ alignSelf: 'stretch' }}>
           <ChannelRow
             title={displayTitle}

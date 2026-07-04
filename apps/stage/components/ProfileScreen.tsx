@@ -10,15 +10,9 @@ import { useEffectiveColorScheme } from '../lib/theme';
 import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
 import { Avatar } from './Avatar';
 import { Box, Col } from './layout';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import {
-  copyAction,
-  profileAddressNode,
-  profileDisplayName,
-  profileNameNode,
-  PROFILE_ADDRESS_COPY,
-} from '@views';
+import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { profileDisplayName } from '@views';
 import { capabilities } from '../lib/capabilities';
 import { ImageViewer } from './ImageViewer';
 import {
@@ -29,8 +23,9 @@ import { ProfileHoldings } from './ProfileScreen.holdings';
 
 export type ProfileScreenVariant = 'tab' | 'route';
 
-function copyActions(getAddress: () => string): PayloadHandlers {
-  return copyAction(PROFILE_ADDRESS_COPY, capabilities, getAddress, 'Address copied');
+function copyAddress(address: string): void {
+  void capabilities.copyToClipboard(address);
+  capabilities.toast('Address copied');
 }
 
 function ProfileIdentity({ addr, isSelf, dark, opening, c, variant, insetTop, displayName, onAvatar, onMessage, onSend }: {
@@ -55,14 +50,15 @@ function ProfileIdentity({ addr, isSelf, dark, opening, c, variant, insetTop, di
           onPress={onAvatar}
 />
         <Box margin={{ top: 14 }} style={{ alignSelf: 'stretch' }}>
-          <ViewHost node={profileNameNode(displayName)} />
+          <Col gap={6} align="start">
+            <Text value={displayName} weight="semibold" size="4xl" textAlign="start" />
+          </Col>
         </Box>
         {addr ? (
           <Box margin={{ top: 2 }}>
-            <ViewHost
-              node={profileAddressNode({ address: addr, label: shortAddress(addr), color: c.text })}
-              actions={copyActions(() => addr)}
-            />
+            <GesturePressable hitSlop={8} onPress={() => { copyAddress(addr); }}>
+              <Text value={shortAddress(addr)} size="md" color={c.text} />
+            </GesturePressable>
           </Box>
         ) : null}
         {}

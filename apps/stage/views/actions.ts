@@ -1,12 +1,4 @@
-export const ACCOUNT_PRESS = 'accounts.account.press';
-
 export const LINK_OPEN = 'link.open';
-
-export const PROFILE_INFO_PRESS = 'profile.info.press';
-
-export const PROFILE_ROUND_PRESS = 'profile.round.press';
-
-export const PROFILE_ADDRESS_COPY = 'profile.address.copy';
 
 export const REACTION_EMOJI_PRESS = 'chat.reaction.emojiPress';
 
@@ -22,28 +14,8 @@ export const COMPOSER_SEND = 'chat.composer.send';
 
 export const COMPOSER_ATTACH = 'chat.composer.attach';
 
-export const BANNER_PRESS = 'banner.press';
-
-export const ONBOARDING_ACTION_PRESS = 'onboarding.action.press';
-
 export const VOICE_PLAY = 'chat.voice.play';
-
-export const VIDEO_PLAY = 'chat.video.play';
 
 export const COMPOSER_CHANGE = 'chat.composer.change';
 
-export const COMPOSER_MENTION_PICK = 'chat.composer.mentionPick';
-
-export const COMPOSER_ATTACH_PICK = 'chat.composer.attachPick';
-
-export const COMPOSER_PENDING_REMOVE = 'chat.composer.pendingRemove';
-
-export const MEMBER_CHIP_REMOVE = 'accounts.memberChip.remove';
-
 export const FILTER_SELECT = 'chat.filter.select';
-
-export const MEMBER_ADD_CHANGE = 'accounts.memberAdd.change';
-
-export const MEMBER_ADD_SUBMIT = 'accounts.memberAdd.submit';
-
-export const SCREEN_BACK = 'screen.back';

@@ -4,9 +4,6 @@ import { Title } from '@stage-labs/kit/react-native/title';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Textarea } from '@stage-labs/kit/react-native/textarea';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import { basicRoot, onboardingStep, ONBOARDING_ACTION_PRESS } from '@views';
 import { Col, Box } from '../layout';
 import { Spinner } from '../Spinner';
 import { usePalette, DANGER } from '../../lib/theme';
@@ -22,28 +19,58 @@ const STAGE_LABELS: Record<Stage, string> = {
 
 type Pal = ReturnType<typeof usePalette>;
 
-export function WelcomeStep({ busy, onCreate, onRestore }: {
+interface StepAction {
+  label: string;
+  variant: 'solid' | 'soft' | 'ghost';
+  disabled: boolean;
+  onPress: () => void;
+}
+
+function OnboardingStepView({ dark, title, caption, captionSize, topPadding, actions }: {
+  dark: boolean; title: string; caption: string;
+  captionSize?: 'sm' | 'md'; topPadding?: number; actions: StepAction[];
+}): React.ReactElement {
+  return (
+    <Col flex={1} justify="between">
+      <Col gap={10} padding={{ top: topPadding ?? 8 }}>
+        <Title>{title}</Title>
+        <Text value={caption} size={captionSize ?? 'sm'} color="secondary" />
+      </Col>
+      <Col gap={10}>
+        {actions.map((action) => (
+          <Button
+            key={action.label}
+            label={action.label}
+            block
+            size="lg"
+            color="primary"
+            variant={action.variant}
+            disabled={action.disabled}
+            dark={dark}
+            onPress={action.onPress}
+          />
+        ))}
+      </Col>
+    </Col>
+  );
+}
+
+export function WelcomeStep({ dark, busy, onCreate, onRestore }: {
   pal: Pal; dark: boolean; busy: boolean; onCreate: () => void; onRestore: () => void;
 }): React.ReactElement {
-  const node = basicRoot(
-    onboardingStep({
-      title: 'Stage',
-      caption: 'Your wallet, your messages, your governance. One gasless smart account.',
-      captionSize: 'md',
-      topPadding: 48,
-      actions: [
-        { id: 'create', label: 'Create new wallet', variant: 'solid', disabled: busy },
-        { id: 'restore', label: 'I have a recovery phrase', variant: 'soft', disabled: busy },
-      ],
-    }),
+  return (
+    <OnboardingStepView
+      dark={dark}
+      title="Stage"
+      caption="Your wallet, your messages, your governance. One gasless smart account."
+      captionSize="md"
+      topPadding={48}
+      actions={[
+        { label: 'Create new wallet', variant: 'solid', disabled: busy, onPress: onCreate },
+        { label: 'I have a recovery phrase', variant: 'soft', disabled: busy, onPress: onRestore },
+      ]}
+    />
   );
-  const actions: PayloadHandlers = {
-    [ONBOARDING_ACTION_PRESS]: (payload) => {
-      if (payload.id === 'create') onCreate();
-      else onRestore();
-    },
-  };
-  return <ViewHost node={node} actions={actions} />;
 }
 
 export function RestoreStep({ pal, dark, busy, phrase, err, onChange, onNext, onBack }: {
@@ -83,29 +110,24 @@ export function RestoreStep({ pal, dark, busy, phrase, err, onChange, onNext, on
   );
 }
 
-export function PasskeyStep({ busy, onAdd, onSkip }: {
+export function PasskeyStep({ dark, busy, onAdd, onSkip }: {
   pal: Pal; dark: boolean; busy: boolean; onAdd: () => void; onSkip: () => void;
 }): React.ReactElement {
-  const node = basicRoot(
-    onboardingStep({
-      title: 'Add a passkey',
-      caption:
+  return (
+    <OnboardingStepView
+      dark={dark}
+      title="Add a passkey"
+      caption={
         'Add a passkey so this device can approve transactions without your ' +
         'recovery phrase. You will only be asked for it when you sign. You can ' +
-        'add one later.',
-      actions: [
-        { id: 'add', label: 'Add a passkey', variant: 'solid', disabled: busy },
-        { id: 'skip', label: 'Skip for now', variant: 'ghost', disabled: busy },
-      ],
-    }),
+        'add one later.'
+      }
+      actions={[
+        { label: 'Add a passkey', variant: 'solid', disabled: busy, onPress: onAdd },
+        { label: 'Skip for now', variant: 'ghost', disabled: busy, onPress: onSkip },
+      ]}
+    />
   );
-  const actions: PayloadHandlers = {
-    [ONBOARDING_ACTION_PRESS]: (payload) => {
-      if (payload.id === 'add') onAdd();
-      else onSkip();
-    },
-  };
-  return <ViewHost node={node} actions={actions} />;
 }
 
 function StageProgress({ pal, stage }: { pal: Pal; stage: Stage }): React.ReactElement {

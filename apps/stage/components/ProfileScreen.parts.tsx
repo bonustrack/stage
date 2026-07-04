@@ -1,15 +1,14 @@
 
 import { useEffect, useState } from 'react';
-import { Row } from './layout';
+import { Button } from '@stage-labs/kit/react-native/button';
+import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Text } from '@stage-labs/kit/react-native/text';
+import type { HeroIconName } from '@stage-labs/kit/icons';
+import { Col, Row } from './layout';
 import { usePalette, type Palette } from '../lib/theme';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from '../modules/messaging';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import {
-  backAction, profileMessageSendNode, profileOverlayHeaderNode,
-  PROFILE_ROUND_PRESS,
-} from '@views';
 import { capabilities } from '../lib/capabilities';
+import { OverlayHeader } from './chrome/OverlayHeader';
 import { TopnavIdentity } from './TopnavIdentity';
 
 export type ProfileColors = Palette;
@@ -40,9 +39,13 @@ export function ProfileHeader({ variant, insetTop, c }: {
   c: ProfileColors;
 }): React.ReactElement {
   if (variant === 'route') {
-    const node = profileOverlayHeaderNode(c.link, insetTop);
-    const actions: PayloadHandlers = { ...backAction(capabilities) };
-    return <ViewHost node={node} actions={actions} />;
+    return (
+      <OverlayHeader
+        onBack={() => { capabilities.back(); }}
+        backColor={c.link}
+        safeTop={insetTop}
+      />
+    );
   }
   return (
     <Row
@@ -57,15 +60,51 @@ export function ProfileHeader({ variant, insetTop, c }: {
   );
 }
 
-export function ProfileActions({ opening, onMessage, onSend, c }: {
+function ProfileRoundAction({ icon, label, disabled, border, fg, dark, onPress }: {
+  icon: HeroIconName; label: string; disabled?: boolean;
+  border: string; fg: string; dark: boolean; onPress: () => void;
+}): React.ReactElement {
+  return (
+    <Col align="center" gap={6}>
+      <Button
+        color="primary"
+        variant="solid"
+        size="xl"
+        pill
+        tintBg={border}
+        tintFg={fg}
+        disabled={disabled}
+        dark={dark}
+        iconStart={<Icon name={icon} size={22} color={fg} dark={dark} />}
+        onPress={onPress}
+      />
+      <Text value={label} weight="semibold" size="md" color={fg} truncate />
+    </Col>
+  );
+}
+
+export function ProfileActions({ dark, opening, onMessage, onSend, c }: {
   dark: boolean; opening: boolean; onMessage: () => void; onSend: () => void; c: ProfileColors;
 }): React.ReactElement {
-  const node = profileMessageSendNode({ border: c.border, fg: c.link }, opening);
-  const actions: PayloadHandlers = {
-    [PROFILE_ROUND_PRESS]: (payload) => {
-      if (payload.action === 'message') { if (!opening) onMessage(); }
-      else if (payload.action === 'send') onSend();
-    },
-  };
-  return <ViewHost node={node} actions={actions} />;
+  return (
+    <Row gap={12} justify="start" padding={{ top: 18 }}>
+      <ProfileRoundAction
+        icon="chatRect"
+        label={opening ? 'Opening…' : 'Message'}
+        disabled={opening}
+        border={c.border}
+        fg={c.link}
+        dark={dark}
+        onPress={() => { if (!opening) onMessage(); }}
+      />
+      <ProfileRoundAction
+        icon="send"
+        label="Send"
+        border={c.border}
+        fg={c.link}
+        dark={dark}
+        onPress={onSend}
+      />
+    </Row>
+  );
 }

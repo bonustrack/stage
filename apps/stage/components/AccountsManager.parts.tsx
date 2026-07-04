@@ -3,10 +3,10 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Dialog } from '@stage-labs/kit/react-native/dialog';
 import { Box, Col, Row } from './layout';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import { accountRow, listRoot, ACCOUNT_PRESS } from '@views';
+import { Caption } from '@stage-labs/kit/react-native/caption';
+import { Image } from '@stage-labs/kit/react-native/image';
+import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
+import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { getPeerName } from '../lib/peerProfiles';
 import { shortAddress } from '../modules/messaging';
 import { type AccountRecord } from '../lib/accounts';
@@ -19,15 +19,9 @@ export function AccountRow({ rec, onPress, onLongPress, topBorder, trailing, bor
   topBorder: boolean; trailing: React.ReactNode;
   border: string;
 }): React.ReactElement {
-  const node = listRoot(
-    accountRow({
-      accountId: rec.address,
-      avatarUri: stampAvatarUrl(rec.address, 40),
-      name: getPeerName(rec.address) ?? rec.label ?? shortAddress(rec.address),
-      address: `${shortAddress(rec.address)} · ${TYPE_LABEL[rec.type]}`,
-    }),
-  );
-  const actions: PayloadHandlers = { [ACCOUNT_PRESS]: () => { onPress(); } };
+  const dark = useKitScheme() === 'dark';
+  const name = getPeerName(rec.address) ?? rec.label ?? shortAddress(rec.address);
+  const address = `${shortAddress(rec.address)} · ${TYPE_LABEL[rec.type]}`;
   return (
     <Pressable
       onLongPress={onLongPress}
@@ -36,7 +30,17 @@ export function AccountRow({ rec, onPress, onLongPress, topBorder, trailing, bor
 >
       <Row align="center">
         <Box flex={1}>
-          <ViewHost node={node} actions={actions} />
+          <ListView dark={dark}>
+            <ListViewItem align="center" gap={12} dark={dark} onPress={onPress}>
+              <Row align="center" gap={12} flex={1}>
+                <Image src={stampAvatarUrl(rec.address, 40)} size={40} radius="full" />
+                <Col gap={2} flex={1}>
+                  <Text value={name} weight="semibold" truncate />
+                  <Caption value={address} color="secondary" truncate />
+                </Col>
+              </Row>
+            </ListViewItem>
+          </ListView>
         </Box>
         {trailing}
       </Row>
