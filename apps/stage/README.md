@@ -6,7 +6,7 @@
 
 `stage` is the universal Stage app, built with Expo and React Native, serving Android, iOS, and the web (via react-native-web) from one codebase. It is an XMTP messenger with multi-account support, Snapshot profiles, group channels, search, and an onchain wallet (assets, balances, and Railgun shielded transfers; the web wallet is public-only by design). Per-platform code lives solely in Metro platform extensions (`x.ts` native / `x.web.ts` web) under `platform/` and `lib/`.
 
-All platform-neutral logic comes from [`@stage-labs/client`](../../packages/client) and the visual language from [`@stage-labs/kit`](../../packages/kit). Screens are direct kit JSX fed by pure models from `views/` (`@views`); the kit's JSON `ViewHost` renderer is used only for runtime-dynamic chat/agent message widgets. The Railgun engine runs on-device through a `nodejs-mobile` bridge (mobile only).
+All platform-neutral logic comes from [`@stage-labs/client`](../../packages/client) and the visual language from [`@stage-labs/kit`](../../packages/kit). Screens and chat message content are direct kit JSX fed by pure models from `views/` (`@views`). The Railgun engine runs on-device through a `nodejs-mobile` bridge (mobile only).
 
 ## Stack
 

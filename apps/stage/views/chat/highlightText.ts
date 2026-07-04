@@ -1,27 +1,13 @@
-import type { Color, RowNode, TextSize, WidgetNode } from '@stage-labs/kit/kit';
-import { compact } from '../node';
-import { HIGHLIGHT_BG } from '../colors';
-
-export interface HighlightTextParams {
-  text: string;
-  query: string;
-  color?: Color;
-  matchBackground?: Color;
-  size?: TextSize;
-  fontSize?: number;
-  lineHeight?: number;
-}
-
-interface Segment {
+export interface HighlightSegment {
   value: string;
   match: boolean;
 }
 
-export function highlightSegments(value: string, query: string): Segment[] {
+export function highlightSegments(value: string, query: string): HighlightSegment[] {
   if (query === '') return [{ value, match: false }];
   const lowerValue = value.toLowerCase();
   const lowerQuery = query.toLowerCase();
-  const segments: Segment[] = [];
+  const segments: HighlightSegment[] = [];
   let cursor = 0;
   let index = lowerValue.indexOf(lowerQuery, cursor);
   while (index !== -1) {
@@ -36,20 +22,4 @@ export function highlightSegments(value: string, query: string): Segment[] {
     segments.push({ value: value.slice(cursor), match: false });
   }
   return segments;
-}
-
-export function highlightText(params: HighlightTextParams): RowNode {
-  const children = highlightSegments(params.text, params.query).map(
-    (segment): WidgetNode =>
-      compact({
-        type: 'Text' as const,
-        value: segment.value,
-        size: params.size,
-        color: params.color,
-        background: segment.match ? params.matchBackground ?? HIGHLIGHT_BG : undefined,
-        fontSize: params.fontSize,
-        lineHeight: params.lineHeight,
-      }),
-  );
-  return { type: 'Row', wrap: 'wrap', align: 'baseline', children };
 }

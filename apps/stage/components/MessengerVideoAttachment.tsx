@@ -1,13 +1,13 @@
 
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import { basicRoot, videoMessage } from '@views';
+import { VideoPlayer } from '@stage-labs/kit/react-native/video-player';
 import { Box } from './layout';
 
 export function MessengerVideoAttachment({ uri }: { uri: string }): React.ReactElement {
-  const node = basicRoot(videoMessage({ src: uri }));
   return (
     <Box margin={{ bottom: 6 }}>
-      <ViewHost node={node} />
+      <Box width={220} radius="md" background="#000">
+        <VideoPlayer src={uri} controls />
+      </Box>
     </Box>
   );
 }
