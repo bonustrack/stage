@@ -242,7 +242,7 @@ function FormSections({ dark, head, sub, border }: GalleryPalette): React.ReactE
               { label: 'Free', value: 'free' },
               { label: 'Pro', value: 'pro' },
             ]}/>
-          <Button dark={dark} variant="primary" label="Submit"/>
+          <Button dark={dark} label="Submit"/>
         </Form>
       </GallerySection>
     </>

@@ -82,7 +82,8 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
         <Row width={'100%'} gap={10} style={{ alignSelf: 'stretch' }}>
           <Col flex={1} style={{ alignSelf: 'stretch' }}>
             <Button
-              variant="danger"
+              color="danger"
+              variant="solid"
               size="lg"
               dark={dark}
               fullWidth
@@ -96,7 +97,6 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
           </Col>
           <Col flex={1} style={{ alignSelf: 'stretch' }}>
             <Button
-              variant="primary"
               size="lg"
               dark={dark}
               fullWidth

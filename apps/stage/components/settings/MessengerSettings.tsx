@@ -39,7 +39,6 @@ function copyValue(label: string, value: string): void {
 
 export function MessengerSettings(): React.ReactElement {
   const { text: fg } = usePalette();
-  const sub = fg;
   const insets = useSafeAreaInsets();
   const epoch = useActiveAccount();
   const [addr, setAddr] = useState('');
@@ -66,7 +65,7 @@ export function MessengerSettings(): React.ReactElement {
     <Col surface="surface" flex={1}>
       <SettingsHeader title="Messenger"/>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
-        <Caption color={sub} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
+        <Caption color={fg} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
           XMTP ACCOUNT
         </Caption>
         {hasRows ? (

@@ -16,7 +16,6 @@ import {
   type ButtonColor,
   type ButtonControlVariant,
   type ButtonSize,
-  type ButtonVariant,
 } from '../button.styles';
 
 export type {
@@ -37,7 +36,7 @@ export function getDefaultButtonRadius(): number {
 export interface ButtonProps
   extends Omit<PressableProps, 'children' | 'style' | 'disabled'> {
   color?: ButtonColor;
-  variant?: ButtonControlVariant | ButtonVariant;
+  variant?: ButtonControlVariant;
   style?: ViewStyle;
   styleColor?: 'primary' | 'secondary';
   size?: ButtonSize;
@@ -136,7 +135,7 @@ function renderLabel(
 
 interface TintArgs {
   color: ButtonColor | undefined;
-  variant: ButtonControlVariant | ButtonVariant | undefined;
+  variant: ButtonControlVariant | undefined;
   styleColor: 'primary' | 'secondary' | undefined;
   dark: boolean;
   tintBg: string | undefined;

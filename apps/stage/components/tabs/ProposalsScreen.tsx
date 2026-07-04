@@ -46,7 +46,7 @@ export function ProposalsScreen(): React.ReactElement {
               {proposalsEmptyLabel(loading)}
             </Text>
             {!loading ? (
-              <Button variant="secondary" size="md" dark={dark} onPress={refresh} label="Refresh"/>
+              <Button color="secondary" variant="solid" size="md" dark={dark} onPress={refresh} label="Refresh"/>
             ) : null}
           </Box>
         </Col>

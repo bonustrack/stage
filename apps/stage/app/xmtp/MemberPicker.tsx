@@ -129,7 +129,8 @@ export function MemberPicker({ state, dark, exclude = [] }: {
             />
           </Box>
           <Button
-            variant="secondary"
+            color="secondary"
+            variant="solid"
             size="md"
             dark={dark}
             loading={adding}

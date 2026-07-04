@@ -82,7 +82,6 @@ function DangerRows({ resetting, nuking, setResetting, setNuking }: {
 
 export function DeveloperSettings(): React.ReactElement {
   const { text: fg } = usePalette();
-  const sub = fg;
   const insets = useSafeAreaInsets();
   const [enabled, setEnabled] = useState(isDebugConsoleEnabled());
 
@@ -103,7 +102,7 @@ export function DeveloperSettings(): React.ReactElement {
     <Col surface="surface" flex={1}>
       <SettingsHeader title="Developer"/>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
-        <Caption color={sub} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
+        <Caption color={fg} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
           DIAGNOSTICS
         </Caption>
         <Box>
@@ -117,7 +116,7 @@ export function DeveloperSettings(): React.ReactElement {
             />
           </SettingsList>
         </Box>
-        <Caption color={sub} style={{ paddingHorizontal: 16, paddingTop: 28, paddingBottom: 8 }}>
+        <Caption color={fg} style={{ paddingHorizontal: 16, paddingTop: 28, paddingBottom: 8 }}>
           DANGER ZONE
         </Caption>
         <Box>

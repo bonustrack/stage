@@ -76,10 +76,10 @@ function CardFoot(props: {
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
       {cancel ? (
-        <Button variant="secondary" size="sm" label={cancel.label} onPress={cancel.onPress} dark={dark} />
+        <Button color="secondary" variant="solid" size="sm" label={cancel.label} onPress={cancel.onPress} dark={dark} />
       ) : null}
       {confirm ? (
-        <Button variant="primary" size="sm" label={confirm.label} onPress={confirm.onPress} dark={dark} />
+        <Button size="sm" label={confirm.label} onPress={confirm.onPress} dark={dark} />
       ) : null}
     </View>
   );

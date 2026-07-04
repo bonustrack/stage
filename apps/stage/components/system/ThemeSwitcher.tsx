@@ -21,7 +21,7 @@ export function ThemeSwitcher({ dark, head }: {
             <Button
               key={opt.value}
               dark={dark}
-              variant={active ? 'primary' : 'secondary'}
+              color={active ? 'primary' : 'secondary'} variant="solid"
               onPress={() => { void setThemePreference(opt.value); }}
               style={{ flex: 1 }}
               icon={<Icon name={opt.icon} size={20} color={fg} />}

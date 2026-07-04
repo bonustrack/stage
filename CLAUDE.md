@@ -82,7 +82,7 @@ Per-app:
 - **`served-main`** must stay content-identical to `main` (drift allowlist deliberately empty).
 - `@stage-labs/config` publishes via `publish-config.yml` under the `beta` dist-tag; bump its version first. Its Vue lint preset remains for external consumers behind optional peers (`eslint-plugin-vue`/`vue-eslint-parser` are knip-ignored).
 - The 3 passkey tests hit live Base RPC and can time out in sandboxes; they pass in CI.
-- Two button taxonomies coexist (legacy `primary/secondary/danger` vs `color` x `solid/soft/outline/ghost`); `resolveModel` in `button.styles.ts` disambiguates — legacy `'ghost'` only works via the new-taxonomy passthrough.
+- Button taxonomy: JSX uses `color` x `solid/soft/outline/ghost` only (legacy `primary/secondary/danger` variants are type errors on the component). The legacy union survives solely at the JSON widget boundary — `resolveModel` in `button.styles.ts` still maps it so agent-sent widgets keep rendering; don't narrow its signature.
 - `theme.ts` setters call the persist helper; don't mutate display state directly.
 
 ## Key paths

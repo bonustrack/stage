@@ -113,6 +113,21 @@ describe('resolveModel', () => {
       variant: 'outline',
     });
   });
+
+  test('JSON boundary keeps accepting the wide legacy union', () => {
+    const fromWidgetJson: ButtonControlVariant | ButtonVariant = 'danger';
+    expect(resolveModel(undefined, fromWidgetJson, undefined)).toEqual({
+      color: 'danger',
+      variant: 'solid',
+    });
+    const withRendererColor: ButtonVariant[] = ['primary', 'secondary', 'danger'];
+    for (const v of withRendererColor) {
+      expect(resolveModel('primary', v, undefined)).toEqual({
+        color: 'primary',
+        variant: 'solid',
+      });
+    }
+  });
 });
 
 describe('SIZES', () => {

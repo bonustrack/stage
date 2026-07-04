@@ -102,7 +102,7 @@ export function RestoreStep({ pal, dark, busy, phrase, err, onChange, onNext, on
         {err ? <Text size="xs" color={DANGER} style={{ marginTop: 8 }}>{err}</Text> : null}
       </Box>
       <Col gap={10}>
-        <Button dark={dark} variant="primary" size="lg" fullWidth tintBg={pal.primary} tintFg={pal.bg}
+        <Button dark={dark} size="lg" fullWidth tintBg={pal.primary} tintFg={pal.bg}
           label="Continue" disabled={busy || !phrase.trim()} onPress={onNext} />
         <Button dark={dark} variant="ghost" size="lg" fullWidth label="Back" disabled={busy} onPress={onBack} />
       </Col>
@@ -167,7 +167,7 @@ function SetupErrorActions({ pal, dark, busy, setupErr, onRetry, onBack }: {
 }): React.ReactElement {
   return (
     <Col gap={10}>
-      <Button dark={dark} variant="primary" size="lg" fullWidth tintBg={pal.primary} tintFg={pal.bg}
+      <Button dark={dark} size="lg" fullWidth tintBg={pal.primary} tintFg={pal.bg}
         label="Try again" disabled={busy} onPress={onRetry} />
       {!setupErr.accountId ? (
         <Button dark={dark} variant="ghost" size="lg" fullWidth label="Back" disabled={busy} onPress={onBack} />

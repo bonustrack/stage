@@ -34,17 +34,17 @@ export function SimulationBlock({ sim, pending, sub, chainId }: {
   sim: SimulateResult | null; pending: boolean; sub: string; chainId: number;
 }): React.ReactElement | null {
   const pal = usePalette();
-  if (pending) return <SimNote text="Simulating…" sub={sub} bg={pal.border} />;
+  if (pending) return <SimNote text="Simulating…" sub={sub} fill={pal.border} />;
   if (!sim) return null;
   if (sim.success === 'unknown') {
-    return <SimNote text="Could not simulate this transaction" sub={sub} bg={pal.border} />;
+    return <SimNote text="Could not simulate this transaction" sub={sub} fill={pal.border} />;
   }
   return <SimOutcome sim={sim} chainId={chainId} />;
 }
 
-function SimNote({ text, sub, bg }: { text: string; sub: string; bg: string }): React.ReactElement {
+function SimNote({ text, sub, fill }: { text: string; sub: string; fill: string }): React.ReactElement {
   return (
-    <Col radius="md" background={bg} padding={10} gap={6} style={{ alignSelf: 'stretch' }}>
+    <Col radius="md" background={fill} padding={10} gap={6} style={{ alignSelf: 'stretch' }}>
       <Row align="center" gap={6}>
         <Icon name="sparkles" size={14} color={sub} />
         <Text size="xs" role="secondary">{text}</Text>

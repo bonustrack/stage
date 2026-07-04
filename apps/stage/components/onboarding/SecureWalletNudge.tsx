@@ -77,16 +77,16 @@ export function SecureWalletNudge(): React.ReactElement | null {
               wallet if you lose your device. You can do this anytime.
             </Text>
             <Col gap={8}>
-              <Button dark={dark} variant="primary" size="md" fullWidth
+              <Button dark={dark} size="md" fullWidth
                 tintBg={pal.primary} tintFg={pal.bg}
                 label="Back up recovery phrase" disabled={busy} onPress={reveal}/>
               {passkey.available ? (
-                <Button dark={dark} variant="secondary" size="md" fullWidth
+                <Button dark={dark} color="secondary" variant="solid" size="md" fullWidth
                   disabled={passkey.busy}
                   label={passkey.busy ? 'Enabling passkey…' : 'Enable passkey for signing'}
                   onPress={passkey.run}/>
               ) : null}
-              <Button dark={dark} variant="secondary" size="md" fullWidth
+              <Button dark={dark} color="secondary" variant="solid" size="md" fullWidth
                 label="Add guardians" onPress={() => { router.push('/wallet/recovery'); }}/>
               <Button dark={dark} variant="ghost" size="md" fullWidth
                 label="Not now" onPress={dismiss}/>
@@ -107,7 +107,7 @@ export function SecureWalletNudge(): React.ReactElement | null {
             <Row gap={8}>
               <Button dark={dark} variant="ghost" size="md" fullWidth style={{ flex: 1 }}
                 label="Hide" onPress={() => { setPhrase(null); }}/>
-              <Button dark={dark} variant="primary" size="md" fullWidth style={{ flex: 1 }}
+              <Button dark={dark} size="md" fullWidth style={{ flex: 1 }}
                 tintBg={pal.primary} tintFg={pal.bg}
                 label="I saved it" onPress={confirm}/>
             </Row>

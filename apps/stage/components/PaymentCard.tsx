@@ -46,7 +46,7 @@ function PaymentActionButton({ action, dark, pal }: {
 }): React.ReactElement {
   return (
     <Button
-      variant="primary" size="lg" fullWidth radius={24} dark={dark}
+      size="lg" fullWidth radius={24} dark={dark}
       loading={action.loading} disabled={action.disabled} onPress={action.onPress}
       label={action.label}
       iconStart={action.icon ?? <Icon name="wallet" size={18} color={pal.bg}/>}

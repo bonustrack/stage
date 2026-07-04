@@ -68,7 +68,7 @@ function ControlRow({ onSkip, onOpen, dark, hint }: {
     <>
       <Row gap={10} margin={{ top: 16 }} style={{ alignSelf: 'stretch' }}>
         <Box flex={1}>
-          <Button block variant="secondary" size="md" dark={dark} onPress={onSkip} label="Skip"/>
+          <Button block color="secondary" variant="solid" size="md" dark={dark} onPress={onSkip} label="Skip"/>
         </Box>
         <Box flex={1}>
           <Button block variant="ghost" size="md" dark={dark} onPress={onOpen} label="Open channel"/>
@@ -227,11 +227,11 @@ function MessageRequestCard({ request, onAdvance }: {
 
         <Row gap={10} margin={{ top: 16 }} style={{ alignSelf: 'stretch' }}>
           <Box flex={1}>
-            <Button block variant="danger" size="md" dark={dark} onPress={() => { act(false); }} label="Block"
+            <Button block color="danger" variant="solid" size="md" dark={dark} onPress={() => { act(false); }} label="Block"
               tintBg={pal.danger} tintFg={pal.bg}/>
           </Box>
           <Box flex={1}>
-            <Button block variant="primary" size="md" dark={dark} onPress={() => { act(true); }} label="Accept"
+            <Button block size="md" dark={dark} onPress={() => { act(true); }} label="Accept"
               tintBg={pal.link} tintFg={pal.bg}/>
           </Box>
         </Row>

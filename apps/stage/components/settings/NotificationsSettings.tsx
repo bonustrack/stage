@@ -15,7 +15,6 @@ import { SettingsList, SettingsToggleRow } from './rows';
 
 export function NotificationsSettings(): React.ReactElement {
   const { text: fg } = usePalette();
-  const sub = fg;
   const insets = useSafeAreaInsets();
   const [enabled, setEnabled] = useState(isPushEnabledSync());
   const [perm, setPerm] = useState<string>('undetermined');
@@ -49,7 +48,7 @@ export function NotificationsSettings(): React.ReactElement {
     <Col surface="surface" flex={1}>
       <SettingsHeader title="Notifications"/>
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
-        <Caption color={sub} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
+        <Caption color={fg} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
           PUSH NOTIFICATIONS
         </Caption>
         <Box>
@@ -64,7 +63,7 @@ export function NotificationsSettings(): React.ReactElement {
             />
           </SettingsList>
         </Box>
-        <Caption color={sub} style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+        <Caption color={fg} style={{ paddingHorizontal: 16, paddingTop: 12 }}>
           {permLabel}
         </Caption>
       </ScrollView>

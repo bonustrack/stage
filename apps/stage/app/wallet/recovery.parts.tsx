@@ -27,7 +27,7 @@ export function GuardianEditor({
   onChange: (next: string[]) => void;
   onThreshold: (m: number) => void;
 }): React.ReactElement {
-  const { head, sub, link } = pal;
+  const { head, sub } = pal;
   const [entry, setEntry] = useState('');
 
   const add = (): void => {
@@ -58,7 +58,7 @@ export function GuardianEditor({
               style={{ color: head, fontSize: fontSize('md'), fontFamily: 'Calibre-Medium', padding: 0,
                 backgroundColor: 'transparent', minHeight: 0, paddingHorizontal: 0, paddingVertical: 0, borderWidth: 0 }}/>
           </Col>
-          <Button variant="secondary" size="md" pill dark={dark} onPress={add} disabled={!entry.trim()} label="Add"/>
+          <Button color="secondary" variant="solid" size="md" pill dark={dark} onPress={add} disabled={!entry.trim()} label="Add"/>
         </Row>
       </Box>
 
@@ -87,7 +87,7 @@ export function GuardianEditor({
 
       <Text size="xs" role="secondary">
         A recovery opens a {formatDelay(delaySeconds)} cancel window. You are notified and can cancel with your key before it takes effect.{' '}
-        <Text size="xs" color={link}>Funds can never move during recovery.</Text>
+        <Text size="xs" role="link">Funds can never move during recovery.</Text>
       </Text>
     </Col>
   );
@@ -111,7 +111,7 @@ export function PendingRecoveryCard({
         Your wallet is being rotated to a new owner. It takes effect {finalizeAfterLabel} unless you cancel.
       </Text>
       <Text size="xs" role="secondary" numberOfLines={1} ellipsizeMode="middle">New owner: {newOwner}</Text>
-      <Button variant="primary" size="md" pill dark={dark} loading={cancelling} onPress={onCancel}
+      <Button size="md" pill dark={dark} loading={cancelling} onPress={onCancel}
         label="Cancel recovery"/>
     </Box>
   );
@@ -133,7 +133,7 @@ export function ApprovalCard({
       <Text size="sm" role="secondary">
         Only approve if you trust this is them. Approving is free and only helps rotate their owner key — it never moves their funds.
       </Text>
-      <Button variant="primary" size="md" pill dark={dark} disabled={approved} loading={approving}
+      <Button size="md" pill dark={dark} disabled={approved} loading={approving}
         onPress={onApprove} label={approved ? 'Approved' : 'Approve recovery'}/>
     </Box>
   );

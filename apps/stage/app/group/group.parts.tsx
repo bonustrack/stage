@@ -126,7 +126,6 @@ export function AddMemberModal({
           />
         </Box>
         <Button
-          variant="primary"
           size="md"
           fullWidth
           dark={dark}

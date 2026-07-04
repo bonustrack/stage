@@ -28,7 +28,7 @@ export function PrivateView({ head, sub, border }: {
           Shielded transfers arrive in the next app build.
         </Text>
         {}
-        {debug ? <BridgePingProbe sub={sub} border={border} /> : null}
+        {debug ? <BridgePingProbe fg={sub} border={border} /> : null}
       </Col>
     );
   }
@@ -65,8 +65,8 @@ export function PrivateView({ head, sub, border }: {
       {}
       {debug ? (
         <>
-          <RailgunDebugPanel head={head} sub={sub} border={border} />
-          <BridgePingProbe sub={sub} border={border} />
+          <RailgunDebugPanel head={head} fg={sub} border={border} />
+          <BridgePingProbe fg={sub} border={border} />
         </>
       ) : null}
     </Col>

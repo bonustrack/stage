@@ -80,7 +80,6 @@ export function PollSheet({
           </Box>
         </Pressable>
         <Button
-          variant="primary"
           size="lg"
           fullWidth
           dark={dark}
@@ -156,7 +155,6 @@ export function SignatureSheet({
 />
         )}
         <Button
-          variant="primary"
           size="lg"
           fullWidth
           dark={dark}
@@ -214,7 +212,6 @@ export function PaymentSheet({
           style={{ color: fg, backgroundColor: inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: fontSize('lg'), minHeight: 0 }}
 />
         <Button
-          variant="primary"
           size="lg"
           fullWidth
           dark={dark}

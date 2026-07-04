@@ -94,7 +94,7 @@ function ComposerRightAction({ p, primary }: { p: EditorProps; primary: string }
   const { dark, bg } = p;
   if (!p.hasContent) return null;
   return (
-    <Button variant="primary" size="md" pill dark={dark} tintBg={primary}
+    <Button size="md" pill dark={dark} tintBg={primary}
       onPress={p.onSend} icon={<Icon name="arrowSmUp" size={20} color={bg} />} />
   );
 }

@@ -51,7 +51,6 @@ export function ExportSheet({ revealPk, onClose, dark, p }: {
         {revealPk}
       </Text>
       <Button
-        variant="primary"
         size="md"
         fullWidth
         dark={dark}

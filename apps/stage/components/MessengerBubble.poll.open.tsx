@@ -36,7 +36,6 @@ export function OpenAnswerBlock({ qi, sub, dark, answers, mine, onSubmit }: {
           }}
 />
         <Button
-          variant="primary"
           size="md"
           dark={dark}
           disabled={draft.trim().length === 0}

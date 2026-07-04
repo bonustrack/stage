@@ -69,7 +69,7 @@ export function Segmented<T extends string | number>({ label, value, options, on
       {label ? <Text size="xs" role="secondary">{label}</Text> : null}
       <Row gap={8}>
         {options.map(([id, text]) => (
-          <Button key={String(id)} variant={value === id ? 'primary' : 'secondary'}
+          <Button key={String(id)} color={value === id ? 'primary' : 'secondary'} variant="solid"
             size="md" dark={dark} pill style={{ flex: 1 }}
             onPress={() => { onChange(id); }} label={text}/>
         ))}
@@ -138,9 +138,9 @@ export function WalletFooter({
   return (
     <Row surface="surface" padding={{ x: 16, top: 12, bottom: Math.max(insets.bottom, 12) }} gap={12} 
       style={{ borderTopWidth: 1, borderTopColor: border }}>
-      <Button variant="secondary" size="lg" pill dark={dark} style={{ flex: 1 }}
+      <Button color="secondary" variant="solid" size="lg" pill dark={dark} style={{ flex: 1 }}
         onPress={onCancel} label="Cancel"/>
-      <Button variant="primary" size="lg" pill dark={dark} style={{ flex: 1 }}
+      <Button size="lg" pill dark={dark} style={{ flex: 1 }}
         loading={!!submitLoading} disabled={!!submitDisabled}
         onPress={onSubmit} label={submitLabel}/>
     </Row>

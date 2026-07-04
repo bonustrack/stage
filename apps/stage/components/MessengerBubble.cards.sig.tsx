@@ -14,16 +14,16 @@ function stringifyPrimitive(v: unknown): string | undefined {
   return undefined;
 }
 
-function detailColors(dark: boolean): { bg: string; border: string } {
+function detailColors(dark: boolean): { fill: string; border: string } {
   return {
-    bg: dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+    fill: dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
     border: dark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)',
   };
 }
 
-function SenderNote({ note, bg, border }: { note: string; bg: string; border: string }): React.ReactElement {
+function SenderNote({ note, fill, border }: { note: string; fill: string; border: string }): React.ReactElement {
   return (
-    <Box radius="md" background={bg} padding={8} style={{ borderWidth: 1, borderColor: border }}>
+    <Box radius="md" background={fill} padding={8} style={{ borderWidth: 1, borderColor: border }}>
       <Text size="xs" role="secondary">Sender's note (untrusted)</Text>
       <Text size="xs" numberOfLines={4}>{note}</Text>
     </Box>
@@ -54,14 +54,14 @@ function Eip712FieldRow({ name, value }: { name: string; value: unknown }): Reac
   );
 }
 
-function Eip712Detail({ req, bg, border }: {
-  req: SigRequest; bg: string; border: string;
+function Eip712Detail({ req, fill, border }: {
+  req: SigRequest; fill: string; border: string;
 }): React.ReactElement {
   const domain = req.eip712?.domain as { name?: unknown; chainId?: unknown } | undefined;
   const primaryType = req.eip712?.primaryType;
   const fields = req.eip712?.message ? Object.entries(req.eip712.message) : [];
   return (
-    <Col radius="md" background={bg} padding={10} gap={6} style={{ borderWidth: 1, borderColor: border }}>
+    <Col radius="md" background={fill} padding={10} gap={6} style={{ borderWidth: 1, borderColor: border }}>
       <Eip712DomainLine domain={domain} />
       {primaryType ? <Text weight="semibold" size="xs">{primaryType}</Text> : null}
       {fields.map(([k, v]) => <Eip712FieldRow key={k} name={k} value={v} />)}
@@ -69,9 +69,9 @@ function Eip712Detail({ req, bg, border }: {
   );
 }
 
-function MessageDetail({ message, bg, border }: { message: string; bg: string; border: string }): React.ReactElement {
+function MessageDetail({ message, fill, border }: { message: string; fill: string; border: string }): React.ReactElement {
   return (
-    <Box radius="md" background={bg} padding={10} style={{ borderWidth: 1, borderColor: border }}>
+    <Box radius="md" background={fill} padding={10} style={{ borderWidth: 1, borderColor: border }}>
       <Text variant="mono" size="xs" numberOfLines={20} style={{ lineHeight: 18 }}>{message}</Text>
     </Box>
   );
@@ -90,7 +90,7 @@ function SigAction({ gated, dark, signing, onSign }: {
   }
   return (
     <Button
-      variant="primary" size="lg" block dark={dark} loading={signing} onPress={onSign} label="Sign"
+      size="lg" block dark={dark} loading={signing} onPress={onSign} label="Sign"
       iconStart={<Icon name="pencil" size={18} color={pal.bg}/>}
       tintBg={pal.primary} tintFg={pal.bg} style={{ marginTop: 2 }}
     />
@@ -105,7 +105,7 @@ export function SigRequestCard({ req, dark, signing, onSign, consentAllowed }: {
   const title = req.kind === 'eip712' ? `Sign ${req.eip712?.primaryType ?? 'typed data'}` : 'Sign message';
   const senderNote = req.description?.trim();
   const gated = isCardActionBlocked(consentAllowed);
-  const { bg, border } = detailColors(dark);
+  const { fill, border } = detailColors(dark);
   const pal = usePalette();
   const blockRadius = useBlockRadius();
   return (
@@ -114,11 +114,11 @@ export function SigRequestCard({ req, dark, signing, onSign, consentAllowed }: {
         <Icon name="pencil" size={18} color={pal.link}/>
         <Text weight="semibold" size="md" style={{ flexShrink: 1 }}>{title}</Text>
       </Row>
-      {senderNote ? <SenderNote note={senderNote} bg={bg} border={border} /> : null}
+      {senderNote ? <SenderNote note={senderNote} fill={fill} border={border} /> : null}
       {req.kind === 'eip712' ? (
-        <Eip712Detail req={req} bg={bg} border={border} />
+        <Eip712Detail req={req} fill={fill} border={border} />
       ) : req.message ? (
-        <MessageDetail message={req.message} bg={bg} border={border} />
+        <MessageDetail message={req.message} fill={fill} border={border} />
       ) : null}
       {onSign ? <SigAction gated={gated} dark={dark} signing={signing} onSign={onSign} /> : null}
     </Box>

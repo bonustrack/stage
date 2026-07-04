@@ -147,7 +147,6 @@ export default function NewGroup(): React.ReactElement {
       {}
       <Box padding={{ top: 16, right: 16, bottom: 16 + insets.bottom, left: 16 }} style={{ borderTopWidth: 1, borderTopColor: border }}>
         <Button
-          variant="primary"
           size="lg"
           fullWidth
           pill

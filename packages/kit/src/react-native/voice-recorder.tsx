@@ -189,7 +189,7 @@ function RecorderView({ props, slideX, panHandlers, onCancelPress, onCompletePre
         <Spacer/>
         {mic}
         {recording ? (
-          <Button variant="primary" size="md" pill dark={dark} tintBg={primary}
+          <Button size="md" pill dark={dark} tintBg={primary}
             onPress={onCompletePress} icon={<Icon name="check" size={20} color={bg} />} />
         ) : (
           rightAction

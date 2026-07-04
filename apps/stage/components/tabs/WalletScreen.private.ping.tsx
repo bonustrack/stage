@@ -33,10 +33,10 @@ interface LogLine { ms: number; line: string }
 
 function fmtLine(l: LogLine): string { return `+${l.ms}ms  ${l.line}`; }
 
-function tone(line: string, sub: string): string {
+function tone(line: string, fg: string): string {
   if (line.includes('✗')) return DANGER;
   if (line.includes('✓') || line.startsWith('reply ← pong')) return SUCCESS;
-  return sub;
+  return fg;
 }
 
 function copyAll(lines: LogLine[]): void {
@@ -44,8 +44,8 @@ function copyAll(lines: LogLine[]): void {
   flash('Logs copied');
 }
 
-function PingLog({ lines, sub, head, border }: {
-  lines: LogLine[]; sub: string; head?: string; border?: string;
+function PingLog({ lines, fg, head, border }: {
+  lines: LogLine[]; fg: string; head?: string; border?: string;
 }): React.ReactElement | null {
   if (lines.length === 0) return null;
   return (
@@ -57,10 +57,10 @@ function PingLog({ lines, sub, head, border }: {
           accessibilityLabel="Copy scan logs"
           style={{
             paddingVertical: 4, paddingHorizontal: 10, borderRadius: 8,
-            borderWidth: 1, borderColor: border ?? sub,
+            borderWidth: 1, borderColor: border ?? fg,
           }}
         >
-          <Text weight="semibold" size="xs" color={head ?? sub}>
+          <Text weight="semibold" size="xs" color={head ?? fg}>
             Copy
           </Text>
         </Pressable>
@@ -74,7 +74,7 @@ function PingLog({ lines, sub, head, border }: {
         removeClippedSubviews
         renderItem={({ item }) => (
           <Text size="3xs"
-            selectable color={tone(item.line, sub)}>
+            selectable color={tone(item.line, fg)}>
             {fmtLine(item)}
           </Text>
         )}
@@ -253,8 +253,8 @@ function useProbeActions(deps: ProbeDeps): ProbeActions {
 }
 
 
-export function BridgePingProbe({ sub, border }: {
-  sub: string; border: string;
+export function BridgePingProbe({ fg, border }: {
+  fg: string; border: string;
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const [state, setState] = useState<ProbeState>({ kind: 'idle' });
@@ -287,12 +287,12 @@ export function BridgePingProbe({ sub, border }: {
     });
   }, [append]);
 
-  const resultColor = state.kind === 'err' ? DANGER : sub;
+  const resultColor = state.kind === 'err' ? DANGER : fg;
   const resultText =
     state.kind === 'idle' ? 'not run yet'
       : state.kind === 'running' ? 'pinging…'
         : state.text;
-  const engineColor = engine.kind === 'err' ? DANGER : sub;
+  const engineColor = engine.kind === 'err' ? DANGER : fg;
   const engineText =
     engine.kind === 'idle' ? 'not run yet'
       : engine.kind === 'running' ? 'initializing engine…'
@@ -300,12 +300,13 @@ export function BridgePingProbe({ sub, border }: {
 
   return (
     <Col padding={{ top: 16 }} margin={{ top: 20 }} gap={8} style={{ borderTopWidth: 1, borderTopColor: border }}>
-      <Text size="xs" color={sub}>
+      <Text size="xs" color={fg}>
         DEV · NODE BRIDGE FEASIBILITY
       </Text>
       <Button
         label="Test Node bridge (ping)"
-        variant="secondary"
+        color="secondary"
+        variant="solid"
         dark={dark}
         loading={state.kind === 'running'}
         onPress={() => { void onPress(); }}
@@ -315,7 +316,8 @@ export function BridgePingProbe({ sub, border }: {
       </Text>
       <Button
         label="Init Railgun engine"
-        variant="secondary"
+        color="secondary"
+        variant="solid"
         dark={dark}
         loading={engine.kind === 'running'}
         onPress={() => { void onInit(); }}
@@ -325,18 +327,20 @@ export function BridgePingProbe({ sub, border }: {
       </Text>
       <Button
         label="Scan balances + show diagnostics"
-        variant="secondary"
+        color="secondary"
+        variant="solid"
         dark={dark}
         loading={engine.kind === 'running'}
         onPress={() => { void onScan(); }}
       />
       <Button
         label="List SDK dispatcher methods"
-        variant="secondary"
+        color="secondary"
+        variant="solid"
         dark={dark}
         onPress={() => { void onMethods(); }}
       />
-      <PingLog lines={log} sub={sub} border={border} />
+      <PingLog lines={log} fg={fg} border={border} />
     </Col>
   );
 }

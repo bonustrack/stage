@@ -76,9 +76,9 @@ function SeedSwatch({ name, seedKey, value, scheme, p }: {
           onChange={setPending}
         />
         <Row margin={{ top: 20 }} gap={12} align="center">
-          <Button variant="secondary" dark={p.dark} onPress={closePicker} label="Cancel" style={{ flex: 1 }}/>
+          <Button color="secondary" variant="solid" dark={p.dark} onPress={closePicker} label="Cancel" style={{ flex: 1 }}/>
           <Button
-            variant="primary" dark={p.dark}
+            dark={p.dark}
             onPress={() => {
               if (pending != null && isHex(pending)) setSeedColor(scheme, seedKey, pending);
               closePicker();
@@ -101,7 +101,7 @@ function SeedChoice<T extends string | number>({ name, options, value, onSelect,
         {options.map((opt) => (
           <Button
             key={String(opt)}
-            variant={opt === value ? 'primary' : 'secondary'}
+            color={opt === value ? 'primary' : 'secondary'} variant="solid"
             size="sm" dark={p.dark}
             onPress={() => { onSelect(opt); }}
             label={String(opt)}
@@ -129,7 +129,7 @@ export function ColorTokens({ p }: { p: GalleryPalette }): React.ReactElement {
           {`seed theme - derives the palette - ${scheme}`}
         </Text>
         <Button
-          variant="secondary" size="sm" dark={p.dark}
+          color="secondary" variant="solid" size="sm" dark={p.dark}
           onPress={() => { resetOverrides(); }}
           label="Reset" accessibilityLabel="Reset theme seed to defaults"
 />
