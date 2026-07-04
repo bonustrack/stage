@@ -111,7 +111,6 @@ const config = {
     ],
   },
   web: {
-    favicon: './assets/favicon.png',
     bundler: 'metro',
     output: 'single',
   },
