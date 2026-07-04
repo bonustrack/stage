@@ -1,21 +1,3 @@
-export const WALLET_TOKEN_PRESS = 'wallet.token.press';
-
-export const WALLET_ADDRESS_COPY = 'wallet.address.copy';
-
-export const WALLET_ADDRESS_SHARE = 'wallet.address.share';
-
-export const WALLET_ACTION_PRESS = 'wallet.action.press';
-
-export const WALLET_SEND_SUBMIT = 'wallet.send.submit';
-
-export const WALLET_TAB_CHANGE = 'wallet.tab.change';
-
-export const WALLET_SEND_FIELD_CHANGE = 'wallet.send.fieldChange';
-
-export const WALLET_SEND_FIELD_ACTION = 'wallet.send.fieldAction';
-
-export const WALLET_NOTICE_PRESS = 'wallet.notice.press';
-
 export const CHANNEL_PRESS = 'chat.channel.press';
 
 export const CHANNEL_LONG_PRESS = 'chat.channel.longPress';

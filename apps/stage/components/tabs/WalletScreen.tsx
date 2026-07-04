@@ -6,14 +6,11 @@ import { usePullToRefresh } from './PullToRefresh';
 import { RefreshButton } from './WalletScreen.refreshButton';
 import { Spinner } from '../Spinner';
 import type { SimultaneousRefs } from '../SwipeTabs.types';
+import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import {
-  walletBalanceHeroNode,
-  walletTotalUsd,
-  WALLET_ACTION_PRESS,
-} from '@views';
+import { Title } from '@stage-labs/kit/react-native/title';
+import { walletHeroDisplay, walletTotalUsd } from '@views';
+import { WalletActionButton } from '../wallet/widgets';
 import { useRouter } from 'expo-router';
 import { flash } from '../../lib/toast';
 import { usePeerProfiles } from '../../lib/peerProfiles';
@@ -88,29 +85,49 @@ function WalletTabBody({ tab, nftState, address, rows, privateRows, pending, err
   return <TokensList rows={rows} privateRows={privateRows} pending={pending} head={c.head} sub={c.sub} border={c.border} bg={c.bg}/>;
 }
 
+const HERO_ACTIONS: readonly (readonly [string, string, string])[] = [
+  ['Send', 'send', 'send'],
+  ['Receive', 'arrowDown', 'receive'],
+  ['Swap', 'switchHorizontal', 'swap'],
+  ['Buy', 'creditCard', 'buy'],
+];
+
+function HeroTitle({ value, color }: { value: string; color?: string }): React.ReactElement {
+  return (
+    <Title size="lg" hero="7xl" color={color}>
+      {value}
+    </Title>
+  );
+}
+
 function WalletBalanceCard({ err, totalUsd, border, onAction }: {
   err: boolean; totalUsd: number | null; border: string;
   onAction: (action: string) => void;
 }): React.ReactElement {
-  const node = useMemo(() => {
-    const parts = totalUsd === null ? null : splitUsd(fmtUsd(totalUsd));
-    return walletBalanceHeroNode(
-      { parts, error: err },
-      border,
-      { swapBuy: true, errorSubtitle: true },
-    );
-  }, [err, totalUsd, border]);
-  const actions: PayloadHandlers = useMemo(
-    () => ({
-      [WALLET_ACTION_PRESS]: (payload) => {
-        if (typeof payload.action === 'string') onAction(payload.action);
-      },
-    }),
-    [onAction],
-  );
+  const parts = totalUsd === null ? null : splitUsd(fmtUsd(totalUsd));
+  const hero = walletHeroDisplay({ parts, error: err });
   return (
     <Col padding={{ top: 4, bottom: 16 }} margin={{ x: 16 }} align="start">
-      <ViewHost node={node} actions={actions} />
+      <Col gap={12}>
+        <Row align="end">
+          <HeroTitle value={hero.total} />
+          {hero.totalDecimals === undefined ? null : (
+            <HeroTitle value={hero.totalDecimals} color="secondary" />
+          )}
+        </Row>
+        {hero.subtitle === undefined ? null : <Caption value={hero.subtitle} color="secondary" />}
+        <Row gap={12} justify="start">
+          {HERO_ACTIONS.map(([label, icon, action]) => (
+            <WalletActionButton
+              key={action}
+              label={label}
+              icon={icon}
+              bg={border}
+              onPress={() => { onAction(action); }}
+            />
+          ))}
+        </Row>
+      </Col>
     </Col>
   );
 }

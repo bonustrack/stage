@@ -1,4 +1,16 @@
-import type { TxDirection, TxRowParams } from './txRow';
+export type TxDirection = 'in' | 'out' | 'self';
+
+export interface TxRowParams {
+  direction: TxDirection;
+  title: string;
+  amount: string;
+  token: string;
+  timestamp: string;
+  counterparty: string;
+  chainLabel?: string;
+  subText?: string;
+  failed?: boolean;
+}
 
 export type ActivityDirection = 'send' | 'receive' | 'self';
 

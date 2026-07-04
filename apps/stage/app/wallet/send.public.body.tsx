@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import type { PayloadHandlers } from '@stage-labs/kit/kit';
-import {
-  basicRoot, sendFields,
-  WALLET_SEND_FIELD_ACTION, WALLET_SEND_FIELD_CHANGE,
-} from '@views';
+import { useEffect, useState } from 'react';
+import { Button } from '@stage-labs/kit/react-native/button';
+import { Caption } from '@stage-labs/kit/react-native/caption';
+import { Icon } from '@stage-labs/kit/react-native/icon';
+import { TextField } from '@stage-labs/kit/react-native/text-field';
+import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
+import { DANGER_COLOR } from '@views';
 import { toggleAmountUnit } from '@stage-labs/client/wallet/sendAmount';
 import { usePalette } from '../../lib/theme';
-import { Col } from '../../components/layout';
+import { Col, Row } from '../../components/layout';
 import { TxStatus } from './send.fields';
 import { RecipientRow, ContactsModal, ContactsButton } from './send.recipient';
 import { usePublicSend } from './send.public';
@@ -22,6 +22,73 @@ function toggleAmount(
   const nextMode: 'eth' | 'usd' = next.unit === 'primary' ? 'eth' : 'usd';
   if (next.amount !== amount) setAmount(next.amount);
   setMode(() => nextMode);
+}
+
+function RecipientField({ value, resolving, error, onChange }: {
+  value: string; resolving: boolean; error?: string;
+  onChange: (v: string) => void;
+}): React.ReactElement {
+  const scheme = useKitScheme();
+  return (
+    <Col gap={6}>
+      <Caption value="RECIPIENT" color="secondary" size="sm" />
+      <TextField
+        name="recipient"
+        value={value}
+        placeholder="0x… or name.eth"
+        dark={scheme === 'dark'}
+        onChangeText={onChange}
+      />
+      {resolving ? <Caption value="Resolving…" color="secondary" /> : null}
+      {error === undefined ? null : <Caption value={error} color={DANGER_COLOR[scheme]} />}
+    </Col>
+  );
+}
+
+function AmountField({ value, unitLabel, secondaryLabel, balanceLabel, maxDisabled, onChange, onMax, onToggleUnit }: {
+  value: string; unitLabel: string;
+  secondaryLabel?: string; balanceLabel?: string; maxDisabled: boolean;
+  onChange: (v: string) => void; onMax: () => void; onToggleUnit: () => void;
+}): React.ReactElement {
+  const scheme = useKitScheme();
+  const dark = scheme === 'dark';
+  return (
+    <Col gap={6}>
+      <Row align="center" justify="between">
+        <Caption value="AMOUNT" color="secondary" size="sm" />
+        <Row align="center" gap={8}>
+          <Button
+            label={unitLabel}
+            color="primary"
+            variant="soft"
+            size="sm"
+            pill
+            dark={dark}
+            iconEnd={<Icon name="arrowDown" size={18} dark={dark} />}
+            onPress={onToggleUnit}
+          />
+          <Button
+            label="MAX"
+            color="primary"
+            variant="ghost"
+            size="sm"
+            disabled={maxDisabled}
+            dark={dark}
+            onPress={onMax}
+          />
+        </Row>
+      </Row>
+      <TextField
+        name="amount"
+        value={value}
+        placeholder="0.0"
+        dark={dark}
+        onChangeText={onChange}
+      />
+      {secondaryLabel === undefined ? null : <Caption value={secondaryLabel} color="secondary" />}
+      {balanceLabel === undefined ? null : <Caption value={balanceLabel} color="secondary" />}
+    </Col>
+  );
 }
 
 export function PublicSendBody({ token, initialTo, onFooter }: {
@@ -45,33 +112,30 @@ export function PublicSendBody({ token, initialTo, onFooter }: {
     });
   }, [onFooter, submitLabel, p.onSubmit, p.canSubmit, p.txState, p.busy]);
 
-  const node = useMemo(() => basicRoot(sendFields({
-    recipient: p.to,
-    amount: p.amount,
-    unitLabel: p.mode === 'eth' ? token.symbol : 'USD',
-    resolving: p.resolving,
-    recipientError: p.resolveErr ?? undefined,
-    secondaryLabel: p.secondaryLabel || undefined,
-    balanceLabel: p.ethBalance
-      ? `Balance: ${Number(p.ethBalance).toLocaleString(undefined, { maximumFractionDigits: 6 })} ${token.symbol}`
-      : undefined,
-    maxDisabled: !p.ethBalance,
-  })), [p.to, p.amount, p.mode, p.resolving, p.resolveErr, p.secondaryLabel, p.ethBalance, token.symbol]);
-
-  const actions: PayloadHandlers = useMemo(() => ({
-    [WALLET_SEND_FIELD_CHANGE]: (payload) => {
-      if (payload.field === 'recipient' && typeof payload.recipient === 'string') p.setTo(payload.recipient);
-      else if (payload.field === 'amount' && typeof payload.amount === 'string') p.setAmount(payload.amount);
-    },
-    [WALLET_SEND_FIELD_ACTION]: (payload) => {
-      if (payload.action === 'max') p.onMax();
-      else if (payload.action === 'toggleUnit') toggleAmount(p.amount, p.mode, p.ethPriceUsd, p.setAmount, p.setMode);
-    },
-  }), [p]);
+  const balanceLabel = p.ethBalance
+    ? `Balance: ${Number(p.ethBalance).toLocaleString(undefined, { maximumFractionDigits: 6 })} ${token.symbol}`
+    : undefined;
 
   return (
     <Col gap={8}>
-      <ViewHost node={node} actions={actions} />
+      <Col gap={16}>
+        <RecipientField
+          value={p.to}
+          resolving={p.resolving}
+          error={p.resolveErr ?? undefined}
+          onChange={p.setTo}
+        />
+        <AmountField
+          value={p.amount}
+          unitLabel={p.mode === 'eth' ? token.symbol : 'USD'}
+          secondaryLabel={p.secondaryLabel || undefined}
+          balanceLabel={balanceLabel}
+          maxDisabled={!p.ethBalance}
+          onChange={p.setAmount}
+          onMax={p.onMax}
+          onToggleUnit={() => { toggleAmount(p.amount, p.mode, p.ethPriceUsd, p.setAmount, p.setMode); }}
+        />
+      </Col>
 
       {p.resolved ? (
         <RecipientRow address={p.resolved} pal={{ head, sub: fg, border }} />

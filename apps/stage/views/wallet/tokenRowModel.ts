@@ -1,5 +1,3 @@
-import type { TokenRowParams } from './tokenRow';
-
 export interface TokenRowAsset {
   chainId: number;
   symbol: string;
@@ -16,10 +14,16 @@ export interface TokenRowFormat {
   fmtBalance: (v: string) => string;
 }
 
-export type TokenRowModelParams = Pick<
-  TokenRowParams,
-  'tokenId' | 'symbol' | 'name' | 'priceUsd' | 'balance' | 'change24h' | 'logoUri' | 'isPrivate'
->;
+export interface TokenRowModelParams {
+  tokenId: string;
+  symbol: string;
+  name: string;
+  priceUsd: string;
+  balance: string;
+  change24h: string;
+  logoUri: string;
+  isPrivate?: boolean;
+}
 
 export function tokenRowModel(r: TokenRowAsset, f: TokenRowFormat): TokenRowModelParams {
   const valueUsd = r.priceUsd === null ? null : r.priceUsd * Number(r.balance);

@@ -4,13 +4,13 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
-import { ViewHost } from '@stage-labs/kit/react-native/view-host';
-import type { ListViewNode, PayloadHandlers } from '@stage-labs/kit/kit';
-import { tokenRow, WALLET_TOKEN_PRESS } from '@views';
+import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
+import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { fmtUsd, fmtBalance } from '@stage-labs/client/wallet/format';
 import { Box, Row, Col } from '../../components/layout';
 import { AppModal } from '../../components/AppModal';
 import { Spinner } from '../../components/Spinner';
+import { TokenRowBody } from '../../components/wallet/TokenRowView';
 import { usePalette } from '../../lib/theme';
 import { getActiveAccount } from '../../lib/accounts';
 import { fetchAssetRows } from '../../components/tabs/WalletScreen.data';
@@ -78,6 +78,47 @@ export function useTopToken(mode: SelectorMode): TokenChoice | null {
   return top ? { symbol: top.symbol, chainId: top.chainId, isPrivate: top.isPrivate } : null;
 }
 
+function rowKey(r: AssetRow): string {
+  return `${r.isPrivate ? 'priv' : 'pub'}:${r.chainId}:${r.symbol}`;
+}
+
+function TokenChoiceList({ rows, onPick }: {
+  rows: AssetRow[];
+  onPick: (r: AssetRow) => void;
+}): React.ReactElement {
+  const dark = useKitScheme() === 'dark';
+  return (
+    <ListView dark={dark}>
+      {rows.map((r) => {
+        const change = r.change24h === null ? '' : `${r.change24h >= 0 ? '+' : ''}${r.change24h.toFixed(2)}%`;
+        const price = r.priceUsd === null ? r.symbol : fmtUsd(r.priceUsd, r.priceUsd < 1 ? 4 : 2);
+        return (
+          <ListViewItem
+            key={rowKey(r)}
+            align="center"
+            gap={12}
+            dark={dark}
+            onPress={() => { onPick(r); }}
+          >
+            <TokenRowBody
+              symbol={r.symbol}
+              name={price}
+              priceUsd={price}
+              balance={`${fmtBalance(r.balance)} ${r.symbol}`}
+              change24h={change}
+              logoUri={r.logoUrl}
+              chainBadgeUri={NETWORK_LOGO[r.chainId] ?? MAINNET_NETWORK_LOGO}
+              isPrivate={r.isPrivate}
+              showAvatar
+              trailingChevron={false}
+            />
+          </ListViewItem>
+        );
+      })}
+    </ListView>
+  );
+}
+
 export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
   mode: SelectorMode;
   value: TokenChoice;
@@ -90,34 +131,10 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
   const { rows, loading } = useSelectorRows(mode);
   const selected = findRow(rows, value);
 
-  const rowKey = (r: AssetRow): string => `${r.isPrivate ? 'priv' : 'pub'}:${r.chainId}:${r.symbol}`;
-  const listNode = useMemo<ListViewNode>(() => ({
-    type: 'ListView',
-    children: rows.map((r) => {
-      const change = r.change24h === null ? '' : `${r.change24h >= 0 ? '+' : ''}${r.change24h.toFixed(2)}%`;
-      const price = r.priceUsd === null ? r.symbol : fmtUsd(r.priceUsd, r.priceUsd < 1 ? 4 : 2);
-      return tokenRow({
-        tokenId: rowKey(r),
-        symbol: r.symbol,
-        name: price,
-        priceUsd: price,
-        balance: `${fmtBalance(r.balance)} ${r.symbol}`,
-        change24h: change,
-        logoUri: r.logoUrl,
-        chainBadgeUri: NETWORK_LOGO[r.chainId] ?? MAINNET_NETWORK_LOGO,
-        isPrivate: r.isPrivate,
-        showAvatar: true,
-        trailingChevron: false,
-      });
-    }),
-  }), [rows]);
-  const listActions: PayloadHandlers = useMemo(() => ({
-    [WALLET_TOKEN_PRESS]: (payload) => {
-      const key = payload.tokenId;
-      const r = rows.find((row) => rowKey(row) === key);
-      if (r) { onChange({ symbol: r.symbol, chainId: r.chainId, isPrivate: r.isPrivate }); setOpen(false); }
-    },
-  }), [rows, onChange]);
+  const onPick = (r: AssetRow): void => {
+    onChange({ symbol: r.symbol, chainId: r.chainId, isPrivate: r.isPrivate });
+    setOpen(false);
+  };
 
   return (
     <Box gap={6}>
@@ -170,7 +187,7 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
             No tokens.
           </Text>
         ) : (
-          <ViewHost node={listNode} actions={listActions} />
+          <TokenChoiceList rows={rows} onPick={onPick} />
         )}
       </AppModal>
     </Box>
