@@ -229,7 +229,7 @@ jobs:
           DEEPLINK='${{ steps.update.outputs.deeplink }}'
           BRANCH='${{ steps.update.outputs.branch }}'
           SHORT_SHA='${{ steps.update.outputs.short_sha }}'
-          LAUNCHER="https://metro.box/preview-launcher.html?u=$(node -e "process.stdout.write(encodeURIComponent(process.argv[1]))" "$MANIFEST")"
+          LAUNCHER="https://stage.box/preview-launcher.html?u=$(node -e "process.stdout.write(encodeURIComponent(process.argv[1]))" "$MANIFEST")"
           QR="https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=$(node -e "process.stdout.write(encodeURIComponent(process.argv[1]))" "$DEEPLINK")"
           {
             echo "## App preview - \`${{ github.ref_name }}\` @ \`$SHORT_SHA\`"
@@ -264,7 +264,7 @@ jobs:
           script: |
             const manifest = `${{ steps.update.outputs.manifest }}`;
             const target =
-              'https://metro.box/preview-launcher.html?u=' + encodeURIComponent(manifest);
+              'https://stage.box/preview-launcher.html?u=' + encodeURIComponent(manifest);
             const native = `${{ steps.native.outputs.native }}` === 'true';
             const shortSha = `${{ steps.update.outputs.short_sha }}`;
             const description = native
