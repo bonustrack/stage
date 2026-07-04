@@ -80,6 +80,7 @@
     "@stage-labs/config": "workspace:*",
     "@types/react": "~19.1.0",
     "babel-preset-expo": "~54.0.10",
-    "@types/bun": "^1.2.0"
+    "@types/bun": "^1.2.0",
+    "@types/markdown-it": "^14.1.2"
   }
 }
