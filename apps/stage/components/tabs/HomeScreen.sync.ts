@@ -5,7 +5,7 @@ import {
   getOrCreateXmtpClient, NoAccountError,
   syncPreferences,
   primeInboxEthCache, subscribeAllMessages,
-  listRequestConvs, streamConvConsent, syncConsent,
+  listRequestConvs, syncAllowedConversations, streamConvConsent, syncConsent,
 } from '../../modules/messaging';
 import { hydrateCachedRows } from '../../modules/messaging';
 import type { Conversation } from '@xmtp/react-native-sdk';
@@ -53,8 +53,7 @@ function makeRefreshers(
   const refresh = async (): Promise<void> => {
     if (run.cancelled) return;
     try {
-      await client.conversations.syncAllConversations(['allowed', 'unknown']);
-      const convs = await client.conversations.list(undefined, undefined, ['allowed']);
+      const convs = await syncAllowedConversations();
       void refreshRequestCount();
       await primeMembers(client, convs);
       const summarized = await Promise.all(convs.map(c => summarize(c, selfInboxId)));
@@ -125,6 +124,7 @@ function subscribeLiveStreams(run: SyncRun, args: SyncArgs, r: Refreshers): void
 async function initSync(run: SyncRun, args: SyncArgs): Promise<void> {
   try {
     const client = await getOrCreateXmtpClient('production');
+    clearTimeout(run.initTimer);
     const selfInboxId = client.inboxId;
     const r = makeRefreshers(client, selfInboxId, run, args);
     args.refreshFromNetworkRef.current = r.refresh;

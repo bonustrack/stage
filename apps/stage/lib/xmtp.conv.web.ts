@@ -24,6 +24,16 @@ export async function listRequestConvs(): Promise<Conversation[]> {
   return client.conversations.list({ consentStates: [ConsentState.Unknown] }).catch(() => []);
 }
 
+export async function syncAllowedConversations(): Promise<Conversation[]> {
+  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  try {
+    await client.conversations.syncAll([ConsentState.Allowed, ConsentState.Unknown]);
+  } catch { }
+  return client.conversations
+    .list({ consentStates: [ConsentState.Allowed] })
+    .catch(() => []);
+}
+
 export async function getConvConsentState(convId: string): Promise<XmtpConsent | null> {
   const conv = await convOfLine(lineOfConv(convId));
   if (!conv) return null;

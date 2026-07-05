@@ -21,7 +21,7 @@ export {
 } from './xmtp.identity';
 
 export {
-  openDmWithAddress, listRequestConvs, acceptRequestConv, blockRequestConv,
+  openDmWithAddress, listRequestConvs, syncAllowedConversations, acceptRequestConv, blockRequestConv,
   getConvConsentState, streamConvConsent, syncConsent,
 } from './xmtp.conv';
 
