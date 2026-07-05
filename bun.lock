@@ -160,6 +160,7 @@
   },
   "patchedDependencies": {
     "nodejs-mobile-react-native@18.20.4": "patches/nodejs-mobile-react-native@18.20.4.patch",
+    "@xmtp/wasm-bindings@1.10.0": "patches/@xmtp%2Fwasm-bindings@1.10.0.patch",
   },
   "packages": {
     "@0no-co/graphql.web": ["@0no-co/graphql.web@1.3.2", "", { "peerDependencies": { "graphql": "^14.0.0 || ^15.0.0 || ^16.0.0" }, "optionalPeers": ["graphql"] }, "sha512-Q1+pRlLhE31GOY/2c9BAEnFTNxO7Awtc6fhhEDlxyCBQ2N0IhD32cPVvPChrK9mwBNSgRdW/sF1kd2e0ojHj1Q=="],

@@ -2,7 +2,7 @@
   "name": "stage-monorepo",
   "private": true,
   "version": "0.0.0",
-  "description": "Stage \u2014 an XMTP messenger with multi-account support, Snapshot profiles, group channels, and an onchain wallet, with parallel Vue web and Expo mobile clients.",
+  "description": "Stage — an XMTP messenger with multi-account support, Snapshot profiles, group channels, and an onchain wallet, with parallel Vue web and Expo mobile clients.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -41,6 +41,7 @@
     "node": ">=22"
   },
   "patchedDependencies": {
-    "nodejs-mobile-react-native@18.20.4": "patches/nodejs-mobile-react-native@18.20.4.patch"
+    "nodejs-mobile-react-native@18.20.4": "patches/nodejs-mobile-react-native@18.20.4.patch",
+    "@xmtp/wasm-bindings@1.10.0": "patches/@xmtp%2Fwasm-bindings@1.10.0.patch"
   }
 }
