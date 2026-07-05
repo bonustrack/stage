@@ -21,4 +21,15 @@ if (typeof Array.prototype.toSorted !== 'function') {
   });
 }
 
+type ImportMetaRegistry = { url: string | null };
+type GlobalWithImportMetaRegistry = { __ExpoImportMetaRegistry?: ImportMetaRegistry };
+
+function repairExpoImportMetaUrlForWeb(): void {
+  if (typeof document === 'undefined' || typeof location === 'undefined') return;
+  const siteRootAsImportMetaBase = { url: `${location.origin}/` };
+  (globalThis as GlobalWithImportMetaRegistry).__ExpoImportMetaRegistry = siteRootAsImportMetaBase;
+}
+
+repairExpoImportMetaUrlForWeb();
+
 export {};
