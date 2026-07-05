@@ -1,0 +1,13 @@
+diff --git a/src/async-require/asyncRequireModule.ts b/src/async-require/asyncRequireModule.ts
+index 86a29962466a86c8836cacf5c1e10585f8968836..3b9a5dc824edffc54e8505d49cdcf9cd4b10acee 100644
+--- a/src/async-require/asyncRequireModule.ts
++++ b/src/async-require/asyncRequireModule.ts
+@@ -126,7 +126,7 @@ asyncRequire.unstable_createWorker = function unstable_createWorker(
+     try {
+       const content = makeWorkerContent(workerUrl);
+       workerUrl = URL.createObjectURL(new Blob([content], { type: 'text/javascript' }));
+-      return new Worker(workerUrl, workerOpts);
++      return new Worker(workerUrl, { ...workerOpts, type: 'classic' });
+     } finally {
+       URL.revokeObjectURL(workerUrl);
+     }
