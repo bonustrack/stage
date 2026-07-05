@@ -25,8 +25,6 @@ export type ButtonSize =
   | '2xl'
   | '3xl';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
-
 export interface SizeSpec {
   height: number;
   paddingHorizontal: number;
@@ -144,22 +142,6 @@ export function resolveColors(
       return outlineColors(ctx);
     case 'ghost':
       return ghostColors(ctx);
-  }
-}
-
-export function legacyVariantToColor(v: ButtonVariant): {
-  color: ButtonColor;
-  variant: ButtonControlVariant;
-} {
-  switch (v) {
-    case 'primary':
-      return { color: 'primary', variant: 'solid' };
-    case 'secondary':
-      return { color: 'secondary', variant: 'solid' };
-    case 'ghost':
-      return { color: 'primary', variant: 'ghost' };
-    case 'danger':
-      return { color: 'danger', variant: 'solid' };
   }
 }
 

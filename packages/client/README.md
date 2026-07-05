@@ -4,7 +4,7 @@
 
 ## Overview
 
-`@stage-labs/client` holds the platform-independent logic both Stage clients share: the Vue web app ([`apps/ui`](../../apps/ui)) and the React Native app ([`apps/app`](../../apps/app)). It is pure TypeScript with no Vue, React, or react-native imports, so the same code runs in a browser, in Hermes, and in Node.
+`@stage-labs/client` holds the framework-independent logic behind the universal Stage app ([`apps/stage`](../../apps/stage)). It is pure TypeScript with no React or react-native imports, so the same code runs in a browser, in Hermes, and in Node.
 
 It covers Snapshot profile resolution, XMTP content humanisation and message builders, embed detection, Stamp avatar resolution, wallet formatting and balances, account key derivation, the Railgun wire protocol, read-only API clients (ENS, Etherscan, OpenSea, CoinGecko), and the shared types that tie it all together.
 
@@ -63,5 +63,5 @@ src/
 
 ## Links
 
-- Consumed by [`apps/ui`](../../apps/ui) and [`apps/app`](../../apps/app)
+- Consumed by [`apps/stage`](../../apps/stage)
 - Design tokens live in [`@stage-labs/kit`](../kit)

@@ -1,0 +1,13 @@
+diff --git a/build/serializer/serializeChunks.js b/build/serializer/serializeChunks.js
+index 6351df5c2851c510416d6097b406113cc598614e..aa61c91c241e0caf2f8d7304ec47a699614b7deb 100644
+--- a/build/serializer/serializeChunks.js
++++ b/build/serializer/serializeChunks.js
+@@ -57,7 +57,7 @@ async function graphToSerialAssetsAsync(config, serializeChunkOptions, ...props)
+         while (toCompare.length) {
+             const chunk = toCompare.shift();
+             for (const chunk2 of toCompare) {
+-                if (chunk !== chunk2 && chunk.isAsync && chunk2.isAsync) {
++                if (chunk !== chunk2 && chunk.isAsync && chunk2.isAsync && !chunk.isEntry && !chunk2.isEntry) {
+                     const commonDeps = [...chunk.deps].filter((dep) => chunk2.deps.has(dep));
+                     for (const dep of commonDeps) {
+                         chunk.deps.delete(dep);

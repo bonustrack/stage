@@ -68,6 +68,10 @@ jobs:
       statuses: write
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      # Public ZeroDev client id, inlined into the OTA bundle so the preview's
+      # smart wallet is configured (empty until the repo secret is set — the
+      # bundle still publishes, wallet setup just stays unconfigured).
+      EXPO_PUBLIC_ZERODEV_PROJECT_ID: ${{ secrets.EXPO_PUBLIC_ZERODEV_PROJECT_ID }}
       # Kill Expo/EAS telemetry network round-trips (saves a few seconds + avoids
       # flakey analytics calls).
       EXPO_NO_TELEMETRY: '1'
@@ -110,7 +114,7 @@ jobs:
           NATIVE=false
           if [ -n "$RANGE" ]; then
             CHANGED="$(git diff --name-only $RANGE || true)"
-            if echo "$CHANGED" | grep -Eq '^(android/|ios/|apps/app/app\.config\.js$|apps/app/package\.json$|package\.json$)'; then
+            if echo "$CHANGED" | grep -Eq '^(android/|ios/|apps/stage/app\.config\.js$|apps/stage/package\.json$|package\.json$)'; then
               NATIVE=true
             fi
           fi
@@ -148,7 +152,7 @@ jobs:
 
       - name: Publish EAS Update for this branch
         id: update
-        working-directory: apps/app
+        working-directory: apps/stage
         # Stamp the preview bundle with the pushed commit so the About page shows
         # the exact previewed SHA. app.config.js (resolveGitHash) reads GIT_COMMIT.
         env:
@@ -213,6 +217,12 @@ jobs:
             echo "::error::expo export produced no Android JS bundle" && exit 1
           fi
           node --check "$BUNDLE"
+          # Ensure a channel with the branch's name exists and points at the
+          # branch (EAS links same-named channel->branch on create). Channels
+          # are what u.expo.dev resolves manifests by, and bundler.stage.box/
+          # <branch> proxies exactly that lookup. Idempotent: exists -> no-op.
+          bunx eas-cli@20.1.0 channel:create "$BRANCH" --non-interactive > /dev/null 2>&1 \
+            || true
           bunx eas-cli@20.1.0 update \
             --branch "$BRANCH" \
             --platform android \
@@ -229,7 +239,7 @@ jobs:
           DEEPLINK='${{ steps.update.outputs.deeplink }}'
           BRANCH='${{ steps.update.outputs.branch }}'
           SHORT_SHA='${{ steps.update.outputs.short_sha }}'
-          LAUNCHER="https://metro.box/preview-launcher.html?u=$(node -e "process.stdout.write(encodeURIComponent(process.argv[1]))" "$MANIFEST")"
+          LAUNCHER="https://bundler.stage.box/preview-launcher.html?u=$(node -e "process.stdout.write(encodeURIComponent(process.argv[1]))" "$MANIFEST")"
           QR="https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=$(node -e "process.stdout.write(encodeURIComponent(process.argv[1]))" "$DEEPLINK")"
           {
             echo "## App preview - \`${{ github.ref_name }}\` @ \`$SHORT_SHA\`"
@@ -264,7 +274,7 @@ jobs:
           script: |
             const manifest = `${{ steps.update.outputs.manifest }}`;
             const target =
-              'https://metro.box/preview-launcher.html?u=' + encodeURIComponent(manifest);
+              'https://bundler.stage.box/preview-launcher.html?u=' + encodeURIComponent(manifest);
             const native = `${{ steps.native.outputs.native }}` === 'true';
             const shortSha = `${{ steps.update.outputs.short_sha }}`;
             const description = native
@@ -297,7 +307,7 @@ jobs:
           bun-version: 1.3.9
 
       - name: Delete this branch's EAS preview channel + branch
-        working-directory: apps/app
+        working-directory: apps/stage
         run: |
           set -euo pipefail
           # Sanitise the deleted ref the SAME way the publish job does

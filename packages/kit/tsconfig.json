@@ -6,7 +6,10 @@
     "paths": {
       "react-native": ["../../apps/app/node_modules/react-native"],
       "react-native-svg": ["../../apps/app/node_modules/react-native-svg"],
-      "react-native-markdown-display": ["../../apps/app/node_modules/react-native-markdown-display"]
+      "react-native-markdown-display": ["../../apps/app/node_modules/react-native-markdown-display"],
+      "react-native-gesture-handler": ["../../apps/app/node_modules/react-native-gesture-handler"],
+      "react-native-reanimated": ["../../apps/app/node_modules/react-native-reanimated"],
+      "expo-av": ["../../apps/app/node_modules/expo-av"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"]

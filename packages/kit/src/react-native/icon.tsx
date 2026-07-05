@@ -1,6 +1,6 @@
 
 import { Path, Svg } from 'react-native-svg';
-import { heroIconPaths, HERO_ICON_DEFAULTS, type HeroIconName } from '@stage-labs/kit/icons';
+import { heroIconPaths, iconStroke, iconStrokeWidth, HERO_ICON_DEFAULTS, type HeroIconName } from '@stage-labs/kit/icons';
 import { brandIconPath, type BrandIconName } from '../brand-icons.data';
 
 export type { HeroIconName, BrandIconName };
@@ -14,7 +14,7 @@ export interface IconProps {
 }
 
 export function Icon({ name, size = 22, color, dark, focused }: IconProps): React.ReactElement {
-  const stroke = color ?? (dark === undefined ? 'currentColor' : dark ? '#ffffff' : '#000000');
+  const stroke = iconStroke(color, dark);
   return (
     <Svg width={size} height={size} viewBox={HERO_ICON_DEFAULTS.viewBox}>
       {heroIconPaths(name).map((d, i) => (
@@ -23,7 +23,7 @@ export function Icon({ name, size = 22, color, dark, focused }: IconProps): Reac
           d={d}
           fill="none"
           stroke={stroke}
-          strokeWidth={focused ? 2.4 : HERO_ICON_DEFAULTS.strokeWidth}
+          strokeWidth={iconStrokeWidth(focused)}
           strokeLinecap="round"
           strokeLinejoin="round"
         />
@@ -40,7 +40,7 @@ export interface BrandIconProps {
 }
 
 export function BrandIcon({ name, size = 22, color, dark }: BrandIconProps): React.ReactElement {
-  const fill = color ?? (dark === undefined ? 'currentColor' : dark ? '#ffffff' : '#000000');
+  const fill = iconStroke(color, dark);
   return (
     <Svg width={size} height={size} viewBox={HERO_ICON_DEFAULTS.viewBox}>
       <Path d={brandIconPath(name)} fill={fill} stroke="none" />

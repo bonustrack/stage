@@ -2,12 +2,19 @@ name = "proxy"
 main = "src/index.ts"
 compatibility_date = "2026-06-01"
 
-# Bind the Worker to preview.metro.box on the metro.box zone. The hostname is
-# already proxied (orange-cloud) through Cloudflare, so a Worker route on it
-# intercepts requests at the edge BEFORE they reach any origin/tunnel - which is
-# how this replaces the legacy linkproxy cloudflared tunnel with zero DNS
-# change. Deploy the route first, verify x-served-by: worker, THEN decommission
-# the tunnel.
+# Both hostnames need proxied (orange-cloud) DNS records in the stage.box zone
+# so the Worker routes intercept at the edge. metro.box is retired and must not
+# be referenced anywhere.
+#
+# proxy.stage.box: link-preview / image-resize / x402 endpoints for the app
+# (record: AAAA 100:: proxied - the Worker answers before any origin).
+#
+# bundler.stage.box: /<branch> proxies the EAS Update manifest for that
+# branch's channel so the expo dev client loads previews from a stable
+# per-branch URL; all other paths fall through to the GitHub Pages origin
+# (dev hub + launcher), so its record stays a proxied CNAME to
+# bonustrack.github.io.
 routes = [
-  { pattern = "preview.metro.box/*", zone_name = "metro.box" },
+  { pattern = "proxy.stage.box/*", zone_name = "stage.box" },
+  { pattern = "bundler.stage.box/*", zone_name = "stage.box" },
 ]

@@ -1,0 +1,346 @@
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type MutableRefObject,
+  type SetStateAction,
+} from 'react';
+import { FlatList } from '@stage-labs/kit/react-native/flat-list';
+
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import * as Clipboard from 'expo-clipboard';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Button } from '@stage-labs/kit/react-native/button';
+import { Col, Row } from '../layout';
+import { DANGER, SUCCESS, useEffectiveColorScheme } from '../../lib/theme';
+import { flash } from '../../lib/toast';
+import {
+  bridgeListen,
+  engineInit,
+  getBalances,
+  isBridgeAvailable,
+  pingBridge,
+  setBridgeStatusListener,
+  walletInfo,
+} from '../../lib/railgun/bridge';
+import { sdkListMethods } from '../../lib/railgun/bridge/sdk';
+import { deriveRailgunKeyMaterial } from '../../lib/railgun/deriveKeys';
+
+
+interface LogLine { ms: number; line: string }
+
+function fmtLine(l: LogLine): string { return `+${l.ms}ms  ${l.line}`; }
+
+function tone(line: string, fg: string): string {
+  if (line.includes('✗')) return DANGER;
+  if (line.includes('✓') || line.startsWith('reply ← pong')) return SUCCESS;
+  return fg;
+}
+
+function copyAll(lines: LogLine[]): void {
+  void Clipboard.setStringAsync(lines.map(fmtLine).join('\n'));
+  flash('Logs copied');
+}
+
+function PingLog({ lines, fg, head, border }: {
+  lines: LogLine[]; fg: string; head?: string; border?: string;
+}): React.ReactElement | null {
+  if (lines.length === 0) return null;
+  return (
+    <Col margin={{ top: 4 }} gap={2}>
+      <Row margin={{ top: 2, bottom: 2 }} justify="end">
+        <Pressable
+          onPress={() => { copyAll(lines); }}
+          hitSlop={8}
+          accessibilityLabel="Copy scan logs"
+          style={{
+            paddingVertical: 4, paddingHorizontal: 10, borderRadius: 8,
+            borderWidth: 1, borderColor: border ?? fg,
+          }}
+        >
+          <Text weight="semibold" size="xs" color={head ?? fg}>
+            Copy
+          </Text>
+        </Pressable>
+      </Row>
+      <FlatList
+        data={lines}
+        keyExtractor={(l, i) => `${i}-${l.ms}`}
+        style={{ maxHeight: 280 }}
+        initialNumToRender={20}
+        windowSize={5}
+        removeClippedSubviews
+        renderItem={({ item }) => (
+          <Text size="3xs"
+            selectable color={tone(item.line, fg)}>
+            {fmtLine(item)}
+          </Text>
+        )}
+      />
+    </Col>
+  );
+}
+
+
+
+const CAP = 300;
+const FLUSH_MS = 350;
+
+interface BatchedLog {
+  lines: LogLine[];
+  append: (line: LogLine) => void;
+  replace: (lines: LogLine[]) => void;
+}
+
+function useBatchedLog(): BatchedLog {
+  const [lines, setLines] = useState<LogLine[]>([]);
+  const buf = useRef<LogLine[]>([]);
+  const dirty = useRef(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const flush = useCallback(() => {
+    if (!dirty.current) return;
+    dirty.current = false;
+    setLines(buf.current.slice());
+  }, []);
+
+  useEffect(() => {
+    let live = true;
+    const tick = (): void => {
+      if (!live) return;
+      flush();
+      timer.current = setTimeout(tick, FLUSH_MS);
+    };
+    timer.current = setTimeout(tick, FLUSH_MS);
+    return () => {
+      live = false;
+      if (timer.current) clearTimeout(timer.current);
+    };
+  }, [flush]);
+
+  const append = useCallback((line: LogLine) => {
+    const next = buf.current;
+    next.push(line);
+    if (next.length> CAP) next.splice(0, next.length - CAP);
+    dirty.current = true;
+  }, []);
+
+  const replace = useCallback((next: LogLine[]) => {
+    buf.current = next.slice(-CAP);
+    dirty.current = false;
+    setLines(buf.current.slice());
+  }, []);
+
+  return { lines, append, replace };
+}
+
+
+type ProbeState =
+  | { kind: 'idle' }
+  | { kind: 'running' }
+  | { kind: 'ok'; text: string }
+  | { kind: 'err'; text: string };
+
+const UNAVAILABLE = 'bridge unavailable (need the nodejs-mobile build)';
+
+interface ProbeDeps {
+  count: number;
+  setCount: Dispatch<SetStateAction<number>>;
+  setState: Dispatch<SetStateAction<ProbeState>>;
+  setEngine: Dispatch<SetStateAction<ProbeState>>;
+  setLog: Dispatch<SetStateAction<LogLine[]>>;
+  runStart: MutableRefObject<number>;
+}
+
+interface ProbeActions {
+  onPress: () => Promise<void>;
+  onInit: () => Promise<void>;
+  onScan: () => Promise<void>;
+  onMethods: () => Promise<void>;
+}
+
+function useProbeActions(deps: ProbeDeps): ProbeActions {
+  const { count, setCount, setState, setEngine, setLog, runStart } = deps;
+
+  const onScan = useCallback(async (): Promise<void> => {
+    runStart.current = Date.now();
+    setLog([]);
+    if (!isBridgeAvailable()) {
+      setEngine({ kind: 'err', text: UNAVAILABLE });
+      return;
+    }
+    setEngine({ kind: 'running' });
+    try {
+      await engineInit();
+      const key = await deriveRailgunKeyMaterial();
+      const info = await walletInfo({
+        encryptionKey: key.encryptionKey,
+        mnemonic: key.mnemonic,
+        creationBlocks: key.creationBlocks,
+      });
+      const res = await getBalances(info.railgunWalletID);
+      const m = res.networks.mainnet.length;
+      const s = res.networks.sepolia.length;
+      setEngine({
+        kind: 'ok',
+        text: `wallet ${info.railgunAddress.slice(0, 12)}… mainnet=${m} rows sepolia=${s} rows scanning=${res.scanning} — watch scan[] lines below`,
+      });
+    } catch (e) {
+      setEngine({ kind: 'err', text: e instanceof Error ? e.message : String(e) });
+    }
+  }, [setEngine, setLog, runStart]);
+
+  const onPress = useCallback(async (): Promise<void> => {
+    runStart.current = Date.now();
+    setLog([]);
+    if (!isBridgeAvailable()) {
+      setState({ kind: 'err', text: UNAVAILABLE });
+      setLog([{ ms: 0, line: 'native module not present ✗' }]);
+      return;
+    }
+    const at = count + 1;
+    setCount(at);
+    setState({ kind: 'running' });
+    const t0 = Date.now();
+    try {
+      const res = await pingBridge({ at });
+      const ms = Date.now() - t0;
+      setState({ kind: 'ok', text: `pong: ${JSON.stringify(res)} (${ms}ms)` });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setState({ kind: 'err', text: msg });
+    }
+  }, [count, setCount, setState, setLog, runStart]);
+
+  const onInit = useCallback(async (): Promise<void> => {
+    runStart.current = Date.now();
+    setLog([]);
+    if (!isBridgeAvailable()) {
+      setEngine({ kind: 'err', text: UNAVAILABLE });
+      setLog([{ ms: 0, line: 'native module not present ✗' }]);
+      return;
+    }
+    setEngine({ kind: 'running' });
+    const t0 = Date.now();
+    try {
+      const res = await engineInit();
+      const ms = Date.now() - t0;
+      setEngine({ kind: 'ok', text: `engine: ${JSON.stringify(res)} (${ms}ms)` });
+    } catch (e) {
+      setEngine({ kind: 'err', text: e instanceof Error ? e.message : String(e) });
+    }
+  }, [setEngine, setLog, runStart]);
+
+  const onMethods = useCallback(async (): Promise<void> => {
+    runStart.current = Date.now();
+    setLog([]);
+    if (!isBridgeAvailable()) {
+      setEngine({ kind: 'err', text: UNAVAILABLE });
+      return;
+    }
+    setEngine({ kind: 'running' });
+    try {
+      const methods = await sdkListMethods();
+      setEngine({ kind: 'ok', text: `${methods.length} SDK methods: ${methods.join(', ')}` });
+    } catch (e) {
+      setEngine({ kind: 'err', text: e instanceof Error ? e.message : String(e) });
+    }
+  }, [setEngine, setLog, runStart]);
+
+  return { onPress, onInit, onScan, onMethods };
+}
+
+
+export function BridgePingProbe({ fg, border }: {
+  fg: string; border: string;
+}): React.ReactElement {
+  const dark = useEffectiveColorScheme() === 'dark';
+  const [state, setState] = useState<ProbeState>({ kind: 'idle' });
+  const [engine, setEngine] = useState<ProbeState>({ kind: 'idle' });
+  const [count, setCount] = useState(0);
+  const { lines: log, append, replace } = useBatchedLog();
+  const runStart = useRef(0);
+
+  const setLog = replace as React.Dispatch<React.SetStateAction<LogLine[]>>;
+
+  const { onPress, onInit, onScan, onMethods } = useProbeActions({
+    count, setCount, setState, setEngine, setLog, runStart,
+  });
+
+  useEffect(() => {
+    setBridgeStatusListener((line) => {
+      const ms = runStart.current ? Date.now() - runStart.current : 0;
+      append({ ms, line });
+    });
+    return () => { setBridgeStatusListener(null); };
+  }, [append]);
+
+  useEffect(() => {
+    if (!isBridgeAvailable()) return undefined;
+    return bridgeListen('event:scanDebug', (p) => {
+      const e = p as { t?: number; chain?: number; msg?: string } | undefined;
+      if (!e?.msg) return;
+      const ms = runStart.current ? Date.now() - runStart.current : 0;
+      append({ ms, line: `scan[${e.chain ?? '?'}] ${e.msg}` });
+    });
+  }, [append]);
+
+  const resultColor = state.kind === 'err' ? DANGER : fg;
+  const resultText =
+    state.kind === 'idle' ? 'not run yet'
+      : state.kind === 'running' ? 'pinging…'
+        : state.text;
+  const engineColor = engine.kind === 'err' ? DANGER : fg;
+  const engineText =
+    engine.kind === 'idle' ? 'not run yet'
+      : engine.kind === 'running' ? 'initializing engine…'
+        : engine.text;
+
+  return (
+    <Col padding={{ top: 16 }} margin={{ top: 20 }} gap={8} style={{ borderTopWidth: 1, borderTopColor: border }}>
+      <Text size="xs" color={fg}>
+        DEV · NODE BRIDGE FEASIBILITY
+      </Text>
+      <Button
+        label="Test Node bridge (ping)"
+        color="secondary"
+        variant="solid"
+        dark={dark}
+        loading={state.kind === 'running'}
+        onPress={() => { void onPress(); }}
+      />
+      <Text size="xs" color={resultColor}>
+        {resultText}
+      </Text>
+      <Button
+        label="Init Railgun engine"
+        color="secondary"
+        variant="solid"
+        dark={dark}
+        loading={engine.kind === 'running'}
+        onPress={() => { void onInit(); }}
+      />
+      <Text size="xs" color={engineColor}>
+        {engineText}
+      </Text>
+      <Button
+        label="Scan balances + show diagnostics"
+        color="secondary"
+        variant="solid"
+        dark={dark}
+        loading={engine.kind === 'running'}
+        onPress={() => { void onScan(); }}
+      />
+      <Button
+        label="List SDK dispatcher methods"
+        color="secondary"
+        variant="solid"
+        dark={dark}
+        onPress={() => { void onMethods(); }}
+      />
+      <PingLog lines={log} fg={fg} border={border} />
+    </Col>
+  );
+}

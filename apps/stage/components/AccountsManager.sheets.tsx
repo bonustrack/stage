@@ -1,0 +1,64 @@
+
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Button } from '@stage-labs/kit/react-native/button';
+import { ListView } from '@stage-labs/kit/react-native/list-view';
+import * as Clipboard from 'expo-clipboard';
+import { flash } from '../lib/toast';
+import { canExportPrivateKey, type AccountRecord } from '../lib/accounts';
+import { SheetModal, SheetRow } from './AccountsManager.parts';
+import { DANGER, useEffectiveColorScheme, usePalette } from '../lib/theme';
+
+interface Pal { head: string; sub: string; border: string; sheetBg: string; }
+
+export function ManageSheet({ manageRec, activeId, onClose, onSwitch, onExport, onRemove, p }: {
+  manageRec: AccountRecord | null; activeId: string | null; onClose: () => void;
+  onSwitch: (id: string) => void; onExport: (id: string) => void;
+  onRemove: (rec: AccountRecord) => void; p: Pal;
+}): React.ReactElement {
+  const dark = useEffectiveColorScheme() === 'dark';
+  return (
+    <SheetModal
+      visible={manageRec !== null}
+      onClose={onClose}
+      bg={p.sheetBg} border={p.border}
+    >
+      {}
+      <ListView dark={dark} style={{ marginHorizontal: -16 }}>
+        {manageRec && manageRec.id !== activeId ? (
+          <SheetRow label="Switch to this account" head={p.head} dark={dark} onPress={() => { const id = manageRec.id; onClose(); onSwitch(id); }} />
+        ) : null}
+        {manageRec && canExportPrivateKey(manageRec) ? (
+          <SheetRow label="Export private key" desc="Reveal + copy this account's key" head={p.head} dark={dark} onPress={() => { const id = manageRec.id; onClose(); onExport(id); }} />
+        ) : null}
+        {manageRec ? (
+          <SheetRow label="Remove account" desc="Delete from this device" danger head={p.head} dark={dark} onPress={() => { onRemove(manageRec); }} />
+        ) : null}
+      </ListView>
+    </SheetModal>
+  );
+}
+
+export function ExportSheet({ revealPk, onClose, dark, p }: {
+  revealPk: string | null; onClose: () => void; dark: boolean; p: Pal;
+}): React.ReactElement {
+  const { primary, bg } = usePalette();
+  return (
+    <SheetModal visible={revealPk !== null} onClose={onClose} bg={p.sheetBg} border={p.border}>
+      <Text size="xs" color={DANGER} style={{ marginBottom: 8 }}>
+        Anyone with this key controls the account. Never share it.
+      </Text>
+      <Text variant="mono" size="xs" selectable color={p.head} style={{ lineHeight: 18, borderWidth: 1, borderColor: p.border, borderRadius: 10, padding: 12, marginBottom: 8 }}>
+        {revealPk}
+      </Text>
+      <Button
+        size="md"
+        fullWidth
+        dark={dark}
+        onPress={() => { if (revealPk) { void Clipboard.setStringAsync(revealPk); flash('Private key copied'); } }}
+        label="Copy to clipboard"
+        tintBg={primary}
+        tintFg={bg}
+      />
+    </SheetModal>
+  );
+}

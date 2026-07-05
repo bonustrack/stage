@@ -1,0 +1,142 @@
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Button } from '@stage-labs/kit/react-native/button';
+import { Row, Col, Box } from './layout';
+import { shortAddress } from '../modules/messaging';
+import { fmtSigValue } from './MessengerBubble.helpers';
+import type { SigRequest, SigReference } from './MessengerBubble.helpers';
+import { usePalette, useBlockRadius } from '../lib/theme';
+import { isCardActionBlocked } from '../lib/consentGate';
+
+function stringifyPrimitive(v: unknown): string | undefined {
+  if (typeof v === 'string') return v;
+  if (typeof v === 'number' || typeof v === 'bigint' || typeof v === 'boolean') return String(v);
+  return undefined;
+}
+
+function detailColors(dark: boolean): { fill: string; border: string } {
+  return {
+    fill: dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+    border: dark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)',
+  };
+}
+
+function SenderNote({ note, fill, border }: { note: string; fill: string; border: string }): React.ReactElement {
+  return (
+    <Box radius="md" background={fill} padding={8} style={{ borderWidth: 1, borderColor: border }}>
+      <Text size="xs" role="secondary">Sender's note (untrusted)</Text>
+      <Text size="xs" numberOfLines={4}>{note}</Text>
+    </Box>
+  );
+}
+
+function Eip712DomainLine({ domain }: {
+  domain: { name?: unknown; chainId?: unknown } | undefined;
+}): React.ReactElement | null {
+  const domainName = stringifyPrimitive(domain?.name);
+  const chainId = stringifyPrimitive(domain?.chainId);
+  if (!domainName && !chainId) return null;
+  return (
+    <Text size="xs" role="secondary">
+      {domainName ?? 'Domain'}{chainId ? ` · chain ${chainId}` : ''}
+    </Text>
+  );
+}
+
+function Eip712FieldRow({ name, value }: { name: string; value: unknown }): React.ReactElement {
+  return (
+    <Row align="start" gap={8}>
+      <Text size="xs" role="secondary" style={{ minWidth: 80, flexShrink: 0 }}>{name}</Text>
+      <Text variant="mono" size="xs" numberOfLines={4} style={{ flexShrink: 1, flex: 1 }}>
+        {fmtSigValue(value)}
+      </Text>
+    </Row>
+  );
+}
+
+function Eip712Detail({ req, fill, border }: {
+  req: SigRequest; fill: string; border: string;
+}): React.ReactElement {
+  const domain = req.eip712?.domain as { name?: unknown; chainId?: unknown } | undefined;
+  const primaryType = req.eip712?.primaryType;
+  const fields = req.eip712?.message ? Object.entries(req.eip712.message) : [];
+  return (
+    <Col radius="md" background={fill} padding={10} gap={6} style={{ borderWidth: 1, borderColor: border }}>
+      <Eip712DomainLine domain={domain} />
+      {primaryType ? <Text weight="semibold" size="xs">{primaryType}</Text> : null}
+      {fields.map(([k, v]) => <Eip712FieldRow key={k} name={k} value={v} />)}
+    </Col>
+  );
+}
+
+function MessageDetail({ message, fill, border }: { message: string; fill: string; border: string }): React.ReactElement {
+  return (
+    <Box radius="md" background={fill} padding={10} style={{ borderWidth: 1, borderColor: border }}>
+      <Text variant="mono" size="xs" numberOfLines={20} style={{ lineHeight: 18 }}>{message}</Text>
+    </Box>
+  );
+}
+
+function SigAction({ gated, dark, signing, onSign }: {
+  gated: boolean; dark: boolean; signing?: boolean; onSign: () => void;
+}): React.ReactElement {
+  const pal = usePalette();
+  if (gated) {
+    return (
+      <Text size="xs" role="secondary" style={{ marginTop: 2 }}>
+        Accept this conversation to enable signing.
+      </Text>
+    );
+  }
+  return (
+    <Button
+      size="lg" block dark={dark} loading={signing} onPress={onSign} label="Sign"
+      iconStart={<Icon name="pencil" size={18} color={pal.bg}/>}
+      tintBg={pal.primary} tintFg={pal.bg} style={{ marginTop: 2 }}
+    />
+  );
+}
+
+export function SigRequestCard({ req, dark, signing, onSign, consentAllowed }: {
+  req: SigRequest; dark: boolean; signing?: boolean;
+  onSign?: () => void;
+  consentAllowed?: boolean;
+}): React.ReactElement {
+  const title = req.kind === 'eip712' ? `Sign ${req.eip712?.primaryType ?? 'typed data'}` : 'Sign message';
+  const senderNote = req.description?.trim();
+  const gated = isCardActionBlocked(consentAllowed);
+  const { fill, border } = detailColors(dark);
+  const pal = usePalette();
+  const blockRadius = useBlockRadius();
+  return (
+    <Box radius={blockRadius} background={pal.border} padding={12} margin={{ top: 8 }} gap={8} style={{ alignSelf: 'stretch' }}>
+      <Row align="center" gap={8}>
+        <Icon name="pencil" size={18} color={pal.link}/>
+        <Text weight="semibold" size="md" style={{ flexShrink: 1 }}>{title}</Text>
+      </Row>
+      {senderNote ? <SenderNote note={senderNote} fill={fill} border={border} /> : null}
+      {req.kind === 'eip712' ? (
+        <Eip712Detail req={req} fill={fill} border={border} />
+      ) : req.message ? (
+        <MessageDetail message={req.message} fill={fill} border={border} />
+      ) : null}
+      {onSign ? <SigAction gated={gated} dark={dark} signing={signing} onSign={onSign} /> : null}
+    </Box>
+  );
+}
+
+export function SigReferenceCard({ ref, dark }: {
+  ref: SigReference; dark: boolean;
+}): React.ReactElement {
+  const short = (h?: string): string => (h && h.length > 14 ? `${h.slice(0, 8)}…${h.slice(-4)}` : (h ?? '')); const blockRadius = useBlockRadius();
+  return (
+    <Box radius={blockRadius} background={dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)'} padding={12} margin={{ top: 8 }} gap={6} style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)' }}>
+      <Row align="center" gap={8}>
+        <Icon name="check" size={18} color={dark ? '#7fd07f' : '#2f9e44'}/>
+        <Text weight="semibold" size="md" color={dark ? '#ffffff' : '#000000'}>Signed ✓</Text>
+      </Row>
+      {ref.signer ? <Text size="xs" role="secondary">by {shortAddress(ref.signer)}</Text> : null}
+      <Text size="xs" role="secondary">{short(ref.signature)}</Text>
+    </Box>
+  );
+}

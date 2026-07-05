@@ -1,0 +1,36 @@
+name: Pages
+
+# Deploys .github/pages/ to GitHub Pages (bundler.stage.box): the dev hub with
+# the rolling dev-client APK link and the preview launcher. Independent of the
+# Netlify app deploy, so preview links work even while the app itself is red.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, 'claude/large-refactoring-pr-3rcl0d']
+    paths: ['.github/pages/**', '.github/workflows/pages.yml']
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .github/pages
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

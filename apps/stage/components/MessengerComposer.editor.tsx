@@ -1,0 +1,175 @@
+
+import { fontSize } from '@stage-labs/kit/tokens';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { TextField } from '@stage-labs/kit/react-native/text-field';
+import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
+import { Button } from '@stage-labs/kit/react-native/button';
+import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
+import { VoiceRecorder } from '@stage-labs/kit/react-native/voice-recorder';
+import { Box, Col } from './layout';
+import { usePalette, useRadius } from '../lib/theme';
+
+interface EditorProps {
+  dark: boolean; fg: string; head: string; bg: string; sub: string; inputBg: string; chipBg: string;
+  recording: boolean; levels: number[]; recordSecs: number;
+  slideThresholdPx: number;
+  text: string; setText: (v: string) => void;
+  selection: { start: number; end: number };
+  setSelection: (s: { start: number; end: number }) => void;
+  focusNonce: number; blurNonce: number;
+  attachMenuOpen: boolean; setAttachMenuOpen: (fn: (o: boolean) => boolean) => void;
+  quickIcon?: HeroIconName; onQuick?: () => void;
+  hasContent: boolean;
+  onStartRec: () => void; onCancelRec: () => void; onStopRec: () => void; onSend: () => void;
+}
+
+function ComposerBtn({ icon, onPress, fg, chipBg, mr }: {
+  icon: HeroIconName; onPress: () => void; fg: string; chipBg: string; mr?: number;
+}): React.ReactElement {
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => ({
+      width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
+      backgroundColor: pressed ? chipBg : 'transparent', marginRight: mr,
+    })}>
+      <Icon name={icon} size={22} color={fg}/>
+    </Pressable>
+  );
+}
+
+function ComposerInputSlot({ p }: { p: EditorProps }): React.ReactElement {
+  const dark = useKitScheme() === 'dark';
+  return (
+    <Box style={{ position: 'relative' }}>
+      <TextField
+        name="composer"
+        value={p.text}
+        placeholder="Message"
+        variant="plain"
+        multiline
+        autoGrow
+        fontSize={fontSize('3xl')}
+        fontFamily="Calibre-Medium"
+        color={p.head}
+        placeholderColor={p.sub}
+        paddingX={8}
+        paddingTop={4}
+        paddingBottom={8}
+        lineHeight={23}
+        minHeight={24}
+        maxHeight={210}
+        autoCapitalize="sentences"
+        focusNonce={p.focusNonce}
+        blurNonce={p.blurNonce}
+        selection={p.selection}
+        dark={dark}
+        onChangeText={(text) => { p.setText(text); }}
+        onSelectionChange={(range) => { p.setSelection({ start: range.start, end: range.end }); }}
+      />
+    </Box>
+  );
+}
+
+function ComposerLeftControls({ p }: { p: EditorProps }): React.ReactElement {
+  const { fg, chipBg } = p;
+  const showQuick = !p.attachMenuOpen && !!p.quickIcon && !!p.onQuick;
+  return (
+    <>
+      {}
+      <ComposerBtn
+        icon={p.attachMenuOpen ? 'x' : 'plus'}
+        onPress={() => { p.setAttachMenuOpen(o => !o); }}
+        fg={fg} chipBg={chipBg}
+        mr={showQuick ? -12 : undefined}
+      />
+      {showQuick && p.quickIcon && p.onQuick
+        ? <ComposerBtn icon={p.quickIcon} onPress={p.onQuick} fg={fg} chipBg={chipBg} />
+        : null}
+    </>
+  );
+}
+
+function ComposerRightAction({ p, primary }: { p: EditorProps; primary: string }): React.ReactElement | null {
+  const { dark, bg } = p;
+  if (!p.hasContent) return null;
+  return (
+    <Button size="md" pill dark={dark} tintBg={primary}
+      onPress={p.onSend} icon={<Icon name="arrowSmUp" size={20} color={bg} />} />
+  );
+}
+
+export function ComposerEditor(p: EditorProps): React.ReactElement {
+  const { primary } = usePalette();
+  return (
+    <Col padding={10} surface="raised" radius="none">
+      <VoiceRecorder
+        recording={p.recording}
+        levels={p.levels}
+        recordSecs={p.recordSecs}
+        slideThresholdPx={p.slideThresholdPx}
+        fg={p.fg} head={p.head} sub={p.sub} bg={p.bg} chipBg={p.chipBg} primary={primary}
+        dark={p.dark}
+        inputSlot={<ComposerInputSlot p={p} />}
+        leftControls={<ComposerLeftControls p={p} />}
+        rightAction={<ComposerRightAction p={p} primary={primary} />}
+        onStart={p.onStartRec}
+        onCancel={p.onCancelRec}
+        onComplete={p.onStopRec}
+      />
+    </Col>
+  );
+}
+
+export type AttachAction = [HeroIconName, string, () => void | Promise<void>];
+
+export function buildAttachActions(a: {
+  pickImage: () => void; takePhoto: () => void;
+  pickFile: () => void; pickLocation: () => Promise<void>;
+  openPoll: () => void; openSig: () => void; openTx: () => void;
+}): AttachAction[] {
+  return [
+    ['photo', 'Image', a.pickImage],
+    ['camera', 'Camera', a.takePhoto],
+    ['paperClip', 'File', a.pickFile],
+    ['mapPin', 'Location', a.pickLocation],
+    ['chartBar', 'Poll', a.openPoll],
+    ['pencil', 'Sign', a.openSig],
+    ['wallet', 'Payment', a.openTx],
+  ];
+}
+
+export function AttachMenu({
+  head, inputBg, chipBg, actions, onClose,
+}: {
+  head: string; inputBg: string; chipBg: string;
+  actions: [HeroIconName, string, () => void | Promise<void>][];
+  onClose: () => void;
+}): React.ReactElement {
+  const btnRadius = useRadius();
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      contentContainerStyle={{ gap: 16, paddingHorizontal: 6, paddingTop: 12, paddingBottom: 2 }}
+>
+      {actions.map(([icon, label, action]) => (
+        <Col key={label} align="center" gap={6}>
+          <Pressable
+            onPress={() => { onClose(); void action(); }}
+            style={({ pressed }) => ({
+              width: 56, height: 56, borderRadius: Math.min(btnRadius, 28),
+              alignItems: 'center', justifyContent: 'center',
+              backgroundColor: pressed ? chipBg : inputBg,
+              borderWidth: 1, borderColor: chipBg,
+            })}
+>
+            <Icon name={icon} size={26} color={head}/>
+          </Pressable>
+          <Text weight="semibold" size="sm" color={head} numberOfLines={1}>{label}</Text>
+        </Col>
+      ))}
+    </ScrollView>
+  );
+}

@@ -1,5 +1,5 @@
 
-import type { ViewStyle, TextStyle } from 'react-native';
+import type { DimensionValue, ViewStyle, TextStyle } from 'react-native';
 import { FONT_SIZE, schemePalette } from './tokens';
 
 export type ControlSize = '3xs' | '2xs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
@@ -75,4 +75,102 @@ export function controlTextStyle(size: ControlSize, colors: ControlColors): Text
     padding: 0,
     margin: 0,
   };
+}
+
+export type TextFieldVariant = 'outline' | 'plain';
+
+export interface TextFieldStyleInput {
+  variant?: TextFieldVariant;
+  focused: boolean;
+  defaultRadius: number;
+  baseColors: ControlColors;
+  background?: string;
+  borderColor?: string;
+  radius?: number | string;
+  paddingX?: number | string;
+  paddingY?: number | string;
+  fontSize?: number;
+  fontFamily?: string;
+  color?: string;
+  noFocusBorder?: boolean;
+}
+
+export interface ResolvedTextFieldSpec {
+  minHeight: number;
+  paddingX: number | string;
+  paddingY: number | string;
+  background: string;
+  radius: number | string;
+  borderWidth: number;
+  borderColor: string;
+  color: string;
+  fontSize: number;
+  fontFamily: string;
+  placeholder: string;
+}
+
+export interface ResolvedTextFieldStyle {
+  box: ViewStyle;
+  text: TextStyle;
+  placeholder: string;
+  spec: ResolvedTextFieldSpec;
+}
+
+function fieldBorder(
+  input: TextFieldStyleInput,
+  c: ControlColors,
+): { width: number; color: string } {
+  const plain = input.variant === 'plain';
+  const width = plain && input.borderColor === undefined ? 0 : 1;
+  const color = input.focused && input.noFocusBorder !== true
+    ? c.focusBorder
+    : (input.borderColor ?? c.border);
+  return { width, color };
+}
+
+function fieldBackground(input: TextFieldStyleInput, c: ControlColors): string {
+  if (input.background !== undefined) return input.background;
+  return input.variant === 'plain' ? 'transparent' : c.bg;
+}
+
+export function textFieldSpec(input: TextFieldStyleInput): ResolvedTextFieldSpec {
+  const size = CONTROL_SIZES.md;
+  const c = input.baseColors;
+  const border = fieldBorder(input, c);
+  return {
+    minHeight: size.minHeight,
+    paddingX: input.paddingX ?? size.paddingHorizontal,
+    paddingY: input.paddingY ?? size.paddingVertical,
+    background: fieldBackground(input, c),
+    radius: input.radius ?? input.defaultRadius,
+    borderWidth: border.width,
+    borderColor: border.color,
+    color: input.color ?? c.text,
+    fontSize: input.fontSize ?? size.fontSize,
+    fontFamily: input.fontFamily ?? 'Calibre-Medium',
+    placeholder: c.placeholder,
+  };
+}
+
+export function textFieldStyle(
+  input: TextFieldStyleInput,
+): ResolvedTextFieldStyle {
+  const s = textFieldSpec(input);
+  const box: ViewStyle = {
+    minHeight: s.minHeight,
+    paddingHorizontal: s.paddingX as DimensionValue,
+    paddingVertical: s.paddingY as DimensionValue,
+    backgroundColor: s.background,
+    borderRadius: s.radius,
+    borderWidth: s.borderWidth,
+    borderColor: s.borderColor,
+  };
+  const text: TextStyle = {
+    color: s.color,
+    fontSize: s.fontSize,
+    fontFamily: s.fontFamily,
+    padding: 0,
+    margin: 0,
+  };
+  return { box, text, placeholder: s.placeholder, spec: s };
 }

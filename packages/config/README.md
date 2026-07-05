@@ -27,7 +27,7 @@ export default single({ tsconfigRootDir: import.meta.dirname });
 
 Options: `{ tsconfigRootDir = process.cwd(), project, files = ["src/**/*.{ts,tsx}"], ignores = [] }`.
 
-### Vue project — `vue`
+### Vue project — `vue` (external consumers)
 
 ```js
 import { vue } from "@stage-labs/config/eslint/vue";

@@ -1,0 +1,39 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`boxStyleEntries minimal input snapshot (only flexDirection defaults) 1`] = `
+{
+  "flexDirection": "column",
+}
+`;
+
+exports[`boxStyleEntries representative full input snapshot 1`] = `
+{
+  "alignItems": "center",
+  "aspectRatio": 1.5,
+  "backgroundColor": "#0e0f10",
+  "borderBottomColor": "#222222",
+  "borderBottomWidth": 2,
+  "borderRadius": "soft",
+  "borderStyle": "dashed",
+  "borderTopColor": "#111111",
+  "borderTopWidth": 1,
+  "flex": 1,
+  "flexDirection": "row",
+  "flexWrap": "wrap",
+  "gap": 8,
+  "height": 40,
+  "justifyContent": "space-between",
+  "marginBottom": 16,
+  "marginLeft": 16,
+  "marginRight": 16,
+  "marginTop": 16,
+  "maxHeight": "80%",
+  "maxWidth": 300,
+  "minHeight": 20,
+  "minWidth": 10,
+  "paddingLeft": 12,
+  "paddingRight": 12,
+  "paddingTop": 4,
+  "width": "100%",
+}
+`;

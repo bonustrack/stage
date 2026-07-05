@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Stage dev-client preview</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --fg: #16171d;
+        --bg: #ffffff;
+        --muted: #6b7280;
+        --border: #e5e7eb;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --fg: #f4f4f5;
+          --bg: #16171d;
+          --muted: #9ca3af;
+          --border: #34363f;
+        }
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: -apple-system, system-ui, sans-serif;
+        text-align: center;
+      }
+      main {
+        padding: 32px 24px;
+        max-width: 420px;
+      }
+      h1 {
+        font-size: 20px;
+        margin: 0 0 8px;
+      }
+      p {
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.5;
+        margin: 0 0 24px;
+      }
+      a.button {
+        display: inline-block;
+        background: var(--fg);
+        color: var(--bg);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 16px;
+        padding: 14px 28px;
+        border-radius: 12px;
+        margin-bottom: 24px;
+      }
+      img.qr {
+        display: block;
+        margin: 0 auto 16px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 8px;
+        background: #fff;
+      }
+      code {
+        display: block;
+        word-break: break-all;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .error {
+        color: #dc2626;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="main">
+      <noscript><p class="error">Enable JavaScript to build the preview link.</p></noscript>
+    </main>
+    <script>
+      const main = document.getElementById('main');
+      const manifest = new URLSearchParams(location.search).get('u');
+      const allowed = ['https://u.expo.dev/', 'https://bundler.stage.box/'];
+      if (!manifest || !allowed.some((prefix) => manifest.startsWith(prefix))) {
+        main.innerHTML =
+          '<h1>Invalid preview link</h1><p class="error">Missing or malformed manifest URL (?u=…).</p>';
+      } else {
+        const deeplink =
+          'stage://expo-development-client/?url=' + encodeURIComponent(manifest);
+        const qr =
+          'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' +
+          encodeURIComponent(deeplink);
+        main.innerHTML =
+          '<h1>Stage dev-client preview</h1>' +
+          '<p>On your phone, tap the button below (requires the Stage dev-client APK). On desktop, scan the QR with your phone.</p>' +
+          '<a class="button" href="' + deeplink + '">Open in dev client</a>' +
+          '<img class="qr" width="220" height="220" alt="QR code" src="' + qr + '" />' +
+          '<code>' + deeplink + '</code>';
+      }
+    </script>
+  </body>
+</html>

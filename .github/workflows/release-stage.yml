@@ -1,13 +1,13 @@
 name: Release Stage
 
 # Builds the Stage (prod) variant for Android (APK) + iOS and publishes the
-# artifacts to a GitHub Release when apps/app/package.json's version changes on
+# artifacts to a GitHub Release when apps/stage/package.json's version changes on
 # main. Also runnable manually via workflow_dispatch.
 on:
   push:
     branches: [main]
     paths:
-      - 'apps/app/package.json'
+      - 'apps/stage/package.json'
   workflow_dispatch:
 
 # Avoid double-building on overlapping pushes.
@@ -27,7 +27,7 @@ jobs:
           fetch-depth: 2
       - id: check
         run: |
-          VERSION=$(jq -r .version apps/app/package.json)
+          VERSION=$(jq -r .version apps/stage/package.json)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           # Manual runs always proceed.
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
@@ -35,7 +35,7 @@ jobs:
             echo "Manual dispatch — building v$VERSION"
             exit 0
           fi
-          PREV=$(git show HEAD~1:apps/app/package.json 2>/dev/null | jq -r .version || echo "")
+          PREV=$(git show HEAD~1:apps/stage/package.json 2>/dev/null | jq -r .version || echo "")
           if [ "$VERSION" != "$PREV" ]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
             echo "Version changed: $PREV -> $VERSION"
@@ -63,7 +63,7 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
       - id: build
-        working-directory: apps/app
+        working-directory: apps/stage
         run: |
           # preview-prod = release APK (Stage variant) per eas.json.
           # NOTE: EAS free tier has a monthly cloud-build cap; cloud builds may
@@ -101,7 +101,7 @@ jobs:
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
-      - working-directory: apps/app
+      - working-directory: apps/stage
         run: |
           OUT=$(eas build -p ios --profile preview-prod --non-interactive --json --wait)
           echo "$OUT"

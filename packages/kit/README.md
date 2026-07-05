@@ -4,9 +4,9 @@
 
 ## Overview
 
-`@stage-labs/kit` is the single source of truth for how Stage looks. It ships the colour and spacing tokens, HeroIcon path data, station icon definitions, avatar helpers, and the theme-preference contract shared by the Vue web app ([`apps/ui`](../../apps/ui)) and the React Native app ([`apps/app`](../../apps/app)).
+`@stage-labs/kit` is the single source of truth for how Stage looks. It ships the colour and spacing tokens, HeroIcon path data, station icon definitions, avatar helpers, the theme-preference contract, and one React Native component family (rendering on web via react-native-web) consumed by the universal app ([`apps/stage`](../../apps/stage)). Screens and chat message content compose the components directly in JSX.
 
-Most of the package is framework-agnostic data so both clients stay visually identical from one place. The few primitive components it exports (`button`, `text`, `title`, `icon`) target React / React Native via peer dependencies; the web renderers stay in `apps/ui`.
+Style logic lives in framework-free core modules (`text.styles.ts`, `button.styles.ts`, `control.styles.ts`, `layout.ts`); components target React Native via peer dependencies and render on every platform, web included.
 
 ## Install
 
@@ -24,29 +24,31 @@ bun install            # from the repo root
 ## Usage
 
 ```ts
-import { colors, spacing } from '@stage-labs/kit/tokens';
-import { resolveTheme } from '@stage-labs/kit/theme';
-import { stationIcons } from '@stage-labs/kit/icons';
+import { colors, resolveColorToken } from '@stage-labs/kit/tokens';
+import { resolveIconName } from '@stage-labs/kit/icons';
+import { resolveBadgeStyle } from '@stage-labs/kit/badge';
 ```
 
 ```tsx
-// React Native primitive components (peer deps: react, react-native, react-native-svg)
-import { Button } from '@stage-labs/kit/button';
-import { Text } from '@stage-labs/kit/text';
+// React Native components (peer deps: react, react-native, react-native-svg, ...)
+import { Button } from '@stage-labs/kit/react-native/button';
+import { Text } from '@stage-labs/kit/react-native/text';
 ```
 
 ## Project structure
 
 ```
 src/
-  tokens.ts          # colour + spacing tokens
+  tokens.ts          # colour + spacing tokens, colour helpers (Scheme, resolveColor, ...)
   theme.ts           # theme-preference contract + resolution
-  icons.ts           # station icon definitions
+  theme-derive.ts    # custom-palette deriver
+  icons.ts           # HeroIcon names + resolveIconName
   heroicons.data.ts  # HeroIcon path data
   avatar.ts          # avatar helpers
-  layout.ts          # layout constants
-  button.tsx         # RN primitives: button (+ button.styles)
-  text.tsx / title.tsx / icon.tsx
+  layout.ts          # Box layout core (spacing, borders, surfaces)
+  badge.ts           # badge style core
+  text.styles.ts / button.styles.ts / control.styles.ts  # shared style cores
+  react-native/      # THE component family (Button, Text, Dialog, ...), renders on web via RNW
   index.ts           # root barrel
 ```
 
@@ -59,5 +61,5 @@ src/
 
 ## Links
 
-- Consumed by [`apps/ui`](../../apps/ui) and [`apps/app`](../../apps/app)
+- Consumed by [`apps/stage`](../../apps/stage)
 - Shared logic lives in [`@stage-labs/client`](../client)

@@ -1,6 +1,7 @@
 
 import { Children, isValidElement, type ReactNode } from 'react';
 import { Pressable, View, Text as RNText, type ViewStyle } from 'react-native';
+import { borderStyleEntries, type ResolvedBoxBorder } from '../layout';
 import { FONT_SIZE, schemePalette } from '../tokens';
 
 export type ListItemAlign = 'start' | 'center' | 'end';
@@ -73,35 +74,83 @@ export interface ListViewItemProps {
   gap?: number;
   align?: ListItemAlign;
   dark: boolean;
+  padding?: Record<string, string | number>;
+  border?: ResolvedBoxBorder;
+  pressedBackground?: string;
+  pressedBorderColor?: string;
+  showDivider?: boolean;
   style?: ViewStyle;
 }
 
 export function ListViewItem(props: ListViewItemProps): React.ReactElement {
-  const { children, onPress, gap = 12, align = 'center', dark, style } = props;
+  const {
+    children,
+    onPress,
+    gap = 12,
+    align = 'center',
+    dark,
+    padding,
+    border,
+    pressedBackground,
+    pressedBorderColor,
+    showDivider = false,
+    style,
+  } = props;
   const c = palette(dark);
+
+  const borderStyle = border ? (borderStyleEntries(border) as ViewStyle) : undefined;
+  const paddingStyle = (padding ?? {
+    paddingTop: 16,
+    paddingRight: ROW_INSET,
+    paddingBottom: 16,
+    paddingLeft: ROW_INSET,
+  }) as ViewStyle;
 
   const row: ViewStyle = {
     flexDirection: 'row',
     alignItems: ALIGN[align],
     gap,
-    paddingVertical: 16,
-    paddingHorizontal: ROW_INSET,
   };
 
+  const content = showDivider ? (
+    <>
+      {children}
+      <View
+        style={{
+          position: 'absolute',
+          left: ROW_INSET,
+          right: ROW_INSET,
+          bottom: 0,
+          height: 1,
+          backgroundColor: c.border,
+        }}
+      />
+    </>
+  ) : (
+    children
+  );
+
   if (onPress) {
+    const pressedBg = pressedBackground ?? c.pressed;
     return (
       <Pressable
         onPress={onPress}
         style={({ pressed }) => [
           row,
-          { backgroundColor: pressed ? c.pressed : 'transparent' },
+          paddingStyle,
+          borderStyle,
+          pressed
+            ? pressedBorderColor !== undefined
+              ? { borderColor: pressedBorderColor }
+              : { backgroundColor: pressedBg }
+            : undefined,
           style,
         ]}
       >
-        {children}
+        {content}
       </Pressable>
     );
   }
 
-  return <View style={[row, style]}>{children}</View>;
+  return <View style={[row, paddingStyle, borderStyle, style]}>{content}</View>;
 }

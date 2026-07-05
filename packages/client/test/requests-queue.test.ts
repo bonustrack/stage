@@ -119,4 +119,31 @@ describe('buildRequestsQueue', () => {
   test('returns an empty queue when nothing is pending', () => {
     expect(buildRequestsQueue({ feeds: [], messageRequests: [], myUri: ME })).toEqual([]);
   });
+
+  test('filterVotedPolls:false keeps a poll the account already voted on (app parity)', () => {
+    const poll = pollEntry('p1', '2026-01-01T00:00:01.000Z');
+    const feeds: FeedRequestInput[] = [{ convId: 'c-voted', events: [poll, voteEntry('p1', 0, ME)] }];
+    const out = buildRequestsQueue({
+      feeds, messageRequests: [], myUri: ME, options: { filterVotedPolls: false },
+    });
+    expect(out.map(r => r.kind)).toEqual(['poll']);
+  });
+
+  test('injected detectors drive feed classification', () => {
+    const feeds: FeedRequestInput[] = [
+      { convId: 'c', events: [entry({ id: 'm', text: 'hi', payload: { custom: true } })] },
+    ];
+    const out = buildRequestsQueue({
+      feeds, messageRequests: [], myUri: ME,
+      options: {
+        filterVotedPolls: false,
+        detectors: {
+          hasPoll: () => false,
+          hasTxRequest: (e) => Boolean((e.payload as { custom?: boolean })?.custom),
+          hasSigRequest: () => false,
+        },
+      },
+    });
+    expect(out.map(r => r.kind)).toEqual(['payment']);
+  });
 });

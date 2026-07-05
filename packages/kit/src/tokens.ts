@@ -66,6 +66,43 @@ export function semanticPalette(scheme: 'light' | 'dark'): {
   };
 }
 
+export type Scheme = 'light' | 'dark';
+
+export interface ThemeColor {
+  dark: string;
+  light: string;
+}
+
+export type Color = string | ThemeColor;
+
+function isThemeColor(value: Color): value is ThemeColor {
+  return typeof value === 'object' && value !== null;
+}
+
+export function resolveColor(value: Color, scheme: Scheme): string {
+  if (isThemeColor(value)) return value[scheme];
+  return resolveColorToken(value, scheme);
+}
+
+export function resolveOptionalColor(
+  value: Color | undefined,
+  scheme: Scheme,
+): string | undefined {
+  return value === undefined ? undefined : resolveColor(value, scheme);
+}
+
+export function readableForeground(hex: string): string {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  const group = m?.[1];
+  if (group === undefined) return '#ffffff';
+  const n = Number.parseInt(group, 16);
+  const r = (n >> 16) & 0xff;
+  const g = (n >> 8) & 0xff;
+  const b = n & 0xff;
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.6 ? '#000000' : '#ffffff';
+}
+
 export type ColorToken =
   | 'text'
   | 'secondary'

@@ -1,0 +1,83 @@
+name: Dev client APK
+
+# On-demand Android dev-client build (EAS `development` profile) for whichever
+# ref it is dispatched on. Produces the APK as an EAS download link (QR in the
+# job summary for phone install) and as a workflow artifact. Needed whenever
+# native code / native deps change and the installed dev client can no longer
+# load JS-OTA previews (pr-preview.yml). Each run consumes one EAS build slot.
+
+on:
+  workflow_dispatch:
+  # workflow_dispatch only works once this file reaches the default branch;
+  # until then a push touching this file on the PR branch triggers the build.
+  push:
+    branches: ['claude/large-refactoring-pr-3rcl0d']
+    paths: ['.github/workflows/dev-client.yml']
+
+concurrency:
+  group: dev-client-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: write
+    env:
+      EXPO_NO_TELEMETRY: '1'
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.9
+
+      - run: bun install --frozen-lockfile
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build dev-client APK on EAS
+        id: build
+        working-directory: apps/stage
+        run: |
+          set -euo pipefail
+          OUT=$(eas build -p android --profile development --non-interactive --json --wait)
+          echo "$OUT"
+          URL=$(echo "$OUT" | jq -r '.[0].artifacts.buildUrl // .[0].artifacts.applicationArchiveUrl')
+          if [ -z "$URL" ] || [ "$URL" = "null" ]; then
+            echo "No Android artifact URL from EAS"; exit 1
+          fi
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          curl -fSL "$URL" -o "$GITHUB_WORKSPACE/stage-dev-client.apk"
+
+      - name: Write install link to job summary
+        run: |
+          set -euo pipefail
+          URL='${{ steps.build.outputs.url }}'
+          QR="https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=$(node -e "process.stdout.write(encodeURIComponent(process.argv[1]))" "$URL")"
+          {
+            echo "## Dev-client APK - \`${{ github.ref_name }}\` @ \`$(git rev-parse --short HEAD)\`"
+            echo ""
+            echo "[Download APK]($URL) (open on the phone, then install)"
+            echo ""
+            echo "![QR]($QR)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dev-client-apk
+          path: stage-dev-client.apk
+
+      # Rolling `dev-client` release: a stable public download URL
+      # (releases/download/dev-client/stage-dev-client.apk) that always carries
+      # the newest dev-client APK. bundler.stage.box links here.
+      - name: Update rolling dev-client release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release upload dev-client stage-dev-client.apk --clobber --repo "$GITHUB_REPOSITORY"

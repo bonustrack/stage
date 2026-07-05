@@ -1,0 +1,13 @@
+diff --git a/dist/bindings_wasm.js b/dist/bindings_wasm.js
+index 859e4a4a5e831c22b41ac23abb34830fc29980db..089990ceaad5416dafe4da6ef1ba5dd39620a1a3 100644
+--- a/dist/bindings_wasm.js
++++ b/dist/bindings_wasm.js
+@@ -4471,7 +4471,7 @@ async function __wbg_init(module_or_path) {
+     }
+ 
+     if (module_or_path === undefined) {
+-        module_or_path = new URL('bindings_wasm_bg.wasm', import.meta.url);
++        module_or_path = '/bindings_wasm_bg.wasm';
+     }
+     const imports = __wbg_get_imports();
+ 

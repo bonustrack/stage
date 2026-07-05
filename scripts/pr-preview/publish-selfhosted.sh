@@ -26,7 +26,7 @@ set -euo pipefail
 : "${PR_PREVIEW_BASE_URL:?set PR_PREVIEW_BASE_URL (public https base)}"
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-APP="$ROOT/apps/app"
+APP="$ROOT/apps/stage"
 DIST="$(mktemp -d)/pr-${PR}"
 RUNTIME_VERSION="${RUNTIME_VERSION:-1.0.0}"   # MUST match app.config.js runtimeVersion
 SCHEME="${SCHEME:-stage}"

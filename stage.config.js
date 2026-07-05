@@ -1,15 +1,11 @@
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from '@stage-labs/config';
-import { reactNative } from './apps/app/eslint.js';
+import { reactNative } from './apps/stage/eslint.js';
 import { kitEslint } from './packages/kit/eslint.js';
-import { uiKitOnly } from './apps/ui/eslint.js';
 
 const ROOT_DIR = fileURLToPath(new URL('.', import.meta.url));
 
-const vuePlugin = await import('eslint-plugin-vue').then((m) => m.default ?? m);
-const vueParser = await import('vue-eslint-parser').then((m) => m.default ?? m);
 
-const kitVueOptions = { vueParser, vuePlugin, rootDir: ROOT_DIR };
 
 export default defineConfig({
   workspaces: {
@@ -22,7 +18,7 @@ export default defineConfig({
         project: ['scripts/**/*.{mjs,js}'],
       },
     },
-    'apps/app': {
+    'apps/stage': {
       type: 'react-native',
       eslint: { preset: 'none', extends: reactNative() },
       knip: {
@@ -30,12 +26,14 @@ export default defineConfig({
           'eslint.js',
           'app/**/*.{ts,tsx}',
           'babel.config.js',
+          'lib/**/*.web.ts',
           'modules/**/*.{ts,tsx}',
+          'platform/**/*.ts',
           'plugins/**/*.{js,ts}',
           'scripts/**/*.js',
           'scripts/**/*.mjs',
         ],
-        project: ['app/**', 'components/**', 'lib/**', 'modules/**'],
+        project: ['app/**', 'components/**', 'lib/**', 'modules/**', 'platform/**'],
         ignoreDependencies: [
           'buffer',
           'crypto-browserify',
@@ -48,12 +46,9 @@ export default defineConfig({
           'expo-system-ui',
           '@railgun-privacy/native-prover',
           'node-gyp-build-mobile',
+          '@types/markdown-it',
         ],
       },
-    },
-    'apps/ui': {
-      type: 'vue',
-      eslint: { extends: uiKitOnly(vuePlugin) },
     },
     'apps/proxy': {
       type: 'worker',
@@ -65,9 +60,8 @@ export default defineConfig({
     },
     'packages/kit': {
       type: 'library',
-      vue: true,
-      eslint: { preset: 'none', extends: kitEslint(kitVueOptions) },
-      knip: { entry: ['eslint.js'], vue: true },
+      eslint: { preset: 'none', extends: kitEslint() },
+      knip: { entry: ['eslint.js'] },
     },
     'packages/config': {
       type: 'library',
@@ -75,17 +69,17 @@ export default defineConfig({
       knip: {
         entry: ['eslint/*.js', 'knip/*.js', 'bin/*.js'],
         project: ['**/*.js'],
-        ignoreDependencies: ['madge'],
+        ignoreDependencies: ['madge', 'eslint-plugin-vue', 'vue-eslint-parser'],
       },
     },
   },
   madge: {
     roots: [
-      'apps/app/app',
-      'apps/app/components',
-      'apps/app/lib',
-      'apps/app/modules',
-      'apps/ui/src',
+      'apps/stage/app',
+      'apps/stage/components',
+      'apps/stage/lib',
+      'apps/stage/modules',
+      'apps/stage/platform',
       'apps/proxy/src',
       'packages/client/src',
       'packages/config',

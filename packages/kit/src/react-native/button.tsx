@@ -9,24 +9,19 @@ import {
   type ViewStyle,
 } from 'react-native';
 import {
-  legacyVariantToColor,
   resolveColors,
   SIZES,
   textLabelStyle,
   type ButtonColor,
   type ButtonControlVariant,
   type ButtonSize,
-  type ButtonVariant,
 } from '../button.styles';
 
 export type {
   ButtonColor,
   ButtonControlVariant,
   ButtonSize,
-  ButtonVariant,
 } from '../button.styles';
-
-const LEGACY_VARIANTS = new Set<ButtonVariant>(['primary', 'secondary', 'danger']);
 
 let defaultButtonRadius = 999;
 export function setDefaultButtonRadius(r: number): void {
@@ -39,9 +34,8 @@ export function getDefaultButtonRadius(): number {
 export interface ButtonProps
   extends Omit<PressableProps, 'children' | 'style' | 'disabled'> {
   color?: ButtonColor;
-  variant?: ButtonControlVariant | ButtonVariant;
+  variant?: ButtonControlVariant;
   style?: ViewStyle;
-  styleColor?: 'primary' | 'secondary';
   size?: ButtonSize;
   label?: string;
   children?: ReactNode;
@@ -58,24 +52,9 @@ export interface ButtonProps
   dark?: boolean;
   tintBg?: string;
   tintFg?: string;
+  tintPressedBg?: string;
   radius?: number;
   textStyle?: TextStyle;
-}
-
-function resolveModel(
-  color: ButtonColor | undefined,
-  variant: ButtonControlVariant | ButtonVariant | undefined,
-  styleColor: 'primary' | 'secondary' | undefined,
-): { color: ButtonColor; variant: ButtonControlVariant } {
-  if (variant && LEGACY_VARIANTS.has(variant as ButtonVariant) && !color) {
-    return legacyVariantToColor(variant as ButtonVariant);
-  }
-  const baseColor: ButtonColor = color ?? styleColor ?? 'primary';
-  const treatment: ButtonControlVariant =
-    variant && (['solid', 'soft', 'outline', 'ghost'] as string[]).includes(variant)
-      ? (variant as ButtonControlVariant)
-      : 'solid';
-  return { color: baseColor, variant: treatment };
 }
 
 type ResolvedColors = ReturnType<typeof resolveColors>;
@@ -153,19 +132,24 @@ function renderLabel(
 
 interface TintArgs {
   color: ButtonColor | undefined;
-  variant: ButtonControlVariant | ButtonVariant | undefined;
-  styleColor: 'primary' | 'secondary' | undefined;
+  variant: ButtonControlVariant | undefined;
   dark: boolean;
   tintBg: string | undefined;
   tintFg: string | undefined;
+  tintPressedBg: string | undefined;
 }
 
 function useResolvedColors(t: TintArgs): ResolvedColors {
   return useMemo(() => {
-    const model = resolveModel(t.color, t.variant, t.styleColor);
-    const base = resolveColors(model.color, model.variant, t.dark);
-    return { ...base, bg: t.tintBg ?? base.bg, text: t.tintFg ?? base.text };
-  }, [t.color, t.variant, t.styleColor, t.dark, t.tintBg, t.tintFg]);
+    const base = resolveColors(t.color ?? 'primary', t.variant ?? 'solid', t.dark);
+    return {
+      ...base,
+      bg: t.tintBg ?? base.bg,
+      text: t.tintFg ?? base.text,
+      pressedBg: t.tintPressedBg ?? base.pressedBg,
+      ghostPressedBg: t.tintPressedBg ?? base.ghostPressedBg,
+    };
+  }, [t.color, t.variant, t.dark, t.tintBg, t.tintFg, t.tintPressedBg]);
 }
 
 function orFlag(a: boolean | undefined, b: boolean | undefined): boolean {
@@ -176,7 +160,6 @@ export function Button(props: ButtonProps): React.ReactElement {
   const {
     color,
     variant,
-    styleColor,
     block,
     fullWidth,
     pill,
@@ -184,6 +167,7 @@ export function Button(props: ButtonProps): React.ReactElement {
     dark = false,
     tintBg,
     tintFg,
+    tintPressedBg,
     size = 'md',
     label,
     children,
@@ -205,7 +189,7 @@ export function Button(props: ButtonProps): React.ReactElement {
   const square = orFlag(pill, uniform);
 
   const spec = SIZES[size];
-  const c = useResolvedColors({ color, variant, styleColor, dark, tintBg, tintFg });
+  const c = useResolvedColors({ color, variant, dark, tintBg, tintFg, tintPressedBg });
   const isDisabled = disabled || loading;
 
   const labelNode = renderLabel(children, label, spec, c.text, textStyle);

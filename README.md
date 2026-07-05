@@ -2,24 +2,27 @@
 
 Stage is an XMTP messenger with multi-account support, Snapshot profiles, group
 channels, and an onchain wallet (assets, balances, and Railgun shielded
-transfers). It ships as two clients that stay visually and functionally
-parallel — a Vue 3 web app and an Expo / React Native mobile app — backed by a
-shared framework-agnostic TypeScript core, a shared design-system kit, and a
-Cloudflare Worker that resolves link previews.
+transfers). It ships as **one universal Expo app** serving Android, iOS, and the
+web from the same React Native codebase (web via react-native-web), backed by a
+framework-agnostic TypeScript core, a design-system kit, and a Cloudflare
+Worker that resolves link previews.
 
 ## Monorepo layout
 
 ```
-packages/
-  client/   # @stage-labs/client — framework-agnostic shared logic (XMTP, Snapshot
-            #   profiles, embeds, wallet/balances, account keys, Railgun, API clients)
-  kit/      # @stage-labs/kit — shared design system: tokens, icon data, theme
-            #   contracts + a few React Native primitive components
-  config/   # @stage-labs/config — shared ESLint and TypeScript config presets
 apps/
-  app/      # app — Expo + React Native mobile client (XMTP messenger + wallet)
-  ui/       # ui — Vue 3 + Vite web client (channels, conversations, profiles)
+  stage/    # stage — the universal Expo + React Native app (android · ios · web)
+            #   app/        expo-router file routes
+            #   components/ kit-JSX screens + colocated *.model.ts pure models
+            #   platform/   per-platform seams (.ts native / .web.ts overrides)
+            #   lib/        state + SDK orchestration (incl. xmtp.*.web adapters)
   proxy/    # proxy — Cloudflare Worker for link-preview / image / x402 proxying
+packages/
+  client/   # @stage-labs/client — framework-agnostic shared logic (XMTP cores,
+            #   Snapshot profiles, embeds, wallet, account keys, Railgun, APIs)
+  kit/      # @stage-labs/kit — design system: tokens, icons, theme contracts,
+            #   and one React Native component family (renders on web via RNW)
+  config/   # @stage-labs/config — shared ESLint/TS/knip/madge presets + stage CLI
 ```
 
 Each workspace has its own README with details.
@@ -43,8 +46,8 @@ Run from the repo root:
 bun run build       # turbo run build
 bun run test        # turbo run test
 bun run typecheck   # turbo run typecheck
-bun run lint        # eslint .
-bun run lint:fix    # eslint . --fix
+bun run lint        # stage lint (eslint over the whole repo)
+bun run lint:fix    # stage lint --fix
 bun run check       # lint + typecheck
 bun run knip        # unused files / deps / exports
 bun run madge       # circular-dependency check
@@ -53,12 +56,15 @@ bun run madge       # circular-dependency check
 Tasks are orchestrated by [Turbo](https://turbo.build); see `turbo.json` for the
 pipeline (`build`, `test`, `typecheck`).
 
-Per-app dev servers:
+Per-app dev servers and builds:
 
 ```sh
-bun --cwd apps/ui dev       # Vue web dev server (Vite)
-bun --cwd apps/app start    # Expo bundler for the mobile app
-bun --cwd apps/proxy dev    # Cloudflare Worker (wrangler dev)
+bun --cwd apps/stage start      # Expo bundler (Metro)
+bun --cwd apps/stage android    # build + run on Android
+bun --cwd apps/stage ios        # build + run on iOS
+bun --cwd apps/stage web        # run the app in a browser
+bun --cwd apps/stage run build:web  # static web export (Netlify publishes dist/)
+bun --cwd apps/proxy dev        # Cloudflare Worker (wrangler dev)
 ```
 
 ## CI / quality gates
