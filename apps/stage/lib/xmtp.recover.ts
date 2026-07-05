@@ -38,7 +38,7 @@ export function isStoreCorruption(err: unknown): boolean {
   return isStoreCorruptionCore(err, [CREATE_TIMEOUT_MESSAGE]);
 }
 
-const CREATE_TIMEOUT_MS = 30_000;
+const CREATE_TIMEOUT_MS = 60_000;
 async function createWithTimeout(
   signer: Awaited<ReturnType<typeof signerForRecord>>, opts: CreateOpts,
 ): Promise<Client> {
