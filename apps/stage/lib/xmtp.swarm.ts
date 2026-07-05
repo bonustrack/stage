@@ -5,7 +5,7 @@ import { stripMetadataBytes, isStrippableImage } from '@stage-labs/client/image/
 declare const sanitizedBrand: unique symbol;
 export type SanitizedFileUri = string & { readonly [sanitizedBrand]: true };
 
-const SWARM_UPLOAD_URL = 'https://blob.metro.box/upload';
+const SWARM_UPLOAD_URL = 'https://blob.stage.box/upload';
 const SWARM_GATEWAY = 'https://api.swarmy.cloud/bzz/';
 
 export function swarmToHttp(url: string): string {

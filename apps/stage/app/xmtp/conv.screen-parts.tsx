@@ -180,7 +180,7 @@ export function ConversationOverlays({ c, convId, dark, archived, onOpenSearch }
           setMenuFor(null);
         }}
         onShareLink={() => {
-          if (menuFor) void Share.share({ message: `https://metro.box/#/xmtp/${convId}?m=${menuFor.id}` });
+          if (menuFor) void Share.share({ message: `https://stage.box/#/xmtp/${convId}?m=${menuFor.id}` });
           setMenuFor(null);
         }}
 />

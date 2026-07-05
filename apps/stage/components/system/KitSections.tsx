@@ -227,7 +227,7 @@ function ContentSections({ dark, head, sub, border }: GalleryPalette): React.Rea
     <>
       <GallerySection name="Markdown" note="Kit value - headings / code / links" {...sec} innerPadH={14} innerPadV={12}>
         <Markdown dark={dark}
-          value={'## Markdown\nRenders **bold**, _italic_, `inline code`, and [links](https://metro.box).\n\n- Bulleted item\n- Second item\n\n```\ncode fence\n```'}/>
+          value={'## Markdown\nRenders **bold**, _italic_, `inline code`, and [links](https://stage.box).\n\n- Bulleted item\n- Second item\n\n```\ncode fence\n```'}/>
       </GallerySection>
 
       <GallerySection name="Table" note="Kit Table / Row / Cell - header + data" {...sec} framed={false}>

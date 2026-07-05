@@ -12,7 +12,7 @@ It ships **one universal Expo app** (`apps/stage`) serving **android, ios, and w
 | `packages/client` | `@stage-labs/client` | Framework- AND runtime-agnostic TS core. XMTP content/codecs/cores, accounts/zerodev, Railgun wire protocol, wallet, read-only APIs, profile/identity. No React/RN imports, no build step. |
 | `packages/kit` | `@stage-labs/kit` | Design system: tokens, theme, icons, layout, and ONE React Native component family (renders on web via RNW). Plain component library — no renderer, no build step. |
 | `packages/config` | `@stage-labs/config` | Publishable ESLint/TS/knip/madge presets + the `stage` CLI (`bin/stage.js`) driven by root `stage.config.js`. |
-| `apps/proxy` | — | Cloudflare Worker: link-preview / image-resize / x402 proxy. Deploys to preview.metro.box. |
+| `apps/proxy` | — | Cloudflare Worker: link-preview / image-resize / x402 proxy + the bundler.stage.box per-branch manifest proxy. Routes on proxy.stage.box and bundler.stage.box (metro.box is retired — never reference it). |
 
 There is no separate web app: the Vue client (`apps/ui`) and the kit Vue renderer family were removed when `apps/stage` became universal. **The parity invariant is retired** — a screen exists once. The JSON widget dialect (`KitRenderer`/`ViewHost`, `WidgetNode`, node registry) is also retired — all UI, including chat message content, is direct kit JSX.
 
@@ -48,7 +48,7 @@ Per-app:
 - **Env vars must be read as literal `process.env.EXPO_PUBLIC_X` member expressions** (see `lib/zerodev/env.ts` RAW_ENV pattern) — dynamic `process.env[name]` defeats the Expo inliner on web.
 - **Models are colocated with components:** presentation logic lives in pure `*.model.ts` files next to the component that consumes them (`components/ChannelRow.model.ts`, `components/settings/WalletSettings.model.ts`, ...). Framework-free — no React imports — and unit-tested in `test/` (`*.spec.ts`). Display helpers in `lib/format.ts`; platform effects (navigate/back/copy/toast/confirm/openUrl/share) go through `lib/capabilities.ts`.
 - **UI composition — everything is direct kit JSX:** state hook -> colocated model -> kit components (shared chrome in `components/chrome/` — ScreenHeader/StackHeader/OverlayHeader/EmptyState — plus domain families like `components/settings/rows.tsx`, `components/wallet/widgets.tsx`). Chat message content (poll cards, media cards, link previews, voice/video, message bubbles) is JSX too, in `components/MessengerBubble.*` and friends.
-- expo-router file routes in `app/`; `_layout.tsx` imports `lib/jsPolyfills` + `lib/cryptoShim` FIRST (order matters). Hand-rolled stores (`lib/storeCore.ts`, `lib/persistedStore.ts` over `platform/storage`) + react-query. App variants via `APP_VARIANT` (prod = Stage/stage.box, dev = metro.box).
+- expo-router file routes in `app/`; `_layout.tsx` imports `lib/jsPolyfills` + `lib/cryptoShim` FIRST (order matters). Hand-rolled stores (`lib/storeCore.ts`, `lib/persistedStore.ts` over `platform/storage`) + react-query. App variants via `APP_VARIANT` (prod = Stage/stage.box, dev = dev.stage.box). The metro.box domain is retired — never use it for endpoints or config; the string survives only as frozen XMTP content-type authority IDs.
 
 ### Shared core (`packages/client`)
 - No build step; subpath exports + `src/index.ts` barrel are the public API (`zerodev/*` deliberately not in the barrel). Pure functions + plain interfaces, no classes/default exports. Boundary validation via `validate.ts` (zod). Always decode XMTP content WITH a zod schema (`decodeJsonContent(bytes, schema)`).

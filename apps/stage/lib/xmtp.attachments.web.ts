@@ -10,7 +10,7 @@ import { type LocalAttachmentInput } from './xmtp.types';
 declare const sanitizedBrand: unique symbol;
 export type SanitizedAttachmentBytes = Uint8Array & { readonly [sanitizedBrand]: true };
 
-const SWARM_UPLOAD_URL = 'https://blob.metro.box/upload';
+const SWARM_UPLOAD_URL = 'https://blob.stage.box/upload';
 const SWARM_GATEWAY = 'https://api.swarmy.cloud/bzz/';
 const SWARM_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 

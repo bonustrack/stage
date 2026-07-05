@@ -25,5 +25,5 @@ export function zerodevConfigured(): boolean {
 }
 
 export function zerodevRpId(): string {
-  return envString('EXPO_PUBLIC_ZERODEV_RP_ID') ?? 'metro.box';
+  return envString('EXPO_PUBLIC_ZERODEV_RP_ID') ?? 'stage.box';
 }

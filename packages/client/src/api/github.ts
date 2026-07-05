@@ -107,7 +107,7 @@ export interface GithubDiff {
   deletions: number;
 }
 
-const PROXY = 'https://blob.metro.box/gh/diff';
+const PROXY = 'https://blob.stage.box/gh/diff';
 const GH = 'https://api.github.com';
 const HEADERS = { Accept: 'application/vnd.github+json' };
 

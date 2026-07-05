@@ -8,7 +8,7 @@ const LINK_PREVIEW_BASE_ENV: unknown = process.env.EXPO_PUBLIC_LINKPROXY_URL;
 export const LINK_PREVIEW_BASE =
   typeof LINK_PREVIEW_BASE_ENV === 'string' && LINK_PREVIEW_BASE_ENV !== ''
     ? LINK_PREVIEW_BASE_ENV.replace(/\/$/, '')
-    : 'https://preview.metro.box';
+    : 'https://proxy.stage.box';
 
 interface LinkPreview {
   url: string;

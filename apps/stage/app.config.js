@@ -38,7 +38,7 @@ const variant = IS_PROD
       name: 'Stage',
       slug: 'metro',
       scheme: 'stage',
-      host: 'metro.box',
+      host: 'dev.stage.box',
       bundleId: 'box.metro.monitor',
       androidPackage: 'box.metro.monitor',
       googleServicesFile: './google-services.json',
