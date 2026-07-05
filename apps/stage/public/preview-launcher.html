@@ -85,7 +85,8 @@
     <script>
       const main = document.getElementById('main');
       const manifest = new URLSearchParams(location.search).get('u');
-      if (!manifest || !manifest.startsWith('https://u.expo.dev/')) {
+      const allowed = ['https://u.expo.dev/', 'https://bundler.stage.box/'];
+      if (!manifest || !allowed.some((prefix) => manifest.startsWith(prefix))) {
         main.innerHTML =
           '<h1>Invalid preview link</h1><p class="error">Missing or malformed manifest URL (?u=…).</p>';
       } else {

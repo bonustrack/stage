@@ -213,6 +213,12 @@ jobs:
             echo "::error::expo export produced no Android JS bundle" && exit 1
           fi
           node --check "$BUNDLE"
+          # Ensure a channel with the branch's name exists and points at the
+          # branch (EAS links same-named channel->branch on create). Channels
+          # are what u.expo.dev resolves manifests by, and bundler.stage.box/
+          # <branch> proxies exactly that lookup. Idempotent: exists -> no-op.
+          bunx eas-cli@20.1.0 channel:create "$BRANCH" --non-interactive > /dev/null 2>&1 \
+            || true
           bunx eas-cli@20.1.0 update \
             --branch "$BRANCH" \
             --platform android \

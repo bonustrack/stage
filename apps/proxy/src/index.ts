@@ -1,4 +1,5 @@
 
+import { BUNDLER_HOST, handleBundler } from './bundler.ts';
 import { fetchPage } from './fetchPage.ts';
 import { fetchImage, parseWidth } from './fetchImage.ts';
 import { parseMeta } from './parse.ts';
@@ -73,7 +74,7 @@ async function handlePreview(request: Request, ctx: ExecutionContext): Promise<R
   const url = new URL(request.url).searchParams.get('url')?.trim() ?? '';
   if (!url) return json({ error: 'url query param required' }, 400);
 
-  const cacheKey = new Request(`https://preview.metro.box/preview?url=${encodeURIComponent(url)}`);
+  const cacheKey = new Request(`https://proxy.stage.box/preview?url=${encodeURIComponent(url)}`);
   const cached = await cacheHit(cacheKey);
   if (cached) return cached;
 
@@ -100,7 +101,7 @@ async function handleImg(request: Request, ctx: ExecutionContext): Promise<Respo
   const width = parseWidth(params.get('w'));
 
   const cacheKey = new Request(
-    `https://preview.metro.box/img?url=${encodeURIComponent(url)}&w=${width ?? ''}`,
+    `https://proxy.stage.box/img?url=${encodeURIComponent(url)}&w=${width ?? ''}`,
   );
   const cached = await cacheHit(cacheKey);
   if (cached) return cached;
@@ -148,7 +149,8 @@ async function handleSettle(request: Request): Promise<Response> {
 
 export default {
   async fetch(request: Request, _env: unknown, ctx: ExecutionContext): Promise<Response> {
-    const { pathname } = new URL(request.url);
+    const { hostname, pathname } = new URL(request.url);
+    if (hostname === BUNDLER_HOST) return handleBundler(request);
     if (pathname === '/health') {
       return new Response('ok', { headers: { 'content-type': 'text/plain', ...BASE_HEADERS } });
     }
