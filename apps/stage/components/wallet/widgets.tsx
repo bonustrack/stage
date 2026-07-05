@@ -67,7 +67,7 @@ export function WalletActionButton({ label, icon, bg, onPress }: {
         tintBg={tintBg}
         tintFg={readableForeground(tintBg)}
         dark={dark}
-        iconStart={iconName === undefined ? undefined : <Icon name={iconName} size={18} dark={dark} />}
+        iconStart={iconName === undefined ? undefined : <Icon name={iconName} size={22} dark={dark} />}
         onPress={onPress}
       />
       <Caption value={label} weight="semibold" />
