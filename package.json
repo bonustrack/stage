@@ -43,6 +43,7 @@
   "patchedDependencies": {
     "nodejs-mobile-react-native@18.20.4": "patches/nodejs-mobile-react-native@18.20.4.patch",
     "@xmtp/wasm-bindings@1.10.0": "patches/@xmtp%2Fwasm-bindings@1.10.0.patch",
-    "expo@54.0.35": "patches/expo@54.0.35.patch"
+    "expo@54.0.35": "patches/expo@54.0.35.patch",
+    "@expo/metro-config@54.0.16": "patches/@expo%2Fmetro-config@54.0.16.patch"
   }
 }
