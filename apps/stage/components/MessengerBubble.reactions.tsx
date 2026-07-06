@@ -10,7 +10,7 @@ import { usePalette } from '../lib/theme';
 function ReactionPill({ emoji, count, own, pillBg, ownBorderColor }: {
   emoji: string; count: number; own: boolean; pillBg: string; ownBorderColor: string;
 }): React.ReactElement {
-  const side = { width: 1, color: ownBorderColor };
+  const side = { width: 1, color: own ? ownBorderColor : 'transparent' };
   return (
     <Row
       align="center"
@@ -18,7 +18,7 @@ function ReactionPill({ emoji, count, own, pillBg, ownBorderColor }: {
       padding={{ x: 8, y: 2 }}
       radius="full"
       background={pillBg}
-      border={own ? { top: side, right: side, bottom: side, left: side } : undefined}
+      border={{ top: side, right: side, bottom: side, left: side }}
     >
       <Text value={emoji} size="xs" />
       <Caption value={String(count)} color="secondary" />
