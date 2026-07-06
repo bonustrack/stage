@@ -2,9 +2,7 @@
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 
 import { Caption } from '@stage-labs/kit/react-native/caption';
-import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { Row } from './layout';
 import { REACT_PRESETS } from './MessengerBubble.helpers';
 import { usePalette } from '../lib/theme';
@@ -39,7 +37,6 @@ export function ReactionsRow({
   onReact?: (emoji: string) => void;
 }): React.ReactElement | null {
   const { link } = usePalette();
-  const dark = useKitScheme() === 'dark';
   const pendingEmojis = (pendingReactions ?? []).filter(e => !reactions?.has(e));
   const removed = new Set(pendingRemovals ?? []);
   const confirmedEntries = reactions
@@ -65,9 +62,9 @@ export function ReactionsRow({
             );
             if (!onReact) return pill;
             return (
-              <ListViewItem key={emoji} dark={dark} onPress={() => { onReact(emoji); }}>
+              <Pressable key={emoji} onPress={() => { onReact(emoji); }}>
                 {pill}
-              </ListViewItem>
+              </Pressable>
             );
           })}
         </Row>
