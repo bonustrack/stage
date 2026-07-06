@@ -13,6 +13,7 @@ import { resetAccount } from '../../lib/wallet';
 import { getPeerName, isPeerResolved } from '../../lib/peerProfiles';
 import { getDraft } from '../../lib/drafts';
 import { requestLabelFilter } from '../../lib/labelFilterRequest';
+import { conversationLinkOf } from '../../lib/conversationLink';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { channelTimestamp } from '../../lib/format';
 import { DANGER } from '../../lib/theme';
@@ -73,7 +74,7 @@ function ChannelRowItemBase({
       labels={isGroup ? item.labels : undefined}
       onLabelPress={isGroup ? requestLabelFilter : undefined}
       onPressIn={() => { prefetchFeed(lineOfConv(item.convId)); }}
-      onPress={() => { router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } }); }}
+      onPress={() => { router.push(conversationLinkOf(item.convId, item.peerAddress)); }}
       onLongPress={() => {
         Vibration.vibrate(10);
         setRowMenu({

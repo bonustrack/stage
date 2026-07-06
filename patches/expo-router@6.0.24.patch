@@ -71,10 +71,10 @@ index a20305ac945eae66aa99e7b429aa440b0e5e38d1..76dd9337d8e64da30aea7906be988626
  //# sourceMappingURL=getPathFromState.js.map
 \ No newline at end of file
 diff --git a/build/fork/getStateFromPath-forks.js b/build/fork/getStateFromPath-forks.js
-index 0d0b9a1506e82965759ab233faa4356b84788080..2706c9e35fefacde5a4be6fe5c495d448f2b3c44 100644
+index 0d0b9a1506e82965759ab233faa4356b84788080..eb1b290ec25a9bbd1e5086edca516fe939ba49ee 100644
 --- a/build/fork/getStateFromPath-forks.js
 +++ b/build/fork/getStateFromPath-forks.js
-@@ -44,7 +44,23 @@ function safelyDecodeURIComponent(str) {
+@@ -44,7 +44,28 @@ function safelyDecodeURIComponent(str) {
          return str;
      }
  }
@@ -89,9 +89,14 @@ index 0d0b9a1506e82965759ab233faa4356b84788080..2706c9e35fefacde5a4be6fe5c495d44
 +    const before = path.slice(0, hashIndex);
 +    const fragment = path.slice(hashIndex + 1);
 +    if ((before === '' || before === '/') && fragment.startsWith('/')) {
-+        return fragment;
++        return rewriteLegacyConversationSegment(fragment);
 +    }
 +    return path;
++}
++function rewriteLegacyConversationSegment(path) {
++    return path
++        .replace(/(\/)xmtp\/user\//i, '$1')
++        .replace(/(\/)xmtp\//i, '$1channel/');
 +}
  function getUrlWithReactNavigationConcessions(path, baseUrl = process.env.EXPO_BASE_URL) {
 +    path = unwrapHashRoutingPath(path);

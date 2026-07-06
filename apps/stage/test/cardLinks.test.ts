@@ -37,6 +37,18 @@ describe('cardLinksOf', () => {
     expect(cards[0]).toMatchObject({ kind: 'dm' });
   });
 
+  test('classifies a bare (no xmtp) address link as dm', () => {
+    const addr = '0x42e167e6bff0a3a701d8fa14f96a0f840eb939df';
+    expect(cardLinksOf(`stage://${addr}`)[0]).toMatchObject({ kind: 'dm', peerAddress: addr });
+    expect(cardLinksOf(`https://stage.box/#/${addr}`)[0]).toMatchObject({ kind: 'dm' });
+  });
+
+  test('classifies a channel/ (no xmtp) conv link as channel', () => {
+    const conv = '47bf58a8f56cad829b2263797a7e25e4';
+    expect(cardLinksOf(`stage://channel/${conv}`)[0]).toMatchObject({ kind: 'channel', convId: conv });
+    expect(cardLinksOf(`https://stage.box/#/channel/${conv}`)[0]).toMatchObject({ kind: 'channel' });
+  });
+
   test('caps at MAX_CARDS, extra links drop out', () => {
     const links = Array.from({ length: MAX_CARDS + 3 }, (_, i) =>
       `https://github.com/owner/repo${i}`).join(' ');

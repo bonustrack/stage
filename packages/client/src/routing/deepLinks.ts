@@ -1,5 +1,6 @@
 export type ParsedRoute =
-  | { pathname: '/xmtp/[convId]'; params: { convId: string; m?: string; focus?: string } }
+  | { pathname: '/[convId]'; params: { convId: string; m?: string; focus?: string } }
+  | { pathname: '/channel/[convId]'; params: { convId: string; m?: string; focus?: string } }
   | { pathname: '/group/[convId]'; params: { convId: string } }
   | { pathname: '/user/[address]'; params: { address: string } }
   | { pathname: '/(tabs)'; params?: undefined }
@@ -36,15 +37,18 @@ function extractRoute(url: string): { segments: string[]; query: URLSearchParams
   return { segments, query: new URLSearchParams(queryPart) };
 }
 
-function conversationRoute(second: string | undefined, query: URLSearchParams): ParsedRoute | null {
-  if (!second) return null;
+function conversationRoute(
+  pathname: '/[convId]' | '/channel/[convId]',
+  convId: string | undefined,
+  query: URLSearchParams,
+): ParsedRoute | null {
+  if (!convId) return null;
   const m = query.get('m') ?? undefined;
   const focus = query.get('focus') ?? undefined;
-  return {
-    pathname: '/xmtp/[convId]',
-    params: { convId: second, ...(m ? { m } : {}), ...(focus ? { focus } : {}) },
-  };
+  return { pathname, params: { convId, ...(m ? { m } : {}), ...(focus ? { focus } : {}) } };
 }
+
+const DM_ADDRESS_HEAD_RE = /^0x[a-fA-F0-9]{40}$/;
 
 const STATIC_ROUTES: Record<string, ParsedRoute> = {
   channels: { pathname: '/(tabs)' },
@@ -52,19 +56,30 @@ const STATIC_ROUTES: Record<string, ParsedRoute> = {
   contacts: { pathname: '/(tabs)/contacts' },
 };
 
-export function routeForUrl(url: string): ParsedRoute | null {
-  const { segments, query } = extractRoute(url);
-  if (segments.length === 0) return { pathname: '/(tabs)' };
+const CONVERSATION_HEADS = new Set(['xmtp', 'channel', 'embed']);
 
-  const [head, second] = segments;
-  if (head === 'xmtp' || head === 'embed') return conversationRoute(second, query);
+function headRoute(segments: string[], query: URLSearchParams): ParsedRoute | null {
+  const [head, second, third] = segments;
+  if (head === undefined) return null;
+  if (CONVERSATION_HEADS.has(head)) {
+    return second === 'user'
+      ? conversationRoute('/[convId]', third, query)
+      : conversationRoute('/channel/[convId]', second, query);
+  }
   if (head === 'group') {
     return second ? { pathname: '/group/[convId]', params: { convId: second } } : null;
   }
   if (head === 'user') {
     return second ? { pathname: '/user/[address]', params: { address: second } } : null;
   }
-  return (head !== undefined ? STATIC_ROUTES[head] : undefined) ?? null;
+  if (DM_ADDRESS_HEAD_RE.test(head)) return conversationRoute('/[convId]', head, query);
+  return STATIC_ROUTES[head] ?? null;
+}
+
+export function routeForUrl(url: string): ParsedRoute | null {
+  const { segments, query } = extractRoute(url);
+  if (segments.length === 0) return { pathname: '/(tabs)' };
+  return headRoute(segments, query);
 }
 
 export function shouldHandleDeepLink(url: string): boolean {

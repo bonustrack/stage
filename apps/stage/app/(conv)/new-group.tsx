@@ -110,7 +110,7 @@ export default function NewGroup(): React.ReactElement {
     }
     try {
       const { id } = await createGroup(members.map(m => m.address), name, imageUrl);
-      router.replace({ pathname: '/xmtp/[convId]', params: { convId: id } });
+      router.replace({ pathname: '/channel/[convId]', params: { convId: id } });
     } catch (err) {
       flash((err as Error)?.message ?? "Couldn't create the group");
       setCreating(false);

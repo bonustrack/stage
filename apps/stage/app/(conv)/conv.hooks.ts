@@ -3,6 +3,32 @@ import { useEffect, useRef, useState } from 'react';
 import { InteractionManager, Keyboard } from 'react-native';
 import type { Input } from '@stage-labs/kit/react-native/input';
 import { isArchived, loadArchivedIds, subscribeArchived } from '../../lib/archived';
+import { openDmWithAddress } from '../../modules/messaging';
+
+const DM_ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
+
+export interface ResolvedConv { convId: string | null; resolving: boolean; error: boolean }
+
+export function useResolvedConvId(param: string | undefined): ResolvedConv {
+  const isAddress = !!param && DM_ADDRESS_RE.test(param);
+  const [state, setState] = useState<ResolvedConv>(() =>
+    isAddress
+      ? { convId: null, resolving: true, error: false }
+      : { convId: param ?? null, resolving: false, error: false });
+  useEffect(() => {
+    if (!param || !DM_ADDRESS_RE.test(param)) {
+      setState({ convId: param ?? null, resolving: false, error: false });
+      return;
+    }
+    let cancelled = false;
+    setState({ convId: null, resolving: true, error: false });
+    void openDmWithAddress(param)
+      .then(id => { if (!cancelled) setState({ convId: id, resolving: false, error: false }); })
+      .catch(() => { if (!cancelled) setState({ convId: null, resolving: false, error: true }); });
+    return () => { cancelled = true; };
+  }, [param]);
+  return state;
+}
 
 type InputRef = React.RefObject<React.ComponentRef<typeof Input> | null>;
 

@@ -51,7 +51,7 @@ function ConvIdCard({ convId }: { convId: string }): React.ReactElement {
   const { avatarUri, avatarAddress } = convAvatar(meta, convId);
 
   const open = (): void => {
-    router.push({ pathname: '/xmtp/[convId]', params: { convId } });
+    router.push({ pathname: '/channel/[convId]', params: { convId } });
   };
 
   return (

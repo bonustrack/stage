@@ -5,7 +5,7 @@ import { ScrollView } from 'react-native-gesture-handler';
 import type { SimultaneousRefs } from './SwipeTabs.types';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { openDmWithAddress, shortAddress } from '../modules/messaging';
+import { shortAddress } from '../modules/messaging';
 import { useEffectiveColorScheme } from '../lib/theme';
 import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
 import { Avatar } from './Avatar';
@@ -86,18 +86,11 @@ export function ProfileScreen({ address, variant, panRef }: {
 
   usePeerProfiles([addr]);
 
-  const [openingDm, setOpeningDm] = useState(false);
   const [viewerUri, setViewerUri] = useState<string | null>(null);
 
-  const onMessage = async (): Promise<void> => {
-    if (!addr || openingDm) return;
-    setOpeningDm(true);
-    try {
-      const convId = await openDmWithAddress(addr);
-      router.replace({ pathname: '/xmtp/[convId]', params: { convId } });
-    } catch (e) {
-      console.warn('openDmWithAddress failed', (e as Error).message);
-    } finally { setOpeningDm(false); }
+  const onMessage = (): void => {
+    if (!addr) return;
+    router.replace({ pathname: '/[convId]', params: { convId: addr } });
   };
 
   const displayName = profileDisplayName(addr, getPeerName(addr), shortAddress(addr));
@@ -108,10 +101,10 @@ export function ProfileScreen({ address, variant, panRef }: {
 
       <ScrollView simultaneousHandlers={panRef} style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 32 }}>
         <ProfileIdentity
-          addr={addr} isSelf={isSelf} dark={dark} opening={openingDm} c={c}
+          addr={addr} isSelf={isSelf} dark={dark} opening={false} c={c}
           variant={variant} insetTop={insets.top} displayName={displayName}
           onAvatar={uri => { if (uri) setViewerUri(uri); }}
-          onMessage={() => { void onMessage(); }}
+          onMessage={onMessage}
           onSend={() => { router.push({ pathname: '/wallet/send', params: { to: addr } }); }}
         />
 

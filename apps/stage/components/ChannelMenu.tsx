@@ -100,7 +100,7 @@ export function ChannelMenu({
 
   const handlers: Record<string, () => void> = {
     search: () => { onClose(); setTimeout(() => onSearch?.(), 0); },
-    'add-members': () => { run(() => { router.push({ pathname: '/xmtp/add-members', params: { convId } }); }); },
+    'add-members': () => { run(() => { router.push({ pathname: '/add-members', params: { convId } }); }); },
     'toggle-read': () => { run(() => { void (isUnread ? markConvRead(convId) : markConvUnread(convId)); }); },
     'toggle-pin': () => { run(() => { void togglePin(convId); }); },
     info: () => { run(() => {

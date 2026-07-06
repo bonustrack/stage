@@ -13,8 +13,12 @@ const LINK_PREFIX =
   '(?:(?:metro|stage):\\/\\/' +
   '|https?:\\/\\/(?:metro|stage)\\.box\\/(?:#\\/)?)';
 
-const DM_PEER_RE = new RegExp(LINK_PREFIX + '(?:xmtp\\/)?user\\/(0x[a-fA-F0-9]{40})');
-const CONV_ID_RE = new RegExp(LINK_PREFIX + 'xmtp\\/(?!user\\/)([^\\s/?#]+)');
+const DM_PEER_RE = new RegExp(
+  LINK_PREFIX + '(?:xmtp\\/)?(?:user\\/)?(0x[a-fA-F0-9]{40})(?![a-fA-F0-9])',
+);
+const CONV_ID_RE = new RegExp(
+  LINK_PREFIX + '(?:xmtp\\/|channel\\/)(?!user\\/)([^\\s/?#]+)',
+);
 
 export function metroDmPeerOf(text?: string | null): string | null {
   if (!text) return null;

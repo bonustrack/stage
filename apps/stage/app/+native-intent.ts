@@ -11,6 +11,13 @@ function isLaunchUrl(path: string): boolean {
   return false;
 }
 
+function rewriteLegacyConversationPath(url: string): string {
+  return url
+    .replace(/(\/)xmtp\/user\//i, '$1')
+    .replace(/(\/)xmtp\//i, '$1channel/');
+}
+
 export function redirectSystemPath({ path }: { path: string; initial: boolean }): string {
-  return isLaunchUrl(path) ? '/' : path;
+  if (isLaunchUrl(path)) return '/';
+  return rewriteLegacyConversationPath(path);
 }

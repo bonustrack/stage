@@ -4,7 +4,7 @@ import { ChannelRow } from './ChannelRow';
 import { Box } from './layout';
 import { usePeerProfiles, getPeerName, isPeerResolved } from '../lib/peerProfiles';
 import { usePalette, useBlockRadius } from '../lib/theme';
-import { openDmWithAddress, shortAddress } from '../modules/messaging';
+import { shortAddress } from '../modules/messaging';
 
 export function DmPeerCard({ address }: { address: string }): React.ReactElement {
   usePeerProfiles([address]);
@@ -16,12 +16,7 @@ export function DmPeerCard({ address }: { address: string }): React.ReactElement
   const avatarAddress = !isPeerResolved(address) ? null : address;
 
   const open = (): void => {
-    void (async () => {
-      try {
-        const convId = await openDmWithAddress(address);
-        router.push({ pathname: '/xmtp/[convId]', params: { convId } });
-      } catch { }
-    })();
+    router.push({ pathname: '/[convId]', params: { convId: address } });
   };
 
   return (

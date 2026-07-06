@@ -24,7 +24,7 @@ function openConvFromResponse(response: Notifications.NotificationResponse | nul
   if (!response) return;
   const convId = convIdFromNotificationData(response.notification?.request?.content?.data);
   if (!convId) return;
-  router.push({ pathname: '/xmtp/[convId]', params: { convId } });
+  router.push({ pathname: '/channel/[convId]', params: { convId } });
   void markConvRead(convId).catch(() => undefined);
 }
 
