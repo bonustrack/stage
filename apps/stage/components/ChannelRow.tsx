@@ -77,6 +77,7 @@ function TitleLine({ params, scheme }: {
         <Text
           key={`${seg.text}-${i}`}
           value={seg.text}
+          size="lg"
           weight="semibold"
           truncate
           style={seg.emphasized === true ? { backgroundColor: HIGHLIGHT_BG[scheme] } : undefined}
