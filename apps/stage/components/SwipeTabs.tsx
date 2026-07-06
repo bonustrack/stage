@@ -1,6 +1,6 @@
 
 import { useEffect, useRef } from 'react';
-import { useWindowDimensions } from 'react-native';
+import { Platform, useWindowDimensions } from 'react-native';
 import { Box } from './layout';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import type { GestureType } from 'react-native-gesture-handler';
@@ -13,6 +13,8 @@ import {
   FLING_VELOCITY, PAGES, SWITCH_FRACTION, TAB_HREF, TAB_ORDER,
   indexOfPathname,
 } from './SwipeTabs.config';
+
+const IS_WEB = Platform.OS === 'web';
 
 export function TabsPager(): React.ReactElement {
   const router = useRouter();
@@ -46,7 +48,7 @@ export function TabsPager(): React.ReactElement {
 
     if (index.value !== routeIndex) {
       index.value = routeIndex;
-      tx.value = withTiming(-routeIndex * width, { duration: 220 });
+      tx.value = IS_WEB ? -routeIndex * width : withTiming(-routeIndex * width, { duration: 220 });
     } else if (widthChanged) {
       tx.value = -routeIndex * width;
     }
@@ -54,6 +56,7 @@ export function TabsPager(): React.ReactElement {
 
   const pan = Gesture.Pan()
     .withRef(panRef)
+    .enabled(!IS_WEB)
     .activeOffsetX([-10, 10])
     .failOffsetY([-14, 14])
     .onUpdate((e) => {

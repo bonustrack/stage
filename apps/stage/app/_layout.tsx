@@ -10,7 +10,8 @@ import { Onboarding } from '../components/onboarding/Onboarding';
 import { useAccountGate } from '../lib/accountGate';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
-import { TransitionPresets, TransitionSpecs } from '@react-navigation/stack';
+import { Platform } from 'react-native';
+import { CardStyleInterpolators, TransitionPresets, TransitionSpecs } from '@react-navigation/stack';
 import { NativeSwipeStack } from '../components/NativeSwipeStack';
 import { useEffectiveColorScheme, usePalette, useRadius } from '../lib/theme';
 import { KitThemeProvider } from '@stage-labs/kit/react-native/theme-context';
@@ -90,13 +91,20 @@ function RootLayoutInner(): React.ReactElement {
           headerShown: false,
           freezeOnBlur: true,
           cardStyle: { backgroundColor: bg },
-          gestureEnabled: true,
+          gestureEnabled: Platform.OS !== 'web',
           gestureResponseDistance: 9999,
-          ...TransitionPresets.SlideFromRightIOS,
-          transitionSpec: {
-            open: { animation: 'timing', config: { duration: 0 } },
-            close: TransitionSpecs.TransitionIOSSpec,
-          },
+          ...(Platform.OS === 'web'
+            ? {
+                animationEnabled: false,
+                cardStyleInterpolator: CardStyleInterpolators.forNoAnimation,
+              }
+            : {
+                ...TransitionPresets.SlideFromRightIOS,
+                transitionSpec: {
+                  open: { animation: 'timing', config: { duration: 0 } },
+                  close: TransitionSpecs.TransitionIOSSpec,
+                },
+              }),
         }}
 >
         {}
