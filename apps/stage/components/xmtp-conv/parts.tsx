@@ -17,6 +17,7 @@ import { REACT_PRESETS } from '../MessengerBubble';
 import { usePalette } from '../../lib/theme';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { useBlockRadius } from '../../lib/theme';
+import { menuPlacement, MENU_GAP, MENU_STRIP_HEIGHT } from './menuPlacement';
 
 export function GithubNavButton({ url, color }: { url: string; color: string }): React.ReactElement {
   const router = useRouter();
@@ -121,13 +122,6 @@ function ActionDropdown({ target, dark, fg, divider, cardBg, blockRadius, on }: 
   );
 }
 
-function clampedMenuTop(anchorY: number, hasText: boolean): number {
-  const actionCount = 2 + (hasText ? 2 : 0);
-  const unitH = 40 + 6 + (actionCount * 48 + 16);
-  const maxTop = Dimensions.get('window').height - 40 - unitH;
-  return Math.max(40, Math.min(anchorY, maxTop));
-}
-
 export function BubbleActionMenu({
   target, anchor, dark, onClose, onReact, onReply, onCopy, onSelect, onShareLink,
 }: {
@@ -142,8 +136,16 @@ export function BubbleActionMenu({
   useEffect(() => { if (!target) setExpanded(false); }, [target]);
 
   const pal = usePalette();
-  const stripTop = clampedMenuTop(anchor.y, !!target?.text);
+  const windowHeight = Dimensions.get('window').height;
+  const { stripTop, dropdownAbove } = menuPlacement(anchor.y, !!target?.text, windowHeight);
   const reactAndClose = (e: string): void => { onReact(e); onClose(); };
+
+  const dropdown = (
+    <ActionDropdown
+      target={target} dark={dark} fg={pal.text} divider={pal.border} cardBg={pal.bg} blockRadius={blockRadius}
+      on={{ reply: onReply, copy: onCopy, select: onSelect, shareLink: onShareLink }}
+    />
+  );
 
   return (
     <Dialog
@@ -153,13 +155,22 @@ export function BubbleActionMenu({
       backdropColor="rgba(0,0,0,0.45)"
       fullBleedPanel
     >
+      <Box
+        align="start" pointerEvents="box-none"
+        style={dropdownAbove
+          ? { position: 'absolute', left: 12, right: 12, bottom: windowHeight - stripTop + MENU_GAP }
+          : { position: 'absolute', left: 12, right: 12, top: stripTop + MENU_STRIP_HEIGHT + MENU_GAP }}
+      >
+        {dropdownAbove ? dropdown : null}
+      </Box>
       <Box align="start" style={{ position: 'absolute', left: 12, right: 12, top: stripTop }} pointerEvents="box-none">
         <ReactionStrip expanded={expanded} setExpanded={setExpanded} dark={dark} sub={pal.sub} stripBg={pal.bg} onReact={reactAndClose} />
-        <Box height={6} pointerEvents="none"/>
-        <ActionDropdown
-          target={target} dark={dark} fg={pal.text} divider={pal.border} cardBg={pal.bg} blockRadius={blockRadius}
-          on={{ reply: onReply, copy: onCopy, select: onSelect, shareLink: onShareLink }}
-        />
+        {dropdownAbove ? null : (
+          <>
+            <Box height={MENU_GAP} pointerEvents="none"/>
+            {dropdown}
+          </>
+        )}
       </Box>
     </Dialog>
   );
