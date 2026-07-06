@@ -67,6 +67,22 @@ bun --cwd apps/stage run build:web  # static web export (Netlify publishes dist/
 bun --cwd apps/proxy dev        # Cloudflare Worker (wrangler dev)
 ```
 
+## Environment
+
+`apps/stage` reads `EXPO_PUBLIC_*` vars at build time (inlined by Expo). Set these
+in the Netlify site (web) and the EAS build profiles (`eas.json`, mobile):
+
+| Var | Purpose |
+|---|---|
+| `EXPO_PUBLIC_ZERODEV_PROJECT_ID` | ZeroDev smart-account project |
+| `EXPO_PUBLIC_SWARMY_KEY` | Swarmy (`api.swarmy.cloud`) bearer key for direct attachment upload |
+
+Attachments (already client-side encrypted) upload directly to Swarmy's
+`POST /api/files` with this bearer key; the encrypted blob is read back from the
+keyless gateway (`api.swarmy.cloud/bzz/<ref>/`). Because `EXPO_PUBLIC_*` values
+are inlined into the shipped bundle, `EXPO_PUBLIC_SWARMY_KEY` is client-visible —
+scope/rate-limit it and rotate if abused.
+
 ## CI / quality gates
 
 CI runs on every push to `main` and on pull requests (`.github/workflows/ci.yml`),

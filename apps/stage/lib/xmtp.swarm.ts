@@ -1,18 +1,12 @@
 
 import { File, Paths } from 'expo-file-system';
 import { stripMetadataBytes, isStrippableImage } from '@stage-labs/client/image/stripMetadata';
+import { SWARM_UPLOAD_MAX_BYTES, tooLargeError, uploadFormToSwarmy } from './swarmy';
+
+export { swarmToHttp } from './swarmy';
 
 declare const sanitizedBrand: unique symbol;
 export type SanitizedFileUri = string & { readonly [sanitizedBrand]: true };
-
-const SWARM_UPLOAD_URL = 'https://blob.stage.box/upload';
-const SWARM_GATEWAY = 'https://api.swarmy.cloud/bzz/';
-
-export function swarmToHttp(url: string): string {
-  if (!url.startsWith('swarm://')) return url;
-  const ref = url.slice('swarm://'.length).replace(/\/+$/, '');
-  return `${SWARM_GATEWAY}${ref}/`;
-}
 
 export const EXT_MIME: Record<string, string> = {
   jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif',
@@ -72,24 +66,10 @@ function writeCleanImage(
   return toFileUri(dest.uri) as SanitizedFileUri;
 }
 
-const SWARM_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
-
 export async function uploadEncryptedToIpfs(encryptedFileUri: string, filename: string): Promise<string> {
   const blob = await (await fetch(encryptedFileUri)).blob();
-  if (blob.size > SWARM_UPLOAD_MAX_BYTES) {
-    const mb = (SWARM_UPLOAD_MAX_BYTES / (1024 * 1024)).toFixed(0);
-    throw new Error(`"${filename}" is too large to send (max ~${mb}MB). Try a smaller file.`);
-  }
-  const res = await fetch(SWARM_UPLOAD_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/octet-stream' },
-    body: blob,
-  });
-  const json = await res.json().catch(() => ({})) as { ref?: string; error?: string; status?: number };
-  if (res.status === 413 || json.status === 413) {
-    throw new Error(`"${filename}" is too large to send (server max ~1MB). Try a smaller file.`);
-  }
-  if (!res.ok || json.error) throw new Error(json.error ?? `Swarm upload failed (${res.status})`);
-  if (!json.ref) throw new Error('Swarm proxy returned no reference');
-  return `${SWARM_GATEWAY}${json.ref}/`;
+  if (blob.size > SWARM_UPLOAD_MAX_BYTES) throw tooLargeError(filename);
+  const form = new FormData();
+  form.append('file', { uri: encryptedFileUri, name: 'a.bin', type: 'application/octet-stream' } as unknown as Blob);
+  return await uploadFormToSwarmy(form, filename);
 }
