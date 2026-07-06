@@ -3,6 +3,7 @@ import { Vibration } from 'react-native';
 import type { ViewType as View } from './layout/native';
 import { Gesture } from 'react-native-gesture-handler';
 import { useGestureHandlerRef } from '@react-navigation/stack';
+import { initialMenuAnchor, type MenuAnchor } from './MessengerBubble.anchor';
 import {
   useAnimatedStyle, useSharedValue, withSpring, runOnJS, interpolate, Extrapolation,
 } from 'react-native-reanimated';
@@ -31,19 +32,22 @@ export function useBubbleGestures(input: BubbleGestureInput): BubbleGestures {
   const swipeX = useSharedValue(0);
   const crossed = useSharedValue(false);
   const rowRef = useRef<View>(null);
-  const lastAnchor = useRef<{ y: number; height: number }>({ y: 0, height: 0 });
+  const lastAnchor = useRef<MenuAnchor>({ y: 0, height: 0 });
   const navGestureRef = useGestureHandlerRef() as React.RefObject<React.ComponentType | undefined>;
 
   const fireReply = (): void => { if (!pending) onReply?.(); };
   const openMenu = (): void => {
     if (pending || !onOpenMenu) { if (!onOpenMenu) onLongPress?.(); return; }
     lightHaptic();
-    onOpenMenu(lastAnchor.current);
     const node = rowRef.current;
-    if (node) node.measureInWindow((_x, y, _w, h) => {
-      lastAnchor.current = { y, height: h };
-      onOpenMenu({ y, height: h });
-    });
+    const initial = initialMenuAnchor(lastAnchor.current, !!node);
+    if (initial) onOpenMenu(initial);
+    if (node) {
+      node.measureInWindow((_x, y, _w, h) => {
+        lastAnchor.current = { y, height: h };
+        onOpenMenu({ y, height: h });
+      });
+    }
   };
   const onDoubleTap = (): void => { if (!pending) { lightHaptic(); onReact?.('👍'); } };
 
