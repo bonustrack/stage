@@ -25,7 +25,7 @@ export function heroIconPaths(name: HeroIconName): readonly string[] {
 export const HERO_ICON_DEFAULTS = {
   viewBox: '0 0 24 24',
   strokeWidth: 1.8,
-  activeStrokeWidth: 2.4,
+  activeStrokeWidth: 1.8,
 } as const;
 
 export function iconStroke(color: string | undefined, dark: boolean | undefined): string {
@@ -33,5 +33,5 @@ export function iconStroke(color: string | undefined, dark: boolean | undefined)
 }
 
 export function iconStrokeWidth(focused: boolean | undefined): number {
-  return focused ? 2.4 : HERO_ICON_DEFAULTS.strokeWidth;
+  return focused ? HERO_ICON_DEFAULTS.activeStrokeWidth : HERO_ICON_DEFAULTS.strokeWidth;
 }
