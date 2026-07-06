@@ -1,4 +1,5 @@
 
+import { Platform, type NativeSyntheticEvent, type TextInputKeyPressEventData } from 'react-native';
 import { fontSize } from '@stage-labs/kit/tokens';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
@@ -38,6 +39,26 @@ function ComposerBtn({ icon, onPress, fg, chipBg, mr }: {
   );
 }
 
+interface WebKeyEvent {
+  key: string;
+  shiftKey: boolean;
+  preventDefault: () => void;
+  nativeEvent: { isComposing?: boolean; keyCode?: number };
+}
+
+function makeWebEnterToSend(
+  p: EditorProps,
+): ((event: NativeSyntheticEvent<TextInputKeyPressEventData>) => void) | undefined {
+  if (Platform.OS !== 'web') return undefined;
+  return (event) => {
+    const e = event as unknown as WebKeyEvent;
+    if (e.key !== 'Enter' || e.shiftKey) return;
+    if (e.nativeEvent.isComposing === true || e.nativeEvent.keyCode === 229) return;
+    e.preventDefault();
+    if (p.hasContent) p.onSend();
+  };
+}
+
 function ComposerInputSlot({ p }: { p: EditorProps }): React.ReactElement {
   const dark = useKitScheme() === 'dark';
   return (
@@ -45,6 +66,7 @@ function ComposerInputSlot({ p }: { p: EditorProps }): React.ReactElement {
       <TextField
         name="composer"
         value={p.text}
+        onKeyPress={makeWebEnterToSend(p)}
         placeholder="Message"
         variant="plain"
         multiline

@@ -3,7 +3,9 @@ import { useEffect, useRef, useState } from 'react';
 import {
   TextInput,
   type DimensionValue,
+  type NativeSyntheticEvent,
   type ReturnKeyTypeOptions,
+  type TextInputKeyPressEventData,
   type TextStyle,
 } from 'react-native';
 import {
@@ -27,6 +29,7 @@ export interface TextFieldProps {
   selection?: { start: number; end: number };
   onSelectionChange?: (range: { start: number; end: number }) => void;
   onSubmit?: () => void;
+  onKeyPress?: (event: NativeSyntheticEvent<TextInputKeyPressEventData>) => void;
   focusNonce?: number;
   blurNonce?: number;
   variant?: TextFieldVariant;
@@ -132,6 +135,7 @@ export function TextField(props: TextFieldProps): React.ReactElement {
     selection,
     onSelectionChange,
     onSubmit,
+    onKeyPress,
     focusNonce,
     blurNonce,
     placeholderColor,
@@ -176,6 +180,7 @@ export function TextField(props: TextFieldProps): React.ReactElement {
       inputMode={inputMode}
       onChangeText={onChangeText}
       onSubmitEditing={onSubmit}
+      onKeyPress={onKeyPress}
       selection={selection}
       onSelectionChange={
         onSelectionChange === undefined
