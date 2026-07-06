@@ -1,22 +1,15 @@
 
-import { View } from 'react-native';
-
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Row } from './layout';
+import { Box, Row } from './layout';
 import { REACT_PRESETS } from './MessengerBubble.helpers';
 import { usePalette } from '../lib/theme';
 
 function ReactionPill({ emoji, count, own, pillBg, ownBorderColor }: {
   emoji: string; count: number; own: boolean; pillBg: string; ownBorderColor: string;
 }): React.ReactElement {
-  // The selected-state border is drawn as an absolutely-positioned overlay so
-  // it never participates in the pill's layout. own/not-own therefore share a
-  // byte-identical box, which guarantees the emoji cannot shift when a user
-  // adds their own reaction (a native-only 1px nudge otherwise appeared when a
-  // transparent border flipped to a colored one).
   return (
     <Row
       align="center"
@@ -28,7 +21,7 @@ function ReactionPill({ emoji, count, own, pillBg, ownBorderColor }: {
       <Text value={emoji} size="xs" />
       <Caption value={String(count)} color="secondary" />
       {own ? (
-        <View
+        <Box
           pointerEvents="none"
           style={{
             position: 'absolute',
