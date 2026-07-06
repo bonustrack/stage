@@ -146,7 +146,7 @@ function ConversationRequestCard({ proposal, onAdvance }: {
   const header = headerFields(authorAddr, entry?.ts);
 
   const openChannel = useCallback(() => {
-    router.push({ pathname: '/xmtp/[convId]', params: { convId: proposal.convId } });
+    router.push({ pathname: '/channel/[convId]', params: { convId: proposal.convId } });
   }, [router, proposal.convId]);
 
   const payload = entry?.payload as { walletSendCalls?: WalletSendCallsContent; signatureRequest?: SignatureRequestContent } | undefined;
@@ -197,7 +197,7 @@ function MessageRequestCard({ request, onAdvance }: {
   const displayTitle = requestTitle(view);
 
   const openChannel = useCallback(() => {
-    router.push({ pathname: '/xmtp/[convId]', params: { convId: request.convId } });
+    router.push({ pathname: '/channel/[convId]', params: { convId: request.convId } });
   }, [router, request.convId]);
 
   const act = useCallback((accept: boolean) => {

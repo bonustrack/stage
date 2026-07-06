@@ -180,7 +180,8 @@ export function ConversationOverlays({ c, convId, dark, archived, onOpenSearch }
           setMenuFor(null);
         }}
         onShareLink={() => {
-          if (menuFor) void Share.share({ message: `https://stage.box/#/xmtp/${convId}?m=${menuFor.id}` });
+          const target = !isGroup && peerAddr ? peerAddr : `channel/${convId}`;
+          if (menuFor) void Share.share({ message: `https://stage.box/#/${target}?m=${menuFor.id}` });
           setMenuFor(null);
         }}
 />

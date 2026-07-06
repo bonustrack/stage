@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 
 import { Animated as RNAnimated } from 'react-native';
 import { Text } from '@stage-labs/kit/react-native/text';
+import { Spinner } from '../../components/Spinner';
 import { Col } from '../../components/layout';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,7 +13,7 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { ConversationFeed } from '../../components/xmtp-conv/ConversationFeed';
 import { ConversationSearch } from '../../components/xmtp-conv/ConversationSearch';
 import { useConversationState } from '../../components/xmtp-conv/useConversationState';
-import { useSearchKeyboardFocus, useArchivedFlag } from './conv.hooks';
+import { useSearchKeyboardFocus, useArchivedFlag, useResolvedConvId } from './conv.hooks';
 import {
   ConversationTopnav, ConversationFooter, ConversationOverlays, ConversationSearchTopnav,
 } from './conv.screen-parts';
@@ -22,7 +23,9 @@ export default function XmtpConversation(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head, bg, border } = usePalette();
   const sub = fg, rowBg = border;
-  const { convId, focus } = useLocalSearchParams<{ convId: string; focus?: string }>();
+  const { convId: routeParam, focus } = useLocalSearchParams<{ convId: string; focus?: string }>();
+  const resolved = useResolvedConvId(routeParam);
+  const convId = resolved.convId ?? undefined;
   const c = useConversationState(convId, focus);
   const { activeLine } = c;
 
@@ -40,10 +43,20 @@ export default function XmtpConversation(): React.ReactElement {
   const { height: kbHeightShared } = useReanimatedKeyboardAnimation();
   const listWrapperStyle = useAnimatedStyle(() => ({ marginBottom: Math.max(0, -kbHeightShared.value - insets.bottom) }));
 
+  if (resolved.resolving) {
+    return (
+      <Col surface="surface" flex={1} align="center" justify="center">
+        <Spinner size={24} color={dark ? '#ffffff' : '#000000'}/>
+      </Col>
+    );
+  }
+
   if (!convId) {
     return (
       <Col surface="surface" flex={1} align="center" justify="center">
-        <Text role="secondary">Missing conversation id.</Text>
+        <Text role="secondary">
+          {resolved.error ? 'Could not open this conversation.' : 'Missing conversation id.'}
+        </Text>
       </Col>
     );
   }

@@ -1,0 +1,118 @@
+diff --git a/build/fork/getPathFromState-forks.js b/build/fork/getPathFromState-forks.js
+index e6692ab808568f46299b5e35e3ad83ff53bb6a83..9fd1d1d335e7a9fd47a64e965439305ab19002b5 100644
+--- a/build/fork/getPathFromState-forks.js
++++ b/build/fork/getPathFromState-forks.js
+@@ -77,13 +77,29 @@ function appendQueryAndHash(path, { '#': hash, ...focusedParams }) {
+     }
+     return path;
+ }
++function wrapHashRoutingHref(path) {
++    if (typeof path !== 'string') {
++        return path;
++    }
++    if (/^[a-z][a-z0-9+.-]*:/i.test(path)) {
++        return path;
++    }
++    if (path.startsWith('/#')) {
++        return path;
++    }
++    let rest = path.startsWith('#') ? path.slice(1) : path;
++    if (!rest.startsWith('/')) {
++        rest = `/${rest}`;
++    }
++    return `/#${rest}`;
++}
+ function appendBaseUrl(path, baseUrl = process.env.EXPO_BASE_URL) {
+     if (process.env.NODE_ENV !== 'development') {
+         if (baseUrl) {
+-            return `/${baseUrl.replace(/^\/+/, '').replace(/\/$/, '')}${path}`;
++            return wrapHashRoutingHref(`/${baseUrl.replace(/^\/+/, '').replace(/\/$/, '')}${path}`);
+         }
+     }
+-    return path;
++    return wrapHashRoutingHref(path);
+ }
+ function getPathWithConventionsCollapsed({ pattern, route, params, preserveGroups, preserveDynamicRoutes, shouldEncodeURISegment = true, initialRouteName, }) {
+     const segments = pattern.split('/');
+diff --git a/build/fork/getPathFromState.js b/build/fork/getPathFromState.js
+index a20305ac945eae66aa99e7b429aa440b0e5e38d1..76dd9337d8e64da30aea7906be98862680bc7e65 100644
+--- a/build/fork/getPathFromState.js
++++ b/build/fork/getPathFromState.js
+@@ -326,12 +326,28 @@ const createNormalizedConfigs = (options, pattern) => Object.fromEntries(Object.
+     const result = createConfigItem(c, pattern);
+     return [name, result];
+ }));
++function wrapHashRoutingHref(path) {
++    if (typeof path !== 'string') {
++        return path;
++    }
++    if (/^[a-z][a-z0-9+.-]*:/i.test(path)) {
++        return path;
++    }
++    if (path.startsWith('/#')) {
++        return path;
++    }
++    let rest = path.startsWith('#') ? path.slice(1) : path;
++    if (!rest.startsWith('/')) {
++        rest = `/${rest}`;
++    }
++    return `/#${rest}`;
++}
+ function appendBaseUrl(path, baseUrl = process.env.EXPO_BASE_URL) {
+     if (process.env.NODE_ENV !== 'development') {
+         if (baseUrl) {
+-            return `/${baseUrl.replace(/^\/+/, '').replace(/\/$/, '')}${path}`;
++            return wrapHashRoutingHref(`/${baseUrl.replace(/^\/+/, '').replace(/\/$/, '')}${path}`);
+         }
+     }
+-    return path;
++    return wrapHashRoutingHref(path);
+ }
+ //# sourceMappingURL=getPathFromState.js.map
+\ No newline at end of file
+diff --git a/build/fork/getStateFromPath-forks.js b/build/fork/getStateFromPath-forks.js
+index 0d0b9a1506e82965759ab233faa4356b84788080..eb1b290ec25a9bbd1e5086edca516fe939ba49ee 100644
+--- a/build/fork/getStateFromPath-forks.js
++++ b/build/fork/getStateFromPath-forks.js
+@@ -44,7 +44,28 @@ function safelyDecodeURIComponent(str) {
+         return str;
+     }
+ }
++function unwrapHashRoutingPath(path) {
++    if (typeof path !== 'string') {
++        return path;
++    }
++    const hashIndex = path.indexOf('#');
++    if (hashIndex === -1) {
++        return path;
++    }
++    const before = path.slice(0, hashIndex);
++    const fragment = path.slice(hashIndex + 1);
++    if ((before === '' || before === '/') && fragment.startsWith('/')) {
++        return rewriteLegacyConversationSegment(fragment);
++    }
++    return path;
++}
++function rewriteLegacyConversationSegment(path) {
++    return path
++        .replace(/(\/)xmtp\/user\//i, '$1')
++        .replace(/(\/)xmtp\//i, '$1channel/');
++}
+ function getUrlWithReactNavigationConcessions(path, baseUrl = process.env.EXPO_BASE_URL) {
++    path = unwrapHashRoutingPath(path);
+     const pathWithoutGroups = (0, matchers_1.stripGroupSegmentsFromPath)(stripBaseUrl(path, baseUrl));
+     let pathname = '';
+     let hash = '';
+diff --git a/build/fork/useLinking.js b/build/fork/useLinking.js
+index f3d3b0c485d58e5d910c95233b8da340bd43f9b4..54bc1d4d52aa64c1a126bc755f8c12fed4050796 100644
+--- a/build/fork/useLinking.js
++++ b/build/fork/useLinking.js
+@@ -153,7 +153,7 @@ function useLinking(ref, { enabled = true, config, getStateFromPath = native_1.g
+         let value;
+         if (enabledRef.current) {
+             const location = server?.location ?? (typeof window !== 'undefined' ? window.location : undefined);
+-            const path = location ? location.pathname + location.search : undefined;
++            const path = location ? location.pathname + location.search + (location.hash || '') : undefined;
+             if (path) {
+                 value = getStateFromPathRef.current(path, configRef.current);
+             }

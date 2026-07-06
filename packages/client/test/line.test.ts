@@ -26,6 +26,18 @@ describe('metroConvIdOf', () => {
     expect(metroConvIdOf(`https://stage.box/xmtp/user/${ADDR}`)).toBeNull();
   });
 
+  test('matches the channel/ (no xmtp segment) conv form', () => {
+    expect(metroConvIdOf(`stage://channel/${CONV}`)).toBe(CONV);
+    expect(metroConvIdOf(`metro://channel/${CONV}`)).toBe(CONV);
+    expect(metroConvIdOf(`https://stage.box/channel/${CONV}`)).toBe(CONV);
+    expect(metroConvIdOf(`https://stage.box/#/channel/${CONV}?m=1`)).toBe(CONV);
+  });
+
+  test('does NOT read a bare address as a conv id', () => {
+    expect(metroConvIdOf(`stage://${ADDR}`)).toBeNull();
+    expect(metroConvIdOf(`https://stage.box/#/${ADDR}`)).toBeNull();
+  });
+
   test('null for non-links', () => {
     expect(metroConvIdOf('just text')).toBeNull();
     expect(metroConvIdOf(null)).toBeNull();
@@ -42,6 +54,13 @@ describe('metroDmPeerOf', () => {
     expect(metroDmPeerOf(`https://metro.box/xmtp/user/${ADDR}`)).toBe(ADDR);
     expect(metroDmPeerOf(`https://stage.box/user/${ADDR}`)).toBe(ADDR);
     expect(metroDmPeerOf(`https://metro.box/#/user/${ADDR}`)).toBe(ADDR);
+  });
+
+  test('matches the bare (no xmtp, no user segment) address form', () => {
+    expect(metroDmPeerOf(`stage://${ADDR}`)).toBe(ADDR);
+    expect(metroDmPeerOf(`metro://${ADDR}`)).toBe(ADDR);
+    expect(metroDmPeerOf(`https://stage.box/${ADDR}`)).toBe(ADDR);
+    expect(metroDmPeerOf(`https://stage.box/#/${ADDR}?m=1`)).toBe(ADDR);
   });
 
   test('matches a link embedded mid-text', () => {

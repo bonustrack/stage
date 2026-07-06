@@ -12,6 +12,7 @@ import {
 } from '../../modules/messaging';
 import type { ConversationRequestView } from '../../modules/messaging';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { conversationLinkOf } from '../../lib/conversationLink';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { ChannelRow } from '../../components/ChannelRow';
@@ -60,7 +61,7 @@ export default function Requests(): React.ReactElement {
             square={item.isGroup}
             lastPreview={item.preview || '(no messages yet)'}
             onPressIn={() => { prefetchFeed(lineOfConv(item.convId)); }}
-            onPress={() => { router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } }); }}
+            onPress={() => { router.push(conversationLinkOf(item.convId, item.peerAddress)); }}
 />
         </Col>
         <Row gap={8} style={{ flexShrink: 0 }}>

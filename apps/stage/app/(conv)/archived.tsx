@@ -5,6 +5,7 @@ import { FlatList } from 'react-native-gesture-handler';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getCachedRows, subscribeCachedRows } from '../../modules/messaging';
+import { conversationLinkOf } from '../../lib/conversationLink';
 import type { Row as RowT } from '../../components/tabs/HomeScreen.helpers';
 import { loadArchivedIds, subscribeArchived } from '../../lib/archived';
 import { shortAddress } from '../../modules/messaging';
@@ -43,7 +44,7 @@ export default function Archived(): React.ReactElement {
         avatarUri={item.avatarUri}
         square={!item.peerAddress}
         lastPreview={item.lastPreview || preview || '(no messages yet)'}
-        onPress={() => { router.push({ pathname: '/xmtp/[convId]', params: { convId: item.convId } }); }}
+        onPress={() => { router.push(conversationLinkOf(item.convId, item.peerAddress)); }}
 />
     );
   }, [router]);

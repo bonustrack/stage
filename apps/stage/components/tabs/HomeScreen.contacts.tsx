@@ -9,7 +9,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { Box, Row, Col } from '../layout';
 import { EmptyState } from '../chrome/EmptyState';
-import { openDmWithAddress, shortAddress } from '../../modules/messaging';
+import { shortAddress } from '../../modules/messaging';
 import { resolveEnsName } from '@stage-labs/client/api/ens';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { getCachedRows } from '../../modules/messaging';
@@ -61,7 +61,6 @@ export function HomeContactResults(
   const q = query.trim();
   const dark = useKitScheme() === 'dark';
   const [resolved, setResolved] = useState<{ address: string; source: 'address' | 'ens' } | null>(null);
-  const [opening, setOpening] = useState<string | null>(null);
 
   const existing = useMemo(() => getExistingPeers(), []);
   usePeerProfiles([resolved?.address, ...existing.map(p => p.address)]);
@@ -95,16 +94,10 @@ export function HomeContactResults(
   }, [existing, q]);
 
   const open = (address: string, convId?: string): void => {
-    if (opening) return;
-    const key = address.toLowerCase();
-    setOpening(key);
-    void (async (): Promise<void> => {
-      try {
-        const { router } = await import('expo-router');
-        const id = convId ?? await openDmWithAddress(address);
-        router.push({ pathname: '/xmtp/[convId]', params: { convId: id } });
-      } catch { } finally { setOpening(null); }
-    })();
+    const target = isAddress(address) ? address : (convId ?? address);
+    void import('expo-router').then(({ router }) => {
+      router.push({ pathname: '/[convId]', params: { convId: target } });
+    });
   };
 
   const showResolved = resolved && !filtered.some(p => p.address.toLowerCase() === resolved.address);

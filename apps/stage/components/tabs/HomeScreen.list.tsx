@@ -58,7 +58,7 @@ function HomeTopnavRight({ head, requestCount, router, onOpenSearch }: {
       <Pressable onPress={onOpenSearch} hitSlop={8}>
         <Icon name="search" size={24} color={head}/>
       </Pressable>
-      <Pressable onPress={() => { router.push('/xmtp/requests'); }} hitSlop={8} style={{ position: 'relative' }}>
+      <Pressable onPress={() => { router.push('/requests'); }} hitSlop={8} style={{ position: 'relative' }}>
         <Icon name="inbox" size={24} color={head}/>
         {requestCount > 0 ? (
           <Box minWidth={16} height={16} padding={{ x: 5 }} radius="full" background={badgeBg}
@@ -69,8 +69,8 @@ function HomeTopnavRight({ head, requestCount, router, onOpenSearch }: {
       </Pressable>
       <HomeOverflowMenu
         color={head}
-        onArchived={() => { router.push('/xmtp/archived'); }}
-        onNewGroup={() => { router.push('/xmtp/new-group'); }}
+        onArchived={() => { router.push('/archived'); }}
+        onNewGroup={() => { router.push('/new-group'); }}
         onProfile={() => {
           void getActiveAccount().then(acct => {
             if (acct?.address) router.push(`/user/${acct.address}`);

@@ -165,13 +165,13 @@ class MetroFcmService : FirebaseMessagingService() {
    *  WHY ACTION_VIEW (not a launch intent + extra): this notification is posted
    *  NATIVELY, so expo-notifications' JS response listener never fires on tap —
    *  the app's `usePushDeepLinks` never sees it. Instead we fire an
-   *  `ACTION_VIEW metro://xmtp/<convId>` at the app's own scheme. expo-router +
-   *  expo-linking auto-route that URL (path-based) to `app/xmtp/[convId].tsx` on
+   *  `ACTION_VIEW metro://<convId>` at the app's own scheme. expo-router +
+   *  expo-linking auto-route that URL (path-based) to `app/(conv)/[convId].tsx` on
    *  BOTH cold start (getInitialURL) and warm tap (the `url` Linking event) with
    *  no JS change needed. The app's MainActivity already declares the `metro`
    *  scheme intent-filter (expo injects it from app.json `"scheme": "metro"`).
    *
-   *  We deep-link the BARE convId (`metro://xmtp/<convId>`), not the raw `line`
+   *  We deep-link the BARE convId (`metro://<convId>`), not the raw `line`
    *  (which may be account-scoped `metro://xmtp/<acct>/<convId>` — 3 segments
    *  expo-router can't map to the single-segment `[convId]` route). `convIdOfLine`
    *  takes the last path segment, matching what the conversation screen expects.
@@ -184,7 +184,7 @@ class MetroFcmService : FirebaseMessagingService() {
       val launch = packageManager.getLaunchIntentForPackage(packageName) ?: return null
       return PendingIntent.getActivity(this, 0, launch, flags)
     }
-    val view = Intent(Intent.ACTION_VIEW, Uri.parse("metro://xmtp/$convId")).apply {
+    val view = Intent(Intent.ACTION_VIEW, Uri.parse("metro://$convId")).apply {
       setPackage(packageName)
       addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
     }
