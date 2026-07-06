@@ -2,17 +2,14 @@
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 
 import { Caption } from '@stage-labs/kit/react-native/caption';
-import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
-import { Row } from './layout';
+import { Box, Row } from './layout';
 import { REACT_PRESETS } from './MessengerBubble.helpers';
 import { usePalette } from '../lib/theme';
 
 function ReactionPill({ emoji, count, own, pillBg, ownBorderColor }: {
   emoji: string; count: number; own: boolean; pillBg: string; ownBorderColor: string;
 }): React.ReactElement {
-  const side = { width: 1, color: ownBorderColor };
   return (
     <Row
       align="center"
@@ -20,10 +17,24 @@ function ReactionPill({ emoji, count, own, pillBg, ownBorderColor }: {
       padding={{ x: 8, y: 2 }}
       radius="full"
       background={pillBg}
-      border={own ? { top: side, right: side, bottom: side, left: side } : undefined}
     >
       <Text value={emoji} size="xs" />
       <Caption value={String(count)} color="secondary" />
+      {own ? (
+        <Box
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            top: -1,
+            left: -1,
+            right: -1,
+            bottom: -1,
+            borderWidth: 1,
+            borderColor: ownBorderColor,
+            borderRadius: 9999,
+          }}
+        />
+      ) : null}
     </Row>
   );
 }
@@ -39,7 +50,6 @@ export function ReactionsRow({
   onReact?: (emoji: string) => void;
 }): React.ReactElement | null {
   const { link } = usePalette();
-  const dark = useKitScheme() === 'dark';
   const pendingEmojis = (pendingReactions ?? []).filter(e => !reactions?.has(e));
   const removed = new Set(pendingRemovals ?? []);
   const confirmedEntries = reactions
@@ -65,9 +75,9 @@ export function ReactionsRow({
             );
             if (!onReact) return pill;
             return (
-              <ListViewItem key={emoji} dark={dark} onPress={() => { onReact(emoji); }}>
+              <Pressable key={emoji} onPress={() => { onReact(emoji); }}>
                 {pill}
-              </ListViewItem>
+              </Pressable>
             );
           })}
         </Row>
