@@ -72,6 +72,10 @@ jobs:
       # smart wallet is configured (empty until the repo secret is set — the
       # bundle still publishes, wallet setup just stays unconfigured).
       EXPO_PUBLIC_ZERODEV_PROJECT_ID: ${{ secrets.EXPO_PUBLIC_ZERODEV_PROJECT_ID }}
+      # Public Swarmy API key, inlined into the OTA bundle so the preview can do
+      # direct image upload to api.swarmy.cloud (empty until the repo secret is
+      # set — the bundle still publishes, upload just stays unconfigured).
+      EXPO_PUBLIC_SWARMY_KEY: ${{ secrets.EXPO_PUBLIC_SWARMY_KEY }}
       # Kill Expo/EAS telemetry network round-trips (saves a few seconds + avoids
       # flakey analytics calls).
       EXPO_NO_TELEMETRY: '1'
