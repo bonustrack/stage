@@ -10,7 +10,6 @@ function envString(name: string): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
-// Uploads authenticate with EXPO_PUBLIC_SWARMY_KEY (inlined at web build time).
 const SWARMY_UPLOAD_URL = 'https://api.swarmy.cloud/api/files';
 const SWARMY_UPLOAD_TIMEOUT_MS = 60_000;
 
