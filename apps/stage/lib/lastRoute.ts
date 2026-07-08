@@ -3,6 +3,7 @@
 import * as Linking from 'expo-linking';
 import { router, usePathname, useRootNavigationState } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 import { appStorage } from '../platform/storage';
 
 const STORAGE_KEY = 'metro:lastRoute:v1';
@@ -61,7 +62,7 @@ export function useRestoreGate(): RestoreGate {
         if (saved) void appStorage.delete(STORAGE_KEY).catch(() => undefined);
         const deepLink = hasColdStartDeepLink(initialUrl);
         const restorable = !!saved && isRestorable(saved);
-        const willRestore = !!saved && restorable && !deepLink;
+        const willRestore = Platform.OS !== 'web' && !!saved && restorable && !deepLink;
         if (willRestore) {
           processSavedRoute = saved;
           restoredTarget = saved;
