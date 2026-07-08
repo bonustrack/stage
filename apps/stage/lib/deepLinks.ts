@@ -1,5 +1,6 @@
 import * as Linking from 'expo-linking';
 import { useEffect } from 'react';
+import { Platform } from 'react-native';
 import { router } from 'expo-router';
 import { routeForUrl, shouldHandleDeepLink } from '@stage-labs/client/routing/deepLinks';
 
@@ -12,6 +13,8 @@ function navigateToUrl(url: string): boolean {
 
 export function useDeepLinks(): void {
   useEffect(() => {
+    if (Platform.OS === 'web') return;
+
     let cancelled = false;
 
     void Linking.getInitialURL().then(url => {
