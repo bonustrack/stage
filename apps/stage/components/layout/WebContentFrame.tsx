@@ -2,7 +2,7 @@
 import { Platform } from 'react-native';
 import { Col } from './Box';
 
-const WEB_CONTENT_MAX_WIDTH = 900;
+export const WEB_CONTENT_MAX_WIDTH = 900;
 
 export function WebContentFrame({ children }: { children: React.ReactNode }): React.ReactElement {
   if (Platform.OS !== 'web') return <>{children}</>;

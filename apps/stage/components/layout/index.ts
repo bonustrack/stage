@@ -1,2 +1,2 @@
 export { Box, Row, Col } from './Box';
-export { WebContentFrame } from './WebContentFrame';
+export { WebContentFrame, WEB_CONTENT_MAX_WIDTH } from './WebContentFrame';
