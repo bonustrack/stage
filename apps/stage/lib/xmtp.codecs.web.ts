@@ -18,7 +18,6 @@ export const XMTP_CODECS = [
   WALLET_SEND_CALLS_CODEC,
   SIGNATURE_REQUEST_CODEC,
   SIGNATURE_REFERENCE_CODEC,
-  TRANSACTION_REFERENCE_CODEC,
 ];
 
 function signerForAccount(account: PrivateKeyAccount): Signer {
