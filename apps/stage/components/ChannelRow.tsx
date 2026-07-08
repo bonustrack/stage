@@ -94,7 +94,7 @@ function LabelChips({ params, scheme, onLabelPress }: {
   if (chips === undefined || chips.length === 0) return null;
   const pressable = params.labelPressable === true && onLabelPress !== undefined;
   return (
-    <Row gap={4} wrap>
+    <Row gap={4}>
       {chips.map((chip, i) => {
         const styled = resolveBadgeStyle(chip.color ?? 'secondary', undefined, 'sm', scheme);
         const badge = (
@@ -151,11 +151,11 @@ function ChannelRowBody({ params, onLabelPress }: {
     <Row align="center" gap={12} flex={1}>
       <Col gap={2} flex={1}>
         <TitleLine params={params} scheme={scheme} />
-        <Row align="center" gap={4}>
-          {hasPrefix ? <Caption value={params.previewPrefix ?? ''} color="info" weight="semibold" /> : null}
-          <Caption value={params.preview} color="secondary" truncate maxLines={1} />
+        <Row align="center" gap={6}>
+          <LabelChips params={params} scheme={scheme} onLabelPress={onLabelPress} />
+          {hasPrefix ? <Text value={params.previewPrefix ?? ''} size="sm" color="info" weight="semibold" /> : null}
+          <Text value={params.preview} size="sm" role="secondary" truncate maxLines={1} style={{ flexShrink: 1 }} />
         </Row>
-        <LabelChips params={params} scheme={scheme} onLabelPress={onLabelPress} />
       </Col>
       <MetaColumn params={params} scheme={scheme} />
     </Row>
