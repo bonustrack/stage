@@ -91,7 +91,7 @@ export function ConversationFeed({
       onContentSizeChange={(_w, h) => { restoreFeedScroll(c, h); }}
       onScrollToIndexFailed={() => undefined}
       renderItem={renderItem}
-      ListEmptyComponent={status !== 'open' ? spinner : !hasMore ? intro : spinner}
+      ListEmptyComponent={status !== 'open' || hasMore ? spinner : null}
       ListFooterComponent={
         <>
           {loadingOlder ? <Box padding={{ y: 16 }} align="center"><Spinner size={20} color={sub} /></Box> : null}
