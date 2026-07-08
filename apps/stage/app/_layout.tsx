@@ -4,7 +4,7 @@ import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { useEffect } from 'react';
 import { Text, TextInput } from '../components/layout/native';
-import { Col } from '../components/layout';
+import { Col, WebContentFrame } from '../components/layout';
 import { Spinner } from '../components/Spinner';
 import { Onboarding } from '../components/onboarding/Onboarding';
 import { useAccountGate } from '../lib/accountGate';
@@ -85,6 +85,7 @@ function RootLayoutInner(): React.ReactElement {
       <KeyboardProvider>
       <StatusBar style={barStyle} translucent backgroundColor="transparent"/>
       {}
+      <WebContentFrame>
       <NativeSwipeStack
         detachInactiveScreens
         screenOptions={{
@@ -113,6 +114,7 @@ function RootLayoutInner(): React.ReactElement {
           options={{ animationEnabled: false, gestureEnabled: false }}
 />
       </NativeSwipeStack>
+      </WebContentFrame>
       {}
       {!gatesOpen ? (
         <Col
