@@ -69,7 +69,7 @@ function FeedBubbleItemBase({
   setReplyTarget, setMenuAnchor, setMenuFor, onAnswer,
 }: FeedBubbleItemProps): React.ReactElement {
   return (
-    <BubbleErrorBoundary sub={sub}>
+    <BubbleErrorBoundary sub={sub} entry={item}>
       <MessengerBubble
         entry={item}
         dark={dark}
