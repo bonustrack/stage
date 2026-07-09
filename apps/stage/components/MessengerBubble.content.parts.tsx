@@ -1,3 +1,4 @@
+import { Component } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import Markdown from 'react-native-markdown-display';
@@ -43,6 +44,29 @@ export function BubbleAttachments({ atts, entryId, fg, dark }: {
   );
 }
 
+interface SafeMarkdownProps { body: string; fg: string; markdownProps: MarkdownProps }
+interface SafeMarkdownState { failed: boolean }
+
+class SafeMarkdown extends Component<SafeMarkdownProps, SafeMarkdownState> {
+  override state: SafeMarkdownState = { failed: false };
+
+  static getDerivedStateFromError(): SafeMarkdownState {
+    return { failed: true };
+  }
+
+  override componentDidUpdate(prev: SafeMarkdownProps): void {
+    if (prev.body !== this.props.body && this.state.failed) this.setState({ failed: false });
+  }
+
+  override render(): React.ReactNode {
+    const { body, fg, markdownProps } = this.props;
+    if (this.state.failed) {
+      return <Text size="3xl" selectable color={fg} style={{ lineHeight: 23 }}>{body}</Text>;
+    }
+    return <Markdown {...markdownProps}>{body}</Markdown>;
+  }
+}
+
 function BubbleBodyText({ body, fg, dark, selectable, highlight, markdownProps }: {
   body: string; fg: string; dark: boolean; selectable?: boolean;
   highlight?: string; markdownProps: MarkdownProps;
@@ -50,7 +74,7 @@ function BubbleBodyText({ body, fg, dark, selectable, highlight, markdownProps }
   if (highlight?.trim()) return <HighlightText text={body} query={highlight} fg={fg} />;
   if (selectable) return <Text size="3xl" selectable color={fg} style={{ lineHeight: 23 }}>{body}</Text>;
   if (hasMention(body)) return <MentionBody text={body} fg={fg} dark={dark} />;
-  return <Markdown {...markdownProps}>{body}</Markdown>;
+  return <SafeMarkdown body={body} fg={fg} markdownProps={markdownProps} />;
 }
 
 export function BubbleBody({ text, fg, dark, selectable, highlight, markdownProps }: {

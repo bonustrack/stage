@@ -77,6 +77,7 @@ function TitleLine({ params, scheme }: {
         <Text
           key={`${seg.text}-${i}`}
           value={seg.text}
+          size="2xl"
           weight="semibold"
           truncate
           style={seg.emphasized === true ? { backgroundColor: HIGHLIGHT_BG[scheme] } : undefined}
@@ -86,26 +87,23 @@ function TitleLine({ params, scheme }: {
   );
 }
 
-function LabelChips({ params, scheme, onLabelPress }: {
-  params: ChannelRowParams; scheme: Scheme; onLabelPress?: (label: string) => void;
+function LabelChips({ params, scheme, fg, onLabelPress }: {
+  params: ChannelRowParams; scheme: Scheme; fg: string; onLabelPress?: (label: string) => void;
 }): React.ReactElement | null {
   const chips = params.chips;
   if (chips === undefined || chips.length === 0) return null;
   const pressable = params.labelPressable === true && onLabelPress !== undefined;
   return (
-    <Row gap={4} wrap>
+    <Row gap={6}>
       {chips.map((chip, i) => {
-        const styled = resolveBadgeStyle(chip.color ?? 'secondary', undefined, 'sm', scheme);
         const badge = (
           <Box
             key={`${chip.label}-${i}`}
-            direction="row"
-            align="center"
+            radius="full"
+            surface="raised"
             padding={{ x: 8, y: 2 }}
-            radius="sm"
-            background={styled.background}
           >
-            <Text value={chip.label} size={styled.fontToken} weight="semibold" color={styled.foreground} />
+            <Text value={chip.label} size="md" color={fg} />
           </Box>
         );
         if (!pressable) return badge;
@@ -145,16 +143,17 @@ function ChannelRowBody({ params, onLabelPress }: {
   params: ChannelRowParams; onLabelPress?: (label: string) => void;
 }): React.ReactElement {
   const scheme = useKitScheme();
+  const { text: fg } = usePalette();
   const hasPrefix = params.previewPrefix !== undefined && params.previewPrefix !== '';
   return (
     <Row align="center" gap={12} flex={1}>
       <Col gap={2} flex={1}>
         <TitleLine params={params} scheme={scheme} />
-        <Row align="center" gap={4}>
-          {hasPrefix ? <Caption value={params.previewPrefix ?? ''} color="info" weight="semibold" /> : null}
-          <Caption value={params.preview} color="secondary" truncate maxLines={1} />
+        <Row align="center" gap={6}>
+          <LabelChips params={params} scheme={scheme} fg={fg} onLabelPress={onLabelPress} />
+          {hasPrefix ? <Text value={params.previewPrefix ?? ''} size="sm" color="info" weight="semibold" /> : null}
+          <Text value={params.preview} size="sm" role="secondary" truncate maxLines={1} style={{ flexShrink: 1 }} />
         </Row>
-        <LabelChips params={params} scheme={scheme} onLabelPress={onLabelPress} />
       </Col>
       <MetaColumn params={params} scheme={scheme} />
     </Row>

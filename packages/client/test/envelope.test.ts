@@ -89,4 +89,36 @@ describe('envelopeFromContent ui-parity options', () => {
     const e = envelopeFromContent(base, 'group_updated', { initiatedByInboxId: 'x', addedInboxes: [], removedInboxes: [], metadataFieldChanges: [] }, undefined, uiOptions);
     expect(e.payload).toEqual({ contentType: 'group_updated', system: true });
   });
+
+  test('reply whose inner content fails to decode falls back instead of throwing', () => {
+    const throwing: EnvelopeOptions = {
+      ...uiOptions,
+      replyTextOf: () => { throw new Error('undecodable inner content'); },
+    };
+    let e: HistoryEntry | undefined;
+    expect(() => { e = envelopeFromContent(base, 'reply', { referenceId: 'r9' }, 'inner fallback', throwing); }).not.toThrow();
+    expect(e?.text).toBe('inner fallback');
+    expect(e?.replyTo).toBe('r9');
+  });
+
+  test('reply with a throwing reference resolver still yields an entry', () => {
+    const throwing: EnvelopeOptions = {
+      ...uiOptions,
+      replyReferenceOf: () => { throw new Error('bad reference'); },
+    };
+    const e = envelopeFromContent(base, 'reply', { content: 'kept text' }, undefined, throwing);
+    expect(e.text).toBe('kept text');
+    expect(e.replyTo).toBe('');
+  });
+
+  test('a handler that throws mid-build degrades to fallback text, not a crash', () => {
+    const throwing: EnvelopeOptions = {
+      ...uiOptions,
+      replyReferenceOf: () => { throw new Error('boom'); },
+      replyTextOf: () => { throw new Error('boom'); },
+    };
+    let e: HistoryEntry | undefined;
+    expect(() => { e = envelopeFromContent(base, 'reply', { anything: true }, 'xmtp fallback', throwing); }).not.toThrow();
+    expect(e?.text).toBe('xmtp fallback');
+  });
 });

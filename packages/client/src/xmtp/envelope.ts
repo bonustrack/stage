@@ -90,11 +90,18 @@ function reactionEnvelope(base: HistoryEntry, typeId: string, decoded: unknown, 
   };
 }
 
-function replyEnvelope(base: HistoryEntry, typeId: string, decoded: unknown, opts: EnvelopeOptions): HistoryEntry {
-  const reference = opts.replyReferenceOf(decoded);
+function safe<T>(fn: () => T): T | undefined {
+  try { return fn(); } catch { return undefined; }
+}
+
+function replyEnvelope(
+  base: HistoryEntry, typeId: string, decoded: unknown, opts: EnvelopeOptions, fallback?: string,
+): HistoryEntry {
+  const reference = safe(() => opts.replyReferenceOf(decoded)) ?? '';
+  const text = safe(() => opts.replyTextOf(decoded)) ?? fallback ?? '[reply]';
   return {
     ...base,
-    text: opts.replyTextOf(decoded) ?? '[reply]',
+    text,
     replyTo: reference,
     payload: { contentType: typeId, replyTo: reference },
   };
@@ -145,7 +152,9 @@ function multiRemoteEnvelope(base: HistoryEntry, typeId: string, decoded: unknow
   return { ...base, text: summary, payload: { contentType: typeId, attachments } };
 }
 
-type Handler = (base: HistoryEntry, typeId: string, decoded: unknown, opts: EnvelopeOptions) => HistoryEntry;
+type Handler = (
+  base: HistoryEntry, typeId: string, decoded: unknown, opts: EnvelopeOptions, fallback?: string,
+) => HistoryEntry;
 
 const ENVELOPE_HANDLERS: Record<string, Handler> = {
   reaction: reactionEnvelope,
@@ -187,6 +196,24 @@ function isGroupUpdate(typeId: string): boolean {
   return typeId === 'group_updated' || typeId === 'groupUpdated';
 }
 
+function handledEnvelope(
+  base: HistoryEntry, typeId: string, decoded: unknown, fallback: string | undefined, options: EnvelopeOptions,
+): HistoryEntry | undefined {
+  const objectOk = !options.requireObjectForHandlers || (decoded !== null && typeof decoded === 'object');
+  if (objectOk && options.handlers.has(typeId)) {
+    const handler = ENVELOPE_HANDLERS[typeId];
+    const built = handler ? safe(() => handler(base, typeId, decoded, options, fallback)) : undefined;
+    if (built) return built;
+  }
+  if (isGroupUpdate(typeId)) {
+    return safe(() => ({
+      ...base, text: humanizeGroupUpdated(decoded as GroupUpdatedContent),
+      payload: { contentType: typeId, system: true } as const,
+    }));
+  }
+  return undefined;
+}
+
 export function envelopeFromContent(
   base: HistoryEntry,
   typeId: string,
@@ -197,18 +224,8 @@ export function envelopeFromContent(
   if (typeof decoded === 'string') {
     return { ...base, text: decoded, payload: { contentType: typeId } };
   }
-  const objectOk = !options.requireObjectForHandlers || (decoded !== null && typeof decoded === 'object');
-  if (objectOk && options.handlers.has(typeId)) {
-    const handler = ENVELOPE_HANDLERS[typeId];
-    if (handler) return handler(base, typeId, decoded, options);
-  }
-  if (isGroupUpdate(typeId)) {
-    return {
-      ...base, text: humanizeGroupUpdated(decoded as GroupUpdatedContent),
-      payload: { contentType: typeId, system: true },
-    };
-  }
-  return { ...base, text: fallback ?? `[${typeId} payload]`, payload: { contentType: typeId } };
+  return handledEnvelope(base, typeId, decoded, fallback, options)
+    ?? { ...base, text: fallback ?? `[${typeId} payload]`, payload: { contentType: typeId } };
 }
 
 export function mapDecodedToEnvelope(msg: DecodedMessageView, line: string): HistoryEntry {
