@@ -168,7 +168,7 @@ function useActiveAddress(): string | null {
 export function HomeEmpty({ onStartConversation }: { onStartConversation: () => void }): React.ReactElement {
   const address = useActiveAddress();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { bg, text } = usePalette();
+  const { bg, text, primary } = usePalette();
   const model = homeEmptyActionModel(address);
   const copyAddress = (): void => {
     if (!address) return;
@@ -177,30 +177,34 @@ export function HomeEmpty({ onStartConversation }: { onStartConversation: () => 
   };
 
   return (
-    <Col flex={1} minHeight={420} align="center" justify="center" gap={14} padding={24}>
-      <Text value={model.title} weight="semibold" textAlign="center" />
-      <Text value={model.body} size="sm" role="secondary" textAlign="center" />
-      <Button
-        dark={dark}
-        size="lg"
-        label={model.startLabel}
-        onPress={onStartConversation}
-        iconStart={<Icon name="plus" size={18} color={bg} />}
-        style={{ alignSelf: 'center' }}
-      />
-      {model.addressLabel ? (
+    <Col flex={1} align="center" justify="center" padding={24}>
+      <Col width="100%" maxWidth={320} align="center" gap={14}>
+        <Text value={model.title} weight="semibold" size="lg" textAlign="center" />
+        <Text value={model.body} size="sm" role="secondary" textAlign="center" />
         <Button
           dark={dark}
-          color="secondary"
-          variant="soft"
-          size="md"
-          label={model.addressLabel}
-          onPress={copyAddress}
-          iconStart={<Icon name="copy" size={18} color={text} />}
-          iconEnd={<Text value={model.addressHint} size="xs" weight="semibold" role="secondary" />}
-          style={{ alignSelf: 'center' }}
+          size="lg"
+          fullWidth
+          tintBg={primary}
+          tintFg={bg}
+          label={model.startLabel}
+          onPress={onStartConversation}
+          iconStart={<Icon name="plus" size={18} color={bg} />}
         />
-      ) : null}
+        {model.addressLabel ? (
+          <Button
+            dark={dark}
+            color="secondary"
+            variant="soft"
+            size="md"
+            fullWidth
+            label={model.addressLabel}
+            onPress={copyAddress}
+            iconStart={<Icon name="copy" size={18} color={text} />}
+            iconEnd={<Text value={model.addressHint} size="xs" weight="semibold" role="secondary" />}
+          />
+        ) : null}
+      </Col>
     </Col>
   );
 }
