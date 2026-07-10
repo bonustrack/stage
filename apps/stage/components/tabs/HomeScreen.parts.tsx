@@ -168,7 +168,7 @@ function useActiveAddress(): string | null {
 export function HomeEmpty({ onStartConversation }: { onStartConversation: () => void }): React.ReactElement {
   const address = useActiveAddress();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { bg, head, sub } = usePalette();
+  const { bg, text } = usePalette();
   const model = homeEmptyActionModel(address);
   const copyAddress = (): void => {
     if (!address) return;
@@ -186,6 +186,7 @@ export function HomeEmpty({ onStartConversation }: { onStartConversation: () => 
         label={model.startLabel}
         onPress={onStartConversation}
         iconStart={<Icon name="plus" size={18} color={bg} />}
+        style={{ alignSelf: 'center' }}
       />
       {model.addressLabel ? (
         <Button
@@ -195,8 +196,9 @@ export function HomeEmpty({ onStartConversation }: { onStartConversation: () => 
           size="md"
           label={model.addressLabel}
           onPress={copyAddress}
-          iconStart={<Icon name="copy" size={18} color={head} />}
-          iconEnd={<Text value={model.addressHint} size="xs" weight="semibold" color={sub} />}
+          iconStart={<Icon name="copy" size={18} color={text} />}
+          iconEnd={<Text value={model.addressHint} size="xs" weight="semibold" role="secondary" />}
+          style={{ alignSelf: 'center' }}
         />
       ) : null}
     </Col>
