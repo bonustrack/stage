@@ -120,6 +120,7 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
   const openSearch = (): void => { setSearchOpen(true); };
   const closeSearch = (): void => { setSearchOpen(false); setQuery(''); };
   useHomeTopnav(props, searchOpen, openSearch, closeSearch);
+  const empty = sortedRows.length === 0 && !query.trim();
 
   return (
     <>
@@ -148,9 +149,9 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
         initialNumToRender={10}
         maxToRenderPerBatch={10}
         removeClippedSubviews
-        contentContainerStyle={{ paddingBottom: 24 }}
+        contentContainerStyle={{ paddingBottom: 24, flexGrow: empty ? 1 : undefined }}
         ListHeaderComponent={<ChannelsListHeader p={props} />}
-        ListEmptyComponent={query.trim() ? null : <HomeEmpty />}
+        ListEmptyComponent={query.trim() ? null : <HomeEmpty onStartConversation={openSearch} />}
         ListFooterComponent={
           query.trim()
             ? <HomeContactResults query={query} c={{ fg, head, sub, border }} noChannels={sortedRows.length === 0}/>

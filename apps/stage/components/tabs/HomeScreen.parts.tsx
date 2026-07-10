@@ -1,22 +1,28 @@
 
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 
 import { DevSettings, Vibration } from 'react-native';
+import { Button } from '@stage-labs/kit/react-native/button';
+import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Col } from '../layout';
-import { EmptyState } from '../chrome/EmptyState';
 import { Spinner } from '../Spinner';
 import { ChannelRow } from '../ChannelRow';
-import { resetXmtpClient, shortAddress, prefetchFeed, lineOfConv } from '../../modules/messaging';
+import {
+  resetXmtpClient, shortAddress, prefetchFeed, lineOfConv, useActiveAccount,
+} from '../../modules/messaging';
 import { resetAccount } from '../../lib/wallet';
 import { getPeerName, isPeerResolved } from '../../lib/peerProfiles';
 import { getDraft } from '../../lib/drafts';
 import { requestLabelFilter } from '../../lib/labelFilterRequest';
 import { conversationLinkOf } from '../../lib/conversationLink';
+import { capabilities } from '../../lib/capabilities';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { channelTimestamp } from '../../lib/format';
-import { DANGER } from '../../lib/theme';
+import { DANGER, useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { getActiveAccount } from '../../lib/accounts';
+import { homeEmptyActionModel } from './HomeScreen.empty.model';
 
 interface RowMenu { convId: string; title: string; isUnread: boolean; isGroup: boolean; peerAddress: string | null }
 
@@ -146,8 +152,53 @@ export function HomeSpinner({ head }: { head: string; bg: string }): React.React
   );
 }
 
-export function HomeEmpty({ message }: { message?: string }): React.ReactElement {
+function useActiveAddress(): string | null {
+  const accountEpoch = useActiveAccount();
+  const [address, setAddress] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void getActiveAccount().then(acct => {
+      if (!cancelled) setAddress(acct?.address ?? null);
+    });
+    return () => { cancelled = true; };
+  }, [accountEpoch]);
+  return address;
+}
+
+export function HomeEmpty({ onStartConversation }: { onStartConversation: () => void }): React.ReactElement {
+  const address = useActiveAddress();
+  const dark = useEffectiveColorScheme() === 'dark';
+  const { bg, head, sub } = usePalette();
+  const model = homeEmptyActionModel(address);
+  const copyAddress = (): void => {
+    if (!address) return;
+    void capabilities.copyToClipboard(address);
+    capabilities.toast('Address copied');
+  };
+
   return (
-    <EmptyState title={message ?? 'No conversations yet. Share your address from Settings to start one.'} />
+    <Col flex={1} minHeight={420} align="center" justify="center" gap={14} padding={24}>
+      <Text value={model.title} weight="semibold" textAlign="center" />
+      <Text value={model.body} size="sm" role="secondary" textAlign="center" />
+      <Button
+        dark={dark}
+        size="lg"
+        label={model.startLabel}
+        onPress={onStartConversation}
+        iconStart={<Icon name="plus" size={18} color={bg} />}
+      />
+      {model.addressLabel ? (
+        <Button
+          dark={dark}
+          color="secondary"
+          variant="soft"
+          size="md"
+          label={model.addressLabel}
+          onPress={copyAddress}
+          iconStart={<Icon name="copy" size={18} color={head} />}
+          iconEnd={<Text value={model.addressHint} size="xs" weight="semibold" color={sub} />}
+        />
+      ) : null}
+    </Col>
   );
 }
