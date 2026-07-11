@@ -5,7 +5,7 @@ import type { AccountRecord } from '../accounts';
 import { smartOwnerSigner } from './keyring';
 import { makePublicClient, makeKernelClient } from './client';
 import { createEcdsaKernel, passkeyKernelFromStored } from './account';
-import { passkeysAvailable } from './native';
+import { passkeysAvailable } from './passkeys';
 
 export async function kernelClientForRecord(rec: AccountRecord): Promise<KernelAccountClient> {
   if (rec.type !== 'smart' || rec.hdIndex == null) {

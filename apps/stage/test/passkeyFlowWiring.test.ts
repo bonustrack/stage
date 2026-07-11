@@ -165,8 +165,9 @@ describe('G. Settings -> Wallet — Remove passkey affordance is wired + gated',
     expect(removeHookSrc).toContain("acct?.type === 'smart' && !!acct.passkey");
     expect(removeHookSrc).toContain('removePasskeyFromRecord(acct)');
   });
-  test('the hook confirms with a destructive Alert before reverting', () => {
-    expect(removeHookSrc).toContain('Alert.alert');
-    expect(removeHookSrc).toContain("style: 'destructive'");
+  test('the hook confirms with a destructive dialog before reverting', () => {
+    expect(removeHookSrc).toContain('capabilities.confirm');
+    expect(removeHookSrc).toContain('destructive: true');
+    expect(removeHookSrc).toContain('if (ok) doRemove()');
   });
 });

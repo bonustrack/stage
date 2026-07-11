@@ -6,11 +6,10 @@ import { smartOwnerSigner } from './keyring';
 import { makePublicClient, makeKernelClient } from './client';
 import {
   createEcdsaKernel,
-  registerPasskeyCredential,
   passkeyValidatorFromStored,
-  type StoredPasskey,
 } from './account';
-import { passkeysAvailable } from './native';
+import { passkeysAvailable, registerPasskeyCredential } from './passkeys';
+import { type StoredPasskey } from './passkeys.model';
 import { zerodevConfigured, zerodevRpId } from './env';
 
 export type EnablePasskeyResult =

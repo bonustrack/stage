@@ -1,7 +1,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
-import { Alert } from 'react-native';
 import { getActiveAccount } from './accounts';
+import { capabilities } from './capabilities';
 import { removePasskeyFromRecord, passkeysAvailable } from './zerodev';
 import { flash } from './toast';
 
@@ -50,14 +50,16 @@ export function useRemovePasskey(epoch?: number, onChanged?: () => void): {
 
   const run = useCallback(() => {
     if (busy) return;
-    Alert.alert(
-      'Remove passkey',
-      'This reverts the account to signing with your recovery key instead of the passkey. It LOWERS security: transactions will no longer require Face ID / biometrics. You will confirm this change with your passkey one last time.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Remove passkey', style: 'destructive', onPress: doRemove },
-      ],
-    );
+    void (async () => {
+      const ok = await capabilities.confirm({
+        title: 'Remove passkey',
+        message:
+          'This reverts the account to signing with your recovery key instead of the passkey. It LOWERS security: transactions will no longer require Face ID / biometrics. You will confirm this change with your passkey one last time.',
+        confirmLabel: 'Remove passkey',
+        destructive: true,
+      });
+      if (ok) doRemove();
+    })();
   }, [busy, doRemove]);
 
   return { available, busy, run };

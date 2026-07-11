@@ -8,7 +8,7 @@ import {
   ecdsaValidatorForOwner,
   passkeyKernelFromStored,
 } from './account';
-import { passkeysAvailable } from './native';
+import { passkeysAvailable } from './passkeys';
 import { zerodevConfigured } from './env';
 
 export type RemovePasskeyResult =
