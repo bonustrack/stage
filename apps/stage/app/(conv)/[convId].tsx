@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { PendingConversation } from '../../components/PendingConversation';
 import { ConversationFeed } from '../../components/xmtp-conv/ConversationFeed';
 import { ConversationSearch } from '../../components/xmtp-conv/ConversationSearch';
 import { useConversationState } from '../../components/xmtp-conv/useConversationState';
@@ -26,6 +27,36 @@ function resolveErrorMessage(error: ResolveConvError): string {
   if (error === 'stale-installations') return 'This contact has not used XMTP in a while, so their keys expired. They need to open an XMTP app before you can message them.';
   if (error === 'failed') return 'Could not open this conversation.';
   return 'Missing conversation id.';
+}
+
+function UnresolvedConversation({ resolved, dark }: {
+  resolved: ReturnType<typeof useResolvedConvId>;
+  dark: boolean;
+}): React.ReactElement {
+  if (resolved.resolving) {
+    return (
+      <Col surface="surface" flex={1} align="center" justify="center">
+        <Spinner size={24} color={dark ? '#ffffff' : '#000000'}/>
+      </Col>
+    );
+  }
+  if (resolved.pendingAddress && resolved.error) {
+    return (
+      <PendingConversation
+        address={resolved.pendingAddress}
+        reason={resolved.error}
+        onDelivered={resolved.retry}
+      />
+    );
+  }
+  return (
+    <Col surface="surface" flex={1} align="center" justify="center" gap={16} padding={24}>
+      <Text role="secondary" textAlign="center">
+        {resolveErrorMessage(resolved.error)}
+      </Text>
+      <Button dark={dark} variant="soft" label="Try again" style={{ alignSelf: 'center' }} onPress={resolved.retry}/>
+    </Col>
+  );
 }
 
 export default function XmtpConversation(): React.ReactElement {
@@ -53,23 +84,8 @@ export default function XmtpConversation(): React.ReactElement {
   const { height: kbHeightShared } = useReanimatedKeyboardAnimation();
   const listWrapperStyle = useAnimatedStyle(() => ({ marginBottom: Math.max(0, -kbHeightShared.value - insets.bottom) }));
 
-  if (resolved.resolving) {
-    return (
-      <Col surface="surface" flex={1} align="center" justify="center">
-        <Spinner size={24} color={dark ? '#ffffff' : '#000000'}/>
-      </Col>
-    );
-  }
-
-  if (!convId) {
-    return (
-      <Col surface="surface" flex={1} align="center" justify="center" gap={16} padding={24}>
-        <Text role="secondary" textAlign="center">
-          {resolveErrorMessage(resolved.error)}
-        </Text>
-        <Button dark={dark} variant="soft" label="Try again" style={{ alignSelf: 'center' }} onPress={resolved.retry}/>
-      </Col>
-    );
+  if (resolved.resolving || !convId) {
+    return <UnresolvedConversation resolved={resolved} dark={dark}/>;
   }
 
   return (
