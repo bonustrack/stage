@@ -22,6 +22,22 @@ export function isInstallationLimit(err: unknown): boolean {
   return INSTALLATION_LIMIT.some(sig => msg.toLowerCase().includes(sig.toLowerCase()));
 }
 
+const STALE_KEY_PACKAGE = ['lifetime', 'expired', 'not found', 'no key package'];
+
+export type KeyPackageVerdict = 'reachable' | 'stale-installations' | 'indeterminate';
+
+export function classifyKeyPackageStatuses(
+  validationErrors: (string | null | undefined)[],
+): KeyPackageVerdict {
+  if (validationErrors.length === 0) return 'indeterminate';
+  if (validationErrors.some(e => e == null || e === '')) return 'reachable';
+  const stale = (e: string): boolean =>
+    STALE_KEY_PACKAGE.some(sig => e.toLowerCase().includes(sig));
+  return validationErrors.every(e => e != null && stale(e))
+    ? 'stale-installations'
+    : 'indeterminate';
+}
+
 export function convIdFromTopic(topic: string | undefined): string | null {
   if (!topic) return null;
   const m = /\/g-([0-9a-fA-F]+)\//.exec(topic);

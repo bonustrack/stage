@@ -1,5 +1,8 @@
 
-import { PublicIdentity, staticKeyPackageStatuses, type Conversation } from '@xmtp/react-native-sdk';
+import {
+  addGroupMembers, PublicIdentity, staticKeyPackageStatuses, type Conversation,
+} from '@xmtp/react-native-sdk';
+import { classifyKeyPackageStatuses } from '@stage-labs/client/xmtp/clientErrors';
 import { getCachedXmtpClient, getOrCreateXmtpClient, convOfLine } from './xmtp.client';
 import { lineOfConv, type DmUnreachableReason, type XmtpConsent } from './xmtp.types';
 
@@ -11,10 +14,40 @@ export async function openDmWithAddress(address: string): Promise<string> {
   return dm.id;
 }
 
-export async function findExistingDmWithAddress(address: string): Promise<string | null> {
+export interface ExistingDm { convId: string; peerJoined: boolean }
+
+export async function findExistingDmWithAddress(address: string): Promise<ExistingDm | null> {
   const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
-  const dm = await client.conversations.findDmByIdentity(new PublicIdentity(address, 'ETHEREUM'));
-  return dm?.id ?? null;
+  const identity = new PublicIdentity(address, 'ETHEREUM');
+  let dm = await client.conversations.findDmByIdentity(identity);
+  if (!dm) {
+    await client.conversations.sync().catch(() => undefined);
+    dm = await client.conversations.findDmByIdentity(identity);
+  }
+  if (!dm) return null;
+  const members = await dm.members().catch(() => []);
+  const peerInboxId = await client.findInboxIdFromIdentity(identity).catch(() => undefined);
+  const peerJoined = members.length >= 2 || peerInboxId === client.inboxId;
+  return { convId: dm.id, peerJoined };
+}
+
+export async function repairDmMembership(convId: string, address: string): Promise<boolean> {
+  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const identity = new PublicIdentity(address, 'ETHEREUM');
+  const peerInboxId = await client.findInboxIdFromIdentity(identity);
+  if (peerInboxId === undefined || peerInboxId === '') return false;
+  try {
+    await addGroupMembers(
+      client.installationId,
+      convId as unknown as Parameters<typeof addGroupMembers>[1],
+      [peerInboxId],
+    );
+  } catch {
+    return false;
+  }
+  const dm = await client.conversations.findDmByIdentity(identity);
+  const members = await dm?.members().catch(() => []) ?? [];
+  return members.length >= 2;
 }
 
 export async function dmUnreachableReason(address: string): Promise<DmUnreachableReason> {
@@ -25,9 +58,8 @@ export async function dmUnreachableReason(address: string): Promise<DmUnreachabl
   const installationIds = (states[0]?.installations ?? []).map(i => i.id) as Parameters<typeof staticKeyPackageStatuses>[1];
   if (installationIds.length === 0) return 'stale-installations';
   const { statuses } = await staticKeyPackageStatuses('production', installationIds);
-  const entries = [...statuses.values()];
-  if (entries.length === 0) return null;
-  return entries.some(s => !s.validationError) ? null : 'stale-installations';
+  const verdict = classifyKeyPackageStatuses([...statuses.values()].map(s => s.validationError));
+  return verdict === 'stale-installations' ? 'stale-installations' : null;
 }
 
 export async function listRequestConvs(): Promise<Conversation[]> {

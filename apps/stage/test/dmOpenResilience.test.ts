@@ -11,21 +11,30 @@ const webSeam = read('lib', 'xmtp.conv.web.ts');
 const nativeSeam = read('lib', 'xmtp.conv.ts');
 const screenSrc = read('app', '(conv)', '[convId].tsx');
 
-describe('address-routed DM opening is resilient, never a silent dead end', () => {
-  test('a failed create falls back to the existing local DM before anything else', () => {
-    const catchIdx = hooksSrc.indexOf('catch (err)');
-    const fallbackIdx = hooksSrc.indexOf('findExistingDmWithAddress(address)');
-    const retryIdx = hooksSrc.indexOf('CREATE_RETRY_DELAY_MS));');
-    const secondCreate = hooksSrc.lastIndexOf('return openDmWithAddress(address)');
-    expect(catchIdx).toBeGreaterThanOrEqual(0);
-    expect(fallbackIdx).toBeGreaterThan(catchIdx);
-    expect(retryIdx).toBeGreaterThan(fallbackIdx);
-    expect(secondCreate).toBeGreaterThan(retryIdx);
+describe('address-routed DM opening never mints or masks a peer-less stub DM', () => {
+  test('existing DM with the peer joined wins before anything else', () => {
+    const lookupIdx = hooksSrc.indexOf('findExistingDmWithAddress(address)');
+    const joinedIdx = hooksSrc.indexOf('existing?.peerJoined');
+    const createIdx = hooksSrc.indexOf('openDmWithAddress(address)');
+    expect(lookupIdx).toBeGreaterThanOrEqual(0);
+    expect(joinedIdx).toBeGreaterThan(lookupIdx);
+    expect(createIdx).toBeGreaterThan(joinedIdx);
   });
-  test('classification runs only after fallback AND retry both failed', () => {
-    const resolveEnd = hooksSrc.indexOf('export function useResolvedConvId');
-    const classifyIdx = hooksSrc.indexOf('dmUnreachableReason(param)');
-    expect(classifyIdx).toBeGreaterThan(resolveEnd);
+  test('a stub DM is repaired or surfaced as unreachable, never opened as-is', () => {
+    expect(hooksSrc).toContain('if (existing) return resolveStubDm(existing.convId, address)');
+    expect(hooksSrc).toContain('repairDmMembership(convId, address)');
+  });
+  test('reachability is probed BEFORE the first create so a failed create cannot plant a stub', () => {
+    const probeIdx = hooksSrc.indexOf('const reason = await dmUnreachableReason(address)');
+    const createIdx = hooksSrc.indexOf('await openDmWithAddress(address)');
+    expect(probeIdx).toBeGreaterThanOrEqual(0);
+    expect(createIdx).toBeGreaterThan(probeIdx);
+  });
+  test('there is no blind createDm retry (it would silently return the stub)', () => {
+    expect(hooksSrc).not.toContain('CREATE_RETRY_DELAY_MS');
+    const first = hooksSrc.indexOf('openDmWithAddress(address)');
+    const last = hooksSrc.lastIndexOf('openDmWithAddress(address)');
+    expect(first).toBe(last);
   });
   test('the error screen offers a retry, it is not terminal', () => {
     expect(hooksSrc).toContain('retry: () => void');
@@ -33,23 +42,32 @@ describe('address-routed DM opening is resilient, never a silent dead end', () =
   });
 });
 
+describe('the seams verify peer membership and sync before concluding no DM exists', () => {
+  const expectation = (src: string): void => {
+    expect(src).toContain('conversations.sync().catch(() => undefined)');
+    expect(src).toContain('members.length >= 2');
+    expect(src).toContain('repairDmMembership(convId: string, address: string): Promise<boolean>');
+  };
+  test('web seam', () => { expectation(webSeam); });
+  test('native seam', () => { expectation(nativeSeam); });
+  test('native repair actually adds the peer back', () => {
+    expect(nativeSeam).toContain('addGroupMembers(');
+  });
+});
+
 describe('dmUnreachableReason claims expired keys only with positive evidence', () => {
   const expectation = (src: string): void => {
-    const statusesIdx = src.indexOf('const entries = [...statuses.values()]');
-    const emptyGuard = src.indexOf('if (entries.length === 0) return null');
-    const verdict = src.indexOf("entries.some(s => !s.validationError) ? null : 'stale-installations'");
-    expect(statusesIdx).toBeGreaterThanOrEqual(0);
-    expect(emptyGuard).toBeGreaterThan(statusesIdx);
-    expect(verdict).toBeGreaterThan(emptyGuard);
+    expect(src).toContain('classifyKeyPackageStatuses([...statuses.values()].map(s => s.validationError))');
+    expect(src).toContain("verdict === 'stale-installations' ? 'stale-installations' : null");
   };
-  test('web seam requires non-empty statuses before declaring stale', () => {
+  test('web seam classifies through the shared evidence core', () => {
     expectation(webSeam);
   });
-  test('native seam requires non-empty statuses before declaring stale', () => {
+  test('native seam classifies through the shared evidence core', () => {
     expectation(nativeSeam);
   });
   test('both seams export the same findExistingDmWithAddress surface', () => {
-    const sig = 'export async function findExistingDmWithAddress(address: string): Promise<string | null>';
+    const sig = 'export async function findExistingDmWithAddress(address: string): Promise<ExistingDm | null>';
     expect(webSeam).toContain(sig);
     expect(nativeSeam).toContain(sig);
   });

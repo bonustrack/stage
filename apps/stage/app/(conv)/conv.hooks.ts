@@ -3,11 +3,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { InteractionManager, Keyboard } from 'react-native';
 import type { Input } from '@stage-labs/kit/react-native/input';
 import { isArchived, loadArchivedIds, subscribeArchived } from '../../lib/archived';
-import { dmUnreachableReason, findExistingDmWithAddress, openDmWithAddress } from '../../modules/messaging';
+import {
+  dmUnreachableReason, findExistingDmWithAddress, openDmWithAddress, repairDmMembership,
+} from '../../modules/messaging';
 
 const DM_ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
-
-const CREATE_RETRY_DELAY_MS = 1500;
 
 export type ResolveConvError = false | 'unregistered' | 'stale-installations' | 'failed';
 
@@ -18,15 +18,30 @@ export interface ResolvedConv {
   retry: () => void;
 }
 
-async function resolveDmConvId(address: string): Promise<string> {
+type DmResolution = { convId: string } | { error: ResolveConvError };
+
+async function classifyUnreachable(address: string): Promise<{ error: ResolveConvError }> {
+  const reason = await dmUnreachableReason(address).catch(() => null);
+  return { error: reason ?? 'failed' };
+}
+
+async function resolveStubDm(convId: string, address: string): Promise<DmResolution> {
+  const repaired = await repairDmMembership(convId, address).catch(() => false);
+  if (repaired) return { convId };
+  return classifyUnreachable(address);
+}
+
+async function resolveDmConvId(address: string): Promise<DmResolution> {
+  const existing = await findExistingDmWithAddress(address).catch(() => null);
+  if (existing?.peerJoined) return { convId: existing.convId };
+  if (existing) return resolveStubDm(existing.convId, address);
+  const reason = await dmUnreachableReason(address).catch(() => null);
+  if (reason) return { error: reason };
   try {
-    return await openDmWithAddress(address);
+    return { convId: await openDmWithAddress(address) };
   } catch (err) {
     if (process.env.NODE_ENV !== 'production') console.warn('openDmWithAddress failed', (err as Error).message);
-    const existing = await findExistingDmWithAddress(address).catch(() => null);
-    if (existing) return existing;
-    await new Promise(resolve => setTimeout(resolve, CREATE_RETRY_DELAY_MS));
-    return openDmWithAddress(address);
+    return classifyUnreachable(address);
   }
 }
 
@@ -46,11 +61,12 @@ export function useResolvedConvId(param: string | undefined): ResolvedConv {
     let cancelled = false;
     setState({ convId: null, resolving: true, error: false });
     void resolveDmConvId(param)
-      .then(id => { if (!cancelled) setState({ convId: id, resolving: false, error: false }); })
-      .catch(async () => {
-        const error = (await dmUnreachableReason(param).catch(() => null)) ?? 'failed';
-        if (!cancelled) setState({ convId: null, resolving: false, error });
-      });
+      .then(res => {
+        if (cancelled) return;
+        if ('convId' in res) setState({ convId: res.convId, resolving: false, error: false });
+        else setState({ convId: null, resolving: false, error: res.error });
+      })
+      .catch(() => { if (!cancelled) setState({ convId: null, resolving: false, error: 'failed' }); });
     return () => { cancelled = true; };
   }, [param, attempt]);
   return { ...state, retry };

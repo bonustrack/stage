@@ -3,6 +3,7 @@ import {
   ConsentState, ConsentEntityType, IdentifierKind,
   type Consent, type Conversation,
 } from '@xmtp/browser-sdk';
+import { classifyKeyPackageStatuses } from '@stage-labs/client/xmtp/clientErrors';
 import { consentStateToString } from '@stage-labs/client/xmtp/consent';
 import { getCachedXmtpClient, getOrCreateXmtpClient, convOfLine } from './xmtp.client.web';
 import { lineOfConv, type DmUnreachableReason, type XmtpConsent } from './xmtp.types';
@@ -16,15 +17,30 @@ export async function openDmWithAddress(address: string): Promise<string> {
   return dm.id;
 }
 
-export async function findExistingDmWithAddress(address: string): Promise<string | null> {
+export interface ExistingDm { convId: string; peerJoined: boolean }
+
+export async function findExistingDmWithAddress(address: string): Promise<ExistingDm | null> {
   const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
   const inboxId = await client.fetchInboxIdByIdentifier({
     identifier: address.toLowerCase(),
     identifierKind: IdentifierKind.Ethereum,
   });
   if (inboxId === undefined || inboxId === '') return null;
-  const dm = await client.conversations.getDmByInboxId(inboxId);
-  return dm?.id ?? null;
+  let dm = await client.conversations.getDmByInboxId(inboxId);
+  if (!dm) {
+    await client.conversations.sync().catch(() => undefined);
+    dm = await client.conversations.getDmByInboxId(inboxId);
+  }
+  if (!dm) return null;
+  const members = await dm.members().catch(() => []);
+  const peerJoined = members.length >= 2 || inboxId === client.inboxId;
+  return { convId: dm.id, peerJoined };
+}
+
+export function repairDmMembership(convId: string, address: string): Promise<boolean> {
+  void convId;
+  void address;
+  return Promise.resolve(false);
 }
 
 export async function dmUnreachableReason(address: string): Promise<DmUnreachableReason> {
@@ -38,9 +54,8 @@ export async function dmUnreachableReason(address: string): Promise<DmUnreachabl
   const installationIds = (states[0]?.installations ?? []).map(i => i.id);
   if (installationIds.length === 0) return 'stale-installations';
   const statuses = await client.fetchKeyPackageStatuses(installationIds);
-  const entries = [...statuses.values()];
-  if (entries.length === 0) return null;
-  return entries.some(s => !s.validationError) ? null : 'stale-installations';
+  const verdict = classifyKeyPackageStatuses([...statuses.values()].map(s => s.validationError));
+  return verdict === 'stale-installations' ? 'stale-installations' : null;
 }
 
 export async function listRequestConvs(): Promise<Conversation[]> {
