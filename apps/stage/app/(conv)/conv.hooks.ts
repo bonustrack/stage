@@ -3,46 +3,22 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { InteractionManager, Keyboard } from 'react-native';
 import type { Input } from '@stage-labs/kit/react-native/input';
 import { isArchived, loadArchivedIds, subscribeArchived } from '../../lib/archived';
-import {
-  dmUnreachableReason, findExistingDmWithAddress, openDmWithAddress, repairDmMembership,
-} from '../../modules/messaging';
+import { resolveDmConvId, type DmResolveError } from '../../lib/dmResolve';
 
 const DM_ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
 
-export type ResolveConvError = false | 'unregistered' | 'stale-installations' | 'failed';
+export type ResolveConvError = false | DmResolveError;
 
 export interface ResolvedConv {
   convId: string | null;
   resolving: boolean;
   error: ResolveConvError;
+  pendingAddress: string | null;
   retry: () => void;
 }
 
-type DmResolution = { convId: string } | { error: ResolveConvError };
-
-async function classifyUnreachable(address: string): Promise<{ error: ResolveConvError }> {
-  const reason = await dmUnreachableReason(address).catch(() => null);
-  return { error: reason ?? 'failed' };
-}
-
-async function resolveStubDm(convId: string, address: string): Promise<DmResolution> {
-  const repaired = await repairDmMembership(convId, address).catch(() => false);
-  if (repaired) return { convId };
-  return classifyUnreachable(address);
-}
-
-async function resolveDmConvId(address: string): Promise<DmResolution> {
-  const existing = await findExistingDmWithAddress(address).catch(() => null);
-  if (existing?.peerJoined) return { convId: existing.convId };
-  if (existing) return resolveStubDm(existing.convId, address);
-  const reason = await dmUnreachableReason(address).catch(() => null);
-  if (reason) return { error: reason };
-  try {
-    return { convId: await openDmWithAddress(address) };
-  } catch (err) {
-    if (process.env.NODE_ENV !== 'production') console.warn('openDmWithAddress failed', (err as Error).message);
-    return classifyUnreachable(address);
-  }
+function isQueueable(error: DmResolveError): boolean {
+  return error === 'unregistered' || error === 'stale-installations';
 }
 
 export function useResolvedConvId(param: string | undefined): ResolvedConv {
@@ -51,22 +27,32 @@ export function useResolvedConvId(param: string | undefined): ResolvedConv {
   const retry = useCallback(() => { setAttempt(a => a + 1); }, []);
   const [state, setState] = useState<Omit<ResolvedConv, 'retry'>>(() =>
     isAddress
-      ? { convId: null, resolving: true, error: false }
-      : { convId: param ?? null, resolving: false, error: false });
+      ? { convId: null, resolving: true, error: false, pendingAddress: null }
+      : { convId: param ?? null, resolving: false, error: false, pendingAddress: null });
   useEffect(() => {
     if (!param || !DM_ADDRESS_RE.test(param)) {
-      setState({ convId: param ?? null, resolving: false, error: false });
+      setState({ convId: param ?? null, resolving: false, error: false, pendingAddress: null });
       return;
     }
     let cancelled = false;
-    setState({ convId: null, resolving: true, error: false });
+    setState({ convId: null, resolving: true, error: false, pendingAddress: null });
     void resolveDmConvId(param)
       .then(res => {
         if (cancelled) return;
-        if ('convId' in res) setState({ convId: res.convId, resolving: false, error: false });
-        else setState({ convId: null, resolving: false, error: res.error });
+        if ('convId' in res) {
+          setState({ convId: res.convId, resolving: false, error: false, pendingAddress: null });
+        } else {
+          setState({
+            convId: null,
+            resolving: false,
+            error: res.error,
+            pendingAddress: isQueueable(res.error) ? param : null,
+          });
+        }
       })
-      .catch(() => { if (!cancelled) setState({ convId: null, resolving: false, error: 'failed' }); });
+      .catch(() => {
+        if (!cancelled) setState({ convId: null, resolving: false, error: 'failed', pendingAddress: null });
+      });
     return () => { cancelled = true; };
   }, [param, attempt]);
   return { ...state, retry };
