@@ -7,7 +7,7 @@
     "start": "node scripts/copy-xmtp-wasm.js && expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "node scripts/copy-xmtp-wasm.js && expo start --web",
+    "web": "node scripts/copy-xmtp-wasm.js && expo start --web --port 8080",
     "typecheck": "tsc --noEmit",
     "test": "bun test test/",
     "eas-build-post-install": "node ./scripts/install-nodejs-project.js",

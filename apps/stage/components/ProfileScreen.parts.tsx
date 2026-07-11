@@ -6,7 +6,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import type { HeroIconName } from '@stage-labs/kit/icons';
 import { Col, Row } from './layout';
 import { usePalette, type Palette } from '../lib/theme';
-import { getCachedXmtpClient, getOrCreateXmtpClient } from '../modules/messaging';
+import { cachedSelfEthAddress, selfEthAddress } from '../modules/messaging';
 import { capabilities } from '../lib/capabilities';
 import { OverlayHeader } from './chrome/OverlayHeader';
 import { TopnavIdentity } from './TopnavIdentity';
@@ -18,15 +18,14 @@ export function useProfileColors(): ProfileColors {
 }
 
 export function useSelfAddress(): string {
-  const cached = getCachedXmtpClient();
-  const [self, setSelf] = useState(cached?.publicIdentity.identifier ?? '');
+  const [self, setSelf] = useState(cachedSelfEthAddress() ?? '');
   useEffect(() => {
     if (self) return;
     let alive = true;
     void (async (): Promise<void> => {
       try {
-        const client = await getOrCreateXmtpClient('production');
-        if (alive) setSelf(client.publicIdentity.identifier);
+        const address = await selfEthAddress();
+        if (alive && address !== null) setSelf(address);
       } catch { }
     })();
     return () => { alive = false; };

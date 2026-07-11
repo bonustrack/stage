@@ -1,7 +1,7 @@
 
-import { PublicIdentity, type Conversation } from '@xmtp/react-native-sdk';
+import { PublicIdentity, staticKeyPackageStatuses, type Conversation } from '@xmtp/react-native-sdk';
 import { getCachedXmtpClient, getOrCreateXmtpClient, convOfLine } from './xmtp.client';
-import { lineOfConv, type XmtpConsent } from './xmtp.types';
+import { lineOfConv, type DmUnreachableReason, type XmtpConsent } from './xmtp.types';
 
 export async function openDmWithAddress(address: string): Promise<string> {
   const client = await getOrCreateXmtpClient('production');
@@ -9,6 +9,18 @@ export async function openDmWithAddress(address: string): Promise<string> {
     new PublicIdentity(address, 'ETHEREUM'),
   );
   return dm.id;
+}
+
+export async function dmUnreachableReason(address: string): Promise<DmUnreachableReason> {
+  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const inboxId = await client.findInboxIdFromIdentity(new PublicIdentity(address, 'ETHEREUM'));
+  if (inboxId === undefined || inboxId === '') return 'unregistered';
+  const states = await client.inboxStates(true, [inboxId]);
+  const installationIds = (states[0]?.installations ?? []).map(i => i.id) as Parameters<typeof staticKeyPackageStatuses>[1];
+  if (installationIds.length === 0) return 'stale-installations';
+  const { statuses } = await staticKeyPackageStatuses('production', installationIds);
+  const anyValid = [...statuses.values()].some(s => !s.validationError);
+  return anyValid ? null : 'stale-installations';
 }
 
 export async function listRequestConvs(): Promise<Conversation[]> {

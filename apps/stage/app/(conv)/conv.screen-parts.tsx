@@ -2,7 +2,7 @@
 import { Share } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Box, Row } from '../../components/layout';
+import { Box, Row, WebFullBleed } from '../../components/layout';
 import type { Input } from '@stage-labs/kit/react-native/input';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import type { useRouter } from 'expo-router';
@@ -35,7 +35,9 @@ export function ConversationTopnav({ c, convId, fg, head, border, insets, router
 }): React.ReactElement {
   const { isGroup, github, peerAddr, groupImage, setOverflowOpen } = c;
   return (
-    <Row height={TOPNAV_HEIGHT + insets.top} surface="toolbar" padding={{ top: insets.top }} align="stretch" style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2, borderBottomWidth: 1, borderBottomColor: border }}>
+    <Box style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2 }}>
+    <WebFullBleed>
+    <Row height={TOPNAV_HEIGHT + insets.top} surface="toolbar" padding={{ top: insets.top }} align="stretch" style={{ borderBottomWidth: 1, borderBottomColor: border }}>
       <Pressable
         onPress={() => { router.replace('/'); }}
         style={{ paddingLeft: 14, paddingRight: 8, justifyContent: 'center' }}
@@ -46,7 +48,7 @@ export function ConversationTopnav({ c, convId, fg, head, border, insets, router
       <Pressable
         onPress={() => {
           if (isGroup) router.push({ pathname: '/group/[convId]', params: { convId } });
-          else if (peerAddr) router.push({ pathname: '/user/[address]', params: { address: peerAddr } });
+          else if (peerAddr) router.push({ pathname: '/profile/[address]', params: { address: peerAddr } });
         }}
         style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 14 }}
 >
@@ -65,6 +67,8 @@ export function ConversationTopnav({ c, convId, fg, head, border, insets, router
         <Icon name="dotsVertical" size={22} color={fg}/>
       </Pressable>
     </Row>
+    </WebFullBleed>
+    </Box>
   );
 }
 

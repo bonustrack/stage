@@ -7,6 +7,8 @@ export type XmtpEnv = 'production' | 'dev' | 'local';
 
 export type XmtpConsent = 'allowed' | 'denied' | 'unknown';
 
+export type DmUnreachableReason = 'unregistered' | 'stale-installations' | null;
+
 export type { ConversationVersion };
 
 export type XmtpFeedStatus = 'idle' | 'loading' | 'open' | 'error';

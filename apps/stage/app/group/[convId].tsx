@@ -112,7 +112,7 @@ export default function GroupDetail(): React.ReactElement {
         members={members} memberNames={memberNames} memberRoles={memberRoles}
         selfAddress={selfAddress} removing={removing} dark={dark} p={pal}
         onAdd={() => { setAddDraft(''); setAddOpen(true); }}
-        onOpenMember={(item) => { router.push({ pathname: '/user/[address]', params: { address: item } }); }}
+        onOpenMember={(item) => { router.push({ pathname: '/profile/[address]', params: { address: item } }); }}
         onRemoveMember={(item) => { removeMember(item); }}
 />
 

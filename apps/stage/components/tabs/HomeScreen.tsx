@@ -14,6 +14,7 @@ import { useChannelsSync } from './HomeScreen.sync';
 import { useIncomingLabelFilter } from './HomeScreen.filter';
 import { deriveLabels, useHomeFilters } from './HomeScreen.labelbar';
 import { filterRowsByQuery } from './HomeScreen.search';
+import { channelsFilterBarVisible } from './HomeScreen.model';
 import { useHomeState, type HomeState } from './HomeScreen.state';
 import { deriveSortedRows } from './HomeScreen.derive';
 
@@ -53,7 +54,13 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
     () => deriveSortedRows({ rows, archived, enabledLabels, unreadOnly, pinned }),
     [rows, pinned, enabledLabels, unreadOnly, archived],
   );
-  const barLabels = useMemo(() => deriveLabels((rows ?? []).filter(r => !archived.has(r.convId))), [rows, archived]);
+  const activeRows = useMemo(() => (rows ?? []).filter(r => !archived.has(r.convId)), [rows, archived]);
+  const barLabels = useMemo(() => deriveLabels(activeRows), [activeRows]);
+  const showFilterBar = channelsFilterBarVisible({
+    rows: activeRows,
+    unreadOnly,
+    enabledLabelsCount: enabledLabels.size,
+  });
   const visibleRows = useMemo(() => filterRowsByQuery(sortedRows, query), [sortedRows, query]);
 
   const channelProfilesVersion = usePeerProfiles(
@@ -83,7 +90,8 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
     <Col flex={1} surface="surface">
       <ChannelsList
         panRef={panRef} router={router} sortedRows={visibleRows} requestCount={st.requestCount}
-        barLabels={barLabels} enabledLabels={enabledLabels} onToggleLabel={toggleLabel}
+        barLabels={barLabels} showFilterBar={showFilterBar}
+        enabledLabels={enabledLabels} onToggleLabel={toggleLabel}
         unreadOnly={unreadOnly} onToggleUnread={toggleUnread} onClearAll={clearAllFilters}
         query={query} setQuery={setQuery} fg={fg} head={head} sub={sub} border={border}
         listExtraData={listExtraData}

@@ -1,12 +1,9 @@
 
-import { Platform } from 'react-native';
 import { TopnavIdentity } from './TopnavIdentity';
-import { Row, WEB_CONTENT_MAX_WIDTH } from './layout';
+import { Row, WebFullBleed } from './layout';
 import { usePalette } from '../lib/theme';
 
 export const TOPNAV_HEIGHT = 52;
-
-const WEB = Platform.OS === 'web';
 
 export function Topnav({ left, right }: {
   left?: React.ReactNode;
@@ -27,46 +24,18 @@ export function Topnav({ left, right }: {
     </>
   );
 
-  if (WEB) {
-    return (
+  return (
+    <WebFullBleed>
       <Row
         height={TOPNAV_HEIGHT}
+        padding={{ x: 16 }}
         align="center"
-        justify="center"
+        justify="between"
         surface="toolbar"
-        width="100vw"
-        margin={{ left: '-50vw' }}
-        style={{
-          position: 'relative',
-          left: '50%',
-          borderBottomWidth: 1,
-          borderBottomColor: border,
-        }}
+        style={{ borderBottomWidth: 1, borderBottomColor: border }}
       >
-        <Row
-          width="100%"
-          height="100%"
-          maxWidth={WEB_CONTENT_MAX_WIDTH}
-          padding={{ x: 16 }}
-          align="center"
-          justify="between"
-        >
-          {content}
-        </Row>
+        {content}
       </Row>
-    );
-  }
-
-  return (
-    <Row
-      height={TOPNAV_HEIGHT}
-      padding={{ x: 16 }}
-      align="center"
-      justify="between"
-      surface="toolbar"
-      style={{ borderBottomWidth: 1, borderBottomColor: border }}
-    >
-      {content}
-    </Row>
+    </WebFullBleed>
   );
 }

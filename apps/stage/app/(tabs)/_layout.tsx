@@ -1,7 +1,8 @@
 
-import { Box, Col } from '../../components/layout';
+import { Box, Col, WEB_CONTENT_MAX_WIDTH } from '../../components/layout';
 import { fontSize } from '@stage-labs/kit/tokens';
 import { Tabs, usePathname } from 'expo-router';
+import { Platform, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
 import { usePalette } from '../../lib/theme';
@@ -41,6 +42,10 @@ export default function TabsLayout(): React.ReactElement {
   const pal = usePalette();
   const active = pal.link;
   const inactive = pal.text;
+  const { width: windowWidth } = useWindowDimensions();
+  const webGutter = Platform.OS === 'web'
+    ? Math.max(0, (windowWidth - WEB_CONTENT_MAX_WIDTH) / 2)
+    : 0;
 
   const tabBarStyle = {
     backgroundColor: pal.toolbarBg,
@@ -51,6 +56,7 @@ export default function TabsLayout(): React.ReactElement {
     height: 60 + insets.bottom,
     paddingTop: 6,
     paddingBottom: insets.bottom,
+    ...(webGutter > 0 ? { width: windowWidth, marginLeft: -webGutter } : {}),
   };
 
   const tabBarHeight = 60 + insets.bottom;

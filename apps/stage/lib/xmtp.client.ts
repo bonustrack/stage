@@ -30,6 +30,15 @@ export class NoAccountError extends Error {
 
 const ENV_KEY = 'xmtp.env';
 
+export function cachedSelfEthAddress(): string | null {
+  return getCachedXmtpClient()?.publicIdentity.identifier ?? null;
+}
+
+export async function selfEthAddress(): Promise<string | null> {
+  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  return client.publicIdentity.identifier;
+}
+
 export async function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promise<Client> {
   const cached = getCachedXmtpClient();
   if (cached) return cached;

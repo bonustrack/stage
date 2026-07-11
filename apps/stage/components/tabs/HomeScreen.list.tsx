@@ -26,6 +26,7 @@ interface ChannelsListProps {
   sortedRows: RowT[];
   requestCount: number;
   barLabels: string[];
+  showFilterBar: boolean;
   enabledLabels: Set<string>;
   onToggleLabel: (label: string) => void;
   unreadOnly: boolean;
@@ -73,7 +74,7 @@ function HomeTopnavRight({ head, requestCount, router, onOpenSearch }: {
         onNewGroup={() => { router.push('/new-group'); }}
         onProfile={() => {
           void getActiveAccount().then(acct => {
-            if (acct?.address) router.push(`/user/${acct.address}`);
+            if (acct?.address) router.push(`/profile/${acct.address}`);
           });
         }}
         onSettings={() => { router.push('/settings'); }}
@@ -86,11 +87,13 @@ function ChannelsListHeader({ p }: { p: ChannelsListProps }): React.ReactElement
   return (
     <>
       <ProposalsBanner/>
-      <LabelFilterBar
-        labels={p.barLabels} enabled={p.enabledLabels} unreadOnly={p.unreadOnly}
-        onToggle={p.onToggleLabel} onToggleUnread={p.onToggleUnread} onClearAll={p.onClearAll}
-        panRef={p.panRef}
-      />
+      {p.showFilterBar ? (
+        <LabelFilterBar
+          labels={p.barLabels} enabled={p.enabledLabels} unreadOnly={p.unreadOnly}
+          onToggle={p.onToggleLabel} onToggleUnread={p.onToggleUnread} onClearAll={p.onClearAll}
+          panRef={p.panRef}
+        />
+      ) : null}
     </>
   );
 }

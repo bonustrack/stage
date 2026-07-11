@@ -17,7 +17,7 @@ export interface ConversationSearchProps {
   sub: string; bg: string;
   c: ConvState;
   dark: boolean;
-  router: { push: (h: { pathname: '/user/[address]'; params: { address: string } }) => void };
+  router: { push: (h: { pathname: '/profile/[address]'; params: { address: string } }) => void };
 }
 
 export function ConversationSearch({
