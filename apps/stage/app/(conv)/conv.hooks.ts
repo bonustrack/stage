@@ -1,19 +1,40 @@
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { InteractionManager, Keyboard } from 'react-native';
 import type { Input } from '@stage-labs/kit/react-native/input';
 import { isArchived, loadArchivedIds, subscribeArchived } from '../../lib/archived';
-import { dmUnreachableReason, openDmWithAddress } from '../../modules/messaging';
+import { dmUnreachableReason, findExistingDmWithAddress, openDmWithAddress } from '../../modules/messaging';
 
 const DM_ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
 
+const CREATE_RETRY_DELAY_MS = 1500;
+
 export type ResolveConvError = false | 'unregistered' | 'stale-installations' | 'failed';
 
-export interface ResolvedConv { convId: string | null; resolving: boolean; error: ResolveConvError }
+export interface ResolvedConv {
+  convId: string | null;
+  resolving: boolean;
+  error: ResolveConvError;
+  retry: () => void;
+}
+
+async function resolveDmConvId(address: string): Promise<string> {
+  try {
+    return await openDmWithAddress(address);
+  } catch (err) {
+    if (process.env.NODE_ENV !== 'production') console.warn('openDmWithAddress failed', (err as Error).message);
+    const existing = await findExistingDmWithAddress(address).catch(() => null);
+    if (existing) return existing;
+    await new Promise(resolve => setTimeout(resolve, CREATE_RETRY_DELAY_MS));
+    return openDmWithAddress(address);
+  }
+}
 
 export function useResolvedConvId(param: string | undefined): ResolvedConv {
   const isAddress = !!param && DM_ADDRESS_RE.test(param);
-  const [state, setState] = useState<ResolvedConv>(() =>
+  const [attempt, setAttempt] = useState(0);
+  const retry = useCallback(() => { setAttempt(a => a + 1); }, []);
+  const [state, setState] = useState<Omit<ResolvedConv, 'retry'>>(() =>
     isAddress
       ? { convId: null, resolving: true, error: false }
       : { convId: param ?? null, resolving: false, error: false });
@@ -24,16 +45,15 @@ export function useResolvedConvId(param: string | undefined): ResolvedConv {
     }
     let cancelled = false;
     setState({ convId: null, resolving: true, error: false });
-    void openDmWithAddress(param)
+    void resolveDmConvId(param)
       .then(id => { if (!cancelled) setState({ convId: id, resolving: false, error: false }); })
-      .catch(async (err: unknown) => {
-        if (process.env.NODE_ENV !== 'production') console.warn('openDmWithAddress failed', (err as Error).message);
+      .catch(async () => {
         const error = (await dmUnreachableReason(param).catch(() => null)) ?? 'failed';
         if (!cancelled) setState({ convId: null, resolving: false, error });
       });
     return () => { cancelled = true; };
-  }, [param]);
-  return state;
+  }, [param, attempt]);
+  return { ...state, retry };
 }
 
 type InputRef = React.RefObject<React.ComponentRef<typeof Input> | null>;
