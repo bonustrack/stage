@@ -11,6 +11,12 @@ export async function openDmWithAddress(address: string): Promise<string> {
   return dm.id;
 }
 
+export async function findExistingDmWithAddress(address: string): Promise<string | null> {
+  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const dm = await client.conversations.findDmByIdentity(new PublicIdentity(address, 'ETHEREUM'));
+  return dm?.id ?? null;
+}
+
 export async function dmUnreachableReason(address: string): Promise<DmUnreachableReason> {
   const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
   const inboxId = await client.findInboxIdFromIdentity(new PublicIdentity(address, 'ETHEREUM'));
@@ -19,8 +25,9 @@ export async function dmUnreachableReason(address: string): Promise<DmUnreachabl
   const installationIds = (states[0]?.installations ?? []).map(i => i.id) as Parameters<typeof staticKeyPackageStatuses>[1];
   if (installationIds.length === 0) return 'stale-installations';
   const { statuses } = await staticKeyPackageStatuses('production', installationIds);
-  const anyValid = [...statuses.values()].some(s => !s.validationError);
-  return anyValid ? null : 'stale-installations';
+  const entries = [...statuses.values()];
+  if (entries.length === 0) return null;
+  return entries.some(s => !s.validationError) ? null : 'stale-installations';
 }
 
 export async function listRequestConvs(): Promise<Conversation[]> {

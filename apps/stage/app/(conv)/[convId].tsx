@@ -2,6 +2,7 @@
 import { useCallback, useState } from 'react';
 
 import { Animated as RNAnimated } from 'react-native';
+import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from '../../components/Spinner';
 import { Col } from '../../components/layout';
@@ -62,10 +63,11 @@ export default function XmtpConversation(): React.ReactElement {
 
   if (!convId) {
     return (
-      <Col surface="surface" flex={1} align="center" justify="center">
-        <Text role="secondary">
+      <Col surface="surface" flex={1} align="center" justify="center" gap={16} padding={24}>
+        <Text role="secondary" textAlign="center">
           {resolveErrorMessage(resolved.error)}
         </Text>
+        <Button dark={dark} variant="soft" label="Try again" style={{ alignSelf: 'center' }} onPress={resolved.retry}/>
       </Col>
     );
   }
