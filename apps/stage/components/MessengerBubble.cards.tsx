@@ -168,7 +168,7 @@ function TxToRow({ address }: { address: string }): React.ReactElement {
   const display = getPeerName(address) ?? shortAddress(address);
   return (
     <Pressable
-      onPress={() => { router.push({ pathname: '/user/[address]', params: { address } }); }}>
+      onPress={() => { router.push({ pathname: '/profile/[address]', params: { address } }); }}>
       <Row align="center" gap={6}>
         <Text role="secondary" size="xs">To</Text>
         <Avatar address={address} size={16} />

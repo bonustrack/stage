@@ -82,7 +82,11 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
     try {
       const more = await loadFeedOlderPage(ln, oldest);
       if (!more) { hasMoreRef.current = false; setHasMore(false); }
-    } catch { }
+    } catch (err) {
+      if (process.env.NODE_ENV !== 'production') console.warn('loadFeedOlderPage failed', (err as Error).message);
+      hasMoreRef.current = false;
+      setHasMore(false);
+    }
     finally {
       loadingOlderRef.current = false;
       setLoadingOlder(false);

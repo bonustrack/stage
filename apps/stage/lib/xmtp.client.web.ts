@@ -35,6 +35,15 @@ type WebXmtpClient = Client<unknown>;
 function addressKeyFor(id: string): string { return ADDRESS_PREFIX + id; }
 function envKeyFor(id: string): string { return ENV_PREFIX + id; }
 
+export function cachedSelfEthAddress(): string | null {
+  return getCachedXmtpClient()?.accountIdentifier?.identifier ?? null;
+}
+
+export async function selfEthAddress(): Promise<string | null> {
+  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  return client.accountIdentifier?.identifier ?? null;
+}
+
 export async function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promise<WebXmtpClient> {
   const cached = getCachedXmtpClient();
   if (cached) return cached;

@@ -15,7 +15,17 @@ import {
   WALLET_SEND_CALLS_CODEC, TRANSACTION_REFERENCE_CODEC,
 } from './xmtp.codecs';
 
-export { envelopeOfXmtpMessage } from './xmtp.envelope';
+import type { HistoryEntry } from '@stage-labs/client/types';
+import { envelopeOfXmtpMessage } from './xmtp.envelope';
+
+export { envelopeOfXmtpMessage };
+
+export async function olderConvMessages(line: string, beforeTsMs: number, limit: number): Promise<HistoryEntry[]> {
+  const conv = await convOfLine(line);
+  if (!conv) return [];
+  const older = await conv.messages({ limit, beforeNs: beforeTsMs * 1_000_000, direction: 'DESCENDING' });
+  return older.map(m => envelopeOfXmtpMessage(m, line));
+}
 
 export async function xmtpSendText(line: string, text: string): Promise<string> {
   const conv = await convOfLine(line);

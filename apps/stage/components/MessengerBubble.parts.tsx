@@ -14,7 +14,7 @@ function MentionLink({ address, dark }: { address: string; dark: boolean }): Rea
   const linkColor = dark ? '#7aa2ff' : '#2f6feb';
   return (
     <Text weight="semibold"
-      onPress={() => { router.push({ pathname: '/user/[address]', params: { address } }); }} color={linkColor}
+      onPress={() => { router.push({ pathname: '/profile/[address]', params: { address } }); }} color={linkColor}
       suppressHighlighting>
       @{display}
     </Text>

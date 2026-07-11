@@ -21,8 +21,11 @@ import { usePushDeepLinks } from '../lib/push';
 import { ensureActiveAccount, ensureMessagingStreamSync } from '../modules/messaging';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { getQueryClient } from '../lib/queryClient';
+import { applyWebGlobalStyles } from '../platform/webStyles';
 
 const queryClient = getQueryClient();
+
+applyWebGlobalStyles();
 
 (function applyDefaultFont(): void {
   const TextAny = Text as unknown as { defaultProps?: Record<string, unknown> };
@@ -91,7 +94,10 @@ function RootLayoutInner(): React.ReactElement {
         screenOptions={{
           headerShown: false,
           freezeOnBlur: true,
-          cardStyle: { backgroundColor: bg },
+          cardStyle: {
+            backgroundColor: bg,
+            ...(Platform.OS === 'web' ? { overflow: 'visible' as const } : {}),
+          },
           gestureEnabled: Platform.OS !== 'web',
           gestureResponseDistance: 9999,
           ...(Platform.OS === 'web'

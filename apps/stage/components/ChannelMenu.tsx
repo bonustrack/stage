@@ -105,7 +105,7 @@ export function ChannelMenu({
     'toggle-pin': () => { run(() => { void togglePin(convId); }); },
     info: () => { run(() => {
       if (isGroup) router.push({ pathname: '/group/[convId]', params: { convId } });
-      else if (peerAddress) router.push({ pathname: '/user/[address]', params: { address: peerAddress } });
+      else if (peerAddress) router.push({ pathname: '/profile/[address]', params: { address: peerAddress } });
     }); },
     'toggle-archive': onToggleArchive,
     leave: () => { confirmLeaveGroup(convId, context, router, onClose, onAfterLeave); },

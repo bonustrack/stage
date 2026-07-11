@@ -1,7 +1,8 @@
 import {
-  ReactionAction, ReactionSchema, encodeText,
+  ReactionAction, ReactionSchema, SortDirection, encodeText,
   type Conversation, type Reaction,
 } from '@xmtp/browser-sdk';
+import type { HistoryEntry } from '@stage-labs/client/types';
 import {
   buildReaction, buildVote, buildOpenAnswer, type ReactionPayload,
 } from '@stage-labs/client/xmtp/builders';
@@ -18,7 +19,20 @@ import {
   WALLET_SEND_CALLS_CODEC, TRANSACTION_REFERENCE_CODEC,
 } from './xmtp.codecs.web';
 
-export { envelopeOfXmtpMessage } from './xmtp.envelope';
+import { envelopeOfXmtpMessage } from './xmtp.envelope.web';
+
+export { envelopeOfXmtpMessage };
+
+export async function olderConvMessages(line: string, beforeTsMs: number, limit: number): Promise<HistoryEntry[]> {
+  const conv = await convOfLine(line);
+  if (!conv) return [];
+  const older = await conv.messages({
+    limit: BigInt(limit),
+    sentBeforeNs: BigInt(beforeTsMs) * BigInt(1_000_000),
+    direction: SortDirection.Descending,
+  });
+  return older.map(m => envelopeOfXmtpMessage(m, line));
+}
 
 type SendableConv = Conversation;
 type EncodedContentArg = Parameters<SendableConv['send']>[0];

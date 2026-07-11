@@ -1,5 +1,5 @@
 
-import { Box, Col } from './layout';
+import { Col } from './layout';
 
 import { Avatar } from './Avatar';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -10,26 +10,6 @@ import { shortAddress } from '../modules/messaging';
 import { type AccountRecord } from '../lib/accounts';
 
 export interface DrawerColors { head: string; sub: string; border: string }
-
-export function DrawerHeader({ rec, c }: {
-  rec: AccountRecord | null; c: DrawerColors;
-}): React.ReactElement {
-  return (
-    <Box padding={{ x: 18, bottom: 16 }}>
-      {rec ? (
-        <>
-          <Avatar address={rec.address} size={56} style={{ backgroundColor: c.border, marginBottom: 10 }}/>
-          <Text weight="semibold" size="4xl" numberOfLines={1} color={c.head}>
-            {getPeerName(rec.address) ?? rec.label ?? shortAddress(rec.address)}
-          </Text>
-          <Text size="md" numberOfLines={1} color={c.sub} style={{ marginTop: 1 }}>
-            {shortAddress(rec.address)}
-          </Text>
-        </>
-      ) : null}
-    </Box>
-  );
-}
 
 export function drawerAccountRows({ accounts, activeId, onSwitch, c, dark }: {
   accounts: AccountRecord[]; activeId: string | null;

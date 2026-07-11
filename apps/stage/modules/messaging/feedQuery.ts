@@ -4,7 +4,7 @@ import { getAccountEpoch } from '../../lib/accountEpoch';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { isMetroControlBody } from '../../lib/push';
 import { convOfLine } from '../../lib/xmtp.client';
-import { envelopeOfXmtpMessage } from '../../lib/xmtp.messages';
+import { envelopeOfXmtpMessage, olderConvMessages } from '../../lib/xmtp.messages';
 import { feedCache } from '../../lib/xmtp.state';
 import { syncInboxOnce, PAGE_SIZE } from '../../lib/xmtp.stream';
 import { messagingKeys } from './queries';
@@ -76,17 +76,13 @@ export function prefetchFeed(line: string): void {
 }
 
 export async function loadFeedOlderPage(line: string, oldest: HistoryEntry): Promise<boolean> {
-  const conv = await convOfLine(line);
-  if (!conv) return false;
-  const beforeNs = new Date(oldest.ts).getTime() * 1_000_000;
-  const older = await conv.messages({ limit: PAGE_SIZE, beforeNs, direction: 'DESCENDING' });
-  const mapped = older
-    .map(m => envelopeOfXmtpMessage(m, line))
+  const beforeTsMs = new Date(oldest.ts).getTime();
+  const mapped = (await olderConvMessages(line, beforeTsMs, PAGE_SIZE))
     .filter(e => !isMetroControlBody(e.text));
   const prev = feedCache.get(line) ?? [];
   const seen = new Set(prev.map(e => e.id));
   const additions = mapped.filter(e => !seen.has(e.id));
   if (additions.length > 0) feedCache.set(line, [...prev, ...additions]);
-  return mapped.filter(e => !prev.some(x => x.id === e.id)).length >= PAGE_SIZE;
+  return additions.length >= PAGE_SIZE;
 }
 

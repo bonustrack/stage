@@ -13,10 +13,19 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { ConversationFeed } from '../../components/xmtp-conv/ConversationFeed';
 import { ConversationSearch } from '../../components/xmtp-conv/ConversationSearch';
 import { useConversationState } from '../../components/xmtp-conv/useConversationState';
-import { useSearchKeyboardFocus, useArchivedFlag, useResolvedConvId } from './conv.hooks';
+import {
+  useSearchKeyboardFocus, useArchivedFlag, useResolvedConvId, type ResolveConvError,
+} from './conv.hooks';
 import {
   ConversationTopnav, ConversationFooter, ConversationOverlays, ConversationSearchTopnav,
 } from './conv.screen-parts';
+
+function resolveErrorMessage(error: ResolveConvError): string {
+  if (error === 'unregistered') return 'This address is not on XMTP yet. Ask them to sign in once, then retry.';
+  if (error === 'stale-installations') return 'This contact has not used XMTP in a while, so their keys expired. They need to open an XMTP app before you can message them.';
+  if (error === 'failed') return 'Could not open this conversation.';
+  return 'Missing conversation id.';
+}
 
 export default function XmtpConversation(): React.ReactElement {
   const router = useRouter();
@@ -55,7 +64,7 @@ export default function XmtpConversation(): React.ReactElement {
     return (
       <Col surface="surface" flex={1} align="center" justify="center">
         <Text role="secondary">
-          {resolved.error ? 'Could not open this conversation.' : 'Missing conversation id.'}
+          {resolveErrorMessage(resolved.error)}
         </Text>
       </Col>
     );

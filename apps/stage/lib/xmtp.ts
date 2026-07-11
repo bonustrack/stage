@@ -12,7 +12,7 @@ export {
   getOrCreateXmtpClient, ensureActiveAccount, switchToAccount, getCachedXmtpClient, waitForXmtpReady, deleteAccount,
   resetXmtpClient, getLastReadNs, setLastReadNs, markConvReadSynced,
   markConvUnreadSynced, syncPreferences, convOfLine, NoAccountError,
-  listXmtpInstallations, revokeXmtpInstallation,
+  listXmtpInstallations, revokeXmtpInstallation, selfEthAddress, cachedSelfEthAddress,
 } from './xmtp.client';
 export type { XmtpInstallation } from './xmtp.client';
 
@@ -21,8 +21,8 @@ export {
 } from './xmtp.identity';
 
 export {
-  openDmWithAddress, listRequestConvs, syncAllowedConversations, acceptRequestConv, blockRequestConv,
-  getConvConsentState, streamConvConsent, syncConsent,
+  openDmWithAddress, dmUnreachableReason, listRequestConvs, syncAllowedConversations, acceptRequestConv,
+  blockRequestConv, getConvConsentState, streamConvConsent, syncConsent,
 } from './xmtp.conv';
 
 export { createGroup, addGroupMembers, leaveGroupConv } from './xmtp.groups';

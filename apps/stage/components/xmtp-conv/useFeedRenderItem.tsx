@@ -11,7 +11,7 @@ type Bubble = ConvState['allBubbles'][number];
 export function useFeedRenderItem(
   c: ConvState,
   dark: boolean,
-  router: { push: (h: { pathname: '/user/[address]'; params: { address: string } }) => void },
+  router: { push: (h: { pathname: '/profile/[address]'; params: { address: string } }) => void },
   highlight?: string,
 ): {
   renderItem: ({ item }: { item: Bubble }) => React.ReactElement;
@@ -41,7 +41,7 @@ export function useFeedRenderItem(
   }, [events]);
 
   const onAvatarPress = useCallback((address: string) => {
-    router.push({ pathname: '/user/[address]', params: { address } });
+    router.push({ pathname: '/profile/[address]', params: { address } });
   }, [router]);
 
   const renderItem = useCallback(({ item }: { item: Bubble }) => (

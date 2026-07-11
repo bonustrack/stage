@@ -1,7 +1,7 @@
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Platform, useWindowDimensions } from 'react-native';
-import { Box } from './layout';
+import { Box, WEB_CONTENT_MAX_WIDTH } from './layout';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import type { GestureType } from 'react-native-gesture-handler';
 import Animated, {
@@ -19,7 +19,9 @@ const IS_WEB = Platform.OS === 'web';
 export function TabsPager(): React.ReactElement {
   const router = useRouter();
   const pathname = usePathname();
-  const { width } = useWindowDimensions();
+  const { width: windowWidth } = useWindowDimensions();
+  const [pagerWidth, setPagerWidth] = useState<number | null>(null);
+  const width = IS_WEB ? (pagerWidth ?? Math.min(windowWidth, WEB_CONTENT_MAX_WIDTH)) : windowWidth;
 
   const routeIndex = indexOfPathname(pathname);
 
@@ -94,17 +96,19 @@ export function TabsPager(): React.ReactElement {
   }));
 
   return (
-    <GestureDetector gesture={pan}>
-      <Animated.View style={stripStyle}>
-        {TAB_ORDER.map((name) => {
-          const Body = PAGES[name];
-          return (
-            <Box width={width} key={name} style={{ height: '100%' }}>
-              <Body panRef={panRef}/>
-            </Box>
-          );
-        })}
-      </Animated.View>
-    </GestureDetector>
+    <Box flex={1} style={{ overflow: 'hidden' }} onLayout={(e) => { if (IS_WEB) setPagerWidth(e.nativeEvent.layout.width); }}>
+      <GestureDetector gesture={pan}>
+        <Animated.View style={stripStyle}>
+          {TAB_ORDER.map((name) => {
+            const Body = PAGES[name];
+            return (
+              <Box width={width} key={name} style={{ height: '100%' }}>
+                <Body panRef={panRef}/>
+              </Box>
+            );
+          })}
+        </Animated.View>
+      </GestureDetector>
+    </Box>
   );
 }

@@ -33,7 +33,7 @@ export function useBubbleGestures(input: BubbleGestureInput): BubbleGestures {
   const crossed = useSharedValue(false);
   const rowRef = useRef<View>(null);
   const lastAnchor = useRef<MenuAnchor>({ y: 0, height: 0 });
-  const navGestureRef = useGestureHandlerRef() as React.RefObject<React.ComponentType | undefined>;
+  const navGestureRef = useGestureHandlerRef() as React.RefObject<React.ComponentType | undefined> | null;
 
   const fireReply = (): void => { if (!pending) onReply?.(); };
   const openMenu = (): void => {
@@ -51,28 +51,31 @@ export function useBubbleGestures(input: BubbleGestureInput): BubbleGestures {
   };
   const onDoubleTap = (): void => { if (!pending) { lightHaptic(); onReact?.('👍'); } };
 
-  const replyPan = useMemo(() => Gesture.Pan()
-    .activeOffsetX(-15)
-    .failOffsetX(15)
-    .failOffsetY([-12, 12])
-    .simultaneousWithExternalGesture(navGestureRef)
-    .onBegin(() => { crossed.value = false; })
-    .onChange(e => {
-      const raw = Math.min(0, e.translationX);
-      const t = THRESHOLD;
-      swipeX.value = raw > t ? raw : t + (raw - t) / 3;
-      const past = raw <= t;
-      if (past && !crossed.value) { crossed.value = true; runOnJS(lightHaptic)(); }
-      else if (!past && crossed.value) { crossed.value = false; }
-    })
-    .onEnd(e => {
-      if (e.translationX <= THRESHOLD) runOnJS(fireReply)();
-      swipeX.value = withSpring(0, { damping: 18, stiffness: 220 });
-    })
-    .onFinalize(() => {
-      swipeX.value = withSpring(0, { damping: 18, stiffness: 220 });
-    }),
-    [onReply, pending, swipeX, crossed, navGestureRef]);
+  const replyPan = useMemo(() => {
+    const pan = Gesture.Pan()
+      .activeOffsetX(-15)
+      .failOffsetX(15)
+      .failOffsetY([-12, 12]);
+    if (navGestureRef) pan.simultaneousWithExternalGesture(navGestureRef);
+    return pan
+      .onBegin(() => { crossed.value = false; })
+      .onChange(e => {
+        const raw = Math.min(0, e.translationX);
+        const t = THRESHOLD;
+        swipeX.value = raw > t ? raw : t + (raw - t) / 3;
+        const past = raw <= t;
+        if (past && !crossed.value) { crossed.value = true; runOnJS(lightHaptic)(); }
+        else if (!past && crossed.value) { crossed.value = false; }
+      })
+      .onEnd(e => {
+        if (e.translationX <= THRESHOLD) runOnJS(fireReply)();
+        swipeX.value = withSpring(0, { damping: 18, stiffness: 220 });
+      })
+      .onFinalize(() => {
+        swipeX.value = withSpring(0, { damping: 18, stiffness: 220 });
+      });
+  },
+  [onReply, pending, swipeX, crossed, navGestureRef]);
 
   const doubleTap = useMemo(() => Gesture.Tap().numberOfTaps(2).onEnd((_e, ok) => {
     if (ok) runOnJS(onDoubleTap)();

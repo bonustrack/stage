@@ -7,7 +7,9 @@ import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box, Col } from '../layout';
 import { Caption } from '@stage-labs/kit/react-native/caption';
-import { getOrCreateXmtpClient, resetXmtpClient, shortAddress, useActiveAccount } from '../../modules/messaging';
+import {
+  getOrCreateXmtpClient, resetXmtpClient, selfEthAddress, shortAddress, useActiveAccount,
+} from '../../modules/messaging';
 import { resetAccount } from '../../lib/wallet';
 import { flash } from '../../lib/toast';
 import { usePalette } from '../../lib/theme';
@@ -50,8 +52,9 @@ export function MessengerSettings(): React.ReactElement {
     void (async (): Promise<void> => {
       try {
         const client = await getOrCreateXmtpClient('production');
+        const address = await selfEthAddress();
         if (!alive) return;
-        setAddr(client.publicIdentity.identifier);
+        setAddr(address ?? '');
         setInbox(client.inboxId);
         setInstall(client.installationId ?? '');
       } catch { }

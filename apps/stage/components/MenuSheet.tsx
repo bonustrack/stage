@@ -8,7 +8,7 @@ import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { usePeerProfiles } from '../lib/peerProfiles';
 import { AccountManager } from '../modules/messaging';
 import { loadAccounts, getActiveAccountId, type AccountRecord } from '../lib/accounts';
-import { drawerAccountRows, DrawerHeader, DrawerRow } from './LeftDrawer.parts';
+import { drawerAccountRows, DrawerRow } from './LeftDrawer.parts';
 import { useDrawerAccountActions } from './LeftDrawer.accounts';
 
 export function MenuSheet({ visible, onClose }: {
@@ -48,7 +48,7 @@ export function MenuSheet({ visible, onClose }: {
     const addr = activeRec?.address;
     if (!addr) return;
     onClose();
-    router.navigate(`/user/${addr}`);
+    router.navigate(`/profile/${addr}`);
   }
 
   function onSwitch(id: string): void {
@@ -61,8 +61,6 @@ export function MenuSheet({ visible, onClose }: {
 
   return (
     <AppModal visible={visible} onClose={onClose}>
-      <DrawerHeader rec={activeRec} c={{ head, sub, border }}/>
-      {}
       <ListView dark={dark} style={{ marginHorizontal: -16 }}>
         {drawerAccountRows({ accounts, activeId, onSwitch, c: { head, sub, border }, dark })}
         {actions.rows}

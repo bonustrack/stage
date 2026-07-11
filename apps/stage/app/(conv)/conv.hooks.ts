@@ -3,11 +3,13 @@ import { useEffect, useRef, useState } from 'react';
 import { InteractionManager, Keyboard } from 'react-native';
 import type { Input } from '@stage-labs/kit/react-native/input';
 import { isArchived, loadArchivedIds, subscribeArchived } from '../../lib/archived';
-import { openDmWithAddress } from '../../modules/messaging';
+import { dmUnreachableReason, openDmWithAddress } from '../../modules/messaging';
 
 const DM_ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
 
-export interface ResolvedConv { convId: string | null; resolving: boolean; error: boolean }
+export type ResolveConvError = false | 'unregistered' | 'stale-installations' | 'failed';
+
+export interface ResolvedConv { convId: string | null; resolving: boolean; error: ResolveConvError }
 
 export function useResolvedConvId(param: string | undefined): ResolvedConv {
   const isAddress = !!param && DM_ADDRESS_RE.test(param);
@@ -24,7 +26,11 @@ export function useResolvedConvId(param: string | undefined): ResolvedConv {
     setState({ convId: null, resolving: true, error: false });
     void openDmWithAddress(param)
       .then(id => { if (!cancelled) setState({ convId: id, resolving: false, error: false }); })
-      .catch(() => { if (!cancelled) setState({ convId: null, resolving: false, error: true }); });
+      .catch(async (err: unknown) => {
+        if (process.env.NODE_ENV !== 'production') console.warn('openDmWithAddress failed', (err as Error).message);
+        const error = (await dmUnreachableReason(param).catch(() => null)) ?? 'failed';
+        if (!cancelled) setState({ convId: null, resolving: false, error });
+      });
     return () => { cancelled = true; };
   }, [param]);
   return state;

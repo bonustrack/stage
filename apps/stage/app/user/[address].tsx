@@ -1,8 +1,7 @@
 
-import { useLocalSearchParams } from 'expo-router';
-import { ProfileScreen } from '../../components/ProfileScreen';
+import { Redirect, useLocalSearchParams } from 'expo-router';
 
-export default function UserProfileView(): React.ReactElement {
+export default function LegacyUserRedirect(): React.ReactElement {
   const { address } = useLocalSearchParams<{ address: string }>();
-  return <ProfileScreen address={address ?? ''} variant="route" />;
+  return <Redirect href={{ pathname: '/profile/[address]', params: { address: address ?? '' } }} />;
 }

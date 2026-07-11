@@ -20,7 +20,7 @@ export function AppModal({
       open={visible}
       onClose={onClose}
       side="bottom"
-      animationType="slide"
+      animationType="none"
       gestureRoot
       backdropColor="rgba(0,0,0,0.45)"
       panelBackground={sheetBg}

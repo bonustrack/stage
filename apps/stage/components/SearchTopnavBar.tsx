@@ -4,7 +4,7 @@ import { fontSize } from '@stage-labs/kit/tokens';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Input } from '@stage-labs/kit/react-native/input';
-import { Row } from './layout';
+import { Row, WebFullBleed } from './layout';
 import { TOPNAV_HEIGHT } from './Topnav';
 
 export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
@@ -20,6 +20,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
   const { head, sub } = props;
   const topInset = props.topInset ?? 0;
   return (
+    <WebFullBleed>
     <Row
       height={TOPNAV_HEIGHT + topInset}
       padding={{ x: 16, top: topInset }}
@@ -45,5 +46,6 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
         </Pressable>
       ) : null}
     </Row>
+    </WebFullBleed>
   );
 });
