@@ -7,27 +7,37 @@ import {
   decodeClientDataJson,
   effectiveRpId,
   hexToBytes,
+  hostSupportsRpId,
   normalizeRegistrationPublicKey,
   signableMessageToHex,
 } from '../lib/zerodev/passkeys.model';
 
-describe('effectiveRpId — configured rpId only when the host is inside it', () => {
+describe('hostSupportsRpId — passkeys only on the rpId family or local dev hosts', () => {
+  test('production host and subdomains are supported', () => {
+    expect(hostSupportsRpId('stage.box', 'stage.box')).toBe(true);
+    expect(hostSupportsRpId('stage.box', 'dev.stage.box')).toBe(true);
+  });
+  test('local dev hosts are supported', () => {
+    expect(hostSupportsRpId('stage.box', 'localhost')).toBe(true);
+    expect(hostSupportsRpId('stage.box', '127.0.0.1')).toBe(true);
+  });
+  test('ephemeral preview hosts are NOT supported (would mint an unusable on-chain credential)', () => {
+    expect(hostSupportsRpId('stage.box', 'deploy-preview-12--stage.netlify.app')).toBe(false);
+  });
+  test('lookalike domains are NOT supported', () => {
+    expect(hostSupportsRpId('stage.box', 'evilstage.box')).toBe(false);
+  });
+});
+
+describe('effectiveRpId — configured rpId inside its family, hostname on local dev', () => {
   test('exact production host keeps the configured rpId', () => {
     expect(effectiveRpId('stage.box', 'stage.box')).toBe('stage.box');
   });
   test('subdomain keeps the configured rpId (registrable suffix)', () => {
     expect(effectiveRpId('stage.box', 'dev.stage.box')).toBe('stage.box');
   });
-  test('localhost dev server falls back to the hostname', () => {
+  test('localhost dev server registers against localhost', () => {
     expect(effectiveRpId('stage.box', 'localhost')).toBe('localhost');
-  });
-  test('unrelated preview host falls back to the hostname', () => {
-    expect(effectiveRpId('stage.box', 'deploy-preview-12--stage.netlify.app')).toBe(
-      'deploy-preview-12--stage.netlify.app',
-    );
-  });
-  test('lookalike domain is NOT treated as inside the rpId', () => {
-    expect(effectiveRpId('stage.box', 'evilstage.box')).toBe('evilstage.box');
   });
 });
 
@@ -47,8 +57,9 @@ describe('base64url helpers — round-trips and url-unsafe characters', () => {
     expect(Array.from(hexToBytes('00ff'))).toEqual([0, 255]);
   });
   test('decodeClientDataJson decodes base64url that would crash atob', () => {
-    const json = '{"type":"webauthn.get","challenge":"xyz","origin":"https://stage.box"}';
+    const json = '{"type":"webauthn.get","challenge":">>?","origin":"https://stage.box"}';
     const b64url = bytesToBase64Url(new TextEncoder().encode(json));
+    expect(b64url).toMatch(/[-_]/);
     expect(decodeClientDataJson(b64url)).toBe(json);
   });
 });

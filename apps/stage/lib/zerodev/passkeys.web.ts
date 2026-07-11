@@ -15,11 +15,13 @@ import {
   decodeClientDataJson,
   effectiveRpId,
   hexToBytes,
+  hostSupportsRpId,
   normalizeRegistrationPublicKey,
   signableMessageToHex,
   type RegisterPasskeyOptions,
   type StoredPasskey,
 } from './passkeys.model';
+import { zerodevRpId } from './env';
 
 type PasskeyGetRequest = Parameters<typeof passkey.get>[0];
 
@@ -27,7 +29,8 @@ export function passkeysAvailable(): boolean {
   return (
     typeof window !== 'undefined' &&
     window.isSecureContext &&
-    typeof window.PublicKeyCredential === 'function'
+    typeof window.PublicKeyCredential === 'function' &&
+    hostSupportsRpId(zerodevRpId(), window.location.hostname)
   );
 }
 
@@ -70,6 +73,10 @@ export function passkeySignMessageCallback(): unknown {
   return signMessageWithWebPasskeys;
 }
 
+function isUserCancelled(e: unknown): boolean {
+  return e instanceof Error && (e.name === 'NotAllowedError' || e.name === 'AbortError');
+}
+
 export async function registerPasskeyCredential(
   hdIndex: number,
   opts: RegisterPasskeyOptions,
@@ -79,12 +86,13 @@ export async function registerPasskeyCredential(
     const rpId = effectiveRpId(opts.rpId, window.location.hostname);
     const challengeBytes = new Uint8Array(32);
     crypto.getRandomValues(challengeBytes);
+    const userTag = bytesToBase64Url(crypto.getRandomValues(new Uint8Array(4)));
     const cred = await passkey.create({
       challenge: bytesToBase64Url(challengeBytes),
       pubKeyCredParams: [{ alg: -7, type: 'public-key' }],
       rp: { id: rpId, name: 'Stage' },
       user: {
-        id: bytesToBase64Url(new TextEncoder().encode(`${opts.userName}:${hdIndex}`)),
+        id: bytesToBase64Url(new TextEncoder().encode(`${opts.userName}:${hdIndex}:${userTag}`)),
         name: opts.userName,
         displayName: opts.userDisplayName ?? opts.userName,
       },
@@ -100,8 +108,9 @@ export async function registerPasskeyCredential(
       authenticatorIdHash: parsed.authenticatorIdHash,
       rpID: rpId,
     };
-  } catch {
-    return null;
+  } catch (e) {
+    if (isUserCancelled(e)) return null;
+    throw e instanceof Error ? e : new Error('Passkey registration failed');
   }
 }
 

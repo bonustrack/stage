@@ -114,6 +114,9 @@ export async function enablePasskeyForRecord(record: AccountRecord): Promise<Ena
   const cred = await resolveCredential(rec);
   if ('result' in cred) return cred.result;
   const stored = cred.stored;
+  if (!rec.passkey) {
+    await updateSmartAccount(rec.id, { passkey: stored, passkeyCredId: stored.authenticatorId });
+  }
 
   const swap = await deployAndSwapToPasskey(publicClient, rec.hdIndex, stored);
   if (!swap.ok) return { ok: false, reason: 'error', message: swap.message };

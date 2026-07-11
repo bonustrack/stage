@@ -12,9 +12,18 @@ export interface RegisterPasskeyOptions {
   userDisplayName?: string;
 }
 
+const DEV_HOSTS = new Set(['localhost', '127.0.0.1']);
+
+function hostInsideRpId(configured: string, hostname: string): boolean {
+  return hostname === configured || hostname.endsWith(`.${configured}`);
+}
+
+export function hostSupportsRpId(configured: string, hostname: string): boolean {
+  return hostInsideRpId(configured, hostname) || DEV_HOSTS.has(hostname);
+}
+
 export function effectiveRpId(configured: string, hostname: string): string {
-  if (hostname === configured || hostname.endsWith(`.${configured}`)) return configured;
-  return hostname;
+  return hostInsideRpId(configured, hostname) ? configured : hostname;
 }
 
 export function bytesToStandardBase64(bytes: Uint8Array): string {

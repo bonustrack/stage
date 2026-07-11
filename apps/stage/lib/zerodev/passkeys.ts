@@ -103,12 +103,13 @@ export async function registerPasskeyCredential(
     const challengeBytes = new Uint8Array(32);
     crypto.getRandomValues(challengeBytes);
     const challenge = bytesToBase64Url(challengeBytes);
+    const userTag = bytesToBase64Url(crypto.getRandomValues(new Uint8Array(4)));
     const cred = await passkey.create({
       challenge,
       pubKeyCredParams: [{ alg: -7, type: 'public-key' }],
       rp: { id: opts.rpId, name: 'Stage' },
       user: {
-        id: bytesToBase64Url(new TextEncoder().encode(`${opts.userName}:${hdIndex}`)),
+        id: bytesToBase64Url(new TextEncoder().encode(`${opts.userName}:${hdIndex}:${userTag}`)),
         name: opts.userName,
         displayName: opts.userDisplayName ?? opts.userName,
       },

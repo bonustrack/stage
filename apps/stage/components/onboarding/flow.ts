@@ -33,7 +33,7 @@ async function finishAccount(withPasskey: boolean, onStage?: (s: Stage) => void)
   const rec = await createSmartAccount();
   if (withPasskey && passkeysAvailable()) {
     const res = await enablePasskeyForRecord(rec);
-    if (!res.ok && res.reason !== 'already') {
+    if (!res.ok && res.reason !== 'already' && res.reason !== 'cancelled') {
       throw new Error(res.message ?? 'Could not set up the passkey for this account.');
     }
   }

@@ -1,5 +1,5 @@
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { getActiveAccount } from './accounts';
 import { capabilities } from './capabilities';
 import { enablePasskeyForRecord, passkeysAvailable, kernelDeployedOnChain } from './zerodev';
@@ -57,16 +57,22 @@ export function useEnablePasskey(epoch?: number): {
     })();
   }, []);
 
+  const confirming = useRef(false);
   const run = useCallback(() => {
-    if (busy) return;
+    if (busy || confirming.current) return;
+    confirming.current = true;
     void (async () => {
-      const ok = await capabilities.confirm({
-        title: 'Enable passkey',
-        message:
-          'Register a passkey on this device to approve every transaction with Face ID / biometrics instead of your recovery key. You can still recover with your phrase.',
-        confirmLabel: 'Enable',
-      });
-      if (ok) doEnable();
+      try {
+        const ok = await capabilities.confirm({
+          title: 'Enable passkey',
+          message:
+            'Register a passkey on this device to approve every transaction with Face ID / biometrics instead of your recovery key. You can still recover with your phrase.',
+          confirmLabel: 'Enable',
+        });
+        if (ok) doEnable();
+      } finally {
+        confirming.current = false;
+      }
     })();
   }, [busy, doEnable]);
 
