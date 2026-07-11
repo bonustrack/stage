@@ -68,7 +68,6 @@ config.resolver.extraNodeModules = {
 const WEB_NATIVE_STUBS = new Set([
   '@xmtp/react-native-sdk',
   'nodejs-mobile-react-native',
-  'react-native-passkeys',
   '@railgun-privacy/native-prover',
 ]);
 const webNativeStub = path.resolve(projectRoot, 'metro.shims', 'web', 'native-stub.js');

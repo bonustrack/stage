@@ -42,7 +42,7 @@ async function requireDeviceAuth(): Promise<boolean> {
 }
 
 async function requireRevealAuth(id?: string): Promise<boolean> {
-  let stored: import('./account').StoredPasskey | undefined;
+  let stored: import('./passkeys.model').StoredPasskey | undefined;
   try {
     const { getActiveAccount, loadAccounts } = await import('../accounts');
     const rec = id
@@ -53,7 +53,7 @@ async function requireRevealAuth(id?: string): Promise<boolean> {
     stored = undefined;
   }
   if (stored) {
-    const { assertPasskeyPresence } = await import('./account');
+    const { assertPasskeyPresence } = await import('./passkeys');
     const ok = await assertPasskeyPresence(stored);
     if (ok !== null) return ok;
   }

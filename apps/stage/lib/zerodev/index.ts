@@ -1,7 +1,7 @@
 export {
   restoreMnemonic, revealRecoveryPhrase, smartOwnerSigner,
 } from './keyring';
-export { passkeysAvailable } from './native';
+export { passkeysAvailable } from './passkeys';
 export { zerodevConfigured } from './env';
 export { createSmartAccount } from './create';
 export { kernelClientForRecord } from './kernelForRecord';

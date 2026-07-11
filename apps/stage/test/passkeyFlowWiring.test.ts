@@ -92,7 +92,7 @@ describe('C. enablePasskey.ts — deploy-via-ECDSA-initcode then swap sudo on-ch
     expect(enableSrc).toContain('changeSudoValidator');
     expect(enableSrc).toContain('sudoValidator: passkeyValidator');
   });
-  test('persists rec.passkey only AFTER the userOp receipt succeeds', () => {
+  test('persists the deployed flag only AFTER the userOp receipt succeeds', () => {
     const swapIdx = enableSrc.indexOf('changeSudoValidator');
     const waitIdx = enableSrc.indexOf('waitForUserOperationReceipt');
     const persistIdx = enableSrc.lastIndexOf('updateSmartAccount(');
@@ -100,6 +100,13 @@ describe('C. enablePasskey.ts — deploy-via-ECDSA-initcode then swap sudo on-ch
     expect(waitIdx).toBeGreaterThan(swapIdx);
     expect(persistIdx).toBeGreaterThan(waitIdx);
     expect(enableSrc).toContain('if (!receipt?.success)');
+  });
+  test('persists a fresh credential BEFORE the swap so an interrupted swap can never orphan it', () => {
+    const prePersist = enableSrc.indexOf('if (!rec.passkey) {');
+    const swapCall = enableSrc.indexOf('deployAndSwapToPasskey(publicClient, rec.hdIndex, stored)');
+    expect(prePersist).toBeGreaterThanOrEqual(0);
+    expect(swapCall).toBeGreaterThan(prePersist);
+    expect(enableSrc).toContain('if (rec.passkey) return { stored: rec.passkey }');
   });
   test('repairs an undeployed record that already carries a passkey (old broken shortcut)', () => {
     expect(enableSrc).toContain('if (rec.passkey && deployed) return { ok: false, reason: \'already\' }');
@@ -165,8 +172,34 @@ describe('G. Settings -> Wallet — Remove passkey affordance is wired + gated',
     expect(removeHookSrc).toContain("acct?.type === 'smart' && !!acct.passkey");
     expect(removeHookSrc).toContain('removePasskeyFromRecord(acct)');
   });
-  test('the hook confirms with a destructive Alert before reverting', () => {
-    expect(removeHookSrc).toContain('Alert.alert');
-    expect(removeHookSrc).toContain("style: 'destructive'");
+  test('the hook confirms with a destructive dialog before reverting', () => {
+    expect(removeHookSrc).toContain('capabilities.confirm');
+    expect(removeHookSrc).toContain('destructive: true');
+    expect(removeHookSrc).toContain('if (ok) doRemove()');
+  });
+});
+
+describe('H. web passkey seam — validator callback contract and safety gates', () => {
+  const webSrc = code(read('lib', 'zerodev', 'passkeys.web.ts'));
+
+  test('sign callback declares the exact 4-arg shape toPasskeyValidator invokes', () => {
+    expect(webSrc).toMatch(
+      /async function signMessageWithWebPasskeys\(\s*message: unknown,\s*rpID: string,\s*chainId: number,\s*allowCredentials\?/,
+    );
+  });
+  test('signature encodes r before s in the validator ABI tuple', () => {
+    expect(webSrc).toContain(
+      '[authenticatorDataHex, clientDataJSON, beforeType, r, s, isRIP7212SupportedNetwork(chainId)]',
+    );
+  });
+  test('availability is gated to the rpId family so ephemeral hosts cannot mint sudo credentials', () => {
+    expect(webSrc).toContain('hostSupportsRpId(zerodevRpId(), window.location.hostname)');
+  });
+  test('user cancellation maps to null while real failures propagate', () => {
+    expect(webSrc).toContain('if (isUserCancelled(e)) return null');
+    expect(webSrc).toContain('throw e instanceof Error ? e : new Error(');
+  });
+  test('onboarding continues without a passkey when the user cancels the sheet', () => {
+    expect(onboardSrc).toContain("res.reason !== 'already' && res.reason !== 'cancelled'");
   });
 });
