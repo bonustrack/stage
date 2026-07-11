@@ -46,6 +46,7 @@ function UnresolvedConversation({ resolved, dark }: {
         address={resolved.pendingAddress}
         reason={resolved.error}
         onDelivered={resolved.retry}
+        dark={dark}
       />
     );
   }

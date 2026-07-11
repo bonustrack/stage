@@ -1,37 +1,109 @@
 
 import { useCallback, useEffect, useState } from 'react';
-import { Button } from '@stage-labs/kit/react-native/button';
-import { Input } from '@stage-labs/kit/react-native/input';
+import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { shortAddress } from '@stage-labs/client/identity/format';
+import type { HistoryEntry } from '@stage-labs/client/types';
 import { enqueueDm, flushDmOutboxFor, queuedDmsFor, subscribeDmOutbox } from '../lib/dmOutbox';
 import { pendingBanner, type OutboxItem } from '../lib/dmOutbox.model';
-import { useEffectiveColorScheme, usePalette } from '../lib/theme';
-import { StackHeader } from './chrome/StackHeader';
-import { Box, Col, Row } from './layout';
+import { getPeerName, usePeerProfiles } from '../lib/peerProfiles';
+import { usePalette } from '../lib/theme';
+import { flash } from '../lib/toast';
+import { getActiveAccountIdSync, lineOfDmPeer } from '../modules/messaging';
+import { Box, Col, Row, WebFullBleed } from './layout';
+import { MessengerBubble } from './MessengerBubble';
+import { ComposerEditor } from './MessengerComposer.editor';
+import { TOPNAV_HEIGHT } from './Topnav';
+import { HeaderAvatar } from './xmtp-conv/parts';
 
 export type PendingReason = 'unregistered' | 'stale-installations' | 'failed';
 
-function QueuedBubble({ item }: { item: OutboxItem }): React.ReactElement {
-  const { border } = usePalette();
+const PENDING_MY_URI = 'pending://me';
+
+function entryOf(item: OutboxItem, myAddress: string | null, myName: string | null): HistoryEntry {
+  return {
+    id: `outbox-${item.id}`,
+    ts: new Date(item.createdAt).toISOString(),
+    station: 'xmtp',
+    line: lineOfDmPeer(item.address),
+    from: PENDING_MY_URI,
+    fromName: myName ?? (myAddress ? shortAddress(myAddress) : 'You'),
+    to: item.address,
+    text: item.text,
+  };
+}
+
+function PendingTopnav({ address, title }: { address: string; title: string }): React.ReactElement {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { text: fg, link: head, border } = usePalette();
   return (
-    <Row justify="end">
-      <Box background={border} radius={16} padding={12} maxWidth="80%">
-        <Text value={item.text} />
-        <Text value="Queued" size="xs" role="secondary" />
-      </Box>
+    <Box style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2 }}>
+    <WebFullBleed>
+    <Row height={TOPNAV_HEIGHT + insets.top} surface="toolbar" padding={{ top: insets.top }} align="stretch" style={{ borderBottomWidth: 1, borderBottomColor: border }}>
+      <Pressable
+        onPress={() => { router.replace('/'); }}
+        style={{ paddingLeft: 14, paddingRight: 8, justifyContent: 'center' }}
+>
+        <Icon name="arrowLeft" size={22} color={fg}/>
+      </Pressable>
+      <Pressable
+        onPress={() => { router.push({ pathname: '/profile/[address]', params: { address } }); }}
+        style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 14 }}
+>
+        <HeaderAvatar peerAddr={address} groupImage="" channelId={address} isGroup={false} border={border}/>
+        <Text weight="semibold" size="4xl" color={head} style={{ flex: 1 }} numberOfLines={1}>
+          {title}
+        </Text>
+      </Pressable>
     </Row>
+    </WebFullBleed>
+    </Box>
   );
 }
 
-export function PendingConversation({ address, reason, onDelivered }: {
+function usePendingComposer(onSubmit: (text: string) => void): {
+  editor: Omit<Parameters<typeof ComposerEditor>[0], 'dark' | 'fg' | 'head' | 'bg' | 'sub' | 'inputBg' | 'chipBg'>;
+} {
+  const [text, setText] = useState('');
+  const [selection, setSelection] = useState({ start: 0, end: 0 });
+  const unavailable = useCallback(() => {
+    flash('Available once this contact can receive messages');
+  }, []);
+  const onSend = useCallback(() => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    setText('');
+    onSubmit(trimmed);
+  }, [text, onSubmit]);
+  return {
+    editor: {
+      recording: false, levels: [], recordSecs: 0, slideThresholdPx: 80,
+      text, setText, selection, setSelection,
+      focusNonce: 0, blurNonce: 0,
+      attachMenuOpen: false, setAttachMenuOpen: unavailable,
+      hasContent: text.trim().length > 0,
+      onStartRec: unavailable, onCancelRec: unavailable, onStopRec: unavailable,
+      onSend,
+    },
+  };
+}
+
+export function PendingConversation({ address, reason, onDelivered, dark }: {
   address: string;
   reason: PendingReason;
   onDelivered: () => void;
+  dark: boolean;
 }): React.ReactElement {
-  const dark = useEffectiveColorScheme() === 'dark';
+  const pal = usePalette();
   const [queued, setQueued] = useState<OutboxItem[]>(() => queuedDmsFor(address));
-  const [draft, setDraft] = useState('');
+  const myAddress = getActiveAccountIdSync();
+  usePeerProfiles([address, myAddress]);
+  const peerName = getPeerName(address) ?? shortAddress(address);
+  const myName = getPeerName(myAddress ?? '') ?? null;
 
   useEffect(() => {
     const sync = (): void => { setQueued(queuedDmsFor(address)); };
@@ -45,36 +117,38 @@ export function PendingConversation({ address, reason, onDelivered }: {
     return () => { alive = false; };
   }, [address, onDelivered]);
 
-  const onSend = useCallback(() => {
-    const text = draft.trim();
-    if (!text) return;
-    setDraft('');
+  const onSubmit = useCallback((text: string) => {
     void enqueueDm(address, text).then(() =>
       flushDmOutboxFor(address).then(convId => { if (convId) onDelivered(); }),
     );
-  }, [address, draft, onDelivered]);
+  }, [address, onDelivered]);
+
+  const { editor } = usePendingComposer(onSubmit);
 
   return (
     <Col surface="surface" flex={1}>
-      <StackHeader title={shortAddress(address)} />
-      <Col flex={1} justify="end" gap={8} padding={16}>
-        {queued.map(item => <QueuedBubble key={item.id} item={item} />)}
+      <PendingTopnav address={address} title={peerName}/>
+      <Col flex={1} justify="end" padding={{ top: TOPNAV_HEIGHT }}>
+        {queued.map(item => (
+          <MessengerBubble
+            key={item.id}
+            entry={entryOf(item, myAddress, myName)}
+            dark={dark}
+            unread={false}
+            pending
+            myUri={PENDING_MY_URI}
+            senderEthAddress={myAddress}
+          />
+        ))}
+        <Text size="sm" color={pal.text} textAlign="center" style={{ paddingHorizontal: 24, paddingVertical: 12, opacity: 0.6 }}>
+          {pendingBanner(reason, peerName)}
+        </Text>
       </Col>
-      <Col gap={12} padding={16}>
-        <Text role="secondary" size="sm" textAlign="center" value={pendingBanner(reason, shortAddress(address))} />
-        <Row gap={8} align="center">
-          <Box flex={1}>
-            <Input
-              dark={dark}
-              value={draft}
-              placeholder="Message"
-              onChangeText={setDraft}
-              onSubmit={onSend}
-            />
-          </Box>
-          <Button dark={dark} label="Send" disabled={!draft.trim()} onPress={onSend} />
-        </Row>
-      </Col>
+      <ComposerEditor
+        dark={dark} fg={pal.text} head={pal.link} bg={pal.bg} sub={pal.text}
+        inputBg={pal.inputBg} chipBg={pal.border}
+        {...editor}
+      />
     </Col>
   );
 }
