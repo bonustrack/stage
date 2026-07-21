@@ -161,6 +161,7 @@ jobs:
         # the exact previewed SHA. app.config.js (resolveGitHash) reads GIT_COMMIT.
         env:
           GIT_COMMIT: ${{ github.sha }}
+          GIT_COMMIT_TIME: ${{ github.event.head_commit.timestamp }}
         run: |
           set -euo pipefail
           mkdir -p "$TMPDIR"

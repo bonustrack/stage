@@ -19,6 +19,21 @@ function resolveGitHash() {
   return 'dev';
 }
 
+function resolveCommitTime() {
+  const fromEnv = process.env.GIT_COMMIT_TIME;
+  if (fromEnv && fromEnv.length > 0) return fromEnv;
+  try {
+    const { execSync } = require('node:child_process');
+    const iso = execSync('git show -s --format=%cI HEAD', {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+    if (iso.length > 0) return iso;
+  } catch {
+  }
+  return '';
+}
+
 
 const PROD_NAME = 'Stage';
 
@@ -196,6 +211,7 @@ const config = {
       projectId: '1707f2db-c2b8-4c91-9341-27b1d57d355f',
     },
     gitHash: resolveGitHash(),
+    commitTime: resolveCommitTime(),
     buildProfile: process.env.EAS_BUILD_PROFILE || 'dev',
   },
   owner: 'bonustrack',
