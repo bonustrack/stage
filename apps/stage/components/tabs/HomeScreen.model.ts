@@ -26,14 +26,13 @@ export function channelsLabelChips(m: ChannelsFilterModel): LabelBarChip[] {
 }
 
 export interface ChannelsFilterBarModel {
-  rows: readonly { unreadCount: number; markedUnread?: boolean }[];
+  labelCount: number;
   unreadOnly: boolean;
   enabledLabelsCount: number;
 }
 
 export function channelsFilterBarVisible(m: ChannelsFilterBarModel): boolean {
-  if (m.unreadOnly || m.enabledLabelsCount > 0) return true;
-  return m.rows.some(r => r.unreadCount > 0 || r.markedUnread === true);
+  return m.labelCount > 0 || m.unreadOnly || m.enabledLabelsCount > 0;
 }
 
 export interface ChannelsFilterHandlers {
