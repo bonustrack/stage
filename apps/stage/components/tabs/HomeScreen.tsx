@@ -57,7 +57,7 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
   const activeRows = useMemo(() => (rows ?? []).filter(r => !archived.has(r.convId)), [rows, archived]);
   const barLabels = useMemo(() => deriveLabels(activeRows), [activeRows]);
   const showFilterBar = channelsFilterBarVisible({
-    rows: activeRows,
+    labelCount: barLabels.length,
     unreadOnly,
     enabledLabelsCount: enabledLabels.size,
   });
