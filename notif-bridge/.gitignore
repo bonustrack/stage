@@ -1,0 +1,5 @@
+node_modules
+data
+*.db3
+*.db3-*
+.env

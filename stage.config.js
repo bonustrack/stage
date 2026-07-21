@@ -8,6 +8,7 @@ const ROOT_DIR = fileURLToPath(new URL('.', import.meta.url));
 
 
 export default defineConfig({
+  eslint: { ignores: ['notif-bridge/**'] },
   workspaces: {
     '.': {
       type: 'library',
