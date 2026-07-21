@@ -1,6 +1,15 @@
 
 
-export const DAEMON_INBOX_ADDRESS = '0x0bA043c6F25085C68042bad079c29bD8f16a651A';
+const RAW_ENV: Record<string, string | undefined> = {
+  EXPO_PUBLIC_NOTIF_BRIDGE_INBOX: process.env.EXPO_PUBLIC_NOTIF_BRIDGE_INBOX as string | undefined,
+};
+
+export function getBridgeInboxAddress(): string | null {
+  const value = RAW_ENV.EXPO_PUBLIC_NOTIF_BRIDGE_INBOX;
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return /^0x[0-9a-fA-F]{40}$/.test(trimmed) ? trimmed : null;
+}
 
 const METRO_CTRL_PREFIX = 'METRO_CTRL:';
 

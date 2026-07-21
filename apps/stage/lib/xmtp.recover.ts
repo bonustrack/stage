@@ -5,7 +5,7 @@ import {
   getActiveAccount, markRegistered, setActiveAccountId,
   type AccountRecord,
 } from './accounts';
-import { registerPushWithDaemon } from './push';
+import { registerPushWithBridge } from './push';
 import { XMTP_CODECS, signerForRecord } from './xmtp.codecs';
 import { setCachedXmtpClient } from './xmtp.state';
 import { type XmtpEnv } from './xmtp.types';
@@ -83,7 +83,7 @@ async function finalizeClient(created: Client, rec: AccountRecord, env: XmtpEnv)
   await markRegistered(rec.id);
   await setActiveAccountId(rec.id);
   await secureStorage.set(ENV_KEY, env);
-  void registerPushWithDaemon(created);
+  void registerPushWithBridge(created);
   return created;
 }
 

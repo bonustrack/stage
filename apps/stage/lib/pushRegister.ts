@@ -6,7 +6,7 @@ import { appStorage } from '../platform/storage';
 import type { Client } from '@xmtp/react-native-sdk';
 import { PublicIdentity } from '@xmtp/react-native-sdk';
 import { ensureNotificationReady, getDeviceFcmToken } from './push.device';
-import { DAEMON_INBOX_ADDRESS, buildRegisterPushBody } from './pushRegister.control';
+import { getBridgeInboxAddress, buildRegisterPushBody } from './pushRegister.control';
 import { isPushEnabledSync, loadPushEnabled } from './pushPref';
 
 export { isMetroControlBody } from './pushRegister.control';
@@ -35,10 +35,13 @@ async function isRecentlyRegistered(stateKey: string, token: string): Promise<bo
 
 async function sendRegisterControlDm(
   client: PushClient,
-  args: { token: string; platform: 'android' | 'ios'; address: string; inboxId: string; stateKey: string },
+  args: {
+    bridgeInbox: string; token: string; platform: 'android' | 'ios';
+    address: string; inboxId: string; stateKey: string;
+  },
 ): Promise<void> {
   const dm = await client.conversations.findOrCreateDmWithIdentity(
-    new PublicIdentity(DAEMON_INBOX_ADDRESS, 'ETHEREUM'),
+    new PublicIdentity(args.bridgeInbox, 'ETHEREUM'),
   );
   const body = buildRegisterPushBody({
     token: args.token, platform: args.platform, address: args.address, inboxId: args.inboxId,
@@ -48,50 +51,66 @@ async function sendRegisterControlDm(
     .catch(() => undefined);
 }
 
-export async function registerPushWithDaemon(client: PushClient): Promise<void> {
+interface RegisterContext {
+  platform: 'android' | 'ios';
+  address: string;
+  inboxId: string;
+  token: string;
+  stateKey: string;
+}
+
+async function resolveRegisterContext(client: PushClient): Promise<RegisterContext | null> {
+  const platform = platformTag();
+  if (!platform) return null;
+  await loadPushEnabled();
+  if (!isPushEnabledSync()) return null;
+  const address = client.publicIdentity?.identifier;
+  const inboxId = client.inboxId;
+  if (!address || !inboxId) return null;
+  const token = await getDeviceFcmToken();
+  if (!token) return null;
+  const stateKey = lastRegisterKey(address.toLowerCase());
+  if (await isRecentlyRegistered(stateKey, token)) return null;
+  return { platform, address, inboxId, token, stateKey };
+}
+
+export async function registerPushWithBridge(client: PushClient): Promise<void> {
   try {
-    const platform = platformTag();
-    if (!platform) return;
-
-    await loadPushEnabled();
-    if (!isPushEnabledSync()) return;
-
-    const address = client.publicIdentity?.identifier;
-    const inboxId = client.inboxId;
-    if (!address || !inboxId) return;
-
-    const token = await getDeviceFcmToken();
-    if (!token) return;
-
-    const stateKey = lastRegisterKey(address.toLowerCase());
-    if (await isRecentlyRegistered(stateKey, token)) return;
-
-    await sendRegisterControlDm(client, { token, platform, address, inboxId, stateKey });
+    const bridgeInbox = getBridgeInboxAddress();
+    if (!bridgeInbox) return;
+    const ctx = await resolveRegisterContext(client);
+    if (!ctx) return;
+    await sendRegisterControlDm(client, { bridgeInbox, ...ctx });
   } catch (err) {
     if (process.env.NODE_ENV !== 'production') {
-      console.warn('registerPushWithDaemon failed', (err as Error).message);
+      console.warn('registerPushWithBridge failed', (err as Error).message);
     }
   }
 }
 
-export async function unregisterPushFromDaemon(client: PushClient): Promise<void> {
+async function loadRegisteredToken(account: string): Promise<string | null> {
+  const prev = await appStorage.get(lastRegisterKey(account)).catch(() => null);
+  await appStorage.delete(lastRegisterKey(account)).catch(() => undefined);
+  if (!prev) return null;
+  try { return (JSON.parse(prev) as { token?: string }).token ?? null; } catch { return null; }
+}
+
+export async function unregisterPushFromBridge(client: PushClient): Promise<void> {
   try {
+    const bridgeInbox = getBridgeInboxAddress();
+    if (!bridgeInbox) return;
     const address = client.publicIdentity?.identifier;
     const inboxId = client.inboxId;
     if (!address || !inboxId) return;
-    const account = address.toLowerCase();
-    const prev = await appStorage.get(lastRegisterKey(account)).catch(() => null);
-    await appStorage.delete(lastRegisterKey(account)).catch(() => undefined);
-    let token: string | null = null;
-    if (prev) { try { token = (JSON.parse(prev) as { token?: string }).token ?? null; } catch { } }
+    const token = await loadRegisteredToken(address.toLowerCase());
     if (!token) return;
     const dm = await client.conversations.findOrCreateDmWithIdentity(
-      new PublicIdentity(DAEMON_INBOX_ADDRESS, 'ETHEREUM'),
+      new PublicIdentity(bridgeInbox, 'ETHEREUM'),
     );
     await dm.send(buildDisablePushBody({ token, address, inboxId }));
   } catch (err) {
     if (process.env.NODE_ENV !== 'production') {
-      console.warn('unregisterPushFromDaemon failed', (err as Error).message);
+      console.warn('unregisterPushFromBridge failed', (err as Error).message);
     }
   }
 }

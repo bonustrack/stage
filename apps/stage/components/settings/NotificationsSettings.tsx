@@ -9,7 +9,7 @@ import { Caption } from '@stage-labs/kit/react-native/caption';
 import { usePalette } from '../../lib/theme';
 import { loadPushEnabled, setPushEnabled, subscribePushPref, isPushEnabledSync } from '../../lib/pushPref';
 import { getOrCreateXmtpClient } from '../../modules/messaging';
-import { registerPushWithDaemon, unregisterPushFromDaemon } from '../../lib/push';
+import { registerPushWithBridge, unregisterPushFromBridge } from '../../lib/push';
 import { SettingsHeader } from './SettingsHeader';
 import { SettingsList, SettingsToggleRow } from './rows';
 
@@ -31,8 +31,8 @@ export function NotificationsSettings(): React.ReactElement {
       await setPushEnabled(next);
       try {
         const client = await getOrCreateXmtpClient('production');
-        if (next) await registerPushWithDaemon(client);
-        else await unregisterPushFromDaemon(client);
+        if (next) await registerPushWithBridge(client);
+        else await unregisterPushFromBridge(client);
       } catch { }
       try { setPerm((await Notifications.getPermissionsAsync()).status); } catch { }
     })();

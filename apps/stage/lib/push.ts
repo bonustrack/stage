@@ -3,8 +3,8 @@
 
 export {
   isMetroControlBody,
-  registerPushWithDaemon,
-  unregisterPushFromDaemon,
+  registerPushWithBridge,
+  unregisterPushFromBridge,
   presentInboundNotification,
   usePushDeepLinks,
 } from './pushRegister';

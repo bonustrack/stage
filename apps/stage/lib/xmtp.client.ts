@@ -6,7 +6,7 @@ import {
   loadAccounts, setActiveAccountId, removeAccount, clearAllAccounts,
   type AccountRecord,
 } from './accounts';
-import { registerPushWithDaemon } from './push';
+import { registerPushWithBridge } from './push';
 import { getSecure, setSecure } from './cache';
 import { bumpAccountEpoch } from './accountEpoch';
 import { XMTP_CODECS } from './xmtp.codecs';
@@ -66,7 +66,7 @@ async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<
         setCachedXmtpClient(built);
         await setActiveAccountId(rec.id);
         await secureStorage.set(ENV_KEY, env);
-        void registerPushWithDaemon(built);
+        void registerPushWithBridge(built);
         return built;
       }
     } catch (e) {
