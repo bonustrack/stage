@@ -111,6 +111,8 @@ function LabelChips({ params, scheme, fg, onLabelPress }: {
           <ListViewItem
             key={`${chip.label}-${i}`}
             dark={scheme === 'dark'}
+            gap={0}
+            padding={{ paddingTop: 0, paddingRight: 0, paddingBottom: 0, paddingLeft: 0 }}
             onPress={() => { onLabelPress(chip.label); }}
           >
             {badge}
@@ -149,7 +151,7 @@ function ChannelRowBody({ params, onLabelPress }: {
     <Row align="center" gap={12} flex={1}>
       <Col gap={2} flex={1}>
         <TitleLine params={params} scheme={scheme} />
-        <Row align="center" gap={2}>
+        <Row align="center" gap={0}>
           <LabelChips params={params} scheme={scheme} fg={fg} onLabelPress={onLabelPress} />
           {hasPrefix ? <Text value={params.previewPrefix ?? ''} size="sm" color="info" weight="semibold" /> : null}
           <Text value={params.preview} size="sm" role="secondary" truncate maxLines={1} style={{ flexShrink: 1 }} />
