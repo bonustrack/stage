@@ -243,8 +243,12 @@ jobs:
           DEEPLINK='${{ steps.update.outputs.deeplink }}'
           BRANCH='${{ steps.update.outputs.branch }}'
           SHORT_SHA='${{ steps.update.outputs.short_sha }}'
-          LAUNCHER="https://bundler.stage.box/preview-launcher.html?u=$(node -e "process.stdout.write(encodeURIComponent(process.argv[1]))" "$MANIFEST")"
-          QR="https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=$(node -e "process.stdout.write(encodeURIComponent(process.argv[1]))" "$DEEPLINK")"
+          enc() { node -e "process.stdout.write(encodeURIComponent(process.argv[1]))" "$1"; }
+          LATEST_MANIFEST="https://bundler.stage.box/$BRANCH"
+          LATEST_DEEPLINK="stage://expo-development-client/?url=$(enc "$LATEST_MANIFEST")"
+          LATEST_LAUNCHER="https://bundler.stage.box/preview-launcher.html?u=$(enc "$LATEST_MANIFEST")"
+          LATEST_QR="https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=$(enc "$LATEST_DEEPLINK")"
+          LAUNCHER="https://bundler.stage.box/preview-launcher.html?u=$(enc "$MANIFEST")"
           {
             echo "## App preview - \`${{ github.ref_name }}\` @ \`$SHORT_SHA\`"
             echo ""
@@ -259,13 +263,25 @@ jobs:
             fi
             echo "**Channel:** \`$BRANCH\` &nbsp;·&nbsp; **commit:** \`$SHORT_SHA\`"
             echo ""
-            echo "[Open dev-client preview ($SHORT_SHA)]($LAUNCHER)"
+            echo "### Open latest on this branch (always the newest commit)"
             echo ""
-            echo "Raw deep link (tap on device) - commit \`$SHORT_SHA\`:"
+            echo "[Open latest preview - \`$BRANCH\`]($LATEST_LAUNCHER)"
+            echo ""
+            echo "Re-tap this same link after any new push and it loads the newest commit - no per-commit link hunting."
+            echo ""
+            echo "Raw deep link (tap on device):"
+            echo ""
+            echo "\`$LATEST_DEEPLINK\`"
+            echo ""
+            echo "![QR]($LATEST_QR)"
+            echo ""
+            echo "<details><summary>Pin this exact commit (\`$SHORT_SHA\`)</summary>"
+            echo ""
+            echo "[Open commit \`$SHORT_SHA\`]($LAUNCHER)"
             echo ""
             echo "\`$DEEPLINK\`"
             echo ""
-            echo "![QR]($QR)"
+            echo "</details>"
           } >> "$GITHUB_STEP_SUMMARY"
 
       # When a PR exists for this branch, the clickable "Preview" commit status on
@@ -276,14 +292,15 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const manifest = `${{ steps.update.outputs.manifest }}`;
+            const branch = `${{ steps.update.outputs.branch }}`;
+            const latestManifest = `https://bundler.stage.box/${branch}`;
             const target =
-              'https://bundler.stage.box/preview-launcher.html?u=' + encodeURIComponent(manifest);
+              'https://bundler.stage.box/preview-launcher.html?u=' + encodeURIComponent(latestManifest);
             const native = `${{ steps.native.outputs.native }}` === 'true';
             const shortSha = `${{ steps.update.outputs.short_sha }}`;
             const description = native
-              ? `Open preview commit ${shortSha} (native changed - APK needed)`
-              : `Open dev-client preview commit ${shortSha}`;
+              ? `Open latest preview on ${branch} (native changed - APK needed)`
+              : `Open latest preview on ${branch}`;
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
