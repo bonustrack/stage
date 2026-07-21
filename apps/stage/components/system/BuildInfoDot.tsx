@@ -18,13 +18,27 @@ function formatLocal(iso: string): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-function resolveBuildInfo(): { hash: string; time: string; channel: string | null } {
+function formatRelative(iso: string, now: number): string {
+  if (iso.length === 0) return '';
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return '';
+  const secs = Math.max(0, Math.round((now - then) / 1000));
+  if (secs < 60) return 'just now';
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
+
+function resolveBuildInfo(now: number): { hash: string; time: string; relative: string; channel: string | null } {
   const extra = (Constants.expoConfig?.extra ?? {}) as Record<string, unknown>;
   const rawHash = typeof extra.gitHash === 'string' && extra.gitHash.length > 0 ? extra.gitHash : 'dev';
   const rawTime = typeof extra.commitTime === 'string' ? extra.commitTime : '';
   return {
     hash: rawHash === 'dev' ? 'dev' : rawHash.slice(0, 7),
     time: formatLocal(rawTime),
+    relative: formatRelative(rawTime, now),
     channel: typeof Updates.channel === 'string' && Updates.channel.length > 0 ? Updates.channel : null,
   };
 }
@@ -33,8 +47,8 @@ export function BuildInfoDot(): React.ReactElement {
   const [open, setOpen] = useState(false);
   const { text, bg, border } = usePalette();
   const insets = useSafeAreaInsets();
-  const { hash, time, channel } = resolveBuildInfo();
-  const head = time.length > 0 ? `${hash} · ${time}` : hash;
+  const { hash, time, relative, channel } = resolveBuildInfo(Date.now());
+  const head = relative.length > 0 ? `${hash} · ${relative}` : hash;
 
   return (
     <Box pointerEvents="box-none" style={StyleSheet.absoluteFill}>
@@ -53,6 +67,9 @@ export function BuildInfoDot(): React.ReactElement {
             }}
 >
             <Text size="xs" weight="medium">{head}</Text>
+            {time.length > 0 ? (
+              <Text size="xs" variant="secondary" style={{ marginTop: 2 }}>{time}</Text>
+            ) : null}
             {channel !== null ? (
               <Text size="xs" variant="secondary" style={{ marginTop: 2 }}>{`channel: ${channel}`}</Text>
             ) : null}
