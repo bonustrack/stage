@@ -22,6 +22,7 @@ import { ensureActiveAccount, ensureMessagingStreamSync } from '../modules/messa
 import { QueryClientProvider } from '@tanstack/react-query';
 import { getQueryClient } from '../lib/queryClient';
 import { applyWebGlobalStyles } from '../platform/webStyles';
+import { BuildInfoDot } from '../components/system/BuildInfoDot';
 
 const queryClient = getQueryClient();
 
@@ -138,6 +139,7 @@ function RootLayoutInner(): React.ReactElement {
           <Onboarding onDone={() => undefined} />
         </Col>
       ) : null}
+      <BuildInfoDot />
       </KeyboardProvider>
     </GestureHandlerRootView>
     </QueryClientProvider>
