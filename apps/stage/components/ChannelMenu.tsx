@@ -13,7 +13,6 @@ import { channelMenuItems, type MenuSheetItem } from './ChannelMenu.model';
 import { AppModal } from './AppModal';
 import { markConvRead, markConvUnread } from '../modules/messaging';
 import { togglePin } from '../lib/pins';
-import { toggleArchived } from '../lib/archived';
 import { leaveGroupConv, lineOfConv } from '../modules/messaging';
 
 export interface ChannelMenuProps {
@@ -23,12 +22,10 @@ export interface ChannelMenuProps {
   peerAddress?: string | null;
   isUnread: boolean;
   isPinned: boolean;
-  isArchived: boolean;
   visible: boolean;
   onClose: () => void;
   context?: 'list' | 'view';
   onAfterLeave?: (result: 'left' | 'hidden') => void;
-  onAfterArchive?: (archived: boolean) => void;
   onSearch?: () => void;
 }
 
@@ -84,19 +81,13 @@ function MenuRow({ item, dark, onPress }: {
 }
 
 export function ChannelMenu({
-  convId, isGroup, peerAddress, isUnread, isPinned, isArchived,
-  visible, onClose, context = 'list', onAfterLeave, onAfterArchive, onSearch,
+  convId, isGroup, peerAddress, isUnread, isPinned,
+  visible, onClose, context = 'list', onAfterLeave, onSearch,
 }: ChannelMenuProps): React.ReactElement {
   const router = useRouter();
   const dark = useKitScheme() === 'dark';
 
   const run = (fn: () => void): void => { onClose(); fn(); };
-
-  const onToggleArchive = (): void => { run(() => {
-    void toggleArchived(convId);
-    onAfterArchive?.(!isArchived);
-    if (!isArchived && context === 'view') router.replace('/');
-  }); };
 
   const handlers: Record<string, () => void> = {
     search: () => { onClose(); setTimeout(() => onSearch?.(), 0); },
@@ -107,12 +98,11 @@ export function ChannelMenu({
       if (isGroup) router.push({ pathname: '/group/[convId]', params: { convId } });
       else if (peerAddress) router.push({ pathname: '/profile/[address]', params: { address: peerAddress } });
     }); },
-    'toggle-archive': onToggleArchive,
     leave: () => { confirmLeaveGroup(convId, context, router, onClose, onAfterLeave); },
   };
 
   const items = channelMenuItems(
-    { isGroup, hasPeer: !!peerAddress, isUnread, isPinned, isArchived },
+    { isGroup, hasPeer: !!peerAddress, isUnread, isPinned },
     { search: !!onSearch, addMembers: true, pin: true, info: true, leaveGroup: true },
   );
 

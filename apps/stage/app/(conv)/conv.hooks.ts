@@ -2,7 +2,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { InteractionManager, Keyboard } from 'react-native';
 import type { Input } from '@stage-labs/kit/react-native/input';
-import { isArchived, loadArchivedIds, subscribeArchived } from '../../lib/archived';
 import { resolveDmConvId, type DmResolveError } from '../../lib/dmResolve';
 
 const DM_ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
@@ -84,14 +83,4 @@ export function useSearchKeyboardFocus(searchOpen: boolean): InputRef {
     };
   }, [searchOpen]);
   return searchInputRef;
-}
-
-export function useArchivedFlag(convId: string | undefined): boolean {
-  const [archived, setArchived] = useState(convId ? isArchived(convId) : false);
-  useEffect(() => {
-    const sync = (): void => { setArchived(convId ? isArchived(convId) : false); };
-    void loadArchivedIds().then(sync);
-    return subscribeArchived(sync);
-  }, [convId]);
-  return archived;
 }

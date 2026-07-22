@@ -11,7 +11,6 @@ export interface ChannelListRow {
 }
 
 export interface ChannelListFilter {
-  archived?: Set<string>;
   enabledLabels?: Set<string>;
   unreadOnly?: boolean;
   query?: string;
@@ -32,10 +31,6 @@ export function filterChannelRows<T extends ChannelListRow>(
   filter: ChannelListFilter,
 ): T[] {
   let out = rows;
-  const archived = filter.archived;
-  if (archived && archived.size > 0) {
-    out = out.filter(r => !archived.has(r.convId));
-  }
   const enabledLabels = filter.enabledLabels;
   if (enabledLabels && enabledLabels.size > 0) {
     out = out.filter(r => (r.labels ?? []).some(l => enabledLabels.has(l.toLowerCase())));

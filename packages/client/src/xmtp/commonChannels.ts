@@ -81,11 +81,10 @@ export async function resolveCommonChannels(
   peerAddress: string,
   rows: CommonChannelRow[],
   memberSetOf: (convId: string) => Promise<string[]>,
-  archived: Set<string>,
   avatarSeedOf: ChannelAvatarSeed = defaultAvatarSeed,
 ): Promise<CommonChannel[]> {
   const peer = peerAddress.toLowerCase();
-  const groups = rows.filter(r => r.peerAddress == null && !archived.has(r.convId));
+  const groups = rows.filter(r => r.peerAddress == null);
   const resolved = await Promise.all(
     groups.map(async (row): Promise<CommonChannel | null> => {
       try {

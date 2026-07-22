@@ -15,13 +15,12 @@ import { flash } from '../../lib/toast';
 
 interface HomeOverflowMenuProps {
   color: string;
-  onArchived: () => void;
   onNewGroup: () => void;
   onProfile: () => void;
   onSettings: () => void;
 }
 
-export function HomeOverflowMenu({ color, onArchived, onNewGroup, onProfile, onSettings }: HomeOverflowMenuProps): React.ReactElement {
+export function HomeOverflowMenu({ color, onNewGroup, onProfile, onSettings }: HomeOverflowMenuProps): React.ReactElement {
   const [open, setOpen] = useState(false);
   const dark = useEffectiveColorScheme() === 'dark';
   const close = (): void => { setOpen(false); };
@@ -35,7 +34,6 @@ export function HomeOverflowMenu({ color, onArchived, onNewGroup, onProfile, onS
   }); };
   const handlers: Record<string, () => void> = {
     new: () => { run(onNewGroup); },
-    archived: () => { run(onArchived); },
     'copy-address': onCopyAddress,
     profile: () => { run(onProfile); },
     settings: () => { run(onSettings); },

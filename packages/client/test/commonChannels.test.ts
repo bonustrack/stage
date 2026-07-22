@@ -44,21 +44,18 @@ describe('resolveCommonChannels', () => {
     { convId: 'g1', peerAddress: null, title: 'Alpha' },
     { convId: 'g2', peerAddress: null, title: 'Beta' },
     { convId: 'dm', peerAddress: '0xSomeone', title: 'DM' },
-    { convId: 'g3', peerAddress: null, title: 'Archived' },
   ];
 
   const members: Record<string, string[]> = {
     g1: ['0xpeeraddress', '0xother'],
     g2: ['0xnobody'],
-    g3: ['0xpeeraddress'],
   };
 
-  test('keeps groups containing the peer, excludes DMs and archived', async () => {
+  test('keeps groups containing the peer, excludes DMs', async () => {
     const result = await resolveCommonChannels(
       PEER,
       rows,
       (convId) => Promise.resolve(members[convId] ?? []),
-      new Set(['g3']),
     );
     expect(result.map(c => c.convId)).toEqual(['g1']);
   });
@@ -68,7 +65,6 @@ describe('resolveCommonChannels', () => {
       '0XPEERADDRESS',
       [{ convId: 'g1', peerAddress: null }],
       () => Promise.resolve(['0xPeerAddress']),
-      new Set(),
     );
     expect(result).toHaveLength(1);
   });
@@ -78,7 +74,6 @@ describe('resolveCommonChannels', () => {
       PEER,
       [{ convId: 'g1', peerAddress: null }],
       () => Promise.reject(new Error('boom')),
-      new Set(),
     );
     expect(result).toEqual([]);
   });

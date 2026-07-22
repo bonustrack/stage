@@ -4,7 +4,6 @@ import {
   summarizeConversationRequest, type CachedRow,
 } from '../../modules/messaging';
 import { pollOf, txRequestOf, sigRequestOf } from '../MessengerBubble.helpers';
-import { isArchived } from '../../lib/archived';
 import {
   detectFeedRequest, assembleRequestsQueue, messageRequestToQueued,
   type FeedDetectors, type QueuedRequest, type RequestKind,
@@ -70,7 +69,7 @@ async function requestTs(conv: unknown): Promise<number> {
 }
 
 export async function buildProposalQueue(rows: CachedRow[]): Promise<QueuedRequest[]> {
-  const candidates = rows.map(r => r.convId).filter(id => !isArchived(id));
+  const candidates = rows.map(r => r.convId);
   const [detected, messageReqs] = await Promise.all([
     mapLimit(candidates, 6, detectOne),
     detectMessageRequests(),

@@ -14,7 +14,7 @@ import { ChannelMenu } from '../../components/ChannelMenu';
 import { isPinned } from '../../lib/pins';
 import { shortAddress, getCachedRows } from '../../modules/messaging';
 import { flash } from '../../lib/toast';
-import { HeaderAvatar, BubbleActionMenu, GithubNavButton } from '../../components/xmtp-conv/parts';
+import { HeaderAvatar, BubbleActionMenu } from '../../components/xmtp-conv/parts';
 import { previewOf } from '../../components/xmtp-conv/feed-helpers';
 import { SearchTopnavBar } from '../../components/SearchTopnavBar';
 import { TOPNAV_HEIGHT } from '../../components/Topnav';
@@ -33,7 +33,7 @@ function topnavTitle(c: Conv): string {
 export function ConversationTopnav({ c, convId, fg, head, border, insets, router }: {
   c: Conv; convId: string; fg: string; head: string; border: string; insets: EdgeInsets; router: Router;
 }): React.ReactElement {
-  const { isGroup, github, peerAddr, groupImage, setOverflowOpen } = c;
+  const { isGroup, peerAddr, groupImage, setOverflowOpen } = c;
   return (
     <Box style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2 }}>
     <WebFullBleed>
@@ -58,7 +58,6 @@ export function ConversationTopnav({ c, convId, fg, head, border, insets, router
         </Text>
       </Pressable>
       {}
-      {isGroup && github ? <GithubNavButton url={github} color={fg} /> : null}
       <Pressable
         onPress={() => { setOverflowOpen(true); }}
         hitSlop={8}
@@ -138,8 +137,8 @@ export function ConversationSearchTopnav({ searchInputRef, border, head, sub, qu
   );
 }
 
-export function ConversationOverlays({ c, convId, dark, archived, onOpenSearch }: {
-  c: Conv; convId: string; dark: boolean; archived: boolean; onOpenSearch: () => void;
+export function ConversationOverlays({ c, convId, dark, onOpenSearch }: {
+  c: Conv; convId: string; dark: boolean; onOpenSearch: () => void;
 }): React.ReactElement {
   const {
     overflowOpen, setOverflowOpen, isGroup, groupName, peerAddr,
@@ -159,7 +158,6 @@ export function ConversationOverlays({ c, convId, dark, archived, onOpenSearch }
         peerAddress={peerAddr}
         isUnread={isUnread}
         isPinned={convId ? isPinned(convId) : false}
-        isArchived={archived}
         onClose={() => { setOverflowOpen(false); }}
         context="view"
         onSearch={onOpenSearch}

@@ -70,7 +70,6 @@ function HomeTopnavRight({ head, requestCount, router, onOpenSearch }: {
       </Pressable>
       <HomeOverflowMenu
         color={head}
-        onArchived={() => { router.push('/archived'); }}
         onNewGroup={() => { router.push('/new-group'); }}
         onProfile={() => {
           void getActiveAccount().then(acct => {

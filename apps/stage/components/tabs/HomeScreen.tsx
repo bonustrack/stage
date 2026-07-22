@@ -18,9 +18,9 @@ import { channelsFilterBarVisible } from './HomeScreen.model';
 import { useHomeState, type HomeState } from './HomeScreen.state';
 import { deriveSortedRows } from './HomeScreen.derive';
 
-function rowMenuProps(rowMenu: HomeState['rowMenu'], pinned: Set<string>, archived: Set<string>) {
+function rowMenuProps(rowMenu: HomeState['rowMenu'], pinned: Set<string>) {
   if (!rowMenu) {
-    return { visible: false, convId: '', title: undefined, isGroup: false, peerAddress: null, isUnread: false, isPinned: false, isArchived: false };
+    return { visible: false, convId: '', title: undefined, isGroup: false, peerAddress: null, isUnread: false, isPinned: false };
   }
   return {
     visible: true,
@@ -30,13 +30,12 @@ function rowMenuProps(rowMenu: HomeState['rowMenu'], pinned: Set<string>, archiv
     peerAddress: rowMenu.peerAddress,
     isUnread: rowMenu.isUnread,
     isPinned: pinned.has(rowMenu.convId),
-    isArchived: archived.has(rowMenu.convId),
   };
 }
 
 function HomeRowMenu({ st }: { st: HomeState }): React.ReactElement {
-  const { rowMenu, pinned, archived, setRowMenu } = st;
-  return <ChannelMenu {...rowMenuProps(rowMenu, pinned, archived)} onClose={() => { setRowMenu(null); }} />;
+  const { rowMenu, pinned, setRowMenu } = st;
+  return <ChannelMenu {...rowMenuProps(rowMenu, pinned)} onClose={() => { setRowMenu(null); }} />;
 }
 
 export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
@@ -45,17 +44,16 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
   const { text: fg, link: head, bg, border } = usePalette();
   const sub = fg;
   const st = useHomeState();
-  const { rows, pinned, archived } = st;
+  const { rows, pinned } = st;
   const { enabledLabels, toggleLabel, unreadOnly, toggleUnread, clearAllFilters } = useHomeFilters();
   const [query, setQuery] = useState<string>('');
   useIncomingLabelFilter(toggleLabel);
 
   const sortedRows = useMemo(
-    () => deriveSortedRows({ rows, archived, enabledLabels, unreadOnly, pinned }),
-    [rows, pinned, enabledLabels, unreadOnly, archived],
+    () => deriveSortedRows({ rows, enabledLabels, unreadOnly, pinned }),
+    [rows, pinned, enabledLabels, unreadOnly],
   );
-  const activeRows = useMemo(() => (rows ?? []).filter(r => !archived.has(r.convId)), [rows, archived]);
-  const barLabels = useMemo(() => deriveLabels(activeRows), [activeRows]);
+  const barLabels = useMemo(() => deriveLabels(rows ?? []), [rows]);
   const showFilterBar = channelsFilterBarVisible({
     labelCount: barLabels.length,
     unreadOnly,

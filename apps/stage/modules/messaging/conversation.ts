@@ -5,7 +5,6 @@ import {
   shortAddress, getLastReadNs,
 } from '../../lib/xmtp';
 import { labelsOfSyncedGroup } from '../../lib/xmtp.labels';
-import { githubOfSyncedGroup } from '../../lib/xmtp.github';
 import { isMetroControlBody } from '../../lib/push';
 import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
@@ -46,20 +45,18 @@ interface GroupRowData {
   memberAddresses: string[];
   groupMeta: { name: string; imageUrl: string };
   labels: Awaited<ReturnType<typeof labelsOfSyncedGroup>>;
-  github: Awaited<ReturnType<typeof githubOfSyncedGroup>> | undefined;
 }
 
 async function gatherGroupRowData(conv: Conversation, peerAddress: string | null): Promise<GroupRowData> {
   if (peerAddress) {
-    return { memberAddresses: [], groupMeta: { name: '', imageUrl: '' }, labels: [], github: undefined };
+    return { memberAddresses: [], groupMeta: { name: '', imageUrl: '' }, labels: [] };
   }
-  const [memberAddresses, groupMeta, labels, github] = await Promise.all([
+  const [memberAddresses, groupMeta, labels] = await Promise.all([
     groupMemberEthAddresses(conv),
     readGroupNameImage(conv),
     labelsOfSyncedGroup(conv),
-    githubOfSyncedGroup(conv),
   ]);
-  return { memberAddresses, groupMeta, labels, github };
+  return { memberAddresses, groupMeta, labels };
 }
 
 function rowAvatar(
@@ -79,7 +76,7 @@ export async function summarizeConversation(
   const preview = previewOfMessage(last);
   const peerAddress = await peerEthAddressOfDm(conv);
   const inboxToAddr = await memberInboxToAddressMap(conv);
-  const { memberAddresses, groupMeta, labels, github } = await gatherGroupRowData(conv, peerAddress);
+  const { memberAddresses, groupMeta, labels } = await gatherGroupRowData(conv, peerAddress);
   const title = channelRowTitle({
     peerAddress, groupName: groupMeta.name,
     memberCount: memberAddresses.length,
@@ -111,7 +108,6 @@ export async function summarizeConversation(
     selfInboxId,
     markedUnread,
     labels,
-    github,
   };
 }
 

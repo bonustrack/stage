@@ -14,7 +14,6 @@ export interface ChannelMenuState {
   hasPeer?: boolean;
   isUnread: boolean;
   isPinned?: boolean;
-  isArchived?: boolean;
 }
 
 export interface ChannelMenuFeatures {
@@ -51,15 +50,6 @@ function pinItem(state: ChannelMenuState, features: ChannelMenuFeatures): MenuSh
     : null;
 }
 
-function archiveItem(state: ChannelMenuState): MenuSheetItem {
-  return {
-    id: 'toggle-archive',
-    label: state.isArchived === true ? 'Unarchive' : 'Archive',
-    icon: state.isArchived === true ? 'arrowUp' : 'archive',
-    danger: true,
-  };
-}
-
 function leaveItem(state: ChannelMenuState, features: ChannelMenuFeatures): MenuSheetItem | null {
   return features.leaveGroup === true && state.isGroup
     ? { id: 'leave', label: 'Leave group', icon: 'arrowLeft', danger: true }
@@ -76,7 +66,6 @@ export function channelMenuItems(
     toggleReadItem(state),
     pinItem(state, features),
     features.info === true ? infoItem(state) : null,
-    archiveItem(state),
     leaveItem(state, features),
   ]);
 }

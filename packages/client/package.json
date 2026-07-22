@@ -38,7 +38,6 @@
     "./xmtp/channelsFilter": "./src/xmtp/channelsFilter.ts",
     "./xmtp/summarizeRow": "./src/xmtp/summarizeRow.ts",
     "./xmtp/commonChannels": "./src/xmtp/commonChannels.ts",
-    "./xmtp/archived": "./src/xmtp/archived.ts",
     "./routing/deepLinks": "./src/routing/deepLinks.ts",
     "./xmtp/mentions": "./src/xmtp/mentions.ts",
     "./xmtp/labels": "./src/xmtp/labels.ts",
