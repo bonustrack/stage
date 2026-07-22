@@ -1,6 +1,6 @@
 {
   "name": "@stage-labs/kit",
-  "version": "0.1.0-beta.1",
+  "version": "0.1.0-beta.0",
   "description": "Stage design system: colour/spacing tokens, HeroIcon path data, station icon definitions, theme-preference contract, and one React Native component family (renders on web via react-native-web).",
   "license": "MIT",
   "repository": {
