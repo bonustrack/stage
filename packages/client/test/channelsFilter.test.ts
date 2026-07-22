@@ -22,10 +22,6 @@ describe('filterChannelRows', () => {
     row({ convId: 'c', title: 'Gamma', lastPreview: 'hello world', lastTs: 1 }),
   ];
 
-  test('archived rows are excluded', () => {
-    expect(filterChannelRows(rows, { archived: new Set(['b']) }).map(r => r.convId)).toEqual(['a', 'c']);
-  });
-
   test('label filter matches case-insensitively', () => {
     expect(filterChannelRows(rows, { enabledLabels: new Set(['work']) }).map(r => r.convId)).toEqual(['a']);
   });

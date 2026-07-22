@@ -6,8 +6,6 @@ import {
   XMTP_USER_PREFIX, lineOfConv, useXmtpFeed, xmtpReply, shortAddress,
 } from '../../modules/messaging';
 import { markConvRead } from '../../modules/messaging';
-import { getGithubLink } from '../../modules/messaging';
-import { useCachedGroupString } from './useCachedGroupString';
 import { markConvAtBottom } from '../../lib/scrollPos';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { useReactionsLayer } from './useReactionsLayer';
@@ -73,7 +71,6 @@ export function useConversationState(convId: string | undefined, focus: string |
   const [menuAnchor, setMenuAnchor] = useState<{ y: number; height: number }>({ y: 0, height: 0 });
   const [overflowOpen, setOverflowOpen] = useState(false);
   const { peerAddr, memberAddrs, inboxToAddr, groupName, groupImage, groupDescription, isGroup } = useConvMeta(convId);
-  const github = useCachedGroupString(convId, activeLine, isGroup, 'github', getGithubLink);
   const consentAllowed = useConsentGate(convId);
   const groupLabels = useGroupLabels(convId, activeLine, isGroup);
 
@@ -118,7 +115,7 @@ export function useConversationState(convId: string | undefined, focus: string |
     menuFor, setMenuFor, menuAnchor, setMenuAnchor, overflowOpen, setOverflowOpen,
     selectedForCopy, setSelectedForCopy,
     confirmedIds, optimisticReactions, optimisticRemovals,
-    peerAddr, groupName, groupImage, groupDescription, groupLabels, isGroup, github, senderEthOf,
+    peerAddr, groupName, groupImage, groupDescription, groupLabels, isGroup, senderEthOf,
     profilesVersion, mentionCandidates, listRef,
     savedScrollRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil, isAtBottomRef,
     reactions, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers,

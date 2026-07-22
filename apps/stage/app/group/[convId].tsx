@@ -20,7 +20,6 @@ import { GroupProfileHeader, GroupNameEditor, GroupDescriptionEditor } from './g
 import { messagingKeys } from '../../modules/messaging';
 import { useGroupDetail } from './group.detail';
 import { GroupLabelsSection } from './group.labels';
-import { GroupGithubSection } from './group.github';
 import { useGroupActions } from './group.actions';
 
 function OverflowTrailing({ color, dark, onPress }: {
@@ -107,7 +106,6 @@ export default function GroupDetail(): React.ReactElement {
 />
 
       <GroupLabelsSection line={line} p={pal}/>
-      <GroupGithubSection line={line} p={pal}/>
       <GroupMembersList
         members={members} memberNames={memberNames} memberRoles={memberRoles}
         selfAddress={selfAddress} removing={removing} dark={dark} p={pal}

@@ -16,7 +16,7 @@ import { ConversationFeed } from '../../components/xmtp-conv/ConversationFeed';
 import { ConversationSearch } from '../../components/xmtp-conv/ConversationSearch';
 import { useConversationState } from '../../components/xmtp-conv/useConversationState';
 import {
-  useSearchKeyboardFocus, useArchivedFlag, useResolvedConvId, type ResolveConvError,
+  useSearchKeyboardFocus, useResolvedConvId, type ResolveConvError,
 } from './conv.hooks';
 import {
   ConversationTopnav, ConversationFooter, ConversationOverlays, ConversationSearchTopnav,
@@ -79,8 +79,6 @@ export default function XmtpConversation(): React.ReactElement {
   const [requestPending, setRequestPending] = useState(false);
   const onRequestPending = useCallback((pending: boolean) => { setRequestPending(pending); }, []);
 
-  const archived = useArchivedFlag(convId);
-
   const insets = useSafeAreaInsets();
   const { height: kbHeightShared } = useReanimatedKeyboardAnimation();
   const listWrapperStyle = useAnimatedStyle(() => ({ marginBottom: Math.max(0, -kbHeightShared.value - insets.bottom) }));
@@ -137,7 +135,7 @@ export default function XmtpConversation(): React.ReactElement {
 />
       {}
       <ConversationOverlays
-        c={c} convId={convId} dark={dark} archived={archived}
+        c={c} convId={convId} dark={dark}
         onOpenSearch={() => { setSearchQuery(''); setSearchOpen(true); }}
 />
     </RNAnimated.View>

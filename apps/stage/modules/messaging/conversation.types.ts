@@ -15,7 +15,6 @@ export interface ConversationView {
   markedUnread: boolean;
   selfInboxId: string;
   labels: string[];
-  github?: string;
 }
 
 export type RequestAvatarDescriptor = Pick<

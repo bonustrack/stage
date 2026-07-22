@@ -56,7 +56,6 @@ export interface ChannelsOverflowItem {
 export function channelsOverflowItems(features: { copyAddress?: boolean } = {}): ChannelsOverflowItem[] {
   const items: ChannelsOverflowItem[] = [
     { id: 'new', label: 'New group', icon: 'plus' },
-    { id: 'archived', label: 'Archived', icon: 'archive' },
   ];
   if (features.copyAddress === true) {
     items.push({ id: 'copy-address', label: 'Copy address', icon: 'copy' });

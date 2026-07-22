@@ -5,12 +5,10 @@ import { Dimensions } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Dialog } from '@stage-labs/kit/react-native/dialog';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
-import { useRouter } from 'expo-router';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Row } from '../layout';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Divider } from '@stage-labs/kit/react-native/divider';
-import { GithubLogo } from '../GithubLogo';
 import { Avatar } from '../Avatar';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
 import { REACT_PRESETS } from '../MessengerBubble';
@@ -18,19 +16,6 @@ import { usePalette } from '../../lib/theme';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { useBlockRadius } from '../../lib/theme';
 import { menuPlacement, MENU_GAP, MENU_STRIP_HEIGHT } from './menuPlacement';
-
-export function GithubNavButton({ url, color }: { url: string; color: string }): React.ReactElement {
-  const router = useRouter();
-  return (
-    <Pressable
-      onPress={() => { router.push({ pathname: '/diff', params: { url } }); }}
-      hitSlop={8}
-      style={{ paddingHorizontal: 6, justifyContent: 'center' }}
->
-      <GithubLogo size={20} color={color}/>
-    </Pressable>
-  );
-}
 
 export function HeaderAvatar({ peerAddr, groupImage, channelId, isGroup, border }: {
   peerAddr: string | null; groupImage: string; channelId: string; isGroup: boolean; border: string;
