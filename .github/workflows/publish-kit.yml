@@ -1,0 +1,45 @@
+name: Publish @stage-labs/kit
+
+# Manually-triggered publish of packages/kit to npm, always under the
+# `beta` dist-tag.
+#
+# Prerequisite: an `NPM_TOKEN` repository secret holding an npm automation
+# token with publish rights to the @stage-labs scope.
+# (Settings -> Secrets and variables -> Actions -> New repository secret.)
+#
+# The published version is whatever is in packages/kit/package.json on the
+# selected branch, so bump it there before running. npm refuses to republish
+# an existing version.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Dry run (pack only, do not publish)
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - name: Show what would be published
+        working-directory: packages/kit
+        run: npm pack --dry-run
+
+      - name: Publish
+        if: ${{ !inputs.dry_run }}
+        working-directory: packages/kit
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --tag beta --access public

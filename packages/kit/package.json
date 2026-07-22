@@ -1,9 +1,20 @@
 {
   "name": "@stage-labs/kit",
-  "version": "0.1.0-beta.0",
-  "private": true,
+  "version": "0.1.0-beta.1",
   "description": "Stage design system: colour/spacing tokens, HeroIcon path data, station icon definitions, theme-preference contract, and one React Native component family (renders on web via react-native-web).",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bonustrack/stage.git",
+    "directory": "packages/kit"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
   "type": "module",
   "types": "./src/index.ts",
   "main": "./src/index.ts",
