@@ -154,7 +154,7 @@ function ChannelRowBody({ params, onLabelPress }: {
         <Row align="center" gap={6}>
           <LabelChips params={params} scheme={scheme} fg={fg} onLabelPress={onLabelPress} />
           {hasPrefix ? <Text value={params.previewPrefix ?? ''} size="md" color="info" weight="semibold" /> : null}
-          <Text value={params.preview} size="md" role="secondary" truncate maxLines={1} style={{ flexShrink: 1 }} />
+          <Text value={params.preview} size="md" role="secondary" maxLines={2} style={{ flexShrink: 1 }} />
         </Row>
       </Col>
       <MetaColumn params={params} scheme={scheme} />
