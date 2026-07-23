@@ -5,7 +5,7 @@ import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { Input } from '@stage-labs/kit/react-native/input';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
-import { Box, Row, Col } from '../../components/layout';
+import { Box, Row, Col, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from '../../components/layout';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePalette } from '../../lib/theme';
@@ -155,8 +155,8 @@ export function ActionPage({ title, head, border, onBack, footer, children }: {
   return (
     <Col surface="surface" flex={1}>
       <ActionHeader title={title} head={head} border={border} onBack={onBack}/>
-      <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ padding: 16, gap: 16 }}>
+      <ScrollView style={[{ flex: 1 }, WEB_EDGE_SCROLL]} keyboardShouldPersistTaps="handled"
+        contentContainerStyle={[{ padding: 16, gap: 16 }, WEB_EDGE_CONTENT]}>
         {children}
       </ScrollView>
       {footer ?? null}

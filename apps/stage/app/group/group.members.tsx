@@ -3,7 +3,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { FlatList } from 'react-native-gesture-handler';
-import { Row } from '../../components/layout';
+import { Row, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from '../../components/layout';
 import { MemberRow } from './group.parts';
 
 interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }
@@ -63,6 +63,8 @@ export function GroupMembersList({
             onRemove={() => { onRemoveMember(item); }}
 />
         )}
+        style={WEB_EDGE_SCROLL}
+        contentContainerStyle={WEB_EDGE_CONTENT}
 />
     </>
   );

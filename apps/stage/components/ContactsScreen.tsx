@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { contactNameModel, contactsEmptyLabel } from './ContactsScreen.model';
 import type { SimultaneousRefs } from './SwipeTabs.types';
-import { Col } from './layout';
+import { Col, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from './layout';
 import { ChannelRow } from './ChannelRow';
 import { usePalette } from '../lib/theme';
 import { useAllContacts, type Contact } from '../lib/useAllContacts';
@@ -46,8 +46,8 @@ export function ContactsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): 
         keyExtractor={c => c.address}
         renderItem={renderItem}
         extraData={contacts.length}
-        style={{ flex: 1, backgroundColor: bg }}
-        contentContainerStyle={{ flexGrow: 1, paddingTop: 4 }}
+        style={[{ flex: 1, backgroundColor: bg }, WEB_EDGE_SCROLL]}
+        contentContainerStyle={[{ flexGrow: 1, paddingTop: 4 }, WEB_EDGE_CONTENT]}
         ListEmptyComponent={
           <Col flex={1} align="center" justify="center" padding={{ x: 24, y: 48 }}>
             <Text size="md" role="secondary" style={{ textAlign: 'center' }}>

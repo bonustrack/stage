@@ -13,7 +13,7 @@ import { flash } from '../../lib/toast';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { StackHeader } from '../../components/chrome/StackHeader';
 import { GroupImagePicker } from '../../components/GroupImagePicker';
-import { Box, Col } from '../../components/layout';
+import { Box, Col, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from '../../components/layout';
 import { MemberField } from '../../components/MemberField';
 import { Spinner } from '../../components/Spinner';
 import { MemberPicker, useMemberPicker } from './MemberPicker';
@@ -123,7 +123,8 @@ export default function NewGroup(): React.ReactElement {
       <StackHeader title="New group" />
 
       <ScrollView
-        contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 24 + insets.bottom }}
+        style={WEB_EDGE_SCROLL}
+        contentContainerStyle={[{ padding: 16, gap: 16, paddingBottom: 24 + insets.bottom }, WEB_EDGE_CONTENT]}
         keyboardShouldPersistTaps="handled"
 >
         {}

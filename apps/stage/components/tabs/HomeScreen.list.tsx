@@ -7,6 +7,7 @@ import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Box } from '../layout';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { CHANNELS_SCROLL_KEY, saveScrollOffset } from '../../lib/scrollPos';
+import { WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from '../layout';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { CHANNEL_ROW_HEIGHT } from './HomeScreen.helpers';
 import type { Row as RowT } from './HomeScreen.helpers';
@@ -148,7 +149,8 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
         initialNumToRender={10}
         maxToRenderPerBatch={10}
         removeClippedSubviews
-        contentContainerStyle={{ paddingBottom: 24 }}
+        style={WEB_EDGE_SCROLL}
+        contentContainerStyle={[{ paddingBottom: 24 }, WEB_EDGE_CONTENT]}
         ListHeaderComponent={<ChannelsListHeader p={props} />}
         ListEmptyComponent={query.trim() ? null : <HomeEmpty />}
         ListFooterComponent={

@@ -12,15 +12,17 @@ import { useTotalUnread } from '../../lib/useTotalUnread';
 import { unreadBadgeLabel } from '../../lib/format';
 
 function PagerOverlay({ insetTop, tabBarHeight }: { insetTop: number; tabBarHeight: number }): React.ReactElement {
+  const web = Platform.OS === 'web';
   return (
     <Col
       pointerEvents="box-none"
+      width={web ? '100vw' : undefined}
+      margin={web ? { left: '-50vw' } : undefined}
       style={{
         position: 'absolute',
         top: insetTop,
-        left: 0,
-        right: 0,
         bottom: tabBarHeight,
+        ...(web ? { left: '50%' } : { left: 0, right: 0 }),
       }}
 >
       {}
