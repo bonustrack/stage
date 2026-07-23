@@ -1,29 +1,97 @@
 
-import { Box, Col, WEB_CONTENT_MAX_WIDTH } from '../../components/layout';
+import { Box, Col, Row, WEB_CONTENT_MAX_WIDTH } from '../../components/layout';
 import { fontSize } from '@stage-labs/kit/tokens';
-import { Tabs, usePathname } from 'expo-router';
+import { Tabs, usePathname, useRouter } from 'expo-router';
 import { Platform, useWindowDimensions } from 'react-native';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
 import { usePalette } from '../../lib/theme';
 import { TabsPager } from '../../components/SwipeTabs';
+import { TAB_ORDER, TAB_HREF, indexOfPathname } from '../../components/SwipeTabs.config';
 import { HoistedTopnav } from '../../components/tabs/HoistedTopnav';
 import { useTotalUnread } from '../../lib/useTotalUnread';
 import { unreadBadgeLabel } from '../../lib/format';
 
+const TAB_ICONS: readonly (readonly [string, HeroIconName])[] = [
+  ['index', 'chatBubble'],
+  ['contacts', 'users'],
+  ['wallet', 'wallet'],
+];
+
+function WebTabBar({ pathname, unreadBadge }: {
+  pathname: string;
+  unreadBadge: string | undefined;
+}): React.ReactElement {
+  const router = useRouter();
+  const pal = usePalette();
+  const activeIndex = pathname.startsWith('/settings') ? -1 : indexOfPathname(pathname);
+  return (
+    <Row
+      width="100vw"
+      height={60}
+      margin={{ left: '-50vw' }}
+      padding={{ top: 6 }}
+      surface="toolbar"
+      style={{
+        position: 'absolute', bottom: 0, left: '50%',
+        borderTopWidth: 1, borderTopColor: pal.border, zIndex: 3,
+      }}
+>
+      {TAB_ORDER.map((name, i) => (
+        <Pressable
+          key={name}
+          onPress={() => { router.navigate(TAB_HREF[name]); }}
+          style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+>
+          <Box>
+            <Icon
+              name={TAB_ICONS[i]?.[1] ?? 'chatBubble'}
+              size={26}
+              color={i === activeIndex ? pal.link : pal.text}
+              focused={i === activeIndex}
+/>
+            {name === 'index' && unreadBadge !== undefined ? (
+              <Box
+                minWidth={18} height={18} padding={{ x: 4 }} radius="full" background={pal.link}
+                align="center" justify="center"
+                style={{ position: 'absolute', top: -6, right: -14 }}
+>
+                <Text size="3xs" weight="semibold" color={pal.bg}>{unreadBadge}</Text>
+              </Box>
+            ) : null}
+          </Box>
+        </Pressable>
+      ))}
+    </Row>
+  );
+}
+
 function PagerOverlay({ insetTop, tabBarHeight }: { insetTop: number; tabBarHeight: number }): React.ReactElement {
-  const web = Platform.OS === 'web';
+  if (Platform.OS === 'web') {
+    return (
+      <Col
+        pointerEvents="box-none"
+        width="100vw"
+        margin={{ left: '-50vw' }}
+        style={{ position: 'absolute', top: 0, bottom: 0, left: '50%' }}
+>
+        {}
+        <Box pointerEvents="box-none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+          <TabsPager/>
+        </Box>
+        {}
+        <Box pointerEvents="box-none" style={{ position: 'absolute', top: insetTop, left: 0, right: 0, zIndex: 2 }}>
+          <HoistedTopnav/>
+        </Box>
+      </Col>
+    );
+  }
   return (
     <Col
       pointerEvents="box-none"
-      width={web ? '100vw' : undefined}
-      margin={web ? { left: '-50vw' } : undefined}
-      style={{
-        position: 'absolute',
-        top: insetTop,
-        bottom: tabBarHeight,
-        ...(web ? { left: '50%' } : { left: 0, right: 0 }),
-      }}
+      style={{ position: 'absolute', top: insetTop, bottom: tabBarHeight, left: 0, right: 0 }}
 >
       {}
       <HoistedTopnav/>
@@ -59,9 +127,11 @@ export default function TabsLayout(): React.ReactElement {
     paddingTop: 6,
     paddingBottom: insets.bottom,
     ...(webGutter > 0 ? { width: windowWidth, marginLeft: -webGutter } : {}),
+    ...(Platform.OS === 'web' ? { display: 'none' as const } : {}),
   };
 
   const tabBarHeight = 60 + insets.bottom;
+  const web = Platform.OS === 'web';
 
   return (
     <Col surface="surface" flex={1}>
@@ -81,13 +151,7 @@ export default function TabsLayout(): React.ReactElement {
           tabBarShowLabel: false,
         }}
 >
-        {(
-          [
-            ['index', 'chatBubble'],
-            ['contacts', 'users'],
-            ['wallet', 'wallet'],
-          ] as const satisfies readonly (readonly [string, HeroIconName])[]
-        ).map(([name, icon]) => (
+        {TAB_ICONS.map(([name, icon]) => (
           <Tabs.Screen
             key={name}
             name={name}
@@ -117,6 +181,8 @@ export default function TabsLayout(): React.ReactElement {
       </Tabs>
       {}
       {pagerVisible ? <PagerOverlay insetTop={insets.top} tabBarHeight={tabBarHeight}/> : null}
+      {}
+      {web ? <WebTabBar pathname={pathname} unreadBadge={unreadBadge}/> : null}
     </Col>
   );
 }

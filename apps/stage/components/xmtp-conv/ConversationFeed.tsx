@@ -50,13 +50,14 @@ function FeedIntro({ c, convId, head, fg, border, rowBg, router }: {
 }
 
 export function ConversationFeed({
-  c, convId, dark, head, sub, fg, border, rowBg, insets, router, searchSlot,
+  c, convId, dark, head, sub, fg, border, rowBg, insets, bottomInset = 0, router, searchSlot,
 }: {
   c: ConvState;
   convId: string;
   dark: boolean;
   head: string; sub: string; fg: string; border: string; rowBg: string;
   insets: { top: number };
+  bottomInset?: number;
   router: { push: (h: { pathname: '/profile/[address]'; params: { address: string } }) => void };
   searchSlot?: React.ReactNode;
 }): React.ReactElement {
@@ -86,7 +87,7 @@ export function ConversationFeed({
       removeClippedSubviews
       onEndReached={() => { void loadOlder(); }}
       onEndReachedThreshold={0.5}
-      contentContainerStyle={[{ paddingTop: 24, paddingBottom: insets.top + 52 + 24 }, WEB_EDGE_CONTENT]}
+      contentContainerStyle={[{ paddingTop: 24 + bottomInset, paddingBottom: insets.top + 52 + 24 }, WEB_EDGE_CONTENT]}
       onScroll={(ev) => { handleFeedScroll(c, convId, ev.nativeEvent.contentOffset.y); }}
       scrollEventThrottle={16}
       onContentSizeChange={(_w, h) => { restoreFeedScroll(c, h); }}

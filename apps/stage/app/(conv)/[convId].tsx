@@ -1,11 +1,11 @@
 
 import { useCallback, useState } from 'react';
 
-import { Animated as RNAnimated } from 'react-native';
+import { Animated as RNAnimated, Platform } from 'react-native';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from '../../components/Spinner';
-import { Col } from '../../components/layout';
+import { Box, Col } from '../../components/layout';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
@@ -78,6 +78,7 @@ export default function XmtpConversation(): React.ReactElement {
 
   const [requestPending, setRequestPending] = useState(false);
   const onRequestPending = useCallback((pending: boolean) => { setRequestPending(pending); }, []);
+  const [composerH, setComposerH] = useState(0);
 
   const insets = useSafeAreaInsets();
   const { height: kbHeightShared } = useReanimatedKeyboardAnimation();
@@ -94,7 +95,14 @@ export default function XmtpConversation(): React.ReactElement {
       }}
 >
       {}
-      <Reanimated.View style={[{ flex: 1 }, listWrapperStyle]}>
+      <Reanimated.View
+        style={[
+          Platform.OS === 'web'
+            ? { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 }
+            : { flex: 1 },
+          listWrapperStyle,
+        ]}
+>
       <ConversationFeed
         c={c}
         convId={convId}
@@ -105,6 +113,7 @@ export default function XmtpConversation(): React.ReactElement {
         border={border}
         rowBg={rowBg}
         insets={insets}
+        bottomInset={composerH}
         router={router}
         searchSlot={searchOpen && searchQuery.trim().length >= 2 ? (
           <ConversationSearch
@@ -129,10 +138,22 @@ export default function XmtpConversation(): React.ReactElement {
       ) : (
         <ConversationTopnav c={c} convId={convId} fg={fg} head={head} border={border} insets={insets} router={router}/>
       )}
-      <ConversationFooter
-        c={c} convId={convId} dark={dark} rowBg={rowBg} insets={insets}
-        requestPending={requestPending} onRequestPending={onRequestPending}
+      {Platform.OS === 'web' ? (
+        <Box
+          style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 2 }}
+          onLayout={(e) => { setComposerH(e.nativeEvent.layout.height); }}
+>
+          <ConversationFooter
+            c={c} convId={convId} dark={dark} rowBg={rowBg} insets={insets}
+            requestPending={requestPending} onRequestPending={onRequestPending}
 />
+        </Box>
+      ) : (
+        <ConversationFooter
+          c={c} convId={convId} dark={dark} rowBg={rowBg} insets={insets}
+          requestPending={requestPending} onRequestPending={onRequestPending}
+/>
+      )}
       {}
       <ConversationOverlays
         c={c} convId={convId} dark={dark}

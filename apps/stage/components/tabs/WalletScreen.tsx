@@ -16,6 +16,7 @@ import { flash } from '../../lib/toast';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { DANGER, usePalette } from '../../lib/theme';
 import { Col, Row, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from '../layout';
+import { WEB_TABS_CONTENT_PAD } from './webPad';
 import { getNftsAcrossChains, type Nft } from '../../lib/opensea';
 import { WalletTabs, NftsView, fmtUsd, splitUsd, type WalletTab } from './WalletScreen.parts';
 import { PrivateView } from './WalletScreen.private';
@@ -166,7 +167,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
     <ScrollView
       simultaneousHandlers={panRef}
       style={[{ flex: 1, backgroundColor: bg }, WEB_EDGE_SCROLL]}
-      contentContainerStyle={[{ paddingBottom: 24, flexGrow: 1 }, WEB_EDGE_CONTENT]}
+      contentContainerStyle={[{ paddingBottom: 24, flexGrow: 1 }, WEB_EDGE_CONTENT, WEB_TABS_CONTENT_PAD]}
       bounces
       alwaysBounceVertical
       overScrollMode="always"
