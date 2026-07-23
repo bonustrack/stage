@@ -1,6 +1,7 @@
 
+import { Platform } from 'react-native';
 import { FlatList } from 'react-native-gesture-handler';
-import { Box } from '../layout';
+import { Box, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from '../layout';
 import { Spinner } from '../Spinner';
 import { ConversationIntro } from './ConversationIntro';
 import { AT_BOTTOM_THRESHOLD_PX, convScrollKey, planFeedRestore, saveScrollOffset } from '../../lib/scrollPos';
@@ -75,17 +76,17 @@ export function ConversationFeed({
       data={allBubbles}
       extraData={extraData}
       inverted
-      showsVerticalScrollIndicator={false}
+      showsVerticalScrollIndicator={Platform.OS === 'web'}
       maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
       keyExtractor={e => e.id}
-      style={{ flex: 1 }}
+      style={[{ flex: 1 }, WEB_EDGE_SCROLL]}
       windowSize={11}
       initialNumToRender={12}
       maxToRenderPerBatch={10}
       removeClippedSubviews
       onEndReached={() => { void loadOlder(); }}
       onEndReachedThreshold={0.5}
-      contentContainerStyle={{ paddingTop: 24, paddingBottom: insets.top + 52 + 24 }}
+      contentContainerStyle={[{ paddingTop: 24, paddingBottom: insets.top + 52 + 24 }, WEB_EDGE_CONTENT]}
       onScroll={(ev) => { handleFeedScroll(c, convId, ev.nativeEvent.contentOffset.y); }}
       scrollEventThrottle={16}
       onContentSizeChange={(_w, h) => { restoreFeedScroll(c, h); }}
