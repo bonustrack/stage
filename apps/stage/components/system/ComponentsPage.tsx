@@ -1,7 +1,7 @@
 
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Col, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from '../layout';
+import { Col, WEB_EDGE_CONTENT, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../layout';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { SystemHeader } from './SystemHeader';
 import { ThemeSwitcher } from './ThemeSwitcher';
@@ -18,9 +18,9 @@ export function ComponentsPage(): React.ReactElement {
     <Col surface="surface" flex={1}>
       <SystemHeader title="Components" dark={dark} fg={fg} head={head} border={border}/>
       <ScrollView
-        style={[{ flex: 1 }, WEB_EDGE_SCROLL]}
+        style={[{ flex: 1 }, WEB_STACK_SCROLL]}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[{ flexGrow: 1, paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT]}
+        contentContainerStyle={[{ flexGrow: 1, paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT, WEB_STACK_CONTENT_PAD]}
 >
         <ThemeSwitcher dark={dark} head={head} sub={sub} border={border} rowBg={rowBg}/>
         <ComponentsSections dark={dark} head={head} sub={sub} border={border} rowBg={rowBg}/>

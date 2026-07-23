@@ -18,7 +18,7 @@ import { Icon } from '@stage-labs/kit/react-native/icon';
 import { ChannelRow } from '../../components/ChannelRow';
 import { EmptyState } from '../../components/chrome/EmptyState';
 import { StackHeader } from '../../components/chrome/StackHeader';
-import { Col, Row, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from '../../components/layout';
+import { Col, Row, WEB_EDGE_CONTENT, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
 
 type ReqRow = ConversationRequestView;
@@ -97,8 +97,8 @@ export default function Requests(): React.ReactElement {
           data={rows}
           keyExtractor={r => r.convId}
           renderItem={renderRow}
-          style={WEB_EDGE_SCROLL}
-          contentContainerStyle={[{ paddingBottom: 24 + insets.bottom }, WEB_EDGE_CONTENT]}
+          style={WEB_STACK_SCROLL}
+          contentContainerStyle={[{ paddingBottom: 24 + insets.bottom }, WEB_EDGE_CONTENT, WEB_STACK_CONTENT_PAD]}
           ListEmptyComponent={<EmptyState title="No message requests." />}
 />
       )}

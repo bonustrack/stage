@@ -19,3 +19,13 @@ export const WEB_EDGE_SCROLL: ViewStyle = Platform.OS === 'web'
 export const WEB_EDGE_CONTENT: ViewStyle = Platform.OS === 'web'
   ? { width: '100%', maxWidth: WEB_CONTENT_MAX_WIDTH, marginHorizontal: 'auto' }
   : {};
+
+export const WEB_STACK_SCROLL: ViewStyle = Platform.OS === 'web'
+  ? ({
+      position: 'absolute', top: 0, bottom: 0, left: '50%', width: '100vw', marginLeft: '-50vw',
+    } as unknown as ViewStyle)
+  : {};
+
+export const WEB_STACK_CONTENT_PAD: ViewStyle = Platform.OS === 'web' ? { paddingTop: 60 } : {};
+
+export const WEB_CHROME_LAYER: ViewStyle = Platform.OS === 'web' ? { zIndex: 2 } : {};

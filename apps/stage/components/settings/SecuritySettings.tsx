@@ -1,7 +1,7 @@
 
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Col, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from '../layout';
+import { Col, WEB_EDGE_CONTENT, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../layout';
 import { DANGER, useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { AccountSecuritySection } from '../tabs/SettingsScreen.account';
 import { SecureWalletNudge } from '../onboarding/SecureWalletNudge';
@@ -17,7 +17,7 @@ export function SecuritySettings(): React.ReactElement {
   return (
     <Col surface="surface" flex={1}>
       <SettingsHeader title="Security"/>
-      <ScrollView style={WEB_EDGE_SCROLL} contentContainerStyle={[{ paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT]}>
+      <ScrollView style={WEB_STACK_SCROLL} contentContainerStyle={[{ paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT, WEB_STACK_CONTENT_PAD]}>
         <SecureWalletNudge/>
         <AccountSecuritySection
           c={{ fg, head, sub, border, rowBg }}

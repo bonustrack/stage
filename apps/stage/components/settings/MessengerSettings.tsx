@@ -5,7 +5,7 @@ import { Alert, DevSettings } from 'react-native';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Box, Col, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from '../layout';
+import { Box, Col, WEB_EDGE_CONTENT, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../layout';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import {
   getOrCreateXmtpClient, resetXmtpClient, selfEthAddress, shortAddress, useActiveAccount,
@@ -67,7 +67,7 @@ export function MessengerSettings(): React.ReactElement {
   return (
     <Col surface="surface" flex={1}>
       <SettingsHeader title="Messenger"/>
-      <ScrollView style={[{ flex: 1 }, WEB_EDGE_SCROLL]} contentContainerStyle={[{ paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT]}>
+      <ScrollView style={[{ flex: 1 }, WEB_STACK_SCROLL]} contentContainerStyle={[{ paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT, WEB_STACK_CONTENT_PAD]}>
         <Caption color={fg} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
           XMTP ACCOUNT
         </Caption>

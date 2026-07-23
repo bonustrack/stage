@@ -8,7 +8,7 @@ import { QrCode } from '@stage-labs/kit/react-native/qr-code';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { capabilities } from '../../lib/capabilities';
-import { Box, Col, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from '../../components/layout';
+import { Box, Col, WEB_EDGE_CONTENT, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../../components/layout';
 import { WalletHeader } from '../../components/wallet/WalletHeader';
 import { WalletIcon } from '../../components/wallet/widgets';
 import { getOrCreateXmtpClient } from '../../modules/messaging';
@@ -101,7 +101,7 @@ export default function WalletReceive(): React.ReactElement {
     <Col surface="surface" flex={1}>
       <WalletHeader title="Receive" />
 
-      <ScrollView style={WEB_EDGE_SCROLL} contentContainerStyle={[{ padding: 16, alignItems: 'center', gap: 16 }, WEB_EDGE_CONTENT]}>
+      <ScrollView style={WEB_STACK_SCROLL} contentContainerStyle={[{ padding: 16, alignItems: 'center', gap: 16 }, WEB_EDGE_CONTENT, WEB_STACK_CONTENT_PAD]}>
         <ReceiveModeToggle
           mode={activeMode}
           onChange={setMode}

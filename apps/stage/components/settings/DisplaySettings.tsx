@@ -2,7 +2,7 @@
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Box, Col, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from '../layout';
+import { Box, Col, WEB_EDGE_CONTENT, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../layout';
 import { Text } from '@stage-labs/kit/react-native/text';
 import {
   setThemePreference, setCustomTheme, useCustomTheme,
@@ -26,9 +26,9 @@ export function DisplaySettings(): React.ReactElement {
     <Col surface="surface" flex={1}>
       <SettingsHeader title="Display"/>
       <ScrollView
-        style={[{ flex: 1 }, WEB_EDGE_SCROLL]}
+        style={[{ flex: 1 }, WEB_STACK_SCROLL]}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[{ flexGrow: 1, paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT]}
+        contentContainerStyle={[{ flexGrow: 1, paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT, WEB_STACK_CONTENT_PAD]}
 >
         <Text size="xs" role="secondary" style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
           THEME

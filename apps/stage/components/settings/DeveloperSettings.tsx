@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Box, Col, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from '../layout';
+import { Box, Col, WEB_EDGE_CONTENT, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../layout';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { usePalette } from '../../lib/theme';
 import {
@@ -101,7 +101,7 @@ export function DeveloperSettings(): React.ReactElement {
   return (
     <Col surface="surface" flex={1}>
       <SettingsHeader title="Developer"/>
-      <ScrollView style={WEB_EDGE_SCROLL} contentContainerStyle={[{ paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT]}>
+      <ScrollView style={WEB_STACK_SCROLL} contentContainerStyle={[{ paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT, WEB_STACK_CONTENT_PAD]}>
         <Caption color={fg} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
           DIAGNOSTICS
         </Caption>

@@ -4,7 +4,7 @@ import { Alert } from 'react-native';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Col, Box, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from '../layout';
+import { Col, Box, WEB_EDGE_CONTENT, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../layout';
 import { WEB_TABBAR_BOTTOM_PAD } from '../tabs/webPad';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { SETTINGS_MENU_ITEMS } from './SettingsMenu.model';
@@ -88,7 +88,7 @@ export function SettingsMenu(): React.ReactElement {
   return (
     <Col surface="surface" flex={1}>
       <SettingsHeader title="Settings"/>
-      <ScrollView style={WEB_EDGE_SCROLL} contentContainerStyle={[{ paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT, WEB_TABBAR_BOTTOM_PAD]}>
+      <ScrollView style={WEB_STACK_SCROLL} contentContainerStyle={[{ paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT, WEB_STACK_CONTENT_PAD, WEB_TABBAR_BOTTOM_PAD]}>
         <SettingsList>
           {SETTINGS_MENU_ITEMS.map((item) => (
             <SettingsNavRow
