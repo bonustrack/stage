@@ -7,6 +7,7 @@ import {
   buildReaction, buildVote, buildOpenAnswer, type ReactionPayload,
 } from '@stage-labs/client/xmtp/builders';
 import { openVoteKey, type PollContent } from '@stage-labs/client/xmtp/poll';
+import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import {
   type SignatureRequestContent, type SignatureReferenceContent,
 } from '@stage-labs/client/xmtp/sign';
@@ -22,6 +23,17 @@ import {
 import { envelopeOfXmtpMessage } from './xmtp.envelope.web';
 
 export { envelopeOfXmtpMessage };
+
+export async function rowMessagesOf(conv: unknown, limit: number): Promise<RowMessage[]> {
+  const c = conv as Conversation;
+  const msgs = await c.messages({ limit: BigInt(limit), direction: SortDirection.Descending });
+  return msgs.map(m => ({
+    content: m.content,
+    contentTypeId: m.contentType.typeId,
+    senderInboxId: m.senderInboxId,
+    sentNs: Number(m.sentAtNs),
+  }));
+}
 
 export async function olderConvMessages(line: string, beforeTsMs: number, limit: number): Promise<HistoryEntry[]> {
   const conv = await convOfLine(line);

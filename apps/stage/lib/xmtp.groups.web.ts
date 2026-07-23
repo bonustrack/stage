@@ -49,6 +49,14 @@ export async function addGroupMembers(convId: string, addresses: string[]): Prom
     await addMembers(identifiersOf(members)));
 }
 
+export function groupNameImage(conv: unknown): Promise<{ name: string; imageUrl: string }> {
+  const g = conv as { name?: unknown; imageUrl?: unknown };
+  return Promise.resolve({
+    name: typeof g.name === 'string' ? g.name : '',
+    imageUrl: typeof g.imageUrl === 'string' ? g.imageUrl : '',
+  });
+}
+
 export async function leaveGroupConv(line: string): Promise<'left' | 'hidden'> {
   const conv = await convOfLine(line);
   if (!conv) throw new Error('Conversation not found');

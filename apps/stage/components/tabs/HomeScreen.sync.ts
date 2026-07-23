@@ -56,7 +56,9 @@ function makeRefreshers(
       const convs = await syncAllowedConversations();
       void refreshRequestCount();
       await primeMembers(client, convs);
-      const summarized = await Promise.all(convs.map(c => summarize(c, selfInboxId)));
+      const summarized = (await Promise.all(
+        convs.map(c => summarize(c, selfInboxId).catch(() => null)),
+      )).filter((r): r is RowT => r !== null);
       if (run.cancelled) return;
       summarized.sort((a, b) => (b.lastTs ?? 0) - (a.lastTs ?? 0));
       args.setRows(summarized);
@@ -93,7 +95,8 @@ async function subscribeConvStream(
       const cs = await (conv as unknown as { consentState: () => Promise<string> })
         .consentState().catch(() => 'allowed');
       if (cs !== 'allowed') { void r.refreshRequestCount(); return; }
-      const row = await summarize(conv, selfInboxId);
+      const row = await summarize(conv, selfInboxId).catch(() => null);
+      if (!row) return;
       args.setRows(prev => (prev ? [row, ...prev.filter(x => x.convId !== row.convId)] : [row]));
     });
     run.cancelConvStream = typeof streamResult === 'function' ? (streamResult as () => void) : null;

@@ -1,14 +1,18 @@
 
-import type { Conversation, DecodedMessage } from '@xmtp/react-native-sdk';
+import type { Conversation } from '@xmtp/react-native-sdk';
 import {
   peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
   shortAddress, getLastReadNs,
 } from '../../lib/xmtp';
+import { groupNameImage } from '../../lib/xmtp.groups';
+import { rowMessagesOf } from '../../lib/xmtp.messages';
 import { labelsOfSyncedGroup } from '../../lib/xmtp.labels';
 import { isMetroControlBody } from '../../lib/push';
 import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
-import { channelRowTitle, countUnreadEntries, initialMarkedUnread } from '@stage-labs/client/xmtp/summarizeRow';
+import {
+  channelRowTitle, countUnreadEntries, initialMarkedUnread, type RowMessage,
+} from '@stage-labs/client/xmtp/summarizeRow';
 import type {
   ConversationView, ConversationRequestView, RequestAvatarDescriptor,
 } from './conversation.types';
@@ -17,28 +21,16 @@ export type {
   ConversationView, ConversationRequestView, RequestAvatarDescriptor,
 } from './conversation.types';
 
-function pickLastMessage(msgs: DecodedMessage[]): DecodedMessage | undefined {
-  return msgs.find(m => {
-    try { const c: unknown = m.content(); return !(typeof c === 'string' && isMetroControlBody(c)); }
-    catch { return true; }
-  }) ?? msgs[0];
+function pickLastMessage(msgs: RowMessage[]): RowMessage | undefined {
+  return msgs.find(m =>
+    !(typeof m.content === 'string' && isMetroControlBody(m.content)),
+  ) ?? msgs[0];
 }
 
-function previewOfMessage(last: DecodedMessage | undefined): string {
+function previewOfMessage(last: RowMessage | undefined): string {
   if (!last) return '';
-  try { return previewOfXmtpContent(last.content(), last.contentTypeId); }
+  try { return previewOfXmtpContent(last.content, last.contentTypeId); }
   catch { return `[${last.contentTypeId ?? 'unknown'}]`; }
-}
-
-async function readGroupNameImage(
-  conv: Conversation,
-): Promise<{ name: string; imageUrl: string }> {
-  const g = conv as unknown as { name?: () => Promise<string>; imageUrl?: () => Promise<string> };
-  const [n, img] = await Promise.all([
-    g.name?.() ?? Promise.resolve(''),
-    g.imageUrl?.().catch(() => '') ?? Promise.resolve(''),
-  ]);
-  return { name: n ?? '', imageUrl: img ?? '' };
 }
 
 interface GroupRowData {
@@ -53,7 +45,7 @@ async function gatherGroupRowData(conv: Conversation, peerAddress: string | null
   }
   const [memberAddresses, groupMeta, labels] = await Promise.all([
     groupMemberEthAddresses(conv),
-    readGroupNameImage(conv),
+    groupNameImage(conv),
     labelsOfSyncedGroup(conv),
   ]);
   return { memberAddresses, groupMeta, labels };
@@ -71,16 +63,17 @@ export async function summarizeConversation(
   conv: Conversation, selfInboxId: string,
 ): Promise<ConversationView> {
   await conv.sync().catch(() => undefined);
-  const msgs: DecodedMessage[] = await conv.messages({ limit: 2 }).catch(() => []);
+  const msgs = await rowMessagesOf(conv, 2).catch(() => []);
   const last = pickLastMessage(msgs);
   const preview = previewOfMessage(last);
   const peerAddress = await peerEthAddressOfDm(conv);
   const inboxToAddr = await memberInboxToAddressMap(conv);
   const { memberAddresses, groupMeta, labels } = await gatherGroupRowData(conv, peerAddress);
+  const topic: string | undefined = conv.topic;
   const title = channelRowTitle({
     peerAddress, groupName: groupMeta.name,
     memberCount: memberAddresses.length,
-    fallbackId: conv.topic.replace(/^.*\//, ''),
+    fallbackId: (topic ?? conv.id).replace(/^.*\//, ''),
   });
   const lastSenderAddress = last?.senderInboxId
     ? inboxToAddr[last.senderInboxId] ?? null
@@ -115,13 +108,11 @@ async function readRequestGroupData(
   conv: Conversation, isGroup: boolean,
 ): Promise<{ memberAddresses: string[]; groupName: string; groupImage: string }> {
   if (!isGroup) return { memberAddresses: [], groupName: '', groupImage: '' };
-  const g = conv as unknown as { name?: () => Promise<string>; imageUrl?: () => Promise<string> };
-  const [memberAddresses, groupName, groupImageRaw] = await Promise.all([
+  const [memberAddresses, groupMeta] = await Promise.all([
     groupMemberEthAddresses(conv),
-    g.name?.().catch(() => '') ?? Promise.resolve(''),
-    g.imageUrl?.().catch(() => '') ?? Promise.resolve(''),
+    groupNameImage(conv),
   ]);
-  return { memberAddresses, groupName: groupName ?? '', groupImage: (groupImageRaw ?? '').trim() };
+  return { memberAddresses, groupName: groupMeta.name, groupImage: groupMeta.imageUrl.trim() };
 }
 
 export async function summarizeConversationRequest(
@@ -131,7 +122,7 @@ export async function summarizeConversationRequest(
   const peerAddress = await peerEthAddressOfDm(conv);
   const isGroup = !peerAddress;
   const { memberAddresses, groupName, groupImage } = await readRequestGroupData(conv, isGroup);
-  const recent: DecodedMessage[] = await conv.messages({ limit: 1 }).catch(() => []);
+  const recent = await rowMessagesOf(conv, 1).catch(() => []);
   const last = recent[0];
   const preview = previewOfMessage(last);
   const title = peerAddress
@@ -157,8 +148,7 @@ export async function requestAvatarDescriptor(
   if (peerAddress) {
     return { convId: conv.id, avatarAddress: peerAddress, avatarUri: null, isGroup: false };
   }
-  const g = conv as unknown as { imageUrl?: () => Promise<string> };
-  const imageUrl = (await g.imageUrl?.().catch(() => '') ?? '').trim();
+  const imageUrl = (await groupNameImage(conv).catch(() => ({ name: '', imageUrl: '' }))).imageUrl.trim();
   return {
     convId: conv.id,
     avatarAddress: imageUrl ? null : channelStampSeed(conv.id),
