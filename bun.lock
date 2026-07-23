@@ -123,18 +123,14 @@
       },
       "peerDependencies": {
         "eslint": "*",
-        "eslint-plugin-vue": "*",
         "knip": "*",
         "madge": "*",
         "typescript": "*",
         "typescript-eslint": "*",
-        "vue-eslint-parser": "*",
       },
       "optionalPeers": [
-        "eslint-plugin-vue",
         "knip",
         "madge",
-        "vue-eslint-parser",
       ],
     },
     "packages/kit": {
