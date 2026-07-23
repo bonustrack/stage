@@ -10,6 +10,15 @@ const WEB_GLOBAL_CSS = [
   '}',
 ].join('\n');
 
+function measuredScrollbarWidth(): number {
+  const probe = document.createElement('div');
+  probe.style.cssText = 'position:absolute;top:-9999px;width:100px;height:100px;overflow:scroll;';
+  document.body.appendChild(probe);
+  const width = probe.offsetWidth - probe.clientWidth;
+  probe.remove();
+  return width;
+}
+
 export function applyWebGlobalStyles(): void {
   if (typeof document === 'undefined') return;
   if (document.getElementById(STYLE_ID)) return;
@@ -17,4 +26,5 @@ export function applyWebGlobalStyles(): void {
   style.id = STYLE_ID;
   style.textContent = WEB_GLOBAL_CSS;
   document.head.appendChild(style);
+  document.documentElement.style.setProperty('--stage-sbw', `${measuredScrollbarWidth()}px`);
 }

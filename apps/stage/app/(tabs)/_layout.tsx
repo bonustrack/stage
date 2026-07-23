@@ -1,5 +1,5 @@
 
-import { Box, Col, Row, WEB_CONTENT_MAX_WIDTH } from '../../components/layout';
+import { Box, Col, Row, WEB_CONTENT_MAX_WIDTH, WEB_CHROME_WIDTH } from '../../components/layout';
 import { fontSize } from '@stage-labs/kit/tokens';
 import { Tabs, usePathname, useRouter } from 'expo-router';
 import { Platform, useWindowDimensions } from 'react-native';
@@ -29,7 +29,7 @@ function WebTabBar({ pathname, unreadBadge }: {
   const activeIndex = pathname.startsWith('/settings') ? -1 : indexOfPathname(pathname);
   return (
     <Row
-      width="100vw"
+      width={WEB_CHROME_WIDTH}
       height={60}
       margin={{ left: '-50vw' }}
       padding={{ top: 6 }}

@@ -3,10 +3,12 @@ import { Platform, type ViewStyle } from 'react-native';
 import { Col } from './Box';
 import { WEB_CONTENT_MAX_WIDTH } from './WebContentFrame';
 
+export const WEB_CHROME_WIDTH = 'calc(100vw - var(--stage-sbw, 0px))';
+
 export function WebFullBleed({ children }: { children: React.ReactNode }): React.ReactElement {
   if (Platform.OS !== 'web') return <>{children}</>;
   return (
-    <Col width="100vw" margin={{ left: '-50vw' }} style={{ position: 'relative', left: '50%' }}>
+    <Col width={WEB_CHROME_WIDTH} margin={{ left: '-50vw' }} style={{ position: 'relative', left: '50%' }}>
       {children}
     </Col>
   );

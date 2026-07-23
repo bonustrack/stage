@@ -1,7 +1,7 @@
 
 import { useCallback, useState } from 'react';
 
-import { Animated as RNAnimated, Platform } from 'react-native';
+import { Animated as RNAnimated, Platform, type ViewStyle } from 'react-native';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from '../../components/Spinner';
@@ -140,7 +140,10 @@ export default function XmtpConversation(): React.ReactElement {
       )}
       {Platform.OS === 'web' ? (
         <Box
-          style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 2 }}
+          style={{
+            position: 'absolute', bottom: 0, left: 0, zIndex: 2,
+            right: 'var(--stage-sbw, 0px)',
+          } as unknown as ViewStyle}
           onLayout={(e) => { setComposerH(e.nativeEvent.layout.height); }}
 >
           <ConversationFooter
