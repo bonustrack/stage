@@ -12,7 +12,6 @@ import { CHANNEL_ROW_HEIGHT } from './HomeScreen.helpers';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { HomeEmpty } from './HomeScreen.parts';
 import { LabelFilterBar } from './HomeScreen.labelbar';
-import { ProposalsBanner } from './Proposals.banner';
 import { ChannelsSearchBar } from './HomeScreen.search';
 import { HomeContactResults } from './HomeScreen.contacts';
 import { HomeOverflowMenu } from './HomeScreen.overflow';
@@ -85,7 +84,6 @@ function HomeTopnavRight({ head, requestCount, router, onOpenSearch }: {
 function ChannelsListHeader({ p }: { p: ChannelsListProps }): React.ReactElement {
   return (
     <>
-      <ProposalsBanner/>
       {p.showFilterBar ? (
         <LabelFilterBar
           labels={p.barLabels} enabled={p.enabledLabels} unreadOnly={p.unreadOnly}

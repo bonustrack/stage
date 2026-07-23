@@ -52,7 +52,7 @@ Per-app:
 
 ### Shared core (`packages/client`)
 - No build step; subpath exports + `src/index.ts` barrel are the public API (`zerodev/*` deliberately not in the barrel). Pure functions + plain interfaces, no classes/default exports. Boundary validation via `validate.ts` (zod). Always decode XMTP content WITH a zod schema (`decodeJsonContent(bytes, schema)`).
-- Domains: `xmtp` (codecs, humanize, builders, line routing, and the orchestration cores: `channelsFilter`, `channelsCache` incl. `applyInbound`, `summarizeRow`, `clientErrors`, `envelope`, `groups`, `requests-queue`), `accounts`+`zerodev`, `railgun` (host-injected dispatch — method-name strings must stay in sync with the host bridge), `wallet` (incl. `txSimulate`, `txDecode`, `prices`), `api` (incl. `github`), `profile/identity/stamp/embed`, `x402`.
+- Domains: `xmtp` (codecs, humanize, builders, line routing, and the orchestration cores: `channelsFilter`, `channelsCache` incl. `applyInbound`, `summarizeRow`, `clientErrors`, `envelope`, `groups`), `accounts`+`zerodev`, `railgun` (host-injected dispatch — method-name strings must stay in sync with the host bridge), `wallet` (incl. `txSimulate`, `txDecode`, `prices`), `api` (incl. `github`), `profile/identity/stamp/embed`, `x402`.
 
 ### Kit (`packages/kit`)
 - Plain design-system component library: ONE component family (`src/react-native/*`, renders on web via RNW) + shared style cores (`text.styles.ts`, `button.styles.ts`, `control.styles.ts`, `layout.ts` surfaces, `badge.ts`, `icons.ts`, `tokens.ts` incl. the `Scheme`/`Color` helpers). Consumed via subpath exports (`@stage-labs/kit/tokens`, `@stage-labs/kit/react-native/button`, ...).
