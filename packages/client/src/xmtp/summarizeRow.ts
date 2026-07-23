@@ -5,6 +5,13 @@ export interface UnreadCountEntry {
   senderInboxId?: string;
 }
 
+export interface RowMessage {
+  content: unknown;
+  contentTypeId: string | undefined;
+  senderInboxId: string;
+  sentNs: number;
+}
+
 export function countUnreadEntries(
   entries: readonly UnreadCountEntry[],
   lastReadNs: number,
