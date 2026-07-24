@@ -4,7 +4,7 @@ import { memo, useCallback } from 'react';
 import { DevSettings, Vibration } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Col } from '../layout';
+import { Col, WEB_EDGE_SCROLL } from '../layout';
 import { EmptyState } from '../chrome/EmptyState';
 import { Spinner } from '../Spinner';
 import { ChannelRow } from '../ChannelRow';
@@ -114,7 +114,7 @@ export function HomeError({ error, dark, fg }: {
   error: string; dark: boolean; fg: string; bg: string;
 }): React.ReactElement {
   return (
-    <Col padding={24} flex={1} align="center" justify="center" surface="surface">
+    <Col padding={24} flex={1} align="center" justify="center" surface="surface" style={WEB_EDGE_SCROLL}>
       <Text size="md" color={fg} style={{ textAlign: 'center', marginBottom: 16 }}>{error}</Text>
       <Pressable
         onPress={() => {
@@ -140,7 +140,7 @@ export function HomeError({ error, dark, fg }: {
 
 export function HomeSpinner({ head }: { head: string; bg: string }): React.ReactElement {
   return (
-    <Col flex={1} align="center" justify="center" surface="surface">
+    <Col flex={1} align="center" justify="center" surface="surface" style={WEB_EDGE_SCROLL}>
       <Spinner size={28} color={head}/>
     </Col>
   );

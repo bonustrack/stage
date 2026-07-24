@@ -3,7 +3,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Box, Row, Col } from '../layout';
+import { Box, Row, Col, WEB_CHROME_LAYER } from '../layout';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Title } from '@stage-labs/kit/react-native/title';
 
@@ -14,7 +14,7 @@ export function SystemHeader({ title, fg, head, border, right }: {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   return (
-    <Box surface="toolbar" padding={{ top: insets.top }}>
+    <Box surface="toolbar" padding={{ top: insets.top }} style={WEB_CHROME_LAYER}>
       <Row padding={{ x: 12, top: 8, bottom: 10 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
         <Pressable onPress={() => { router.back(); }} hitSlop={8} style={{ padding: 4 }}>
           <Icon name="arrowLeft" size={22} color={fg}/>

@@ -6,7 +6,7 @@ import { Text, type TextSizeToken, type TextWeight } from '@stage-labs/kit/react
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { Title, type TitleSizeToken } from '@stage-labs/kit/react-native/title';
 import { resolveColorToken } from '@stage-labs/kit/tokens';
-import { Box, Row } from '../layout';
+import { Box, Row, WEB_CHROME_LAYER } from '../layout';
 
 export type ScreenHeaderTitleStyle =
   | {
@@ -102,6 +102,7 @@ export function ScreenHeader(props: ScreenHeaderProps): React.ReactElement {
       gap={8}
       background={props.surface}
       border={border}
+      style={WEB_CHROME_LAYER}
       padding={{
         x: 12,
         top: (props.padTop ?? 8) + (props.safeTop ?? 0),

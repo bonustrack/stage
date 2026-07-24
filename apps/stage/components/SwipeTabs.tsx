@@ -1,7 +1,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Platform, useWindowDimensions } from 'react-native';
-import { Box, WEB_CONTENT_MAX_WIDTH } from './layout';
+import { Box } from './layout';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import type { GestureType } from 'react-native-gesture-handler';
 import Animated, {
@@ -21,7 +21,7 @@ export function TabsPager(): React.ReactElement {
   const pathname = usePathname();
   const { width: windowWidth } = useWindowDimensions();
   const [pagerWidth, setPagerWidth] = useState<number | null>(null);
-  const width = IS_WEB ? (pagerWidth ?? Math.min(windowWidth, WEB_CONTENT_MAX_WIDTH)) : windowWidth;
+  const width = IS_WEB ? (pagerWidth ?? windowWidth) : windowWidth;
 
   const routeIndex = indexOfPathname(pathname);
 

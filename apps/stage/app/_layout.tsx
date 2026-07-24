@@ -65,6 +65,11 @@ function RootLayoutInner(): React.ReactElement {
   const barStyle: 'light' | 'dark' = isDarkBg(toolbarBg) ? 'light' : 'dark';
   useEffect(() => { setStatusBarStyle(barStyle, true); }, [barStyle]);
 
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+    document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+  }, [dark]);
+
   useDeepLinks();
 
   const restore = useRestoreGate();

@@ -2,7 +2,7 @@
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Col } from '../layout';
+import { Col, WEB_EDGE_CONTENT, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../layout';
 import type { HeroIconName } from '@stage-labs/kit/react-native/icon';
 import { capabilities } from '../../lib/capabilities';
 import { SettingsHeader } from './SettingsHeader';
@@ -21,7 +21,7 @@ export function ExperimentalSettings(): React.ReactElement {
   return (
     <Col surface="surface" flex={1}>
       <SettingsHeader title="Experimental"/>
-      <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
+      <ScrollView style={WEB_STACK_SCROLL} contentContainerStyle={[{ paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT, WEB_STACK_CONTENT_PAD]}>
         <SettingsList>
           {ROWS.map((row) => (
             <SettingsNavRow

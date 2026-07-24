@@ -9,7 +9,7 @@ import { shortAddress } from '../modules/messaging';
 import { useEffectiveColorScheme } from '../lib/theme';
 import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
 import { Avatar } from './Avatar';
-import { Box, Col } from './layout';
+import { Box, Col, WEB_EDGE_CONTENT, WEB_STACK_SCROLL } from './layout';
 import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { profileDisplayName } from './ProfileScreen.model';
@@ -99,7 +99,7 @@ export function ProfileScreen({ address, variant, panRef }: {
     <Col flex={1} surface="surface">
       <ProfileHeader variant={variant} insetTop={insets.top} c={c} />
 
-      <ScrollView simultaneousHandlers={panRef} style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 32 }}>
+      <ScrollView simultaneousHandlers={panRef} style={[{ flex: 1 }, WEB_STACK_SCROLL]} contentContainerStyle={[{ paddingBottom: 32 }, WEB_EDGE_CONTENT]}>
         <ProfileIdentity
           addr={addr} isSelf={isSelf} dark={dark} opening={false} c={c}
           variant={variant} insetTop={insets.top} displayName={displayName}

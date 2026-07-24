@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@stage-labs/kit/react-native/text';
 import { walletAccountRows } from './WalletSettings.model';
-import { Col } from '../layout';
+import { Col, WEB_EDGE_CONTENT, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../layout';
 import { useBlockRadius, useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { useActiveAccount } from '../../modules/messaging/account';
 import { flash } from '../../lib/toast';
@@ -42,7 +42,7 @@ export function WalletSettings(): React.ReactElement {
   return (
     <Col surface="surface" flex={1}>
       <SettingsHeader title="Wallet"/>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
+      <ScrollView style={[{ flex: 1 }, WEB_STACK_SCROLL]} contentContainerStyle={[{ paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT, WEB_STACK_CONTENT_PAD]}>
         {!model ? (
           <Text size="md" color={c.sub} style={{ padding: 24 }}>No active account.</Text>
         ) : (
