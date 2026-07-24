@@ -5,7 +5,7 @@ import { Animated as RNAnimated, Platform, type ViewStyle } from 'react-native';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from '../../components/Spinner';
-import { Box, Col } from '../../components/layout';
+import { Box, Col, WEB_EDGE_SCROLL } from '../../components/layout';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
@@ -35,7 +35,7 @@ function UnresolvedConversation({ resolved, dark }: {
 }): React.ReactElement {
   if (resolved.resolving) {
     return (
-      <Col surface="surface" flex={1} align="center" justify="center">
+      <Col surface="surface" flex={1} align="center" justify="center" style={WEB_EDGE_SCROLL}>
         <Spinner size={24} color={dark ? '#ffffff' : '#000000'}/>
       </Col>
     );

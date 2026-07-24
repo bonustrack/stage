@@ -89,7 +89,7 @@ export default function Requests(): React.ReactElement {
       <StackHeader title="Message requests" />
 
       {!rows ? (
-        <Col flex={1} align="center" justify="center">
+        <Col flex={1} align="center" justify="center" style={WEB_STACK_SCROLL}>
           <Spinner size={28} color={head}/>
         </Col>
       ) : (
