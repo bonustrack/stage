@@ -15,7 +15,7 @@ export function WebFullBleed({ children }: { children: React.ReactNode }): React
 }
 
 export const WEB_EDGE_SCROLL: ViewStyle = Platform.OS === 'web'
-  ? ({ width: '100vw', left: '50%', marginLeft: '-50vw' } as unknown as ViewStyle)
+  ? ({ width: '100vw', left: '50%', marginLeft: '-50vw', overflowY: 'scroll' } as unknown as ViewStyle)
   : {};
 
 export const WEB_EDGE_CONTENT: ViewStyle = Platform.OS === 'web'
@@ -25,6 +25,7 @@ export const WEB_EDGE_CONTENT: ViewStyle = Platform.OS === 'web'
 export const WEB_STACK_SCROLL: ViewStyle = Platform.OS === 'web'
   ? ({
       position: 'absolute', top: 0, bottom: 0, left: '50%', width: '100vw', marginLeft: '-50vw',
+      overflowY: 'scroll',
     } as unknown as ViewStyle)
   : {};
 
