@@ -1,20 +1,20 @@
 
-import { Box, Col, Row, WEB_CONTENT_MAX_WIDTH, WEB_CHROME_WIDTH } from '../../components/layout';
+import { Box, Col, Row, WEB_CHROME_WIDTH } from '../../components/layout';
 import { fontSize } from '@stage-labs/kit/tokens';
 import { Tabs, usePathname, useRouter } from 'expo-router';
-import { Platform, useWindowDimensions } from 'react-native';
+import { Platform } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
 import { usePalette } from '../../lib/theme';
 import { TabsPager } from '../../components/SwipeTabs';
-import { TAB_ORDER, TAB_HREF, indexOfPathname } from '../../components/SwipeTabs.config';
+import { TAB_HREF, indexOfPathname, type TabName } from '../../components/SwipeTabs.config';
 import { HoistedTopnav } from '../../components/tabs/HoistedTopnav';
 import { useTotalUnread } from '../../lib/useTotalUnread';
 import { unreadBadgeLabel } from '../../lib/format';
 
-const TAB_ICONS: readonly (readonly [string, HeroIconName])[] = [
+const TAB_ICONS: readonly (readonly [TabName, HeroIconName])[] = [
   ['index', 'chatBubble'],
   ['contacts', 'users'],
   ['wallet', 'wallet'],
@@ -39,7 +39,7 @@ function WebTabBar({ pathname, unreadBadge }: {
         borderTopWidth: 1, borderTopColor: pal.border, zIndex: 3,
       }}
 >
-      {TAB_ORDER.map((name, i) => (
+      {TAB_ICONS.map(([name, icon], i) => (
         <Pressable
           key={name}
           onPress={() => { router.navigate(TAB_HREF[name]); }}
@@ -47,7 +47,7 @@ function WebTabBar({ pathname, unreadBadge }: {
 >
           <Box>
             <Icon
-              name={TAB_ICONS[i]?.[1] ?? 'chatBubble'}
+              name={icon}
               size={26}
               color={i === activeIndex ? pal.link : pal.text}
               focused={i === activeIndex}
@@ -112,10 +112,7 @@ export default function TabsLayout(): React.ReactElement {
   const pal = usePalette();
   const active = pal.link;
   const inactive = pal.text;
-  const { width: windowWidth } = useWindowDimensions();
-  const webGutter = Platform.OS === 'web'
-    ? Math.max(0, (windowWidth - WEB_CONTENT_MAX_WIDTH) / 2)
-    : 0;
+  const web = Platform.OS === 'web';
 
   const tabBarStyle = {
     backgroundColor: pal.toolbarBg,
@@ -126,12 +123,10 @@ export default function TabsLayout(): React.ReactElement {
     height: 60 + insets.bottom,
     paddingTop: 6,
     paddingBottom: insets.bottom,
-    ...(webGutter > 0 ? { width: windowWidth, marginLeft: -webGutter } : {}),
-    ...(Platform.OS === 'web' ? { display: 'none' as const } : {}),
+    ...(web ? { display: 'none' as const } : {}),
   };
 
   const tabBarHeight = 60 + insets.bottom;
-  const web = Platform.OS === 'web';
 
   return (
     <Col surface="surface" flex={1}>

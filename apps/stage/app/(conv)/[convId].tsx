@@ -88,6 +88,13 @@ export default function XmtpConversation(): React.ReactElement {
     return <UnresolvedConversation resolved={resolved} dark={dark}/>;
   }
 
+  const footer = (
+    <ConversationFooter
+      c={c} convId={convId} dark={dark} rowBg={rowBg} insets={insets}
+      requestPending={requestPending} onRequestPending={onRequestPending}
+/>
+  );
+
   return (
     <RNAnimated.View
       style={{
@@ -146,17 +153,9 @@ export default function XmtpConversation(): React.ReactElement {
           } as unknown as ViewStyle}
           onLayout={(e) => { setComposerH(e.nativeEvent.layout.height); }}
 >
-          <ConversationFooter
-            c={c} convId={convId} dark={dark} rowBg={rowBg} insets={insets}
-            requestPending={requestPending} onRequestPending={onRequestPending}
-/>
+          {footer}
         </Box>
-      ) : (
-        <ConversationFooter
-          c={c} convId={convId} dark={dark} rowBg={rowBg} insets={insets}
-          requestPending={requestPending} onRequestPending={onRequestPending}
-/>
-      )}
+      ) : footer}
       {}
       <ConversationOverlays
         c={c} convId={convId} dark={dark}
