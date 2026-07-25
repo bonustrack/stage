@@ -1,4 +1,6 @@
 
+import { ROW_PREVIEW_MAX_CHARS } from './summarizeRow';
+
 export interface CachedChannelRow {
   convId: string;
   unreadCount: number;
@@ -67,7 +69,7 @@ export function applySentPatch<R extends CachedChannelRow>(
   const updated = {
     ...cur,
     lastTs: nowMs,
-    lastPreview: preview.slice(0, 80),
+    lastPreview: preview.slice(0, ROW_PREVIEW_MAX_CHARS),
     lastFromSelf: true,
     unreadCount: 0,
     markedUnread: false,

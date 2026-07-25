@@ -1,5 +1,7 @@
 import { shortAddress } from '../identity/format';
 
+export const ROW_PREVIEW_MAX_CHARS = 200;
+
 export interface UnreadCountEntry {
   sentNs?: number;
   senderInboxId?: string;

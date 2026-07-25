@@ -1,5 +1,5 @@
 
-import { memo } from 'react';
+import { Fragment, memo } from 'react';
 
 import { resolveBadgeStyle } from '@stage-labs/kit/badge';
 import type { Scheme } from '@stage-labs/kit/tokens';
@@ -10,7 +10,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { resolveColorToken } from '@stage-labs/kit/tokens';
-import type { StyleProp, ViewStyle } from 'react-native';
+import { Platform, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 import { Avatar } from './Avatar';
 import { Row, Col, Box } from './layout';
 import { channelRowModel, type ChannelRowParams } from './ChannelRow.model';
@@ -141,21 +141,68 @@ function MetaColumn({ params, scheme }: {
   );
 }
 
+function InlineLabelChips({ params, fg, chipBg, onLabelPress }: {
+  params: ChannelRowParams; fg: string; chipBg: string; onLabelPress?: (label: string) => void;
+}): React.ReactElement | null {
+  const chips = params.chips;
+  if (chips === undefined || chips.length === 0) return null;
+  const pressable = params.labelPressable === true && onLabelPress !== undefined;
+  return (
+    <>
+      {chips.map((chip, i) => (
+        <Fragment key={`${chip.label}-${i}`}>
+          <Text
+            size="md"
+            color={fg}
+            onPress={pressable ? (): void => { onLabelPress(chip.label); } : undefined}
+            style={[
+              { backgroundColor: chipBg, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
+              { whiteSpace: 'nowrap' } as unknown as TextStyle,
+            ]}
+          >
+            {chip.label}
+          </Text>
+          {' '}
+        </Fragment>
+      ))}
+    </>
+  );
+}
+
+function PreviewParagraph({ params, fg, chipBg, hasPrefix, onLabelPress }: {
+  params: ChannelRowParams; fg: string; chipBg: string; hasPrefix: boolean;
+  onLabelPress?: (label: string) => void;
+}): React.ReactElement {
+  return (
+    <Text size="md" role="secondary" maxLines={2} style={{ flexShrink: 1 }}>
+      <InlineLabelChips params={params} fg={fg} chipBg={chipBg} onLabelPress={onLabelPress} />
+      {hasPrefix ? <Text value={`${params.previewPrefix ?? ''} `} size="md" color="info" weight="semibold" /> : null}
+      {params.preview}
+    </Text>
+  );
+}
+
 function ChannelRowBody({ params, onLabelPress }: {
   params: ChannelRowParams; onLabelPress?: (label: string) => void;
 }): React.ReactElement {
   const scheme = useKitScheme();
-  const { text: fg } = usePalette();
+  const { text: fg, inputBg } = usePalette();
   const hasPrefix = params.previewPrefix !== undefined && params.previewPrefix !== '';
   return (
     <Row align="center" gap={12} flex={1}>
       <Col gap={2} flex={1}>
         <TitleLine params={params} scheme={scheme} />
-        <Row align="center" gap={6}>
-          <LabelChips params={params} scheme={scheme} fg={fg} onLabelPress={onLabelPress} />
-          {hasPrefix ? <Text value={params.previewPrefix ?? ''} size="md" color="info" weight="semibold" /> : null}
-          <Text value={params.preview} size="md" role="secondary" truncate maxLines={1} style={{ flexShrink: 1 }} />
-        </Row>
+        {Platform.OS === 'web' ? (
+          <PreviewParagraph
+            params={params} fg={fg} chipBg={inputBg} hasPrefix={hasPrefix} onLabelPress={onLabelPress}
+          />
+        ) : (
+          <Row align="start" gap={6}>
+            <LabelChips params={params} scheme={scheme} fg={fg} onLabelPress={onLabelPress} />
+            {hasPrefix ? <Text value={params.previewPrefix ?? ''} size="md" color="info" weight="semibold" /> : null}
+            <Text value={params.preview} size="md" role="secondary" maxLines={2} style={{ flexShrink: 1 }} />
+          </Row>
+        )}
       </Col>
       <MetaColumn params={params} scheme={scheme} />
     </Row>

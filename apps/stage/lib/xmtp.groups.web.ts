@@ -49,11 +49,14 @@ export async function addGroupMembers(convId: string, addresses: string[]): Prom
     await addMembers(identifiersOf(members)));
 }
 
-export function groupNameImage(conv: unknown): Promise<{ name: string; imageUrl: string }> {
-  const g = conv as { name?: unknown; imageUrl?: unknown };
+export function groupNameImage(
+  conv: unknown,
+): Promise<{ name: string; imageUrl: string; description: string }> {
+  const g = conv as { name?: unknown; imageUrl?: unknown; description?: unknown };
   return Promise.resolve({
     name: typeof g.name === 'string' ? g.name : '',
     imageUrl: typeof g.imageUrl === 'string' ? g.imageUrl : '',
+    description: typeof g.description === 'string' ? g.description : '',
   });
 }
 

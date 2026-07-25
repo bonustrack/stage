@@ -7,6 +7,7 @@ import { shortAddress, getConvConsentState } from '../../modules/messaging';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { convIdFromTopic } from '@stage-labs/client/xmtp/clientErrors';
 import { applyInbound } from '@stage-labs/client/xmtp/channelsCache';
+import { ROW_PREVIEW_MAX_CHARS } from '@stage-labs/client/xmtp/summarizeRow';
 
 interface StreamedMsg {
   id?: string;
@@ -84,7 +85,7 @@ export function makeMsgStreamHandler({ isCancelled, setRows, refresh, refreshReq
       catch { preview = `[${msg.contentTypeId ?? 'unknown'}]`; }
       if (typeof decoded === 'string' && isMetroControlBody(decoded)) return;
       const lastTs = msg.sentNs ? Math.floor(msg.sentNs / 1_000_000) : Date.now();
-      const lastPreview = preview.slice(0, 80);
+      const lastPreview = preview.slice(0, ROW_PREVIEW_MAX_CHARS);
 
       const msgConvId = streamConvId
         ?? convIdFromTopic((msg as unknown as { topic?: string }).topic)

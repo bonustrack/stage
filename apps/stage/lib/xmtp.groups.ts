@@ -48,13 +48,20 @@ export async function addGroupMembers(convId: string, addresses: string[]): Prom
   });
 }
 
-export async function groupNameImage(conv: unknown): Promise<{ name: string; imageUrl: string }> {
-  const g = conv as { name?: () => Promise<string>; imageUrl?: () => Promise<string> };
-  const [name, imageUrl] = await Promise.all([
+export async function groupNameImage(
+  conv: unknown,
+): Promise<{ name: string; imageUrl: string; description: string }> {
+  const g = conv as {
+    name?: () => Promise<string>;
+    imageUrl?: () => Promise<string>;
+    description?: () => Promise<string>;
+  };
+  const [name, imageUrl, description] = await Promise.all([
     g.name?.().catch(() => '') ?? Promise.resolve(''),
     g.imageUrl?.().catch(() => '') ?? Promise.resolve(''),
+    g.description?.().catch(() => '') ?? Promise.resolve(''),
   ]);
-  return { name: name ?? '', imageUrl: imageUrl ?? '' };
+  return { name: name ?? '', imageUrl: imageUrl ?? '', description: description ?? '' };
 }
 
 export async function leaveGroupConv(line: string): Promise<'left' | 'hidden'> {

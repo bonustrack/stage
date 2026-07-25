@@ -11,7 +11,8 @@ import { isMetroControlBody } from '../../lib/push';
 import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
 import {
-  channelRowTitle, countUnreadEntries, initialMarkedUnread, type RowMessage,
+  channelRowTitle, countUnreadEntries, initialMarkedUnread,
+  ROW_PREVIEW_MAX_CHARS, type RowMessage,
 } from '@stage-labs/client/xmtp/summarizeRow';
 import type {
   ConversationView, ConversationRequestView, RequestAvatarDescriptor,
@@ -89,7 +90,7 @@ export async function summarizeConversation(
     convId: conv.id,
     title,
     lastTs: last?.sentNs ? Math.floor(last.sentNs / 1_000_000) : null,
-    lastPreview: preview.slice(0, 80),
+    lastPreview: preview.slice(0, ROW_PREVIEW_MAX_CHARS),
     avatarAddress,
     avatarUri,
     peerAddress,

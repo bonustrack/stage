@@ -10,7 +10,6 @@ import { CHANNELS_SCROLL_KEY, saveScrollOffset } from '../../lib/scrollPos';
 import { WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from '../layout';
 import { WEB_TABS_CONTENT_PAD } from './webPad';
 import { useEffectiveColorScheme } from '../../lib/theme';
-import { CHANNEL_ROW_HEIGHT } from './HomeScreen.helpers';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { HomeEmpty } from './HomeScreen.parts';
 import { LabelFilterBar } from './HomeScreen.labelbar';
@@ -45,7 +44,6 @@ interface ChannelsListProps {
   didRestoreRef: MutableRefObject<boolean>;
   contentHeightRef: MutableRefObject<number>;
   renderRow: ({ item }: { item: RowT }) => React.ReactElement;
-  getRowLayout: (d: ArrayLike<RowT> | null | undefined, index: number) => { length: number; offset: number; index: number };
 }
 
 function HomeTopnavRight({ head, requestCount, router, onOpenSearch }: {
@@ -116,7 +114,7 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
   const {
     panRef, sortedRows, query, fg, head, sub, border, setQuery,
     listExtraData, listRef, savedOffsetRef, didRestoreRef, contentHeightRef,
-    renderRow, getRowLayout,
+    renderRow,
   } = props;
   const [searchOpen, setSearchOpen] = useState(false);
   const openSearch = (): void => { setSearchOpen(true); };
@@ -145,7 +143,6 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
         }}
         extraData={listExtraData}
         keyExtractor={r => r.convId}
-        getItemLayout={getRowLayout}
         windowSize={11}
         initialNumToRender={10}
         maxToRenderPerBatch={10}
@@ -163,8 +160,4 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
 />
     </>
   );
-}
-
-export function channelRowLayout(_d: ArrayLike<RowT> | null | undefined, index: number): { length: number; offset: number; index: number } {
-  return { length: CHANNEL_ROW_HEIGHT, offset: CHANNEL_ROW_HEIGHT * index, index };
 }

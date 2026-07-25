@@ -3,6 +3,7 @@ import {
   applyRead, applyUnread, applyConsent, applySentPatch,
   type CachedChannelRow,
 } from '../src/xmtp/channelsCache';
+import { ROW_PREVIEW_MAX_CHARS } from '../src/xmtp/summarizeRow';
 
 interface Row extends CachedChannelRow {
   lastTs?: number;
@@ -51,10 +52,10 @@ describe('applyConsent', () => {
 
 describe('applySentPatch', () => {
   test('moves row to front, truncates preview, marks self', () => {
-    const longPreview = 'x'.repeat(200);
+    const longPreview = 'x'.repeat(300);
     const out = applySentPatch(base, 'b', longPreview, 555);
     expect(out?.[0]?.convId).toBe('b');
-    expect((out?.[0]?.lastPreview as string).length).toBe(80);
+    expect((out?.[0]?.lastPreview as string).length).toBe(ROW_PREVIEW_MAX_CHARS);
     expect(out?.[0]?.lastFromSelf).toBe(true);
     expect(out?.[0]?.lastTs).toBe(555);
     expect(out?.[1]?.convId).toBe('a');
