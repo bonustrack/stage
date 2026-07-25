@@ -9,7 +9,7 @@ import { useDraftsVersion } from '../../lib/drafts';
 import { Col } from '../layout';
 import { ChannelMenu } from '../ChannelMenu';
 import { HomeError, HomeSpinner, useChannelRowRenderer } from './HomeScreen.parts';
-import { ChannelsList, channelRowLayout } from './HomeScreen.list';
+import { ChannelsList } from './HomeScreen.list';
 import { useChannelsSync } from './HomeScreen.sync';
 import { useIncomingLabelFilter } from './HomeScreen.filter';
 import { deriveLabels, useHomeFilters } from './HomeScreen.labelbar';
@@ -95,7 +95,7 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
         listExtraData={listExtraData}
         listRef={st.scroll.listRef} savedOffsetRef={st.scroll.savedOffsetRef}
         didRestoreRef={st.scroll.didRestoreRef} contentHeightRef={st.scroll.contentHeightRef}
-        renderRow={renderRow} getRowLayout={channelRowLayout}
+        renderRow={renderRow}
       />
       <HomeRowMenu st={st} />
     </Col>
