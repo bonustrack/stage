@@ -2,11 +2,15 @@
 import { useMemo, useState } from 'react';
 import type { SimultaneousRefs } from '../SwipeTabs.types';
 import { useRouter } from 'expo-router';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { useActiveAccount } from '../../modules/messaging';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { useDraftsVersion } from '../../lib/drafts';
-import { Col } from '../layout';
+import { Col, Row } from '../layout';
+import { useWebTabRail, WEB_TAB_RAIL_WIDTH } from './useWebTabRail';
+import { usePaneWidth } from './paneWidth';
+import { PaneResizeHandle } from './PaneResizeHandle';
 import { ChannelMenu } from '../ChannelMenu';
 import { HomeError, HomeSpinner, useChannelRowRenderer } from './HomeScreen.parts';
 import { ChannelsList } from './HomeScreen.list';
@@ -38,11 +42,13 @@ function HomeRowMenu({ st }: { st: HomeState }): React.ReactElement {
   return <ChannelMenu {...rowMenuProps(rowMenu, pinned)} onClose={() => { setRowMenu(null); }} />;
 }
 
-export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
+export function HomeScreen({ panRef, pane }: { panRef?: SimultaneousRefs; pane?: boolean } = {}): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head, bg, border } = usePalette();
   const sub = fg;
+  const splitHome = useWebTabRail() && pane !== true;
+  const paneWidth = usePaneWidth();
   const st = useHomeState();
   const { rows, pinned } = st;
   const { enabledLabels, toggleLabel, unreadOnly, toggleUnread, clearAllFilters } = useHomeFilters();
@@ -77,26 +83,52 @@ export function HomeScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Reac
     () => [channelProfilesVersion, draftsVersion, pinned, query] as const,
     [channelProfilesVersion, draftsVersion, pinned, query],
   );
-  const renderRow = useChannelRowRenderer(router, st.setRowMenu, {
+  const navRouter = useMemo(
+    () => (pane === true
+      ? { push: (to: Parameters<typeof router.replace>[0]) => { router.replace(to); } }
+      : router),
+    [pane, router],
+  );
+  const renderRow = useChannelRowRenderer(navRouter, st.setRowMenu, {
     channelProfilesVersion, draftsVersion, pinned, query,
   });
 
-  if (st.error) return <HomeError error={st.error} dark={dark} fg={fg} bg={bg} />;
-  if (!rows) return <HomeSpinner head={head} bg={bg} />;
+  if (st.error) return <HomeError error={st.error} dark={dark} fg={fg} bg={bg} plain={pane} />;
+  if (!rows) return <HomeSpinner head={head} bg={bg} plain={pane} />;
+
+  const list = (
+    <ChannelsList
+      panRef={panRef} router={router} sortedRows={visibleRows} requestCount={st.requestCount}
+      barLabels={barLabels} showFilterBar={showFilterBar}
+      enabledLabels={enabledLabels} onToggleLabel={toggleLabel}
+      unreadOnly={unreadOnly} onToggleUnread={toggleUnread} onClearAll={clearAllFilters}
+      query={query} setQuery={setQuery} fg={fg} head={head} sub={sub} border={border}
+      listExtraData={listExtraData}
+      listRef={st.scroll.listRef} savedOffsetRef={st.scroll.savedOffsetRef}
+      didRestoreRef={st.scroll.didRestoreRef} contentHeightRef={st.scroll.contentHeightRef}
+      renderRow={renderRow}
+      pane={pane === true || splitHome}
+    />
+  );
+
+  if (splitHome) {
+    return (
+      <Row flex={1} surface="surface" padding={{ left: WEB_TAB_RAIL_WIDTH }}>
+        <Col width={paneWidth} style={{ borderRightWidth: 1, borderRightColor: border }}>
+          {list}
+          <PaneResizeHandle/>
+        </Col>
+        <Col flex={1} align="center" justify="center">
+          <Text size="md" role="secondary">Select a chat to start messaging</Text>
+        </Col>
+        <HomeRowMenu st={st} />
+      </Row>
+    );
+  }
 
   return (
     <Col flex={1} surface="surface">
-      <ChannelsList
-        panRef={panRef} router={router} sortedRows={visibleRows} requestCount={st.requestCount}
-        barLabels={barLabels} showFilterBar={showFilterBar}
-        enabledLabels={enabledLabels} onToggleLabel={toggleLabel}
-        unreadOnly={unreadOnly} onToggleUnread={toggleUnread} onClearAll={clearAllFilters}
-        query={query} setQuery={setQuery} fg={fg} head={head} sub={sub} border={border}
-        listExtraData={listExtraData}
-        listRef={st.scroll.listRef} savedOffsetRef={st.scroll.savedOffsetRef}
-        didRestoreRef={st.scroll.didRestoreRef} contentHeightRef={st.scroll.contentHeightRef}
-        renderRow={renderRow}
-      />
+      {list}
       <HomeRowMenu st={st} />
     </Col>
   );

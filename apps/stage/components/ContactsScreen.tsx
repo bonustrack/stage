@@ -6,7 +6,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { contactNameModel, contactsEmptyLabel } from './ContactsScreen.model';
 import type { SimultaneousRefs } from './SwipeTabs.types';
 import { Col, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from './layout';
-import { WEB_TABS_CONTENT_PAD } from './tabs/webPad';
+import { useWebTabsContentPad } from './tabs/webPad';
 import { ChannelRow } from './ChannelRow';
 import { usePalette } from '../lib/theme';
 import { useAllContacts, type Contact } from '../lib/useAllContacts';
@@ -14,6 +14,7 @@ import { getPeerName } from '../lib/peerProfiles';
 import { shortAddress } from '../modules/messaging';
 
 export function ContactsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
+  const webTabsPad = useWebTabsContentPad();
   const { bg } = usePalette();
   const router = useRouter();
   const { contacts, loading } = useAllContacts();
@@ -48,7 +49,7 @@ export function ContactsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): 
         renderItem={renderItem}
         extraData={contacts.length}
         style={[{ flex: 1, backgroundColor: bg }, WEB_EDGE_SCROLL]}
-        contentContainerStyle={[{ flexGrow: 1, paddingTop: 4 }, WEB_EDGE_CONTENT, WEB_TABS_CONTENT_PAD]}
+        contentContainerStyle={[{ flexGrow: 1, paddingTop: 4 }, WEB_EDGE_CONTENT, webTabsPad]}
         ListEmptyComponent={
           <Col flex={1} align="center" justify="center" padding={{ x: 24, y: 48 }}>
             <Text size="md" role="secondary" style={{ textAlign: 'center' }}>

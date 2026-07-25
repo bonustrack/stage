@@ -5,11 +5,18 @@ import { Animated as RNAnimated, Platform, type ViewStyle } from 'react-native';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from '../../components/Spinner';
-import { Box, Col, WEB_EDGE_SCROLL } from '../../components/layout';
+import { Box, Col, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT, WEB_CHROME_WIDTH, WEB_CHROME_SHIFT } from '../../components/layout';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, usePathname, useRouter } from 'expo-router';
+import { HomeScreen } from '../../components/tabs/HomeScreen';
+import { WebTabRail } from '../../components/tabs/WebTabRail';
+import { useWebTabRail, WEB_TAB_RAIL_WIDTH } from '../../components/tabs/useWebTabRail';
+import { usePaneWidth } from '../../components/tabs/paneWidth';
+import { PaneResizeHandle } from '../../components/tabs/PaneResizeHandle';
+import { useTotalUnread } from '../../lib/useTotalUnread';
+import { unreadBadgeLabel } from '../../lib/format';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { PendingConversation } from '../../components/PendingConversation';
 import { ConversationFeed } from '../../components/xmtp-conv/ConversationFeed';
@@ -60,6 +67,62 @@ function UnresolvedConversation({ resolved, dark }: {
   );
 }
 
+function FooterDock({ children, onHeight }: {
+  children: React.ReactNode; onHeight: (h: number) => void;
+}): React.ReactElement {
+  if (Platform.OS !== 'web') return <>{children}</>;
+  return (
+    <Box
+      width={WEB_CHROME_WIDTH}
+      margin={{ left: WEB_CHROME_SHIFT }}
+      style={{ position: 'absolute', bottom: 0, left: '50%', zIndex: 2 } as unknown as ViewStyle}
+      onLayout={(e) => { onHeight(e.nativeEvent.layout.height); }}
+>
+      <Box style={WEB_EDGE_CONTENT}>
+        {children}
+      </Box>
+    </Box>
+  );
+}
+
+function ConversationSplitPane({ pathname, unreadBadge, border }: {
+  pathname: string; unreadBadge: string | undefined; border: string;
+}): React.ReactElement {
+  const paneWidth = usePaneWidth();
+  return (
+    <>
+      <Box
+        surface="surface"
+        width={paneWidth}
+        margin={{ left: `calc(-50vw + ${WEB_TAB_RAIL_WIDTH}px)` }}
+        style={{
+          position: 'absolute', top: 0, bottom: 0, left: '50%', zIndex: 3,
+          borderRightWidth: 1, borderRightColor: border,
+        }}
+>
+        <HomeScreen pane/>
+        <PaneResizeHandle/>
+      </Box>
+      <WebTabRail pathname={pathname} unreadBadge={unreadBadge}/>
+    </>
+  );
+}
+
+function ConversationShell({ bg, split, pathname, unreadBadge, border, children }: {
+  bg: string; split: boolean; pathname: string; unreadBadge: string | undefined; border: string;
+  children: React.ReactNode;
+}): React.ReactElement {
+  return (
+    <RNAnimated.View
+      style={{ flex: 1, backgroundColor: bg }}
+      {...(split ? ({ dataSet: { stagepane: '1' } } as unknown as Record<string, unknown>) : {})}
+>
+      {children}
+      {split ? <ConversationSplitPane pathname={pathname} unreadBadge={unreadBadge} border={border}/> : null}
+    </RNAnimated.View>
+  );
+}
+
 export default function XmtpConversation(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -79,13 +142,20 @@ export default function XmtpConversation(): React.ReactElement {
   const [requestPending, setRequestPending] = useState(false);
   const onRequestPending = useCallback((pending: boolean) => { setRequestPending(pending); }, []);
   const [composerH, setComposerH] = useState(0);
+  const split = useWebTabRail();
+  const pathname = usePathname();
+  const unreadBadge = unreadBadgeLabel(useTotalUnread());
 
   const insets = useSafeAreaInsets();
   const { height: kbHeightShared } = useReanimatedKeyboardAnimation();
   const listWrapperStyle = useAnimatedStyle(() => ({ marginBottom: Math.max(0, -kbHeightShared.value - insets.bottom) }));
 
   if (resolved.resolving || !convId) {
-    return <UnresolvedConversation resolved={resolved} dark={dark}/>;
+    return (
+      <ConversationShell bg={bg} split={split} pathname={pathname} unreadBadge={unreadBadge} border={border}>
+        <UnresolvedConversation resolved={resolved} dark={dark}/>
+      </ConversationShell>
+    );
   }
 
   const footer = (
@@ -96,11 +166,7 @@ export default function XmtpConversation(): React.ReactElement {
   );
 
   return (
-    <RNAnimated.View
-      style={{
-        flex: 1, backgroundColor: bg,
-      }}
->
+    <ConversationShell bg={bg} split={split} pathname={pathname} unreadBadge={unreadBadge} border={border}>
       {}
       <Reanimated.View
         style={[
@@ -145,22 +211,12 @@ export default function XmtpConversation(): React.ReactElement {
       ) : (
         <ConversationTopnav c={c} convId={convId} fg={fg} head={head} border={border} insets={insets} router={router}/>
       )}
-      {Platform.OS === 'web' ? (
-        <Box
-          style={{
-            position: 'absolute', bottom: 0, left: 0, zIndex: 2,
-            right: 'var(--stage-sbw, 0px)',
-          } as unknown as ViewStyle}
-          onLayout={(e) => { setComposerH(e.nativeEvent.layout.height); }}
->
-          {footer}
-        </Box>
-      ) : footer}
+      <FooterDock onHeight={setComposerH}>{footer}</FooterDock>
       {}
       <ConversationOverlays
         c={c} convId={convId} dark={dark}
         onOpenSearch={() => { setSearchQuery(''); setSearchOpen(true); }}
 />
-    </RNAnimated.View>
+    </ConversationShell>
   );
 }

@@ -8,7 +8,7 @@ import { Box } from '../layout';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { CHANNELS_SCROLL_KEY, saveScrollOffset } from '../../lib/scrollPos';
 import { WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from '../layout';
-import { WEB_TABS_CONTENT_PAD } from './webPad';
+import { useWebTabsContentPad } from './webPad';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { HomeEmpty } from './HomeScreen.parts';
@@ -16,6 +16,7 @@ import { LabelFilterBar } from './HomeScreen.labelbar';
 import { ChannelsSearchBar } from './HomeScreen.search';
 import { HomeContactResults } from './HomeScreen.contacts';
 import { HomeOverflowMenu } from './HomeScreen.overflow';
+import { Topnav } from '../Topnav';
 import { usePublishTopnavSlot } from './topnavSlots';
 import { getActiveAccount } from '../../lib/accounts';
 import { unreadBadgeLabel } from '../../lib/format';
@@ -44,6 +45,7 @@ interface ChannelsListProps {
   didRestoreRef: MutableRefObject<boolean>;
   contentHeightRef: MutableRefObject<number>;
   renderRow: ({ item }: { item: RowT }) => React.ReactElement;
+  pane?: boolean;
 }
 
 function HomeTopnavRight({ head, requestCount, router, onOpenSearch }: {
@@ -97,17 +99,21 @@ function ChannelsListHeader({ p }: { p: ChannelsListProps }): React.ReactElement
 
 function useHomeTopnav(p: ChannelsListProps, searchOpen: boolean, onOpenSearch: () => void, onCloseSearch: () => void): void {
   const { head, requestCount, router, query, setQuery, sub, border } = p;
+  const publish = p.pane !== true;
   const right = useMemo(
     () => <HomeTopnavRight head={head} requestCount={requestCount} router={router} onOpenSearch={onOpenSearch} />,
     [head, requestCount, router, onOpenSearch],
   );
   const override = useMemo(
     () => (searchOpen ? (
-      <ChannelsSearchBar query={query} setQuery={setQuery} onClose={onCloseSearch} head={head} sub={sub} border={border} />
+      <ChannelsSearchBar
+        query={query} setQuery={setQuery} onClose={onCloseSearch}
+        head={head} sub={sub} border={border}
+      />
     ) : undefined),
     [searchOpen, query, setQuery, onCloseSearch, head, sub, border],
   );
-  usePublishTopnavSlot({ right, override });
+  usePublishTopnavSlot({ right, override }, publish);
 }
 
 export function ChannelsList(props: ChannelsListProps): React.ReactElement {
@@ -116,13 +122,31 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
     listExtraData, listRef, savedOffsetRef, didRestoreRef, contentHeightRef,
     renderRow,
   } = props;
+  const webTabsPad = useWebTabsContentPad();
   const [searchOpen, setSearchOpen] = useState(false);
   const openSearch = (): void => { setSearchOpen(true); };
   const closeSearch = (): void => { setSearchOpen(false); setQuery(''); };
   useHomeTopnav(props, searchOpen, openSearch, closeSearch);
+  const listStyle = props.pane === true ? { flex: 1 } : WEB_EDGE_SCROLL;
+  const contentStyle = props.pane === true
+    ? [{ paddingTop: 12, paddingBottom: 24 }]
+    : [{ paddingBottom: 24 }, WEB_EDGE_CONTENT, webTabsPad];
 
   return (
     <>
+      {props.pane === true ? (
+        searchOpen ? (
+          <ChannelsSearchBar
+            query={query} setQuery={setQuery} onClose={closeSearch}
+            head={head} sub={sub} border={border} inline
+          />
+        ) : (
+          <Topnav
+            inline
+            right={<HomeTopnavRight head={head} requestCount={props.requestCount} router={props.router} onOpenSearch={openSearch} />}
+          />
+        )
+      ) : null}
       <FlatList
         ref={listRef}
         simultaneousHandlers={panRef}
@@ -147,8 +171,8 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
         initialNumToRender={10}
         maxToRenderPerBatch={10}
         removeClippedSubviews
-        style={WEB_EDGE_SCROLL}
-        contentContainerStyle={[{ paddingBottom: 24 }, WEB_EDGE_CONTENT, WEB_TABS_CONTENT_PAD]}
+        style={listStyle}
+        contentContainerStyle={contentStyle}
         ListHeaderComponent={<ChannelsListHeader p={props} />}
         ListEmptyComponent={query.trim() ? null : <HomeEmpty />}
         ListFooterComponent={

@@ -1,74 +1,21 @@
 
-import { Box, Col, Row, WEB_CHROME_WIDTH } from '../../components/layout';
+import { Box, Col } from '../../components/layout';
 import { fontSize } from '@stage-labs/kit/tokens';
-import { Tabs, usePathname, useRouter } from 'expo-router';
+import { Tabs, usePathname } from 'expo-router';
 import { Platform } from 'react-native';
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Text } from '@stage-labs/kit/react-native/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
+import { Icon } from '@stage-labs/kit/react-native/icon';
 import { usePalette } from '../../lib/theme';
 import { TabsPager } from '../../components/SwipeTabs';
-import { TAB_HREF, indexOfPathname, type TabName } from '../../components/SwipeTabs.config';
 import { HoistedTopnav } from '../../components/tabs/HoistedTopnav';
+import { TAB_ICONS, WebTabBar, WebTabRail } from '../../components/tabs/WebTabRail';
+import { useWebTabRail } from '../../components/tabs/useWebTabRail';
 import { useTotalUnread } from '../../lib/useTotalUnread';
 import { unreadBadgeLabel } from '../../lib/format';
 
-const TAB_ICONS: readonly (readonly [TabName, HeroIconName])[] = [
-  ['index', 'chatBubble'],
-  ['contacts', 'users'],
-  ['wallet', 'wallet'],
-];
-
-function WebTabBar({ pathname, unreadBadge }: {
-  pathname: string;
-  unreadBadge: string | undefined;
+function PagerOverlay({ insetTop, tabBarHeight, topnavHidden }: {
+  insetTop: number; tabBarHeight: number; topnavHidden?: boolean;
 }): React.ReactElement {
-  const router = useRouter();
-  const pal = usePalette();
-  const activeIndex = pathname.startsWith('/settings') ? -1 : indexOfPathname(pathname);
-  return (
-    <Row
-      width={WEB_CHROME_WIDTH}
-      height={60}
-      margin={{ left: '-50vw' }}
-      padding={{ top: 6 }}
-      surface="toolbar"
-      style={{
-        position: 'absolute', bottom: 0, left: '50%',
-        borderTopWidth: 1, borderTopColor: pal.border, zIndex: 3,
-      }}
->
-      {TAB_ICONS.map(([name, icon], i) => (
-        <Pressable
-          key={name}
-          onPress={() => { router.navigate(TAB_HREF[name]); }}
-          style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
->
-          <Box>
-            <Icon
-              name={icon}
-              size={26}
-              color={i === activeIndex ? pal.link : pal.text}
-              focused={i === activeIndex}
-/>
-            {name === 'index' && unreadBadge !== undefined ? (
-              <Box
-                minWidth={18} height={18} padding={{ x: 4 }} radius="full" background={pal.link}
-                align="center" justify="center"
-                style={{ position: 'absolute', top: -6, right: -14 }}
->
-                <Text size="3xs" weight="semibold" color={pal.bg}>{unreadBadge}</Text>
-              </Box>
-            ) : null}
-          </Box>
-        </Pressable>
-      ))}
-    </Row>
-  );
-}
-
-function PagerOverlay({ insetTop, tabBarHeight }: { insetTop: number; tabBarHeight: number }): React.ReactElement {
   if (Platform.OS === 'web') {
     return (
       <Col
@@ -82,9 +29,11 @@ function PagerOverlay({ insetTop, tabBarHeight }: { insetTop: number; tabBarHeig
           <TabsPager/>
         </Box>
         {}
-        <Box pointerEvents="box-none" style={{ position: 'absolute', top: insetTop, left: 0, right: 0, zIndex: 2 }}>
-          <HoistedTopnav/>
-        </Box>
+        {topnavHidden === true ? null : (
+          <Box pointerEvents="box-none" style={{ position: 'absolute', top: insetTop, left: 0, right: 0, zIndex: 2 }}>
+            <HoistedTopnav/>
+          </Box>
+        )}
       </Col>
     );
   }
@@ -113,6 +62,7 @@ export default function TabsLayout(): React.ReactElement {
   const active = pal.link;
   const inactive = pal.text;
   const web = Platform.OS === 'web';
+  const rail = useWebTabRail();
 
   const tabBarStyle = {
     backgroundColor: pal.toolbarBg,
@@ -175,9 +125,16 @@ export default function TabsLayout(): React.ReactElement {
         <Tabs.Screen name="settings" options={{ href: null }}/>
       </Tabs>
       {}
-      {pagerVisible ? <PagerOverlay insetTop={insets.top} tabBarHeight={tabBarHeight}/> : null}
+      {pagerVisible ? (
+        <PagerOverlay
+          insetTop={insets.top}
+          tabBarHeight={tabBarHeight}
+          topnavHidden={web && rail && pathname === '/'}
+        />
+      ) : null}
       {}
-      {web ? <WebTabBar pathname={pathname} unreadBadge={unreadBadge}/> : null}
+      {web && rail ? <WebTabRail pathname={pathname} unreadBadge={unreadBadge}/> : null}
+      {web && !rail ? <WebTabBar pathname={pathname} unreadBadge={unreadBadge}/> : null}
     </Col>
   );
 }

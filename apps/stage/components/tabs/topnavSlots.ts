@@ -22,10 +22,11 @@ export function useTopnavSlot(): TopnavSlot | undefined {
   return useSyncExternalStore(subscribe, () => slot, () => slot);
 }
 
-export function usePublishTopnavSlot(next: TopnavSlot): void {
+export function usePublishTopnavSlot(next: TopnavSlot, enabled = true): void {
   useEffect(() => {
+    if (!enabled) return;
     slot = next;
     emit();
     return () => { slot = undefined; emit(); };
-  }, [next.right, next.override]);
+  }, [next.right, next.override, enabled]);
 }

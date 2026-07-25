@@ -2,14 +2,17 @@
 import { TopnavIdentity } from './TopnavIdentity';
 import { Row, WebFullBleed } from './layout';
 import { usePalette } from '../lib/theme';
+import { useWebTabRail, WEB_TAB_RAIL_WIDTH } from './tabs/useWebTabRail';
 
 export const TOPNAV_HEIGHT = 52;
 
-export function Topnav({ left, right }: {
+export function Topnav({ left, right, inline }: {
   left?: React.ReactNode;
   right?: React.ReactNode;
+  inline?: boolean;
 }): React.ReactElement {
   const { border } = usePalette();
+  const rail = useWebTabRail() && inline !== true;
 
   const content = (
     <>
@@ -24,18 +27,18 @@ export function Topnav({ left, right }: {
     </>
   );
 
-  return (
-    <WebFullBleed>
-      <Row
-        height={TOPNAV_HEIGHT}
-        padding={{ x: 16 }}
-        align="center"
-        justify="between"
-        surface="toolbar"
-        style={{ borderBottomWidth: 1, borderBottomColor: border }}
-      >
-        {content}
-      </Row>
-    </WebFullBleed>
+  const bar = (
+    <Row
+      height={TOPNAV_HEIGHT}
+      padding={{ x: 16, left: rail ? WEB_TAB_RAIL_WIDTH + 16 : 16 }}
+      align="center"
+      justify="between"
+      surface="toolbar"
+      style={{ borderBottomWidth: 1, borderBottomColor: border }}
+    >
+      {content}
+    </Row>
   );
+  if (inline === true) return bar;
+  return <WebFullBleed>{bar}</WebFullBleed>;
 }

@@ -110,11 +110,11 @@ export function useChannelRowRenderer(
   ), [router, setRowMenu, channelProfilesVersion, draftsVersion, pinned, query]);
 }
 
-export function HomeError({ error, dark, fg }: {
-  error: string; dark: boolean; fg: string; bg: string;
+export function HomeError({ error, dark, fg, plain }: {
+  error: string; dark: boolean; fg: string; bg: string; plain?: boolean;
 }): React.ReactElement {
   return (
-    <Col padding={24} flex={1} align="center" justify="center" surface="surface" style={WEB_EDGE_SCROLL}>
+    <Col padding={24} flex={1} align="center" justify="center" surface="surface" style={plain === true ? undefined : WEB_EDGE_SCROLL}>
       <Text size="md" color={fg} style={{ textAlign: 'center', marginBottom: 16 }}>{error}</Text>
       <Pressable
         onPress={() => {
@@ -138,9 +138,9 @@ export function HomeError({ error, dark, fg }: {
   );
 }
 
-export function HomeSpinner({ head }: { head: string; bg: string }): React.ReactElement {
+export function HomeSpinner({ head, plain }: { head: string; bg: string; plain?: boolean }): React.ReactElement {
   return (
-    <Col flex={1} align="center" justify="center" surface="surface" style={WEB_EDGE_SCROLL}>
+    <Col flex={1} align="center" justify="center" surface="surface" style={plain === true ? undefined : WEB_EDGE_SCROLL}>
       <Spinner size={28} color={head}/>
     </Col>
   );
