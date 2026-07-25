@@ -1,6 +1,6 @@
 
 import {
-  MAX_LABELS, MAX_LABEL_LEN, LabelPermissionError, asGroup,
+  MAX_LABELS, MAX_LABEL_LEN, LabelPermissionError, asGroup, readAppData,
   parseBlob, readLabels, labelsOfSyncedGroup, addLabel, removeLabel, writeLabels,
   type Group,
 } from '@stage-labs/client/xmtp/labels';
@@ -18,8 +18,7 @@ export async function getGroupLabels(line: string): Promise<string[]> {
   if (!group) return [];
   try {
     await group.sync?.();
-    const appData = await group.appData();
-    return readLabels(parseBlob(appData));
+    return readLabels(parseBlob(await readAppData(group)));
   } catch {
     return [];
   }

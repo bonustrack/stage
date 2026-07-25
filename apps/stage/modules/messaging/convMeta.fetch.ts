@@ -4,6 +4,7 @@ import { convOfLine } from '../../lib/xmtp.client';
 import {
   peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
 } from '../../lib/xmtp.identity';
+import { groupNameImage } from '../../lib/xmtp.groups';
 
 export interface ConvMeta {
   peerAddr: string | null;
@@ -20,26 +21,17 @@ export const EMPTY_CONV_META: ConvMeta = {
   groupDescription: '', memberAddrs: [], inboxToAddr: {},
 };
 
-interface GroupMetaAccessor {
-  name?: () => Promise<string>;
-  imageUrl?: () => Promise<string>;
-  description?: () => Promise<string>;
-}
-
 async function fetchGroupConvMeta(
   conv: Parameters<typeof groupMemberEthAddresses>[0],
   inboxToAddr: Record<string, string>,
 ): Promise<ConvMeta> {
-  const g = conv as unknown as GroupMetaAccessor;
-  const [members, name, image, description] = await Promise.all([
+  const [members, meta] = await Promise.all([
     groupMemberEthAddresses(conv),
-    g.name?.() ?? Promise.resolve(''),
-    g.imageUrl?.().catch(() => '') ?? Promise.resolve(''),
-    g.description?.().catch(() => '') ?? Promise.resolve(''),
+    groupNameImage(conv),
   ]);
   return {
-    peerAddr: null, isGroup: true, groupName: name ?? '', groupImage: image ?? '',
-    groupDescription: description ?? '', memberAddrs: members, inboxToAddr,
+    peerAddr: null, isGroup: true, groupName: meta.name, groupImage: meta.imageUrl,
+    groupDescription: meta.description, memberAddrs: members, inboxToAddr,
   };
 }
 

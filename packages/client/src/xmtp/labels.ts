@@ -16,20 +16,26 @@ export class LabelPermissionError extends Error {
 
 interface GroupLike {
   sync?: () => Promise<unknown>;
-  appData?: () => Promise<string>;
+  appData?: (() => Promise<string>) | string;
   updateAppData?: (appData: string) => Promise<void>;
 }
 
 export interface Group extends GroupLike {
-  appData: () => Promise<string>;
   updateAppData: (appData: string) => Promise<void>;
 }
 
 export function asGroup(conv: unknown): Group | null {
   const g = conv as GroupLike;
-  return g && typeof g.appData === 'function' && typeof g.updateAppData === 'function'
+  const readableAppData =
+    typeof g?.appData === 'function' || typeof g?.appData === 'string' || g?.appData === undefined;
+  return g && typeof g.updateAppData === 'function' && readableAppData
     ? (g as Group)
     : null;
+}
+
+export async function readAppData(group: Group): Promise<string> {
+  if (typeof group.appData === 'function') return await group.appData() ?? '';
+  return group.appData ?? '';
 }
 
 export function cleanLabel(raw: string): string {
@@ -70,7 +76,7 @@ export function labelsOfSyncedGroup(conv: unknown): Promise<string[]> {
   if (!group) return Promise.resolve([]);
   return (async (): Promise<string[]> => {
     try {
-      return readLabels(parseBlob(await group.appData()));
+      return readLabels(parseBlob(await readAppData(group)));
     } catch {
       return [];
     }
@@ -100,7 +106,7 @@ export async function writeLabels(
   fn: (labels: string[]) => string[],
 ): Promise<string[]> {
   await group.sync?.();
-  const existing = parseBlob(await group.appData());
+  const existing = parseBlob(await readAppData(group));
   const next = readLabels({ ...existing, labels: fn(readLabels(existing)) });
   const blob: LabelsBlob & Record<string, unknown> = { ...existing, v: 1, labels: next };
   try {

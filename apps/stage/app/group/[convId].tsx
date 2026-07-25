@@ -10,7 +10,7 @@ import { GroupImagePicker } from '../../components/GroupImagePicker';
 import { OverlayHeader } from '../../components/chrome/OverlayHeader';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getCachedXmtpClient, getOrCreateXmtpClient, lineOfConv } from '../../modules/messaging';
+import { cachedSelfEthAddress, selfEthAddress, lineOfConv } from '../../modules/messaging';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { ImageViewer } from '../../components/ImageViewer';
@@ -67,10 +67,10 @@ export default function GroupDetail(): React.ReactElement {
   const [overflowOpen, setOverflowOpen] = useState(false);
 
   useEffect(() => {
-    const c = getCachedXmtpClient();
-    if (c) { setSelfAddress(c.publicIdentity.identifier.toLowerCase()); return; }
-    void getOrCreateXmtpClient('production').then(client => {
-      setSelfAddress(client.publicIdentity.identifier.toLowerCase());
+    const cached = cachedSelfEthAddress();
+    if (cached) { setSelfAddress(cached.toLowerCase()); return; }
+    void selfEthAddress().then(addr => {
+      if (addr) setSelfAddress(addr.toLowerCase());
     }).catch(() => undefined);
   }, []);
 
