@@ -5,7 +5,7 @@ import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Col, Box, WEB_EDGE_CONTENT, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../layout';
-import { WEB_TABBAR_BOTTOM_PAD } from '../tabs/webPad';
+import { useWebTabbarBottomPad } from '../tabs/webPad';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { SETTINGS_MENU_ITEMS } from './SettingsMenu.model';
 import { capabilities } from '../../lib/capabilities';
@@ -82,13 +82,14 @@ function DangerRows({ resetting, nuking, setResetting, setNuking }: {
 export function SettingsMenu(): React.ReactElement {
   const insets = useSafeAreaInsets();
 
+  const tabbarPad = useWebTabbarBottomPad();
   const [resetting, setResetting] = useState(false);
   const [nuking, setNuking] = useState(false);
 
   return (
     <Col surface="surface" flex={1}>
       <SettingsHeader title="Settings"/>
-      <ScrollView style={WEB_STACK_SCROLL} contentContainerStyle={[{ paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT, WEB_STACK_CONTENT_PAD, WEB_TABBAR_BOTTOM_PAD]}>
+      <ScrollView style={WEB_STACK_SCROLL} contentContainerStyle={[{ paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT, WEB_STACK_CONTENT_PAD, tabbarPad]}>
         <SettingsList>
           {SETTINGS_MENU_ITEMS.map((item) => (
             <SettingsNavRow

@@ -8,6 +8,10 @@ const WEB_GLOBAL_CSS = [
   'input, textarea, [contenteditable] {',
   '  outline: none !important;',
   '}',
+  'html.stage-resizing * {',
+  '  user-select: none !important;',
+  '  -webkit-user-select: none !important;',
+  '}',
 ].join('\n');
 
 function measuredScrollbarWidth(): number {

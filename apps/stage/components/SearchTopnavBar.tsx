@@ -1,5 +1,5 @@
 
-import { forwardRef } from 'react';
+import { Fragment, forwardRef } from 'react';
 import { fontSize } from '@stage-labs/kit/tokens';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Icon } from '@stage-labs/kit/react-native/icon';
@@ -16,11 +16,13 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
   border: string;
   placeholder?: string;
   topInset?: number;
+  inline?: boolean;
 }>(function SearchTopnavBar(props, ref): React.ReactElement {
   const { head, sub } = props;
   const topInset = props.topInset ?? 0;
+  const Frame = props.inline === true ? Fragment : WebFullBleed;
   return (
-    <WebFullBleed>
+    <Frame>
     <Row
       height={TOPNAV_HEIGHT + topInset}
       padding={{ x: 16, top: topInset }}
@@ -46,6 +48,6 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
         </Pressable>
       ) : null}
     </Row>
-    </WebFullBleed>
+    </Frame>
   );
 });
