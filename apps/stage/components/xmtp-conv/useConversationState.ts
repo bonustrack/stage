@@ -1,5 +1,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { useConvMeta } from '../../modules/messaging';
 import {
@@ -52,7 +53,10 @@ function useMentionCandidates(isGroup: boolean, memberAddrs: string[], peerAddr:
 
 export function useConversationState(convId: string | undefined, focus: string | undefined) {
   const activeLine = lineOfConv(convId ?? '');
-  const autoFocusNonce = useMemo(() => (focus ? Date.now() : undefined), [focus]);
+  const autoFocusNonce = useMemo(
+    () => (focus || Platform.OS === 'web' ? Date.now() : undefined),
+    [focus, convId],
+  );
 
   const xmtpFeed = useXmtpFeed(activeLine, !!convId);
   const events = xmtpFeed.events;

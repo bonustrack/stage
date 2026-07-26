@@ -2,16 +2,10 @@
 import { IdentifierKind, type Signer } from '@xmtp/browser-sdk';
 import { hexToBytes } from 'viem';
 import type { PrivateKeyAccount } from 'viem/accounts';
-import { PollCodec } from './xmtpPollCodec';
-import { SignatureRequestCodec, SignatureReferenceCodec } from './xmtpSignatureCodec';
-import { WalletSendCallsCodec, TransactionReferenceCodec } from './xmtpTxCodec';
+import {
+  POLL_CODEC, SIGNATURE_REQUEST_CODEC, SIGNATURE_REFERENCE_CODEC, WALLET_SEND_CALLS_CODEC,
+} from './xmtpJsonCodecs';
 import { getViemAccount, type AccountRecord } from './accounts';
-
-export const POLL_CODEC = new PollCodec();
-export const SIGNATURE_REQUEST_CODEC = new SignatureRequestCodec();
-export const SIGNATURE_REFERENCE_CODEC = new SignatureReferenceCodec();
-export const WALLET_SEND_CALLS_CODEC = new WalletSendCallsCodec();
-export const TRANSACTION_REFERENCE_CODEC = new TransactionReferenceCodec();
 
 export const XMTP_CODECS = [
   POLL_CODEC,

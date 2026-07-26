@@ -23,6 +23,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { getQueryClient } from '../lib/queryClient';
 import { applyWebGlobalStyles } from '../platform/webStyles';
 import { BuildInfoDot } from '../components/system/BuildInfoDot';
+import { SplitSidebar } from '../components/tabs/SplitSidebar';
 
 const queryClient = getQueryClient();
 
@@ -127,6 +128,8 @@ function RootLayoutInner(): React.ReactElement {
 />
       </NativeSwipeStack>
       </WebContentFrame>
+      {}
+      <SplitSidebar visible={gatesOpen && onboarding.hasAccount}/>
       {}
       {!gatesOpen ? (
         <Col

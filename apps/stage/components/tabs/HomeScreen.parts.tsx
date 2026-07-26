@@ -111,7 +111,7 @@ export function useChannelRowRenderer(
 }
 
 export function HomeError({ error, dark, fg, plain }: {
-  error: string; dark: boolean; fg: string; bg: string; plain?: boolean;
+  error: string; dark: boolean; fg: string; plain?: boolean;
 }): React.ReactElement {
   return (
     <Col padding={24} flex={1} align="center" justify="center" surface="surface" style={plain === true ? undefined : WEB_EDGE_SCROLL}>
@@ -138,7 +138,7 @@ export function HomeError({ error, dark, fg, plain }: {
   );
 }
 
-export function HomeSpinner({ head, plain }: { head: string; bg: string; plain?: boolean }): React.ReactElement {
+export function HomeSpinner({ head, plain }: { head: string; plain?: boolean }): React.ReactElement {
   return (
     <Col flex={1} align="center" justify="center" surface="surface" style={plain === true ? undefined : WEB_EDGE_SCROLL}>
       <Spinner size={28} color={head}/>

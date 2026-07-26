@@ -7,10 +7,8 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { useActiveAccount } from '../../modules/messaging';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { useDraftsVersion } from '../../lib/drafts';
-import { Col, Row } from '../layout';
-import { useWebTabRail, WEB_TAB_RAIL_WIDTH } from './useWebTabRail';
-import { usePaneWidth } from './paneWidth';
-import { PaneResizeHandle } from './PaneResizeHandle';
+import { Col } from '../layout';
+import { useWebTabRail } from './useWebTabRail';
 import { ChannelMenu } from '../ChannelMenu';
 import { HomeError, HomeSpinner, useChannelRowRenderer } from './HomeScreen.parts';
 import { ChannelsList } from './HomeScreen.list';
@@ -42,13 +40,28 @@ function HomeRowMenu({ st }: { st: HomeState }): React.ReactElement {
   return <ChannelMenu {...rowMenuProps(rowMenu, pinned)} onClose={() => { setRowMenu(null); }} />;
 }
 
+function SplitPlaceholder(): React.ReactElement {
+  return (
+    <Col
+      flex={1} align="center" justify="center" surface="surface"
+      margin={{ left: 'var(--stage-pane-left, 0px)' }}
+>
+      <Text size="md" role="secondary">Select a chat to start messaging</Text>
+    </Col>
+  );
+}
+
 export function HomeScreen({ panRef, pane }: { panRef?: SimultaneousRefs; pane?: boolean } = {}): React.ReactElement {
+  const splitHome = useWebTabRail() && pane !== true;
+  if (splitHome) return <SplitPlaceholder/>;
+  return <ChannelsHome panRef={panRef} pane={pane === true}/>;
+}
+
+function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boolean }): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border } = usePalette();
+  const { text: fg, link: head, border } = usePalette();
   const sub = fg;
-  const splitHome = useWebTabRail() && pane !== true;
-  const paneWidth = usePaneWidth();
   const st = useHomeState();
   const { rows, pinned } = st;
   const { enabledLabels, toggleLabel, unreadOnly, toggleUnread, clearAllFilters } = useHomeFilters();
@@ -84,7 +97,7 @@ export function HomeScreen({ panRef, pane }: { panRef?: SimultaneousRefs; pane?:
     [channelProfilesVersion, draftsVersion, pinned, query],
   );
   const navRouter = useMemo(
-    () => (pane === true
+    () => (pane
       ? { push: (to: Parameters<typeof router.replace>[0]) => { router.replace(to); } }
       : router),
     [pane, router],
@@ -93,8 +106,8 @@ export function HomeScreen({ panRef, pane }: { panRef?: SimultaneousRefs; pane?:
     channelProfilesVersion, draftsVersion, pinned, query,
   });
 
-  if (st.error) return <HomeError error={st.error} dark={dark} fg={fg} bg={bg} plain={pane} />;
-  if (!rows) return <HomeSpinner head={head} bg={bg} plain={pane} />;
+  if (st.error) return <HomeError error={st.error} dark={dark} fg={fg} plain={pane} />;
+  if (!rows) return <HomeSpinner head={head} plain={pane} />;
 
   const list = (
     <ChannelsList
@@ -107,24 +120,9 @@ export function HomeScreen({ panRef, pane }: { panRef?: SimultaneousRefs; pane?:
       listRef={st.scroll.listRef} savedOffsetRef={st.scroll.savedOffsetRef}
       didRestoreRef={st.scroll.didRestoreRef} contentHeightRef={st.scroll.contentHeightRef}
       renderRow={renderRow}
-      pane={pane === true || splitHome}
+      pane={pane}
     />
   );
-
-  if (splitHome) {
-    return (
-      <Row flex={1} surface="surface" padding={{ left: WEB_TAB_RAIL_WIDTH }}>
-        <Col width={paneWidth} style={{ borderRightWidth: 1, borderRightColor: border }}>
-          {list}
-          <PaneResizeHandle/>
-        </Col>
-        <Col flex={1} align="center" justify="center">
-          <Text size="md" role="secondary">Select a chat to start messaging</Text>
-        </Col>
-        <HomeRowMenu st={st} />
-      </Row>
-    );
-  }
 
   return (
     <Col flex={1} surface="surface">

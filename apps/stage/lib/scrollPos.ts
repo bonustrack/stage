@@ -11,6 +11,10 @@ const WRITE_DEBOUNCE_MS = 300;
 
 export const AT_BOTTOM_THRESHOLD_PX = 24;
 
+export function peekScrollOffset(key: string): number | undefined {
+  return cache.get(key);
+}
+
 export async function getScrollOffset(key: string): Promise<number | undefined> {
   if (cache.has(key)) return cache.get(key);
   try {

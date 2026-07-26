@@ -14,19 +14,6 @@ export function Topnav({ left, right, inline }: {
   const { border } = usePalette();
   const rail = useWebTabRail() && inline !== true;
 
-  const content = (
-    <>
-      <Row align="center" gap={8}>
-        {left ?? <TopnavIdentity/>}
-      </Row>
-      {right ? (
-        <Row align="center" gap={18}>
-          {right}
-        </Row>
-      ) : null}
-    </>
-  );
-
   const bar = (
     <Row
       height={TOPNAV_HEIGHT}
@@ -36,7 +23,14 @@ export function Topnav({ left, right, inline }: {
       surface="toolbar"
       style={{ borderBottomWidth: 1, borderBottomColor: border }}
     >
-      {content}
+      <Row align="center" gap={8}>
+        {left ?? <TopnavIdentity/>}
+      </Row>
+      {right ? (
+        <Row align="center" gap={18}>
+          {right}
+        </Row>
+      ) : null}
     </Row>
   );
   if (inline === true) return bar;

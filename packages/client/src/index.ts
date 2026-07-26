@@ -10,7 +10,6 @@ export * from './xmtp/envelope';
 export * from './xmtp/consent';
 export * from './xmtp/groups';
 export * from './image/stripMetadata';
-export * from './xmtp/request';
 export * from './xmtp/builders';
 export * from './xmtp/voice';
 export * from './xmtp/codecs';
@@ -42,6 +41,5 @@ export * from './wallet/prices';
 export * from './accounts/types';
 export * from './accounts/keys';
 export * from './accounts/registry';
-export * from './accounts/store';
 
 export * from './railgun';

@@ -10,13 +10,41 @@ const USDC = { address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', decimals: 
 const RCPT = '0x1111111111111111111111111111111111111111';
 
 describe('parseSendAmount', () => {
-  it('parses decimals', () => {
-    expect(parseSendAmount('1.5', 18)).toBe(parseUnits('1.5', 18));
+  it('parses plain decimal strings to base units', () => {
+    expect(parseSendAmount('1', 18)).toBe(parseUnits('1', 18));
+    expect(parseSendAmount('0.05', 18)).toBe(parseUnits('0.05', 18));
+    expect(parseSendAmount('1.5', 6)).toBe(parseUnits('1.5', 6));
   });
-  it('rejects zero and non-numeric and over-precision', () => {
-    expect(() => parseSendAmount('0', 18)).toThrow();
-    expect(() => parseSendAmount('abc', 18)).toThrow();
-    expect(() => parseSendAmount('1.1234567', 6)).toThrow();
+
+  it('handles high-precision / tiny values exactly (no float rounding)', () => {
+    expect(parseSendAmount('0.000000000000000001', 18)).toBe(1n);
+    expect(parseSendAmount('123456789.123456789', 18)).toBe(parseUnits('123456789.123456789', 18));
+  });
+
+  it('trims surrounding whitespace', () => {
+    expect(parseSendAmount('  1.0  ', 18)).toBe(parseUnits('1.0', 18));
+  });
+
+  it('rejects scientific notation that Number() would accept', () => {
+    expect(() => parseSendAmount('1e3', 18)).toThrow('Invalid amount');
+    expect(() => parseSendAmount('1E-3', 18)).toThrow('Invalid amount');
+  });
+
+  it('rejects non-positive amounts', () => {
+    expect(() => parseSendAmount('0', 18)).toThrow('Invalid amount');
+    expect(() => parseSendAmount('0.0', 18)).toThrow('Invalid amount');
+    expect(() => parseSendAmount('-1', 18)).toThrow('Invalid amount');
+  });
+
+  it('rejects junk / NaN / empty', () => {
+    expect(() => parseSendAmount('', 18)).toThrow('Invalid amount');
+    expect(() => parseSendAmount('abc', 18)).toThrow('Invalid amount');
+    expect(() => parseSendAmount('1.2.3', 18)).toThrow('Invalid amount');
+    expect(() => parseSendAmount('0x1', 18)).toThrow('Invalid amount');
+  });
+
+  it('rejects more fraction digits than token decimals', () => {
+    expect(() => parseSendAmount('1.1234567', 6)).toThrow('Invalid amount');
   });
 });
 

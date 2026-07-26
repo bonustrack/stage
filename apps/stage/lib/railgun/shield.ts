@@ -5,12 +5,9 @@ import { engineInit, walletInfo } from './bridge';
 import { deriveRailgunKeyMaterial } from './deriveKeys';
 import { addPending, updatePending } from './cache';
 import { watchShieldLanding } from './shieldScan';
-import { populateShieldBaseToken, populateShieldErc20, ensureProviderLoaded } from './bridge/shieldCalls';
+import { populateShieldBaseToken, populateShieldErc20 } from './bridge/shieldCalls';
 import { getShieldSigner, deriveShieldPrivateKey, shieldNetForChainId } from './shieldClient';
-import { RAILGUN_TOKENS } from './tokens';
-import type { TokenMeta } from './tokens';
-
-const TXID_VERSION = 'V2_PoseidonMerkle';
+import { TXID_VERSION, loadShieldProvider, tokenMeta } from './txCommon';
 
 export interface ShieldParams {
   chainId: number;
@@ -23,18 +20,11 @@ export interface ShieldResult {
   zkAddress: string;
 }
 
-function tokenMeta(chainId: number, symbol: string): TokenMeta {
-  const net = chainId === 1 ? 'mainnet' : 'sepolia';
-  const meta = RAILGUN_TOKENS[net].find(t => t.symbol === symbol);
-  if (!meta) throw new Error(`Unsupported shield token: ${symbol}`);
-  return meta;
-}
-
 export async function shieldToPrivate(params: ShieldParams): Promise<ShieldResult> {
   const accountId = await getActiveAccountId();
   if (!accountId) throw new Error('No active account');
   const cfg = shieldNetForChainId(params.chainId);
-  const meta = tokenMeta(params.chainId, params.symbol);
+  const meta = tokenMeta(params.chainId, params.symbol, 'shield');
   const amountWei = parseUnits(params.amount, meta.decimals);
   if (amountWei <= 0n) throw new Error('Enter an amount greater than zero');
 
@@ -47,13 +37,7 @@ export async function shieldToPrivate(params: ShieldParams): Promise<ShieldResul
   try {
     const key = await deriveRailgunKeyMaterial();
     await engineInit();
-    await ensureProviderLoaded(
-      {
-        chainId: cfg.chainId,
-        providers: cfg.rpcUrls.map((url, i) => ({ provider: url, priority: i + 1, weight: 1 })),
-      },
-      cfg.networkName,
-    );
+    await loadShieldProvider(cfg);
     const info = await walletInfo({
       encryptionKey: key.encryptionKey, mnemonic: key.mnemonic, creationBlocks: key.creationBlocks,
     });

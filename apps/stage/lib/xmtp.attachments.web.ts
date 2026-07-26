@@ -7,24 +7,13 @@ import { stripMetadataBytes, isStrippableImage } from '@stage-labs/client/image/
 import { convOfLine } from './xmtp.client.web';
 import { type LocalAttachmentInput } from './xmtp.types';
 import { SWARM_UPLOAD_MAX_BYTES, swarmToHttp, tooLargeError, uploadFormToSwarmy } from './swarmy';
+import { attachmentMimeType } from './attachmentFiles';
 
 export { swarmToHttp } from './swarmy';
+export { fileUriToBase64 } from './attachmentFiles';
 
 declare const sanitizedBrand: unique symbol;
 export type SanitizedAttachmentBytes = Uint8Array & { readonly [sanitizedBrand]: true };
-
-const EXT_MIME: Record<string, string> = {
-  jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif',
-  webp: 'image/webp', heic: 'image/heic', heif: 'image/heif', bmp: 'image/bmp',
-  m4a: 'audio/m4a', mp3: 'audio/mpeg', wav: 'audio/wav', aac: 'audio/aac',
-  ogg: 'audio/ogg', caf: 'audio/x-caf', mp4: 'video/mp4', mov: 'video/quicktime',
-  webm: 'video/webm', pdf: 'application/pdf',
-};
-
-function mimeOfInput(f: LocalAttachmentInput): string {
-  if (f.mimeType.includes('/')) return f.mimeType;
-  return EXT_MIME[f.filename.split('.').pop()?.toLowerCase() ?? ''] ?? 'application/octet-stream';
-}
 
 async function fetchBytes(uri: string): Promise<Uint8Array> {
   const blob = await (await fetch(uri)).blob();
@@ -67,7 +56,7 @@ export async function xmtpSendMultiRemoteAttachment(
 
   const infos: RemoteAttachment[] = [];
   for (const f of files) {
-    const mimeType = mimeOfInput(f);
+    const mimeType = attachmentMimeType(f.mimeType, f.filename);
     const clean = sanitizeAttachmentBytes(await fetchBytes(f.fileUri), mimeType, f.filename);
     const encrypted = await encryptSanitizedAttachment({
       bytes: clean, mimeType, filename: f.filename,
@@ -100,20 +89,4 @@ export async function resolveRemoteAttachment(info: RemoteAttachment): Promise<{
     mimeType: decrypted.mimeType,
     filename: decrypted.filename,
   };
-}
-
-export async function fileUriToBase64(uri: string): Promise<string> {
-  const res = await fetch(uri);
-  const blob = await res.blob();
-  return await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (): void => {
-      const result = reader.result;
-      if (typeof result !== 'string') { reject(new Error('FileReader returned non-string')); return; }
-      const comma = result.indexOf(',');
-      resolve(comma === -1 ? result : result.slice(comma + 1));
-    };
-    reader.onerror = (): void => { reject(reader.error ?? new Error('FileReader failed')); };
-    reader.readAsDataURL(blob);
-  });
 }

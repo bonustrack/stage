@@ -1,6 +1,1 @@
-
-import { MessengerSettings } from '../../components/settings/MessengerSettings';
-
-export default function SettingsMessengerRoute(): React.ReactElement {
-  return <MessengerSettings />;
-}
+export { MessengerSettings as default } from '../../components/settings/MessengerSettings';

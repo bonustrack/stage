@@ -3,15 +3,13 @@ import { getActiveAccountId } from '../accounts';
 import { engineInit, walletInfo } from './bridge';
 import { deriveRailgunKeyMaterial } from './deriveKeys';
 import { addPending, updatePending } from './cache';
-import { ensureProviderLoaded } from './bridge/shieldCalls';
 import {
   gasEstimateUnshield, generateUnshieldProof, populateProvedUnshield,
   type UnshieldGasDetails, type UnshieldErc20Recipient,
-} from './bridge/unshieldCalls';
+} from '@stage-labs/client/railgun';
+import { sdk } from './bridge/sdk';
 import { getShieldSigner, shieldNetForChainId } from './shieldClient';
-import { RAILGUN_TOKENS, type TokenMeta } from './tokens';
-
-const TXID_VERSION = 'V2_PoseidonMerkle';
+import { TXID_VERSION, loadShieldProvider, tokenMeta } from './txCommon';
 
 export interface UnshieldParams {
   chainId: number;
@@ -25,18 +23,11 @@ export interface UnshieldResult {
   recipient: Hex;
 }
 
-function tokenMeta(chainId: number, symbol: string): TokenMeta {
-  const net = chainId === 1 ? 'mainnet' : 'sepolia';
-  const meta = RAILGUN_TOKENS[net].find(t => t.symbol === symbol);
-  if (!meta) throw new Error(`Unsupported unshield token: ${symbol}`);
-  return meta;
-}
-
 export async function unshieldToPublic(params: UnshieldParams): Promise<UnshieldResult> {
   const accountId = await getActiveAccountId();
   if (!accountId) throw new Error('No active account');
   const cfg = shieldNetForChainId(params.chainId);
-  const meta = tokenMeta(params.chainId, params.symbol);
+  const meta = tokenMeta(params.chainId, params.symbol, 'unshield');
   const amountWei = parseUnits(params.amount, meta.decimals);
   if (amountWei <= 0n) throw new Error('Enter an amount greater than zero');
 
@@ -49,13 +40,7 @@ export async function unshieldToPublic(params: UnshieldParams): Promise<Unshield
   try {
     const key = await deriveRailgunKeyMaterial();
     await engineInit();
-    await ensureProviderLoaded(
-      {
-        chainId: cfg.chainId,
-        providers: cfg.rpcUrls.map((url, i) => ({ provider: url, priority: i + 1, weight: 1 })),
-      },
-      cfg.networkName,
-    );
+    await loadShieldProvider(cfg);
     const info = await walletInfo({
       encryptionKey: key.encryptionKey, mnemonic: key.mnemonic, creationBlocks: key.creationBlocks,
     });
@@ -74,19 +59,19 @@ export async function unshieldToPublic(params: UnshieldParams): Promise<Unshield
       maxPriorityFeePerGas: fees.maxPriorityFeePerGas.toString(),
     };
 
-    const est = await gasEstimateUnshield({
+    const est = await gasEstimateUnshield(sdk, {
       txidVersion: TXID_VERSION, networkName: cfg.networkName,
       railgunWalletID: info.railgunWalletID, encryptionKey: key.encryptionKey,
       erc20Recipients: recipients, originalGasDetails: baseGas,
     });
 
-    await generateUnshieldProof({
+    await generateUnshieldProof(sdk, {
       txidVersion: TXID_VERSION, networkName: cfg.networkName,
       railgunWalletID: info.railgunWalletID, encryptionKey: key.encryptionKey,
       erc20Recipients: recipients,
     });
 
-    const populated = await populateProvedUnshield({
+    const populated = await populateProvedUnshield(sdk, {
       txidVersion: TXID_VERSION, networkName: cfg.networkName,
       railgunWalletID: info.railgunWalletID, erc20Recipients: recipients,
       gasDetails: { ...baseGas, gasEstimate: est.gasEstimate },

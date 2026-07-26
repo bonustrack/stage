@@ -1,6 +1,1 @@
-
-import { WalletSettings } from '../../components/settings/WalletSettings';
-
-export default function SettingsWalletRoute(): React.ReactElement {
-  return <WalletSettings />;
-}
+export { WalletSettings as default } from '../../components/settings/WalletSettings';

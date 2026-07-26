@@ -17,7 +17,7 @@ import { ChannelsSearchBar } from './HomeScreen.search';
 import { HomeContactResults } from './HomeScreen.contacts';
 import { HomeOverflowMenu } from './HomeScreen.overflow';
 import { Topnav } from '../Topnav';
-import { usePublishTopnavSlot } from './topnavSlots';
+import { usePublishTopnavSlot, type TopnavSlot } from './topnavSlots';
 import { getActiveAccount } from '../../lib/accounts';
 import { unreadBadgeLabel } from '../../lib/format';
 
@@ -45,7 +45,7 @@ interface ChannelsListProps {
   didRestoreRef: MutableRefObject<boolean>;
   contentHeightRef: MutableRefObject<number>;
   renderRow: ({ item }: { item: RowT }) => React.ReactElement;
-  pane?: boolean;
+  pane: boolean;
 }
 
 function HomeTopnavRight({ head, requestCount, router, onOpenSearch }: {
@@ -97,9 +97,8 @@ function ChannelsListHeader({ p }: { p: ChannelsListProps }): React.ReactElement
   );
 }
 
-function useHomeTopnav(p: ChannelsListProps, searchOpen: boolean, onOpenSearch: () => void, onCloseSearch: () => void): void {
-  const { head, requestCount, router, query, setQuery, sub, border } = p;
-  const publish = p.pane !== true;
+function useHomeTopnav(p: ChannelsListProps, searchOpen: boolean, onOpenSearch: () => void, onCloseSearch: () => void): TopnavSlot {
+  const { head, requestCount, router, query, setQuery, sub, border, pane } = p;
   const right = useMemo(
     () => <HomeTopnavRight head={head} requestCount={requestCount} router={router} onOpenSearch={onOpenSearch} />,
     [head, requestCount, router, onOpenSearch],
@@ -108,17 +107,18 @@ function useHomeTopnav(p: ChannelsListProps, searchOpen: boolean, onOpenSearch: 
     () => (searchOpen ? (
       <ChannelsSearchBar
         query={query} setQuery={setQuery} onClose={onCloseSearch}
-        head={head} sub={sub} border={border}
+        head={head} sub={sub} border={border} inline={pane}
       />
     ) : undefined),
-    [searchOpen, query, setQuery, onCloseSearch, head, sub, border],
+    [searchOpen, query, setQuery, onCloseSearch, head, sub, border, pane],
   );
-  usePublishTopnavSlot({ right, override }, publish);
+  usePublishTopnavSlot({ right, override }, !pane);
+  return { right, override };
 }
 
 export function ChannelsList(props: ChannelsListProps): React.ReactElement {
   const {
-    panRef, sortedRows, query, fg, head, sub, border, setQuery,
+    panRef, sortedRows, query, fg, head, sub, border, setQuery, pane,
     listExtraData, listRef, savedOffsetRef, didRestoreRef, contentHeightRef,
     renderRow,
   } = props;
@@ -126,27 +126,15 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
   const [searchOpen, setSearchOpen] = useState(false);
   const openSearch = (): void => { setSearchOpen(true); };
   const closeSearch = (): void => { setSearchOpen(false); setQuery(''); };
-  useHomeTopnav(props, searchOpen, openSearch, closeSearch);
-  const listStyle = props.pane === true ? { flex: 1 } : WEB_EDGE_SCROLL;
-  const contentStyle = props.pane === true
+  const slot = useHomeTopnav(props, searchOpen, openSearch, closeSearch);
+  const listStyle = pane ? { flex: 1 } : WEB_EDGE_SCROLL;
+  const contentStyle = pane
     ? [{ paddingTop: 12, paddingBottom: 24 }]
     : [{ paddingBottom: 24 }, WEB_EDGE_CONTENT, webTabsPad];
 
   return (
     <>
-      {props.pane === true ? (
-        searchOpen ? (
-          <ChannelsSearchBar
-            query={query} setQuery={setQuery} onClose={closeSearch}
-            head={head} sub={sub} border={border} inline
-          />
-        ) : (
-          <Topnav
-            inline
-            right={<HomeTopnavRight head={head} requestCount={props.requestCount} router={props.router} onOpenSearch={openSearch} />}
-          />
-        )
-      ) : null}
+      {pane ? slot.override ?? <Topnav inline right={slot.right}/> : null}
       <FlatList
         ref={listRef}
         simultaneousHandlers={panRef}

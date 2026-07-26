@@ -13,7 +13,7 @@ import {
   getCachedXmtpClient, setCachedXmtpClient, resetClientScopedState,
 } from './xmtp.state.web';
 import { type XmtpEnv, convIdOfLine, lineOfConv } from './xmtp.types';
-import { deleteDbKey, deleteLegacyDbKey, deleteDbFiles } from './xmtp.dbkey.web';
+import { deleteDbKey, deleteLegacyDbKey, deleteDbFiles } from './xmtp.dbkey';
 import { createClientForAccount } from './xmtp.recover.web';
 import {
   webXmtpDbPath, canReuseSavedClient, installationCreatedAtMs,

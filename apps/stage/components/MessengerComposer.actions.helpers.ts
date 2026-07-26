@@ -3,7 +3,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { xmtpSendText } from '../modules/messaging';
 import { setLastAttachment } from '../lib/lastAttachment';
-import { mimeOf } from './MessengerComposer.helpers';
+import { mimeOf } from '../lib/attachmentFiles';
 import { rememberLocalAttachments, stashLocalAttachment } from '../lib/localAttachmentCache';
 import { planSendSteps, type SendStep } from './MessengerComposer.send';
 import type { ComposerActionsArgs } from './MessengerComposer.types';

@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import type { FlatList } from 'react-native-gesture-handler';
 import { getCachedRows, setCachedRows, subscribeCachedRows, ensureChannelsQueryBridge } from '../../modules/messaging';
 import { loadPinnedIds, subscribePins } from '../../lib/pins';
-import { CHANNELS_SCROLL_KEY, getScrollOffset, flushScrollOffset } from '../../lib/scrollPos';
+import {
+  CHANNELS_SCROLL_KEY, getScrollOffset, peekScrollOffset, flushScrollOffset,
+} from '../../lib/scrollPos';
 import type { Row as RowT } from './HomeScreen.helpers';
 
 export interface RowMenu { convId: string; title: string; isUnread: boolean; isGroup: boolean; peerAddress: string | null }
@@ -45,12 +47,12 @@ export function useHomeState(): HomeState {
 
   const refreshFromNetworkRef = useRef<(() => Promise<void>) | null>(null);
   const listRef = useRef<FlatList<RowT>>(null);
-  const savedOffsetRef = useRef<number | undefined>(undefined);
+  const savedOffsetRef = useRef<number | undefined>(peekScrollOffset(CHANNELS_SCROLL_KEY));
   const didRestoreRef = useRef(false);
   const contentHeightRef = useRef(0);
 
   useEffect(() => {
-    void getScrollOffset(CHANNELS_SCROLL_KEY).then(o => { savedOffsetRef.current = o; });
+    void getScrollOffset(CHANNELS_SCROLL_KEY).then(o => { savedOffsetRef.current ??= o; });
     return () => { flushScrollOffset(CHANNELS_SCROLL_KEY); };
   }, []);
   useEffect(() => {

@@ -22,7 +22,7 @@ export function useTopnavSlot(): TopnavSlot | undefined {
   return useSyncExternalStore(subscribe, () => slot, () => slot);
 }
 
-export function usePublishTopnavSlot(next: TopnavSlot, enabled = true): void {
+export function usePublishTopnavSlot(next: TopnavSlot, enabled: boolean): void {
   useEffect(() => {
     if (!enabled) return;
     slot = next;

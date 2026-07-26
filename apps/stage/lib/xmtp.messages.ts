@@ -14,7 +14,7 @@ import { convOfLine } from './xmtp.client';
 import {
   POLL_CODEC, SIGNATURE_REQUEST_CODEC, SIGNATURE_REFERENCE_CODEC,
   WALLET_SEND_CALLS_CODEC, TRANSACTION_REFERENCE_CODEC,
-} from './xmtp.codecs';
+} from './xmtpJsonCodecs';
 
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { envelopeOfXmtpMessage } from './xmtp.envelope';

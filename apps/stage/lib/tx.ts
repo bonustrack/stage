@@ -6,7 +6,7 @@ import {
 import { getActiveViemAccount } from './accounts';
 import { VIEM_CHAINS } from '../components/tabs/WalletScreen.assets';
 import { broviderTransport } from '@stage-labs/client/wallet/client';
-import { parseAmount } from './txAmount';
+import { parseSendAmount } from '@stage-labs/client/wallet/send';
 
 const rpcTransport = broviderTransport;
 
@@ -27,7 +27,7 @@ export async function sendNativeOrToken(params: SendParams): Promise<Hex> {
   const { to, amount, token, chainId = 1 } = params;
 
   if (!isAddress(to)) throw new Error('Invalid recipient address');
-  const value = parseAmount(amount, token ? token.decimals ?? 18 : 18);
+  const value = parseSendAmount(amount, token ? token.decimals ?? 18 : 18);
 
   const local = await getActiveViemAccount();
   if (!local) throw new Error('No in-app wallet to send from');

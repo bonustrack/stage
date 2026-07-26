@@ -1,20 +1,14 @@
 import type { RailgunDispatch } from './dispatch';
 import { SDK_METHOD } from './methods';
-import { bn } from './wire';
+import {
+  bn, wireGasDetails, wireRecipients,
+  type RailgunErc20Recipient, type RailgunGasDetails,
+} from './wire';
 import type { PopulateResult } from './shieldCalls';
 
-export interface TransferGasDetails {
-  evmGasType: 0 | 1 | 2;
-  gasEstimate: string;
-  maxFeePerGas: string;
-  maxPriorityFeePerGas: string;
-}
+export type TransferGasDetails = RailgunGasDetails;
 
-export interface TransferErc20Recipient {
-  tokenAddress: string;
-  amountWei: string;
-  recipientAddress: string;
-}
+export type TransferErc20Recipient = RailgunErc20Recipient;
 
 export async function gasEstimateTransfer(dispatch: RailgunDispatch, params: {
   txidVersion: string;
@@ -30,9 +24,7 @@ export async function gasEstimateTransfer(dispatch: RailgunDispatch, params: {
     params.railgunWalletID,
     params.encryptionKey,
     undefined,
-    params.erc20Recipients.map(r => ({
-      tokenAddress: r.tokenAddress, amount: bn(r.amountWei), recipientAddress: r.recipientAddress,
-    })),
+    wireRecipients(params.erc20Recipients),
     [],
     wireGasDetails(params.originalGasDetails),
     undefined,
@@ -54,9 +46,7 @@ export async function generateTransferProof(dispatch: RailgunDispatch, params: {
     params.encryptionKey,
     false,
     undefined,
-    params.erc20Recipients.map(r => ({
-      tokenAddress: r.tokenAddress, amount: bn(r.amountWei), recipientAddress: r.recipientAddress,
-    })),
+    wireRecipients(params.erc20Recipients),
     [],
     undefined,
     true,
@@ -77,22 +67,11 @@ export async function populateProvedTransfer(dispatch: RailgunDispatch, params: 
     params.railgunWalletID,
     false,
     undefined,
-    params.erc20Recipients.map(r => ({
-      tokenAddress: r.tokenAddress, amount: bn(r.amountWei), recipientAddress: r.recipientAddress,
-    })),
+    wireRecipients(params.erc20Recipients),
     [],
     undefined,
     true,
     bn('0'),
     wireGasDetails(params.gasDetails),
   ]);
-}
-
-function wireGasDetails(g: TransferGasDetails): Record<string, unknown> {
-  return {
-    evmGasType: g.evmGasType,
-    gasEstimate: bn(g.gasEstimate),
-    maxFeePerGas: bn(g.maxFeePerGas),
-    maxPriorityFeePerGas: bn(g.maxPriorityFeePerGas),
-  };
 }

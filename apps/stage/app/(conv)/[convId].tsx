@@ -9,14 +9,7 @@ import { Box, Col, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT, WEB_CHROME_WIDTH, WEB_CHRO
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
-import { useLocalSearchParams, usePathname, useRouter } from 'expo-router';
-import { HomeScreen } from '../../components/tabs/HomeScreen';
-import { WebTabRail } from '../../components/tabs/WebTabRail';
-import { useWebTabRail, WEB_TAB_RAIL_WIDTH } from '../../components/tabs/useWebTabRail';
-import { usePaneWidth } from '../../components/tabs/paneWidth';
-import { PaneResizeHandle } from '../../components/tabs/PaneResizeHandle';
-import { useTotalUnread } from '../../lib/useTotalUnread';
-import { unreadBadgeLabel } from '../../lib/format';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { PendingConversation } from '../../components/PendingConversation';
 import { ConversationFeed } from '../../components/xmtp-conv/ConversationFeed';
@@ -85,40 +78,12 @@ function FooterDock({ children, onHeight }: {
   );
 }
 
-function ConversationSplitPane({ pathname, unreadBadge, border }: {
-  pathname: string; unreadBadge: string | undefined; border: string;
-}): React.ReactElement {
-  const paneWidth = usePaneWidth();
-  return (
-    <>
-      <Box
-        surface="surface"
-        width={paneWidth}
-        margin={{ left: `calc(-50vw + ${WEB_TAB_RAIL_WIDTH}px)` }}
-        style={{
-          position: 'absolute', top: 0, bottom: 0, left: '50%', zIndex: 3,
-          borderRightWidth: 1, borderRightColor: border,
-        }}
->
-        <HomeScreen pane/>
-        <PaneResizeHandle/>
-      </Box>
-      <WebTabRail pathname={pathname} unreadBadge={unreadBadge}/>
-    </>
-  );
-}
-
-function ConversationShell({ bg, split, pathname, unreadBadge, border, children }: {
-  bg: string; split: boolean; pathname: string; unreadBadge: string | undefined; border: string;
-  children: React.ReactNode;
+function ConversationShell({ bg, children }: {
+  bg: string; children: React.ReactNode;
 }): React.ReactElement {
   return (
-    <RNAnimated.View
-      style={{ flex: 1, backgroundColor: bg }}
-      {...(split ? ({ dataSet: { stagepane: '1' } } as unknown as Record<string, unknown>) : {})}
->
+    <RNAnimated.View style={{ flex: 1, backgroundColor: bg }}>
       {children}
-      {split ? <ConversationSplitPane pathname={pathname} unreadBadge={unreadBadge} border={border}/> : null}
     </RNAnimated.View>
   );
 }
@@ -142,9 +107,6 @@ export default function XmtpConversation(): React.ReactElement {
   const [requestPending, setRequestPending] = useState(false);
   const onRequestPending = useCallback((pending: boolean) => { setRequestPending(pending); }, []);
   const [composerH, setComposerH] = useState(0);
-  const split = useWebTabRail();
-  const pathname = usePathname();
-  const unreadBadge = unreadBadgeLabel(useTotalUnread());
 
   const insets = useSafeAreaInsets();
   const { height: kbHeightShared } = useReanimatedKeyboardAnimation();
@@ -152,7 +114,7 @@ export default function XmtpConversation(): React.ReactElement {
 
   if (resolved.resolving || !convId) {
     return (
-      <ConversationShell bg={bg} split={split} pathname={pathname} unreadBadge={unreadBadge} border={border}>
+      <ConversationShell bg={bg}>
         <UnresolvedConversation resolved={resolved} dark={dark}/>
       </ConversationShell>
     );
@@ -166,7 +128,7 @@ export default function XmtpConversation(): React.ReactElement {
   );
 
   return (
-    <ConversationShell bg={bg} split={split} pathname={pathname} unreadBadge={unreadBadge} border={border}>
+    <ConversationShell bg={bg}>
       {}
       <Reanimated.View
         style={[

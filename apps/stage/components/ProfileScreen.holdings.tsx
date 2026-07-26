@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -10,7 +10,7 @@ import { fetchAssetRows } from './tabs/WalletScreen.data';
 import { type AssetRow } from './tabs/WalletScreen.assets';
 import { TokensList } from './tabs/WalletScreen.tokens';
 import { NftsView } from './tabs/WalletScreen.parts';
-import { getNftsAcrossChains, type Nft } from '../lib/opensea';
+import { useNfts } from '../lib/useNfts';
 
 type HoldingsTab = 'tokens' | 'nfts';
 const TAB_LABEL: Record<HoldingsTab, string> = { tokens: 'Tokens', nfts: 'NFTs' };
@@ -52,8 +52,7 @@ export function ProfileHoldings({ address }: { address: string }): React.ReactEl
   const [rows, setRows] = useState<AssetRow[] | null>(null);
   const [err, setErr] = useState(false);
 
-  const [nfts, setNfts] = useState<Nft[] | null>(null);
-  const [nftStatus, setNftStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const { nfts, nftStatus } = useNfts(tab === 'nfts', address);
 
   useEffect(() => {
     if (!address) return;
@@ -70,25 +69,6 @@ export function ProfileHoldings({ address }: { address: string }): React.ReactEl
     })();
     return () => { cancelled = true; };
   }, [address]);
-
-  const loadedAddrRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (tab !== 'nfts' || !address || loadedAddrRef.current === address) return;
-    loadedAddrRef.current = address;
-    let cancelled = false;
-    setNftStatus('loading');
-    void (async (): Promise<void> => {
-      try {
-        const list = await getNftsAcrossChains(address);
-        if (cancelled) return;
-        setNfts(list);
-        setNftStatus('ready');
-      } catch {
-        if (!cancelled) setNftStatus('error');
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [tab, address]);
 
   return (
     <Col>

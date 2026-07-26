@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Keyboard } from 'react-native';
 import { loadDrafts, getDraft, setDraft } from '../lib/drafts';
 import { loadLastAttachment, getLastAttachment, subscribeLastAttachment } from '../lib/lastAttachment';
@@ -16,14 +16,34 @@ export function useLastAttachment(): string | undefined {
   return label;
 }
 
-export function useComposerDrafts(convId: string, text: string, setText: (v: string) => void): void {
+export function useCaretToEnd(
+  text: string,
+  setSelection: (range: { start: number; end: number }) => void,
+): () => void {
+  const textRef = useRef(text);
+  textRef.current = text;
+  return useCallback(() => {
+    const end = textRef.current.length;
+    setSelection({ start: end, end });
+  }, [setSelection]);
+}
+
+export function useComposerDrafts(
+  convId: string,
+  text: string,
+  setText: (v: string) => void,
+  setSelection: (range: { start: number; end: number }) => void,
+): void {
   const draftRestored = useRef(false);
   const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     draftRestored.current = false;
     void loadDrafts().then(() => {
       const d = getDraft(convId);
-      if (d) setText(d);
+      if (d) {
+        setText(d);
+        setSelection({ start: d.length, end: d.length });
+      }
       draftRestored.current = true;
     });
   }, [convId]);
@@ -41,6 +61,7 @@ export function useComposerFocus(
   replyTargetId: string | undefined,
   replyNonce: number | undefined,
   autoFocusNonce: number | undefined,
+  caretToEnd: () => void,
 ): void {
   const innerRaf = useRef<number | null>(null);
   useEffect(() => {
@@ -56,7 +77,7 @@ export function useComposerFocus(
   }, [replyTargetId, replyNonce]);
   useEffect(() => {
     if (!autoFocusNonce) return;
-    const t = setTimeout(() => { bumpFocus(); }, 0);
+    const t = setTimeout(() => { caretToEnd(); bumpFocus(); }, 0);
     return () => { clearTimeout(t); };
   }, [autoFocusNonce]);
   useEffect(() => {

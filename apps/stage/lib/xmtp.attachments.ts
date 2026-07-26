@@ -8,11 +8,13 @@ import {
 import { getCachedXmtpClient, getOrCreateXmtpClient, convOfLine } from './xmtp.client';
 import { type LocalAttachmentInput } from './xmtp.types';
 import {
-  EXT_MIME, materializeFileUri, sanitizeFileUri, uploadEncryptedToIpfs, swarmToHttp,
+  materializeFileUri, sanitizeFileUri, uploadEncryptedToIpfs, swarmToHttp,
   type SanitizedFileUri,
 } from './xmtp.swarm';
+import { attachmentMimeType } from './attachmentFiles';
 
 export { swarmToHttp } from './xmtp.swarm';
+export { fileUriToBase64 } from './attachmentFiles';
 
 interface AttachmentEncryptor {
   encryptAttachment: (file: {
@@ -37,9 +39,7 @@ export async function xmtpSendMultiRemoteAttachment(
   const infos: RemoteAttachmentInfo[] = [];
   for (const f of files) {
     const fileUri = await materializeFileUri(f.fileUri);
-    const mimeType = f.mimeType?.includes('/')
-      ? f.mimeType
-      : (EXT_MIME[f.filename.split('.').pop()?.toLowerCase() ?? ''] ?? 'application/octet-stream');
+    const mimeType = attachmentMimeType(f.mimeType, f.filename);
     const cleanUri = await sanitizeFileUri(fileUri, mimeType, f.filename);
     const encrypted = await encryptSanitizedAttachment(client, {
       fileUri: cleanUri, mimeType, filename: f.filename,
@@ -71,20 +71,4 @@ export async function resolveRemoteAttachment(info: RemoteAttachmentInfo): Promi
   };
   const decrypted = await client.decryptAttachment(encrypted);
   return { fileUri: decrypted.fileUri, mimeType: decrypted.mimeType, filename: decrypted.filename };
-}
-
-export async function fileUriToBase64(uri: string): Promise<string> {
-  const res = await fetch(uri);
-  const blob = await res.blob();
-  return await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (): void => {
-      const result = reader.result;
-      if (typeof result !== 'string') { reject(new Error('FileReader returned non-string')); return; }
-      const comma = result.indexOf(',');
-      resolve(comma === -1 ? result : result.slice(comma + 1));
-    };
-    reader.onerror = (): void => { reject(reader.error ?? new Error('FileReader failed')); };
-    reader.readAsDataURL(blob);
-  });
 }

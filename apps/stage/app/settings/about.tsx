@@ -1,6 +1,1 @@
-
-import { AboutPage } from '../../components/system/AboutPage';
-
-export default function SettingsAboutRoute(): React.ReactElement {
-  return <AboutPage />;
-}
+export { AboutPage as default } from '../../components/system/AboutPage';

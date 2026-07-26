@@ -8,7 +8,7 @@ import {
 import { XMTP_CODECS, signerForRecord } from './xmtp.codecs.web';
 import { setCachedXmtpClient } from './xmtp.state.web';
 import { type XmtpEnv } from './xmtp.types';
-import { deleteDbKey, deleteDbFiles } from './xmtp.dbkey.web';
+import { deleteDbKey, deleteDbFiles } from './xmtp.dbkey';
 import {
   INSTALLATION_LIMIT_MESSAGE, isInstallationLimit,
   isStoreCorruption as isStoreCorruptionCore,

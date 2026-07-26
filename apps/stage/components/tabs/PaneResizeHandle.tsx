@@ -9,7 +9,7 @@ const TAP_SLOP_PX = 3;
 
 function setResizing(on: boolean): void {
   if (typeof document === 'undefined') return;
-  document.documentElement.classList[on ? 'add' : 'remove']('stage-resizing');
+  document.documentElement.classList.toggle('stage-resizing', on);
 }
 
 export function PaneResizeHandle(): React.ReactElement {

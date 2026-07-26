@@ -1,6 +1,1 @@
-
-import { ExperimentalSettings } from '../../components/settings/ExperimentalSettings';
-
-export default function SettingsExperimentalRoute(): React.ReactElement {
-  return <ExperimentalSettings />;
-}
+export { ExperimentalSettings as default } from '../../components/settings/ExperimentalSettings';

@@ -1,6 +1,1 @@
-
-import { SettingsMenu } from '../../components/settings/SettingsMenu';
-
-export default function SettingsRoute(): React.ReactElement {
-  return <SettingsMenu />;
-}
+export { SettingsMenu as default } from '../../components/settings/SettingsMenu';

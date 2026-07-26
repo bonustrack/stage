@@ -1,20 +1,14 @@
 import type { RailgunDispatch } from './dispatch';
 import { SDK_METHOD } from './methods';
-import { bn } from './wire';
+import {
+  bn, wireGasDetails, wireRecipients,
+  type RailgunErc20Recipient, type RailgunGasDetails,
+} from './wire';
 import type { PopulateResult } from './shieldCalls';
 
-export interface UnshieldGasDetails {
-  evmGasType: 0 | 1 | 2;
-  gasEstimate: string;
-  maxFeePerGas: string;
-  maxPriorityFeePerGas: string;
-}
+export type UnshieldGasDetails = RailgunGasDetails;
 
-export interface UnshieldErc20Recipient {
-  tokenAddress: string;
-  amountWei: string;
-  recipientAddress: string;
-}
+export type UnshieldErc20Recipient = RailgunErc20Recipient;
 
 export async function gasEstimateUnshield(dispatch: RailgunDispatch, params: {
   txidVersion: string;
@@ -29,9 +23,7 @@ export async function gasEstimateUnshield(dispatch: RailgunDispatch, params: {
     params.networkName,
     params.railgunWalletID,
     params.encryptionKey,
-    params.erc20Recipients.map(r => ({
-      tokenAddress: r.tokenAddress, amount: bn(r.amountWei), recipientAddress: r.recipientAddress,
-    })),
+    wireRecipients(params.erc20Recipients),
     [],
     wireGasDetails(params.originalGasDetails),
     undefined,
@@ -51,9 +43,7 @@ export async function generateUnshieldProof(dispatch: RailgunDispatch, params: {
     params.networkName,
     params.railgunWalletID,
     params.encryptionKey,
-    params.erc20Recipients.map(r => ({
-      tokenAddress: r.tokenAddress, amount: bn(r.amountWei), recipientAddress: r.recipientAddress,
-    })),
+    wireRecipients(params.erc20Recipients),
     [],
     undefined,
     true,
@@ -72,22 +62,11 @@ export async function populateProvedUnshield(dispatch: RailgunDispatch, params: 
     params.txidVersion,
     params.networkName,
     params.railgunWalletID,
-    params.erc20Recipients.map(r => ({
-      tokenAddress: r.tokenAddress, amount: bn(r.amountWei), recipientAddress: r.recipientAddress,
-    })),
+    wireRecipients(params.erc20Recipients),
     [],
     undefined,
     true,
     bn('0'),
     wireGasDetails(params.gasDetails),
   ]);
-}
-
-function wireGasDetails(g: UnshieldGasDetails): Record<string, unknown> {
-  return {
-    evmGasType: g.evmGasType,
-    gasEstimate: bn(g.gasEstimate),
-    maxFeePerGas: bn(g.maxFeePerGas),
-    maxPriorityFeePerGas: bn(g.maxPriorityFeePerGas),
-  };
 }

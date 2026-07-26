@@ -14,7 +14,7 @@ import { useTotalUnread } from '../../lib/useTotalUnread';
 import { unreadBadgeLabel } from '../../lib/format';
 
 function PagerOverlay({ insetTop, tabBarHeight, topnavHidden }: {
-  insetTop: number; tabBarHeight: number; topnavHidden?: boolean;
+  insetTop: number; tabBarHeight: number; topnavHidden: boolean;
 }): React.ReactElement {
   if (Platform.OS === 'web') {
     return (
@@ -29,7 +29,7 @@ function PagerOverlay({ insetTop, tabBarHeight, topnavHidden }: {
           <TabsPager/>
         </Box>
         {}
-        {topnavHidden === true ? null : (
+        {topnavHidden ? null : (
           <Box pointerEvents="box-none" style={{ position: 'absolute', top: insetTop, left: 0, right: 0, zIndex: 2 }}>
             <HoistedTopnav/>
           </Box>
@@ -129,12 +129,14 @@ export default function TabsLayout(): React.ReactElement {
         <PagerOverlay
           insetTop={insets.top}
           tabBarHeight={tabBarHeight}
-          topnavHidden={web && rail && pathname === '/'}
+          topnavHidden={rail && pathname === '/'}
         />
       ) : null}
       {}
-      {web && rail ? <WebTabRail pathname={pathname} unreadBadge={unreadBadge}/> : null}
-      {web && !rail ? <WebTabBar pathname={pathname} unreadBadge={unreadBadge}/> : null}
+      {web ? (rail
+        ? <WebTabRail pathname={pathname} unreadBadge={unreadBadge}/>
+        : <WebTabBar pathname={pathname} unreadBadge={unreadBadge}/>
+      ) : null}
     </Col>
   );
 }

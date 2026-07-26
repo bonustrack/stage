@@ -14,7 +14,7 @@ export const TAB_ICONS: readonly (readonly [TabName, HeroIconName])[] = [
   ['wallet', 'wallet'],
 ];
 
-export function TabButtons({ pathname, unreadBadge, vertical }: {
+function TabButtons({ pathname, unreadBadge, vertical }: {
   pathname: string;
   unreadBadge: string | undefined;
   vertical: boolean;

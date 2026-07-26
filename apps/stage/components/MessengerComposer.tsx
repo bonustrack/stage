@@ -4,7 +4,10 @@ import { FilePicker } from '@stage-labs/kit/react-native/file-picker';
 import { Col } from './layout';
 import { type Attachment } from './MessengerComposer.helpers';
 import { useComposerActions } from './MessengerComposer.actions';
-import { useComposerDrafts, useComposerFocus, computeMentions, applyMention, useLastAttachment } from './MessengerComposer.hooks';
+import {
+  useComposerDrafts, useComposerFocus, useCaretToEnd,
+  computeMentions, applyMention, useLastAttachment,
+} from './MessengerComposer.hooks';
 import { ReplyBanner, MentionPopup, PendingRow } from './MessengerComposer.parts';
 import { ComposerEditor, AttachMenu, buildAttachActions } from './MessengerComposer.editor';
 import { DANGER, usePalette } from '../lib/theme';
@@ -89,8 +92,9 @@ export function MessengerComposer(props: Props): React.ReactElement {
   const { SLIDE_CANCEL_THRESHOLD_PX } = actions;
 
   const convId = xmtpLine.replace('metro://xmtp/', '');
-  useComposerDrafts(convId, s.text, s.setText);
-  useComposerFocus(s.bumpFocus, s.bumpBlur, replyingTo?.id, replyingTo?.nonce, autoFocusNonce);
+  const caretToEnd = useCaretToEnd(s.text, s.setSelection);
+  useComposerDrafts(convId, s.text, s.setText, s.setSelection);
+  useComposerFocus(s.bumpFocus, s.bumpBlur, replyingTo?.id, replyingTo?.nonce, autoFocusNonce, caretToEnd);
 
   const hasContent = s.text.trim().length > 0 || s.pending.length > 0;
 

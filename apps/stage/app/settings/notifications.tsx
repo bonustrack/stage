@@ -1,6 +1,1 @@
-
-import { NotificationsSettings } from '../../components/settings/NotificationsSettings';
-
-export default function SettingsNotificationsRoute(): React.ReactElement {
-  return <NotificationsSettings />;
-}
+export { NotificationsSettings as default } from '../../components/settings/NotificationsSettings';

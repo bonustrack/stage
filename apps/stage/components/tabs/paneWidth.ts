@@ -3,7 +3,7 @@ import { useSyncExternalStore } from 'react';
 import { Platform } from 'react-native';
 import { WEB_TAB_RAIL_WIDTH } from './useWebTabRail';
 
-export const DEFAULT_PANE_WIDTH = 380;
+const DEFAULT_PANE_WIDTH = 380;
 const MIN_PANE_WIDTH = 280;
 const MAX_PANE_WIDTH = 600;
 const STORAGE_KEY = 'web.channelsPaneWidth';

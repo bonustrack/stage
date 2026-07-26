@@ -1,5 +1,5 @@
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { ScrollView } from 'react-native-gesture-handler';
 import { usePullToRefresh } from './PullToRefresh';
@@ -17,7 +17,7 @@ import { usePeerProfiles } from '../../lib/peerProfiles';
 import { DANGER, usePalette } from '../../lib/theme';
 import { Col, Row, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from '../layout';
 import { useWebTabsContentPad } from './webPad';
-import { getNftsAcrossChains, type Nft } from '../../lib/opensea';
+import { useNfts, type NftState } from '../../lib/useNfts';
 import { WalletTabs, NftsView, fmtUsd, splitUsd, type WalletTab } from './WalletScreen.parts';
 import { PrivateView } from './WalletScreen.private';
 import { privateBalancesToRows, symbolPricesFromPublic } from './WalletScreen.private.rows';
@@ -29,29 +29,6 @@ import { TokensList } from './WalletScreen.tokens';
 import { ActivityView } from './WalletScreen.activity';
 import { useWalletBalances } from './WalletScreen.balances';
 import { useWalletFocused } from './useWalletFocused';
-
-interface NftState { nfts: Nft[] | null; nftStatus: 'idle' | 'loading' | 'ready' | 'error' }
-
-function useWalletNfts(tab: WalletTab, address?: string): NftState {
-  const [nfts, setNfts] = useState<Nft[] | null>(null);
-  const [nftStatus, setNftStatus] = useState<NftState['nftStatus']>('idle');
-  const loadedAddrRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (tab !== 'nfts' || !address || loadedAddrRef.current === address) return;
-    loadedAddrRef.current = address;
-    let cancelled = false;
-    setNftStatus('loading');
-    void (async (): Promise<void> => {
-      try {
-        const list = await getNftsAcrossChains(address);
-        if (cancelled) return;
-        setNfts(list); setNftStatus('ready');
-      } catch { if (!cancelled) setNftStatus('error'); }
-    })();
-    return () => { cancelled = true; };
-  }, [tab, address]);
-  return { nfts, nftStatus };
-}
 
 function useWalletEffects(focused: boolean, privAccountId: string | null, address?: string): void {
   useEffect(() => {
@@ -150,7 +127,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
   );
   const webTabsPad = useWebTabsContentPad();
   const [tab, setTab] = useState<WalletTab>('tokens');
-  const nftState = useWalletNfts(tab, address);
+  const nftState = useNfts(tab === 'nfts', address);
 
   const totalUsd = walletTotalUsd(rows);
   const c = { head, sub, border, bg };

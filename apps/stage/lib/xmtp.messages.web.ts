@@ -18,7 +18,7 @@ import { convOfLine } from './xmtp.client.web';
 import {
   POLL_CODEC, SIGNATURE_REQUEST_CODEC, SIGNATURE_REFERENCE_CODEC,
   WALLET_SEND_CALLS_CODEC, TRANSACTION_REFERENCE_CODEC,
-} from './xmtp.codecs.web';
+} from './xmtpJsonCodecs';
 
 import { envelopeOfXmtpMessage } from './xmtp.envelope.web';
 

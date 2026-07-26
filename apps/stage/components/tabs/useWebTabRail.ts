@@ -1,7 +1,7 @@
 
 import { Platform, useWindowDimensions } from 'react-native';
 
-export const WEB_SIDEBAR_MIN_WIDTH = 1100;
+const WEB_SIDEBAR_MIN_WIDTH = 1100;
 
 export const WEB_TAB_RAIL_WIDTH = 72;
 
