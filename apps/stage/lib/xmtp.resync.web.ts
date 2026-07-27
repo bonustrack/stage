@@ -3,7 +3,7 @@ import { ConsentState } from '@xmtp/browser-sdk';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { isMetroControlBody } from './pushRegister.control';
 import { getCachedXmtpClient, convOfLine } from './xmtp.client.web';
-import { envelopeOfXmtpMessage } from './xmtp.envelope.web';
+import { latestConvMessages } from './xmtp.messages.web';
 import { feedCache, activeFeedLines } from './xmtp.state.web';
 
 export const PAGE_SIZE = 20;
@@ -40,9 +40,8 @@ export async function resyncActiveFeeds(): Promise<void> {
       const conv = await convOfLine(line);
       if (!conv) continue;
       await conv.sync().catch(() => undefined);
-      const msgs = await conv.messages({ limit: BigInt(PAGE_SIZE) });
-      for (const m of msgs) {
-        const env = envelopeOfXmtpMessage(m, line);
+      const page = await latestConvMessages(conv, line, PAGE_SIZE);
+      for (const env of page.reverse()) {
         if (!isMetroControlBody(env.text)) pushToFeedSlice(line, env);
       }
     } catch { }

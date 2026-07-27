@@ -1,8 +1,8 @@
 
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { isMetroControlBody } from '../../lib/push';
+import { latestConvMessages, olderConvMessages, type ConvHandle } from '../../lib/xmtp.messages';
 import { convOfLine } from '../../lib/xmtp.client';
-import { envelopeOfXmtpMessage } from '../../lib/xmtp.messages';
 import { PAGE_SIZE } from '../../lib/xmtp.stream';
 
 export type SearchHit = HistoryEntry;
@@ -32,15 +32,14 @@ interface ScanState {
 }
 
 async function readLocalSearchPage(
-  conv: NonNullable<Awaited<ReturnType<typeof convOfLine>>>,
-  beforeNs: number | undefined,
+  conv: ConvHandle,
+  beforeTsMs: number | undefined,
   line: string,
 ): Promise<HistoryEntry[] | null> {
   try {
-    const batch = await conv.messages({
-      limit: PAGE_SIZE, direction: 'DESCENDING', ...(beforeNs ? { beforeNs } : {}),
-    });
-    return batch.map(m => envelopeOfXmtpMessage(m, line));
+    return beforeTsMs === undefined
+      ? await latestConvMessages(conv, line, PAGE_SIZE)
+      : await olderConvMessages(line, beforeTsMs, PAGE_SIZE);
   } catch {
     return null;
   }
@@ -81,17 +80,17 @@ export async function searchLocalHistory(
   if (!conv) return empty;
 
   const state: ScanState = { hits: [], seen: new Set<string>(), truncated: false };
-  let beforeNs: number | undefined;
+  let beforeTsMs: number | undefined;
 
   for (let page = 0; page < SEARCH_MAX_PAGES; page += 1) {
     if (shouldAbort()) break;
-    const mapped = await readLocalSearchPage(conv, beforeNs, line);
+    const mapped = await readLocalSearchPage(conv, beforeTsMs, line);
     if (mapped === null || mapped.length === 0) break;
 
     const capped = collectPageHits(mapped, needle, state);
     const oldest = mapped[mapped.length - 1];
     if (oldest === undefined) break;
-    beforeNs = new Date(oldest.ts).getTime() * 1_000_000;
+    beforeTsMs = new Date(oldest.ts).getTime();
 
     onResults({ hits: [...state.hits], truncated: state.truncated });
 

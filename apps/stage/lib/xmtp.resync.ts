@@ -3,7 +3,7 @@ import type { ConsentState } from '@xmtp/react-native-sdk';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { isMetroControlBody } from './push';
 import { getCachedXmtpClient, convOfLine } from './xmtp.client';
-import { envelopeOfXmtpMessage } from './xmtp.messages';
+import { latestConvMessages } from './xmtp.messages';
 import { feedCache, activeFeedLines } from './xmtp.state';
 
 export const PAGE_SIZE = 20;
@@ -40,9 +40,8 @@ export async function resyncActiveFeeds(): Promise<void> {
       const conv = await convOfLine(line);
       if (!conv) continue;
       await conv.sync().catch(() => undefined);
-      const msgs = await conv.messages({ limit: PAGE_SIZE });
-      for (const m of msgs.reverse()) {
-        const env = envelopeOfXmtpMessage(m, line);
+      const page = await latestConvMessages(conv, line, PAGE_SIZE);
+      for (const env of page.reverse()) {
         if (!isMetroControlBody(env.text)) pushToFeedSlice(line, env);
       }
     } catch { }

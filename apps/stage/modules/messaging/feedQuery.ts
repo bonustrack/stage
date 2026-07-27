@@ -4,7 +4,7 @@ import { getAccountEpoch } from '../../lib/accountEpoch';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { isMetroControlBody } from '../../lib/push';
 import { convOfLine } from '../../lib/xmtp.client';
-import { envelopeOfXmtpMessage, olderConvMessages } from '../../lib/xmtp.messages';
+import { latestConvMessages, olderConvMessages } from '../../lib/xmtp.messages';
 import { feedCache } from '../../lib/xmtp.state';
 import { syncInboxOnce, PAGE_SIZE } from '../../lib/xmtp.stream';
 import { messagingKeys } from './queries';
@@ -28,9 +28,9 @@ function mergeNewestFirst(prev: HistoryEntry[], additions: HistoryEntry[]): Hist
   return fresh.length === 0 ? prev : [...fresh, ...prev];
 }
 
-function applyPage(line: string, msgs: Parameters<typeof envelopeOfXmtpMessage>[0][]): void {
+function applyPage(line: string, page: HistoryEntry[]): void {
   const prev = feedCache.get(line) ?? [];
-  const next = mergeNewestFirst(prev, msgs.map(m => envelopeOfXmtpMessage(m, line)));
+  const next = mergeNewestFirst(prev, page);
   if (next !== prev) feedCache.set(line, next);
 }
 
@@ -45,7 +45,7 @@ function revalidateFeed(line: string): Promise<void> {
       const fresh = await convOfLine(line);
       if (!fresh) return;
       await fresh.sync().catch(() => undefined);
-      applyPage(line, await fresh.messages({ limit: PAGE_SIZE }));
+      applyPage(line, await latestConvMessages(fresh, line, PAGE_SIZE));
       await reconcileOnOpen(line);
     } catch { }
     finally { bgSyncInFlight.delete(line); }
@@ -60,7 +60,7 @@ export async function loadFeedFirstPage(line: string): Promise<HistoryEntry[]> {
     await revalidateFeed(line);
     return feedCache.get(line) ?? [];
   }
-  applyPage(line, await conv.messages({ limit: PAGE_SIZE }));
+  applyPage(line, await latestConvMessages(conv, line, PAGE_SIZE));
   void revalidateFeed(line);
   return feedCache.get(line) ?? [];
 }

@@ -2,7 +2,7 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { isMetroControlBody } from '../../lib/push';
 import { convOfLine } from '../../lib/xmtp.client';
-import { envelopeOfXmtpMessage } from '../../lib/xmtp.messages';
+import { latestConvMessages } from '../../lib/xmtp.messages';
 import { feedCache, activeFeedLines } from '../../lib/xmtp.state';
 import { PAGE_SIZE } from '../../lib/xmtp.resync';
 
@@ -47,14 +47,12 @@ export async function reconcileOnOpen(line: string): Promise<void> {
   try {
     const conv = await convOfLine(line);
     if (!conv) return;
-    const [storeLatestMsg] = await conv.messages({ limit: 1 });
-    if (!storeLatestMsg) return;
-    const storeLatest = envelopeOfXmtpMessage(storeLatestMsg, line);
+    const [storeLatest] = await latestConvMessages(conv, line, 1);
+    if (!storeLatest) return;
     if (isMetroControlBody(storeLatest.text)) return;
     const feed = feedLatest(line);
     if (feed?.id === storeLatest.id) return;
-    const page = await conv.messages({ limit: PAGE_SIZE });
-    reloadSlice(line, page.map(m => envelopeOfXmtpMessage(m, line)));
+    reloadSlice(line, await latestConvMessages(conv, line, PAGE_SIZE));
     logReconcileHeal('[feed-reconcile] open-time heal', line, 'reconcileOnOpen', feed, storeLatest);
   } catch { }
 }
@@ -73,8 +71,8 @@ async function healArrivalGap(line: string): Promise<void> {
     const conv = await convOfLine(line);
     if (!conv) return;
     await conv.sync().catch(() => undefined);
-    const page = await conv.messages({ limit: PAGE_SIZE });
-    const mapped = page.map(m => envelopeOfXmtpMessage(m, line)).filter(e => !isMetroControlBody(e.text));
+    const page = await latestConvMessages(conv, line, PAGE_SIZE);
+    const mapped = page.filter(e => !isMetroControlBody(e.text));
     const before = feedLatest(line);
     reloadSlice(line, mapped);
     const after = feedLatest(line);

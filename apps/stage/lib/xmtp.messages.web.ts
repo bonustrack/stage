@@ -35,6 +35,15 @@ export async function rowMessagesOf(conv: unknown, limit: number): Promise<RowMe
   }));
 }
 
+export type ConvHandle = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
+
+export async function latestConvMessages(
+  conv: ConvHandle, line: string, limit: number,
+): Promise<HistoryEntry[]> {
+  const msgs = await conv.messages({ limit: BigInt(limit), direction: SortDirection.Descending });
+  return msgs.map(m => envelopeOfXmtpMessage(m, line));
+}
+
 export async function olderConvMessages(line: string, beforeTsMs: number, limit: number): Promise<HistoryEntry[]> {
   const conv = await convOfLine(line);
   if (!conv) return [];
