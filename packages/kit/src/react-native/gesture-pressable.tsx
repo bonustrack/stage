@@ -1,6 +1,6 @@
 
 import { useMemo, type ReactNode } from 'react';
-import { View } from 'react-native';
+import { View, type ViewStyle } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
 
@@ -15,6 +15,8 @@ export interface GesturePressableProps {
 }
 
 const SWIPE_THRESHOLD = 40;
+
+const TAPPABLE: ViewStyle = { cursor: 'pointer' };
 
 function pickDirection(dx: number, dy: number): SwipeDir | undefined {
   if (Math.abs(dx) < SWIPE_THRESHOLD && Math.abs(dy) < SWIPE_THRESHOLD) return undefined;
@@ -45,7 +47,12 @@ export function GesturePressable(props: GesturePressableProps): React.ReactEleme
 
   return (
     <GestureDetector gesture={gesture}>
-      <View hitSlop={hitSlop}>{children}</View>
+      <View
+        hitSlop={hitSlop}
+        style={onPress !== undefined || onLongPress !== undefined ? TAPPABLE : undefined}
+>
+        {children}
+      </View>
     </GestureDetector>
   );
 }
