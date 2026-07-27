@@ -13,7 +13,7 @@ import { resetAccount } from '../../lib/wallet';
 import { getPeerName, isPeerResolved } from '../../lib/peerProfiles';
 import { getDraft } from '../../lib/drafts';
 import { requestLabelFilter } from '../../lib/labelFilterRequest';
-import { conversationLinkOf } from '../../lib/conversationLink';
+import { conversationLinkOf, isActiveConversationPath } from '../../lib/conversationLink';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { channelTimestamp } from '../../lib/format';
 import { DANGER } from '../../lib/theme';
@@ -51,15 +51,17 @@ interface ChannelRowItemProps {
   avatarAddress: string | null;
   pinned: boolean;
   draftText: string;
+  active: boolean;
 }
 
 function ChannelRowItemBase({
-  item, router, setRowMenu, query, title, preview, avatarAddress, pinned, draftText,
+  item, router, setRowMenu, query, title, preview, avatarAddress, pinned, draftText, active,
 }: ChannelRowItemProps): React.ReactElement {
   const isGroup = !item.peerAddress;
   return (
     <ChannelRow
       title={title}
+      active={active}
       highlightQuery={query}
       avatarUri={item.avatarUri}
       avatarAddress={avatarAddress}
@@ -92,9 +94,12 @@ const ChannelRowItem = memo(ChannelRowItemBase);
 export function useChannelRowRenderer(
   router: { push: (to: { pathname: string; params: { convId: string } }) => void },
   setRowMenu: (m: RowMenu) => void,
-  deps: { channelProfilesVersion: number; draftsVersion: number; pinned: Set<string>; query?: string },
+  deps: {
+    channelProfilesVersion: number; draftsVersion: number;
+    pinned: Set<string>; query?: string; activePath: string;
+  },
 ): ({ item }: { item: RowT }) => React.ReactElement {
-  const { channelProfilesVersion, draftsVersion, pinned, query } = deps;
+  const { channelProfilesVersion, draftsVersion, pinned, query, activePath } = deps;
   return useCallback(({ item }: { item: RowT }): React.ReactElement => (
     <ChannelRowItem
       item={item}
@@ -106,8 +111,9 @@ export function useChannelRowRenderer(
       avatarAddress={rowAvatarAddress(item, !item.peerAddress)}
       pinned={pinned.has(item.convId)}
       draftText={getDraft(item.convId)}
+      active={isActiveConversationPath(activePath, item.convId, item.peerAddress)}
     />
-  ), [router, setRowMenu, channelProfilesVersion, draftsVersion, pinned, query]);
+  ), [router, setRowMenu, channelProfilesVersion, draftsVersion, pinned, query, activePath]);
 }
 
 export function HomeError({ error, dark, fg, plain }: {

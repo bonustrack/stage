@@ -35,6 +35,7 @@ export interface ChannelRowProps {
   labels?: string[];
   onLabelPress?: (label: string) => void;
   showChevron?: boolean;
+  active?: boolean;
   avatarSize?: number;
   onPress?: () => void;
   onPressIn?: () => void;
@@ -212,7 +213,7 @@ function ChannelRowBody({ params, onLabelPress }: {
 function ChannelRowBase({
   title, avatarAddress, avatarUri, cacheBuster, square,
   lastPreview, timestamp, subtitle, unreadCount = 0, markedUnread,
-  pinned, hasDraft, draftText, showChevron, avatarSize = 44,
+  pinned, hasDraft, draftText, showChevron, active, avatarSize = 44,
   onPress, onPressIn, onLongPress, containerStyle, labels, onLabelPress, highlightQuery,
 }: ChannelRowProps): React.ReactElement {
   const { link: head, bg, border } = usePalette();
@@ -238,7 +239,7 @@ function ChannelRowBase({
       onLongPress={onLongPress}
       delayLongPress={onLongPress ? 300 : undefined}
       style={containerStyle ?? (({ pressed }) => ({
-        backgroundColor: pressed ? border : 'transparent',
+        backgroundColor: pressed || active === true ? border : 'transparent',
         paddingHorizontal: 14,
       }))}
 >

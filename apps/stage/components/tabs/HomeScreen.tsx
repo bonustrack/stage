@@ -1,7 +1,7 @@
 
 import { useMemo, useState } from 'react';
 import type { SimultaneousRefs } from '../SwipeTabs.types';
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { useActiveAccount } from '../../modules/messaging';
@@ -59,6 +59,7 @@ export function HomeScreen({ panRef, pane }: { panRef?: SimultaneousRefs; pane?:
 
 function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boolean }): React.ReactElement {
   const router = useRouter();
+  const pathname = usePathname();
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head, border } = usePalette();
   const sub = fg;
@@ -92,9 +93,10 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
     refreshFromNetworkRef: st.refreshFromNetworkRef,
   });
 
+  const activePath = pane ? pathname : '';
   const listExtraData = useMemo(
-    () => [channelProfilesVersion, draftsVersion, pinned, query] as const,
-    [channelProfilesVersion, draftsVersion, pinned, query],
+    () => [channelProfilesVersion, draftsVersion, pinned, query, activePath] as const,
+    [channelProfilesVersion, draftsVersion, pinned, query, activePath],
   );
   const navRouter = useMemo(
     () => (pane
@@ -103,7 +105,7 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
     [pane, router],
   );
   const renderRow = useChannelRowRenderer(navRouter, st.setRowMenu, {
-    channelProfilesVersion, draftsVersion, pinned, query,
+    channelProfilesVersion, draftsVersion, pinned, query, activePath,
   });
 
   if (st.error) return <HomeError error={st.error} dark={dark} fg={fg} plain={pane} />;
