@@ -1,7 +1,7 @@
 import { useMemo, useRef } from 'react';
 import { Vibration } from 'react-native';
 import type { ViewType as View } from './layout/native';
-import { Gesture } from 'react-native-gesture-handler';
+import { Gesture, type GestureType } from 'react-native-gesture-handler';
 import { useGestureHandlerRef } from '@react-navigation/stack';
 import { initialMenuAnchor, type MenuAnchor } from './MessengerBubble.anchor';
 import {
@@ -24,6 +24,11 @@ export interface BubbleGestures {
 }
 
 function lightHaptic(): void { Vibration.vibrate(10); }
+
+function keepsFeedScrollable<T extends GestureType>(gesture: T): T {
+  gesture.config.touchAction = 'pan-y';
+  return gesture;
+}
 
 const THRESHOLD = -64;
 
@@ -52,7 +57,7 @@ export function useBubbleGestures(input: BubbleGestureInput): BubbleGestures {
   const onDoubleTap = (): void => { if (!pending) { lightHaptic(); onReact?.('👍'); } };
 
   const replyPan = useMemo(() => {
-    const pan = Gesture.Pan()
+    const pan = keepsFeedScrollable(Gesture.Pan())
       .activeOffsetX(-15)
       .failOffsetX(15)
       .failOffsetY([-12, 12]);
@@ -77,10 +82,9 @@ export function useBubbleGestures(input: BubbleGestureInput): BubbleGestures {
   },
   [onReply, pending, swipeX, crossed, navGestureRef]);
 
-  const doubleTap = useMemo(() => Gesture.Tap().numberOfTaps(2).onEnd((_e, ok) => {
-    if (ok) runOnJS(onDoubleTap)();
-  }), [onDoubleTap]);
-  const longPress = useMemo(() => Gesture.LongPress().minDuration(300)
+  const doubleTap = useMemo(() => keepsFeedScrollable(Gesture.Tap()).numberOfTaps(2)
+    .onEnd((_e, ok) => { if (ok) runOnJS(onDoubleTap)(); }), [onDoubleTap]);
+  const longPress = useMemo(() => keepsFeedScrollable(Gesture.LongPress()).minDuration(300)
     .onStart(() => { runOnJS(openMenu)(); }), [openMenu]);
   const tapGestures = useMemo(
     () => Gesture.Race(replyPan, Gesture.Exclusive(longPress, doubleTap)),

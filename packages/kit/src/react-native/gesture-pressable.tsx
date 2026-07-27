@@ -28,6 +28,7 @@ export function GesturePressable(props: GesturePressableProps): React.ReactEleme
   const { children, onPress, onLongPress, onSwipe, hitSlop } = props;
 
   const gesture = useMemo(() => {
+    const touchAction = onSwipe ? 'none' : 'manipulation';
     const tap = Gesture.Tap().onEnd((_e, success) => {
       if (success && onPress) runOnJS(onPress)();
     });
@@ -42,6 +43,7 @@ export function GesturePressable(props: GesturePressableProps): React.ReactEleme
       const dir = pickDirection(e.translationX, e.translationY);
       if (dir) runOnJS(onSwipe)(dir);
     });
+    for (const g of [tap, long, pan]) g.config.touchAction = touchAction;
     return Gesture.Exclusive(long, pan, tap);
   }, [onPress, onLongPress, onSwipe, hitSlop]);
 
