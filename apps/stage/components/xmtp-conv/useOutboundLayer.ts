@@ -1,5 +1,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 import { attachmentEmojiPreview } from '@stage-labs/client/xmtp/humanize';
 import { patchRowSent } from '../../modules/messaging';
 import type { HistoryEntry } from '@stage-labs/client/types';
@@ -78,7 +79,10 @@ export function useOutboundLayer(
   const listRef = useRef<FlatList<HistoryEntry>>(null);
   const scrollToNewest = useStableCallback(() => {
     requestAnimationFrame(() => {
-      try { listRef.current?.scrollToOffset({ offset: 0, animated: false }); } catch { }
+      try {
+        if (Platform.OS === 'web') listRef.current?.scrollToEnd({ animated: false });
+        else listRef.current?.scrollToOffset({ offset: 0, animated: false });
+      } catch { }
     });
   });
 
@@ -102,8 +106,9 @@ export function useOutboundLayer(
     if (jumpClearTimer.current) clearTimeout(jumpClearTimer.current);
     jumpClearTimer.current = setTimeout(() => { setJumpHighlightId(null); }, 1800);
     if (idx < 0) return;
+    const index = Platform.OS === 'web' ? allBubbles.length - 1 - idx : idx;
     try {
-      listRef.current?.scrollToIndex({ index: idx, animated: false, viewPosition: 0.5 });
+      listRef.current?.scrollToIndex({ index, animated: false, viewPosition: 0.5 });
     } catch { }
   });
   useEffect(() => () => { if (jumpClearTimer.current) clearTimeout(jumpClearTimer.current); }, []);

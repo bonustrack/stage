@@ -77,26 +77,32 @@ export function ownReactionsByMessage(events: HistoryEntry[], myUri: string, pol
   return out;
 }
 
-export function showsInvertedScrollbar(isWeb: boolean, coarsePointer: boolean): boolean {
-  return isWeb && !coarsePointer;
-}
-
 export interface FeedScrollMetrics {
   offset: number;
   contentHeight: number;
   viewportHeight: number;
 }
 
-export interface FeedThumb { height: number; bottom: number }
+export function feedDistanceFromNewest(m: FeedScrollMetrics, upright: boolean): number {
+  if (!upright) return Math.max(0, m.offset);
+  return Math.max(0, m.contentHeight - m.viewportHeight - m.offset);
+}
 
-export const MIN_THUMB_HEIGHT = 36;
+export function uprightScrollOffset(
+  distanceFromNewest: number, contentHeight: number, viewportHeight: number,
+): number {
+  return Math.max(0, contentHeight - viewportHeight - distanceFromNewest);
+}
 
-export function invertedThumb(m: FeedScrollMetrics, track: number): FeedThumb | null {
-  const scrollable = m.contentHeight - m.viewportHeight;
-  if (!(scrollable > 1) || !(m.contentHeight > 0) || track <= MIN_THUMB_HEIGHT) return null;
-  const height = Math.min(track, Math.max(MIN_THUMB_HEIGHT, (m.viewportHeight / m.contentHeight) * track));
-  const progress = Math.min(1, Math.max(0, m.offset / scrollable));
-  return { height, bottom: progress * (track - height) };
+export function planUprightRestore(args: {
+  loaded: boolean; restoredSaved: boolean; savedDistance: number | undefined;
+  userDragged: boolean; atNewest: boolean;
+}): 'saved' | 'newest' | 'skip' {
+  const { loaded, restoredSaved, savedDistance, userDragged, atNewest } = args;
+  if (!loaded) return 'skip';
+  if (!restoredSaved && savedDistance != null && savedDistance > 0) return 'saved';
+  if (atNewest) return 'newest';
+  return userDragged || restoredSaved ? 'skip' : 'newest';
 }
 
 export function isReaction(e: HistoryEntry): boolean {
