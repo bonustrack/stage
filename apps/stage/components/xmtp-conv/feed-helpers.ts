@@ -81,6 +81,24 @@ export function showsInvertedScrollbar(isWeb: boolean, coarsePointer: boolean): 
   return isWeb && !coarsePointer;
 }
 
+export interface FeedScrollMetrics {
+  offset: number;
+  contentHeight: number;
+  viewportHeight: number;
+}
+
+export interface FeedThumb { height: number; bottom: number }
+
+export const MIN_THUMB_HEIGHT = 36;
+
+export function invertedThumb(m: FeedScrollMetrics, track: number): FeedThumb | null {
+  const scrollable = m.contentHeight - m.viewportHeight;
+  if (!(scrollable > 1) || !(m.contentHeight > 0) || track <= MIN_THUMB_HEIGHT) return null;
+  const height = Math.min(track, Math.max(MIN_THUMB_HEIGHT, (m.viewportHeight / m.contentHeight) * track));
+  const progress = Math.min(1, Math.max(0, m.offset / scrollable));
+  return { height, bottom: progress * (track - height) };
+}
+
 export function isReaction(e: HistoryEntry): boolean {
   const p = e.payload as { reactTo?: string } | undefined;
   return Boolean(p?.reactTo);

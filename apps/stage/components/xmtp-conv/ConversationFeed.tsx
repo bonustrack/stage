@@ -1,4 +1,5 @@
 
+import { useRef } from 'react';
 import { Platform } from 'react-native';
 import { FlatList } from 'react-native-gesture-handler';
 import { Box, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from '../layout';
@@ -7,8 +8,11 @@ import { ConversationIntro } from './ConversationIntro';
 import { AT_BOTTOM_THRESHOLD_PX, convScrollKey, planFeedRestore, saveScrollOffset } from '../../lib/scrollPos';
 import { isCoarsePointer } from '../../lib/pointer';
 import { showsInvertedScrollbar } from './feed-helpers';
+import { FeedScrollbar, type FeedScrollbarControl } from './FeedScrollbar';
 import { useFeedRenderItem } from './useFeedRenderItem';
 import type { useConversationState } from './useConversationState';
+
+export const FEED_SCROLL_ID = 'stage-feed';
 
 type ConvState = ReturnType<typeof useConversationState>;
 
@@ -67,41 +71,62 @@ export function ConversationFeed({
   const { renderItem, extraData } = useFeedRenderItem(c, dark, router);
   const intro = <FeedIntro c={c} convId={convId} head={head} fg={fg} border={border} rowBg={rowBg} router={router} />;
   const spinner = <Box padding={32} align="center"><Spinner size={28} color={head} /></Box>;
+  const barControl = useRef<FeedScrollbarControl | null>(null);
+  const nativeBar = showsInvertedScrollbar(Platform.OS === 'web', isCoarsePointer());
 
   if (searchSlot !== undefined) {
     return <Box flex={1} padding={{ top: insets.top + 52 }}>{searchSlot}</Box>;
   }
 
   return (
-    <FlatList
-      ref={listRef}
-      data={allBubbles}
-      extraData={extraData}
-      inverted
-      showsVerticalScrollIndicator={showsInvertedScrollbar(Platform.OS === 'web', isCoarsePointer())}
-      maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
-      keyExtractor={e => e.id}
-      style={[{ flex: 1 }, WEB_EDGE_SCROLL]}
-      windowSize={11}
-      initialNumToRender={12}
-      maxToRenderPerBatch={10}
-      removeClippedSubviews
-      onEndReached={() => { void loadOlder(); }}
-      onEndReachedThreshold={0.5}
-      contentContainerStyle={[{ paddingTop: 24 + bottomInset, paddingBottom: insets.top + 52 + 24 }, WEB_EDGE_CONTENT]}
-      onScroll={(ev) => { handleFeedScroll(c, convId, ev.nativeEvent.contentOffset.y); }}
-      scrollEventThrottle={16}
-      onContentSizeChange={(_w, h) => { restoreFeedScroll(c, h); }}
-      onScrollToIndexFailed={() => undefined}
-      renderItem={renderItem}
-      ListEmptyComponent={status !== 'open' || hasMore ? spinner : null}
-      ListFooterComponent={
-        <>
-          {loadingOlder ? <Box padding={{ y: 16 }} align="center"><Spinner size={20} color={sub} /></Box> : null}
-          {!hasMore ? intro : null}
-        </>
-      }
-      keyboardShouldPersistTaps="handled"
-    />
+    <Box flex={1}>
+      <FlatList
+        ref={listRef}
+        nativeID={FEED_SCROLL_ID}
+        data={allBubbles}
+        extraData={extraData}
+        inverted
+        showsVerticalScrollIndicator={nativeBar}
+        maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
+        keyExtractor={e => e.id}
+        style={[{ flex: 1 }, WEB_EDGE_SCROLL]}
+        windowSize={11}
+        initialNumToRender={12}
+        maxToRenderPerBatch={10}
+        removeClippedSubviews
+        onEndReached={() => { void loadOlder(); }}
+        onEndReachedThreshold={0.5}
+        contentContainerStyle={[{ paddingTop: 24 + bottomInset, paddingBottom: insets.top + 52 + 24 }, WEB_EDGE_CONTENT]}
+        onScroll={(ev) => {
+          const m = ev.nativeEvent;
+          handleFeedScroll(c, convId, m.contentOffset.y);
+          if (!nativeBar) {
+            barControl.current?.update({
+              offset: m.contentOffset.y,
+              contentHeight: m.contentSize.height,
+              viewportHeight: m.layoutMeasurement.height,
+            });
+          }
+        }}
+        scrollEventThrottle={16}
+        onContentSizeChange={(_w, h) => { restoreFeedScroll(c, h); }}
+        onScrollToIndexFailed={() => undefined}
+        renderItem={renderItem}
+        ListEmptyComponent={status !== 'open' || hasMore ? spinner : null}
+        ListFooterComponent={
+          <>
+            {loadingOlder ? <Box padding={{ y: 16 }} align="center"><Spinner size={20} color={sub} /></Box> : null}
+            {!hasMore ? intro : null}
+          </>
+        }
+        keyboardShouldPersistTaps="handled"
+      />
+      {nativeBar ? null : (
+        <FeedScrollbar
+          control={barControl} color={fg}
+          top={insets.top + 52} bottom={bottomInset}
+        />
+      )}
+    </Box>
   );
 }
