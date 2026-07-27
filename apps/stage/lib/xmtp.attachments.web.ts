@@ -8,6 +8,7 @@ import { convOfLine } from './xmtp.client.web';
 import { type LocalAttachmentInput } from './xmtp.types';
 import { SWARM_UPLOAD_MAX_BYTES, swarmToHttp, tooLargeError, uploadFormToSwarmy } from './swarmy';
 import { attachmentMimeType } from './attachmentFiles';
+import { retypeFilename, shrinkImageForUpload } from './attachmentImage.web';
 
 export { swarmToHttp } from './swarmy';
 export { fileUriToBase64 } from './attachmentFiles';
@@ -47,6 +48,30 @@ async function uploadEncryptedToSwarm(payload: Uint8Array, filename: string): Pr
   return await uploadFormToSwarmy(form, filename);
 }
 
+async function remoteAttachmentOf(f: LocalAttachmentInput): Promise<RemoteAttachment> {
+  const sourceMime = attachmentMimeType(f.mimeType, f.filename);
+  const raw = await fetchBytes(f.fileUri);
+  const fitted = await shrinkImageForUpload(raw, sourceMime, SWARM_UPLOAD_MAX_BYTES);
+  const filename = fitted.mimeType === sourceMime
+    ? f.filename
+    : retypeFilename(f.filename, fitted.mimeType);
+  const clean = sanitizeAttachmentBytes(fitted.bytes, fitted.mimeType, filename);
+  const encrypted = await encryptSanitizedAttachment({
+    bytes: clean, mimeType: fitted.mimeType, filename,
+  });
+  const url = await uploadEncryptedToSwarm(encrypted.payload, filename);
+  return {
+    url,
+    contentDigest: encrypted.contentDigest,
+    secret: encrypted.secret,
+    salt: encrypted.salt,
+    nonce: encrypted.nonce,
+    scheme: 'https://',
+    contentLength: encrypted.contentLength,
+    filename,
+  };
+}
+
 export async function xmtpSendMultiRemoteAttachment(
   line: string, files: LocalAttachmentInput[],
 ): Promise<string> {
@@ -55,24 +80,7 @@ export async function xmtpSendMultiRemoteAttachment(
   if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
 
   const infos: RemoteAttachment[] = [];
-  for (const f of files) {
-    const mimeType = attachmentMimeType(f.mimeType, f.filename);
-    const clean = sanitizeAttachmentBytes(await fetchBytes(f.fileUri), mimeType, f.filename);
-    const encrypted = await encryptSanitizedAttachment({
-      bytes: clean, mimeType, filename: f.filename,
-    });
-    const url = await uploadEncryptedToSwarm(encrypted.payload, f.filename);
-    infos.push({
-      url,
-      contentDigest: encrypted.contentDigest,
-      secret: encrypted.secret,
-      salt: encrypted.salt,
-      nonce: encrypted.nonce,
-      scheme: 'https://',
-      contentLength: encrypted.contentLength,
-      filename: f.filename,
-    });
-  }
+  for (const f of files) infos.push(await remoteAttachmentOf(f));
   return await conv.sendMultiRemoteAttachment({ attachments: infos });
 }
 

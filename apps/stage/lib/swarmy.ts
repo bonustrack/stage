@@ -14,7 +14,7 @@ const SWARMY_UPLOAD_URL = 'https://api.swarmy.cloud/api/files';
 const SWARMY_UPLOAD_TIMEOUT_MS = 60_000;
 
 export const SWARM_GATEWAY = 'https://api.swarmy.cloud/bzz/';
-export const SWARM_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
+export const SWARM_UPLOAD_MAX_BYTES = 1_000_000;
 
 export function swarmToHttp(url: string): string {
   if (!url.startsWith('swarm://')) return url;
