@@ -5,6 +5,8 @@ import { Box, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from '../layout';
 import { Spinner } from '../Spinner';
 import { ConversationIntro } from './ConversationIntro';
 import { AT_BOTTOM_THRESHOLD_PX, convScrollKey, planFeedRestore, saveScrollOffset } from '../../lib/scrollPos';
+import { isCoarsePointer } from '../../lib/pointer';
+import { showsInvertedScrollbar } from './feed-helpers';
 import { useFeedRenderItem } from './useFeedRenderItem';
 import type { useConversationState } from './useConversationState';
 
@@ -76,7 +78,7 @@ export function ConversationFeed({
       data={allBubbles}
       extraData={extraData}
       inverted
-      showsVerticalScrollIndicator={Platform.OS === 'web'}
+      showsVerticalScrollIndicator={showsInvertedScrollbar(Platform.OS === 'web', isCoarsePointer())}
       maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
       keyExtractor={e => e.id}
       style={[{ flex: 1 }, WEB_EDGE_SCROLL]}

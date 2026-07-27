@@ -77,6 +77,10 @@ export function ownReactionsByMessage(events: HistoryEntry[], myUri: string, pol
   return out;
 }
 
+export function showsInvertedScrollbar(isWeb: boolean, coarsePointer: boolean): boolean {
+  return isWeb && !coarsePointer;
+}
+
 export function isReaction(e: HistoryEntry): boolean {
   const p = e.payload as { reactTo?: string } | undefined;
   return Boolean(p?.reactTo);
