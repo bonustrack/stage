@@ -55,11 +55,11 @@ function useOptimisticCleanup(
   }, [optimistic, confirmedOptimisticIds]);
 }
 
-function useStickyBottom(allBubblesLength: number, showJump: boolean, setShowJump: (v: boolean) => void, setListEpoch: React.Dispatch<React.SetStateAction<number>>): void {
+function useStickyBottom(allBubblesLength: number, showJump: boolean, setShowJump: (v: boolean) => void, scrollToNewest: () => void): void {
   const prevBubbleCount = useRef(0);
   useEffect(() => {
     if (allBubblesLength > prevBubbleCount.current && prevBubbleCount.current > 0) {
-      if (!showJump) setListEpoch(e => e + 1);
+      if (!showJump) scrollToNewest();
       setShowJump(false);
     }
     prevBubbleCount.current = allBubblesLength;
@@ -73,10 +73,14 @@ export function useOutboundLayer(
   activeLine: string,
 ) {
   const [showJump, setShowJump] = useState(false);
-  const [listEpoch, setListEpoch] = useState(0);
   const [jumpHighlightId, setJumpHighlightId] = useState<string | null>(null);
   const jumpClearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const listRef = useRef<FlatList<HistoryEntry>>(null);
+  const scrollToNewest = useStableCallback(() => {
+    requestAnimationFrame(() => {
+      try { listRef.current?.scrollToOffset({ offset: 0, animated: false }); } catch { }
+    });
+  });
 
   const [optimistic, setOptimistic] = useState<HistoryEntry[]>([]);
   const [confirmedIds, setConfirmedIds] = useState<Map<string, string>>(new Map());
@@ -91,7 +95,7 @@ export function useOutboundLayer(
     return [...optimistic.filter(o => !confirmedOptimisticIds.has(o.id)), ...liveBubbles];
   }, [liveBubbles, optimistic, confirmedOptimisticIds]);
   useOptimisticCleanup(optimistic, confirmedOptimisticIds, setOptimistic, setConfirmedIds);
-  useStickyBottom(allBubbles.length, showJump, setShowJump, setListEpoch);
+  useStickyBottom(allBubbles.length, showJump, setShowJump, scrollToNewest);
   const jumpToMessage = useStableCallback((messageId: string) => {
     const idx = allBubbles.findIndex(b => b.id === messageId);
     setJumpHighlightId(messageId);
@@ -117,7 +121,7 @@ export function useOutboundLayer(
       ...(replyTo ? { replyTo } : {}),
       ...(payload ? { payload } : attachments.length ? { payload: { attachments } } : {}),
     }, ...prev]);
-    setListEpoch(e => e + 1);
+    scrollToNewest();
     setShowJump(false);
     const preview = text.trim() || attachmentEmojiPreview(attachments[0]?.mime, attachments[0]?.name);
     if (convId) patchRowSent(convId, preview);
@@ -136,7 +140,7 @@ export function useOutboundLayer(
   }, []);
 
   return {
-    showJump, setShowJump, listEpoch, setListEpoch, jumpHighlightId,
+    showJump, setShowJump, scrollToNewest, jumpHighlightId,
     listRef, confirmedIds, allBubbles, jumpToMessage, onOptimistic, onSent,
   };
 }

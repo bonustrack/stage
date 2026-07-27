@@ -76,7 +76,7 @@ export function ConversationFooter({ c, convId, dark, rowBg, insets, requestPend
   requestPending: boolean; onRequestPending: (pending: boolean) => void;
 }): React.ReactElement {
   const {
-    showJump, setShowJump, setListEpoch, markAtBottom, activeLine, mentionCandidates,
+    showJump, setShowJump, scrollToNewest, markAtBottom, activeLine, mentionCandidates,
     replyingTo, setReplyingTo, autoFocusNonce, jumpToMessage, onOptimistic, onSent,
   } = c;
   return (
@@ -84,7 +84,7 @@ export function ConversationFooter({ c, convId, dark, rowBg, insets, requestPend
       <Box>
         {showJump ? (
           <Pressable
-            onPress={() => { markAtBottom(); setListEpoch(e => e + 1); setShowJump(false); }}
+            onPress={() => { markAtBottom(); scrollToNewest(); setShowJump(false); }}
             style={{
               position: 'absolute', alignSelf: 'center', bottom: '100%', marginBottom: 8, zIndex: 3,
               width: 36, height: 36, borderRadius: 999,

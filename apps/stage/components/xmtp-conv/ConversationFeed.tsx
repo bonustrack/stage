@@ -18,7 +18,7 @@ function handleFeedScroll(c: ConvState, convId: string, y: number): void {
 }
 
 function restoreFeedScroll(c: ConvState, h: number): void {
-  if (c.didRestoreScroll.current || c.listEpoch !== 0) return;
+  if (c.didRestoreScroll.current) return;
   const plan = planFeedRestore({
     loaded: c.savedScrollLoaded.current, contentHeight: h, itemCount: c.allBubbles.length,
     savedOffset: c.savedScrollRef.current, now: Date.now(),
@@ -61,7 +61,7 @@ export function ConversationFeed({
   router: { push: (h: { pathname: '/profile/[address]'; params: { address: string } }) => void };
   searchSlot?: React.ReactNode;
 }): React.ReactElement {
-  const { loadOlder, hasMore, loadingOlder, status, listEpoch, listRef, allBubbles } = c;
+  const { loadOlder, hasMore, loadingOlder, status, listRef, allBubbles } = c;
   const { renderItem, extraData } = useFeedRenderItem(c, dark, router);
   const intro = <FeedIntro c={c} convId={convId} head={head} fg={fg} border={border} rowBg={rowBg} router={router} />;
   const spinner = <Box padding={32} align="center"><Spinner size={28} color={head} /></Box>;
@@ -72,7 +72,6 @@ export function ConversationFeed({
 
   return (
     <FlatList
-      key={listEpoch}
       ref={listRef}
       data={allBubbles}
       extraData={extraData}

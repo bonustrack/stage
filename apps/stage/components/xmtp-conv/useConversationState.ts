@@ -99,7 +99,7 @@ export function useConversationState(convId: string | undefined, focus: string |
   const { signingIds, onSign, payingIds, onPay } = useTxSignLayer(activeLine);
 
   const {
-    showJump, setShowJump, listEpoch, setListEpoch, jumpHighlightId,
+    showJump, setShowJump, scrollToNewest, jumpHighlightId,
     listRef, confirmedIds, allBubbles, jumpToMessage, onOptimistic, onSent,
   } = useOutboundLayer(events, myUri, convId, activeLine);
 
@@ -114,7 +114,7 @@ export function useConversationState(convId: string | undefined, focus: string |
 
   return {
     activeLine, autoFocusNonce, events, loadOlder, hasMore, loadingOlder, status, myUri,
-    showJump, setShowJump, listEpoch, setListEpoch,
+    showJump, setShowJump, scrollToNewest,
     replyingTo, setReplyingTo, setReplyTarget, jumpHighlightId,
     menuFor, setMenuFor, menuAnchor, setMenuAnchor, overflowOpen, setOverflowOpen,
     selectedForCopy, setSelectedForCopy,
