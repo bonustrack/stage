@@ -91,7 +91,7 @@ export async function fetchImage(rawUrl: string, width?: number): Promise<ImageR
 
   try {
     const { res } = await fetchFollowing(rawUrl, {
-      image: { width: w, fit: 'scale-down', quality: QUALITY },
+      image: { width: w, fit: 'scale-down', quality: QUALITY, format: 'webp', anim: false },
     });
     if (res.ok) {
       const ct = imageContentType(res);
