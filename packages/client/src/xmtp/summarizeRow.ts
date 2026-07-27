@@ -14,6 +14,10 @@ export interface RowMessage {
   sentNs: number;
 }
 
+export interface StreamedMessage extends RowMessage {
+  id: string;
+}
+
 export function countUnreadEntries(
   entries: readonly UnreadCountEntry[],
   lastReadNs: number,

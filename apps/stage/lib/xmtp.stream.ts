@@ -10,6 +10,7 @@ import {
   STREAM_CONSENT_STATES, pushToFeedSlice, resyncActiveFeeds, syncInboxOnce,
 } from './xmtp.resync';
 import { lineOfConv, type StreamMsg } from './xmtp.types';
+import type { StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { convIdFromTopic } from '@stage-labs/client/xmtp/clientErrors';
 import { reconcileOnArrival, feedLatestNs } from '../modules/messaging/feedReconcile';
 
@@ -78,10 +79,23 @@ type StreamCb = Parameters<
 >[0];
 type StreamCbMsg = Parameters<StreamCb>[0];
 
+function streamedMessageOf(msg: StreamCbMsg): StreamedMessage {
+  let content: unknown;
+  try { content = msg.content(); } catch { content = undefined; }
+  return {
+    id: msg.id,
+    content,
+    contentTypeId: msg.contentTypeId,
+    senderInboxId: msg.senderInboxId,
+    sentNs: msg.sentNs,
+  };
+}
+
 function fanOutToSubscribers(convId: string | undefined, msg: StreamCbMsg): void {
   if (streamSubscribers.size === 0) return;
+  const normalized = streamedMessageOf(msg);
   for (const cb of streamSubscribers) {
-    try { cb({ convId: convId ?? null, msg }); } catch { }
+    try { cb({ convId: convId ?? null, msg: normalized }); } catch { }
   }
 }
 

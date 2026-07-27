@@ -8,6 +8,7 @@ import {
   STREAM_CONSENT_STATES, pushToFeedSlice, resyncActiveFeeds,
 } from './xmtp.resync.web';
 import { lineOfConv, type StreamMsg } from './xmtp.types.web';
+import type { StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { reconcileOnArrival, feedLatestNs } from '../modules/messaging/feedReconcile';
 
 export { PAGE_SIZE, syncInboxOnce } from './xmtp.resync.web';
@@ -34,10 +35,21 @@ function rearmGlobalStream(): void {
   }, 500);
 }
 
+function streamedMessageOf(msg: DecodedMessage): StreamedMessage {
+  return {
+    id: msg.id,
+    content: msg.content,
+    contentTypeId: msg.contentType.typeId,
+    senderInboxId: msg.senderInboxId,
+    sentNs: Number(msg.sentAtNs),
+  };
+}
+
 function fanOutToSubscribers(convId: string | null, msg: DecodedMessage): void {
   if (streamSubscribers.size === 0) return;
+  const normalized = streamedMessageOf(msg);
   for (const cb of streamSubscribers) {
-    try { cb({ convId, msg }); } catch { }
+    try { cb({ convId, msg: normalized }); } catch { }
   }
 }
 

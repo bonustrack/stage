@@ -1,5 +1,5 @@
 
-import type { DecodedMessage } from '@xmtp/browser-sdk';
+import type { StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
 
 export type XmtpEnv = 'production' | 'dev' | 'local';
 
@@ -13,7 +13,7 @@ export interface LocalAttachmentInput { fileUri: string; mimeType: string; filen
 
 export interface StreamMsg {
   convId: string | null;
-  msg: DecodedMessage;
+  msg: StreamedMessage;
 }
 
 export {

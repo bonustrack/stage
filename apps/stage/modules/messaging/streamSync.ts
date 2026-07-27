@@ -8,7 +8,7 @@ const GROUP_UPDATED = 'group_updated';
 const OUTBOX_FLUSH_INTERVAL_MS = 5 * 60 * 1000;
 
 function isGroupUpdated(m: StreamMsg): boolean {
-  const id = (m.msg as unknown as { contentTypeId?: string }).contentTypeId;
+  const id = m.msg.contentTypeId;
   return typeof id === 'string' && id.includes(GROUP_UPDATED);
 }
 
