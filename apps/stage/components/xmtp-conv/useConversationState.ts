@@ -8,6 +8,7 @@ import {
 } from '../../modules/messaging';
 import { markConvRead } from '../../modules/messaging';
 import { markConvAtBottom } from '../../lib/scrollPos';
+import { isCoarsePointer } from '../../lib/pointer';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { useReactionsLayer } from './useReactionsLayer';
 import { useVotesLayer } from './useVotesLayer';
@@ -54,7 +55,7 @@ function useMentionCandidates(isGroup: boolean, memberAddrs: string[], peerAddr:
 export function useConversationState(convId: string | undefined, focus: string | undefined) {
   const activeLine = lineOfConv(convId ?? '');
   const autoFocusNonce = useMemo(
-    () => (focus || Platform.OS === 'web' ? Date.now() : undefined),
+    () => (focus || (Platform.OS === 'web' && !isCoarsePointer()) ? Date.now() : undefined),
     [focus, convId],
   );
 
