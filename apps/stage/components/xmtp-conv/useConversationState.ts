@@ -10,6 +10,8 @@ import { markConvRead } from '../../modules/messaging';
 import { markConvAtBottom } from '../../lib/scrollPos';
 import { isCoarsePointer } from '../../lib/pointer';
 import type { HistoryEntry } from '@stage-labs/client/types';
+import type { MenuAnchor } from '../MessengerBubble.anchor';
+import type { MenuPoint } from '../AnchoredMenu.model';
 import { useReactionsLayer } from './useReactionsLayer';
 import { useVotesLayer } from './useVotesLayer';
 import { useTxSignLayer } from './useTxSignLayer';
@@ -73,8 +75,9 @@ export function useConversationState(convId: string | undefined, focus: string |
   const { replyingTo, setReplyingTo, setReplyTarget } = useReplyTarget();
   const [menuFor, setMenuFor] = useState<HistoryEntry | null>(null);
   const [selectedForCopy, setSelectedForCopy] = useState<string | null>(null);
-  const [menuAnchor, setMenuAnchor] = useState<{ y: number; height: number }>({ y: 0, height: 0 });
+  const [menuAnchor, setMenuAnchor] = useState<MenuAnchor>({ y: 0, height: 0 });
   const [overflowOpen, setOverflowOpen] = useState(false);
+  const [overflowAnchor, setOverflowAnchor] = useState<MenuPoint | null>(null);
   const { peerAddr, memberAddrs, inboxToAddr, groupName, groupImage, groupDescription, isGroup } = useConvMeta(convId);
   const consentAllowed = useConsentGate(convId);
   const groupLabels = useGroupLabels(convId, activeLine, isGroup);
@@ -118,6 +121,7 @@ export function useConversationState(convId: string | undefined, focus: string |
     showJump, setShowJump, scrollToNewest,
     replyingTo, setReplyingTo, setReplyTarget, jumpHighlightId,
     menuFor, setMenuFor, menuAnchor, setMenuAnchor, overflowOpen, setOverflowOpen,
+    overflowAnchor, setOverflowAnchor,
     selectedForCopy, setSelectedForCopy,
     confirmedIds, optimisticReactions, optimisticRemovals,
     peerAddr, groupName, groupImage, groupDescription, groupLabels, isGroup, senderEthOf,

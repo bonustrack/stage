@@ -14,10 +14,9 @@ import { getPeerName, isPeerResolved } from '../../lib/peerProfiles';
 import { getDraft } from '../../lib/drafts';
 import { conversationLinkOf, isActiveConversationPath } from '../../lib/conversationLink';
 import type { Row as RowT } from './HomeScreen.helpers';
+import type { RowMenu } from './HomeScreen.state';
 import { channelTimestamp } from '../../lib/format';
 import { DANGER } from '../../lib/theme';
-
-interface RowMenu { convId: string; title: string; isUnread: boolean; isGroup: boolean; peerAddress: string | null }
 
 function rowTitle(item: RowT): string {
   return item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title;
@@ -75,12 +74,12 @@ function ChannelRowItemBase({
       labels={isGroup ? item.labels : undefined}
       onPressIn={() => { prefetchFeed(lineOfConv(item.convId)); }}
       onPress={() => { router.push(conversationLinkOf(item.convId, item.peerAddress)); }}
-      onLongPress={() => {
+      onLongPress={(anchor) => {
         Vibration.vibrate(10);
         setRowMenu({
           convId: item.convId, title,
           isUnread: item.unreadCount > 0 || item.markedUnread,
-          isGroup, peerAddress: item.peerAddress,
+          isGroup, peerAddress: item.peerAddress, anchor,
         });
       }}
     />

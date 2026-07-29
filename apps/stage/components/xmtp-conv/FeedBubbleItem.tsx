@@ -7,6 +7,7 @@ import type { WalletSendCallsContent } from '@stage-labs/client/xmtp/tx';
 import { MessengerBubble } from '../MessengerBubble';
 import { BubbleErrorBoundary } from '../MessengerBubble.boundary';
 import type { MessengerBubbleProps } from '../MessengerBubble.props';
+import type { MenuAnchor } from '../MessengerBubble.anchor';
 import { previewOf } from './feed-helpers';
 
 interface FeedBubbleItemProps {
@@ -38,7 +39,7 @@ interface FeedBubbleItemProps {
   onPay: (requestId: string, wsc: WalletSendCallsContent) => void;
   onReact: (messageId: string, emoji: string) => void;
   setReplyTarget: (id: string, preview: string, sender?: string | null) => void;
-  setMenuAnchor: Dispatch<SetStateAction<{ y: number; height: number }>>;
+  setMenuAnchor: Dispatch<SetStateAction<MenuAnchor>>;
   setMenuFor: Dispatch<SetStateAction<HistoryEntry | null>>;
   onAnswer: (messageId: string, label: string) => void;
 }

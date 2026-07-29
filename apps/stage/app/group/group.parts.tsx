@@ -12,6 +12,8 @@ import { MEMBER_OWNER_BG, MEMBER_OWNER_FG } from '../../lib/uiColors';
 import { memberRowModel, type MemberRowBadge } from './group.parts.model';
 import { stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { AppModal } from '../../components/AppModal';
+import { AnchoredMenu } from '../../components/AnchoredMenu';
+import type { MenuPoint } from '../../components/AnchoredMenu.model';
 import { MemberField } from '../../components/MemberField';
 import { DANGER, usePalette } from '../../lib/theme';
 
@@ -142,13 +144,14 @@ export function AddMemberModal({
 }
 
 export function OverflowModal({
-  visible, onClose, leaving, onLeave,
+  visible, onClose, anchor, leaving, onLeave,
 }: {
-  visible: boolean; onClose: () => void; leaving: boolean; onLeave: () => void;
+  visible: boolean; onClose: () => void; anchor?: MenuPoint | null;
+  leaving: boolean; onLeave: () => void;
 }): React.ReactElement {
   return (
-    <AppModal visible={visible} onClose={onClose}>
-      <Box gap={4}>
+    <AnchoredMenu visible={visible} onClose={onClose} anchor={anchor}>
+      <Box gap={4} padding={{ x: 16 }}>
         <Pressable
           onPress={onLeave}
           disabled={leaving}
@@ -160,6 +163,6 @@ export function OverflowModal({
           </Text>
         </Pressable>
       </Box>
-    </AppModal>
+    </AnchoredMenu>
   );
 }

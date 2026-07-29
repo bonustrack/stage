@@ -10,6 +10,7 @@ import { getPeerName } from '../../lib/peerProfiles';
 import { MessengerComposer } from '../../components/MessengerComposer';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { ChannelMenu } from '../../components/ChannelMenu';
+import { menuPointOf } from '../../components/AnchoredMenu';
 import { isPinned } from '../../lib/pins';
 import { shortAddress, getCachedRows } from '../../modules/messaging';
 import { flash } from '../../lib/toast';
@@ -31,7 +32,7 @@ function topnavTitle(c: Conv): string {
 export function ConversationTopnav({ c, convId, fg, head, border, insets, router }: {
   c: Conv; convId: string; fg: string; head: string; border: string; insets: EdgeInsets; router: Router;
 }): React.ReactElement {
-  const { isGroup, peerAddr, groupImage, setOverflowOpen } = c;
+  const { isGroup, peerAddr, groupImage, setOverflowOpen, setOverflowAnchor } = c;
   return (
     <ConvTopnavShell fg={fg} border={border} safeTop={insets.top} onBack={() => { router.replace('/'); }}>
       <ConvTopnavIdentity
@@ -43,7 +44,7 @@ export function ConversationTopnav({ c, convId, fg, head, border, insets, router
         }}
       />
       <Pressable
-        onPress={() => { setOverflowOpen(true); }}
+        onPress={(e) => { setOverflowAnchor(menuPointOf(e)); setOverflowOpen(true); }}
         hitSlop={8}
         style={{ paddingHorizontal: 14, justifyContent: 'center' }}
 >
@@ -123,7 +124,7 @@ export function ConversationOverlays({ c, convId, dark, onOpenSearch }: {
   c: Conv; convId: string; dark: boolean; onOpenSearch: () => void;
 }): React.ReactElement {
   const {
-    overflowOpen, setOverflowOpen, isGroup, groupName, peerAddr,
+    overflowOpen, setOverflowOpen, overflowAnchor, isGroup, groupName, peerAddr,
     menuFor, setMenuFor, menuAnchor, onReact, setReplyTarget, senderEthOf, setSelectedForCopy,
   } = c;
   const title = isGroup
@@ -141,6 +142,7 @@ export function ConversationOverlays({ c, convId, dark, onOpenSearch }: {
         isUnread={isUnread}
         isPinned={convId ? isPinned(convId) : false}
         onClose={() => { setOverflowOpen(false); }}
+        anchor={overflowAnchor}
         context="view"
         onSearch={onOpenSearch}
         onAfterLeave={result => { flash(result === 'left' ? 'Left group' : 'Group hidden'); }}

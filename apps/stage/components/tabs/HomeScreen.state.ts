@@ -6,8 +6,16 @@ import {
   CHANNELS_SCROLL_KEY, getScrollOffset, peekScrollOffset, flushScrollOffset,
 } from '../../lib/scrollPos';
 import type { Row as RowT } from './HomeScreen.helpers';
+import type { MenuPoint } from '../AnchoredMenu.model';
 
-export interface RowMenu { convId: string; title: string; isUnread: boolean; isGroup: boolean; peerAddress: string | null }
+export interface RowMenu {
+  convId: string;
+  title: string;
+  isUnread: boolean;
+  isGroup: boolean;
+  peerAddress: string | null;
+  anchor?: MenuPoint;
+}
 
 export interface ScrollRefs {
   listRef: React.RefObject<FlatList<RowT> | null>;

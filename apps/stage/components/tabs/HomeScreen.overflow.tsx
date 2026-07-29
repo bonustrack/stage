@@ -8,7 +8,8 @@ import { channelsOverflowItems } from './HomeScreen.model';
 import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import * as Clipboard from 'expo-clipboard';
 import { Col } from '../layout';
-import { AppModal } from '../AppModal';
+import { AnchoredMenu, menuPointOf } from '../AnchoredMenu';
+import type { MenuPoint } from '../AnchoredMenu.model';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { getActiveAccount } from '../../lib/accounts';
 import { flash } from '../../lib/toast';
@@ -21,9 +22,10 @@ interface HomeOverflowMenuProps {
 }
 
 export function HomeOverflowMenu({ color, onNewGroup, onProfile, onSettings }: HomeOverflowMenuProps): React.ReactElement {
-  const [open, setOpen] = useState(false);
+  const [anchor, setAnchor] = useState<MenuPoint | null>(null);
   const dark = useEffectiveColorScheme() === 'dark';
-  const close = (): void => { setOpen(false); };
+  const open = anchor !== null;
+  const close = (): void => { setAnchor(null); };
   const run = (fn: () => void): void => { close(); fn(); };
   const onCopyAddress = (): void => { run(() => {
     void getActiveAccount().then(acct => {
@@ -41,12 +43,11 @@ export function HomeOverflowMenu({ color, onNewGroup, onProfile, onSettings }: H
 
   return (
     <>
-      <Pressable onPress={() => { setOpen(true); }} hitSlop={8}>
+      <Pressable onPress={(e) => { setAnchor(menuPointOf(e)); }} hitSlop={8}>
         <Icon name="dotsVertical" size={24} color={color} />
       </Pressable>
-      <AppModal visible={open} onClose={close}>
-        {}
-        <ListView dark={dark} style={{ marginHorizontal: -16 }}>
+      <AnchoredMenu visible={open} onClose={close} anchor={anchor}>
+        <ListView dark={dark}>
           {channelsOverflowItems({ copyAddress: true }).map(item => (
             <OverflowRow
               key={item.id}
@@ -58,7 +59,7 @@ export function HomeOverflowMenu({ color, onNewGroup, onProfile, onSettings }: H
             />
           ))}
         </ListView>
-      </AppModal>
+      </AnchoredMenu>
     </>
   );
 }

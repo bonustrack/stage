@@ -21,7 +21,10 @@ import { deriveSortedRows } from './HomeScreen.helpers';
 
 function rowMenuProps(rowMenu: HomeState['rowMenu'], pinned: Set<string>) {
   if (!rowMenu) {
-    return { visible: false, convId: '', title: undefined, isGroup: false, peerAddress: null, isUnread: false, isPinned: false };
+    return {
+      visible: false, convId: '', title: undefined, isGroup: false,
+      peerAddress: null, isUnread: false, isPinned: false, anchor: null,
+    };
   }
   return {
     visible: true,
@@ -31,6 +34,7 @@ function rowMenuProps(rowMenu: HomeState['rowMenu'], pinned: Set<string>) {
     peerAddress: rowMenu.peerAddress,
     isUnread: rowMenu.isUnread,
     isPinned: pinned.has(rowMenu.convId),
+    anchor: rowMenu.anchor ?? null,
   };
 }
 

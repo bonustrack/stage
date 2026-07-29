@@ -4,6 +4,7 @@ import type { ViewType as View } from './layout/native';
 import { Gesture, type GestureType } from 'react-native-gesture-handler';
 import { useGestureHandlerRef } from '@react-navigation/stack';
 import { initialMenuAnchor, type MenuAnchor } from './MessengerBubble.anchor';
+import type { MenuPoint } from './AnchoredMenu.model';
 import {
   useAnimatedStyle, useSharedValue, withSpring, runOnJS, interpolate, Extrapolation,
 } from 'react-native-reanimated';
@@ -12,14 +13,14 @@ export interface BubbleGestureInput {
   pending?: boolean;
   onReply?: () => void;
   onReact?: (emoji: string) => void;
-  onOpenMenu?: (anchor: { y: number; height: number }) => void;
+  onOpenMenu?: (anchor: MenuAnchor) => void;
   onLongPress?: () => void;
 }
 
 export interface BubbleGestures {
   rowRef: React.RefObject<View | null>;
   tapGestures: ReturnType<typeof Gesture.Race>;
-  openMenu: () => void;
+  openMenu: (point?: MenuPoint) => void;
   swipeStyle: ReturnType<typeof useAnimatedStyle>;
   replyHintStyle: ReturnType<typeof useAnimatedStyle>;
 }
@@ -42,16 +43,16 @@ export function useBubbleGestures(input: BubbleGestureInput): BubbleGestures {
   const navGestureRef = useGestureHandlerRef() as React.RefObject<React.ComponentType | undefined> | null;
 
   const fireReply = (): void => { if (!pending) onReply?.(); };
-  const openMenu = (): void => {
+  const openMenu = (point?: MenuPoint): void => {
     if (pending || !onOpenMenu) { if (!onOpenMenu) onLongPress?.(); return; }
     lightHaptic();
     const node = rowRef.current;
     const initial = initialMenuAnchor(lastAnchor.current, !!node);
-    if (initial) onOpenMenu(initial);
+    if (initial) onOpenMenu({ ...initial, point });
     if (node) {
       node.measureInWindow((_x, y, _w, h) => {
         lastAnchor.current = { y, height: h };
-        onOpenMenu({ y, height: h });
+        onOpenMenu({ y, height: h, point });
       });
     }
   };
@@ -86,7 +87,7 @@ export function useBubbleGestures(input: BubbleGestureInput): BubbleGestures {
   const doubleTap = useMemo(() => keepsFeedScrollable(Gesture.Tap()).numberOfTaps(2)
     .onEnd((_e, ok) => { if (ok) runOnJS(onDoubleTap)(); }), [onDoubleTap]);
   const longPress = useMemo(() => keepsFeedScrollable(Gesture.LongPress()).minDuration(300)
-    .onStart(() => { runOnJS(openMenu)(); }), [openMenu]);
+    .onStart((e) => { runOnJS(openMenu)({ x: e.absoluteX, y: e.absoluteY }); }), [openMenu]);
   const tapGestures = useMemo(
     () => Gesture.Race(replyPan, Gesture.Exclusive(longPress, doubleTap)),
     [replyPan, longPress, doubleTap]);

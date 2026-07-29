@@ -15,6 +15,7 @@ import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { ImageViewer } from '../../components/ImageViewer';
 import { AddMemberModal, OverflowModal } from './group.parts';
+import type { MenuPoint } from '../../components/AnchoredMenu.model';
 import { GroupMembersList } from './group.members';
 import { GroupProfileHeader, GroupNameEditor, GroupDescriptionEditor } from './group.editor';
 import { messagingKeys } from '../../modules/messaging';
@@ -23,7 +24,7 @@ import { GroupLabelsSection } from './group.labels';
 import { useGroupActions } from './group.actions';
 
 function OverflowTrailing({ color, dark, onPress }: {
-  color: string; dark: boolean; onPress: () => void;
+  color: string; dark: boolean; onPress: (point: MenuPoint) => void;
 }): React.ReactElement {
   return (
     <GesturePressable onPress={onPress} hitSlop={10}>
@@ -64,7 +65,7 @@ export default function GroupDetail(): React.ReactElement {
   const [addOpen, setAddOpen] = useState(false);
   const [selfAddress, setSelfAddress] = useState<string>('');
   const [viewerOpen, setViewerOpen] = useState(false);
-  const [overflowOpen, setOverflowOpen] = useState(false);
+  const [overflowAnchor, setOverflowAnchor] = useState<MenuPoint | null>(null);
 
   useEffect(() => {
     const cached = cachedSelfEthAddress();
@@ -81,7 +82,7 @@ export default function GroupDetail(): React.ReactElement {
         backColor={fg}
         safeTop={insets.top}
         trailing={
-          <OverflowTrailing color={fg} dark={dark} onPress={() => { setOverflowOpen(true); }} />
+          <OverflowTrailing color={fg} dark={dark} onPress={(point) => { setOverflowAnchor(point); }} />
         }
       />
 
@@ -122,9 +123,10 @@ export default function GroupDetail(): React.ReactElement {
         dark={dark} p={pal}
 />
       <OverflowModal
-        visible={overflowOpen}
-        onClose={() => { setOverflowOpen(false); }}
-        leaving={leaving} onLeave={() => { leaveGroup(() => { setOverflowOpen(false); }); }}
+        visible={overflowAnchor !== null}
+        anchor={overflowAnchor}
+        onClose={() => { setOverflowAnchor(null); }}
+        leaving={leaving} onLeave={() => { leaveGroup(() => { setOverflowAnchor(null); }); }}
 />
       <ImageViewer
         uri={imageUrl ? avatarRenderUrl('', imageUrl, 1024) : ''}

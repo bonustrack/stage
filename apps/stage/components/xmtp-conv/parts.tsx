@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 
-import { Dimensions } from 'react-native';
+import { Dimensions, StyleSheet, useWindowDimensions } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Dialog } from '@stage-labs/kit/react-native/dialog';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
@@ -17,6 +17,10 @@ import { usePalette } from '../../lib/theme';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { useBlockRadius } from '../../lib/theme';
 import { menuPlacement, MENU_GAP, MENU_STRIP_HEIGHT } from './menuPlacement';
+import { MENU_SHADOW, useAnchoredMenus } from '../AnchoredMenu';
+import { anchoredMenuStyle, type MenuPoint } from '../AnchoredMenu.model';
+import { dismissContextMenuProps } from '../../lib/contextMenu';
+import type { MenuAnchor } from '../MessengerBubble.anchor';
 
 export function HeaderAvatar({ peerAddr, groupImage, channelId, isGroup, border }: {
   peerAddr: string | null; groupImage: string; channelId: string; isGroup: boolean; border: string;
@@ -133,7 +137,7 @@ function ActionDropdown({ target, dark, fg, divider, cardBg, blockRadius, on }: 
   const hasText = !!target?.text;
   return (
     <Box minWidth={220} maxWidth={320} background={cardBg} radius={blockRadius} padding={{ y: 4 }}
-      style={{ overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 8 }}>
+      style={{ overflow: 'hidden', ...MENU_SHADOW }}>
       <ActionRow icon="reply" label="Reply" fg={fg} dark={dark} onPress={on.reply}/>
       {hasText ? <Divider dark={dark} color={divider} style={{ marginLeft: 16 }} /> : null}
       {hasText ? <ActionRow icon="copy" label="Copy" fg={fg} dark={dark} onPress={on.copy} /> : null}
@@ -145,10 +149,44 @@ function ActionDropdown({ target, dark, fg, divider, cardBg, blockRadius, on }: 
   );
 }
 
+const ANCHORED_MENU_WIDTH = 320;
+
+function AnchoredBubbleMenu({ open, point, onClose, strip, dropdown }: {
+  open: boolean; point: MenuPoint; onClose: () => void;
+  strip: React.ReactNode; dropdown: React.ReactNode;
+}): React.ReactElement {
+  const viewport = useWindowDimensions();
+  const placement = anchoredMenuStyle(point, viewport);
+  return (
+    <Dialog open={open} onClose={onClose} animationType="none" backdropColor="transparent" fullBleedPanel>
+      <Pressable
+        onPress={onClose}
+        style={StyleSheet.absoluteFillObject}
+        {...dismissContextMenuProps(onClose)}
+      >
+        <Box
+          width={ANCHORED_MENU_WIDTH}
+          align="start"
+          pointerEvents="box-none"
+          style={{
+            position: 'absolute',
+            top: placement.top, bottom: placement.bottom,
+            left: placement.left, right: placement.right,
+          }}
+        >
+          {strip}
+          <Box height={MENU_GAP} pointerEvents="none"/>
+          {dropdown}
+        </Box>
+      </Pressable>
+    </Dialog>
+  );
+}
+
 export function BubbleActionMenu({
   target, anchor, dark, onClose, onReact, onReply, onCopy, onSelect, onShareLink,
 }: {
-  target: HistoryEntry | null; anchor: { y: number; height: number };
+  target: HistoryEntry | null; anchor: MenuAnchor;
   dark: boolean; onClose: () => void;
   onReact: (emoji: string) => void; onReply: () => void; onCopy: () => void;
   onSelect: () => void;
@@ -156,6 +194,7 @@ export function BubbleActionMenu({
 }): React.ReactElement {
   const [expanded, setExpanded] = useState(false);
   const blockRadius = useBlockRadius();
+  const anchored = useAnchoredMenus();
   useEffect(() => { if (!target) setExpanded(false); }, [target]);
 
   const pal = usePalette();
@@ -169,6 +208,17 @@ export function BubbleActionMenu({
       on={{ reply: onReply, copy: onCopy, select: onSelect, shareLink: onShareLink }}
     />
   );
+  const strip = (
+    <ReactionStrip expanded={expanded} setExpanded={setExpanded} dark={dark} sub={pal.sub} stripBg={pal.bg} onReact={reactAndClose} />
+  );
+
+  if (anchored && anchor.point) {
+    return (
+      <AnchoredBubbleMenu
+        open={!!target} point={anchor.point} onClose={onClose} strip={strip} dropdown={dropdown}
+      />
+    );
+  }
 
   return (
     <Dialog
@@ -187,7 +237,7 @@ export function BubbleActionMenu({
         {dropdownAbove ? dropdown : null}
       </Box>
       <Box align="start" style={{ position: 'absolute', left: 12, right: 12, top: stripTop }} pointerEvents="box-none">
-        <ReactionStrip expanded={expanded} setExpanded={setExpanded} dark={dark} sub={pal.sub} stripBg={pal.bg} onReact={reactAndClose} />
+        {strip}
         {dropdownAbove ? null : (
           <>
             <Box height={MENU_GAP} pointerEvents="none"/>

@@ -1,10 +1,11 @@
 
 import type { HistoryEntry } from '@stage-labs/client/types';
+import type { MenuAnchor } from './MessengerBubble.anchor';
 
 export interface MessengerBubbleProps {
   entry: HistoryEntry; dark: boolean; unread: boolean; pending?: boolean; replyTarget?: boolean;
   onReact?: (emoji: string) => void; onReply?: () => void; onLongPress?: () => void;
-  onOpenMenu?: (anchor: { y: number; height: number }) => void;
+  onOpenMenu?: (anchor: MenuAnchor) => void;
   onCloseMenu?: () => void;
   onReplyPreviewPress?: () => void;
   onAnswer?: (label: string) => void;

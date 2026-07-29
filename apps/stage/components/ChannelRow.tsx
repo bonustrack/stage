@@ -13,6 +13,8 @@ import { Platform, type StyleProp, type TextStyle, type ViewStyle } from 'react-
 import { Avatar } from './Avatar';
 import { Row, Col, Box } from './layout';
 import { channelRowModel, type ChannelRowParams } from './ChannelRow.model';
+import { menuPointOf } from './AnchoredMenu';
+import type { MenuPoint } from './AnchoredMenu.model';
 import { contextMenuProps } from '../lib/contextMenu';
 import { unreadBadgeLabel } from '../lib/format';
 import { HIGHLIGHT_BG } from '../lib/uiColors';
@@ -38,7 +40,7 @@ export interface ChannelRowProps {
   avatarSize?: number;
   onPress?: () => void;
   onPressIn?: () => void;
-  onLongPress?: () => void;
+  onLongPress?: (point?: MenuPoint) => void;
   containerStyle?: StyleProp<ViewStyle>;
   noBorder?: boolean;
   highlightQuery?: string;
@@ -217,7 +219,7 @@ function ChannelRowBase({
     <Pressable
       onPress={onPress}
       onPressIn={onPressIn}
-      onLongPress={onLongPress}
+      onLongPress={onLongPress === undefined ? undefined : (e) => { onLongPress(menuPointOf(e)); }}
       delayLongPress={onLongPress ? 300 : undefined}
       style={containerStyle ?? (({ pressed }) => ({
         backgroundColor: pressed || active === true ? border : 'transparent',

@@ -8,9 +8,10 @@ import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { resolveColorToken } from '@stage-labs/kit/tokens';
-import { Box, Row } from './layout';
+import { Row } from './layout';
 import { channelMenuItems, type MenuSheetItem } from './ChannelMenu.model';
-import { AppModal } from './AppModal';
+import { AnchoredMenu } from './AnchoredMenu';
+import type { MenuPoint } from './AnchoredMenu.model';
 import { markConvRead, markConvUnread } from '../modules/messaging';
 import { togglePin } from '../lib/pins';
 import { leaveGroupConv, lineOfConv } from '../modules/messaging';
@@ -24,6 +25,7 @@ export interface ChannelMenuProps {
   isPinned: boolean;
   visible: boolean;
   onClose: () => void;
+  anchor?: MenuPoint | null;
   context?: 'list' | 'view';
   onAfterLeave?: (result: 'left' | 'hidden') => void;
   onSearch?: () => void;
@@ -82,7 +84,7 @@ function MenuRow({ item, dark, onPress }: {
 
 export function ChannelMenu({
   convId, isGroup, peerAddress, isUnread, isPinned,
-  visible, onClose, context = 'list', onAfterLeave, onSearch,
+  visible, onClose, anchor, context = 'list', onAfterLeave, onSearch,
 }: ChannelMenuProps): React.ReactElement {
   const router = useRouter();
   const dark = useKitScheme() === 'dark';
@@ -107,15 +109,12 @@ export function ChannelMenu({
   );
 
   return (
-    <AppModal visible={visible} onClose={onClose}>
-      {}
-      <Box margin={{ x: -16 }}>
-        <ListView dark={dark}>
-          {items.map((item) => (
-            <MenuRow key={item.id} item={item} dark={dark} onPress={() => { handlers[item.id]?.(); }} />
-          ))}
-        </ListView>
-      </Box>
-    </AppModal>
+    <AnchoredMenu visible={visible} onClose={onClose} anchor={anchor}>
+      <ListView dark={dark}>
+        {items.map((item) => (
+          <MenuRow key={item.id} item={item} dark={dark} onPress={() => { handlers[item.id]?.(); }} />
+        ))}
+      </ListView>
+    </AnchoredMenu>
   );
 }
