@@ -1,6 +1,45 @@
 
-import type { DimensionValue, ViewStyle, TextStyle } from 'react-native';
+import type { DimensionValue, ViewStyle, TextStyle, TextInputProps } from 'react-native';
 import { FONT_SIZE, schemePalette } from './tokens';
+
+type FocusEv = Parameters<NonNullable<TextInputProps['onFocus']>>[0];
+
+export function fieldIds(name: string | undefined): {
+  nativeID?: string;
+  accessibilityLabelledBy?: string;
+} {
+  if (!name) return {};
+  return { nativeID: `input-${name}`, accessibilityLabelledBy: `label-${name}` };
+}
+
+export function chainFocus(
+  focused: boolean,
+  setFocused: (v: boolean) => void,
+  next: ((e: FocusEv) => void) | undefined,
+  e: FocusEv,
+): void {
+  setFocused(focused);
+  next?.(e);
+}
+
+export function styleList(style: ViewStyle | ViewStyle[] | undefined): ViewStyle[] {
+  if (!style) return [];
+  return Array.isArray(style) ? style : [style];
+}
+
+export function triggerRowStyle(block?: boolean, disabled?: boolean): ViewStyle {
+  return {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    alignSelf: block ? 'stretch' : 'flex-start',
+    opacity: disabled ? 0.5 : 1,
+  };
+}
+
+export function triggerLabelStyle(color: string, fontSize: number): TextStyle {
+  return { flex: 1, color, fontSize, fontFamily: 'Calibre-Medium' };
+}
 
 export type ControlSize = '3xs' | '2xs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
 export type ControlVariant = 'soft' | 'outline';

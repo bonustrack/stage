@@ -6,14 +6,16 @@ import { Box, Row, Col } from '../layout';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import {
-  usePalette, useEffectiveColorScheme, useThemeSeeds,
+  usePalette, useEffectiveColorScheme, useThemeSeeds, seedColorHex,
   setSeedColor, setSeedDensity, setSeedRadius, setSeedBaseSize, resetOverrides,
+  setAccentLevel, setGrayscaleTint, setGrayscaleShade,
   type SeedColorKey,
 } from '../../lib/theme';
 import type { GalleryPalette } from './galleryPalette';
 import { AppModal } from '../AppModal';
 import { ColorPicker } from '@stage-labs/kit/react-native/color-picker';
 import { isHex } from '../../lib/colorOverrides';
+import type { AccentLevel, GrayscaleShade, GrayscaleTint } from '@stage-labs/kit/theme-derive';
 import {
   fontSize, type Density, type RadiusName, type BaseSize,
 } from '@stage-labs/kit/tokens';
@@ -21,13 +23,16 @@ import {
 const SEED_ROWS: readonly (readonly [label: string, key: SeedColorKey])[] = [
   ['surface-background', 'background'],
   ['surface-foreground', 'foreground'],
-  ['accent', 'accent'],
+  ['accent-primary', 'accent'],
   ['grayscale', 'grayscale'],
 ];
 
 const DENSITY_OPTS: readonly Density[] = ['compact', 'normal', 'spacious'];
 const RADIUS_OPTS: readonly RadiusName[] = ['pill', 'round', 'soft', 'sharp'];
 const BASE_SIZE_OPTS: readonly BaseSize[] = [14, 15, 16, 17, 18];
+const ACCENT_LEVEL_OPTS: readonly AccentLevel[] = [0, 1, 2, 3];
+const TINT_OPTS: readonly GrayscaleTint[] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+const SHADE_OPTS: readonly GrayscaleShade[] = [-4, -3, -2, -1, 0, 1, 2, 3, 4];
 
 function SeedSwatch({ name, seedKey, value, scheme, p }: {
   name: string; seedKey: SeedColorKey; value: string;
@@ -118,10 +123,6 @@ export function ColorTokens({ p }: { p: GalleryPalette }): React.ReactElement {
   const scheme = useEffectiveColorScheme();
   const seeds = useThemeSeeds();
   const seed = seeds[scheme];
-  const seedValue = (key: SeedColorKey): string =>
-    key === 'background' ? seed.surface.background
-      : key === 'foreground' ? seed.surface.foreground
-        : seed[key];
   return (
     <Box>
       <Row margin={{ top: 16 }} align="center" justify="between">
@@ -136,9 +137,25 @@ export function ColorTokens({ p }: { p: GalleryPalette }): React.ReactElement {
       </Row>
       <Box margin={{ top: 2 }}>
         {SEED_ROWS.map(([label, key]) => (
-          <SeedSwatch key={label} name={label} seedKey={key} value={seedValue(key)} scheme={scheme} p={p}/>
+          <SeedSwatch
+            key={label} name={label} seedKey={key}
+            value={seedColorHex(seeds, scheme, key)} scheme={scheme} p={p}
+          />
         ))}
       </Box>
+
+      <SeedChoice
+        name="accent-level" options={ACCENT_LEVEL_OPTS} value={seed.accent.level}
+        onSelect={(v) => { setAccentLevel(scheme, v); }} p={p}
+      />
+      <SeedChoice
+        name="grayscale-tint" options={TINT_OPTS} value={seed.grayscale.tint}
+        onSelect={(v) => { setGrayscaleTint(scheme, v); }} p={p}
+      />
+      <SeedChoice
+        name="grayscale-shade" options={SHADE_OPTS} value={seed.grayscale.shade ?? 0}
+        onSelect={(v) => { setGrayscaleShade(scheme, v); }} p={p}
+      />
 
       {}
       <Box margin={{ top: 20 }}>

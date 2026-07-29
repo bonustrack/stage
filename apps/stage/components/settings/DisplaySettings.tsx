@@ -10,7 +10,7 @@ import {
 } from '../../lib/theme';
 import { THEME_OPTIONS } from '../tabs/SettingsScreen.parts';
 import { ColorTokens } from '../system/ColorTokens';
-import { SettingsHeader } from './SettingsHeader';
+import { StackHeader } from '../chrome/StackHeader';
 import { SettingsList, SettingsThemeRow } from './rows';
 
 export function DisplaySettings(): React.ReactElement {
@@ -24,7 +24,7 @@ export function DisplaySettings(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <SettingsHeader title="Display"/>
+      <StackHeader title="Display"/>
       <ScrollView
         style={[{ flex: 1 }, WEB_STACK_SCROLL]}
         keyboardShouldPersistTaps="handled"

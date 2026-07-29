@@ -55,3 +55,39 @@ export function hexToHsv(hex: string): { h: number; s: number; v: number } {
 const HEX_RE = /^#([0-9a-fA-F]{6})$/;
 
 export function isHexColor(v: string): boolean { return HEX_RE.test(v.trim()); }
+
+const HSL_SECTORS: readonly (readonly [number, number, number])[] = [
+  [1, 2, 0], [2, 1, 0], [0, 1, 2], [0, 2, 1], [2, 0, 1], [1, 0, 2],
+];
+
+function sectorChannels(hh: number, c: number, x: number): [number, number, number] {
+  const parts = [0, c, x];
+  const sector = HSL_SECTORS[Math.floor(hh) % 6] ?? HSL_SECTORS[0];
+  const pick = (i: number): number => parts[sector?.[i] ?? 0] ?? 0;
+  return [pick(0), pick(1), pick(2)];
+}
+
+export function hslToHex(h: number, s: number, l: number): string {
+  const hh = ((h % 360) + 360) % 360 / 60;
+  const li = clamp01(l);
+  const c = (1 - Math.abs(2 * li - 1)) * clamp01(s);
+  const x = c * (1 - Math.abs((hh % 2) - 1));
+  const m = li - c / 2;
+  const [r, g, b] = sectorChannels(hh, c, x);
+  return `#${toByte(r + m)}${toByte(g + m)}${toByte(b + m)}`;
+}
+
+export function hexToHsl(hex: string): { h: number; s: number; l: number } {
+  const digits = normalizeHexDigits(hex);
+  if (digits == null) return { h: 0, s: 0, l: 0 };
+  const int = parseInt(digits, 16);
+  const r = ((int >> 16) & 255) / 255;
+  const g = ((int >> 8) & 255) / 255;
+  const b = (int & 255) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const d = max - min;
+  const l = (max + min) / 2;
+  const denom = 1 - Math.abs(2 * l - 1);
+  return { h: rgbToHue(r, g, b, max, d), s: denom === 0 ? 0 : d / denom, l };
+}

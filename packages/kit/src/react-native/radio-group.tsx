@@ -1,6 +1,8 @@
 
 import { useState } from 'react';
+import { FONT_SIZE, fontName } from '../tokens';
 import { Pressable, View, Text as RNText, type ViewStyle } from 'react-native';
+import { styleList } from '../control.styles';
 
 export interface RadioOption {
   label: string;
@@ -21,11 +23,6 @@ export interface RadioGroupProps {
   size?: number;
   dark?: boolean;
   style?: ViewStyle | ViewStyle[];
-}
-
-function styleList(style: ViewStyle | ViewStyle[] | undefined): ViewStyle[] {
-  if (!style) return [];
-  return Array.isArray(style) ? style : [style];
 }
 
 function RadioOptionRow(props: {
@@ -63,7 +60,7 @@ function RadioOptionRow(props: {
           <View style={{ width: size * 0.5, height: size * 0.5, borderRadius: size * 0.25, backgroundColor: head }} />
         ) : null}
       </View>
-      <RNText style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Medium' }}>{opt.label}</RNText>
+      <RNText style={{ color: head, fontSize: FONT_SIZE.md, fontFamily: fontName.sans }}>{opt.label}</RNText>
     </Pressable>
   );
 }

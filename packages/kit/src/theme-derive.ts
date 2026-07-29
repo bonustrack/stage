@@ -1,14 +1,32 @@
 
 export type { Scheme } from './tokens';
 import type { Scheme } from './tokens';
+import { hexToHsl, hslToHex } from './color-math';
+
+export type AccentLevel = 0 | 1 | 2 | 3;
+export type GrayscaleTint = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+export type GrayscaleShade = -4 | -3 | -2 | -1 | 0 | 1 | 2 | 3 | 4;
+
+export interface AccentColor {
+  primary: string;
+  level: AccentLevel;
+}
+
+export interface GrayscaleOptions {
+  hue: number;
+  tint: GrayscaleTint;
+  shade?: GrayscaleShade;
+}
+
+export interface SurfaceColors {
+  background: string;
+  foreground: string;
+}
 
 export interface ThemeSeed {
-  grayscale: string;
-  accent: string;
-  surface: {
-    background: string;
-    foreground: string;
-  };
+  accent: AccentColor;
+  grayscale: GrayscaleOptions;
+  surface: SurfaceColors;
 }
 
 export interface DerivedPalette {
@@ -20,8 +38,18 @@ export interface DerivedPalette {
 export const DANGER_FIXED = '#eb4c5b';
 export const SUCCESS_FIXED = '#57b375';
 
+export const ACCENT_LEVEL_DEFAULT: AccentLevel = 3;
+
+const GRAYSCALE_BASE_L: Record<Scheme, number> = { dark: 0.167, light: 0.896 };
+const TINT_STEP = 0.01;
+const SHADE_STEP = 0.03;
+const ACCENT_MUTE_STEP = 0.18;
 
 function clamp255(n: number): number { return n < 0 ? 0 : n > 255 ? 255 : Math.round(n); }
+
+function clampRange(n: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, Math.round(n))) || 0;
+}
 
 export function parseHex(hex: string): [number, number, number] | null {
   const m = /^#([0-9a-fA-F]{6})$/.exec(hex.trim());
@@ -45,20 +73,36 @@ export function mix(a: string, b: string, t: number): string {
   ]);
 }
 
+export function grayscaleHex(g: GrayscaleOptions, scheme: Scheme): string {
+  const base = GRAYSCALE_BASE_L[scheme];
+  return hslToHex(g.hue, g.tint * TINT_STEP, base - (g.shade ?? 0) * SHADE_STEP);
+}
+
+export function grayscaleFromHex(hex: string, scheme: Scheme): GrayscaleOptions {
+  const { h, s, l } = hexToHsl(hex);
+  return {
+    hue: clampRange(h, 0, 360),
+    tint: clampRange(s / TINT_STEP, 0, 9) as GrayscaleTint,
+    shade: clampRange((GRAYSCALE_BASE_L[scheme] - l) / SHADE_STEP, -4, 4) as GrayscaleShade,
+  };
+}
+
+export function accentHex(a: AccentColor, surfaceForeground: string): string {
+  return mix(a.primary, surfaceForeground, (ACCENT_LEVEL_DEFAULT - a.level) * ACCENT_MUTE_STEP);
+}
 
 export const DEFAULT_SEED: Record<Scheme, ThemeSeed> = {
   dark: {
-    grayscale: '#282a2d',
-    accent: '#ffffff',
+    accent: { primary: '#ffffff', level: ACCENT_LEVEL_DEFAULT },
+    grayscale: { hue: 216, tint: 6, shade: 0 },
     surface: { background: '#0e0f10', foreground: '#9f9fa3' },
   },
   light: {
-    grayscale: '#e4e4e5',
-    accent: '#000000',
+    accent: { primary: '#000000', level: ACCENT_LEVEL_DEFAULT },
+    grayscale: { hue: 240, tint: 2, shade: 0 },
     surface: { background: '#ffffff', foreground: '#57606a' },
   },
 };
-
 
 const BORDER_RATIO = 1;
 
@@ -71,7 +115,6 @@ const SUB_RATIO: Record<Scheme, number> = {
   dark: 0.5,
   light: 0.5,
 };
-
 
 const LEGACY: Record<Scheme, DerivedPalette> = {
   dark: {
@@ -86,9 +129,14 @@ const LEGACY: Record<Scheme, DerivedPalette> = {
   },
 };
 
+function grayscaleEquals(a: GrayscaleOptions, b: GrayscaleOptions): boolean {
+  return a.hue === b.hue && a.tint === b.tint && (a.shade ?? 0) === (b.shade ?? 0);
+}
+
 function seedEquals(a: ThemeSeed, b: ThemeSeed): boolean {
-  return a.grayscale.toLowerCase() === b.grayscale.toLowerCase()
-    && a.accent.toLowerCase() === b.accent.toLowerCase()
+  return a.accent.primary.toLowerCase() === b.accent.primary.toLowerCase()
+    && a.accent.level === b.accent.level
+    && grayscaleEquals(a.grayscale, b.grayscale)
     && a.surface.background.toLowerCase() === b.surface.background.toLowerCase()
     && a.surface.foreground.toLowerCase() === b.surface.foreground.toLowerCase();
 }
@@ -98,19 +146,18 @@ export function derivePalette(seed: ThemeSeed, scheme: Scheme): DerivedPalette {
 
   const bg = seed.surface.background;
   const text = seed.surface.foreground;
-  const border = mix(bg, seed.grayscale, BORDER_RATIO);
-  const inputBg = mix(bg, seed.grayscale, INPUT_BG_RATIO[scheme]);
-  const sub = mix(text, seed.grayscale, SUB_RATIO[scheme]);
+  const gray = grayscaleHex(seed.grayscale, scheme);
+  const accent = accentHex(seed.accent, text);
   return {
     bg,
-    border,
+    border: mix(bg, gray, BORDER_RATIO),
     text,
-    sub,
-    link: seed.accent,
-    primary: seed.accent,
+    sub: mix(text, gray, SUB_RATIO[scheme]),
+    link: accent,
+    primary: accent,
     danger: DANGER_FIXED,
     success: SUCCESS_FIXED,
-    inputBg,
+    inputBg: mix(bg, gray, INPUT_BG_RATIO[scheme]),
     toolbarBg: bg,
   };
 }

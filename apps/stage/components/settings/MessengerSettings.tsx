@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 import { Alert, DevSettings } from 'react-native';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
@@ -14,7 +14,7 @@ import { resetAccount } from '../../lib/wallet';
 import { flash } from '../../lib/toast';
 import { usePalette } from '../../lib/theme';
 import { MessengerSessions } from './MessengerSessions';
-import { SettingsHeader } from './SettingsHeader';
+import { StackHeader } from '../chrome/StackHeader';
 import { SettingsButtonRow, SettingsList, SettingsValueRow } from './rows';
 
 function onResetIdentity(): void {
@@ -39,34 +39,36 @@ function copyValue(label: string, value: string): void {
   flash(`${label} copied`);
 }
 
+interface XmtpIdentity { addr: string; inbox: string; install: string }
+
+const NO_IDENTITY: XmtpIdentity = { addr: '', inbox: '', install: '' };
+
+async function fetchXmtpIdentity(): Promise<XmtpIdentity> {
+  const client = await getOrCreateXmtpClient('production');
+  const address = await selfEthAddress();
+  return {
+    addr: address ?? '',
+    inbox: client.inboxId,
+    install: client.installationId ?? '',
+  };
+}
+
 export function MessengerSettings(): React.ReactElement {
   const { text: fg } = usePalette();
   const insets = useSafeAreaInsets();
   const epoch = useActiveAccount();
-  const [addr, setAddr] = useState('');
-  const [inbox, setInbox] = useState('');
-  const [install, setInstall] = useState('');
-
-  useEffect(() => {
-    let alive = true;
-    void (async (): Promise<void> => {
-      try {
-        const client = await getOrCreateXmtpClient('production');
-        const address = await selfEthAddress();
-        if (!alive) return;
-        setAddr(address ?? '');
-        setInbox(client.inboxId);
-        setInstall(client.installationId ?? '');
-      } catch { }
-    })();
-    return () => { alive = false; };
-  }, [epoch]);
+  const { data: id = NO_IDENTITY } = useQuery({
+    queryKey: ['xmtpIdentity', epoch],
+    queryFn: fetchXmtpIdentity,
+    staleTime: Infinity,
+  });
+  const { addr, inbox, install } = id;
 
   const hasRows = addr !== '' || inbox !== '' || install !== '';
 
   return (
     <Col surface="surface" flex={1}>
-      <SettingsHeader title="Messenger"/>
+      <StackHeader title="Messenger"/>
       <ScrollView style={[{ flex: 1 }, WEB_STACK_SCROLL]} contentContainerStyle={[{ paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT, WEB_STACK_CONTENT_PAD]}>
         <Caption color={fg} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
           XMTP ACCOUNT

@@ -8,19 +8,16 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { walletAccountRows } from './WalletSettings.model';
 import { Col, WEB_EDGE_CONTENT, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../layout';
 import { useBlockRadius, useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { useActiveAccount } from '../../modules/messaging/account';
 import { flash } from '../../lib/toast';
 import { useWalletModel } from './WalletSettings.parts';
-import { useEnablePasskey } from '../../lib/useEnablePasskey';
-import { useRemovePasskey } from '../../lib/useRemovePasskey';
+import { useEnablePasskey, useRemovePasskey } from '../../lib/passkey';
 import {
   type C, SectionLabel, makeCard, SmartAccountSections, WalletCopyRow, WalletInfoRow,
 } from './WalletSettings.sections';
-import { SettingsHeader } from './SettingsHeader';
+import { StackHeader } from '../chrome/StackHeader';
 import { SettingsList } from './rows';
 
 export function WalletSettings(): React.ReactElement {
-  const epoch = useActiveAccount();
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head, border } = usePalette();
@@ -28,9 +25,9 @@ export function WalletSettings(): React.ReactElement {
   const insets = useSafeAreaInsets();
   const c: C = { fg, head, sub: fg, border, rowBg: border };
 
-  const { model, deploy } = useWalletModel(epoch);
-  const passkey = useEnablePasskey(epoch);
-  const removePasskey = useRemovePasskey(epoch);
+  const { model, deploy } = useWalletModel();
+  const passkey = useEnablePasskey();
+  const removePasskey = useRemovePasskey();
 
   const onCopy = (label: string, value: string): void => {
     void Clipboard.setStringAsync(value); flash(`${label} copied`);
@@ -41,7 +38,7 @@ export function WalletSettings(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <SettingsHeader title="Wallet"/>
+      <StackHeader title="Wallet"/>
       <ScrollView style={[{ flex: 1 }, WEB_STACK_SCROLL]} contentContainerStyle={[{ paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT, WEB_STACK_CONTENT_PAD]}>
         {!model ? (
           <Text size="md" color={c.sub} style={{ padding: 24 }}>No active account.</Text>

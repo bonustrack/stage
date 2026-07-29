@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { broviderRpc } from '@stage-labs/client/wallet/client';
 import { getAddress } from 'viem';
 import { getActiveAccount } from './accounts';
@@ -154,26 +154,18 @@ export function useTxSimulation(
   value: string | undefined,
   chainId: number,
 ): { result: SimulateResult | null; pending: boolean } {
-  const [result, setResult] = useState<SimulateResult | null>(null);
-  const [pending, setPending] = useState<boolean>(!!to);
-  useEffect(() => {
-    if (!to) { setResult(null); setPending(false); return; }
-    let alive = true;
-    setPending(true);
-    void (async () => {
-      const active = await getActiveAccount();
-      const from = active?.address;
+  const { data: result, isPending } = useQuery({
+    queryKey: ['txSimulate', chainId, to ?? '', data ?? '', value ?? ''],
+    queryFn: async (): Promise<SimulateResult> => {
+      const from = (await getActiveAccount())?.address;
       if (!from) {
-        if (alive) {
-          setResult({ success: 'unknown', assetChanges: { in: [], out: [] }, error: 'No active wallet' });
-          setPending(false);
-        }
-        return;
+        return { success: 'unknown', assetChanges: { in: [], out: [] }, error: 'No active wallet' };
       }
-      const r = await simulateTx({ from, to, data, value, chainId });
-      if (alive) { setResult(r); setPending(false); }
-    })();
-    return () => { alive = false; };
-  }, [to, data, value, chainId]);
-  return { result, pending };
+      return simulateTx({ from, to: to ?? '', data, value, chainId });
+    },
+    enabled: !!to,
+    staleTime: 0,
+    gcTime: 0,
+  });
+  return { result: result ?? null, pending: !!to && isPending };
 }

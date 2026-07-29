@@ -1,6 +1,6 @@
 
-
 import { createValueStore } from './persistedStore';
+import { useStoreValue } from './storeCore';
 
 const STORAGE_KEY = 'push.enabled';
 
@@ -18,4 +18,6 @@ export const isPushEnabledSync = (): boolean => store.get();
 
 export const setPushEnabled = (enabled: boolean): Promise<void> => store.setAsync(enabled);
 
-export const subscribePushPref = (cb: () => void): () => void => store.subscribe(cb);
+export function usePushEnabled(): boolean {
+  return useStoreValue(store.subscribe, store.get, store.loadAsync);
+}

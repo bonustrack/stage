@@ -1,12 +1,9 @@
-import { Linking } from 'react-native';
-
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box } from '../../components/layout';
 import { DANGER } from '../../lib/theme';
-import { explorerTxUrl } from '@stage-labs/client/xmtp/tx';
+import { TxHashLink, type FormPal } from './wallet.form';
 
-interface Pal { fg: string; head: string; sub: string; border: string; inputBg: string; link: string }
+type Pal = FormPal;
 type Phase = 'idle' | 'proving' | 'broadcasting' | 'done' | 'error';
 
 const shortAddr = (a: string): string => (a.length> 12 ? `${a.slice(0, 6)}…${a.slice(-4)}` : a);
@@ -47,13 +44,7 @@ export function UnshieldPhaseLine({ phase, txHash, err, bridgeOk, chainId }: {
       ) : phase === 'broadcasting' ? (
         <Text size="xs" role="secondary">Broadcasting…</Text>
       ) : null}
-      {txHash ? (
-        <Pressable onPress={() => { void Linking.openURL(explorerTxUrl(chainId, txHash)); }} hitSlop={6}>
-          <Text size="xs">
-            {txHash.slice(0, 10)}…{txHash.slice(-8)}
-          </Text>
-        </Pressable>
-      ) : null}
+      <TxHashLink chainId={chainId} txHash={txHash} />
       {err ? (
         <Text size="xs" color={DANGER}>{err}</Text>
       ) : null}

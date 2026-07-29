@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
@@ -13,34 +13,18 @@ import {
 
 const SHIELD_ICON: HeroIconName = 'shieldCheck';
 
-type Status = 'loading' | 'ready';
-
 const PRIVATE_GREEN = '#22c55e';
 
 export function PrivateActivitySection({ head, sub, border, bg }: {
   head: string; sub: string; border: string; bg: string;
 }): React.ReactElement | null {
-  const [rows, setRows] = useState<PrivateActivityRow[]>([]);
-  const [available, setAvailable] = useState(false);
-  const [status, setStatus] = useState<Status>('loading');
+  const { data, isPending } = useQuery({
+    queryKey: ['privateActivity'],
+    queryFn: () => fetchPrivateActivity(),
+  });
+  const rows: PrivateActivityRow[] = data?.rows ?? [];
 
-  useEffect(() => {
-    let cancelled = false;
-    void (async (): Promise<void> => {
-      try {
-        const res = await fetchPrivateActivity();
-        if (cancelled) return;
-        setAvailable(res.available);
-        setRows(res.rows);
-      } catch {
-      } finally {
-        if (!cancelled) setStatus('ready');
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
-
-  if (status === 'ready' && !available) return null;
+  if (!isPending && !data?.available) return null;
 
   return (
     <Col>
@@ -50,7 +34,7 @@ export function PrivateActivitySection({ head, sub, border, bg }: {
           Private activity
         </Text>
       </Row>
-      {status === 'loading' ? (
+      {isPending ? (
         <Text size="md" role="secondary" style={{ paddingVertical: 14 }}>
           Loading private activity…
         </Text>

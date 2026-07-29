@@ -20,7 +20,7 @@ const disableSrc = code(read('lib', 'zerodev', 'disablePasskey.ts'));
 const walletSettingsSrc = code(read('components', 'settings', 'WalletSettings.tsx'))
   + code(read('components', 'settings', 'WalletSettings.sections.tsx'))
   + code(read('components', 'settings', 'WalletSettings.model.ts'));
-const removeHookSrc = code(read('lib', 'useRemovePasskey.ts'));
+const passkeyHookSrc = code(read('lib', 'passkey.ts'));
 
 describe('A. create.ts — create is passkey-AGNOSTIC (ECDSA-owner only)', () => {
   test('builds the ECDSA (deployable) Kernel and never touches the passkey path', () => {
@@ -169,13 +169,12 @@ describe('G. Settings -> Wallet — Remove passkey affordance is wired + gated',
     expect(walletSettingsSrc).toContain('Remove passkey');
   });
   test('the hook shows only for a smart account that currently HAS a passkey', () => {
-    expect(removeHookSrc).toContain("acct?.type === 'smart' && !!acct.passkey");
-    expect(removeHookSrc).toContain('removePasskeyFromRecord(acct)');
+    expect(passkeyHookSrc).toContain("acct.type === 'smart' && !!acct.passkey");
+    expect(passkeyHookSrc).toContain('perform: removePasskeyFromRecord');
   });
   test('the hook confirms with a destructive dialog before reverting', () => {
-    expect(removeHookSrc).toContain('capabilities.confirm');
-    expect(removeHookSrc).toContain('destructive: true');
-    expect(removeHookSrc).toContain('if (ok) doRemove()');
+    expect(passkeyHookSrc).toContain('destructive: true');
+    expect(passkeyHookSrc).toContain('if (await capabilities.confirm(spec.confirm)) perform();');
   });
 });
 

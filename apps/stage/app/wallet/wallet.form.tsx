@@ -1,4 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
+import { Linking } from 'react-native';
+import { explorerTxUrl } from '@stage-labs/client/xmtp/tx';
 import { fontSize } from '@stage-labs/kit/tokens';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
@@ -11,6 +13,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePalette } from '../../lib/theme';
 
 export interface FormPal { fg: string; head: string; sub: string; border: string; inputBg: string; link: string }
+
+export function TxHashLink({ chainId, txHash }: {
+  chainId: number; txHash: string | null;
+}): React.ReactElement | null {
+  if (!txHash) return null;
+  return (
+    <Pressable onPress={() => { void Linking.openURL(explorerTxUrl(chainId, txHash)); }} hitSlop={6}>
+      <Text size="xs">
+        {txHash.slice(0, 10)}…{txHash.slice(-8)}
+      </Text>
+    </Pressable>
+  );
+}
 
 export interface FooterState {
   submitLabel: string; onSubmit: () => void; submitDisabled: boolean; submitLoading: boolean;

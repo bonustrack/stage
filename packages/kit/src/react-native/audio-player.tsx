@@ -1,5 +1,6 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { FONT_SIZE, fontName } from '../tokens';
 import { Pressable, Text as RNText, View } from 'react-native';
 import { Audio, type AVPlaybackStatus } from 'expo-av';
 import { Icon } from './icon';
@@ -154,7 +155,7 @@ function WaveformPlayer(props: AudioPlayerProps): React.ReactElement {
       <RNText
         style={{
           color: onAccent,
-          fontSize: 13,
+          fontSize: FONT_SIZE.xs,
           minWidth: 34,
           textAlign: 'right',
           fontFamily: 'Calibre-Regular',
@@ -209,7 +210,7 @@ function BasicPlayer(props: {
           }}
         />
       </View>
-      <RNText style={{ color: fg, fontSize: 13, fontFamily: 'Calibre-Medium' }}>
+      <RNText style={{ color: fg, fontSize: FONT_SIZE.xs, fontFamily: fontName.sans }}>
         {fmt(lengthMs)}
       </RNText>
     </View>

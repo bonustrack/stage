@@ -5,7 +5,7 @@ import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Col, WEB_EDGE_CONTENT, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../layout';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { SystemHeader } from './SystemHeader';
+import { StackHeader } from '../chrome/StackHeader';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { KitSections } from './KitSections';
 import { GithubLogo } from '../GithubLogo';
@@ -21,17 +21,19 @@ export function KitPage(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <SystemHeader
-        title="Kit" dark={dark} fg={fg} head={head} border={border}
-        right={
-          <Pressable
-            onPress={() => { void Linking.openURL(KIT_GITHUB_URL); }}
-            hitSlop={8}
-            style={{ padding: 4 }}
-            accessibilityLabel="View @stage-labs/kit on GitHub"
+      <StackHeader
+        title="Kit"
+        trailing={
+          <Col flex={1} align="end">
+            <Pressable
+              onPress={() => { void Linking.openURL(KIT_GITHUB_URL); }}
+              hitSlop={8}
+              style={{ padding: 4 }}
+              accessibilityLabel="View @stage-labs/kit on GitHub"
 >
-            <GithubLogo size={22} color={fg}/>
-          </Pressable>
+              <GithubLogo size={22} color={fg}/>
+            </Pressable>
+          </Col>
         }
 />
       <ScrollView

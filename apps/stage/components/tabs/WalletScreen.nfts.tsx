@@ -7,7 +7,7 @@ import { Spinner } from '../Spinner';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Col, Row, Box } from '../layout';
-import { type Nft } from '../../lib/opensea';
+import { type Nft } from '@stage-labs/client/api/opensea';
 import { DANGER } from '../../lib/theme';
 
 export function NftsView({

@@ -3,7 +3,7 @@ import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Col, WEB_EDGE_CONTENT, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../layout';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { SystemHeader } from './SystemHeader';
+import { StackHeader } from '../chrome/StackHeader';
 import { AboutPanel } from './AboutPanel';
 
 export function AboutPage(): React.ReactElement {
@@ -15,7 +15,7 @@ export function AboutPage(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <SystemHeader title="About" dark={dark} fg={fg} head={head} border={border}/>
+      <StackHeader title="About"/>
       <ScrollView style={WEB_STACK_SCROLL} contentContainerStyle={[{ paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT, WEB_STACK_CONTENT_PAD]}>
         <AboutPanel dark={dark} head={head} sub={sub} border={border} rowBg={rowBg}/>
       </ScrollView>

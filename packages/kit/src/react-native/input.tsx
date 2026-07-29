@@ -7,12 +7,12 @@ import {
   type StyleProp,
   type TextStyle,
 } from 'react-native';
-
-type FocusEv = Parameters<NonNullable<TextInputProps['onFocus']>>[0];
 import {
+  chainFocus,
   controlBoxStyle,
   controlColors,
   controlTextStyle,
+  fieldIds,
   type ControlSize,
   type ControlVariant,
 } from '../control.styles';
@@ -53,21 +53,6 @@ export interface InputProps {
     TextInputProps,
     'value' | 'defaultValue' | 'onChangeText' | 'style' | 'placeholder' | 'editable'
   >;
-}
-
-function fieldIds(name: string | undefined): { nativeID?: string; accessibilityLabelledBy?: string } {
-  if (!name) return {};
-  return { nativeID: `input-${name}`, accessibilityLabelledBy: `label-${name}` };
-}
-
-function chainFocus(
-  focused: boolean,
-  setFocused: (v: boolean) => void,
-  next: ((e: FocusEv) => void) | undefined,
-  e: FocusEv,
-): void {
-  setFocused(focused);
-  next?.(e);
 }
 
 export const Input = forwardRef<TextInput, InputProps>(function Input(props, ref) {

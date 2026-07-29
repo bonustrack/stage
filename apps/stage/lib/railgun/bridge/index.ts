@@ -2,11 +2,10 @@
 import type { ScanConfig } from './scanConfig';
 import { DEFAULT_SCAN_CONFIG } from './scanConfig';
 import { rawCall, ENGINE_INIT_TIMEOUT_MS } from './transport';
+import { sdk } from './sdk';
 
 export { type ScanConfig } from './scanConfig';
 export { setBridgeStatusListener } from './diagnostics';
-export { walletInfo, getBalances } from './wallet';
-export type { BridgeBalanceRow } from './wallet';
 export {
   isBridgeAvailable,
   bridgeListen,
@@ -41,4 +40,33 @@ export async function engineInit(
     { walletSource: 'metro', dev, scanConfig },
     ENGINE_INIT_TIMEOUT_MS,
   )) as EngineStatusResult;
+}
+
+export interface WalletInfoResult {
+  railgunWalletID: string;
+  railgunAddress: string;
+}
+
+export interface BridgeBalanceRow {
+  tokenAddress: string;
+  amount: string;
+}
+
+export interface BalancesResult {
+  walletId: string;
+  networks: { mainnet: BridgeBalanceRow[]; sepolia: BridgeBalanceRow[] };
+  scanning: boolean;
+  scanDebug?: { t: number; chain: number; msg: string }[];
+}
+
+export async function walletInfo(params: {
+  encryptionKey: string;
+  mnemonic: string;
+  creationBlocks: Record<string, number>;
+}): Promise<WalletInfoResult> {
+  return sdk<WalletInfoResult>('createWallet', [params]);
+}
+
+export async function getBalances(walletId: string): Promise<BalancesResult> {
+  return sdk<BalancesResult>('balances', [{ walletId }]);
 }

@@ -218,6 +218,12 @@ export const fontFamily = {
   mono: ['Menlo', 'ui-monospace', 'monospace'],
 } as const;
 
+export const fontName = {
+  sans: fontFamily.sans[0],
+  head: fontFamily.head[0],
+  mono: fontFamily.mono[0],
+} as const;
+
 
 export type RadiusName = 'pill' | 'round' | 'soft' | 'sharp';
 

@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { Alert } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
@@ -10,16 +10,16 @@ import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { capabilities } from '../../lib/capabilities';
 import { Box, Col } from '../layout';
 import { flash } from '../../lib/toast';
-import {
-  getActiveAccount, getPrivateKey, canExportPrivateKey, type AccountRecord,
-} from '../../lib/accounts';
-import { deleteAccount, shortAddress, useActiveAccount } from '../../modules/messaging';
+import { getPrivateKey, canExportPrivateKey, type AccountRecord } from '../../lib/accounts';
+import { deleteAccount, shortAddress, useActiveAccountRecord } from '../../modules/messaging';
 import { reloadApp } from '../AccountsManager.helpers';
 import { SettingsButtonRow, SettingsList, SettingsNavRow } from '../settings/rows';
 
 interface SectionColors { fg: string; head: string; sub: string; border: string; rowBg: string }
 
-function confirmExport(rec: AccountRecord, setRevealed: (pk: string) => void): void {
+interface RevealedKey { id: string; pk: string }
+
+function confirmExport(rec: AccountRecord, setRevealed: (key: RevealedKey) => void): void {
   Alert.alert(
     'Export private key',
     'Anyone with this key controls your account — never share it. Make sure no one can see your screen.',
@@ -29,7 +29,7 @@ function confirmExport(rec: AccountRecord, setRevealed: (pk: string) => void): v
           void (async (): Promise<void> => {
             const pk = await getPrivateKey(rec.id);
             if (!pk) { Alert.alert('No key', 'This account has no exportable private key.'); return; }
-            setRevealed(pk);
+            setRevealed({ id: rec.id, pk });
           })();
         } },
     ],
@@ -70,27 +70,19 @@ function RevealedKeyRow({ c, dark, revealed }: {
   );
 }
 
-function useActiveRecord(epoch: number): [AccountRecord | null, string | null, React.Dispatch<React.SetStateAction<string | null>>] {
-  const [rec, setRec] = useState<AccountRecord | null>(null);
-  const [revealed, setRevealed] = useState<string | null>(null);
-  useEffect(() => {
-    let alive = true;
-    void (async (): Promise<void> => {
-      const active = await getActiveAccount();
-      if (alive) { setRec(active); setRevealed(null); }
-    })();
-    return () => { alive = false; };
-  }, [epoch]);
-  return [rec, revealed, setRevealed];
+function revealedKeyFor(key: RevealedKey | null, rec: AccountRecord): string | null {
+  if (!key) return null;
+  return key.id === rec.id ? key.pk : null;
 }
 
 export function AccountSecuritySection(
   { c, dark }: { c: SectionColors; danger?: string; dark: boolean },
 ): React.ReactElement | null {
-  const epoch = useActiveAccount();
-  const [rec, revealed, setRevealed] = useActiveRecord(epoch);
+  const rec = useActiveAccountRecord();
+  const [key, setRevealed] = useState<RevealedKey | null>(null);
 
   if (!rec) return null;
+  const revealed = revealedKeyFor(key, rec);
 
   return (
     <>

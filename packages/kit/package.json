@@ -1,6 +1,6 @@
 {
   "name": "@stage-labs/kit",
-  "version": "0.1.0-beta.0",
+  "version": "0.2.0-beta.0",
   "description": "Stage design system: colour/spacing tokens, HeroIcon path data, station icon definitions, theme-preference contract, and one React Native component family (renders on web via react-native-web).",
   "license": "MIT",
   "repository": {
@@ -66,7 +66,9 @@
     "./react-native/text-field": "./src/react-native/text-field.tsx",
     "./react-native/color-picker": "./src/react-native/color-picker.tsx",
     "./react-native/gesture-pressable": "./src/react-native/gesture-pressable.tsx",
-    "./react-native/file-picker": "./src/react-native/file-picker.tsx"
+    "./react-native/file-picker": "./src/react-native/file-picker.tsx",
+    "./react-native/badge": "./src/react-native/badge.tsx",
+    "./react-native/transition": "./src/react-native/transition.tsx"
   },
   "dependencies": {
     "qrcode": "^1.5.4"

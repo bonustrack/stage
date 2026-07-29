@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  erc20Abi, encodeFunctionData, parseUnits, createPublicClient, type Hex,
+  erc20Abi, encodeFunctionData, parseUnits, createPublicClient, formatEther, type Hex,
 } from 'viem';
 import { base } from 'viem/chains';
 import { resolveEnsName } from '@stage-labs/client/api/ens';
+import { getSimplePrices, type CgPrice } from '@stage-labs/client/api/coingecko';
+import { getOrCreateXmtpClient } from '../../modules/messaging';
+import { publicClientFor } from '@stage-labs/client/wallet/client';
 import { sendNativeOrToken } from '../../lib/tx';
 import { getActiveAccount } from '../../lib/accounts';
 import { kernelClientForRecord } from '../../lib/zerodev';
@@ -12,7 +15,31 @@ import { classifyRecipientInput, noAddressSetError } from '@stage-labs/client/wa
 import { tokenAmountFromInput } from '@stage-labs/client/wallet/sendAmount';
 import { ASSETS } from '../../components/tabs/WalletScreen.assets';
 import type { TokenChoice } from './TokenSelector';
-import { fetchBalanceAndPrice } from './send.helpers';
+
+const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11' as const;
+const multicall3Abi = [{
+  name: 'getEthBalance', type: 'function', stateMutability: 'view',
+  inputs: [{ name: 'a', type: 'address' }],
+  outputs: [{ name: 'b', type: 'uint256' }],
+}] as const;
+
+async function fetchBalanceAndPrice(): Promise<{
+  ethBalance: string | null;
+  ethPriceUsd: number | null;
+}> {
+  const client = await getOrCreateXmtpClient('production');
+  const addr = client.publicIdentity.identifier as Hex;
+  const pub = publicClientFor(1);
+  const [bal, prices] = await Promise.all([
+    pub.readContract({ address: MULTICALL3, abi: multicall3Abi, functionName: 'getEthBalance', args: [addr] }),
+    getSimplePrices(['ethereum']).catch((): Record<string, CgPrice> => ({})),
+  ]);
+  const p = prices.ethereum?.usd;
+  return {
+    ethBalance: formatEther(bal),
+    ethPriceUsd: typeof p === 'number' ? p : null,
+  };
+}
 
 export type SendTxState = 'idle' | 'submitting' | 'pending' | 'confirmed';
 

@@ -1,5 +1,5 @@
 
-import { useSyncExternalStore } from 'react';
+import { useStoreValue } from '../storeCore';
 import { appStorage } from '../../platform/storage';
 
 const STORAGE_KEY = 'railgun.debugConsole.enabled';
@@ -44,13 +44,8 @@ export function subscribeDebugConsole(cb: () => void): () => void {
   return () => { subscribers.delete(cb); };
 }
 
+function primeDebugConsole(): void { void loadDebugConsole(); }
+
 export function useDebugConsole(): boolean {
-  return useSyncExternalStore(
-    (cb) => {
-      void loadDebugConsole();
-      return subscribeDebugConsole(cb);
-    },
-    isDebugConsoleEnabled,
-    isDebugConsoleEnabled,
-  );
+  return useStoreValue(subscribeDebugConsole, isDebugConsoleEnabled, primeDebugConsole);
 }

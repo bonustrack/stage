@@ -1,19 +1,17 @@
 
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { fetchUsdPrice, fmtUsdValue } from '@stage-labs/client/wallet/prices';
 import { priceKeyFor, priceKeyId } from './txAssets';
 
 export function useUsdValue(
   chainId: number, token: string | null | undefined, amount: string | undefined,
 ): string | null {
-  const [usd, setUsd] = useState<number | null>(null);
   const id = priceKeyId(priceKeyFor(chainId, token));
-  useEffect(() => {
-    if (!id) { setUsd(null); return; }
-    let alive = true;
-    void fetchUsdPrice(priceKeyFor(chainId, token)).then(p => { if (alive) setUsd(p); });
-    return () => { alive = false; };
-  }, [id, chainId, token]);
+  const { data: usd } = useQuery({
+    queryKey: ['usdPrice', id],
+    queryFn: () => fetchUsdPrice(priceKeyFor(chainId, token)),
+    enabled: !!id,
+  });
   if (!amount) return null;
-  return fmtUsdValue(amount, usd);
+  return fmtUsdValue(amount, usd ?? null);
 }

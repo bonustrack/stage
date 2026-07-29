@@ -10,10 +10,13 @@ import {
 import {
   controlBoxStyle,
   controlColors,
+  styleList,
+  triggerLabelStyle,
+  triggerRowStyle,
   type ControlSize,
   type ControlVariant,
 } from '../control.styles';
-import { BLOCK_RADIUS_DEFAULT } from '../tokens';
+import { BLOCK_RADIUS_DEFAULT, FONT_SIZE, fontName } from '../tokens';
 import { Icon } from './icon';
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -28,11 +31,6 @@ function parseISO(v: string | undefined): Date | null {
   if (!m) return null;
   const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
   return Number.isNaN(d.getTime()) ? null : d;
-}
-
-function styleList(style: ViewStyle | ViewStyle[] | undefined): ViewStyle[] {
-  if (!style) return [];
-  return Array.isArray(style) ? style : [style];
 }
 
 function toISO(d: Date): string {
@@ -109,7 +107,7 @@ function DayCell(props: {
           opacity: enabled ? 1 : 0.3,
         }}
       >
-        <RNText style={{ color: isSel ? '#ffffff' : colors.head, fontSize: 15, fontFamily: 'Calibre-Medium' }}>
+        <RNText style={{ color: isSel ? '#ffffff' : colors.head, fontSize: FONT_SIZE.md, fontFamily: fontName.sans }}>
           {d.getDate()}
         </RNText>
       </View>
@@ -129,7 +127,7 @@ function MonthHeader(props: {
       <Pressable accessibilityRole="button" accessibilityLabel="Previous month" onPress={() => { onShift(-1); }} hitSlop={8}>
         <Icon name="chevronLeft" size={20} color={head} />
       </Pressable>
-      <RNText style={{ flex: 1, textAlign: 'center', color: head, fontSize: 16, fontFamily: 'Calibre-Semibold' }}>
+      <RNText style={{ flex: 1, textAlign: 'center', color: head, fontSize: FONT_SIZE.lg, fontFamily: fontName.head }}>
         {MONTHS[month]} {year}
       </RNText>
       <Pressable accessibilityRole="button" accessibilityLabel="Next month" onPress={() => { onShift(1); }} hitSlop={8}>
@@ -169,7 +167,7 @@ function CalendarSheet(props: CalendarSheetProps): React.ReactElement {
           <View style={{ flexDirection: 'row' }}>
             {WEEKDAYS.map((w, i) => (
               <View key={i} style={{ width: `${100 / 7}%`, alignItems: 'center', paddingVertical: 4 }}>
-                <RNText style={{ color: colors.sub, fontSize: 12, fontFamily: 'Calibre-Medium' }}>{w}</RNText>
+                <RNText style={{ color: colors.sub, fontSize: FONT_SIZE['2xs'], fontFamily: fontName.sans }}>{w}</RNText>
               </View>
             ))}
           </View>
@@ -209,21 +207,11 @@ function DateTrigger(props: DateTriggerProps): React.ReactElement {
       accessibilityState={{ disabled, expanded: open }}
       disabled={disabled}
       onPress={onOpen}
-      style={[
-        box,
-        {
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 8,
-          alignSelf: block ? 'stretch' : 'flex-start',
-          opacity: disabled ? 0.5 : 1,
-        },
-        ...styleList(style),
-      ]}
+      style={[box, triggerRowStyle(block, disabled), ...styleList(style)]}
     >
       <RNText
         numberOfLines={1}
-        style={{ flex: 1, color: selDate ? headColor : ctrlColors.placeholder, fontSize: 15, fontFamily: 'Calibre-Medium' }}
+        style={triggerLabelStyle(selDate ? headColor : ctrlColors.placeholder, FONT_SIZE.md)}
       >
         {label}
       </RNText>

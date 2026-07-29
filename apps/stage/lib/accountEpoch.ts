@@ -1,19 +1,21 @@
 
-import { useSyncExternalStore } from 'react';
+import { makeListeners, useStoreValue } from './storeCore';
 
 let epoch = 0;
-const listeners = new Set<() => void>();
+const { listeners, notify } = makeListeners();
 
 export function bumpAccountEpoch(): void {
   epoch += 1;
-  for (const l of listeners) l();
+  notify();
 }
 
 export function getAccountEpoch(): number { return epoch; }
 
+function subscribe(cb: () => void): () => void {
+  listeners.add(cb);
+  return () => { listeners.delete(cb); };
+}
+
 export function useAccountEpoch(): number {
-  return useSyncExternalStore(
-    (cb) => { listeners.add(cb); return () => listeners.delete(cb); },
-    () => epoch,
-  );
+  return useStoreValue(subscribe, getAccountEpoch);
 }

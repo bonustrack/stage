@@ -1,37 +1,17 @@
 
 import type { ReactNode } from 'react';
-import { resolveIconName } from '@stage-labs/kit/icons';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Checkbox } from '@stage-labs/kit/react-native/checkbox';
-import { Icon } from '@stage-labs/kit/react-native/icon';
 import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Switch } from '@stage-labs/kit/react-native/switch';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
-import { resolveColorToken } from '@stage-labs/kit/tokens';
 import { Col } from '../layout';
+import { AppIcon } from '../widgets';
 
 export function SettingsList({ children }: { children: ReactNode }): React.ReactElement {
   const dark = useKitScheme() === 'dark';
   return <ListView dark={dark}>{children}</ListView>;
-}
-
-export function SettingsIcon({ name, color, size }: {
-  name: string;
-  color: string;
-  size: number;
-}): React.ReactElement | null {
-  const scheme = useKitScheme();
-  const resolved = resolveIconName(name);
-  if (resolved === undefined) return null;
-  return (
-    <Icon
-      name={resolved}
-      size={size}
-      color={resolveColorToken(color, scheme)}
-      dark={scheme === 'dark'}
-    />
-  );
 }
 
 export interface SettingsNavRowProps {
@@ -47,7 +27,7 @@ export function SettingsNavRow(props: SettingsNavRowProps): React.ReactElement {
   return (
     <ListViewItem align="center" gap={12} dark={dark} onPress={props.onPress}>
       {props.iconStart === undefined ? null : (
-        <SettingsIcon name={props.iconStart} color="link" size={28} />
+        <AppIcon name={props.iconStart} color="link" size={28} />
       )}
       <Col flex={1}>
         <Text value={props.label} size="xl" color="link" truncate />
@@ -55,7 +35,7 @@ export function SettingsNavRow(props: SettingsNavRowProps): React.ReactElement {
       {props.value === undefined ? null : (
         <Text value={props.value} color="secondary" truncate />
       )}
-      <SettingsIcon name={props.iconEnd ?? 'chevronRight'} color="secondary" size={24} />
+      <AppIcon name={props.iconEnd ?? 'chevronRight'} color="secondary" size={24} />
     </ListViewItem>
   );
 }
@@ -108,7 +88,7 @@ export function SettingsValueRow(props: SettingsValueRowProps): React.ReactEleme
       </Col>
       <Text value={props.value} size="md" color="text" truncate />
       {props.onPress === undefined ? null : (
-        <SettingsIcon name="copy" color="secondary" size={16} />
+        <AppIcon name="copy" color="secondary" size={16} />
       )}
     </ListViewItem>
   );
@@ -133,7 +113,7 @@ export function SettingsButtonRow(props: SettingsButtonRowProps): React.ReactEle
       onPress={props.onPress}
     >
       {props.iconStart === undefined ? null : (
-        <SettingsIcon name={props.iconStart} color={tone} size={28} />
+        <AppIcon name={props.iconStart} color={tone} size={28} />
       )}
       <Col gap={2} flex={1}>
         <Text value={props.label} size="md" weight="semibold" color={tone} />
@@ -157,11 +137,11 @@ export function SettingsThemeRow(props: SettingsThemeRowProps): React.ReactEleme
   const dark = useKitScheme() === 'dark';
   return (
     <ListViewItem align="center" gap={12} dark={dark} onPress={props.onPress}>
-      <SettingsIcon name={props.iconName} color={props.iconColor ?? 'link'} size={28} />
+      <AppIcon name={props.iconName} color={props.iconColor ?? 'link'} size={28} />
       <Col flex={1}>
         <Text value={props.label} size="xl" color="text" truncate />
       </Col>
-      {props.selected ? <SettingsIcon name="check" color="link" size={24} /> : null}
+      {props.selected ? <AppIcon name="check" color="link" size={24} /> : null}
     </ListViewItem>
   );
 }

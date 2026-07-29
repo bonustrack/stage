@@ -1,5 +1,6 @@
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { Caption } from '@stage-labs/kit/react-native/caption';
@@ -10,7 +11,7 @@ import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { capabilities } from '../../lib/capabilities';
 import { Box, Col, WEB_EDGE_CONTENT, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../../components/layout';
 import { WalletHeader } from '../../components/wallet/WalletHeader';
-import { WalletIcon } from '../../components/wallet/widgets';
+import { AppIcon } from '../../components/widgets';
 import { getOrCreateXmtpClient } from '../../modules/messaging';
 import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
 import { usePalette } from '../../lib/theme';
@@ -33,7 +34,7 @@ function AddressCard({ label, address, hint, onCopy }: {
         <Col flex={1}>
           <Text value={address || '—'} size="md" truncate />
         </Col>
-        <WalletIcon name="copy" color="secondary" size={16} />
+        <AppIcon name="copy" color="secondary" size={16} />
       </ListViewItem>
       <Caption value={hint} color="secondary" textAlign="center" />
     </Col>
@@ -71,21 +72,15 @@ export default function WalletReceive(): React.ReactElement {
   const { border } = usePalette();
 
   const [mode, setMode] = useState<ReceiveMode>('public');
-  const [publicAddress, setPublicAddress] = useState('');
   const { snapshot } = usePrivateWallet();
   const privateAddress = snapshot?.zkAddress ?? '';
   const privateReady = privateAddress.length> 0;
 
-  useEffect(() => {
-    let cancelled = false;
-    void (async (): Promise<void> => {
-      try {
-        const client = await getOrCreateXmtpClient('production');
-        if (!cancelled) setPublicAddress(client.publicIdentity.identifier);
-      } catch { }
-    })();
-    return () => { cancelled = true; };
-  }, []);
+  const { data: publicAddress = '' } = useQuery({
+    queryKey: ['receivePublicAddress'],
+    queryFn: async (): Promise<string> =>
+      (await getOrCreateXmtpClient('production')).publicIdentity.identifier,
+  });
 
   const { activeMode, address, label, hint } = receiveViewModel({
     mode, publicAddress, privateAddress, privateReady,

@@ -13,6 +13,10 @@ export type BadgeColorValue = Color;
 
 export type BadgeSize = '3xs' | '2xs' | 'sm' | 'md' | 'lg';
 
+export type BadgeVariant = 'solid' | 'soft' | 'outline';
+
+const SOFT_ALPHA = 0.16;
+
 const BADGE_SEMANTIC_BG: Record<BadgeColor, string> = {
   secondary: '#8a929d',
   success: '#1f9d55',
@@ -51,6 +55,29 @@ export interface ResolvedBadgeStyle {
   background: string;
   foreground: string;
   fontToken: BadgeFontToken;
+  borderColor?: string;
+}
+
+function withAlpha(hex: string, alpha: number): string {
+  const m = /^#([0-9a-fA-F]{6})$/.exec(hex.trim());
+  const h = m?.[1];
+  if (h === undefined) return hex;
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function tonedStyle(
+  tone: string, variant: BadgeVariant, fontToken: BadgeFontToken,
+): ResolvedBadgeStyle {
+  if (variant === 'soft') {
+    return { background: withAlpha(tone, SOFT_ALPHA), foreground: tone, fontToken };
+  }
+  if (variant === 'outline') {
+    return { background: 'transparent', foreground: tone, fontToken, borderColor: tone };
+  }
+  return { background: tone, foreground: readableForeground(tone), fontToken };
 }
 
 export function resolveBadgeStyle(
@@ -58,6 +85,7 @@ export function resolveBadgeStyle(
   background: BadgeColorValue | undefined,
   size: BadgeSize | undefined,
   scheme: Scheme,
+  variant: BadgeVariant = 'solid',
 ): ResolvedBadgeStyle {
   const fontToken = BADGE_FONT_TOKEN[size ?? 'sm'];
   if (background !== undefined) {
@@ -69,9 +97,10 @@ export function resolveBadgeStyle(
     return { background: bg, foreground: fg, fontToken };
   }
   if (color !== undefined && !isSemanticBadgeColor(color)) {
-    const bg = resolveColor(color, scheme);
-    return { background: bg, foreground: readableForeground(bg), fontToken };
+    return tonedStyle(resolveColor(color, scheme), variant, fontToken);
   }
   const tone = isSemanticBadgeColor(color) ? color : 'secondary';
-  return { background: BADGE_SEMANTIC_BG[tone], foreground: '#ffffff', fontToken };
+  const semantic = BADGE_SEMANTIC_BG[tone];
+  if (variant === 'solid') return { background: semantic, foreground: '#ffffff', fontToken };
+  return tonedStyle(semantic, variant, fontToken);
 }

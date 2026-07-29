@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
-import { getActiveAccount } from '../../lib/accounts';
+import { useActiveAccountRecord } from '../../modules/messaging';
 import { unshieldToPublic } from '../../lib/railgun/unshield';
 import { isBridgeAvailable } from '../../lib/railgun/bridge';
 import { UnshieldRecipient, UnshieldPhaseLine } from './unshield.parts';
@@ -10,6 +10,11 @@ import { TokenSelector, useSelectedBalance } from './TokenSelector';
 
 type Phase = 'idle' | 'proving' | 'broadcasting' | 'done' | 'error';
 const NET_LABEL: Record<number, string> = { 1: 'Ethereum', 11155111: 'Sepolia' };
+
+function initialChainIdOf(raw: string | undefined): number {
+  const n = Number(raw);
+  return typeof raw === 'string' && Number.isFinite(n) ? n : 11155111;
+}
 
 function submitLabelFor(phase: Phase): string {
   const byPhase: Partial<Record<Phase, string>> = {
@@ -25,14 +30,10 @@ export default function WalletUnshield(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const pal = useFormPal();
 
-  const [eoa, setEoa] = useState<string | null>(null);
-  useEffect(() => { void getActiveAccount().then(a => { setEoa(a?.address ?? null); }); }, []);
+  const eoa = useActiveAccountRecord()?.address ?? null;
 
-  const initialSymbol = params.symbol === 'USDC' ? 'USDC' : 'ETH';
-  const initialChainId = typeof params.chainId === 'string' && Number.isFinite(Number(params.chainId))
-    ? Number(params.chainId) : 11155111;
-  const [symbol, setSymbol] = useState<'ETH' | 'USDC'>(initialSymbol);
-  const [chainId, setChainId] = useState<number>(initialChainId);
+  const [symbol, setSymbol] = useState<'ETH' | 'USDC'>(params.symbol === 'USDC' ? 'USDC' : 'ETH');
+  const [chainId, setChainId] = useState<number>(initialChainIdOf(params.chainId));
   const balance = useSelectedBalance('shielded', { symbol, chainId });
   const [amount, setAmount] = useState('');
   const [phase, setPhase] = useState<Phase>('idle');

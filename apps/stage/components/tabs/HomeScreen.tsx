@@ -17,7 +17,7 @@ import { deriveLabels, useHomeFilters } from './HomeScreen.labelbar';
 import { filterRowsByQuery } from './HomeScreen.search';
 import { channelsFilterBarVisible } from './HomeScreen.model';
 import { useHomeState, type HomeState } from './HomeScreen.state';
-import { deriveSortedRows } from './HomeScreen.derive';
+import { deriveSortedRows } from './HomeScreen.helpers';
 
 function rowMenuProps(rowMenu: HomeState['rowMenu'], pinned: Set<string>) {
   if (!rowMenu) {

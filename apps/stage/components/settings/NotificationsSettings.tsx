@@ -7,26 +7,23 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box, Col, WEB_EDGE_CONTENT, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../layout';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { usePalette } from '../../lib/theme';
-import { loadPushEnabled, setPushEnabled, subscribePushPref, isPushEnabledSync } from '../../lib/pushPref';
+import { setPushEnabled, usePushEnabled } from '../../lib/pushPref';
 import { getOrCreateXmtpClient } from '../../modules/messaging';
 import { registerPushWithDaemon, unregisterPushFromDaemon } from '../../lib/push';
-import { SettingsHeader } from './SettingsHeader';
+import { StackHeader } from '../chrome/StackHeader';
 import { SettingsList, SettingsToggleRow } from './rows';
 
 export function NotificationsSettings(): React.ReactElement {
   const { text: fg } = usePalette();
   const insets = useSafeAreaInsets();
-  const [enabled, setEnabled] = useState(isPushEnabledSync());
+  const enabled = usePushEnabled();
   const [perm, setPerm] = useState<string>('undetermined');
 
   useEffect(() => {
-    void loadPushEnabled().then(setEnabled);
     void Notifications.getPermissionsAsync().then(p => { setPerm(p.status); }).catch(() => undefined);
-    return subscribePushPref(() => { setEnabled(isPushEnabledSync()); });
   }, []);
 
   const onToggle = (next: boolean): void => {
-    setEnabled(next);
     void (async (): Promise<void> => {
       await setPushEnabled(next);
       try {
@@ -46,7 +43,7 @@ export function NotificationsSettings(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <SettingsHeader title="Notifications"/>
+      <StackHeader title="Notifications"/>
       <ScrollView style={WEB_STACK_SCROLL} contentContainerStyle={[{ paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT, WEB_STACK_CONTENT_PAD]}>
         <Caption color={fg} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
           PUSH NOTIFICATIONS

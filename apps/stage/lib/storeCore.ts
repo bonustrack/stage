@@ -1,4 +1,18 @@
 
+import { useCallback, useSyncExternalStore } from 'react';
+
+export function useStoreValue<T>(
+  subscribe: (cb: () => void) => () => void,
+  get: () => T,
+  prime?: () => void,
+): T {
+  const subscribeAndPrime = useCallback((cb: () => void): (() => void) => {
+    prime?.();
+    return subscribe(cb);
+  }, [subscribe, prime]);
+  return useSyncExternalStore(subscribeAndPrime, get, get);
+}
+
 export function makeListeners<T = void>(): {
   listeners: Set<(v: T) => void>;
   notify: (v: T) => void;

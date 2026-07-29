@@ -1,13 +1,12 @@
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from './Spinner';
 import { Col, Row } from './layout';
 import { DANGER, usePalette } from '../lib/theme';
-import { fetchAssetRows } from './tabs/WalletScreen.data';
-import { type AssetRow } from './tabs/WalletScreen.assets';
+import { useAssetRows } from './tabs/WalletScreen.data';
 import { TokensList } from './tabs/WalletScreen.tokens';
 import { NftsView } from './tabs/WalletScreen.parts';
 import { useNfts } from '../lib/useNfts';
@@ -49,26 +48,9 @@ export function ProfileHoldings({ address }: { address: string }): React.ReactEl
 
   const [tab, setTab] = useState<HoldingsTab>('tokens');
 
-  const [rows, setRows] = useState<AssetRow[] | null>(null);
-  const [err, setErr] = useState(false);
+  const { data: rows = null, isError: err } = useAssetRows(address);
 
   const { nfts, nftStatus } = useNfts(tab === 'nfts', address);
-
-  useEffect(() => {
-    if (!address) return;
-    let cancelled = false;
-    setRows(null);
-    setErr(false);
-    void (async (): Promise<void> => {
-      try {
-        const next = await fetchAssetRows(address);
-        if (!cancelled) setRows(next);
-      } catch {
-        if (!cancelled) setErr(true);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [address]);
 
   return (
     <Col>

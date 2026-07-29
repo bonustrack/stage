@@ -2,7 +2,7 @@
 import { Children, isValidElement, type ReactNode } from 'react';
 import { Pressable, View, Text as RNText, type ViewStyle } from 'react-native';
 import { borderStyleEntries, type ResolvedBoxBorder } from '../layout';
-import { FONT_SIZE, schemePalette } from '../tokens';
+import { FONT_SIZE, fontName, schemePalette } from '../tokens';
 
 export type ListItemAlign = 'start' | 'center' | 'end';
 
@@ -55,7 +55,7 @@ export function ListView(props: ListViewProps): React.ReactElement {
           style={{
             color: c.sub,
             fontSize: FONT_SIZE.xs,
-            fontFamily: 'Calibre-Medium',
+            fontFamily: fontName.sans,
             paddingVertical: 10,
             paddingHorizontal: 16,
           }}

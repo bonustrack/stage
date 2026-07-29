@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -10,41 +10,27 @@ import { Spinner } from '../Spinner';
 import { Col, Box, Row } from '../layout';
 import { DANGER } from '../../lib/theme';
 import { usePeerProfiles } from '../../lib/peerProfiles';
-import { fetchActivityAllChains, type ActivityRow } from '../../lib/etherscan';
+import { fetchActivityAllChains, type ActivityRow } from '@stage-labs/client/api/etherscan';
 import { PrivateActivitySection } from './WalletScreen.privateActivity';
-import { SoftBadge, WalletIcon } from '../wallet/widgets';
+import { AppIcon } from '../widgets';
+import { Badge } from '@stage-labs/kit/react-native/badge';
 import { relTime, txPartyLabel, txTitle } from '@stage-labs/client/wallet/activityFormat';
-
-type Status = 'idle' | 'loading' | 'ready' | 'error';
 
 export function ActivityView({ address, head, sub, border, bg }: {
   address?: string; head: string; sub: string; border: string; bg: string;
 }): React.ReactElement {
-  const [rows, setRows] = useState<ActivityRow[]>([]);
-  const [status, setStatus] = useState<Status>('idle');
-
-  useEffect(() => {
-    if (!address) return;
-    let cancelled = false;
-    setStatus('loading');
-    void (async (): Promise<void> => {
-      try {
-        const list = await fetchActivityAllChains(address, 50);
-        if (cancelled) return;
-        setRows(list);
-        setStatus('ready');
-      } catch {
-        if (!cancelled) setStatus('error');
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [address]);
+  const { data, isError } = useQuery({
+    queryKey: ['activity', address ?? ''],
+    queryFn: () => fetchActivityAllChains(address ?? '', 50),
+    enabled: !!address,
+  });
+  const rows = data ?? [];
 
   usePeerProfiles(rows.map(r => r.counterparty));
 
   const priv = <PrivateActivitySection head={head} sub={sub} border={border} bg={bg} />;
 
-  if (status === 'error') {
+  if (isError) {
     return (
       <Col margin={{ x: 16 }}>
         {priv}
@@ -56,7 +42,7 @@ export function ActivityView({ address, head, sub, border, bg }: {
       </Col>
     );
   }
-  if (status === 'loading' || status === 'idle') {
+  if (data === undefined) {
     return (
       <Col margin={{ x: 16 }}>
         {priv}
@@ -112,7 +98,7 @@ function TxRowView(params: TxRowParams): React.ReactElement {
       : undefined;
   return (
     <Row align="center" gap={12}>
-      <WalletIcon
+      <AppIcon
         name={DIR_ICON[params.direction]}
         color={params.failed === true ? DANGER_COLOR[scheme] : undefined}
         size={16}
@@ -121,7 +107,7 @@ function TxRowView(params: TxRowParams): React.ReactElement {
         <Text value={params.title} weight="semibold" color="link" truncate />
         <Row align="center" gap={6} flex={1}>
           {params.chainLabel === undefined ? null : (
-            <SoftBadge label={params.chainLabel} color="secondary" />
+            <Badge label={params.chainLabel} color="secondary" />
           )}
           <Caption value={params.counterparty} color="secondary" truncate />
         </Row>

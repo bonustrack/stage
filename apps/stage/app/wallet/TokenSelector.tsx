@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Image } from '@stage-labs/kit/react-native/image';
@@ -12,8 +12,8 @@ import { AppModal } from '../../components/AppModal';
 import { Spinner } from '../../components/Spinner';
 import { TokenRowBody } from '../../components/wallet/TokenRowView';
 import { usePalette } from '../../lib/theme';
-import { getActiveAccount } from '../../lib/accounts';
-import { fetchAssetRows } from '../../components/tabs/WalletScreen.data';
+import { useActiveAccountRecord } from '../../modules/messaging';
+import { useAssetRows } from '../../components/tabs/WalletScreen.data';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, type AssetRow } from '../../components/tabs/WalletScreen.assets';
 import { privateBalancesToRows, symbolPricesFromPublic } from '../../components/tabs/WalletScreen.private.rows';
 import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
@@ -43,21 +43,9 @@ function byValueDesc(rows: AssetRow[]): AssetRow[] {
 }
 
 function useSelectorRows(mode: SelectorMode): { rows: AssetRow[]; loading: boolean } {
-  const [publicRows, setPublicRows] = useState<AssetRow[] | null>(null);
+  const address = useActiveAccountRecord()?.address ?? '';
+  const publicRows = useAssetRows(address).data ?? null;
   const { snapshot } = usePrivateWallet(mode === 'shielded' || mode === 'combined');
-
-  useEffect(() => {
-    let cancelled = false;
-    void (async (): Promise<void> => {
-      try {
-        const acct = await getActiveAccount();
-        if (!acct?.address || cancelled) return;
-        const next = await fetchAssetRows(acct.address);
-        if (!cancelled) setPublicRows(next);
-      } catch { }
-    })();
-    return () => { cancelled = true; };
-  }, []);
 
   const shieldedRows = useMemo(
     () => privateBalancesToRows(snapshot, symbolPricesFromPublic(publicRows ?? [])),

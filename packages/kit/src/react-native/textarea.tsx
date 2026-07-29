@@ -7,13 +7,14 @@ import {
   type TextStyle,
 } from 'react-native';
 
-type FocusEv = Parameters<NonNullable<TextInputProps['onFocus']>>[0];
 type ContentSizeEv = Parameters<NonNullable<TextInputProps['onContentSizeChange']>>[0];
 import {
   CONTROL_SIZES,
+  chainFocus,
   controlBoxStyle,
   controlColors,
   controlTextStyle,
+  fieldIds,
   type ControlSize,
   type ControlVariant,
 } from '../control.styles';
@@ -47,21 +48,6 @@ export interface TextareaProps {
     TextInputProps,
     'value' | 'defaultValue' | 'onChangeText' | 'style' | 'placeholder' | 'editable' | 'multiline'
   >;
-}
-
-function fieldIds(name: string | undefined): { nativeID?: string; accessibilityLabelledBy?: string } {
-  if (!name) return {};
-  return { nativeID: `input-${name}`, accessibilityLabelledBy: `label-${name}` };
-}
-
-function chainFocus(
-  focused: boolean,
-  setFocused: (v: boolean) => void,
-  next: ((e: FocusEv) => void) | undefined,
-  e: FocusEv,
-): void {
-  setFocused(focused);
-  next?.(e);
 }
 
 function resolveHeight(

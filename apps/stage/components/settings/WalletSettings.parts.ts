@@ -1,8 +1,9 @@
 
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { KERNEL_VERSION_STRING, ENTRY_POINT_VERSION, SCW_CHAIN_ID } from '@stage-labs/client/zerodev/config';
 import type { WalletDeployState, WalletModuleRole } from './WalletSettings.model';
-import { getActiveAccount, type AccountRecord } from '../../lib/accounts';
+import type { AccountRecord } from '../../lib/accounts';
+import { useActiveAccountRecord } from '../../modules/messaging';
 import { makePublicClient } from '../../lib/zerodev/client';
 
 export type ModuleRole = WalletModuleRole;
@@ -80,30 +81,23 @@ function modelFromRecord(rec: AccountRecord): WalletModel {
   };
 }
 
-export function useWalletModel(epoch: number): { model: WalletModel | null; deploy: DeployState } {
-  const [model, setModel] = useState<WalletModel | null>(null);
-  const [deploy, setDeploy] = useState<DeployState>('loading');
+async function fetchDeployState(rec: AccountRecord): Promise<DeployState> {
+  if (rec.type !== 'smart') return 'unknown';
+  try {
+    const code = await makePublicClient().getCode({ address: rec.address as `0x${string}` });
+    return code && code !== '0x' ? 'deployed' : 'counterfactual';
+  } catch {
+    return 'unknown';
+  }
+}
 
-  useEffect(() => {
-    let alive = true;
-    setDeploy('loading');
-    void (async (): Promise<void> => {
-      const rec = await getActiveAccount();
-      if (!alive) return;
-      if (!rec) { setModel(null); setDeploy('unknown'); return; }
-      setModel(modelFromRecord(rec));
-      if (rec.type !== 'smart') { setDeploy('unknown'); return; }
-      try {
-        const client = makePublicClient();
-        const code = await client.getCode({ address: rec.address as `0x${string}` });
-        if (!alive) return;
-        setDeploy(code && code !== '0x' ? 'deployed' : 'counterfactual');
-      } catch {
-        if (alive) setDeploy('unknown');
-      }
-    })();
-    return () => { alive = false; };
-  }, [epoch]);
-
-  return { model, deploy };
+export function useWalletModel(): { model: WalletModel | null; deploy: DeployState } {
+  const rec = useActiveAccountRecord();
+  const { data: deploy } = useQuery({
+    queryKey: ['walletDeployState', rec?.id ?? '', rec?.address ?? ''],
+    queryFn: () => (rec ? fetchDeployState(rec) : Promise.resolve<DeployState>('unknown')),
+    enabled: !!rec,
+    staleTime: 60_000,
+  });
+  return { model: rec ? modelFromRecord(rec) : null, deploy: deploy ?? 'loading' };
 }

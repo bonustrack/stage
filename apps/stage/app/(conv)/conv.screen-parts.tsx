@@ -1,8 +1,7 @@
 
 import { Share } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Text } from '@stage-labs/kit/react-native/text';
-import { Box, Row, WebFullBleed } from '../../components/layout';
+import { Box } from '../../components/layout';
 import type { Input } from '@stage-labs/kit/react-native/input';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import type { useRouter } from 'expo-router';
@@ -14,10 +13,9 @@ import { ChannelMenu } from '../../components/ChannelMenu';
 import { isPinned } from '../../lib/pins';
 import { shortAddress, getCachedRows } from '../../modules/messaging';
 import { flash } from '../../lib/toast';
-import { HeaderAvatar, BubbleActionMenu } from '../../components/xmtp-conv/parts';
+import { BubbleActionMenu, ConvTopnavIdentity, ConvTopnavShell } from '../../components/xmtp-conv/parts';
 import { previewOf } from '../../components/xmtp-conv/feed-helpers';
 import { SearchTopnavBar } from '../../components/SearchTopnavBar';
-import { TOPNAV_HEIGHT } from '../../components/Topnav';
 import { RequestActionBar } from '../../components/RequestActionBar';
 import type { useConversationState } from '../../components/xmtp-conv/useConversationState';
 import type { EdgeInsets } from 'react-native-safe-area-context';
@@ -35,29 +33,15 @@ export function ConversationTopnav({ c, convId, fg, head, border, insets, router
 }): React.ReactElement {
   const { isGroup, peerAddr, groupImage, setOverflowOpen } = c;
   return (
-    <Box style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2 }}>
-    <WebFullBleed>
-    <Row height={TOPNAV_HEIGHT + insets.top} surface="toolbar" padding={{ top: insets.top }} align="stretch" style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-      <Pressable
-        onPress={() => { router.replace('/'); }}
-        style={{ paddingLeft: 14, paddingRight: 8, justifyContent: 'center' }}
->
-        <Icon name="arrowLeft" size={22} color={fg}/>
-      </Pressable>
-      {}
-      <Pressable
+    <ConvTopnavShell fg={fg} border={border} safeTop={insets.top} onBack={() => { router.replace('/'); }}>
+      <ConvTopnavIdentity
+        peerAddr={peerAddr} groupImage={groupImage} channelId={convId} isGroup={isGroup}
+        border={border} head={head} title={topnavTitle(c)}
         onPress={() => {
           if (isGroup) router.push({ pathname: '/group/[convId]', params: { convId } });
           else if (peerAddr) router.push({ pathname: '/profile/[address]', params: { address: peerAddr } });
         }}
-        style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 14 }}
->
-        <HeaderAvatar peerAddr={peerAddr} groupImage={groupImage} channelId={convId} isGroup={isGroup} border={border}/>
-        <Text weight="semibold" size="4xl" color={head} style={{ flex: 1 }} numberOfLines={1}>
-          {topnavTitle(c)}
-        </Text>
-      </Pressable>
-      {}
+      />
       <Pressable
         onPress={() => { setOverflowOpen(true); }}
         hitSlop={8}
@@ -65,9 +49,7 @@ export function ConversationTopnav({ c, convId, fg, head, border, insets, router
 >
         <Icon name="dotsVertical" size={22} color={fg}/>
       </Pressable>
-    </Row>
-    </WebFullBleed>
-    </Box>
+    </ConvTopnavShell>
   );
 }
 

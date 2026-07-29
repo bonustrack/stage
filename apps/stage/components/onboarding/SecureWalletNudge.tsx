@@ -1,5 +1,6 @@
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { Title } from '@stage-labs/kit/react-native/title';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -7,9 +8,9 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { Col, Row, Box } from '../layout';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { flash } from '../../lib/toast';
-import { getActiveAccount } from '../../lib/accounts';
+import { useActiveAccountRecord } from '../../modules/messaging';
 import { revealRecoveryPhrase } from '../../lib/zerodev';
-import { useEnablePasskey } from '../../lib/useEnablePasskey';
+import { useEnablePasskey } from '../../lib/passkey';
 import { isWalletBackedUp, setWalletBackedUp } from '../../lib/walletBackup';
 
 export function SecureWalletNudge(): React.ReactElement | null {
@@ -17,22 +18,19 @@ export function SecureWalletNudge(): React.ReactElement | null {
   const dark = useEffectiveColorScheme() === 'dark';
   const pal = usePalette();
 
-  const [show, setShow] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   const [phrase, setPhrase] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const passkey = useEnablePasskey();
 
-  useEffect(() => {
-    let alive = true;
-    void (async () => {
-      const acct = await getActiveAccount();
-      const done = await isWalletBackedUp();
-      if (alive) setShow(acct?.type === 'smart' && !done);
-    })();
-    return () => { alive = false; };
-  }, []);
+  const acct = useActiveAccountRecord();
+  const { data: backedUp } = useQuery({
+    queryKey: ['walletBackedUp'],
+    queryFn: () => isWalletBackedUp(),
+    staleTime: Infinity,
+  });
 
-  if (!show) return null;
+  if (dismissed || acct?.type !== 'smart' || backedUp !== false) return null;
 
   const reveal = (): void => {
     if (busy) return;
@@ -54,13 +52,13 @@ export function SecureWalletNudge(): React.ReactElement | null {
     void (async () => {
       await setWalletBackedUp(true);
       setPhrase(null);
-      setShow(false);
+      setDismissed(true);
       flash('Recovery phrase backed up');
     })();
   };
 
   const dismiss = (): void => {
-    void (async () => { await setWalletBackedUp(true); setShow(false); })();
+    void (async () => { await setWalletBackedUp(true); setDismissed(true); })();
   };
 
   return (

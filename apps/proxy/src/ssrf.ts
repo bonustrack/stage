@@ -74,6 +74,50 @@ function isBlockedHost(host: string): boolean {
 
 export class SsrfError extends Error {}
 
+async function drain(
+  reader: ReadableStreamDefaultReader<Uint8Array>, maxBytes: number, reject: boolean,
+): Promise<Uint8Array | null> {
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (!value) continue;
+    if (reject && total + value.length > maxBytes) { void reader.cancel(); return null; }
+    chunks.push(value);
+    total += value.length;
+    if (!reject && total >= maxBytes) { void reader.cancel(); break; }
+  }
+  const out = new Uint8Array(total);
+  let off = 0;
+  for (const c of chunks) { out.set(c, off); off += c.length; }
+  return out;
+}
+
+export async function readCappedBytes(
+  res: Response, maxBytes: number, mode: 'truncate' | 'reject' = 'truncate',
+): Promise<Uint8Array | null> {
+  const reader = res.body?.getReader() as ReadableStreamDefaultReader<Uint8Array> | undefined;
+  if (!reader) {
+    const buf = new Uint8Array(await res.arrayBuffer());
+    if (buf.byteLength <= maxBytes) return buf;
+    return mode === 'reject' ? null : buf.slice(0, maxBytes);
+  }
+  return drain(reader, maxBytes, mode === 'reject');
+}
+
+export async function readCappedText(
+  res: Response, maxBytes: number, mode: 'truncate' | 'reject' = 'truncate',
+): Promise<string | null> {
+  if (!res.body) {
+    const text = await res.text();
+    if (new TextEncoder().encode(text).length <= maxBytes) return text;
+    return mode === 'reject' ? null : text.slice(0, maxBytes);
+  }
+  const bytes = await readCappedBytes(res, maxBytes, mode);
+  return bytes === null ? null : new TextDecoder('utf-8').decode(bytes);
+}
+
 export function assertPublicUrl(raw: string): URL {
   let u: URL;
   try {

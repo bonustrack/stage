@@ -6,7 +6,8 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { changeColor } from '../../lib/uiColors';
 import { Col, Row } from '../layout';
-import { SoftBadge, WalletIcon } from './widgets';
+import { AppIcon } from '../widgets';
+import { Badge } from '@stage-labs/kit/react-native/badge';
 
 export interface TokenRowViewParams {
   symbol: string;
@@ -48,7 +49,7 @@ export function TokenRowBody(params: TokenRowViewParams): React.ReactElement {
       <Col gap={2}>
         <Row align="center" gap={6}>
           {params.isPrivate === true ? (
-            <WalletIcon name="shield-check" color="secondary" size={16} />
+            <AppIcon name="shield-check" color="secondary" size={16} />
           ) : null}
           <Text value={params.symbol} weight="semibold" truncate />
         </Row>
@@ -59,11 +60,11 @@ export function TokenRowBody(params: TokenRowViewParams): React.ReactElement {
         <Text value={params.balance} weight="semibold" textAlign="end" />
         <Row gap={4} justify="end" align="center">
           <Caption value={params.priceUsd} color="secondary" />
-          <SoftBadge label={params.change24h} color={badgeColor} />
+          <Badge label={params.change24h} color={badgeColor} />
         </Row>
       </Col>
       {params.trailingChevron !== false ? (
-        <WalletIcon name="chevron-right" color={changeColor(params.change24h)[scheme]} size={16} />
+        <AppIcon name="chevron-right" color={changeColor(params.change24h)[scheme]} size={16} />
       ) : null}
     </Row>
   );

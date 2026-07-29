@@ -3,7 +3,7 @@ import { useMemo, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
-import { fontSize } from '../tokens';
+import { fontName, fontSize } from '../tokens';
 import { Box, Row, Col } from './box';
 import { Icon } from './icon';
 import { Input } from './input';
@@ -158,7 +158,7 @@ function HsvPicker({ value, onChange, p }: {
           borderRadius: 10, borderWidth: 1, borderColor: p.border,
           backgroundColor: p.rowBg,
           color: text != null && !isHexColor(text) ? '#eb4c5b' : p.head,
-          fontSize: fontSize('md'), fontFamily: 'Calibre-Medium',
+          fontSize: fontSize('md'), fontFamily: fontName.sans,
         }}
 />
     </Box>

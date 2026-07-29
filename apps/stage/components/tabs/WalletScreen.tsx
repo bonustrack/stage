@@ -1,5 +1,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useActiveAccountRecord } from '../../modules/messaging';
+import { refreshSnapshot } from '../../lib/railgun/wallet';
+import { useAssetRows } from './WalletScreen.data';
+import { type AssetRow } from './WalletScreen.assets';
 
 import { ScrollView } from 'react-native-gesture-handler';
 import { usePullToRefresh } from './PullToRefresh';
@@ -10,7 +14,7 @@ import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Title } from '@stage-labs/kit/react-native/title';
 import { walletHeroDisplay, walletTotalUsd } from './WalletScreen.model';
-import { WalletActionButton } from '../wallet/widgets';
+import { WalletActionButton } from '../widgets';
 import { useRouter } from 'expo-router';
 import { flash } from '../../lib/toast';
 import { usePeerProfiles } from '../../lib/peerProfiles';
@@ -27,8 +31,35 @@ import { startEoaShieldWatch } from '../../lib/railgun/eoaShieldWatch';
 import { isBridgeAvailable } from '../../lib/railgun/bridge';
 import { TokensList } from './WalletScreen.tokens';
 import { ActivityView } from './WalletScreen.activity';
-import { useWalletBalances } from './WalletScreen.balances';
 import { useWalletFocused } from './useWalletFocused';
+
+interface WalletBalances {
+  address: string;
+  rows: AssetRow[] | null;
+  err: string;
+  refreshing: boolean;
+  onRefresh: () => void;
+}
+
+export function useWalletBalances(privAccountId: string | null, focused: boolean): WalletBalances {
+  const address = useActiveAccountRecord()?.address ?? '';
+  const rows = useAssetRows(address, focused);
+  const refetch = rows.refetch;
+
+  const onRefresh = useCallback((): void => {
+    if (!address) return;
+    if (privAccountId) void refreshSnapshot(privAccountId).catch(() => undefined);
+    void refetch();
+  }, [address, privAccountId, refetch]);
+
+  return {
+    address,
+    rows: rows.data ?? null,
+    err: rows.error ? rows.error.message : '',
+    refreshing: rows.isRefetching,
+    onRefresh,
+  };
+}
 
 function useWalletEffects(focused: boolean, privAccountId: string | null, address?: string): void {
   useEffect(() => {

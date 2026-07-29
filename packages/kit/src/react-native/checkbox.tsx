@@ -1,7 +1,9 @@
 
 import { useState } from 'react';
+import { FONT_SIZE, fontName } from '../tokens';
 import { Pressable, View, Text as RNText, type ViewStyle } from 'react-native';
 import { Icon } from './icon';
+import { styleList } from '../control.styles';
 
 export interface CheckboxProps {
   name?: string;
@@ -14,11 +16,6 @@ export interface CheckboxProps {
   size?: number;
   dark?: boolean;
   style?: ViewStyle | ViewStyle[];
-}
-
-function styleList(style: ViewStyle | ViewStyle[] | undefined): ViewStyle[] {
-  if (!style) return [];
-  return Array.isArray(style) ? style : [style];
 }
 
 function checkboxColors(dark: boolean): { head: string; bg: string; border: string } {
@@ -89,7 +86,7 @@ export function Checkbox(props: CheckboxProps): React.ReactElement {
         {checked ? <Icon name="check" size={size - 4} color={bg} /> : null}
       </View>
       {label ? (
-        <RNText style={{ color: head, fontSize: 15, fontFamily: 'Calibre-Medium' }}>{label}</RNText>
+        <RNText style={{ color: head, fontSize: FONT_SIZE.md, fontFamily: fontName.sans }}>{label}</RNText>
       ) : null}
     </Pressable>
   );

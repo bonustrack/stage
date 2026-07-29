@@ -2,7 +2,7 @@
   "name": "stage-monorepo",
   "private": true,
   "version": "0.0.0",
-  "description": "Stage — an XMTP messenger with multi-account support, Snapshot profiles, group channels, and an onchain wallet, with parallel Vue web and Expo mobile clients.",
+  "description": "Stage — an XMTP messenger with multi-account support, Snapshot profiles, group channels, and an onchain wallet, shipped as one universal Expo app for android, ios and web.",
   "license": "MIT",
   "repository": {
     "type": "git",

@@ -7,11 +7,18 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { usePalette } from '../../lib/theme';
 import { TabsPager } from '../../components/SwipeTabs';
-import { HoistedTopnav } from '../../components/tabs/HoistedTopnav';
+import { Topnav } from '../../components/Topnav';
+import { useTopnavSlot } from '../../components/tabs/topnavSlots';
 import { TAB_ICONS, WebTabBar, WebTabRail } from '../../components/tabs/WebTabRail';
 import { useWebTabRail } from '../../components/tabs/useWebTabRail';
 import { useTotalUnread } from '../../lib/useTotalUnread';
 import { unreadBadgeLabel } from '../../lib/format';
+
+function HoistedTopnav(): React.ReactElement {
+  const slot = useTopnavSlot();
+  if (slot?.override) return <>{slot.override}</>;
+  return <Topnav right={slot?.right} />;
+}
 
 function PagerOverlay({ insetTop, tabBarHeight, topnavHidden }: {
   insetTop: number; tabBarHeight: number; topnavHidden: boolean;

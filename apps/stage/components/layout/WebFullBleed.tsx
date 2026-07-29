@@ -1,6 +1,6 @@
 
 import { Platform, type ViewStyle } from 'react-native';
-import { Col } from './Box';
+import { Col } from '@stage-labs/kit/react-native/box';
 import { WEB_CONTENT_MAX_WIDTH } from './WebContentFrame';
 
 export const WEB_CHROME_WIDTH = 'calc(100vw - var(--stage-pane-left, 0px) - var(--stage-sbw, 0px))';

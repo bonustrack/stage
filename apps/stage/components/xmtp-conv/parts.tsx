@@ -6,7 +6,8 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Dialog } from '@stage-labs/kit/react-native/dialog';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Box, Row } from '../layout';
+import { Box, Row, WebFullBleed } from '../layout';
+import { TOPNAV_HEIGHT } from '../Topnav';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Divider } from '@stage-labs/kit/react-native/divider';
 import { Avatar } from '../Avatar';
@@ -30,6 +31,43 @@ export function HeaderAvatar({ peerAddr, groupImage, channelId, isGroup, border 
     return <Avatar address={channelStampSeed(channelId)} size="sm" square style={{ backgroundColor: border }} />;
   }
   return null;
+}
+
+export function ConvTopnavShell({ fg, border, safeTop, onBack, children }: {
+  fg: string; border: string; safeTop: number; onBack: () => void; children: React.ReactNode;
+}): React.ReactElement {
+  return (
+    <Box style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2 }}>
+    <WebFullBleed>
+    <Row height={TOPNAV_HEIGHT + safeTop} surface="toolbar" padding={{ top: safeTop }} align="stretch" style={{ borderBottomWidth: 1, borderBottomColor: border }}>
+      <Pressable
+        onPress={onBack}
+        style={{ paddingLeft: 14, paddingRight: 8, justifyContent: 'center' }}
+>
+        <Icon name="arrowLeft" size={22} color={fg}/>
+      </Pressable>
+      {children}
+    </Row>
+    </WebFullBleed>
+    </Box>
+  );
+}
+
+export function ConvTopnavIdentity({ peerAddr, groupImage, channelId, isGroup, border, head, title, onPress }: {
+  peerAddr: string | null; groupImage: string; channelId: string; isGroup: boolean;
+  border: string; head: string; title: string; onPress: () => void;
+}): React.ReactElement {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 14 }}
+>
+      <HeaderAvatar peerAddr={peerAddr} groupImage={groupImage} channelId={channelId} isGroup={isGroup} border={border}/>
+      <Text weight="semibold" size="4xl" color={head} style={{ flex: 1 }} numberOfLines={1}>
+        {title}
+      </Text>
+    </Pressable>
+  );
 }
 
 const MORE_EMOJIS = ['❤️', '😂', '😮', '😢', '🎉', '🤯', '🥳', '👏', '🙌', '🤝', '✅', '❌', '👌', '🚀', '💀', '🤔', '😅', '🫶'];

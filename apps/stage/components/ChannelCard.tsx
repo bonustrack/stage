@@ -1,7 +1,6 @@
 
 import { router } from 'expo-router';
 import { ChannelRow } from './ChannelRow';
-import { DmPeerCard } from './ChannelCard.dm';
 import { Box } from './layout';
 import { useConvMeta } from '../modules/messaging';
 import { usePeerProfiles, getPeerName, isPeerResolved } from '../lib/peerProfiles';
@@ -62,6 +61,32 @@ function ConvIdCard({ convId }: { convId: string }): React.ReactElement {
         avatarUri={avatarUri}
         avatarAddress={avatarAddress}
         square={meta.isGroup}
+        onPress={open}
+        noBorder
+      />
+    </Box>
+  );
+}
+
+function DmPeerCard({ address }: { address: string }): React.ReactElement {
+  usePeerProfiles([address]);
+  const { border } = usePalette();
+  const blockRadius = useBlockRadius();
+
+  const peerName = getPeerName(address);
+  const title = peerName == null || peerName === '' ? shortAddress(address) : peerName;
+  const avatarAddress = !isPeerResolved(address) ? null : address;
+
+  const open = (): void => {
+    router.push({ pathname: '/[convId]', params: { convId: address } });
+  };
+
+  return (
+    <Box radius={blockRadius} style={{ borderWidth: 1, borderColor: border, overflow: 'hidden' }}>
+      <ChannelRow
+        title={title}
+        subtitle="Direct message"
+        avatarAddress={avatarAddress}
         onPress={open}
         noBorder
       />

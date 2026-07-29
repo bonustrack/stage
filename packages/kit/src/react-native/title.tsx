@@ -1,6 +1,6 @@
 
 import { Text as RNText, type TextProps as RNTextProps, type TextStyle } from 'react-native';
-import { resolveColorToken, type ColorToken } from '../tokens';
+import { fontName, resolveColorToken, type ColorToken } from '../tokens';
 import { useKitPalette, useKitScheme } from './theme-context';
 
 export type TitleLevel = 1 | 2 | 3;
@@ -33,7 +33,7 @@ export function Title(props: TitleProps): React.ReactElement {
   const base: TextStyle = {
     color: color != null ? resolveColorToken(color, scheme) : palette.link,
     fontSize: heroPx ?? LEVEL_SIZE[lvl],
-    fontFamily: 'Calibre-Semibold',
+    fontFamily: fontName.head,
     ...(heroPx === undefined ? {} : { lineHeight: heroPx * 1.05 }),
   };
 

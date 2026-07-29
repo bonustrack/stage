@@ -33,12 +33,12 @@ exports[`derivePalette default seed returns the LEGACY palette (light) — snaps
 exports[`derivePalette custom seed derives a palette — snapshot 1`] = `
 {
   "bg": "#101820",
-  "border": "#334455",
+  "border": "#222324",
   "danger": "#eb4c5b",
-  "inputBg": "#222e3b",
+  "inputBg": "#191e22",
   "link": "#ff6600",
   "primary": "#ff6600",
-  "sub": "#7a8693",
+  "sub": "#71767a",
   "success": "#57b375",
   "text": "#c0c8d0",
   "toolbarBg": "#101820",

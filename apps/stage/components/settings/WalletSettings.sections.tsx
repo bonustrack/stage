@@ -1,6 +1,5 @@
 
 import type { ReactElement, ReactNode } from 'react';
-import { resolveBadgeStyle } from '@stage-labs/kit/badge';
 import { Card } from '@stage-labs/kit/react-native/card';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -17,15 +16,16 @@ import {
 import { Box, Col, Row } from '../layout';
 import { usePalette } from '../../lib/theme';
 import { type DeployState, type useWalletModel } from './WalletSettings.parts';
-import { type useEnablePasskey } from '../../lib/useEnablePasskey';
-import { type useRemovePasskey } from '../../lib/useRemovePasskey';
-import { SettingsIcon, SettingsList } from './rows';
+import { type PasskeyAction } from '../../lib/passkey';
+import { SettingsList } from './rows';
+import { AppIcon } from '../widgets';
+import { Badge } from '@stage-labs/kit/react-native/badge';
 
 export interface C { fg: string; head: string; sub: string; border: string; rowBg: string }
 
 type WalletModel = NonNullable<ReturnType<typeof useWalletModel>['model']>;
-type Passkey = ReturnType<typeof useEnablePasskey>;
-type RemovePasskey = ReturnType<typeof useRemovePasskey>;
+type Passkey = PasskeyAction;
+type RemovePasskey = PasskeyAction;
 
 export type CardFn = (children: ReactNode) => ReactElement;
 
@@ -75,29 +75,8 @@ export function WalletCopyRow({ label, value, onCopy }: {
         <Text value={label} size="xs" color="secondary" />
         <Text value={value} size="md" color="text" />
       </Col>
-      <SettingsIcon name="copy" color="link" size={16} />
+      <AppIcon name="copy" color="link" size={16} />
     </ListViewItem>
-  );
-}
-
-function RoleBadge({ role }: { role: WalletModuleRole }): React.ReactElement {
-  const scheme = useKitScheme();
-  const styled = resolveBadgeStyle(WALLET_ROLE_BADGE[role], undefined, 'sm', scheme);
-  return (
-    <Box
-      direction="row"
-      align="center"
-      padding={{ x: 8, y: 2 }}
-      radius="sm"
-      background={styled.background}
-    >
-      <Text
-        value={role.toUpperCase()}
-        size={styled.fontToken}
-        weight="semibold"
-        color={styled.foreground}
-      />
-    </Box>
   );
 }
 
@@ -112,7 +91,7 @@ function WalletModuleRow({ name, role, status }: {
       <Col flex={1} gap={3}>
         <Row align="center" gap={8}>
           <Text value={name} size="md" color="text" />
-          <RoleBadge role={role} />
+          <Badge label={role.toUpperCase()} color={WALLET_ROLE_BADGE[role]} />
         </Row>
         <Text value={status} size="xs" color="secondary" />
       </Col>
@@ -124,7 +103,7 @@ function WalletDeployRow({ deploy }: { deploy: WalletDeployState }): React.React
   const dark = useKitScheme() === 'dark';
   return (
     <ListViewItem align="center" gap={12} dark={dark}>
-      <SettingsIcon
+      <AppIcon
         name={deploy === 'deployed' ? 'checkCircle' : 'clock'}
         color={deploy === 'deployed' ? 'link' : 'secondary'}
         size={24}
@@ -153,11 +132,11 @@ function WalletManageList({ passkey, removePasskey, guardianCount, onAction }: {
           dark={dark}
           onPress={() => { onAction(item.action); }}
         >
-          <SettingsIcon name={item.icon} color="link" size={28} />
+          <AppIcon name={item.icon} color="link" size={28} />
           <Col flex={1}>
             <Text value={item.label} size="md" color="text" />
           </Col>
-          <SettingsIcon name="chevronRight" color="link" size={24} />
+          <AppIcon name="chevronRight" color="link" size={24} />
         </ListViewItem>
       ))}
     </SettingsList>

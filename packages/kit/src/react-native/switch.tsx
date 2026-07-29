@@ -1,5 +1,6 @@
 
 import { Pressable, Text as RNText, View, type ViewStyle } from 'react-native';
+import { FONT_SIZE, fontName } from '../tokens';
 
 export interface SwitchProps {
   name?: string;
@@ -58,8 +59,8 @@ export function Switch(props: SwitchProps): React.ReactElement {
         <RNText
           style={{
             color: dark ? '#ffffff' : '#000000',
-            fontSize: 15,
-            fontFamily: 'Calibre-Medium',
+            fontSize: FONT_SIZE.md,
+            fontFamily: fontName.sans,
           }}
         >
           {label}

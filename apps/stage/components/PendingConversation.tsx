@@ -2,8 +2,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Icon } from '@stage-labs/kit/react-native/icon';
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import type { HistoryEntry } from '@stage-labs/client/types';
@@ -13,11 +11,11 @@ import { getPeerName, usePeerProfiles } from '../lib/peerProfiles';
 import { usePalette } from '../lib/theme';
 import { flash } from '../lib/toast';
 import { getActiveAccountIdSync, lineOfDmPeer } from '../modules/messaging';
-import { Box, Col, Row, WebFullBleed } from './layout';
+import { Col } from './layout';
 import { MessengerBubble } from './MessengerBubble';
 import { ComposerEditor } from './MessengerComposer.editor';
 import { TOPNAV_HEIGHT } from './Topnav';
-import { HeaderAvatar } from './xmtp-conv/parts';
+import { ConvTopnavIdentity, ConvTopnavShell } from './xmtp-conv/parts';
 
 export type PendingReason = 'unregistered' | 'stale-installations' | 'failed';
 
@@ -41,27 +39,13 @@ function PendingTopnav({ address, title }: { address: string; title: string }): 
   const insets = useSafeAreaInsets();
   const { text: fg, link: head, border } = usePalette();
   return (
-    <Box style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2 }}>
-    <WebFullBleed>
-    <Row height={TOPNAV_HEIGHT + insets.top} surface="toolbar" padding={{ top: insets.top }} align="stretch" style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-      <Pressable
-        onPress={() => { router.replace('/'); }}
-        style={{ paddingLeft: 14, paddingRight: 8, justifyContent: 'center' }}
->
-        <Icon name="arrowLeft" size={22} color={fg}/>
-      </Pressable>
-      <Pressable
+    <ConvTopnavShell fg={fg} border={border} safeTop={insets.top} onBack={() => { router.replace('/'); }}>
+      <ConvTopnavIdentity
+        peerAddr={address} groupImage="" channelId={address} isGroup={false}
+        border={border} head={head} title={title}
         onPress={() => { router.push({ pathname: '/profile/[address]', params: { address } }); }}
-        style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 14 }}
->
-        <HeaderAvatar peerAddr={address} groupImage="" channelId={address} isGroup={false} border={border}/>
-        <Text weight="semibold" size="4xl" color={head} style={{ flex: 1 }} numberOfLines={1}>
-          {title}
-        </Text>
-      </Pressable>
-    </Row>
-    </WebFullBleed>
-    </Box>
+      />
+    </ConvTopnavShell>
   );
 }
 

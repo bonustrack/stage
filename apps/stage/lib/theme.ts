@@ -1,5 +1,5 @@
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useColorScheme } from 'react-native';
 import { secureStorage } from '../platform/storage';
 import {
@@ -15,27 +15,25 @@ import {
   subscribe as subscribeOverrides,
 } from './colorOverrides';
 import { derivePalette } from '@stage-labs/kit/theme-derive';
+import { useStoreValue } from './storeCore';
 import {
   getRadius, getBlockRadius, loadRadius,
   subscribe as subscribeRadius,
 } from './radiusOverride';
 
 export {
-  setCustomTheme, resetOverrides,
+  setCustomTheme, resetOverrides, seedColorHex,
   setSeedColor, setSeedDensity, setSeedRadius, setSeedBaseSize,
+  setAccentLevel, setGrayscaleTint, setGrayscaleShade,
   type SeedColorKey,
 } from './colorOverrides';
-export { useCustomTheme } from './useCustomTheme';
 
 export function useThemeSeeds(): import('./colorOverrides').ThemeSeeds {
-  const [s, setS] = useState(getSeeds());
-  useEffect(() => {
-    loadOverrides();
-    setS(getSeeds());
-    const unsub = subscribeOverrides(() => { setS(getSeeds()); });
-    return unsub;
-  }, []);
-  return s;
+  return useStoreValue(subscribeOverrides, getSeeds, loadOverrides);
+}
+
+export function useCustomTheme(): boolean {
+  return useStoreValue(subscribeOverrides, isCustomTheme, loadOverrides);
 }
 
 export type { ThemePreference };
@@ -67,15 +65,17 @@ export async function setThemePreference(p: ThemePreference): Promise<void> {
   try { await secureStorage.set(STORAGE_KEY, p); } catch { }
 }
 
+function subscribeThemePreference(cb: () => void): () => void {
+  listeners.add(cb);
+  return () => { listeners.delete(cb); };
+}
+
+function getThemePreference(): ThemePreference { return cached; }
+
+function primeThemePreference(): void { void ensureLoaded(); }
+
 export function useThemePreference(): ThemePreference {
-  const [pref, setPref] = useState<ThemePreference>(cached);
-  useEffect(() => {
-    void ensureLoaded();
-    const fn = (p: ThemePreference): void => { setPref(p); };
-    listeners.add(fn);
-    return (): void => { listeners.delete(fn); };
-  }, []);
-  return pref;
+  return useStoreValue(subscribeThemePreference, getThemePreference, primeThemePreference);
 }
 
 export function useEffectiveColorScheme(): 'light' | 'dark' {
@@ -92,33 +92,18 @@ export interface Palette {
   inputBg: string; toolbarBg: string;
 }
 
-function useOverridesVersion(): number {
-  const [v, setV] = useState(0);
-  useEffect(() => {
-    loadOverrides();
-    loadRadius();
-    const bump = (): void => { setV((n) => n + 1); };
-    const unsubColors = subscribeOverrides(bump);
-    const unsubRadius = subscribeRadius(() => { setDefaultButtonRadius(getRadius()); bump(); });
-    setDefaultButtonRadius(getRadius());
-    return () => { unsubColors(); unsubRadius(); };
-  }, []);
-  return v;
+
+function primeRadius(): void {
+  loadRadius();
+  setDefaultButtonRadius(getRadius());
+}
+
+function subscribeButtonRadius(cb: () => void): () => void {
+  return subscribeRadius(() => { setDefaultButtonRadius(getRadius()); cb(); });
 }
 
 export function useRadius(): number {
-  const [r, setR] = useState(getRadius());
-  useEffect(() => {
-    loadRadius();
-    setDefaultButtonRadius(getRadius());
-    setR(getRadius());
-    const unsub = subscribeRadius(() => {
-      setDefaultButtonRadius(getRadius());
-      setR(getRadius());
-    });
-    return unsub;
-  }, []);
-  return r;
+  return useStoreValue(subscribeButtonRadius, getRadius, primeRadius);
 }
 
 export function withAlpha(color: string, alpha: number): string {
@@ -140,22 +125,17 @@ export function withAlpha(color: string, alpha: number): string {
 }
 
 export function useBlockRadius(): number {
-  const [r, setR] = useState(getBlockRadius());
-  useEffect(() => {
-    loadRadius();
-    setR(getBlockRadius());
-    const unsub = subscribeRadius(() => { setR(getBlockRadius()); });
-    return unsub;
-  }, []);
-  return r;
+  return useStoreValue(subscribeRadius, getBlockRadius, loadRadius);
 }
 
 export function usePalette(): Palette {
   const scheme = useEffectiveColorScheme();
-  const version = useOverridesVersion();
+  const custom = useCustomTheme();
+  const seeds = useThemeSeeds();
+  useRadius();
   return useMemo(() => {
-    if (isCustomTheme()) {
-      const d = derivePalette(getSeeds()[scheme], scheme);
+    if (custom) {
+      const d = derivePalette(seeds[scheme], scheme);
       return {
         bg: d.bg, border: d.border, text: d.text, sub: d.sub, link: d.link,
         primary: d.primary, danger: d.danger, success: d.success,
@@ -169,5 +149,5 @@ export function usePalette(): Palette {
       danger: s.dangerColor, success: s.successColor,
       inputBg: s.inputBgColor, toolbarBg: s.toolbarBgColor,
     };
-  }, [scheme, version]);
+  }, [scheme, custom, seeds]);
 }

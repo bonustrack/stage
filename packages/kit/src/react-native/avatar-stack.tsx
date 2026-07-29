@@ -1,5 +1,6 @@
 
 import { Text as RNText, View } from 'react-native';
+import { fontName } from '../tokens';
 import { AvatarView } from './avatar.view';
 
 export interface AvatarStackEntry {
@@ -42,7 +43,7 @@ function FallbackCell(input: {
         style={{
           color: input.color,
           fontSize: input.size * 0.4,
-          fontFamily: 'Calibre-Semibold',
+          fontFamily: fontName.head,
         }}
       >
         {input.label.slice(0, 2)}

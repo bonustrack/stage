@@ -11,10 +11,13 @@ import {
 import {
   controlBoxStyle,
   controlColors,
+  styleList,
+  triggerLabelStyle,
+  triggerRowStyle,
   type ControlSize,
   type ControlVariant,
 } from '../control.styles';
-import { BLOCK_RADIUS_DEFAULT, FONT_SIZE, schemePalette } from '../tokens';
+import { BLOCK_RADIUS_DEFAULT, FONT_SIZE, fontName, schemePalette } from '../tokens';
 import { Icon } from './icon';
 
 export interface SelectOption {
@@ -38,11 +41,6 @@ export interface SelectProps {
   onChange?: (value: string) => void;
   dark?: boolean;
   style?: ViewStyle | ViewStyle[];
-}
-
-function styleList(style: ViewStyle | ViewStyle[] | undefined): ViewStyle[] {
-  if (!style) return [];
-  return Array.isArray(style) ? style : [style];
 }
 
 interface SelectTriggerProps {
@@ -70,15 +68,11 @@ function SelectTrigger(props: SelectTriggerProps): React.ReactElement {
       accessibilityState={{ disabled, expanded: open }}
       disabled={disabled}
       onPress={onOpen}
-      style={[
-        box,
-        { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: block ? 'stretch' : 'flex-start', opacity: disabled ? 0.5 : 1 },
-        ...styleList(style),
-      ]}
+      style={[box, triggerRowStyle(block, disabled), ...styleList(style)]}
     >
       <RNText
         numberOfLines={1}
-        style={{ flex: 1, color: current ? head : placeholderColor, fontSize: FONT_SIZE.md, fontFamily: 'Calibre-Medium' }}
+        style={triggerLabelStyle(current ? head : placeholderColor, FONT_SIZE.md)}
       >
         {current ? current.label : placeholder}
       </RNText>
@@ -116,7 +110,7 @@ function SelectRow(props: {
         borderBottomColor: rowBorder,
       }}
     >
-      <RNText style={{ flex: 1, color: head, fontSize: FONT_SIZE.lg, fontFamily: 'Calibre-Medium' }}>
+      <RNText style={{ flex: 1, color: head, fontSize: FONT_SIZE.lg, fontFamily: fontName.sans }}>
         {opt.label}
       </RNText>
       {isSel ? <Icon name="check" size={18} color={head} /> : null}
@@ -152,7 +146,7 @@ function SelectSheet(props: {
             ))}
             {options.length === 0 ? (
               <View style={{ padding: 16 }}>
-                <RNText style={{ color: placeholderColor, fontFamily: 'Calibre-Medium' }}>No options</RNText>
+                <RNText style={{ color: placeholderColor, fontFamily: fontName.sans }}>No options</RNText>
               </View>
             ) : null}
           </ScrollView>

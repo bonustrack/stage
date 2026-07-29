@@ -2,7 +2,7 @@
 import { type ReactNode } from 'react';
 import { Pressable, View, Text as RNText, type ViewStyle } from 'react-native';
 import { Button } from './button';
-import { BLOCK_RADIUS_DEFAULT, FONT_SIZE, schemePalette } from '../tokens';
+import { BLOCK_RADIUS_DEFAULT, FONT_SIZE, fontName, schemePalette } from '../tokens';
 
 export type CardSize = 'sm' | 'md' | 'lg';
 
@@ -55,7 +55,7 @@ function CardStatusLine(props: {
       style={{
         color: sub,
         fontSize: STATUS_SIZE[size],
-        fontFamily: 'Calibre-Medium',
+        fontFamily: fontName.sans,
         marginBottom: collapsed ? 0 : 8,
       }}
       numberOfLines={1}

@@ -1,5 +1,6 @@
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { type Conversation } from '@xmtp/react-native-sdk';
 import { useContactsFocused } from '../components/tabs/useWalletFocused';
 import {
@@ -13,6 +14,8 @@ export interface Contact {
   address: string;
   name: string;
 }
+
+const NO_ADDRESSES: string[] = [];
 
 function seedAddresses(): string[] {
   const out = new Set<string>();
@@ -51,24 +54,13 @@ async function collectAddresses(): Promise<string[]> {
 }
 
 export function useAllContacts(): { contacts: Contact[]; loading: boolean } {
-  const [addresses, setAddresses] = useState<string[]>(() => seedAddresses());
-  const [loading, setLoading] = useState(true);
-
   const focused = useContactsFocused();
-
-  useEffect(() => {
-    if (!focused) return;
-    let cancelled = false;
-    void (async (): Promise<void> => {
-      try {
-        const addrs = await collectAddresses();
-        if (!cancelled) setAddresses(addrs);
-      } catch { } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [focused]);
+  const { data: addresses = NO_ADDRESSES, isFetched } = useQuery({
+    queryKey: ['allContacts', getActiveAccountIdSync()],
+    queryFn: collectAddresses,
+    enabled: focused,
+    placeholderData: seedAddresses,
+  });
 
   const version = usePeerProfiles(addresses);
 
@@ -78,5 +70,5 @@ export function useAllContacts(): { contacts: Contact[]; loading: boolean } {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [addresses, version]);
 
-  return { contacts, loading };
+  return { contacts, loading: !isFetched };
 }

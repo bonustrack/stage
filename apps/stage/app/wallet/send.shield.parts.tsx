@@ -1,12 +1,9 @@
-import { Linking } from 'react-native';
-
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box } from '../../components/layout';
 import { DANGER } from '../../lib/theme';
-import { explorerTxUrl } from '@stage-labs/client/xmtp/tx';
+import { TxHashLink, type FormPal } from './wallet.form';
 
-interface Pal { fg: string; head: string; sub: string; border: string; inputBg: string; link: string }
+type Pal = FormPal;
 
 const short0zk = (a: string): string => (a.length> 18 ? `${a.slice(0, 10)}…${a.slice(-6)}` : a);
 
@@ -43,13 +40,7 @@ export function ShieldPhaseLine({ txHash, err, errPhase, bridgeOk, chainId }: {
   if (!txHash && !err) return null;
   return (
     <Box padding={{ x: 4 }} gap={4}>
-      {txHash ? (
-        <Pressable onPress={() => { void Linking.openURL(explorerTxUrl(chainId, txHash)); }} hitSlop={6}>
-          <Text size="xs">
-            {txHash.slice(0, 10)}…{txHash.slice(-8)}
-          </Text>
-        </Pressable>
-      ) : null}
+      <TxHashLink chainId={chainId} txHash={txHash} />
       {err ? (
         <>
           <Text size="xs" color={DANGER} selectable>{err}</Text>

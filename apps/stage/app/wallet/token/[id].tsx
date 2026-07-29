@@ -5,7 +5,7 @@ import { Title } from '@stage-labs/kit/react-native/title';
 import { tokenDetailViewModel } from '@stage-labs/client/wallet/tokenDetail';
 import { Box, Col, Row } from '../../../components/layout';
 import { WalletHeader } from '../../../components/wallet/WalletHeader';
-import { WalletActionButton, WalletIcon } from '../../../components/wallet/widgets';
+import { WalletActionButton, AppIcon } from '../../../components/widgets';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePalette } from '../../../lib/theme';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, type AssetRow } from '../../../components/tabs/WalletScreen.assets';
@@ -86,7 +86,7 @@ function TokenDetailBody({ r, symbol, sub, bg, border }: {
           bg={bg}
         />
         <Row align="center" gap={6} margin={{ top: 10 }}>
-          {r.isPrivate === true ? <WalletIcon name="eyeOff" color={sub} size={20} /> : null}
+          {r.isPrivate === true ? <AppIcon name="eyeOff" color={sub} size={20} /> : null}
           <Title size="lg" color="link">{vm.name}</Title>
         </Row>
         <Box radius="full" padding={{ x: 10, y: 3 }} border={{

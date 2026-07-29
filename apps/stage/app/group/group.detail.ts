@@ -1,9 +1,12 @@
 
 import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useConvMeta, fetchGroupRoles } from '../../modules/messaging';
 import { ensurePeerProfiles, getPeerName, subscribePeerProfiles } from '@stage-labs/client/identity/peerProfiles';
 
 type Roles = Record<string, 'owner' | 'admin' | 'member'>;
+
+const NO_ROLES: Roles = {};
 type Names = Record<string, string | null>;
 
 interface ActionSeeders {
@@ -21,7 +24,6 @@ export function useGroupDetail(
 ): { memberNames: Names; memberRoles: Roles } {
   const meta = useConvMeta(convId);
   const [memberNames, setMemberNames] = useState<Names>({});
-  const [memberRoles, setMemberRoles] = useState<Roles>({});
 
   const metaMembers = meta.memberAddrs;
   const sortedMembers = useMemo(
@@ -39,14 +41,12 @@ export function useGroupDetail(
   }, [meta.groupName, meta.groupImage, meta.groupDescription, sortedMembers]);
 
   const inboxToAddr = meta.inboxToAddr;
-  useEffect(() => {
-    if (!convId || Object.keys(inboxToAddr).length === 0) return;
-    let cancelled = false;
-    void fetchGroupRoles(convId, inboxToAddr).then(roles => {
-      if (!cancelled) setMemberRoles(roles);
-    });
-    return (): void => { cancelled = true; };
-  }, [convId, inboxToAddr]);
+  const inboxIds = Object.keys(inboxToAddr);
+  const { data: memberRoles = NO_ROLES } = useQuery({
+    queryKey: ['groupRoles', convId ?? '', inboxIds.sort().join(',')],
+    queryFn: () => fetchGroupRoles(convId ?? '', inboxToAddr),
+    enabled: !!convId && inboxIds.length > 0,
+  });
 
   useEffect(() => {
     if (sortedMembers.length === 0) return;

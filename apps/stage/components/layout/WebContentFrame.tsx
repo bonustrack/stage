@@ -1,6 +1,6 @@
 
 import { Platform } from 'react-native';
-import { Col } from './Box';
+import { Col } from '@stage-labs/kit/react-native/box';
 
 export const WEB_CONTENT_MAX_WIDTH = 900;
 

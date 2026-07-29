@@ -5,7 +5,7 @@ import { Col, WEB_EDGE_CONTENT, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '
 import { DANGER, useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { AccountSecuritySection } from '../tabs/SettingsScreen.account';
 import { SecureWalletNudge } from '../onboarding/SecureWalletNudge';
-import { SettingsHeader } from './SettingsHeader';
+import { StackHeader } from '../chrome/StackHeader';
 
 export function SecuritySettings(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
@@ -16,7 +16,7 @@ export function SecuritySettings(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <SettingsHeader title="Security"/>
+      <StackHeader title="Security"/>
       <ScrollView style={WEB_STACK_SCROLL} contentContainerStyle={[{ paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT, WEB_STACK_CONTENT_PAD]}>
         <SecureWalletNudge/>
         <AccountSecuritySection

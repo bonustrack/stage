@@ -1,36 +1,21 @@
 
 import { appStorage } from '../platform/storage';
 import {
-  DEFAULT_SEED, type ThemeSeed, type Scheme,
+  grayscaleFromHex,
+  type ThemeSeed, type Scheme, type AccentLevel,
+  type GrayscaleShade, type GrayscaleTint,
   type RadiusName, type Density, type BaseSize,
-  RADIUS_NAME_DEFAULT, DENSITY_DEFAULT, BASE_SIZE_DEFAULT,
 } from '@stage-labs/kit';
+import {
+  cloneSeed, defaultSeeds, migrateSeeds,
+  type SeedColorKey, type ThemeSeeds,
+} from './colorOverrides.model';
 
-export type { Scheme };
-
-export interface ThemeSeeds {
-  light: ThemeSeed;
-  dark: ThemeSeed;
-  density: Density;
-  radius: RadiusName;
-  baseSize: BaseSize;
-}
+export type { Scheme, ThemeSeeds, SeedColorKey };
+export { isHex, seedColorHex } from './colorOverrides.model';
 
 const SEED_KEY = 'theme:seed';
 const CUSTOM_KEY = 'theme:custom';
-const HEX_RE = /^#([0-9a-fA-F]{6})$/;
-
-export function isHex(v: string): boolean { return HEX_RE.test(v.trim()); }
-
-function defaultSeeds(): ThemeSeeds {
-  return {
-    light: { ...DEFAULT_SEED.light, surface: { ...DEFAULT_SEED.light.surface } },
-    dark: { ...DEFAULT_SEED.dark, surface: { ...DEFAULT_SEED.dark.surface } },
-    density: DENSITY_DEFAULT,
-    radius: RADIUS_NAME_DEFAULT,
-    baseSize: BASE_SIZE_DEFAULT,
-  };
-}
 
 let cache: ThemeSeeds = defaultSeeds();
 let customEnabled = false;
@@ -52,11 +37,8 @@ export function loadOverrides(): void {
       const map = new Map(pairs);
       const seedRaw = map.get(SEED_KEY);
       if (seedRaw != null) {
-        const parsed = JSON.parse(seedRaw) as Partial<ThemeSeeds>;
-        if (parsed && typeof parsed === 'object' && parsed.light && parsed.dark) {
-          cache = { ...defaultSeeds(), ...parsed };
-          changed = true;
-        }
+        const parsed: unknown = JSON.parse(seedRaw);
+        if (parsed && typeof parsed === 'object') { cache = migrateSeeds(parsed); changed = true; }
       }
       const customRaw = map.get(CUSTOM_KEY);
       if (customRaw != null) { customEnabled = customRaw === '1'; changed = true; }
@@ -76,18 +58,39 @@ export function setCustomTheme(on: boolean): void {
   void appStorage.set(CUSTOM_KEY, on ? '1' : '0').catch(() => undefined);
 }
 
-export type SeedColorKey = 'grayscale' | 'accent' | 'background' | 'foreground';
-export function setSeedColor(scheme: Scheme, key: SeedColorKey, hex: string): void {
-  if (!isHex(hex)) return;
-  const v = hex.trim().toLowerCase();
-  const next: ThemeSeeds = { ...cache, [scheme]: { ...cache[scheme], surface: { ...cache[scheme].surface } } };
-  const s = next[scheme];
-  if (key === 'background') s.surface.background = v;
-  else if (key === 'foreground') s.surface.foreground = v;
-  else s[key] = v;
-  cache = next;
+function commit(scheme: Scheme, seed: ThemeSeed): void {
+  cache = { ...cache, [scheme]: seed };
   emit();
   persist();
+}
+
+export function setSeedColor(scheme: Scheme, key: SeedColorKey, hex: string): void {
+  const v = hex.trim().toLowerCase();
+  if (!/^#([0-9a-f]{6})$/.test(v)) return;
+  const seed = cloneSeed(cache[scheme]);
+  if (key === 'background') seed.surface.background = v;
+  else if (key === 'foreground') seed.surface.foreground = v;
+  else if (key === 'accent') seed.accent.primary = v;
+  else seed.grayscale = grayscaleFromHex(v, scheme);
+  commit(scheme, seed);
+}
+
+export function setAccentLevel(scheme: Scheme, level: AccentLevel): void {
+  const seed = cloneSeed(cache[scheme]);
+  seed.accent.level = level;
+  commit(scheme, seed);
+}
+
+export function setGrayscaleTint(scheme: Scheme, tint: GrayscaleTint): void {
+  const seed = cloneSeed(cache[scheme]);
+  seed.grayscale.tint = tint;
+  commit(scheme, seed);
+}
+
+export function setGrayscaleShade(scheme: Scheme, shade: GrayscaleShade): void {
+  const seed = cloneSeed(cache[scheme]);
+  seed.grayscale.shade = shade;
+  commit(scheme, seed);
 }
 
 export function setSeedDensity(d: Density): void {

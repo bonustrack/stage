@@ -1,5 +1,5 @@
 
-import { assertPublicUrl, SsrfError } from './ssrf.ts';
+import { assertPublicUrl, readCappedBytes, SsrfError } from './ssrf.ts';
 
 const TIMEOUT_MS = 5000;
 const MAX_REDIRECTS = 3;
@@ -51,34 +51,11 @@ async function fetchFollowing(
   throw new SsrfError('too many redirects');
 }
 
-async function drainCapped(
-  reader: ReadableStreamDefaultReader<Uint8Array>,
-): Promise<ArrayBuffer | null> {
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (!value) continue;
-    total += value.length;
-    if (total > MAX_IMG_BYTES) { void reader.cancel(); return null; }
-    chunks.push(value);
-  }
-  const out = new Uint8Array(total);
-  let off = 0;
-  for (const c of chunks) { out.set(c, off); off += c.length; }
-  return out.buffer;
-}
-
 async function readImageCapped(res: Response): Promise<ArrayBuffer | null> {
   const declared = Number(res.headers.get('content-length') ?? '');
   if (Number.isFinite(declared) && declared > MAX_IMG_BYTES) return null;
-  const reader = res.body?.getReader() as ReadableStreamDefaultReader<Uint8Array> | undefined;
-  if (!reader) {
-    const buf = await res.arrayBuffer();
-    return buf.byteLength > MAX_IMG_BYTES ? null : buf;
-  }
-  return drainCapped(reader);
+  const bytes = await readCappedBytes(res, MAX_IMG_BYTES, 'reject');
+  return bytes === null ? null : (bytes.buffer as ArrayBuffer);
 }
 
 function imageContentType(res: Response): string | null {

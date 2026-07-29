@@ -12,7 +12,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { Platform } from 'react-native';
 import { CardStyleInterpolators, TransitionPresets, TransitionSpecs } from '@react-navigation/stack';
-import { NativeSwipeStack } from '../components/NativeSwipeStack';
+import { createStackNavigator } from '@react-navigation/stack';
+import { withLayoutContext } from 'expo-router';
 import { useEffectiveColorScheme, usePalette, useRadius } from '../lib/theme';
 import { KitThemeProvider } from '@stage-labs/kit/react-native/theme-context';
 import { useDeepLinks } from '../lib/deepLinks';
@@ -47,6 +48,8 @@ function isDarkBg(hex: string): boolean {
   const r = (n >> 16) & 0xff, g = (n >> 8) & 0xff, b = n & 0xff;
   return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.5;
 }
+
+const NativeSwipeStack = withLayoutContext(createStackNavigator().Navigator);
 
 export default function RootLayout(): React.ReactElement {
   const scheme = useEffectiveColorScheme();

@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -18,19 +18,13 @@ export function useProfileColors(): ProfileColors {
 }
 
 export function useSelfAddress(): string {
-  const [self, setSelf] = useState(cachedSelfEthAddress() ?? '');
-  useEffect(() => {
-    if (self) return;
-    let alive = true;
-    void (async (): Promise<void> => {
-      try {
-        const address = await selfEthAddress();
-        if (alive && address !== null) setSelf(address);
-      } catch { }
-    })();
-    return () => { alive = false; };
-  }, [self]);
-  return self;
+  const { data } = useQuery({
+    queryKey: ['selfEthAddress'],
+    queryFn: async (): Promise<string> => (await selfEthAddress()) ?? '',
+    initialData: () => cachedSelfEthAddress() ?? undefined,
+    staleTime: Infinity,
+  });
+  return data ?? '';
 }
 
 export function ProfileHeader({ variant, insetTop, c }: {

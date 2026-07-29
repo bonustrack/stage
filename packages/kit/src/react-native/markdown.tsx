@@ -1,5 +1,6 @@
 
 import { useMemo } from 'react';
+import { FONT_SIZE, fontName } from '../tokens';
 import { type TextStyle } from 'react-native';
 import RNMarkdown from 'react-native-markdown-display';
 
@@ -19,12 +20,12 @@ function markdownStyles(fg: string, link: string, dark: boolean): Record<string,
     color: fg,
     fontSize,
     lineHeight,
-    fontFamily: 'Calibre-Semibold',
+    fontFamily: fontName.head,
     marginTop: 8,
     marginBottom: 3,
   });
   return {
-    body: { color: fg, fontSize: 15, lineHeight: lh, fontFamily: 'Calibre-Medium' },
+    body: { color: fg, fontSize: FONT_SIZE.md, lineHeight: lh, fontFamily: fontName.sans },
     paragraph: { marginTop: 0, marginBottom: 6 },
     heading1: h(24, 28),
     heading2: h(21, 25),
@@ -32,12 +33,12 @@ function markdownStyles(fg: string, link: string, dark: boolean): Record<string,
     heading4: h(18, 22),
     heading5: h(18, 22),
     heading6: h(18, 22),
-    strong: { fontFamily: 'Calibre-Semibold', fontWeight: 'normal', fontSize: 15, lineHeight: lh },
-    em: { fontFamily: 'Calibre-Medium', fontStyle: 'italic', fontWeight: 'normal', fontSize: 15, lineHeight: lh },
+    strong: { fontFamily: fontName.head, fontWeight: 'normal', fontSize: FONT_SIZE.md, lineHeight: lh },
+    em: { fontFamily: fontName.sans, fontStyle: 'italic', fontWeight: 'normal', fontSize: FONT_SIZE.md, lineHeight: lh },
     link: { color: link, textDecorationLine: 'underline' },
-    code_inline: { backgroundColor: codeBg, paddingHorizontal: 4, borderRadius: 4, fontFamily: 'Menlo', fontSize: 13, lineHeight: lh },
-    fence: { backgroundColor: codeBg, padding: 8, borderRadius: 6, fontFamily: 'Menlo', fontSize: 13, lineHeight: 19 },
-    code_block: { backgroundColor: codeBg, padding: 8, borderRadius: 6, fontFamily: 'Menlo', fontSize: 13, lineHeight: 19 },
+    code_inline: { backgroundColor: codeBg, paddingHorizontal: 4, borderRadius: 4, fontFamily: fontName.mono, fontSize: FONT_SIZE.xs, lineHeight: lh },
+    fence: { backgroundColor: codeBg, padding: 8, borderRadius: 6, fontFamily: fontName.mono, fontSize: FONT_SIZE.xs, lineHeight: 19 },
+    code_block: { backgroundColor: codeBg, padding: 8, borderRadius: 6, fontFamily: fontName.mono, fontSize: FONT_SIZE.xs, lineHeight: 19 },
     bullet_list: { marginTop: 2, marginBottom: 6 },
     ordered_list: { marginTop: 2, marginBottom: 6 },
     blockquote: { borderLeftWidth: 3, borderLeftColor: codeBg, paddingLeft: 8, marginVertical: 4 },

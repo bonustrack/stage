@@ -1,7 +1,7 @@
 
 import { Pressable, Text as RNText, View, type ViewStyle } from 'react-native';
 import { Icon } from './icon';
-import { FONT_SIZE } from '../tokens';
+import { FONT_SIZE, fontName } from '../tokens';
 import type { HeroIconName } from '@stage-labs/kit/icons';
 
 export interface TabsOptionView {
@@ -91,7 +91,7 @@ export function Tabs(props: TabsProps): React.ReactElement {
               style={{
                 color: selected ? p.activeText : p.text,
                 fontSize: underline ? FONT_SIZE['3xl'] : FONT_SIZE.sm,
-                fontFamily: 'Calibre-Semibold',
+                fontFamily: fontName.head,
               }}
             >
               {opt.label}

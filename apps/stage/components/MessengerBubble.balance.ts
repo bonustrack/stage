@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { formatUnits, isAddress, erc20Abi, type Hex } from 'viem';
 
 import { getActiveAccount } from '../lib/accounts';
@@ -36,8 +36,6 @@ interface OnchainMeta {
   symbol: string;
 }
 
-const cache = new Map<string, Promise<OnchainMeta | null>>();
-
 const minimalErc20Abi = [
   ...erc20Abi.filter(x => x.type === 'function' && (x.name === 'balanceOf' || x.name === 'decimals' || x.name === 'symbol')),
 ] as const;
@@ -69,20 +67,6 @@ async function readOnchain(
   return { raw, decimals, symbol };
 }
 
-async function loadMeta(cid: number, token: string | undefined, addr: Hex): Promise<OnchainMeta | null> {
-  const key = `${cid}:${(token ?? 'native').toLowerCase()}:${addr.toLowerCase()}`;
-  let meta = cache.get(key);
-  if (!meta) {
-    meta = readOnchain(cid, token, addr).catch(() => null);
-    cache.set(key, meta);
-  }
-  const onchain = await meta;
-  if (!onchain) {
-    cache.delete(key);
-  }
-  return onchain;
-}
-
 function buildBalance(
   onchain: OnchainMeta, native: boolean,
   symbol: string | undefined, needed: number | undefined,
@@ -109,7 +93,7 @@ async function resolveBalance(
   if (!addr || !isAddress(addr)) return null;
   const known = ASSETS.find(a => a.chainId === cid
     && a.symbol.toLowerCase() === (symbol ?? '').toLowerCase());
-  const onchain = await loadMeta(cid, token, addr);
+  const onchain = await readOnchain(cid, token, addr).catch(() => null);
   if (!onchain) return null;
   return buildBalance(onchain, isNativeToken(token), symbol, needed, known);
 }
@@ -120,19 +104,9 @@ export function usePayerBalance(
   symbol: string | undefined,
   needed?: number,
 ): PayerBalance | null {
-  const [bal, setBal] = useState<PayerBalance | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const next = await resolveBalance(chainId, token, symbol, needed);
-        if (!cancelled && next) setBal(next);
-      } catch {
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [chainId, token, symbol, needed]);
-
-  return bal;
+  const { data } = useQuery({
+    queryKey: ['payerBalance', parseChainId(chainId), token ?? '', symbol ?? '', needed ?? -1],
+    queryFn: () => resolveBalance(chainId, token, symbol, needed),
+  });
+  return data ?? null;
 }
