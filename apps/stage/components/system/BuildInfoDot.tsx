@@ -43,6 +43,8 @@ function resolveBuildInfo(now: number): { hash: string; time: string; relative: 
   };
 }
 
+const ABOVE_ALL_CHROME = 100;
+
 export function BuildInfoDot(): React.ReactElement {
   const [open, setOpen] = useState(false);
   const { text, bg, border } = usePalette();
@@ -51,7 +53,7 @@ export function BuildInfoDot(): React.ReactElement {
   const head = relative.length > 0 ? `${hash} · ${relative}` : hash;
 
   return (
-    <Box pointerEvents="box-none" style={StyleSheet.absoluteFill}>
+    <Box pointerEvents="box-none" style={{ ...StyleSheet.absoluteFillObject, zIndex: ABOVE_ALL_CHROME }}>
       {open ? <Pressable style={StyleSheet.absoluteFill} onPress={() => { setOpen(false); }} /> : null}
       <Box pointerEvents="box-none" style={{ position: 'absolute', left: 10, bottom: insets.bottom + 10 }}>
         {open ? (
