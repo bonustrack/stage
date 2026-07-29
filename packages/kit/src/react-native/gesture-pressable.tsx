@@ -1,6 +1,6 @@
 
 import { useMemo, type ReactNode } from 'react';
-import { View, type ViewStyle } from 'react-native';
+import { View, type TextStyle, type ViewStyle } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
 
@@ -16,7 +16,7 @@ export interface GesturePressableProps {
 
 const SWIPE_THRESHOLD = 40;
 
-const TAPPABLE: ViewStyle = { cursor: 'pointer' };
+const TAPPABLE: ViewStyle & Pick<TextStyle, 'userSelect'> = { cursor: 'pointer', userSelect: 'none' };
 
 function pickDirection(dx: number, dy: number): SwipeDir | undefined {
   if (Math.abs(dx) < SWIPE_THRESHOLD && Math.abs(dy) < SWIPE_THRESHOLD) return undefined;
