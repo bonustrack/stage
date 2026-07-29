@@ -6,9 +6,11 @@ import { runOnJS } from 'react-native-reanimated';
 
 export type SwipeDir = 'left' | 'right' | 'up' | 'down';
 
+export interface GesturePoint { x: number; y: number }
+
 export interface GesturePressableProps {
   children: ReactNode;
-  onPress?: () => void;
+  onPress?: (point: GesturePoint) => void;
   onLongPress?: () => void;
   onSwipe?: (direction: SwipeDir) => void;
   hitSlop?: number;
@@ -29,8 +31,8 @@ export function GesturePressable(props: GesturePressableProps): React.ReactEleme
 
   const gesture = useMemo(() => {
     const touchAction = onSwipe ? 'none' : 'manipulation';
-    const tap = Gesture.Tap().onEnd((_e, success) => {
-      if (success && onPress) runOnJS(onPress)();
+    const tap = Gesture.Tap().onEnd((e, success) => {
+      if (success && onPress) runOnJS(onPress)({ x: e.absoluteX, y: e.absoluteY });
     });
     if (hitSlop !== undefined) tap.hitSlop(hitSlop);
     const long = Gesture.LongPress()
