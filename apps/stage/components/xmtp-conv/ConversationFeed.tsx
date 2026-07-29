@@ -2,7 +2,7 @@
 import { useMemo, useRef } from 'react';
 import { Platform } from 'react-native';
 import { FlatList } from 'react-native-gesture-handler';
-import { Box, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from '../layout';
+import { Box, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT_WIDE } from '../layout';
 import { Spinner } from '../Spinner';
 import { ConversationIntro } from './ConversationIntro';
 import { AT_BOTTOM_THRESHOLD_PX, convScrollKey, planFeedRestore, saveScrollOffset } from '../../lib/scrollPos';
@@ -154,7 +154,7 @@ export function ConversationFeed({
       onEndReachedThreshold={0.5}
       onStartReached={o.onStartReached}
       onStartReachedThreshold={0.5}
-      contentContainerStyle={[o.contentPadding, WEB_EDGE_CONTENT]}
+      contentContainerStyle={[o.contentPadding, WEB_EDGE_CONTENT_WIDE]}
       onLayout={(ev) => { viewportHeight.current = ev.nativeEvent.layout.height; }}
       onScroll={(ev) => {
         const m = ev.nativeEvent;

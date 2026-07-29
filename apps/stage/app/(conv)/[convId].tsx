@@ -5,7 +5,7 @@ import { Animated as RNAnimated, Platform, type ViewStyle } from 'react-native';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from '../../components/Spinner';
-import { Box, Col, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT, WEB_CHROME_WIDTH, WEB_CHROME_SHIFT } from '../../components/layout';
+import { Box, Col, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT_WIDE, WEB_CHROME_WIDTH, WEB_CHROME_SHIFT } from '../../components/layout';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
@@ -71,7 +71,7 @@ function FooterDock({ children, onHeight }: {
       style={{ position: 'absolute', bottom: 0, left: '50%', zIndex: 2 } as unknown as ViewStyle}
       onLayout={(e) => { onHeight(e.nativeEvent.layout.height); }}
 >
-      <Box style={WEB_EDGE_CONTENT}>
+      <Box style={WEB_EDGE_CONTENT_WIDE}>
         {children}
       </Box>
     </Box>

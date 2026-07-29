@@ -29,6 +29,10 @@ export const WEB_EDGE_CONTENT: ViewStyle = Platform.OS === 'web'
   ? { width: '100%', maxWidth: WEB_CONTENT_MAX_WIDTH, marginHorizontal: 'auto' }
   : {};
 
+export const WEB_EDGE_CONTENT_WIDE: ViewStyle = Platform.OS === 'web'
+  ? { width: '100%' }
+  : {};
+
 export const WEB_STACK_SCROLL: ViewStyle = Platform.OS === 'web'
   ? { ...WEB_EDGE_SCROLL, position: 'absolute', top: 0, bottom: 0 }
   : {};
