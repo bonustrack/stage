@@ -13,7 +13,6 @@ import { ChannelMenu } from '../ChannelMenu';
 import { HomeError, HomeSpinner, useChannelRowRenderer } from './HomeScreen.parts';
 import { ChannelsList } from './HomeScreen.list';
 import { useChannelsSync } from './HomeScreen.sync';
-import { useIncomingLabelFilter } from './HomeScreen.filter';
 import { deriveLabels, useHomeFilters } from './HomeScreen.labelbar';
 import { filterRowsByQuery } from './HomeScreen.search';
 import { channelsFilterBarVisible } from './HomeScreen.model';
@@ -67,7 +66,6 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
   const { rows, pinned } = st;
   const { enabledLabels, toggleLabel, unreadOnly, toggleUnread, clearAllFilters } = useHomeFilters();
   const [query, setQuery] = useState<string>('');
-  useIncomingLabelFilter(toggleLabel);
 
   const sortedRows = useMemo(
     () => deriveSortedRows({ rows, enabledLabels, unreadOnly, pinned }),

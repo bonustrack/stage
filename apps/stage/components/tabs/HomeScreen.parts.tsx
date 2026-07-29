@@ -12,7 +12,6 @@ import { resetXmtpClient, shortAddress, prefetchFeed, lineOfConv } from '../../m
 import { resetAccount } from '../../lib/wallet';
 import { getPeerName, isPeerResolved } from '../../lib/peerProfiles';
 import { getDraft } from '../../lib/drafts';
-import { requestLabelFilter } from '../../lib/labelFilterRequest';
 import { conversationLinkOf, isActiveConversationPath } from '../../lib/conversationLink';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { channelTimestamp } from '../../lib/format';
@@ -74,7 +73,6 @@ function ChannelRowItemBase({
       hasDraft={draftText.trim().length > 0}
       draftText={draftText}
       labels={isGroup ? item.labels : undefined}
-      onLabelPress={isGroup ? requestLabelFilter : undefined}
       onPressIn={() => { prefetchFeed(lineOfConv(item.convId)); }}
       onPress={() => { router.push(conversationLinkOf(item.convId, item.peerAddress)); }}
       onLongPress={() => {

@@ -5,7 +5,6 @@ import { resolveBadgeStyle } from '@stage-labs/kit/badge';
 import type { Scheme } from '@stage-labs/kit/tokens';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Icon } from '@stage-labs/kit/react-native/icon';
-import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
@@ -33,7 +32,6 @@ export interface ChannelRowProps {
   hasDraft?: boolean;
   draftText?: string | null;
   labels?: string[];
-  onLabelPress?: (label: string) => void;
   showChevron?: boolean;
   active?: boolean;
   avatarSize?: number;
@@ -88,38 +86,23 @@ function TitleLine({ params, scheme }: {
   );
 }
 
-function LabelChips({ params, scheme, fg, onLabelPress }: {
-  params: ChannelRowParams; scheme: Scheme; fg: string; onLabelPress?: (label: string) => void;
+function LabelChips({ params, fg }: {
+  params: ChannelRowParams; fg: string;
 }): React.ReactElement | null {
   const chips = params.chips;
   if (chips === undefined || chips.length === 0) return null;
-  const pressable = params.labelPressable === true && onLabelPress !== undefined;
   return (
     <Row gap={6}>
-      {chips.map((chip, i) => {
-        const badge = (
-          <Box
-            key={`${chip.label}-${i}`}
-            radius="full"
-            surface="raised"
-            padding={{ x: 8, y: 2 }}
-          >
-            <Text value={chip.label} size="md" color={fg} />
-          </Box>
-        );
-        if (!pressable) return badge;
-        return (
-          <ListViewItem
-            key={`${chip.label}-${i}`}
-            dark={scheme === 'dark'}
-            gap={0}
-            padding={{ paddingTop: 0, paddingRight: 0, paddingBottom: 0, paddingLeft: 0 }}
-            onPress={() => { onLabelPress(chip.label); }}
-          >
-            {badge}
-          </ListViewItem>
-        );
-      })}
+      {chips.map((chip, i) => (
+        <Box
+          key={`${chip.label}-${i}`}
+          radius="full"
+          surface="raised"
+          padding={{ x: 8, y: 2 }}
+        >
+          <Text value={chip.label} size="md" color={fg} />
+        </Box>
+      ))}
     </Row>
   );
 }
@@ -142,12 +125,11 @@ function MetaColumn({ params, scheme }: {
   );
 }
 
-function InlineLabelChips({ params, fg, chipBg, onLabelPress }: {
-  params: ChannelRowParams; fg: string; chipBg: string; onLabelPress?: (label: string) => void;
+function InlineLabelChips({ params, fg, chipBg }: {
+  params: ChannelRowParams; fg: string; chipBg: string;
 }): React.ReactElement | null {
   const chips = params.chips;
   if (chips === undefined || chips.length === 0) return null;
-  const pressable = params.labelPressable === true && onLabelPress !== undefined;
   return (
     <>
       {chips.map((chip, i) => (
@@ -155,9 +137,11 @@ function InlineLabelChips({ params, fg, chipBg, onLabelPress }: {
           <Text
             size="md"
             color={fg}
-            onPress={pressable ? (): void => { onLabelPress(chip.label); } : undefined}
             style={[
-              { backgroundColor: chipBg, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
+              {
+                backgroundColor: chipBg, borderRadius: 999,
+                paddingHorizontal: 8, paddingVertical: 2, userSelect: 'none',
+              },
               { whiteSpace: 'nowrap' } as unknown as TextStyle,
             ]}
           >
@@ -170,21 +154,20 @@ function InlineLabelChips({ params, fg, chipBg, onLabelPress }: {
   );
 }
 
-function PreviewParagraph({ params, fg, chipBg, hasPrefix, onLabelPress }: {
+function PreviewParagraph({ params, fg, chipBg, hasPrefix }: {
   params: ChannelRowParams; fg: string; chipBg: string; hasPrefix: boolean;
-  onLabelPress?: (label: string) => void;
 }): React.ReactElement {
   return (
     <Text size="md" role="secondary" maxLines={2} style={{ flexShrink: 1 }}>
-      <InlineLabelChips params={params} fg={fg} chipBg={chipBg} onLabelPress={onLabelPress} />
+      <InlineLabelChips params={params} fg={fg} chipBg={chipBg} />
       {hasPrefix ? <Text value={`${params.previewPrefix ?? ''} `} size="md" color="info" weight="semibold" /> : null}
       {params.preview}
     </Text>
   );
 }
 
-function ChannelRowBody({ params, onLabelPress }: {
-  params: ChannelRowParams; onLabelPress?: (label: string) => void;
+function ChannelRowBody({ params }: {
+  params: ChannelRowParams;
 }): React.ReactElement {
   const scheme = useKitScheme();
   const { text: fg, inputBg } = usePalette();
@@ -194,12 +177,10 @@ function ChannelRowBody({ params, onLabelPress }: {
       <Col gap={2} flex={1}>
         <TitleLine params={params} scheme={scheme} />
         {Platform.OS === 'web' ? (
-          <PreviewParagraph
-            params={params} fg={fg} chipBg={inputBg} hasPrefix={hasPrefix} onLabelPress={onLabelPress}
-          />
+          <PreviewParagraph params={params} fg={fg} chipBg={inputBg} hasPrefix={hasPrefix} />
         ) : (
           <Row align="start" gap={6}>
-            <LabelChips params={params} scheme={scheme} fg={fg} onLabelPress={onLabelPress} />
+            <LabelChips params={params} fg={fg} />
             {hasPrefix ? <Text value={params.previewPrefix ?? ''} size="md" color="info" weight="semibold" /> : null}
             <Text value={params.preview} size="md" role="secondary" maxLines={2} style={{ flexShrink: 1 }} />
           </Row>
@@ -214,7 +195,7 @@ function ChannelRowBase({
   title, avatarAddress, avatarUri, cacheBuster, square,
   lastPreview, timestamp, subtitle, unreadCount = 0, markedUnread,
   pinned, hasDraft, draftText, showChevron, active, avatarSize = 44,
-  onPress, onPressIn, onLongPress, containerStyle, labels, onLabelPress, highlightQuery,
+  onPress, onPressIn, onLongPress, containerStyle, labels, highlightQuery,
 }: ChannelRowProps): React.ReactElement {
   const { link: head, bg, border } = usePalette();
   const params = channelRowModel({
@@ -227,7 +208,6 @@ function ChannelRowBase({
     hasDraft,
     draftText,
     labels,
-    labelPressable: !!onLabelPress,
     pinned,
     timestampLabel: timestamp ?? '',
   });
@@ -253,7 +233,7 @@ function ChannelRowBase({
           style={{ backgroundColor: border }}
 />
         <Col minWidth={0} flex={1}>
-          <ChannelRowBody params={params} onLabelPress={onLabelPress} />
+          <ChannelRowBody params={params} />
         </Col>
         <TrailingBadge unreadCount={unreadCount} markedUnread={markedUnread}
           showChevron={showChevron} head={head} bg={bg} />

@@ -25,7 +25,6 @@ export interface ChannelRowParams {
   pinned?: boolean;
   unreadDot?: boolean;
   omitAvatar?: boolean;
-  labelPressable?: boolean;
   interactive?: boolean;
 }
 
@@ -42,7 +41,6 @@ export interface ChannelRowDomain {
   hasDraft?: boolean;
   draftText?: string | null;
   labels?: string[];
-  labelPressable?: boolean;
   highlightQuery?: string;
   pinned?: boolean;
   unreadCount?: number;
@@ -101,7 +99,6 @@ export function channelRowModel(d: ChannelRowDomain): ChannelRowParams {
     unreadBadge: unreadBadgeLabel(d.unreadCount ?? 0, d.markedUnread ?? false),
     chips: resolveChips(draft, d.labels),
     pinned: d.pinned,
-    labelPressable: d.labelPressable,
     omitAvatar: d.omitAvatar,
     interactive: d.interactive,
   };

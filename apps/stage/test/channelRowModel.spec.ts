@@ -15,7 +15,6 @@ describe('channelRowModel', () => {
       unreadBadge: undefined,
       chips: undefined,
       pinned: undefined,
-      labelPressable: undefined,
       omitAvatar: undefined,
       interactive: undefined,
     });
