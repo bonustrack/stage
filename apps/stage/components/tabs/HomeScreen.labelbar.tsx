@@ -1,5 +1,6 @@
 
 import { useMemo, useState } from 'react';
+import { Platform } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
@@ -32,6 +33,10 @@ export function useHomeFilters(): {
 
 export { deriveBarLabels as deriveLabels } from '@stage-labs/client/xmtp/channelsFilter';
 
+const CHIPS_GAP = 14;
+const GAP_ALREADY_ABOVE_LIST = Platform.OS === 'web' ? 8 : 0;
+const CHIPS_PADDING = { x: 16, top: CHIPS_GAP - GAP_ALREADY_ABOVE_LIST, bottom: CHIPS_GAP };
+
 export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggleUnread, onClearAll, panRef }: {
   labels: string[];
   enabled: Set<string>;
@@ -56,7 +61,7 @@ export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggle
     <GestureDetector gesture={gesture}>
       <Box style={{ alignSelf: 'stretch' }}>
         <Scroll horizontal showsHorizontalScrollIndicator={false}>
-          <Row gap={8} padding={{ x: 16, top: 14, bottom: 7 }}>
+          <Row gap={8} padding={CHIPS_PADDING}>
             {chips.map((chip) => {
               const selected = chip.selected === true;
               return (
