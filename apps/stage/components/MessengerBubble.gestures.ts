@@ -19,6 +19,7 @@ export interface BubbleGestureInput {
 export interface BubbleGestures {
   rowRef: React.RefObject<View | null>;
   tapGestures: ReturnType<typeof Gesture.Race>;
+  openMenu: () => void;
   swipeStyle: ReturnType<typeof useAnimatedStyle>;
   replyHintStyle: ReturnType<typeof useAnimatedStyle>;
 }
@@ -96,5 +97,5 @@ export function useBubbleGestures(input: BubbleGestureInput): BubbleGestures {
     transform: [{ scale: interpolate(swipeX.value, [-64, 0], [1, 0.6], Extrapolation.CLAMP) }],
   }));
 
-  return { rowRef, tapGestures, swipeStyle, replyHintStyle };
+  return { rowRef, tapGestures, openMenu, swipeStyle, replyHintStyle };
 }

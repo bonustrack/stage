@@ -10,6 +10,7 @@ import { REACT_PRESETS } from './MessengerBubble.helpers';
 import type { MessengerBubbleProps } from './MessengerBubble.props';
 import { BubbleContent } from './MessengerBubble.content';
 import { ReactionsRow, ReactionPicker } from './MessengerBubble.reactions';
+import { contextMenuProps } from '../lib/contextMenu';
 import { usePalette } from '../lib/theme';
 import { useBubbleGestures } from './MessengerBubble.gestures';
 
@@ -83,6 +84,7 @@ function MessengerBubbleBase(props: MessengerBubbleProps): React.ReactElement {
     <GestureDetector gesture={g.tapGestures}>
       <Animated.View
         ref={g.rowRef}
+        {...contextMenuProps(g.openMenu)}
         style={[g.swipeStyle, {
           flexDirection: 'row', alignItems: 'flex-start',
           paddingHorizontal: 12, paddingVertical: 6, gap: 10,

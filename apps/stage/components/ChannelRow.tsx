@@ -13,6 +13,7 @@ import { Platform, type StyleProp, type TextStyle, type ViewStyle } from 'react-
 import { Avatar } from './Avatar';
 import { Row, Col, Box } from './layout';
 import { channelRowModel, type ChannelRowParams } from './ChannelRow.model';
+import { contextMenuProps } from '../lib/contextMenu';
 import { unreadBadgeLabel } from '../lib/format';
 import { HIGHLIGHT_BG } from '../lib/uiColors';
 import { usePalette } from '../lib/theme';
@@ -222,6 +223,7 @@ function ChannelRowBase({
         backgroundColor: pressed || active === true ? border : 'transparent',
         paddingHorizontal: 14,
       }))}
+      {...contextMenuProps(onLongPress)}
 >
       <Row minHeight={ROW_CONTENT_HEIGHT} padding={{ y: 9 }} align="center" gap={12}>
         <Avatar
