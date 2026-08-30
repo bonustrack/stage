@@ -9,6 +9,7 @@ import {
   streamConvConsent, syncConsent,
 } from '../../modules/messaging';
 import { hydrateCachedRows } from '../../modules/messaging';
+import { hydratePeerProfiles } from '../../lib/peerProfiles';
 import { perfLog, perfTime } from '../../lib/perf';
 import type { Conversation } from '@xmtp/react-native-sdk';
 import type { Row as RowT } from './HomeScreen.helpers';
@@ -142,6 +143,7 @@ async function initSync(run: SyncRun, args: SyncArgs): Promise<void> {
     const selfInboxId = client.inboxId;
     const r = makeRefreshers(client, selfInboxId, run, args);
     args.refreshFromNetworkRef.current = r.refresh;
+    await hydratePeerProfiles();
     await r.refresh();
     await subscribeConvStream(client, selfInboxId, run, args, r);
     subscribeLiveStreams(run, args, r);
@@ -165,7 +167,7 @@ export function useChannelsSync(args: SyncArgs): void {
       if (run.cancelled || (rows && rows.length > 0)) return;
       setError('XMTP failed to initialise (timed out). Tap Reset below to wipe the local identity and start fresh.');
     }, 30_000);
-    void hydrateCachedRows().then(cached => {
+    void Promise.all([hydrateCachedRows(), hydratePeerProfiles()]).then(([cached]) => {
       if (run.cancelled) return;
       if (cached && Array.isArray(cached) && cached.length > 0 && !rows) setRowsState(cached as RowT[]);
     });

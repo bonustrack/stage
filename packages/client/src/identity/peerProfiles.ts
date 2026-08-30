@@ -3,7 +3,10 @@ import { STAMP_URL } from '../profile/snapshot';
 
 export interface PeerProfile {
   name?: string;
+  stale?: boolean;
 }
+
+export type PeerProfileEntries = Record<string, string | null>;
 
 const store = new Map<string, PeerProfile>();
 const pending = new Set<string>();
@@ -41,24 +44,34 @@ function namesFromResult(json: unknown): Record<string, string> {
   return out;
 }
 
+function applyNames(chunk: string[], names: Record<string, string>): boolean {
+  let changed = false;
+  for (const a of chunk) {
+    const before = store.get(a);
+    if (!before || before.name !== names[a]) changed = true;
+    store.set(a, { name: names[a] });
+  }
+  return changed;
+}
+
 async function fetchBatch(addrs: string[]): Promise<void> {
+  let changed = false;
   try {
     for (let i = 0; i < addrs.length; i += STAMP_LOOKUP_CHUNK) {
       const chunk = addrs.slice(i, i + STAMP_LOOKUP_CHUNK);
       const names = await lookupNamesChunk(chunk);
-      if (!names) {
-        chunk.forEach(a => pending.delete(a));
-        continue;
-      }
-      for (const a of chunk) {
-        store.set(a, { name: names[a] });
-        pending.delete(a);
-      }
+      if (names && applyNames(chunk, names)) changed = true;
+      chunk.forEach(a => pending.delete(a));
     }
   } finally {
     addrs.forEach(a => pending.delete(a));
-    notify();
+    if (changed) notify();
   }
+}
+
+function needsLookup(address: string): boolean {
+  const entry = store.get(address);
+  return (!entry || entry.stale === true) && !pending.has(address);
 }
 
 export function ensurePeerProfiles(addresses: (string | null | undefined)[]): void {
@@ -68,10 +81,27 @@ export function ensurePeerProfiles(addresses: (string | null | undefined)[]): vo
         .filter((a): a is string => typeof a === 'string' && a.length > 0)
         .map(a => a.toLowerCase()),
     ),
-  ].filter(a => !store.has(a) && !pending.has(a));
+  ].filter(needsLookup);
   if (!todo.length) return;
   todo.forEach(a => pending.add(a));
   void fetchBatch(todo);
+}
+
+export function seedPeerProfiles(entries: PeerProfileEntries): void {
+  let added = false;
+  for (const [address, name] of Object.entries(entries)) {
+    const key = address.toLowerCase();
+    if (store.has(key)) continue;
+    store.set(key, { name: name ?? undefined, stale: true });
+    added = true;
+  }
+  if (added) notify();
+}
+
+export function peerProfileEntries(): PeerProfileEntries {
+  const out: PeerProfileEntries = {};
+  for (const [address, profile] of store) out[address] = profile.name ?? null;
+  return out;
 }
 
 export function isPeerResolved(address?: string | null): boolean {
