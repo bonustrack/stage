@@ -3,7 +3,7 @@ import { Platform, type ViewStyle } from 'react-native';
 import { Col } from '@stage-labs/kit/react-native/box';
 import { WEB_CONTENT_MAX_WIDTH } from './WebContentFrame';
 
-export const WEB_CHROME_WIDTH = 'calc(100vw - var(--stage-pane-left, 0px) - var(--stage-sbw, 0px))';
+export const WEB_CHROME_WIDTH = 'calc(100vw - var(--stage-pane-left, 0px) - var(--stage-gutter, 0px))';
 
 export const WEB_CHROME_SHIFT = 'calc(-50vw + var(--stage-pane-left, 0px))';
 
@@ -29,8 +29,10 @@ export const WEB_EDGE_CONTENT: ViewStyle = Platform.OS === 'web'
   ? { width: '100%', maxWidth: WEB_CONTENT_MAX_WIDTH, marginHorizontal: 'auto' }
   : {};
 
+const WEB_SCROLLBAR_PAD = 'max(0px, var(--stage-gutter, 0px) - var(--stage-sbw, 0px))';
+
 export const WEB_EDGE_CONTENT_WIDE: ViewStyle = Platform.OS === 'web'
-  ? { width: '100%' }
+  ? ({ width: '100%', paddingRight: WEB_SCROLLBAR_PAD } as unknown as ViewStyle)
   : {};
 
 export const WEB_STACK_SCROLL: ViewStyle = Platform.OS === 'web'
