@@ -5,9 +5,11 @@ import {
   getOrCreateXmtpClient, NoAccountError,
   syncPreferences,
   primeInboxEthCache, subscribeAllMessages,
-  listRequestConvs, syncAllowedConversations, streamConvConsent, syncConsent,
+  listRequestConvs, listAllowedConversations, syncConversationsFromNetwork,
+  streamConvConsent, syncConsent,
 } from '../../modules/messaging';
 import { hydrateCachedRows } from '../../modules/messaging';
+import { perfLog, perfTime } from '../../lib/perf';
 import type { Conversation } from '@xmtp/react-native-sdk';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { summarize } from './HomeScreen.helpers';
@@ -50,20 +52,29 @@ function makeRefreshers(
       if (!run.cancelled) args.setRequestCount(reqs.length);
     } catch { }
   };
+  const paintFrom = async (convs: Conversation[]): Promise<boolean> => {
+    await primeMembers(client, convs);
+    const summarized = (await Promise.all(
+      convs.map(c => summarize(c, selfInboxId, true).catch(() => null)),
+    )).filter((r): r is RowT => r !== null);
+    if (run.cancelled) return false;
+    summarized.sort((a, b) => (b.lastTs ?? 0) - (a.lastTs ?? 0));
+    args.setRows(summarized);
+    lastRefreshAt = Date.now();
+    clearTimeout(run.initTimer);
+    return true;
+  };
   const refresh = async (): Promise<void> => {
     if (run.cancelled) return;
     try {
-      const convs = await syncAllowedConversations();
-      void refreshRequestCount();
-      await primeMembers(client, convs);
-      const summarized = (await Promise.all(
-        convs.map(c => summarize(c, selfInboxId).catch(() => null)),
-      )).filter((r): r is RowT => r !== null);
+      const local = await perfTime('channels.listLocal', listAllowedConversations);
+      perfLog('channels.localCount', { count: local.length });
+      if (local.length > 0) await perfTime('channels.paintLocal', () => paintFrom(local));
+      await perfTime('channels.syncNetwork', syncConversationsFromNetwork);
       if (run.cancelled) return;
-      summarized.sort((a, b) => (b.lastTs ?? 0) - (a.lastTs ?? 0));
-      args.setRows(summarized);
-      lastRefreshAt = Date.now();
-      clearTimeout(run.initTimer);
+      const fresh = await listAllowedConversations();
+      await perfTime('channels.paintFresh', () => paintFrom(fresh));
+      void refreshRequestCount();
     } catch { }
   };
   const refreshThrottled = async (): Promise<void> => {

@@ -85,9 +85,9 @@ function rowAvatar(
 }
 
 export async function summarizeConversation(
-  conv: Conversation, selfInboxId: string,
+  conv: Conversation, selfInboxId: string, alreadySynced = false,
 ): Promise<ConversationView> {
-  await conv.sync().catch(() => undefined);
+  if (!alreadySynced) await conv.sync().catch(() => undefined);
   const msgs = await rowMessagesOf(conv, 2).catch(() => []);
   const last = pickLastMessage(msgs);
   const preview = previewOfMessage(last);

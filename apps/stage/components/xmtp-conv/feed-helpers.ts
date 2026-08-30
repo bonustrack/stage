@@ -94,6 +94,24 @@ export function uprightScrollOffset(
   return Math.max(0, contentHeight - viewportHeight - distanceFromNewest);
 }
 
+export function shouldPageOlder(m: FeedScrollMetrics, positioned: boolean): boolean {
+  if (!positioned) return false;
+  if (m.contentHeight <= m.viewportHeight) return true;
+  return m.offset <= m.viewportHeight / 2;
+}
+
+export const FEED_MIN_BATCH = 12;
+export const FEED_MAX_FIRST_PAINT = 60;
+
+export function uprightFirstBatch(rowCount: number): number {
+  return Math.min(Math.max(rowCount, FEED_MIN_BATCH), FEED_MAX_FIRST_PAINT);
+}
+
+export function initialUprightIndex(rowCount: number, batchSize: number): number {
+  if (rowCount <= batchSize) return 0;
+  return rowCount - batchSize;
+}
+
 export function planUprightRestore(args: {
   loaded: boolean; restoredSaved: boolean; savedDistance: number | undefined;
   userDragged: boolean; atNewest: boolean;

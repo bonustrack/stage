@@ -1,12 +1,15 @@
 
-import { useMemo, useRef } from 'react';
-import { Platform } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Platform, type ViewStyle } from 'react-native';
 import { FlatList } from 'react-native-gesture-handler';
-import { Box, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT_WIDE } from '../layout';
+import { Box, WebFullBleed, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT_WIDE } from '../layout';
 import { Spinner } from '../Spinner';
 import { ConversationIntro } from './ConversationIntro';
 import { AT_BOTTOM_THRESHOLD_PX, convScrollKey, planFeedRestore, saveScrollOffset } from '../../lib/scrollPos';
-import { feedDistanceFromNewest, planUprightRestore, uprightScrollOffset } from './feed-helpers';
+import {
+  FEED_MIN_BATCH, feedDistanceFromNewest, initialUprightIndex, planUprightRestore,
+  shouldPageOlder, uprightFirstBatch, uprightScrollOffset, type FeedScrollMetrics,
+} from './feed-helpers';
 import { useFeedRenderItem } from './useFeedRenderItem';
 import type { useConversationState } from './useConversationState';
 
@@ -22,14 +25,16 @@ function handleFeedScroll(c: ConvState, convId: string, distance: number): void 
 }
 
 function scrollFeedTo(c: ConvState, offset: number): void {
-  requestAnimationFrame(() => {
+  const apply = (): void => {
     try { c.listRef.current?.scrollToOffset({ offset, animated: false }); } catch { }
-  });
+  };
+  if (UPRIGHT) { apply(); return; }
+  requestAnimationFrame(apply);
 }
 
 function restoreUprightScroll(
   c: ConvState, contentHeight: number, viewportHeight: number, userDragged: boolean,
-): void {
+): number | null {
   const plan = planUprightRestore({
     loaded: c.savedScrollLoaded.current,
     restoredSaved: c.didRestoreScroll.current,
@@ -37,17 +42,19 @@ function restoreUprightScroll(
     userDragged,
     atNewest: c.isAtBottomRef.current,
   });
-  if (plan === 'skip') return;
+  if (plan === 'skip') return null;
   if (plan === 'saved') c.didRestoreScroll.current = true;
   const distance = plan === 'saved' ? c.savedScrollRef.current ?? 0 : 0;
-  scrollFeedTo(c, uprightScrollOffset(distance, contentHeight, viewportHeight));
+  const offset = uprightScrollOffset(distance, contentHeight, viewportHeight);
+  scrollFeedTo(c, offset);
+  return offset;
 }
 
 function restoreFeedScroll(
   c: ConvState, contentHeight: number, viewportHeight: number, userDragged: boolean,
-): void {
-  if (UPRIGHT) { restoreUprightScroll(c, contentHeight, viewportHeight, userDragged); return; }
-  if (c.didRestoreScroll.current) return;
+): number | null {
+  if (UPRIGHT) return restoreUprightScroll(c, contentHeight, viewportHeight, userDragged);
+  if (c.didRestoreScroll.current) return null;
   const plan = planFeedRestore({
     loaded: c.savedScrollLoaded.current, contentHeight, itemCount: c.allBubbles.length,
     savedOffset: c.savedScrollRef.current, now: Date.now(),
@@ -55,18 +62,30 @@ function restoreFeedScroll(
   });
   if (plan === 'skip') {
     if (c.pinBottomUntil.current !== 0) c.didRestoreScroll.current = true;
-    return;
+    return null;
   }
   const distance = plan === 'bottom' ? 0 : plan.offset;
   if (plan !== 'bottom') c.didRestoreScroll.current = true;
   scrollFeedTo(c, distance);
+  return distance;
+}
+
+function feedPager(
+  loadOlder: () => Promise<void>,
+  metrics: React.RefObject<FeedScrollMetrics>,
+  positioned: React.RefObject<boolean>,
+): () => void {
+  return () => {
+    if (UPRIGHT && !shouldPageOlder(metrics.current, positioned.current)) return;
+    void loadOlder();
+  };
 }
 
 interface OrientedFeed {
   inverted: boolean;
   onStartReached?: () => void;
   onEndReached?: () => void;
-  contentPadding: { paddingTop: number; paddingBottom: number };
+  contentPadding: ViewStyle;
   header?: React.ReactElement;
   footer?: React.ReactElement;
 }
@@ -78,7 +97,10 @@ function orientFeed(
     return {
       inverted: false,
       onStartReached: loadOlder,
-      contentPadding: { paddingTop: headPad, paddingBottom: footPad },
+      contentPadding: {
+        paddingTop: headPad, paddingBottom: footPad,
+        flexGrow: 1, justifyContent: 'flex-end',
+      },
       header: olderEdge,
     };
   }
@@ -88,6 +110,29 @@ function orientFeed(
     contentPadding: { paddingTop: footPad, paddingBottom: headPad },
     footer: olderEdge,
   };
+}
+
+function FeedOlderEdge({ loading, sub, hasMore, intro }: {
+  loading: boolean; sub: string; hasMore: boolean; intro: React.ReactElement;
+}): React.ReactElement {
+  return (
+    <>
+      {loading ? <Box padding={{ y: 16 }} align="center"><Spinner size={20} color={sub} /></Box> : null}
+      {!hasMore ? intro : null}
+    </>
+  );
+}
+
+const LOADER_DELAY_MS = 180;
+
+function useSlowOpen(waiting: boolean): boolean {
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    if (!waiting) { setSlow(false); return; }
+    const timer = setTimeout(() => { setSlow(true); }, LOADER_DELAY_MS);
+    return () => { clearTimeout(timer); };
+  }, [waiting]);
+  return slow;
 }
 
 function FeedIntro({ c, convId, head, fg, border, rowBg, router }: {
@@ -122,19 +167,36 @@ export function ConversationFeed({
   const spinner = <Box padding={32} align="center"><Spinner size={28} color={head} /></Box>;
   const viewportHeight = useRef(0);
   const userDragged = useRef(false);
+  const metrics = useRef<FeedScrollMetrics>({ offset: 0, contentHeight: 0, viewportHeight: 0 });
+  const positioned = useRef(false);
   const rows = useMemo(() => (UPRIGHT ? [...allBubbles].reverse() : allBubbles), [allBubbles]);
+  const empty = rows.length === 0 && (status !== 'open' || hasMore);
+  const slowOpen = useSlowOpen(empty);
 
   if (searchSlot !== undefined) {
-    return <Box flex={1} padding={{ top: insets.top + 52 }}>{searchSlot}</Box>;
+    return (
+      <WebFullBleed>
+        <Box flex={1} padding={{ top: insets.top + 52 }}>{searchSlot}</Box>
+      </WebFullBleed>
+    );
+  }
+
+  if (empty) {
+    return (
+      <WebFullBleed>
+        <Box flex={1} padding={{ top: insets.top + 52 }}>{slowOpen ? spinner : null}</Box>
+      </WebFullBleed>
+    );
   }
 
   const olderEdge = (
-    <>
-      {loadingOlder ? <Box padding={{ y: 16 }} align="center"><Spinner size={20} color={sub} /></Box> : null}
-      {!hasMore ? intro : null}
-    </>
+    <FeedOlderEdge loading={loadingOlder && c.showJump} sub={sub} hasMore={hasMore} intro={intro} />
   );
-  const o = orientFeed(() => { void loadOlder(); }, insets.top + 52 + 24, 24 + bottomInset, olderEdge);
+  const firstBatch = UPRIGHT ? uprightFirstBatch(rows.length) : FEED_MIN_BATCH;
+  const o = orientFeed(
+    feedPager(loadOlder, metrics, positioned),
+    insets.top + 52 + 24, 24 + bottomInset, olderEdge,
+  );
 
   return (
     <FlatList
@@ -147,7 +209,8 @@ export function ConversationFeed({
       keyExtractor={e => e.id}
       style={[{ flex: 1 }, WEB_EDGE_SCROLL]}
       windowSize={11}
-      initialNumToRender={12}
+      initialNumToRender={firstBatch}
+      initialScrollIndex={UPRIGHT ? initialUprightIndex(rows.length, firstBatch) : undefined}
       maxToRenderPerBatch={10}
       removeClippedSubviews
       onEndReached={o.onEndReached}
@@ -159,18 +222,26 @@ export function ConversationFeed({
       onScroll={(ev) => {
         const m = ev.nativeEvent;
         viewportHeight.current = m.layoutMeasurement.height;
-        handleFeedScroll(c, convId, feedDistanceFromNewest({
+        metrics.current = {
           offset: m.contentOffset.y,
           contentHeight: m.contentSize.height,
           viewportHeight: m.layoutMeasurement.height,
-        }, UPRIGHT));
+        };
+        handleFeedScroll(c, convId, feedDistanceFromNewest(metrics.current, UPRIGHT));
       }}
       scrollEventThrottle={16}
       onScrollBeginDrag={() => { userDragged.current = true; }}
-      onContentSizeChange={(_w, h) => { restoreFeedScroll(c, h, viewportHeight.current, userDragged.current); }}
+      onContentSizeChange={(_w, h) => {
+        const applied = restoreFeedScroll(c, h, viewportHeight.current, userDragged.current);
+        if (applied !== null) positioned.current = true;
+        metrics.current = {
+          offset: applied ?? metrics.current.offset,
+          contentHeight: h,
+          viewportHeight: viewportHeight.current,
+        };
+      }}
       onScrollToIndexFailed={() => undefined}
       renderItem={renderItem}
-      ListEmptyComponent={status !== 'open' || hasMore ? spinner : null}
       ListHeaderComponent={o.header}
       ListFooterComponent={o.footer}
       keyboardShouldPersistTaps="handled"

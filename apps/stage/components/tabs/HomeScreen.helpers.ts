@@ -6,8 +6,10 @@ import type { ConversationView } from '../../modules/messaging';
 
 export type Row = ConversationView & Record<string, unknown>;
 
-export async function summarize(conv: Conversation, selfInboxId: string): Promise<Row> {
-  return { ...await summarizeConversation(conv, selfInboxId) };
+export async function summarize(
+  conv: Conversation, selfInboxId: string, alreadySynced = false,
+): Promise<Row> {
+  return { ...await summarizeConversation(conv, selfInboxId, alreadySynced) };
 }
 
 export interface SortInputs {

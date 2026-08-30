@@ -5,7 +5,7 @@ import { Animated as RNAnimated, Platform, type ViewStyle } from 'react-native';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from '../../components/Spinner';
-import { Box, Col, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT_WIDE, WEB_CHROME_WIDTH, WEB_CHROME_SHIFT } from '../../components/layout';
+import { Box, Col, WEB_EDGE_SCROLL, WEB_CHROME_WIDTH, WEB_CHROME_SHIFT } from '../../components/layout';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
@@ -60,6 +60,8 @@ function UnresolvedConversation({ resolved, dark }: {
   );
 }
 
+let measuredFooterHeight = 0;
+
 function FooterDock({ children, onHeight }: {
   children: React.ReactNode; onHeight: (h: number) => void;
 }): React.ReactElement {
@@ -69,11 +71,12 @@ function FooterDock({ children, onHeight }: {
       width={WEB_CHROME_WIDTH}
       margin={{ left: WEB_CHROME_SHIFT }}
       style={{ position: 'absolute', bottom: 0, left: '50%', zIndex: 2 } as unknown as ViewStyle}
-      onLayout={(e) => { onHeight(e.nativeEvent.layout.height); }}
+      onLayout={(e) => {
+        measuredFooterHeight = e.nativeEvent.layout.height;
+        onHeight(measuredFooterHeight);
+      }}
 >
-      <Box style={WEB_EDGE_CONTENT_WIDE}>
-        {children}
-      </Box>
+      {children}
     </Box>
   );
 }
@@ -106,7 +109,7 @@ export default function XmtpConversation(): React.ReactElement {
 
   const [requestPending, setRequestPending] = useState(false);
   const onRequestPending = useCallback((pending: boolean) => { setRequestPending(pending); }, []);
-  const [composerH, setComposerH] = useState(0);
+  const [composerH, setComposerH] = useState(measuredFooterHeight);
 
   const insets = useSafeAreaInsets();
   const { height: kbHeightShared } = useReanimatedKeyboardAnimation();

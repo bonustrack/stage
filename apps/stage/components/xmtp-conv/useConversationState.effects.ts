@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { setActiveConversation } from '../../modules/metro-pill';
 import { setActiveConvId } from '../../lib/activeConv';
 import { getCachedRows, getConvConsentState, streamConvConsent, getGroupLabels } from '../../modules/messaging';
-import { convScrollKey, getScrollOffset, flushScrollOffset } from '../../lib/scrollPos';
+import {
+  convScrollKey, getScrollOffset, peekScrollOffset, flushScrollOffset,
+} from '../../lib/scrollPos';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import {
   reactionsByMessage, ownReactionsByMessage,
@@ -77,13 +79,19 @@ export function useConvScrollPersistence(convId: string | undefined): ScrollPers
   const didRestoreScroll = useRef(false);
   const pinBottomUntil = useRef(0);
   const isAtBottomRef = useRef(true);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!convId) return;
     const key = convScrollKey(convId);
     isAtBottomRef.current = true;
-    void getScrollOffset(key).then(o => {
-      savedScrollRef.current = o; savedScrollLoaded.current = true;
-    });
+    const cached = peekScrollOffset(key);
+    if (cached !== undefined) {
+      savedScrollRef.current = cached;
+      savedScrollLoaded.current = true;
+    } else {
+      void getScrollOffset(key).then(o => {
+        savedScrollRef.current = o; savedScrollLoaded.current = true;
+      });
+    }
     return () => { flushScrollOffset(key, isAtBottomRef.current ? 0 : undefined); };
   }, [convId]);
   return { savedScrollRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil, isAtBottomRef };

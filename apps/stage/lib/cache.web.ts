@@ -1,26 +1,60 @@
-
-import { AppState } from 'react-native';
-import { Directory, File, Paths } from 'expo-file-system';
 import { hydrateOnce, makeListeners } from './storeCore';
 import { secureStorage } from '../platform/storage';
 
 const FLUSH_DEBOUNCE_MS = 1_500;
+const DB_NAME = 'stage-cache';
+const DB_VERSION = 1;
+const STORE = 'kv';
 
 const dirtyStores = new Set<{ flushNow: () => void }>();
-let appStateFlushWired = false;
-function wireAppStateFlush(): void {
-  if (appStateFlushWired) return;
-  appStateFlushWired = true;
-  AppState.addEventListener('change', (state) => {
-    if (state === 'active') return;
+let unloadFlushWired = false;
+let dbPromise: Promise<IDBDatabase | null> | null = null;
+
+function wireUnloadFlush(): void {
+  if (unloadFlushWired || typeof window === 'undefined') return;
+  unloadFlushWired = true;
+  window.addEventListener('pagehide', () => {
     for (const s of dirtyStores) { try { s.flushNow(); } catch { } }
   });
 }
 
-function metroDir(): Directory {
-  const dir = new Directory(Paths.document, 'metro');
-  if (!dir.exists) dir.create({ intermediates: true });
-  return dir;
+function openDb(): Promise<IDBDatabase | null> {
+  if (dbPromise) return dbPromise;
+  dbPromise = new Promise<IDBDatabase | null>((resolve) => {
+    try {
+      const scope = globalThis as { indexedDB?: IDBFactory };
+      if (!scope.indexedDB) { resolve(null); return; }
+      const req = scope.indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = () => {
+        if (!req.result.objectStoreNames.contains(STORE)) req.result.createObjectStore(STORE);
+      };
+      req.onsuccess = () => { resolve(req.result); };
+      req.onerror = () => { resolve(null); };
+      req.onblocked = () => { resolve(null); };
+    } catch { resolve(null); }
+  });
+  return dbPromise;
+}
+
+async function idbRead<T>(key: string): Promise<T | null> {
+  const db = await openDb();
+  if (!db) return null;
+  return new Promise<T | null>((resolve) => {
+    try {
+      const req = db.transaction(STORE, 'readonly').objectStore(STORE).get(key);
+      req.onsuccess = () => { resolve((req.result as T | undefined) ?? null); };
+      req.onerror = () => { resolve(null); };
+    } catch { resolve(null); }
+  });
+}
+
+async function idbWrite(key: string, value: unknown): Promise<void> {
+  const db = await openDb();
+  if (!db) return;
+  try {
+    const store = db.transaction(STORE, 'readwrite').objectStore(STORE);
+    if (value === null) store.delete(key); else store.put(value, key);
+  } catch { }
 }
 
 export class PersistentStore<T> {
@@ -33,17 +67,11 @@ export class PersistentStore<T> {
   private dirty = false;
 
   constructor(private readonly fileName: string, private readonly debounced = false) {
-    if (debounced) wireAppStateFlush();
+    if (debounced) wireUnloadFlush();
   }
 
-  private file(): File { return new File(metroDir(), this.fileName); }
-
   private writeToDisk(): void {
-    try {
-      const f = this.file();
-      if (this.value === null) { if (f.exists) f.delete(); }
-      else f.write(JSON.stringify(this.value));
-    } catch { }
+    void idbWrite(this.fileName, this.value);
     this.dirty = false;
     dirtyStores.delete(this);
   }
@@ -54,14 +82,11 @@ export class PersistentStore<T> {
   }
 
   private async readDisk(): Promise<T | null> {
-    try {
-      const f = this.file();
-      if (f.exists) {
-        const parsed = JSON.parse(await f.text()) as T;
-        this.value = parsed;
-        this.notify(this.value);
-      }
-    } catch { }
+    const stored = await idbRead<T>(this.fileName);
+    if (stored !== null) {
+      this.value = stored;
+      this.notify(this.value);
+    }
     return this.value;
   }
 
@@ -92,7 +117,7 @@ export class PersistentStore<T> {
     dirtyStores.delete(this);
     this.value = null;
     this.hydration.reset();
-    try { const f = this.file(); if (f.exists) f.delete(); } catch { }
+    void idbWrite(this.fileName, null);
     this.notify(null);
   }
 

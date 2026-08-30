@@ -7,6 +7,7 @@ import {
   type AccountRecord,
 } from './accounts';
 import { getSecure, setSecure } from './cache';
+import { perfLog, perfTime } from './perf';
 import { bumpAccountEpoch } from './accountEpoch';
 import { XMTP_CODECS, signerForRecord } from './xmtp.codecs.web';
 import {
@@ -72,16 +73,23 @@ async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<
   const opts = { env, dbPath, codecs: XMTP_CODECS } as Parameters<typeof Client.create>[1];
   const savedAddress = await getSecure(addressKeyFor(rec.id));
   const savedEnv = await getSecure(envKeyFor(rec.id));
-  if (canReuseSavedClient(savedAddress, savedEnv, address, env)) {
+  const reusable = canReuseSavedClient(savedAddress, savedEnv, address, env);
+  perfLog('xmtp.client path', { reusable, savedAddress, savedEnv, address, env });
+  if (reusable) {
     try {
-      const built = await Client.build(
+      const built = await perfTime('xmtp.client.build', () => Client.build(
         { identifier: address, identifierKind: IdentifierKind.Ethereum },
         opts,
-      );
+      ));
       return await finalizeClient(built, rec, env);
-    } catch { }
+    } catch (e) {
+      perfLog('xmtp.client.build FAILED, falling back to create', {
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
   }
-  const created = await createClientForAccount(rec, env, { env, dbPath, codecs: XMTP_CODECS });
+  const created = await perfTime('xmtp.client.create', () =>
+    createClientForAccount(rec, env, { env, dbPath, codecs: XMTP_CODECS }));
   await setSecure(addressKeyFor(rec.id), address);
   await setSecure(envKeyFor(rec.id), env);
   return created;

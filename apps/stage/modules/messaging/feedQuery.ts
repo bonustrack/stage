@@ -6,6 +6,7 @@ import { isMetroControlBody } from '../../lib/push';
 import { convOfLine } from '../../lib/xmtp.client';
 import { latestConvMessages, olderConvMessages } from '../../lib/xmtp.messages';
 import { feedCache } from '../../lib/xmtp.state';
+import { perfLog, perfTime } from '../../lib/perf';
 import { syncInboxOnce, PAGE_SIZE } from '../../lib/xmtp.stream';
 import { messagingKeys } from './queries';
 import { reconcileOnOpen } from './feedReconcile';
@@ -55,12 +56,13 @@ function revalidateFeed(line: string): Promise<void> {
 }
 
 export async function loadFeedFirstPage(line: string): Promise<HistoryEntry[]> {
-  const conv = await convOfLine(line);
+  const conv = await perfTime('feed.convOfLine', () => convOfLine(line));
   if (!conv) {
-    await revalidateFeed(line);
+    perfLog('feed.coldPath: conversation not local, awaiting network');
+    await perfTime('feed.revalidate', () => revalidateFeed(line));
     return feedCache.get(line) ?? [];
   }
-  applyPage(line, await latestConvMessages(conv, line, PAGE_SIZE));
+  applyPage(line, await perfTime('feed.latestMessages', () => latestConvMessages(conv, line, PAGE_SIZE)));
   void revalidateFeed(line);
   return feedCache.get(line) ?? [];
 }
