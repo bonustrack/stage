@@ -2,6 +2,7 @@
 import { useSyncExternalStore } from 'react';
 import { Platform } from 'react-native';
 import { WEB_TAB_RAIL_WIDTH } from './useWebTabRail';
+import { namespacedKey, readNamespaced } from '../../platform/storageNamespace';
 
 const DEFAULT_PANE_WIDTH = 380;
 const MIN_PANE_WIDTH = 280;
@@ -17,7 +18,7 @@ function clampPaneWidth(w: number): number {
 
 function readInitial(): number {
   if (Platform.OS !== 'web' || typeof localStorage === 'undefined') return DEFAULT_PANE_WIDTH;
-  const raw = Number(localStorage.getItem(STORAGE_KEY));
+  const raw = Number(readNamespaced(localStorage, STORAGE_KEY));
   return Number.isFinite(raw) && raw > 0 ? clampPaneWidth(raw) : DEFAULT_PANE_WIDTH;
 }
 
@@ -45,7 +46,7 @@ export function setPaneWidth(next: number): void {
   width = w;
   syncCssVar();
   if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
-    localStorage.setItem(STORAGE_KEY, String(w));
+    localStorage.setItem(namespacedKey(STORAGE_KEY), String(w));
   }
   for (const l of listeners) l();
 }
