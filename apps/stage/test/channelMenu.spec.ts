@@ -11,7 +11,7 @@ describe('channelMenuItems', () => {
       { id: 'search', label: 'Search', icon: 'search' },
       { id: 'add-members', label: 'Add members', icon: 'plus' },
       { id: 'toggle-read', label: 'Mark as read', icon: 'check' },
-      { id: 'toggle-pin', label: 'Pin', icon: 'mapPin' },
+      { id: 'toggle-pin', label: 'Pin', icon: 'pin' },
       { id: 'info', label: 'Group info', icon: 'users' },
       { id: 'leave', label: 'Leave group', icon: 'arrowLeft', danger: true },
     ]);

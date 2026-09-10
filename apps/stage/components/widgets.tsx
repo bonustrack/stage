@@ -1,8 +1,8 @@
 
-import { resolveIconName } from '@stage-labs/kit/icons';
+import { isBrandIconName, resolveIconName } from '@stage-labs/kit/icons';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Caption } from '@stage-labs/kit/react-native/caption';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { BrandIcon, Icon } from '@stage-labs/kit/react-native/icon';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { readableForeground, resolveColorToken } from '@stage-labs/kit/tokens';
 import { Col } from './layout';
@@ -13,6 +13,16 @@ export function AppIcon({ name, color, size }: {
   size: number;
 }): React.ReactElement | null {
   const scheme = useKitScheme();
+  if (isBrandIconName(name)) {
+    return (
+      <BrandIcon
+        name={name}
+        size={size}
+        color={color === undefined ? undefined : resolveColorToken(color, scheme)}
+        dark={scheme === 'dark'}
+      />
+    );
+  }
   const resolved = resolveIconName(name);
   if (resolved === undefined) return null;
   return (

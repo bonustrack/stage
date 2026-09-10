@@ -46,7 +46,7 @@ function toggleReadItem(state: ChannelMenuState): MenuSheetItem {
 
 function pinItem(state: ChannelMenuState, features: ChannelMenuFeatures): MenuSheetItem | null {
   return features.pin === true
-    ? { id: 'toggle-pin', label: state.isPinned === true ? 'Unpin' : 'Pin', icon: 'mapPin' }
+    ? { id: 'toggle-pin', label: state.isPinned === true ? 'Unpin' : 'Pin', icon: 'pin' }
     : null;
 }
 

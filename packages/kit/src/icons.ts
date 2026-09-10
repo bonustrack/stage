@@ -1,6 +1,8 @@
 
 import { HERO_ICON_DATA } from './heroicons.data';
 
+export { isBrandIconName, brandIconPath, type BrandIconName } from './brand-icons.data';
+
 export const HERO_ICON_PATHS = HERO_ICON_DATA;
 
 export type HeroIconName = keyof typeof HERO_ICON_PATHS;

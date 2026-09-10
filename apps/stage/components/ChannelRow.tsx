@@ -3,7 +3,7 @@ import { Fragment, memo } from 'react';
 
 import type { Scheme } from '@stage-labs/kit/tokens';
 import { Caption } from '@stage-labs/kit/react-native/caption';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { BrandIcon } from '@stage-labs/kit/react-native/icon';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
@@ -76,7 +76,7 @@ function TitleLine({ params, scheme }: {
   return (
     <Row align="center" gap={4} flex={1} height={TITLE_LINE_HEIGHT}>
       {params.pinned === true
-        ? <Icon name="mapPin" size={14} color={resolveColorToken('secondary', scheme)} dark={scheme === 'dark'} />
+        ? <BrandIcon name="pin" size={14} color={resolveColorToken('secondary', scheme)} dark={scheme === 'dark'} />
         : null}
       {segments.map((seg, i) => (
         <Text
