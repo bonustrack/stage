@@ -27,6 +27,7 @@ import { applyWebGlobalStyles } from '../platform/webStyles';
 import { BuildInfoDot } from '../components/system/BuildInfoDot';
 import { AlertHost } from '../components/system/AlertHost';
 import { HistorySyncRunner } from '../components/system/HistorySync';
+import { OnboardingRouteReset } from '../components/system/OnboardingRouteReset';
 import { installAlertShim } from '../lib/alertShim';
 import { SplitSidebar } from '../components/tabs/SplitSidebar';
 
@@ -160,6 +161,7 @@ function RootLayoutInner(): React.ReactElement {
       <BuildInfoDot />
       <AlertHost />
       <HistorySyncRunner ready={gatesOpen} hasAccount={onboarding.hasAccount} />
+      <OnboardingRouteReset ready={gatesOpen} showing={shell.showOnboarding} />
       </KeyboardProvider>
     </GestureHandlerRootView>
     </QueryClientProvider>
