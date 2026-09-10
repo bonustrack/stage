@@ -53,14 +53,14 @@ function TrailingBadge({ unreadCount, markedUnread, showChevron, head, bg }: {
   unreadCount: number; markedUnread?: boolean; showChevron?: boolean;
   head: string; bg: string;
 }): React.ReactElement | null {
-  if (unreadCount > 0) {
+  const shown = unreadCount > 0 ? unreadCount : markedUnread === true ? 1 : 0;
+  if (shown > 0) {
     return (
       <Row minWidth={BADGE_SIZE} height={BADGE_SIZE} padding={{ x: 7 }} align="center" justify="center" radius="full" background={head}>
-        <Text weight="semibold" size="2xs" color={bg}>{unreadBadgeLabel(unreadCount)}</Text>
+        <Text weight="semibold" size="2xs" color={bg}>{unreadBadgeLabel(shown)}</Text>
       </Row>
     );
   }
-  if (markedUnread) return <Box width={BADGE_SIZE} height={BADGE_SIZE} radius="full" background={head}/>;
   if (showChevron) return <Text size="2xl" role="secondary">›</Text>;
   return null;
 }
