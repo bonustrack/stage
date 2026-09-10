@@ -1,7 +1,7 @@
 
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Box, Col, WEB_EDGE_CONTENT, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../layout';
+import { Box, Col, WEB_EDGE_CONTENT_WIDE, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../layout';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { usePalette } from '../../lib/theme';
 import { setDebugConsole, useDebugConsole } from '../../lib/railgun/debugConsole';
@@ -18,7 +18,7 @@ export function DeveloperSettings(): React.ReactElement {
   return (
     <Col surface="surface" flex={1}>
       <StackHeader title="Developer"/>
-      <ScrollView style={WEB_STACK_SCROLL} contentContainerStyle={[{ paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT, WEB_STACK_CONTENT_PAD]}>
+      <ScrollView style={WEB_STACK_SCROLL} contentContainerStyle={[{ paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT_WIDE, WEB_STACK_CONTENT_PAD]}>
         <Caption color={fg} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
           DIAGNOSTICS
         </Caption>

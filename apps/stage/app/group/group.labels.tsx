@@ -5,7 +5,6 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Input } from '@stage-labs/kit/react-native/input';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
-import { Button } from '@stage-labs/kit/react-native/button';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { Box, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
@@ -54,19 +53,16 @@ function LabelChips({ labels, onRemove, p }: {
           gap={6}
           radius="full"
           background={p.rowBg}
-          padding={{ y: 6, left: 12, right: 8 }}
+          padding={{ y: 6, left: 12, right: 10 }}
         >
-          <Text value={label} size="xs" />
-          <Button
-            color="secondary"
-            variant="ghost"
-            size="sm"
-            dark={dark}
-            iconStart={<Icon name="x" size={18} dark={dark} />}
-            onPress={() => {
-              onRemove(label);
-            }}
-          />
+          <Text value={label} size="xs" color={p.fg} />
+          <Pressable
+            hitSlop={8}
+            onPress={() => { onRemove(label); }}
+            style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+          >
+            <Icon name="x" size={14} color={p.sub} dark={dark} />
+          </Pressable>
         </Row>
       ))}
     </Row>

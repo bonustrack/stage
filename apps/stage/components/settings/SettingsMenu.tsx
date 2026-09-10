@@ -2,7 +2,7 @@
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Col, WEB_EDGE_CONTENT, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../layout';
+import { Col, WEB_EDGE_CONTENT_WIDE, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../layout';
 import { useWebTabbarBottomPad } from '../tabs/webPad';
 import { SETTINGS_MENU_ITEMS } from './SettingsMenu.model';
 import { capabilities } from '../../lib/capabilities';
@@ -17,7 +17,7 @@ export function SettingsMenu(): React.ReactElement {
   return (
     <Col surface="surface" flex={1}>
       <StackHeader title="Settings"/>
-      <ScrollView style={WEB_STACK_SCROLL} contentContainerStyle={[{ paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT, WEB_STACK_CONTENT_PAD, tabbarPad]}>
+      <ScrollView style={WEB_STACK_SCROLL} contentContainerStyle={[{ paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT_WIDE, WEB_STACK_CONTENT_PAD, tabbarPad]}>
         <SettingsList>
           {SETTINGS_MENU_ITEMS.map((item) => (
             <SettingsNavRow

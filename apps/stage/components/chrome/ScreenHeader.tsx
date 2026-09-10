@@ -96,7 +96,7 @@ export function ScreenHeader(props: ScreenHeaderProps): React.ReactElement {
       ? undefined
       : { bottom: { width: 1, color: resolveColorToken(props.borderColor, scheme) } };
   return (
-    <WebFullBleed>
+    <WebFullBleed layer>
       <Row
         align="center"
         justify={titled === undefined ? 'between' : undefined}

@@ -14,7 +14,7 @@ export function OverlayHeader({ onBack, backColor, safeTop, trailing }: {
 }): React.ReactElement {
   const scheme = useKitScheme();
   return (
-    <WebFullBleed>
+    <WebFullBleed layer>
       <Row
         align="center"
         justify="between"

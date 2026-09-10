@@ -3,7 +3,7 @@ import { Linking } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Col, WEB_EDGE_CONTENT, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../layout';
+import { Col, WEB_EDGE_CONTENT_WIDE, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../layout';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { StackHeader } from '../chrome/StackHeader';
 import { ThemeSwitcher } from './ThemeSwitcher';
@@ -39,7 +39,7 @@ export function KitPage(): React.ReactElement {
       <ScrollView
         style={[{ flex: 1 }, WEB_STACK_SCROLL]}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[{ flexGrow: 1, paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT, WEB_STACK_CONTENT_PAD]}
+        contentContainerStyle={[{ flexGrow: 1, paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT_WIDE, WEB_STACK_CONTENT_PAD]}
 >
         <ThemeSwitcher dark={dark} head={head} sub={sub} border={border} rowBg={rowBg}/>
         <KitSections dark={dark} head={head} sub={sub} border={border} rowBg={rowBg}/>
