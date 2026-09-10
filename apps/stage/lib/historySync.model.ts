@@ -33,7 +33,7 @@ export function historySyncPhaseLabel(phase: HistorySyncPhase, account?: string)
     case 'requesting': return 'Asking your other device for history…';
     case 'waiting': return waitingLabel(account);
     case 'done': return 'History synced from your other device.';
-    case 'timeout': return 'No answer from your other device. Open Stage there and try again.';
+    case 'timeout': return 'No answer from your other device yet. Open Stage there and retry, or use Send history with a PIN in its Messenger settings.';
     case 'error': return 'History sync failed. Try again.';
     default: return null;
   }

@@ -2,6 +2,15 @@ import type { Client } from '@xmtp/react-native-sdk';
 import { getCachedXmtpClient } from './xmtp.state';
 import { getOrCreateXmtpClient } from './xmtp.client';
 import { fingerprintOf } from './historySync.model';
+import { historyServerUrl } from './historyServer';
+import { secureStorage } from '../platform/storage';
+
+const ENV_KEY = 'xmtp.env';
+
+async function historyServer(): Promise<string> {
+  const env = await secureStorage.get(ENV_KEY).catch(() => null);
+  return historyServerUrl(env ?? 'production');
+}
 
 const ARCHIVE_LOOKBACK_DAYS = 30;
 
@@ -16,7 +25,7 @@ export async function requestHistorySync(): Promise<void> {
 
 export async function sendHistoryArchive(pin: string): Promise<void> {
   const client = await historyClient();
-  await client.sendSyncArchive(pin);
+  await client.sendSyncArchive(pin, await historyServer());
 }
 
 export async function countAvailableHistoryArchives(): Promise<number> {

@@ -15,6 +15,7 @@ import {
 } from './xmtp.state.web';
 import { type XmtpEnv, convIdOfLine, lineOfConv } from './xmtp.types';
 import { deleteDbKey, deleteDbFiles } from './xmtp.dbkey';
+import { historyServerUrl } from './historyServer';
 import { createClientForAccount } from './xmtp.recover.web';
 import {
   webXmtpDbPath, canReuseSavedClient, installationCreatedAtMs,
@@ -70,7 +71,8 @@ async function finalizeClient(
 async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<WebXmtpClient> {
   const address = rec.address.toLowerCase();
   const dbPath = webXmtpDbPath(rec.id, env);
-  const opts = { env, dbPath, codecs: XMTP_CODECS } as Parameters<typeof Client.create>[1];
+  const historySyncUrl = historyServerUrl(env);
+  const opts = { env, dbPath, codecs: XMTP_CODECS, historySyncUrl } as Parameters<typeof Client.create>[1];
   const savedAddress = await getSecure(addressKeyFor(rec.id));
   const savedEnv = await getSecure(envKeyFor(rec.id));
   const reusable = canReuseSavedClient(savedAddress, savedEnv, address, env);

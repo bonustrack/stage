@@ -6,6 +6,7 @@ import { parseMeta } from './parse.ts';
 import { proxyPreviewImages } from './imgProxy.ts';
 import { parseSettleBody, settleX402 } from './settle.ts';
 import { SsrfError } from './ssrf.ts';
+import { HISTORY_PREFIX, handleHistory } from './historyProxy.ts';
 
 const CACHE_TTL = 24 * 60 * 60;
 const IMG_CACHE_TTL = 7 * 24 * 60 * 60;
@@ -157,6 +158,7 @@ export default {
     if (pathname === '/preview') return handlePreview(request, ctx);
     if (pathname === '/img') return handleImg(request, ctx);
     if (pathname === '/x402-settle') return handleSettle(request);
+    if (pathname.startsWith(HISTORY_PREFIX)) return handleHistory(request);
     return json({ error: 'not found' }, 404);
   },
 };
