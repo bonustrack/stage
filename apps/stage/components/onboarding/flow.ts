@@ -29,32 +29,39 @@ export async function bringMessagingOnline(
   AccountManager.bumpEpoch();
 }
 
-async function finishAccount(withPasskey: boolean, onStage?: (s: Stage) => void): Promise<void> {
+export type SetupWarning = string | null;
+
+const PASSKEY_FALLBACK = 'The passkey could not be set up for this account on this device.';
+
+async function finishAccount(withPasskey: boolean, onStage?: (s: Stage) => void): Promise<SetupWarning> {
   onStage?.('wallet');
   const rec = await createSmartAccount();
+  let warning: SetupWarning = null;
   if (withPasskey && passkeysAvailable()) {
     const res = await enablePasskeyForRecord(rec);
-    if (!res.ok && res.reason !== 'already' && res.reason !== 'cancelled') {
-      throw new Error(res.message ?? 'Could not set up the passkey for this account.');
+    if (!(res.ok || res.reason === 'already' || res.reason === 'cancelled')) {
+      warning = res.message ?? PASSKEY_FALLBACK;
     }
   }
   await bringMessagingOnline(rec.id, onStage);
+  return warning;
 }
 
-export async function createWallet(withPasskey: boolean, onStage?: (s: Stage) => void): Promise<void> {
-  await finishAccount(withPasskey, onStage);
+export async function createWallet(withPasskey: boolean, onStage?: (s: Stage) => void): Promise<SetupWarning> {
+  return finishAccount(withPasskey, onStage);
 }
 
 export async function restoreWallet(
   phrase: string, withPasskey: boolean, onStage?: (s: Stage) => void,
-): Promise<void> {
+): Promise<SetupWarning> {
   onStage?.('wallet');
   await restoreMnemonic(phrase);
-  await finishAccount(withPasskey, onStage);
+  return finishAccount(withPasskey, onStage);
 }
 
-export async function importKeyAccount(pk: Hex, onStage?: (s: Stage) => void): Promise<void> {
+export async function importKeyAccount(pk: Hex, onStage?: (s: Stage) => void): Promise<SetupWarning> {
   onStage?.('wallet');
   const rec = await addPrivateKeyAccount(pk);
   await bringMessagingOnline(rec.id, onStage);
+  return null;
 }

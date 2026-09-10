@@ -11,6 +11,16 @@ import {
 import { passkeysAvailable, registerPasskeyCredential } from './passkeys';
 import { type StoredPasskey } from './passkeys.model';
 import { zerodevConfigured, zerodevRpId } from './env';
+import { txErrorMessage } from '@stage-labs/client/wallet/txError';
+
+const SWAP_FALLBACK = 'Could not install the passkey on-chain.';
+const SECURED_ELSEWHERE =
+  'This account rejected the signature. It is probably already secured by a passkey on another device.';
+
+function swapFailureMessage(e: unknown): string {
+  const message = txErrorMessage(e, SWAP_FALLBACK);
+  return /signature rejected/i.test(message) ? SECURED_ELSEWHERE : message;
+}
 
 export type EnablePasskeyResult =
   | { ok: true; deployed: boolean; userOpHash?: string }
@@ -54,7 +64,7 @@ export async function deployAndSwapToPasskey(
     }
     return { ok: true, txHash: userOpHash };
   } catch (e) {
-    return { ok: false, message: e instanceof Error ? e.message : 'Could not install passkey on-chain' };
+    return { ok: false, message: swapFailureMessage(e) };
   }
 }
 

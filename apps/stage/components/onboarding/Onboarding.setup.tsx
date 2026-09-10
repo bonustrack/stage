@@ -37,18 +37,21 @@ function ProgressBar({ value, pal }: { value: number; pal: Pal }): React.ReactEl
   );
 }
 
-function StageIndicator({ state, pal }: { state: StageState; pal: Pal }): React.ReactElement {
+function StageIndicator({ state, failed, pal }: { state: StageState; failed: boolean; pal: Pal }): React.ReactElement {
   if (state === 'done') return <Icon name="check" size={20} color={pal.primary} />;
+  if (state === 'active' && failed) return <Icon name="xCircle" size={20} color={DANGER} />;
   if (state === 'active') return <Spinner size={18} color={pal.primary} />;
   return <Box width={8} height={8} radius="full" background={pal.border} margin={{ x: 6 }} />;
 }
 
-function StageRow({ stage, state, pal }: { stage: Stage; state: StageState; pal: Pal }): React.ReactElement {
+function StageRow({ stage, state, failed, pal }: {
+  stage: Stage; state: StageState; failed: boolean; pal: Pal;
+}): React.ReactElement {
   const color = state === 'pending' ? pal.sub : pal.text;
   return (
     <Row align="center" gap={12}>
       <Box width={20} align="center">
-        <StageIndicator state={state} pal={pal} />
+        <StageIndicator state={state} failed={failed} pal={pal} />
       </Box>
       <Text size="xl" color={color} weight={state === 'active' ? 'semibold' : 'normal'}>{STAGE_LABELS[stage]}</Text>
     </Row>
@@ -95,7 +98,7 @@ export function SetupStep({ pal, dark, busy, stage, setupErr, withHistory, onRet
         {setupErr === null ? <ProgressBar value={progress} pal={pal} /> : null}
         <Col gap={14} width="100%" padding={{ top: 8 }}>
           {stages.map((s) => (
-            <StageRow key={s} stage={s} state={stageState(s, stage, stages)} pal={pal} />
+            <StageRow key={s} stage={s} state={stageState(s, stage, stages)} failed={setupErr !== null} pal={pal} />
           ))}
         </Col>
         <SetupActions

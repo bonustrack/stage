@@ -199,6 +199,6 @@ describe('H. web passkey seam — validator callback contract and safety gates',
     expect(webSrc).toContain('throw e instanceof Error ? e : new Error(');
   });
   test('onboarding continues without a passkey when the user cancels the sheet', () => {
-    expect(onboardSrc).toContain("res.reason !== 'already' && res.reason !== 'cancelled'");
+    expect(onboardSrc).toContain("res.ok || res.reason === 'already' || res.reason === 'cancelled'");
   });
 });

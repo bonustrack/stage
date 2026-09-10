@@ -1,9 +1,12 @@
 import { useRef, useState } from 'react';
+import { Alert } from 'react-native';
 import type { Hex } from 'viem';
+import { txErrorMessage } from '@stage-labs/client/wallet/txError';
 import { holdOnboarding } from '../../lib/onboardingHold';
 import { runHistorySync } from '../../lib/historySync';
 import {
-  createWallet, restoreWallet, importKeyAccount, bringMessagingOnline, XmtpSetupError, type Stage,
+  createWallet, restoreWallet, importKeyAccount, bringMessagingOnline, XmtpSetupError,
+  type SetupWarning, type Stage,
 } from './flow';
 import type { SetupErr } from './Onboarding.setup.model';
 
@@ -27,14 +30,14 @@ function choiceSyncsHistory(choice: Choice): boolean {
   return choice.kind !== 'create';
 }
 
-async function runChoice(choice: Choice, withPasskey: boolean, onStage: (s: Stage) => void): Promise<void> {
+async function runChoice(choice: Choice, withPasskey: boolean, onStage: (s: Stage) => void): Promise<SetupWarning> {
   if (choice.kind === 'create') return createWallet(withPasskey, onStage);
   if (choice.kind === 'restore') return restoreWallet(choice.phrase, withPasskey, onStage);
   return importKeyAccount(choice.pk, onStage);
 }
 
 function describe(e: unknown): string {
-  return e instanceof Error ? e.message : String(e);
+  return txErrorMessage(e, 'Something went wrong.');
 }
 
 export function useSetupRunner(onDone: () => void): SetupRunner {
@@ -52,21 +55,24 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
     setStage(first);
   };
 
-  const finish = (): void => {
+  const finish = (warning: SetupWarning): void => {
     if (skipped.current) return;
     holdOnboarding(false);
     setBusy(false);
     onDone();
+    if (warning !== null) {
+      Alert.alert('Passkey not added', `${warning} You can add a passkey later from Settings, Security.`);
+    }
   };
 
-  const tail = async (syncHistory: boolean): Promise<void> => {
+  const tail = async (syncHistory: boolean, warning: SetupWarning): Promise<void> => {
     if (syncHistory) {
       setStage('history');
       await runHistorySync();
       if (skipped.current) return;
     }
     setStage('finishing');
-    finish();
+    finish(warning);
   };
 
   const run = (choice: Choice, withPasskey: boolean): void => {
@@ -76,8 +82,8 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
     begin('wallet');
     void (async (): Promise<void> => {
       try {
-        await runChoice(choice, withPasskey, setStage);
-        await tail(syncHistory);
+        const warning = await runChoice(choice, withPasskey, setStage);
+        await tail(syncHistory, warning);
       } catch (e) {
         setBusy(false);
         if (e instanceof XmtpSetupError) setSetupErr({ message: e.message, accountId: e.accountId });
@@ -92,7 +98,7 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
     void (async (): Promise<void> => {
       try {
         await bringMessagingOnline(accountId, setStage);
-        await tail(withHistory);
+        await tail(withHistory, null);
       } catch (e) {
         setBusy(false);
         setSetupErr({ message: describe(e), accountId });
