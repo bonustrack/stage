@@ -47,7 +47,7 @@ export interface ChannelRowProps {
 }
 
 const ROW_CONTENT_HEIGHT = 67;
-const BADGE_SIZE = 22;
+const BADGE_SIZE = 18;
 
 function TrailingBadge({ unreadCount, markedUnread, showChevron, head, bg }: {
   unreadCount: number; markedUnread?: boolean; showChevron?: boolean;
@@ -56,8 +56,8 @@ function TrailingBadge({ unreadCount, markedUnread, showChevron, head, bg }: {
   const shown = unreadCount > 0 ? unreadCount : markedUnread === true ? 1 : 0;
   if (shown > 0) {
     return (
-      <Row minWidth={BADGE_SIZE} height={BADGE_SIZE} padding={{ x: 7 }} align="center" justify="center" radius="full" background={head}>
-        <Text weight="semibold" size="2xs" color={bg}>{unreadBadgeLabel(shown)}</Text>
+      <Row minWidth={BADGE_SIZE} height={BADGE_SIZE} padding={{ x: 4 }} align="center" justify="center" radius="full" background={head}>
+        <Text weight="semibold" size="3xs" color={bg}>{unreadBadgeLabel(shown)}</Text>
       </Row>
     );
   }
