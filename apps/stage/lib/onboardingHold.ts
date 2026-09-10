@@ -16,7 +16,13 @@ export function holdOnboarding(next: boolean): void {
   notify();
 }
 
-export function useOnboardingVisible(hasAccount: boolean): boolean {
+export interface ShellGates {
+  showOnboarding: boolean;
+  sidebarVisible: boolean;
+}
+
+export function useShellGates(gatesOpen: boolean, hasAccount: boolean): ShellGates {
   const holding = useStoreValue(subscribe, get);
-  return !hasAccount || holding;
+  const showOnboarding = !hasAccount || holding;
+  return { showOnboarding, sidebarVisible: gatesOpen && hasAccount && !showOnboarding };
 }
