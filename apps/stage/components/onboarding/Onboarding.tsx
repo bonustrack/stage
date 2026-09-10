@@ -11,6 +11,8 @@ export interface OnboardingProps {
   onDone: () => void;
 }
 
+const ONBOARDING_MAX_WIDTH = 560;
+
 export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const pal = usePalette();
@@ -18,7 +20,8 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
   const f = useOnboardingFlow(onDone);
 
   return (
-    <Col surface="surface" flex={1} padding={{ x: 24, top: 24 + insets.top, bottom: 16 + insets.bottom }}>
+    <Col surface="surface" flex={1} align="center" padding={{ x: 24, top: 24 + insets.top, bottom: 16 + insets.bottom }}>
+      <Col flex={1} width="100%" maxWidth={ONBOARDING_MAX_WIDTH}>
       {f.step === 'welcome' ? (
         <WelcomeStep pal={pal} dark={dark} busy={f.busy} onCreate={f.onCreate} onRestore={f.onRestore} onImport={f.onImport} />
       ) : null}
@@ -44,6 +47,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
           onRetry={f.onSetupRetry} onBack={f.onSetupBack} onSkipHistory={f.onSkipHistory}
         />
       ) : null}
+      </Col>
     </Col>
   );
 }
