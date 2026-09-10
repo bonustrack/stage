@@ -4,7 +4,7 @@ import { makeListeners, useStoreValue } from './storeCore';
 import { bumpAccountEpoch } from './accountEpoch';
 import { waitForXmtpReady } from './xmtp.state';
 import {
-  countAvailableHistoryArchives, countLocalConversations, processHistoryArchive, requestHistorySync,
+  countAvailableHistoryArchives, historyFingerprint, processHistoryArchive, requestHistorySync,
   sendHistoryArchive,
 } from './xmtp.history';
 import { historyPinFromRandom, historySyncIsActive, HISTORY_PIN_LENGTH, type HistorySyncPhase } from './historySync.model';
@@ -67,20 +67,20 @@ async function tryProcessArchive(): Promise<void> {
   }
 }
 
-async function archiveArrived(baseline: number): Promise<boolean> {
+async function archiveArrived(baseline: string | null): Promise<boolean> {
   try {
     if (await countAvailableHistoryArchives() > 0) {
       await tryProcessArchive();
       return true;
     }
-    return await countLocalConversations() > baseline;
+    return baseline !== null && await historyFingerprint() !== baseline;
   } catch (err) {
     warn('poll', err);
     return false;
   }
 }
 
-async function waitForHistory(deadline: number, baseline: number): Promise<boolean> {
+async function waitForHistory(deadline: number, baseline: string | null): Promise<boolean> {
   while (Date.now() < deadline) {
     if (await archiveArrived(baseline)) return true;
     await sleep(POLL_MS);
@@ -88,12 +88,12 @@ async function waitForHistory(deadline: number, baseline: number): Promise<boole
   return false;
 }
 
-async function localConversationBaseline(): Promise<number> {
+async function localHistoryBaseline(): Promise<string | null> {
   try {
-    return await countLocalConversations();
+    return await historyFingerprint();
   } catch (err) {
     warn('baseline', err);
-    return Number.MAX_SAFE_INTEGER;
+    return null;
   }
 }
 
@@ -102,7 +102,7 @@ export async function runHistorySync(): Promise<HistorySyncPhase> {
   setPhase('requesting');
   try {
     if (!(await waitForXmtpReady())) { setPhase('error'); return 'error'; }
-    const baseline = await localConversationBaseline();
+    const baseline = await localHistoryBaseline();
     await requestHistorySync();
     setPhase('waiting');
     if (!(await waitForHistory(Date.now() + TIMEOUT_MS, baseline))) { setPhase('timeout'); return 'timeout'; }

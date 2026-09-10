@@ -1,6 +1,7 @@
 import type { Client } from '@xmtp/react-native-sdk';
 import { getCachedXmtpClient } from './xmtp.state';
 import { getOrCreateXmtpClient } from './xmtp.client';
+import { fingerprintOf } from './historySync.model';
 
 const ARCHIVE_LOOKBACK_DAYS = 30;
 
@@ -30,8 +31,12 @@ export async function processHistoryArchive(pin?: string): Promise<void> {
   await client.processSyncArchive(pin);
 }
 
-export async function countLocalConversations(): Promise<number> {
+export async function historyFingerprint(): Promise<string> {
   const client = await historyClient();
   const conversations = await client.conversations.list();
-  return conversations.length;
+  const entries = await Promise.all(conversations.map(async (conversation) => {
+    const [first] = await conversation.messages({ limit: 1, direction: 'ASCENDING' });
+    return { id: conversation.id, firstNs: first === undefined ? '' : String(first.sentNs) };
+  }));
+  return fingerprintOf(entries);
 }

@@ -42,3 +42,9 @@ export function historySyncPhaseLabel(phase: HistorySyncPhase, account?: string)
 export function historySyncIsActive(phase: HistorySyncPhase): boolean {
   return phase === 'requesting' || phase === 'waiting';
 }
+
+export interface HistoryEntry { id: string; firstNs: string }
+
+export function fingerprintOf(entries: readonly HistoryEntry[]): string {
+  return entries.map((entry) => `${entry.id}:${entry.firstNs}`).sort().join('|');
+}

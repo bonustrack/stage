@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  formatHistoryPin, historyPinFromRandom, historySyncIsActive, historySyncPhaseLabel,
+  fingerprintOf, formatHistoryPin, historyPinFromRandom, historySyncIsActive, historySyncPhaseLabel,
   isValidHistoryPin, normalizeHistoryPin,
 } from '../lib/historySync.model';
 
@@ -33,5 +33,14 @@ describe('history sync phases', () => {
     expect(historySyncIsActive('requesting')).toBe(true);
     expect(historySyncIsActive('waiting')).toBe(true);
     expect(historySyncIsActive('done')).toBe(false);
+  });
+});
+
+describe('fingerprintOf', () => {
+  test('is order independent and changes when an older message appears', () => {
+    const before = fingerprintOf([{ id: 'b', firstNs: '200' }, { id: 'a', firstNs: '100' }]);
+    expect(before).toBe(fingerprintOf([{ id: 'a', firstNs: '100' }, { id: 'b', firstNs: '200' }]));
+    expect(fingerprintOf([{ id: 'a', firstNs: '50' }, { id: 'b', firstNs: '200' }])).not.toBe(before);
+    expect(fingerprintOf([{ id: 'a', firstNs: '100' }, { id: 'b', firstNs: '200' }, { id: 'c', firstNs: '' }])).not.toBe(before);
   });
 });

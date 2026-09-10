@@ -1,6 +1,9 @@
-import { BackupElementSelectionOption, type ArchiveOptions, type Client } from '@xmtp/browser-sdk';
+import {
+  BackupElementSelectionOption, SortDirection, type ArchiveOptions, type Client,
+} from '@xmtp/browser-sdk';
 import { getCachedXmtpClient } from './xmtp.state.web';
 import { getOrCreateXmtpClient } from './xmtp.client.web';
+import { fingerprintOf } from './historySync.model';
 
 const ARCHIVE_LOOKBACK_DAYS = 30;
 
@@ -37,8 +40,12 @@ export async function processHistoryArchive(pin?: string): Promise<void> {
   await client.processSyncArchive(pin ?? null);
 }
 
-export async function countLocalConversations(): Promise<number> {
+export async function historyFingerprint(): Promise<string> {
   const client = await historyClient();
   const conversations = await client.conversations.list();
-  return conversations.length;
+  const entries = await Promise.all(conversations.map(async (conversation) => {
+    const [first] = await conversation.messages({ limit: 1n, direction: SortDirection.Ascending });
+    return { id: conversation.id, firstNs: first === undefined ? '' : String(first.sentAtNs) };
+  }));
+  return fingerprintOf(entries);
 }
