@@ -33,8 +33,16 @@ function formatRelative(iso: string, now: number): string {
   return `${Math.floor(hours / 24)}d ago`;
 }
 
+const FRESH_BUILD_MS = 30 * 60 * 1000;
+
+function isFresh(iso: string, now: number): boolean {
+  if (iso.length === 0) return false;
+  const then = new Date(iso).getTime();
+  return !Number.isNaN(then) && now - then < FRESH_BUILD_MS;
+}
+
 interface BuildInfo {
-  hash: string; time: string; relative: string; channel: string | null; href: string | undefined;
+  hash: string; time: string; relative: string; channel: string | null; href: string | undefined; fresh: boolean;
 }
 
 function resolveBuildInfo(now: number): BuildInfo {
@@ -46,6 +54,7 @@ function resolveBuildInfo(now: number): BuildInfo {
     href: commitUrl(rawHash),
     time: formatLocal(rawTime),
     relative: formatRelative(rawTime, now),
+    fresh: isFresh(rawTime, now),
     channel: typeof Updates.channel === 'string' && Updates.channel.length > 0 ? Updates.channel : null,
   };
 }
@@ -56,7 +65,8 @@ export function BuildInfoDot(): React.ReactElement {
   const [open, setOpen] = useState(false);
   const { text, bg, border } = usePalette();
   const insets = useSafeAreaInsets();
-  const { hash, time, relative, channel, href } = resolveBuildInfo(Date.now());
+  const { hash, time, relative, channel, href, fresh } = resolveBuildInfo(Date.now());
+  const dotColor = fresh ? text : withAlpha(text, open ? 0.6 : 0.32);
   const head = relative.length > 0 ? `${hash} · ${relative}` : hash;
   const openCommit = href === undefined ? undefined : (): void => { setOpen(false); capabilities.openUrl(href); };
 
@@ -91,7 +101,7 @@ export function BuildInfoDot(): React.ReactElement {
         <Pressable
           hitSlop={12}
           onPress={() => { setOpen((v) => !v); }}
-          style={{ width: 11, height: 11, borderRadius: 6, backgroundColor: withAlpha(text, open ? 0.6 : 0.32) }}
+          style={{ width: 11, height: 11, borderRadius: 6, backgroundColor: dotColor }}
         />
       </Box>
     </Box>
