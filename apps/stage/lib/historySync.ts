@@ -4,7 +4,8 @@ import { makeListeners, useStoreValue } from './storeCore';
 import { bumpAccountEpoch } from './accountEpoch';
 import { waitForXmtpReady } from './xmtp.state';
 import {
-  countAvailableHistoryArchives, processHistoryArchive, requestHistorySync, sendHistoryArchive,
+  countAvailableHistoryArchives, countLocalConversations, processHistoryArchive, requestHistorySync,
+  sendHistoryArchive,
 } from './xmtp.history';
 import { historyPinFromRandom, historySyncIsActive, HISTORY_PIN_LENGTH, type HistorySyncPhase } from './historySync.model';
 
@@ -54,12 +55,46 @@ function applyReceivedHistory(): void {
   bumpAccountEpoch();
 }
 
-async function waitForArchive(deadline: number): Promise<boolean> {
+function warn(step: string, err: unknown): void {
+  if (process.env.NODE_ENV !== 'production') console.warn(`history sync ${step} failed`, err instanceof Error ? err.message : err);
+}
+
+async function tryProcessArchive(): Promise<void> {
+  try {
+    await processHistoryArchive();
+  } catch (err) {
+    warn('process', err);
+  }
+}
+
+async function archiveArrived(baseline: number): Promise<boolean> {
+  try {
+    if (await countAvailableHistoryArchives() > 0) {
+      await tryProcessArchive();
+      return true;
+    }
+    return await countLocalConversations() > baseline;
+  } catch (err) {
+    warn('poll', err);
+    return false;
+  }
+}
+
+async function waitForHistory(deadline: number, baseline: number): Promise<boolean> {
   while (Date.now() < deadline) {
-    if (await countAvailableHistoryArchives() > 0) return true;
+    if (await archiveArrived(baseline)) return true;
     await sleep(POLL_MS);
   }
   return false;
+}
+
+async function localConversationBaseline(): Promise<number> {
+  try {
+    return await countLocalConversations();
+  } catch (err) {
+    warn('baseline', err);
+    return Number.MAX_SAFE_INTEGER;
+  }
 }
 
 export async function runHistorySync(): Promise<HistorySyncPhase> {
@@ -67,14 +102,15 @@ export async function runHistorySync(): Promise<HistorySyncPhase> {
   setPhase('requesting');
   try {
     if (!(await waitForXmtpReady())) { setPhase('error'); return 'error'; }
+    const baseline = await localConversationBaseline();
     await requestHistorySync();
     setPhase('waiting');
-    if (!(await waitForArchive(Date.now() + TIMEOUT_MS))) { setPhase('timeout'); return 'timeout'; }
-    await processHistoryArchive();
+    if (!(await waitForHistory(Date.now() + TIMEOUT_MS, baseline))) { setPhase('timeout'); return 'timeout'; }
     applyReceivedHistory();
     setPhase('done');
     return 'done';
-  } catch {
+  } catch (err) {
+    warn('request', err);
     setPhase('error');
     return 'error';
   }

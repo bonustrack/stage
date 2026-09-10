@@ -36,3 +36,9 @@ export async function processHistoryArchive(pin?: string): Promise<void> {
   const client = await historyClient();
   await client.processSyncArchive(pin ?? null);
 }
+
+export async function countLocalConversations(): Promise<number> {
+  const client = await historyClient();
+  const conversations = await client.conversations.list();
+  return conversations.length;
+}
