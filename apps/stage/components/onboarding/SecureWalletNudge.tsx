@@ -66,7 +66,7 @@ export function SecureWalletNudge(): React.ReactElement | null {
       <Col surface="raised" gap={12}
         padding={16}
         style={{ borderWidth: 1, borderColor: pal.border, borderRadius: 14 }}>
-        <Title level={3} color={pal.text}>Secure your wallet</Title>
+        <Title level={3} color={pal.primary}>Secure your wallet</Title>
 
         {phrase == null ? (
           <>

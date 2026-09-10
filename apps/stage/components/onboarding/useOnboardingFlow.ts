@@ -4,6 +4,7 @@ import { passkeysAvailable } from '../../lib/zerodev';
 import type { Stage } from './flow';
 import type { SetupErr } from './Onboarding.setup.model';
 import { useSetupRunner, type Choice } from './useSetupRunner';
+import { completeIfUnique } from './RecoveryPhrase.model';
 
 export type Step = 'welcome' | 'restore' | 'import' | 'passkey' | 'setup';
 
@@ -71,7 +72,7 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
     busy: runner.busy, stage: runner.stage, setupErr: runner.setupErr, withHistory: runner.withHistory,
     onCreate: () => { toPasskey({ kind: 'create' }); },
     onRestore: () => { setErr(''); setStep('restore'); },
-    onPhraseChange: (t) => { setPhrase(t); setErr(''); },
+    onPhraseChange: (t) => { setPhrase((prev) => completeIfUnique(prev, t)); setErr(''); },
     onRestoreNext,
     onRestoreBack: () => { setErr(''); setStep('welcome'); },
     onImport: () => { setStep('import'); },
