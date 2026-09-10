@@ -3,6 +3,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Col } from '../layout';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { WelcomeStep, RestoreStep, PasskeyStep, SetupStep } from './Onboarding.steps';
+import { ImportStep } from './Onboarding.import';
 import { useOnboardingFlow } from './useOnboardingFlow';
 
 export interface OnboardingProps {
@@ -18,7 +19,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
   return (
     <Col surface="surface" flex={1} padding={{ x: 24, top: 24 + insets.top, bottom: 16 + insets.bottom }}>
       {f.step === 'welcome' ? (
-        <WelcomeStep pal={pal} dark={dark} busy={f.busy} onCreate={f.onCreate} onRestore={f.onRestore} />
+        <WelcomeStep pal={pal} dark={dark} busy={f.busy} onCreate={f.onCreate} onRestore={f.onRestore} onImport={f.onImport} />
       ) : null}
 
       {f.step === 'restore' ? (
@@ -26,6 +27,10 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
           pal={pal} dark={dark} busy={f.busy} phrase={f.phrase} err={f.err}
           onChange={f.onPhraseChange} onNext={f.onRestoreNext} onBack={f.onRestoreBack}
         />
+      ) : null}
+
+      {f.step === 'import' ? (
+        <ImportStep pal={pal} dark={dark} busy={f.busy} onTransfer={f.onImportTransfer} onBack={f.onRestoreBack} />
       ) : null}
 
       {f.step === 'passkey' ? (

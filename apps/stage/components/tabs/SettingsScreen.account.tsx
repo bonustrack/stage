@@ -13,6 +13,8 @@ import { flash } from '../../lib/toast';
 import { getPrivateKey, canExportPrivateKey, type AccountRecord } from '../../lib/accounts';
 import { deleteAccount, shortAddress, useActiveAccountRecord } from '../../modules/messaging';
 import { reloadApp } from '../AccountsManager.helpers';
+import { transferKindFor } from '../../lib/accountTransfer';
+import { TransferAccountSheet } from '../accounts/TransferAccountSheet';
 import { SettingsButtonRow, SettingsList, SettingsNavRow } from '../settings/rows';
 
 interface SectionColors { fg: string; head: string; sub: string; border: string; rowBg: string }
@@ -75,11 +77,35 @@ function revealedKeyFor(key: RevealedKey | null, rec: AccountRecord): string | n
   return key.id === rec.id ? key.pk : null;
 }
 
+function AccountRows({ rec, revealed, onExport, onMove }: {
+  rec: AccountRecord; revealed: string | null; onExport: () => void; onMove: () => void;
+}): React.ReactElement {
+  return (
+    <SettingsList>
+      {canExportPrivateKey(rec) && !revealed ? (
+        <SettingsNavRow label="Export private key" iconStart="wallet" iconEnd="chevronDown" onPress={onExport} />
+      ) : null}
+      {transferKindFor(rec) !== null ? (
+        <SettingsNavRow label="Move to another device" iconStart="qrcode" onPress={onMove} />
+      ) : null}
+      {rec.type === 'smart' ? (
+        <SettingsNavRow
+          label={(rec.guardians ?? []).length ? 'Guardian recovery' : 'Set up guardian recovery'}
+          iconStart="userGroup"
+          onPress={() => { capabilities.navigate('/wallet/recovery'); }}
+        />
+      ) : null}
+      <SettingsButtonRow label="Remove account" iconStart="trash" danger onPress={() => { confirmRemove(rec); }} />
+    </SettingsList>
+  );
+}
+
 export function AccountSecuritySection(
   { c, dark }: { c: SectionColors; danger?: string; dark: boolean },
 ): React.ReactElement | null {
   const rec = useActiveAccountRecord();
   const [key, setRevealed] = useState<RevealedKey | null>(null);
+  const [moving, setMoving] = useState(false);
 
   if (!rec) return null;
   const revealed = revealedKeyFor(key, rec);
@@ -94,31 +120,14 @@ export function AccountSecuritySection(
               <RevealedKeyRow c={c} dark={dark} revealed={revealed} />
             </ListView>
           ) : null}
-          <SettingsList>
-            {canExportPrivateKey(rec) && !revealed ? (
-              <SettingsNavRow
-                label="Export private key"
-                iconStart="wallet"
-                iconEnd="chevronDown"
-                onPress={() => { confirmExport(rec, setRevealed); }}
-              />
-            ) : null}
-            {rec.type === 'smart' ? (
-              <SettingsNavRow
-                label={(rec.guardians ?? []).length ? 'Guardian recovery' : 'Set up guardian recovery'}
-                iconStart="userGroup"
-                onPress={() => { capabilities.navigate('/wallet/recovery'); }}
-              />
-            ) : null}
-            <SettingsButtonRow
-              label="Remove account"
-              iconStart="trash"
-              danger
-              onPress={() => { confirmRemove(rec); }}
-            />
-          </SettingsList>
+          <AccountRows
+            rec={rec} revealed={revealed}
+            onExport={() => { confirmExport(rec, setRevealed); }}
+            onMove={() => { setMoving(true); }}
+          />
         </Card>
       </Box>
+      <TransferAccountSheet rec={moving ? rec : null} dark={dark} onClose={() => { setMoving(false); }} />
     </>
   );
 }

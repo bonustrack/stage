@@ -55,8 +55,8 @@ function OnboardingStepView({ dark, title, caption, captionSize, topPadding, act
   );
 }
 
-export function WelcomeStep({ dark, busy, onCreate, onRestore }: {
-  pal: Pal; dark: boolean; busy: boolean; onCreate: () => void; onRestore: () => void;
+export function WelcomeStep({ dark, busy, onCreate, onRestore, onImport }: {
+  pal: Pal; dark: boolean; busy: boolean; onCreate: () => void; onRestore: () => void; onImport: () => void;
 }): React.ReactElement {
   return (
     <OnboardingStepView
@@ -68,6 +68,7 @@ export function WelcomeStep({ dark, busy, onCreate, onRestore }: {
       actions={[
         { label: 'Create new wallet', variant: 'solid', disabled: busy, onPress: onCreate },
         { label: 'I have a recovery phrase', variant: 'soft', disabled: busy, onPress: onRestore },
+        { label: 'Import from another device', variant: 'ghost', disabled: busy, onPress: onImport },
       ]}
     />
   );

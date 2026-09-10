@@ -3,6 +3,8 @@ import {
   restoreMnemonic, createSmartAccount, enablePasskeyForRecord, passkeysAvailable,
 } from '../../lib/zerodev';
 import { AccountManager } from '../../modules/messaging';
+import type { Hex } from 'viem';
+import { addPrivateKeyAccount } from '../../lib/accounts';
 
 export type Stage = 'wallet' | 'messaging' | 'finishing';
 
@@ -50,4 +52,10 @@ export async function restoreWallet(
   onStage?.('wallet');
   await restoreMnemonic(phrase);
   await finishAccount(withPasskey, onStage);
+}
+
+export async function importKeyAccount(pk: Hex, onStage?: (s: Stage) => void): Promise<void> {
+  onStage?.('wallet');
+  const rec = await addPrivateKeyAccount(pk);
+  await bringMessagingOnline(rec.id, onStage);
 }

@@ -27,6 +27,7 @@ export default defineConfig({
           'app/**/*.{ts,tsx}',
           'babel.config.js',
           'lib/**/*.web.ts',
+          'components/**/*.web.tsx',
           'modules/**/*.{ts,tsx}',
           'platform/**/*.ts',
           'plugins/**/*.{js,ts}',

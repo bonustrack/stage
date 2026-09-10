@@ -6,6 +6,9 @@ import { AccountList } from './AccountsManager.list';
 import { ManageSheet, ExportSheet } from './AccountsManager.sheets';
 import { usePalette } from '../lib/theme';
 import { usePeerProfiles } from '../lib/peerProfiles';
+import { useAccountTransfer } from './accounts/useAccountTransfer';
+import { TransferAccountSheet } from './accounts/TransferAccountSheet';
+import { ImportAccountSheet } from './accounts/ImportAccountSheet';
 
 export function AccountsManager({ dark, flat = false, onSwitched }: { dark: boolean; flat?: boolean; onSwitched?: () => void }): React.ReactElement {
   const tokens = usePalette();
@@ -17,6 +20,7 @@ export function AccountsManager({ dark, flat = false, onSwitched }: { dark: bool
   const pal = { head, sub, border, sheetBg };
 
   const m = useAccountsManager(onSwitched);
+  const t = useAccountTransfer();
 
   usePeerProfiles(m.accounts.map(a => a.address));
 
@@ -28,6 +32,7 @@ export function AccountsManager({ dark, flat = false, onSwitched }: { dark: bool
         expanded={m.expanded} setExpanded={m.setExpanded}
         head={head} sub={sub} border={border} rowBg={rowBg}
         onSwitch={(id) => void m.onSwitch(id)} setManageId={m.setManageId} onAdd={() => void m.onAdd()}
+        onImport={t.openImport}
       />
 
       {m.busy ? (
@@ -41,10 +46,16 @@ export function AccountsManager({ dark, flat = false, onSwitched }: { dark: bool
         onClose={() => { m.setManageId(null); }}
         onSwitch={(id) => void m.onSwitch(id)}
         onExport={(id) => void m.onExport(id)}
+        onTransfer={t.openTransfer}
         onRemove={m.onRemove}
         p={pal}
       />
       <ExportSheet revealPk={m.revealPk} onClose={() => { m.setRevealPk(null); }} dark={dark} p={pal} />
+      <TransferAccountSheet rec={t.transferRec} dark={dark} onClose={t.closeTransfer} />
+      <ImportAccountSheet
+        visible={t.importOpen} dark={dark} busy={t.importing} error={t.importError}
+        onClose={t.closeImport} onSubmit={t.onImport}
+      />
     </Box>
   );
 }

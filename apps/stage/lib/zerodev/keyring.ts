@@ -85,6 +85,14 @@ export async function restoreMnemonic(phrase: string): Promise<void> {
   ownerCache.clear();
 }
 
+export type MnemonicRelation = 'none' | 'same' | 'different';
+
+export async function mnemonicRelation(phrase: string): Promise<MnemonicRelation> {
+  const current = await readMnemonic();
+  if (!current) return 'none';
+  return current === normalizeMnemonic(phrase) ? 'same' : 'different';
+}
+
 export async function clearMnemonic(): Promise<void> {
   sessionMnemonic = null;
   ownerCache.clear();
@@ -150,6 +158,13 @@ async function storePrivateKey(id: string, pk: Hex): Promise<void> {
 export async function getViemAccount(id: string): Promise<PrivateKeyAccount | null> {
   const pk = await loadPrivateKey(id);
   return pk ? privateKeyToAccount(pk) : null;
+}
+
+export async function importPrivateKey(pk: Hex): Promise<{ id: string; address: string }> {
+  const acct = privateKeyToAccount(pk);
+  const id = acct.address.toLowerCase();
+  await storePrivateKey(id, pk);
+  return { id, address: acct.address };
 }
 
 export async function adoptLegacyKey(): Promise<{ id: string; address: string } | null> {

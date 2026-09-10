@@ -162,6 +162,12 @@ const config = {
       },
     ],
     [
+      'expo-camera',
+      {
+        cameraPermission: `Allow ${variant.name} to scan a QR code when importing an account.`,
+      },
+    ],
+    [
       'expo-location',
       {
         locationAlwaysAndWhenInUsePermission: `Allow ${variant.name} to share your current location in chat.`,

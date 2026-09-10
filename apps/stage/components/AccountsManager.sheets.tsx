@@ -5,14 +5,16 @@ import { ListView } from '@stage-labs/kit/react-native/list-view';
 import * as Clipboard from 'expo-clipboard';
 import { flash } from '../lib/toast';
 import { canExportPrivateKey, type AccountRecord } from '../lib/accounts';
+import { transferKindFor } from '../lib/accountTransfer';
 import { SheetModal, SheetRow } from './AccountsManager.parts';
 import { DANGER, useEffectiveColorScheme, usePalette } from '../lib/theme';
 
 interface Pal { head: string; sub: string; border: string; sheetBg: string; }
 
-export function ManageSheet({ manageRec, activeId, onClose, onSwitch, onExport, onRemove, p }: {
+export function ManageSheet({ manageRec, activeId, onClose, onSwitch, onExport, onTransfer, onRemove, p }: {
   manageRec: AccountRecord | null; activeId: string | null; onClose: () => void;
   onSwitch: (id: string) => void; onExport: (id: string) => void;
+  onTransfer: (rec: AccountRecord) => void;
   onRemove: (rec: AccountRecord) => void; p: Pal;
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
@@ -29,6 +31,9 @@ export function ManageSheet({ manageRec, activeId, onClose, onSwitch, onExport, 
         ) : null}
         {manageRec && canExportPrivateKey(manageRec) ? (
           <SheetRow label="Export private key" desc="Reveal + copy this account's key" head={p.head} dark={dark} onPress={() => { const id = manageRec.id; onClose(); onExport(id); }} />
+        ) : null}
+        {manageRec && transferKindFor(manageRec) !== null ? (
+          <SheetRow label="Move to another device" desc="Show a QR code to import this account elsewhere" head={p.head} dark={dark} onPress={() => { onClose(); onTransfer(manageRec); }} />
         ) : null}
         {manageRec ? (
           <SheetRow label="Remove account" desc="Delete from this device" danger head={p.head} dark={dark} onPress={() => { onRemove(manageRec); }} />

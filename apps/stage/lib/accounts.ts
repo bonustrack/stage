@@ -3,13 +3,14 @@
 import './cryptoShim';
 import { secureStorage } from '../platform/storage';
 import type { PrivateKeyAccount } from 'viem/accounts';
+import type { Hex } from 'viem';
 const setActiveAccountForCache = async (id: string | null): Promise<void> => {
   const { setActiveAccountForCache: fn } = await import('./channelsCache');
   fn(id);
 };
-import { getViemAccount, adoptLegacyKey, deleteKey, clearMnemonic } from './zerodev/keyring';
+import { getViemAccount, adoptLegacyKey, deleteKey, clearMnemonic, importPrivateKey } from './zerodev/keyring';
 import { LEGACY_DB_DIR } from '@stage-labs/client/accounts/keys';
-import { resolveActiveAccount } from '@stage-labs/client/accounts/registry';
+import { addLocalAccountToList, resolveActiveAccount } from '@stage-labs/client/accounts/registry';
 
 export { canExportPrivateKey } from '@stage-labs/client/accounts/keys';
 export { getViemAccount, revealPrivateKey as getPrivateKey } from './zerodev/keyring';
@@ -86,6 +87,15 @@ export async function addSmartAccount(rec: AccountRecord): Promise<AccountRecord
   await persist(next);
   await setActiveAccountId(id);
   return created;
+}
+
+export async function addPrivateKeyAccount(pk: Hex): Promise<AccountRecord> {
+  const { id, address } = await importPrivateKey(pk);
+  const list = await loadAccounts();
+  const { list: next, record } = addLocalAccountToList(list, id, address, 'privateKey');
+  await persist(next);
+  await setActiveAccountId(record.id);
+  return record;
 }
 
 export async function updateSmartAccount(

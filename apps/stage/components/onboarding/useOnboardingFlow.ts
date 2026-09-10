@@ -1,12 +1,25 @@
 
 import { useState } from 'react';
+import type { Hex } from 'viem';
+import type { AccountTransfer } from '@stage-labs/client/accounts/transfer';
 import { passkeysAvailable } from '../../lib/zerodev';
-import { createWallet, restoreWallet, bringMessagingOnline, XmtpSetupError, type Stage } from './flow';
+import {
+  createWallet, restoreWallet, importKeyAccount, bringMessagingOnline, XmtpSetupError, type Stage,
+} from './flow';
 import { type SetupErr } from './Onboarding.steps';
 
-export type Step = 'welcome' | 'restore' | 'passkey' | 'setup';
+export type Step = 'welcome' | 'restore' | 'import' | 'passkey' | 'setup';
 
-type Choice = { kind: 'create' } | { kind: 'restore'; phrase: string };
+type Choice =
+  | { kind: 'create' }
+  | { kind: 'restore'; phrase: string }
+  | { kind: 'importKey'; pk: Hex };
+
+async function runChoice(choice: Choice, withPasskey: boolean, onStage: (s: Stage) => void): Promise<void> {
+  if (choice.kind === 'create') return createWallet(withPasskey, onStage);
+  if (choice.kind === 'restore') return restoreWallet(choice.phrase, withPasskey, onStage);
+  return importKeyAccount(choice.pk, onStage);
+}
 
 export interface OnboardingFlow {
   step: Step;
@@ -20,6 +33,8 @@ export interface OnboardingFlow {
   onPhraseChange: (t: string) => void;
   onRestoreNext: () => void;
   onRestoreBack: () => void;
+  onImport: () => void;
+  onImportTransfer: (transfer: AccountTransfer) => void;
   onAddPasskey: () => void;
   onSkipPasskey: () => void;
   onSetupRetry: () => void;
@@ -43,8 +58,7 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
     setStep('setup');
     void (async () => {
       try {
-        if (choice.kind === 'create') await createWallet(withPasskey, setStage);
-        else await restoreWallet(choice.phrase, withPasskey, setStage);
+        await runChoice(choice, withPasskey, setStage);
         onDone();
       } catch (e) {
         setBusy(false);
@@ -87,6 +101,11 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
     toPasskey({ kind: 'restore', phrase: p });
   };
 
+  const onImportTransfer = (transfer: AccountTransfer): void => {
+    if (transfer.kind === 'phrase') toPasskey({ kind: 'restore', phrase: transfer.phrase });
+    else run({ kind: 'importKey', pk: transfer.pk }, false);
+  };
+
   const onSetupRetry = (): void => {
     if (setupErr?.accountId) retryMessaging(setupErr.accountId);
     else if (pending) run(pending, false);
@@ -100,6 +119,8 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
     onPhraseChange: (t) => { setPhrase(t); setErr(''); },
     onRestoreNext,
     onRestoreBack: () => { setErr(''); setStep('welcome'); },
+    onImport: () => { setStep('import'); },
+    onImportTransfer,
     onAddPasskey: () => { if (pending) run(pending, true); },
     onSkipPasskey: () => { if (pending) run(pending, false); },
     onSetupRetry,

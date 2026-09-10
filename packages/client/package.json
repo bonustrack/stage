@@ -69,6 +69,7 @@
     "./accounts/types": "./src/accounts/types.ts",
     "./accounts/keys": "./src/accounts/keys.ts",
     "./accounts/registry": "./src/accounts/registry.ts",
+    "./accounts/transfer": "./src/accounts/transfer.ts",
     "./railgun": "./src/railgun/index.ts",
     "./zerodev/config": "./src/zerodev/config.ts",
     "./zerodev/account": "./src/zerodev/account.ts",

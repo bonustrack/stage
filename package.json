@@ -46,5 +46,8 @@
     "expo@54.0.35": "patches/expo@54.0.35.patch",
     "@expo/metro-config@54.0.16": "patches/@expo%2Fmetro-config@54.0.16.patch",
     "expo-router@6.0.24": "patches/expo-router@6.0.24.patch"
+  },
+  "dependencies": {
+    "jsqr": "^1.4.0"
   }
 }

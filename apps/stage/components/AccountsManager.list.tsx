@@ -13,6 +13,7 @@ interface AccountListProps {
   expanded: boolean; setExpanded: (fn: (e: boolean) => boolean) => void;
   head: string; sub: string; border: string; rowBg: string;
   onSwitch: (id: string) => void; setManageId: (id: string) => void; onAdd: () => void;
+  onImport: () => void;
 }
 
 function manageTrailing(p: AccountListProps, id: string): React.ReactElement {
@@ -63,6 +64,27 @@ function CollapsedHeader(p: AccountListProps): React.ReactElement | null {
   return null;
 }
 
+function AddRow({ icon, label, p, onPress }: {
+  icon: 'plus' | 'qrcode'; label: string; p: AccountListProps; onPress: () => void;
+}): React.ReactElement {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        paddingHorizontal: 14, paddingVertical: 12,
+        flexDirection: 'row', alignItems: 'center', gap: 12,
+        borderTopWidth: 1, borderTopColor: p.border,
+        backgroundColor: pressed ? p.border : 'transparent',
+      })}
+>
+      <Box width={28} height={28} radius="full" align="center" justify="center" style={{ borderWidth: 1, borderColor: p.sub, borderStyle: 'dashed' }}>
+        <Icon name={icon} size={16} color={p.sub}/>
+      </Box>
+      <Text weight="semibold" size="md" color={p.head}>{label}</Text>
+    </Pressable>
+  );
+}
+
 function AddSection(p: AccountListProps): React.ReactElement {
   return (
     <>
@@ -75,20 +97,8 @@ function AddSection(p: AccountListProps): React.ReactElement {
           trailing={manageTrailing(p, a.id)}
 />
       )) : null}
-      <Pressable
-        onPress={p.onAdd}
-        style={({ pressed }) => ({
-          paddingHorizontal: 14, paddingVertical: 12,
-          flexDirection: 'row', alignItems: 'center', gap: 12,
-          borderTopWidth: 1, borderTopColor: p.border,
-          backgroundColor: pressed ? p.border : 'transparent',
-        })}
->
-        <Box width={28} height={28} radius="full" align="center" justify="center" style={{ borderWidth: 1, borderColor: p.sub, borderStyle: 'dashed' }}>
-          <Icon name="plus" size={16} color={p.sub}/>
-        </Box>
-        <Text weight="semibold" size="md" color={p.head}>Add account</Text>
-      </Pressable>
+      <AddRow icon="plus" label="Add account" p={p} onPress={p.onAdd} />
+      <AddRow icon="qrcode" label="Import account" p={p} onPress={p.onImport} />
     </>
   );
 }
