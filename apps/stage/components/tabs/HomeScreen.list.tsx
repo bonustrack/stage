@@ -10,6 +10,7 @@ import { CHANNELS_SCROLL_KEY, saveScrollOffset } from '../../lib/scrollPos';
 import { WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from '../layout';
 import { useWebTabsContentPad } from './webPad';
 import { useEffectiveColorScheme } from '../../lib/theme';
+import { HistorySyncBanner } from '../system/HistorySync';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { HomeEmpty } from './HomeScreen.parts';
 import { LabelFilterBar } from './HomeScreen.labelbar';
@@ -86,6 +87,7 @@ function HomeTopnavRight({ head, requestCount, router, onOpenSearch }: {
 function ChannelsListHeader({ p }: { p: ChannelsListProps }): React.ReactElement {
   return (
     <>
+      <HistorySyncBanner />
       {p.showFilterBar ? (
         <LabelFilterBar
           labels={p.barLabels} enabled={p.enabledLabels} unreadOnly={p.unreadOnly}

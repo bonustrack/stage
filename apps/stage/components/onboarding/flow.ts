@@ -5,6 +5,7 @@ import {
 import { AccountManager } from '../../modules/messaging';
 import type { Hex } from 'viem';
 import { addPrivateKeyAccount } from '../../lib/accounts';
+import { markHistorySyncPending } from '../../lib/historySync';
 
 export type Stage = 'wallet' | 'messaging' | 'finishing';
 
@@ -30,9 +31,10 @@ export async function bringMessagingOnline(
   AccountManager.bumpEpoch();
 }
 
-async function finishAccount(withPasskey: boolean, onStage?: (s: Stage) => void): Promise<void> {
+async function finishAccount(withPasskey: boolean, onStage?: (s: Stage) => void, syncHistory = false): Promise<void> {
   onStage?.('wallet');
   const rec = await createSmartAccount();
+  if (syncHistory) await markHistorySyncPending(rec.id);
   if (withPasskey && passkeysAvailable()) {
     const res = await enablePasskeyForRecord(rec);
     if (!res.ok && res.reason !== 'already' && res.reason !== 'cancelled') {
@@ -51,11 +53,12 @@ export async function restoreWallet(
 ): Promise<void> {
   onStage?.('wallet');
   await restoreMnemonic(phrase);
-  await finishAccount(withPasskey, onStage);
+  await finishAccount(withPasskey, onStage, true);
 }
 
 export async function importKeyAccount(pk: Hex, onStage?: (s: Stage) => void): Promise<void> {
   onStage?.('wallet');
   const rec = await addPrivateKeyAccount(pk);
+  await markHistorySyncPending(rec.id);
   await bringMessagingOnline(rec.id, onStage);
 }

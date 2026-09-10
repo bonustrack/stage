@@ -14,6 +14,7 @@ import { reloadApp } from '../AccountsManager.helpers';
 import { flash } from '../../lib/toast';
 import { usePalette } from '../../lib/theme';
 import { MessengerSessions } from './MessengerSessions';
+import { HistorySyncSection } from './HistorySyncSection';
 import { StackHeader } from '../chrome/StackHeader';
 import { SettingsButtonRow, SettingsList, SettingsValueRow } from './rows';
 
@@ -101,6 +102,8 @@ export function MessengerSettings(): React.ReactElement {
         ) : null}
 
         <MessengerSessions />
+
+        <HistorySyncSection />
 
         <Box padding={{ top: 28 }}>
           <SettingsList>

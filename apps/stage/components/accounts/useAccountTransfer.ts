@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import type { AccountTransfer } from '@stage-labs/client/accounts/transfer';
 import type { AccountRecord } from '../../lib/accounts';
 import { importAccountTransfer } from '../../lib/accountTransfer';
+import { markHistorySyncPending } from '../../lib/historySync';
 import { AccountManager } from '../../modules/messaging';
 import { reloadApp } from '../AccountsManager.helpers';
 
@@ -34,6 +35,7 @@ export function useAccountTransfer(): AccountTransferState {
     void (async (): Promise<void> => {
       try {
         const rec = await importAccountTransfer(transfer);
+        await markHistorySyncPending(rec.id);
         await AccountManager.switch(rec.id);
         reloadApp();
       } catch (e) {

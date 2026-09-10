@@ -25,6 +25,7 @@ import { getQueryClient } from '../lib/queryClient';
 import { applyWebGlobalStyles } from '../platform/webStyles';
 import { BuildInfoDot } from '../components/system/BuildInfoDot';
 import { AlertHost } from '../components/system/AlertHost';
+import { HistorySyncRunner } from '../components/system/HistorySync';
 import { installAlertShim } from '../lib/alertShim';
 import { SplitSidebar } from '../components/tabs/SplitSidebar';
 
@@ -155,6 +156,7 @@ function RootLayoutInner(): React.ReactElement {
       ) : null}
       <BuildInfoDot />
       <AlertHost />
+      <HistorySyncRunner ready={gatesOpen} hasAccount={onboarding.hasAccount} />
       </KeyboardProvider>
     </GestureHandlerRootView>
     </QueryClientProvider>
