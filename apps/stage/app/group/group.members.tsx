@@ -3,7 +3,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { FlatList } from 'react-native-gesture-handler';
-import { Row, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from '../../components/layout';
+import { Row, WebFullBleed, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT_WIDE } from '../../components/layout';
 import { MemberRow } from './group.parts';
 
 interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }
@@ -45,7 +45,9 @@ export function GroupMembersList({
 }): React.ReactElement {
   return (
     <>
-      <MembersHeader count={members.length} fg={p.fg} border={p.border} onAdd={onAdd}/>
+      <WebFullBleed>
+        <MembersHeader count={members.length} fg={p.fg} border={p.border} onAdd={onAdd}/>
+      </WebFullBleed>
       <FlatList
         data={members}
         extraData={memberNames}
@@ -64,7 +66,7 @@ export function GroupMembersList({
 />
         )}
         style={WEB_EDGE_SCROLL}
-        contentContainerStyle={WEB_EDGE_CONTENT}
+        contentContainerStyle={WEB_EDGE_CONTENT_WIDE}
 />
     </>
   );

@@ -5,7 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { capabilities } from '../../lib/capabilities';
-import { Box, Col } from '../../components/layout';
+import { Box, Col, WebFullBleed } from '../../components/layout';
 import { GroupImagePicker } from '../../components/GroupImagePicker';
 import { OverlayHeader } from '../../components/chrome/OverlayHeader';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -86,27 +86,29 @@ export default function GroupDetail(): React.ReactElement {
         }
       />
 
-      <GroupProfileHeader
-        insetTop={insets.top} imageUrl={imageUrl} channelId={convId ?? ''} uploadingImage={uploadingImage}
-        fg={fg} bg={bg} rowBg={rowBg}
-        onTap={() => { if (imageUrl) setViewerOpen(true); else pickImage(); }}
-        onPick={() => { pickImage(); }}
+      <WebFullBleed>
+        <GroupProfileHeader
+          insetTop={insets.top} imageUrl={imageUrl} channelId={convId ?? ''} uploadingImage={uploadingImage}
+          fg={fg} bg={bg} rowBg={rowBg}
+          onTap={() => { if (imageUrl) setViewerOpen(true); else pickImage(); }}
+          onPick={() => { pickImage(); }}
 />
-      <GroupImagePicker openNonce={pickNonce} onPick={(file) => { void onPickedImage(file); }} />
+        <GroupImagePicker openNonce={pickNonce} onPick={(file) => { void onPickedImage(file); }} />
 
-      <GroupNameEditor
-        name={name} draft={draft} setDraft={setDraft}
-        editing={editing} setEditing={setEditing} saving={saving}
-        onSave={() => { void saveName(); }} dark={dark} p={pal}
-/>
-
-      <GroupDescriptionEditor
-        description={description} descriptionDraft={descriptionDraft} setDescriptionDraft={setDescriptionDraft}
-        editing={editingDescription} setEditing={setEditingDescription} saving={savingDescription}
-        onSave={() => { void saveDescription(); }} dark={dark} p={pal}
+        <GroupNameEditor
+          name={name} draft={draft} setDraft={setDraft}
+          editing={editing} setEditing={setEditing} saving={saving}
+          onSave={() => { void saveName(); }} dark={dark} p={pal}
 />
 
-      <GroupLabelsSection line={line} p={pal}/>
+        <GroupDescriptionEditor
+          description={description} descriptionDraft={descriptionDraft} setDescriptionDraft={setDescriptionDraft}
+          editing={editingDescription} setEditing={setEditingDescription} saving={savingDescription}
+          onSave={() => { void saveDescription(); }} dark={dark} p={pal}
+/>
+
+        <GroupLabelsSection line={line} p={pal}/>
+      </WebFullBleed>
       <GroupMembersList
         members={members} memberNames={memberNames} memberRoles={memberRoles}
         selfAddress={selfAddress} removing={removing} dark={dark} p={pal}

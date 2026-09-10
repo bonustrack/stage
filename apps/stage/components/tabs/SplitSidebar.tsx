@@ -13,8 +13,11 @@ import { PaneResizeHandle } from './PaneResizeHandle';
 
 const DM_ROUTE = /^\/0x[a-fA-F0-9]{40}$/;
 
+const SPLIT_PREFIXES = ['/channel/', '/group/', '/profile/'];
+
 export function isSplitRoute(pathname: string): boolean {
-  return pathname === '/' || pathname.startsWith('/channel/') || DM_ROUTE.test(pathname);
+  if (pathname === '/' || DM_ROUTE.test(pathname)) return true;
+  return SPLIT_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }
 
 function usePaneScope(active: boolean): void {
