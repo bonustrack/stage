@@ -198,12 +198,6 @@ export async function markConvReadSynced(convId: string): Promise<void> {
 
 export async function markConvUnreadSynced(convId: string): Promise<void> {
   await setLastReadNs(convId, 0);
-  try {
-    const conv = await convOfLine(lineOfConv(convId));
-    if (conv && (await conv.consentState()) !== ConsentState.Unknown) {
-      await conv.updateConsentState(ConsentState.Unknown);
-    }
-  } catch { }
 }
 
 export async function syncPreferences(): Promise<void> {
