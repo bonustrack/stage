@@ -37,13 +37,13 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
       <Col
         width="100%"
         maxWidth={BLOCK_MAX_WIDTH}
-        padding={block.card ? 32 : 0}
-        style={block.card
-          ? {
-              height: '85%', minHeight: block.minHeight, maxHeight: BLOCK_MAX_HEIGHT,
-              borderRadius: CARD_RADIUS, borderWidth: 1, borderColor: pal.border,
-            }
-          : { flex: 1 }}
+        padding={block.card ? 32 : 20}
+        style={[
+          { borderRadius: CARD_RADIUS, borderWidth: 1, borderColor: pal.border },
+          block.card
+            ? { height: '85%', minHeight: block.minHeight, maxHeight: BLOCK_MAX_HEIGHT }
+            : { flex: 1 },
+        ]}
       >
       <Col align="center" padding={{ bottom: 24 }}>
         <StageLogo size={LOGO_SIZE} color={pal.primary} />
