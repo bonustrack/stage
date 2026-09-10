@@ -74,22 +74,30 @@ async function tryProcessArchive(): Promise<void> {
 interface Watch { baseline: HistorySnapshot | null; installedAtMs: number | null }
 
 async function localHistoryChanged(watch: Watch): Promise<boolean> {
-  const current = await historySnapshot();
-  if (watch.installedAtMs !== null && holdsHistoryBefore(current, watch.installedAtMs)) return true;
-  return watch.baseline !== null && current.fingerprint !== watch.baseline.fingerprint;
+  try {
+    const current = await historySnapshot();
+    if (watch.installedAtMs !== null && holdsHistoryBefore(current, watch.installedAtMs)) return true;
+    return watch.baseline !== null && current.fingerprint !== watch.baseline.fingerprint;
+  } catch (err) {
+    warn('snapshot', err);
+    return false;
+  }
 }
 
-async function archiveArrived(watch: Watch): Promise<boolean> {
+async function archiveListed(): Promise<boolean> {
   try {
-    if (await countAvailableHistoryArchives() > 0) {
-      await tryProcessArchive();
-      return true;
-    }
-    return await localHistoryChanged(watch);
+    if (await countAvailableHistoryArchives() === 0) return false;
+    await tryProcessArchive();
+    return true;
   } catch (err) {
     warn('poll', err);
     return false;
   }
+}
+
+async function archiveArrived(watch: Watch): Promise<boolean> {
+  if (await localHistoryChanged(watch)) return true;
+  return archiveListed();
 }
 
 async function waitForHistory(deadline: number, watch: Watch): Promise<boolean> {
@@ -108,6 +116,21 @@ async function startWatch(): Promise<Watch> {
     warn('baseline', err);
     return { baseline: null, installedAtMs };
   }
+}
+
+export const ONBOARDING_HISTORY_WAIT_MS = 20_000;
+
+export function waitForHistorySyncSettled(maxMs: number): Promise<void> {
+  return new Promise((resolve) => {
+    if (!historySyncIsActive(phase)) { resolve(); return; }
+    const timer = setTimeout(finish, maxMs);
+    const unsubscribe = subscribe(() => { if (!historySyncIsActive(phase)) finish(); });
+    function finish(): void {
+      clearTimeout(timer);
+      unsubscribe();
+      resolve();
+    }
+  });
 }
 
 export async function runHistorySync(): Promise<HistorySyncPhase> {

@@ -14,14 +14,14 @@ export const STAGE_LABELS: Record<Stage, string> = {
 const STAGE_HINTS: Record<Stage, string> = {
   wallet: 'This only takes a moment.',
   messaging: 'Registering your encrypted inbox. This can take up to a minute on first launch.',
-  history: 'Your other device is sending its messages. Open Stage there on this account and keep it in the foreground. You can skip and let it finish in the background.',
+  history: 'Asking your other device for your messages. Open Stage there on this account. If it takes longer, we continue in the background and show progress on the home screen.',
   finishing: 'Almost there.',
 };
 
 const EXPECTED_MS: Record<Stage, number> = {
   wallet: 4_000,
   messaging: 30_000,
-  history: 120_000,
+  history: 20_000,
   finishing: 1_500,
 };
 

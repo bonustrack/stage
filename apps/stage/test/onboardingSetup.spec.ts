@@ -16,7 +16,7 @@ describe('setupProgress', () => {
   test('starts each stage just past its boundary and never finishes it early', () => {
     expect(setupProgress('wallet', stages, 0)).toBeCloseTo(0.1 / 4);
     expect(setupProgress('wallet', stages, 999_999)).toBeCloseTo(0.9 / 4);
-    expect(setupProgress('history', stages, 60_000)).toBeCloseTo((2 + 0.1 + 0.4) / 4);
+    expect(setupProgress('history', stages, 10_000)).toBeCloseTo((2 + 0.1 + 0.4) / 4);
   });
 
   test('caps at one and ignores unknown stages', () => {

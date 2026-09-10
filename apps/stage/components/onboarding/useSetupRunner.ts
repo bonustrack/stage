@@ -3,7 +3,7 @@ import { Alert } from 'react-native';
 import type { Hex } from 'viem';
 import { txErrorMessage } from '@stage-labs/client/wallet/txError';
 import { holdOnboarding } from '../../lib/onboardingHold';
-import { runHistorySync } from '../../lib/historySync';
+import { ONBOARDING_HISTORY_WAIT_MS, runHistorySync, waitForHistorySyncSettled } from '../../lib/historySync';
 import {
   createWallet, restoreWallet, importKeyAccount, bringMessagingOnline, XmtpSetupError,
   type SetupWarning, type Stage,
@@ -68,7 +68,8 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
   const tail = async (syncHistory: boolean, warning: SetupWarning): Promise<void> => {
     if (syncHistory) {
       setStage('history');
-      await runHistorySync();
+      void runHistorySync();
+      await waitForHistorySyncSettled(ONBOARDING_HISTORY_WAIT_MS);
       if (skipped.current) return;
     }
     setStage('finishing');
