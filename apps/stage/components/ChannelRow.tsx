@@ -50,6 +50,7 @@ const BADGE_SIZE = 18;
 const TITLE_LINE_HEIGHT = 24;
 const PREVIEW_LINE_HEIGHT = 20;
 const LINE_GAP = 2;
+const PIN_ICON_SIZE = 18;
 
 function TrailingBadge({ unreadCount, markedUnread, showChevron, head, bg }: {
   unreadCount: number; markedUnread?: boolean; showChevron?: boolean;
@@ -76,7 +77,7 @@ function TitleLine({ params, scheme }: {
   return (
     <Row align="center" gap={4} flex={1} height={TITLE_LINE_HEIGHT}>
       {params.pinned === true
-        ? <BrandIcon name="pin" size={14} color={resolveColorToken('secondary', scheme)} dark={scheme === 'dark'} />
+        ? <BrandIcon name="pin" size={PIN_ICON_SIZE} color={resolveColorToken('secondary', scheme)} dark={scheme === 'dark'} />
         : null}
       {segments.map((seg, i) => (
         <Text
