@@ -70,7 +70,7 @@ export function RestoreStep({ pal, dark, busy, phrase, err, onChange, onNext, on
   return (
     <Col flex={1} justify="between">
       <Box padding={{ top: 8 }}>
-        <Title level={2} color={pal.text}>Restore wallet</Title>
+        <Title level={2} color={pal.primary}>Restore wallet</Title>
         <Text size="sm" color={pal.sub} style={{ marginTop: 8, marginBottom: 14 }}>
           Enter your 12-24 word recovery phrase, separated by spaces.
         </Text>

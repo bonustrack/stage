@@ -93,7 +93,7 @@ export function SetupStep({ pal, dark, busy, stage, setupErr, withHistory, onRet
         {setupErr === null
           ? <Spinner size={36} color={pal.primary} />
           : <Icon name="exclamationCircle" size={40} color={DANGER} />}
-        <Title level={1} color={pal.text} style={{ textAlign: 'center' }}>{setupTitle(stage, setupErr)}</Title>
+        <Title level={1} color={pal.primary} style={{ textAlign: 'center' }}>{setupTitle(stage, setupErr)}</Title>
         <Text size="lg" color={pal.sub} textAlign="center">{setupHint(stage, setupErr)}</Text>
         {setupErr === null ? <ProgressBar value={progress} pal={pal} /> : null}
         <Col gap={14} width="100%" padding={{ top: 8 }}>

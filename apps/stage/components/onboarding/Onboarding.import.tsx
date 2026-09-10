@@ -15,7 +15,7 @@ export function ImportStep({ pal, dark, busy, onTransfer, onBack }: {
   return (
     <Col flex={1} justify="between">
       <Box padding={{ top: 8 }}>
-        <Title level={2} color={pal.text}>Import from another device</Title>
+        <Title level={2} color={pal.primary}>Import from another device</Title>
         <Text size="sm" color={pal.sub} style={{ marginTop: 8, marginBottom: 14 }}>
           On your other device open the account and choose Move to another device, then scan the code it shows.
         </Text>
