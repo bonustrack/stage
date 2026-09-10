@@ -1,25 +1,11 @@
-
 import { useState } from 'react';
-import type { Hex } from 'viem';
 import type { AccountTransfer } from '@stage-labs/client/accounts/transfer';
 import { passkeysAvailable } from '../../lib/zerodev';
-import {
-  createWallet, restoreWallet, importKeyAccount, bringMessagingOnline, XmtpSetupError, type Stage,
-} from './flow';
-import { type SetupErr } from './Onboarding.steps';
+import type { Stage } from './flow';
+import type { SetupErr } from './Onboarding.setup.model';
+import { useSetupRunner, type Choice } from './useSetupRunner';
 
 export type Step = 'welcome' | 'restore' | 'import' | 'passkey' | 'setup';
-
-type Choice =
-  | { kind: 'create' }
-  | { kind: 'restore'; phrase: string }
-  | { kind: 'importKey'; pk: Hex };
-
-async function runChoice(choice: Choice, withPasskey: boolean, onStage: (s: Stage) => void): Promise<void> {
-  if (choice.kind === 'create') return createWallet(withPasskey, onStage);
-  if (choice.kind === 'restore') return restoreWallet(choice.phrase, withPasskey, onStage);
-  return importKeyAccount(choice.pk, onStage);
-}
 
 export interface OnboardingFlow {
   step: Step;
@@ -28,6 +14,7 @@ export interface OnboardingFlow {
   busy: boolean;
   stage: Stage;
   setupErr: SetupErr | null;
+  withHistory: boolean;
   onCreate: () => void;
   onRestore: () => void;
   onPhraseChange: (t: string) => void;
@@ -37,6 +24,7 @@ export interface OnboardingFlow {
   onImportTransfer: (transfer: AccountTransfer) => void;
   onAddPasskey: () => void;
   onSkipPasskey: () => void;
+  onSkipHistory: () => void;
   onSetupRetry: () => void;
   onSetupBack: () => void;
 }
@@ -45,52 +33,17 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
   const [step, setStep] = useState<Step>('welcome');
   const [phrase, setPhrase] = useState('');
   const [err, setErr] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [stage, setStage] = useState<Stage>('wallet');
-  const [setupErr, setSetupErr] = useState<SetupErr | null>(null);
   const [pending, setPending] = useState<Choice | null>(null);
+  const runner = useSetupRunner(onDone);
 
-  const run = (choice: Choice, withPasskey: boolean): void => {
-    if (busy) return;
-    setBusy(true);
-    setSetupErr(null);
-    setStage('wallet');
+  const start = (choice: Choice, withPasskey: boolean): void => {
     setStep('setup');
-    void (async () => {
-      try {
-        await runChoice(choice, withPasskey, setStage);
-        onDone();
-      } catch (e) {
-        setBusy(false);
-        if (e instanceof XmtpSetupError) {
-          setSetupErr({ message: e.message, accountId: e.accountId });
-        } else {
-          setPending(null);
-          setSetupErr({ message: e instanceof Error ? e.message : String(e) });
-        }
-      }
-    })();
-  };
-
-  const retryMessaging = (accountId: string): void => {
-    if (busy) return;
-    setBusy(true);
-    setSetupErr(null);
-    setStage('messaging');
-    void (async () => {
-      try {
-        await bringMessagingOnline(accountId, setStage);
-        onDone();
-      } catch (e) {
-        setBusy(false);
-        setSetupErr({ message: e instanceof Error ? e.message : String(e), accountId });
-      }
-    })();
+    runner.run(choice, withPasskey);
   };
 
   const toPasskey = (choice: Choice): void => {
     setPending(choice);
-    if (!passkeysAvailable()) { run(choice, false); return; }
+    if (!passkeysAvailable()) { start(choice, false); return; }
     setStep('passkey');
   };
 
@@ -103,17 +56,19 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
 
   const onImportTransfer = (transfer: AccountTransfer): void => {
     if (transfer.kind === 'phrase') toPasskey({ kind: 'restore', phrase: transfer.phrase });
-    else run({ kind: 'importKey', pk: transfer.pk }, false);
+    else start({ kind: 'importKey', pk: transfer.pk }, false);
   };
 
   const onSetupRetry = (): void => {
-    if (setupErr?.accountId) retryMessaging(setupErr.accountId);
-    else if (pending) run(pending, false);
-    else { setSetupErr(null); setStep('welcome'); }
+    const accountId = runner.setupErr?.accountId;
+    if (accountId !== undefined) runner.retryMessaging(accountId);
+    else if (pending) start(pending, false);
+    else { runner.reset(); setStep('welcome'); }
   };
 
   return {
-    step, phrase, err, busy, stage, setupErr,
+    step, phrase, err,
+    busy: runner.busy, stage: runner.stage, setupErr: runner.setupErr, withHistory: runner.withHistory,
     onCreate: () => { toPasskey({ kind: 'create' }); },
     onRestore: () => { setErr(''); setStep('restore'); },
     onPhraseChange: (t) => { setPhrase(t); setErr(''); },
@@ -121,9 +76,10 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
     onRestoreBack: () => { setErr(''); setStep('welcome'); },
     onImport: () => { setStep('import'); },
     onImportTransfer,
-    onAddPasskey: () => { if (pending) run(pending, true); },
-    onSkipPasskey: () => { if (pending) run(pending, false); },
+    onAddPasskey: () => { if (pending) start(pending, true); },
+    onSkipPasskey: () => { if (pending) start(pending, false); },
+    onSkipHistory: runner.skipHistory,
     onSetupRetry,
-    onSetupBack: () => { setSetupErr(null); setPending(null); setStep('welcome'); },
+    onSetupBack: () => { runner.reset(); setPending(null); setStep('welcome'); },
   };
 }

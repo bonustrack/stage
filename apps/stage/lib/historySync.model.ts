@@ -23,10 +23,15 @@ export function formatHistoryPin(pin: string): string {
   return `${pin.slice(0, 3)} ${pin.slice(3)}`.trim();
 }
 
-export function historySyncPhaseLabel(phase: HistorySyncPhase): string | null {
+function waitingLabel(account: string | undefined): string {
+  const where = account === undefined ? 'on this account' : `on ${account}`;
+  return `Waiting for your other device. Open Stage there ${where} and keep it in the foreground.`;
+}
+
+export function historySyncPhaseLabel(phase: HistorySyncPhase, account?: string): string | null {
   switch (phase) {
     case 'requesting': return 'Asking your other device for history…';
-    case 'waiting': return 'Waiting for your other device. Keep Stage open there.';
+    case 'waiting': return waitingLabel(account);
     case 'done': return 'History synced from your other device.';
     case 'timeout': return 'No answer from your other device. Open Stage there and try again.';
     case 'error': return 'History sync failed. Try again.';

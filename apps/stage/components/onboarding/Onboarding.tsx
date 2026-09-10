@@ -2,7 +2,8 @@
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Col } from '../layout';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
-import { WelcomeStep, RestoreStep, PasskeyStep, SetupStep } from './Onboarding.steps';
+import { WelcomeStep, RestoreStep, PasskeyStep } from './Onboarding.steps';
+import { SetupStep } from './Onboarding.setup';
 import { ImportStep } from './Onboarding.import';
 import { useOnboardingFlow } from './useOnboardingFlow';
 
@@ -39,8 +40,8 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
 
       {f.step === 'setup' ? (
         <SetupStep
-          pal={pal} dark={dark} busy={f.busy} stage={f.stage} setupErr={f.setupErr}
-          onRetry={f.onSetupRetry} onBack={f.onSetupBack}
+          pal={pal} dark={dark} busy={f.busy} stage={f.stage} setupErr={f.setupErr} withHistory={f.withHistory}
+          onRetry={f.onSetupRetry} onBack={f.onSetupBack} onSkipHistory={f.onSkipHistory}
         />
       ) : null}
     </Col>

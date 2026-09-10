@@ -4,6 +4,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Col, Row } from '../layout';
 import { Spinner } from '../Spinner';
 import { getActiveAccountId } from '../../lib/accounts';
+import { shortAddress, useActiveAccountRecord } from '../../modules/messaging';
 import {
   dismissHistorySync, runHistorySync, takePendingHistorySync, useHistorySyncPhase,
 } from '../../lib/historySync';
@@ -39,8 +40,9 @@ export function HistorySyncBanner(): React.ReactElement | null {
   const phase = useHistorySyncPhase();
   const dark = useEffectiveColorScheme() === 'dark';
   const { text } = usePalette();
+  const rec = useActiveAccountRecord();
   useAutoDismiss(phase);
-  const label = historySyncPhaseLabel(phase);
+  const label = historySyncPhaseLabel(phase, rec === null ? undefined : shortAddress(rec.address));
   if (label === null) return null;
   const busy = historySyncIsActive(phase);
   return (

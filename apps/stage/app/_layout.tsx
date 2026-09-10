@@ -8,6 +8,7 @@ import { Col, WebContentFrame } from '../components/layout';
 import { Spinner } from '../components/Spinner';
 import { Onboarding } from '../components/onboarding/Onboarding';
 import { useAccountGate } from '../lib/accountGate';
+import { useOnboardingVisible } from '../lib/onboardingHold';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { Platform } from 'react-native';
@@ -85,6 +86,7 @@ function RootLayoutInner(): React.ReactElement {
   usePushDeepLinks();
 
   const onboarding = useAccountGate();
+  const showOnboarding = useOnboardingVisible(onboarding.hasAccount);
 
   useEffect(() => { if (onboarding.hasAccount) void ensureActiveAccount(); }, [onboarding.hasAccount]);
   useEffect(() => { ensureMessagingStreamSync(); }, []);
@@ -145,7 +147,7 @@ function RootLayoutInner(): React.ReactElement {
 >
           <Spinner size={28} color={dark ? '#ffffff' : '#000000'}/>
         </Col>
-      ) : !onboarding.hasAccount ? (
+      ) : showOnboarding ? (
         <Col
           surface="surface"
           style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}

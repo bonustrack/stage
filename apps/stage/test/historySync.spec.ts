@@ -29,6 +29,7 @@ describe('history sync phases', () => {
   test('idle has no label and only the two pending phases are active', () => {
     expect(historySyncPhaseLabel('idle')).toBeNull();
     expect(historySyncPhaseLabel('waiting')).toContain('other device');
+    expect(historySyncPhaseLabel('waiting', '0x12…34')).toContain('0x12…34');
     expect(historySyncIsActive('requesting')).toBe(true);
     expect(historySyncIsActive('waiting')).toBe(true);
     expect(historySyncIsActive('done')).toBe(false);
