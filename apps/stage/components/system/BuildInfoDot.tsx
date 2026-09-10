@@ -63,10 +63,10 @@ const ABOVE_ALL_CHROME = 100;
 
 export function BuildInfoDot(): React.ReactElement {
   const [open, setOpen] = useState(false);
-  const { text, bg, border } = usePalette();
+  const { text, bg, border, primary } = usePalette();
   const insets = useSafeAreaInsets();
   const { hash, time, relative, channel, href, fresh } = resolveBuildInfo(Date.now());
-  const dotColor = fresh ? text : withAlpha(text, open ? 0.6 : 0.32);
+  const dotColor = fresh ? primary : withAlpha(text, open ? 0.6 : 0.32);
   const head = relative.length > 0 ? `${hash} · ${relative}` : hash;
   const openCommit = href === undefined ? undefined : (): void => { setOpen(false); capabilities.openUrl(href); };
 
