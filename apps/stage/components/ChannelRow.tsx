@@ -47,6 +47,7 @@ export interface ChannelRowProps {
 }
 
 const ROW_CONTENT_HEIGHT = 67;
+const BADGE_SIZE = 22;
 
 function TrailingBadge({ unreadCount, markedUnread, showChevron, head, bg }: {
   unreadCount: number; markedUnread?: boolean; showChevron?: boolean;
@@ -54,12 +55,12 @@ function TrailingBadge({ unreadCount, markedUnread, showChevron, head, bg }: {
 }): React.ReactElement | null {
   if (unreadCount > 0) {
     return (
-      <Row minWidth={22} height={22} padding={{ x: 7 }} align="center" justify="center" radius="full" background={head}>
+      <Row minWidth={BADGE_SIZE} height={BADGE_SIZE} padding={{ x: 7 }} align="center" justify="center" radius="full" background={head}>
         <Text weight="semibold" size="2xs" color={bg}>{unreadBadgeLabel(unreadCount)}</Text>
       </Row>
     );
   }
-  if (markedUnread) return <Box width={12} height={12} radius="full" background={head}/>;
+  if (markedUnread) return <Box width={BADGE_SIZE} height={BADGE_SIZE} radius="full" background={head}/>;
   if (showChevron) return <Text size="2xl" role="secondary">›</Text>;
   return null;
 }
