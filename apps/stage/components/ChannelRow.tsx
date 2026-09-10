@@ -76,9 +76,11 @@ function TitleLine({ params, scheme }: {
     : [{ text: params.title, emphasized: false }];
   return (
     <Row align="center" gap={4} flex={1} height={TITLE_LINE_HEIGHT}>
-      {params.pinned === true
-        ? <BrandIcon name="pin" size={PIN_ICON_SIZE} color={resolveColorToken('secondary', scheme)} dark={scheme === 'dark'} />
-        : null}
+      {params.pinned === true ? (
+        <Box width={PIN_ICON_SIZE} height={PIN_ICON_SIZE} style={{ flexShrink: 0 }}>
+          <BrandIcon name="pin" size={PIN_ICON_SIZE} color={resolveColorToken('secondary', scheme)} dark={scheme === 'dark'} />
+        </Box>
+      ) : null}
       {segments.map((seg, i) => (
         <Text
           key={`${seg.text}-${i}`}
