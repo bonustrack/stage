@@ -109,6 +109,7 @@ function MetaColumn({ params, scheme }: {
 
 const CHIP_TEXT_SIZE = 'sm';
 const CHIP_PADDING = { x: 7, y: 1 } as const;
+const NATIVE_CHIP_BASELINE_DROP = 4;
 
 function WebChip({ label, fg, chipBg }: {
   label: string; fg: string; chipBg: string;
@@ -133,7 +134,12 @@ function NativeChip({ label, fg }: {
   label: string; fg: string;
 }): React.ReactElement {
   return (
-    <Box radius="full" surface="raised" padding={CHIP_PADDING}>
+    <Box
+      radius="full"
+      surface="raised"
+      padding={CHIP_PADDING}
+      style={{ transform: [{ translateY: NATIVE_CHIP_BASELINE_DROP }] }}
+    >
       <Text value={label} size={CHIP_TEXT_SIZE} color={fg} />
     </Box>
   );
