@@ -89,27 +89,6 @@ function TitleLine({ params, scheme }: {
   );
 }
 
-function LabelChips({ params, fg }: {
-  params: ChannelRowParams; fg: string;
-}): React.ReactElement | null {
-  const chips = params.chips;
-  if (chips === undefined || chips.length === 0) return null;
-  return (
-    <Row gap={6}>
-      {chips.map((chip, i) => (
-        <Box
-          key={`${chip.label}-${i}`}
-          radius="full"
-          surface="raised"
-          padding={{ x: 8, y: 2 }}
-        >
-          <Text value={chip.label} size="md" color={fg} />
-        </Box>
-      ))}
-    </Row>
-  );
-}
-
 function MetaColumn({ params, scheme }: {
   params: ChannelRowParams; scheme: Scheme;
 }): React.ReactElement {
@@ -128,6 +107,38 @@ function MetaColumn({ params, scheme }: {
   );
 }
 
+const CHIP_TEXT_SIZE = 'sm';
+const CHIP_PADDING = { x: 7, y: 1 } as const;
+
+function WebChip({ label, fg, chipBg }: {
+  label: string; fg: string; chipBg: string;
+}): React.ReactElement {
+  return (
+    <Text
+      value={label}
+      size={CHIP_TEXT_SIZE}
+      color={fg}
+      style={[
+        {
+          backgroundColor: chipBg, borderRadius: 999,
+          paddingHorizontal: CHIP_PADDING.x, paddingVertical: CHIP_PADDING.y, userSelect: 'none',
+        },
+        { whiteSpace: 'nowrap' } as unknown as TextStyle,
+      ]}
+    />
+  );
+}
+
+function NativeChip({ label, fg }: {
+  label: string; fg: string;
+}): React.ReactElement {
+  return (
+    <Box radius="full" surface="raised" padding={CHIP_PADDING}>
+      <Text value={label} size={CHIP_TEXT_SIZE} color={fg} />
+    </Box>
+  );
+}
+
 function InlineLabelChips({ params, fg, chipBg }: {
   params: ChannelRowParams; fg: string; chipBg: string;
 }): React.ReactElement | null {
@@ -137,19 +148,9 @@ function InlineLabelChips({ params, fg, chipBg }: {
     <>
       {chips.map((chip, i) => (
         <Fragment key={`${chip.label}-${i}`}>
-          <Text
-            size="md"
-            color={fg}
-            style={[
-              {
-                backgroundColor: chipBg, borderRadius: 999,
-                paddingHorizontal: 8, paddingVertical: 2, userSelect: 'none',
-              },
-              { whiteSpace: 'nowrap' } as unknown as TextStyle,
-            ]}
-          >
-            {chip.label}
-          </Text>
+          {Platform.OS === 'web'
+            ? <WebChip label={chip.label} fg={fg} chipBg={chipBg} />
+            : <NativeChip label={chip.label} fg={fg} />}
           {' '}
         </Fragment>
       ))}
@@ -179,15 +180,7 @@ function ChannelRowBody({ params }: {
     <Row align="center" gap={12} flex={1}>
       <Col gap={2} flex={1}>
         <TitleLine params={params} scheme={scheme} />
-        {Platform.OS === 'web' ? (
-          <PreviewParagraph params={params} fg={fg} chipBg={inputBg} hasPrefix={hasPrefix} />
-        ) : (
-          <Row align="start" gap={6}>
-            <LabelChips params={params} fg={fg} />
-            {hasPrefix ? <Text value={params.previewPrefix ?? ''} size="md" color="info" weight="semibold" /> : null}
-            <Text value={params.preview} size="md" role="secondary" maxLines={2} style={{ flexShrink: 1 }} />
-          </Row>
-        )}
+        <PreviewParagraph params={params} fg={fg} chipBg={inputBg} hasPrefix={hasPrefix} />
       </Col>
       <MetaColumn params={params} scheme={scheme} />
     </Row>
