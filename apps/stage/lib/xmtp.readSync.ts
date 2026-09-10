@@ -1,9 +1,11 @@
 import { PublicIdentity } from '@xmtp/react-native-sdk';
 import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
-import { isSyncGroupName, type ReadStateContent, type SyncGroupCandidate } from '@stage-labs/client/xmtp/readState';
+import {
+  isSyncGroupName, type PinStateContent, type ReadStateContent, type SyncGroupCandidate,
+} from '@stage-labs/client/xmtp/readState';
 import { getCachedXmtpClient, getOrCreateXmtpClient, convOfLine } from './xmtp.client';
 import { lineOfConv } from './xmtp.types';
-import { READ_STATE_CODEC } from './xmtpJsonCodecs';
+import { PIN_STATE_CODEC, READ_STATE_CODEC } from './xmtpJsonCodecs';
 
 async function client(): ReturnType<typeof getOrCreateXmtpClient> {
   return getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
@@ -43,6 +45,11 @@ async function requireConv(convId: string): Promise<NonNullable<Awaited<ReturnTy
 export async function sendReadState(convId: string, content: ReadStateContent): Promise<void> {
   const conv = await requireConv(convId);
   await conv.send(content, { contentType: READ_STATE_CODEC.contentType });
+}
+
+export async function sendPinState(convId: string, content: PinStateContent): Promise<void> {
+  const conv = await requireConv(convId);
+  await conv.send(content, { contentType: PIN_STATE_CODEC.contentType });
 }
 
 export async function syncConversation(convId: string): Promise<void> {

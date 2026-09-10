@@ -24,6 +24,7 @@ import {
 } from '@stage-labs/client/xmtp/tx.schema';
 import {
   READ_STATE_CONTENT_TYPE, readStateFallbackText, readStateSchema, type ReadStateContent,
+  PIN_STATE_CONTENT_TYPE, pinStateFallbackText, pinStateSchema, type PinStateContent,
 } from '@stage-labs/client/xmtp/readState';
 
 type JsonCodec<T> = JSContentCodec<T> & { shouldPush: () => boolean };
@@ -72,5 +73,10 @@ export const TRANSACTION_REFERENCE_CODEC = jsonCodec<TransactionReferenceContent
 
 export const READ_STATE_CODEC: JsonCodec<ReadStateContent> = {
   ...jsonCodec<ReadStateContent>(READ_STATE_CONTENT_TYPE, readStateFallbackText, readStateSchema),
+  shouldPush: (): boolean => false,
+};
+
+export const PIN_STATE_CODEC: JsonCodec<PinStateContent> = {
+  ...jsonCodec<PinStateContent>(PIN_STATE_CONTENT_TYPE, pinStateFallbackText, pinStateSchema),
   shouldPush: (): boolean => false,
 };

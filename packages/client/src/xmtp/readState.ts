@@ -32,6 +32,35 @@ export function parseReadState(content: unknown): ReadStateContent | null {
   return parsed.success ? parsed.data : null;
 }
 
+export const PIN_STATE_CONTENT_TYPE: XmtpContentTypeId = {
+  authorityId: 'stage.box', typeId: 'pinState', versionMajor: 1, versionMinor: 0,
+};
+
+export interface PinStateContent {
+  convId: string;
+  pinned: boolean;
+  at: number;
+}
+
+export const pinStateSchema: ZodType<PinStateContent> = z.object({
+  convId: z.string().min(1),
+  pinned: z.boolean(),
+  at: z.number().positive(),
+});
+
+export function pinStateFallbackText(): string {
+  return 'Stage pin state';
+}
+
+export function isPinStateType(contentTypeId: string | undefined): boolean {
+  return typeof contentTypeId === 'string' && contentTypeId.includes(PIN_STATE_CONTENT_TYPE.typeId);
+}
+
+export function parsePinState(content: unknown): PinStateContent | null {
+  const parsed = pinStateSchema.safeParse(content);
+  return parsed.success ? parsed.data : null;
+}
+
 export const SYNC_GROUP_PREFIX = 'stage.sync:';
 
 export function syncGroupName(address: string): string {

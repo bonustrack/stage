@@ -1,9 +1,11 @@
 import { SortDirection, type Conversation } from '@xmtp/browser-sdk';
 import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
-import { isSyncGroupName, type ReadStateContent, type SyncGroupCandidate } from '@stage-labs/client/xmtp/readState';
+import {
+  isSyncGroupName, type PinStateContent, type ReadStateContent, type SyncGroupCandidate,
+} from '@stage-labs/client/xmtp/readState';
 import { getCachedXmtpClient, getOrCreateXmtpClient, convOfLine } from './xmtp.client.web';
 import { lineOfConv } from './xmtp.types.web';
-import { READ_STATE_CODEC } from './xmtpJsonCodecs';
+import { PIN_STATE_CODEC, READ_STATE_CODEC } from './xmtpJsonCodecs';
 
 async function client(): ReturnType<typeof getOrCreateXmtpClient> {
   return getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
@@ -39,6 +41,11 @@ async function requireConv(convId: string): Promise<Conversation> {
 export async function sendReadState(convId: string, content: ReadStateContent): Promise<void> {
   const conv = await requireConv(convId);
   await conv.send(READ_STATE_CODEC.encode(content));
+}
+
+export async function sendPinState(convId: string, content: PinStateContent): Promise<void> {
+  const conv = await requireConv(convId);
+  await conv.send(PIN_STATE_CODEC.encode(content));
 }
 
 export async function syncConversation(convId: string): Promise<void> {

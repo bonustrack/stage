@@ -26,3 +26,21 @@ export function notifyReadStateChanged(change: ReadStateChange): void {
     try { cb(change); } catch { }
   }
 }
+
+export interface PinChange {
+  convId: string;
+  pinned: boolean;
+}
+
+const pinListeners = new Set<(change: PinChange) => void>();
+
+export function onPinChanged(cb: (change: PinChange) => void): () => void {
+  pinListeners.add(cb);
+  return () => { pinListeners.delete(cb); };
+}
+
+export function notifyPinChanged(change: PinChange): void {
+  for (const cb of pinListeners) {
+    try { cb(change); } catch { }
+  }
+}

@@ -1,19 +1,20 @@
 import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { applyRead, applyUnread } from '@stage-labs/client/xmtp/channelsCache';
 import {
-  isReadStateType, parseReadState, pickSyncGroup, shouldApplyReadState, syncGroupName,
-  type ReadStateContent,
+  isPinStateType, isReadStateType, parsePinState, parseReadState, pickSyncGroup, shouldApplyReadState,
+  syncGroupName, type PinStateContent, type ReadStateContent,
 } from '@stage-labs/client/xmtp/readState';
 import { appStorage } from '../platform/storage';
 import { getActiveAccount } from './accounts';
 import { subscribeAccountEpoch } from './accountEpoch';
 import { getCachedRows, setCachedRows } from './channelsCache';
+import { applyRemotePin } from './pins';
 import {
-  isHiddenConv, onReadStateChanged, registerHiddenConv, type ReadStateChange,
+  isHiddenConv, onPinChanged, onReadStateChanged, registerHiddenConv, type PinChange, type ReadStateChange,
 } from './readSyncRegistry';
 import { setLastReadNs, setMarkedUnreadFlag } from './xmtp.client';
 import {
-  createSyncGroup, listSyncGroups, recentSyncMessages, sendReadState, syncConversation,
+  createSyncGroup, listSyncGroups, recentSyncMessages, sendPinState, sendReadState, syncConversation,
 } from './xmtp.readSync';
 import { waitForXmtpReady } from './xmtp.state';
 import { subscribeAllMessages } from './xmtp.stream';
@@ -40,14 +41,28 @@ function patchRows(state: ReadStateContent): void {
   if (next !== null) setCachedRows(next);
 }
 
-async function applyMessage(m: RowMessage): Promise<void> {
-  if (!isReadStateType(m.contentTypeId)) return;
+function readKey(convId: string): string { return `read:${convId}`; }
+function pinKey(convId: string): string { return `pin:${convId}`; }
+
+async function applyReadMessage(m: RowMessage): Promise<void> {
   const state = parseReadState(m.content);
-  if (state === null || !shouldApplyReadState(localAt.get(state.convId), state.at)) return;
-  localAt.set(state.convId, state.at);
+  if (state === null || !shouldApplyReadState(localAt.get(readKey(state.convId)), state.at)) return;
+  localAt.set(readKey(state.convId), state.at);
   await setLastReadNs(state.convId, state.lastReadNs);
   await setMarkedUnreadFlag(state.convId, state.markedUnread);
   patchRows(state);
+}
+
+async function applyPinMessage(m: RowMessage): Promise<void> {
+  const state = parsePinState(m.content);
+  if (state === null || !shouldApplyReadState(localAt.get(pinKey(state.convId)), state.at)) return;
+  localAt.set(pinKey(state.convId), state.at);
+  await applyRemotePin(state.convId, state.pinned);
+}
+
+async function applyMessage(m: RowMessage): Promise<void> {
+  if (isReadStateType(m.contentTypeId)) await applyReadMessage(m);
+  else if (isPinStateType(m.contentTypeId)) await applyPinMessage(m);
 }
 
 async function ensureGroup(address: string): Promise<string> {
@@ -91,26 +106,37 @@ async function boot(): Promise<void> {
   }
 }
 
-async function publish(content: ReadStateContent): Promise<void> {
+async function withGroup(send: (groupId: string) => Promise<void>): Promise<void> {
   try {
     const rec = await getActiveAccount().catch(() => null);
     if (rec === null) return;
-    const id = await ensureGroup(rec.address);
-    await sendReadState(id, content);
+    await send(await ensureGroup(rec.address));
   } catch (err) {
     warn('publish', err);
   }
 }
 
-function queuePublish(change: ReadStateChange): void {
-  const at = Date.now();
-  localAt.set(change.convId, at);
-  const pending = pendingPublish.get(change.convId);
+function debounce(key: string, fn: () => void): void {
+  const pending = pendingPublish.get(key);
   if (pending !== undefined) clearTimeout(pending);
-  pendingPublish.set(change.convId, setTimeout(() => {
-    pendingPublish.delete(change.convId);
-    void publish({ ...change, at });
+  pendingPublish.set(key, setTimeout(() => {
+    pendingPublish.delete(key);
+    fn();
   }, PUBLISH_DEBOUNCE_MS));
+}
+
+function queueReadPublish(change: ReadStateChange): void {
+  const at = Date.now();
+  localAt.set(readKey(change.convId), at);
+  const content: ReadStateContent = { ...change, at };
+  debounce(readKey(change.convId), () => { void withGroup((id) => sendReadState(id, content)); });
+}
+
+function queuePinPublish(change: PinChange): void {
+  const at = Date.now();
+  localAt.set(pinKey(change.convId), at);
+  const content: PinStateContent = { ...change, at };
+  debounce(pinKey(change.convId), () => { void withGroup((id) => sendPinState(id, content)); });
 }
 
 function onStreamMessage(m: StreamMsg): void {
@@ -121,7 +147,8 @@ function onStreamMessage(m: StreamMsg): void {
 export function startReadSync(): void {
   if (started) return;
   started = true;
-  onReadStateChanged(queuePublish);
+  onReadStateChanged(queueReadPublish);
+  onPinChanged(queuePinPublish);
   subscribeAllMessages(onStreamMessage, { includeHidden: true });
   subscribeAccountEpoch(() => { void boot(); });
   void boot();

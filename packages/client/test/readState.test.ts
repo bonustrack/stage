@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  isReadStateType, isSyncGroupName, parseReadState, pickSyncGroup, shouldApplyReadState, syncGroupName,
+  isPinStateType, isReadStateType, isSyncGroupName, parsePinState, parseReadState, pickSyncGroup,
+  shouldApplyReadState, syncGroupName,
 } from '../src/xmtp/readState';
 
 describe('read state payload', () => {
@@ -46,5 +47,15 @@ describe('shouldApplyReadState', () => {
     expect(shouldApplyReadState(4, 5)).toBe(true);
     expect(shouldApplyReadState(5, 5)).toBe(false);
     expect(shouldApplyReadState(6, 5)).toBe(false);
+  });
+});
+
+describe('pin state payload', () => {
+  test('parses a valid payload, rejects malformed ones, and recognises its type', () => {
+    const ok = { convId: 'c1', pinned: true, at: 3 };
+    expect(parsePinState(ok)).toEqual(ok);
+    expect(parsePinState({ convId: 'c1', pinned: 'yes', at: 3 })).toBeNull();
+    expect(isPinStateType('stage.box/pinState:1.0')).toBe(true);
+    expect(isPinStateType('stage.box/readState:1.0')).toBe(false);
   });
 });
