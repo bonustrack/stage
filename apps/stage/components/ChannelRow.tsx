@@ -1,7 +1,6 @@
 
 import { Fragment, memo } from 'react';
 
-import { resolveBadgeStyle } from '@stage-labs/kit/badge';
 import type { Scheme } from '@stage-labs/kit/tokens';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Icon } from '@stage-labs/kit/react-native/icon';
@@ -48,6 +47,9 @@ export interface ChannelRowProps {
 
 const ROW_CONTENT_HEIGHT = 67;
 const BADGE_SIZE = 18;
+const TITLE_LINE_HEIGHT = 24;
+const PREVIEW_LINE_HEIGHT = 20;
+const LINE_GAP = 2;
 
 function TrailingBadge({ unreadCount, markedUnread, showChevron, head, bg }: {
   unreadCount: number; markedUnread?: boolean; showChevron?: boolean;
@@ -72,7 +74,7 @@ function TitleLine({ params, scheme }: {
     ? params.titleSegments
     : [{ text: params.title, emphasized: false }];
   return (
-    <Row align="center" gap={4} flex={1}>
+    <Row align="center" gap={4} flex={1} height={TITLE_LINE_HEIGHT}>
       {params.pinned === true
         ? <Icon name="mapPin" size={14} color={resolveColorToken('secondary', scheme)} dark={scheme === 'dark'} />
         : null}
@@ -90,20 +92,17 @@ function TitleLine({ params, scheme }: {
   );
 }
 
-function MetaColumn({ params, scheme }: {
-  params: ChannelRowParams; scheme: Scheme;
+function MetaColumn({ params, trailing }: {
+  params: ChannelRowParams; trailing: React.ReactNode;
 }): React.ReactElement {
-  const hasUnreadBadge = params.unreadBadge !== undefined && params.unreadBadge !== '';
-  const showUnreadDot = !hasUnreadBadge && params.unreadDot === true;
-  const styled = resolveBadgeStyle('info', undefined, 'sm', scheme);
   return (
-    <Col gap={4} align="end">
-      <Caption value={params.timestamp} color="secondary" />
-      {hasUnreadBadge || showUnreadDot ? (
-        <Box direction="row" align="center" padding={{ x: 8, y: 2 }} radius="full" background={styled.background}>
-          <Text value={hasUnreadBadge ? params.unreadBadge : ' '} size={styled.fontToken} weight="semibold" color={styled.foreground} />
-        </Box>
-      ) : null}
+    <Col gap={LINE_GAP} align="end">
+      <Row align="center" height={TITLE_LINE_HEIGHT}>
+        <Caption value={params.timestamp} color="secondary" />
+      </Row>
+      <Row align="center" height={PREVIEW_LINE_HEIGHT}>
+        {trailing}
+      </Row>
     </Col>
   );
 }
@@ -169,7 +168,7 @@ function PreviewParagraph({ params, fg, chipBg, hasPrefix }: {
   params: ChannelRowParams; fg: string; chipBg: string; hasPrefix: boolean;
 }): React.ReactElement {
   return (
-    <Text size="md" role="secondary" maxLines={2} style={{ flexShrink: 1 }}>
+    <Text size="md" role="secondary" maxLines={2} style={{ flexShrink: 1, lineHeight: PREVIEW_LINE_HEIGHT }}>
       <InlineLabelChips params={params} fg={fg} chipBg={chipBg} />
       {hasPrefix ? <Text value={`${params.previewPrefix ?? ''} `} size="md" color="info" weight="semibold" /> : null}
       {params.preview}
@@ -177,19 +176,19 @@ function PreviewParagraph({ params, fg, chipBg, hasPrefix }: {
   );
 }
 
-function ChannelRowBody({ params }: {
-  params: ChannelRowParams;
+function ChannelRowBody({ params, trailing }: {
+  params: ChannelRowParams; trailing: React.ReactNode;
 }): React.ReactElement {
   const scheme = useKitScheme();
   const { text: fg, inputBg } = usePalette();
   const hasPrefix = params.previewPrefix !== undefined && params.previewPrefix !== '';
   return (
-    <Row align="center" gap={12} flex={1}>
-      <Col gap={2} flex={1}>
+    <Row align="start" gap={12} flex={1}>
+      <Col gap={LINE_GAP} flex={1}>
         <TitleLine params={params} scheme={scheme} />
         <PreviewParagraph params={params} fg={fg} chipBg={inputBg} hasPrefix={hasPrefix} />
       </Col>
-      <MetaColumn params={params} scheme={scheme} />
+      <MetaColumn params={params} trailing={trailing} />
     </Row>
   );
 }
@@ -237,10 +236,14 @@ function ChannelRowBase({
           style={{ backgroundColor: border }}
 />
         <Col minWidth={0} flex={1}>
-          <ChannelRowBody params={params} />
+          <ChannelRowBody
+            params={params}
+            trailing={(
+              <TrailingBadge unreadCount={unreadCount} markedUnread={markedUnread}
+                showChevron={showChevron} head={head} bg={bg} />
+            )}
+          />
         </Col>
-        <TrailingBadge unreadCount={unreadCount} markedUnread={markedUnread}
-          showChevron={showChevron} head={head} bg={bg} />
       </Row>
     </Pressable>
   );
