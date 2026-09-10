@@ -16,6 +16,10 @@ function subscribe(cb: () => void): () => void {
   return () => { listeners.delete(cb); };
 }
 
+export function subscribeAccountEpoch(cb: () => void): () => void {
+  return subscribe(cb);
+}
+
 export function useAccountEpoch(): number {
   return useStoreValue(subscribe, getAccountEpoch);
 }

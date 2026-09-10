@@ -7,6 +7,8 @@ import { classifyKeyPackageStatuses } from '@stage-labs/client/xmtp/clientErrors
 import { consentStateToString } from '@stage-labs/client/xmtp/consent';
 import { getCachedXmtpClient, getOrCreateXmtpClient, convOfLine } from './xmtp.client.web';
 import { lineOfConv, type DmUnreachableReason, type XmtpConsent } from './xmtp.types';
+import { conversationIsSyncGroup } from './xmtp.readSync.web';
+import { registerHiddenConv } from './readSyncRegistry';
 
 export async function openDmWithAddress(address: string): Promise<string> {
   const client = await getOrCreateXmtpClient('production');
@@ -66,11 +68,20 @@ export async function listRequestConvs(): Promise<Conversation[]> {
   return client.conversations.list({ consentStates: [ConsentState.Unknown] }).catch(() => []);
 }
 
+async function withoutSyncGroups(convs: Conversation[]): Promise<Conversation[]> {
+  const flags = await Promise.all(convs.map((c) => conversationIsSyncGroup(c).catch(() => false)));
+  return convs.filter((c, i) => {
+    if (flags[i] === true) registerHiddenConv(c.id);
+    return flags[i] !== true;
+  });
+}
+
 export async function listAllowedConversations(): Promise<Conversation[]> {
   const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
-  return client.conversations
+  const convs = await client.conversations
     .list({ consentStates: [ConsentState.Allowed] })
     .catch(() => []);
+  return withoutSyncGroups(convs);
 }
 
 export async function syncConversationsFromNetwork(): Promise<void> {

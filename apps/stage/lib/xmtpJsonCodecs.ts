@@ -22,6 +22,9 @@ import {
 import {
   walletSendCallsSchema, transactionReferenceSchema,
 } from '@stage-labs/client/xmtp/tx.schema';
+import {
+  READ_STATE_CONTENT_TYPE, readStateFallbackText, readStateSchema, type ReadStateContent,
+} from '@stage-labs/client/xmtp/readState';
 
 type JsonCodec<T> = JSContentCodec<T> & { shouldPush: () => boolean };
 
@@ -66,3 +69,8 @@ export const TRANSACTION_REFERENCE_CODEC = jsonCodec<TransactionReferenceContent
   TRANSACTION_REFERENCE_CONTENT_TYPE, transactionReferenceFallbackText,
   transactionReferenceSchema, 'xmtp.transactionReference',
 );
+
+export const READ_STATE_CODEC: JsonCodec<ReadStateContent> = {
+  ...jsonCodec<ReadStateContent>(READ_STATE_CONTENT_TYPE, readStateFallbackText, readStateSchema),
+  shouldPush: (): boolean => false,
+};

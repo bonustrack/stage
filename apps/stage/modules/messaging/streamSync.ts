@@ -3,6 +3,7 @@ import { flushDmOutbox } from '../../lib/dmOutbox';
 import { subscribeAllMessages } from '../../lib/xmtp';
 import type { StreamMsg } from '../../lib/xmtp.types';
 import { invalidateConvMeta } from './queries';
+import { startReadSync } from '../../lib/readSync';
 
 const GROUP_UPDATED = 'group_updated';
 const OUTBOX_FLUSH_INTERVAL_MS = 5 * 60 * 1000;
@@ -19,6 +20,7 @@ export function ensureMessagingStreamSync(): void {
   subscribeAllMessages((m: StreamMsg) => {
     if (m.convId && isGroupUpdated(m)) invalidateConvMeta(m.convId);
   });
+  startReadSync();
   void flushDmOutbox();
   setInterval(() => { void flushDmOutbox(); }, OUTBOX_FLUSH_INTERVAL_MS);
 }

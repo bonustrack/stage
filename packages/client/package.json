@@ -28,6 +28,7 @@
     "./xmtp/builders": "./src/xmtp/builders.ts",
     "./xmtp/voice": "./src/xmtp/voice.ts",
     "./xmtp/codecs": "./src/xmtp/codecs.ts",
+    "./xmtp/readState": "./src/xmtp/readState.ts",
     "./xmtp/inboxCache": "./src/xmtp/inboxCache.ts",
     "./xmtp/channelsCache": "./src/xmtp/channelsCache.ts",
     "./xmtp/clientConfig": "./src/xmtp/clientConfig.ts",

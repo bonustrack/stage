@@ -6,7 +6,7 @@ import {
   syncPreferences,
   primeInboxEthCache, subscribeAllMessages,
   listRequestConvs, listAllowedConversations, syncConversationsFromNetwork,
-  streamConvConsent, syncConsent,
+  streamConvConsent, syncConsent, conversationIsSyncGroup,
 } from '../../modules/messaging';
 import { hydrateCachedRows } from '../../modules/messaging';
 import { hydratePeerProfiles } from '../../lib/peerProfiles';
@@ -15,6 +15,7 @@ import type { Conversation } from '@xmtp/react-native-sdk';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { summarize } from './HomeScreen.helpers';
 import { makeMsgStreamHandler } from './HomeScreen.stream';
+import { registerHiddenConv } from '../../lib/readSyncRegistry';
 
 interface SyncArgs {
   accountEpoch: number;
@@ -104,6 +105,7 @@ async function subscribeConvStream(
       (cb: (conv: Conversation | null) => Promise<void>) => Promise<unknown>;
     const streamResult: unknown = await streamFn(async (conv) => {
       if (run.cancelled || !conv) return;
+      if (await conversationIsSyncGroup(conv).catch(() => false)) { registerHiddenConv(conv.id); return; }
       const cs = await (conv as unknown as { consentState: () => Promise<string> })
         .consentState().catch(() => 'allowed');
       if (cs !== 'allowed') { void r.refreshRequestCount(); return; }

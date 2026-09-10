@@ -4,6 +4,7 @@ import { hexToBytes } from 'viem';
 import type { PrivateKeyAccount } from 'viem/accounts';
 import {
   POLL_CODEC, SIGNATURE_REQUEST_CODEC, SIGNATURE_REFERENCE_CODEC, WALLET_SEND_CALLS_CODEC,
+  READ_STATE_CODEC,
 } from './xmtpJsonCodecs';
 import { getViemAccount, type AccountRecord } from './accounts';
 
@@ -12,6 +13,7 @@ export const XMTP_CODECS = [
   WALLET_SEND_CALLS_CODEC,
   SIGNATURE_REQUEST_CODEC,
   SIGNATURE_REFERENCE_CODEC,
+  READ_STATE_CODEC,
 ];
 
 function signerForAccount(account: PrivateKeyAccount): Signer {

@@ -190,6 +190,10 @@ const MARKED_UNREAD_PREFIX = 'unread.marked.';
 export async function getMarkedUnread(convId: string): Promise<boolean> {
   return (await getSecure(MARKED_UNREAD_PREFIX + convId)) === '1';
 }
+export async function setMarkedUnreadFlag(convId: string, value: boolean): Promise<void> {
+  if (value) await setSecure(MARKED_UNREAD_PREFIX + convId, '1');
+  else await secureStorage.delete(MARKED_UNREAD_PREFIX + convId).catch(() => undefined);
+}
 
 export async function markConvReadSynced(convId: string): Promise<void> {
   await setLastReadNs(convId, Date.now() * 1_000_000);

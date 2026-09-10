@@ -1,6 +1,7 @@
 
 import { PersistentStore } from './cache';
 import { markConvReadSynced, markConvUnreadSynced } from './xmtp';
+import { notifyReadStateChanged } from './readSyncRegistry';
 import {
   applyRead, applyUnread, applySentPatch,
   type CachedChannelRow,
@@ -78,6 +79,7 @@ function currentRows(): CachedRow[] | null { return activeStore().get(); }
 export async function markConvRead(convId: string): Promise<void> {
   const nowNs = Date.now() * 1_000_000;
   await markConvReadSynced(convId);
+  notifyReadStateChanged({ convId, lastReadNs: nowNs, markedUnread: false });
   const rows = currentRows();
   if (!rows) return;
   const next = applyRead(rows, convId, nowNs);
@@ -88,6 +90,8 @@ export async function markConvRead(convId: string): Promise<void> {
 export async function markConvUnread(convId: string): Promise<void> {
   await markConvUnreadSynced(convId);
   const rows = currentRows();
+  const current = rows?.find((r) => r.convId === convId);
+  notifyReadStateChanged({ convId, lastReadNs: current?.lastReadNs ?? 0, markedUnread: true });
   if (!rows) return;
   const next = applyUnread(rows, convId);
   if (next === null) return;

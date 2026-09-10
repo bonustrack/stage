@@ -10,12 +10,15 @@ import {
 import { lineOfConv, type StreamMsg } from './xmtp.types.web';
 import type { StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { reconcileOnArrival, feedLatestNs } from '../modules/messaging/feedReconcile';
+import { isHiddenConv } from './readSyncRegistry';
 
 export { PAGE_SIZE, syncInboxOnce } from './xmtp.resync.web';
 
-const streamSubscribers = new Set<(m: StreamMsg) => void>();
-export function subscribeAllMessages(cb: (m: StreamMsg) => void): () => void {
-  streamSubscribers.add(cb);
+export interface SubscribeOptions { includeHidden?: boolean }
+
+const streamSubscribers = new Map<(m: StreamMsg) => void, boolean>();
+export function subscribeAllMessages(cb: (m: StreamMsg) => void, options: SubscribeOptions = {}): () => void {
+  streamSubscribers.set(cb, options.includeHidden === true);
   void ensureGlobalStream();
   return () => { streamSubscribers.delete(cb); };
 }
@@ -48,7 +51,9 @@ function streamedMessageOf(msg: DecodedMessage): StreamedMessage {
 function fanOutToSubscribers(convId: string | null, msg: DecodedMessage): void {
   if (streamSubscribers.size === 0) return;
   const normalized = streamedMessageOf(msg);
-  for (const cb of streamSubscribers) {
+  const hidden = isHiddenConv(convId);
+  for (const [cb, includeHidden] of streamSubscribers) {
+    if (hidden && !includeHidden) continue;
     try { cb({ convId, msg: normalized }); } catch { }
   }
 }
@@ -73,7 +78,7 @@ function handleStreamMessage(msg: DecodedMessage | undefined): void {
     if (activeFeedLines.size > 0) void resyncActiveFeeds();
     return;
   }
-  routeMessageToFeed(convId, msg);
+  if (!isHiddenConv(convId)) routeMessageToFeed(convId, msg);
 }
 
 function onGlobalStreamClose(): void {

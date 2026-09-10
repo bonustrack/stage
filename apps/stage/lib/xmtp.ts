@@ -10,7 +10,7 @@ export {
 
 export {
   getOrCreateXmtpClient, ensureActiveAccount, switchToAccount, getCachedXmtpClient, waitForXmtpReady, deleteAccount,
-  resetActiveXmtpStore, getLastReadNs, setLastReadNs, getMarkedUnread, markConvReadSynced,
+  resetActiveXmtpStore, getLastReadNs, setLastReadNs, getMarkedUnread, setMarkedUnreadFlag, markConvReadSynced,
   markConvUnreadSynced, syncPreferences, convOfLine, NoAccountError,
   listXmtpInstallations, revokeXmtpInstallation, selfEthAddress, cachedSelfEthAddress,
 } from './xmtp.client';
@@ -41,3 +41,5 @@ export {
 
 export { subscribeAllMessages } from './xmtp.stream';
 export { useXmtpFeed } from './xmtp.feed';
+
+export { conversationIsSyncGroup } from './xmtp.readSync';
