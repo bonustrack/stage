@@ -10,6 +10,10 @@ import { AccountManager } from '../modules/messaging';
 import { loadAccounts, getActiveAccountId, type AccountRecord } from '../lib/accounts';
 import { drawerAccountRows, DrawerRow } from './LeftDrawer.parts';
 import { useDrawerAccountActions } from './LeftDrawer.accounts';
+import { transferKindFor } from '../lib/accountTransfer';
+import { useAccountTransfer } from './accounts/useAccountTransfer';
+import { TransferAccountSheet } from './accounts/TransferAccountSheet';
+import { ImportAccountSheet } from './accounts/ImportAccountSheet';
 
 export function MenuSheet({ visible, onClose }: {
   visible: boolean;
@@ -38,6 +42,8 @@ export function MenuSheet({ visible, onClose }: {
   const actions = useDrawerAccountActions({
     head, sub, border, dark, onChanged: () => { onClose(); void refresh(); },
   });
+  const t = useAccountTransfer();
+  const movable = activeRec !== null && transferKindFor(activeRec) !== null;
 
   function go(href: '/settings'): void {
     onClose();
@@ -60,14 +66,25 @@ export function MenuSheet({ visible, onClose }: {
   }
 
   return (
-    <AppModal visible={visible} onClose={onClose}>
-      <ListView dark={dark} style={{ marginHorizontal: -16 }}>
-        {drawerAccountRows({ accounts, activeId, onSwitch, c: { head, sub, border }, dark })}
-        {actions.rows}
-        <DrawerRow rowKey="profile" icon="user" label="Profile" head={head} sub={sub} border={border} dark={dark} onPress={goProfile}/>
-        <DrawerRow rowKey="settings" icon="cog" label="Settings" head={head} sub={sub} border={border} dark={dark} onPress={() => { go('/settings'); }}/>
-      </ListView>
-      {actions.modal}
-    </AppModal>
+    <>
+      <AppModal visible={visible} onClose={onClose}>
+        <ListView dark={dark} style={{ marginHorizontal: -16 }}>
+          {drawerAccountRows({ accounts, activeId, onSwitch, c: { head, sub, border }, dark })}
+          {actions.rows}
+          <DrawerRow rowKey="import" icon="qrcode" label="Import account" head={head} sub={sub} border={border} dark={dark} onPress={() => { onClose(); t.openImport(); }}/>
+          {movable ? (
+            <DrawerRow rowKey="move" icon="deviceMobile" label="Move to another device" head={head} sub={sub} border={border} dark={dark} onPress={() => { onClose(); t.openTransfer(activeRec); }}/>
+          ) : null}
+          <DrawerRow rowKey="profile" icon="user" label="Profile" head={head} sub={sub} border={border} dark={dark} onPress={goProfile}/>
+          <DrawerRow rowKey="settings" icon="cog" label="Settings" head={head} sub={sub} border={border} dark={dark} onPress={() => { go('/settings'); }}/>
+        </ListView>
+        {actions.modal}
+      </AppModal>
+      <TransferAccountSheet rec={t.transferRec} dark={dark} onClose={t.closeTransfer} />
+      <ImportAccountSheet
+        visible={t.importOpen} dark={dark} busy={t.importing} error={t.importError}
+        onClose={t.closeImport} onSubmit={t.onImport}
+      />
+    </>
   );
 }
