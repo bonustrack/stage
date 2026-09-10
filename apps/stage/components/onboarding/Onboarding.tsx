@@ -14,8 +14,8 @@ export interface OnboardingProps {
 }
 
 const BLOCK_MAX_WIDTH = 520;
-const BLOCK_MIN_HEIGHT = 600;
-const BLOCK_MAX_HEIGHT = 1000;
+const BLOCK_MIN_HEIGHT = 520;
+const BLOCK_MAX_HEIGHT = 680;
 const CARD_BREAKPOINT = 700;
 const LOGO_SIZE = 64;
 const CARD_RADIUS = 12;
@@ -41,7 +41,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
         style={[
           { borderRadius: CARD_RADIUS, borderWidth: 1, borderColor: pal.border },
           block.card
-            ? { height: '85%', minHeight: block.minHeight, maxHeight: BLOCK_MAX_HEIGHT }
+            ? { height: '70%', minHeight: block.minHeight, maxHeight: BLOCK_MAX_HEIGHT }
             : { flex: 1 },
         ]}
       >
