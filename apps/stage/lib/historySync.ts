@@ -4,10 +4,14 @@ import { makeListeners, useStoreValue } from './storeCore';
 import { bumpAccountEpoch } from './accountEpoch';
 import { waitForXmtpReady } from './xmtp.state';
 import {
-  countAvailableHistoryArchives, historyFingerprint, processHistoryArchive, requestHistorySync,
+  countAvailableHistoryArchives, historySnapshot, processHistoryArchive, requestHistorySync,
   sendHistoryArchive,
 } from './xmtp.history';
-import { historyPinFromRandom, historySyncIsActive, HISTORY_PIN_LENGTH, type HistorySyncPhase } from './historySync.model';
+import { getActiveAccount } from './accounts';
+import {
+  historyPinFromRandom, historySyncIsActive, holdsHistoryBefore, HISTORY_PIN_LENGTH,
+  type HistorySnapshot, type HistorySyncPhase,
+} from './historySync.model';
 
 const PENDING_KEY = 'history.sync.pending';
 const TIMEOUT_MS = 120_000;
@@ -67,33 +71,42 @@ async function tryProcessArchive(): Promise<void> {
   }
 }
 
-async function archiveArrived(baseline: string | null): Promise<boolean> {
+interface Watch { baseline: HistorySnapshot | null; installedAtMs: number | null }
+
+async function localHistoryChanged(watch: Watch): Promise<boolean> {
+  const current = await historySnapshot();
+  if (watch.installedAtMs !== null && holdsHistoryBefore(current, watch.installedAtMs)) return true;
+  return watch.baseline !== null && current.fingerprint !== watch.baseline.fingerprint;
+}
+
+async function archiveArrived(watch: Watch): Promise<boolean> {
   try {
     if (await countAvailableHistoryArchives() > 0) {
       await tryProcessArchive();
       return true;
     }
-    return baseline !== null && await historyFingerprint() !== baseline;
+    return await localHistoryChanged(watch);
   } catch (err) {
     warn('poll', err);
     return false;
   }
 }
 
-async function waitForHistory(deadline: number, baseline: string | null): Promise<boolean> {
+async function waitForHistory(deadline: number, watch: Watch): Promise<boolean> {
   while (Date.now() < deadline) {
-    if (await archiveArrived(baseline)) return true;
+    if (await archiveArrived(watch)) return true;
     await sleep(POLL_MS);
   }
   return false;
 }
 
-async function localHistoryBaseline(): Promise<string | null> {
+async function startWatch(): Promise<Watch> {
+  const installedAtMs = (await getActiveAccount().catch(() => null))?.createdAt ?? null;
   try {
-    return await historyFingerprint();
+    return { baseline: await historySnapshot(), installedAtMs };
   } catch (err) {
     warn('baseline', err);
-    return null;
+    return { baseline: null, installedAtMs };
   }
 }
 
@@ -102,10 +115,10 @@ export async function runHistorySync(): Promise<HistorySyncPhase> {
   setPhase('requesting');
   try {
     if (!(await waitForXmtpReady())) { setPhase('error'); return 'error'; }
-    const baseline = await localHistoryBaseline();
+    const watch = await startWatch();
     await requestHistorySync();
     setPhase('waiting');
-    if (!(await waitForHistory(Date.now() + TIMEOUT_MS, baseline))) { setPhase('timeout'); return 'timeout'; }
+    if (!(await waitForHistory(Date.now() + TIMEOUT_MS, watch))) { setPhase('timeout'); return 'timeout'; }
     applyReceivedHistory();
     setPhase('done');
     return 'done';

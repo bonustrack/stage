@@ -45,6 +45,25 @@ export function historySyncIsActive(phase: HistorySyncPhase): boolean {
 
 export interface HistoryEntry { id: string; firstNs: string }
 
+export interface HistorySnapshot { fingerprint: string; oldestNs: number | null }
+
+export const HISTORY_CLOCK_SKEW_MS = 5 * 60 * 1000;
+
 export function fingerprintOf(entries: readonly HistoryEntry[]): string {
   return entries.map((entry) => `${entry.id}:${entry.firstNs}`).sort().join('|');
+}
+
+export function snapshotOf(entries: readonly HistoryEntry[]): HistorySnapshot {
+  let oldestNs: number | null = null;
+  for (const entry of entries) {
+    if (entry.firstNs === '') continue;
+    const ns = Number(entry.firstNs);
+    if (Number.isFinite(ns) && (oldestNs === null || ns < oldestNs)) oldestNs = ns;
+  }
+  return { fingerprint: fingerprintOf(entries), oldestNs };
+}
+
+export function holdsHistoryBefore(snapshot: HistorySnapshot, installedAtMs: number): boolean {
+  if (snapshot.oldestNs === null) return false;
+  return snapshot.oldestNs < (installedAtMs - HISTORY_CLOCK_SKEW_MS) * 1_000_000;
 }

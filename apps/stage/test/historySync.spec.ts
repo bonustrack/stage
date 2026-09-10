@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
   fingerprintOf, formatHistoryPin, historyPinFromRandom, historySyncIsActive, historySyncPhaseLabel,
-  isValidHistoryPin, normalizeHistoryPin,
+  holdsHistoryBefore, isValidHistoryPin, normalizeHistoryPin, snapshotOf,
 } from '../lib/historySync.model';
 
 describe('history pin', () => {
@@ -42,5 +42,24 @@ describe('fingerprintOf', () => {
     expect(before).toBe(fingerprintOf([{ id: 'a', firstNs: '100' }, { id: 'b', firstNs: '200' }]));
     expect(fingerprintOf([{ id: 'a', firstNs: '50' }, { id: 'b', firstNs: '200' }])).not.toBe(before);
     expect(fingerprintOf([{ id: 'a', firstNs: '100' }, { id: 'b', firstNs: '200' }, { id: 'c', firstNs: '' }])).not.toBe(before);
+  });
+});
+
+describe('history snapshot', () => {
+  const dayMs = 24 * 60 * 60 * 1000;
+  const installedAtMs = 1_700_000_000_000;
+  const ns = (ms: number): string => String(ms * 1_000_000);
+
+  test('finds the oldest message and ignores empty conversations', () => {
+    const snap = snapshotOf([{ id: 'a', firstNs: ns(installedAtMs) }, { id: 'b', firstNs: '' }, { id: 'c', firstNs: ns(installedAtMs - dayMs) }]);
+    expect(snap.oldestNs).toBe((installedAtMs - dayMs) * 1_000_000);
+    expect(snapshotOf([{ id: 'b', firstNs: '' }]).oldestNs).toBeNull();
+  });
+
+  test('history older than the install, beyond clock skew, counts as arrived', () => {
+    expect(holdsHistoryBefore(snapshotOf([{ id: 'a', firstNs: ns(installedAtMs - dayMs) }]), installedAtMs)).toBe(true);
+    expect(holdsHistoryBefore(snapshotOf([{ id: 'a', firstNs: ns(installedAtMs - 60_000) }]), installedAtMs)).toBe(false);
+    expect(holdsHistoryBefore(snapshotOf([{ id: 'a', firstNs: ns(installedAtMs + 1) }]), installedAtMs)).toBe(false);
+    expect(holdsHistoryBefore(snapshotOf([]), installedAtMs)).toBe(false);
   });
 });
