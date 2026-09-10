@@ -6,6 +6,7 @@ import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { Row } from './layout';
+import { AppIcon } from './widgets';
 import { channelMenuItems, type MenuSheetItem } from './ChannelMenu.model';
 import { AnchoredMenu } from './AnchoredMenu';
 import type { MenuPoint } from './AnchoredMenu.model';
@@ -56,7 +57,6 @@ function confirmLeaveGroup(
   );
 }
 
-import { AppIcon } from './widgets';
 
 function MenuRow({ item, dark, onPress }: {
   item: MenuSheetItem; dark: boolean; onPress: () => void;
