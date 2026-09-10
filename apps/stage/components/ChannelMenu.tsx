@@ -2,12 +2,9 @@
 import { Alert } from 'react-native';
 
 import { useRouter } from 'expo-router';
-import { resolveIconName } from '@stage-labs/kit/icons';
-import { Icon } from '@stage-labs/kit/react-native/icon';
 import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
-import { resolveColorToken } from '@stage-labs/kit/tokens';
 import { Row } from './layout';
 import { channelMenuItems, type MenuSheetItem } from './ChannelMenu.model';
 import { AnchoredMenu } from './AnchoredMenu';
@@ -59,22 +56,17 @@ function confirmLeaveGroup(
   );
 }
 
+import { AppIcon } from './widgets';
+
 function MenuRow({ item, dark, onPress }: {
   item: MenuSheetItem; dark: boolean; onPress: () => void;
 }): React.ReactElement {
-  const scheme = dark ? 'dark' : 'light';
-  const iconName = item.icon === undefined ? undefined : resolveIconName(item.icon);
   const danger = item.danger === true;
   return (
     <ListViewItem dark={dark} align="center" gap={12} onPress={onPress}>
       <Row align="center" gap={12} flex={1}>
-        {iconName === undefined ? null : (
-          <Icon
-            name={iconName}
-            size={22}
-            color={resolveColorToken(danger ? 'danger' : 'secondary', scheme)}
-            dark={dark}
-          />
+        {item.icon === undefined ? null : (
+          <AppIcon name={item.icon} size={22} color={danger ? 'danger' : 'secondary'} />
         )}
         <Text value={item.label} color={danger ? 'danger' : undefined} weight="medium" />
       </Row>

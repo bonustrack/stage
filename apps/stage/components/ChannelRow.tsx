@@ -50,7 +50,7 @@ const BADGE_SIZE = 18;
 const TITLE_LINE_HEIGHT = 24;
 const PREVIEW_LINE_HEIGHT = 20;
 const LINE_GAP = 2;
-const PIN_ICON_SIZE = 18;
+const PIN_ICON_SIZE = 16;
 
 function TrailingBadge({ unreadCount, markedUnread, showChevron, head, bg }: {
   unreadCount: number; markedUnread?: boolean; showChevron?: boolean;
