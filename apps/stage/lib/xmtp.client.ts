@@ -3,7 +3,7 @@ import { secureStorage } from '../platform/storage';
 import { Client, PublicIdentity, type Conversation } from '@xmtp/react-native-sdk';
 import {
   getActiveAccount,
-  loadAccounts, setActiveAccountId, removeAccount, clearAllAccounts,
+  loadAccounts, setActiveAccountId, removeAccount,
   type AccountRecord,
 } from './accounts';
 import { registerPushWithDaemon } from './push';
@@ -15,7 +15,7 @@ import {
 } from './xmtp.state';
 import { type XmtpEnv, convIdOfLine } from './xmtp.types';
 import {
-  loadOrCreateDbKey, deleteDbKey, deleteLegacyDbKey, deleteDbFiles,
+  loadOrCreateDbKey, deleteDbKey, deleteDbFiles,
   ensureDbDir, wipeXmtpStore,
 } from './xmtp.dbkey';
 import { createClientForAccount, isStoreCorruption } from './xmtp.recover';
@@ -106,14 +106,11 @@ export async function deleteAccount(id: string): Promise<void> {
   resetClientScopedState();
 }
 
-export async function resetXmtpClient(): Promise<void> {
+export async function resetActiveXmtpStore(): Promise<void> {
+  const rec = await getActiveAccount();
+  if (!rec) return;
   resetClientScopedState();
-  await secureStorage.delete(ENV_KEY).catch(() => undefined);
-  const removed = await clearAllAccounts();
-  await Promise.all(removed.map(a => deleteDbKey(a.id)));
-  await deleteLegacyDbKey();
-  const dirs = new Set<string>(['xmtp', ...removed.map(a => a.dbDir)]);
-  for (const name of dirs) deleteDbFiles(name);
+  await wipeXmtpStore(rec.id, rec.dbDir);
 }
 
 export interface XmtpInstallation {

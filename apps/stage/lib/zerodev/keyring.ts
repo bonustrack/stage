@@ -166,9 +166,6 @@ export async function deleteKey(id: string): Promise<void> {
   await secureStorage.delete(PK_PREFIX + id).catch(() => undefined);
 }
 
-export async function clearLegacyKey(): Promise<void> {
-  await secureStorage.delete(LEGACY_PK_KEY).catch(() => undefined);
-}
 
 
 export interface RailgunKeyMaterial {

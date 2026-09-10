@@ -3,7 +3,7 @@ import { Client, ConsentState, IdentifierKind, type Conversation } from '@xmtp/b
 import { secureStorage } from '../platform/storage';
 import {
   getActiveAccount,
-  loadAccounts, setActiveAccountId, removeAccount, clearAllAccounts,
+  loadAccounts, setActiveAccountId, removeAccount,
   type AccountRecord,
 } from './accounts';
 import { getSecure, setSecure } from './cache';
@@ -14,7 +14,7 @@ import {
   getCachedXmtpClient, setCachedXmtpClient, resetClientScopedState,
 } from './xmtp.state.web';
 import { type XmtpEnv, convIdOfLine, lineOfConv } from './xmtp.types';
-import { deleteDbKey, deleteLegacyDbKey, deleteDbFiles } from './xmtp.dbkey';
+import { deleteDbKey, deleteDbFiles } from './xmtp.dbkey';
 import { createClientForAccount } from './xmtp.recover.web';
 import {
   webXmtpDbPath, canReuseSavedClient, installationCreatedAtMs,
@@ -132,15 +132,13 @@ export async function deleteAccount(id: string): Promise<void> {
   disposeCachedClient();
 }
 
-export async function resetXmtpClient(): Promise<void> {
+export async function resetActiveXmtpStore(): Promise<void> {
+  const rec = await getActiveAccount();
+  if (!rec) return;
   disposeCachedClient();
-  await secureStorage.delete(ENV_KEY).catch(() => undefined);
-  const removed = await clearAllAccounts();
-  await Promise.all(removed.map(a => deleteDbKey(a.id)));
-  await Promise.all(removed.map(a => forgetSavedClient(a.id)));
-  await deleteLegacyDbKey();
-  const dirs = new Set<string>(['xmtp', ...removed.map(a => a.dbDir)]);
-  for (const name of dirs) deleteDbFiles(name);
+  deleteDbFiles(rec.dbDir);
+  await deleteDbKey(rec.id);
+  await forgetSavedClient(rec.id);
 }
 
 export interface XmtpInstallation {

@@ -6,7 +6,6 @@ import { Caption } from '@stage-labs/kit/react-native/caption';
 import { usePalette } from '../../lib/theme';
 import { setDebugConsole, useDebugConsole } from '../../lib/railgun/debugConsole';
 import { StackHeader } from '../chrome/StackHeader';
-import { DangerZone } from './dangerActions';
 import { SettingsList, SettingsToggleRow } from './rows';
 
 export function DeveloperSettings(): React.ReactElement {
@@ -33,12 +32,6 @@ export function DeveloperSettings(): React.ReactElement {
               onChange={onToggle}
             />
           </SettingsList>
-        </Box>
-        <Caption color={fg} style={{ paddingHorizontal: 16, paddingTop: 28, paddingBottom: 8 }}>
-          DANGER ZONE
-        </Caption>
-        <Box>
-          <DangerZone dev />
         </Box>
       </ScrollView>
     </Col>

@@ -7,7 +7,7 @@ const setActiveAccountForCache = async (id: string | null): Promise<void> => {
   const { setActiveAccountForCache: fn } = await import('./channelsCache');
   fn(id);
 };
-import { getViemAccount, adoptLegacyKey, deleteKey, clearLegacyKey } from './zerodev/keyring';
+import { getViemAccount, adoptLegacyKey, deleteKey, clearMnemonic } from './zerodev/keyring';
 import { LEGACY_DB_DIR } from '@stage-labs/client/accounts/keys';
 import { resolveActiveAccount } from '@stage-labs/client/accounts/registry';
 
@@ -120,15 +120,6 @@ export async function removeAccount(id: string): Promise<AccountRecord[]> {
     if (first) await setActiveAccountId(first.id);
     else await secureStorage.delete(ACTIVE_KEY).catch(() => undefined);
   }
+  if (next.length === 0) await clearMnemonic();
   return next;
-}
-
-export async function clearAllAccounts(): Promise<AccountRecord[]> {
-  const list = await loadAccounts();
-  for (const a of list) await deleteKey(a.id);
-  await secureStorage.delete(LIST_KEY).catch(() => undefined);
-  await secureStorage.delete(ACTIVE_KEY).catch(() => undefined);
-  await clearLegacyKey();
-  cache = null;
-  return list;
 }

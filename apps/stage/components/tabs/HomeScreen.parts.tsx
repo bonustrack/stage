@@ -1,15 +1,15 @@
 
 import { memo, useCallback } from 'react';
 
-import { DevSettings, Vibration } from 'react-native';
+import { Vibration } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Col, WEB_EDGE_SCROLL } from '../layout';
 import { EmptyState } from '../chrome/EmptyState';
 import { Spinner } from '../Spinner';
 import { ChannelRow } from '../ChannelRow';
-import { resetXmtpClient, shortAddress, prefetchFeed, lineOfConv } from '../../modules/messaging';
-import { resetAccount } from '../../lib/wallet';
+import { resetActiveXmtpStore, shortAddress, prefetchFeed, lineOfConv } from '../../modules/messaging';
+import { reloadApp } from '../AccountsManager.helpers';
 import { getPeerName, isPeerResolved } from '../../lib/peerProfiles';
 import { getDraft } from '../../lib/drafts';
 import { conversationLinkOf, isActiveConversationPath } from '../../lib/conversationLink';
@@ -122,9 +122,8 @@ export function HomeError({ error, dark, fg, plain }: {
       <Pressable
         onPress={() => {
           void (async (): Promise<void> => {
-            await resetXmtpClient();
-            await resetAccount();
-            DevSettings.reload?.();
+            await resetActiveXmtpStore();
+            reloadApp();
           })();
         }}
         style={({ pressed }) => ({
@@ -134,7 +133,7 @@ export function HomeError({ error, dark, fg, plain }: {
         })}
 >
         <Text size="md" color={DANGER}>
-          Reset XMTP identity
+          Reset XMTP database
         </Text>
       </Pressable>
     </Col>

@@ -101,7 +101,7 @@ export function BuildInfoDot(): React.ReactElement {
         <Pressable
           hitSlop={12}
           onPress={() => { setOpen((v) => !v); }}
-          style={{ width: 11, height: 11, borderRadius: 6, backgroundColor: dotColor }}
+          style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dotColor }}
         />
       </Box>
     </Box>

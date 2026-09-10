@@ -10,7 +10,7 @@ export {
 
 export {
   getOrCreateXmtpClient, ensureActiveAccount, switchToAccount, getCachedXmtpClient, waitForXmtpReady, deleteAccount,
-  resetXmtpClient, getLastReadNs, setLastReadNs, markConvReadSynced,
+  resetActiveXmtpStore, getLastReadNs, setLastReadNs, markConvReadSynced,
   markConvUnreadSynced, syncPreferences, convOfLine, NoAccountError,
   listXmtpInstallations, revokeXmtpInstallation, selfEthAddress, cachedSelfEthAddress,
 } from './xmtp.client';

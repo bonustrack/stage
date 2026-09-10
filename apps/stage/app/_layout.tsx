@@ -24,11 +24,14 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { getQueryClient } from '../lib/queryClient';
 import { applyWebGlobalStyles } from '../platform/webStyles';
 import { BuildInfoDot } from '../components/system/BuildInfoDot';
+import { AlertHost } from '../components/system/AlertHost';
+import { installAlertShim } from '../lib/alertShim';
 import { SplitSidebar } from '../components/tabs/SplitSidebar';
 
 const queryClient = getQueryClient();
 
 applyWebGlobalStyles();
+installAlertShim();
 
 (function applyDefaultFont(): void {
   const TextAny = Text as unknown as { defaultProps?: Record<string, unknown> };
@@ -151,6 +154,7 @@ function RootLayoutInner(): React.ReactElement {
         </Col>
       ) : null}
       <BuildInfoDot />
+      <AlertHost />
       </KeyboardProvider>
     </GestureHandlerRootView>
     </QueryClientProvider>

@@ -1,5 +1,4 @@
-
-import { DevSettings } from 'react-native';
+import { DevSettings, Platform } from 'react-native';
 import { type AccountRecord } from '../lib/accounts';
 
 export const TYPE_LABEL: Record<AccountRecord['type'], string> = {
@@ -10,5 +9,9 @@ export const TYPE_LABEL: Record<AccountRecord['type'], string> = {
 };
 
 export function reloadApp(): void {
+  if (Platform.OS === 'web') {
+    (globalThis as { location?: { reload: () => void } }).location?.reload();
+    return;
+  }
   DevSettings.reload?.();
 }

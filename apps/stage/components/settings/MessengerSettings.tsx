@@ -1,16 +1,16 @@
 
 import { useQuery } from '@tanstack/react-query';
 
-import { Alert, DevSettings } from 'react-native';
+import { Alert } from 'react-native';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box, Col, WEB_EDGE_CONTENT, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../layout';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import {
-  getOrCreateXmtpClient, resetXmtpClient, selfEthAddress, shortAddress, useActiveAccount,
+  getOrCreateXmtpClient, resetActiveXmtpStore, selfEthAddress, shortAddress, useActiveAccount,
 } from '../../modules/messaging';
-import { resetAccount } from '../../lib/wallet';
+import { reloadApp } from '../AccountsManager.helpers';
 import { flash } from '../../lib/toast';
 import { usePalette } from '../../lib/theme';
 import { MessengerSessions } from './MessengerSessions';
@@ -19,15 +19,14 @@ import { SettingsButtonRow, SettingsList, SettingsValueRow } from './rows';
 
 function onResetIdentity(): void {
   Alert.alert(
-    'Reset XMTP identity',
-    'This wipes the local wallet + XMTP database. You will get a fresh inbox on next launch. Existing conversations on this device will become unreachable.',
+    'Reset XMTP database',
+    'Wipes the local XMTP database of the current account only. The account and its keys stay. Messages stored on this device for this account are gone; a fresh installation is created on next launch.',
     [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Reset', style: 'destructive', onPress: () => {
           void (async (): Promise<void> => {
-            await resetXmtpClient();
-            await resetAccount();
-            DevSettings.reload?.();
+            await resetActiveXmtpStore();
+            reloadApp();
           })();
         } },
     ],
@@ -106,7 +105,7 @@ export function MessengerSettings(): React.ReactElement {
         <Box padding={{ top: 28 }}>
           <SettingsList>
             <SettingsButtonRow
-              label="Reset XMTP identity"
+              label="Reset XMTP database"
               danger
               onPress={onResetIdentity}
             />
