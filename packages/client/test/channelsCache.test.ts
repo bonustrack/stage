@@ -29,8 +29,8 @@ describe('applyRead', () => {
 });
 
 describe('applyUnread', () => {
-  test('forces unreadCount>=1, lastReadNs 0, markedUnread true', () => {
-    expect(applyUnread(base, 'b')?.[1]).toEqual({ convId: 'b', unreadCount: 1, lastReadNs: 0, markedUnread: true, lastTs: 2 });
+  test('sets markedUnread and leaves the count and read marker alone', () => {
+    expect(applyUnread(base, 'b')?.[1]).toEqual({ convId: 'b', unreadCount: 0, lastReadNs: 0, markedUnread: true, lastTs: 2 });
     expect(applyUnread(base, 'a')?.[0]?.unreadCount).toBe(3);
   });
   test('missing returns null', () => {

@@ -186,8 +186,14 @@ export async function setLastReadNs(convId: string, ns: number): Promise<void> {
   await setSecure(LAST_READ_PREFIX + convId, String(ns));
 }
 
+const MARKED_UNREAD_PREFIX = 'unread.marked.';
+export async function getMarkedUnread(convId: string): Promise<boolean> {
+  return (await getSecure(MARKED_UNREAD_PREFIX + convId)) === '1';
+}
+
 export async function markConvReadSynced(convId: string): Promise<void> {
   await setLastReadNs(convId, Date.now() * 1_000_000);
+  await secureStorage.delete(MARKED_UNREAD_PREFIX + convId).catch(() => undefined);
   try {
     const conv = await convOfLine(lineOfConv(convId));
     if (conv && (await conv.consentState()) !== ConsentState.Allowed) {
@@ -197,7 +203,7 @@ export async function markConvReadSynced(convId: string): Promise<void> {
 }
 
 export async function markConvUnreadSynced(convId: string): Promise<void> {
-  await setLastReadNs(convId, 0);
+  await setSecure(MARKED_UNREAD_PREFIX + convId, '1');
 }
 
 export async function syncPreferences(): Promise<void> {

@@ -2,7 +2,7 @@
 import type { Conversation } from '@xmtp/react-native-sdk';
 import {
   peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
-  shortAddress, getLastReadNs,
+  shortAddress, getLastReadNs, getMarkedUnread,
 } from '../../lib/xmtp';
 import { groupNameImage } from '../../lib/xmtp.groups';
 import { rowMessagesOf } from '../../lib/xmtp.messages';
@@ -107,7 +107,7 @@ export async function summarizeConversation(
   const { avatarUri, avatarAddress } = rowAvatar(conv, peerAddress, groupMeta.imageUrl);
   const lastReadNs = await getLastReadNs(conv.id);
   const unreadCount = countUnreadEntries(msgs, lastReadNs, selfInboxId);
-  const markedUnread = initialMarkedUnread({
+  const markedUnread = await resolveMarkedUnread(conv.id, {
     lastReadNs, unreadCount, hasLast: !!last, lastFromSelf,
   });
   return {

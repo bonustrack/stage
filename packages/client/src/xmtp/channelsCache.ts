@@ -37,7 +37,7 @@ export function applyUnread<R extends CachedChannelRow>(
   const cur = idx === -1 ? undefined : rows[idx];
   if (cur === undefined) return null;
   const next = [...rows];
-  next[idx] = { ...cur, unreadCount: Math.max(1, cur.unreadCount), lastReadNs: 0, markedUnread: true };
+  next[idx] = { ...cur, markedUnread: true };
   return next;
 }
 
