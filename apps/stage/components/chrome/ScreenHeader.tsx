@@ -6,7 +6,7 @@ import { Text, type TextSizeToken, type TextWeight } from '@stage-labs/kit/react
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { Title, type TitleSizeToken } from '@stage-labs/kit/react-native/title';
 import { resolveColorToken } from '@stage-labs/kit/tokens';
-import { Box, Row, WEB_CHROME_LAYER } from '../layout';
+import { Box, Row, WebFullBleed, WEB_CHROME_LAYER } from '../layout';
 
 export type ScreenHeaderTitleStyle =
   | {
@@ -96,29 +96,31 @@ export function ScreenHeader(props: ScreenHeaderProps): React.ReactElement {
       ? undefined
       : { bottom: { width: 1, color: resolveColorToken(props.borderColor, scheme) } };
   return (
-    <Row
-      align="center"
-      justify={titled === undefined ? 'between' : undefined}
-      gap={8}
-      background={props.surface}
-      border={border}
-      style={WEB_CHROME_LAYER}
-      padding={{
-        x: 12,
-        top: (props.padTop ?? 8) + (props.safeTop ?? 0),
-        bottom: props.padBottom ?? 10,
-      }}
-    >
-      <BackButton
-        onBack={props.onBack}
-        backColor={props.backColor}
-        backHitSlop={props.backHitSlop}
-        backPadding={props.backPadding}
-      />
-      {titled === undefined ? null : (
-        <HeaderTitle title={titled.title} titleStyle={titled.titleStyle} />
-      )}
-      {props.trailing}
-    </Row>
+    <WebFullBleed>
+      <Row
+        align="center"
+        justify={titled === undefined ? 'between' : undefined}
+        gap={8}
+        background={props.surface}
+        border={border}
+        style={WEB_CHROME_LAYER}
+        padding={{
+          x: 12,
+          top: (props.padTop ?? 8) + (props.safeTop ?? 0),
+          bottom: props.padBottom ?? 10,
+        }}
+      >
+        <BackButton
+          onBack={props.onBack}
+          backColor={props.backColor}
+          backHitSlop={props.backHitSlop}
+          backPadding={props.backPadding}
+        />
+        {titled === undefined ? null : (
+          <HeaderTitle title={titled.title} titleStyle={titled.titleStyle} />
+        )}
+        {props.trailing}
+      </Row>
+    </WebFullBleed>
   );
 }

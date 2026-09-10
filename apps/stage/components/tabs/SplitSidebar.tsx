@@ -10,15 +10,7 @@ import { WebTabRail } from './WebTabRail';
 import { useWebTabRail, WEB_TAB_RAIL_WIDTH } from './useWebTabRail';
 import { usePaneWidth } from './paneWidth';
 import { PaneResizeHandle } from './PaneResizeHandle';
-
-const DM_ROUTE = /^\/0x[a-fA-F0-9]{40}$/;
-
-const SPLIT_PREFIXES = ['/channel/', '/group/', '/profile/'];
-
-export function isSplitRoute(pathname: string): boolean {
-  if (pathname === '/' || DM_ROUTE.test(pathname)) return true;
-  return SPLIT_PREFIXES.some((prefix) => pathname.startsWith(prefix));
-}
+import { isSplitRoute, isTabRoute } from './splitRoutes';
 
 function usePaneScope(active: boolean): void {
   useEffect(() => {
@@ -40,7 +32,7 @@ export function SplitSidebar({ visible }: { visible: boolean }): React.ReactElem
   if (!active) return null;
   return (
     <>
-      {pathname === '/' ? null : <WebTabRail pathname={pathname} unreadBadge={unreadBadge}/>}
+      {isTabRoute(pathname) ? null : <WebTabRail pathname={pathname} unreadBadge={unreadBadge}/>}
       <Box
         surface="surface"
         width={paneWidth}
