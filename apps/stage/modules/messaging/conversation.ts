@@ -84,6 +84,13 @@ function rowAvatar(
   return { avatarUri, avatarAddress };
 }
 
+async function resolveMarkedUnread(
+  convId: string, inputs: Parameters<typeof initialMarkedUnread>[0],
+): Promise<boolean> {
+  if (await getMarkedUnread(convId)) return true;
+  return initialMarkedUnread(inputs);
+}
+
 export async function summarizeConversation(
   conv: Conversation, selfInboxId: string, alreadySynced = false,
 ): Promise<ConversationView> {
