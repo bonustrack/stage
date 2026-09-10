@@ -16,15 +16,15 @@ interface StepAction {
   onPress: () => void;
 }
 
-function OnboardingStepView({ dark, title, caption, captionSize, topPadding, actions }: {
-  dark: boolean; title: string; caption: string;
+function OnboardingStepView({ dark, title, centered, caption, captionSize, topPadding, actions }: {
+  dark: boolean; title: string; centered?: boolean; caption?: string;
   captionSize?: 'sm' | 'md'; topPadding?: number; actions: StepAction[];
 }): React.ReactElement {
   return (
     <Col flex={1} justify="between">
-      <Col gap={10} padding={{ top: topPadding ?? 8 }}>
-        <Title>{title}</Title>
-        <Text value={caption} size={captionSize ?? 'sm'} color="secondary" />
+      <Col gap={10} padding={{ top: topPadding ?? 8 }} align={centered === true ? 'center' : undefined}>
+        <Title level={centered === true ? 1 : 2} style={centered === true ? { textAlign: 'center' } : undefined}>{title}</Title>
+        {caption === undefined ? null : <Text value={caption} size={captionSize ?? 'sm'} color="secondary" />}
       </Col>
       <Col gap={10}>
         {actions.map((action) => (
@@ -52,9 +52,8 @@ export function WelcomeStep({ dark, busy, onCreate, onRestore, onImport }: {
     <OnboardingStepView
       dark={dark}
       title="Stage"
-      caption="Your wallet, your messages, your governance. One gasless smart account."
-      captionSize="md"
-      topPadding={48}
+      centered
+      topPadding={8}
       actions={[
         { label: 'Create new wallet', variant: 'solid', disabled: busy, onPress: onCreate },
         { label: 'I have a recovery phrase', variant: 'soft', disabled: busy, onPress: onRestore },
