@@ -7,8 +7,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { capabilities } from '../../lib/capabilities';
 import { GitHubLinkRow } from './GitHubLinkRow';
 import { SettingsList, SettingsValueRow } from '../settings/rows';
-
-const METRO_GITHUB_URL = 'https://github.com/bonustrack/stage';
+import { commitUrl, STAGE_GITHUB_URL } from '../../lib/githubRepo';
 
 interface AboutMeta {
   pkgName: string; versionLabel: string; gitHash: string; shortHash: string; buildProfile: string;
@@ -44,7 +43,7 @@ export function AboutPanel({ dark, head, sub, border, rowBg }: {
   dark: boolean; head: string; sub: string; border: string; rowBg: string;
 }): React.ReactElement {
   const { pkgName, versionLabel, gitHash, shortHash, buildProfile } = resolveAboutMeta();
-  const commitUrl = gitHash === 'dev' ? undefined : `${METRO_GITHUB_URL}/commit/${gitHash}`;
+  const commitHref = commitUrl(gitHash);
 
   return (
     <Box padding={{ top: 18 }}>
@@ -60,7 +59,7 @@ export function AboutPanel({ dark, head, sub, border, rowBg }: {
         <SettingsValueRow
           label="Commit"
           value={shortHash}
-          onPress={commitUrl ? () => { capabilities.openUrl(commitUrl); } : undefined}
+          onPress={commitHref ? () => { capabilities.openUrl(commitHref); } : undefined}
         />
         <SettingsValueRow label="Build profile" value={buildProfile} />
       </SettingsList>
@@ -71,7 +70,7 @@ export function AboutPanel({ dark, head, sub, border, rowBg }: {
       </Box>
       <GitHubLinkRow
         dark={dark} head={head} sub={sub} border={border} rowBg={rowBg}
-        url={METRO_GITHUB_URL}
+        url={STAGE_GITHUB_URL}
         title="View Stage on GitHub"
         subtitle="bonustrack/stage"
       />

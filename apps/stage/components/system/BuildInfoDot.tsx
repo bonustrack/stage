@@ -6,6 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box } from '../layout';
 import { usePalette, withAlpha } from '../../lib/theme';
+import { capabilities } from '../../lib/capabilities';
+import { commitUrl } from '../../lib/githubRepo';
 
 function pad(n: number): string {
   return n < 10 ? `0${n}` : String(n);
@@ -31,12 +33,17 @@ function formatRelative(iso: string, now: number): string {
   return `${Math.floor(hours / 24)}d ago`;
 }
 
-function resolveBuildInfo(now: number): { hash: string; time: string; relative: string; channel: string | null } {
+interface BuildInfo {
+  hash: string; time: string; relative: string; channel: string | null; href: string | undefined;
+}
+
+function resolveBuildInfo(now: number): BuildInfo {
   const extra = (Constants.expoConfig?.extra ?? {}) as Record<string, unknown>;
   const rawHash = typeof extra.gitHash === 'string' && extra.gitHash.length > 0 ? extra.gitHash : 'dev';
   const rawTime = typeof extra.commitTime === 'string' ? extra.commitTime : '';
   return {
     hash: rawHash === 'dev' ? 'dev' : rawHash.slice(0, 7),
+    href: commitUrl(rawHash),
     time: formatLocal(rawTime),
     relative: formatRelative(rawTime, now),
     channel: typeof Updates.channel === 'string' && Updates.channel.length > 0 ? Updates.channel : null,
@@ -49,25 +56,29 @@ export function BuildInfoDot(): React.ReactElement {
   const [open, setOpen] = useState(false);
   const { text, bg, border } = usePalette();
   const insets = useSafeAreaInsets();
-  const { hash, time, relative, channel } = resolveBuildInfo(Date.now());
+  const { hash, time, relative, channel, href } = resolveBuildInfo(Date.now());
   const head = relative.length > 0 ? `${hash} · ${relative}` : hash;
+  const openCommit = href === undefined ? undefined : (): void => { setOpen(false); capabilities.openUrl(href); };
 
   return (
     <Box pointerEvents="box-none" style={{ ...StyleSheet.absoluteFillObject, zIndex: ABOVE_ALL_CHROME }}>
       {open ? <Pressable style={StyleSheet.absoluteFill} onPress={() => { setOpen(false); }} /> : null}
       <Box pointerEvents="box-none" style={{ position: 'absolute', left: 10, bottom: insets.bottom + 10 }}>
         {open ? (
-          <Box
-            background={withAlpha(bg, 0.96)}
-            margin={{ bottom: 8 }}
-            padding={{ x: 10, y: 7 }}
+          <Pressable
+            onPress={openCommit}
+            disabled={openCommit === undefined}
             style={{
               maxWidth: 260,
+              marginBottom: 8,
+              paddingHorizontal: 10,
+              paddingVertical: 7,
+              backgroundColor: withAlpha(bg, 0.96),
               borderColor: border,
               borderWidth: StyleSheet.hairlineWidth,
               borderRadius: 8,
             }}
->
+          >
             <Text size="xs" weight="medium">{head}</Text>
             {time.length > 0 ? (
               <Text size="xs" variant="secondary" style={{ marginTop: 2 }}>{time}</Text>
@@ -75,7 +86,7 @@ export function BuildInfoDot(): React.ReactElement {
             {channel !== null ? (
               <Text size="xs" variant="secondary" style={{ marginTop: 2 }}>{`channel: ${channel}`}</Text>
             ) : null}
-          </Box>
+          </Pressable>
         ) : null}
         <Pressable
           hitSlop={12}
