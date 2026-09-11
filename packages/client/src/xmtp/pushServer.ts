@@ -4,7 +4,7 @@ export const PUSH_RPC = {
   remove: '/notifications.v1.Notifications/DeleteInstallation',
 } as const;
 
-export type PushPlatform = 'android' | 'ios';
+export type PushPlatform = 'android' | 'ios' | 'web';
 
 export interface HmacKeyData {
   thirtyDayPeriodsSinceEpoch: number;

@@ -16,6 +16,7 @@ import {
 import { type XmtpEnv, convIdOfLine, lineOfConv } from './xmtp.types';
 import { deleteDbKey, deleteDbFiles } from './xmtp.dbkey';
 import { historyServerUrl } from './historyServer';
+import { registerPushWithServer } from './pushRegister.web';
 import { createClientForAccount } from './xmtp.recover.web';
 import {
   webXmtpDbPath, canReuseSavedClient, installationCreatedAtMs,
@@ -65,6 +66,7 @@ async function finalizeClient(
   setCachedXmtpClient(client);
   await setActiveAccountId(rec.id);
   await secureStorage.set(ENV_KEY, env);
+  void registerPushWithServer(client);
   return client;
 }
 

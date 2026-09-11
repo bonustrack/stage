@@ -13,7 +13,7 @@
 [build.environment]
   BUN_VERSION = "1.3.9"
   NODE_VERSION = "22"
-  SECRETS_SCAN_OMIT_PATHS = "google-services*.json,apps/stage/google-services*.json"
+  SECRETS_SCAN_OMIT_PATHS = "google-services*.json,apps/stage/google-services*.json,lib/firebaseWeb.ts,apps/stage/lib/firebaseWeb.ts"
 
 [[headers]]
   for = "/*"

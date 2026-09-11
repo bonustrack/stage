@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react';
 
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
-import * as Notifications from 'expo-notifications';
 import { Linking, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box, Col, WEB_EDGE_CONTENT_WIDE, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../layout';
@@ -10,7 +9,9 @@ import { Caption } from '@stage-labs/kit/react-native/caption';
 import { usePalette } from '../../lib/theme';
 import { setPushEnabled, usePushEnabled } from '../../lib/pushPref';
 import { getOrCreateXmtpClient } from '../../modules/messaging';
-import { registerPushWithServer, unregisterPushFromServer } from '../../lib/push';
+import {
+  getPushPermission, registerPushWithServer, requestPushPermission, unregisterPushFromServer,
+} from '../../lib/push';
 import { describePushStatus, usePushStatus } from '../../lib/pushStatus';
 import { StackHeader } from '../chrome/StackHeader';
 import { SettingsButtonRow, SettingsList, SettingsToggleRow } from './rows';
@@ -23,25 +24,28 @@ export function NotificationsSettings(): React.ReactElement {
   const status = usePushStatus();
 
   useEffect(() => {
-    void Notifications.getPermissionsAsync().then(p => { setPerm(p.status); }).catch(() => undefined);
+    void getPushPermission().then(setPerm);
   }, []);
 
   const onToggle = (next: boolean): void => {
     void (async (): Promise<void> => {
       await setPushEnabled(next);
+      if (next) setPerm(await requestPushPermission());
       try {
         const client = await getOrCreateXmtpClient('production');
         if (next) await registerPushWithServer(client);
         else await unregisterPushFromServer(client);
       } catch { }
-      try { setPerm((await Notifications.getPermissionsAsync()).status); } catch { }
+      setPerm(await getPushPermission());
     })();
   };
 
   const permLabel = perm === 'granted'
     ? 'System notifications are allowed.'
     : perm === 'denied'
-      ? 'Blocked in system settings. Allow notifications for Stage to receive push.'
+      ? (Platform.OS === 'web'
+        ? 'Blocked in the browser. Allow notifications for this site to receive push.'
+        : 'Blocked in system settings. Allow notifications for Stage to receive push.')
       : 'System permission will be requested when you enable push.';
 
   return (
