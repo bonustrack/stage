@@ -13,7 +13,7 @@ import { shortAddress } from '../../modules/messaging';
 import { resolveEnsName } from '@stage-labs/client/api/ens';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { getCachedRows } from '../../modules/messaging';
-import { stampAvatarUrl } from '@stage-labs/kit/avatar';
+import { peerAvatarUrl } from '../../lib/peerProfiles';
 
 function looksLikeEns(s: string): boolean {
   return /^[a-z0-9-]+(\.[a-z0-9-]+)*\.eth$/i.test(s.trim());
@@ -43,7 +43,7 @@ function ContactResultRow({ title, subtitle, address, dark, onPress }: {
   return (
     <ListViewItem dark={dark} align="center" gap={12} onPress={onPress}>
       <Row align="center" gap={12} flex={1}>
-        <Image src={stampAvatarUrl(address, 80)} size={40} radius="full" />
+        <Image src={peerAvatarUrl(address, 80)} size={40} radius="full" />
         <Col gap={2} flex={1}>
           <Text value={title} weight="semibold" truncate />
           {subtitle === undefined || subtitle === '' ? null : (

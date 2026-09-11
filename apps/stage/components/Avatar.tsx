@@ -4,6 +4,7 @@ import { AvatarView } from '@stage-labs/kit/react-native/avatar-view';
 import type { ImageStyle, StyleProp } from 'react-native';
 import { stampAvatarUrl, AVATAR_SIZES, type AvatarSize } from '@stage-labs/kit/avatar';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
+import { getPeerAvatar, usePeerProfiles } from '../lib/peerProfiles';
 
 const FULLSCREEN_FETCH_PX = 512;
 
@@ -27,13 +28,16 @@ function resolveAvatarUri(
   cacheBuster?: number | string,
 ): string | null {
   if (imageUri?.trim()) return avatarRenderUrl(address ?? '', imageUri, renderPx);
-  if (address) return stampAvatarUrl(address, stampPx, cacheBuster);
-  return null;
+  if (!address) return null;
+  const resolved = getPeerAvatar(address);
+  if (resolved) return avatarRenderUrl(address, resolved, renderPx);
+  return stampAvatarUrl(address, stampPx, cacheBuster);
 }
 
 export function Avatar({
   address, imageUri, size = 'md', cacheBuster, square, style, onPress,
 }: Props): React.ReactElement {
+  usePeerProfiles([imageUri?.trim() ? null : address]);
   const px = typeof size === 'number' ? size : SIZE_PX[size];
   const fetchPx = px * 2;
   const uri = resolveAvatarUri(address, imageUri, fetchPx, px, cacheBuster);
