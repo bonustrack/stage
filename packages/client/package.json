@@ -80,7 +80,8 @@
     "./zerodev/account": "./src/zerodev/account.ts",
     "./zerodev/derive": "./src/zerodev/derive.ts",
     "./zerodev/scan": "./src/zerodev/scan.ts",
-    "./zerodev/recovery": "./src/zerodev/recovery.ts"
+    "./zerodev/recovery": "./src/zerodev/recovery.ts",
+    "./zerodev/validatorPlan": "./src/zerodev/validatorPlan.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
