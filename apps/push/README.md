@@ -64,6 +64,10 @@ You need `flyctl` logged in to the bonustrack Fly organisation.
      shown next to it. `APNS_TOPIC` is the iOS bundle id and is set in `fly.toml`.
    - Either backend switches on only when its credential is present, so Android
      can go live before the Apple key exists.
+   - A secret saved in the Fly dashboard is only staged. `fly secrets deploy` did
+     not reliably reach the machine either; run `fly deploy --ha=false` after
+     changing secrets and confirm the process arguments include `--fcm-enabled`
+     or `--apns-enabled` (`fly ssh console -C ps`).
 
 3. Deploy once by hand to confirm it boots:
 
