@@ -5,7 +5,8 @@ name: Deploy push server
 # demand. Needs the FLY_API_TOKEN repository secret: a deploy token for the
 # stage-push app created with `fly tokens create deploy -a stage-push`.
 # Runtime secrets (database URL, APNs key, FCM credentials) live on the Fly app,
-# not here; see apps/push/README.md.
+# not here; see apps/push/README.md. --ha=false keeps a single machine: every
+# machine runs its own XMTP listener, so two machines would push every message twice.
 
 on:
   push:
@@ -38,4 +39,4 @@ jobs:
             echo "FLY_API_TOKEN secret is not set; add it in the repository settings." >&2
             exit 1
           fi
-          flyctl deploy --remote-only --config fly.toml --dockerfile Dockerfile
+          flyctl deploy --remote-only --ha=false --config fly.toml --dockerfile Dockerfile

@@ -66,7 +66,7 @@ You need `flyctl` logged in to the bonustrack Fly organisation.
 3. Deploy once by hand to confirm it boots:
 
    ```
-   fly deploy --config fly.toml --dockerfile Dockerfile
+   fly deploy --ha=false --config fly.toml --dockerfile Dockerfile
    fly logs --app stage-push
    curl -s https://stage-push.fly.dev/readyz
    ```
@@ -81,14 +81,17 @@ You need `flyctl` logged in to the bonustrack Fly organisation.
    After that, any change under `apps/push/` on main deploys itself
    through `.github/workflows/deploy-push-server.yml`.
 
+   Always deploy with `--ha=false` and keep one machine (`fly scale count 1`).
+   Each machine runs its own XMTP listener and would push every message again.
+
 5. Point `push.stage.box` at the app and tell the app about it:
 
    ```
    fly certs add push.stage.box --app stage-push
    ```
 
-   Add the CNAME Fly prints to the stage.box zone in Cloudflare with the proxy
-   turned off (grey cloud), so the TLS certificate is Fly's. The app reads
+   Add the A and AAAA records Fly prints to the stage.box zone in Cloudflare
+   with the proxy turned off (grey cloud), so the TLS certificate is Fly's. The app reads
    `EXPO_PUBLIC_PUSH_SERVER_URL` and defaults to `https://push.stage.box`.
 
 ## Environment reference
