@@ -96,3 +96,14 @@ describe('check and status', () => {
     expect(res.headers.get('access-control-allow-methods')).toContain('POST');
   });
 });
+
+describe('failures', () => {
+  test('a chain error becomes a JSON error with CORS headers', async () => {
+    const chain = fakeChain();
+    chain.subnameOwner = async () => { throw new Error('over rate limit\nmore details'); };
+    const res = await handleNames(new Request('https://proxy.stage.box/names/check?label=someone'), deps(chain, memoryStore()));
+    expect(res.status).toBe(502);
+    expect(res.headers.get('access-control-allow-origin')).toBe('*');
+    expect(await res.json()).toEqual({ error: 'name service error: over rate limit' });
+  });
+});

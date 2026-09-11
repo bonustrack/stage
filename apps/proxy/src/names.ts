@@ -2,6 +2,7 @@ import { isAddress, type Hex } from 'viem';
 import {
   claimIsFresh, claimMessage, describeLabelProblem, stageNameOf, validateStageLabel,
 } from '@stage-labs/client/identity/stageNames';
+import { broviderRpc } from '@stage-labs/client/wallet/client';
 import { makeNamesChain } from './namesChain.ts';
 import type { NamesChain, NamesDeps, NamesStore } from './namesTypes.ts';
 
@@ -15,7 +16,6 @@ export interface NamesEnv {
   NAMES_KV?: KVNamespace;
 }
 
-const DEFAULT_BASE_RPC = 'https://mainnet.base.org';
 
 const CORS = {
   'access-control-allow-origin': '*',
@@ -89,14 +89,23 @@ async function claim(request: Request, deps: NamesDeps): Promise<Response> {
   }
 }
 
+async function route(request: Request, deps: NamesDeps): Promise<Response> {
+  const url = new URL(request.url);
+  const path = url.pathname.slice(NAMES_PREFIX.length);
+  if (path === 'status' && request.method === 'GET') return status(url, deps);
+  if (path === 'check' && request.method === 'GET') return check(url, deps);
+  if (path === 'claim' && request.method === 'POST') return claim(request, deps);
+  return reply({ error: 'not found' }, 404);
+}
+
 export async function handleNames(request: Request, deps: NamesDeps): Promise<Response> {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
-  const url = new URL(request.url);
-  const route = url.pathname.slice(NAMES_PREFIX.length);
-  if (route === 'status' && request.method === 'GET') return status(url, deps);
-  if (route === 'check' && request.method === 'GET') return check(url, deps);
-  if (route === 'claim' && request.method === 'POST') return claim(request, deps);
-  return reply({ error: 'not found' }, 404);
+  try {
+    return await route(request, deps);
+  } catch (err) {
+    const detail = err instanceof Error ? err.message.split('\n')[0] ?? 'unknown error' : String(err);
+    return reply({ error: `name service error: ${detail}` }, 502);
+  }
 }
 
 function kvStore(kv: KVNamespace): NamesStore {
@@ -115,6 +124,6 @@ export function handleNamesRequest(request: Request, env: NamesEnv): Promise<Res
   if (!env.NAMES_OPERATOR_KEY || !env.NAMES_KV) {
     return Promise.resolve(reply({ error: 'name registration is not configured' }, 503));
   }
-  chain ??= makeNamesChain(env.NAMES_OPERATOR_KEY as Hex, env.NAMES_RPC_URL ?? DEFAULT_BASE_RPC);
+  chain ??= makeNamesChain(env.NAMES_OPERATOR_KEY as Hex, env.NAMES_RPC_URL ?? broviderRpc(8453));
   return handleNames(request, { chain, store: kvStore(env.NAMES_KV) });
 }
