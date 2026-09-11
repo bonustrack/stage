@@ -28,6 +28,7 @@ export function EditProfileSection({ address, name, onSaved, onImagePicked }: {
   const [image, setImage] = useState<PickedFile | null>(null);
   const [pickNonce, setPickNonce] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
 
   useEffect(() => { setDraft(draftFrom(current)); }, [current.displayName, current.description]);
 
@@ -35,11 +36,17 @@ export function EditProfileSection({ address, name, onSaved, onImagePicked }: {
   const dirty = hasChanges(current, draft, image !== null);
 
   const save = (): void => {
-    if (busy || !dirty || problem) return;
+    if (busy || problem) return;
+    if (!dirty) { setStatus('Nothing changed yet.'); return; }
     setBusy(true);
+    setStatus('Uploading and sending the transaction…');
     void saveBasenameProfile(address, name, { ...changedFields(current, draft), image: image ?? undefined })
-      .then(() => { setImage(null); onImagePicked(null); flash('Profile saved. It can take a minute to appear everywhere.'); onSaved(); })
-      .catch((err: unknown) => { flash(`Could not save: ${err instanceof Error ? err.message.split('\n')[0] : String(err)}`); })
+      .then((hash) => {
+        setImage(null); onImagePicked(null); onSaved();
+        setStatus(hash ? `Saved onchain (${hash.slice(0, 10)}…). It can take a minute to appear everywhere.` : 'Nothing to save.');
+        flash('Profile saved.');
+      })
+      .catch((err: unknown) => { setStatus(`Could not save: ${err instanceof Error ? err.message.split('\n')[0] ?? 'unknown error' : String(err)}`); })
       .finally(() => { setBusy(false); });
   };
 
@@ -52,7 +59,7 @@ export function EditProfileSection({ address, name, onSaved, onImagePicked }: {
       <Box padding={{ x: 16 }}>
         <Textarea value={draft.description} onChangeText={(v) => { setDraft({ ...draft, description: v }); }} placeholder="About you" placeholderTextColor={sub} dark={dark} disabled={busy} rows={3} style={fieldStyle(fg, border)} />
       </Box>
-      {problem ? <Box padding={{ x: 16 }}><Text value={problem} size="md" color="secondary" /></Box> : null}
+      {problem ?? status ? <Box padding={{ x: 16 }}><Text value={problem ?? status ?? ''} size="md" color="secondary" /></Box> : null}
       <SettingsList>
         <SettingsButtonRow
           label={image ? 'Picture selected, save to apply' : 'Change picture'}
