@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import * as Notifications from 'expo-notifications';
+import { Linking, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Box, Col, WEB_EDGE_CONTENT_WIDE, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../layout';
 import { Caption } from '@stage-labs/kit/react-native/caption';
@@ -12,7 +13,7 @@ import { getOrCreateXmtpClient } from '../../modules/messaging';
 import { registerPushWithServer, unregisterPushFromServer } from '../../lib/push';
 import { describePushStatus, usePushStatus } from '../../lib/pushStatus';
 import { StackHeader } from '../chrome/StackHeader';
-import { SettingsList, SettingsToggleRow } from './rows';
+import { SettingsButtonRow, SettingsList, SettingsToggleRow } from './rows';
 
 export function NotificationsSettings(): React.ReactElement {
   const { text: fg } = usePalette();
@@ -40,7 +41,7 @@ export function NotificationsSettings(): React.ReactElement {
   const permLabel = perm === 'granted'
     ? 'System notifications are allowed.'
     : perm === 'denied'
-      ? 'Blocked in system settings — enable notifications for Metro in your OS settings.'
+      ? 'Blocked in system settings. Allow notifications for Stage to receive push.'
       : 'System permission will be requested when you enable push.';
 
   return (
@@ -56,7 +57,7 @@ export function NotificationsSettings(): React.ReactElement {
               label="Push notifications"
               name="push"
               checked={enabled}
-              description="Get notified about new messages even when Metro is closed."
+              description="Get notified about new messages even when Stage is closed."
               control="switch"
               onChange={onToggle}
             />
@@ -68,6 +69,17 @@ export function NotificationsSettings(): React.ReactElement {
         <Caption color={fg} style={{ paddingHorizontal: 16, paddingTop: 8 }}>
           {describePushStatus(status)}
         </Caption>
+        {perm === 'denied' && Platform.OS !== 'web' ? (
+          <Box padding={{ top: 12 }}>
+            <SettingsList>
+              <SettingsButtonRow
+                label="Open system settings"
+                description="Allow notifications for Stage, then turn push off and on again."
+                onPress={() => { void Linking.openSettings(); }}
+              />
+            </SettingsList>
+          </Box>
+        ) : null}
       </ScrollView>
     </Col>
   );
