@@ -82,7 +82,8 @@
     "./zerodev/scan": "./src/zerodev/scan.ts",
     "./zerodev/recovery": "./src/zerodev/recovery.ts",
     "./zerodev/validatorPlan": "./src/zerodev/validatorPlan.ts",
-    "./zerodev/passkeyLink": "./src/zerodev/passkeyLink.ts"
+    "./zerodev/passkeyLink": "./src/zerodev/passkeyLink.ts",
+    "./zerodev/recoveryKeyAccess": "./src/zerodev/recoveryKeyAccess.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

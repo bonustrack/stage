@@ -17,6 +17,7 @@ import { transferKindFor } from '../../lib/accountTransfer';
 import { TransferAccountSheet } from '../accounts/TransferAccountSheet';
 import { SettingsButtonRow, SettingsList, SettingsNavRow } from '../settings/rows';
 import { describeLinkResult, linkPasskeyForRecord, passkeysAvailable } from '../../lib/zerodev';
+import { RecoveryKeyRow } from '../settings/RecoveryKeyRow';
 
 interface SectionColors { fg: string; head: string; sub: string; border: string; rowBg: string }
 
@@ -90,6 +91,7 @@ function AccountRows({ rec, revealed, onExport, onMove }: {
       {rec.type === 'smart' && !rec.passkey && passkeysAvailable() ? (
         <SettingsNavRow label="Use my passkey on this device" iconStart="key" onPress={() => { linkPasskey(rec); }} />
       ) : null}
+      <RecoveryKeyRow rec={rec} />
       {canExportPrivateKey(rec) && !revealed ? (
         <SettingsNavRow label="Export private key" iconStart="wallet" iconEnd="chevronDown" onPress={onExport} />
       ) : null}
