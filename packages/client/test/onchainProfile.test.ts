@@ -45,7 +45,6 @@ function fakeClient(answers: { name: string; addr: string; text?: string }, fail
       if (functionName === 'addr') return answers.addr;
       return answers.text ?? '';
     },
-    getEnsName: async () => { throw new Error('no mainnet'); },
   } as unknown as PublicClient;
 }
 
@@ -60,10 +59,9 @@ describe('resolveBasenameProfile', () => {
     expect(await resolveBasenameProfile(client, ALICE)).toBeNull();
   });
 
-  test('falls back from ENS to basenames and swallows RPC failures', async () => {
-    const clients = { mainnet: fakeClient({ name: '', addr: '' }), base: fakeClient({ name: 'tony.base.eth', addr: ALICE }) };
+  test('resolves through the Base client and swallows RPC failures', async () => {
+    const clients = { base: fakeClient({ name: 'tony.base.eth', addr: ALICE }) };
     expect(await resolveOnchainProfile(clients, ALICE)).toEqual({ name: 'tony.base.eth', avatar: undefined, source: 'basename' });
-    const broken = { mainnet: fakeClient({ name: '', addr: '' }, true), base: fakeClient({ name: '', addr: '' }, true) };
-    expect(await resolveOnchainProfile(broken, ALICE)).toBeNull();
+    expect(await resolveOnchainProfile({ base: fakeClient({ name: '', addr: '' }, true) }, ALICE)).toBeNull();
   });
 });

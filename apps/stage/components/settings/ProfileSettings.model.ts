@@ -27,18 +27,9 @@ export function profileView(state: ProfileState): ProfileView {
       claimVisible: false,
     };
   }
-  if (state.source === 'ens' && state.name) {
-    return {
-      title: state.name,
-      explanation: 'Your name and picture come from your ENS primary name. Change the avatar record on ENS to update them everywhere.',
-      canChangePicture: false,
-      manageLabel: 'Manage on ENS',
-      claimVisible: false,
-    };
-  }
   return {
     title: state.name ?? '',
-    explanation: 'Stage shows names and pictures from ENS and Basenames. Claim a Basename with this wallet, set it as primary, and it appears here and for everyone you chat with.',
+    explanation: 'Stage shows names and pictures from Basenames. Claim one with this wallet, set it as primary, and it appears here and for everyone you chat with.',
     canChangePicture: false,
     manageLabel: null,
     claimVisible: true,

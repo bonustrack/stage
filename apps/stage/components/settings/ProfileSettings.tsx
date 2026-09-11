@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Text } from '@stage-labs/kit/react-native/text';
 import type { PickedFile } from '@stage-labs/kit/react-native/file-picker';
-import { BASENAME_CLAIM_URL, manageNameUrl } from '@stage-labs/client/identity/basenameWrite';
+import { BASENAME_CLAIM_URL, manageBasenameUrl } from '@stage-labs/client/identity/basenameWrite';
 import { Box, Col, WEB_EDGE_CONTENT_WIDE, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../layout';
 import { usePalette } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
@@ -50,7 +50,7 @@ function ProfileActions({ view, name, address, busy, onChangePicture }: {
         />
       ) : null}
       {view.manageLabel && name ? (
-        <SettingsButtonRow label={view.manageLabel} onPress={() => { capabilities.openUrl(manageNameUrl(name)); }} />
+        <SettingsButtonRow label={view.manageLabel} onPress={() => { capabilities.openUrl(manageBasenameUrl(name)); }} />
       ) : null}
       {view.claimVisible ? (
         <SettingsButtonRow

@@ -11,12 +11,6 @@ describe('profileView', () => {
     expect(view.claimVisible).toBe(false);
   });
 
-  test('an ENS name is managed on ENS and cannot be edited in the app', () => {
-    const view = profileView({ address: ADDR, name: 'nick.eth', source: 'ens' });
-    expect(view.canChangePicture).toBe(false);
-    expect(view.manageLabel).toBe('Manage on ENS');
-  });
-
   test('without an onchain name the claim action is offered', () => {
     const view = profileView({ address: ADDR, name: 'Tony' });
     expect(view.claimVisible).toBe(true);

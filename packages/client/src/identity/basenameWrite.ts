@@ -1,6 +1,6 @@
 import { encodeFunctionData, namehash, type Hex } from 'viem';
 import { normalize } from 'viem/ens';
-import { BASENAME_L2_RESOLVER, isBasename } from './onchainProfile';
+import { BASENAME_L2_RESOLVER } from './onchainProfile';
 
 export const BASENAME_REVERSE_REGISTRAR = '0x79EA96012eEa67A83431F1701B3dFf7e37F9E282' as const;
 export const BASENAME_CLAIM_URL = 'https://www.base.org/names';
@@ -39,7 +39,6 @@ export function encodeSetPrimaryBasename(name: string): ContractCall {
   };
 }
 
-export function manageNameUrl(name: string): string {
-  if (isBasename(name)) return `https://www.base.org/name/${name.slice(0, -'.base.eth'.length)}`;
-  return `https://app.ens.domains/${name}`;
+export function manageBasenameUrl(name: string): string {
+  return `https://www.base.org/name/${name.replace(/\.base\.eth$/i, '')}`;
 }

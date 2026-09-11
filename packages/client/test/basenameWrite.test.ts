@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { BASENAME_REVERSE_REGISTRAR, encodeSetBasenameAvatar, encodeSetPrimaryBasename, manageNameUrl } from '../src/identity/basenameWrite';
+import { BASENAME_REVERSE_REGISTRAR, encodeSetBasenameAvatar, encodeSetPrimaryBasename, manageBasenameUrl } from '../src/identity/basenameWrite';
 import { BASENAME_L2_RESOLVER } from '../src/identity/onchainProfile';
 
 describe('basename write calls', () => {
@@ -15,8 +15,7 @@ describe('basename write calls', () => {
     expect(call.data.startsWith('0xc47f0027')).toBe(true);
   });
 
-  test('links to the right manager for each name kind', () => {
-    expect(manageNameUrl('shrek.base.eth')).toBe('https://www.base.org/name/shrek');
-    expect(manageNameUrl('nick.eth')).toBe('https://app.ens.domains/nick.eth');
+  test('links to the base.org manager for the name', () => {
+    expect(manageBasenameUrl('shrek.base.eth')).toBe('https://www.base.org/name/shrek');
   });
 });

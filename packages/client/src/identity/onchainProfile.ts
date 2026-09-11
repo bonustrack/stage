@@ -1,6 +1,6 @@
 import { createPublicClient, encodePacked, http, keccak256, namehash, stringToBytes, type Hex, type PublicClient } from 'viem';
 import { normalize } from 'viem/ens';
-import { base, mainnet } from 'viem/chains';
+import { base } from 'viem/chains';
 
 export const BASENAME_L2_RESOLVER = '0xC6d566A56A1aFf6508b41f6c90ff131615583BCD' as const;
 
@@ -22,7 +22,7 @@ export const L2_RESOLVER_ABI = [
   },
 ] as const;
 
-export type OnchainProfileSource = 'ens' | 'basename';
+export type OnchainProfileSource = 'basename';
 
 export interface OnchainProfile {
   name: string;
@@ -31,7 +31,6 @@ export interface OnchainProfile {
 }
 
 export interface ProfileClients {
-  mainnet: PublicClient;
   base: PublicClient;
 }
 
@@ -56,16 +55,10 @@ export function usableAvatarUri(value: string | null | undefined): string | unde
 }
 
 export function makeProfileClients(rpcUrlFor: (chainId: number) => string): ProfileClients {
-  const make = (chain: typeof mainnet | typeof base): PublicClient =>
-    createPublicClient({ chain, transport: http(rpcUrlFor(chain.id)), batch: { multicall: true } }) as PublicClient;
-  return { mainnet: make(mainnet), base: make(base) };
-}
-
-export async function resolveEnsProfile(client: PublicClient, address: string): Promise<OnchainProfile | null> {
-  const name = await client.getEnsName({ address: address as Hex });
-  if (!name) return null;
-  const avatar = await client.getEnsAvatar({ name: normalize(name) }).catch(() => null);
-  return { name, avatar: usableAvatarUri(avatar), source: 'ens' };
+  const client = createPublicClient({
+    chain: base, transport: http(rpcUrlFor(base.id)), batch: { multicall: true },
+  }) as PublicClient;
+  return { base: client };
 }
 
 export async function resolveBasenameProfile(client: PublicClient, address: string): Promise<OnchainProfile | null> {
@@ -82,7 +75,5 @@ export async function resolveBasenameProfile(client: PublicClient, address: stri
 }
 
 export async function resolveOnchainProfile(clients: ProfileClients, address: string): Promise<OnchainProfile | null> {
-  const ens = await resolveEnsProfile(clients.mainnet, address).catch(() => null);
-  if (ens) return ens;
   return resolveBasenameProfile(clients.base, address).catch(() => null);
 }
