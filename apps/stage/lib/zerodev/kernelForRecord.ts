@@ -2,7 +2,7 @@ import '../cryptoShim';
 import type { Hex, PublicClient } from 'viem';
 import { createKernelAccount, type CreateKernelAccountReturnType, type KernelAccountClient } from '@zerodev/sdk';
 import {
-  describeUnavailableSigning, planKernelSigning, validationIdOf, type KernelValidationState,
+  KERNEL_EXECUTE_SELECTOR, describeUnavailableSigning, planKernelSigning, validationIdOf, type KernelValidationState,
 } from '@stage-labs/client/zerodev/validatorPlan';
 import type { AccountRecord } from '../accounts';
 import { smartOwnerSigner } from './keyring';
@@ -19,17 +19,24 @@ const KERNEL_VALIDATION_ABI = [
     inputs: [{ name: 'vId', type: 'bytes21' }],
     outputs: [{ name: 'nonce', type: 'uint32' }, { name: 'hook', type: 'address' }],
   },
+  {
+    name: 'isAllowedSelector', type: 'function', stateMutability: 'view',
+    inputs: [{ name: 'vId', type: 'bytes21' }, { name: 'selector', type: 'bytes4' }],
+    outputs: [{ type: 'bool' }],
+  },
 ] as const;
 
 async function readValidationState(publicClient: PublicClient, account: Hex, ecdsaValidator: Hex): Promise<KernelValidationState> {
   const code = await publicClient.getCode({ address: account });
-  if (!code || code === '0x') return { rootValidatorId: null, ecdsaInstalled: false };
+  if (!code || code === '0x') return { rootValidatorId: null, ecdsaInstalled: false, ecdsaCanExecute: false };
   const kernel = { address: account, abi: KERNEL_VALIDATION_ABI } as const;
-  const [rootValidatorId, [, hook]] = await Promise.all([
+  const ecdsaId = validationIdOf(ecdsaValidator);
+  const [rootValidatorId, [, hook], ecdsaCanExecute] = await Promise.all([
     publicClient.readContract({ ...kernel, functionName: 'rootValidator' }),
-    publicClient.readContract({ ...kernel, functionName: 'validationConfig', args: [validationIdOf(ecdsaValidator)] }),
+    publicClient.readContract({ ...kernel, functionName: 'validationConfig', args: [ecdsaId] }),
+    publicClient.readContract({ ...kernel, functionName: 'isAllowedSelector', args: [ecdsaId, KERNEL_EXECUTE_SELECTOR] }).catch(() => false),
   ]);
-  return { rootValidatorId, ecdsaInstalled: hook.toLowerCase() !== ZERO_ADDRESS };
+  return { rootValidatorId, ecdsaInstalled: hook.toLowerCase() !== ZERO_ADDRESS, ecdsaCanExecute };
 }
 
 async function passkeyKernelFor(publicClient: PublicClient, rec: AccountRecord, hdIndex: number): Promise<CreateKernelAccountReturnType | null> {

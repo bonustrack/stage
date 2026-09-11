@@ -6,17 +6,18 @@ const PASSKEY_ROOT = '0x017ab16ff354acb328452f1d445b3ddee9a91e9e69';
 
 describe('planKernelSigning', () => {
   test('prefers the passkey whenever this device can use it', () => {
-    expect(planKernelSigning({ rootValidatorId: PASSKEY_ROOT, ecdsaInstalled: true, ecdsaValidator: ECDSA, passkeyUsable: true })).toBe('passkey');
+    expect(planKernelSigning({ rootValidatorId: PASSKEY_ROOT, ecdsaInstalled: true, ecdsaCanExecute: false, ecdsaValidator: ECDSA, passkeyUsable: true })).toBe('passkey');
   });
 
   test('signs as root with the ECDSA key for undeployed or ECDSA-rooted accounts', () => {
-    expect(planKernelSigning({ rootValidatorId: null, ecdsaInstalled: false, ecdsaValidator: ECDSA, passkeyUsable: false })).toBe('ecdsa-root');
-    expect(planKernelSigning({ rootValidatorId: validationIdOf(ECDSA), ecdsaInstalled: true, ecdsaValidator: ECDSA, passkeyUsable: false })).toBe('ecdsa-root');
+    expect(planKernelSigning({ rootValidatorId: null, ecdsaInstalled: false, ecdsaCanExecute: false, ecdsaValidator: ECDSA, passkeyUsable: false })).toBe('ecdsa-root');
+    expect(planKernelSigning({ rootValidatorId: validationIdOf(ECDSA), ecdsaInstalled: true, ecdsaCanExecute: false, ecdsaValidator: ECDSA, passkeyUsable: false })).toBe('ecdsa-root');
   });
 
-  test('uses the ECDSA key as a secondary validator when the passkey is root but unusable here', () => {
-    expect(planKernelSigning({ rootValidatorId: PASSKEY_ROOT, ecdsaInstalled: true, ecdsaValidator: ECDSA, passkeyUsable: false })).toBe('ecdsa-secondary');
-    expect(planKernelSigning({ rootValidatorId: PASSKEY_ROOT, ecdsaInstalled: false, ecdsaValidator: ECDSA, passkeyUsable: false })).toBe('unavailable');
+  test('uses the ECDSA key as a secondary validator only when the account lets it execute', () => {
+    expect(planKernelSigning({ rootValidatorId: PASSKEY_ROOT, ecdsaInstalled: true, ecdsaCanExecute: true, ecdsaValidator: ECDSA, passkeyUsable: false })).toBe('ecdsa-secondary');
+    expect(planKernelSigning({ rootValidatorId: PASSKEY_ROOT, ecdsaInstalled: true, ecdsaCanExecute: false, ecdsaValidator: ECDSA, passkeyUsable: false })).toBe('unavailable');
+    expect(planKernelSigning({ rootValidatorId: PASSKEY_ROOT, ecdsaInstalled: false, ecdsaCanExecute: false, ecdsaValidator: ECDSA, passkeyUsable: false })).toBe('unavailable');
   });
 
   test('validation ids are the secondary-type prefix plus the lowercase address', () => {
