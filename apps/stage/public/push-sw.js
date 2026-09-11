@@ -51,7 +51,7 @@ self.addEventListener('push', function (event) {
 });
 
 async function openConversation(convId) {
-  var url = convId ? '/channel/' + convId : '/';
+  var url = convId ? '/#/channel/' + convId : '/';
   var clients = await windowClients();
   var target = clients[0];
   if (target) {
