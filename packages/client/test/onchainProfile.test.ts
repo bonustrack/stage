@@ -41,6 +41,7 @@ function fakeClient(answers: { name: string; addr: string; text?: string }, fail
   return {
     readContract: async ({ functionName }: { functionName: string }) => {
       if (fail) throw new Error('rpc down');
+      if (functionName === 'resolver') return '0x00000000000000000000000000000000000000C0';
       if (functionName === 'name') return answers.name;
       if (functionName === 'addr') return answers.addr;
       return answers.text ?? '';

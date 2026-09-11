@@ -9,7 +9,7 @@ import { Box, Col, WEB_EDGE_CONTENT_WIDE, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PA
 import { usePalette } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
 import { flash } from '../../lib/toast';
-import { getPeerName, getPeerProfileSource, usePeerProfiles } from '../../lib/peerProfiles';
+import { getPeerName, getPeerProfileSource, invalidatePeerProfile, usePeerProfiles } from '../../lib/peerProfiles';
 import { setBasenameAvatar } from '../../lib/profileWrite';
 import { shortAddress, useActiveAccountRecord } from '../../modules/messaging';
 import { Avatar } from '../Avatar';
@@ -17,6 +17,7 @@ import { GroupImagePicker } from '../GroupImagePicker';
 import { StackHeader } from '../chrome/StackHeader';
 import { SettingsButtonRow, SettingsList, SettingsValueRow } from './rows';
 import { profileView, type ProfileView } from './ProfileSettings.model';
+import { ClaimStageName } from './ProfileSettings.claim';
 
 function useAvatarChange(address: string | null, name: string | undefined): { busy: boolean; onPick: (file: PickedFile) => void } {
   const [busy, setBusy] = useState(false);
@@ -49,12 +50,12 @@ function ProfileActions({ view, name, address, busy, onChangePicture }: {
           onPress={onChangePicture}
         />
       ) : null}
-      {view.manageLabel && name ? (
-        <SettingsButtonRow label={view.manageLabel} onPress={() => { capabilities.openUrl(manageBasenameUrl(name)); }} />
+      {view.manageLabel && name && manageBasenameUrl(name) ? (
+        <SettingsButtonRow label={view.manageLabel} onPress={() => { capabilities.openUrl(manageBasenameUrl(name) ?? ''); }} />
       ) : null}
       {view.claimVisible ? (
         <SettingsButtonRow
-          label="Claim a Basename"
+          label="Use a Basename instead"
           description="Opens base.org. Register with this wallet and pick “Set as primary name”."
           onPress={() => { capabilities.openUrl(BASENAME_CLAIM_URL); }}
         />
@@ -91,6 +92,11 @@ export function ProfileSettings(): React.ReactElement {
         <Caption color={fg} style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
           {view.explanation}
         </Caption>
+        {address && view.claimVisible ? (
+          <Box padding={{ bottom: 16 }}>
+            <ClaimStageName address={address} onClaimed={() => { invalidatePeerProfile(address); }} />
+          </Box>
+        ) : null}
         {address ? (
           <Box>
             <ProfileActions

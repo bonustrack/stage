@@ -1,6 +1,7 @@
 import { encodeFunctionData, namehash, type Hex } from 'viem';
 import { normalize } from 'viem/ens';
 import { BASENAME_L2_RESOLVER } from './onchainProfile';
+import { isStageName, STAGE_NAMES_PARENT } from './stageNames';
 
 export const BASENAME_REVERSE_REGISTRAR = '0x79EA96012eEa67A83431F1701B3dFf7e37F9E282' as const;
 export const BASENAME_CLAIM_URL = 'https://www.base.org/names';
@@ -23,9 +24,9 @@ const REVERSE_REGISTRAR_ABI = [
 
 export interface ContractCall { to: Hex; data: Hex }
 
-export function encodeSetBasenameAvatar(name: string, avatarUri: string): ContractCall {
+export function encodeSetBasenameAvatar(name: string, avatarUri: string, resolver: Hex = BASENAME_L2_RESOLVER): ContractCall {
   return {
-    to: BASENAME_L2_RESOLVER,
+    to: resolver,
     data: encodeFunctionData({
       abi: L2_RESOLVER_WRITE_ABI, functionName: 'setText', args: [namehash(normalize(name)), 'avatar', avatarUri],
     }),
@@ -39,6 +40,11 @@ export function encodeSetPrimaryBasename(name: string): ContractCall {
   };
 }
 
-export function manageBasenameUrl(name: string): string {
+export function manageBasenameUrl(name: string): string | null {
+  if (isStageName(name)) return null;
   return `https://www.base.org/name/${name.replace(/\.base\.eth$/i, '')}`;
+}
+
+export function isSubnameOf(name: string, parent = STAGE_NAMES_PARENT): boolean {
+  return name.toLowerCase().endsWith(`.${parent}`);
 }

@@ -19,17 +19,20 @@ export function profileView(state: ProfileState): ProfileView {
     return { title: '', explanation: 'No active account.', canChangePicture: false, manageLabel: null, claimVisible: false };
   }
   if (state.source === 'basename' && state.name) {
+    const stageName = state.name.toLowerCase().endsWith('.stage.base.eth');
     return {
       title: state.name,
-      explanation: 'Your name and picture come from your Basename on Base. Anyone who messages you sees them, in Stage and in other apps.',
+      explanation: stageName
+        ? 'Your free Stage name. Anyone who messages you sees it and your picture, in Stage and in other Base apps.'
+        : 'Your name and picture come from your Basename on Base. Anyone who messages you sees them, in Stage and in other apps.',
       canChangePicture: true,
-      manageLabel: 'Manage on base.org',
+      manageLabel: stageName ? null : 'Manage on base.org',
       claimVisible: false,
     };
   }
   return {
     title: state.name ?? '',
-    explanation: 'Stage shows names and pictures from Basenames. Claim one with this wallet, set it as primary, and it appears here and for everyone you chat with.',
+    explanation: 'Claim a free Stage name below, or use a Basename you already own by setting it as primary on base.org.',
     canChangePicture: false,
     manageLabel: null,
     claimVisible: true,

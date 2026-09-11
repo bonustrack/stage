@@ -15,7 +15,8 @@ describe('basename write calls', () => {
     expect(call.data.startsWith('0xc47f0027')).toBe(true);
   });
 
-  test('links to the base.org manager for the name', () => {
+  test('links to the base.org manager for basenames but not for stage subnames', () => {
     expect(manageBasenameUrl('shrek.base.eth')).toBe('https://www.base.org/name/shrek');
+    expect(manageBasenameUrl('fabien.stage.base.eth')).toBeNull();
   });
 });
