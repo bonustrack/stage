@@ -1,0 +1,38 @@
+name: Distribute release to testers
+
+# Re-sends an already published GitHub Release APK to the Firebase App
+# Distribution tester group, without rebuilding. Use it to hand an existing
+# version to newly added testers or after fixing the distribution secret.
+# Needs FIREBASE_APP_DISTRIBUTION_SA_JSON (see release-stage.yml).
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to distribute (for example v0.1.2)'
+        required: true
+        type: string
+
+jobs:
+  distribute:
+    runs-on: ubuntu-latest
+    env:
+      SA_JSON: ${{ secrets.FIREBASE_APP_DISTRIBUTION_SA_JSON }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Download the release APK
+        run: gh release download "${{ inputs.tag }}" --repo "${{ github.repository }}" --pattern 'stage.apk' --dir artifacts
+      - name: Distribute to testers
+        run: |
+          set -euo pipefail
+          if [ -z "${SA_JSON}" ]; then
+            echo "::error::FIREBASE_APP_DISTRIBUTION_SA_JSON secret is not set." >&2
+            exit 1
+          fi
+          printf '%s' "$SA_JSON" > "$RUNNER_TEMP/firebase-sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-sa.json"
+          npx --yes firebase-tools@14 appdistribution:distribute artifacts/stage.apk \
+            --app 1:163881755635:android:d88662b6bbcd166a7da886 \
+            --groups testers \
+            --release-notes "Stage ${{ inputs.tag }}"
+          rm -f "$RUNNER_TEMP/firebase-sa.json"

@@ -128,6 +128,36 @@ jobs:
           path: stage.ipa
           if-no-files-found: ignore
 
+  testers:
+    # Hands the same APK to the whitelisted tester group through Firebase App
+    # Distribution, so people can install it without the Play store. Needs the
+    # FIREBASE_APP_DISTRIBUTION_SA_JSON secret: a Firebase service account key
+    # with the "Firebase App Distribution Admin" role on project metro-e47f6.
+    needs: [guard, android]
+    if: needs.guard.outputs.changed == 'true' && needs.android.result == 'success'
+    runs-on: ubuntu-latest
+    env:
+      SA_JSON: ${{ secrets.FIREBASE_APP_DISTRIBUTION_SA_JSON }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: android-apk
+          path: artifacts
+      - name: Distribute to testers
+        run: |
+          set -euo pipefail
+          if [ -z "${SA_JSON}" ]; then
+            echo "::warning::FIREBASE_APP_DISTRIBUTION_SA_JSON is not set; skipping tester distribution."
+            exit 0
+          fi
+          printf '%s' "$SA_JSON" > "$RUNNER_TEMP/firebase-sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-sa.json"
+          npx --yes firebase-tools@14 appdistribution:distribute artifacts/stage.apk \
+            --app 1:163881755635:android:d88662b6bbcd166a7da886 \
+            --groups testers \
+            --release-notes "Stage v${{ needs.guard.outputs.version }} (${{ github.sha }})"
+          rm -f "$RUNNER_TEMP/firebase-sa.json"
+
   release:
     needs: [guard, android, ios]
     if: needs.guard.outputs.changed == 'true' && !cancelled() && needs.android.result == 'success'
