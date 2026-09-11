@@ -1,141 +1,142 @@
-
-
 import { Platform } from 'react-native';
-import * as Notifications from 'expo-notifications';
-import { appStorage } from '../platform/storage';
 import type { Client } from '@xmtp/react-native-sdk';
-import { PublicIdentity } from '@xmtp/react-native-sdk';
-import { ensureNotificationReady, getDeviceFcmToken } from './push.device';
-import { DAEMON_INBOX_ADDRESS, buildRegisterPushBody } from './pushRegister.control';
+import { getAllPushTopics, getHmacKeys } from '@xmtp/react-native-sdk';
+import {
+  PUSH_RPC, deleteInstallationBody, groupIdOfTopic, isWelcomeTopic, registerInstallationBody,
+  subscribeWithMetadataBody, type HmacKeysByTopic, type PushPlatform,
+} from '@stage-labs/client/xmtp/pushServer';
+import { isSyncGroupName } from '@stage-labs/client/xmtp/readState';
+import { appStorage } from '../platform/storage';
+import { getDeviceFcmToken } from './push.device';
 import { isPushEnabledSync, loadPushEnabled } from './pushPref';
+import { getCachedXmtpClient } from './xmtp.state';
 
 export { isMetroControlBody } from './pushRegister.control';
-import { buildDisablePushBody } from './pushRegister.control';
 export { usePushDeepLinks } from './pushRegister.deeplink';
 
-const REGISTER_TTL_MS = 6 * 60 * 60 * 1000;
-const lastRegisterKey = (account: string): string => `push.register.${account}`;
+const SERVER_URL_ENV: unknown = process.env.EXPO_PUBLIC_PUSH_SERVER_URL;
+const PUSH_SERVER_URL =
+  typeof SERVER_URL_ENV === 'string' && SERVER_URL_ENV !== ''
+    ? SERVER_URL_ENV.replace(/\/$/, '')
+    : 'https://push.stage.box';
 
-function platformTag(): 'android' | 'ios' | null {
+const REGISTER_TTL_MS = 6 * 60 * 60 * 1000;
+const TOPIC_REFRESH_DEBOUNCE_MS = 1_500;
+const stateKey = (installationId: string): string => `push.server.${installationId}`;
+
+type PushClient = Pick<Client, 'installationId' | 'conversations'>;
+
+interface RegisterState { token: string; at: number; topics: string }
+
+function platformTag(): PushPlatform | null {
   if (Platform.OS === 'android') return 'android';
   if (Platform.OS === 'ios') return 'ios';
   return null;
 }
 
-type PushClient = Pick<Client, 'inboxId' | 'publicIdentity' | 'conversations'>;
-
-async function isRecentlyRegistered(stateKey: string, token: string): Promise<boolean> {
-  const prev = await appStorage.get(stateKey).catch(() => null);
-  if (!prev) return false;
-  try {
-    const { token: prevToken, at } = JSON.parse(prev) as { token: string; at: number };
-    return prevToken === token && Date.now() - at < REGISTER_TTL_MS;
-  } catch { return false; }
+function warn(label: string, err: unknown): void {
+  if (process.env.NODE_ENV !== 'production') console.warn(label, (err as Error).message);
 }
 
-async function sendRegisterControlDm(
-  client: PushClient,
-  args: { token: string; platform: 'android' | 'ios'; address: string; inboxId: string; stateKey: string },
-): Promise<void> {
-  const dm = await client.conversations.findOrCreateDmWithIdentity(
-    new PublicIdentity(DAEMON_INBOX_ADDRESS, 'ETHEREUM'),
-  );
-  const body = buildRegisterPushBody({
-    token: args.token, platform: args.platform, address: args.address, inboxId: args.inboxId,
+async function postJson(path: string, body: unknown): Promise<void> {
+  const res = await fetch(`${PUSH_SERVER_URL}${path}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
   });
-  await dm.send(body);
-  await appStorage.set(args.stateKey, JSON.stringify({ token: args.token, at: Date.now() }))
-    .catch(() => undefined);
+  if (!res.ok) throw new Error(`push server ${path} responded ${res.status}`);
 }
 
-export async function registerPushWithDaemon(client: PushClient): Promise<void> {
+async function readState(key: string): Promise<RegisterState | null> {
+  const raw = await appStorage.get(key).catch(() => null);
+  if (!raw) return null;
   try {
-    const platform = platformTag();
+    const parsed = JSON.parse(raw) as Partial<RegisterState>;
+    if (typeof parsed.token !== 'string' || typeof parsed.at !== 'number') return null;
+    return { token: parsed.token, at: parsed.at, topics: typeof parsed.topics === 'string' ? parsed.topics : '' };
+  } catch { return null; }
+}
+
+async function hiddenGroupIds(client: PushClient): Promise<Set<string>> {
+  const hidden = new Set<string>();
+  const groups = await client.conversations.listGroups().catch(() => []);
+  for (const group of groups) {
+    const name = await group.name().catch(() => '');
+    if (isSyncGroupName(name)) hidden.add(group.id.toLowerCase());
+  }
+  return hidden;
+}
+
+async function subscribableTopics(client: PushClient): Promise<{ topics: string[]; hmacKeys: HmacKeysByTopic }> {
+  const all = await getAllPushTopics(client.installationId);
+  const hidden = await hiddenGroupIds(client);
+  const topics = all.filter((topic) => {
+    const groupId = groupIdOfTopic(topic);
+    return groupId === null || !hidden.has(groupId);
+  });
+  const keys = await getHmacKeys(client.installationId);
+  const hmacKeys: HmacKeysByTopic = {};
+  for (const [topic, entry] of Object.entries(keys.hmacKeys)) hmacKeys[topic] = entry.values;
+  return { topics, hmacKeys };
+}
+
+async function subscribeTopics(client: PushClient, prev: RegisterState | null, token: string, registeredAt: number): Promise<void> {
+  const key = stateKey(client.installationId);
+  const subs = await subscribableTopics(client);
+  const signature = [...subs.topics].sort().join('\n');
+  if (prev?.at === registeredAt && prev.topics === signature) return;
+  await postJson(
+    PUSH_RPC.subscribe,
+    subscribeWithMetadataBody(client.installationId, subs.topics, subs.hmacKeys, isWelcomeTopic),
+  );
+  const next: RegisterState = { token, at: registeredAt, topics: signature };
+  await appStorage.set(key, JSON.stringify(next)).catch(() => undefined);
+}
+
+async function pushAllowed(): Promise<PushPlatform | null> {
+  const platform = platformTag();
+  if (!platform) return null;
+  await loadPushEnabled();
+  return isPushEnabledSync() ? platform : null;
+}
+
+export async function registerPushWithServer(client: PushClient): Promise<void> {
+  try {
+    const platform = await pushAllowed();
     if (!platform) return;
-
-    await loadPushEnabled();
-    if (!isPushEnabledSync()) return;
-
-    const address = client.publicIdentity?.identifier;
-    const inboxId = client.inboxId;
-    if (!address || !inboxId) return;
-
     const token = await getDeviceFcmToken();
     if (!token) return;
-
-    const stateKey = lastRegisterKey(address.toLowerCase());
-    if (await isRecentlyRegistered(stateKey, token)) return;
-
-    await sendRegisterControlDm(client, { token, platform, address, inboxId, stateKey });
-  } catch (err) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.warn('registerPushWithDaemon failed', (err as Error).message);
+    const prev = await readState(stateKey(client.installationId));
+    const fresh = prev !== null && prev.token === token && Date.now() - prev.at < REGISTER_TTL_MS;
+    if (!fresh) {
+      await postJson(PUSH_RPC.register, registerInstallationBody(client.installationId, token, platform));
     }
+    await subscribeTopics(client, fresh ? prev : null, token, fresh ? prev.at : Date.now());
+  } catch (err) {
+    warn('registerPushWithServer failed', err);
   }
 }
 
-export async function unregisterPushFromDaemon(client: PushClient): Promise<void> {
+export async function unregisterPushFromServer(client: PushClient): Promise<void> {
   try {
-    const address = client.publicIdentity?.identifier;
-    const inboxId = client.inboxId;
-    if (!address || !inboxId) return;
-    const account = address.toLowerCase();
-    const prev = await appStorage.get(lastRegisterKey(account)).catch(() => null);
-    await appStorage.delete(lastRegisterKey(account)).catch(() => undefined);
-    let token: string | null = null;
-    if (prev) { try { token = (JSON.parse(prev) as { token?: string }).token ?? null; } catch { } }
-    if (!token) return;
-    const dm = await client.conversations.findOrCreateDmWithIdentity(
-      new PublicIdentity(DAEMON_INBOX_ADDRESS, 'ETHEREUM'),
-    );
-    await dm.send(buildDisablePushBody({ token, address, inboxId }));
+    const key = stateKey(client.installationId);
+    const prev = await readState(key);
+    await appStorage.delete(key).catch(() => undefined);
+    if (!prev) return;
+    await postJson(PUSH_RPC.remove, deleteInstallationBody(client.installationId));
   } catch (err) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.warn('unregisterPushFromDaemon failed', (err as Error).message);
-    }
+    warn('unregisterPushFromServer failed', err);
   }
 }
 
-const bgDeliveredMsgIds = new Set<string>();
-const BG_DELIVERED_MAX = 200;
+let topicRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 
-export function markBackgroundDelivered(messageId: string | null | undefined): void {
-  if (!messageId) return;
-  bgDeliveredMsgIds.add(messageId);
-  if (bgDeliveredMsgIds.size > BG_DELIVERED_MAX) {
-    const oldest = bgDeliveredMsgIds.values().next().value;
-    if (oldest !== undefined) bgDeliveredMsgIds.delete(oldest);
-  }
-}
-
-function consumeBackgroundDelivered(messageId: string | undefined): boolean {
-  if (!messageId) return false;
-  return bgDeliveredMsgIds.delete(messageId);
-}
-
-export async function presentInboundNotification(args: {
-  title: string;
-  body: string;
-  convId: string;
-  messageId?: string;
-}): Promise<void> {
-  try {
-    if (consumeBackgroundDelivered(args.messageId)) return;
-    const ready = await ensureNotificationReady();
-    if (!ready) return;
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: args.title,
-        body: args.body,
-        sound: 'default',
-        data: { convId: args.convId, messageId: args.messageId ?? null, kind: 'xmtp-inbound' },
-        ...(Platform.OS === 'android' ? { channelId: 'xmtp' } : {}),
-      },
-      trigger: null,
-    });
-  } catch (err) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.warn('presentInboundNotification failed', (err as Error).message);
-    }
-  }
+export function schedulePushTopicRefresh(): void {
+  if (platformTag() === null) return;
+  if (topicRefreshTimer) clearTimeout(topicRefreshTimer);
+  topicRefreshTimer = setTimeout(() => {
+    topicRefreshTimer = null;
+    const client = getCachedXmtpClient();
+    if (client) void registerPushWithServer(client);
+  }, TOPIC_REFRESH_DEBOUNCE_MS);
 }

@@ -17,7 +17,7 @@ export function setAppForeground(foreground: boolean): boolean {
 }
 
 export interface XmtpPushEvent {
-  line?: string | null;
+  topic?: string | null;
   convId?: string | null;
   messageId?: string | null;
 }

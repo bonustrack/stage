@@ -16,6 +16,7 @@ import type { Row as RowT } from './HomeScreen.helpers';
 import { summarize } from './HomeScreen.helpers';
 import { makeMsgStreamHandler } from './HomeScreen.stream';
 import { registerHiddenConv } from '../../lib/readSyncRegistry';
+import { schedulePushTopicRefresh } from '../../lib/push';
 
 interface SyncArgs {
   accountEpoch: number;
@@ -105,6 +106,7 @@ async function subscribeConvStream(
       (cb: (conv: Conversation | null) => Promise<void>) => Promise<unknown>;
     const streamResult: unknown = await streamFn(async (conv) => {
       if (run.cancelled || !conv) return;
+      schedulePushTopicRefresh();
       if (await conversationIsSyncGroup(conv).catch(() => false)) { registerHiddenConv(conv.id); return; }
       const cs = await (conv as unknown as { consentState: () => Promise<string> })
         .consentState().catch(() => 'allowed');

@@ -2,7 +2,7 @@
 import { AppState } from 'react-native';
 import { setAppForeground, subscribeXmtpPush } from '../modules/metro-pill';
 import { isMetroControlBody } from './push';
-import { markBackgroundDelivered } from './pushRegister';
+import { markBackgroundDelivered } from './pushNotify';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from './xmtp.client';
 import { envelopeOfXmtpMessage } from './xmtp.messages';
 import { activeFeedLines, registerGlobalStreamTeardown } from './xmtp.state';

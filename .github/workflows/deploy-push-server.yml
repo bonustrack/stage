@@ -1,0 +1,41 @@
+name: Deploy push server
+
+# Deploys apps/push (the XMTP notification server, pinned to an upstream
+# commit in its Dockerfile) to Fly whenever that folder changes on main, or on
+# demand. Needs the FLY_API_TOKEN repository secret: a deploy token for the
+# stage-push app created with `fly tokens create deploy -a stage-push`.
+# Runtime secrets (database URL, APNs key, FCM credentials) live on the Fly app,
+# not here; see apps/push/README.md.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/push/**'
+      - '.github/workflows/deploy-push-server.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-push-server
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy with flyctl
+        working-directory: apps/push
+        run: |
+          set -euo pipefail
+          if [ -z "${FLY_API_TOKEN}" ]; then
+            echo "FLY_API_TOKEN secret is not set; add it in the repository settings." >&2
+            exit 1
+          fi
+          flyctl deploy --remote-only --config fly.toml --dockerfile Dockerfile

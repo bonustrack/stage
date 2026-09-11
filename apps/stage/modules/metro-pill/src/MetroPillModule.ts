@@ -1,7 +1,7 @@
 import { NativeModule, requireNativeModule } from 'expo-modules-core';
 
 interface XmtpPushEvent {
-  line?: string | null;
+  topic?: string | null;
   convId?: string | null;
   messageId?: string | null;
 }
