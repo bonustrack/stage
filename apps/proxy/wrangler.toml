@@ -18,3 +18,9 @@ routes = [
   { pattern = "proxy.stage.box/*", zone_name = "stage.box" },
   { pattern = "bundler.stage.box/*", zone_name = "stage.box" },
 ]
+
+# Records which address claimed which *.stage.base.eth name (one per address).
+# The operator key that creates the names lives in the NAMES_OPERATOR_KEY secret.
+[[kv_namespaces]]
+binding = "NAMES_KV"
+id = "c02f6c676fb6486b9da51188fa61c7fa"
