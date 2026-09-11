@@ -31,6 +31,7 @@ export * from './identity/format';
 export * from './identity/peerProfiles';
 export * from './identity/onchainProfile';
 export * from './identity/basenameWrite';
+export * from './identity/stageNames';
 export * from './wallet/format';
 export * from './wallet/activityFormat';
 export * from './wallet/assets';

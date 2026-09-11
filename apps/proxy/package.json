@@ -10,7 +10,8 @@
     "test": "bun test test/"
   },
   "dependencies": {
-    "@stage-labs/client": "workspace:*"
+    "@stage-labs/client": "workspace:*",
+    "viem": "^2.51.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250601.0",

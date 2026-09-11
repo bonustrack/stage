@@ -8,6 +8,7 @@ import { parseSettleBody, settleX402 } from './settle.ts';
 import { SsrfError } from './ssrf.ts';
 import { HISTORY_PREFIX, handleHistory } from './historyProxy.ts';
 import { PUSH_PREFIX, handlePush } from './pushProxy.ts';
+import { NAMES_PREFIX, handleNamesRequest, type NamesEnv } from './names.ts';
 
 const CACHE_TTL = 24 * 60 * 60;
 const IMG_CACHE_TTL = 7 * 24 * 60 * 60;
@@ -150,7 +151,7 @@ async function handleSettle(request: Request): Promise<Response> {
 }
 
 export default {
-  async fetch(request: Request, _env: unknown, ctx: ExecutionContext): Promise<Response> {
+  async fetch(request: Request, env: NamesEnv, ctx: ExecutionContext): Promise<Response> {
     const { hostname, pathname } = new URL(request.url);
     if (hostname === BUNDLER_HOST) return handleBundler(request);
     if (pathname === '/health') {
@@ -161,6 +162,10 @@ export default {
     if (pathname === '/x402-settle') return handleSettle(request);
     if (pathname.startsWith(HISTORY_PREFIX)) return handleHistory(request);
     if (pathname.startsWith(PUSH_PREFIX)) return handlePush(request);
+    if (pathname.startsWith(NAMES_PREFIX)) {
+      if (rateLimited(clientIp(request))) return json({ error: 'rate limited' }, 429);
+      return handleNamesRequest(request, env);
+    }
     return json({ error: 'not found' }, 404);
   },
 };

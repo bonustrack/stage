@@ -2,6 +2,7 @@ import { createPublicClient, encodePacked, http, keccak256, namehash, stringToBy
 import { normalize } from 'viem/ens';
 import { base } from 'viem/chains';
 
+export const BASENAME_REGISTRY = '0xB94704422c2a1E396835A571837Aa5AE53285a95' as const;
 export const BASENAME_L2_RESOLVER = '0xC6d566A56A1aFf6508b41f6c90ff131615583BCD' as const;
 
 export const L2_RESOLVER_ABI = [
