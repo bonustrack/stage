@@ -52,8 +52,8 @@ async function resolvePeerConversation(param: string): Promise<ConvState> {
   return { convId: null, resolving: false, error: res.error, pendingAddress: isQueueable(res.error) ? address : null };
 }
 
-export function useResolvedConvId(param: string | undefined): ResolvedConv {
-  const peer = isPeerHandle(param);
+export function useResolvedConvId(param: string | undefined, peerRoute = true): ResolvedConv {
+  const peer = peerRoute && isPeerHandle(param);
   const [attempt, setAttempt] = useState(0);
   const retry = useCallback(() => { setAttempt(a => a + 1); }, []);
   const [state, setState] = useState<ConvState>(() => {
@@ -62,7 +62,7 @@ export function useResolvedConvId(param: string | undefined): ResolvedConv {
     return cached ? { convId: cached, resolving: false, error: false, pendingAddress: null } : RESOLVING;
   });
   useEffect(() => {
-    if (!param || !isPeerHandle(param)) {
+    if (!param || !peerRoute || !isPeerHandle(param)) {
       setState(directState(param));
       return;
     }
@@ -72,7 +72,7 @@ export function useResolvedConvId(param: string | undefined): ResolvedConv {
       .then((next) => { if (!cancelled) setState(next); })
       .catch(() => { if (!cancelled) setState({ convId: null, resolving: false, error: 'failed', pendingAddress: null }); });
     return () => { cancelled = true; };
-  }, [param, attempt]);
+  }, [param, peerRoute, attempt]);
   return { ...state, retry };
 }
 

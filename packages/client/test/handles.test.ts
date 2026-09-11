@@ -10,6 +10,7 @@ describe('parseHandle', () => {
   test('recognises addresses, conversation ids, stage labels, basenames and ens names', () => {
     expect(parseHandle(ADDR)).toEqual({ kind: 'address', value: ADDR.toLowerCase() });
     expect(parseHandle(CONV)).toEqual({ kind: 'conversation', value: CONV });
+    expect(parseHandle('748fc31cf68f1dc53d856830fbdd072c').kind).toBe('conversation');
     expect(parseHandle('Boorger')).toEqual({ kind: 'stage', value: 'boorger.stage.base.eth' });
     expect(parseHandle('shrek.base.eth')).toEqual({ kind: 'basename', value: 'shrek.base.eth' });
     expect(parseHandle('fabien.eth')).toEqual({ kind: 'ens', value: 'fabien.eth' });

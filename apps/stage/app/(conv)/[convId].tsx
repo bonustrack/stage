@@ -9,7 +9,7 @@ import { Box, Col, WEB_EDGE_SCROLL, WEB_CHROME_WIDTH, WEB_CHROME_SHIFT } from '.
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { PendingConversation } from '../../components/PendingConversation';
 import { ConversationFeed } from '../../components/xmtp-conv/ConversationFeed';
@@ -97,7 +97,8 @@ export default function XmtpConversation(): React.ReactElement {
   const { text: fg, link: head, bg, border } = usePalette();
   const sub = fg, rowBg = border;
   const { convId: routeParam, focus } = useLocalSearchParams<{ convId: string; focus?: string }>();
-  const resolved = useResolvedConvId(routeParam);
+  const pathname = usePathname();
+  const resolved = useResolvedConvId(routeParam, !pathname.startsWith('/channel/'));
   const convId = resolved.convId ?? undefined;
   const c = useConversationState(convId, focus);
   const { activeLine } = c;

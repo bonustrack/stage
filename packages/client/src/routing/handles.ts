@@ -5,7 +5,7 @@ export type HandleKind = 'address' | 'conversation' | 'stage' | 'basename' | 'en
 export interface ParsedHandle { kind: HandleKind; value: string }
 
 const ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
-const CONVERSATION_ID_RE = /^(0x)?[0-9a-fA-F]{64}$/;
+const CONVERSATION_ID_RE = /^(0x)?(?:[0-9a-fA-F]{32}|[0-9a-fA-F]{64})$/;
 const LABEL_RE = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
 const NAME_RE = /^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/;
 
