@@ -19,7 +19,7 @@ import { useRouter } from 'expo-router';
 import { flash } from '../../lib/toast';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { DANGER, usePalette } from '../../lib/theme';
-import { Col, Row, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from '../layout';
+import { Col, Row, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT_WIDE } from '../layout';
 import { useWebTabsContentPad } from './webPad';
 import { useNfts, type NftState } from '../../lib/useNfts';
 import { WalletTabs, NftsView, fmtUsd, splitUsd, type WalletTab } from './WalletScreen.parts';
@@ -176,7 +176,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
     <ScrollView
       simultaneousHandlers={panRef}
       style={[{ flex: 1, backgroundColor: bg }, WEB_EDGE_SCROLL]}
-      contentContainerStyle={[{ paddingBottom: 24, flexGrow: 1 }, WEB_EDGE_CONTENT, webTabsPad]}
+      contentContainerStyle={[{ paddingBottom: 24, flexGrow: 1 }, WEB_EDGE_CONTENT_WIDE, webTabsPad]}
       bounces
       alwaysBounceVertical
       overScrollMode="always"
