@@ -10,6 +10,7 @@ import { usePalette } from '../../lib/theme';
 import { setPushEnabled, usePushEnabled } from '../../lib/pushPref';
 import { getOrCreateXmtpClient } from '../../modules/messaging';
 import { registerPushWithServer, unregisterPushFromServer } from '../../lib/push';
+import { describePushStatus, usePushStatus } from '../../lib/pushStatus';
 import { StackHeader } from '../chrome/StackHeader';
 import { SettingsList, SettingsToggleRow } from './rows';
 
@@ -18,6 +19,7 @@ export function NotificationsSettings(): React.ReactElement {
   const insets = useSafeAreaInsets();
   const enabled = usePushEnabled();
   const [perm, setPerm] = useState<string>('undetermined');
+  const status = usePushStatus();
 
   useEffect(() => {
     void Notifications.getPermissionsAsync().then(p => { setPerm(p.status); }).catch(() => undefined);
@@ -62,6 +64,9 @@ export function NotificationsSettings(): React.ReactElement {
         </Box>
         <Caption color={fg} style={{ paddingHorizontal: 16, paddingTop: 12 }}>
           {permLabel}
+        </Caption>
+        <Caption color={fg} style={{ paddingHorizontal: 16, paddingTop: 8 }}>
+          {describePushStatus(status)}
         </Caption>
       </ScrollView>
     </Col>

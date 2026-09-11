@@ -9,6 +9,7 @@ import { isSyncGroupName } from '@stage-labs/client/xmtp/readState';
 import { appStorage } from '../platform/storage';
 import { getDeviceFcmToken } from './push.device';
 import { isPushEnabledSync, loadPushEnabled } from './pushPref';
+import { setPushStatus } from './pushStatus';
 import { getCachedXmtpClient } from './xmtp.state';
 
 export { isMetroControlBody } from './pushRegister.control';
@@ -35,7 +36,9 @@ function platformTag(): PushPlatform | null {
 }
 
 function warn(label: string, err: unknown): void {
-  if (process.env.NODE_ENV !== 'production') console.warn(label, (err as Error).message);
+  const message = err instanceof Error ? err.message : String(err);
+  setPushStatus('failed', message);
+  if (process.env.NODE_ENV !== 'production') console.warn(label, message);
 }
 
 async function postJson(path: string, body: unknown): Promise<void> {
@@ -84,20 +87,31 @@ async function subscribeTopics(client: PushClient, prev: RegisterState | null, t
   const key = stateKey(client.installationId);
   const subs = await subscribableTopics(client);
   const signature = [...subs.topics].sort().join('\n');
-  if (prev?.at === registeredAt && prev.topics === signature) return;
+  if (prev?.at === registeredAt && prev.topics === signature) {
+    setPushStatus('registered', `${subs.topics.length} topics, unchanged`);
+    return;
+  }
   await postJson(
     PUSH_RPC.subscribe,
     subscribeWithMetadataBody(client.installationId, subs.topics, subs.hmacKeys, isWelcomeTopic),
   );
   const next: RegisterState = { token, at: registeredAt, topics: signature };
   await appStorage.set(key, JSON.stringify(next)).catch(() => undefined);
+  setPushStatus('registered', `${subs.topics.length} topics`);
 }
 
 async function pushAllowed(): Promise<PushPlatform | null> {
   const platform = platformTag();
-  if (!platform) return null;
+  if (!platform) {
+    setPushStatus('unsupported');
+    return null;
+  }
   await loadPushEnabled();
-  return isPushEnabledSync() ? platform : null;
+  if (!isPushEnabledSync()) {
+    setPushStatus('disabled');
+    return null;
+  }
+  return platform;
 }
 
 export async function registerPushWithServer(client: PushClient): Promise<void> {
@@ -105,7 +119,11 @@ export async function registerPushWithServer(client: PushClient): Promise<void> 
     const platform = await pushAllowed();
     if (!platform) return;
     const token = await getDeviceFcmToken();
-    if (!token) return;
+    if (!token) {
+      setPushStatus('no-token');
+      return;
+    }
+    setPushStatus('registering');
     const prev = await readState(stateKey(client.installationId));
     const fresh = prev !== null && prev.token === token && Date.now() - prev.at < REGISTER_TTL_MS;
     if (!fresh) {
@@ -122,6 +140,7 @@ export async function unregisterPushFromServer(client: PushClient): Promise<void
     const key = stateKey(client.installationId);
     const prev = await readState(key);
     await appStorage.delete(key).catch(() => undefined);
+    setPushStatus('disabled');
     if (!prev) return;
     await postJson(PUSH_RPC.remove, deleteInstallationBody(client.installationId));
   } catch (err) {
