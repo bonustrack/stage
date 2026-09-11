@@ -66,17 +66,21 @@ describe('A2. callers install the passkey BEFORE messaging (passkey signs the in
   });
 });
 
-describe('B. kernelForRecord.ts — override only for enable-upgraded accounts', () => {
+describe('B. kernelForRecord.ts — validator chosen from the account\'s onchain root', () => {
   test('passkey branch builds from the passkey validator', () => {
     expect(kernelSrc).toContain('passkeyKernelFromStored');
     expect(kernelSrc).toContain('if (rec.passkey)');
   });
   test('passkeySudo => no override; else pin to rec.address', () => {
-    expect(kernelSrc).toContain('rec.passkeySudo ? undefined : (rec.address as `0x${string}`)');
+    expect(kernelSrc).toContain('rec.passkeySudo ? undefined : (rec.address as Hex)');
   });
-  test('fails closed (throws) rather than signing a passkey account with the ECDSA key', () => {
-    expect(kernelSrc).toContain('if (passkeysAvailable())');
-    expect(kernelSrc).toMatch(/throw new Error\([^)]*refusing to sign with the ECDSA key/);
+  test('reads the root validator and the ECDSA execute permission before choosing', () => {
+    expect(kernelSrc).toContain("functionName: 'rootValidator'");
+    expect(kernelSrc).toContain('KERNEL_EXECUTE_SELECTOR');
+    expect(kernelSrc).toContain('planKernelSigning(');
+  });
+  test('fails closed (throws) rather than signing with a key the account does not allow to transact', () => {
+    expect(kernelSrc).toContain('throw new Error(describeUnavailableSigning())');
   });
 });
 

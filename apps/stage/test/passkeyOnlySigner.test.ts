@@ -32,13 +32,13 @@ describe('passkey-only signer (kernelForRecord chokepoint)', () => {
     expect(firstOwnerRead).toBeGreaterThan(passkeyBuild);
   });
 
-  test('passkey account fails closed (throws) instead of signing with the key', () => {
-    expect(body).toContain('if (passkeysAvailable())');
-    expect(body).toMatch(/throw new Error\([^)]*refusing to sign with the ECDSA key/);
+  test('fails closed (throws) unless the account lets the ECDSA key sign as root or secondary', () => {
+    expect(body).toContain("if (plan !== 'ecdsa-root' && plan !== 'ecdsa-secondary') throw new Error(describeUnavailableSigning())");
+    expect(body.indexOf('describeUnavailableSigning()')).toBeLessThan(body.indexOf('smartOwnerSigner'));
   });
 
   test('passkey kernel pins the address only for enable-upgraded accounts', () => {
-    expect(body).toContain('rec.passkeySudo ? undefined : (rec.address as `0x${string}`)');
+    expect(body).toContain('rec.passkeySudo ? undefined : (rec.address as Hex)');
   });
 });
 

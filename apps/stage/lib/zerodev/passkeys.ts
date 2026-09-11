@@ -1,5 +1,6 @@
 
 import '../cryptoShim';
+import type { PasskeyPublicKey } from '@stage-labs/client/zerodev/passkeyLink';
 import { Platform } from 'react-native';
 import {
   bytesToBase64Url,
@@ -144,4 +145,10 @@ export async function assertPasskeyPresence(stored: StoredPasskey): Promise<bool
   } catch {
     return false;
   }
+}
+
+export function linkExistingPasskey(rpId: string, key: PasskeyPublicKey): Promise<StoredPasskey | null> {
+  void rpId;
+  void key;
+  return Promise.resolve(null);
 }
