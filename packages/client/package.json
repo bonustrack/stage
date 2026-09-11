@@ -55,6 +55,7 @@
     "./identity/format": "./src/identity/format.ts",
     "./identity/peerProfiles": "./src/identity/peerProfiles.ts",
     "./identity/onchainProfile": "./src/identity/onchainProfile.ts",
+    "./identity/basenameWrite": "./src/identity/basenameWrite.ts",
     "./wallet/format": "./src/wallet/format.ts",
     "./wallet/activityFormat": "./src/wallet/activityFormat.ts",
     "./wallet/assets": "./src/wallet/assets.ts",

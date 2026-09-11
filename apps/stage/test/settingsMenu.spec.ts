@@ -2,8 +2,9 @@ import { describe, expect, test } from 'bun:test';
 import { SETTINGS_MENU_ITEMS } from '../components/settings/SettingsMenu.model';
 
 describe('settingsMenu', () => {
-  test('menu items list the seven settings sections in order', () => {
+  test('menu items list the eight settings sections in order', () => {
     expect(SETTINGS_MENU_ITEMS).toEqual([
+      { href: '/settings/profile', label: 'Profile', icon: 'userCircle' },
       { href: '/settings/display', label: 'Display', icon: 'sun' },
       { href: '/settings/messenger', label: 'Messenger', icon: 'chat' },
       { href: '/settings/notifications', label: 'Notifications', icon: 'bell' },

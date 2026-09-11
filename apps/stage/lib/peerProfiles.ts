@@ -17,6 +17,8 @@ export {
   isPeerResolved,
   getPeerName,
   getPeerAvatar,
+  getPeerProfileSource,
+  invalidatePeerProfile,
 } from '@stage-labs/client/identity/peerProfiles';
 
 const profileClients = makeProfileClients(broviderRpc);

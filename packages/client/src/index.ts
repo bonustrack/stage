@@ -30,6 +30,7 @@ export * from './api';
 export * from './identity/format';
 export * from './identity/peerProfiles';
 export * from './identity/onchainProfile';
+export * from './identity/basenameWrite';
 export * from './wallet/format';
 export * from './wallet/activityFormat';
 export * from './wallet/assets';

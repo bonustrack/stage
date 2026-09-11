@@ -5,6 +5,7 @@ export interface SettingsMenuItem {
 }
 
 export const SETTINGS_MENU_ITEMS: SettingsMenuItem[] = [
+  { href: '/settings/profile', label: 'Profile', icon: 'userCircle' },
   { href: '/settings/display', label: 'Display', icon: 'sun' },
   { href: '/settings/messenger', label: 'Messenger', icon: 'chat' },
   { href: '/settings/notifications', label: 'Notifications', icon: 'bell' },
