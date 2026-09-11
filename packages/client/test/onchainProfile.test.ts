@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  baseCoinType, baseReverseNode, isBasename, resolveBasenameProfile, resolveOnchainProfile, usableAvatarUri,
+  avatarCacheKey, baseCoinType, baseReverseNode, isBasename, resolveBasenameProfile, resolveOnchainProfile, usableAvatarUri,
 } from '../src/identity/onchainProfile';
 import type { PublicClient } from 'viem';
 
@@ -37,22 +37,30 @@ describe('avatar and name helpers', () => {
   });
 });
 
-function fakeClient(answers: { name: string; addr: string; text?: string }, fail = false): PublicClient {
+function fakeClient(answers: { name: string; addr: string; text?: Record<string, string> }, fail = false): PublicClient {
   return {
-    readContract: async ({ functionName }: { functionName: string }) => {
+    readContract: async ({ functionName, args }: { functionName: string; args?: unknown[] }) => {
       if (fail) throw new Error('rpc down');
       if (functionName === 'resolver') return '0x00000000000000000000000000000000000000C0';
       if (functionName === 'name') return answers.name;
       if (functionName === 'addr') return answers.addr;
-      return answers.text ?? '';
+      return answers.text?.[String(args?.[1])] ?? '';
     },
   } as unknown as PublicClient;
 }
 
 describe('resolveBasenameProfile', () => {
-  test('returns the basename and avatar when forward resolution matches', async () => {
-    const client = fakeClient({ name: 'tony.base.eth', addr: ALICE, text: 'ipfs://pic' });
-    expect(await resolveBasenameProfile(client, ALICE)).toEqual({ name: 'tony.base.eth', avatar: 'ipfs://pic', source: 'basename' });
+  test('returns the basename with its avatar, display name and description when forward resolution matches', async () => {
+    const client = fakeClient({ name: 'tony.base.eth', addr: ALICE, text: { avatar: 'ipfs://pic', name: ' Tony ', description: 'Builder' } });
+    expect(await resolveBasenameProfile(client, ALICE)).toEqual({
+      name: 'tony.base.eth', displayName: 'Tony', description: 'Builder', avatar: 'ipfs://pic', source: 'basename',
+    });
+  });
+
+  test('avatar cache keys change with the record and are absent without one', () => {
+    expect(avatarCacheKey('ipfs://a')).not.toBe(avatarCacheKey('ipfs://b'));
+    expect(avatarCacheKey('ipfs://a')).toHaveLength(8);
+    expect(avatarCacheKey(undefined)).toBeUndefined();
   });
 
   test('rejects a reverse record that does not resolve back to the address', async () => {
@@ -62,7 +70,9 @@ describe('resolveBasenameProfile', () => {
 
   test('resolves through the Base client and swallows RPC failures', async () => {
     const clients = { base: fakeClient({ name: 'tony.base.eth', addr: ALICE }) };
-    expect(await resolveOnchainProfile(clients, ALICE)).toEqual({ name: 'tony.base.eth', avatar: undefined, source: 'basename' });
+    expect(await resolveOnchainProfile(clients, ALICE)).toEqual({
+      name: 'tony.base.eth', displayName: undefined, description: undefined, avatar: undefined, source: 'basename',
+    });
     expect(await resolveOnchainProfile({ base: fakeClient({ name: '', addr: '' }, true) }, ALICE)).toBeNull();
   });
 });

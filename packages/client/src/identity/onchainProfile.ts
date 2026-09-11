@@ -1,4 +1,6 @@
 import { createPublicClient, encodePacked, http, keccak256, namehash, stringToBytes, type Hex, type PublicClient } from 'viem';
+
+export const PROFILE_TEXT_KEYS = { displayName: 'name', description: 'description', avatar: 'avatar' } as const;
 import { normalize } from 'viem/ens';
 import { base } from 'viem/chains';
 
@@ -40,8 +42,19 @@ export type OnchainProfileSource = 'basename';
 
 export interface OnchainProfile {
   name: string;
+  displayName?: string;
+  description?: string;
   avatar?: string;
   source: OnchainProfileSource;
+}
+
+export function avatarCacheKey(avatar: string | undefined): string | undefined {
+  return avatar === undefined ? undefined : keccak256(stringToBytes(avatar)).slice(2, 10);
+}
+
+function nonEmpty(value: string): string | undefined {
+  const trimmed = value.trim();
+  return trimmed === '' ? undefined : trimmed;
 }
 
 export interface ProfileClients {
@@ -94,12 +107,18 @@ export async function resolveBasenameProfile(client: PublicClient, address: stri
   const node = namehash(normalize(name));
   const resolverAddress = (await resolverForNode(client, node)) ?? BASENAME_L2_RESOLVER;
   const resolver = { address: resolverAddress, abi: L2_RESOLVER_ABI } as const;
-  const [forward, avatar] = await Promise.all([
+  const text = (key: string): Promise<string> =>
+    client.readContract({ ...resolver, functionName: 'text', args: [node, key] }).catch(() => '');
+  const [forward, avatar, displayName, description] = await Promise.all([
     client.readContract({ ...resolver, functionName: 'addr', args: [node] }),
-    client.readContract({ ...resolver, functionName: 'text', args: [node, 'avatar'] }).catch(() => ''),
+    text(PROFILE_TEXT_KEYS.avatar),
+    text(PROFILE_TEXT_KEYS.displayName),
+    text(PROFILE_TEXT_KEYS.description),
   ]);
   if (forward.toLowerCase() !== address.toLowerCase()) return null;
-  return { name, avatar: usableAvatarUri(avatar), source: 'basename' };
+  return {
+    name, displayName: nonEmpty(displayName), description: nonEmpty(description), avatar: usableAvatarUri(avatar), source: 'basename',
+  };
 }
 
 export async function resolveOnchainProfile(clients: ProfileClients, address: string): Promise<OnchainProfile | null> {

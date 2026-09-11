@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { shortAddress } from '../modules/messaging';
 import { useEffectiveColorScheme } from '../lib/theme';
-import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
+import { usePeerProfiles, getPeerName, getPeerHandle, getPeerDescription } from '../lib/peerProfiles';
 import { Avatar } from './Avatar';
 import { Box, Col, WEB_EDGE_CONTENT, WEB_EDGE_CONTENT_WIDE, WEB_STACK_SCROLL } from './layout';
 import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
@@ -28,10 +28,10 @@ function copyAddress(address: string): void {
   capabilities.toast('Address copied');
 }
 
-function ProfileIdentity({ addr, isSelf, dark, opening, c, variant, insetTop, displayName, onAvatar, onMessage, onSend }: {
+function ProfileIdentity({ addr, isSelf, dark, opening, c, variant, insetTop, displayName, handle, about, onAvatar, onMessage, onSend }: {
   addr: string; isSelf: boolean; dark: boolean; opening: boolean;
   c: ReturnType<typeof useProfileColors>; variant: ProfileScreenVariant; insetTop: number;
-  displayName: string; onAvatar: (uri: string | null) => void;
+  displayName: string; handle?: string; about?: string; onAvatar: (uri: string | null) => void;
   onMessage: () => void; onSend: () => void;
 }): React.ReactElement {
   return (
@@ -52,6 +52,8 @@ function ProfileIdentity({ addr, isSelf, dark, opening, c, variant, insetTop, di
         <Box margin={{ top: 14 }} style={{ alignSelf: 'stretch' }}>
           <Col gap={6} align="start">
             <Text value={displayName} weight="semibold" size="4xl" textAlign="start" />
+            {handle && handle !== displayName ? <Text value={handle} size="md" color={c.text} /> : null}
+            {about ? <Text value={about} size="md" textAlign="start" /> : null}
           </Col>
         </Box>
         {addr ? (
@@ -104,6 +106,7 @@ export function ProfileScreen({ address, variant, panRef }: {
         <ProfileIdentity
           addr={addr} isSelf={isSelf} dark={dark} opening={false} c={c}
           variant={variant} insetTop={insets.top} displayName={displayName}
+          handle={getPeerHandle(addr)} about={getPeerDescription(addr)}
           onAvatar={uri => { if (uri) setViewerUri(uri); }}
           onMessage={onMessage}
           onSend={() => { router.push({ pathname: '/wallet/send', params: { to: addr } }); }}

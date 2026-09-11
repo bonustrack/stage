@@ -43,7 +43,7 @@ function ContactResultRow({ title, subtitle, address, dark, onPress }: {
   return (
     <ListViewItem dark={dark} align="center" gap={12} onPress={onPress}>
       <Row align="center" gap={12} flex={1}>
-        <Image src={peerAvatarUrl(address, 80)} size={40} radius="full" />
+        <Image src={peerAvatarUrl(address, 40)} size={40} radius="full" />
         <Col gap={2} flex={1}>
           <Text value={title} weight="semibold" truncate />
           {subtitle === undefined || subtitle === '' ? null : (

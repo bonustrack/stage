@@ -8,14 +8,17 @@ import {
   subscribePeerProfiles,
   type PeerProfileEntries,
 } from '@stage-labs/client/identity/peerProfiles';
-import { makeProfileClients, resolveOnchainProfile } from '@stage-labs/client/identity/onchainProfile';
-import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
+import { avatarCacheKey, makeProfileClients, resolveOnchainProfile } from '@stage-labs/client/identity/onchainProfile';
 import { broviderRpc } from '@stage-labs/client/wallet/client';
+import { stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { PersistentStore } from './cache';
 
 export {
   isPeerResolved,
   getPeerName,
+  getPeerDisplayName,
+  getPeerHandle,
+  getPeerDescription,
   getPeerAvatar,
   getPeerProfileSource,
   invalidatePeerProfile,
@@ -24,8 +27,8 @@ export {
 const profileClients = makeProfileClients(broviderRpc);
 setOnchainProfileResolver((address) => resolveOnchainProfile(profileClients, address));
 
-export function peerAvatarUrl(address: string, size: number): string {
-  return avatarRenderUrl(address, getPeerAvatar(address), size);
+export function peerAvatarUrl(address: string, displayPx: number): string {
+  return stampAvatarUrl(address, displayPx, avatarCacheKey(getPeerAvatar(address)));
 }
 
 const persisted = new PersistentStore<PeerProfileEntries>('peer-profiles.json', true);

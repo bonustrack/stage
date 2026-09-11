@@ -33,7 +33,7 @@ export function AccountRow({ rec, onPress, onLongPress, topBorder, trailing, bor
           <ListView dark={dark}>
             <ListViewItem align="center" gap={12} dark={dark} onPress={onPress}>
               <Row align="center" gap={12} flex={1}>
-                <Image src={peerAvatarUrl(rec.address, 80)} size={40} radius="full" />
+                <Image src={peerAvatarUrl(rec.address, 40)} size={40} radius="full" />
                 <Col gap={2} flex={1}>
                   <Text value={name} weight="semibold" truncate />
                   <Caption value={address} color="secondary" truncate />

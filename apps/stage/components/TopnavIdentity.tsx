@@ -23,7 +23,7 @@ export function TopnavIdentity(): React.ReactElement {
       <Pressable onPress={() => { setMenuOpen(true); }} hitSlop={8}>
         <Row align="center" gap={8}>
           {myAddress ? (
-            <Image src={peerAvatarUrl(myAddress, 56)} size={28} radius="full" background={border} />
+            <Image src={peerAvatarUrl(myAddress, 28)} size={28} radius="full" background={border} />
           ) : (
             <Col size={28} radius="full" background={border} />
           )}

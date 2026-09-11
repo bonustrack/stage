@@ -4,12 +4,20 @@ import type { OnchainProfile, OnchainProfileSource } from './onchainProfile';
 
 export interface PeerProfile {
   name?: string;
+  displayName?: string;
+  description?: string;
   avatar?: string;
   source?: OnchainProfileSource;
   stale?: boolean;
 }
 
-export interface PersistedPeerProfile { name: string | null; avatar?: string; source?: OnchainProfileSource }
+export interface PersistedPeerProfile {
+  name: string | null;
+  displayName?: string;
+  description?: string;
+  avatar?: string;
+  source?: OnchainProfileSource;
+}
 
 export type PeerProfileEntries = Record<string, string | null | PersistedPeerProfile>;
 
@@ -62,7 +70,7 @@ function applyNames(chunk: string[], names: Record<string, string>): boolean {
   for (const a of chunk) {
     const before = store.get(a);
     if (!before || before.name !== names[a]) changed = true;
-    store.set(a, { name: names[a], avatar: before?.avatar, source: before?.source });
+    store.set(a, { ...before, name: names[a], stale: undefined });
   }
   return changed;
 }
@@ -70,8 +78,11 @@ function applyNames(chunk: string[], names: Record<string, string>): boolean {
 function applyOnchain(address: string, profile: OnchainProfile | null): boolean {
   if (!profile) return false;
   const before = store.get(address);
-  if (before?.name === profile.name && before.avatar === profile.avatar && before.source === profile.source) return false;
-  store.set(address, { name: profile.name, avatar: profile.avatar, source: profile.source });
+  const next: PeerProfile = {
+    name: profile.name, displayName: profile.displayName, description: profile.description, avatar: profile.avatar, source: profile.source,
+  };
+  if (before && (Object.keys(next) as (keyof PeerProfile)[]).every((k) => before[k] === next[k])) return false;
+  store.set(address, next);
   return true;
 }
 
@@ -128,7 +139,10 @@ export function seedPeerProfiles(entries: PeerProfileEntries): void {
     const key = address.toLowerCase();
     if (store.has(key)) continue;
     const persisted = typeof entry === 'object' && entry !== null ? entry : { name: entry };
-    store.set(key, { name: persisted.name ?? undefined, avatar: persisted.avatar, source: persisted.source, stale: true });
+    store.set(key, {
+      name: persisted.name ?? undefined, displayName: persisted.displayName, description: persisted.description,
+      avatar: persisted.avatar, source: persisted.source, stale: true,
+    });
     added = true;
   }
   if (added) notify();
@@ -139,7 +153,10 @@ export function peerProfileEntries(): PeerProfileEntries {
   for (const [address, profile] of store) {
     out[address] = profile.avatar === undefined && profile.source === undefined
       ? profile.name ?? null
-      : { name: profile.name ?? null, avatar: profile.avatar, source: profile.source };
+      : {
+          name: profile.name ?? null, displayName: profile.displayName, description: profile.description,
+          avatar: profile.avatar, source: profile.source,
+        };
   }
   return out;
 }
@@ -167,8 +184,25 @@ export function isPeerResolved(address?: string | null): boolean {
 
 export function getPeerName(address?: string | null): string | undefined {
   if (!address) return undefined;
+  const profile = store.get(address.toLowerCase());
+  const n = profile?.displayName ?? profile?.name;
+  return n?.trim() ? n.trim() : undefined;
+}
+
+export function getPeerDisplayName(address?: string | null): string | undefined {
+  if (!address) return undefined;
+  return store.get(address.toLowerCase())?.displayName;
+}
+
+export function getPeerHandle(address?: string | null): string | undefined {
+  if (!address) return undefined;
   const n = store.get(address.toLowerCase())?.name;
   return n?.trim() ? n.trim() : undefined;
+}
+
+export function getPeerDescription(address?: string | null): string | undefined {
+  if (!address) return undefined;
+  return store.get(address.toLowerCase())?.description;
 }
 
 export function subscribePeerProfiles(listener: () => void): () => void {

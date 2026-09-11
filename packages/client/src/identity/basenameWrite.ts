@@ -12,6 +12,11 @@ const L2_RESOLVER_WRITE_ABI = [
     inputs: [{ name: 'node', type: 'bytes32' }, { name: 'key', type: 'string' }, { name: 'value', type: 'string' }],
     outputs: [],
   },
+  {
+    name: 'multicall', type: 'function', stateMutability: 'nonpayable',
+    inputs: [{ name: 'data', type: 'bytes[]' }],
+    outputs: [{ name: 'results', type: 'bytes[]' }],
+  },
 ] as const;
 
 const REVERSE_REGISTRAR_ABI = [
@@ -31,6 +36,14 @@ export function encodeSetBasenameAvatar(name: string, avatarUri: string, resolve
       abi: L2_RESOLVER_WRITE_ABI, functionName: 'setText', args: [namehash(normalize(name)), 'avatar', avatarUri],
     }),
   };
+}
+
+export function encodeSetTextRecords(name: string, records: Record<string, string>, resolver: Hex = BASENAME_L2_RESOLVER): ContractCall {
+  const node = namehash(normalize(name));
+  const calls = Object.entries(records).map(([key, value]) =>
+    encodeFunctionData({ abi: L2_RESOLVER_WRITE_ABI, functionName: 'setText', args: [node, key, value] }));
+  if (calls.length === 1 && calls[0] !== undefined) return { to: resolver, data: calls[0] };
+  return { to: resolver, data: encodeFunctionData({ abi: L2_RESOLVER_WRITE_ABI, functionName: 'multicall', args: [calls] }) };
 }
 
 export function encodeSetPrimaryBasename(name: string): ContractCall {
