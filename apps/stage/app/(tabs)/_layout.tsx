@@ -5,6 +5,7 @@ import { Tabs, usePathname } from 'expo-router';
 import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { usePalette } from '../../lib/theme';
 import { TabsPager } from '../../components/SwipeTabs';
 import { Topnav } from '../../components/Topnav';
@@ -14,14 +15,18 @@ import { useWebTabRail } from '../../components/tabs/useWebTabRail';
 import { useTotalUnread } from '../../lib/useTotalUnread';
 import { unreadBadgeLabel } from '../../lib/format';
 
-function HoistedTopnav(): React.ReactElement {
+const WIDE_TAB_TITLES: Record<string, string> = { '/wallet': 'Wallet', '/contacts': 'Contacts' };
+
+function HoistedTopnav({ rail, pathname }: { rail: boolean; pathname: string }): React.ReactElement {
   const slot = useTopnavSlot();
   if (slot?.override) return <>{slot.override}</>;
-  return <Topnav right={slot?.right} />;
+  const title = rail ? WIDE_TAB_TITLES[pathname] : undefined;
+  const left = title === undefined ? undefined : <Text value={title} size="4xl" weight="semibold" />;
+  return <Topnav left={left} right={slot?.right} />;
 }
 
-function PagerOverlay({ insetTop, tabBarHeight, topnavHidden }: {
-  insetTop: number; tabBarHeight: number; topnavHidden: boolean;
+function PagerOverlay({ insetTop, tabBarHeight, topnavHidden, rail, pathname }: {
+  insetTop: number; tabBarHeight: number; topnavHidden: boolean; rail: boolean; pathname: string;
 }): React.ReactElement {
   if (Platform.OS === 'web') {
     return (
@@ -38,7 +43,7 @@ function PagerOverlay({ insetTop, tabBarHeight, topnavHidden }: {
         {}
         {topnavHidden ? null : (
           <Box pointerEvents="box-none" style={{ position: 'absolute', top: insetTop, left: 0, right: 0, zIndex: 2 }}>
-            <HoistedTopnav/>
+            <HoistedTopnav rail={rail} pathname={pathname}/>
           </Box>
         )}
       </Col>
@@ -50,7 +55,7 @@ function PagerOverlay({ insetTop, tabBarHeight, topnavHidden }: {
       style={{ position: 'absolute', top: insetTop, bottom: tabBarHeight, left: 0, right: 0 }}
 >
       {}
-      <HoistedTopnav/>
+      <HoistedTopnav rail={rail} pathname={pathname}/>
       {}
       <Box flex={1}>
         <TabsPager/>
@@ -137,6 +142,8 @@ export default function TabsLayout(): React.ReactElement {
           insetTop={insets.top}
           tabBarHeight={tabBarHeight}
           topnavHidden={rail && pathname === '/'}
+          rail={rail}
+          pathname={pathname}
         />
       ) : null}
       {}
