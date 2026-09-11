@@ -19,5 +19,6 @@ describe('routeForUrl', () => {
     expect(routeForUrl('https://stage.box/#/settings')).toEqual({ pathname: '/(tabs)/settings' });
     expect(routeForUrl('https://stage.box/#/')).toEqual({ pathname: '/(tabs)' });
     expect(routeForUrl('https://stage.box/#/-bad-')).toBeNull();
+    expect(routeForUrl('https://stage.box/#/requests')).toBeNull();
   });
 });

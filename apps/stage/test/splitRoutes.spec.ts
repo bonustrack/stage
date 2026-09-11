@@ -6,6 +6,9 @@ describe('isSplitRoute', () => {
     expect(isSplitRoute('/')).toBe(true);
     expect(isSplitRoute('/channel/abc')).toBe(true);
     expect(isSplitRoute('/0x1234567890abcdef1234567890abcdef12345678')).toBe(true);
+    expect(isSplitRoute('/boorger')).toBe(true);
+    expect(isSplitRoute('/fabien.eth')).toBe(true);
+    expect(isSplitRoute('/profile/boorger')).toBe(true);
   });
 
   test('profiles, groups, settings, wallet, contacts, and accounts split', () => {

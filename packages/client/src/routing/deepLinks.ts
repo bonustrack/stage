@@ -1,4 +1,4 @@
-import { parseHandle } from './handles';
+import { isPeerHandleSegment } from './handles';
 
 export type ParsedRoute =
   | { pathname: '/[convId]'; params: { convId: string; m?: string; focus?: string } }
@@ -81,7 +81,7 @@ function headRoute(segments: string[], query: URLSearchParams): ParsedRoute | nu
   if (entity !== undefined) return entity;
   const fixed = STATIC_ROUTES[head];
   if (fixed) return fixed;
-  return parseHandle(head).kind === 'invalid' ? null : conversationRoute('/[convId]', head, query);
+  return isPeerHandleSegment(head) ? conversationRoute('/[convId]', head, query) : null;
 }
 
 export function routeForUrl(url: string): ParsedRoute | null {

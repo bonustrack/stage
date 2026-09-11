@@ -11,6 +11,19 @@ const NAME_RE = /^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/;
 
 export const STAGE_ORIGIN = 'https://stage.box';
 
+export const RESERVED_ROOT_SEGMENTS = new Set([
+  'channels', 'channel', 'group', 'profile', 'user', 'settings', 'contacts', 'wallet', 'accounts',
+  'requests', 'new-group', 'add-members', 'embed', 'xmtp',
+]);
+
+const PEER_KINDS = new Set<HandleKind>(['address', 'stage', 'basename', 'ens']);
+
+export function isPeerHandleSegment(segment: string | null | undefined): boolean {
+  const value = (segment ?? '').toLowerCase();
+  if (value === '' || RESERVED_ROOT_SEGMENTS.has(value)) return false;
+  return PEER_KINDS.has(parseHandle(value).kind);
+}
+
 export function parseHandle(raw: string | null | undefined): ParsedHandle {
   const value = (raw ?? '').trim();
   if (value === '') return { kind: 'invalid', value };
