@@ -5,6 +5,7 @@ import type { HmacKeysByTopic } from '@stage-labs/client/xmtp/pushServer';
 import { isSyncGroupName } from '@stage-labs/client/xmtp/readState';
 import { FIREBASE_WEB_CONFIG, firebaseWebConfigured } from './firebaseWeb';
 import { runPushRegistration, runPushUnregistration, type PushTopics } from './pushRegister.core';
+import { linkProxyBase } from './historyServer';
 import { setPushStatus } from './pushStatus';
 import { getCachedXmtpClient } from './xmtp.state.web';
 
@@ -13,6 +14,10 @@ export { isMetroControlBody } from './pushRegister.control';
 export type PushPermission = 'granted' | 'denied' | 'undetermined';
 
 export const PUSH_SERVICE_WORKER_PATH = '/push-sw.js';
+
+function proxiedRpcUrl(method: string): string {
+  return `${linkProxyBase()}/xmtp-push/${method}`;
+}
 const TOPIC_REFRESH_DEBOUNCE_MS = 1_500;
 
 type PushClient = Pick<Client<unknown>, 'installationId' | 'conversations'>;
@@ -88,6 +93,7 @@ export async function registerPushWithServer(client: PushClient): Promise<void> 
   await runPushRegistration({
     installationId,
     platform: 'web',
+    rpcUrl: proxiedRpcUrl,
     getToken: webPushToken,
     collectTopics: () => collectTopics(client, installationId),
   });
@@ -95,7 +101,7 @@ export async function registerPushWithServer(client: PushClient): Promise<void> 
 
 export async function unregisterPushFromServer(client: PushClient): Promise<void> {
   const installationId = installationIdOf(client);
-  if (installationId) await runPushUnregistration(installationId);
+  if (installationId) await runPushUnregistration(installationId, proxiedRpcUrl);
 }
 
 let topicRefreshTimer: ReturnType<typeof setTimeout> | null = null;

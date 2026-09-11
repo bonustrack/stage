@@ -1,7 +1,7 @@
 export const PUSH_RPC = {
-  register: '/notifications.v1.Notifications/RegisterInstallation',
-  subscribe: '/notifications.v1.Notifications/SubscribeWithMetadata',
-  remove: '/notifications.v1.Notifications/DeleteInstallation',
+  register: 'RegisterInstallation',
+  subscribe: 'SubscribeWithMetadata',
+  remove: 'DeleteInstallation',
 } as const;
 
 export type PushPlatform = 'android' | 'ios' | 'web';

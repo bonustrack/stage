@@ -7,10 +7,11 @@ import { isPushEnabledSync, loadPushEnabled } from './pushPref';
 import { setPushStatus } from './pushStatus';
 
 const SERVER_URL_ENV: unknown = process.env.EXPO_PUBLIC_PUSH_SERVER_URL;
-const PUSH_SERVER_URL =
+export const PUSH_SERVER_URL =
   typeof SERVER_URL_ENV === 'string' && SERVER_URL_ENV !== ''
     ? SERVER_URL_ENV.replace(/\/$/, '')
     : 'https://push.stage.box';
+export const PUSH_RPC_PATH = '/notifications.v1.Notifications/';
 
 const REGISTER_TTL_MS = 6 * 60 * 60 * 1000;
 const stateKey = (installationId: string): string => `push.server.${installationId}`;
@@ -20,6 +21,7 @@ export interface PushTopics { topics: string[]; hmacKeys: HmacKeysByTopic }
 export interface PushRegistrationInput {
   installationId: string;
   platform: PushPlatform;
+  rpcUrl: (method: string) => string;
   getToken: () => Promise<string | null>;
   collectTopics: () => Promise<PushTopics>;
 }
@@ -32,13 +34,17 @@ export function reportPushFailure(label: string, err: unknown): void {
   if (process.env.NODE_ENV !== 'production') console.warn(label, message);
 }
 
-async function postJson(path: string, body: unknown): Promise<void> {
-  const res = await fetch(`${PUSH_SERVER_URL}${path}`, {
+export function directRpcUrl(method: string): string {
+  return `${PUSH_SERVER_URL}${PUSH_RPC_PATH}${method}`;
+}
+
+async function postJson(url: string, body: unknown): Promise<void> {
+  const res = await fetch(url, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(`push server ${path} responded ${res.status}`);
+  if (!res.ok) throw new Error(`push server responded ${res.status}`);
 }
 
 async function readState(key: string): Promise<RegisterState | null> {
@@ -61,7 +67,7 @@ async function subscribeTopics(
     return;
   }
   await postJson(
-    PUSH_RPC.subscribe,
+    input.rpcUrl(PUSH_RPC.subscribe),
     subscribeWithMetadataBody(input.installationId, subs.topics, subs.hmacKeys, isWelcomeTopic),
   );
   const next: RegisterState = { token, at: registeredAt, topics: signature };
@@ -88,7 +94,7 @@ export async function runPushRegistration(input: PushRegistrationInput): Promise
     const prev = await readState(stateKey(input.installationId));
     const fresh = prev !== null && prev.token === token && Date.now() - prev.at < REGISTER_TTL_MS;
     if (!fresh) {
-      await postJson(PUSH_RPC.register, registerInstallationBody(input.installationId, token, input.platform));
+      await postJson(input.rpcUrl(PUSH_RPC.register), registerInstallationBody(input.installationId, token, input.platform));
     }
     await subscribeTopics(input, fresh ? prev : null, token, fresh ? prev.at : Date.now());
   } catch (err) {
@@ -96,14 +102,14 @@ export async function runPushRegistration(input: PushRegistrationInput): Promise
   }
 }
 
-export async function runPushUnregistration(installationId: string): Promise<void> {
+export async function runPushUnregistration(installationId: string, rpcUrl: (method: string) => string): Promise<void> {
   try {
     const key = stateKey(installationId);
     const prev = await readState(key);
     await appStorage.delete(key).catch(() => undefined);
     setPushStatus('disabled');
     if (!prev) return;
-    await postJson(PUSH_RPC.remove, deleteInstallationBody(installationId));
+    await postJson(rpcUrl(PUSH_RPC.remove), deleteInstallationBody(installationId));
   } catch (err) {
     reportPushFailure('push unregistration failed', err);
   }

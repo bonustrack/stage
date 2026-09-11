@@ -5,7 +5,7 @@ import { getAllPushTopics, getHmacKeys } from '@xmtp/react-native-sdk';
 import { groupIdOfTopic, type HmacKeysByTopic, type PushPlatform } from '@stage-labs/client/xmtp/pushServer';
 import { isSyncGroupName } from '@stage-labs/client/xmtp/readState';
 import { getDeviceFcmToken } from './push.device';
-import { runPushRegistration, runPushUnregistration, type PushTopics } from './pushRegister.core';
+import { directRpcUrl, runPushRegistration, runPushUnregistration, type PushTopics } from './pushRegister.core';
 import { setPushStatus } from './pushStatus';
 import { getCachedXmtpClient } from './xmtp.state';
 
@@ -56,13 +56,14 @@ export async function registerPushWithServer(client: PushClient): Promise<void> 
   await runPushRegistration({
     installationId: client.installationId,
     platform,
+    rpcUrl: directRpcUrl,
     getToken: getDeviceFcmToken,
     collectTopics: () => collectTopics(client),
   });
 }
 
 export async function unregisterPushFromServer(client: PushClient): Promise<void> {
-  await runPushUnregistration(client.installationId);
+  await runPushUnregistration(client.installationId, directRpcUrl);
 }
 
 let topicRefreshTimer: ReturnType<typeof setTimeout> | null = null;
