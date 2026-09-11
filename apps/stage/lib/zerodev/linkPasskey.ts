@@ -13,7 +13,7 @@ export type LinkPasskeyResult =
   | { ok: true }
   | { ok: false; reason: 'unavailable' | 'cancelled' | 'no-passkey' | 'error'; message?: string };
 
-async function accountPasskey(address: Hex): Promise<PasskeyPublicKey | null> {
+export async function accountPasskey(address: Hex): Promise<PasskeyPublicKey | null> {
   const publicClient = makePublicClient();
   const code = await publicClient.getCode({ address });
   if (!code || code === '0x') return null;
@@ -25,6 +25,21 @@ async function accountPasskey(address: Hex): Promise<PasskeyPublicKey | null> {
     return pubX === 0n && pubY === 0n ? null : { pubX, pubY };
   } catch {
     return null;
+  }
+}
+
+export function storedPasskeyMatches(rec: AccountRecord, key: PasskeyPublicKey | null): boolean {
+  if (!rec.passkey) return false;
+  if (!key) return true;
+  return BigInt(rec.passkey.pubX) === key.pubX && BigInt(rec.passkey.pubY) === key.pubY;
+}
+
+export async function passkeyLinked(rec: AccountRecord): Promise<boolean> {
+  if (rec.type !== 'smart' || !rec.passkey) return false;
+  try {
+    return storedPasskeyMatches(rec, await accountPasskey(rec.address as Hex));
+  } catch {
+    return true;
   }
 }
 

@@ -16,8 +16,8 @@ import { reloadApp } from '../AccountsManager.helpers';
 import { transferKindFor } from '../../lib/accountTransfer';
 import { TransferAccountSheet } from '../accounts/TransferAccountSheet';
 import { SettingsButtonRow, SettingsList, SettingsNavRow } from '../settings/rows';
-import { describeLinkResult, linkPasskeyForRecord, passkeysAvailable } from '../../lib/zerodev';
 import { RecoveryKeyRow } from '../settings/RecoveryKeyRow';
+import { PasskeyLinkRow } from '../settings/PasskeyLinkRow';
 
 interface SectionColors { fg: string; head: string; sub: string; border: string; rowBg: string }
 
@@ -79,18 +79,12 @@ function revealedKeyFor(key: RevealedKey | null, rec: AccountRecord): string | n
   return key.id === rec.id ? key.pk : null;
 }
 
-function linkPasskey(rec: AccountRecord): void {
-  void linkPasskeyForRecord(rec).then((result) => { flash(describeLinkResult(result)); });
-}
-
 function AccountRows({ rec, revealed, onExport, onMove }: {
   rec: AccountRecord; revealed: string | null; onExport: () => void; onMove: () => void;
 }): React.ReactElement {
   return (
     <SettingsList>
-      {rec.type === 'smart' && !rec.passkey && passkeysAvailable() ? (
-        <SettingsNavRow label="Use my passkey on this device" iconStart="key" onPress={() => { linkPasskey(rec); }} />
-      ) : null}
+      <PasskeyLinkRow rec={rec} />
       <RecoveryKeyRow rec={rec} />
       {canExportPrivateKey(rec) && !revealed ? (
         <SettingsNavRow label="Export private key" iconStart="wallet" iconEnd="chevronDown" onPress={onExport} />

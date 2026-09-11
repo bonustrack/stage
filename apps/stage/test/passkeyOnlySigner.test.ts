@@ -22,7 +22,7 @@ describe('passkey-only signer (kernelForRecord chokepoint)', () => {
   test('passkey branch builds the Kernel from the passkey validator', () => {
     const passkeyCall = body.indexOf('passkeyKernelFromStored');
     expect(passkeyCall).toBeGreaterThanOrEqual(0);
-    expect(body).toContain('if (rec.passkey)');
+    expect(body).toContain('if (rec.passkey && storedPasskeyMatches(');
   });
 
   test('mnemonic is NOT read before the passkey kernel is built', () => {

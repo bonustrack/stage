@@ -11,6 +11,7 @@ import { smartOwnerSigner } from './keyring';
 import { makePublicClient, makeKernelClient } from './client';
 import { createEcdsaKernel, ecdsaValidatorForOwner, passkeyKernelFromStored } from './account';
 import { ENTRY_POINT, KERNEL_VERSION } from './config';
+import { accountPasskey, storedPasskeyMatches } from './linkPasskey';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -59,7 +60,7 @@ export async function kernelClientForRecord(rec: AccountRecord): Promise<KernelA
   const publicClient = makePublicClient();
   const hdIndex = rec.hdIndex;
   let passkeyAccount: CreateKernelAccountReturnType | null = null;
-  if (rec.passkey) {
+  if (rec.passkey && storedPasskeyMatches(rec, await accountPasskey(rec.address as Hex).catch(() => null))) {
     const addressOverride = rec.passkeySudo ? undefined : (rec.address as Hex);
     passkeyAccount = await passkeyKernelFromStored(
       publicClient,

@@ -69,7 +69,7 @@ describe('A2. callers install the passkey BEFORE messaging (passkey signs the in
 describe('B. kernelForRecord.ts — validator chosen from the account\'s onchain root', () => {
   test('passkey branch builds from the passkey validator', () => {
     expect(kernelSrc).toContain('passkeyKernelFromStored');
-    expect(kernelSrc).toContain('if (rec.passkey)');
+    expect(kernelSrc).toContain('if (rec.passkey && storedPasskeyMatches(');
   });
   test('passkeySudo => no override; else pin to rec.address', () => {
     expect(kernelSrc).toContain('rec.passkeySudo ? undefined : (rec.address as Hex)');
