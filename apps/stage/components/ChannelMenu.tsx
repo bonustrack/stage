@@ -13,6 +13,7 @@ import type { MenuPoint } from './AnchoredMenu.model';
 import { markConvRead, markConvUnread } from '../modules/messaging';
 import { togglePin } from '../lib/pins';
 import { leaveGroupConv, lineOfConv } from '../modules/messaging';
+import { profileLinkOf } from '../lib/links';
 
 export interface ChannelMenuProps {
   convId: string;
@@ -90,7 +91,7 @@ export function ChannelMenu({
     'toggle-pin': () => { run(() => { void togglePin(convId); }); },
     info: () => { run(() => {
       if (isGroup) router.push({ pathname: '/group/[convId]', params: { convId } });
-      else if (peerAddress) router.push({ pathname: '/profile/[address]', params: { address: peerAddress } });
+      else if (peerAddress) router.push(profileLinkOf(peerAddress));
     }); },
     leave: () => { confirmLeaveGroup(convId, context, router, onClose, onAfterLeave); },
   };

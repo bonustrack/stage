@@ -12,7 +12,7 @@ import {
 } from '../../modules/messaging';
 import type { ConversationRequestView } from '../../modules/messaging';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { conversationLinkOf } from '../../lib/conversationLink';
+import { conversationLinkOf } from '../../lib/links';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { ChannelRow } from '../../components/ChannelRow';

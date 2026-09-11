@@ -20,6 +20,8 @@ import { SearchTopnavBar } from '../../components/SearchTopnavBar';
 import { RequestActionBar } from '../../components/RequestActionBar';
 import type { useConversationState } from '../../components/xmtp-conv/useConversationState';
 import type { EdgeInsets } from 'react-native-safe-area-context';
+import { conversationSharePath, profileLinkOf } from '../../lib/links';
+import { shareUrlFor } from '@stage-labs/client/routing/handles';
 
 type Conv = ReturnType<typeof useConversationState>;
 type Router = ReturnType<typeof useRouter>;
@@ -40,7 +42,7 @@ export function ConversationTopnav({ c, convId, fg, head, border, insets, router
         border={border} head={head} title={topnavTitle(c)}
         onPress={() => {
           if (isGroup) router.push({ pathname: '/group/[convId]', params: { convId } });
-          else if (peerAddr) router.push({ pathname: '/profile/[address]', params: { address: peerAddr } });
+          else if (peerAddr) router.push(profileLinkOf(peerAddr));
         }}
       />
       <Pressable
@@ -166,8 +168,8 @@ export function ConversationOverlays({ c, convId, dark, onOpenSearch }: {
           setMenuFor(null);
         }}
         onShareLink={() => {
-          const target = !isGroup && peerAddr ? peerAddr : `channel/${convId}`;
-          if (menuFor) void Share.share({ message: `https://stage.box/#/${target}?m=${menuFor.id}` });
+          const path = conversationSharePath(convId, !isGroup ? peerAddr : null);
+          if (menuFor) void Share.share({ message: `${shareUrlFor(path)}?m=${menuFor.id}` });
           setMenuFor(null);
         }}
 />

@@ -14,6 +14,7 @@ import { transferKindFor } from '../lib/accountTransfer';
 import { useAccountTransfer } from './accounts/useAccountTransfer';
 import { TransferAccountSheet } from './accounts/TransferAccountSheet';
 import { ImportAccountSheet } from './accounts/ImportAccountSheet';
+import { profileLinkOf } from '../lib/links';
 
 export function MenuSheet({ visible, onClose }: {
   visible: boolean;
@@ -54,7 +55,7 @@ export function MenuSheet({ visible, onClose }: {
     const addr = activeRec?.address;
     if (!addr) return;
     onClose();
-    router.navigate(`/profile/${addr}`);
+    router.navigate(profileLinkOf(addr));
   }
 
   function onSwitch(id: string): void {

@@ -22,6 +22,7 @@ import { useDecodedCall } from '../lib/useDecodedCall';
 import { useTxSimulation } from '../lib/txSimulate';
 import { SimulationBlock } from './MessengerBubble.sim';
 import { txActionLabel, isTransferRequest } from './MessengerBubble.txwording';
+import { profileLinkOf } from '../lib/links';
 
 interface TxCardModel {
   target?: string;
@@ -168,7 +169,7 @@ function TxToRow({ address }: { address: string }): React.ReactElement {
   const display = getPeerName(address) ?? shortAddress(address);
   return (
     <Pressable
-      onPress={() => { router.push({ pathname: '/profile/[address]', params: { address } }); }}>
+      onPress={() => { router.push(profileLinkOf(address)); }}>
       <Row align="center" gap={6}>
         <Text role="secondary" size="xs">To</Text>
         <Avatar address={address} size={16} />

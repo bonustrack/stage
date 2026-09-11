@@ -1,3 +1,5 @@
+import { parseHandle } from './handles';
+
 export type ParsedRoute =
   | { pathname: '/[convId]'; params: { convId: string; m?: string; focus?: string } }
   | { pathname: '/channel/[convId]'; params: { convId: string; m?: string; focus?: string } }
@@ -48,7 +50,6 @@ function conversationRoute(
   return { pathname, params: { convId, ...(m ? { m } : {}), ...(focus ? { focus } : {}) } };
 }
 
-const DM_ADDRESS_HEAD_RE = /^0x[a-fA-F0-9]{40}$/;
 
 const STATIC_ROUTES: Record<string, ParsedRoute> = {
   channels: { pathname: '/(tabs)' },
@@ -58,6 +59,16 @@ const STATIC_ROUTES: Record<string, ParsedRoute> = {
 
 const CONVERSATION_HEADS = new Set(['xmtp', 'channel', 'embed']);
 
+function entityRoute(head: string, second: string | undefined): ParsedRoute | null | undefined {
+  if (head === 'group') {
+    return second ? { pathname: '/group/[convId]', params: { convId: second } } : null;
+  }
+  if (head === 'user' || head === 'profile') {
+    return second ? { pathname: '/user/[address]', params: { address: second } } : null;
+  }
+  return undefined;
+}
+
 function headRoute(segments: string[], query: URLSearchParams): ParsedRoute | null {
   const [head, second, third] = segments;
   if (head === undefined) return null;
@@ -66,14 +77,11 @@ function headRoute(segments: string[], query: URLSearchParams): ParsedRoute | nu
       ? conversationRoute('/[convId]', third, query)
       : conversationRoute('/channel/[convId]', second, query);
   }
-  if (head === 'group') {
-    return second ? { pathname: '/group/[convId]', params: { convId: second } } : null;
-  }
-  if (head === 'user') {
-    return second ? { pathname: '/user/[address]', params: { address: second } } : null;
-  }
-  if (DM_ADDRESS_HEAD_RE.test(head)) return conversationRoute('/[convId]', head, query);
-  return STATIC_ROUTES[head] ?? null;
+  const entity = entityRoute(head, second);
+  if (entity !== undefined) return entity;
+  const fixed = STATIC_ROUTES[head];
+  if (fixed) return fixed;
+  return parseHandle(head).kind === 'invalid' ? null : conversationRoute('/[convId]', head, query);
 }
 
 export function routeForUrl(url: string): ParsedRoute | null {

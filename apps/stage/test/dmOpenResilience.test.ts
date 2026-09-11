@@ -44,7 +44,7 @@ describe('address-routed DM opening never mints or masks a peer-less stub DM', (
 describe('unreachable peers get a pending conversation with an outbox, not a dead end', () => {
   test('unregistered and stale-installations resolve to a pending composer', () => {
     expect(hooksSrc).toContain("error === 'unregistered' || error === 'stale-installations'");
-    expect(hooksSrc).toContain('pendingAddress: isQueueable(res.error) ? param : null');
+    expect(hooksSrc).toContain('pendingAddress: isQueueable(res.error) ? address : null');
     expect(screenSrc).toContain('<PendingConversation');
   });
   test('sends are queued first, then flushed through the stub-safe ladder', () => {

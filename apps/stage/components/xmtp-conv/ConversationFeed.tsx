@@ -12,6 +12,7 @@ import {
 } from './feed-helpers';
 import { useFeedRenderItem } from './useFeedRenderItem';
 import type { useConversationState } from './useConversationState';
+import { profileLinkOf } from '../../lib/links';
 
 const UPRIGHT = Platform.OS === 'web';
 
@@ -144,7 +145,7 @@ function FeedIntro({ c, convId, head, fg, border, rowBg, router }: {
       isGroup={c.isGroup} peerAddr={c.peerAddr} groupName={c.groupName} groupImage={c.groupImage}
       groupDescription={c.groupDescription} groupLabels={c.groupLabels} convId={convId}
       head={head} fg={fg} border={border} rowBg={rowBg}
-      onPressPeer={(address) => { router.push({ pathname: '/profile/[address]', params: { address } }); }}
+      onPressPeer={(address) => { router.push(profileLinkOf(address)); }}
     />
   );
 }

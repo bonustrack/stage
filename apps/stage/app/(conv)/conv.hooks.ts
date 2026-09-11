@@ -2,10 +2,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { InteractionManager, Keyboard } from 'react-native';
 import type { Input } from '@stage-labs/kit/react-native/input';
+import { parseHandle } from '@stage-labs/client/routing/handles';
 import { resolveDmConvId, type DmResolveError } from '../../lib/dmResolve';
 import { getCachedRows } from '../../lib/channelsCache';
-
-const DM_ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
+import { resolveHandleToAddress } from '../../lib/resolveHandle';
 
 export type ResolveConvError = false | DmResolveError;
 
@@ -29,46 +29,48 @@ function cachedDmConvId(address: string): string | null {
   return hit ? hit.convId : null;
 }
 
+type ConvState = Omit<ResolvedConv, 'retry'>;
+
+const RESOLVING: ConvState = { convId: null, resolving: true, error: false, pendingAddress: null };
+
+function directState(param: string | undefined): ConvState {
+  return { convId: param ?? null, resolving: false, error: false, pendingAddress: null };
+}
+
+function isPeerHandle(param: string | undefined): boolean {
+  const kind = parseHandle(param).kind;
+  return kind === 'address' || kind === 'stage' || kind === 'basename' || kind === 'ens';
+}
+
+async function resolvePeerConversation(param: string): Promise<ConvState> {
+  const address = await resolveHandleToAddress(param);
+  if (!address) return { convId: null, resolving: false, error: 'failed', pendingAddress: null };
+  const cached = cachedDmConvId(address);
+  if (cached !== null) return { convId: cached, resolving: false, error: false, pendingAddress: null };
+  const res = await resolveDmConvId(address);
+  if ('convId' in res) return { convId: res.convId, resolving: false, error: false, pendingAddress: null };
+  return { convId: null, resolving: false, error: res.error, pendingAddress: isQueueable(res.error) ? address : null };
+}
+
 export function useResolvedConvId(param: string | undefined): ResolvedConv {
-  const isAddress = !!param && DM_ADDRESS_RE.test(param);
+  const peer = isPeerHandle(param);
   const [attempt, setAttempt] = useState(0);
   const retry = useCallback(() => { setAttempt(a => a + 1); }, []);
-  const [state, setState] = useState<Omit<ResolvedConv, 'retry'>>(() => {
-    if (!isAddress) return { convId: param ?? null, resolving: false, error: false, pendingAddress: null };
-    const cached = param ? cachedDmConvId(param) : null;
-    return cached
-      ? { convId: cached, resolving: false, error: false, pendingAddress: null }
-      : { convId: null, resolving: true, error: false, pendingAddress: null };
+  const [state, setState] = useState<ConvState>(() => {
+    if (!peer) return directState(param);
+    const cached = param && parseHandle(param).kind === 'address' ? cachedDmConvId(param) : null;
+    return cached ? { convId: cached, resolving: false, error: false, pendingAddress: null } : RESOLVING;
   });
   useEffect(() => {
-    if (!param || !DM_ADDRESS_RE.test(param)) {
-      setState({ convId: param ?? null, resolving: false, error: false, pendingAddress: null });
-      return;
-    }
-    const cached = cachedDmConvId(param);
-    if (cached !== null) {
-      setState({ convId: cached, resolving: false, error: false, pendingAddress: null });
+    if (!param || !isPeerHandle(param)) {
+      setState(directState(param));
       return;
     }
     let cancelled = false;
-    setState({ convId: null, resolving: true, error: false, pendingAddress: null });
-    void resolveDmConvId(param)
-      .then(res => {
-        if (cancelled) return;
-        if ('convId' in res) {
-          setState({ convId: res.convId, resolving: false, error: false, pendingAddress: null });
-        } else {
-          setState({
-            convId: null,
-            resolving: false,
-            error: res.error,
-            pendingAddress: isQueueable(res.error) ? param : null,
-          });
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setState({ convId: null, resolving: false, error: 'failed', pendingAddress: null });
-      });
+    setState(RESOLVING);
+    resolvePeerConversation(param)
+      .then((next) => { if (!cancelled) setState(next); })
+      .catch(() => { if (!cancelled) setState({ convId: null, resolving: false, error: 'failed', pendingAddress: null }); });
     return () => { cancelled = true; };
   }, [param, attempt]);
   return { ...state, retry };

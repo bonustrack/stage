@@ -22,6 +22,7 @@ import { messagingKeys } from '../../modules/messaging';
 import { useGroupDetail } from './group.detail';
 import { GroupLabelsSection } from './group.labels';
 import { useGroupActions } from './group.actions';
+import { profileLinkOf } from '../../lib/links';
 
 function OverflowTrailing({ color, dark, onPress }: {
   color: string; dark: boolean; onPress: (point: MenuPoint) => void;
@@ -113,7 +114,7 @@ export default function GroupDetail(): React.ReactElement {
         members={members} memberNames={memberNames} memberRoles={memberRoles}
         selfAddress={selfAddress} removing={removing} dark={dark} p={pal}
         onAdd={() => { setAddDraft(''); setAddOpen(true); }}
-        onOpenMember={(item) => { router.push({ pathname: '/profile/[address]', params: { address: item } }); }}
+        onOpenMember={(item) => { router.push(profileLinkOf(item)); }}
         onRemoveMember={(item) => { removeMember(item); }}
 />
 

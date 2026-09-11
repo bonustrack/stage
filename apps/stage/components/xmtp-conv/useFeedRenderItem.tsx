@@ -4,6 +4,7 @@ import { FeedBubbleItem } from './FeedBubbleItem';
 import { usePalette } from '../../lib/theme';
 import { previewOf } from './feed-helpers';
 import type { useConversationState } from './useConversationState';
+import { profileLinkOf } from '../../lib/links';
 
 type ConvState = ReturnType<typeof useConversationState>;
 type Bubble = ConvState['allBubbles'][number];
@@ -41,7 +42,7 @@ export function useFeedRenderItem(
   }, [events]);
 
   const onAvatarPress = useCallback((address: string) => {
-    router.push({ pathname: '/profile/[address]', params: { address } });
+    router.push(profileLinkOf(address));
   }, [router]);
 
   const renderItem = useCallback(({ item }: { item: Bubble }) => (

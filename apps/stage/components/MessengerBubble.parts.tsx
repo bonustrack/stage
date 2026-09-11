@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { shortAddress } from '../modules/messaging';
 import { usePeerProfiles, getPeerName } from '../lib/peerProfiles';
 import { MENTION_RE } from './MessengerBubble.helpers';
+import { profileLinkOf } from '../lib/links';
 
 export { QuestionView } from './MessengerBubble.question';
 
@@ -14,7 +15,7 @@ function MentionLink({ address, dark }: { address: string; dark: boolean }): Rea
   const linkColor = dark ? '#7aa2ff' : '#2f6feb';
   return (
     <Text weight="semibold"
-      onPress={() => { router.push({ pathname: '/profile/[address]', params: { address } }); }} color={linkColor}
+      onPress={() => { router.push(profileLinkOf(address)); }} color={linkColor}
       suppressHighlighting>
       @{display}
     </Text>

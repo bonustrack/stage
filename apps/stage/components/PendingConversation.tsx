@@ -16,6 +16,7 @@ import { MessengerBubble } from './MessengerBubble';
 import { ComposerEditor } from './MessengerComposer.editor';
 import { TOPNAV_HEIGHT } from './Topnav';
 import { ConvTopnavIdentity, ConvTopnavShell } from './xmtp-conv/parts';
+import { profileLinkOf } from '../lib/links';
 
 export type PendingReason = 'unregistered' | 'stale-installations' | 'failed';
 
@@ -43,7 +44,7 @@ function PendingTopnav({ address, title }: { address: string; title: string }): 
       <ConvTopnavIdentity
         peerAddr={address} groupImage="" channelId={address} isGroup={false}
         border={border} head={head} title={title}
-        onPress={() => { router.push({ pathname: '/profile/[address]', params: { address } }); }}
+        onPress={() => { router.push(profileLinkOf(address)); }}
       />
     </ConvTopnavShell>
   );

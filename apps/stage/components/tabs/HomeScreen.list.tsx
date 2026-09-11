@@ -21,6 +21,7 @@ import { Topnav } from '../Topnav';
 import { usePublishTopnavSlot, type TopnavSlot } from './topnavSlots';
 import { getActiveAccount } from '../../lib/accounts';
 import { unreadBadgeLabel } from '../../lib/format';
+import { profileLinkOf } from '../../lib/links';
 
 interface ChannelsListProps {
   panRef?: import('../SwipeTabs.types').SimultaneousRefs;
@@ -75,7 +76,7 @@ function HomeTopnavRight({ head, requestCount, router, onOpenSearch }: {
         onNewGroup={() => { router.push('/new-group'); }}
         onProfile={() => {
           void getActiveAccount().then(acct => {
-            if (acct?.address) router.push(`/profile/${acct.address}`);
+            if (acct?.address) router.push(profileLinkOf(acct.address));
           });
         }}
         onSettings={() => { router.push('/settings'); }}

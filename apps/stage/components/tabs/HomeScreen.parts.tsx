@@ -12,7 +12,7 @@ import { resetActiveXmtpStore, shortAddress, prefetchFeed, lineOfConv } from '..
 import { reloadApp } from '../AccountsManager.helpers';
 import { getPeerName, isPeerResolved } from '../../lib/peerProfiles';
 import { getDraft } from '../../lib/drafts';
-import { conversationLinkOf, isActiveConversationPath } from '../../lib/conversationLink';
+import { conversationLinkOf, isActiveConversationPathFor } from '../../lib/links';
 import type { Row as RowT } from './HomeScreen.helpers';
 import type { RowMenu } from './HomeScreen.state';
 import { channelTimestamp } from '../../lib/format';
@@ -108,7 +108,7 @@ export function useChannelRowRenderer(
       avatarAddress={rowAvatarAddress(item, !item.peerAddress)}
       pinned={pinned.has(item.convId)}
       draftText={getDraft(item.convId)}
-      active={isActiveConversationPath(activePath, item.convId, item.peerAddress)}
+      active={isActiveConversationPathFor(activePath, item.convId, item.peerAddress)}
     />
   ), [router, setRowMenu, channelProfilesVersion, draftsVersion, pinned, query, activePath]);
 }
