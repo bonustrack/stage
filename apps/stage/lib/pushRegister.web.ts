@@ -3,7 +3,7 @@ import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getMessaging, getToken, isSupported } from 'firebase/messaging';
 import type { HmacKeysByTopic } from '@stage-labs/client/xmtp/pushServer';
 import { isSyncGroupName } from '@stage-labs/client/xmtp/readState';
-import { FIREBASE_WEB_CONFIG, VAPID_PUBLIC_KEY, firebaseWebConfigured } from './firebaseWeb';
+import { FIREBASE_WEB_CONFIG, firebaseWebConfigured } from './firebaseWeb';
 import { runPushRegistration, runPushUnregistration, type PushTopics } from './pushRegister.core';
 import { setPushStatus } from './pushStatus';
 import { getCachedXmtpClient } from './xmtp.state.web';
@@ -50,7 +50,9 @@ async function webPushToken(): Promise<string | null> {
   const registration = await navigator.serviceWorker.register(PUSH_SERVICE_WORKER_PATH);
   await navigator.serviceWorker.ready;
   const app = getApps().length > 0 ? getApp() : initializeApp(FIREBASE_WEB_CONFIG);
-  return getToken(getMessaging(app), { vapidKey: VAPID_PUBLIC_KEY, serviceWorkerRegistration: registration });
+  return getToken(getMessaging(app), {
+    vapidKey: FIREBASE_WEB_CONFIG.vapidPublicKey, serviceWorkerRegistration: registration,
+  });
 }
 
 function groupTopic(groupId: string): string {
