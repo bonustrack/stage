@@ -6,7 +6,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import type { PickedFile } from '@stage-labs/kit/react-native/file-picker';
 import { BASENAME_CLAIM_URL, manageBasenameUrl } from '@stage-labs/client/identity/basenameWrite';
 import { Box, Col, WEB_EDGE_CONTENT_WIDE, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../layout';
-import { usePalette } from '../../lib/theme';
+
 import { capabilities } from '../../lib/capabilities';
 import { flash } from '../../lib/toast';
 import { getPeerName, getPeerProfileSource, invalidatePeerProfile, usePeerProfiles } from '../../lib/peerProfiles';
@@ -70,7 +70,7 @@ function ProfileActions({ view, name, address, busy, onChangePicture }: {
 }
 
 export function ProfileSettings(): React.ReactElement {
-  const { text: fg } = usePalette();
+
   const insets = useSafeAreaInsets();
   const address = useActiveAccountRecord()?.address ?? null;
   usePeerProfiles([address]);
@@ -89,9 +89,9 @@ export function ProfileSettings(): React.ReactElement {
           <Text value={view.title || (address ? shortAddress(address) : '')} size="2xl" weight="semibold" />
           {address ? <Caption value={shortAddress(address)} color="secondary" /> : null}
         </Col>
-        <Caption color={fg} style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
-          {view.explanation}
-        </Caption>
+        <Box padding={{ x: 16, bottom: 12 }}>
+          <Text value={view.explanation} size="md" color="secondary" />
+        </Box>
         {address && view.claimVisible ? (
           <Box padding={{ bottom: 16 }}>
             <ClaimStageName address={address} onClaimed={() => { invalidatePeerProfile(address); }} />

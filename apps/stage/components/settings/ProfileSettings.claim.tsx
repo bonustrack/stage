@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Caption } from '@stage-labs/kit/react-native/caption';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { Input } from '@stage-labs/kit/react-native/input';
 import { fontSize } from '@stage-labs/kit/tokens';
 import { Box, Col } from '../layout';
@@ -62,7 +63,7 @@ function SetPrimaryRow({ address, label, onDone }: { address: string; label: str
           onPress={run}
         />
       </SettingsList>
-      {error ? <Caption color="secondary" style={{ paddingHorizontal: 16 }}>{error}</Caption> : null}
+      {error ? <Box padding={{ x: 16 }}><Text value={error} size="md" color="secondary" /></Box> : null}
     </Col>
   );
 }
@@ -114,9 +115,9 @@ function ClaimForm({ address, onClaimed }: { address: string; onClaimed: () => v
           style={{ color: fg, borderColor: border, borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: fontSize('lg') }}
         />
       </Box>
-      <Caption color="secondary" style={{ paddingHorizontal: 16 }}>
-        {claimStatusText(state)}
-      </Caption>
+      <Box padding={{ x: 16 }}>
+        <Text value={claimStatusText(state)} size="md" color="secondary" />
+      </Box>
       <SettingsList>
         <SettingsButtonRow
           label={busy ? 'Claiming…' : `Claim ${label === '' ? 'name' : `${label}.stage.base.eth`}`}

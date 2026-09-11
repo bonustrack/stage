@@ -2,7 +2,6 @@ import { isAddress, type Hex } from 'viem';
 import {
   claimIsFresh, claimMessage, describeLabelProblem, stageNameOf, validateStageLabel,
 } from '@stage-labs/client/identity/stageNames';
-import { broviderRpc } from '@stage-labs/client/wallet/client';
 import { makeNamesChain } from './namesChain.ts';
 import type { NamesChain, NamesDeps, NamesStore } from './namesTypes.ts';
 
@@ -12,8 +11,11 @@ export const NAMES_PREFIX = '/names/';
 
 export interface NamesEnv {
   NAMES_OPERATOR_KEY?: string;
+  NAMES_RPC_URL?: string;
   NAMES_KV?: KVNamespace;
 }
+
+const DEFAULT_BASE_RPC = 'https://mainnet.base.org';
 
 const CORS = {
   'access-control-allow-origin': '*',
@@ -113,6 +115,6 @@ export function handleNamesRequest(request: Request, env: NamesEnv): Promise<Res
   if (!env.NAMES_OPERATOR_KEY || !env.NAMES_KV) {
     return Promise.resolve(reply({ error: 'name registration is not configured' }, 503));
   }
-  chain ??= makeNamesChain(env.NAMES_OPERATOR_KEY as Hex, broviderRpc(8453));
+  chain ??= makeNamesChain(env.NAMES_OPERATOR_KEY as Hex, env.NAMES_RPC_URL ?? DEFAULT_BASE_RPC);
   return handleNames(request, { chain, store: kvStore(env.NAMES_KV) });
 }
