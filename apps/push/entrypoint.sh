@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-# Fly Postgres attaches as DATABASE_URL; the server reads DB_CONNECTION_STRING.
+# The database secret is DATABASE_URL; the server reads DB_CONNECTION_STRING.
 if [ -z "${DB_CONNECTION_STRING:-}" ] && [ -n "${DATABASE_URL:-}" ]; then
   export DB_CONNECTION_STRING="$DATABASE_URL"
 fi

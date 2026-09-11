@@ -1,5 +1,5 @@
 app = "stage-push"
-primary_region = "cdg"
+primary_region = "iad"
 
 [build]
   dockerfile = "Dockerfile"

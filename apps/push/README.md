@@ -2,7 +2,7 @@
 
 This is XMTP's reference notification server, built from a pinned upstream commit
 (see `UPSTREAM_COMMIT` in the `Dockerfile`) and deployed to Fly as the app
-`stage-push`. It is the piece that turns an encrypted message on the XMTP network
+`stage-push` in the `iad` region (Ashburn, Virginia, the same site as AWS us-east-1). It is the piece that turns an encrypted message on the XMTP network
 into a contentless push on the user's devices.
 
 ## What it sees and what it cannot see
@@ -32,17 +32,19 @@ client dials the server over plaintext gRPC; the JSON path above stays on TLS.
 
 You need `flyctl` logged in to the bonustrack Fly organisation.
 
-1. Create the app and its database in the region set in `fly.toml`:
+1. Create the app and point it at the database. The database is a managed
+   Postgres outside Fly (PlanetScale today); the server only needs a
+   connection string and runs its own migrations on first start:
 
    ```
    cd apps/push
-   fly apps create stage-push
-   fly postgres create --name stage-push-db --region cdg --vm-size shared-cpu-1x --initial-cluster-size 1 --volume-size 1
-   fly postgres attach stage-push-db --app stage-push
+   fly apps create stage-push --org stage-labs
+   fly secrets set --app stage-push DATABASE_URL='postgres://user:password@host:5432/dbname?sslmode=require'
    ```
 
-   Attaching sets `DATABASE_URL` on the app; the entrypoint maps it to the
-   variable the server reads. Migrations run automatically on first start.
+   The entrypoint maps `DATABASE_URL` to the variable the server reads. Keep
+   `sslmode=require` (or `verify-full`) so the connection to the provider is
+   encrypted.
 
 2. Set the delivery credentials as Fly secrets:
 
@@ -98,7 +100,7 @@ You need `flyctl` logged in to the bonustrack Fly organisation.
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `DB_CONNECTION_STRING` or `DATABASE_URL` | required | Postgres connection string |
+| `DB_CONNECTION_STRING` or `DATABASE_URL` | required | Postgres connection string, a managed database outside Fly |
 | `XMTP_GRPC_ADDRESS` | `production.xmtp.network:5556` | XMTP node the listener streams from |
 | `XMTP_LISTENER_TLS` | `true` | TLS to the XMTP node |
 | `LISTENER_TYPE` | `v3` | `v3` today; `v4` once the app moves to the decentralised network |
