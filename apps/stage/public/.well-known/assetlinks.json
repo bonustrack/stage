@@ -1,11 +1,21 @@
 [
   {
-    "relation": ["delegate_permission/common.handle_all_urls"],
+    "relation": ["delegate_permission/common.handle_all_urls", "delegate_permission/common.get_login_creds"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "box.stage",
+      "sha256_cert_fingerprints": [
+        "60:E1:91:BB:1A:54:57:35:EE:AD:F9:1C:63:E9:54:79:5C:86:2A:A3:49:E7:70:B7:03:27:79:A0:3F:F0:77:E8"
+      ]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls", "delegate_permission/common.get_login_creds"],
     "target": {
       "namespace": "android_app",
       "package_name": "box.metro.monitor",
       "sha256_cert_fingerprints": [
-        "REPLACE_WITH_RELEASE_SHA256_FINGERPRINT"
+        "40:76:99:2F:42:52:06:28:AD:BD:E2:D7:9B:B2:14:35:14:E5:FE:6F:6B:77:67:BB:0E:DB:C7:1A:6C:2C:F0:11"
       ]
     }
   }
