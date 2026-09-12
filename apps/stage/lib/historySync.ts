@@ -9,7 +9,7 @@ import {
 } from './xmtp.history';
 import { getActiveAccount } from './accounts';
 import {
-  historyPinFromRandom, historySyncIsActive, holdsHistoryBefore, HISTORY_PIN_LENGTH,
+  historyGrewOlder, historyPinFromRandom, historySyncIsActive, holdsHistoryBefore, HISTORY_PIN_LENGTH,
   type HistorySnapshot, type HistorySyncPhase,
 } from './historySync.model';
 
@@ -71,13 +71,13 @@ async function tryProcessArchive(): Promise<void> {
   }
 }
 
-interface Watch { baseline: HistorySnapshot | null; installedAtMs: number | null }
+interface Watch { baseline: HistorySnapshot | null; installedAtMs: number | null; startedAtMs: number }
 
 async function localHistoryChanged(watch: Watch): Promise<boolean> {
   try {
     const current = await historySnapshot();
     if (watch.installedAtMs !== null && holdsHistoryBefore(current, watch.installedAtMs)) return true;
-    return watch.baseline !== null && current.fingerprint !== watch.baseline.fingerprint;
+    return watch.baseline !== null && historyGrewOlder(watch.baseline, current, watch.startedAtMs);
   } catch (err) {
     warn('snapshot', err);
     return false;
@@ -110,11 +110,12 @@ async function waitForHistory(deadline: number, watch: Watch): Promise<boolean> 
 
 async function startWatch(): Promise<Watch> {
   const installedAtMs = (await getActiveAccount().catch(() => null))?.createdAt ?? null;
+  const startedAtMs = Date.now();
   try {
-    return { baseline: await historySnapshot(), installedAtMs };
+    return { baseline: await historySnapshot(), installedAtMs, startedAtMs };
   } catch (err) {
     warn('baseline', err);
-    return { baseline: null, installedAtMs };
+    return { baseline: null, installedAtMs, startedAtMs };
   }
 }
 

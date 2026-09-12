@@ -45,7 +45,7 @@ export function historySyncIsActive(phase: HistorySyncPhase): boolean {
 
 export interface HistoryEntry { id: string; firstNs: string }
 
-export interface HistorySnapshot { fingerprint: string; oldestNs: number | null }
+export interface HistorySnapshot { fingerprint: string; oldestNs: number | null; firstNsById: Record<string, number> }
 
 export const HISTORY_CLOCK_SKEW_MS = 5 * 60 * 1000;
 
@@ -55,12 +55,24 @@ export function fingerprintOf(entries: readonly HistoryEntry[]): string {
 
 export function snapshotOf(entries: readonly HistoryEntry[]): HistorySnapshot {
   let oldestNs: number | null = null;
+  const firstNsById: Record<string, number> = {};
   for (const entry of entries) {
     if (entry.firstNs === '') continue;
     const ns = Number(entry.firstNs);
-    if (Number.isFinite(ns) && (oldestNs === null || ns < oldestNs)) oldestNs = ns;
+    if (!Number.isFinite(ns)) continue;
+    firstNsById[entry.id] = ns;
+    if (oldestNs === null || ns < oldestNs) oldestNs = ns;
   }
-  return { fingerprint: fingerprintOf(entries), oldestNs };
+  return { fingerprint: fingerprintOf(entries), oldestNs, firstNsById };
+}
+
+export function historyGrewOlder(baseline: HistorySnapshot, current: HistorySnapshot, watchStartedAtMs: number): boolean {
+  const beforeWatchNs = (watchStartedAtMs - HISTORY_CLOCK_SKEW_MS) * 1_000_000;
+  for (const [id, firstNs] of Object.entries(current.firstNsById)) {
+    const known = baseline.firstNsById[id];
+    if (known === undefined ? firstNs < beforeWatchNs : firstNs < known) return true;
+  }
+  return false;
 }
 
 export function holdsHistoryBefore(snapshot: HistorySnapshot, installedAtMs: number): boolean {

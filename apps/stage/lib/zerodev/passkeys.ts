@@ -2,6 +2,7 @@
 import '../cryptoShim';
 import type { PasskeyPublicKey } from '@stage-labs/client/zerodev/passkeyLink';
 import { Platform } from 'react-native';
+import { storedPasskeyFromAssertion } from './passkeyAssertion';
 import {
   bytesToBase64Url,
   type RegisterPasskeyOptions,
@@ -147,8 +148,17 @@ export async function assertPasskeyPresence(stored: StoredPasskey): Promise<bool
   }
 }
 
-export function linkExistingPasskey(rpId: string, key: PasskeyPublicKey): Promise<StoredPasskey | null> {
-  void rpId;
-  void key;
-  return Promise.resolve(null);
+export async function linkExistingPasskey(rpId: string, key: PasskeyPublicKey): Promise<StoredPasskey | null> {
+  if (!passkeysAvailable()) return null;
+  const passkey = asPasskeysNative(require('react-native-passkeys'));
+  const challengeBytes = new Uint8Array(32);
+  crypto.getRandomValues(challengeBytes);
+  let cred: unknown;
+  try {
+    cred = await passkey.get({ challenge: bytesToBase64Url(challengeBytes), rpId, userVerification: 'required' });
+  } catch {
+    return null;
+  }
+  if (!cred) return null;
+  return storedPasskeyFromAssertion(cred, rpId, key);
 }

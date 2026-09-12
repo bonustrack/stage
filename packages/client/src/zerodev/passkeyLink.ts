@@ -1,4 +1,5 @@
-import { keccak256, type Hex } from 'viem';
+import { p256 } from '@noble/curves/p256';
+import { keccak256, sha256, type Hex } from 'viem';
 
 export const WEBAUTHN_STORAGE_ABI = [
   {
@@ -54,4 +55,15 @@ export function concatBytes(...parts: Uint8Array[]): Uint8Array {
 
 export function hexOfBigint(value: bigint): Hex {
   return `0x${value.toString(16)}`;
+}
+
+export function passkeyAssertionMatches(
+  key: PasskeyPublicKey, authenticatorData: Uint8Array, clientDataJSON: Uint8Array, r: bigint, s: bigint,
+): boolean {
+  const signed = sha256(concatBytes(authenticatorData, sha256(clientDataJSON, 'bytes')), 'bytes');
+  try {
+    return p256.verify(rsToRawSignature(r, s), signed, p256RawPublicKey(key), { lowS: false, prehash: false });
+  } catch {
+    return false;
+  }
 }

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  fingerprintOf, formatHistoryPin, historyPinFromRandom, historySyncIsActive, historySyncPhaseLabel,
+  fingerprintOf, formatHistoryPin, historyGrewOlder, historyPinFromRandom, historySyncIsActive, historySyncPhaseLabel,
   holdsHistoryBefore, isValidHistoryPin, normalizeHistoryPin, snapshotOf,
 } from '../lib/historySync.model';
 
@@ -61,5 +61,32 @@ describe('history snapshot', () => {
     expect(holdsHistoryBefore(snapshotOf([{ id: 'a', firstNs: ns(installedAtMs - 60_000) }]), installedAtMs)).toBe(false);
     expect(holdsHistoryBefore(snapshotOf([{ id: 'a', firstNs: ns(installedAtMs + 1) }]), installedAtMs)).toBe(false);
     expect(holdsHistoryBefore(snapshotOf([]), installedAtMs)).toBe(false);
+  });
+});
+
+describe('historyGrewOlder', () => {
+  const dayMs = 24 * 60 * 60 * 1000;
+  const startedAtMs = 1_700_000_000_000;
+  const ns = (ms: number): string => String(ms * 1_000_000);
+  const baseline = snapshotOf([{ id: 'a', firstNs: ns(startedAtMs - 60_000) }, { id: 'b', firstNs: '' }]);
+
+  test('a known conversation whose first message moved earlier counts as history', () => {
+    expect(historyGrewOlder(baseline, snapshotOf([{ id: 'a', firstNs: ns(startedAtMs - dayMs) }]), startedAtMs)).toBe(true);
+  });
+
+  test('a welcome for a new conversation with only fresh messages does not', () => {
+    const current = snapshotOf([{ id: 'a', firstNs: ns(startedAtMs - 60_000) }, { id: 'c', firstNs: ns(startedAtMs + 2_000) }]);
+    expect(historyGrewOlder(baseline, current, startedAtMs)).toBe(false);
+  });
+
+  test('a new conversation carrying messages from before the watch does', () => {
+    const current = snapshotOf([{ id: 'c', firstNs: ns(startedAtMs - dayMs) }]);
+    expect(historyGrewOlder(baseline, current, startedAtMs)).toBe(true);
+  });
+
+  test('an unchanged snapshot or a first message for an empty conversation is not history', () => {
+    expect(historyGrewOlder(baseline, baseline, startedAtMs)).toBe(false);
+    const current = snapshotOf([{ id: 'a', firstNs: ns(startedAtMs - 60_000) }, { id: 'b', firstNs: ns(startedAtMs + 1) }]);
+    expect(historyGrewOlder(baseline, current, startedAtMs)).toBe(false);
   });
 });

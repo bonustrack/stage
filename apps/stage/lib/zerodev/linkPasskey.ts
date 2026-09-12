@@ -34,13 +34,25 @@ export function storedPasskeyMatches(rec: AccountRecord, key: PasskeyPublicKey |
   return BigInt(rec.passkey.pubX) === key.pubX && BigInt(rec.passkey.pubY) === key.pubY;
 }
 
-export async function passkeyLinked(rec: AccountRecord): Promise<boolean> {
-  if (rec.type !== 'smart' || !rec.passkey) return false;
+export type PasskeyPlace = 'this-device' | 'elsewhere' | 'none' | 'unknown';
+
+export async function dropMismatchedPasskey(rec: AccountRecord, key: PasskeyPublicKey | null): Promise<boolean> {
+  if (!rec.passkey || storedPasskeyMatches(rec, key)) return false;
+  await updateSmartAccount(rec.id, { passkey: undefined, passkeyCredId: undefined });
+  return true;
+}
+
+export async function passkeyPlace(rec: AccountRecord): Promise<PasskeyPlace> {
+  if (rec.type !== 'smart') return 'none';
+  let key: PasskeyPublicKey | null;
   try {
-    return storedPasskeyMatches(rec, await accountPasskey(rec.address as Hex));
+    key = await accountPasskey(rec.address as Hex);
   } catch {
-    return true;
+    return 'unknown';
   }
+  if (!key) return rec.passkey ? 'this-device' : 'none';
+  if (await dropMismatchedPasskey(rec, key)) return 'elsewhere';
+  return rec.passkey ? 'this-device' : 'elsewhere';
 }
 
 export async function linkPasskeyForRecord(rec: AccountRecord): Promise<LinkPasskeyResult> {

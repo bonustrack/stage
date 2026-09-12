@@ -9,9 +9,8 @@ import {
   uint8ArrayToHexString,
 } from '@zerodev/webauthn-key';
 import { encodeAbiParameters, type Hex } from 'viem';
-import {
-  authenticatorIdHashOf, concatBytes, hexOfBigint, p256RawPublicKey, rsToRawSignature, type PasskeyPublicKey,
-} from '@stage-labs/client/zerodev/passkeyLink';
+import type { PasskeyPublicKey } from '@stage-labs/client/zerodev/passkeyLink';
+import { storedPasskeyFromAssertion } from './passkeyAssertion';
 import {
   base64UrlToBytes,
   bytesToBase64Url,
@@ -134,25 +133,6 @@ export async function assertPasskeyPresence(stored: StoredPasskey): Promise<bool
   }
 }
 
-function asArrayBuffer(bytes: Uint8Array): ArrayBuffer {
-  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
-}
-
-async function assertionMatchesKey(
-  cred: Awaited<ReturnType<typeof passkey.get>> & object, key: PasskeyPublicKey,
-): Promise<boolean> {
-  const authenticatorData = base64UrlToBytes(cred.response.authenticatorData);
-  const clientData = base64UrlToBytes(cred.response.clientDataJSON);
-  const clientDataHash = new Uint8Array(await crypto.subtle.digest('SHA-256', asArrayBuffer(clientData)));
-  const { r, s } = parseAndNormalizeSig(uint8ArrayToHexString(base64UrlToBytes(cred.response.signature)));
-  const publicKey = await crypto.subtle.importKey(
-    'raw', asArrayBuffer(p256RawPublicKey(key)), { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify'],
-  );
-  return crypto.subtle.verify(
-    { name: 'ECDSA', hash: 'SHA-256' }, publicKey, asArrayBuffer(rsToRawSignature(r, s)), asArrayBuffer(concatBytes(authenticatorData, clientDataHash)),
-  );
-}
-
 export async function linkExistingPasskey(rpId: string, key: PasskeyPublicKey): Promise<StoredPasskey | null> {
   if (!passkeysAvailable()) return null;
   let cred: Awaited<ReturnType<typeof passkey.get>>;
@@ -164,15 +144,5 @@ export async function linkExistingPasskey(rpId: string, key: PasskeyPublicKey): 
     throw e instanceof Error ? e : new Error('Passkey request failed');
   }
   if (!cred) return null;
-  if (!(await assertionMatchesKey(cred, key))) {
-    throw new Error('That passkey does not belong to this account. Pick the passkey created for this wallet.');
-  }
-  const rawId = base64UrlToBytes(cred.rawId);
-  return {
-    pubX: hexOfBigint(key.pubX),
-    pubY: hexOfBigint(key.pubY),
-    authenticatorId: cred.rawId,
-    authenticatorIdHash: authenticatorIdHashOf(rawId),
-    rpID: rpId,
-  };
+  return storedPasskeyFromAssertion(cred, rpId, key);
 }

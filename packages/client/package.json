@@ -91,6 +91,7 @@
     "test": "bun test test/"
   },
   "dependencies": {
+    "@noble/curves": "^1.9.1",
     "@zerodev/ecdsa-validator": "5.4.9",
     "@zerodev/sdk": "5.5.10",
     "viem": "^2.51.0",

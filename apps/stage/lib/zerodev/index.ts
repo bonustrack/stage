@@ -7,7 +7,7 @@ export { createSmartAccount } from './create';
 export { kernelClientForRecord } from './kernelForRecord';
 export { enablePasskeyForRecord } from './enablePasskey';
 export { removePasskeyFromRecord } from './disablePasskey';
-export { linkPasskeyForRecord, describeLinkResult, passkeyLinked } from './linkPasskey';
+export { linkPasskeyForRecord, describeLinkResult, passkeyPlace, type PasskeyPlace } from './linkPasskey';
 export { kernelDeployedOnChain } from './client';
 export {
   installGuardians, updateGuardians, signRecoveryApproval, cancelRecovery,

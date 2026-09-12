@@ -17,7 +17,7 @@ import { transferKindFor } from '../../lib/accountTransfer';
 import { TransferAccountSheet } from '../accounts/TransferAccountSheet';
 import { SettingsButtonRow, SettingsList, SettingsNavRow } from '../settings/rows';
 import { RecoveryKeyRow } from '../settings/RecoveryKeyRow';
-import { PasskeyLinkRow } from '../settings/PasskeyLinkRow';
+import { PasskeyLinkRow, usePasskeyPlace } from '../settings/PasskeyLinkRow';
 
 interface SectionColors { fg: string; head: string; sub: string; border: string; rowBg: string }
 
@@ -82,10 +82,11 @@ function revealedKeyFor(key: RevealedKey | null, rec: AccountRecord): string | n
 function AccountRows({ rec, revealed, onExport, onMove }: {
   rec: AccountRecord; revealed: string | null; onExport: () => void; onMove: () => void;
 }): React.ReactElement {
+  const [place, setPlace] = usePasskeyPlace(rec);
   return (
     <SettingsList>
-      <PasskeyLinkRow rec={rec} />
-      <RecoveryKeyRow rec={rec} />
+      <PasskeyLinkRow rec={rec} place={place} onLinked={() => { setPlace('this-device'); }} />
+      <RecoveryKeyRow rec={rec} place={place} />
       {canExportPrivateKey(rec) && !revealed ? (
         <SettingsNavRow label="Export private key" iconStart="wallet" iconEnd="chevronDown" onPress={onExport} />
       ) : null}
