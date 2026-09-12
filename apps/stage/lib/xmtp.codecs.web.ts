@@ -56,7 +56,7 @@ async function signerForSmart(rec: AccountRecord): Promise<Signer> {
   }
   const { kernelClientForRecord } = await import('./zerodev/kernelForRecord');
   const { SCW_CHAIN_ID_BIGINT } = await import('@stage-labs/client/zerodev/config');
-  const kernelClient = await kernelClientForRecord(rec);
+  const kernelClient = await kernelClientForRecord(rec, 'sign');
   return {
     type: 'SCW',
     getIdentifier: () => ({

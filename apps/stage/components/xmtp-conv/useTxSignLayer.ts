@@ -30,7 +30,7 @@ function typedDataOf(req: SignatureRequestContent): TypedDataDefinition {
 }
 
 async function signWithKernel(req: SignatureRequestContent, active: AccountRecord): Promise<{ signature: string; signer: string }> {
-  const kernel = await kernelClientForRecord(active);
+  const kernel = await kernelClientForRecord(active, 'sign');
   if (req.kind === 'eip712') {
     const typedData = typedDataOf(req);
     const signature = await kernel.signTypedData(typedData as Parameters<typeof kernel.signTypedData>[0]);

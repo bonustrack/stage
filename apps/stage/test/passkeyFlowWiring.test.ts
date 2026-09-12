@@ -68,8 +68,8 @@ describe('A2. callers install the passkey BEFORE messaging (passkey signs the in
 
 describe('B. kernelForRecord.ts — validator chosen from the account\'s onchain root', () => {
   test('passkey branch builds from the passkey validator', () => {
-    expect(kernelSrc).toContain('passkeyKernelFromStored');
-    expect(kernelSrc).toContain('if (rec.passkey && storedPasskeyMatches(');
+    expect(kernelSrc).toContain('passkeyKernelResult(publicClient, hdIndex, rec.passkey, addressOverride)');
+    expect(kernelSrc).toContain('storedPasskeyMatches(');
   });
   test('passkeySudo => no override; else pin to rec.address', () => {
     expect(kernelSrc).toContain('rec.passkeySudo ? undefined : (rec.address as Hex)');
@@ -80,7 +80,7 @@ describe('B. kernelForRecord.ts — validator chosen from the account\'s onchain
     expect(kernelSrc).toContain('planKernelSigning(');
   });
   test('fails closed (throws) rather than signing with a key the account does not allow to transact', () => {
-    expect(kernelSrc).toContain('throw new Error(describeUnavailableSigning())');
+    expect(kernelSrc).toContain('throw new Error(describeUnavailableSigning(purpose, passkey.problem, passkey.detail))');
   });
 });
 
@@ -120,7 +120,7 @@ describe('C. enablePasskey.ts — deploy-via-ECDSA-initcode then swap sudo on-ch
 describe('D. xmtp.codecs.ts — smart account signs XMTP via the scwSigner + kernel', () => {
   test('smart accounts route through signerForSmart -> scwSigner + kernelClientForRecord', () => {
     expect(codecsSrc).toContain("rec.type === 'smart'");
-    expect(codecsSrc).toContain('kernelClientForRecord(rec)');
+    expect(codecsSrc).toContain("kernelClientForRecord(rec, 'sign')");
     expect(codecsSrc).toContain('scwSigner(kernelClient, rec.address)');
   });
 });

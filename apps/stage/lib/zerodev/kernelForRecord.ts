@@ -4,12 +4,13 @@ import type { HDAccount } from 'viem/accounts';
 import { createKernelAccount, type CreateKernelAccountReturnType, type KernelAccountClient } from '@zerodev/sdk';
 import { getValidatorAddress } from '@zerodev/ecdsa-validator';
 import {
-  KERNEL_EXECUTE_SELECTOR, describeUnavailableSigning, planKernelSigning, validationIdOf, type KernelValidationState,
+  KERNEL_EXECUTE_SELECTOR, describeUnavailableSigning, planKernelSigning, validationIdOf,
+  type KernelSigningPurpose, type KernelValidationState, type PasskeyProblem,
 } from '@stage-labs/client/zerodev/validatorPlan';
 import type { AccountRecord } from '../accounts';
 import { smartOwnerSigner } from './keyring';
 import { makePublicClient, makeKernelClient } from './client';
-import { createEcdsaKernel, ecdsaValidatorForOwner, passkeyKernelFromStored } from './account';
+import { createEcdsaKernel, ecdsaValidatorForOwner, passkeyKernelResult } from './account';
 import { ENTRY_POINT, KERNEL_VERSION } from './config';
 import { accountPasskey, storedPasskeyMatches } from './linkPasskey';
 
@@ -53,29 +54,34 @@ async function secondaryEcdsaClient(publicClient: PublicClient, owner: HDAccount
   return makeKernelClient(account, publicClient);
 }
 
-export async function kernelClientForRecord(rec: AccountRecord): Promise<KernelAccountClient> {
+interface PasskeyAttempt { account: CreateKernelAccountReturnType | null; problem: PasskeyProblem; detail?: string }
+
+async function tryPasskey(publicClient: PublicClient, rec: AccountRecord, hdIndex: number): Promise<PasskeyAttempt> {
+  if (!rec.passkey) return { account: null, problem: 'not-stored' };
+  if (!storedPasskeyMatches(rec, await accountPasskey(rec.address as Hex).catch(() => null))) {
+    return { account: null, problem: 'mismatch' };
+  }
+  const addressOverride = rec.passkeySudo ? undefined : (rec.address as Hex);
+  const result = await passkeyKernelResult(publicClient, hdIndex, rec.passkey, addressOverride);
+  if ('account' in result) return { account: result.account, problem: 'none' };
+  return { account: null, problem: 'build-failed', detail: result.error };
+}
+
+export async function kernelClientForRecord(rec: AccountRecord, purpose: KernelSigningPurpose = 'transact'): Promise<KernelAccountClient> {
   if (rec.type !== 'smart' || rec.hdIndex == null) {
     throw new Error('Not a smart account.');
   }
   const publicClient = makePublicClient();
   const hdIndex = rec.hdIndex;
-  let passkeyAccount: CreateKernelAccountReturnType | null = null;
-  if (rec.passkey && storedPasskeyMatches(rec, await accountPasskey(rec.address as Hex).catch(() => null))) {
-    const addressOverride = rec.passkeySudo ? undefined : (rec.address as Hex);
-    passkeyAccount = await passkeyKernelFromStored(
-      publicClient,
-      undefined as unknown as Parameters<typeof passkeyKernelFromStored>[1],
-      hdIndex,
-      rec.passkey,
-      addressOverride,
-    );
-  }
-  if (passkeyAccount) return makeKernelClient(passkeyAccount, publicClient);
+  const passkey = await tryPasskey(publicClient, rec, hdIndex);
+  if (passkey.account) return makeKernelClient(passkey.account, publicClient);
 
   const ecdsaValidator = getValidatorAddress(ENTRY_POINT, KERNEL_VERSION);
   const state = await readValidationState(publicClient, rec.address as Hex, ecdsaValidator);
-  const plan = planKernelSigning({ ...state, ecdsaValidator, passkeyUsable: false });
-  if (plan !== 'ecdsa-root' && plan !== 'ecdsa-secondary') throw new Error(describeUnavailableSigning());
+  const plan = planKernelSigning({ ...state, ecdsaValidator, passkeyUsable: false, purpose });
+  if (plan !== 'ecdsa-root' && plan !== 'ecdsa-secondary') {
+    throw new Error(describeUnavailableSigning(purpose, passkey.problem, passkey.detail));
+  }
 
   const owner = await smartOwnerSigner(hdIndex);
   if (plan === 'ecdsa-root') {

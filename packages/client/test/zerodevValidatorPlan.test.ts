@@ -20,6 +20,11 @@ describe('planKernelSigning', () => {
     expect(planKernelSigning({ rootValidatorId: PASSKEY_ROOT, ecdsaInstalled: false, ecdsaCanExecute: false, ecdsaValidator: ECDSA, passkeyUsable: false })).toBe('unavailable');
   });
 
+  test('message signing only needs the ECDSA validator to be installed', () => {
+    expect(planKernelSigning({ rootValidatorId: PASSKEY_ROOT, ecdsaInstalled: true, ecdsaCanExecute: false, ecdsaValidator: ECDSA, passkeyUsable: false, purpose: 'sign' })).toBe('ecdsa-secondary');
+    expect(planKernelSigning({ rootValidatorId: PASSKEY_ROOT, ecdsaInstalled: true, ecdsaCanExecute: false, ecdsaValidator: ECDSA, passkeyUsable: false, purpose: 'transact' })).toBe('unavailable');
+  });
+
   test('validation ids are the secondary-type prefix plus the lowercase address', () => {
     expect(validationIdOf(ECDSA)).toBe('0x01845adb2c711129d4f3966735ed98a9f09fc4ce57');
   });

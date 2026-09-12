@@ -20,25 +20,27 @@ describe('passkey-only signer (kernelForRecord chokepoint)', () => {
   const body = bodyOf(kernelSrc, 'kernelClientForRecord');
 
   test('passkey branch builds the Kernel from the passkey validator', () => {
-    const passkeyCall = body.indexOf('passkeyKernelFromStored');
+    const passkeyCall = body.indexOf('tryPasskey(publicClient, rec, hdIndex)');
     expect(passkeyCall).toBeGreaterThanOrEqual(0);
-    expect(body).toContain('if (rec.passkey && storedPasskeyMatches(');
+    expect(kernelSrc).toContain("if (!rec.passkey) return { account: null, problem: 'not-stored' }");
+    expect(kernelSrc).toContain('storedPasskeyMatches(');
   });
 
   test('mnemonic is NOT read before the passkey kernel is built', () => {
-    const passkeyBuild = body.indexOf('passkeyKernelFromStored');
+    const passkeyBuild = body.indexOf('tryPasskey(publicClient, rec, hdIndex)');
     const firstOwnerRead = body.indexOf('smartOwnerSigner');
     expect(passkeyBuild).toBeGreaterThanOrEqual(0);
     expect(firstOwnerRead).toBeGreaterThan(passkeyBuild);
   });
 
   test('fails closed (throws) unless the account lets the ECDSA key sign as root or secondary', () => {
-    expect(body).toContain("if (plan !== 'ecdsa-root' && plan !== 'ecdsa-secondary') throw new Error(describeUnavailableSigning())");
+    expect(body).toContain("if (plan !== 'ecdsa-root' && plan !== 'ecdsa-secondary') {");
+    expect(body).toContain('throw new Error(describeUnavailableSigning(purpose, passkey.problem, passkey.detail))');
     expect(body.indexOf('describeUnavailableSigning()')).toBeLessThan(body.indexOf('smartOwnerSigner'));
   });
 
   test('passkey kernel pins the address only for enable-upgraded accounts', () => {
-    expect(body).toContain('rec.passkeySudo ? undefined : (rec.address as Hex)');
+    expect(kernelSrc).toContain('rec.passkeySudo ? undefined : (rec.address as Hex)');
   });
 });
 

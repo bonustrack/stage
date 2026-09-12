@@ -64,6 +64,6 @@ async function signerForSmart(rec: AccountRecord): Promise<Signer> {
   }
   const { kernelClientForRecord } = await import('./zerodev/kernelForRecord');
   const { scwSigner } = await import('./zerodev/scwSigner');
-  const kernelClient = await kernelClientForRecord(rec);
+  const kernelClient = await kernelClientForRecord(rec, 'sign');
   return scwSigner(kernelClient, rec.address);
 }

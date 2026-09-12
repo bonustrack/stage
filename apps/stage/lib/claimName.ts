@@ -15,7 +15,7 @@ async function signWithActiveAccount(message: string): Promise<{ address: Hex; s
   const active = await getActiveAccount();
   if (!active) throw new Error('No active account');
   if (active.type === 'smart') {
-    const kernel = await kernelClientForRecord(active);
+    const kernel = await kernelClientForRecord(active, 'sign');
     const signature = await kernel.signMessage({ message } as Parameters<typeof kernel.signMessage>[0]);
     return { address: active.address as Hex, signature };
   }

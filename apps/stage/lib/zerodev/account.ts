@@ -112,6 +112,22 @@ export async function passkeyValidatorFromStored(
   }
 }
 
+export type PasskeyKernelResult = { account: CreateKernelAccountReturnType } | { error: string };
+
+export async function passkeyKernelResult(
+  publicClient: PublicClient,
+  hdIndex: number,
+  stored: StoredPasskey,
+  addressOverride?: `0x${string}`,
+): Promise<PasskeyKernelResult> {
+  if (!passkeysAvailable()) return { error: 'passkeys are not available on this device' };
+  try {
+    return { account: await buildPasskeyKernel(publicClient, undefined as unknown as HDAccount, hdIndex, stored, addressOverride) };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message.split('\n')[0] ?? 'unknown error' : String(e) };
+  }
+}
+
 export async function passkeyKernelFromStored(
   publicClient: PublicClient,
   owner: HDAccount,
