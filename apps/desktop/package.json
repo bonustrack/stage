@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "description": "Stage desktop app for macOS, Linux and Windows, bundling the web UI",
+  "homepage": "https://stage.box",
+  "author": "Stage Labs",
   "main": "dist/main.cjs",
   "scripts": {
     "build": "esbuild src/main.ts src/preload.ts --bundle --platform=node --target=node22 --format=cjs --external:electron --outdir=dist --out-extension:.js=.cjs",
