@@ -16,6 +16,7 @@ import {
   type ButtonControlVariant,
   type ButtonSize,
 } from '../button.styles';
+import { RADIUS_SCALE } from '../tokens';
 
 export type {
   ButtonColor,
@@ -62,6 +63,7 @@ type ResolvedColors = ReturnType<typeof resolveColors>;
 interface ContainerStyleArgs {
   spec: (typeof SIZES)[ButtonSize];
   square: boolean;
+  pill: boolean;
   stretch: boolean;
   radius: number | undefined;
   c: ResolvedColors;
@@ -85,13 +87,13 @@ function containerStyle(
   args: ContainerStyleArgs,
   pressed: boolean,
 ): (ViewStyle | undefined)[] {
-  const { spec, square, stretch, radius, c, isDisabled, style } = args;
+  const { spec, square, stretch, pill, radius, c, isDisabled, style } = args;
   const usePressedBg = pressed && !isDisabled;
   const base: ViewStyle = {
     height: spec.height,
     width: square ? spec.height : stretch ? '100%' : undefined,
     paddingHorizontal: square ? 0 : spec.paddingHorizontal,
-    borderRadius: radius ?? defaultButtonRadius,
+    borderRadius: radius ?? (pill ? RADIUS_SCALE.pill : defaultButtonRadius),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -186,14 +188,16 @@ export function Button(props: ButtonProps): React.ReactElement {
   const startIcon = iconStart ?? icon;
   const endIcon = iconEnd ?? iconRight;
   const stretch = orFlag(block, fullWidth);
-  const square = orFlag(pill, uniform);
+  const square = uniform === true;
 
   const spec = SIZES[size];
   const c = useResolvedColors({ color, variant, dark, tintBg, tintFg, tintPressedBg });
   const isDisabled = disabled || loading;
 
   const labelNode = renderLabel(children, label, spec, c.text, textStyle);
-  const styleArgs: ContainerStyleArgs = { spec, square, stretch, radius, c, isDisabled, style };
+  const styleArgs: ContainerStyleArgs = {
+    spec, square, stretch, pill: pill === true, radius, c, isDisabled, style,
+  };
 
   return (
     <Pressable

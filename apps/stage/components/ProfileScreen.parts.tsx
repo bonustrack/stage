@@ -60,6 +60,7 @@ function ProfileRoundAction({ icon, label, disabled, border, fg, dark, onPress }
         variant="solid"
         size="xl"
         pill
+        uniform
         tintBg={border}
         tintFg={fg}
         disabled={disabled}
