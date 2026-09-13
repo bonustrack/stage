@@ -36,7 +36,7 @@ function TabButtons({ pathname, unreadBadge, vertical }: {
           <Box>
             <Icon
               name={icon}
-              size={26}
+              size={22}
               color={i === activeIndex ? pal.link : pal.text}
               focused={i === activeIndex}
 />
