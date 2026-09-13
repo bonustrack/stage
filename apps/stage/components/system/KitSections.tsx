@@ -70,7 +70,7 @@ function TypographySections({ dark, head, sub, border }: GalleryPalette): React.
             label="iconStart" iconStart={<Icon name="check" size={18} color={dark ? '#000' : '#fff'} />}/>
           <Button dark={dark} color="secondary"
             label="iconEnd" iconEnd={<Icon name="check" size={18} color={head} />}/>
-          <Button dark={dark} color="secondary" pill iconStart={<Icon name="cog" size={18} color={head} />}/>
+          <Button dark={dark} color="secondary" pill uniform iconStart={<Icon name="cog" size={18} color={head} />}/>
         </Row>
       </GallerySection>
 
