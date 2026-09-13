@@ -21,7 +21,6 @@ export function GroupProfileHeader({ imageUrl, channelId, uploadingImage, insetT
   const fallbackUri = channelId ? stampAvatarUrl(channelStampSeed(channelId), 88) : '';
   return (
     <>
-      {}
       <Box height={140 + insetTop} surface="raised"/>
       <Box surface="surface" padding={{ x: 16 }} margin={{ top: -18 }} align="start" style={{ borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'visible' }}>
         <Pressable onPress={onTap} onLongPress={onPick} disabled={uploadingImage} hitSlop={8}

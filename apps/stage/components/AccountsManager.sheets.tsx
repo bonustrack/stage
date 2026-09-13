@@ -24,7 +24,6 @@ export function ManageSheet({ manageRec, activeId, onClose, onSwitch, onExport, 
       onClose={onClose}
       bg={p.sheetBg} border={p.border}
     >
-      {}
       <ListView dark={dark} style={{ marginHorizontal: -16 }}>
         {manageRec && manageRec.id !== activeId ? (
           <SheetRow label="Switch to this account" head={p.head} dark={dark} onPress={() => { const id = manageRec.id; onClose(); onSwitch(id); }} />

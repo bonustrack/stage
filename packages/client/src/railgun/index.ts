@@ -2,17 +2,11 @@
 export type { RailgunDispatch } from './dispatch';
 export { bn, type BigIntWire } from './wire';
 export {
-  SDK_METHODS, SDK_METHOD, ENGINE_OPS, EXTRA_CALLS, COMPOSITE_OPS,
+  SDK_METHODS, ENGINE_OPS, COMPOSITE_OPS,
   railgunMethodManifest,
-  type SdkMethod, type EngineOp, type ExtraCall, type CompositeOp,
+  type SdkMethod, type EngineOp, type CompositeOp,
   type RailgunMethodManifest,
 } from './methods';
-export type {
-  RailgunBridgeAPI, EngineStatus, BalancesSnapshot, EngineInitOptions,
-  ShieldEstimateInput, ShieldPopulateInput,
-  TransferFlowInput, TransferPopulateInput,
-  UnshieldFlowInput, UnshieldPopulateInput,
-} from './api';
 export type {
   RailgunNet,
   BridgeCall,

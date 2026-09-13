@@ -6,8 +6,6 @@ import { broviderRpc } from '@stage-labs/client/wallet/client';
 import { makeNamesChain } from './namesChain.ts';
 import type { NamesChain, NamesDeps, NamesStore } from './namesTypes.ts';
 
-export type { NamesChain, NamesDeps, NamesStore } from './namesTypes.ts';
-
 export const NAMES_PREFIX = '/names/';
 
 export interface NamesEnv {

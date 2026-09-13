@@ -10,6 +10,7 @@ const nativeSeam = read('lib', 'xmtp.stream.ts');
 const webSeam = read('lib', 'xmtp.stream.web.ts');
 const nativeTypes = read('lib', 'xmtp.types.ts');
 const webTypes = read('lib', 'xmtp.types.web.ts');
+const sharedTypes = read('lib', 'xmtp.types.core.ts');
 const consumer = read('components', 'tabs', 'HomeScreen.stream.ts');
 
 describe('streamed messages reach subscribers in one platform-neutral shape', () => {
@@ -24,9 +25,11 @@ describe('streamed messages reach subscribers in one platform-neutral shape', ()
 
   test('both StreamMsg types carry the normalised shape, not a raw sdk message', () => {
     for (const src of [nativeTypes, webTypes]) {
-      expect(src).toContain('msg: StreamedMessage;');
+      expect(src).toContain("export * from './xmtp.types.core';");
       expect(src).not.toContain('msg: DecodedMessage;');
     }
+    expect(sharedTypes).toContain('msg: StreamedMessage;');
+    expect(sharedTypes).not.toContain('msg: DecodedMessage;');
   });
 
   test('the web seam reads content as a property and derives the type id', () => {

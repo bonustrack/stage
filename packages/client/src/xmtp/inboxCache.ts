@@ -5,15 +5,6 @@ export interface InboxEthStore {
   has(inboxId: string): boolean;
 }
 
-export class InboxEthCache implements InboxEthStore {
-  private readonly map = new Map<string, string>();
-
-  get(inboxId: string): string | undefined { return this.map.get(inboxId); }
-  set(inboxId: string, eth: string): void { this.map.set(inboxId, eth); }
-  has(inboxId: string): boolean { return this.map.has(inboxId); }
-  clear(): void { this.map.clear(); }
-}
-
 export type InboxEthFetcher = (ids: string[]) => Promise<Record<string, string>>;
 
 export async function resolveInboxEthCached(

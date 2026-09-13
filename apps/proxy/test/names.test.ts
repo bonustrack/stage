@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { claimMessage } from '@stage-labs/client/identity/stageNames';
-import { handleNames, type NamesChain, type NamesDeps, type NamesStore } from '../src/names.ts';
+import { handleNames } from '../src/names.ts';
+import type { NamesChain, NamesDeps, NamesStore } from '../src/namesTypes.ts';
 
 const ALICE = '0x00000000000000000000000000000000000000A1';
 const NOW = 1_800_000_000_000;

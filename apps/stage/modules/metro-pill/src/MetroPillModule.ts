@@ -19,8 +19,6 @@ declare class MetroPillModule extends NativeModule<MetroPillEvents> {
 let resolved: MetroPillModule | null = null;
 try {
   resolved = requireNativeModule<MetroPillModule>('MetroPill');
-} catch {
-  resolved = null;
-}
+} catch { }
 
 export default resolved;

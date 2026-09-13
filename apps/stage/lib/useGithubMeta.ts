@@ -22,7 +22,7 @@ function metaPath(ref: GithubRef): string {
   return base;
 }
 
-function repoMeta(j: Record<string, unknown>, ref: GithubRef, repo: string): GithubMeta {
+function repoMeta(j: Record<string, unknown>, repo: string): GithubMeta {
   const name = typeof j.full_name === 'string' ? j.full_name : repo;
   return {
     kind: 'repo', title: name, repo, state: '',
@@ -64,7 +64,7 @@ async function fetchGithubMeta(ref: GithubRef): Promise<GithubMeta | null> {
     if (!res.ok) return null;
     const j = (await res.json()) as Record<string, unknown>;
     const repo = `${ref.owner}/${ref.repo}`;
-    return ref.kind === 'repo' ? repoMeta(j, ref, repo) : issueOrPullMeta(j, ref, repo);
+    return ref.kind === 'repo' ? repoMeta(j, repo) : issueOrPullMeta(j, ref, repo);
   } catch {
     return null;
   }

@@ -14,8 +14,8 @@ export function useStoreValue<T>(
 }
 
 export function makeListeners<T = void>(): {
-  listeners: Set<(v: T) => void>;
   notify: (v: T) => void;
+  subscribe: (cb: (v: T) => void) => () => void;
 } {
   const listeners = new Set<(v: T) => void>();
   const notify = (v: T): void => {
@@ -23,7 +23,11 @@ export function makeListeners<T = void>(): {
       try { cb(v); } catch { }
     }
   };
-  return { listeners, notify };
+  const subscribe = (cb: (v: T) => void): (() => void) => {
+    listeners.add(cb);
+    return () => { listeners.delete(cb); };
+  };
+  return { notify, subscribe };
 }
 
 export function hydrateOnce<T>(reader: () => Promise<T>): {

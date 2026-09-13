@@ -17,7 +17,6 @@ import { profileLinkOf } from '../lib/links';
 
 export interface ChannelMenuProps {
   convId: string;
-  title?: string | null;
   isGroup: boolean;
   peerAddress?: string | null;
   isUnread: boolean;

@@ -1,5 +1,5 @@
 import { isNodejsMobilePresent, loadNodejsMobile, type NodejsChannel } from './nodejsMobile';
-import type { BridgeCall, BridgeEvent } from './protocol';
+import type { BridgeCall, BridgeEvent } from '@stage-labs/client/railgun';
 import { attachRawProbe, fmtPayload, status } from './diagnostics';
 import { startReadinessHandshake } from './handshake';
 

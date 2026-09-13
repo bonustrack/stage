@@ -1,3 +1,4 @@
+import { errorMessage } from '@stage-labs/client/errors';
 import { useEffect, useState } from 'react';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -24,7 +25,7 @@ function useAvailability(label: string, setState: (next: ClaimState) => void): v
         if (!check.valid) setState({ label, phase: 'invalid', detail: check.reason });
         else setState({ label, phase: check.available ? 'available' : 'unavailable' });
       }).catch((err: unknown) => {
-        if (!cancelled) setState({ label, phase: 'failed', detail: err instanceof Error ? err.message : String(err) });
+        if (!cancelled) setState({ label, phase: 'failed', detail: errorMessage(err) });
       });
     }, CHECK_DEBOUNCE_MS);
     return () => { cancelled = true; clearTimeout(timer); };
@@ -51,7 +52,7 @@ function SetPrimaryRow({ address, label, onDone }: { address: string; label: str
     setBusy(true);
     setPrimaryStageName(address, label)
       .then(onDone)
-      .catch((err: unknown) => { setError(err instanceof Error ? err.message : String(err)); })
+      .catch((err: unknown) => { setError(errorMessage(err)); })
       .finally(() => { setBusy(false); });
   };
   return (
@@ -93,7 +94,7 @@ function ClaimForm({ address, onClaimed }: { address: string; onClaimed: () => v
         setState({ label, phase: 'claimed' });
         onClaimed();
       } catch (err) {
-        setState({ label, phase: 'failed', detail: err instanceof Error ? err.message : String(err) });
+        setState({ label, phase: 'failed', detail: errorMessage(err) });
       }
     })();
   };

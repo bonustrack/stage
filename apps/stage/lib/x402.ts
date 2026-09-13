@@ -1,12 +1,7 @@
 
 import type { X402Accept } from './useLinkPreview';
+import { KNOWN_TOKENS } from './txConfirm';
 
-const KNOWN_ASSETS: Record<string, { symbol: string; decimals: number }> = {
-  '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913': { symbol: 'USDC', decimals: 6 },
-  '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': { symbol: 'USDC', decimals: 6 },
-  '0x036cbd53842c5426634e7929541ec2318f3dcf7e': { symbol: 'USDC', decimals: 6 },
-  '0x1c7d4b196cb0c7b01d743fbc6116a902379c7238': { symbol: 'USDC', decimals: 6 },
-};
 
 const NETWORKS: Record<string, { chainId: number; label: string }> = {
   'eip155:8453': { chainId: 8453, label: 'Base' },
@@ -53,7 +48,7 @@ export function formatAtomic(amount: string, decimals: number): string | undefin
 }
 
 export function x402KnownAsset(accept: X402Accept): { symbol: string; decimals: number } | undefined {
-  return accept.asset ? KNOWN_ASSETS[accept.asset.toLowerCase()] : undefined;
+  return accept.asset ? KNOWN_TOKENS[accept.asset.toLowerCase()] : undefined;
 }
 
 export function x402CanPayInApp(accept: X402Accept): boolean {
@@ -96,7 +91,7 @@ export function sanitizeTokenName(name: string): string {
 
 export function x402AmountLabel(accept: X402Accept): string | undefined {
   if (!accept.amount) return undefined;
-  const asset = accept.asset ? KNOWN_ASSETS[accept.asset.toLowerCase()] : undefined;
+  const asset = accept.asset ? KNOWN_TOKENS[accept.asset.toLowerCase()] : undefined;
   if (asset) {
     const formatted = formatAtomic(accept.amount, asset.decimals);
     return formatted ? `${formatted} ${asset.symbol}` : undefined;

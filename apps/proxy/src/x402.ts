@@ -1,12 +1,5 @@
 
-import {
-  parseX402Challenge,
-  type X402Accept,
-  type X402Challenge,
-} from '@stage-labs/client/x402';
-
-export { parseX402Challenge };
-export type { X402Accept, X402Challenge };
+import { parseX402Challenge, type X402Challenge } from '@stage-labs/client/x402';
 
 function decodeHeaderChallenge(headerVal: string): unknown {
   try {

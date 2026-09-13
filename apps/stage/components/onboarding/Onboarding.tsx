@@ -57,7 +57,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
         keyboardShouldPersistTaps="handled"
       >
       {f.step === 'welcome' ? (
-        <WelcomeStep pal={pal} dark={dark} busy={f.busy} onCreate={f.onCreate} onRestore={f.onRestore} onImport={f.onImport} />
+        <WelcomeStep dark={dark} busy={f.busy} onCreate={f.onCreate} onRestore={f.onRestore} onImport={f.onImport} />
       ) : null}
 
       {f.step === 'restore' ? (
@@ -72,7 +72,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
       ) : null}
 
       {f.step === 'passkey' ? (
-        <PasskeyStep pal={pal} dark={dark} busy={f.busy} onAdd={f.onAddPasskey} onSkip={f.onSkipPasskey} />
+        <PasskeyStep dark={dark} busy={f.busy} onAdd={f.onAddPasskey} onSkip={f.onSkipPasskey} />
       ) : null}
 
       {f.step === 'setup' ? (

@@ -25,7 +25,7 @@ function safeExtFor(srcUri: string): string {
   return ext.length > 0 && ext.length <= 5 ? ext : 'bin';
 }
 
-function asFileUri(uri: string): string {
+export function asFileUri(uri: string): string {
   return uri.startsWith('file://') ? uri : `file://${uri.replace(/^file:\/+/, '/')}`;
 }
 

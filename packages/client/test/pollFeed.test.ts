@@ -5,7 +5,7 @@ import {
   voteEventsOf, pollQuestionsInFeed, pollOptionCountsInFeed,
   votesByMessage, ownVotesByMessage, openAnswersByMessage,
 } from '../src/xmtp/poll-feed';
-import { voteKey, openVoteKey } from '../src/xmtp/poll';
+import { voteKey, openVoteKey } from '../src/xmtp/poll-tally';
 
 const LINE = 'metro://xmtp/tony/conv1';
 let seq = 0;

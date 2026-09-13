@@ -68,7 +68,7 @@ export function ActivityView({ address, head, sub, border, bg }: {
     <Col margin={{ x: 16 }}>
       {priv}
       {rows.map(r => (
-        <TxRow key={r.hash} r={r} head={head} sub={sub} border={border} bg={bg}/>
+        <TxRow key={r.hash} r={r} border={border}/>
       ))}
     </Col>
   );
@@ -125,7 +125,7 @@ function TxRowView(params: TxRowParams): React.ReactElement {
 }
 
 function TxRow({ r, border }: {
-  r: ActivityRow; head: string; sub: string; border: string; bg: string;
+  r: ActivityRow; border: string;
 }): React.ReactElement {
   const model = txRowModel({
     direction: r.direction,

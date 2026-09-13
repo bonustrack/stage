@@ -14,7 +14,7 @@ const ERC20_TRANSFER_ABI = [
   },
 ] as const;
 
-const KNOWN_TOKENS: Record<string, { symbol: string; decimals: number }> = {
+export const KNOWN_TOKENS: Record<string, { symbol: string; decimals: number }> = {
   '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913': { symbol: 'USDC', decimals: 6 },
   '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': { symbol: 'USDC', decimals: 6 },
   '0x036cbd53842c5426634e7929541ec2318f3dcf7e': { symbol: 'USDC', decimals: 6 },

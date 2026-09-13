@@ -12,17 +12,6 @@ function str(v: unknown): string | undefined {
   return typeof v === 'string' && v.trim() ? v.trim() : undefined;
 }
 
-function isGeneric(s: string): boolean {
-  const g = s.toLowerCase();
-  return (
-    g === 'rpc request failed.' ||
-    g === 'rpc request failed' ||
-    g === 'an error occurred.' ||
-    g === 'http request failed.' ||
-    g.startsWith('an unknown error')
-  );
-}
-
 function humanize(s: string): string {
   if (/AA21/i.test(s)) return 'Gas sponsorship failed (account could not pay). Try again.';
   if (/AA2[3-4]/i.test(s) || /signature error/i.test(s)) return 'Signature rejected by the account. Try again.';
@@ -39,20 +28,13 @@ function metaMessage(e: ViemErrorLike): string | undefined {
   return str((e.metaMessages as unknown[]).map(m => str(m)).filter(Boolean).join(' '));
 }
 
-function pickMessage(candidate: string | undefined, msg: string | undefined): string | undefined {
-  if (candidate && !isGeneric(candidate)) return candidate;
-  if (msg && !isGeneric(msg)) return candidate ?? msg;
-  return candidate ?? msg;
-}
-
 function collect(err: unknown, depth = 0): string | undefined {
   if (!err || depth > 6) return undefined;
   if (typeof err === 'string') return str(err);
   if (typeof err !== 'object') return undefined;
   const e = err as ViemErrorLike;
   const specific = str(e.details) ?? metaMessage(e) ?? str(e.shortMessage);
-  const candidate = collect(e.cause, depth + 1) ?? specific;
-  return pickMessage(candidate, str(e.message));
+  return collect(e.cause, depth + 1) ?? specific ?? str(e.message);
 }
 
 export function txErrorMessage(err: unknown, fallback: string): string {
@@ -65,8 +47,4 @@ export function txErrorMessage(err: unknown, fallback: string): string {
   } catch {
     return fallback;
   }
-}
-
-export function friendlyTxError(err: unknown, fallback = 'Transaction failed'): string {
-  return txErrorMessage(err, fallback);
 }

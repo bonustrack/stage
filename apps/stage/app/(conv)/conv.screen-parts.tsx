@@ -126,19 +126,15 @@ export function ConversationOverlays({ c, convId, dark, onOpenSearch }: {
   c: Conv; convId: string; dark: boolean; onOpenSearch: () => void;
 }): React.ReactElement {
   const {
-    overflowOpen, setOverflowOpen, overflowAnchor, isGroup, groupName, peerAddr,
+    overflowOpen, setOverflowOpen, overflowAnchor, isGroup, peerAddr,
     menuFor, setMenuFor, menuAnchor, onReact, setReplyTarget, senderEthOf, setSelectedForCopy,
   } = c;
-  const title = isGroup
-    ? (groupName == null || groupName === '' ? undefined : groupName)
-    : (peerAddr ? (getPeerName(peerAddr) ?? shortAddress(peerAddr)) : undefined);
   const isUnread = (getCachedRows()?.find(r => r.convId === convId)?.unreadCount ?? 0) > 0;
   return (
     <>
       <ChannelMenu
         visible={overflowOpen}
         convId={convId}
-        title={title}
         isGroup={isGroup}
         peerAddress={peerAddr}
         isUnread={isUnread}

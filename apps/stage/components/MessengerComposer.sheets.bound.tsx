@@ -1,7 +1,6 @@
 import { PollSheet, SignatureSheet, PaymentSheet } from './MessengerComposer.sheets';
 import type { ComposerState } from './MessengerComposer.state';
-
-interface SheetPalette { fg: string; sub: string; inputBg: string; chipBg: string }
+import type { Palette } from './MessengerComposer.helpers';
 
 interface SheetActions {
   sendPoll: () => void;
@@ -10,7 +9,7 @@ interface SheetActions {
 }
 
 export function ComposerSheets({ s, palette, dark, actions }: {
-  s: ComposerState; palette: SheetPalette; dark: boolean; actions: SheetActions;
+  s: ComposerState; palette: Palette; dark: boolean; actions: SheetActions;
 }): React.ReactElement {
   return (
     <>

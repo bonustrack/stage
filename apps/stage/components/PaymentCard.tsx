@@ -99,7 +99,6 @@ export function PaymentCard({
         </Text>
       ) : null}
       {detail}
-      {}
       <PaymentBalanceLine show={balance.show} bal={bal} pal={pal} />
       {resolvedAction ? (
         <PaymentActionButton action={resolvedAction} dark={dark} pal={pal} />

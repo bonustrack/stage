@@ -15,8 +15,6 @@ import { Box, Col, Row } from '../../components/layout';
 
 export type { ShieldStage };
 
-interface Pal { sub: string; head: string; link: string }
-
 const STATE_ICON: Record<StepState, string> = {
   done: 'check-circle',
   active: 'clock',
@@ -74,7 +72,7 @@ function StepRow({ step, scheme }: {
 }
 
 export function ShieldStepper({ stage, errorAt = 0 }: {
-  stage: ShieldStage; pal: Pal; errorAt?: number;
+  stage: ShieldStage; errorAt?: number;
 }): React.ReactElement | null {
   const scheme = useKitScheme();
   if (stage === 'idle') return null;

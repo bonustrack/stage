@@ -1,4 +1,4 @@
-
+import { errorMessage } from '@stage-labs/client/errors';
 import { useCallback } from 'react';
 import { Alert } from 'react-native';
 import { resolveEnsName } from '@stage-labs/client/api/ens';
@@ -52,7 +52,7 @@ export function useRecoveryActions(a: RecoveryActionsArgs): RecoveryActions {
       Alert.alert('Guardians saved', 'Your recovery guardians are set.');
       router.back();
     } catch (e) {
-      Alert.alert('Could not save guardians', e instanceof Error ? e.message : String(e));
+      Alert.alert('Could not save guardians', errorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -66,7 +66,7 @@ export function useRecoveryActions(a: RecoveryActionsArgs): RecoveryActions {
       Alert.alert('Recovery cancelled', 'The pending recovery was cancelled.');
       router.back();
     } catch (e) {
-      Alert.alert('Could not cancel', e instanceof Error ? e.message : String(e));
+      Alert.alert('Could not cancel', errorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -92,7 +92,7 @@ export function useRecoveryActions(a: RecoveryActionsArgs): RecoveryActions {
       setApproved(true);
       Alert.alert('Approved', 'Your approval was sent to the recovery conversation.');
     } catch (e) {
-      Alert.alert('Could not approve', e instanceof Error ? e.message : String(e));
+      Alert.alert('Could not approve', errorMessage(e));
     } finally {
       setApproving(false);
     }

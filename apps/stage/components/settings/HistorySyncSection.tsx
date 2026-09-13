@@ -1,3 +1,4 @@
+import { errorMessage } from '@stage-labs/client/errors';
 import { useState } from 'react';
 import { Alert } from 'react-native';
 import { Caption } from '@stage-labs/kit/react-native/caption';
@@ -21,10 +22,6 @@ import { SettingsButtonRow, SettingsList } from './rows';
 const SYNC_DESC = 'Ask your other devices for the messages this device is missing. Keep Stage open on the other device while it answers.';
 const SEND_DESC = 'Package this device\'s history for another device. You will get a PIN to enter there.';
 const RECEIVE_DESC = 'Enter the PIN shown on the device that sent its history.';
-
-function errorMessage(e: unknown): string {
-  return e instanceof Error ? e.message : String(e);
-}
 
 function PinSheet({ visible, busy, onClose, onSubmit }: {
   visible: boolean; busy: boolean; onClose: () => void; onSubmit: (pin: string) => void;

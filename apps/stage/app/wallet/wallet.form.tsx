@@ -126,21 +126,6 @@ export function AmountBox({ pal, amount, setAmount, busy, balance, symbol, dark 
   );
 }
 
-export function LockedRecipient({ pal, label, value, hint }: {
-  pal: FormPal; label: string; value: string; hint: string;
-}): React.ReactElement {
-  const { head, border } = pal;
-  return (
-    <Box gap={6}>
-      <Text size="xs" role="secondary">{label}</Text>
-      <Box surface="raised" radius="lg" padding={{ x: 14, y: 12 }} style={{ borderWidth: 1, borderColor: border }}>
-        <Text weight="semibold" size="md" color={head}>{value}</Text>
-        <Text size="xs" role="secondary" style={{ marginTop: 2 }}>{hint}</Text>
-      </Box>
-    </Box>
-  );
-}
-
 export function WalletFooter({
   border, dark, onCancel, submitLabel, onSubmit, submitDisabled, submitLoading,
 }: {
@@ -163,7 +148,7 @@ export function WalletFooter({
 }
 
 export function ActionPage({ title, head, border, onBack, footer, children }: {
-  title: string; head: string; bg: string; border: string; onBack: () => void;
+  title: string; head: string; border: string; onBack: () => void;
   footer?: React.ReactNode;
   children: React.ReactNode;
 }): React.ReactElement {

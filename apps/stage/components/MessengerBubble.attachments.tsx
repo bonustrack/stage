@@ -24,10 +24,10 @@ function MessengerVideoAttachment({ uri }: { uri: string }): React.ReactElement 
   );
 }
 
-export function AttachmentView({ att, fullUrl, fg, dark }: {
-  att: Attachment; fullUrl: string; fg: string; dark: boolean;
+export function AttachmentView({ att, fullUrl, fg }: {
+  att: Attachment; fullUrl: string; fg: string;
 }): React.ReactElement {
-  if (att.kind === 'image') return <MessengerImageAttachment uri={fullUrl} dark={dark} />;
+  if (att.kind === 'image') return <MessengerImageAttachment uri={fullUrl} />;
   if (att.kind === 'video' || att.mime?.startsWith('video/')) return <MessengerVideoAttachment uri={fullUrl} />;
   if (att.kind === 'audio' || att.mime?.startsWith('audio/')) {
     return <VoiceMessage uri={fullUrl} />;
@@ -102,8 +102,8 @@ function useRemoteAttachment(remote: Attachment['remote']): {
   };
 }
 
-export function RemoteAttachmentResolver({ att, fg, dark, msgId, index }: {
-  att: Attachment; fg: string; dark: boolean;
+export function RemoteAttachmentResolver({ att, fg, msgId, index }: {
+  att: Attachment; fg: string;
   msgId?: string; index?: number;
 }): React.ReactElement {
   const local = useLocalAttachment(msgId, index);
@@ -115,5 +115,5 @@ export function RemoteAttachmentResolver({ att, fg, dark, msgId, index }: {
     return <AttachmentRetry label={label} fg={fg} onRetry={remote.retry} />;
   }
   if (!uri) return <AttachmentPending label={label} fg={fg} />;
-  return <AttachmentView att={{ ...att, mime: remote.mime ?? att.mime }} fullUrl={uri} fg={fg} dark={dark} />;
+  return <AttachmentView att={{ ...att, mime: remote.mime ?? att.mime }} fullUrl={uri} fg={fg} />;
 }

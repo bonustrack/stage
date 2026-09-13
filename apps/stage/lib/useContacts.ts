@@ -7,10 +7,9 @@ import {
 import { usePeerProfiles, getPeerName } from './peerProfiles';
 import { shortAddress } from './xmtp';
 
-export interface Contact {
-  address: string;
-  name: string;
-}
+import type { Contact } from './useAllContacts';
+
+export type { Contact };
 
 function peerAddressesFromRows(rows: CachedRow[] | null): string[] {
   const out: string[] = [];

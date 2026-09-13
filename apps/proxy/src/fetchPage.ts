@@ -1,12 +1,12 @@
 
-import { assertPublicUrl, readCappedText, SsrfError } from './ssrf.ts';
-import { challengeFrom402, type X402Challenge } from './x402.ts';
+import { assertPublicUrl, readCappedText, SsrfError, UA } from './ssrf.ts';
+import type { X402Challenge } from '@stage-labs/client/x402';
+import { challengeFrom402 } from './x402.ts';
 
 const TIMEOUT_MS = 5000;
 const MAX_REDIRECTS = 3;
 const MAX_BYTES = 1_500_000;
 const X402_MAX_BYTES = 64_000;
-const UA = 'Mozilla/5.0 (compatible; MetroLinkPreview/1.0; +https://metro.box)';
 
 export interface FetchResult { html: string; finalUrl: string }
 

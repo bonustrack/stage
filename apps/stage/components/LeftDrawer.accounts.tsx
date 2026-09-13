@@ -14,10 +14,10 @@ async function activate(id: string, onChanged: () => void): Promise<void> {
   onChanged();
 }
 
-export function useDrawerAccountActions({ head, sub, border, dark, onChanged }: {
-  head: string; sub: string; border: string; dark: boolean;
+export function useDrawerAccountActions({ head, sub, dark, onChanged }: {
+  head: string; sub: string; dark: boolean;
   onChanged: () => void;
-}): { rows: React.ReactElement[]; modal: React.ReactElement | null } {
+}): { rows: React.ReactElement[] } {
   const [busy, setBusy] = useState(false);
 
   const onNew = (): void => {
@@ -45,9 +45,9 @@ export function useDrawerAccountActions({ head, sub, border, dark, onChanged }: 
   const rows = [
     <DrawerRow
       key="new-account" rowKey="new-account" icon="userAdd" label="New account"
-      head={head} sub={sub} border={border} dark={dark} onPress={onNew}
+      head={head} sub={sub} dark={dark} onPress={onNew}
     />,
   ];
 
-  return { rows, modal: null };
+  return { rows };
 }

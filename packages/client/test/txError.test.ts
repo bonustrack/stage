@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'bun:test';
-import { friendlyTxError, txErrorMessage } from '../src/wallet/txError';
+import { txErrorMessage } from '../src/wallet/txError';
+
+const friendlyTxError = (err: unknown, fallback = 'Transaction failed'): string => txErrorMessage(err, fallback);
 
 describe('friendlyTxError', () => {
   it('maps insufficient funds', () => {

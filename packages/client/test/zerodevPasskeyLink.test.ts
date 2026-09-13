@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { keccak256 } from 'viem';
 import {
-  authenticatorIdHashOf, bigintToBytes32, concatBytes, hexOfBigint, p256RawPublicKey, rsToRawSignature, validatorAddressOf,
+  authenticatorIdHashOf, bigintToBytes32, hexOfBigint, p256RawPublicKey, rsToRawSignature, validatorAddressOf,
 } from '../src/zerodev/passkeyLink';
 
 describe('passkey link helpers', () => {
@@ -25,7 +25,6 @@ describe('passkey link helpers', () => {
     expect(sig.length).toBe(64);
     expect(sig[31]).toBe(3);
     expect(sig[63]).toBe(4);
-    expect(Array.from(concatBytes(new Uint8Array([1]), new Uint8Array([2, 3])))).toEqual([1, 2, 3]);
   });
 
   test('hashes the raw credential id the way the webauthn key does', () => {

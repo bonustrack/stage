@@ -5,17 +5,11 @@ import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Text } from '@stage-labs/kit/react-native/text';
 import type { HeroIconName } from '@stage-labs/kit/icons';
 import { Col, Row } from './layout';
-import { usePalette, type Palette } from '../lib/theme';
+import type { Palette } from '../lib/theme';
 import { cachedSelfEthAddress, selfEthAddress } from '../modules/messaging';
 import { capabilities } from '../lib/capabilities';
 import { OverlayHeader } from './chrome/OverlayHeader';
 import { TopnavIdentity } from './TopnavIdentity';
-
-export type ProfileColors = Palette;
-
-export function useProfileColors(): ProfileColors {
-  return usePalette();
-}
 
 export function useSelfAddress(): string {
   const { data } = useQuery({
@@ -29,7 +23,7 @@ export function useSelfAddress(): string {
 
 export function ProfileHeader({ variant, insetTop, c, menu }: {
   variant: 'tab' | 'route'; insetTop: number;
-  c: ProfileColors; menu?: React.ReactNode;
+  c: Palette; menu?: React.ReactNode;
 }): React.ReactElement {
   if (variant === 'route') {
     return (
@@ -78,19 +72,18 @@ function ProfileRoundAction({ icon, label, disabled, border, fg, dark, onPress }
   );
 }
 
-export function ProfileActions({ dark, opening, onMessage, onSend, c }: {
-  dark: boolean; opening: boolean; onMessage: () => void; onSend: () => void; c: ProfileColors;
+export function ProfileActions({ dark, onMessage, onSend, c }: {
+  dark: boolean; onMessage: () => void; onSend: () => void; c: Palette;
 }): React.ReactElement {
   return (
     <Row gap={12} justify="start" padding={{ top: 18 }}>
       <ProfileRoundAction
         icon="chatRect"
-        label={opening ? 'Opening…' : 'Message'}
-        disabled={opening}
+        label="Message"
         border={c.border}
         fg={c.link}
         dark={dark}
-        onPress={() => { if (!opening) onMessage(); }}
+        onPress={onMessage}
       />
       <ProfileRoundAction
         icon="send"

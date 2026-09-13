@@ -1,3 +1,5 @@
+import { secureStorage } from '../platform/storage';
+
 export class MemoryStore<K, V> {
   private readonly map = new Map<K, V>();
   private readonly keyed = new Map<K, Set<(v: V | undefined) => void>>();
@@ -34,4 +36,11 @@ export class MemoryStore<K, V> {
       for (const l of this.global) l(k, undefined);
     }
   }
+}
+
+export async function getSecure(key: string): Promise<string | null> {
+  try { return await secureStorage.get(key); } catch { return null; }
+}
+export async function setSecure(key: string, value: string): Promise<void> {
+  try { await secureStorage.set(key, value); } catch { }
 }

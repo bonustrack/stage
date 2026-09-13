@@ -9,7 +9,7 @@ import { usePalette, useBlockRadius } from '../lib/theme';
 import { shortAddress } from '../modules/messaging';
 
 export function ChannelCard(
-  { convId, peerAddress }: { convId?: string; peerAddress?: string; dark?: boolean },
+  { convId, peerAddress }: { convId?: string; peerAddress?: string },
 ): React.ReactElement | null {
   if (peerAddress) return <DmPeerCard address={peerAddress} />;
   if (!convId) return null;
@@ -62,7 +62,6 @@ function ConvIdCard({ convId }: { convId: string }): React.ReactElement {
         avatarAddress={avatarAddress}
         square={meta.isGroup}
         onPress={open}
-        noBorder
       />
     </Box>
   );
@@ -88,7 +87,6 @@ function DmPeerCard({ address }: { address: string }): React.ReactElement {
         subtitle="Direct message"
         avatarAddress={avatarAddress}
         onPress={open}
-        noBorder
       />
     </Box>
   );

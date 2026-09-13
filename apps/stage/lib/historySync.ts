@@ -18,16 +18,11 @@ const TIMEOUT_MS = 120_000;
 const POLL_MS = 5_000;
 
 let phase: HistorySyncPhase = 'idle';
-const { listeners, notify } = makeListeners();
+const { notify, subscribe } = makeListeners();
 
 function setPhase(next: HistorySyncPhase): void {
   phase = next;
   notify();
-}
-
-function subscribe(cb: () => void): () => void {
-  listeners.add(cb);
-  return () => { listeners.delete(cb); };
 }
 
 function getPhase(): HistorySyncPhase { return phase; }

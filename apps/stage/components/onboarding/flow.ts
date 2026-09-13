@@ -1,4 +1,4 @@
-
+import { errorMessage } from '@stage-labs/client/errors';
 import {
   restoreMnemonic, createSmartAccount, enablePasskeyForRecord, passkeysAvailable,
 } from '../../lib/zerodev';
@@ -11,7 +11,7 @@ export type Stage = 'wallet' | 'messaging' | 'history' | 'finishing';
 export class XmtpSetupError extends Error {
   readonly accountId: string;
   constructor(accountId: string, cause: unknown) {
-    super(cause instanceof Error ? cause.message : String(cause));
+    super(errorMessage(cause));
     this.name = 'XmtpSetupError';
     this.accountId = accountId;
   }

@@ -1,5 +1,5 @@
 
-import type { AccountRecord, AccountType } from './types';
+import type { AccountRecord } from './types';
 
 export function dbDirFor(id: string): string {
   return `xmtp-${id}`;
@@ -12,14 +12,6 @@ export function buildLocalAccount(
   now: number = Date.now(),
 ): AccountRecord {
   return { id, address, type, dbDir: dbDirFor(id), registered: false, createdAt: now };
-}
-
-export function buildWalletConnectAccount(
-  address: string,
-  now: number = Date.now(),
-): AccountRecord {
-  const id = address.toLowerCase();
-  return { id, address, type: 'walletconnect', dbDir: dbDirFor(id), registered: false, createdAt: now };
 }
 
 export interface AddLocalResult {
@@ -54,8 +46,4 @@ export function resolveActiveAccount(
   const first = list[0];
   if (first === undefined) return null;
   return list.find(a => a.id === activeId) ?? first;
-}
-
-export function canSignInApp(type: AccountType): boolean {
-  return type !== 'walletconnect';
 }

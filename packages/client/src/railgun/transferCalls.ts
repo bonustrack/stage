@@ -1,5 +1,4 @@
 import type { RailgunDispatch } from './dispatch';
-import { SDK_METHOD } from './methods';
 import {
   bn, wireGasDetails, wireRecipients,
   type RailgunErc20Recipient, type RailgunGasDetails,
@@ -18,7 +17,7 @@ export async function gasEstimateTransfer(dispatch: RailgunDispatch, params: {
   erc20Recipients: TransferErc20Recipient[];
   originalGasDetails: TransferGasDetails;
 }): Promise<{ gasEstimate: string }> {
-  return dispatch<{ gasEstimate: string }>(SDK_METHOD('gas.estimateTransfer'), [
+  return dispatch<{ gasEstimate: string }>('gas.estimateTransfer', [
     params.txidVersion,
     params.networkName,
     params.railgunWalletID,
@@ -39,7 +38,7 @@ export async function generateTransferProof(dispatch: RailgunDispatch, params: {
   encryptionKey: string;
   erc20Recipients: TransferErc20Recipient[];
 }): Promise<void> {
-  await dispatch(SDK_METHOD('proof.transfer'), [
+  await dispatch('proof.transfer', [
     params.txidVersion,
     params.networkName,
     params.railgunWalletID,
@@ -61,7 +60,7 @@ export async function populateProvedTransfer(dispatch: RailgunDispatch, params: 
   erc20Recipients: TransferErc20Recipient[];
   gasDetails: TransferGasDetails;
 }): Promise<PopulateResult> {
-  return dispatch<PopulateResult>(SDK_METHOD('tx.populateProvedTransfer'), [
+  return dispatch<PopulateResult>('tx.populateProvedTransfer', [
     params.txidVersion,
     params.networkName,
     params.railgunWalletID,

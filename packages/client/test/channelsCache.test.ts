@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  applyRead, applyUnread, applyConsent, applySentPatch,
+  applyRead, applyUnread, applySentPatch,
   type CachedChannelRow,
 } from '../src/xmtp/channelsCache';
 import { ROW_PREVIEW_MAX_CHARS } from '../src/xmtp/summarizeRow';
@@ -35,18 +35,6 @@ describe('applyUnread', () => {
   });
   test('missing returns null', () => {
     expect(applyUnread(base, 'zzz')).toBeNull();
-  });
-});
-
-describe('applyConsent', () => {
-  test('no-op when state already matches returns null', () => {
-    expect(applyConsent(base, 'a', true)).toBeNull();
-  });
-  test('to unknown sets markedUnread + min unread', () => {
-    expect(applyConsent(base, 'b', true)?.[1]).toEqual({ convId: 'b', unreadCount: 1, lastReadNs: 0, markedUnread: true, lastTs: 2 });
-  });
-  test('to allowed clears markedUnread + unread', () => {
-    expect(applyConsent(base, 'a', false)?.[0]).toEqual({ convId: 'a', unreadCount: 0, lastReadNs: 100, markedUnread: false, lastTs: 1 });
   });
 });
 

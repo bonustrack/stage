@@ -8,12 +8,9 @@ import {
 const BUTTON_KEY = 'theme:radiusOverride';
 const BLOCK_KEY = 'theme:blockRadiusOverride';
 
-function clamp(n: number, def: number): number {
-  if (!Number.isFinite(n)) return def;
+function clampRadius(n: number): number {
   return Math.max(RADIUS_MIN, Math.min(RADIUS_MAX, Math.round(n)));
 }
-function clampRadius(n: number): number { return clamp(n, BUTTON_RADIUS_DEFAULT); }
-function clampBlockRadius(n: number): number { return clamp(n, BLOCK_RADIUS_DEFAULT); }
 
 let buttonCache: number | null = null;
 let blockCache: number | null = null;
@@ -33,7 +30,7 @@ export function loadRadius(): void {
         const n = Number(raw);
         if (!Number.isFinite(n)) continue;
         if (key === BUTTON_KEY) { buttonCache = clampRadius(n); changed = true; }
-        else if (key === BLOCK_KEY) { blockCache = clampBlockRadius(n); changed = true; }
+        else if (key === BLOCK_KEY) { blockCache = clampRadius(n); changed = true; }
       }
       if (changed) emit();
     })

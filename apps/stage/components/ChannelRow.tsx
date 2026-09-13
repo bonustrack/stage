@@ -41,7 +41,6 @@ export interface ChannelRowProps {
   onPressIn?: () => void;
   onLongPress?: (point?: MenuPoint) => void;
   containerStyle?: StyleProp<ViewStyle>;
-  noBorder?: boolean;
   highlightQuery?: string;
 }
 

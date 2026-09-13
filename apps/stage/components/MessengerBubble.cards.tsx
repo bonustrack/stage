@@ -218,7 +218,6 @@ function DecodedCallBlock({ decoded, pending, target, sub, selector }: {
       </Text>
       {decoded?.args.map((a, i) => (
         <Row key={`${a.name}-${i}`} align="start" gap={8}>
-          {}
           <Text size="xs" role="secondary" style={{ minWidth: 80, flexShrink: 0 }} numberOfLines={2}>
             {a.name}{a.type ? ` (${a.type})` : ''}
           </Text>

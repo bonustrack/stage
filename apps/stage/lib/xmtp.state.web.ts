@@ -1,7 +1,6 @@
 
 import type { Client } from '@xmtp/browser-sdk';
-import type { HistoryEntry } from '@stage-labs/client/types';
-import { MemoryStore } from './cache';
+import { resetSharedXmtpState } from './xmtp.state.core';
 
 let cachedClient: Client<unknown> | null = null;
 
@@ -18,19 +17,9 @@ export async function waitForXmtpReady(capMs = 60_000): Promise<boolean> {
   return false;
 }
 
-export const inboxEthCache = new MemoryStore<string, string>();
-
-export const feedCache = new MemoryStore<string, HistoryEntry[]>();
-
-export const activeFeedLines = new Set<string>();
-
-let globalStreamTeardown: (() => void) | null = null;
-export function registerGlobalStreamTeardown(fn: () => void): void { globalStreamTeardown = fn; }
+export { inboxEthCache, feedCache, activeFeedLines, registerGlobalStreamTeardown } from './xmtp.state.core';
 
 export function resetClientScopedState(): void {
   cachedClient = null;
-  globalStreamTeardown?.();
-  activeFeedLines.clear();
-  feedCache.clear();
-  inboxEthCache.clear();
+  resetSharedXmtpState();
 }

@@ -1,4 +1,5 @@
 import { ASSETS, NATIVE_TOKEN_SENTINEL } from './assets';
+import { shortAddress } from '../identity/format';
 import { decodeAbiParameters, type Hex } from 'viem';
 
 const TRANSFER_TOPIC =
@@ -51,7 +52,7 @@ function tokenMeta(addr: string, chainId: number): { symbol: string; decimals: n
   const lc = addr.toLowerCase();
   const hit = ASSETS.find(a => a.chainId === chainId && a.address?.toLowerCase() === lc);
   if (hit) return { symbol: hit.symbol, decimals: hit.decimals };
-  return { symbol: `${addr.slice(0, 6)}…${addr.slice(-4)}`, decimals: 18 };
+  return { symbol: shortAddress(addr), decimals: 18 };
 }
 
 function nativeMeta(chainId: number): { symbol: string; decimals: number } {

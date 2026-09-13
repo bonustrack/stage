@@ -7,10 +7,11 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   listRequestConvs, acceptRequestConv, blockRequestConv,
-  getCachedXmtpClient, summarizeConversationRequest,
+  summarizeConversationRequest,
   prefetchFeed, lineOfConv,
 } from '../../modules/messaging';
 import type { ConversationRequestView } from '../../modules/messaging';
+import { syncConsentBestEffort } from '../../components/RequestActionBar';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { conversationLinkOf } from '../../lib/links';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
@@ -42,10 +43,7 @@ export default function Requests(): React.ReactElement {
   const act = useCallback((convId: string, accept: boolean): void => {
     setRows(prev => (prev ?? []).filter(r => r.convId !== convId));
     void (accept ? acceptRequestConv(convId) : blockRequestConv(convId))
-      .then(() => {
-        void (getCachedXmtpClient() as unknown as { preferences?: { syncConsent?: () => Promise<unknown> } })
-          ?.preferences?.syncConsent?.();
-      })
+      .then(syncConsentBestEffort)
       .catch(() => { void load(); });
   }, [load]);
 

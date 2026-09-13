@@ -138,7 +138,6 @@ export function streamConvConsent(cb: () => void): () => void {
 
 export async function syncConsent(): Promise<void> {
   try {
-    const client = getCachedXmtpClient();
-    await (client as unknown as { preferences?: { syncConsent?: () => Promise<unknown> } })?.preferences?.syncConsent?.();
+    await getCachedXmtpClient()?.preferences.syncConsent();
   } catch { }
 }

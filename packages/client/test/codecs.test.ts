@@ -2,10 +2,8 @@
 import { describe, expect, test } from 'bun:test';
 import { encodeJsonContent, decodeJsonContent, POLL_CONTENT_TYPE } from '../src/xmtp/codecs';
 import { pollContentSchema } from '../src/xmtp/poll.schema';
-import {
-  normalizeQuestions, openVoteKey, parseOpenVote, openAnswersByPoll,
-  parseVoteKey, type PollContent, type VoteEvent,
-} from '../src/xmtp/poll';
+import { normalizeQuestions, openVoteKey, type PollContent } from '../src/xmtp/poll';
+import { openAnswersByPoll, parseOpenVote, parseVoteKey, type VoteEvent } from '../src/xmtp/poll-tally';
 
 const poll: PollContent = {
   pollId: 'poll_abc',

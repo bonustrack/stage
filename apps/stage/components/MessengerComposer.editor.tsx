@@ -13,7 +13,7 @@ import { Box, Col } from './layout';
 import { usePalette, useRadius } from '../lib/theme';
 
 interface EditorProps {
-  dark: boolean; fg: string; head: string; bg: string; sub: string; inputBg: string; chipBg: string;
+  dark: boolean; fg: string; head: string; bg: string; sub: string; chipBg: string;
   recording: boolean; levels: number[]; recordSecs: number;
   slideThresholdPx: number;
   text: string; setText: (v: string) => void;
@@ -98,7 +98,6 @@ function ComposerLeftControls({ p }: { p: EditorProps }): React.ReactElement {
   const showQuick = !p.attachMenuOpen && !!p.quickIcon && !!p.onQuick;
   return (
     <>
-      {}
       <ComposerBtn
         icon={p.attachMenuOpen ? 'x' : 'plus'}
         onPress={() => { p.setAttachMenuOpen(o => !o); }}

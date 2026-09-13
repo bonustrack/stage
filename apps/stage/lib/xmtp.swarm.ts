@@ -1,4 +1,4 @@
-
+import { asFileUri } from './localAttachmentCache';
 import { File, Paths } from 'expo-file-system';
 import { stripMetadataBytes, isStrippableImage } from '@stage-labs/client/image/stripMetadata';
 import { SWARM_UPLOAD_MAX_BYTES, tooLargeError, uploadFormToSwarmy } from './swarmy';
@@ -17,7 +17,7 @@ export async function materializeFileUri(src: string): Promise<string> {
   const buf = new Uint8Array(await blob.arrayBuffer());
   dest.create();
   dest.write(buf);
-  return toFileUri(dest.uri);
+  return asFileUri(dest.uri);
 }
 
 function freshCacheFile(prefix: string, ext: string): File {
@@ -25,10 +25,6 @@ function freshCacheFile(prefix: string, ext: string): File {
   const dest = new File(Paths.cache, tmpName);
   if (dest.exists) try { dest.delete(); } catch { }
   return dest;
-}
-
-function toFileUri(uri: string): string {
-  return uri.startsWith('file://') ? uri : `file://${uri.replace(/^file:\/+/, '/')}`;
 }
 
 export async function sanitizeFileUri(
@@ -55,7 +51,7 @@ function writeCleanImage(
   const dest = freshCacheFile('xmtp-clean', ext.length <= 5 ? ext : 'img');
   dest.create();
   dest.write(bytes);
-  return toFileUri(dest.uri) as SanitizedFileUri;
+  return asFileUri(dest.uri) as SanitizedFileUri;
 }
 
 export async function uploadEncryptedToIpfs(encryptedFileUri: string, filename: string): Promise<string> {

@@ -157,7 +157,6 @@ export function ColorTokens({ p }: { p: GalleryPalette }): React.ReactElement {
         onSelect={(v) => { setGrayscaleShade(scheme, v); }} p={p}
       />
 
-      {}
       <Box margin={{ top: 20 }}>
         <Text color={p.sub} variant="caption" weight="medium">DERIVED</Text>
         <Row margin={{ top: 8 }} gap={8} align="center" style={{ flexWrap: 'wrap' }}>

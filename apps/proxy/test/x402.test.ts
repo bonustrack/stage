@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseX402Challenge } from '../src/x402.ts';
+import { parseX402Challenge } from '@stage-labs/client/x402';
 
 void test('parses a v1 body challenge (maxAmountRequired)', () => {
   const c = parseX402Challenge(

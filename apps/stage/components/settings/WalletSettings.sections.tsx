@@ -15,17 +15,13 @@ import {
 } from './WalletSettings.model';
 import { Box, Col, Row } from '../layout';
 import { usePalette } from '../../lib/theme';
-import { type DeployState, type useWalletModel } from './WalletSettings.parts';
+import type { useWalletModel } from './WalletSettings.parts';
 import { type PasskeyAction } from '../../lib/passkey';
 import { SettingsList } from './rows';
 import { AppIcon } from '../widgets';
 import { Badge } from '@stage-labs/kit/react-native/badge';
 
-export interface C { fg: string; head: string; sub: string; border: string; rowBg: string }
-
 type WalletModel = NonNullable<ReturnType<typeof useWalletModel>['model']>;
-type Passkey = PasskeyAction;
-type RemovePasskey = PasskeyAction;
 
 export type CardFn = (children: ReactNode) => ReactElement;
 
@@ -145,10 +141,10 @@ function WalletManageList({ passkey, removePasskey, guardianCount, onAction }: {
 
 export function SmartAccountSections({ model, deploy, card, passkey, removePasskey, onCopy, onRecovery }: {
   model: WalletModel;
-  deploy: DeployState;
+  deploy: WalletDeployState;
   card: CardFn;
-  passkey: Passkey;
-  removePasskey: RemovePasskey;
+  passkey: PasskeyAction;
+  removePasskey: PasskeyAction;
   onCopy: (label: string, value: string) => void;
   onRecovery: () => void;
 }): React.ReactElement {

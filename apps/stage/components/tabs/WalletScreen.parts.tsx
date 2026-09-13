@@ -18,7 +18,7 @@ interface Palette { head: string; sub: string; border: string; bg: string; card:
 export type WalletTab = 'tokens' | 'nfts' | 'activity' | 'private';
 
 export function WalletTabs({ tab, setTab, border }: {
-  tab: WalletTab; setTab: (t: WalletTab) => void; head: string; sub: string; border: string;
+  tab: WalletTab; setTab: (t: WalletTab) => void; border: string;
 }): React.ReactElement {
   const dark = useKitScheme() === 'dark';
   const options = walletTabOptions({ privateTab: Platform.OS !== 'web' })

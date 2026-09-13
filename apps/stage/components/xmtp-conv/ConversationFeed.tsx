@@ -136,27 +136,27 @@ function useSlowOpen(waiting: boolean): boolean {
   return slow;
 }
 
-function FeedIntro({ c, convId, head, fg, border, rowBg, router }: {
-  c: ConvState; convId: string; head: string; fg: string; border: string; rowBg: string;
+function FeedIntro({ c, convId, head, fg, border, router }: {
+  c: ConvState; convId: string; head: string; fg: string; border: string;
   router: { push: (h: { pathname: '/profile/[address]'; params: { address: string } }) => void };
 }): React.ReactElement {
   return (
     <ConversationIntro
       isGroup={c.isGroup} peerAddr={c.peerAddr} groupName={c.groupName} groupImage={c.groupImage}
       groupDescription={c.groupDescription} groupLabels={c.groupLabels} convId={convId}
-      head={head} fg={fg} border={border} rowBg={rowBg}
+      head={head} fg={fg} border={border}
       onPressPeer={(address) => { router.push(profileLinkOf(address)); }}
     />
   );
 }
 
 export function ConversationFeed({
-  c, convId, dark, head, sub, fg, border, rowBg, insets, bottomInset = 0, router, searchSlot,
+  c, convId, dark, head, sub, fg, border, insets, bottomInset = 0, router, searchSlot,
 }: {
   c: ConvState;
   convId: string;
   dark: boolean;
-  head: string; sub: string; fg: string; border: string; rowBg: string;
+  head: string; sub: string; fg: string; border: string;
   insets: { top: number };
   bottomInset?: number;
   router: { push: (h: { pathname: '/profile/[address]'; params: { address: string } }) => void };
@@ -164,7 +164,7 @@ export function ConversationFeed({
 }): React.ReactElement {
   const { loadOlder, hasMore, loadingOlder, status, listRef, allBubbles } = c;
   const { renderItem, extraData } = useFeedRenderItem(c, dark, router);
-  const intro = <FeedIntro c={c} convId={convId} head={head} fg={fg} border={border} rowBg={rowBg} router={router} />;
+  const intro = <FeedIntro c={c} convId={convId} head={head} fg={fg} border={border} router={router} />;
   const spinner = <Box padding={32} align="center"><Spinner size={28} color={head} /></Box>;
   const viewportHeight = useRef(0);
   const userDragged = useRef(false);

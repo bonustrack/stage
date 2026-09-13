@@ -124,7 +124,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
         uploading={s.uploading} err={s.err}
       />
       <ComposerEditor
-        dark={dark} fg={fg} head={head} bg={bg} sub={sub} inputBg={inputBg} chipBg={chipBg}
+        dark={dark} fg={fg} head={head} bg={bg} sub={sub} chipBg={chipBg}
         recording={s.recording} levels={s.levels} recordSecs={s.recordSecs}
         slideThresholdPx={SLIDE_CANCEL_THRESHOLD_PX}
         text={s.text} setText={s.setText}
@@ -139,7 +139,6 @@ export function MessengerComposer(props: Props): React.ReactElement {
         onStopRec={() => void actions.stopRec()}
         onSend={() => void actions.send()}
       />
-      {}
       {s.attachMenuOpen ? (
         <AttachMenu
           head={head} inputBg={inputBg} chipBg={chipBg}

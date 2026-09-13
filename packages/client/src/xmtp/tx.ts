@@ -26,10 +26,6 @@ export interface WalletSendCallsContent {
   calls: WalletSendCall[];
 }
 
-export const WALLET_SEND_CALLS_TYPE_ID = 'xmtp.org/walletSendCalls:1.0';
-export const WALLET_SEND_CALLS_TYPE_SHORT = 'walletSendCalls';
-
-
 export interface TransactionMetadata {
   transactionType?: string;
   currency?: string;
@@ -45,10 +41,6 @@ export interface TransactionReferenceContent {
   reference: string;
   metadata?: TransactionMetadata;
 }
-
-export const TRANSACTION_REFERENCE_TYPE_ID = 'xmtp.org/transactionReference:1.0';
-export const TRANSACTION_REFERENCE_TYPE_SHORT = 'transactionReference';
-
 
 export function walletSendCallsFallbackText(c: WalletSendCallsContent): string {
   const desc = c.calls?.[0]?.metadata?.description;
@@ -98,14 +90,6 @@ export function buildPublicTransfer(input: PublicTransferInput): WalletSendCalls
   };
 }
 
-export function walletSendCallsPreviewText(c: WalletSendCallsContent): string {
-  const desc = c.calls?.[0]?.metadata?.description;
-  return desc ? `Payment request: ${desc}` : 'Payment request';
-}
-export function transactionReferencePreviewText(): string {
-  return 'Transaction';
-}
-
 export function chainIdToNumber(chainId: string | number): number {
   if (typeof chainId === 'number') return chainId;
   return chainId.startsWith('0x') ? parseInt(chainId, 16) : parseInt(chainId, 10);
@@ -132,7 +116,7 @@ function isHexData(v: string): v is `0x${string}` {
 
 function toBigInt(v: string | undefined): bigint {
   if (!v) return 0n;
-  return v.startsWith('0x') ? BigInt(v) : BigInt(v);
+  return BigInt(v);
 }
 
 export function normalizeWalletSendCalls(content: WalletSendCallsContent): NormalizedSendCalls {

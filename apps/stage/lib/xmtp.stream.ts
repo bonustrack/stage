@@ -1,7 +1,7 @@
 
 import { AppState } from 'react-native';
 import { setAppForeground, subscribeXmtpPush } from '../modules/metro-pill';
-import { isMetroControlBody } from './push';
+import { isMetroControlBody } from './pushRegister.control';
 import { markBackgroundDelivered } from './pushNotify';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from './xmtp.client';
 import { envelopeOfXmtpMessage } from './xmtp.messages';
@@ -38,8 +38,6 @@ let lastStreamCloseAt = 0;
 const MIN_FORCED_SYNC_SPACING_MS = 4_000;
 const STREAM_FRESH_MS = 3_000;
 const STREAM_DEAD_GRACE_MS = 5_000;
-
-function noteStreamDelivery(): void { lastStreamMsgAt = Date.now(); }
 
 function onXmtpPush(): void {
   if (pushResyncTimer) clearTimeout(pushResyncTimer);
@@ -111,7 +109,7 @@ function routeMessageToFeed(convId: string, msg: StreamCbMsg): void {
   const prevLatestNs = activeFeedLines.has(line) ? feedLatestNs(line) : 0;
   pushToFeedSlice(line, env);
   if (activeFeedLines.has(line)) {
-    const arrivingNs = (msg as unknown as { sentNs?: number }).sentNs ?? 0;
+    const arrivingNs = msg.sentNs;
     void reconcileOnArrival(line, prevLatestNs, arrivingNs, env.id);
   }
   if (activeFeedLines.size > 0 && !activeFeedLines.has(line)) void resyncActiveFeeds();
@@ -119,8 +117,8 @@ function routeMessageToFeed(convId: string, msg: StreamCbMsg): void {
 
 function handleStreamMessage(msg: StreamCbMsg): Promise<void> {
   if (!msg) return Promise.resolve();
-  noteStreamDelivery();
-  const convId = convIdFromTopic((msg as unknown as { topic?: string }).topic)
+  lastStreamMsgAt = Date.now();
+  const convId = convIdFromTopic(msg.topic)
     ?? (msg as unknown as { conversationId?: string }).conversationId;
   fanOutToSubscribers(convId, msg);
   if (!convId) {

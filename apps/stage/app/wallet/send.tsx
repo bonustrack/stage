@@ -23,7 +23,7 @@ export default function WalletSend(): React.ReactElement {
     const chainId = typeof params.chainId === 'string' && Number.isFinite(Number(params.chainId))
       ? Number(params.chainId) : isPrivate ? 11155111 : 1;
     return { symbol, chainId, isPrivate };
-  }, [params.symbol, params.chainId, params.private, hasParamToken]);
+  }, [params.symbol, params.chainId, params.private]);
 
   const [token, setToken] = useState<TokenChoice>(initial);
 

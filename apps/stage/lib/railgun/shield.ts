@@ -6,7 +6,8 @@ import { deriveRailgunKeyMaterial } from './deriveKeys';
 import { addPending, updatePending } from './cache';
 import { watchShieldLanding } from './shieldScan';
 import { populateShieldBaseToken, populateShieldErc20 } from './bridge/shieldCalls';
-import { getShieldSigner, deriveShieldPrivateKey, shieldNetForChainId } from './shieldClient';
+import { getShieldSigner, deriveShieldPrivateKey } from './shieldClient';
+import { netForChainId } from './networks';
 import { TXID_VERSION, loadShieldProvider, tokenMeta } from './txCommon';
 
 export interface ShieldParams {
@@ -23,7 +24,7 @@ export interface ShieldResult {
 export async function shieldToPrivate(params: ShieldParams): Promise<ShieldResult> {
   const accountId = await getActiveAccountId();
   if (!accountId) throw new Error('No active account');
-  const cfg = shieldNetForChainId(params.chainId);
+  const cfg = netForChainId(params.chainId);
   const meta = tokenMeta(params.chainId, params.symbol, 'shield');
   const amountWei = parseUnits(params.amount, meta.decimals);
   if (amountWei <= 0n) throw new Error('Enter an amount greater than zero');

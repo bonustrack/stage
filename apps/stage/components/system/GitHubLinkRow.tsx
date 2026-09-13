@@ -8,7 +8,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { GithubLogo } from '../GithubLogo';
 
 export function GitHubLinkRow({ head, sub, border, url, title, subtitle }: {
-  dark: boolean; head: string; sub: string; border: string; rowBg: string;
+  head: string; sub: string; border: string;
   url: string; title: string; subtitle: string;
 }): React.ReactElement {
   return (

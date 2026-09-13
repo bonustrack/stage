@@ -73,7 +73,6 @@ export function ImageViewer({ uri, visible, onClose }: {
   return (
     <Dialog open={visible} onClose={onClose} animationType="fade" backdrop={false} fullBleedPanel>
       <Col background={'rgba(0,0,0,0.97)'} flex={1}>
-        {}
         <Pressable
           onPress={onClose}
           style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
@@ -83,7 +82,6 @@ export function ImageViewer({ uri, visible, onClose }: {
           ) : null}
         </Pressable>
 
-        {}
         <Pressable
           onPress={onClose}
           style={{ position: 'absolute', top: 48, right: 20, padding: 10 }}
@@ -92,7 +90,6 @@ export function ImageViewer({ uri, visible, onClose }: {
           <Icon name="x" size={28} color="#ffffff"/>
         </Pressable>
 
-        {}
         <Box align="center" style={{ position: 'absolute', bottom: 48, left: 0, right: 0 }}>
           <Pressable
             onPress={() => { void onDownload(); }}

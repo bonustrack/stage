@@ -39,8 +39,8 @@ function resolveAboutMeta(): AboutMeta {
   };
 }
 
-export function AboutPanel({ dark, head, sub, border, rowBg }: {
-  dark: boolean; head: string; sub: string; border: string; rowBg: string;
+export function AboutPanel({ head, sub, border }: {
+  head: string; sub: string; border: string;
 }): React.ReactElement {
   const { pkgName, versionLabel, gitHash, shortHash, buildProfile } = resolveAboutMeta();
   const commitHref = commitUrl(gitHash);
@@ -69,7 +69,7 @@ export function AboutPanel({ dark, head, sub, border, rowBg }: {
         </Text>
       </Box>
       <GitHubLinkRow
-        dark={dark} head={head} sub={sub} border={border} rowBg={rowBg}
+        head={head} sub={sub} border={border}
         url={STAGE_GITHUB_URL}
         title="View Stage on GitHub"
         subtitle="bonustrack/stage"

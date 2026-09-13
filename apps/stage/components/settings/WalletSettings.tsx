@@ -12,7 +12,7 @@ import { flash } from '../../lib/toast';
 import { useWalletModel } from './WalletSettings.parts';
 import { useEnablePasskey, useRemovePasskey } from '../../lib/passkey';
 import {
-  type C, SectionLabel, makeCard, SmartAccountSections, WalletCopyRow, WalletInfoRow,
+  SectionLabel, makeCard, SmartAccountSections, WalletCopyRow, WalletInfoRow,
 } from './WalletSettings.sections';
 import { StackHeader } from '../chrome/StackHeader';
 import { SettingsList } from './rows';
@@ -20,10 +20,9 @@ import { SettingsList } from './rows';
 export function WalletSettings(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, border } = usePalette();
+  const { text: fg, border } = usePalette();
   const blockRadius = useBlockRadius();
   const insets = useSafeAreaInsets();
-  const c: C = { fg, head, sub: fg, border, rowBg: border };
 
   const { model, deploy } = useWalletModel();
   const passkey = useEnablePasskey();
@@ -34,14 +33,14 @@ export function WalletSettings(): React.ReactElement {
   };
   const onRecovery = (): void => { router.push('/wallet/recovery'); };
 
-  const card = makeCard(dark, c.rowBg, blockRadius);
+  const card = makeCard(dark, border, blockRadius);
 
   return (
     <Col surface="surface" flex={1}>
       <StackHeader title="Wallet"/>
       <ScrollView style={[{ flex: 1 }, WEB_STACK_SCROLL]} contentContainerStyle={[{ paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT_WIDE, WEB_STACK_CONTENT_PAD]}>
         {!model ? (
-          <Text size="md" color={c.sub} style={{ padding: 24 }}>No active account.</Text>
+          <Text size="md" color={fg} style={{ padding: 24 }}>No active account.</Text>
         ) : (
           <>
             <SectionLabel>ACCOUNT</SectionLabel>

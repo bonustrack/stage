@@ -13,8 +13,7 @@ export async function prewarmRailgun(): Promise<boolean> {
 
 export async function ensureRailgunForChain(chainId: number): Promise<boolean> {
   if (!isRailgunAvailable()) return false;
-  const ok = isEngineReady() ? true : await initEngine();
-  if (!ok) return false;
+  if (!(await initEngine())) return false;
   await ensureProvider(netForChainId(chainId).net).catch(() => undefined);
   return true;
 }

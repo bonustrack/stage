@@ -2,7 +2,7 @@
 import { makeListeners, useStoreValue } from './storeCore';
 
 let epoch = 0;
-const { listeners, notify } = makeListeners();
+const { notify, subscribe } = makeListeners();
 
 export function bumpAccountEpoch(): void {
   epoch += 1;
@@ -11,14 +11,7 @@ export function bumpAccountEpoch(): void {
 
 export function getAccountEpoch(): number { return epoch; }
 
-function subscribe(cb: () => void): () => void {
-  listeners.add(cb);
-  return () => { listeners.delete(cb); };
-}
-
-export function subscribeAccountEpoch(cb: () => void): () => void {
-  return subscribe(cb);
-}
+export const subscribeAccountEpoch = subscribe;
 
 export function useAccountEpoch(): number {
   return useStoreValue(subscribe, getAccountEpoch);

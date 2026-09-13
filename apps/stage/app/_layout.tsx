@@ -105,7 +105,6 @@ function RootLayoutInner(): React.ReactElement {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <KeyboardProvider>
       <StatusBar style={barStyle} translucent backgroundColor="transparent"/>
-      {}
       <WebContentFrame>
       <NativeSwipeStack
         detachInactiveScreens
@@ -132,16 +131,13 @@ function RootLayoutInner(): React.ReactElement {
               }),
         }}
 >
-        {}
         <NativeSwipeStack.Screen
           name="(tabs)"
           options={{ animationEnabled: false, gestureEnabled: false }}
 />
       </NativeSwipeStack>
       </WebContentFrame>
-      {}
       <SplitSidebar visible={shell.sidebarVisible}/>
-      {}
       {!gatesOpen ? (
         <Col
           surface="surface" align="center" justify="center"
@@ -154,7 +150,6 @@ function RootLayoutInner(): React.ReactElement {
           surface="surface"
           style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: ONBOARDING_LAYER }}
 >
-          {}
           <Onboarding onDone={() => undefined} />
         </Col>
       ) : null}

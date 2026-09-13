@@ -1,4 +1,4 @@
-import type { RailgunNet } from './protocol';
+import type { RailgunNet } from '@stage-labs/client/railgun';
 
 interface ChainScanConfig {
   net: RailgunNet;

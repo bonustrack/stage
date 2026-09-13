@@ -1,14 +1,8 @@
 import type { MenuPoint } from '../components/AnchoredMenu.model';
 
-export interface ContextMenuEvent {
-  preventDefault: () => void;
-  clientX: number;
-  clientY: number;
-}
+import type { ContextMenuProps } from './contextMenu.model';
 
-export interface ContextMenuProps {
-  onContextMenu?: (event: ContextMenuEvent) => void;
-}
+export type { ContextMenuEvent, ContextMenuProps } from './contextMenu.model';
 
 export function contextMenuProps(open: ((point: MenuPoint) => void) | undefined): ContextMenuProps {
   void open;

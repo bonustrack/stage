@@ -8,12 +8,7 @@ export interface AlertRequest {
 }
 
 let current: AlertRequest | null = null;
-const { listeners, notify } = makeListeners();
-
-function subscribe(cb: () => void): () => void {
-  listeners.add(cb);
-  return () => { listeners.delete(cb); };
-}
+const { notify, subscribe } = makeListeners();
 
 function get(): AlertRequest | null { return current; }
 

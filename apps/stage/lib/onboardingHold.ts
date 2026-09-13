@@ -1,12 +1,7 @@
 import { makeListeners, useStoreValue } from './storeCore';
 
 let held = false;
-const { listeners, notify } = makeListeners();
-
-function subscribe(cb: () => void): () => void {
-  listeners.add(cb);
-  return () => { listeners.delete(cb); };
-}
+const { notify, subscribe } = makeListeners();
 
 function get(): boolean { return held; }
 

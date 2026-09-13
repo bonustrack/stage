@@ -40,7 +40,6 @@ export default function AddMembers(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      {}
       <StackHeader title="Add members" />
 
       <ScrollView
@@ -51,7 +50,6 @@ export default function AddMembers(): React.ReactElement {
         <MemberPicker state={picker} dark={dark} exclude={memberAddrs}/>
       </ScrollView>
 
-      {}
       <Box padding={{ top: 16, right: 16, bottom: 16 + insets.bottom, left: 16 }} style={{ borderTopWidth: 1, borderTopColor: border }}>
         <Button
           size="lg"

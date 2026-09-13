@@ -1,0 +1,26 @@
+import { secureStorage } from '../platform/storage';
+import { getSecure, setSecure } from './cache';
+
+const LAST_READ_PREFIX = 'unread.lastRead.';
+export async function getLastReadNs(convId: string): Promise<number> {
+  const raw = await getSecure(LAST_READ_PREFIX + convId);
+  if (!raw) return 0;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : 0;
+}
+export async function setLastReadNs(convId: string, ns: number): Promise<void> {
+  await setSecure(LAST_READ_PREFIX + convId, String(ns));
+}
+
+export const MARKED_UNREAD_PREFIX = 'unread.marked.';
+export async function getMarkedUnread(convId: string): Promise<boolean> {
+  return (await getSecure(MARKED_UNREAD_PREFIX + convId)) === '1';
+}
+export async function setMarkedUnreadFlag(convId: string, value: boolean): Promise<void> {
+  if (value) await setSecure(MARKED_UNREAD_PREFIX + convId, '1');
+  else await secureStorage.delete(MARKED_UNREAD_PREFIX + convId).catch(() => undefined);
+}
+
+export async function markConvUnreadSynced(convId: string): Promise<void> {
+  await setSecure(MARKED_UNREAD_PREFIX + convId, '1');
+}

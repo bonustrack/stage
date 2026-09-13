@@ -6,14 +6,11 @@ import type { AccountRecord } from '../../lib/accounts';
 import { useActiveAccountRecord } from '../../modules/messaging';
 import { makePublicClient } from '../../lib/zerodev/client';
 
-export type ModuleRole = WalletModuleRole;
 interface WalletModule {
   name: string;
-  role: ModuleRole;
+  role: WalletModuleRole;
   status: string;
 }
-
-export type DeployState = WalletDeployState;
 
 export interface WalletModel {
   rec: AccountRecord;
@@ -81,7 +78,7 @@ function modelFromRecord(rec: AccountRecord): WalletModel {
   };
 }
 
-async function fetchDeployState(rec: AccountRecord): Promise<DeployState> {
+async function fetchDeployState(rec: AccountRecord): Promise<WalletDeployState> {
   if (rec.type !== 'smart') return 'unknown';
   try {
     const code = await makePublicClient().getCode({ address: rec.address as `0x${string}` });
@@ -91,11 +88,11 @@ async function fetchDeployState(rec: AccountRecord): Promise<DeployState> {
   }
 }
 
-export function useWalletModel(): { model: WalletModel | null; deploy: DeployState } {
+export function useWalletModel(): { model: WalletModel | null; deploy: WalletDeployState } {
   const rec = useActiveAccountRecord();
   const { data: deploy } = useQuery({
     queryKey: ['walletDeployState', rec?.id ?? '', rec?.address ?? ''],
-    queryFn: () => (rec ? fetchDeployState(rec) : Promise.resolve<DeployState>('unknown')),
+    queryFn: () => (rec ? fetchDeployState(rec) : Promise.resolve<WalletDeployState>('unknown')),
     enabled: !!rec,
     staleTime: 60_000,
   });

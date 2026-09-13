@@ -41,8 +41,10 @@ export function parseHistoryRoute(pathname: string, method: string): HistoryRout
   return uploadRoute(base, kind, id, method) ?? fileRoute(base, kind, id, method);
 }
 
-function corsResponse(body: BodyInit | null, status: number, contentType?: string | null): Response {
-  const headers: Record<string, string> = { ...HISTORY_CORS_HEADERS, 'x-served-by': 'worker' };
+export function corsResponse(
+  cors: Record<string, string>, body: BodyInit | null, status: number, contentType?: string | null,
+): Response {
+  const headers: Record<string, string> = { ...cors, 'x-served-by': 'worker' };
   if (contentType) headers['content-type'] = contentType;
   return new Response(body, { status, headers });
 }
@@ -52,16 +54,16 @@ async function uploadBody(request: Request): Promise<Uint8Array | null> {
 }
 
 export async function handleHistory(request: Request): Promise<Response> {
-  if (request.method === 'OPTIONS') return corsResponse(null, 204);
+  if (request.method === 'OPTIONS') return corsResponse(HISTORY_CORS_HEADERS, null, 204);
   const route = parseHistoryRoute(new URL(request.url).pathname, request.method);
-  if (route === null) return corsResponse('not found', 404, 'text/plain');
+  if (route === null) return corsResponse(HISTORY_CORS_HEADERS, 'not found', 404, 'text/plain');
   const body = route.method === 'POST' ? await uploadBody(request) : null;
-  if (route.method === 'POST' && body === null) return corsResponse('archive too large', 413, 'text/plain');
+  if (route.method === 'POST' && body === null) return corsResponse(HISTORY_CORS_HEADERS, 'archive too large', 413, 'text/plain');
   const upstream = await fetch(route.upstream, {
     method: route.method,
     body,
     headers: body === null ? undefined : { 'content-type': request.headers.get('content-type') ?? 'application/octet-stream' },
     signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
   });
-  return corsResponse(upstream.body, upstream.status, upstream.headers.get('content-type'));
+  return corsResponse(HISTORY_CORS_HEADERS, upstream.body, upstream.status, upstream.headers.get('content-type'));
 }

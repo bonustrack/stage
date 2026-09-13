@@ -122,7 +122,7 @@ function ShieldBody({ pal, dark, zkAddress, initialSymbol, initialChainId, onFoo
       <AmountBox pal={pal} amount={amount} setAmount={setAmount} busy={busy}
         balance={balance} symbol={symbol} dark={dark} />
 
-      <ShieldStepper stage={stage} pal={pal} />
+      <ShieldStepper stage={stage} />
       <ShieldPhaseLine txHash={txHash} err={err} bridgeOk={isBridgeAvailable()} chainId={chainId} />
     </Box>
   );
@@ -179,7 +179,7 @@ function SendBody({ pal, dark, symbol = 'ETH', chainId = 1, balance = null, onFo
       <AmountBox pal={pal} amount={amount} setAmount={setAmount} busy={busy}
         balance={balance} symbol={symbol} dark={dark} />
 
-      <ShieldStepper stage={stage} pal={pal} />
+      <ShieldStepper stage={stage} />
       <ShieldPhaseLine txHash={txHash} err={err} errPhase={errPhase}
         bridgeOk={isBridgeAvailable()} chainId={chainId} />
     </Box>

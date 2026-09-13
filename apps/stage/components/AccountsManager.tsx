@@ -5,7 +5,6 @@ import { useAccountsManager } from './AccountsManager.hook';
 import { AccountList } from './AccountsManager.list';
 import { ManageSheet, ExportSheet } from './AccountsManager.sheets';
 import { usePalette } from '../lib/theme';
-import { usePeerProfiles } from '../lib/peerProfiles';
 import { useAccountTransfer } from './accounts/useAccountTransfer';
 import { TransferAccountSheet } from './accounts/TransferAccountSheet';
 import { ImportAccountSheet } from './accounts/ImportAccountSheet';
@@ -21,8 +20,6 @@ export function AccountsManager({ dark, flat = false, onSwitched }: { dark: bool
 
   const m = useAccountsManager(onSwitched);
   const t = useAccountTransfer();
-
-  usePeerProfiles(m.accounts.map(a => a.address));
 
   return (
     <Box>

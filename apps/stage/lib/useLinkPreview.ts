@@ -1,14 +1,11 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { parseX402Challenge, type X402Accept, type X402Challenge } from '@stage-labs/client/x402';
+import { linkProxyBase } from './historyServer';
 
 export type { X402Accept, X402Challenge };
 
-const LINK_PREVIEW_BASE_ENV: unknown = process.env.EXPO_PUBLIC_LINKPROXY_URL;
-export const LINK_PREVIEW_BASE =
-  typeof LINK_PREVIEW_BASE_ENV === 'string' && LINK_PREVIEW_BASE_ENV !== ''
-    ? LINK_PREVIEW_BASE_ENV.replace(/\/$/, '')
-    : 'https://proxy.stage.box';
+export const LINK_PREVIEW_BASE = linkProxyBase();
 
 interface LinkPreview {
   url: string;

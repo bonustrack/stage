@@ -133,7 +133,6 @@ export default function XmtpConversation(): React.ReactElement {
 
   return (
     <ConversationShell bg={bg}>
-      {}
       <Reanimated.View
         style={[
           Platform.OS === 'web'
@@ -150,7 +149,6 @@ export default function XmtpConversation(): React.ReactElement {
         sub={sub}
         fg={fg}
         border={border}
-        rowBg={rowBg}
         insets={insets}
         bottomInset={composerH}
         router={router}
@@ -167,7 +165,6 @@ export default function XmtpConversation(): React.ReactElement {
         ) : undefined}
 />
       </Reanimated.View>
-      {}
       {searchOpen ? (
         <ConversationSearchTopnav
           searchInputRef={searchInputRef}
@@ -178,7 +175,6 @@ export default function XmtpConversation(): React.ReactElement {
         <ConversationTopnav c={c} convId={convId} fg={fg} head={head} border={border} insets={insets} router={router}/>
       )}
       <FooterDock onHeight={setComposerH}>{footer}</FooterDock>
-      {}
       <ConversationOverlays
         c={c} convId={convId} dark={dark}
         onOpenSearch={() => { setSearchQuery(''); setSearchOpen(true); }}

@@ -7,9 +7,7 @@ import { Col } from './layout';
 import { capabilities } from '../lib/capabilities';
 import { previewLinkOf } from '../lib/previewLinkDetect';
 
-export function PreviewLinkCard({ url }: {
-  url: string; dark?: boolean;
-}): React.ReactElement | null {
+export function PreviewLinkCard({ url }: { url: string }): React.ReactElement | null {
   const dark = useKitScheme() === 'dark';
   const ref = previewLinkOf(url);
   if (!ref) return null;

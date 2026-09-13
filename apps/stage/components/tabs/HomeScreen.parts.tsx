@@ -77,7 +77,7 @@ function ChannelRowItemBase({
       onLongPress={(anchor) => {
         Vibration.vibrate(10);
         setRowMenu({
-          convId: item.convId, title,
+          convId: item.convId,
           isUnread: item.unreadCount > 0 || item.markedUnread,
           isGroup, peerAddress: item.peerAddress, anchor,
         });

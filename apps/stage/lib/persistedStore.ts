@@ -13,7 +13,7 @@ export interface SetStore {
 
 export function createSetStore(key: string): SetStore {
   let cache = new Set<string>();
-  const { listeners, notify } = makeListeners();
+  const { notify, subscribe } = makeListeners();
   const hydration = hydrateOnce(async (): Promise<Set<string>> => {
     try {
       const raw = await appStorage.get(key);
@@ -52,11 +52,6 @@ export function createSetStore(key: string): SetStore {
     return set(next);
   }
 
-  function subscribe(cb: () => void): () => void {
-    listeners.add(cb);
-    return () => { listeners.delete(cb); };
-  }
-
   return { load, has, get, set, toggle, subscribe };
 }
 
@@ -80,7 +75,7 @@ export interface ValueStore<T> {
 export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
   const serialize = opts.serialize ?? ((v: T): string => String(v));
   let cache: T = opts.default;
-  const { listeners, notify } = makeListeners();
+  const { notify, subscribe } = makeListeners();
 
   function apply(raw: string | null): boolean {
     if (raw == null) return false;
@@ -125,11 +120,6 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
     notify();
     try { await appStorage.set(opts.key, serialize(cache)); }
     catch { }
-  }
-
-  function subscribe(cb: () => void): () => void {
-    listeners.add(cb);
-    return () => { listeners.delete(cb); };
   }
 
   return { load, loadAsync, get, set, setAsync, subscribe };

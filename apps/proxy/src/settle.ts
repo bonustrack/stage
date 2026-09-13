@@ -1,10 +1,9 @@
 
-import { assertPublicUrl, readCappedText, SsrfError } from './ssrf.ts';
+import { assertPublicUrl, readCappedText, SsrfError, UA } from './ssrf.ts';
 
 const TIMEOUT_MS = 8000;
 const MAX_REDIRECTS = 3;
 const MAX_BODY_BYTES = 16_000;
-const UA = 'Mozilla/5.0 (compatible; MetroLinkPreview/1.0; +https://metro.box)';
 
 export interface SettleRequest {
   url: string;

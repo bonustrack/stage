@@ -1,3 +1,4 @@
+import { errorMessage } from '@stage-labs/client/errors';
 import type { decodeAudioData as DecodeAudioData } from 'react-native-audio-api';
 import { voiceBucketRms } from '@stage-labs/client/xmtp/voice';
 
@@ -44,7 +45,7 @@ export async function decodeWaveformBars(uri: string, count: number): Promise<nu
     return voiceBucketRms(pcm, count);
   } catch (err) {
     if (__DEV__) {
-      const msg = err instanceof Error ? err.message : String(err);
+      const msg = errorMessage(err);
       console.warn(`[VoiceMessage] decode failed for ${uri.slice(0, 48)}: ${msg}`);
     }
     throw err;

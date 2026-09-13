@@ -26,7 +26,7 @@ function submitLabelFor(phase: Phase): string {
 export default function WalletUnshield(): React.ReactElement {
   const router = useRouter();
   const params = useLocalSearchParams<{ symbol?: string; chainId?: string }>();
-  const { link: head, bg, border } = usePalette();
+  const { link: head, border } = usePalette();
   const dark = useEffectiveColorScheme() === 'dark';
   const pal = useFormPal();
 
@@ -58,7 +58,7 @@ export default function WalletUnshield(): React.ReactElement {
   };
 
   return (
-    <ActionPage title="Unshield token" head={head} bg={bg} border={border} onBack={() => { router.back(); }}
+    <ActionPage title="Unshield token" head={head} border={border} onBack={() => { router.back(); }}
       footer={
         <WalletFooter border={border} dark={dark} onCancel={() => { router.back(); }}
           submitDisabled={!canSubmit} submitLoading={busy} onSubmit={onSubmit}

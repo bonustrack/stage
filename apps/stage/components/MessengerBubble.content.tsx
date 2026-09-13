@@ -101,7 +101,7 @@ export function BubbleContent(props: BubbleContentProps): React.ReactElement {
         <Text size="3xs" role="secondary">{pending ? 'Sending' : bubbleTimestamp(entry.ts)}</Text>
       </Row>
       <ReplyPreview preview={replyPreview} fg={fg} sub={sub} onPress={onReplyPreviewPress} />
-      <BubbleAttachments atts={d.atts} entryId={entry.id} fg={fg} dark={dark} />
+      <BubbleAttachments atts={d.atts} entryId={entry.id} fg={fg} />
       <BubbleMain d={d} entry={entry} fg={fg} dark={dark} selectable={selectable} highlight={highlight} markdownProps={markdownProps} />
       <BubbleEmbeds cardLinks={cardLinks} dark={dark} />
       <BubbleCards d={d} p={props} />

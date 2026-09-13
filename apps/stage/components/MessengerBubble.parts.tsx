@@ -22,7 +22,7 @@ function MentionLink({ address, dark }: { address: string; dark: boolean }): Rea
   );
 }
 
-export function MentionBody({ text, fg, dark, selectable }: { text: string; fg: string; dark: boolean; selectable?: boolean }): React.ReactElement {
+export function MentionBody({ text, fg, dark }: { text: string; fg: string; dark: boolean }): React.ReactElement {
   const runs: React.ReactNode[] = [];
   let last = 0;
   let m: RegExpExecArray | null;
@@ -37,7 +37,7 @@ export function MentionBody({ text, fg, dark, selectable }: { text: string; fg: 
   }
   if (last < text.length) runs.push(text.slice(last));
   return (
-    <Text size="3xl" selectable={selectable} color={fg} style={{ lineHeight: 23 }}>
+    <Text size="3xl" color={fg} style={{ lineHeight: 23 }}>
       {runs}
     </Text>
   );

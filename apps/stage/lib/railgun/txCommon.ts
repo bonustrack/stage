@@ -1,12 +1,12 @@
 
-import type { RailgunNetworkConfig } from './networks';
+import { netForChainId, type RailgunNetworkConfig } from './networks';
 import { ensureProviderLoaded } from './bridge/shieldCalls';
 import { RAILGUN_TOKENS, type TokenMeta } from './tokens';
 
 export const TXID_VERSION = 'V2_PoseidonMerkle';
 
 export function tokenMeta(chainId: number, symbol: string, kind: string): TokenMeta {
-  const net = chainId === 1 ? 'mainnet' : 'sepolia';
+  const net = netForChainId(chainId).net;
   const meta = RAILGUN_TOKENS[net].find(t => t.symbol === symbol);
   if (!meta) throw new Error(`Unsupported ${kind} token: ${symbol}`);
   return meta;

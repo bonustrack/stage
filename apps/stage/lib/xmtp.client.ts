@@ -1,4 +1,4 @@
-
+import { MARKED_UNREAD_PREFIX, setLastReadNs } from './xmtp.unread';
 import { secureStorage } from '../platform/storage';
 import { Client, PublicIdentity, type Conversation } from '@xmtp/react-native-sdk';
 import {
@@ -7,7 +7,6 @@ import {
   type AccountRecord,
 } from './accounts';
 import { registerPushWithServer } from './push';
-import { getSecure, setSecure } from './cache';
 import { bumpAccountEpoch } from './accountEpoch';
 import { XMTP_CODECS } from './xmtp.codecs';
 import {
@@ -139,39 +138,16 @@ export async function revokeXmtpInstallation(installationId: string): Promise<vo
   );
 }
 
-const LAST_READ_PREFIX = 'unread.lastRead.';
-export async function getLastReadNs(convId: string): Promise<number> {
-  const raw = await getSecure(LAST_READ_PREFIX + convId);
-  if (!raw) return 0;
-  const n = Number(raw);
-  return Number.isFinite(n) ? n : 0;
-}
-export async function setLastReadNs(convId: string, ns: number): Promise<void> {
-  await setSecure(LAST_READ_PREFIX + convId, String(ns));
-}
-
-const MARKED_UNREAD_PREFIX = 'unread.marked.';
-export async function getMarkedUnread(convId: string): Promise<boolean> {
-  return (await getSecure(MARKED_UNREAD_PREFIX + convId)) === '1';
-}
-export async function setMarkedUnreadFlag(convId: string, value: boolean): Promise<void> {
-  if (value) await setSecure(MARKED_UNREAD_PREFIX + convId, '1');
-  else await secureStorage.delete(MARKED_UNREAD_PREFIX + convId).catch(() => undefined);
-}
+export { getLastReadNs, setLastReadNs, getMarkedUnread, setMarkedUnreadFlag, markConvUnreadSynced } from './xmtp.unread';
 
 export async function markConvReadSynced(convId: string): Promise<void> {
   await setLastReadNs(convId, Date.now() * 1_000_000);
   await secureStorage.delete(MARKED_UNREAD_PREFIX + convId).catch(() => undefined);
 }
 
-export async function markConvUnreadSynced(convId: string): Promise<void> {
-  await setSecure(MARKED_UNREAD_PREFIX + convId, '1');
-}
-
 export async function syncPreferences(): Promise<void> {
   try {
-    const client = getCachedXmtpClient();
-    await (client as unknown as { preferences?: { sync?: () => Promise<unknown> } })?.preferences?.sync?.();
+    await getCachedXmtpClient()?.preferences.sync();
   } catch { }
 }
 

@@ -54,7 +54,7 @@ export function GuardianEditor({
         <Row gap={8} align="center">
           <Col surface="raised" radius="lg" padding={{ x: 14, y: 12 }} flex={1}>
             <Input value={entry} onChangeText={setEntry} placeholder="0x… or name.eth" placeholderTextColor={sub}
-              disabled={false} dark={dark} inputProps={{ autoCapitalize: 'none', autoCorrect: false }}
+              dark={dark} inputProps={{ autoCapitalize: 'none', autoCorrect: false }}
               style={{ color: head, fontSize: fontSize('md'), fontFamily: 'Calibre-Medium', padding: 0,
                 backgroundColor: 'transparent', minHeight: 0, paddingHorizontal: 0, paddingVertical: 0, borderWidth: 0 }}/>
           </Col>

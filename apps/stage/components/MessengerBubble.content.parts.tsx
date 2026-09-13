@@ -18,27 +18,26 @@ import { HighlightText } from './HighlightText';
 
 export type MarkdownProps = Pick<ComponentProps<typeof Markdown>, 'markdownit' | 'onLinkPress' | 'style'>;
 
-function BubbleAttachment({ att, index, entryId, fg, dark }: {
-  att: Attachment; index: number; entryId: string; fg: string; dark: boolean;
+function BubbleAttachment({ att, index, entryId, fg }: {
+  att: Attachment; index: number; entryId: string; fg: string;
 }): React.ReactElement {
-  const key = att.id ?? `${entryId}-att-${index}`;
   if (att.remote) {
-    return <RemoteAttachmentResolver key={key} att={att} fg={fg} dark={dark} msgId={entryId} index={index} />;
+    return <RemoteAttachmentResolver att={att} fg={fg} msgId={entryId} index={index} />;
   }
   const fullUrl = att.dataB64
     ? `data:${att.mime ?? 'application/octet-stream'};base64,${att.dataB64}`
     : att.url ?? '';
-  return <AttachmentView key={key} att={att} fg={fg} fullUrl={fullUrl} dark={dark} />;
+  return <AttachmentView att={att} fg={fg} fullUrl={fullUrl} />;
 }
 
-export function BubbleAttachments({ atts, entryId, fg, dark }: {
-  atts: Attachment[]; entryId: string; fg: string; dark: boolean;
+export function BubbleAttachments({ atts, entryId, fg }: {
+  atts: Attachment[]; entryId: string; fg: string;
 }): React.ReactElement | null {
   if (atts.length === 0) return null;
   return (
     <Box style={{ alignSelf: 'stretch' }}>
       {atts.map((a, i) => (
-        <BubbleAttachment key={a.id ?? `${entryId}-att-${i}`} att={a} index={i} entryId={entryId} fg={fg} dark={dark} />
+        <BubbleAttachment key={a.id ?? `${entryId}-att-${i}`} att={a} index={i} entryId={entryId} fg={fg} />
       ))}
     </Box>
   );
@@ -91,12 +90,12 @@ export function BubbleBody({ text, fg, dark, selectable, highlight, markdownProp
 
 function embedNode(card: CardLink, dark: boolean): React.ReactElement {
   switch (card.kind) {
-    case 'dm': return <ChannelCard peerAddress={card.peerAddress} dark={dark} />;
-    case 'channel': return <ChannelCard convId={card.convId} dark={dark} />;
-    case 'youtube': return <YouTubeEmbed videoId={card.videoId} dark={dark} />;
+    case 'dm': return <ChannelCard peerAddress={card.peerAddress} />;
+    case 'channel': return <ChannelCard convId={card.convId} />;
+    case 'youtube': return <YouTubeEmbed videoId={card.videoId} />;
     case 'map': return <LocationEmbed lat={card.lat} lng={card.lng} sourceUrl={card.sourceUrl} dark={dark} />;
-    case 'github': return <GitHubLinkCard url={card.url} dark={dark} />;
-    case 'preview': return <PreviewLinkCard url={card.url} dark={dark} />;
+    case 'github': return <GitHubLinkCard url={card.url} />;
+    case 'preview': return <PreviewLinkCard url={card.url} />;
     default: return <LinkPreviewCard url={card.url} dark={dark} />;
   }
 }

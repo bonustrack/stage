@@ -1,3 +1,4 @@
+import { errorMessage } from '@stage-labs/client/errors';
 import { useCallback, useState } from 'react';
 import type { AccountTransfer } from '@stage-labs/client/accounts/transfer';
 import type { AccountRecord } from '../../lib/accounts';
@@ -39,7 +40,7 @@ export function useAccountTransfer(): AccountTransferState {
         await AccountManager.switch(rec.id);
         reloadApp();
       } catch (e) {
-        setImportError(e instanceof Error ? e.message : String(e));
+        setImportError(errorMessage(e));
         setImporting(false);
       }
     })();

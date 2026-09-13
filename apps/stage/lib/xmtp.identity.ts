@@ -53,9 +53,7 @@ export async function peerEthAddressOfDm(conv: Conversation): Promise<string | n
 export async function memberInboxToAddressMap(conv: Conversation): Promise<Record<string, string>> {
   try {
     const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
-    const members = await (conv as unknown as {
-      members: () => Promise<{ inboxId: string }[]>;
-    }).members();
+    const members = await conv.members();
     const ids = members.map(m => m.inboxId);
     return await resolveInboxEth(client, ids);
   } catch (err) {
@@ -68,9 +66,7 @@ export async function groupMemberEthAddresses(conv: Conversation): Promise<strin
   if ((conv as unknown as { version?: string }).version !== 'GROUP') return [];
   try {
     const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
-    const members = await (conv as unknown as {
-      members: () => Promise<{ inboxId: string }[]>;
-    }).members();
+    const members = await conv.members();
     const otherIds = members
       .map(m => m.inboxId)
       .filter(id => id !== client.inboxId);

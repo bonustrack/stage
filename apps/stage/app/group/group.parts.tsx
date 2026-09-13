@@ -9,7 +9,7 @@ import { shortAddress } from '../../modules/messaging';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { MEMBER_OWNER_BG, MEMBER_OWNER_FG } from '../../lib/uiColors';
-import { memberRowModel, type MemberRowBadge } from './group.parts.model';
+import { memberRowModel, type GroupMemberRole, type MemberRowBadge } from './group.parts.model';
 import { stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { AppModal } from '../../components/AppModal';
 import { AnchoredMenu } from '../../components/AnchoredMenu';
@@ -18,8 +18,6 @@ import { MemberField } from '../../components/MemberField';
 import { DANGER, usePalette } from '../../lib/theme';
 
 interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }
-
-type MemberRole = 'owner' | 'admin' | 'member' | undefined;
 
 function MemberBadge({ badge, border, sub, dark }: {
   badge: MemberRowBadge; border: string; sub: string; dark: boolean;
@@ -48,7 +46,7 @@ export function MemberRow({
   item, isSelf, isRemovingThis, role, name, dark, p, onPress, onRemove,
 }: {
   item: string; isSelf: boolean; isRemovingThis: boolean;
-  role: MemberRole; name: string | null | undefined;
+  role: GroupMemberRole; name: string | null | undefined;
   dark: boolean; p: Pal; onPress: () => void; onRemove: () => void;
 }): React.ReactElement {
   const { sub, border } = p;

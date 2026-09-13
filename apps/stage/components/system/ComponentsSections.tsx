@@ -53,13 +53,13 @@ export function ComponentsSections({ dark, head, sub, border }: GalleryPalette):
   return (
     <Box>
       <GallerySection name="UserCard" note="Person row (ChannelRow, circle avatar) - DMs & profiles" {...sec}>
-        <ChannelRow title="vitalik.eth" subtitle="Direct message" avatarAddress={SAMPLE_USER_ADDR} onPress={() => undefined} noBorder />
+        <ChannelRow title="vitalik.eth" subtitle="Direct message" avatarAddress={SAMPLE_USER_ADDR} onPress={() => undefined} />
       </GallerySection>
 
       <GallerySection name="ChannelCard" note="Channel row (ChannelRow, square avatar) - groups & channels" {...sec}>
         <ChannelRow
           title="Metro Dev" subtitle="12 members" avatarAddress={SAMPLE_USER_ADDR} square
-          lastPreview="Less: shipping the Components page" onPress={() => undefined} noBorder
+          lastPreview="Less: shipping the Components page" onPress={() => undefined}
         />
       </GallerySection>
 

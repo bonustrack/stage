@@ -3,13 +3,12 @@ import { Box } from '../../components/layout';
 import { DANGER } from '../../lib/theme';
 import { TxHashLink, type FormPal } from './wallet.form';
 
-type Pal = FormPal;
 type Phase = 'idle' | 'proving' | 'broadcasting' | 'done' | 'error';
 
 const shortAddr = (a: string): string => (a.length> 12 ? `${a.slice(0, 6)}…${a.slice(-4)}` : a);
 
 export function UnshieldRecipient({ pal, eoa, network }: {
-  pal: Pal; eoa: string | null; network: string;
+  pal: FormPal; eoa: string | null; network: string;
 }): React.ReactElement {
   const { head, border } = pal;
   return (

@@ -89,9 +89,9 @@ describe('device-bound secret storage', () => {
   test('xmtp.dbkey writes (adopt + fresh) are device-bound (regression: db-key backup leak)', () => {
     const src = stripComments(readFileSync(DBKEY, 'utf8'));
     expect(src).toMatch(/secureStorage\.set\(\s*id,\s*legacy,\s*STORE_OPTS\)/);
-    expect(src).toMatch(/secureStorage\.set\(\s*id,\s*encodeKey\(fresh\),\s*STORE_OPTS\)/);
+    expect(src).toMatch(/secureStorage\.set\(\s*id,\s*bytesToBase64\(fresh\),\s*STORE_OPTS\)/);
     expect(src).not.toMatch(/secureStorage\.set\(\s*id,\s*legacy\)\s*\.catch/);
-    expect(src).not.toMatch(/secureStorage\.set\(\s*id,\s*encodeKey\(fresh\)\)\s*;/);
+    expect(src).not.toMatch(/secureStorage\.set\(\s*id,\s*bytesToBase64\(fresh\)\)\s*;/);
   });
 
   for (const [label, path] of [

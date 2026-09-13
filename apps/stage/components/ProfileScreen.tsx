@@ -6,7 +6,7 @@ import type { SimultaneousRefs } from './SwipeTabs.types';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { shortAddress } from '../modules/messaging';
-import { useEffectiveColorScheme } from '../lib/theme';
+import { useEffectiveColorScheme, usePalette, type Palette } from '../lib/theme';
 import { usePeerProfiles, getPeerName, getPeerHandle, getPeerDescription } from '../lib/peerProfiles';
 import { Avatar } from './Avatar';
 import { Box, Col, WEB_EDGE_CONTENT, WEB_EDGE_CONTENT_WIDE, WEB_STACK_SCROLL } from './layout';
@@ -16,7 +16,7 @@ import { profileDisplayName } from './ProfileScreen.model';
 import { capabilities } from '../lib/capabilities';
 import { ImageViewer } from './ImageViewer';
 import {
-  ProfileActions, ProfileHeader, useProfileColors, useSelfAddress,
+  ProfileActions, ProfileHeader, useSelfAddress,
 } from './ProfileScreen.parts';
 import { CommonChannels } from './CommonChannels';
 import { ProfileHoldings } from './ProfileScreen.holdings';
@@ -29,17 +29,15 @@ function copyAddress(address: string): void {
   capabilities.toast('Address copied');
 }
 
-function ProfileIdentity({ addr, isSelf, dark, opening, c, variant, insetTop, displayName, handle, about, onAvatar, onMessage, onSend }: {
-  addr: string; isSelf: boolean; dark: boolean; opening: boolean;
-  c: ReturnType<typeof useProfileColors>; variant: ProfileScreenVariant; insetTop: number;
+function ProfileIdentity({ addr, isSelf, dark, c, variant, insetTop, displayName, handle, about, onAvatar, onMessage, onSend }: {
+  addr: string; isSelf: boolean; dark: boolean;
+  c: Palette; variant: ProfileScreenVariant; insetTop: number;
   displayName: string; handle?: string; about?: string; onAvatar: (uri: string | null) => void;
   onMessage: () => void; onSend: () => void;
 }): React.ReactElement {
   return (
     <>
-      {}
       <Box height={140 + (variant === 'route' ? insetTop : 0)} background={c.border}/>
-      {}
       <Box surface="surface" padding={{ x: 16, bottom: 8 }} margin={{ top: -18 }} align="start" style={{ borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'visible' }}>
         <Avatar
           address={addr || null}
@@ -64,9 +62,8 @@ function ProfileIdentity({ addr, isSelf, dark, opening, c, variant, insetTop, di
             </GesturePressable>
           </Box>
         ) : null}
-        {}
         {!isSelf && addr ? (
-          <ProfileActions dark={dark} opening={opening} c={c} onMessage={onMessage} onSend={onSend} />
+          <ProfileActions dark={dark} c={c} onMessage={onMessage} onSend={onSend} />
         ) : null}
       </Box>
     </>
@@ -81,7 +78,7 @@ export function ProfileScreen({ address, variant, panRef }: {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const dark = useEffectiveColorScheme() === 'dark';
-  const c = useProfileColors();
+  const c = usePalette();
 
   const addr = address ?? '';
   const self = useSelfAddress();
@@ -105,7 +102,7 @@ export function ProfileScreen({ address, variant, panRef }: {
 
       <ScrollView simultaneousHandlers={panRef} style={[{ flex: 1 }, WEB_STACK_SCROLL]} contentContainerStyle={[{ paddingBottom: 32 }, contentWidth]}>
         <ProfileIdentity
-          addr={addr} isSelf={isSelf} dark={dark} opening={false} c={c}
+          addr={addr} isSelf={isSelf} dark={dark} c={c}
           variant={variant} insetTop={insets.top} displayName={displayName}
           handle={getPeerHandle(addr)} about={getPeerDescription(addr)}
           onAvatar={uri => { if (uri) setViewerUri(uri); }}
@@ -113,10 +110,8 @@ export function ProfileScreen({ address, variant, panRef }: {
           onSend={() => { router.push({ pathname: '/wallet/send', params: { to: addr } }); }}
         />
 
-        {}
         {!isSelf && addr ? <CommonChannels peerAddress={addr} enabled={!isSelf} c={c} /> : null}
 
-        {}
         {addr ? <ProfileHoldings address={addr} /> : null}
       </ScrollView>
 

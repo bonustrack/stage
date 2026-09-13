@@ -119,7 +119,6 @@ export default function NewGroup(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      {}
       <StackHeader title="New group" />
 
       <ScrollView
@@ -127,7 +126,6 @@ export default function NewGroup(): React.ReactElement {
         contentContainerStyle={[{ padding: 16, gap: 16, paddingBottom: 24 + insets.bottom }, WEB_EDGE_CONTENT]}
         keyboardShouldPersistTaps="handled"
 >
-        {}
         <GroupImageField image={image} creating={creating} fg={fg} border={border} rowBg={rowBg}
           onPick={() => { pickImage(); }}/>
         <GroupImagePicker
@@ -137,7 +135,6 @@ export default function NewGroup(): React.ReactElement {
           }}
         />
 
-        {}
         <GroupNameField
           name={name} setName={setName} head={head} sub={sub} inputBg={inputBg} border={border}
 />
@@ -145,7 +142,6 @@ export default function NewGroup(): React.ReactElement {
         <MemberPicker state={picker} dark={dark}/>
       </ScrollView>
 
-      {}
       <Box padding={{ top: 16, right: 16, bottom: 16 + insets.bottom, left: 16 }} style={{ borderTopWidth: 1, borderTopColor: border }}>
         <Button
           size="lg"

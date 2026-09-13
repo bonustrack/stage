@@ -5,14 +5,9 @@ import {
   type Reaction, type Attachment as AttachmentContent,
 } from '@xmtp/browser-sdk';
 import type { HistoryEntry } from '@stage-labs/client/types';
+import { bytesToBase64 } from '@stage-labs/client/xmtp/pushServer';
 import { envelopeFromContent, type EnvelopeOptions } from '@stage-labs/client/xmtp/envelope';
 import { XMTP_USER_PREFIX } from './xmtp.types';
-
-function bytesToBase64(bytes: Uint8Array): string {
-  let s = '';
-  for (const b of bytes) s += String.fromCharCode(b);
-  return btoa(s);
-}
 
 function isRemovedAction(action: Reaction['action']): boolean {
   return action === ReactionAction.Removed || (action as unknown) === 'removed';

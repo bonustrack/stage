@@ -8,7 +8,8 @@ import {
   type UnshieldGasDetails, type UnshieldErc20Recipient,
 } from '@stage-labs/client/railgun';
 import { sdk } from './bridge/sdk';
-import { getShieldSigner, shieldNetForChainId } from './shieldClient';
+import { getShieldSigner } from './shieldClient';
+import { netForChainId } from './networks';
 import { TXID_VERSION, loadShieldProvider, tokenMeta } from './txCommon';
 
 export interface UnshieldParams {
@@ -26,7 +27,7 @@ export interface UnshieldResult {
 export async function unshieldToPublic(params: UnshieldParams): Promise<UnshieldResult> {
   const accountId = await getActiveAccountId();
   if (!accountId) throw new Error('No active account');
-  const cfg = shieldNetForChainId(params.chainId);
+  const cfg = netForChainId(params.chainId);
   const meta = tokenMeta(params.chainId, params.symbol, 'unshield');
   const amountWei = parseUnits(params.amount, meta.decimals);
   if (amountWei <= 0n) throw new Error('Enter an amount greater than zero');

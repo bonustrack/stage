@@ -15,19 +15,11 @@ export interface SignatureRequestContent {
   description?: string;
 }
 
-export const SIGNATURE_REQUEST_TYPE_ID = 'metro.box/signatureRequest:1.0';
-export const SIGNATURE_REQUEST_TYPE_SHORT = 'signatureRequest';
-
-
 export interface SignatureReferenceContent {
   requestId: string;
   signature: string;
   signer: string;
 }
-
-export const SIGNATURE_REFERENCE_TYPE_ID = 'metro.box/signatureReference:1.0';
-export const SIGNATURE_REFERENCE_TYPE_SHORT = 'signatureReference';
-
 
 export function mintSignatureRequestId(): string {
   const g = globalThis as { crypto?: { randomUUID?: () => string } };
@@ -78,14 +70,6 @@ export function signatureRequestFallbackText(c: SignatureRequestContent): string
 
 export function signatureReferenceFallbackText(c: SignatureReferenceContent): string {
   return c?.signature ? `[Signature] ${c.signature}` : '[Signature]';
-}
-
-export function signatureRequestPreviewText(c: SignatureRequestContent): string {
-  const desc = c?.description?.trim();
-  return desc ? `Signature request: ${desc}` : 'Signature request';
-}
-export function signatureReferencePreviewText(): string {
-  return 'Signature';
 }
 
 export interface SignTypedDataInput {

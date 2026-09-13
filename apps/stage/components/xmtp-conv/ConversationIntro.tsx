@@ -9,16 +9,13 @@ import { channelStampSeed } from '@stage-labs/kit/avatar';
 import { shortAddress } from '../../modules/messaging';
 
 function IntroLabelChips({ labels, fg }: {
-  labels: string[]; fg: string; rowBg: string;
+  labels: string[]; fg: string;
 }): React.ReactElement | null {
   if (labels.length === 0) return null;
   return (
     <Row margin={{ top: 8 }} align="center" gap={6} justify="start" style={{ flexWrap: 'wrap' }}>
       {labels.map(label => (
-        <Box radius="full" surface="raised" padding={{ x: 8, y: 2 }}
-          key={label.toLowerCase()}
-          
->
+        <Box radius="full" surface="raised" padding={{ x: 8, y: 2 }} key={label.toLowerCase()}>
           <Text size="md" color={fg}>{label}</Text>
         </Box>
       ))}
@@ -28,7 +25,7 @@ function IntroLabelChips({ labels, fg }: {
 
 export function ConversationIntro({
   isGroup, peerAddr, groupName, groupImage, groupDescription, groupLabels,
-  convId, head, fg, border, rowBg, onPressPeer,
+  convId, head, fg, border, onPressPeer,
 }: {
   isGroup: boolean;
   peerAddr: string | null;
@@ -37,7 +34,7 @@ export function ConversationIntro({
   groupDescription: string;
   groupLabels: string[];
   convId: string;
-  head: string; fg: string; border: string; rowBg: string;
+  head: string; fg: string; border: string;
   onPressPeer: (address: string) => void;
 }): React.ReactElement | null {
   if (isGroup) {
@@ -55,7 +52,7 @@ export function ConversationIntro({
         <Text weight="semibold" size="5xl" color={head} style={{ lineHeight: 30, marginTop: 12, textAlign: 'left', flexShrink: 1 }}>
           {name}
         </Text>
-        <IntroLabelChips labels={groupLabels} fg={fg} rowBg={rowBg}/>
+        <IntroLabelChips labels={groupLabels} fg={fg}/>
         {desc ? (
           <Text size="4xl" role="secondary" style={{ marginTop: 10, textAlign: 'left', lineHeight: 23 }}>
             {desc}

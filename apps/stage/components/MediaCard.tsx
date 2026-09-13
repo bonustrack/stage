@@ -4,7 +4,6 @@ import { Box } from './layout';
 import { usePalette, useBlockRadius } from '../lib/theme';
 
 interface Props {
-  dark: boolean;
   onPress?: () => void;
   width?: number;
   children: React.ReactNode;

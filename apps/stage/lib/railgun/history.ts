@@ -1,3 +1,4 @@
+import { shortAddress } from '@stage-labs/client/identity/format';
 import { formatUnits } from 'viem';
 import { stampTokenUrl } from '@stage-labs/kit/avatar';
 import { isBridgeAvailable, engineInit, walletInfo } from './bridge';
@@ -40,10 +41,6 @@ function tokenForAddress(net: RailgunNet, address: string): TokenMeta | undefine
   return RAILGUN_TOKENS[net].find((t) => t.address.toLowerCase() === want);
 }
 
-function shortToken(address: string): string {
-  return address.length > 10 ? `${address.slice(0, 6)}…${address.slice(-4)}` : address;
-}
-
 function isShieldReceive(item: HistoryItem, leg: HistoryErc20Amount): boolean {
   if (leg.shieldFee !== undefined && leg.shieldFee !== null) return true;
   return item.category === 'ShieldERC20s';
@@ -64,7 +61,7 @@ function rowsForItem(net: RailgunNet, item: HistoryItem): PrivateActivityRow[] {
       key: `${item.txid}-${kind}-${direction}-${a.tokenAddress}`,
       kind,
       direction,
-      symbol: meta?.symbol ?? shortToken(a.tokenAddress),
+      symbol: meta?.symbol ?? shortAddress(a.tokenAddress),
       logoUrl: meta ? stampTokenUrl(meta.logoChainId, meta.logoAddress, 32) : '',
       amount,
       chainId: cfg.chainId,

@@ -73,8 +73,7 @@ function BubbleColumn({ p, fg, sub, pillBg }: {
 }
 
 function MessengerBubbleBase(props: MessengerBubbleProps): React.ReactElement {
-  const { entry, dark, unread, replyTarget, myUri, senderEthAddress, onAvatarPress } = props;
-  void (entry.from === myUri);
+  const { entry, dark, unread, replyTarget, senderEthAddress, onAvatarPress } = props;
   const isSystem = (entry.payload as { system?: boolean } | undefined)?.system === true;
   const pal = usePalette();
   const fg = isSystem ? pal.text : pal.link;

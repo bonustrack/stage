@@ -41,7 +41,7 @@ export function MenuSheet({ visible, onClose }: {
   const activeRec = accounts.find(a => a.id === activeId) ?? accounts[0] ?? null;
 
   const actions = useDrawerAccountActions({
-    head, sub, border, dark, onChanged: () => { onClose(); void refresh(); },
+    head, sub, dark, onChanged: () => { onClose(); void refresh(); },
   });
   const t = useAccountTransfer();
   const movable = activeRec !== null && transferKindFor(activeRec) !== null;
@@ -72,14 +72,13 @@ export function MenuSheet({ visible, onClose }: {
         <ListView dark={dark} style={{ marginHorizontal: -16 }}>
           {drawerAccountRows({ accounts, activeId, onSwitch, c: { head, sub, border }, dark })}
           {actions.rows}
-          <DrawerRow rowKey="import" icon="qrcode" label="Import account" head={head} sub={sub} border={border} dark={dark} onPress={() => { onClose(); t.openImport(); }}/>
+          <DrawerRow rowKey="import" icon="qrcode" label="Import account" head={head} sub={sub} dark={dark} onPress={() => { onClose(); t.openImport(); }}/>
           {movable ? (
-            <DrawerRow rowKey="move" icon="deviceMobile" label="Move to another device" head={head} sub={sub} border={border} dark={dark} onPress={() => { onClose(); t.openTransfer(activeRec); }}/>
+            <DrawerRow rowKey="move" icon="deviceMobile" label="Move to another device" head={head} sub={sub} dark={dark} onPress={() => { onClose(); t.openTransfer(activeRec); }}/>
           ) : null}
-          <DrawerRow rowKey="profile" icon="user" label="Profile" head={head} sub={sub} border={border} dark={dark} onPress={goProfile}/>
-          <DrawerRow rowKey="settings" icon="cog" label="Settings" head={head} sub={sub} border={border} dark={dark} onPress={() => { go('/settings'); }}/>
+          <DrawerRow rowKey="profile" icon="user" label="Profile" head={head} sub={sub} dark={dark} onPress={goProfile}/>
+          <DrawerRow rowKey="settings" icon="cog" label="Settings" head={head} sub={sub} dark={dark} onPress={() => { go('/settings'); }}/>
         </ListView>
-        {actions.modal}
       </AppModal>
       <TransferAccountSheet rec={t.transferRec} dark={dark} onClose={t.closeTransfer} />
       <ImportAccountSheet

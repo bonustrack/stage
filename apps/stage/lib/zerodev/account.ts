@@ -1,6 +1,5 @@
 import '../cryptoShim';
 import type { PublicClient } from 'viem';
-import type { HDAccount } from 'viem/accounts';
 import { createKernelAccount, type CreateKernelAccountReturnType, type KernelValidator } from '@zerodev/sdk';
 import { ENTRY_POINT, KERNEL_VERSION } from './config';
 import { passkeysAvailable, passkeySignMessageCallback } from './passkeys';
@@ -70,7 +69,6 @@ function liveWebAuthnKey(stored: StoredPasskey): WebAuthnKey {
 
 async function buildPasskeyKernel(
   publicClient: PublicClient,
-  _owner: HDAccount,
   hdIndex: number,
   stored: StoredPasskey,
   addressOverride?: `0x${string}`,
@@ -122,7 +120,7 @@ export async function passkeyKernelResult(
 ): Promise<PasskeyKernelResult> {
   if (!passkeysAvailable()) return { error: 'passkeys are not available on this device' };
   try {
-    return { account: await buildPasskeyKernel(publicClient, undefined as unknown as HDAccount, hdIndex, stored, addressOverride) };
+    return { account: await buildPasskeyKernel(publicClient, hdIndex, stored, addressOverride) };
   } catch (e) {
     return { error: e instanceof Error ? e.message.split('\n')[0] ?? 'unknown error' : String(e) };
   }
@@ -130,14 +128,13 @@ export async function passkeyKernelResult(
 
 export async function passkeyKernelFromStored(
   publicClient: PublicClient,
-  owner: HDAccount,
   hdIndex: number,
   stored: StoredPasskey,
   addressOverride?: `0x${string}`,
 ): Promise<CreateKernelAccountReturnType | null> {
   if (!passkeysAvailable()) return null;
   try {
-    return await buildPasskeyKernel(publicClient, owner, hdIndex, stored, addressOverride);
+    return await buildPasskeyKernel(publicClient, hdIndex, stored, addressOverride);
   } catch (e) {
     if (__DEV__) console.warn('[zerodev] passkey kernel rebuild failed:', e);
     return null;

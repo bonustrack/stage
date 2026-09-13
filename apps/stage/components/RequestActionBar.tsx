@@ -10,7 +10,7 @@ import {
 import { usePalette } from '../lib/theme';
 import { Box, Col, Row } from './layout';
 
-function syncConsentBestEffort(): void {
+export function syncConsentBestEffort(): void {
   void (getCachedXmtpClient() as unknown as {
     preferences?: { syncConsent?: () => Promise<unknown> };
   })?.preferences?.syncConsent?.();
@@ -78,7 +78,6 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
         <Text color={fg} style={{ textAlign: 'center', opacity: 0.8 }}>
           This is a message request. Approve to reply, or reject to decline.
         </Text>
-        {}
         <Row width={'100%'} gap={10} style={{ alignSelf: 'stretch' }}>
           <Col flex={1} style={{ alignSelf: 'stretch' }}>
             <Button

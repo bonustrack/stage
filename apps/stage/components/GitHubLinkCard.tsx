@@ -52,9 +52,7 @@ function GithubFooter({ meta, subColor }: { meta: GithubMeta; subColor: string }
   );
 }
 
-export function GitHubLinkCard({ url }: {
-  url: string; dark?: boolean;
-}): React.ReactElement | null {
+export function GitHubLinkCard({ url }: { url: string }): React.ReactElement | null {
   const ref = githubLinkOf(url);
   const meta = useGithubMeta(ref);
   const pal = usePalette();

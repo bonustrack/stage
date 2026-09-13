@@ -50,7 +50,7 @@ export function AccountRow({ rec, onPress, onLongPress, topBorder, trailing, bor
 
 export function SheetModal({ visible, onClose, children, bg, border }: {
   visible: boolean; onClose: () => void; children: React.ReactNode;
-  bg: string; border: string; title?: string; head?: string;
+  bg: string; border: string;
 }): React.ReactElement {
   return (
     <Dialog

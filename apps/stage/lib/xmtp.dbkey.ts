@@ -1,4 +1,4 @@
-
+import { bytesToBase64 } from '@stage-labs/client/xmtp/pushServer';
 import { deleteDbFiles } from './xmtp.dbkeyFs';
 import { secureStorage } from '../platform/storage';
 import type { SecureAccessOptions } from '../platform/types';
@@ -18,12 +18,6 @@ function decodeKey(b64: string): Uint8Array {
   const out = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
   return out;
-}
-
-function encodeKey(key: Uint8Array): string {
-  let s = '';
-  for (const byte of key) s += String.fromCharCode(byte);
-  return btoa(s);
 }
 
 function randomKey(): Uint8Array {
@@ -47,7 +41,7 @@ export async function loadOrCreateDbKey(accountId: string): Promise<Uint8Array> 
   }
 
   const fresh = randomKey();
-  await secureStorage.set(id, encodeKey(fresh), STORE_OPTS);
+  await secureStorage.set(id, bytesToBase64(fresh), STORE_OPTS);
   return fresh;
 }
 

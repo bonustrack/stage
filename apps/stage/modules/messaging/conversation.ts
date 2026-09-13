@@ -32,11 +32,6 @@ export interface ConversationView {
   labels: string[];
 }
 
-export type RequestAvatarDescriptor = Pick<
-  ConversationRequestView,
-  'convId' | 'avatarAddress' | 'avatarUri' | 'isGroup'
->;
-
 export interface ConversationRequestView {
   convId: string;
   title: string;
@@ -170,21 +165,5 @@ export async function summarizeConversationRequest(
     avatarUri,
     preview: preview.slice(0, 80),
     isGroup,
-  };
-}
-
-export async function requestAvatarDescriptor(
-  conv: Conversation,
-): Promise<RequestAvatarDescriptor> {
-  const peerAddress = await peerEthAddressOfDm(conv).catch(() => null);
-  if (peerAddress) {
-    return { convId: conv.id, avatarAddress: peerAddress, avatarUri: null, isGroup: false };
-  }
-  const imageUrl = (await groupNameImage(conv).catch(() => ({ name: '', imageUrl: '' }))).imageUrl.trim();
-  return {
-    convId: conv.id,
-    avatarAddress: imageUrl ? null : channelStampSeed(conv.id),
-    avatarUri: imageUrl || null,
-    isGroup: true,
   };
 }

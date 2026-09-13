@@ -9,17 +9,6 @@ export const ENGINE_OPS = [
 ] as const;
 export type EngineOp = (typeof ENGINE_OPS)[number];
 
-export const EXTRA_CALLS = [
-  'ping',
-  'hello',
-  'engineStatus',
-  'engineInit',
-  'walletInfo',
-  'balances',
-  'sdk',
-] as const;
-export type ExtraCall = (typeof EXTRA_CALLS)[number];
-
 export const COMPOSITE_OPS = ['shield', 'privateTransfer', 'unshield'] as const;
 export type CompositeOp = (typeof COMPOSITE_OPS)[number];
 
@@ -58,10 +47,6 @@ export const SDK_METHODS = [
 ] as const;
 
 export type SdkMethod = (typeof SDK_METHODS)[number];
-
-export function SDK_METHOD<M extends SdkMethod>(m: M): M {
-  return m;
-}
 
 export interface RailgunMethodManifest {
   sdkMethods: readonly string[];

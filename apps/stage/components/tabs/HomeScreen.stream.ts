@@ -69,19 +69,17 @@ export function makeMsgStreamHandler({ isCancelled, setRows, refresh, refreshReq
   const onMiss = makeMissRefresher(isCancelled, refresh, refreshRequestCount);
   return ({ convId: streamConvId, msg }: { convId: string | null; msg: StreamedMessage | null }): void => {
     if (isCancelled() || !msg) return;
-    (((): void => {
-      const decoded = msg.content;
-      let preview = '';
-      try { preview = previewOfXmtpContent(decoded, msg.contentTypeId); }
-      catch { preview = `[${msg.contentTypeId ?? 'unknown'}]`; }
-      if (typeof decoded === 'string' && isMetroControlBody(decoded)) return;
-      const lastTs = msg.sentNs ? Math.floor(msg.sentNs / 1_000_000) : Date.now();
-      const lastPreview = preview.slice(0, ROW_PREVIEW_MAX_CHARS);
+    const decoded = msg.content;
+    let preview = '';
+    try { preview = previewOfXmtpContent(decoded, msg.contentTypeId); }
+    catch { preview = `[${msg.contentTypeId ?? 'unknown'}]`; }
+    if (typeof decoded === 'string' && isMetroControlBody(decoded)) return;
+    const lastTs = msg.sentNs ? Math.floor(msg.sentNs / 1_000_000) : Date.now();
+    const lastPreview = preview.slice(0, ROW_PREVIEW_MAX_CHARS);
 
-      const result = applyToRows(streamConvId, msg, lastTs, lastPreview, setRows);
-      if (result.needsRefresh) onMiss(streamConvId);
-      maybeNotify(result.notify, streamConvId, msg.id, lastPreview);
-    }))();
+    const result = applyToRows(streamConvId, msg, lastTs, lastPreview, setRows);
+    if (result.needsRefresh) onMiss(streamConvId);
+    maybeNotify(result.notify, streamConvId, msg.id, lastPreview);
   };
 }
 

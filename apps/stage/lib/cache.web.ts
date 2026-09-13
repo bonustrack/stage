@@ -1,5 +1,4 @@
 import { hydrateOnce, makeListeners } from './storeCore';
-import { secureStorage } from '../platform/storage';
 
 const FLUSH_DEBOUNCE_MS = 1_500;
 const DB_NAME = 'stage-cache';
@@ -61,7 +60,6 @@ export class PersistentStore<T> {
   private value: T | null = null;
   private readonly hydration = hydrateOnce<T | null>(() => this.readDisk());
   private readonly pubsub = makeListeners<T | null>();
-  private get listeners(): Set<(v: T | null) => void> { return this.pubsub.listeners; }
   private notify(v: T | null): void { this.pubsub.notify(v); }
   private flushTimer: number | null = null;
   private dirty = false;
@@ -122,16 +120,8 @@ export class PersistentStore<T> {
   }
 
   subscribe(l: (v: T | null) => void): () => void {
-    this.listeners.add(l);
-    return () => { this.listeners.delete(l); };
+    return this.pubsub.subscribe(l);
   }
 }
 
-export { MemoryStore } from './cache.shared';
-
-export async function getSecure(key: string): Promise<string | null> {
-  try { return await secureStorage.get(key); } catch { return null; }
-}
-export async function setSecure(key: string, value: string): Promise<void> {
-  try { await secureStorage.set(key, value); } catch { }
-}
+export { MemoryStore, getSecure, setSecure } from './cache.shared';

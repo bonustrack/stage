@@ -10,7 +10,6 @@ import type { MenuPoint } from '../AnchoredMenu.model';
 
 export interface RowMenu {
   convId: string;
-  title: string;
   isUnread: boolean;
   isGroup: boolean;
   peerAddress: string | null;

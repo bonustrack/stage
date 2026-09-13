@@ -3,7 +3,7 @@ import '../cryptoShim';
 import type { AccountRecord } from '../accounts';
 import { updateSmartAccount } from '../accounts';
 import { smartOwnerSigner } from './keyring';
-import { makePublicClient, makeKernelClient } from './client';
+import { kernelDeployedOnChain, makePublicClient, makeKernelClient } from './client';
 import {
   createEcdsaKernel,
   passkeyValidatorFromStored,
@@ -80,18 +80,6 @@ function passkeyPreflight(rec: AccountRecord): EnablePasskeyResult | null {
   return null;
 }
 
-async function isKernelDeployed(
-  publicClient: ReturnType<typeof makePublicClient>,
-  address: string,
-): Promise<boolean> {
-  try {
-    const code = await publicClient.getCode({ address: address as `0x${string}` });
-    return !!code && code !== '0x';
-  } catch {
-    return false;
-  }
-}
-
 async function securedElsewhere(rec: AccountRecord, deployed: boolean): Promise<boolean> {
   if (!deployed || rec.passkey) return false;
   try {
@@ -135,7 +123,7 @@ export async function enablePasskeyForRecord(record: AccountRecord): Promise<Ena
 
   const publicClient = makePublicClient();
 
-  const deployed = await isKernelDeployed(publicClient, rec.address);
+  const deployed = await kernelDeployedOnChain(rec.address).catch(() => false);
 
   if (rec.passkey && deployed) return { ok: false, reason: 'already' };
   if (await securedElsewhere(rec, deployed)) return linkInsteadOfMinting(rec);
@@ -150,7 +138,6 @@ export async function enablePasskeyForRecord(record: AccountRecord): Promise<Ena
   const swap = await deployAndSwapToPasskey(publicClient, rec.hdIndex, stored);
   if (!swap.ok) return { ok: false, reason: 'error', message: swap.message };
 
-  void deployed;
   await updateSmartAccount(rec.id, { passkey: stored, passkeyCredId: stored.authenticatorId, deployed: true });
   return { ok: true, deployed: true, userOpHash: swap.txHash };
 }

@@ -33,7 +33,7 @@ export function drawerAccountRows({ accounts, activeId, onSwitch, c, dark }: {
 
 export function DrawerRow({ rowKey, icon, label, onPress, head, sub, dark }: {
   rowKey?: string; icon: HeroIconName; label: string; onPress: () => void;
-  head: string; sub: string; border: string; dark: boolean;
+  head: string; sub: string; dark: boolean;
 }): React.ReactElement {
   return (
     <ListViewItem key={rowKey} dark={dark} onPress={onPress}>

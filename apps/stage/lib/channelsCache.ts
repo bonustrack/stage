@@ -74,13 +74,11 @@ export function subscribeCachedRows(l: (rows: CachedRow[] | null) => void): () =
   return () => { activeListeners.delete(l); };
 }
 
-function currentRows(): CachedRow[] | null { return activeStore().get(); }
-
 export async function markConvRead(convId: string): Promise<void> {
   const nowNs = Date.now() * 1_000_000;
   await markConvReadSynced(convId);
   notifyReadStateChanged({ convId, lastReadNs: nowNs, markedUnread: false });
-  const rows = currentRows();
+  const rows = getCachedRows();
   if (!rows) return;
   const next = applyRead(rows, convId, nowNs);
   if (next === null) return;
@@ -89,7 +87,7 @@ export async function markConvRead(convId: string): Promise<void> {
 
 export async function markConvUnread(convId: string): Promise<void> {
   await markConvUnreadSynced(convId);
-  const rows = currentRows();
+  const rows = getCachedRows();
   const current = rows?.find((r) => r.convId === convId);
   notifyReadStateChanged({ convId, lastReadNs: current?.lastReadNs ?? 0, markedUnread: true });
   if (!rows) return;
@@ -99,7 +97,7 @@ export async function markConvUnread(convId: string): Promise<void> {
 }
 
 export function patchRowSent(convId: string, preview: string): void {
-  const rows = currentRows();
+  const rows = getCachedRows();
   if (!rows) return;
   const next = applySentPatch(rows, convId, preview, Date.now());
   if (next === null) return;

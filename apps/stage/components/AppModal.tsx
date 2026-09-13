@@ -8,7 +8,6 @@ export function AppModal({
 }: {
   visible: boolean;
   onClose: () => void;
-  title?: string;
   children: ReactNode;
 }): React.ReactElement {
   const pal = usePalette();

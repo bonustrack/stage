@@ -6,7 +6,6 @@ export interface MessengerBubbleProps {
   entry: HistoryEntry; dark: boolean; unread: boolean; pending?: boolean; replyTarget?: boolean;
   onReact?: (emoji: string) => void; onReply?: () => void; onLongPress?: () => void;
   onOpenMenu?: (anchor: MenuAnchor) => void;
-  onCloseMenu?: () => void;
   onReplyPreviewPress?: () => void;
   onAnswer?: (label: string) => void;
   replyPreview?: string; reactions?: Map<string, number>;

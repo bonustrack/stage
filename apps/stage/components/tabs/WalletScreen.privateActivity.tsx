@@ -65,7 +65,6 @@ function PrivateTxRow({ r, head, sub, border, bg }: {
   return (
     <Row padding={{ y: 14 }} align="center" gap={12} 
       style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-      {}
       <TokenAvatar
         logoUrl={r.logoUrl}
         chainId={r.chainId}

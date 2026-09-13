@@ -36,11 +36,9 @@ function PagerOverlay({ insetTop, tabBarHeight, topnavHidden, rail, pathname }: 
         margin={{ left: '-50vw' }}
         style={{ position: 'absolute', top: 0, bottom: 0, left: '50%' }}
 >
-        {}
         <Box pointerEvents="box-none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
           <TabsPager/>
         </Box>
-        {}
         {topnavHidden ? null : (
           <Box pointerEvents="box-none" style={{ position: 'absolute', top: insetTop, left: 0, right: 0, zIndex: 2 }}>
             <HoistedTopnav rail={rail} pathname={pathname}/>
@@ -54,9 +52,7 @@ function PagerOverlay({ insetTop, tabBarHeight, topnavHidden, rail, pathname }: 
       pointerEvents="box-none"
       style={{ position: 'absolute', top: insetTop, bottom: tabBarHeight, left: 0, right: 0 }}
 >
-      {}
       <HoistedTopnav rail={rail} pathname={pathname}/>
-      {}
       <Box flex={1}>
         <TabsPager/>
       </Box>
@@ -92,12 +88,10 @@ export default function TabsLayout(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      {}
       <Box height={insets.top} surface="toolbar"
         pointerEvents="none"
         style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1 }}
 />
-      {}
       <Tabs
         screenOptions={{
           headerShown: false,
@@ -133,10 +127,8 @@ export default function TabsLayout(): React.ReactElement {
             }}
 />
         ))}
-        {}
         <Tabs.Screen name="settings" options={{ href: null }}/>
       </Tabs>
-      {}
       {pagerVisible ? (
         <PagerOverlay
           insetTop={insets.top}
@@ -146,7 +138,6 @@ export default function TabsLayout(): React.ReactElement {
           pathname={pathname}
         />
       ) : null}
-      {}
       {web ? (rail
         ? <WebTabRail pathname={pathname} unreadBadge={unreadBadge}/>
         : <WebTabBar pathname={pathname} unreadBadge={unreadBadge}/>

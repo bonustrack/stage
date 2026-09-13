@@ -63,35 +63,3 @@ const REQUEST_PREFIX = '​[stage:recovery]';
 export function encodeRecoveryMessage(msg: RecoveryMessage): string {
   return `${REQUEST_PREFIX}${JSON.stringify(msg)}`;
 }
-
-function asRecoveryMessage(rec: Record<string, unknown>): RecoveryMessage | null {
-  if (rec.kind === 'recovery.request' && rec.wallet && rec.newOwner) {
-    return rec as unknown as RecoveryRequest;
-  }
-  if (rec.kind === 'recovery.approval' && rec.wallet && rec.newOwner && rec.signature) {
-    return rec as unknown as RecoveryApproval;
-  }
-  return null;
-}
-
-export function parseRecoveryMessage(text: string): RecoveryMessage | null {
-  if (!text?.startsWith(REQUEST_PREFIX)) return null;
-  try {
-    const obj: unknown = JSON.parse(text.slice(REQUEST_PREFIX.length));
-    if (typeof obj !== 'object' || obj === null) return null;
-    return asRecoveryMessage(obj as Record<string, unknown>);
-  } catch {
-    return null;
-  }
-}
-
-export interface PendingRotation {
-  wallet: string;
-  newOwner: string;
-  approvedAt: number;
-  finalizeAfter: number;
-}
-
-export function rotationReady(p: PendingRotation, nowSeconds: number): boolean {
-  return nowSeconds >= p.finalizeAfter;
-}

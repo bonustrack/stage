@@ -9,10 +9,6 @@ import { ensureRailgunForChain } from './engine';
 import { snapshotStore } from './cache';
 import type { PrivateSnapshot } from './types';
 
-function getCachedSnapshot(accountId: string): PrivateSnapshot | null {
-  return snapshotStore(accountId).get();
-}
-
 export async function openPrivateWallet(accountId: string): Promise<PrivateSnapshot | null> {
   const warm = await snapshotStore(accountId).hydrate();
   void refreshSnapshot(accountId);
@@ -20,7 +16,7 @@ export async function openPrivateWallet(accountId: string): Promise<PrivateSnaps
 }
 
 export async function refreshSnapshot(accountId: string): Promise<void> {
-  const prev = getCachedSnapshot(accountId);
+  const prev = snapshotStore(accountId).get();
   try {
     if (isBridgeAvailable()) {
       const next = await bridgeRefreshSnapshot(prev);

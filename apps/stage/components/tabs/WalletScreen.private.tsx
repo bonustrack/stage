@@ -27,7 +27,6 @@ export function PrivateView({ head, sub, border }: {
         <Text size="md" role="secondary" style={{ textAlign: 'center' }}>
           Shielded transfers arrive in the next app build.
         </Text>
-        {}
         {debug ? <BridgePingProbe fg={sub} border={border} /> : null}
       </Col>
     );
@@ -35,7 +34,6 @@ export function PrivateView({ head, sub, border }: {
 
   return (
     <Col margin={{ x: 16, top: 4 }}>
-      {}
       <Pressable
         onPress={() => {
           if (snapshot?.zkAddress) { void Clipboard.setStringAsync(snapshot.zkAddress); flash('0zk address copied'); }
@@ -48,7 +46,6 @@ export function PrivateView({ head, sub, border }: {
         </Text>
       </Pressable>
 
-      {}
       {live.map(p => (
         <Row padding={{ y: 8 }} key={p.id} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
           <Text weight="semibold" size="md" color={head}>
@@ -60,9 +57,7 @@ export function PrivateView({ head, sub, border }: {
         </Row>
       ))}
 
-      {}
 
-      {}
       {debug ? (
         <>
           <RailgunDebugPanel head={head} fg={sub} border={border} />

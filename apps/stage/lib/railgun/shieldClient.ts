@@ -6,7 +6,7 @@ import {
 import { mainnet, sepolia } from 'viem/chains';
 import { getActiveAccountId } from '../accounts';
 import { getViemAccount } from '../zerodev/keyring';
-import { RAILGUN_NETWORKS, type RailgunNetworkConfig } from './networks';
+import type { RailgunNetworkConfig } from './networks';
 import { shieldPrivateKeyMessage } from './bridge/shieldCalls';
 
 const VIEM_CHAIN: Record<number, Chain> = { 1: mainnet, 11155111: sepolia };
@@ -35,8 +35,4 @@ export async function deriveShieldPrivateKey(signer: ShieldSigner): Promise<stri
   const message = await shieldPrivateKeyMessage();
   const signature = await signer.walletClient.signMessage({ account: signer.account, message });
   return keccak256(signature);
-}
-
-export function shieldNetForChainId(chainId: number): RailgunNetworkConfig {
-  return chainId === 1 ? RAILGUN_NETWORKS.mainnet : RAILGUN_NETWORKS.sepolia;
 }

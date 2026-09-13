@@ -11,13 +11,13 @@ import { useCommonChannels } from '../lib/useCommonChannels';
 import { shortAddress } from '../modules/messaging';
 import { hasDraft, getDraft } from '../lib/drafts';
 import { isPinned } from '../lib/pins';
-import type { ProfileColors } from './ProfileScreen.parts';
+import type { Palette } from '../lib/theme';
 import { channelTimestamp } from '../lib/format';
 
 export function CommonChannels({ peerAddress, enabled, c }: {
   peerAddress: string | null;
   enabled: boolean;
-  c: ProfileColors;
+  c: Palette;
 }): React.ReactElement | null {
   const router = useRouter();
   const { channels, loading } = useCommonChannels(peerAddress, enabled);
@@ -26,7 +26,6 @@ export function CommonChannels({ peerAddress, enabled, c }: {
 
   return (
     <Box margin={{ top: 20 }}>
-      {}
       <Row margin={{ x: 16, bottom: 6 }} justify="start" align="center" gap={24} 
         style={{ borderBottomWidth: 1, borderBottomColor: c.border }}>
         <Pressable style={{ paddingVertical: 10, marginBottom: -1, borderBottomWidth: 2, borderBottomColor: c.link }}>
@@ -37,7 +36,6 @@ export function CommonChannels({ peerAddress, enabled, c }: {
         {loading ? <Spinner size={20} color={c.text} /> : null}
       </Row>
 
-      {}
       {channels.map(ch => {
         const hasMsg = ch.lastPreview.length> 0;
         const preview = hasMsg

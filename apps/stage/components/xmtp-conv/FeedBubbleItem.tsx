@@ -99,7 +99,6 @@ function FeedBubbleItemBase({
         onReact={(emoji) => { onReact(item.id, emoji); }}
         onReply={() => { setReplyTarget(item.id, previewOf(item), senderEthAddress); }}
         onOpenMenu={(anchor) => { setMenuAnchor(anchor); setMenuFor(item); }}
-        onCloseMenu={() => { setMenuFor(null); }}
         selectable={selectable}
         onAnswer={(label) => { onAnswer(item.id, label); }}
         highlight={highlight}

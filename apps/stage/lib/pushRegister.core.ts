@@ -1,3 +1,4 @@
+import { errorMessage } from '@stage-labs/client/errors';
 import {
   PUSH_RPC, deleteInstallationBody, isWelcomeTopic, registerInstallationBody, subscribeWithMetadataBody,
   type HmacKeysByTopic, type PushPlatform,
@@ -29,7 +30,7 @@ export interface PushRegistrationInput {
 interface RegisterState { token: string; at: number; topics: string }
 
 export function reportPushFailure(label: string, err: unknown): void {
-  const message = err instanceof Error ? err.message : String(err);
+  const message = errorMessage(err);
   setPushStatus('failed', message);
   if (process.env.NODE_ENV !== 'production') console.warn(label, message);
 }

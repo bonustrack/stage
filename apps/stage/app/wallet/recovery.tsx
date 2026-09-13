@@ -11,13 +11,13 @@ import { DEFAULT_RECOVERY_DELAY_SECONDS } from '@stage-labs/client/zerodev/recov
 import { zerodevConfigured } from '../../lib/zerodev';
 import { useRecoveryActions, type RecoveryActions } from './recovery.actions';
 
-type PagePal = Pick<Palette, 'link' | 'bg' | 'border'>;
+type PagePal = Pick<Palette, 'link' | 'border'>;
 
 function RecoveryNotice({ pal, p, onBack, message }: {
   pal: FormPal; p: PagePal; onBack: () => void; message: string;
 }): React.ReactElement {
   return (
-    <ActionPage title="Recovery" head={p.link} bg={p.bg} border={p.border} onBack={onBack}>
+    <ActionPage title="Recovery" head={p.link} border={p.border} onBack={onBack}>
       <Text size="sm" color={pal.sub}>{message}</Text>
     </ActionPage>
   );
@@ -32,7 +32,7 @@ function RecoverySetupForm({ rec, pal, dark, p, params, delay, guardians, setGua
 }): React.ReactElement {
   const pendingNewOwner = params.newOwner;
   return (
-    <ActionPage title="Recovery" head={p.link} bg={p.bg} border={p.border} onBack={onBack}
+    <ActionPage title="Recovery" head={p.link} border={p.border} onBack={onBack}
       footer={(
         <WalletFooter border={p.border} dark={dark} onCancel={onBack}
           submitLabel={(rec.guardians ?? []).length ? 'Update guardians' : 'Save guardians'}
@@ -55,8 +55,8 @@ export default function WalletRecovery(): React.ReactElement {
   const router = useRouter();
   const params = useLocalSearchParams<{ mode?: string; line?: string; wallet?: string; newOwner?: string }>();
   const mode = params.mode === 'approve' ? 'approve' : 'setup';
-  const { link, bg, border } = usePalette();
-  const p: PagePal = { link, bg, border };
+  const { link, border } = usePalette();
+  const p: PagePal = { link, border };
   const dark = useEffectiveColorScheme() === 'dark';
   const pal = useFormPal();
 
@@ -84,7 +84,7 @@ export default function WalletRecovery(): React.ReactElement {
 
   if (mode === 'approve') {
     return (
-      <ActionPage title="Approve recovery" head={link} bg={bg} border={border} onBack={onBack}>
+      <ActionPage title="Approve recovery" head={link} border={border} onBack={onBack}>
         <ApprovalCard pal={pal} dark={dark}
           wallet={params.wallet ?? ''} newOwner={params.newOwner ?? ''}
           onApprove={() => { void actions.onApprove(); }} approving={approving} approved={approved}/>

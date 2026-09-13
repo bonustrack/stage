@@ -5,16 +5,11 @@ export type PushPhase = 'idle' | 'unsupported' | 'disabled' | 'no-token' | 'regi
 export interface PushStatus { phase: PushPhase; detail: string; at: number }
 
 let current: PushStatus = { phase: 'idle', detail: '', at: 0 };
-const { listeners, notify } = makeListeners();
+const { notify, subscribe } = makeListeners();
 
 export function setPushStatus(phase: PushPhase, detail = ''): void {
   current = { phase, detail, at: Date.now() };
   notify();
-}
-
-function subscribe(cb: () => void): () => void {
-  listeners.add(cb);
-  return () => { listeners.delete(cb); };
 }
 
 export function usePushStatus(): PushStatus {

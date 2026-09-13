@@ -1,4 +1,5 @@
-
+import { errorMessage } from '@stage-labs/client/errors';
+import { MARKED_UNREAD_PREFIX, setLastReadNs } from './xmtp.unread';
 import { Client, ConsentState, IdentifierKind, type Conversation } from '@xmtp/browser-sdk';
 import { secureStorage } from '../platform/storage';
 import {
@@ -88,7 +89,7 @@ async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<
       return await finalizeClient(built, rec, env);
     } catch (e) {
       perfLog('xmtp.client.build FAILED, falling back to create', {
-        error: e instanceof Error ? e.message : String(e),
+        error: errorMessage(e),
       });
     }
   }
@@ -177,25 +178,7 @@ export async function revokeXmtpInstallation(installationId: string): Promise<vo
   await Client.revokeInstallations(signer, inboxId, [target.bytes], client.env);
 }
 
-const LAST_READ_PREFIX = 'unread.lastRead.';
-export async function getLastReadNs(convId: string): Promise<number> {
-  const raw = await getSecure(LAST_READ_PREFIX + convId);
-  if (!raw) return 0;
-  const n = Number(raw);
-  return Number.isFinite(n) ? n : 0;
-}
-export async function setLastReadNs(convId: string, ns: number): Promise<void> {
-  await setSecure(LAST_READ_PREFIX + convId, String(ns));
-}
-
-const MARKED_UNREAD_PREFIX = 'unread.marked.';
-export async function getMarkedUnread(convId: string): Promise<boolean> {
-  return (await getSecure(MARKED_UNREAD_PREFIX + convId)) === '1';
-}
-export async function setMarkedUnreadFlag(convId: string, value: boolean): Promise<void> {
-  if (value) await setSecure(MARKED_UNREAD_PREFIX + convId, '1');
-  else await secureStorage.delete(MARKED_UNREAD_PREFIX + convId).catch(() => undefined);
-}
+export { getLastReadNs, setLastReadNs, getMarkedUnread, setMarkedUnreadFlag, markConvUnreadSynced } from './xmtp.unread';
 
 export async function markConvReadSynced(convId: string): Promise<void> {
   await setLastReadNs(convId, Date.now() * 1_000_000);
@@ -206,10 +189,6 @@ export async function markConvReadSynced(convId: string): Promise<void> {
       await conv.updateConsentState(ConsentState.Allowed);
     }
   } catch { }
-}
-
-export async function markConvUnreadSynced(convId: string): Promise<void> {
-  await setSecure(MARKED_UNREAD_PREFIX + convId, '1');
 }
 
 export async function syncPreferences(): Promise<void> {

@@ -7,7 +7,7 @@ import { ShieldFlowForm } from './send.shield';
 export default function WalletShield(): React.ReactElement {
   const router = useRouter();
   const params = useLocalSearchParams<{ symbol?: string; chainId?: string }>();
-  const { link: head, bg, border } = usePalette();
+  const { link: head, border } = usePalette();
   const dark = useEffectiveColorScheme() === 'dark';
   const pal = useFormPal();
   const { snapshot } = usePrivateWallet();
@@ -17,7 +17,7 @@ export default function WalletShield(): React.ReactElement {
   const initialChainId = typeof params.chainId === 'string' ? Number(params.chainId) : undefined;
 
   return (
-    <ActionPage title="Shield token" head={head} bg={bg} border={border} onBack={() => { router.back(); }}
+    <ActionPage title="Shield token" head={head} border={border} onBack={() => { router.back(); }}
       footer={footer ? (
         <WalletFooter border={border} dark={dark} onCancel={() => { router.back(); }}
           submitLabel={footer.submitLabel} onSubmit={footerSubmit}

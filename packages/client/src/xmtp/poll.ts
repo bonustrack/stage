@@ -43,9 +43,6 @@ export function normalizeQuestions(poll: PollContent | undefined): PollQuestion[
   return [];
 }
 
-export const POLL_CONTENT_TYPE_ID = 'metro.box/poll:1.0';
-export const POLL_CONTENT_TYPE_SHORT = 'poll';
-
 export function mintPollId(): string {
   const g = globalThis as { crypto?: { randomUUID?: () => string } };
   if (g.crypto?.randomUUID) return g.crypto.randomUUID();
@@ -70,14 +67,4 @@ export function pollFallbackText(poll: PollContent): string {
   return lines.join('\n');
 }
 
-export function pollPreviewText(poll: PollContent): string {
-  const qs = normalizeQuestions(poll);
-  const title = qs[0]?.question ?? poll.question ?? '';
-  return qs.length > 1 ? `Poll: ${title} (+${qs.length - 1} more)` : `Poll: ${title}`;
-}
-
-export {
-  parseVoteKey, voteKey, votesByPoll, ownVotes,
-  openVoteKey, parseOpenVote, openAnswersByPoll,
-  type VoteEvent,
-} from './poll-tally';
+export { openVoteKey } from './poll-tally';

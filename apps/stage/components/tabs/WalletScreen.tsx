@@ -172,7 +172,6 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
 
   return (
     <Col surface="surface" flex={1}>
-    {}
     <ScrollView
       simultaneousHandlers={panRef}
       style={[{ flex: 1, backgroundColor: bg }, WEB_EDGE_SCROLL]}
@@ -187,14 +186,12 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
       scrollEventThrottle={pull.scrollEventThrottle}
 >
       {pull.indicator}
-      {}
       <Row margin={{ x: 16, top: 8 }} justify="end" align="center" gap={18}>
         <RefreshButton refreshing={refreshing} onRefresh={onRefresh} color={head}/>
       </Row>
-      {}
       <WalletBalanceCard err={!!err} totalUsd={totalUsd} border={border} onAction={onWalletAction} />
 
-      <WalletTabs tab={tab} setTab={setTab} head={head} sub={sub} border={border}/>
+      <WalletTabs tab={tab} setTab={setTab} border={border}/>
 
       <WalletTabBody
         tab={tab} nftState={nftState} address={address} rows={rows}

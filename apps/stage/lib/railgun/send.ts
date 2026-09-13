@@ -1,3 +1,4 @@
+import { errorMessage } from '@stage-labs/client/errors';
 import { parseUnits, type Hex } from 'viem';
 import { getActiveAccountId } from '../accounts';
 import { engineInit, walletInfo } from './bridge';
@@ -8,7 +9,8 @@ import {
   type TransferGasDetails, type TransferErc20Recipient,
 } from '@stage-labs/client/railgun';
 import { sdk } from './bridge/sdk';
-import { getShieldSigner, shieldNetForChainId } from './shieldClient';
+import { getShieldSigner } from './shieldClient';
+import { netForChainId } from './networks';
 import { TXID_VERSION, loadShieldProvider, tokenMeta } from './txCommon';
 
 export interface SendParams {
@@ -30,7 +32,7 @@ export async function sendShielded(params: SendParams): Promise<SendResult> {
   if (!recipient.toLowerCase().startsWith('0zk')) {
     throw new Error('Recipient must be a 0zk address');
   }
-  const cfg = shieldNetForChainId(params.chainId);
+  const cfg = netForChainId(params.chainId);
   const meta = tokenMeta(params.chainId, params.symbol, 'send');
   const amountWei = parseUnits(params.amount, meta.decimals);
   if (amountWei <= 0n) throw new Error('Enter an amount greater than zero');
@@ -101,7 +103,7 @@ export async function sendShielded(params: SendParams): Promise<SendResult> {
     updatePending(accountId, pendingId, { phase: 'confirmed', txHash });
     return { txHash, recipient };
   } catch (e) {
-    const raw = e instanceof Error ? e.message : String(e);
+    const raw = errorMessage(e);
     const msg = raw?.trim() ? raw : `Unknown error (no message) at step "${step}"`;
     console.error(`[sendShielded] failed at step="${step}":`, e);
     updatePending(accountId, pendingId, { phase: 'failed', error: msg });

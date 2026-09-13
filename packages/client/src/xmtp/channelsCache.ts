@@ -41,22 +41,6 @@ export function applyUnread<R extends CachedChannelRow>(
   return next;
 }
 
-export function applyConsent<R extends CachedChannelRow>(
-  rows: readonly R[],
-  convId: string,
-  markedUnread: boolean,
-): R[] | null {
-  const idx = findRowIndex(rows, convId);
-  const cur = idx === -1 ? undefined : rows[idx];
-  if (cur === undefined) return null;
-  if (cur.markedUnread === markedUnread) return null;
-  const next = [...rows];
-  next[idx] = markedUnread
-    ? { ...cur, markedUnread: true, unreadCount: Math.max(1, cur.unreadCount) }
-    : { ...cur, markedUnread: false, unreadCount: 0 };
-  return next;
-}
-
 export function applySentPatch<R extends CachedChannelRow>(
   rows: readonly R[],
   convId: string,

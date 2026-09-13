@@ -32,7 +32,6 @@ export async function swapRootToEcdsa(
     const addressOverride = rec.passkeySudo ? undefined : (rec.address as `0x${string}`);
     const passkeyAccount = await passkeyKernelFromStored(
       publicClient,
-      undefined as unknown as Parameters<typeof passkeyKernelFromStored>[1],
       rec.hdIndex,
       rec.passkey,
       addressOverride,

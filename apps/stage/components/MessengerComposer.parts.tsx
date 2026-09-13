@@ -28,9 +28,7 @@ export function ReplyBanner({
   return (
     <Box padding={{ x: 22 }} surface="surface" style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: borderColor }}>
       <Pressable onPress={onPress} disabled={!onPress}>
-        {}
         <Row padding={{ y: 11, x: 0 }} align="center" gap={10}>
-          {}
           <Icon name="reply" size={16} color={sub}/>
           <Text size="xl" numberOfLines={1} style={{ flex: 1 }}>
             <Text size="xl" role="secondary">Replying to </Text>
@@ -38,7 +36,6 @@ export function ReplyBanner({
               {(sender ? getPeerName(sender) : undefined) ?? (sender ? shortAddress(sender) : 'message')}
             </Text>
           </Text>
-          {}
           <Pressable onPress={onClear} hitSlop={8}>
             <Icon name="x" size={18} color={sub}/>
           </Pressable>

@@ -1,3 +1,4 @@
+import { errorMessage } from '@stage-labs/client/errors';
 import {
   useCallback,
   useEffect,
@@ -150,7 +151,7 @@ interface ProbeDeps {
   setCount: Dispatch<SetStateAction<number>>;
   setState: Dispatch<SetStateAction<ProbeState>>;
   setEngine: Dispatch<SetStateAction<ProbeState>>;
-  setLog: Dispatch<SetStateAction<LogLine[]>>;
+  setLog: (lines: LogLine[]) => void;
   runStart: MutableRefObject<number>;
 }
 
@@ -188,7 +189,7 @@ function useProbeActions(deps: ProbeDeps): ProbeActions {
         text: `wallet ${info.railgunAddress.slice(0, 12)}… mainnet=${m} rows sepolia=${s} rows scanning=${res.scanning} — watch scan[] lines below`,
       });
     } catch (e) {
-      setEngine({ kind: 'err', text: e instanceof Error ? e.message : String(e) });
+      setEngine({ kind: 'err', text: errorMessage(e) });
     }
   }, [setEngine, setLog, runStart]);
 
@@ -209,7 +210,7 @@ function useProbeActions(deps: ProbeDeps): ProbeActions {
       const ms = Date.now() - t0;
       setState({ kind: 'ok', text: `pong: ${JSON.stringify(res)} (${ms}ms)` });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = errorMessage(e);
       setState({ kind: 'err', text: msg });
     }
   }, [count, setCount, setState, setLog, runStart]);
@@ -229,7 +230,7 @@ function useProbeActions(deps: ProbeDeps): ProbeActions {
       const ms = Date.now() - t0;
       setEngine({ kind: 'ok', text: `engine: ${JSON.stringify(res)} (${ms}ms)` });
     } catch (e) {
-      setEngine({ kind: 'err', text: e instanceof Error ? e.message : String(e) });
+      setEngine({ kind: 'err', text: errorMessage(e) });
     }
   }, [setEngine, setLog, runStart]);
 
@@ -245,7 +246,7 @@ function useProbeActions(deps: ProbeDeps): ProbeActions {
       const methods = await sdkListMethods();
       setEngine({ kind: 'ok', text: `${methods.length} SDK methods: ${methods.join(', ')}` });
     } catch (e) {
-      setEngine({ kind: 'err', text: e instanceof Error ? e.message : String(e) });
+      setEngine({ kind: 'err', text: errorMessage(e) });
     }
   }, [setEngine, setLog, runStart]);
 
@@ -263,7 +264,7 @@ export function BridgePingProbe({ fg, border }: {
   const { lines: log, append, replace } = useBatchedLog();
   const runStart = useRef(0);
 
-  const setLog = replace as React.Dispatch<React.SetStateAction<LogLine[]>>;
+  const setLog = replace;
 
   const { onPress, onInit, onScan, onMethods } = useProbeActions({
     count, setCount, setState, setEngine, setLog, runStart,

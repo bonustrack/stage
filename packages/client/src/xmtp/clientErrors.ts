@@ -1,3 +1,4 @@
+import { errorMessage } from '../errors';
 export const INSTALLATION_LIMIT_MESSAGE =
   'This wallet already has XMTP set up on too many devices (installation limit reached). ' +
   'Messaging is unavailable for this account — wallet features still work.';
@@ -5,7 +6,7 @@ export const INSTALLATION_LIMIT_MESSAGE =
 const STORE_CORRUPTION = ['PRAGMA key', 'StorageError', 'incorrect value'];
 
 export function isStoreCorruption(err: unknown, extraSignatures: string[] = []): boolean {
-  const msg = err instanceof Error ? err.message : String(err);
+  const msg = errorMessage(err);
   return [...STORE_CORRUPTION, ...extraSignatures].some(sig => msg.includes(sig));
 }
 
@@ -18,7 +19,7 @@ const INSTALLATION_LIMIT = [
 ];
 
 export function isInstallationLimit(err: unknown): boolean {
-  const msg = err instanceof Error ? err.message : String(err);
+  const msg = errorMessage(err);
   return INSTALLATION_LIMIT.some(sig => msg.toLowerCase().includes(sig.toLowerCase()));
 }
 

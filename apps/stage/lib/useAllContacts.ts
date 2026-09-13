@@ -33,8 +33,7 @@ async function collectAddresses(): Promise<string[]> {
 
   try {
     const memberLists = await Promise.all(convs.map(c =>
-      (c as unknown as { members: () => Promise<{ inboxId: string }[]> })
-        .members().then(ms => ms.map(m => m.inboxId)).catch(() => [] as string[]),
+      c.members().then(ms => ms.map(m => m.inboxId)).catch(() => [] as string[]),
     ));
     await primeInboxEthCache(client, memberLists.flat());
   } catch { }

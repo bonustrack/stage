@@ -14,10 +14,7 @@ import { resolveEnsName } from '@stage-labs/client/api/ens';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { getCachedRows } from '../../modules/messaging';
 import { peerAvatarUrl } from '../../lib/peerProfiles';
-
-function looksLikeEns(s: string): boolean {
-  return /^[a-z0-9-]+(\.[a-z0-9-]+)*\.eth$/i.test(s.trim());
-}
+import { looksLikeEns } from '@stage-labs/client/wallet/send';
 
 function getExistingPeers(): { address: string; convId: string }[] {
   const rows = getCachedRows() ?? [];

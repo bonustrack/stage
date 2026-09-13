@@ -51,7 +51,7 @@ function PendingTopnav({ address, title }: { address: string; title: string }): 
 }
 
 function usePendingComposer(onSubmit: (text: string) => void): {
-  editor: Omit<Parameters<typeof ComposerEditor>[0], 'dark' | 'fg' | 'head' | 'bg' | 'sub' | 'inputBg' | 'chipBg'>;
+  editor: Omit<Parameters<typeof ComposerEditor>[0], 'dark' | 'fg' | 'head' | 'bg' | 'sub' | 'chipBg'>;
 } {
   const [text, setText] = useState('');
   const [selection, setSelection] = useState({ start: 0, end: 0 });
@@ -130,8 +130,7 @@ export function PendingConversation({ address, reason, onDelivered, dark }: {
         </Text>
       </Col>
       <ComposerEditor
-        dark={dark} fg={pal.text} head={pal.link} bg={pal.bg} sub={pal.text}
-        inputBg={pal.inputBg} chipBg={pal.border}
+        dark={dark} fg={pal.text} head={pal.link} bg={pal.bg} sub={pal.text} chipBg={pal.border}
         {...editor}
       />
     </Col>

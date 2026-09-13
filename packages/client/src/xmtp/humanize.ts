@@ -1,4 +1,4 @@
-
+import { shortAddress } from '../identity/format';
 interface FieldChange { fieldName: string; oldValue?: string; newValue?: string }
 export interface GroupUpdatedContent {
   initiatedByInboxId?: string;
@@ -37,8 +37,7 @@ const MENTION_RE = /@(0x[0-9a-fA-F]{40})\b/g;
 
 export function humanizeMentions(text: string): string {
   if (!text.includes('@0x')) return text;
-  return text.replace(MENTION_RE, (_m, addr: string) =>
-    `@${addr.slice(0, 6)}…${addr.slice(-4)}`);
+  return text.replace(MENTION_RE, (_m, addr: string) => `@${shortAddress(addr)}`);
 }
 
 export function shortContentType(raw: string | undefined | null): string {

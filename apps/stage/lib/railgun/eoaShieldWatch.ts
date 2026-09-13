@@ -1,6 +1,6 @@
 import { createPublicClient, http, type Hex } from 'viem';
 import { NETWORK_CONFIG } from '@railgun-community/shared-models';
-import { RAILGUN_NETWORKS } from './networks';
+import { netForChainId } from './networks';
 import { VIEM_CHAINS } from '../../components/tabs/WalletScreen.assets';
 import { addPending, pendingStore } from './cache';
 import { watchShieldLanding } from './shieldScan';
@@ -9,7 +9,7 @@ const POLL_MS = 25_000;
 const LOOKBACK_BLOCKS = 3n;
 
 const proxyFor = (chainId: number): Hex | null => {
-  const net = chainId === 1 ? RAILGUN_NETWORKS.mainnet : RAILGUN_NETWORKS.sepolia;
+  const net = netForChainId(chainId);
   const cfg = NETWORK_CONFIG[net.networkName];
   return cfg ? (cfg.proxyContract as Hex) : null;
 };
@@ -55,7 +55,7 @@ async function scanRecentBlocksForShield(
 async function pollOnce(accountId: string, eoa: Hex, chainId: number): Promise<void> {
   if (hasLiveShield(accountId, chainId)) return;
   const chain = VIEM_CHAINS[chainId];
-  const net = chainId === 1 ? RAILGUN_NETWORKS.mainnet : RAILGUN_NETWORKS.sepolia;
+  const net = netForChainId(chainId);
   const proxy = proxyFor(chainId);
   if (!chain || !proxy) return;
   const client = createPublicClient({ chain, transport: http(net.rpcUrls[0]) });

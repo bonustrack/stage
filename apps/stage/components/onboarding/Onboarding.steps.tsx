@@ -3,9 +3,6 @@ import { Title } from '@stage-labs/kit/react-native/title';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Col } from '../layout';
-import { usePalette } from '../../lib/theme';
-
-type Pal = ReturnType<typeof usePalette>;
 
 interface StepAction {
   label: string;
@@ -44,7 +41,7 @@ function OnboardingStepView({ dark, title, centered, caption, captionSize, topPa
 }
 
 export function WelcomeStep({ dark, busy, onCreate, onRestore, onImport }: {
-  pal: Pal; dark: boolean; busy: boolean; onCreate: () => void; onRestore: () => void; onImport: () => void;
+  dark: boolean; busy: boolean; onCreate: () => void; onRestore: () => void; onImport: () => void;
 }): React.ReactElement {
   return (
     <OnboardingStepView
@@ -62,7 +59,7 @@ export function WelcomeStep({ dark, busy, onCreate, onRestore, onImport }: {
 }
 
 export function PasskeyStep({ dark, busy, onAdd, onSkip }: {
-  pal: Pal; dark: boolean; busy: boolean; onAdd: () => void; onSkip: () => void;
+  dark: boolean; busy: boolean; onAdd: () => void; onSkip: () => void;
 }): React.ReactElement {
   return (
     <OnboardingStepView

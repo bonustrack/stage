@@ -1,4 +1,4 @@
-
+import { asFileUri } from './localAttachmentCache';
 import { File, Paths } from 'expo-file-system';
 import {
   MultiRemoteAttachmentCodec,
@@ -66,7 +66,7 @@ export async function resolveRemoteAttachment(info: RemoteAttachmentInfo): Promi
     filename: info.filename,
   };
   const encrypted: EncryptedLocalAttachment = {
-    encryptedLocalFileUri: dest.uri.startsWith('file://') ? dest.uri : `file://${dest.uri.replace(/^file:\/+/, '/')}`,
+    encryptedLocalFileUri: asFileUri(dest.uri),
     metadata,
   };
   const decrypted = await client.decryptAttachment(encrypted);

@@ -104,7 +104,6 @@ export function MemberPicker({ state, dark, exclude = [] }: {
 
   return (
     <>
-      {}
       <Col gap={6}>
         <Text size="xs" role="secondary">
           Add members
@@ -141,14 +140,12 @@ export function MemberPicker({ state, dark, exclude = [] }: {
         </Row>
       </Col>
 
-      {}
       <ContactSuggestions
         contacts={contacts}
         selected={selectedAddresses}
         onToggle={toggleContact}
 />
 
-      {}
       {members.length> 0 && (
         <Col gap={8}>
           {members.map(m => (
