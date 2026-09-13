@@ -3,6 +3,7 @@ import { app, BrowserWindow, session, systemPreferences } from 'electron';
 import { DEEP_LINK_SCHEME, deepLinkIn, desktopRouteUrl, sameSite, siteBaseFor } from './links';
 import { installMenu } from './menu';
 import { registerAppScheme, serveWebApp } from './serve';
+import { startUpdates } from './updates';
 import { createWindow, frontWindow } from './window';
 
 const ALLOWED_PERMISSIONS = new Set([
@@ -73,6 +74,7 @@ function start(): void {
     installMenu();
     createWindow(site, pendingLink === null ? site : desktopRouteUrl(site, pendingLink));
     pendingLink = null;
+    startUpdates();
   });
 }
 

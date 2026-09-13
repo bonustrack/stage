@@ -1,5 +1,6 @@
 import { app, Menu, shell, type MenuItemConstructorOptions } from 'electron';
 import { WEBSITE } from './links';
+import { checkForUpdatesNow } from './updates';
 
 export function installMenu(): void {
   const mac = process.platform === 'darwin';
@@ -26,6 +27,8 @@ export function installMenu(): void {
       role: 'help',
       submenu: [
         { label: 'Open stage.box in the browser', click: () => { void shell.openExternal(WEBSITE); } },
+        { type: 'separator' },
+        { label: 'Check for Updates…', click: checkForUpdatesNow },
         { label: `Version ${app.getVersion()}`, enabled: false },
       ],
     },

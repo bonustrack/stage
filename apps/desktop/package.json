@@ -1,6 +1,6 @@
 {
   "name": "stage-desktop",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "private": true,
   "description": "Stage desktop app for macOS, Linux and Windows, bundling the web UI",
   "homepage": "https://stage.box",
@@ -18,6 +18,7 @@
     "@types/node": "^22.0.0",
     "electron": "44.3.0",
     "electron-builder": "26.15.3",
+    "electron-updater": "6.8.9",
     "esbuild": "0.28.1"
   }
 }

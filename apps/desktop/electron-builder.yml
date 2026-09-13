@@ -14,13 +14,20 @@ protocols:
   - name: Stage
     schemes:
       - stage
+publish:
+  provider: github
+  owner: bonustrack
+  repo: stage
+  releaseType: release
 mac:
   category: public.app-category.social-networking
   target:
-    - dmg
-    - zip
+    - target: dmg
+      arch: universal
+    - target: zip
+      arch: universal
   hardenedRuntime: true
-  notarize: false
+  notarize: true
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
@@ -40,4 +47,3 @@ nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
 afterSign: scripts/adhoc-sign.mjs
-publish: null

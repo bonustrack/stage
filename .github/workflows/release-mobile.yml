@@ -256,8 +256,9 @@ jobs:
         with:
           tag_name: v${{ needs.guard.outputs.version }}
           name: Stage v${{ needs.guard.outputs.version }}
+          append_body: true
           body: |
-            Stage v${{ needs.guard.outputs.version }} for Android (`box.stage`).
-            Install the APK directly, or get it from Google Play once the store
-            release is approved. iOS ships through TestFlight. Commit: ${{ github.sha }}
+            Android: install the `.apk` directly, or get it from Google Play once
+            the store release is approved. iOS ships through TestFlight.
+            Commit: ${{ github.sha }}
           files: artifacts/*.apk
