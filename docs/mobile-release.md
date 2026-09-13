@@ -13,6 +13,8 @@
 
 Version codes and build numbers are managed by EAS (`appVersionSource: remote`, `autoIncrement: true`), so nothing needs bumping besides `version`.
 
+The public client ids the JavaScript bundle needs (`EXPO_PUBLIC_ZERODEV_PROJECT_ID`, `EXPO_PUBLIC_SWARMY_KEY`) live in the `base` profile of `apps/stage/eas.json`, because EAS cloud builds bundle on Expo's servers where repo secrets and the gitignored `.env` do not exist. They are inlined into every shipped bundle anyway, so they are not secret. Without them a store build has no wallet configuration and attachment uploads fail.
+
 ## Secrets
 
 Repo `Settings -> Secrets and variables -> Actions`.
