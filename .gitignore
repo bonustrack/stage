@@ -3,6 +3,8 @@ node_modules
 .netlify
 .turbo
 dist
+apps/desktop/release
+apps/desktop/web
 *.tgz
 *.log
 .env

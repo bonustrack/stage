@@ -40,6 +40,8 @@ jobs:
         with:
           bun-version: ${{ inputs.bun-version }}
       - run: ${{ inputs.install-command }}
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
       - name: Lint
         if: ${{ inputs.lint }}
         run: bun run lint

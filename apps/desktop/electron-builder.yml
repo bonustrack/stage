@@ -1,0 +1,43 @@
+appId: box.stage.desktop
+productName: Stage
+artifactName: Stage-${version}-${os}-${arch}.${ext}
+directories:
+  output: release
+  buildResources: build
+files:
+  - dist/**
+  - package.json
+extraResources:
+  - from: web
+    to: web
+protocols:
+  - name: Stage
+    schemes:
+      - stage
+mac:
+  category: public.app-category.social-networking
+  target:
+    - dmg
+    - zip
+  hardenedRuntime: true
+  notarize: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  extendInfo:
+    NSCameraUsageDescription: Stage uses the camera to scan the code shown by your other device.
+    NSMicrophoneUsageDescription: Stage uses the microphone to record voice messages.
+    NSCameraUseContinuityCameraDeviceType: true
+linux:
+  target:
+    - AppImage
+    - deb
+  category: Network
+  maintainer: Stage Labs
+win:
+  target:
+    - nsis
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+afterSign: scripts/adhoc-sign.mjs
+publish: null

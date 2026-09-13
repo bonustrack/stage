@@ -13,6 +13,7 @@ It ships **one universal Expo app** (`apps/stage`) serving **android, ios, and w
 | `packages/kit` | `@stage-labs/kit` | Design system: tokens, theme, icons, layout, and ONE React Native component family (renders on web via RNW). Plain component library — no renderer, no build step. |
 | `packages/config` | `@stage-labs/config` | Publishable ESLint/TS/knip/madge presets + the `stage` CLI (`bin/stage.js`) driven by root `stage.config.js`. |
 | `apps/proxy` | — | Cloudflare Worker: link-preview / image-resize / x402 proxy + the bundler.stage.box per-branch manifest proxy. Routes on proxy.stage.box and bundler.stage.box (metro.box is retired — never reference it). |
+| `apps/desktop` | `stage-desktop` | Electron app for macOS, Linux and Windows. Bundles the `expo export --platform web` output (`scripts/export-ui.mjs` -> `web/`, prod variant, rpId stage.box) and serves it from the privileged `stage-app://stage.box` scheme with the same COOP/COEP headers as Netlify, so it works with stage.box down. Adds the native window, menus, `stage://` deep links and macOS camera/mic prompts. `STAGE_DESKTOP_URL=http://localhost:8080` points it at a Metro dev server instead. `release-desktop.yml` builds installers when its `package.json` version changes. |
 
 There is no separate web app: the Vue client (`apps/ui`) and the kit Vue renderer family were removed when `apps/stage` became universal. **The parity invariant is retired** — a screen exists once. The JSON widget dialect (`KitRenderer`/`ViewHost`, `WidgetNode`, node registry) is also retired — all UI, including chat message content, is direct kit JSX.
 
@@ -39,6 +40,7 @@ Per-app:
 | `bun --cwd apps/stage run build:web` | `expo export --platform web` -> `dist/` (Netlify publishes this). NEVER export into the repo tree during local checks — ESLint OOMs on bundles; use a temp dir |
 | `bun --cwd apps/stage run typecheck` / `test` | `tsc --noEmit` / `bun test test/` |
 | `bun --cwd apps/proxy dev` | `wrangler dev` |
+| `bun --cwd apps/desktop start` / `dist` | Export the web UI into `apps/desktop/web` and run Electron / build installers into `apps/desktop/release` (run Electron from a plain terminal: editors set `ELECTRON_RUN_AS_NODE`) |
 
 ## Architecture
 
