@@ -1,5 +1,5 @@
 
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from '../../lib/safeArea';
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import { ScreenHeader } from '../chrome/ScreenHeader';

@@ -8,6 +8,7 @@ import {
   effectiveRpId,
   hexToBytes,
   hostSupportsRpId,
+  webAuthnOrigin,
   normalizeRegistrationPublicKey,
   signableMessageToHex,
 } from '../lib/zerodev/passkeys.model';
@@ -105,5 +106,17 @@ describe('normalizeRegistrationPublicKey — web getPublicKey() to base64 public
   test('returns input unchanged for non-credential shapes', () => {
     expect(normalizeRegistrationPublicKey(null)).toBe(null);
     expect(normalizeRegistrationPublicKey('nope')).toBe('nope');
+  });
+});
+
+describe('webAuthnOrigin — Chromium only serves WebAuthn to https, localhost or extensions', () => {
+  test('https anywhere and http on local dev hosts qualify', () => {
+    expect(webAuthnOrigin('https:', 'stage.box')).toBe(true);
+    expect(webAuthnOrigin('http:', 'localhost')).toBe(true);
+  });
+
+  test('the bundled desktop scheme and plain http do not', () => {
+    expect(webAuthnOrigin('stage-app:', 'stage.box')).toBe(false);
+    expect(webAuthnOrigin('http:', 'stage.box')).toBe(false);
   });
 });

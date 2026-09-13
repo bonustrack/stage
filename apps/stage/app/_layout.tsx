@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { Text, TextInput } from '../components/layout/native';
 import { Col, WebContentFrame } from '../components/layout';
 import { Spinner } from '../components/Spinner';
+import { TopChrome } from '../components/system/TopChrome';
 import { Onboarding } from '../components/onboarding/Onboarding';
 import { useAccountGate } from '../lib/accountGate';
 import { useShellGates } from '../lib/onboardingHold';
@@ -153,6 +154,7 @@ function RootLayoutInner(): React.ReactElement {
           <Onboarding onDone={() => undefined} />
         </Col>
       ) : null}
+      <TopChrome />
       <BuildInfoDot />
       <AlertHost />
       <HistorySyncRunner ready={gatesOpen} hasAccount={onboarding.hasAccount} />

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import Constants from 'expo-constants';
 import * as Updates from 'expo-updates';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from '../../lib/safeArea';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box } from '../layout';
 import { usePalette, withAlpha } from '../../lib/theme';

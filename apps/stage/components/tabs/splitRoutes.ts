@@ -3,7 +3,7 @@ import { isPeerHandleSegment } from '@stage-labs/client/routing/handles';
 const TAB_ROUTES = new Set(['/', '/contacts', '/wallet', '/settings']);
 
 const SPLIT_PREFIXES = [
-  '/channel/', '/group/', '/profile/', '/settings', '/wallet', '/contacts', '/accounts',
+  '/channel/', '/group/', '/profile/', '/settings', '/wallet', '/contacts', '/accounts', '/requests',
 ];
 
 function isDmRoute(pathname: string): boolean {

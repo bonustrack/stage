@@ -9,7 +9,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Box, Row, Col, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from '../../components/layout';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from '../../lib/safeArea';
 import { usePalette } from '../../lib/theme';
 
 export interface FormPal { fg: string; head: string; sub: string; border: string; inputBg: string; link: string }

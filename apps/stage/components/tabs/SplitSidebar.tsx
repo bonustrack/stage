@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { usePathname } from 'expo-router';
 import { Box } from '../layout';
 import { usePalette } from '../../lib/theme';
+import { useTopChromeInset } from '../../lib/webLayout';
 import { useTotalUnread } from '../../lib/useTotalUnread';
 import { unreadBadgeLabel } from '../../lib/format';
 import { HomeScreen } from './HomeScreen';
@@ -27,6 +28,7 @@ export function SplitSidebar({ visible }: { visible: boolean }): React.ReactElem
   const active = visible && rail && isSplitRoute(pathname);
   usePaneScope(active);
   const paneWidth = usePaneWidth();
+  const inset = useTopChromeInset();
   const { border } = usePalette();
   const unreadBadge = unreadBadgeLabel(useTotalUnread());
   if (!active) return null;
@@ -37,7 +39,7 @@ export function SplitSidebar({ visible }: { visible: boolean }): React.ReactElem
         surface="surface"
         width={paneWidth}
         style={{
-          position: 'absolute', top: 0, bottom: 0, left: WEB_TAB_RAIL_WIDTH, zIndex: 3,
+          position: 'absolute', top: inset, bottom: 0, left: WEB_TAB_RAIL_WIDTH, zIndex: 3,
           borderRightWidth: 1, borderRightColor: border,
         }}
 >

@@ -2,7 +2,7 @@
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from '../../lib/safeArea';
 
 import { Text } from '@stage-labs/kit/react-native/text';
 import { walletAccountRows } from './WalletSettings.model';

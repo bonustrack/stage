@@ -22,6 +22,10 @@ export function hostSupportsRpId(configured: string, hostname: string): boolean 
   return hostInsideRpId(configured, hostname) || DEV_HOSTS.has(hostname);
 }
 
+export function webAuthnOrigin(protocol: string, hostname: string): boolean {
+  return protocol === 'https:' || DEV_HOSTS.has(hostname);
+}
+
 export function effectiveRpId(configured: string, hostname: string): string {
   return hostInsideRpId(configured, hostname) ? configured : hostname;
 }

@@ -158,6 +158,12 @@ export function reactNative() {
           {
             paths: [
               {
+                name: 'react-native-safe-area-context',
+                importNames: ['useSafeAreaInsets'],
+                message:
+                  "Use useSafeAreaInsets from '@/lib/safeArea' so the desktop title bar counts as a top inset.",
+              },
+              {
                 name: 'react-native',
                 importNames: ['View'],
                 message:
@@ -219,6 +225,12 @@ export function reactNative() {
           {
             paths: [
               {
+                name: 'react-native-safe-area-context',
+                importNames: ['useSafeAreaInsets'],
+                message:
+                  "Use useSafeAreaInsets from '@/lib/safeArea' so the desktop title bar counts as a top inset.",
+              },
+              {
                 name: 'react-native',
                 importNames: ['View'],
                 message:
@@ -263,6 +275,12 @@ export function reactNative() {
       rules: {
         'no-restricted-imports': 'off',
         '@typescript-eslint/no-restricted-imports': 'off',
+      },
+    },
+    {
+      files: ['lib/safeArea.ts'],
+      rules: {
+        'no-restricted-imports': 'off',
       },
     },
     {

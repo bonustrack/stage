@@ -24,7 +24,7 @@ describe('isSplitRoute', () => {
 
   test('other stack routes stay single-column', () => {
     expect(isSplitRoute('/new-group')).toBe(false);
-    expect(isSplitRoute('/requests')).toBe(false);
+    expect(isSplitRoute('/requests')).toBe(true);
   });
 });
 

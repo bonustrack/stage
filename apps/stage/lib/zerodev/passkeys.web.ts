@@ -20,6 +20,7 @@ import {
   hostSupportsRpId,
   normalizeRegistrationPublicKey,
   signableMessageToHex,
+  webAuthnOrigin,
   type RegisterPasskeyOptions,
   type StoredPasskey,
 } from './passkeys.model';
@@ -32,6 +33,7 @@ export function passkeysAvailable(): boolean {
     typeof window !== 'undefined' &&
     window.isSecureContext &&
     typeof window.PublicKeyCredential === 'function' &&
+    webAuthnOrigin(window.location.protocol, window.location.hostname) &&
     hostSupportsRpId(zerodevRpId(), window.location.hostname)
   );
 }

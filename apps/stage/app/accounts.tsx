@@ -2,7 +2,7 @@
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { Col, WEB_EDGE_CONTENT_WIDE, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../components/layout';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from '../lib/safeArea';
 import { useEffectiveColorScheme } from '../lib/theme';
 import { StackHeader } from '../components/chrome/StackHeader';
 import { AccountsManager } from '../components/AccountsManager';

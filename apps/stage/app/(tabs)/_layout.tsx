@@ -3,7 +3,7 @@ import { Box, Col } from '../../components/layout';
 import { fontSize } from '@stage-labs/kit/tokens';
 import { Tabs, usePathname } from 'expo-router';
 import { Platform } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from '../../lib/safeArea';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { usePalette } from '../../lib/theme';
@@ -36,7 +36,7 @@ function PagerOverlay({ insetTop, tabBarHeight, topnavHidden, rail, pathname }: 
         margin={{ left: '-50vw' }}
         style={{ position: 'absolute', top: 0, bottom: 0, left: '50%' }}
 >
-        <Box pointerEvents="box-none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+        <Box pointerEvents="box-none" style={{ position: 'absolute', top: insetTop, left: 0, right: 0, bottom: 0 }}>
           <TabsPager/>
         </Box>
         {topnavHidden ? null : (

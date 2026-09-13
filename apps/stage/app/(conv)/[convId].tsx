@@ -7,7 +7,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from '../../components/Spinner';
 import { Box, Col, WEB_EDGE_SCROLL, WEB_CHROME_WIDTH, WEB_CHROME_SHIFT } from '../../components/layout';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
 import { useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';

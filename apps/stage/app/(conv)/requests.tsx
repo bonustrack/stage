@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { FlatList } from '@stage-labs/kit/react-native/flat-list';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from '../../lib/safeArea';
 import {
   listRequestConvs, acceptRequestConv, blockRequestConv,
   summarizeConversationRequest,

@@ -5,6 +5,7 @@ import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
 import { useRouter } from 'expo-router';
 import { Box, Col, Row, WEB_CHROME_WIDTH } from '../layout';
 import { usePalette } from '../../lib/theme';
+import { useTopChromeInset } from '../../lib/webLayout';
 import { TAB_HREF, indexOfPathname, type TabName } from '../SwipeTabs.config';
 import { WEB_TAB_RAIL_WIDTH } from './useWebTabRail';
 
@@ -82,6 +83,7 @@ export function WebTabRail({ pathname, unreadBadge }: {
   unreadBadge: string | undefined;
 }): React.ReactElement {
   const pal = usePalette();
+  const inset = useTopChromeInset();
   return (
     <Col
       width={WEB_TAB_RAIL_WIDTH}
@@ -90,8 +92,8 @@ export function WebTabRail({ pathname, unreadBadge }: {
       gap={4}
       surface="toolbar"
       style={{
-        position: 'absolute', top: 0, bottom: 0, left: '50%',
-        borderRightWidth: 1, borderRightColor: pal.border, zIndex: 3,
+        position: 'absolute', top: inset, bottom: 0, left: '50%',
+        borderRightWidth: inset > 0 ? 0 : 1, borderRightColor: pal.border, zIndex: 3,
       }}
 >
       <TabButtons pathname={pathname} unreadBadge={unreadBadge} vertical/>

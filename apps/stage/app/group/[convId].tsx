@@ -9,7 +9,7 @@ import { Box, Col, WebFullBleed } from '../../components/layout';
 import { GroupImagePicker } from '../../components/GroupImagePicker';
 import { OverlayHeader } from '../../components/chrome/OverlayHeader';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from '../../lib/safeArea';
 import { cachedSelfEthAddress, selfEthAddress, lineOfConv } from '../../modules/messaging';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';

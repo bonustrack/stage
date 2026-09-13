@@ -1,7 +1,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from '../lib/safeArea';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import type { HistoryEntry } from '@stage-labs/client/types';

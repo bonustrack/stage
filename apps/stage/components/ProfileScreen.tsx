@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { ScrollView } from 'react-native-gesture-handler';
 import type { SimultaneousRefs } from './SwipeTabs.types';
 import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from '../lib/safeArea';
 import { shortAddress } from '../modules/messaging';
 import { useEffectiveColorScheme, usePalette, type Palette } from '../lib/theme';
 import { usePeerProfiles, getPeerName, getPeerHandle, getPeerDescription } from '../lib/peerProfiles';
