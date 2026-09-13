@@ -2,8 +2,9 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { useRouter } from 'expo-router';
-import { ListView } from '@stage-labs/kit/react-native/list-view';
-import { AppModal } from './AppModal';
+import { AnchoredMenu, useAnchoredMenus } from './AnchoredMenu';
+import { MenuList } from './MenuRows';
+import type { MenuPoint } from './AnchoredMenu.model';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { usePeerProfiles } from '../lib/peerProfiles';
 import { AccountManager } from '../modules/messaging';
@@ -16,8 +17,9 @@ import { TransferAccountSheet } from './accounts/TransferAccountSheet';
 import { ImportAccountSheet } from './accounts/ImportAccountSheet';
 import { profileLinkOf } from '../lib/links';
 
-export function MenuSheet({ visible, onClose }: {
+export function MenuSheet({ visible, anchor, onClose }: {
   visible: boolean;
+  anchor: MenuPoint | null;
   onClose: () => void;
 }): React.ReactElement {
   const router = useRouter();
@@ -41,9 +43,10 @@ export function MenuSheet({ visible, onClose }: {
   const activeRec = accounts.find(a => a.id === activeId) ?? accounts[0] ?? null;
 
   const actions = useDrawerAccountActions({
-    head, sub, dark, onChanged: () => { onClose(); void refresh(); },
+    dark, onChanged: () => { onClose(); void refresh(); },
   });
   const t = useAccountTransfer();
+  const compact = useAnchoredMenus();
   const movable = activeRec !== null && transferKindFor(activeRec) !== null;
 
   function go(href: '/settings'): void {
@@ -68,18 +71,18 @@ export function MenuSheet({ visible, onClose }: {
 
   return (
     <>
-      <AppModal visible={visible} onClose={onClose}>
-        <ListView dark={dark} style={{ marginHorizontal: -16 }}>
-          {drawerAccountRows({ accounts, activeId, onSwitch, c: { head, sub, border }, dark })}
+      <AnchoredMenu visible={visible} onClose={onClose} anchor={anchor}>
+        <MenuList dark={dark}>
+          {drawerAccountRows({ accounts, activeId, onSwitch, c: { head, sub, border }, dark, compact })}
           {actions.rows}
-          <DrawerRow rowKey="import" icon="qrcode" label="Import account" head={head} sub={sub} dark={dark} onPress={() => { onClose(); t.openImport(); }}/>
+          <DrawerRow rowKey="import" icon="qrcode" label="Import account" dark={dark} onPress={() => { onClose(); t.openImport(); }}/>
           {movable ? (
-            <DrawerRow rowKey="move" icon="deviceMobile" label="Move to another device" head={head} sub={sub} dark={dark} onPress={() => { onClose(); t.openTransfer(activeRec); }}/>
+            <DrawerRow rowKey="move" icon="deviceMobile" label="Move to another device" dark={dark} onPress={() => { onClose(); t.openTransfer(activeRec); }}/>
           ) : null}
-          <DrawerRow rowKey="profile" icon="user" label="Profile" head={head} sub={sub} dark={dark} onPress={goProfile}/>
-          <DrawerRow rowKey="settings" icon="cog" label="Settings" head={head} sub={sub} dark={dark} onPress={() => { go('/settings'); }}/>
-        </ListView>
-      </AppModal>
+          <DrawerRow rowKey="profile" icon="user" label="Profile" dark={dark} onPress={goProfile}/>
+          <DrawerRow rowKey="settings" icon="cog" label="Settings" dark={dark} onPress={() => { go('/settings'); }}/>
+        </MenuList>
+      </AnchoredMenu>
       <TransferAccountSheet rec={t.transferRec} dark={dark} onClose={t.closeTransfer} />
       <ImportAccountSheet
         visible={t.importOpen} dark={dark} busy={t.importing} error={t.importError}

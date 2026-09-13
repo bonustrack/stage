@@ -20,7 +20,7 @@ export function GitHubLinkRow({ head, sub, border, url, title, subtitle }: {
         style={{ borderWidth: 1, borderColor: border }}
 >
         <Row gap={12} align="center">
-          <GithubLogo size={22} color={head}/>
+          <GithubLogo size={24} color={head}/>
           <Col flex={1}>
             <Text weight="semibold" size="md" color={head}>
               {title}

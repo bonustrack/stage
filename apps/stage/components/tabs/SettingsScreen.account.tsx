@@ -64,7 +64,7 @@ function RevealedKeyRow({ c, dark, revealed }: {
       onPress={() => { void Clipboard.setStringAsync(revealed); flash('Private key copied'); }}
       style={{ paddingHorizontal: 14, paddingVertical: 14 }}
     >
-      <Icon name="wallet" size={22} color={c.head} />
+      <Icon name="wallet" size={24} color={c.head} />
       <Col flex={1}>
         <Text size="xl" color={c.fg}>Tap to copy private key</Text>
         <Text size="xs" selectable color={c.sub} style={{ marginTop: 4 }}>{revealed}</Text>

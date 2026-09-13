@@ -11,7 +11,7 @@ import { isCoarsePointer } from '../lib/pointer';
 import { useBlockRadius, usePalette } from '../lib/theme';
 
 const DESKTOP_MIN_WIDTH = 900;
-const MENU_WIDTH = 300;
+const MENU_WIDTH = 260;
 
 export const MENU_SHADOW = {
   shadowColor: '#000',
@@ -29,6 +29,12 @@ export function useAnchoredMenus(): boolean {
 export function menuPointOf(event: GestureResponderEvent): MenuPoint {
   const { pageX, pageY } = event.nativeEvent;
   return { x: pageX, y: pageY };
+}
+
+export function menuPointBelow(event: GestureResponderEvent): MenuPoint {
+  const target = event.currentTarget as unknown as { getBoundingClientRect?: () => { left: number; bottom: number } };
+  const rect = target.getBoundingClientRect?.();
+  return rect === undefined ? menuPointOf(event) : { x: rect.left, y: rect.bottom + 6 };
 }
 
 export function AnchoredMenu({ visible, onClose, anchor, children }: {
@@ -51,6 +57,7 @@ export function AnchoredMenu({ visible, onClose, anchor, children }: {
   }
 
   const { maxHeight, ...position } = anchoredMenuStyle(anchor, viewport);
+  const edge = { width: 1, color: pal.border };
   return (
     <Dialog
       open={visible}
@@ -70,8 +77,9 @@ export function AnchoredMenu({ visible, onClose, anchor, children }: {
         >
           <Box
             width={MENU_WIDTH}
-            background={pal.bg}
+            background={pal.inputBg}
             radius={radius}
+            border={{ top: edge, right: edge, bottom: edge, left: edge }}
             style={{ overflow: 'hidden', ...MENU_SHADOW }}
           >
             <Scroll style={{ maxHeight }} showsVerticalScrollIndicator={false}>

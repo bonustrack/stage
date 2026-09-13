@@ -30,7 +30,7 @@ function OverflowTrailing({ color, dark, onPress }: {
   return (
     <GesturePressable onPress={onPress} hitSlop={10}>
       <Box padding={6}>
-        <Icon name="dotsHorizontal" size={22} color={color} dark={dark} />
+        <Icon name="dotsHorizontal" size={24} color={color} dark={dark} />
       </Box>
     </GesturePressable>
   );

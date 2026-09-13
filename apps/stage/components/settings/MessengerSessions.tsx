@@ -33,7 +33,7 @@ function Session({ inst, busy, onRevoke, c }: {
       style={{ borderWidth: 1, borderColor: c.border }}
     >
       <Row align="center" gap={12}>
-        <Icon name="deviceTablet" size={22} color={c.fg} />
+        <Icon name="deviceTablet" size={24} color={c.fg} />
         <Col flex={1} minWidth={0}>
           <Row align="center" gap={8}>
             <Text size="md" color={c.fg}>{shortAddress(inst.id)}</Text>

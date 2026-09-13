@@ -154,7 +154,7 @@ function RootLayoutInner(): React.ReactElement {
           <Onboarding onDone={() => undefined} />
         </Col>
       ) : null}
-      <TopChrome />
+      <TopChrome decorated={gatesOpen && !shell.showOnboarding} />
       <BuildInfoDot />
       <AlertHost />
       <HistorySyncRunner ready={gatesOpen} hasAccount={onboarding.hasAccount} />

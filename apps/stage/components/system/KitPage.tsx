@@ -31,7 +31,7 @@ export function KitPage(): React.ReactElement {
               style={{ padding: 4 }}
               accessibilityLabel="View @stage-labs/kit on GitHub"
 >
-              <GithubLogo size={22} color={fg}/>
+              <GithubLogo size={24} color={fg}/>
             </Pressable>
           </Col>
         }

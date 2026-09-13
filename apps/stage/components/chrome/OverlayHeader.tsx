@@ -26,7 +26,7 @@ export function OverlayHeader({ onBack, backColor, safeTop, trailing }: {
           <Box padding={6}>
             <Icon
               name="arrowLeft"
-              size={22}
+              size={24}
               color={resolveColorToken(backColor, scheme)}
               dark={scheme === 'dark'}
             />

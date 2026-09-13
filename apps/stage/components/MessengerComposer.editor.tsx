@@ -34,7 +34,7 @@ function ComposerBtn({ icon, onPress, fg, chipBg, mr }: {
       width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
       backgroundColor: pressed ? chipBg : 'transparent', marginRight: mr,
     })}>
-      <Icon name={icon} size={22} color={fg}/>
+      <Icon name={icon} size={24} color={fg}/>
     </Pressable>
   );
 }
@@ -186,7 +186,7 @@ export function AttachMenu({
               borderWidth: 1, borderColor: chipBg,
             })}
 >
-            <Icon name={icon} size={22} color={head}/>
+            <Icon name={icon} size={24} color={head}/>
           </Pressable>
           <Text weight="semibold" size="sm" color={head} numberOfLines={1}>{label}</Text>
         </Col>

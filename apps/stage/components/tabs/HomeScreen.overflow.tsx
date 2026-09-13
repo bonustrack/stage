@@ -2,13 +2,11 @@
 import { useState } from 'react';
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Text } from '@stage-labs/kit/react-native/text';
-import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
+import { Icon } from '@stage-labs/kit/react-native/icon';
 import { channelsOverflowItems } from './HomeScreen.model';
-import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import * as Clipboard from 'expo-clipboard';
-import { Col } from '../layout';
-import { AnchoredMenu, menuPointOf } from '../AnchoredMenu';
+import { MenuList, MenuRow } from '../MenuRows';
+import { AnchoredMenu, menuPointBelow } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { getActiveAccount } from '../../lib/accounts';
@@ -43,40 +41,16 @@ export function HomeOverflowMenu({ color, onNewGroup, onProfile, onSettings }: H
 
   return (
     <>
-      <Pressable onPress={(e) => { setAnchor(menuPointOf(e)); }} hitSlop={8}>
-        <Icon name="dotsVertical" size={22} color={color} />
+      <Pressable onPress={(e) => { setAnchor(menuPointBelow(e)); }} hitSlop={8}>
+        <Icon name="dotsVertical" size={24} color={color} />
       </Pressable>
       <AnchoredMenu visible={open} onClose={close} anchor={anchor}>
-        <ListView dark={dark}>
+        <MenuList dark={dark}>
           {channelsOverflowItems({ copyAddress: true }).map(item => (
-            <OverflowRow
-              key={item.id}
-              icon={item.icon as HeroIconName}
-              label={item.label}
-              color={color}
-              dark={dark}
-              onPress={handlers[item.id] ?? close}
-            />
+            <MenuRow key={item.id} icon={item.icon} label={item.label} dark={dark} onPress={handlers[item.id] ?? close} />
           ))}
-        </ListView>
+        </MenuList>
       </AnchoredMenu>
     </>
-  );
-}
-
-function OverflowRow({ icon, label, color, dark, onPress }: {
-  icon: React.ComponentProps<typeof Icon>['name'];
-  label: string;
-  color: string;
-  dark: boolean;
-  onPress: () => void;
-}): React.ReactElement {
-  return (
-    <ListViewItem dark={dark} onPress={onPress}>
-      <Icon name={icon} size={20} color={color} />
-      <Col flex={1}>
-        <Text size="xl" color={color}>{label}</Text>
-      </Col>
-    </ListViewItem>
   );
 }

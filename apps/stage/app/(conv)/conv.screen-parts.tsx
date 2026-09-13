@@ -50,7 +50,7 @@ export function ConversationTopnav({ c, convId, fg, head, border, insets, router
         hitSlop={8}
         style={{ paddingHorizontal: 14, justifyContent: 'center' }}
 >
-        <Icon name="dotsVertical" size={22} color={fg}/>
+        <Icon name="dotsVertical" size={24} color={fg}/>
       </Pressable>
     </ConvTopnavShell>
   );

@@ -29,7 +29,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
       align="center" gap={10} surface="toolbar"
       style={{ borderBottomWidth: 1, borderBottomColor: props.border }}>
       <Pressable onPress={props.onClose} hitSlop={8}>
-        <Icon name="arrowLeft" size={22} color={head}/>
+        <Icon name="arrowLeft" size={24} color={head}/>
       </Pressable>
       <Input
         ref={ref}

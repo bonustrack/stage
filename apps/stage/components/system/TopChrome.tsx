@@ -9,9 +9,9 @@ const DRAG_REGION = { dataSet: { stagedrag: '1' } };
 const CHROME_LAYER = 50;
 const PANEL_RADIUS = 8;
 
-export function TopChrome(): React.ReactElement | null {
+export function TopChrome({ decorated }: { decorated: boolean }): React.ReactElement | null {
   const inset = useTopChromeInset();
-  const wide = useWebTabRail();
+  const wide = useWebTabRail() && decorated;
   const pathname = usePathname();
   const railed = wide && isSplitRoute(pathname);
   const { border } = usePalette();

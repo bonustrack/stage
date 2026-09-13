@@ -128,11 +128,11 @@ function WalletManageList({ passkey, removePasskey, guardianCount, onAction }: {
           dark={dark}
           onPress={() => { onAction(item.action); }}
         >
-          <AppIcon name={item.icon} color="link" size={22} />
+          <AppIcon name={item.icon} color="link" size={24} />
           <Col flex={1}>
             <Text value={item.label} size="md" color="text" />
           </Col>
-          <AppIcon name="chevronRight" color="link" size={22} />
+          <AppIcon name="chevronRight" color="link" size={24} />
         </ListViewItem>
       ))}
     </SettingsList>

@@ -74,7 +74,7 @@ function BackButton({ onBack, backColor, backHitSlop, backPadding }: {
       <Box padding={backPadding ?? 4}>
         <Icon
           name="arrowLeft"
-          size={22}
+          size={24}
           color={resolveColorToken(backColor, scheme)}
           dark={scheme === 'dark'}
         />

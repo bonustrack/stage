@@ -14,8 +14,8 @@ async function activate(id: string, onChanged: () => void): Promise<void> {
   onChanged();
 }
 
-export function useDrawerAccountActions({ head, sub, dark, onChanged }: {
-  head: string; sub: string; dark: boolean;
+export function useDrawerAccountActions({ dark, onChanged }: {
+  dark: boolean;
   onChanged: () => void;
 }): { rows: React.ReactElement[] } {
   const [busy, setBusy] = useState(false);
@@ -45,7 +45,7 @@ export function useDrawerAccountActions({ head, sub, dark, onChanged }: {
   const rows = [
     <DrawerRow
       key="new-account" rowKey="new-account" icon="userAdd" label="New account"
-      head={head} sub={sub} dark={dark} onPress={onNew}
+      dark={dark} onPress={onNew}
     />,
   ];
 

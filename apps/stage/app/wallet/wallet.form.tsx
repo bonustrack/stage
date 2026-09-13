@@ -65,7 +65,7 @@ export function ActionHeader({ title, head, border, onBack }: {
   return (
     <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 8 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
       <Pressable onPress={onBack} hitSlop={8} style={{ padding: 4 }}>
-        <Icon name="arrowLeft" size={22} color={head}/>
+        <Icon name="arrowLeft" size={24} color={head}/>
       </Pressable>
       <Text weight="semibold" size="xl" color={head} style={{ flex: 1 }} numberOfLines={1}>
         {title}

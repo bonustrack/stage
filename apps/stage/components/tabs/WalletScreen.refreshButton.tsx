@@ -45,7 +45,7 @@ export function RefreshButton({
       })}
     >
       <Animated.View style={{ transform: [{ rotate }] }}>
-        <Icon name="refresh" size={22} color={color} />
+        <Icon name="refresh" size={24} color={color} />
       </Animated.View>
     </Pressable>
   );

@@ -1,11 +1,9 @@
 import { useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
-import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
-import { Col } from './layout';
-import { AnchoredMenu, menuPointOf } from './AnchoredMenu';
+import { AnchoredMenu, menuPointBelow } from './AnchoredMenu';
 import type { MenuPoint } from './AnchoredMenu.model';
+import { MenuList, MenuRow } from './MenuRows';
 import { useEffectiveColorScheme } from '../lib/theme';
 import { capabilities } from '../lib/capabilities';
 import { profileMenuItems } from './ProfileScreen.model';
@@ -21,20 +19,15 @@ export function ProfileMenu({ color, isSelf }: { color: string; isSelf: boolean 
   };
   return (
     <>
-      <Pressable onPress={(e) => { setAnchor(menuPointOf(e)); }} hitSlop={8}>
-        <Icon name="dotsVertical" size={22} color={color} />
+      <Pressable onPress={(e) => { setAnchor(menuPointBelow(e)); }} hitSlop={8}>
+        <Icon name="dotsVertical" size={24} color={color} />
       </Pressable>
       <AnchoredMenu visible={anchor !== null} onClose={close} anchor={anchor}>
-        <ListView dark={dark}>
+        <MenuList dark={dark}>
           {items.map(item => (
-            <ListViewItem key={item.id} dark={dark} onPress={handlers[item.id] ?? close}>
-              <Icon name={item.icon} size={20} color={color} />
-              <Col flex={1}>
-                <Text size="xl" color={color}>{item.label}</Text>
-              </Col>
-            </ListViewItem>
+            <MenuRow key={item.id} icon={item.icon} label={item.label} dark={dark} onPress={handlers[item.id] ?? close} />
           ))}
-        </ListView>
+        </MenuList>
       </AnchoredMenu>
     </>
   );

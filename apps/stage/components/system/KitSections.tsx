@@ -101,7 +101,7 @@ function SurfaceSections({ dark, head, sub, border }: GalleryPalette): React.Rea
         <ListView dark={dark} status={{ text: `${LIST_ROWS.length} items` }}>
           {LIST_ROWS.map((label) => (
             <ListViewItem key={label} dark={dark} onPress={() => undefined}>
-              <Icon name="cog" size={22} color={head}/>
+              <Icon name="cog" size={24} color={head}/>
               <Col flex={1}>
                 <Text color={head} weight="medium" size="xl">{label}</Text>
               </Col>

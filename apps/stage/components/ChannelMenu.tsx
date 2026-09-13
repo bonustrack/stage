@@ -2,12 +2,9 @@
 import { Alert } from 'react-native';
 
 import { useRouter } from 'expo-router';
-import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
-import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
-import { Row } from './layout';
-import { AppIcon } from './widgets';
-import { channelMenuItems, type MenuSheetItem } from './ChannelMenu.model';
+import { MenuList, MenuRow } from './MenuRows';
+import { channelMenuItems } from './ChannelMenu.model';
 import { AnchoredMenu } from './AnchoredMenu';
 import type { MenuPoint } from './AnchoredMenu.model';
 import { markConvRead, markConvUnread } from '../modules/messaging';
@@ -58,22 +55,6 @@ function confirmLeaveGroup(
 }
 
 
-function MenuRow({ item, dark, onPress }: {
-  item: MenuSheetItem; dark: boolean; onPress: () => void;
-}): React.ReactElement {
-  const danger = item.danger === true;
-  return (
-    <ListViewItem dark={dark} align="center" gap={12} onPress={onPress}>
-      <Row align="center" gap={12} flex={1}>
-        {item.icon === undefined ? null : (
-          <AppIcon name={item.icon} size={22} color={danger ? 'danger' : 'secondary'} />
-        )}
-        <Text value={item.label} color={danger ? 'danger' : undefined} weight="medium" />
-      </Row>
-    </ListViewItem>
-  );
-}
-
 export function ChannelMenu({
   convId, isGroup, peerAddress, isUnread, isPinned,
   visible, onClose, anchor, context = 'list', onAfterLeave, onSearch,
@@ -102,11 +83,11 @@ export function ChannelMenu({
 
   return (
     <AnchoredMenu visible={visible} onClose={onClose} anchor={anchor}>
-      <ListView dark={dark}>
+      <MenuList dark={dark}>
         {items.map((item) => (
-          <MenuRow key={item.id} item={item} dark={dark} onPress={() => { handlers[item.id]?.(); }} />
+          <MenuRow key={item.id} icon={item.icon} label={item.label} danger={item.danger} dark={dark} onPress={() => { handlers[item.id]?.(); }} />
         ))}
-      </ListView>
+      </MenuList>
     </AnchoredMenu>
   );
 }

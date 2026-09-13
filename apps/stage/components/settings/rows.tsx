@@ -27,7 +27,7 @@ export function SettingsNavRow(props: SettingsNavRowProps): React.ReactElement {
   return (
     <ListViewItem align="center" gap={12} dark={dark} onPress={props.onPress}>
       {props.iconStart === undefined ? null : (
-        <AppIcon name={props.iconStart} color="link" size={22} />
+        <AppIcon name={props.iconStart} color="link" size={24} />
       )}
       <Col flex={1}>
         <Text value={props.label} size="xl" color="link" truncate />
@@ -35,7 +35,7 @@ export function SettingsNavRow(props: SettingsNavRowProps): React.ReactElement {
       {props.value === undefined ? null : (
         <Text value={props.value} color="secondary" truncate />
       )}
-      <AppIcon name={props.iconEnd ?? 'chevronRight'} color="secondary" size={22} />
+      <AppIcon name={props.iconEnd ?? 'chevronRight'} color="secondary" size={24} />
     </ListViewItem>
   );
 }
@@ -113,7 +113,7 @@ export function SettingsButtonRow(props: SettingsButtonRowProps): React.ReactEle
       onPress={props.onPress}
     >
       {props.iconStart === undefined ? null : (
-        <AppIcon name={props.iconStart} color={tone} size={22} />
+        <AppIcon name={props.iconStart} color={tone} size={24} />
       )}
       <Col gap={2} flex={1}>
         <Text value={props.label} size="md" weight="semibold" color={tone} />
@@ -137,11 +137,11 @@ export function SettingsThemeRow(props: SettingsThemeRowProps): React.ReactEleme
   const dark = useKitScheme() === 'dark';
   return (
     <ListViewItem align="center" gap={12} dark={dark} onPress={props.onPress}>
-      <AppIcon name={props.iconName} color={props.iconColor ?? 'link'} size={22} />
+      <AppIcon name={props.iconName} color={props.iconColor ?? 'link'} size={24} />
       <Col flex={1}>
         <Text value={props.label} size="xl" color="text" truncate />
       </Col>
-      {props.selected ? <AppIcon name="check" color="link" size={22} /> : null}
+      {props.selected ? <AppIcon name="check" color="link" size={24} /> : null}
     </ListViewItem>
   );
 }
