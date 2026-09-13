@@ -40,7 +40,7 @@ Per-app:
 | `bun --cwd apps/stage run build:web` | `expo export --platform web` -> `dist/` (Netlify publishes this). NEVER export into the repo tree during local checks — ESLint OOMs on bundles; use a temp dir |
 | `bun --cwd apps/stage run typecheck` / `test` | `tsc --noEmit` / `bun test test/` |
 | `bun --cwd apps/proxy dev` | `wrangler dev` |
-| `bun --cwd apps/desktop start` / `dist` | Export the web UI into `apps/desktop/web` and run Electron / build installers into `apps/desktop/release` (run Electron from a plain terminal: editors set `ELECTRON_RUN_AS_NODE`) |
+| `bun run --cwd apps/desktop start` / `dist` | Export the web UI into `apps/desktop/web` and run Electron / build installers into `apps/desktop/release` (run Electron from a plain terminal: editors set `ELECTRON_RUN_AS_NODE`) |
 
 ## Architecture
 
