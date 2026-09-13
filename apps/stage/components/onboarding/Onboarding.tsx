@@ -1,6 +1,7 @@
 
 import { useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { Col } from '../layout';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { WelcomeStep, PasskeyStep } from './Onboarding.steps';
@@ -49,6 +50,12 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
       <Col align="center" padding={{ bottom: 24 }}>
         <StageLogo size={LOGO_SIZE} color={pal.primary} />
       </Col>
+      <Scroll
+        style={{ flex: 1, alignSelf: 'stretch' }}
+        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
       {f.step === 'welcome' ? (
         <WelcomeStep pal={pal} dark={dark} busy={f.busy} onCreate={f.onCreate} onRestore={f.onRestore} onImport={f.onImport} />
       ) : null}
@@ -74,6 +81,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
           onRetry={f.onSetupRetry} onBack={f.onSetupBack} onSkipHistory={f.onSkipHistory}
         />
       ) : null}
+      </Scroll>
       </Col>
     </Col>
   );
