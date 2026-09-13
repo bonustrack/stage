@@ -22,7 +22,7 @@ export function ProfileMenu({ color, isSelf }: { color: string; isSelf: boolean 
   return (
     <>
       <Pressable onPress={(e) => { setAnchor(menuPointOf(e)); }} hitSlop={8}>
-        <Icon name="dotsVertical" size={24} color={color} />
+        <Icon name="dotsVertical" size={22} color={color} />
       </Pressable>
       <AnchoredMenu visible={anchor !== null} onClose={close} anchor={anchor}>
         <ListView dark={dark}>

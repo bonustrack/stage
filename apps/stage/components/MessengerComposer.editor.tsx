@@ -186,7 +186,7 @@ export function AttachMenu({
               borderWidth: 1, borderColor: chipBg,
             })}
 >
-            <Icon name={icon} size={26} color={head}/>
+            <Icon name={icon} size={22} color={head}/>
           </Pressable>
           <Text weight="semibold" size="sm" color={head} numberOfLines={1}>{label}</Text>
         </Col>

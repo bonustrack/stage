@@ -87,7 +87,7 @@ export function ImageViewer({ uri, visible, onClose }: {
           style={{ position: 'absolute', top: 48, right: 20, padding: 10 }}
           hitSlop={10}
 >
-          <Icon name="x" size={28} color="#ffffff"/>
+          <Icon name="x" size={22} color="#ffffff"/>
         </Pressable>
 
         <Box align="center" style={{ position: 'absolute', bottom: 48, left: 0, right: 0 }}>

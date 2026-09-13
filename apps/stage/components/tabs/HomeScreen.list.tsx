@@ -60,10 +60,10 @@ function HomeTopnavRight({ head, requestCount, router, onOpenSearch }: {
   return (
     <>
       <Pressable onPress={onOpenSearch} hitSlop={8}>
-        <Icon name="search" size={24} color={head}/>
+        <Icon name="search" size={22} color={head}/>
       </Pressable>
       <Pressable onPress={() => { router.push('/requests'); }} hitSlop={8} style={{ position: 'relative' }}>
-        <Icon name="inbox" size={24} color={head}/>
+        <Icon name="inbox" size={22} color={head}/>
         {requestCount > 0 ? (
           <Box minWidth={16} height={16} padding={{ x: 5 }} radius="full" background={badgeBg}
             align="center" justify="center" style={{ position: 'absolute', top: -6, right: -8 }}>

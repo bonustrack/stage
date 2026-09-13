@@ -44,7 +44,7 @@ export function HomeOverflowMenu({ color, onNewGroup, onProfile, onSettings }: H
   return (
     <>
       <Pressable onPress={(e) => { setAnchor(menuPointOf(e)); }} hitSlop={8}>
-        <Icon name="dotsVertical" size={24} color={color} />
+        <Icon name="dotsVertical" size={22} color={color} />
       </Pressable>
       <AnchoredMenu visible={open} onClose={close} anchor={anchor}>
         <ListView dark={dark}>
