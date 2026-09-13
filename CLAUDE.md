@@ -81,7 +81,7 @@ Per-app:
 - **Netlify base must point at `apps/stage`** (set in Netlify UI); `netlify.toml` builds `bun run build:web` and publishes `dist`. Headers: COOP same-origin + **COEP credentialless** (deliberate — keeps SharedArrayBuffer for XMTP wasm while cross-origin avatars/IPFS load). Don't change to require-corp.
 - **`patches/nodejs-mobile-react-native@18.20.4.patch`** is required for the mobile build (STL/AGP8/BigInt fixes). EAS node pinned 18.20.4. Native module changes need a fresh dev-client build; a JS reload is not enough.
 - Embedded Node host install via `apps/stage/scripts/install-nodejs-project.js`; `metro.config.js` blockLists `nodejs-assets`.
-- **Mobile releases are version-driven** (`apps/stage/package.json` version bump triggers `release-stage.yml`; iOS continue-on-error). EAS free tier has a monthly build cap. Every push to every branch publishes a JS-OTA dev-client preview (`pr-preview.yml`; the "Preview" commit status carries the deep link).
+- **Mobile releases are version-driven** (the `version` in `apps/stage/app.config.js` triggers `release-mobile.yml`: EAS Build + EAS Submit for Play and TestFlight, see `docs/mobile-release.md`). EAS free tier has a monthly build cap. Every push to every branch publishes a JS-OTA dev-client preview (`pr-preview.yml`; the "Preview" commit status carries the deep link).
 - **`served-main`** must stay content-identical to `main` (drift allowlist deliberately empty).
 - `@stage-labs/config` publishes via `publish-config.yml` under the `beta` dist-tag; bump its version first. Its Vue lint preset remains for external consumers behind optional peers (`eslint-plugin-vue`/`vue-eslint-parser` are knip-ignored).
 - The 3 passkey tests hit live Base RPC and can time out in sandboxes; they pass in CI.
