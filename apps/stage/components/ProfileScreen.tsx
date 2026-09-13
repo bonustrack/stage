@@ -20,6 +20,7 @@ import {
 } from './ProfileScreen.parts';
 import { CommonChannels } from './CommonChannels';
 import { ProfileHoldings } from './ProfileScreen.holdings';
+import { ProfileMenu } from './ProfileMenu';
 
 export type ProfileScreenVariant = 'tab' | 'route';
 
@@ -100,7 +101,7 @@ export function ProfileScreen({ address, variant, panRef }: {
 
   return (
     <Col flex={1} surface="surface">
-      <ProfileHeader variant={variant} insetTop={insets.top} c={c} />
+      <ProfileHeader variant={variant} insetTop={insets.top} c={c} menu={<ProfileMenu color={c.link} isSelf={isSelf} />} />
 
       <ScrollView simultaneousHandlers={panRef} style={[{ flex: 1 }, WEB_STACK_SCROLL]} contentContainerStyle={[{ paddingBottom: 32 }, contentWidth]}>
         <ProfileIdentity

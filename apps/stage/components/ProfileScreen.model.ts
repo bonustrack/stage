@@ -7,3 +7,9 @@ export function profileDisplayName(
   const trimmed = resolvedName?.trim();
   return trimmed !== undefined && trimmed !== '' ? trimmed : shortAddress;
 }
+
+export interface ProfileMenuItem { id: 'edit'; label: string; icon: 'pencil' }
+
+export function profileMenuItems(isSelf: boolean): ProfileMenuItem[] {
+  return isSelf ? [{ id: 'edit', label: 'Edit profile', icon: 'pencil' }] : [];
+}

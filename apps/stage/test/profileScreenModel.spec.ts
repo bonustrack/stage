@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { profileDisplayName } from '../components/ProfileScreen.model';
+import { profileDisplayName, profileMenuItems } from '../components/ProfileScreen.model';
 
 describe('profileDisplayName', () => {
   test('empty address shows loading placeholder', () => {
@@ -14,5 +14,12 @@ describe('profileDisplayName', () => {
     expect(profileDisplayName('0xabc', undefined, '0x12…cd')).toBe('0x12…cd');
     expect(profileDisplayName('0xabc', null, '0x12…cd')).toBe('0x12…cd');
     expect(profileDisplayName('0xabc', '   ', '0x12…cd')).toBe('0x12…cd');
+  });
+});
+
+describe('profileMenuItems', () => {
+  test('only the own profile offers editing', () => {
+    expect(profileMenuItems(true)).toEqual([{ id: 'edit', label: 'Edit profile', icon: 'pencil' }]);
+    expect(profileMenuItems(false)).toEqual([]);
   });
 });

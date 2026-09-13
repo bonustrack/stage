@@ -33,6 +33,7 @@ export interface ScreenHeaderProps {
   safeTop?: number;
   padTop?: number;
   padBottom?: number;
+  minHeight?: number;
   surface?: string;
   borderColor?: string;
   trailing?: ReactNode;
@@ -101,6 +102,7 @@ export function ScreenHeader(props: ScreenHeaderProps): React.ReactElement {
         align="center"
         justify={titled === undefined ? 'between' : undefined}
         gap={8}
+        minHeight={props.minHeight}
         background={props.surface}
         border={border}
         style={WEB_CHROME_LAYER}

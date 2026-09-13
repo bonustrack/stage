@@ -27,9 +27,9 @@ export function useSelfAddress(): string {
   return data ?? '';
 }
 
-export function ProfileHeader({ variant, insetTop, c }: {
+export function ProfileHeader({ variant, insetTop, c, menu }: {
   variant: 'tab' | 'route'; insetTop: number;
-  c: ProfileColors;
+  c: ProfileColors; menu?: React.ReactNode;
 }): React.ReactElement {
   if (variant === 'route') {
     return (
@@ -37,6 +37,7 @@ export function ProfileHeader({ variant, insetTop, c }: {
         onBack={() => { capabilities.back(); }}
         backColor={c.link}
         safeTop={insetTop}
+        trailing={menu}
       />
     );
   }
@@ -49,6 +50,7 @@ export function ProfileHeader({ variant, insetTop, c }: {
       style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2 }}
 >
       <TopnavIdentity/>
+      {menu}
     </Row>
   );
 }

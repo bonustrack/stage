@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
+import { TOPNAV_HEIGHT } from '../Topnav';
 import { ScreenHeader } from './ScreenHeader';
 
 export function StackHeader({ title, trailing }: {
@@ -20,6 +21,9 @@ export function StackHeader({ title, trailing }: {
       }}
       backColor={fg}
       safeTop={insets.top}
+      padTop={0}
+      padBottom={0}
+      minHeight={TOPNAV_HEIGHT + insets.top}
       surface={toolbarBg}
       borderColor={border}
       trailing={trailing}
