@@ -1,7 +1,6 @@
 
 import { useCallback, useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
@@ -13,7 +12,7 @@ import { flash } from '../../lib/toast';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { StackHeader } from '../../components/chrome/StackHeader';
 import { GroupImagePicker } from '../../components/GroupImagePicker';
-import { Box, Col, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from '../../components/layout';
+import { Box, Col, ScreenScroll, WEB_EDGE_CONTENT } from '../../components/layout';
 import { MemberField } from '../../components/MemberField';
 import { Spinner } from '../../components/Spinner';
 import { MemberPicker, useMemberPicker } from './MemberPicker';
@@ -121,8 +120,7 @@ export default function NewGroup(): React.ReactElement {
     <Col surface="surface" flex={1}>
       <StackHeader title="New group" />
 
-      <ScrollView
-        style={WEB_EDGE_SCROLL}
+      <ScreenScroll
         contentContainerStyle={[{ padding: 16, gap: 16, paddingBottom: 24 + insets.bottom }, WEB_EDGE_CONTENT]}
         keyboardShouldPersistTaps="handled"
 >
@@ -140,7 +138,7 @@ export default function NewGroup(): React.ReactElement {
 />
 
         <MemberPicker state={picker} dark={dark}/>
-      </ScrollView>
+      </ScreenScroll>
 
       <Box padding={{ top: 16, right: 16, bottom: 16 + insets.bottom, left: 16 }} style={{ borderTopWidth: 1, borderTopColor: border }}>
         <Button

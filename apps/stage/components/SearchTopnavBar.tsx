@@ -4,8 +4,12 @@ import { fontSize } from '@stage-labs/kit/tokens';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Input } from '@stage-labs/kit/react-native/input';
-import { Row, WebFullBleed } from './layout';
+import { Box, Row, STICKY_UNDER_CHROME } from './layout';
 import { TOPNAV_HEIGHT } from './Topnav';
+
+function StickyFrame({ children }: { children: React.ReactNode }): React.ReactElement {
+  return <Box style={STICKY_UNDER_CHROME}>{children}</Box>;
+}
 
 export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
   query: string;
@@ -20,7 +24,7 @@ export const SearchTopnavBar = forwardRef<React.ComponentRef<typeof Input>, {
 }>(function SearchTopnavBar(props, ref): React.ReactElement {
   const { head, sub } = props;
   const topInset = props.topInset ?? 0;
-  const Frame = props.inline === true ? Fragment : WebFullBleed;
+  const Frame = props.inline === true ? Fragment : StickyFrame;
   return (
     <Frame>
     <Row

@@ -3,7 +3,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
 import { useRouter } from 'expo-router';
-import { Box, Col, Row, WEB_CHROME_WIDTH } from '../layout';
+import { Box, Col, Row, pinnedEdges } from '../layout';
 import { usePalette } from '../../lib/theme';
 import { useTopChromeInset } from '../../lib/webLayout';
 import { TAB_HREF, indexOfPathname, type TabName } from '../SwipeTabs.config';
@@ -63,15 +63,10 @@ export function WebTabBar({ pathname, unreadBadge }: {
   const pal = usePalette();
   return (
     <Row
-      width={WEB_CHROME_WIDTH}
       height={60}
-      margin={{ left: '-50vw' }}
       padding={{ top: 6 }}
       surface="toolbar"
-      style={{
-        position: 'absolute', bottom: 0, left: '50%',
-        borderTopWidth: 1, borderTopColor: pal.border, zIndex: 3,
-      }}
+      style={[pinnedEdges({ bottom: 0, left: 0, right: 0 }, 3), { borderTopWidth: 1, borderTopColor: pal.border }]}
 >
       <TabButtons pathname={pathname} unreadBadge={unreadBadge} vertical={false}/>
     </Row>
@@ -87,14 +82,13 @@ export function WebTabRail({ pathname, unreadBadge }: {
   return (
     <Col
       width={WEB_TAB_RAIL_WIDTH}
-      margin={{ left: '-50vw' }}
       padding={{ top: 12 }}
       gap={4}
       surface="toolbar"
-      style={{
-        position: 'absolute', top: inset, bottom: 0, left: '50%',
-        borderRightWidth: inset > 0 ? 0 : 1, borderRightColor: pal.border, zIndex: 3,
-      }}
+      style={[
+        pinnedEdges({ top: inset, bottom: 0, left: 0 }, 3),
+        { borderRightWidth: inset > 0 ? 0 : 1, borderRightColor: pal.border },
+      ]}
 >
       <TabButtons pathname={pathname} unreadBadge={unreadBadge} vertical/>
     </Col>

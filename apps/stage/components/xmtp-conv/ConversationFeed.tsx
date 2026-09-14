@@ -1,13 +1,12 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, type ViewStyle } from 'react-native';
-import { FlatList } from 'react-native-gesture-handler';
-import { Box, WebFullBleed, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT_WIDE } from '../layout';
+import { Box, VirtualList } from '../layout';
 import { Spinner } from '../Spinner';
 import { ConversationIntro } from './ConversationIntro';
 import { AT_BOTTOM_THRESHOLD_PX, convScrollKey, planFeedRestore, saveScrollOffset } from '../../lib/scrollPos';
 import {
-  FEED_MIN_BATCH, feedDistanceFromNewest, initialUprightIndex, planUprightRestore,
+  FEED_MIN_BATCH, feedDistanceFromNewest, planUprightRestore,
   shouldPageOlder, uprightFirstBatch, uprightScrollOffset, type FeedScrollMetrics,
 } from './feed-helpers';
 import { useFeedRenderItem } from './useFeedRenderItem';
@@ -15,6 +14,7 @@ import type { useConversationState } from './useConversationState';
 import { profileLinkOf } from '../../lib/links';
 
 const UPRIGHT = Platform.OS === 'web';
+const FEED_ESTIMATED_ROW = 80;
 
 type ConvState = ReturnType<typeof useConversationState>;
 
@@ -175,19 +175,11 @@ export function ConversationFeed({
   const slowOpen = useSlowOpen(empty);
 
   if (searchSlot !== undefined) {
-    return (
-      <WebFullBleed>
-        <Box flex={1} padding={{ top: insets.top + 52 }}>{searchSlot}</Box>
-      </WebFullBleed>
-    );
+    return <Box flex={1} padding={{ top: insets.top + 52 }}>{searchSlot}</Box>;
   }
 
   if (empty) {
-    return (
-      <WebFullBleed>
-        <Box flex={1} padding={{ top: insets.top + 52 }}>{slowOpen ? spinner : null}</Box>
-      </WebFullBleed>
-    );
+    return <Box flex={1} padding={{ top: insets.top + 52 }}>{slowOpen ? spinner : null}</Box>;
   }
 
   const olderEdge = (
@@ -200,25 +192,25 @@ export function ConversationFeed({
   );
 
   return (
-    <FlatList
+    <VirtualList
       ref={listRef}
       data={rows}
       extraData={extraData}
       inverted={o.inverted}
+      anchor={UPRIGHT ? 'end' : 'start'}
+      estimatedItemSize={FEED_ESTIMATED_ROW}
       showsVerticalScrollIndicator={Platform.OS === 'web'}
       maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
       keyExtractor={e => e.id}
-      style={[{ flex: 1 }, WEB_EDGE_SCROLL]}
       windowSize={11}
       initialNumToRender={firstBatch}
-      initialScrollIndex={UPRIGHT ? initialUprightIndex(rows.length, firstBatch) : undefined}
       maxToRenderPerBatch={10}
       removeClippedSubviews
       onEndReached={o.onEndReached}
       onEndReachedThreshold={0.5}
       onStartReached={o.onStartReached}
       onStartReachedThreshold={0.5}
-      contentContainerStyle={[o.contentPadding, WEB_EDGE_CONTENT_WIDE]}
+      contentContainerStyle={o.contentPadding}
       onLayout={(ev) => { viewportHeight.current = ev.nativeEvent.layout.height; }}
       onScroll={(ev) => {
         const m = ev.nativeEvent;

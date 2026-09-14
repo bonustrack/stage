@@ -1,7 +1,7 @@
 
 import { useEffect } from 'react';
 import { usePathname } from 'expo-router';
-import { Box } from '../layout';
+import { Box, pinnedEdges } from '../layout';
 import { usePalette } from '../../lib/theme';
 import { useTopChromeInset } from '../../lib/webLayout';
 import { useTotalUnread } from '../../lib/useTotalUnread';
@@ -38,10 +38,10 @@ export function SplitSidebar({ visible }: { visible: boolean }): React.ReactElem
       <Box
         surface="surface"
         width={paneWidth}
-        style={{
-          position: 'absolute', top: inset, bottom: 0, left: WEB_TAB_RAIL_WIDTH, zIndex: 3,
-          borderRightWidth: 1, borderRightColor: border,
-        }}
+        style={[
+          pinnedEdges({ top: inset, bottom: 0, left: WEB_TAB_RAIL_WIDTH }, 3),
+          { borderRightWidth: 1, borderRightColor: border },
+        ]}
 >
         <HomeScreen pane/>
         <PaneResizeHandle/>

@@ -1,7 +1,7 @@
 
 import { Share } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Box } from '../../components/layout';
+import { Box, pinnedTop } from '../../components/layout';
 import type { Input } from '@stage-labs/kit/react-native/input';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import type { useRouter } from 'expo-router';
@@ -106,7 +106,7 @@ export function ConversationSearchTopnav({ searchInputRef, border, head, sub, qu
   query: string; setQuery: (s: string) => void; onClose: () => void; topInset: number;
 }): React.ReactElement {
   return (
-    <Box style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2 }}>
+    <Box style={pinnedTop(2)}>
       <SearchTopnavBar
         ref={searchInputRef}
         border={border}

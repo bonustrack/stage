@@ -1,11 +1,11 @@
 
 import { useCallback, useState } from 'react';
 
-import { Animated as RNAnimated, Platform, type ViewStyle } from 'react-native';
+import { Animated as RNAnimated, Platform } from 'react-native';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from '../../components/Spinner';
-import { Box, Col, WEB_EDGE_SCROLL, WEB_CHROME_WIDTH, WEB_CHROME_SHIFT } from '../../components/layout';
+import { Box, Col, pinnedBottom } from '../../components/layout';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
@@ -35,7 +35,7 @@ function UnresolvedConversation({ resolved, dark }: {
 }): React.ReactElement {
   if (resolved.resolving) {
     return (
-      <Col surface="surface" flex={1} align="center" justify="center" style={WEB_EDGE_SCROLL}>
+      <Col surface="surface" flex={1} align="center" justify="center">
         <Spinner size={24} color={dark ? '#ffffff' : '#000000'}/>
       </Col>
     );
@@ -68,9 +68,7 @@ function FooterDock({ children, onHeight }: {
   if (Platform.OS !== 'web') return <>{children}</>;
   return (
     <Box
-      width={WEB_CHROME_WIDTH}
-      margin={{ left: WEB_CHROME_SHIFT }}
-      style={{ position: 'absolute', bottom: 0, left: '50%', zIndex: 2 } as unknown as ViewStyle}
+      style={pinnedBottom(2)}
       onLayout={(e) => {
         measuredFooterHeight = e.nativeEvent.layout.height;
         onHeight(measuredFooterHeight);
@@ -134,12 +132,7 @@ export default function XmtpConversation(): React.ReactElement {
   return (
     <ConversationShell bg={bg}>
       <Reanimated.View
-        style={[
-          Platform.OS === 'web'
-            ? { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 }
-            : { flex: 1 },
-          listWrapperStyle,
-        ]}
+        style={[{ flex: 1 }, listWrapperStyle]}
 >
       <ConversationFeed
         c={c}

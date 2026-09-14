@@ -1,12 +1,11 @@
 
-import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 
 import { Text } from '@stage-labs/kit/react-native/text';
 import { walletAccountRows } from './WalletSettings.model';
-import { Col, WEB_EDGE_CONTENT_WIDE, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../layout';
+import { Col, ScreenScroll } from '../layout';
 import { useBlockRadius, useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { flash } from '../../lib/toast';
 import { useWalletModel } from './WalletSettings.parts';
@@ -38,7 +37,7 @@ export function WalletSettings(): React.ReactElement {
   return (
     <Col surface="surface" flex={1}>
       <StackHeader title="Wallet"/>
-      <ScrollView style={[{ flex: 1 }, WEB_STACK_SCROLL]} contentContainerStyle={[{ paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT_WIDE, WEB_STACK_CONTENT_PAD]}>
+      <ScreenScroll contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         {!model ? (
           <Text size="md" color={fg} style={{ padding: 24 }}>No active account.</Text>
         ) : (
@@ -72,7 +71,7 @@ export function WalletSettings(): React.ReactElement {
             ) : null}
           </>
         )}
-      </ScrollView>
+      </ScreenScroll>
     </Col>
   );
 }

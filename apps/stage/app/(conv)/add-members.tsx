@@ -1,7 +1,6 @@
 
 import { useCallback, useState } from 'react';
 
-import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from '../../lib/safeArea';
@@ -9,7 +8,7 @@ import { addGroupMembers } from '../../modules/messaging';
 import { flash } from '../../lib/toast';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { StackHeader } from '../../components/chrome/StackHeader';
-import { Box, Col, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from '../../components/layout';
+import { Box, Col, ScreenScroll, WEB_EDGE_CONTENT } from '../../components/layout';
 import { useConvMeta } from '../../modules/messaging';
 import { MemberPicker, useMemberPicker } from './MemberPicker';
 
@@ -42,13 +41,12 @@ export default function AddMembers(): React.ReactElement {
     <Col surface="surface" flex={1}>
       <StackHeader title="Add members" />
 
-      <ScrollView
-        style={WEB_EDGE_SCROLL}
+      <ScreenScroll
         contentContainerStyle={[{ padding: 16, gap: 16, paddingBottom: 24 + insets.bottom }, WEB_EDGE_CONTENT]}
         keyboardShouldPersistTaps="handled"
 >
         <MemberPicker state={picker} dark={dark} exclude={memberAddrs}/>
-      </ScrollView>
+      </ScreenScroll>
 
       <Box padding={{ top: 16, right: 16, bottom: 16 + insets.bottom, left: 16 }} style={{ borderTopWidth: 1, borderTopColor: border }}>
         <Button

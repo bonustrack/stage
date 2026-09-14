@@ -6,7 +6,7 @@ import { Text, type TextSizeToken, type TextWeight } from '@stage-labs/kit/react
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { Title, type TitleSizeToken } from '@stage-labs/kit/react-native/title';
 import { resolveColorToken } from '@stage-labs/kit/tokens';
-import { Box, Row, WebFullBleed, WEB_CHROME_LAYER } from '../layout';
+import { Box, Row, STICKY_TOP } from '../layout';
 
 export type ScreenHeaderTitleStyle =
   | {
@@ -97,7 +97,6 @@ export function ScreenHeader(props: ScreenHeaderProps): React.ReactElement {
       ? undefined
       : { bottom: { width: 1, color: resolveColorToken(props.borderColor, scheme) } };
   return (
-    <WebFullBleed layer>
       <Row
         align="center"
         justify={titled === undefined ? 'between' : undefined}
@@ -105,7 +104,7 @@ export function ScreenHeader(props: ScreenHeaderProps): React.ReactElement {
         minHeight={props.minHeight}
         background={props.surface}
         border={border}
-        style={WEB_CHROME_LAYER}
+        style={STICKY_TOP}
         padding={{
           x: 12,
           top: (props.padTop ?? 8) + (props.safeTop ?? 0),
@@ -123,6 +122,5 @@ export function ScreenHeader(props: ScreenHeaderProps): React.ReactElement {
         )}
         {props.trailing}
       </Row>
-    </WebFullBleed>
   );
 }

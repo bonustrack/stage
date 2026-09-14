@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { BASENAME_CLAIM_URL, manageBasenameUrl } from '@stage-labs/client/identity/basenameWrite';
-import { Box, Col, WEB_EDGE_CONTENT_WIDE, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../layout';
+import { Box, Col, ScreenScroll } from '../layout';
 
 import { capabilities } from '../../lib/capabilities';
 import { flash } from '../../lib/toast';
@@ -95,13 +94,13 @@ export function ProfileSettings(): React.ReactElement {
   return (
     <Col surface="surface" flex={1}>
       <StackHeader title="Profile"/>
-      <ScrollView style={WEB_STACK_SCROLL} contentContainerStyle={[{ paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT_WIDE, WEB_STACK_CONTENT_PAD]}>
+      <ScreenScroll contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <ProfileHeader address={address} name={name} handle={handle} preview={preview} />
         <Box padding={{ x: 16, bottom: 12 }}>
           <Text value={view.explanation} size="md" color="secondary" />
         </Box>
         {address ? <ProfileSections address={address} handle={handle} view={view} onPreview={setPreview} /> : null}
-      </ScrollView>
+      </ScreenScroll>
     </Col>
   );
 }

@@ -4,7 +4,7 @@ import { memo, useCallback } from 'react';
 import { Vibration } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Col, WEB_EDGE_SCROLL } from '../layout';
+import { Col } from '../layout';
 import { EmptyState } from '../chrome/EmptyState';
 import { Spinner } from '../Spinner';
 import { ChannelRow } from '../ChannelRow';
@@ -113,11 +113,11 @@ export function useChannelRowRenderer(
   ), [router, setRowMenu, channelProfilesVersion, draftsVersion, pinned, query, activePath]);
 }
 
-export function HomeError({ error, dark, fg, plain }: {
-  error: string; dark: boolean; fg: string; plain?: boolean;
+export function HomeError({ error, dark, fg }: {
+  error: string; dark: boolean; fg: string;
 }): React.ReactElement {
   return (
-    <Col padding={24} flex={1} align="center" justify="center" surface="surface" style={plain === true ? undefined : WEB_EDGE_SCROLL}>
+    <Col padding={24} flex={1} align="center" justify="center" surface="surface">
       <Text size="md" color={fg} style={{ textAlign: 'center', marginBottom: 16 }}>{error}</Text>
       <Pressable
         onPress={() => {
@@ -140,9 +140,9 @@ export function HomeError({ error, dark, fg, plain }: {
   );
 }
 
-export function HomeSpinner({ head, plain }: { head: string; plain?: boolean }): React.ReactElement {
+export function HomeSpinner({ head }: { head: string }): React.ReactElement {
   return (
-    <Col flex={1} align="center" justify="center" surface="surface" style={plain === true ? undefined : WEB_EDGE_SCROLL}>
+    <Col flex={1} align="center" justify="center" surface="surface">
       <Spinner size={28} color={head}/>
     </Col>
   );

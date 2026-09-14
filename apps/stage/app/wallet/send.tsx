@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
-import { Col, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from '../../components/layout';
+import { Col, ScreenScroll, WEB_EDGE_CONTENT } from '../../components/layout';
 import { WalletHeader } from '../../components/wallet/WalletHeader';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
@@ -47,7 +46,7 @@ export default function WalletSend(): React.ReactElement {
     <Col surface="surface" flex={1}>
       <WalletHeader title="Send token" />
 
-      <ScrollView style={[{ flex: 1 }, WEB_EDGE_SCROLL]} keyboardShouldPersistTaps="handled"
+      <ScreenScroll keyboardShouldPersistTaps="handled"
         contentContainerStyle={[{ padding: 16, gap: 16 }, WEB_EDGE_CONTENT]}>
         <TokenSelector mode="combined" value={token} onChange={onChange}/>
 
@@ -58,7 +57,7 @@ export default function WalletSend(): React.ReactElement {
         ) : (
           <PublicSendBody key={bodyKey} token={token} initialTo={initialTo} onFooter={reportFooter}/>
         )}
-      </ScrollView>
+      </ScreenScroll>
 
       {footer ? (
         <WalletFooter border={border} dark={dark} onCancel={() => { router.back(); }}

@@ -5,6 +5,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { AppModal } from './AppModal';
 import { Box } from './layout';
+import { documentScroll } from '../lib/documentScroll';
 import { anchoredMenuStyle, type MenuPoint } from './AnchoredMenu.model';
 import { dismissContextMenuProps } from '../lib/contextMenu';
 import { isCoarsePointer } from '../lib/pointer';
@@ -28,7 +29,8 @@ export function useAnchoredMenus(): boolean {
 
 export function menuPointOf(event: GestureResponderEvent): MenuPoint {
   const { pageX, pageY } = event.nativeEvent;
-  return { x: pageX, y: pageY };
+  const scroll = documentScroll();
+  return { x: pageX - scroll.x, y: pageY - scroll.y };
 }
 
 export function menuPointBelow(event: GestureResponderEvent): MenuPoint {

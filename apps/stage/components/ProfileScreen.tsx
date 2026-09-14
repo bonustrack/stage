@@ -1,7 +1,6 @@
 
 import { useState } from 'react';
 
-import { ScrollView } from 'react-native-gesture-handler';
 import type { SimultaneousRefs } from './SwipeTabs.types';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from '../lib/safeArea';
@@ -9,7 +8,7 @@ import { shortAddress } from '../modules/messaging';
 import { useEffectiveColorScheme, usePalette, type Palette } from '../lib/theme';
 import { usePeerProfiles, getPeerName, getPeerHandle, getPeerDescription } from '../lib/peerProfiles';
 import { Avatar } from './Avatar';
-import { Box, Col, WEB_EDGE_CONTENT, WEB_EDGE_CONTENT_WIDE, WEB_STACK_SCROLL } from './layout';
+import { Box, Col, ScreenScroll, WEB_EDGE_CONTENT } from './layout';
 import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { profileDisplayName } from './ProfileScreen.model';
@@ -94,13 +93,13 @@ export function ProfileScreen({ address, variant, panRef }: {
   };
 
   const displayName = profileDisplayName(addr, getPeerName(addr), shortAddress(addr));
-  const contentWidth = variant === 'route' ? WEB_EDGE_CONTENT_WIDE : WEB_EDGE_CONTENT;
+  const contentWidth = variant === 'route' ? undefined : WEB_EDGE_CONTENT;
 
   return (
     <Col flex={1} surface="surface">
       <ProfileHeader variant={variant} insetTop={insets.top} c={c} menu={<ProfileMenu color={c.link} isSelf={isSelf} />} />
 
-      <ScrollView simultaneousHandlers={panRef} style={[{ flex: 1 }, WEB_STACK_SCROLL]} contentContainerStyle={[{ paddingBottom: 32 }, contentWidth]}>
+      <ScreenScroll simultaneousHandlers={panRef} contentContainerStyle={[{ paddingBottom: 32 }, contentWidth]}>
         <ProfileIdentity
           addr={addr} isSelf={isSelf} dark={dark} c={c}
           variant={variant} insetTop={insets.top} displayName={displayName}
@@ -113,7 +112,7 @@ export function ProfileScreen({ address, variant, panRef }: {
         {!isSelf && addr ? <CommonChannels peerAddress={addr} enabled={!isSelf} c={c} /> : null}
 
         {addr ? <ProfileHoldings address={addr} /> : null}
-      </ScrollView>
+      </ScreenScroll>
 
       <ImageViewer uri={viewerUri ?? ''} visible={viewerUri !== null} onClose={() => { setViewerUri(null); }}/>
     </Col>

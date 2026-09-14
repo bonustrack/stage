@@ -2,8 +2,7 @@
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
-import { FlatList } from 'react-native-gesture-handler';
-import { Row, WebFullBleed, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT_WIDE } from '../../components/layout';
+import { Row, VirtualList } from '../../components/layout';
 import { MemberRow } from './group.parts';
 
 interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }
@@ -45,10 +44,8 @@ export function GroupMembersList({
 }): React.ReactElement {
   return (
     <>
-      <WebFullBleed>
-        <MembersHeader count={members.length} fg={p.fg} border={p.border} onAdd={onAdd}/>
-      </WebFullBleed>
-      <FlatList
+      <MembersHeader count={members.length} fg={p.fg} border={p.border} onAdd={onAdd}/>
+      <VirtualList
         data={members}
         extraData={memberNames}
         keyExtractor={addr => addr.toLowerCase()}
@@ -65,8 +62,6 @@ export function GroupMembersList({
             onRemove={() => { onRemoveMember(item); }}
 />
         )}
-        style={WEB_EDGE_SCROLL}
-        contentContainerStyle={WEB_EDGE_CONTENT_WIDE}
 />
     </>
   );

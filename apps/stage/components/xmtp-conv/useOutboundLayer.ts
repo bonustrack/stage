@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 import { attachmentEmojiPreview } from '@stage-labs/client/xmtp/humanize';
 import { patchRowSent } from '../../modules/messaging';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import type { FlatList } from 'react-native-gesture-handler';
+import type { VirtualListHandle } from '../layout';
 import { hasAttachments, isReaction } from './feed-helpers';
 import { useStableCallback } from '../../lib/useStableCallback';
 
@@ -76,7 +76,7 @@ export function useOutboundLayer(
   const [showJump, setShowJump] = useState(false);
   const [jumpHighlightId, setJumpHighlightId] = useState<string | null>(null);
   const jumpClearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const listRef = useRef<FlatList<HistoryEntry>>(null);
+  const listRef = useRef<VirtualListHandle>(null);
   const scrollToNewest = useStableCallback(() => {
     requestAnimationFrame(() => {
       try {

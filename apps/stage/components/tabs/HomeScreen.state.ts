@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { FlatList } from 'react-native-gesture-handler';
+import type { VirtualListHandle } from '../layout';
 import { getCachedRows, setCachedRows, subscribeCachedRows, ensureChannelsQueryBridge } from '../../modules/messaging';
 import { loadPinnedIds, subscribePins } from '../../lib/pins';
 import {
@@ -17,7 +17,7 @@ export interface RowMenu {
 }
 
 export interface ScrollRefs {
-  listRef: React.RefObject<FlatList<RowT> | null>;
+  listRef: React.RefObject<VirtualListHandle | null>;
   savedOffsetRef: React.MutableRefObject<number | undefined>;
   didRestoreRef: React.MutableRefObject<boolean>;
   contentHeightRef: React.MutableRefObject<number>;
@@ -53,7 +53,7 @@ export function useHomeState(): HomeState {
   const [pinned, setPinned] = useState<Set<string>>(new Set());
 
   const refreshFromNetworkRef = useRef<(() => Promise<void>) | null>(null);
-  const listRef = useRef<FlatList<RowT>>(null);
+  const listRef = useRef<VirtualListHandle>(null);
   const savedOffsetRef = useRef<number | undefined>(peekScrollOffset(CHANNELS_SCROLL_KEY));
   const didRestoreRef = useRef(false);
   const contentHeightRef = useRef(0);

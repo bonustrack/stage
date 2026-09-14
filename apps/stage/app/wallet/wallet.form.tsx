@@ -3,11 +3,10 @@ import { Linking } from 'react-native';
 import { explorerTxUrl } from '@stage-labs/client/xmtp/tx';
 import { fontSize } from '@stage-labs/kit/tokens';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { Input } from '@stage-labs/kit/react-native/input';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
-import { Box, Row, Col, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from '../../components/layout';
+import { Box, Row, Col, ScreenScroll, WEB_EDGE_CONTENT } from '../../components/layout';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { usePalette } from '../../lib/theme';
@@ -155,10 +154,10 @@ export function ActionPage({ title, head, border, onBack, footer, children }: {
   return (
     <Col surface="surface" flex={1}>
       <ActionHeader title={title} head={head} border={border} onBack={onBack}/>
-      <ScrollView style={[{ flex: 1 }, WEB_EDGE_SCROLL]} keyboardShouldPersistTaps="handled"
+      <ScreenScroll keyboardShouldPersistTaps="handled"
         contentContainerStyle={[{ padding: 16, gap: 16 }, WEB_EDGE_CONTENT]}>
         {children}
-      </ScrollView>
+      </ScreenScroll>
       {footer ?? null}
     </Col>
   );

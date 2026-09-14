@@ -1,8 +1,9 @@
 
 import { Box, Col } from '../../components/layout';
 import { fontSize } from '@stage-labs/kit/tokens';
-import { Tabs, usePathname } from 'expo-router';
+import { usePathname } from 'expo-router';
 import { Platform } from 'react-native';
+import { Tabs } from '../../lib/navigation/tabs';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -30,20 +31,9 @@ function PagerOverlay({ insetTop, tabBarHeight, topnavHidden, rail, pathname }: 
 }): React.ReactElement {
   if (Platform.OS === 'web') {
     return (
-      <Col
-        pointerEvents="box-none"
-        width="100vw"
-        margin={{ left: '-50vw' }}
-        style={{ position: 'absolute', top: 0, bottom: 0, left: '50%' }}
->
-        <Box pointerEvents="box-none" style={{ position: 'absolute', top: insetTop, left: 0, right: 0, bottom: 0 }}>
-          <TabsPager/>
-        </Box>
-        {topnavHidden ? null : (
-          <Box pointerEvents="box-none" style={{ position: 'absolute', top: insetTop, left: 0, right: 0, zIndex: 2 }}>
-            <HoistedTopnav rail={rail} pathname={pathname}/>
-          </Box>
-        )}
+      <Col flex={1} padding={{ top: insetTop, bottom: tabBarHeight }}>
+        {topnavHidden ? null : <HoistedTopnav rail={rail} pathname={pathname}/>}
+        <TabsPager/>
       </Col>
     );
   }
@@ -84,14 +74,16 @@ export default function TabsLayout(): React.ReactElement {
     ...(web ? { display: 'none' as const } : {}),
   };
 
-  const tabBarHeight = 60 + insets.bottom;
+  const tabBarHeight = web && rail ? 0 : 60 + insets.bottom;
 
   return (
     <Col surface="surface" flex={1}>
-      <Box height={insets.top} surface="toolbar"
-        pointerEvents="none"
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1 }}
+      {web ? null : (
+        <Box height={insets.top} surface="toolbar"
+          pointerEvents="none"
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1 }}
 />
+      )}
       <Tabs
         screenOptions={{
           headerShown: false,

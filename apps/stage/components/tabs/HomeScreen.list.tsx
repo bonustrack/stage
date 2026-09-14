@@ -2,13 +2,11 @@
 import type { MutableRefObject, RefObject } from 'react';
 import { useMemo, useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { FlatList } from 'react-native-gesture-handler';
 import { Icon } from '@stage-labs/kit/react-native/icon';
-import { Box } from '../layout';
+import { Box, VirtualList, type VirtualListHandle } from '../layout';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { CHANNELS_SCROLL_KEY, saveScrollOffset } from '../../lib/scrollPos';
-import { WEB_EDGE_SCROLL, WEB_EDGE_CONTENT } from '../layout';
-import { useWebTabsContentPad } from './webPad';
+import { WEB_EDGE_CONTENT } from '../layout';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { HistorySyncBanner } from '../system/HistorySync';
 import type { Row as RowT } from './HomeScreen.helpers';
@@ -42,7 +40,7 @@ interface ChannelsListProps {
   sub: string;
   border: string;
   listExtraData: readonly unknown[];
-  listRef: RefObject<FlatList<RowT> | null>;
+  listRef: RefObject<VirtualListHandle | null>;
   savedOffsetRef: MutableRefObject<number | undefined>;
   didRestoreRef: MutableRefObject<boolean>;
   contentHeightRef: MutableRefObject<number>;
@@ -125,21 +123,20 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
     listExtraData, listRef, savedOffsetRef, didRestoreRef, contentHeightRef,
     renderRow,
   } = props;
-  const webTabsPad = useWebTabsContentPad();
   const [searchOpen, setSearchOpen] = useState(false);
   const openSearch = (): void => { setSearchOpen(true); };
   const closeSearch = (): void => { setSearchOpen(false); setQuery(''); };
   const slot = useHomeTopnav(props, searchOpen, openSearch, closeSearch);
-  const listStyle = pane ? { flex: 1 } : WEB_EDGE_SCROLL;
   const contentStyle = pane
-    ? [{ paddingTop: 12, paddingBottom: 24 }]
-    : [{ paddingBottom: 24 }, WEB_EDGE_CONTENT, webTabsPad];
+    ? { paddingTop: 12, paddingBottom: 24 }
+    : [{ paddingBottom: 24 }, WEB_EDGE_CONTENT];
 
   return (
     <>
       {pane ? slot.override ?? <Topnav inline right={slot.right}/> : null}
-      <FlatList
+      <VirtualList
         ref={listRef}
+        scroll={pane ? 'self' : 'window'}
         simultaneousHandlers={panRef}
         data={sortedRows}
         onScroll={(ev) => { saveScrollOffset(CHANNELS_SCROLL_KEY, ev.nativeEvent.contentOffset.y); }}
@@ -162,7 +159,6 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
         initialNumToRender={10}
         maxToRenderPerBatch={10}
         removeClippedSubviews
-        style={listStyle}
         contentContainerStyle={contentStyle}
         ListHeaderComponent={<ChannelsListHeader p={props} />}
         ListEmptyComponent={query.trim() ? null : <HomeEmpty />}

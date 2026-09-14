@@ -19,7 +19,7 @@
     },
     "apps/desktop": {
       "name": "stage-desktop",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "devDependencies": {
         "@types/node": "^22.0.0",
         "electron": "44.3.0",
@@ -48,10 +48,12 @@
         "@railgun-community/shared-models": "7.6.1",
         "@railgun-community/wallet": "10.4.0",
         "@react-native-async-storage/async-storage": "2.2.0",
+        "@react-navigation/native": "7.3.6",
         "@react-navigation/stack": "^7.9.3",
         "@stage-labs/client": "workspace:*",
         "@stage-labs/kit": "workspace:*",
         "@tanstack/react-query": "^5.100.14",
+        "@tanstack/react-virtual": "3.14.13",
         "@xmtp/browser-sdk": "^7.0.0",
         "@xmtp/react-native-sdk": "^5.7.0",
         "@zerodev/ecdsa-validator": "5.4.9",
@@ -1118,6 +1120,10 @@
     "@tanstack/query-core": ["@tanstack/query-core@5.101.2", "", {}, "sha512-hH5MLoJhF7KaIGd7q3xTXGXvslI+GYlM1Z/35aSHHWaCJWB7XvTSHYuV3eM7tw+aE0mT/xMro4M4Q9rCGHT0lw=="],
 
     "@tanstack/react-query": ["@tanstack/react-query@5.101.2", "", { "dependencies": { "@tanstack/query-core": "5.101.2" }, "peerDependencies": { "react": "^18 || ^19" } }, "sha512-seDkr6kzGzX1okaaTtZPtgA688CDPlXUz1C6xSg0ESqn04Vuc8tlrYms1s3de+znBqhPVxFRfpAfUf+6XvfPWg=="],
+
+    "@tanstack/react-virtual": ["@tanstack/react-virtual@3.14.13", "", { "dependencies": { "@tanstack/virtual-core": "3.17.11" }, "peerDependencies": { "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0", "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-JbDTAwtzZ99aOeCrAfW5EsE5KSq5RWh6Af2dtFwyLIIk48Ja7vm6n4axu/43T3vfjFnEGJalxJ1wyYjSQD6bSg=="],
+
+    "@tanstack/virtual-core": ["@tanstack/virtual-core@3.17.11", "", {}, "sha512-+ILjvtHup6Y2hzQ6YzwMgX1Q+oQpxEGOXCEsCNaPoIP0VxMbizIBTmYTDtkerkIQS8/CbP1BRuyt8V/8BCsy1g=="],
 
     "@ts-graphviz/adapter": ["@ts-graphviz/adapter@2.0.6", "", { "dependencies": { "@ts-graphviz/common": "^2.1.5" } }, "sha512-kJ10lIMSWMJkLkkCG5gt927SnGZcBuG0s0HHswGzcHTgvtUe7yk5/3zTEr0bafzsodsOq5Gi6FhQeV775nC35Q=="],
 

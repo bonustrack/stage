@@ -2,14 +2,13 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
-import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { QrCode } from '@stage-labs/kit/react-native/qr-code';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { capabilities } from '../../lib/capabilities';
-import { Box, Col, WEB_EDGE_CONTENT, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../../components/layout';
+import { Box, Col, ScreenScroll } from '../../components/layout';
 import { WalletHeader } from '../../components/wallet/WalletHeader';
 import { AppIcon } from '../../components/widgets';
 import { getOrCreateXmtpClient } from '../../modules/messaging';
@@ -96,7 +95,7 @@ export default function WalletReceive(): React.ReactElement {
     <Col surface="surface" flex={1}>
       <WalletHeader title="Receive" />
 
-      <ScrollView style={WEB_STACK_SCROLL} contentContainerStyle={[{ padding: 16, alignItems: 'center', gap: 16 }, WEB_EDGE_CONTENT, WEB_STACK_CONTENT_PAD]}>
+      <ScreenScroll contentContainerStyle={{ padding: 16, alignItems: 'center', gap: 16 }}>
         <ReceiveModeToggle
           mode={activeMode}
           onChange={setMode}
@@ -109,7 +108,7 @@ export default function WalletReceive(): React.ReactElement {
             <AddressCard label={label} address={address || '—'} hint={hint} onCopy={onCopy} />
           </Col>
         </Col>
-      </ScrollView>
+      </ScreenScroll>
     </Col>
   );
 }

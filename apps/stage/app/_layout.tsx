@@ -4,7 +4,7 @@ import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { useEffect } from 'react';
 import { Text, TextInput } from '../components/layout/native';
-import { Col, WebContentFrame } from '../components/layout';
+import { Col, WebContentFrame, viewportFill } from '../components/layout';
 import { Spinner } from '../components/Spinner';
 import { TopChrome } from '../components/system/TopChrome';
 import { Onboarding } from '../components/onboarding/Onboarding';
@@ -13,9 +13,8 @@ import { useShellGates } from '../lib/onboardingHold';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { Platform } from 'react-native';
-import { CardStyleInterpolators, TransitionPresets, TransitionSpecs } from '@react-navigation/stack';
-import { createStackNavigator } from '@react-navigation/stack';
-import { withLayoutContext } from 'expo-router';
+import { RootStack, rootStackScreenOptions, TABS_SCREEN_OPTIONS } from '../lib/navigation/rootStack';
+import { useDocumentScrollRestore } from '../lib/navigation/scrollRestore';
 import { useEffectiveColorScheme, usePalette, useRadius } from '../lib/theme';
 import { KitThemeProvider } from '@stage-labs/kit/react-native/theme-context';
 import { useDeepLinks } from '../lib/deepLinks';
@@ -57,8 +56,6 @@ function isDarkBg(hex: string): boolean {
   return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.5;
 }
 
-const NativeSwipeStack = withLayoutContext(createStackNavigator().Navigator);
-
 export default function RootLayout(): React.ReactElement {
   const scheme = useEffectiveColorScheme();
   const palette = usePalette();
@@ -83,6 +80,7 @@ function RootLayoutInner(): React.ReactElement {
   }, [dark]);
 
   useDeepLinks();
+  useDocumentScrollRestore();
 
   const restore = useRestoreGate();
 
@@ -107,50 +105,17 @@ function RootLayoutInner(): React.ReactElement {
       <KeyboardProvider>
       <StatusBar style={barStyle} translucent backgroundColor="transparent"/>
       <WebContentFrame>
-      <NativeSwipeStack
-        detachInactiveScreens
-        screenOptions={{
-          headerShown: false,
-          freezeOnBlur: true,
-          cardStyle: {
-            backgroundColor: bg,
-            ...(Platform.OS === 'web' ? { overflow: 'visible' as const } : {}),
-          },
-          gestureEnabled: Platform.OS !== 'web',
-          gestureResponseDistance: 9999,
-          ...(Platform.OS === 'web'
-            ? {
-                animationEnabled: false,
-                cardStyleInterpolator: CardStyleInterpolators.forNoAnimation,
-              }
-            : {
-                ...TransitionPresets.SlideFromRightIOS,
-                transitionSpec: {
-                  open: { animation: 'timing', config: { duration: 0 } },
-                  close: TransitionSpecs.TransitionIOSSpec,
-                },
-              }),
-        }}
->
-        <NativeSwipeStack.Screen
-          name="(tabs)"
-          options={{ animationEnabled: false, gestureEnabled: false }}
-/>
-      </NativeSwipeStack>
+      <RootStack detachInactiveScreens screenOptions={rootStackScreenOptions(bg)}>
+        <RootStack.Screen name="(tabs)" options={TABS_SCREEN_OPTIONS}/>
+      </RootStack>
       </WebContentFrame>
       <SplitSidebar visible={shell.sidebarVisible}/>
       {!gatesOpen ? (
-        <Col
-          surface="surface" align="center" justify="center"
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
->
+        <Col surface="surface" align="center" justify="center" style={viewportFill()}>
           <Spinner size={28} color={dark ? '#ffffff' : '#000000'}/>
         </Col>
       ) : shell.showOnboarding ? (
-        <Col
-          surface="surface"
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: ONBOARDING_LAYER }}
->
+        <Col surface="surface" style={viewportFill(ONBOARDING_LAYER)}>
           <Onboarding onDone={() => undefined} />
         </Col>
       ) : null}

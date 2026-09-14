@@ -6,7 +6,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Dialog } from '@stage-labs/kit/react-native/dialog';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Box, Row, WebFullBleed } from '../layout';
+import { Box, Row, pinnedTop } from '../layout';
 import { TOPNAV_HEIGHT } from '../Topnav';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Divider } from '@stage-labs/kit/react-native/divider';
@@ -41,8 +41,7 @@ export function ConvTopnavShell({ fg, border, safeTop, onBack, children }: {
   fg: string; border: string; safeTop: number; onBack: () => void; children: React.ReactNode;
 }): React.ReactElement {
   return (
-    <Box style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2 }}>
-    <WebFullBleed>
+    <Box style={pinnedTop(2)}>
     <Row height={TOPNAV_HEIGHT + safeTop} surface="toolbar" padding={{ top: safeTop }} align="stretch" style={{ borderBottomWidth: 1, borderBottomColor: border }}>
       <Pressable
         onPress={onBack}
@@ -52,7 +51,6 @@ export function ConvTopnavShell({ fg, border, safeTop, onBack, children }: {
       </Pressable>
       {children}
     </Row>
-    </WebFullBleed>
     </Box>
   );
 }

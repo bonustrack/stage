@@ -5,7 +5,6 @@ import { refreshSnapshot } from '../../lib/railgun/wallet';
 import { useAssetRows } from './WalletScreen.data';
 import { type AssetRow } from './WalletScreen.assets';
 
-import { ScrollView } from 'react-native-gesture-handler';
 import { usePullToRefresh } from './PullToRefresh';
 import { RefreshButton } from './WalletScreen.refreshButton';
 import { Spinner } from '../Spinner';
@@ -19,8 +18,7 @@ import { useRouter } from 'expo-router';
 import { flash } from '../../lib/toast';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { DANGER, usePalette } from '../../lib/theme';
-import { Col, Row, WEB_EDGE_SCROLL, WEB_EDGE_CONTENT_WIDE } from '../layout';
-import { useWebTabsContentPad } from './webPad';
+import { Col, Row, ScreenScroll } from '../layout';
 import { useNfts, type NftState } from '../../lib/useNfts';
 import { WalletTabs, NftsView, fmtUsd, splitUsd, type WalletTab } from './WalletScreen.parts';
 import { PrivateView } from './WalletScreen.private';
@@ -156,7 +154,6 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
     () => privateBalancesToRows(privSnapshot, symbolPricesFromPublic(rows ?? [])),
     [privSnapshot, rows],
   );
-  const webTabsPad = useWebTabsContentPad();
   const [tab, setTab] = useState<WalletTab>('tokens');
   const nftState = useNfts(tab === 'nfts', address);
 
@@ -172,10 +169,10 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
 
   return (
     <Col surface="surface" flex={1}>
-    <ScrollView
+    <ScreenScroll
       simultaneousHandlers={panRef}
-      style={[{ flex: 1, backgroundColor: bg }, WEB_EDGE_SCROLL]}
-      contentContainerStyle={[{ paddingBottom: 24, flexGrow: 1 }, WEB_EDGE_CONTENT_WIDE, webTabsPad]}
+      style={{ backgroundColor: bg }}
+      contentContainerStyle={{ paddingBottom: 24, flexGrow: 1 }}
       bounces
       alwaysBounceVertical
       overScrollMode="always"
@@ -197,7 +194,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
         tab={tab} nftState={nftState} address={address} rows={rows}
         privateRows={privateRows} pending={pending} err={!!err} c={c}
       />
-    </ScrollView>
+    </ScreenScroll>
     </Col>
   );
 }

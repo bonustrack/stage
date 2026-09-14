@@ -5,7 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { capabilities } from '../../lib/capabilities';
-import { Box, Col, WebFullBleed } from '../../components/layout';
+import { Box, Col } from '../../components/layout';
 import { GroupImagePicker } from '../../components/GroupImagePicker';
 import { OverlayHeader } from '../../components/chrome/OverlayHeader';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -87,8 +87,7 @@ export default function GroupDetail(): React.ReactElement {
         }
       />
 
-      <WebFullBleed>
-        <GroupProfileHeader
+      <GroupProfileHeader
           insetTop={insets.top} imageUrl={imageUrl} channelId={convId ?? ''} uploadingImage={uploadingImage}
           fg={fg} bg={bg} rowBg={rowBg}
           onTap={() => { if (imageUrl) setViewerOpen(true); else pickImage(); }}
@@ -108,8 +107,7 @@ export default function GroupDetail(): React.ReactElement {
           onSave={() => { void saveDescription(); }} dark={dark} p={pal}
 />
 
-        <GroupLabelsSection line={line} p={pal}/>
-      </WebFullBleed>
+      <GroupLabelsSection line={line} p={pal}/>
       <GroupMembersList
         members={members} memberNames={memberNames} memberRoles={memberRoles}
         selfAddress={selfAddress} removing={removing} dark={dark} p={pal}

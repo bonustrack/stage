@@ -1,6 +1,6 @@
 
 import { TopnavIdentity } from './TopnavIdentity';
-import { Row, WebFullBleed } from './layout';
+import { Box, Row, STICKY_UNDER_CHROME } from './layout';
 import { usePalette } from '../lib/theme';
 import { usePathname } from 'expo-router';
 import { useWebTabRail, WEB_TAB_RAIL_WIDTH } from './tabs/useWebTabRail';
@@ -38,5 +38,5 @@ export function Topnav({ left, right, inline }: {
     </Row>
   );
   if (inline === true) return bar;
-  return <WebFullBleed>{bar}</WebFullBleed>;
+  return <Box style={STICKY_UNDER_CHROME}>{bar}</Box>;
 }

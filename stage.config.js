@@ -26,7 +26,7 @@ export default defineConfig({
           'eslint.js',
           'app/**/*.{ts,tsx}',
           'babel.config.js',
-          'lib/**/*.web.ts',
+          'lib/**/*.web.{ts,tsx}',
           'components/**/*.web.tsx',
           'modules/**/*.{ts,tsx}',
           'platform/**/*.ts',

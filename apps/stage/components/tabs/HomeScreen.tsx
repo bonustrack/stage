@@ -44,10 +44,7 @@ function HomeRowMenu({ st }: { st: HomeState }): React.ReactElement {
 
 function SplitPlaceholder(): React.ReactElement {
   return (
-    <Col
-      flex={1} align="center" justify="center" surface="surface"
-      margin={{ left: 'var(--stage-pane-left, 0px)' }}
->
+    <Col flex={1} align="center" justify="center" surface="surface">
       <Text size="md" role="secondary">Select a chat to start messaging</Text>
     </Col>
   );
@@ -109,8 +106,8 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
     channelProfilesVersion, draftsVersion, pinned, query, activePath,
   });
 
-  if (st.error) return <HomeError error={st.error} dark={dark} fg={fg} plain={pane} />;
-  if (!rows) return <HomeSpinner head={head} plain={pane} />;
+  if (st.error) return <HomeError error={st.error} dark={dark} fg={fg} />;
+  if (!rows) return <HomeSpinner head={head} />;
 
   const list = (
     <ChannelsList

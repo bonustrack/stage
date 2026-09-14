@@ -1,10 +1,9 @@
 
 import { useEffect, useState } from 'react';
 
-import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 import { Linking, Platform } from 'react-native';
 import { useSafeAreaInsets } from '../../lib/safeArea';
-import { Box, Col, WEB_EDGE_CONTENT_WIDE, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../layout';
+import { Box, Col, ScreenScroll } from '../layout';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { usePalette } from '../../lib/theme';
 import { setPushEnabled, usePushEnabled } from '../../lib/pushPref';
@@ -51,7 +50,7 @@ export function NotificationsSettings(): React.ReactElement {
   return (
     <Col surface="surface" flex={1}>
       <StackHeader title="Notifications"/>
-      <ScrollView style={WEB_STACK_SCROLL} contentContainerStyle={[{ paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT_WIDE, WEB_STACK_CONTENT_PAD]}>
+      <ScreenScroll contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <Caption color={fg} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
           PUSH NOTIFICATIONS
         </Caption>
@@ -84,7 +83,7 @@ export function NotificationsSettings(): React.ReactElement {
             </SettingsList>
           </Box>
         ) : null}
-      </ScrollView>
+      </ScreenScroll>
     </Col>
   );
 }

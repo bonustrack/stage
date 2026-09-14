@@ -1,9 +1,7 @@
 
-import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
 
 import { useSafeAreaInsets } from '../../lib/safeArea';
-import { Col, WEB_EDGE_CONTENT_WIDE, WEB_STACK_SCROLL, WEB_STACK_CONTENT_PAD } from '../layout';
-import { useWebTabbarBottomPad } from '../tabs/webPad';
+import { Col, ScreenScroll } from '../layout';
 import { SETTINGS_MENU_ITEMS } from './SettingsMenu.model';
 import { capabilities } from '../../lib/capabilities';
 import { StackHeader } from '../chrome/StackHeader';
@@ -12,12 +10,11 @@ import { SettingsList, SettingsNavRow } from './rows';
 export function SettingsMenu(): React.ReactElement {
   const insets = useSafeAreaInsets();
 
-  const tabbarPad = useWebTabbarBottomPad();
 
   return (
     <Col surface="surface" flex={1}>
       <StackHeader title="Settings"/>
-      <ScrollView style={WEB_STACK_SCROLL} contentContainerStyle={[{ paddingBottom: 32 + insets.bottom }, WEB_EDGE_CONTENT_WIDE, WEB_STACK_CONTENT_PAD, tabbarPad]}>
+      <ScreenScroll contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <SettingsList>
           {SETTINGS_MENU_ITEMS.map((item) => (
             <SettingsNavRow
@@ -28,7 +25,7 @@ export function SettingsMenu(): React.ReactElement {
             />
           ))}
         </SettingsList>
-      </ScrollView>
+      </ScreenScroll>
     </Col>
   );
 }

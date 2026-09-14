@@ -8,17 +8,18 @@
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <style id="expo-reset">
-      html,
-      body {
-        height: 100%;
+      html {
+        scrollbar-gutter: stable;
       }
       body {
-        overflow: hidden;
+        margin: 0;
+        min-height: 100vh;
+        overflow-y: scroll;
       }
       #root {
         display: flex;
-        height: 100%;
-        flex: 1;
+        flex-direction: column;
+        min-height: 100vh;
       }
     </style>
     <style id="stage-web-overrides">

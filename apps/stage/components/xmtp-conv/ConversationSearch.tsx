@@ -1,9 +1,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator } from 'react-native';
-import { FlatList } from 'react-native-gesture-handler';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Box, Row } from '../layout';
+import { Box, Row, VirtualList } from '../layout';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { useFeedRenderItem } from './useFeedRenderItem';
 import { searchLocalHistory, type SearchScanResult } from '../../modules/messaging/searchLocal';
@@ -50,8 +49,8 @@ export function ConversationSearch({
   const showEmpty = q.length >= 2 && !scanning && result.hits.length === 0;
 
   return (
-    <FlatList<HistoryEntry>
-      style={{ flex: 1, backgroundColor: bg }}
+    <VirtualList<HistoryEntry>
+      style={{ backgroundColor: bg }}
       data={result.hits}
       extraData={extraData}
       inverted

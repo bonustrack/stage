@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { usePathname } from 'expo-router';
-import { Box } from '../layout';
+import { Box, pinnedEdges } from '../layout';
 import { isSplitRoute } from '../tabs/splitRoutes';
 import { usePalette } from '../../lib/theme';
 import { useTopChromeInset, useWebTabRail, WEB_TAB_RAIL_WIDTH } from '../../lib/webLayout';
@@ -26,17 +26,17 @@ export function TopChrome({ decorated }: { decorated: boolean }): React.ReactEle
       <Box
         height={inset}
         surface={wide ? 'toolbar' : 'none'}
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: CHROME_LAYER }}
+        style={pinnedEdges({ top: 0, left: 0, right: 0 }, CHROME_LAYER)}
         {...DRAG_REGION}
       />
       {wide ? (
         <Box
           pointerEvents="none"
           border={railed ? { top: edge, left: edge } : { top: edge }}
-          style={{
-            position: 'absolute', top: inset, bottom: 0, right: 0, zIndex: CHROME_LAYER,
-            left: railed ? WEB_TAB_RAIL_WIDTH - 1 : 0, borderTopLeftRadius: railed ? PANEL_RADIUS : 0,
-          }}
+          style={[
+            pinnedEdges({ top: inset, bottom: 0, right: 0, left: railed ? WEB_TAB_RAIL_WIDTH - 1 : 0 }, CHROME_LAYER),
+            { borderTopLeftRadius: railed ? PANEL_RADIUS : 0 },
+          ]}
         />
       ) : null}
     </>
