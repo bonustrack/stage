@@ -125,7 +125,10 @@ export default function TabsLayout(): React.ReactElement {
         ))}
         <Tabs.Screen
           name="account"
-          options={{ tabBarIcon: () => <AccountAvatar size={26}/>, tabBarAccessibilityLabel: 'Account' }}
+          options={{
+            tabBarIcon: () => <Box margin={{ top: -2 }}><AccountAvatar size={26}/></Box>,
+            tabBarAccessibilityLabel: 'Account',
+          }}
           listeners={{ tabPress: (e) => { e.preventDefault(); setAccountMenu(true); } }}
 />
         <Tabs.Screen name="settings" options={{ href: null }}/>
