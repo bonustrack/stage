@@ -1,4 +1,5 @@
 
+import { useState } from 'react';
 import { Box, Col } from '../../components/layout';
 import { fontSize } from '@stage-labs/kit/tokens';
 import { usePathname } from 'expo-router';
@@ -15,7 +16,8 @@ import { TAB_ICONS, WebTabBar, WebTabRail } from '../../components/tabs/WebTabRa
 import { useWebTabRail } from '../../components/tabs/useWebTabRail';
 import { useTotalUnread } from '../../lib/useTotalUnread';
 import { unreadBadgeLabel } from '../../lib/format';
-import { AccountAvatarButton } from '../../components/AccountAvatarButton';
+import { AccountAvatar } from '../../components/AccountAvatarButton';
+import { MenuSheet } from '../../components/MenuSheet';
 
 const WIDE_TAB_TITLES: Record<string, string> = { '/wallet': 'Wallet', '/contacts': 'Contacts' };
 
@@ -62,6 +64,7 @@ export default function TabsLayout(): React.ReactElement {
   const inactive = pal.text;
   const web = Platform.OS === 'web';
   const rail = useWebTabRail();
+  const [accountMenu, setAccountMenu] = useState(false);
 
   const tabBarStyle = {
     backgroundColor: pal.toolbarBg,
@@ -122,14 +125,8 @@ export default function TabsLayout(): React.ReactElement {
         ))}
         <Tabs.Screen
           name="account"
-          options={{
-            tabBarButton: () => (
-              <Box flex={1} align="center" justify="center">
-                <AccountAvatarButton size={26}/>
-              </Box>
-            ),
-          }}
-          listeners={{ tabPress: (e) => { e.preventDefault(); } }}
+          options={{ tabBarIcon: () => <AccountAvatar size={26}/>, tabBarAccessibilityLabel: 'Account' }}
+          listeners={{ tabPress: (e) => { e.preventDefault(); setAccountMenu(true); } }}
 />
         <Tabs.Screen name="settings" options={{ href: null }}/>
       </Tabs>
@@ -145,7 +142,7 @@ export default function TabsLayout(): React.ReactElement {
       {web ? (rail
         ? <WebTabRail pathname={pathname} unreadBadge={unreadBadge}/>
         : <WebTabBar pathname={pathname} unreadBadge={unreadBadge}/>
-      ) : null}
+      ) : <MenuSheet visible={accountMenu} anchor={null} onClose={() => { setAccountMenu(false); }}/>}
     </Col>
   );
 }

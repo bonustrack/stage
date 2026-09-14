@@ -9,14 +9,19 @@ import { usePalette } from '../lib/theme';
 import { usePeerProfiles, peerAvatarUrl } from '../lib/peerProfiles';
 import { useActiveAccountRecord } from '../modules/messaging';
 
+export function AccountAvatar({ size }: { size: number }): React.ReactElement {
+  const { border } = usePalette();
+  const myAddress = useActiveAccountRecord()?.address ?? null;
+  usePeerProfiles([myAddress]);
+  if (myAddress === null) return <Col size={size} radius="full" background={border} />;
+  return <Image src={peerAvatarUrl(myAddress, size)} size={size} radius="full" background={border} />;
+}
+
 export function AccountAvatarButton({ size = 28, opens = 'below' }: {
   size?: number;
   opens?: 'below' | 'beside';
 }): React.ReactElement {
-  const { border } = usePalette();
   const [menuAnchor, setMenuAnchor] = useState<MenuPoint | null>(null);
-  const myAddress = useActiveAccountRecord()?.address ?? null;
-  usePeerProfiles([myAddress]);
   return (
     <>
       <Pressable
@@ -24,11 +29,7 @@ export function AccountAvatarButton({ size = 28, opens = 'below' }: {
         onPress={(e) => { setMenuAnchor(opens === 'beside' ? menuPointBeside(e) : menuPointBelow(e)); }}
         hitSlop={8}
       >
-        {myAddress ? (
-          <Image src={peerAvatarUrl(myAddress, size)} size={size} radius="full" background={border} />
-        ) : (
-          <Col size={size} radius="full" background={border} />
-        )}
+        <AccountAvatar size={size} />
       </Pressable>
       <MenuSheet visible={menuAnchor !== null} anchor={menuAnchor} onClose={() => { setMenuAnchor(null); }} />
     </>
