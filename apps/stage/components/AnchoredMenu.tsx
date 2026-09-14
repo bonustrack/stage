@@ -33,10 +33,21 @@ export function menuPointOf(event: GestureResponderEvent): MenuPoint {
   return { x: pageX - scroll.x, y: pageY - scroll.y };
 }
 
+interface AnchorRect { left: number; right: number; top: number; bottom: number }
+
+function anchorRect(event: GestureResponderEvent): AnchorRect | undefined {
+  const target = event.currentTarget as unknown as { getBoundingClientRect?: () => AnchorRect };
+  return target.getBoundingClientRect?.();
+}
+
 export function menuPointBelow(event: GestureResponderEvent): MenuPoint {
-  const target = event.currentTarget as unknown as { getBoundingClientRect?: () => { left: number; bottom: number } };
-  const rect = target.getBoundingClientRect?.();
+  const rect = anchorRect(event);
   return rect === undefined ? menuPointOf(event) : { x: rect.left, y: rect.bottom + 6 };
+}
+
+export function menuPointBeside(event: GestureResponderEvent): MenuPoint {
+  const rect = anchorRect(event);
+  return rect === undefined ? menuPointOf(event) : { x: rect.right + 6, y: rect.top };
 }
 
 export function AnchoredMenu({ visible, onClose, anchor, children }: {

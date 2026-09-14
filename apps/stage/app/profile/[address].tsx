@@ -10,7 +10,7 @@ export default function UserProfileView(): React.ReactElement {
   const { address } = useLocalSearchParams<{ address: string }>();
   const resolved = useResolvedHandle(address);
   const dark = useEffectiveColorScheme() === 'dark';
-  if (resolved.address) return <ProfileScreen address={resolved.address} variant="route" />;
+  if (resolved.address) return <ProfileScreen address={resolved.address} />;
   return (
     <Col surface="surface" flex={1} align="center" justify="center" padding={24}>
       {resolved.resolving

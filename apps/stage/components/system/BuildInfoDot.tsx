@@ -4,7 +4,7 @@ import Constants from 'expo-constants';
 import * as Updates from 'expo-updates';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Box } from '../layout';
+import { Box, viewportFill } from '../layout';
 import { usePalette, withAlpha } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
 import { commitUrl } from '../../lib/githubRepo';
@@ -71,7 +71,7 @@ export function BuildInfoDot(): React.ReactElement {
   const openCommit = href === undefined ? undefined : (): void => { setOpen(false); capabilities.openUrl(href); };
 
   return (
-    <Box pointerEvents="box-none" style={{ ...StyleSheet.absoluteFillObject, zIndex: ABOVE_ALL_CHROME }}>
+    <Box pointerEvents="box-none" style={viewportFill(ABOVE_ALL_CHROME)}>
       {open ? <Pressable style={StyleSheet.absoluteFill} onPress={() => { setOpen(false); }} /> : null}
       <Box pointerEvents="box-none" style={{ position: 'absolute', left: 10, bottom: insets.bottom + 10 }}>
         {open ? (

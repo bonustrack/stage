@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Col, ScreenScroll, WEB_EDGE_CONTENT } from '../../components/layout';
+import { Col, ScreenScroll } from '../../components/layout';
 import { WalletHeader } from '../../components/wallet/WalletHeader';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
@@ -47,7 +47,7 @@ export default function WalletSend(): React.ReactElement {
       <WalletHeader title="Send token" />
 
       <ScreenScroll keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[{ padding: 16, gap: 16 }, WEB_EDGE_CONTENT]}>
+        contentContainerStyle={{ padding: 16, gap: 16 }}>
         <TokenSelector mode="combined" value={token} onChange={onChange}/>
 
         {token.isPrivate ? (

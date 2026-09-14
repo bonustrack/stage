@@ -12,7 +12,7 @@ import { flash } from '../../lib/toast';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { StackHeader } from '../../components/chrome/StackHeader';
 import { GroupImagePicker } from '../../components/GroupImagePicker';
-import { Box, Col, ScreenScroll, WEB_EDGE_CONTENT } from '../../components/layout';
+import { Box, Col, ScreenScroll } from '../../components/layout';
 import { MemberField } from '../../components/MemberField';
 import { Spinner } from '../../components/Spinner';
 import { MemberPicker, useMemberPicker } from './MemberPicker';
@@ -121,7 +121,7 @@ export default function NewGroup(): React.ReactElement {
       <StackHeader title="New group" />
 
       <ScreenScroll
-        contentContainerStyle={[{ padding: 16, gap: 16, paddingBottom: 24 + insets.bottom }, WEB_EDGE_CONTENT]}
+        contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 24 + insets.bottom }}
         keyboardShouldPersistTaps="handled"
 >
         <GroupImageField image={image} creating={creating} fg={fg} border={border} rowBg={rowBg}

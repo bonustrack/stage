@@ -15,6 +15,7 @@ import { TAB_ICONS, WebTabBar, WebTabRail } from '../../components/tabs/WebTabRa
 import { useWebTabRail } from '../../components/tabs/useWebTabRail';
 import { useTotalUnread } from '../../lib/useTotalUnread';
 import { unreadBadgeLabel } from '../../lib/format';
+import { AccountAvatarButton } from '../../components/AccountAvatarButton';
 
 const WIDE_TAB_TITLES: Record<string, string> = { '/wallet': 'Wallet', '/contacts': 'Contacts' };
 
@@ -69,7 +70,7 @@ export default function TabsLayout(): React.ReactElement {
     elevation: 0,
     shadowOpacity: 0,
     height: 60 + insets.bottom,
-    paddingTop: 6,
+    paddingTop: 9,
     paddingBottom: insets.bottom,
     ...(web ? { display: 'none' as const } : {}),
   };
@@ -119,6 +120,17 @@ export default function TabsLayout(): React.ReactElement {
             }}
 />
         ))}
+        <Tabs.Screen
+          name="account"
+          options={{
+            tabBarButton: () => (
+              <Box flex={1} align="center" justify="center">
+                <AccountAvatarButton size={26}/>
+              </Box>
+            ),
+          }}
+          listeners={{ tabPress: (e) => { e.preventDefault(); } }}
+/>
         <Tabs.Screen name="settings" options={{ href: null }}/>
       </Tabs>
       {pagerVisible ? (

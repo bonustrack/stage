@@ -1,5 +1,4 @@
 
-import { TopnavIdentity } from './TopnavIdentity';
 import { Box, Row, STICKY_UNDER_CHROME } from './layout';
 import { usePalette } from '../lib/theme';
 import { usePathname } from 'expo-router';
@@ -28,7 +27,7 @@ export function Topnav({ left, right, inline }: {
       style={{ borderBottomWidth: 1, borderBottomColor: border }}
     >
       <Row align="center" gap={8}>
-        {left ?? <TopnavIdentity/>}
+        {left}
       </Row>
       {right ? (
         <Row align="center" gap={18}>

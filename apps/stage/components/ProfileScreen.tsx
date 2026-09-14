@@ -1,14 +1,13 @@
 
 import { useState } from 'react';
 
-import type { SimultaneousRefs } from './SwipeTabs.types';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from '../lib/safeArea';
 import { shortAddress } from '../modules/messaging';
 import { useEffectiveColorScheme, usePalette, type Palette } from '../lib/theme';
 import { usePeerProfiles, getPeerName, getPeerHandle, getPeerDescription } from '../lib/peerProfiles';
 import { Avatar } from './Avatar';
-import { Box, Col, ScreenScroll, WEB_EDGE_CONTENT } from './layout';
+import { Box, Col, ScreenScroll } from './layout';
 import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { profileDisplayName } from './ProfileScreen.model';
@@ -21,22 +20,20 @@ import { CommonChannels } from './CommonChannels';
 import { ProfileHoldings } from './ProfileScreen.holdings';
 import { ProfileMenu } from './ProfileMenu';
 
-export type ProfileScreenVariant = 'tab' | 'route';
-
 function copyAddress(address: string): void {
   void capabilities.copyToClipboard(address);
   capabilities.toast('Address copied');
 }
 
-function ProfileIdentity({ addr, isSelf, dark, c, variant, insetTop, displayName, handle, about, onAvatar, onMessage, onSend }: {
+function ProfileIdentity({ addr, isSelf, dark, c, insetTop, displayName, handle, about, onAvatar, onMessage, onSend }: {
   addr: string; isSelf: boolean; dark: boolean;
-  c: Palette; variant: ProfileScreenVariant; insetTop: number;
+  c: Palette; insetTop: number;
   displayName: string; handle?: string; about?: string; onAvatar: (uri: string | null) => void;
   onMessage: () => void; onSend: () => void;
 }): React.ReactElement {
   return (
     <>
-      <Box height={140 + (variant === 'route' ? insetTop : 0)} background={c.border}/>
+      <Box height={140 + insetTop} background={c.border}/>
       <Box surface="surface" padding={{ x: 16, bottom: 8 }} margin={{ top: -18 }} align="start" style={{ borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'visible' }}>
         <Avatar
           address={addr || null}
@@ -69,11 +66,7 @@ function ProfileIdentity({ addr, isSelf, dark, c, variant, insetTop, displayName
   );
 }
 
-export function ProfileScreen({ address, variant, panRef }: {
-  address: string;
-  variant: ProfileScreenVariant;
-  panRef?: SimultaneousRefs;
-}): React.ReactElement {
+export function ProfileScreen({ address }: { address: string }): React.ReactElement {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -93,16 +86,15 @@ export function ProfileScreen({ address, variant, panRef }: {
   };
 
   const displayName = profileDisplayName(addr, getPeerName(addr), shortAddress(addr));
-  const contentWidth = variant === 'route' ? undefined : WEB_EDGE_CONTENT;
 
   return (
     <Col flex={1} surface="surface">
-      <ProfileHeader variant={variant} insetTop={insets.top} c={c} menu={<ProfileMenu color={c.link} isSelf={isSelf} />} />
+      <ProfileHeader insetTop={insets.top} c={c} menu={<ProfileMenu color={c.link} isSelf={isSelf} />} />
 
-      <ScreenScroll simultaneousHandlers={panRef} contentContainerStyle={[{ paddingBottom: 32 }, contentWidth]}>
+      <ScreenScroll contentContainerStyle={{ paddingBottom: 32 }}>
         <ProfileIdentity
           addr={addr} isSelf={isSelf} dark={dark} c={c}
-          variant={variant} insetTop={insets.top} displayName={displayName}
+          insetTop={insets.top} displayName={displayName}
           handle={getPeerHandle(addr)} about={getPeerDescription(addr)}
           onAvatar={uri => { if (uri) setViewerUri(uri); }}
           onMessage={onMessage}

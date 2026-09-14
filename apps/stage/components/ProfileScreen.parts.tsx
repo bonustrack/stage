@@ -9,7 +9,6 @@ import type { Palette } from '../lib/theme';
 import { cachedSelfEthAddress, selfEthAddress } from '../modules/messaging';
 import { capabilities } from '../lib/capabilities';
 import { OverlayHeader } from './chrome/OverlayHeader';
-import { TopnavIdentity } from './TopnavIdentity';
 
 export function useSelfAddress(): string {
   const { data } = useQuery({
@@ -21,31 +20,16 @@ export function useSelfAddress(): string {
   return data ?? '';
 }
 
-export function ProfileHeader({ variant, insetTop, c, menu }: {
-  variant: 'tab' | 'route'; insetTop: number;
-  c: Palette; menu?: React.ReactNode;
+export function ProfileHeader({ insetTop, c, menu }: {
+  insetTop: number; c: Palette; menu?: React.ReactNode;
 }): React.ReactElement {
-  if (variant === 'route') {
-    return (
-      <OverlayHeader
-        onBack={() => { capabilities.back(); }}
-        backColor={c.link}
-        safeTop={insetTop}
-        trailing={menu}
-      />
-    );
-  }
   return (
-    <Row
-      align="center"
-      justify="between"
-      height={44 + insetTop}
-      padding={{ top: insetTop, x: 14 }}
-      style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 2 }}
->
-      <TopnavIdentity/>
-      {menu}
-    </Row>
+    <OverlayHeader
+      onBack={() => { capabilities.back(); }}
+      backColor={c.link}
+      safeTop={insetTop}
+      trailing={menu}
+    />
   );
 }
 

@@ -8,7 +8,7 @@ import { addGroupMembers } from '../../modules/messaging';
 import { flash } from '../../lib/toast';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { StackHeader } from '../../components/chrome/StackHeader';
-import { Box, Col, ScreenScroll, WEB_EDGE_CONTENT } from '../../components/layout';
+import { Box, Col, ScreenScroll } from '../../components/layout';
 import { useConvMeta } from '../../modules/messaging';
 import { MemberPicker, useMemberPicker } from './MemberPicker';
 
@@ -42,7 +42,7 @@ export default function AddMembers(): React.ReactElement {
       <StackHeader title="Add members" />
 
       <ScreenScroll
-        contentContainerStyle={[{ padding: 16, gap: 16, paddingBottom: 24 + insets.bottom }, WEB_EDGE_CONTENT]}
+        contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 24 + insets.bottom }}
         keyboardShouldPersistTaps="handled"
 >
         <MemberPicker state={picker} dark={dark} exclude={memberAddrs}/>

@@ -8,6 +8,7 @@ import { usePalette } from '../../lib/theme';
 import { useTopChromeInset } from '../../lib/webLayout';
 import { TAB_HREF, indexOfPathname, type TabName } from '../SwipeTabs.config';
 import { WEB_TAB_RAIL_WIDTH } from './useWebTabRail';
+import { AccountAvatarButton } from '../AccountAvatarButton';
 
 export const TAB_ICONS: readonly (readonly [TabName, HeroIconName])[] = [
   ['index', 'chatBubble'],
@@ -64,11 +65,13 @@ export function WebTabBar({ pathname, unreadBadge }: {
   return (
     <Row
       height={60}
-      padding={{ top: 6 }}
       surface="toolbar"
       style={[pinnedEdges({ bottom: 0, left: 0, right: 0 }, 3), { borderTopWidth: 1, borderTopColor: pal.border }]}
 >
       <TabButtons pathname={pathname} unreadBadge={unreadBadge} vertical={false}/>
+      <Box flex={1} align="center" justify="center">
+        <AccountAvatarButton size={26}/>
+      </Box>
     </Row>
   );
 }
@@ -91,6 +94,10 @@ export function WebTabRail({ pathname, unreadBadge }: {
       ]}
 >
       <TabButtons pathname={pathname} unreadBadge={unreadBadge} vertical/>
+      <Box flex={1}/>
+      <Box align="center" padding={{ bottom: 16 }}>
+        <AccountAvatarButton size={32} opens="beside"/>
+      </Box>
     </Col>
   );
 }

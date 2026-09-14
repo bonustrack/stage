@@ -6,7 +6,6 @@ import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Box, VirtualList, type VirtualListHandle } from '../layout';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { CHANNELS_SCROLL_KEY, saveScrollOffset } from '../../lib/scrollPos';
-import { WEB_EDGE_CONTENT } from '../layout';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { HistorySyncBanner } from '../system/HistorySync';
 import type { Row as RowT } from './HomeScreen.helpers';
@@ -127,9 +126,7 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
   const openSearch = (): void => { setSearchOpen(true); };
   const closeSearch = (): void => { setSearchOpen(false); setQuery(''); };
   const slot = useHomeTopnav(props, searchOpen, openSearch, closeSearch);
-  const contentStyle = pane
-    ? { paddingTop: 12, paddingBottom: 24 }
-    : [{ paddingBottom: 24 }, WEB_EDGE_CONTENT];
+  const contentStyle = { paddingTop: 12, paddingBottom: 24 };
 
   return (
     <>
