@@ -3,7 +3,7 @@ import '../cryptoShim';
 import type { AccountRecord } from '../accounts';
 import { updateSmartAccount } from '../accounts';
 import { smartOwnerSigner } from './keyring';
-import { makePublicClient, makeKernelClient } from './client';
+import { makePublicClient, makeKernelClient, swapSudoValidator } from './client';
 import {
   ecdsaValidatorForOwner,
   passkeyKernelFromStored,
@@ -46,24 +46,9 @@ export async function swapRootToEcdsa(
 
     const ecdsaValidator = await ecdsaValidatorForOwner(publicClient, owner);
 
-    const userOpHash = await (
-      kernelClient as unknown as {
-        changeSudoValidator: (a: { sudoValidator: unknown }) => Promise<string>;
-      }
-    ).changeSudoValidator({ sudoValidator: ecdsaValidator });
-
-    const receipt = await (
-      kernelClient as unknown as {
-        waitForUserOperationReceipt: (a: {
-          hash: string;
-          timeout?: number;
-        }) => Promise<{ success: boolean; receipt?: { transactionHash?: string } }>;
-      }
-    ).waitForUserOperationReceipt({ hash: userOpHash, timeout: 120_000 });
-    if (!receipt?.success) {
-      return { ok: false, message: 'Revert userOp did not succeed on-chain; passkey not removed.' };
-    }
-    return { ok: true, txHash: userOpHash };
+    const { hash, success } = await swapSudoValidator(kernelClient, ecdsaValidator);
+    if (!success) return { ok: false, message: 'Revert userOp did not succeed on-chain; passkey not removed.' };
+    return { ok: true, txHash: hash };
   } catch (e) {
     return { ok: false, message: e instanceof Error ? e.message : 'Could not revert to key signing on-chain' };
   }

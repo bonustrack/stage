@@ -17,8 +17,7 @@ import { TransferAccountSheet } from '../accounts/TransferAccountSheet';
 import { SettingsButtonRow, SettingsList, SettingsNavRow } from '../settings/rows';
 import { RecoveryKeyRow } from '../settings/RecoveryKeyRow';
 import { PasskeyLinkRow, usePasskeyPlace } from '../settings/PasskeyLinkRow';
-
-interface SectionColors { fg: string; head: string; sub: string; border: string; rowBg: string }
+import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 
 interface RevealedKey { id: string; pk: string }
 
@@ -53,9 +52,8 @@ function confirmRemove(rec: AccountRecord): void {
   );
 }
 
-function RevealedKeyRow({ c, dark, revealed }: {
-  c: SectionColors; dark: boolean; revealed: string;
-}): React.ReactElement {
+function RevealedKeyRow({ dark, revealed }: { dark: boolean; revealed: string }): React.ReactElement {
+  const { text, link } = usePalette();
   return (
     <ListViewItem
       dark={dark}
@@ -63,12 +61,12 @@ function RevealedKeyRow({ c, dark, revealed }: {
       onPress={() => { void Clipboard.setStringAsync(revealed); capabilities.toast('Private key copied'); }}
       style={{ paddingHorizontal: 14, paddingVertical: 14 }}
     >
-      <Icon name="wallet" size={24} color={c.head} />
+      <Icon name="wallet" size={24} color={link} />
       <Col flex={1}>
-        <Text size="xl" color={c.fg}>Tap to copy private key</Text>
-        <Text size="xs" selectable color={c.sub} style={{ marginTop: 4 }}>{revealed}</Text>
+        <Text size="xl" color={text}>Tap to copy private key</Text>
+        <Text size="xs" selectable color={text} style={{ marginTop: 4 }}>{revealed}</Text>
       </Col>
-      <Icon name="copy" size={20} color={c.head} />
+      <Icon name="copy" size={20} color={link} />
     </ListViewItem>
   );
 }
@@ -104,9 +102,9 @@ function AccountRows({ rec, revealed, onExport, onMove }: {
   );
 }
 
-export function AccountSecuritySection(
-  { c, dark }: { c: SectionColors; danger?: string; dark: boolean },
-): React.ReactElement | null {
+export function AccountSecuritySection(): React.ReactElement | null {
+  const dark = useEffectiveColorScheme() === 'dark';
+  const { text, border } = usePalette();
   const rec = useActiveAccountRecord();
   const [key, setRevealed] = useState<RevealedKey | null>(null);
   const [moving, setMoving] = useState(false);
@@ -116,12 +114,12 @@ export function AccountSecuritySection(
 
   return (
     <>
-      <Text size="xs" color={c.sub} style={{ paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8 }}>ACCOUNT</Text>
+      <Text size="xs" color={text} style={{ paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8 }}>ACCOUNT</Text>
       <Box margin={{ x: 16 }} style={{ overflow: 'hidden' }}>
-        <Card dark={dark} background={c.rowBg} padding={0}>
+        <Card dark={dark} background={border} padding={0}>
           {revealed && canExportPrivateKey(rec) ? (
             <ListView dark={dark}>
-              <RevealedKeyRow c={c} dark={dark} revealed={revealed} />
+              <RevealedKeyRow dark={dark} revealed={revealed} />
             </ListView>
           ) : null}
           <AccountRows

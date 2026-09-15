@@ -11,14 +11,12 @@ import {
 import {
   controlBoxStyle,
   controlColors,
-  styleList,
-  triggerLabelStyle,
-  triggerRowStyle,
   type ControlSize,
   type ControlVariant,
 } from '../control.styles';
 import { BLOCK_RADIUS_DEFAULT, FONT_SIZE, fontName, schemePalette } from '../tokens';
 import { Icon } from './icon';
+import { ControlTrigger } from './control-trigger';
 
 export interface SelectOption {
   label: string;
@@ -41,49 +39,6 @@ export interface SelectProps {
   onChange?: (value: string) => void;
   dark?: boolean;
   style?: ViewStyle | ViewStyle[];
-}
-
-interface SelectTriggerProps {
-  name?: string;
-  disabled?: boolean;
-  block?: boolean;
-  clearable?: boolean;
-  open: boolean;
-  current?: SelectOption;
-  placeholder: string;
-  box: ViewStyle;
-  head: string;
-  placeholderColor: string;
-  style?: ViewStyle | ViewStyle[];
-  onOpen: () => void;
-  onClear: () => void;
-}
-
-function SelectTrigger(props: SelectTriggerProps): React.ReactElement {
-  const { name, disabled, block, clearable, open, current, placeholder, box, head, placeholderColor, style, onOpen, onClear } = props;
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={name}
-      accessibilityState={{ disabled, expanded: open }}
-      disabled={disabled}
-      onPress={onOpen}
-      style={[box, triggerRowStyle(block, disabled), ...styleList(style)]}
-    >
-      <RNText
-        numberOfLines={1}
-        style={triggerLabelStyle(current ? head : placeholderColor, FONT_SIZE.md)}
-      >
-        {current ? current.label : placeholder}
-      </RNText>
-      {clearable && current ? (
-        <Pressable accessibilityRole="button" accessibilityLabel="Clear" onPress={onClear} hitSlop={8}>
-          <Icon name="x" size={16} color={placeholderColor} />
-        </Pressable>
-      ) : null}
-      <Icon name="selector" size={16} color={placeholderColor} />
-    </Pressable>
-  );
 }
 
 function SelectRow(props: {
@@ -156,6 +111,14 @@ function SelectSheet(props: {
   );
 }
 
+function cornerOf(radius: number | undefined, pill: boolean | undefined): number {
+  return radius ?? (pill ? 999 : BLOCK_RADIUS_DEFAULT);
+}
+
+function labelOf(current: SelectOption | undefined, placeholder: string): string {
+  return current === undefined ? placeholder : current.label;
+}
+
 export function Select(props: SelectProps): React.ReactElement {
   const {
     name,
@@ -180,42 +143,35 @@ export function Select(props: SelectProps): React.ReactElement {
   const selected = controlled ?? internal;
 
   const colors = controlColors(variant, dark);
-  const corner = radius ?? (pill ? 999 : BLOCK_RADIUS_DEFAULT);
-  const box = controlBoxStyle(size, variant, colors, corner, false);
-  const p = schemePalette(dark);
-  const head = p.head;
+  const box = controlBoxStyle(size, variant, colors, cornerOf(radius, pill), false);
+  const { head, border: rowBorder } = schemePalette(dark);
   const sheetBg = dark ? '#1b1c1e' : '#ffffff';
-  const rowBorder = p.border;
 
   const current = options.find((o) => o.value === selected);
 
-  function pick(v: string): void {
+  function select(v: string | undefined): void {
     if (controlled === undefined) setInternal(v);
-    onChange?.(v);
+    onChange?.(v ?? '');
     setOpen(false);
-  }
-
-  function clear(): void {
-    if (controlled === undefined) setInternal(undefined);
-    onChange?.('');
   }
 
   return (
     <>
-      <SelectTrigger
+      <ControlTrigger
         name={name}
         disabled={disabled}
         block={block}
         clearable={clearable}
         open={open}
-        current={current}
-        placeholder={placeholder}
+        hasValue={current !== undefined}
+        label={labelOf(current, placeholder)}
+        icon="selector"
         box={box}
-        head={head}
+        headColor={head}
         placeholderColor={colors.placeholder}
         style={style}
         onOpen={() => { setOpen(true); }}
-        onClear={clear}
+        onClear={() => { select(undefined); }}
       />
 
       <SelectSheet
@@ -226,7 +182,7 @@ export function Select(props: SelectProps): React.ReactElement {
         head={head}
         rowBorder={rowBorder}
         placeholderColor={colors.placeholder}
-        onPick={pick}
+        onPick={select}
         onClose={() => { setOpen(false); }}
       />
     </>

@@ -44,3 +44,15 @@ export function makeKernelClient(
     },
   });
 }
+
+export async function swapSudoValidator(
+  kernelClient: KernelAccountClient, sudoValidator: unknown,
+): Promise<{ hash: string; success: boolean }> {
+  const client = kernelClient as unknown as {
+    changeSudoValidator: (a: { sudoValidator: unknown }) => Promise<string>;
+    waitForUserOperationReceipt: (a: { hash: string; timeout?: number }) => Promise<{ success: boolean } | undefined>;
+  };
+  const hash = await client.changeSudoValidator({ sudoValidator });
+  const receipt = await client.waitForUserOperationReceipt({ hash, timeout: 120_000 });
+  return { hash, success: receipt?.success === true };
+}

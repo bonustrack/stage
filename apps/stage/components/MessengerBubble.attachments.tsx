@@ -32,10 +32,13 @@ export function AttachmentView({ att, fullUrl, fg }: {
   if (att.kind === 'audio' || att.mime?.startsWith('audio/')) {
     return <VoiceMessage uri={fullUrl} />;
   }
-  const label = att.name ?? `${att.kind} attachment`;
+  return <AttachmentChip label={att.name ?? `${att.kind} attachment`} fg={fg} onPress={() => void Linking.openURL(fullUrl)} />;
+}
+
+function AttachmentChip({ label, fg, onPress }: { label: string; fg: string; onPress: () => void }): React.ReactElement {
   return (
     <Pressable
-      onPress={() => void Linking.openURL(fullUrl)}
+      onPress={onPress}
       style={{
         flexDirection: 'row', alignItems: 'center', gap: 8,
         paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8,
@@ -56,21 +59,7 @@ function fetchRemote(remote: Attachment['remote']): Promise<{ fileUri: string; m
 function AttachmentRetry({ label, fg, onRetry }: {
   label: string; fg: string; onRetry: () => void;
 }): React.ReactElement {
-  return (
-    <Pressable
-      onPress={onRetry}
-      style={{
-        flexDirection: 'row', alignItems: 'center', gap: 8,
-        paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8,
-        backgroundColor: 'rgba(0,0,0,0.12)', marginBottom: 6,
-      }}
->
-      <Icon name="paperClip" size={16} color={fg}/>
-      <Text size="xs" color={fg} style={{ flexShrink: 1 }} numberOfLines={1}>
-        {label} — tap to retry
-      </Text>
-    </Pressable>
-  );
+  return <AttachmentChip label={`${label} — tap to retry`} fg={fg} onPress={onRetry} />;
 }
 
 function AttachmentPending({ label, fg }: { label: string; fg: string }): React.ReactElement {

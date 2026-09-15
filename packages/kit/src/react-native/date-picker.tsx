@@ -10,14 +10,12 @@ import {
 import {
   controlBoxStyle,
   controlColors,
-  styleList,
-  triggerLabelStyle,
-  triggerRowStyle,
   type ControlSize,
   type ControlVariant,
 } from '../control.styles';
 import { BLOCK_RADIUS_DEFAULT, FONT_SIZE, fontName } from '../tokens';
 import { Icon } from './icon';
+import { ControlTrigger } from './control-trigger';
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const MONTHS = [
@@ -182,49 +180,6 @@ function CalendarSheet(props: CalendarSheetProps): React.ReactElement {
   );
 }
 
-interface DateTriggerProps {
-  name?: string;
-  disabled?: boolean;
-  block?: boolean;
-  clearable?: boolean;
-  open: boolean;
-  selDate: Date | null;
-  label: string;
-  box: ViewStyle;
-  ctrlColors: ReturnType<typeof controlColors>;
-  headColor: string;
-  style?: ViewStyle | ViewStyle[];
-  onOpen: () => void;
-  onClear: () => void;
-}
-
-function DateTrigger(props: DateTriggerProps): React.ReactElement {
-  const { name, disabled, block, clearable, open, selDate, label, box, ctrlColors, headColor, style, onOpen, onClear } = props;
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={name}
-      accessibilityState={{ disabled, expanded: open }}
-      disabled={disabled}
-      onPress={onOpen}
-      style={[box, triggerRowStyle(block, disabled), ...styleList(style)]}
-    >
-      <RNText
-        numberOfLines={1}
-        style={triggerLabelStyle(selDate ? headColor : ctrlColors.placeholder, FONT_SIZE.md)}
-      >
-        {label}
-      </RNText>
-      {clearable && selDate ? (
-        <Pressable accessibilityRole="button" accessibilityLabel="Clear" onPress={onClear} hitSlop={8}>
-          <Icon name="x" size={16} color={ctrlColors.placeholder} />
-        </Pressable>
-      ) : null}
-      <Icon name="calendar" size={16} color={ctrlColors.placeholder} />
-    </Pressable>
-  );
-}
-
 function sheetColorsFor(dark: boolean): SheetColors {
   return {
     head: dark ? '#ffffff' : '#000000',
@@ -297,17 +252,18 @@ export function DatePicker(props: DatePickerProps): React.ReactElement {
 
   return (
     <>
-      <DateTrigger
+      <ControlTrigger
         name={name}
         disabled={disabled}
         block={block}
         clearable={clearable}
         open={open}
-        selDate={selDate}
+        hasValue={selDate !== null}
         label={label}
+        icon="calendar"
         box={box}
-        ctrlColors={ctrlColors}
         headColor={sheetColors.head}
+        placeholderColor={ctrlColors.placeholder}
         style={style}
         onOpen={() => {
           setView(selDate ?? new Date());

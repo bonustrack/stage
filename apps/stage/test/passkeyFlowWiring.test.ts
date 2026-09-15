@@ -15,6 +15,7 @@ const codecsSrc = code(read('lib', 'xmtp.codecs.ts'));
 const txLayerSrc = code(read('components', 'xmtp-conv', 'useTxSignLayer.ts'));
 const onboardSrc = code(read('components', 'onboarding', 'flow.ts'));
 const disableSrc = code(read('lib', 'zerodev', 'disablePasskey.ts'));
+const clientSrc = code(read('lib', 'zerodev', 'client.ts'));
 const walletSettingsSrc = code(read('components', 'settings', 'WalletSettings.tsx'))
   + code(read('components', 'settings', 'WalletSettings.sections.tsx'))
   + code(read('components', 'settings', 'WalletSettings.model.ts'));
@@ -81,18 +82,20 @@ describe('C. enablePasskey.ts — deploy-via-ECDSA-initcode then swap sudo on-ch
     expect(enableSrc).toContain('export async function deployAndSwapToPasskey');
     expect(enableSrc).toContain('deployAndSwapToPasskey(publicClient, rec.hdIndex, stored)');
   });
-  test('swaps sudo to the passkey via changeSudoValidator (one sponsored userOp)', () => {
-    expect(enableSrc).toContain('changeSudoValidator');
-    expect(enableSrc).toContain('sudoValidator: passkeyValidator');
+  test('swaps sudo to the passkey via the shared changeSudoValidator helper (one sponsored userOp)', () => {
+    expect(enableSrc).toContain('swapSudoValidator(kernelClient, passkeyValidator)');
+    expect(clientSrc).toContain('changeSudoValidator({ sudoValidator })');
   });
   test('persists the deployed flag only AFTER the userOp receipt succeeds', () => {
-    const swapIdx = enableSrc.indexOf('changeSudoValidator');
-    const waitIdx = enableSrc.indexOf('waitForUserOperationReceipt');
-    const persistIdx = enableSrc.lastIndexOf('updateSmartAccount(');
+    const swapIdx = clientSrc.indexOf('changeSudoValidator');
+    const waitIdx = clientSrc.indexOf('waitForUserOperationReceipt');
     expect(swapIdx).toBeGreaterThanOrEqual(0);
     expect(waitIdx).toBeGreaterThan(swapIdx);
-    expect(persistIdx).toBeGreaterThan(waitIdx);
-    expect(enableSrc).toContain('if (!receipt?.success)');
+    expect(clientSrc).toContain('success: receipt?.success === true');
+    const helperIdx = enableSrc.indexOf('swapSudoValidator(kernelClient');
+    const persistIdx = enableSrc.lastIndexOf('updateSmartAccount(');
+    expect(persistIdx).toBeGreaterThan(helperIdx);
+    expect(enableSrc).toContain('if (!success) return { ok: false');
   });
   test('persists a fresh credential BEFORE the swap so an interrupted swap can never orphan it', () => {
     const prePersist = enableSrc.indexOf('if (!rec.passkey) {');
@@ -130,19 +133,16 @@ describe('F. disablePasskey.ts — revert swaps root back to ECDSA, clears state
     expect(disableSrc).toContain('passkeyKernelFromStored');
     expect(disableSrc).toContain('rec.passkeySudo ? undefined : (rec.address as `0x${string}`)');
   });
-  test('swaps sudo BACK to the ECDSA validator via changeSudoValidator (one userOp)', () => {
+  test('swaps sudo BACK to the ECDSA validator via the shared changeSudoValidator helper (one userOp)', () => {
     expect(disableSrc).toContain('ecdsaValidatorForOwner');
-    expect(disableSrc).toContain('changeSudoValidator');
-    expect(disableSrc).toContain('sudoValidator: ecdsaValidator');
+    expect(disableSrc).toContain('swapSudoValidator(kernelClient, ecdsaValidator)');
   });
   test('clears rec.passkey ONLY AFTER the userOp receipt succeeds (fail-closed)', () => {
-    const swapIdx = disableSrc.indexOf('changeSudoValidator');
-    const waitIdx = disableSrc.indexOf('waitForUserOperationReceipt');
+    const swapIdx = disableSrc.indexOf('swapSudoValidator(kernelClient');
     const clearIdx = disableSrc.lastIndexOf('updateSmartAccount(');
     expect(swapIdx).toBeGreaterThanOrEqual(0);
-    expect(waitIdx).toBeGreaterThan(swapIdx);
-    expect(clearIdx).toBeGreaterThan(waitIdx);
-    expect(disableSrc).toContain('if (!receipt?.success)');
+    expect(clearIdx).toBeGreaterThan(swapIdx);
+    expect(disableSrc).toContain('if (!success) return { ok: false');
     expect(disableSrc).toContain('passkey: undefined');
     expect(disableSrc).toContain('passkeyCredId: undefined');
     expect(disableSrc).toContain('passkeySudo: undefined');

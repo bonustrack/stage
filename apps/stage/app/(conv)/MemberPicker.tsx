@@ -7,7 +7,8 @@ import { Icon } from '@stage-labs/kit/react-native/icon';
 import { shortAddress } from '../../modules/messaging';
 import { resolveEnsName } from '@stage-labs/client/api/ens';
 import { capabilities } from '../../lib/capabilities';
-import { usePalette } from '../../lib/theme';
+import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { useSafeAreaInsets } from '../../lib/safeArea';
 import { Avatar } from '../../components/Avatar';
 import { Box, Col, Row } from '../../components/layout';
 import { MemberField } from '../../components/MemberField';
@@ -178,5 +179,19 @@ export function MemberPicker({ state, dark, exclude = [] }: {
         </Col>
       )}
     </>
+  );
+}
+
+export function MemberPickerFooter({ count, busy, verb, onPress }: {
+  count: number; busy: boolean; verb: string; onPress: () => void;
+}): React.ReactElement {
+  const dark = useEffectiveColorScheme() === 'dark';
+  const { bg, border, primary } = usePalette();
+  const insets = useSafeAreaInsets();
+  return (
+    <Box padding={{ top: 16, right: 16, bottom: 16 + insets.bottom, left: 16 }} style={{ borderTopWidth: 1, borderTopColor: border }}>
+      <Button size="lg" fullWidth pill dark={dark} loading={busy} disabled={count === 0} onPress={onPress}
+        tintBg={primary} tintFg={bg} label={count > 0 ? `${verb} (${count})` : verb} />
+    </Box>
   );
 }

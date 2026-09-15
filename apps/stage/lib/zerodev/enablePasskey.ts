@@ -3,7 +3,7 @@ import '../cryptoShim';
 import type { AccountRecord } from '../accounts';
 import { updateSmartAccount } from '../accounts';
 import { smartOwnerSigner } from './keyring';
-import { kernelDeployedOnChain, makePublicClient, makeKernelClient } from './client';
+import { kernelDeployedOnChain, makePublicClient, makeKernelClient, swapSudoValidator } from './client';
 import {
   createEcdsaKernel,
   passkeyValidatorFromStored,
@@ -46,24 +46,9 @@ export async function deployAndSwapToPasskey(
     const passkeyValidator = await passkeyValidatorFromStored(publicClient, stored);
     if (!passkeyValidator) return { ok: false, message: 'Passkey validator unavailable.' };
 
-    const userOpHash = await (
-      kernelClient as unknown as {
-        changeSudoValidator: (a: { sudoValidator: unknown }) => Promise<string>;
-      }
-    ).changeSudoValidator({ sudoValidator: passkeyValidator });
-
-    const receipt = await (
-      kernelClient as unknown as {
-        waitForUserOperationReceipt: (a: {
-          hash: string;
-          timeout?: number;
-        }) => Promise<{ success: boolean; receipt?: { transactionHash?: string } }>;
-      }
-    ).waitForUserOperationReceipt({ hash: userOpHash, timeout: 120_000 });
-    if (!receipt?.success) {
-      return { ok: false, message: 'Passkey swap userOp did not succeed on-chain; passkey not enabled.' };
-    }
-    return { ok: true, txHash: userOpHash };
+    const { hash, success } = await swapSudoValidator(kernelClient, passkeyValidator);
+    if (!success) return { ok: false, message: 'Passkey swap userOp did not succeed on-chain; passkey not enabled.' };
+    return { ok: true, txHash: hash };
   } catch (e) {
     return { ok: false, message: swapFailureMessage(e) };
   }

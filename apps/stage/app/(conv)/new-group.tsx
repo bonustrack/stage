@@ -3,7 +3,6 @@ import { useCallback, useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Button } from '@stage-labs/kit/react-native/button';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { createGroup } from '../../modules/messaging';
@@ -15,7 +14,7 @@ import { GroupImagePicker } from '../../components/GroupImagePicker';
 import { Box, Col, ScreenScroll } from '../../components/layout';
 import { MemberField } from '../../components/MemberField';
 import { Spinner } from '../../components/Spinner';
-import { MemberPicker, useMemberPicker } from './MemberPicker';
+import { MemberPicker, MemberPickerFooter, useMemberPicker } from './MemberPicker';
 
 interface PickedImage { uri: string; mime: string; name: string }
 
@@ -80,7 +79,7 @@ function GroupNameField({ name, setName, head, sub, inputBg, border }: {
 export default function NewGroup(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border, primary, inputBg } = usePalette();
+  const { text: fg, link: head, border, inputBg } = usePalette();
   const sub = fg;
   const rowBg = border;
   const insets = useSafeAreaInsets();
@@ -140,20 +139,7 @@ export default function NewGroup(): React.ReactElement {
         <MemberPicker state={picker} dark={dark}/>
       </ScreenScroll>
 
-      <Box padding={{ top: 16, right: 16, bottom: 16 + insets.bottom, left: 16 }} style={{ borderTopWidth: 1, borderTopColor: border }}>
-        <Button
-          size="lg"
-          fullWidth
-          pill
-          dark={dark}
-          loading={creating}
-          disabled={members.length === 0}
-          onPress={() => { void onCreate(); }}
-          tintBg={primary}
-          tintFg={bg}
-          label={members.length> 0 ? `Create group (${members.length})` : 'Create group'}
-/>
-      </Box>
+      <MemberPickerFooter count={members.length} busy={creating} verb="Create group" onPress={() => { void onCreate(); }} />
     </Col>
   );
 }

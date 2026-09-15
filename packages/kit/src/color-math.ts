@@ -39,17 +39,24 @@ function rgbToHue(r: number, g: number, b: number, max: number, d: number): numb
   return h < 0 ? h + 360 : h;
 }
 
-export function hexToHsv(hex: string): { h: number; s: number; v: number } {
+interface RgbStats { r: number; g: number; b: number; max: number; min: number; d: number }
+
+function hexToRgbStats(hex: string): RgbStats | null {
   const digits = normalizeHexDigits(hex);
-  if (digits == null) return { h: 0, s: 0, v: 0 };
+  if (digits == null) return null;
   const int = parseInt(digits, 16);
   const r = ((int >> 16) & 255) / 255;
   const g = ((int >> 8) & 255) / 255;
   const b = (int & 255) / 255;
   const max = Math.max(r, g, b);
-  const d = max - Math.min(r, g, b);
-  const s = max === 0 ? 0 : d / max;
-  return { h: rgbToHue(r, g, b, max, d), s, v: max };
+  const min = Math.min(r, g, b);
+  return { r, g, b, max, min, d: max - min };
+}
+
+export function hexToHsv(hex: string): { h: number; s: number; v: number } {
+  const c = hexToRgbStats(hex);
+  if (c == null) return { h: 0, s: 0, v: 0 };
+  return { h: rgbToHue(c.r, c.g, c.b, c.max, c.d), s: c.max === 0 ? 0 : c.d / c.max, v: c.max };
 }
 
 const HEX_RE = /^#([0-9a-fA-F]{6})$/;
@@ -78,16 +85,9 @@ export function hslToHex(h: number, s: number, l: number): string {
 }
 
 export function hexToHsl(hex: string): { h: number; s: number; l: number } {
-  const digits = normalizeHexDigits(hex);
-  if (digits == null) return { h: 0, s: 0, l: 0 };
-  const int = parseInt(digits, 16);
-  const r = ((int >> 16) & 255) / 255;
-  const g = ((int >> 8) & 255) / 255;
-  const b = (int & 255) / 255;
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  const d = max - min;
-  const l = (max + min) / 2;
+  const c = hexToRgbStats(hex);
+  if (c == null) return { h: 0, s: 0, l: 0 };
+  const l = (c.max + c.min) / 2;
   const denom = 1 - Math.abs(2 * l - 1);
-  return { h: rgbToHue(r, g, b, max, d), s: denom === 0 ? 0 : d / denom, l };
+  return { h: rgbToHue(c.r, c.g, c.b, c.max, c.d), s: denom === 0 ? 0 : c.d / denom, l };
 }

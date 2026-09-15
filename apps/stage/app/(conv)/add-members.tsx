@@ -1,22 +1,20 @@
 
 import { useCallback, useState } from 'react';
 
-import { Button } from '@stage-labs/kit/react-native/button';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { addGroupMembers } from '../../modules/messaging';
 import { capabilities } from '../../lib/capabilities';
-import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { useEffectiveColorScheme } from '../../lib/theme';
 import { StackHeader } from '../../components/chrome/StackHeader';
-import { Box, Col, ScreenScroll } from '../../components/layout';
+import { Col, ScreenScroll } from '../../components/layout';
 import { useConvMeta } from '../../modules/messaging';
-import { MemberPicker, useMemberPicker } from './MemberPicker';
+import { MemberPicker, MemberPickerFooter, useMemberPicker } from './MemberPicker';
 
 export default function AddMembers(): React.ReactElement {
   const router = useRouter();
   const { convId } = useLocalSearchParams<{ convId: string }>();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { bg, border, primary } = usePalette();
   const insets = useSafeAreaInsets();
 
   const picker = useMemberPicker();
@@ -48,20 +46,7 @@ export default function AddMembers(): React.ReactElement {
         <MemberPicker state={picker} dark={dark} exclude={memberAddrs}/>
       </ScreenScroll>
 
-      <Box padding={{ top: 16, right: 16, bottom: 16 + insets.bottom, left: 16 }} style={{ borderTopWidth: 1, borderTopColor: border }}>
-        <Button
-          size="lg"
-          fullWidth
-          pill
-          dark={dark}
-          loading={submitting}
-          disabled={members.length === 0}
-          onPress={() => { void onSubmit(); }}
-          tintBg={primary}
-          tintFg={bg}
-          label={members.length> 0 ? `Add to group (${members.length})` : 'Add to group'}
-/>
-      </Box>
+      <MemberPickerFooter count={members.length} busy={submitting} verb="Add to group" onPress={() => { void onSubmit(); }} />
     </Col>
   );
 }

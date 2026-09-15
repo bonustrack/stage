@@ -1,9 +1,13 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Col } from './layout';
 import { AppIcon } from './widgets';
-import { useAnchoredMenus } from './AnchoredMenu';
+import { AnchoredMenu, menuPointBelow, useAnchoredMenus } from './AnchoredMenu';
+import type { MenuPoint } from './AnchoredMenu.model';
+import { useEffectiveColorScheme } from '../lib/theme';
 
 const COMPACT_PADDING = { paddingTop: 8, paddingBottom: 8, paddingLeft: 14, paddingRight: 14 };
 const HOVER_ROW = { dataSet: { stagemenurow: '1' } };
@@ -38,5 +42,30 @@ export function MenuRow({ icon, label, onPress, dark, danger, chevron }: {
         {chevron === true && !compact ? <AppIcon name="chevronRight" size={18} color="secondary" /> : null}
       </ListViewItem>
     </MenuHover>
+  );
+}
+
+export interface OverflowMenuItem { id: string; label: string; icon: string; danger?: boolean }
+
+export function OverflowMenu({ color, items, onSelect }: {
+  color: string; items: OverflowMenuItem[]; onSelect: (id: string) => void;
+}): React.ReactElement {
+  const [anchor, setAnchor] = useState<MenuPoint | null>(null);
+  const dark = useEffectiveColorScheme() === 'dark';
+  const close = (): void => { setAnchor(null); };
+  return (
+    <>
+      <Pressable onPress={(e) => { setAnchor(menuPointBelow(e)); }} hitSlop={8}>
+        <Icon name="dotsVertical" size={24} color={color} />
+      </Pressable>
+      <AnchoredMenu visible={anchor !== null} onClose={close} anchor={anchor}>
+        <MenuList dark={dark}>
+          {items.map(item => (
+            <MenuRow key={item.id} icon={item.icon} label={item.label} danger={item.danger} dark={dark}
+              onPress={() => { close(); onSelect(item.id); }} />
+          ))}
+        </MenuList>
+      </AnchoredMenu>
+    </>
   );
 }
