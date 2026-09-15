@@ -11,8 +11,7 @@ describe('stageConvIdOf', () => {
     expect(stageConvIdOf(`stage://xmtp/${CONV}`)).toBe(CONV);
   });
 
-  test('matches https permalinks on both hosts, path- and hash-routed', () => {
-    expect(stageConvIdOf(`https://metro.box/xmtp/${CONV}`)).toBe(CONV);
+  test('matches https permalinks, path- and hash-routed', () => {
     expect(stageConvIdOf(`https://stage.box/xmtp/${CONV}`)).toBe(CONV);
     expect(stageConvIdOf(`https://stage.box/#/xmtp/${CONV}?m=1`)).toBe(CONV);
   });
@@ -50,10 +49,8 @@ describe('stageDmPeerOf', () => {
     expect(stageDmPeerOf(`stage://xmtp/user/${ADDR}`)).toBe(ADDR);
   });
 
-  test('matches https user links on both hosts (xmtp/user and bare user)', () => {
-    expect(stageDmPeerOf(`https://metro.box/xmtp/user/${ADDR}`)).toBe(ADDR);
+  test('matches https user links (xmtp/user and bare user)', () => {
     expect(stageDmPeerOf(`https://stage.box/user/${ADDR}`)).toBe(ADDR);
-    expect(stageDmPeerOf(`https://metro.box/#/user/${ADDR}`)).toBe(ADDR);
   });
 
   test('matches the bare (no xmtp, no user segment) address form', () => {

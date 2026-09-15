@@ -19,9 +19,9 @@ describe('previewLinkOf', () => {
   });
 
   test('https preview-launcher form with percent-encoded inner url', () => {
-    const r = previewLinkOf(`https://metro.box/preview-launcher.html?u=${ENCODED}`);
+    const r = previewLinkOf(`https://stage.box/preview-launcher.html?u=${ENCODED}`);
     expect(r?.groupId).toBe(GROUP);
-    expect(r?.url).toBe(`https://metro.box/preview-launcher.html?u=${ENCODED}`);
+    expect(r?.url).toBe(`https://stage.box/preview-launcher.html?u=${ENCODED}`);
   });
 
   test('https preview-launcher on stage.box host', () => {

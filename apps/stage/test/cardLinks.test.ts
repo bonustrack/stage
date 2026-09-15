@@ -62,10 +62,9 @@ describe('cardLinksOf', () => {
     expect(cards.map(c => c.kind)).toEqual(['channel', 'channel']);
   });
 
-  test('https user links on the current and legacy hosts render a dm card', () => {
+  test('https user links render a dm card', () => {
     const addr = '0x42e167e6bff0a3a701d8fa14f96a0f840eb939df';
     expect(cardLinksOf(`https://stage.box/user/${addr}`)[0]).toMatchObject({ kind: 'dm' });
-    expect(cardLinksOf(`https://metro.box/user/${addr}`)[0]).toMatchObject({ kind: 'dm' });
   });
 
   test('detects a stage.box user link surrounded by text', () => {
@@ -88,7 +87,7 @@ describe('cardLinksOf', () => {
   test('detects the https preview-launcher deep link', () => {
     const text = [
       'Test 2 - mixed: deployment + channel + GitHub:',
-      'https://metro.box/preview-launcher.html?u=https%3A%2F%2Fu.expo.dev%2F1707f2db-c2b8-4c91-9341-27b1d57d355f%2Fgroup%2F521df401-53f1-4413-b95a-c682dc054134',
+      'https://stage.box/preview-launcher.html?u=https%3A%2F%2Fu.expo.dev%2F1707f2db-c2b8-4c91-9341-27b1d57d355f%2Fgroup%2F521df401-53f1-4413-b95a-c682dc054134',
       'metro://xmtp/47bf58a8f56cad829b2263797a7e25e4',
       'https://github.com/bonustrack/stage/pull/505',
     ].join('\n');

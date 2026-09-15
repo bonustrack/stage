@@ -31,7 +31,7 @@ export const throwingCodec: DecodedMessageView = {
   id: 'msg-unknown-1',
   senderInboxId: 'inbox-carol',
   sentNs: NS,
-  contentTypeId: 'metro.box/somethingNew:9.9',
+  contentTypeId: 'example.com/somethingNew:9.9',
   content: () => { throw new Error('codec not registered'); },
   fallback: 'fallback text',
 };

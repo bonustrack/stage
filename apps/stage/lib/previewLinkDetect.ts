@@ -7,7 +7,7 @@ export interface PreviewLinkRef {
 }
 
 const RE =
-  /(?:(?:metro|stage):\/\/expo-development-client\/\?url=|https?:\/\/(?:metro|stage)\.box\/preview-launcher\.html\?u=)(\S+)/i;
+  /(?:(?:metro|stage):\/\/expo-development-client\/\?url=|https?:\/\/stage\.box\/preview-launcher\.html\?u=)(\S+)/i;
 
 export function previewLinkOf(text?: string | null): PreviewLinkRef | null {
   if (!text) return null;

@@ -10,7 +10,7 @@ export function lineOfDmPeer(address: string): string {
 
 const LINK_PREFIX =
   '(?:(?:metro|stage):\\/\\/' +
-  '|https?:\\/\\/(?:metro|stage)\\.box\\/(?:#\\/)?)';
+  '|https?:\\/\\/stage\\.box\\/(?:#\\/)?)';
 
 const DM_PEER_RE = new RegExp(
   LINK_PREFIX + '(?:xmtp\\/)?(?:user\\/)?(0x[a-fA-F0-9]{40})(?![a-fA-F0-9])',
