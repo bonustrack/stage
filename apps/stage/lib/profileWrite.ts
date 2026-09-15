@@ -10,7 +10,8 @@ import { uploadAvatar } from './profile';
 import { sendCall } from './tx';
 import { kernelClientForRecord } from './zerodev/kernelForRecord';
 
-const STAMP_CLEAR_URL = 'https://stamp.fyi/clear/address/';
+const STAMP_CLEAR_URL = 'https://stamp.fyi/clear/';
+const baseClient = makeProfileClients(broviderRpc).base;
 
 export interface ProfileChanges {
   displayName?: string;
@@ -18,7 +19,7 @@ export interface ProfileChanges {
   image?: { uri: string; mime: string; name?: string };
 }
 
-export async function sendOnBase(call: ContractCall): Promise<Hex> {
+async function submitOnBase(call: ContractCall): Promise<Hex> {
   const active = await getActiveAccount();
   if (!active) throw new Error('No active account');
   if (active.type === 'smart') {
@@ -28,8 +29,18 @@ export async function sendOnBase(call: ContractCall): Promise<Hex> {
   return sendCall({ to: call.to, data: call.data, chainId: base.id });
 }
 
-export function clearStampLookup(address: string): void {
-  fetch(`${STAMP_CLEAR_URL}${address.toLowerCase()}`).catch(() => undefined);
+export async function sendOnBase(call: ContractCall): Promise<Hex> {
+  const hash = await submitOnBase(call);
+  const receipt = await baseClient.waitForTransactionReceipt({ hash });
+  if (receipt.status !== 'success') throw new Error('The transaction reverted.');
+  return hash;
+}
+
+export function refreshProfileCaches(address: string, avatarChanged = false): void {
+  const id = address.toLowerCase();
+  fetch(`${STAMP_CLEAR_URL}address/${id}`).catch(() => undefined);
+  if (avatarChanged) fetch(`${STAMP_CLEAR_URL}avatar/eth:${id}`).catch(() => undefined);
+  invalidatePeerProfile(address);
 }
 
 async function recordsFor(changes: ProfileChanges): Promise<Record<string, string>> {
@@ -45,7 +56,6 @@ export async function saveBasenameProfile(address: string, name: string, changes
   if (Object.keys(records).length === 0) return null;
   const resolver = await resolverForNode(makeProfileClients(broviderRpc).base, namehash(normalize(name)));
   const hash = await sendOnBase(encodeSetTextRecords(name, records, resolver ?? undefined));
-  invalidatePeerProfile(address);
-  clearStampLookup(address);
+  refreshProfileCaches(address, changes.image !== undefined);
   return hash;
 }

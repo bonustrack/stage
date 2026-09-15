@@ -91,6 +91,17 @@ describe('check and status', () => {
     expect((await handleNames(new Request('https://proxy.stage.box/names/status'), d)).status).toBe(400);
   });
 
+  test('resolve returns the onchain owner, the claimed address, or null', async () => {
+    const store = memoryStore(); const d = deps(fakeChain({ taken: ['ownedname'] }), store);
+    expect(await (await handleNames(new Request('https://proxy.stage.box/names/resolve?label=ownedname'), d)).json())
+      .toEqual({ address: '0x00000000000000000000000000000000000000b2' });
+    await handleNames(claimRequest(goodClaim), d);
+    expect(await (await handleNames(new Request('https://proxy.stage.box/names/resolve?label=fabien'), d)).json())
+      .toEqual({ address: ALICE.toLowerCase() });
+    expect(await (await handleNames(new Request('https://proxy.stage.box/names/resolve?label=nobody'), d)).json()).toEqual({ address: null });
+    expect((await handleNames(new Request('https://proxy.stage.box/names/resolve?label=ab'), d)).status).toBe(400);
+  });
+
   test('answers preflight', async () => {
     const res = await handleNames(new Request('https://proxy.stage.box/names/claim', { method: 'OPTIONS' }), deps(fakeChain(), memoryStore()));
     expect(res.status).toBe(204);

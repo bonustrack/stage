@@ -90,10 +90,15 @@ export function makeNamesChain(operatorKey: Hex, rpcUrl: string): NamesChain {
           args: [parentNode, keccak256(stringToBytes(label)), account.address, parentResolver, 0n],
         }));
       }
-      const resolver = await publicClient.readContract({ ...registry, functionName: 'resolver', args: [node] });
+      const resolver = current === ZERO
+        ? parentResolver
+        : await publicClient.readContract({ ...registry, functionName: 'resolver', args: [node] });
+      if (resolver === ZERO) throw new Error('name has no resolver');
       const recorded = await publicClient.readContract({ address: resolver, abi: RESOLVER_ABI, functionName: 'addr', args: [node] }).catch(() => ZERO);
       if (recorded.toLowerCase() !== owner.toLowerCase()) {
         await write(() => wallet.writeContract({ address: resolver, abi: RESOLVER_ABI, functionName: 'setAddr', args: [node, owner] }));
+        const check = await publicClient.readContract({ address: resolver, abi: RESOLVER_ABI, functionName: 'addr', args: [node] }).catch(() => ZERO);
+        if (check.toLowerCase() !== owner.toLowerCase()) throw new Error('forward record did not persist');
       }
       return write(() => wallet.writeContract({ ...registry, functionName: 'setOwner', args: [node, owner] }));
     },

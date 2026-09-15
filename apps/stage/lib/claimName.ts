@@ -3,8 +3,7 @@ import { claimMessage, stageNameOf } from '@stage-labs/client/identity/stageName
 import { encodeSetPrimaryBasename } from '@stage-labs/client/identity/basenameWrite';
 import { getActiveAccount, getActiveViemAccount } from './accounts';
 import { linkProxyBase } from './historyServer';
-import { invalidatePeerProfile } from './peerProfiles';
-import { clearStampLookup, sendOnBase } from './profileWrite';
+import { refreshProfileCaches, sendOnBase } from './profileWrite';
 import { kernelClientForRecord } from './zerodev/kernelForRecord';
 
 export interface NameCheck { valid: boolean; available: boolean; reason?: string }
@@ -53,7 +52,6 @@ export async function claimStageName(label: string): Promise<string> {
 
 export async function setPrimaryStageName(address: string, label: string): Promise<Hex> {
   const hash = await sendOnBase(encodeSetPrimaryBasename(stageNameOf(label)));
-  invalidatePeerProfile(address);
-  clearStampLookup(address);
+  refreshProfileCaches(address);
   return hash;
 }

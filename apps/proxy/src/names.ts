@@ -39,6 +39,14 @@ async function status(url: URL, deps: NamesDeps): Promise<Response> {
   return reply({ name: label ? stageNameOf(label) : null });
 }
 
+async function resolve(url: URL, deps: NamesDeps): Promise<Response> {
+  const label = (url.searchParams.get('label') ?? '').toLowerCase();
+  if (validateStageLabel(label)) return reply({ error: 'invalid label' }, 400);
+  const owner = await deps.chain.subnameOwner(label);
+  const address = owner ?? (await deps.store.get(labelKey(label))) ?? null;
+  return reply({ address: address ? address.toLowerCase() : null });
+}
+
 async function check(url: URL, deps: NamesDeps): Promise<Response> {
   const label = (url.searchParams.get('label') ?? '').toLowerCase();
   const problem = validateStageLabel(label);
@@ -92,6 +100,7 @@ async function route(request: Request, deps: NamesDeps): Promise<Response> {
   const path = url.pathname.slice(NAMES_PREFIX.length);
   if (path === 'status' && request.method === 'GET') return status(url, deps);
   if (path === 'check' && request.method === 'GET') return check(url, deps);
+  if (path === 'resolve' && request.method === 'GET') return resolve(url, deps);
   if (path === 'claim' && request.method === 'POST') return claim(request, deps);
   return reply({ error: 'not found' }, 404);
 }

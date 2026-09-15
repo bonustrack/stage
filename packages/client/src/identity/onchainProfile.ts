@@ -90,6 +90,20 @@ export function makeProfileClients(rpcUrlFor: (chainId: number) => string): Prof
 
 const ZERO_ADDRESS: Hex = '0x0000000000000000000000000000000000000000';
 
+export async function nodeOwner(client: PublicClient, node: Hex): Promise<Hex | null> {
+  const owner: Hex = await client.readContract({
+    address: BASENAME_REGISTRY, abi: REGISTRY_ABI, functionName: 'owner', args: [node],
+  }).catch(() => ZERO_ADDRESS);
+  return owner === ZERO_ADDRESS ? null : owner;
+}
+
+async function nameBelongsTo(client: PublicClient, node: Hex, forward: string, address: string): Promise<boolean> {
+  const wanted = address.toLowerCase();
+  if (forward.toLowerCase() === wanted) return true;
+  if (forward !== ZERO_ADDRESS) return false;
+  return (await nodeOwner(client, node))?.toLowerCase() === wanted;
+}
+
 export async function resolverForNode(client: PublicClient, node: Hex): Promise<Hex | null> {
   const resolver: Hex = await client.readContract({
     address: BASENAME_REGISTRY, abi: REGISTRY_ABI, functionName: 'resolver', args: [node],
@@ -115,7 +129,7 @@ export async function resolveBasenameProfile(client: PublicClient, address: stri
     text(PROFILE_TEXT_KEYS.displayName),
     text(PROFILE_TEXT_KEYS.description),
   ]);
-  if (forward.toLowerCase() !== address.toLowerCase()) return null;
+  if (!(await nameBelongsTo(client, node, forward, address))) return null;
   return {
     name, displayName: nonEmpty(displayName), description: nonEmpty(description), avatar: usableAvatarUri(avatar), source: 'basename',
   };
