@@ -128,7 +128,7 @@ jobs:
       # the materialised node_modules trees (root + every workspace). bun.lock is
       # the exact-dependency key, so a hit means `bun install --frozen-lockfile`
       # below is a near-instant verify instead of a cold multi-minute download +
-      # link of the RN / Expo / Railgun dependency graph. restore-keys lets a
+      # link of the RN / Expo dependency graph. restore-keys lets a
       # stale-but-close cache still seed most packages when the lock changes.
       - name: Cache bun dependencies
         uses: actions/cache@v4

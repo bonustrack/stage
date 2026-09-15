@@ -67,5 +67,4 @@ export interface AssetRow {
   priceUsd: number | null;
   change24h: number | null;
   logoUrl: string;
-  isPrivate?: boolean;
 }

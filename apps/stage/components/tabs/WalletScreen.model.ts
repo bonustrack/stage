@@ -1,17 +1,11 @@
 import type { TabsOptionView } from '@stage-labs/kit/react-native/tabs';
 
-export interface WalletScreenFeatures {
-  privateTab?: boolean;
-}
-
-export function walletTabOptions(features: WalletScreenFeatures = {}): TabsOptionView[] {
-  const options: TabsOptionView[] = [
+export function walletTabOptions(): TabsOptionView[] {
+  return [
     { value: 'tokens', label: 'Tokens' },
     { value: 'nfts', label: 'NFTs' },
     { value: 'activity', label: 'Activity' },
   ];
-  if (features.privateTab === true) options.push({ value: 'private', label: 'Railgun' });
-  return options;
 }
 
 export interface WalletTotalRow {
@@ -52,7 +46,6 @@ export interface TokenRowAsset {
   priceUsd: number | null;
   change24h: number | null;
   logoUrl: string;
-  isPrivate?: boolean;
 }
 
 export interface TokenRowFormat {
@@ -68,7 +61,6 @@ export interface TokenRowModelParams {
   balance: string;
   change24h: string;
   logoUri: string;
-  isPrivate?: boolean;
 }
 
 export function tokenRowModel(r: TokenRowAsset, f: TokenRowFormat): TokenRowModelParams {
@@ -84,6 +76,5 @@ export function tokenRowModel(r: TokenRowAsset, f: TokenRowFormat): TokenRowMode
     balance: valueUsd === null ? '—' : f.fmtUsd(valueUsd),
     change24h: changeText,
     logoUri: r.logoUrl,
-    isPrivate: r.isPrivate,
   };
 }

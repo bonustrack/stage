@@ -3,9 +3,6 @@ import { buildSortedTokenRows as buildSorted, tokenRowId } from '@stage-labs/cli
 
 export { tokenRowId };
 
-export function buildSortedTokenRows(
-  rows: AssetRow[],
-  privateRows: AssetRow[],
-): { r: AssetRow; id: string }[] {
-  return buildSorted([...rows, ...privateRows]);
+export function buildSortedTokenRows(rows: AssetRow[]): { r: AssetRow; id: string }[] {
+  return buildSorted(rows);
 }

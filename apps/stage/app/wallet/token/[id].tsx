@@ -5,7 +5,7 @@ import { Title } from '@stage-labs/kit/react-native/title';
 import { tokenDetailViewModel } from '@stage-labs/client/wallet/tokenDetail';
 import { Box, Col, Row } from '../../../components/layout';
 import { WalletHeader } from '../../../components/wallet/WalletHeader';
-import { WalletActionButton, AppIcon } from '../../../components/widgets';
+import { WalletActionButton } from '../../../components/widgets';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePalette } from '../../../lib/theme';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, type AssetRow } from '../../../components/tabs/WalletScreen.assets';
@@ -26,18 +26,9 @@ function parseRow(raw: string | undefined): AssetRow | null {
 
 interface DetailAction { label: string; icon: string; action: string }
 
-function detailActions(isPrivate: boolean | undefined): DetailAction[] {
-  if (isPrivate === true) {
-    return [
-      { label: 'Send', icon: 'send', action: 'send-private' },
-      { label: 'Unshield', icon: 'eye', action: 'unshield' },
-    ];
-  }
-  return [
-    { label: 'Send', icon: 'send', action: 'send' },
-    { label: 'Shield', icon: 'eyeOff', action: 'shield' },
-  ];
-}
+const DETAIL_ACTIONS: DetailAction[] = [
+  { label: 'Send', icon: 'send', action: 'send' },
+];
 
 function TokenDetailAvatar({ logoSrc, networkLogo, border, bg }: {
   logoSrc: string; networkLogo: string; border: string; bg: string;
@@ -58,22 +49,14 @@ function TokenDetailAvatar({ logoSrc, networkLogo, border, bg }: {
   );
 }
 
-function TokenDetailBody({ r, symbol, sub, bg, border }: {
-  r: AssetRow; symbol: 'ETH' | 'USDC' | undefined; sub: string; bg: string; border: string;
+function TokenDetailBody({ r, bg, border }: {
+  r: AssetRow; bg: string; border: string;
 }): React.ReactElement {
   const router = useRouter();
   const vm = tokenDetailViewModel(r, { networkLabels: NETWORK_LABEL });
   const onAction = (action: string): void => {
-    const sym = symbol ?? r.symbol;
-    const chainId = String(r.chainId);
-    if (action === 'send-private') {
-      router.push({ pathname: '/wallet/send', params: { symbol: sym, chainId, private: '1' } });
-    } else if (action === 'unshield') {
-      router.push({ pathname: '/wallet/unshield', params: { symbol: sym, chainId } });
-    } else if (action === 'shield') {
-      router.push({ pathname: '/wallet/shield', params: { symbol: sym, chainId } });
-    } else if (action === 'send') {
-      router.push({ pathname: '/wallet/send', params: { symbol: r.symbol, chainId } });
+    if (action === 'send') {
+      router.push({ pathname: '/wallet/send', params: { symbol: r.symbol, chainId: String(r.chainId) } });
     }
   };
   return (
@@ -86,7 +69,6 @@ function TokenDetailBody({ r, symbol, sub, bg, border }: {
           bg={bg}
         />
         <Row align="center" gap={6} margin={{ top: 10 }}>
-          {r.isPrivate === true ? <AppIcon name="eyeOff" color={sub} size={20} /> : null}
           <Title size="lg" color="link">{vm.name}</Title>
         </Row>
         <Box radius="full" padding={{ x: 10, y: 3 }} border={{
@@ -103,7 +85,7 @@ function TokenDetailBody({ r, symbol, sub, bg, border }: {
         <Text value={vm.usdLabel} size="md" color="secondary" />
         <Box padding={{ top: 18 }}>
           <Row gap={36} justify="start">
-            {detailActions(r.isPrivate).map((a) => (
+            {DETAIL_ACTIONS.map((a) => (
               <WalletActionButton
                 key={a.action}
                 label={a.label}
@@ -121,7 +103,7 @@ function TokenDetailBody({ r, symbol, sub, bg, border }: {
 
 export default function TokenDetail(): React.ReactElement {
   const params = useLocalSearchParams<{ id?: string; row?: string }>();
-  const { text: sub, bg, border } = usePalette();
+  const { bg, border } = usePalette();
 
   const r = parseRow(params.row);
 
@@ -136,13 +118,10 @@ export default function TokenDetail(): React.ReactElement {
     );
   }
 
-  const symbol: 'ETH' | 'USDC' | undefined =
-    r.symbol === 'ETH' ? 'ETH' : r.symbol === 'USDC' ? 'USDC' : undefined;
-
   return (
     <Col surface="surface" flex={1}>
       <WalletHeader title={r.name} backTone="link" truncate padBottom={8} />
-      <TokenDetailBody r={r} symbol={symbol} sub={sub} bg={bg} border={border} />
+      <TokenDetailBody r={r} bg={bg} border={border} />
     </Col>
   );
 }

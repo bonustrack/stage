@@ -47,7 +47,7 @@ export function priceKeyId(k: PriceKey): string | null {
 }
 
 export function tokenRowId(r: AssetRow): string {
-  return `${r.isPrivate ? 'priv' : 'pub'}:${r.chainId}:${r.symbol}`;
+  return `${r.chainId}:${r.symbol}`;
 }
 
 export function buildSortedTokenRows(rows: AssetRow[]): { r: AssetRow; id: string }[] {

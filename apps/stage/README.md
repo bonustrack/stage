@@ -4,9 +4,9 @@
 
 ## Overview
 
-`stage` is the universal Stage app, built with Expo and React Native, serving Android, iOS, and the web (via react-native-web) from one codebase. It is an XMTP messenger with multi-account support, Snapshot profiles, group channels, search, and an onchain wallet (assets, balances, and Railgun shielded transfers; the web wallet is public-only by design). Per-platform code lives solely in Metro platform extensions (`x.ts` native / `x.web.ts` web) under `platform/` and `lib/`.
+`stage` is the universal Stage app, built with Expo and React Native, serving Android, iOS, and the web (via react-native-web) from one codebase. It is an XMTP messenger with multi-account support, Snapshot profiles, group channels, search, and an onchain wallet (assets, balances, transfers). Per-platform code lives solely in Metro platform extensions (`x.ts` native / `x.web.ts` web) under `platform/` and `lib/`.
 
-All platform-neutral logic comes from [`@stage-labs/client`](../../packages/client) and the visual language from [`@stage-labs/kit`](../../packages/kit). Screens and chat message content are direct kit JSX fed by pure `.model.ts` files colocated with their components. The Railgun engine runs on-device through a `nodejs-mobile` bridge (mobile only).
+All platform-neutral logic comes from [`@stage-labs/client`](../../packages/client) and the visual language from [`@stage-labs/kit`](../../packages/kit). Screens and chat message content are direct kit JSX fed by pure `.model.ts` files colocated with their components.
 
 ## Stack
 
@@ -42,7 +42,7 @@ platform/     # per-platform seams (x.ts native / x.web.ts web overrides)
 lib/          # accounts, caches, XMTP glue (incl. xmtp.*.web adapters), wallet helpers
 modules/      # local Expo native modules (stage-pill)
 plugins/      # config plugins
-scripts/      # build helpers (e.g. nodejs-mobile project install)
+scripts/      # build helpers (XMTP wasm copy)
 assets/       # fonts + images
 app.config.js # Expo app config
 eas.json      # EAS build profiles

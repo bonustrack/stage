@@ -7,11 +7,10 @@ import { capabilities } from '../../lib/capabilities';
 import { StackHeader } from '../chrome/StackHeader';
 import { SettingsList, SettingsNavRow } from './rows';
 
-type Href = '/settings/kit' | '/settings/components' | '/settings/developer';
+type Href = '/settings/kit' | '/settings/components';
 const ROWS: { href: Href; label: string; icon: HeroIconName }[] = [
   { href: '/settings/kit', label: 'Kit', icon: 'colorSwatch' },
   { href: '/settings/components', label: 'Components', icon: 'viewGrid' },
-  { href: '/settings/developer', label: 'Developer', icon: 'beaker' },
 ];
 
 export function ExperimentalSettings(): React.ReactElement {

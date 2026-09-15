@@ -195,7 +195,6 @@ const config = {
     './plugins/withStagePill',
     './plugins/withGradleMemory',
     './plugins/withBouncyCastleDedup',
-    './plugins/withNodejsMobile',
     [
       'react-native-audio-api',
       {

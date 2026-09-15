@@ -1,6 +1,6 @@
 # Stage — monorepo guide for Claude
 
-Stage is an XMTP messenger with multi-account support, Snapshot profiles, group channels, and an onchain wallet (assets, balances, Railgun shielded transfers). The product bet is a privacy super app where **agents are contacts**.
+Stage is an XMTP messenger with multi-account support, Snapshot profiles, group channels, and an onchain wallet (assets, balances, transfers). The product bet is a privacy super app where **agents are contacts**.
 
 It ships **one universal Expo app** (`apps/stage`) serving **android, ios, web and desktop** from the same React Native codebase (web via react-native-web), built on a framework-agnostic TS core (`packages/client`), a design-system kit (`packages/kit`), and a Cloudflare Worker (`apps/proxy`). Tooling: **Bun 1.3.9** (exact) + Turbo, **Node >=22**.
 
@@ -8,8 +8,8 @@ It ships **one universal Expo app** (`apps/stage`) serving **android, ios, web a
 
 | Path | Package | What it is |
 |---|---|---|
-| `apps/stage` | `stage` | THE app: Expo + React Native 0.81 (new arch), expo-router, all three platforms. Classic RN structure: `app/` (file routes), `components/` (kit-JSX screens + colocated `*.model.ts` pure models), `lib/` (state + SDK orchestration), `platform/` (the only per-platform code, via Metro `.native.ts`/`.web.ts` resolution), `test/` (pure-model tests). Runs Railgun on-device via embedded Node (mobile only). |
-| `packages/client` | `@stage-labs/client` | Framework- AND runtime-agnostic TS core. XMTP content/codecs/cores, accounts/zerodev, Railgun wire protocol, wallet, read-only APIs, profile/identity. No React/RN imports, no build step. |
+| `apps/stage` | `stage` | THE app: Expo + React Native 0.81 (new arch), expo-router, all three platforms. Classic RN structure: `app/` (file routes), `components/` (kit-JSX screens + colocated `*.model.ts` pure models), `lib/` (state + SDK orchestration), `platform/` (the only per-platform code, via Metro `.native.ts`/`.web.ts` resolution), `test/` (pure-model tests). |
+| `packages/client` | `@stage-labs/client` | Framework- AND runtime-agnostic TS core. XMTP content/codecs/cores, accounts/zerodev, wallet, read-only APIs, profile/identity. No React/RN imports, no build step. |
 | `packages/kit` | `@stage-labs/kit` | Design system: tokens, theme, icons, layout, and ONE React Native component family (renders on web via RNW). Plain component library — no renderer, no build step. |
 | `packages/config` | `@stage-labs/config` | Publishable ESLint/TS/knip/madge presets + the `stage` CLI (`bin/stage.js`) driven by root `stage.config.js`. |
 | `apps/proxy` | — | Cloudflare Worker: link-preview / image-resize / x402 proxy + the bundler.stage.box per-branch manifest proxy. Routes on proxy.stage.box and bundler.stage.box only. |
@@ -45,7 +45,7 @@ Per-app:
 ## Architecture
 
 ### Universal app (`apps/stage`)
-- **One codebase, three platforms.** Web is react-native-web (`app.config.js` web `output: 'single'` — static SSG would execute native imports at build time). Platform divergence lives ONLY in Metro platform extensions: `x.ts` (native/default, typechecked) + `x.web.ts` (web override, identical export surface). A small `Platform.OS === 'web'` check is fine for feature gates (e.g. the Railgun tab is hidden — **the web wallet is public-only by design**).
+- **One codebase, three platforms.** Web is react-native-web (`app.config.js` web `output: 'single'` — static SSG would execute native imports at build time). Platform divergence lives ONLY in Metro platform extensions: `x.ts` (native/default, typechecked) + `x.web.ts` (web override, identical export surface). A small `Platform.OS === 'web'` check is fine for feature gates.
 - **Platform seams:** `platform/storage(.web).ts` (SecureStorage/AppStorage contracts in `platform/types.ts`), and the `lib/xmtp.*.web.ts` family implementing the native modules' surfaces against `@xmtp/browser-sdk` (client/codecs/dbkey/state/types/conv/identity/groups/envelope/attachments/resync/stream/recover). Web variants cross-import each other with explicit `./xmtp.X.web` specifiers. Native-only packages are stubbed for web in `metro.config.js` (`metro.shims/web/native-stub.js`).
 - **Web scroll architecture — the document scrolls, nothing else does.** `public/index.html` gives body `min-height: 100vh; overflow-y: scroll` (native window scrollbar, always visible); every screen renders in normal flow. Two seams make that possible with the SAME screens as native: `lib/navigation/rootStack(.web).tsx` + `tabs(.web).tsx` (react-navigation stack/tabs natively; on web a flow navigator that renders only the focused route, no absolute-fill cards) and the scroll hosts in `components/layout/` — `ScreenScroll` (ScrollView natively, a plain View on web) and `VirtualList` (FlatList natively; on web TanStack Virtual with `scroll="window"` by default or `scroll="self"` inside the fixed channels pane, `anchor="end"` for the chat feed). Chrome floats over the flow via `webChrome.ts`: headers are `STICKY_TOP`/`STICKY_UNDER_CHROME`, the rail, sidebar, tab bar, band, conversation header and composer are `pinned*` (`position: fixed` on web, `absolute` natively), overlays use `viewportFill()`. The root `WebContentFrame` pads the document by `--stage-pane-left` (`paneWidth.ts`) when the split sidebar is showing; `useDocumentScrollRestore` restores `window.scrollY` per route. Never add `overflow: scroll` containers or `100vh`/`100vw` sizing to a screen; put content in flow and let the page grow.
 - **Env vars must be read as literal `process.env.EXPO_PUBLIC_X` member expressions** (see `lib/zerodev/env.ts` RAW_ENV pattern) — dynamic `process.env[name]` defeats the Expo inliner on web.
@@ -55,13 +55,12 @@ Per-app:
 
 ### Shared core (`packages/client`)
 - No build step; subpath exports + `src/index.ts` barrel are the public API (`zerodev/*` deliberately not in the barrel). Pure functions + plain interfaces, no classes/default exports. Boundary validation via `validate.ts` (zod). Always decode XMTP content WITH a zod schema (`decodeJsonContent(bytes, schema)`).
-- Domains: `xmtp` (codecs, humanize, builders, line routing, and the orchestration cores: `channelsFilter`, `channelsCache` incl. `applyInbound`, `summarizeRow`, `clientErrors`, `envelope`, `groups`), `accounts`+`zerodev`, `railgun` (host-injected dispatch — method-name strings must stay in sync with the host bridge), `wallet` (incl. `txSimulate`, `txDecode`, `prices`), `api` (incl. `github`), `profile/identity/stamp/embed`, `x402`.
+- Domains: `xmtp` (codecs, humanize, builders, line routing, and the orchestration cores: `channelsFilter`, `channelsCache` incl. `applyInbound`, `summarizeRow`, `clientErrors`, `envelope`, `groups`), `accounts`+`zerodev`, `wallet` (incl. `txSimulate`, `txDecode`, `prices`), `api` (incl. `github`), `profile/identity/stamp/embed`, `x402`.
 
 ### Kit (`packages/kit`)
 - **Kit is the React Native equivalent of [OpenAI ChatKit](https://openai.github.io/chatkit-js/)** — ChatKit is the north star for components, props, theme options, and every colour/typography/radius/density variable. Mirror ChatKit's names and literal unions exactly; the DOM-vs-RN platform difference is the only thing that should diverge. Never invent a component or a token value: if something is missing, match what ChatKit calls it, and never write a raw literal where a token exists (`FONT_SIZE.*`, `fontName.*`, `semanticColors`, `RADIUS_SCALE`). The full `ThemeOption` surface is 1:1 (`colorScheme`/`radius`/`density`/`typography.baseSize`/`color.surface`/`color.accent {primary,level}`/`color.grayscale {hue,tint,shade}`) and every ChatKit widget node exists. OpenAI does not publish ChatKit's colour maths, so `theme-derive.ts` implements the documented semantics itself — defaults are lossless and guarded by tests. See `packages/kit/README.md` for the parity table.
 - Plain design-system component library: ONE component family (`src/react-native/*`, renders on web via RNW) + shared style cores (`text.styles.ts`, `button.styles.ts`, `control.styles.ts`, `layout.ts` surfaces, `badge.ts`, `icons.ts`, `tokens.ts` incl. the `Scheme`/`Color` helpers). Consumed via subpath exports (`@stage-labs/kit/tokens`, `@stage-labs/kit/react-native/button`, ...).
 - Theming: preference contract (`theme.ts`), runtime context (`react-native/theme-context.tsx`), custom-palette deriver (`theme-derive.ts`, LEGACY short-circuit guarded by tests).
-- On mobile the Railgun host is embedded Node (`apps/stage/nodejs-assets/nodejs-project/`).
 
 ## Conventions
 
@@ -79,8 +78,7 @@ Per-app:
 ## Gotchas / footguns
 
 - **Netlify base must point at `apps/stage`** (set in Netlify UI); `netlify.toml` builds `bun run build:web` and publishes `dist`. Headers: COOP same-origin + **COEP credentialless** (deliberate — keeps SharedArrayBuffer for XMTP wasm while cross-origin avatars/IPFS load). Don't change to require-corp.
-- **`patches/nodejs-mobile-react-native@18.20.4.patch`** is required for the mobile build (STL/AGP8/BigInt fixes). EAS node pinned 18.20.4. Native module changes need a fresh dev-client build; a JS reload is not enough.
-- Embedded Node host install via `apps/stage/scripts/install-nodejs-project.js`; `metro.config.js` blockLists `nodejs-assets`.
+- Native module changes (e.g. `modules/stage-pill`) need a fresh dev-client build; a JS reload is not enough.
 - **Mobile releases are version-driven** (the `version` in `apps/stage/app.config.js` triggers `release-mobile.yml`: EAS Build + EAS Submit for Play and TestFlight, see `docs/mobile-release.md`). EAS free tier has a monthly build cap. Every push to every branch publishes a JS-OTA dev-client preview (`pr-preview.yml`; the "Preview" commit status carries the deep link).
 - **`served-main`** must stay content-identical to `main` (drift allowlist deliberately empty).
 - `@stage-labs/config` publishes via `publish-config.yml` under the `beta` dist-tag; bump its version first. Its Vue lint preset remains for external consumers behind optional peers (`eslint-plugin-vue`/`vue-eslint-parser` are knip-ignored).
@@ -94,7 +92,7 @@ Per-app:
 |---|---|
 | `stage.config.js` + `packages/config/bin/stage.js` | THE central tooling config + CLI |
 | `apps/stage/app.config.js` + `eas.json` | Expo config (variants, web output single, plugins/permissions) + EAS profiles |
-| `apps/stage/metro.config.js` | node-core polyfills, web native-stubs, monorepo resolution, nodejs-assets blockList |
+| `apps/stage/metro.config.js` | node-core polyfills, web native-stubs, monorepo resolution, desktop-shell blockList |
 | `apps/stage/platform/*` | the platform seams (storage contracts + impls) |
 | `apps/stage/lib/xmtp.*.web.ts` | the web XMTP adapter family |
 | `apps/stage/components/*` | kit-JSX screens/UI + colocated `*.model.ts` pure models |

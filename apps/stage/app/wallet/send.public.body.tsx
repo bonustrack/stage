@@ -98,7 +98,7 @@ export function PublicSendBody({ token, initialTo, onFooter }: {
   const { text: fg, link: head, border } = usePalette();
   const [picking, setPicking] = useState(false);
 
-  const balance = useSelectedBalance('combined', token);
+  const balance = useSelectedBalance(token);
   const p = usePublicSend(initialTo, token, balance);
 
   const submitLabel = p.txState === 'submitting' ? 'Confirm in wallet…'

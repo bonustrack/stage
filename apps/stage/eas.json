@@ -5,7 +5,7 @@
   },
   "build": {
     "base": {
-      "node": "18.20.4",
+      "node": "22.14.0",
       "env": {
         "EXPO_PUBLIC_ZERODEV_PROJECT_ID": "c107f734-f7bb-48c1-a5d2-ceb3f70a42f6",
         "EXPO_PUBLIC_SWARMY_KEY": "36888b0c2abab37f14314"

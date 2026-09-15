@@ -25,7 +25,6 @@ describe('tokenRowModel', () => {
       balance: '$4000.00',
       change24h: '+1.50%',
       logoUri: 'logo.png',
-      isPrivate: undefined,
     });
   });
 
@@ -41,12 +40,11 @@ describe('tokenRowModel', () => {
   test('unpriced token falls back to symbol and em dash value', () => {
     const p = tokenRowModel({
       chainId: 11155111, symbol: 'TEST', name: 'Test', balance: '5',
-      priceUsd: null, change24h: null, logoUrl: 'l', isPrivate: true,
+      priceUsd: null, change24h: null, logoUrl: 'l',
     }, fmt);
     expect(p.name).toBe('TEST');
     expect(p.balance).toBe('—');
     expect(p.change24h).toBe('');
-    expect(p.isPrivate).toBe(true);
     expect(p.tokenId).toBe('11155111:TEST');
   });
 });

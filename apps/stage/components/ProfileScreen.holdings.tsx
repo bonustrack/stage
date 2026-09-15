@@ -75,10 +75,7 @@ export function ProfileHoldings({ address }: { address: string }): React.ReactEl
           </Text>
         </Col>
       ) : (
-        <TokensList
-          rows={rows} privateRows={[]} pending={[]}
-          head={head} sub={sub} border={border} bg={bg}
-/>
+        <TokensList rows={rows} head={head} sub={sub} border={border} bg={bg} />
       )}
     </Col>
   );

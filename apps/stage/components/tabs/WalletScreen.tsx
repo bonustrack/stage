@@ -1,7 +1,6 @@
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useActiveAccountRecord } from '../../modules/messaging';
-import { refreshSnapshot } from '../../lib/railgun/wallet';
 import { useAssetRows } from './WalletScreen.data';
 import { type AssetRow } from './WalletScreen.assets';
 
@@ -21,12 +20,6 @@ import { DANGER, usePalette } from '../../lib/theme';
 import { Col, Row, ScreenScroll } from '../layout';
 import { useNfts, type NftState } from '../../lib/useNfts';
 import { WalletTabs, NftsView, fmtUsd, splitUsd, type WalletTab } from './WalletScreen.parts';
-import { PrivateView } from './WalletScreen.private';
-import { privateBalancesToRows, symbolPricesFromPublic } from './WalletScreen.private.rows';
-import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
-import { prewarmRailgun } from '../../lib/railgun/engine';
-import { startEoaShieldWatch } from '../../lib/railgun/eoaShieldWatch';
-import { isBridgeAvailable } from '../../lib/railgun/bridge';
 import { TokensList } from './WalletScreen.tokens';
 import { ActivityView } from './WalletScreen.activity';
 import { useWalletFocused } from './useWalletFocused';
@@ -39,16 +32,15 @@ interface WalletBalances {
   onRefresh: () => void;
 }
 
-export function useWalletBalances(privAccountId: string | null, focused: boolean): WalletBalances {
+export function useWalletBalances(focused: boolean): WalletBalances {
   const address = useActiveAccountRecord()?.address ?? '';
   const rows = useAssetRows(address, focused);
   const refetch = rows.refetch;
 
   const onRefresh = useCallback((): void => {
     if (!address) return;
-    if (privAccountId) void refreshSnapshot(privAccountId).catch(() => undefined);
     void refetch();
-  }, [address, privAccountId, refetch]);
+  }, [address, refetch]);
 
   return {
     address,
@@ -59,24 +51,13 @@ export function useWalletBalances(privAccountId: string | null, focused: boolean
   };
 }
 
-function useWalletEffects(focused: boolean, privAccountId: string | null, address?: string): void {
-  useEffect(() => {
-    if (!focused || !privAccountId || !address || !isBridgeAvailable()) return;
-    return startEoaShieldWatch(privAccountId, address);
-  }, [focused, privAccountId, address]);
-  useEffect(() => { if (focused) void prewarmRailgun(); }, [focused]);
-}
-
-function WalletTabBody({ tab, nftState, address, rows, privateRows, pending, err, c }: {
+function WalletTabBody({ tab, nftState, address, rows, err, c }: {
   tab: WalletTab; nftState: NftState; address?: string;
   rows: ReturnType<typeof useWalletBalances>['rows'];
-  privateRows: ReturnType<typeof privateBalancesToRows>;
-  pending: ReturnType<typeof usePrivateWallet>['pending'];
   err: boolean; c: { head: string; sub: string; border: string; bg: string };
 }): React.ReactElement {
-  if (tab === 'private') return <PrivateView head={c.head} sub={c.sub} border={c.border}/>;
   if (tab === 'nfts') return <NftsView status={nftState.nftStatus} nfts={nftState.nfts} head={c.head} sub={c.sub} border={c.border}/>;
-  if (tab === 'activity') return <ActivityView address={address} head={c.head} sub={c.sub} border={c.border} bg={c.bg}/>;
+  if (tab === 'activity') return <ActivityView address={address} head={c.head} border={c.border}/>;
   if (err) {
     return (
       <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center">
@@ -89,7 +70,7 @@ function WalletTabBody({ tab, nftState, address, rows, privateRows, pending, err
       <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center"><Spinner size={28} color={c.head}/></Col>
     );
   }
-  return <TokensList rows={rows} privateRows={privateRows} pending={pending} head={c.head} sub={c.sub} border={c.border} bg={c.bg}/>;
+  return <TokensList rows={rows} head={c.head} sub={c.sub} border={c.border} bg={c.bg}/>;
 }
 
 const HERO_ACTIONS: readonly (readonly [string, string, string])[] = [
@@ -144,16 +125,10 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
   const { link: head, text: sub, bg, border } = usePalette();
   const focused = useWalletFocused();
 
-  const { snapshot: privSnapshot, accountId: privAccountId, pending } = usePrivateWallet(focused);
-  const { address, rows, err, refreshing, onRefresh } = useWalletBalances(privAccountId, focused);
+  const { address, rows, err, refreshing, onRefresh } = useWalletBalances(focused);
   usePeerProfiles([address]);
   const pull = usePullToRefresh(refreshing, onRefresh, head);
-  useWalletEffects(focused, privAccountId, address);
 
-  const privateRows = useMemo(
-    () => privateBalancesToRows(privSnapshot, symbolPricesFromPublic(rows ?? [])),
-    [privSnapshot, rows],
-  );
   const [tab, setTab] = useState<WalletTab>('tokens');
   const nftState = useNfts(tab === 'nfts', address);
 
@@ -190,10 +165,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
 
       <WalletTabs tab={tab} setTab={setTab} border={border}/>
 
-      <WalletTabBody
-        tab={tab} nftState={nftState} address={address} rows={rows}
-        privateRows={privateRows} pending={pending} err={!!err} c={c}
-      />
+      <WalletTabBody tab={tab} nftState={nftState} address={address} rows={rows} err={!!err} c={c} />
     </ScreenScroll>
     </Col>
   );

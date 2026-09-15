@@ -11,13 +11,12 @@ import { Col, Box, Row } from '../layout';
 import { DANGER } from '../../lib/theme';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { fetchActivityAllChains, type ActivityRow } from '@stage-labs/client/api/etherscan';
-import { PrivateActivitySection } from './WalletScreen.privateActivity';
 import { AppIcon } from '../widgets';
 import { Badge } from '@stage-labs/kit/react-native/badge';
 import { relTime, txPartyLabel, txTitle } from '@stage-labs/client/wallet/activityFormat';
 
-export function ActivityView({ address, head, sub, border, bg }: {
-  address?: string; head: string; sub: string; border: string; bg: string;
+export function ActivityView({ address, head, border }: {
+  address?: string; head: string; border: string;
 }): React.ReactElement {
   const { data, isError } = useQuery({
     queryKey: ['activity', address ?? ''],
@@ -28,12 +27,9 @@ export function ActivityView({ address, head, sub, border, bg }: {
 
   usePeerProfiles(rows.map(r => r.counterparty));
 
-  const priv = <PrivateActivitySection head={head} sub={sub} border={border} bg={bg} />;
-
   if (isError) {
     return (
       <Col margin={{ x: 16 }}>
-        {priv}
         <Col padding={{ y: 40 }} align="center">
           <Text size="md" color={DANGER}>
             Couldn’t load activity
@@ -45,7 +41,6 @@ export function ActivityView({ address, head, sub, border, bg }: {
   if (data === undefined) {
     return (
       <Col margin={{ x: 16 }}>
-        {priv}
         <Col padding={{ y: 40 }} align="center">
           <Spinner size={28} color={head}/>
         </Col>
@@ -55,7 +50,6 @@ export function ActivityView({ address, head, sub, border, bg }: {
   if (rows.length === 0) {
     return (
       <Col margin={{ x: 16 }}>
-        {priv}
         <Col padding={{ y: 40 }} align="center">
           <Text size="md" role="secondary">
             No transactions yet
@@ -66,7 +60,6 @@ export function ActivityView({ address, head, sub, border, bg }: {
   }
   return (
     <Col margin={{ x: 16 }}>
-      {priv}
       {rows.map(r => (
         <TxRow key={r.hash} r={r} border={border}/>
       ))}

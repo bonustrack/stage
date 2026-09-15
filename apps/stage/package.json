@@ -10,12 +10,9 @@
     "web": "node scripts/copy-xmtp-wasm.js && expo start --web --port 8080",
     "typecheck": "tsc --noEmit",
     "test": "bun test test/",
-    "eas-build-post-install": "node ./scripts/install-nodejs-project.js",
     "build:web": "node scripts/copy-xmtp-wasm.js && expo export --platform web --output-dir dist"
   },
   "dependencies": {
-    "@railgun-community/shared-models": "7.6.1",
-    "@railgun-community/wallet": "10.4.0",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-navigation/native": "7.3.6",
     "@react-navigation/stack": "^7.9.3",
@@ -33,7 +30,6 @@
     "@zerodev/weighted-ecdsa-validator": "5.4.4",
     "buffer": "^6.0.3",
     "crypto-browserify": "3.12.0",
-    "ethers": "6.13.1",
     "expo": "~54.0.33",
     "expo-application": "~7.0.8",
     "expo-av": "~16.0.8",
@@ -57,7 +53,6 @@
     "expo-status-bar": "~3.0.9",
     "expo-updates": "~29.0.18",
     "firebase": "12.19.0",
-    "nodejs-mobile-react-native": "18.20.4",
     "path-browserify": "1.0.1",
     "querystring-es3": "0.2.1",
     "react": "19.1.0",

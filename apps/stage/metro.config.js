@@ -16,11 +16,10 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, 'node_modules'),
 ];
 
-const nodejsHostBlock = /[/\\]nodejs-assets[/\\].*/;
 const desktopShellBlock = /[/\\]apps[/\\]stage[/\\]desktop[/\\].*/;
 config.resolver.blockList = config.resolver.blockList
-  ? [].concat(config.resolver.blockList, nodejsHostBlock, desktopShellBlock)
-  : [nodejsHostBlock, desktopShellBlock];
+  ? [].concat(config.resolver.blockList, desktopShellBlock)
+  : desktopShellBlock;
 
 const appNodeModules = path.resolve(projectRoot, 'node_modules');
 
@@ -68,8 +67,6 @@ config.resolver.extraNodeModules = {
 
 const WEB_NATIVE_STUBS = new Set([
   '@xmtp/react-native-sdk',
-  'nodejs-mobile-react-native',
-  '@railgun-privacy/native-prover',
 ]);
 const webNativeStub = path.resolve(projectRoot, 'metro.shims', 'web', 'native-stub.js');
 

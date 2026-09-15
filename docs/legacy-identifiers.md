@@ -16,5 +16,4 @@ ones under `stage`.
 | Firebase project `metro-e47f6` | `google-services*.json`, `lib/firebaseWeb.ts`, `apps/push/fly.toml` | GCP project id, immutable. |
 | `METRO_CTRL:` | `lib/pushRegister.control.ts` | Wire prefix of push control messages; must match the push server. |
 | Notification channels `metro-conversations` / `metro-messages`, prefs `metro_pill`, category `box.metro.pill.category.CONVERSATION` | `modules/stage-pill/android` | Android persists per-channel user settings and preferences under these ids. |
-| `walletSource: 'metro'` | `lib/railgun/sdkEngine.ts`, `nodejs-project/engine.js` | Railgun engine wallet-source label bound to the existing on-device engine database. |
 | `metro:lastRoute:v1`, documents dir `metro/` | `lib/lastRoute.ts`, `lib/appDocuments.ts` | Read once and migrated to the `stage` equivalents on first launch; the constants only survive as the migration source. |

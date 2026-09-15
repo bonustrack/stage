@@ -17,7 +17,6 @@ export interface TokenRowViewParams {
   change24h: string;
   logoUri: string;
   chainBadgeUri?: string;
-  isPrivate?: boolean;
   showAvatar?: boolean;
   trailingChevron?: boolean;
 }
@@ -47,12 +46,7 @@ export function TokenRowBody(params: TokenRowViewParams): React.ReactElement {
         <TokenRowAvatar logoUri={params.logoUri} chainBadgeUri={params.chainBadgeUri} />
       ) : null}
       <Col gap={2}>
-        <Row align="center" gap={6}>
-          {params.isPrivate === true ? (
-            <AppIcon name="shield-check" color="secondary" size={16} />
-          ) : null}
-          <Text value={params.symbol} weight="semibold" truncate />
-        </Row>
+        <Text value={params.symbol} weight="semibold" truncate />
         <Caption value={params.name} color="secondary" />
       </Col>
       <Spacer />

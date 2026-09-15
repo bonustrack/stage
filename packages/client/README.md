@@ -6,7 +6,7 @@
 
 `@stage-labs/client` holds the framework-independent logic behind the universal Stage app ([`apps/stage`](../../apps/stage)). It is pure TypeScript with no React or react-native imports, so the same code runs in a browser, in Hermes, and in Node.
 
-It covers Snapshot profile resolution, XMTP content humanisation and message builders, embed detection, Stamp avatar resolution, wallet formatting and balances, account key derivation, the Railgun wire protocol, read-only API clients (ENS, Etherscan, OpenSea, CoinGecko), and the shared types that tie it all together.
+It covers Snapshot profile resolution, XMTP content humanisation and message builders, embed detection, Stamp avatar resolution, wallet formatting and balances, account key derivation, read-only API clients (ENS, Etherscan, OpenSea, CoinGecko), and the shared types that tie it all together.
 
 ## Install
 
@@ -48,7 +48,6 @@ src/
   api/         # read-only clients: ens, etherscan, opensea, coingecko
   embed/       # link/embed detection
   stamp/       # stamp.fyi avatar resolution
-  railgun/     # Railgun wire protocol (shield/unshield/transfer calls)
   stage/       # Stage SDK client + interfaces
   types.ts     # shared domain types
   index.ts     # root barrel

@@ -1,5 +1,4 @@
 
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { Caption } from '@stage-labs/kit/react-native/caption';
@@ -12,10 +11,10 @@ import { Box, Col, ScreenScroll } from '../../components/layout';
 import { WalletHeader } from '../../components/wallet/WalletHeader';
 import { AppIcon } from '../../components/widgets';
 import { getOrCreateXmtpClient } from '../../modules/messaging';
-import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
 import { usePalette } from '../../lib/theme';
-import { ReceiveModeToggle, type ReceiveMode } from '../../components/wallet/ReceiveModeToggle';
-import { receiveViewModel } from '@stage-labs/client/wallet/receive';
+
+const ADDRESS_LABEL = 'Wallet address (tap to copy)';
+const ADDRESS_HINT = 'Scan or share this address to receive ETH or tokens on Ethereum mainnet.';
 
 const QR_FIXED_FOREGROUND = '#000000';
 const QR_FIXED_BACKGROUND = '#ffffff';
@@ -70,25 +69,16 @@ function QrPanel({ address, border }: {
 export default function WalletReceive(): React.ReactElement {
   const { border } = usePalette();
 
-  const [mode, setMode] = useState<ReceiveMode>('public');
-  const { snapshot } = usePrivateWallet();
-  const privateAddress = snapshot?.zkAddress ?? '';
-  const privateReady = privateAddress.length> 0;
-
-  const { data: publicAddress = '' } = useQuery({
+  const { data: address = '' } = useQuery({
     queryKey: ['receivePublicAddress'],
     queryFn: async (): Promise<string> =>
       (await getOrCreateXmtpClient('production')).publicIdentity.identifier,
   });
 
-  const { activeMode, address, label, hint } = receiveViewModel({
-    mode, publicAddress, privateAddress, privateReady,
-  });
-
   const onCopy = (): void => {
     if (!address) return;
     void capabilities.copyToClipboard(address);
-    capabilities.toast(activeMode === 'private' ? '0zk address copied' : 'Address copied');
+    capabilities.toast('Address copied');
   };
 
   return (
@@ -96,16 +86,10 @@ export default function WalletReceive(): React.ReactElement {
       <WalletHeader title="Receive" />
 
       <ScreenScroll contentContainerStyle={{ padding: 16, alignItems: 'center', gap: 16 }}>
-        <ReceiveModeToggle
-          mode={activeMode}
-          onChange={setMode}
-          privateReady={privateReady}
-/>
-
         <Col width="100%">
           <Col align="center" gap={16}>
             <QrPanel address={address} border={border} />
-            <AddressCard label={label} address={address || '—'} hint={hint} onCopy={onCopy} />
+            <AddressCard label={ADDRESS_LABEL} address={address || '—'} hint={ADDRESS_HINT} onCopy={onCopy} />
           </Col>
         </Col>
       </ScreenScroll>

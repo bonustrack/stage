@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Image } from '@stage-labs/kit/react-native/image';
@@ -15,16 +15,11 @@ import { usePalette } from '../../lib/theme';
 import { useActiveAccountRecord } from '../../modules/messaging';
 import { useAssetRows } from '../../components/tabs/WalletScreen.data';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, type AssetRow } from '../../components/tabs/WalletScreen.assets';
-import { privateBalancesToRows, symbolPricesFromPublic } from '../../components/tabs/WalletScreen.private.rows';
-import { usePrivateWallet } from '../../lib/railgun/usePrivateWallet';
 
-export type SelectorMode = 'public' | 'shielded' | 'combined';
-export interface TokenChoice { symbol: string; chainId: number; isPrivate?: boolean }
+export interface TokenChoice { symbol: string; chainId: number }
 
 function findRow(rows: AssetRow[], sel: TokenChoice): AssetRow | undefined {
-  return rows.find(r =>
-    r.symbol === sel.symbol && r.chainId === sel.chainId && !!r.isPrivate === !!sel.isPrivate,
-  );
+  return rows.find(r => r.symbol === sel.symbol && r.chainId === sel.chainId);
 }
 
 function hasBalance(r: AssetRow): boolean {
@@ -42,32 +37,20 @@ function byValueDesc(rows: AssetRow[]): AssetRow[] {
   return [...rows].sort((a, b) => usdValue(b) - usdValue(a));
 }
 
-function useSelectorRows(mode: SelectorMode): { rows: AssetRow[]; loading: boolean } {
+function useSelectorRows(): { rows: AssetRow[]; loading: boolean } {
   const address = useActiveAccountRecord()?.address ?? '';
   const publicRows = useAssetRows(address).data ?? null;
-  const { snapshot } = usePrivateWallet(mode === 'shielded' || mode === 'combined');
-
-  const shieldedRows = useMemo(
-    () => privateBalancesToRows(snapshot, symbolPricesFromPublic(publicRows ?? [])),
-    [snapshot, publicRows],
-  );
-
-  if (mode === 'shielded') return { rows: byValueDesc(shieldedRows.filter(hasBalance)), loading: false };
-  const pub = (publicRows ?? []).filter(hasBalance);
-  if (mode === 'combined') {
-    return { rows: byValueDesc([...pub, ...shieldedRows.filter(hasBalance)]), loading: publicRows === null };
-  }
-  return { rows: byValueDesc(pub), loading: publicRows === null };
+  return { rows: byValueDesc((publicRows ?? []).filter(hasBalance)), loading: publicRows === null };
 }
 
-export function useTopToken(mode: SelectorMode): TokenChoice | null {
-  const { rows } = useSelectorRows(mode);
+export function useTopToken(): TokenChoice | null {
+  const { rows } = useSelectorRows();
   const top = rows[0];
-  return top ? { symbol: top.symbol, chainId: top.chainId, isPrivate: top.isPrivate } : null;
+  return top ? { symbol: top.symbol, chainId: top.chainId } : null;
 }
 
 function rowKey(r: AssetRow): string {
-  return `${r.isPrivate ? 'priv' : 'pub'}:${r.chainId}:${r.symbol}`;
+  return `${r.chainId}:${r.symbol}`;
 }
 
 function TokenChoiceList({ rows, onPick }: {
@@ -96,7 +79,6 @@ function TokenChoiceList({ rows, onPick }: {
               change24h={change}
               logoUri={r.logoUrl}
               chainBadgeUri={NETWORK_LOGO[r.chainId] ?? MAINNET_NETWORK_LOGO}
-              isPrivate={r.isPrivate}
               showAvatar
               trailingChevron={false}
             />
@@ -107,20 +89,18 @@ function TokenChoiceList({ rows, onPick }: {
   );
 }
 
-export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
-  mode: SelectorMode;
+export function TokenSelector({ value, onChange, label = 'TOKEN' }: {
   value: TokenChoice;
   onChange: (v: TokenChoice) => void;
   label?: string;
 }): React.ReactElement {
   const { text: fg, link: head, border, bg } = usePalette();
-  const sub = fg;
   const [open, setOpen] = useState(false);
-  const { rows, loading } = useSelectorRows(mode);
+  const { rows, loading } = useSelectorRows();
   const selected = findRow(rows, value);
 
   const onPick = (r: AssetRow): void => {
-    onChange({ symbol: r.symbol, chainId: r.chainId, isPrivate: r.isPrivate });
+    onChange({ symbol: r.symbol, chainId: r.chainId });
     setOpen(false);
   };
 
@@ -149,12 +129,9 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
           </Box>
         </Box>
         <Col minWidth={0} flex={1}>
-          <Row minWidth={0} align="center" gap={6}>
-            {value.isPrivate ? <Icon name="shieldCheck" size={14} color={sub} /> : null}
-            <Text weight="semibold" size="md" color={head} numberOfLines={1}>
-              {value.symbol}
-            </Text>
-          </Row>
+          <Text weight="semibold" size="md" color={head} numberOfLines={1}>
+            {value.symbol}
+          </Text>
           <Text size="xs" role="secondary" numberOfLines={1}>
             {selected ? `Balance: ${selected.balance}` : '—'}
           </Text>
@@ -182,7 +159,7 @@ export function TokenSelector({ mode, value, onChange, label = 'TOKEN' }: {
   );
 }
 
-export function useSelectedBalance(mode: SelectorMode, value: TokenChoice): string | null {
-  const { rows } = useSelectorRows(mode);
+export function useSelectedBalance(value: TokenChoice): string | null {
+  const { rows } = useSelectorRows();
   return findRow(rows, value)?.balance ?? null;
 }

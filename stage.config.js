@@ -32,7 +32,6 @@ export default defineConfig({
           'platform/**/*.ts',
           'plugins/**/*.{js,ts}',
           'scripts/**/*.js',
-          'scripts/**/*.mjs',
         ],
         project: ['app/**', 'components/**', 'lib/**', 'modules/**', 'platform/**'],
         ignoreDependencies: [
@@ -45,8 +44,6 @@ export default defineConfig({
           'stream-browserify',
           'babel-preset-expo',
           'expo-system-ui',
-          '@railgun-privacy/native-prover',
-          'node-gyp-build-mobile',
           '@types/markdown-it',
         ],
       },

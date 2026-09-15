@@ -95,7 +95,7 @@ const keyringGuardRule = {
 
 export function reactNative() {
   return [
-    { ignores: ['node_modules/**', '.expo/**', 'dist/**', 'nodejs-assets/**', 'desktop/**'] },
+    { ignores: ['node_modules/**', '.expo/**', 'dist/**', 'desktop/**'] },
     ...recommended,
     {
       files: ['app/**/*.{ts,tsx}', 'components/**/*.{ts,tsx}', 'lib/**/*.{ts,tsx}', 'modules/**/*.{ts,tsx}', 'platform/**/*.{ts,tsx}'],

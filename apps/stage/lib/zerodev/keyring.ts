@@ -185,23 +185,6 @@ export async function deleteKey(id: string): Promise<void> {
 }
 
 
-
-export interface RailgunKeyMaterial {
-  mnemonic: string;
-  encryptionKey: string;
-}
-
-export async function railgunKeyMaterialFor(id: string): Promise<RailgunKeyMaterial | null> {
-  const pk = await loadPrivateKey(id);
-  if (!pk) return null;
-  const { mnemonicFromPrivateKey, encryptionKeyFromPrivateKey } = await import('../railgun/deriveKeys');
-  return {
-    mnemonic: mnemonicFromPrivateKey(pk),
-    encryptionKey: encryptionKeyFromPrivateKey(pk),
-  };
-}
-
-
 export async function revealRecoveryPhrase(): Promise<string | null> {
   if (!(await requireRevealAuth())) return null;
   return readMnemonic();

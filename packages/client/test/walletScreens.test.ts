@@ -1,36 +1,9 @@
 import { describe, expect, it } from 'bun:test';
-import { receiveViewModel } from '../src/wallet/receive';
 import { tokenDetailViewModel, tokenValueUsd } from '../src/wallet/tokenDetail';
 import {
   parsePositiveAmount, tokenAmountFromInput, toggleAmountUnit, trimDecimalString,
 } from '../src/wallet/sendAmount';
 
-const PUB = '0x1111111111111111111111111111111111111111';
-const ZK = '0zkprivateaddr';
-
-describe('receiveViewModel', () => {
-  it('public mode returns public address + labels', () => {
-    const vm = receiveViewModel({ mode: 'public', publicAddress: PUB, privateAddress: ZK, privateReady: true });
-    expect(vm.activeMode).toBe('public');
-    expect(vm.address).toBe(PUB);
-    expect(vm.label).toBe('Wallet address (tap to copy)');
-    expect(vm.hint).toContain('Scan or share');
-  });
-
-  it('private mode when ready returns shielded address + labels', () => {
-    const vm = receiveViewModel({ mode: 'private', publicAddress: PUB, privateAddress: ZK, privateReady: true });
-    expect(vm.activeMode).toBe('private');
-    expect(vm.address).toBe(ZK);
-    expect(vm.label).toBe('Shielded 0zk address (tap to copy)');
-    expect(vm.hint).toContain('Railgun');
-  });
-
-  it('private mode falls back to public when not ready', () => {
-    const vm = receiveViewModel({ mode: 'private', publicAddress: PUB, privateAddress: '', privateReady: false });
-    expect(vm.activeMode).toBe('public');
-    expect(vm.address).toBe(PUB);
-  });
-});
 
 describe('tokenValueUsd / tokenDetailViewModel', () => {
   it('null price yields null value and em-dash usd', () => {
