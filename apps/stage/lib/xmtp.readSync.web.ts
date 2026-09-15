@@ -3,13 +3,9 @@ import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import {
   isSyncGroupName, type PinStateContent, type ReadStateContent, type SyncGroupCandidate,
 } from '@stage-labs/client/xmtp/readState';
-import { getCachedXmtpClient, getOrCreateXmtpClient, convOfLine } from './xmtp.client.web';
+import { convOfLine, xmtpClient } from './xmtp.client.web';
 import { lineOfConv } from './xmtp.types.web';
 import { PIN_STATE_CODEC, READ_STATE_CODEC } from './xmtpJsonCodecs';
-
-async function client(): ReturnType<typeof getOrCreateXmtpClient> {
-  return getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
-}
 
 export function conversationIsSyncGroup(conv: unknown): Promise<boolean> {
   const group = conv as { name?: unknown };
@@ -17,7 +13,7 @@ export function conversationIsSyncGroup(conv: unknown): Promise<boolean> {
 }
 
 export async function listSyncGroups(): Promise<SyncGroupCandidate[]> {
-  const all = await (await client()).conversations.list();
+  const all = await (await xmtpClient()).conversations.list();
   const out: SyncGroupCandidate[] = [];
   for (const conv of all) {
     if (!(await conversationIsSyncGroup(conv))) continue;
@@ -28,7 +24,7 @@ export async function listSyncGroups(): Promise<SyncGroupCandidate[]> {
 }
 
 export async function createSyncGroup(name: string): Promise<string> {
-  const group = await (await client()).conversations.createGroupWithIdentifiers([], { groupName: name });
+  const group = await (await xmtpClient()).conversations.createGroupWithIdentifiers([], { groupName: name });
   return group.id;
 }
 

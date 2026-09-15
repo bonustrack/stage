@@ -1,18 +1,9 @@
 import {
-  BackupElementSelectionOption, SortDirection, type ArchiveOptions, type Client,
+  BackupElementSelectionOption, SortDirection, type ArchiveOptions,
 } from '@xmtp/browser-sdk';
-import { getCachedXmtpClient } from './xmtp.state.web';
-import { getOrCreateXmtpClient } from './xmtp.client.web';
+import { xmtpClient } from './xmtp.client.web';
 import { snapshotOf, type HistorySnapshot } from './historySync.model';
-import { historyServerUrl } from './historyServer';
-import { secureStorage } from '../platform/storage';
-
-const ENV_KEY = 'xmtp.env';
-
-async function historyServer(): Promise<string> {
-  const env = await secureStorage.get(ENV_KEY).catch(() => null);
-  return historyServerUrl(env ?? 'production');
-}
+import { historyServer } from './historyServer';
 
 const ARCHIVE_LOOKBACK_DAYS = 30;
 
@@ -21,36 +12,31 @@ const ARCHIVE_OPTIONS: ArchiveOptions = {
   excludeDisappearingMessages: false,
 };
 
-type WebXmtpClient = Client<unknown>;
-
-async function historyClient(): Promise<WebXmtpClient> {
-  return getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
-}
 
 export async function requestHistorySync(): Promise<void> {
-  const client = await historyClient();
+  const client = await xmtpClient();
   await client.sendSyncRequest(ARCHIVE_OPTIONS, await historyServer());
 }
 
 export async function sendHistoryArchive(pin: string): Promise<void> {
-  const client = await historyClient();
+  const client = await xmtpClient();
   await client.sendSyncArchive(pin, ARCHIVE_OPTIONS, await historyServer());
 }
 
 export async function countAvailableHistoryArchives(): Promise<number> {
-  const client = await historyClient();
+  const client = await xmtpClient();
   await client.syncAllDeviceSyncGroups();
   const archives = await client.listAvailableArchives(ARCHIVE_LOOKBACK_DAYS);
   return archives.length;
 }
 
 export async function processHistoryArchive(pin?: string): Promise<void> {
-  const client = await historyClient();
+  const client = await xmtpClient();
   await client.processSyncArchive(pin ?? null);
 }
 
 export async function historySnapshot(): Promise<HistorySnapshot> {
-  const client = await historyClient();
+  const client = await xmtpClient();
   const conversations = await client.conversations.list();
   const entries = await Promise.all(conversations.map(async (conversation) => {
     const [first] = await conversation.messages({ limit: 1n, direction: SortDirection.Ascending });

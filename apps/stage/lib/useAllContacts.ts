@@ -3,11 +3,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { type Conversation } from '@xmtp/react-native-sdk';
 import { useContactsFocused } from '../components/tabs/useWalletFocused';
-import {
-  getCachedXmtpClient, getOrCreateXmtpClient,
-  peerEthAddressOfDm, groupMemberEthAddresses, primeInboxEthCache,
-  getActiveAccountIdSync, getCachedRows, shortAddress,
-} from '../modules/messaging';
+import { peerEthAddressOfDm, groupMemberEthAddresses, primeInboxEthCache, getActiveAccountIdSync, getCachedRows, shortAddress, xmtpClient } from '../modules/messaging';
 import { usePeerProfiles, getPeerName } from './peerProfiles';
 
 export interface Contact {
@@ -27,7 +23,7 @@ function seedAddresses(): string[] {
 }
 
 async function collectAddresses(): Promise<string[]> {
-  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const client = await xmtpClient();
   const self = (getActiveAccountIdSync() ?? '').toLowerCase();
   const convs = await client.conversations.list(undefined, undefined, ['allowed']);
 

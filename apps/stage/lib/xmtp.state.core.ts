@@ -16,3 +16,27 @@ export function resetSharedXmtpState(): void {
   feedCache.clear();
   inboxEthCache.clear();
 }
+
+export interface ClientSlot<C> {
+  get: () => C | null;
+  set: (client: C | null) => void;
+  waitForReady: (capMs?: number) => Promise<boolean>;
+  reset: () => void;
+}
+
+export function createClientSlot<C>(): ClientSlot<C> {
+  let cached: C | null = null;
+  return {
+    get: () => cached,
+    set: (client) => { cached = client; },
+    waitForReady: async (capMs = 60_000) => {
+      const start = Date.now();
+      while (cached === null && Date.now() - start < capMs) await new Promise((r) => setTimeout(r, 250));
+      return cached !== null;
+    },
+    reset: () => {
+      cached = null;
+      resetSharedXmtpState();
+    },
+  };
+}

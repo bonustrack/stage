@@ -3,7 +3,7 @@ import { ConsentState, IdentifierKind, type Identifier } from '@xmtp/browser-sdk
 import {
   createGroupWith, addGroupMembersWith, requireValidMembers, type CreateGroupResult,
 } from '@stage-labs/client/xmtp/groups';
-import { getCachedXmtpClient, getOrCreateXmtpClient, convOfLine } from './xmtp.client.web';
+import { convOfLine, xmtpClient } from './xmtp.client.web';
 import { lineOfConv } from './xmtp.types';
 
 function identifiersOf(addresses: string[]): Identifier[] {
@@ -29,7 +29,7 @@ export async function createGroup(
   name?: string,
   imageUrl?: string,
 ): Promise<CreateGroupResult> {
-  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const client = await xmtpClient();
   const opts = buildCreateGroupOptions(name, imageUrl);
   return createGroupWith(addresses, lineOfConv, async (members) =>
     await client.conversations.createGroupWithIdentifiers(identifiersOf(members), opts));
@@ -63,7 +63,7 @@ export function groupNameImage(
 export async function leaveGroupConv(line: string): Promise<'left' | 'hidden'> {
   const conv = await convOfLine(line);
   if (!conv) throw new Error('Conversation not found');
-  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const client = await xmtpClient();
   const selfInboxId = client.inboxId;
   const group = conv as unknown as {
     removeMembers?: (inboxIds: string[]) => Promise<void>;

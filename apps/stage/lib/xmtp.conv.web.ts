@@ -5,7 +5,7 @@ import {
 } from '@xmtp/browser-sdk';
 import { classifyKeyPackageStatuses } from '@stage-labs/client/xmtp/clientErrors';
 import { consentStateToString } from '@stage-labs/client/xmtp/consent';
-import { getCachedXmtpClient, getOrCreateXmtpClient, convOfLine } from './xmtp.client.web';
+import { getCachedXmtpClient, getOrCreateXmtpClient, convOfLine, xmtpClient } from './xmtp.client.web';
 import { lineOfConv, type DmUnreachableReason, type XmtpConsent } from './xmtp.types';
 import { conversationIsSyncGroup } from './xmtp.readSync.web';
 import { registerHiddenConv } from './readSyncRegistry';
@@ -22,7 +22,7 @@ export async function openDmWithAddress(address: string): Promise<string> {
 export interface ExistingDm { convId: string; peerJoined: boolean }
 
 export async function findExistingDmWithAddress(address: string): Promise<ExistingDm | null> {
-  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const client = await xmtpClient();
   const inboxId = await client.fetchInboxIdByIdentifier({
     identifier: address.toLowerCase(),
     identifierKind: IdentifierKind.Ethereum,
@@ -46,7 +46,7 @@ export function repairDmMembership(convId: string, address: string): Promise<boo
 }
 
 export async function dmUnreachableReason(address: string): Promise<DmUnreachableReason> {
-  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const client = await xmtpClient();
   const inboxId = await client.fetchInboxIdByIdentifier({
     identifier: address.toLowerCase(),
     identifierKind: IdentifierKind.Ethereum,
@@ -61,7 +61,7 @@ export async function dmUnreachableReason(address: string): Promise<DmUnreachabl
 }
 
 export async function listRequestConvs(): Promise<Conversation[]> {
-  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const client = await xmtpClient();
   try {
     await client.conversations.syncAll([ConsentState.Unknown]);
   } catch { }
@@ -77,7 +77,7 @@ async function withoutSyncGroups(convs: Conversation[]): Promise<Conversation[]>
 }
 
 export async function listAllowedConversations(): Promise<Conversation[]> {
-  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const client = await xmtpClient();
   const convs = await client.conversations
     .list({ consentStates: [ConsentState.Allowed] })
     .catch(() => []);
@@ -85,7 +85,7 @@ export async function listAllowedConversations(): Promise<Conversation[]> {
 }
 
 export async function syncConversationsFromNetwork(): Promise<void> {
-  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const client = await xmtpClient();
   try {
     await client.conversations.syncAll([ConsentState.Allowed, ConsentState.Unknown]);
   } catch { }

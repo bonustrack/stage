@@ -7,14 +7,13 @@ import {
 } from './accounts';
 import { XMTP_CODECS, signerForRecord } from './xmtp.codecs.web';
 import { setCachedXmtpClient } from './xmtp.state.web';
-import { type XmtpEnv } from './xmtp.types';
+import { type XmtpEnv, XMTP_ENV_KEY } from './xmtp.types.web';
 import { deleteDbKey, deleteDbFiles } from './xmtp.dbkey';
 import {
   INSTALLATION_LIMIT_MESSAGE, isInstallationLimit,
   isStoreCorruption as isStoreCorruptionCore,
 } from '@stage-labs/client/xmtp/clientErrors';
 
-const ENV_KEY = 'xmtp.env';
 
 export interface CreateOpts {
   env: XmtpEnv;
@@ -42,7 +41,7 @@ async function finalizeClient(
   setCachedXmtpClient(created);
   await markRegistered(rec.id);
   await setActiveAccountId(rec.id);
-  await secureStorage.set(ENV_KEY, env);
+  await secureStorage.set(XMTP_ENV_KEY, env);
   return created;
 }
 

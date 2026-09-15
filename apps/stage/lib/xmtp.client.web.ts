@@ -1,4 +1,5 @@
 import { errorMessage } from '@stage-labs/client/errors';
+import { XMTP_ENV_KEY } from './xmtp.types.web';
 import { MARKED_UNREAD_PREFIX, setLastReadNs } from './xmtp.unread';
 import { Client, ConsentState, IdentifierKind, type Conversation } from '@xmtp/browser-sdk';
 import { secureStorage } from '../platform/storage';
@@ -30,7 +31,6 @@ export class NoAccountError extends Error {
   constructor() { super('No account — onboarding not completed yet.'); this.name = 'NoAccountError'; }
 }
 
-const ENV_KEY = 'xmtp.env';
 const ADDRESS_PREFIX = 'xmtp.address.';
 const ENV_PREFIX = 'xmtp.env.';
 
@@ -44,7 +44,7 @@ export function cachedSelfEthAddress(): string | null {
 }
 
 export async function selfEthAddress(): Promise<string | null> {
-  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const client = await xmtpClient();
   return client.accountIdentifier?.identifier ?? null;
 }
 
@@ -66,7 +66,7 @@ async function finalizeClient(
 ): Promise<WebXmtpClient> {
   setCachedXmtpClient(client);
   await setActiveAccountId(rec.id);
-  await secureStorage.set(ENV_KEY, env);
+  await secureStorage.set(XMTP_ENV_KEY, env);
   void registerPushWithServer(client);
   return client;
 }
@@ -153,7 +153,7 @@ export interface XmtpInstallation {
 }
 
 export async function listXmtpInstallations(): Promise<XmtpInstallation[]> {
-  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const client = await xmtpClient();
   const state = await client.preferences.inboxState();
   const current = client.installationId;
   return state.installations
@@ -166,7 +166,7 @@ export async function listXmtpInstallations(): Promise<XmtpInstallation[]> {
 }
 
 export async function revokeXmtpInstallation(installationId: string): Promise<void> {
-  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const client = await xmtpClient();
   const account = await getActiveAccount();
   if (!account) throw new NoAccountError();
   const inboxId = client.inboxId;
@@ -200,7 +200,11 @@ export async function syncPreferences(): Promise<void> {
 export async function convOfLine(line: string): Promise<Conversation | null> {
   const convId = convIdOfLine(line);
   if (!convId) return null;
-  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const client = await xmtpClient();
   const conv = await client.conversations.getConversationById(convId).catch(() => undefined);
   return conv ?? null;
+}
+
+export async function xmtpClient(): ReturnType<typeof getOrCreateXmtpClient> {
+  return await xmtpClient();
 }

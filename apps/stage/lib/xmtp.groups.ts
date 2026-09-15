@@ -3,7 +3,7 @@ import { PublicIdentity } from '@xmtp/react-native-sdk';
 import {
   createGroupWith, addGroupMembersWith, requireValidMembers, type CreateGroupResult,
 } from '@stage-labs/client/xmtp/groups';
-import { getCachedXmtpClient, getOrCreateXmtpClient, convOfLine } from './xmtp.client';
+import { convOfLine, xmtpClient } from './xmtp.client';
 import { lineOfConv, type XmtpConsent } from './xmtp.types';
 
 function buildCreateGroupOptions(
@@ -22,7 +22,7 @@ export async function createGroup(
   name?: string,
   imageUrl?: string,
 ): Promise<CreateGroupResult> {
-  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const client = await xmtpClient();
   const opts = buildCreateGroupOptions(name, imageUrl);
   return createGroupWith(addresses, lineOfConv, async (members) => {
     const identities = members.map(a => new PublicIdentity(a, 'ETHEREUM'));

@@ -5,7 +5,7 @@ import {
   type MultiRemoteAttachmentContent, type RemoteAttachmentInfo,
   type RemoteAttachmentMetadata, type EncryptedLocalAttachment,
 } from '@xmtp/react-native-sdk';
-import { getCachedXmtpClient, getOrCreateXmtpClient, convOfLine } from './xmtp.client';
+import { convOfLine, xmtpClient } from './xmtp.client';
 import { type LocalAttachmentInput } from './xmtp.types';
 import {
   materializeFileUri, sanitizeFileUri, uploadEncryptedToIpfs, swarmToHttp,
@@ -34,7 +34,7 @@ export async function xmtpSendMultiRemoteAttachment(
   if (files.length === 0) throw new Error('No attachments to send.');
   const conv = await convOfLine(line);
   if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
-  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const client = await xmtpClient();
 
   const infos: RemoteAttachmentInfo[] = [];
   for (const f of files) {
@@ -55,7 +55,7 @@ export async function xmtpSendMultiRemoteAttachment(
 export async function resolveRemoteAttachment(info: RemoteAttachmentInfo): Promise<{
   fileUri: string; mimeType?: string; filename?: string;
 }> {
-  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const client = await xmtpClient();
   const tmpName = `xmtp-att-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.bin`;
   const dest = new File(Paths.cache, tmpName);
   if (dest.exists) try { dest.delete(); } catch { }

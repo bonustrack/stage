@@ -12,7 +12,7 @@ import { XMTP_CODECS } from './xmtp.codecs';
 import {
   getCachedXmtpClient, setCachedXmtpClient, resetClientScopedState,
 } from './xmtp.state';
-import { type XmtpEnv, convIdOfLine } from './xmtp.types';
+import { type XmtpEnv, convIdOfLine, XMTP_ENV_KEY } from './xmtp.types';
 import {
   loadOrCreateDbKey, deleteDbKey, deleteDbFiles,
   ensureDbDir, wipeXmtpStore,
@@ -27,14 +27,13 @@ export class NoAccountError extends Error {
   constructor() { super('No account — onboarding not completed yet.'); this.name = 'NoAccountError'; }
 }
 
-const ENV_KEY = 'xmtp.env';
 
 export function cachedSelfEthAddress(): string | null {
   return getCachedXmtpClient()?.publicIdentity.identifier ?? null;
 }
 
 export async function selfEthAddress(): Promise<string | null> {
-  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const client = await xmtpClient();
   return client.publicIdentity.identifier;
 }
 
@@ -64,7 +63,7 @@ async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<
       if (built) {
         setCachedXmtpClient(built);
         await setActiveAccountId(rec.id);
-        await secureStorage.set(ENV_KEY, env);
+        await secureStorage.set(XMTP_ENV_KEY, env);
         void registerPushWithServer(built);
         return built;
       }
@@ -119,7 +118,7 @@ export interface XmtpInstallation {
 }
 
 export async function listXmtpInstallations(): Promise<XmtpInstallation[]> {
-  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const client = await xmtpClient();
   const state = await client.inboxState(true);
   const current = client.installationId;
   return state.installations
@@ -128,7 +127,7 @@ export async function listXmtpInstallations(): Promise<XmtpInstallation[]> {
 }
 
 export async function revokeXmtpInstallation(installationId: string): Promise<void> {
-  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const client = await xmtpClient();
   const account = await getActiveAccount();
   if (!account) throw new NoAccountError();
   const signer = await signerForRecord(account);
@@ -154,8 +153,12 @@ export async function syncPreferences(): Promise<void> {
 export async function convOfLine(line: string): Promise<Conversation | null> {
   const convId = convIdOfLine(line);
   if (!convId) return null;
-  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const client = await xmtpClient();
   const conv = await client.conversations.findConversation(convId as unknown as Parameters<typeof client.conversations.findConversation>[0])
     .catch(() => null);
   return conv ?? null;
+}
+
+export async function xmtpClient(): ReturnType<typeof getOrCreateXmtpClient> {
+  return await xmtpClient();
 }

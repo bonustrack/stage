@@ -8,14 +8,13 @@ import {
 import { registerPushWithServer } from './pushRegister';
 import { XMTP_CODECS, signerForRecord } from './xmtp.codecs';
 import { setCachedXmtpClient } from './xmtp.state';
-import { type XmtpEnv } from './xmtp.types';
+import { type XmtpEnv, XMTP_ENV_KEY } from './xmtp.types';
 import { loadOrCreateDbKey, ensureDbDir, wipeXmtpStore } from './xmtp.dbkey';
 import {
   INSTALLATION_LIMIT_MESSAGE, isInstallationLimit,
   isStoreCorruption as isStoreCorruptionCore,
 } from '@stage-labs/client/xmtp/clientErrors';
 
-const ENV_KEY = 'xmtp.env';
 
 export interface CreateOpts {
   env: XmtpEnv;
@@ -82,7 +81,7 @@ async function finalizeClient(created: Client, rec: AccountRecord, env: XmtpEnv)
   setCachedXmtpClient(created);
   await markRegistered(rec.id);
   await setActiveAccountId(rec.id);
-  await secureStorage.set(ENV_KEY, env);
+  await secureStorage.set(XMTP_ENV_KEY, env);
   void registerPushWithServer(created);
   return created;
 }

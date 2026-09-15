@@ -1,7 +1,7 @@
 
 import type { DecodedMessage } from '@xmtp/browser-sdk';
 import { isControlBody } from './xmtp.types.web';
-import { getCachedXmtpClient, getOrCreateXmtpClient } from './xmtp.client.web';
+import { xmtpClient } from './xmtp.client.web';
 import { envelopeOfXmtpMessage } from './xmtp.envelope.web';
 import { activeFeedLines, registerGlobalStreamTeardown } from './xmtp.state.web';
 import {
@@ -101,7 +101,7 @@ export async function ensureGlobalStream(): Promise<void> {
   if (globalStreamHandle || globalStreamStarting) return;
   globalStreamStarting = true;
   try {
-    const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+    const client = await xmtpClient();
     globalStreamHandle = await client.conversations.streamAllMessages({
       onValue: handleStreamMessage,
       onError: () => undefined,

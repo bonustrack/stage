@@ -3,7 +3,7 @@ import {
   addGroupMembers, PublicIdentity, staticKeyPackageStatuses, type Conversation,
 } from '@xmtp/react-native-sdk';
 import { classifyKeyPackageStatuses } from '@stage-labs/client/xmtp/clientErrors';
-import { getCachedXmtpClient, getOrCreateXmtpClient, convOfLine } from './xmtp.client';
+import { getCachedXmtpClient, getOrCreateXmtpClient, convOfLine, xmtpClient } from './xmtp.client';
 import { lineOfConv, type DmUnreachableReason, type XmtpConsent } from './xmtp.types';
 import { conversationIsSyncGroup } from './xmtp.readSync';
 import { registerHiddenConv } from './readSyncRegistry';
@@ -19,7 +19,7 @@ export async function openDmWithAddress(address: string): Promise<string> {
 export interface ExistingDm { convId: string; peerJoined: boolean }
 
 export async function findExistingDmWithAddress(address: string): Promise<ExistingDm | null> {
-  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const client = await xmtpClient();
   const identity = new PublicIdentity(address, 'ETHEREUM');
   let dm = await client.conversations.findDmByIdentity(identity);
   if (!dm) {
@@ -34,7 +34,7 @@ export async function findExistingDmWithAddress(address: string): Promise<Existi
 }
 
 export async function repairDmMembership(convId: string, address: string): Promise<boolean> {
-  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const client = await xmtpClient();
   const identity = new PublicIdentity(address, 'ETHEREUM');
   const peerInboxId = await client.findInboxIdFromIdentity(identity);
   if (peerInboxId === undefined || peerInboxId === '') return false;
@@ -53,7 +53,7 @@ export async function repairDmMembership(convId: string, address: string): Promi
 }
 
 export async function dmUnreachableReason(address: string): Promise<DmUnreachableReason> {
-  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const client = await xmtpClient();
   const inboxId = await client.findInboxIdFromIdentity(new PublicIdentity(address, 'ETHEREUM'));
   if (inboxId === undefined || inboxId === '') return 'unregistered';
   const states = await client.inboxStates(true, [inboxId]);
@@ -65,7 +65,7 @@ export async function dmUnreachableReason(address: string): Promise<DmUnreachabl
 }
 
 export async function listRequestConvs(): Promise<Conversation[]> {
-  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const client = await xmtpClient();
   try {
     await client.conversations.syncAllConversations(['unknown']);
   } catch { }
@@ -81,13 +81,13 @@ async function withoutSyncGroups(convs: Conversation[]): Promise<Conversation[]>
 }
 
 export async function listAllowedConversations(): Promise<Conversation[]> {
-  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const client = await xmtpClient();
   const convs = await client.conversations.list(undefined, undefined, ['allowed']).catch(() => []);
   return withoutSyncGroups(convs);
 }
 
 export async function syncConversationsFromNetwork(): Promise<void> {
-  const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+  const client = await xmtpClient();
   try {
     await client.conversations.syncAllConversations(['allowed', 'unknown']);
   } catch { }

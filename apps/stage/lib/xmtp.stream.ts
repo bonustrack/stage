@@ -3,7 +3,7 @@ import { AppState } from 'react-native';
 import { setAppForeground, subscribeXmtpPush } from '../modules/stage-pill';
 import { isControlBody } from './xmtp.types';
 import { markBackgroundDelivered } from './pushNotify';
-import { getCachedXmtpClient, getOrCreateXmtpClient } from './xmtp.client';
+import { xmtpClient } from './xmtp.client';
 import { envelopeOfXmtpMessage } from './xmtp.messages';
 import { activeFeedLines, registerGlobalStreamTeardown } from './xmtp.state';
 import {
@@ -76,7 +76,7 @@ function rearmGlobalStream(): void {
 }
 
 type StreamCb = Parameters<
-  Awaited<ReturnType<typeof getOrCreateXmtpClient>>['conversations']['streamAllMessages']
+  Awaited<ReturnType<typeof xmtpClient>>['conversations']['streamAllMessages']
 >[0];
 type StreamCbMsg = Parameters<StreamCb>[0];
 
@@ -136,7 +136,7 @@ function onGlobalStreamClose(): void {
   rearmGlobalStream();
 }
 
-async function startStream(client: Awaited<ReturnType<typeof getOrCreateXmtpClient>>): Promise<void> {
+async function startStream(client: Awaited<ReturnType<typeof xmtpClient>>): Promise<void> {
   await client.conversations.streamAllMessages(
     handleStreamMessage,
     'all',
@@ -149,7 +149,7 @@ export async function ensureGlobalStream(): Promise<void> {
   if (globalStreamCancel || globalStreamStarting) return;
   globalStreamStarting = true;
   try {
-    const client = getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
+    const client = await xmtpClient();
     await startStream(client);
     globalStreamCancel = () => {
       try { client.conversations.cancelStreamAllMessages(); } catch { }
