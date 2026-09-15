@@ -8,9 +8,11 @@ export const TYPE_LABEL: Record<AccountRecord['type'], string> = {
   smart: 'Smart wallet',
 };
 
-export function reloadApp(): void {
+export function reloadApp(home = false): void {
   if (Platform.OS === 'web') {
-    (globalThis as { location?: { reload: () => void } }).location?.reload();
+    const location = (globalThis as { location?: { reload: () => void; replace: (url: string) => void; origin: string; pathname: string } }).location;
+    if (home) location?.replace(location.origin + location.pathname);
+    else location?.reload();
     return;
   }
   DevSettings.reload?.();

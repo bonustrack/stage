@@ -73,7 +73,9 @@ export function useAccountsManager(onSwitched?: () => void): {
               const wasActive = rec.id === activeId;
               await deleteAccount(rec.id);
               setManageId(null);
-              if (wasActive) reloadApp();
+              const remaining = await loadAccounts();
+              if (remaining.length === 0) reloadApp(true);
+              else if (wasActive) reloadApp();
               else await refresh();
             })();
           } },

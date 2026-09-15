@@ -388,7 +388,7 @@ exports[`SIZES snapshot 1`] = `
     "spinner": "small",
   },
   "lg": {
-    "fontSize": 16,
+    "fontSize": 17,
     "gap": 8,
     "height": 48,
     "paddingHorizontal": 20,
@@ -409,7 +409,7 @@ exports[`SIZES snapshot 1`] = `
     "spinner": "small",
   },
   "xl": {
-    "fontSize": 16,
+    "fontSize": 18,
     "gap": 8,
     "height": 56,
     "paddingHorizontal": 24,

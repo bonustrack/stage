@@ -98,7 +98,7 @@ function RootLayoutInner(): React.ReactElement {
   const gatesOpen = loaded && onboarding.ready && restore.ready;
   const shell = useShellGates(gatesOpen, onboarding.hasAccount);
   const pathname = usePathname();
-  const routing = shell.showOnboarding && !isOnboardingRoute(pathname);
+  const routing = shell.showOnboarding && !isOnboardingRoute(pathname) && pathname !== '/';
 
   return (
     <QueryClientProvider client={queryClient}>

@@ -48,11 +48,19 @@ export function hasWordWithPrefix(prefix: string, wordlist: readonly string[] = 
   return wordlist.some((word) => word.startsWith(prefix));
 }
 
+function acceptTypedSpace(previous: string, wordlist: readonly string[]): boolean {
+  if (previous.trim().length === 0) return false;
+  if (!looksLikePhrase(previous)) return true;
+  const token = currentToken(previous);
+  return !token.complete && wordlist.includes(token.word);
+}
+
 export function acceptTypedChar(previous: string, next: string, wordlist: readonly string[] = english): string {
   if (next.length !== previous.length + 1 || !next.startsWith(previous)) return next;
+  if (/\s$/.test(next)) return acceptTypedSpace(previous, wordlist) ? next : previous;
   if (!looksLikePhrase(next)) return next;
   const token = currentToken(next);
-  if (token.complete || token.word.length === 0) return next;
+  if (token.word.length === 0) return next;
   return hasWordWithPrefix(token.word, wordlist) ? next : previous;
 }
 

@@ -18,6 +18,8 @@ import { useTotalUnread } from '../../lib/useTotalUnread';
 import { unreadBadgeLabel } from '../../lib/format';
 import { AccountAvatar } from '../../components/AccountAvatarButton';
 import { MenuSheet } from '../../components/MenuSheet';
+import { Landing } from '../../components/landing/Landing';
+import { useAccountGate } from '../../lib/accountGate';
 
 const WIDE_TAB_TITLES: Record<string, string> = { '/wallet': 'Wallet', '/contacts': 'Contacts' };
 
@@ -53,6 +55,20 @@ function PagerOverlay({ insetTop, tabBarHeight, topnavHidden, rail, pathname }: 
   );
 }
 
+function nativeTabBarStyle(pal: ReturnType<typeof usePalette>, bottomInset: number, web: boolean) {
+  return {
+    backgroundColor: pal.toolbarBg,
+    borderTopWidth: 1,
+    borderTopColor: pal.border,
+    elevation: 0,
+    shadowOpacity: 0,
+    height: 60 + bottomInset,
+    paddingTop: 9,
+    paddingBottom: bottomInset,
+    ...(web ? { display: 'none' as const } : {}),
+  };
+}
+
 export default function TabsLayout(): React.ReactElement {
   const pathname = usePathname();
   const unread = useTotalUnread();
@@ -65,20 +81,12 @@ export default function TabsLayout(): React.ReactElement {
   const web = Platform.OS === 'web';
   const rail = useWebTabRail();
   const [accountMenu, setAccountMenu] = useState(false);
+  const gate = useAccountGate();
 
-  const tabBarStyle = {
-    backgroundColor: pal.toolbarBg,
-    borderTopWidth: 1,
-    borderTopColor: pal.border,
-    elevation: 0,
-    shadowOpacity: 0,
-    height: 60 + insets.bottom,
-    paddingTop: 9,
-    paddingBottom: insets.bottom,
-    ...(web ? { display: 'none' as const } : {}),
-  };
-
+  const tabBarStyle = nativeTabBarStyle(pal, insets.bottom, web);
   const tabBarHeight = web && rail ? 0 : 60 + insets.bottom;
+
+  if (gate.ready && !gate.hasAccount) return <Landing />;
 
   return (
     <Col surface="surface" flex={1}>

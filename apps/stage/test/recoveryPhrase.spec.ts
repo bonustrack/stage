@@ -57,15 +57,24 @@ describe('acceptTypedChar', () => {
     expect(acceptTypedChar('', 'a')).toBe('a');
   });
 
-  test('keeps valid prefixes, spaces, deletions and pastes', () => {
+  test('keeps valid prefixes, deletions and pastes', () => {
     expect(acceptTypedChar('fr', 'fro')).toBe('fro');
-    expect(acceptTypedChar('from', 'from ')).toBe('from ');
     expect(acceptTypedChar('frm', 'fr')).toBe('fr');
     expect(acceptTypedChar('', 'abandon ability zzz')).toBe('abandon ability zzz');
+  });
+
+  test('only accepts a space right after a complete word', () => {
+    expect(acceptTypedChar('frog', 'frog ')).toBe('frog ');
+    expect(acceptTypedChar('add', 'add ')).toBe('add ');
+    expect(acceptTypedChar('fro', 'fro ')).toBe('fro');
+    expect(acceptTypedChar('', ' ')).toBe('');
+    expect(acceptTypedChar('frog ', 'frog  ')).toBe('frog ');
+    expect(acceptTypedChar('fro', 'fro\n')).toBe('fro');
   });
 
   test('leaves transfer codes and private keys alone', () => {
     expect(acceptTypedChar('0', '0x')).toBe('0x');
     expect(acceptTypedChar('stage-account:', 'stage-account:1')).toBe('stage-account:1');
+    expect(acceptTypedChar('0xabc', '0xabc ')).toBe('0xabc ');
   });
 });

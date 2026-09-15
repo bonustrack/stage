@@ -50,6 +50,7 @@
     "./api/ens": "./src/api/ens.ts",
     "./api/etherscan": "./src/api/etherscan.ts",
     "./api/github": "./src/api/github.ts",
+    "./api/releases": "./src/api/releases.ts",
     "./api/opensea": "./src/api/opensea.ts",
     "./api/coingecko": "./src/api/coingecko.ts",
     "./text/markdown": "./src/text/markdown.ts",

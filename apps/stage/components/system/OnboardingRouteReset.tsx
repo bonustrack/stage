@@ -9,7 +9,7 @@ export function OnboardingRouteReset({ ready, showing }: { ready: boolean; showi
   const navReady = useRootNavigationState()?.key !== undefined;
   const active = ready && showing && navReady;
   useEffect(() => {
-    if (!active || isOnboardingRoute(pathname)) return;
+    if (!active || isOnboardingRoute(pathname) || pathname === '/') return;
     router.replace(signupHref(nextRouteFor(currentRoute(pathname))));
   }, [active, pathname]);
   useEffect(() => {

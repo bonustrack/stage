@@ -39,8 +39,8 @@ export const SIZES: Record<ButtonSize, SizeSpec> = {
   xs: { height: 30, paddingHorizontal: 11, fontSize: FONT_SIZE.xs, gap: 6, spinner: 'small' },
   sm: { height: 32, paddingHorizontal: 12, fontSize: FONT_SIZE.sm, gap: 6, spinner: 'small' },
   md: { height: 40, paddingHorizontal: 16, fontSize: FONT_SIZE.md, gap: 8, spinner: 'small' },
-  lg: { height: 48, paddingHorizontal: 20, fontSize: FONT_SIZE.lg, gap: 8, spinner: 'small' },
-  xl: { height: 56, paddingHorizontal: 24, fontSize: FONT_SIZE.lg, gap: 8, spinner: 'small' },
+  lg: { height: 48, paddingHorizontal: 20, fontSize: FONT_SIZE.xl, gap: 8, spinner: 'small' },
+  xl: { height: 56, paddingHorizontal: 24, fontSize: FONT_SIZE['2xl'], gap: 8, spinner: 'small' },
   '2xl': { height: 64, paddingHorizontal: 28, fontSize: FONT_SIZE['2xl'], gap: 10, spinner: 'large' },
   '3xl': { height: 72, paddingHorizontal: 32, fontSize: FONT_SIZE['4xl'], gap: 12, spinner: 'large' },
 };

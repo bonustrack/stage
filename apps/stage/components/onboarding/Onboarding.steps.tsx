@@ -2,8 +2,7 @@
 import { Title } from '@stage-labs/kit/react-native/title';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Col, Row } from '../layout';
+import { Col } from '../layout';
 
 interface StepAction {
   label: string;
@@ -39,25 +38,6 @@ function OnboardingStepView({ dark, title, centered, caption, captionSize, topPa
           />
         ))}
       </Col>
-    </Col>
-  );
-}
-
-export function WelcomeStep({ dark, busy, onCreate, onImport, onBack }: {
-  dark: boolean; busy: boolean; onCreate: () => void; onImport: () => void; onBack?: () => void;
-}): React.ReactElement {
-  return (
-    <Col gap={16}>
-      <Button label="Create new wallet" block size="lg" color="primary" variant="solid" disabled={busy} dark={dark} onPress={onCreate} />
-      <Row justify="center" gap={4}>
-        <Text value="Or" size="md" color="secondary" />
-        <Pressable onPress={onImport} disabled={busy} hitSlop={8}>
-          <Text value="import wallet" size="md" color="link" weight="semibold" />
-        </Pressable>
-      </Row>
-      {onBack === undefined ? null : (
-        <Button label="Back" block size="lg" color="primary" variant="ghost" disabled={busy} dark={dark} onPress={onBack} />
-      )}
     </Col>
   );
 }
