@@ -8,7 +8,7 @@ const MAX_REDIRECTS = 3;
 const MAX_BYTES = 1_500_000;
 const X402_MAX_BYTES = 64_000;
 
-export interface FetchResult { html: string; finalUrl: string }
+interface FetchResult { html: string; finalUrl: string }
 
 async function readJsonCapped(res: Response): Promise<unknown> {
   try {

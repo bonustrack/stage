@@ -18,7 +18,7 @@ export const HISTORY_CORS_HEADERS = {
   'access-control-max-age': '86400',
 };
 
-export interface HistoryRoute {
+interface HistoryRoute {
   upstream: string;
   method: 'GET' | 'POST';
 }

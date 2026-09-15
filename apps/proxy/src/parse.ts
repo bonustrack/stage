@@ -64,7 +64,7 @@ function faviconLink(html: string): string | undefined {
   return best;
 }
 
-export function resolveUrl(href: string | undefined, base: string): string | undefined {
+function resolveUrl(href: string | undefined, base: string): string | undefined {
   if (!href) return undefined;
   try {
     const u = new URL(href, base);

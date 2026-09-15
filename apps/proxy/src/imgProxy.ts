@@ -8,7 +8,7 @@ function imgUrl(origin: string, target: string, width: number): string {
   return `${origin}/img?url=${encodeURIComponent(target)}&w=${width}`;
 }
 
-export interface ProxiedPreview extends PreviewMeta {
+interface ProxiedPreview extends PreviewMeta {
   imageOrigin?: string;
   faviconOrigin?: string;
 }

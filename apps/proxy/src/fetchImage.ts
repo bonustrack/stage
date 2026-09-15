@@ -3,12 +3,12 @@ import { assertPublicUrl, readCappedBytes, SsrfError, UA } from './ssrf.ts';
 
 const TIMEOUT_MS = 5000;
 const MAX_REDIRECTS = 3;
-export const MAX_IMG_BYTES = 3_000_000;
+const MAX_IMG_BYTES = 3_000_000;
 const DEFAULT_WIDTH = 600;
 const MAX_WIDTH = 2000;
 const QUALITY = 80;
 
-export interface ImageResult {
+interface ImageResult {
   body: ArrayBuffer;
   contentType: string;
   resized: boolean;

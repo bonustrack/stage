@@ -1,7 +1,7 @@
 import path from 'node:path';
 
 export const APP_SCHEME = 'stage-app';
-export const APP_HOST = 'stage.box';
+const APP_HOST = 'stage.box';
 export const APP_HOME = `${APP_SCHEME}://${APP_HOST}/`;
 
 export const ISOLATION_HEADERS: Readonly<Record<string, string>> = {

@@ -5,12 +5,12 @@ const TIMEOUT_MS = 8000;
 const MAX_REDIRECTS = 3;
 const MAX_BODY_BYTES = 16_000;
 
-export interface SettleRequest {
+interface SettleRequest {
   url: string;
   paymentHeader: string;
 }
 
-export interface SettleResult {
+interface SettleResult {
   status: number;
   ok: boolean;
   body?: string;
