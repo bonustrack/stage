@@ -10,8 +10,8 @@ void test('rejects non-http(s) schemes', () => {
 
 void test('rejects blocked internal hosts', () => {
   assert.throws(() => assertPublicUrl('http://localhost/x'), SsrfError);
-  assert.throws(() => assertPublicUrl('https://preview.metro.box/x'), SsrfError);
-  assert.throws(() => assertPublicUrl('https://metro.box/x'), SsrfError);
+  assert.throws(() => assertPublicUrl('https://preview.stage.box/x'), SsrfError);
+  assert.throws(() => assertPublicUrl('https://stage.box/x'), SsrfError);
   assert.throws(() => assertPublicUrl('http://metadata.google.internal/'), SsrfError);
 });
 

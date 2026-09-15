@@ -40,7 +40,7 @@ app/          # expo-router routes (tabs, group, user, wallet, settings, xmtp, a
 components/   # screen + UI components in kit JSX (chrome/, settings/, wallet/, ...) with colocated *.model.ts files
 platform/     # per-platform seams (x.ts native / x.web.ts web overrides)
 lib/          # accounts, caches, XMTP glue (incl. xmtp.*.web adapters), wallet helpers
-modules/      # local Expo native modules (metro-pill)
+modules/      # local Expo native modules (stage-pill)
 plugins/      # config plugins
 scripts/      # build helpers (e.g. nodejs-mobile project install)
 assets/       # fonts + images

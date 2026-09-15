@@ -2,7 +2,7 @@
 import { getQueryClient } from '../../lib/queryClient';
 import { getAccountEpoch } from '../../lib/accountEpoch';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { isMetroControlBody } from '../../lib/push';
+import { isControlBody } from '../../lib/push';
 import { convOfLine } from '../../lib/xmtp.client';
 import { latestConvMessages, olderConvMessages } from '../../lib/xmtp.messages';
 import { feedCache } from '../../lib/xmtp.state';
@@ -25,7 +25,7 @@ export function ensureFeedQueryBridge(): void {
 
 function mergeNewestFirst(prev: HistoryEntry[], additions: HistoryEntry[]): HistoryEntry[] {
   const seen = new Set(prev.map(e => e.id));
-  const fresh = additions.filter(e => !isMetroControlBody(e.text) && !seen.has(e.id));
+  const fresh = additions.filter(e => !isControlBody(e.text) && !seen.has(e.id));
   return fresh.length === 0 ? prev : [...fresh, ...prev];
 }
 
@@ -80,7 +80,7 @@ export function prefetchFeed(line: string): void {
 export async function loadFeedOlderPage(line: string, oldest: HistoryEntry): Promise<boolean> {
   const beforeTsMs = new Date(oldest.ts).getTime();
   const mapped = (await olderConvMessages(line, beforeTsMs, PAGE_SIZE))
-    .filter(e => !isMetroControlBody(e.text));
+    .filter(e => !isControlBody(e.text));
   const prev = feedCache.get(line) ?? [];
   const seen = new Set(prev.map(e => e.id));
   const additions = mapped.filter(e => !seen.has(e.id));

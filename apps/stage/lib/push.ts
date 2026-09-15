@@ -1,5 +1,5 @@
 export {
-  isMetroControlBody,
+  isControlBody,
   registerPushWithServer,
   unregisterPushFromServer,
   schedulePushTopicRefresh,

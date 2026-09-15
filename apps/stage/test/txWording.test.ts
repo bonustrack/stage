@@ -38,8 +38,8 @@ describe('txActionLabel', () => {
   test('native transfer (no call) -> Pay', () => { expect(txActionLabel(null, false)).toBe('Pay'); });
   test('Poster post(string,string) -> Post message', () => {
     const c = call('post', [
-      { name: 'content', type: 'string', value: 'Hello from Metro' },
-      { name: 'tag', type: 'string', value: 'metro' },
+      { name: 'content', type: 'string', value: 'Hello from Stage' },
+      { name: 'tag', type: 'string', value: 'stage' },
     ]);
     expect(txActionLabel(c, false)).toBe('Post message');
   });

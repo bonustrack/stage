@@ -16,7 +16,7 @@ export interface StreamMsg {
 }
 
 export {
-  XMTP_USER_PREFIX, lineOfConv, lineOfDmPeer, convIdOfLine, metroDmPeerOf, metroConvIdOf,
+  XMTP_USER_PREFIX, lineOfConv, lineOfDmPeer, convIdOfLine, stageDmPeerOf, stageConvIdOf,
 } from '@stage-labs/client/xmtp/line';
 
 export { shortAddress, stampAvatarUrl } from '@stage-labs/client/identity/format';

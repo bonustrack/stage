@@ -1,4 +1,4 @@
-package box.metro.pill
+package box.stage.pill
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -30,9 +30,9 @@ import com.google.firebase.messaging.RemoteMessage
  *
  * Pushes without a `topic` are not ours and are forwarded to Expo's own
  * FirebaseMessagingService so expo-notifications keeps working. This service is
- * the only MESSAGING_EVENT receiver in the merged manifest (see withMetroPill).
+ * the only MESSAGING_EVENT receiver in the merged manifest (see withStagePill).
  */
-class MetroFcmService : FirebaseMessagingService() {
+class StageFcmService : FirebaseMessagingService() {
 
   override fun onNewToken(token: String) {
     runCatching { delegateNewToken(token) }
@@ -48,7 +48,7 @@ class MetroFcmService : FirebaseMessagingService() {
 
     val convId = groupIdOfTopic(topic)
     runCatching {
-      MetroPillModule.emit(
+      StagePillModule.emit(
         "onXmtpPush",
         mapOf("topic" to topic, "convId" to convId, "messageId" to null),
       )

@@ -59,8 +59,8 @@ describe('error mappers', () => {
 
 describe('createGroupWith', () => {
   test('builds line + id from injected create', async () => {
-    const res = await createGroupWith([ADDR_A], id => `metro://xmtp/${id}`, async () => ({ id: 'gid' }));
-    expect(res).toEqual({ line: 'metro://xmtp/gid', id: 'gid' });
+    const res = await createGroupWith([ADDR_A], id => `stage://xmtp/${id}`, async () => ({ id: 'gid' }));
+    expect(res).toEqual({ line: 'stage://xmtp/gid', id: 'gid' });
   });
   test('maps create error', async () => {
     await expect(createGroupWith([ADDR_A], id => id, async () => { throw new Error('no inbox'); }))

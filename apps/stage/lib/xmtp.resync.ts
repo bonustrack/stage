@@ -1,7 +1,7 @@
 
 import type { ConsentState } from '@xmtp/react-native-sdk';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { isMetroControlBody } from './pushRegister.control';
+import { isControlBody } from './pushRegister.control';
 import { getCachedXmtpClient, convOfLine } from './xmtp.client';
 import { latestConvMessages } from './xmtp.messages';
 import { feedCache, activeFeedLines } from './xmtp.state';
@@ -42,7 +42,7 @@ export async function resyncActiveFeeds(): Promise<void> {
       await conv.sync().catch(() => undefined);
       const page = await latestConvMessages(conv, line, PAGE_SIZE);
       for (const env of page.reverse()) {
-        if (!isMetroControlBody(env.text)) pushToFeedSlice(line, env);
+        if (!isControlBody(env.text)) pushToFeedSlice(line, env);
       }
     } catch { }
   }

@@ -22,7 +22,7 @@ function useSpinRotation(): Animated.AnimatedInterpolation<string> {
 }
 
 export function Spinner({ size = 24, color = '#000000' }: { size?: number; color?: string }) {
-  const gid = useRef(`metroSpin${Math.random().toString(36).slice(2, 8)}`).current;
+  const gid = useRef(`stageSpin${Math.random().toString(36).slice(2, 8)}`).current;
   const rotate = useSpinRotation();
   const Wrapper = Platform.OS === 'web' ? Box : Animated.View;
   const wrapperStyle = Platform.OS === 'web'

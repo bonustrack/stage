@@ -17,7 +17,7 @@ const STORED = {
   pubY: '0x' + 'b7'.repeat(32),
   authenticatorId: 'AQIDBAUGBwgJCgsMDQ4PEA',
   authenticatorIdHash: ('0x' + 'cd'.repeat(32)) as `0x${string}`,
-  rpID: 'metro.box',
+  rpID: 'stage.box',
 };
 
 describe('passkey sign callback contract', () => {

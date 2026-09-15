@@ -13,7 +13,7 @@ const cfg = requireCjs('../plugins/nodejsMobileConfig.js') as NodejsMobileConfig
 
 const TEMPLATE_GRADLE = [
   'android {',
-  '    namespace "box.metro.app"',
+  '    namespace "box.stage.app"',
   "    androidResources { ignoreAssetsPattern '!.svn:!.git' }",
   '}',
 ].join('\n');
@@ -52,7 +52,7 @@ describe('app build.gradle transform', () => {
 
 describe('AndroidManifest extractNativeLibs', () => {
   test('forces android:extractNativeLibs=true (libnode.so load fix)', () => {
-    const manifest = { application: [{ $: { 'android:label': 'Metro' } }] };
+    const manifest = { application: [{ $: { 'android:label': 'Stage' } }] };
     cfg.setExtractNativeLibs(manifest);
     expect(manifest.application[0].$['android:extractNativeLibs']).toBe('true');
   });

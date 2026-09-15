@@ -19,7 +19,7 @@ export interface PingResult {
 }
 
 export async function pingBridge(payload?: unknown): Promise<PingResult> {
-  return (await rawCall('ping', payload ?? { hello: 'metro' })) as PingResult;
+  return (await rawCall('ping', payload ?? { hello: 'stage' })) as PingResult;
 }
 
 export interface EngineStatusResult {

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { useFocusEffect } from 'expo-router';
-import { setActiveConversation } from '../../modules/metro-pill';
+import { setActiveConversation } from '../../modules/stage-pill';
 import { setActiveConvId } from '../../lib/activeConv';
 import { getCachedRows, getConvConsentState, streamConvConsent, getGroupLabels } from '../../modules/messaging';
 import {

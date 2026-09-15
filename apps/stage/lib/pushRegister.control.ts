@@ -1,5 +1,5 @@
-const METRO_CTRL_PREFIX = 'METRO_CTRL:';
+const CONTROL_BODY_PREFIX = 'METRO_CTRL:';
 
-export function isMetroControlBody(text: unknown): boolean {
-  return typeof text === 'string' && text.startsWith(METRO_CTRL_PREFIX);
+export function isControlBody(text: unknown): boolean {
+  return typeof text === 'string' && text.startsWith(CONTROL_BODY_PREFIX);
 }

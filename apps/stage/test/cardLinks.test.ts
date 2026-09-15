@@ -10,14 +10,14 @@ describe('cardLinksOf', () => {
   });
 
   test('detects a single github link', () => {
-    const cards = cardLinksOf('see https://github.com/bonustrack/metro/pull/321 please');
+    const cards = cardLinksOf('see https://github.com/bonustrack/stage/pull/321 please');
     expect(cards).toHaveLength(1);
     expect(cards[0]).toMatchObject({ kind: 'github' });
   });
 
   test('renders one card per distinct card link, in order of appearance', () => {
     const text = [
-      'preview https://github.com/bonustrack/metro/issues/501',
+      'preview https://github.com/bonustrack/stage/issues/501',
       'channel metro://xmtp/47bf58a8f56cad829b2263797a7e25e4',
       'build metro://expo-development-client/?url=https://u.expo.dev/abc/group/grp123',
     ].join(' ');
@@ -26,7 +26,7 @@ describe('cardLinksOf', () => {
   });
 
   test('dedupes identical urls', () => {
-    const url = 'https://github.com/bonustrack/metro';
+    const url = 'https://github.com/bonustrack/stage';
     const cards = cardLinksOf(`${url} and again ${url}`);
     expect(cards).toHaveLength(1);
   });
@@ -78,8 +78,8 @@ describe('cardLinksOf', () => {
   test('handles newline-separated links (two github + a user link)', () => {
     const text = [
       'Test 1 - two GitHub links + a user link:',
-      'https://github.com/bonustrack/metro/pull/502',
-      'https://github.com/bonustrack/metro/issues/486',
+      'https://github.com/bonustrack/stage/pull/502',
+      'https://github.com/bonustrack/stage/issues/486',
       'https://stage.box/user/0x42e167e6bff0a3a701d8fa14f96a0f840eb939df',
     ].join('\n');
     expect(cardLinksOf(text).map(c => c.kind)).toEqual(['github', 'github', 'dm']);
@@ -90,7 +90,7 @@ describe('cardLinksOf', () => {
       'Test 2 - mixed: deployment + channel + GitHub:',
       'https://metro.box/preview-launcher.html?u=https%3A%2F%2Fu.expo.dev%2F1707f2db-c2b8-4c91-9341-27b1d57d355f%2Fgroup%2F521df401-53f1-4413-b95a-c682dc054134',
       'metro://xmtp/47bf58a8f56cad829b2263797a7e25e4',
-      'https://github.com/bonustrack/metro/pull/505',
+      'https://github.com/bonustrack/stage/pull/505',
     ].join('\n');
     expect(cardLinksOf(text).map(c => c.kind)).toEqual(['preview', 'channel', 'github']);
   });
@@ -112,15 +112,15 @@ describe('cardLinksOf', () => {
   });
 
   test('suppresses a card for an angle-bracket-wrapped special link', () => {
-    expect(cardLinksOf('<https://github.com/bonustrack/metro/pull/321>')).toEqual([]);
+    expect(cardLinksOf('<https://github.com/bonustrack/stage/pull/321>')).toEqual([]);
     expect(cardLinksOf('<metro://xmtp/47bf58a8f56cad829b2263797a7e25e4>')).toEqual([]);
   });
 
   test('mixed <bracketed> + bare link: only the bare link cards', () => {
-    const text = 'hide <https://example.com/secret> but show https://github.com/bonustrack/metro';
+    const text = 'hide <https://example.com/secret> but show https://github.com/bonustrack/stage';
     const cards = cardLinksOf(text);
     expect(cards).toHaveLength(1);
-    expect(cards[0]).toMatchObject({ kind: 'github', url: 'https://github.com/bonustrack/metro' });
+    expect(cards[0]).toMatchObject({ kind: 'github', url: 'https://github.com/bonustrack/stage' });
   });
 
   test('a lone leading or trailing angle bracket does not suppress', () => {
@@ -130,7 +130,7 @@ describe('cardLinksOf', () => {
 
   test('generic + special links stack in order', () => {
     const text = [
-      'https://github.com/bonustrack/metro',
+      'https://github.com/bonustrack/stage',
       'https://news.ycombinator.com/item?id=1',
       'metro://xmtp/47bf58a8f56cad829b2263797a7e25e4',
     ].join(' ');

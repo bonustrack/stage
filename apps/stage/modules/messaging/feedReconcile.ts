@@ -1,6 +1,6 @@
 
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { isMetroControlBody } from '../../lib/push';
+import { isControlBody } from '../../lib/push';
 import { convOfLine } from '../../lib/xmtp.client';
 import { latestConvMessages } from '../../lib/xmtp.messages';
 import { feedCache, activeFeedLines } from '../../lib/xmtp.state';
@@ -9,7 +9,7 @@ import { PAGE_SIZE } from '../../lib/xmtp.resync';
 function feedLatest(line: string): HistoryEntry | undefined {
   const slice = feedCache.get(line);
   if (!slice) return undefined;
-  return slice.find(e => !isMetroControlBody(e.text));
+  return slice.find(e => !isControlBody(e.text));
 }
 
 function entryNs(e: HistoryEntry): number {
@@ -18,7 +18,7 @@ function entryNs(e: HistoryEntry): number {
 }
 
 function reloadSlice(line: string, msgs: HistoryEntry[]): void {
-  const page = msgs.filter(e => !isMetroControlBody(e.text));
+  const page = msgs.filter(e => !isControlBody(e.text));
   const prev = feedCache.get(line) ?? [];
   const seen = new Set(prev.map(e => e.id));
   const fresh = page.filter(e => !seen.has(e.id));
@@ -49,7 +49,7 @@ export async function reconcileOnOpen(line: string): Promise<void> {
     if (!conv) return;
     const [storeLatest] = await latestConvMessages(conv, line, 1);
     if (!storeLatest) return;
-    if (isMetroControlBody(storeLatest.text)) return;
+    if (isControlBody(storeLatest.text)) return;
     const feed = feedLatest(line);
     if (feed?.id === storeLatest.id) return;
     reloadSlice(line, await latestConvMessages(conv, line, PAGE_SIZE));
@@ -72,7 +72,7 @@ async function healArrivalGap(line: string): Promise<void> {
     if (!conv) return;
     await conv.sync().catch(() => undefined);
     const page = await latestConvMessages(conv, line, PAGE_SIZE);
-    const mapped = page.filter(e => !isMetroControlBody(e.text));
+    const mapped = page.filter(e => !isControlBody(e.text));
     const before = feedLatest(line);
     reloadSlice(line, mapped);
     const after = feedLatest(line);

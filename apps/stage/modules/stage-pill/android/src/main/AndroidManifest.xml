@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
   xmlns:tools="http://schemas.android.com/tools">
-  <!-- POST_NOTIFICATIONS is also declared by the config plugin (withMetroPill)
+  <!-- POST_NOTIFICATIONS is also declared by the config plugin (withStagePill)
        so it lands in the merged manifest even if module-manifest merge order
        changes. Declaring it here keeps the module self-describing. -->
   <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -9,9 +9,9 @@
     <!-- Custom FCM service: the ONLY MESSAGING_EVENT receiver. Renders avatar
          data-pushes natively (avatar-left custom RemoteViews) and reflectively
          forwards every other push to an instance of ExpoFirebaseMessagingService
-         (see MetroFcmService.kt) so existing expo-notifications behaviour is kept. -->
+         (see StageFcmService.kt) so existing expo-notifications behaviour is kept. -->
     <service
-      android:name="box.metro.pill.MetroFcmService"
+      android:name="box.stage.pill.StageFcmService"
       android:exported="false">
       <intent-filter>
         <action android:name="com.google.firebase.MESSAGING_EVENT" />

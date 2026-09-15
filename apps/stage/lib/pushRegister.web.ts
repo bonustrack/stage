@@ -9,7 +9,7 @@ import { linkProxyBase } from './historyServer';
 import { setPushStatus } from './pushStatus';
 import { getCachedXmtpClient } from './xmtp.state.web';
 
-export { isMetroControlBody } from './pushRegister.control';
+export { isControlBody } from './pushRegister.control';
 
 export type PushPermission = 'granted' | 'denied' | 'undetermined';
 

@@ -9,13 +9,11 @@
 #   3. uploads dist/ to a static host under a per-PR path,
 #   4. prints the dev-client deep link.
 #
-# It needs a static host the CI runner can WRITE to. The daemon's apk.metro.box
-# (python http.server over /private/tmp/apkserve via cloudflared) is read-only
-# from CI's perspective — there is no upload endpoint — so this script targets an
+# It needs a static host the CI runner can WRITE to, so this script targets an
 # S3-compatible bucket (Cloudflare R2 recommended: same Cloudflare account as the
-# metro.box zone). Set these env vars / GH secrets:
-#   PR_PREVIEW_BUCKET    e.g. s3://metro-pr-preview
-#   PR_PREVIEW_BASE_URL  public base, e.g. https://pr-preview.metro.box
+# stage.box zone). Set these env vars / GH secrets:
+#   PR_PREVIEW_BUCKET    e.g. s3://stage-pr-preview
+#   PR_PREVIEW_BASE_URL  public base, e.g. https://pr-preview.stage.box
 #   AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_ENDPOINT_URL_S3 (R2 endpoint)
 #
 # Usage: PR=236 ./scripts/pr-preview/publish-selfhosted.sh

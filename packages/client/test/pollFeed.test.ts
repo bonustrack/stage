@@ -7,13 +7,13 @@ import {
 } from '../src/xmtp/poll-feed';
 import { voteKey, openVoteKey } from '../src/xmtp/poll-tally';
 
-const LINE = 'metro://xmtp/tony/conv1';
+const LINE = 'stage://xmtp/tony/conv1';
 let seq = 0;
 function ts(): string { return new Date(2026, 0, 1, 0, 0, ++seq).toISOString(); }
 
 function pollEntry(id: string, question: string, options: string[], extra?: { multiSelect?: boolean; open?: boolean }): HistoryEntry {
   return {
-    id, ts: ts(), station: 'xmtp', line: LINE, from: 'metro:user/alice', to: LINE,
+    id, ts: ts(), station: 'xmtp', line: LINE, from: 'stage:user/alice', to: LINE,
     text: `Poll: ${question}`,
     payload: {
       contentType: 'poll',
@@ -44,8 +44,8 @@ describe('poll-feed shared tally helpers', () => {
 
   test('voteEventsOf only picks custom-schema reactions', () => {
     const feed = [
-      voteEntry('metro:user/a', 'p1', voteKey(0, 0)),
-      { id: 'r1', ts: ts(), station: 'xmtp', line: LINE, from: 'metro:user/b', to: LINE,
+      voteEntry('stage:user/a', 'p1', voteKey(0, 0)),
+      { id: 'r1', ts: ts(), station: 'xmtp', line: LINE, from: 'stage:user/b', to: LINE,
         text: '[react 👍]', payload: { contentType: 'reaction', reactTo: 'p1', emoji: '👍' } } as HistoryEntry,
     ];
     expect(voteEventsOf(feed)).toHaveLength(1);
@@ -54,9 +54,9 @@ describe('poll-feed shared tally helpers', () => {
   test('single-select tally counts distinct voters per option', () => {
     const feed = [
       pollEntry('p1', 'Lunch?', ['Pizza', 'Sushi', 'Tacos']),
-      voteEntry('metro:user/a', 'p1', voteKey(0, 0)),
-      voteEntry('metro:user/b', 'p1', voteKey(0, 0)),
-      voteEntry('metro:user/c', 'p1', voteKey(0, 1)),
+      voteEntry('stage:user/a', 'p1', voteKey(0, 0)),
+      voteEntry('stage:user/b', 'p1', voteKey(0, 0)),
+      voteEntry('stage:user/c', 'p1', voteKey(0, 1)),
     ];
     const tally = votesByMessage(feed).get('p1')?.get(0);
     expect(tally?.get(0)?.size).toBe(2);
@@ -66,8 +66,8 @@ describe('poll-feed shared tally helpers', () => {
   test('single-select: latest vote replaces earlier one for same voter', () => {
     const feed = [
       pollEntry('p1', 'Lunch?', ['Pizza', 'Sushi']),
-      voteEntry('metro:user/a', 'p1', voteKey(0, 0)),
-      voteEntry('metro:user/a', 'p1', voteKey(0, 1)),
+      voteEntry('stage:user/a', 'p1', voteKey(0, 0)),
+      voteEntry('stage:user/a', 'p1', voteKey(0, 1)),
     ];
     const tally = votesByMessage(feed).get('p1')?.get(0);
     expect(tally?.get(0)?.size ?? 0).toBe(0);
@@ -77,8 +77,8 @@ describe('poll-feed shared tally helpers', () => {
   test('removed vote is not counted', () => {
     const feed = [
       pollEntry('p1', 'Lunch?', ['Pizza', 'Sushi']),
-      voteEntry('metro:user/a', 'p1', voteKey(0, 0)),
-      voteEntry('metro:user/a', 'p1', voteKey(0, 0), true),
+      voteEntry('stage:user/a', 'p1', voteKey(0, 0)),
+      voteEntry('stage:user/a', 'p1', voteKey(0, 0), true),
     ];
     expect(votesByMessage(feed).get('p1')?.get(0)?.get(0)?.size ?? 0).toBe(0);
   });
@@ -86,8 +86,8 @@ describe('poll-feed shared tally helpers', () => {
   test('multi-select tally lets one voter pick several options', () => {
     const feed = [
       pollEntry('p1', 'Pick toppings', ['Cheese', 'Olives', 'Ham'], { multiSelect: true }),
-      voteEntry('metro:user/a', 'p1', voteKey(0, 0)),
-      voteEntry('metro:user/a', 'p1', voteKey(0, 2)),
+      voteEntry('stage:user/a', 'p1', voteKey(0, 0)),
+      voteEntry('stage:user/a', 'p1', voteKey(0, 2)),
     ];
     const tally = votesByMessage(feed).get('p1')?.get(0);
     expect(tally?.get(0)?.size).toBe(1);
@@ -97,10 +97,10 @@ describe('poll-feed shared tally helpers', () => {
   test('ownVotesByMessage reflects only my selections', () => {
     const feed = [
       pollEntry('p1', 'Lunch?', ['Pizza', 'Sushi']),
-      voteEntry('metro:user/me', 'p1', voteKey(0, 1)),
-      voteEntry('metro:user/other', 'p1', voteKey(0, 0)),
+      voteEntry('stage:user/me', 'p1', voteKey(0, 1)),
+      voteEntry('stage:user/other', 'p1', voteKey(0, 0)),
     ];
-    const own = ownVotesByMessage(feed, 'metro:user/me').get('p1')?.get(0);
+    const own = ownVotesByMessage(feed, 'stage:user/me').get('p1')?.get(0);
     expect(own?.has(1)).toBe(true);
     expect(own?.has(0)).toBe(false);
   });
@@ -110,7 +110,7 @@ describe('poll-feed shared tally helpers', () => {
     const isCustom = sdkReaction.schema === 'custom';
     const removed = sdkReaction.action === 'removed';
     const mapped: HistoryEntry = {
-      id: `v-web-${++seq}`, ts: ts(), station: 'xmtp', line: LINE, from: 'metro:user/me', to: LINE,
+      id: `v-web-${++seq}`, ts: ts(), station: 'xmtp', line: LINE, from: 'stage:user/me', to: LINE,
       text: `[vote ${sdkReaction.content}]`,
       payload: {
         contentType: 'reaction', reactTo: sdkReaction.reference, emoji: sdkReaction.content,
@@ -121,15 +121,15 @@ describe('poll-feed shared tally helpers', () => {
     const feed = [pollEntry('p1', 'Lunch?', ['Pizza', 'Sushi']), mapped];
     expect(voteEventsOf(feed)).toHaveLength(1);
     expect(votesByMessage(feed).get('p1')?.get(0)?.get(0)?.size).toBe(1);
-    expect(ownVotesByMessage(feed, 'metro:user/me').get('p1')?.get(0)?.has(0)).toBe(true);
+    expect(ownVotesByMessage(feed, 'stage:user/me').get('p1')?.get(0)?.has(0)).toBe(true);
   });
 
   test('open answers are decoded from open-vote custom reactions', () => {
     const feed = [
       pollEntry('p1', 'Favorite?', ['A', 'B'], { open: true }),
-      voteEntry('metro:user/a', 'p1', openVoteKey(0, 'Mango')),
+      voteEntry('stage:user/a', 'p1', openVoteKey(0, 'Mango')),
     ];
     const answers = openAnswersByMessage(feed).get('p1')?.get(0);
-    expect(answers?.get('metro:user/a')?.text).toBe('Mango');
+    expect(answers?.get('stage:user/a')?.text).toBe('Mango');
   });
 });

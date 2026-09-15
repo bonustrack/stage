@@ -7,7 +7,8 @@ import { Platform } from 'react-native';
 import { appStorage } from '../platform/storage';
 import { loadAccounts } from './accounts';
 
-const STORAGE_KEY = 'metro:lastRoute:v1';
+const STORAGE_KEY = 'stage:lastRoute:v1';
+const LEGACY_STORAGE_KEY = 'metro:lastRoute:v1';
 
 let restoreState: 'idle' | 'restoring' | 'done' = 'idle';
 
@@ -26,6 +27,13 @@ function isRestorable(path: string): boolean {
   const TAB_ROOTS = ['/wallet', '/settings'];
   if (TAB_ROOTS.includes(path)) return false;
   return true;
+}
+
+async function readSavedRoute(): Promise<string | null> {
+  const [current, legacy] = await Promise.all([appStorage.get(STORAGE_KEY), appStorage.get(LEGACY_STORAGE_KEY)]);
+  void appStorage.delete(STORAGE_KEY).catch(() => undefined);
+  void appStorage.delete(LEGACY_STORAGE_KEY).catch(() => undefined);
+  return current ?? legacy;
 }
 
 function persist(path: string): void {
@@ -57,11 +65,10 @@ export function useRestoreGate(): RestoreGate {
     void (async (): Promise<void> => {
       try {
         const [saved, initialUrl, accounts] = await Promise.all([
-          appStorage.get(STORAGE_KEY),
+          readSavedRoute(),
           Linking.getInitialURL().catch(() => null),
           loadAccounts(),
         ]);
-        if (saved) void appStorage.delete(STORAGE_KEY).catch(() => undefined);
         const deepLink = hasColdStartDeepLink(initialUrl);
         const restorable = !!saved && isRestorable(saved);
         const willRestore = Platform.OS !== 'web' && !!saved && restorable && !deepLink && accounts.length > 0;

@@ -1,6 +1,6 @@
 
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { isMetroControlBody } from '../../lib/push';
+import { isControlBody } from '../../lib/push';
 import { latestConvMessages, olderConvMessages, type ConvHandle } from '../../lib/xmtp.messages';
 import { convOfLine } from '../../lib/xmtp.client';
 import { PAGE_SIZE } from '../../lib/xmtp.stream';
@@ -17,7 +17,7 @@ export interface SearchScanResult {
 
 function matches(e: HistoryEntry, needle: string): boolean {
   if (!e.text) return false;
-  if (isMetroControlBody(e.text)) return false;
+  if (isControlBody(e.text)) return false;
   return e.text.toLowerCase().includes(needle);
 }
 

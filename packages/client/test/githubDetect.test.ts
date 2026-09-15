@@ -4,19 +4,19 @@ import { githubLinkOf } from '../src/api/github';
 
 describe('githubLinkOf', () => {
   test('detects a bare repo link', () => {
-    expect(githubLinkOf('see https://github.com/bonustrack/metro for code')).toMatchObject({
-      owner: 'bonustrack', repo: 'metro', kind: 'repo', number: undefined,
+    expect(githubLinkOf('see https://github.com/bonustrack/stage for code')).toMatchObject({
+      owner: 'bonustrack', repo: 'stage', kind: 'repo', number: undefined,
     });
   });
 
   test('detects a PR link with number', () => {
-    expect(githubLinkOf('https://github.com/bonustrack/metro/pull/321')).toMatchObject({
+    expect(githubLinkOf('https://github.com/bonustrack/stage/pull/321')).toMatchObject({
       kind: 'pull', number: 321,
     });
   });
 
   test('detects an issue link with number', () => {
-    expect(githubLinkOf('https://github.com/bonustrack/metro/issues/325')).toMatchObject({
+    expect(githubLinkOf('https://github.com/bonustrack/stage/issues/325')).toMatchObject({
       kind: 'issue', number: 325,
     });
   });

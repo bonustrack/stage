@@ -1,6 +1,7 @@
 
 import { AppState } from 'react-native';
-import { Directory, File, Paths } from 'expo-file-system';
+import { File } from 'expo-file-system';
+import { appDocumentsDir } from './appDocuments';
 import { hydrateOnce, makeListeners } from './storeCore';
 
 const FLUSH_DEBOUNCE_MS = 1_500;
@@ -16,12 +17,6 @@ function wireAppStateFlush(): void {
   });
 }
 
-function metroDir(): Directory {
-  const dir = new Directory(Paths.document, 'metro');
-  if (!dir.exists) dir.create({ intermediates: true });
-  return dir;
-}
-
 export class PersistentStore<T> {
   private value: T | null = null;
   private readonly hydration = hydrateOnce<T | null>(() => this.readDisk());
@@ -34,7 +29,7 @@ export class PersistentStore<T> {
     if (debounced) wireAppStateFlush();
   }
 
-  private file(): File { return new File(metroDir(), this.fileName); }
+  private file(): File { return new File(appDocumentsDir(), this.fileName); }
 
   private writeToDisk(): void {
     try {

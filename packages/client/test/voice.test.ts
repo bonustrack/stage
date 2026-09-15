@@ -49,8 +49,8 @@ describe('formatVoiceDuration', () => {
 
 describe('voiceWaveformBars', () => {
   test('returns VOICE_BAR_COUNT bars in [0,1] and is deterministic', () => {
-    const a = voiceWaveformBars('metro://x');
-    const b = voiceWaveformBars('metro://x');
+    const a = voiceWaveformBars('stage://x');
+    const b = voiceWaveformBars('stage://x');
     expect(a).toHaveLength(VOICE_BAR_COUNT);
     expect(a).toEqual(b);
     for (const v of a) { expect(v).toBeGreaterThanOrEqual(0); expect(v).toBeLessThanOrEqual(1); }

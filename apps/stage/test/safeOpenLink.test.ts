@@ -4,9 +4,9 @@ import { isAllowedLinkScheme } from '../lib/safeOpenLink';
 
 describe('isAllowedLinkScheme', () => {
   test('allows web + mailto + our app schemes', () => {
-    expect(isAllowedLinkScheme('https://metro.box/xmtp/abc')).toBe(true);
+    expect(isAllowedLinkScheme('https://stage.box/xmtp/abc')).toBe(true);
     expect(isAllowedLinkScheme('http://example.com')).toBe(true);
-    expect(isAllowedLinkScheme('mailto:hi@metro.box')).toBe(true);
+    expect(isAllowedLinkScheme('mailto:hi@stage.box')).toBe(true);
     expect(isAllowedLinkScheme('metro://xmtp/abc')).toBe(true);
     expect(isAllowedLinkScheme('stage://room/123')).toBe(true);
   });

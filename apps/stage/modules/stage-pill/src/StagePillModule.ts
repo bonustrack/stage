@@ -6,19 +6,19 @@ interface XmtpPushEvent {
   messageId?: string | null;
 }
 
-interface MetroPillEvents {
+interface StagePillEvents {
   [event: string]: (e: XmtpPushEvent) => void;
   onXmtpPush: (e: XmtpPushEvent) => void;
 }
 
-declare class MetroPillModule extends NativeModule<MetroPillEvents> {
+declare class StagePillModule extends NativeModule<StagePillEvents> {
   setActiveConversation(convId: string | null): boolean;
   setAppForeground(foreground: boolean): boolean;
 }
 
-let resolved: MetroPillModule | null = null;
+let resolved: StagePillModule | null = null;
 try {
-  resolved = requireNativeModule<MetroPillModule>('MetroPill');
+  resolved = requireNativeModule<StagePillModule>('StagePill');
 } catch { }
 
 export default resolved;

@@ -1,5 +1,5 @@
 
-import { isMetroControlBody, presentInboundNotification } from '../../lib/push';
+import { isControlBody, presentInboundNotification } from '../../lib/push';
 import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 import { getPeerName } from '../../lib/peerProfiles';
 import { isActiveConv } from '../../lib/activeConv';
@@ -73,7 +73,7 @@ export function makeMsgStreamHandler({ isCancelled, setRows, refresh, refreshReq
     let preview = '';
     try { preview = previewOfXmtpContent(decoded, msg.contentTypeId); }
     catch { preview = `[${msg.contentTypeId ?? 'unknown'}]`; }
-    if (typeof decoded === 'string' && isMetroControlBody(decoded)) return;
+    if (typeof decoded === 'string' && isControlBody(decoded)) return;
     const lastTs = msg.sentNs ? Math.floor(msg.sentNs / 1_000_000) : Date.now();
     const lastPreview = preview.slice(0, ROW_PREVIEW_MAX_CHARS);
 

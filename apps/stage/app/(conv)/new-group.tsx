@@ -63,7 +63,7 @@ function GroupNameField({ name, setName, head, sub, inputBg, border }: {
       </Text>
       <MemberField
         value={name}
-        placeholder="e.g. Metro builders"
+        placeholder="e.g. Stage builders"
         color={head}
         placeholderColor={sub}
         inputBg={inputBg}

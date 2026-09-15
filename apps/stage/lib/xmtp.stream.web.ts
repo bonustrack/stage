@@ -1,6 +1,6 @@
 
 import type { DecodedMessage } from '@xmtp/browser-sdk';
-import { isMetroControlBody } from './pushRegister.control';
+import { isControlBody } from './pushRegister.control';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from './xmtp.client.web';
 import { envelopeOfXmtpMessage } from './xmtp.envelope.web';
 import { activeFeedLines, registerGlobalStreamTeardown } from './xmtp.state.web';
@@ -61,7 +61,7 @@ function fanOutToSubscribers(convId: string | null, msg: DecodedMessage): void {
 function routeMessageToFeed(convId: string, msg: DecodedMessage): void {
   const line = lineOfConv(convId);
   const env = envelopeOfXmtpMessage(msg, line);
-  if (isMetroControlBody(env.text)) return;
+  if (isControlBody(env.text)) return;
   const prevLatestNs = activeFeedLines.has(line) ? feedLatestNs(line) : 0;
   pushToFeedSlice(line, env);
   if (activeFeedLines.has(line)) {

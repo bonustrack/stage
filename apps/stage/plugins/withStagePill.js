@@ -4,12 +4,12 @@ const PERMISSIONS = [
   'android.permission.POST_NOTIFICATIONS',
 ];
 
-const FCM_SERVICE_NAME = 'box.metro.pill.MetroFcmService';
+const FCM_SERVICE_NAME = 'box.stage.pill.StageFcmService';
 
 const EXPO_FCM_SERVICE_NAME =
   'expo.modules.notifications.service.ExpoFirebaseMessagingService';
 
-function withMetroPill(config) {
+function withStagePill(config) {
   return withAndroidManifest(config, (cfg) => {
     const manifest = cfg.modResults.manifest;
 
@@ -71,4 +71,4 @@ function withMetroPill(config) {
   });
 }
 
-module.exports = withMetroPill;
+module.exports = withStagePill;

@@ -14,7 +14,7 @@ const BOX_SURFACE_HINT = {
 };
 const TEXT_TAGS = new Set(['Text', 'Title', 'Caption']);
 const BOX_TAGS = new Set(['Box', 'Row', 'Col']);
-const metroThemeNative = {
+const stageThemeNative = {
   rules: {
     'prefer-role-variant': {
       meta: { type: 'suggestion', docs: { description: 'prefer theme-native role/surface variants over per-call color/background palette idents' }, schema: [] },
@@ -99,12 +99,12 @@ export function reactNative() {
     ...recommended,
     {
       files: ['app/**/*.{ts,tsx}', 'components/**/*.{ts,tsx}', 'lib/**/*.{ts,tsx}', 'modules/**/*.{ts,tsx}', 'platform/**/*.{ts,tsx}'],
-      plugins: { metro: { rules: { ...metroThemeNative.rules, ...keyringGuardRule } }, ...commentPlugins },
+      plugins: { stage: { rules: { ...stageThemeNative.rules, ...keyringGuardRule } }, ...commentPlugins },
       rules: {
         ...COMMENT_RULES,
         ...FUNCTION_SIZE_RULES,
-        'metro/prefer-role-variant': 'warn',
-        'metro/no-keyring-bypass': 'error',
+        'stage/prefer-role-variant': 'warn',
+        'stage/no-keyring-bypass': 'error',
         ...NO_ESCAPE_HATCHES,
         'no-restricted-syntax': [
           'error',

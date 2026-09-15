@@ -1,16 +1,14 @@
-export const UA = 'Mozilla/5.0 (compatible; MetroLinkPreview/1.0; +https://metro.box)';
+export const UA = 'Mozilla/5.0 (compatible; StageLinkPreview/1.0; +https://stage.box)';
 
 const BLOCKED_HOST_SUFFIXES = [
   'localhost',
   '.localhost',
   '.local',
   '.internal',
-  '.metro.box',
   '.stage.box',
 ];
 
 const BLOCKED_HOSTS = new Set([
-  'metro.box',
   'stage.box',
   'metadata.google.internal',
 ]);

@@ -192,7 +192,7 @@ const config = {
         },
       },
     ],
-    './plugins/withMetroPill',
+    './plugins/withStagePill',
     './plugins/withGradleMemory',
     './plugins/withBouncyCastleDedup',
     './plugins/withNodejsMobile',

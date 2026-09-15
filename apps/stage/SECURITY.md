@@ -54,7 +54,7 @@ is invoked only when signing a tx/message, never on app open or wallet creation.
 
 Two independent mechanisms make a leak fail before it can ship:
 
-1. **Lint (build-failing).** A custom ESLint rule `metro/no-keyring-bypass`
+1. **Lint (build-failing).** A custom ESLint rule `stage/no-keyring-bypass`
    (see [`eslint.config.mjs`](./eslint.config.mjs)) errors if any file other than
    `lib/zerodev/keyring.ts` imports the banned primitives / storage-key
    constants. The rule runs over `lib/`, `app/`, `components/`, and `modules/`,

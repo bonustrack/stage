@@ -50,7 +50,7 @@ const POSTER_ABI = parseAbi([
   'function post(string content, string tag)',
 ]);
 const postStringStringData = encodeFunctionData({
-  abi: POSTER_ABI, functionName: 'post', args: ['hello', 'metro'],
+  abi: POSTER_ABI, functionName: 'post', args: ['hello', 'stage'],
 });
 const postStringData = encodeFunctionData({
   abi: parseAbi(['function post(string content)']), functionName: 'post', args: ['hello'],

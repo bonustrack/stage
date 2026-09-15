@@ -3,13 +3,13 @@
   var script = document.currentScript;
   var convId = script.getAttribute('data-conv-id') || '';
   var title = script.getAttribute('data-title') || 'Chat';
-  var metroUrl = script.getAttribute('data-metro-url') || new URL(script.src).origin;
+  var stageUrl = script.getAttribute('data-stage-url') || script.getAttribute('data-metro-url') || new URL(script.src).origin;
   if (!convId) {
-    console.warn('[metro-embed] missing data-conv-id; widget will not mount');
+    console.warn('[stage-embed] missing data-conv-id; widget will not mount');
     return;
   }
 
-  var WIDGET_ID = 'metro-embed-widget';
+  var WIDGET_ID = 'stage-embed-widget';
   if (document.getElementById(WIDGET_ID)) return;
 
   var wrap = document.createElement('div');
@@ -48,7 +48,7 @@
   iframe.title = title;
   iframe.style.cssText = 'flex:1;width:100%;border:0;display:block';
   iframe.allow = 'clipboard-write; geolocation; microphone; camera';
-  iframe.dataset.src = metroUrl.replace(/\/$/, '') + '/#/embed/' + encodeURIComponent(convId);
+  iframe.dataset.src = stageUrl.replace(/\/$/, '') + '/#/embed/' + encodeURIComponent(convId);
   panel.appendChild(iframe);
 
   var open = false;

@@ -1,7 +1,7 @@
 
 import { AppState } from 'react-native';
-import { setAppForeground, subscribeXmtpPush } from '../modules/metro-pill';
-import { isMetroControlBody } from './pushRegister.control';
+import { setAppForeground, subscribeXmtpPush } from '../modules/stage-pill';
+import { isControlBody } from './pushRegister.control';
 import { markBackgroundDelivered } from './pushNotify';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from './xmtp.client';
 import { envelopeOfXmtpMessage } from './xmtp.messages';
@@ -105,7 +105,7 @@ function fanOutToSubscribers(convId: string | undefined, msg: StreamCbMsg): void
 function routeMessageToFeed(convId: string, msg: StreamCbMsg): void {
   const line = lineOfConv(convId);
   const env = envelopeOfXmtpMessage(msg, line);
-  if (isMetroControlBody(env.text)) return;
+  if (isControlBody(env.text)) return;
   const prevLatestNs = activeFeedLines.has(line) ? feedLatestNs(line) : 0;
   pushToFeedSlice(line, env);
   if (activeFeedLines.has(line)) {

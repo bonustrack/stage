@@ -1,4 +1,4 @@
-package box.metro.pill
+package box.stage.pill
 
 import android.app.PendingIntent
 import android.content.Context
@@ -17,30 +17,30 @@ import expo.modules.kotlin.modules.ModuleDefinition
 import java.lang.ref.WeakReference
 
 /**
- * MetroPill — native Android support for:
+ * StagePill — native Android support for:
  *   (1) Android Bubbles (conversation shortcut + bubble notification) for a
  *       1-1 DM; and
  *   (2) the push-notification plumbing the custom FCM service reads
  *       (active-conversation + app-foreground suppression flags, and the
- *       `onXmtpPush` event MetroFcmService emits on every contentless push).
+ *       `onXmtpPush` event StageFcmService emits on every contentless push).
  */
-class MetroPillModule : Module() {
+class StagePillModule : Module() {
   private val context: Context
     get() = appContext.reactContext ?: throw IllegalStateException("No react context")
 
   override fun definition() = ModuleDefinition {
-    Name("MetroPill")
+    Name("StagePill")
 
-    // `onXmtpPush` is fired by MetroFcmService (via the companion `emit`) on every
+    // `onXmtpPush` is fired by StageFcmService (via the companion `emit`) on every
     // contentless xmtp push so JS can force a sync + reload the open feed — the
     // real-time delivery signal that replaces the removed periodic poll.
     Events("onError", "onXmtpPush")
 
     OnCreate {
-      instanceRef = WeakReference(this@MetroPillModule)
+      instanceRef = WeakReference(this@StagePillModule)
     }
     OnDestroy {
-      if (instanceRef?.get() === this@MetroPillModule) instanceRef = null
+      if (instanceRef?.get() === this@StagePillModule) instanceRef = null
     }
 
     // ---- Android Bubbles ----
@@ -55,7 +55,7 @@ class MetroPillModule : Module() {
 
     // ---- Active-conversation tracking (notification suppression) ----
     // The conversation screen reports the convId it's currently showing (on
-    // focus) and clears it (null) on blur / background. MetroFcmService — which
+    // focus) and clears it (null) on blur / background. StageFcmService — which
     // runs in a SEPARATE process/context for FCM dispatch — reads this from
     // SharedPreferences and suppresses the push when it matches the inbound
     // message's conversation (the user is already looking at it). Stored in
@@ -63,7 +63,7 @@ class MetroPillModule : Module() {
     // no suppression happens by default.
     Function("setActiveConversation") { convId: String? ->
       // Resolve prefs from the APPLICATION context (not the react/activity
-      // context) so the writer and MetroFcmService — which reads from the
+      // context) so the writer and StageFcmService — which reads from the
       // application context — hit the SAME SharedPreferencesImpl/file. Use
       // commit() (synchronous) instead of apply() to eliminate the apply()
       // visibility race the diagnosis flagged: the write must be on disk
@@ -81,7 +81,7 @@ class MetroPillModule : Module() {
     // When the app is warm/foregrounded the live XMTP stream already holds the
     // DECRYPTED message, so the JS layer posts a RICH local notification (real
     // sender + preview) for conversations the user isn't viewing. To avoid a
-    // DUPLICATE card, MetroFcmService must NOT also post its generic card while
+    // DUPLICATE card, StageFcmService must NOT also post its generic card while
     // foregrounded — so JS sets this `app_foreground` flag on active / clears it
     // on background, and onMessageReceived skips the generic card when it's true.
     // Same prefs file + commit() (synchronous) pattern as setActiveConversation
@@ -222,22 +222,22 @@ class MetroPillModule : Module() {
   companion object {
     const val CHANNEL_ID = "metro-conversations"
 
-    /** SharedPreferences shared with MetroFcmService for notification
+    /** SharedPreferences shared with StageFcmService for notification
      *  suppression of the currently-open conversation. */
     const val PREFS_NAME = "metro_pill"
     const val KEY_ACTIVE_CONV = "active_conv"
 
-    /** Whether the app is currently foregrounded. When true, MetroFcmService
+    /** Whether the app is currently foregrounded. When true, StageFcmService
      *  skips its generic card so the JS layer posts the rich one (no dupes). */
     const val KEY_APP_FOREGROUND = "app_foreground"
 
-    /** Weak ref so MetroFcmService (a separate FCM-dispatch context) can deliver
+    /** Weak ref so StageFcmService (a separate FCM-dispatch context) can deliver
      *  the `onXmtpPush` event back into JS without leaking the module across JS
      *  reloads. Cleared in OnDestroy. */
     @Volatile
-    var instanceRef: WeakReference<MetroPillModule>? = null
+    var instanceRef: WeakReference<StagePillModule>? = null
 
-    /** Called from MetroFcmService — no-ops if no module is currently attached
+    /** Called from StageFcmService — no-ops if no module is currently attached
      *  (the FCM card still posts and the contentless push still wakes a cold JS
      *  on next launch). */
     fun emit(name: String, payload: Map<String, Any?>) {

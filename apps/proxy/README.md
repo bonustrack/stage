@@ -1,13 +1,12 @@
 # proxy
 
 The link-preview / image / x402 proxy as a **Cloudflare Worker**
-(`preview.metro.box`). Runs entirely on the Workers runtime - no Express, no
-origin, no laptop dependency. Given an http(s) URL it fetches the page at the
+(`proxy.stage.box`), plus the `bundler.stage.box` per-branch manifest proxy.
+Runs entirely on the Workers runtime - no Express, no origin, no laptop
+dependency. Given an http(s) URL it fetches the page at the
 edge, parses OpenGraph / Twitter-card / `<title>` / meta description / favicon,
 and returns a compact JSON card. When the URL answers HTTP 402 with an x402
 payment challenge it surfaces the normalised challenge instead.
-
-This replaces the previous Node service + `cloudflared` named tunnel.
 
 ## API
 
@@ -18,8 +17,7 @@ GET /preview?url=<encoded>  -> 200 { url, title, description, image, siteName, f
    400 invalid/blocked url   422 no previewable content   429 rate limited   502 fetch failed
 ```
 
-Every response carries `x-served-by: worker` so callers can distinguish the
-Worker from the legacy tunnel during the cutover.
+Every response carries `x-served-by: worker`.
 
 ## Security / SSRF
 
@@ -28,8 +26,8 @@ link-local / RFC1918 destinations** by design, so DNS-rebinding to an internal
 IP is neutralised at the platform layer (no DNS resolution is done in-Worker;
 see `src/ssrf.ts`). On top of that we keep:
 
-- a host allowlist block for our own internal surface (`*.metro.box`,
-  `*.stage.box`, `localhost`, `*.local`, `*.internal`, cloud metadata hosts),
+- a host allowlist block for our own internal surface (`*.stage.box`,
+  `localhost`, `*.local`, `*.internal`, cloud metadata hosts),
   re-checked on every redirect hop,
 - a literal private-IP guard (cheap defence-in-depth),
 - http(s)-only, credential stripping, 5s timeout, 1.5 MB body cap, 3-redirect
@@ -53,25 +51,19 @@ limit).
 cd apps/proxy
 # auth: either `wrangler login` (interactive) or export CLOUDFLARE_API_TOKEN
 #       (token needs Workers Scripts:Edit + Workers Routes:Edit on the
-#        metro.box zone, and Account: Workers Scripts)
+#        stage.box zone, and Account: Workers Scripts)
 bunx wrangler deploy
 ```
 
-`wrangler.toml` binds the Worker to a route `preview.metro.box/*` on the
-`metro.box` zone. The hostname is already proxied through Cloudflare, so the
-route intercepts at the edge before any origin/tunnel - deploy the route first,
-verify `x-served-by: worker`, THEN decommission the old tunnel:
+`wrangler.toml` binds the Worker to the routes `proxy.stage.box/*` and
+`bundler.stage.box/*` on the `stage.box` zone. Both hostnames are proxied
+(orange-cloud) DNS records, so the routes intercept at the edge before any
+origin. CI deploys on every push to `main` (`deploy-proxy.yml`).
 
 ```sh
-curl https://preview.metro.box/health            # -> ok, header x-served-by: worker
-curl "https://preview.metro.box/preview?url=https%3A%2F%2Fgithub.com%2Fbonustrack%2Fstage"
-
-# once verified:
-launchctl unload ~/Library/LaunchAgents/box.metro.tunnel-linkproxy.plist
-rm ~/Library/LaunchAgents/box.metro.tunnel-linkproxy.plist
-pkill -f linkproxy
-cloudflared tunnel delete linkproxy
+curl https://proxy.stage.box/health            # -> ok, header x-served-by: worker
+curl "https://proxy.stage.box/preview?url=https%3A%2F%2Fgithub.com%2Fbonustrack%2Fstage"
 ```
 
 The app reads the base URL from `EXPO_PUBLIC_LINKPROXY_URL` (default
-`https://preview.metro.box`); no app change is needed for the cutover.
+`https://proxy.stage.box`).

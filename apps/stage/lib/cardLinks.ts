@@ -5,7 +5,7 @@ import { youtubeIdOf, mapCoordsOf } from '@stage-labs/client/embed/detect';
 import { githubLinkOf } from '@stage-labs/client/api/github';
 import { previewLinkOf } from './previewLinkDetect';
 import { isGenericLink } from './genericLinkDetect';
-import { metroConvIdOf, metroDmPeerOf } from '@stage-labs/client/xmtp/line';
+import { stageConvIdOf, stageDmPeerOf } from '@stage-labs/client/xmtp/line';
 
 export const MAX_CARDS = 5;
 
@@ -21,10 +21,10 @@ export type CardLink =
 const TOKEN_RE = /(?:https?:\/\/|metro:\/\/|stage:\/\/)\S+/gi;
 
 function classify(token: string): CardLink | null {
-  const dmPeer = metroDmPeerOf(token);
+  const dmPeer = stageDmPeerOf(token);
   if (dmPeer) return { kind: 'dm', url: token, peerAddress: dmPeer };
 
-  const convId = metroConvIdOf(token);
+  const convId = stageConvIdOf(token);
   if (convId) return { kind: 'channel', url: token, convId };
 
   const videoId = youtubeIdOf(token);

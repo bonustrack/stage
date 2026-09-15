@@ -8,7 +8,7 @@ import {
   textMessage, reactionMessage, voteReaction, throwingCodec,
 } from './fixtures/decoded-messages';
 
-const LINE = 'metro://xmtp/tony/conv1';
+const LINE = 'stage://xmtp/tony/conv1';
 
 describe('mapDecodedToEnvelope', () => {
   test('plain text maps to a text entry with xmtp station + user-prefixed from', () => {

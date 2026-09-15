@@ -1,14 +1,13 @@
 
 import { useEffect, useReducer } from 'react';
 import { AppState } from 'react-native';
-import { Directory, File, Paths } from 'expo-file-system';
+import { File } from 'expo-file-system';
+import { appDocumentsDir } from './appDocuments';
 
 const PERSIST_DEBOUNCE_MS = 800;
 
 function draftsFile(): File {
-  const dir = new Directory(Paths.document, 'metro');
-  if (!dir.exists) dir.create({ intermediates: true });
-  return new File(dir, 'composer-drafts.json');
+  return new File(appDocumentsDir(), 'composer-drafts.json');
 }
 
 function parseDrafts(raw: string): Record<string, string> {

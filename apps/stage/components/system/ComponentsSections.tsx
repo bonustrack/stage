@@ -12,15 +12,15 @@ import type { GalleryPalette } from './galleryPalette';
 
 const SAMPLE_USER_ADDR = '0x42e167e6bff0a3a701d8fa14f96a0f840eb939df';
 const SAMPLE_SELF_ADDR = '0x2539a8b2bb4f2f0d8f1e9b5d4c3a2b1e0f9d8c7b';
-const SAMPLE_MY_URI = 'metro://xmtp/user/self-showcase';
-const SAMPLE_XMTP_LINE = 'metro://xmtp/0xshowcase-components-page';
+const SAMPLE_MY_URI = 'stage://xmtp/user/self-showcase';
+const SAMPLE_XMTP_LINE = 'stage://xmtp/0xshowcase-components-page';
 
 const SAMPLE_INCOMING: HistoryEntry = {
   id: 'showcase-in-1',
   ts: '2026-06-05T10:00:00.000Z',
   station: 'xmtp',
   line: SAMPLE_XMTP_LINE,
-  from: `metro://xmtp/user/${SAMPLE_USER_ADDR}`,
+  from: `stage://xmtp/user/${SAMPLE_USER_ADDR}`,
   fromName: 'vitalik.eth',
   to: SAMPLE_MY_URI,
   text: 'gm! the new Components page is looking sharp',
@@ -33,7 +33,7 @@ const SAMPLE_OUTGOING: HistoryEntry = {
   line: SAMPLE_XMTP_LINE,
   from: SAMPLE_MY_URI,
   fromName: 'you',
-  to: `metro://xmtp/user/${SAMPLE_USER_ADDR}`,
+  to: `stage://xmtp/user/${SAMPLE_USER_ADDR}`,
   text: 'thanks - flip the theme above to preview every component across modes',
 };
 
@@ -58,7 +58,7 @@ export function ComponentsSections({ dark, head, sub, border }: GalleryPalette):
 
       <GallerySection name="ChannelCard" note="Channel row (ChannelRow, square avatar) - groups & channels" {...sec}>
         <ChannelRow
-          title="Metro Dev" subtitle="12 members" avatarAddress={SAMPLE_USER_ADDR} square
+          title="Stage Dev" subtitle="12 members" avatarAddress={SAMPLE_USER_ADDR} square
           lastPreview="Less: shipping the Components page" onPress={() => undefined}
         />
       </GallerySection>

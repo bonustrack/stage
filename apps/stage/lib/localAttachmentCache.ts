@@ -32,7 +32,7 @@ export function asFileUri(uri: string): string {
 export function stashLocalAttachment(srcUri: string): string {
   if (!srcUri.startsWith('file://')) return srcUri;
   try {
-    const name = `metro-pending-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${safeExtFor(srcUri)}`;
+    const name = `stage-pending-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${safeExtFor(srcUri)}`;
     const src = new File(srcUri);
     const dest = new File(Paths.cache, name);
     if (dest.exists) try { dest.delete(); } catch { }

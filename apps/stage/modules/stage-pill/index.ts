@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 
-import nativeModule from './src/MetroPillModule';
+import nativeModule from './src/StagePillModule';
 
 const native = Platform.OS === 'android' ? nativeModule : null;
 

@@ -11,6 +11,7 @@ import {
 import { ReplyBanner, MentionPopup, PendingRow } from './MessengerComposer.parts';
 import { ComposerEditor, AttachMenu, buildAttachActions } from './MessengerComposer.editor';
 import { DANGER, usePalette } from '../lib/theme';
+import { convIdOfLine } from '../modules/messaging';
 import { useComposerState } from './MessengerComposer.state';
 import { ComposerSheets } from './MessengerComposer.sheets.bound';
 
@@ -91,7 +92,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
   const actions = useComposerActions(actionsArgs(props, s));
   const { SLIDE_CANCEL_THRESHOLD_PX } = actions;
 
-  const convId = xmtpLine.replace('metro://xmtp/', '');
+  const convId = convIdOfLine(xmtpLine) ?? xmtpLine;
   const caretToEnd = useCaretToEnd(s.text, s.setSelection);
   useComposerDrafts(convId, s.text, s.setText, s.setSelection);
   useComposerFocus(s.bumpFocus, s.bumpBlur, replyingTo?.id, replyingTo?.nonce, autoFocusNonce, caretToEnd);
