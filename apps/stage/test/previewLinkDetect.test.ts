@@ -8,7 +8,7 @@ const EXPO = `https://u.expo.dev/${PROJECT}/group/${GROUP}`;
 const ENCODED = encodeURIComponent(EXPO);
 
 describe('previewLinkOf', () => {
-  test('metro:// dev-client link (raw inner url)', () => {
+  test('legacy-scheme dev-client link (raw inner url)', () => {
     const r = previewLinkOf(`metro://expo-development-client/?url=${EXPO}`);
     expect(r?.groupId).toBe(GROUP);
   });

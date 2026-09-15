@@ -13,7 +13,7 @@ describe('redirectSystemPath', () => {
     expect(r(`stage://expo-development-client/?url=${EXPO}`)).toBe('/');
   });
 
-  test('metro:// dev-client launch link → home', () => {
+  test('legacy-scheme dev-client launch link → home', () => {
     expect(r(`metro://expo-development-client/?url=${EXPO}`)).toBe('/');
   });
 

@@ -1,10 +1,11 @@
-# Legacy "Metro" identifiers
+# Frozen legacy identifiers
 
-Stage used to be called Metro. Every name in the codebase has been renamed
-(components, helpers, the `stage-pill` native module, tests, docs), and the
-app now emits `stage://` conversation lines. A few identifiers deliberately
-keep the old string because changing them would break existing installs,
-messages or store listings. Do not rename these; add new ones under `stage`.
+Stage shipped under an earlier name. Every name in the codebase has since been
+renamed (components, helpers, the `stage-pill` native module, tests, docs),
+and the app emits `stage://` conversation lines. The identifiers below
+deliberately keep the earlier string because changing them would break
+existing installs, messages or store listings. Do not rename these; add new
+ones under `stage`.
 
 | Identifier | Where | Why it stays |
 |---|---|---|

@@ -31,7 +31,7 @@ bun --cwd apps/stage web      # run in the browser
 bun --cwd apps/stage run build:web  # static web export (Netlify publishes dist/)
 ```
 
-> Note: Expo's RN bundler is itself called Metro, a naming collision with the Metro chat/orchestrator product. The bundler here is `bun --cwd apps/stage start`. New native modules require a fresh dev-client / APK build, not just a JS reload.
+> Note: "Metro" in this repo always means Expo's JavaScript bundler (`bun --cwd apps/stage start`), never the product. New native modules require a fresh dev-client / APK build, not just a JS reload.
 
 ## Project structure
 

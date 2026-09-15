@@ -74,7 +74,7 @@ describe('stageDmPeerOf', () => {
 });
 
 describe('convIdOfLine', () => {
-  test('reads the conv id back from a fresh line and from a legacy metro:// line', () => {
+  test('reads the conv id back from a fresh line and from a legacy-scheme line', () => {
     expect(lineOfConv(CONV)).toBe(`stage://xmtp/${CONV}`);
     expect(convIdOfLine(lineOfConv(CONV))).toBe(CONV);
     expect(convIdOfLine(`metro://xmtp/${CONV}`)).toBe(CONV);

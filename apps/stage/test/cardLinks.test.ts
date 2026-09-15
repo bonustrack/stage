@@ -55,14 +55,14 @@ describe('cardLinksOf', () => {
     expect(cardLinksOf(links)).toHaveLength(MAX_CARDS);
   });
 
-  test('stage:// and metro:// channel links each render a channel card', () => {
+  test('current and legacy channel link schemes each render a channel card', () => {
     const cards = cardLinksOf(
       'stage://xmtp/47bf58a8f56cad829b2263797a7e25e4 and metro://xmtp/47bf58a8f56cad829b2263797a7e25e4',
     );
     expect(cards.map(c => c.kind)).toEqual(['channel', 'channel']);
   });
 
-  test('https metro.box / stage.box user links render a dm card', () => {
+  test('https user links on the current and legacy hosts render a dm card', () => {
     const addr = '0x42e167e6bff0a3a701d8fa14f96a0f840eb939df';
     expect(cardLinksOf(`https://stage.box/user/${addr}`)[0]).toMatchObject({ kind: 'dm' });
     expect(cardLinksOf(`https://metro.box/user/${addr}`)[0]).toMatchObject({ kind: 'dm' });
