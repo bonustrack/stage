@@ -1,8 +1,8 @@
 import { makeListeners, useStoreValue } from './storeCore';
 
-export type PushPhase = 'idle' | 'unsupported' | 'disabled' | 'no-token' | 'registering' | 'registered' | 'failed';
+type PushPhase = 'idle' | 'unsupported' | 'disabled' | 'no-token' | 'registering' | 'registered' | 'failed';
 
-export interface PushStatus { phase: PushPhase; detail: string; at: number }
+interface PushStatus { phase: PushPhase; detail: string; at: number }
 
 let current: PushStatus = { phase: 'idle', detail: '', at: 0 };
 const { notify, subscribe } = makeListeners();

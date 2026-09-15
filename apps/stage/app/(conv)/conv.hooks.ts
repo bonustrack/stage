@@ -9,7 +9,7 @@ import { resolveHandleToAddress } from '../../lib/resolveHandle';
 
 export type ResolveConvError = false | DmResolveError;
 
-export interface ResolvedConv {
+interface ResolvedConv {
   convId: string | null;
   resolving: boolean;
   error: ResolveConvError;

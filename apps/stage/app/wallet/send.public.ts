@@ -20,7 +20,7 @@ async function fetchEthPrice(): Promise<number | null> {
   return typeof p === 'number' ? p : null;
 }
 
-export type SendTxState = 'idle' | 'submitting' | 'pending' | 'confirmed';
+type SendTxState = 'idle' | 'submitting' | 'pending' | 'confirmed';
 
 interface SendAsset { address: Hex | null; decimals: number; }
 type ActiveAccount = NonNullable<Awaited<ReturnType<typeof getActiveAccount>>>;
@@ -55,7 +55,7 @@ function secondaryLabelOf(amount: string, mode: 'eth' | 'usd', tokenPriceUsd: nu
   return `≈ ${tok.toLocaleString(undefined, { maximumFractionDigits: 6 })} ${symbol}`;
 }
 
-export interface PublicSend {
+interface PublicSend {
   to: string; setTo: (v: string) => void;
   amount: string; setAmount: (v: string) => void;
   mode: 'eth' | 'usd'; setMode: (fn: (m: 'eth' | 'usd') => 'eth' | 'usd') => void;

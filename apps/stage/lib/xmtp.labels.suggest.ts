@@ -8,7 +8,7 @@ function rowLabels(row: unknown): string[] {
   return raw.filter((l): l is string => typeof l === 'string');
 }
 
-export function getAllKnownLabels(): string[] {
+function getAllKnownLabels(): string[] {
   const rows = getCachedRows();
   if (!rows) return [];
   const seen = new Set<string>();

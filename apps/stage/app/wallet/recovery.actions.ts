@@ -9,7 +9,7 @@ import {
 } from '../../lib/zerodev';
 import type { Address } from 'viem';
 
-export interface RecoveryActionsArgs {
+interface RecoveryActionsArgs {
   rec: AccountRecord | null;
   guardians: string[];
   threshold: number;

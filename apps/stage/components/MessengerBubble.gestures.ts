@@ -9,7 +9,7 @@ import {
   useAnimatedStyle, useSharedValue, withSpring, runOnJS, interpolate, Extrapolation,
 } from 'react-native-reanimated';
 
-export interface BubbleGestureInput {
+interface BubbleGestureInput {
   pending?: boolean;
   onReply?: () => void;
   onReact?: (emoji: string) => void;
@@ -17,7 +17,7 @@ export interface BubbleGestureInput {
   onLongPress?: () => void;
 }
 
-export interface BubbleGestures {
+interface BubbleGestures {
   rowRef: React.RefObject<View | null>;
   tapGestures: ReturnType<typeof Gesture.Race>;
   openMenu: (point?: MenuPoint) => void;

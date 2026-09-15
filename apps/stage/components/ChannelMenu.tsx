@@ -12,7 +12,7 @@ import { togglePin } from '../lib/pins';
 import { leaveGroupConv, lineOfConv } from '../modules/messaging';
 import { profileLinkOf } from '../lib/links';
 
-export interface ChannelMenuProps {
+interface ChannelMenuProps {
   convId: string;
   isGroup: boolean;
   peerAddress?: string | null;

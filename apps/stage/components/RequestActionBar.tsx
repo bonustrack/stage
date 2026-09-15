@@ -16,7 +16,7 @@ export function syncConsentBestEffort(): void {
   })?.preferences?.syncConsent?.();
 }
 
-export interface RequestActionBarProps {
+interface RequestActionBarProps {
   convId: string;
   dark: boolean;
   onPending: (pending: boolean) => void;

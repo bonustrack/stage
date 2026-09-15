@@ -142,7 +142,7 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
   );
 }
 
-export type AttachAction = [HeroIconName, string, () => void | Promise<void>];
+type AttachAction = [HeroIconName, string, () => void | Promise<void>];
 
 export function buildAttachActions(a: {
   pickImage: () => void; takePhoto: () => void;

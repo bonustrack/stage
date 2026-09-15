@@ -18,7 +18,7 @@ import { TOPNAV_HEIGHT } from './Topnav';
 import { ConvTopnavIdentity, ConvTopnavShell } from './xmtp-conv/parts';
 import { profileLinkOf } from '../lib/links';
 
-export type PendingReason = 'unregistered' | 'stale-installations' | 'failed';
+type PendingReason = 'unregistered' | 'stale-installations' | 'failed';
 
 const PENDING_MY_URI = 'pending://me';
 

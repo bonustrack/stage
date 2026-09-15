@@ -47,7 +47,7 @@ function hasColdStartDeepLink(url: string | null): boolean {
   return /[a-z0-9]/i.test(body.replace(/^\/+/, '').split(/[?#]/)[0] ?? '');
 }
 
-export interface RestoreGate {
+interface RestoreGate {
   ready: boolean;
 }
 

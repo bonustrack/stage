@@ -5,7 +5,7 @@ import { Audio } from 'expo-av';
 
 export { SLIDE_CANCEL_THRESHOLD_PX } from '@stage-labs/kit/react-native/voice-recorder';
 
-export interface VoiceArgs {
+interface VoiceArgs {
   upload: (uri: string, mime: string, name?: string) => Promise<void>;
   setErr: (v: string | null) => void;
   setRecording: (v: boolean) => void;

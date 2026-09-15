@@ -8,7 +8,7 @@ import { shortAddress } from '../modules/messaging';
 import { type AccountRecord } from '../lib/accounts';
 import { MenuHover, MenuRow, menuRowPadding } from './MenuRows';
 
-export interface DrawerColors { head: string; sub: string; border: string }
+interface DrawerColors { head: string; sub: string; border: string }
 
 export function drawerAccountRows({ accounts, activeId, onSwitch, c, dark, compact }: {
   accounts: AccountRecord[]; activeId: string | null;

@@ -73,7 +73,7 @@ export function questionOf(entry: HistoryEntry): Question | undefined {
 }
 
 interface PollOption { label: string; description?: string }
-export interface PollQuestion { question: string; header?: string; options: PollOption[]; multiSelect?: boolean; open?: boolean }
+interface PollQuestion { question: string; header?: string; options: PollOption[]; multiSelect?: boolean; open?: boolean }
 export interface Poll { pollId?: string; question?: string; questions: PollQuestion[] }
 
 export function pollOf(entry: HistoryEntry): Poll | undefined {

@@ -1,4 +1,4 @@
-export interface PollOptionInput {
+interface PollOptionInput {
   label: string;
 }
 
@@ -25,8 +25,8 @@ export interface PollQuestionBlock {
   options: PollOptionRow[];
 }
 
-export type PollVotesByQuestion = Map<number, Map<number, Set<string>>>;
-export type PollOwnVotesByQuestion = Map<number, Set<number>>;
+type PollVotesByQuestion = Map<number, Map<number, Set<string>>>;
+type PollOwnVotesByQuestion = Map<number, Set<number>>;
 
 function optionRow(
   option: PollOptionInput,

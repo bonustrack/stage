@@ -5,13 +5,13 @@ export interface MemberRowBadge {
   label: string;
 }
 
-export interface MemberRowModel {
+interface MemberRowModel {
   displayName: string;
   addressLine?: string;
   badge?: MemberRowBadge;
 }
 
-export interface MemberRowInput {
+interface MemberRowInput {
   shortAddress: string;
   name: string | null | undefined;
   isSelf: boolean;

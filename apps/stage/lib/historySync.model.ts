@@ -47,7 +47,7 @@ export interface HistoryEntry { id: string; firstNs: string }
 
 export interface HistorySnapshot { fingerprint: string; oldestNs: number | null; firstNsById: Record<string, number> }
 
-export const HISTORY_CLOCK_SKEW_MS = 5 * 60 * 1000;
+const HISTORY_CLOCK_SKEW_MS = 5 * 60 * 1000;
 
 export function fingerprintOf(entries: readonly HistoryEntry[]): string {
   return entries.map((entry) => `${entry.id}:${entry.firstNs}`).sort().join('|');

@@ -2,7 +2,7 @@
 import { TextField } from '@stage-labs/kit/react-native/text-field';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 
-export interface MemberFieldProps {
+interface MemberFieldProps {
   value: string;
   placeholder: string;
   color: string;

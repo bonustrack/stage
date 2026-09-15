@@ -22,7 +22,7 @@ export interface Member {
 
 const ADDR_RE = /^0x[0-9a-fA-F]{40}$/;
 
-export interface MemberPickerState {
+interface MemberPickerState {
   members: Member[];
   entry: string;
   setEntry: (v: string) => void;

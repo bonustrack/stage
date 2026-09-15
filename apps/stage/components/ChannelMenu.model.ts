@@ -2,21 +2,21 @@ export function compactList<T>(items: (T | undefined | null)[]): T[] {
   return items.filter((item): item is T => item !== undefined && item !== null);
 }
 
-export interface MenuSheetItem {
+interface MenuSheetItem {
   id: string;
   label: string;
   icon?: string;
   danger?: boolean;
 }
 
-export interface ChannelMenuState {
+interface ChannelMenuState {
   isGroup: boolean;
   hasPeer?: boolean;
   isUnread: boolean;
   isPinned?: boolean;
 }
 
-export interface ChannelMenuFeatures {
+interface ChannelMenuFeatures {
   search?: boolean;
   addMembers?: boolean;
   pin?: boolean;

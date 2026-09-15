@@ -1,10 +1,10 @@
-export interface ContactNameDomain {
+interface ContactNameDomain {
   resolvedName: string | null;
   fallbackName: string;
   shortAddress: string;
 }
 
-export interface ContactNameModel {
+interface ContactNameModel {
   name: string;
   handle?: string;
 }

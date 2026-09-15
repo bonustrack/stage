@@ -2,12 +2,12 @@ import type { BadgeColor } from '@stage-labs/kit/badge';
 import { channelTimestamp, unreadBadgeLabel } from '../lib/format';
 import { highlightSegments } from './HighlightText.model';
 
-export interface ChannelLabelChip {
+interface ChannelLabelChip {
   label: string;
   color?: BadgeColor;
 }
 
-export interface ChannelTitleSegment {
+interface ChannelTitleSegment {
   text: string;
   emphasized?: boolean;
 }
@@ -30,7 +30,7 @@ export interface ChannelRowParams {
 
 const MAX_VISIBLE_LABELS = 2;
 
-export interface ChannelRowDomain {
+interface ChannelRowDomain {
   convId: string;
   title: string;
   avatarUri: string;

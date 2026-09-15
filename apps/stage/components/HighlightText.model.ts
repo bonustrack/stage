@@ -1,4 +1,4 @@
-export interface HighlightSegment {
+interface HighlightSegment {
   value: string;
   match: boolean;
 }

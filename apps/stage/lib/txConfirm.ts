@@ -21,7 +21,7 @@ export const KNOWN_TOKENS: Record<string, { symbol: string; decimals: number }> 
   '0x1c7d4b196cb0c7b01d743fbc6116a902379c7238': { symbol: 'USDC', decimals: 6 },
 };
 
-export interface ConfirmSummary {
+interface ConfirmSummary {
   verified: boolean;
   recipient: string;
   amount?: string;

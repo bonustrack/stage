@@ -15,7 +15,7 @@ interface SendToken {
   symbol?: string;
 }
 
-export interface SendParams {
+interface SendParams {
   to: string;
   amount: string;
   token?: SendToken;
@@ -49,7 +49,7 @@ export async function sendNativeOrToken(params: SendParams): Promise<Hex> {
   return client.sendTransaction({ chain, to: to, value });
 }
 
-export interface RawCall {
+interface RawCall {
   to: string;
   data?: string;
   value?: string;

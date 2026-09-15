@@ -19,7 +19,7 @@ import { unreadBadgeLabel } from '../lib/format';
 import { HIGHLIGHT_BG } from '../lib/uiColors';
 import { usePalette } from '../lib/theme';
 
-export interface ChannelRowProps {
+interface ChannelRowProps {
   title: string;
   avatarAddress?: string | null;
   avatarUri?: string | null;

@@ -1,8 +1,8 @@
 export interface MenuPoint { x: number; y: number }
 
-export interface MenuViewport { width: number; height: number }
+interface MenuViewport { width: number; height: number }
 
-export interface AnchoredMenuStyle {
+interface AnchoredMenuStyle {
   top?: number;
   bottom?: number;
   left?: number;

@@ -4,9 +4,9 @@ import {
   mnemonicRelation, restoreMnemonic, revealPrivateKey, revealRecoveryPhrase,
 } from './zerodev/keyring';
 
-export type TransferKind = AccountTransfer['kind'];
+type TransferKind = AccountTransfer['kind'];
 
-export const PHRASE_CONFLICT_MESSAGE =
+const PHRASE_CONFLICT_MESSAGE =
   'This device already holds a different recovery phrase. Remove its smart wallet accounts before importing another phrase.';
 
 export function transferKindFor(rec: AccountRecord): TransferKind | null {

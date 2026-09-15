@@ -7,7 +7,7 @@ import { TokenAvatar } from './tabs/WalletScreen.tokenAvatar';
 import { usePayerBalance, type PayerBalance } from './MessengerBubble.balance';
 import { usePalette, useBlockRadius, withAlpha } from '../lib/theme';
 
-export interface PaymentBalanceArgs {
+interface PaymentBalanceArgs {
   show: boolean;
   chainId: string | number | undefined;
   token: string | undefined;
@@ -15,7 +15,7 @@ export interface PaymentBalanceArgs {
   needed: number | undefined;
 }
 
-export interface PaymentAction {
+interface PaymentAction {
   label: string;
   onPress: () => void;
   icon?: React.ReactElement;
