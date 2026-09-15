@@ -20,6 +20,9 @@ jobs:
       SA_JSON: ${{ secrets.FIREBASE_APP_DISTRIBUTION_SA_JSON }}
       GH_TOKEN: ${{ github.token }}
     steps:
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.9
       - name: Download the release APK
         run: gh release download "${{ inputs.tag }}" --repo "${{ github.repository }}" --pattern 'stage.apk' --dir artifacts
       - name: Distribute to testers
@@ -31,7 +34,7 @@ jobs:
           fi
           printf '%s' "$SA_JSON" > "$RUNNER_TEMP/firebase-sa.json"
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-sa.json"
-          npx --yes firebase-tools@14 appdistribution:distribute artifacts/stage.apk \
+          bunx firebase-tools@14 appdistribution:distribute artifacts/stage.apk \
             --app 1:163881755635:android:d88662b6bbcd166a7da886 \
             --groups testers \
             --release-notes "Stage ${{ inputs.tag }}"
