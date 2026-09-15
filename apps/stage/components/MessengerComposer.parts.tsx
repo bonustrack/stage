@@ -9,7 +9,7 @@ import { Avatar } from './Avatar';
 import { Box, Row, Col } from './layout';
 import { shortAddress } from '../modules/messaging';
 import { getPeerName } from '../lib/peerProfiles';
-import { type Attachment } from './MessengerComposer.helpers';
+import { type Attachment } from './MessengerComposer.types';
 import { usePalette } from '../lib/theme';
 
 const kindIcon = (kind: string): HeroIconName => (

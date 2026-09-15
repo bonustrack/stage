@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { type Attachment } from './MessengerComposer.helpers';
+import { type Attachment } from './MessengerComposer.types';
 
 export interface ComposerState {
   text: string; setText: (v: string) => void;

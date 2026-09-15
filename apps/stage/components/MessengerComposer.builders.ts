@@ -4,7 +4,7 @@ import { isAddress, parseUnits, toHex } from 'viem';
 import { xmtpSendPoll, xmtpSendTxRequest, xmtpSendSignatureRequest } from '../modules/messaging';
 import { type PollContent, mintPollId, pollFallbackText } from '@stage-labs/client/xmtp/poll';
 import {
-  type SignatureRequestContent, mintSignatureRequestId, signatureRequestFallbackText,
+  type SignatureRequestContent, buildEip712SignatureRequest, buildPersonalSignatureRequest, signatureRequestFallbackText,
 } from '@stage-labs/client/xmtp/sign';
 import {
   type WalletSendCallsContent, walletSendCallsFallbackText,
@@ -15,36 +15,19 @@ import type { ComposerActionsArgs } from './MessengerComposer.types';
 
 const mintLocalId = (): string => `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
-function buildPersonalContent(message: string, description: string): SignatureRequestContent | null {
-  if (!message) { Alert.alert('Enter a message to sign'); return null; }
-  return { id: mintSignatureRequestId(), kind: 'personal', message, ...(description ? { description } : {}) };
-}
-
-function buildEip712Content(json: string, description: string): SignatureRequestContent | null {
-  let parsed: unknown;
-  try { parsed = JSON.parse(json); }
-  catch { Alert.alert('Typed-data JSON is not valid JSON'); return null; }
-  const td = parsed as { domain?: unknown; types?: unknown; primaryType?: unknown; message?: unknown };
-  if (!td || typeof td !== 'object' || !td.types || !td.primaryType || !td.message) {
-    Alert.alert('Typed data needs `types`, `primaryType`, and `message` fields'); return null;
+function buildSignatureContent(a: ComposerActionsArgs): SignatureRequestContent | null {
+  try {
+    return a.sigKind === 'personal'
+      ? buildPersonalSignatureRequest(a.sigMessage, a.sigDesc)
+      : buildEip712SignatureRequest(a.sigJson, a.sigDesc);
+  } catch (e) {
+    Alert.alert((e as Error).message);
+    return null;
   }
-  return {
-    id: mintSignatureRequestId(), kind: 'eip712',
-    eip712: {
-      domain: (td.domain ?? {}) as Record<string, unknown>,
-      types: td.types as Record<string, { name: string; type: string }[]>,
-      primaryType: td.primaryType as string,
-      message: td.message as Record<string, unknown>,
-    },
-    ...(description ? { description } : {}),
-  };
 }
 
 export async function sendSignatureRequest(a: ComposerActionsArgs): Promise<void> {
-  const description = a.sigDesc.trim();
-  const content = a.sigKind === 'personal'
-    ? buildPersonalContent(a.sigMessage.trim(), description)
-    : buildEip712Content(a.sigJson, description);
+  const content = buildSignatureContent(a);
   if (!content) return;
   const localId = mintLocalId();
   setLastAttachment('Sign');

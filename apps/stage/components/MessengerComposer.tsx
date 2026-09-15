@@ -2,7 +2,7 @@
 import { Text } from '@stage-labs/kit/react-native/text';
 import { FilePicker } from '@stage-labs/kit/react-native/file-picker';
 import { Col } from './layout';
-import { type Attachment } from './MessengerComposer.helpers';
+import { type Attachment } from './MessengerComposer.types';
 import { useComposerActions } from './MessengerComposer.actions';
 import {
   useComposerDrafts, useComposerFocus, useCaretToEnd,

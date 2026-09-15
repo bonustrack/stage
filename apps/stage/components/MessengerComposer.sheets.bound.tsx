@@ -1,6 +1,6 @@
 import { PollSheet, SignatureSheet, PaymentSheet } from './MessengerComposer.sheets';
 import type { ComposerState } from './MessengerComposer.state';
-import type { Palette } from './MessengerComposer.helpers';
+import type { Palette } from './MessengerComposer.types';
 
 interface SheetActions {
   sendPoll: () => void;

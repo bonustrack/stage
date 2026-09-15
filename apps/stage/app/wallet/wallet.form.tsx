@@ -1,9 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
-import { Linking } from 'react-native';
-import { explorerTxUrl } from '@stage-labs/client/xmtp/tx';
-import { fontSize } from '@stage-labs/kit/tokens';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Input } from '@stage-labs/kit/react-native/input';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Box, Row, Col, ScreenScroll } from '../../components/layout';
@@ -13,51 +8,12 @@ import { usePalette } from '../../lib/theme';
 
 export interface FormPal { fg: string; head: string; sub: string; border: string; inputBg: string; link: string }
 
-export function TxHashLink({ chainId, txHash }: {
-  chainId: number; txHash: string | null;
-}): React.ReactElement | null {
-  if (!txHash) return null;
-  return (
-    <Pressable onPress={() => { void Linking.openURL(explorerTxUrl(chainId, txHash)); }} hitSlop={6}>
-      <Text size="xs">
-        {txHash.slice(0, 10)}…{txHash.slice(-8)}
-      </Text>
-    </Pressable>
-  );
-}
-
-export interface FooterState {
-  submitLabel: string; onSubmit: () => void; submitDisabled: boolean; submitLoading: boolean;
-}
-
-export function useFooterReporter(): {
-  footer: FooterState | null;
-  report: (s: FooterState) => void;
-  onSubmit: () => void;
-} {
-  const [footer, setFooter] = useState<FooterState | null>(null);
-  const ref = useRef<FooterState | null>(null);
-  const report = useCallback((s: FooterState): void => {
-    ref.current = s;
-    setFooter(prev => {
-      if (prev?.submitLabel === s.submitLabel
-        && prev.submitDisabled === s.submitDisabled
-        && prev.submitLoading === s.submitLoading) {
-        return prev;
-      }
-      return s;
-    });
-  }, []);
-  const onSubmit = useCallback((): void => { ref.current?.onSubmit(); }, []);
-  return { footer, report, onSubmit };
-}
-
 export function useFormPal(): FormPal {
   const { text, link, border, inputBg } = usePalette();
   return { fg: text, head: link, sub: text, border, inputBg, link };
 }
 
-export function ActionHeader({ title, head, border, onBack }: {
+function ActionHeader({ title, head, border, onBack }: {
   title: string; head: string; border: string; onBack: () => void;
 }): React.ReactElement {
   const insets = useSafeAreaInsets();
@@ -88,39 +44,6 @@ export function Segmented<T extends string | number>({ label, value, options, on
             onPress={() => { onChange(id); }} label={text}/>
         ))}
       </Row>
-    </Box>
-  );
-}
-
-export function AmountBox({ pal, amount, setAmount, busy, balance, symbol, dark }: {
-  pal: FormPal; amount: string; setAmount: (v: string) => void; busy: boolean;
-  balance?: string | null; symbol?: string; dark?: boolean;
-}): React.ReactElement {
-  const { head, sub, link } = pal;
-  const hasBal = balance != null && Number(balance) > 0;
-  return (
-    <Box gap={6}>
-      <Row align="center">
-        <Text size="xs" role="secondary" style={{ flex: 1 }}>AMOUNT</Text>
-        {balance != null ? (
-          <Button variant="ghost" size="sm" dark={!!dark} disabled={!hasBal || busy}
-            onPress={() => { if (hasBal) setAmount(balance); }}
-            label="MAX" textStyle={{ color: hasBal ? link : sub, fontSize: fontSize('xs') }}
-            style={{ height: 24, paddingHorizontal: 8 }}/>
-        ) : null}
-      </Row>
-      <Box surface="raised" radius="lg" padding={{ x: 14, y: 12 }}>
-        <Input value={amount} onChangeText={setAmount} placeholder="0.0" placeholderTextColor={sub}
-          inputType="number" disabled={busy} dark={!!dark}
-          inputProps={{ keyboardType: 'decimal-pad' }}
-          style={{ color: head, fontSize: fontSize('xl'), fontFamily: 'Calibre-Semibold', padding: 0,
-            backgroundColor: 'transparent', minHeight: 0, paddingHorizontal: 0, paddingVertical: 0, borderWidth: 0 }}/>
-      </Box>
-      {balance != null ? (
-        <Text size="xs" role="secondary" style={{ paddingHorizontal: 4 }}>
-          Balance: {Number(balance).toLocaleString(undefined, { maximumFractionDigits: 6 })}{symbol ? ` ${symbol}` : ''}
-        </Text>
-      ) : null}
     </Box>
   );
 }

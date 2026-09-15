@@ -9,7 +9,7 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { Box, Row, Col } from './layout';
 import { AppModal } from './AppModal';
 import { usePalette, useBlockRadius } from '../lib/theme';
-import { type Palette } from './MessengerComposer.helpers';
+import { type Palette } from './MessengerComposer.types';
 
 const ACCENT = '#c0a06e';
 

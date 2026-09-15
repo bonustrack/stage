@@ -3,7 +3,7 @@ import {
   fileUriToBase64, xmtpReply, xmtpSendAttachment, xmtpSendMultiRemoteAttachment, xmtpSendText,
 } from '../modules/messaging';
 import { mimeOf } from '../lib/attachmentFiles';
-import { type Attachment, INLINE_ATTACHMENT_MAX_BYTES } from './MessengerComposer.helpers';
+import { type Attachment, INLINE_ATTACHMENT_MAX_BYTES } from './MessengerComposer.types';
 
 let seq = 0;
 const mintLocalId = (): string =>

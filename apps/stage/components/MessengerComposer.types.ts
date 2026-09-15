@@ -1,5 +1,11 @@
 
-import type { Attachment } from './MessengerComposer.helpers';
+export interface Attachment {
+  id: string; url: string; kind: string; mime: string; size: number; name?: string;
+}
+
+export interface Palette { fg: string; sub: string; inputBg: string; chipBg: string }
+
+export const INLINE_ATTACHMENT_MAX_BYTES = 900 * 1024;
 
 interface OptimisticEntry {
   localId: string;
