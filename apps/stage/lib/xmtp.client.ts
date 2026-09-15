@@ -148,5 +148,5 @@ export async function convOfLine(line: string): Promise<Conversation | null> {
 }
 
 export async function xmtpClient(): ReturnType<typeof getOrCreateXmtpClient> {
-  return await xmtpClient();
+  return getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
 }
