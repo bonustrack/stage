@@ -7,7 +7,8 @@ import { ManageSheet, ExportSheet } from './AccountsManager.sheets';
 import { usePalette } from '../lib/theme';
 import { useAccountTransfer } from './accounts/useAccountTransfer';
 import { TransferAccountSheet } from './accounts/TransferAccountSheet';
-import { ImportAccountSheet } from './accounts/ImportAccountSheet';
+import { router } from 'expo-router';
+import { IMPORT_ROUTE, SIGNUP_ROUTE } from './onboarding/nextRoute.model';
 
 export function AccountsManager({ dark, flat = false, onSwitched }: { dark: boolean; flat?: boolean; onSwitched?: () => void }): React.ReactElement {
   const tokens = usePalette();
@@ -28,8 +29,8 @@ export function AccountsManager({ dark, flat = false, onSwitched }: { dark: bool
         activeRec={m.activeRec} otherAccounts={m.otherAccounts}
         expanded={m.expanded} setExpanded={m.setExpanded}
         head={head} sub={sub} border={border} rowBg={rowBg}
-        onSwitch={(id) => void m.onSwitch(id)} setManageId={m.setManageId} onAdd={() => void m.onAdd()}
-        onImport={t.openImport}
+        onSwitch={(id) => void m.onSwitch(id)} setManageId={m.setManageId} onAdd={() => { router.navigate(SIGNUP_ROUTE); }}
+        onImport={() => { router.navigate(IMPORT_ROUTE); }}
       />
 
       {m.busy ? (
@@ -49,10 +50,6 @@ export function AccountsManager({ dark, flat = false, onSwitched }: { dark: bool
       />
       <ExportSheet revealPk={m.revealPk} onClose={() => { m.setRevealPk(null); }} dark={dark} p={pal} />
       <TransferAccountSheet rec={t.transferRec} dark={dark} onClose={t.closeTransfer} />
-      <ImportAccountSheet
-        visible={t.importOpen} dark={dark} busy={t.importing} error={t.importError}
-        onClose={t.closeImport} onSubmit={t.onImport}
-      />
     </Box>
   );
 }

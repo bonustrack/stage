@@ -1,7 +1,6 @@
 import { errorMessage } from '@stage-labs/client/errors';
-import {
-  restoreMnemonic, createSmartAccount, enablePasskeyForRecord, passkeysAvailable,
-} from '../../lib/zerodev';
+import { createSmartAccount, enablePasskeyForRecord, passkeysAvailable } from '../../lib/zerodev';
+import { adoptPhrase } from '../../lib/accountTransfer';
 import { AccountManager } from '../../modules/messaging';
 import type { Hex } from 'viem';
 import { addPrivateKeyAccount } from '../../lib/accounts';
@@ -37,9 +36,11 @@ const PASSKEY_FALLBACK = 'The passkey could not be set up for this account on th
 const PASSKEY_LATER = 'You can add a passkey later from Settings, Security.';
 const PROFILE_LATER = 'You can set your name and picture later from Settings, Profile.';
 
-async function finishAccount(withPasskey: boolean, onStage?: (s: Stage) => void): Promise<{ id: string; address: string; warning: SetupWarning }> {
+async function finishAccount(
+  withPasskey: boolean, fresh: boolean, onStage?: (s: Stage) => void,
+): Promise<{ id: string; address: string; warning: SetupWarning }> {
   onStage?.('wallet');
-  const rec = await createSmartAccount();
+  const rec = await createSmartAccount({ fresh });
   let warning: SetupWarning = null;
   if (withPasskey && passkeysAvailable()) {
     const res = await enablePasskeyForRecord(rec);
@@ -64,7 +65,7 @@ async function setUpProfile(address: string, profile: ProfileSetup, onStage?: (s
 export async function createWallet(
   withPasskey: boolean, onStage?: (s: Stage) => void, profile?: ProfileSetup,
 ): Promise<SetupWarning> {
-  const account = await finishAccount(withPasskey, onStage);
+  const account = await finishAccount(withPasskey, true, onStage);
   if (profile === undefined) return account.warning;
   return account.warning ?? await setUpProfile(account.address, profile, onStage);
 }
@@ -73,8 +74,8 @@ export async function restoreWallet(
   phrase: string, withPasskey: boolean, onStage?: (s: Stage) => void,
 ): Promise<SetupWarning> {
   onStage?.('wallet');
-  await restoreMnemonic(phrase);
-  return (await finishAccount(withPasskey, onStage)).warning;
+  await adoptPhrase(phrase);
+  return (await finishAccount(withPasskey, false, onStage)).warning;
 }
 
 export async function importKeyAccount(pk: Hex, onStage?: (s: Stage) => void): Promise<SetupWarning> {

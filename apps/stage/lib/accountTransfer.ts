@@ -1,6 +1,5 @@
 import { encodeAccountTransfer, type AccountTransfer } from '@stage-labs/client/accounts/transfer';
-import { addPrivateKeyAccount, canExportPrivateKey, type AccountRecord } from './accounts';
-import { createSmartAccount } from './zerodev';
+import { canExportPrivateKey, type AccountRecord } from './accounts';
 import {
   mnemonicRelation, restoreMnemonic, revealPrivateKey, revealRecoveryPhrase,
 } from './zerodev/keyring';
@@ -29,10 +28,8 @@ export async function transferPayloadFor(rec: AccountRecord): Promise<string | n
   return null;
 }
 
-export async function importAccountTransfer(transfer: AccountTransfer): Promise<AccountRecord> {
-  if (transfer.kind === 'pk') return addPrivateKeyAccount(transfer.pk);
-  const relation = await mnemonicRelation(transfer.phrase);
+export async function adoptPhrase(phrase: string): Promise<void> {
+  const relation = await mnemonicRelation(phrase);
   if (relation === 'different') throw new Error(PHRASE_CONFLICT_MESSAGE);
-  if (relation === 'none') await restoreMnemonic(transfer.phrase);
-  return createSmartAccount();
+  if (relation === 'none') await restoreMnemonic(phrase);
 }

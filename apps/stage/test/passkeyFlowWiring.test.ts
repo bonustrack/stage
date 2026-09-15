@@ -14,8 +14,6 @@ const enableSrc = code(read('lib', 'zerodev', 'enablePasskey.ts'));
 const codecsSrc = code(read('lib', 'xmtp.codecs.ts'));
 const txLayerSrc = code(read('components', 'xmtp-conv', 'useTxSignLayer.ts'));
 const onboardSrc = code(read('components', 'onboarding', 'flow.ts'));
-const acctMgrSrc = code(read('components', 'AccountsManager.hook.ts'));
-const drawerSrc = code(read('components', 'LeftDrawer.accounts.tsx'));
 const disableSrc = code(read('lib', 'zerodev', 'disablePasskey.ts'));
 const walletSettingsSrc = code(read('components', 'settings', 'WalletSettings.tsx'))
   + code(read('components', 'settings', 'WalletSettings.sections.tsx'))
@@ -24,7 +22,7 @@ const passkeyHookSrc = code(read('lib', 'passkey.ts'));
 
 describe('A. create.ts — create is passkey-AGNOSTIC (ECDSA-owner only)', () => {
   test('builds the ECDSA (deployable) Kernel and never touches the passkey path', () => {
-    expect(createSrc).toContain('const account = await createEcdsaKernel(publicClient, owner, hdIndex)');
+    expect(createSrc).toContain('const { address } = await createEcdsaKernel(publicClient, owner, hdIndex)');
     expect(createSrc).not.toContain('registerPasskeyCredential');
     expect(createSrc).not.toContain('deployAndSwapToPasskey');
     expect(createSrc).not.toContain('passkey,');
@@ -38,7 +36,7 @@ describe('A. create.ts — create is passkey-AGNOSTIC (ECDSA-owner only)', () =>
 
 describe('A2. callers install the passkey BEFORE messaging (passkey signs the inbox)', () => {
   test('onboarding create/restore: createSmartAccount, enable, THEN bringMessagingOnline', () => {
-    const create = onboardSrc.indexOf('createSmartAccount()');
+    const create = onboardSrc.indexOf('createSmartAccount({ fresh })');
     const enable = onboardSrc.indexOf('enablePasskeyForRecord(rec)');
     const msg = onboardSrc.indexOf('bringMessagingOnline(rec.id');
     expect(create).toBeGreaterThanOrEqual(0);
@@ -47,22 +45,13 @@ describe('A2. callers install the passkey BEFORE messaging (passkey signs the in
     expect(onboardSrc).toContain('withPasskey && passkeysAvailable()');
   });
 
-  test('AccountsManager add: createSmartAccount, enable, THEN switch', () => {
-    const create = acctMgrSrc.indexOf('createSmartAccount()');
-    const enable = acctMgrSrc.indexOf('enablePasskeyForRecord(rec)');
-    const sw = acctMgrSrc.indexOf('AccountManager.switch(rec.id)');
-    expect(create).toBeGreaterThanOrEqual(0);
-    expect(enable).toBeGreaterThan(create);
-    expect(sw).toBeGreaterThan(enable);
-  });
-
-  test('LeftDrawer add: createSmartAccount, enable, THEN activate', () => {
-    const create = drawerSrc.indexOf('createSmartAccount()');
-    const enable = drawerSrc.indexOf('enablePasskeyForRecord(rec)');
-    const act = drawerSrc.indexOf('activate(rec.id, onChanged)');
-    expect(create).toBeGreaterThanOrEqual(0);
-    expect(enable).toBeGreaterThan(create);
-    expect(act).toBeGreaterThan(enable);
+  test('the only other creators route through the onboarding pages', () => {
+    const menu = code(read('components', 'MenuSheet.tsx'));
+    const accounts = code(read('components', 'AccountsManager.tsx'));
+    expect(menu).not.toContain('createSmartAccount');
+    expect(accounts).not.toContain('createSmartAccount');
+    expect(menu).toContain('SIGNUP_ROUTE');
+    expect(accounts).toContain('SIGNUP_ROUTE');
   });
 });
 

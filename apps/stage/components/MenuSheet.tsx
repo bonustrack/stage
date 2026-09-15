@@ -10,12 +10,11 @@ import { usePeerProfiles } from '../lib/peerProfiles';
 import { AccountManager } from '../modules/messaging';
 import { loadAccounts, getActiveAccountId, type AccountRecord } from '../lib/accounts';
 import { drawerAccountRows, DrawerRow } from './LeftDrawer.parts';
-import { useDrawerAccountActions } from './LeftDrawer.accounts';
 import { transferKindFor } from '../lib/accountTransfer';
 import { useAccountTransfer } from './accounts/useAccountTransfer';
 import { TransferAccountSheet } from './accounts/TransferAccountSheet';
-import { ImportAccountSheet } from './accounts/ImportAccountSheet';
 import { profileLinkOf } from '../lib/links';
+import { IMPORT_ROUTE, SIGNUP_ROUTE } from './onboarding/nextRoute.model';
 
 export function MenuSheet({ visible, anchor, onClose }: {
   visible: boolean;
@@ -42,14 +41,11 @@ export function MenuSheet({ visible, anchor, onClose }: {
 
   const activeRec = accounts.find(a => a.id === activeId) ?? accounts[0] ?? null;
 
-  const actions = useDrawerAccountActions({
-    dark, onChanged: () => { onClose(); void refresh(); },
-  });
   const t = useAccountTransfer();
   const compact = useAnchoredMenus();
   const movable = activeRec !== null && transferKindFor(activeRec) !== null;
 
-  function go(href: '/settings'): void {
+  function go(href: '/settings' | typeof SIGNUP_ROUTE | typeof IMPORT_ROUTE): void {
     onClose();
     router.navigate(href);
   }
@@ -74,8 +70,8 @@ export function MenuSheet({ visible, anchor, onClose }: {
       <AnchoredMenu visible={visible} onClose={onClose} anchor={anchor}>
         <MenuList dark={dark}>
           {drawerAccountRows({ accounts, activeId, onSwitch, c: { head, sub, border }, dark, compact })}
-          {actions.rows}
-          <DrawerRow rowKey="import" icon="qrcode" label="Import account" dark={dark} onPress={() => { onClose(); t.openImport(); }}/>
+          <DrawerRow rowKey="new-account" icon="userAdd" label="New account" dark={dark} onPress={() => { go(SIGNUP_ROUTE); }}/>
+          <DrawerRow rowKey="import" icon="qrcode" label="Import account" dark={dark} onPress={() => { go(IMPORT_ROUTE); }}/>
           {movable ? (
             <DrawerRow rowKey="move" icon="deviceMobile" label="Move to another device" dark={dark} onPress={() => { onClose(); t.openTransfer(activeRec); }}/>
           ) : null}
@@ -84,10 +80,6 @@ export function MenuSheet({ visible, anchor, onClose }: {
         </MenuList>
       </AnchoredMenu>
       <TransferAccountSheet rec={t.transferRec} dark={dark} onClose={t.closeTransfer} />
-      <ImportAccountSheet
-        visible={t.importOpen} dark={dark} busy={t.importing} error={t.importError}
-        onClose={t.closeImport} onSubmit={t.onImport}
-      />
     </>
   );
 }

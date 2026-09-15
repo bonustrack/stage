@@ -11,6 +11,11 @@ describe('isSplitRoute', () => {
     expect(isSplitRoute('/profile/boorger')).toBe(true);
   });
 
+  test('the onboarding pages never split, even though they look like handles', () => {
+    expect(isSplitRoute('/signup')).toBe(false);
+    expect(isSplitRoute('/import')).toBe(false);
+  });
+
   test('profiles, groups, settings, wallet, contacts, and accounts split', () => {
     expect(isSplitRoute('/group/abc')).toBe(true);
     expect(isSplitRoute('/profile/0xabc')).toBe(true);

@@ -9,6 +9,7 @@ import { SetupStep } from './Onboarding.setup';
 import { ImportStep } from './Onboarding.import';
 import { ProfileStep } from './Onboarding.profile';
 import { useOnboardingFlow } from './useOnboardingFlow';
+import { useAccountGate } from '../../lib/accountGate';
 import { StageLogo } from './StageLogo';
 
 export interface OnboardingProps {
@@ -30,6 +31,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
   const insets = useSafeAreaInsets();
   const f = useOnboardingFlow(onDone);
   const card = useCardLayout();
+  const loggedIn = useAccountGate().hasAccount;
 
   return (
     <Col surface="surface" flex={1} align="center" justify="center" padding={{ x: 24, top: 24 + insets.top, bottom: 16 + insets.bottom }}>
@@ -49,7 +51,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
         keyboardShouldPersistTaps="handled"
       >
       {f.step === 'welcome' ? (
-        <WelcomeStep dark={dark} busy={f.busy} onCreate={f.onCreate} onImport={f.onImport} />
+        <WelcomeStep dark={dark} busy={f.busy} onCreate={f.onCreate} onImport={f.onImport} onBack={loggedIn ? f.onLeave : undefined} />
       ) : null}
 
       {f.step === 'profile' ? (

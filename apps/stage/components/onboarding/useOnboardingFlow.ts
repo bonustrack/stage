@@ -18,6 +18,7 @@ export interface OnboardingFlow {
   withHistory: boolean;
   withProfile: boolean;
   onCreate: () => void;
+  onLeave: () => void;
   onProfileContinue: (profile: ProfileSetup | null) => void;
   onProfileBack: () => void;
   onImport: () => void;
@@ -66,6 +67,7 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
     busy: runner.busy, stage: runner.stage, setupErr: runner.setupErr, withHistory: runner.withHistory,
     withProfile: runner.withProfile,
     onCreate: () => { setStep('profile'); },
+    onLeave: () => { if (router.canGoBack()) router.back(); else router.replace('/'); },
     onProfileContinue: (profile) => { toPasskey(profile === null ? { kind: 'create' } : { kind: 'create', profile }); },
     onProfileBack: () => { setStep('welcome'); },
     onImport: () => { router.push({ pathname: IMPORT_ROUTE, params: next === undefined ? {} : { next } }); },

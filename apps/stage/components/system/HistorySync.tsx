@@ -3,30 +3,12 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Col, Row } from '../layout';
 import { Spinner } from '../Spinner';
-import { getActiveAccountId } from '../../lib/accounts';
 import { shortAddress, useActiveAccountRecord } from '../../modules/messaging';
-import {
-  dismissHistorySync, runHistorySync, takePendingHistorySync, useHistorySyncPhase,
-} from '../../lib/historySync';
+import { dismissHistorySync, runHistorySync, useHistorySyncPhase } from '../../lib/historySync';
 import { historySyncIsActive, historySyncPhaseLabel } from '../../lib/historySync.model';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 
 const DONE_VISIBLE_MS = 4_000;
-
-export function HistorySyncRunner({ ready, hasAccount }: { ready: boolean; hasAccount: boolean }): null {
-  const active = ready && hasAccount;
-  useEffect(() => {
-    if (!active) return;
-    let alive = true;
-    void (async (): Promise<void> => {
-      const id = await getActiveAccountId();
-      if (!alive || id === null) return;
-      if (await takePendingHistorySync(id)) void runHistorySync();
-    })();
-    return () => { alive = false; };
-  }, [active]);
-  return null;
-}
 
 function useAutoDismiss(phase: string): void {
   useEffect(() => {

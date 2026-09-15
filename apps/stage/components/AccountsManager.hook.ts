@@ -7,7 +7,6 @@ import {
   loadAccounts, getActiveAccountId, getPrivateKey, canExportPrivateKey,
   type AccountRecord,
 } from '../lib/accounts';
-import { createSmartAccount, enablePasskeyForRecord, passkeysAvailable } from '../lib/zerodev';
 import { reloadApp } from './AccountsManager.helpers';
 
 export function useAccountsManager(onSwitched?: () => void): {
@@ -16,7 +15,7 @@ export function useAccountsManager(onSwitched?: () => void): {
   manageId: string | null; setManageId: (id: string | null) => void;
   revealPk: string | null; setRevealPk: (s: string | null) => void;
   manageRec: AccountRecord | null; activeRec: AccountRecord | null; otherAccounts: AccountRecord[];
-  onSwitch: (id: string) => Promise<void>; onAdd: () => Promise<void>;
+  onSwitch: (id: string) => Promise<void>;
   onExport: (id: string) => Promise<void>;
   onRemove: (rec: AccountRecord) => void;
 } {
@@ -55,25 +54,6 @@ export function useAccountsManager(onSwitched?: () => void): {
     } finally { setBusy(false); }
   }
 
-  async function onAdd(): Promise<void> {
-    if (busy) return;
-    setBusy(true);
-    try {
-      const rec = await createSmartAccount();
-      if (passkeysAvailable()) {
-        const res = await enablePasskeyForRecord(rec);
-        if (!res.ok && res.reason !== 'already') {
-          throw new Error(res.message ?? 'Could not set up the passkey for this account.');
-        }
-      }
-      await AccountManager.switch(rec.id);
-      reloadApp();
-    } catch (e) {
-      Alert.alert('Could not create account', (e as Error).message);
-      setBusy(false);
-    }
-  }
-
   async function onExport(id: string): Promise<void> {
     const pk = await getPrivateKey(id);
     if (!pk) { Alert.alert('No key', 'This account has no exportable private key.'); return; }
@@ -105,6 +85,6 @@ export function useAccountsManager(onSwitched?: () => void): {
     accounts, activeId, busy, expanded, setExpanded,
     manageId, setManageId, revealPk, setRevealPk,
     manageRec, activeRec, otherAccounts,
-    onSwitch, onAdd, onExport, onRemove,
+    onSwitch, onExport, onRemove,
   };
 }

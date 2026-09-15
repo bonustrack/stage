@@ -7,7 +7,6 @@ import { Text, TextInput } from '../components/layout/native';
 import { Col, WebContentFrame, viewportFill } from '../components/layout';
 import { Spinner } from '../components/Spinner';
 import { TopChrome } from '../components/system/TopChrome';
-import { Onboarding } from '../components/onboarding/Onboarding';
 import { useAccountGate } from '../lib/accountGate';
 import { useShellGates } from '../lib/onboardingHold';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -15,6 +14,8 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { Platform } from 'react-native';
 import { RootStack, rootStackScreenOptions, TABS_SCREEN_OPTIONS } from '../lib/navigation/rootStack';
 import { useDocumentScrollRestore } from '../lib/navigation/scrollRestore';
+import { usePathname } from 'expo-router';
+import { isOnboardingRoute } from '../components/onboarding/nextRoute.model';
 import { useEffectiveColorScheme, usePalette, useRadius } from '../lib/theme';
 import { KitThemeProvider } from '@stage-labs/kit/react-native/theme-context';
 import { useDeepLinks } from '../lib/deepLinks';
@@ -26,13 +27,11 @@ import { getQueryClient } from '../lib/queryClient';
 import { applyWebGlobalStyles } from '../platform/webStyles';
 import { BuildInfoDot } from '../components/system/BuildInfoDot';
 import { AlertHost } from '../components/system/AlertHost';
-import { HistorySyncRunner } from '../components/system/HistorySync';
 import { OnboardingRouteReset } from '../components/system/OnboardingRouteReset';
 import { installAlertShim } from '../lib/alertShim';
 import { SplitSidebar } from '../components/tabs/SplitSidebar';
 
 const queryClient = getQueryClient();
-const ONBOARDING_LAYER = 4;
 
 applyWebGlobalStyles();
 installAlertShim();
@@ -98,6 +97,8 @@ function RootLayoutInner(): React.ReactElement {
 
   const gatesOpen = loaded && onboarding.ready && restore.ready;
   const shell = useShellGates(gatesOpen, onboarding.hasAccount);
+  const pathname = usePathname();
+  const routing = shell.showOnboarding && !isOnboardingRoute(pathname);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -110,19 +111,14 @@ function RootLayoutInner(): React.ReactElement {
       </RootStack>
       </WebContentFrame>
       <SplitSidebar visible={shell.sidebarVisible}/>
-      {!gatesOpen ? (
+      {!gatesOpen || routing ? (
         <Col surface="surface" align="center" justify="center" style={viewportFill()}>
           <Spinner size={28} color={dark ? '#ffffff' : '#000000'}/>
-        </Col>
-      ) : shell.showOnboarding ? (
-        <Col surface="surface" style={viewportFill(ONBOARDING_LAYER)}>
-          <Onboarding onDone={() => undefined} />
         </Col>
       ) : null}
       <TopChrome decorated={gatesOpen && !shell.showOnboarding} />
       <BuildInfoDot />
       <AlertHost />
-      <HistorySyncRunner ready={gatesOpen} hasAccount={onboarding.hasAccount} />
       <OnboardingRouteReset ready={gatesOpen} showing={shell.showOnboarding} />
       </KeyboardProvider>
     </GestureHandlerRootView>

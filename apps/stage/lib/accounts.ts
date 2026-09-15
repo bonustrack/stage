@@ -11,6 +11,8 @@ const setActiveAccountForCache = async (id: string | null): Promise<void> => {
 import { getViemAccount, adoptLegacyKey, deleteKey, clearMnemonic, importPrivateKey } from './zerodev/keyring';
 import { LEGACY_DB_DIR } from '@stage-labs/client/accounts/keys';
 import { addLocalAccountToList, resolveActiveAccount } from '@stage-labs/client/accounts/registry';
+import { nextHdIndex } from '@stage-labs/client/accounts/hdIndex';
+import { readSmartHdIndexHighWater } from './zerodev/hdIndexStore';
 
 export { canExportPrivateKey } from '@stage-labs/client/accounts/keys';
 export { getViemAccount, revealPrivateKey as getPrivateKey } from './zerodev/keyring';
@@ -110,7 +112,8 @@ export async function updateSmartAccount(
 
 export async function nextSmartHdIndex(): Promise<number> {
   const list = await loadAccounts();
-  return list.filter(a => a.type === 'smart').length;
+  const used = list.flatMap(a => (a.type === 'smart' && a.hdIndex !== undefined ? [a.hdIndex] : []));
+  return nextHdIndex(used, await readSmartHdIndexHighWater());
 }
 
 export async function markRegistered(id: string): Promise<void> {

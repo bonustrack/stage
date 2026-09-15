@@ -43,8 +43,8 @@ function OnboardingStepView({ dark, title, centered, caption, captionSize, topPa
   );
 }
 
-export function WelcomeStep({ dark, busy, onCreate, onImport }: {
-  dark: boolean; busy: boolean; onCreate: () => void; onImport: () => void;
+export function WelcomeStep({ dark, busy, onCreate, onImport, onBack }: {
+  dark: boolean; busy: boolean; onCreate: () => void; onImport: () => void; onBack?: () => void;
 }): React.ReactElement {
   return (
     <Col gap={16}>
@@ -55,6 +55,9 @@ export function WelcomeStep({ dark, busy, onCreate, onImport }: {
           <Text value="import wallet" size="md" color="link" weight="semibold" />
         </Pressable>
       </Row>
+      {onBack === undefined ? null : (
+        <Button label="Back" block size="lg" color="primary" variant="ghost" disabled={busy} dark={dark} onPress={onBack} />
+      )}
     </Col>
   );
 }

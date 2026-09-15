@@ -1,4 +1,5 @@
 import { isPeerHandleSegment } from '@stage-labs/client/routing/handles';
+import { isOnboardingRoute } from '../onboarding/nextRoute.model';
 
 const TAB_ROUTES = new Set(['/', '/contacts', '/wallet', '/settings']);
 
@@ -16,6 +17,7 @@ export function isTabRoute(pathname: string): boolean {
 }
 
 export function isSplitRoute(pathname: string): boolean {
+  if (isOnboardingRoute(pathname)) return false;
   if (pathname === '/' || isDmRoute(pathname)) return true;
   return SPLIT_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }

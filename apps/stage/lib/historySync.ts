@@ -1,5 +1,4 @@
 import './cryptoShim';
-import { appStorage } from '../platform/storage';
 import { makeListeners, useStoreValue } from './storeCore';
 import { bumpAccountEpoch } from './accountEpoch';
 import { waitForXmtpReady } from './xmtp.state';
@@ -13,7 +12,6 @@ import {
   type HistorySnapshot, type HistorySyncPhase,
 } from './historySync.model';
 
-const PENDING_KEY = 'history.sync.pending';
 const TIMEOUT_MS = 120_000;
 const POLL_MS = 5_000;
 
@@ -35,16 +33,6 @@ export function dismissHistorySync(): void {
   if (!historySyncIsActive(phase)) setPhase('idle');
 }
 
-export async function markHistorySyncPending(accountId: string): Promise<void> {
-  await appStorage.set(PENDING_KEY, accountId).catch(() => undefined);
-}
-
-export async function takePendingHistorySync(accountId: string): Promise<boolean> {
-  const pending = await appStorage.get(PENDING_KEY).catch(() => null);
-  if (pending !== accountId) return false;
-  await appStorage.delete(PENDING_KEY).catch(() => undefined);
-  return true;
-}
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => { setTimeout(resolve, ms); });

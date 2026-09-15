@@ -1,6 +1,7 @@
 
 import '../cryptoShim';
 import { secureStorage } from '../../platform/storage';
+import { resetSmartHdIndex } from './hdIndexStore';
 import type { SecureAccessOptions } from '../../platform/types';
 import {
   privateKeyToAccount,
@@ -80,6 +81,7 @@ async function unlockMnemonic(): Promise<string | null> {
 export async function restoreMnemonic(phrase: string): Promise<void> {
   const norm = normalizeMnemonic(phrase);
   if (!isValidMnemonic(norm)) throw new Error('Invalid recovery phrase — failed BIP-39 check.');
+  if ((await readMnemonic()) !== norm) await resetSmartHdIndex();
   await secureStorage.set(MNEMONIC_KEY, norm, STORE_OPTS);
   sessionMnemonic = norm;
   ownerCache.clear();
@@ -96,6 +98,7 @@ export async function mnemonicRelation(phrase: string): Promise<MnemonicRelation
 export async function clearMnemonic(): Promise<void> {
   sessionMnemonic = null;
   ownerCache.clear();
+  await resetSmartHdIndex();
   await secureStorage.delete(MNEMONIC_KEY).catch(() => undefined);
 }
 
