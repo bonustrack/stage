@@ -1,16 +1,15 @@
-
 import {
   PublicIdentity,
   ReactionCodec, ReplyCodec, StaticAttachmentCodec, RemoteAttachmentCodec,
   MultiRemoteAttachmentCodec, GroupUpdatedCodec,
   type Signer,
 } from '@xmtp/react-native-sdk';
-import type { PrivateKeyAccount } from 'viem/accounts';
 import {
   POLL_CODEC, SIGNATURE_REQUEST_CODEC, SIGNATURE_REFERENCE_CODEC,
   WALLET_SEND_CALLS_CODEC, TRANSACTION_REFERENCE_CODEC, READ_STATE_CODEC, PIN_STATE_CODEC,
 } from './xmtpJsonCodecs';
-import { getViemAccount, type AccountRecord } from './accounts';
+import type { AccountRecord } from './accounts';
+import { signingKeyForRecord } from './xmtp.signing.core';
 
 export const XMTP_CODECS = [
   new ReactionCodec(),
@@ -28,42 +27,13 @@ export const XMTP_CODECS = [
   PIN_STATE_CODEC,
 ];
 
-function signerForAccount(account: PrivateKeyAccount): Signer {
-  return {
-    getIdentifier: () => Promise.resolve(new PublicIdentity(account.address, 'ETHEREUM')),
-    getChainId: () => 1,
-    getBlockNumber: () => undefined,
-    signerType: () => 'EOA',
-    signMessage: async (message: string) => {
-      const signature = await account.signMessage({ message });
-      return { signature };
-    },
-  };
-}
-
 export async function signerForRecord(rec: AccountRecord): Promise<Signer> {
-  if (rec.type === 'smart') return signerForSmart(rec);
-  const acct = await getViemAccount(rec.id);
-  if (!acct) throw new Error('No signing key for this account.');
-  return signerForAccount(acct);
-}
-
-async function signerForSmart(rec: AccountRecord): Promise<Signer> {
-  if (rec.hdIndex == null) throw new Error('Smart account is missing its HD index.');
-  if (rec.scwXmtp === false) {
-    const { smartOwnerAddress, signOwnerMessage } = await import('./zerodev/keyring');
-    const hdIndex = rec.hdIndex;
-    const ownerAddr = await smartOwnerAddress(hdIndex);
-    return {
-      getIdentifier: () => Promise.resolve(new PublicIdentity(ownerAddr, 'ETHEREUM')),
-      getChainId: () => 1,
-      getBlockNumber: () => undefined,
-      signerType: () => 'EOA',
-      signMessage: async (message: string) => ({ signature: await signOwnerMessage(hdIndex, message) }),
-    };
-  }
-  const { kernelClientForRecord } = await import('./zerodev/kernelForRecord');
-  const { scwSigner } = await import('./zerodev/scwSigner');
-  const kernelClient = await kernelClientForRecord(rec, 'sign');
-  return scwSigner(kernelClient, rec.address);
+  const key = await signingKeyForRecord(rec);
+  return {
+    getIdentifier: () => Promise.resolve(new PublicIdentity(key.address, 'ETHEREUM')),
+    getChainId: () => key.chainId,
+    getBlockNumber: () => undefined,
+    signerType: () => key.kind,
+    signMessage: async (message: string) => ({ signature: await key.signMessage(message) }),
+  };
 }

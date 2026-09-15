@@ -1,4 +1,3 @@
-import { MARKED_UNREAD_PREFIX, setLastReadNs } from './xmtp.unread';
 import { secureStorage } from '../platform/storage';
 import { Client, PublicIdentity, type Conversation } from '@xmtp/react-native-sdk';
 import {
@@ -10,8 +9,7 @@ import { registerPushWithServer } from './pushRegister';
 import { bumpAccountEpoch } from './accountEpoch';
 import { XMTP_CODECS } from './xmtp.codecs';
 import {
-  getCachedXmtpClient, setCachedXmtpClient, resetClientScopedState,
-} from './xmtp.state';
+  getCachedXmtpClient, setCachedXmtpClient, resetClientScopedState, getOrCreateCachedClient } from './xmtp.state';
 import { type XmtpEnv, convIdOfLine, XMTP_ENV_KEY } from './xmtp.types';
 import {
   loadOrCreateDbKey, deleteDbKey, deleteDbFiles,
@@ -37,18 +35,13 @@ export async function selfEthAddress(): Promise<string | null> {
   return client.publicIdentity.identifier;
 }
 
-export async function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promise<Client> {
-  const cached = getCachedXmtpClient();
-  if (cached) return cached;
-  if (inFlightCreate) return inFlightCreate;
-  inFlightCreate = (async () => {
+export function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promise<Client> {
+  return getOrCreateCachedClient(async () => {
     const account = await getActiveAccount();
     if (!account) throw new NoAccountError();
     return buildClientForAccount(account, env);
-  })();
-  try { return await inFlightCreate; } finally { inFlightCreate = null; }
+  });
 }
-let inFlightCreate: Promise<Client> | null = null;
 
 async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<Client> {
   const dbDirectory = await ensureDbDir(rec.dbDir);
@@ -137,12 +130,7 @@ export async function revokeXmtpInstallation(installationId: string): Promise<vo
   );
 }
 
-export { getLastReadNs, setLastReadNs, getMarkedUnread, setMarkedUnreadFlag, markConvUnreadSynced } from './xmtp.unread';
-
-export async function markConvReadSynced(convId: string): Promise<void> {
-  await setLastReadNs(convId, Date.now() * 1_000_000);
-  await secureStorage.delete(MARKED_UNREAD_PREFIX + convId).catch(() => undefined);
-}
+export { getLastReadNs, setLastReadNs, getMarkedUnread, setMarkedUnreadFlag, markConvUnreadSynced, markConvReadSynced } from './xmtp.unread';
 
 export async function syncPreferences(): Promise<void> {
   try {

@@ -1,12 +1,11 @@
-
 import { IdentifierKind, type Signer } from '@xmtp/browser-sdk';
 import { hexToBytes } from 'viem';
-import type { PrivateKeyAccount } from 'viem/accounts';
 import {
   POLL_CODEC, SIGNATURE_REQUEST_CODEC, SIGNATURE_REFERENCE_CODEC, WALLET_SEND_CALLS_CODEC,
   READ_STATE_CODEC, PIN_STATE_CODEC,
 } from './xmtpJsonCodecs';
-import { getViemAccount, type AccountRecord } from './accounts';
+import type { AccountRecord } from './accounts';
+import { signingKeyForRecord } from './xmtp.signing.core';
 
 export const XMTP_CODECS = [
   POLL_CODEC,
@@ -17,55 +16,13 @@ export const XMTP_CODECS = [
   PIN_STATE_CODEC,
 ];
 
-function signerForAccount(account: PrivateKeyAccount): Signer {
-  return {
-    type: 'EOA',
-    getIdentifier: () => ({
-      identifier: account.address.toLowerCase(),
-      identifierKind: IdentifierKind.Ethereum,
-    }),
-    signMessage: async (message: string): Promise<Uint8Array> => {
-      const sigHex = await account.signMessage({ message });
-      return hexToBytes(sigHex);
-    },
-  };
-}
-
 export async function signerForRecord(rec: AccountRecord): Promise<Signer> {
-  if (rec.type === 'smart') return signerForSmart(rec);
-  const acct = await getViemAccount(rec.id);
-  if (!acct) throw new Error('No signing key for this account.');
-  return signerForAccount(acct);
-}
-
-async function signerForSmart(rec: AccountRecord): Promise<Signer> {
-  if (rec.hdIndex == null) throw new Error('Smart account is missing its HD index.');
-  if (rec.scwXmtp === false) {
-    const { smartOwnerAddress, signOwnerMessage } = await import('./zerodev/keyring');
-    const hdIndex = rec.hdIndex;
-    const ownerAddr = await smartOwnerAddress(hdIndex);
-    return {
-      type: 'EOA',
-      getIdentifier: () => ({
-        identifier: ownerAddr,
-        identifierKind: IdentifierKind.Ethereum,
-      }),
-      signMessage: async (message: string): Promise<Uint8Array> =>
-        hexToBytes(await signOwnerMessage(hdIndex, message)),
-    };
-  }
-  const { kernelClientForRecord } = await import('./zerodev/kernelForRecord');
-  const { SCW_CHAIN_ID_BIGINT } = await import('@stage-labs/client/zerodev/config');
-  const kernelClient = await kernelClientForRecord(rec, 'sign');
-  return {
-    type: 'SCW',
-    getIdentifier: () => ({
-      identifier: rec.address.toLowerCase(),
-      identifierKind: IdentifierKind.Ethereum,
-    }),
-    getChainId: () => SCW_CHAIN_ID_BIGINT,
-    signMessage: async (message: string): Promise<Uint8Array> => hexToBytes(
-      await kernelClient.signMessage({ message } as Parameters<typeof kernelClient.signMessage>[0]),
-    ),
+  const key = await signingKeyForRecord(rec);
+  const identity = {
+    getIdentifier: () => ({ identifier: key.address.toLowerCase(), identifierKind: IdentifierKind.Ethereum }),
+    signMessage: async (message: string): Promise<Uint8Array> => hexToBytes(await key.signMessage(message)),
   };
+  return key.kind === 'SCW'
+    ? { type: 'SCW', ...identity, getChainId: () => BigInt(key.chainId) }
+    : { type: 'EOA', ...identity };
 }

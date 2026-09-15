@@ -1,6 +1,5 @@
 import { errorMessage } from '@stage-labs/client/errors';
 import { XMTP_ENV_KEY } from './xmtp.types.web';
-import { MARKED_UNREAD_PREFIX, setLastReadNs } from './xmtp.unread';
 import { Client, ConsentState, IdentifierKind, type Conversation } from '@xmtp/browser-sdk';
 import { secureStorage } from '../platform/storage';
 import {
@@ -13,13 +12,13 @@ import { perfLog, perfTime } from './perf';
 import { bumpAccountEpoch } from './accountEpoch';
 import { XMTP_CODECS, signerForRecord } from './xmtp.codecs.web';
 import {
-  getCachedXmtpClient, setCachedXmtpClient, resetClientScopedState,
-} from './xmtp.state.web';
+  getCachedXmtpClient, setCachedXmtpClient, resetClientScopedState, getOrCreateCachedClient } from './xmtp.state.web';
 import { type XmtpEnv, convIdOfLine, lineOfConv } from './xmtp.types';
 import { deleteDbKey, deleteDbFiles } from './xmtp.dbkey';
 import { historyServerUrl } from './historyServer';
 import { registerPushWithServer } from './pushRegister.web';
 import { createClientForAccount } from './xmtp.recover.web';
+import { markConvReadSynced as markConvReadLocally } from './xmtp.unread';
 import {
   webXmtpDbPath, canReuseSavedClient, installationCreatedAtMs,
 } from '@stage-labs/client/xmtp/clientConfig';
@@ -48,18 +47,13 @@ export async function selfEthAddress(): Promise<string | null> {
   return client.accountIdentifier?.identifier ?? null;
 }
 
-export async function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promise<WebXmtpClient> {
-  const cached = getCachedXmtpClient();
-  if (cached) return cached;
-  if (inFlightCreate) return inFlightCreate;
-  inFlightCreate = (async () => {
+export function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promise<WebXmtpClient> {
+  return getOrCreateCachedClient(async () => {
     const account = await getActiveAccount();
     if (!account) throw new NoAccountError();
     return buildClientForAccount(account, env);
-  })();
-  try { return await inFlightCreate; } finally { inFlightCreate = null; }
+  });
 }
-let inFlightCreate: Promise<WebXmtpClient> | null = null;
 
 async function finalizeClient(
   client: WebXmtpClient, rec: AccountRecord, env: XmtpEnv,
@@ -181,8 +175,7 @@ export async function revokeXmtpInstallation(installationId: string): Promise<vo
 export { getLastReadNs, setLastReadNs, getMarkedUnread, setMarkedUnreadFlag, markConvUnreadSynced } from './xmtp.unread';
 
 export async function markConvReadSynced(convId: string): Promise<void> {
-  await setLastReadNs(convId, Date.now() * 1_000_000);
-  await secureStorage.delete(MARKED_UNREAD_PREFIX + convId).catch(() => undefined);
+  await markConvReadLocally(convId);
   try {
     const conv = await convOfLine(lineOfConv(convId));
     if (conv && (await conv.consentState()) !== ConsentState.Allowed) {

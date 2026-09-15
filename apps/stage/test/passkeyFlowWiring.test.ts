@@ -11,7 +11,7 @@ const code = (src: string) =>
 const createSrc = code(read('lib', 'zerodev', 'create.ts'));
 const kernelSrc = code(read('lib', 'zerodev', 'kernelForRecord.ts'));
 const enableSrc = code(read('lib', 'zerodev', 'enablePasskey.ts'));
-const codecsSrc = code(read('lib', 'xmtp.codecs.ts'));
+const signingSrc = code(read('lib', 'xmtp.signing.core.ts'));
 const txLayerSrc = code(read('components', 'xmtp-conv', 'useTxSignLayer.ts'));
 const onboardSrc = code(read('components', 'onboarding', 'flow.ts'));
 const disableSrc = code(read('lib', 'zerodev', 'disablePasskey.ts'));
@@ -109,11 +109,11 @@ describe('C. enablePasskey.ts — deploy-via-ECDSA-initcode then swap sudo on-ch
   });
 });
 
-describe('D. xmtp.codecs.ts — smart account signs XMTP via the scwSigner + kernel', () => {
-  test('smart accounts route through signerForSmart -> scwSigner + kernelClientForRecord', () => {
-    expect(codecsSrc).toContain("rec.type === 'smart'");
-    expect(codecsSrc).toContain("kernelClientForRecord(rec, 'sign')");
-    expect(codecsSrc).toContain('scwSigner(kernelClient, rec.address)');
+describe('D. xmtp.signing.core.ts — smart account signs XMTP via the kernel client', () => {
+  test('smart accounts resolve their signing key through kernelClientForRecord', () => {
+    expect(signingSrc).toContain("rec.type === 'smart'");
+    expect(signingSrc).toContain("kernelClientForRecord(rec, 'sign')");
+    expect(signingSrc).toContain("kind: 'SCW', address: rec.address");
   });
 });
 
