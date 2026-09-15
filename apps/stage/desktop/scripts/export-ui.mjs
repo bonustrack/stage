@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const stageDir = path.resolve(here, '..', '..', 'stage');
+const stageDir = path.resolve(here, '..', '..');
 const outDir = path.resolve(here, '..', 'web');
 const env = { ...process.env, APP_VARIANT: 'prod', EXPO_PUBLIC_ZERODEV_RP_ID: 'stage.box', EXPO_NO_TELEMETRY: '1' };
 

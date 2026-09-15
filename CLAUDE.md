@@ -2,7 +2,7 @@
 
 Stage is an XMTP messenger with multi-account support, Snapshot profiles, group channels, and an onchain wallet (assets, balances, Railgun shielded transfers). The product bet is a privacy super app where **agents are contacts**.
 
-It ships **one universal Expo app** (`apps/stage`) serving **android, ios, and web** from the same React Native codebase (web via react-native-web), built on a framework-agnostic TS core (`packages/client`), a design-system kit (`packages/kit`), and a Cloudflare Worker (`apps/proxy`). Tooling: **Bun 1.3.9** (exact) + Turbo, **Node >=22**.
+It ships **one universal Expo app** (`apps/stage`) serving **android, ios, web and desktop** from the same React Native codebase (web via react-native-web), built on a framework-agnostic TS core (`packages/client`), a design-system kit (`packages/kit`), and a Cloudflare Worker (`apps/proxy`). Tooling: **Bun 1.3.9** (exact) + Turbo, **Node >=22**.
 
 ## Repo layout
 
@@ -13,7 +13,7 @@ It ships **one universal Expo app** (`apps/stage`) serving **android, ios, and w
 | `packages/kit` | `@stage-labs/kit` | Design system: tokens, theme, icons, layout, and ONE React Native component family (renders on web via RNW). Plain component library — no renderer, no build step. |
 | `packages/config` | `@stage-labs/config` | Publishable ESLint/TS/knip/madge presets + the `stage` CLI (`bin/stage.js`) driven by root `stage.config.js`. |
 | `apps/proxy` | — | Cloudflare Worker: link-preview / image-resize / x402 proxy + the bundler.stage.box per-branch manifest proxy. Routes on proxy.stage.box and bundler.stage.box only. |
-| `apps/desktop` | `stage-desktop` | Electron app for macOS, Linux and Windows. Bundles the `expo export --platform web` output (`scripts/export-ui.mjs` -> `web/`, prod variant, rpId stage.box) and serves it from the privileged `stage-app://stage.box` scheme with the same COOP/COEP headers as Netlify, so it works with stage.box down. Adds the native window, menus, `stage://` deep links and macOS camera/mic prompts. `STAGE_DESKTOP_URL=http://localhost:8080` points it at a Metro dev server instead. Self-updates via electron-updater from the GitHub Release `v<version>`; `release-desktop.yml` builds the installers on the same `app.config.js` version bump as the mobile release (see `docs/desktop-release.md`). |
+| `apps/stage/desktop` | `stage-desktop` | The Electron shell for macOS, Linux and Windows — a nested workspace inside the app (like `modules/stage-pill` is the Android shell), kept as its own package only because electron-builder reads the package.json it packs. Bundles the `expo export --platform web` output (`scripts/export-ui.mjs` -> `web/`, prod variant, rpId stage.box) and serves it from the privileged `stage-app://stage.box` scheme with the same COOP/COEP headers as Netlify, so it works with stage.box down. Adds the native window, menus, `stage://` deep links and macOS camera/mic prompts. `STAGE_DESKTOP_URL=http://localhost:8080` points it at a Metro dev server instead. Self-updates via electron-updater from the GitHub Release `v<version>`; `release-desktop.yml` builds the installers on the same `app.config.js` version bump as the mobile release (see `docs/desktop-release.md`). |
 
 There is no separate web app: the Vue client (`apps/ui`) and the kit Vue renderer family were removed when `apps/stage` became universal. **The parity invariant is retired** — a screen exists once. The JSON widget dialect (`KitRenderer`/`ViewHost`, `WidgetNode`, node registry) is also retired — all UI, including chat message content, is direct kit JSX.
 
@@ -40,7 +40,7 @@ Per-app:
 | `bun --cwd apps/stage run build:web` | `expo export --platform web` -> `dist/` (Netlify publishes this). NEVER export into the repo tree during local checks — ESLint OOMs on bundles; use a temp dir |
 | `bun --cwd apps/stage run typecheck` / `test` | `tsc --noEmit` / `bun test test/` |
 | `bun --cwd apps/proxy dev` | `wrangler dev` |
-| `bun run --cwd apps/desktop start` / `dist` | Export the web UI into `apps/desktop/web` and run Electron / build installers into `apps/desktop/release` (run Electron from a plain terminal: editors set `ELECTRON_RUN_AS_NODE`) |
+| `bun run --cwd apps/stage/desktop start` / `dist` | Export the web UI into `apps/stage/desktop/web` and run Electron / build installers into `apps/stage/desktop/release` (run Electron from a plain terminal: editors set `ELECTRON_RUN_AS_NODE`) |
 
 ## Architecture
 

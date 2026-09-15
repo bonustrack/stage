@@ -71,8 +71,8 @@ jobs:
       - name: Stamp the app version
         shell: bash
         run: |
-          jq --arg v "${{ needs.guard.outputs.version }}" '.version = $v' apps/desktop/package.json > pkg.tmp
-          mv pkg.tmp apps/desktop/package.json
+          jq --arg v "${{ needs.guard.outputs.version }}" '.version = $v' apps/stage/desktop/package.json > pkg.tmp
+          mv pkg.tmp apps/stage/desktop/package.json
       - name: Mac signing and notarization (only when the secrets are set)
         if: runner.os == 'macOS'
         shell: bash
@@ -93,7 +93,7 @@ jobs:
             echo "APPLE_API_KEY_ID=$ASC_KEY_ID" >> "$GITHUB_ENV"
             echo "APPLE_API_ISSUER=$ASC_ISSUER_ID" >> "$GITHUB_ENV"
           fi
-      - run: bun run --cwd apps/desktop dist
+      - run: bun run --cwd apps/stage/desktop dist
       - if: always() && runner.os == 'macOS'
         shell: bash
         run: rm -f "$RUNNER_TEMP/asc-api-key.p8"
@@ -101,13 +101,13 @@ jobs:
         with:
           name: desktop-${{ matrix.os }}
           path: |
-            apps/desktop/release/*.dmg
-            apps/desktop/release/*.zip
-            apps/desktop/release/*.AppImage
-            apps/desktop/release/*.deb
-            apps/desktop/release/*.exe
-            apps/desktop/release/*.blockmap
-            apps/desktop/release/latest*.yml
+            apps/stage/desktop/release/*.dmg
+            apps/stage/desktop/release/*.zip
+            apps/stage/desktop/release/*.AppImage
+            apps/stage/desktop/release/*.deb
+            apps/stage/desktop/release/*.exe
+            apps/stage/desktop/release/*.blockmap
+            apps/stage/desktop/release/latest*.yml
           if-no-files-found: error
 
   publish:

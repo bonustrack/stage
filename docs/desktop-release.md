@@ -11,14 +11,14 @@
 | `build` (Windows) | NSIS `.exe` installer. |
 | `publish` | Attaches the installers, the `.blockmap` files and the `latest*.yml` update manifests to the GitHub Release `v<version>`, appending to the release the mobile workflow creates. |
 
-The version in `apps/desktop/package.json` is stamped from `app.config.js` at build time; keep it in sync when bumping so local builds report the same number.
+The version in `apps/stage/desktop/package.json` is stamped from `app.config.js` at build time; keep it in sync when bumping so local builds report the same number.
 
 ## Auto-updates
 
-The app uses electron-updater with the GitHub provider (`publish` in `apps/desktop/electron-builder.yml`). It checks on launch and every six hours, and `Help -> Check for Updates…` checks on demand.
+The app uses electron-updater with the GitHub provider (`publish` in `apps/stage/desktop/electron-builder.yml`). It checks on launch and every six hours, and `Help -> Check for Updates…` checks on demand.
 
 - Windows and Linux download the update in the background and offer "Restart now" when it is ready. The update also installs on quit.
-- macOS only offers to open the release page, because Squirrel.Mac refuses to install an update into an app that is not signed with a Developer ID. Flip `installsInPlace` in `apps/desktop/src/updateModel.ts` once signed builds ship.
+- macOS only offers to open the release page, because Squirrel.Mac refuses to install an update into an app that is not signed with a Developer ID. Flip `installsInPlace` in `apps/stage/desktop/src/updateModel.ts` once signed builds ship.
 
 electron-updater picks the newest `v<version>` release, so a mobile-only release without desktop assets would make desktop update checks fail until the next full release. The shared trigger keeps both workflows on the same versions.
 
@@ -43,7 +43,7 @@ Repo `Settings -> Secrets and variables -> Actions`. All optional; without them 
 ## Local build
 
 ```sh
-bun run --cwd apps/desktop dist
+bun run --cwd apps/stage/desktop dist
 ```
 
-Produces the installers and `latest-mac.yml` in `apps/desktop/release/`. Run Electron from a plain terminal: editor terminals set `ELECTRON_RUN_AS_NODE`, which makes Electron start as Node and exit.
+Produces the installers and `latest-mac.yml` in `apps/stage/desktop/release/`. Run Electron from a plain terminal: editor terminals set `ELECTRON_RUN_AS_NODE`, which makes Electron start as Node and exit.

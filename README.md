@@ -65,7 +65,7 @@ bun --cwd apps/stage ios        # build + run on iOS
 bun --cwd apps/stage web        # run the app in a browser
 bun --cwd apps/stage run build:web  # static web export (Netlify publishes dist/)
 bun --cwd apps/proxy dev        # Cloudflare Worker (wrangler dev)
-bun run --cwd apps/desktop start  # Electron desktop app with the bundled web UI (macOS / Linux / Windows)
+bun run --cwd apps/stage/desktop start  # Electron desktop app with the bundled web UI (macOS / Linux / Windows)
 ```
 
 ## Environment

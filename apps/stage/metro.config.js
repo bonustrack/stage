@@ -17,9 +17,10 @@ config.resolver.nodeModulesPaths = [
 ];
 
 const nodejsHostBlock = /[/\\]nodejs-assets[/\\].*/;
+const desktopShellBlock = /[/\\]apps[/\\]stage[/\\]desktop[/\\].*/;
 config.resolver.blockList = config.resolver.blockList
-  ? [].concat(config.resolver.blockList, nodejsHostBlock)
-  : nodejsHostBlock;
+  ? [].concat(config.resolver.blockList, nodejsHostBlock, desktopShellBlock)
+  : [nodejsHostBlock, desktopShellBlock];
 
 const appNodeModules = path.resolve(projectRoot, 'node_modules');
 

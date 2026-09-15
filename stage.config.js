@@ -55,7 +55,7 @@ export default defineConfig({
       type: 'worker',
       knip: { entry: ['src/**/*.ts'] },
     },
-    'apps/desktop': {
+    'apps/stage/desktop': {
       type: 'library',
       eslint: { ignores: ['web/**', 'release/**'] },
       knip: { entry: ['src/preload.ts', 'scripts/*.mjs'], ignoreBinaries: ['codesign'] },
@@ -81,7 +81,7 @@ export default defineConfig({
   },
   madge: {
     roots: [
-      'apps/desktop/src',
+      'apps/stage/desktop/src',
       'apps/stage/app',
       'apps/stage/components',
       'apps/stage/lib',

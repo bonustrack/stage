@@ -17,17 +17,6 @@
         "typescript-eslint": "^8.59.2",
       },
     },
-    "apps/desktop": {
-      "name": "stage-desktop",
-      "version": "0.1.2",
-      "devDependencies": {
-        "@types/node": "^22.0.0",
-        "electron": "44.3.0",
-        "electron-builder": "26.15.3",
-        "electron-updater": "6.8.9",
-        "esbuild": "0.28.1",
-      },
-    },
     "apps/proxy": {
       "name": "proxy",
       "version": "0.1.0",
@@ -117,6 +106,17 @@
         "@types/markdown-it": "^14.1.2",
         "@types/react": "~19.1.0",
         "babel-preset-expo": "~54.0.10",
+      },
+    },
+    "apps/stage/desktop": {
+      "name": "stage-desktop",
+      "version": "0.1.2",
+      "devDependencies": {
+        "@types/node": "^22.0.0",
+        "electron": "44.3.0",
+        "electron-builder": "26.15.3",
+        "electron-updater": "6.8.9",
+        "esbuild": "0.28.1",
       },
     },
     "packages/client": {
@@ -2967,7 +2967,7 @@
 
     "stage": ["stage@workspace:apps/stage"],
 
-    "stage-desktop": ["stage-desktop@workspace:apps/desktop"],
+    "stage-desktop": ["stage-desktop@workspace:apps/stage/desktop"],
 
     "standard-navigation": ["standard-navigation@0.0.7", "", {}, "sha512-NCGLCNyuXrFOkGHxdNZFnpsehGtiq1oXbPhKl7ZuxFO5J//H2evqqOchmD4YwEUJnkjO4kH9Xp4hQX6hdAYCKQ=="],
 
