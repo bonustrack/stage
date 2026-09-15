@@ -7,6 +7,7 @@ export type StageState = 'done' | 'active' | 'pending';
 export const STAGE_LABELS: Record<Stage, string> = {
   wallet: 'Creating your wallet',
   messaging: 'Setting up secure messaging',
+  profile: 'Saving your profile',
   history: 'Syncing your message history',
   finishing: 'Finishing up',
 };
@@ -14,6 +15,7 @@ export const STAGE_LABELS: Record<Stage, string> = {
 const STAGE_HINTS: Record<Stage, string> = {
   wallet: 'This only takes a moment.',
   messaging: 'Registering your encrypted inbox. This can take up to a minute on first launch.',
+  profile: 'Claiming your name and writing your profile onchain. Stage pays the fees.',
   history: 'Asking your other device for your messages. Open Stage there on this account. If it takes longer, we continue in the background and show progress on the home screen.',
   finishing: 'Almost there.',
 };
@@ -21,6 +23,7 @@ const STAGE_HINTS: Record<Stage, string> = {
 const EXPECTED_MS: Record<Stage, number> = {
   wallet: 4_000,
   messaging: 30_000,
+  profile: 20_000,
   history: 20_000,
   finishing: 1_500,
 };
@@ -28,10 +31,13 @@ const EXPECTED_MS: Record<Stage, number> = {
 const MESSAGING_RETRY_HINT =
   'Your wallet is ready, but secure messaging did not finish setting up. Try again. Your wallet and recovery phrase are safe.';
 
-export function setupStages(withHistory: boolean): Stage[] {
-  return withHistory
-    ? ['wallet', 'messaging', 'history', 'finishing']
-    : ['wallet', 'messaging', 'finishing'];
+export function setupStages(withHistory: boolean, withProfile = false): Stage[] {
+  return [
+    'wallet', 'messaging',
+    ...(withProfile ? ['profile' as const] : []),
+    ...(withHistory ? ['history' as const] : []),
+    'finishing',
+  ];
 }
 
 export function setupProgress(stage: Stage, stages: Stage[], elapsedMs: number): number {

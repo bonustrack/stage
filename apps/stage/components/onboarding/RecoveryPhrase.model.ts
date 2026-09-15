@@ -44,6 +44,18 @@ export function applyCompletion(text: string, word: string): string {
   return `${trimmed}${word} `;
 }
 
+export function hasWordWithPrefix(prefix: string, wordlist: readonly string[] = english): boolean {
+  return wordlist.some((word) => word.startsWith(prefix));
+}
+
+export function acceptTypedChar(previous: string, next: string, wordlist: readonly string[] = english): string {
+  if (next.length !== previous.length + 1 || !next.startsWith(previous)) return next;
+  if (!looksLikePhrase(next)) return next;
+  const token = currentToken(next);
+  if (token.complete || token.word.length === 0) return next;
+  return hasWordWithPrefix(token.word, wordlist) ? next : previous;
+}
+
 export function completeIfUnique(previous: string, next: string, wordlist: readonly string[] = english): string {
   if (next.length <= previous.length) return next;
   const token = currentToken(next);
@@ -58,4 +70,9 @@ export function invalidWords(text: string, wordlist: readonly string[] = english
   const words = text.trim().toLowerCase().split(/\s+/).filter((word) => word.length > 0);
   const finished = token.complete ? words : words.slice(0, -1);
   return finished.filter((word) => !set.has(word));
+}
+
+export function looksLikePhrase(text: string): boolean {
+  const t = text.trim();
+  return t.length > 0 && !t.startsWith('0x') && !t.includes(':');
 }

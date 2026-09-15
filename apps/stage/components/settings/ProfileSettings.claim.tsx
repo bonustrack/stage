@@ -6,31 +6,10 @@ import { Input } from '@stage-labs/kit/react-native/input';
 import { fontSize } from '@stage-labs/kit/tokens';
 import { Box, Col } from '../layout';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { checkStageName, claimStageName, ownedStageName, setPrimaryStageName } from '../../lib/claimName';
+import { claimStageName, ownedStageName, setPrimaryStageName } from '../../lib/claimName';
+import { useNameAvailability } from './useNameAvailability';
 import { SettingsButtonRow, SettingsList } from './rows';
-import { canClaim, claimStatusText, localLabelProblem, normalizeLabel, type ClaimState } from './ProfileSettings.claim.model';
-
-const CHECK_DEBOUNCE_MS = 400;
-
-function useAvailability(label: string, setState: (next: ClaimState) => void): void {
-  useEffect(() => {
-    if (label === '') { setState({ label, phase: 'idle' }); return; }
-    const problem = localLabelProblem(label);
-    if (problem) { setState({ label, phase: 'invalid', detail: problem }); return; }
-    setState({ label, phase: 'checking' });
-    let cancelled = false;
-    const timer = setTimeout(() => {
-      void checkStageName(label).then((check) => {
-        if (cancelled) return;
-        if (!check.valid) setState({ label, phase: 'invalid', detail: check.reason });
-        else setState({ label, phase: check.available ? 'available' : 'unavailable' });
-      }).catch((err: unknown) => {
-        if (!cancelled) setState({ label, phase: 'failed', detail: errorMessage(err) });
-      });
-    }, CHECK_DEBOUNCE_MS);
-    return () => { cancelled = true; clearTimeout(timer); };
-  }, [label]);
-}
+import { canClaim, claimStatusText, normalizeLabel, type ClaimState } from './ProfileSettings.claim.model';
 
 function useOwnedLabel(address: string): string | null {
   const [owned, setOwned] = useState<string | null>(null);
@@ -82,7 +61,7 @@ function ClaimForm({ address, onClaimed }: { address: string; onClaimed: () => v
   const label = normalizeLabel(raw);
   const [state, setState] = useState<ClaimState>({ label: '', phase: 'idle' });
   const busy = state.phase === 'claiming';
-  useAvailability(busy || state.phase === 'claimed' ? state.label : label, busy || state.phase === 'claimed' ? () => undefined : setState);
+  useNameAvailability(busy || state.phase === 'claimed' ? state.label : label, busy || state.phase === 'claimed' ? () => undefined : setState);
 
   const claim = (): void => {
     if (!canClaim(state)) return;

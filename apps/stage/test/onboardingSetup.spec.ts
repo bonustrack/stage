@@ -7,6 +7,7 @@ describe('setupStages', () => {
   test('adds the history stage only for imports and restores', () => {
     expect(setupStages(false)).toEqual(['wallet', 'messaging', 'finishing']);
     expect(setupStages(true)).toEqual(['wallet', 'messaging', 'history', 'finishing']);
+    expect(setupStages(false, true)).toEqual(['wallet', 'messaging', 'profile', 'finishing']);
   });
 });
 

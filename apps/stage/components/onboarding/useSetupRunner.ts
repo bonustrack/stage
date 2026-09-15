@@ -9,9 +9,10 @@ import {
   type SetupWarning, type Stage,
 } from './flow';
 import type { SetupErr } from './Onboarding.setup.model';
+import type { ProfileSetup } from './Onboarding.profile.model';
 
 export type Choice =
-  | { kind: 'create' }
+  | { kind: 'create'; profile?: ProfileSetup }
   | { kind: 'restore'; phrase: string }
   | { kind: 'importKey'; pk: Hex };
 
@@ -20,6 +21,7 @@ export interface SetupRunner {
   stage: Stage;
   setupErr: SetupErr | null;
   withHistory: boolean;
+  withProfile: boolean;
   run: (choice: Choice, withPasskey: boolean) => void;
   retryMessaging: (accountId: string) => void;
   skipHistory: () => void;
@@ -31,7 +33,7 @@ function choiceSyncsHistory(choice: Choice): boolean {
 }
 
 async function runChoice(choice: Choice, withPasskey: boolean, onStage: (s: Stage) => void): Promise<SetupWarning> {
-  if (choice.kind === 'create') return createWallet(withPasskey, onStage);
+  if (choice.kind === 'create') return createWallet(withPasskey, onStage, choice.profile);
   if (choice.kind === 'restore') return restoreWallet(choice.phrase, withPasskey, onStage);
   return importKeyAccount(choice.pk, onStage);
 }
@@ -45,6 +47,7 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
   const [stage, setStage] = useState<Stage>('wallet');
   const [setupErr, setSetupErr] = useState<SetupErr | null>(null);
   const [withHistory, setWithHistory] = useState(false);
+  const [withProfile, setWithProfile] = useState(false);
   const skipped = useRef(false);
 
   const begin = (first: Stage): void => {
@@ -60,9 +63,7 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
     holdOnboarding(false);
     setBusy(false);
     onDone();
-    if (warning !== null) {
-      Alert.alert('Passkey not added', `${warning} You can add a passkey later from Settings, Security.`);
-    }
+    if (warning !== null) Alert.alert(warning.title, warning.message);
   };
 
   const tail = async (syncHistory: boolean, warning: SetupWarning): Promise<void> => {
@@ -80,6 +81,7 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
     if (busy) return;
     const syncHistory = choiceSyncsHistory(choice);
     setWithHistory(syncHistory);
+    setWithProfile(choice.kind === 'create' && choice.profile !== undefined);
     begin('wallet');
     void (async (): Promise<void> => {
       try {
@@ -120,5 +122,5 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
     holdOnboarding(false);
   };
 
-  return { busy, stage, setupErr, withHistory, run, retryMessaging, skipHistory, reset };
+  return { busy, stage, setupErr, withHistory, withProfile, run, retryMessaging, skipHistory, reset };
 }

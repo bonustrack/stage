@@ -80,11 +80,11 @@ function SetupActions({ dark, busy, stage, setupErr, onRetry, onBack, onSkipHist
   );
 }
 
-export function SetupStep({ pal, dark, busy, stage, setupErr, withHistory, onRetry, onBack, onSkipHistory }: {
-  pal: Pal; dark: boolean; busy: boolean; stage: Stage; setupErr: SetupErr | null; withHistory: boolean;
+export function SetupStep({ pal, dark, busy, stage, setupErr, withHistory, withProfile, onRetry, onBack, onSkipHistory }: {
+  pal: Pal; dark: boolean; busy: boolean; stage: Stage; setupErr: SetupErr | null; withHistory: boolean; withProfile: boolean;
   onRetry: () => void; onBack: () => void; onSkipHistory: () => void;
 }): React.ReactElement {
-  const stages = setupStages(withHistory);
+  const stages = setupStages(withHistory, withProfile);
   const elapsed = useStageElapsed(stage);
   const progress = setupProgress(stage, stages, elapsed);
   return (

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { english } from 'viem/accounts';
 import {
-  applyCompletion, completeIfUnique, currentToken, invalidWords, suggestWords, uniqueCompletion,
+  acceptTypedChar, applyCompletion, completeIfUnique, currentToken, invalidWords, suggestWords, uniqueCompletion,
 } from '../components/onboarding/RecoveryPhrase.model';
 
 describe('BIP-39 wordlist shape', () => {
@@ -47,5 +47,25 @@ describe('invalidWords', () => {
     expect(invalidWords('abandon foo ability ')).toEqual(['foo']);
     expect(invalidWords('abandon foo abil')).toEqual(['foo']);
     expect(invalidWords('abandon ability ')).toEqual([]);
+  });
+});
+
+describe('acceptTypedChar', () => {
+  test('rejects a character that cannot start any word', () => {
+    expect(acceptTypedChar('fr', 'frm')).toBe('fr');
+    expect(acceptTypedChar('', 'x')).toBe('');
+    expect(acceptTypedChar('', 'a')).toBe('a');
+  });
+
+  test('keeps valid prefixes, spaces, deletions and pastes', () => {
+    expect(acceptTypedChar('fr', 'fro')).toBe('fro');
+    expect(acceptTypedChar('from', 'from ')).toBe('from ');
+    expect(acceptTypedChar('frm', 'fr')).toBe('fr');
+    expect(acceptTypedChar('', 'abandon ability zzz')).toBe('abandon ability zzz');
+  });
+
+  test('leaves transfer codes and private keys alone', () => {
+    expect(acceptTypedChar('0', '0x')).toBe('0x');
+    expect(acceptTypedChar('stage-account:', 'stage-account:1')).toBe('stage-account:1');
   });
 });
