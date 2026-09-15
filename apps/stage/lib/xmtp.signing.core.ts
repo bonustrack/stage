@@ -12,10 +12,10 @@ async function smartSigningKey(rec: AccountRecord): Promise<SigningKey> {
   if (rec.hdIndex == null) throw new Error('Smart account is missing its HD index.');
   if (rec.scwXmtp === false) {
     const { smartOwnerAddress, signOwnerMessage } = await import('./zerodev/keyring');
-    const hdIndex = rec.hdIndex;
+    const ref = { hdIndex: rec.hdIndex, phraseId: rec.phraseId };
     return {
-      kind: 'EOA', address: await smartOwnerAddress(hdIndex), chainId: 1,
-      signMessage: (message) => signOwnerMessage(hdIndex, message),
+      kind: 'EOA', address: await smartOwnerAddress(ref), chainId: 1,
+      signMessage: (message) => signOwnerMessage(ref, message),
     };
   }
   const { kernelClientForRecord } = await import('./zerodev/kernelForRecord');

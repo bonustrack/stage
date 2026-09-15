@@ -2,17 +2,26 @@ import { secureStorage } from '../../platform/storage';
 
 const HD_INDEX_KEY = 'accounts.smart.nextHdIndex';
 
-export async function readSmartHdIndexHighWater(): Promise<number | null> {
-  const raw = await secureStorage.get(HD_INDEX_KEY).catch(() => null);
+const keyFor = (phraseId: string): string => `${HD_INDEX_KEY}.${phraseId}`;
+
+export async function readSmartHdIndexHighWater(phraseId: string): Promise<number | null> {
+  const raw = await secureStorage.get(keyFor(phraseId)).catch(() => null);
   if (raw === null) return null;
   const value = Number(raw);
   return Number.isInteger(value) ? value : null;
 }
 
-export async function reserveSmartHdIndex(hdIndex: number): Promise<void> {
-  await secureStorage.set(HD_INDEX_KEY, String(hdIndex + 1));
+export async function reserveSmartHdIndex(phraseId: string, hdIndex: number): Promise<void> {
+  await secureStorage.set(keyFor(phraseId), String(hdIndex + 1));
 }
 
-export async function resetSmartHdIndex(): Promise<void> {
+export async function resetSmartHdIndex(phraseId: string): Promise<void> {
+  await secureStorage.delete(keyFor(phraseId)).catch(() => undefined);
+}
+
+export async function migrateLegacyHdIndex(phraseId: string): Promise<void> {
+  const legacy = await secureStorage.get(HD_INDEX_KEY).catch(() => null);
+  if (legacy === null) return;
+  await secureStorage.set(keyFor(phraseId), legacy);
   await secureStorage.delete(HD_INDEX_KEY).catch(() => undefined);
 }

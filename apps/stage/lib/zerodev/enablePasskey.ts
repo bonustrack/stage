@@ -2,7 +2,7 @@
 import '../cryptoShim';
 import type { AccountRecord } from '../accounts';
 import { updateSmartAccount } from '../accounts';
-import { smartOwnerSigner } from './keyring';
+import { smartOwnerSigner, type SmartKeyRef } from './keyring';
 import { kernelDeployedOnChain, makePublicClient, makeKernelClient, swapSudoValidator } from './client';
 import {
   createEcdsaKernel,
@@ -33,12 +33,12 @@ export type DeployAndSwapResult =
 
 export async function deployAndSwapToPasskey(
   publicClient: ReturnType<typeof makePublicClient>,
-  hdIndex: number,
+  key: SmartKeyRef,
   stored: StoredPasskey,
 ): Promise<DeployAndSwapResult> {
   try {
-    const owner = await smartOwnerSigner(hdIndex);
-    const ecdsaAccount = await createEcdsaKernel(publicClient, owner, hdIndex);
+    const owner = await smartOwnerSigner(key);
+    const ecdsaAccount = await createEcdsaKernel(publicClient, owner, key.hdIndex);
     const kernelClient = makeKernelClient(
       ecdsaAccount,
       publicClient,
@@ -120,7 +120,7 @@ export async function enablePasskeyForRecord(record: AccountRecord): Promise<Ena
     await updateSmartAccount(rec.id, { passkey: stored, passkeyCredId: stored.authenticatorId });
   }
 
-  const swap = await deployAndSwapToPasskey(publicClient, rec.hdIndex, stored);
+  const swap = await deployAndSwapToPasskey(publicClient, { hdIndex: rec.hdIndex, phraseId: rec.phraseId }, stored);
   if (!swap.ok) return { ok: false, reason: 'error', message: swap.message };
 
   await updateSmartAccount(rec.id, { passkey: stored, passkeyCredId: stored.authenticatorId, deployed: true });

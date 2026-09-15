@@ -1,5 +1,5 @@
 export {
-  restoreMnemonic, revealRecoveryPhrase, smartOwnerSigner,
+  revealRecoveryPhrase, smartOwnerSigner,
 } from './keyring';
 export { passkeysAvailable } from './passkeys';
 export { zerodevConfigured } from './env';

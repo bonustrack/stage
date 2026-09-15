@@ -62,7 +62,7 @@ export async function installGuardians(
   if (rec.type !== 'smart' || rec.hdIndex == null) throw new Error('Not a smart account.');
   const cfg = weightedConfigFor(guardians, threshold, delaySeconds);
 
-  const owner = await smartOwnerSigner(rec.hdIndex);
+  const owner = await smartOwnerSigner({ hdIndex: rec.hdIndex, phraseId: rec.phraseId });
   const publicClient = makePublicClient();
 
   const guardianValidator = await buildGuardianValidator(publicClient, cfg);
@@ -108,7 +108,7 @@ export async function signRecoveryApproval(
 
 export async function cancelRecovery(rec: AccountRecord, newOwner: Address, nonce: bigint): Promise<string> {
   if (rec.type !== 'smart' || rec.hdIndex == null) throw new Error('Not a smart account.');
-  const owner = await smartOwnerSigner(rec.hdIndex);
+  const owner = await smartOwnerSigner({ hdIndex: rec.hdIndex, phraseId: rec.phraseId });
   const publicClient = makePublicClient();
   const account = await createEcdsaKernel(publicClient, owner, rec.hdIndex);
   const kernelClient = makeKernelClient(account, publicClient);
@@ -134,7 +134,7 @@ export async function updateGuardians(
 ): Promise<string> {
   if (rec.type !== 'smart' || rec.hdIndex == null) throw new Error('Not a smart account.');
   const cfg = weightedConfigFor(guardians, threshold, delaySeconds);
-  const owner = await smartOwnerSigner(rec.hdIndex);
+  const owner = await smartOwnerSigner({ hdIndex: rec.hdIndex, phraseId: rec.phraseId });
   const publicClient = makePublicClient();
   const account = await createEcdsaKernel(publicClient, owner, rec.hdIndex);
   const kernelClient = makeKernelClient(account, publicClient);

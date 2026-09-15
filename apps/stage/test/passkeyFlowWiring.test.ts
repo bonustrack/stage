@@ -37,7 +37,7 @@ describe('A. create.ts — create is passkey-AGNOSTIC (ECDSA-owner only)', () =>
 
 describe('A2. callers install the passkey BEFORE messaging (passkey signs the inbox)', () => {
   test('onboarding create/restore: createSmartAccount, enable, THEN bringMessagingOnline', () => {
-    const create = onboardSrc.indexOf('createSmartAccount({ fresh })');
+    const create = onboardSrc.indexOf('createSmartAccount({ fresh, phraseId })');
     const enable = onboardSrc.indexOf('enablePasskeyForRecord(rec)');
     const msg = onboardSrc.indexOf('bringMessagingOnline(rec.id');
     expect(create).toBeGreaterThanOrEqual(0);
@@ -76,11 +76,11 @@ describe('B. kernelForRecord.ts — validator chosen from the account\'s onchain
 
 describe('C. enablePasskey.ts — deploy-via-ECDSA-initcode then swap sudo on-chain', () => {
   test('builds the CURRENT ECDSA Kernel (its initCode deploys to the ECDSA-derived address)', () => {
-    expect(enableSrc).toContain('createEcdsaKernel(publicClient, owner, hdIndex)');
+    expect(enableSrc).toContain('createEcdsaKernel(publicClient, owner, key.hdIndex)');
   });
   test('shares ONE on-chain deploy-and-swap helper with the create path', () => {
     expect(enableSrc).toContain('export async function deployAndSwapToPasskey');
-    expect(enableSrc).toContain('deployAndSwapToPasskey(publicClient, rec.hdIndex, stored)');
+    expect(enableSrc).toContain('deployAndSwapToPasskey(publicClient, { hdIndex: rec.hdIndex, phraseId: rec.phraseId }, stored)');
   });
   test('swaps sudo to the passkey via the shared changeSudoValidator helper (one sponsored userOp)', () => {
     expect(enableSrc).toContain('swapSudoValidator(kernelClient, passkeyValidator)');
@@ -99,7 +99,7 @@ describe('C. enablePasskey.ts — deploy-via-ECDSA-initcode then swap sudo on-ch
   });
   test('persists a fresh credential BEFORE the swap so an interrupted swap can never orphan it', () => {
     const prePersist = enableSrc.indexOf('if (!rec.passkey) {');
-    const swapCall = enableSrc.indexOf('deployAndSwapToPasskey(publicClient, rec.hdIndex, stored)');
+    const swapCall = enableSrc.indexOf('deployAndSwapToPasskey(publicClient, { hdIndex: rec.hdIndex, phraseId: rec.phraseId }, stored)');
     expect(prePersist).toBeGreaterThanOrEqual(0);
     expect(swapCall).toBeGreaterThan(prePersist);
     expect(enableSrc).toContain('if (rec.passkey) return { stored: rec.passkey }');

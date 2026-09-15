@@ -27,18 +27,6 @@ export function suggestWords(prefix: string, wordlist: readonly string[] = engli
   return matches;
 }
 
-export function uniqueCompletion(prefix: string, wordlist: readonly string[] = english): string | null {
-  const clean = prefix.toLowerCase();
-  if (clean.length === 0) return null;
-  let found: string | null = null;
-  for (const word of wordlist) {
-    if (!word.startsWith(clean)) continue;
-    if (found !== null) return null;
-    found = word;
-  }
-  return found;
-}
-
 export function applyCompletion(text: string, word: string): string {
   const trimmed = text.replace(/\S+$/, '');
   return `${trimmed}${word} `;
@@ -55,21 +43,20 @@ function acceptTypedSpace(previous: string, wordlist: readonly string[]): boolea
   return !token.complete && wordlist.includes(token.word);
 }
 
+function acceptTypedLetter(previous: string, next: string, wordlist: readonly string[]): string {
+  const token = currentToken(next);
+  if (token.word.length === 0 || hasWordWithPrefix(token.word, wordlist)) return next;
+  const finished = currentToken(previous);
+  const char = next.slice(-1).toLowerCase();
+  const startsNextWord = !finished.complete && wordlist.includes(finished.word) && hasWordWithPrefix(char, wordlist);
+  return startsNextWord ? `${previous} ${char}` : previous;
+}
+
 export function acceptTypedChar(previous: string, next: string, wordlist: readonly string[] = english): string {
   if (next.length !== previous.length + 1 || !next.startsWith(previous)) return next;
   if (/\s$/.test(next)) return acceptTypedSpace(previous, wordlist) ? next : previous;
   if (!looksLikePhrase(next)) return next;
-  const token = currentToken(next);
-  if (token.word.length === 0) return next;
-  return hasWordWithPrefix(token.word, wordlist) ? next : previous;
-}
-
-export function completeIfUnique(previous: string, next: string, wordlist: readonly string[] = english): string {
-  if (next.length <= previous.length) return next;
-  const token = currentToken(next);
-  if (token.complete || token.word.length === 0) return next;
-  const word = uniqueCompletion(token.word, wordlist);
-  return word === null ? next : applyCompletion(next, word);
+  return acceptTypedLetter(previous, next, wordlist);
 }
 
 export function invalidWords(text: string, wordlist: readonly string[] = english): string[] {

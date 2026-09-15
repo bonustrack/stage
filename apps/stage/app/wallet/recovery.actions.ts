@@ -81,7 +81,7 @@ export function useRecoveryActions(a: RecoveryActionsArgs): RecoveryActions {
     }
     setApproving(true);
     try {
-      const signer = await smartOwnerSigner(active.hdIndex);
+      const signer = await smartOwnerSigner({ hdIndex: active.hdIndex, phraseId: active.phraseId });
       const signature = await signRecoveryApproval(
         signer, params.wallet as Address, params.newOwner as Address, 0n,
       );

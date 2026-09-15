@@ -8,7 +8,7 @@ const setActiveAccountForCache = async (id: string | null): Promise<void> => {
   const { setActiveAccountForCache: fn } = await import('./channelsCache');
   fn(id);
 };
-import { getViemAccount, adoptLegacyKey, deleteKey, clearMnemonic, importPrivateKey } from './zerodev/keyring';
+import { getViemAccount, adoptLegacyKey, deleteKey, deletePhrase, importPrivateKey, primaryPhraseId } from './zerodev/keyring';
 import { LEGACY_DB_DIR } from '@stage-labs/client/accounts/keys';
 import { addLocalAccountToList, resolveActiveAccount } from '@stage-labs/client/accounts/registry';
 import { nextHdIndex } from '@stage-labs/client/accounts/hdIndex';
@@ -30,11 +30,20 @@ async function persist(list: AccountRecord[]): Promise<void> {
   await secureStorage.set(LIST_KEY, JSON.stringify(list));
 }
 
+async function withPhraseIds(list: AccountRecord[]): Promise<AccountRecord[]> {
+  if (!list.some(a => a.type === 'smart' && a.phraseId === undefined)) return list;
+  const primary = await primaryPhraseId();
+  if (!primary) return list;
+  const next = list.map(a => (a.type === 'smart' && a.phraseId === undefined ? { ...a, phraseId: primary } : a));
+  await persist(next);
+  return next;
+}
+
 export async function loadAccounts(): Promise<AccountRecord[]> {
   if (cache) return cache;
   const raw = await secureStorage.get(LIST_KEY).catch(() => null);
   if (raw) {
-    try { cache = JSON.parse(raw) as AccountRecord[]; return cache; }
+    try { cache = await withPhraseIds(JSON.parse(raw) as AccountRecord[]); return cache; }
     catch { }
   }
   const list: AccountRecord[] = [];
@@ -110,10 +119,10 @@ export async function updateSmartAccount(
   await persist(list);
 }
 
-export async function nextSmartHdIndex(): Promise<number> {
+export async function nextSmartHdIndex(phraseId: string): Promise<number> {
   const list = await loadAccounts();
-  const used = list.flatMap(a => (a.type === 'smart' && a.hdIndex !== undefined ? [a.hdIndex] : []));
-  return nextHdIndex(used, await readSmartHdIndexHighWater());
+  const used = list.flatMap(a => (a.type === 'smart' && a.phraseId === phraseId && a.hdIndex !== undefined ? [a.hdIndex] : []));
+  return nextHdIndex(used, await readSmartHdIndexHighWater(phraseId));
 }
 
 export async function markRegistered(id: string): Promise<void> {
@@ -124,6 +133,7 @@ export async function markRegistered(id: string): Promise<void> {
 
 export async function removeAccount(id: string): Promise<AccountRecord[]> {
   const list = await loadAccounts();
+  const rec = list.find(a => a.id === id);
   const next = list.filter(a => a.id !== id);
   await deleteKey(id);
   await persist(next);
@@ -133,6 +143,10 @@ export async function removeAccount(id: string): Promise<AccountRecord[]> {
     if (first) await setActiveAccountId(first.id);
     else await secureStorage.delete(ACTIVE_KEY).catch(() => undefined);
   }
-  if (next.length === 0) await clearMnemonic();
+  const removedPhrase = rec?.type === 'smart' ? rec.phraseId : undefined;
+  const stillUsed = new Set(next.flatMap(a => (a.type === 'smart' && a.phraseId ? [a.phraseId] : [])));
+  if (removedPhrase && !stillUsed.has(removedPhrase)) {
+    await deletePhrase(removedPhrase, [...stillUsed][0] ?? null);
+  }
   return next;
 }

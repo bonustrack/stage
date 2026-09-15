@@ -83,7 +83,7 @@ export async function kernelClientForRecord(rec: AccountRecord, purpose: KernelS
     throw new Error(describeUnavailableSigning(purpose, passkey.problem, passkey.detail));
   }
 
-  const owner = await smartOwnerSigner(hdIndex);
+  const owner = await smartOwnerSigner({ hdIndex, phraseId: rec.phraseId });
   if (plan === 'ecdsa-root') {
     return makeKernelClient(await createEcdsaKernel(publicClient, owner, hdIndex), publicClient);
   }

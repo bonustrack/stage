@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { english } from 'viem/accounts';
 import {
-  acceptTypedChar, applyCompletion, completeIfUnique, currentToken, invalidWords, suggestWords, uniqueCompletion,
+  acceptTypedChar, applyCompletion, currentToken, suggestWords,
 } from '../components/onboarding/RecoveryPhrase.model';
 
 describe('BIP-39 wordlist shape', () => {
@@ -22,31 +22,12 @@ describe('currentToken', () => {
   });
 });
 
-describe('suggestWords and uniqueCompletion', () => {
-  test('three letters can be ambiguous, four never are', () => {
+describe('suggestWords', () => {
+  test('lists words for a prefix, capped', () => {
     expect(suggestWords('act')).toEqual(['act', 'action', 'actor', 'actress', 'actual']);
-    expect(uniqueCompletion('act')).toBeNull();
-    expect(uniqueCompletion('actr')).toBe('actress');
-    expect(uniqueCompletion('zoo')).toBe('zoo');
     expect(suggestWords('')).toEqual([]);
     expect(suggestWords('qqq')).toEqual([]);
-  });
-});
-
-describe('completeIfUnique', () => {
-  test('completes while typing forward and never while deleting', () => {
-    expect(completeIfUnique('abandon act', 'abandon actr')).toBe('abandon actress ');
-    expect(completeIfUnique('abandon actress ', 'abandon actress')).toBe('abandon actress');
-    expect(completeIfUnique('abandon ac', 'abandon act')).toBe('abandon act');
     expect(applyCompletion('abandon act', 'actor')).toBe('abandon actor ');
-  });
-});
-
-describe('invalidWords', () => {
-  test('flags finished words outside the list and ignores the one still being typed', () => {
-    expect(invalidWords('abandon foo ability ')).toEqual(['foo']);
-    expect(invalidWords('abandon foo abil')).toEqual(['foo']);
-    expect(invalidWords('abandon ability ')).toEqual([]);
   });
 });
 
@@ -55,6 +36,18 @@ describe('acceptTypedChar', () => {
     expect(acceptTypedChar('fr', 'frm')).toBe('fr');
     expect(acceptTypedChar('', 'x')).toBe('');
     expect(acceptTypedChar('', 'a')).toBe('a');
+  });
+
+  test('never completes a word for the typist, so whole words type through unchanged', () => {
+    let text = '';
+    for (const ch of 'weekend palace') text = acceptTypedChar(text, text + ch);
+    expect(text).toBe('weekend palace');
+  });
+
+  test('inserts the space when the next word starts right after a finished one', () => {
+    expect(acceptTypedChar('weekend', 'weekendp')).toBe('weekend p');
+    expect(acceptTypedChar('act', 'acti')).toBe('acti');
+    expect(acceptTypedChar('act', 'actx')).toBe('act');
   });
 
   test('keeps valid prefixes, deletions and pastes', () => {

@@ -27,7 +27,7 @@ export async function swapRootToEcdsa(
     if (!rec.passkey || rec.hdIndex == null) {
       return { ok: false, message: 'No passkey on this account.' };
     }
-    const owner = await smartOwnerSigner(rec.hdIndex);
+    const owner = await smartOwnerSigner({ hdIndex: rec.hdIndex, phraseId: rec.phraseId });
 
     const addressOverride = rec.passkeySudo ? undefined : (rec.address as `0x${string}`);
     const passkeyAccount = await passkeyKernelFromStored(

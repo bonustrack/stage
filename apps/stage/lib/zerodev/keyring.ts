@@ -1,13 +1,13 @@
 
 import '../cryptoShim';
 import { secureStorage } from '../../platform/storage';
-import { resetSmartHdIndex } from './hdIndexStore';
+import { migrateLegacyHdIndex, resetSmartHdIndex } from './hdIndexStore';
 import type { SecureAccessOptions } from '../../platform/types';
 import {
   privateKeyToAccount,
   type PrivateKeyAccount, type HDAccount,
 } from 'viem/accounts';
-import { type Hex } from 'viem';
+import { keccak256, stringToBytes, type Hex } from 'viem';
 import {
   generateWalletMnemonic, normalizeMnemonic, isValidMnemonic, deriveOwner,
 } from '@stage-labs/client/zerodev/derive';
@@ -15,8 +15,6 @@ import {
   PK_PREFIX, LEGACY_PK_KEY,
 } from '@stage-labs/client/accounts/keys';
 
-
-const MNEMONIC_KEY = 'wallet.mnemonic';
 
 const STORE_OPTS: SecureAccessOptions = {
   thisDeviceOnly: true,
@@ -62,81 +60,113 @@ async function requireRevealAuth(id?: string): Promise<boolean> {
 }
 
 
-let sessionMnemonic: string | null = null;
+const PHRASE_KEY_PREFIX = 'wallet.mnemonic.';
+const PRIMARY_PHRASE_KEY = 'wallet.mnemonic.primary';
+const LEGACY_MNEMONIC_KEY = 'wallet.mnemonic';
 
-async function readMnemonic(): Promise<string | null> {
-  const raw = await secureStorage.get(MNEMONIC_KEY, STORE_OPTS).catch(() => null);
-  if (!raw) return null;
-  const phrase = normalizeMnemonic(raw);
-  return isValidMnemonic(phrase) ? phrase : null;
+export interface SmartKeyRef { hdIndex: number; phraseId?: string }
+
+export function phraseIdOf(phrase: string): string {
+  return keccak256(stringToBytes(normalizeMnemonic(phrase))).slice(2, 18);
 }
 
-async function unlockMnemonic(): Promise<string | null> {
-  if (sessionMnemonic) return sessionMnemonic;
-  const phrase = await readMnemonic();
-  if (phrase) sessionMnemonic = phrase;
+const phraseKey = (phraseId: string): string => `${PHRASE_KEY_PREFIX}${phraseId}`;
+const sessionPhrases = new Map<string, string>();
+const ownerCache = new Map<string, HDAccount>();
+
+async function storePhrase(phraseId: string, phrase: string): Promise<void> {
+  await secureStorage.set(phraseKey(phraseId), phrase, STORE_OPTS);
+  sessionPhrases.set(phraseId, phrase);
+}
+
+async function migrateLegacyPhrase(): Promise<void> {
+  const raw = await secureStorage.get(LEGACY_MNEMONIC_KEY, STORE_OPTS).catch(() => null);
+  if (!raw) return;
+  const phrase = normalizeMnemonic(raw);
+  if (isValidMnemonic(phrase)) {
+    const id = phraseIdOf(phrase);
+    await storePhrase(id, phrase);
+    await secureStorage.set(PRIMARY_PHRASE_KEY, id, STORE_OPTS);
+    await migrateLegacyHdIndex(id);
+  }
+  await secureStorage.delete(LEGACY_MNEMONIC_KEY).catch(() => undefined);
+}
+
+let migration: Promise<void> | null = null;
+const migrated = (): Promise<void> => { migration ??= migrateLegacyPhrase(); return migration; };
+
+export async function primaryPhraseId(): Promise<string | null> {
+  await migrated();
+  return secureStorage.get(PRIMARY_PHRASE_KEY, STORE_OPTS).catch(() => null);
+}
+
+async function phraseIdFor(ref: { phraseId?: string }): Promise<string> {
+  const id = ref.phraseId ?? await primaryPhraseId();
+  if (!id) throw new Error('Recovery phrase unavailable for this smart account.');
+  return id;
+}
+
+async function readPhrase(phraseId: string): Promise<string | null> {
+  await migrated();
+  const cached = sessionPhrases.get(phraseId);
+  if (cached) return cached;
+  const raw = await secureStorage.get(phraseKey(phraseId), STORE_OPTS).catch(() => null);
+  if (!raw) return null;
+  const phrase = normalizeMnemonic(raw);
+  if (!isValidMnemonic(phrase)) return null;
+  sessionPhrases.set(phraseId, phrase);
   return phrase;
 }
 
-export async function restoreMnemonic(phrase: string): Promise<void> {
+export async function addPhrase(phrase: string): Promise<string> {
   const norm = normalizeMnemonic(phrase);
   if (!isValidMnemonic(norm)) throw new Error('Invalid recovery phrase — failed BIP-39 check.');
-  if ((await readMnemonic()) !== norm) await resetSmartHdIndex();
-  await secureStorage.set(MNEMONIC_KEY, norm, STORE_OPTS);
-  sessionMnemonic = norm;
-  ownerCache.clear();
+  const id = phraseIdOf(norm);
+  if ((await readPhrase(id)) === null) await storePhrase(id, norm);
+  if ((await primaryPhraseId()) === null) await secureStorage.set(PRIMARY_PHRASE_KEY, id, STORE_OPTS);
+  return id;
 }
 
-export type MnemonicRelation = 'none' | 'same' | 'different';
-
-export async function mnemonicRelation(phrase: string): Promise<MnemonicRelation> {
-  const current = await readMnemonic();
-  if (!current) return 'none';
-  return current === normalizeMnemonic(phrase) ? 'same' : 'different';
+export async function ensurePrimaryPhrase(): Promise<string> {
+  const existing = await primaryPhraseId();
+  if (existing && (await readPhrase(existing)) !== null) return existing;
+  return addPhrase(generateWalletMnemonic());
 }
 
-export async function clearMnemonic(): Promise<void> {
-  sessionMnemonic = null;
-  ownerCache.clear();
-  await resetSmartHdIndex();
-  await secureStorage.delete(MNEMONIC_KEY).catch(() => undefined);
+export async function deletePhrase(phraseId: string, nextPrimary: string | null): Promise<void> {
+  sessionPhrases.delete(phraseId);
+  for (const key of [...ownerCache.keys()]) if (key.startsWith(`${phraseId}:`)) ownerCache.delete(key);
+  await resetSmartHdIndex(phraseId);
+  await secureStorage.delete(phraseKey(phraseId)).catch(() => undefined);
+  if ((await primaryPhraseId()) !== phraseId) return;
+  if (nextPrimary) await secureStorage.set(PRIMARY_PHRASE_KEY, nextPrimary, STORE_OPTS);
+  else await secureStorage.delete(PRIMARY_PHRASE_KEY).catch(() => undefined);
 }
 
-export async function ensureMnemonic(): Promise<void> {
-  const existing = await unlockMnemonic();
-  if (existing) return;
-  const minted = generateWalletMnemonic();
-  await secureStorage.set(MNEMONIC_KEY, minted, STORE_OPTS);
-  sessionMnemonic = minted;
-  ownerCache.clear();
-}
-
-
-const ownerCache = new Map<number, HDAccount>();
-
-async function ownerFor(hdIndex: number): Promise<HDAccount> {
-  const cached = ownerCache.get(hdIndex);
+async function ownerFor(ref: SmartKeyRef): Promise<HDAccount> {
+  const phraseId = await phraseIdFor(ref);
+  const key = `${phraseId}:${ref.hdIndex}`;
+  const cached = ownerCache.get(key);
   if (cached) return cached;
-  const mnemonic = await unlockMnemonic();
-  if (!mnemonic) throw new Error('Recovery phrase unavailable for this smart account.');
-  const owner = deriveOwner(mnemonic, hdIndex);
-  ownerCache.set(hdIndex, owner);
+  const phrase = await readPhrase(phraseId);
+  if (!phrase) throw new Error('Recovery phrase unavailable for this smart account.');
+  const owner = deriveOwner(phrase, ref.hdIndex);
+  ownerCache.set(key, owner);
   return owner;
 }
 
-export async function smartOwnerAddress(hdIndex: number): Promise<string> {
-  return (await ownerFor(hdIndex)).address.toLowerCase();
+export async function smartOwnerAddress(ref: SmartKeyRef): Promise<string> {
+  return (await ownerFor(ref)).address.toLowerCase();
 }
 
-export async function smartOwnerSigner(hdIndex: number): Promise<HDAccount> {
-  return ownerFor(hdIndex);
+export async function smartOwnerSigner(ref: SmartKeyRef): Promise<HDAccount> {
+  return ownerFor(ref);
 }
 
-export async function signOwnerMessage(hdIndex: number, message: string): Promise<Hex> {
-  const owner = await ownerFor(hdIndex);
+export async function signOwnerMessage(ref: SmartKeyRef, message: string): Promise<Hex> {
+  const owner = await ownerFor(ref);
   return owner.signMessage({ message });
 }
-
 
 async function loadPrivateKey(id: string): Promise<Hex | null> {
   const pk = await secureStorage.get(PK_PREFIX + id, STORE_OPTS).catch(() => null);
@@ -185,9 +215,9 @@ export async function deleteKey(id: string): Promise<void> {
 }
 
 
-export async function revealRecoveryPhrase(): Promise<string | null> {
+export async function revealRecoveryPhrase(ref: { phraseId?: string } = {}): Promise<string | null> {
   if (!(await requireRevealAuth())) return null;
-  return readMnemonic();
+  return readPhrase(await phraseIdFor(ref));
 }
 
 export async function revealPrivateKey(id: string): Promise<Hex | null> {

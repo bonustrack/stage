@@ -12,7 +12,7 @@ import { usePalette, DANGER } from '../../lib/theme';
 import { QrScanner } from '../accounts/QrScanner';
 import { parseImportInput } from '../accounts/ImportAccountPanel.model';
 import {
-  acceptTypedChar, applyCompletion, completeIfUnique, currentToken, invalidWords, looksLikePhrase, suggestWords,
+  acceptTypedChar, applyCompletion, currentToken, invalidWords, looksLikePhrase, suggestWords,
 } from './RecoveryPhrase.model';
 
 type Pal = ReturnType<typeof usePalette>;
@@ -73,7 +73,7 @@ export function ImportStep({ pal, dark, busy, onTransfer, onBack }: {
       </Text>
       <Textarea
         value={text}
-        onChangeText={(t) => { setText((prev) => completeIfUnique(prev, acceptTypedChar(prev, t))); setErr(null); }}
+        onChangeText={(t) => { setText((prev) => acceptTypedChar(prev, t)); setErr(null); }}
         placeholder="word1 word2 word3 ..."
         placeholderTextColor={pal.sub}
         dark={dark}

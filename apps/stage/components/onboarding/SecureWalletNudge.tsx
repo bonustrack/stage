@@ -37,7 +37,7 @@ export function SecureWalletNudge(): React.ReactElement | null {
     setBusy(true);
     void (async () => {
       try {
-        const m = await revealRecoveryPhrase();
+        const m = await revealRecoveryPhrase(acct);
         if (!m) throw new Error('No recovery phrase on this device.');
         setPhrase(m);
       } catch (e) {

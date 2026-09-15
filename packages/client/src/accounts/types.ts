@@ -11,6 +11,7 @@ export interface AccountRecord {
   createdAt: number;
 
   hdIndex?: number;
+  phraseId?: string;
   ownerAddress?: string;
   passkeyCredId?: string;
   passkey?: {

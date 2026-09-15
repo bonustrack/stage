@@ -42,7 +42,7 @@ export async function setRecoveryKeyAccess(rec: AccountRecord, allow: boolean): 
   if (rec.type !== 'smart' || rec.hdIndex == null) return { ok: false, message: 'Not a smart account.' };
   if (!rec.passkey) return { ok: false, message: 'Only the device holding the passkey can change this.' };
   try {
-    const owner = (await smartOwnerAddress(rec.hdIndex)) as Hex;
+    const owner = (await smartOwnerAddress({ hdIndex: rec.hdIndex, phraseId: rec.phraseId })) as Hex;
     const kernel = await kernelClientForRecord(rec);
     const calls = recoveryKeyAccessCalls(rec.address as Hex, ecdsaValidatorAddress(), owner, allow);
     const txHash = await kernel.sendTransaction({ calls });

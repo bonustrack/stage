@@ -37,10 +37,10 @@ const PASSKEY_LATER = 'You can add a passkey later from Settings, Security.';
 const PROFILE_LATER = 'You can set your name and picture later from Settings, Profile.';
 
 async function finishAccount(
-  withPasskey: boolean, fresh: boolean, onStage?: (s: Stage) => void,
+  withPasskey: boolean, fresh: boolean, onStage?: (s: Stage) => void, phraseId?: string,
 ): Promise<{ id: string; address: string; warning: SetupWarning }> {
   onStage?.('wallet');
-  const rec = await createSmartAccount({ fresh });
+  const rec = await createSmartAccount({ fresh, phraseId });
   let warning: SetupWarning = null;
   if (withPasskey && passkeysAvailable()) {
     const res = await enablePasskeyForRecord(rec);
@@ -74,8 +74,8 @@ export async function restoreWallet(
   phrase: string, withPasskey: boolean, onStage?: (s: Stage) => void,
 ): Promise<SetupWarning> {
   onStage?.('wallet');
-  await adoptPhrase(phrase);
-  return (await finishAccount(withPasskey, false, onStage)).warning;
+  const phraseId = await adoptPhrase(phrase);
+  return (await finishAccount(withPasskey, false, onStage, phraseId)).warning;
 }
 
 export async function importKeyAccount(pk: Hex, onStage?: (s: Stage) => void): Promise<SetupWarning> {
