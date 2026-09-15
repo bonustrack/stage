@@ -36,14 +36,16 @@ describe('A. create.ts — create is passkey-AGNOSTIC (ECDSA-owner only)', () =>
 });
 
 describe('A2. callers install the passkey BEFORE messaging (passkey signs the inbox)', () => {
-  test('onboarding create/restore: createSmartAccount, enable, THEN bringMessagingOnline', () => {
-    const create = onboardSrc.indexOf('createSmartAccount({ fresh, phraseId })');
+  test('onboarding create/restore: account record, enable, THEN bringMessagingOnline', () => {
+    const finish = onboardSrc.indexOf('async function finishAccount(');
     const enable = onboardSrc.indexOf('enablePasskeyForRecord(rec)');
     const msg = onboardSrc.indexOf('bringMessagingOnline(rec.id');
-    expect(create).toBeGreaterThanOrEqual(0);
-    expect(enable).toBeGreaterThan(create);
+    expect(finish).toBeGreaterThanOrEqual(0);
+    expect(enable).toBeGreaterThan(finish);
     expect(msg).toBeGreaterThan(enable);
     expect(onboardSrc).toContain('withPasskey && passkeysAvailable()');
+    expect(onboardSrc).toContain('finishAccount(await createSmartAccount(), withPasskey, onStage)');
+    expect(onboardSrc).toContain('finishAccount(record, withPasskey, onStage)');
   });
 
   test('the only other creators route through the onboarding pages', () => {

@@ -1,9 +1,9 @@
 import { errorMessage } from '@stage-labs/client/errors';
-import { createSmartAccount, enablePasskeyForRecord, passkeysAvailable } from '../../lib/zerodev';
+import { createSmartAccount, enablePasskeyForRecord, passkeysAvailable, restoreSmartAccount } from '../../lib/zerodev';
 import { adoptPhrase } from '../../lib/accountTransfer';
 import { AccountManager } from '../../modules/messaging';
 import type { Hex } from 'viem';
-import { addPrivateKeyAccount } from '../../lib/accounts';
+import { addPrivateKeyAccount, type AccountRecord } from '../../lib/accounts';
 import { applyProfileSetup } from '../../lib/profileSetup';
 import type { ProfileSetup } from './Onboarding.profile.model';
 
@@ -37,10 +37,8 @@ const PASSKEY_LATER = 'You can add a passkey later from Settings, Security.';
 const PROFILE_LATER = 'You can set your name and picture later from Settings, Profile.';
 
 async function finishAccount(
-  withPasskey: boolean, fresh: boolean, onStage?: (s: Stage) => void, phraseId?: string,
+  rec: AccountRecord, withPasskey: boolean, onStage?: (s: Stage) => void,
 ): Promise<{ id: string; address: string; warning: SetupWarning }> {
-  onStage?.('wallet');
-  const rec = await createSmartAccount({ fresh, phraseId });
   let warning: SetupWarning = null;
   if (withPasskey && passkeysAvailable()) {
     const res = await enablePasskeyForRecord(rec);
@@ -65,7 +63,8 @@ async function setUpProfile(address: string, profile: ProfileSetup, onStage?: (s
 export async function createWallet(
   withPasskey: boolean, onStage?: (s: Stage) => void, profile?: ProfileSetup,
 ): Promise<SetupWarning> {
-  const account = await finishAccount(withPasskey, true, onStage);
+  onStage?.('wallet');
+  const account = await finishAccount(await createSmartAccount(), withPasskey, onStage);
   if (profile === undefined) return account.warning;
   return account.warning ?? await setUpProfile(account.address, profile, onStage);
 }
@@ -74,8 +73,12 @@ export async function restoreWallet(
   phrase: string, withPasskey: boolean, onStage?: (s: Stage) => void,
 ): Promise<SetupWarning> {
   onStage?.('wallet');
-  const phraseId = await adoptPhrase(phrase);
-  return (await finishAccount(withPasskey, false, onStage, phraseId)).warning;
+  const { record, alreadyImported } = await restoreSmartAccount(await adoptPhrase(phrase));
+  if (alreadyImported) {
+    await bringMessagingOnline(record.id, onStage);
+    return { title: 'Already on this device', message: 'This account was already imported here, so we switched to it instead of adding it again.' };
+  }
+  return (await finishAccount(record, withPasskey, onStage)).warning;
 }
 
 export async function importKeyAccount(pk: Hex, onStage?: (s: Stage) => void): Promise<SetupWarning> {
