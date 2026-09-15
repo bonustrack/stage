@@ -6,7 +6,7 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { shortAddress } from '../../modules/messaging';
 import { resolveEnsName } from '@stage-labs/client/api/ens';
-import { flash } from '../../lib/toast';
+import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import { Avatar } from '../../components/Avatar';
 import { Box, Col, Row } from '../../components/layout';
@@ -49,18 +49,18 @@ export function useMemberPicker(): MemberPickerState {
         label = shortAddress(raw);
       } else if (raw.includes('.')) {
         address = await resolveEnsName(raw.toLowerCase());
-        if (!address) { flash(`Couldn't resolve ${raw}`); return; }
+        if (!address) { capabilities.toast(`Couldn't resolve ${raw}`); return; }
       } else {
-        flash('Enter a 0x address or a .eth name'); return;
+        capabilities.toast('Enter a 0x address or a .eth name'); return;
       }
       const lower = address.toLowerCase();
       if (members.some(m => m.address.toLowerCase() === lower)) {
-        flash('Already added'); setEntry(''); return;
+        capabilities.toast('Already added'); setEntry(''); return;
       }
       setMembers(prev => [...prev, { address: address, label }]);
       setEntry('');
     } catch (err) {
-      flash((err as Error)?.message ?? 'Failed to add member');
+      capabilities.toast((err as Error)?.message ?? 'Failed to add member');
     } finally {
       setAdding(false);
     }

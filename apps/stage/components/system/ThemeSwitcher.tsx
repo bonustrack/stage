@@ -1,10 +1,15 @@
 
 import { Box, Row } from '../layout';
-import { Icon } from '@stage-labs/kit/react-native/icon';
+import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
 import { Title } from '@stage-labs/kit/react-native/title';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { setThemePreference, useThemePreference } from '../../lib/theme';
-import { THEME_OPTIONS } from '../tabs/SettingsScreen.parts';
+import { setThemePreference, useThemePreference, type ThemePreference } from '../../lib/theme';
+
+export const THEME_OPTIONS: { value: ThemePreference; label: string; icon: HeroIconName }[] = [
+  { value: 'system', label: 'System', icon: 'desktop' },
+  { value: 'light',  label: 'Light',  icon: 'sun' },
+  { value: 'dark',   label: 'Dark',   icon: 'moon' },
+];
 
 export function ThemeSwitcher({ dark, head }: {
   dark: boolean; head: string; sub: string; border: string; rowBg: string;

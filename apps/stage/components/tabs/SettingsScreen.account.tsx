@@ -9,7 +9,6 @@ import { Card } from '@stage-labs/kit/react-native/card';
 import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { capabilities } from '../../lib/capabilities';
 import { Box, Col } from '../layout';
-import { flash } from '../../lib/toast';
 import { getPrivateKey, canExportPrivateKey, type AccountRecord } from '../../lib/accounts';
 import { deleteAccount, shortAddress, useActiveAccountRecord } from '../../modules/messaging';
 import { reloadApp } from '../AccountsManager.helpers';
@@ -61,7 +60,7 @@ function RevealedKeyRow({ c, dark, revealed }: {
     <ListViewItem
       dark={dark}
       align="start"
-      onPress={() => { void Clipboard.setStringAsync(revealed); flash('Private key copied'); }}
+      onPress={() => { void Clipboard.setStringAsync(revealed); capabilities.toast('Private key copied'); }}
       style={{ paddingHorizontal: 14, paddingVertical: 14 }}
     >
       <Icon name="wallet" size={24} color={c.head} />

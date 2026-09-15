@@ -12,7 +12,7 @@ import * as MediaLibrary from 'expo-media-library';
 import { Directory, File, Paths } from 'expo-file-system';
 import { Buffer } from 'buffer';
 import { Icon } from '@stage-labs/kit/react-native/icon';
-import { flash } from '../lib/toast';
+import { capabilities } from '../lib/capabilities';
 
 function extOf(uri: string): string {
   const dataMime = /^data:image\/([a-z0-9.+-]+)/i.exec(uri)?.[1];
@@ -61,7 +61,7 @@ export function ImageViewer({ uri, visible, onClose }: {
       }
       const local = await toLocalUri(uri);
       await MediaLibrary.saveToLibraryAsync(local);
-      if (Platform.OS === 'android') flash('Saved to photos');
+      if (Platform.OS === 'android') capabilities.toast('Saved to photos');
       else Alert.alert('Saved', 'Image saved to your photos.');
     } catch (e) {
       Alert.alert('Download failed', (e as Error).message ?? 'Could not save image.');

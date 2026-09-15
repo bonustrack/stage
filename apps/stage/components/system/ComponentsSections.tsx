@@ -3,7 +3,7 @@ import { Box } from '../layout';
 import { GallerySection } from './GallerySection';
 import { ChannelRow } from '../ChannelRow';
 import { TokenRow } from '../tabs/WalletScreen.parts';
-import type { AssetRow } from '../tabs/WalletScreen.assets';
+import type { AssetRow } from '@stage-labs/client/wallet/assets';
 import { MessengerBubble } from '../MessengerBubble';
 import { MessengerComposer } from '../MessengerComposer';
 import type { HistoryEntry } from '@stage-labs/client/types';

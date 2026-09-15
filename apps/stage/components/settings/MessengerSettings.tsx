@@ -10,7 +10,7 @@ import {
   getOrCreateXmtpClient, resetActiveXmtpStore, selfEthAddress, shortAddress, useActiveAccount,
 } from '../../modules/messaging';
 import { reloadApp } from '../AccountsManager.helpers';
-import { flash } from '../../lib/toast';
+import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import { MessengerSessions } from './MessengerSessions';
 import { HistorySyncSection } from './HistorySyncSection';
@@ -35,7 +35,7 @@ function onResetIdentity(): void {
 
 function copyValue(label: string, value: string): void {
   void Clipboard.setStringAsync(value);
-  flash(`${label} copied`);
+  capabilities.toast(`${label} copied`);
 }
 
 interface XmtpIdentity { addr: string; inbox: string; install: string }

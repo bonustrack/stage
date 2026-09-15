@@ -6,7 +6,7 @@ import {
   loadAccounts, setActiveAccountId, removeAccount,
   type AccountRecord,
 } from './accounts';
-import { registerPushWithServer } from './push';
+import { registerPushWithServer } from './pushRegister';
 import { bumpAccountEpoch } from './accountEpoch';
 import { XMTP_CODECS } from './xmtp.codecs';
 import {

@@ -1,7 +1,7 @@
 
 import { ConsentState } from '@xmtp/browser-sdk';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { isControlBody } from './pushRegister.control';
+import { isControlBody } from './xmtp.types.web';
 import { getCachedXmtpClient, convOfLine } from './xmtp.client.web';
 import { latestConvMessages } from './xmtp.messages.web';
 import { feedCache, activeFeedLines } from './xmtp.state.web';

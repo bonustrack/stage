@@ -2,7 +2,7 @@
 import { Box, Row, STICKY_UNDER_CHROME } from './layout';
 import { usePalette } from '../lib/theme';
 import { usePathname } from 'expo-router';
-import { useWebTabRail, WEB_TAB_RAIL_WIDTH } from './tabs/useWebTabRail';
+import { useWebTabRail, WEB_TAB_RAIL_WIDTH } from '../lib/webLayout';
 import { isSplitRoute } from './tabs/splitRoutes';
 
 export const TOPNAV_HEIGHT = 52;

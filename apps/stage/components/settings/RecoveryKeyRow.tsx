@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import type { AccountRecord } from '../../lib/accounts';
-import { flash } from '../../lib/toast';
+import { capabilities } from '../../lib/capabilities';
 import type { PasskeyPlace } from '../../lib/zerodev';
 import { recoveryKeyCanExecute, setRecoveryKeyAccess } from '../../lib/zerodev/recoveryKeyAccess';
 import { SettingsToggleRow, SettingsValueRow } from './rows';
@@ -47,7 +47,7 @@ export function RecoveryKeyRow({ rec, place }: { rec: AccountRecord; place: Pass
           ? (next ? 'Recovery key can now send transactions.' : 'Recovery key can no longer send transactions.')
           : result.message;
         if (result.ok) setAllowed(next);
-        flash(text);
+        capabilities.toast(text);
         setStatus(text);
       });
     });

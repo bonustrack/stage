@@ -5,7 +5,7 @@ import { Tabs } from '@stage-labs/kit/react-native/tabs';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { tokenRowModel, walletTabOptions } from './WalletScreen.model';
 import { Box, Row } from '../layout';
-import { type AssetRow } from './WalletScreen.assets';
+import { type AssetRow } from '@stage-labs/client/wallet/assets';
 import { TokenAvatar } from './WalletScreen.tokenAvatar';
 import { TokenRowBody } from '../wallet/TokenRowView';
 

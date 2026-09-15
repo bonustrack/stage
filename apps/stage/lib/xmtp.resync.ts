@@ -1,7 +1,7 @@
 
 import type { ConsentState } from '@xmtp/react-native-sdk';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { isControlBody } from './pushRegister.control';
+import { isControlBody } from './xmtp.types';
 import { getCachedXmtpClient, convOfLine } from './xmtp.client';
 import { latestConvMessages } from './xmtp.messages';
 import { feedCache, activeFeedLines } from './xmtp.state';

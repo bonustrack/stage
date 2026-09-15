@@ -8,7 +8,7 @@ import { Icon } from '@stage-labs/kit/react-native/icon';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { Box, Row } from '../../components/layout';
 import { Spinner } from '../../components/Spinner';
-import { flash } from '../../lib/toast';
+import { capabilities } from '../../lib/capabilities';
 import {
   getGroupLabels, addGroupLabel, removeGroupLabel,
   LabelPermissionError, MAX_LABEL_LEN, MAX_LABELS,
@@ -123,8 +123,8 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
   }, [line]);
 
   const reportError = (e: unknown): void => {
-    if (e instanceof LabelPermissionError) flash(e.message);
-    else flash('Could not update labels. Try again.');
+    if (e instanceof LabelPermissionError) capabilities.toast(e.message);
+    else capabilities.toast('Could not update labels. Try again.');
   };
 
   const add = async (value: string): Promise<void> => {

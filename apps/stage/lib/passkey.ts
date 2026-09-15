@@ -8,7 +8,6 @@ import { type ConfirmOptions } from './confirm';
 import {
   enablePasskeyForRecord, removePasskeyFromRecord, passkeysAvailable, kernelDeployedOnChain,
 } from './zerodev';
-import { flash } from './toast';
 
 export interface PasskeyAction {
   available: boolean;
@@ -90,10 +89,10 @@ function usePasskeyAction(spec: PasskeySpec): PasskeyAction {
     void (async (): Promise<void> => {
       try {
         const acct = await getActiveAccount();
-        if (!acct) { flash('No active account'); return; }
+        if (!acct) { capabilities.toast('No active account'); return; }
         const res = await spec.perform(acct);
-        if (res.ok) { flash(spec.success); setClearedFor(acct.id); return; }
-        flash(spec.notes[res.reason] ?? res.message ?? spec.fallback);
+        if (res.ok) { capabilities.toast(spec.success); setClearedFor(acct.id); return; }
+        capabilities.toast(spec.notes[res.reason] ?? res.message ?? spec.fallback);
         if (spec.clearOn.includes(res.reason)) setClearedFor(acct.id);
       } finally {
         setBusy(false);

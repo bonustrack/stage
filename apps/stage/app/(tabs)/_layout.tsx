@@ -13,7 +13,7 @@ import { TabsPager } from '../../components/SwipeTabs';
 import { Topnav } from '../../components/Topnav';
 import { useTopnavSlot } from '../../components/tabs/topnavSlots';
 import { TAB_ICONS, WebTabBar, WebTabRail } from '../../components/tabs/WebTabRail';
-import { useWebTabRail } from '../../components/tabs/useWebTabRail';
+import { useWebTabRail } from '../../lib/webLayout';
 import { useTotalUnread } from '../../lib/useTotalUnread';
 import { unreadBadgeLabel } from '../../lib/format';
 import { AccountAvatar } from '../../components/AccountAvatarButton';

@@ -7,7 +7,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Col, Row, Box } from '../layout';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
-import { flash } from '../../lib/toast';
+import { capabilities } from '../../lib/capabilities';
 import { useActiveAccountRecord } from '../../modules/messaging';
 import { revealRecoveryPhrase } from '../../lib/zerodev';
 import { useEnablePasskey } from '../../lib/passkey';
@@ -41,7 +41,7 @@ export function SecureWalletNudge(): React.ReactElement | null {
         if (!m) throw new Error('No recovery phrase on this device.');
         setPhrase(m);
       } catch (e) {
-        flash(e instanceof Error ? e.message : 'Could not read recovery phrase');
+        capabilities.toast(e instanceof Error ? e.message : 'Could not read recovery phrase');
       } finally {
         setBusy(false);
       }
@@ -53,7 +53,7 @@ export function SecureWalletNudge(): React.ReactElement | null {
       await setWalletBackedUp(true);
       setPhrase(null);
       setDismissed(true);
-      flash('Recovery phrase backed up');
+      capabilities.toast('Recovery phrase backed up');
     })();
   };
 

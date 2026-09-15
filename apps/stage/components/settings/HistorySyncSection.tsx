@@ -9,7 +9,7 @@ import { Title } from '@stage-labs/kit/react-native/title';
 import { fontSize } from '@stage-labs/kit/tokens';
 import { Box, Col } from '../layout';
 import { AppModal } from '../AppModal';
-import { flash } from '../../lib/toast';
+import { capabilities } from '../../lib/capabilities';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import {
   generateHistoryPin, receiveHistoryWithPin, runHistorySync, shareHistory, useHistorySyncPhase,
@@ -77,7 +77,7 @@ function useHistoryActions(): {
     if (busy) return;
     setBusy(true);
     receiveHistoryWithPin(pin)
-      .then(() => { setPinOpen(false); flash('History imported'); })
+      .then(() => { setPinOpen(false); capabilities.toast('History imported'); })
       .catch((e: unknown) => { Alert.alert('Could not import history', errorMessage(e)); })
       .finally(() => { setBusy(false); });
   };

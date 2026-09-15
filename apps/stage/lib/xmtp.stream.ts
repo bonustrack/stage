@@ -1,7 +1,7 @@
 
 import { AppState } from 'react-native';
 import { setAppForeground, subscribeXmtpPush } from '../modules/stage-pill';
-import { isControlBody } from './pushRegister.control';
+import { isControlBody } from './xmtp.types';
 import { markBackgroundDelivered } from './pushNotify';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from './xmtp.client';
 import { envelopeOfXmtpMessage } from './xmtp.messages';

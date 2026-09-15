@@ -17,7 +17,7 @@ import {
 } from './xmtpJsonCodecs';
 
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { envelopeOfXmtpMessage } from './xmtp.envelope';
+import { mapDecodedToEnvelope as envelopeOfXmtpMessage } from '@stage-labs/client/xmtp/envelope';
 
 export { envelopeOfXmtpMessage };
 

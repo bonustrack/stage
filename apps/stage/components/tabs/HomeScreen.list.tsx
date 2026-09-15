@@ -11,7 +11,7 @@ import { HistorySyncBanner } from '../system/HistorySync';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { HomeEmpty } from './HomeScreen.parts';
 import { LabelFilterBar } from './HomeScreen.labelbar';
-import { ChannelsSearchBar } from './HomeScreen.search';
+import { SearchTopnavBar } from '../SearchTopnavBar';
 import { HomeContactResults } from './HomeScreen.contacts';
 import { HomeOverflowMenu } from './HomeScreen.overflow';
 import { Topnav } from '../Topnav';
@@ -105,7 +105,7 @@ function useHomeTopnav(p: ChannelsListProps, searchOpen: boolean, onOpenSearch: 
   );
   const override = useMemo(
     () => (searchOpen ? (
-      <ChannelsSearchBar
+      <SearchTopnavBar
         query={query} setQuery={setQuery} onClose={onCloseSearch}
         head={head} sub={sub} border={border} inline={pane}
       />

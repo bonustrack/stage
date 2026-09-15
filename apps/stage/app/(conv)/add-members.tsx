@@ -5,7 +5,7 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { addGroupMembers } from '../../modules/messaging';
-import { flash } from '../../lib/toast';
+import { capabilities } from '../../lib/capabilities';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { StackHeader } from '../../components/chrome/StackHeader';
 import { Box, Col, ScreenScroll } from '../../components/layout';
@@ -30,9 +30,9 @@ export default function AddMembers(): React.ReactElement {
     try {
       await addGroupMembers(convId, members.map(m => m.address));
       router.back();
-      flash(members.length === 1 ? 'Member added' : `${members.length} members added`);
+      capabilities.toast(members.length === 1 ? 'Member added' : `${members.length} members added`);
     } catch (err) {
-      flash((err as Error)?.message ?? "Couldn't add members");
+      capabilities.toast((err as Error)?.message ?? "Couldn't add members");
       setSubmitting(false);
     }
   }, [members, submitting, convId, router]);

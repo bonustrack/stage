@@ -3,10 +3,9 @@ import { useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { Col } from '../layout';
 import { TokenRow } from './WalletScreen.parts';
-import type { AssetRow } from './WalletScreen.assets';
-import { buildSortedTokenRows } from './WalletScreen.sort';
+import type { AssetRow } from '@stage-labs/client/wallet/assets';
+import { buildSortedTokenRows } from '@stage-labs/client/wallet/tokens';
 
-export { buildSortedTokenRows, tokenRowId } from './WalletScreen.sort';
 
 export function TokensList({
   rows, head, sub, border, bg,

@@ -13,7 +13,7 @@ import { ChannelMenu } from '../../components/ChannelMenu';
 import { menuPointOf } from '../../components/AnchoredMenu';
 import { isPinned } from '../../lib/pins';
 import { shortAddress, getCachedRows } from '../../modules/messaging';
-import { flash } from '../../lib/toast';
+import { capabilities } from '../../lib/capabilities';
 import { BubbleActionMenu, ConvTopnavIdentity, ConvTopnavShell } from '../../components/xmtp-conv/parts';
 import { previewOf } from '../../components/xmtp-conv/feed-helpers';
 import { SearchTopnavBar } from '../../components/SearchTopnavBar';
@@ -143,7 +143,7 @@ export function ConversationOverlays({ c, convId, dark, onOpenSearch }: {
         anchor={overflowAnchor}
         context="view"
         onSearch={onOpenSearch}
-        onAfterLeave={result => { flash(result === 'left' ? 'Left group' : 'Group hidden'); }}
+        onAfterLeave={result => { capabilities.toast(result === 'left' ? 'Left group' : 'Group hidden'); }}
 />
       <BubbleActionMenu
         target={menuFor}

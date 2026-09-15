@@ -6,7 +6,6 @@ import { BASENAME_CLAIM_URL, manageBasenameUrl } from '@stage-labs/client/identi
 import { Box, Col, ScreenScroll } from '../layout';
 
 import { capabilities } from '../../lib/capabilities';
-import { flash } from '../../lib/toast';
 import { getPeerHandle, getPeerName, getPeerProfileSource, invalidatePeerProfile, usePeerProfiles } from '../../lib/peerProfiles';
 import { shortAddress, useActiveAccountRecord } from '../../modules/messaging';
 import { Avatar } from '../Avatar';
@@ -34,7 +33,7 @@ function ProfileActions({ view, name, address }: {
       <SettingsValueRow
         label="Address"
         value={shortAddress(address)}
-        onPress={() => { void capabilities.copyToClipboard(address); flash('Address copied'); }}
+        onPress={() => { void capabilities.copyToClipboard(address); capabilities.toast('Address copied'); }}
       />
     </SettingsList>
   );

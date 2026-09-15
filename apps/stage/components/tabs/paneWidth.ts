@@ -1,7 +1,7 @@
 
 import { useSyncExternalStore } from 'react';
 import { Platform } from 'react-native';
-import { WEB_TAB_RAIL_WIDTH } from './useWebTabRail';
+import { WEB_TAB_RAIL_WIDTH } from '../../lib/webLayout';
 import { namespacedKey, readNamespaced } from '../../platform/storageNamespace';
 
 const DEFAULT_PANE_WIDTH = 380;

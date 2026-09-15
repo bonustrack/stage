@@ -1,6 +1,6 @@
 
 import type { DecodedMessage } from '@xmtp/browser-sdk';
-import { isControlBody } from './pushRegister.control';
+import { isControlBody } from './xmtp.types.web';
 import { getCachedXmtpClient, getOrCreateXmtpClient } from './xmtp.client.web';
 import { envelopeOfXmtpMessage } from './xmtp.envelope.web';
 import { activeFeedLines, registerGlobalStreamTeardown } from './xmtp.state.web';

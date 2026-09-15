@@ -8,7 +8,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { createGroup } from '../../modules/messaging';
 import { uploadAvatar } from '../../lib/profile';
-import { flash } from '../../lib/toast';
+import { capabilities } from '../../lib/capabilities';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { StackHeader } from '../../components/chrome/StackHeader';
 import { GroupImagePicker } from '../../components/GroupImagePicker';
@@ -104,14 +104,14 @@ export default function NewGroup(): React.ReactElement {
       try {
         imageUrl = await uploadAvatar(image.uri, image.mime, image.name);
       } catch {
-        flash("Couldn't upload the group image — creating without it.");
+        capabilities.toast("Couldn't upload the group image — creating without it.");
       }
     }
     try {
       const { id } = await createGroup(members.map(m => m.address), name, imageUrl);
       router.replace({ pathname: '/channel/[convId]', params: { convId: id } });
     } catch (err) {
-      flash((err as Error)?.message ?? "Couldn't create the group");
+      capabilities.toast((err as Error)?.message ?? "Couldn't create the group");
       setCreating(false);
     }
   }, [members, name, image, creating, router]);

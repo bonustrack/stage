@@ -2,7 +2,7 @@
 import { useCallback, useState } from 'react';
 import { useActiveAccountRecord } from '../../modules/messaging';
 import { useAssetRows } from './WalletScreen.data';
-import { type AssetRow } from './WalletScreen.assets';
+import { type AssetRow } from '@stage-labs/client/wallet/assets';
 
 import { usePullToRefresh } from './PullToRefresh';
 import { RefreshButton } from './WalletScreen.refreshButton';
@@ -14,7 +14,7 @@ import { Title } from '@stage-labs/kit/react-native/title';
 import { walletHeroDisplay, walletTotalUsd } from './WalletScreen.model';
 import { WalletActionButton } from '../widgets';
 import { useRouter } from 'expo-router';
-import { flash } from '../../lib/toast';
+import { capabilities } from '../../lib/capabilities';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { DANGER, usePalette } from '../../lib/theme';
 import { Col, Row, ScreenScroll } from '../layout';
@@ -138,8 +138,8 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
   const onWalletAction = useCallback((action: string): void => {
     if (action === 'send') router.push('/wallet/send');
     else if (action === 'receive') router.push('/wallet/receive');
-    else if (action === 'swap') flash('Swap — coming soon');
-    else if (action === 'buy') flash('Buy — coming soon');
+    else if (action === 'swap') capabilities.toast('Swap — coming soon');
+    else if (action === 'buy') capabilities.toast('Buy — coming soon');
   }, [router]);
 
   return (

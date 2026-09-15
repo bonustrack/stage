@@ -6,7 +6,6 @@ import { shortAddress } from '../modules/messaging';
 import { fmtSigValue } from './MessengerBubble.helpers';
 import type { SigRequest, SigReference } from './MessengerBubble.helpers';
 import { usePalette, useBlockRadius } from '../lib/theme';
-import { isCardActionBlocked } from '../lib/consentGate';
 
 function stringifyPrimitive(v: unknown): string | undefined {
   if (typeof v === 'string') return v;
@@ -104,7 +103,7 @@ export function SigRequestCard({ req, dark, signing, onSign, consentAllowed }: {
 }): React.ReactElement {
   const title = req.kind === 'eip712' ? `Sign ${req.eip712?.primaryType ?? 'typed data'}` : 'Sign message';
   const senderNote = req.description?.trim();
-  const gated = isCardActionBlocked(consentAllowed);
+  const gated = consentAllowed === false;
   const { fill, border } = detailColors(dark);
   const pal = usePalette();
   const blockRadius = useBlockRadius();

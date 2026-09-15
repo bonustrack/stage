@@ -5,7 +5,7 @@ import { KERNEL_EXECUTE_SELECTOR, validationIdOf } from '@stage-labs/client/zero
 import { recoveryKeyAccessCalls } from '@stage-labs/client/zerodev/recoveryKeyAccess';
 import type { AccountRecord } from '../accounts';
 import { makePublicClient } from './client';
-import { ENTRY_POINT, KERNEL_VERSION } from './config';
+import { ENTRY_POINT, KERNEL_VERSION } from '@stage-labs/client/zerodev/account';
 import { kernelClientForRecord } from './kernelForRecord';
 import { smartOwnerAddress } from './keyring';
 

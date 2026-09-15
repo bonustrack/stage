@@ -3,7 +3,7 @@ import {
   PublicIdentity, type Signer as XmtpSigner,
 } from '@xmtp/react-native-sdk';
 import type { KernelAccountClient } from '@zerodev/sdk';
-import { SCW_CHAIN_ID } from './config';
+import { SCW_CHAIN_ID } from '@stage-labs/client/zerodev/config';
 
 export function scwSigner(kernelClient: KernelAccountClient, scwAddress: string): XmtpSigner {
   return {

@@ -1,9 +1,9 @@
 
-import { isControlBody, presentInboundNotification } from '../../lib/push';
+import { presentInboundNotification } from '../../lib/pushNotify';
 import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 import { getPeerName } from '../../lib/peerProfiles';
 import { isActiveConv } from '../../lib/activeConv';
-import { shortAddress, getConvConsentState } from '../../modules/messaging';
+import { isControlBody, shortAddress, getConvConsentState } from '../../modules/messaging';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { applyInbound } from '@stage-labs/client/xmtp/channelsCache';
 import { ROW_PREVIEW_MAX_CHARS, type StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';

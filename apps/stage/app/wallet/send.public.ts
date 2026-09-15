@@ -11,7 +11,7 @@ import { kernelClientForRecord } from '../../lib/zerodev';
 import { broviderTransport } from '@stage-labs/client/wallet/client';
 import { classifyRecipientInput, noAddressSetError } from '@stage-labs/client/wallet/send';
 import { tokenAmountFromInput } from '@stage-labs/client/wallet/sendAmount';
-import { ASSETS } from '../../components/tabs/WalletScreen.assets';
+import { ASSETS } from '@stage-labs/client/wallet/assets';
 import type { TokenChoice } from './TokenSelector';
 
 async function fetchEthPrice(): Promise<number | null> {

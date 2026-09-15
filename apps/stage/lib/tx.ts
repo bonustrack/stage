@@ -4,7 +4,7 @@ import {
   createWalletClient, type Hex,
 } from 'viem';
 import { getActiveViemAccount } from './accounts';
-import { VIEM_CHAINS } from '../components/tabs/WalletScreen.assets';
+import { VIEM_CHAINS } from '@stage-labs/client/wallet/assets';
 import { broviderTransport } from '@stage-labs/client/wallet/client';
 import { parseSendAmount } from '@stage-labs/client/wallet/send';
 

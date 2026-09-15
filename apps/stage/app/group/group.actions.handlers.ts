@@ -1,7 +1,7 @@
 
 import { Alert } from 'react-native';
 import { leaveGroupConv, shortAddress } from '../../modules/messaging';
-import { flash } from '../../lib/toast';
+import { capabilities } from '../../lib/capabilities';
 import { uploadAvatar } from '../../lib/profile';
 import {
   addGroupMember, removeGroupMember, updateGroupImage,
@@ -117,7 +117,7 @@ async function runLeaveGroup(c: GroupHandlersCtx): Promise<void> {
   c.setLeaving(true);
   try {
     const result = await leaveGroupConv(c.line);
-    flash(result === 'left' ? 'Left group' : 'Group hidden');
+    capabilities.toast(result === 'left' ? 'Left group' : 'Group hidden');
     c.router.replace('/');
   } catch (e) {
     Alert.alert('Couldn’t leave', (e as Error).message ?? 'Unknown error');

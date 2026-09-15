@@ -1,7 +1,7 @@
 
 import { Image } from '@stage-labs/kit/react-native/image';
 import { Box } from '../layout';
-import { NETWORK_LOGO, MAINNET_NETWORK_LOGO } from './WalletScreen.assets';
+import { NETWORK_LOGO, MAINNET_NETWORK_LOGO } from '@stage-labs/client/wallet/assets';
 
 export function TokenAvatar({ logoUrl, chainId, bg, border, badge }: {
   logoUrl: string;

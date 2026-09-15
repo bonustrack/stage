@@ -5,14 +5,14 @@ import { xmtpSendTxReference, xmtpSendSignatureReference } from '../../modules/m
 import {
   type WalletSendCallsContent, type TransactionReferenceContent, chainIdToNumber,
 } from '@stage-labs/client/xmtp/tx';
-import { VIEM_CHAINS } from '../../components/tabs/WalletScreen.assets';
+import { VIEM_CHAINS } from '@stage-labs/client/wallet/assets';
 import {
   type SignatureRequestContent, type SignatureReferenceContent,
 } from '@stage-labs/client/xmtp/sign';
 import { sendCall } from '../../lib/tx';
 import { deriveConfirmSummary, confirmMessage } from '../../lib/txConfirm';
 import { deriveSignSummary, signConfirmMessage } from '../../lib/signConfirm';
-import { flash } from '../../lib/toast';
+import { capabilities } from '../../lib/capabilities';
 import { txErrorMessage } from '@stage-labs/client/wallet/txError';
 import type { TypedDataDefinition } from 'viem';
 import { base } from 'viem/chains';
@@ -115,7 +115,7 @@ export function useTxSignLayer(activeLine: string) {
         try {
           await produceAndPostSignature(activeLine, requestId, req);
         } catch (e) {
-          flash(txErrorMessage(e, 'Signing failed'));
+          capabilities.toast(txErrorMessage(e, 'Signing failed'));
         } finally {
           setSigningIds(prev => { const n = new Set(prev); n.delete(requestId); return n; });
         }
@@ -139,7 +139,7 @@ export function useTxSignLayer(activeLine: string) {
 
   const onPay = useCallback((requestId: string, wsc: WalletSendCallsContent) => {
     const call = wsc.calls?.[0];
-    if (!call?.to) { flash('Malformed payment request'); return; }
+    if (!call?.to) { capabilities.toast('Malformed payment request'); return; }
     const callTo = call.to;
     const chainId = chainIdToNumber(wsc.chainId);
     const { chainName, nativeSymbol } = chainMeta(chainId);
@@ -154,7 +154,7 @@ export function useTxSignLayer(activeLine: string) {
           const ref = paymentReceipt(txHash, settledChainId, summary, nativeSymbol);
           await xmtpSendTxReference(activeLine, ref);
         } catch (e) {
-          flash(txErrorMessage(e, 'Payment failed'));
+          capabilities.toast(txErrorMessage(e, 'Payment failed'));
         } finally {
           setPayingIds(prev => { const n = new Set(prev); n.delete(requestId); return n; });
         }

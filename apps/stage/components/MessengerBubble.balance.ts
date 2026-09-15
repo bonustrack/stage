@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { formatUnits, isAddress, erc20Abi, type Hex } from 'viem';
 
 import { getActiveAccount } from '../lib/accounts';
-import { ASSETS, NATIVE_TOKEN_SENTINEL } from '../components/tabs/WalletScreen.assets';
+import { ASSETS, NATIVE_TOKEN_SENTINEL } from '@stage-labs/client/wallet/assets';
 import { chainFor, publicClientFor } from '@stage-labs/client/wallet/client';
 import { chainIdToNumber } from '@stage-labs/client/xmtp/tx';
 

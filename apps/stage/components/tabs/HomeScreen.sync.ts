@@ -16,7 +16,7 @@ import type { Row as RowT } from './HomeScreen.helpers';
 import { summarize } from './HomeScreen.helpers';
 import { makeMsgStreamHandler } from './HomeScreen.stream';
 import { registerHiddenConv } from '../../lib/readSyncRegistry';
-import { schedulePushTopicRefresh } from '../../lib/push';
+import { schedulePushTopicRefresh } from '../../lib/pushRegister';
 
 interface SyncArgs {
   accountEpoch: number;

@@ -11,7 +11,7 @@ import {
   listXmtpInstallations, revokeXmtpInstallation, shortAddress, useActiveAccount,
   type XmtpInstallation,
 } from '../../modules/messaging';
-import { flash } from '../../lib/toast';
+import { capabilities } from '../../lib/capabilities';
 import { DANGER, useBlockRadius, usePalette } from '../../lib/theme';
 
 function when(ms: number | undefined): string {
@@ -79,7 +79,7 @@ export function MessengerSessions(): React.ReactElement {
           text: 'Revoke', style: 'destructive', onPress: () => {
             setBusy(inst.id);
             void revokeXmtpInstallation(inst.id)
-              .then(() => { flash('Session revoked'); return load(); })
+              .then(() => { capabilities.toast('Session revoked'); return load(); })
               .catch(() => { Alert.alert('Revoke failed', 'Could not revoke that session. Check your connection and try again.'); })
               .finally(() => { setBusy(null); });
           },

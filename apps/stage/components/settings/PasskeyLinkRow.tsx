@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { AccountRecord } from '../../lib/accounts';
-import { flash } from '../../lib/toast';
+import { capabilities } from '../../lib/capabilities';
 import {
   describeLinkResult, linkPasskeyForRecord, passkeyPlace, passkeysAvailable, type PasskeyPlace,
 } from '../../lib/zerodev';
@@ -39,7 +39,7 @@ export function PasskeyLinkRow({ rec, place, onLinked }: {
     void linkPasskeyForRecord(rec).then((result) => {
       setBusy(false);
       const text = describeLinkResult(result);
-      flash(text);
+      capabilities.toast(text);
       setStatus(text);
       if (result.ok) onLinked();
     });

@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test';
-import type { AssetRow } from '@stage-labs/client/wallet/assets';
+import type { AssetRow } from '../src/wallet/assets';
 import {
   buildSortedTokenRows,
   tokenRowId,
-} from '../components/tabs/WalletScreen.sort';
+} from '../src/wallet/tokens';
 
 function row(p: Partial<AssetRow> & { symbol: string; balance: string }): AssetRow {
   return {

@@ -9,7 +9,6 @@ import { directRpcUrl, runPushRegistration, runPushUnregistration, type PushTopi
 import { setPushStatus } from './pushStatus';
 import { getCachedXmtpClient } from './xmtp.state';
 
-export { isControlBody } from './pushRegister.control';
 export { usePushDeepLinks } from './pushRegister.deeplink';
 
 export type PushPermission = 'granted' | 'denied' | 'undetermined';

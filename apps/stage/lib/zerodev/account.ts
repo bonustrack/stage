@@ -1,7 +1,7 @@
 import '../cryptoShim';
 import type { PublicClient } from 'viem';
 import { createKernelAccount, type CreateKernelAccountReturnType, type KernelValidator } from '@zerodev/sdk';
-import { ENTRY_POINT, KERNEL_VERSION } from './config';
+import { ENTRY_POINT, KERNEL_VERSION } from '@stage-labs/client/zerodev/account';
 import { passkeysAvailable, passkeySignMessageCallback } from './passkeys';
 import type { StoredPasskey } from './passkeys.model';
 

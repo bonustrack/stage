@@ -7,7 +7,7 @@ import { fontSize } from '@stage-labs/kit/tokens';
 import type { PickedFile } from '@stage-labs/kit/react-native/file-picker';
 import { Box, Col } from '../layout';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { flash } from '../../lib/toast';
+import { capabilities } from '../../lib/capabilities';
 import { getPeerDescription, getPeerDisplayName } from '../../lib/peerProfiles';
 import { saveBasenameProfile } from '../../lib/profileWrite';
 import { GroupImagePicker } from '../GroupImagePicker';
@@ -44,7 +44,7 @@ export function EditProfileSection({ address, name, onSaved, onImagePicked }: {
       .then((hash) => {
         setImage(null); onImagePicked(null); onSaved();
         setStatus(hash ? `Saved onchain (${hash.slice(0, 10)}…). It can take a minute to appear everywhere.` : 'Nothing to save.');
-        flash('Profile saved.');
+        capabilities.toast('Profile saved.');
       })
       .catch((err: unknown) => { setStatus(`Could not save: ${err instanceof Error ? err.message.split('\n')[0] ?? 'unknown error' : String(err)}`); })
       .finally(() => { setBusy(false); });

@@ -8,13 +8,13 @@ import { useActiveAccount } from '../../modules/messaging';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { useDraftsVersion } from '../../lib/drafts';
 import { Col } from '../layout';
-import { useWebTabRail } from './useWebTabRail';
+import { useWebTabRail } from '../../lib/webLayout';
 import { ChannelMenu } from '../ChannelMenu';
 import { HomeError, HomeSpinner, useChannelRowRenderer } from './HomeScreen.parts';
 import { ChannelsList } from './HomeScreen.list';
 import { useChannelsSync } from './HomeScreen.sync';
 import { deriveLabels, useHomeFilters } from './HomeScreen.labelbar';
-import { filterRowsByQuery } from './HomeScreen.search';
+import { filterChannelRows } from '@stage-labs/client/xmtp/channelsFilter';
 import { channelsFilterBarVisible } from './HomeScreen.model';
 import { useHomeState, type HomeState } from './HomeScreen.state';
 import { deriveSortedRows } from './HomeScreen.helpers';
@@ -77,7 +77,7 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
     unreadOnly,
     enabledLabelsCount: enabledLabels.size,
   });
-  const visibleRows = useMemo(() => filterRowsByQuery(sortedRows, query), [sortedRows, query]);
+  const visibleRows = useMemo(() => filterChannelRows(sortedRows, { query }), [sortedRows, query]);
 
   const channelProfilesVersion = usePeerProfiles(
     (rows ?? []).flatMap(r => [r.avatarAddress, r.peerAddress, r.lastSenderAddress]),

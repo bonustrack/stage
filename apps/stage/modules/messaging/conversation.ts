@@ -7,7 +7,7 @@ import {
 import { groupNameImage } from '../../lib/xmtp.groups';
 import { rowMessagesOf } from '../../lib/xmtp.messages';
 import { labelsOfSyncedGroup } from '../../lib/xmtp.labels';
-import { isControlBody } from '../../lib/push';
+import { isControlBody } from '../../lib/xmtp.types';
 import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
 import {

@@ -3,7 +3,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { ListView } from '@stage-labs/kit/react-native/list-view';
 import * as Clipboard from 'expo-clipboard';
-import { flash } from '../lib/toast';
+import { capabilities } from '../lib/capabilities';
 import { canExportPrivateKey, type AccountRecord } from '../lib/accounts';
 import { transferKindFor } from '../lib/accountTransfer';
 import { SheetModal, SheetRow } from './AccountsManager.parts';
@@ -58,7 +58,7 @@ export function ExportSheet({ revealPk, onClose, dark, p }: {
         size="md"
         fullWidth
         dark={dark}
-        onPress={() => { if (revealPk) { void Clipboard.setStringAsync(revealPk); flash('Private key copied'); } }}
+        onPress={() => { if (revealPk) { void Clipboard.setStringAsync(revealPk); capabilities.toast('Private key copied'); } }}
         label="Copy to clipboard"
         tintBg={primary}
         tintFg={bg}

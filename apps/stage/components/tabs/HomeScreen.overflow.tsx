@@ -10,7 +10,7 @@ import { AnchoredMenu, menuPointBelow } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { getActiveAccount } from '../../lib/accounts';
-import { flash } from '../../lib/toast';
+import { capabilities } from '../../lib/capabilities';
 
 interface HomeOverflowMenuProps {
   color: string;
@@ -29,7 +29,7 @@ export function HomeOverflowMenu({ color, onNewGroup, onProfile, onSettings }: H
     void getActiveAccount().then(acct => {
       if (!acct?.address) return;
       void Clipboard.setStringAsync(acct.address);
-      flash('Address copied');
+      capabilities.toast('Address copied');
     });
   }); };
   const handlers: Record<string, () => void> = {

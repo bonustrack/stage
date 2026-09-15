@@ -9,7 +9,7 @@ import { enqueueDm, flushDmOutboxFor, queuedDmsFor, subscribeDmOutbox } from '..
 import { pendingBanner, type OutboxItem } from '../lib/dmOutbox.model';
 import { getPeerName, usePeerProfiles } from '../lib/peerProfiles';
 import { usePalette } from '../lib/theme';
-import { flash } from '../lib/toast';
+import { capabilities } from '../lib/capabilities';
 import { getActiveAccountIdSync, lineOfDmPeer } from '../modules/messaging';
 import { Col } from './layout';
 import { MessengerBubble } from './MessengerBubble';
@@ -56,7 +56,7 @@ function usePendingComposer(onSubmit: (text: string) => void): {
   const [text, setText] = useState('');
   const [selection, setSelection] = useState({ start: 0, end: 0 });
   const unavailable = useCallback(() => {
-    flash('Available once this contact can receive messages');
+    capabilities.toast('Available once this contact can receive messages');
   }, []);
   const onSend = useCallback(() => {
     const trimmed = text.trim();

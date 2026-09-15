@@ -5,9 +5,8 @@ import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
 import { useRouter } from 'expo-router';
 import { Box, Col, Row, pinnedEdges } from '../layout';
 import { usePalette } from '../../lib/theme';
-import { useTopChromeInset } from '../../lib/webLayout';
 import { TAB_HREF, indexOfPathname, type TabName } from '../SwipeTabs.config';
-import { WEB_TAB_RAIL_WIDTH } from './useWebTabRail';
+import { useTopChromeInset, WEB_TAB_RAIL_WIDTH } from '../../lib/webLayout';
 import { AccountAvatarButton } from '../AccountAvatarButton';
 
 export const TAB_ICONS: readonly (readonly [TabName, HeroIconName])[] = [

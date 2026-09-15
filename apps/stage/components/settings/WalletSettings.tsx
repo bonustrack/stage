@@ -7,7 +7,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { walletAccountRows } from './WalletSettings.model';
 import { Col, ScreenScroll } from '../layout';
 import { useBlockRadius, useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { flash } from '../../lib/toast';
+import { capabilities } from '../../lib/capabilities';
 import { useWalletModel } from './WalletSettings.parts';
 import { useEnablePasskey, useRemovePasskey } from '../../lib/passkey';
 import {
@@ -28,7 +28,7 @@ export function WalletSettings(): React.ReactElement {
   const removePasskey = useRemovePasskey();
 
   const onCopy = (label: string, value: string): void => {
-    void Clipboard.setStringAsync(value); flash(`${label} copied`);
+    void Clipboard.setStringAsync(value); capabilities.toast(`${label} copied`);
   };
   const onRecovery = (): void => { router.push('/wallet/recovery'); };
 

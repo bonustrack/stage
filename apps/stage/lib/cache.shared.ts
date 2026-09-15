@@ -1,4 +1,96 @@
 import { secureStorage } from '../platform/storage';
+import { hydrateOnce, makeListeners } from './storeCore';
+
+const FLUSH_DEBOUNCE_MS = 1_500;
+
+export interface PersistenceBackend {
+  read<T>(name: string): Promise<T | null>;
+  write(name: string, value: unknown): void;
+  onFlushSignal(flushAll: () => void): void;
+}
+
+const dirtyStores = new Set<{ flushNow: () => void }>();
+let flushSignalWired = false;
+
+function flushDirtyStores(): void {
+  for (const s of dirtyStores) { try { s.flushNow(); } catch { } }
+}
+
+export class PersistentStore<T> {
+  private value: T | null = null;
+  private readonly hydration = hydrateOnce<T | null>(() => this.readBacking());
+  private readonly pubsub = makeListeners<T | null>();
+  private notify(v: T | null): void { this.pubsub.notify(v); }
+  private flushTimer: number | null = null;
+  private dirty = false;
+
+  constructor(
+    private readonly backend: PersistenceBackend,
+    private readonly fileName: string,
+    private readonly debounced = false,
+  ) {
+    if (debounced && !flushSignalWired) {
+      flushSignalWired = true;
+      backend.onFlushSignal(flushDirtyStores);
+    }
+  }
+
+  private writeBacking(): void {
+    this.backend.write(this.fileName, this.value);
+    this.dirty = false;
+    dirtyStores.delete(this);
+  }
+
+  flushNow(): void {
+    if (this.flushTimer) { clearTimeout(this.flushTimer); this.flushTimer = null; }
+    if (this.dirty) this.writeBacking();
+  }
+
+  private async readBacking(): Promise<T | null> {
+    const stored = await this.backend.read<T>(this.fileName);
+    if (stored !== null) {
+      this.value = stored;
+      this.notify(this.value);
+    }
+    return this.value;
+  }
+
+  async hydrate(): Promise<T | null> {
+    if (this.hydration.done()) return this.value;
+    return this.hydration.run();
+  }
+
+  get(): T | null { return this.value; }
+
+  set(next: T | null): void {
+    this.value = next;
+    this.hydration.markDone();
+    this.notify(this.value);
+    if (!this.debounced) { this.writeBacking(); return; }
+    this.dirty = true;
+    dirtyStores.add(this);
+    if (this.flushTimer) clearTimeout(this.flushTimer);
+    this.flushTimer = setTimeout(() => {
+      this.flushTimer = null;
+      this.writeBacking();
+    }, FLUSH_DEBOUNCE_MS) as unknown as number;
+  }
+
+  clear(): void {
+    if (this.flushTimer) { clearTimeout(this.flushTimer); this.flushTimer = null; }
+    this.dirty = false;
+    dirtyStores.delete(this);
+    this.value = null;
+    this.hydration.reset();
+    this.backend.write(this.fileName, null);
+    this.notify(null);
+  }
+
+  subscribe(l: (v: T | null) => void): () => void {
+    return this.pubsub.subscribe(l);
+  }
+}
+
 
 export class MemoryStore<K, V> {
   private readonly map = new Map<K, V>();

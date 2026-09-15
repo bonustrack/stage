@@ -5,7 +5,7 @@ export type {
 } from './xmtp.types';
 export {
   XMTP_USER_PREFIX, lineOfConv, lineOfDmPeer, convIdOfLine, stageConvIdOf, stageDmPeerOf,
-  shortAddress, stampAvatarUrl,
+  shortAddress, stampAvatarUrl, isControlBody,
 } from './xmtp.types';
 
 export {

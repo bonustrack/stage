@@ -11,7 +11,7 @@ import type { AccountRecord } from '../accounts';
 import { smartOwnerSigner } from './keyring';
 import { makePublicClient, makeKernelClient } from './client';
 import { createEcdsaKernel, ecdsaValidatorForOwner, passkeyKernelResult } from './account';
-import { ENTRY_POINT, KERNEL_VERSION } from './config';
+import { ENTRY_POINT, KERNEL_VERSION } from '@stage-labs/client/zerodev/account';
 import { accountPasskey, storedPasskeyMatches } from './linkPasskey';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';

@@ -10,7 +10,7 @@ import { setPushEnabled, usePushEnabled } from '../../lib/pushPref';
 import { getOrCreateXmtpClient } from '../../modules/messaging';
 import {
   getPushPermission, registerPushWithServer, requestPushPermission, unregisterPushFromServer,
-} from '../../lib/push';
+} from '../../lib/pushRegister';
 import { describePushStatus, usePushStatus } from '../../lib/pushStatus';
 import { StackHeader } from '../chrome/StackHeader';
 import { SettingsButtonRow, SettingsList, SettingsToggleRow } from './rows';

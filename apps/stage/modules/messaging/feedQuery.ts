@@ -2,7 +2,7 @@
 import { getQueryClient } from '../../lib/queryClient';
 import { getAccountEpoch } from '../../lib/accountEpoch';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { isControlBody } from '../../lib/push';
+import { isControlBody } from '../../lib/xmtp.types';
 import { convOfLine } from '../../lib/xmtp.client';
 import { latestConvMessages, olderConvMessages } from '../../lib/xmtp.messages';
 import { feedCache } from '../../lib/xmtp.state';

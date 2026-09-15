@@ -20,7 +20,7 @@ import {
   x402KnownAsset,
 } from '../lib/x402';
 import { payX402Exact } from '../lib/x402.pay';
-import { flash } from '../lib/toast';
+import { capabilities } from '../lib/capabilities';
 import type { X402Challenge } from '../lib/useLinkPreview';
 import { usePalette, withAlpha } from '../lib/theme';
 
@@ -97,10 +97,10 @@ export function X402Card({ challenge, dark }: {
       try {
         const res = await payX402Exact({ resource: endpoint, accept, x402Version: challenge.x402Version });
         setPhase(res.ok ? 'paid' : 'failed');
-        flash(res.ok ? 'Payment sent' : `Payment failed (${res.status})`);
+        capabilities.toast(res.ok ? 'Payment sent' : `Payment failed (${res.status})`);
       } catch (e) {
         setPhase('failed');
-        flash((e as Error).message || 'Payment failed');
+        capabilities.toast((e as Error).message || 'Payment failed');
       }
     })();
   };

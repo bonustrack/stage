@@ -8,7 +8,7 @@ import { WalletHeader } from '../../../components/wallet/WalletHeader';
 import { WalletActionButton } from '../../../components/widgets';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePalette } from '../../../lib/theme';
-import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, type AssetRow } from '../../../components/tabs/WalletScreen.assets';
+import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, type AssetRow } from '@stage-labs/client/wallet/assets';
 import { withStampDisplayPx } from '@stage-labs/kit/avatar';
 
 const NETWORK_LABEL: Record<number, string> = { 1: 'Ethereum', 11155111: 'Sepolia' };

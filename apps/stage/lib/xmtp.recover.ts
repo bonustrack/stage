@@ -5,7 +5,7 @@ import {
   getActiveAccount, markRegistered, setActiveAccountId,
   type AccountRecord,
 } from './accounts';
-import { registerPushWithServer } from './push';
+import { registerPushWithServer } from './pushRegister';
 import { XMTP_CODECS, signerForRecord } from './xmtp.codecs';
 import { setCachedXmtpClient } from './xmtp.state';
 import { type XmtpEnv } from './xmtp.types';

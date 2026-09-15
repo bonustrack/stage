@@ -1,6 +1,6 @@
 
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { isControlBody } from '../../lib/push';
+import { isControlBody } from '../../lib/xmtp.types';
 import { convOfLine } from '../../lib/xmtp.client';
 import { latestConvMessages } from '../../lib/xmtp.messages';
 import { feedCache, activeFeedLines } from '../../lib/xmtp.state';

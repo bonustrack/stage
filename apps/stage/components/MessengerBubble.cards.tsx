@@ -16,7 +16,6 @@ import { VIEM_CHAINS } from '@stage-labs/client/wallet/assets';
 import { tokenLogoUrl } from '../lib/txAssets';
 import { useUsdValue } from '../lib/txPrices';
 import { chainIdToNumber, explorerTxUrl } from '@stage-labs/client/xmtp/tx';
-import { isCardActionBlocked } from '../lib/consentGate';
 import { spoofWarning, type DecodedCall } from '@stage-labs/client/wallet/txDecode';
 import { useDecodedCall } from '../lib/useDecodedCall';
 import { useTxSimulation } from '../lib/txSimulate';
@@ -53,7 +52,7 @@ export function TxRequestCard({ req, dark, sub, paying, onPay, consentAllowed }:
   consentAllowed?: boolean;
 }): React.ReactElement {
   const pal = usePalette();
-  const gated = isCardActionBlocked(consentAllowed);
+  const gated = consentAllowed === false;
   const m = useTxCardModel(req);
   const action = (onPay && !gated) ? {
     label: m.actionLabel, onPress: onPay, loading: paying,

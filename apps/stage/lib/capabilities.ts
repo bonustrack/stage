@@ -1,9 +1,8 @@
 
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
-import { Linking, Share } from 'react-native';
+import { Linking, Platform, Share, ToastAndroid } from 'react-native';
 import { confirmDialog, type ConfirmOptions } from './confirm';
-import { flash } from './toast';
 
 export interface Capabilities {
   navigate(to: string): void;
@@ -19,7 +18,7 @@ export const capabilities: Capabilities = {
   navigate: (to) => { router.push(to); },
   back: () => { router.back(); },
   copyToClipboard: async (text) => { await Clipboard.setStringAsync(text); },
-  toast: flash,
+  toast: (message) => { if (Platform.OS === 'android') ToastAndroid.show(message, ToastAndroid.SHORT); },
   confirm: confirmDialog,
   openUrl: (url) => { void Linking.openURL(url); },
   share: async (payload) => {
