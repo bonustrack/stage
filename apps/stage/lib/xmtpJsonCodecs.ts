@@ -27,7 +27,7 @@ import {
   PIN_STATE_CONTENT_TYPE, pinStateFallbackText, pinStateSchema, type PinStateContent,
 } from '@stage-labs/client/xmtp/readState';
 
-type JsonCodec<T> = JSContentCodec<T> & { shouldPush: () => boolean };
+export type JsonCodec<T> = JSContentCodec<T> & { shouldPush: () => boolean };
 
 type JsonSchema<T> = Parameters<typeof decodeJsonContent<T>>[1];
 

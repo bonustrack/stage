@@ -4,7 +4,7 @@ import { convOfLine } from '../../lib/xmtp.client';
 import {
   peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
 } from '../../lib/xmtp.identity';
-import { groupNameImage } from '../../lib/xmtp.groups';
+import { groupAdminInboxIds, groupNameImage } from '../../lib/xmtp.groups';
 
 export interface ConvMeta {
   peerAddr: string | null;
@@ -52,15 +52,8 @@ export async function fetchGroupRoles(
 ): Promise<Record<string, 'owner' | 'admin' | 'member'>> {
   const conv = await convOfLine(lineOfConv(convId));
   if (!conv) return {};
-  const group = conv as unknown as {
-    listSuperAdmins?: () => Promise<string[]>;
-    listAdmins?: () => Promise<string[]>;
-  };
-  const [supers, admins] = await Promise.all([
-    group.listSuperAdmins?.().catch(() => [] as string[]) ?? Promise.resolve([] as string[]),
-    group.listAdmins?.().catch(() => [] as string[]) ?? Promise.resolve([] as string[]),
-  ]);
-  const superSet = new Set(supers.map(s => s.toLowerCase()));
+  const { admins, superAdmins } = await groupAdminInboxIds(conv);
+  const superSet = new Set(superAdmins.map(s => s.toLowerCase()));
   const adminSet = new Set(admins.map(a => a.toLowerCase()));
   const roles: Record<string, 'owner' | 'admin' | 'member'> = {};
   for (const [inboxId, addr] of Object.entries(inboxToAddr)) {

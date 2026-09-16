@@ -1,5 +1,5 @@
 import { secureStorage } from '../platform/storage';
-import { Client, PublicIdentity, type Conversation } from '@xmtp/react-native-sdk';
+import { Client, PublicIdentity, type Conversation, type ConversationId } from '@xmtp/react-native-sdk';
 import {
   getActiveAccount,
   loadAccounts, setActiveAccountId, removeAccount,
@@ -124,10 +124,7 @@ export async function revokeXmtpInstallation(installationId: string): Promise<vo
   const account = await getActiveAccount();
   if (!account) throw new NoAccountError();
   const signer = await signerForRecord(account);
-  await client.revokeInstallations(
-    signer,
-    [installationId as unknown as Parameters<typeof client.revokeInstallations>[1][number]],
-  );
+  await client.revokeInstallations(signer, [asInstallationId(installationId)]);
 }
 
 export { getLastReadNs, setLastReadNs, getMarkedUnread, setMarkedUnreadFlag, markConvUnreadSynced, markConvReadSynced } from './xmtp.unread';
@@ -138,12 +135,15 @@ export async function syncPreferences(): Promise<void> {
   } catch { }
 }
 
+export const asConversationId = (id: string): ConversationId => id as ConversationId;
+type InstallationId = Parameters<Client['revokeInstallations']>[1][number];
+export const asInstallationId = (id: string): InstallationId => id as InstallationId;
+
 export async function convOfLine(line: string): Promise<Conversation | null> {
   const convId = convIdOfLine(line);
   if (!convId) return null;
   const client = await xmtpClient();
-  const conv = await client.conversations.findConversation(convId as unknown as Parameters<typeof client.conversations.findConversation>[0])
-    .catch(() => null);
+  const conv = await client.conversations.findConversation(asConversationId(convId)).catch(() => null);
   return conv ?? null;
 }
 

@@ -1,4 +1,3 @@
-import { PublicIdentity } from '@xmtp/react-native-sdk';
 import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import {
   isSyncGroupName, type PinStateContent, type ReadStateContent, type SyncGroupCandidate,
@@ -25,10 +24,7 @@ export async function listSyncGroups(): Promise<SyncGroupCandidate[]> {
 }
 
 export async function createSyncGroup(name: string): Promise<string> {
-  const conversations = (await xmtpClient()).conversations as unknown as {
-    newGroupWithIdentities: (peers: PublicIdentity[], opts?: { name?: string }) => Promise<{ id: string }>;
-  };
-  const group = await conversations.newGroupWithIdentities([], { name });
+  const group = await (await xmtpClient()).conversations.newGroupWithIdentities([], { name });
   return group.id;
 }
 

@@ -18,6 +18,8 @@ export function identityResolvers<C extends { inboxId: string | undefined }, V e
   deps: IdentityDeps<C, V>,
 ): {
   primeInboxEthCache: (client: C, ids: string[]) => Promise<void>;
+  primeConversationMembers: (client: C, convs: V[]) => Promise<void>;
+  isGroupConv: (conv: V) => boolean;
   peerEthAddressOfDm: (conv: V) => Promise<string | null>;
   memberInboxToAddressMap: (conv: V) => Promise<InboxEthMap>;
   groupMemberEthAddresses: (conv: V) => Promise<string[]>;
@@ -27,6 +29,17 @@ export function identityResolvers<C extends { inboxId: string | undefined }, V e
 
   return {
     primeInboxEthCache: (client, ids) => primeInboxEthCache(inboxEthCache, deps.fetchInboxEth(client), ids),
+
+    async primeConversationMembers(client, convs) {
+      try {
+        const memberLists = await Promise.all(convs.map(c =>
+          c.members().then(ms => ms.map(m => m.inboxId)).catch(() => [] as string[]),
+        ));
+        await primeInboxEthCache(inboxEthCache, deps.fetchInboxEth(client), memberLists.flat());
+      } catch { }
+    },
+
+    isGroupConv: deps.isGroup,
 
     async peerEthAddressOfDm(conv) {
       const peerInboxId = deps.peerInboxIdOf(conv);

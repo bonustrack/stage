@@ -1,49 +1,38 @@
+import {
+  addGroupMembers, convIdOfLine, convOfLine, memberInboxToAddressMap, removeGroupMembers, updateGroupMeta,
+} from '../../modules/messaging';
 
-import { convOfLine, memberInboxToAddressMap } from '../../modules/messaging';
-import { PublicIdentity } from '@xmtp/react-native-sdk';
+function convIdOf(line: string): string {
+  const convId = convIdOfLine(line);
+  if (!convId) throw new Error('Conversation not found');
+  return convId;
+}
 
-async function sortedMembers(conv: unknown): Promise<string[]> {
-  const map = await memberInboxToAddressMap(conv as never);
+async function sortedMembers(line: string): Promise<string[]> {
+  const conv = await convOfLine(line);
+  if (!conv) throw new Error('Conversation not found');
+  const map = await memberInboxToAddressMap(conv);
   return Object.values(map).sort((a, b) => a.localeCompare(b));
 }
 
 export async function addGroupMember(line: string, addr: string): Promise<string[]> {
-  const conv = await convOfLine(line);
-  if (!conv) throw new Error('Conversation not found');
-  const group = conv as unknown as { addMembersByIdentity?: (ids: PublicIdentity[]) => Promise<unknown> };
-  if (!group.addMembersByIdentity) throw new Error('Not a group conversation');
-  await group.addMembersByIdentity([new PublicIdentity(addr, 'ETHEREUM')]);
-  return sortedMembers(conv);
+  await addGroupMembers(convIdOf(line), [addr]);
+  return sortedMembers(line);
 }
 
 export async function removeGroupMember(line: string, addr: string): Promise<string[]> {
-  const conv = await convOfLine(line);
-  const group = conv as unknown as {
-    removeMembersByIdentity?: (ids: PublicIdentity[]) => Promise<unknown>;
-  };
-  if (!group.removeMembersByIdentity) throw new Error('Not a group conversation');
-  await group.removeMembersByIdentity([new PublicIdentity(addr, 'ETHEREUM')]);
-  return sortedMembers(conv);
+  await removeGroupMembers(convIdOf(line), [addr]);
+  return sortedMembers(line);
 }
 
-export async function updateGroupImage(line: string, url: string): Promise<void> {
-  const conv = await convOfLine(line);
-  if (!conv) throw new Error('Conversation not found');
-  const group = conv as unknown as { updateImageUrl?: (u: string) => Promise<void> };
-  if (!group.updateImageUrl) throw new Error('Not a group conversation');
-  await group.updateImageUrl(url);
+export function updateGroupImage(line: string, url: string): Promise<void> {
+  return updateGroupMeta(convIdOf(line), { imageUrl: url });
 }
 
-export async function updateGroupDescription(line: string, next: string): Promise<void> {
-  const conv = await convOfLine(line);
-  if (!conv) throw new Error('Conversation not found');
-  const group = conv as unknown as { updateDescription?: (d: string) => Promise<void> };
-  if (!group.updateDescription) throw new Error('Not a group conversation');
-  await group.updateDescription(next);
+export function updateGroupDescription(line: string, next: string): Promise<void> {
+  return updateGroupMeta(convIdOf(line), { description: next });
 }
 
-export async function updateGroupName(line: string, next: string): Promise<void> {
-  const conv = await convOfLine(line);
-  const group = conv as unknown as { updateName?: (n: string) => Promise<void> };
-  await group.updateName?.(next);
+export function updateGroupName(line: string, next: string): Promise<void> {
+  return updateGroupMeta(convIdOf(line), { name: next });
 }

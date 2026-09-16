@@ -1,13 +1,12 @@
-import { type Conversation } from '@xmtp/react-native-sdk';
+import { Dm, Group, type Conversation } from '@xmtp/react-native-sdk';
 import { xmtpClient } from './xmtp.client';
 import { identityResolvers } from './xmtp.identity.core';
 
 type NativeXmtpClient = Awaited<ReturnType<typeof xmtpClient>>;
 
-const versionOf = (conv: Conversation): string | undefined => (conv as unknown as { version?: string }).version;
-
 export const {
-  primeInboxEthCache, peerEthAddressOfDm, memberInboxToAddressMap, groupMemberEthAddresses,
+  primeInboxEthCache, primeConversationMembers, isGroupConv,
+  peerEthAddressOfDm, memberInboxToAddressMap, groupMemberEthAddresses,
 } = identityResolvers<NativeXmtpClient, Conversation>({
   client: xmtpClient,
   fetchInboxEth: (client) => async (ids) => {
@@ -21,10 +20,6 @@ export const {
     }
     return out;
   },
-  peerInboxIdOf: (conv) => {
-    if (versionOf(conv) !== 'DM') return null;
-    const dm = conv as unknown as { peerInboxId: () => Promise<string> };
-    return () => dm.peerInboxId();
-  },
-  isGroup: (conv) => versionOf(conv) === 'GROUP',
+  peerInboxIdOf: (conv) => (conv instanceof Dm ? () => conv.peerInboxId() : null),
+  isGroup: (conv) => conv instanceof Group,
 });

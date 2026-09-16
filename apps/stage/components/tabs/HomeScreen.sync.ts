@@ -4,7 +4,7 @@ import { AppState } from 'react-native';
 import {
   getOrCreateXmtpClient, NoAccountError,
   syncPreferences,
-  primeInboxEthCache, subscribeAllMessages,
+  primeConversationMembers, subscribeAllMessages,
   listVisibleConversations, syncConversationsFromNetwork,
   streamNewConversations, streamConvConsent, syncConsent, conversationIsSyncGroup,
 } from '../../modules/messaging';
@@ -48,7 +48,7 @@ function makeRefreshers(
   let lastRefreshAt = 0;
   const THROTTLE_MS = 30_000;
   const paintFrom = async (convs: Conversation[]): Promise<boolean> => {
-    await primeMembers(client, convs);
+    await primeConversationMembers(client, convs);
     const summarized = (await Promise.all(
       convs.map(c => summarize(c, selfInboxId, true).catch(() => null)),
     )).filter((r): r is RowT => r !== null);
@@ -78,22 +78,10 @@ function makeRefreshers(
   return { refresh, refreshThrottled };
 }
 
-async function primeMembers(client: Awaited<ReturnType<typeof getOrCreateXmtpClient>>, convs: Conversation[]): Promise<void> {
-  try {
-    const memberLists = await Promise.all(convs.map(c =>
-      (c as unknown as { members: () => Promise<{ inboxId: string }[]> })
-        .members().then(ms => ms.map(m => m.inboxId)).catch(() => [] as string[]),
-    ));
-    await primeInboxEthCache(client, memberLists.flat());
-  } catch { }
-}
-
 async function onNewConversation(conv: Conversation, selfInboxId: string, run: SyncRun, args: SyncArgs): Promise<void> {
   schedulePushTopicRefresh();
   if (await conversationIsSyncGroup(conv).catch(() => false)) { registerHiddenConv(conv.id); return; }
-  const cs = await (conv as unknown as { consentState: () => Promise<string> })
-    .consentState().catch(() => 'allowed');
-  if (cs === 'denied') return;
+  if ((await conv.consentState().catch(() => 'allowed')) === 'denied') return;
   const row = await summarize(conv, selfInboxId).catch(() => null);
   if (!row || run.cancelled) return;
   args.setRows(prev => (prev ? [row, ...prev.filter(x => x.convId !== row.convId)] : [row]));

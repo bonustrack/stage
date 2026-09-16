@@ -69,7 +69,7 @@ async function tryFreeInstallationSlot(rec: AccountRecord, env: XmtpEnv): Promis
     const signer = await signerForRecord(rec);
     await Client.revokeInstallations(
       env, signer, inboxId,
-      [oldest.id as unknown as Parameters<typeof Client.revokeInstallations>[3][number]],
+      [oldest.id as Parameters<typeof Client.revokeInstallations>[3][number]],
     );
     return true;
   } catch {

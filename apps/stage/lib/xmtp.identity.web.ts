@@ -1,16 +1,12 @@
-import { IdentifierKind, type Conversation } from '@xmtp/browser-sdk';
+import { Dm, Group, IdentifierKind, type Conversation } from '@xmtp/browser-sdk';
 import { xmtpClient } from './xmtp.client.web';
 import { identityResolvers } from './xmtp.identity.core';
 
 type WebXmtpClient = Awaited<ReturnType<typeof xmtpClient>>;
 
-function peerInboxIdOf(conv: Conversation): (() => Promise<string>) | null {
-  const dm = conv as unknown as { peerInboxId?: () => Promise<string> };
-  return typeof dm.peerInboxId === 'function' ? dm.peerInboxId.bind(conv) : null;
-}
-
 export const {
-  primeInboxEthCache, peerEthAddressOfDm, memberInboxToAddressMap, groupMemberEthAddresses,
+  primeInboxEthCache, primeConversationMembers, isGroupConv,
+  peerEthAddressOfDm, memberInboxToAddressMap, groupMemberEthAddresses,
 } = identityResolvers<WebXmtpClient, Conversation>({
   client: xmtpClient,
   fetchInboxEth: (client) => async (ids) => {
@@ -24,6 +20,6 @@ export const {
     }
     return out;
   },
-  peerInboxIdOf,
-  isGroup: (conv) => peerInboxIdOf(conv) === null,
+  peerInboxIdOf: (conv) => (conv instanceof Dm ? () => conv.peerInboxId() : null),
+  isGroup: (conv) => conv instanceof Group,
 });

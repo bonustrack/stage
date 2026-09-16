@@ -3,7 +3,7 @@ import {
   addGroupMembers, PublicIdentity, staticKeyPackageStatuses, type Conversation,
 } from '@xmtp/react-native-sdk';
 import { classifyKeyPackageStatuses } from '@stage-labs/client/xmtp/clientErrors';
-import { getCachedXmtpClient, getOrCreateXmtpClient, convOfLine, xmtpClient } from './xmtp.client';
+import { getCachedXmtpClient, getOrCreateXmtpClient, convOfLine, xmtpClient, asConversationId } from './xmtp.client';
 import { lineOfConv, type DmUnreachableReason, type XmtpConsent } from './xmtp.types';
 import { conversationIsSyncGroup } from './xmtp.readSync';
 import { registerHiddenConv } from './readSyncRegistry';
@@ -41,7 +41,7 @@ export async function repairDmMembership(convId: string, address: string): Promi
   try {
     await addGroupMembers(
       client.installationId,
-      convId as unknown as Parameters<typeof addGroupMembers>[1],
+      asConversationId(convId),
       [peerInboxId],
     );
   } catch {
@@ -90,7 +90,7 @@ export async function getConvConsentState(convId: string): Promise<XmtpConsent |
   const conv = await convOfLine(lineOfConv(convId));
   if (!conv) return null;
   try {
-    return await (conv as unknown as { consentState: () => Promise<XmtpConsent> }).consentState();
+    return await conv.consentState();
   } catch {
     return null;
   }
@@ -99,13 +99,13 @@ export async function getConvConsentState(convId: string): Promise<XmtpConsent |
 export async function acceptRequestConv(convId: string): Promise<void> {
   const conv = await convOfLine(lineOfConv(convId));
   if (!conv) throw new Error('Conversation not found');
-  await (conv as unknown as { updateConsent: (s: XmtpConsent) => Promise<void> }).updateConsent('allowed');
+  await conv.updateConsent('allowed');
 }
 
 export async function blockRequestConv(convId: string): Promise<void> {
   const conv = await convOfLine(lineOfConv(convId));
   if (!conv) throw new Error('Conversation not found');
-  await (conv as unknown as { updateConsent: (s: XmtpConsent) => Promise<void> }).updateConsent('denied');
+  await conv.updateConsent('denied');
 }
 
 export function streamNewConversations(cb: (conv: Conversation) => void): () => void {
@@ -121,22 +121,13 @@ export function streamNewConversations(cb: (conv: Conversation) => void): () => 
 
 export function streamConvConsent(cb: () => void): () => void {
   const client = getCachedXmtpClient();
-  const prefs = (client as unknown as {
-    preferences?: { streamConsent?: (h: () => void) => Promise<{ end?: () => void } | (() => void)>; };
-  })?.preferences;
-  if (!prefs?.streamConsent) return () => undefined;
-  let canceller: (() => void) | null = null;
+  if (!client) return () => undefined;
   let cancelled = false;
-  void prefs.streamConsent(() => { cb(); }).then(sub => {
-    const stop = () => {
-      const end = (sub as { end?: () => void }).end;
-      if (typeof end === 'function') end.call(sub);
-      else if (typeof sub === 'function') (sub)();
-    };
-    if (cancelled) { try { stop(); } catch { } return; }
-    canceller = () => { try { stop(); } catch { } };
-  }).catch(() => undefined);
-  return () => { cancelled = true; canceller?.(); };
+  void client.preferences.streamConsent(() => { if (!cancelled) cb(); return Promise.resolve(); }).catch(() => undefined);
+  return () => {
+    cancelled = true;
+    try { client.preferences.cancelStreamConsent(); } catch { }
+  };
 }
 
 export async function syncConsent(): Promise<void> {

@@ -18,7 +18,8 @@ export {
 export type { XmtpInstallation } from '../../lib/xmtp.client';
 
 export {
-  primeInboxEthCache, peerEthAddressOfDm, memberInboxToAddressMap, groupMemberEthAddresses,
+  primeInboxEthCache, primeConversationMembers, isGroupConv,
+  peerEthAddressOfDm, memberInboxToAddressMap, groupMemberEthAddresses,
 } from '../../lib/xmtp.identity';
 
 export {
@@ -28,7 +29,9 @@ export {
   blockRequestConv, getConvConsentState, streamNewConversations, streamConvConsent, syncConsent,
 } from '../../lib/xmtp.conv';
 
-export { createGroup, addGroupMembers, leaveGroupConv } from '../../lib/xmtp.groups';
+export {
+  createGroup, addGroupMembers, removeGroupMembers, updateGroupMeta, groupAdminInboxIds, leaveGroupConv,
+} from '../../lib/xmtp.groups';
 
 export {
   envelopeOfXmtpMessage, xmtpSendText, xmtpReact, xmtpSendPoll,

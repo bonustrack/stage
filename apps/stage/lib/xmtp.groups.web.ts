@@ -1,76 +1,61 @@
-
-import { ConsentState, IdentifierKind, type Identifier } from '@xmtp/browser-sdk';
+import { ConsentState, Group, IdentifierKind, type Conversation, type Identifier } from '@xmtp/browser-sdk';
 import {
   createGroupWith, addGroupMembersWith, requireValidMembers, type CreateGroupResult,
 } from '@stage-labs/client/xmtp/groups';
 import { convOfLine, xmtpClient } from './xmtp.client.web';
 import { lineOfConv } from './xmtp.types';
+import { groupMeta, notAGroup, requireConv, NO_GROUP_ADMINS, type GroupAdmins, type GroupInfo, type GroupMeta } from './xmtp.groups.core';
 
 function identifiersOf(addresses: string[]): Identifier[] {
-  return addresses.map(a => ({
-    identifier: a.toLowerCase(),
-    identifierKind: IdentifierKind.Ethereum,
-  }));
+  return addresses.map(a => ({ identifier: a.toLowerCase(), identifierKind: IdentifierKind.Ethereum }));
 }
 
-function buildCreateGroupOptions(
-  name?: string, imageUrl?: string,
-): { groupName?: string; groupImageUrlSquare?: string } {
-  const opts: { groupName?: string; groupImageUrlSquare?: string } = {};
-  const trimmedName = name?.trim();
-  if (trimmedName) opts.groupName = trimmedName;
-  const trimmedImage = imageUrl?.trim();
-  if (trimmedImage) opts.groupImageUrlSquare = trimmedImage;
-  return opts;
+function asGroup(conv: Conversation): Group {
+  return conv instanceof Group ? conv : notAGroup();
 }
 
-export async function createGroup(
-  addresses: string[],
-  name?: string,
-  imageUrl?: string,
-): Promise<CreateGroupResult> {
+export async function createGroup(addresses: string[], name?: string, imageUrl?: string): Promise<CreateGroupResult> {
   const client = await xmtpClient();
-  const opts = buildCreateGroupOptions(name, imageUrl);
-  return createGroupWith(addresses, lineOfConv, async (members) =>
-    await client.conversations.createGroupWithIdentifiers(identifiersOf(members), opts));
+  const meta = groupMeta(name, imageUrl);
+  const opts = { groupName: meta.name, groupImageUrlSquare: meta.imageUrl };
+  return createGroupWith(addresses, lineOfConv, (members) =>
+    client.conversations.createGroupWithIdentifiers(identifiersOf(members), opts));
 }
 
 export async function addGroupMembers(convId: string, addresses: string[]): Promise<void> {
   requireValidMembers(addresses);
-  const conv = await convOfLine(lineOfConv(convId));
-  if (!conv) throw new Error('Conversation not found');
-  const group = conv as unknown as {
-    addMembersByIdentifiers?: (identifiers: Identifier[]) => Promise<unknown>;
-  };
-  if (!group.addMembersByIdentifiers) throw new Error('Not a group conversation');
-  const addMembers = group.addMembersByIdentifiers.bind(group);
-
-  await addGroupMembersWith(addresses, async (members) =>
-    await addMembers(identifiersOf(members)));
+  const group = asGroup(requireConv(await convOfLine(lineOfConv(convId))));
+  await addGroupMembersWith(addresses, (members) => group.addMembersByIdentifiers(identifiersOf(members)));
 }
 
-export function groupNameImage(
-  conv: unknown,
-): Promise<{ name: string; imageUrl: string; description: string }> {
-  const g = conv as { name?: unknown; imageUrl?: unknown; description?: unknown };
-  return Promise.resolve({
-    name: typeof g.name === 'string' ? g.name : '',
-    imageUrl: typeof g.imageUrl === 'string' ? g.imageUrl : '',
-    description: typeof g.description === 'string' ? g.description : '',
-  });
+export async function removeGroupMembers(convId: string, addresses: string[]): Promise<void> {
+  const group = asGroup(requireConv(await convOfLine(lineOfConv(convId))));
+  await group.removeMembersByIdentifiers(identifiersOf(addresses));
+}
+
+export async function updateGroupMeta(convId: string, patch: GroupMeta & { description?: string }): Promise<void> {
+  const group = asGroup(requireConv(await convOfLine(lineOfConv(convId))));
+  if (patch.name !== undefined) await group.updateName(patch.name);
+  if (patch.imageUrl !== undefined) await group.updateImageUrl(patch.imageUrl);
+  if (patch.description !== undefined) await group.updateDescription(patch.description);
+}
+
+export function groupAdminInboxIds(conv: unknown): Promise<GroupAdmins> {
+  if (!(conv instanceof Group)) return Promise.resolve(NO_GROUP_ADMINS);
+  return Promise.resolve({ admins: conv.admins, superAdmins: conv.superAdmins });
+}
+
+export function groupNameImage(conv: unknown): Promise<GroupInfo> {
+  if (!(conv instanceof Group)) return Promise.resolve({ name: '', imageUrl: '', description: '' });
+  return Promise.resolve({ name: conv.name ?? '', imageUrl: conv.imageUrl ?? '', description: conv.description ?? '' });
 }
 
 export async function leaveGroupConv(line: string): Promise<'left' | 'hidden'> {
-  const conv = await convOfLine(line);
-  if (!conv) throw new Error('Conversation not found');
-  const client = await xmtpClient();
-  const selfInboxId = client.inboxId;
-  const group = conv as unknown as {
-    removeMembers?: (inboxIds: string[]) => Promise<void>;
-  };
-  if (selfInboxId && typeof group.removeMembers === 'function') {
+  const conv = requireConv(await convOfLine(line));
+  const selfInboxId = (await xmtpClient()).inboxId;
+  if (conv instanceof Group && selfInboxId) {
     try {
-      await group.removeMembers([selfInboxId]);
+      await conv.removeMembers([selfInboxId]);
       await conv.updateConsentState(ConsentState.Denied).catch(() => undefined);
       return 'left';
     } catch { }

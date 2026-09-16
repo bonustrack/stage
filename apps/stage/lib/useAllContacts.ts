@@ -3,7 +3,10 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { type Conversation } from '@xmtp/react-native-sdk';
 import { useContactsFocused } from '../components/tabs/useWalletFocused';
-import { peerEthAddressOfDm, groupMemberEthAddresses, primeInboxEthCache, getActiveAccountIdSync, getCachedRows, shortAddress, xmtpClient } from '../modules/messaging';
+import {
+  peerEthAddressOfDm, groupMemberEthAddresses, primeConversationMembers, isGroupConv,
+  getActiveAccountIdSync, getCachedRows, shortAddress, xmtpClient,
+} from '../modules/messaging';
 import { usePeerProfiles, getPeerName } from './peerProfiles';
 
 export interface Contact {
@@ -27,17 +30,11 @@ async function collectAddresses(): Promise<string[]> {
   const self = (getActiveAccountIdSync() ?? '').toLowerCase();
   const convs = await client.conversations.list(undefined, undefined, ['allowed']);
 
-  try {
-    const memberLists = await Promise.all(convs.map(c =>
-      c.members().then(ms => ms.map(m => m.inboxId)).catch(() => [] as string[]),
-    ));
-    await primeInboxEthCache(client, memberLists.flat());
-  } catch { }
+  await primeConversationMembers(client, convs);
 
   const set = new Set<string>();
   await Promise.all(convs.map(async (c: Conversation) => {
-    const isGroup = (c as unknown as { version?: string }).version === 'GROUP';
-    const addrs = isGroup
+    const addrs = isGroupConv(c)
       ? await groupMemberEthAddresses(c)
       : [await peerEthAddressOfDm(c)].filter((a): a is string => !!a);
     for (const a of addrs) {

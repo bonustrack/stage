@@ -4,17 +4,10 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { useRouter } from 'expo-router';
 import {
-  getConvConsentState, acceptRequestConv, blockRequestConv,
-  getCachedXmtpClient, streamConvConsent,
+  getConvConsentState, acceptRequestConv, blockRequestConv, streamConvConsent, syncConsent,
 } from '../modules/messaging';
 import { usePalette } from '../lib/theme';
 import { Box, Col, Row } from './layout';
-
-export function syncConsentBestEffort(): void {
-  void (getCachedXmtpClient() as unknown as {
-    preferences?: { syncConsent?: () => Promise<unknown> };
-  })?.preferences?.syncConsent?.();
-}
 
 interface RequestActionBarProps {
   convId: string;
@@ -55,7 +48,7 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
     if (busy) return;
     setBusy(true);
     void acceptRequestConv(convId)
-      .then(() => { syncConsentBestEffort(); setPending(false); onPending(false); })
+      .then(() => { void syncConsent(); setPending(false); onPending(false); })
       .catch(() => { setBusy(false); });
   }, [busy, convId, onPending]);
 
@@ -64,7 +57,7 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
     setBusy(true);
     void blockRequestConv(convId)
       .then(() => {
-        syncConsentBestEffort();
+        void syncConsent();
         if (router.canGoBack()) router.back(); else router.replace('/');
       })
       .catch(() => { setBusy(false); });
