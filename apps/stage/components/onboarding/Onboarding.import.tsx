@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import type { AccountTransfer } from '@stage-labs/client/accounts/transfer';
-import { Title } from '@stage-labs/kit/react-native/title';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Icon } from '@stage-labs/kit/react-native/icon';
-import { Col, Box, Row } from '../layout';
+import { Row } from '../layout';
 import { FormField } from '../FormField';
+import { OnboardingCard } from './OnboardingCard';
 import { usePalette, DANGER } from '../../lib/theme';
 import { QrScanner } from '../accounts/QrScanner';
 import { parseImportInput } from '../accounts/ImportAccountPanel.model';
@@ -49,9 +49,9 @@ function inputHint(text: string, err: string | null): { text: string; danger: bo
   return count > 0 ? { text: `${count} of 12 to 24 words`, danger: false } : null;
 }
 
-export function ImportStep({ pal, dark, busy, onTransfer, onBack }: {
+export function ImportStep({ pal, dark, busy, onTransfer }: {
   pal: Pal; dark: boolean; busy: boolean;
-  onTransfer: (transfer: AccountTransfer) => void; onBack: () => void;
+  onTransfer: (transfer: AccountTransfer) => void;
 }): React.ReactElement {
   const [text, setText] = useState('');
   const [err, setErr] = useState<string | null>(null);
@@ -67,7 +67,7 @@ export function ImportStep({ pal, dark, busy, onTransfer, onBack }: {
   };
   const phraseField = (
     <>
-      <Text size="sm" color={pal.sub} style={{ marginTop: 8, marginBottom: 14 }}>
+      <Text size="md" color={pal.sub}>
         Enter your 12-24 word recovery phrase, or scan the code shown by Move to another device on your other device.
       </Text>
       <FormField label="Recovery phrase" placeholder="word1 word2 word3 ..." multiline rows={4} value={text}
@@ -79,27 +79,25 @@ export function ImportStep({ pal, dark, busy, onTransfer, onBack }: {
       )}
     </>
   );
+  const footer = (
+    <>
+      {scanning ? (
+        <Button dark={dark} variant="soft" color="primary" size="lg" fullWidth pill label="Stop scanning" disabled={busy}
+          onPress={() => { setScanning(false); }} />
+      ) : (
+        <>
+          <Button dark={dark} size="lg" fullWidth pill tintBg={pal.primary} tintFg={pal.bg}
+            label="Continue" disabled={busy || text.trim().length === 0} onPress={() => { submit(text); }} />
+          <Button dark={dark} variant="soft" color="primary" size="lg" fullWidth pill label="Scan QR code"
+            iconStart={<Icon name="qrcode" size={20} color={pal.primary} />}
+            disabled={busy} onPress={() => { setScanning(true); }} />
+        </>
+      )}
+    </>
+  );
   return (
-    <Col flex={1} justify="between" gap={24}>
-      <Box padding={{ top: 8 }} gap={scanning ? 16 : 0}>
-        <Title level={2} color={pal.primary}>Import wallet</Title>
-        {scanning ? <QrScanner dark={dark} onScan={(code) => { setScanning(false); setText(code); submit(code); }} /> : phraseField}
-      </Box>
-      <Col gap={10}>
-        {scanning ? (
-          <Button dark={dark} variant="soft" color="primary" size="lg" fullWidth label="Stop scanning" disabled={busy}
-            onPress={() => { setScanning(false); }} />
-        ) : (
-          <>
-            <Button dark={dark} size="lg" fullWidth tintBg={pal.primary} tintFg={pal.bg}
-              label="Continue" disabled={busy || text.trim().length === 0} onPress={() => { submit(text); }} />
-            <Button dark={dark} variant="soft" color="primary" size="lg" fullWidth label="Scan QR code"
-              iconStart={<Icon name="qrcode" size={20} color={pal.primary} />}
-              disabled={busy} onPress={() => { setScanning(true); }} />
-          </>
-        )}
-        <Button dark={dark} variant="ghost" size="lg" fullWidth label="Back" disabled={busy} onPress={onBack} />
-      </Col>
-    </Col>
+    <OnboardingCard title="Import wallet" footer={footer}>
+      {scanning ? <QrScanner dark={dark} onScan={(code) => { setScanning(false); setText(code); submit(code); }} /> : phraseField}
+    </OnboardingCard>
   );
 }

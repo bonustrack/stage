@@ -8,7 +8,7 @@ import { usePalette } from '../../lib/theme';
 import { claimStageName, ownedStageName, setPrimaryStageName } from '../../lib/claimName';
 import { useNameAvailability } from './useNameAvailability';
 import { SettingsButtonRow, SettingsList } from './rows';
-import { canClaim, claimStatusText, normalizeLabel, sanitizeLabelInput, type ClaimState } from './ProfileSettings.claim.model';
+import { canClaim, claimStatusText, claimStatusTone, normalizeLabel, sanitizeLabelInput, type ClaimState } from './ProfileSettings.claim.model';
 
 function useOwnedLabel(address: string): string | null {
   const [owned, setOwned] = useState<string | null>(null);
@@ -83,7 +83,7 @@ function ClaimForm({ address, onClaimed }: { address: string; onClaimed: () => v
       </Caption>
       <Box padding={{ x: 16 }}>
         <FormField label="Username" placeholder="yourname" value={raw} onChangeText={(t) => { setRaw(sanitizeLabelInput(t)); }} disabled={busy}
-          inputProps={{ autoCapitalize: 'none', autoCorrect: false }} hint={claimStatusText(state)} />
+          inputProps={{ autoCapitalize: 'none', autoCorrect: false }} hint={claimStatusText(state)} hintTone={claimStatusTone(state)} />
       </Box>
       <SettingsList>
         <SettingsButtonRow

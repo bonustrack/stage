@@ -10,7 +10,8 @@ import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 export const FORM_FIELD_RADIUS = 4;
 
 const FIELD_PADDING_X = 16;
-const FIELD_PADDING_Y = 12;
+const FIELD_PADDING_TOP = 8;
+const FIELD_PADDING_BOTTOM = 12;
 
 type NativeInputProps = Omit<TextInputProps, 'value' | 'defaultValue' | 'onChangeText' | 'style' | 'placeholder' | 'editable' | 'multiline'>;
 
@@ -28,11 +29,17 @@ export interface FormFieldProps {
   trailing?: ReactNode;
   hint?: string;
   hintColor?: string;
+  hintTone?: 'secondary' | 'success' | 'danger';
 }
 
 function useFieldText(): { color: string; fontFamily: string; fontSize: number } {
   const { link } = usePalette();
-  return { color: link, fontFamily: fontName.sans, fontSize: fontSize('xl') };
+  return { color: link, fontFamily: fontName.sans, fontSize: fontSize('2xl') };
+}
+
+function FieldHint({ hint, color }: { hint?: string; color: string }): React.ReactElement | null {
+  if (hint === undefined) return null;
+  return <Text value={hint} size="md" color={color} style={{ paddingHorizontal: 4 }} />;
 }
 
 const BARE_INPUT = {
@@ -41,10 +48,12 @@ const BARE_INPUT = {
 } as const;
 
 export function FormField({
-  label, value, onChangeText, placeholder, multiline, rows = 3, disabled, inputType, inputProps, onSubmit, trailing, hint, hintColor,
+  label, value, onChangeText, placeholder, multiline, rows = 3, disabled, inputType, inputProps, onSubmit, trailing, hint, hintColor, hintTone = 'secondary',
 }: FormFieldProps): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
-  const { sub } = usePalette();
+  const pal = usePalette();
+  const { sub, border } = pal;
+  const toneColor = { secondary: 'secondary', success: pal.success, danger: pal.danger }[hintTone];
   const textStyle = useFieldText();
   const field = multiline ? (
     <Textarea value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={sub}
@@ -57,12 +66,12 @@ export function FormField({
   );
   return (
     <Col gap={hint === undefined ? 0 : 6}>
-      <Col surface="raised" radius={FORM_FIELD_RADIUS} padding={{ x: FIELD_PADDING_X, y: FIELD_PADDING_Y }} gap={2}
+      <Col background={border} radius={FORM_FIELD_RADIUS} padding={{ x: FIELD_PADDING_X, top: FIELD_PADDING_TOP, bottom: FIELD_PADDING_BOTTOM }} gap={2}
         style={disabled === true ? { opacity: 0.6 } : undefined}>
-        <Text value={label} size="md" color="secondary" />
+        <Text value={label} size="lg" color="secondary" />
         {trailing === undefined ? field : <Row align="center" gap={8}>{field}<Row style={{ flexShrink: 0 }}>{trailing}</Row></Row>}
       </Col>
-      {hint === undefined ? null : <Text value={hint} size="md" color={hintColor ?? 'secondary'} style={{ paddingHorizontal: 4 }} />}
+      <FieldHint hint={hint} color={hintColor ?? toneColor} />
     </Col>
   );
 }

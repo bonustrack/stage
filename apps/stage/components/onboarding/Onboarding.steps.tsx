@@ -1,63 +1,28 @@
 
-import { Title } from '@stage-labs/kit/react-native/title';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
+import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Col } from '../layout';
-
-interface StepAction {
-  label: string;
-  variant: 'solid' | 'soft' | 'ghost';
-  disabled: boolean;
-  onPress: () => void;
-}
-
-function OnboardingStepView({ dark, title, centered, caption, captionSize, topPadding, actions }: {
-  dark: boolean; title?: string; centered?: boolean; caption?: string;
-  captionSize?: 'sm' | 'md'; topPadding?: number; actions: StepAction[];
-}): React.ReactElement {
-  return (
-    <Col flex={1} justify="between">
-      <Col gap={10} padding={{ top: topPadding ?? 8 }} align={centered === true ? 'center' : undefined}>
-        {title === undefined ? null : (
-          <Title level={centered === true ? 1 : 2} style={centered === true ? { textAlign: 'center' } : undefined}>{title}</Title>
-        )}
-        {caption === undefined ? null : <Text value={caption} size={captionSize ?? 'sm'} color="secondary" />}
-      </Col>
-      <Col gap={10}>
-        {actions.map((action) => (
-          <Button
-            key={action.label}
-            label={action.label}
-            block
-            size="lg"
-            color="primary"
-            variant={action.variant}
-            disabled={action.disabled}
-            dark={dark}
-            onPress={action.onPress}
-          />
-        ))}
-      </Col>
-    </Col>
-  );
-}
+import { usePalette } from '../../lib/theme';
+import { OnboardingCard, SkipLink } from './OnboardingCard';
 
 export function PasskeyStep({ dark, busy, onAdd, onSkip }: {
   dark: boolean; busy: boolean; onAdd: () => void; onSkip: () => void;
 }): React.ReactElement {
+  const pal = usePalette();
+  const footer = (
+    <>
+      <Button label="Add a passkey" block pill size="lg" color="primary" variant="solid" disabled={busy} dark={dark} onPress={onAdd} />
+      <SkipLink disabled={busy} onPress={onSkip} />
+    </>
+  );
   return (
-    <OnboardingStepView
-      dark={dark}
-      title="Add a passkey"
-      caption={
-        'Add a passkey so this device can approve transactions without your ' +
-        'recovery phrase. You will only be asked for it when you sign. You can ' +
-        'add one later.'
-      }
-      actions={[
-        { label: 'Add a passkey', variant: 'solid', disabled: busy, onPress: onAdd },
-        { label: 'Skip for now', variant: 'ghost', disabled: busy, onPress: onSkip },
-      ]}
-    />
+    <OnboardingCard title="Add a passkey" footer={footer}>
+      <Col align="center" padding={{ top: 8 }}>
+        <Icon name="fingerPrint" size={56} color={pal.link} />
+      </Col>
+      <Text size="4xl" color="link" textAlign="center" style={{ paddingVertical: 12 }}
+        value={'Approve transactions on this device with a passkey instead of your recovery phrase.'} />
+    </OnboardingCard>
   );
 }

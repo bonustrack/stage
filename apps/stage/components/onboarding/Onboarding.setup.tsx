@@ -1,59 +1,38 @@
-import { useEffect, useState } from 'react';
-import { Title } from '@stage-labs/kit/react-native/title';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Box, Col, Row } from '../layout';
 import { Spinner } from '../Spinner';
+import { OnboardingCard, SkipLink } from './OnboardingCard';
 import { DANGER, usePalette } from '../../lib/theme';
 import type { Stage } from './flow';
 import {
-  STAGE_LABELS, setupHint, setupProgress, setupStages, setupTitle, stageState,
-  type SetupErr, type StageState,
+  STAGE_LABELS, setupHint, setupStages, setupTitle, stageState,
+  type SetupErr, type SetupPlan, type StageState,
 } from './Onboarding.setup.model';
 
 type Pal = ReturnType<typeof usePalette>;
 
-const CONTENT_MAX_WIDTH = 460;
-const TICK_MS = 1_000;
-
-function useStageElapsed(stage: Stage): number {
-  const [elapsed, setElapsed] = useState(0);
-  useEffect(() => {
-    const started = Date.now();
-    setElapsed(0);
-    const timer = setInterval(() => { setElapsed(Date.now() - started); }, TICK_MS);
-    return () => { clearInterval(timer); };
-  }, [stage]);
-  return elapsed;
-}
-
-function ProgressBar({ value, pal }: { value: number; pal: Pal }): React.ReactElement {
-  const pct = `${Math.round(value * 100)}%`;
-  return (
-    <Box width="100%" height={6} radius="full" background={pal.border} style={{ overflow: 'hidden' }}>
-      <Box width={pct} height={6} radius="full" background={pal.primary} />
-    </Box>
-  );
-}
+const ROW_RADIUS = 12;
+const ROW_HEIGHT = 52;
+const ROW_ICON = 16;
 
 function StageIndicator({ state, failed, pal }: { state: StageState; failed: boolean; pal: Pal }): React.ReactElement {
-  if (state === 'done') return <Icon name="check" size={20} color={pal.primary} />;
-  if (state === 'active' && failed) return <Icon name="xCircle" size={20} color={DANGER} />;
-  if (state === 'active') return <Spinner size={18} color={pal.primary} />;
-  return <Box width={8} height={8} radius="full" background={pal.border} margin={{ x: 6 }} />;
+  if (state === 'done') return <Icon name="check" size={ROW_ICON} color={pal.success} />;
+  if (state === 'active' && failed) return <Icon name="xCircle" size={ROW_ICON} color={DANGER} />;
+  if (state === 'active') return <Spinner size={ROW_ICON} color={pal.link} />;
+  return <Box width={6} height={6} radius="full" background={pal.sub} margin={{ x: 5 }} />;
 }
 
-function StageRow({ stage, state, failed, pal }: {
-  stage: Stage; state: StageState; failed: boolean; pal: Pal;
+function StageRow({ stage, state, failed, last, pal }: {
+  stage: Stage; state: StageState; failed: boolean; last: boolean; pal: Pal;
 }): React.ReactElement {
-  const color = state === 'pending' ? pal.sub : pal.text;
   return (
-    <Row align="center" gap={12}>
-      <Box width={20} align="center">
+    <Row align="center" gap={8} height={ROW_HEIGHT} padding={{ x: 16 }} border={last ? undefined : { bottom: { width: 1, color: pal.border } }}>
+      <Box width={ROW_ICON} align="center">
         <StageIndicator state={state} failed={failed} pal={pal} />
       </Box>
-      <Text size="xl" color={color} weight={state === 'active' ? 'semibold' : 'normal'}>{STAGE_LABELS[stage]}</Text>
+      <Text size="3xl" color={state === 'pending' ? pal.sub : pal.link}>{STAGE_LABELS[stage]}</Text>
     </Row>
   );
 }
@@ -64,48 +43,30 @@ function SetupActions({ dark, busy, stage, setupErr, onRetry, onBack, onSkipHist
 }): React.ReactElement | null {
   if (setupErr !== null) {
     return (
-      <Col gap={10} width="100%" padding={{ top: 8 }}>
-        <Button dark={dark} size="lg" fullWidth color="primary" variant="solid" label="Try again" disabled={busy} onPress={onRetry} />
-        {setupErr.accountId === undefined ? (
-          <Button dark={dark} variant="ghost" size="lg" fullWidth color="primary" label="Back" disabled={busy} onPress={onBack} />
-        ) : null}
-      </Col>
+      <>
+        <Button dark={dark} size="lg" fullWidth pill color="primary" variant="solid" label="Try again" disabled={busy} onPress={onRetry} />
+        {setupErr.retry === 'messaging' ? null : <SkipLink label="Start over" disabled={busy} onPress={onBack} />}
+      </>
     );
   }
   if (stage !== 'history') return null;
-  return (
-    <Box padding={{ top: 8 }}>
-      <Button dark={dark} variant="ghost" size="lg" color="primary" label="Skip for now" onPress={onSkipHistory} />
-    </Box>
-  );
+  return <SkipLink onPress={onSkipHistory} />;
 }
 
-export function SetupStep({ pal, dark, busy, stage, setupErr, withHistory, withProfile, onRetry, onBack, onSkipHistory }: {
-  pal: Pal; dark: boolean; busy: boolean; stage: Stage; setupErr: SetupErr | null; withHistory: boolean; withProfile: boolean;
+export function SetupStep({ pal, dark, busy, stage, setupErr, plan, onRetry, onBack, onSkipHistory }: {
+  pal: Pal; dark: boolean; busy: boolean; stage: Stage; setupErr: SetupErr | null; plan: SetupPlan;
   onRetry: () => void; onBack: () => void; onSkipHistory: () => void;
 }): React.ReactElement {
-  const stages = setupStages(withHistory, withProfile);
-  const elapsed = useStageElapsed(stage);
-  const progress = setupProgress(stage, stages, elapsed);
+  const stages = setupStages(plan);
+  const actions = SetupActions({ dark, busy, stage, setupErr, onRetry, onBack, onSkipHistory });
   return (
-    <Col flex={1} align="center" justify="center">
-      <Col gap={20} align="center" width="100%" maxWidth={CONTENT_MAX_WIDTH}>
-        {setupErr === null
-          ? <Spinner size={36} color={pal.primary} />
-          : <Icon name="exclamationCircle" size={40} color={DANGER} />}
-        <Title level={1} color={pal.primary} style={{ textAlign: 'center' }}>{setupTitle(stage, setupErr)}</Title>
-        <Text size="lg" color={pal.sub} textAlign="center">{setupHint(stage, setupErr)}</Text>
-        {setupErr === null ? <ProgressBar value={progress} pal={pal} /> : null}
-        <Col gap={14} width="100%" padding={{ top: 8 }}>
-          {stages.map((s) => (
-            <StageRow key={s} stage={s} state={stageState(s, stage, stages)} failed={setupErr !== null} pal={pal} />
-          ))}
-        </Col>
-        <SetupActions
-          dark={dark} busy={busy} stage={stage} setupErr={setupErr}
-          onRetry={onRetry} onBack={onBack} onSkipHistory={onSkipHistory}
-        />
+    <OnboardingCard title={setupTitle(stage, setupErr)} footer={actions}>
+      <Text size="4xl" color="link" textAlign="center" style={{ paddingVertical: 12 }}>{setupHint(stage, setupErr)}</Text>
+      <Col width="100%" radius={ROW_RADIUS} style={{ borderWidth: 1, borderColor: pal.border, overflow: 'hidden' }}>
+        {stages.map((s, i) => (
+          <StageRow key={s} stage={s} state={stageState(s, stage, stages)} failed={setupErr !== null} last={i === stages.length - 1} pal={pal} />
+        ))}
       </Col>
-    </Col>
+    </OnboardingCard>
   );
 }

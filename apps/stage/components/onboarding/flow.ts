@@ -3,11 +3,11 @@ import { createSmartAccount, enablePasskeyForRecord, passkeysAvailable, restoreS
 import { adoptPhrase } from '../../lib/accountTransfer';
 import { AccountManager } from '../../modules/messaging';
 import type { Hex } from 'viem';
-import { addPrivateKeyAccount, type AccountRecord } from '../../lib/accounts';
+import { addPrivateKeyAccount, loadAccounts, removeAccount, type AccountRecord } from '../../lib/accounts';
 import { applyProfileSetup } from '../../lib/profileSetup';
 import type { ProfileSetup } from './Onboarding.profile.model';
 
-export type Stage = 'wallet' | 'messaging' | 'profile' | 'history' | 'finishing';
+export type Stage = 'wallet' | 'passkey' | 'messaging' | 'profile' | 'history' | 'finishing';
 
 export class XmtpSetupError extends Error {
   readonly accountId: string;
@@ -30,24 +30,44 @@ export async function bringMessagingOnline(
   AccountManager.bumpEpoch();
 }
 
+export class PasskeySetupError extends Error {
+  readonly accountId: string;
+  constructor(accountId: string, message: string) {
+    super(message);
+    this.name = 'PasskeySetupError';
+    this.accountId = accountId;
+  }
+}
+
 export type SetupWarning = { title: string; message: string } | null;
 
-const PASSKEY_FALLBACK = 'The passkey could not be set up for this account on this device.';
-const PASSKEY_LATER = 'You can add a passkey later from Settings, Security.';
+const PASSKEY_FALLBACK = 'The passkey could not be set up on this device.';
+const PASSKEY_CANCELLED = 'The passkey prompt was dismissed before it finished.';
 const PROFILE_LATER = 'You can set your name and picture later from Settings, Profile.';
+
+async function securePasskey(rec: AccountRecord, onStage?: (s: Stage) => void): Promise<void> {
+  onStage?.('passkey');
+  const res = await enablePasskeyForRecord(rec);
+  if (res.ok || res.reason === 'already') return;
+  throw new PasskeySetupError(rec.id, res.reason === 'cancelled' ? PASSKEY_CANCELLED : res.message ?? PASSKEY_FALLBACK);
+}
 
 async function finishAccount(
   rec: AccountRecord, withPasskey: boolean, onStage?: (s: Stage) => void,
 ): Promise<{ id: string; address: string; warning: SetupWarning }> {
-  let warning: SetupWarning = null;
-  if (withPasskey && passkeysAvailable()) {
-    const res = await enablePasskeyForRecord(rec);
-    if (!(res.ok || res.reason === 'already' || res.reason === 'cancelled')) {
-      warning = { title: 'Passkey not added', message: `${res.message ?? PASSKEY_FALLBACK} ${PASSKEY_LATER}` };
-    }
-  }
+  if (withPasskey && passkeysAvailable()) await securePasskey(rec, onStage);
   await bringMessagingOnline(rec.id, onStage);
-  return { id: rec.id, address: rec.address, warning };
+  return { id: rec.id, address: rec.address, warning: null };
+}
+
+export async function resumeWithPasskey(accountId: string, onStage?: (s: Stage) => void): Promise<void> {
+  const rec = (await loadAccounts()).find((a) => a.id === accountId);
+  if (!rec) throw new Error('This account is no longer on the device.');
+  await finishAccount(rec, true, onStage);
+}
+
+export async function abandonAccount(accountId: string): Promise<void> {
+  await removeAccount(accountId);
 }
 
 async function setUpProfile(address: string, profile: ProfileSetup, onStage?: (s: Stage) => void): Promise<SetupWarning> {

@@ -38,11 +38,11 @@ describe('A. create.ts — create is passkey-AGNOSTIC (ECDSA-owner only)', () =>
 describe('A2. callers install the passkey BEFORE messaging (passkey signs the inbox)', () => {
   test('onboarding create/restore: account record, enable, THEN bringMessagingOnline', () => {
     const finish = onboardSrc.indexOf('async function finishAccount(');
-    const enable = onboardSrc.indexOf('enablePasskeyForRecord(rec)');
+    const secure = onboardSrc.indexOf('await securePasskey(rec, onStage)');
     const msg = onboardSrc.indexOf('bringMessagingOnline(rec.id');
     expect(finish).toBeGreaterThanOrEqual(0);
-    expect(enable).toBeGreaterThan(finish);
-    expect(msg).toBeGreaterThan(enable);
+    expect(secure).toBeGreaterThan(finish);
+    expect(msg).toBeGreaterThan(secure);
     expect(onboardSrc).toContain('withPasskey && passkeysAvailable()');
     expect(onboardSrc).toContain('finishAccount(await createSmartAccount(), withPasskey, onStage)');
     expect(onboardSrc).toContain('finishAccount(record, withPasskey, onStage)');
@@ -193,7 +193,9 @@ describe('H. web passkey seam — validator callback contract and safety gates',
     expect(webSrc).toContain('if (isUserCancelled(e)) return null');
     expect(webSrc).toContain('throw e instanceof Error ? e : new Error(');
   });
-  test('onboarding continues without a passkey when the user cancels the sheet', () => {
-    expect(onboardSrc).toContain("res.ok || res.reason === 'already' || res.reason === 'cancelled'");
+  test('onboarding stops when the chosen passkey is refused or dismissed, keeping the record for a retry', () => {
+    expect(onboardSrc).toContain("if (res.ok || res.reason === 'already') return;");
+    expect(onboardSrc).toContain('throw new PasskeySetupError(rec.id');
+    expect(onboardSrc).toContain('export async function resumeWithPasskey');
   });
 });

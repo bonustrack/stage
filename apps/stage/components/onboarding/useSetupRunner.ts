@@ -5,10 +5,11 @@ import { txErrorMessage } from '@stage-labs/client/wallet/txError';
 import { holdOnboarding } from '../../lib/onboardingHold';
 import { ONBOARDING_HISTORY_WAIT_MS, runHistorySync, waitForHistorySyncSettled } from '../../lib/historySync';
 import {
-  createWallet, restoreWallet, importKeyAccount, bringMessagingOnline, XmtpSetupError,
+  createWallet, restoreWallet, importKeyAccount, bringMessagingOnline, resumeWithPasskey, abandonAccount, XmtpSetupError, PasskeySetupError,
   type SetupWarning, type Stage,
 } from './flow';
-import type { SetupErr } from './Onboarding.setup.model';
+import type { SetupErr, SetupPlan } from './Onboarding.setup.model';
+import { passkeysAvailable } from '../../lib/zerodev';
 import type { ProfileSetup } from './Onboarding.profile.model';
 
 export type Choice =
@@ -20,16 +21,22 @@ export interface SetupRunner {
   busy: boolean;
   stage: Stage;
   setupErr: SetupErr | null;
-  withHistory: boolean;
-  withProfile: boolean;
+  plan: SetupPlan;
   run: (choice: Choice, withPasskey: boolean) => void;
-  retryMessaging: (accountId: string) => void;
+  resume: (accountId: string, retry: 'messaging' | 'passkey') => void;
+  startOver: () => void;
   skipHistory: () => void;
   reset: () => void;
 }
 
 function choiceSyncsHistory(choice: Choice): boolean {
   return choice.kind !== 'create';
+}
+
+function errorFrom(e: unknown): SetupErr {
+  if (e instanceof PasskeySetupError) return { message: e.message, accountId: e.accountId, retry: 'passkey' };
+  if (e instanceof XmtpSetupError) return { message: e.message, accountId: e.accountId, retry: 'messaging' };
+  return { message: describe(e), retry: 'restart' };
 }
 
 async function runChoice(choice: Choice, withPasskey: boolean, onStage: (s: Stage) => void): Promise<SetupWarning> {
@@ -46,8 +53,7 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
   const [busy, setBusy] = useState(false);
   const [stage, setStage] = useState<Stage>('wallet');
   const [setupErr, setSetupErr] = useState<SetupErr | null>(null);
-  const [withHistory, setWithHistory] = useState(false);
-  const [withProfile, setWithProfile] = useState(false);
+  const [plan, setPlan] = useState<SetupPlan>({});
   const skipped = useRef(false);
 
   const begin = (first: Stage): void => {
@@ -80,8 +86,7 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
   const run = (choice: Choice, withPasskey: boolean): void => {
     if (busy) return;
     const syncHistory = choiceSyncsHistory(choice);
-    setWithHistory(syncHistory);
-    setWithProfile(choice.kind === 'create' && choice.profile !== undefined);
+    setPlan({ passkey: withPasskey && passkeysAvailable(), profile: choice.kind === 'create' && choice.profile !== undefined, history: syncHistory });
     begin('wallet');
     void (async (): Promise<void> => {
       try {
@@ -89,24 +94,30 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
         await tail(syncHistory, warning);
       } catch (e) {
         setBusy(false);
-        if (e instanceof XmtpSetupError) setSetupErr({ message: e.message, accountId: e.accountId });
-        else setSetupErr({ message: describe(e) });
+        setSetupErr(errorFrom(e));
       }
     })();
   };
 
-  const retryMessaging = (accountId: string): void => {
+  const resume = (accountId: string, retry: 'messaging' | 'passkey'): void => {
     if (busy) return;
-    begin('messaging');
+    begin(retry);
     void (async (): Promise<void> => {
       try {
-        await bringMessagingOnline(accountId, setStage);
-        await tail(withHistory, null);
+        if (retry === 'passkey') await resumeWithPasskey(accountId, setStage);
+        else await bringMessagingOnline(accountId, setStage);
+        await tail(plan.history === true, null);
       } catch (e) {
         setBusy(false);
-        setSetupErr({ message: describe(e), accountId });
+        setSetupErr(errorFrom(e));
       }
     })();
+  };
+
+  const startOver = (): void => {
+    const accountId = setupErr?.accountId;
+    if (accountId !== undefined) void abandonAccount(accountId).catch(() => undefined);
+    reset();
   };
 
   const skipHistory = (): void => {
@@ -122,5 +133,5 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
     holdOnboarding(false);
   };
 
-  return { busy, stage, setupErr, withHistory, withProfile, run, retryMessaging, skipHistory, reset };
+  return { busy, stage, setupErr, plan, run, resume, startOver, skipHistory, reset };
 }

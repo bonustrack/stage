@@ -29,8 +29,8 @@ const STATIC_STATUS: Partial<Record<ClaimPhase, string>> = {
 };
 
 const NAME_STATUS: Partial<Record<ClaimPhase, (name: string) => string>> = {
-  available: (name) => `${name} is available.`,
-  unavailable: (name) => `${name} is already taken.`,
+  available: () => 'Available',
+  unavailable: () => 'Already taken',
   claimed: (name) => `${name} is yours. It can take a minute to show everywhere.`,
 };
 
@@ -41,6 +41,12 @@ export function claimStatusText(state: ClaimState): string {
   if (named !== undefined) return named(stageNameOf(state.label));
   if (state.phase === 'invalid') return state.detail ?? 'That name is not allowed.';
   return `Could not claim the name: ${state.detail ?? 'unknown error'}`;
+}
+
+export function claimStatusTone(state: ClaimState): 'success' | 'danger' | 'secondary' {
+  if (state.phase === 'available' || state.phase === 'claimed') return 'success';
+  if (state.phase === 'unavailable' || state.phase === 'invalid' || state.phase === 'failed') return 'danger';
+  return 'secondary';
 }
 
 export function canClaim(state: ClaimState): boolean {
