@@ -43,7 +43,8 @@ describe('A2. callers install the passkey BEFORE messaging (passkey signs the in
     expect(finish).toBeGreaterThanOrEqual(0);
     expect(secure).toBeGreaterThan(finish);
     expect(msg).toBeGreaterThan(secure);
-    expect(onboardSrc).toContain('withPasskey && passkeysAvailable()');
+    expect(onboardSrc).toContain('(withPasskey || required) && passkeysAvailable()');
+    expect(onboardSrc).toContain("kernelCustody(rec.address as `0x${string}`)) === 'passkey-root'");
     expect(onboardSrc).toContain('finishAccount(await createSmartAccount(), withPasskey, onStage)');
     expect(onboardSrc).toContain('finishAccount(record, withPasskey, onStage)');
   });
@@ -106,8 +107,12 @@ describe('C. enablePasskey.ts — deploy-via-ECDSA-initcode then swap sudo on-ch
     expect(swapCall).toBeGreaterThan(prePersist);
     expect(enableSrc).toContain('if (rec.passkey) return { stored: rec.passkey }');
   });
-  test('repairs an undeployed record that already carries a passkey (old broken shortcut)', () => {
-    expect(enableSrc).toContain('if (rec.passkey && deployed) return { ok: false, reason: \'already\' }');
+  test('decides from the onchain root: an existing passkey is linked, never replaced by a new one', () => {
+    expect(enableSrc).toContain("custody = await kernelCustody(address)");
+    expect(enableSrc).toContain("if (custody === 'passkey-root')");
+    expect(enableSrc).toContain('if (storedPasskeyMatches(rec, key)) return { ok: false, reason: \'already\' }');
+    expect(enableSrc).toContain('await dropMismatchedPasskey(rec, key);\n    return linkInsteadOfMinting(rec);');
+    expect(enableSrc.indexOf("custody === 'passkey-root'")).toBeLessThan(enableSrc.indexOf('resolveCredential(rec)'));
   });
 });
 

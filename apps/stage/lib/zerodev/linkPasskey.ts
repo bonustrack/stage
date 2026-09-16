@@ -5,6 +5,8 @@ import {
 } from '@stage-labs/client/zerodev/passkeyLink';
 import type { AccountRecord } from '../accounts';
 import { updateSmartAccount } from '../accounts';
+import { getValidatorAddress } from '@zerodev/ecdsa-validator';
+import { ENTRY_POINT, KERNEL_VERSION } from '@stage-labs/client/zerodev/account';
 import { makePublicClient } from './client';
 import { zerodevConfigured, zerodevRpId } from './env';
 import { linkExistingPasskey, passkeysAvailable } from './passkeys';
@@ -26,6 +28,18 @@ export async function accountPasskey(address: Hex): Promise<PasskeyPublicKey | n
   } catch {
     return null;
   }
+}
+
+export type KernelCustody = 'undeployed' | 'ecdsa-root' | 'passkey-root' | 'other-root';
+
+export async function kernelCustody(address: Hex): Promise<KernelCustody> {
+  const publicClient = makePublicClient();
+  const code = await publicClient.getCode({ address });
+  if (!code || code === '0x') return 'undeployed';
+  const rootId = await publicClient.readContract({ address, abi: KERNEL_ROOT_VALIDATOR_ABI, functionName: 'rootValidator' });
+  const root = validatorAddressOf(rootId).toLowerCase();
+  if (root === getValidatorAddress(ENTRY_POINT, KERNEL_VERSION).toLowerCase()) return 'ecdsa-root';
+  return (await accountPasskey(address)) === null ? 'other-root' : 'passkey-root';
 }
 
 export function storedPasskeyMatches(rec: AccountRecord, key: PasskeyPublicKey | null): boolean {

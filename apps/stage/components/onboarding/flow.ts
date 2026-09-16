@@ -1,5 +1,6 @@
 import { errorMessage } from '@stage-labs/client/errors';
 import { createSmartAccount, enablePasskeyForRecord, passkeysAvailable, restoreSmartAccount } from '../../lib/zerodev';
+import { kernelCustody } from '../../lib/zerodev/linkPasskey';
 import { adoptPhrase } from '../../lib/accountTransfer';
 import { AccountManager } from '../../modules/messaging';
 import type { Hex } from 'viem';
@@ -52,10 +53,18 @@ async function securePasskey(rec: AccountRecord, onStage?: (s: Stage) => void): 
   throw new PasskeySetupError(rec.id, res.reason === 'cancelled' ? PASSKEY_CANCELLED : res.message ?? PASSKEY_FALLBACK);
 }
 
+const PASSKEY_REQUIRED = 'This wallet is secured by a passkey. Confirm that passkey on this device to continue.';
+
+async function passkeyRequired(rec: AccountRecord): Promise<boolean> {
+  return (await kernelCustody(rec.address as `0x${string}`)) === 'passkey-root';
+}
+
 async function finishAccount(
   rec: AccountRecord, withPasskey: boolean, onStage?: (s: Stage) => void,
 ): Promise<{ id: string; address: string; warning: SetupWarning }> {
-  if (withPasskey && passkeysAvailable()) await securePasskey(rec, onStage);
+  const required = !withPasskey && await passkeyRequired(rec);
+  if (required && !passkeysAvailable()) throw new PasskeySetupError(rec.id, PASSKEY_REQUIRED);
+  if ((withPasskey || required) && passkeysAvailable()) await securePasskey(rec, onStage);
   await bringMessagingOnline(rec.id, onStage);
   return { id: rec.id, address: rec.address, warning: null };
 }

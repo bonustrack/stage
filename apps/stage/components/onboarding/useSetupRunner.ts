@@ -56,6 +56,11 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
   const [plan, setPlan] = useState<SetupPlan>({});
   const skipped = useRef(false);
 
+  const onStage = (s: Stage): void => {
+    setStage(s);
+    if (s === 'passkey') setPlan((p) => (p.passkey === true ? p : { ...p, passkey: true }));
+  };
+
   const begin = (first: Stage): void => {
     skipped.current = false;
     holdOnboarding(true);
@@ -90,7 +95,7 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
     begin('wallet');
     void (async (): Promise<void> => {
       try {
-        const warning = await runChoice(choice, withPasskey, setStage);
+        const warning = await runChoice(choice, withPasskey, onStage);
         await tail(syncHistory, warning);
       } catch (e) {
         setBusy(false);
@@ -104,8 +109,8 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
     begin(retry);
     void (async (): Promise<void> => {
       try {
-        if (retry === 'passkey') await resumeWithPasskey(accountId, setStage);
-        else await bringMessagingOnline(accountId, setStage);
+        if (retry === 'passkey') await resumeWithPasskey(accountId, onStage);
+        else await bringMessagingOnline(accountId, onStage);
         await tail(plan.history === true, null);
       } catch (e) {
         setBusy(false);

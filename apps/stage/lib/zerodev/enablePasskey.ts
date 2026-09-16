@@ -3,20 +3,19 @@ import '../cryptoShim';
 import type { AccountRecord } from '../accounts';
 import { updateSmartAccount } from '../accounts';
 import { smartOwnerSigner, type SmartKeyRef } from './keyring';
-import { kernelDeployedOnChain, makePublicClient, makeKernelClient, swapSudoValidator } from './client';
+import { makePublicClient, makeKernelClient, swapSudoValidator } from './client';
 import {
   createEcdsaKernel,
   passkeyValidatorFromStored,
 } from './account';
 import { passkeysAvailable, registerPasskeyCredential } from './passkeys';
-import { accountPasskey, linkPasskeyForRecord } from './linkPasskey';
+import { accountPasskey, dropMismatchedPasskey, kernelCustody, linkPasskeyForRecord, storedPasskeyMatches } from './linkPasskey';
 import { type StoredPasskey } from './passkeys.model';
 import { zerodevConfigured, zerodevRpId } from './env';
 import { txErrorMessage } from '@stage-labs/client/wallet/txError';
 
 const SWAP_FALLBACK = 'Could not install the passkey on-chain.';
-const SECURED_ELSEWHERE =
-  'This account rejected the signature. It is probably already secured by a passkey on another device.';
+const SECURED_ELSEWHERE = 'This account is secured by a passkey on another device. Use that passkey to continue.';
 
 function swapFailureMessage(e: unknown): string {
   const message = txErrorMessage(e, SWAP_FALLBACK);
@@ -65,15 +64,6 @@ function passkeyPreflight(rec: AccountRecord): EnablePasskeyResult | null {
   return null;
 }
 
-async function securedElsewhere(rec: AccountRecord, deployed: boolean): Promise<boolean> {
-  if (!deployed || rec.passkey) return false;
-  try {
-    return (await accountPasskey(rec.address as `0x${string}`)) !== null;
-  } catch {
-    return false;
-  }
-}
-
 async function linkInsteadOfMinting(rec: AccountRecord): Promise<EnablePasskeyResult> {
   const linked = await linkPasskeyForRecord(rec);
   if (linked.ok) return { ok: true, deployed: true };
@@ -107,11 +97,20 @@ export async function enablePasskeyForRecord(record: AccountRecord): Promise<Ena
   const rec = record as AccountRecord & { hdIndex: number };
 
   const publicClient = makePublicClient();
-
-  const deployed = await kernelDeployedOnChain(rec.address).catch(() => false);
-
-  if (rec.passkey && deployed) return { ok: false, reason: 'already' };
-  if (await securedElsewhere(rec, deployed)) return linkInsteadOfMinting(rec);
+  const address = rec.address as `0x${string}`;
+  let custody: Awaited<ReturnType<typeof kernelCustody>>;
+  try {
+    custody = await kernelCustody(address);
+  } catch (e) {
+    return { ok: false, reason: 'error', message: txErrorMessage(e, 'Could not read the account onchain. Check your connection and try again.') };
+  }
+  if (custody === 'other-root') return { ok: false, reason: 'error', message: 'This account is controlled by another signer, so a passkey cannot be added here.' };
+  if (custody === 'passkey-root') {
+    const key = await accountPasskey(address);
+    if (storedPasskeyMatches(rec, key)) return { ok: false, reason: 'already' };
+    await dropMismatchedPasskey(rec, key);
+    return linkInsteadOfMinting(rec);
+  }
 
   const cred = await resolveCredential(rec);
   if ('result' in cred) return cred.result;
