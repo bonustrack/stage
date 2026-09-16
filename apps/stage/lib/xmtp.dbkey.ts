@@ -1,9 +1,9 @@
 import { bytesToBase64 } from '@stage-labs/client/xmtp/pushServer';
 import { deleteDbFiles } from './xmtp.dbkeyFs';
 import { secureStorage } from '../platform/storage';
-import type { SecureAccessOptions } from '../platform/types';
+import type { DeviceBoundAccessOptions } from '../platform/types';
 
-const STORE_OPTS: SecureAccessOptions = {
+const STORE_OPTS: DeviceBoundAccessOptions = {
   thisDeviceOnly: true,
 };
 

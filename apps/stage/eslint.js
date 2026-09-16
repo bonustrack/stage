@@ -284,6 +284,36 @@ export function reactNative() {
       },
     },
     {
+      files: ['lib/zerodev/keyring.ts', 'lib/xmtp.dbkey.ts'],
+      rules: {
+        'no-restricted-syntax': [
+          'error',
+          {
+            selector:
+              "CallExpression[callee.object.name='secureStorage'][callee.property.name='set']:not([arguments.2.name=/^(STORE_OPTS|SENTINEL_OPTS)$/])",
+            message: 'Secrets are device-bound: every secureStorage.set here must pass STORE_OPTS or SENTINEL_OPTS.',
+          },
+          {
+            selector:
+              "CallExpression[callee.object.name='secureStorage'][callee.property.name='get']:not([arguments.1.name=/^(STORE_OPTS|SENTINEL_OPTS)$/])",
+            message: 'Secrets are device-bound: every secureStorage.get here must pass STORE_OPTS or SENTINEL_OPTS.',
+          },
+        ],
+      },
+    },
+    {
+      files: ['lib/cryptoShim.ts'],
+      rules: {
+        'no-restricted-syntax': [
+          'error',
+          {
+            selector: "MemberExpression[object.name='Math'][property.name='random']",
+            message: 'The crypto shim must never fall back to Math.random; require a CSPRNG or throw.',
+          },
+        ],
+      },
+    },
+    {
       files: ['**/*.js'],
       rules: {
         '@typescript-eslint/no-require-imports': 'off',

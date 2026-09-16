@@ -4,6 +4,8 @@ export interface SecureAccessOptions {
   authenticationPrompt?: string;
 }
 
+export type DeviceBoundAccessOptions = SecureAccessOptions & { thisDeviceOnly: true };
+
 export interface SecureStorage {
   get: (key: string, options?: SecureAccessOptions) => Promise<string | null>;
   set: (key: string, value: string, options?: SecureAccessOptions) => Promise<void>;

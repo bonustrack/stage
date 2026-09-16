@@ -2,7 +2,7 @@
 import '../cryptoShim';
 import { secureStorage } from '../../platform/storage';
 import { migrateLegacyHdIndex, resetSmartHdIndex } from './hdIndexStore';
-import type { SecureAccessOptions } from '../../platform/types';
+import type { DeviceBoundAccessOptions } from '../../platform/types';
 import {
   privateKeyToAccount,
   type PrivateKeyAccount, type HDAccount,
@@ -16,13 +16,13 @@ import {
 } from '@stage-labs/client/accounts/keys';
 
 
-const STORE_OPTS: SecureAccessOptions = {
+const STORE_OPTS: DeviceBoundAccessOptions = {
   thisDeviceOnly: true,
 };
 
 const AUTH_SENTINEL_KEY = 'wallet.authGate';
 
-const SENTINEL_OPTS: SecureAccessOptions = {
+const SENTINEL_OPTS: DeviceBoundAccessOptions = {
   requireAuthentication: true,
   thisDeviceOnly: true,
   authenticationPrompt: 'Verify it is you to reveal this secret',
