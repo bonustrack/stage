@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  BASENAME_REVERSE_REGISTRAR, encodeSetBasenameAvatar, encodeSetPrimaryBasename, encodeSetTextRecords, manageBasenameUrl,
+  BASENAME_REVERSE_REGISTRAR, encodeSetBasenameAvatar, encodeSetPrimaryBasename, encodeSetTextRecords,
 } from '../src/identity/basenameWrite';
 import { BASENAME_L2_RESOLVER } from '../src/identity/onchainProfile';
 
@@ -25,8 +25,4 @@ describe('basename write calls', () => {
     expect(call.data.startsWith('0xc47f0027')).toBe(true);
   });
 
-  test('links to the base.org manager for basenames but not for stage subnames', () => {
-    expect(manageBasenameUrl('shrek.base.eth')).toBe('https://www.base.org/name/shrek');
-    expect(manageBasenameUrl('fabien.stage.base.eth')).toBeNull();
-  });
 });

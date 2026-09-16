@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { BASENAME_CLAIM_URL, manageBasenameUrl } from '@stage-labs/client/identity/basenameWrite';
 import { Box, Col, ScreenScroll } from '../layout';
 
 import { capabilities } from '../../lib/capabilities';
@@ -10,26 +9,14 @@ import { getPeerHandle, getPeerName, getPeerProfileSource, invalidatePeerProfile
 import { shortAddress, useActiveAccountRecord } from '../../modules/messaging';
 import { Avatar } from '../Avatar';
 import { StackHeader } from '../chrome/StackHeader';
-import { SettingsButtonRow, SettingsList, SettingsValueRow } from './rows';
+import { SettingsList, SettingsValueRow } from './rows';
 import { profileView, type ProfileView } from './ProfileSettings.model';
 import { ClaimStageName } from './ProfileSettings.claim';
 import { EditProfileSection } from './ProfileSettings.edit';
 
-function ProfileActions({ view, name, address }: {
-  view: ProfileView; name: string | undefined; address: string;
-}): React.ReactElement {
+function ProfileActions({ address }: { address: string }): React.ReactElement {
   return (
     <SettingsList>
-      {view.manageLabel && name && manageBasenameUrl(name) ? (
-        <SettingsButtonRow label={view.manageLabel} onPress={() => { capabilities.openUrl(manageBasenameUrl(name) ?? ''); }} />
-      ) : null}
-      {view.claimVisible ? (
-        <SettingsButtonRow
-          label="Use a Basename instead"
-          description="Opens base.org. Register with this wallet and pick “Set as primary name”."
-          onPress={() => { capabilities.openUrl(BASENAME_CLAIM_URL); }}
-        />
-      ) : null}
       <SettingsValueRow
         label="Address"
         value={shortAddress(address)}
@@ -73,7 +60,7 @@ function ProfileSections({ address, handle, view, onPreview }: {
         </Box>
       ) : null}
       <Box>
-        <ProfileActions view={view} name={handle} address={address} />
+        <ProfileActions address={address} />
       </Box>
     </>
   );
@@ -95,9 +82,11 @@ export function ProfileSettings(): React.ReactElement {
       <StackHeader title="Profile"/>
       <ScreenScroll contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <ProfileHeader address={address} name={name} handle={handle} preview={preview} />
-        <Box padding={{ x: 16, bottom: 12 }}>
-          <Text value={view.explanation} size="md" color="secondary" />
-        </Box>
+        {view.explanation === '' ? null : (
+          <Box padding={{ x: 16, bottom: 12 }}>
+            <Text value={view.explanation} size="md" color="secondary" />
+          </Box>
+        )}
         {address ? <ProfileSections address={address} handle={handle} view={view} onPreview={setPreview} /> : null}
       </ScreenScroll>
     </Col>

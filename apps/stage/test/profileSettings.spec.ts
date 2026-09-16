@@ -4,10 +4,9 @@ import { profileView } from '../components/settings/ProfileSettings.model';
 const ADDR = '0x00000000000000000000000000000000000000A1';
 
 describe('profileView', () => {
-  test('a Basename can change its picture and be managed on base.org', () => {
+  test('a Basename can change its picture and hides the claim action', () => {
     const view = profileView({ address: ADDR, name: 'shrek.base.eth', source: 'basename' });
     expect(view.canChangePicture).toBe(true);
-    expect(view.manageLabel).toBe('Manage on base.org');
     expect(view.claimVisible).toBe(false);
   });
 
