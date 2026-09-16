@@ -13,7 +13,7 @@
     "./types": "./src/types.ts",
     "./validate": "./src/validate.ts",
     "./errors": "./src/errors.ts",
-    "./profile/snapshot": "./src/profile/snapshot.ts",
+    "./profile/avatar": "./src/profile/avatar.ts",
     "./profile/upload": "./src/profile/upload.ts",
     "./xmtp/humanize": "./src/xmtp/humanize.ts",
     "./xmtp/poll": "./src/xmtp/poll.ts",

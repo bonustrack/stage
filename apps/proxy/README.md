@@ -1,20 +1,39 @@
 # proxy
 
-The link-preview / image / x402 proxy as a **Cloudflare Worker**
-(`proxy.stage.box`), plus the `bundler.stage.box` per-branch manifest proxy.
-Runs entirely on the Workers runtime - no Express, no origin, no laptop
-dependency. Given an http(s) URL it fetches the page at the
-edge, parses OpenGraph / Twitter-card / `<title>` / meta description / favicon,
-and returns a compact JSON card. When the URL answers HTTP 402 with an x402
-payment challenge it surfaces the normalised challenge instead.
+Stage's edge services as one **Cloudflare Worker** on `proxy.stage.box`, plus
+the `bundler.stage.box` per-branch manifest proxy. Runs entirely on the Workers
+runtime - no Express, no origin, no laptop dependency.
+
+- **Link previews:** given an http(s) URL it fetches the page at the edge,
+  parses OpenGraph / Twitter-card / `<title>` / meta description / favicon, and
+  returns a compact JSON card. When the URL answers HTTP 402 with an x402
+  payment challenge it surfaces the normalised challenge instead, and
+  `/x402-settle` settles one.
+- **Image resize:** `/img` fetches and resizes remote images so avatars and
+  previews load cross-origin under the app's COEP policy.
+- **Stage names:** `/names/*` issues free `<label>.stage.base.eth` subnames on
+  Base. The Worker holds the operator key (`NAMES_OPERATOR_KEY`) and a KV of
+  issued labels (`NAMES_KV`); claims are signed by the wallet in the app and
+  labels are validated server-side (`a-z0-9`, single hyphens, none at the
+  ends, 6+ chars).
+- **XMTP relays:** `/xmtp-history/*` forwards to the XMTP message-history
+  server and `/xmtp-push/*` to the Stage push server (`apps/push`), so the web
+  app talks to one origin with the right CORS headers.
 
 ## API
 
 ```
-GET /health                 -> "ok"
-GET /preview?url=<encoded>  -> 200 { url, title, description, image, siteName, favicon }
-                               OR { kind:'x402', endpoint, accepts:[...], raw, ... }
-   400 invalid/blocked url   422 no previewable content   429 rate limited   502 fetch failed
+GET  /health                     -> "ok"
+GET  /preview?url=<encoded>      -> 200 { url, title, description, image, siteName, favicon }
+                                    OR { kind:'x402', endpoint, accepts:[...], raw, ... }
+    400 invalid/blocked url   422 no previewable content   429 rate limited   502 fetch failed
+GET  /img?url=<encoded>&w=<px>   -> resized image
+POST /x402-settle                -> settlement result
+GET  /names/check?label=<label>  -> { valid, available, reason? }
+GET  /names/status?address=<0x>  -> { name | null }
+GET  /names/resolve?label=<l>    -> { address | null }   (registry owner, then the KV record)
+POST /names/claim                -> { label, address, issuedAt, signature } -> the issued name
+*    /xmtp-history/* /xmtp-push/* -> relayed upstream
 ```
 
 Every response carries `x-served-by: worker`.
@@ -56,7 +75,9 @@ bunx wrangler deploy
 ```
 
 `wrangler.toml` binds the Worker to the routes `proxy.stage.box/*` and
-`bundler.stage.box/*` on the `stage.box` zone. Both hostnames are proxied
+`bundler.stage.box/*` on the `stage.box` zone and the `NAMES_KV` namespace;
+`NAMES_OPERATOR_KEY` (and the optional `NAMES_RPC_URL`) are Worker secrets set
+with `wrangler secret put`, never committed. Both hostnames are proxied
 (orange-cloud) DNS records, so the routes intercept at the edge before any
 origin. CI deploys on every push to `main` (`deploy-proxy.yml`).
 

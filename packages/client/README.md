@@ -1,12 +1,12 @@
 # @stage-labs/client
 
-> Framework-agnostic TypeScript core shared by the Stage web and mobile clients.
+> Framework- and runtime-agnostic TypeScript core behind the universal Stage app.
 
 ## Overview
 
 `@stage-labs/client` holds the framework-independent logic behind the universal Stage app ([`apps/stage`](../../apps/stage)). It is pure TypeScript with no React or react-native imports, so the same code runs in a browser, in Hermes, and in Node.
 
-It covers Snapshot profile resolution, XMTP content humanisation and message builders, embed detection, Stamp avatar resolution, wallet formatting and balances, account key derivation, read-only API clients (ENS, Etherscan, OpenSea, CoinGecko), and the shared types that tie it all together.
+It covers the XMTP orchestration cores (content codecs, humanisation, message builders, channel filtering/caching, consent, groups, envelopes), onchain identity (Basenames and `*.stage.base.eth` names, peer profiles, avatar URLs), the smart-account layer (accounts, keys, ZeroDev validator plans, passkey linking, recovery), wallet formatting/balances/tx decoding, read-only API clients (ENS, Etherscan, OpenSea, CoinGecko, GitHub releases), x402 challenges, and the shared types that tie it all together. Boundary data is validated with zod (`validate.ts`); XMTP content is always decoded through a schema.
 
 ## Install
 
@@ -21,34 +21,40 @@ bun install            # from the repo root
 "dependencies": { "@stage-labs/client": "workspace:*" }
 ```
 
-The exports point at `.ts` source, so consumers bundle the TypeScript directly (Vite for web, Metro/Expo for mobile). There is no build step.
+The exports point at `.ts` source, so consumers bundle the TypeScript directly (Metro/Expo for every platform). There is no build step.
 
 ## Usage
 
 Import from the granular subpath exports so bundlers tree-shake what you do not use:
 
 ```ts
-import { humanize } from '@stage-labs/client/xmtp/humanize';
-import { resolveStamp } from '@stage-labs/client/stamp/resolve';
+import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
+import { avatarRenderUrl } from '@stage-labs/client/profile/avatar';
 import { detectEmbed } from '@stage-labs/client/embed/detect';
-import type { Message } from '@stage-labs/client/types';
+import type { HistoryEntry } from '@stage-labs/client/types';
 ```
 
-The package root (`@stage-labs/client`) re-exports everything.
+The package root (`@stage-labs/client`) re-exports everything except `zerodev/*`, which is deliberately subpath-only.
 
 ## Project structure
 
 ```
 src/
-  xmtp/        # humanize, message builders, codecs, line parsing, inbox cache
-  profile/     # Snapshot profile resolution
-  identity/    # address/name formatting, peer profile lookups
-  wallet/      # formatting, token assets, balances
-  accounts/    # account key derivation + registry
-  api/         # read-only clients: ens, etherscan, opensea, coingecko
+  xmtp/        # codecs, humanize, builders, line routing, channelsFilter/channelsCache, summarizeRow,
+               # consent, groups, envelope, clientErrors, polls, signatures, tx requests, read state, push server
+  identity/    # Basenames + stage names (read/write), onchain profiles, peer profile lookups, formatting
+  profile/     # avatar URL helper (stamp + IPFS gateway) and picture upload parsing
+  accounts/    # account records, key storage constants, HD index, device transfer
+  zerodev/     # Kernel smart accounts: derive, validator plan, passkey link, recovery (subpath-only)
+  wallet/      # formatting, assets, balances, prices, send, tx decode/simulate/error
+  api/         # read-only clients: ens, etherscan, opensea, coingecko, github releases
+  routing/     # deep links and handle parsing
   embed/       # link/embed detection
   stamp/       # stamp.fyi avatar resolution
-  stage/       # Stage SDK client + interfaces
+  image/       # EXIF/metadata stripping before upload
+  text/        # markdown helpers
+  x402/        # x402 payment challenge parsing
+  validate.ts  # parseOrThrow / parseOrNull zod boundary helpers
   types.ts     # shared domain types
   index.ts     # root barrel
 ```
@@ -58,9 +64,11 @@ src/
 | Script              | Description                  |
 | ------------------- | --------------------------- |
 | `bun run typecheck` | Type-check without emitting. |
-| `bun run lint`      | Lint `src/`.                |
+| `bun run test`      | Run the unit tests.          |
+
+Linting is centralised at the repo root (`bun run lint`).
 
 ## Links
 
 - Consumed by [`apps/stage`](../../apps/stage)
-- Design tokens live in [`@stage-labs/kit`](../kit)
+- Design system: [`@stage-labs/kit`](../kit)

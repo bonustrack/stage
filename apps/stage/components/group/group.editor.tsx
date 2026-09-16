@@ -7,7 +7,7 @@ import { fontSize } from '@stage-labs/kit/tokens';
 import { Box, Row } from '../layout';
 import { FormField } from '../FormField';
 import { Spinner } from '../Spinner';
-import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
+import { avatarRenderUrl } from '@stage-labs/client/profile/avatar';
 import { channelStampSeed, stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { usePalette } from '../../lib/theme';
 

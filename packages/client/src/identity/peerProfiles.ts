@@ -1,5 +1,5 @@
 
-import { STAMP_URL } from '../profile/snapshot';
+import { STAMP_URL } from '../profile/avatar';
 import type { OnchainProfile, OnchainProfileSource } from './onchainProfile';
 
 export interface PeerProfile {

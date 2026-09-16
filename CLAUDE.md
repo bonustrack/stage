@@ -1,21 +1,22 @@
 # Stage — monorepo guide for Claude
 
-Stage is an XMTP messenger with multi-account support, Snapshot profiles, group channels, and an onchain wallet (assets, balances, transfers). The product bet is a privacy super app where **agents are contacts**.
+Stage is a private, encrypted XMTP messenger with multi-account support, group channels, free onchain names and avatars (`*.stage.base.eth` on Base, read like Basenames), and a ZeroDev smart-account wallet on Base (assets, balances, transfers, passkeys, social recovery). The product bet is a privacy super app where **agents are contacts**.
 
-It ships **one universal Expo app** (`apps/stage`) serving **android, ios, web and desktop** from the same React Native codebase (web via react-native-web), built on a framework-agnostic TS core (`packages/client`), a design-system kit (`packages/kit`), and a Cloudflare Worker (`apps/proxy`). Tooling: **Bun 1.3.9** (exact) + Turbo, **Node >=22**.
+It ships **one universal Expo app** (`apps/stage`) serving **android, ios, web and desktop** from the same React Native codebase (web via react-native-web), built on a framework-agnostic TS core (`packages/client`), a design-system kit (`packages/kit`), a Cloudflare Worker (`apps/proxy`) and the XMTP push server (`apps/push`). Tooling: **Bun 1.3.9** (exact, the only package manager — no npm/npx, no package-lock.json) + Turbo, **Node >=22**.
 
 ## Repo layout
 
 | Path | Package | What it is |
 |---|---|---|
-| `apps/stage` | `stage` | THE app: Expo + React Native 0.81 (new arch), expo-router, all three platforms. Classic RN structure: `app/` (file routes ONLY — every file under it is a route, so helpers live in `components/`), `components/` (kit-JSX screens + colocated `*.model.ts` pure models, one folder per screen family: `bubble/`, `composer/`, `home/`, `conversation/`, `group/`, `wallet/`, `onboarding/`, `settings/`), `lib/` (state + SDK orchestration), `platform/` (the only per-platform code, via Metro `.native.ts`/`.web.ts` resolution), `test/` (pure-model tests). |
-| `packages/client` | `@stage-labs/client` | Framework- AND runtime-agnostic TS core. XMTP content/codecs/cores, accounts/zerodev, wallet, read-only APIs, profile/identity. No React/RN imports, no build step. |
-| `packages/kit` | `@stage-labs/kit` | Design system: tokens, theme, icons, layout, and ONE React Native component family (renders on web via RNW). Plain component library — no renderer, no build step. |
+| `apps/stage` | `stage` | THE app: Expo + React Native 0.81 (new arch), expo-router, all three platforms. Classic RN structure: `app/` (file routes ONLY — every file under it is a route, so helpers live in `components/`), `components/` (kit-JSX screens + colocated `*.model.ts` pure models, one folder per screen family: `bubble/`, `composer/`, `home/`, `conversation/`, `group/`, `wallet/`, `onboarding/`, `settings/`), `lib/` (state + SDK orchestration; the XMTP seams live here as `xmtp.*.ts` / `.web.ts` / `.core.ts`), `modules/` (`messaging/` facade barrel + the `stage-pill` Android module), `platform/` (storage seams via Metro `.ts`/`.web.ts` resolution), `test/` (pure-model tests). |
+| `packages/client` | `@stage-labs/client` | Framework- AND runtime-agnostic TS core. XMTP content/codecs/cores, accounts/zerodev, wallet, read-only APIs, identity (Basenames + stage names), avatar URLs. No React/RN imports, no build step. |
+| `packages/kit` | `@stage-labs/kit` | Design system: tokens, theme, icons, layout, and ONE React Native component family (renders on web via RNW). Plain component library — no renderer, no build step. Published to npm (`publish-kit.yml`) and consumed by other codebases: never delete components, tokens or style setup because the app stopped using them, and keep the in-app gallery (Settings → Experimental → `components/system/Kit*`) reachable. |
 | `packages/config` | `@stage-labs/config` | Publishable ESLint/TS/knip/madge presets + the `stage` CLI (`bin/stage.js`) driven by root `stage.config.js`. |
-| `apps/proxy` | — | Cloudflare Worker: link-preview / image-resize / x402 proxy + the bundler.stage.box per-branch manifest proxy. Routes on proxy.stage.box and bundler.stage.box only. |
+| `apps/proxy` | — | Cloudflare Worker on proxy.stage.box: link previews, `/img` resize, x402 challenge + settle, the `/names/*` stage-names service (operator key + KV, server-side label validation), `/xmtp-history/*` and `/xmtp-push/*` relays, plus the bundler.stage.box per-branch manifest proxy. Deployed by `deploy-proxy.yml`. |
+| `apps/push` | — | XMTP's reference notification server built from a pinned upstream commit, deployed to Fly as `stage-push` (`deploy-push-server.yml`). Not a Bun workspace — Dockerfile + fly.toml only; see its README. |
 | `apps/stage/desktop` | `stage-desktop` | The Electron shell for macOS, Linux and Windows — a nested workspace inside the app (like `modules/stage-pill` is the Android shell), kept as its own package only because electron-builder reads the package.json it packs. Bundles the `expo export --platform web` output (`scripts/export-ui.mjs` -> `web/`, prod variant, rpId stage.box) and serves it from the privileged `stage-app://stage.box` scheme with the same COOP/COEP headers as Netlify, so it works with stage.box down. Adds the native window, menus, `stage://` deep links and macOS camera/mic prompts. `STAGE_DESKTOP_URL=http://localhost:8080` points it at a Metro dev server instead. Self-updates via electron-updater from the GitHub Release `v<version>`; `release-desktop.yml` builds the installers on the same `app.config.js` version bump as the mobile release (see `docs/desktop-release.md`). |
 
-There is no separate web app: the Vue client (`apps/ui`) and the kit Vue renderer family were removed when `apps/stage` became universal. **The parity invariant is retired** — a screen exists once. The JSON widget dialect (`KitRenderer`/`ViewHost`, `WidgetNode`, node registry) is also retired — all UI, including chat message content, is direct kit JSX.
+There is no separate web app: the Vue client (`apps/ui`) and the kit Vue renderer family were removed when `apps/stage` became universal. **The parity invariant is retired** — a screen exists once. The JSON widget dialect (`KitRenderer`/`ViewHost`, `WidgetNode`, node registry) is also retired — all UI, including chat message content, is direct kit JSX. Railgun / shielded transfers and the embedded Node host were removed in Sept 2026 — the wallet is public-only; do not reintroduce them.
 
 ## Commands
 
@@ -55,7 +56,8 @@ Per-app:
 
 ### Shared core (`packages/client`)
 - No build step; subpath exports + `src/index.ts` barrel are the public API (`zerodev/*` deliberately not in the barrel). Pure functions + plain interfaces, no classes/default exports. Boundary validation via `validate.ts` (zod). Always decode XMTP content WITH a zod schema (`decodeJsonContent(bytes, schema)`).
-- Domains: `xmtp` (codecs, humanize, builders, line routing, and the orchestration cores: `channelsFilter`, `channelsCache` incl. `applyInbound`, `summarizeRow`, `clientErrors`, `envelope`, `groups`), `accounts`+`zerodev`, `wallet` (incl. `txSimulate`, `txDecode`, `prices`), `api` (incl. `github`), `profile/identity/stamp/embed`, `x402`.
+- Domains: `xmtp` (codecs, humanize, builders, line routing, consent, and the orchestration cores: `channelsFilter`, `channelsCache` incl. `applyInbound`, `summarizeRow`, `clientErrors`, `envelope`, `groups`), `accounts`+`zerodev` (validator plans, passkey linking, recovery), `wallet` (incl. `txSimulate`, `txDecode`, `prices`), `api` (incl. `github` releases for the landing downloads), `identity` (Basenames + `stageNames` read/write, `onchainProfile`, `peerProfiles`), `profile/avatar` (stamp + IPFS avatar URLs), `stamp/embed/routing/image/text`, `x402`.
+- Names and avatars come from Base only (Basenames or `*.stage.base.eth` issued by the proxy; issued names may lack a forward `addr` record, so resolution accepts registry ownership and falls back to `/names/resolve`). Mainnet ENS is not consulted. Usernames are `a-z0-9` with single inner hyphens, 6+ chars, validated in the client AND in the Worker.
 
 ### Kit (`packages/kit`)
 - **Kit is the React Native equivalent of [OpenAI ChatKit](https://openai.github.io/chatkit-js/)** — ChatKit is the north star for components, props, theme options, and every colour/typography/radius/density variable. Mirror ChatKit's names and literal unions exactly; the DOM-vs-RN platform difference is the only thing that should diverge. Never invent a component or a token value: if something is missing, match what ChatKit calls it, and never write a raw literal where a token exists (`FONT_SIZE.*`, `fontName.*`, `semanticColors`, `RADIUS_SCALE`). The full `ThemeOption` surface is 1:1 (`colorScheme`/`radius`/`density`/`typography.baseSize`/`color.surface`/`color.accent {primary,level}`/`color.grayscale {hue,tint,shade}`) and every ChatKit widget node exists. OpenAI does not publish ChatKit's colour maths, so `theme-derive.ts` implements the documented semantics itself — defaults are lossless and guarded by tests. See `packages/kit/README.md` for the parity table.
@@ -64,10 +66,12 @@ Per-app:
 
 ## Conventions
 
-- **Commits:** Conventional Commits `type(scope): subject (#NNN)`, lowercase imperative. Trailer required: `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>`. Commit/push only when asked; branch first if on `main`.
+- **Commits:** Conventional Commits `type(scope): subject (#NNN)`, lowercase imperative. Trailer required: `Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>`. Commit/push only when asked; branch first if on `main`.
 - **NO COMMENTS IN CODE** — `comments/no-comments` bans non-directive comments across `.ts/.tsx/.js` including config files AND test files (the built config spreads COMMENT_RULES into the test block). Express intent in names/types. Markdown is exempt.
 - **No TS escape hatches:** no-explicit-any, no-non-null-assertion, ban-ts-comment are errors; `noUncheckedIndexedAccess` is on — null-guard, never assert.
 - **Single quotes**; max 400 lines/file, 100 lines/function, cyclomatic complexity <= 10.
+- **Forms:** every text input except the message composer goes through `components/FormField` (filled with the border colour, no border, radius 4, label inside above the value). Never style a kit `Input` inline in a screen.
+- **Security invariants:** the keyring (`lib/zerodev/keyring.ts`) is the only importer of private-key/mnemonic primitives (`stage/no-keyring-bypass`), every `secureStorage` get/set in the keyring and `xmtp.dbkey.ts` passes a `DeviceBoundAccessOptions` const, and `lib/cryptoShim.ts` never touches `Math.random` — all lint rules in `apps/stage/eslint.js`. Never print operator or private keys; secrets reach CI only as GitHub secrets and the Worker only via `wrangler secret`.
 - **Kit-only UI:** build screens from kit primitives in JSX fed by colocated `*.model.ts` models, not raw RN style objects; `usePalette`/`useEffectiveColorScheme` for the few native-styled shells.
 - **No circular deps** (madge) and **no unused files/deps/exports** (knip). New workspace => `stage.config.js` entry + `madge.roots`.
 - Invariants about source shape (which module may import a secret primitive, that every secure write is device-bound, no `Math.random` in the crypto shim) are ESLint rules in `apps/stage/eslint.js`, never tests that `readFileSync` a source file and `toContain` a line — those break on every refactor and catch nothing.
@@ -80,10 +84,10 @@ Per-app:
 
 - **Netlify base must point at `apps/stage`** (set in Netlify UI); `netlify.toml` builds `bun run build:web` and publishes `dist`. Headers: COOP same-origin + **COEP credentialless** (deliberate — keeps SharedArrayBuffer for XMTP wasm while cross-origin avatars/IPFS load). Don't change to require-corp.
 - Native module changes (e.g. `modules/stage-pill`) need a fresh dev-client build; a JS reload is not enough.
-- **Mobile releases are version-driven** (the `version` in `apps/stage/app.config.js` triggers `release-mobile.yml`: EAS Build + EAS Submit for Play and TestFlight, see `docs/mobile-release.md`). EAS free tier has a monthly build cap. Every push to every branch publishes a JS-OTA dev-client preview (`pr-preview.yml`; the "Preview" commit status carries the deep link).
+- **Mobile releases are version-driven** (the `version` in `apps/stage/app.config.js` triggers `release-mobile.yml`: EAS Build + EAS Submit for Play and TestFlight, see `docs/mobile-release.md`). Account identifiers are injected at build time, never committed to `eas.json`. EAS free tier has a monthly build cap. Every push to every branch publishes a JS-OTA dev-client preview (`pr-preview.yml`; the "Preview" commit status carries the deep link).
 - **`served-main`** must stay content-identical to `main` (drift allowlist deliberately empty).
 - `@stage-labs/config` publishes via `publish-config.yml` under the `beta` dist-tag; bump its version first. Its Vue lint preset remains for external consumers behind optional peers (`eslint-plugin-vue`/`vue-eslint-parser` are knip-ignored).
-- The 3 passkey tests hit live Base RPC and can time out in sandboxes; they pass in CI.
+- The passkey tests that build a validator (`passkeyCallbackContract`, `passkeyKernelDerivation`) hit live Base RPC and can time out in sandboxes; they pass in CI.
 - Button taxonomy: `color` x `solid/soft/outline/ghost` only. The legacy `primary/secondary/danger` variant union is gone entirely (it died with the JSON widget boundary) — don't reintroduce it.
 - `theme.ts` setters call the persist helper; don't mutate display state directly.
 
@@ -94,9 +98,12 @@ Per-app:
 | `stage.config.js` + `packages/config/bin/stage.js` | THE central tooling config + CLI |
 | `apps/stage/app.config.js` + `eas.json` | Expo config (variants, web output single, plugins/permissions) + EAS profiles |
 | `apps/stage/metro.config.js` | node-core polyfills, web native-stubs, monorepo resolution, desktop-shell blockList |
-| `apps/stage/platform/*` | the platform seams (storage contracts + impls) |
-| `apps/stage/lib/xmtp.*.web.ts` | the web XMTP adapter family |
-| `apps/stage/components/*` | kit-JSX screens/UI + colocated `*.model.ts` pure models |
+| `apps/stage/platform/*` | the storage seams (contracts + impls) |
+| `apps/stage/lib/xmtp.*.ts` / `.web.ts` / `.core.ts` | the XMTP seam family; `modules/messaging/index.ts` is the facade components import |
+| `apps/stage/lib/zerodev/*` | keyring (multi-phrase), account create/restore, kernel client, passkey enable/link/disable, recovery |
+| `apps/stage/components/*` | kit-JSX screens/UI + colocated `*.model.ts` pure models, one folder per family (`bubble/`, `composer/`, `home/`, `conversation/`, `group/`, `wallet/`, `onboarding/`, `settings/`) |
+| `apps/stage/components/FormField.tsx` | THE text input wrapper |
+| `apps/stage/eslint.js` | app lint preset incl. the keyring / device-bound storage / CSPRNG rules and the facade import restriction |
 | `apps/stage/components/chrome/*` | shared JSX screen chrome (headers, empty state) |
 | `apps/stage/lib/capabilities.ts` | platform-effects contract (navigate/copy/toast/share/...) |
 | `apps/stage/app/_layout.tsx` | root providers, polyfill order, font patch |
@@ -107,4 +114,5 @@ Per-app:
 | `packages/client/src/validate.ts` | parseOrThrow/parseOrNull boundary helpers |
 | `netlify.toml` | universal web deploy + COOP/COEP headers |
 | `.github/workflows/_ci.yml` | the 6 gates |
-| `README.md` | monorepo layout, commands, CI gate order |
+| `docs/legacy-identifiers.md` | the frozen pre-rename identifiers that must keep their old string |
+| `README.md` | monorepo layout, commands, env vars, releases, CI gate order |

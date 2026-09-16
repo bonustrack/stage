@@ -11,7 +11,7 @@ import { OverlayHeader } from '../../components/chrome/OverlayHeader';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { cachedSelfEthAddress, selfEthAddress, lineOfConv } from '../../modules/messaging';
-import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
+import { avatarRenderUrl } from '@stage-labs/client/profile/avatar';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { ImageViewer } from '../../components/ImageViewer';
 import { AddMemberModal, OverflowModal } from '../../components/group/group.parts';

@@ -1,6 +1,6 @@
 
 export * from './types';
-export * from './profile/snapshot';
+export * from './profile/avatar';
 export * from './profile/upload';
 export * from './xmtp/humanize';
 export * from './xmtp/poll';

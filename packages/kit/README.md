@@ -85,7 +85,9 @@ src/
 | Script              | Description                  |
 | ------------------- | --------------------------- |
 | `bun run typecheck` | Type-check without emitting. |
-| `bun run lint`      | Lint `src/`.                |
+| `bun run test`      | Run the unit + snapshot tests (`test/*.spec.ts`). |
+
+Linting is centralised at the repo root (`bun run lint`). The package is published to npm by `publish-kit.yml`; other codebases consume it, so components, tokens and style setup are never removed because the app stopped using them.
 
 ## Links
 
