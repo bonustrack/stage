@@ -1,7 +1,8 @@
 
 import { createValueStore } from './persistedStore';
 import { resolveDmConvId } from './dmResolve';
-import { lineOfConv, xmtpSendText } from './xmtp';
+import { lineOfConv } from './xmtp.types';
+import { xmtpSendText } from './xmtp.messages';
 import {
   addressesWithQueued, deserializeOutbox, itemsForAddress, withoutItem, type OutboxItem,
 } from './dmOutbox.model';

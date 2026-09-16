@@ -5,7 +5,7 @@ import {
   type CachedRow,
 } from './channelsCache';
 import { usePeerProfiles, getPeerName } from './peerProfiles';
-import { shortAddress } from './xmtp';
+import { shortAddress } from './xmtp.types';
 
 import type { Contact } from './useAllContacts';
 

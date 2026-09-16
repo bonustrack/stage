@@ -1,6 +1,6 @@
 
 import { flushDmOutbox } from '../../lib/dmOutbox';
-import { subscribeAllMessages } from '../../lib/xmtp';
+import { subscribeAllMessages } from '../../lib/xmtp.stream';
 import type { StreamMsg } from '../../lib/xmtp.types';
 import { invalidateConvMeta } from './queries';
 import { startReadSync } from '../../lib/readSync';

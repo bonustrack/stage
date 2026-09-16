@@ -1,7 +1,7 @@
 
 import {
   dmUnreachableReason, findExistingDmWithAddress, openDmWithAddress, repairDmMembership,
-} from './xmtp';
+} from './xmtp.conv';
 
 export type DmResolveError = 'unregistered' | 'stale-installations' | 'failed';
 

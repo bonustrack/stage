@@ -1,8 +1,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import type { Client } from '@xmtp/react-native-sdk';
-import type { XmtpEnv } from '../../lib/xmtp';
-import { switchToAccount } from '../../lib/xmtp';
+import type { XmtpEnv } from '../../lib/xmtp.types';
+import { switchToAccount } from '../../lib/xmtp.client';
 import { getActiveAccount, type AccountRecord } from '../../lib/accounts';
 import { bumpAccountEpoch, useAccountEpoch } from '../../lib/accountEpoch';
 

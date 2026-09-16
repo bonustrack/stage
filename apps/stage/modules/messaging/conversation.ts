@@ -1,9 +1,7 @@
 
 import type { Conversation } from '@xmtp/react-native-sdk';
-import {
-  peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
-  getLastReadNs, getMarkedUnread,
-} from '../../lib/xmtp';
+import { peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap } from '../../lib/xmtp.identity';
+import { getLastReadNs, getMarkedUnread } from '../../lib/xmtp.client';
 import { groupNameImage } from '../../lib/xmtp.groups';
 import { rowMessagesOf } from '../../lib/xmtp.messages';
 import { labelsOfSyncedGroup } from '../../lib/xmtp.labels';

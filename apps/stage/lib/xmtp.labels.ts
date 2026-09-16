@@ -4,7 +4,7 @@ import {
   parseBlob, readLabels, labelsOfSyncedGroup, addLabel, removeLabel, writeLabels,
   type Group,
 } from '@stage-labs/client/xmtp/labels';
-import { convOfLine } from './xmtp';
+import { convOfLine } from './xmtp.client';
 
 export {
   MAX_LABELS, MAX_LABEL_LEN, LabelPermissionError, asGroup,
