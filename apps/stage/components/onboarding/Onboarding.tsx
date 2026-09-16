@@ -1,3 +1,4 @@
+import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { Col } from '../layout';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
@@ -6,6 +7,7 @@ import { SetupStep } from './Onboarding.setup';
 import { ImportStep } from './Onboarding.import';
 import { ProfileStep } from './Onboarding.profile';
 import { useOnboardingFlow } from './useOnboardingFlow';
+import { safeNextRoute } from './nextRoute.model';
 
 export interface OnboardingProps {
   onDone: () => void;
@@ -36,4 +38,9 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
       ) : null}
     </Col>
   );
+}
+
+export function OnboardingPage(): React.ReactElement {
+  const { next } = useLocalSearchParams<{ next?: string }>();
+  return <Onboarding onDone={() => { router.replace(safeNextRoute(next)); }} />;
 }

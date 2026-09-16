@@ -29,10 +29,6 @@ export interface SetupRunner {
   reset: () => void;
 }
 
-function choiceSyncsHistory(choice: Choice): boolean {
-  return choice.kind !== 'create';
-}
-
 function errorFrom(e: unknown): SetupErr {
   if (e instanceof PasskeySetupError) return { message: e.message, accountId: e.accountId, retry: 'passkey' };
   if (e instanceof XmtpSetupError) return { message: e.message, accountId: e.accountId, retry: 'messaging' };
@@ -90,18 +86,18 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
 
   const run = (choice: Choice, withPasskey: boolean): void => {
     if (busy) return;
-    const syncHistory = choiceSyncsHistory(choice);
+    const restore = choice.kind !== 'create';
     setPlan({
-      restore: choice.kind !== 'create',
+      restore,
       passkey: withPasskey && passkeysAvailable(),
       profile: choice.kind === 'create' && choice.profile !== undefined,
-      history: syncHistory,
+      history: restore,
     });
     begin('wallet');
     void (async (): Promise<void> => {
       try {
         const warning = await runChoice(choice, withPasskey, onStage);
-        await tail(syncHistory, warning);
+        await tail(restore, warning);
       } catch (e) {
         setBusy(false);
         setSetupErr(errorFrom(e));

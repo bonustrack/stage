@@ -10,7 +10,7 @@ import { useSafeAreaInsets } from '../../lib/safeArea';
 import { capabilities } from '../../lib/capabilities';
 import { inBrowser } from '../../lib/desktopShell';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { StageLogo } from '../onboarding/StageLogo';
+import { StageLogo } from './StageLogo';
 import { IMPORT_ROUTE, SIGNUP_ROUTE } from '../onboarding/nextRoute.model';
 import { RELEASES_REPO, downloadLinks, type DownloadLink } from './Landing.model';
 
