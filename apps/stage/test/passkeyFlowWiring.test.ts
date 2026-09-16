@@ -108,7 +108,7 @@ describe('C. enablePasskey.ts — deploy-via-ECDSA-initcode then swap sudo on-ch
     expect(enableSrc).toContain('if (rec.passkey) return { stored: rec.passkey }');
   });
   test('decides from the onchain root: an existing passkey is linked, never replaced by a new one', () => {
-    expect(enableSrc).toContain("custody = await kernelCustody(address)");
+    expect(enableSrc).toContain('custody = await kernelCustody(address)');
     expect(enableSrc).toContain("if (custody === 'passkey-root')");
     expect(enableSrc).toContain('if (storedPasskeyMatches(rec, key)) return { ok: false, reason: \'already\' }');
     expect(enableSrc).toContain('await dropMismatchedPasskey(rec, key);\n    return linkInsteadOfMinting(rec);');
