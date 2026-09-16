@@ -24,7 +24,7 @@ export function OverlayHeader({ onBack, backColor, safeTop, trailing }: {
         <GesturePressable onPress={onBack} hitSlop={10}>
           <Box padding={6}>
             <Icon
-              name="arrowLeft"
+              name="arrowNarrowLeft"
               size={24}
               color={resolveColorToken(backColor, scheme)}
               dark={scheme === 'dark'}

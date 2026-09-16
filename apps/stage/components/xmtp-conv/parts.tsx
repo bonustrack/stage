@@ -47,7 +47,7 @@ export function ConvTopnavShell({ fg, border, safeTop, onBack, children }: {
         onPress={onBack}
         style={{ paddingLeft: 14, paddingRight: 8, justifyContent: 'center' }}
 >
-        <Icon name="arrowLeft" size={24} color={fg}/>
+        <Icon name="arrowNarrowLeft" size={24} color={fg}/>
       </Pressable>
       {children}
     </Row>

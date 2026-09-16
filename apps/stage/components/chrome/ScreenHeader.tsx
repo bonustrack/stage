@@ -73,7 +73,7 @@ function BackButton({ onBack, backColor, backHitSlop, backPadding }: {
     <GesturePressable onPress={onBack} hitSlop={backHitSlop ?? 8}>
       <Box padding={backPadding ?? 4}>
         <Icon
-          name="arrowLeft"
+          name="arrowNarrowLeft"
           size={24}
           color={resolveColorToken(backColor, scheme)}
           dark={scheme === 'dark'}
