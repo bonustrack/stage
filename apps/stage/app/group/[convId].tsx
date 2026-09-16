@@ -14,14 +14,14 @@ import { cachedSelfEthAddress, selfEthAddress, lineOfConv } from '../../modules/
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { ImageViewer } from '../../components/ImageViewer';
-import { AddMemberModal, OverflowModal } from './group.parts';
+import { AddMemberModal, OverflowModal } from '../../components/group/group.parts';
 import type { MenuPoint } from '../../components/AnchoredMenu.model';
-import { GroupMembersList } from './group.members';
-import { GroupProfileHeader, GroupNameEditor, GroupDescriptionEditor } from './group.editor';
+import { GroupMembersList } from '../../components/group/group.members';
+import { GroupProfileHeader, GroupNameEditor, GroupDescriptionEditor } from '../../components/group/group.editor';
 import { messagingKeys } from '../../modules/messaging';
-import { useGroupDetail } from './group.detail';
-import { GroupLabelsSection } from './group.labels';
-import { useGroupActions } from './group.actions';
+import { useGroupDetail } from '../../components/group/group.detail';
+import { GroupLabelsSection } from '../../components/group/group.labels';
+import { useGroupActions } from '../../components/group/group.actions';
 import { profileLinkOf } from '../../lib/links';
 
 function OverflowTrailing({ color, dark, onPress }: {

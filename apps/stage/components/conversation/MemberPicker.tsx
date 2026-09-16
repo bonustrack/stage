@@ -9,9 +9,9 @@ import { resolveEnsName } from '@stage-labs/client/api/ens';
 import { capabilities } from '../../lib/capabilities';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { useSafeAreaInsets } from '../../lib/safeArea';
-import { Avatar } from '../../components/Avatar';
-import { Box, Col, Row } from '../../components/layout';
-import { FormField } from '../../components/FormField';
+import { Avatar } from '../Avatar';
+import { Box, Col, Row } from '../layout';
+import { FormField } from '../FormField';
 import { useContacts, type Contact } from '../../lib/useContacts';
 import { ContactSuggestions } from './ContactSuggestions';
 

@@ -4,17 +4,17 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
-import { Box, Col, Row } from '../../components/layout';
+import { Box, Col, Row } from '../layout';
 import { shortAddress } from '../../modules/messaging';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { MEMBER_OWNER_BG, MEMBER_OWNER_FG } from '../../lib/uiColors';
 import { memberRowModel, type GroupMemberRole, type MemberRowBadge } from './group.parts.model';
 import { stampAvatarUrl } from '@stage-labs/kit/avatar';
-import { AppModal } from '../../components/AppModal';
-import { AnchoredMenu } from '../../components/AnchoredMenu';
-import type { MenuPoint } from '../../components/AnchoredMenu.model';
-import { FormField } from '../../components/FormField';
+import { AppModal } from '../AppModal';
+import { AnchoredMenu } from '../AnchoredMenu';
+import type { MenuPoint } from '../AnchoredMenu.model';
+import { FormField } from '../FormField';
 import { DANGER, usePalette } from '../../lib/theme';
 
 interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }

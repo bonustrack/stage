@@ -4,9 +4,9 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
-import { Box, Row } from '../../components/layout';
-import { FormField } from '../../components/FormField';
-import { Spinner } from '../../components/Spinner';
+import { Box, Row } from '../layout';
+import { FormField } from '../FormField';
+import { Spinner } from '../Spinner';
 import { capabilities } from '../../lib/capabilities';
 import {
   getGroupLabels, addGroupLabel, removeGroupLabel,

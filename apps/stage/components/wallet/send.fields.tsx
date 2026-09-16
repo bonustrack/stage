@@ -2,7 +2,7 @@ import { Linking } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import type { Hex } from 'viem';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Box } from '../../components/layout';
+import { Box } from '../layout';
 import { DANGER } from '../../lib/theme';
 import { explorerTxUrl } from '@stage-labs/client/xmtp/tx';
 

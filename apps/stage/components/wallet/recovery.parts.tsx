@@ -1,11 +1,11 @@
 
 import { useState } from 'react';
-import { FormField } from '../../components/FormField';
+import { FormField } from '../FormField';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Box, Row, Col } from '../../components/layout';
+import { Box, Row, Col } from '../layout';
 import type { FormPal } from './wallet.form';
 import { Segmented } from './wallet.form';
 import { dedupeGuardians, DEFAULT_RECOVERY_DELAY_SECONDS } from '@stage-labs/client/zerodev/recovery';

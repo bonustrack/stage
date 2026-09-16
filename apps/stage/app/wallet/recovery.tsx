@@ -4,12 +4,12 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Col } from '../../components/layout';
 import { usePalette, useEffectiveColorScheme, type Palette } from '../../lib/theme';
-import { ActionPage, WalletFooter, useFormPal, type FormPal } from './wallet.form';
-import { GuardianEditor, PendingRecoveryCard, ApprovalCard, formatDelay } from './recovery.parts';
+import { ActionPage, WalletFooter, useFormPal, type FormPal } from '../../components/wallet/wallet.form';
+import { GuardianEditor, PendingRecoveryCard, ApprovalCard, formatDelay } from '../../components/wallet/recovery.parts';
 import { getActiveAccount, type AccountRecord } from '../../lib/accounts';
 import { DEFAULT_RECOVERY_DELAY_SECONDS } from '@stage-labs/client/zerodev/recovery';
 import { zerodevConfigured } from '../../lib/zerodev';
-import { useRecoveryActions, type RecoveryActions } from './recovery.actions';
+import { useRecoveryActions, type RecoveryActions } from '../../components/wallet/recovery.actions';
 
 type PagePal = Pick<Palette, 'link' | 'border'>;
 

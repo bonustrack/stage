@@ -8,12 +8,12 @@ import { DANGER_COLOR } from '../../lib/uiColors';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { Col, Row, ScreenScroll } from '../../components/layout';
 import { WalletHeader } from '../../components/wallet/WalletHeader';
-import { WalletFooter } from './wallet.form';
+import { WalletFooter } from '../../components/wallet/wallet.form';
 import { FormField } from '../../components/FormField';
-import { TxStatus } from './send.fields';
-import { RecipientRow, ContactsModal, ContactsButton } from './send.recipient';
-import { usePublicSend } from './send.public';
-import { TokenSelector, useSelectedBalance, useTopToken, type TokenChoice } from './TokenSelector';
+import { TxStatus } from '../../components/wallet/send.fields';
+import { RecipientRow, ContactsModal, ContactsButton } from '../../components/wallet/send.recipient';
+import { usePublicSend } from '../../components/wallet/send.public';
+import { TokenSelector, useSelectedBalance, useTopToken, type TokenChoice } from '../../components/wallet/TokenSelector';
 
 function toggleAmount(
   amount: string, mode: 'eth' | 'usd', priceUsd: number | null,

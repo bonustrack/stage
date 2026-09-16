@@ -2,9 +2,9 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
-import { Avatar } from '../../components/Avatar';
-import { AppModal } from '../../components/AppModal';
-import { Row, Col } from '../../components/layout';
+import { Avatar } from '../Avatar';
+import { AppModal } from '../AppModal';
+import { Row, Col } from '../layout';
 import { shortAddress } from '../../modules/messaging';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { useContacts } from '../../lib/useContacts';

@@ -10,7 +10,7 @@ import { ON_PRIMARY_COLOR } from '../../lib/uiColors';
 import { usePalette } from '../../lib/theme';
 import { shortAddress } from '../../modules/messaging';
 import type { Contact } from '../../lib/useContacts';
-import { Col, Row } from '../../components/layout';
+import { Col, Row } from '../layout';
 
 function SuggestionCheck({ selected, checkBackground, dark }: {
   selected: boolean; checkBackground: string; dark: boolean;

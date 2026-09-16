@@ -7,7 +7,7 @@ const APP_ROOT = join(import.meta.dir, '..');
 const read = (...p: string[]) => readFileSync(join(APP_ROOT, ...p), 'utf8');
 
 const resolveSrc = read('lib', 'dmResolve.ts');
-const hooksSrc = read('app', '(conv)', 'conv.hooks.ts');
+const hooksSrc = read('components', 'conversation', 'conv.hooks.ts');
 const outboxSrc = read('lib', 'dmOutbox.ts');
 const streamSrc = read('modules', 'messaging', 'streamSync.ts');
 const webSeam = read('lib', 'xmtp.conv.web.ts');

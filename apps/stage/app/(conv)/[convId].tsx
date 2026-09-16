@@ -17,10 +17,10 @@ import { ConversationSearch } from '../../components/xmtp-conv/ConversationSearc
 import { useConversationState } from '../../components/xmtp-conv/useConversationState';
 import {
   useSearchKeyboardFocus, useResolvedConvId, type ResolveConvError,
-} from './conv.hooks';
+} from '../../components/conversation/conv.hooks';
 import {
   ConversationTopnav, ConversationFooter, ConversationOverlays, ConversationSearchTopnav,
-} from './conv.screen-parts';
+} from '../../components/conversation/conv.screen-parts';
 
 function resolveErrorMessage(error: ResolveConvError): string {
   if (error === 'unregistered') return 'This address is not on XMTP yet. Ask them to sign in once, then retry.';

@@ -2,7 +2,7 @@
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
-import { Row, VirtualList } from '../../components/layout';
+import { Row, VirtualList } from '../layout';
 import { MemberRow } from './group.parts';
 
 interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }

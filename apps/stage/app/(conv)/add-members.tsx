@@ -9,7 +9,7 @@ import { useEffectiveColorScheme } from '../../lib/theme';
 import { StackHeader } from '../../components/chrome/StackHeader';
 import { Col, ScreenScroll } from '../../components/layout';
 import { useConvMeta } from '../../modules/messaging';
-import { MemberPicker, MemberPickerFooter, useMemberPicker } from './MemberPicker';
+import { MemberPicker, MemberPickerFooter, useMemberPicker } from '../../components/conversation/MemberPicker';
 
 export default function AddMembers(): React.ReactElement {
   const router = useRouter();

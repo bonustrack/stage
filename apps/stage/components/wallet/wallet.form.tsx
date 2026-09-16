@@ -1,7 +1,7 @@
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
-import { Box, Row, Col, ScreenScroll } from '../../components/layout';
+import { Box, Row, Col, ScreenScroll } from '../layout';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { usePalette } from '../../lib/theme';

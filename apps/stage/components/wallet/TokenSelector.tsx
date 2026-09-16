@@ -7,13 +7,13 @@ import { Icon } from '@stage-labs/kit/react-native/icon';
 import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { fmtUsd, fmtBalance } from '@stage-labs/client/wallet/format';
-import { Box, Row, Col } from '../../components/layout';
-import { AppModal } from '../../components/AppModal';
-import { Spinner } from '../../components/Spinner';
-import { TokenRowBody } from '../../components/wallet/TokenRowView';
+import { Box, Row, Col } from '../layout';
+import { AppModal } from '../AppModal';
+import { Spinner } from '../Spinner';
+import { TokenRowBody } from '../wallet/TokenRowView';
 import { usePalette } from '../../lib/theme';
 import { useActiveAccountRecord } from '../../modules/messaging';
-import { useAssetRows } from '../../components/tabs/WalletScreen.data';
+import { useAssetRows } from '../tabs/WalletScreen.data';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, type AssetRow } from '@stage-labs/client/wallet/assets';
 
 export interface TokenChoice { symbol: string; chainId: number }
