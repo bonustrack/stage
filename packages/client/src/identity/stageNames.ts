@@ -3,7 +3,7 @@ export const STAGE_NAME_MIN_LENGTH = 6;
 export const STAGE_NAME_MAX_LENGTH = 32;
 export const CLAIM_TTL_MS = 10 * 60 * 1000;
 
-const LABEL_PATTERN = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
+const LABEL_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export type LabelProblem = 'too-short' | 'too-long' | 'characters';
 
@@ -18,7 +18,7 @@ export function describeLabelProblem(problem: LabelProblem): string {
   switch (problem) {
     case 'too-short': return `At least ${STAGE_NAME_MIN_LENGTH} characters.`;
     case 'too-long': return `At most ${STAGE_NAME_MAX_LENGTH} characters.`;
-    case 'characters': return 'Lowercase letters, digits and hyphens only, no hyphen at the start or end.';
+    case 'characters': return 'Lowercase letters, digits and single hyphens only, not at the start or end.';
   }
 }
 

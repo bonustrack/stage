@@ -7,7 +7,7 @@ import { fontName, fontSize } from '@stage-labs/kit/tokens';
 import { Col, Row } from './layout';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 
-export const FORM_FIELD_RADIUS = 8;
+export const FORM_FIELD_RADIUS = 4;
 
 const FIELD_PADDING_X = 16;
 const FIELD_PADDING_Y = 12;
@@ -62,7 +62,7 @@ export function FormField({
         <Text value={label} size="md" color="secondary" />
         {trailing === undefined ? field : <Row align="center" gap={8}>{field}<Row style={{ flexShrink: 0 }}>{trailing}</Row></Row>}
       </Col>
-      {hint === undefined ? null : <Text value={hint} size="xs" color={hintColor ?? 'secondary'} style={{ paddingHorizontal: 4 }} />}
+      {hint === undefined ? null : <Text value={hint} size="md" color={hintColor ?? 'secondary'} style={{ paddingHorizontal: 4 }} />}
     </Col>
   );
 }

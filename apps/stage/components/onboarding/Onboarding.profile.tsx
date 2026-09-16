@@ -11,7 +11,7 @@ import { FormField } from '../FormField';
 import { usePalette } from '../../lib/theme';
 import { GroupImagePicker } from '../GroupImagePicker';
 import { useNameAvailability } from '../settings/useNameAvailability';
-import { claimStatusText, normalizeLabel, type ClaimState } from '../settings/ProfileSettings.claim.model';
+import { claimStatusText, normalizeLabel, sanitizeLabelInput, type ClaimState } from '../settings/ProfileSettings.claim.model';
 import { canContinueProfile, profileSetupFrom, profileStepProblem, type ProfileSetup } from './Onboarding.profile.model';
 
 type Pal = ReturnType<typeof usePalette>;
@@ -56,7 +56,7 @@ export function ProfileStep({ pal, dark, busy, onContinue, onBack }: {
       <Col gap={16} padding={{ top: 8 }}>
         <Title level={2} color={pal.primary}>Set up your profile</Title>
         <PicturePicker pal={pal} image={image} busy={busy} onPick={setImage} />
-        <FormField label="Username" placeholder="yourname" value={raw} onChangeText={setRaw} disabled={busy}
+        <FormField label="Username" placeholder="yourname" value={raw} onChangeText={(t) => { setRaw(sanitizeLabelInput(t)); }} disabled={busy}
           inputProps={{ autoCapitalize: 'none', autoCorrect: false }}
           hint={label === '' ? 'Your free name: username.stage.base.eth' : claimStatusText(state)} />
         <FormField label="Display name" placeholder="How people see you" value={displayName} onChangeText={setDisplayName} disabled={busy} />

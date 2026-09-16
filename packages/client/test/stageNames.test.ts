@@ -5,6 +5,7 @@ describe('validateStageLabel', () => {
   test('accepts six or more lowercase letters, digits and inner hyphens', () => {
     expect(validateStageLabel('fabien')).toBeNull();
     expect(validateStageLabel('stage-42')).toBeNull();
+    expect(validateStageLabel('my-stage-name')).toBeNull();
   });
 
   test('rejects short, long, uppercase and badly placed hyphens', () => {
@@ -13,6 +14,7 @@ describe('validateStageLabel', () => {
     expect(validateStageLabel('Fabien')).toBe('characters');
     expect(validateStageLabel('-fabien')).toBe('characters');
     expect(validateStageLabel('fabien-')).toBe('characters');
+    expect(validateStageLabel('dsdsd--ds')).toBe('characters');
     expect(validateStageLabel('fab.ien')).toBe('characters');
   });
 });

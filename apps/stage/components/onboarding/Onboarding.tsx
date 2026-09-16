@@ -18,6 +18,7 @@ export interface OnboardingProps {
 const BLOCK_MAX_WIDTH = 520;
 const CARD_BREAKPOINT = 700;
 const CARD_RADIUS = 12;
+const HEADER_LOGO_SIZE = 48;
 
 function useCardLayout(): boolean {
   return useWindowDimensions().width >= CARD_BREAKPOINT;
@@ -31,16 +32,14 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
   const card = useCardLayout();
 
   return (
-    <Col surface="surface" flex={1} align="center" justify="center" padding={{ x: 24, top: 24 + insets.top, bottom: 16 + insets.bottom }}>
+    <Col surface="surface" flex={1} align="center" justify="center" gap={24} padding={{ x: 24, top: 24 + insets.top, bottom: 16 + insets.bottom }}>
+      <StageLogo size={HEADER_LOGO_SIZE} color={pal.primary} />
       <Col
         width="100%"
         maxWidth={BLOCK_MAX_WIDTH}
         padding={card ? 32 : 20}
         style={[{ borderRadius: CARD_RADIUS, borderWidth: 1, borderColor: pal.border }, card ? null : { flex: 1 }]}
       >
-      <Col align="center" padding={{ bottom: 24 }}>
-        <StageLogo color={pal.primary} />
-      </Col>
       <Scroll
         style={card ? { alignSelf: 'stretch' } : { flex: 1, alignSelf: 'stretch' }}
         contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}

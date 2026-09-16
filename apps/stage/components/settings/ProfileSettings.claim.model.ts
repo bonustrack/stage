@@ -8,6 +8,10 @@ export interface ClaimState {
   detail?: string;
 }
 
+export function sanitizeLabelInput(text: string): string {
+  return text.toLowerCase().replace(/[^a-z0-9-]/g, '').replace(/-{2,}/g, '-').replace(/^-/, '');
+}
+
 export function normalizeLabel(raw: string): string {
   return raw.trim().toLowerCase().replace(/\.stage\.base\.eth$/, '');
 }
