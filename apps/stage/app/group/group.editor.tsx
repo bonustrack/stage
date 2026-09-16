@@ -2,10 +2,10 @@
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { TextField } from '@stage-labs/kit/react-native/text-field';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { fontSize } from '@stage-labs/kit/tokens';
 import { Box, Row } from '../../components/layout';
+import { FormField } from '../../components/FormField';
 import { Spinner } from '../../components/Spinner';
 import { avatarRenderUrl } from '@stage-labs/client/profile/snapshot';
 import { channelStampSeed, stampAvatarUrl } from '@stage-labs/kit/avatar';
@@ -47,34 +47,17 @@ export function GroupProfileHeader({ imageUrl, channelId, uploadingImage, insetT
   );
 }
 
-function GroupFieldEditor({ value, placeholder, saveLabel, disabled, multiline, minHeight, dark, p, onChangeText, onSave }: {
-  value: string; placeholder: string; saveLabel: string; disabled: boolean;
-  multiline?: boolean; minHeight?: number; dark: boolean; p: Pal;
+function GroupFieldEditor({ label, value, placeholder, saveLabel, disabled, multiline, dark, onChangeText, onSave }: {
+  label: string; value: string; placeholder: string; saveLabel: string; disabled: boolean;
+  multiline?: boolean; dark: boolean;
   onChangeText: (s: string) => void; onSave: () => void;
 }): React.ReactElement {
-  const { fg, sub, border, inputBg } = p;
   const { primary, bg } = usePalette();
   return (
     <Row align={multiline === true ? 'start' : 'center'} gap={8} padding={{ top: 6 }}>
       <Box flex={1}>
-        <TextField
-          name="field"
-          value={value}
-          placeholder={placeholder}
-          variant="outline"
-          multiline={multiline}
-          minHeight={minHeight}
-          autoFocus
-          background={inputBg}
-          borderColor={border}
-          color={fg}
-          placeholderColor={sub}
-          radius={10}
-          paddingX={10}
-          paddingY={8}
-          dark={dark}
-          onChangeText={onChangeText}
-        />
+        <FormField label={label} value={value} placeholder={placeholder} multiline={multiline} rows={2}
+          onChangeText={onChangeText} inputProps={{ autoFocus: true }} />
       </Box>
       <Button
         label={saveLabel}
@@ -103,12 +86,12 @@ export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, sa
     <Box padding={{ x: 16, bottom: 16 }}>
       {editing ? (
         <GroupFieldEditor
+          label="Name"
           value={draft}
           placeholder="Group name"
           saveLabel={saving ? 'Saving…' : 'Save'}
           disabled={saving || !draft.trim()}
           dark={dark}
-          p={p}
           onChangeText={setDraft}
           onSave={onSave}
         />
@@ -135,14 +118,13 @@ export function GroupDescriptionEditor({ description, descriptionDraft, setDescr
       <Text size="xs" role="secondary">DESCRIPTION</Text>
       {editing ? (
         <GroupFieldEditor
+          label="Description"
           value={descriptionDraft}
           placeholder="What is this group about?"
           saveLabel={saving ? 'Saving…' : 'Save'}
           disabled={saving}
           multiline
-          minHeight={60}
           dark={dark}
-          p={p}
           onChangeText={setDescriptionDraft}
           onSave={onSave}
         />

@@ -1,14 +1,13 @@
 
 import { useState } from 'react';
-import { fontSize } from '@stage-labs/kit/tokens';
-import { Input } from '@stage-labs/kit/react-native/input';
+import { FormField } from './FormField';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Row, Box } from './layout';
 import { usePalette, useBlockRadius, withAlpha } from '../lib/theme';
 
-export function OpenAnswerBlock({ qi, sub, dark, answers, mine, onSubmit }: {
-  qi: number; sub: string; dark: boolean;
+export function OpenAnswerBlock({ qi, dark, answers, mine, onSubmit }: {
+  qi: number; dark: boolean;
   answers?: Map<string, { text: string; ts: string }>;
   mine?: string; onSubmit: (text: string) => void;
 }): React.ReactElement {
@@ -17,24 +16,13 @@ export function OpenAnswerBlock({ qi, sub, dark, answers, mine, onSubmit }: {
   const [draft, setDraft] = useState('');
   const list = answers ? [...answers.entries()].sort((a, b) => a[1].ts.localeCompare(b[1].ts)) : [];
   const submit = (): void => { onSubmit(draft); setDraft(''); };
-  const inputBg = pal.inputBg;
   return (
     <Box margin={{ top: 2 }} gap={6} style={{ alignSelf: 'stretch' }}>
       <Row align="center" gap={8} style={{ alignSelf: 'stretch' }}>
-        <Input
-          value={draft}
-          onChangeText={setDraft}
-          onSubmit={submit}
-          placeholder="Type your answer"
-          placeholderTextColor={sub}
-          dark={dark}
-          inputProps={{ returnKeyType: 'send' }}
-          style={{
-            flex: 1, color: pal.text, fontSize: fontSize('xl'), fontFamily: 'Calibre-Medium',
-            paddingHorizontal: 12, paddingVertical: 9, borderRadius: radius,
-            borderWidth: 0, backgroundColor: inputBg, minHeight: 0,
-          }}
-/>
+        <Box flex={1}>
+          <FormField label="Your answer" placeholder="Type your answer" value={draft} onChangeText={setDraft} onSubmit={submit}
+            inputProps={{ returnKeyType: 'send' }} />
+        </Box>
         <Button
           size="md"
           dark={dark}

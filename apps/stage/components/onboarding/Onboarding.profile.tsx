@@ -2,13 +2,12 @@ import { useState } from 'react';
 import { Title } from '@stage-labs/kit/react-native/title';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { Input } from '@stage-labs/kit/react-native/input';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { fontSize } from '@stage-labs/kit/tokens';
 import type { PickedFile } from '@stage-labs/kit/react-native/file-picker';
-import { Box, Col } from '../layout';
+import { Col } from '../layout';
+import { FormField } from '../FormField';
 import { usePalette } from '../../lib/theme';
 import { GroupImagePicker } from '../GroupImagePicker';
 import { useNameAvailability } from '../settings/useNameAvailability';
@@ -18,13 +17,6 @@ import { canContinueProfile, profileSetupFrom, profileStepProblem, type ProfileS
 type Pal = ReturnType<typeof usePalette>;
 
 const PICTURE_SIZE = 88;
-
-function fieldStyle(pal: Pal): { color: string; borderColor: string; borderWidth: number; borderRadius: number; paddingHorizontal: number; paddingVertical: number; fontFamily: string; fontSize: number } {
-  return {
-    color: pal.text, borderColor: pal.border, borderWidth: 1, borderRadius: 12,
-    paddingHorizontal: 12, paddingVertical: 12, fontFamily: 'Calibre-Medium', fontSize: fontSize('lg'),
-  };
-}
 
 function PicturePicker({ pal, image, busy, onPick }: {
   pal: Pal; image: PickedFile | null; busy: boolean; onPick: (file: PickedFile) => void;
@@ -64,15 +56,10 @@ export function ProfileStep({ pal, dark, busy, onContinue, onBack }: {
       <Col gap={16} padding={{ top: 8 }}>
         <Title level={2} color={pal.primary}>Set up your profile</Title>
         <PicturePicker pal={pal} image={image} busy={busy} onPick={setImage} />
-        <Box gap={6}>
-          <Input value={raw} onChangeText={setRaw} placeholder="username" placeholderTextColor={pal.sub} dark={dark}
-            disabled={busy} inputType="text" style={fieldStyle(pal)} inputProps={{ autoCapitalize: 'none', autoCorrect: false }} />
-          <Text size="xs" color={pal.sub}>
-            {label === '' ? 'Your free name: username.stage.base.eth' : claimStatusText(state)}
-          </Text>
-        </Box>
-        <Input value={displayName} onChangeText={setDisplayName} placeholder="Display name" placeholderTextColor={pal.sub}
-          dark={dark} disabled={busy} inputType="text" style={fieldStyle(pal)} />
+        <FormField label="Username" placeholder="yourname" value={raw} onChangeText={setRaw} disabled={busy}
+          inputProps={{ autoCapitalize: 'none', autoCorrect: false }}
+          hint={label === '' ? 'Your free name: username.stage.base.eth' : claimStatusText(state)} />
+        <FormField label="Display name" placeholder="How people see you" value={displayName} onChangeText={setDisplayName} disabled={busy} />
         {problem === null ? null : <Text size="xs" color={pal.sub}>{problem}</Text>}
       </Col>
       <Col gap={10}>

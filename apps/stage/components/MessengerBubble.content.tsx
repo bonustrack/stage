@@ -65,11 +65,11 @@ function BubbleCards({ d, p }: { d: ReturnType<typeof descriptorsOf>; p: BubbleC
   return (
     <>
       {d.question && p.onAnswer ? (
-        <QuestionView question={d.question} dark={p.dark} sub={p.sub} onAnswer={p.onAnswer} />
+        <QuestionView question={d.question} dark={p.dark} onAnswer={p.onAnswer} />
       ) : null}
       {d.poll && p.onVote ? (
         <PollView
-          poll={d.poll} dark={p.dark} sub={p.sub} votes={p.votes} ownVotes={p.ownVotes} onVote={p.onVote}
+          poll={d.poll} dark={p.dark} votes={p.votes} ownVotes={p.ownVotes} onVote={p.onVote}
           openAnswers={p.openAnswers} onOpenAnswer={p.onOpenAnswer} myUri={p.myUri}
         />
       ) : null}

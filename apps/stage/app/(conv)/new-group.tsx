@@ -12,7 +12,7 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { StackHeader } from '../../components/chrome/StackHeader';
 import { GroupImagePicker } from '../../components/GroupImagePicker';
 import { Box, Col, ScreenScroll } from '../../components/layout';
-import { MemberField } from '../../components/MemberField';
+import { FormField } from '../../components/FormField';
 import { Spinner } from '../../components/Spinner';
 import { MemberPicker, MemberPickerFooter, useMemberPicker } from './MemberPicker';
 
@@ -51,36 +51,14 @@ function GroupImageField({ image, creating, fg, border, rowBg, onPick }: {
   );
 }
 
-function GroupNameField({ name, setName, head, sub, inputBg, border }: {
-  name: string; setName: (s: string) => void;
-  head: string; sub: string; inputBg: string; border: string;
-}): React.ReactElement {
-  return (
-    <Col gap={6}>
-      <Text size="xs" role="secondary">
-        Group name (optional)
-      </Text>
-      <MemberField
-        value={name}
-        placeholder="e.g. Stage builders"
-        color={head}
-        placeholderColor={sub}
-        inputBg={inputBg}
-        border={border}
-        radius={12}
-        paddingX={14}
-        paddingY={12}
-        onChangeText={setName}
-      />
-    </Col>
-  );
+function GroupNameField({ name, setName }: { name: string; setName: (s: string) => void }): React.ReactElement {
+  return <FormField label="Group name (optional)" placeholder="e.g. Stage builders" value={name} onChangeText={setName} />;
 }
 
 export default function NewGroup(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, border, inputBg } = usePalette();
-  const sub = fg;
+  const { text: fg, border } = usePalette();
   const rowBg = border;
   const insets = useSafeAreaInsets();
   const [name, setName] = useState('');
@@ -132,9 +110,7 @@ export default function NewGroup(): React.ReactElement {
           }}
         />
 
-        <GroupNameField
-          name={name} setName={setName} head={head} sub={sub} inputBg={inputBg} border={border}
-/>
+        <GroupNameField name={name} setName={setName} />
 
         <MemberPicker state={picker} dark={dark}/>
       </ScreenScroll>

@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { fontSize } from '@stage-labs/kit/tokens';
+import { FormField } from './FormField';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Textarea } from '@stage-labs/kit/react-native/textarea';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box } from './layout';
 import type { Question } from './MessengerBubble.helpers';
@@ -93,27 +92,12 @@ function OtherToggle({ dark, onPress }: { dark: boolean; onPress: () => void }):
   );
 }
 
-function OtherField({ value, onChange, onSubmit, dark, sub, fg }: {
+function OtherField({ value, onChange, onSubmit }: {
   value: string; onChange: (v: string) => void; onSubmit: () => void;
-  dark: boolean; sub: string; fg: string;
 }): React.ReactElement {
   return (
-    <Box radius="lg" background={dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)'} padding={{ x: 12, y: 8 }} style={{ borderWidth: 1, borderColor: dark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.14)' }}>
-      <Textarea
-        value={value}
-        onChangeText={onChange}
-        placeholder="Type your answer…"
-        placeholderTextColor={sub}
-        autoFocus
-        dark={dark}
-        inputProps={{ onSubmitEditing: onSubmit, blurOnSubmit: true }}
-        style={{
-          color: fg,
-          fontFamily: 'Calibre-Medium', fontSize: fontSize('md'), lineHeight: 22,
-          minHeight: 22, padding: 0, backgroundColor: 'transparent', borderWidth: 0, height: undefined,
-        }}
-      />
-    </Box>
+    <FormField label="Your answer" placeholder="Type your answer…" multiline rows={1} value={value} onChangeText={onChange}
+      inputProps={{ autoFocus: true, onSubmitEditing: onSubmit, blurOnSubmit: true }} />
   );
 }
 
@@ -139,8 +123,8 @@ function SubmitButton({ s, dark }: { s: QuestionState; dark: boolean }): React.R
   );
 }
 
-export function QuestionView({ question, dark, sub, onAnswer }: {
-  question: Question; dark: boolean; sub: string; onAnswer: (label: string) => void;
+export function QuestionView({ question, dark, onAnswer }: {
+  question: Question; dark: boolean; onAnswer: (label: string) => void;
 }): React.ReactElement {
   const s = useQuestionState(question, onAnswer);
   const fg = usePalette().text;
@@ -162,7 +146,7 @@ export function QuestionView({ question, dark, sub, onAnswer }: {
         <OtherToggle dark={dark} onPress={() => { s.setOtherOpen(true); }} />
       ) : null}
       {s.otherOpen ? (
-        <OtherField value={s.otherText} onChange={s.setOtherText} onSubmit={s.submit} dark={dark} sub={sub} fg={fg} />
+        <OtherField value={s.otherText} onChange={s.setOtherText} onSubmit={s.submit} />
       ) : null}
       {needSubmitButton ? <SubmitButton s={s} dark={dark} /> : null}
     </Box>

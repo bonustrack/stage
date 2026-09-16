@@ -1,26 +1,17 @@
 import type { ReactNode } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { fontSize, type FontSizeName } from '@stage-labs/kit/tokens';
-import { Input, type InputProps } from '@stage-labs/kit/react-native/input';
-import { Textarea } from '@stage-labs/kit/react-native/textarea';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Box, Row, Col } from './layout';
 import { AppModal } from './AppModal';
-import { usePalette, useBlockRadius } from '../lib/theme';
+import { FormField, FORM_FIELD_RADIUS } from './FormField';
+import { usePalette } from '../lib/theme';
 import { type Palette } from './MessengerComposer.types';
 
 const ACCENT = '#c0a06e';
 
 interface SheetProps { open: boolean; onClose: () => void; palette: Palette; dark: boolean; onSend: () => void }
-
-function fieldStyle(palette: Palette, r: number, size: FontSizeName, extra?: object): object {
-  return {
-    color: palette.fg, backgroundColor: palette.inputBg, borderRadius: r, paddingHorizontal: 12, paddingVertical: 10,
-    fontFamily: 'Calibre-Medium', fontSize: fontSize(size), minHeight: 0, ...extra,
-  };
-}
 
 function SheetShell({ open, onClose, dark, onSend, submitLabel, children }: SheetProps & { submitLabel: string; children: ReactNode }): React.ReactElement {
   const { primary, bg } = usePalette();
@@ -34,18 +25,6 @@ function SheetShell({ open, onClose, dark, onSend, submitLabel, children }: Shee
   );
 }
 
-function SheetInput({ palette, dark, size = 'lg', flex, ...input }: {
-  palette: Palette; dark: boolean; size?: FontSizeName; flex?: boolean;
-  value: string; onChangeText: (v: string) => void; placeholder: string;
-  inputType?: InputProps['inputType']; inputProps?: InputProps['inputProps'];
-}): React.ReactElement {
-  const r = useBlockRadius();
-  return (
-    <Input {...input} placeholderTextColor={palette.sub} dark={dark}
-      style={fieldStyle(palette, r, size, flex === true ? { flex: 1 } : undefined)} />
-  );
-}
-
 export function PollSheet({
   palette, dark, question, setQuestion, header, setHeader, options, setOptions, multi, setMulti, ...sheet
 }: SheetProps & {
@@ -55,22 +34,19 @@ export function PollSheet({
   multi: boolean; setMulti: React.Dispatch<React.SetStateAction<boolean>>;
 }): React.ReactElement {
   const { fg, sub, inputBg } = palette;
-  const field = { palette, dark };
   return (
     <SheetShell {...sheet} palette={palette} dark={dark} submitLabel="Send poll">
-      <SheetInput {...field} value={question} onChangeText={setQuestion} placeholder="Question" />
-      <SheetInput {...field} value={header} onChangeText={setHeader} placeholder="Header (optional, e.g. LUNCH)" size="sm"
+      <FormField label="Question" value={question} onChangeText={setQuestion} />
+      <FormField label="Header (optional)" placeholder="e.g. LUNCH" value={header} onChangeText={setHeader}
         inputProps={{ maxLength: 12, autoCapitalize: 'characters' }} />
       {options.map((opt, i) => (
-        <Row key={i} align="center" gap={8}>
-          <SheetInput {...field} flex value={opt} placeholder={`Option ${i + 1}`}
-            onChangeText={t => { setOptions(prev => prev.map((o, j) => (j === i ? t : o))); }} />
-          {options.length > 2 ? (
+        <FormField key={i} label={`Option ${i + 1}`} value={opt}
+          onChangeText={t => { setOptions(prev => prev.map((o, j) => (j === i ? t : o))); }}
+          trailing={options.length > 2 ? (
             <Pressable onPress={() => { setOptions(prev => prev.filter((_, j) => j !== i)); }} hitSlop={8}>
               <Icon name="x" size={18} color={sub}/>
             </Pressable>
-          ) : null}
-        </Row>
+          ) : undefined} />
       ))}
       <Button variant="ghost" size="sm" dark={dark} onPress={() => { setOptions(prev => [...prev, '']); }}
         label="Add option" icon={<Icon name="plus" size={16} color={fg} />} />
@@ -93,17 +69,14 @@ export function SignatureSheet({
   message: string; setMessage: (v: string) => void;
   json: string; setJson: (v: string) => void;
 }): React.ReactElement {
-  const { fg, sub, inputBg, chipBg } = palette;
-  const r = useBlockRadius();
-  const textarea = (minHeight: number, size: FontSizeName): object =>
-    fieldStyle(palette, r, size, { minHeight, height: undefined, textAlignVertical: 'top' });
+  const { fg, inputBg, chipBg } = palette;
   return (
     <SheetShell {...sheet} palette={palette} dark={dark} submitLabel="Send request">
       <Row gap={8}>
         {([['personal', 'Message'], ['eip712', 'Typed data']] as const).map(([k, label]) => (
           <Pressable key={k} onPress={() => { setKind(k); }}
             style={{
-              flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: r,
+              flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: FORM_FIELD_RADIUS,
               borderWidth: 1, borderColor: kind === k ? ACCENT : chipBg,
               backgroundColor: kind === k ? 'rgba(192,160,110,0.15)' : inputBg,
             }}>
@@ -111,14 +84,13 @@ export function SignatureSheet({
           </Pressable>
         ))}
       </Row>
-      <SheetInput palette={palette} dark={dark} value={desc} onChangeText={setDesc} placeholder="Description (e.g. Sign in to dapp)" size="md" />
+      <FormField label="Description" placeholder="e.g. Sign in to dapp" value={desc} onChangeText={setDesc} />
       {kind === 'personal' ? (
-        <Textarea value={message} onChangeText={setMessage} placeholder="Message to sign" placeholderTextColor={sub} dark={dark}
-          style={textarea(80, 'md')} />
+        <FormField label="Message to sign" multiline rows={3} value={message} onChangeText={setMessage} />
       ) : (
-        <Textarea value={json} onChangeText={setJson} placeholderTextColor={sub} dark={dark}
-          placeholder={'EIP-712 typed data JSON\n{ "domain": {…}, "types": {…}, "primaryType": "…", "message": {…} }'}
-          inputProps={{ autoCapitalize: 'none', autoCorrect: false }} style={textarea(160, 'xs')} />
+        <FormField label="EIP-712 typed data" multiline rows={6} value={json} onChangeText={setJson}
+          placeholder={'{ "domain": {…}, "types": {…}, "primaryType": "…", "message": {…} }'}
+          inputProps={{ autoCapitalize: 'none', autoCorrect: false }} />
       )}
     </SheetShell>
   );
@@ -131,14 +103,13 @@ export function PaymentSheet({
   amount: string; setAmount: (v: string) => void;
   note: string; setNote: (v: string) => void;
 }): React.ReactElement {
-  const field = { palette, dark };
   return (
     <SheetShell {...sheet} palette={palette} dark={dark} submitLabel="Send request">
-      <SheetInput {...field} value={to} onChangeText={setTo} placeholder="Recipient address (0x…)" size="sm"
+      <FormField label="Recipient" placeholder="0x…" value={to} onChangeText={setTo}
         inputProps={{ autoCapitalize: 'none', autoCorrect: false }} />
-      <SheetInput {...field} value={amount} onChangeText={setAmount} placeholder="Amount (ETH)" inputType="number"
+      <FormField label="Amount (ETH)" placeholder="0.0" value={amount} onChangeText={setAmount} inputType="number"
         inputProps={{ keyboardType: 'decimal-pad' }} />
-      <SheetInput {...field} value={note} onChangeText={setNote} placeholder="Note (optional)" />
+      <FormField label="Note (optional)" placeholder="What is it for?" value={note} onChangeText={setNote} />
     </SheetShell>
   );
 }

@@ -2,13 +2,12 @@ import { errorMessage } from '@stage-labs/client/errors';
 import { useState } from 'react';
 import { Alert } from 'react-native';
 import { Caption } from '@stage-labs/kit/react-native/caption';
-import { Input } from '@stage-labs/kit/react-native/input';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Title } from '@stage-labs/kit/react-native/title';
-import { fontSize } from '@stage-labs/kit/tokens';
 import { Box, Col } from '../layout';
 import { AppModal } from '../AppModal';
+import { FormField } from '../FormField';
 import { capabilities } from '../../lib/capabilities';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import {
@@ -27,7 +26,6 @@ function PinSheet({ visible, busy, onClose, onSubmit }: {
   visible: boolean; busy: boolean; onClose: () => void; onSubmit: (pin: string) => void;
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
-  const pal = usePalette();
   const [pin, setPin] = useState('');
   const clean = normalizeHistoryPin(pin);
   return (
@@ -35,17 +33,8 @@ function PinSheet({ visible, busy, onClose, onSubmit }: {
       <Col gap={12}>
         <Title level={3}>Receive history</Title>
         <Text size="sm" role="secondary">{RECEIVE_DESC}</Text>
-        <Input
-          value={pin}
-          onChangeText={setPin}
-          placeholder="000 000"
-          placeholderTextColor={pal.sub}
-          inputProps={{ keyboardType: 'number-pad', maxLength: 7, autoFocus: true }}
-          style={{
-            color: pal.text, backgroundColor: pal.inputBg, fontSize: fontSize('xl'), textAlign: 'center',
-            borderWidth: 1, borderColor: pal.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 12,
-          }}
-        />
+        <FormField label="Code" placeholder="000 000" value={pin} onChangeText={setPin}
+          inputProps={{ keyboardType: 'number-pad', maxLength: 7, autoFocus: true }} />
         <Button
           dark={dark} variant="solid" color="primary" size="lg" fullWidth label="Import history"
           loading={busy} disabled={busy || !isValidHistoryPin(clean)}

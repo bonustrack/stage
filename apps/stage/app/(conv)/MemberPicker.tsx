@@ -11,7 +11,7 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { Avatar } from '../../components/Avatar';
 import { Box, Col, Row } from '../../components/layout';
-import { MemberField } from '../../components/MemberField';
+import { FormField } from '../../components/FormField';
 import { useContacts, type Contact } from '../../lib/useContacts';
 import { ContactSuggestions } from './ContactSuggestions';
 
@@ -96,7 +96,7 @@ export function MemberPicker({ state, dark, exclude = [] }: {
   dark: boolean;
   exclude?: string[];
 }): React.ReactElement {
-  const { link: head, text: sub, border, inputBg } = usePalette();
+  const { link: head, text: sub, border } = usePalette();
   const {
     members, entry, setEntry, adding, addMember, removeMember,
     toggleContact, selectedAddresses,
@@ -106,27 +106,11 @@ export function MemberPicker({ state, dark, exclude = [] }: {
   return (
     <>
       <Col gap={6}>
-        <Text size="xs" role="secondary">
-          Add members
-        </Text>
         <Row gap={8} align="center">
           <Box flex={1}>
-            <MemberField
-              value={entry}
-              placeholder="0x… or name.eth"
-              color={head}
-              placeholderColor={sub}
-              inputBg={inputBg}
-              border={border}
-              radius={12}
-              paddingX={14}
-              paddingY={12}
-              autoCapitalize="none"
-              autoCorrect={false}
-              returnKeyType="done"
-              onChangeText={setEntry}
+            <FormField label="Add members" placeholder="0x… or name.eth" value={entry} onChangeText={setEntry}
               onSubmit={() => { void addMember(); }}
-            />
+              inputProps={{ autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'done' }} />
           </Box>
           <Button
             color="secondary"

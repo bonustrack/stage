@@ -121,7 +121,7 @@ export default function GroupDetail(): React.ReactElement {
         onClose={() => { setAddOpen(false); }}
         addDraft={addDraft} setAddDraft={setAddDraft} adding={adding}
         onAdd={() => { void addMember(() => { setAddOpen(false); }); }}
-        dark={dark} p={pal}
+        dark={dark}
 />
       <OverflowModal
         visible={overflowAnchor !== null}

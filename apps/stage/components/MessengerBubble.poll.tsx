@@ -77,8 +77,8 @@ function PollQuestionView({ block, qi, colors, onVote }: {
   );
 }
 
-export function PollView({ poll, dark, sub, votes, ownVotes, onVote, openAnswers, onOpenAnswer, myUri }: {
-  poll: Poll; dark: boolean; sub: string;
+export function PollView({ poll, dark, votes, ownVotes, onVote, openAnswers, onOpenAnswer, myUri }: {
+  poll: Poll; dark: boolean;
   votes?: PollVotes;
   ownVotes?: PollOwn;
   onVote: (questionIndex: number, optionIndex: number, action: 'added' | 'removed') => void;
@@ -104,7 +104,7 @@ export function PollView({ poll, dark, sub, votes, ownVotes, onVote, openAnswers
       {poll.questions.map((q, qi) => (
         q.open === true && onOpenAnswer ? (
           <OpenAnswerBlock
-            key={`open-${qi}`} qi={qi} sub={sub} dark={dark}
+            key={`open-${qi}`} qi={qi} dark={dark}
             answers={openAnswers?.get(qi)} mine={myUri}
             onSubmit={(text) => { onOpenAnswer(qi, text); }}
           />

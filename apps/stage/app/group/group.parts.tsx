@@ -14,7 +14,7 @@ import { stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { AppModal } from '../../components/AppModal';
 import { AnchoredMenu } from '../../components/AnchoredMenu';
 import type { MenuPoint } from '../../components/AnchoredMenu.model';
-import { MemberField } from '../../components/MemberField';
+import { FormField } from '../../components/FormField';
 import { DANGER, usePalette } from '../../lib/theme';
 
 interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }
@@ -98,33 +98,19 @@ export function MemberRow({
 }
 
 export function AddMemberModal({
-  visible, onClose, addDraft, setAddDraft, adding, onAdd, dark, p,
+  visible, onClose, addDraft, setAddDraft, adding, onAdd, dark,
 }: {
   visible: boolean; onClose: () => void;
   addDraft: string; setAddDraft: (s: string) => void; adding: boolean; onAdd: () => void;
-  dark: boolean; p: Pal;
+  dark: boolean;
 }): React.ReactElement {
-  const { fg, sub, border, inputBg } = p;
   const { primary, bg } = usePalette();
   return (
     <AppModal visible={visible} onClose={onClose}>
       <Box>
         <Box margin={{ bottom: 10 }}>
-          <MemberField
-            value={addDraft}
-            placeholder="0x… Ethereum address"
-            color={fg}
-            placeholderColor={sub}
-            inputBg={inputBg}
-            border={border}
-            radius={10}
-            paddingX={12}
-            paddingY={10}
-            autoFocus
-            autoCapitalize="none"
-            autoCorrect={false}
-            onChangeText={setAddDraft}
-          />
+          <FormField label="Address" placeholder="0x… Ethereum address" value={addDraft} onChangeText={setAddDraft}
+            inputProps={{ autoFocus: true, autoCapitalize: 'none', autoCorrect: false }} />
         </Box>
         <Button
           size="md"

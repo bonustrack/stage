@@ -1,7 +1,6 @@
 
 import { useState } from 'react';
-import { fontSize } from '@stage-labs/kit/tokens';
-import { Input } from '@stage-labs/kit/react-native/input';
+import { FormField } from '../../components/FormField';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Button } from '@stage-labs/kit/react-native/button';
@@ -49,18 +48,13 @@ export function GuardianEditor({
 
   return (
     <Col gap={16}>
-      <Box gap={6}>
-        <Text size="xs" role="secondary">GUARDIAN ADDRESS OR ENS</Text>
-        <Row gap={8} align="center">
-          <Col surface="raised" radius="lg" padding={{ x: 14, y: 12 }} flex={1}>
-            <Input value={entry} onChangeText={setEntry} placeholder="0x… or name.eth" placeholderTextColor={sub}
-              dark={dark} inputProps={{ autoCapitalize: 'none', autoCorrect: false }}
-              style={{ color: head, fontSize: fontSize('md'), fontFamily: 'Calibre-Medium', padding: 0,
-                backgroundColor: 'transparent', minHeight: 0, paddingHorizontal: 0, paddingVertical: 0, borderWidth: 0 }}/>
-          </Col>
-          <Button color="secondary" variant="solid" size="md" pill dark={dark} onPress={add} disabled={!entry.trim()} label="Add"/>
-        </Row>
-      </Box>
+      <Row gap={8} align="center">
+        <Box flex={1}>
+          <FormField label="Guardian address or ENS" placeholder="0x… or name.eth" value={entry} onChangeText={setEntry}
+            inputProps={{ autoCapitalize: 'none', autoCorrect: false }} />
+        </Box>
+        <Button color="secondary" variant="solid" size="md" pill dark={dark} onPress={add} disabled={!entry.trim()} label="Add"/>
+      </Row>
 
       {n > 0 ? (
         <Col gap={8}>

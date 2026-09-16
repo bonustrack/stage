@@ -1,12 +1,11 @@
 
 import { useEffect, useMemo, useState } from 'react';
-import { fontSize } from '@stage-labs/kit/tokens';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Input } from '@stage-labs/kit/react-native/input';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { Box, Row } from '../../components/layout';
+import { FormField } from '../../components/FormField';
 import { Spinner } from '../../components/Spinner';
 import { capabilities } from '../../lib/capabilities';
 import {
@@ -72,24 +71,14 @@ function LabelChips({ labels, onRemove, p }: {
 function LabelAddRow({ draft, setDraft, busy, onAdd, p }: {
   draft: string; setDraft: (s: string) => void; busy: boolean; onAdd: () => void; p: Pal;
 }): React.ReactElement {
-  const { fg, sub, border, inputBg } = p;
+  const { fg, border } = p;
   const disabled = busy || !draft.trim();
   return (
     <Row margin={{ top: 10 }} align="center" gap={8}>
-      <Input
-        value={draft}
-        onChangeText={setDraft}
-        onSubmit={onAdd}
-        placeholder="Add a label"
-        placeholderTextColor={sub}
-        disabled={busy}
-        inputProps={{ maxLength: MAX_LABEL_LEN, returnKeyType: 'done' }}
-        style={{
-          flex: 1, color: fg, backgroundColor: inputBg,
-          borderWidth: 1, borderColor: border, borderRadius: 10,
-          paddingHorizontal: 10, paddingVertical: 8, fontSize: fontSize('md'),
-        }}
-/>
+      <Box flex={1}>
+        <FormField label="Label" placeholder="Add a label" value={draft} onChangeText={setDraft} onSubmit={onAdd} disabled={busy}
+          inputProps={{ maxLength: MAX_LABEL_LEN, returnKeyType: 'done' }} />
+      </Box>
       <Pressable
         onPress={onAdd}
         disabled={disabled}

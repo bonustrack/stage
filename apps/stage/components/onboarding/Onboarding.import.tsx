@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import type { AccountTransfer } from '@stage-labs/client/accounts/transfer';
-import { fontSize } from '@stage-labs/kit/tokens';
 import { Title } from '@stage-labs/kit/react-native/title';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { Textarea } from '@stage-labs/kit/react-native/textarea';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Col, Box, Row } from '../layout';
+import { FormField } from '../FormField';
 import { usePalette, DANGER } from '../../lib/theme';
 import { QrScanner } from '../accounts/QrScanner';
 import { parseImportInput } from '../accounts/ImportAccountPanel.model';
@@ -71,21 +70,9 @@ export function ImportStep({ pal, dark, busy, onTransfer, onBack }: {
       <Text size="sm" color={pal.sub} style={{ marginTop: 8, marginBottom: 14 }}>
         Enter your 12-24 word recovery phrase, or scan the code shown by Move to another device on your other device.
       </Text>
-      <Textarea
-        value={text}
+      <FormField label="Recovery phrase" placeholder="word1 word2 word3 ..." multiline rows={4} value={text}
         onChangeText={(t) => { setText((prev) => acceptTypedChar(prev, t)); setErr(null); }}
-        placeholder="word1 word2 word3 ..."
-        placeholderTextColor={pal.sub}
-        dark={dark}
-        inputProps={{ autoCapitalize: 'none', autoCorrect: false }}
-        style={{
-          color: pal.text, fontFamily: 'Menlo', fontSize: fontSize('sm'),
-          minHeight: 110, height: undefined,
-          borderWidth: 1, borderColor: pal.border, borderRadius: 12,
-          paddingHorizontal: 12, paddingVertical: 12,
-          textAlignVertical: 'top', backgroundColor: 'transparent',
-        }}
-      />
+        inputProps={{ autoCapitalize: 'none', autoCorrect: false }} />
       <SuggestionChips words={suggestions} pal={pal} onPick={(word) => { setText(applyCompletion(text, word)); }} />
       {hint === null ? null : (
         <Text size="xs" color={hint.danger ? DANGER : pal.sub} style={{ marginTop: 8 }}>{hint.text}</Text>

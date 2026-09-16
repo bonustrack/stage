@@ -186,14 +186,14 @@ export function Button(props: ButtonProps): React.ReactElement {
   const startIcon = iconStart ?? icon;
   const endIcon = iconEnd ?? iconRight;
   const stretch = orFlag(block, fullWidth);
-  const square = orFlag(pill, uniform);
+  const square = uniform === true;
 
   const spec = SIZES[size];
   const c = useResolvedColors({ color, variant, dark, tintBg, tintFg, tintPressedBg });
   const isDisabled = disabled || loading;
 
   const labelNode = renderLabel(children, label, spec, c.text, textStyle);
-  const styleArgs: ContainerStyleArgs = { spec, square, stretch, radius, c, isDisabled, style };
+  const styleArgs: ContainerStyleArgs = { spec, square, stretch, radius: pill === true ? 999 : radius, c, isDisabled, style };
 
   return (
     <Pressable

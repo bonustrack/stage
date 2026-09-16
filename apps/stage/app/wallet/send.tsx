@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Icon } from '@stage-labs/kit/react-native/icon';
-import { TextField } from '@stage-labs/kit/react-native/text-field';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { toggleAmountUnit } from '@stage-labs/client/wallet/sendAmount';
 import { DANGER_COLOR } from '../../lib/uiColors';
@@ -11,6 +9,7 @@ import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { Col, Row, ScreenScroll } from '../../components/layout';
 import { WalletHeader } from '../../components/wallet/WalletHeader';
 import { WalletFooter } from './wallet.form';
+import { FormField } from '../../components/FormField';
 import { TxStatus } from './send.fields';
 import { RecipientRow, ContactsModal, ContactsButton } from './send.recipient';
 import { usePublicSend } from './send.public';
@@ -31,19 +30,11 @@ function RecipientField({ value, resolving, error, onChange }: {
   onChange: (v: string) => void;
 }): React.ReactElement {
   const scheme = useKitScheme();
+  const hint = error ?? (resolving ? 'Resolving…' : undefined);
   return (
-    <Col gap={6}>
-      <Caption value="RECIPIENT" color="secondary" size="sm" />
-      <TextField
-        name="recipient"
-        value={value}
-        placeholder="0x… or name.eth"
-        dark={scheme === 'dark'}
-        onChangeText={onChange}
-      />
-      {resolving ? <Caption value="Resolving…" color="secondary" /> : null}
-      {error === undefined ? null : <Caption value={error} color={DANGER_COLOR[scheme]} />}
-    </Col>
+    <FormField label="Recipient" placeholder="0x… or name.eth" value={value} onChangeText={onChange}
+      inputProps={{ autoCapitalize: 'none', autoCorrect: false }}
+      hint={hint} hintColor={error === undefined ? undefined : DANGER_COLOR[scheme]} />
   );
 }
 
@@ -54,42 +45,17 @@ function AmountField({ value, unitLabel, secondaryLabel, balanceLabel, maxDisabl
 }): React.ReactElement {
   const scheme = useKitScheme();
   const dark = scheme === 'dark';
+  const controls = (
+    <Row align="center" gap={8}>
+      <Button label={unitLabel} color="primary" variant="soft" size="sm" pill dark={dark}
+        iconEnd={<Icon name="arrowDown" size={18} dark={dark} />} onPress={onToggleUnit} />
+      <Button label="MAX" color="primary" variant="ghost" size="sm" disabled={maxDisabled} dark={dark} onPress={onMax} />
+    </Row>
+  );
   return (
-    <Col gap={6}>
-      <Row align="center" justify="between">
-        <Caption value="AMOUNT" color="secondary" size="sm" />
-        <Row align="center" gap={8}>
-          <Button
-            label={unitLabel}
-            color="primary"
-            variant="soft"
-            size="sm"
-            pill
-            dark={dark}
-            iconEnd={<Icon name="arrowDown" size={18} dark={dark} />}
-            onPress={onToggleUnit}
-          />
-          <Button
-            label="MAX"
-            color="primary"
-            variant="ghost"
-            size="sm"
-            disabled={maxDisabled}
-            dark={dark}
-            onPress={onMax}
-          />
-        </Row>
-      </Row>
-      <TextField
-        name="amount"
-        value={value}
-        placeholder="0.0"
-        dark={dark}
-        onChangeText={onChange}
-      />
-      {secondaryLabel === undefined ? null : <Caption value={secondaryLabel} color="secondary" />}
-      {balanceLabel === undefined ? null : <Caption value={balanceLabel} color="secondary" />}
-    </Col>
+    <FormField label="Amount" placeholder="0.0" value={value} onChangeText={onChange} inputType="number"
+      inputProps={{ keyboardType: 'decimal-pad' }} trailing={controls}
+      hint={[secondaryLabel, balanceLabel].filter((s) => s !== undefined).join(' · ') || undefined} />
   );
 }
 

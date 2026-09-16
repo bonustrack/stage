@@ -2,10 +2,9 @@ import { errorMessage } from '@stage-labs/client/errors';
 import { useEffect, useState } from 'react';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Input } from '@stage-labs/kit/react-native/input';
-import { fontSize } from '@stage-labs/kit/tokens';
 import { Box, Col } from '../layout';
-import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { FormField } from '../FormField';
+import { usePalette } from '../../lib/theme';
 import { claimStageName, ownedStageName, setPrimaryStageName } from '../../lib/claimName';
 import { useNameAvailability } from './useNameAvailability';
 import { SettingsButtonRow, SettingsList } from './rows';
@@ -55,8 +54,7 @@ export function ClaimStageName({ address, onClaimed }: { address: string; onClai
 }
 
 function ClaimForm({ address, onClaimed }: { address: string; onClaimed: () => void }): React.ReactElement {
-  const { text: fg, sub, border } = usePalette();
-  const dark = useEffectiveColorScheme() === 'dark';
+  const { text: fg } = usePalette();
   const [raw, setRaw] = useState('');
   const label = normalizeLabel(raw);
   const [state, setState] = useState<ClaimState>({ label: '', phase: 'idle' });
@@ -84,19 +82,8 @@ function ClaimForm({ address, onClaimed }: { address: string; onClaimed: () => v
         CLAIM A FREE NAME
       </Caption>
       <Box padding={{ x: 16 }}>
-        <Input
-          value={raw}
-          onChangeText={setRaw}
-          placeholder="yourname"
-          placeholderTextColor={sub}
-          dark={dark}
-          disabled={busy}
-          inputType="text"
-          style={{ color: fg, borderColor: border, borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'Calibre-Medium', fontSize: fontSize('lg') }}
-        />
-      </Box>
-      <Box padding={{ x: 16 }}>
-        <Text value={claimStatusText(state)} size="md" color="secondary" />
+        <FormField label="Username" placeholder="yourname" value={raw} onChangeText={setRaw} disabled={busy}
+          inputProps={{ autoCapitalize: 'none', autoCorrect: false }} hint={claimStatusText(state)} />
       </Box>
       <SettingsList>
         <SettingsButtonRow
