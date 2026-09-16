@@ -7,7 +7,7 @@ import { fontName, fontSize } from '@stage-labs/kit/tokens';
 import { Col, Row } from './layout';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 
-export const FORM_FIELD_RADIUS = 10;
+export const FORM_FIELD_RADIUS = 8;
 
 const FIELD_PADDING_X = 16;
 const FIELD_PADDING_Y = 12;
