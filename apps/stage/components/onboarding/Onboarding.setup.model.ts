@@ -6,7 +6,7 @@ export interface SetupErr { message: string; accountId?: string; retry: SetupRet
 
 export type StageState = 'done' | 'active' | 'pending';
 
-export const STAGE_LABELS: Record<Stage, string> = {
+const STAGE_LABELS: Record<Stage, string> = {
   wallet: 'Creating your wallet',
   passkey: 'Adding your passkey',
   messaging: 'Setting up secure messaging',
@@ -14,6 +14,8 @@ export const STAGE_LABELS: Record<Stage, string> = {
   history: 'Syncing your message history',
   finishing: 'Finishing up',
 };
+
+const RESTORE_WALLET_LABEL = 'Restoring your wallet';
 
 const STAGE_HINTS: Record<Stage, string> = {
   wallet: 'This only takes a moment.',
@@ -27,7 +29,11 @@ const STAGE_HINTS: Record<Stage, string> = {
 const MESSAGING_RETRY_HINT =
   'Your wallet is ready, but secure messaging did not finish setting up. Try again. Your wallet and recovery phrase are safe.';
 
-export interface SetupPlan { passkey?: boolean; profile?: boolean; history?: boolean }
+export interface SetupPlan { restore?: boolean; passkey?: boolean; profile?: boolean; history?: boolean }
+
+export function stageLabel(stage: Stage, plan: SetupPlan): string {
+  return stage === 'wallet' && plan.restore === true ? RESTORE_WALLET_LABEL : STAGE_LABELS[stage];
+}
 
 export function setupStages(plan: SetupPlan): Stage[] {
   return [
@@ -47,8 +53,8 @@ export function stageState(stage: Stage, current: Stage, stages: Stage[]): Stage
   return position === currentPosition ? 'active' : 'pending';
 }
 
-export function setupTitle(stage: Stage, err: SetupErr | null): string {
-  if (err === null) return STAGE_LABELS[stage];
+export function setupTitle(stage: Stage, err: SetupErr | null, plan: SetupPlan = {}): string {
+  if (err === null) return stageLabel(stage, plan);
   return err.retry === 'passkey' ? 'Passkey not added' : 'Setup needs another try';
 }
 

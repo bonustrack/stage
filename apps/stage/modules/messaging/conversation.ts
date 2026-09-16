@@ -2,7 +2,7 @@
 import type { Conversation } from '@xmtp/react-native-sdk';
 import {
   peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
-  shortAddress, getLastReadNs, getMarkedUnread,
+  getLastReadNs, getMarkedUnread,
 } from '../../lib/xmtp';
 import { groupNameImage } from '../../lib/xmtp.groups';
 import { rowMessagesOf } from '../../lib/xmtp.messages';
@@ -32,15 +32,6 @@ export interface ConversationView {
   labels: string[];
 }
 
-export interface ConversationRequestView {
-  convId: string;
-  title: string;
-  peerAddress: string | null;
-  avatarAddress: string | null;
-  avatarUri: string | null;
-  preview: string;
-  isGroup: boolean;
-}
 function pickLastMessage(msgs: RowMessage[]): RowMessage | undefined {
   return msgs.find(m =>
     !(typeof m.content === 'string' && isControlBody(m.content)),
@@ -128,42 +119,5 @@ export async function summarizeConversation(
     selfInboxId,
     markedUnread,
     labels,
-  };
-}
-
-async function readRequestGroupData(
-  conv: Conversation, isGroup: boolean,
-): Promise<{ memberAddresses: string[]; groupName: string; groupImage: string }> {
-  if (!isGroup) return { memberAddresses: [], groupName: '', groupImage: '' };
-  const [memberAddresses, groupMeta] = await Promise.all([
-    groupMemberEthAddresses(conv),
-    groupNameImage(conv),
-  ]);
-  return { memberAddresses, groupName: groupMeta.name, groupImage: groupMeta.imageUrl.trim() };
-}
-
-export async function summarizeConversationRequest(
-  conv: Conversation,
-): Promise<ConversationRequestView> {
-  await conv.sync().catch(() => undefined);
-  const peerAddress = await peerEthAddressOfDm(conv);
-  const isGroup = !peerAddress;
-  const { memberAddresses, groupName, groupImage } = await readRequestGroupData(conv, isGroup);
-  const recent = await rowMessagesOf(conv, 1).catch(() => []);
-  const last = recent[0];
-  const preview = previewOfMessage(last);
-  const title = peerAddress
-    ? shortAddress(peerAddress)
-    : (groupName.trim() || `${memberAddresses.length + 1} members`);
-  const avatarUri = isGroup ? (groupImage || null) : null;
-  const avatarAddress = peerAddress ?? (avatarUri ? null : channelStampSeed(conv.id));
-  return {
-    convId: conv.id,
-    title,
-    peerAddress,
-    avatarAddress,
-    avatarUri,
-    preview: preview.slice(0, 80),
-    isGroup,
   };
 }

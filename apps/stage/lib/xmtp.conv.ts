@@ -64,14 +64,6 @@ export async function dmUnreachableReason(address: string): Promise<DmUnreachabl
   return verdict === 'stale-installations' ? 'stale-installations' : null;
 }
 
-export async function listRequestConvs(): Promise<Conversation[]> {
-  const client = await xmtpClient();
-  try {
-    await client.conversations.syncAllConversations(['unknown']);
-  } catch { }
-  return client.conversations.list(undefined, undefined, ['unknown']).catch(() => []);
-}
-
 async function withoutSyncGroups(convs: Conversation[]): Promise<Conversation[]> {
   const flags = await Promise.all(convs.map((c) => conversationIsSyncGroup(c).catch(() => false)));
   return convs.filter((c, i) => {
@@ -80,9 +72,9 @@ async function withoutSyncGroups(convs: Conversation[]): Promise<Conversation[]>
   });
 }
 
-export async function listAllowedConversations(): Promise<Conversation[]> {
+export async function listVisibleConversations(): Promise<Conversation[]> {
   const client = await xmtpClient();
-  const convs = await client.conversations.list(undefined, undefined, ['allowed']).catch(() => []);
+  const convs = await client.conversations.list(undefined, undefined, ['allowed', 'unknown']).catch(() => []);
   return withoutSyncGroups(convs);
 }
 
@@ -114,6 +106,17 @@ export async function blockRequestConv(convId: string): Promise<void> {
   const conv = await convOfLine(lineOfConv(convId));
   if (!conv) throw new Error('Conversation not found');
   await (conv as unknown as { updateConsent: (s: XmtpConsent) => Promise<void> }).updateConsent('denied');
+}
+
+export function streamNewConversations(cb: (conv: Conversation) => void): () => void {
+  const client = getCachedXmtpClient();
+  if (!client) return () => undefined;
+  let cancelled = false;
+  void client.conversations.stream((conv) => { if (!cancelled) cb(conv); return Promise.resolve(); }).catch(() => undefined);
+  return () => {
+    cancelled = true;
+    try { client.conversations.cancelStream(); } catch { }
+  };
 }
 
 export function streamConvConsent(cb: () => void): () => void {

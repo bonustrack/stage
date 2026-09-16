@@ -22,9 +22,9 @@ export {
 
 export {
   openDmWithAddress, findExistingDmWithAddress, repairDmMembership, dmUnreachableReason,
-  listRequestConvs, listAllowedConversations,
+  listVisibleConversations,
   syncConversationsFromNetwork, acceptRequestConv,
-  blockRequestConv, getConvConsentState, streamConvConsent, syncConsent,
+  blockRequestConv, getConvConsentState, streamNewConversations, streamConvConsent, syncConsent,
 } from './xmtp.conv';
 
 export { createGroup, addGroupMembers, leaveGroupConv } from './xmtp.groups';

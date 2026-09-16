@@ -3,10 +3,8 @@ import type { MutableRefObject, RefObject } from 'react';
 import { useMemo, useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Icon } from '@stage-labs/kit/react-native/icon';
-import { Box, VirtualList, type VirtualListHandle } from '../layout';
-import { Text } from '@stage-labs/kit/react-native/text';
+import { VirtualList, type VirtualListHandle } from '../layout';
 import { CHANNELS_SCROLL_KEY, saveScrollOffset } from '../../lib/scrollPos';
-import { useEffectiveColorScheme } from '../../lib/theme';
 import { HistorySyncBanner } from '../system/HistorySync';
 import type { Row as RowT } from './HomeScreen.helpers';
 import { HomeEmpty } from './HomeScreen.parts';
@@ -17,14 +15,12 @@ import { HomeOverflowMenu } from './HomeScreen.overflow';
 import { Topnav } from '../Topnav';
 import { usePublishTopnavSlot, type TopnavSlot } from './topnavSlots';
 import { getActiveAccount } from '../../lib/accounts';
-import { unreadBadgeLabel } from '../../lib/format';
 import { profileLinkOf } from '../../lib/links';
 
 interface ChannelsListProps {
   panRef?: import('../SwipeTabs.types').SimultaneousRefs;
   router: { push: (to: string | { pathname: string; params: Record<string, string> }) => void };
   sortedRows: RowT[];
-  requestCount: number;
   barLabels: string[];
   showFilterBar: boolean;
   enabledLabels: Set<string>;
@@ -47,26 +43,13 @@ interface ChannelsListProps {
   pane: boolean;
 }
 
-function HomeTopnavRight({ head, requestCount, router, onOpenSearch }: {
-  head: string; requestCount: number;
-  router: ChannelsListProps['router']; onOpenSearch: () => void;
+function HomeTopnavRight({ head, router, onOpenSearch }: {
+  head: string; router: ChannelsListProps['router']; onOpenSearch: () => void;
 }): React.ReactElement {
-  const dark = useEffectiveColorScheme() === 'dark';
-  const badgeBg = dark ? '#ffffff' : '#000000';
-  const badgeFg = dark ? '#000000' : '#ffffff';
   return (
     <>
       <Pressable onPress={onOpenSearch} hitSlop={8}>
         <Icon name="search" size={24} color={head}/>
-      </Pressable>
-      <Pressable onPress={() => { router.push('/requests'); }} hitSlop={8} style={{ position: 'relative' }}>
-        <Icon name="inbox" size={24} color={head}/>
-        {requestCount > 0 ? (
-          <Box minWidth={16} height={16} padding={{ x: 5 }} radius="full" background={badgeBg}
-            align="center" justify="center" style={{ position: 'absolute', top: -6, right: -8 }}>
-            <Text weight="semibold" size="3xs" color={badgeFg}>{unreadBadgeLabel(requestCount)}</Text>
-          </Box>
-        ) : null}
       </Pressable>
       <HomeOverflowMenu
         color={head}
@@ -98,10 +81,10 @@ function ChannelsListHeader({ p }: { p: ChannelsListProps }): React.ReactElement
 }
 
 function useHomeTopnav(p: ChannelsListProps, searchOpen: boolean, onOpenSearch: () => void, onCloseSearch: () => void): TopnavSlot {
-  const { head, requestCount, router, query, setQuery, sub, border, pane } = p;
+  const { head, router, query, setQuery, sub, border, pane } = p;
   const right = useMemo(
-    () => <HomeTopnavRight head={head} requestCount={requestCount} router={router} onOpenSearch={onOpenSearch} />,
-    [head, requestCount, router, onOpenSearch],
+    () => <HomeTopnavRight head={head} router={router} onOpenSearch={onOpenSearch} />,
+    [head, router, onOpenSearch],
   );
   const override = useMemo(
     () => (searchOpen ? (

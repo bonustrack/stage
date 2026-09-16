@@ -60,14 +60,6 @@ export async function dmUnreachableReason(address: string): Promise<DmUnreachabl
   return verdict === 'stale-installations' ? 'stale-installations' : null;
 }
 
-export async function listRequestConvs(): Promise<Conversation[]> {
-  const client = await xmtpClient();
-  try {
-    await client.conversations.syncAll([ConsentState.Unknown]);
-  } catch { }
-  return client.conversations.list({ consentStates: [ConsentState.Unknown] }).catch(() => []);
-}
-
 async function withoutSyncGroups(convs: Conversation[]): Promise<Conversation[]> {
   const flags = await Promise.all(convs.map((c) => conversationIsSyncGroup(c).catch(() => false)));
   return convs.filter((c, i) => {
@@ -76,10 +68,10 @@ async function withoutSyncGroups(convs: Conversation[]): Promise<Conversation[]>
   });
 }
 
-export async function listAllowedConversations(): Promise<Conversation[]> {
+export async function listVisibleConversations(): Promise<Conversation[]> {
   const client = await xmtpClient();
   const convs = await client.conversations
-    .list({ consentStates: [ConsentState.Allowed] })
+    .list({ consentStates: [ConsentState.Allowed, ConsentState.Unknown] })
     .catch(() => []);
   return withoutSyncGroups(convs);
 }
@@ -114,19 +106,12 @@ export async function blockRequestConv(convId: string): Promise<void> {
   await conv.updateConsentState(ConsentState.Denied);
 }
 
-interface ConsentStreamHandle { end: () => Promise<unknown> }
+interface StreamHandle { end: () => Promise<unknown> }
 
-export function streamConvConsent(cb: () => void): () => void {
-  const client = getCachedXmtpClient();
-  if (!client) return () => undefined;
-  let handle: ConsentStreamHandle | null = null;
+function endWhenCancelled<T extends StreamHandle>(start: Promise<T>): () => void {
+  let handle: StreamHandle | null = null;
   let cancelled = false;
-  void client.preferences.streamConsent({
-    onValue: (records: Consent[]) => {
-      if (records.some(c => c.entityType === ConsentEntityType.GroupId)) cb();
-    },
-    onError: () => undefined,
-  }).then((stream) => {
+  start.then((stream) => {
     if (cancelled) { void stream.end().catch(() => undefined); return; }
     handle = stream;
   }).catch(() => undefined);
@@ -134,6 +119,23 @@ export function streamConvConsent(cb: () => void): () => void {
     cancelled = true;
     if (handle) void handle.end().catch(() => undefined);
   };
+}
+
+export function streamNewConversations(cb: (conv: Conversation) => void): () => void {
+  const client = getCachedXmtpClient();
+  if (!client) return () => undefined;
+  return endWhenCancelled(client.conversations.stream({ onValue: cb, onError: () => undefined }));
+}
+
+export function streamConvConsent(cb: () => void): () => void {
+  const client = getCachedXmtpClient();
+  if (!client) return () => undefined;
+  return endWhenCancelled(client.preferences.streamConsent({
+    onValue: (records: Consent[]) => {
+      if (records.some(c => c.entityType === ConsentEntityType.GroupId)) cb();
+    },
+    onError: () => undefined,
+  }));
 }
 
 export async function syncConsent(): Promise<void> {

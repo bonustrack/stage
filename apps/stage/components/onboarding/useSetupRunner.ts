@@ -91,7 +91,12 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
   const run = (choice: Choice, withPasskey: boolean): void => {
     if (busy) return;
     const syncHistory = choiceSyncsHistory(choice);
-    setPlan({ passkey: withPasskey && passkeysAvailable(), profile: choice.kind === 'create' && choice.profile !== undefined, history: syncHistory });
+    setPlan({
+      restore: choice.kind !== 'create',
+      passkey: withPasskey && passkeysAvailable(),
+      profile: choice.kind === 'create' && choice.profile !== undefined,
+      history: syncHistory,
+    });
     begin('wallet');
     void (async (): Promise<void> => {
       try {

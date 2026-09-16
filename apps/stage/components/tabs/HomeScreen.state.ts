@@ -29,7 +29,6 @@ export interface HomeState {
   setRows: (next: RowT[] | null | ((p: RowT[] | null) => RowT[] | null)) => void;
   error: string; setError: React.Dispatch<React.SetStateAction<string>>;
   rowMenu: RowMenu | null; setRowMenu: React.Dispatch<React.SetStateAction<RowMenu | null>>;
-  requestCount: number; setRequestCount: React.Dispatch<React.SetStateAction<number>>;
   pinned: Set<string>;
   refreshFromNetworkRef: React.MutableRefObject<(() => Promise<void>) | null>;
   scroll: ScrollRefs;
@@ -49,7 +48,6 @@ export function useHomeState(): HomeState {
 
   const [error, setError] = useState<string>('');
   const [rowMenu, setRowMenu] = useState<RowMenu | null>(null);
-  const [requestCount, setRequestCount] = useState<number>(0);
   const [pinned, setPinned] = useState<Set<string>>(new Set());
 
   const refreshFromNetworkRef = useRef<(() => Promise<void>) | null>(null);
@@ -69,7 +67,7 @@ export function useHomeState(): HomeState {
 
   return {
     rows, setRowsState, setRows, error, setError, rowMenu, setRowMenu,
-    requestCount, setRequestCount, pinned, refreshFromNetworkRef,
+    pinned, refreshFromNetworkRef,
     scroll: { listRef, savedOffsetRef, didRestoreRef, contentHeightRef },
   };
 }

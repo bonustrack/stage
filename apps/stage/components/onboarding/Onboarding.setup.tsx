@@ -7,7 +7,7 @@ import { OnboardingCard, SkipLink } from './OnboardingCard';
 import { DANGER, usePalette } from '../../lib/theme';
 import type { Stage } from './flow';
 import {
-  STAGE_LABELS, setupHint, setupStages, setupTitle, stageState,
+  setupHint, setupStages, setupTitle, stageLabel, stageState,
   type SetupErr, type SetupPlan, type StageState,
 } from './Onboarding.setup.model';
 
@@ -24,15 +24,15 @@ function StageIndicator({ state, failed, pal }: { state: StageState; failed: boo
   return <Box width={6} height={6} radius="full" background={pal.sub} margin={{ x: 5 }} />;
 }
 
-function StageRow({ stage, state, failed, last, pal }: {
-  stage: Stage; state: StageState; failed: boolean; last: boolean; pal: Pal;
+function StageRow({ label, state, failed, last, pal }: {
+  label: string; state: StageState; failed: boolean; last: boolean; pal: Pal;
 }): React.ReactElement {
   return (
     <Row align="center" gap={8} height={ROW_HEIGHT} padding={{ x: 16 }} border={last ? undefined : { bottom: { width: 1, color: pal.border } }}>
       <Box width={ROW_ICON} align="center">
         <StageIndicator state={state} failed={failed} pal={pal} />
       </Box>
-      <Text size="3xl" color={state === 'pending' ? pal.sub : pal.link}>{STAGE_LABELS[stage]}</Text>
+      <Text size="3xl" color={state === 'pending' ? pal.sub : pal.link}>{label}</Text>
     </Row>
   );
 }
@@ -60,11 +60,11 @@ export function SetupStep({ pal, dark, busy, stage, setupErr, plan, onRetry, onB
   const stages = setupStages(plan);
   const actions = SetupActions({ dark, busy, stage, setupErr, onRetry, onBack, onSkipHistory });
   return (
-    <OnboardingCard title={setupTitle(stage, setupErr)} footer={actions}>
+    <OnboardingCard title={setupTitle(stage, setupErr, plan)} footer={actions}>
       <Text size="4xl" color="link" textAlign="center" style={{ paddingVertical: 12 }}>{setupHint(stage, setupErr)}</Text>
       <Col width="100%" radius={ROW_RADIUS} style={{ borderWidth: 1, borderColor: pal.border, overflow: 'hidden' }}>
         {stages.map((s, i) => (
-          <StageRow key={s} stage={s} state={stageState(s, stage, stages)} failed={setupErr !== null} last={i === stages.length - 1} pal={pal} />
+          <StageRow key={s} label={stageLabel(s, plan)} state={stageState(s, stage, stages)} failed={setupErr !== null} last={i === stages.length - 1} pal={pal} />
         ))}
       </Col>
     </OnboardingCard>

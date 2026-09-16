@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  setupHint, setupStages, setupTitle, stageState,
+  setupHint, setupStages, setupTitle, stageLabel, stageState,
 } from '../components/onboarding/Onboarding.setup.model';
 
 describe('setupStages', () => {
@@ -24,6 +24,9 @@ describe('stageState', () => {
 describe('setup copy', () => {
   test('switches to the retry title and hint on error', () => {
     expect(setupTitle('messaging', null)).toBe('Setting up secure messaging');
+    expect(setupTitle('wallet', null, { restore: true })).toBe('Restoring your wallet');
+    expect(stageLabel('wallet', {})).toBe('Creating your wallet');
+    expect(stageLabel('wallet', { restore: true })).toBe('Restoring your wallet');
     expect(setupTitle('messaging', { message: 'x', retry: 'restart' })).toBe('Setup needs another try');
     expect(setupTitle('passkey', { message: 'x', accountId: '0xabc', retry: 'passkey' })).toBe('Passkey not added');
     expect(setupHint('messaging', { message: 'boom', retry: 'restart' })).toContain('boom');

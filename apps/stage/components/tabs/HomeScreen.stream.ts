@@ -30,14 +30,9 @@ interface MsgHandlerDeps {
   isCancelled: () => boolean;
   setRows: (next: (p: RowT[] | null) => RowT[] | null) => void;
   refresh: () => Promise<void>;
-  refreshRequestCount: () => Promise<void>;
 }
 
-function makeMissRefresher(
-  isCancelled: () => boolean,
-  refresh: () => Promise<void>,
-  refreshRequestCount: () => Promise<void>,
-) {
+function makeMissRefresher(isCancelled: () => boolean, refresh: () => Promise<void>) {
   let missTimer: number | null = null;
   let refreshInFlight = false;
 
@@ -56,17 +51,14 @@ function makeMissRefresher(
 
   return (convId: string | null): void => {
     void (async (): Promise<void> => {
-      if (convId) {
-        const consent = await getConvConsentState(convId).catch(() => null);
-        if (consent === 'unknown') { void refreshRequestCount(); return; }
-      }
+      if (convId && (await getConvConsentState(convId).catch(() => null)) === 'denied') return;
       if (!isCancelled()) armFullRefresh();
     })();
   };
 }
 
-export function makeMsgStreamHandler({ isCancelled, setRows, refresh, refreshRequestCount }: MsgHandlerDeps) {
-  const onMiss = makeMissRefresher(isCancelled, refresh, refreshRequestCount);
+export function makeMsgStreamHandler({ isCancelled, setRows, refresh }: MsgHandlerDeps) {
+  const onMiss = makeMissRefresher(isCancelled, refresh);
   return ({ convId: streamConvId, msg }: { convId: string | null; msg: StreamedMessage | null }): void => {
     if (isCancelled() || !msg) return;
     const decoded = msg.content;

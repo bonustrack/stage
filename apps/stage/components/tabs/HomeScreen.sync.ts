@@ -5,8 +5,8 @@ import {
   getOrCreateXmtpClient, NoAccountError,
   syncPreferences,
   primeInboxEthCache, subscribeAllMessages,
-  listRequestConvs, listAllowedConversations, syncConversationsFromNetwork,
-  streamConvConsent, syncConsent, conversationIsSyncGroup,
+  listVisibleConversations, syncConversationsFromNetwork,
+  streamNewConversations, streamConvConsent, syncConsent, conversationIsSyncGroup,
 } from '../../modules/messaging';
 import { hydrateCachedRows } from '../../modules/messaging';
 import { hydratePeerProfiles } from '../../lib/peerProfiles';
@@ -24,7 +24,6 @@ interface SyncArgs {
   setRowsState: Dispatch<SetStateAction<RowT[] | null>>;
   setRows: (next: RowT[] | null | ((p: RowT[] | null) => RowT[] | null)) => void;
   setError: Dispatch<SetStateAction<string>>;
-  setRequestCount: Dispatch<SetStateAction<number>>;
   refreshFromNetworkRef: MutableRefObject<(() => Promise<void>) | null>;
 }
 
@@ -40,7 +39,6 @@ interface SyncRun {
 interface Refreshers {
   refresh: () => Promise<void>;
   refreshThrottled: () => Promise<void>;
-  refreshRequestCount: () => Promise<void>;
 }
 
 function makeRefreshers(
@@ -49,12 +47,6 @@ function makeRefreshers(
 ): Refreshers {
   let lastRefreshAt = 0;
   const THROTTLE_MS = 30_000;
-  const refreshRequestCount = async (): Promise<void> => {
-    try {
-      const reqs = await listRequestConvs();
-      if (!run.cancelled) args.setRequestCount(reqs.length);
-    } catch { }
-  };
   const paintFrom = async (convs: Conversation[]): Promise<boolean> => {
     await primeMembers(client, convs);
     const summarized = (await Promise.all(
@@ -70,21 +62,20 @@ function makeRefreshers(
   const refresh = async (): Promise<void> => {
     if (run.cancelled) return;
     try {
-      const local = await perfTime('channels.listLocal', listAllowedConversations);
+      const local = await perfTime('channels.listLocal', listVisibleConversations);
       perfLog('channels.localCount', { count: local.length });
       if (local.length > 0) await perfTime('channels.paintLocal', () => paintFrom(local));
       await perfTime('channels.syncNetwork', syncConversationsFromNetwork);
       if (run.cancelled) return;
-      const fresh = await listAllowedConversations();
+      const fresh = await listVisibleConversations();
       await perfTime('channels.paintFresh', () => paintFrom(fresh));
-      void refreshRequestCount();
     } catch { }
   };
   const refreshThrottled = async (): Promise<void> => {
     if (run.cancelled || Date.now() - lastRefreshAt < THROTTLE_MS) return;
     await refresh();
   };
-  return { refresh, refreshThrottled, refreshRequestCount };
+  return { refresh, refreshThrottled };
 }
 
 async function primeMembers(client: Awaited<ReturnType<typeof getOrCreateXmtpClient>>, convs: Conversation[]): Promise<void> {
@@ -97,25 +88,22 @@ async function primeMembers(client: Awaited<ReturnType<typeof getOrCreateXmtpCli
   } catch { }
 }
 
-async function subscribeConvStream(
-  client: Awaited<ReturnType<typeof getOrCreateXmtpClient>>, selfInboxId: string,
-  run: SyncRun, args: SyncArgs, r: Refreshers,
-): Promise<void> {
+async function onNewConversation(conv: Conversation, selfInboxId: string, run: SyncRun, args: SyncArgs): Promise<void> {
+  schedulePushTopicRefresh();
+  if (await conversationIsSyncGroup(conv).catch(() => false)) { registerHiddenConv(conv.id); return; }
+  const cs = await (conv as unknown as { consentState: () => Promise<string> })
+    .consentState().catch(() => 'allowed');
+  if (cs === 'denied') return;
+  const row = await summarize(conv, selfInboxId).catch(() => null);
+  if (!row || run.cancelled) return;
+  args.setRows(prev => (prev ? [row, ...prev.filter(x => x.convId !== row.convId)] : [row]));
+}
+
+function subscribeConvStream(selfInboxId: string, run: SyncRun, args: SyncArgs): void {
   try {
-    const streamFn = client.conversations.stream.bind(client.conversations) as
-      (cb: (conv: Conversation | null) => Promise<void>) => Promise<unknown>;
-    const streamResult: unknown = await streamFn(async (conv) => {
-      if (run.cancelled || !conv) return;
-      schedulePushTopicRefresh();
-      if (await conversationIsSyncGroup(conv).catch(() => false)) { registerHiddenConv(conv.id); return; }
-      const cs = await (conv as unknown as { consentState: () => Promise<string> })
-        .consentState().catch(() => 'allowed');
-      if (cs !== 'allowed') { void r.refreshRequestCount(); return; }
-      const row = await summarize(conv, selfInboxId).catch(() => null);
-      if (!row) return;
-      args.setRows(prev => (prev ? [row, ...prev.filter(x => x.convId !== row.convId)] : [row]));
+    run.cancelConvStream = streamNewConversations((conv) => {
+      if (!run.cancelled) void onNewConversation(conv, selfInboxId, run, args);
     });
-    run.cancelConvStream = typeof streamResult === 'function' ? (streamResult as () => void) : null;
   } catch { }
 }
 
@@ -123,20 +111,20 @@ function subscribeLiveStreams(run: SyncRun, args: SyncArgs, r: Refreshers): void
   try {
     run.cancelMsgStream = subscribeAllMessages(makeMsgStreamHandler({
       isCancelled: () => run.cancelled, setRows: args.setRows,
-      refresh: r.refresh, refreshRequestCount: r.refreshRequestCount,
+      refresh: r.refresh,
     }));
   } catch { }
   try {
     run.cancelConsentStream = streamConvConsent(() => {
       void (async (): Promise<void> => {
-        await syncConsent(); void r.refresh(); void r.refreshRequestCount();
+        await syncConsent(); void r.refresh();
       })();
     });
   } catch { }
   run.appStateSub = AppState.addEventListener('change', (state) => {
     if (state !== 'active') return;
     void syncPreferences(); void syncConsent();
-    void r.refreshThrottled(); void r.refreshRequestCount();
+    void r.refreshThrottled();
   });
 }
 
@@ -149,7 +137,7 @@ async function initSync(run: SyncRun, args: SyncArgs): Promise<void> {
     args.refreshFromNetworkRef.current = r.refresh;
     await hydratePeerProfiles();
     await r.refresh();
-    await subscribeConvStream(client, selfInboxId, run, args, r);
+    subscribeConvStream(selfInboxId, run, args);
     subscribeLiveStreams(run, args, r);
     await syncPreferences();
     await syncConsent();

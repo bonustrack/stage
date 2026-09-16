@@ -87,7 +87,7 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
 
   useChannelsSync({
     accountEpoch, rows, setRowsState: st.setRowsState, setRows: st.setRows,
-    setError: st.setError, setRequestCount: st.setRequestCount,
+    setError: st.setError,
     refreshFromNetworkRef: st.refreshFromNetworkRef,
   });
 
@@ -111,7 +111,7 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
 
   const list = (
     <ChannelsList
-      panRef={panRef} router={router} sortedRows={visibleRows} requestCount={st.requestCount}
+      panRef={panRef} router={router} sortedRows={visibleRows}
       barLabels={barLabels} showFilterBar={showFilterBar}
       enabledLabels={enabledLabels} onToggleLabel={toggleLabel}
       unreadOnly={unreadOnly} onToggleUnread={toggleUnread} onClearAll={clearAllFilters}
