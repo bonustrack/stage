@@ -31,8 +31,8 @@ export interface FormFieldProps {
 }
 
 function useFieldText(): { color: string; fontFamily: string; fontSize: number } {
-  const { text } = usePalette();
-  return { color: text, fontFamily: fontName.sans, fontSize: fontSize('xl') };
+  const { link } = usePalette();
+  return { color: link, fontFamily: fontName.sans, fontSize: fontSize('xl') };
 }
 
 const BARE_INPUT = {
