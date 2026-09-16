@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { bubbleFallbackText, bubbleFallbackShape } from '../components/MessengerBubble.boundary.model';
+import { bubbleFallbackText, bubbleFallbackShape } from '../components/bubble/boundary.model';
 
 const PLACEHOLDER = '(this message could not be displayed)';
 

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { pollQuestionBlocks, type PollQuestionInput } from '../components/MessengerBubble.poll.model';
+import { pollQuestionBlocks, type PollQuestionInput } from '../components/bubble/poll.model';
 
 function votesFor(...sizes: number[]): Map<number, Set<string>> {
   const m = new Map<number, Set<string>>();

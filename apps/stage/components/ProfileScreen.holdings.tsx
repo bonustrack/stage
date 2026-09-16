@@ -6,9 +6,9 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from './Spinner';
 import { Col, Row } from './layout';
 import { DANGER, usePalette } from '../lib/theme';
-import { useAssetRows } from './tabs/WalletScreen.data';
-import { TokensList } from './tabs/WalletScreen.tokens';
-import { NftsView } from './tabs/WalletScreen.parts';
+import { useAssetRows } from './wallet/screen/data';
+import { TokensList } from './wallet/screen/tokens';
+import { NftsView } from './wallet/screen/parts';
 import { useNfts } from '../lib/useNfts';
 
 type HoldingsTab = 'tokens' | 'nfts';

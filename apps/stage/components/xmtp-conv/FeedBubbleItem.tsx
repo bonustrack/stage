@@ -4,10 +4,10 @@ import type { Dispatch, SetStateAction } from 'react';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import type { SignatureRequestContent } from '@stage-labs/client/xmtp/sign';
 import type { WalletSendCallsContent } from '@stage-labs/client/xmtp/tx';
-import { MessengerBubble } from '../MessengerBubble';
-import { BubbleErrorBoundary } from '../MessengerBubble.boundary';
-import type { MessengerBubbleProps } from '../MessengerBubble.props';
-import type { MenuAnchor } from '../MessengerBubble.anchor';
+import { MessengerBubble } from '../bubble/MessengerBubble';
+import { BubbleErrorBoundary } from '../bubble/boundary';
+import type { MessengerBubbleProps } from '../bubble/props';
+import type { MenuAnchor } from '../bubble/props';
 import { previewOf } from './feed-helpers';
 
 interface FeedBubbleItemProps {

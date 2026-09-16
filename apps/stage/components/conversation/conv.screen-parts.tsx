@@ -7,7 +7,7 @@ import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import type { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { getPeerName } from '../../lib/peerProfiles';
-import { MessengerComposer } from '../MessengerComposer';
+import { MessengerComposer } from '../composer/MessengerComposer';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { ChannelMenu } from '../ChannelMenu';
 import { menuPointOf } from '../AnchoredMenu';

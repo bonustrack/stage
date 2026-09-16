@@ -12,7 +12,7 @@ import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Divider } from '@stage-labs/kit/react-native/divider';
 import { Avatar } from '../Avatar';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
-import { REACT_PRESETS } from '../MessengerBubble';
+import { REACT_PRESETS } from '../bubble/MessengerBubble';
 import { usePalette } from '../../lib/theme';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { useBlockRadius } from '../../lib/theme';
@@ -20,7 +20,7 @@ import { menuPlacement, MENU_GAP, MENU_STRIP_HEIGHT } from './menuPlacement';
 import { MENU_SHADOW, useAnchoredMenus } from '../AnchoredMenu';
 import { anchoredMenuStyle, type MenuPoint } from '../AnchoredMenu.model';
 import { dismissContextMenuProps } from '../../lib/contextMenu';
-import type { MenuAnchor } from '../MessengerBubble.anchor';
+import type { MenuAnchor } from '../bubble/props';
 
 export function HeaderAvatar({ peerAddr, groupImage, channelId, isGroup, border }: {
   peerAddr: string | null; groupImage: string; channelId: string; isGroup: boolean; border: string;

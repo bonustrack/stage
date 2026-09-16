@@ -5,7 +5,7 @@ import { Box, pinnedEdges } from '../layout';
 import { usePalette } from '../../lib/theme';
 import { useTotalUnread } from '../../lib/useTotalUnread';
 import { unreadBadgeLabel } from '../../lib/format';
-import { HomeScreen } from './HomeScreen';
+import { HomeScreen } from '../home/HomeScreen';
 import { WebTabRail } from './WebTabRail';
 import { useTopChromeInset, useWebTabRail, WEB_TAB_RAIL_WIDTH } from '../../lib/webLayout';
 import { usePaneWidth } from './paneWidth';

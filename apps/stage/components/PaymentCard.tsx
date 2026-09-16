@@ -3,8 +3,8 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Row, Box } from './layout';
-import { TokenAvatar } from './tabs/WalletScreen.tokenAvatar';
-import { usePayerBalance, type PayerBalance } from './MessengerBubble.balance';
+import { TokenAvatar } from './wallet/screen/tokenAvatar';
+import { usePayerBalance, type PayerBalance } from './bubble/balance';
 import { usePalette, useBlockRadius, withAlpha } from '../lib/theme';
 
 interface PaymentBalanceArgs {

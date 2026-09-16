@@ -3,7 +3,7 @@ import {
   walletHeroDisplay,
   walletTabOptions,
   walletTotalUsd,
-} from '../components/tabs/WalletScreen.model';
+} from '../components/wallet/screen/model';
 
 describe('walletTabOptions', () => {
   test('lists tokens, NFTs and activity on every platform', () => {

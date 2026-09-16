@@ -10,7 +10,7 @@ import { markConvRead } from '../../modules/messaging';
 import { markConvAtBottom } from '../../lib/scrollPos';
 import { isCoarsePointer } from '../../lib/pointer';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import type { MenuAnchor } from '../MessengerBubble.anchor';
+import type { MenuAnchor } from '../bubble/props';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { useReactionsLayer } from './useReactionsLayer';
 import { useVotesLayer } from './useVotesLayer';

@@ -13,7 +13,7 @@ import { Spinner } from '../Spinner';
 import { TokenRowBody } from '../wallet/TokenRowView';
 import { usePalette } from '../../lib/theme';
 import { useActiveAccountRecord } from '../../modules/messaging';
-import { useAssetRows } from '../tabs/WalletScreen.data';
+import { useAssetRows } from './screen/data';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, type AssetRow } from '@stage-labs/client/wallet/assets';
 
 export interface TokenChoice { symbol: string; chainId: number }

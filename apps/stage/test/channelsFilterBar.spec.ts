@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { channelsFilterBarVisible } from '../components/tabs/HomeScreen.model';
+import { channelsFilterBarVisible } from '../components/home/model';
 
 describe('channelsFilterBarVisible', () => {
   test('hides when there are no labels', () => {

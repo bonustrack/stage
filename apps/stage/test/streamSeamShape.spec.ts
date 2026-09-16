@@ -11,7 +11,7 @@ const webSeam = read('lib', 'xmtp.stream.web.ts');
 const nativeTypes = read('lib', 'xmtp.types.ts');
 const webTypes = read('lib', 'xmtp.types.web.ts');
 const sharedTypes = read('lib', 'xmtp.types.core.ts');
-const consumer = read('components', 'tabs', 'HomeScreen.stream.ts');
+const consumer = read('components', 'home', 'stream.ts');
 
 describe('streamed messages reach subscribers in one platform-neutral shape', () => {
   test('both seams normalise before fanning out', () => {

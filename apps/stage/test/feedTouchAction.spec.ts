@@ -5,7 +5,7 @@ import { join } from 'path';
 const APP_ROOT = join(import.meta.dir, '..');
 const read = (...p: string[]) => readFileSync(join(APP_ROOT, ...p), 'utf8');
 
-const bubbleGestures = read('components', 'MessengerBubble.gestures.ts');
+const bubbleGestures = read('components', 'bubble', 'gestures.ts');
 const swipeTabs = read('components', 'SwipeTabs.tsx');
 
 describe('touch dragging a message bubble still scrolls the feed on mobile web', () => {

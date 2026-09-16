@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { tokenRowModel, type TokenRowFormat } from '../components/tabs/WalletScreen.model';
+import { tokenRowModel, type TokenRowFormat } from '../components/wallet/screen/model';
 
 const fmt: TokenRowFormat = {
   fmtUsd: (v, maxFrac = 2) => `$${v.toFixed(maxFrac)}`,

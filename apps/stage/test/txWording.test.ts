@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
   isTransferRequest, humanizeAction, txActionLabel,
-} from '../components/MessengerBubble.txwording';
+} from '../components/bubble/txwording';
 import type { DecodedCall } from '@stage-labs/client/wallet/txDecode';
 
 const call = (functionName: string, args: DecodedCall['args'] = []): DecodedCall => ({

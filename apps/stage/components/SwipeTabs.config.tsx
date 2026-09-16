@@ -1,9 +1,9 @@
 
 import type { Href } from 'expo-router';
 
-import { HomeScreen } from './tabs/HomeScreen';
+import { HomeScreen } from './home/HomeScreen';
 import { ContactsScreen } from './ContactsScreen';
-import { WalletScreen } from './tabs/WalletScreen';
+import { WalletScreen } from './wallet/screen/WalletScreen';
 
 export type { SimultaneousRefs } from './SwipeTabs.types';
 import type { SimultaneousRefs } from './SwipeTabs.types';
