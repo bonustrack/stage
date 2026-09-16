@@ -1,5 +1,7 @@
 import { errorMessage } from '@stage-labs/client/errors';
-import { createSmartAccount, enablePasskeyForRecord, passkeysAvailable, restoreSmartAccount } from '../../lib/zerodev';
+import {
+  createSmartAccount, enablePasskeyForRecord, passkeysAvailable, peekRestorableAccount, restoreSmartAccount,
+} from '../../lib/zerodev';
 import { kernelCustody } from '../../lib/zerodev/linkPasskey';
 import { adoptPhrase } from '../../lib/accountTransfer';
 import { AccountManager } from '../../modules/messaging';
@@ -9,6 +11,10 @@ import { applyProfileSetup } from '../../lib/profileSetup';
 import type { ProfileSetup } from './Onboarding.profile.model';
 
 export type Stage = 'wallet' | 'passkey' | 'messaging' | 'profile' | 'history' | 'finishing';
+
+export type PasskeyChoice = 'none' | 'add' | 'verify';
+
+export type PasskeyMode = Exclude<PasskeyChoice, 'none'>;
 
 export class XmtpSetupError extends Error {
   readonly accountId: string;
@@ -59,9 +65,18 @@ async function passkeyRequired(rec: AccountRecord): Promise<boolean> {
   return (await kernelCustody(rec.address as `0x${string}`)) === 'passkey-root';
 }
 
+export interface PhraseInspection { passkeyRequired: boolean; alreadyImported: boolean }
+
+export async function inspectPhrase(phrase: string): Promise<PhraseInspection> {
+  const { address, alreadyImported } = await peekRestorableAccount(await adoptPhrase(phrase));
+  if (alreadyImported) return { passkeyRequired: false, alreadyImported };
+  return { passkeyRequired: (await kernelCustody(address)) === 'passkey-root', alreadyImported };
+}
+
 async function finishAccount(
-  rec: AccountRecord, withPasskey: boolean, onStage?: (s: Stage) => void,
+  rec: AccountRecord, passkey: PasskeyChoice, onStage?: (s: Stage) => void,
 ): Promise<{ id: string; address: string; warning: SetupWarning }> {
+  const withPasskey = passkey !== 'none';
   const required = !withPasskey && await passkeyRequired(rec);
   if (required && !passkeysAvailable()) throw new PasskeySetupError(rec.id, PASSKEY_REQUIRED);
   if ((withPasskey || required) && passkeysAvailable()) await securePasskey(rec, onStage);
@@ -69,10 +84,16 @@ async function finishAccount(
   return { id: rec.id, address: rec.address, warning: null };
 }
 
+export async function confirmRestoredPasskey(phrase: string): Promise<string> {
+  const { record } = await restoreSmartAccount(await adoptPhrase(phrase));
+  await securePasskey(record);
+  return record.id;
+}
+
 export async function resumeWithPasskey(accountId: string, onStage?: (s: Stage) => void): Promise<void> {
   const rec = (await loadAccounts()).find((a) => a.id === accountId);
   if (!rec) throw new Error('This account is no longer on the device.');
-  await finishAccount(rec, true, onStage);
+  await finishAccount(rec, 'verify', onStage);
 }
 
 export async function abandonAccount(accountId: string): Promise<void> {
@@ -90,16 +111,16 @@ async function setUpProfile(address: string, profile: ProfileSetup, onStage?: (s
 }
 
 export async function createWallet(
-  withPasskey: boolean, onStage?: (s: Stage) => void, profile?: ProfileSetup,
+  passkey: PasskeyChoice, onStage?: (s: Stage) => void, profile?: ProfileSetup,
 ): Promise<SetupWarning> {
   onStage?.('wallet');
-  const account = await finishAccount(await createSmartAccount(), withPasskey, onStage);
+  const account = await finishAccount(await createSmartAccount(), passkey, onStage);
   if (profile === undefined) return account.warning;
   return account.warning ?? await setUpProfile(account.address, profile, onStage);
 }
 
 export async function restoreWallet(
-  phrase: string, withPasskey: boolean, onStage?: (s: Stage) => void,
+  phrase: string, passkey: PasskeyChoice, onStage?: (s: Stage) => void,
 ): Promise<SetupWarning> {
   onStage?.('wallet');
   const { record, alreadyImported } = await restoreSmartAccount(await adoptPhrase(phrase));
@@ -107,7 +128,7 @@ export async function restoreWallet(
     await bringMessagingOnline(record.id, onStage);
     return { title: 'Already on this device', message: 'This account was already imported here, so we switched to it instead of adding it again.' };
   }
-  return (await finishAccount(record, withPasskey, onStage)).warning;
+  return (await finishAccount(record, passkey, onStage)).warning;
 }
 
 export async function importKeyAccount(pk: Hex, onStage?: (s: Stage) => void): Promise<SetupWarning> {

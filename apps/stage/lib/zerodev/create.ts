@@ -74,22 +74,38 @@ export async function createSmartAccount(opts: CreateSmartAccountOpts = {}): Pro
   return storeSmartAccount(phraseId, await pickFreshAccount(makePublicClient(), phraseId), opts.label);
 }
 
-export async function restoreSmartAccount(phraseId: string): Promise<RestoredSmartAccount> {
-  requireConfigured();
-  const publicClient = makePublicClient();
+type Restorable = { kind: 'local'; record: AccountRecord } | { kind: 'candidate'; candidate: Candidate };
+
+async function findRestorable(publicClient: PublicClient, phraseId: string): Promise<Restorable> {
   const local = new Map((await loadAccounts()).map((a) => [a.address.toLowerCase(), a]));
   let alreadyHere: AccountRecord | null = null;
   for (let hdIndex = 0; hdIndex < FRESH_SEARCH_LIMIT; hdIndex++) {
     const candidate = await candidateAt(publicClient, phraseId, hdIndex);
     const existing = local.get(candidate.address.toLowerCase());
     if (existing) { alreadyHere ??= existing; continue; }
-    if (await identityInUse(publicClient, candidate.address)) {
-      return { record: await storeSmartAccount(phraseId, candidate), alreadyImported: false };
-    }
+    if (await identityInUse(publicClient, candidate.address)) return { kind: 'candidate', candidate };
     if (alreadyHere) break;
-    return { record: await storeSmartAccount(phraseId, candidate), alreadyImported: false };
+    return { kind: 'candidate', candidate };
   }
   if (!alreadyHere) throw new Error('Could not find a wallet for this recovery phrase.');
-  await setActiveAccountId(alreadyHere.id);
-  return { record: alreadyHere, alreadyImported: true };
+  return { kind: 'local', record: alreadyHere };
+}
+
+export interface RestorableAccount { address: `0x${string}`; alreadyImported: boolean }
+
+export async function peekRestorableAccount(phraseId: string): Promise<RestorableAccount> {
+  requireConfigured();
+  const found = await findRestorable(makePublicClient(), phraseId);
+  if (found.kind === 'local') return { address: found.record.address as `0x${string}`, alreadyImported: true };
+  return { address: found.candidate.address, alreadyImported: false };
+}
+
+export async function restoreSmartAccount(phraseId: string): Promise<RestoredSmartAccount> {
+  requireConfigured();
+  const found = await findRestorable(makePublicClient(), phraseId);
+  if (found.kind === 'candidate') {
+    return { record: await storeSmartAccount(phraseId, found.candidate), alreadyImported: false };
+  }
+  await setActiveAccountId(found.record.id);
+  return { record: found.record, alreadyImported: true };
 }

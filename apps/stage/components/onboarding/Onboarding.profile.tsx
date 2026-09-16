@@ -49,15 +49,13 @@ export function ProfileStep({ pal, dark, busy, onContinue }: {
   const problem = profileStepProblem(label, displayName, image !== null);
   const ready = canContinueProfile(state, label, displayName, image !== null);
   const footer = (
-    <>
-      <Button dark={dark} size="lg" fullWidth pill tintBg={pal.primary} tintFg={pal.bg}
-        label="Continue" disabled={busy || !ready}
-        onPress={() => { onContinue(profileSetupFrom(label, displayName, image)); }} />
-      <SkipLink disabled={busy} onPress={() => { onContinue(null); }} />
-    </>
+    <Button dark={dark} size="lg" fullWidth pill tintBg={pal.primary} tintFg={pal.bg}
+      label="Continue" disabled={busy || !ready}
+      onPress={() => { onContinue(profileSetupFrom(label, displayName, image)); }} />
   );
   return (
     <OnboardingCard title="Set up your profile" footer={footer}
+      after={<SkipLink disabled={busy} onPress={() => { onContinue(null); }} />}
       banner={<PicturePicker pal={pal} image={image} busy={busy} onPick={setImage} />}>
       <FormField label="Username" placeholder="e.g. alice123" value={raw} onChangeText={(t) => { setRaw(sanitizeLabelInput(t)); }} disabled={busy}
         inputProps={{ autoCapitalize: 'none', autoCorrect: false }}

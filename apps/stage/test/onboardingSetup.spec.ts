@@ -2,13 +2,15 @@ import { describe, expect, test } from 'bun:test';
 import {
   setupHint, setupStages, setupTitle, stageLabel, stageState,
 } from '../components/onboarding/Onboarding.setup.model';
+import { passkeyStepCopy } from '../components/onboarding/Onboarding.steps.model';
 
 describe('setupStages', () => {
   test('adds the history stage only for imports and restores', () => {
     expect(setupStages({})).toEqual(['wallet', 'messaging', 'finishing']);
     expect(setupStages({ history: true })).toEqual(['wallet', 'messaging', 'history', 'finishing']);
     expect(setupStages({ profile: true })).toEqual(['wallet', 'messaging', 'profile', 'finishing']);
-    expect(setupStages({ passkey: true, profile: true })).toEqual(['wallet', 'passkey', 'messaging', 'profile', 'finishing']);
+    expect(setupStages({ passkey: 'add', profile: true })).toEqual(['wallet', 'passkey', 'messaging', 'profile', 'finishing']);
+    expect(setupStages({ restore: true, passkey: 'verify' })).toEqual(['wallet', 'passkey', 'messaging', 'finishing']);
   });
 });
 
@@ -29,8 +31,20 @@ describe('setup copy', () => {
     expect(stageLabel('wallet', { restore: true })).toBe('Restoring your wallet');
     expect(setupTitle('messaging', { message: 'x', retry: 'restart' })).toBe('Setup needs another try');
     expect(setupTitle('passkey', { message: 'x', accountId: '0xabc', retry: 'passkey' })).toBe('Passkey not added');
+    expect(setupTitle('passkey', { message: 'x', accountId: '0xabc', retry: 'passkey' }, { passkey: 'verify' })).toBe('Passkey not confirmed');
+    expect(setupTitle('passkey', null, { passkey: 'verify' })).toBe('Confirming your passkey');
+    expect(setupHint('passkey', null, { passkey: 'verify' })).toContain('protects this wallet');
     expect(setupHint('messaging', { message: 'boom', retry: 'restart' })).toContain('boom');
     expect(setupHint('messaging', { message: 'boom', accountId: '0xabc', retry: 'messaging' })).toContain('wallet is ready');
     expect(setupHint('passkey', { message: 'Dismissed.', accountId: '0xabc', retry: 'passkey' })).toContain('start over');
+  });
+});
+
+describe('passkeyStepCopy', () => {
+  test('a wallet that already has a passkey must confirm it and cannot skip', () => {
+    const verify = passkeyStepCopy('verify');
+    expect(verify.skippable).toBe(false);
+    expect(verify.title).toBe('Confirm your passkey');
+    expect(passkeyStepCopy('add')).toMatchObject({ skippable: true, title: 'Add a passkey' });
   });
 });

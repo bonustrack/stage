@@ -65,6 +65,12 @@ export function ImportStep({ pal, dark, busy, onTransfer }: {
     setErr(null);
     onTransfer(parsed.transfer);
   };
+  const onScan = (code: string): void => {
+    setScanning(false);
+    const parsed = parseImportInput(code);
+    setText(parsed.ok && parsed.transfer.kind === 'phrase' ? parsed.transfer.phrase : '');
+    submit(code);
+  };
   const phraseField = (
     <>
       <Text size="md" color={pal.sub}>
@@ -97,7 +103,7 @@ export function ImportStep({ pal, dark, busy, onTransfer }: {
   );
   return (
     <OnboardingCard title="Import wallet" footer={footer}>
-      {scanning ? <QrScanner dark={dark} onScan={(code) => { setScanning(false); setText(code); submit(code); }} /> : phraseField}
+      {scanning ? <QrScanner dark={dark} onScan={onScan} /> : phraseField}
     </OnboardingCard>
   );
 }

@@ -37,20 +37,20 @@ function StageRow({ label, state, failed, last, pal }: {
   );
 }
 
-function SetupActions({ dark, busy, stage, setupErr, onRetry, onBack, onSkipHistory }: {
-  dark: boolean; busy: boolean; stage: Stage; setupErr: SetupErr | null;
-  onRetry: () => void; onBack: () => void; onSkipHistory: () => void;
+function SetupActions({ dark, busy, setupErr, onRetry }: {
+  dark: boolean; busy: boolean; setupErr: SetupErr | null; onRetry: () => void;
+}): React.ReactElement | null {
+  if (setupErr === null) return null;
+  return <Button dark={dark} size="lg" fullWidth pill color="primary" variant="solid" label="Try again" disabled={busy} onPress={onRetry} />;
+}
+
+function SetupLink({ busy, stage, setupErr, onBack, onSkipHistory }: {
+  busy: boolean; stage: Stage; setupErr: SetupErr | null; onBack: () => void; onSkipHistory: () => void;
 }): React.ReactElement | null {
   if (setupErr !== null) {
-    return (
-      <>
-        <Button dark={dark} size="lg" fullWidth pill color="primary" variant="solid" label="Try again" disabled={busy} onPress={onRetry} />
-        {setupErr.retry === 'messaging' ? null : <SkipLink label="Start over" disabled={busy} onPress={onBack} />}
-      </>
-    );
+    return setupErr.retry === 'messaging' ? null : <SkipLink label="Start over" disabled={busy} onPress={onBack} />;
   }
-  if (stage !== 'history') return null;
-  return <SkipLink onPress={onSkipHistory} />;
+  return stage === 'history' ? <SkipLink onPress={onSkipHistory} /> : null;
 }
 
 export function SetupStep({ pal, dark, busy, stage, setupErr, plan, onRetry, onBack, onSkipHistory }: {
@@ -58,10 +58,11 @@ export function SetupStep({ pal, dark, busy, stage, setupErr, plan, onRetry, onB
   onRetry: () => void; onBack: () => void; onSkipHistory: () => void;
 }): React.ReactElement {
   const stages = setupStages(plan);
-  const actions = SetupActions({ dark, busy, stage, setupErr, onRetry, onBack, onSkipHistory });
+  const actions = SetupActions({ dark, busy, setupErr, onRetry });
+  const link = SetupLink({ busy, stage, setupErr, onBack, onSkipHistory });
   return (
-    <OnboardingCard title={setupTitle(stage, setupErr, plan)} footer={actions}>
-      <Text size="4xl" color="link" textAlign="center" style={{ paddingVertical: 12 }}>{setupHint(stage, setupErr)}</Text>
+    <OnboardingCard title={setupTitle(stage, setupErr, plan)} footer={actions} after={link}>
+      <Text size="4xl" color="link" textAlign="center" style={{ paddingVertical: 12 }}>{setupHint(stage, setupErr, plan)}</Text>
       <Col width="100%" radius={ROW_RADIUS} style={{ borderWidth: 1, borderColor: pal.border, overflow: 'hidden' }}>
         {stages.map((s, i) => (
           <StageRow key={s} label={stageLabel(s, plan)} state={stageState(s, stage, stages)} failed={setupErr !== null} last={i === stages.length - 1} pal={pal} />
