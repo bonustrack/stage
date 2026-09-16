@@ -1,7 +1,17 @@
+import { Platform } from 'react-native';
+
+interface DesktopBridge { titleBarInset?: unknown }
+
+function bridge(): DesktopBridge | undefined {
+  return (globalThis as { stageDesktop?: DesktopBridge }).stageDesktop;
+}
+
 export function desktopTitleBarInset(): number {
-  return 0;
+  if (Platform.OS !== 'web') return 0;
+  const inset = bridge()?.titleBarInset;
+  return typeof inset === 'number' && Number.isFinite(inset) && inset > 0 ? inset : 0;
 }
 
 export function inBrowser(): boolean {
-  return false;
+  return Platform.OS === 'web' && bridge() === undefined;
 }
