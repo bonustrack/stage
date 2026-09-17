@@ -20,7 +20,7 @@ import { registerPushWithServer } from './pushRegister.web';
 import { createClientForAccount } from './xmtp.recover.web';
 import { markConvReadSynced as markConvReadLocally } from './xmtp.unread';
 import {
-  webXmtpDbPath, canReuseSavedClient, installationCreatedAtMs,
+  webXmtpDbPath, canReuseSavedClient, installationCreatedAtMs, openSavedClient,
 } from '@stage-labs/client/xmtp/clientConfig';
 
 export { getCachedXmtpClient, waitForXmtpReady } from './xmtp.state.web';
@@ -74,24 +74,18 @@ async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<
   const savedEnv = await getSecure(envKeyFor(rec.id));
   const reusable = canReuseSavedClient(savedAddress, savedEnv, address, env);
   perfLog('xmtp.client path', { reusable, savedAddress, savedEnv, address, env });
-  if (reusable) {
-    try {
-      const built = await perfTime('xmtp.client.build', () => Client.build(
-        { identifier: address, identifierKind: IdentifierKind.Ethereum },
-        opts,
-      ));
-      return await finalizeClient(built, rec, env);
-    } catch (e) {
-      perfLog('xmtp.client.build FAILED, falling back to create', {
-        error: errorMessage(e),
-      });
-    }
-  }
-  const created = await perfTime('xmtp.client.create', () =>
-    createClientForAccount(rec, env, { env, dbPath, codecs: XMTP_CODECS }));
+  const opened = await openSavedClient<WebXmtpClient>({
+    reusable,
+    build: () => perfTime('xmtp.client.build', () => Client.build({ identifier: address, identifierKind: IdentifierKind.Ethereum }, opts)),
+    isRegistered: (client) => client.isRegistered(),
+    close: (client) => { client.close(); },
+    create: () => perfTime('xmtp.client.create', () => createClientForAccount(rec, env, { env, dbPath, codecs: XMTP_CODECS })),
+    onFallback: (reason, e) => { perfLog(`xmtp.client.build ${reason}, falling back to create`, { error: e === undefined ? '' : errorMessage(e) }); },
+  });
+  if (!opened.created) return finalizeClient(opened.client, rec, env);
   await setSecure(addressKeyFor(rec.id), address);
   await setSecure(envKeyFor(rec.id), env);
-  return created;
+  return opened.client;
 }
 
 function disposeCachedClient(): void {

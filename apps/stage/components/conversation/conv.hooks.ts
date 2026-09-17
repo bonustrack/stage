@@ -13,6 +13,7 @@ interface ResolvedConv {
   convId: string | null;
   resolving: boolean;
   error: ResolveConvError;
+  detail?: string;
   pendingAddress: string | null;
   retry: () => void;
 }
@@ -49,7 +50,7 @@ async function resolvePeerConversation(param: string): Promise<ConvState> {
   if (cached !== null) return { convId: cached, resolving: false, error: false, pendingAddress: null };
   const res = await resolveDmConvId(address);
   if ('convId' in res) return { convId: res.convId, resolving: false, error: false, pendingAddress: null };
-  return { convId: null, resolving: false, error: res.error, pendingAddress: isQueueable(res.error) ? address : null };
+  return { convId: null, resolving: false, error: res.error, detail: res.detail, pendingAddress: isQueueable(res.error) ? address : null };
 }
 
 export function useResolvedConvId(param: string | undefined, peerRoute = true): ResolvedConv {

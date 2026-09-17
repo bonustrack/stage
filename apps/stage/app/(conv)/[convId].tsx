@@ -22,10 +22,10 @@ import {
   ConversationTopnav, ConversationFooter, ConversationOverlays, ConversationSearchTopnav,
 } from '../../components/conversation/conv.screen-parts';
 
-function resolveErrorMessage(error: ResolveConvError): string {
+function resolveErrorMessage(error: ResolveConvError, detail?: string): string {
   if (error === 'unregistered') return 'This address is not on XMTP yet. Ask them to sign in once, then retry.';
   if (error === 'stale-installations') return 'This contact has not used XMTP in a while, so their keys expired. They need to open an XMTP app before you can message them.';
-  if (error === 'failed') return 'Could not open this conversation.';
+  if (error === 'failed') return detail ? `Could not open this conversation. ${detail}` : 'Could not open this conversation.';
   return 'Missing conversation id.';
 }
 
@@ -53,7 +53,7 @@ function UnresolvedConversation({ resolved, dark }: {
   return (
     <Col surface="surface" flex={1} align="center" justify="center" gap={16} padding={24}>
       <Text role="secondary" textAlign="center">
-        {resolveErrorMessage(resolved.error)}
+        {resolveErrorMessage(resolved.error, resolved.detail)}
       </Text>
       <Button dark={dark} variant="soft" label="Try again" style={{ alignSelf: 'center' }} onPress={resolved.retry}/>
     </Col>
