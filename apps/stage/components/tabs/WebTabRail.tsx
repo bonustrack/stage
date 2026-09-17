@@ -30,7 +30,7 @@ function TabButtons({ pathname, unreadBadge, vertical }: {
           key={name}
           onPress={() => { router.navigate(TAB_HREF[name]); }}
           style={vertical
-            ? { height: 56, alignItems: 'center', justifyContent: 'center' }
+            ? { height: 48, alignItems: 'center', justifyContent: 'center' }
             : { flex: 1, alignItems: 'center', justifyContent: 'center' }}
 >
           <Box>
