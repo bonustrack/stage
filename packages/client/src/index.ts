@@ -19,6 +19,7 @@ export * from './xmtp/mentions';
 export * from './xmtp/labels';
 export * from './xmtp/clientErrors';
 export * from './xmtp/channelsFilter';
+export * from './xmtp/pinOrder';
 export * from './xmtp/summarizeRow';
 export * from './embed/detect';
 export * from './text/markdown';

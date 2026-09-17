@@ -54,6 +54,8 @@ describe('pin state payload', () => {
   test('parses a valid payload, rejects malformed ones, and recognises its type', () => {
     const ok = { convId: 'c1', pinned: true, at: 3 };
     expect(parsePinState(ok)).toEqual(ok);
+    expect(parsePinState({ ...ok, order: ['c2', 'c1'] })?.order).toEqual(['c2', 'c1']);
+    expect(parsePinState({ ...ok, order: [''] })).toBeNull();
     expect(parsePinState({ convId: 'c1', pinned: 'yes', at: 3 })).toBeNull();
     expect(isPinStateType('stage.box/pinState:1.0')).toBe(true);
     expect(isPinStateType('stage.box/readState:1.0')).toBe(false);

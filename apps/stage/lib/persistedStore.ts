@@ -2,59 +2,6 @@
 import { appStorage } from '../platform/storage';
 import { hydrateOnce, makeListeners } from './storeCore';
 
-export interface SetStore {
-  load: () => Promise<Set<string>>;
-  has: (id: string) => boolean;
-  get: () => Set<string>;
-  set: (next: Set<string>) => Promise<Set<string>>;
-  toggle: (id: string) => Promise<Set<string>>;
-  subscribe: (cb: () => void) => () => void;
-}
-
-export function createSetStore(key: string): SetStore {
-  let cache = new Set<string>();
-  const { notify, subscribe } = makeListeners();
-  const hydration = hydrateOnce(async (): Promise<Set<string>> => {
-    try {
-      const raw = await appStorage.get(key);
-      const ids: unknown = raw ? JSON.parse(raw) : [];
-      if (Array.isArray(ids)) cache = new Set(ids.filter((x): x is string => typeof x === 'string'));
-    } catch { }
-    return cache;
-  });
-
-  async function persist(): Promise<void> {
-    try {
-      await appStorage.set(key, JSON.stringify([...cache]));
-    } catch { }
-  }
-
-  async function load(): Promise<Set<string>> {
-    if (hydration.done()) return cache;
-    return hydration.run();
-  }
-
-  function has(id: string): boolean { return cache.has(id); }
-  function get(): Set<string> { return cache; }
-
-  async function set(next: Set<string>): Promise<Set<string>> {
-    cache = next;
-    hydration.markDone();
-    notify();
-    await persist();
-    return cache;
-  }
-
-  async function toggle(id: string): Promise<Set<string>> {
-    const next = new Set(cache);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    return set(next);
-  }
-
-  return { load, has, get, set, toggle, subscribe };
-}
-
 export interface ValueStoreOptions<T> {
   key: string;
   default: T;

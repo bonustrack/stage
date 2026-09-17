@@ -1,3 +1,4 @@
+import { pinRank } from './pinOrder';
 export interface ChannelListRow {
   convId: string;
   title: string;
@@ -45,12 +46,14 @@ export function filterChannelRows<T extends ChannelListRow>(
 
 export function sortChannelRows<T extends ChannelListRow>(
   rows: T[],
-  pinned?: Set<string>,
+  pinnedOrder: readonly string[] = [],
 ): T[] {
+  const rank = pinRank(pinnedOrder);
+  const rankOf = (r: T): number => rank.get(r.convId) ?? Number.POSITIVE_INFINITY;
   return [...rows].sort((a, b) => {
-    const ap = pinned?.has(a.convId) === true ? 1 : 0;
-    const bp = pinned?.has(b.convId) === true ? 1 : 0;
-    if (ap !== bp) return bp - ap;
+    const ra = rankOf(a);
+    const rb = rankOf(b);
+    if (ra !== rb) return ra - rb;
     return (b.lastTs ?? 0) - (a.lastTs ?? 0);
   });
 }

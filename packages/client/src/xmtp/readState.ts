@@ -40,12 +40,14 @@ export interface PinStateContent {
   convId: string;
   pinned: boolean;
   at: number;
+  order?: string[];
 }
 
 export const pinStateSchema: ZodType<PinStateContent> = z.object({
   convId: z.string().min(1),
   pinned: z.boolean(),
   at: z.number().positive(),
+  order: z.array(z.string().min(1)).optional(),
 });
 
 export function pinStateFallbackText(): string {

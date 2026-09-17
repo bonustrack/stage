@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { VirtualListHandle } from '../layout';
 import { getCachedRows, setCachedRows, subscribeCachedRows, ensureChannelsQueryBridge } from '../../modules/messaging';
-import { loadPinnedIds, subscribePins } from '../../lib/pins';
+import { getPinnedOrder, loadPinnedOrder, subscribePins } from '../../lib/pins';
 import {
   CHANNELS_SCROLL_KEY, getScrollOffset, peekScrollOffset, flushScrollOffset,
 } from '../../lib/scrollPos';
@@ -29,7 +29,7 @@ export interface HomeState {
   setRows: (next: RowT[] | null | ((p: RowT[] | null) => RowT[] | null)) => void;
   error: string; setError: React.Dispatch<React.SetStateAction<string>>;
   rowMenu: RowMenu | null; setRowMenu: React.Dispatch<React.SetStateAction<RowMenu | null>>;
-  pinned: Set<string>;
+  pinned: readonly string[];
   refreshFromNetworkRef: React.MutableRefObject<(() => Promise<void>) | null>;
   scroll: ScrollRefs;
 }
@@ -48,7 +48,7 @@ export function useHomeState(): HomeState {
 
   const [error, setError] = useState<string>('');
   const [rowMenu, setRowMenu] = useState<RowMenu | null>(null);
-  const [pinned, setPinned] = useState<Set<string>>(new Set());
+  const [pinned, setPinned] = useState<readonly string[]>([]);
 
   const refreshFromNetworkRef = useRef<(() => Promise<void>) | null>(null);
   const listRef = useRef<VirtualListHandle>(null);
@@ -61,8 +61,8 @@ export function useHomeState(): HomeState {
     return () => { flushScrollOffset(CHANNELS_SCROLL_KEY); };
   }, []);
   useEffect(() => {
-    void loadPinnedIds().then(setPinned);
-    return subscribePins(() => { void loadPinnedIds().then(s => { setPinned(new Set(s)); }); });
+    void loadPinnedOrder().then(setPinned);
+    return subscribePins(() => { setPinned(getPinnedOrder()); });
   }, []);
 
   return {

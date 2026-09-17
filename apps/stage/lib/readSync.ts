@@ -8,7 +8,7 @@ import { appStorage } from '../platform/storage';
 import { getActiveAccount } from './accounts';
 import { subscribeAccountEpoch } from './accountEpoch';
 import { getCachedRows, setCachedRows } from './channelsCache';
-import { applyRemotePin } from './pins';
+import { applyRemotePinState } from './pins';
 import {
   isHiddenConv, onPinChanged, onReadStateChanged, registerHiddenConv, type PinChange, type ReadStateChange,
 } from './readSyncRegistry';
@@ -43,6 +43,7 @@ function patchRows(state: ReadStateContent): void {
 
 function readKey(convId: string): string { return `read:${convId}`; }
 function pinKey(convId: string): string { return `pin:${convId}`; }
+const PIN_ORDER_KEY = 'pinOrder';
 
 async function applyReadMessage(m: RowMessage): Promise<void> {
   const state = parseReadState(m.content);
@@ -55,9 +56,11 @@ async function applyReadMessage(m: RowMessage): Promise<void> {
 
 async function applyPinMessage(m: RowMessage): Promise<void> {
   const state = parsePinState(m.content);
-  if (state === null || !shouldApplyReadState(localAt.get(pinKey(state.convId)), state.at)) return;
-  localAt.set(pinKey(state.convId), state.at);
-  await applyRemotePin(state.convId, state.pinned);
+  if (state === null) return;
+  const key = state.order === undefined ? pinKey(state.convId) : PIN_ORDER_KEY;
+  if (!shouldApplyReadState(localAt.get(key), state.at)) return;
+  localAt.set(key, state.at);
+  await applyRemotePinState(state);
 }
 
 async function applyMessage(m: RowMessage): Promise<void> {
@@ -135,8 +138,9 @@ function queueReadPublish(change: ReadStateChange): void {
 function queuePinPublish(change: PinChange): void {
   const at = Date.now();
   localAt.set(pinKey(change.convId), at);
-  const content: PinStateContent = { ...change, at };
-  debounce(pinKey(change.convId), () => { void withGroup((id) => sendPinState(id, content)); });
+  localAt.set(PIN_ORDER_KEY, at);
+  const content: PinStateContent = { convId: change.convId, pinned: change.pinned, order: [...change.order], at };
+  debounce(PIN_ORDER_KEY, () => { void withGroup((id) => sendPinState(id, content)); });
 }
 
 function onStreamMessage(m: StreamMsg): void {

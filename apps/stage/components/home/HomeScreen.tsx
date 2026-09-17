@@ -18,8 +18,9 @@ import { filterChannelRows } from '@stage-labs/client/xmtp/channelsFilter';
 import { channelsFilterBarVisible } from './model';
 import { useHomeState, type HomeState } from './state';
 import { deriveSortedRows } from './helpers';
+import { usePinDrag } from './pinDrag';
 
-function rowMenuProps(rowMenu: HomeState['rowMenu'], pinned: Set<string>) {
+function rowMenuProps(rowMenu: HomeState['rowMenu'], pinned: readonly string[]) {
   if (!rowMenu) {
     return {
       visible: false, convId: '', isGroup: false,
@@ -32,7 +33,7 @@ function rowMenuProps(rowMenu: HomeState['rowMenu'], pinned: Set<string>) {
     isGroup: rowMenu.isGroup,
     peerAddress: rowMenu.peerAddress,
     isUnread: rowMenu.isUnread,
-    isPinned: pinned.has(rowMenu.convId),
+    isPinned: pinned.includes(rowMenu.convId),
     anchor: rowMenu.anchor ?? null,
   };
 }
@@ -102,8 +103,10 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
       : router),
     [pane, router],
   );
+  const visiblePinned = useMemo(() => visibleRows.map(r => r.convId).filter(id => pinned.includes(id)), [visibleRows, pinned]);
+  const pinDrag = usePinDrag(pinned, visiblePinned);
   const renderRow = useChannelRowRenderer(navRouter, st.setRowMenu, {
-    channelProfilesVersion, draftsVersion, pinned, query, activePath,
+    channelProfilesVersion, draftsVersion, pinned, query, activePath, pinDrag,
   });
 
   if (st.error) return <HomeError error={st.error} dark={dark} fg={fg} />;

@@ -44,7 +44,7 @@ interface ChannelRowProps {
   highlightQuery?: string;
 }
 
-const ROW_CONTENT_HEIGHT = 67;
+export const CHANNEL_ROW_HEIGHT = 67;
 const BADGE_SIZE = 18;
 const TITLE_LINE_HEIGHT = 24;
 const PREVIEW_LINE_HEIGHT = 20;
@@ -228,7 +228,7 @@ function ChannelRowBase({
       }))}
       {...contextMenuProps(onLongPress)}
 >
-      <Row minHeight={ROW_CONTENT_HEIGHT} padding={{ y: 9 }} align="center" gap={12}>
+      <Row minHeight={CHANNEL_ROW_HEIGHT} padding={{ y: 9 }} align="center" gap={12}>
         <Avatar
           imageUri={avatarUri}
           address={avatarUri ? null : avatarAddress ?? null}

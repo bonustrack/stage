@@ -58,7 +58,8 @@ describe('sortChannelRows', () => {
       row({ convId: 'new', lastTs: 9 }),
       row({ convId: 'pin', lastTs: 2 }),
     ];
-    expect(sortChannelRows(rows, new Set(['pin'])).map(r => r.convId)).toEqual(['pin', 'new', 'old']);
+    expect(sortChannelRows(rows, ['pin']).map(r => r.convId)).toEqual(['pin', 'new', 'old']);
+    expect(sortChannelRows(rows, ['old', 'pin']).map(r => r.convId)).toEqual(['old', 'pin', 'new']);
     expect(sortChannelRows(rows).map(r => r.convId)).toEqual(['new', 'pin', 'old']);
   });
 });

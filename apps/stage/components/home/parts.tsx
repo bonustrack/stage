@@ -8,6 +8,7 @@ import { Col } from '../layout';
 import { EmptyState } from '../chrome/EmptyState';
 import { Spinner } from '../Spinner';
 import { ChannelRow } from '../ChannelRow';
+import { PinnedDraggable, type PinDrag } from './pinDrag';
 import { resetActiveXmtpStore, shortAddress, prefetchFeed, lineOfConv } from '../../modules/messaging';
 import { reloadApp } from '../AccountsManager.helpers';
 import { getPeerName, isPeerResolved } from '../../lib/peerProfiles';
@@ -50,13 +51,23 @@ interface ChannelRowItemProps {
   pinned: boolean;
   draftText: string;
   active: boolean;
+  pinDrag: PinDrag;
 }
 
 function ChannelRowItemBase({
-  item, router, setRowMenu, query, title, preview, avatarAddress, pinned, draftText, active,
+  item, router, setRowMenu, query, title, preview, avatarAddress, pinned, draftText, active, pinDrag,
 }: ChannelRowItemProps): React.ReactElement {
   const isGroup = !item.peerAddress;
-  return (
+  const openMenu = (anchor?: { x: number; y: number }): void => {
+    Vibration.vibrate(10);
+    setRowMenu({
+      convId: item.convId,
+      isUnread: item.unreadCount > 0 || item.markedUnread,
+      isGroup, peerAddress: item.peerAddress, anchor,
+    });
+  };
+  const dragIndex = pinned ? pinDrag.visible.indexOf(item.convId) : -1;
+  const row = (
     <ChannelRow
       title={title}
       active={active}
@@ -74,16 +85,11 @@ function ChannelRowItemBase({
       labels={isGroup ? item.labels : undefined}
       onPressIn={() => { prefetchFeed(lineOfConv(item.convId)); }}
       onPress={() => { router.push(conversationLinkOf(item.convId, item.peerAddress)); }}
-      onLongPress={(anchor) => {
-        Vibration.vibrate(10);
-        setRowMenu({
-          convId: item.convId,
-          isUnread: item.unreadCount > 0 || item.markedUnread,
-          isGroup, peerAddress: item.peerAddress, anchor,
-        });
-      }}
+      onLongPress={openMenu}
     />
   );
+  if (dragIndex === -1) return row;
+  return <PinnedDraggable drag={pinDrag} index={dragIndex} onHold={openMenu}>{row}</PinnedDraggable>;
 }
 
 const ChannelRowItem = memo(ChannelRowItemBase);
@@ -93,10 +99,10 @@ export function useChannelRowRenderer(
   setRowMenu: (m: RowMenu) => void,
   deps: {
     channelProfilesVersion: number; draftsVersion: number;
-    pinned: Set<string>; query?: string; activePath: string;
+    pinned: readonly string[]; query?: string; activePath: string; pinDrag: PinDrag;
   },
 ): ({ item }: { item: RowT }) => React.ReactElement {
-  const { channelProfilesVersion, draftsVersion, pinned, query, activePath } = deps;
+  const { channelProfilesVersion, draftsVersion, pinned, query, activePath, pinDrag } = deps;
   return useCallback(({ item }: { item: RowT }): React.ReactElement => (
     <ChannelRowItem
       item={item}
@@ -106,11 +112,12 @@ export function useChannelRowRenderer(
       title={rowTitle(item)}
       preview={rowPreview(item)}
       avatarAddress={rowAvatarAddress(item, !item.peerAddress)}
-      pinned={pinned.has(item.convId)}
+      pinned={pinned.includes(item.convId)}
       draftText={getDraft(item.convId)}
       active={isActiveConversationPathFor(activePath, item.convId, item.peerAddress)}
+      pinDrag={pinDrag}
     />
-  ), [router, setRowMenu, channelProfilesVersion, draftsVersion, pinned, query, activePath]);
+  ), [router, setRowMenu, channelProfilesVersion, draftsVersion, pinned, query, activePath, pinDrag]);
 }
 
 export function HomeError({ error, dark, fg }: {

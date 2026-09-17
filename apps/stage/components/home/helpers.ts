@@ -16,7 +16,7 @@ export interface SortInputs {
   rows: Row[] | null;
   enabledLabels: Set<string>;
   unreadOnly: boolean;
-  pinned: Set<string>;
+  pinned: readonly string[];
 }
 
 export function deriveSortedRows(i: SortInputs): Row[] {

@@ -1,25 +1,45 @@
-import { createSetStore } from './persistedStore';
+import { movedPinOrder, pinOrderAfterRemote, toggledPinOrder, type PinOrder } from '@stage-labs/client/xmtp/pinOrder';
+import type { PinStateContent } from '@stage-labs/client/xmtp/readState';
+import { createValueStore } from './persistedStore';
 import { notifyPinChanged } from './readSyncRegistry';
 
-const store = createSetStore('channels.pinned');
+function parseOrder(raw: string): PinOrder | undefined {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : undefined;
+  } catch { return undefined; }
+}
 
-export const loadPinnedIds = (): Promise<Set<string>> => store.load();
+const store = createValueStore<PinOrder>({
+  key: 'channels.pinned', default: [], serialize: (v) => JSON.stringify(v), deserialize: parseOrder,
+});
 
-export const isPinned = (convId: string): boolean => store.has(convId);
+export const loadPinnedOrder = (): Promise<PinOrder> => store.load();
 
-export async function togglePin(convId: string): Promise<Set<string>> {
-  const next = await store.toggle(convId);
-  notifyPinChanged({ convId, pinned: next.has(convId) });
+export const isPinned = (convId: string): boolean => store.get().includes(convId);
+
+function commit(convId: string, next: PinOrder): PinOrder {
+  store.set(next);
+  notifyPinChanged({ convId, pinned: next.includes(convId), order: next });
   return next;
 }
 
-export async function applyRemotePin(convId: string, pinned: boolean): Promise<void> {
+export const getPinnedOrder = (): PinOrder => store.get();
+
+export async function togglePin(convId: string): Promise<PinOrder> {
+  return commit(convId, toggledPinOrder(await store.load(), convId));
+}
+
+export function movePin(convId: string, toIndex: number): void {
+  const current = store.get();
+  const next = movedPinOrder(current, convId, toIndex);
+  if (next !== current) commit(convId, next);
+}
+
+export async function applyRemotePinState(state: PinStateContent): Promise<void> {
   const current = await store.load();
-  if (current.has(convId) === pinned) return;
-  const next = new Set(current);
-  if (pinned) next.add(convId);
-  else next.delete(convId);
-  await store.set(next);
+  const next = pinOrderAfterRemote(current, state);
+  if (next !== current) await store.setAsync(next);
 }
 
 export const subscribePins = (cb: () => void): () => void => store.subscribe(cb);

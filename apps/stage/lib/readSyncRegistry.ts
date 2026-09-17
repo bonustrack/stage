@@ -30,6 +30,7 @@ export function notifyReadStateChanged(change: ReadStateChange): void {
 export interface PinChange {
   convId: string;
   pinned: boolean;
+  order: readonly string[];
 }
 
 const pinListeners = new Set<(change: PinChange) => void>();
