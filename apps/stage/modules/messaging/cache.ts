@@ -17,4 +17,6 @@ export {
   feedCache,
   activeFeedLines,
   inboxEthCache,
+  getXmtpBootstrapPhase,
+  useXmtpBootstrapPhase,
 } from '../../lib/xmtp.state';

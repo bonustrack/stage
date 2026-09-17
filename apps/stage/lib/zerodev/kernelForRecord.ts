@@ -56,11 +56,14 @@ async function secondaryEcdsaClient(publicClient: PublicClient, owner: HDAccount
 
 interface PasskeyAttempt { account: CreateKernelAccountReturnType | null; problem: PasskeyProblem; detail?: string }
 
+async function passkeyProblem(rec: AccountRecord): Promise<PasskeyProblem> {
+  if (!rec.passkey) return 'not-stored';
+  const onchain = await accountPasskey(rec.address as Hex).catch(() => null);
+  return storedPasskeyMatches(rec, onchain) ? 'none' : 'mismatch';
+}
+
 async function tryPasskey(publicClient: PublicClient, rec: AccountRecord, hdIndex: number): Promise<PasskeyAttempt> {
   if (!rec.passkey) return { account: null, problem: 'not-stored' };
-  if (!storedPasskeyMatches(rec, await accountPasskey(rec.address as Hex).catch(() => null))) {
-    return { account: null, problem: 'mismatch' };
-  }
   const addressOverride = rec.passkeySudo ? undefined : (rec.address as Hex);
   const result = await passkeyKernelResult(publicClient, hdIndex, rec.passkey, addressOverride);
   if ('account' in result) return { account: result.account, problem: 'none' };
@@ -73,12 +76,17 @@ export async function kernelClientForRecord(rec: AccountRecord, purpose: KernelS
   }
   const publicClient = makePublicClient();
   const hdIndex = rec.hdIndex;
-  const passkey = await tryPasskey(publicClient, rec, hdIndex);
-  if (passkey.account) return makeKernelClient(passkey.account, publicClient);
-
   const ecdsaValidator = getValidatorAddress(ENTRY_POINT, KERNEL_VERSION);
-  const state = await readValidationState(publicClient, rec.address as Hex, ecdsaValidator);
-  const plan = planKernelSigning({ ...state, ecdsaValidator, passkeyUsable: false, purpose });
+  const [state, problem] = await Promise.all([
+    readValidationState(publicClient, rec.address as Hex, ecdsaValidator), passkeyProblem(rec),
+  ]);
+  let passkey: PasskeyAttempt = { account: null, problem };
+  let plan = planKernelSigning({ ...state, ecdsaValidator, passkeyUsable: problem === 'none', purpose });
+  if (plan === 'passkey') {
+    passkey = await tryPasskey(publicClient, rec, hdIndex);
+    if (passkey.account) return makeKernelClient(passkey.account, publicClient);
+    plan = planKernelSigning({ ...state, ecdsaValidator, passkeyUsable: false, purpose });
+  }
   if (plan !== 'ecdsa-root' && plan !== 'ecdsa-secondary') {
     throw new Error(describeUnavailableSigning(purpose, passkey.problem, passkey.detail));
   }

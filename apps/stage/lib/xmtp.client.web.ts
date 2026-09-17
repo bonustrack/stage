@@ -12,7 +12,7 @@ import { perfLog, perfTime } from './perf';
 import { bumpAccountEpoch } from './accountEpoch';
 import { XMTP_CODECS, signerForRecord } from './xmtp.codecs.web';
 import {
-  getCachedXmtpClient, setCachedXmtpClient, resetClientScopedState, getOrCreateCachedClient } from './xmtp.state.web';
+  getCachedXmtpClient, setCachedXmtpClient, resetClientScopedState, getOrCreateCachedClient, whileRegistering } from './xmtp.state.web';
 import { type XmtpEnv, convIdOfLine, lineOfConv } from './xmtp.types';
 import { deleteDbKey, deleteDbFiles } from './xmtp.dbkey';
 import { historyServerUrl } from './historyServer';
@@ -79,7 +79,7 @@ async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<
     build: () => perfTime('xmtp.client.build', () => Client.build({ identifier: address, identifierKind: IdentifierKind.Ethereum }, opts)),
     isRegistered: (client) => client.isRegistered(),
     close: (client) => { client.close(); },
-    create: () => perfTime('xmtp.client.create', () => createClientForAccount(rec, env, { env, dbPath, codecs: XMTP_CODECS })),
+    create: () => whileRegistering(() => perfTime('xmtp.client.create', () => createClientForAccount(rec, env, { env, dbPath, codecs: XMTP_CODECS }))),
     onFallback: (reason, e) => { perfLog(`xmtp.client.build ${reason}, falling back to create`, { error: e === undefined ? '' : errorMessage(e) }); },
   });
   if (!opened.created) return finalizeClient(opened.client, rec, env);

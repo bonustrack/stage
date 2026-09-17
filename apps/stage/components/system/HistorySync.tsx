@@ -3,7 +3,7 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Col, Row } from '../layout';
 import { Spinner } from '../Spinner';
-import { shortAddress, useActiveAccountRecord } from '../../modules/messaging';
+import { shortAddress, useActiveAccountRecord, useXmtpBootstrapPhase } from '../../modules/messaging';
 import { dismissHistorySync, runHistorySync, useHistorySyncPhase } from '../../lib/historySync';
 import { historySyncIsActive, historySyncPhaseLabel } from '../../lib/historySync.model';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
@@ -16,6 +16,20 @@ function useAutoDismiss(phase: string): void {
     const timer = setTimeout(dismissHistorySync, DONE_VISIBLE_MS);
     return () => { clearTimeout(timer); };
   }, [phase]);
+}
+
+export function MessagingSetupBanner(): React.ReactElement | null {
+  const phase = useXmtpBootstrapPhase();
+  const { text } = usePalette();
+  if (phase !== 'registering') return null;
+  return (
+    <Box margin={{ x: 12, top: 8, bottom: 4 }} padding={{ x: 12, y: 10 }} surface="raised" style={{ borderRadius: 12 }}>
+      <Row align="center" gap={10}>
+        <Spinner size={16} color={text} />
+        <Col flex={1}><Text size="sm">Setting up secure messaging on this device…</Text></Col>
+      </Row>
+    </Box>
+  );
 }
 
 export function HistorySyncBanner(): React.ReactElement | null {

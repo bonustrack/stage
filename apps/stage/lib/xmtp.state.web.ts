@@ -9,4 +9,7 @@ export const getOrCreateCachedClient = slot.getOrCreate;
 export const waitForXmtpReady = slot.waitForReady;
 export const resetClientScopedState = slot.reset;
 
-export { inboxEthCache, feedCache, activeFeedLines, registerGlobalStreamTeardown } from './xmtp.state.core';
+export {
+  inboxEthCache, feedCache, activeFeedLines, registerGlobalStreamTeardown,
+  getXmtpBootstrapPhase, useXmtpBootstrapPhase, whileRegistering,
+} from './xmtp.state.core';

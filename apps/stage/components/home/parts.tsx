@@ -7,6 +7,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Col } from '../layout';
 import { EmptyState } from '../chrome/EmptyState';
 import { Spinner } from '../Spinner';
+import { MessagingSetupBanner } from '../system/HistorySync';
 import { ChannelRow } from '../ChannelRow';
 import { PinnedDraggable, type PinDrag } from './pinDrag';
 import { resetActiveXmtpStore, shortAddress, prefetchFeed, lineOfConv } from '../../modules/messaging';
@@ -149,8 +150,11 @@ export function HomeError({ error, dark, fg }: {
 
 export function HomeSpinner({ head }: { head: string }): React.ReactElement {
   return (
-    <Col flex={1} align="center" justify="center" surface="surface">
-      <Spinner size={28} color={head}/>
+    <Col flex={1} surface="surface">
+      <MessagingSetupBanner />
+      <Col flex={1} align="center" justify="center">
+        <Spinner size={28} color={head}/>
+      </Col>
     </Col>
   );
 }

@@ -5,7 +5,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { VirtualList, type VirtualListHandle } from '../layout';
 import { CHANNELS_SCROLL_KEY, saveScrollOffset } from '../../lib/scrollPos';
-import { HistorySyncBanner } from '../system/HistorySync';
+import { HistorySyncBanner, MessagingSetupBanner } from '../system/HistorySync';
 import type { Row as RowT } from './helpers';
 import { HomeEmpty } from './parts';
 import { LabelFilterBar } from './labelbar';
@@ -68,6 +68,7 @@ function HomeTopnavRight({ head, router, onOpenSearch }: {
 function ChannelsListHeader({ p }: { p: ChannelsListProps }): React.ReactElement {
   return (
     <>
+      <MessagingSetupBanner />
       <HistorySyncBanner />
       {p.showFilterBar ? (
         <LabelFilterBar

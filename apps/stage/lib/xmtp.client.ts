@@ -9,7 +9,8 @@ import { registerPushWithServer } from './pushRegister';
 import { bumpAccountEpoch } from './accountEpoch';
 import { XMTP_CODECS } from './xmtp.codecs';
 import {
-  getCachedXmtpClient, setCachedXmtpClient, resetClientScopedState, getOrCreateCachedClient } from './xmtp.state';
+  getCachedXmtpClient, setCachedXmtpClient, resetClientScopedState, getOrCreateCachedClient, whileRegistering
+} from './xmtp.state';
 import { type XmtpEnv, convIdOfLine, XMTP_ENV_KEY } from './xmtp.types';
 import {
   loadOrCreateDbKey, deleteDbKey, deleteDbFiles,
@@ -69,7 +70,7 @@ async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<
       }
     }
   }
-  return createClientForAccount(rec, env, opts);
+  return whileRegistering(() => createClientForAccount(rec, env, opts));
 }
 
 export async function switchToAccount(id: string, env: XmtpEnv = 'production'): Promise<Client> {

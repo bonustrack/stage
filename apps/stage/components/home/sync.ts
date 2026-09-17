@@ -3,7 +3,7 @@ import { useEffect, type Dispatch, type MutableRefObject, type SetStateAction } 
 import { AppState } from 'react-native';
 import {
   getOrCreateXmtpClient, NoAccountError,
-  syncPreferences,
+  syncPreferences, getXmtpBootstrapPhase,
   primeConversationMembers, subscribeAllMessages,
   listVisibleConversations, syncConversationsFromNetwork,
   streamNewConversations, streamConvConsent, syncConsent, conversationIsSyncGroup,
@@ -17,6 +17,8 @@ import { summarize } from './helpers';
 import { makeMsgStreamHandler } from './stream';
 import { registerHiddenConv } from '../../lib/readSyncRegistry';
 import { schedulePushTopicRefresh } from '../../lib/pushRegister';
+
+const INIT_TIMEOUT_MS = 30_000;
 
 interface SyncArgs {
   accountEpoch: number;
@@ -143,10 +145,14 @@ export function useChannelsSync(args: SyncArgs): void {
       cancelled: false, initTimer: undefined as unknown as ReturnType<typeof setTimeout>,
       cancelConvStream: null, cancelMsgStream: null, cancelConsentStream: null, appStateSub: null,
     };
-    run.initTimer = setTimeout(() => {
-      if (run.cancelled || (rows && rows.length > 0)) return;
-      setError('XMTP failed to initialise (timed out). Tap Reset below to wipe the local identity and start fresh.');
-    }, 30_000);
+    const armInitTimer = (): void => {
+      run.initTimer = setTimeout(() => {
+        if (run.cancelled || (rows && rows.length > 0)) return;
+        if (getXmtpBootstrapPhase() === 'registering') { armInitTimer(); return; }
+        setError('XMTP failed to initialise (timed out). Tap Reset below to wipe the local identity and start fresh.');
+      }, INIT_TIMEOUT_MS);
+    };
+    armInitTimer();
     void Promise.all([hydrateCachedRows(), hydratePeerProfiles()]).then(([cached]) => {
       if (run.cancelled) return;
       if (cached && Array.isArray(cached) && cached.length > 0 && !rows) setRowsState(cached as RowT[]);

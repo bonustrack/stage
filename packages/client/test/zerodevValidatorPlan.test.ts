@@ -5,8 +5,15 @@ const ECDSA = '0x845ADb2C711129d4f3966735eD98a9F09fC4cE57';
 const PASSKEY_ROOT = '0x017ab16ff354acb328452f1d445b3ddee9a91e9e69';
 
 describe('planKernelSigning', () => {
-  test('prefers the passkey whenever this device can use it', () => {
+  test('transactions prefer the passkey whenever this device can use it', () => {
     expect(planKernelSigning({ rootValidatorId: PASSKEY_ROOT, ecdsaInstalled: true, ecdsaCanExecute: false, ecdsaValidator: ECDSA, passkeyUsable: true })).toBe('passkey');
+    expect(planKernelSigning({ rootValidatorId: PASSKEY_ROOT, ecdsaInstalled: true, ecdsaCanExecute: true, ecdsaValidator: ECDSA, passkeyUsable: true, purpose: 'transact' })).toBe('passkey');
+  });
+
+  test('message signing uses the silent ECDSA key and keeps the passkey for when it is the only signer', () => {
+    expect(planKernelSigning({ rootValidatorId: PASSKEY_ROOT, ecdsaInstalled: true, ecdsaCanExecute: false, ecdsaValidator: ECDSA, passkeyUsable: true, purpose: 'sign' })).toBe('ecdsa-secondary');
+    expect(planKernelSigning({ rootValidatorId: validationIdOf(ECDSA), ecdsaInstalled: true, ecdsaCanExecute: false, ecdsaValidator: ECDSA, passkeyUsable: true, purpose: 'sign' })).toBe('ecdsa-root');
+    expect(planKernelSigning({ rootValidatorId: PASSKEY_ROOT, ecdsaInstalled: false, ecdsaCanExecute: false, ecdsaValidator: ECDSA, passkeyUsable: true, purpose: 'sign' })).toBe('passkey');
   });
 
   test('signs as root with the ECDSA key for undeployed or ECDSA-rooted accounts', () => {
