@@ -17,6 +17,7 @@ export interface ProfileChanges {
   displayName?: string;
   description?: string;
   image?: { uri: string; mime: string; name?: string };
+  removeImage?: boolean;
 }
 
 async function submitOnBase(call: ContractCall): Promise<Hex> {
@@ -48,6 +49,7 @@ async function recordsFor(changes: ProfileChanges): Promise<Record<string, strin
   if (changes.displayName !== undefined) records[PROFILE_TEXT_KEYS.displayName] = changes.displayName;
   if (changes.description !== undefined) records[PROFILE_TEXT_KEYS.description] = changes.description;
   if (changes.image) records[PROFILE_TEXT_KEYS.avatar] = await uploadAvatar(changes.image.uri, changes.image.mime, changes.image.name ?? 'avatar');
+  else if (changes.removeImage === true) records[PROFILE_TEXT_KEYS.avatar] = '';
   return records;
 }
 
@@ -56,6 +58,6 @@ export async function saveBasenameProfile(address: string, name: string, changes
   if (Object.keys(records).length === 0) return null;
   const resolver = await resolverForNode(makeProfileClients(broviderRpc).base, namehash(normalize(name)));
   const hash = await sendOnBase(encodeSetTextRecords(name, records, resolver ?? undefined));
-  refreshProfileCaches(address, changes.image !== undefined);
+  refreshProfileCaches(address, changes.image !== undefined || changes.removeImage === true);
   return hash;
 }
