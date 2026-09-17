@@ -5,7 +5,7 @@ import { setActiveConversation } from '../../modules/stage-pill';
 import { setActiveConvId } from '../../lib/activeConv';
 import { getCachedRows, getConvConsentState, streamConvConsent, getGroupLabels } from '../../modules/messaging';
 import {
-  convScrollKey, getScrollOffset, peekScrollOffset, flushScrollOffset,
+  convScrollKey, getScrollOffset, peekScrollOffset, flushScrollOffset, getFeedAnchor, peekFeedAnchor, type FeedAnchor,
 } from '../../lib/scrollPos';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import {
@@ -67,6 +67,7 @@ export function useGroupLabels(convId: string | undefined, activeLine: string, i
 
 export interface ScrollPersistence {
   savedScrollRef: React.MutableRefObject<number | undefined>;
+  savedAnchorRef: React.MutableRefObject<FeedAnchor | null>;
   savedScrollLoaded: React.MutableRefObject<boolean>;
   didRestoreScroll: React.MutableRefObject<boolean>;
   pinBottomUntil: React.MutableRefObject<number>;
@@ -75,6 +76,7 @@ export interface ScrollPersistence {
 
 export function useConvScrollPersistence(convId: string | undefined): ScrollPersistence {
   const savedScrollRef = useRef<number | undefined>(undefined);
+  const savedAnchorRef = useRef<FeedAnchor | null>(null);
   const savedScrollLoaded = useRef(false);
   const didRestoreScroll = useRef(false);
   const pinBottomUntil = useRef(0);
@@ -83,18 +85,22 @@ export function useConvScrollPersistence(convId: string | undefined): ScrollPers
     if (!convId) return;
     const key = convScrollKey(convId);
     isAtBottomRef.current = true;
+    didRestoreScroll.current = false;
+    pinBottomUntil.current = 0;
     const cached = peekScrollOffset(key);
-    if (cached !== undefined) {
+    const cachedAnchor = peekFeedAnchor(convId);
+    if (cached !== undefined && cachedAnchor !== undefined) {
       savedScrollRef.current = cached;
+      savedAnchorRef.current = cachedAnchor;
       savedScrollLoaded.current = true;
     } else {
-      void getScrollOffset(key).then(o => {
-        savedScrollRef.current = o; savedScrollLoaded.current = true;
+      void Promise.all([getScrollOffset(key), getFeedAnchor(convId)]).then(([o, anchor]) => {
+        savedScrollRef.current = o; savedAnchorRef.current = anchor; savedScrollLoaded.current = true;
       });
     }
-    return () => { flushScrollOffset(key, isAtBottomRef.current ? 0 : undefined); };
+    return () => { flushScrollOffset(key); };
   }, [convId]);
-  return { savedScrollRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil, isAtBottomRef };
+  return { savedScrollRef, savedAnchorRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil, isAtBottomRef };
 }
 
 export function useFeedDerivations(events: HistoryEntry[], myUri: string) {

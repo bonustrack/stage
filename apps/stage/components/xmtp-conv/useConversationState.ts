@@ -93,8 +93,9 @@ export function useConversationState(convId: string | undefined, focus: string |
   const mentionCandidates = useMentionCandidates(isGroup, memberAddrs, peerAddr, profilesVersion);
 
   const scroll = useConvScrollPersistence(convId);
-  const { savedScrollRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil, isAtBottomRef } = scroll;
+  const { savedScrollRef, savedAnchorRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil, isAtBottomRef } = scroll;
 
+  const atBottom = useCallback(() => isAtBottomRef.current, [isAtBottomRef]);
   const { reactions, ownReactions, votes, ownVotes, openAnswers } = useFeedDerivations(events, myUri);
 
   const { optimisticReactions, optimisticRemovals, onReact } = useReactionsLayer(activeLine, reactions, ownReactions);
@@ -104,8 +105,8 @@ export function useConversationState(convId: string | undefined, focus: string |
 
   const {
     showJump, setShowJump, scrollToNewest, jumpHighlightId,
-    listRef, confirmedIds, allBubbles, jumpToMessage, onOptimistic, onSent,
-  } = useOutboundLayer(events, myUri, convId, activeLine);
+    listRef, confirmedIds, allBubbles, rowKeyOf, jumpToMessage, onOptimistic, onSent,
+  } = useOutboundLayer(events, myUri, convId, activeLine, atBottom);
 
   const markAtBottom = useCallback(() => {
     isAtBottomRef.current = true;
@@ -126,9 +127,9 @@ export function useConversationState(convId: string | undefined, focus: string |
     confirmedIds, optimisticReactions, optimisticRemovals,
     peerAddr, groupName, groupImage, groupDescription, groupLabels, isGroup, senderEthOf,
     profilesVersion, mentionCandidates, listRef,
-    savedScrollRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil, isAtBottomRef,
+    savedScrollRef, savedAnchorRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil, isAtBottomRef,
     reactions, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers,
-    allBubbles, jumpToMessage,
+    allBubbles, rowKeyOf, jumpToMessage,
     onReact, onSign, signingIds, onVote, onOpenAnswer, onPay, payingIds, onAnswer,
     onOptimistic, onSent, markAtBottom, consentAllowed,
   };

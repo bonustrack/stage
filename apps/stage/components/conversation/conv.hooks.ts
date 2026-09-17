@@ -67,9 +67,10 @@ export function useResolvedConvId(param: string | undefined, peerRoute = true): 
       return;
     }
     let cancelled = false;
-    setState(RESOLVING);
+    const cached = parseHandle(param).kind === 'address' ? cachedDmConvId(param) : null;
+    setState(cached ? { convId: cached, resolving: false, error: false, pendingAddress: null } : RESOLVING);
     resolvePeerConversation(param)
-      .then((next) => { if (!cancelled) setState(next); })
+      .then((next) => { if (!cancelled) setState(prev => (prev.convId === next.convId && !prev.resolving ? prev : next)); })
       .catch(() => { if (!cancelled) setState({ convId: null, resolving: false, error: 'failed', pendingAddress: null }); });
     return () => { cancelled = true; };
   }, [param, peerRoute, attempt]);

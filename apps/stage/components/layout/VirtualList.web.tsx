@@ -8,14 +8,14 @@ import { elementHost, windowHost, type ScrollHost } from './VirtualList.web.host
 import {
   distanceFromEnd, distanceFromStart, endOffset, itemTranslate, nearEnd, nearStart, type ListScrollMetrics,
 } from './VirtualList.model';
-import type { VirtualListHandle, VirtualListProps } from './VirtualList.types';
+import type { ListAnchor, VirtualListHandle, VirtualListProps } from './VirtualList.types';
 
 const ESTIMATED_ITEM_SIZE = 72;
 const OVERSCAN = 6;
-const END_PIN_THRESHOLD_PX = 2;
 const SEPARATORS = { highlight: () => undefined, unhighlight: () => undefined, updateProps: () => undefined };
 const SELF_SCROLL = { overflowY: 'auto' } as unknown as ViewStyle;
 const ITEM_STYLE = { position: 'absolute', top: 0, left: 0, width: '100%' } as const;
+const ANCHOR_SETTLE_FRAMES = 8;
 
 type ListVirtualizer = Pick<
   Virtualizer<Window, Element> | Virtualizer<HTMLDivElement, Element>,
@@ -78,7 +78,6 @@ function virtualizerOptions<T>(props: VirtualListProps<T>, scrollMargin: number,
   const count = data.length;
   const estimate = props.estimatedItemSize ?? ESTIMATED_ITEM_SIZE;
   const keyOf = props.keyExtractor;
-  const end = props.anchor === 'end';
   return {
     count,
     estimateSize: () => estimate,
@@ -88,22 +87,17 @@ function virtualizerOptions<T>(props: VirtualListProps<T>, scrollMargin: number,
       const item = data[index];
       return keyOf !== undefined && item !== undefined ? keyOf(item, sourceIndex(props, index, count)) : index;
     },
-    anchorTo: end ? 'end' as const : 'start' as const,
-    followOnAppend: false,
-    initialOffset: end ? Math.max(0, count * estimate - viewport) : 0,
+    initialOffset: props.anchor === 'end' ? Math.max(0, count * estimate - viewport) : 0,
   };
 }
 
-function useEdgeCallbacks<T>(
-  props: VirtualListProps<T>, host: ScrollHost, count: number, atEnd: RefObject<boolean>,
-): () => void {
+function useEdgeCallbacks<T>(props: VirtualListProps<T>, host: ScrollHost, count: number): () => void {
   const fired = useRef({ start: -1, end: -1 });
   const latest = useRef(props);
   latest.current = props;
   return useCallback(() => {
     const p = latest.current;
     const m = host.metrics();
-    atEnd.current = distanceFromEnd(m) <= END_PIN_THRESHOLD_PX;
     p.onScroll?.(toScrollEvent(m));
     if (p.onStartReached && fired.current.start !== count && nearStart(m, p.onStartReachedThreshold)) {
       fired.current.start = count;
@@ -113,7 +107,7 @@ function useEdgeCallbacks<T>(
       fired.current.end = count;
       p.onEndReached({ distanceFromEnd: distanceFromEnd(m) });
     }
-  }, [host, count, atEnd]);
+  }, [host, count]);
 }
 
 function useScrollSubscription<T>(props: VirtualListProps<T>, host: ScrollHost, check: () => void): void {
@@ -138,8 +132,7 @@ function useScrollSubscription<T>(props: VirtualListProps<T>, host: ScrollHost, 
 }
 
 function useContentObserver<T>(
-  props: VirtualListProps<T>, refs: ListRefs, host: ScrollHost, setScrollMargin: (m: number) => void,
-  check: () => void, atEnd: RefObject<boolean>,
+  props: VirtualListProps<T>, refs: ListRefs, host: ScrollHost, setScrollMargin: (m: number) => void, check: () => void,
 ): void {
   const latest = useRef(props);
   latest.current = props;
@@ -149,14 +142,13 @@ function useContentObserver<T>(
     const observer = new ResizeObserver(() => {
       const items = refs.items.current;
       if (items !== null) setScrollMargin(host.itemsOffset(items));
-      const m = host.metrics();
-      if (latest.current.anchor === 'end' && atEnd.current) host.scrollTo(endOffset(m), false);
-      latest.current.onContentSizeChange?.(content.clientWidth, m.contentHeight);
+      if (latest.current.stickToEnd?.() === true) host.scrollTo(endOffset(host.metrics()), false);
       check();
+      latest.current.onContentSizeChange?.(content.clientWidth, host.metrics().contentHeight);
     });
     observer.observe(content);
     return () => { observer.disconnect(); };
-  }, [refs, host, setScrollMargin, check, atEnd]);
+  }, [refs, host, setScrollMargin, check]);
 }
 
 function useInitialPosition<T>(
@@ -177,9 +169,79 @@ function useInitialPosition<T>(
   }, [anchor, initialScrollIndex, host, virtualizer, count]);
 }
 
-function useListHandle(
-  handle: ForwardedRef<VirtualListHandle>, host: ScrollHost, virtualizer: ListVirtualizer,
+function rowElements(refs: ListRefs): HTMLElement[] {
+  return Array.from(refs.items.current?.querySelectorAll<HTMLElement>('[data-index]') ?? []);
+}
+
+function viewportTop(refs: ListRefs, scroll: VirtualListProps<unknown>['scroll']): number {
+  return scroll === 'self' ? (refs.root.current?.getBoundingClientRect().top ?? 0) : 0;
+}
+
+function visibleAnchor<T>(props: VirtualListProps<T>, refs: ListRefs, virtualizer: ListVirtualizer): ListAnchor | null {
+  const top = viewportTop(refs, props.scroll);
+  for (const el of rowElements(refs)) {
+    const rect = el.getBoundingClientRect();
+    if (rect.bottom <= top) continue;
+    const index = Number(el.dataset.index);
+    return { key: String(virtualizer.options.getItemKey(index)), offset: rect.top - top };
+  }
+  return null;
+}
+
+function scrollToAnchor<T>(
+  props: VirtualListProps<T>, refs: ListRefs, host: ScrollHost, virtualizer: ListVirtualizer, anchor: ListAnchor,
+): boolean {
+  const count = props.data?.length ?? 0;
+  let index = -1;
+  for (let i = 0; i < count && index === -1; i++) {
+    if (String(virtualizer.options.getItemKey(i)) === anchor.key) index = i;
+  }
+  if (index === -1) return false;
+  virtualizer.scrollToIndex(index, { align: 'start' });
+  const settle = (framesLeft: number, stableFrames: number): void => {
+    const el = rowElements(refs).find((row) => row.dataset.index === String(index));
+    if (el === undefined) return;
+    const delta = el.getBoundingClientRect().top - viewportTop(refs, props.scroll) - anchor.offset;
+    if (Math.abs(delta) > 1) host.scrollTo(host.metrics().offset + delta, false);
+    const stable = Math.abs(delta) <= 1 ? stableFrames + 1 : 0;
+    if (framesLeft > 0 && stable < 2) requestAnimationFrame(() => { settle(framesLeft - 1, stable); });
+  };
+  settle(ANCHOR_SETTLE_FRAMES, 0);
+  return true;
+}
+
+function firstKeyOf<T>(props: VirtualListProps<T>, virtualizer: ListVirtualizer): string | null {
+  return (props.data?.length ?? 0) > 0 ? String(virtualizer.options.getItemKey(0)) : null;
+}
+
+function keyIndexOf<T>(props: VirtualListProps<T>, virtualizer: ListVirtualizer, key: string): number {
+  const count = props.data?.length ?? 0;
+  for (let i = 0; i < count; i++) if (String(virtualizer.options.getItemKey(i)) === key) return i;
+  return -1;
+}
+
+function usePrependAnchor<T>(
+  props: VirtualListProps<T>, refs: ListRefs, host: ScrollHost, virtualizer: ListVirtualizer,
+): () => void {
+  const lastAnchor = useRef<ListAnchor | null>(null);
+  const firstKey = useRef<string | null>(null);
+  const remember = useCallback(() => { lastAnchor.current = visibleAnchor(props, refs, virtualizer); }, [props, refs, virtualizer]);
+  useLayoutEffect(() => {
+    const previous = firstKey.current;
+    firstKey.current = firstKeyOf(props, virtualizer);
+    const anchor = lastAnchor.current;
+    if (previous === null || anchor === null || props.stickToEnd?.() === true || previous === firstKey.current) return;
+    if (keyIndexOf(props, virtualizer, previous) > 0) scrollToAnchor(props, refs, host, virtualizer, anchor);
+  }, [props.data, props, refs, host, virtualizer]);
+  return remember;
+}
+
+function useListHandle<T>(
+  handle: ForwardedRef<VirtualListHandle>, props: VirtualListProps<T>, refs: ListRefs,
+  host: ScrollHost, virtualizer: ListVirtualizer,
 ): void {
+  const latest = useRef(props);
+  latest.current = props;
   useImperativeHandle(handle, () => ({
     scrollToOffset: ({ offset, animated }) => { host.scrollTo(offset, animated === true); },
     scrollToEnd: (params) => { host.scrollTo(endOffset(host.metrics()), params?.animated === true); },
@@ -187,7 +249,9 @@ function useListHandle(
       const align = viewPosition === 1 ? 'end' : viewPosition === 0.5 ? 'center' : 'start';
       virtualizer.scrollToIndex(index, { align, behavior: animated === true ? 'smooth' : 'auto' });
     },
-  }), [host, virtualizer]);
+    visibleAnchor: () => visibleAnchor(latest.current, refs, virtualizer),
+    scrollToAnchor: (anchor) => scrollToAnchor(latest.current, refs, host, virtualizer, anchor),
+  }), [refs, host, virtualizer]);
 }
 
 function VirtualRows<T>({ props, refs, virtualizer }: {
@@ -217,12 +281,13 @@ function VirtualRows<T>({ props, refs, virtualizer }: {
 
 function ListBody<T>({ props, handle, refs, host, virtualizer, setScrollMargin }: BodyProps<T>): React.ReactElement {
   const count = props.data?.length ?? 0;
-  const atEnd = useRef(false);
-  const check = useEdgeCallbacks(props, host, count, atEnd);
+  const edges = useEdgeCallbacks(props, host, count);
+  const rememberAnchor = usePrependAnchor(props, refs, host, virtualizer);
+  const check = useCallback(() => { edges(); rememberAnchor(); }, [edges, rememberAnchor]);
   useScrollSubscription(props, host, check);
-  useContentObserver(props, refs, host, setScrollMargin, check, atEnd);
+  useContentObserver(props, refs, host, setScrollMargin, check);
   useInitialPosition(props, host, virtualizer, count);
-  useListHandle(handle, host, virtualizer);
+  useListHandle(handle, props, refs, host, virtualizer);
   useEffect(() => { check(); }, [count, check]);
   return (
     <View

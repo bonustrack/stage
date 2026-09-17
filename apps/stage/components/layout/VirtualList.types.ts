@@ -20,10 +20,15 @@ export interface VirtualListProps<T> extends SharedFlatListProps<T> {
   scroll?: ListScrollMode;
   anchor?: 'start' | 'end';
   estimatedItemSize?: number;
+  stickToEnd?: () => boolean;
 }
+
+export interface ListAnchor { key: string; offset: number }
 
 export interface VirtualListHandle {
   scrollToOffset(params: { offset: number; animated?: boolean }): void;
   scrollToEnd(params?: { animated?: boolean }): void;
   scrollToIndex(params: { index: number; animated?: boolean; viewPosition?: number }): void;
+  visibleAnchor(): ListAnchor | null;
+  scrollToAnchor(anchor: ListAnchor): boolean;
 }

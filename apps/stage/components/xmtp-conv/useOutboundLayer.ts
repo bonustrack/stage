@@ -56,15 +56,19 @@ function useOptimisticCleanup(
   }, [optimistic, confirmedOptimisticIds]);
 }
 
-function useStickyBottom(allBubblesLength: number, showJump: boolean, setShowJump: (v: boolean) => void, scrollToNewest: () => void): void {
+function useStickyBottom(
+  allBubblesLength: number, convId: string | undefined, atBottom: () => boolean,
+  setShowJump: (v: boolean) => void, scrollToNewest: () => void,
+): void {
   const prevBubbleCount = useRef(0);
+  useEffect(() => { prevBubbleCount.current = 0; }, [convId]);
   useEffect(() => {
-    if (allBubblesLength > prevBubbleCount.current && prevBubbleCount.current > 0) {
-      if (!showJump) scrollToNewest();
+    if (allBubblesLength > prevBubbleCount.current && prevBubbleCount.current > 0 && atBottom()) {
+      scrollToNewest();
       setShowJump(false);
     }
     prevBubbleCount.current = allBubblesLength;
-  }, [allBubblesLength, showJump]);
+  }, [allBubblesLength, atBottom]);
 }
 
 export function useOutboundLayer(
@@ -72,6 +76,7 @@ export function useOutboundLayer(
   myUri: string,
   convId: string | undefined,
   activeLine: string,
+  atBottom: () => boolean,
 ) {
   const [showJump, setShowJump] = useState(false);
   const [jumpHighlightId, setJumpHighlightId] = useState<string | null>(null);
@@ -99,7 +104,9 @@ export function useOutboundLayer(
     return [...optimistic.filter(o => !confirmedOptimisticIds.has(o.id)), ...liveBubbles];
   }, [liveBubbles, optimistic, confirmedOptimisticIds]);
   useOptimisticCleanup(optimistic, confirmedOptimisticIds, setOptimistic, setConfirmedIds);
-  useStickyBottom(allBubbles.length, showJump, setShowJump, scrollToNewest);
+  const localIdOf = useMemo(() => new Map([...confirmedIds].map(([localId, sentId]) => [sentId, localId])), [confirmedIds]);
+  const rowKeyOf = useCallback((e: HistoryEntry): string => localIdOf.get(e.id) ?? e.id, [localIdOf]);
+  useStickyBottom(allBubbles.length, convId, atBottom, setShowJump, scrollToNewest);
   const jumpToMessage = useStableCallback((messageId: string) => {
     const idx = allBubbles.findIndex(b => b.id === messageId);
     setJumpHighlightId(messageId);
@@ -146,6 +153,6 @@ export function useOutboundLayer(
 
   return {
     showJump, setShowJump, scrollToNewest, jumpHighlightId,
-    listRef, confirmedIds, allBubbles, jumpToMessage, onOptimistic, onSent,
+    listRef, confirmedIds, allBubbles, rowKeyOf, jumpToMessage, onOptimistic, onSent,
   };
 }
