@@ -1,5 +1,4 @@
 
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Image } from '@stage-labs/kit/react-native/image';
@@ -13,9 +12,10 @@ import { memberRowModel, type GroupMemberRole, type MemberRowBadge } from './gro
 import { stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { AppModal } from '../AppModal';
 import { AnchoredMenu } from '../AnchoredMenu';
+import { MenuList, MenuRow } from '../MenuRows';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { FormField } from '../FormField';
-import { DANGER, usePalette } from '../../lib/theme';
+import { DANGER, useEffectiveColorScheme, usePalette } from '../../lib/theme';
 
 interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }
 
@@ -133,20 +133,13 @@ export function OverflowModal({
   visible: boolean; onClose: () => void; anchor?: MenuPoint | null;
   leaving: boolean; onLeave: () => void;
 }): React.ReactElement {
+  const dark = useEffectiveColorScheme() === 'dark';
   return (
     <AnchoredMenu visible={visible} onClose={onClose} anchor={anchor}>
-      <Box gap={4} padding={{ x: 16 }}>
-        <Pressable
-          onPress={onLeave}
-          disabled={leaving}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, opacity: leaving ? 0.5 : 1 }}
->
-          <Icon name="arrowLeft" size={20} color={DANGER}/>
-          <Text size="md" color={DANGER}>
-            {leaving ? 'Leaving…' : 'Leave group'}
-          </Text>
-        </Pressable>
-      </Box>
+      <MenuList dark={dark}>
+        <MenuRow icon="arrowLeft" label={leaving ? 'Leaving…' : 'Leave group'} danger dark={dark}
+          onPress={() => { if (!leaving) onLeave(); }} />
+      </MenuList>
     </AnchoredMenu>
   );
 }

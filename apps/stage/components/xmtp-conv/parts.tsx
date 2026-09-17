@@ -9,15 +9,14 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Row, pinnedTop } from '../layout';
 import { TOPNAV_HEIGHT } from '../Topnav';
 import { Icon } from '@stage-labs/kit/react-native/icon';
-import { Divider } from '@stage-labs/kit/react-native/divider';
 import { Avatar } from '../Avatar';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
 import { REACT_PRESETS } from '../bubble/MessengerBubble';
 import { usePalette } from '../../lib/theme';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { useBlockRadius } from '../../lib/theme';
 import { menuPlacement, MENU_GAP, MENU_STRIP_HEIGHT } from './menuPlacement';
-import { MENU_SHADOW, useAnchoredMenus } from '../AnchoredMenu';
+import { MENU_SHADOW, MENU_WIDTH, MenuSurface, useAnchoredMenus } from '../AnchoredMenu';
+import { MenuList, MenuRow } from '../MenuRows';
 import { anchoredMenuStyle, type MenuPoint } from '../AnchoredMenu.model';
 import { dismissContextMenuProps } from '../../lib/contextMenu';
 import type { MenuAnchor } from '../bubble/props';
@@ -74,31 +73,14 @@ export function ConvTopnavIdentity({ peerAddr, groupImage, channelId, isGroup, b
 
 const MORE_EMOJIS = ['❤️', '😂', '😮', '😢', '🎉', '🤯', '🥳', '👏', '🙌', '🤝', '✅', '❌', '👌', '🚀', '💀', '🤔', '😅', '🫶'];
 
-function ActionRow({ icon, label, color, fg, dark, onPress }: {
-  icon: React.ComponentProps<typeof Icon>['name']; label: string; color?: string;
-  fg: string; dark: boolean; onPress: () => void;
-}): React.ReactElement {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        flexDirection: 'row', alignItems: 'center', gap: 14,
-        paddingVertical: 13, paddingHorizontal: 16,
-        backgroundColor: pressed ? (dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)') : 'transparent',
-      })}
-    >
-      <Icon name={icon} size={20} color={color ?? fg}/>
-      <Text size="md" color={color ?? fg}>{label}</Text>
-    </Pressable>
-  );
-}
-
-function ReactionStrip({ expanded, setExpanded, dark, sub, stripBg, onReact }: {
+function ReactionStrip({ expanded, setExpanded, dark, sub, stripBg, border, onReact }: {
   expanded: boolean; setExpanded: (v: boolean) => void; dark: boolean; sub: string;
-  stripBg: string; onReact: (e: string) => void;
+  stripBg: string; border: string; onReact: (e: string) => void;
 }): React.ReactElement {
+  const edge = { width: 1, color: border };
   return (
-    <Row background={stripBg} radius="full" maxWidth={'100%'} padding={{ x: 10, y: 6 }} align="center" gap={4} style={{ shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 6 }}>
+    <Row background={stripBg} radius="full" maxWidth={'100%'} padding={{ x: 10, y: 6 }} align="center" gap={4}
+      border={{ top: edge, right: edge, bottom: edge, left: edge }} style={MENU_SHADOW}>
       {expanded ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingRight: 4 }}>
           {[...REACT_PRESETS, ...MORE_EMOJIS].map(e => (
@@ -128,26 +110,27 @@ function ReactionStrip({ expanded, setExpanded, dark, sub, stripBg, onReact }: {
   );
 }
 
-function ActionDropdown({ target, dark, fg, divider, cardBg, blockRadius, on }: {
-  target: HistoryEntry | null; dark: boolean; fg: string; divider: string; cardBg: string;
-  blockRadius: number; on: { reply: () => void; copy: () => void; select: () => void; shareLink: () => void };
-}): React.ReactElement {
-  const hasText = !!target?.text;
-  return (
-    <Box minWidth={220} maxWidth={320} background={cardBg} radius={blockRadius} padding={{ y: 4 }}
-      style={{ overflow: 'hidden', ...MENU_SHADOW }}>
-      <ActionRow icon="reply" label="Reply" fg={fg} dark={dark} onPress={on.reply}/>
-      {hasText ? <Divider dark={dark} color={divider} style={{ marginLeft: 16 }} /> : null}
-      {hasText ? <ActionRow icon="copy" label="Copy" fg={fg} dark={dark} onPress={on.copy} /> : null}
-      {hasText ? <Divider dark={dark} color={divider} style={{ marginLeft: 16 }} /> : null}
-      {hasText ? <ActionRow icon="document" label="Select" fg={fg} dark={dark} onPress={on.select} /> : null}
-      <Divider dark={dark} color={divider} style={{ marginLeft: 16 }}/>
-      <ActionRow icon="send" label="Share link" fg={fg} dark={dark} onPress={on.shareLink}/>
-    </Box>
-  );
+interface BubbleActions { reply: () => void; copy: () => void; select: () => void; shareLink: () => void }
+
+function bubbleMenuItems(hasText: boolean): { id: keyof BubbleActions; icon: string; label: string }[] {
+  return [
+    { id: 'reply', icon: 'reply', label: 'Reply' },
+    ...(hasText ? [{ id: 'copy' as const, icon: 'copy', label: 'Copy' }, { id: 'select' as const, icon: 'document', label: 'Select' }] : []),
+    { id: 'shareLink', icon: 'send', label: 'Share link' },
+  ];
 }
 
-const ANCHORED_MENU_WIDTH = 320;
+function ActionDropdown({ hasText, dark, on }: { hasText: boolean; dark: boolean; on: BubbleActions }): React.ReactElement {
+  return (
+    <MenuSurface>
+      <MenuList dark={dark}>
+        {bubbleMenuItems(hasText).map(item => (
+          <MenuRow key={item.id} icon={item.icon} label={item.label} dark={dark} onPress={on[item.id]} />
+        ))}
+      </MenuList>
+    </MenuSurface>
+  );
+}
 
 function AnchoredBubbleMenu({ open, point, onClose, strip, dropdown }: {
   open: boolean; point: MenuPoint; onClose: () => void;
@@ -163,7 +146,7 @@ function AnchoredBubbleMenu({ open, point, onClose, strip, dropdown }: {
         {...dismissContextMenuProps(onClose)}
       >
         <Box
-          width={ANCHORED_MENU_WIDTH}
+          width={MENU_WIDTH}
           align="start"
           pointerEvents="box-none"
           style={{
@@ -191,7 +174,6 @@ export function BubbleActionMenu({
   onShareLink: () => void;
 }): React.ReactElement {
   const [expanded, setExpanded] = useState(false);
-  const blockRadius = useBlockRadius();
   const anchored = useAnchoredMenus();
   useEffect(() => { if (!target) setExpanded(false); }, [target]);
 
@@ -201,13 +183,10 @@ export function BubbleActionMenu({
   const reactAndClose = (e: string): void => { onReact(e); onClose(); };
 
   const dropdown = (
-    <ActionDropdown
-      target={target} dark={dark} fg={pal.text} divider={pal.border} cardBg={pal.bg} blockRadius={blockRadius}
-      on={{ reply: onReply, copy: onCopy, select: onSelect, shareLink: onShareLink }}
-    />
+    <ActionDropdown hasText={!!target?.text} dark={dark} on={{ reply: onReply, copy: onCopy, select: onSelect, shareLink: onShareLink }} />
   );
   const strip = (
-    <ReactionStrip expanded={expanded} setExpanded={setExpanded} dark={dark} sub={pal.sub} stripBg={pal.bg} onReact={reactAndClose} />
+    <ReactionStrip expanded={expanded} setExpanded={setExpanded} dark={dark} sub={pal.sub} stripBg={pal.inputBg} border={pal.border} onReact={reactAndClose} />
   );
 
   if (anchored && anchor.point) {

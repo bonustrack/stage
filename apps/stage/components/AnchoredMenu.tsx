@@ -12,7 +12,7 @@ import { isCoarsePointer } from '../lib/pointer';
 import { useBlockRadius, usePalette } from '../lib/theme';
 
 const DESKTOP_MIN_WIDTH = 900;
-const MENU_WIDTH = 260;
+export const MENU_WIDTH = 260;
 
 export const MENU_SHADOW = {
   shadowColor: '#000',
@@ -21,6 +21,27 @@ export const MENU_SHADOW = {
   shadowOffset: { width: 0, height: 6 },
   elevation: 8,
 };
+
+export function MenuSurface({ width = MENU_WIDTH, maxHeight, children }: {
+  width?: number; maxHeight?: number; children: ReactNode;
+}): React.ReactElement {
+  const pal = usePalette();
+  const radius = useBlockRadius();
+  const edge = { width: 1, color: pal.border };
+  return (
+    <Box
+      width={width}
+      background={pal.inputBg}
+      radius={radius}
+      border={{ top: edge, right: edge, bottom: edge, left: edge }}
+      style={{ overflow: 'hidden', ...MENU_SHADOW }}
+    >
+      {maxHeight === undefined ? children : (
+        <Scroll style={{ maxHeight }} showsVerticalScrollIndicator={false}>{children}</Scroll>
+      )}
+    </Box>
+  );
+}
 
 export function useAnchoredMenus(): boolean {
   const { width } = useWindowDimensions();
@@ -58,8 +79,6 @@ export function AnchoredMenu({ visible, onClose, anchor, children }: {
 }): React.ReactElement {
   const anchored = useAnchoredMenus();
   const viewport = useWindowDimensions();
-  const pal = usePalette();
-  const radius = useBlockRadius();
 
   if (!anchored || !anchor) {
     return (
@@ -70,7 +89,6 @@ export function AnchoredMenu({ visible, onClose, anchor, children }: {
   }
 
   const { maxHeight, ...position } = anchoredMenuStyle(anchor, viewport);
-  const edge = { width: 1, color: pal.border };
   return (
     <Dialog
       open={visible}
@@ -88,17 +106,7 @@ export function AnchoredMenu({ visible, onClose, anchor, children }: {
           onPress={(e) => { e.stopPropagation(); }}
           style={{ position: 'absolute', ...position }}
         >
-          <Box
-            width={MENU_WIDTH}
-            background={pal.inputBg}
-            radius={radius}
-            border={{ top: edge, right: edge, bottom: edge, left: edge }}
-            style={{ overflow: 'hidden', ...MENU_SHADOW }}
-          >
-            <Scroll style={{ maxHeight }} showsVerticalScrollIndicator={false}>
-              {children}
-            </Scroll>
-          </Box>
+          <MenuSurface maxHeight={maxHeight}>{children}</MenuSurface>
         </Pressable>
       </Pressable>
     </Dialog>
