@@ -278,6 +278,12 @@ export function reactNative() {
       },
     },
     {
+      files: ['components/landing/**'],
+      rules: {
+        'no-restricted-syntax': 'off',
+      },
+    },
+    {
       files: ['lib/safeArea.ts'],
       rules: {
         'no-restricted-imports': 'off',

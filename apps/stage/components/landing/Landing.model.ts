@@ -1,46 +1,131 @@
-import type { BrandIconName } from '@stage-labs/kit/icons';
-import type { Release } from '@stage-labs/client/api/releases';
+export const HERO_YELLOW = '#fafe69';
+export const HERO_BLACK = '#000000';
+export const HERO_WHITE = '#ffffff';
 
-export type DownloadPlatform = 'ios' | 'android' | 'macos' | 'windows' | 'linux';
+export const HERO_COPY = {
+  eyebrow: 'Private by default',
+  title: 'Your agent is the product',
+  paragraph:
+    'Stage is an end-to-end encrypted messenger built on XMTP, with free onchain names, avatars and a smart-account wallet on Base. Groups, multiple accounts, and agents as contacts.',
+  cta: 'Get started →',
+} as const;
 
-export interface DownloadLink {
-  platform: DownloadPlatform;
-  label: string;
-  icon: BrandIconName;
-  href: string | null;
+export const BANNER = {
+  lead: 'Psst! Stage is in early access. ',
+  link: 'Claim your free onchain name',
+  tail: '. →',
+  copies: 3,
+  size: 19,
+  lineHeight: 29,
+  padY: 12,
+  padRight: 64,
+  durationMs: 10_000,
+} as const;
+
+export const BANNER_HEIGHT = BANNER.lineHeight + 2 * BANNER.padY;
+
+export const HERO_LAYOUT = {
+  containerMaxWidth: 1400,
+  containerPadX: 32,
+  contentPadY: 58,
+  contentGap: 40,
+  blockMaxWidth: 760,
+  blockPadY: 16,
+  bandHeight: 580,
+  headerPadY: 40,
+  logoHeight: 66,
+  logoPadX: 32,
+  logoPadY: 14,
+  boxFrameHeight: 600,
+  ctaPadX: 24,
+  ctaPadY: 12,
+} as const;
+
+export const HERO_LOGO_SIZE = HERO_LAYOUT.logoHeight - 2 * HERO_LAYOUT.logoPadY;
+
+export const HERO_TYPE = {
+  eyebrow: { size: 17, letterSpacing: 1.7 },
+  title: { size: 76, lineHeight: 83.6 },
+  paragraph: { size: 26, lineHeight: 31.2 },
+  cta: { size: 19, lineHeight: 29 },
+} as const;
+
+export interface HeroBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
-export const RELEASES_REPO = { owner: 'bonustrack', repo: 'stage' } as const;
-const RELEASES_URL = `https://github.com/${RELEASES_REPO.owner}/${RELEASES_REPO.repo}/releases`;
-export const LATEST_RELEASE_URL = `${RELEASES_URL}/latest`;
-export const IOS_STORE_URL: string | null = null;
+export interface HeroBoxLayer {
+  color: string;
+  count: number;
+  top: (heroHeight: number) => number;
+}
 
-const ASSET_PATTERNS: Record<Exclude<DownloadPlatform, 'ios'>, RegExp[]> = {
-  android: [/\.apk$/i],
-  macos: [/-mac-universal\.dmg$/i, /-mac-arm64\.dmg$/i, /\.dmg$/i],
-  windows: [/-win-x64\.exe$/i, /\.exe$/i],
-  linux: [/\.AppImage$/i],
-};
+export const HERO_BOX_LAYERS: readonly HeroBoxLayer[] = [
+  { color: HERO_YELLOW, count: 4, top: (heroHeight) => heroHeight - 160 - HERO_LAYOUT.boxFrameHeight },
+  { color: HERO_WHITE, count: 6, top: () => 320 },
+];
 
-function assetUrl(releases: Release[], patterns: RegExp[]): string | null {
-  for (const release of releases) {
-    if (release.prerelease) continue;
-    for (const pattern of patterns) {
-      const asset = release.assets.find((candidate) => pattern.test(candidate.name));
-      if (asset !== undefined) return asset.url;
+export function heroBoxes(count: number, frameWidth: number, frameHeight: number, random: () => number): HeroBox[] {
+  return Array.from({ length: count }, () => {
+    const width = Math.floor(random() * (frameWidth * 0.1) + frameWidth * 0.2);
+    const height = Math.floor(random() * (frameHeight * 0.1) + frameHeight * 0.3);
+    return {
+      x: Math.floor(random() * (frameWidth - width * 0.4) - width * 0.3),
+      y: Math.floor(random() * (frameHeight - height * 0.4) - height * 0.3),
+      width,
+      height,
+    };
+  });
+}
+
+export const ASCII = {
+  chars: [' ', '⋅', '.', '^', ' '] as const,
+  size: 14,
+  lineHeight: 8,
+  letterSpacing: -1,
+  cellWidth: 7.6,
+  maxWidth: 1500,
+  tickMs: 100,
+  tickStep: 0.04,
+} as const;
+
+export function asciiGrid(width: number, height: number): { cols: number; rows: number } {
+  const effectiveWidth = Math.min(width, ASCII.maxWidth);
+  return {
+    cols: Math.max(1, Math.floor(effectiveWidth / ASCII.cellWidth)),
+    rows: Math.ceil(height / ASCII.lineHeight) + 2,
+  };
+}
+
+export function tornadoField(x: number, y: number, cols: number, rows: number, t: number): number {
+  const centerX = cols * 0.5 + Math.sin(t * 0.3) * cols * 0.1;
+  const centerY = rows * 0.5 + Math.cos(t * 0.2) * rows * 0.1;
+  const dx = x - centerX;
+  const dy = y - centerY;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  const angle = Math.atan2(dy, dx);
+  const vortex = Math.sin((angle + distance * 0.02 - t * 0.6) * 3) * Math.exp(-distance * 0.003);
+  const eye = distance < 30 ? -2 : 0;
+  const debris =
+    Math.sin((angle + distance * 0.03 - t * 0.4) * 8) * Math.exp(-distance * 0.004) * Math.sin(y * 0.1 - t * 0.6);
+  const turbulence = Math.sin(x * 0.2 + y * 0.15 - t * 1.2) * Math.exp(-distance * 0.002) * 0.5;
+  const rotation = Math.sin(angle * 5 + t * 0.9) * (1 - distance * 0.001);
+  return eye + vortex * 1.5 + debris + turbulence + rotation * 0.8;
+}
+
+export function asciiFrame(cols: number, rows: number, time: number): string {
+  const t = time * 0.5;
+  const lines: string[] = [];
+  for (let y = 0; y < rows; y += 1) {
+    let line = '';
+    for (let x = 0; x < cols; x += 1) {
+      const i = Math.floor((tornadoField(x, y, cols, rows, t) + 1) * 2);
+      line += ASCII.chars[Math.max(0, Math.min(i, 4))] ?? ' ';
     }
+    lines.push(line);
   }
-  return null;
-}
-
-export function downloadLinks(releases: Release[] = []): DownloadLink[] {
-  const href = (platform: Exclude<DownloadPlatform, 'ios'>): string =>
-    assetUrl(releases, ASSET_PATTERNS[platform]) ?? LATEST_RELEASE_URL;
-  return [
-    { platform: 'ios', label: 'iOS', icon: 'brandApple', href: IOS_STORE_URL },
-    { platform: 'android', label: 'Android', icon: 'brandAndroid', href: href('android') },
-    { platform: 'macos', label: 'macOS', icon: 'brandApple', href: href('macos') },
-    { platform: 'windows', label: 'Windows', icon: 'brandWindows', href: href('windows') },
-    { platform: 'linux', label: 'Linux', icon: 'brandLinux', href: href('linux') },
-  ];
+  return lines.join('\n');
 }
