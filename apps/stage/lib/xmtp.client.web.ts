@@ -1,6 +1,4 @@
-import { errorMessage } from '@stage-labs/client/errors';
-import { XMTP_ENV_KEY } from './xmtp.types.web';
-import { Client, ConsentState, IdentifierKind, type Conversation } from '@xmtp/browser-sdk';
+import { Client, ConsentState, type Conversation } from '@xmtp/browser-sdk';
 import { secureStorage } from '../platform/storage';
 import {
   getActiveAccount,
@@ -12,16 +10,13 @@ import { perfLog, perfTime } from './perf';
 import { bumpAccountEpoch } from './accountEpoch';
 import { XMTP_CODECS, signerForRecord } from './xmtp.codecs.web';
 import {
-  getCachedXmtpClient, setCachedXmtpClient, resetClientScopedState, getOrCreateCachedClient, whileRegistering } from './xmtp.state.web';
+  getCachedXmtpClient, resetClientScopedState, getOrCreateCachedClient } from './xmtp.state.web';
 import { type XmtpEnv, convIdOfLine, lineOfConv } from './xmtp.types';
 import { deleteDbKey, deleteDbFiles } from './xmtp.dbkey';
 import { historyServerUrl } from './historyServer';
-import { registerPushWithServer } from './pushRegister.web';
-import { createClientForAccount } from './xmtp.recover.web';
+import { openClientForAccount, type CreateOpts } from './xmtp.recover.web';
 import { markConvReadSynced as markConvReadLocally } from './xmtp.unread';
-import {
-  webXmtpDbPath, canReuseSavedClient, installationCreatedAtMs, openSavedClient,
-} from '@stage-labs/client/xmtp/clientConfig';
+import { webXmtpDbPath, canReuseSavedClient, installationCreatedAtMs } from '@stage-labs/client/xmtp/clientConfig';
 
 export { getCachedXmtpClient, waitForXmtpReady } from './xmtp.state.web';
 export { ensureActiveAccount } from './xmtp.recover.web';
@@ -32,11 +27,13 @@ export class NoAccountError extends Error {
 
 const ADDRESS_PREFIX = 'xmtp.address.';
 const ENV_PREFIX = 'xmtp.env.';
+const INSTALLATION_PREFIX = 'xmtp.installation.';
 
 type WebXmtpClient = Client<unknown>;
 
 function addressKeyFor(id: string): string { return ADDRESS_PREFIX + id; }
 function envKeyFor(id: string): string { return ENV_PREFIX + id; }
+function installationKeyFor(id: string): string { return INSTALLATION_PREFIX + id; }
 
 export function cachedSelfEthAddress(): string | null {
   return getCachedXmtpClient()?.accountIdentifier?.identifier ?? null;
@@ -55,36 +52,30 @@ export function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promise<WebX
   });
 }
 
-async function finalizeClient(
-  client: WebXmtpClient, rec: AccountRecord, env: XmtpEnv,
-): Promise<WebXmtpClient> {
-  setCachedXmtpClient(client);
-  await setActiveAccountId(rec.id);
-  await secureStorage.set(XMTP_ENV_KEY, env);
-  void registerPushWithServer(client);
-  return client;
+async function opfsFileExists(name: string): Promise<boolean> {
+  try {
+    const root = await navigator.storage.getDirectory();
+    await root.getFileHandle(name);
+    return true;
+  } catch (e) {
+    return !(e instanceof DOMException && e.name === 'NotFoundError');
+  }
 }
 
 async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<WebXmtpClient> {
   const address = rec.address.toLowerCase();
-  const dbPath = webXmtpDbPath(rec.id, env);
-  const historySyncUrl = historyServerUrl(env);
-  const opts = { env, dbPath, codecs: XMTP_CODECS, historySyncUrl } as Parameters<typeof Client.create>[1];
-  const savedAddress = await getSecure(addressKeyFor(rec.id));
-  const savedEnv = await getSecure(envKeyFor(rec.id));
-  const reusable = canReuseSavedClient(savedAddress, savedEnv, address, env);
-  perfLog('xmtp.client path', { reusable, savedAddress, savedEnv, address, env });
-  const opened = await openSavedClient<WebXmtpClient>({
-    reusable,
-    build: () => perfTime('xmtp.client.build', () => Client.build({ identifier: address, identifierKind: IdentifierKind.Ethereum }, opts)),
-    isRegistered: (client) => client.isRegistered(),
-    close: (client) => { client.close(); },
-    create: () => whileRegistering(() => perfTime('xmtp.client.create', () => createClientForAccount(rec, env, { env, dbPath, codecs: XMTP_CODECS }))),
-    onFallback: (reason, e) => { perfLog(`xmtp.client.build ${reason}, falling back to create`, { error: e === undefined ? '' : errorMessage(e) }); },
-  });
-  if (!opened.created) return finalizeClient(opened.client, rec, env);
+  const opts: CreateOpts = { env, dbPath: webXmtpDbPath(rec.id, env), codecs: XMTP_CODECS, historySyncUrl: historyServerUrl(env) };
+  const [savedAddress, savedEnv, savedInstallation] = await Promise.all([
+    getSecure(addressKeyFor(rec.id)), getSecure(envKeyFor(rec.id)), getSecure(installationKeyFor(rec.id)),
+  ]);
+  const reusable = canReuseSavedClient(savedAddress, savedEnv, address, env) && await opfsFileExists(opts.dbPath);
+  perfLog('xmtp.client path', { reusable, savedAddress, savedEnv, savedInstallation, address, env });
+  const opened = await perfTime('xmtp.client.open', () =>
+    openClientForAccount(rec, env, opts, reusable ? savedInstallation : null));
+  perfLog('xmtp.client opened', { registered: opened.registered, installation: opened.client.installationId });
   await setSecure(addressKeyFor(rec.id), address);
   await setSecure(envKeyFor(rec.id), env);
+  await setSecure(installationKeyFor(rec.id), opened.client.installationId ?? '');
   return opened.client;
 }
 
@@ -113,6 +104,7 @@ export async function switchToAccount(id: string, env: XmtpEnv = 'production'): 
 async function forgetSavedClient(id: string): Promise<void> {
   await secureStorage.delete(addressKeyFor(id)).catch(() => undefined);
   await secureStorage.delete(envKeyFor(id)).catch(() => undefined);
+  await secureStorage.delete(installationKeyFor(id)).catch(() => undefined);
 }
 
 export async function deleteAccount(id: string): Promise<void> {

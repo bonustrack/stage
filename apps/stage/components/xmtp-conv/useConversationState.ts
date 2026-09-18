@@ -10,6 +10,7 @@ import { markConvRead } from '../../modules/messaging';
 import { markConvAtBottom } from '../../lib/scrollPos';
 import { isCoarsePointer } from '../../lib/pointer';
 import type { HistoryEntry } from '@stage-labs/client/types';
+import { isSystemEntry } from '@stage-labs/client/xmtp/envelope';
 import type { MenuAnchor } from '../bubble/props';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { useReactionsLayer } from './useReactionsLayer';
@@ -62,7 +63,11 @@ export function useConversationState(convId: string | undefined, focus: string |
   );
 
   const xmtpFeed = useXmtpFeed(activeLine, !!convId);
-  const events = xmtpFeed.events;
+  const { peerAddr, memberAddrs, inboxToAddr, groupName, groupImage, groupDescription, isGroup } = useConvMeta(convId);
+  const events = useMemo(
+    () => (peerAddr === null ? xmtpFeed.events : xmtpFeed.events.filter(e => !isSystemEntry(e))),
+    [xmtpFeed.events, peerAddr],
+  );
   const { loadOlder, hasMore, loadingOlder } = xmtpFeed;
   useEffect(() => {
     if (!convId) return;
@@ -78,7 +83,6 @@ export function useConversationState(convId: string | undefined, focus: string |
   const [menuAnchor, setMenuAnchor] = useState<MenuAnchor>({ y: 0, height: 0 });
   const [overflowOpen, setOverflowOpen] = useState(false);
   const [overflowAnchor, setOverflowAnchor] = useState<MenuPoint | null>(null);
-  const { peerAddr, memberAddrs, inboxToAddr, groupName, groupImage, groupDescription, isGroup } = useConvMeta(convId);
   const consentAllowed = useConsentGate(convId);
   const groupLabels = useGroupLabels(convId, activeLine, isGroup);
 

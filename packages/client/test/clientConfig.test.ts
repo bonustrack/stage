@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  webXmtpDbPath, canReuseSavedClient, installationCreatedAtMs, openSavedClient,
+  webXmtpDbPath, canReuseSavedClient, installationCreatedAtMs, openPersistedClient, OPEN_ATTEMPTS,
 } from '../src/xmtp/clientConfig';
 import { dbDirFor } from '../src/accounts/registry';
 
@@ -36,47 +36,85 @@ describe('installationCreatedAtMs', () => {
   });
 });
 
-describe('openSavedClient', () => {
-  const deps = (over: Partial<Parameters<typeof openSavedClient<string>>[0]>) => {
+describe('openPersistedClient', () => {
+  type Deps = Parameters<typeof openPersistedClient<string>>[0];
+  const deps = (over: Partial<Deps>) => {
     const calls: string[] = [];
-    const d = {
-      reusable: true,
-      build: () => { calls.push('build'); return Promise.resolve('built'); },
+    const d: Deps = {
+      open: () => { calls.push('open'); return Promise.resolve('inst-a'); },
       isRegistered: () => Promise.resolve(true),
+      register: () => { calls.push('register'); return Promise.resolve(); },
+      installationIdOf: (c: string) => c,
       close: (c: string) => { calls.push(`close:${c}`); },
-      create: () => { calls.push('create'); return Promise.resolve('created'); },
-      onFallback: (reason: string) => { calls.push(`fallback:${reason}`); },
+      savedInstallationId: 'inst-a',
+      retryable: () => true,
+      sleep: () => { calls.push('sleep'); return Promise.resolve(); },
+      onEvent: (event: string) => { calls.push(`event:${event}`); },
       ...over,
     };
     return { d, calls };
   };
 
-  test('a registered saved installation is reused', async () => {
+  test('a registered persisted installation is reused without registering', async () => {
     const { d, calls } = deps({});
-    expect(await openSavedClient(d)).toEqual({ client: 'built', created: false });
-    expect(calls).toEqual(['build']);
+    expect(await openPersistedClient(d)).toEqual({ client: 'inst-a', registered: false });
+    expect(calls).toEqual(['open']);
   });
 
-  test('an unregistered saved installation is closed and a fresh client is created', async () => {
+  test('an unregistered persisted installation is registered in place, never replaced', async () => {
     const { d, calls } = deps({ isRegistered: () => Promise.resolve(false) });
-    expect(await openSavedClient(d)).toEqual({ client: 'created', created: true });
-    expect(calls).toEqual(['build', 'fallback:unregistered', 'close:built', 'create']);
+    expect(await openPersistedClient(d)).toEqual({ client: 'inst-a', registered: true });
+    expect(calls).toEqual(['open', 'register', 'event:registered']);
   });
 
-  test('a failing build falls back to create', async () => {
-    const { d, calls } = deps({ build: () => Promise.reject(new Error('locked')) });
-    expect(await openSavedClient(d)).toEqual({ client: 'created', created: true });
-    expect(calls).toEqual(['fallback:build-failed', 'create']);
+  test('a fresh device registers whatever installation the store holds', async () => {
+    const { d, calls } = deps({ savedInstallationId: null, isRegistered: () => Promise.resolve(false) });
+    expect(await openPersistedClient(d)).toEqual({ client: 'inst-a', registered: true });
+    expect(calls).toEqual(['open', 'register', 'event:registered']);
   });
 
-  test('a registration probe that throws counts as unregistered', async () => {
-    const { d } = deps({ isRegistered: () => Promise.reject(new Error('worker gone')) });
-    expect((await openSavedClient(d)).created).toBe(true);
+  test('a store that opens with a different installation is closed and retried, never registered', async () => {
+    let opens = 0;
+    const { d, calls } = deps({ open: () => { opens += 1; return Promise.resolve(opens < 3 ? 'inst-memory' : 'inst-a'); } });
+    expect(await openPersistedClient(d)).toEqual({ client: 'inst-a', registered: false });
+    expect(calls).toEqual([
+      'event:installation-mismatch', 'close:inst-memory', 'sleep',
+      'event:installation-mismatch', 'close:inst-memory', 'sleep',
+    ]);
   });
 
-  test('nothing saved goes straight to create', async () => {
-    const { d, calls } = deps({ reusable: false });
-    expect(await openSavedClient(d)).toEqual({ client: 'created', created: true });
-    expect(calls).toEqual(['create']);
+  test('a persistent mismatch gives up with the locked-store error instead of a new installation', async () => {
+    const { d, calls } = deps({ open: () => Promise.resolve('inst-memory'), attempts: 2 });
+    await expect(openPersistedClient(d)).rejects.toThrow(/another tab/);
+    expect(calls.filter(c => c === 'register')).toEqual([]);
+    expect(calls.filter(c => c.startsWith('close'))).toHaveLength(2);
+  });
+
+  test('a failing open is retried and the last error surfaces', async () => {
+    let opens = 0;
+    const { d, calls } = deps({ open: () => { opens += 1; return opens < 2 ? Promise.reject(new Error('locked')) : Promise.resolve('inst-a'); } });
+    expect(await openPersistedClient(d)).toEqual({ client: 'inst-a', registered: false });
+    expect(calls).toEqual(['event:open-failed', 'sleep']);
+    const failing = deps({ open: () => Promise.reject(new Error('locked')), attempts: 3 });
+    await expect(openPersistedClient(failing.d)).rejects.toThrow('locked');
+    expect(failing.calls.filter(c => c === 'event:open-failed')).toHaveLength(3);
+  });
+
+  test('an open error the seam calls final is thrown after a single attempt', async () => {
+    let opens = 0;
+    const { d, calls } = deps({ open: () => { opens += 1; return Promise.reject(new Error('12/10 installations')); }, retryable: () => false });
+    await expect(openPersistedClient(d)).rejects.toThrow('12/10');
+    expect(opens).toBe(1);
+    expect(calls).toEqual(['event:open-failed']);
+  });
+
+  test('a registration probe that throws surfaces instead of creating a new installation', async () => {
+    const { d, calls } = deps({ isRegistered: () => Promise.reject(new Error('worker gone')) });
+    await expect(openPersistedClient(d)).rejects.toThrow('worker gone');
+    expect(calls).toEqual(['open']);
+  });
+
+  test('defaults to five attempts', () => {
+    expect(OPEN_ATTEMPTS).toBe(5);
   });
 });

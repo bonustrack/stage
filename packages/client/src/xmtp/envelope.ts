@@ -1,6 +1,6 @@
 
 import type { HistoryEntry } from '../types';
-import { humanizeGroupUpdated, type GroupUpdatedContent } from './humanize';
+import { humanizeGroupUpdated, isGroupUpdateTypeId, type GroupUpdatedContent } from './humanize';
 import { type PollContent, pollFallbackText } from './poll';
 import {
   type SignatureRequestContent, type SignatureReferenceContent,
@@ -192,8 +192,8 @@ const ENVELOPE_HANDLERS: Record<string, Handler> = {
   multiRemoteAttachment: multiRemoteEnvelope,
 };
 
-function isGroupUpdate(typeId: string): boolean {
-  return typeId === 'group_updated' || typeId === 'groupUpdated';
+export function isSystemEntry(entry: HistoryEntry): boolean {
+  return (entry.payload as { system?: boolean } | undefined)?.system === true;
 }
 
 function handledEnvelope(
@@ -205,7 +205,7 @@ function handledEnvelope(
     const built = handler ? safe(() => handler(base, typeId, decoded, options, fallback)) : undefined;
     if (built) return built;
   }
-  if (isGroupUpdate(typeId)) {
+  if (isGroupUpdateTypeId(typeId)) {
     return safe(() => ({
       ...base, text: humanizeGroupUpdated(decoded as GroupUpdatedContent),
       payload: { contentType: typeId, system: true } as const,

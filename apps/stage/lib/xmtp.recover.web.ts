@@ -6,11 +6,15 @@ import {
   type AccountRecord,
 } from './accounts';
 import { XMTP_CODECS, signerForRecord } from './xmtp.codecs.web';
-import { setCachedXmtpClient } from './xmtp.state.web';
+import { setCachedXmtpClient, whileRegistering } from './xmtp.state.web';
+import { registerPushWithServer } from './pushRegister.web';
+import { perfLog } from './perf';
+import { errorMessage } from '@stage-labs/client/errors';
+import { openPersistedClient, type OpenedClient } from '@stage-labs/client/xmtp/clientConfig';
 import { type XmtpEnv, XMTP_ENV_KEY } from './xmtp.types.web';
 import { deleteDbKey, deleteDbFiles } from './xmtp.dbkey';
 import {
-  INSTALLATION_LIMIT_MESSAGE, isInstallationLimit,
+  INSTALLATION_LIMIT_MESSAGE, isInstallationLimit, isStoreLocked,
   isStoreCorruption as isStoreCorruptionCore,
 } from '@stage-labs/client/xmtp/clientErrors';
 
@@ -19,6 +23,7 @@ export interface CreateOpts {
   env: XmtpEnv;
   dbPath: string;
   codecs: typeof XMTP_CODECS;
+  historySyncUrl?: string;
 }
 
 class XmtpInstallationLimitError extends Error {
@@ -42,6 +47,7 @@ async function finalizeClient(
   await markRegistered(rec.id);
   await setActiveAccountId(rec.id);
   await secureStorage.set(XMTP_ENV_KEY, env);
+  void registerPushWithServer(created);
   return created;
 }
 
@@ -50,17 +56,27 @@ async function wipeWebXmtpStore(rec: AccountRecord): Promise<void> {
   await deleteDbKey(rec.id);
 }
 
-export async function createClientForAccount(
-  rec: AccountRecord, env: XmtpEnv, opts: CreateOpts, recovered = false,
-): Promise<WebXmtpClient> {
+export async function openClientForAccount(
+  rec: AccountRecord, env: XmtpEnv, opts: CreateOpts, savedInstallationId: string | null, recovered = false,
+): Promise<OpenedClient<WebXmtpClient>> {
   const signer = await signerForRecord(rec);
   try {
-    const created = await Client.create(signer, opts);
-    return await finalizeClient(created, rec, env);
+    const opened = await openPersistedClient<WebXmtpClient>({
+      open: () => Client.create(signer, { ...opts, disableAutoRegister: true }),
+      isRegistered: (client) => client.isRegistered(),
+      register: (client) => whileRegistering(async () => { await client.register(); }),
+      installationIdOf: (client) => client.installationId ?? '',
+      close: (client) => { client.close(); },
+      savedInstallationId,
+      retryable: isStoreLocked,
+      onEvent: (event, e) => { perfLog(`xmtp.client.open ${event}`, { error: e === undefined ? '' : errorMessage(e) }); },
+    });
+    await finalizeClient(opened.client, rec, env);
+    return opened;
   } catch (e) {
     if (!recovered && isStoreCorruption(e)) {
       await wipeWebXmtpStore(rec);
-      return createClientForAccount(rec, env, opts, true);
+      return openClientForAccount(rec, env, opts, null, true);
     }
     if (isInstallationLimit(e)) throw new XmtpInstallationLimitError();
     throw e;

@@ -6,7 +6,7 @@ import { groupNameImage } from '../../lib/xmtp.groups';
 import { rowMessagesOf } from '../../lib/xmtp.messages';
 import { labelsOfSyncedGroup } from '../../lib/xmtp.labels';
 import { isControlBody } from '../../lib/xmtp.types';
-import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
+import { isGroupUpdateTypeId, previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
 import {
   channelRowTitle, countUnreadEntries, initialMarkedUnread,
@@ -30,14 +30,18 @@ export interface ConversationView {
   labels: string[];
 }
 
-function pickLastMessage(msgs: RowMessage[]): RowMessage | undefined {
+function isMembershipNoise(m: RowMessage, dm: boolean): boolean {
+  return dm && isGroupUpdateTypeId(m.contentTypeId);
+}
+
+function pickLastMessage(msgs: RowMessage[], dm: boolean): RowMessage | undefined {
   return msgs.find(m =>
-    !(typeof m.content === 'string' && isControlBody(m.content)),
+    !(typeof m.content === 'string' && isControlBody(m.content)) && !isMembershipNoise(m, dm),
   ) ?? msgs[0];
 }
 
-function previewOfMessage(last: RowMessage | undefined): string {
-  if (!last) return '';
+function previewOfMessage(last: RowMessage | undefined, dm: boolean): string {
+  if (!last || isMembershipNoise(last, dm)) return '';
   try { return previewOfXmtpContent(last.content, last.contentTypeId); }
   catch { return `[${last.contentTypeId ?? 'unknown'}]`; }
 }
@@ -68,6 +72,10 @@ function rowAvatar(
   return { avatarUri, avatarAddress };
 }
 
+function lastSenderAddressOf(last: RowMessage | undefined, inboxToAddr: Record<string, string>): string | null {
+  return last?.senderInboxId ? inboxToAddr[last.senderInboxId] ?? null : null;
+}
+
 async function resolveMarkedUnread(
   convId: string, inputs: Parameters<typeof initialMarkedUnread>[0],
 ): Promise<boolean> {
@@ -79,10 +87,11 @@ export async function summarizeConversation(
   conv: Conversation, selfInboxId: string, alreadySynced = false,
 ): Promise<ConversationView> {
   if (!alreadySynced) await conv.sync().catch(() => undefined);
-  const msgs = await rowMessagesOf(conv, 2).catch(() => []);
-  const last = pickLastMessage(msgs);
-  const preview = previewOfMessage(last);
   const peerAddress = await peerEthAddressOfDm(conv);
+  const dm = peerAddress !== null;
+  const msgs = await rowMessagesOf(conv, dm ? 6 : 2).catch(() => []);
+  const last = pickLastMessage(msgs, dm);
+  const preview = previewOfMessage(last, dm);
   const inboxToAddr = await memberInboxToAddressMap(conv);
   const { memberAddresses, groupMeta, labels } = await gatherGroupRowData(conv, peerAddress);
   const topic: string | undefined = conv.topic;
@@ -91,9 +100,7 @@ export async function summarizeConversation(
     memberCount: memberAddresses.length,
     fallbackId: (topic ?? conv.id).replace(/^.*\//, ''),
   });
-  const lastSenderAddress = last?.senderInboxId
-    ? inboxToAddr[last.senderInboxId] ?? null
-    : null;
+  const lastSenderAddress = lastSenderAddressOf(last, inboxToAddr);
   const lastFromSelf = !!last && last.senderInboxId === selfInboxId;
   const { avatarUri, avatarAddress } = rowAvatar(conv, peerAddress, groupMeta.imageUrl);
   const lastReadNs = await getLastReadNs(conv.id);

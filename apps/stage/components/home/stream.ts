@@ -1,6 +1,6 @@
 
 import { presentInboundNotification } from '../../lib/pushNotify';
-import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
+import { isGroupUpdateTypeId, previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 import { getPeerName } from '../../lib/peerProfiles';
 import { isActiveConv } from '../../lib/activeConv';
 import { isControlBody, shortAddress, getConvConsentState } from '../../modules/messaging';
@@ -83,6 +83,8 @@ function applyToRows(
   let notify: NotifyCtx | null = null;
   setRows(prev => {
     if (!prev) return prev;
+    const target = prev.find(r => r.convId === msgConvId);
+    if (target?.peerAddress != null && isGroupUpdateTypeId(msg.contentTypeId)) return prev;
     const result = applyInbound(
       prev,
       {

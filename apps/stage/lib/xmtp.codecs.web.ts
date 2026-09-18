@@ -5,7 +5,7 @@ import {
   READ_STATE_CODEC, PIN_STATE_CODEC,
 } from './xmtpJsonCodecs';
 import type { AccountRecord } from './accounts';
-import { signingKeyForRecord } from './xmtp.signing.core';
+import { lazySigningKeyForRecord } from './xmtp.signing.core';
 
 export const XMTP_CODECS = [
   POLL_CODEC,
@@ -17,7 +17,7 @@ export const XMTP_CODECS = [
 ];
 
 export async function signerForRecord(rec: AccountRecord): Promise<Signer> {
-  const key = await signingKeyForRecord(rec);
+  const key = await lazySigningKeyForRecord(rec);
   const identity = {
     getIdentifier: () => ({ identifier: key.address.toLowerCase(), identifierKind: IdentifierKind.Ethereum }),
     signMessage: async (message: string): Promise<Uint8Array> => hexToBytes(await key.signMessage(message)),

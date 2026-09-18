@@ -17,6 +17,12 @@ function describeFieldChange(f: FieldChange): string {
   return `changed ${f.fieldName.replace(/_/g, ' ')}`;
 }
 
+const GROUP_UPDATE_TYPE_IDS: readonly string[] = ['group_updated', 'groupUpdated'];
+
+export function isGroupUpdateTypeId(typeId: string | undefined): boolean {
+  return typeId !== undefined && GROUP_UPDATE_TYPE_IDS.includes(typeId);
+}
+
 function memberClause(verb: string, count: number): string {
   return count ? `${verb} ${count} member${count === 1 ? '' : 's'}` : '';
 }

@@ -3,6 +3,16 @@ export const INSTALLATION_LIMIT_MESSAGE =
   'This wallet already has XMTP set up on too many devices (installation limit reached). ' +
   'Messaging is unavailable for this account — wallet features still work.';
 
+export const STORE_LOCKED_MESSAGE =
+  'Stage is already open in another tab or window on this device. Close it and reload.';
+
+const STORE_LOCKED = ['Access Handle', 'NoModificationAllowedError', 'database is locked'];
+
+export function isStoreLocked(err: unknown): boolean {
+  const msg = errorMessage(err);
+  return STORE_LOCKED.some(sig => msg.includes(sig));
+}
+
 const STORE_CORRUPTION = ['PRAGMA key', 'StorageError', 'incorrect value'];
 
 export function isStoreCorruption(err: unknown, extraSignatures: string[] = []): boolean {
