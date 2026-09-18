@@ -52,11 +52,33 @@ export function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promise<WebX
   });
 }
 
-async function opfsFileExists(name: string): Promise<boolean> {
+const OPFS_POOL_DIR = '.opfs-libxmtp-metadata';
+const OPFS_EMPTY_SLOT_BYTES = 4096;
+
+type OpfsEntry =
+  | { kind: 'file'; getFile: () => Promise<{ size: number }> }
+  | ({ kind: 'directory' } & OpfsDirectory);
+
+interface OpfsDirectory {
+  values: () => AsyncIterable<OpfsEntry>;
+}
+
+async function dirHasDatabase(dir: OpfsDirectory): Promise<boolean> {
+  for await (const entry of dir.values()) {
+    if (entry.kind === 'directory') {
+      if (await dirHasDatabase(entry)) return true;
+    } else if ((await entry.getFile()).size > OPFS_EMPTY_SLOT_BYTES) {
+      return true;
+    }
+  }
+  return false;
+}
+
+async function opfsHasDatabase(): Promise<boolean> {
   try {
     const root = await navigator.storage.getDirectory();
-    await root.getFileHandle(name);
-    return true;
+    const pool = await root.getDirectoryHandle(OPFS_POOL_DIR) as unknown as OpfsDirectory;
+    return await dirHasDatabase(pool);
   } catch (e) {
     return !(e instanceof DOMException && e.name === 'NotFoundError');
   }
@@ -68,7 +90,7 @@ async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<
   const [savedAddress, savedEnv, savedInstallation] = await Promise.all([
     getSecure(addressKeyFor(rec.id)), getSecure(envKeyFor(rec.id)), getSecure(installationKeyFor(rec.id)),
   ]);
-  const reusable = canReuseSavedClient(savedAddress, savedEnv, address, env) && await opfsFileExists(opts.dbPath);
+  const reusable = canReuseSavedClient(savedAddress, savedEnv, address, env) && await opfsHasDatabase();
   perfLog('xmtp.client path', { reusable, savedAddress, savedEnv, savedInstallation, address, env });
   const opened = await perfTime('xmtp.client.open', () =>
     openClientForAccount(rec, env, opts, reusable ? savedInstallation : null));
