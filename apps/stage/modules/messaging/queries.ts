@@ -7,7 +7,6 @@ export const messagingKeys = {
   all: ['xmtp'] as const,
   convMeta: (convId: string | null | undefined) =>
     ['xmtp', 'convMeta', convId ?? ''] as const,
-  channels: (account: string) => ['xmtp', 'channels', account] as const,
   messages: (account: number, line: string) =>
     ['xmtp', 'messages', account, line] as const,
 } as const;

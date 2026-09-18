@@ -29,7 +29,6 @@ function notifyActive(): void {
 }
 
 function fileNameFor(id: string): string {
-  if (id === DEFAULT_KEY) return 'channels-cache.json';
   const safe = id.replace(/[^A-Za-z0-9._-]/g, '_');
   return `channels-cache.${safe}.json`;
 }
@@ -61,6 +60,7 @@ export function setActiveAccountForCache(id: string | null): void {
 }
 
 export async function hydrateCachedRows(): Promise<CachedRow[] | null> {
+  if (activeId === DEFAULT_KEY) return null;
   const v = await activeStore().hydrate();
   return Array.isArray(v) ? v : null;
 }

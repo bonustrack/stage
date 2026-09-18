@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { VirtualListHandle } from '../layout';
-import { getCachedRows, setCachedRows, subscribeCachedRows, ensureChannelsQueryBridge } from '../../modules/messaging';
+import { getCachedRows, setCachedRows, subscribeCachedRows } from '../../modules/messaging';
 import { getPinnedOrder, loadPinnedOrder, subscribePins } from '../../lib/pins';
 import {
   CHANNELS_SCROLL_KEY, getScrollOffset, peekScrollOffset, flushScrollOffset,
@@ -44,7 +44,6 @@ export function useHomeState(): HomeState {
     }
   };
   useEffect(() => subscribeCachedRows(r => { setRowsState(r as RowT[] | null); }), []);
-  useEffect(() => { ensureChannelsQueryBridge(); }, []);
 
   const [error, setError] = useState<string>('');
   const [rowMenu, setRowMenu] = useState<RowMenu | null>(null);

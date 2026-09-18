@@ -21,7 +21,7 @@ import { KitThemeProvider } from '@stage-labs/kit/react-native/theme-context';
 import { useDeepLinks } from '../lib/deepLinks';
 import { useRestoreGate } from '../lib/lastRoute';
 import { usePushDeepLinks } from '../lib/pushRegister';
-import { ensureActiveAccount, ensureMessagingStreamSync } from '../modules/messaging';
+import { ensureActiveAccount, ensureMessagingStreamSync, getOrCreateXmtpClient } from '../modules/messaging';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { getQueryClient } from '../lib/queryClient';
 import { applyWebGlobalStyles } from '../platform/webStyles';
@@ -86,8 +86,14 @@ function RootLayoutInner(): React.ReactElement {
   usePushDeepLinks();
 
   const onboarding = useAccountGate();
+  const pathname = usePathname();
 
-  useEffect(() => { if (onboarding.hasAccount) void ensureActiveAccount(); }, [onboarding.hasAccount]);
+  useEffect(() => {
+    if (!onboarding.hasAccount) return;
+    void ensureActiveAccount()
+      .then(() => (isOnboardingRoute(pathname) ? undefined : getOrCreateXmtpClient('production')))
+      .catch(() => undefined);
+  }, [onboarding.hasAccount]);
   useEffect(() => { ensureMessagingStreamSync(); }, []);
 
   const [loaded] = useFonts({
@@ -97,7 +103,6 @@ function RootLayoutInner(): React.ReactElement {
 
   const gatesOpen = loaded && onboarding.ready && restore.ready;
   const shell = useShellGates(gatesOpen, onboarding.hasAccount);
-  const pathname = usePathname();
   const routing = shell.showOnboarding && !isOnboardingRoute(pathname) && pathname !== '/';
 
   return (
