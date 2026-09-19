@@ -6,13 +6,13 @@ export const HERO_COPY = {
   eyebrow: 'Private by default',
   title: 'Your agent is the product',
   paragraph:
-    'Stage is an end-to-end encrypted messenger built on XMTP, with free onchain names, avatars and a smart-account wallet on Base. Groups, multiple accounts, and agents as contacts.',
+    'Stage is a private, end-to-end encrypted messenger with a built-in wallet, free usernames and avatars. Groups, multiple accounts, and agents as contacts.',
   cta: 'Get started →',
 } as const;
 
 export const BANNER = {
   lead: 'Psst! Stage is in early access. ',
-  link: 'Claim your free onchain name',
+  link: 'Claim your free username',
   tail: '. →',
   copies: 3,
   size: 19,

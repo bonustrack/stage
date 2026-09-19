@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useWindowDimensions } from 'react-native';
 import Animated, {
   Easing, cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming, type SharedValue,
 } from 'react-native-reanimated';
@@ -49,15 +50,22 @@ function useMarquee(copyWidth: number): { style: ReturnType<typeof useAnimatedSt
   };
 }
 
+function copiesToCover(viewportWidth: number, copyWidth: number): number {
+  if (copyWidth <= 0) return BANNER.copies;
+  return Math.max(BANNER.copies, Math.ceil(viewportWidth / copyWidth) + 2);
+}
+
 export function ScrollingBanner(): React.ReactElement {
   const [copyWidth, setCopyWidth] = useState(0);
+  const { width } = useWindowDimensions();
+  const copies = copiesToCover(width, copyWidth);
   const marquee = useMarquee(copyWidth);
   return (
     <Pressable onHoverIn={marquee.pause} onHoverOut={marquee.resume} accessibilityRole="none">
       <Box background={HERO_BLACK} style={{ overflow: 'hidden' }}>
         <Animated.View style={[{ alignSelf: 'flex-start' }, marquee.style]}>
           <Row>
-            {Array.from({ length: BANNER.copies }, (_, i) => (
+            {Array.from({ length: copies }, (_, i) => (
               <BannerCopy key={i} onWidth={i === 0 ? setCopyWidth : undefined} />
             ))}
           </Row>
