@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import {
   TextInput,
   type DimensionValue,
@@ -14,7 +14,7 @@ import {
   type ResolvedTextFieldStyle,
   type TextFieldVariant,
 } from '../control.styles';
-import { BLOCK_RADIUS_DEFAULT } from '../tokens';
+import { CONTROL_RADIUS_DEFAULT } from '../tokens';
 
 export interface TextFieldProps {
   name?: string;
@@ -45,7 +45,6 @@ export interface TextFieldProps {
   fontFamily?: string;
   color?: string;
   placeholderColor?: string;
-  noFocusBorder?: boolean;
   maxLength?: number;
   maxHeight?: number | string;
   minHeight?: number | string;
@@ -98,18 +97,14 @@ function overrideStyle(input: {
   };
 }
 
-function resolveStyled(
-  props: TextFieldProps,
-  focused: boolean,
-): ResolvedTextFieldStyle {
+function resolveStyled(props: TextFieldProps): ResolvedTextFieldStyle {
   const baseColors = controlColors(
     props.variant === 'plain' ? 'soft' : 'outline',
     props.dark ?? false,
   );
   return textFieldStyle({
     variant: props.variant,
-    focused,
-    defaultRadius: BLOCK_RADIUS_DEFAULT,
+    defaultRadius: CONTROL_RADIUS_DEFAULT,
     baseColors,
     background: props.background,
     borderColor: props.borderColor,
@@ -119,7 +114,6 @@ function resolveStyled(
     fontSize: props.fontSize,
     fontFamily: props.fontFamily,
     color: props.color,
-    noFocusBorder: props.noFocusBorder,
   });
 }
 
@@ -145,12 +139,11 @@ export function TextField(props: TextFieldProps): React.ReactElement {
     autoCorrect,
     inputMode,
   } = props;
-  const [focused, setFocused] = useState(false);
   const ref = useRef<TextInput>(null);
   useNonce(focusNonce, () => ref.current?.focus());
   useNonce(blurNonce, () => ref.current?.blur());
 
-  const styled = resolveStyled(props, focused);
+  const styled = resolveStyled(props);
   const extra = sizeStyle({
     multiline,
     autoGrow: props.autoGrow,
@@ -189,12 +182,6 @@ export function TextField(props: TextFieldProps): React.ReactElement {
               onSelectionChange(event.nativeEvent.selection);
             }
       }
-      onFocus={() => {
-        setFocused(true);
-      }}
-      onBlur={() => {
-        setFocused(false);
-      }}
       style={[
         styled.box,
         styled.text,

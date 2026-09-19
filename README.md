@@ -73,6 +73,7 @@ bun --cwd apps/stage web                # run the app in a browser
 bun --cwd apps/stage run build:web      # web export (Netlify publishes dist/)
 bun --cwd apps/proxy dev                # Cloudflare Worker (wrangler dev)
 bun run --cwd apps/stage/desktop start  # Electron desktop app with the bundled web UI
+bun run --cwd packages/kit storybook    # gallery of every kit component (Vite, port 6006)
 ```
 
 ## Environment

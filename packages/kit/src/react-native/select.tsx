@@ -14,7 +14,7 @@ import {
   type ControlSize,
   type ControlVariant,
 } from '../control.styles';
-import { BLOCK_RADIUS_DEFAULT, FONT_SIZE, fontName, schemePalette } from '../tokens';
+import { CONTROL_RADIUS_DEFAULT, FONT_SIZE, fontName, schemePalette } from '../tokens';
 import { Icon } from './icon';
 import { ControlTrigger } from './control-trigger';
 
@@ -112,7 +112,7 @@ function SelectSheet(props: {
 }
 
 function cornerOf(radius: number | undefined, pill: boolean | undefined): number {
-  return radius ?? (pill ? 999 : BLOCK_RADIUS_DEFAULT);
+  return radius ?? (pill ? 999 : CONTROL_RADIUS_DEFAULT);
 }
 
 function labelOf(current: SelectOption | undefined, placeholder: string): string {
@@ -143,7 +143,7 @@ export function Select(props: SelectProps): React.ReactElement {
   const selected = controlled ?? internal;
 
   const colors = controlColors(variant, dark);
-  const box = controlBoxStyle(size, variant, colors, cornerOf(radius, pill), false);
+  const box = controlBoxStyle(size, variant, colors, cornerOf(radius, pill));
   const { head, border: rowBorder } = schemePalette(dark);
   const sheetBg = dark ? '#1b1c1e' : '#ffffff';
 

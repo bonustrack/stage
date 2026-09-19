@@ -1,6 +1,7 @@
 
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { fontSize } from '@stage-labs/kit/tokens';
+import { markdownStyles as kitMarkdownStyles } from '@stage-labs/kit/markdown-styles';
 import type { RemoteAttachmentInfo } from '@xmtp/react-native-sdk';
 import { normalizeQuestions, type PollContent } from '@stage-labs/client/xmtp/poll';
 import { formatEther } from 'viem';
@@ -39,23 +40,7 @@ export function attachmentsOf(entry: HistoryEntry): Attachment[] {
 }
 
 export function markdownStyles(fg: string, dark: boolean, mine: boolean): Record<string, object> {
-  const codeBg = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-  const lh = mine ? 21 : 23;
-  const h = (fontSize: number, lineHeight: number): object =>
-    ({ color: fg, fontSize, lineHeight, fontFamily: 'Calibre-Semibold', marginTop: 6, marginBottom: 2 });
-  return {
-    body: { color: fg, fontSize: fontSize('3xl'), lineHeight: lh, fontFamily: 'Calibre-Medium' },
-    paragraph: { marginTop: 0, marginBottom: 0 },
-    heading1: h(30, 34), heading2: h(24, 28), heading3: h(21, 25), heading4: h(21, 25), heading5: h(21, 25), heading6: h(21, 25),
-    strong: { fontFamily: 'Calibre-Semibold', fontWeight: 'normal', fontSize: fontSize('md'), lineHeight: lh },
-    em: { fontFamily: 'Calibre-Medium', fontStyle: 'italic', fontWeight: 'normal', fontSize: fontSize('md'), lineHeight: lh },
-    link: { color: fg, textDecorationLine: 'underline' },
-    code_inline: { backgroundColor: codeBg, paddingHorizontal: 4, borderRadius: 4, fontFamily: 'Menlo', fontSize: fontSize('xs'), lineHeight: lh },
-    fence: { backgroundColor: codeBg, padding: 8, borderRadius: 6, fontFamily: 'Menlo', fontSize: fontSize('2xs'), lineHeight: 18 },
-    bullet_list: { marginTop: 2, marginBottom: 2 },
-    ordered_list: { marginTop: 2, marginBottom: 2 },
-    blockquote: { borderLeftWidth: 3, borderLeftColor: codeBg, paddingLeft: 8, marginVertical: 4 },
-  };
+  return kitMarkdownStyles({ fg, dark, link: fg, fontSize: fontSize('3xl'), lineHeight: mine ? 21 : 23, paragraphGap: 0 });
 }
 
 interface QuestionOption { label: string; description?: string }

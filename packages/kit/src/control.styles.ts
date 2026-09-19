@@ -1,8 +1,6 @@
 
-import type { DimensionValue, ViewStyle, TextStyle, TextInputProps } from 'react-native';
+import type { DimensionValue, ViewStyle, TextStyle } from 'react-native';
 import { FONT_SIZE, schemePalette } from './tokens';
-
-type FocusEv = Parameters<NonNullable<TextInputProps['onFocus']>>[0];
 
 export function fieldIds(name: string | undefined): {
   nativeID?: string;
@@ -10,16 +8,6 @@ export function fieldIds(name: string | undefined): {
 } {
   if (!name) return {};
   return { nativeID: `input-${name}`, accessibilityLabelledBy: `label-${name}` };
-}
-
-export function chainFocus(
-  focused: boolean,
-  setFocused: (v: boolean) => void,
-  next: ((e: FocusEv) => void) | undefined,
-  e: FocusEv,
-): void {
-  setFocused(focused);
-  next?.(e);
 }
 
 export function styleList(style: ViewStyle | ViewStyle[] | undefined): ViewStyle[] {
@@ -68,7 +56,6 @@ export interface ControlColors {
   text: string;
   placeholder: string;
   border: string;
-  focusBorder: string;
 }
 
 export function controlColors(variant: ControlVariant, dark: boolean): ControlColors {
@@ -77,13 +64,11 @@ export function controlColors(variant: ControlVariant, dark: boolean): ControlCo
   const sub = p.sub;
   const inputBg = dark ? '#1b1c1e' : '#f4f4f5';
   const border = p.border;
-  const accent = dark ? '#4f9cf9' : '#2f6fed';
   return {
     bg: variant === 'soft' ? inputBg : 'transparent',
     text: head,
     placeholder: sub,
     border: variant === 'outline' ? border : 'transparent',
-    focusBorder: accent,
   };
 }
 
@@ -92,7 +77,6 @@ export function controlBoxStyle(
   variant: ControlVariant,
   colors: ControlColors,
   radius: number,
-  focused: boolean,
 ): ViewStyle {
   const spec = CONTROL_SIZES[size];
   return {
@@ -101,8 +85,9 @@ export function controlBoxStyle(
     paddingVertical: spec.paddingVertical,
     backgroundColor: colors.bg,
     borderRadius: radius,
-    borderWidth: variant === 'outline' || focused ? 1 : 0,
-    borderColor: focused ? colors.focusBorder : colors.border,
+    borderWidth: variant === 'outline' ? 1 : 0,
+    borderColor: colors.border,
+    outlineWidth: 0,
   };
 }
 
@@ -120,7 +105,6 @@ export type TextFieldVariant = 'outline' | 'plain';
 
 export interface TextFieldStyleInput {
   variant?: TextFieldVariant;
-  focused: boolean;
   defaultRadius: number;
   baseColors: ControlColors;
   background?: string;
@@ -131,7 +115,6 @@ export interface TextFieldStyleInput {
   fontSize?: number;
   fontFamily?: string;
   color?: string;
-  noFocusBorder?: boolean;
 }
 
 export interface ResolvedTextFieldSpec {
@@ -161,10 +144,7 @@ function fieldBorder(
 ): { width: number; color: string } {
   const plain = input.variant === 'plain';
   const width = plain && input.borderColor === undefined ? 0 : 1;
-  const color = input.focused && input.noFocusBorder !== true
-    ? c.focusBorder
-    : (input.borderColor ?? c.border);
-  return { width, color };
+  return { width, color: input.borderColor ?? c.border };
 }
 
 function fieldBackground(input: TextFieldStyleInput, c: ControlColors): string {
@@ -203,6 +183,7 @@ export function textFieldStyle(
     borderRadius: s.radius,
     borderWidth: s.borderWidth,
     borderColor: s.borderColor,
+    outlineWidth: 0,
   };
   const text: TextStyle = {
     color: s.color,

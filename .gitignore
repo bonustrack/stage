@@ -13,3 +13,4 @@ apps/stage/desktop/web
 telegram-attachments.json
 .typing-stop/
 .tail-lock
+packages/kit/build

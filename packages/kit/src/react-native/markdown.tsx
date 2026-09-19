@@ -1,8 +1,8 @@
-
 import { useMemo } from 'react';
-import { FONT_SIZE, fontName } from '../tokens';
 import { type TextStyle } from 'react-native';
 import RNMarkdown from 'react-native-markdown-display';
+import { markdownStyles } from '../markdown.styles';
+import { schemePalette } from '../tokens';
 
 export interface MarkdownProps {
   value: string;
@@ -13,49 +13,15 @@ export interface MarkdownProps {
   style?: TextStyle;
 }
 
-function markdownStyles(fg: string, link: string, dark: boolean): Record<string, object> {
-  const codeBg = dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-  const lh = 23;
-  const h = (fontSize: number, lineHeight: number): object => ({
-    color: fg,
-    fontSize,
-    lineHeight,
-    fontFamily: fontName.head,
-    marginTop: 8,
-    marginBottom: 3,
-  });
-  return {
-    body: { color: fg, fontSize: FONT_SIZE.md, lineHeight: lh, fontFamily: fontName.sans },
-    paragraph: { marginTop: 0, marginBottom: 6 },
-    heading1: h(24, 28),
-    heading2: h(21, 25),
-    heading3: h(19, 23),
-    heading4: h(18, 22),
-    heading5: h(18, 22),
-    heading6: h(18, 22),
-    strong: { fontFamily: fontName.head, fontWeight: 'normal', fontSize: FONT_SIZE.md, lineHeight: lh },
-    em: { fontFamily: fontName.sans, fontStyle: 'italic', fontWeight: 'normal', fontSize: FONT_SIZE.md, lineHeight: lh },
-    link: { color: link, textDecorationLine: 'underline' },
-    code_inline: { backgroundColor: codeBg, paddingHorizontal: 4, borderRadius: 4, fontFamily: fontName.mono, fontSize: FONT_SIZE.xs, lineHeight: lh },
-    fence: { backgroundColor: codeBg, padding: 8, borderRadius: 6, fontFamily: fontName.mono, fontSize: FONT_SIZE.xs, lineHeight: 19 },
-    code_block: { backgroundColor: codeBg, padding: 8, borderRadius: 6, fontFamily: fontName.mono, fontSize: FONT_SIZE.xs, lineHeight: 19 },
-    bullet_list: { marginTop: 2, marginBottom: 6 },
-    ordered_list: { marginTop: 2, marginBottom: 6 },
-    blockquote: { borderLeftWidth: 3, borderLeftColor: codeBg, paddingLeft: 8, marginVertical: 4 },
-  };
-}
-
 export function Markdown(props: MarkdownProps): React.ReactElement {
   const { value, color, linkColor, dark = false, style } = props;
-
-  const fg = color ?? (dark ? '#ffffff' : '#000000');
-  const link = linkColor ?? '#2cc6c6';
+  const fg = color ?? schemePalette(dark).head;
 
   const styles = useMemo(() => {
-    const base = markdownStyles(fg, link, dark);
+    const base = markdownStyles({ fg, dark, link: linkColor });
     if (style) base.body = { ...base.body, ...style };
     return base;
-  }, [fg, link, dark, style]);
+  }, [fg, linkColor, dark, style]);
 
   return <RNMarkdown style={styles}>{value}</RNMarkdown>;
 }

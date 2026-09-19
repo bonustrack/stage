@@ -29,6 +29,7 @@
     "./avatar": "./src/avatar.ts",
     "./layout": "./src/layout.ts",
     "./badge": "./src/badge.ts",
+    "./markdown-styles": "./src/markdown.styles.ts",
     "./react-native/button": "./src/react-native/button.tsx",
     "./react-native/text": "./src/react-native/text.tsx",
     "./react-native/title": "./src/react-native/title.tsx",
@@ -87,11 +88,17 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "bun test test/"
+    "test": "bun test test/",
+    "storybook": "vite",
+    "storybook:build": "vite build"
   },
   "devDependencies": {
     "@stage-labs/config": "workspace:*",
     "@types/qrcode": "^1.5.5",
-    "@types/react": "~19.1.0"
+    "@types/react": "~19.1.0",
+    "@types/react-dom": "~19.1.0",
+    "react-dom": "19.1.0",
+    "react-native-web": "^0.21.2",
+    "vite": "^6"
   }
 }

@@ -13,7 +13,7 @@ import {
   type ControlSize,
   type ControlVariant,
 } from '../control.styles';
-import { BLOCK_RADIUS_DEFAULT, FONT_SIZE, fontName } from '../tokens';
+import { CONTROL_RADIUS_DEFAULT, FONT_SIZE, fontName } from '../tokens';
 import { Icon } from './icon';
 import { ControlTrigger } from './control-trigger';
 
@@ -217,8 +217,8 @@ export function DatePicker(props: DatePickerProps): React.ReactElement {
   const [view, setView] = useState<Date>(() => selDate ?? new Date());
 
   const ctrlColors = controlColors(variant, dark);
-  const corner = radius ?? (pill ? 999 : BLOCK_RADIUS_DEFAULT);
-  const box = controlBoxStyle(size, variant, ctrlColors, corner, false);
+  const corner = radius ?? (pill ? 999 : CONTROL_RADIUS_DEFAULT);
+  const box = controlBoxStyle(size, variant, ctrlColors, corner);
   const sheetColors = sheetColorsFor(dark);
 
   const minD = parseISO(min);

@@ -2,15 +2,16 @@
   "extends": "@stage-labs/config/tsconfig/base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "baseUrl": ".",
-    "paths": {
-      "react-native": ["../../apps/app/node_modules/react-native"],
-      "react-native-svg": ["../../apps/app/node_modules/react-native-svg"],
-      "react-native-markdown-display": ["../../apps/app/node_modules/react-native-markdown-display"],
-      "react-native-gesture-handler": ["../../apps/app/node_modules/react-native-gesture-handler"],
-      "react-native-reanimated": ["../../apps/app/node_modules/react-native-reanimated"],
-      "expo-av": ["../../apps/app/node_modules/expo-av"]
-    }
+    "types": [
+      "vite/client"
+    ]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "stories/**/*.tsx",
+    "gallery/**/*.ts",
+    "gallery/**/*.tsx",
+    "vite.config.ts"
+  ]
 }

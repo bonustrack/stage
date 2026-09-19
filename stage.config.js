@@ -64,7 +64,10 @@ export default defineConfig({
     'packages/kit': {
       type: 'library',
       eslint: { preset: 'none', extends: kitEslint() },
-      knip: { entry: ['eslint.js'] },
+      knip: {
+        entry: ['eslint.js', 'stories/*.stories.tsx'],
+        project: ['src/**', 'stories/**', 'gallery/**'],
+      },
     },
     'packages/config': {
       type: 'library',

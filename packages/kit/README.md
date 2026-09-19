@@ -75,10 +75,25 @@ src/
   avatar.ts          # avatar helpers
   layout.ts          # Box layout core (spacing, borders, surfaces)
   badge.ts           # badge style core
+  markdown.styles.ts # Markdown style sheet (Discord/Telegram-like), shared with the app's chat bubbles
   text.styles.ts / button.styles.ts / control.styles.ts  # shared style cores
   react-native/      # THE component family (Button, Text, Dialog, ...), renders on web via RNW
   index.ts           # root barrel
+stories/             # one story file per component (controls for every prop + variant matrices)
+gallery/             # the storybook shell: Vite entry, sidebar, controls panel, hash routing (kit components only)
+vite.config.ts       # react-native-web aliasing for the gallery
 ```
+
+## Storybook
+
+The component gallery is a small hand-rolled page in `gallery/`, served by Vite and drawn entirely with kit components, so it looks like the kit and renders text exactly as the app does (same fonts, same antialiasing). No Storybook or Ladle dependency.
+
+```sh
+bun run --cwd packages/kit storybook        # dev server on http://localhost:6006
+bun run --cwd packages/kit storybook:build  # static site in packages/kit/build (gitignored, ~2 MB)
+```
+
+Stories use the Storybook component-story format: a default export with a `title`, named exports that render the component, and `args` / `argTypes` on each export. Every kit component has a `Controls` story exposing all of its props as controls (unions as selects, booleans as switches, numbers, text and colours), and the ones with variant axes (Button, Badge, Text, Title, Icon, Image, Input, Box, Avatar) also have a matrix story showing every option at once. The `Theme` story drives the `ThemeOption` surface (accent, grayscale, surface, radius, density, base size) through `derivePalette`. Control values live in the URL hash, so a configured story is a shareable link; the sun/moon toggle in the sidebar switches the scheme, sets the document `color-scheme` so native scrollbars follow, and flows into `KitThemeProvider`. Only kit components appear in stories; app UI from `apps/stage` never does.
 
 ## Scripts
 
@@ -86,6 +101,10 @@ src/
 | ------------------- | --------------------------- |
 | `bun run typecheck` | Type-check without emitting. |
 | `bun run test`      | Run the unit + snapshot tests (`test/*.spec.ts`). |
+| `bun run storybook` | Gallery dev server with a story per component. |
+| `bun run storybook:build` | Static gallery build into `build/`. |
+
+Form controls (`Input`, `Textarea`, `TextField`, `Select`, `DatePicker`) default to `CONTROL_RADIUS_DEFAULT` (8px) and draw no focus ring: no accent border on focus and `outlineWidth: 0` so the browser's own ring stays off on web. Cards and images keep `BLOCK_RADIUS_DEFAULT` (12px). `Markdown` styles come from `markdown.styles.ts` (`@stage-labs/kit/markdown-styles`), which overrides every default of `react-native-markdown-display` so nothing bleeds through; callers can pass body size, line height, paragraph gap and link colour.
 
 Linting is centralised at the repo root (`bun run lint`). The package is published to npm by `publish-kit.yml`; other codebases consume it, so components, tokens and style setup are never removed because the app stopped using them.
 

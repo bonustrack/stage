@@ -10,7 +10,6 @@ import {
 type ContentSizeEv = Parameters<NonNullable<TextInputProps['onContentSizeChange']>>[0];
 import {
   CONTROL_SIZES,
-  chainFocus,
   controlBoxStyle,
   controlColors,
   controlTextStyle,
@@ -18,7 +17,7 @@ import {
   type ControlSize,
   type ControlVariant,
 } from '../control.styles';
-import { BLOCK_RADIUS_DEFAULT } from '../tokens';
+import { CONTROL_RADIUS_DEFAULT } from '../tokens';
 
 function lineHeight(size: ControlSize): number {
   return Math.round(CONTROL_SIZES[size].fontSize * 1.4);
@@ -87,10 +86,9 @@ export const Textarea = forwardRef<TextInput, TextareaProps>(function Textarea(p
   } = props;
 
   const [contentHeight, setContentHeight] = useState<number | undefined>(undefined);
-  const [focused, setFocused] = useState(false);
   const colors = controlColors(variant, dark);
-  const corner = radius ?? BLOCK_RADIUS_DEFAULT;
-  const box = controlBoxStyle(size, variant, colors, corner, focused);
+  const corner = radius ?? CONTROL_RADIUS_DEFAULT;
+  const box = controlBoxStyle(size, variant, colors, corner);
   const text = controlTextStyle(size, colors);
 
   const resolvedH = resolveHeight(size, rows, maxRows, autoResize, contentHeight);
@@ -115,8 +113,6 @@ export const Textarea = forwardRef<TextInput, TextareaProps>(function Textarea(p
       selectTextOnFocus={autoSelect}
       onChangeText={onChangeText}
       onContentSizeChange={handleContentSize}
-      onFocus={(e) => { chainFocus(true, setFocused, inputProps?.onFocus, e); }}
-      onBlur={(e) => { chainFocus(false, setFocused, inputProps?.onBlur, e); }}
       textAlignVertical="top"
       style={[box, text, { height: resolvedH }, disabled && { opacity: 0.5 }, style]}
     />

@@ -158,6 +158,7 @@ export const RADIUS_MIN = 0;
 export const RADIUS_MAX = 999;
 export const BUTTON_RADIUS_DEFAULT = 999;
 export const BLOCK_RADIUS_DEFAULT = 12;
+export const CONTROL_RADIUS_DEFAULT = 8;
 
 
 export type FontSizeName =

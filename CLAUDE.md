@@ -41,6 +41,7 @@ Per-app:
 | `bun --cwd apps/stage run build:web` | `expo export --platform web` -> `dist/` (Netlify publishes this). NEVER export into the repo tree during local checks — ESLint OOMs on bundles; use a temp dir |
 | `bun --cwd apps/stage run typecheck` / `test` | `tsc --noEmit` / `bun test test/` |
 | `bun --cwd apps/proxy dev` | `wrangler dev` |
+| `bun run --cwd packages/kit storybook` / `storybook:build` | Kit component gallery (hand-rolled Vite page in `packages/kit/gallery/`, stories in `packages/kit/stories/`, one per component with every prop as a control) / static build into `packages/kit/build` |
 | `bun run --cwd apps/stage/desktop start` / `dist` | Export the web UI into `apps/stage/desktop/web` and run Electron / build installers into `apps/stage/desktop/release` (run Electron from a plain terminal: editors set `ELECTRON_RUN_AS_NODE`) |
 
 ## Architecture
@@ -63,6 +64,7 @@ Per-app:
 - **Kit is the React Native equivalent of [OpenAI ChatKit](https://openai.github.io/chatkit-js/)** — ChatKit is the north star for components, props, theme options, and every colour/typography/radius/density variable. Mirror ChatKit's names and literal unions exactly; the DOM-vs-RN platform difference is the only thing that should diverge. Never invent a component or a token value: if something is missing, match what ChatKit calls it, and never write a raw literal where a token exists (`FONT_SIZE.*`, `fontName.*`, `semanticColors`, `RADIUS_SCALE`). The full `ThemeOption` surface is 1:1 (`colorScheme`/`radius`/`density`/`typography.baseSize`/`color.surface`/`color.accent {primary,level}`/`color.grayscale {hue,tint,shade}`) and every ChatKit widget node exists. OpenAI does not publish ChatKit's colour maths, so `theme-derive.ts` implements the documented semantics itself — defaults are lossless and guarded by tests. See `packages/kit/README.md` for the parity table.
 - Plain design-system component library: ONE component family (`src/react-native/*`, renders on web via RNW) + shared style cores (`text.styles.ts`, `button.styles.ts`, `control.styles.ts`, `layout.ts` surfaces, `badge.ts`, `icons.ts`, `tokens.ts` incl. the `Scheme`/`Color` helpers). Consumed via subpath exports (`@stage-labs/kit/tokens`, `@stage-labs/kit/react-native/button`, ...).
 - Theming: preference contract (`theme.ts`), runtime context (`react-native/theme-context.tsx`), custom-palette deriver (`theme-derive.ts`, LEGACY short-circuit guarded by tests).
+- **Storybook = `packages/kit/gallery/`** (own Vite shell built from kit components, react-native-web alias in `vite.config.ts`; stories in `stories/*.stories.tsx` in Storybook CSF shape with `args`/`argTypes`): every component gets a `Controls` story listing all props with literal unions as selects, plus matrix stories for variant axes. Stories import kit sources only, never `apps/stage`. New component => new story file; knip treats `stories/*.stories.tsx` as entries. No Storybook/Ladle dependency; keep it that way.
 
 ## Conventions
 

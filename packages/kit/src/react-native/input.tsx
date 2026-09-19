@@ -1,5 +1,5 @@
 
-import { forwardRef, useState } from 'react';
+import { forwardRef } from 'react';
 import {
   TextInput,
   type TextInputProps,
@@ -8,7 +8,6 @@ import {
   type TextStyle,
 } from 'react-native';
 import {
-  chainFocus,
   controlBoxStyle,
   controlColors,
   controlTextStyle,
@@ -16,7 +15,7 @@ import {
   type ControlSize,
   type ControlVariant,
 } from '../control.styles';
-import { BLOCK_RADIUS_DEFAULT } from '../tokens';
+import { CONTROL_RADIUS_DEFAULT } from '../tokens';
 
 export type InputType = 'text' | 'email' | 'password' | 'number' | 'tel' | 'url';
 
@@ -77,10 +76,9 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(props, ref
     inputProps,
   } = props;
 
-  const [focused, setFocused] = useState(false);
   const colors = controlColors(variant, dark);
-  const corner = radius ?? (pill ? 999 : BLOCK_RADIUS_DEFAULT);
-  const box = controlBoxStyle(size, variant, colors, corner, focused);
+  const corner = radius ?? (pill ? 999 : CONTROL_RADIUS_DEFAULT);
+  const box = controlBoxStyle(size, variant, colors, corner);
   const text = controlTextStyle(size, colors);
 
   return (
@@ -102,8 +100,6 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(props, ref
         onSubmit?.(e.nativeEvent.text);
         inputProps?.onSubmitEditing?.(e);
       }}
-      onFocus={(e) => { chainFocus(true, setFocused, inputProps?.onFocus, e); }}
-      onBlur={(e) => { chainFocus(false, setFocused, inputProps?.onBlur, e); }}
       style={[box, text, disabled && { opacity: 0.5 }, style]}
     />
   );
