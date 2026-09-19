@@ -8,6 +8,7 @@ import { usePalette } from '../../lib/theme';
 import { TAB_HREF, indexOfPathname, type TabName } from '../SwipeTabs.config';
 import { useTopChromeInset, WEB_TAB_RAIL_WIDTH } from '../../lib/webLayout';
 import { AccountAvatarButton } from '../AccountAvatarButton';
+import { RailTooltip } from './RailTooltip';
 
 export const TAB_ICONS: readonly (readonly [TabName, HeroIconName])[] = [
   ['index', 'chatBubble'],
@@ -15,43 +16,51 @@ export const TAB_ICONS: readonly (readonly [TabName, HeroIconName])[] = [
   ['wallet', 'wallet'],
 ];
 
+const TAB_LABELS: Record<TabName, string> = { index: 'Chats', contacts: 'Contacts', wallet: 'Wallet' };
+
+function TabIcon({ name, icon, active, unreadBadge }: {
+  name: TabName; icon: HeroIconName; active: boolean; unreadBadge: string | undefined;
+}): React.ReactElement {
+  const pal = usePalette();
+  return (
+    <Box>
+      <Icon name={icon} size={24} color={active ? pal.link : pal.text} focused={active}/>
+      {name === 'index' && unreadBadge !== undefined ? (
+        <Box
+          minWidth={18} height={18} padding={{ x: 4 }} radius="full" background={pal.link}
+          align="center" justify="center"
+          style={{ position: 'absolute', top: -6, right: -14 }}
+>
+          <Text size="3xs" weight="semibold" color={pal.bg}>{unreadBadge}</Text>
+        </Box>
+      ) : null}
+    </Box>
+  );
+}
+
 function TabButtons({ pathname, unreadBadge, vertical }: {
   pathname: string;
   unreadBadge: string | undefined;
   vertical: boolean;
 }): React.ReactElement {
   const router = useRouter();
-  const pal = usePalette();
   const activeIndex = pathname.startsWith('/settings') ? -1 : indexOfPathname(pathname);
   return (
     <>
-      {TAB_ICONS.map(([name, icon], i) => (
-        <Pressable
-          key={name}
-          onPress={() => { router.navigate(TAB_HREF[name]); }}
-          style={vertical
-            ? { height: 48, alignItems: 'center', justifyContent: 'center' }
-            : { flex: 1, alignItems: 'center', justifyContent: 'center' }}
->
-          <Box>
-            <Icon
-              name={icon}
-              size={24}
-              color={i === activeIndex ? pal.link : pal.text}
-              focused={i === activeIndex}
-/>
-            {name === 'index' && unreadBadge !== undefined ? (
-              <Box
-                minWidth={18} height={18} padding={{ x: 4 }} radius="full" background={pal.link}
-                align="center" justify="center"
-                style={{ position: 'absolute', top: -6, right: -14 }}
->
-                <Text size="3xs" weight="semibold" color={pal.bg}>{unreadBadge}</Text>
-              </Box>
-            ) : null}
-          </Box>
-        </Pressable>
-      ))}
+      {TAB_ICONS.map(([name, icon], i) => {
+        const icn = <TabIcon name={name} icon={icon} active={i === activeIndex} unreadBadge={unreadBadge}/>;
+        const go = (): void => { router.navigate(TAB_HREF[name]); };
+        return vertical ? (
+          <RailTooltip key={name} label={TAB_LABELS[name]} onPress={go}
+            style={{ height: 48, alignItems: 'center', justifyContent: 'center' }}>
+            {icn}
+          </RailTooltip>
+        ) : (
+          <Pressable key={name} onPress={go} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            {icn}
+          </Pressable>
+        );
+      })}
     </>
   );
 }

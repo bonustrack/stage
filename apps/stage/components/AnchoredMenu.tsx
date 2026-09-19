@@ -9,31 +9,23 @@ import { documentScroll } from '../lib/documentScroll';
 import { anchoredMenuStyle, type MenuPoint } from './AnchoredMenu.model';
 import { dismissContextMenuProps } from '../lib/contextMenu';
 import { isCoarsePointer } from '../lib/pointer';
-import { useBlockRadius, usePalette } from '../lib/theme';
+import { usePalette } from '../lib/theme';
+import { MENU_GAP, MENU_RADIUS, MENU_SHADOW } from './menuStyle';
 
 const DESKTOP_MIN_WIDTH = 900;
 export const MENU_WIDTH = 260;
 
-export const MENU_SHADOW = {
-  shadowColor: '#000',
-  shadowOpacity: 0.3,
-  shadowRadius: 14,
-  shadowOffset: { width: 0, height: 6 },
-  elevation: 8,
-};
+export { MENU_SHADOW };
 
-export function MenuSurface({ width = MENU_WIDTH, maxHeight, children }: {
+export function MenuSurface({ width, maxHeight, children }: {
   width?: number; maxHeight?: number; children: ReactNode;
 }): React.ReactElement {
-  const pal = usePalette();
-  const radius = useBlockRadius();
-  const edge = { width: 1, color: pal.border };
+  const { border } = usePalette();
   return (
     <Box
       width={width}
-      background={pal.inputBg}
-      radius={radius}
-      border={{ top: edge, right: edge, bottom: edge, left: edge }}
+      background={border}
+      radius={MENU_RADIUS}
       style={{ overflow: 'hidden', ...MENU_SHADOW }}
     >
       {maxHeight === undefined ? children : (
@@ -63,12 +55,12 @@ function anchorRect(event: GestureResponderEvent): AnchorRect | undefined {
 
 export function menuPointBelow(event: GestureResponderEvent): MenuPoint {
   const rect = anchorRect(event);
-  return rect === undefined ? menuPointOf(event) : { x: rect.left, y: rect.bottom + 6 };
+  return rect === undefined ? menuPointOf(event) : { x: rect.left, y: rect.bottom + MENU_GAP };
 }
 
 export function menuPointBeside(event: GestureResponderEvent): MenuPoint {
   const rect = anchorRect(event);
-  return rect === undefined ? menuPointOf(event) : { x: rect.right + 6, y: rect.top };
+  return rect === undefined ? menuPointOf(event) : { x: rect.right + MENU_GAP, y: rect.top };
 }
 
 export function AnchoredMenu({ visible, onClose, anchor, children }: {

@@ -7,9 +7,11 @@ import { Col } from './layout';
 import { AppIcon } from './widgets';
 import { AnchoredMenu, menuPointBelow, useAnchoredMenus } from './AnchoredMenu';
 import type { MenuPoint } from './AnchoredMenu.model';
-import { useEffectiveColorScheme } from '../lib/theme';
+import { useEffectiveColorScheme, usePalette } from '../lib/theme';
+import { withAlpha } from '../lib/theme';
+import { MENU_ROW } from './menuStyle';
 
-const COMPACT_PADDING = { paddingTop: 8, paddingBottom: 8, paddingLeft: 14, paddingRight: 14 };
+const COMPACT_PADDING = { paddingTop: MENU_ROW.padY, paddingBottom: MENU_ROW.padY, paddingLeft: MENU_ROW.padX, paddingRight: MENU_ROW.padX };
 const HOVER_ROW = { dataSet: { stagemenurow: '1' } };
 
 export function MenuHover({ compact, children }: { compact: boolean; children: ReactNode }): React.ReactElement {
@@ -23,8 +25,13 @@ export function menuRowPadding(compact: boolean): Record<string, number> | undef
 
 export function MenuList({ dark, children }: { dark: boolean; children: ReactNode }): React.ReactElement {
   const compact = useAnchoredMenus();
-  if (compact) return <Col padding={{ y: 4 }}>{children}</Col>;
+  if (compact) return <Col padding={{ y: MENU_ROW.listPadY }}>{children}</Col>;
   return <ListView dark={dark}>{children}</ListView>;
+}
+
+function MenuSeparator(): React.ReactElement {
+  const { text } = usePalette();
+  return <Col height={MENU_ROW.separator} background={withAlpha(text, MENU_ROW.separatorAlpha)} />;
 }
 
 export function MenuRow({ icon, label, onPress, dark, danger, chevron }: {
@@ -34,10 +41,11 @@ export function MenuRow({ icon, label, onPress, dark, danger, chevron }: {
   const tone = danger === true ? 'danger' : 'link';
   return (
     <MenuHover compact={compact}>
-      <ListViewItem dark={dark} onPress={onPress} gap={12} padding={menuRowPadding(compact)}>
-        {icon === undefined ? null : <AppIcon name={icon} size={compact ? 16 : 22} color={tone} />}
+      {compact && danger === true ? <MenuSeparator /> : null}
+      <ListViewItem dark={dark} onPress={onPress} gap={compact ? MENU_ROW.gap : 12} padding={menuRowPadding(compact)}>
+        {icon === undefined ? null : <AppIcon name={icon} size={compact ? MENU_ROW.icon : 22} color={tone} />}
         <Col flex={1}>
-          <Text value={label} size={compact ? 'lg' : 'xl'} color={tone} />
+          <Text value={label} size="xl" color={tone} truncate style={compact ? { lineHeight: MENU_ROW.lineHeight } : undefined} />
         </Col>
         {chevron === true && !compact ? <AppIcon name="chevronRight" size={18} color="secondary" /> : null}
       </ListViewItem>

@@ -27,6 +27,7 @@ import { getQueryClient } from '../lib/queryClient';
 import { applyWebGlobalStyles } from '../platform/webStyles';
 import { BuildInfoDot } from '../components/system/BuildInfoDot';
 import { AlertHost } from '../components/system/AlertHost';
+import { TooltipHost } from '../components/system/TooltipHost';
 import { OnboardingRouteReset } from '../components/system/OnboardingRouteReset';
 import { installAlertShim } from '../lib/alertShim';
 import { SplitSidebar } from '../components/tabs/SplitSidebar';
@@ -124,6 +125,7 @@ function RootLayoutInner(): React.ReactElement {
       <TopChrome decorated={gatesOpen && !shell.showOnboarding} />
       <BuildInfoDot />
       <AlertHost />
+      <TooltipHost />
       <OnboardingRouteReset ready={gatesOpen} showing={shell.showOnboarding} />
       </KeyboardProvider>
     </GestureHandlerRootView>
