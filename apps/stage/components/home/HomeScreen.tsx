@@ -46,7 +46,7 @@ function HomeRowMenu({ st }: { st: HomeState }): React.ReactElement {
 function SplitPlaceholder(): React.ReactElement {
   return (
     <Col flex={1} align="center" justify="center" surface="surface">
-      <Text size="md" role="secondary">Select a chat to start messaging</Text>
+      <Text size="3xl" role="secondary">Select a chat to start messaging</Text>
     </Col>
   );
 }

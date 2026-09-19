@@ -5,7 +5,6 @@ import { Vibration } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Col } from '../layout';
-import { EmptyState } from '../chrome/EmptyState';
 import { Spinner } from '../Spinner';
 import { MessagingSetupBanner } from '../system/HistorySync';
 import { ChannelRow } from '../ChannelRow';
@@ -161,6 +160,8 @@ export function HomeSpinner({ head }: { head: string }): React.ReactElement {
 
 export function HomeEmpty({ message }: { message?: string }): React.ReactElement {
   return (
-    <EmptyState title={message ?? 'No conversations yet. Share your address from Settings to start one.'} />
+    <Col align="center" justify="center" padding={24}>
+      <Text size="3xl" role="secondary" textAlign="center">{message ?? 'No conversations yet'}</Text>
+    </Col>
   );
 }
