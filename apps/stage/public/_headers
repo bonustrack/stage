@@ -1,0 +1,12 @@
+# Netlify headers for the web export (this file is copied into dist by expo export).
+# COOP same-origin + COEP credentialless keeps SharedArrayBuffer for the XMTP wasm
+# while cross-origin avatars and IPFS images still load. Do not change to require-corp.
+/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: credentialless
+
+/.well-known/apple-app-site-association
+  Content-Type: application/json
+
+/.well-known/assetlinks.json
+  Content-Type: application/json

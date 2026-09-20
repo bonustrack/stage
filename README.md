@@ -36,7 +36,7 @@ architecture guide.
 
 ## Prerequisites
 
-- [Bun](https://bun.sh) `1.3.9` (pinned via the `packageManager` field) — the only package manager
+- [Bun](https://bun.sh) `1.4.0` (pinned via the `packageManager` field) — the only package manager
 - Node.js `>= 22` (per the `engines` field)
 
 ## Install
@@ -70,7 +70,7 @@ bun --cwd apps/stage start              # Expo bundler (Metro)
 bun --cwd apps/stage android            # build + run on Android
 bun --cwd apps/stage ios                # build + run on iOS
 bun --cwd apps/stage web                # run the app in a browser
-bun --cwd apps/stage run build:web      # web export (Netlify publishes dist/)
+bun --cwd apps/stage run build:web      # web export (Netlify publishes dist/; build settings live in the Netlify UI, headers/redirects in public/_headers and public/_redirects)
 bun --cwd apps/proxy dev                # Cloudflare Worker (wrangler dev)
 bun run --cwd apps/stage/desktop start  # Electron desktop app with the bundled web UI
 bun run --cwd packages/kit storybook    # gallery of every kit component (Vite, port 6006)
@@ -114,7 +114,7 @@ rate-limit and rotate it.
 CI runs on every push to `main` and on pull requests (`.github/workflows/ci.yml`),
 delegating to the reusable `.github/workflows/_ci.yml` workflow. The gates, in
 order, are: **lint → typecheck → knip → madge → build → test**, all on Bun
-`1.3.9` with a frozen lockfile.
+`1.4.0` with a frozen lockfile.
 
 ## License
 

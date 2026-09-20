@@ -8,7 +8,7 @@ name: Main preview
 # publishes a per-PR branch on pull_request); this one publishes the merged
 # result of main to a single stable branch.
 #
-# Auth + toolchain mirror pr-preview.yml exactly: EXPO_TOKEN secret, bun 1.3.9
+# Auth + toolchain mirror pr-preview.yml exactly: EXPO_TOKEN secret, bun 1.4.0
 # via oven-sh/setup-bun, frozen-lockfile install, and bunx eas-cli pinned, run
 # from apps/stage. JS-only update (no APK); the dev-client APK must already include
 # expo-updates for the deep link to load it.
@@ -38,7 +38,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.3.9
+          bun-version: 1.4.0
 
       - name: Prepare temp dir
         run: mkdir -p "$TMPDIR"
