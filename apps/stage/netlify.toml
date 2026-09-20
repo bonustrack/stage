@@ -1,0 +1,39 @@
+# Netlify config for the universal web app (apps/stage via expo web export).
+# It lives in the Stage site's base directory (apps/stage, set in the Netlify
+# UI), NOT at the repo root: a root netlify.toml applies to every Netlify site
+# built from this repo and would hijack the kit gallery site (base packages/kit,
+# configured in the UI only). command and publish resolve relative to the base
+# (bun install still installs the whole workspace).
+[build]
+  command = "bun install && bun run build:web"
+  publish = "dist"
+
+# google-services*.json are Firebase ANDROID CLIENT configs: the AIza key in
+# them is a public client identifier that ships inside every APK (Google
+# documents committing it as safe). Netlify's secrets scanner flags it as a
+# likely secret and fails the build, so exempt exactly those files.
+[build.environment]
+  BUN_VERSION = "1.4.0"
+  NODE_VERSION = "22"
+  SECRETS_SCAN_OMIT_PATHS = "google-services*.json,apps/stage/google-services*.json,lib/firebaseWeb.ts,apps/stage/lib/firebaseWeb.ts"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cross-Origin-Opener-Policy = "same-origin"
+    Cross-Origin-Embedder-Policy = "credentialless"
+
+[[headers]]
+  for = "/.well-known/apple-app-site-association"
+  [headers.values]
+    Content-Type = "application/json"
+
+[[headers]]
+  for = "/.well-known/assetlinks.json"
+  [headers.values]
+    Content-Type = "application/json"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

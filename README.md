@@ -70,7 +70,7 @@ bun --cwd apps/stage start              # Expo bundler (Metro)
 bun --cwd apps/stage android            # build + run on Android
 bun --cwd apps/stage ios                # build + run on iOS
 bun --cwd apps/stage web                # run the app in a browser
-bun --cwd apps/stage run build:web      # web export (Netlify publishes dist/; build settings live in the Netlify UI, headers/redirects in public/_headers and public/_redirects)
+bun --cwd apps/stage run build:web      # web export (Netlify publishes dist/, config in apps/stage/netlify.toml)
 bun --cwd apps/proxy dev                # Cloudflare Worker (wrangler dev)
 bun run --cwd apps/stage/desktop start  # Electron desktop app with the bundled web UI
 bun run --cwd packages/kit storybook    # gallery of every kit component (Vite, port 6006)

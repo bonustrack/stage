@@ -84,7 +84,7 @@ Per-app:
 
 ## Gotchas / footguns
 
-- **Netlify is configured in the UI only, there is NO `netlify.toml`** (a root toml would apply to every site built from this repo and hijack the kit gallery site). Stage site: base `apps/stage`, command `bun install && bun run build:web`, publish `apps/stage/dist`, env `BUN_VERSION` + `SECRETS_SCAN_OMIT_PATHS`. Kit gallery site: base `packages/kit`, command `bun install && bun run storybook:build`, publish `packages/kit/build`, env `BUN_VERSION`. Node comes from the `.nvmrc` in each base directory (Netlify reads it; Bun has no file equivalent, only the env var). Headers and the SPA redirect ship as `apps/stage/public/_headers` and `_redirects` (copied into `dist` by the export). Headers: COOP same-origin + **COEP credentialless** (deliberate — keeps SharedArrayBuffer for XMTP wasm while cross-origin avatars/IPFS load). Don't change to require-corp.
+- **Netlify config is `apps/stage/netlify.toml`, NEVER at the repo root.** The Stage site's base directory is `apps/stage` (set in the Netlify UI), so Netlify reads that file; a root toml applies to every site built from this repo and hijacked the kit gallery site. The toml sets the command (`bun install && bun run build:web`), publish (`dist`), `BUN_VERSION`, `NODE_VERSION`, the secrets-scan exemption for the public Firebase client key, the COOP/COEP headers and the SPA redirect. Kit gallery site: base `packages/kit`, configured in the UI only (command `bun install && bun run storybook:build`, publish `packages/kit/build`, env `BUN_VERSION`; Node from `packages/kit/.nvmrc`). Headers: COOP same-origin + **COEP credentialless** (deliberate — keeps SharedArrayBuffer for XMTP wasm while cross-origin avatars/IPFS load). Don't change to require-corp.
 - Native module changes (e.g. `modules/stage-pill`) need a fresh dev-client build; a JS reload is not enough.
 - **Mobile releases are version-driven** (the `version` in `apps/stage/app.config.js` triggers `release-mobile.yml`: EAS Build + EAS Submit for Play and TestFlight, see `docs/mobile-release.md`). Account identifiers are injected at build time, never committed to `eas.json`. EAS free tier has a monthly build cap. Every push to every branch publishes a JS-OTA dev-client preview (`pr-preview.yml`; the "Preview" commit status carries the deep link).
 - **`served-main`** must stay content-identical to `main` (drift allowlist deliberately empty).
@@ -114,7 +114,7 @@ Per-app:
 | `packages/client/package.json` + `src/index.ts` | public API surface + barrel |
 | `packages/client/src/xmtp/*` | codecs + orchestration cores |
 | `packages/client/src/validate.ts` | parseOrThrow/parseOrNull boundary helpers |
-| `apps/stage/public/_headers` + `_redirects` | COOP/COEP headers and the SPA redirect for the Netlify web deploy (build settings live in the Netlify UI, no toml) |
+| `apps/stage/netlify.toml` | universal web deploy + COOP/COEP headers (in the site base dir, never at the root) |
 | `.github/workflows/_ci.yml` | the 6 gates |
 | `docs/legacy-identifiers.md` | the frozen pre-rename identifiers that must keep their old string |
 | `README.md` | monorepo layout, commands, env vars, releases, CI gate order |
