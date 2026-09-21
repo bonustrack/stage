@@ -8,6 +8,18 @@ import type { NamesChain } from './namesTypes.ts';
 const ZERO = '0x0000000000000000000000000000000000000000';
 const WRITE_ATTEMPTS = 4;
 const WRITE_RETRY_MS = 2_000;
+const READ_ATTEMPTS = 5;
+const READ_RETRY_MS = 1_500;
+
+const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function settles<T>(read: () => Promise<T>, accept: (value: T) => boolean): Promise<boolean> {
+  for (let i = 0; i < READ_ATTEMPTS; i++) {
+    if (accept(await read())) return true;
+    await delay(READ_RETRY_MS);
+  }
+  return false;
+}
 
 async function withRetries<T>(attempt: () => Promise<T>): Promise<T> {
   let lastError: unknown;
@@ -16,7 +28,7 @@ async function withRetries<T>(attempt: () => Promise<T>): Promise<T> {
       return await attempt();
     } catch (err) {
       lastError = err;
-      await new Promise((resolve) => setTimeout(resolve, WRITE_RETRY_MS));
+      await delay(WRITE_RETRY_MS);
     }
   }
   throw lastError instanceof Error ? lastError : new Error(String(lastError));
@@ -97,8 +109,10 @@ export function makeNamesChain(operatorKey: Hex, rpcUrl: string): NamesChain {
       const recorded = await publicClient.readContract({ address: resolver, abi: RESOLVER_ABI, functionName: 'addr', args: [node] }).catch(() => ZERO);
       if (recorded.toLowerCase() !== owner.toLowerCase()) {
         await write(() => wallet.writeContract({ address: resolver, abi: RESOLVER_ABI, functionName: 'setAddr', args: [node, owner] }));
-        const check = await publicClient.readContract({ address: resolver, abi: RESOLVER_ABI, functionName: 'addr', args: [node] }).catch(() => ZERO);
-        if (check.toLowerCase() !== owner.toLowerCase()) throw new Error('forward record did not persist');
+        const readAddr = (): Promise<Hex> =>
+          publicClient.readContract({ address: resolver, abi: RESOLVER_ABI, functionName: 'addr', args: [node] }).catch(() => ZERO);
+        const persisted = await settles(readAddr, (check) => check.toLowerCase() === owner.toLowerCase());
+        if (!persisted) throw new Error('forward record did not persist');
       }
       return write(() => wallet.writeContract({ ...registry, functionName: 'setOwner', args: [node, owner] }));
     },

@@ -2,6 +2,7 @@
 import {
   dmUnreachableReason, findExistingDmWithAddress, openDmWithAddress, repairDmMembership,
 } from './xmtp.conv';
+import { perfTime } from './perf';
 
 export type DmResolveError = 'unregistered' | 'stale-installations' | 'failed';
 
@@ -12,20 +13,23 @@ async function classifyUnreachable(address: string): Promise<{ error: DmResolveE
   return { error: reason ?? 'failed' };
 }
 
+const STUB_DM_DETAIL = 'The chat exists but the contact has not joined it yet. Try again in a moment.';
+
 async function resolveStubDm(convId: string, address: string): Promise<DmResolution> {
   const repaired = await repairDmMembership(convId, address).catch(() => false);
   if (repaired) return { convId };
-  return classifyUnreachable(address);
+  const unreachable = await classifyUnreachable(address);
+  return unreachable.error === 'failed' ? { ...unreachable, detail: STUB_DM_DETAIL } : unreachable;
 }
 
 export async function resolveDmConvId(address: string): Promise<DmResolution> {
-  const existing = await findExistingDmWithAddress(address).catch(() => null);
+  const existing = await perfTime('dm.findExisting', () => findExistingDmWithAddress(address)).catch(() => null);
   if (existing?.peerJoined) return { convId: existing.convId };
   if (existing) return resolveStubDm(existing.convId, address);
-  const reason = await dmUnreachableReason(address).catch(() => null);
+  const reason = await perfTime('dm.unreachableReason', () => dmUnreachableReason(address)).catch(() => null);
   if (reason) return { error: reason };
   try {
-    return { convId: await openDmWithAddress(address) };
+    return { convId: await perfTime('dm.open', () => openDmWithAddress(address)) };
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
     const unreachable = await classifyUnreachable(address);

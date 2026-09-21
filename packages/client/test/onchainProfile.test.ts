@@ -76,3 +76,23 @@ describe('resolveBasenameProfile', () => {
     expect(await resolveOnchainProfile({ base: fakeClient({ name: '', addr: '' }, true) }, ALICE)).toBeNull();
   });
 });
+
+describe('resolveOnchainProfile issued-name fallback', () => {
+  const clients = { base: fakeClient({ name: '', addr: ALICE, text: { avatar: 'ipfs://cid' } }) };
+
+  test('uses the issuer record when the reverse record is empty and the name resolves to the address', async () => {
+    const profile = await resolveOnchainProfile(clients, ALICE, async () => 'alice456.stage.base.eth');
+    expect(profile?.name).toBe('alice456.stage.base.eth');
+    expect(profile?.avatar).toBe('ipfs://cid');
+  });
+
+  test('stays null without a lookup or when the issuer knows no name', async () => {
+    expect(await resolveOnchainProfile(clients, ALICE)).toBeNull();
+    expect(await resolveOnchainProfile(clients, ALICE, async () => null)).toBeNull();
+  });
+
+  test('rejects an issuer name whose forward record points elsewhere', async () => {
+    const other = { base: fakeClient({ name: '', addr: '0x00000000000000000000000000000000000000B2' }) };
+    expect(await resolveOnchainProfile(other, ALICE, async () => 'alice456.stage.base.eth')).toBeNull();
+  });
+});

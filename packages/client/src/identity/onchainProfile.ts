@@ -111,13 +111,16 @@ export async function resolverForNode(client: PublicClient, node: Hex): Promise<
   return resolver === ZERO_ADDRESS ? null : resolver;
 }
 
-export async function resolveBasenameProfile(client: PublicClient, address: string): Promise<OnchainProfile | null> {
+async function primaryBasename(client: PublicClient, address: string): Promise<string | null> {
   const reverseNode = baseReverseNode(address);
   const reverseResolver = (await resolverForNode(client, reverseNode)) ?? BASENAME_L2_RESOLVER;
   const name = await client.readContract({
     address: reverseResolver, abi: L2_RESOLVER_ABI, functionName: 'name', args: [reverseNode],
   });
-  if (!name) return null;
+  return name === '' ? null : name;
+}
+
+async function profileForName(client: PublicClient, name: string, address: string): Promise<OnchainProfile | null> {
   const node = namehash(normalize(name));
   const resolverAddress = (await resolverForNode(client, node)) ?? BASENAME_L2_RESOLVER;
   const resolver = { address: resolverAddress, abi: L2_RESOLVER_ABI } as const;
@@ -135,6 +138,19 @@ export async function resolveBasenameProfile(client: PublicClient, address: stri
   };
 }
 
-export async function resolveOnchainProfile(clients: ProfileClients, address: string): Promise<OnchainProfile | null> {
-  return resolveBasenameProfile(clients.base, address).catch(() => null);
+export async function resolveBasenameProfile(client: PublicClient, address: string): Promise<OnchainProfile | null> {
+  const name = await primaryBasename(client, address);
+  return name === null ? null : profileForName(client, name, address);
+}
+
+export type IssuedNameLookup = (address: string) => Promise<string | null>;
+
+export async function resolveOnchainProfile(
+  clients: ProfileClients, address: string, issuedName?: IssuedNameLookup,
+): Promise<OnchainProfile | null> {
+  const primary = await resolveBasenameProfile(clients.base, address).catch(() => null);
+  if (primary !== null || issuedName === undefined) return primary;
+  const name = await issuedName(address).catch(() => null);
+  if (name === null) return null;
+  return profileForName(clients.base, name, address).catch(() => null);
 }

@@ -12,6 +12,7 @@ import { avatarCacheKey, makeProfileClients, resolveOnchainProfile } from '@stag
 import { broviderRpc } from '@stage-labs/client/wallet/client';
 import { stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { PersistentStore } from './cache';
+import { linkProxyBase } from './historyServer';
 
 export {
   isPeerResolved,
@@ -25,7 +26,15 @@ export {
 } from '@stage-labs/client/identity/peerProfiles';
 
 const profileClients = makeProfileClients(broviderRpc);
-setOnchainProfileResolver((address) => resolveOnchainProfile(profileClients, address));
+
+async function issuedStageName(address: string): Promise<string | null> {
+  const res = await fetch(`${linkProxyBase()}/names/status?address=${encodeURIComponent(address)}`, { headers: { 'x-stage-client': '1' } });
+  if (!res.ok) return null;
+  const body = (await res.json()) as { name?: string | null };
+  return typeof body.name === 'string' && body.name !== '' ? body.name : null;
+}
+
+setOnchainProfileResolver((address) => resolveOnchainProfile(profileClients, address, issuedStageName));
 
 export function peerAvatarUrl(address: string, displayPx: number): string {
   return stampAvatarUrl(address, displayPx, avatarCacheKey(getPeerAvatar(address)));
