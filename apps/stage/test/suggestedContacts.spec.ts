@@ -14,6 +14,6 @@ describe('suggestedContacts', () => {
     expect(suggestedContacts([], POOL[1]?.toUpperCase() ?? null, POOL)).toEqual([POOL[0]]);
   });
   test('ships one curated suggestion', () => {
-    expect(SUGGESTED_CONTACTS).toEqual(['0xB9d6FB23EACaD83c2770a16DcE4280fD4c1A7404']);
+    expect(SUGGESTED_CONTACTS).toEqual(['0xa94Cb9AA3CB82880142ff98706320E1Fb9B31767']);
   });
 });

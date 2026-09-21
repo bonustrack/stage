@@ -1,4 +1,4 @@
-export const SUGGESTED_CONTACTS: readonly string[] = ['0xB9d6FB23EACaD83c2770a16DcE4280fD4c1A7404'];
+export const SUGGESTED_CONTACTS: readonly string[] = ['0xa94Cb9AA3CB82880142ff98706320E1Fb9B31767'];
 
 export const SUGGESTED_HEADING = 'SUGGESTED';
 export const SUGGESTED_SUBTITLE = 'Suggested contact';
