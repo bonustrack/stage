@@ -5,7 +5,7 @@ export type ImportParse =
   | { ok: false; error: string };
 
 export const IMPORT_EMPTY = 'Scan the code from your other device, or paste a private key or recovery phrase.';
-export const IMPORT_INVALID = 'That is not a Stage transfer code, private key, or recovery phrase.';
+export const IMPORT_INVALID = 'That is not a Stage link code, private key, or recovery phrase.';
 
 export function parseImportInput(text: string): ImportParse {
   if (text.trim().length === 0) return { ok: false, error: IMPORT_EMPTY };
@@ -20,4 +20,4 @@ export function transferWarning(kind: AccountTransfer['kind']): string {
 }
 
 export const TRANSFER_HOW_TO =
-  'On the other device open Stage, go to Accounts, choose Import account and scan this code. Nothing is sent over the network: the code only exists on this screen.';
+  'On the other device open Stage, go to Accounts, choose Import account and scan this code. This account stays on this device and also works on the new one. Nothing is sent over the network: the code only exists on this screen.';

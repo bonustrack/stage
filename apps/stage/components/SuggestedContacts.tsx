@@ -1,0 +1,33 @@
+import { useMemo } from 'react';
+import { useRouter } from 'expo-router';
+import { Caption } from '@stage-labs/kit/react-native/caption';
+import { Box } from './layout';
+import { ChannelRow } from './ChannelRow';
+import { getPeerName, usePeerProfiles } from '../lib/peerProfiles';
+import { shortAddress, useActiveAccountRecord } from '../modules/messaging';
+import { SUGGESTED_HEADING, SUGGESTED_SUBTITLE, suggestedContacts } from './SuggestedContacts.model';
+
+export function SuggestedContacts({ known }: { known: readonly string[] }): React.ReactElement | null {
+  const router = useRouter();
+  const self = useActiveAccountRecord()?.address ?? null;
+  const addresses = useMemo(() => suggestedContacts(known, self), [known, self]);
+  usePeerProfiles(addresses);
+  if (addresses.length === 0) return null;
+  return (
+    <Box>
+      <Box padding={{ x: 16, top: 16, bottom: 6 }}>
+        <Caption value={SUGGESTED_HEADING} color="secondary" weight="semibold" />
+      </Box>
+      {addresses.map((address) => (
+        <ChannelRow
+          key={address}
+          title={getPeerName(address) ?? shortAddress(address)}
+          avatarAddress={address}
+          square={false}
+          subtitle={SUGGESTED_SUBTITLE}
+          onPress={() => { router.push({ pathname: '/[convId]', params: { convId: address } }); }}
+        />
+      ))}
+    </Box>
+  );
+}

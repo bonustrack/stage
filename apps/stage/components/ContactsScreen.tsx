@@ -1,5 +1,5 @@
 
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { contactNameModel, contactsEmptyLabel } from './ContactsScreen.model';
@@ -10,11 +10,13 @@ import { usePalette } from '../lib/theme';
 import { useAllContacts, type Contact } from '../lib/useAllContacts';
 import { getPeerName } from '../lib/peerProfiles';
 import { shortAddress } from '../modules/messaging';
+import { SuggestedContacts } from './SuggestedContacts';
 
 export function ContactsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const { bg } = usePalette();
   const router = useRouter();
   const { contacts, loading } = useAllContacts();
+  const known = useMemo(() => contacts.map((c) => c.address), [contacts]);
 
   const open = useCallback((address: string): void => {
     router.push({ pathname: '/[convId]', params: { convId: address } });
@@ -47,6 +49,7 @@ export function ContactsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): 
         extraData={contacts.length}
         style={{ backgroundColor: bg }}
         contentContainerStyle={{ flexGrow: 1, paddingTop: 4 }}
+        ListHeaderComponent={<SuggestedContacts known={known} />}
         ListEmptyComponent={
           <Col flex={1} align="center" justify="center" padding={{ x: 24, y: 48 }}>
             <Text size="md" role="secondary" style={{ textAlign: 'center' }}>

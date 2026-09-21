@@ -32,7 +32,7 @@ export function ManageSheet({ manageRec, activeId, onClose, onSwitch, onExport, 
           <SheetRow label="Export private key" desc="Reveal + copy this account's key" head={p.head} dark={dark} onPress={() => { const id = manageRec.id; onClose(); onExport(id); }} />
         ) : null}
         {manageRec && transferKindFor(manageRec) !== null ? (
-          <SheetRow label="Move to another device" desc="Show a QR code to import this account elsewhere" head={p.head} dark={dark} onPress={() => { onClose(); onTransfer(manageRec); }} />
+          <SheetRow label="Link a device" desc="Show a QR code to use this account on another device too" head={p.head} dark={dark} onPress={() => { onClose(); onTransfer(manageRec); }} />
         ) : null}
         {manageRec ? (
           <SheetRow label="Remove account" desc="Delete from this device" danger head={p.head} dark={dark} onPress={() => { onRemove(manageRec); }} />

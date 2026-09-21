@@ -104,7 +104,7 @@ export function WebTabRail({ pathname, unreadBadge }: {
       <TabButtons pathname={pathname} unreadBadge={unreadBadge} vertical/>
       <Box flex={1}/>
       <Box align="center" padding={{ bottom: 16 }}>
-        <AccountAvatarButton size={32} opens="beside"/>
+        <AccountAvatarButton size={32}/>
       </Box>
     </Col>
   );

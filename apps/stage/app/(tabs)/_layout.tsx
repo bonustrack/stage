@@ -1,8 +1,7 @@
 
-import { useState } from 'react';
 import { Box, Col } from '../../components/layout';
 import { fontSize } from '@stage-labs/kit/tokens';
-import { usePathname } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import { Platform } from 'react-native';
 import { Tabs } from '../../lib/navigation/tabs';
 import { useSafeAreaInsets } from '../../lib/safeArea';
@@ -16,8 +15,7 @@ import { TAB_ICONS, WebTabBar, WebTabRail } from '../../components/tabs/WebTabRa
 import { useWebTabRail } from '../../lib/webLayout';
 import { useTotalUnread } from '../../lib/useTotalUnread';
 import { unreadBadgeLabel } from '../../lib/format';
-import { AccountAvatar } from '../../components/AccountAvatarButton';
-import { MenuSheet } from '../../components/MenuSheet';
+import { AccountAvatar, SETTINGS_ROUTE } from '../../components/AccountAvatarButton';
 import { Landing } from '../../components/landing/Landing';
 import { useAccountGate } from '../../lib/accountGate';
 
@@ -71,6 +69,7 @@ function nativeTabBarStyle(pal: ReturnType<typeof usePalette>, bottomInset: numb
 
 export default function TabsLayout(): React.ReactElement {
   const pathname = usePathname();
+  const router = useRouter();
   const unread = useTotalUnread();
   const unreadBadge = unreadBadgeLabel(unread);
   const pagerVisible = !pathname.startsWith('/settings');
@@ -80,7 +79,6 @@ export default function TabsLayout(): React.ReactElement {
   const inactive = pal.text;
   const web = Platform.OS === 'web';
   const rail = useWebTabRail();
-  const [accountMenu, setAccountMenu] = useState(false);
   const gate = useAccountGate();
 
   const tabBarStyle = nativeTabBarStyle(pal, insets.bottom, web);
@@ -137,7 +135,7 @@ export default function TabsLayout(): React.ReactElement {
             tabBarIcon: () => <Box margin={{ top: -1 }}><AccountAvatar size={26}/></Box>,
             tabBarAccessibilityLabel: 'Account',
           }}
-          listeners={{ tabPress: (e) => { e.preventDefault(); setAccountMenu(true); } }}
+          listeners={{ tabPress: (e) => { e.preventDefault(); router.navigate(SETTINGS_ROUTE); } }}
 />
         <Tabs.Screen name="settings" options={{ href: null }}/>
       </Tabs>
@@ -153,7 +151,7 @@ export default function TabsLayout(): React.ReactElement {
       {web ? (rail
         ? <WebTabRail pathname={pathname} unreadBadge={unreadBadge}/>
         : <WebTabBar pathname={pathname} unreadBadge={unreadBadge}/>
-      ) : <MenuSheet visible={accountMenu} anchor={null} onClose={() => { setAccountMenu(false); }}/>}
+      ) : null}
     </Col>
   );
 }

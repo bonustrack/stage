@@ -9,7 +9,7 @@ import { Card } from '@stage-labs/kit/react-native/card';
 import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { capabilities } from '../../lib/capabilities';
 import { Box, Col } from '../layout';
-import { getPrivateKey, canExportPrivateKey, type AccountRecord } from '../../lib/accounts';
+import { getPrivateKey, canExportPrivateKey, loadAccounts, type AccountRecord } from '../../lib/accounts';
 import { deleteAccount, shortAddress, useActiveAccountRecord } from '../../modules/messaging';
 import { reloadApp } from '../AccountsManager.helpers';
 import { transferKindFor } from '../../lib/accountTransfer';
@@ -46,7 +46,11 @@ function confirmRemove(rec: AccountRecord): void {
     [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Remove', style: 'destructive', onPress: () => {
-          void (async (): Promise<void> => { await deleteAccount(rec.id); reloadApp(); })();
+          void (async (): Promise<void> => {
+            await deleteAccount(rec.id);
+            const remaining = await loadAccounts();
+            reloadApp(remaining.length === 0);
+          })();
         } },
     ],
   );
@@ -88,7 +92,7 @@ function AccountRows({ rec, revealed, onExport, onMove }: {
         <SettingsNavRow label="Export private key" iconStart="wallet" iconEnd="chevronDown" onPress={onExport} />
       ) : null}
       {transferKindFor(rec) !== null ? (
-        <SettingsNavRow label="Move to another device" iconStart="qrcode" onPress={onMove} />
+        <SettingsNavRow label="Link a device" iconStart="qrcode" onPress={onMove} />
       ) : null}
       {rec.type === 'smart' ? (
         <SettingsNavRow

@@ -4,6 +4,7 @@ import {
   type NavigationState, type ParamListBase, type StackActionHelpers, type StackNavigationState,
   type StackRouterOptions, type TabActionHelpers, type TabNavigationState, type TabRouterOptions,
 } from '@react-navigation/native';
+import { Box } from '@stage-labs/kit/react-native/box';
 
 export type FlowScreenOptions = Record<string, unknown>;
 
@@ -25,6 +26,18 @@ function focusedScreen<State extends NavigationState>(
   return descriptors[route.key]?.render() ?? null;
 }
 
+const HIDDEN = { display: 'none' } as const;
+
+function stackScreens<State extends NavigationState>(
+  state: State, descriptors: Record<string, FlowDescriptor<State>>,
+): React.ReactNode {
+  return state.routes.map((route, i) => (
+    <Box key={route.key} style={i === state.index ? undefined : HIDDEN}>
+      {descriptors[route.key]?.render() ?? null}
+    </Box>
+  ));
+}
+
 export function FlowStackNavigator({
   id, initialRouteName, children, layout, screenListeners, screenOptions, screenLayout,
 }: FlowProps<StackNavigationState<ParamListBase>, StackRouterOptions>): React.ReactElement {
@@ -32,7 +45,7 @@ export function FlowStackNavigator({
     StackNavigationState<ParamListBase>, StackRouterOptions, StackActionHelpers<ParamListBase>,
     FlowScreenOptions, EventMapBase
   >(StackRouter, { id, initialRouteName, children, layout, screenListeners, screenOptions, screenLayout });
-  return <NavigationContent>{focusedScreen(state, descriptors)}</NavigationContent>;
+  return <NavigationContent>{stackScreens(state, descriptors)}</NavigationContent>;
 }
 
 export function FlowTabNavigator({

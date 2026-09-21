@@ -14,7 +14,7 @@ import { transferKindFor, transferPayloadFor } from '../../lib/accountTransfer';
 import { TRANSFER_HOW_TO, transferWarning } from './ImportAccountPanel.model';
 
 const QR_SIZE = 240;
-const UNAVAILABLE_MESSAGE = 'This account cannot be moved: it has no exportable key on this device.';
+const UNAVAILABLE_MESSAGE = 'This account cannot be linked: it has no exportable key on this device.';
 
 function usePayload(rec: AccountRecord | null, onClose: () => void): string | null {
   const [payload, setPayload] = useState<string | null>(null);
@@ -60,12 +60,12 @@ export function TransferAccountSheet({ rec, dark, onClose }: {
   const copy = (): void => {
     if (payload === null) return;
     void capabilities.copyToClipboard(payload);
-    capabilities.toast('Transfer code copied');
+    capabilities.toast('Link code copied');
   };
   return (
     <AppModal visible={rec !== null} onClose={onClose}>
       <Col gap={14} align="center">
-        <Title level={3}>Move to another device</Title>
+        <Title level={3}>Link a device</Title>
         {kind !== null ? <Text size="xs" color={DANGER} textAlign="center">{transferWarning(kind)}</Text> : null}
         <QrPanel payload={payload} />
         <Text size="sm" role="secondary" textAlign="center">{TRANSFER_HOW_TO}</Text>

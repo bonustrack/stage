@@ -16,6 +16,8 @@ import { Topnav } from '../Topnav';
 import { usePublishTopnavSlot, type TopnavSlot } from '../tabs/topnavSlots';
 import { getActiveAccount } from '../../lib/accounts';
 import { profileLinkOf } from '../../lib/links';
+import { SuggestedContacts } from '../SuggestedContacts';
+import { getCachedRows } from '../../modules/messaging';
 
 interface ChannelsListProps {
   panRef?: import('../SwipeTabs.types').SimultaneousRefs;
@@ -41,6 +43,12 @@ interface ChannelsListProps {
   contentHeightRef: MutableRefObject<number>;
   renderRow: ({ item }: { item: RowT }) => React.ReactElement;
   pane: boolean;
+}
+
+function knownPeerAddresses(rows: readonly Record<string, unknown>[] | null): string[] {
+  const out: string[] = [];
+  for (const row of rows ?? []) { const peer = row.peerAddress; if (typeof peer === 'string') out.push(peer); }
+  return out;
 }
 
 function HomeTopnavRight({ head, router, onOpenSearch }: {
@@ -111,6 +119,7 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
   const closeSearch = (): void => { setSearchOpen(false); setQuery(''); };
   const slot = useHomeTopnav(props, searchOpen, openSearch, closeSearch);
   const contentStyle = { paddingTop: 12, paddingBottom: 24 };
+  const knownPeers = useMemo(() => knownPeerAddresses(getCachedRows()), [sortedRows]);
 
   return (
     <>
@@ -146,7 +155,7 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
         ListFooterComponent={
           query.trim()
             ? <HomeContactResults query={query} c={{ fg, head, sub, border }} noChannels={sortedRows.length === 0}/>
-            : null
+            : <SuggestedContacts known={knownPeers} />
         }
         renderItem={renderRow}
 />

@@ -10,10 +10,6 @@ import { usePeerProfiles } from '../lib/peerProfiles';
 import { AccountManager } from '../modules/messaging';
 import { loadAccounts, getActiveAccountId, type AccountRecord } from '../lib/accounts';
 import { drawerAccountRows, DrawerRow } from './LeftDrawer.parts';
-import { transferKindFor } from '../lib/accountTransfer';
-import { useAccountTransfer } from './accounts/useAccountTransfer';
-import { TransferAccountSheet } from './accounts/TransferAccountSheet';
-import { profileLinkOf } from '../lib/links';
 import { IMPORT_ROUTE, SIGNUP_ROUTE } from './onboarding/nextRoute.model';
 
 export function MenuSheet({ visible, anchor, onClose }: {
@@ -39,22 +35,11 @@ export function MenuSheet({ visible, anchor, onClose }: {
   useEffect(() => { if (visible) void refresh(); }, [visible, refresh]);
   usePeerProfiles(accounts.map(a => a.address));
 
-  const activeRec = accounts.find(a => a.id === activeId) ?? accounts[0] ?? null;
-
-  const t = useAccountTransfer();
   const compact = useAnchoredMenus();
-  const movable = activeRec !== null && transferKindFor(activeRec) !== null;
 
-  function go(href: '/settings' | typeof SIGNUP_ROUTE | typeof IMPORT_ROUTE): void {
+  function go(href: typeof SIGNUP_ROUTE | typeof IMPORT_ROUTE): void {
     onClose();
     router.navigate(href);
-  }
-
-  function goProfile(): void {
-    const addr = activeRec?.address;
-    if (!addr) return;
-    onClose();
-    router.navigate(profileLinkOf(addr));
   }
 
   function onSwitch(id: string): void {
@@ -72,14 +57,8 @@ export function MenuSheet({ visible, anchor, onClose }: {
           {drawerAccountRows({ accounts, activeId, onSwitch, c: { head, sub, border }, dark, compact })}
           <DrawerRow rowKey="new-account" icon="userAdd" label="New account" dark={dark} onPress={() => { go(SIGNUP_ROUTE); }}/>
           <DrawerRow rowKey="import" icon="qrcode" label="Import account" dark={dark} onPress={() => { go(IMPORT_ROUTE); }}/>
-          {movable ? (
-            <DrawerRow rowKey="move" icon="deviceMobile" label="Move to another device" dark={dark} onPress={() => { onClose(); t.openTransfer(activeRec); }}/>
-          ) : null}
-          <DrawerRow rowKey="profile" icon="user" label="Profile" dark={dark} onPress={goProfile}/>
-          <DrawerRow rowKey="settings" icon="cog" label="Settings" dark={dark} onPress={() => { go('/settings'); }}/>
         </MenuList>
       </AnchoredMenu>
-      <TransferAccountSheet rec={t.transferRec} dark={dark} onClose={t.closeTransfer} />
     </>
   );
 }

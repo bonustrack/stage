@@ -58,11 +58,6 @@ export function menuPointBelow(event: GestureResponderEvent): MenuPoint {
   return rect === undefined ? menuPointOf(event) : { x: rect.left, y: rect.bottom + MENU_GAP };
 }
 
-export function menuPointBeside(event: GestureResponderEvent): MenuPoint {
-  const rect = anchorRect(event);
-  return rect === undefined ? menuPointOf(event) : { x: rect.right + MENU_GAP, y: rect.top };
-}
-
 export function AnchoredMenu({ visible, onClose, anchor, children }: {
   visible: boolean;
   onClose: () => void;

@@ -74,7 +74,7 @@ export function ImportStep({ pal, dark, busy, onTransfer }: {
   const phraseField = (
     <>
       <Text size="md" color={pal.sub}>
-        Enter your 12-24 word recovery phrase, or scan the code shown by Move to another device on your other device.
+        Enter your 12-24 word recovery phrase, or scan the code shown by Link a device on your other device.
       </Text>
       <FormField label="Recovery phrase" placeholder="word1 word2 word3 ..." multiline rows={4} value={text}
         onChangeText={(t) => { setText((prev) => acceptTypedChar(prev, t)); setErr(null); }}
