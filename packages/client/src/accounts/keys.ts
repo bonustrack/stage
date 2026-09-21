@@ -12,7 +12,7 @@ export function normalizePk(input: string): Hex {
   if (!pk.startsWith('0x')) pk = '0x' + pk;
   pk = '0x' + pk.slice(2).toLowerCase();
   if (!/^0x[0-9a-f]{64}$/.test(pk)) {
-    throw new Error('Invalid private key — expected 64 hex characters.');
+    throw new Error('Invalid private key: expected 64 hex characters.');
   }
   return pk as Hex;
 }

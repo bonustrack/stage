@@ -70,7 +70,7 @@ export function GuardianEditor({
         </Col>
       ) : (
         <Text size="sm" role="secondary">
-          Add friends as guardians. If you lose this device, a threshold of them can restore your wallet — they never gain access to your funds.
+          Add friends as guardians. If you lose this device, a threshold of them can restore your wallet. They never gain access to your funds.
         </Text>
       )}
 
@@ -125,7 +125,7 @@ export function ApprovalCard({
       <Text size="xs" role="secondary" numberOfLines={1} ellipsizeMode="middle">Wallet: {wallet}</Text>
       <Text size="xs" role="secondary" numberOfLines={1} ellipsizeMode="middle">New owner: {newOwner}</Text>
       <Text size="sm" role="secondary">
-        Only approve if you trust this is them. Approving is free and only helps rotate their owner key — it never moves their funds.
+        Only approve if you trust this is them. Approving is free and only helps rotate their owner key. It never moves their funds.
       </Text>
       <Button size="md" pill dark={dark} disabled={approved} loading={approving}
         onPress={onApprove} label={approved ? 'Approved' : 'Approve recovery'}/>

@@ -23,7 +23,7 @@ export { getCachedXmtpClient, waitForXmtpReady } from './xmtp.state';
 export { ensureActiveAccount } from './xmtp.recover';
 
 export class NoAccountError extends Error {
-  constructor() { super('No account — onboarding not completed yet.'); this.name = 'NoAccountError'; }
+  constructor() { super('No account: onboarding not completed yet.'); this.name = 'NoAccountError'; }
 }
 
 

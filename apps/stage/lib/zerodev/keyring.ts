@@ -120,7 +120,7 @@ async function readPhrase(phraseId: string): Promise<string | null> {
 
 export async function addPhrase(phrase: string): Promise<string> {
   const norm = normalizeMnemonic(phrase);
-  if (!isValidMnemonic(norm)) throw new Error('Invalid recovery phrase — failed BIP-39 check.');
+  if (!isValidMnemonic(norm)) throw new Error('Invalid recovery phrase: failed BIP-39 check.');
   const id = phraseIdOf(norm);
   if ((await readPhrase(id)) === null) await storePhrase(id, norm);
   if ((await primaryPhraseId()) === null) await secureStorage.set(PRIMARY_PHRASE_KEY, id, STORE_OPTS);

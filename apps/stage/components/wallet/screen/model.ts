@@ -73,7 +73,7 @@ export function tokenRowModel(r: TokenRowAsset, f: TokenRowFormat): TokenRowMode
     symbol: r.name,
     name: priceText,
     priceUsd: `${f.fmtBalance(r.balance)} ${r.symbol}`,
-    balance: valueUsd === null ? '—' : f.fmtUsd(valueUsd),
+    balance: valueUsd === null ? '-' : f.fmtUsd(valueUsd),
     change24h: changeText,
     logoUri: r.logoUrl,
   };

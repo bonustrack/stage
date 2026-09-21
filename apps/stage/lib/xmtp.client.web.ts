@@ -22,7 +22,7 @@ export { getCachedXmtpClient, waitForXmtpReady } from './xmtp.state.web';
 export { ensureActiveAccount } from './xmtp.recover.web';
 
 export class NoAccountError extends Error {
-  constructor() { super('No account — onboarding not completed yet.'); this.name = 'NoAccountError'; }
+  constructor() { super('No account: onboarding not completed yet.'); this.name = 'NoAccountError'; }
 }
 
 const ADDRESS_PREFIX = 'xmtp.address.';

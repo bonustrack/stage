@@ -133,7 +133,7 @@ export function TokenSelector({ value, onChange, label = 'TOKEN' }: {
             {value.symbol}
           </Text>
           <Text size="xs" role="secondary" numberOfLines={1}>
-            {selected ? `Balance: ${selected.balance}` : '—'}
+            {selected ? `Balance: ${selected.balance}` : '-'}
           </Text>
         </Col>
         <Icon name="chevronDown" size={18} color={fg}/>

@@ -1,6 +1,10 @@
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Dialog } from '@stage-labs/kit/react-native/dialog';
+import { useWebTabRail } from '../lib/webLayout';
+import { sheetPlacement } from './AppModal.model';
+
+const SHEET_BOTTOM_PAD = 28;
 import { Box, Col, Row } from './layout';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Caption } from '@stage-labs/kit/react-native/caption';
@@ -52,19 +56,22 @@ export function SheetModal({ visible, onClose, children, bg, border }: {
   visible: boolean; onClose: () => void; children: React.ReactNode;
   bg: string; border: string;
 }): React.ReactElement {
+  const place = sheetPlacement(useWebTabRail(), SHEET_BOTTOM_PAD);
   return (
     <Dialog
       open={visible}
       onClose={onClose}
-      side="bottom"
-      animationType="slide"
+      side={place.side}
+      animationType={place.side === 'bottom' ? 'slide' : 'none'}
       backdropColor="rgba(0,0,0,0.45)"
       panelBackground={bg}
       panelRadius={18}
-      panelPadding={{ x: 16, top: 16, bottom: 28 }}
-      panelBorderColor={border}
-      safeAreaBottom
-      handle
+      panelWidth={place.panelWidth}
+      panelMaxWidth={place.panelMaxWidth}
+      panelPadding={{ x: 16, top: 16, bottom: place.bottomPad }}
+      panelBorderColor={place.side === 'bottom' ? border : undefined}
+      safeAreaBottom={place.safeAreaBottom}
+      handle={place.handle}
       handleColor={border}
     >
       {children}

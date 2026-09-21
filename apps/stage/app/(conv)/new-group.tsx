@@ -81,7 +81,7 @@ export default function NewGroup(): React.ReactElement {
       try {
         imageUrl = await uploadAvatar(image.uri, image.mime, image.name);
       } catch {
-        capabilities.toast("Couldn't upload the group image — creating without it.");
+        capabilities.toast("Couldn't upload the group image. Creating without it.");
       }
     }
     try {

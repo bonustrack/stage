@@ -35,7 +35,7 @@ export function isValidMnemonic(phrase: string): boolean {
 export function deriveOwner(mnemonic: string, index: number): HDAccount {
   const phrase = normalizeMnemonic(mnemonic);
   if (!isValidMnemonic(phrase)) {
-    throw new Error('Invalid recovery phrase — failed BIP-39 check.');
+    throw new Error('Invalid recovery phrase: failed BIP-39 check.');
   }
   return mnemonicToAccount(phrase, { path: ownerDerivationPath(index) });
 }

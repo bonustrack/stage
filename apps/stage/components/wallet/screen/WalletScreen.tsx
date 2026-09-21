@@ -138,8 +138,8 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
   const onWalletAction = useCallback((action: string): void => {
     if (action === 'send') router.push('/wallet/send');
     else if (action === 'receive') router.push('/wallet/receive');
-    else if (action === 'swap') capabilities.toast('Swap — coming soon');
-    else if (action === 'buy') capabilities.toast('Buy — coming soon');
+    else if (action === 'swap') capabilities.toast('Swap: coming soon');
+    else if (action === 'buy') capabilities.toast('Buy: coming soon');
   }, [router]);
 
   return (

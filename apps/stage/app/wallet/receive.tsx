@@ -30,7 +30,7 @@ function AddressCard({ label, address, hint, onCopy }: {
       <Caption value={label.toUpperCase()} color="secondary" size="sm" />
       <ListViewItem align="center" gap={12} dark={dark} onPress={onCopy}>
         <Col flex={1}>
-          <Text value={address || '—'} size="md" truncate />
+          <Text value={address || '-'} size="md" truncate />
         </Col>
         <AppIcon name="copy" color="secondary" size={16} />
       </ListViewItem>
@@ -89,7 +89,7 @@ export default function WalletReceive(): React.ReactElement {
         <Col width="100%">
           <Col align="center" gap={16}>
             <QrPanel address={address} border={border} />
-            <AddressCard label={ADDRESS_LABEL} address={address || '—'} hint={ADDRESS_HINT} onCopy={onCopy} />
+            <AddressCard label={ADDRESS_LABEL} address={address || '-'} hint={ADDRESS_HINT} onCopy={onCopy} />
           </Col>
         </Col>
       </ScreenScroll>

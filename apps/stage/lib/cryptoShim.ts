@@ -16,7 +16,7 @@ function assertSecureRandom(): void {
   const c = (globalThis as { crypto?: Crypto }).crypto;
   if (!c || typeof c.getRandomValues !== 'function') {
     throw new Error(
-      'cryptoShim: no secure crypto.getRandomValues available — refusing to ' +
+      'cryptoShim: no secure crypto.getRandomValues available, refusing to ' +
         'generate keys with a non-cryptographic PRNG. Ensure ' +
         "'react-native-get-random-values' is linked and its native module is present.",
     );

@@ -59,7 +59,7 @@ function fetchRemote(remote: Attachment['remote']): Promise<{ fileUri: string; m
 function AttachmentRetry({ label, fg, onRetry }: {
   label: string; fg: string; onRetry: () => void;
 }): React.ReactElement {
-  return <AttachmentChip label={`${label} — tap to retry`} fg={fg} onPress={onRetry} />;
+  return <AttachmentChip label={`${label}. Tap to retry`} fg={fg} onPress={onRetry} />;
 }
 
 function AttachmentPending({ label, fg }: { label: string; fg: string }): React.ReactElement {

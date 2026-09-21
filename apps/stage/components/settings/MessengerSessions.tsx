@@ -100,7 +100,7 @@ export function MessengerSessions(): React.ReactElement {
         </Row>
       ) : error ? (
         <Text size="sm" color={c.sub} style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-          Messaging isn{'’'}t ready yet — open a chat first, then come back.
+          Messaging isn{'’'}t ready yet. Open a chat first, then come back.
         </Text>
       ) : list.length === 0 ? (
         <Text size="sm" color={c.sub} style={{ paddingHorizontal: 16, paddingTop: 12 }}>

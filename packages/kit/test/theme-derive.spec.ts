@@ -16,11 +16,11 @@ const CUSTOM: ThemeSeed = {
 };
 
 describe('derivePalette', () => {
-  test('default seed returns the LEGACY palette (dark) — snapshot', () => {
+  test('default seed returns the LEGACY palette (dark): snapshot', () => {
     expect(derivePalette(DEFAULT_SEED.dark, 'dark')).toMatchSnapshot();
   });
 
-  test('default seed returns the LEGACY palette (light) — snapshot', () => {
+  test('default seed returns the LEGACY palette (light): snapshot', () => {
     expect(derivePalette(DEFAULT_SEED.light, 'light')).toMatchSnapshot();
   });
 
@@ -44,7 +44,7 @@ describe('derivePalette', () => {
     expect(derivePalette(noShade, 'dark')).toEqual(derivePalette(DEFAULT_SEED.dark, 'dark'));
   });
 
-  test('custom seed derives a palette — snapshot', () => {
+  test('custom seed derives a palette: snapshot', () => {
     expect(derivePalette(CUSTOM, 'dark')).toMatchSnapshot();
   });
 

@@ -43,7 +43,7 @@ describe('tokenRowModel', () => {
       priceUsd: null, change24h: null, logoUrl: 'l',
     }, fmt);
     expect(p.name).toBe('TEST');
-    expect(p.balance).toBe('—');
+    expect(p.balance).toBe('-');
     expect(p.change24h).toBe('');
     expect(p.tokenId).toBe('11155111:TEST');
   });

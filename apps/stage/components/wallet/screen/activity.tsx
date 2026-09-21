@@ -82,7 +82,7 @@ function valuePrefix(direction: TxDirection): string {
 function TxRowView(params: TxRowParams): React.ReactElement {
   const scheme = useKitScheme();
   const amountLabel = params.amount === '0'
-    ? '—'
+    ? '-'
     : `${valuePrefix(params.direction)}${params.amount} ${params.token}`;
   const amountColor = params.failed === true
     ? DANGER_COLOR[scheme]

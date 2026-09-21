@@ -22,6 +22,8 @@ export interface DialogProps {
   panelBackground?: Color;
   panelRadius?: RadiusValue | number;
   panelMaxHeight?: number | string;
+  panelWidth?: number | string;
+  panelMaxWidth?: number | string;
   panelPadding?: SpacingValue;
   panelBorderColor?: Color;
   handle?: boolean;
@@ -65,6 +67,8 @@ function panelStyle(props: DialogProps, scheme: Scheme, insetBottom: number): Vi
   const style: ViewStyle = {
     backgroundColor: resolveOptionalColor(props.panelBackground, scheme),
     maxHeight: props.panelMaxHeight as ViewStyle['maxHeight'],
+    width: props.panelWidth as ViewStyle['width'],
+    maxWidth: props.panelMaxWidth as ViewStyle['maxWidth'],
     ...panelRadiusStyle(props),
     ...panelBorderStyle(props, scheme),
   };

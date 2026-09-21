@@ -38,13 +38,13 @@ export function resolveSwarmyResponse(
     throw new Error(`"${filename}" is too large to send (server max ~1MB). Try a smaller file.`);
   }
   if (status === 401 || status === 403) {
-    throw new Error(`Couldn't send "${filename}" — the upload service rejected the request.`);
+    throw new Error(`Couldn't send "${filename}": the upload service rejected the request.`);
   }
   if (status < 200 || status >= 300) {
-    throw new Error(`Couldn't send "${filename}" — upload failed (${status}).`);
+    throw new Error(`Couldn't send "${filename}": upload failed (${status}).`);
   }
   const ref = body?.swarmReference;
-  if (!ref) throw new Error(`Couldn't send "${filename}" — the upload service returned no reference.`);
+  if (!ref) throw new Error(`Couldn't send "${filename}": the upload service returned no reference.`);
   return `${SWARM_GATEWAY}${ref}/`;
 }
 
@@ -66,7 +66,7 @@ export async function uploadFormToSwarmy(form: FormData, filename: string): Prom
   } catch (e) {
     const timedOut = e instanceof Error && e.name === 'AbortError';
     const reason = timedOut ? 'the upload timed out' : 'the upload service could not be reached';
-    throw new Error(`Couldn't send "${filename}" — ${reason}. Check your connection and try again.`);
+    throw new Error(`Couldn't send "${filename}": ${reason}. Check your connection and try again.`);
   } finally {
     clearTimeout(timer);
   }

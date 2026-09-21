@@ -12,7 +12,7 @@ describe('tokenValueUsd / tokenDetailViewModel', () => {
       { name: 'Ethereum', symbol: 'ETH', chainId: 1, balance: '2', priceUsd: null },
       { networkLabels: { 1: 'Ethereum' } },
     );
-    expect(vm.usdLabel).toBe('—');
+    expect(vm.usdLabel).toBe('-');
     expect(vm.valueUsd).toBeNull();
   });
 

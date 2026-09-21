@@ -29,6 +29,6 @@ export const Controls: Story<Omit<DialogProps, 'open' | 'onClose' | 'children'>>
 Controls.args = { side: 'bottom', backdrop: true, dismissable: true, animationType: 'slide', handle: true, scroll: false, safeAreaBottom: true, panelRadius: 'xl', fullBleedPanel: false };
 Controls.argTypes = {
   side: select(['center', 'bottom']), backdrop: bool, backdropColor: color, dismissable: bool, animationType: select(['slide', 'fade', 'none']),
-  gestureRoot: bool, safeAreaBottom: bool, panelBackground: color, panelRadius: select(RADII), panelMaxHeight: number, panelPadding: number,
+  gestureRoot: bool, safeAreaBottom: bool, panelBackground: color, panelRadius: select(RADII), panelMaxHeight: number, panelWidth: number, panelMaxWidth: number, panelPadding: number,
   panelBorderColor: color, handle: bool, handleColor: color, scroll: bool, keyboardPersistTaps: bool, scrollPadding: number, fullBleedPanel: bool,
 };

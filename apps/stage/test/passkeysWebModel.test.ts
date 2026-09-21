@@ -13,7 +13,7 @@ import {
   signableMessageToHex,
 } from '../lib/zerodev/passkeys.model';
 
-describe('hostSupportsRpId — passkeys only on the rpId family or local dev hosts', () => {
+describe('hostSupportsRpId: passkeys only on the rpId family or local dev hosts', () => {
   test('production host and subdomains are supported', () => {
     expect(hostSupportsRpId('stage.box', 'stage.box')).toBe(true);
     expect(hostSupportsRpId('stage.box', 'dev.stage.box')).toBe(true);
@@ -30,7 +30,7 @@ describe('hostSupportsRpId — passkeys only on the rpId family or local dev hos
   });
 });
 
-describe('effectiveRpId — configured rpId inside its family, hostname on local dev', () => {
+describe('effectiveRpId: configured rpId inside its family, hostname on local dev', () => {
   test('exact production host keeps the configured rpId', () => {
     expect(effectiveRpId('stage.box', 'stage.box')).toBe('stage.box');
   });
@@ -42,7 +42,7 @@ describe('effectiveRpId — configured rpId inside its family, hostname on local
   });
 });
 
-describe('base64url helpers — round-trips and url-unsafe characters', () => {
+describe('base64url helpers: round-trips and url-unsafe characters', () => {
   test('bytesToBase64Url emits -/_ and no padding', () => {
     const bytes = Uint8Array.from([251, 239, 190, 62, 63, 255]);
     const b64url = bytesToBase64Url(bytes);
@@ -65,7 +65,7 @@ describe('base64url helpers — round-trips and url-unsafe characters', () => {
   });
 });
 
-describe('signableMessageToHex — mirrors the native callback message contract', () => {
+describe('signableMessageToHex: mirrors the native callback message contract', () => {
   test('plain string passes through', () => {
     expect(signableMessageToHex('0xabcdef')).toBe('0xabcdef');
   });
@@ -80,7 +80,7 @@ describe('signableMessageToHex — mirrors the native callback message contract'
   });
 });
 
-describe('normalizeRegistrationPublicKey — web getPublicKey() to base64 publicKey', () => {
+describe('normalizeRegistrationPublicKey: web getPublicKey() to base64 publicKey', () => {
   const der = Uint8Array.from([48, 89, 48, 19]);
   test('adds response.publicKey from getPublicKey() as standard base64', () => {
     const cred = {
@@ -109,7 +109,7 @@ describe('normalizeRegistrationPublicKey — web getPublicKey() to base64 public
   });
 });
 
-describe('webAuthnOrigin — Chromium only serves WebAuthn to https, localhost or extensions', () => {
+describe('webAuthnOrigin: Chromium only serves WebAuthn to https, localhost or extensions', () => {
   test('https anywhere and http on local dev hosts qualify', () => {
     expect(webAuthnOrigin('https:', 'stage.box')).toBe(true);
     expect(webAuthnOrigin('http:', 'localhost')).toBe(true);

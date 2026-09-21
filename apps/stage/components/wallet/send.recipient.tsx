@@ -80,7 +80,7 @@ export function ContactsModal({ visible, onClose, onPick, pal }: {
       </Text>
       {contacts.length === 0 ? (
         <Text size="md" role="secondary" style={{ paddingVertical: 16 }}>
-          No contacts yet — start a DM to build your list.
+          No contacts yet. Start a DM to build your list.
         </Text>
       ) : (
         contacts.map((c) => (

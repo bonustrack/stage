@@ -1,6 +1,6 @@
 // Bun Snapshot v1, https://bun.sh/docs/test/snapshots
 
-exports[`derivePalette default seed returns the LEGACY palette (dark) — snapshot 1`] = `
+exports[`derivePalette default seed returns the LEGACY palette (dark): snapshot 1`] = `
 {
   "bg": "#0e0f10",
   "border": "#282a2d",
@@ -15,7 +15,7 @@ exports[`derivePalette default seed returns the LEGACY palette (dark) — snapsh
 }
 `;
 
-exports[`derivePalette default seed returns the LEGACY palette (light) — snapshot 1`] = `
+exports[`derivePalette default seed returns the LEGACY palette (light): snapshot 1`] = `
 {
   "bg": "#ffffff",
   "border": "#e4e4e5",
@@ -30,7 +30,7 @@ exports[`derivePalette default seed returns the LEGACY palette (light) — snaps
 }
 `;
 
-exports[`derivePalette custom seed derives a palette — snapshot 1`] = `
+exports[`derivePalette custom seed derives a palette: snapshot 1`] = `
 {
   "bg": "#101820",
   "border": "#222324",

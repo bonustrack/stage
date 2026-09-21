@@ -26,7 +26,7 @@ export function tokenDetailViewModel(
     name: row.name,
     networkLabel: opts.networkLabels[row.chainId] ?? `Chain ${row.chainId}`,
     balanceLabel: `${fmtBalance(row.balance)} ${row.symbol}`,
-    usdLabel: valueUsd === null ? '—' : fmtUsd(valueUsd),
+    usdLabel: valueUsd === null ? '-' : fmtUsd(valueUsd),
     valueUsd,
   };
 }

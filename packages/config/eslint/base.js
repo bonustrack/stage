@@ -13,7 +13,7 @@ export const COMMENT_PLUGIN = {
         fixable: 'code',
         docs: { description: 'Disallow all comments; only functional tooling directives (eslint/`@ts-*`/triple-slash) may remain.' },
         schema: [],
-        messages: { banned: 'Comments are not allowed — delete this comment. Express intent in code (names, types). Only eslint/`@ts-*`/triple-slash directive comments are permitted.' },
+        messages: { banned: 'Comments are not allowed: delete this comment. Express intent in code (names, types). Only eslint/`@ts-*`/triple-slash directive comments are permitted.' },
       },
       create(context) {
         const sourceCode = context.sourceCode ?? context.getSourceCode();
@@ -49,10 +49,36 @@ export const COMMENT_PLUGIN = {
   },
 };
 
-export const commentPlugins = { comments: COMMENT_PLUGIN };
+const EM_DASH = String.fromCharCode(0x2014);
+
+export const TEXT_PLUGIN = {
+  rules: {
+    'no-em-dash': {
+      meta: {
+        type: 'suggestion',
+        docs: { description: 'Disallow the em dash in source text: copy uses a period, comma or colon instead.' },
+        schema: [],
+        messages: { banned: 'Do not use the em dash. Split the sentence or use a comma or colon.' },
+      },
+      create(context) {
+        const check = (node, value) => {
+          if (typeof value === 'string' && value.includes(EM_DASH)) context.report({ node, messageId: 'banned' });
+        };
+        return {
+          Literal(node) { check(node, node.value); },
+          TemplateElement(node) { check(node, node.value.cooked ?? node.value.raw); },
+          JSXText(node) { check(node, node.value); },
+        };
+      },
+    },
+  },
+};
+
+export const commentPlugins = { comments: COMMENT_PLUGIN, text: TEXT_PLUGIN };
 
 export const COMMENT_RULES = {
   'comments/no-comments': 'error',
+  'text/no-em-dash': 'error',
 };
 
 export const MAX_LINES_PER_FUNCTION = ['error', { max: 100, skipBlankLines: true, skipComments: true, IIFEs: true }];

@@ -70,6 +70,7 @@ Per-app:
 
 - **Commits:** Conventional Commits `type(scope): subject (#NNN)`, lowercase imperative. Trailer required: `Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>`. Commit/push only when asked; branch first if on `main`.
 - **NO COMMENTS IN CODE** — `comments/no-comments` bans non-directive comments across `.ts/.tsx/.js` including config files AND test files (the built config spreads COMMENT_RULES into the test block). Express intent in names/types. Markdown is exempt.
+- **NO EM DASH (`—`) anywhere in source or copy** — `text/no-em-dash` (same COMMENT_RULES block) fails lint on any string literal, template or JSX text containing it. Write two sentences, or use a comma or colon; empty-value placeholders use a plain `-`.
 - **No TS escape hatches:** no-explicit-any, no-non-null-assertion, ban-ts-comment are errors; `noUncheckedIndexedAccess` is on — null-guard, never assert.
 - **Single quotes**; max 400 lines/file, 100 lines/function, cyclomatic complexity <= 10.
 - **Forms:** every text input except the message composer goes through `components/FormField` (filled with the border colour, no border, radius 4, label inside above the value). Never style a kit `Input` inline in a screen.

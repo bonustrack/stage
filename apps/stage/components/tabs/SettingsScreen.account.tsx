@@ -24,7 +24,7 @@ interface RevealedKey { id: string; pk: string }
 function confirmExport(rec: AccountRecord, setRevealed: (key: RevealedKey) => void): void {
   Alert.alert(
     'Export private key',
-    'Anyone with this key controls your account — never share it. Make sure no one can see your screen.',
+    'Anyone with this key controls your account. Never share it, and make sure no one can see your screen.',
     [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Reveal key', style: 'destructive', onPress: () => {
@@ -42,7 +42,7 @@ function confirmRemove(rec: AccountRecord): void {
   const name = rec.label ?? shortAddress(rec.address ?? '');
   Alert.alert(
     'Remove account',
-    `Remove ${name}? Without the private key backed up this account is unrecoverable — its local XMTP database is deleted from this device.`,
+    `Remove ${name}? Without a backup of the private key this account is unrecoverable. Its local XMTP database is deleted from this device.`,
     [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Remove', style: 'destructive', onPress: () => {

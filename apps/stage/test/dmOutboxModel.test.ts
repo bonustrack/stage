@@ -16,7 +16,7 @@ const item = (over: Partial<OutboxItem> & { id: string }): OutboxItem => ({
   ...over,
 });
 
-describe('deserializeOutbox — storage boundary is guarded', () => {
+describe('deserializeOutbox: storage boundary is guarded', () => {
   test('round-trips a valid queue', () => {
     const items = [item({ id: 'a' }), item({ id: 'b', createdAt: 2 })];
     expect(deserializeOutbox(JSON.stringify(items))).toEqual(items);
@@ -46,7 +46,7 @@ describe('queue operations', () => {
   });
 });
 
-describe('pendingBanner — truthful copy per reason', () => {
+describe('pendingBanner: truthful copy per reason', () => {
   test('unregistered peers are told delivery happens when they join', () => {
     expect(pendingBanner('unregistered', '0xef83…43e7')).toContain("isn't on XMTP yet");
     expect(pendingBanner('unregistered', '0xef83…43e7')).toContain('delivered when they join');

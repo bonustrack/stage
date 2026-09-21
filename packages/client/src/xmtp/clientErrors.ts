@@ -1,7 +1,7 @@
 import { errorMessage } from '../errors';
 export const INSTALLATION_LIMIT_MESSAGE =
   'This wallet already has XMTP set up on too many devices (installation limit reached). ' +
-  'Messaging is unavailable for this account — wallet features still work.';
+  'Messaging is unavailable for this account. Wallet features still work.';
 
 export const STORE_LOCKED_MESSAGE =
   'Stage is already open in another tab or window on this device. Close it and reload.';

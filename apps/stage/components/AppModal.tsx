@@ -1,7 +1,10 @@
-
 import type { ReactNode } from 'react';
 import { Dialog } from '@stage-labs/kit/react-native/dialog';
 import { usePalette, useBlockRadius } from '../lib/theme';
+import { useWebTabRail } from '../lib/webLayout';
+import { CENTERED_MODAL_PAD, sheetPlacement } from './AppModal.model';
+
+const SHEET_BOTTOM_PAD = 16;
 
 export function AppModal({
   visible, onClose, children,
@@ -11,25 +14,27 @@ export function AppModal({
   children: ReactNode;
 }): React.ReactElement {
   const pal = usePalette();
-  const sheetBg = pal.bg;
   const sheetRadius = Math.round(useBlockRadius() * 1.4);
+  const place = sheetPlacement(useWebTabRail(), SHEET_BOTTOM_PAD);
 
   return (
     <Dialog
       open={visible}
       onClose={onClose}
-      side="bottom"
+      side={place.side}
       animationType="none"
       gestureRoot
       backdropColor="rgba(0,0,0,0.45)"
-      panelBackground={sheetBg}
+      panelBackground={pal.bg}
       panelRadius={sheetRadius}
-      panelPadding={{ top: 18, bottom: 16 }}
+      panelWidth={place.panelWidth}
+      panelMaxWidth={place.panelMaxWidth}
+      panelPadding={{ top: 18, bottom: place.bottomPad }}
       panelMaxHeight="88%"
-      safeAreaBottom
+      safeAreaBottom={place.safeAreaBottom}
       scroll
       keyboardPersistTaps
-      scrollPadding={{ x: 16, top: 0 }}
+      scrollPadding={{ x: CENTERED_MODAL_PAD, top: 0 }}
     >
       {children}
     </Dialog>
