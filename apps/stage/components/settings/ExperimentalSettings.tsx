@@ -7,9 +7,8 @@ import { capabilities } from '../../lib/capabilities';
 import { StackHeader } from '../chrome/StackHeader';
 import { SettingsList, SettingsNavRow } from './rows';
 
-type Href = '/settings/kit' | '/settings/components';
+type Href = '/settings/components';
 const ROWS: { href: Href; label: string; icon: HeroIconName }[] = [
-  { href: '/settings/kit', label: 'Kit', icon: 'colorSwatch' },
   { href: '/settings/components', label: 'Components', icon: 'viewGrid' },
 ];
 
