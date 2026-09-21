@@ -27,11 +27,11 @@ export const BANNER_HEIGHT = BANNER.lineHeight + 2 * BANNER.padY;
 export const HERO_LAYOUT = {
   containerMaxWidth: 1400,
   containerPadX: 32,
-  contentPadY: 58,
+  contentPadY: 12,
   contentGap: 40,
   blockMaxWidth: 760,
   blockPadY: 16,
-  bandHeight: 580,
+  bandHeight: 540,
   headerPadY: 40,
   logoHeight: 66,
   logoPadX: 32,
