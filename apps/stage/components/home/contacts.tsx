@@ -10,11 +10,11 @@ import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { Box, Row, Col } from '../layout';
 import { EmptyState } from '../chrome/EmptyState';
 import { shortAddress } from '../../modules/messaging';
-import { resolveEnsName } from '@stage-labs/client/api/ens';
+import { resolveHandleToAddress } from '../../lib/resolveHandle';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { getCachedRows } from '../../modules/messaging';
 import { peerAvatarUrl } from '../../lib/peerProfiles';
-import { looksLikeEns } from '@stage-labs/client/wallet/send';
+import { peopleLookup } from './contacts.model';
 
 function getExistingPeers(): { address: string; convId: string }[] {
   const rows = getCachedRows() ?? [];
@@ -34,6 +34,9 @@ function getExistingPeers(): { address: string; convId: string }[] {
 
 interface Colors { fg: string; head: string; sub: string; border: string }
 
+const LOOKUP_DEBOUNCE_MS = 300;
+const NO_MATCH_HINT = 'No matches. Try a username, a full address or a name.eth to start a chat.';
+
 function ContactResultRow({ title, subtitle, address, dark, onPress }: {
   title: string; subtitle?: string; address: string; dark: boolean; onPress: () => void;
 }): React.ReactElement {
@@ -52,33 +55,32 @@ function ContactResultRow({ title, subtitle, address, dark, onPress }: {
   );
 }
 
+interface ResolvedPeer { address: string; title: string }
+
+function useResolvedPeer(q: string, enabled: boolean): ResolvedPeer | null {
+  const [resolved, setResolved] = useState<ResolvedPeer | null>(null);
+  const lookup = useMemo(() => (enabled ? peopleLookup(q) : null), [q, enabled]);
+  useEffect(() => {
+    if (!lookup) { setResolved(null); return; }
+    if (isAddress(lookup.handle)) { setResolved({ address: lookup.handle, title: lookup.title }); return; }
+    let cancelled = false;
+    setResolved(null);
+    const t = setTimeout(() => {
+      void resolveHandleToAddress(lookup.handle).then((addr) => {
+        if (!cancelled && addr) setResolved({ address: addr.toLowerCase(), title: lookup.title });
+      });
+    }, LOOKUP_DEBOUNCE_MS);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [lookup?.handle, enabled]);
+  return resolved;
+}
+
 export function HomeContactResults(
   { query, noChannels }: { query: string; c: Colors; noChannels: boolean },
 ): React.ReactElement | null {
   const q = query.trim();
   const dark = useKitScheme() === 'dark';
-  const [resolved, setResolved] = useState<{ address: string; source: 'address' | 'ens' } | null>(null);
-
   const existing = useMemo(() => getExistingPeers(), []);
-  usePeerProfiles([resolved?.address, ...existing.map(p => p.address)]);
-
-  useEffect(() => {
-    const needle = q.toLowerCase();
-    if (!needle) { setResolved(null); return; }
-    if (isAddress(needle)) { setResolved({ address: needle, source: 'address' }); return; }
-    if (!looksLikeEns(needle)) { setResolved(null); return; }
-    let cancelled = false;
-    setResolved(null);
-    const t = setTimeout(() => {
-      void (async (): Promise<void> => {
-        try {
-          const addr = await resolveEnsName(needle);
-          if (!cancelled && addr) setResolved({ address: addr.toLowerCase(), source: 'ens' });
-        } catch { }
-      })();
-    }, 300);
-    return () => { cancelled = true; clearTimeout(t); };
-  }, [q]);
 
   const filtered = useMemo(() => {
     const needle = q.toLowerCase();
@@ -89,6 +91,9 @@ export function HomeContactResults(
       return !!n && n.toLowerCase().includes(needle);
     });
   }, [existing, q]);
+
+  const resolved = useResolvedPeer(q, filtered.length === 0);
+  usePeerProfiles([resolved?.address, ...existing.map(p => p.address)]);
 
   const open = (address: string, convId?: string): void => {
     const target = isAddress(address) ? address : (convId ?? address);
@@ -101,7 +106,7 @@ export function HomeContactResults(
   if (!q) return null;
   if (!showResolved && filtered.length === 0) {
     if (!noChannels) return null;
-    return <EmptyState title="No matches. Paste a full address or a name.eth to start a chat." />;
+    return <EmptyState title={NO_MATCH_HINT} />;
   }
 
   const rows = [
@@ -109,7 +114,7 @@ export function HomeContactResults(
       ? [{
           address: resolved.address,
           convId: undefined,
-          title: getPeerName(resolved.address) ?? (resolved.source === 'ens' ? q : shortAddress(resolved.address)),
+          title: getPeerName(resolved.address) ?? (resolved.title === '' ? shortAddress(resolved.address) : resolved.title),
           subtitle: 'Start chat',
         }]
       : []),

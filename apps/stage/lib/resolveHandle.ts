@@ -20,15 +20,18 @@ async function resolveBasenameAddress(name: string): Promise<string | null> {
   return (await nodeOwner(client, node))?.toLowerCase() ?? null;
 }
 
-async function resolveStageName(name: string): Promise<string | null> {
-  const onchain = await resolveBasenameAddress(name).catch(() => null);
-  if (onchain) return onchain;
-  const label = stageLabelOf(name);
-  if (!label) return null;
+async function issuedAddressFor(label: string): Promise<string | null> {
   const res = await fetch(`${linkProxyBase()}/names/resolve?label=${encodeURIComponent(label)}`, { headers: { 'x-stage-client': '1' } });
   if (!res.ok) return null;
   const body = (await res.json()) as { address?: string | null };
   return body.address ?? null;
+}
+
+async function resolveStageName(name: string): Promise<string | null> {
+  const label = stageLabelOf(name);
+  const issued = label ? await issuedAddressFor(label).catch(() => null) : null;
+  if (issued) return issued;
+  return resolveBasenameAddress(name).catch(() => null);
 }
 
 function resolveParsed(parsed: ParsedHandle): Promise<string | null> {
