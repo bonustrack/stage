@@ -3,6 +3,7 @@ import { useEffect, useReducer } from 'react';
 import { AppState } from 'react-native';
 import { File } from 'expo-file-system';
 import { appDocumentsDir } from './appDocuments';
+import { makeListeners } from './storeCore';
 
 const PERSIST_DEBOUNCE_MS = 800;
 
@@ -23,8 +24,8 @@ function parseDrafts(raw: string): Record<string, string> {
 let drafts: Record<string, string> = {};
 let loaded = false;
 let loading: Promise<void> | null = null;
-const listeners = new Set<() => void>();
-const notify = (): void => { listeners.forEach(l => { l(); }); };
+const listeners = makeListeners();
+const notify = listeners.notify;
 
 export async function loadDrafts(): Promise<void> {
   if (loaded) return;
@@ -82,8 +83,7 @@ export function useDraftsVersion(): number {
   useEffect(() => {
     void loadDrafts();
     const fn = (): void => { bump(); };
-    listeners.add(fn);
-    return () => { listeners.delete(fn); };
+    return listeners.subscribe(fn);
   }, []);
   return version;
 }

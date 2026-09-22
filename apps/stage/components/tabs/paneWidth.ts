@@ -1,6 +1,6 @@
 
-import { useSyncExternalStore } from 'react';
 import { Platform } from 'react-native';
+import { makeListeners, useStoreValue } from '../../lib/storeCore';
 import { WEB_TAB_RAIL_WIDTH } from '../../lib/webLayout';
 import { namespacedKey, readNamespaced } from '../../platform/storageNamespace';
 
@@ -10,7 +10,7 @@ const MAX_PANE_WIDTH = 600;
 const STORAGE_KEY = 'web.channelsPaneWidth';
 const STYLE_ID = 'stage-pane-width';
 
-const listeners = new Set<() => void>();
+const listeners = makeListeners();
 
 function clampPaneWidth(w: number): number {
   return Math.min(MAX_PANE_WIDTH, Math.max(MIN_PANE_WIDTH, w));
@@ -48,18 +48,13 @@ export function setPaneWidth(next: number): void {
   if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
     localStorage.setItem(namespacedKey(STORAGE_KEY), String(w));
   }
-  for (const l of listeners) l();
+  listeners.notify();
 }
 
 export function resetPaneWidth(): void {
   setPaneWidth(DEFAULT_PANE_WIDTH);
 }
 
-function subscribe(cb: () => void): () => void {
-  listeners.add(cb);
-  return () => { listeners.delete(cb); };
-}
-
 export function usePaneWidth(): number {
-  return useSyncExternalStore(subscribe, getPaneWidth, getPaneWidth);
+  return useStoreValue(listeners.subscribe, getPaneWidth);
 }

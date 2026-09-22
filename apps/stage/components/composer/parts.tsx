@@ -49,7 +49,7 @@ export function MentionPopup({
   dark, head, matches, onPick,
 }: {
   dark: boolean; head: string;
-  matches: { address: string; name: string; cacheBuster?: number }[];
+  matches: { address: string; name: string }[];
   onPick: (c: { address: string; name: string }) => void;
 }): React.ReactElement {
   const border = usePalette().border;
@@ -69,7 +69,7 @@ export function MentionPopup({
             borderTopWidth: i === 0 ? 0 : 1, borderTopColor: border,
           })}
 >
-          <Avatar address={c.address} size="sm" cacheBuster={c.cacheBuster}/>
+          <Avatar address={c.address} size="sm"/>
           <Text weight="semibold" size="md" color={head} style={{ flex: 1 }} numberOfLines={1}>
             {c.name}
           </Text>

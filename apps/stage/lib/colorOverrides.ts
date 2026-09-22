@@ -1,5 +1,6 @@
 
 import { appStorage } from '../platform/storage';
+import { makeListeners } from './storeCore';
 import {
   grayscaleFromHex,
   type ThemeSeed, type Scheme, type AccentLevel,
@@ -20,9 +21,8 @@ const CUSTOM_KEY = 'theme:custom';
 let cache: ThemeSeeds = defaultSeeds();
 let customEnabled = false;
 let loaded = false;
-const listeners = new Set<() => void>();
-
-function emit(): void { for (const l of listeners) l(); }
+const listeners = makeListeners();
+const emit = listeners.notify;
 
 function persist(): void {
   void appStorage.set(SEED_KEY, JSON.stringify(cache)).catch(() => undefined);
@@ -117,7 +117,4 @@ export function resetOverrides(): void {
   persist();
 }
 
-export function subscribe(fn: () => void): () => void {
-  listeners.add(fn);
-  return () => { listeners.delete(fn); };
-}
+export const subscribe = listeners.subscribe;

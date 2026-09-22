@@ -1,3 +1,5 @@
+import { makeListeners } from './storeCore';
+
 const hiddenConvs = new Set<string>();
 
 export function registerHiddenConv(convId: string): void {
@@ -14,18 +16,10 @@ export interface ReadStateChange {
   markedUnread: boolean;
 }
 
-const listeners = new Set<(change: ReadStateChange) => void>();
+const readListeners = makeListeners<ReadStateChange>();
 
-export function onReadStateChanged(cb: (change: ReadStateChange) => void): () => void {
-  listeners.add(cb);
-  return () => { listeners.delete(cb); };
-}
-
-export function notifyReadStateChanged(change: ReadStateChange): void {
-  for (const cb of listeners) {
-    try { cb(change); } catch { }
-  }
-}
+export const onReadStateChanged = readListeners.subscribe;
+export const notifyReadStateChanged = readListeners.notify;
 
 export interface PinChange {
   convId: string;
@@ -33,15 +27,7 @@ export interface PinChange {
   order: readonly string[];
 }
 
-const pinListeners = new Set<(change: PinChange) => void>();
+const pinListeners = makeListeners<PinChange>();
 
-export function onPinChanged(cb: (change: PinChange) => void): () => void {
-  pinListeners.add(cb);
-  return () => { pinListeners.delete(cb); };
-}
-
-export function notifyPinChanged(change: PinChange): void {
-  for (const cb of pinListeners) {
-    try { cb(change); } catch { }
-  }
-}
+export const onPinChanged = pinListeners.subscribe;
+export const notifyPinChanged = pinListeners.notify;

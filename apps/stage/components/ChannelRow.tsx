@@ -23,7 +23,6 @@ interface ChannelRowProps {
   title: string;
   avatarAddress?: string | null;
   avatarUri?: string | null;
-  cacheBuster?: number | string;
   square?: boolean;
   lastPreview?: string | null;
   timestamp?: string | null;
@@ -196,7 +195,7 @@ function ChannelRowBody({ params, trailing }: {
 }
 
 function ChannelRowBase({
-  title, avatarAddress, avatarUri, cacheBuster, square,
+  title, avatarAddress, avatarUri, square,
   lastPreview, timestamp, subtitle, unreadCount = 0, markedUnread,
   pinned, hasDraft, draftText, showChevron, active, avatarSize = 44,
   onPress, onPressIn, onLongPress, containerStyle, labels, highlightQuery,
@@ -234,7 +233,6 @@ function ChannelRowBase({
           address={avatarUri ? null : avatarAddress ?? null}
           size={avatarSize}
           square={square}
-          cacheBuster={cacheBuster}
           style={{ backgroundColor: border }}
 />
         <Col minWidth={0} flex={1}>

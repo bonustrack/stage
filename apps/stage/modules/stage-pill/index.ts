@@ -4,10 +4,6 @@ import nativeModule from './src/StagePillModule';
 
 const native = Platform.OS === 'android' ? nativeModule : null;
 
-export function isAvailable(): boolean {
-  return native != null;
-}
-
 export function setActiveConversation(convId: string | null): boolean {
   return native?.setActiveConversation?.(convId) ?? false;
 }

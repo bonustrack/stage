@@ -17,17 +17,12 @@ export const MENU_WIDTH = 260;
 
 export { MENU_SHADOW };
 
-export function MenuSurface({ width, maxHeight, children }: {
-  width?: number; maxHeight?: number; children: ReactNode;
+export function MenuSurface({ maxHeight, children }: {
+  maxHeight?: number; children: ReactNode;
 }): React.ReactElement {
   const { border } = usePalette();
   return (
-    <Box
-      width={width}
-      background={border}
-      radius={MENU_RADIUS}
-      style={{ overflow: 'hidden', ...MENU_SHADOW }}
-    >
+    <Box background={border} radius={MENU_RADIUS} style={{ overflow: 'hidden', ...MENU_SHADOW }}>
       {maxHeight === undefined ? children : (
         <Scroll style={{ maxHeight }} showsVerticalScrollIndicator={false}>{children}</Scroll>
       )}

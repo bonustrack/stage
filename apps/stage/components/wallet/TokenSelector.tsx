@@ -89,10 +89,9 @@ function TokenChoiceList({ rows, onPick }: {
   );
 }
 
-export function TokenSelector({ value, onChange, label = 'TOKEN' }: {
+export function TokenSelector({ value, onChange }: {
   value: TokenChoice;
   onChange: (v: TokenChoice) => void;
-  label?: string;
 }): React.ReactElement {
   const { text: fg, link: head, border, bg } = usePalette();
   const [open, setOpen] = useState(false);
@@ -106,7 +105,7 @@ export function TokenSelector({ value, onChange, label = 'TOKEN' }: {
 
   return (
     <Box gap={6}>
-      <Text size="xs" role="secondary">{label}</Text>
+      <Text size="xs" role="secondary">TOKEN</Text>
       <Pressable
         onPress={() => { setOpen(true); }}
         style={({ pressed }) => ({

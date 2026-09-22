@@ -2,11 +2,12 @@
 
 import { useSyncExternalStore } from 'react';
 import { File, Paths } from 'expo-file-system';
+import { makeListeners } from './storeCore';
 
 const byMessageId = new Map<string, string[]>();
 
-const listeners = new Set<() => void>();
-function emit(): void { for (const l of listeners) l(); }
+const listeners = makeListeners();
+const emit = listeners.notify;
 
 export function rememberLocalAttachments(messageId: string, uris: readonly (string | undefined)[]): void {
   const locals = uris.map(u => u ?? '');
@@ -47,8 +48,7 @@ export function useLocalAttachment(messageId?: string, index?: number): string |
   return useSyncExternalStore(
     (cb) => {
       if (messageId === undefined || index === undefined) return () => { return; };
-      listeners.add(cb);
-      return () => { listeners.delete(cb); };
+      return listeners.subscribe(cb);
     },
     () => (messageId !== undefined && index !== undefined ? getLocalAttachment(messageId, index) : undefined),
   );

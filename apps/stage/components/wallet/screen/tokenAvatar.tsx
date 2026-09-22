@@ -3,12 +3,11 @@ import { Image } from '@stage-labs/kit/react-native/image';
 import { Box } from '../../layout';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO } from '@stage-labs/client/wallet/assets';
 
-export function TokenAvatar({ logoUrl, chainId, bg, border, badge }: {
+export function TokenAvatar({ logoUrl, chainId, bg, border }: {
   logoUrl: string;
   chainId: number;
   bg: string;
   border: string;
-  badge?: React.ReactNode;
 }): React.ReactElement {
   return (
     <Box width={32} height={32}>
@@ -26,11 +25,6 @@ export function TokenAvatar({ logoUrl, chainId, bg, border, badge }: {
           height="100%"
 />
       </Box>
-      {badge ? (
-        <Box width={18} height={18} radius="full" surface="surface" align="center" justify="center" style={{ position: 'absolute', right: -5, top: -5, borderWidth: 2, borderColor: bg }}>
-          {badge}
-        </Box>
-      ) : null}
     </Box>
   );
 }

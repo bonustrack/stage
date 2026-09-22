@@ -11,10 +11,9 @@ import { useContacts } from '../../lib/useContacts';
 
 interface RowPalette { head: string; sub: string; border: string }
 
-export function RecipientRow({ address, pal, right, onPress }: {
+export function RecipientRow({ address, pal, onPress }: {
   address: string;
   pal: RowPalette;
-  right?: React.ReactNode;
   onPress?: () => void;
 }): React.ReactElement {
   const { head, border } = pal;
@@ -39,7 +38,6 @@ export function RecipientRow({ address, pal, right, onPress }: {
           </Text>
         ) : null}
       </Col>
-      {right}
     </>
   );
 

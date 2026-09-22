@@ -1,5 +1,6 @@
 
-import { useEffect, useSyncExternalStore } from 'react';
+import { useEffect } from 'react';
+import { makeListeners, useStoreValue } from '../../lib/storeCore';
 
 export interface TopnavSlot {
   right?: React.ReactNode;
@@ -7,19 +8,12 @@ export interface TopnavSlot {
 }
 
 let slot: TopnavSlot | undefined;
-const listeners = new Set<() => void>();
-
-function emit(): void {
-  for (const l of listeners) l();
-}
-
-function subscribe(cb: () => void): () => void {
-  listeners.add(cb);
-  return () => { listeners.delete(cb); };
-}
+const listeners = makeListeners();
+const emit = listeners.notify;
+const getSlot = (): TopnavSlot | undefined => slot;
 
 export function useTopnavSlot(): TopnavSlot | undefined {
-  return useSyncExternalStore(subscribe, () => slot, () => slot);
+  return useStoreValue(listeners.subscribe, getSlot);
 }
 
 export function usePublishTopnavSlot(next: TopnavSlot, enabled: boolean): void {
