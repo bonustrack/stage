@@ -1,7 +1,5 @@
 export const VOICE_BAR_COUNT = 34;
 
-export const VOICE_MIME_M4A = 'audio/m4a';
-
 export function voiceFilename(now: number = Date.now(), ext = 'm4a'): string {
   return `voice-${now}.${ext}`;
 }

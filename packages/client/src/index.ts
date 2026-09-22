@@ -23,7 +23,6 @@ export * from './xmtp/pinOrder';
 export * from './xmtp/summarizeRow';
 export * from './embed/detect';
 export * from './text/markdown';
-export * from './stamp/resolve';
 export * from './x402/challenge';
 
 export * from './api';

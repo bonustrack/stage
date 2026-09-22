@@ -44,7 +44,6 @@ export function computeMentionQuery(
   text: string,
   cursor: number,
   candidates: MentionCandidate[] | undefined,
-  limit = 6,
 ): MentionQuery {
   if (!candidates || candidates.length === 0) return { matches: [], range: null };
   const before = text.slice(0, cursor);
@@ -52,7 +51,7 @@ export function computeMentionQuery(
   if (!m) return { matches: [], range: null };
   const query = (m[2] ?? '').toLowerCase();
   const start = cursor - query.length - 1;
-  const matches = matchMembers(candidates, query, limit);
+  const matches = matchMembers(candidates, query);
   return { matches, range: { start, end: cursor } };
 }
 

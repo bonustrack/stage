@@ -65,9 +65,9 @@ export function baseCoinType(chainId: number): string {
   return ((0x80000000 | chainId) >>> 0).toString(16).toUpperCase();
 }
 
-export function baseReverseNode(address: string, chainId = base.id): Hex {
+export function baseReverseNode(address: string): Hex {
   const addressNode = keccak256(stringToBytes(address.slice(2).toLowerCase()));
-  const chainReverseNode = namehash(`${baseCoinType(chainId)}.reverse`);
+  const chainReverseNode = namehash(`${baseCoinType(base.id)}.reverse`);
   return keccak256(encodePacked(['bytes32', 'bytes32'], [chainReverseNode, addressNode]));
 }
 

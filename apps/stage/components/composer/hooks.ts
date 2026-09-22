@@ -91,7 +91,7 @@ export function useComposerFocus(
   }, []);
 }
 
-interface MentionCandidate { address: string; name: string; cacheBuster?: number }
+interface MentionCandidate { address: string; name: string }
 
 export function computeMentions(
   text: string,
