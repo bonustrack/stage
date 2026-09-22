@@ -39,22 +39,32 @@ async function withPhraseIds(list: AccountRecord[]): Promise<AccountRecord[]> {
   return next;
 }
 
+function parseStoredList(raw: string): AccountRecord[] | null {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as AccountRecord[]) : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function loadAccounts(): Promise<AccountRecord[]> {
   if (cache) return cache;
-  const raw = await secureStorage.get(LIST_KEY).catch(() => null);
-  if (raw) {
-    try { cache = await withPhraseIds(JSON.parse(raw) as AccountRecord[]); return cache; }
-    catch { }
+  const raw = await secureStorage.get(LIST_KEY).catch(() => undefined);
+  if (raw === undefined) return [];
+  if (raw !== null && raw !== '') {
+    const stored = parseStoredList(raw);
+    if (stored === null) return [];
+    cache = await withPhraseIds(stored);
+    return cache;
   }
-  const list: AccountRecord[] = [];
   const adopted = await adoptLegacyKey();
-  if (adopted) {
-    list.push({
-      id: adopted.id, address: adopted.address, type: 'generated',
-      dbDir: LEGACY_DB_DIR, registered: true, createdAt: Date.now(),
-    });
-    await secureStorage.set(ACTIVE_KEY, adopted.id);
-  }
+  if (!adopted) { cache = []; return cache; }
+  const list: AccountRecord[] = [{
+    id: adopted.id, address: adopted.address, type: 'generated',
+    dbDir: LEGACY_DB_DIR, registered: true, createdAt: Date.now(),
+  }];
+  await secureStorage.set(ACTIVE_KEY, adopted.id);
   await persist(list);
   return list;
 }

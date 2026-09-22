@@ -18,7 +18,7 @@ export function installationCreatedAtMs(clientTimestampNs: bigint | null | undef
   return clientTimestampNs != null ? Number(clientTimestampNs / 1_000_000n) : null;
 }
 
-export type PersistedClientEvent = 'open-failed' | 'installation-mismatch' | 'registered';
+export type PersistedClientEvent = 'open-failed' | 'installation-mismatch' | 'installation-adopted' | 'registered';
 
 export interface PersistedClientDeps<C> {
   open: () => Promise<C>;
@@ -46,9 +46,16 @@ function matchesSavedInstallation<C>(deps: PersistedClientDeps<C>, client: C): b
   return deps.savedInstallationId === null || deps.installationIdOf(client) === deps.savedInstallationId;
 }
 
-type Attempt<C> = { kind: 'ready'; client: C } | { kind: 'retry'; error: unknown } | { kind: 'fail'; error: unknown };
+type Attempt<C> =
+  | { kind: 'ready'; client: C }
+  | { kind: 'retry'; error: unknown; mismatched?: string }
+  | { kind: 'fail'; error: unknown };
 
-async function attemptOpen<C>(deps: PersistedClientDeps<C>): Promise<Attempt<C>> {
+function mismatchIsPersistent(previous: string | null, current: string): boolean {
+  return previous !== null && previous === current;
+}
+
+async function attemptOpen<C>(deps: PersistedClientDeps<C>, previousMismatch: string | null): Promise<Attempt<C>> {
   let client: C;
   try {
     client = await deps.open();
@@ -57,9 +64,14 @@ async function attemptOpen<C>(deps: PersistedClientDeps<C>): Promise<Attempt<C>>
     return { kind: deps.retryable?.(e) === true ? 'retry' : 'fail', error: e };
   }
   if (matchesSavedInstallation(deps, client)) return { kind: 'ready', client };
+  const installationId = deps.installationIdOf(client);
+  if (mismatchIsPersistent(previousMismatch, installationId)) {
+    deps.onEvent?.('installation-adopted');
+    return { kind: 'ready', client };
+  }
   deps.onEvent?.('installation-mismatch');
   try { deps.close(client); } catch { }
-  return { kind: 'retry', error: new Error(STORE_LOCKED_MESSAGE) };
+  return { kind: 'retry', error: new Error(STORE_LOCKED_MESSAGE), mismatched: installationId };
 }
 
 async function registerIfNeeded<C>(deps: PersistedClientDeps<C>, client: C): Promise<OpenedClient<C>> {
@@ -72,10 +84,12 @@ async function registerIfNeeded<C>(deps: PersistedClientDeps<C>, client: C): Pro
 export async function openPersistedClient<C>(deps: PersistedClientDeps<C>): Promise<OpenedClient<C>> {
   const attempts = deps.attempts ?? OPEN_ATTEMPTS;
   const sleep = deps.sleep ?? defaultSleep;
+  let previousMismatch: string | null = null;
   for (let attempt = 1; ; attempt += 1) {
-    const result = await attemptOpen(deps);
+    const result: Attempt<C> = await attemptOpen(deps, previousMismatch);
     if (result.kind === 'ready') return registerIfNeeded(deps, result.client);
     if (result.kind === 'fail' || attempt >= attempts) throw result.error;
+    previousMismatch = result.mismatched ?? null;
     await sleep(OPEN_RETRY_MS);
   }
 }
