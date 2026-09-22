@@ -45,9 +45,9 @@ async function collectAddresses(): Promise<string[]> {
   return [...set];
 }
 
-export function useAllContacts(): { contacts: Contact[]; loading: boolean } {
+export function useAllContacts(): { contacts: Contact[] } {
   const focused = useContactsFocused();
-  const { data: addresses = NO_ADDRESSES, isFetched } = useQuery({
+  const { data: addresses = NO_ADDRESSES } = useQuery({
     queryKey: ['allContacts', getActiveAccountIdSync()],
     queryFn: collectAddresses,
     enabled: focused,
@@ -62,5 +62,5 @@ export function useAllContacts(): { contacts: Contact[]; loading: boolean } {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [addresses, version]);
 
-  return { contacts, loading: !isFetched };
+  return { contacts };
 }

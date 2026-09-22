@@ -1,8 +1,7 @@
 
 import { useCallback, useMemo } from 'react';
 import { useRouter } from 'expo-router';
-import { Text } from '@stage-labs/kit/react-native/text';
-import { contactNameModel, contactsEmptyLabel } from './ContactsScreen.model';
+import { contactNameModel } from './ContactsScreen.model';
 import type { SimultaneousRefs } from './SwipeTabs.types';
 import { Col, VirtualList } from './layout';
 import { ChannelRow } from './ChannelRow';
@@ -15,7 +14,7 @@ import { SuggestedContacts } from './SuggestedContacts';
 export function ContactsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const { bg } = usePalette();
   const router = useRouter();
-  const { contacts, loading } = useAllContacts();
+  const { contacts } = useAllContacts();
   const known = useMemo(() => contacts.map((c) => c.address), [contacts]);
 
   const open = useCallback((address: string): void => {
@@ -50,13 +49,6 @@ export function ContactsScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): 
         style={{ backgroundColor: bg }}
         contentContainerStyle={{ flexGrow: 1, paddingTop: 4 }}
         ListHeaderComponent={<SuggestedContacts known={known} />}
-        ListEmptyComponent={
-          <Col flex={1} align="center" justify="center" padding={{ x: 24, y: 48 }}>
-            <Text size="md" role="secondary" style={{ textAlign: 'center' }}>
-              {contactsEmptyLabel(loading)}
-            </Text>
-          </Col>
-        }
       />
     </Col>
   );

@@ -15,7 +15,3 @@ export function contactNameModel(d: ContactNameDomain): ContactNameModel {
   }
   return { name: d.fallbackName, handle: undefined };
 }
-
-export function contactsEmptyLabel(loading: boolean): string {
-  return loading ? 'Loading contacts…' : 'No contacts yet. Start a chat to add one.';
-}
