@@ -25,18 +25,18 @@ describe('stageState', () => {
 
 describe('setup copy', () => {
   test('switches to the retry title and hint on error', () => {
-    expect(setupTitle('messaging', null)).toBe('Setting up secure messaging');
-    expect(setupTitle('wallet', null, { restore: true })).toBe('Restoring your wallet');
+    expect(setupTitle(null)).toBe('Creating your account');
+    expect(setupTitle(null, { restore: true })).toBe('Restoring your account');
     expect(stageLabel('wallet', {})).toBe('Creating your wallet');
     expect(stageLabel('wallet', { restore: true })).toBe('Restoring your wallet');
-    expect(setupTitle('messaging', { message: 'x', retry: 'restart' })).toBe('Setup needs another try');
-    expect(setupTitle('passkey', { message: 'x', accountId: '0xabc', retry: 'passkey' })).toBe('Passkey not added');
-    expect(setupTitle('passkey', { message: 'x', accountId: '0xabc', retry: 'passkey' }, { passkey: 'verify' })).toBe('Passkey not confirmed');
-    expect(setupTitle('passkey', null, { passkey: 'verify' })).toBe('Confirming your passkey');
-    expect(setupHint('passkey', null, { passkey: 'verify' })).toContain('protects this wallet');
-    expect(setupHint('messaging', { message: 'boom', retry: 'restart' })).toContain('boom');
-    expect(setupHint('messaging', { message: 'boom', accountId: '0xabc', retry: 'messaging' })).toContain('wallet is ready');
-    expect(setupHint('passkey', { message: 'Dismissed.', accountId: '0xabc', retry: 'passkey' })).toContain('start over');
+    expect(setupTitle({ message: 'x', retry: 'restart' })).toBe('Setup needs another try');
+    expect(setupTitle({ message: 'x', accountId: '0xabc', retry: 'passkey' })).toBe('Passkey not added');
+    expect(setupTitle({ message: 'x', accountId: '0xabc', retry: 'passkey' }, { passkey: 'verify' })).toBe('Passkey not confirmed');
+    expect(setupTitle(null, { passkey: 'verify' })).toBe('Creating your account');
+    expect(stageLabel('passkey', { passkey: 'verify' })).toBe('Confirming your passkey');
+    expect(setupHint({ message: 'boom', retry: 'restart' })).toContain('boom');
+    expect(setupHint({ message: 'boom', accountId: '0xabc', retry: 'messaging' })).toContain('wallet is ready');
+    expect(setupHint({ message: 'Dismissed.', accountId: '0xabc', retry: 'passkey' })).toContain('start over');
   });
 });
 

@@ -278,7 +278,7 @@ export function reactNative() {
       },
     },
     {
-      files: ['components/landing/**'],
+      files: ['components/landing/**', 'components/chrome/PageIntro.tsx', 'components/chrome/PageIntro.model.ts'],
       rules: {
         'no-restricted-syntax': 'off',
       },

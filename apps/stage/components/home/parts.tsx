@@ -18,20 +18,20 @@ import type { Row as RowT } from './helpers';
 import type { RowMenu } from './state';
 import { channelTimestamp } from '../../lib/format';
 import { DANGER } from '../../lib/theme';
+import { rowPreviewText } from './model';
 
 function rowTitle(item: RowT): string {
   return item.peerAddress ? (getPeerName(item.peerAddress) ?? item.title) : item.title;
 }
 
 function rowPreview(item: RowT): string {
-  if (!item.lastPreview) return '(no messages yet)';
-  let prefix = '';
-  if (item.lastFromSelf) {
-    prefix = `${(item.lastSenderAddress && getPeerName(item.lastSenderAddress)) ?? 'You'}: `;
-  } else if (item.lastSenderAddress) {
-    prefix = `${getPeerName(item.lastSenderAddress) ?? shortAddress(item.lastSenderAddress)}: `;
-  }
-  return `${prefix}${item.lastPreview}`;
+  const sender = item.lastSenderAddress;
+  return rowPreviewText({
+    preview: item.lastPreview,
+    dm: !!item.peerAddress,
+    fromSelf: item.lastFromSelf,
+    senderLabel: sender ? getPeerName(sender) ?? shortAddress(sender) : null,
+  });
 }
 
 function rowAvatarAddress(item: RowT, isGroup: boolean): string | null {
@@ -158,10 +158,3 @@ export function HomeSpinner({ head }: { head: string }): React.ReactElement {
   );
 }
 
-export function HomeEmpty({ message }: { message?: string }): React.ReactElement {
-  return (
-    <Col align="center" justify="center" padding={24}>
-      <Text size="3xl" role="secondary" textAlign="center">{message ?? 'No conversations yet'}</Text>
-    </Col>
-  );
-}

@@ -1,3 +1,20 @@
+export const NO_MESSAGES_PREVIEW = '(no messages yet)';
+export const SELF_PREVIEW_PREFIX = 'You: ';
+
+export interface RowPreviewModel {
+  preview: string | null | undefined;
+  dm: boolean;
+  fromSelf: boolean;
+  senderLabel: string | null;
+}
+
+export function rowPreviewText(m: RowPreviewModel): string {
+  if (!m.preview) return NO_MESSAGES_PREVIEW;
+  if (m.fromSelf) return `${SELF_PREVIEW_PREFIX}${m.preview}`;
+  if (m.dm || m.senderLabel === null) return m.preview;
+  return `${m.senderLabel}: ${m.preview}`;
+}
+
 export interface LabelBarChip {
   value: string;
   label: string;

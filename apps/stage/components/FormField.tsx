@@ -12,6 +12,7 @@ export const FORM_FIELD_RADIUS = 4;
 const FIELD_PADDING_X = 16;
 const FIELD_PADDING_TOP = 8;
 const FIELD_PADDING_BOTTOM = 12;
+const TRAILING_SLOT = 24;
 
 type NativeInputProps = Omit<TextInputProps, 'value' | 'defaultValue' | 'onChangeText' | 'style' | 'placeholder' | 'editable' | 'multiline'>;
 
@@ -27,6 +28,7 @@ export interface FormFieldProps {
   inputProps?: NativeInputProps;
   onSubmit?: (text: string) => void;
   trailing?: ReactNode;
+  labelTrailing?: ReactNode;
   hint?: string;
   hintColor?: string;
   hintTone?: 'secondary' | 'success' | 'danger';
@@ -48,7 +50,7 @@ const BARE_INPUT = {
 } as const;
 
 export function FormField({
-  label, value, onChangeText, placeholder, multiline, rows = 3, disabled, inputType, inputProps, onSubmit, trailing, hint, hintColor, hintTone = 'secondary',
+  label, value, onChangeText, placeholder, multiline, rows = 3, disabled, inputType, inputProps, onSubmit, trailing, labelTrailing, hint, hintColor, hintTone = 'secondary',
 }: FormFieldProps): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const pal = usePalette();
@@ -68,8 +70,14 @@ export function FormField({
     <Col gap={hint === undefined ? 0 : 6}>
       <Col background={border} radius={FORM_FIELD_RADIUS} padding={{ x: FIELD_PADDING_X, top: FIELD_PADDING_TOP, bottom: FIELD_PADDING_BOTTOM }} gap={2}
         style={disabled === true ? { opacity: 0.6 } : undefined}>
-        <Text value={label} size="lg" color="secondary" />
-        {trailing === undefined ? field : <Row align="center" gap={8}>{field}<Row style={{ flexShrink: 0 }}>{trailing}</Row></Row>}
+        <Row align="center" gap={6}>
+          <Text value={label} size="lg" color="secondary" />
+          {labelTrailing}
+        </Row>
+        <Row align="center" gap={8} minHeight={TRAILING_SLOT}>
+          {field}
+          {trailing === undefined ? null : <Row align="center" height={TRAILING_SLOT} style={{ flexShrink: 0 }}>{trailing}</Row>}
+        </Row>
       </Col>
       <FieldHint hint={hint} color={hintColor ?? toneColor} />
     </Col>

@@ -7,7 +7,7 @@ import {
   setThemePreference, setCustomTheme, useCustomTheme,
   useEffectiveColorScheme, usePalette, useThemePreference,
 } from '../../lib/theme';
-import { THEME_OPTIONS } from '../system/ThemeSwitcher';
+import { THEME_OPTIONS } from './themeOptions.model';
 import { ColorTokens } from '../system/ColorTokens';
 import { StackHeader } from '../chrome/StackHeader';
 import { SettingsList, SettingsThemeRow } from './rows';

@@ -17,16 +17,10 @@ const STAGE_LABELS: Record<Stage, string> = {
 
 const RESTORE_WALLET_LABEL = 'Restoring your wallet';
 const VERIFY_PASSKEY_LABEL = 'Confirming your passkey';
-const VERIFY_PASSKEY_HINT = 'Confirm the passkey that protects this wallet with your device.';
 
-const STAGE_HINTS: Record<Stage, string> = {
-  wallet: 'This only takes a moment.',
-  passkey: 'Confirm with your device to secure this wallet with a passkey.',
-  messaging: 'Registering your encrypted inbox. This can take up to a minute on first launch.',
-  profile: 'Claiming your name and writing your profile onchain. Stage pays the fees.',
-  history: 'Asking your other device for your messages. Open Stage there on this account. If it takes longer, we continue in the background and show progress on the home screen.',
-  finishing: 'Almost there.',
-};
+
+const SETUP_TITLE = { create: 'Creating your account', restore: 'Restoring your account' } as const;
+const SETUP_HINT = 'This only takes a moment while your wallet, messaging and profile are set up.';
 
 const MESSAGING_RETRY_HINT =
   'Your wallet is ready, but secure messaging did not finish setting up. Try again. Your wallet and recovery phrase are safe.';
@@ -57,14 +51,14 @@ export function stageState(stage: Stage, current: Stage, stages: Stage[]): Stage
   return position === currentPosition ? 'active' : 'pending';
 }
 
-export function setupTitle(stage: Stage, err: SetupErr | null, plan: SetupPlan = {}): string {
-  if (err === null) return stageLabel(stage, plan);
+export function setupTitle(err: SetupErr | null, plan: SetupPlan = {}): string {
+  if (err === null) return plan.restore === true ? SETUP_TITLE.restore : SETUP_TITLE.create;
   if (err.retry !== 'passkey') return 'Setup needs another try';
   return plan.passkey === 'verify' ? 'Passkey not confirmed' : 'Passkey not added';
 }
 
-export function setupHint(stage: Stage, err: SetupErr | null, plan: SetupPlan = {}): string {
-  if (err === null) return stage === 'passkey' && plan.passkey === 'verify' ? VERIFY_PASSKEY_HINT : STAGE_HINTS[stage];
+export function setupHint(err: SetupErr | null, plan: SetupPlan = {}): string {
+  if (err === null) return SETUP_HINT;
   if (err.retry === 'messaging') return MESSAGING_RETRY_HINT;
   if (err.retry === 'passkey') {
     const next = plan.passkey === 'verify' ? 'confirm the passkey' : 'secure this wallet with a passkey';

@@ -49,6 +49,8 @@ function inputHint(text: string, err: string | null): { text: string; danger: bo
   return count > 0 ? { text: `${count} of 12 to 24 words`, danger: false } : null;
 }
 
+const IMPORT_ABOUT = 'Enter your 12-24 word recovery phrase, or scan the code shown by Link a device on your other device.';
+
 export function ImportStep({ pal, dark, busy, onTransfer }: {
   pal: Pal; dark: boolean; busy: boolean;
   onTransfer: (transfer: AccountTransfer) => void;
@@ -73,9 +75,6 @@ export function ImportStep({ pal, dark, busy, onTransfer }: {
   };
   const phraseField = (
     <>
-      <Text size="md" color={pal.sub}>
-        Enter your 12-24 word recovery phrase, or scan the code shown by Link a device on your other device.
-      </Text>
       <FormField label="Recovery phrase" placeholder="word1 word2 word3 ..." multiline rows={4} value={text}
         onChangeText={(t) => { setText((prev) => acceptTypedChar(prev, t)); setErr(null); }}
         inputProps={{ autoCapitalize: 'none', autoCorrect: false }} />
@@ -102,7 +101,7 @@ export function ImportStep({ pal, dark, busy, onTransfer }: {
     </>
   );
   return (
-    <OnboardingCard title="Import wallet" footer={footer}>
+    <OnboardingCard title="Import wallet" about={IMPORT_ABOUT} footer={footer}>
       {scanning ? <QrScanner dark={dark} onScan={onScan} /> : phraseField}
     </OnboardingCard>
   );

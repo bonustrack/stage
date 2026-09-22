@@ -11,7 +11,7 @@ import {
   setAccentLevel, setGrayscaleTint, setGrayscaleShade,
   type SeedColorKey,
 } from '../../lib/theme';
-import type { GalleryPalette } from './galleryPalette';
+
 import { AppModal } from '../AppModal';
 import { ColorPicker } from '@stage-labs/kit/react-native/color-picker';
 import { isHex } from '../../lib/colorOverrides';
@@ -116,6 +116,14 @@ function SeedChoice<T extends string | number>({ name, options, value, onSelect,
       </Row>
     </Box>
   );
+}
+
+export interface GalleryPalette {
+  dark: boolean;
+  head: string;
+  sub: string;
+  border: string;
+  rowBg: string;
 }
 
 export function ColorTokens({ p }: { p: GalleryPalette }): React.ReactElement {

@@ -51,7 +51,7 @@ function TabButtons({ pathname, unreadBadge, vertical }: {
         const icn = <TabIcon name={name} icon={icon} active={i === activeIndex} unreadBadge={unreadBadge}/>;
         const go = (): void => { router.navigate(TAB_HREF[name]); };
         return vertical ? (
-          <RailTooltip key={name} label={TAB_LABELS[name]} onPress={go}
+          <RailTooltip key={name} label={TAB_LABELS[name]} onPress={go} placement="beside"
             style={{ height: 48, alignItems: 'center', justifyContent: 'center' }}>
             {icn}
           </RailTooltip>

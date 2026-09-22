@@ -6,6 +6,7 @@ export function RailTooltip({ label, onPress, style, children }: {
   onPress: () => void;
   style: React.ComponentProps<typeof Pressable>['style'];
   children: ReactNode;
+  placement?: 'beside' | 'above' | 'below';
 }): React.ReactElement {
   return <Pressable onPress={onPress} style={style} accessibilityLabel={label}>{children}</Pressable>;
 }

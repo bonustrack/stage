@@ -1,6 +1,13 @@
 import { makeListeners, useStoreValue } from './storeCore';
 
-export interface RailTooltipState { label: string; anchorRight: number; centerY: number }
+export type RailTooltipState =
+  | { placement: 'beside'; label: string; anchorRight: number; centerY: number }
+  | { placement: 'above'; label: string; centerX: number; anchorTop: number }
+  | { placement: 'below'; label: string; centerX: number; anchorBottom: number };
+
+export function tooltipLabel(text: string): string {
+  return text.replace(/\.+$/, '');
+}
 
 let current: RailTooltipState | null = null;
 const listeners = makeListeners();

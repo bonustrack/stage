@@ -18,7 +18,7 @@ export function describeLabelProblem(problem: LabelProblem): string {
   switch (problem) {
     case 'too-short': return `At least ${STAGE_NAME_MIN_LENGTH} characters.`;
     case 'too-long': return `At most ${STAGE_NAME_MAX_LENGTH} characters.`;
-    case 'characters': return 'Lowercase letters, digits and single hyphens only, not at the start or end.';
+    case 'characters': return 'Only a-z, 0-9 and single inner hyphens.';
   }
 }
 

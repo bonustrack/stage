@@ -13,6 +13,7 @@
     "build:web": "node scripts/copy-xmtp-wasm.js && expo export --platform web --output-dir dist"
   },
   "dependencies": {
+    "@faker-js/faker": "10.6.0",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-navigation/native": "7.3.6",
     "@react-navigation/stack": "^7.9.3",

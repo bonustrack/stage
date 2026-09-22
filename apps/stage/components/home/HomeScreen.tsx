@@ -2,12 +2,12 @@
 import { useMemo, useState } from 'react';
 import type { SimultaneousRefs } from '../SwipeTabs.types';
 import { usePathname, useRouter } from 'expo-router';
-import { Text } from '@stage-labs/kit/react-native/text';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { useActiveAccount } from '../../modules/messaging';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { useDraftsVersion } from '../../lib/drafts';
 import { Col } from '../layout';
+import { SplitPlaceholder } from './SplitPlaceholder';
 import { useWebTabRail } from '../../lib/webLayout';
 import { ChannelMenu } from '../ChannelMenu';
 import { HomeError, HomeSpinner, useChannelRowRenderer } from './parts';
@@ -41,14 +41,6 @@ function rowMenuProps(rowMenu: HomeState['rowMenu'], pinned: readonly string[]) 
 function HomeRowMenu({ st }: { st: HomeState }): React.ReactElement {
   const { rowMenu, pinned, setRowMenu } = st;
   return <ChannelMenu {...rowMenuProps(rowMenu, pinned)} onClose={() => { setRowMenu(null); }} />;
-}
-
-function SplitPlaceholder(): React.ReactElement {
-  return (
-    <Col flex={1} align="center" justify="center" surface="surface">
-      <Text size="3xl" role="secondary">Select a chat to start messaging</Text>
-    </Col>
-  );
 }
 
 export function HomeScreen({ panRef, pane }: { panRef?: SimultaneousRefs; pane?: boolean } = {}): React.ReactElement {

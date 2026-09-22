@@ -6,9 +6,9 @@ import { abandonAccount, confirmRestoredPasskey, inspectPhrase, PasskeySetupErro
 import type { SetupErr, SetupPlan } from './Onboarding.setup.model';
 import { useSetupRunner, type Choice } from './useSetupRunner';
 import { IMPORT_ROUTE } from './nextRoute.model';
-import type { ProfileSetup } from './Onboarding.profile.model';
+import { EMPTY_DETAILS, profileSetupFrom, type ProfileDetails } from './Onboarding.profile.model';
 
-export type Step = 'profile' | 'import' | 'passkey' | 'setup';
+export type Step = 'username' | 'profile' | 'import' | 'passkey' | 'setup';
 
 export interface OnboardingFlow {
   step: Step;
@@ -18,17 +18,27 @@ export interface OnboardingFlow {
   plan: SetupPlan;
   passkeyMode: PasskeyMode;
   passkeyErr: string | null;
-  onProfileContinue: (profile: ProfileSetup | null) => void;
+  onUsernameContinue: (label: string) => void;
+  onProfileContinue: (details: ProfileDetails) => void;
+  onProfileSkip: () => void;
+  onProfileBack: () => void;
   onImportTransfer: (transfer: AccountTransfer) => void;
   onAddPasskey: () => void;
   onSkipPasskey: () => void;
+  onPasskeyBack: () => void;
   onSkipHistory: () => void;
   onSetupRetry: () => void;
   onSetupBack: () => void;
 }
 
+function createChoice(label: string, details: ProfileDetails): Choice {
+  const profile = profileSetupFrom(label, details);
+  return profile === null ? { kind: 'create' } : { kind: 'create', profile };
+}
+
 export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
-  const [flowStep, setStep] = useState<Step>('profile');
+  const [flowStep, setStep] = useState<Step>('username');
+  const [label, setLabel] = useState('');
   const [pending, setPending] = useState<Choice | null>(null);
   const [passkeyMode, setPasskeyMode] = useState<PasskeyMode>('add');
   const [inspecting, setInspecting] = useState(false);
@@ -36,7 +46,7 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
   const [restoredId, setRestoredId] = useState<string | null>(null);
   const runner = useSetupRunner(onDone);
   const atImportRoute = usePathname() === IMPORT_ROUTE;
-  const step: Step = flowStep === 'profile' && atImportRoute ? 'import' : flowStep;
+  const step: Step = flowStep === 'username' && atImportRoute ? 'import' : flowStep;
 
   const start = (choice: Choice, passkey: PasskeyChoice): void => {
     setStep('setup');
@@ -93,25 +103,29 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
   const startOver = (): void => {
     if (restoredId !== null) void abandonAccount(restoredId).catch(() => undefined);
     runner.startOver();
-    setRestoredId(null); setPasskeyErr(null); setPending(null);
-    setStep('profile');
+    setRestoredId(null); setPasskeyErr(null); setPending(null); setLabel('');
+    setStep('username');
   };
 
   const onSetupRetry = (): void => {
     const err = runner.setupErr;
     if (err?.accountId !== undefined && err.retry !== 'restart') runner.resume(err.accountId, err.retry);
     else if (pending) start(pending, 'none');
-    else { runner.reset(); setStep('profile'); }
+    else { runner.reset(); setStep('username'); }
   };
 
   return {
     step,
     busy: runner.busy || inspecting, stage: runner.stage, setupErr: runner.setupErr, plan: runner.plan,
     passkeyMode, passkeyErr,
-    onProfileContinue: (profile) => { toPasskey(profile === null ? { kind: 'create' } : { kind: 'create', profile }, 'add'); },
+    onUsernameContinue: (next) => { setLabel(next); if (next === '') toPasskey({ kind: 'create' }, 'add'); else setStep('profile'); },
+    onProfileContinue: (details) => { toPasskey(createChoice(label, details), 'add'); },
+    onProfileSkip: () => { toPasskey(createChoice(label, EMPTY_DETAILS), 'add'); },
+    onProfileBack: () => { setStep('username'); },
     onImportTransfer,
     onAddPasskey,
     onSkipPasskey: () => { if (pending && passkeyMode === 'add') start(pending, 'none'); },
+    onPasskeyBack: () => { setPasskeyErr(null); setStep(label === '' ? 'username' : 'profile'); },
     onSkipHistory: runner.skipHistory,
     onSetupRetry,
     onSetupBack: startOver,

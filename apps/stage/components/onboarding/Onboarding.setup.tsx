@@ -13,8 +13,7 @@ import {
 
 type Pal = ReturnType<typeof usePalette>;
 
-const ROW_RADIUS = 12;
-const ROW_HEIGHT = 52;
+const ROW_HEIGHT = 40;
 const ROW_ICON = 16;
 
 function StageIndicator({ state, failed, pal }: { state: StageState; failed: boolean; pal: Pal }): React.ReactElement {
@@ -24,11 +23,11 @@ function StageIndicator({ state, failed, pal }: { state: StageState; failed: boo
   return <Box width={6} height={6} radius="full" background={pal.sub} margin={{ x: 5 }} />;
 }
 
-function StageRow({ label, state, failed, last, pal }: {
-  label: string; state: StageState; failed: boolean; last: boolean; pal: Pal;
+function StageRow({ label, state, failed, pal }: {
+  label: string; state: StageState; failed: boolean; pal: Pal;
 }): React.ReactElement {
   return (
-    <Row align="center" gap={8} height={ROW_HEIGHT} padding={{ x: 16 }} border={last ? undefined : { bottom: { width: 1, color: pal.border } }}>
+    <Row align="center" gap={8} height={ROW_HEIGHT} padding={{ x: 16 }}>
       <Box width={ROW_ICON} align="center">
         <StageIndicator state={state} failed={failed} pal={pal} />
       </Box>
@@ -61,11 +60,10 @@ export function SetupStep({ pal, dark, busy, stage, setupErr, plan, onRetry, onB
   const actions = SetupActions({ dark, busy, setupErr, onRetry });
   const link = SetupLink({ busy, stage, setupErr, onBack, onSkipHistory });
   return (
-    <OnboardingCard title={setupTitle(stage, setupErr, plan)} footer={actions} after={link}>
-      <Text size="4xl" color="link" textAlign="center" style={{ paddingVertical: 12 }}>{setupHint(stage, setupErr, plan)}</Text>
-      <Col width="100%" radius={ROW_RADIUS} style={{ borderWidth: 1, borderColor: pal.border, overflow: 'hidden' }}>
-        {stages.map((s, i) => (
-          <StageRow key={s} label={stageLabel(s, plan)} state={stageState(s, stage, stages)} failed={setupErr !== null} last={i === stages.length - 1} pal={pal} />
+    <OnboardingCard title={setupTitle(setupErr, plan)} about={setupHint(setupErr, plan)} footer={actions} after={link}>
+      <Col width="100%">
+        {stages.map((s) => (
+          <StageRow key={s} label={stageLabel(s, plan)} state={stageState(s, stage, stages)} failed={setupErr !== null} pal={pal} />
         ))}
       </Col>
     </OnboardingCard>

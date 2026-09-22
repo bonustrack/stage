@@ -6,7 +6,7 @@ describe('claim model', () => {
     expect(normalizeLabel('  Fabien.stage.base.eth ')).toBe('fabien');
     expect(localLabelProblem('')).toBeNull();
     expect(localLabelProblem('abc')).toContain('At least 6');
-    expect(localLabelProblem('fab_ien')).toContain('Lowercase');
+    expect(localLabelProblem('fab_ien')).toContain('hyphens');
     expect(localLabelProblem('fabien')).toBeNull();
   });
 

@@ -7,7 +7,6 @@ import { VirtualList, type VirtualListHandle } from '../layout';
 import { CHANNELS_SCROLL_KEY, saveScrollOffset } from '../../lib/scrollPos';
 import { HistorySyncBanner, MessagingSetupBanner } from '../system/HistorySync';
 import type { Row as RowT } from './helpers';
-import { HomeEmpty } from './parts';
 import { LabelFilterBar } from './labelbar';
 import { SearchTopnavBar } from '../SearchTopnavBar';
 import { HomeContactResults } from './contacts';
@@ -151,7 +150,6 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
         removeClippedSubviews
         contentContainerStyle={contentStyle}
         ListHeaderComponent={<ChannelsListHeader p={props} />}
-        ListEmptyComponent={query.trim() ? null : <HomeEmpty />}
         ListFooterComponent={
           query.trim()
             ? <HomeContactResults query={query} c={{ fg, head, sub, border }} noChannels={sortedRows.length === 0}/>

@@ -3,9 +3,9 @@ import { useRouter } from 'expo-router';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Box } from './layout';
 import { ChannelRow } from './ChannelRow';
-import { getPeerName, usePeerProfiles } from '../lib/peerProfiles';
+import { getPeerDescription, getPeerName, usePeerProfiles } from '../lib/peerProfiles';
 import { shortAddress, useActiveAccountRecord } from '../modules/messaging';
-import { SUGGESTED_HEADING, SUGGESTED_SUBTITLE, suggestedContacts } from './SuggestedContacts.model';
+import { SUGGESTED_HEADING, suggestedContacts, suggestedSubtitle } from './SuggestedContacts.model';
 
 export function SuggestedContacts({ known }: { known: readonly string[] }): React.ReactElement | null {
   const router = useRouter();
@@ -24,7 +24,7 @@ export function SuggestedContacts({ known }: { known: readonly string[] }): Reac
           title={getPeerName(address) ?? shortAddress(address)}
           avatarAddress={address}
           square={false}
-          subtitle={SUGGESTED_SUBTITLE}
+          subtitle={suggestedSubtitle(getPeerDescription(address))}
           onPress={() => { router.push({ pathname: '/[convId]', params: { convId: address } }); }}
         />
       ))}
