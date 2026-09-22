@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { claimIsFresh, claimMessage, isStageName, stageNameOf, validateStageLabel } from '../src/identity/stageNames';
+import { claimIsFresh, claimMessage, displayHandle, isStageName, stageNameOf, validateStageLabel } from '../src/identity/stageNames';
 
 describe('validateStageLabel', () => {
   test('accepts six or more lowercase letters, digits and inner hyphens', () => {
@@ -24,6 +24,12 @@ describe('names and claims', () => {
     expect(stageNameOf('fabien')).toBe('fabien.stage.base.eth');
     expect(isStageName('fabien.stage.base.eth')).toBe(true);
     expect(isStageName('fabien.base.eth')).toBe(false);
+  });
+
+  test('stage names display as @username, other names unchanged', () => {
+    expect(displayHandle('Alice321.stage.base.eth')).toBe('@alice321');
+    expect(displayHandle('fabien.base.eth')).toBe('fabien.base.eth');
+    expect(displayHandle('vitalik.eth')).toBe('vitalik.eth');
   });
 
   test('claim messages are lowercase-address and time bound', () => {

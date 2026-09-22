@@ -13,7 +13,7 @@ import { useEnablePasskey, useRemovePasskey } from '../../lib/passkey';
 import {
   SectionLabel, makeCard, SmartAccountSections, WalletCopyRow, WalletInfoRow,
 } from './WalletSettings.sections';
-import { StackHeader } from '../chrome/StackHeader';
+import { SettingsHeader } from '../chrome/SettingsHeader';
 import { SettingsList } from './rows';
 
 export function WalletSettings(): React.ReactElement {
@@ -36,7 +36,7 @@ export function WalletSettings(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <StackHeader title="Wallet"/>
+      <SettingsHeader title="Wallet"/>
       <ScreenScroll contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         {!model ? (
           <Text size="md" color={fg} style={{ padding: 24 }}>No active account.</Text>

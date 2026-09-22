@@ -5,8 +5,8 @@ import { Col } from './layout';
 import { usePalette } from '../lib/theme';
 import { usePeerProfiles, peerAvatarUrl } from '../lib/peerProfiles';
 import { useActiveAccountRecord } from '../modules/messaging';
+import { SETTINGS_ROUTE } from '../lib/routes';
 
-export const SETTINGS_ROUTE = '/settings';
 
 export function AccountAvatar({ size }: { size: number }): React.ReactElement {
   const { border } = usePalette();

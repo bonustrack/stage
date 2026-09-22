@@ -22,7 +22,7 @@ export function profileView(state: ProfileState): ProfileView {
     return {
       title: state.name,
       explanation: stageName
-        ? 'Your free Stage name. Anyone who messages you sees it and your picture, in Stage and in other Base apps.'
+        ? 'Your Stage username. Anyone who messages you sees it and your picture, in Stage and in other Base apps.'
         : 'Your name and picture come from your Basename on Base. Anyone who messages you sees them, in Stage and in other apps.',
       canChangePicture: true,
       claimVisible: false,

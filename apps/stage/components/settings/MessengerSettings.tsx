@@ -14,7 +14,7 @@ import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import { MessengerSessions } from './MessengerSessions';
 import { HistorySyncSection } from './HistorySyncSection';
-import { StackHeader } from '../chrome/StackHeader';
+import { SettingsHeader } from '../chrome/SettingsHeader';
 import { SettingsButtonRow, SettingsList, SettingsValueRow } from './rows';
 
 function onResetIdentity(): void {
@@ -67,7 +67,7 @@ export function MessengerSettings(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <StackHeader title="Messenger"/>
+      <SettingsHeader title="Messenger"/>
       <ScreenScroll contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <Caption color={fg} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
           XMTP ACCOUNT

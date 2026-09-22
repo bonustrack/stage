@@ -6,9 +6,10 @@ import { usePalette } from '../../lib/theme';
 import { TOPNAV_HEIGHT } from '../Topnav';
 import { ScreenHeader } from './ScreenHeader';
 
-export function StackHeader({ title, trailing }: {
+export function StackHeader({ title, trailing, backTo }: {
   title: string;
   trailing?: ReactNode;
+  backTo?: string;
 }): React.ReactElement {
   const { text: fg, link: head, border, toolbarBg } = usePalette();
   const insets = useSafeAreaInsets();
@@ -17,7 +18,8 @@ export function StackHeader({ title, trailing }: {
       title={title}
       titleStyle={{ kind: 'title', size: 'sm', color: head }}
       onBack={() => {
-        capabilities.back();
+        if (backTo === undefined) capabilities.back();
+        else capabilities.backTo(backTo);
       }}
       backColor={fg}
       safeTop={insets.top}

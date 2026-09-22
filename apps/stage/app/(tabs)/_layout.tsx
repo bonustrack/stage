@@ -15,7 +15,8 @@ import { TAB_ICONS, WebTabBar, WebTabRail } from '../../components/tabs/WebTabRa
 import { useWebTabRail } from '../../lib/webLayout';
 import { useTotalUnread } from '../../lib/useTotalUnread';
 import { unreadBadgeLabel } from '../../lib/format';
-import { AccountAvatar, SETTINGS_ROUTE } from '../../components/AccountAvatarButton';
+import { AccountAvatar } from '../../components/AccountAvatarButton';
+import { SETTINGS_ROUTE } from '../../lib/routes';
 import { Landing } from '../../components/landing/Landing';
 import { useAccountGate } from '../../lib/accountGate';
 

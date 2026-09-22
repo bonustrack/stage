@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { canClaim, claimStatusText, claimStatusTone, localLabelProblem, normalizeLabel, sanitizeLabelInput } from '../components/settings/ProfileSettings.claim.model';
+import { claimStatusText, claimStatusTone, localLabelProblem, normalizeLabel, sanitizeLabelInput } from '../components/settings/ProfileSettings.claim.model';
 
 describe('claim model', () => {
   test('normalises input and reports local problems before hitting the network', () => {
@@ -10,9 +10,7 @@ describe('claim model', () => {
     expect(localLabelProblem('fabien')).toBeNull();
   });
 
-  test('only an available name can be claimed and every phase has a message', () => {
-    expect(canClaim({ label: 'fabien', phase: 'available' })).toBe(true);
-    expect(canClaim({ label: 'fabien', phase: 'checking' })).toBe(false);
+  test('every phase has a message and a tone', () => {
     expect(claimStatusText({ label: 'fabien', phase: 'available' })).toBe('Available');
     expect(claimStatusTone({ label: 'fabien', phase: 'available' })).toBe('success');
     expect(claimStatusTone({ label: 'fabien', phase: 'unavailable' })).toBe('danger');

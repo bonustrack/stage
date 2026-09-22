@@ -1,6 +1,7 @@
 
 import { STAMP_URL } from '../profile/avatar';
 import type { OnchainProfile, OnchainProfileSource } from './onchainProfile';
+import { displayHandle } from './stageNames';
 
 export interface PeerProfile {
   name?: string;
@@ -185,8 +186,10 @@ export function isPeerResolved(address?: string | null): boolean {
 export function getPeerName(address?: string | null): string | undefined {
   if (!address) return undefined;
   const profile = store.get(address.toLowerCase());
-  const n = profile?.displayName ?? profile?.name;
-  return n?.trim() ? n.trim() : undefined;
+  const display = profile?.displayName?.trim();
+  if (display) return display;
+  const name = profile?.name?.trim();
+  return name ? displayHandle(name) : undefined;
 }
 
 export function getPeerDisplayName(address?: string | null): string | undefined {

@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from '../lib/safeArea';
 import { shortAddress } from '../modules/messaging';
 import { useEffectiveColorScheme, usePalette, type Palette } from '../lib/theme';
 import { usePeerProfiles, getPeerName, getPeerHandle, getPeerDescription } from '../lib/peerProfiles';
+import { displayHandle } from '@stage-labs/client/identity/stageNames';
 import { Avatar } from './Avatar';
 import { Box, Col, ScreenScroll } from './layout';
 import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
@@ -46,9 +47,9 @@ function ProfileIdentity({ addr, isSelf, dark, c, insetTop, displayName, handle,
 />
         <Box margin={{ top: 14 }} style={{ alignSelf: 'stretch' }}>
           <Col gap={6} align="start">
-            <Text value={displayName} weight="semibold" size="4xl" textAlign="start" />
-            {handle && handle !== displayName ? <Text value={handle} size="md" color={c.text} /> : null}
-            {about ? <Text value={about} size="md" textAlign="start" /> : null}
+            <Text value={displayName} weight="semibold" size="5xl" textAlign="start" />
+            {handle && displayHandle(handle) !== displayName ? <Text value={displayHandle(handle)} size="md" color={c.text} /> : null}
+            {about ? <Text value={about} size="4xl" textAlign="start" /> : null}
           </Col>
         </Box>
         {addr ? (

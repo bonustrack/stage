@@ -8,6 +8,8 @@ const TONY = '0x0000000000000000000000000000000000000001';
 const NAMELESS = '0x0000000000000000000000000000000000000002';
 const RENAMED = '0x0000000000000000000000000000000000000003';
 const FRESH = '0x0000000000000000000000000000000000000004';
+const ALICE = '0x0000000000000000000000000000000000000005';
+const NAMED_ALICE = '0x0000000000000000000000000000000000000006';
 
 let lookups: string[][] = [];
 let answer: Record<string, string> = {};
@@ -36,6 +38,13 @@ describe('seeded profiles are usable before the network answers', () => {
     expect(getPeerName(TONY)).toBe('Tony');
     expect(isPeerResolved(NAMELESS)).toBe(true);
     expect(getPeerName(NAMELESS)).toBeUndefined();
+  });
+
+  test('a stage name shows as @username unless a display name is set', () => {
+    seedPeerProfiles({ [ALICE]: { name: 'alice321.stage.base.eth' } });
+    expect(getPeerName(ALICE)).toBe('@alice321');
+    seedPeerProfiles({ [NAMED_ALICE]: { name: 'alice321.stage.base.eth', displayName: 'Alice from Stage' } });
+    expect(getPeerName(NAMED_ALICE)).toBe('Alice from Stage');
   });
 
   test('seeding never overwrites a name the session already fetched', async () => {

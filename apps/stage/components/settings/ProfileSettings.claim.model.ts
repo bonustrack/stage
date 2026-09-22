@@ -1,4 +1,4 @@
-import { describeLabelProblem, stageNameOf, validateStageLabel } from '@stage-labs/client/identity/stageNames';
+import { describeLabelProblem, validateStageLabel } from '@stage-labs/client/identity/stageNames';
 
 export type ClaimPhase = 'idle' | 'checking' | 'available' | 'unavailable' | 'invalid' | 'claiming' | 'claimed' | 'failed';
 
@@ -38,7 +38,7 @@ export function claimStatusText(state: ClaimState): string {
   const fixed = STATIC_STATUS[state.phase];
   if (fixed !== undefined) return fixed;
   const named = NAME_STATUS[state.phase];
-  if (named !== undefined) return named(stageNameOf(state.label));
+  if (named !== undefined) return named(`@${state.label}`);
   if (state.phase === 'invalid') return state.detail ?? 'That name is not allowed.';
   return `Could not claim the name: ${state.detail ?? 'unknown error'}`;
 }
@@ -47,8 +47,4 @@ export function claimStatusTone(state: ClaimState): 'success' | 'danger' | 'seco
   if (state.phase === 'available' || state.phase === 'claimed') return 'success';
   if (state.phase === 'unavailable' || state.phase === 'invalid' || state.phase === 'failed') return 'danger';
   return 'secondary';
-}
-
-export function canClaim(state: ClaimState): boolean {
-  return state.phase === 'available';
 }

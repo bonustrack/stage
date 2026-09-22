@@ -12,7 +12,7 @@ import {
   getPushPermission, registerPushWithServer, requestPushPermission, unregisterPushFromServer,
 } from '../../lib/pushRegister';
 import { describePushStatus, usePushStatus } from '../../lib/pushStatus';
-import { StackHeader } from '../chrome/StackHeader';
+import { SettingsHeader } from '../chrome/SettingsHeader';
 import { SettingsButtonRow, SettingsList, SettingsToggleRow } from './rows';
 
 export function NotificationsSettings(): React.ReactElement {
@@ -49,7 +49,7 @@ export function NotificationsSettings(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <StackHeader title="Notifications"/>
+      <SettingsHeader title="Notifications"/>
       <ScreenScroll contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <Caption color={fg} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
           PUSH NOTIFICATIONS

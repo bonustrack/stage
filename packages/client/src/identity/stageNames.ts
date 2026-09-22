@@ -30,6 +30,10 @@ export function isStageName(name: string): boolean {
   return name.toLowerCase().endsWith(`.${STAGE_NAMES_PARENT}`);
 }
 
+export function displayHandle(name: string): string {
+  return isStageName(name) ? `@${name.slice(0, -(STAGE_NAMES_PARENT.length + 1)).toLowerCase()}` : name;
+}
+
 export interface ClaimRequest {
   label: string;
   address: string;

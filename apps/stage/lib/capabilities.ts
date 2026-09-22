@@ -7,6 +7,7 @@ import { confirmDialog, type ConfirmOptions } from './confirm';
 export interface Capabilities {
   navigate(to: string): void;
   back(): void;
+  backTo(to: string): void;
   copyToClipboard(text: string): void | Promise<void>;
   toast(message: string): void;
   confirm(options: ConfirmOptions): Promise<boolean>;
@@ -17,6 +18,7 @@ export interface Capabilities {
 export const capabilities: Capabilities = {
   navigate: (to) => { router.push(to); },
   back: () => { router.back(); },
+  backTo: (to) => { router.dismissTo(to); },
   copyToClipboard: async (text) => { await Clipboard.setStringAsync(text); },
   toast: (message) => { if (Platform.OS === 'android') ToastAndroid.show(message, ToastAndroid.SHORT); },
   confirm: confirmDialog,

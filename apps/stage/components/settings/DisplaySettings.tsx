@@ -9,7 +9,7 @@ import {
 } from '../../lib/theme';
 import { THEME_OPTIONS } from './themeOptions.model';
 import { ColorTokens } from '../system/ColorTokens';
-import { StackHeader } from '../chrome/StackHeader';
+import { SettingsHeader } from '../chrome/SettingsHeader';
 import { SettingsList, SettingsThemeRow } from './rows';
 
 export function DisplaySettings(): React.ReactElement {
@@ -23,7 +23,7 @@ export function DisplaySettings(): React.ReactElement {
 
   return (
     <Col surface="surface" flex={1}>
-      <StackHeader title="Display"/>
+      <SettingsHeader title="Display"/>
       <ScreenScroll
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 + insets.bottom }}
