@@ -54,7 +54,7 @@ export async function deleteLegacyDbKey(): Promise<void> {
 }
 
 export async function wipeXmtpStore(accountId: string, dbDirName: string): Promise<void> {
-  deleteDbFiles(dbDirName);
+  await deleteDbFiles(dbDirName);
   const accountKey = await secureStorage.get(dbKeyId(accountId), STORE_OPTS).catch(() => null);
   const legacyKey = await secureStorage.get(LEGACY_DB_ENCRYPTION_KEY, STORE_OPTS).catch(() => null);
   await deleteDbKey(accountId);

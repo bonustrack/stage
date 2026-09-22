@@ -89,7 +89,7 @@ export async function openPersistedClient<C>(deps: PersistedClientDeps<C>): Prom
     const result: Attempt<C> = await attemptOpen(deps, previousMismatch);
     if (result.kind === 'ready') return registerIfNeeded(deps, result.client);
     if (result.kind === 'fail' || attempt >= attempts) throw result.error;
-    previousMismatch = result.mismatched ?? null;
+    previousMismatch = result.mismatched ?? previousMismatch;
     await sleep(OPEN_RETRY_MS);
   }
 }

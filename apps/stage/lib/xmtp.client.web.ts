@@ -133,7 +133,7 @@ export async function deleteAccount(id: string): Promise<void> {
   const list = await loadAccounts();
   const rec = list.find(a => a.id === id);
   await removeAccount(id);
-  if (rec) deleteDbFiles(rec.dbDir);
+  if (rec) await deleteDbFiles(rec.dbDir);
   await deleteDbKey(id);
   await forgetSavedClient(id);
   disposeCachedClient();
@@ -143,7 +143,7 @@ export async function resetActiveXmtpStore(): Promise<void> {
   const rec = await getActiveAccount();
   if (!rec) return;
   disposeCachedClient();
-  deleteDbFiles(rec.dbDir);
+  await deleteDbFiles(rec.dbDir);
   await deleteDbKey(rec.id);
   await forgetSavedClient(rec.id);
 }

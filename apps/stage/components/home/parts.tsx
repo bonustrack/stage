@@ -18,6 +18,8 @@ import type { Row as RowT } from './helpers';
 import type { RowMenu } from './state';
 import { channelTimestamp } from '../../lib/format';
 import { DANGER } from '../../lib/theme';
+import { capabilities } from '../../lib/capabilities';
+import { Button } from '@stage-labs/kit/react-native/button';
 import { rowPreviewText } from './model';
 
 function rowTitle(item: RowT): string {
@@ -120,19 +122,28 @@ export function useChannelRowRenderer(
   ), [router, setRowMenu, channelProfilesVersion, draftsVersion, pinned, query, activePath, pinDrag]);
 }
 
+const RESET_TITLE = 'Reset local database';
+const RESET_MESSAGE = 'Wipes the local XMTP database of this account only. The account and its keys stay, '
+  + 'but messages stored on this device are gone and a new device slot is used. An account supports ten.';
+
+function confirmReset(): void {
+  void (async (): Promise<void> => {
+    if (!await capabilities.confirm({ title: RESET_TITLE, message: RESET_MESSAGE, confirmLabel: 'Reset', destructive: true })) return;
+    await resetActiveXmtpStore();
+    reloadApp();
+  })();
+}
+
 export function HomeError({ error, dark, fg }: {
   error: string; dark: boolean; fg: string;
 }): React.ReactElement {
   return (
     <Col padding={24} flex={1} align="center" justify="center" surface="surface">
       <Text size="md" color={fg} style={{ textAlign: 'center', marginBottom: 16 }}>{error}</Text>
+      <Button label="Reload" size="lg" pill color="primary" variant="solid" dark={dark}
+        style={{ alignSelf: 'center', marginBottom: 12 }} onPress={() => { reloadApp(); }} />
       <Pressable
-        onPress={() => {
-          void (async (): Promise<void> => {
-            await resetActiveXmtpStore();
-            reloadApp();
-          })();
-        }}
+        onPress={confirmReset}
         style={({ pressed }) => ({
           paddingHorizontal: 20, paddingVertical: 12, borderRadius: 999,
           backgroundColor: pressed ? '#5c2231' : 'transparent',
@@ -140,7 +151,7 @@ export function HomeError({ error, dark, fg }: {
         })}
 >
         <Text size="md" color={DANGER}>
-          Reset XMTP database
+          {RESET_TITLE}
         </Text>
       </Pressable>
     </Col>

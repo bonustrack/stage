@@ -11,6 +11,7 @@ import { registerPushWithServer } from './pushRegister.web';
 import { perfLog } from './perf';
 import { errorMessage } from '@stage-labs/client/errors';
 import { openPersistedClient, type OpenedClient } from '@stage-labs/client/xmtp/clientConfig';
+import { withCreateTimeout } from './xmtp.recover.core';
 import { type XmtpEnv, XMTP_ENV_KEY } from './xmtp.types.web';
 import { deleteDbKey, deleteDbFiles } from './xmtp.dbkey';
 import {
@@ -34,6 +35,17 @@ export async function ensureActiveAccount(): Promise<void> {
   await getActiveAccount();
 }
 
+const NOISY_OPEN_EVENTS = new Set(['installation-mismatch', 'open-failed']);
+
+function reportOpenEvent(event: string, savedInstallationId: string | null, e?: unknown): void {
+  const detail = { saved: savedInstallationId ?? '', error: e === undefined ? '' : errorMessage(e) };
+  perfLog(`xmtp.client.open ${event}`, detail);
+  if (NOISY_OPEN_EVENTS.has(event)) console.warn(`[stage] xmtp store open ${event}`, detail);
+}
+
+const CREATE_TIMEOUT_MS = 45_000;
+const CREATE_TIMEOUT_MESSAGE = 'Opening the local message store timed out.';
+
 export function isStoreCorruption(err: unknown): boolean {
   return isStoreCorruptionCore(err);
 }
@@ -52,7 +64,7 @@ async function finalizeClient(
 }
 
 async function wipeWebXmtpStore(rec: AccountRecord): Promise<void> {
-  deleteDbFiles(rec.dbDir);
+  await deleteDbFiles(rec.dbDir);
   await deleteDbKey(rec.id);
 }
 
@@ -62,14 +74,18 @@ export async function openClientForAccount(
   const signer = await signerForRecord(rec);
   try {
     const opened = await openPersistedClient<WebXmtpClient>({
-      open: () => Client.create(signer, { ...opts, disableAutoRegister: true }),
+      open: () => withCreateTimeout(
+        () => Client.create(signer, { ...opts, disableAutoRegister: true }),
+        CREATE_TIMEOUT_MS, CREATE_TIMEOUT_MESSAGE,
+        (late) => { try { late.close(); } catch { } },
+      ),
       isRegistered: (client) => client.isRegistered(),
       register: (client) => whileRegistering(async () => { await client.register(); }),
       installationIdOf: (client) => client.installationId ?? '',
       close: (client) => { client.close(); },
       savedInstallationId,
       retryable: isStoreLocked,
-      onEvent: (event, e) => { perfLog(`xmtp.client.open ${event}`, { error: e === undefined ? '' : errorMessage(e) }); },
+      onEvent: (event, e) => { reportOpenEvent(event, savedInstallationId, e); },
     });
     await finalizeClient(opened.client, rec, env);
     return opened;

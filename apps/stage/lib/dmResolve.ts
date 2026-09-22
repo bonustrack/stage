@@ -1,7 +1,8 @@
-
+import { errorMessage } from '@stage-labs/client/errors';
 import {
   dmUnreachableReason, findExistingDmWithAddress, openDmWithAddress, repairDmMembership,
 } from './xmtp.conv';
+import { xmtpClient } from './xmtp.client';
 import { perfTime } from './perf';
 
 export type DmResolveError = 'unregistered' | 'stale-installations' | 'failed';
@@ -22,7 +23,7 @@ async function resolveStubDm(convId: string, address: string): Promise<DmResolut
   return unreachable.error === 'failed' ? { ...unreachable, detail: STUB_DM_DETAIL } : unreachable;
 }
 
-export async function resolveDmConvId(address: string): Promise<DmResolution> {
+async function resolveWithClient(address: string): Promise<DmResolution> {
   const existing = await perfTime('dm.findExisting', () => findExistingDmWithAddress(address)).catch(() => null);
   if (existing?.peerJoined) return { convId: existing.convId };
   if (existing) return resolveStubDm(existing.convId, address);
@@ -31,8 +32,16 @@ export async function resolveDmConvId(address: string): Promise<DmResolution> {
   try {
     return { convId: await perfTime('dm.open', () => openDmWithAddress(address)) };
   } catch (err) {
-    const detail = err instanceof Error ? err.message : String(err);
     const unreachable = await classifyUnreachable(address);
-    return unreachable.error === 'failed' ? { ...unreachable, detail } : unreachable;
+    return unreachable.error === 'failed' ? { ...unreachable, detail: errorMessage(err) } : unreachable;
   }
+}
+
+export async function resolveDmConvId(address: string): Promise<DmResolution> {
+  try {
+    await perfTime('dm.client', () => xmtpClient());
+  } catch (err) {
+    return { error: 'failed', detail: errorMessage(err) };
+  }
+  return resolveWithClient(address);
 }

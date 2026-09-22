@@ -1,8 +1,8 @@
 
 import { Opfs } from '@xmtp/browser-sdk';
 
-export function deleteDbFiles(dbDirName: string): void {
-  void deleteOpfsDbFiles(dbDirName);
+export function deleteDbFiles(dbDirName: string): Promise<void> {
+  return deleteOpfsDbFiles(dbDirName);
 }
 
 async function deleteOpfsDbFiles(prefix: string): Promise<void> {

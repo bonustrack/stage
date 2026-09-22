@@ -105,6 +105,23 @@ describe('openPersistedClient', () => {
     ]);
   });
 
+  test('a lock between two identical mismatches still adopts the store', async () => {
+    let opens = 0;
+    const { d, calls } = deps({
+      open: () => {
+        opens += 1;
+        if (opens === 2) return Promise.reject(new Error('NoModificationAllowedError'));
+        return Promise.resolve('inst-b');
+      },
+    });
+    expect(await openPersistedClient(d)).toEqual({ client: 'inst-b', registered: false });
+    expect(calls).toEqual([
+      'event:installation-mismatch', 'close:inst-b', 'sleep',
+      'event:open-failed', 'sleep',
+      'event:installation-adopted',
+    ]);
+  });
+
   test('a failing open is retried and the last error surfaces', async () => {
     let opens = 0;
     const { d, calls } = deps({ open: () => { opens += 1; return opens < 2 ? Promise.reject(new Error('locked')) : Promise.resolve('inst-a'); } });

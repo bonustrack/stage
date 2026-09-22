@@ -1,11 +1,11 @@
 
 import { Directory, File, Paths } from 'expo-file-system';
 
-export function deleteDbFiles(dbDirName: string): void {
+export function deleteDbFiles(dbDirName: string): Promise<void> {
   const dir = dbDirObj(dbDirName);
   if (!dir.exists) {
     try { dir.create({ intermediates: true }); } catch { }
-    return;
+    return Promise.resolve();
   }
   try {
     dir.delete();
@@ -18,6 +18,7 @@ export function deleteDbFiles(dbDirName: string): void {
     try { dir.delete(); } catch { }
   }
   try { dbDirObj(dbDirName).create({ intermediates: true }); } catch { }
+  return Promise.resolve();
 }
 
 function dbDirObj(name: string): Directory { return new Directory(Paths.document, name); }

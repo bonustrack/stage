@@ -1,4 +1,5 @@
 import { DevSettings, Platform } from 'react-native';
+import { reloadAsync } from 'expo-updates';
 import { type AccountRecord } from '../lib/accounts';
 
 export const TYPE_LABEL: Record<AccountRecord['type'], string> = {
@@ -15,5 +16,6 @@ export function reloadApp(home = false): void {
     else location?.reload();
     return;
   }
-  DevSettings.reload?.();
+  if (DevSettings.reload) { DevSettings.reload(); return; }
+  void reloadAsync().catch(() => undefined);
 }

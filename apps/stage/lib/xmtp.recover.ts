@@ -14,6 +14,7 @@ import {
   INSTALLATION_LIMIT_MESSAGE, isInstallationLimit,
   isStoreCorruption as isStoreCorruptionCore,
 } from '@stage-labs/client/xmtp/clientErrors';
+import { withCreateTimeout } from './xmtp.recover.core';
 
 
 export interface CreateOpts {
@@ -38,21 +39,10 @@ export function isStoreCorruption(err: unknown): boolean {
 }
 
 const CREATE_TIMEOUT_MS = 60_000;
-async function createWithTimeout(
+function createWithTimeout(
   signer: Awaited<ReturnType<typeof signerForRecord>>, opts: CreateOpts,
 ): Promise<Client> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(
-      () => { reject(new Error(CREATE_TIMEOUT_MESSAGE)); },
-      CREATE_TIMEOUT_MS,
-    );
-  });
-  try {
-    return await Promise.race<Client>([Client.create(signer, opts), timeout]);
-  } finally {
-    if (timer) clearTimeout(timer);
-  }
+  return withCreateTimeout(() => Client.create(signer, opts), CREATE_TIMEOUT_MS, CREATE_TIMEOUT_MESSAGE);
 }
 
 async function tryFreeInstallationSlot(rec: AccountRecord, env: XmtpEnv): Promise<boolean> {
