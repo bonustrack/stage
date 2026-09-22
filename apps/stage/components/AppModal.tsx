@@ -1,10 +1,12 @@
 import type { ReactNode } from 'react';
 import { Dialog } from '@stage-labs/kit/react-native/dialog';
-import { usePalette, useBlockRadius } from '../lib/theme';
+import { usePalette } from '../lib/theme';
+import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { useWebTabRail } from '../lib/webLayout';
 import { CENTERED_MODAL_PAD, sheetPlacement } from './AppModal.model';
 
 const SHEET_BOTTOM_PAD = 16;
+const SHEET_RADIUS = Math.round(BLOCK_RADIUS_DEFAULT * 1.4);
 
 export function AppModal({
   visible, onClose, children,
@@ -14,7 +16,6 @@ export function AppModal({
   children: ReactNode;
 }): React.ReactElement {
   const pal = usePalette();
-  const sheetRadius = Math.round(useBlockRadius() * 1.4);
   const place = sheetPlacement(useWebTabRail(), SHEET_BOTTOM_PAD);
 
   return (
@@ -26,7 +27,7 @@ export function AppModal({
       gestureRoot
       backdropColor="rgba(0,0,0,0.45)"
       panelBackground={pal.bg}
-      panelRadius={sheetRadius}
+      panelRadius={SHEET_RADIUS}
       panelWidth={place.panelWidth}
       panelMaxWidth={place.panelMaxWidth}
       panelPadding={{ top: 18, bottom: place.bottomPad }}

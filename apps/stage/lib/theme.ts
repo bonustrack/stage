@@ -9,17 +9,12 @@ import {
 import {
   semanticColors, semanticPalette,
 } from '@stage-labs/kit/tokens';
-import { setDefaultButtonRadius } from '@stage-labs/kit/react-native/button';
 import {
   getSeeds, loadOverrides, isCustomTheme,
   subscribe as subscribeOverrides,
 } from './colorOverrides';
 import { derivePalette } from '@stage-labs/kit/theme-derive';
-import { useStoreValue } from './storeCore';
-import {
-  getRadius, getBlockRadius, loadRadius,
-  subscribe as subscribeRadius,
-} from './radiusOverride';
+import { makeListeners, useStoreValue } from './storeCore';
 
 export {
   setCustomTheme, resetOverrides, seedColorHex,
@@ -43,11 +38,11 @@ export const SUCCESS = semanticColors.successColor.dark;
 
 let cached: ThemePreference = 'system';
 let loaded = false;
-const listeners = new Set<(p: ThemePreference) => void>();
+const listeners = makeListeners<ThemePreference>();
 
 function emit(p: ThemePreference): void {
   cached = p;
-  for (const l of listeners) l(p);
+  listeners.notify(p);
 }
 
 async function ensureLoaded(): Promise<void> {
@@ -65,17 +60,12 @@ export async function setThemePreference(p: ThemePreference): Promise<void> {
   try { await secureStorage.set(STORAGE_KEY, p); } catch { }
 }
 
-function subscribeThemePreference(cb: () => void): () => void {
-  listeners.add(cb);
-  return () => { listeners.delete(cb); };
-}
-
 function getThemePreference(): ThemePreference { return cached; }
 
 function primeThemePreference(): void { void ensureLoaded(); }
 
 export function useThemePreference(): ThemePreference {
-  return useStoreValue(subscribeThemePreference, getThemePreference, primeThemePreference);
+  return useStoreValue(listeners.subscribe, getThemePreference, primeThemePreference);
 }
 
 export function useEffectiveColorScheme(): 'light' | 'dark' {
@@ -92,19 +82,6 @@ export interface Palette {
   inputBg: string; toolbarBg: string;
 }
 
-
-function primeRadius(): void {
-  loadRadius();
-  setDefaultButtonRadius(getRadius());
-}
-
-function subscribeButtonRadius(cb: () => void): () => void {
-  return subscribeRadius(() => { setDefaultButtonRadius(getRadius()); cb(); });
-}
-
-export function useRadius(): number {
-  return useStoreValue(subscribeButtonRadius, getRadius, primeRadius);
-}
 
 export function withAlpha(color: string, alpha: number): string {
   const a = Math.max(0, Math.min(1, alpha));
@@ -124,15 +101,10 @@ export function withAlpha(color: string, alpha: number): string {
   return color;
 }
 
-export function useBlockRadius(): number {
-  return useStoreValue(subscribeRadius, getBlockRadius, loadRadius);
-}
-
 export function usePalette(): Palette {
   const scheme = useEffectiveColorScheme();
   const custom = useCustomTheme();
   const seeds = useThemeSeeds();
-  useRadius();
   return useMemo(() => {
     if (custom) {
       const d = derivePalette(seeds[scheme], scheme);

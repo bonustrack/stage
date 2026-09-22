@@ -5,7 +5,8 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { Row, Box } from './layout';
 import { TokenAvatar } from './wallet/screen/tokenAvatar';
 import { usePayerBalance, type PayerBalance } from './bubble/balance';
-import { usePalette, useBlockRadius, withAlpha } from '../lib/theme';
+import { usePalette, withAlpha } from '../lib/theme';
+import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 
 interface PaymentBalanceArgs {
   show: boolean;
@@ -71,7 +72,6 @@ export function PaymentCard({
   footer?: React.ReactNode;
 }): React.ReactElement {
   const pal = usePalette();
-  const blockRadius = useBlockRadius();
 
   const bal = usePayerBalance(
     balance.show ? balance.chainId : undefined,
@@ -83,7 +83,7 @@ export function PaymentCard({
   const resolvedAction = typeof action === 'function' ? action(bal) : action;
 
   return (
-    <Box radius={blockRadius} background={withAlpha(pal.primary, 0.08)} padding={12} margin={{ top: 8 }} gap={8} style={{ alignSelf: 'stretch' }}>
+    <Box radius={BLOCK_RADIUS_DEFAULT} background={withAlpha(pal.primary, 0.08)} padding={12} margin={{ top: 8 }} gap={8} style={{ alignSelf: 'stretch' }}>
       <Row align="center" justify="between" gap={8}>
         <Row align="center" gap={10} style={{ flexShrink: 1 }}>
           <TokenAvatar logoUrl={logoUrl} chainId={chainNum} bg={withAlpha(pal.primary, 0.08)} border={pal.border}/>

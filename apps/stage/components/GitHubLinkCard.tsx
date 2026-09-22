@@ -7,7 +7,8 @@ import { Box, Row } from './layout';
 import { GithubLogo } from './GithubLogo';
 import { githubLinkOf } from '@stage-labs/client/api/github';
 import { useGithubMeta } from '../lib/useGithubMeta';
-import { DANGER, SUCCESS, usePalette, useBlockRadius } from '../lib/theme';
+import { DANGER, SUCCESS, usePalette } from '../lib/theme';
+import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 
 const DOT: Record<string, string> = {
   open: SUCCESS, merged: '#a371f7', closed: DANGER,
@@ -56,7 +57,6 @@ export function GitHubLinkCard({ url }: { url: string }): React.ReactElement | n
   const ref = githubLinkOf(url);
   const meta = useGithubMeta(ref);
   const pal = usePalette();
-  const blockRadius = useBlockRadius();
   if (!ref || !meta) return null;
 
   const subColor = pal.text;
@@ -64,7 +64,7 @@ export function GitHubLinkCard({ url }: { url: string }): React.ReactElement | n
 
   return (
     <Pressable onPress={() => void Linking.openURL(url)}>
-      <Box background={'transparent'} padding={{ x: 12, y: 10 }} radius={blockRadius} style={{ borderWidth: 1, borderColor: pal.border }}>
+      <Box background={'transparent'} padding={{ x: 12, y: 10 }} radius={BLOCK_RADIUS_DEFAULT} style={{ borderWidth: 1, borderColor: pal.border }}>
         <Row margin={{ bottom: 4 }} align="center" justify="start">
           <GithubLogo size={16} color={pal.link}/>
           <Text size="3xs" color={subColor} style={{ marginLeft: 6 }}>

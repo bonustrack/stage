@@ -16,7 +16,7 @@ import { RootStack, rootStackScreenOptions, TABS_SCREEN_OPTIONS } from '../lib/n
 import { useDocumentScrollRestore } from '../lib/navigation/scrollRestore';
 import { usePathname } from 'expo-router';
 import { isOnboardingRoute } from '../components/onboarding/nextRoute.model';
-import { useEffectiveColorScheme, usePalette, useRadius } from '../lib/theme';
+import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { KitThemeProvider } from '@stage-labs/kit/react-native/theme-context';
 import { useDeepLinks } from '../lib/deepLinks';
 import { useRestoreGate } from '../lib/lastRoute';
@@ -69,7 +69,6 @@ export default function RootLayout(): React.ReactElement {
 function RootLayoutInner(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { bg, toolbarBg } = usePalette();
-  useRadius();
 
   const barStyle: 'light' | 'dark' = isDarkBg(toolbarBg) ? 'light' : 'dark';
   useEffect(() => { setStatusBarStyle(barStyle, true); }, [barStyle]);

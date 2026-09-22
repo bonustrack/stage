@@ -10,7 +10,7 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { VoiceRecorder } from '@stage-labs/kit/react-native/voice-recorder';
 import { Box, Col } from '../layout';
-import { usePalette, useRadius } from '../../lib/theme';
+import { usePalette } from '../../lib/theme';
 
 interface EditorProps {
   dark: boolean; fg: string; head: string; bg: string; sub: string; chipBg: string;
@@ -167,7 +167,6 @@ export function AttachMenu({
   actions: [HeroIconName, string, () => void | Promise<void>][];
   onClose: () => void;
 }): React.ReactElement {
-  const btnRadius = useRadius();
   return (
     <ScrollView
       horizontal
@@ -180,7 +179,7 @@ export function AttachMenu({
           <Pressable
             onPress={() => { onClose(); void action(); }}
             style={({ pressed }) => ({
-              width: 56, height: 56, borderRadius: Math.min(btnRadius, 28),
+              width: 56, height: 56, borderRadius: 28,
               alignItems: 'center', justifyContent: 'center',
               backgroundColor: pressed ? chipBg : inputBg,
               borderWidth: 1, borderColor: chipBg,

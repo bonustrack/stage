@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from '../../lib/safeArea';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { walletAccountRows } from './WalletSettings.model';
 import { Col, ScreenScroll } from '../layout';
-import { useBlockRadius, useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
 import { useWalletModel } from './WalletSettings.parts';
 import { useEnablePasskey, useRemovePasskey } from '../../lib/passkey';
@@ -15,12 +15,12 @@ import {
 } from './WalletSettings.sections';
 import { SettingsHeader } from '../chrome/SettingsHeader';
 import { SettingsList } from './rows';
+import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 
 export function WalletSettings(): React.ReactElement {
   const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, border } = usePalette();
-  const blockRadius = useBlockRadius();
   const insets = useSafeAreaInsets();
 
   const { model, deploy } = useWalletModel();
@@ -32,7 +32,7 @@ export function WalletSettings(): React.ReactElement {
   };
   const onRecovery = (): void => { router.push('/wallet/recovery'); };
 
-  const card = makeCard(dark, border, blockRadius);
+  const card = makeCard(dark, border, BLOCK_RADIUS_DEFAULT);
 
   return (
     <Col surface="surface" flex={1}>

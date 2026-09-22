@@ -9,7 +9,7 @@ import { Row, Col, Box } from '../layout';
 import { shortAddress } from '../../modules/messaging';
 import { ethFromWeiHex } from './helpers';
 import type { TxRequest, TxReceipt } from './helpers';
-import { usePalette, useBlockRadius, withAlpha } from '../../lib/theme';
+import { usePalette, withAlpha } from '../../lib/theme';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { PaymentCard } from '../PaymentCard';
 import { VIEM_CHAINS } from '@stage-labs/client/wallet/assets';
@@ -22,6 +22,7 @@ import { useTxSimulation } from '../../lib/txSimulate';
 import { SimulationBlock } from './sim';
 import { txActionLabel, isTransferRequest } from './txwording';
 import { profileLinkOf } from '../../lib/links';
+import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 
 interface TxCardModel {
   target?: string;
@@ -252,10 +253,9 @@ export function TxReceiptCard({ receipt, dark }: {
     ? `${receipt.metadata.amount} ${receipt.metadata.currency ?? 'ETH'}`
     : undefined;
   const successLabel = amountLabel ? `Payment sent · ${amountLabel}` : 'Transaction sent';
-  const url = explorerTxUrl(receipt.networkId, receipt.reference);
-  const blockRadius = useBlockRadius(); const pal = usePalette();
+  const url = explorerTxUrl(receipt.networkId, receipt.reference); const pal = usePalette();
   return (
-    <Box radius={blockRadius} background={dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)'} padding={12} margin={{ top: 8 }} gap={6} style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)' }}>
+    <Box radius={BLOCK_RADIUS_DEFAULT} background={dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)'} padding={12} margin={{ top: 8 }} gap={6} style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)' }}>
       <Row align="center" gap={8}>
         <Icon name="check" size={18} color={dark ? '#7fd07f' : '#2f9e44'}/>
         <Text weight="semibold" size="md" color={dark ? '#ffffff' : '#000000'}>

@@ -12,7 +12,8 @@ import {
   type XmtpInstallation,
 } from '../../modules/messaging';
 import { capabilities } from '../../lib/capabilities';
-import { DANGER, useBlockRadius, usePalette } from '../../lib/theme';
+import { DANGER, usePalette } from '../../lib/theme';
+import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 
 function when(ms: number | undefined): string {
   if (!ms) return 'Unknown date';
@@ -23,10 +24,9 @@ function Session({ inst, busy, onRevoke, c }: {
   inst: XmtpInstallation; busy: boolean; onRevoke: () => void;
   c: { fg: string; sub: string; border: string; rowBg: string };
 }): React.ReactElement {
-  const blockRadius = useBlockRadius();
   return (
     <Box
-      radius={blockRadius}
+      radius={BLOCK_RADIUS_DEFAULT}
       margin={{ x: 16, top: 8 }}
       padding={12}
       background={c.rowBg}

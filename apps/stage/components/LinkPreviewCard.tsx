@@ -8,7 +8,8 @@ import { Box, Row } from './layout';
 import { domainOf } from '../lib/genericLinkDetect';
 import { useLinkPreview, isX402, type LinkPreviewResult } from '../lib/useLinkPreview';
 import { X402Card } from './X402Card';
-import { usePalette, useBlockRadius } from '../lib/theme';
+import { usePalette } from '../lib/theme';
+import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 
 function LinkPreviewBody({ meta, url, subColor }: {
   meta: Exclude<LinkPreviewResult, { kind: 'x402' }>; url: string; subColor: string;
@@ -46,13 +47,12 @@ export function LinkPreviewCard({ url, dark }: {
 }): React.ReactElement | null {
   const meta = useLinkPreview(url);
   const pal = usePalette();
-  const blockRadius = useBlockRadius();
   if (!meta) return null;
   if (isX402(meta)) return <X402Card challenge={meta} dark={dark} />;
 
   return (
     <Pressable onPress={() => void Linking.openURL(url)}>
-      <Box background={'transparent'} radius={blockRadius} style={{ borderWidth: 1, borderColor: pal.border, overflow: 'hidden' }}>
+      <Box background={'transparent'} radius={BLOCK_RADIUS_DEFAULT} style={{ borderWidth: 1, borderColor: pal.border, overflow: 'hidden' }}>
         <LinkPreviewBody meta={meta} url={url} subColor={pal.text} />
       </Box>
     </Pressable>

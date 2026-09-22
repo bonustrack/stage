@@ -5,7 +5,8 @@ import { Row, Col, Box } from '../layout';
 import { shortAddress } from '../../modules/messaging';
 import { fmtSigValue } from './helpers';
 import type { SigRequest, SigReference } from './helpers';
-import { usePalette, useBlockRadius } from '../../lib/theme';
+import { usePalette } from '../../lib/theme';
+import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 
 function stringifyPrimitive(v: unknown): string | undefined {
   if (typeof v === 'string') return v;
@@ -106,9 +107,8 @@ export function SigRequestCard({ req, dark, signing, onSign, consentAllowed }: {
   const gated = consentAllowed === false;
   const { fill, border } = detailColors(dark);
   const pal = usePalette();
-  const blockRadius = useBlockRadius();
   return (
-    <Box radius={blockRadius} background={pal.border} padding={12} margin={{ top: 8 }} gap={8} style={{ alignSelf: 'stretch' }}>
+    <Box radius={BLOCK_RADIUS_DEFAULT} background={pal.border} padding={12} margin={{ top: 8 }} gap={8} style={{ alignSelf: 'stretch' }}>
       <Row align="center" gap={8}>
         <Icon name="pencil" size={18} color={pal.link}/>
         <Text weight="semibold" size="md" style={{ flexShrink: 1 }}>{title}</Text>
@@ -127,9 +127,9 @@ export function SigRequestCard({ req, dark, signing, onSign, consentAllowed }: {
 export function SigReferenceCard({ ref, dark }: {
   ref: SigReference; dark: boolean;
 }): React.ReactElement {
-  const short = (h?: string): string => (h && h.length > 14 ? `${h.slice(0, 8)}…${h.slice(-4)}` : (h ?? '')); const blockRadius = useBlockRadius();
+  const short = (h?: string): string => (h && h.length > 14 ? `${h.slice(0, 8)}…${h.slice(-4)}` : (h ?? ''));
   return (
-    <Box radius={blockRadius} background={dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)'} padding={12} margin={{ top: 8 }} gap={6} style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)' }}>
+    <Box radius={BLOCK_RADIUS_DEFAULT} background={dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)'} padding={12} margin={{ top: 8 }} gap={6} style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)' }}>
       <Row align="center" gap={8}>
         <Icon name="check" size={18} color={dark ? '#7fd07f' : '#2f9e44'}/>
         <Text weight="semibold" size="md" color={dark ? '#ffffff' : '#000000'}>Signed ✓</Text>

@@ -4,7 +4,8 @@ import { FormField } from '../FormField';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Row, Box } from '../layout';
-import { usePalette, useBlockRadius, withAlpha } from '../../lib/theme';
+import { usePalette, withAlpha } from '../../lib/theme';
+import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 
 export function OpenAnswerBlock({ qi, dark, answers, mine, onSubmit }: {
   qi: number; dark: boolean;
@@ -12,7 +13,6 @@ export function OpenAnswerBlock({ qi, dark, answers, mine, onSubmit }: {
   mine?: string; onSubmit: (text: string) => void;
 }): React.ReactElement {
   const pal = usePalette();
-  const radius = useBlockRadius();
   const [draft, setDraft] = useState('');
   const list = answers ? [...answers.entries()].sort((a, b) => a[1].ts.localeCompare(b[1].ts)) : [];
   const submit = (): void => { onSubmit(draft); setDraft(''); };
@@ -32,7 +32,7 @@ export function OpenAnswerBlock({ qi, dark, answers, mine, onSubmit }: {
 />
       </Row>
       {list.map(([voter, a]) => (
-        <Box radius={radius} background={voter === mine
+        <Box radius={BLOCK_RADIUS_DEFAULT} background={voter === mine
               ? withAlpha(pal.link, dark ? 0.18 : 0.14)
               : (dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)')} padding={{ x: 12, y: 7 }}
           key={`${qi}-${voter}`}

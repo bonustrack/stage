@@ -5,8 +5,9 @@ import { Box } from './layout';
 import { useConvMeta } from '../modules/messaging';
 import { usePeerProfiles, getPeerName, isPeerResolved } from '../lib/peerProfiles';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
-import { usePalette, useBlockRadius } from '../lib/theme';
+import { usePalette } from '../lib/theme';
 import { shortAddress } from '../modules/messaging';
+import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 
 export function ChannelCard(
   { convId, peerAddress }: { convId?: string; peerAddress?: string },
@@ -43,7 +44,6 @@ function ConvIdCard({ convId }: { convId: string }): React.ReactElement {
   const meta = useConvMeta(convId);
   usePeerProfiles([meta.peerAddr]);
   const { border } = usePalette();
-  const blockRadius = useBlockRadius();
 
   const title = convTitle(meta, convId);
   const subtitle = convSubtitle(meta);
@@ -54,7 +54,7 @@ function ConvIdCard({ convId }: { convId: string }): React.ReactElement {
   };
 
   return (
-    <Box radius={blockRadius} style={{ borderWidth: 1, borderColor: border, overflow: 'hidden' }}>
+    <Box radius={BLOCK_RADIUS_DEFAULT} style={{ borderWidth: 1, borderColor: border, overflow: 'hidden' }}>
       <ChannelRow
         title={title}
         subtitle={subtitle}
@@ -70,7 +70,6 @@ function ConvIdCard({ convId }: { convId: string }): React.ReactElement {
 function DmPeerCard({ address }: { address: string }): React.ReactElement {
   usePeerProfiles([address]);
   const { border } = usePalette();
-  const blockRadius = useBlockRadius();
 
   const peerName = getPeerName(address);
   const title = peerName == null || peerName === '' ? shortAddress(address) : peerName;
@@ -81,7 +80,7 @@ function DmPeerCard({ address }: { address: string }): React.ReactElement {
   };
 
   return (
-    <Box radius={blockRadius} style={{ borderWidth: 1, borderColor: border, overflow: 'hidden' }}>
+    <Box radius={BLOCK_RADIUS_DEFAULT} style={{ borderWidth: 1, borderColor: border, overflow: 'hidden' }}>
       <ChannelRow
         title={title}
         subtitle="Direct message"
