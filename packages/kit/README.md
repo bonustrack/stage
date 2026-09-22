@@ -70,7 +70,7 @@ src/
   tokens.ts          # colour + spacing tokens, colour helpers (Scheme, resolveColor, ...)
   theme.ts           # theme-preference contract + resolution
   theme-derive.ts    # custom-palette deriver
-  icons.ts           # HeroIcon names + resolveIconName
+  icons.ts           # HeroIcon names + resolveIconName; heroicons.data.ts (v1 outline) + heroicons.solid.data.ts (v1 solid, `Icon variant="solid"`)
   heroicons.data.ts  # HeroIcon path data
   avatar.ts          # avatar helpers
   layout.ts          # Box layout core (spacing, borders, surfaces)

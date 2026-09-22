@@ -2,7 +2,7 @@ import { MAX_LINES, recommended, NO_ESCAPE_HATCHES, commentPlugins, COMMENT_RULE
 
 export function kitEslint() {
   return [
-    { ignores: ['node_modules/**', 'dist/**', 'build/**', 'src/heroicons.data.ts'] },
+    { ignores: ['node_modules/**', 'dist/**', 'build/**', 'src/heroicons.data.ts', 'src/heroicons.solid.data.ts'] },
     ...recommended,
     {
       files: ['src/**/*.{ts,tsx}'],

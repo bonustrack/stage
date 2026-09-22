@@ -2,6 +2,7 @@
 import { HERO_ICON_DATA } from './heroicons.data';
 
 export { isBrandIconName, brandIconPath, type BrandIconName } from './brand-icons.data';
+export { HERO_SOLID_ICON_PATHS, HERO_SOLID_VIEW_BOX, isHeroSolidIconName, type HeroSolidIconName, type SolidPath } from './heroicons.solid.data';
 
 export const HERO_ICON_PATHS = HERO_ICON_DATA;
 
