@@ -82,7 +82,8 @@
     "react-native-gesture-handler": "*",
     "react-native-safe-area-context": "*",
     "react-native-reanimated": "~4.3.1",
-    "expo-av": "*",
+    "expo-audio": "*",
+    "expo-video": "*",
     "expo-document-picker": "*",
     "expo-image-picker": "*"
   },
@@ -97,6 +98,7 @@
     "@types/qrcode": "^1.5.5",
     "@types/react": "~19.1.0",
     "@types/react-dom": "~19.1.0",
+    "expo-modules-core": "3.0.30",
     "react-dom": "19.1.0",
     "react-native-web": "^0.21.2",
     "vite": "^6"

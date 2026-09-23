@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FONT_SIZE, fontName } from '../tokens';
 import { Pressable, Text as RNText, View } from 'react-native';
-import { Audio, type AVPlaybackStatus } from 'expo-av';
+import { createAudioPlayer, type AudioPlayer as ExpoAudioPlayer, type AudioStatus } from 'expo-audio';
 import { Icon } from './icon';
 
 const DEFAULT_BAR_COUNT = 34;
@@ -37,53 +37,54 @@ interface AudioState {
 }
 
 function useAudio(src: string, onPlay?: () => void): AudioState {
-  const soundRef = useRef<Audio.Sound | null>(null);
+  const playerRef = useRef<ExpoAudioPlayer | null>(null);
   const [playing, setPlaying] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
 
   useEffect(() => {
     return () => {
-      void soundRef.current?.unloadAsync();
-      soundRef.current = null;
+      playerRef.current?.remove();
+      playerRef.current = null;
     };
   }, []);
 
-  function onStatus(status: AVPlaybackStatus): void {
+  function onStatus(status: AudioStatus): void {
     if (!status.isLoaded) return;
-    setPosition(status.positionMillis);
-    if (status.durationMillis) setDuration(status.durationMillis);
+    setPosition(Math.round(status.currentTime * 1000));
+    if (Number.isFinite(status.duration) && status.duration > 0) setDuration(Math.round(status.duration * 1000));
     if (status.didJustFinish) {
       setPlaying(false);
       setPosition(0);
-      void soundRef.current?.setPositionAsync(0);
+      playerRef.current?.pause();
+      void playerRef.current?.seekTo(0);
     } else {
-      setPlaying(status.isPlaying);
+      setPlaying(status.playing);
     }
   }
 
-  async function toggle(): Promise<void> {
-    if (soundRef.current === null) {
+  function toggle(): Promise<void> {
+    const current = playerRef.current;
+    if (current === null) {
       onPlay?.();
-      const { sound } = await Audio.Sound.createAsync(
-        { uri: src },
-        { shouldPlay: true },
-        onStatus,
-      );
-      soundRef.current = sound;
-      return;
+      const player = createAudioPlayer({ uri: src });
+      player.addListener('playbackStatusUpdate', onStatus);
+      playerRef.current = player;
+      player.play();
+      return Promise.resolve();
     }
-    if (playing) await soundRef.current.pauseAsync();
+    if (playing) current.pause();
     else {
       onPlay?.();
-      await soundRef.current.playAsync();
+      current.play();
     }
+    return Promise.resolve();
   }
 
   function seek(fraction: number): void {
-    if (!soundRef.current || duration <= 0) return;
+    if (!playerRef.current || duration <= 0) return;
     const clamped = Math.max(0, Math.min(1, fraction));
-    void soundRef.current.setPositionAsync(Math.floor(clamped * duration));
+    void playerRef.current.seekTo(Math.floor(clamped * duration) / 1000);
   }
 
   return { playing, position, duration, toggle, seek };

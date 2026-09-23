@@ -58,6 +58,7 @@ export default defineConfig({
       knip: {
         entry: ['eslint.js', 'stories/*.stories.tsx'],
         project: ['src/**', 'stories/**', 'gallery/**'],
+        ignoreDependencies: ['react-native-web'],
       },
     },
     'packages/config': {

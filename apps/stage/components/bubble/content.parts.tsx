@@ -1,4 +1,5 @@
 import { Component } from 'react';
+import { Platform } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import Markdown from 'react-native-markdown-display';
@@ -46,6 +47,13 @@ function MentionBody({ text, fg, dark }: { text: string; fg: string; dark: boole
 
 export type MarkdownProps = Pick<ComponentProps<typeof Markdown>, 'markdownit' | 'onLinkPress' | 'style'>;
 
+const WEB_PLAYABLE_MIME: Readonly<Record<string, string>> = { 'audio/m4a': 'audio/mp4' };
+
+function dataUrlMime(mime: string | undefined): string {
+  const declared = mime ?? 'application/octet-stream';
+  return Platform.OS === 'web' ? WEB_PLAYABLE_MIME[declared] ?? declared : declared;
+}
+
 function BubbleAttachment({ att, index, entryId, fg }: {
   att: Attachment; index: number; entryId: string; fg: string;
 }): React.ReactElement {
@@ -53,7 +61,7 @@ function BubbleAttachment({ att, index, entryId, fg }: {
     return <RemoteAttachmentResolver att={att} fg={fg} msgId={entryId} index={index} />;
   }
   const fullUrl = att.dataB64
-    ? `data:${att.mime ?? 'application/octet-stream'};base64,${att.dataB64}`
+    ? `data:${dataUrlMime(att.mime)};base64,${att.dataB64}`
     : att.url ?? '';
   return <AttachmentView att={att} fg={fg} fullUrl={fullUrl} />;
 }

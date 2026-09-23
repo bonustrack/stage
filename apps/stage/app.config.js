@@ -167,7 +167,7 @@ const config = {
       },
     ],
     [
-      'expo-av',
+      'expo-audio',
       {
         microphonePermission: `Allow ${variant.name} to record voice messages.`,
       },
