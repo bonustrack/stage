@@ -24,7 +24,7 @@ export class PersistentStore<T> {
   private readonly hydration = hydrateOnce<T | null>(() => this.readBacking());
   private readonly pubsub = makeListeners<T | null>();
   private notify(v: T | null): void { this.pubsub.notify(v); }
-  private flushTimer: number | null = null;
+  private flushTimer: ReturnType<typeof setTimeout> | null = null;
   private dirty = false;
 
   constructor(
@@ -76,7 +76,7 @@ export class PersistentStore<T> {
     this.flushTimer = setTimeout(() => {
       this.flushTimer = null;
       this.writeBacking();
-    }, this.flushDelayMs) as unknown as number;
+    }, this.flushDelayMs);
   }
 
   clear(): void {

@@ -1,15 +1,13 @@
 
 import { parseEtherscanResponse, type EtherscanResponse } from './etherscan.schema';
 import type { EtherscanTx } from './etherscan.types';
-import { readEnv } from './env';
 export type { EtherscanTx } from './etherscan.types';
 
-const DEFAULT_KEY =
-  readEnv('EXPO_PUBLIC_ETHERSCAN_API_KEY') ?? '2UAJBTBZRQTSZUF9JW953W9XMGDM3YAZWY';
+const DEFAULT_KEY = '2UAJBTBZRQTSZUF9JW953W9XMGDM3YAZWY';
 
 const V2_URL = 'https://api.etherscan.io/v2/api';
 
-export const ACTIVITY_CHAINS = [
+const ACTIVITY_CHAINS = [
   { id: 1, label: 'Ethereum' },
   { id: 11155111, label: 'Sepolia' },
 ] as const;
@@ -28,11 +26,11 @@ export interface ActivityRow {
   chainLabel: string;
 }
 
-export async function fetchActivity(
+async function fetchActivity(
   address: string,
-  chainId = 1,
-  limit = 50,
-  apiKey: string = DEFAULT_KEY,
+  chainId: number,
+  limit: number,
+  apiKey: string,
 ): Promise<ActivityRow[]> {
   const addr = address.toLowerCase();
   const label = ACTIVITY_CHAINS.find(c => c.id === chainId)?.label ?? `chain ${chainId}`;

@@ -8,7 +8,7 @@ export function useNfts(active: boolean, address?: string): NftState {
   const enabled = active && !!address;
   const { data, isError } = useQuery({
     queryKey: ['nfts', address ?? ''],
-    queryFn: () => getNftsAcrossChains(address ?? ''),
+    queryFn: () => getNftsAcrossChains(address ?? '', process.env.EXPO_PUBLIC_OPENSEA_API_KEY as string | undefined),
     enabled,
   });
   if (isError) return { nfts: null, nftStatus: 'error' };

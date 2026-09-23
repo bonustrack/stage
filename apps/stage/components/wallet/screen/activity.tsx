@@ -20,7 +20,7 @@ export function ActivityView({ address, head, border }: {
 }): React.ReactElement {
   const { data, isError } = useQuery({
     queryKey: ['activity', address ?? ''],
-    queryFn: () => fetchActivityAllChains(address ?? '', 50),
+    queryFn: () => fetchActivityAllChains(address ?? '', 50, process.env.EXPO_PUBLIC_ETHERSCAN_API_KEY as string | undefined),
     enabled: !!address,
   });
   const rows = data ?? [];

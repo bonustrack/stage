@@ -28,10 +28,10 @@ export function subscribeAllMessages(cb: (m: StreamMsg) => void, options: Subscr
 
 let globalStreamCancel: (() => void) | null = null;
 let globalStreamStarting = false;
-let globalStreamRearmTimer: number | null = null;
+let globalStreamRearmTimer: ReturnType<typeof setTimeout> | null = null;
 let globalAppStateSub: { remove: () => void } | null = null;
 let globalPushSub: (() => void) | null = null;
-let pushResyncTimer: number | null = null;
+let pushResyncTimer: ReturnType<typeof setTimeout> | null = null;
 let lastForcedPushSyncAt = 0;
 let lastStreamMsgAt = 0;
 let lastStreamCloseAt = 0;
@@ -64,7 +64,7 @@ function onXmtpPush(): void {
       }
       await resyncActiveFeeds();
     })();
-  }, 300) as unknown as number;
+  }, 300);
 }
 
 function rearmGlobalStream(): void {
@@ -72,7 +72,7 @@ function rearmGlobalStream(): void {
   globalStreamRearmTimer = setTimeout(() => {
     globalStreamRearmTimer = null;
     void ensureGlobalStream();
-  }, 500) as unknown as number;
+  }, 500);
 }
 
 type StreamCb = Parameters<
@@ -118,8 +118,7 @@ function routeMessageToFeed(convId: string, msg: StreamCbMsg): void {
 function handleStreamMessage(msg: StreamCbMsg): Promise<void> {
   if (!msg) return Promise.resolve();
   lastStreamMsgAt = Date.now();
-  const convId = convIdFromTopic(msg.topic)
-    ?? (msg as unknown as { conversationId?: string }).conversationId;
+  const convId = convIdFromTopic(msg.topic) ?? undefined;
   fanOutToSubscribers(convId, msg);
   if (!convId) {
     if (activeFeedLines.size > 0) void resyncActiveFeeds();

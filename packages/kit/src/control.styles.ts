@@ -117,25 +117,10 @@ export interface TextFieldStyleInput {
   color?: string;
 }
 
-export interface ResolvedTextFieldSpec {
-  minHeight: number;
-  paddingX: number | string;
-  paddingY: number | string;
-  background: string;
-  radius: number | string;
-  borderWidth: number;
-  borderColor: string;
-  color: string;
-  fontSize: number;
-  fontFamily: string;
-  placeholder: string;
-}
-
 export interface ResolvedTextFieldStyle {
   box: ViewStyle;
   text: TextStyle;
   placeholder: string;
-  spec: ResolvedTextFieldSpec;
 }
 
 function fieldBorder(
@@ -152,45 +137,28 @@ function fieldBackground(input: TextFieldStyleInput, c: ControlColors): string {
   return input.variant === 'plain' ? 'transparent' : c.bg;
 }
 
-export function textFieldSpec(input: TextFieldStyleInput): ResolvedTextFieldSpec {
-  const size = CONTROL_SIZES.md;
-  const c = input.baseColors;
-  const border = fieldBorder(input, c);
-  return {
-    minHeight: size.minHeight,
-    paddingX: input.paddingX ?? size.paddingHorizontal,
-    paddingY: input.paddingY ?? size.paddingVertical,
-    background: fieldBackground(input, c),
-    radius: input.radius ?? input.defaultRadius,
-    borderWidth: border.width,
-    borderColor: border.color,
-    color: input.color ?? c.text,
-    fontSize: input.fontSize ?? size.fontSize,
-    fontFamily: input.fontFamily ?? fontName.sans,
-    placeholder: c.placeholder,
-  };
-}
-
 export function textFieldStyle(
   input: TextFieldStyleInput,
 ): ResolvedTextFieldStyle {
-  const s = textFieldSpec(input);
+  const size = CONTROL_SIZES.md;
+  const c = input.baseColors;
+  const border = fieldBorder(input, c);
   const box: ViewStyle = {
-    minHeight: s.minHeight,
-    paddingHorizontal: s.paddingX as DimensionValue,
-    paddingVertical: s.paddingY as DimensionValue,
-    backgroundColor: s.background,
-    borderRadius: s.radius,
-    borderWidth: s.borderWidth,
-    borderColor: s.borderColor,
+    minHeight: size.minHeight,
+    paddingHorizontal: (input.paddingX ?? size.paddingHorizontal) as DimensionValue,
+    paddingVertical: (input.paddingY ?? size.paddingVertical) as DimensionValue,
+    backgroundColor: fieldBackground(input, c),
+    borderRadius: input.radius ?? input.defaultRadius,
+    borderWidth: border.width,
+    borderColor: border.color,
     outlineWidth: 0,
   };
   const text: TextStyle = {
-    color: s.color,
-    fontSize: s.fontSize,
-    fontFamily: s.fontFamily,
+    color: input.color ?? c.text,
+    fontSize: input.fontSize ?? size.fontSize,
+    fontFamily: input.fontFamily ?? fontName.sans,
     padding: 0,
     margin: 0,
   };
-  return { box, text, placeholder: s.placeholder, spec: s };
+  return { box, text, placeholder: c.placeholder };
 }

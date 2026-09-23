@@ -57,7 +57,6 @@ describe('envelopeFromContent ui-parity options', () => {
     attachmentNameOf: (d) => (d as { filename?: string }).filename,
     attachmentLabelOf: (d) => (d as { filename?: string }).filename ?? 'attachment',
     attachmentDataB64Of: () => 'B64',
-    handlers: new Set(['reaction', 'reply', 'attachment', 'poll', 'walletSendCalls', 'signatureRequest']),
     requireObjectForHandlers: true,
   };
 

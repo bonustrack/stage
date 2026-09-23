@@ -5,7 +5,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { Col } from './layout';
 import { capabilities } from '../lib/capabilities';
-import { previewLinkOf } from '../lib/previewLinkDetect';
+import { previewLinkOf } from '../lib/cardLinks';
 
 export function PreviewLinkCard({ url }: { url: string }): React.ReactElement | null {
   const dark = useKitScheme() === 'dark';

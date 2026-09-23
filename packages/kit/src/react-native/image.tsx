@@ -7,15 +7,15 @@ import {
   type ImageLoadEventData,
   type NativeSyntheticEvent,
 } from 'react-native';
+import { flushBleed } from '../layout';
+import type { RadiusValue } from '../radius';
 import { BLOCK_RADIUS_DEFAULT } from '../tokens';
 
 export type ImageFit = 'none' | 'cover' | 'contain' | 'fill' | 'scale-down';
 export type ImagePosition =
   | 'center' | 'top' | 'bottom' | 'left' | 'right'
   | 'top left' | 'top right' | 'bottom left' | 'bottom right';
-export type ImageRadius =
-  | '2xs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl'
-  | 'full' | '100%' | 'none';
+export type ImageRadius = RadiusValue;
 
 const FIT: Record<ImageFit, ImageStyle['resizeMode']> = {
   none: 'center',
@@ -65,7 +65,7 @@ export function Image(props: ImageProps): React.ReactElement {
     background, margin, style, onLoad, onError,
   } = props;
 
-  const bleed = flush === true ? 16 : typeof flush === 'number' ? flush : 0;
+  const bleed = flushBleed(flush);
   const r = radiusValue(radius);
 
   const base: ImageStyle = {

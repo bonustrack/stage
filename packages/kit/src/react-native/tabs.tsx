@@ -2,7 +2,7 @@
 import { Pressable, Text as RNText, View, type ViewStyle } from 'react-native';
 import { Icon } from './icon';
 import { FONT_SIZE, fontName } from '../tokens';
-import type { HeroIconName } from '@stage-labs/kit/icons';
+import type { HeroIconName } from '../icons';
 
 export interface TabsOptionView {
   value: string;

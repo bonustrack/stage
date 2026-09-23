@@ -3,7 +3,7 @@ import { Path, Svg } from 'react-native-svg';
 import {
   heroIconPaths, iconStroke, iconStrokeWidth, HERO_ICON_DEFAULTS, HERO_SOLID_ICON_PATHS, HERO_SOLID_VIEW_BOX,
   isHeroSolidIconName, type HeroIconName, type HeroSolidIconName, type SolidPath,
-} from '@stage-labs/kit/icons';
+} from '../icons';
 import { brandIconPath, type BrandIconName } from '../brand-icons.data';
 
 export type { HeroIconName, HeroSolidIconName, BrandIconName };

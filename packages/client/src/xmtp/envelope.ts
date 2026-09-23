@@ -44,15 +44,8 @@ export interface EnvelopeOptions {
   attachmentNameOf(decoded: unknown): string | undefined;
   attachmentLabelOf(decoded: unknown): string;
   attachmentDataB64Of(decoded: unknown): string;
-  handlers: ReadonlySet<string>;
   requireObjectForHandlers: boolean;
 }
-
-const ALL_HANDLERS = new Set([
-  'reaction', 'poll', 'signatureRequest', 'signatureReference', 'walletSendCalls',
-  'transactionReference', 'reply', 'group_updated', 'groupUpdated', 'attachment',
-  'multiRemoteStaticAttachment', 'multiRemoteAttachment',
-]);
 
 const defaultEnvelopeOptions: EnvelopeOptions = {
   reactionRemoved: (action) => action === 'removed',
@@ -63,7 +56,6 @@ const defaultEnvelopeOptions: EnvelopeOptions = {
   attachmentNameOf: (decoded) => (decoded as StaticAttachmentView).filename,
   attachmentLabelOf: (decoded) => (decoded as StaticAttachmentView).filename,
   attachmentDataB64Of: (decoded) => (decoded as StaticAttachmentView).data,
-  handlers: ALL_HANDLERS,
   requireObjectForHandlers: false,
 };
 
@@ -179,14 +171,6 @@ const ENVELOPE_HANDLERS: Record<string, Handler> = {
     payload: { contentType: typeId, txReference: decoded as TransactionReferenceContent },
   }),
   reply: replyEnvelope,
-  group_updated: (base, typeId, decoded) => ({
-    ...base, text: humanizeGroupUpdated(decoded as GroupUpdatedContent),
-    payload: { contentType: typeId, system: true },
-  }),
-  groupUpdated: (base, typeId, decoded) => ({
-    ...base, text: humanizeGroupUpdated(decoded as GroupUpdatedContent),
-    payload: { contentType: typeId, system: true },
-  }),
   attachment: attachmentEnvelope,
   multiRemoteStaticAttachment: multiRemoteEnvelope,
   multiRemoteAttachment: multiRemoteEnvelope,
@@ -200,9 +184,9 @@ function handledEnvelope(
   base: HistoryEntry, typeId: string, decoded: unknown, fallback: string | undefined, options: EnvelopeOptions,
 ): HistoryEntry | undefined {
   const objectOk = !options.requireObjectForHandlers || (decoded !== null && typeof decoded === 'object');
-  if (objectOk && options.handlers.has(typeId)) {
-    const handler = ENVELOPE_HANDLERS[typeId];
-    const built = handler ? safe(() => handler(base, typeId, decoded, options, fallback)) : undefined;
+  const handler = Object.hasOwn(ENVELOPE_HANDLERS, typeId) ? ENVELOPE_HANDLERS[typeId] : undefined;
+  if (objectOk && handler) {
+    const built = safe(() => handler(base, typeId, decoded, options, fallback));
     if (built) return built;
   }
   if (isGroupUpdateTypeId(typeId)) {

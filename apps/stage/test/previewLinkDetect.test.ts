@@ -1,6 +1,6 @@
 
 import { describe, expect, test } from 'bun:test';
-import { previewLinkOf } from '../lib/previewLinkDetect';
+import { previewLinkOf } from '../lib/cardLinks';
 
 const GROUP = '521df401-53f1-4413-b95a-c682dc054134';
 const PROJECT = '1707f2db-c2b8-4c91-9341-27b1d57d355f';

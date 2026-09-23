@@ -196,6 +196,11 @@ export function borderStyleEntries(
   return s;
 }
 
+export function flushBleed(flush: number | boolean | undefined): number {
+  if (flush === true) return 16;
+  return typeof flush === 'number' ? flush : 0;
+}
+
 export function boxStyleEntries(props: BoxBaseProps): BoxStyleEntries {
   const s: BoxStyleEntries = {};
   applyFlex(s, props);

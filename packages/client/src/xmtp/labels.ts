@@ -33,7 +33,7 @@ export function asGroup(conv: unknown): Group | null {
     : null;
 }
 
-export async function readAppData(group: Group): Promise<string> {
+async function readAppData(group: Group): Promise<string> {
   if (typeof group.appData === 'function') return await group.appData() ?? '';
   return group.appData ?? '';
 }
@@ -42,7 +42,7 @@ function cleanLabel(raw: string): string {
   return raw.trim().replace(/\s+/g, ' ').slice(0, MAX_LABEL_LEN);
 }
 
-export function parseBlob(appData: string): Record<string, unknown> {
+function parseBlob(appData: string): Record<string, unknown> {
   if (!appData?.trim()) return {};
   try {
     const parsed: unknown = JSON.parse(appData);
@@ -54,7 +54,7 @@ export function parseBlob(appData: string): Record<string, unknown> {
   }
 }
 
-export function readLabels(blob: Record<string, unknown>): string[] {
+function readLabels(blob: Record<string, unknown>): string[] {
   const raw = blob.labels;
   if (!Array.isArray(raw)) return [];
   const out: string[] = [];
@@ -71,16 +71,15 @@ export function readLabels(blob: Record<string, unknown>): string[] {
   return out;
 }
 
-export function labelsOfSyncedGroup(conv: unknown): Promise<string[]> {
+export async function groupLabelsOf(conv: unknown, sync = false): Promise<string[]> {
   const group = asGroup(conv);
-  if (!group) return Promise.resolve([]);
-  return (async (): Promise<string[]> => {
-    try {
-      return readLabels(parseBlob(await readAppData(group)));
-    } catch {
-      return [];
-    }
-  })();
+  if (!group) return [];
+  try {
+    if (sync) await group.sync?.();
+    return readLabels(parseBlob(await readAppData(group)));
+  } catch {
+    return [];
+  }
 }
 
 function isLabelPermissionDenied(e: unknown): boolean {

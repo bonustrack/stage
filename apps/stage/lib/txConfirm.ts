@@ -1,19 +1,6 @@
 
-import { decodeFunctionData, formatEther, formatUnits, isAddress, type Hex } from 'viem';
+import { decodeFunctionData, erc20Abi, formatEther, formatUnits, isAddress, type Hex } from 'viem';
 import { selectorOf } from '@stage-labs/client/wallet/txDecode';
-
-const ERC20_TRANSFER_ABI = [
-  {
-    type: 'function',
-    name: 'transfer',
-    stateMutability: 'nonpayable',
-    inputs: [
-      { name: 'to', type: 'address' },
-      { name: 'amount', type: 'uint256' },
-    ],
-    outputs: [{ name: '', type: 'bool' }],
-  },
-] as const;
 
 export const KNOWN_TOKENS: Record<string, { symbol: string; decimals: number }> = {
   '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913': { symbol: 'USDC', decimals: 6 },
@@ -55,9 +42,9 @@ function deriveTransferSummary(
   to: string | undefined, data: string,
 ): ConfirmSummary | undefined {
   try {
-    const decoded = decodeFunctionData({ abi: ERC20_TRANSFER_ABI, data: data as Hex });
+    const decoded = decodeFunctionData({ abi: erc20Abi, data: data as Hex });
     if (decoded.functionName !== 'transfer') return undefined;
-    const [recipient, rawAmount] = decoded.args as readonly [string, bigint];
+    const [recipient, rawAmount] = decoded.args;
     const known = KNOWN_TOKENS[(to ?? '').toLowerCase()];
     const amount = known
       ? formatUnits(rawAmount, known.decimals)

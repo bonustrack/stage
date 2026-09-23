@@ -60,9 +60,6 @@ export const {
   json: async (line, codec, content) => (await requireConv(line)).send(content, { contentType: codec.contentType }),
   attachment: async (line, filename, mimeType, dataB64) => {
     const conv = await requireConv(line);
-    const payload = buildStaticAttachment(filename, mimeType, dataB64);
-    const c = conv as unknown as { sendAttachment?: (p: typeof payload) => Promise<string> };
-    if (typeof c.sendAttachment === 'function') return c.sendAttachment(payload);
-    return conv.send({ attachment: payload });
+    return conv.send({ attachment: buildStaticAttachment(filename, mimeType, dataB64) });
   },
 });

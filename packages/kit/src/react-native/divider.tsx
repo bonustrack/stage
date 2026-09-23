@@ -1,5 +1,6 @@
 
 import { View, type ViewStyle } from 'react-native';
+import { flushBleed } from '../layout';
 
 export interface DividerProps {
   spacing?: number;
@@ -16,7 +17,7 @@ function borderColor(dark: boolean): string {
 
 export function Divider(props: DividerProps): React.ReactElement {
   const { spacing = 0, color, size = 1, flush = false, dark, style } = props;
-  const bleed = flush === true ? 16 : typeof flush === 'number' ? flush : 0;
+  const bleed = flushBleed(flush);
 
   const base: ViewStyle = {
     height: size,

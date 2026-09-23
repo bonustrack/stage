@@ -29,7 +29,7 @@ function knob(checked: boolean, dark: boolean): ViewStyle {
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: checked && !dark ? '#ffffff' : checked ? '#000000' : '#ffffff',
+    backgroundColor: checked && dark ? '#000000' : '#ffffff',
     alignSelf: checked ? 'flex-end' : 'flex-start',
   };
 }

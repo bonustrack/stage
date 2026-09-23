@@ -5,7 +5,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Row } from './layout';
-import { domainOf } from '../lib/genericLinkDetect';
+import { domainOf } from '../lib/format';
 import { useLinkPreview, isX402, type LinkPreviewResult } from '../lib/useLinkPreview';
 import { X402Card } from './X402Card';
 import { usePalette } from '../lib/theme';

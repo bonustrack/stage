@@ -1,11 +1,9 @@
 
 import { parseOpenseaResponse } from './opensea.schema';
 import type { ApiNft } from './opensea.types';
-import { readEnv } from './env';
 export type { ApiNft } from './opensea.types';
 
-const DEFAULT_KEY =
-  readEnv('EXPO_PUBLIC_OPENSEA_API_KEY') ?? '51754bb53b324552ba4741c5b7298096';
+const DEFAULT_KEY = '51754bb53b324552ba4741c5b7298096';
 
 interface ChainItem {
   name: string;
@@ -33,10 +31,10 @@ export interface Nft {
   openseaUrl: string;
 }
 
-export async function getNfts(
+async function getNfts(
   address: string,
   chainId: string,
-  apiKey: string = DEFAULT_KEY,
+  apiKey: string,
 ): Promise<Nft[]> {
   const network = NETWORKS[chainId];
   if (!network) return [];
@@ -87,15 +85,14 @@ function toNft(a: ApiNft, chainId: string): Nft {
   };
 }
 
-export const NFT_CHAIN_IDS = ['1', '8453', '42161', '10', '137'];
+const NFT_CHAIN_IDS = ['1', '8453', '42161', '10', '137'];
 
 export async function getNftsAcrossChains(
   address: string,
-  chainIds: string[] = NFT_CHAIN_IDS,
   apiKey: string = DEFAULT_KEY,
 ): Promise<Nft[]> {
   const batches = await Promise.all(
-    chainIds.map(id => getNfts(address, id, apiKey).catch(() => [] as Nft[])),
+    NFT_CHAIN_IDS.map(id => getNfts(address, id, apiKey).catch(() => [] as Nft[])),
   );
   return batches.flat();
 }

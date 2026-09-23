@@ -17,12 +17,6 @@ function isCustomSchema(schema: Reaction['schema']): boolean {
   return schema === ReactionSchema.Custom || (schema as unknown) === 'custom';
 }
 
-const WEB_HANDLERS = new Set([
-  'reaction', 'reply', 'attachment', 'poll', 'walletSendCalls', 'signatureRequest',
-  'signatureReference', 'transactionReference', 'group_updated', 'groupUpdated',
-  'multiRemoteStaticAttachment', 'multiRemoteAttachment',
-]);
-
 const webEnvelopeOptions: EnvelopeOptions = {
   reactionRemoved: (action) => isRemovedAction(action as Reaction['action']),
   reactionCustom: (schema) => isCustomSchema(schema as Reaction['schema']),
@@ -35,7 +29,6 @@ const webEnvelopeOptions: EnvelopeOptions = {
   attachmentNameOf: (decoded) => (decoded as AttachmentContent).filename,
   attachmentLabelOf: (decoded) => (decoded as AttachmentContent).filename ?? 'attachment',
   attachmentDataB64Of: (decoded) => bytesToBase64((decoded as AttachmentContent).content),
-  handlers: WEB_HANDLERS,
   requireObjectForHandlers: true,
 };
 

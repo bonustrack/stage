@@ -4,7 +4,7 @@ import { peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap } 
 import { getLastReadNs, getMarkedUnread } from '../../lib/xmtp.client';
 import { groupNameImage } from '../../lib/xmtp.groups';
 import { rowMessagesOf } from '../../lib/xmtp.messages';
-import { labelsOfSyncedGroup } from '../../lib/xmtp.labels';
+import { groupLabelsOf } from '../../lib/xmtp.labels';
 import { isControlBody } from '../../lib/xmtp.types';
 import { isGroupUpdateTypeId, previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 import { revivesClearedChat } from '@stage-labs/client/xmtp/readState';
@@ -59,7 +59,7 @@ function previewOfMessage(last: RowMessage | undefined, dm: boolean): string {
 interface GroupRowData {
   memberAddresses: string[];
   groupMeta: { name: string; imageUrl: string };
-  labels: Awaited<ReturnType<typeof labelsOfSyncedGroup>>;
+  labels: Awaited<ReturnType<typeof groupLabelsOf>>;
 }
 
 async function gatherGroupRowData(conv: Conversation, peerAddress: string | null): Promise<GroupRowData> {
@@ -69,7 +69,7 @@ async function gatherGroupRowData(conv: Conversation, peerAddress: string | null
   const [memberAddresses, groupMeta, labels] = await Promise.all([
     groupMemberEthAddresses(conv),
     groupNameImage(conv),
-    labelsOfSyncedGroup(conv),
+    groupLabelsOf(conv),
   ]);
   return { memberAddresses, groupMeta, labels };
 }

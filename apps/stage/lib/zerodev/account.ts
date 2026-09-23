@@ -97,7 +97,7 @@ async function buildPasskeyKernel(
 export async function passkeyValidatorFromStored(
   publicClient: PublicClient,
   stored: StoredPasskey,
-): Promise<unknown> {
+): Promise<KernelValidator | null> {
   if (!passkeysAvailable()) return null;
   try {
     return await buildPasskeyValidator(publicClient, stored);

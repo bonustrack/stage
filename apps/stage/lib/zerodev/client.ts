@@ -7,6 +7,7 @@ import {
   type KernelAccountClient,
 } from '@zerodev/sdk';
 import type { KernelSmartAccountImplementation } from '@zerodev/sdk';
+import type { KernelValidator } from '@zerodev/sdk/types';
 import type { SmartAccount } from 'viem/account-abstraction';
 import { zerodevRpcUrl } from './env';
 
@@ -45,13 +46,9 @@ export type SudoSwapResult =
   | { ok: false; message: string };
 
 export async function swapSudoValidator(
-  kernelClient: KernelAccountClient, sudoValidator: unknown,
+  kernelClient: KernelAccountClient, sudoValidator: KernelValidator,
 ): Promise<{ hash: string; success: boolean }> {
-  const client = kernelClient as unknown as {
-    changeSudoValidator: (a: { sudoValidator: unknown }) => Promise<string>;
-    waitForUserOperationReceipt: (a: { hash: string; timeout?: number }) => Promise<{ success: boolean } | undefined>;
-  };
-  const hash = await client.changeSudoValidator({ sudoValidator });
-  const receipt = await client.waitForUserOperationReceipt({ hash, timeout: 120_000 });
-  return { hash, success: receipt?.success === true };
+  const hash = await kernelClient.changeSudoValidator({ sudoValidator });
+  const receipt = await kernelClient.waitForUserOperationReceipt({ hash, timeout: 120_000 });
+  return { hash, success: receipt.success };
 }

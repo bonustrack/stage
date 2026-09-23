@@ -9,7 +9,7 @@ import { stampTokenUrl } from '@stage-labs/kit/avatar';
 import { Row, Box } from './layout';
 import { PaymentCard } from './PaymentCard';
 import { shortAddress } from '../modules/messaging';
-import { domainOf } from '../lib/genericLinkDetect';
+import { domainOf } from '../lib/format';
 import {
   x402AmountLabel,
   x402NetworkLabel,

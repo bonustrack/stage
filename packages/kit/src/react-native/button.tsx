@@ -112,22 +112,14 @@ function renderLabel(
   textColor: string,
   textStyle: TextStyle | undefined,
 ): ReactNode {
-  if (children !== undefined) {
-    if (typeof children !== 'string') return children;
-    return (
-      <Text style={[textLabelStyle(spec, textColor), textStyle]} numberOfLines={1}>
-        {children}
-      </Text>
-    );
-  }
-  if (label !== undefined) {
-    return (
-      <Text style={[textLabelStyle(spec, textColor), textStyle]} numberOfLines={1}>
-        {label}
-      </Text>
-    );
-  }
-  return null;
+  const content = children !== undefined ? children : label;
+  if (content === undefined) return null;
+  if (typeof content !== 'string') return content;
+  return (
+    <Text style={[textLabelStyle(spec, textColor), textStyle]} numberOfLines={1}>
+      {content}
+    </Text>
+  );
 }
 
 interface TintArgs {
