@@ -9,7 +9,4 @@ export {
   patchRowSent,
 } from '../../lib/channelsCache';
 
-export {
-  getXmtpBootstrapPhase,
-  useXmtpBootstrapPhase,
-} from '../../lib/xmtp.state';
+export { getXmtpBootstrapPhase, useXmtpBootstrapPhase } from '../../lib/xmtp.state.core';

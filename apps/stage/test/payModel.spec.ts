@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { paymentBlocker } from '../components/xmtp-conv/pay.model';
+import { paymentBlocker } from '../components/conversation/pay.model';
 
 const BASE = 8453;
 

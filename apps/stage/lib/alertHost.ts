@@ -1,4 +1,4 @@
-import type { AlertButton } from 'react-native';
+import { Alert, Platform, type AlertButton } from 'react-native';
 import { makeListeners, useStoreValue } from './storeCore';
 
 export interface AlertRequest {
@@ -28,4 +28,10 @@ export function dismissAlert(): void {
 
 export function useAlertRequest(): AlertRequest | null {
   return useStoreValue(subscribe, get);
+}
+
+export function installAlertShim(): boolean {
+  if (Platform.OS !== 'web') return false;
+  (Alert as { alert: typeof presentAlert }).alert = presentAlert;
+  return true;
 }

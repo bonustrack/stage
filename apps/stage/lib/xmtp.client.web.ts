@@ -9,8 +9,7 @@ import { getSecure, setSecure } from './cache.shared';
 import { perfLog, perfTime } from './perf';
 import { bumpAccountEpoch } from './accountEpoch';
 import { XMTP_CODECS, signerForRecord } from './xmtp.codecs.web';
-import {
-  getCachedXmtpClient, resetClientScopedState, getOrCreateCachedClient } from './xmtp.state.web';
+import { getCachedXmtpClient, resetClientScopedState, getOrCreateCachedClient } from './xmtp.state.web';
 import { type XmtpEnv, convIdOfLine } from './xmtp.types';
 import { deleteDbKey, deleteDbFiles } from './xmtp.dbkey';
 import { historyServerUrl } from './historyServer';

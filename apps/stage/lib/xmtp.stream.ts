@@ -5,7 +5,7 @@ import { isControlBody } from './xmtp.types';
 import { markBackgroundDelivered } from './pushNotify';
 import { xmtpClient } from './xmtp.client';
 import { envelopeOfXmtpMessage } from './xmtp.messages';
-import { activeFeedLines, registerGlobalStreamTeardown } from './xmtp.state';
+import { activeFeedLines, registerGlobalStreamTeardown } from './xmtp.state.core';
 import {
   STREAM_CONSENT_STATES, pushToFeedSlice, resyncActiveFeeds, syncInboxOnce,
 } from './xmtp.resync';

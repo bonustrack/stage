@@ -4,7 +4,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Col, Row, ScreenScroll } from '../layout';
 import { useSafeAreaInsets } from '../../lib/safeArea';
-import { desktopTitleBarInset } from '../../lib/desktopShell';
+import { desktopTitleBarInset } from '../../lib/webLayout';
 import { SIGNUP_ROUTE } from '../onboarding/nextRoute.model';
 import { StageLogo } from './StageLogo';
 import { HeroBackdrop } from './HeroBackdrop';

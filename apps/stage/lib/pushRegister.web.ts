@@ -3,7 +3,7 @@ import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getMessaging, getToken, isSupported } from 'firebase/messaging';
 import type { HmacKeysByTopic } from '@stage-labs/client/xmtp/pushServer';
 import { isSyncGroupName } from '@stage-labs/client/xmtp/readState';
-import { FIREBASE_WEB_CONFIG, firebaseWebConfigured } from './firebaseWeb';
+import { FIREBASE_WEB_CONFIG } from './firebaseWeb';
 import {
   makeTopicRefresh, runPushRegistration, runPushUnregistration, toPermission,
   type PushPermission, type PushTopics,
@@ -42,7 +42,6 @@ export async function requestPushPermission(): Promise<PushPermission> {
 
 async function webPushToken(): Promise<string | null> {
   if (!notificationsAvailable() || Notification.permission !== 'granted') return null;
-  if (!firebaseWebConfigured()) throw new Error('web push is not configured in this build');
   if (!(await isSupported())) throw new Error('this browser does not support web push');
   const registration = await navigator.serviceWorker.register(PUSH_SERVICE_WORKER_PATH);
   await navigator.serviceWorker.ready;

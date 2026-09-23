@@ -5,7 +5,7 @@ import { Row, Col, Box } from '../layout';
 import { usePalette, withAlpha } from '../../lib/theme';
 import type { SimulateResult, AssetMove } from '../../lib/txSimulate';
 import { NATIVE_TOKEN_SENTINEL } from '@stage-labs/client/wallet/assets';
-import { useUsdValue } from '../../lib/txPrices';
+import { useUsdValue } from '../../lib/txDisplay';
 
 function SimOutcome({ sim, chainId }: {
   sim: SimulateResult; chainId: number;

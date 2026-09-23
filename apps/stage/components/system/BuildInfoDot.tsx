@@ -1,10 +1,9 @@
-import Constants from 'expo-constants';
 import * as Updates from 'expo-updates';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { Box, viewportFill } from '../layout';
 import { usePalette, withAlpha } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
-import { commitUrl } from '../../lib/githubRepo';
+import { buildMeta, commitUrl } from '../../lib/githubRepo';
 import { RailTooltip } from '../tabs/RailTooltip';
 
 function formatRelative(iso: string, now: number): string {
@@ -33,9 +32,7 @@ interface BuildInfo {
 }
 
 function resolveBuildInfo(now: number): BuildInfo {
-  const extra = (Constants.expoConfig?.extra ?? {}) as Record<string, unknown>;
-  const rawHash = typeof extra.gitHash === 'string' && extra.gitHash.length > 0 ? extra.gitHash : 'dev';
-  const rawTime = typeof extra.commitTime === 'string' ? extra.commitTime : '';
+  const { gitHash: rawHash, commitTime: rawTime } = buildMeta();
   return {
     hash: rawHash === 'dev' ? 'dev' : rawHash.slice(0, 7),
     href: commitUrl(rawHash),

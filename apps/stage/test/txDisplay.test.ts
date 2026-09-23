@@ -1,6 +1,7 @@
 
 import { describe, expect, test } from 'bun:test';
-import { tokenLogoUrl, priceKeyFor, priceKeyId, isUnknownToken } from '../lib/txAssets';
+import { priceKeyFor, priceKeyId, isUnknownToken } from '@stage-labs/client/wallet/tokens';
+import { tokenLogoUrl } from '../lib/txDisplay';
 
 const SEPOLIA = 11155111;
 const BASE = 8453;

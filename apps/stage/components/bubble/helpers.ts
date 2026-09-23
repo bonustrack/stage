@@ -7,10 +7,15 @@ import { normalizeQuestions, type PollContent, type PollQuestion } from '@stage-
 import type { SignatureRequestContent, SignatureReferenceContent } from '@stage-labs/client/xmtp/sign';
 import type { WalletSendCallsContent, TransactionReferenceContent } from '@stage-labs/client/xmtp/tx';
 import { formatEther } from 'viem';
+import { MarkdownIt } from 'react-native-markdown-display';
+import { registerDeepLinkSchemas } from '@stage-labs/client/text/markdown';
 
 export const REACT_PRESETS = ['👍', '🔥', '👀', '🙏', '😁', '💯', '🫡'];
 
-export { mdParser } from '../../lib/mdParser';
+export const mdParser = MarkdownIt({ typographer: false, linkify: true, breaks: true });
+
+registerDeepLinkSchemas(mdParser.linkify);
+
 export { hasMention } from '@stage-labs/client/xmtp/mentions';
 
 const CODE_SPAN_RE = /```[\s\S]*?```|`[^`\n]*`/g;

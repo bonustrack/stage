@@ -7,8 +7,7 @@ import { Text, TextInput } from '../components/layout/native';
 import { Col, WebContentFrame, viewportFill } from '../components/layout';
 import { Spinner } from '../components/Spinner';
 import { TopChrome } from '../components/system/TopChrome';
-import { useAccountGate } from '../lib/accountGate';
-import { useShellGates } from '../lib/onboardingHold';
+import { useAccountGate, useShellGates } from '../lib/accountGate';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { Platform } from 'react-native';
@@ -29,7 +28,7 @@ import { BuildInfoDot } from '../components/system/BuildInfoDot';
 import { AlertHost } from '../components/system/AlertHost';
 import { TooltipHost } from '../components/system/TooltipHost';
 import { OnboardingRouteReset } from '../components/system/OnboardingRouteReset';
-import { installAlertShim } from '../lib/alertShim';
+import { installAlertShim } from '../lib/alertHost';
 import { SplitSidebar } from '../components/tabs/SplitSidebar';
 
 const queryClient = getQueryClient();

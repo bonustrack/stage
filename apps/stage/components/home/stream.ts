@@ -2,7 +2,7 @@
 import { presentInboundNotification } from '../../lib/pushNotify';
 import { isGroupUpdateTypeId, previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 import { getPeerName } from '../../lib/peerProfiles';
-import { isActiveConv } from '../../lib/activeConv';
+import { isActiveConv } from '../../lib/readSyncRegistry';
 import { isControlBody, shortAddress, getConvConsentState } from '../../modules/messaging';
 import type { Row as RowT } from './helpers';
 import { applyInbound } from '@stage-labs/client/xmtp/channelsCache';

@@ -6,7 +6,7 @@ import { isControlBody } from '../../lib/xmtp.types';
 import { convOfLine } from '../../lib/xmtp.client';
 import { latestConvMessages, olderConvMessages } from '../../lib/xmtp.messages';
 import { prependToFeed, refreshLatestPage } from '../../lib/xmtp.resync';
-import { feedCache } from '../../lib/xmtp.state';
+import { feedCache } from '../../lib/xmtp.state.core';
 import { perfLog, perfTime } from '../../lib/perf';
 import { syncInboxOnce, PAGE_SIZE } from '../../lib/xmtp.stream';
 import { messagingKeys } from './queries';

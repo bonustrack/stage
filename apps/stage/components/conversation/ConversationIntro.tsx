@@ -4,7 +4,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Row } from '../layout';
 import { Avatar } from '../Avatar';
-import { convTitle } from '../conversation/convTitle';
+import { convTitle } from './convTitle';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
 import { shortAddress } from '../../modules/messaging';
 

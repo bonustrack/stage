@@ -14,7 +14,7 @@ import { GroupImagePicker } from '../../components/GroupImagePicker';
 import { Box, Col, ScreenScroll } from '../../components/layout';
 import { FormField } from '../../components/FormField';
 import { Spinner } from '../../components/Spinner';
-import { MemberPicker, MemberPickerFooter, useMemberPicker } from '../../components/conversation/MemberPicker';
+import { MemberPicker, MemberPickerFooter, useMemberPicker } from '../../components/group/MemberPicker';
 
 interface PickedImage { uri: string; mime: string; name: string }
 

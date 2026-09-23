@@ -13,7 +13,3 @@ export const FIREBASE_WEB_CONFIG: FirebaseWebConfig = {
   appId: '1:163881755635:web:9fc29ae9da09f64c7da886',
   vapidPublicKey: 'BG18y5MY0MOeRCixSZYeGGxHRZJyREjfONqSenNxjiVGQCaLWWYJZa4qcpLkmjZrByPFAiUAEly5HXfW7xb0Va8',
 };
-
-export function firebaseWebConfigured(): boolean {
-  return Object.values(FIREBASE_WEB_CONFIG).every((value) => value !== '');
-}

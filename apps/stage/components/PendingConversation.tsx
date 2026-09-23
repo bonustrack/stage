@@ -15,7 +15,7 @@ import { Col } from './layout';
 import { MessengerBubble } from './bubble/MessengerBubble';
 import { ComposerEditor } from './composer/editor';
 import { TOPNAV_HEIGHT } from './Topnav';
-import { ConvTopnavIdentity, ConvTopnavShell } from './xmtp-conv/parts';
+import { ConvTopnavIdentity, ConvTopnavShell } from './conversation/parts';
 import { profileLinkOf } from '../lib/links';
 
 type PendingReason = 'unregistered' | 'stale-installations' | 'failed';

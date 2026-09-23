@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { menuPlacement, MENU_SCREEN_MARGIN, MENU_STRIP_HEIGHT } from '../components/xmtp-conv/menuPlacement';
+import { menuPlacement, MENU_SCREEN_MARGIN, MENU_STRIP_HEIGHT } from '../components/conversation/menuPlacement';
 
 const WINDOW = 800;
 

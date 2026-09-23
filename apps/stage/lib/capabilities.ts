@@ -1,8 +1,26 @@
-
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
-import { Linking, Platform, Share, ToastAndroid } from 'react-native';
-import { confirmDialog, type ConfirmOptions } from './confirm';
+import { Alert, Linking, Platform, Share, ToastAndroid } from 'react-native';
+
+export interface ConfirmOptions {
+  title: string;
+  message?: string;
+  confirmLabel?: string;
+  destructive?: boolean;
+}
+
+function confirmDialog(options: ConfirmOptions): Promise<boolean> {
+  return new Promise((resolve) => {
+    Alert.alert(options.title, options.message, [
+      { text: 'Cancel', style: 'cancel', onPress: () => { resolve(false); } },
+      {
+        text: options.confirmLabel ?? 'OK',
+        style: options.destructive ? 'destructive' : undefined,
+        onPress: () => { resolve(true); },
+      },
+    ]);
+  });
+}
 
 export interface Capabilities {
   navigate(to: string): void;

@@ -93,6 +93,51 @@ const keyringGuardRule = {
     },
 };
 
+const RN_PRIMITIVE_PATHS = [
+  {
+    name: 'react-native-safe-area-context',
+    importNames: ['useSafeAreaInsets'],
+    message:
+      "Use useSafeAreaInsets from '@/lib/safeArea' so the desktop title bar counts as a top inset.",
+  },
+  {
+    name: 'react-native',
+    importNames: ['View'],
+    message:
+      "Use Box/Row/Col from '@/components/layout' instead of View for layout containers.",
+  },
+  {
+    name: 'react-native',
+    importNames: ['Image'],
+    message:
+      "Import Image from '@stage-labs/kit/react-native/image' instead of react-native.",
+  },
+  {
+    name: 'react-native',
+    importNames: ['TextInput'],
+    message:
+      "Use Input/Textarea from '@stage-labs/kit/react-native/input' | '@stage-labs/kit/react-native/textarea' instead of react-native TextInput.",
+  },
+  {
+    name: 'react-native',
+    importNames: ['ScrollView'],
+    message:
+      "Use Scroll from '@stage-labs/kit/react-native/scroll' instead of react-native ScrollView.",
+  },
+  {
+    name: 'react-native',
+    importNames: ['Pressable'],
+    message:
+      "Use Pressable from '@stage-labs/kit/react-native/pressable' (or Kit Button) instead of react-native Pressable.",
+  },
+  {
+    name: 'react-native',
+    importNames: ['FlatList'],
+    message:
+      "Use FlatList from '@stage-labs/kit/react-native/flat-list' instead of react-native FlatList.",
+  },
+];
+
 export function reactNative() {
   return [
     { ignores: ['node_modules/**', '.expo/**', 'dist/**', 'desktop/**'] },
@@ -153,55 +198,7 @@ export function reactNative() {
         ],
         'max-lines': MAX_LINES,
         '@typescript-eslint/no-require-imports': 'off',
-        'no-restricted-imports': [
-          'error',
-          {
-            paths: [
-              {
-                name: 'react-native-safe-area-context',
-                importNames: ['useSafeAreaInsets'],
-                message:
-                  "Use useSafeAreaInsets from '@/lib/safeArea' so the desktop title bar counts as a top inset.",
-              },
-              {
-                name: 'react-native',
-                importNames: ['View'],
-                message:
-                  "Use Box/Row/Col from '@/components/layout' instead of View for layout containers.",
-              },
-              {
-                name: 'react-native',
-                importNames: ['Image'],
-                message:
-                  "Import Image from '@stage-labs/kit/react-native/image' instead of react-native.",
-              },
-              {
-                name: 'react-native',
-                importNames: ['TextInput'],
-                message:
-                  "Use Input/Textarea from '@stage-labs/kit/react-native/input' | '@stage-labs/kit/react-native/textarea' instead of react-native TextInput.",
-              },
-              {
-                name: 'react-native',
-                importNames: ['ScrollView'],
-                message:
-                  "Use Scroll from '@stage-labs/kit/react-native/scroll' instead of react-native ScrollView.",
-              },
-              {
-                name: 'react-native',
-                importNames: ['Pressable'],
-                message:
-                  "Use Pressable from '@stage-labs/kit/react-native/pressable' (or Kit Button) instead of react-native Pressable.",
-              },
-              {
-                name: 'react-native',
-                importNames: ['FlatList'],
-                message:
-                  "Use FlatList from '@stage-labs/kit/react-native/flat-list' instead of react-native FlatList.",
-              },
-            ],
-          },
-        ],
+        'no-restricted-imports': ['error', { paths: RN_PRIMITIVE_PATHS }],
         '@typescript-eslint/no-restricted-imports': [
           'warn',
           {
@@ -223,32 +220,7 @@ export function reactNative() {
         'no-restricted-imports': [
           'error',
           {
-            paths: [
-              {
-                name: 'react-native-safe-area-context',
-                importNames: ['useSafeAreaInsets'],
-                message:
-                  "Use useSafeAreaInsets from '@/lib/safeArea' so the desktop title bar counts as a top inset.",
-              },
-              {
-                name: 'react-native',
-                importNames: ['View'],
-                message:
-                  "Use Box/Row/Col from '@/components/layout' instead of View for layout containers.",
-              },
-              {
-                name: 'react-native',
-                importNames: ['Image'],
-                message:
-                  "Import Image from '@stage-labs/kit/react-native/image' instead of react-native.",
-              },
-              {
-                name: 'react-native',
-                importNames: ['TextInput'],
-                message:
-                  "Use Input/Textarea from '@stage-labs/kit/react-native/input' | '@stage-labs/kit/react-native/textarea' instead of react-native TextInput.",
-              },
-            ],
+            paths: RN_PRIMITIVE_PATHS,
             patterns: [
               {
                 group: ['**/lib/xmtp', '**/lib/xmtp.*'],

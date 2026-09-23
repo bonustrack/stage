@@ -3,7 +3,7 @@ import type { DecodedMessage } from '@xmtp/browser-sdk';
 import { isControlBody } from './xmtp.types';
 import { xmtpClient } from './xmtp.client.web';
 import { envelopeOfXmtpMessage } from './xmtp.envelope.web';
-import { activeFeedLines, registerGlobalStreamTeardown } from './xmtp.state.web';
+import { activeFeedLines, registerGlobalStreamTeardown } from './xmtp.state.core';
 import {
   STREAM_CONSENT_STATES, pushToFeedSlice, resyncActiveFeeds,
 } from './xmtp.resync.web';

@@ -7,7 +7,7 @@ import { adoptPhrase } from '../../lib/accountTransfer';
 import { AccountManager } from '../../modules/messaging';
 import type { Hex } from 'viem';
 import { addPrivateKeyAccount, loadAccounts, removeAccount, type AccountRecord } from '../../lib/accounts';
-import { applyProfileSetup } from '../../lib/profileSetup';
+import { applyProfileSetup } from '../../lib/claimName';
 import type { ProfileSetup } from './Onboarding.profile.model';
 
 export type Stage = 'wallet' | 'passkey' | 'messaging' | 'profile' | 'history' | 'finishing';

@@ -8,9 +8,8 @@ import {
 import { registerPushWithServer } from './pushRegister';
 import { bumpAccountEpoch } from './accountEpoch';
 import { XMTP_CODECS } from './xmtp.codecs';
-import {
-  getCachedXmtpClient, setCachedXmtpClient, resetClientScopedState, getOrCreateCachedClient, whileRegistering
-} from './xmtp.state';
+import { getCachedXmtpClient, setCachedXmtpClient, resetClientScopedState, getOrCreateCachedClient } from './xmtp.state';
+import { whileRegistering } from './xmtp.state.core';
 import { type XmtpEnv, convIdOfLine, XMTP_ENV_KEY } from './xmtp.types';
 import {
   loadOrCreateDbKey, deleteDbKey, deleteDbFiles,

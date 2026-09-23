@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import {
   FEED_MAX_FIRST_PAINT, FEED_MIN_BATCH, feedDistanceFromNewest,
   planUprightRestore, shouldPageOlder, uprightFirstBatch, uprightScrollOffset,
-} from '../components/xmtp-conv/feed-helpers';
+} from '../components/conversation/feed-helpers';
 
 const CONTENT = 3000;
 const VIEWPORT = 800;

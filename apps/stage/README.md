@@ -40,7 +40,7 @@ bun run --cwd apps/stage/desktop start  # Electron shell around the web export
 ```
 app/            # expo-router routes ONLY: (tabs), (conv), channel, group, profile, user, wallet, settings, accounts, signup, import
 components/     # kit-JSX screens with colocated *.model.ts files, one folder per family:
-                #   bubble/ composer/ conversation/ group/ home/ wallet/ onboarding/ settings/ accounts/ landing/ chrome/ layout/ tabs/ xmtp-conv/ system/
+                #   bubble/ composer/ conversation/ group/ home/ wallet/ onboarding/ settings/ accounts/ landing/ chrome/ layout/ tabs/ system/
 lib/            # accounts + keyring, caches, XMTP seams (xmtp.*.ts / .web.ts / .core.ts), zerodev, names, wallet helpers
 modules/        # messaging/ (the ONLY messaging facade components import from) + stage-pill (Android native module)
 platform/       # storage seams (x.ts native / x.web.ts web)

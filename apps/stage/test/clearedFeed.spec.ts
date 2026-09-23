@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { entriesAfterClear, feedReachedClear } from '../components/xmtp-conv/clearedFeed.model';
+import { entriesAfterClear, feedReachedClear } from '../components/conversation/feed-helpers';
 
 const at = (ms: number, id: string): HistoryEntry => ({
   id, ts: new Date(ms).toISOString(), station: 'xmtp', line: 'l', from: 'a', to: 'b',

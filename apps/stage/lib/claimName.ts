@@ -1,9 +1,10 @@
 import type { Hex } from 'viem';
+import type { ProfileSetup } from '../components/onboarding/Onboarding.profile.model';
 import { claimMessage, fetchIssuedName, stageNameOf } from '@stage-labs/client/identity/stageNames';
 import { encodeSetPrimaryBasename } from '@stage-labs/client/identity/basenameWrite';
 import { getActiveAccount, getActiveViemAccount } from './accounts';
 import { linkProxyBase } from './historyServer';
-import { refreshProfileCaches, sendOnBase } from './profileWrite';
+import { refreshProfileCaches, saveBasenameProfile, sendOnBase } from './profileWrite';
 import { kernelClientForRecord } from './zerodev/kernelForRecord';
 
 export interface NameCheck { valid: boolean; available: boolean; reason?: string }
@@ -51,4 +52,13 @@ export async function setPrimaryStageName(address: string, label: string): Promi
   const hash = await sendOnBase(encodeSetPrimaryBasename(stageNameOf(label)));
   refreshProfileCaches(address);
   return hash;
+}
+
+export async function applyProfileSetup(address: string, profile: ProfileSetup): Promise<void> {
+  await claimStageName(profile.label);
+  await setPrimaryStageName(address, profile.label);
+  if (profile.displayName === undefined && profile.description === undefined && profile.image === undefined) return;
+  await saveBasenameProfile(address, stageNameOf(profile.label), {
+    displayName: profile.displayName, description: profile.description, image: profile.image,
+  });
 }

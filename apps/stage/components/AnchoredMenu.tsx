@@ -5,10 +5,9 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Scroll } from '@stage-labs/kit/react-native/scroll';
 import { AppModal } from './AppModal';
 import { Box } from './layout';
-import { documentScroll } from '../lib/documentScroll';
 import { anchoredMenuStyle, type MenuPoint } from './AnchoredMenu.model';
 import { dismissContextMenuProps } from '../lib/contextMenu';
-import { isCoarsePointer } from '../lib/pointer';
+import { documentScroll, isCoarsePointer } from '../lib/webLayout';
 import { usePalette } from '../lib/theme';
 import { MENU_GAP, MENU_RADIUS, MENU_SHADOW } from './menuStyle';
 

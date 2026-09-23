@@ -12,9 +12,9 @@ import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller
 import { useLocalSearchParams, usePathname, useRouter } from 'expo-router';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { PendingConversation } from '../../components/PendingConversation';
-import { ConversationFeed } from '../../components/xmtp-conv/ConversationFeed';
-import { ConversationSearch } from '../../components/xmtp-conv/ConversationSearch';
-import { useConversationState } from '../../components/xmtp-conv/useConversationState';
+import { ConversationFeed } from '../../components/conversation/ConversationFeed';
+import { ConversationSearch } from '../../components/conversation/ConversationSearch';
+import { useConversationState } from '../../components/conversation/useConversationState';
 import {
   useSearchKeyboardFocus, useResolvedConvId, type ResolveConvError,
 } from '../../components/conversation/conv.hooks';

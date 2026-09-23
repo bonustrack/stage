@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getActiveAccount, type AccountRecord } from './accounts';
 import { useActiveAccountRecord } from '../modules/messaging/account';
 import { capabilities } from './capabilities';
-import { type ConfirmOptions } from './confirm';
+import type { ConfirmOptions } from './capabilities';
 import {
   enablePasskeyForRecord, removePasskeyFromRecord, passkeysAvailable, kernelCustody,
 } from './zerodev';

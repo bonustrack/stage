@@ -6,7 +6,8 @@ import {
   type AccountRecord,
 } from './accounts';
 import { XMTP_CODECS, signerForRecord } from './xmtp.codecs.web';
-import { setCachedXmtpClient, whileRegistering } from './xmtp.state.web';
+import { setCachedXmtpClient } from './xmtp.state.web';
+import { whileRegistering } from './xmtp.state.core';
 import { registerPushWithServer } from './pushRegister.web';
 import { perfLog } from './perf';
 import { errorMessage } from '@stage-labs/client/errors';

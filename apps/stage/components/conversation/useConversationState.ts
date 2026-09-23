@@ -1,14 +1,19 @@
-
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Platform } from 'react-native';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { AppState, Platform } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
-import { useConvMeta } from '../../modules/messaging';
 import {
-  XMTP_USER_PREFIX, lineOfConv, useXmtpFeed, xmtpReply, shortAddress,
+  XMTP_USER_PREFIX, lineOfConv, useXmtpFeed, xmtpReply, shortAddress, useConvMeta, markConvRead,
+  getCachedRows, getGroupLabels, useConvConsentState,
 } from '../../modules/messaging';
-import { markConvRead } from '../../modules/messaging';
-import { markConvAtBottom } from '../../lib/scrollPos';
-import { isCoarsePointer } from '../../lib/pointer';
+import { setActiveConversation } from '../../modules/stage-pill';
+import { setActiveConvId } from '../../lib/readSyncRegistry';
+import {
+  markConvAtBottom, convScrollKey, getScrollOffset, peekScrollOffset, flushScrollOffset, getFeedAnchor, peekFeedAnchor,
+  type FeedAnchor,
+} from '../../lib/scrollPos';
+import { isCoarsePointer } from '../../lib/webLayout';
+import { useReconciledMap } from '../../lib/mapReconcile';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { isSystemEntry } from '@stage-labs/client/xmtp/envelope';
 import type { MenuAnchor } from '../bubble/props';
@@ -18,11 +23,105 @@ import { useVotesLayer } from './useVotesLayer';
 import { useTxSignLayer } from './useTxSignLayer';
 import { useOutboundLayer } from './useOutboundLayer';
 import { useClearedChats } from '../../lib/clearedChats';
-import { entriesAfterClear, feedReachedClear } from './clearedFeed.model';
 import {
-  useActiveConvSuppression, useConsentGate, useGroupLabels,
-  useConvScrollPersistence, useFeedDerivations,
-} from './useConversationState.effects';
+  entriesAfterClear, feedReachedClear, reactionsByMessage, ownReactionsByMessage,
+  pollOptionCountsInFeed, votesByMessage, ownVotesByMessage, openAnswersByMessage,
+} from './feed-helpers';
+
+function useActiveConvSuppression(convId: string | undefined): void {
+  const activeConvId = useMemo(() => convId?.toLowerCase(), [convId]);
+  useFocusEffect(useCallback(() => {
+    if (!activeConvId) return;
+    setActiveConversation(activeConvId);
+    setActiveConvId(activeConvId);
+    const sub = AppState.addEventListener('change', (s) => {
+      const open = s === 'active' ? activeConvId : null;
+      setActiveConversation(open);
+      setActiveConvId(open);
+    });
+    return () => { sub.remove(); setActiveConversation(null); setActiveConvId(null); };
+  }, [activeConvId]));
+}
+
+type ConvConsent = Exclude<ReturnType<typeof useConvConsentState>, null>;
+
+interface ConsentGate {
+  consent: ConvConsent;
+  markAllowed: () => void;
+}
+
+function useConsentGate(convId: string | undefined): ConsentGate {
+  const streamed = useConvConsentState(convId);
+  const [allowedHere, setAllowedHere] = useState(false);
+  useEffect(() => { setAllowedHere(false); }, [convId, streamed]);
+  const markAllowed = useCallback(() => { setAllowedHere(true); }, []);
+  return { consent: allowedHere ? 'allowed' : streamed ?? undefined, markAllowed };
+}
+
+function cachedLabels(cid?: string): string[] {
+  const v = getCachedRows()?.find(r => r.convId === cid)?.labels;
+  return Array.isArray(v) ? v.filter((l): l is string => typeof l === 'string') : [];
+}
+
+function useGroupLabels(convId: string | undefined, activeLine: string, isGroup: boolean): string[] {
+  const [groupLabels, setGroupLabels] = useState<string[]>(() => cachedLabels(convId));
+  useEffect(() => {
+    if (!isGroup) { setGroupLabels([]); return; }
+    setGroupLabels(cachedLabels(convId));
+    let cancelled = false;
+    void getGroupLabels(activeLine).then(v => { if (!cancelled) setGroupLabels(v); }).catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [convId, activeLine, isGroup]);
+  return groupLabels;
+}
+
+interface ScrollPersistence {
+  savedScrollRef: React.MutableRefObject<number | undefined>;
+  savedAnchorRef: React.MutableRefObject<FeedAnchor | null>;
+  savedScrollLoaded: React.MutableRefObject<boolean>;
+  didRestoreScroll: React.MutableRefObject<boolean>;
+  pinBottomUntil: React.MutableRefObject<number>;
+  isAtBottomRef: React.MutableRefObject<boolean>;
+}
+
+function useConvScrollPersistence(convId: string | undefined): ScrollPersistence {
+  const savedScrollRef = useRef<number | undefined>(undefined);
+  const savedAnchorRef = useRef<FeedAnchor | null>(null);
+  const savedScrollLoaded = useRef(false);
+  const didRestoreScroll = useRef(false);
+  const pinBottomUntil = useRef(0);
+  const isAtBottomRef = useRef(true);
+  useLayoutEffect(() => {
+    if (!convId) return;
+    const key = convScrollKey(convId);
+    isAtBottomRef.current = true;
+    didRestoreScroll.current = false;
+    pinBottomUntil.current = 0;
+    const cached = peekScrollOffset(key);
+    const cachedAnchor = peekFeedAnchor(convId);
+    if (cached !== undefined && cachedAnchor !== undefined) {
+      savedScrollRef.current = cached;
+      savedAnchorRef.current = cachedAnchor;
+      savedScrollLoaded.current = true;
+    } else {
+      void Promise.all([getScrollOffset(key), getFeedAnchor(convId)]).then(([o, anchor]) => {
+        savedScrollRef.current = o; savedAnchorRef.current = anchor; savedScrollLoaded.current = true;
+      });
+    }
+    return () => { flushScrollOffset(key); };
+  }, [convId]);
+  return { savedScrollRef, savedAnchorRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil, isAtBottomRef };
+}
+
+function useFeedDerivations(events: HistoryEntry[], myUri: string) {
+  const pollOptionCounts = useMemo(() => pollOptionCountsInFeed(events), [events]);
+  const reactions = useReconciledMap(useMemo(() => reactionsByMessage(events, pollOptionCounts), [events, pollOptionCounts]));
+  const ownReactions = useReconciledMap(useMemo(() => ownReactionsByMessage(events, myUri, pollOptionCounts), [events, myUri, pollOptionCounts]));
+  const votes = useReconciledMap(useMemo(() => votesByMessage(events), [events]));
+  const ownVotes = useReconciledMap(useMemo(() => ownVotesByMessage(events, myUri), [events, myUri]));
+  const openAnswers = useReconciledMap(useMemo(() => openAnswersByMessage(events), [events]));
+  return { reactions, ownReactions, votes, ownVotes, openAnswers };
+}
 
 function useReplyTarget() {
   const [replyingTo, setReplyingTo] = useState<{ id: string; preview: string; sender?: string | null; nonce: number } | null>(null);

@@ -7,7 +7,7 @@ import Animated, {
 import { CHANNEL_ROW_HEIGHT } from '../ChannelRow';
 import { movePin } from '../../lib/pins';
 import { usePalette } from '../../lib/theme';
-import { isCoarsePointer } from '../../lib/pointer';
+import { isCoarsePointer } from '../../lib/webLayout';
 
 const HOLD_MS = 250;
 const MOVE_SLOP = 6;
