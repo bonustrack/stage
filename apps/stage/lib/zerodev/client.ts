@@ -17,11 +17,6 @@ export function makePublicClient(): PublicClient {
   return createPublicClient({ chain, transport: http(rpc) });
 }
 
-export async function kernelDeployedOnChain(address: string): Promise<boolean> {
-  const publicClient = makePublicClient();
-  const code = await publicClient.getCode({ address: address as `0x${string}` });
-  return !!code && code !== '0x';
-}
 
 export function makeKernelClient(
   account: SmartAccount<KernelSmartAccountImplementation>,

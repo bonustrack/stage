@@ -7,8 +7,7 @@ export { createSmartAccount, peekRestorableAccount, restoreSmartAccount } from '
 export { kernelClientForRecord } from './kernelForRecord';
 export { enablePasskeyForRecord } from './enablePasskey';
 export { removePasskeyFromRecord } from './disablePasskey';
-export { linkPasskeyForRecord, describeLinkResult, passkeyPlace, type PasskeyPlace } from './linkPasskey';
-export { kernelDeployedOnChain } from './client';
+export { linkPasskeyForRecord, describeLinkResult, passkeyPlace, kernelCustody, type PasskeyPlace } from './linkPasskey';
 export {
   installGuardians, updateGuardians, signRecoveryApproval, cancelRecovery,
 } from './recovery';

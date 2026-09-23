@@ -27,12 +27,16 @@ function ecdsaPlan(
   return allowed ? 'ecdsa-secondary' : 'unavailable';
 }
 
+function isDeployedEcdsaRoot(input: KernelValidationState & { ecdsaValidator: Hex }): boolean {
+  return input.rootValidatorId !== null && input.rootValidatorId.toLowerCase() === validationIdOf(input.ecdsaValidator);
+}
+
 export function planKernelSigning(
   input: KernelValidationState & { ecdsaValidator: Hex; passkeyUsable: boolean; purpose?: KernelSigningPurpose },
 ): KernelSigningPlan {
   const ecdsa = ecdsaPlan(input);
   if (input.purpose === 'sign' && ecdsa !== 'unavailable') return ecdsa;
-  if (input.passkeyUsable) return 'passkey';
+  if (input.passkeyUsable && !isDeployedEcdsaRoot(input)) return 'passkey';
   return ecdsa;
 }
 

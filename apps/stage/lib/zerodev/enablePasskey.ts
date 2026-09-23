@@ -91,6 +91,11 @@ async function resolveCredential(rec: AccountRecord & { hdIndex: number }): Prom
   return { stored };
 }
 
+async function forgetPasskeyUnlessRoot(id: string, address: `0x${string}`): Promise<void> {
+  if ((await kernelCustody(address).catch(() => null)) === 'passkey-root') return;
+  await updateSmartAccount(id, { passkey: undefined, passkeyCredId: undefined });
+}
+
 export async function enablePasskeyForRecord(record: AccountRecord): Promise<EnablePasskeyResult> {
   const guard = passkeyPreflight(record);
   if (guard) return guard;
@@ -115,12 +120,16 @@ export async function enablePasskeyForRecord(record: AccountRecord): Promise<Ena
   const cred = await resolveCredential(rec);
   if ('result' in cred) return cred.result;
   const stored = cred.stored;
-  if (!rec.passkey) {
+  const storedHere = !rec.passkey;
+  if (storedHere) {
     await updateSmartAccount(rec.id, { passkey: stored, passkeyCredId: stored.authenticatorId });
   }
 
   const swap = await deployAndSwapToPasskey(publicClient, { hdIndex: rec.hdIndex, phraseId: rec.phraseId }, stored);
-  if (!swap.ok) return { ok: false, reason: 'error', message: swap.message };
+  if (!swap.ok) {
+    if (storedHere) await forgetPasskeyUnlessRoot(rec.id, address);
+    return { ok: false, reason: 'error', message: swap.message };
+  }
 
   await updateSmartAccount(rec.id, { passkey: stored, passkeyCredId: stored.authenticatorId, deployed: true });
   return { ok: true, deployed: true, userOpHash: swap.txHash };

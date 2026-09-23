@@ -6,7 +6,7 @@ import { useActiveAccountRecord } from '../modules/messaging/account';
 import { capabilities } from './capabilities';
 import { type ConfirmOptions } from './confirm';
 import {
-  enablePasskeyForRecord, removePasskeyFromRecord, passkeysAvailable, kernelDeployedOnChain,
+  enablePasskeyForRecord, removePasskeyFromRecord, passkeysAvailable, kernelCustody,
 } from './zerodev';
 
 export interface PasskeyAction {
@@ -35,7 +35,8 @@ const ENABLE: PasskeySpec = {
   offer: async (acct) => {
     if (!passkeysAvailable() || acct.type !== 'smart') return false;
     if (!acct.passkey) return true;
-    return !(await kernelDeployedOnChain(acct.address).catch(() => false));
+    const custody = await kernelCustody(acct.address as `0x${string}`).catch(() => null);
+    return custody === 'undeployed' || custody === 'ecdsa-root';
   },
   confirm: {
     title: 'Enable passkey',

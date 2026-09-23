@@ -16,6 +16,11 @@ describe('planKernelSigning', () => {
     expect(planKernelSigning({ rootValidatorId: PASSKEY_ROOT, ecdsaInstalled: false, ecdsaCanExecute: false, ecdsaValidator: ECDSA, passkeyUsable: true, purpose: 'sign' })).toBe('passkey');
   });
 
+  test('a stale passkey on a deployed ECDSA-rooted account never takes over transactions', () => {
+    expect(planKernelSigning({ rootValidatorId: validationIdOf(ECDSA), ecdsaInstalled: true, ecdsaCanExecute: false, ecdsaValidator: ECDSA, passkeyUsable: true, purpose: 'transact' })).toBe('ecdsa-root');
+    expect(planKernelSigning({ rootValidatorId: null, ecdsaInstalled: false, ecdsaCanExecute: false, ecdsaValidator: ECDSA, passkeyUsable: true, purpose: 'transact' })).toBe('passkey');
+  });
+
   test('signs as root with the ECDSA key for undeployed or ECDSA-rooted accounts', () => {
     expect(planKernelSigning({ rootValidatorId: null, ecdsaInstalled: false, ecdsaCanExecute: false, ecdsaValidator: ECDSA, passkeyUsable: false })).toBe('ecdsa-root');
     expect(planKernelSigning({ rootValidatorId: validationIdOf(ECDSA), ecdsaInstalled: true, ecdsaCanExecute: false, ecdsaValidator: ECDSA, passkeyUsable: false })).toBe('ecdsa-root');
