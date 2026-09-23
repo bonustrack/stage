@@ -92,6 +92,26 @@ export const ASCII = {
   tickStep: 0.04,
 } as const;
 
+export const ASCII_GLYPH = {
+  pitch: 7.4287109375,
+  baseline: 8.5,
+  caret: { left: 0.25, right: 8.18, top: 10.17, bottom: 6.1, leg: 2.1, apex: 2.1 },
+  period: { left: 2.66, right: 5.07, top: 2.76, bottom: 0 },
+  dot: { left: 3.34, right: 5.07, top: 5.91, bottom: 3.82 },
+} as const;
+
+export interface GlyphRect { x: number; y: number; width: number; height: number }
+
+export function asciiOrigin(width: number, height: number, cols: number, rows: number): { x: number; y: number } {
+  return { x: (width - cols * ASCII_GLYPH.pitch) / 2, y: (height - rows * ASCII.lineHeight) / 2 };
+}
+
+export function glyphRect(ch: string, x: number, baseline: number): GlyphRect | null {
+  const box = ch === '.' ? ASCII_GLYPH.period : ch === '⋅' ? ASCII_GLYPH.dot : null;
+  if (box === null) return null;
+  return { x: x + box.left, y: baseline - box.top, width: box.right - box.left, height: box.top - box.bottom };
+}
+
 export function asciiGrid(width: number, height: number): { cols: number; rows: number } {
   const effectiveWidth = Math.min(width, ASCII.maxWidth);
   return {

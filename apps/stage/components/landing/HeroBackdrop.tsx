@@ -1,41 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Text } from '@stage-labs/kit/react-native/text';
+import { useState } from 'react';
 import { Box } from '../layout';
+import { AsciiField } from './AsciiField';
 import {
-  ASCII, HERO_BLACK, HERO_BOX_LAYERS, HERO_LAYOUT, HERO_YELLOW,
-  asciiFrame, asciiGrid, heroBoxes, type HeroBox, type HeroBoxLayer,
+  HERO_BOX_LAYERS, HERO_LAYOUT, HERO_YELLOW, heroBoxes, type HeroBox, type HeroBoxLayer,
 } from './Landing.model';
 
 interface Frame {
   width: number;
   height: number;
-}
-
-function useAsciiArt(width: number, height: number): string {
-  const [time, setTime] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => { setTime((t) => t + ASCII.tickStep); }, ASCII.tickMs);
-    return (): void => { clearInterval(id); };
-  }, []);
-  const { cols, rows } = asciiGrid(width, height);
-  return useMemo(() => asciiFrame(cols, rows, time), [cols, rows, time]);
-}
-
-function AsciiField({ width, height }: Frame): React.ReactElement {
-  const art = useAsciiArt(width, height);
-  return (
-    <Box
-      align="center" justify="center" pointerEvents="none"
-      style={{ position: 'absolute', top: 0, left: 0, width, height, overflow: 'hidden' }}
-    >
-      <Text
-        variant="mono" color={HERO_BLACK}
-        style={{ fontSize: ASCII.size, lineHeight: ASCII.lineHeight, letterSpacing: ASCII.letterSpacing }}
-      >
-        {art}
-      </Text>
-    </Box>
-  );
 }
 
 function BoxLayer({ layer, width, heroHeight }: { layer: HeroBoxLayer; width: number; heroHeight: number }): React.ReactElement {
