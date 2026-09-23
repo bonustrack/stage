@@ -67,7 +67,7 @@ describe('recipient states', () => {
     const ens = startRecipient('vitalik.eth');
     expect(ens).toEqual({ kind: 'unsupported', input: 'vitalik.eth', label: 'vitalik.eth' });
     expect(recipientAddress(ens)).toBeNull();
-    expect(recipientHint(ens)).toEqual({ text: 'vitalik.eth is a mainnet ENS name. Stage sends to names on Base only.', tone: 'danger' });
+    expect(recipientHint(ens)).toEqual({ text: 'vitalik.eth is a mainnet ENS name. Stage only supports names on Base.', tone: 'danger' });
     expect(settleRecipient(ens, ALICE)).toBe(ens);
   });
 

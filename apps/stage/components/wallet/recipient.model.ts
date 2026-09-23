@@ -65,7 +65,7 @@ export function recipientAddress(state: RecipientState): string | null {
 export function recipientHint(state: RecipientState): RecipientHint | undefined {
   if (state.kind === 'resolving') return { text: `Looking up ${state.query.label ?? state.query.handle}…`, tone: 'secondary' };
   if (state.kind === 'unresolved') return { text: `No address found for ${state.label}`, tone: 'danger' };
-  if (state.kind === 'unsupported') return { text: `${state.label} is a mainnet ENS name. Stage sends to names on Base only.`, tone: 'danger' };
+  if (state.kind === 'unsupported') return { text: `${state.label} is a mainnet ENS name. Stage only supports names on Base.`, tone: 'danger' };
   if (state.kind === 'invalid') return { text: RECIPIENT_HELP, tone: 'secondary' };
   return undefined;
 }

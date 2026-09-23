@@ -22,28 +22,6 @@ export function parseSendAmount(amount: string, decimals: number): bigint {
   return value;
 }
 
-export function looksLikeEns(s: string): boolean {
-  return /^[a-z0-9-]+(\.[a-z0-9-]+)+\.eth$|^[a-z0-9-]+\.eth$/i.test(s.trim());
-}
-
-export type RecipientClassification =
-  | { kind: 'empty' }
-  | { kind: 'address'; resolved: string }
-  | { kind: 'invalid' }
-  | { kind: 'ens'; query: string };
-
-export function classifyRecipientInput(raw: string): RecipientClassification {
-  const q = raw.trim();
-  if (!q) return { kind: 'empty' };
-  if (isAddress(q)) return { kind: 'address', resolved: q.toLowerCase() };
-  if (!looksLikeEns(q)) return { kind: 'invalid' };
-  return { kind: 'ens', query: q.toLowerCase() };
-}
-
-export function noAddressSetError(query: string): string {
-  return `No address set for ${query}`;
-}
-
 export interface BuildTransferArgs {
   recipient: string;
   amount: string;

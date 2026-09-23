@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'bun:test';
-import { isAddress, parseUnits } from 'viem';
-import {
-  buildPublicTransfer, parseSendAmount, looksLikeEns,
-  classifyRecipientInput, noAddressSetError,
-} from '../src/wallet/send';
+import { parseUnits } from 'viem';
+import { buildPublicTransfer, parseSendAmount } from '../src/wallet/send';
 
 const ETH = { address: null, decimals: 18 } as const;
 const USDC = { address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', decimals: 6 } as const;
@@ -48,14 +45,6 @@ describe('parseSendAmount', () => {
   });
 });
 
-describe('looksLikeEns', () => {
-  it('matches .eth names and rejects addresses', () => {
-    expect(looksLikeEns('vitalik.eth')).toBe(true);
-    expect(looksLikeEns('sub.name.eth')).toBe(true);
-    expect(looksLikeEns(RCPT)).toBe(false);
-  });
-});
-
 describe('buildPublicTransfer', () => {
   it('builds a native transfer', () => {
     const call = buildPublicTransfer({ recipient: RCPT, amount: '1', asset: ETH });
@@ -77,33 +66,5 @@ describe('buildPublicTransfer', () => {
     expect(Object.keys(native).sort()).toEqual(['to', 'value']);
     const erc20 = buildPublicTransfer({ recipient: RCPT, amount: '1', asset: USDC });
     expect(Object.keys(erc20).sort()).toEqual(['data', 'to', 'value']);
-  });
-});
-
-describe('classifyRecipientInput equivalence with old inline branch', () => {
-  function oldBranch(raw: string): { resolved: string | null; resolving: boolean; ens: string | null } {
-    const q = raw.trim();
-    if (!q) return { resolved: null, resolving: false, ens: null };
-    if (isAddress(q)) return { resolved: q.toLowerCase(), resolving: false, ens: null };
-    if (!looksLikeEns(q)) return { resolved: null, resolving: false, ens: null };
-    return { resolved: null, resolving: true, ens: q.toLowerCase() };
-  }
-  function newBranch(raw: string): { resolved: string | null; resolving: boolean; ens: string | null } {
-    const c = classifyRecipientInput(raw);
-    if (c.kind === 'empty' || c.kind === 'invalid') return { resolved: null, resolving: false, ens: null };
-    if (c.kind === 'address') return { resolved: c.resolved, resolving: false, ens: null };
-    return { resolved: null, resolving: true, ens: c.query };
-  }
-  const cases = ['', '   ', RCPT, RCPT.toUpperCase(), 'Vitalik.eth', '  sub.name.ETH ', 'not-an-address', '0x1234'];
-  for (const raw of cases) {
-    it(`matches for ${JSON.stringify(raw)}`, () => {
-      expect(newBranch(raw)).toEqual(oldBranch(raw));
-    });
-  }
-});
-
-describe('noAddressSetError', () => {
-  it('preserves original-case query', () => {
-    expect(noAddressSetError('Vitalik.eth')).toBe('No address set for Vitalik.eth');
   });
 });

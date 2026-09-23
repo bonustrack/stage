@@ -5,7 +5,10 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { shortAddress } from '../../modules/messaging';
-import { resolveEnsName } from '@stage-labs/client/api/ens';
+import { resolveHandleToAddress } from '../../lib/resolveHandle';
+import {
+  RECIPIENT_HELP, RECIPIENT_PLACEHOLDER, recipientHint, settleRecipient, startRecipient,
+} from '../wallet/recipient.model';
 import { capabilities } from '../../lib/capabilities';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { useSafeAreaInsets } from '../../lib/safeArea';
@@ -20,7 +23,6 @@ export interface Member {
   label: string;
 }
 
-const ADDR_RE = /^0x[0-9a-fA-F]{40}$/;
 
 interface MemberPickerState {
   members: Member[];
@@ -43,17 +45,13 @@ export function useMemberPicker(): MemberPickerState {
     if (!raw || adding) return;
     setAdding(true);
     try {
-      let address: string | null = null;
-      let label = raw;
-      if (ADDR_RE.test(raw)) {
-        address = raw;
-        label = shortAddress(raw);
-      } else if (raw.includes('.')) {
-        address = await resolveEnsName(raw.toLowerCase());
-        if (!address) { capabilities.toast(`Couldn't resolve ${raw}`); return; }
-      } else {
-        capabilities.toast('Enter a 0x address or a .eth name'); return;
-      }
+      const start = startRecipient(raw);
+      const found = start.kind === 'resolving'
+        ? settleRecipient(start, await resolveHandleToAddress(start.query.handle))
+        : start;
+      if (found.kind !== 'resolved') { capabilities.toast(recipientHint(found)?.text ?? RECIPIENT_HELP); return; }
+      const { address } = found;
+      const label = found.label ?? shortAddress(address);
       const lower = address.toLowerCase();
       if (members.some(m => m.address.toLowerCase() === lower)) {
         capabilities.toast('Already added'); setEntry(''); return;
@@ -108,7 +106,7 @@ export function MemberPicker({ state, dark, exclude = [] }: {
       <Col gap={6}>
         <Row gap={8} align="center">
           <Box flex={1}>
-            <FormField label="Add members" placeholder="0x… or name.eth" value={entry} onChangeText={setEntry}
+            <FormField label="Add members" placeholder={RECIPIENT_PLACEHOLDER} value={entry} onChangeText={setEntry}
               onSubmit={() => { void addMember(); }}
               inputProps={{ autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'done' }} />
           </Box>
