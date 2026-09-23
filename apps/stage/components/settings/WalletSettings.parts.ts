@@ -25,15 +25,6 @@ export interface WalletModel {
   chainId: number;
   kernelVersion: string;
   entryPointVersion: string;
-  guardianCount: number;
-}
-
-function formatDelay(seconds?: number): string | null {
-  if (!seconds || seconds <= 0) return null;
-  if (seconds % 86400 === 0) return `${seconds / 86400}d`;
-  if (seconds % 3600 === 0) return `${seconds / 3600}h`;
-  if (seconds % 60 === 0) return `${seconds / 60}m`;
-  return `${seconds}s`;
 }
 
 function buildModules(rec: AccountRecord): WalletModule[] {
@@ -45,14 +36,6 @@ function buildModules(rec: AccountRecord): WalletModule[] {
     mods.push({ name: 'ECDSA owner key', role: 'backup', status: 'Mnemonic-derived, fallback' });
   } else {
     mods.push({ name: 'ECDSA owner key', role: 'sudo', status: 'Active signer (mnemonic-derived)' });
-  }
-
-  const guardians = rec.guardians ?? [];
-  if (guardians.length) {
-    const threshold = rec.guardianThreshold ?? guardians.length;
-    const delay = formatDelay(rec.guardianDelay);
-    const detail = `${threshold} of ${guardians.length}${delay ? `, ${delay} delay` : ''}`;
-    mods.push({ name: 'Guardian recovery', role: 'recovery', status: detail });
   }
 
   return mods;
@@ -74,7 +57,6 @@ function modelFromRecord(rec: AccountRecord): WalletModel {
     chainId: SCW_CHAIN_ID,
     kernelVersion: KERNEL_VERSION_STRING,
     entryPointVersion: ENTRY_POINT_VERSION,
-    guardianCount: (rec.guardians ?? []).length,
   };
 }
 

@@ -94,13 +94,6 @@ function AccountRows({ rec, revealed, onExport, onMove }: {
       {transferKindFor(rec) !== null ? (
         <SettingsNavRow label="Link a device" iconStart="qrcode" onPress={onMove} />
       ) : null}
-      {rec.type === 'smart' ? (
-        <SettingsNavRow
-          label={(rec.guardians ?? []).length ? 'Guardian recovery' : 'Set up guardian recovery'}
-          iconStart="userGroup"
-          onPress={() => { capabilities.navigate('/wallet/recovery'); }}
-        />
-      ) : null}
       <SettingsButtonRow label="Remove account" iconStart="trash" danger onPress={() => { confirmRemove(rec); }} />
     </SettingsList>
   );

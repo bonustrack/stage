@@ -1,6 +1,6 @@
 import type { BadgeColor } from '@stage-labs/kit/badge';
 
-export type WalletModuleRole = 'sudo' | 'backup' | 'recovery' | 'session';
+export type WalletModuleRole = 'sudo' | 'backup' | 'session';
 
 export type WalletDeployState = 'loading' | 'deployed' | 'counterfactual' | 'unknown';
 
@@ -18,7 +18,7 @@ export interface WalletAccountModel {
 }
 
 export const WALLET_ROLE_BADGE: Record<WalletModuleRole, BadgeColor> = {
-  sudo: 'success', backup: 'secondary', recovery: 'info', session: 'secondary',
+  sudo: 'success', backup: 'secondary', session: 'secondary',
 };
 
 export function walletDeployLabel(d: WalletDeployState): string {
@@ -44,7 +44,7 @@ export function walletAccountRows(model: WalletAccountModel): WalletValueRow[] {
   return rows;
 }
 
-export type WalletManageAction = 'passkey' | 'removePasskey' | 'recovery';
+export type WalletManageAction = 'passkey' | 'removePasskey';
 
 export interface WalletManageItem {
   icon: string;
@@ -55,7 +55,6 @@ export interface WalletManageItem {
 export function walletManageItems(
   passkey: WalletPasskeyAction,
   removePasskey: WalletPasskeyAction,
-  guardianCount: number | undefined,
 ): WalletManageItem[] {
   const items: WalletManageItem[] = [];
   if (passkey.available) {
@@ -72,10 +71,5 @@ export function walletManageItems(
       action: 'removePasskey',
     });
   }
-  items.push({
-    icon: 'userGroup',
-    label: guardianCount ? 'Guardian recovery & backup phrase' : 'Set up recovery & backup phrase',
-    action: 'recovery',
-  });
   return items;
 }

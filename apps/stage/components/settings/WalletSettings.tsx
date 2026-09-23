@@ -1,5 +1,4 @@
 
-import { useRouter } from 'expo-router';
 
 import { Text } from '@stage-labs/kit/react-native/text';
 import { walletAccountRows } from './WalletSettings.model';
@@ -12,14 +11,11 @@ import { SettingsCard, SettingsPage, SettingsSectionLabel } from './SettingsPage
 import { SettingsList } from './rows';
 
 export function WalletSettings(): React.ReactElement {
-  const router = useRouter();
   const { text: fg } = usePalette();
 
   const { model, deploy } = useWalletModel();
   const passkey = useEnablePasskey();
   const removePasskey = useRemovePasskey();
-
-  const onRecovery = (): void => { router.push('/wallet/recovery'); };
 
   return (
     <SettingsPage title="Wallet">
@@ -51,7 +47,7 @@ export function WalletSettings(): React.ReactElement {
             <SmartAccountSections
               model={model} deploy={deploy}
               passkey={passkey} removePasskey={removePasskey}
-              onCopy={(label, value) => { capabilities.copy(label, value); }} onRecovery={onRecovery}
+              onCopy={(label, value) => { capabilities.copy(label, value); }}
             />
           ) : null}
         </>

@@ -18,7 +18,7 @@ describe('walletDeployLabel', () => {
 describe('WALLET_ROLE_BADGE', () => {
   test('maps roles to badge colors', () => {
     expect(WALLET_ROLE_BADGE).toEqual({
-      sudo: 'success', backup: 'secondary', recovery: 'info', session: 'secondary',
+      sudo: 'success', backup: 'secondary', session: 'secondary',
     });
   });
 });
@@ -58,29 +58,19 @@ describe('walletAccountRows', () => {
 });
 
 describe('walletManageItems', () => {
-  test('minimal (recovery row only)', () => {
-    expect(
-      walletManageItems(
-        { available: false, busy: false },
-        { available: false, busy: false },
-        undefined,
-      ),
-    ).toEqual([
-      { icon: 'userGroup', label: 'Set up recovery & backup phrase', action: 'recovery' },
-    ]);
+  test('no passkey actions leaves nothing to manage', () => {
+    expect(walletManageItems({ available: false, busy: false }, { available: false, busy: false })).toEqual([]);
   });
 
-  test('full (busy passkey, removable, guardians set)', () => {
+  test('busy passkey and removable passkey', () => {
     expect(
       walletManageItems(
         { available: true, busy: true },
         { available: true, busy: false },
-        2,
       ),
     ).toEqual([
       { icon: 'fingerPrint', label: 'Enabling passkey…', action: 'passkey' },
       { icon: 'fingerPrint', label: 'Remove passkey', action: 'removePasskey' },
-      { icon: 'userGroup', label: 'Guardian recovery & backup phrase', action: 'recovery' },
     ]);
   });
 });

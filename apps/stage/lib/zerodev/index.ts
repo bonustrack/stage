@@ -8,6 +8,3 @@ export { kernelClientForRecord } from './kernelForRecord';
 export { enablePasskeyForRecord } from './enablePasskey';
 export { removePasskeyFromRecord } from './disablePasskey';
 export { linkPasskeyForRecord, describeLinkResult, passkeyPlace, kernelCustody, type PasskeyPlace } from './linkPasskey';
-export {
-  installGuardians, updateGuardians,
-} from './recovery';

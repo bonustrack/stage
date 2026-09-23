@@ -75,7 +75,6 @@
     "./zerodev/config": "./src/zerodev/config.ts",
     "./zerodev/account": "./src/zerodev/account.ts",
     "./zerodev/derive": "./src/zerodev/derive.ts",
-    "./zerodev/recovery": "./src/zerodev/recovery.ts",
     "./zerodev/validatorPlan": "./src/zerodev/validatorPlan.ts",
     "./zerodev/passkeyLink": "./src/zerodev/passkeyLink.ts",
     "./zerodev/recoveryKeyAccess": "./src/zerodev/recoveryKeyAccess.ts"

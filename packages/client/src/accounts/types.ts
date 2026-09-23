@@ -27,7 +27,4 @@ export interface AccountRecord {
   deployed?: boolean;
   scwXmtp?: boolean;
 
-  guardians?: string[];
-  guardianThreshold?: number;
-  guardianDelay?: number;
 }

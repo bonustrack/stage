@@ -1,6 +1,6 @@
 # Stage — monorepo guide for Claude
 
-Stage is a private, encrypted XMTP messenger with multi-account support, group channels, free onchain names and avatars (`*.stage.base.eth` on Base, read like Basenames), and a ZeroDev smart-account wallet on Base (assets, balances, transfers, passkeys, social recovery). The product bet is a privacy super app where **agents are contacts**.
+Stage is a private, encrypted XMTP messenger with multi-account support, group channels, free onchain names and avatars (`*.stage.base.eth` on Base, read like Basenames), and a ZeroDev smart-account wallet on Base (assets, balances, transfers, passkeys, recovery phrase backup). The product bet is a privacy super app where **agents are contacts**.
 
 It ships **one universal Expo app** (`apps/stage`) serving **android, ios, web and desktop** from the same React Native codebase (web via react-native-web), built on a framework-agnostic TS core (`packages/client`), a design-system kit (`packages/kit`), a Cloudflare Worker (`apps/proxy`) and the XMTP push server (`apps/push`). Tooling: **Bun 1.4.0** (exact, the only package manager — no npm/npx, no package-lock.json) + Turbo, **Node >=22**.
 
@@ -57,7 +57,7 @@ Per-app:
 
 ### Shared core (`packages/client`)
 - No build step; the subpath exports in `package.json` are the public API (there is no root barrel). Pure functions + plain interfaces, no classes/default exports. Boundary validation via `validate.ts` (zod). Always decode XMTP content WITH a zod schema (`decodeJsonContent(bytes, schema)`).
-- Domains: `xmtp` (codecs, humanize, builders, line routing, consent, and the orchestration cores: `channelsFilter`, `channelsCache` incl. `applyInbound`, `summarizeRow`, `clientErrors`, `envelope`, `groups`), `accounts`+`zerodev` (validator plans, passkey linking, recovery), `wallet` (incl. `txSimulate`, `txDecode`, `prices`), `api` (etherscan, opensea, coingecko, `github` link detection), `identity` (Basenames + `stageNames` read/write, `onchainProfile`, `peerProfiles`), `profile/avatar` (stamp + IPFS avatar URLs), `embed/routing/image/text`, `x402`.
+- Domains: `xmtp` (codecs, humanize, builders, line routing, consent, and the orchestration cores: `channelsFilter`, `channelsCache` incl. `applyInbound`, `summarizeRow`, `clientErrors`, `envelope`, `groups`), `accounts`+`zerodev` (validator plans, passkey linking, recovery key access), `wallet` (incl. `txSimulate`, `txDecode`, `prices`), `api` (etherscan, opensea, coingecko, `github` link detection), `identity` (Basenames + `stageNames` read/write, `onchainProfile`, `peerProfiles`), `profile/avatar` (stamp + IPFS avatar URLs), `embed/routing/image/text`, `x402`.
 - Names and avatars come from Base only (Basenames or `*.stage.base.eth` issued by the proxy; issued names may lack a forward `addr` record, so resolution accepts registry ownership and falls back to `/names/resolve`). Mainnet ENS is not consulted. Usernames are `a-z0-9` with single inner hyphens, 6+ chars, validated in the client AND in the Worker. A `*.stage.base.eth` name is a native Stage username: it is displayed as `@label` everywhere (`displayHandle`, applied inside `getPeerName`), while routing and resolution keep the full onchain name. A bare label typed into the channels search resolves the same way (`peopleLookup` -> `resolveHandleToAddress`), so `tony123` finds `tony123.stage.base.eth`.
 - **Deleting a direct chat** (row menu, DMs only; groups keep "Leave group") writes a `clearState` snapshot (peer address -> deleted-at ms, merged by max per peer) to the private `stage.sync:` group beside `readState`/`pinState`, so every device hides it, and sets the conversation's consent to unknown ("Delete and block" sets denied). A row stays hidden until a real message newer than the deletion arrives (`isRowCleared` on `lastBubbleTs`: reactions and read receipts never revive it), the feed shows only messages after the deletion, and the unread badge skips hidden rows. XMTP cannot leave or delete a DM, so this is the whole mechanism.
 
@@ -104,7 +104,7 @@ Per-app:
 | `apps/stage/metro.config.js` | node-core polyfills (buffer/events/util/assert/punycode), monorepo resolution, desktop-shell blockList |
 | `apps/stage/platform/*` | the storage seams (contracts + impls) |
 | `apps/stage/lib/xmtp.*.ts` / `.web.ts` / `.core.ts` | the XMTP seam family; `modules/messaging/index.ts` is the facade components import |
-| `apps/stage/lib/zerodev/*` | keyring (multi-phrase), account create/restore, kernel client, passkey enable/link/disable, recovery |
+| `apps/stage/lib/zerodev/*` | keyring (multi-phrase), account create/restore, kernel client, passkey enable/link/disable |
 | `apps/stage/components/*` | kit-JSX screens/UI + colocated `*.model.ts` pure models, one folder per family (`bubble/`, `composer/`, `home/`, `conversation/`, `group/`, `wallet/`, `onboarding/`, `settings/`) |
 | `apps/stage/components/FormField.tsx` | THE text input wrapper |
 | `apps/stage/components/UsernameField.tsx` | THE username form (field, shuffle, availability, status marks), shared by sign-up and Settings -> Profile |

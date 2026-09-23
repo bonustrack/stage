@@ -1,7 +1,6 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
 import { Title } from '@stage-labs/kit/react-native/title';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
@@ -14,7 +13,6 @@ import { useEnablePasskey } from '../../lib/passkey';
 import { isWalletBackedUp, setWalletBackedUp } from '../../lib/walletBackup';
 
 export function SecureWalletNudge(): React.ReactElement | null {
-  const router = useRouter();
   const dark = useEffectiveColorScheme() === 'dark';
   const pal = usePalette();
 
@@ -71,8 +69,8 @@ export function SecureWalletNudge(): React.ReactElement | null {
         {phrase == null ? (
           <>
             <Text size="sm" color={pal.sub}>
-              Back up your recovery phrase and add guardians so you can recover this
-              wallet if you lose your device. You can do this anytime.
+              Back up your recovery phrase so you can recover this wallet if you
+              lose your device. You can do this anytime.
             </Text>
             <Col gap={8}>
               <Button dark={dark} size="md" fullWidth
@@ -84,8 +82,6 @@ export function SecureWalletNudge(): React.ReactElement | null {
                   label={passkey.busy ? 'Enabling passkey…' : 'Enable passkey for signing'}
                   onPress={passkey.run}/>
               ) : null}
-              <Button dark={dark} color="secondary" variant="solid" size="md" fullWidth
-                label="Add guardians" onPress={() => { router.push('/wallet/recovery'); }}/>
               <Button dark={dark} variant="ghost" size="md" fullWidth
                 label="Not now" onPress={dismiss}/>
             </Col>

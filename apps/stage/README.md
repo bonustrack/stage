@@ -4,7 +4,7 @@
 
 ## Overview
 
-`stage` serves Android, iOS, the web (via react-native-web) and the Electron desktop shell from one codebase. It is an XMTP messenger with multi-account support, group channels, message requests shown inline in the channel list (only rejected conversations are hidden), free `*.stage.base.eth` names and avatars, search, and a ZeroDev smart-account wallet on Base (assets, balances, transfers, passkeys, social recovery). Per-platform code lives solely in Metro platform extensions (`x.ts` native / `x.web.ts` web) under `platform/` and `lib/`; a small `Platform.OS === 'web'` gate is fine for trivial divergences.
+`stage` serves Android, iOS, the web (via react-native-web) and the Electron desktop shell from one codebase. It is an XMTP messenger with multi-account support, group channels, message requests shown inline in the channel list (only rejected conversations are hidden), free `*.stage.base.eth` names and avatars, search, and a ZeroDev smart-account wallet on Base (assets, balances, transfers, passkeys, recovery phrase backup). Per-platform code lives solely in Metro platform extensions (`x.ts` native / `x.web.ts` web) under `platform/` and `lib/`; a small `Platform.OS === 'web'` gate is fine for trivial divergences.
 
 All platform-neutral logic comes from [`@stage-labs/client`](../../packages/client) and the visual language from [`@stage-labs/kit`](../../packages/kit). Screens and chat message content are direct kit JSX fed by pure `.model.ts` files colocated with their components.
 

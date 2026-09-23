@@ -3,7 +3,7 @@
 Stage is a private, encrypted messenger built on XMTP, with group channels,
 multi-account support, free onchain names and avatars (`*.stage.base.eth` on
 Base), and a smart-account wallet (assets, balances, transfers, passkeys,
-social recovery). It ships as **one universal Expo app** serving Android, iOS,
+recovery phrase backup). It ships as **one universal Expo app** serving Android, iOS,
 web and desktop from the same React Native codebase (web via
 react-native-web), backed by a framework-agnostic TypeScript core, a
 design-system kit, a Cloudflare Worker and a push-notification server.

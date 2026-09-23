@@ -8,8 +8,8 @@ import {
   walletManageItems,
   type WalletDeployState,
   type WalletManageAction,
+  type WalletManageItem,
   type WalletModuleRole,
-  type WalletPasskeyAction,
 } from './WalletSettings.model';
 import { Col, Row } from '../layout';
 import { SettingsCard, SettingsSectionLabel } from './SettingsPage';
@@ -88,16 +88,14 @@ function WalletDeployRow({ deploy }: { deploy: WalletDeployState }): React.React
   );
 }
 
-function WalletManageList({ passkey, removePasskey, guardianCount, onAction }: {
-  passkey: WalletPasskeyAction;
-  removePasskey: WalletPasskeyAction;
-  guardianCount: number | undefined;
+function WalletManageList({ items, onAction }: {
+  items: WalletManageItem[];
   onAction: (action: WalletManageAction) => void;
 }): React.ReactElement {
   const dark = useKitScheme() === 'dark';
   return (
     <SettingsList>
-      {walletManageItems(passkey, removePasskey, guardianCount).map((item) => (
+      {items.map((item) => (
         <ListViewItem
           key={item.action}
           align="center"
@@ -116,17 +114,16 @@ function WalletManageList({ passkey, removePasskey, guardianCount, onAction }: {
   );
 }
 
-export function SmartAccountSections({ model, deploy, passkey, removePasskey, onCopy, onRecovery }: {
+export function SmartAccountSections({ model, deploy, passkey, removePasskey, onCopy }: {
   model: WalletModel;
   deploy: WalletDeployState;
   passkey: PasskeyAction;
   removePasskey: PasskeyAction;
   onCopy: (label: string, value: string) => void;
-  onRecovery: () => void;
 }): React.ReactElement {
+  const manageItems = walletManageItems(passkey, removePasskey);
   const onManage = (action: WalletManageAction): void => {
-    if (action === 'recovery') onRecovery();
-    else if (action === 'passkey') { if (!passkey.busy) passkey.run(); }
+    if (action === 'passkey') { if (!passkey.busy) passkey.run(); }
     else if (!removePasskey.busy) removePasskey.run();
   };
   return (
@@ -176,15 +173,14 @@ export function SmartAccountSections({ model, deploy, passkey, removePasskey, on
         </SettingsList>
       </SettingsCard>
 
-      <SettingsSectionLabel>MANAGE</SettingsSectionLabel>
-      <SettingsCard>
-        <WalletManageList
-          passkey={passkey}
-          removePasskey={removePasskey}
-          guardianCount={model.guardianCount}
-          onAction={onManage}
-        />
-      </SettingsCard>
+      {manageItems.length > 0 ? (
+        <>
+          <SettingsSectionLabel>MANAGE</SettingsSectionLabel>
+          <SettingsCard>
+            <WalletManageList items={manageItems} onAction={onManage} />
+          </SettingsCard>
+        </>
+      ) : null}
     </>
   );
 }
