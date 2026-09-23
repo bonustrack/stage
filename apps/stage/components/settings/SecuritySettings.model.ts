@@ -3,6 +3,8 @@ export type SecurityRowKey =
   | 'showPhrase'
   | 'enablePasskey'
   | 'passkeyLink'
+  | 'devicePasskey'
+  | 'approveDevice'
   | 'recoveryKey'
   | 'removePasskey'
   | 'exportKey'
@@ -17,6 +19,7 @@ export interface SecurityRowsInput {
   canExportKey: boolean;
   keyRevealed: boolean;
   canLinkDevice: boolean;
+  place?: 'this-device' | 'elsewhere' | 'none' | 'unknown' | null;
 }
 
 export type PasskeyActionKind = 'enable' | 'remove';
@@ -53,9 +56,15 @@ export function phrasePanelActions(mode: PhraseRowMode): PhrasePanelAction[] {
   return mode === 'backup' ? ['hide', 'saved'] : ['hide'];
 }
 
+function devicePasskeyRows(input: SecurityRowsInput): SecurityRowKey[] {
+  if (input.place === 'elsewhere') return ['devicePasskey'];
+  return input.place === 'this-device' ? ['approveDevice'] : [];
+}
+
 function smartRecoveryRows(input: SecurityRowsInput): SecurityRowKey[] {
   if (!input.isSmart) return [];
-  return input.backedUp === true ? ['passkeyLink', 'recoveryKey', 'showPhrase'] : ['passkeyLink', 'recoveryKey'];
+  const rows: SecurityRowKey[] = ['passkeyLink', ...devicePasskeyRows(input), 'recoveryKey'];
+  return input.backedUp === true ? [...rows, 'showPhrase'] : rows;
 }
 
 export function securityRows(input: SecurityRowsInput): SecurityRowKey[] {

@@ -3,6 +3,14 @@ export type AccountType = 'smart' | 'generated' | 'privateKey';
 
 export const ACCOUNT_TYPES: readonly AccountType[] = ['smart', 'generated', 'privateKey'];
 
+export interface StoredPasskeyRecord {
+  pubX: string;
+  pubY: string;
+  authenticatorId: string;
+  authenticatorIdHash: string;
+  rpID: string;
+}
+
 export interface AccountRecord {
   id: string;
   address: string;
@@ -16,13 +24,8 @@ export interface AccountRecord {
   phraseId?: string;
   ownerAddress?: string;
   passkeyCredId?: string;
-  passkey?: {
-    pubX: string;
-    pubY: string;
-    authenticatorId: string;
-    authenticatorIdHash: string;
-    rpID: string;
-  };
+  passkey?: StoredPasskeyRecord;
+  devicePasskey?: StoredPasskeyRecord & { permissionId: string };
   passkeySudo?: boolean;
   deployed?: boolean;
   scwXmtp?: boolean;

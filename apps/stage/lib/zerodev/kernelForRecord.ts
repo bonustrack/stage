@@ -13,6 +13,8 @@ import { makePublicClient, makeKernelClient } from './client';
 import { createEcdsaKernel, ecdsaValidatorForOwner, passkeyKernelResult } from './account';
 import { ENTRY_POINT, KERNEL_VERSION } from '@stage-labs/client/zerodev/account';
 import { accountPasskey, storedPasskeyMatches } from './linkPasskey';
+import { devicePasskeyKernel, devicePasskeyUsable } from './devicePasskey';
+import { passkeysAvailable } from './passkeys';
 import { recover, ignored } from '../errorPolicy';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -71,30 +73,51 @@ async function tryPasskey(publicClient: PublicClient, rec: AccountRecord, hdInde
   return { account: null, problem: 'build-failed', detail: result.error };
 }
 
+async function deviceKernelClient(publicClient: PublicClient, rec: AccountRecord): Promise<KernelAccountClient | null> {
+  if (!rec.devicePasskey) return null;
+  const account = await devicePasskeyKernel(publicClient, rec.address as Hex, rec.devicePasskey).catch(recover('passkey.device', null));
+  return account ? makeKernelClient(account, publicClient) : null;
+}
+
+async function deviceUsable(publicClient: PublicClient, rec: AccountRecord, purpose: KernelSigningPurpose): Promise<boolean> {
+  if (purpose === 'sign' || !rec.devicePasskey || !passkeysAvailable()) return false;
+  return devicePasskeyUsable(publicClient, rec).catch(recover('passkey.device', false));
+}
+
+async function ecdsaClient(publicClient: PublicClient, rec: AccountRecord & { hdIndex: number }, plan: 'ecdsa-root' | 'ecdsa-secondary'): Promise<KernelAccountClient> {
+  const owner = await smartOwnerSigner({ hdIndex: rec.hdIndex, phraseId: rec.phraseId });
+  if (plan === 'ecdsa-root') {
+    return makeKernelClient(await createEcdsaKernel(publicClient, owner, rec.hdIndex), publicClient);
+  }
+  return secondaryEcdsaClient(publicClient, owner, rec.address as Hex);
+}
+
 export async function kernelClientForRecord(rec: AccountRecord, purpose: KernelSigningPurpose = 'transact'): Promise<KernelAccountClient> {
   if (rec.type !== 'smart' || rec.hdIndex == null) {
     throw new Error('Not a smart account.');
   }
   const publicClient = makePublicClient();
-  const hdIndex = rec.hdIndex;
+  const smart = { ...rec, hdIndex: rec.hdIndex };
   const ecdsaValidator = getValidatorAddress(ENTRY_POINT, KERNEL_VERSION);
-  const [state, problem] = await Promise.all([
-    readValidationState(publicClient, rec.address as Hex, ecdsaValidator), passkeyProblem(rec),
+  const [state, problem, devicePasskey] = await Promise.all([
+    readValidationState(publicClient, rec.address as Hex, ecdsaValidator), passkeyProblem(rec), deviceUsable(publicClient, rec, purpose),
   ]);
+  const planFor = (passkeyUsable: boolean, devicePasskeyUsable: boolean): ReturnType<typeof planKernelSigning> =>
+    planKernelSigning({ ...state, ecdsaValidator, passkeyUsable, devicePasskeyUsable, purpose });
   let passkey: PasskeyAttempt = { account: null, problem };
-  let plan = planKernelSigning({ ...state, ecdsaValidator, passkeyUsable: problem === 'none', purpose });
+  let plan = planFor(problem === 'none', devicePasskey);
   if (plan === 'passkey') {
-    passkey = await tryPasskey(publicClient, rec, hdIndex);
+    passkey = await tryPasskey(publicClient, rec, smart.hdIndex);
     if (passkey.account) return makeKernelClient(passkey.account, publicClient);
-    plan = planKernelSigning({ ...state, ecdsaValidator, passkeyUsable: false, purpose });
+    plan = planFor(false, devicePasskey);
+  }
+  if (plan === 'device-passkey') {
+    const client = await deviceKernelClient(publicClient, rec);
+    if (client) return client;
+    plan = planFor(false, false);
   }
   if (plan !== 'ecdsa-root' && plan !== 'ecdsa-secondary') {
     throw new Error(describeUnavailableSigning(purpose, passkey.problem, passkey.detail));
   }
-
-  const owner = await smartOwnerSigner({ hdIndex, phraseId: rec.phraseId });
-  if (plan === 'ecdsa-root') {
-    return makeKernelClient(await createEcdsaKernel(publicClient, owner, hdIndex), publicClient);
-  }
-  return secondaryEcdsaClient(publicClient, owner, rec.address as Hex);
+  return ecdsaClient(publicClient, smart, plan);
 }

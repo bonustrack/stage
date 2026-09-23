@@ -136,7 +136,7 @@ export async function addPrivateKeyAccount(pk: Hex): Promise<AccountRecord> {
 }
 
 export async function updateSmartAccount(
-  id: string, patch: Partial<Pick<AccountRecord, 'deployed' | 'scwXmtp' | 'passkeyCredId' | 'passkey' | 'passkeySudo' | 'label'>>,
+  id: string, patch: Partial<Pick<AccountRecord, 'deployed' | 'scwXmtp' | 'passkeyCredId' | 'passkey' | 'passkeySudo' | 'label' | 'devicePasskey'>>,
 ): Promise<void> {
   const list = await loadAccountsForWrite();
   const rec = list.find(a => a.id === id.toLowerCase());

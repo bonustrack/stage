@@ -77,7 +77,8 @@
     "./zerodev/derive": "./src/zerodev/derive.ts",
     "./zerodev/validatorPlan": "./src/zerodev/validatorPlan.ts",
     "./zerodev/passkeyLink": "./src/zerodev/passkeyLink.ts",
-    "./zerodev/recoveryKeyAccess": "./src/zerodev/recoveryKeyAccess.ts"
+    "./zerodev/recoveryKeyAccess": "./src/zerodev/recoveryKeyAccess.ts",
+    "./zerodev/devicePasskey": "./src/zerodev/devicePasskey.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

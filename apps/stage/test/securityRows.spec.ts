@@ -22,6 +22,20 @@ describe('securityRows', () => {
     ]);
   });
 
+  test('a device without the account passkey gets its own passkey row, the passkey device gets the approve row', () => {
+    expect(securityRows({ ...SMART, place: 'elsewhere' })).toEqual([
+      'passkeyLink', 'devicePasskey', 'recoveryKey', 'showPhrase', 'linkDevice', 'removeAccount',
+    ]);
+    expect(securityRows({ ...SMART, place: 'this-device' })).toEqual([
+      'passkeyLink', 'approveDevice', 'recoveryKey', 'showPhrase', 'linkDevice', 'removeAccount',
+    ]);
+    for (const place of ['none', 'unknown', null] as const) {
+      expect(securityRows({ ...SMART, place })).not.toContain('devicePasskey');
+      expect(securityRows({ ...SMART, place })).not.toContain('approveDevice');
+    }
+    expect(securityRows({ ...SMART, isSmart: false, place: 'elsewhere' })).not.toContain('devicePasskey');
+  });
+
   test('backup row waits for the stored flag', () => {
     expect(securityRows({ ...SMART, backedUp: null })).not.toContain('backupPhrase');
     expect(securityRows({ ...SMART, backedUp: null })).not.toContain('showPhrase');
