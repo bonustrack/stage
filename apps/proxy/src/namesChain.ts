@@ -5,6 +5,7 @@ import { BASENAME_REGISTRY } from '@stage-labs/client/identity/onchainProfile';
 import { STAGE_NAMES_PARENT, stageNameOf } from '@stage-labs/client/identity/stageNames';
 import type { NamesChain } from './namesTypes.ts';
 
+const NAME_TAKEN = 'name already taken';
 const ZERO = '0x0000000000000000000000000000000000000000';
 const WRITE_ATTEMPTS = 4;
 const WRITE_RETRY_MS = 2_000;
@@ -95,7 +96,7 @@ export function makeNamesChain(operatorKey: Hex, rpcUrl: string): NamesChain {
       const parentResolver = await publicClient.readContract({ ...registry, functionName: 'resolver', args: [parentNode] });
       if (parentResolver === ZERO) throw new Error('parent name has no resolver');
       const current = await publicClient.readContract({ ...registry, functionName: 'owner', args: [node] });
-      if (current !== ZERO && current.toLowerCase() !== account.address.toLowerCase()) throw new Error('name already taken');
+      if (current !== ZERO && current.toLowerCase() !== account.address.toLowerCase()) throw new Error(NAME_TAKEN);
       if (current === ZERO) {
         await write(() => wallet.writeContract({
           ...registry, functionName: 'setSubnodeRecord',

@@ -15,14 +15,19 @@ function memoryStore(): NamesStore & { data: Map<string, string> } {
   };
 }
 
-function fakeChain(opts: { valid?: boolean; taken?: string[]; fail?: boolean } = {}): NamesChain & { issued: string[] } {
+function fakeChain(opts: { valid?: boolean; taken?: string[]; fail?: boolean; failWith?: string } = {}): NamesChain & { issued: string[] } {
   const issued: string[] = [];
   return {
     issued,
     operator: '0x00000000000000000000000000000000000000EE',
     verifyClaim: async (_a, message, signature) => (opts.valid ?? true) && signature === '0x5169' && message.startsWith('Claim '),
     subnameOwner: async (label) => (opts.taken ?? []).includes(label) ? '0x00000000000000000000000000000000000000B2' : null,
-    issue: async (label) => { if (opts.fail) throw new Error('rpc down'); issued.push(label); return '0xtx'; },
+    issue: async (label) => {
+      if (opts.failWith) throw new Error(opts.failWith);
+      if (opts.fail) throw new Error('rpc down\nURL: https://rpc.example/secret-key');
+      issued.push(label);
+      return '0xtx';
+    },
   };
 }
 
@@ -65,6 +70,30 @@ describe('claim', () => {
     expect(res.status).toBe(502);
     expect(await store.get('label:fabien')).toBeNull();
     expect(await store.get(`addr:${ALICE.toLowerCase()}`)).toBeNull();
+  });
+
+  test('a claim interrupted mid-issue can be resumed by its claimant but not taken by someone else', async () => {
+    const store = memoryStore();
+    store.data.set('label:fabien', ALICE.toLowerCase());
+    store.data.set(`addr:${ALICE.toLowerCase()}`, 'fabien');
+    const other = { ...goodClaim, address: '0x00000000000000000000000000000000000000C3' };
+    expect((await handleNames(claimRequest(other), deps(fakeChain(), store))).status).toBe(409);
+    const chain = fakeChain();
+    expect((await handleNames(claimRequest(goodClaim), deps(chain, store))).status).toBe(200);
+    expect(chain.issued).toEqual(['fabien']);
+  });
+
+  test('a failed registration never echoes the chain error, which can carry the RPC URL', async () => {
+    const res = await handleNames(claimRequest(goodClaim), deps(fakeChain({ fail: true }), memoryStore()));
+    expect(res.status).toBe(502);
+    expect(await res.json()).toEqual({ error: 'registration failed, try again' });
+  });
+
+  test('a name taken onchain mid-claim is reported as taken and releases the reservation', async () => {
+    const store = memoryStore();
+    const res = await handleNames(claimRequest(goodClaim), deps(fakeChain({ failWith: 'name already taken' }), store));
+    expect(res.status).toBe(409);
+    expect(await store.get('label:fabien')).toBeNull();
   });
 
   test('the signed message binds label, address and time', () => {

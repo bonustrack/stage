@@ -65,18 +65,33 @@ function parseClaim(raw: unknown): ClaimBody | null {
   return { label: label.toLowerCase(), address, issuedAt, signature: signature as Hex };
 }
 
+const NAME_TAKEN = 'name already taken';
+
 async function rejectClaim(claim: ClaimBody, deps: NamesDeps): Promise<Response | null> {
   const now = (deps.now ?? Date.now)();
   const problem = validateStageLabel(claim.label);
   if (problem) return reply({ error: describeLabelProblem(problem) }, 400);
   if (!claimIsFresh(claim.issuedAt, now)) return reply({ error: 'claim expired, sign it again' }, 400);
-  if (await deps.store.get(addressKey(claim.address))) return reply({ error: 'this address already has a name' }, 409);
+  const heldName = await deps.store.get(addressKey(claim.address));
+  if (heldName !== null && heldName !== claim.label) return reply({ error: 'this address already has a name' }, 409);
   const message = claimMessage({ label: claim.label, address: claim.address, issuedAt: claim.issuedAt });
   if (!(await deps.chain.verifyClaim(claim.address, message, claim.signature))) return reply({ error: 'invalid signature' }, 401);
-  if ((await deps.chain.subnameOwner(claim.label)) !== null || (await deps.store.get(labelKey(claim.label))) !== null) {
-    return reply({ error: 'name already taken' }, 409);
+  return unavailableReply(claim, deps);
+}
+
+async function unavailableReply(claim: ClaimBody, deps: NamesDeps): Promise<Response | null> {
+  const owner = await deps.chain.subnameOwner(claim.label);
+  if (owner !== null) {
+    const own = owner.toLowerCase() === claim.address.toLowerCase();
+    return reply({ error: own ? 'this address already has a name' : NAME_TAKEN }, 409);
   }
-  return null;
+  const reservedBy = await deps.store.get(labelKey(claim.label));
+  return reservedBy !== null && reservedBy !== claim.address.toLowerCase() ? reply({ error: NAME_TAKEN }, 409) : null;
+}
+
+async function releaseReservation(body: ClaimBody, deps: NamesDeps): Promise<void> {
+  if ((await deps.store.get(labelKey(body.label))) === body.address.toLowerCase()) await deps.store.put(labelKey(body.label), '');
+  if ((await deps.store.get(addressKey(body.address))) === body.label) await deps.store.put(addressKey(body.address), '');
 }
 
 async function claim(request: Request, deps: NamesDeps): Promise<Response> {
@@ -85,13 +100,15 @@ async function claim(request: Request, deps: NamesDeps): Promise<Response> {
   const rejection = await rejectClaim(body, deps);
   if (rejection) return rejection;
   await deps.store.put(labelKey(body.label), body.address.toLowerCase());
+  await deps.store.put(addressKey(body.address), body.label);
   try {
     const txHash = await deps.chain.issue(body.label, body.address);
-    await deps.store.put(addressKey(body.address), body.label);
     return reply({ name: stageNameOf(body.label), txHash });
   } catch (err) {
-    await deps.store.put(labelKey(body.label), '');
-    return reply({ error: err instanceof Error ? err.message : 'registration failed' }, 502);
+    await releaseReservation(body, deps);
+    if (err instanceof Error && err.message === NAME_TAKEN) return reply({ error: NAME_TAKEN }, 409);
+    console.error('names claim failed', err);
+    return reply({ error: 'registration failed, try again' }, 502);
   }
 }
 
