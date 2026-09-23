@@ -3,7 +3,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { VirtualList } from '../layout';
 import { CHANNELS_SCROLL_KEY, saveScrollOffset } from '../../lib/scrollPos';
-import { HistorySyncBanner, MessagingSetupBanner } from '../system/HistorySync';
+import { MessagingSetupBanner } from '../system/HistorySync';
 import { LabelFilterBar } from './labelbar';
 import { SearchTopnavBar } from '../SearchTopnavBar';
 import { HomeContactResults } from './contacts';
@@ -66,7 +66,6 @@ function ChannelsListHeader({ p }: { p: ChannelsListProps }): React.ReactElement
   return (
     <>
       <MessagingSetupBanner />
-      <HistorySyncBanner />
       {p.showFilterBar ? (
         <LabelFilterBar
           labels={p.barLabels} enabled={p.enabledLabels} unreadOnly={p.unreadOnly}

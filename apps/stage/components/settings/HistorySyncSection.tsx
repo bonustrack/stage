@@ -22,7 +22,7 @@ const SYNC_DESC = 'Ask your other devices for the messages this device is missin
 const SEND_DESC = 'Package this device\'s history for another device. You will get a PIN to enter there.';
 const RECEIVE_DESC = 'Enter the PIN shown on the device that sent its history.';
 
-function PinSheet({ visible, busy, onClose, onSubmit }: {
+export function PinSheet({ visible, busy, onClose, onSubmit }: {
   visible: boolean; busy: boolean; onClose: () => void; onSubmit: (pin: string) => void;
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';

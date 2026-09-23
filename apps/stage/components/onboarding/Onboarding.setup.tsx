@@ -4,6 +4,8 @@ import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Box, Col, Row } from '../layout';
 import { Spinner } from '../Spinner';
 import { OnboardingCard, SkipLink } from './OnboardingCard';
+import { ContinueWithoutHistoryLink, HistoryStalledActions, useHistoryStepHint } from './Onboarding.history';
+import type { HistoryControls } from './useSetupRunner';
 import { DANGER, usePalette } from '../../lib/theme';
 import type { Stage } from './flow';
 import {
@@ -36,34 +38,35 @@ function StageRow({ label, state, failed }: {
   );
 }
 
-function SetupActions({ dark, busy, setupErr, onRetry }: {
-  dark: boolean; busy: boolean; setupErr: SetupErr | null; onRetry: () => void;
+function SetupActions({ dark, busy, setupErr, onRetry, history }: {
+  dark: boolean; busy: boolean; setupErr: SetupErr | null; onRetry: () => void; history: HistoryControls;
 }): React.ReactElement | null {
-  if (setupErr === null) return null;
+  if (setupErr === null) return history.stalled ? <HistoryStalledActions dark={dark} history={history} /> : null;
   return <Button dark={dark} size="lg" fullWidth pill color="primary" variant="solid" label="Try again" disabled={busy} onPress={onRetry} />;
 }
 
-function SetupLink({ busy, stage, setupErr, onBack, onSkipHistory }: {
-  busy: boolean; stage: Stage; setupErr: SetupErr | null; onBack: () => void; onSkipHistory: () => void;
+function SetupLink({ busy, setupErr, onBack, history }: {
+  busy: boolean; setupErr: SetupErr | null; onBack: () => void; history: HistoryControls;
 }): React.ReactElement | null {
   if (setupErr !== null) {
     return setupErr.retry === 'messaging' ? null : <SkipLink label="Start over" disabled={busy} onPress={onBack} />;
   }
-  return stage === 'history' ? <SkipLink onPress={onSkipHistory} /> : null;
+  return history.stalled ? <ContinueWithoutHistoryLink history={history} /> : null;
 }
 
-export function SetupStep({ dark, busy, stage, setupErr, plan, onRetry, onBack, onSkipHistory }: {
+export function SetupStep({ dark, busy, stage, setupErr, plan, onRetry, onBack, history }: {
   dark: boolean; busy: boolean; stage: Stage; setupErr: SetupErr | null; plan: SetupPlan;
-  onRetry: () => void; onBack: () => void; onSkipHistory: () => void;
+  onRetry: () => void; onBack: () => void; history: HistoryControls;
 }): React.ReactElement {
   const stages = setupStages(plan);
-  const actions = SetupActions({ dark, busy, setupErr, onRetry });
-  const link = SetupLink({ busy, stage, setupErr, onBack, onSkipHistory });
+  const historyHint = useHistoryStepHint(stage === 'history' && setupErr === null, history.stalled);
+  const actions = SetupActions({ dark, busy, setupErr, onRetry, history });
+  const link = SetupLink({ busy, setupErr, onBack, history });
   return (
-    <OnboardingCard title={setupTitle(setupErr, plan)} about={setupHint(setupErr, plan)} footer={actions} after={link}>
+    <OnboardingCard title={setupTitle(setupErr, plan)} about={historyHint ?? setupHint(setupErr, plan)} footer={actions} after={link}>
       <Col width="100%">
         {stages.map((s) => (
-          <StageRow key={s} label={stageLabel(s, plan)} state={stageState(s, stage, stages)} failed={setupErr !== null} />
+          <StageRow key={s} label={stageLabel(s, plan)} state={stageState(s, stage, stages)} failed={setupErr !== null || (history.stalled && s === 'history')} />
         ))}
       </Col>
     </OnboardingCard>

@@ -88,7 +88,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
       {f.step === 'setup' ? (
         <SetupStep
           dark={dark} busy={f.busy} stage={f.stage} setupErr={f.setupErr} plan={f.plan}
-          onRetry={f.onSetupRetry} onBack={f.onSetupBack} onSkipHistory={f.onSkipHistory}
+          onRetry={f.onSetupRetry} onBack={f.onSetupBack} history={f.history}
         />
       ) : null}
     </Col>

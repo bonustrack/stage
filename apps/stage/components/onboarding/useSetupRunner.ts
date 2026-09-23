@@ -3,7 +3,7 @@ import { Alert } from 'react-native';
 import type { Hex } from 'viem';
 import { txErrorMessage } from '@stage-labs/client/wallet/txError';
 import { holdOnboarding } from '../../lib/accountGate';
-import { ONBOARDING_HISTORY_WAIT_MS, runHistorySync, waitForHistorySyncSettled } from '../../lib/historySync';
+import { receiveHistoryWithPin, syncHistoryToEnd } from '../../lib/historySync';
 import {
   createWallet, restoreWallet, importKeyAccount, bringMessagingOnline, resumeWithPasskey, abandonAccount, XmtpSetupError, PasskeySetupError,
   type PasskeyChoice, type SetupWarning, type Stage,
@@ -26,8 +26,15 @@ export interface SetupRunner {
   run: (choice: Choice, passkey: PasskeyChoice) => void;
   resume: (accountId: string, retry: 'messaging' | 'passkey') => void;
   startOver: () => void;
-  skipHistory: () => void;
+  history: HistoryControls;
   reset: () => void;
+}
+
+export interface HistoryControls {
+  stalled: boolean;
+  retry: () => void;
+  receivePin: (pin: string) => Promise<void>;
+  continueWithout: () => void;
 }
 
 function errorFrom(e: unknown): SetupErr {
@@ -52,7 +59,8 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
   const [stage, setStage] = useState<Stage>('wallet');
   const [setupErr, setSetupErr] = useState<SetupErr | null>(null);
   const [plan, setPlan] = useState<SetupPlan>({});
-  const skipped = useRef(false);
+  const [historyStalled, setHistoryStalled] = useState(false);
+  const heldWarning = useRef<SetupWarning>(null);
 
   const onStage = (s: Stage): void => {
     setStage(s);
@@ -60,7 +68,6 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
   };
 
   const begin = (first: Stage): void => {
-    skipped.current = false;
     holdOnboarding(true);
     setBusy(true);
     setSetupErr(null);
@@ -68,7 +75,6 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
   };
 
   const finish = (warning: SetupWarning): void => {
-    if (skipped.current) return;
     holdOnboarding(false);
     setBusy(false);
     onDone();
@@ -78,9 +84,12 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
   const tail = async (syncHistory: boolean, warning: SetupWarning): Promise<void> => {
     if (syncHistory) {
       setStage('history');
-      void runHistorySync();
-      await waitForHistorySyncSettled(ONBOARDING_HISTORY_WAIT_MS);
-      if (skipped.current) return;
+      setHistoryStalled(false);
+      if ((await syncHistoryToEnd()) !== 'done') {
+        heldWarning.current = warning;
+        setHistoryStalled(true);
+        return;
+      }
     }
     setStage('finishing');
     finish(warning);
@@ -128,12 +137,18 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
     reset();
   };
 
-  const skipHistory = (): void => {
-    if (stage !== 'history') return;
-    skipped.current = true;
-    holdOnboarding(false);
-    setBusy(false);
-    onDone();
+  const continueWithout = (): void => {
+    if (!historyStalled) return;
+    setHistoryStalled(false);
+    setStage('finishing');
+    finish(heldWarning.current);
+  };
+
+  const history: HistoryControls = {
+    stalled: historyStalled,
+    retry: () => { if (historyStalled) void tail(true, heldWarning.current); },
+    receivePin: async (pin) => { await receiveHistoryWithPin(pin); continueWithout(); },
+    continueWithout,
   };
 
   const reset = (): void => {
@@ -141,5 +156,5 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
     holdOnboarding(false);
   };
 
-  return { busy, stage, setupErr, plan, run, resume, startOver, skipHistory, reset };
+  return { busy, stage, setupErr, plan, run, resume, startOver, history, reset };
 }

@@ -29,11 +29,6 @@ export function useHistorySyncPhase(): HistorySyncPhase {
   return useStoreValue(subscribe, getPhase);
 }
 
-export function dismissHistorySync(): void {
-  if (!historySyncIsActive(phase)) setPhase('idle');
-}
-
-
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => { setTimeout(resolve, ms); });
 }
@@ -102,21 +97,6 @@ async function startWatch(): Promise<Watch> {
   }
 }
 
-export const ONBOARDING_HISTORY_WAIT_MS = 20_000;
-
-export function waitForHistorySyncSettled(maxMs: number): Promise<void> {
-  return new Promise((resolve) => {
-    if (!historySyncIsActive(phase)) { resolve(); return; }
-    const timer = setTimeout(finish, maxMs);
-    const unsubscribe = subscribe(() => { if (!historySyncIsActive(phase)) finish(); });
-    function finish(): void {
-      clearTimeout(timer);
-      unsubscribe();
-      resolve();
-    }
-  });
-}
-
 export async function runHistorySync(): Promise<HistorySyncPhase> {
   if (historySyncIsActive(phase)) return phase;
   setPhase('requesting');
@@ -134,6 +114,25 @@ export async function runHistorySync(): Promise<HistorySyncPhase> {
     setPhase('error');
     return 'error';
   }
+}
+
+function whenHistorySettled(): Promise<void> {
+  return new Promise((resolve) => {
+    const unsubscribe = subscribe(check);
+    function check(): void {
+      if (historySyncIsActive(phase)) return;
+      unsubscribe();
+      resolve();
+    }
+    check();
+  });
+}
+
+export async function syncHistoryToEnd(): Promise<HistorySyncPhase> {
+  const started = await runHistorySync();
+  if (!historySyncIsActive(started)) return started;
+  await whenHistorySettled();
+  return phase;
 }
 
 export async function receiveHistoryWithPin(pin: string): Promise<void> {

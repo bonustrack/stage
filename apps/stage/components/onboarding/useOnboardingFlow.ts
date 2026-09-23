@@ -4,7 +4,7 @@ import type { AccountTransfer } from '@stage-labs/client/accounts/transfer';
 import { passkeysAvailable } from '../../lib/zerodev';
 import { abandonAccount, confirmRestoredPasskey, inspectPhrase, PasskeySetupError, type PasskeyChoice, type PasskeyMode, type Stage } from './flow';
 import type { SetupErr, SetupPlan } from './Onboarding.setup.model';
-import { useSetupRunner, type Choice } from './useSetupRunner';
+import { useSetupRunner, type Choice, type HistoryControls } from './useSetupRunner';
 import { IMPORT_ROUTE } from './nextRoute.model';
 import { EMPTY_DETAILS, profileSetupFrom, type ProfileDetails } from './Onboarding.profile.model';
 
@@ -26,7 +26,7 @@ export interface OnboardingFlow {
   onAddPasskey: () => void;
   onSkipPasskey: () => void;
   onPasskeyBack: () => void;
-  onSkipHistory: () => void;
+  history: HistoryControls;
   onSetupRetry: () => void;
   onSetupBack: () => void;
 }
@@ -126,7 +126,7 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
     onAddPasskey,
     onSkipPasskey: () => { if (pending && passkeyMode === 'add') start(pending, 'none'); },
     onPasskeyBack: () => { setPasskeyErr(null); setStep(label === '' ? 'username' : 'profile'); },
-    onSkipHistory: runner.skipHistory,
+    history: runner.history,
     onSetupRetry,
     onSetupBack: startOver,
   };
