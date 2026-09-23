@@ -13,6 +13,7 @@ import { deleteDbKey, deleteDbFiles, wipeXmtpStore } from './xmtp.dbkey';
 import { historyServerUrl } from './historyServer';
 import { openClientForAccount, type CreateOpts } from './xmtp.recover.web';
 import { makeClientLifecycle } from './xmtp.client.core';
+import { withMainThreadWasm } from './xmtp.wasm.web';
 import { webXmtpDbPath, canReuseSavedClient, installationCreatedAtMs } from '@stage-labs/client/xmtp/clientConfig';
 import { ignored, attempt } from './errorPolicy';
 
@@ -94,7 +95,7 @@ async function revokeInstallation(client: WebXmtpClient, account: AccountRecord,
   const target = state.installations.find(i => i.id === installationId);
   if (!target) throw new Error('Installation not found.');
   const signer = await signerForRecord(account);
-  await Client.revokeInstallations(signer, inboxId, [target.bytes], client.env);
+  await withMainThreadWasm(() => Client.revokeInstallations(signer, inboxId, [target.bytes], client.env));
 }
 
 export const {

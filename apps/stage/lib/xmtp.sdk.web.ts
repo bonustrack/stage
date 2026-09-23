@@ -10,6 +10,7 @@ import { xmtpClient } from './xmtp.client.web';
 import { getCachedXmtpClient } from './xmtp.state.web';
 import { envelopeOfXmtpMessage } from './xmtp.envelope.web';
 import { historyServer } from './historyServer';
+import { withMainThreadWasm } from './xmtp.wasm.web';
 import type { XmtpConsent } from './xmtp.types';
 import {
   NO_GROUP_ADMINS, NO_GROUP_INFO, convFinder, notAGroup,
@@ -186,7 +187,7 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
   send: {
     text: (conv, text) => conv.sendText(text),
     reaction: (conv, reaction) => conv.sendReaction(toWasmReaction(reaction)),
-    reply: async (conv, replyTo, text) => conv.sendReply({ reference: replyTo, content: await encodeText(text) }),
+    reply: async (conv, replyTo, text) => conv.sendReply({ reference: replyTo, content: await withMainThreadWasm(() => encodeText(text)) }),
     json: (conv, codec, content) => conv.send(asEncoded(codec.encode(content))),
     attachment: (conv, filename, mimeType, dataB64) =>
       conv.sendAttachment({ filename, mimeType, content: base64ToBytes(dataB64) }),

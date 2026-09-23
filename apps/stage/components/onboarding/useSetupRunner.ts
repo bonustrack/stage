@@ -55,8 +55,18 @@ function describe(e: unknown): string {
   return txErrorMessage(e, 'Something went wrong.');
 }
 
+function useBusyLatch(): [boolean, (next: boolean) => void, () => boolean] {
+  const [busy, setBusyState] = useState(false);
+  const latched = useRef(false);
+  const setBusy = (next: boolean): void => {
+    latched.current = next;
+    setBusyState(next);
+  };
+  return [busy, setBusy, () => latched.current];
+}
+
 export function useSetupRunner(onDone: () => void): SetupRunner {
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy, isBusy] = useBusyLatch();
   const [stage, setStage] = useState<Stage>('wallet');
   const [setupErr, setSetupErr] = useState<SetupErr | null>(null);
   const [plan, setPlan] = useState<SetupPlan>({});
@@ -97,7 +107,7 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
   };
 
   const run = (choice: Choice, passkey: PasskeyChoice): void => {
-    if (busy) return;
+    if (isBusy()) return;
     const restore = choice.kind !== 'create';
     setPlan({
       restore,
@@ -118,7 +128,7 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
   };
 
   const resume = (accountId: string, retry: 'messaging' | 'passkey'): void => {
-    if (busy) return;
+    if (isBusy()) return;
     begin(retry);
     void (async (): Promise<void> => {
       try {

@@ -5,6 +5,7 @@ import {
 } from '@xmtp/browser-sdk';
 import { stripMetadataBytes, isStrippableImage } from '@stage-labs/client/image/stripMetadata';
 import { convOfLine } from './xmtp.sdk.web';
+import { withMainThreadWasm } from './xmtp.wasm.web';
 import { type LocalAttachmentInput } from './xmtp.types';
 import { SWARM_UPLOAD_MAX_BYTES, swarmToHttp, tooLargeError, uploadFormToSwarmy } from './swarmy';
 import { attachmentMimeType } from './attachmentFiles';
@@ -36,9 +37,9 @@ function sanitizeAttachmentBytes(
 export async function encryptSanitizedAttachment(
   file: { bytes: SanitizedAttachmentBytes; mimeType: string; filename: string },
 ): Promise<EncryptedAttachment> {
-  return await encryptAttachment({
+  return await withMainThreadWasm(() => encryptAttachment({
     filename: file.filename, mimeType: file.mimeType, content: file.bytes,
-  });
+  }));
 }
 
 async function uploadEncryptedToSwarm(payload: Uint8Array, filename: string): Promise<string> {
@@ -90,7 +91,7 @@ export async function resolveRemoteAttachment(info: RemoteAttachment): Promise<{
   const res = await fetch(swarmToHttp(info.url));
   if (!res.ok) throw new Error(`Attachment download failed (${res.status})`);
   const encrypted = new Uint8Array(await res.arrayBuffer());
-  const decrypted = await decryptAttachment(encrypted, info);
+  const decrypted = await withMainThreadWasm(() => decryptAttachment(encrypted, info));
   const blob = new Blob([decrypted.content.slice().buffer], { type: decrypted.mimeType });
   return {
     fileUri: URL.createObjectURL(blob),
