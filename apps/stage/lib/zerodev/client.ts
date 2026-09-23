@@ -40,6 +40,10 @@ export function makeKernelClient(
   });
 }
 
+export type SudoSwapResult =
+  | { ok: true; txHash: string }
+  | { ok: false; message: string };
+
 export async function swapSudoValidator(
   kernelClient: KernelAccountClient, sudoValidator: unknown,
 ): Promise<{ hash: string; success: boolean }> {

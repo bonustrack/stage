@@ -4,7 +4,7 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { Row, Col, Box } from '../layout';
 import { shortAddress } from '../../modules/messaging';
 import { fmtSigValue } from './helpers';
-import type { SigRequest, SigReference } from './helpers';
+import type { SignatureRequestContent, SignatureReferenceContent } from '@stage-labs/client/xmtp/sign';
 import { usePalette } from '../../lib/theme';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 
@@ -55,7 +55,7 @@ function Eip712FieldRow({ name, value }: { name: string; value: unknown }): Reac
 }
 
 function Eip712Detail({ req, fill, border }: {
-  req: SigRequest; fill: string; border: string;
+  req: SignatureRequestContent; fill: string; border: string;
 }): React.ReactElement {
   const domain = req.eip712?.domain as { name?: unknown; chainId?: unknown } | undefined;
   const primaryType = req.eip712?.primaryType;
@@ -98,7 +98,7 @@ function SigAction({ gated, dark, signing, onSign }: {
 }
 
 export function SigRequestCard({ req, dark, signing, onSign, consentAllowed }: {
-  req: SigRequest; dark: boolean; signing?: boolean;
+  req: SignatureRequestContent; dark: boolean; signing?: boolean;
   onSign?: () => void;
   consentAllowed?: boolean;
 }): React.ReactElement {
@@ -141,7 +141,7 @@ export function ReceiptBox({ dark, title, children }: {
 }
 
 export function SigReferenceCard({ ref, dark }: {
-  ref: SigReference; dark: boolean;
+  ref: SignatureReferenceContent; dark: boolean;
 }): React.ReactElement {
   const short = (h?: string): string => (h && h.length > 14 ? `${h.slice(0, 8)}…${h.slice(-4)}` : (h ?? ''));
   return (

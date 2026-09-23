@@ -1,17 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  bytesToBase64, deleteInstallationBody, groupIdOfTopic, isWelcomeTopic, registerInstallationBody,
+  deleteInstallationBody, groupIdOfTopic, isWelcomeTopic, registerInstallationBody,
   subscribeWithMetadataBody,
 } from '../src/xmtp/pushServer';
-
-describe('bytesToBase64', () => {
-  test('matches the standard encoding including padding', () => {
-    const cases: [string, string][] = [['', ''], ['f', 'Zg=='], ['fo', 'Zm8='], ['foo', 'Zm9v'], ['foob', 'Zm9vYg==']];
-    for (const [input, expected] of cases) {
-      expect(bytesToBase64(new TextEncoder().encode(input))).toBe(expected);
-    }
-  });
-});
 
 describe('request bodies', () => {
   test('registers with the token field matching the platform', () => {

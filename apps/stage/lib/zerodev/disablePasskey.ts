@@ -3,10 +3,10 @@ import '../cryptoShim';
 import type { AccountRecord } from '../accounts';
 import { updateSmartAccount } from '../accounts';
 import { smartOwnerSigner } from './keyring';
-import { makePublicClient, makeKernelClient, swapSudoValidator } from './client';
+import { makePublicClient, makeKernelClient, swapSudoValidator, type SudoSwapResult } from './client';
 import {
   ecdsaValidatorForOwner,
-  passkeyKernelFromStored,
+  passkeyKernelResult,
 } from './account';
 import { passkeysAvailable } from './passkeys';
 import { zerodevConfigured } from './env';
@@ -15,14 +15,10 @@ export type RemovePasskeyResult =
   | { ok: true; userOpHash: string }
   | { ok: false; reason: 'unavailable' | 'none' | 'error'; message?: string };
 
-export type SwapToEcdsaResult =
-  | { ok: true; txHash: string }
-  | { ok: false; message: string };
-
 export async function swapRootToEcdsa(
   publicClient: ReturnType<typeof makePublicClient>,
   rec: AccountRecord,
-): Promise<SwapToEcdsaResult> {
+): Promise<SudoSwapResult> {
   try {
     if (!rec.passkey || rec.hdIndex == null) {
       return { ok: false, message: 'No passkey on this account.' };
@@ -30,17 +26,17 @@ export async function swapRootToEcdsa(
     const owner = await smartOwnerSigner({ hdIndex: rec.hdIndex, phraseId: rec.phraseId });
 
     const addressOverride = rec.passkeySudo ? undefined : (rec.address as `0x${string}`);
-    const passkeyAccount = await passkeyKernelFromStored(
+    const passkeyAccount = await passkeyKernelResult(
       publicClient,
       rec.hdIndex,
       rec.passkey,
       addressOverride,
     );
-    if (!passkeyAccount) {
+    if ('error' in passkeyAccount) {
       return { ok: false, message: 'Passkey validator unavailable; cannot authorize the revert.' };
     }
     const kernelClient = makeKernelClient(
-      passkeyAccount,
+      passkeyAccount.account,
       publicClient,
     );
 

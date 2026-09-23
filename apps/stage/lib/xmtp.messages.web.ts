@@ -4,6 +4,7 @@ import {
 } from '@xmtp/browser-sdk';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import type { ReactionPayload } from '@stage-labs/client/xmtp/builders';
+import { base64ToBytes } from '@stage-labs/client/text/base64';
 import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { convOfLine } from './xmtp.client.web';
 import { makeSenders } from './xmtp.send.core';
@@ -63,13 +64,6 @@ function toWasmReaction(r: ReactionPayload): Reaction {
     content: r.content,
     schema: r.schema === 'custom' ? ReactionSchema.Custom : ReactionSchema.Unicode,
   };
-}
-
-function base64ToBytes(b64: string): Uint8Array {
-  const bin = atob(b64);
-  const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i += 1) out[i] = bin.charCodeAt(i);
-  return out;
 }
 
 export const {

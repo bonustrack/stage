@@ -67,21 +67,25 @@ function liveWebAuthnKey(stored: StoredPasskey): WebAuthnKey {
   };
 }
 
+function buildPasskeyValidator(publicClient: PublicClient, stored: StoredPasskey): Promise<KernelValidator> {
+  const { toPasskeyValidator, PasskeyValidatorContractVersion } = asPasskeyValidator(
+    require('@zerodev/passkey-validator'),
+  );
+  return toPasskeyValidator(publicClient, {
+    webAuthnKey: liveWebAuthnKey(stored),
+    entryPoint: ENTRY_POINT,
+    kernelVersion: KERNEL_VERSION,
+    validatorContractVersion: passkeyContractVersion(PasskeyValidatorContractVersion),
+  });
+}
+
 async function buildPasskeyKernel(
   publicClient: PublicClient,
   hdIndex: number,
   stored: StoredPasskey,
   addressOverride?: `0x${string}`,
 ): Promise<CreateKernelAccountReturnType> {
-  const { toPasskeyValidator, PasskeyValidatorContractVersion } = asPasskeyValidator(
-    require('@zerodev/passkey-validator'),
-  );
-  const passkeyValidator = await toPasskeyValidator(publicClient, {
-    webAuthnKey: liveWebAuthnKey(stored),
-    entryPoint: ENTRY_POINT,
-    kernelVersion: KERNEL_VERSION,
-    validatorContractVersion: passkeyContractVersion(PasskeyValidatorContractVersion),
-  });
+  const passkeyValidator = await buildPasskeyValidator(publicClient, stored);
   return createKernelAccount(publicClient, {
     plugins: { sudo: passkeyValidator },
     entryPoint: ENTRY_POINT,
@@ -96,15 +100,7 @@ export async function passkeyValidatorFromStored(
 ): Promise<unknown> {
   if (!passkeysAvailable()) return null;
   try {
-    const { toPasskeyValidator, PasskeyValidatorContractVersion } = asPasskeyValidator(
-      require('@zerodev/passkey-validator'),
-    );
-    return await toPasskeyValidator(publicClient, {
-      webAuthnKey: liveWebAuthnKey(stored),
-      entryPoint: ENTRY_POINT,
-      kernelVersion: KERNEL_VERSION,
-      validatorContractVersion: passkeyContractVersion(PasskeyValidatorContractVersion),
-    });
+    return await buildPasskeyValidator(publicClient, stored);
   } catch {
     return null;
   }
@@ -123,20 +119,5 @@ export async function passkeyKernelResult(
     return { account: await buildPasskeyKernel(publicClient, hdIndex, stored, addressOverride) };
   } catch (e) {
     return { error: e instanceof Error ? e.message.split('\n')[0] ?? 'unknown error' : String(e) };
-  }
-}
-
-export async function passkeyKernelFromStored(
-  publicClient: PublicClient,
-  hdIndex: number,
-  stored: StoredPasskey,
-  addressOverride?: `0x${string}`,
-): Promise<CreateKernelAccountReturnType | null> {
-  if (!passkeysAvailable()) return null;
-  try {
-    return await buildPasskeyKernel(publicClient, hdIndex, stored, addressOverride);
-  } catch (e) {
-    if (__DEV__) console.warn('[zerodev] passkey kernel rebuild failed:', e);
-    return null;
   }
 }

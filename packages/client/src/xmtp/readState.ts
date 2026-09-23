@@ -1,23 +1,18 @@
-import { z, type ZodType } from 'zod';
+import { z } from 'zod';
 import type { XmtpContentTypeId } from './codecs';
 
 export const READ_STATE_CONTENT_TYPE: XmtpContentTypeId = {
   authorityId: 'stage.box', typeId: 'readState', versionMajor: 1, versionMinor: 0,
 };
 
-export interface ReadStateContent {
-  convId: string;
-  lastReadNs: number;
-  markedUnread: boolean;
-  at: number;
-}
-
-export const readStateSchema: ZodType<ReadStateContent> = z.object({
+export const readStateSchema = z.object({
   convId: z.string().min(1),
   lastReadNs: z.number().nonnegative(),
   markedUnread: z.boolean(),
   at: z.number().positive(),
 });
+
+export type ReadStateContent = z.infer<typeof readStateSchema>;
 
 export function readStateFallbackText(): string {
   return 'Stage read state';
@@ -36,19 +31,14 @@ export const PIN_STATE_CONTENT_TYPE: XmtpContentTypeId = {
   authorityId: 'stage.box', typeId: 'pinState', versionMajor: 1, versionMinor: 0,
 };
 
-export interface PinStateContent {
-  convId: string;
-  pinned: boolean;
-  at: number;
-  order?: string[];
-}
-
-export const pinStateSchema: ZodType<PinStateContent> = z.object({
+export const pinStateSchema = z.object({
   convId: z.string().min(1),
   pinned: z.boolean(),
   at: z.number().positive(),
   order: z.array(z.string().min(1)).optional(),
 });
+
+export type PinStateContent = z.infer<typeof pinStateSchema>;
 
 export function pinStateFallbackText(): string {
   return 'Stage pin state';
@@ -69,13 +59,11 @@ export const CLEAR_STATE_CONTENT_TYPE: XmtpContentTypeId = {
 
 export type ClearedChats = Record<string, number>;
 
-export interface ClearStateContent {
-  cleared: ClearedChats;
-}
-
-export const clearStateSchema: ZodType<ClearStateContent> = z.object({
+export const clearStateSchema = z.object({
   cleared: z.record(z.string().min(1), z.number().nonnegative()),
 });
+
+export type ClearStateContent = z.infer<typeof clearStateSchema>;
 
 export function clearStateFallbackText(): string {
   return 'Stage deleted chats';

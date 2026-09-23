@@ -1,6 +1,5 @@
 
-import type { ZodType } from 'zod';
-import { parseOrThrow, type BoundaryName } from '../validate';
+import { parseOrThrow, type BoundaryName, type OutputSchema } from '../validate';
 
 export interface XmtpContentTypeId {
   authorityId: string;
@@ -47,7 +46,7 @@ export function encodeJsonContent(
 
 export function decodeJsonContent<T>(
   bytes: Uint8Array,
-  schema?: ZodType<T>,
+  schema?: OutputSchema<T>,
   where: BoundaryName = 'xmtp.codec',
 ): T {
   const data: unknown = JSON.parse(new TextDecoder().decode(bytes));

@@ -10,7 +10,7 @@ import { Box, Col } from './layout';
 import { Spinner } from './Spinner';
 import * as MediaLibrary from 'expo-media-library';
 import { Directory, File, Paths } from 'expo-file-system';
-import { Buffer } from 'buffer';
+import { base64ToBytes } from '@stage-labs/client/text/base64';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { capabilities } from '../lib/capabilities';
 
@@ -35,7 +35,7 @@ async function toLocalUri(uri: string): Promise<string> {
     const file = new File(tempDir(), `img-${Date.now()}.${ext}`);
     if (file.exists) file.delete();
     file.create();
-    file.write(new Uint8Array(Buffer.from(b64, 'base64')));
+    file.write(base64ToBytes(b64));
     return file.uri;
   }
   const dest = new File(tempDir(), `img-${Date.now()}.${ext}`);

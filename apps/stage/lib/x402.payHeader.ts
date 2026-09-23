@@ -1,5 +1,6 @@
 
-import type { TypedDataDefinition, Hex } from 'viem';
+import { bytesToHex, type TypedDataDefinition, type Hex } from 'viem';
+import { utf8ToBase64 } from '@stage-labs/client/text/base64';
 
 import { x402ChainNumber } from './x402';
 import type { X402Accept } from './useLinkPreview';
@@ -83,13 +84,6 @@ export function buildTypedData(
   };
 }
 
-function toBase64(s: string): string {
-  if (typeof btoa === 'function') return btoa(unescape(encodeURIComponent(s)));
-  const B = (globalThis as { Buffer?: { from(s: string, enc: string): { toString(enc: string): string } } }).Buffer;
-  if (B) return B.from(s, 'utf-8').toString('base64');
-  throw new Error('no base64 encoder');
-}
-
 export function buildPaymentHeader(args: {
   accept: X402Accept;
   authorization: X402Authorization;
@@ -105,7 +99,7 @@ export function buildPaymentHeader(args: {
       authorization: args.authorization,
     },
   };
-  return toBase64(JSON.stringify(payload));
+  return utf8ToBase64(JSON.stringify(payload));
 }
 
 export function randomNonce(): string {
@@ -115,7 +109,5 @@ export function randomNonce(): string {
     throw new Error('Secure random unavailable: refusing to build a payment authorization with a weak nonce');
   }
   c.getRandomValues(bytes);
-  let hex = '0x';
-  for (const b of bytes) hex += b.toString(16).padStart(2, '0');
-  return hex;
+  return bytesToHex(bytes);
 }

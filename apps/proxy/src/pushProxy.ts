@@ -1,4 +1,5 @@
-import { corsResponse, HISTORY_CORS_HEADERS } from './historyProxy.ts';
+import { corsHeaders, corsResponse } from './respond.ts';
+
 export const PUSH_PREFIX = '/xmtp-push/';
 
 const UPSTREAM = 'https://push.stage.box/notifications.v1.Notifications/';
@@ -6,7 +7,7 @@ const METHODS = new Set(['RegisterInstallation', 'SubscribeWithMetadata', 'Delet
 const MAX_BODY_BYTES = 2_000_000;
 const UPSTREAM_TIMEOUT_MS = 20_000;
 
-const PUSH_CORS_HEADERS = { ...HISTORY_CORS_HEADERS, 'access-control-allow-methods': 'POST, OPTIONS' };
+const PUSH_CORS_HEADERS = corsHeaders('POST, OPTIONS');
 
 export function parsePushRoute(pathname: string, method: string): string | null {
   if (!pathname.startsWith(PUSH_PREFIX) || method !== 'POST') return null;

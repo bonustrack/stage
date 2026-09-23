@@ -7,7 +7,7 @@ import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Row, Col, Box } from '../layout';
 import { shortAddress } from '../../modules/messaging';
 import { ethFromWeiHex } from './helpers';
-import type { TxRequest, TxReceipt } from './helpers';
+import type { WalletSendCallsContent, TransactionReferenceContent } from '@stage-labs/client/xmtp/tx';
 import { usePalette, withAlpha } from '../../lib/theme';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { PaymentCard } from '../PaymentCard';
@@ -48,7 +48,7 @@ interface TxCardModel {
 }
 export { SigRequestCard, SigReferenceCard } from './cards.sig';
 export function TxRequestCard({ req, dark, sub, paying, onPay, consentAllowed }: {
-  req: TxRequest; dark: boolean; sub: string; paying?: boolean;
+  req: WalletSendCallsContent; dark: boolean; sub: string; paying?: boolean;
   onPay?: () => void;
   consentAllowed?: boolean;
 }): React.ReactElement {
@@ -105,15 +105,15 @@ function txCallFlags(args: { data?: string; tokenAddr?: string; currency?: strin
   };
 }
 
-function rawCall(req: TxRequest): {
+function rawCall(req: WalletSendCallsContent): {
   target?: string; data?: string; value?: string;
-  meta: NonNullable<TxRequest['calls'][number]['metadata']>;
+  meta: NonNullable<WalletSendCallsContent['calls'][number]['metadata']>;
 } {
   const call = req.calls[0];
   return { target: call?.to, data: call?.data, value: call?.value, meta: call?.metadata ?? {} };
 }
 
-function txCallFields(req: TxRequest): TxCallFields {
+function txCallFields(req: WalletSendCallsContent): TxCallFields {
   const { target, data, value, meta } = rawCall(req);
   const { amount, currency, toAddress, description } = meta;
   const eth = ethFromWeiHex(value);
@@ -129,7 +129,7 @@ function txCallFields(req: TxRequest): TxCallFields {
   };
 }
 
-function useTxCardModel(req: TxRequest): TxCardModel {
+function useTxCardModel(req: WalletSendCallsContent): TxCardModel {
   const f = txCallFields(req);
   const logoUrl = tokenLogoUrl(f.chainNum, f.tokenAddr ?? null, 36);
   const amountUsd = useUsdValue(f.chainNum, f.tokenAddr ?? null, f.amountValue);
@@ -247,7 +247,7 @@ function TxWarning({ text }: { text: string }): React.ReactElement {
   );
 }
 export function TxReceiptCard({ receipt, dark }: {
-  receipt: TxReceipt; dark: boolean;
+  receipt: TransactionReferenceContent; dark: boolean;
 }): React.ReactElement {
   const amountLabel = receipt.metadata?.amount != null
     ? `${receipt.metadata.amount} ${receipt.metadata.currency ?? 'ETH'}`

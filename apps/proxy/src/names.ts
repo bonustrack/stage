@@ -6,6 +6,7 @@ import { broviderRpc } from '@stage-labs/client/wallet/client';
 import { makeNamesChain } from './namesChain.ts';
 import type { NamesChain, NamesDeps, NamesStore } from './namesTypes.ts';
 import { CLAIMS_OBJECT_NAME, claimsStore, serialized } from './namesClaims.ts';
+import { corsHeaders, corsResponse, jsonResponse } from './respond.ts';
 
 export const NAMES_PREFIX = '/names/';
 
@@ -16,22 +17,13 @@ export interface NamesEnv {
   NAMES_CLAIMS?: DurableObjectNamespace;
 }
 
-
-const CORS = {
-  'access-control-allow-origin': '*',
-  'access-control-allow-methods': 'GET, POST, OPTIONS',
-  'access-control-allow-headers': 'content-type, x-stage-client',
-  'access-control-max-age': '86400',
-  'x-served-by': 'worker',
-};
+const CORS = corsHeaders('GET, POST, OPTIONS', 'content-type, x-stage-client');
 
 const addressKey = (address: string): string => `addr:${address.toLowerCase()}`;
 const labelKey = (label: string): string => `label:${label}`;
 
 function reply(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status, headers: { 'content-type': 'application/json; charset=utf-8', ...CORS },
-  });
+  return jsonResponse(body, status, CORS);
 }
 
 async function status(url: URL, deps: NamesDeps): Promise<Response> {
@@ -125,7 +117,7 @@ async function route(request: Request, deps: NamesDeps): Promise<Response> {
 }
 
 export async function handleNames(request: Request, deps: NamesDeps): Promise<Response> {
-  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
+  if (request.method === 'OPTIONS') return corsResponse(CORS, null, 204);
   try {
     return await route(request, deps);
   } catch (err) {

@@ -5,7 +5,7 @@ import {
   type Reaction, type Attachment as AttachmentContent,
 } from '@xmtp/browser-sdk';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { bytesToBase64 } from '@stage-labs/client/xmtp/pushServer';
+import { bytesToBase64 } from '@stage-labs/client/text/base64';
 import { envelopeFromContent, type EnvelopeOptions } from '@stage-labs/client/xmtp/envelope';
 import { XMTP_USER_PREFIX } from './xmtp.types';
 

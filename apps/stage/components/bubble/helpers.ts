@@ -3,7 +3,9 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import { fontSize } from '@stage-labs/kit/tokens';
 import { markdownStyles as kitMarkdownStyles } from '@stage-labs/kit/markdown-styles';
 import type { RemoteAttachmentInfo } from '@xmtp/react-native-sdk';
-import { normalizeQuestions, type PollContent } from '@stage-labs/client/xmtp/poll';
+import { normalizeQuestions, type PollContent, type PollQuestion } from '@stage-labs/client/xmtp/poll';
+import type { SignatureRequestContent, SignatureReferenceContent } from '@stage-labs/client/xmtp/sign';
+import type { WalletSendCallsContent, TransactionReferenceContent } from '@stage-labs/client/xmtp/tx';
 import { formatEther } from 'viem';
 
 export const REACT_PRESETS = ['👍', '🔥', '👀', '🙏', '😁', '💯', '🫡'];
@@ -57,8 +59,6 @@ export function questionOf(entry: HistoryEntry): Question | undefined {
   return p.question;
 }
 
-interface PollOption { label: string; description?: string }
-interface PollQuestion { question: string; header?: string; options: PollOption[]; multiSelect?: boolean; open?: boolean }
 export interface Poll { pollId?: string; question?: string; questions: PollQuestion[] }
 
 export function pollOf(entry: HistoryEntry): Poll | undefined {
@@ -70,26 +70,13 @@ export function pollOf(entry: HistoryEntry): Poll | undefined {
   return { pollId: raw.pollId, question: first.question, questions };
 }
 
-export interface SigRequest {
-  id?: string;
-  kind?: 'eip712' | 'personal';
-  eip712?: { domain?: Record<string, unknown>; types?: Record<string, { name: string; type: string }[]>; primaryType?: string; message?: Record<string, unknown> };
-  message?: string;
-  description?: string;
-}
-export interface SigReference {
-  requestId?: string;
-  signature: string;
-  signer?: string;
-}
-
-export function sigRequestOf(entry: HistoryEntry): SigRequest | undefined {
-  const p = entry.payload as { signatureRequest?: SigRequest } | undefined;
+export function sigRequestOf(entry: HistoryEntry): SignatureRequestContent | undefined {
+  const p = entry.payload as { signatureRequest?: SignatureRequestContent } | undefined;
   if (!p?.signatureRequest?.kind) return undefined;
   return p.signatureRequest;
 }
-export function sigReferenceOf(entry: HistoryEntry): SigReference | undefined {
-  const p = entry.payload as { signatureReference?: SigReference } | undefined;
+export function sigReferenceOf(entry: HistoryEntry): SignatureReferenceContent | undefined {
+  const p = entry.payload as { signatureReference?: SignatureReferenceContent } | undefined;
   if (!p?.signatureReference?.signature) return undefined;
   return p.signatureReference;
 }
@@ -107,25 +94,13 @@ export function fmtSigValue(v: unknown): string {
   } catch { return '[unserializable]'; }
 }
 
-export interface TxRequest {
-  version?: string;
-  chainId?: string;
-  from?: string;
-  calls: { to?: string; data?: string; value?: string; metadata?: { description?: string; currency?: string; amount?: number; toAddress?: string } }[];
-}
-export interface TxReceipt {
-  networkId: number | string;
-  reference: string;
-  metadata?: { currency?: string; amount?: number; toAddress?: string };
-}
-
-export function txRequestOf(entry: HistoryEntry): TxRequest | undefined {
-  const p = entry.payload as { walletSendCalls?: TxRequest } | undefined;
+export function txRequestOf(entry: HistoryEntry): WalletSendCallsContent | undefined {
+  const p = entry.payload as { walletSendCalls?: WalletSendCallsContent } | undefined;
   if (!p?.walletSendCalls || !Array.isArray(p.walletSendCalls.calls)) return undefined;
   return p.walletSendCalls;
 }
-export function txReceiptOf(entry: HistoryEntry): TxReceipt | undefined {
-  const p = entry.payload as { txReference?: TxReceipt } | undefined;
+export function txReceiptOf(entry: HistoryEntry): TransactionReferenceContent | undefined {
+  const p = entry.payload as { txReference?: TransactionReferenceContent } | undefined;
   if (!p?.txReference?.reference) return undefined;
   return p.txReference;
 }

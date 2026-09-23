@@ -1,7 +1,5 @@
 
 import { z } from 'zod';
-import type { ZodType } from 'zod';
-import type { PollContent } from './poll';
 
 const optionSchema = z.union([
   z.string().transform(label => ({ label })),
@@ -19,7 +17,7 @@ const questionSchema = z.object({
   { message: 'a choice question needs >=2 options (or set open:true for free-text)' },
 );
 
-export const pollContentSchema: ZodType<PollContent> = z.object({
+export const pollContentSchema = z.object({
   pollId: z.string().min(1),
   questions: z.array(questionSchema).min(1).optional(),
   question: z.string().min(1).optional(),
@@ -29,4 +27,6 @@ export const pollContentSchema: ZodType<PollContent> = z.object({
 }).refine(
   p => (p.questions !== undefined && p.questions.length > 0) || (typeof p.question === 'string' && (p.options?.length ?? 0) >= 2),
   { message: 'poll needs either questions[] or a question + options' },
-) as unknown as ZodType<PollContent>;
+);
+
+export type PollContent = z.infer<typeof pollContentSchema>;

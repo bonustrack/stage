@@ -1,5 +1,6 @@
 
 import { decodeFunctionData, formatEther, formatUnits, isAddress, type Hex } from 'viem';
+import { selectorOf } from '@stage-labs/client/wallet/txDecode';
 
 const ERC20_TRANSFER_ABI = [
   {
@@ -34,11 +35,6 @@ interface CallLike {
   to?: string;
   data?: string;
   value?: string;
-}
-
-function selectorOf(data?: string): string | undefined {
-  if (!data || !/^0x[0-9a-fA-F]{8}/.test(data)) return undefined;
-  return data.slice(0, 10).toLowerCase();
 }
 
 function parseWei(value?: string): bigint | null {

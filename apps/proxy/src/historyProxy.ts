@@ -1,4 +1,5 @@
 import { readCappedBytes } from './ssrf.ts';
+import { corsHeaders, corsResponse } from './respond.ts';
 
 export const HISTORY_PREFIX = '/xmtp-history/';
 
@@ -11,12 +12,7 @@ const MAX_ARCHIVE_BYTES = 50_000_000;
 const UPSTREAM_TIMEOUT_MS = 60_000;
 const FILE_ID = /^[A-Za-z0-9_-]{1,128}$/;
 
-export const HISTORY_CORS_HEADERS = {
-  'access-control-allow-origin': '*',
-  'access-control-allow-methods': 'GET, POST, OPTIONS',
-  'access-control-allow-headers': 'content-type',
-  'access-control-max-age': '86400',
-};
+const HISTORY_CORS_HEADERS = corsHeaders('GET, POST, OPTIONS');
 
 interface HistoryRoute {
   upstream: string;
@@ -39,14 +35,6 @@ export function parseHistoryRoute(pathname: string, method: string): HistoryRout
   const base = env === undefined ? undefined : UPSTREAMS[env];
   if (base === undefined || rest.length > 0) return null;
   return uploadRoute(base, kind, id, method) ?? fileRoute(base, kind, id, method);
-}
-
-export function corsResponse(
-  cors: Record<string, string>, body: BodyInit | null, status: number, contentType?: string | null,
-): Response {
-  const headers: Record<string, string> = { ...cors, 'x-served-by': 'worker' };
-  if (contentType) headers['content-type'] = contentType;
-  return new Response(body, { status, headers });
 }
 
 async function uploadBody(request: Request): Promise<Uint8Array | null> {

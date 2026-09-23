@@ -1,12 +1,9 @@
-
+import { base64ToBytes } from '@stage-labs/client/text/base64';
 import { parseX402Challenge, type X402Challenge } from '@stage-labs/client/x402';
 
 function decodeHeaderChallenge(headerVal: string): unknown {
   try {
-    const bin = atob(headerVal.trim());
-    const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
-    const json = new TextDecoder('utf-8').decode(bytes);
-    return JSON.parse(json);
+    return JSON.parse(new TextDecoder('utf-8').decode(base64ToBytes(headerVal.trim())));
   } catch {
     return null;
   }

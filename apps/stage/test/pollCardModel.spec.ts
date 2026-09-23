@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { pollQuestionBlocks, type PollQuestionInput } from '../components/bubble/poll.model';
+import type { PollQuestion } from '@stage-labs/client/xmtp/poll';
+import { pollQuestionBlocks } from '../components/bubble/poll.model';
 
 function votesFor(...sizes: number[]): Map<number, Set<string>> {
   const m = new Map<number, Set<string>>();
@@ -9,7 +10,7 @@ function votesFor(...sizes: number[]): Map<number, Set<string>> {
   return m;
 }
 
-const SHIP_IT: PollQuestionInput = {
+const SHIP_IT: PollQuestion = {
   question: 'Ship it?',
   options: [{ label: 'Yes' }, { label: 'No' }],
 };
@@ -44,7 +45,7 @@ describe('pollQuestionBlocks', () => {
   });
 
   test('marks own votes with a check prefix and unselected multi-select with a box', () => {
-    const question: PollQuestionInput = {
+    const question: PollQuestion = {
       question: 'Pick toppings',
       header: 'Lunch poll',
       multiSelect: true,
@@ -73,7 +74,7 @@ describe('pollQuestionBlocks', () => {
   });
 
   test('open questions get an open header suffix', () => {
-    const question: PollQuestionInput = {
+    const question: PollQuestion = {
       question: 'Anything else?',
       header: 'Feedback',
       open: true,
@@ -91,7 +92,7 @@ describe('pollQuestionBlocks', () => {
   });
 
   test('question text hides for single-question polls and the first of many', () => {
-    const second: PollQuestionInput = { question: 'And also?', options: [] };
+    const second: PollQuestion = { question: 'And also?', options: [] };
     const single = pollQuestionBlocks([SHIP_IT], undefined, undefined);
     expect(single[0]?.question).toBeUndefined();
     const multi = pollQuestionBlocks([SHIP_IT, second], undefined, undefined);
@@ -100,7 +101,7 @@ describe('pollQuestionBlocks', () => {
   });
 
   test('votes are counted per question index', () => {
-    const second: PollQuestionInput = { question: 'And also?', options: [{ label: 'Sure' }] };
+    const second: PollQuestion = { question: 'And also?', options: [{ label: 'Sure' }] };
     const blocks = pollQuestionBlocks(
       [SHIP_IT, second],
       new Map([[1, votesFor(2)]]),

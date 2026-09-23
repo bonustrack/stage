@@ -133,3 +133,32 @@ export function assertPublicUrl(raw: string): URL {
   if (isPrivateIp(host)) throw new SsrfError('private ip not allowed');
   return u;
 }
+
+export interface PublicFetchOptions {
+  maxRedirects: number;
+  timeoutMs: number;
+  headers: (url: string) => HeadersInit;
+  cf?: RequestInit['cf'];
+}
+
+export interface PublicFetchResult {
+  res: Response;
+  finalUrl: string;
+}
+
+export async function fetchPublic(rawUrl: string, opts: PublicFetchOptions): Promise<PublicFetchResult> {
+  let current = assertPublicUrl(rawUrl).toString();
+  for (let hop = 0; hop <= opts.maxRedirects; hop++) {
+    const res = await fetch(current, {
+      method: 'GET',
+      redirect: 'manual',
+      signal: AbortSignal.timeout(opts.timeoutMs),
+      headers: opts.headers(current),
+      ...(opts.cf ? { cf: opts.cf } : {}),
+    });
+    const loc = res.status >= 300 && res.status < 400 ? res.headers.get('location') : null;
+    if (!loc) return { res, finalUrl: current };
+    current = assertPublicUrl(new URL(loc, current).toString()).toString();
+  }
+  throw new SsrfError('too many redirects');
+}

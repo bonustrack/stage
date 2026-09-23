@@ -7,7 +7,7 @@ import {
 } from '@stage-labs/client/xmtp/tx';
 import { VIEM_CHAINS } from '@stage-labs/client/wallet/assets';
 import {
-  type SignatureRequestContent, type SignatureReferenceContent,
+  type SignatureRequestContent, buildSignatureReference, personalMessageForRequest, typedDataForRequest,
 } from '@stage-labs/client/xmtp/sign';
 import { sendCall } from '../../lib/tx';
 import { deriveConfirmSummary, confirmMessage } from '../../lib/txConfirm';
@@ -21,13 +21,7 @@ import { kernelClientForRecord } from '../../lib/zerodev';
 import { paymentBlocker } from './pay.model';
 
 function typedDataOf(req: SignatureRequestContent): TypedDataDefinition {
-  const td = req.eip712;
-  if (!td) throw new Error('Malformed typed-data request');
-  const types = { ...td.types };
-  delete types.EIP712Domain;
-  return {
-    domain: td.domain, types, primaryType: td.primaryType, message: td.message,
-  } as unknown as TypedDataDefinition;
+  return typedDataForRequest(req) as unknown as TypedDataDefinition;
 }
 
 async function signWithKernel(req: SignatureRequestContent, active: AccountRecord): Promise<{ signature: string; signer: string }> {
@@ -37,8 +31,7 @@ async function signWithKernel(req: SignatureRequestContent, active: AccountRecor
     const signature = await kernel.signTypedData(typedData as Parameters<typeof kernel.signTypedData>[0]);
     return { signature, signer: active.address };
   }
-  const message = req.message ?? '';
-  if (!message) throw new Error('Empty message to sign');
+  const message = personalMessageForRequest(req);
   const signature = await kernel.signMessage({ message } as Parameters<typeof kernel.signMessage>[0]);
   return { signature, signer: active.address };
 }
@@ -50,9 +43,7 @@ async function signWithLocalEoa(req: SignatureRequestContent): Promise<{ signatu
     const signature = await local.signTypedData(typedDataOf(req));
     return { signature, signer: local.address };
   }
-  const message = req.message ?? '';
-  if (!message) throw new Error('Empty message to sign');
-  const signature = await local.signMessage({ message });
+  const signature = await local.signMessage({ message: personalMessageForRequest(req) });
   return { signature, signer: local.address };
 }
 
@@ -61,8 +52,7 @@ async function produceAndPostSignature(activeLine: string, requestId: string, re
   const { signature, signer } = active?.type === 'smart'
     ? await signWithKernel(req, active)
     : await signWithLocalEoa(req);
-  const ref: SignatureReferenceContent = { requestId, signature, signer };
-  await xmtpSendSignatureReference(activeLine, ref);
+  await xmtpSendSignatureReference(activeLine, buildSignatureReference(requestId, signature, signer));
 }
 
 type TxCall = NonNullable<WalletSendCallsContent['calls']>[number];

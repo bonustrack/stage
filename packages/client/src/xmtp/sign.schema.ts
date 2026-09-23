@@ -1,7 +1,6 @@
 
 import { z } from 'zod';
 import type { ZodType } from 'zod';
-import type { SignatureRequestContent, SignatureReferenceContent } from './sign';
 
 const MAX_STR = 8_192;
 const MAX_TYPE_NAMES = 64;
@@ -36,7 +35,7 @@ const eip712Schema = z.object({
   message: cappedRecord(z.unknown(), MAX_MESSAGE_KEYS),
 });
 
-export const signatureRequestSchema: ZodType<SignatureRequestContent> = z.object({
+export const signatureRequestSchema = z.object({
   id: z.string().min(1).max(256),
   kind: z.enum(['eip712', 'personal']),
   eip712: eip712Schema.optional(),
@@ -47,8 +46,12 @@ export const signatureRequestSchema: ZodType<SignatureRequestContent> = z.object
   { message: 'eip712 request needs `eip712`; personal request needs `message`' },
 );
 
-export const signatureReferenceSchema: ZodType<SignatureReferenceContent> = z.object({
+export const signatureReferenceSchema = z.object({
   requestId: z.string().min(1).max(256),
   signature: z.string().min(1).max(MAX_STR),
   signer: z.string().min(1).max(256),
 });
+
+export type Eip712TypedData = z.infer<typeof eip712Schema>;
+export type SignatureRequestContent = z.infer<typeof signatureRequestSchema>;
+export type SignatureReferenceContent = z.infer<typeof signatureReferenceSchema>;

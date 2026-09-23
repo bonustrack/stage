@@ -48,6 +48,7 @@
     "./api/opensea": "./src/api/opensea.ts",
     "./api/coingecko": "./src/api/coingecko.ts",
     "./text/markdown": "./src/text/markdown.ts",
+    "./text/base64": "./src/text/base64.ts",
     "./identity/format": "./src/identity/format.ts",
     "./identity/peerProfiles": "./src/identity/peerProfiles.ts",
     "./identity/onchainProfile": "./src/identity/onchainProfile.ts",

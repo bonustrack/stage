@@ -25,7 +25,7 @@ const FOURBYTE_BASE = 'https://www.4byte.directory/api/v1/signatures/';
 const abiCache = new Map<string, { abi: Abi; verified: boolean } | null>();
 const sigCache = new Map<string, string | null>();
 
-function selectorOf(data?: string): string | undefined {
+export function selectorOf(data?: string): string | undefined {
   if (!data || !/^0x[0-9a-fA-F]{8}/.test(data)) return undefined;
   return data.slice(0, 10).toLowerCase();
 }

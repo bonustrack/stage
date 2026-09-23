@@ -1,5 +1,5 @@
 import type { Hex } from 'viem';
-import { claimMessage, stageNameOf } from '@stage-labs/client/identity/stageNames';
+import { claimMessage, fetchIssuedName, stageNameOf } from '@stage-labs/client/identity/stageNames';
 import { encodeSetPrimaryBasename } from '@stage-labs/client/identity/basenameWrite';
 import { getActiveAccount, getActiveViemAccount } from './accounts';
 import { linkProxyBase } from './historyServer';
@@ -29,11 +29,8 @@ export async function checkStageName(label: string): Promise<NameCheck> {
   return (await res.json()) as NameCheck;
 }
 
-export async function ownedStageName(address: string): Promise<string | null> {
-  const res = await fetch(`${linkProxyBase()}/names/status?address=${address}`, { headers: HEADERS });
-  if (!res.ok) return null;
-  const body = (await res.json()) as { name?: string | null };
-  return body.name ?? null;
+export function ownedStageName(address: string): Promise<string | null> {
+  return fetchIssuedName(linkProxyBase(), address);
 }
 
 export async function claimStageName(label: string): Promise<string> {

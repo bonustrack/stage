@@ -9,6 +9,7 @@ import { SsrfError } from './ssrf.ts';
 import { HISTORY_PREFIX, handleHistory } from './historyProxy.ts';
 import { PUSH_PREFIX, handlePush } from './pushProxy.ts';
 import { NAMES_PREFIX, handleNamesRequest, type NamesEnv } from './names.ts';
+import { jsonResponse, type HeaderMap } from './respond.ts';
 
 const CACHE_TTL = 24 * 60 * 60;
 const IMG_CACHE_TTL = 7 * 24 * 60 * 60;
@@ -44,11 +45,8 @@ const BASE_HEADERS = {
   'access-control-allow-origin': '*',
 };
 
-function json(body: unknown, status = 200, extra: Record<string, string> = {}): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json; charset=utf-8', ...BASE_HEADERS, ...extra },
-  });
+function json(body: unknown, status = 200, extra: HeaderMap = {}): Response {
+  return jsonResponse(body, status, { ...BASE_HEADERS, ...extra });
 }
 
 async function cacheHit(cacheKey: Request): Promise<Response | null> {

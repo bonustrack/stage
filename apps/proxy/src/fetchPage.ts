@@ -1,5 +1,5 @@
 
-import { assertPublicUrl, readCappedText, SsrfError, UA } from './ssrf.ts';
+import { fetchPublic, readCappedText, UA } from './ssrf.ts';
 import type { X402Challenge } from '@stage-labs/client/x402';
 import { challengeFrom402 } from './x402.ts';
 
@@ -19,23 +19,11 @@ async function readJsonCapped(res: Response): Promise<unknown> {
   }
 }
 
-interface Redirect { redirectTo: string }
-function isRedirect(v: unknown): v is Redirect {
-  return typeof v === 'object' && v !== null && 'redirectTo' in v;
-}
-
-async function fetchOnce(current: string): Promise<Response> {
-  return fetch(current, {
-    method: 'GET',
-    redirect: 'manual',
-    signal: AbortSignal.timeout(TIMEOUT_MS),
-    headers: {
-      'User-Agent': UA,
-      Accept: 'application/json,text/html,application/xhtml+xml',
-      'Accept-Language': 'en-US,en;q=0.9',
-    },
-  });
-}
+const PAGE_HEADERS = {
+  'User-Agent': UA,
+  Accept: 'application/json,text/html,application/xhtml+xml',
+  'Accept-Language': 'en-US,en;q=0.9',
+};
 
 async function challengeFor(res: Response, current: string): Promise<X402Challenge | null> {
   const ct = res.headers.get('content-type') ?? '';
@@ -43,29 +31,13 @@ async function challengeFor(res: Response, current: string): Promise<X402Challen
   return challengeFrom402(current, res.headers, body);
 }
 
-async function handleResponse(
-  res: Response,
-  current: string,
-): Promise<FetchResult | X402Challenge | Redirect | null> {
-  if (res.status === 402) return challengeFor(res, current);
-  if (res.status >= 300 && res.status < 400) {
-    const loc = res.headers.get('location');
-    if (!loc) return null;
-    const next = assertPublicUrl(new URL(loc, current).toString()).toString();
-    return { redirectTo: next };
-  }
+export async function fetchPage(rawUrl: string): Promise<FetchResult | X402Challenge | null> {
+  const { res, finalUrl } = await fetchPublic(rawUrl, {
+    maxRedirects: MAX_REDIRECTS, timeoutMs: TIMEOUT_MS, headers: () => PAGE_HEADERS,
+  });
+  if (res.status === 402) return challengeFor(res, finalUrl);
   if (!res.ok) return null;
   const ct = res.headers.get('content-type') ?? '';
   if (!/text\/html|application\/xhtml/i.test(ct)) return null;
-  return { html: (await readCappedText(res, MAX_BYTES)) ?? '', finalUrl: current };
-}
-
-export async function fetchPage(rawUrl: string): Promise<FetchResult | X402Challenge | null> {
-  let current = assertPublicUrl(rawUrl).toString();
-  for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
-    const outcome = await handleResponse(await fetchOnce(current), current);
-    if (isRedirect(outcome)) { current = outcome.redirectTo; continue; }
-    return outcome;
-  }
-  throw new SsrfError('too many redirects');
+  return { html: (await readCappedText(res, MAX_BYTES)) ?? '', finalUrl };
 }

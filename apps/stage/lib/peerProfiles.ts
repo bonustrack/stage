@@ -8,8 +8,8 @@ import {
   subscribePeerProfiles,
   type PeerProfileEntries,
 } from '@stage-labs/client/identity/peerProfiles';
-import { avatarCacheKey, makeProfileClients, resolveOnchainProfile } from '@stage-labs/client/identity/onchainProfile';
-import { broviderRpc } from '@stage-labs/client/wallet/client';
+import { avatarCacheKey, baseProfileClient, resolveOnchainProfile } from '@stage-labs/client/identity/onchainProfile';
+import { fetchIssuedName } from '@stage-labs/client/identity/stageNames';
 import { stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { PersistentStore } from './cache.shared';
 import { linkProxyBase } from './historyServer';
@@ -25,16 +25,9 @@ export {
   invalidatePeerProfile,
 } from '@stage-labs/client/identity/peerProfiles';
 
-const profileClients = makeProfileClients(broviderRpc);
-
-async function issuedStageName(address: string): Promise<string | null> {
-  const res = await fetch(`${linkProxyBase()}/names/status?address=${encodeURIComponent(address)}`, { headers: { 'x-stage-client': '1' } });
-  if (!res.ok) return null;
-  const body = (await res.json()) as { name?: string | null };
-  return typeof body.name === 'string' && body.name !== '' ? body.name : null;
-}
-
-setOnchainProfileResolver((address) => resolveOnchainProfile(profileClients, address, issuedStageName));
+setOnchainProfileResolver((address) => resolveOnchainProfile(
+  baseProfileClient(), address, (peer) => fetchIssuedName(linkProxyBase(), peer),
+));
 
 export function peerAvatarUrl(address: string, displayPx: number): string {
   return stampAvatarUrl(address, displayPx, avatarCacheKey(getPeerAvatar(address)));

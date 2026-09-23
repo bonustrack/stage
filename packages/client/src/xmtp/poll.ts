@@ -1,3 +1,7 @@
+import { mintId } from '../mintId';
+import type { PollContent } from './poll.schema';
+
+export type { PollContent } from './poll.schema';
 
 export interface PollOption {
   label: string;
@@ -10,15 +14,6 @@ export interface PollQuestion {
   options: PollOption[];
   multiSelect?: boolean;
   open?: boolean;
-}
-
-export interface PollContent {
-  pollId: string;
-  questions?: PollQuestion[];
-  question?: string;
-  header?: string;
-  options?: PollOption[];
-  multiSelect?: boolean;
 }
 
 export function normalizeQuestions(poll: PollContent | undefined): PollQuestion[] {
@@ -44,9 +39,7 @@ export function normalizeQuestions(poll: PollContent | undefined): PollQuestion[
 }
 
 export function mintPollId(): string {
-  const g = globalThis as { crypto?: { randomUUID?: () => string } };
-  if (g.crypto?.randomUUID) return g.crypto.randomUUID();
-  return `poll_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+  return mintId('poll');
 }
 
 export function pollFallbackText(poll: PollContent): string {

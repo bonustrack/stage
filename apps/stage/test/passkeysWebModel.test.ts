@@ -1,9 +1,9 @@
 
+import { bytesToBase64 } from '@stage-labs/client/text/base64';
 import { describe, expect, test } from 'bun:test';
 import {
   base64UrlToBytes,
   bytesToBase64Url,
-  bytesToStandardBase64,
   decodeClientDataJson,
   effectiveRpId,
   hexToBytes,
@@ -93,7 +93,7 @@ describe('normalizeRegistrationPublicKey: web getPublicKey() to base64 publicKey
     const out = normalizeRegistrationPublicKey(cred) as {
       response: { publicKey?: string };
     };
-    expect(out.response.publicKey).toBe(bytesToStandardBase64(der));
+    expect(out.response.publicKey).toBe(bytesToBase64(der));
   });
   test('keeps an existing string publicKey untouched (native shape)', () => {
     const cred = { response: { publicKey: 'already-there' } };

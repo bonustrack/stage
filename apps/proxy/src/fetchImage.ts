@@ -1,5 +1,5 @@
 
-import { assertPublicUrl, readCappedBytes, SsrfError, UA } from './ssrf.ts';
+import { fetchPublic, readCappedBytes, SsrfError, UA } from './ssrf.ts';
 
 const TIMEOUT_MS = 5000;
 const MAX_REDIRECTS = 3;
@@ -26,28 +26,10 @@ const REQ_HEADERS = {
   Accept: 'image/avif,image/webp,image/png,image/jpeg,image/*;q=0.8,*/*;q=0.5',
 };
 
-async function fetchFollowing(
-  startUrl: string,
-  cf?: RequestInit['cf'],
-): Promise<{ res: Response; finalUrl: string }> {
-  let current = assertPublicUrl(startUrl).toString();
-  for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
-    const res = await fetch(current, {
-      method: 'GET',
-      redirect: 'manual',
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-      headers: REQ_HEADERS,
-      ...(cf ? { cf } : {}),
-    });
-    if (res.status >= 300 && res.status < 400) {
-      const loc = res.headers.get('location');
-      if (!loc) return { res, finalUrl: current };
-      current = assertPublicUrl(new URL(loc, current).toString()).toString();
-      continue;
-    }
-    return { res, finalUrl: current };
-  }
-  throw new SsrfError('too many redirects');
+function fetchFollowing(startUrl: string, cf?: RequestInit['cf']): Promise<{ res: Response }> {
+  return fetchPublic(startUrl, {
+    maxRedirects: MAX_REDIRECTS, timeoutMs: TIMEOUT_MS, headers: () => REQ_HEADERS, ...(cf ? { cf } : {}),
+  });
 }
 
 async function readImageCapped(res: Response): Promise<ArrayBuffer | null> {

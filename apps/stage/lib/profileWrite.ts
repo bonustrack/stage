@@ -2,8 +2,7 @@ import { base } from 'viem/chains';
 import { namehash, type Hex } from 'viem';
 import { normalize } from 'viem/ens';
 import { encodeSetTextRecords, type ContractCall } from '@stage-labs/client/identity/basenameWrite';
-import { PROFILE_TEXT_KEYS, makeProfileClients, resolverForNode } from '@stage-labs/client/identity/onchainProfile';
-import { broviderRpc } from '@stage-labs/client/wallet/client';
+import { PROFILE_TEXT_KEYS, baseProfileClient, resolverForNode } from '@stage-labs/client/identity/onchainProfile';
 import { getActiveAccount } from './accounts';
 import { invalidatePeerProfile } from './peerProfiles';
 import { uploadAvatar } from './profile';
@@ -11,7 +10,6 @@ import { sendCall } from './tx';
 import { kernelClientForRecord } from './zerodev/kernelForRecord';
 
 const STAMP_CLEAR_URL = 'https://stamp.fyi/clear/';
-const baseClient = makeProfileClients(broviderRpc).base;
 
 export interface ProfileChanges {
   displayName?: string;
@@ -32,7 +30,7 @@ async function submitOnBase(call: ContractCall): Promise<Hex> {
 
 export async function sendOnBase(call: ContractCall): Promise<Hex> {
   const hash = await submitOnBase(call);
-  const receipt = await baseClient.waitForTransactionReceipt({ hash });
+  const receipt = await baseProfileClient().waitForTransactionReceipt({ hash });
   if (receipt.status !== 'success') throw new Error('The transaction reverted.');
   return hash;
 }
@@ -56,7 +54,7 @@ async function recordsFor(changes: ProfileChanges): Promise<Record<string, strin
 export async function saveBasenameProfile(address: string, name: string, changes: ProfileChanges): Promise<Hex | null> {
   const records = await recordsFor(changes);
   if (Object.keys(records).length === 0) return null;
-  const resolver = await resolverForNode(makeProfileClients(broviderRpc).base, namehash(normalize(name)));
+  const resolver = await resolverForNode(baseProfileClient(), namehash(normalize(name)));
   const hash = await sendOnBase(encodeSetTextRecords(name, records, resolver ?? undefined));
   refreshProfileCaches(address, changes.image !== undefined || changes.removeImage === true);
   return hash;

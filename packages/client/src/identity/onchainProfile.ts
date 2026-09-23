@@ -3,6 +3,7 @@ import { createPublicClient, encodePacked, http, keccak256, namehash, stringToBy
 export const PROFILE_TEXT_KEYS = { displayName: 'name', description: 'description', avatar: 'avatar' } as const;
 import { normalize } from 'viem/ens';
 import { base } from 'viem/chains';
+import { broviderRpc } from '../wallet/client';
 
 export const BASENAME_REGISTRY = '0xB94704422c2a1E396835A571837Aa5AE53285a95' as const;
 export const BASENAME_L2_RESOLVER = '0xC6d566A56A1aFf6508b41f6c90ff131615583BCD' as const;
@@ -57,10 +58,6 @@ function nonEmpty(value: string): string | undefined {
   return trimmed === '' ? undefined : trimmed;
 }
 
-export interface ProfileClients {
-  base: PublicClient;
-}
-
 export function baseCoinType(chainId: number): string {
   return ((0x80000000 | chainId) >>> 0).toString(16).toUpperCase();
 }
@@ -77,11 +74,13 @@ export function usableAvatarUri(value: string | null | undefined): string | unde
   return undefined;
 }
 
-export function makeProfileClients(rpcUrlFor: (chainId: number) => string): ProfileClients {
-  const client = createPublicClient({
-    chain: base, transport: http(rpcUrlFor(base.id)), batch: { multicall: true },
+let cachedBaseClient: PublicClient | null = null;
+
+export function baseProfileClient(): PublicClient {
+  cachedBaseClient ??= createPublicClient({
+    chain: base, transport: http(broviderRpc(base.id)), batch: { multicall: true },
   }) as PublicClient;
-  return { base: client };
+  return cachedBaseClient;
 }
 
 const ZERO_ADDRESS: Hex = '0x0000000000000000000000000000000000000000';
@@ -91,6 +90,15 @@ export async function nodeOwner(client: PublicClient, node: Hex): Promise<Hex | 
     address: BASENAME_REGISTRY, abi: REGISTRY_ABI, functionName: 'owner', args: [node],
   }).catch(() => ZERO_ADDRESS);
   return owner === ZERO_ADDRESS ? null : owner;
+}
+
+export async function resolveBasenameAddress(client: PublicClient, name: string): Promise<string | null> {
+  const node = namehash(normalize(name));
+  const resolver = await resolverForNode(client, node);
+  if (!resolver) return null;
+  const address = await client.readContract({ address: resolver, abi: L2_RESOLVER_ABI, functionName: 'addr', args: [node] });
+  if (address !== ZERO_ADDRESS) return address.toLowerCase();
+  return (await nodeOwner(client, node))?.toLowerCase() ?? null;
 }
 
 async function nameBelongsTo(client: PublicClient, node: Hex, forward: string, address: string): Promise<boolean> {
@@ -142,11 +150,11 @@ export async function resolveBasenameProfile(client: PublicClient, address: stri
 export type IssuedNameLookup = (address: string) => Promise<string | null>;
 
 export async function resolveOnchainProfile(
-  clients: ProfileClients, address: string, issuedName?: IssuedNameLookup,
+  client: PublicClient, address: string, issuedName?: IssuedNameLookup,
 ): Promise<OnchainProfile | null> {
-  const primary = await resolveBasenameProfile(clients.base, address).catch(() => null);
+  const primary = await resolveBasenameProfile(client, address).catch(() => null);
   if (primary !== null || issuedName === undefined) return primary;
   const name = await issuedName(address).catch(() => null);
   if (name === null) return null;
-  return profileForName(clients.base, name, address).catch(() => null);
+  return profileForName(client, name, address).catch(() => null);
 }

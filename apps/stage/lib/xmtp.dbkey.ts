@@ -1,4 +1,4 @@
-import { bytesToBase64 } from '@stage-labs/client/xmtp/pushServer';
+import { base64ToBytes, bytesToBase64 } from '@stage-labs/client/text/base64';
 import { deleteDbFiles } from './xmtp.dbkeyFs';
 import { secureStorage } from '../platform/storage';
 import type { DeviceBoundAccessOptions } from '../platform/types';
@@ -13,13 +13,6 @@ function dbKeyId(accountId: string): string {
   return `xmtp.dbEncryptionKey.${accountId}`;
 }
 
-function decodeKey(b64: string): Uint8Array {
-  const bin = atob(b64);
-  const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out;
-}
-
 function randomKey(): Uint8Array {
   const fresh = new Uint8Array(32);
   if (typeof globalThis.crypto?.getRandomValues !== 'function') {
@@ -32,12 +25,12 @@ function randomKey(): Uint8Array {
 export async function loadOrCreateDbKey(accountId: string): Promise<Uint8Array> {
   const id = dbKeyId(accountId);
   const existing = await secureStorage.get(id, STORE_OPTS);
-  if (existing) return decodeKey(existing);
+  if (existing) return base64ToBytes(existing);
 
   const legacy = await secureStorage.get(LEGACY_DB_ENCRYPTION_KEY, STORE_OPTS);
   if (legacy) {
     await secureStorage.set(id, legacy, STORE_OPTS).catch(() => undefined);
-    return decodeKey(legacy);
+    return base64ToBytes(legacy);
   }
 
   const fresh = randomKey();

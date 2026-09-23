@@ -1,7 +1,9 @@
 import { createPublicClient, createWalletClient, http, keccak256, namehash, stringToBytes, type Hex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { base } from 'viem/chains';
-import { BASENAME_REGISTRY } from '@stage-labs/client/identity/onchainProfile';
+import {
+  BASENAME_REGISTRY, L2_RESOLVER_ABI, REGISTRY_ABI as BASENAME_REGISTRY_ABI,
+} from '@stage-labs/client/identity/onchainProfile';
 import { STAGE_NAMES_PARENT, stageNameOf } from '@stage-labs/client/identity/stageNames';
 import type { NamesChain } from './namesTypes.ts';
 
@@ -36,14 +38,7 @@ async function withRetries<T>(attempt: () => Promise<T>): Promise<T> {
 }
 
 const REGISTRY_ABI = [
-  {
-    name: 'owner', type: 'function', stateMutability: 'view',
-    inputs: [{ name: 'node', type: 'bytes32' }], outputs: [{ type: 'address' }],
-  },
-  {
-    name: 'resolver', type: 'function', stateMutability: 'view',
-    inputs: [{ name: 'node', type: 'bytes32' }], outputs: [{ type: 'address' }],
-  },
+  ...BASENAME_REGISTRY_ABI,
   {
     name: 'setSubnodeRecord', type: 'function', stateMutability: 'nonpayable',
     inputs: [
@@ -59,13 +54,10 @@ const REGISTRY_ABI = [
 ] as const;
 
 const RESOLVER_ABI = [
+  ...L2_RESOLVER_ABI,
   {
     name: 'setAddr', type: 'function', stateMutability: 'nonpayable',
     inputs: [{ name: 'node', type: 'bytes32' }, { name: 'a', type: 'address' }], outputs: [],
-  },
-  {
-    name: 'addr', type: 'function', stateMutability: 'view',
-    inputs: [{ name: 'node', type: 'bytes32' }], outputs: [{ type: 'address' }],
   },
 ] as const;
 

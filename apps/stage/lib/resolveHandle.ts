@@ -1,44 +1,28 @@
 import { useEffect, useState } from 'react';
-import { namehash } from 'viem';
-import { normalize } from 'viem/ens';
 import { resolveEnsName } from '@stage-labs/client/api/ens';
-import { L2_RESOLVER_ABI, makeProfileClients, nodeOwner, resolverForNode } from '@stage-labs/client/identity/onchainProfile';
+import { baseProfileClient, resolveBasenameAddress } from '@stage-labs/client/identity/onchainProfile';
+import { fetchIssuedAddress } from '@stage-labs/client/identity/stageNames';
 import { parseHandle, stageLabelOf, type ParsedHandle } from '@stage-labs/client/routing/handles';
-import { broviderRpc } from '@stage-labs/client/wallet/client';
 import { linkProxyBase } from './historyServer';
 
-const ZERO = '0x0000000000000000000000000000000000000000';
 const cache = new Map<string, Promise<string | null>>();
 
-async function resolveBasenameAddress(name: string): Promise<string | null> {
-  const client = makeProfileClients(broviderRpc).base;
-  const node = namehash(normalize(name));
-  const resolver = await resolverForNode(client, node);
-  if (!resolver) return null;
-  const address = await client.readContract({ address: resolver, abi: L2_RESOLVER_ABI, functionName: 'addr', args: [node] });
-  if (address !== ZERO) return address.toLowerCase();
-  return (await nodeOwner(client, node))?.toLowerCase() ?? null;
-}
-
-async function issuedAddressFor(label: string): Promise<string | null> {
-  const res = await fetch(`${linkProxyBase()}/names/resolve?label=${encodeURIComponent(label)}`, { headers: { 'x-stage-client': '1' } });
-  if (!res.ok) return null;
-  const body = (await res.json()) as { address?: string | null };
-  return body.address ?? null;
+function basenameAddress(name: string): Promise<string | null> {
+  return resolveBasenameAddress(baseProfileClient(), name);
 }
 
 async function resolveStageName(name: string): Promise<string | null> {
   const label = stageLabelOf(name);
-  const issued = label ? await issuedAddressFor(label).catch(() => null) : null;
+  const issued = label ? await fetchIssuedAddress(linkProxyBase(), label).catch(() => null) : null;
   if (issued) return issued;
-  return resolveBasenameAddress(name).catch(() => null);
+  return basenameAddress(name).catch(() => null);
 }
 
 function resolveParsed(parsed: ParsedHandle): Promise<string | null> {
   switch (parsed.kind) {
     case 'address': return Promise.resolve(parsed.value);
     case 'stage': return resolveStageName(parsed.value);
-    case 'basename': return resolveBasenameAddress(parsed.value);
+    case 'basename': return basenameAddress(parsed.value);
     case 'ens': return resolveEnsName(parsed.value).then((a) => a?.toLowerCase() ?? null);
     default: return Promise.resolve(null);
   }

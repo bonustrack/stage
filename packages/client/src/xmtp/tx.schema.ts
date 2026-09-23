@@ -1,7 +1,5 @@
 
 import { z } from 'zod';
-import type { ZodType } from 'zod';
-import type { WalletSendCallsContent, TransactionReferenceContent } from './tx';
 
 const MAX_STR = 16_384;
 const MAX_CALLS = 32;
@@ -29,7 +27,7 @@ const callSchema = z.object({
   metadata: callMetadataSchema.optional(),
 });
 
-export const walletSendCallsSchema: ZodType<WalletSendCallsContent> = z.object({
+export const walletSendCallsSchema = z.object({
   version: z.string().max(64),
   chainId: z.string().max(64),
   from: z.string().max(256),
@@ -48,8 +46,11 @@ const txMetadataSchema = z.object({
   { message: `too many metadata keys (>${MAX_META_KEYS})` },
 );
 
-export const transactionReferenceSchema: ZodType<TransactionReferenceContent> = z.object({
+export const transactionReferenceSchema = z.object({
   networkId: z.union([z.number(), z.string().max(64)]),
   reference: z.string().min(1).max(MAX_STR),
   metadata: txMetadataSchema.optional(),
 });
+
+export type WalletSendCallsContent = z.infer<typeof walletSendCallsSchema>;
+export type TransactionReferenceContent = z.infer<typeof transactionReferenceSchema>;

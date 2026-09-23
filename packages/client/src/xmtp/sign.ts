@@ -1,31 +1,7 @@
+import { mintId } from '../mintId';
+import type { Eip712TypedData, SignatureRequestContent, SignatureReferenceContent } from './sign.schema';
 
-
-export interface Eip712TypedData {
-  domain: Record<string, unknown>;
-  types: Record<string, { name: string; type: string }[]>;
-  primaryType: string;
-  message: Record<string, unknown>;
-}
-
-export interface SignatureRequestContent {
-  id: string;
-  kind: 'eip712' | 'personal';
-  eip712?: Eip712TypedData;
-  message?: string;
-  description?: string;
-}
-
-export interface SignatureReferenceContent {
-  requestId: string;
-  signature: string;
-  signer: string;
-}
-
-function mintSignatureRequestId(): string {
-  const g = globalThis as { crypto?: { randomUUID?: () => string } };
-  if (g.crypto?.randomUUID) return g.crypto.randomUUID();
-  return `sig_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
-}
+export type { Eip712TypedData, SignatureRequestContent, SignatureReferenceContent } from './sign.schema';
 
 export function buildPersonalSignatureRequest(
   message: string, description?: string,
@@ -33,7 +9,7 @@ export function buildPersonalSignatureRequest(
   const msg = message.trim();
   if (!msg) throw new Error('Enter a message to sign');
   const desc = description?.trim();
-  return { id: mintSignatureRequestId(), kind: 'personal', message: msg, ...(desc ? { description: desc } : {}) };
+  return { id: mintId('sig'), kind: 'personal', message: msg, ...(desc ? { description: desc } : {}) };
 }
 
 export function buildEip712SignatureRequest(
@@ -51,7 +27,7 @@ export function buildEip712SignatureRequest(
   }
   const desc = description?.trim();
   return {
-    id: mintSignatureRequestId(),
+    id: mintId('sig'),
     kind: 'eip712',
     eip712: {
       domain: (td.domain ?? {}) as Record<string, unknown>,
@@ -72,14 +48,7 @@ export function signatureReferenceFallbackText(c: SignatureReferenceContent): st
   return c?.signature ? `[Signature] ${c.signature}` : '[Signature]';
 }
 
-export interface SignTypedDataInput {
-  domain: Record<string, unknown>;
-  types: Record<string, { name: string; type: string }[]>;
-  primaryType: string;
-  message: Record<string, unknown>;
-}
-
-export function typedDataForRequest(req: SignatureRequestContent): SignTypedDataInput {
+export function typedDataForRequest(req: SignatureRequestContent): Eip712TypedData {
   const td = req.eip712;
   if (!td) throw new Error('Malformed typed-data request');
   const types = { ...td.types };

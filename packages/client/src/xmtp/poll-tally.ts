@@ -1,3 +1,4 @@
+import { base64ToUtf8, utf8ToBase64 } from '../text/base64';
 
 export function parseVoteKey(content: string): { q: number; o: number } | null {
   const m = /^(?:(\d+):)?(\d+)$/.exec(content);
@@ -12,27 +13,16 @@ export function voteKey(questionIndex: number, optionIndex: number): string {
   return questionIndex === 0 ? String(optionIndex) : `${questionIndex}:${optionIndex}`;
 }
 
-const b64enc = (s: string): string => {
-  const g = globalThis as { btoa?: (x: string) => string; Buffer?: { from(x: string, e: string): { toString(e: string): string } } };
-  const bytes = encodeURIComponent(s).replace(/%([0-9A-F]{2})/g, (_, h: string) => String.fromCharCode(parseInt(h, 16)));
-  if (g.btoa) return g.btoa(bytes);
-  if (g.Buffer) return g.Buffer.from(s, 'utf-8').toString('base64');
-  return s;
-};
-const b64dec = (s: string): string => {
-  const g = globalThis as { atob?: (x: string) => string; Buffer?: { from(x: string, e: string): { toString(e: string): string } } };
+function decodeOpenText(encoded: string): string {
   try {
-    if (g.atob) {
-      const bin = g.atob(s);
-      return decodeURIComponent(Array.from(bin).map(c => `%${c.charCodeAt(0).toString(16).padStart(2, '0')}`).join(''));
-    }
-    if (g.Buffer) return g.Buffer.from(s, 'base64').toString('utf-8');
-  } catch { }
-  return s;
-};
+    return base64ToUtf8(encoded);
+  } catch {
+    return encoded;
+  }
+}
 
 export function openVoteKey(questionIndex: number, text: string): string {
-  return `open:${questionIndex}:${b64enc(text)}`;
+  return `open:${questionIndex}:${utf8ToBase64(text)}`;
 }
 
 export function parseOpenVote(content: string): { q: number; text: string } | null {
@@ -40,7 +30,7 @@ export function parseOpenVote(content: string): { q: number; text: string } | nu
   if (!m) return null;
   const q = Number(m[1]);
   if (!Number.isInteger(q)) return null;
-  return { q, text: b64dec(m[2] ?? '') };
+  return { q, text: decodeOpenText(m[2] ?? '') };
 }
 
 function latestOpenAnswers(

@@ -22,5 +22,5 @@ export interface OpenseaResponse {
 }
 
 export function parseOpenseaResponse(data: unknown): OpenseaResponse | null {
-  return parseOrNull('api.opensea', responseSchema, data) as OpenseaResponse | null;
+  return parseOrNull('api.opensea', responseSchema, data);
 }

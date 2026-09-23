@@ -3,7 +3,7 @@ import '../cryptoShim';
 import type { AccountRecord } from '../accounts';
 import { updateSmartAccount } from '../accounts';
 import { smartOwnerSigner, type SmartKeyRef } from './keyring';
-import { makePublicClient, makeKernelClient, swapSudoValidator } from './client';
+import { makePublicClient, makeKernelClient, swapSudoValidator, type SudoSwapResult } from './client';
 import {
   createEcdsaKernel,
   passkeyValidatorFromStored,
@@ -26,15 +26,11 @@ export type EnablePasskeyResult =
   | { ok: true; deployed: boolean; userOpHash?: string }
   | { ok: false; reason: 'unavailable' | 'already' | 'cancelled' | 'error'; message?: string };
 
-export type DeployAndSwapResult =
-  | { ok: true; txHash: string }
-  | { ok: false; message: string };
-
 export async function deployAndSwapToPasskey(
   publicClient: ReturnType<typeof makePublicClient>,
   key: SmartKeyRef,
   stored: StoredPasskey,
-): Promise<DeployAndSwapResult> {
+): Promise<SudoSwapResult> {
   try {
     const owner = await smartOwnerSigner(key);
     const ecdsaAccount = await createEcdsaKernel(publicClient, owner, key.hdIndex);

@@ -1,43 +1,6 @@
-export interface WalletSendCallMetadata {
-  description?: string;
-  transactionType?: string;
-  currency?: string;
-  amount?: number;
-  decimals?: number;
-  toAddress?: string;
-  [k: string]: unknown;
-}
+import type { WalletSendCallsContent, TransactionReferenceContent } from './tx.schema';
 
-export interface WalletSendCall {
-  to?: string;
-  data?: string;
-  value?: string;
-  gas?: string;
-  metadata?: WalletSendCallMetadata;
-}
-
-export interface WalletSendCallsContent {
-  version: string;
-  chainId: string;
-  from: string;
-  calls: WalletSendCall[];
-}
-
-export interface TransactionMetadata {
-  transactionType?: string;
-  currency?: string;
-  amount?: number;
-  decimals?: number;
-  fromAddress?: string;
-  toAddress?: string;
-  [k: string]: unknown;
-}
-
-export interface TransactionReferenceContent {
-  networkId: number | string;
-  reference: string;
-  metadata?: TransactionMetadata;
-}
+export type { WalletSendCallsContent, TransactionReferenceContent } from './tx.schema';
 
 export function walletSendCallsFallbackText(c: WalletSendCallsContent): string {
   const desc = c.calls?.[0]?.metadata?.description;

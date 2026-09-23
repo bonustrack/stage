@@ -1,14 +1,4 @@
-interface PollOptionInput {
-  label: string;
-}
-
-export interface PollQuestionInput {
-  question: string;
-  header?: string;
-  options: PollOptionInput[];
-  multiSelect?: boolean;
-  open?: boolean;
-}
+import type { PollOption, PollQuestion } from '@stage-labs/client/xmtp/poll';
 
 export interface PollOptionRow {
   label: string;
@@ -28,7 +18,7 @@ type PollVotesByQuestion = Map<number, Map<number, Set<string>>>;
 type PollOwnVotesByQuestion = Map<number, Set<number>>;
 
 function optionRow(
-  option: PollOptionInput,
+  option: PollOption,
   votes: number,
   total: number,
   selected: boolean,
@@ -44,7 +34,7 @@ function optionRow(
   };
 }
 
-function headerLabel(q: PollQuestionInput): string | undefined {
+function headerLabel(q: PollQuestion): string | undefined {
   if (q.header === undefined) return undefined;
   const base = `${q.header}${q.open === true ? ' · open' : ''}`;
   if (base === '') return undefined;
@@ -52,7 +42,7 @@ function headerLabel(q: PollQuestionInput): string | undefined {
 }
 
 function questionBlock(
-  q: PollQuestionInput,
+  q: PollQuestion,
   qi: number,
   multiQuestion: boolean,
   votes: Map<number, Set<string>> | undefined,
@@ -78,7 +68,7 @@ function questionBlock(
 }
 
 export function pollQuestionBlocks(
-  questions: PollQuestionInput[],
+  questions: PollQuestion[],
   votes: PollVotesByQuestion | undefined,
   ownVotes: PollOwnVotesByQuestion | undefined,
 ): PollQuestionBlock[] {

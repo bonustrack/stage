@@ -1,3 +1,6 @@
+import { bytesToHex } from 'viem';
+import { base64ToBytes, bytesToBase64 } from '@stage-labs/client/text/base64';
+
 export interface StoredPasskey {
   pubX: string;
   pubY: string;
@@ -30,14 +33,8 @@ export function effectiveRpId(configured: string, hostname: string): string {
   return hostInsideRpId(configured, hostname) ? configured : hostname;
 }
 
-export function bytesToStandardBase64(bytes: Uint8Array): string {
-  let bin = '';
-  for (const b of bytes) bin += String.fromCharCode(b);
-  return btoa(bin);
-}
-
 export function bytesToBase64Url(bytes: Uint8Array): string {
-  return bytesToStandardBase64(bytes)
+  return bytesToBase64(bytes)
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=+$/, '');
@@ -46,8 +43,7 @@ export function bytesToBase64Url(bytes: Uint8Array): string {
 export function base64UrlToBytes(value: string): Uint8Array {
   const base64 = value.replace(/-/g, '+').replace(/_/g, '/');
   const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
-  const bin = atob(padded);
-  return Uint8Array.from(bin, (c) => c.codePointAt(0) ?? 0);
+  return base64ToBytes(padded);
 }
 
 export function hexToBytes(hex: string): Uint8Array {
@@ -59,10 +55,6 @@ export function hexToBytes(hex: string): Uint8Array {
   return bytes;
 }
 
-function bytesToHex(bytes: Uint8Array): string {
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
-}
-
 export function decodeClientDataJson(b64url: string): string {
   return new TextDecoder().decode(base64UrlToBytes(b64url));
 }
@@ -72,7 +64,7 @@ export function signableMessageToHex(message: unknown): string {
   if (typeof message === 'object' && message !== null && 'raw' in message) {
     const raw = message.raw;
     if (typeof raw === 'string') return raw;
-    if (raw instanceof Uint8Array) return bytesToHex(raw);
+    if (raw instanceof Uint8Array) return bytesToHex(raw).slice(2);
   }
   throw new Error('Unsupported message format');
 }
@@ -96,6 +88,6 @@ export function normalizeRegistrationPublicKey(cred: unknown): unknown {
   if (!der) return cred;
   return {
     ...record,
-    response: { ...response, publicKey: bytesToStandardBase64(new Uint8Array(der)) },
+    response: { ...response, publicKey: bytesToBase64(new Uint8Array(der)) },
   };
 }
