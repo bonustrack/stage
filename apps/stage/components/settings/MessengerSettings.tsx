@@ -2,19 +2,15 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { Alert } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
-import { useSafeAreaInsets } from '../../lib/safeArea';
-import { Box, Col, ScreenScroll } from '../layout';
-import { Caption } from '@stage-labs/kit/react-native/caption';
+import { Box } from '../layout';
 import {
   getOrCreateXmtpClient, resetActiveXmtpStore, selfEthAddress, shortAddress, useActiveAccount,
 } from '../../modules/messaging';
 import { reloadApp } from '../../lib/reloadApp';
 import { capabilities } from '../../lib/capabilities';
-import { usePalette } from '../../lib/theme';
 import { MessengerSessions } from './MessengerSessions';
 import { HistorySyncSection } from './HistorySyncSection';
-import { SettingsHeader } from '../chrome/SettingsHeader';
+import { SettingsPage, SettingsSectionLabel } from './SettingsPage';
 import { SettingsButtonRow, SettingsList, SettingsValueRow } from './rows';
 
 function onResetIdentity(): void {
@@ -33,11 +29,6 @@ function onResetIdentity(): void {
   );
 }
 
-function copyValue(label: string, value: string): void {
-  void Clipboard.setStringAsync(value);
-  capabilities.toast(`${label} copied`);
-}
-
 interface XmtpIdentity { addr: string; inbox: string; install: string }
 
 const NO_IDENTITY: XmtpIdentity = { addr: '', inbox: '', install: '' };
@@ -53,8 +44,6 @@ async function fetchXmtpIdentity(): Promise<XmtpIdentity> {
 }
 
 export function MessengerSettings(): React.ReactElement {
-  const { text: fg } = usePalette();
-  const insets = useSafeAreaInsets();
   const epoch = useActiveAccount();
   const { data: id = NO_IDENTITY } = useQuery({
     queryKey: ['xmtpIdentity', epoch],
@@ -66,54 +55,49 @@ export function MessengerSettings(): React.ReactElement {
   const hasRows = addr !== '' || inbox !== '' || install !== '';
 
   return (
-    <Col surface="surface" flex={1}>
-      <SettingsHeader title="Messenger"/>
-      <ScreenScroll contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
-        <Caption color={fg} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
-          XMTP ACCOUNT
-        </Caption>
-        {hasRows ? (
-          <Box>
-            <SettingsList>
-              {addr ? (
-                <SettingsValueRow
-                  label="Your XMTP address"
-                  value={shortAddress(addr)}
-                  onPress={() => { copyValue('Your XMTP address', addr); }}
-                />
-              ) : null}
-              {inbox ? (
-                <SettingsValueRow
-                  label="Inbox id"
-                  value={inbox}
-                  onPress={() => { copyValue('Inbox id', inbox); }}
-                />
-              ) : null}
-              {install ? (
-                <SettingsValueRow
-                  label="Installation id"
-                  value={shortAddress(install)}
-                  onPress={() => { copyValue('Installation id', install); }}
-                />
-              ) : null}
-            </SettingsList>
-          </Box>
-        ) : null}
-
-        <MessengerSessions />
-
-        <HistorySyncSection />
-
-        <Box padding={{ top: 28 }}>
+    <SettingsPage title="Messenger">
+      <SettingsSectionLabel top={20}>XMTP ACCOUNT</SettingsSectionLabel>
+      {hasRows ? (
+        <Box>
           <SettingsList>
-            <SettingsButtonRow
-              label="Reset XMTP database"
-              danger
-              onPress={onResetIdentity}
-            />
+            {addr ? (
+              <SettingsValueRow
+                label="Your XMTP address"
+                value={shortAddress(addr)}
+                onPress={() => { capabilities.copy('Your XMTP address', addr); }}
+              />
+            ) : null}
+            {inbox ? (
+              <SettingsValueRow
+                label="Inbox id"
+                value={inbox}
+                onPress={() => { capabilities.copy('Inbox id', inbox); }}
+              />
+            ) : null}
+            {install ? (
+              <SettingsValueRow
+                label="Installation id"
+                value={shortAddress(install)}
+                onPress={() => { capabilities.copy('Installation id', install); }}
+              />
+            ) : null}
           </SettingsList>
         </Box>
-      </ScreenScroll>
-    </Col>
+      ) : null}
+
+      <MessengerSessions />
+
+      <HistorySyncSection />
+
+      <Box padding={{ top: 28 }}>
+        <SettingsList>
+          <SettingsButtonRow
+            label="Reset XMTP database"
+            danger
+            onPress={onResetIdentity}
+          />
+        </SettingsList>
+      </Box>
+    </SettingsPage>
   );
 }

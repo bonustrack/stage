@@ -38,7 +38,7 @@ export function Title(props: TitleProps): React.ReactElement {
   };
 
   return (
-    <RNText style={style ? [base, ...(Array.isArray(style) ? style : [style])] : base} {...rest}>
+    <RNText style={style ? [base, style] : base} {...rest}>
       {children}
     </RNText>
   );

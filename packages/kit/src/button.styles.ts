@@ -1,6 +1,6 @@
 
 import type { TextStyle } from 'react-native';
-import { FONT_SIZE, colors, schemePalette } from './tokens';
+import { FONT_SIZE, colors, fontName, schemePalette } from './tokens';
 
 export type ButtonColor =
   | 'primary'
@@ -149,7 +149,7 @@ export function textLabelStyle(spec: SizeSpec, color: string): TextStyle {
   return {
     color,
     fontSize: spec.fontSize,
-    fontFamily: 'Calibre-Semibold',
+    fontFamily: fontName.head,
     textAlign: 'center',
   };
 }

@@ -3,7 +3,7 @@ import { useMemo, useRef, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
-import { fontName, fontSize } from '../tokens';
+import { fontName, fontSize, readableForeground } from '../tokens';
 import { Box, Row, Col } from './box';
 import { Icon } from './icon';
 import { Input } from './input';
@@ -35,14 +35,6 @@ export const DEFAULT_SWATCHES = [
   '#2f6df6',
   '#8b5cf6',
 ];
-
-function readable(hex: string): string {
-  const group = /^#?([0-9a-f]{6})$/i.exec(hex.trim())?.[1];
-  if (group === undefined) return '#ffffff';
-  const n = Number.parseInt(group, 16);
-  const lum = (0.299 * ((n >> 16) & 0xff) + 0.587 * ((n >> 8) & 0xff) + 0.114 * (n & 0xff)) / 255;
-  return lum > 0.6 ? '#000000' : '#ffffff';
-}
 
 interface HsvPalette {
   dark: boolean;
@@ -188,7 +180,7 @@ function Swatches({ value, swatches = DEFAULT_SWATCHES, onChange, dark = false }
               justifyContent: 'center',
             }}
           >
-            {selected ? <Icon name="check" size={18} color={readable(hex)} /> : null}
+            {selected ? <Icon name="check" size={18} color={readableForeground(hex)} /> : null}
           </Pressable>
         );
       })}

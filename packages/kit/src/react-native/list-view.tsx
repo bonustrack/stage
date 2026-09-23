@@ -1,18 +1,12 @@
 
 import { Children, isValidElement, type ReactNode } from 'react';
 import { Pressable, View, Text as RNText, type ViewStyle } from 'react-native';
-import { borderStyleEntries, type ResolvedBoxBorder } from '../layout';
+import { FLEX_ALIGN, borderStyleEntries, type ResolvedBoxBorder } from '../layout';
 import { FONT_SIZE, fontName, schemePalette } from '../tokens';
 
 export type ListItemAlign = 'start' | 'center' | 'end';
 
 const ROW_INSET = 16;
-
-const ALIGN: Record<ListItemAlign, ViewStyle['alignItems']> = {
-  start: 'flex-start',
-  center: 'center',
-  end: 'flex-end',
-};
 
 function palette(dark: boolean): { border: string; pressed: string; sub: string } {
   const p = schemePalette(dark);
@@ -108,7 +102,7 @@ export function ListViewItem(props: ListViewItemProps): React.ReactElement {
 
   const row: ViewStyle = {
     flexDirection: 'row',
-    alignItems: ALIGN[align],
+    alignItems: FLEX_ALIGN[align],
     gap,
   };
 

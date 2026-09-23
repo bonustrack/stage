@@ -2,8 +2,7 @@
 import { useEffect, useState } from 'react';
 
 import { Linking, Platform } from 'react-native';
-import { useSafeAreaInsets } from '../../lib/safeArea';
-import { Box, Col, ScreenScroll } from '../layout';
+import { Box } from '../layout';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { usePalette } from '../../lib/theme';
 import { setPushEnabled, usePushEnabled } from '../../lib/pushPref';
@@ -12,12 +11,11 @@ import {
   getPushPermission, registerPushWithServer, requestPushPermission, unregisterPushFromServer,
 } from '../../lib/pushRegister';
 import { describePushStatus, usePushStatus } from '../../lib/pushStatus';
-import { SettingsHeader } from '../chrome/SettingsHeader';
+import { SettingsPage, SettingsSectionLabel } from './SettingsPage';
 import { SettingsButtonRow, SettingsList, SettingsToggleRow } from './rows';
 
 export function NotificationsSettings(): React.ReactElement {
   const { text: fg } = usePalette();
-  const insets = useSafeAreaInsets();
   const enabled = usePushEnabled();
   const [perm, setPerm] = useState<string>('undetermined');
   const status = usePushStatus();
@@ -48,42 +46,37 @@ export function NotificationsSettings(): React.ReactElement {
       : 'System permission will be requested when you enable push.';
 
   return (
-    <Col surface="surface" flex={1}>
-      <SettingsHeader title="Notifications"/>
-      <ScreenScroll contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
-        <Caption color={fg} style={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 8 }}>
-          PUSH NOTIFICATIONS
-        </Caption>
-        <Box>
+    <SettingsPage title="Notifications">
+      <SettingsSectionLabel top={20}>PUSH NOTIFICATIONS</SettingsSectionLabel>
+      <Box>
+        <SettingsList>
+          <SettingsToggleRow
+            label="Push notifications"
+            name="push"
+            checked={enabled}
+            description="Get notified about new messages even when Stage is closed."
+            control="switch"
+            onChange={onToggle}
+          />
+        </SettingsList>
+      </Box>
+      <Caption color={fg} style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+        {permLabel}
+      </Caption>
+      <Caption color={fg} style={{ paddingHorizontal: 16, paddingTop: 8 }}>
+        {describePushStatus(status)}
+      </Caption>
+      {perm === 'denied' && Platform.OS !== 'web' ? (
+        <Box padding={{ top: 12 }}>
           <SettingsList>
-            <SettingsToggleRow
-              label="Push notifications"
-              name="push"
-              checked={enabled}
-              description="Get notified about new messages even when Stage is closed."
-              control="switch"
-              onChange={onToggle}
+            <SettingsButtonRow
+              label="Open system settings"
+              description="Allow notifications for Stage, then turn push off and on again."
+              onPress={() => { void Linking.openSettings(); }}
             />
           </SettingsList>
         </Box>
-        <Caption color={fg} style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-          {permLabel}
-        </Caption>
-        <Caption color={fg} style={{ paddingHorizontal: 16, paddingTop: 8 }}>
-          {describePushStatus(status)}
-        </Caption>
-        {perm === 'denied' && Platform.OS !== 'web' ? (
-          <Box padding={{ top: 12 }}>
-            <SettingsList>
-              <SettingsButtonRow
-                label="Open system settings"
-                description="Allow notifications for Stage, then turn push off and on again."
-                onPress={() => { void Linking.openSettings(); }}
-              />
-            </SettingsList>
-          </Box>
-        ) : null}
-      </ScreenScroll>
-    </Col>
+      ) : null}
+    </SettingsPage>
   );
 }

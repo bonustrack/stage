@@ -1,20 +1,9 @@
 
 import { Children, cloneElement, isValidElement, type ReactNode } from 'react';
 import { View, type ViewStyle } from 'react-native';
+import { FLEX_ALIGN } from '../layout';
 
 export type TableCellAlign = 'start' | 'center' | 'end';
-
-const H_ALIGN: Record<TableCellAlign, ViewStyle['alignItems']> = {
-  start: 'flex-start',
-  center: 'center',
-  end: 'flex-end',
-};
-
-const V_JUSTIFY: Record<TableCellAlign, ViewStyle['justifyContent']> = {
-  start: 'flex-start',
-  center: 'center',
-  end: 'flex-end',
-};
 
 export interface TableCellProps {
   children?: ReactNode;
@@ -34,8 +23,8 @@ function TableCell(props: TableCellProps): React.ReactElement {
     width: width as ViewStyle['width'],
     flex: width === undefined ? colSpan : undefined,
     padding,
-    alignItems: H_ALIGN[align],
-    justifyContent: V_JUSTIFY[vAlign],
+    alignItems: FLEX_ALIGN[align],
+    justifyContent: FLEX_ALIGN[vAlign],
   };
   return <View style={style ? [base, style] : base}>{children}</View>;
 }

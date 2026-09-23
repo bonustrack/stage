@@ -29,23 +29,31 @@ export function useActiveConvSuppression(convId: string | undefined): void {
   }, [activeConvId]));
 }
 
-export function useConsentGate(convId: string | undefined): boolean | undefined {
-  const [consentAllowed, setConsentAllowed] = useState<boolean | undefined>(undefined);
+type ConvConsent = Awaited<ReturnType<typeof getConvConsentState>> | undefined;
+
+interface ConsentGate {
+  consent: ConvConsent;
+  markAllowed: () => void;
+}
+
+export function useConsentGate(convId: string | undefined): ConsentGate {
+  const [consent, setConsent] = useState<ConvConsent>(undefined);
   useEffect(() => {
-    if (!convId) { setConsentAllowed(undefined); return; }
+    if (!convId) { setConsent(undefined); return; }
     let cancelled = false;
     const resolve = async (): Promise<void> => {
       try {
         const state = await getConvConsentState(convId);
-        if (!cancelled) setConsentAllowed(state == null ? undefined : state === 'allowed');
-      } catch { if (!cancelled) setConsentAllowed(undefined); }
+        if (!cancelled) setConsent(state ?? undefined);
+      } catch { if (!cancelled) setConsent(undefined); }
     };
     void resolve();
     let cancelConsent: (() => void) | null = null;
     try { cancelConsent = streamConvConsent(() => { void resolve(); }); } catch { }
     return () => { cancelled = true; cancelConsent?.(); };
   }, [convId]);
-  return consentAllowed;
+  const markAllowed = useCallback(() => { setConsent('allowed'); }, []);
+  return { consent, markAllowed };
 }
 
 function cachedLabels(cid?: string): string[] {

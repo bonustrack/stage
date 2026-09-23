@@ -1,5 +1,5 @@
 
-import { Linking } from 'react-native';
+import { capabilities } from '../../../lib/capabilities';
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Image } from '@stage-labs/kit/react-native/image';
@@ -47,7 +47,7 @@ export function NftsView({
       {nfts.map(nft => (
         <Box width={'50%'} key={`${nft.chainId}:${nft.id}`}>
           <Pressable
-            onPress={() => { if (nft.openseaUrl) void Linking.openURL(nft.openseaUrl); }}
+            onPress={() => { if (nft.openseaUrl) capabilities.openUrl(nft.openseaUrl); }}
             style={({ pressed }) => ({ padding: 6, opacity: pressed ? 0.7 : 1 })}
 >
             {nft.image ? (

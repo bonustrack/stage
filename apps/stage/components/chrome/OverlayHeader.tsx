@@ -1,10 +1,7 @@
 
 import type { ReactNode } from 'react';
-import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
-import { Icon } from '@stage-labs/kit/react-native/icon';
-import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
-import { resolveColorToken } from '@stage-labs/kit/tokens';
-import { Box, Row, pinnedTop } from '../layout';
+import { Row, pinnedTop } from '../layout';
+import { BackButton } from './ScreenHeader';
 
 export function OverlayHeader({ onBack, backColor, safeTop, trailing }: {
   onBack: () => void;
@@ -12,7 +9,6 @@ export function OverlayHeader({ onBack, backColor, safeTop, trailing }: {
   safeTop: number;
   trailing?: ReactNode;
 }): React.ReactElement {
-  const scheme = useKitScheme();
   return (
       <Row
         align="center"
@@ -21,16 +17,7 @@ export function OverlayHeader({ onBack, backColor, safeTop, trailing }: {
         padding={{ x: 14, top: safeTop }}
         style={pinnedTop(2)}
       >
-        <GesturePressable onPress={onBack} hitSlop={10}>
-          <Box padding={6}>
-            <Icon
-              name="arrowNarrowLeft"
-              size={24}
-              color={resolveColorToken(backColor, scheme)}
-              dark={scheme === 'dark'}
-            />
-          </Box>
-        </GesturePressable>
+        <BackButton onBack={onBack} backColor={backColor} hitSlop={10} padding={6} />
         {trailing}
       </Row>
   );

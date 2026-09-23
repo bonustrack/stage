@@ -1,6 +1,6 @@
 
 import type { DimensionValue, ViewStyle, TextStyle } from 'react-native';
-import { FONT_SIZE, schemePalette } from './tokens';
+import { FONT_SIZE, fontName, schemePalette } from './tokens';
 
 export function fieldIds(name: string | undefined): {
   nativeID?: string;
@@ -26,7 +26,7 @@ export function triggerRowStyle(block?: boolean, disabled?: boolean): ViewStyle 
 }
 
 export function triggerLabelStyle(color: string, fontSize: number): TextStyle {
-  return { flex: 1, color, fontSize, fontFamily: 'Calibre-Medium' };
+  return { flex: 1, color, fontSize, fontFamily: fontName.sans };
 }
 
 export type ControlSize = '3xs' | '2xs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
@@ -95,7 +95,7 @@ export function controlTextStyle(size: ControlSize, colors: ControlColors): Text
   return {
     color: colors.text,
     fontSize: CONTROL_SIZES[size].fontSize,
-    fontFamily: 'Calibre-Medium',
+    fontFamily: fontName.sans,
     padding: 0,
     margin: 0,
   };
@@ -166,7 +166,7 @@ export function textFieldSpec(input: TextFieldStyleInput): ResolvedTextFieldSpec
     borderColor: border.color,
     color: input.color ?? c.text,
     fontSize: input.fontSize ?? size.fontSize,
-    fontFamily: input.fontFamily ?? 'Calibre-Medium',
+    fontFamily: input.fontFamily ?? fontName.sans,
     placeholder: c.placeholder,
   };
 }

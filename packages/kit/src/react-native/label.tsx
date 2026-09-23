@@ -1,23 +1,14 @@
 
 import { Text as RNText, type TextStyle } from 'react-native';
 import { type ReactNode } from 'react';
+import { TEXT_ALIGN_MAP, TEXT_FONTS } from '../text.styles';
+import { FONT_SIZE } from '../tokens';
 
 export type LabelSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 export type LabelWeight = 'normal' | 'medium' | 'semibold' | 'bold';
 export type LabelAlign = 'start' | 'center' | 'end';
 
-const SIZE: Record<LabelSize, number> = { xs: 12, sm: 13, md: 15, lg: 17, xl: 20 };
-const FONT: Record<LabelWeight, string> = {
-  normal: 'Calibre-Medium',
-  medium: 'Calibre-Medium',
-  semibold: 'Calibre-Semibold',
-  bold: 'Calibre-Semibold',
-};
-const ALIGN: Record<LabelAlign, TextStyle['textAlign']> = {
-  start: 'left',
-  center: 'center',
-  end: 'right',
-};
+const SIZE: Record<LabelSize, number> = { xs: FONT_SIZE['2xs'], sm: FONT_SIZE.xs, md: FONT_SIZE.md, lg: FONT_SIZE.xl, xl: FONT_SIZE['4xl'] };
 
 export interface LabelProps {
   value?: string;
@@ -51,14 +42,14 @@ export function Label(props: LabelProps): React.ReactElement {
   const base: TextStyle = {
     color: color ?? headColor(dark),
     fontSize: SIZE[size],
-    fontFamily: FONT[weight],
-    textAlign: ALIGN[textAlign],
+    fontFamily: TEXT_FONTS[weight],
+    textAlign: TEXT_ALIGN_MAP[textAlign],
   };
 
   return (
     <RNText
       nativeID={fieldName ? `label-${fieldName}` : undefined}
-      style={style ? [base, ...(Array.isArray(style) ? style : [style])] : base}
+      style={style ? [base, style] : base}
     >
       {value ?? children}
     </RNText>

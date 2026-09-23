@@ -87,7 +87,8 @@ export function useConversationState(convId: string | undefined, focus: string |
   const [menuAnchor, setMenuAnchor] = useState<MenuAnchor>({ y: 0, height: 0 });
   const [overflowOpen, setOverflowOpen] = useState(false);
   const [overflowAnchor, setOverflowAnchor] = useState<MenuPoint | null>(null);
-  const consentAllowed = useConsentGate(convId);
+  const { consent, markAllowed: markConsentAllowed } = useConsentGate(convId);
+  const consentAllowed = consent === undefined ? undefined : consent === 'allowed';
   const groupLabels = useGroupLabels(convId, activeLine, isGroup);
 
   const senderEthOf = useCallback((from: string): string | null => {
@@ -139,6 +140,6 @@ export function useConversationState(convId: string | undefined, focus: string |
     reactions, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers,
     allBubbles, rowKeyOf, jumpToMessage,
     onReact, onSign, signingIds, onVote, onOpenAnswer, onPay, payingIds, onAnswer,
-    onOptimistic, onSent, markAtBottom, consentAllowed,
+    onOptimistic, onSent, markAtBottom, consent, consentAllowed, markConsentAllowed,
   };
 }

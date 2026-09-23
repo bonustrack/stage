@@ -1,4 +1,4 @@
-import { Pressable, Text as RNText, type ViewStyle } from 'react-native';
+import { Modal, Pressable, Text as RNText, type ViewStyle } from 'react-native';
 import { styleList, triggerLabelStyle, triggerRowStyle } from '../control.styles';
 import { FONT_SIZE } from '../tokens';
 import { Icon, type HeroIconName } from './icon';
@@ -18,6 +18,26 @@ export interface ControlTriggerProps {
   style?: ViewStyle | ViewStyle[];
   onOpen: () => void;
   onClear: () => void;
+}
+
+export function ControlSheet({ open, onClose, panelStyle, children }: {
+  open: boolean;
+  onClose: () => void;
+  panelStyle: ViewStyle;
+  children: React.ReactNode;
+}): React.ReactElement {
+  return (
+    <Modal visible={open} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable
+        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 24 }}
+        onPress={onClose}
+      >
+        <Pressable style={panelStyle} onPress={() => undefined}>
+          {children}
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
 }
 
 export function ControlTrigger(props: ControlTriggerProps): React.ReactElement {

@@ -59,8 +59,7 @@ export function TransferAccountSheet({ rec, dark, onClose }: {
   const payload = usePayload(rec, onClose);
   const copy = (): void => {
     if (payload === null) return;
-    void capabilities.copyToClipboard(payload);
-    capabilities.toast('Link code copied');
+    capabilities.copy('Link code', payload);
   };
   return (
     <AppModal visible={rec !== null} onClose={onClose}>

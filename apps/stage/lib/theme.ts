@@ -7,7 +7,7 @@ import {
   type ThemePreference,
 } from '@stage-labs/kit/theme';
 import {
-  semanticColors, semanticPalette,
+  semanticColors, kitPalette, type KitPalette,
 } from '@stage-labs/kit/tokens';
 import {
   getSeeds, loadOverrides, isCustomTheme,
@@ -76,11 +76,7 @@ export function useEffectiveColorScheme(): 'light' | 'dark' {
   return sys === 'dark' ? 'dark' : 'light';
 }
 
-export interface Palette {
-  bg: string; border: string; text: string; sub: string; link: string;
-  primary: string; danger: string; success: string;
-  inputBg: string; toolbarBg: string;
-}
+export type Palette = KitPalette;
 
 
 export function withAlpha(color: string, alpha: number): string {
@@ -106,20 +102,7 @@ export function usePalette(): Palette {
   const custom = useCustomTheme();
   const seeds = useThemeSeeds();
   return useMemo(() => {
-    if (custom) {
-      const d = derivePalette(seeds[scheme], scheme);
-      return {
-        bg: d.bg, border: d.border, text: d.text, sub: d.sub, link: d.link,
-        primary: d.primary, danger: d.danger, success: d.success,
-        inputBg: d.inputBg, toolbarBg: d.toolbarBg,
-      };
-    }
-    const s = semanticPalette(scheme);
-    return {
-      bg: s.bgColor, border: s.borderColor, text: s.textColor, sub: s.subColor,
-      link: s.linkColor, primary: s.primaryColor,
-      danger: s.dangerColor, success: s.successColor,
-      inputBg: s.inputBgColor, toolbarBg: s.toolbarBgColor,
-    };
+    if (custom) return { ...derivePalette(seeds[scheme], scheme) };
+    return kitPalette(scheme);
   }, [scheme, custom, seeds]);
 }

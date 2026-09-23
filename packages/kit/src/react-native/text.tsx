@@ -68,11 +68,6 @@ function buildBaseStyle(
   return base;
 }
 
-function mergeStyle(base: TextStyle, style: TextStyle | TextStyle[] | undefined): TextStyle | TextStyle[] {
-  if (!style) return base;
-  return [base, ...(Array.isArray(style) ? style : [style])];
-}
-
 export function Text(props: TextProps): React.ReactElement {
   const {
     value,
@@ -100,7 +95,7 @@ export function Text(props: TextProps): React.ReactElement {
   const content = children ?? value;
 
   return (
-    <RNText style={mergeStyle(base, style)} numberOfLines={clamp} {...rest}>
+    <RNText style={style ? [base, style] : base} numberOfLines={clamp} {...rest}>
       {content}
     </RNText>
   );

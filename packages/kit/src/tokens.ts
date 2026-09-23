@@ -66,6 +66,35 @@ export function semanticPalette(scheme: 'light' | 'dark'): {
   };
 }
 
+export interface KitPalette {
+  bg: string;
+  border: string;
+  text: string;
+  sub: string;
+  link: string;
+  primary: string;
+  danger: string;
+  success: string;
+  inputBg: string;
+  toolbarBg: string;
+}
+
+export function kitPalette(scheme: 'light' | 'dark'): KitPalette {
+  const s = semanticPalette(scheme);
+  return {
+    bg: s.bgColor,
+    border: s.borderColor,
+    text: s.textColor,
+    sub: s.subColor,
+    link: s.linkColor,
+    primary: s.primaryColor,
+    danger: s.dangerColor,
+    success: s.successColor,
+    inputBg: s.inputBgColor,
+    toolbarBg: s.toolbarBgColor,
+  };
+}
+
 export type Scheme = 'light' | 'dark';
 
 export interface ThemeColor {

@@ -28,8 +28,6 @@ export interface ScreenHeaderProps {
   titleStyle?: ScreenHeaderTitleStyle;
   onBack: () => void;
   backColor: string;
-  backHitSlop?: number;
-  backPadding?: number;
   safeTop?: number;
   padTop?: number;
   padBottom?: number;
@@ -62,16 +60,16 @@ function HeaderTitle({ title, titleStyle }: {
   );
 }
 
-function BackButton({ onBack, backColor, backHitSlop, backPadding }: {
+export function BackButton({ onBack, backColor, hitSlop = 8, padding = 4 }: {
   onBack: () => void;
   backColor: string;
-  backHitSlop?: number;
-  backPadding?: number;
+  hitSlop?: number;
+  padding?: number;
 }): React.ReactElement {
   const scheme = useKitScheme();
   return (
-    <GesturePressable onPress={onBack} hitSlop={backHitSlop ?? 8}>
-      <Box padding={backPadding ?? 4}>
+    <GesturePressable onPress={onBack} hitSlop={hitSlop}>
+      <Box padding={padding}>
         <Icon
           name="arrowNarrowLeft"
           size={24}
@@ -111,12 +109,7 @@ export function ScreenHeader(props: ScreenHeaderProps): React.ReactElement {
           bottom: props.padBottom ?? 10,
         }}
       >
-        <BackButton
-          onBack={props.onBack}
-          backColor={props.backColor}
-          backHitSlop={props.backHitSlop}
-          backPadding={props.backPadding}
-        />
+        <BackButton onBack={props.onBack} backColor={props.backColor} />
         {titled === undefined ? null : (
           <HeaderTitle title={titled.title} titleStyle={titled.titleStyle} />
         )}

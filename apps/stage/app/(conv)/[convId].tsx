@@ -106,8 +106,6 @@ export default function XmtpConversation(): React.ReactElement {
   const closeSearch = useCallback(() => { setSearchOpen(false); setSearchQuery(''); }, []);
   const searchInputRef = useSearchKeyboardFocus(searchOpen);
 
-  const [requestPending, setRequestPending] = useState(false);
-  const onRequestPending = useCallback((pending: boolean) => { setRequestPending(pending); }, []);
   const [composerH, setComposerH] = useState(measuredFooterHeight);
 
   const insets = useSafeAreaInsets();
@@ -125,7 +123,6 @@ export default function XmtpConversation(): React.ReactElement {
   const footer = (
     <ConversationFooter
       c={c} convId={convId} dark={dark} rowBg={rowBg} insets={insets}
-      requestPending={requestPending} onRequestPending={onRequestPending}
 />
   );
 

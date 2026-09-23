@@ -1,5 +1,5 @@
 
-import { Linking } from 'react-native';
+import { capabilities } from '../../lib/capabilities';
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Box, Row, Col } from '../layout';
@@ -13,7 +13,7 @@ export function GitHubLinkRow({ head, sub, border, url, title, subtitle }: {
 }): React.ReactElement {
   return (
     <Pressable
-      onPress={() => { void Linking.openURL(url); }}
+      onPress={() => { capabilities.openUrl(url); }}
       style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
 >
       <Box radius="lg" surface="raised" padding={{ x: 14, y: 14 }} margin={{ x: 16, top: 16 }}

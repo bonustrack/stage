@@ -1,6 +1,4 @@
 
-import type { ReactElement, ReactNode } from 'react';
-import { Card } from '@stage-labs/kit/react-native/card';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
@@ -13,8 +11,8 @@ import {
   type WalletModuleRole,
   type WalletPasskeyAction,
 } from './WalletSettings.model';
-import { Box, Col, Row } from '../layout';
-import { usePalette } from '../../lib/theme';
+import { Col, Row } from '../layout';
+import { SettingsCard, SettingsSectionLabel } from './SettingsPage';
 import type { useWalletModel } from './WalletSettings.parts';
 import { type PasskeyAction } from '../../lib/passkey';
 import { SettingsList } from './rows';
@@ -22,27 +20,6 @@ import { AppIcon } from '../widgets';
 import { Badge } from '@stage-labs/kit/react-native/badge';
 
 type WalletModel = NonNullable<ReturnType<typeof useWalletModel>['model']>;
-
-export type CardFn = (children: ReactNode) => ReactElement;
-
-export function makeCard(dark: boolean, rowBg: string, blockRadius: number): CardFn {
-  return (children) => (
-    <Box margin={{ x: 16 }} radius={blockRadius} style={{ overflow: 'hidden' }}>
-      <Card dark={dark} background={rowBg} padding={0}>
-        {children}
-      </Card>
-    </Box>
-  );
-}
-
-export function SectionLabel({ children }: { children: string }): React.ReactElement {
-  const { text: fg } = usePalette();
-  return (
-    <Text size="xs" color={fg} style={{ paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8 }}>
-      {children}
-    </Text>
-  );
-}
 
 export function WalletInfoRow({ label, value }: {
   label: string;
@@ -139,10 +116,9 @@ function WalletManageList({ passkey, removePasskey, guardianCount, onAction }: {
   );
 }
 
-export function SmartAccountSections({ model, deploy, card, passkey, removePasskey, onCopy, onRecovery }: {
+export function SmartAccountSections({ model, deploy, passkey, removePasskey, onCopy, onRecovery }: {
   model: WalletModel;
   deploy: WalletDeployState;
-  card: CardFn;
   passkey: PasskeyAction;
   removePasskey: PasskeyAction;
   onCopy: (label: string, value: string) => void;
@@ -155,24 +131,24 @@ export function SmartAccountSections({ model, deploy, card, passkey, removePassk
   };
   return (
     <>
-      <SectionLabel>DEPLOY STATUS</SectionLabel>
-      {card(
+      <SettingsSectionLabel>DEPLOY STATUS</SettingsSectionLabel>
+      <SettingsCard>
         <SettingsList>
           <WalletDeployRow deploy={deploy} />
-        </SettingsList>,
-      )}
+        </SettingsList>
+      </SettingsCard>
 
-      <SectionLabel>MODULES / VALIDATORS</SectionLabel>
-      {card(
+      <SettingsSectionLabel>MODULES / VALIDATORS</SettingsSectionLabel>
+      <SettingsCard>
         <SettingsList>
           {model.modules.map((m) => (
             <WalletModuleRow key={m.name} name={m.name} role={m.role} status={m.status} />
           ))}
-        </SettingsList>,
-      )}
+        </SettingsList>
+      </SettingsCard>
 
-      <SectionLabel>IDENTITY</SectionLabel>
-      {card(
+      <SettingsSectionLabel>IDENTITY</SettingsSectionLabel>
+      <SettingsCard>
         <SettingsList>
           <WalletCopyRow
             label="XMTP identity"
@@ -188,27 +164,27 @@ export function SmartAccountSections({ model, deploy, card, passkey, removePassk
               }}
             />
           ) : null}
-        </SettingsList>,
-      )}
+        </SettingsList>
+      </SettingsCard>
 
-      <SectionLabel>NETWORK</SectionLabel>
-      {card(
+      <SettingsSectionLabel>NETWORK</SettingsSectionLabel>
+      <SettingsCard>
         <SettingsList>
           <WalletInfoRow label="Chain" value={`Base (${model.chainId})`} />
           <WalletInfoRow label="Kernel" value={`v${model.kernelVersion}`} />
           <WalletInfoRow label="EntryPoint" value={`v${model.entryPointVersion}`} />
-        </SettingsList>,
-      )}
+        </SettingsList>
+      </SettingsCard>
 
-      <SectionLabel>MANAGE</SectionLabel>
-      {card(
+      <SettingsSectionLabel>MANAGE</SettingsSectionLabel>
+      <SettingsCard>
         <WalletManageList
           passkey={passkey}
           removePasskey={removePasskey}
           guardianCount={model.guardianCount}
           onAction={onManage}
-        />,
-      )}
+        />
+      </SettingsCard>
     </>
   );
 }

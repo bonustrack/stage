@@ -1,7 +1,6 @@
 
 import { useState } from 'react';
 import {
-  Modal,
   Pressable,
   Text as RNText,
   View,
@@ -15,7 +14,7 @@ import {
 } from '../control.styles';
 import { CONTROL_RADIUS_DEFAULT, FONT_SIZE, fontName } from '../tokens';
 import { Icon } from './icon';
-import { ControlTrigger } from './control-trigger';
+import { ControlSheet, ControlTrigger } from './control-trigger';
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const MONTHS = [
@@ -152,31 +151,21 @@ function CalendarSheet(props: CalendarSheetProps): React.ReactElement {
   const month = view.getMonth();
   const cells = buildCells(year, month);
   return (
-    <Modal visible={open} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable
-        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 24 }}
-        onPress={onClose}
-      >
-        <Pressable
-          style={{ backgroundColor: colors.sheetBg, borderRadius: 16, padding: 16 }}
-          onPress={() => undefined}
-        >
-          <MonthHeader month={month} year={year} head={colors.head} onShift={onShift} />
-          <View style={{ flexDirection: 'row' }}>
-            {WEEKDAYS.map((w, i) => (
-              <View key={i} style={{ width: `${100 / 7}%`, alignItems: 'center', paddingVertical: 4 }}>
-                <RNText style={{ color: colors.sub, fontSize: FONT_SIZE['2xs'], fontFamily: fontName.sans }}>{w}</RNText>
-              </View>
-            ))}
+    <ControlSheet open={open} onClose={onClose} panelStyle={{ backgroundColor: colors.sheetBg, borderRadius: 16, padding: 16 }}>
+      <MonthHeader month={month} year={year} head={colors.head} onShift={onShift} />
+      <View style={{ flexDirection: 'row' }}>
+        {WEEKDAYS.map((w, i) => (
+          <View key={i} style={{ width: `${100 / 7}%`, alignItems: 'center', paddingVertical: 4 }}>
+            <RNText style={{ color: colors.sub, fontSize: FONT_SIZE['2xs'], fontFamily: fontName.sans }}>{w}</RNText>
           </View>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-            {cells.map((d, i) => (
-              <DayCell key={i} d={d} index={i} selDate={selDate} inRange={inRange} onPick={onPick} colors={colors} />
-            ))}
-          </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
+        ))}
+      </View>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+        {cells.map((d, i) => (
+          <DayCell key={i} d={d} index={i} selDate={selDate} inRange={inRange} onPick={onPick} colors={colors} />
+        ))}
+      </View>
+    </ControlSheet>
   );
 }
 

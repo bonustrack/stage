@@ -1,7 +1,6 @@
 
 import { useState } from 'react';
 import {
-  Modal,
   Pressable,
   ScrollView,
   Text as RNText,
@@ -16,7 +15,7 @@ import {
 } from '../control.styles';
 import { CONTROL_RADIUS_DEFAULT, FONT_SIZE, fontName, schemePalette } from '../tokens';
 import { Icon } from './icon';
-import { ControlTrigger } from './control-trigger';
+import { ControlSheet, ControlTrigger } from './control-trigger';
 
 export interface SelectOption {
   label: string;
@@ -86,28 +85,22 @@ function SelectSheet(props: {
 }): React.ReactElement {
   const { open, options, selected, sheetBg, head, rowBorder, placeholderColor, onPick, onClose } = props;
   return (
-    <Modal visible={open} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable
-        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 24 }}
-        onPress={onClose}
-      >
-        <Pressable
-          style={{ backgroundColor: sheetBg, borderRadius: 14, overflow: 'hidden', maxHeight: '70%' }}
-          onPress={() => undefined}
-        >
-          <ScrollView>
-            {options.map((opt) => (
-              <SelectRow key={opt.value} opt={opt} selected={selected} head={head} rowBorder={rowBorder} onPick={onPick} />
-            ))}
-            {options.length === 0 ? (
-              <View style={{ padding: 16 }}>
-                <RNText style={{ color: placeholderColor, fontFamily: fontName.sans }}>No options</RNText>
-              </View>
-            ) : null}
-          </ScrollView>
-        </Pressable>
-      </Pressable>
-    </Modal>
+    <ControlSheet
+      open={open}
+      onClose={onClose}
+      panelStyle={{ backgroundColor: sheetBg, borderRadius: 14, overflow: 'hidden', maxHeight: '70%' }}
+    >
+      <ScrollView>
+        {options.map((opt) => (
+          <SelectRow key={opt.value} opt={opt} selected={selected} head={head} rowBorder={rowBorder} onPick={onPick} />
+        ))}
+        {options.length === 0 ? (
+          <View style={{ padding: 16 }}>
+            <RNText style={{ color: placeholderColor, fontFamily: fontName.sans }}>No options</RNText>
+          </View>
+        ) : null}
+      </ScrollView>
+    </ControlSheet>
   );
 }
 

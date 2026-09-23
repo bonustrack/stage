@@ -3,7 +3,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Box, Col, Row } from '../src/react-native/box';
 import { Text } from '../src/react-native/text';
 import { KitThemeProvider, type KitPalette } from '../src/react-native/theme-context';
-import { fontFamily, semanticPalette } from '../src/tokens';
+import { fontFamily, kitPalette } from '../src/tokens';
 import { ControlsPanel } from './Controls';
 import { Sidebar } from './Sidebar';
 import { argToText, coerceArgs, parseHash, serializeRoute, type ArgValue } from './route';
@@ -15,15 +15,7 @@ const SIDEBAR_WIDTH = 240;
 const CONTROLS_WIDTH = 300;
 const SCHEME_KEY = 'stage-kit-gallery.scheme';
 
-const PALETTES: Record<Scheme, KitPalette> = { light: paletteFor('light'), dark: paletteFor('dark') };
-
-function paletteFor(scheme: Scheme): KitPalette {
-  const s = semanticPalette(scheme);
-  return {
-    bg: s.bgColor, border: s.borderColor, text: s.textColor, sub: s.subColor, link: s.linkColor,
-    primary: s.primaryColor, danger: s.dangerColor, success: s.successColor, inputBg: s.inputBgColor, toolbarBg: s.toolbarBgColor,
-  };
-}
+const PALETTES: Record<Scheme, KitPalette> = { light: kitPalette('light'), dark: kitPalette('dark') };
 
 function applyDocumentScheme(scheme: Scheme, palette: KitPalette): void {
   document.documentElement.style.colorScheme = scheme;

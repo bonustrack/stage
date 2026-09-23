@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useSafeAreaInsets } from '../../lib/safeArea';
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Box, Col, ScreenScroll } from '../layout';
+import { Box, Col } from '../layout';
 import { useEffectiveColorScheme } from '../../lib/theme';
 
 import { capabilities } from '../../lib/capabilities';
@@ -11,7 +10,7 @@ import { getPeerAvatar, getPeerHandle, getPeerName, getPeerProfileSource, invali
 import { displayHandle } from '@stage-labs/client/identity/stageNames';
 import { shortAddress, useActiveAccountRecord } from '../../modules/messaging';
 import { Avatar } from '../Avatar';
-import { SettingsHeader } from '../chrome/SettingsHeader';
+import { SettingsPage } from './SettingsPage';
 import { profileView, type ProfileView } from './ProfileSettings.model';
 import { ClaimStageName } from './ProfileSettings.claim';
 import { EditProfileSection, type ProfilePicture } from './ProfileSettings.edit';
@@ -31,8 +30,7 @@ function CopyableAddress({ address }: { address: string }): React.ReactElement {
     return () => { clearTimeout(timer); };
   }, [copied]);
   const copy = (): void => {
-    void capabilities.copyToClipboard(address);
-    capabilities.toast('Address copied');
+    capabilities.copy('Address', address);
     setCopied(true);
   };
   return (
@@ -116,7 +114,6 @@ function EditPane({ address, handle, view, picture, pickNonce, onPick, onRemove,
 
 export function ProfileSettings(): React.ReactElement {
 
-  const insets = useSafeAreaInsets();
   const address = useActiveAccountRecord()?.address ?? null;
   usePeerProfiles([address]);
   const handle = getPeerHandle(address);
@@ -127,15 +124,12 @@ export function ProfileSettings(): React.ReactElement {
   const onSaved = (): void => { setPicture({ kind: 'keep' }); if (address) invalidatePeerProfile(address); };
 
   return (
-    <Col surface="surface" flex={1}>
-      <SettingsHeader title="Profile"/>
-      <ScreenScroll contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
-        {address && view.claimVisible ? <ClaimPane address={address} /> : (
-          <EditPane address={address} handle={handle} view={view} picture={picture} pickNonce={pickNonce}
-            onPick={() => { setPickNonce(n => n + 1); }} onRemove={() => { setPicture({ kind: 'remove' }); }}
-            onFile={(file) => { setPicture({ kind: 'new', file }); }} onSaved={onSaved} />
-        )}
-      </ScreenScroll>
-    </Col>
+    <SettingsPage title="Profile">
+      {address && view.claimVisible ? <ClaimPane address={address} /> : (
+        <EditPane address={address} handle={handle} view={view} picture={picture} pickNonce={pickNonce}
+          onPick={() => { setPickNonce(n => n + 1); }} onRemove={() => { setPicture({ kind: 'remove' }); }}
+          onFile={(file) => { setPicture({ kind: 'new', file }); }} onSaved={onSaved} />
+      )}
+    </SettingsPage>
   );
 }

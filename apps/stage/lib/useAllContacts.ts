@@ -16,13 +16,23 @@ export interface Contact {
 
 const NO_ADDRESSES: string[] = [];
 
-function seedAddresses(): string[] {
+export function peerAddressesOf(rows: ReturnType<typeof getCachedRows>): string[] {
   const out = new Set<string>();
-  for (const r of getCachedRows() ?? []) {
+  for (const r of rows ?? []) {
     const peer = typeof r.peerAddress === 'string' ? r.peerAddress : null;
     if (peer) out.add(peer.toLowerCase());
   }
   return [...out];
+}
+
+export function toSortedContacts(addresses: string[]): Contact[] {
+  return addresses
+    .map(address => ({ address, name: getPeerName(address) ?? shortAddress(address) }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function seedAddresses(): string[] {
+  return peerAddressesOf(getCachedRows());
 }
 
 async function collectAddresses(): Promise<string[]> {
@@ -56,11 +66,7 @@ export function useAllContacts(): { contacts: Contact[] } {
 
   const version = usePeerProfiles(addresses);
 
-  const contacts = useMemo(() => {
-    return addresses
-      .map(address => ({ address, name: getPeerName(address) ?? shortAddress(address) }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [addresses, version]);
+  const contacts = useMemo(() => toSortedContacts(addresses), [addresses, version]);
 
   return { contacts };
 }

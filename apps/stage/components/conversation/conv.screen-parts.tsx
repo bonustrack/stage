@@ -6,13 +6,13 @@ import type { Input } from '@stage-labs/kit/react-native/input';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import type { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
-import { getPeerName } from '../../lib/peerProfiles';
+import { convTitle } from './convTitle';
 import { MessengerComposer } from '../composer/MessengerComposer';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { ChannelMenu } from '../ChannelMenu';
 import { menuPointOf } from '../AnchoredMenu';
 import { isPinned } from '../../lib/pins';
-import { shortAddress, getCachedRows } from '../../modules/messaging';
+import { getCachedRows } from '../../modules/messaging';
 import { capabilities } from '../../lib/capabilities';
 import { BubbleActionMenu, ConvTopnavIdentity, ConvTopnavShell } from '../xmtp-conv/parts';
 import { previewOf } from '../xmtp-conv/feed-helpers';
@@ -26,11 +26,6 @@ import { shareUrlFor } from '@stage-labs/client/routing/handles';
 type Conv = ReturnType<typeof useConversationState>;
 type Router = ReturnType<typeof useRouter>;
 
-function topnavTitle(c: Conv): string {
-  if (c.isGroup) return c.groupName === null ? '' : (c.groupName || 'Untitled group');
-  return c.peerAddr ? (getPeerName(c.peerAddr) ?? shortAddress(c.peerAddr)) : '';
-}
-
 export function ConversationTopnav({ c, convId, fg, head, border, insets, router }: {
   c: Conv; convId: string; fg: string; head: string; border: string; insets: EdgeInsets; router: Router;
 }): React.ReactElement {
@@ -39,7 +34,7 @@ export function ConversationTopnav({ c, convId, fg, head, border, insets, router
     <ConvTopnavShell fg={fg} border={border} safeTop={insets.top} onBack={() => { router.replace('/'); }}>
       <ConvTopnavIdentity
         peerAddr={peerAddr} groupImage={groupImage} channelId={convId} isGroup={isGroup}
-        border={border} head={head} title={topnavTitle(c)}
+        border={border} head={head} title={convTitle(c)}
         onPress={() => {
           if (isGroup) router.push({ pathname: '/group/[convId]', params: { convId } });
           else if (peerAddr) router.push(profileLinkOf(peerAddr));
@@ -56,14 +51,14 @@ export function ConversationTopnav({ c, convId, fg, head, border, insets, router
   );
 }
 
-export function ConversationFooter({ c, convId, dark, rowBg, insets, requestPending, onRequestPending }: {
+export function ConversationFooter({ c, convId, dark, rowBg, insets }: {
   c: Conv; convId: string; dark: boolean; rowBg: string; insets: EdgeInsets;
-  requestPending: boolean; onRequestPending: (pending: boolean) => void;
 }): React.ReactElement {
   const {
     showJump, setShowJump, scrollToNewest, markAtBottom, activeLine, mentionCandidates,
-    replyingTo, setReplyingTo, autoFocusNonce, jumpToMessage, onOptimistic, onSent,
+    replyingTo, setReplyingTo, autoFocusNonce, jumpToMessage, onOptimistic, onSent, consent, markConsentAllowed,
   } = c;
+  const requestPending = consent === 'unknown';
   return (
     <KeyboardStickyView offset={{ opened: insets.bottom }}>
       <Box>
@@ -80,7 +75,7 @@ export function ConversationFooter({ c, convId, dark, rowBg, insets, requestPend
             <Icon name="arrowDown" size={18} color="#ffffff"/>
           </Pressable>
         ) : null}
-        <RequestActionBar convId={convId} dark={dark} onPending={onRequestPending}/>
+        {requestPending ? <RequestActionBar convId={convId} dark={dark} onAccepted={markConsentAllowed}/> : null}
         {!requestPending ? (
           <MessengerComposer
             dark={dark}

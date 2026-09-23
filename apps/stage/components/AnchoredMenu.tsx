@@ -53,6 +53,24 @@ export function menuPointBelow(event: GestureResponderEvent): MenuPoint {
   return rect === undefined ? menuPointOf(event) : { x: rect.left, y: rect.bottom + MENU_GAP };
 }
 
+export function AnchoredOverlay({ open, onClose, children }: {
+  open: boolean;
+  onClose: () => void;
+  children: ReactNode;
+}): React.ReactElement {
+  return (
+    <Dialog open={open} onClose={onClose} animationType="none" backdropColor="transparent" fullBleedPanel>
+      <Pressable
+        onPress={onClose}
+        style={StyleSheet.absoluteFillObject}
+        {...dismissContextMenuProps(onClose)}
+      >
+        {children}
+      </Pressable>
+    </Dialog>
+  );
+}
+
 export function AnchoredMenu({ visible, onClose, anchor, children }: {
   visible: boolean;
   onClose: () => void;
@@ -72,25 +90,13 @@ export function AnchoredMenu({ visible, onClose, anchor, children }: {
 
   const { maxHeight, ...position } = anchoredMenuStyle(anchor, viewport);
   return (
-    <Dialog
-      open={visible}
-      onClose={onClose}
-      animationType="none"
-      backdropColor="transparent"
-      fullBleedPanel
-    >
+    <AnchoredOverlay open={visible} onClose={onClose}>
       <Pressable
-        onPress={onClose}
-        style={StyleSheet.absoluteFillObject}
-        {...dismissContextMenuProps(onClose)}
+        onPress={(e) => { e.stopPropagation(); }}
+        style={{ position: 'absolute', ...position }}
       >
-        <Pressable
-          onPress={(e) => { e.stopPropagation(); }}
-          style={{ position: 'absolute', ...position }}
-        >
-          <MenuSurface maxHeight={maxHeight}>{children}</MenuSurface>
-        </Pressable>
+        <MenuSurface maxHeight={maxHeight}>{children}</MenuSurface>
       </Pressable>
-    </Dialog>
+    </AnchoredOverlay>
   );
 }

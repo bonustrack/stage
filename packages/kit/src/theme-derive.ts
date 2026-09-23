@@ -1,6 +1,6 @@
 
 export type { Scheme } from './tokens';
-import type { Scheme } from './tokens';
+import { kitPalette, type KitPalette, type Scheme } from './tokens';
 import { hexToHsl, hslToHex } from './color-math';
 
 export type AccentLevel = 0 | 1 | 2 | 3;
@@ -29,11 +29,7 @@ export interface ThemeSeed {
   surface: SurfaceColors;
 }
 
-export interface DerivedPalette {
-  bg: string; border: string; text: string; sub: string; link: string;
-  primary: string; danger: string; success: string;
-  inputBg: string; toolbarBg: string;
-}
+export type DerivedPalette = KitPalette;
 
 export const DANGER_FIXED = '#eb4c5b';
 export const SUCCESS_FIXED = '#57b375';
@@ -116,18 +112,7 @@ const SUB_RATIO: Record<Scheme, number> = {
   light: 0.5,
 };
 
-const LEGACY: Record<Scheme, DerivedPalette> = {
-  dark: {
-    bg: '#0e0f10', border: '#282a2d', text: '#9f9fa3', sub: '#7a7a7e',
-    link: '#ffffff', primary: '#ffffff', danger: DANGER_FIXED, success: SUCCESS_FIXED,
-    inputBg: '#1c1d1f', toolbarBg: '#0e0f10',
-  },
-  light: {
-    bg: '#ffffff', border: '#e4e4e5', text: '#57606a', sub: '#8a929d',
-    link: '#000000', primary: '#000000', danger: DANGER_FIXED, success: SUCCESS_FIXED,
-    inputBg: '#f2f2f3', toolbarBg: '#ffffff',
-  },
-};
+const LEGACY: Record<Scheme, DerivedPalette> = { dark: kitPalette('dark'), light: kitPalette('light') };
 
 function grayscaleEquals(a: GrayscaleOptions, b: GrayscaleOptions): boolean {
   return a.hue === b.hue && a.tint === b.tint && (a.shade ?? 0) === (b.shade ?? 0);

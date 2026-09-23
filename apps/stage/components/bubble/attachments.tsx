@@ -1,7 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 
-import { Linking } from 'react-native';
+import { capabilities } from '../../lib/capabilities';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
@@ -32,7 +32,7 @@ export function AttachmentView({ att, fullUrl, fg }: {
   if (att.kind === 'audio' || att.mime?.startsWith('audio/')) {
     return <VoiceMessage uri={fullUrl} />;
   }
-  return <AttachmentChip label={att.name ?? `${att.kind} attachment`} fg={fg} onPress={() => void Linking.openURL(fullUrl)} />;
+  return <AttachmentChip label={att.name ?? `${att.kind} attachment`} fg={fg} onPress={() => { capabilities.openUrl(fullUrl); }} />;
 }
 
 function AttachmentChip({ label, fg, onPress }: { label: string; fg: string; onPress: () => void }): React.ReactElement {

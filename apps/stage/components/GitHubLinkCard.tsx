@@ -1,14 +1,11 @@
 
-import { Linking } from 'react-native';
-
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Row } from './layout';
 import { GithubLogo } from './GithubLogo';
 import { githubLinkOf } from '@stage-labs/client/api/github';
 import { useGithubMeta } from '../lib/useGithubMeta';
 import { DANGER, SUCCESS, usePalette } from '../lib/theme';
-import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
+import { OutlinedLinkCard } from './LinkPreviewCard';
 
 const DOT: Record<string, string> = {
   open: SUCCESS, merged: '#a371f7', closed: DANGER,
@@ -63,24 +60,22 @@ export function GitHubLinkCard({ url }: { url: string }): React.ReactElement | n
   const numLabel = meta.number != null ? `#${meta.number}` : null;
 
   return (
-    <Pressable onPress={() => void Linking.openURL(url)}>
-      <Box background={'transparent'} padding={{ x: 12, y: 10 }} radius={BLOCK_RADIUS_DEFAULT} style={{ borderWidth: 1, borderColor: pal.border }}>
-        <Row margin={{ bottom: 4 }} align="center" justify="start">
-          <GithubLogo size={16} color={pal.link}/>
-          <Text size="3xs" color={subColor} style={{ marginLeft: 6 }}>
-            {meta.repo}{numLabel ? ` · ${numLabel}` : ''}
-          </Text>
-        </Row>
-        <Text weight="semibold" size="4xl" numberOfLines={2}>
-          {meta.title}
+    <OutlinedLinkCard url={url} padding={{ x: 12, y: 10 }}>
+      <Row margin={{ bottom: 4 }} align="center" justify="start">
+        <GithubLogo size={16} color={pal.link}/>
+        <Text size="3xs" color={subColor} style={{ marginLeft: 6 }}>
+          {meta.repo}{numLabel ? ` · ${numLabel}` : ''}
         </Text>
-        {meta.description ? (
-          <Text size="md" color={subColor} style={{ lineHeight: 21, marginTop: 3 }} numberOfLines={2}>
-            {meta.description}
-          </Text>
-        ) : null}
-        <GithubFooter meta={meta} subColor={subColor} />
-      </Box>
-    </Pressable>
+      </Row>
+      <Text weight="semibold" size="4xl" numberOfLines={2}>
+        {meta.title}
+      </Text>
+      {meta.description ? (
+        <Text size="md" color={subColor} style={{ lineHeight: 21, marginTop: 3 }} numberOfLines={2}>
+          {meta.description}
+        </Text>
+      ) : null}
+      <GithubFooter meta={meta} subColor={subColor} />
+    </OutlinedLinkCard>
   );
 }

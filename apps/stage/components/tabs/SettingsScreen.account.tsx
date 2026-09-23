@@ -2,7 +2,6 @@
 import { useState } from 'react';
 
 import { Alert } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Card } from '@stage-labs/kit/react-native/card';
@@ -16,6 +15,7 @@ import { transferKindFor } from '../../lib/accountTransfer';
 import { TransferAccountSheet } from '../accounts/TransferAccountSheet';
 import { SettingsButtonRow, SettingsList, SettingsNavRow } from '../settings/rows';
 import { RecoveryKeyRow } from '../settings/RecoveryKeyRow';
+import { SettingsSectionLabel } from '../settings/SettingsPage';
 import { PasskeyLinkRow, usePasskeyPlace } from '../settings/PasskeyLinkRow';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 
@@ -62,7 +62,7 @@ function RevealedKeyRow({ dark, revealed }: { dark: boolean; revealed: string })
     <ListViewItem
       dark={dark}
       align="start"
-      onPress={() => { void Clipboard.setStringAsync(revealed); capabilities.toast('Private key copied'); }}
+      onPress={() => { capabilities.copy('Private key', revealed); }}
       style={{ paddingHorizontal: 14, paddingVertical: 14 }}
     >
       <Icon name="wallet" size={24} color={link} />
@@ -108,7 +108,7 @@ function AccountRows({ rec, revealed, onExport, onMove }: {
 
 export function AccountSecuritySection(): React.ReactElement | null {
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text, border } = usePalette();
+  const { border } = usePalette();
   const rec = useActiveAccountRecord();
   const [key, setRevealed] = useState<RevealedKey | null>(null);
   const [moving, setMoving] = useState(false);
@@ -118,7 +118,7 @@ export function AccountSecuritySection(): React.ReactElement | null {
 
   return (
     <>
-      <Text size="xs" color={text} style={{ paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8 }}>ACCOUNT</Text>
+      <SettingsSectionLabel>ACCOUNT</SettingsSectionLabel>
       <Box margin={{ x: 16 }} style={{ overflow: 'hidden' }}>
         <Card dark={dark} background={border} padding={0}>
           {revealed && canExportPrivateKey(rec) ? (

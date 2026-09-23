@@ -79,8 +79,7 @@ export default function WalletReceive(): React.ReactElement {
 
   const onCopy = (): void => {
     if (!address) return;
-    void capabilities.copyToClipboard(address);
-    capabilities.toast('Address copied');
+    capabilities.copy('Address', address);
   };
 
   return (

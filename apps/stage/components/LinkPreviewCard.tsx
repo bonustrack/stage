@@ -1,5 +1,5 @@
 
-import { Linking } from 'react-native';
+import type { SpacingValue } from '@stage-labs/kit/layout';
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Image } from '@stage-labs/kit/react-native/image';
@@ -10,6 +10,7 @@ import { useLinkPreview, isX402, type LinkPreviewResult } from '../lib/useLinkPr
 import { X402Card } from './X402Card';
 import { usePalette } from '../lib/theme';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
+import { capabilities } from '../lib/capabilities';
 
 function LinkPreviewBody({ meta, url, subColor }: {
   meta: Exclude<LinkPreviewResult, { kind: 'x402' }>; url: string; subColor: string;
@@ -42,6 +43,19 @@ function LinkPreviewBody({ meta, url, subColor }: {
   );
 }
 
+export function OutlinedLinkCard({ url, padding, children }: {
+  url: string; padding?: SpacingValue; children: React.ReactNode;
+}): React.ReactElement {
+  const pal = usePalette();
+  return (
+    <Pressable onPress={() => { capabilities.openUrl(url); }}>
+      <Box background={'transparent'} padding={padding} radius={BLOCK_RADIUS_DEFAULT} style={{ borderWidth: 1, borderColor: pal.border, overflow: 'hidden' }}>
+        {children}
+      </Box>
+    </Pressable>
+  );
+}
+
 export function LinkPreviewCard({ url, dark }: {
   url: string; dark?: boolean;
 }): React.ReactElement | null {
@@ -51,10 +65,8 @@ export function LinkPreviewCard({ url, dark }: {
   if (isX402(meta)) return <X402Card challenge={meta} dark={dark} />;
 
   return (
-    <Pressable onPress={() => void Linking.openURL(url)}>
-      <Box background={'transparent'} radius={BLOCK_RADIUS_DEFAULT} style={{ borderWidth: 1, borderColor: pal.border, overflow: 'hidden' }}>
-        <LinkPreviewBody meta={meta} url={url} subColor={pal.text} />
-      </Box>
-    </Pressable>
+    <OutlinedLinkCard url={url}>
+      <LinkPreviewBody meta={meta} url={url} subColor={pal.text} />
+    </OutlinedLinkCard>
   );
 }

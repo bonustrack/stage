@@ -1,5 +1,5 @@
 
-import { Linking } from 'react-native';
+import { capabilities } from '../lib/capabilities';
 
 import { Image } from '@stage-labs/kit/react-native/image';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -12,7 +12,7 @@ export function YouTubeEmbed({ videoId }: { videoId: string }): React.ReactEleme
   const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
   const thumbUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
   return (
-    <MediaCard onPress={() => void Linking.openURL(watchUrl)}>
+    <MediaCard onPress={() => { capabilities.openUrl(watchUrl); }}>
       <Box aspectRatio={16 / 9} style={{ position: 'relative' }}>
         <Image
           src={thumbUrl}
@@ -41,7 +41,7 @@ export function LocationEmbed({ lat, lng, sourceUrl, dark }: {
   const label = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
   const tileBg = usePalette().border;
   return (
-    <MediaCard onPress={() => void Linking.openURL(sourceUrl)}>
+    <MediaCard onPress={() => { capabilities.openUrl(sourceUrl); }}>
       <Box aspectRatio={1} style={{ position: 'relative' }}>
         <Image
           src={tileUrl}

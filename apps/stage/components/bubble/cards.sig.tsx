@@ -124,18 +124,30 @@ export function SigRequestCard({ req, dark, signing, onSign, consentAllowed }: {
   );
 }
 
+export function ReceiptBox({ dark, title, children }: {
+  dark: boolean; title: string; children: React.ReactNode;
+}): React.ReactElement {
+  return (
+    <Box radius={BLOCK_RADIUS_DEFAULT} background={dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)'} padding={12} margin={{ top: 8 }} gap={6} style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)' }}>
+      <Row align="center" gap={8}>
+        <Icon name="check" size={18} color={dark ? '#7fd07f' : '#2f9e44'}/>
+        <Text weight="semibold" size="md" color={dark ? '#ffffff' : '#000000'}>
+          {title}
+        </Text>
+      </Row>
+      {children}
+    </Box>
+  );
+}
+
 export function SigReferenceCard({ ref, dark }: {
   ref: SigReference; dark: boolean;
 }): React.ReactElement {
   const short = (h?: string): string => (h && h.length > 14 ? `${h.slice(0, 8)}…${h.slice(-4)}` : (h ?? ''));
   return (
-    <Box radius={BLOCK_RADIUS_DEFAULT} background={dark ? 'rgba(120,200,120,0.08)' : 'rgba(60,160,60,0.06)'} padding={12} margin={{ top: 8 }} gap={6} style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)' }}>
-      <Row align="center" gap={8}>
-        <Icon name="check" size={18} color={dark ? '#7fd07f' : '#2f9e44'}/>
-        <Text weight="semibold" size="md" color={dark ? '#ffffff' : '#000000'}>Signed ✓</Text>
-      </Row>
+    <ReceiptBox dark={dark} title="Signed ✓">
       {ref.signer ? <Text size="xs" role="secondary">by {shortAddress(ref.signer)}</Text> : null}
       <Text size="xs" role="secondary">{short(ref.signature)}</Text>
-    </Box>
+    </ReceiptBox>
   );
 }

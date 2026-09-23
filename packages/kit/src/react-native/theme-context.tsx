@@ -1,39 +1,12 @@
 
 import { createContext, createElement, useContext, type ReactNode } from 'react';
-import { semanticPalette } from '../tokens';
+import { kitPalette, type KitPalette } from '../tokens';
 
-export interface KitPalette {
-  bg: string;
-  border: string;
-  text: string;
-  sub: string;
-  link: string;
-  primary: string;
-  danger: string;
-  success: string;
-  inputBg: string;
-  toolbarBg: string;
-}
+export type { KitPalette } from '../tokens';
 
 export interface KitThemeValue {
   palette: KitPalette;
   scheme: 'light' | 'dark';
-}
-
-function defaultPalette(scheme: 'light' | 'dark'): KitPalette {
-  const s = semanticPalette(scheme);
-  return {
-    bg: s.bgColor,
-    border: s.borderColor,
-    text: s.textColor,
-    sub: s.subColor,
-    link: s.linkColor,
-    primary: s.primaryColor,
-    danger: s.dangerColor,
-    success: s.successColor,
-    inputBg: s.inputBgColor,
-    toolbarBg: s.toolbarBgColor,
-  };
 }
 
 const KitThemeContext = createContext<KitThemeValue | null>(null);
@@ -51,7 +24,7 @@ export function KitThemeProvider({ value, scheme, children }: KitThemeProviderPr
 function useKitThemeValue(): KitThemeValue {
   const ctx = useContext(KitThemeContext);
   if (ctx) return ctx;
-  return { palette: defaultPalette('light'), scheme: 'light' };
+  return { palette: kitPalette('light'), scheme: 'light' };
 }
 
 export function useKitPalette(): KitPalette {

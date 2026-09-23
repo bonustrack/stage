@@ -4,7 +4,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Row } from '../layout';
 import { Avatar } from '../Avatar';
-import { getPeerName } from '../../lib/peerProfiles';
+import { convTitle } from '../conversation/convTitle';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
 import { shortAddress } from '../../modules/messaging';
 
@@ -38,7 +38,7 @@ export function ConversationIntro({
   onPressPeer: (address: string) => void;
 }): React.ReactElement | null {
   if (isGroup) {
-    const name = groupName === null ? '' : (groupName || 'Untitled group');
+    const name = convTitle({ isGroup, groupName, peerAddr });
     const desc = groupDescription.trim();
     return (
       <Box padding={{ x: 12, y: 24 }} align="start">
@@ -70,7 +70,7 @@ export function ConversationIntro({
     >
       <Avatar address={peerAddr} size="lg" style={{ backgroundColor: border }} />
       <Text weight="semibold" size="5xl" color={head} style={{ lineHeight: 30, marginTop: 12, flexShrink: 1 }}>
-        {getPeerName(peerAddr) ?? shortAddress(peerAddr)}
+        {convTitle({ isGroup, groupName, peerAddr })}
       </Text>
       <Text size="xs" role="secondary" style={{ marginTop: 2 }} numberOfLines={1}>
         {shortAddress(peerAddr)}

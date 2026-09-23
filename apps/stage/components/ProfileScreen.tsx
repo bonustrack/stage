@@ -21,11 +21,6 @@ import { CommonChannels } from './CommonChannels';
 import { ProfileHoldings } from './ProfileScreen.holdings';
 import { ProfileMenu } from './ProfileMenu';
 
-function copyAddress(address: string): void {
-  void capabilities.copyToClipboard(address);
-  capabilities.toast('Address copied');
-}
-
 function ProfileIdentity({ addr, isSelf, dark, c, insetTop, displayName, handle, about, onAvatar, onMessage, onSend }: {
   addr: string; isSelf: boolean; dark: boolean;
   c: Palette; insetTop: number;
@@ -54,7 +49,7 @@ function ProfileIdentity({ addr, isSelf, dark, c, insetTop, displayName, handle,
         </Box>
         {addr ? (
           <Box margin={{ top: 2 }}>
-            <GesturePressable hitSlop={8} onPress={() => { copyAddress(addr); }}>
+            <GesturePressable hitSlop={8} onPress={() => { capabilities.copy('Address', addr); }}>
               <Text value={shortAddress(addr)} size="md" color={c.text} />
             </GesturePressable>
           </Box>

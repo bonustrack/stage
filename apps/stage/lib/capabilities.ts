@@ -9,10 +9,15 @@ export interface Capabilities {
   back(): void;
   backTo(to: string): void;
   copyToClipboard(text: string): void | Promise<void>;
+  copy(label: string, value: string): void;
   toast(message: string): void;
   confirm(options: ConfirmOptions): Promise<boolean>;
   openUrl(url: string): void;
   share(payload: { text?: string; url?: string }): void | Promise<void>;
+}
+
+function toast(message: string): void {
+  if (Platform.OS === 'android') ToastAndroid.show(message, ToastAndroid.SHORT);
 }
 
 export const capabilities: Capabilities = {
@@ -20,7 +25,8 @@ export const capabilities: Capabilities = {
   back: () => { router.back(); },
   backTo: (to) => { router.dismissTo(to); },
   copyToClipboard: async (text) => { await Clipboard.setStringAsync(text); },
-  toast: (message) => { if (Platform.OS === 'android') ToastAndroid.show(message, ToastAndroid.SHORT); },
+  copy: (label, value) => { void Clipboard.setStringAsync(value); toast(`${label} copied`); },
+  toast,
   confirm: confirmDialog,
   openUrl: (url) => { void Linking.openURL(url); },
   share: async (payload) => {

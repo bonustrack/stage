@@ -65,10 +65,14 @@ export interface BoxBaseProps {
   border?: ResolvedBoxBorder;
 }
 
-const ALIGN: Record<Align, string> = {
+export const FLEX_ALIGN = {
   start: 'flex-start',
   center: 'center',
   end: 'flex-end',
+} as const;
+
+const ALIGN: Record<Align, string> = {
+  ...FLEX_ALIGN,
   stretch: 'stretch',
   baseline: 'baseline',
 };

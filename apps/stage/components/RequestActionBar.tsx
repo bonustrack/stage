@@ -1,56 +1,31 @@
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { useRouter } from 'expo-router';
-import {
-  getConvConsentState, acceptRequestConv, blockRequestConv, streamConvConsent, syncConsent,
-} from '../modules/messaging';
+import { acceptRequestConv, blockRequestConv, syncConsent } from '../modules/messaging';
 import { usePalette } from '../lib/theme';
 import { Box, Col, Row } from './layout';
 
 interface RequestActionBarProps {
   convId: string;
   dark: boolean;
-  onPending: (pending: boolean) => void;
+  onAccepted: () => void;
 }
 
-export function RequestActionBar(props: RequestActionBarProps): React.ReactElement | null {
-  const { convId, dark, onPending } = props;
+export function RequestActionBar(props: RequestActionBarProps): React.ReactElement {
+  const { convId, dark, onAccepted } = props;
   const router = useRouter();
   const { bg, border, text: fg, link, danger } = usePalette();
-  const [pending, setPending] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    const resolve = async (): Promise<void> => {
-      try {
-        const state = await getConvConsentState(convId);
-        if (cancelled) return;
-        if (state === 'unknown') { setPending(true); onPending(true); }
-        else { setPending(false); onPending(false); }
-      } catch {
-        if (!cancelled) { setPending(false); onPending(false); }
-      }
-    };
-    void resolve();
-    let cancelConsent: (() => void) | null = null;
-    try { cancelConsent = streamConvConsent(() => { void resolve(); }); }
-    catch { }
-    return (): void => {
-      cancelled = true;
-      if (cancelConsent) try { cancelConsent(); } catch { }
-    };
-  }, [convId, onPending]);
 
   const onApprove = useCallback((): void => {
     if (busy) return;
     setBusy(true);
     void acceptRequestConv(convId)
-      .then(() => { void syncConsent(); setPending(false); onPending(false); })
+      .then(() => { void syncConsent(); onAccepted(); })
       .catch(() => { setBusy(false); });
-  }, [busy, convId, onPending]);
+  }, [busy, convId, onAccepted]);
 
   const onReject = useCallback((): void => {
     if (busy) return;
@@ -62,8 +37,6 @@ export function RequestActionBar(props: RequestActionBarProps): React.ReactEleme
       })
       .catch(() => { setBusy(false); });
   }, [busy, convId, router]);
-
-  if (pending !== true) return null;
 
   return (
     <Box surface="toolbar" style={{ borderTopWidth: 1, borderTopColor: border }}>

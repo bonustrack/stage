@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 
-import { Dimensions, StyleSheet, useWindowDimensions } from 'react-native';
+import { Dimensions, useWindowDimensions } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Dialog } from '@stage-labs/kit/react-native/dialog';
 import { Scroll as ScrollView } from '@stage-labs/kit/react-native/scroll';
@@ -14,11 +14,10 @@ import { channelStampSeed } from '@stage-labs/kit/avatar';
 import { REACT_PRESETS } from '../bubble/helpers';
 import { usePalette } from '../../lib/theme';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { menuPlacement, MENU_GAP, MENU_STRIP_HEIGHT } from './menuPlacement';
-import { MENU_SHADOW, MENU_WIDTH, MenuSurface, useAnchoredMenus } from '../AnchoredMenu';
+import { menuPlacement, STRIP_GAP, MENU_STRIP_HEIGHT } from './menuPlacement';
+import { AnchoredOverlay, MENU_SHADOW, MENU_WIDTH, MenuSurface, useAnchoredMenus } from '../AnchoredMenu';
 import { MenuList, MenuRow } from '../MenuRows';
 import { anchoredMenuStyle, type MenuPoint } from '../AnchoredMenu.model';
-import { dismissContextMenuProps } from '../../lib/contextMenu';
 import type { MenuAnchor } from '../bubble/props';
 
 export function HeaderAvatar({ peerAddr, groupImage, channelId, isGroup, border }: {
@@ -139,28 +138,22 @@ function AnchoredBubbleMenu({ open, point, onClose, strip, dropdown }: {
   const viewport = useWindowDimensions();
   const placement = anchoredMenuStyle(point, viewport);
   return (
-    <Dialog open={open} onClose={onClose} animationType="none" backdropColor="transparent" fullBleedPanel>
-      <Pressable
-        onPress={onClose}
-        style={StyleSheet.absoluteFillObject}
-        {...dismissContextMenuProps(onClose)}
+    <AnchoredOverlay open={open} onClose={onClose}>
+      <Box
+        width={MENU_WIDTH}
+        align="start"
+        pointerEvents="box-none"
+        style={{
+          position: 'absolute',
+          top: placement.top, bottom: placement.bottom,
+          left: placement.left, right: placement.right,
+        }}
       >
-        <Box
-          width={MENU_WIDTH}
-          align="start"
-          pointerEvents="box-none"
-          style={{
-            position: 'absolute',
-            top: placement.top, bottom: placement.bottom,
-            left: placement.left, right: placement.right,
-          }}
-        >
-          {strip}
-          <Box height={MENU_GAP} pointerEvents="none"/>
-          {dropdown}
-        </Box>
-      </Pressable>
-    </Dialog>
+        {strip}
+        <Box height={STRIP_GAP} pointerEvents="none"/>
+        {dropdown}
+      </Box>
+    </AnchoredOverlay>
   );
 }
 
@@ -208,8 +201,8 @@ export function BubbleActionMenu({
       <Box
         align="start" pointerEvents="box-none"
         style={dropdownAbove
-          ? { position: 'absolute', left: 12, right: 12, bottom: windowHeight - stripTop + MENU_GAP }
-          : { position: 'absolute', left: 12, right: 12, top: stripTop + MENU_STRIP_HEIGHT + MENU_GAP }}
+          ? { position: 'absolute', left: 12, right: 12, bottom: windowHeight - stripTop + STRIP_GAP }
+          : { position: 'absolute', left: 12, right: 12, top: stripTop + MENU_STRIP_HEIGHT + STRIP_GAP }}
       >
         {dropdownAbove ? dropdown : null}
       </Box>
@@ -217,7 +210,7 @@ export function BubbleActionMenu({
         {strip}
         {dropdownAbove ? null : (
           <>
-            <Box height={MENU_GAP} pointerEvents="none"/>
+            <Box height={STRIP_GAP} pointerEvents="none"/>
             {dropdown}
           </>
         )}

@@ -1,4 +1,3 @@
-import * as Clipboard from 'expo-clipboard';
 import { channelsOverflowItems } from './model';
 import { OverflowMenu } from '../MenuRows';
 import { getActiveAccount } from '../../lib/accounts';
@@ -14,8 +13,7 @@ interface HomeOverflowMenuProps {
 function copyActiveAddress(): void {
   void getActiveAccount().then(acct => {
     if (!acct?.address) return;
-    void Clipboard.setStringAsync(acct.address);
-    capabilities.toast('Address copied');
+    capabilities.copy('Address', acct.address);
   });
 }
 

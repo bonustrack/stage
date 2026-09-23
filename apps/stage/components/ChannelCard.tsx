@@ -17,6 +17,15 @@ export function ChannelCard(
   return <ConvIdCard convId={convId} />;
 }
 
+function CardFrame({ children }: { children: React.ReactNode }): React.ReactElement {
+  const { border } = usePalette();
+  return (
+    <Box radius={BLOCK_RADIUS_DEFAULT} style={{ borderWidth: 1, borderColor: border, overflow: 'hidden' }}>
+      {children}
+    </Box>
+  );
+}
+
 function convTitle(meta: ReturnType<typeof useConvMeta>, convId: string): string {
   if (meta.isGroup) return meta.groupName == null || meta.groupName === '' ? 'Channel' : meta.groupName;
   const peerName = getPeerName(meta.peerAddr);
@@ -43,7 +52,6 @@ function convAvatar(
 function ConvIdCard({ convId }: { convId: string }): React.ReactElement {
   const meta = useConvMeta(convId);
   usePeerProfiles([meta.peerAddr]);
-  const { border } = usePalette();
 
   const title = convTitle(meta, convId);
   const subtitle = convSubtitle(meta);
@@ -54,7 +62,7 @@ function ConvIdCard({ convId }: { convId: string }): React.ReactElement {
   };
 
   return (
-    <Box radius={BLOCK_RADIUS_DEFAULT} style={{ borderWidth: 1, borderColor: border, overflow: 'hidden' }}>
+    <CardFrame>
       <ChannelRow
         title={title}
         subtitle={subtitle}
@@ -63,13 +71,12 @@ function ConvIdCard({ convId }: { convId: string }): React.ReactElement {
         square={meta.isGroup}
         onPress={open}
       />
-    </Box>
+    </CardFrame>
   );
 }
 
 function DmPeerCard({ address }: { address: string }): React.ReactElement {
   usePeerProfiles([address]);
-  const { border } = usePalette();
 
   const peerName = getPeerName(address);
   const title = peerName == null || peerName === '' ? shortAddress(address) : peerName;
@@ -80,13 +87,13 @@ function DmPeerCard({ address }: { address: string }): React.ReactElement {
   };
 
   return (
-    <Box radius={BLOCK_RADIUS_DEFAULT} style={{ borderWidth: 1, borderColor: border, overflow: 'hidden' }}>
+    <CardFrame>
       <ChannelRow
         title={title}
         subtitle="Direct message"
         avatarAddress={avatarAddress}
         onPress={open}
       />
-    </Box>
+    </CardFrame>
   );
 }

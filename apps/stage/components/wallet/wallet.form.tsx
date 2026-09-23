@@ -1,7 +1,5 @@
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Icon } from '@stage-labs/kit/react-native/icon';
-import { Box, Row, Col, ScreenScroll } from '../layout';
+import { Box, Row } from '../layout';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { usePalette } from '../../lib/theme';
@@ -11,22 +9,6 @@ export interface FormPal { fg: string; head: string; sub: string; border: string
 export function useFormPal(): FormPal {
   const { text, link, border, inputBg } = usePalette();
   return { fg: text, head: link, sub: text, border, inputBg, link };
-}
-
-function ActionHeader({ title, head, border, onBack }: {
-  title: string; head: string; border: string; onBack: () => void;
-}): React.ReactElement {
-  const insets = useSafeAreaInsets();
-  return (
-    <Row surface="toolbar" padding={{ x: 12, top: 8 + insets.top, bottom: 8 }} align="center" gap={8} style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-      <Pressable onPress={onBack} hitSlop={8} style={{ padding: 4 }}>
-        <Icon name="arrowNarrowLeft" size={24} color={head}/>
-      </Pressable>
-      <Text weight="semibold" size="xl" color={head} style={{ flex: 1 }} numberOfLines={1}>
-        {title}
-      </Text>
-    </Row>
-  );
 }
 
 export function Segmented<T extends string | number>({ label, value, options, onChange, dark }: {
@@ -66,22 +48,5 @@ export function WalletFooter({
         loading={!!submitLoading} disabled={!!submitDisabled}
         onPress={onSubmit} label={submitLabel}/>
     </Row>
-  );
-}
-
-export function ActionPage({ title, head, border, onBack, footer, children }: {
-  title: string; head: string; border: string; onBack: () => void;
-  footer?: React.ReactNode;
-  children: React.ReactNode;
-}): React.ReactElement {
-  return (
-    <Col surface="surface" flex={1}>
-      <ActionHeader title={title} head={head} border={border} onBack={onBack}/>
-      <ScreenScroll keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ padding: 16, gap: 16 }}>
-        {children}
-      </ScreenScroll>
-      {footer ?? null}
-    </Col>
   );
 }

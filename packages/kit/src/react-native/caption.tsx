@@ -1,24 +1,15 @@
 
 import { Text as RNText, type TextStyle } from 'react-native';
 import { type ReactNode } from 'react';
-import { resolveColorToken, type ColorToken } from '../tokens';
+import { FONT_SIZE, resolveColorToken, type ColorToken } from '../tokens';
+import { TEXT_ALIGN_MAP, TEXT_FONTS } from '../text.styles';
 import { useKitPalette, useKitScheme } from './theme-context';
 
 export type CaptionSize = 'sm' | 'md';
 export type CaptionWeight = 'normal' | 'medium' | 'semibold';
 export type CaptionAlign = 'start' | 'center' | 'end';
 
-const SIZE: Record<CaptionSize, number> = { sm: 12, md: 13 };
-const FONT: Record<CaptionWeight, string> = {
-  normal: 'Calibre-Medium',
-  medium: 'Calibre-Medium',
-  semibold: 'Calibre-Semibold',
-};
-const ALIGN: Record<CaptionAlign, TextStyle['textAlign']> = {
-  start: 'left',
-  center: 'center',
-  end: 'right',
-};
+const SIZE: Record<CaptionSize, number> = { sm: FONT_SIZE['2xs'], md: FONT_SIZE.xs };
 
 export interface CaptionProps {
   value?: string;
@@ -53,15 +44,15 @@ export function Caption(props: CaptionProps): React.ReactElement {
       ? resolveColorToken(color, scheme)
       : palette.sub,
     fontSize: SIZE[size],
-    fontFamily: FONT[weight],
-    textAlign: ALIGN[textAlign],
+    fontFamily: TEXT_FONTS[weight],
+    textAlign: TEXT_ALIGN_MAP[textAlign],
   };
 
   const lines = truncate ? 1 : maxLines;
 
   return (
     <RNText
-      style={style ? [base, ...(Array.isArray(style) ? style : [style])] : base}
+      style={style ? [base, style] : base}
       numberOfLines={lines}
     >
       {value ?? children}
