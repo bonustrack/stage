@@ -35,6 +35,15 @@ interface MemberPickerState {
   selectedAddresses: Set<string>;
 }
 
+async function lookupMember(raw: string): Promise<Member | string> {
+  const start = startRecipient(raw);
+  const found = start.kind === 'resolving'
+    ? settleRecipient(start, await resolveHandleToAddress(start.query.handle))
+    : start;
+  if (found.kind !== 'resolved') return recipientHint(found)?.text ?? RECIPIENT_HELP;
+  return { address: found.address, label: found.label ?? shortAddress(found.address) };
+}
+
 export function useMemberPicker(): MemberPickerState {
   const [entry, setEntry] = useState('');
   const [members, setMembers] = useState<Member[]>([]);
@@ -45,13 +54,9 @@ export function useMemberPicker(): MemberPickerState {
     if (!raw || adding) return;
     setAdding(true);
     try {
-      const start = startRecipient(raw);
-      const found = start.kind === 'resolving'
-        ? settleRecipient(start, await resolveHandleToAddress(start.query.handle))
-        : start;
-      if (found.kind !== 'resolved') { capabilities.toast(recipientHint(found)?.text ?? RECIPIENT_HELP); return; }
-      const { address } = found;
-      const label = found.label ?? shortAddress(address);
+      const member = await lookupMember(raw);
+      if (typeof member === 'string') { capabilities.toast(member); return; }
+      const { address, label } = member;
       const lower = address.toLowerCase();
       if (members.some(m => m.address.toLowerCase() === lower)) {
         capabilities.toast('Already added'); setEntry(''); return;

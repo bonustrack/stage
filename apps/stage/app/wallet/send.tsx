@@ -73,7 +73,7 @@ function submitLabelFor(txState: string, reviewing: boolean): string {
 function SendForm({ token, initialTo, selector, onCancel }: {
   token: TokenChoice; initialTo: string; selector: React.ReactNode; onCancel: () => void;
 }): React.ReactElement {
-  const { text: fg, border } = usePalette();
+  const { border } = usePalette();
   const dark = useEffectiveColorScheme() === 'dark';
   const [picking, setPicking] = useState(false);
   const [reviewing, setReviewing] = useState(false);
