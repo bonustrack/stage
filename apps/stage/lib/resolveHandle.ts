@@ -5,6 +5,7 @@ import { fetchIssuedAddress } from '@stage-labs/client/identity/stageNames';
 import { parseHandle, stageLabelOf, type ParsedHandle } from '@stage-labs/client/routing/handles';
 import { linkProxyBase } from './historyServer';
 import { getQueryClient } from './queryClient';
+import { recover } from './errorPolicy';
 
 function basenameAddress(name: string): Promise<string | null> {
   return resolveBasenameAddress(baseProfileClient(), name);
@@ -12,9 +13,9 @@ function basenameAddress(name: string): Promise<string | null> {
 
 async function resolveStageName(name: string): Promise<string | null> {
   const label = stageLabelOf(name);
-  const issued = label ? await fetchIssuedAddress(linkProxyBase(), label).catch(() => null) : null;
+  const issued = label ? await fetchIssuedAddress(linkProxyBase(), label).catch(recover('handle.issued', null)) : null;
   if (issued) return issued;
-  return basenameAddress(name).catch(() => null);
+  return basenameAddress(name).catch(recover('handle.basename', null));
 }
 
 function resolveParsed(parsed: ParsedHandle): Promise<string | null> {
@@ -30,7 +31,7 @@ function resolveParsed(parsed: ParsedHandle): Promise<string | null> {
 function handleQuery(parsed: ParsedHandle) {
   return {
     queryKey: ['handle', parsed.kind, parsed.value],
-    queryFn: () => resolveParsed(parsed).catch(() => null),
+    queryFn: () => resolveParsed(parsed).catch(recover('handle.resolve', null)),
     staleTime: (q: Query<string | null>) => (q.state.data === null ? 0 : Infinity),
     gcTime: Infinity,
   };

@@ -3,6 +3,7 @@ import type { StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import type { ReactionPayload } from '@stage-labs/client/xmtp/builders';
 import type { JsonCodec } from './xmtpJsonCodecs';
 import { convIdOfLine, type XmtpConsent } from './xmtp.types';
+import { recover } from './errorPolicy';
 
 export interface GroupMeta { name?: string; imageUrl?: string }
 
@@ -110,7 +111,7 @@ export function convFinder<Cl extends ClientLike, C extends ConvLike, M>(
     const convId = convIdOfLine(line);
     if (!convId) return null;
     const client = await sdk.client();
-    const conv = await sdk.findConv(client, convId).catch(() => null);
+    const conv = await sdk.findConv(client, convId).catch(recover('xmtp.findConv', null));
     return conv ?? null;
   };
 }

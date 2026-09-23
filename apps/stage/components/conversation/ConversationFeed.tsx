@@ -15,6 +15,7 @@ import { usePalette } from '../../lib/theme';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { TOPNAV_HEIGHT } from '../Topnav';
 import type { HistoryEntry } from '@stage-labs/client/types';
+import { attempt } from '../../lib/errorPolicy';
 
 const UPRIGHT = Platform.OS === 'web';
 const FEED_ESTIMATED_ROW = 80;
@@ -33,7 +34,7 @@ function handleFeedScroll(c: ConvState, convId: string, distance: number): void 
 
 function scrollFeedTo(c: ConvState, offset: number): void {
   const apply = (): void => {
-    try { c.listRef.current?.scrollToOffset({ offset, animated: false }); } catch { }
+    attempt(() => { c.listRef.current?.scrollToOffset({ offset, animated: false }); }, 'ui');
   };
   if (UPRIGHT) { apply(); return; }
   requestAnimationFrame(apply);

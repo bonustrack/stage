@@ -11,6 +11,7 @@ import { XmtpInstallationLimitError, clientFinalizer, withCreateTimeout } from '
 import type { XmtpEnv } from './xmtp.types';
 import { wipeXmtpStore } from './xmtp.dbkey';
 import { isInstallationLimit, isStoreLocked, isStoreCorruption } from '@stage-labs/client/xmtp/clientErrors';
+import { attempt } from './errorPolicy';
 
 export interface CreateOpts {
   env: XmtpEnv;
@@ -47,7 +48,7 @@ export async function openClientForAccount(
       open: () => withCreateTimeout(
         () => Client.create(signer, { ...opts, disableAutoRegister: true }),
         CREATE_TIMEOUT_MS, CREATE_TIMEOUT_MESSAGE,
-        (late) => { try { late.close(); } catch { } },
+        (late) => { attempt(() => { late.close(); }, 'cleanup'); },
       ),
       isRegistered: (client) => client.isRegistered(),
       register: (client) => whileRegistering(async () => { await client.register(); }),

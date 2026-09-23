@@ -3,6 +3,7 @@ import { appStorage } from '../platform/storage';
 import { getActiveAccount } from './accounts';
 import { notifyClearedChatsChanged } from './readSyncRegistry';
 import { makeListeners, useStoreValue } from './storeCore';
+import { reported } from './errorPolicy';
 
 const KEY_PREFIX = 'channels.cleared.';
 const EMPTY: ClearedChats = {};
@@ -23,11 +24,12 @@ function parseCleared(raw: string | null): ClearedChats {
 }
 
 async function loadForActiveAccount(): Promise<void> {
-  const rec = await getActiveAccount().catch(() => null);
+  const rec = await getActiveAccount();
   const id = rec?.id ?? null;
   if (id === accountId) return;
+  const raw = id === null ? null : await appStorage.get(KEY_PREFIX + id);
   accountId = id;
-  cleared = id === null ? EMPTY : parseCleared(await appStorage.get(KEY_PREFIX + id).catch(() => null));
+  cleared = parseCleared(raw);
   listeners.notify();
 }
 
@@ -39,12 +41,12 @@ export function ensureClearedChatsLoaded(): Promise<void> {
 function commit(next: ClearedChats): void {
   cleared = next;
   listeners.notify();
-  if (accountId !== null) void appStorage.set(KEY_PREFIX + accountId, JSON.stringify(next)).catch(() => undefined);
+  if (accountId !== null) void appStorage.set(KEY_PREFIX + accountId, JSON.stringify(next)).catch(reported('clearedChats.save'));
 }
 
 export function getClearedChats(): ClearedChats { return cleared; }
 
-function primeClearedChats(): void { void ensureClearedChatsLoaded(); }
+function primeClearedChats(): void { void ensureClearedChatsLoaded().catch(reported('clearedChats.load')); }
 
 export function useClearedChats(): ClearedChats {
   return useStoreValue(listeners.subscribe, getClearedChats, primeClearedChats);

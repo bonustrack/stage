@@ -13,6 +13,7 @@ import {
   ensureFeedQueryBridge, loadFeedFirstPage, loadFeedOlderPage,
 } from '../modules/messaging/feedQuery';
 import { type XmtpFeedStatus } from './xmtp.types';
+import { report, reported } from './errorPolicy';
 
 const EMPTY: HistoryEntry[] = [];
 
@@ -41,7 +42,7 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
     let cancelled = false;
     void getOrCreateXmtpClient('production')
       .then(c => { if (!cancelled) setInboxId(c.inboxId); })
-      .catch(() => undefined);
+      .catch(reported('feed.client'));
     setHasMore(true);
     setLoadingOlder(false);
     loadingOlderRef.current = false;
@@ -84,7 +85,7 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
       const more = await loadFeedOlderPage(ln, oldest);
       if (!more) { hasMoreRef.current = false; setHasMore(false); }
     } catch (err) {
-      if (process.env.NODE_ENV !== 'production') console.warn('loadFeedOlderPage failed', (err as Error).message);
+      report('feed.loadOlder', err);
       hasMoreRef.current = false;
       setHasMore(false);
     }

@@ -1,5 +1,6 @@
 
 import { useCallback, useSyncExternalStore } from 'react';
+import { report } from './errorPolicy';
 
 export function useStoreValue<T>(
   subscribe: (cb: () => void) => () => void,
@@ -21,7 +22,11 @@ export function makeListeners<T = void>(): {
   const listeners = new Set<(v: T) => void>();
   const notify = (v: T): void => {
     for (const cb of listeners) {
-      try { cb(v); } catch { }
+      try {
+        cb(v);
+      } catch (err) {
+        report('store.listener', err);
+      }
     }
   };
   const subscribe = (cb: (v: T) => void): (() => void) => {

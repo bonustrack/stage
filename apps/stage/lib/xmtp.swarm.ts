@@ -2,6 +2,7 @@ import { asFileUri } from './localAttachmentCache';
 import { File, Paths } from 'expo-file-system';
 import { stripMetadataBytes, isStrippableImage } from '@stage-labs/client/image/stripMetadata';
 import { SWARM_UPLOAD_MAX_BYTES, tooLargeError, uploadFormToSwarmy } from './swarmy';
+import { attempt } from './errorPolicy';
 
 export { swarmToHttp } from './swarmy';
 
@@ -23,7 +24,7 @@ export async function materializeFileUri(src: string): Promise<string> {
 function freshCacheFile(prefix: string, ext: string): File {
   const tmpName = `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   const dest = new File(Paths.cache, tmpName);
-  if (dest.exists) try { dest.delete(); } catch { }
+  if (dest.exists) attempt(() => { dest.delete(); }, 'cleanup');
   return dest;
 }
 

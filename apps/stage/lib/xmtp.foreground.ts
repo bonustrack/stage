@@ -4,6 +4,7 @@ import { markBackgroundDelivered } from './pushNotify';
 import { reclaimSharedDb, releaseSharedDb } from './xmtp.dbConnection';
 import { resyncActiveFeeds, syncInboxOnce } from './xmtp.resync';
 import type { StreamStatus } from './xmtp.types';
+import { attempt } from './errorPolicy';
 
 const PUSH_RESYNC_DELAY_MS = 300;
 const MIN_FORCED_SYNC_SPACING_MS = 4_000;
@@ -63,8 +64,9 @@ export const foregroundWatch = {
   detach(): void {
     if (pushResyncTimer) { clearTimeout(pushResyncTimer); pushResyncTimer = null; }
     lastForcedPushSyncAt = 0;
-    if (pushSub) { try { pushSub(); } catch { } pushSub = null; }
-    if (appStateSub) { try { appStateSub.remove(); } catch { } appStateSub = null; }
+    if (pushSub) { attempt(pushSub, 'cleanup'); pushSub = null; }
+    const sub = appStateSub;
+    if (sub) { attempt(() => { sub.remove(); }, 'cleanup'); appStateSub = null; }
     setAppForeground(false);
   },
 };

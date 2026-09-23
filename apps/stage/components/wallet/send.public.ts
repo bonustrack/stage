@@ -15,11 +15,12 @@ import { resolveHandleToAddress } from '../../lib/resolveHandle';
 import {
   recipientAddress, recipientFor, settleRecipient, startRecipient, type RecipientState,
 } from './recipient.model';
+import { ignored } from '../../lib/errorPolicy';
 
 const RESOLVE_DEBOUNCE_MS = 300;
 
 async function fetchEthPrice(): Promise<number | null> {
-  const prices = await getSimplePrices(['ethereum']).catch((): Record<string, CgPrice> => ({}));
+  const prices = await getSimplePrices(['ethereum']).catch(ignored<Record<string, CgPrice>>({}, 'optional'));
   const p = prices.ethereum?.usd;
   return typeof p === 'number' ? p : null;
 }
@@ -92,13 +93,9 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
 
   useEffect(() => {
     let cancelled = false;
-    void (async (): Promise<void> => {
-      try {
-        const p = await fetchEthPrice();
-        if (cancelled) return;
-        if (typeof p === 'number') setEthPriceUsd(p);
-      } catch { }
-    })();
+    void fetchEthPrice().then((p) => {
+      if (!cancelled && typeof p === 'number') setEthPriceUsd(p);
+    }).catch(ignored(undefined, 'optional'));
     return () => { cancelled = true; };
   }, []);
 

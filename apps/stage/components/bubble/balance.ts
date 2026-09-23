@@ -5,6 +5,7 @@ import { getActiveAccount } from '../../lib/accounts';
 import { ASSETS, NATIVE_TOKEN_SENTINEL } from '@stage-labs/client/wallet/assets';
 import { chainFor, publicClientFor } from '@stage-labs/client/wallet/client';
 import { chainIdToNumber } from '@stage-labs/client/xmtp/tx';
+import { recover, ignored } from '../../lib/errorPolicy';
 
 export interface PayerBalance {
   text: string;
@@ -56,14 +57,10 @@ async function readOnchain(
   const raw = await pub.readContract({
     address: t, abi: erc20Abi, functionName: 'balanceOf', args: [addr],
   });
-  let decimals = 18;
-  let symbol = 'tokens';
-  try {
-    decimals = await pub.readContract({ address: t, abi: minimalErc20Abi, functionName: 'decimals' });
-  } catch { }
-  try {
-    symbol = await pub.readContract({ address: t, abi: minimalErc20Abi, functionName: 'symbol' });
-  } catch { }
+  const [decimals, symbol] = await Promise.all([
+    pub.readContract({ address: t, abi: minimalErc20Abi, functionName: 'decimals' }).catch(ignored(18, 'optional')),
+    pub.readContract({ address: t, abi: minimalErc20Abi, functionName: 'symbol' }).catch(ignored('tokens', 'optional')),
+  ]);
   return { raw, decimals, symbol };
 }
 
@@ -91,7 +88,7 @@ async function resolveBalance(
   if (!addr || !isAddress(addr)) return null;
   const known = ASSETS.find(a => a.chainId === cid
     && a.symbol.toLowerCase() === (symbol ?? '').toLowerCase());
-  const onchain = await readOnchain(cid, token, addr).catch(() => null);
+  const onchain = await readOnchain(cid, token, addr).catch(recover('bubble.balance', null));
   if (!onchain) return null;
   return buildBalance(onchain, symbol, needed, known);
 }

@@ -1,3 +1,4 @@
+import { ignored } from './errorPolicy';
 
 const RAW_ENV: Record<string, string | undefined> = {
   EXPO_PUBLIC_SWARMY_KEY: process.env.EXPO_PUBLIC_SWARMY_KEY as string | undefined,
@@ -70,6 +71,6 @@ export async function uploadFormToSwarmy(form: FormData, filename: string): Prom
   } finally {
     clearTimeout(timer);
   }
-  const body = await res.json().catch(() => null) as { swarmReference?: string } | null;
+  const body = await res.json().catch(ignored(null, 'optional')) as { swarmReference?: string } | null;
   return resolveSwarmyResponse(res.status, body, filename);
 }

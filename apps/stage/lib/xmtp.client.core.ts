@@ -1,5 +1,6 @@
 import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import type { XmtpEnv } from './xmtp.types';
+import { report } from './errorPolicy';
 
 export class NoAccountError extends Error {
   constructor() { super('No account: onboarding not completed yet.'); this.name = 'NoAccountError'; }
@@ -120,7 +121,9 @@ export function makeClientLifecycle<C>(deps: LifecycleDeps<C>): ReturnType<typeo
       try {
         const cached = client.get();
         if (cached) await client.syncPreferences(cached);
-      } catch { }
+      } catch (err) {
+        report('xmtp.syncPreferences', err);
+      }
     },
     async listXmtpInstallations() {
       const c = await xmtpClient();

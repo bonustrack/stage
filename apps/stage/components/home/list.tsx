@@ -16,6 +16,7 @@ import { SuggestedContacts } from '../SuggestedContacts';
 import { usePalette } from '../../lib/theme';
 import { homeRows, type ScrollRefs } from './state';
 import type { Row } from './model';
+import { attempt } from '../../lib/errorPolicy';
 
 interface ChannelsListProps {
   panRef?: import('../SwipeTabs.types').SimultaneousRefs;
@@ -127,7 +128,7 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
           didRestoreRef.current = true;
           const offset = Math.min(want, Math.max(0, h));
           requestAnimationFrame(() => {
-            try { listRef.current?.scrollToOffset({ offset, animated: false }); } catch { }
+            attempt(() => { listRef.current?.scrollToOffset({ offset, animated: false }); }, 'ui');
           });
         }}
         extraData={listExtraData}

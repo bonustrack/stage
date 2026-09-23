@@ -3,6 +3,7 @@ import jsQR from 'jsqr';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Col } from '../layout';
 import { View } from '../layout/native';
+import { ignored } from '../../lib/errorPolicy';
 
 export interface QrScannerProps {
   onScan: (text: string) => void;
@@ -46,7 +47,7 @@ async function detectOnce(
   video: HTMLVideoElement, canvas: HTMLCanvasElement, detector: BarcodeDetectorLike | null,
 ): Promise<string | null> {
   if (detector === null) return decodeFrame(video, canvas);
-  const found = await detector.detect(video).catch((): DetectedBarcode[] => []);
+  const found = await detector.detect(video).catch(ignored<DetectedBarcode[]>([], 'probe'));
   const first = found[0];
   return first !== undefined && first.rawValue.length > 0 ? first.rawValue : null;
 }

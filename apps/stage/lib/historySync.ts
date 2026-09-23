@@ -11,6 +11,7 @@ import {
   historyGrewOlder, historyPinFromRandom, historySyncIsActive, holdsHistoryBefore, HISTORY_PIN_LENGTH,
   type HistorySnapshot, type HistorySyncPhase,
 } from './historySync.model';
+import { report, recover } from './errorPolicy';
 
 const TIMEOUT_MS = 120_000;
 const POLL_MS = 5_000;
@@ -37,15 +38,11 @@ function applyReceivedHistory(): void {
   bumpAccountEpoch();
 }
 
-function warn(step: string, err: unknown): void {
-  if (process.env.NODE_ENV !== 'production') console.warn(`history sync ${step} failed`, err instanceof Error ? err.message : err);
-}
-
 async function tryProcessArchive(): Promise<void> {
   try {
     await processHistoryArchive();
   } catch (err) {
-    warn('process', err);
+    report('historySync.process', err);
   }
 }
 
@@ -57,7 +54,7 @@ async function localHistoryChanged(watch: Watch): Promise<boolean> {
     if (watch.installedAtMs !== null && holdsHistoryBefore(current, watch.installedAtMs)) return true;
     return watch.baseline !== null && historyGrewOlder(watch.baseline, current, watch.startedAtMs);
   } catch (err) {
-    warn('snapshot', err);
+    report('historySync.snapshot', err);
     return false;
   }
 }
@@ -68,7 +65,7 @@ async function archiveListed(): Promise<boolean> {
     await tryProcessArchive();
     return true;
   } catch (err) {
-    warn('poll', err);
+    report('historySync.poll', err);
     return false;
   }
 }
@@ -87,12 +84,12 @@ async function waitForHistory(deadline: number, watch: Watch): Promise<boolean> 
 }
 
 async function startWatch(): Promise<Watch> {
-  const installedAtMs = (await getActiveAccount().catch(() => null))?.createdAt ?? null;
+  const installedAtMs = (await getActiveAccount().catch(recover('historySync.watch', null)))?.createdAt ?? null;
   const startedAtMs = Date.now();
   try {
     return { baseline: await historySnapshot(), installedAtMs, startedAtMs };
   } catch (err) {
-    warn('baseline', err);
+    report('historySync.baseline', err);
     return { baseline: null, installedAtMs, startedAtMs };
   }
 }
@@ -110,7 +107,7 @@ export async function runHistorySync(): Promise<HistorySyncPhase> {
     setPhase('done');
     return 'done';
   } catch (err) {
-    warn('request', err);
+    report('historySync.request', err);
     setPhase('error');
     return 'error';
   }

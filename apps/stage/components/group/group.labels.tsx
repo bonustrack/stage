@@ -14,6 +14,7 @@ import {
   LabelPermissionError, MAX_LABEL_LEN, MAX_LABELS,
 } from '../../modules/messaging';
 import { suggestLabels } from '../../modules/messaging';
+import { reported } from '../../lib/errorPolicy';
 
 const MAX_SUGGESTIONS = 8;
 
@@ -108,7 +109,7 @@ export function GroupLabelsSection({ line }: { line: string }): React.ReactEleme
 
   useEffect(() => {
     let cancelled = false;
-    void getGroupLabels(line).then((ls) => { if (!cancelled) setLabels(ls); }).catch(() => undefined);
+    void getGroupLabels(line).then((ls) => { if (!cancelled) setLabels(ls); }).catch(reported('group.labels'));
     return (): void => { cancelled = true; };
   }, [line]);
 

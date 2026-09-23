@@ -6,6 +6,7 @@ import {
   applyRead, applyUnread, applySentPatch,
   type CachedChannelRow,
 } from '@stage-labs/client/xmtp/channelsCache';
+import { attempt } from './errorPolicy';
 
 export type CachedRow = CachedChannelRow;
 
@@ -46,7 +47,7 @@ export function getActiveAccountIdSync(): string { return activeId; }
 export function knownActiveAccountId(): string | null { return activeId === DEFAULT_KEY ? null : activeId; }
 
 function bindActiveStore(): void {
-  if (activeStoreUnsub) { try { activeStoreUnsub(); } catch { } activeStoreUnsub = null; }
+  if (activeStoreUnsub) { attempt(activeStoreUnsub, 'cleanup'); activeStoreUnsub = null; }
   activeStoreUnsub = activeStore().subscribe(() => { notifyActive(); });
 }
 bindActiveStore();

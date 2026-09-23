@@ -13,6 +13,8 @@ import {
 import { describePushStatus, usePushStatus } from '../../lib/pushStatus';
 import { SettingsPage, SettingsSectionLabel } from './SettingsPage';
 import { SettingsButtonRow, SettingsList, SettingsToggleRow } from './rows';
+import { capabilities } from '../../lib/capabilities';
+import { report } from '../../lib/errorPolicy';
 
 export function NotificationsSettings(): React.ReactElement {
   const { text: fg } = usePalette();
@@ -32,7 +34,10 @@ export function NotificationsSettings(): React.ReactElement {
         const client = await getOrCreateXmtpClient('production');
         if (next) await registerPushWithServer(client);
         else await unregisterPushFromServer(client);
-      } catch { }
+      } catch (err) {
+        report('settings.push', err);
+        capabilities.toast('Could not update notifications. Try again.');
+      }
       setPerm(await getPushPermission());
     })();
   };

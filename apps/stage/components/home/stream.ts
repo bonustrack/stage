@@ -8,6 +8,7 @@ import { homeRows } from './state';
 import { applyInbound } from '@stage-labs/client/xmtp/channelsCache';
 import { ROW_PREVIEW_MAX_CHARS, type StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { revivesClearedChat } from '@stage-labs/client/xmtp/readState';
+import { recover } from '../../lib/errorPolicy';
 
 const notifiedMsgIds = new Set<string>();
 function alreadyNotified(id: string): boolean {
@@ -51,7 +52,7 @@ function makeMissRefresher(isCancelled: () => boolean, refresh: () => Promise<vo
 
   return (convId: string | null): void => {
     void (async (): Promise<void> => {
-      if (convId && (await getConvConsentState(convId).catch(() => null)) === 'denied') return;
+      if (convId && (await getConvConsentState(convId).catch(recover('home.streamConsent', null))) === 'denied') return;
       if (!isCancelled()) armFullRefresh();
     })();
   };

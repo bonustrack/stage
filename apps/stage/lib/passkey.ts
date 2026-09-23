@@ -8,6 +8,7 @@ import type { ConfirmOptions } from './capabilities';
 import {
   enablePasskeyForRecord, removePasskeyFromRecord, passkeysAvailable, kernelCustody,
 } from './zerodev';
+import { recover } from './errorPolicy';
 
 export interface PasskeyAction {
   available: boolean;
@@ -35,7 +36,7 @@ const ENABLE: PasskeySpec = {
   offer: async (acct) => {
     if (!passkeysAvailable() || acct.type !== 'smart') return false;
     if (!acct.passkey) return true;
-    const custody = await kernelCustody(acct.address as `0x${string}`).catch(() => null);
+    const custody = await kernelCustody(acct.address as `0x${string}`).catch(recover('passkey.custody', null));
     return custody === 'undeployed' || custody === 'ecdsa-root';
   },
   confirm: {

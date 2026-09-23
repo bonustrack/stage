@@ -13,6 +13,7 @@ import {
   type SanitizedFileUri,
 } from './xmtp.swarm';
 import { attachmentMimeType } from './attachmentFiles';
+import { attempt } from './errorPolicy';
 
 export { swarmToHttp } from './xmtp.swarm';
 export { fileUriToBase64 } from './attachmentFiles';
@@ -59,7 +60,7 @@ export async function resolveRemoteAttachment(info: RemoteAttachmentInfo): Promi
   const client = await xmtpClient();
   const tmpName = `xmtp-att-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.bin`;
   const dest = new File(Paths.cache, tmpName);
-  if (dest.exists) try { dest.delete(); } catch { }
+  if (dest.exists) attempt(() => { dest.delete(); }, 'cleanup');
   await File.downloadFileAsync(swarmToHttp(info.url), dest, { idempotent: true });
   const metadata: RemoteAttachmentMetadata = {
     secret: info.secret, salt: info.salt, nonce: info.nonce,

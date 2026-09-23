@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from 'react';
 import { File, Paths } from 'expo-file-system';
 import { makeListeners } from './storeCore';
+import { attempt } from './errorPolicy';
 
 const byMessageId = new Map<string, string[]>();
 
@@ -36,7 +37,7 @@ export function stashLocalAttachment(srcUri: string): string {
     const name = `stage-pending-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${safeExtFor(srcUri)}`;
     const src = new File(srcUri);
     const dest = new File(Paths.cache, name);
-    if (dest.exists) try { dest.delete(); } catch { }
+    if (dest.exists) attempt(() => { dest.delete(); }, 'cleanup');
     src.copy(dest);
     return asFileUri(dest.uri);
   } catch {

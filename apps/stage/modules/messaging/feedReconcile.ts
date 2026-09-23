@@ -5,6 +5,7 @@ import { convOfLine } from '../../lib/xmtp.sdk';
 import { latestConvMessages } from '../../lib/xmtp.messages';
 import { feedCache, activeFeedLines } from '../../lib/xmtp.state.core';
 import { PAGE_SIZE, prependToFeed, refreshLatestPage } from '../../lib/xmtp.resync';
+import { report } from '../../lib/errorPolicy';
 
 function feedLatest(line: string): HistoryEntry | undefined {
   const slice = feedCache.get(line);
@@ -45,7 +46,9 @@ export async function reconcileOnOpen(line: string): Promise<void> {
     if (feed?.id === storeLatest.id) return;
     prependToFeed(line, await latestConvMessages(conv, line, PAGE_SIZE));
     logReconcileHeal('[feed-reconcile] open-time heal', line, 'reconcileOnOpen', feed, storeLatest);
-  } catch { }
+  } catch (err) {
+    report('feed.reconcileOnOpen', err);
+  }
 }
 
 export async function reconcileOnArrival(
@@ -70,7 +73,9 @@ async function healArrivalGap(line: string): Promise<void> {
         before, { id: after?.id ?? null, ts: after?.ts ?? null },
       );
     }
-  } catch { }
+  } catch (err) {
+    report('feed.reconcileOnArrival', err);
+  }
 }
 
 export function feedLatestNs(line: string): number {

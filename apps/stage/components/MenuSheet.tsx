@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
+import { Alert } from 'react-native';
+import { errorMessage } from '@stage-labs/client/errors';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
@@ -13,6 +15,7 @@ import { getPeerName, usePeerProfiles } from '../lib/peerProfiles';
 import { AccountManager, shortAddress } from '../modules/messaging';
 import { loadAccounts, getActiveAccountId, type AccountRecord } from '../lib/accounts';
 import { IMPORT_ROUTE, SIGNUP_ROUTE } from './onboarding/nextRoute.model';
+import { report, reported } from '../lib/errorPolicy';
 
 function AccountSwitchRow({ account, active, onSwitch, dark, compact }: {
   account: AccountRecord; active: boolean; onSwitch: (id: string) => void; dark: boolean; compact: boolean;
@@ -51,7 +54,7 @@ export function MenuSheet({ visible, anchor, onClose }: {
     void Promise.all([loadAccounts(), getActiveAccountId()]).then(([list, active]) => {
       setAccounts(list);
       setActiveId(active);
-    });
+    }).catch(reported('menu.accounts'));
   }, [visible]);
   usePeerProfiles(accounts.map(a => a.address));
 
@@ -66,7 +69,12 @@ export function MenuSheet({ visible, anchor, onClose }: {
     onClose();
     if (id === activeId) return;
     void (async () => {
-      try { await AccountManager.switch(id); } catch { }
+      try {
+        await AccountManager.switch(id);
+      } catch (err) {
+        report('menu.switchAccount', err);
+        Alert.alert('Switch failed', errorMessage(err));
+      }
     })();
   }
 

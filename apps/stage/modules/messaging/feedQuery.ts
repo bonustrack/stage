@@ -10,6 +10,7 @@ import { feedCache } from '../../lib/xmtp.state.core';
 import { perfLog, perfTime } from '../../lib/perf';
 import { messagingKeys } from './queries';
 import { reconcileOnOpen } from './feedReconcile';
+import { report, ignored } from '../../lib/errorPolicy';
 
 function mirrorSlice(line: string, slice: HistoryEntry[] | undefined): void {
   const key = messagingKeys.messages(getAccountEpoch(), line);
@@ -35,8 +36,11 @@ function revalidateFeed(line: string): Promise<void> {
       if (!page) return;
       prependToFeed(line, page);
       await reconcileOnOpen(line);
-    } catch { }
-    finally { bgSyncInFlight.delete(line); }
+    } catch (err) {
+      report('feed.revalidate', err);
+    } finally {
+      bgSyncInFlight.delete(line);
+    }
   })();
   bgSyncInFlight.set(line, run);
   return run;
@@ -61,7 +65,7 @@ export function prefetchFeed(line: string): void {
       queryFn: () => loadFeedFirstPage(line),
       staleTime: 2_000,
     })
-    .catch(() => undefined);
+    .catch(ignored(undefined, 'optional'));
 }
 
 export async function loadFeedOlderPage(line: string, oldest: HistoryEntry): Promise<boolean> {

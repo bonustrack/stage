@@ -15,6 +15,7 @@ import {
   NO_GROUP_ADMINS, NO_GROUP_INFO, convFinder, notAGroup,
   type GroupMeta, type MessageQuery, type XmtpSdk,
 } from './xmtp.sdk.core';
+import { reported, ignore } from './errorPolicy';
 
 type WebClient = Awaited<ReturnType<typeof xmtpClient>>;
 type WebMessagesOptions = NonNullable<Parameters<Conversation['messages']>[0]>;
@@ -77,12 +78,12 @@ function endWhenCancelled(start: Promise<StreamHandle>): () => void {
   let handle: StreamHandle | null = null;
   let cancelled = false;
   start.then((stream) => {
-    if (cancelled) { void stream.end().catch(() => undefined); return; }
+    if (cancelled) { ignore(stream.end(), 'cleanup'); return; }
     handle = stream;
-  }).catch(() => undefined);
+  }).catch(reported('xmtp.stream'));
   return () => {
     cancelled = true;
-    if (handle) void handle.end().catch(() => undefined);
+    if (handle) ignore(handle.end(), 'cleanup');
   };
 }
 
@@ -91,11 +92,11 @@ async function streamAllMessages(
 ): Promise<() => void> {
   const handle = await client.conversations.streamAllMessages({
     onValue: onMessage,
-    onError: () => undefined,
+    onError: reported('xmtp.messageStream'),
     onFail: onClose,
     consentStates: VISIBLE_STATES,
   });
-  return () => { void handle.end().catch(() => undefined); };
+  return () => { ignore(handle.end(), 'cleanup'); };
 }
 
 function streamConsent(client: WebClient, onChange: () => void): () => void {
@@ -103,7 +104,7 @@ function streamConsent(client: WebClient, onChange: () => void): () => void {
     onValue: (records: Consent[]) => {
       if (records.some(c => c.entityType === ConsentEntityType.GroupId)) onChange();
     },
-    onError: () => undefined,
+    onError: reported('xmtp.consentStream'),
   }));
 }
 
@@ -145,7 +146,7 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
     client.conversations.createGroupWithIdentifiers(identifiersOf(addresses), groupOptions(meta)),
   streamAllMessages,
   streamConversations: (client, onConv) =>
-    endWhenCancelled(client.conversations.stream({ onValue: onConv, onError: () => undefined })),
+    endWhenCancelled(client.conversations.stream({ onValue: onConv, onError: reported('xmtp.convStream') })),
   streamConsent,
   history: {
     sendSyncRequest: async (client) => client.sendSyncRequest(ARCHIVE_OPTIONS, await historyServer()),

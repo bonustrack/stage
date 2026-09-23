@@ -1,14 +1,11 @@
 import { resolveInboxEthCached, primeInboxEthCache } from '@stage-labs/client/xmtp/inboxCache';
 import { inboxEthCache } from './xmtp.state.core';
 import { sdk } from './xmtp.sdk';
+import { report, recover } from './errorPolicy';
 
 type InboxEthMap = Record<string, string>;
 type IdentityClient = Awaited<ReturnType<typeof sdk.client>>;
 type IdentityConv = Awaited<ReturnType<typeof sdk.listConvs>>[number];
-
-function warn(where: string, err: unknown): void {
-  if (process.env.NODE_ENV !== 'production') console.warn(`${where} failed`, (err as Error).message);
-}
 
 function fetchInboxEth(client: IdentityClient): (ids: string[]) => Promise<InboxEthMap> {
   return async (ids) => {
@@ -29,10 +26,12 @@ function resolve(client: IdentityClient, ids: string[]): Promise<InboxEthMap> {
 export async function primeConversationMembers(client: IdentityClient, convs: IdentityConv[]): Promise<void> {
   try {
     const memberLists = await Promise.all(convs.map(c =>
-      c.members().then(ms => ms.map(m => m.inboxId)).catch(() => [] as string[]),
+      c.members().then(ms => ms.map(m => m.inboxId)).catch(recover<string[]>('xmtp.primeMembers', [])),
     ));
     await primeInboxEthCache(inboxEthCache, fetchInboxEth(client), memberLists.flat());
-  } catch { }
+  } catch (err) {
+    report('xmtp.primeMembers', err);
+  }
 }
 
 export const isGroupConv = sdk.isGroup;
@@ -52,7 +51,7 @@ export async function memberInboxToAddressMap(conv: IdentityConv): Promise<Inbox
     const members = await conv.members();
     return await resolve(await sdk.client(), members.map(m => m.inboxId));
   } catch (err) {
-    warn('memberInboxToAddressMap', err);
+    report('xmtp.memberInboxToAddressMap', err);
     return {};
   }
 }
@@ -65,7 +64,7 @@ export async function groupMemberEthAddresses(conv: IdentityConv): Promise<strin
     const map = await resolve(client, otherIds);
     return otherIds.map(id => map[id]).filter((a): a is string => !!a);
   } catch (err) {
-    warn('groupMemberEthAddresses', err);
+    report('xmtp.groupMemberEthAddresses', err);
     return [];
   }
 }

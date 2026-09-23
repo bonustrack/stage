@@ -10,6 +10,7 @@ import {
   resolveCommonChannels, createMemberSetCache,
   type CommonChannel, type CommonChannelRow,
 } from '@stage-labs/client/xmtp/commonChannels';
+import { reported } from './errorPolicy';
 
 const memberSetCache = createMemberSetCache();
 
@@ -24,7 +25,7 @@ function avatarSeedOf(row: CommonChannelRow): string {
 }
 
 async function resolveChannels(peerAddress: string): Promise<CommonChannel[]> {
-  await hydrateCachedRows().catch(() => undefined);
+  await hydrateCachedRows().catch(reported('commonChannels.hydrate'));
   const rows = (getCachedRows() ?? []) as CommonChannelRow[];
   const memberSetOf = memberSetCache.resolver(getAccountEpoch(), fetchMembers);
   return resolveCommonChannels(peerAddress, rows, memberSetOf, avatarSeedOf);

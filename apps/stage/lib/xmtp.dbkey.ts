@@ -3,6 +3,7 @@ import { deleteDbFiles } from './xmtp.dbkeyFs';
 import { secureStorage } from '../platform/storage';
 import type { DeviceBoundAccessOptions } from '../platform/types';
 import { XMTP_APP_GROUP } from './xmtp.appGroup';
+import { recover, ignored } from './errorPolicy';
 
 const STORE_OPTS: DeviceBoundAccessOptions = XMTP_APP_GROUP
   ? { thisDeviceOnly: true, afterFirstUnlock: true, accessGroup: XMTP_APP_GROUP }
@@ -30,7 +31,7 @@ export async function loadOrCreateDbKey(accountId: string): Promise<Uint8Array> 
 
   const legacy = await secureStorage.get(LEGACY_DB_ENCRYPTION_KEY, STORE_OPTS);
   if (legacy) {
-    await secureStorage.set(id, legacy, STORE_OPTS).catch(() => undefined);
+    await secureStorage.set(id, legacy, STORE_OPTS).catch(ignored(undefined, 'cache'));
     return base64ToBytes(legacy);
   }
 
@@ -40,17 +41,17 @@ export async function loadOrCreateDbKey(accountId: string): Promise<Uint8Array> 
 }
 
 export async function deleteDbKey(accountId: string): Promise<void> {
-  await secureStorage.delete(dbKeyId(accountId)).catch(() => undefined);
+  await secureStorage.delete(dbKeyId(accountId)).catch(ignored(undefined, 'cleanup'));
 }
 
 async function deleteLegacyDbKey(): Promise<void> {
-  await secureStorage.delete(LEGACY_DB_ENCRYPTION_KEY).catch(() => undefined);
+  await secureStorage.delete(LEGACY_DB_ENCRYPTION_KEY).catch(ignored(undefined, 'cleanup'));
 }
 
 export async function wipeXmtpStore(accountId: string, dbDirName: string): Promise<void> {
   await deleteDbFiles(dbDirName);
-  const accountKey = await secureStorage.get(dbKeyId(accountId), STORE_OPTS).catch(() => null);
-  const legacyKey = await secureStorage.get(LEGACY_DB_ENCRYPTION_KEY, STORE_OPTS).catch(() => null);
+  const accountKey = await secureStorage.get(dbKeyId(accountId), STORE_OPTS).catch(recover('xmtp.wipeStore', undefined));
+  const legacyKey = await secureStorage.get(LEGACY_DB_ENCRYPTION_KEY, STORE_OPTS).catch(recover('xmtp.wipeStore', null));
   await deleteDbKey(accountId);
   if (legacyKey && (accountKey === legacyKey || accountKey === null)) {
     await deleteLegacyDbKey();

@@ -7,6 +7,7 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import type { VirtualListHandle } from '../layout';
 import { hasAttachments, isReaction } from './feed-helpers';
 import { useStableCallback } from '../../lib/useStableCallback';
+import { attempt } from '../../lib/errorPolicy';
 
 function matchConfirmed(
   optimistic: HistoryEntry[], liveBubbles: HistoryEntry[],
@@ -84,10 +85,10 @@ export function useOutboundLayer(
   const listRef = useRef<VirtualListHandle>(null);
   const scrollToNewest = useStableCallback(() => {
     requestAnimationFrame(() => {
-      try {
+      attempt(() => {
         if (Platform.OS === 'web') listRef.current?.scrollToEnd({ animated: false });
         else listRef.current?.scrollToOffset({ offset: 0, animated: false });
-      } catch { }
+      }, 'ui');
     });
   });
 
@@ -114,9 +115,7 @@ export function useOutboundLayer(
     jumpClearTimer.current = setTimeout(() => { setJumpHighlightId(null); }, 1800);
     if (idx < 0) return;
     const index = Platform.OS === 'web' ? allBubbles.length - 1 - idx : idx;
-    try {
-      listRef.current?.scrollToIndex({ index, animated: false, viewPosition: 0.5 });
-    } catch { }
+    attempt(() => { listRef.current?.scrollToIndex({ index, animated: false, viewPosition: 0.5 }); }, 'ui');
   });
   useEffect(() => () => { if (jumpClearTimer.current) clearTimeout(jumpClearTimer.current); }, []);
 

@@ -2,6 +2,7 @@ import { INSTALLATION_LIMIT_MESSAGE } from '@stage-labs/client/xmtp/clientErrors
 import { secureStorage } from '../platform/storage';
 import { getActiveAccount, markRegistered, setActiveAccountId, type AccountRecord } from './accounts';
 import { XMTP_ENV_KEY, type XmtpEnv } from './xmtp.types';
+import { ignored, attempt } from './errorPolicy';
 
 export class XmtpInstallationLimitError extends Error {
   constructor() { super(INSTALLATION_LIMIT_MESSAGE); this.name = 'XmtpInstallationLimitError'; }
@@ -18,7 +19,7 @@ export async function withCreateTimeout<C>(
   let timedOut = false;
   const started = run();
   if (disposeLate) {
-    void started.then((value) => { if (timedOut) disposeLate(value); }).catch(() => undefined);
+    void started.then((value) => { if (timedOut) disposeLate(value); }).catch(ignored(undefined, 'cleanup'));
   }
   const timeout = new Promise<never>((_, reject) => {
     timer = setTimeout(() => { timedOut = true; reject(new Error(message)); }, ms);
@@ -40,7 +41,7 @@ export async function assertStillActiveAccount(accountId: string, discard: () =>
     return;
   }
   if (activeId === accountId) return;
-  try { discard(); } catch { }
+  attempt(discard, 'cleanup');
   throw new Error(STALE_ACCOUNT_MESSAGE);
 }
 

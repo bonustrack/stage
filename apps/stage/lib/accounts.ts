@@ -19,6 +19,7 @@ export { getViemAccount, revealPrivateKey as getPrivateKey } from './zerodev/key
 
 export type { AccountRecord } from '@stage-labs/client/accounts/types';
 import { ACCOUNT_TYPES, type AccountRecord } from '@stage-labs/client/accounts/types';
+import { recover, ignored } from './errorPolicy';
 
 const LIST_KEY = 'accounts.list';
 const ACTIVE_KEY = 'accounts.active';
@@ -32,7 +33,7 @@ async function persist(list: AccountRecord[]): Promise<void> {
 
 async function withPhraseIds(list: AccountRecord[]): Promise<AccountRecord[]> {
   if (!list.some(a => a.type === 'smart' && a.phraseId === undefined)) return list;
-  const primary = await primaryPhraseId().catch(() => null);
+  const primary = await primaryPhraseId().catch(recover('accounts.phraseIds', null));
   if (!primary) return list;
   const next = list.map(a => (a.type === 'smart' && a.phraseId === undefined ? { ...a, phraseId: primary } : a));
   await persist(next);
@@ -57,7 +58,7 @@ function unreadable(strict: boolean): AccountRecord[] {
 
 async function loadList(strict: boolean): Promise<AccountRecord[]> {
   if (cache) return cache;
-  const raw = await secureStorage.get(LIST_KEY).catch(() => undefined);
+  const raw = await secureStorage.get(LIST_KEY).catch(recover('accounts.list', undefined));
   if (raw === undefined) return unreadable(strict);
   if (raw !== null && raw !== '') {
     const stored = parseStoredList(raw);
@@ -85,7 +86,7 @@ function loadAccountsForWrite(): Promise<AccountRecord[]> {
 }
 
 export async function getActiveAccountId(): Promise<string | null> {
-  const id = await secureStorage.get(ACTIVE_KEY).catch(() => null);
+  const id = await secureStorage.get(ACTIVE_KEY).catch(recover('accounts.activeId', null));
   if (id) await setActiveAccountForCache(id);
   return id;
 }
@@ -166,7 +167,7 @@ export async function removeAccount(id: string): Promise<AccountRecord[]> {
   if (active === id) {
     const first = next[0];
     if (first) await setActiveAccountId(first.id);
-    else await secureStorage.delete(ACTIVE_KEY).catch(() => undefined);
+    else await secureStorage.delete(ACTIVE_KEY).catch(ignored(undefined, 'cleanup'));
   }
   const removedPhrase = rec?.type === 'smart' ? rec.phraseId : undefined;
   const stillUsed = new Set(next.flatMap(a => (a.type === 'smart' && a.phraseId ? [a.phraseId] : [])));

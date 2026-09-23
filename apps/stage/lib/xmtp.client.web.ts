@@ -14,6 +14,7 @@ import { historyServerUrl } from './historyServer';
 import { openClientForAccount, type CreateOpts } from './xmtp.recover.web';
 import { makeClientLifecycle } from './xmtp.client.core';
 import { webXmtpDbPath, canReuseSavedClient, installationCreatedAtMs } from '@stage-labs/client/xmtp/clientConfig';
+import { ignored, attempt } from './errorPolicy';
 
 const ADDRESS_PREFIX = 'xmtp.address.';
 const ENV_PREFIX = 'xmtp.env.';
@@ -76,14 +77,14 @@ async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<
 
 function disposeCachedClient(): void {
   const client = getCachedXmtpClient();
-  if (client) { try { client.close(); } catch { } }
+  if (client) attempt(() => { client.close(); }, 'cleanup');
   resetClientScopedState();
 }
 
 async function forgetSavedClient(id: string): Promise<void> {
-  await secureStorage.delete(addressKeyFor(id)).catch(() => undefined);
-  await secureStorage.delete(envKeyFor(id)).catch(() => undefined);
-  await secureStorage.delete(installationKeyFor(id)).catch(() => undefined);
+  await secureStorage.delete(addressKeyFor(id)).catch(ignored(undefined, 'cleanup'));
+  await secureStorage.delete(envKeyFor(id)).catch(ignored(undefined, 'cleanup'));
+  await secureStorage.delete(installationKeyFor(id)).catch(ignored(undefined, 'cleanup'));
 }
 
 async function revokeInstallation(client: WebXmtpClient, account: AccountRecord, installationId: string): Promise<void> {

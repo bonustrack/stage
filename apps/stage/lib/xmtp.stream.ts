@@ -5,12 +5,15 @@ import { pushToFeedSlice, resyncActiveFeeds } from './xmtp.resync';
 import { foregroundWatch } from './xmtp.foreground';
 import { isHiddenConv } from './readSyncRegistry';
 import { reconcileOnArrival, feedLatestNs } from '../modules/messaging/feedReconcile';
+import { report } from './errorPolicy';
 
 type StreamMessage = Parameters<Parameters<typeof sdk.streamAllMessages>[1]>[0];
 
 interface SubscribeOptions { includeHidden?: boolean }
 
 const REARM_DELAY_MS = 500;
+const RETRY_BASE_MS = 5_000;
+const RETRY_MAX_MS = 60_000;
 
 const streamSubscribers = new Map<(m: StreamMsg) => void, boolean>();
 
@@ -18,6 +21,7 @@ let cancelStream: (() => void) | null = null;
 let starting = false;
 let generation = 0;
 let rearmTimer: ReturnType<typeof setTimeout> | null = null;
+let startFailures = 0;
 let lastMessageAt = 0;
 let lastCloseAt = 0;
 
@@ -34,12 +38,19 @@ export function subscribeAllMessages(cb: (m: StreamMsg) => void, options: Subscr
   return () => { streamSubscribers.delete(cb); };
 }
 
-function rearmGlobalStream(): void {
+function rearmGlobalStream(delayMs = REARM_DELAY_MS): void {
   if (rearmTimer) return;
   rearmTimer = setTimeout(() => {
     rearmTimer = null;
     void ensureGlobalStream();
-  }, REARM_DELAY_MS);
+  }, delayMs);
+}
+
+function retryAfterStartFailure(err: unknown): void {
+  report('xmtp.globalStream', err);
+  if (streamSubscribers.size === 0) return;
+  startFailures += 1;
+  rearmGlobalStream(Math.min(RETRY_BASE_MS * 2 ** (startFailures - 1), RETRY_MAX_MS));
 }
 
 function fanOutToSubscribers(convId: string | null | undefined, msg: NonNullable<StreamMessage>): void {
@@ -48,7 +59,11 @@ function fanOutToSubscribers(convId: string | null | undefined, msg: NonNullable
   const hidden = isHiddenConv(convId);
   for (const [cb, includeHidden] of streamSubscribers) {
     if (hidden && !includeHidden) continue;
-    try { cb({ convId: convId ?? null, msg: normalized }); } catch { }
+    try {
+      cb({ convId: convId ?? null, msg: normalized });
+    } catch (err) {
+      report('xmtp.streamSubscriber', err);
+    }
   }
 }
 
@@ -92,16 +107,20 @@ export async function ensureGlobalStream(): Promise<void> {
     const cancel = await sdk.streamAllMessages(client, handleStreamMessage, onGlobalStreamClose);
     if (startedIn !== generation) { cancel(); return; }
     cancelStream = cancel;
+    startFailures = 0;
     foregroundWatch.attach(status);
-  } catch { }
-  finally { starting = false; }
+  } catch (err) {
+    retryAfterStartFailure(err);
+  } finally {
+    starting = false;
+  }
 }
 
 function teardownGlobalStream(): void {
   generation += 1;
   if (cancelStream) { cancelStream(); cancelStream = null; }
   if (rearmTimer) { clearTimeout(rearmTimer); rearmTimer = null; }
-  lastMessageAt = 0; lastCloseAt = 0;
+  lastMessageAt = 0; lastCloseAt = 0; startFailures = 0;
   foregroundWatch.detach();
 }
 registerGlobalStreamTeardown(teardownGlobalStream);

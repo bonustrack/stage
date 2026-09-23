@@ -1,5 +1,6 @@
 import { secureStorage } from '../platform/storage';
 import { XMTP_ENV_KEY } from './xmtp.types';
+import { ignored } from './errorPolicy';
 
 const PROXY_BASE_ENV: unknown = process.env.EXPO_PUBLIC_LINKPROXY_URL;
 
@@ -17,6 +18,6 @@ export function historyServerUrl(env: string): string {
 }
 
 export async function historyServer(): Promise<string> {
-  const env = await secureStorage.get(XMTP_ENV_KEY).catch(() => null);
+  const env = await secureStorage.get(XMTP_ENV_KEY).catch(ignored(null, 'optional'));
   return historyServerUrl(env ?? 'production');
 }

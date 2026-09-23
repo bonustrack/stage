@@ -13,6 +13,7 @@ import { makePublicClient, makeKernelClient } from './client';
 import { createEcdsaKernel, ecdsaValidatorForOwner, passkeyKernelResult } from './account';
 import { ENTRY_POINT, KERNEL_VERSION } from '@stage-labs/client/zerodev/account';
 import { accountPasskey, storedPasskeyMatches } from './linkPasskey';
+import { recover, ignored } from '../errorPolicy';
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -38,7 +39,7 @@ async function readValidationState(publicClient: PublicClient, account: Hex, ecd
   const [rootValidatorId, [, hook], ecdsaCanExecute] = await Promise.all([
     publicClient.readContract({ ...kernel, functionName: 'rootValidator' }),
     publicClient.readContract({ ...kernel, functionName: 'validationConfig', args: [ecdsaId] }),
-    publicClient.readContract({ ...kernel, functionName: 'isAllowedSelector', args: [ecdsaId, KERNEL_EXECUTE_SELECTOR] }).catch(() => false),
+    publicClient.readContract({ ...kernel, functionName: 'isAllowedSelector', args: [ecdsaId, KERNEL_EXECUTE_SELECTOR] }).catch(ignored(false, 'probe')),
   ]);
   return { rootValidatorId, ecdsaInstalled: hook.toLowerCase() !== ZERO_ADDRESS, ecdsaCanExecute };
 }
@@ -58,7 +59,7 @@ interface PasskeyAttempt { account: CreateKernelAccountReturnType | null; proble
 
 async function passkeyProblem(rec: AccountRecord): Promise<PasskeyProblem> {
   if (!rec.passkey) return 'not-stored';
-  const onchain = await accountPasskey(rec.address as Hex).catch(() => null);
+  const onchain = await accountPasskey(rec.address as Hex).catch(recover('passkey.onchain', null));
   return storedPasskeyMatches(rec, onchain) ? 'none' : 'mismatch';
 }
 

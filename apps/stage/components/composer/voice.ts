@@ -7,6 +7,7 @@ import {
   useAudioRecorder,
   type AudioRecorder,
 } from 'expo-audio';
+import { ignored } from '../../lib/errorPolicy';
 
 export { SLIDE_CANCEL_THRESHOLD_PX } from '@stage-labs/kit/react-native/voice-recorder';
 
@@ -69,7 +70,7 @@ export function useVoiceRecorder(args: VoiceArgs) {
     setRecording(false); recRef.current = null; pendingStop.current = null;
     clearTimers();
     setLevels([]);
-    try { await rec.stop(); } catch { }
+    await rec.stop().catch(ignored(undefined, 'cleanup'));
   };
 
   const stopRec = async (): Promise<void> => {

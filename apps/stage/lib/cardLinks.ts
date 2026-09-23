@@ -22,6 +22,14 @@ interface PreviewLinkRef {
 const PREVIEW_RE =
   /(?:(?:metro|stage):\/\/expo-development-client\/\?url=|https?:\/\/stage\.box\/preview-launcher\.html\?u=)(\S+)/i;
 
+function decodedOrRaw(raw: string): string {
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+}
+
 export function previewLinkOf(text?: string | null): PreviewLinkRef | null {
   if (!text) return null;
   const m = PREVIEW_RE.exec(text);
@@ -29,11 +37,7 @@ export function previewLinkOf(text?: string | null): PreviewLinkRef | null {
   const url = m[0];
   const rawInner = m[1];
   if (rawInner === undefined) return null;
-  let inner = rawInner;
-  try {
-    inner = decodeURIComponent(rawInner);
-  } catch {
-  }
+  const inner = decodedOrRaw(rawInner);
   const g = /u\.expo\.dev\/[^/\s]+\/group\/([A-Za-z0-9-]+)/i.exec(inner);
   if (!g) return null;
   const groupId = g[1];

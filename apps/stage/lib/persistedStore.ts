@@ -2,6 +2,7 @@
 import { appStorage } from '../platform/storage';
 import type { AppStorage } from '../platform/types';
 import { hydrateOnce, makeListeners, useStoreValue } from './storeCore';
+import { report, reported } from './errorPolicy';
 
 export interface ValueStoreOptions<T> {
   key: string;
@@ -36,12 +37,16 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
   }
 
   const hydration = hydrateOnce(async (): Promise<boolean> => {
-    try { return apply(await storage.get(opts.key)); }
-    catch { return false; }
+    try {
+      return apply(await storage.get(opts.key));
+    } catch (err) {
+      report(`store.${opts.key}`, err);
+      return false;
+    }
   });
 
   function persist(): void {
-    void storage.set(opts.key, serialize(cache)).catch(() => undefined);
+    void storage.set(opts.key, serialize(cache)).catch(reported(`store.${opts.key}`));
   }
 
   async function load(): Promise<T> {
@@ -70,8 +75,7 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
 
   async function setAsync(value: T): Promise<void> {
     commit(value);
-    try { await storage.set(opts.key, serialize(cache)); }
-    catch { }
+    await storage.set(opts.key, serialize(cache)).catch(reported(`store.${opts.key}`));
   }
 
   const use = (): T => useStoreValue(subscribe, get, loadAsync);

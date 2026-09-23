@@ -21,8 +21,8 @@ const FRESH_SEARCH_LIMIT = 32;
 
 async function identityInUse(publicClient: PublicClient, address: `0x${string}`): Promise<boolean> {
   const [code, registered] = await Promise.all([
-    publicClient.getCode({ address }).catch(() => undefined),
-    isXmtpRegistered(address).catch(() => false),
+    publicClient.getCode({ address }),
+    isXmtpRegistered(address),
   ]);
   return (code !== undefined && code !== '0x') || registered;
 }

@@ -26,10 +26,12 @@ import { getQueryClient } from '../lib/queryClient';
 import { applyWebGlobalStyles } from '../platform/webStyles';
 import { BuildInfoDot } from '../components/system/BuildInfoDot';
 import { AlertHost } from '../components/system/AlertHost';
+import { ToastHost } from '../components/system/ToastHost';
 import { TooltipHost } from '../components/system/TooltipHost';
 import { OnboardingRouteReset } from '../components/system/OnboardingRouteReset';
 import { installAlertShim } from '../lib/alertHost';
 import { SplitSidebar } from '../components/tabs/SplitSidebar';
+import { reported } from '../lib/errorPolicy';
 
 const queryClient = getQueryClient();
 
@@ -91,7 +93,7 @@ function RootLayoutInner(): React.ReactElement {
     if (!onboarding.hasAccount) return;
     void ensureActiveAccount()
       .then(() => (isOnboardingRoute(pathname) ? undefined : getOrCreateXmtpClient('production')))
-      .catch(() => undefined);
+      .catch(reported('boot.client'));
   }, [onboarding.hasAccount]);
   useEffect(() => { ensureMessagingStreamSync(); }, []);
 
@@ -122,6 +124,7 @@ function RootLayoutInner(): React.ReactElement {
       ) : null}
       <TopChrome decorated={gatesOpen && !shell.showOnboarding} />
       <BuildInfoDot />
+      <ToastHost />
       <AlertHost />
       <TooltipHost />
       <OnboardingRouteReset ready={gatesOpen} showing={shell.showOnboarding} />

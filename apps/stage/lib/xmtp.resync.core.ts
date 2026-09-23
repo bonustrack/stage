@@ -1,6 +1,7 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { isControlBody } from './xmtp.types';
 import { feedCache, activeFeedLines } from './xmtp.state.core';
+import { report } from './errorPolicy';
 
 export const PAGE_SIZE = 20;
 
@@ -30,8 +31,11 @@ export function throttledInboxSync(syncAll: () => Promise<boolean>): (maxAgeMs?:
     inFlight = (async () => {
       try {
         if (await syncAll()) lastAt = Date.now();
-      } catch { }
-      finally { inFlight = null; }
+      } catch (err) {
+        report('xmtp.inboxSync', err);
+      } finally {
+        inFlight = null;
+      }
     })();
     return inFlight;
   };
@@ -47,7 +51,9 @@ export function feedResync(
       try {
         const page = await latestPage(line);
         if (page !== null) prependToFeed(line, page);
-      } catch { }
+      } catch (err) {
+        report('xmtp.feedResync', err);
+      }
     }
   };
 }

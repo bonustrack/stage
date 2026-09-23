@@ -17,6 +17,7 @@ import { homeRows, updateHomeRows } from './state';
 import type { Row } from './model';
 import { registerHiddenConv } from '../../lib/readSyncRegistry';
 import { schedulePushTopicRefresh } from '../../lib/pushRegister';
+import { report, recover, attempt } from '../../lib/errorPolicy';
 
 const INIT_TIMEOUT_MS = 30_000;
 
@@ -76,7 +77,9 @@ function makeRefreshers(
       if (run.cancelled) return;
       const fresh = await listVisibleConversations();
       await perfTime('channels.paintFresh', () => paintFrom(fresh));
-    } catch { }
+    } catch (err) {
+      report('home.refresh', err);
+    }
   };
   const refreshThrottled = async (): Promise<void> => {
     if (run.cancelled || Date.now() - lastRefreshAt < THROTTLE_MS) return;
@@ -87,9 +90,9 @@ function makeRefreshers(
 
 async function onNewConversation(conv: Conversation, selfInboxId: string, run: SyncRun): Promise<void> {
   schedulePushTopicRefresh();
-  if (await conversationIsSyncGroup(conv).catch(() => false)) { registerHiddenConv(conv.id); return; }
-  if ((await getConvConsentState(conv.id).catch(() => null)) === 'denied') return;
-  const row = await summarize(conv, selfInboxId).catch(() => null);
+  if (await conversationIsSyncGroup(conv).catch(recover('home.newConversation', false))) { registerHiddenConv(conv.id); return; }
+  if ((await getConvConsentState(conv.id).catch(recover('home.newConversation', null))) === 'denied') return;
+  const row = await summarize(conv, selfInboxId).catch(recover('home.newConversation', null));
   if (!row || run.cancelled) return;
   updateHomeRows(prev => (prev ? [row, ...prev.filter(x => x.convId !== row.convId)] : [row]));
 }
@@ -99,7 +102,9 @@ function subscribeConvStream(selfInboxId: string, run: SyncRun): void {
     run.cancelConvStream = streamNewConversations((conv) => {
       if (!run.cancelled) void onNewConversation(conv, selfInboxId, run);
     });
-  } catch { }
+  } catch (err) {
+    report('home.convStream', err);
+  }
 }
 
 function subscribeLiveStreams(run: SyncRun, r: Refreshers): void {
@@ -107,14 +112,18 @@ function subscribeLiveStreams(run: SyncRun, r: Refreshers): void {
     run.cancelMsgStream = subscribeAllMessages(makeMsgStreamHandler({
       isCancelled: () => run.cancelled, refresh: r.refresh,
     }));
-  } catch { }
+  } catch (err) {
+    report('home.messageStream', err);
+  }
   try {
     run.cancelConsentStream = streamConvConsent(() => {
       void (async (): Promise<void> => {
         await syncConsent(); void r.refresh();
       })();
     });
-  } catch { }
+  } catch (err) {
+    report('home.consentStream', err);
+  }
   run.appStateSub = AppState.addEventListener('change', (state) => {
     if (state !== 'active') return;
     void syncPreferences(); void syncConsent();
@@ -130,6 +139,7 @@ async function initSync(run: SyncRun, args: SyncArgs): Promise<void> {
     const r = makeRefreshers(client, selfInboxId, run);
     await hydratePeerProfiles();
     await r.refresh();
+    if (run.cancelled) return;
     subscribeConvStream(selfInboxId, run);
     subscribeLiveStreams(run, r);
     await syncPreferences();
@@ -162,10 +172,11 @@ export function useChannelsSync(args: SyncArgs): void {
     return (): void => {
       run.cancelled = true;
       clearTimeout(run.initTimer);
-      if (run.cancelConvStream) try { run.cancelConvStream(); } catch { }
-      if (run.cancelMsgStream) try { run.cancelMsgStream(); } catch { }
-      if (run.cancelConsentStream) try { run.cancelConsentStream(); } catch { }
-      if (run.appStateSub) try { run.appStateSub.remove(); } catch { }
+      for (const stop of [run.cancelConvStream, run.cancelMsgStream, run.cancelConsentStream]) {
+        if (stop) attempt(stop, 'cleanup');
+      }
+      const appStateSub = run.appStateSub;
+      if (appStateSub) attempt(() => { appStateSub.remove(); }, 'cleanup');
     };
   }, [accountEpoch]);
 }

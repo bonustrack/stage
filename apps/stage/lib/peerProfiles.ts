@@ -13,6 +13,7 @@ import { fetchIssuedName } from '@stage-labs/client/identity/stageNames';
 import { stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { PersistentStore } from './cache.shared';
 import { linkProxyBase } from './historyServer';
+import { recover } from './errorPolicy';
 
 export {
   isPeerResolved,
@@ -37,7 +38,7 @@ const persisted = new PersistentStore<PeerProfileEntries>('peer-profiles.json', 
 let hydration: Promise<void> | null = null;
 
 async function hydrateAndMirror(): Promise<void> {
-  const saved = await persisted.hydrate().catch(() => null);
+  const saved = await persisted.hydrate().catch(recover('peerProfiles.hydrate', null));
   if (saved) seedPeerProfiles(saved);
   subscribePeerProfiles(() => { persisted.set(peerProfileEntries()); });
 }

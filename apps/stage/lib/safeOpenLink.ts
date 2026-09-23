@@ -1,3 +1,4 @@
+import { reported } from './errorPolicy';
 
 const ALLOWED_SCHEMES = new Set(['http', 'https', 'mailto', 'metro', 'stage']);
 
@@ -15,7 +16,7 @@ export function isAllowedLinkScheme(url: string): boolean {
 export function openInBubbleLink(url: string): boolean {
   if (isAllowedLinkScheme(url)) {
     const { Linking } = require('react-native') as typeof import('react-native');
-    void Linking.openURL(url).catch(() => undefined);
+    void Linking.openURL(url).catch(reported('link.open'));
   }
   return false;
 }

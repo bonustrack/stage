@@ -1,24 +1,26 @@
 
 import { Directory, File, Paths } from 'expo-file-system';
 import { sharedStoreRoot } from './xmtp.appGroup';
+import { report, attempt } from './errorPolicy';
+
+function removeDir(dir: Directory): void {
+  try {
+    dir.delete();
+  } catch (err) {
+    report('xmtp.deleteDbFiles', err);
+    attempt(() => {
+      for (const entry of dir.list()) {
+        if (entry instanceof File) attempt(() => { entry.delete(); }, 'cleanup');
+      }
+    }, 'cleanup');
+    attempt(() => { dir.delete(); }, 'cleanup');
+  }
+}
 
 export function deleteDbFiles(dbDirName: string): Promise<void> {
   const dir = dbDirObj(dbDirName);
-  if (!dir.exists) {
-    try { dir.create({ intermediates: true }); } catch { }
-    return Promise.resolve();
-  }
-  try {
-    dir.delete();
-  } catch {
-    try {
-      for (const entry of dir.list()) {
-        if (entry instanceof File) { try { entry.delete(); } catch { } }
-      }
-    } catch { }
-    try { dir.delete(); } catch { }
-  }
-  try { dbDirObj(dbDirName).create({ intermediates: true }); } catch { }
+  if (dir.exists) removeDir(dir);
+  attempt(() => { dbDirObj(dbDirName).create({ intermediates: true }); }, 'cleanup');
   return Promise.resolve();
 }
 
@@ -45,7 +47,7 @@ function assertWritableDir(dir: Directory, path: string): void {
     const probe = new File(dir, '.xmtp_write_probe');
     probe.write('1');
     const ok = probe.exists;
-    try { probe.delete(); } catch { }
+    attempt(() => { probe.delete(); }, 'cleanup');
     console.log(`[xmtp] dbDirectory ready path=${path} exists=${dir.exists} writable=${ok}`);
   } catch (e) {
     console.warn(`[xmtp] dbDirectory NOT writable path=${path} exists=${dir.exists} err=${String(e)}`);

@@ -9,6 +9,7 @@ import { knownActiveAccountId } from './channelsCache';
 import {
   addressesWithQueued, deserializeOutbox, itemsForAddress, withoutItem, type OutboxItem,
 } from './dmOutbox.model';
+import { report, reported, recover } from './errorPolicy';
 
 const store = createValueStore<OutboxItem[]>({
   key: 'dm.outbox',
@@ -31,7 +32,7 @@ export function subscribeDmOutbox(cb: () => void): () => void {
 const flushing = new Map<string, Promise<string | null>>();
 
 async function activeAccountId(): Promise<string | null> {
-  return (await getActiveAccount().catch(() => null))?.id ?? null;
+  return (await getActiveAccount().catch(recover('dmOutbox.account', null)))?.id ?? null;
 }
 
 export function queuedDmsFor(address: string): OutboxItem[] {
@@ -62,11 +63,12 @@ async function deliverQueued(address: string, convId: string, accountId: string 
 async function flushFor(address: string, accountId: string | null): Promise<string | null> {
   const items = itemsForAddress(await store.load(), address, accountId);
   if (items.length === 0) return null;
-  const res = await resolveDmConvId(address).catch(() => null);
+  const res = await resolveDmConvId(address).catch(recover('dmOutbox.resolve', null));
   if (!res || !('convId' in res)) return null;
   try {
     await deliverQueued(address, res.convId, accountId);
-  } catch {
+  } catch (err) {
+    report('dmOutbox.deliver', err);
     return null;
   }
   return res.convId;
@@ -85,6 +87,6 @@ export async function flushDmOutboxFor(address: string): Promise<string | null> 
 export async function flushDmOutbox(): Promise<void> {
   const accountId = await activeAccountId();
   for (const address of addressesWithQueued(await store.load(), accountId)) {
-    await flushDmOutboxFor(address).catch(() => null);
+    await flushDmOutboxFor(address).catch(reported('dmOutbox.flush'));
   }
 }

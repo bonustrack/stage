@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { decodeWaveformBars } from './VoiceMessage.decode';
+import { recover } from '../lib/errorPolicy';
 
 type Entry = number[] | false;
 
@@ -11,7 +12,7 @@ function decodeOnce(uri: string, count: number): Promise<Entry> {
   if (existing) return existing;
   const p = decodeWaveformBars(uri, count)
     .then((bars): Entry => bars)
-    .catch((): Entry => false)
+    .catch(recover<Entry>('voice.waveform', false))
     .then((entry) => {
       cache.set(uri, entry);
       inflight.delete(uri);

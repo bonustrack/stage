@@ -1,5 +1,6 @@
 
 import { Opfs } from '@xmtp/browser-sdk';
+import { report } from './errorPolicy';
 
 export function deleteDbFiles(dbDirName: string): Promise<void> {
   return deleteOpfsDbFiles(dbDirName);
@@ -17,7 +18,9 @@ async function deleteOpfsDbFiles(prefix: string): Promise<void> {
     } finally {
       opfs.close();
     }
-  } catch { }
+  } catch (err) {
+    report('xmtp.deleteDbFiles', err);
+  }
 }
 
 export function ensureDbDir(name: string): Promise<string> {

@@ -1,5 +1,6 @@
 import { DevSettings, Platform } from 'react-native';
 import { reloadAsync } from 'expo-updates';
+import { reported } from './errorPolicy';
 
 export function reloadApp(home = false): void {
   if (Platform.OS === 'web') {
@@ -9,5 +10,5 @@ export function reloadApp(home = false): void {
     return;
   }
   if (DevSettings.reload) { DevSettings.reload(); return; }
-  void reloadAsync().catch(() => undefined);
+  void reloadAsync().catch(reported('app.reload'));
 }

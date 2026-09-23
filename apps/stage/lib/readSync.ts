@@ -21,6 +21,7 @@ import { waitForXmtpReady } from './xmtp.state';
 import { subscribeAllMessages } from './xmtp.stream';
 import { lineOfConv, type StreamMsg } from './xmtp.types';
 import { CLEAR_STATE_CODEC, PIN_STATE_CODEC, READ_STATE_CODEC, type JsonCodec } from './xmtpJsonCodecs';
+import { report, reported, recover, ignored } from './errorPolicy';
 
 const CURSOR_PREFIX = 'readSync.cursor.';
 const REPLAY_LIMIT = 500;
@@ -33,10 +34,6 @@ let bootToken = 0;
 let groupId: string | null = null;
 const localAt = new Map<string, number>();
 const pendingPublish = new Map<string, ReturnType<typeof setTimeout>>();
-
-function warn(step: string, err: unknown): void {
-  if (process.env.NODE_ENV !== 'production') console.warn(`read sync ${step} failed`, err instanceof Error ? err.message : err);
-}
 
 function patchRows(state: ReadStateContent): void {
   const rows = getCachedRows();
@@ -90,9 +87,9 @@ async function ensureGroup(address: string): Promise<string> {
 }
 
 async function replay(accountId: string, id: string): Promise<void> {
-  await syncConversation(id).catch((err: unknown) => { warn('sync', err); });
+  await syncConversation(id).catch(reported('readSync.sync'));
   const cursorKey = CURSOR_PREFIX + accountId;
-  const cursor = Number(await appStorage.get(cursorKey).catch(() => null)) || 0;
+  const cursor = Number(await appStorage.get(cursorKey).catch(recover('readSync.cursor', null))) || 0;
   const messages = (await recentSyncMessages(id, cursor === 0 ? FIRST_REPLAY_LIMIT : REPLAY_LIMIT))
     .filter((m) => m.sentNs > cursor)
     .sort((a, b) => a.sentNs - b.sentNs);
@@ -101,7 +98,7 @@ async function replay(accountId: string, id: string): Promise<void> {
     await applyMessage(m);
     latest = Math.max(latest, m.sentNs);
   }
-  if (latest > cursor) await appStorage.set(cursorKey, String(latest)).catch(() => undefined);
+  if (latest > cursor) await appStorage.set(cursorKey, String(latest)).catch(ignored(undefined, 'cache'));
 }
 
 async function boot(): Promise<void> {
@@ -109,24 +106,24 @@ async function boot(): Promise<void> {
   groupId = null;
   localAt.clear();
   if (!(await waitForXmtpReady())) return;
-  const rec = await getActiveAccount().catch(() => null);
+  const rec = await getActiveAccount().catch(recover('readSync.boot', null));
   if (rec === null || token !== bootToken) return;
   await ensureClearedChatsLoaded();
   try {
     const id = await ensureGroup(rec.address);
     if (token === bootToken) await replay(rec.id, id);
   } catch (err) {
-    warn('boot', err);
+    report('readSync.boot', err);
   }
 }
 
 async function withGroup(send: (groupId: string) => Promise<unknown>): Promise<void> {
   try {
-    const rec = await getActiveAccount().catch(() => null);
+    const rec = await getActiveAccount();
     if (rec === null) return;
     await send(await ensureGroup(rec.address));
   } catch (err) {
-    warn('publish', err);
+    report('readSync.publish', err);
   }
 }
 

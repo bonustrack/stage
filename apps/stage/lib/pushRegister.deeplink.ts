@@ -2,6 +2,7 @@
 import * as Notifications from 'expo-notifications';
 import { useEffect } from 'react';
 import { router } from 'expo-router';
+import { reported, attempt } from './errorPolicy';
 const markConvRead = async (convId: string): Promise<void> => {
   const { markConvRead: fn } = await import('./channelsCache');
   return fn(convId);
@@ -25,7 +26,7 @@ function openConvFromResponse(response: Notifications.NotificationResponse | nul
   const convId = convIdFromNotificationData(response.notification?.request?.content?.data);
   if (!convId) return;
   router.push({ pathname: '/channel/[convId]', params: { convId } });
-  void markConvRead(convId).catch(() => undefined);
+  void markConvRead(convId).catch(reported('push.markRead'));
 }
 
 export function usePushDeepLinks(): void {
@@ -34,10 +35,10 @@ export function usePushDeepLinks(): void {
     void Notifications.getLastNotificationResponseAsync()
       .then((resp) => {
         if (cancelled || !resp) return;
-        try { Notifications.clearLastNotificationResponse(); } catch { }
+        attempt(() => { Notifications.clearLastNotificationResponse(); }, 'cleanup');
         openConvFromResponse(resp);
       })
-      .catch(() => undefined);
+      .catch(reported('push.lastResponse'));
     const sub = Notifications.addNotificationResponseReceivedListener(openConvFromResponse);
     return (): void => { cancelled = true; sub.remove(); };
   }, []);

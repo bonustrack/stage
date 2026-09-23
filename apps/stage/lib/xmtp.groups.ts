@@ -4,6 +4,7 @@ import {
 import { convOfLine, sdk } from './xmtp.sdk';
 import { notAGroup, type GroupAdmins, type GroupInfo, type GroupMeta } from './xmtp.sdk.core';
 import { lineOfConv } from './xmtp.types';
+import { report, reported } from './errorPolicy';
 
 type GroupConv = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
 
@@ -64,9 +65,11 @@ export async function leaveGroupConv(line: string): Promise<'left' | 'hidden'> {
   if (leave) {
     try {
       await leave();
-      await sdk.setConsent(conv, 'denied').catch(() => undefined);
+      await sdk.setConsent(conv, 'denied').catch(reported('xmtp.leaveGroupConsent'));
       return 'left';
-    } catch { }
+    } catch (err) {
+      report('xmtp.leaveGroup', err);
+    }
   }
   await sdk.setConsent(conv, 'denied');
   return 'hidden';

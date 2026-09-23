@@ -19,6 +19,8 @@ declare class StagePillModule extends NativeModule<StagePillEvents> {
 let resolved: StagePillModule | null = null;
 try {
   resolved = requireNativeModule<StagePillModule>('StagePill');
-} catch { }
+} catch {
+  resolved = null;
+}
 
 export default resolved;

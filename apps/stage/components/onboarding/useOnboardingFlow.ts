@@ -7,6 +7,7 @@ import type { SetupErr, SetupPlan } from './Onboarding.setup.model';
 import { useSetupRunner, type Choice, type HistoryControls } from './useSetupRunner';
 import { IMPORT_ROUTE } from './nextRoute.model';
 import { EMPTY_DETAILS, profileSetupFrom, type ProfileDetails } from './Onboarding.profile.model';
+import { reported } from '../../lib/errorPolicy';
 
 export type Step = 'username' | 'profile' | 'import' | 'passkey' | 'setup';
 
@@ -101,7 +102,7 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
   };
 
   const startOver = (): void => {
-    if (restoredId !== null) void abandonAccount(restoredId).catch(() => undefined);
+    if (restoredId !== null) void abandonAccount(restoredId).catch(reported('onboarding.abandon'));
     runner.startOver();
     setRestoredId(null); setPasskeyErr(null); setPending(null); setLabel('');
     setStep('username');

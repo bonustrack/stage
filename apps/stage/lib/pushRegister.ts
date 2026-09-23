@@ -11,6 +11,7 @@ import {
 } from './pushRegister.core';
 import { setPushStatus } from './pushStatus';
 import { getCachedXmtpClient } from './xmtp.state';
+import { recover } from './errorPolicy';
 
 export { usePushDeepLinks } from './pushRegister.deeplink';
 
@@ -24,9 +25,9 @@ function platformTag(): PushPlatform | null {
 
 async function hiddenGroupIds(client: PushClient): Promise<Set<string>> {
   const hidden = new Set<string>();
-  const groups = await client.conversations.listGroups().catch(() => []);
+  const groups = await client.conversations.listGroups().catch(recover('push.hiddenGroups', []));
   for (const group of groups) {
-    const name = await group.name().catch(() => '');
+    const name = await group.name().catch(recover('push.hiddenGroups', ''));
     if (isSyncGroupName(name)) hidden.add(group.id.toLowerCase());
   }
   return hidden;

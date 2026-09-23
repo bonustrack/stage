@@ -1,6 +1,8 @@
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import { Alert, Linking, Platform, Share, ToastAndroid } from 'react-native';
+import { showToast } from './toastHost';
+import { reported } from './errorPolicy';
 
 export interface ConfirmOptions {
   title: string;
@@ -36,6 +38,7 @@ export interface Capabilities {
 
 function toast(message: string): void {
   if (Platform.OS === 'android') ToastAndroid.show(message, ToastAndroid.SHORT);
+  else showToast(message);
 }
 
 export const capabilities: Capabilities = {
@@ -46,7 +49,7 @@ export const capabilities: Capabilities = {
   copy: (label, value) => { void Clipboard.setStringAsync(value); toast(`${label} copied`); },
   toast,
   confirm: confirmDialog,
-  openUrl: (url) => { void Linking.openURL(url); },
+  openUrl: (url) => { void Linking.openURL(url).catch(reported('link.open')); },
   share: async (payload) => {
     await Share.share({ message: payload.text ?? payload.url ?? '' });
   },

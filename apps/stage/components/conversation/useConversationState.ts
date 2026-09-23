@@ -27,6 +27,7 @@ import {
   entriesAfterClear, feedReachedClear, reactionsByMessage, ownReactionsByMessage,
   pollOptionCountsInFeed, votesByMessage, ownVotesByMessage, openAnswersByMessage,
 } from './feed-helpers';
+import { reported } from '../../lib/errorPolicy';
 
 function useActiveConvSuppression(convId: string | undefined): void {
   const activeConvId = useMemo(() => convId?.toLowerCase(), [convId]);
@@ -69,7 +70,7 @@ function useGroupLabels(convId: string | undefined, activeLine: string, isGroup:
     if (!isGroup) { setGroupLabels([]); return; }
     setGroupLabels(cachedLabels(convId));
     let cancelled = false;
-    void getGroupLabels(activeLine).then(v => { if (!cancelled) setGroupLabels(v); }).catch(() => undefined);
+    void getGroupLabels(activeLine).then(v => { if (!cancelled) setGroupLabels(v); }).catch(reported('conversation.labels'));
     return () => { cancelled = true; };
   }, [convId, activeLine, isGroup]);
   return groupLabels;

@@ -14,6 +14,7 @@ import {
 import {
   PK_PREFIX, LEGACY_PK_KEY,
 } from '@stage-labs/client/accounts/keys';
+import { recover, ignored } from '../errorPolicy';
 
 
 const STORE_OPTS: DeviceBoundAccessOptions = {
@@ -37,7 +38,7 @@ async function requireDeviceAuth(): Promise<boolean> {
   } catch {
     return true;
   }
-  return (await secureStorage.get(AUTH_SENTINEL_KEY, SENTINEL_OPTS).catch(() => null)) !== null;
+  return (await secureStorage.get(AUTH_SENTINEL_KEY, SENTINEL_OPTS).catch(ignored(null, 'probe'))) !== null;
 }
 
 async function requireRevealAuth(id?: string): Promise<boolean> {
@@ -80,7 +81,7 @@ async function storePhrase(phraseId: string, phrase: string): Promise<void> {
 }
 
 async function migrateLegacyPhrase(): Promise<void> {
-  const raw = await secureStorage.get(LEGACY_MNEMONIC_KEY, STORE_OPTS).catch(() => null);
+  const raw = await secureStorage.get(LEGACY_MNEMONIC_KEY, STORE_OPTS);
   if (!raw) return;
   const phrase = normalizeMnemonic(raw);
   if (isValidMnemonic(phrase)) {
@@ -89,11 +90,17 @@ async function migrateLegacyPhrase(): Promise<void> {
     await secureStorage.set(PRIMARY_PHRASE_KEY, id, STORE_OPTS);
     await migrateLegacyHdIndex(id);
   }
-  await secureStorage.delete(LEGACY_MNEMONIC_KEY).catch(() => undefined);
+  await secureStorage.delete(LEGACY_MNEMONIC_KEY).catch(ignored(undefined, 'cleanup'));
 }
 
 let migration: Promise<void> | null = null;
-const migrated = (): Promise<void> => { migration ??= migrateLegacyPhrase(); return migration; };
+function migrated(): Promise<void> {
+  migration ??= migrateLegacyPhrase().catch((err: unknown) => {
+    migration = null;
+    throw err;
+  });
+  return migration;
+}
 
 export async function primaryPhraseId(): Promise<string | null> {
   await migrated();
@@ -137,10 +144,10 @@ export async function deletePhrase(phraseId: string, nextPrimary: string | null)
   sessionPhrases.delete(phraseId);
   for (const key of [...ownerCache.keys()]) if (key.startsWith(`${phraseId}:`)) ownerCache.delete(key);
   await resetSmartHdIndex(phraseId);
-  await secureStorage.delete(phraseKey(phraseId)).catch(() => undefined);
+  await secureStorage.delete(phraseKey(phraseId)).catch(ignored(undefined, 'cleanup'));
   if ((await primaryPhraseId()) !== phraseId) return;
   if (nextPrimary) await secureStorage.set(PRIMARY_PHRASE_KEY, nextPrimary, STORE_OPTS);
-  else await secureStorage.delete(PRIMARY_PHRASE_KEY).catch(() => undefined);
+  else await secureStorage.delete(PRIMARY_PHRASE_KEY).catch(ignored(undefined, 'cleanup'));
 }
 
 async function ownerFor(ref: SmartKeyRef): Promise<HDAccount> {
@@ -169,19 +176,22 @@ export async function signOwnerMessage(ref: SmartKeyRef, message: string): Promi
 }
 
 async function loadPrivateKey(id: string): Promise<Hex | null> {
-  const pk = await secureStorage.get(PK_PREFIX + id, STORE_OPTS).catch(() => null);
+  const pk = await secureStorage.get(PK_PREFIX + id, STORE_OPTS);
   if (pk && /^0x[0-9a-f]{64}$/.test(pk)) return pk as Hex;
-  const legacy = await secureStorage.get(LEGACY_PK_KEY, STORE_OPTS).catch(() => null);
-  if (legacy && /^0x[0-9a-fA-F]{64}$/.test(legacy)) {
-    const norm = ('0x' + legacy.slice(2).toLowerCase()) as Hex;
-    try {
-      if (privateKeyToAccount(norm).address.toLowerCase() === id.toLowerCase()) {
-        await secureStorage.set(PK_PREFIX + id, norm, STORE_OPTS).catch(() => undefined);
-        return norm;
-      }
-    } catch { }
+  const legacy = await secureStorage.get(LEGACY_PK_KEY, STORE_OPTS);
+  const norm = legacy && /^0x[0-9a-fA-F]{64}$/.test(legacy) ? legacyKeyOwnedBy(legacy, id) : null;
+  if (norm === null) return null;
+  await secureStorage.set(PK_PREFIX + id, norm, STORE_OPTS).catch(ignored(undefined, 'cache'));
+  return norm;
+}
+
+function legacyKeyOwnedBy(legacy: string, id: string): Hex | null {
+  const norm = ('0x' + legacy.slice(2).toLowerCase()) as Hex;
+  try {
+    return privateKeyToAccount(norm).address.toLowerCase() === id.toLowerCase() ? norm : null;
+  } catch {
+    return null;
   }
-  return null;
 }
 
 async function storePrivateKey(id: string, pk: Hex): Promise<void> {
@@ -201,7 +211,7 @@ export async function importPrivateKey(pk: Hex): Promise<{ id: string; address: 
 }
 
 export async function adoptLegacyKey(): Promise<{ id: string; address: string } | null> {
-  const legacy = await secureStorage.get(LEGACY_PK_KEY, STORE_OPTS).catch(() => null);
+  const legacy = await secureStorage.get(LEGACY_PK_KEY, STORE_OPTS).catch(recover('keyring.adoptLegacyKey', null));
   if (!legacy || !/^0x[0-9a-fA-F]{64}$/.test(legacy)) return null;
   const pk = ('0x' + legacy.slice(2).toLowerCase()) as Hex;
   const acct = privateKeyToAccount(pk);
@@ -211,7 +221,7 @@ export async function adoptLegacyKey(): Promise<{ id: string; address: string } 
 }
 
 export async function deleteKey(id: string): Promise<void> {
-  await secureStorage.delete(PK_PREFIX + id).catch(() => undefined);
+  await secureStorage.delete(PK_PREFIX + id).catch(ignored(undefined, 'cleanup'));
 }
 
 

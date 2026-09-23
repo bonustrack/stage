@@ -1,5 +1,6 @@
 
 import { appStorage } from '../platform/storage';
+import { ignore, ignored } from './errorPolicy';
 
 export const CHANNELS_SCROLL_KEY = 'scroll:channels';
 export function convScrollKey(convId: string): string { return `scroll:conv:${convId}`; }
@@ -16,13 +17,13 @@ function debouncedKv<T>(parse: (raw: string | null) => T | undefined, write: (ke
   const timers = new Map<string, ReturnType<typeof setTimeout>>();
   const persist = (key: string): void => {
     const v = values.get(key);
-    if (v !== undefined) void write(key, v).catch(() => undefined);
+    if (v !== undefined) ignore(write(key, v), 'cache');
   };
   return {
     peek: (key: string): T | undefined => values.get(key),
     async get(key: string): Promise<T | undefined> {
       if (values.has(key)) return values.get(key);
-      const v = parse(await appStorage.get(key).catch(() => null));
+      const v = parse(await appStorage.get(key).catch(ignored(null, 'cache')));
       if (v !== undefined) values.set(key, v);
       return v;
     },
@@ -58,8 +59,10 @@ function parseAnchor(raw: string | null): FeedAnchor | null {
     if (typeof v === 'object' && v !== null && typeof (v as FeedAnchor).key === 'string' && typeof (v as FeedAnchor).offset === 'number') {
       return { key: (v as FeedAnchor).key, offset: (v as FeedAnchor).offset };
     }
-  } catch { }
-  return null;
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 const offsets = debouncedKv<number>(parseOffset, (key, v) => appStorage.set(key, String(v)));

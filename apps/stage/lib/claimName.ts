@@ -6,6 +6,7 @@ import { getActiveAccount, getActiveViemAccount } from './accounts';
 import { linkProxyBase } from './historyServer';
 import { refreshProfileCaches, saveBasenameProfile, sendOnBase } from './profileWrite';
 import { kernelClientForRecord } from './zerodev/kernelForRecord';
+import { ignored } from './errorPolicy';
 
 export interface NameCheck { valid: boolean; available: boolean; reason?: string }
 
@@ -43,7 +44,7 @@ export async function claimStageName(label: string): Promise<string> {
   const res = await fetch(`${linkProxyBase()}/names/claim`, {
     method: 'POST', headers: HEADERS, body: JSON.stringify({ label, address, issuedAt, signature }),
   });
-  const body = (await res.json().catch(() => ({}))) as { name?: string; error?: string };
+  const body = (await res.json().catch(ignored({}, 'optional'))) as { name?: string; error?: string };
   if (!res.ok || !body.name) throw new Error(body.error ?? `claim failed (${res.status})`);
   return body.name;
 }

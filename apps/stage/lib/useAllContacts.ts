@@ -1,7 +1,7 @@
 
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { type Conversation } from '@xmtp/react-native-sdk';
+import type { Conversation } from '@xmtp/react-native-sdk';
 import { useContactsFocused } from '../components/tabs/useWalletFocused';
 import {
   peerEthAddressOfDm, groupMemberEthAddresses, primeConversationMembers, isGroupConv,

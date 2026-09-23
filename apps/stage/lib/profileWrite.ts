@@ -8,6 +8,7 @@ import { invalidatePeerProfile } from './peerProfiles';
 import { uploadAvatar } from './profile';
 import { sendCall } from './tx';
 import { kernelClientForRecord } from './zerodev/kernelForRecord';
+import { ignore } from './errorPolicy';
 
 const STAMP_CLEAR_URL = 'https://stamp.fyi/clear/';
 
@@ -37,8 +38,8 @@ export async function sendOnBase(call: ContractCall): Promise<Hex> {
 
 export function refreshProfileCaches(address: string, avatarChanged = false): void {
   const id = address.toLowerCase();
-  fetch(`${STAMP_CLEAR_URL}address/${id}`).catch(() => undefined);
-  if (avatarChanged) fetch(`${STAMP_CLEAR_URL}avatar/eth:${id}`).catch(() => undefined);
+  ignore(fetch(`${STAMP_CLEAR_URL}address/${id}`), 'cache');
+  if (avatarChanged) ignore(fetch(`${STAMP_CLEAR_URL}avatar/eth:${id}`), 'cache');
   invalidatePeerProfile(address);
 }
 

@@ -11,6 +11,7 @@ import {
   NO_GROUP_ADMINS, NO_GROUP_INFO, VISIBLE_CONSENT, convFinder, notAGroup,
   type MessageQuery, type XmtpSdk,
 } from './xmtp.sdk.core';
+import { reported, recover, attempt } from './errorPolicy';
 
 type NativeClient = Awaited<ReturnType<typeof xmtpClient>>;
 type NativeMessage = Awaited<ReturnType<Conversation['messages']>>[number];
@@ -50,7 +51,9 @@ function conversationIdField(m: NativeMessage): string | undefined {
 async function groupInfoOf(conv: Conversation): Promise<{ name: string; imageUrl: string; description: string }> {
   if (!(conv instanceof Group)) return { ...NO_GROUP_INFO };
   const [name, imageUrl, description] = await Promise.all([
-    conv.name().catch(() => ''), conv.imageUrl().catch(() => ''), conv.description().catch(() => ''),
+    conv.name().catch(recover('xmtp.groupInfo', '')),
+    conv.imageUrl().catch(recover('xmtp.groupInfo', '')),
+    conv.description().catch(recover('xmtp.groupInfo', '')),
   ]);
   return { name, imageUrl, description };
 }
@@ -58,8 +61,8 @@ async function groupInfoOf(conv: Conversation): Promise<{ name: string; imageUrl
 async function groupAdminsOf(conv: Conversation): Promise<{ admins: string[]; superAdmins: string[] }> {
   if (!(conv instanceof Group)) return NO_GROUP_ADMINS;
   const [admins, superAdmins] = await Promise.all([
-    conv.listAdmins().catch(() => [] as string[]),
-    conv.listSuperAdmins().catch(() => [] as string[]),
+    conv.listAdmins().catch(recover<string[]>('xmtp.groupAdmins', [])),
+    conv.listSuperAdmins().catch(recover<string[]>('xmtp.groupAdmins', [])),
   ]);
   return { admins, superAdmins };
 }
@@ -74,16 +77,16 @@ async function streamAllMessages(
     onClose,
   );
   return () => {
-    try { client.conversations.cancelStreamAllMessages(); } catch { }
+    attempt(() => { client.conversations.cancelStreamAllMessages(); }, 'cleanup');
   };
 }
 
 function streamConversations(client: NativeClient, onConv: (conv: Conversation) => void): () => void {
   let live = true;
-  void client.conversations.stream((conv) => { if (live) onConv(conv); return Promise.resolve(); }).catch(() => undefined);
+  void client.conversations.stream((conv) => { if (live) onConv(conv); return Promise.resolve(); }).catch(reported('xmtp.convStream'));
   return () => {
     live = false;
-    try { client.conversations.cancelStream(); } catch { }
+    attempt(() => { client.conversations.cancelStream(); }, 'cleanup');
   };
 }
 
@@ -92,10 +95,10 @@ function streamConsent(client: NativeClient, onChange: () => void): () => void {
   void client.preferences.streamConsent(() => {
     if (live) onChange();
     return Promise.resolve();
-  }).catch(() => undefined);
+  }).catch(reported('xmtp.consentStream'));
   return () => {
     live = false;
-    try { client.preferences.cancelStreamConsent(); } catch { }
+    attempt(() => { client.preferences.cancelStreamConsent(); }, 'cleanup');
   };
 }
 
@@ -145,7 +148,7 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
   },
   isGroup: (conv) => conv instanceof Group,
   dmPeerInboxId: (conv) => (conv instanceof Dm ? () => conv.peerInboxId() : null),
-  groupName: (conv) => (conv instanceof Group ? conv.name().catch(() => '') : Promise.resolve('')),
+  groupName: (conv) => (conv instanceof Group ? conv.name().catch(recover('xmtp.groupName', '')) : Promise.resolve('')),
   groupInfo: groupInfoOf,
   groupAdmins: groupAdminsOf,
   groupOps: (conv) => (conv instanceof Group ? conv : null),

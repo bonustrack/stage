@@ -11,6 +11,7 @@ import {
 import type { SetupErr, SetupPlan } from './Onboarding.setup.model';
 import { passkeysAvailable } from '../../lib/zerodev';
 import type { ProfileSetup } from './Onboarding.profile.model';
+import { reported } from '../../lib/errorPolicy';
 
 export type Choice =
   | { kind: 'create'; profile?: ProfileSetup }
@@ -133,7 +134,7 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
 
   const startOver = (): void => {
     const accountId = setupErr?.accountId;
-    if (accountId !== undefined) void abandonAccount(accountId).catch(() => undefined);
+    if (accountId !== undefined) void abandonAccount(accountId).catch(reported('onboarding.abandon'));
     reset();
   };
 

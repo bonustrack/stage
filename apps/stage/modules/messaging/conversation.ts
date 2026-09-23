@@ -13,6 +13,7 @@ import {
   channelRowTitle, countUnreadEntries, initialMarkedUnread,
   ROW_PREVIEW_MAX_CHARS, type RowMessage,
 } from '@stage-labs/client/xmtp/summarizeRow';
+import { reported, recover } from '../../lib/errorPolicy';
 export interface ConversationView {
   convId: string;
   title: string;
@@ -96,10 +97,10 @@ async function resolveMarkedUnread(
 export async function summarizeConversation(
   conv: Conversation, selfInboxId: string, alreadySynced = false,
 ): Promise<ConversationView> {
-  if (!alreadySynced) await conv.sync().catch(() => undefined);
+  if (!alreadySynced) await conv.sync().catch(reported('conversation.sync'));
   const peerAddress = await peerEthAddressOfDm(conv);
   const dm = peerAddress !== null;
-  const msgs = await rowMessagesOf(conv, dm ? 6 : 2).catch(() => []);
+  const msgs = await rowMessagesOf(conv, dm ? 6 : 2).catch(recover('conversation.rowMessages', []));
   const last = pickLastMessage(msgs, dm);
   const preview = previewOfMessage(last, dm);
   const inboxToAddr = await memberInboxToAddressMap(conv);

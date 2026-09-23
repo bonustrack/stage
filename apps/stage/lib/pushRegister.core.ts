@@ -6,6 +6,7 @@ import {
 import { appStorage } from '../platform/storage';
 import { isPushEnabledSync, loadPushEnabled } from './pushPref';
 import { setPushStatus } from './pushStatus';
+import { report, ignored } from './errorPolicy';
 
 const SERVER_URL_ENV: unknown = process.env.EXPO_PUBLIC_PUSH_SERVER_URL;
 const PUSH_SERVER_URL =
@@ -53,10 +54,9 @@ export function makeTopicRefresh<C>(
 
 interface RegisterState { token: string; at: number; topics: string }
 
-function reportPushFailure(label: string, err: unknown): void {
-  const message = errorMessage(err);
-  setPushStatus('failed', message);
-  if (process.env.NODE_ENV !== 'production') console.warn(label, message);
+function reportPushFailure(scope: string, err: unknown): void {
+  setPushStatus('failed', errorMessage(err));
+  report(scope, err);
 }
 
 export function directRpcUrl(method: string): string {
@@ -73,7 +73,7 @@ async function postJson(url: string, body: unknown): Promise<void> {
 }
 
 async function readState(key: string): Promise<RegisterState | null> {
-  const raw = await appStorage.get(key).catch(() => null);
+  const raw = await appStorage.get(key).catch(ignored(null, 'cache'));
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as Partial<RegisterState>;
@@ -96,7 +96,7 @@ async function subscribeTopics(
     subscribeWithMetadataBody(input.installationId, subs.topics, subs.hmacKeys, isWelcomeTopic),
   );
   const next: RegisterState = { token, at: registeredAt, topics: signature };
-  await appStorage.set(stateKey(input.installationId), JSON.stringify(next)).catch(() => undefined);
+  await appStorage.set(stateKey(input.installationId), JSON.stringify(next)).catch(ignored(undefined, 'cache'));
   setPushStatus('registered', `${subs.topics.length} topics`);
 }
 
@@ -123,7 +123,7 @@ export async function runPushRegistration(input: PushRegistrationInput): Promise
     }
     await subscribeTopics(input, fresh ? prev : null, token, fresh ? prev.at : Date.now());
   } catch (err) {
-    reportPushFailure('push registration failed', err);
+    reportPushFailure('push.register', err);
   }
 }
 
@@ -131,11 +131,11 @@ export async function runPushUnregistration(installationId: string, rpcUrl: (met
   try {
     const key = stateKey(installationId);
     const prev = await readState(key);
-    await appStorage.delete(key).catch(() => undefined);
+    await appStorage.delete(key).catch(ignored(undefined, 'cleanup'));
     setPushStatus('disabled');
     if (!prev) return;
     await postJson(rpcUrl(PUSH_RPC.remove), deleteInstallationBody(installationId));
   } catch (err) {
-    reportPushFailure('push unregistration failed', err);
+    reportPushFailure('push.unregister', err);
   }
 }

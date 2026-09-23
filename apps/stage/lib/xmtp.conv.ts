@@ -5,6 +5,7 @@ import { lineOfConv, type DmUnreachableReason, type XmtpConsent } from './xmtp.t
 import { conversationIsSyncGroup } from './xmtp.readSync';
 import { registerHiddenConv } from './readSyncRegistry';
 import { makeSharedSource } from './storeCore';
+import { report, reported, recover } from './errorPolicy';
 
 type Conv = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
 type ConvClient = Awaited<ReturnType<typeof sdk.client>>;
@@ -22,12 +23,12 @@ export async function findExistingDmWithAddress(address: string): Promise<Existi
   if (!lookup) return null;
   let dm = await lookup.find();
   if (!dm) {
-    await sdk.syncConvList(client).catch(() => undefined);
+    await sdk.syncConvList(client).catch(reported('xmtp.syncConvList'));
     dm = await lookup.find();
   }
   if (!dm) return null;
-  const members = await dm.members().catch(() => []);
-  const peerInboxId = await lookup.peerInboxId().catch(() => undefined);
+  const members = await dm.members().catch(recover('xmtp.dmMembers', []));
+  const peerInboxId = await lookup.peerInboxId().catch(recover('xmtp.dmPeer', undefined));
   const peerJoined = members.length >= 2 || peerInboxId === client.inboxId;
   return { convId: dm.id, peerJoined };
 }
@@ -40,11 +41,12 @@ export async function repairDmMembership(convId: string, address: string): Promi
   if (peerInboxId === undefined || peerInboxId === '') return false;
   try {
     await forceAddMember(client, convId, peerInboxId);
-  } catch {
+  } catch (err) {
+    report('xmtp.repairDm', err);
     return false;
   }
   const dm = await (await sdk.dmLookup(client, address))?.find();
-  const members = await dm?.members().catch(() => []) ?? [];
+  const members = await dm?.members().catch(recover('xmtp.dmMembers', [])) ?? [];
   return members.length >= 2;
 }
 
@@ -59,7 +61,7 @@ export async function dmUnreachableReason(address: string): Promise<DmUnreachabl
 }
 
 async function withoutSyncGroups(convs: Conv[]): Promise<Conv[]> {
-  const flags = await Promise.all(convs.map((c) => conversationIsSyncGroup(c).catch(() => false)));
+  const flags = await Promise.all(convs.map((c) => conversationIsSyncGroup(c).catch(recover('xmtp.syncGroupCheck', false))));
   return convs.filter((c, i) => {
     if (flags[i] === true) registerHiddenConv(c.id);
     return flags[i] !== true;
@@ -75,7 +77,9 @@ export async function syncConversationsFromNetwork(): Promise<void> {
   const client = await sdk.client();
   try {
     await sdk.syncVisible(client);
-  } catch { }
+  } catch (err) {
+    report('xmtp.syncVisible', err);
+  }
 }
 
 export async function getConvConsentState(convId: string): Promise<XmtpConsent | null> {
@@ -83,7 +87,8 @@ export async function getConvConsentState(convId: string): Promise<XmtpConsent |
   if (!conv) return null;
   try {
     return await sdk.consentOf(conv);
-  } catch {
+  } catch (err) {
+    report('xmtp.consentOf', err);
     return null;
   }
 }
@@ -118,5 +123,7 @@ export async function syncConsent(): Promise<void> {
   try {
     const client = sdk.cachedClient();
     if (client) await sdk.syncConsent(client);
-  } catch { }
+  } catch (err) {
+    report('xmtp.syncConsent', err);
+  }
 }

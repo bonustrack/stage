@@ -1,6 +1,7 @@
 import { AppState } from 'react-native';
 import { File } from 'expo-file-system';
 import { appDocumentsDir } from './appDocuments';
+import { attempt } from './errorPolicy';
 
 export const persistenceBackend = {
   async read<T>(name: string): Promise<T | null> {
@@ -10,11 +11,11 @@ export const persistenceBackend = {
     } catch { return null; }
   },
   write(name: string, value: unknown): void {
-    try {
+    attempt(() => {
       const f = new File(appDocumentsDir(), name);
       if (value === null) { if (f.exists) f.delete(); }
       else f.write(JSON.stringify(value));
-    } catch { }
+    }, 'cache');
   },
   onFlushSignal(flushAll: () => void): void {
     AppState.addEventListener('change', (state) => { if (state !== 'active') flushAll(); });

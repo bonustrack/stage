@@ -20,6 +20,7 @@ import { GroupProfileHeader, GroupNameEditor, GroupDescriptionEditor } from '../
 import { useGroupDetail } from '../../components/group/group.detail';
 import { GroupLabelsSection } from '../../components/group/group.labels';
 import { profileLinkOf } from '../../lib/links';
+import { reported } from '../../lib/errorPolicy';
 
 function OverflowTrailing({ color, dark, onPress }: {
   color: string; dark: boolean; onPress: (point: MenuPoint) => void;
@@ -50,7 +51,7 @@ export default function GroupDetail(): React.ReactElement {
     if (cached) { setSelfAddress(cached.toLowerCase()); return; }
     void selfEthAddress().then(addr => {
       if (addr) setSelfAddress(addr.toLowerCase());
-    }).catch(() => undefined);
+    }).catch(reported('group.selfAddress'));
   }, []);
 
   return (

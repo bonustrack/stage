@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import { appStorage } from '../platform/storage';
 import { loadAccounts } from './accounts';
+import { ignore, ignored } from './errorPolicy';
 
 const STORAGE_KEY = 'stage:lastRoute:v1';
 const LEGACY_STORAGE_KEY = 'metro:lastRoute:v1';
@@ -31,13 +32,13 @@ function isRestorable(path: string): boolean {
 
 async function readSavedRoute(): Promise<string | null> {
   const [current, legacy] = await Promise.all([appStorage.get(STORAGE_KEY), appStorage.get(LEGACY_STORAGE_KEY)]);
-  void appStorage.delete(STORAGE_KEY).catch(() => undefined);
-  void appStorage.delete(LEGACY_STORAGE_KEY).catch(() => undefined);
+  ignore(appStorage.delete(STORAGE_KEY), 'cleanup');
+  ignore(appStorage.delete(LEGACY_STORAGE_KEY), 'cleanup');
   return current ?? legacy;
 }
 
 function persist(path: string): void {
-  void appStorage.set(STORAGE_KEY, path).catch(() => undefined);
+  ignore(appStorage.set(STORAGE_KEY, path), 'cache');
 }
 
 function hasColdStartDeepLink(url: string | null): boolean {
@@ -66,7 +67,7 @@ export function useRestoreGate(): RestoreGate {
       try {
         const [saved, initialUrl, accounts] = await Promise.all([
           readSavedRoute(),
-          Linking.getInitialURL().catch(() => null),
+          Linking.getInitialURL().catch(ignored(null, 'probe')),
           loadAccounts(),
         ]);
         const deepLink = hasColdStartDeepLink(initialUrl);

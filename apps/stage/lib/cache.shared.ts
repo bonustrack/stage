@@ -1,6 +1,7 @@
 import { secureStorage } from '../platform/storage';
 import { persistenceBackend } from './cache';
 import { hydrateOnce, makeListeners } from './storeCore';
+import { report, attempt } from './errorPolicy';
 
 const FLUSH_DEBOUNCE_MS = 1_500;
 
@@ -16,7 +17,7 @@ const dirtyStores = new Set<{ flushNow: () => void }>();
 let flushSignalWired = false;
 
 function flushDirtyStores(): void {
-  for (const s of dirtyStores) { try { s.flushNow(); } catch { } }
+  for (const s of dirtyStores) attempt(() => { s.flushNow(); }, 'cache');
 }
 
 export class PersistentStore<T> {
@@ -137,5 +138,9 @@ export async function getSecure(key: string): Promise<string | null> {
   try { return await secureStorage.get(key); } catch { return null; }
 }
 export async function setSecure(key: string, value: string): Promise<void> {
-  try { await secureStorage.set(key, value); } catch { }
+  try {
+    await secureStorage.set(key, value);
+  } catch (err) {
+    report('storage.setSecure', err);
+  }
 }

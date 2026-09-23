@@ -13,6 +13,7 @@ import { accountPasskey, dropMismatchedPasskey, kernelCustody, linkPasskeyForRec
 import { type StoredPasskey } from './passkeys.model';
 import { zerodevConfigured, zerodevRpId } from './env';
 import { txErrorMessage } from '@stage-labs/client/wallet/txError';
+import { recover } from '../errorPolicy';
 
 const SWAP_FALLBACK = 'Could not install the passkey on-chain.';
 const SECURED_ELSEWHERE = 'This account is secured by a passkey on another device. Use that passkey to continue.';
@@ -88,7 +89,8 @@ async function resolveCredential(rec: AccountRecord & { hdIndex: number }): Prom
 }
 
 async function forgetPasskeyUnlessRoot(id: string, address: `0x${string}`): Promise<void> {
-  if ((await kernelCustody(address).catch(() => null)) === 'passkey-root') return;
+  const custody = await kernelCustody(address).catch(recover('passkey.custody', null));
+  if (custody === null || custody === 'passkey-root') return;
   await updateSmartAccount(id, { passkey: undefined, passkeyCredId: undefined });
 }
 

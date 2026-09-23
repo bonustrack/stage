@@ -1,3 +1,4 @@
+import { attempt } from './errorPolicy';
 const DB_NAME = 'stage-cache';
 const DB_VERSION = 1;
 const STORE = 'kv';
@@ -37,10 +38,10 @@ async function idbRead<T>(key: string): Promise<T | null> {
 async function idbWrite(key: string, value: unknown): Promise<void> {
   const db = await openDb();
   if (!db) return;
-  try {
+  attempt(() => {
     const store = db.transaction(STORE, 'readwrite').objectStore(STORE);
     if (value === null) store.delete(key); else store.put(value, key);
-  } catch { }
+  }, 'cache');
 }
 
 export const persistenceBackend = {

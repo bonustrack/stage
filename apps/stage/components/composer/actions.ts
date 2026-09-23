@@ -10,6 +10,7 @@ import { setLastAttachment } from '../../lib/lastAttachment';
 import { mimeOf } from '../../lib/attachmentFiles';
 import { rememberLocalAttachments, stashLocalAttachment } from '../../lib/localAttachmentCache';
 import { planSendSteps, type SendStep } from './send';
+import { ignored } from '../../lib/errorPolicy';
 
 type ComposerActionsArgs = PostHooks & Pick<ComposerState,
   'text' | 'pending' | 'setPending' | 'setText' | 'setUploading' | 'setRecording' | 'setRecordSecs' | 'setLevels'
@@ -30,8 +31,7 @@ async function uploadAttachment(a: ComposerActionsArgs, uri: string, mime: strin
   try {
     const resolvedMime = mimeOf(mime, name ?? uri);
     const kind = kindOf(resolvedMime);
-    let size = 0;
-    try { size = (await (await fetch(uri)).blob()).size; } catch { }
+    const size = await fetch(uri).then(r => r.blob()).then(b => b.size).catch(ignored(0, 'optional'));
     const id = `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     a.setPending(prev => [...prev, { id, url: uri, kind, mime: resolvedMime, size, name }]);
   } catch (e) { a.setErr((e as Error).message); }

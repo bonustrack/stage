@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { report } from './errorPolicy';
 
 export function markBackgroundDelivered(messageId: string | null | undefined): void {
   void messageId;
@@ -32,5 +33,7 @@ export async function presentInboundNotification(args: {
       openConversation(args.convId);
       notification.close();
     };
-  } catch { }
+  } catch (err) {
+    report('push.webNotification', err);
+  }
 }
