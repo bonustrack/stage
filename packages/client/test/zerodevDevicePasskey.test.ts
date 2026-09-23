@@ -1,9 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 import { decodeAbiParameters, decodeFunctionData, parseAbi, type Hex } from 'viem';
 import {
-  SUDO_POLICY, WEBAUTHN_SIGNER_V0_0_4, checkDevicePasskeyApproval, devicePasskeyEnableData, devicePasskeyFingerprint,
-  devicePasskeyPermissionId, devicePasskeySignerData, encodeDevicePasskeyApproval, encodeDevicePasskeyRequest,
-  enableDevicePasskeyCalls, encodeUninstallDevicePasskey, isDevicePasskeyInstalled, removeDevicePasskeyCalls, parseDevicePasskeyApproval, parseDevicePasskeyRequest,
+  SUDO_POLICY, WEBAUTHN_SIGNER_V0_0_4, devicePasskeyEnableData, devicePasskeyPermissionId, devicePasskeySignerData,
+  enableDevicePasskeyCalls, encodeUninstallDevicePasskey, isDevicePasskeyInstalled, removeDevicePasskeyCalls,
   permissionValidationId, type DevicePasskeyKey,
 } from '../src/zerodev/devicePasskey';
 
@@ -68,54 +67,11 @@ describe('device passkey permission encoding', () => {
     expect(enableDevicePasskeyCalls().every((c) => c.value === 0n && c.data === '0x' && c.to !== ACCOUNT)).toBe(true);
   });
 
-  test('fingerprints are short, readable and key specific', () => {
-    expect(devicePasskeyFingerprint(KEY)).toMatch(/^[0-9A-F]{4}-[0-9A-F]{4}$/);
-    expect(devicePasskeyFingerprint(OTHER)).not.toBe(devicePasskeyFingerprint(KEY));
-  });
-
   test('installed means an enabled validation, the patched WebAuthn signer and the execute selector', () => {
     const live = { hook: '0x0000000000000000000000000000000000000001', signer: WEBAUTHN_SIGNER_V0_0_4, canExecute: true } as const;
     expect(isDevicePasskeyInstalled(live)).toBe(true);
     expect(isDevicePasskeyInstalled({ ...live, canExecute: false })).toBe(false);
     expect(isDevicePasskeyInstalled({ ...live, signer: '0x0000000000000000000000000000000000000000' })).toBe(false);
     expect(isDevicePasskeyInstalled({ ...live, hook: '0x0000000000000000000000000000000000000000' })).toBe(false);
-  });
-});
-
-describe('device passkey codes', () => {
-  test('a request round-trips and carries only public data', () => {
-    const code = encodeDevicePasskeyRequest({ account: ACCOUNT, key: KEY });
-    expect(code.startsWith('stage-device-passkey:1:0x')).toBe(true);
-    const parsed = parseDevicePasskeyRequest(`  ${code.toUpperCase().replace('STAGE-DEVICE-PASSKEY', 'stage-device-passkey')} `);
-    expect(parsed?.account.toLowerCase()).toBe(ACCOUNT.toLowerCase());
-    expect(parsed && BigInt(parsed.key.pubY)).toBe(0xabcn);
-    expect(parsed && devicePasskeyPermissionId(parsed.key)).toBe(devicePasskeyPermissionId(KEY));
-  });
-
-  test('malformed requests are rejected', () => {
-    expect(parseDevicePasskeyRequest('hello')).toBeNull();
-    expect(parseDevicePasskeyRequest('stage-device-passkey:1:0x12:0x1:0x2:0x3')).toBeNull();
-    const code = encodeDevicePasskeyRequest({ account: ACCOUNT, key: KEY });
-    expect(parseDevicePasskeyRequest(code.replace(':1:', ':2:'))).toBeNull();
-    expect(parseDevicePasskeyRequest(`${code}:extra`)).toBeNull();
-  });
-
-  test('an approval round-trips', () => {
-    const approval = { account: ACCOUNT, permissionId: devicePasskeyPermissionId(KEY), nonce: 3, enableSignature: '0xdeadbeef' as Hex };
-    const parsed = parseDevicePasskeyApproval(encodeDevicePasskeyApproval(approval));
-    expect(parsed?.nonce).toBe(3);
-    expect(parsed?.enableSignature).toBe('0xdeadbeef');
-    expect(parsed?.permissionId).toBe(approval.permissionId);
-    expect(parseDevicePasskeyApproval('stage-device-approval:1:0xaa:0x1234:1:0x00')).toBeNull();
-    expect(parseDevicePasskeyApproval(encodeDevicePasskeyApproval({ ...approval, enableSignature: '0xabc' }))).toBeNull();
-  });
-
-  test('an approval must match this account, this passkey and the current validator nonce', () => {
-    const approval = { account: ACCOUNT, permissionId: devicePasskeyPermissionId(KEY), nonce: 2, enableSignature: '0x00' as Hex };
-    expect(checkDevicePasskeyApproval(approval, ACCOUNT, KEY, 2)).toBe('ok');
-    expect(checkDevicePasskeyApproval(approval, '0x00000000000000000000000000000000000000Bb', KEY, 2)).toBe('other-account');
-    expect(checkDevicePasskeyApproval(approval, ACCOUNT, OTHER, 2)).toBe('other-passkey');
-    expect(checkDevicePasskeyApproval(approval, ACCOUNT, KEY, 3)).toBe('stale');
-    expect(checkDevicePasskeyApproval({ ...approval, nonce: 1 }, ACCOUNT, KEY, 0)).toBe('ok');
   });
 });

@@ -1,4 +1,4 @@
-import type { PasskeyMode, Stage } from './flow';
+import type { Stage } from './flow';
 
 export type SetupRetry = 'restart' | 'messaging' | 'passkey';
 
@@ -18,7 +18,6 @@ const STAGE_LABELS: Record<Stage, string> = {
 };
 
 const RESTORE_WALLET_LABEL = 'Restoring your wallet';
-const VERIFY_PASSKEY_LABEL = 'Confirming your passkey';
 
 
 const SETUP_TITLE = { create: 'Creating your account', restore: 'Restoring your account' } as const;
@@ -27,11 +26,10 @@ const SETUP_HINT = 'This only takes a moment while your wallet, messaging and pr
 const MESSAGING_RETRY_HINT =
   'Your wallet is ready, but secure messaging did not finish setting up. Try again. Your wallet and recovery phrase are safe.';
 
-export interface SetupPlan { restore?: boolean; passkey?: PasskeyMode; profile?: boolean; history?: boolean }
+export interface SetupPlan { restore?: boolean; passkey?: 'add'; profile?: boolean; history?: boolean }
 
 export function stageLabel(stage: Stage, plan: SetupPlan): string {
   if (stage === 'wallet' && plan.restore === true) return RESTORE_WALLET_LABEL;
-  if (stage === 'passkey' && plan.passkey === 'verify') return VERIFY_PASSKEY_LABEL;
   return STAGE_LABELS[stage];
 }
 
@@ -61,16 +59,14 @@ export function stageState(stage: Stage, current: Stage, stages: Stage[]): Stage
 
 export function setupTitle(err: SetupErr | null, plan: SetupPlan = {}): string {
   if (err === null) return plan.restore === true ? SETUP_TITLE.restore : SETUP_TITLE.create;
-  if (err.retry !== 'passkey') return 'Setup needs another try';
-  return plan.passkey === 'verify' ? 'Passkey not confirmed' : 'Passkey not added';
+  return err.retry === 'passkey' ? 'Passkey not added' : 'Setup needs another try';
 }
 
-export function setupHint(err: SetupErr | null, plan: SetupPlan = {}): string {
+export function setupHint(err: SetupErr | null): string {
   if (err === null) return SETUP_HINT;
   if (err.retry === 'messaging') return MESSAGING_RETRY_HINT;
   if (err.retry === 'passkey') {
-    const next = plan.passkey === 'verify' ? 'confirm the passkey' : 'secure this wallet with a passkey';
-    return `${err.message} Try again to ${next}, continue without a passkey, or start over.`;
+    return `${err.message} Try again, continue without a passkey (you can enable one later in Settings, Security), or start over.`;
   }
   return `We could not finish setting up. ${err.message}`;
 }

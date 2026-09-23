@@ -1,8 +1,6 @@
 import { errorMessage } from '@stage-labs/client/errors';
-import {
-  createSmartAccount, enablePasskeyForRecord, passkeysAvailable, peekRestorableAccount, restoreSmartAccount,
-} from '../../lib/zerodev';
-import { kernelCustody } from '../../lib/zerodev/linkPasskey';
+import { createSmartAccount, passkeysAvailable, restoreSmartAccount } from '../../lib/zerodev';
+import { enableDevicePasskey } from '../../lib/zerodev/devicePasskeyFlow';
 import { adoptPhrase } from '../../lib/accountTransfer';
 import { AccountManager } from '../../modules/messaging';
 import type { Hex } from 'viem';
@@ -12,9 +10,7 @@ import type { ProfileSetup } from './Onboarding.profile.model';
 
 export type Stage = 'wallet' | 'passkey' | 'messaging' | 'profile' | 'history' | 'finishing';
 
-export type PasskeyChoice = 'none' | 'add' | 'verify';
-
-export type PasskeyMode = Exclude<PasskeyChoice, 'none'>;
+export type PasskeyChoice = 'none' | 'add';
 
 export class XmtpSetupError extends Error {
   readonly accountId: string;
@@ -53,17 +49,9 @@ const PROFILE_LATER = 'You can set your name and picture later from Settings, Pr
 
 async function securePasskey(rec: AccountRecord, onStage?: (s: Stage) => void): Promise<void> {
   onStage?.('passkey');
-  const res = await enablePasskeyForRecord(rec);
-  if (res.ok || res.reason === 'already') return;
-  throw new PasskeySetupError(rec.id, res.reason === 'cancelled' ? PASSKEY_CANCELLED : res.message ?? PASSKEY_FALLBACK);
-}
-
-export interface PhraseInspection { passkeySecured: boolean; alreadyImported: boolean }
-
-export async function inspectPhrase(phrase: string): Promise<PhraseInspection> {
-  const { address, alreadyImported } = await peekRestorableAccount(await adoptPhrase(phrase));
-  if (alreadyImported) return { passkeySecured: false, alreadyImported };
-  return { passkeySecured: (await kernelCustody(address)) === 'passkey-root', alreadyImported };
+  const res = await enableDevicePasskey(rec);
+  if (res.ok) return;
+  throw new PasskeySetupError(rec.id, res.cancelled === true ? PASSKEY_CANCELLED : res.message || PASSKEY_FALLBACK);
 }
 
 async function finishAccount(
@@ -73,20 +61,10 @@ async function finishAccount(
   await bringMessagingOnline(rec.id, onStage);
 }
 
-export async function confirmRestoredPasskey(phrase: string): Promise<string> {
-  const { record } = await restoreSmartAccount(await adoptPhrase(phrase));
-  try {
-    await securePasskey(record);
-  } catch (e) {
-    throw e instanceof PasskeySetupError ? e : new PasskeySetupError(record.id, errorMessage(e));
-  }
-  return record.id;
-}
-
 export async function resumeWithPasskey(accountId: string, onStage?: (s: Stage) => void): Promise<void> {
   const rec = (await loadAccounts()).find((a) => a.id === accountId);
   if (!rec) throw new Error('This account is no longer on the device.');
-  await finishAccount(rec, 'verify', onStage);
+  await finishAccount(rec, 'add', onStage);
 }
 
 export async function abandonAccount(accountId: string): Promise<void> {
@@ -113,17 +91,12 @@ export async function createWallet(
   return setUpProfile(rec.address, profile, onStage);
 }
 
-export async function restoreWallet(
-  phrase: string, passkey: PasskeyChoice, onStage?: (s: Stage) => void,
-): Promise<SetupWarning> {
+export async function restoreWallet(phrase: string, onStage?: (s: Stage) => void): Promise<SetupWarning> {
   onStage?.('wallet');
   const { record, alreadyImported } = await restoreSmartAccount(await adoptPhrase(phrase));
-  if (alreadyImported) {
-    await bringMessagingOnline(record.id, onStage);
-    return { title: 'Already on this device', message: 'This account was already imported here, so we switched to it instead of adding it again.' };
-  }
-  await finishAccount(record, passkey, onStage);
-  return null;
+  await bringMessagingOnline(record.id, onStage);
+  if (!alreadyImported) return null;
+  return { title: 'Already on this device', message: 'This account was already imported here, so we switched to it instead of adding it again.' };
 }
 
 export async function importKeyAccount(pk: Hex, onStage?: (s: Stage) => void): Promise<SetupWarning> {

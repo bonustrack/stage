@@ -8,14 +8,14 @@ import {
   type DevicePasskeyKey,
 } from '@stage-labs/client/zerodev/devicePasskey';
 import type { AccountRecord } from '../accounts';
-import { passkeyValidatorFromStored } from './account';
+import { ecdsaValidatorForOwner, passkeyValidatorFromStored } from './account';
+import { smartOwnerSigner } from './keyring';
 import type { StoredPasskey } from './passkeys.model';
 
 const PERMISSION_SIGNATURE_PREFIX: Hex = '0xff';
 
 const KERNEL_PERMISSION_ABI = [
   ...PERMISSION_CONFIG_ABI,
-  { name: 'currentNonce', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint32' }] },
   {
     name: 'validationConfig', type: 'function', stateMutability: 'view',
     inputs: [{ name: 'vId', type: 'bytes21' }],
@@ -32,10 +32,6 @@ export type DevicePasskeyRecord = NonNullable<AccountRecord['devicePasskey']>;
 
 export function devicePasskeyKey(stored: Pick<StoredPasskey, 'pubX' | 'pubY' | 'authenticatorIdHash'>): DevicePasskeyKey {
   return { pubX: stored.pubX as Hex, pubY: stored.pubY as Hex, authenticatorIdHash: stored.authenticatorIdHash as Hex };
-}
-
-export async function readCurrentNonce(publicClient: PublicClient, account: Hex): Promise<number> {
-  return publicClient.readContract({ address: account, abi: KERNEL_PERMISSION_ABI, functionName: 'currentNonce' });
 }
 
 export async function readDevicePasskeyInstalled(publicClient: PublicClient, account: Hex, permissionId: Hex): Promise<boolean> {
@@ -78,15 +74,21 @@ export async function devicePasskeyValidator(publicClient: PublicClient, stored:
   };
 }
 
-export async function devicePasskeyKernel(
-  publicClient: PublicClient, address: Hex, stored: StoredPasskey, enableSignature?: Hex,
-): Promise<CreateKernelAccountReturnType> {
+export async function devicePasskeyKernel(publicClient: PublicClient, address: Hex, stored: StoredPasskey): Promise<CreateKernelAccountReturnType> {
   const regular = await devicePasskeyValidator(publicClient, stored);
+  return createKernelAccount(publicClient, { plugins: { regular }, entryPoint: ENTRY_POINT, kernelVersion: KERNEL_VERSION, address });
+}
+
+export interface EnablingAccount { address: Hex; hdIndex: number; phraseId?: string }
+
+export async function enablingDevicePasskeyKernel(
+  publicClient: PublicClient, account: EnablingAccount, stored: StoredPasskey,
+): Promise<CreateKernelAccountReturnType> {
+  const owner = await smartOwnerSigner({ hdIndex: account.hdIndex, phraseId: account.phraseId });
+  const [sudo, regular] = await Promise.all([ecdsaValidatorForOwner(publicClient, owner), devicePasskeyValidator(publicClient, stored)]);
   return createKernelAccount(publicClient, {
-    plugins: enableSignature === undefined ? { regular } : { regular, pluginEnableSignature: enableSignature },
-    entryPoint: ENTRY_POINT,
-    kernelVersion: KERNEL_VERSION,
-    address,
+    plugins: { sudo, regular }, entryPoint: ENTRY_POINT, kernelVersion: KERNEL_VERSION,
+    index: BigInt(account.hdIndex), address: account.address,
   });
 }
 

@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 
 import { Alert } from 'react-native';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -15,12 +15,13 @@ import { TransferAccountSheet } from '../accounts/TransferAccountSheet';
 import { SettingsButtonRow, SettingsList, SettingsNavRow } from '../settings/rows';
 import { RecoveryKeyRow } from '../settings/RecoveryKeyRow';
 import { DevicePasskeyRow } from '../settings/DevicePasskeyRow';
-import { ApproveDeviceRow } from '../settings/ApproveDeviceRow';
+import { RootKeyRow } from '../settings/RootKeyRow';
 import { SettingsSectionLabel } from '../settings/SettingsPage';
 import { PasskeyLinkRow, usePasskeyPlace } from '../settings/PasskeyLinkRow';
 import { RecoveryPhraseRow, useWalletBackedUp } from '../settings/RecoveryPhraseRow';
-import { passkeyActionLabel, securityRows, type SecurityRowKey } from '../settings/SecuritySettings.model';
-import { useEnablePasskey, useRemovePasskey } from '../../lib/passkey';
+import { securityRows, type SecurityCustody, type SecurityRowKey } from '../settings/SecuritySettings.model';
+import { kernelCustody } from '../../lib/zerodev';
+import { recover } from '../../lib/errorPolicy';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 
 interface RevealedKey { id: string; pk: string }
@@ -84,27 +85,35 @@ function revealedKeyFor(key: RevealedKey | null, rec: AccountRecord): string | n
   return key.id === rec.id ? key.pk : null;
 }
 
-function AccountRows({ rec, dark, revealed, onExport, onMove }: {
-  rec: AccountRecord; dark: boolean; revealed: string | null; onExport: () => void; onMove: () => void;
+function useCustody(rec: AccountRecord, epoch: number): SecurityCustody | null {
+  const [custody, setCustody] = useState<SecurityCustody | null>(null);
+  useEffect(() => {
+    let alive = true;
+    if (rec.type !== 'smart') { setCustody(null); return; }
+    void kernelCustody(rec.address as `0x${string}`).catch(recover('passkey.custody', null)).then((value) => { if (alive) setCustody(value); });
+    return () => { alive = false; };
+  }, [rec.address, rec.type, epoch]);
+  return custody;
+}
+
+function AccountRows({ rec, revealed, onExport, onMove }: {
+  rec: AccountRecord; revealed: string | null; onExport: () => void; onMove: () => void;
 }): React.ReactElement {
-  const [place, setPlace] = usePasskeyPlace(rec);
-  const enablePasskey = useEnablePasskey();
-  const removePasskey = useRemovePasskey();
+  const [epoch, setEpoch] = useState(0);
+  const [place, setPlace] = usePasskeyPlace(rec, epoch);
+  const custody = useCustody(rec, epoch);
   const backedUp = useWalletBackedUp();
   const keys = securityRows({
-    isSmart: rec.type === 'smart', backedUp,
-    enablePasskey: enablePasskey.available, removePasskey: removePasskey.available,
-    canExportKey: canExportPrivateKey(rec), keyRevealed: revealed !== null, canLinkDevice: transferKindFor(rec) !== null, place,
+    isSmart: rec.type === 'smart', backedUp, custody, devicePasskeyStored: rec.devicePasskey !== undefined,
+    canExportKey: canExportPrivateKey(rec), keyRevealed: revealed !== null, canLinkDevice: transferKindFor(rec) !== null,
   });
   const rows: Record<SecurityRowKey, () => React.ReactElement | null> = {
     backupPhrase: () => <RecoveryPhraseRow rec={rec} mode="backup" />,
     showPhrase: () => <RecoveryPhraseRow rec={rec} mode="show" />,
-    enablePasskey: () => <SettingsButtonRow label={passkeyActionLabel('enable', enablePasskey.busy)} iconStart="fingerPrint" onPress={enablePasskey.run} />,
-    passkeyLink: () => <PasskeyLinkRow rec={rec} place={place} onLinked={() => { setPlace('this-device'); }} />,
-    devicePasskey: () => <DevicePasskeyRow rec={rec} dark={dark} />,
-    approveDevice: () => <ApproveDeviceRow rec={rec} dark={dark} />,
+    rootKey: () => <RootKeyRow rec={rec} epoch={epoch} onChanged={() => { setEpoch((n) => n + 1); }} />,
+    passkeyLink: () => <PasskeyLinkRow rec={rec} place={place} onLinked={() => { setPlace('this-device'); setEpoch((n) => n + 1); }} />,
+    devicePasskey: () => <DevicePasskeyRow key={`${rec.id}:${epoch}`} rec={rec} />,
     recoveryKey: () => <RecoveryKeyRow rec={rec} place={place} />,
-    removePasskey: () => <SettingsButtonRow label={passkeyActionLabel('remove', removePasskey.busy)} iconStart="fingerPrint" onPress={removePasskey.run} />,
     exportKey: () => <SettingsNavRow label="Export private key" iconStart="wallet" iconEnd="chevronDown" onPress={onExport} />,
     linkDevice: () => <SettingsNavRow label="Link a device" iconStart="qrcode" onPress={onMove} />,
     removeAccount: () => <SettingsButtonRow label="Remove account" iconStart="trash" danger onPress={() => { confirmRemove(rec); }} />,
@@ -137,7 +146,7 @@ export function AccountSecuritySection(): React.ReactElement | null {
             </ListView>
           ) : null}
           <AccountRows
-            rec={rec} dark={dark} revealed={revealed}
+            rec={rec} revealed={revealed}
             onExport={() => { confirmExport(rec, setRevealed); }}
             onMove={() => { setMoving(true); }}
           />

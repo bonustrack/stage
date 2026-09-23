@@ -8,7 +8,6 @@ import { useSafeAreaInsets } from '../../lib/safeArea';
 import { Col } from '../layout';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { PasskeyStep } from './Onboarding.steps';
-import { passkeyStepSkippable } from './Onboarding.steps.model';
 import { SetupStep } from './Onboarding.setup';
 import { ImportStep } from './Onboarding.import';
 import { ProfileStep } from './Onboarding.profile';
@@ -45,7 +44,7 @@ function stepBack(f: Flow): (() => void) | null {
 function stepSkip(f: Flow): (() => void) | null {
   if (f.step === 'username') return () => { f.onUsernameContinue(''); };
   if (f.step === 'profile') return f.onProfileSkip;
-  if (f.step === 'passkey' && passkeyStepSkippable(f.passkeyMode, f.passkeyErr)) return f.onSkipPasskey;
+  if (f.step === 'passkey') return f.onSkipPasskey;
   return null;
 }
 
@@ -83,8 +82,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
         <ImportStep dark={dark} busy={f.busy} onTransfer={f.onImportTransfer} />
       ) : null}
       {f.step === 'passkey' ? (
-        <PasskeyStep dark={dark} busy={f.busy} mode={f.passkeyMode} error={f.passkeyErr}
-          onAdd={f.onAddPasskey} onSkip={f.onSkipPasskey} onStartOver={f.onSetupBack} />
+        <PasskeyStep dark={dark} busy={f.busy} onAdd={f.onAddPasskey} onSkip={f.onSkipPasskey} />
       ) : null}
       {f.step === 'setup' ? (
         <SetupStep

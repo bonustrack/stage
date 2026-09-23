@@ -91,15 +91,6 @@ async function findRestorable(publicClient: PublicClient, phraseId: string): Pro
   return { kind: 'local', record: alreadyHere };
 }
 
-export interface RestorableAccount { address: `0x${string}`; alreadyImported: boolean }
-
-export async function peekRestorableAccount(phraseId: string): Promise<RestorableAccount> {
-  requireConfigured();
-  const found = await findRestorable(makePublicClient(), phraseId);
-  if (found.kind === 'local') return { address: found.record.address as `0x${string}`, alreadyImported: true };
-  return { address: found.candidate.address, alreadyImported: false };
-}
-
 export async function restoreSmartAccount(phraseId: string): Promise<RestoredSmartAccount> {
   requireConfigured();
   const found = await findRestorable(makePublicClient(), phraseId);

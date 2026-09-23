@@ -1,5 +1,5 @@
 import {
-  concat, concatHex, encodeAbiParameters, encodeFunctionData, getAddress, isAddress, keccak256, pad, slice, zeroAddress, type Hex,
+  concat, concatHex, encodeAbiParameters, encodeFunctionData, keccak256, pad, slice, zeroAddress, type Hex,
 } from 'viem';
 
 export const WEBAUTHN_SIGNER_V0_0_4: Hex = '0x65DEeC8fEe717dc044D0CFD63cCf55F02cCaC2b3';
@@ -82,72 +82,6 @@ export function enableDevicePasskeyCalls(): DevicePasskeyCall[] {
 
 export function removeDevicePasskeyCalls(account: Hex, permissionId: Hex): DevicePasskeyCall[] {
   return [{ to: account, data: encodeUninstallDevicePasskey(permissionId), value: 0n }, NO_OP_CALL];
-}
-
-export function devicePasskeyFingerprint(key: DevicePasskeyKey): string {
-  const hex = keccak256(devicePasskeySignerData(key)).slice(2, 10).toUpperCase();
-  return `${hex.slice(0, 4)}-${hex.slice(4)}`;
-}
-
-export interface DevicePasskeyRequest { account: Hex; key: DevicePasskeyKey }
-
-export interface DevicePasskeyApproval { account: Hex; permissionId: Hex; nonce: number; enableSignature: Hex }
-
-const REQUEST_PREFIX = 'stage-device-passkey:1';
-const APPROVAL_PREFIX = 'stage-device-approval:1';
-const WORD = /^0x[0-9a-f]{1,64}$/;
-const BYTES32 = /^0x[0-9a-f]{64}$/;
-const PERMISSION_ID = /^0x[0-9a-f]{8}$/;
-const SIGNATURE = /^0x(?:[0-9a-f]{2})+$/;
-
-function word(value: Hex): string {
-  return `0x${BigInt(value).toString(16).padStart(64, '0')}`;
-}
-
-export function encodeDevicePasskeyRequest(request: DevicePasskeyRequest): string {
-  const { account, key } = request;
-  return [REQUEST_PREFIX, getAddress(account).toLowerCase(), word(key.pubX), word(key.pubY), key.authenticatorIdHash.toLowerCase()].join(':');
-}
-
-function parseAccount(raw: string | undefined): Hex | null {
-  return raw !== undefined && isAddress(raw, { strict: false }) ? getAddress(raw) : null;
-}
-
-export function parseDevicePasskeyRequest(input: string): DevicePasskeyRequest | null {
-  const parts = input.trim().toLowerCase().split(':');
-  if (parts.length !== 6 || `${parts[0]}:${parts[1]}` !== REQUEST_PREFIX) return null;
-  const [, , rawAccount, pubX, pubY, idHash] = parts;
-  const account = parseAccount(rawAccount);
-  if (account === null || pubX === undefined || pubY === undefined || idHash === undefined) return null;
-  if (!WORD.test(pubX) || !WORD.test(pubY) || !BYTES32.test(idHash)) return null;
-  return { account, key: { pubX: pubX as Hex, pubY: pubY as Hex, authenticatorIdHash: idHash as Hex } };
-}
-
-export function encodeDevicePasskeyApproval(approval: DevicePasskeyApproval): string {
-  return [
-    APPROVAL_PREFIX, getAddress(approval.account).toLowerCase(), approval.permissionId.toLowerCase(),
-    String(approval.nonce), approval.enableSignature.toLowerCase(),
-  ].join(':');
-}
-
-export function parseDevicePasskeyApproval(input: string): DevicePasskeyApproval | null {
-  const parts = input.trim().toLowerCase().split(':');
-  if (parts.length !== 6 || `${parts[0]}:${parts[1]}` !== APPROVAL_PREFIX) return null;
-  const [, , rawAccount, permissionId, rawNonce, signature] = parts;
-  const account = parseAccount(rawAccount);
-  if (account === null || permissionId === undefined || rawNonce === undefined || signature === undefined) return null;
-  if (!PERMISSION_ID.test(permissionId) || !/^\d{1,10}$/.test(rawNonce) || !SIGNATURE.test(signature)) return null;
-  return { account, permissionId: permissionId as Hex, nonce: Number(rawNonce), enableSignature: signature as Hex };
-}
-
-export type ApprovalCheck = 'ok' | 'other-account' | 'other-passkey' | 'stale';
-
-export function checkDevicePasskeyApproval(
-  approval: DevicePasskeyApproval, account: Hex, key: DevicePasskeyKey, currentNonce: number,
-): ApprovalCheck {
-  if (approval.account.toLowerCase() !== account.toLowerCase()) return 'other-account';
-  if (approval.permissionId !== devicePasskeyPermissionId(key)) return 'other-passkey';
-  return approval.nonce === Math.max(currentNonce, 1) ? 'ok' : 'stale';
 }
 
 export interface DevicePasskeyOnchain { hook: Hex; signer: Hex; canExecute: boolean }

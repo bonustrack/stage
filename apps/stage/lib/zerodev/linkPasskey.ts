@@ -56,15 +56,21 @@ export async function dropMismatchedPasskey(rec: AccountRecord, key: PasskeyPubl
   return true;
 }
 
+async function forgetRetiredPasskey(rec: AccountRecord): Promise<void> {
+  if (!rec.passkey || (await kernelCustody(rec.address as Hex)) !== 'ecdsa-root') return;
+  await updateSmartAccount(rec.id, { passkey: undefined, passkeyCredId: undefined, passkeySudo: undefined });
+}
+
 export async function passkeyPlace(rec: AccountRecord): Promise<PasskeyPlace> {
   if (rec.type !== 'smart') return 'none';
   let key: PasskeyPublicKey | null;
   try {
     key = await accountPasskey(rec.address as Hex);
+    if (!key) await forgetRetiredPasskey(rec);
   } catch {
     return 'unknown';
   }
-  if (!key) return rec.passkey ? 'this-device' : 'none';
+  if (!key) return 'none';
   if (await dropMismatchedPasskey(rec, key)) return 'elsewhere';
   return rec.passkey ? 'this-device' : 'elsewhere';
 }

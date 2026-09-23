@@ -18,17 +18,16 @@ export function validationIdOf(validator: Hex): Hex {
   return `0x01${validator.slice(2).toLowerCase()}`;
 }
 
-function ecdsaPlan(
-  input: KernelValidationState & { ecdsaValidator: Hex; purpose?: KernelSigningPurpose },
-): Exclude<KernelSigningPlan, 'passkey' | 'device-passkey'> {
-  if (input.rootValidatorId === null) return 'ecdsa-root';
-  if (input.rootValidatorId.toLowerCase() === validationIdOf(input.ecdsaValidator)) return 'ecdsa-root';
-  const allowed = input.purpose === 'sign' ? input.ecdsaInstalled : input.ecdsaInstalled && input.ecdsaCanExecute;
-  return allowed ? 'ecdsa-secondary' : 'unavailable';
+type DeployedState = KernelValidationState & { rootValidatorId: Hex; ecdsaValidator: Hex; purpose?: KernelSigningPurpose };
+
+function isEcdsaRoot(input: DeployedState): boolean {
+  return input.rootValidatorId.toLowerCase() === validationIdOf(input.ecdsaValidator);
 }
 
-function isDeployedEcdsaRoot(input: KernelValidationState & { ecdsaValidator: Hex }): boolean {
-  return input.rootValidatorId !== null && input.rootValidatorId.toLowerCase() === validationIdOf(input.ecdsaValidator);
+function ecdsaPlan(input: DeployedState): Exclude<KernelSigningPlan, 'passkey' | 'device-passkey'> {
+  if (isEcdsaRoot(input)) return 'ecdsa-root';
+  const allowed = input.purpose === 'sign' ? input.ecdsaInstalled : input.ecdsaInstalled && input.ecdsaCanExecute;
+  return allowed ? 'ecdsa-secondary' : 'unavailable';
 }
 
 export interface KernelSigningInput extends KernelValidationState {
@@ -39,12 +38,15 @@ export interface KernelSigningInput extends KernelValidationState {
 }
 
 export function planKernelSigning(input: KernelSigningInput): KernelSigningPlan {
-  const ecdsa = ecdsaPlan(input);
+  const { rootValidatorId } = input;
+  if (rootValidatorId === null) return 'ecdsa-root';
+  const deployed = { ...input, rootValidatorId };
+  const ecdsa = ecdsaPlan(deployed);
   if (input.purpose === 'sign' && ecdsa !== 'unavailable') return ecdsa;
-  if (isDeployedEcdsaRoot(input)) return ecdsa;
+  const device = input.purpose !== 'sign' && input.devicePasskeyUsable === true;
+  if (isEcdsaRoot(deployed)) return device ? 'device-passkey' : ecdsa;
   if (input.passkeyUsable) return 'passkey';
-  if (input.purpose !== 'sign' && input.devicePasskeyUsable === true && input.rootValidatorId !== null) return 'device-passkey';
-  return ecdsa;
+  return device ? 'device-passkey' : ecdsa;
 }
 
 const PASSKEY_PROBLEMS: Record<PasskeyProblem, string> = {
@@ -55,7 +57,7 @@ const PASSKEY_PROBLEMS: Record<PasskeyProblem, string> = {
 };
 
 const TRANSACT_NEXT_STEPS =
-  'Approve with your passkey, add a passkey for this device under Settings > Security, or turn on Recovery key can transact from a device that has your passkey.';
+  'Approve with your passkey, or on the device that has it open Settings > Security and make your recovery phrase the main key.';
 
 const SIGN_NEXT_STEPS = 'Use the device where the passkey is set up, or link the passkey under Settings > Security.';
 

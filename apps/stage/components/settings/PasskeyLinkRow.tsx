@@ -7,16 +7,16 @@ import {
 import { SettingsButtonRow, SettingsValueRow } from './rows';
 
 const ELSEWHERE_HINT =
-  'This account is secured by a passkey created on another device. Pick that passkey when your password manager offers it.';
+  'If your password manager syncs the passkey that secures this wallet, pick it here. This device can then make your recovery phrase the main key.';
 
-export function usePasskeyPlace(rec: AccountRecord): [PasskeyPlace | null, (next: PasskeyPlace) => void] {
+export function usePasskeyPlace(rec: AccountRecord, epoch = 0): [PasskeyPlace | null, (next: PasskeyPlace) => void] {
   const [place, setPlace] = useState<PasskeyPlace | null>(null);
   useEffect(() => {
     let cancelled = false;
     setPlace(null);
     void passkeyPlace(rec).then((value) => { if (!cancelled) setPlace(value); });
     return () => { cancelled = true; };
-  }, [rec.address, rec.passkey?.authenticatorId]);
+  }, [rec.address, rec.passkey?.authenticatorId, epoch]);
   return [place, setPlace];
 }
 

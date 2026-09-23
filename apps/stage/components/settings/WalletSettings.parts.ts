@@ -28,16 +28,14 @@ export interface WalletModel {
 }
 
 function buildModules(rec: AccountRecord): WalletModule[] {
-  const mods: WalletModule[] = [];
-  const hasPasskey = !!rec.passkey;
-
-  if (hasPasskey) {
-    mods.push({ name: 'Passkey validator', role: 'sudo', status: 'Active signer (WebAuthn)' });
-    mods.push({ name: 'ECDSA owner key', role: 'backup', status: 'Mnemonic-derived, fallback' });
-  } else {
-    mods.push({ name: 'ECDSA owner key', role: 'sudo', status: 'Active signer (mnemonic-derived)' });
+  if (rec.passkey) {
+    return [
+      { name: 'Passkey validator', role: 'sudo', status: 'Main key (older passkey setup)' },
+      { name: 'ECDSA owner key', role: 'backup', status: 'Recovery phrase' },
+    ];
   }
-
+  const mods: WalletModule[] = [{ name: 'ECDSA owner key', role: 'sudo', status: 'Main key (recovery phrase)' }];
+  if (rec.devicePasskey) mods.push({ name: "This device's passkey", role: 'session', status: 'Approves transactions on this device' });
   return mods;
 }
 
@@ -50,7 +48,7 @@ function modelFromRecord(rec: AccountRecord): WalletModel {
     address: rec.address,
     label: rec.label ?? 'Account',
     hdIndex: rec.hdIndex ?? null,
-    activeSigner: rec.passkey ? 'Passkey' : 'Recovery key',
+    activeSigner: rec.passkey || rec.devicePasskey ? 'Passkey' : 'Recovery key',
     ownerAddress: rec.ownerAddress ?? null,
     xmtpAddress,
     modules: isSmart ? buildModules(rec) : [],

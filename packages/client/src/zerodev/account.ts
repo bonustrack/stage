@@ -1,5 +1,5 @@
 
-import type { PublicClient } from 'viem';
+import type { Hex, PublicClient } from 'viem';
 import type { HDAccount } from 'viem/accounts';
 import { getEntryPoint, KERNEL_V3_1 } from '@zerodev/sdk/constants';
 import { createKernelAccount, type CreateKernelAccountReturnType } from '@zerodev/sdk';
@@ -25,6 +25,7 @@ export async function createEcdsaKernel(
   publicClient: PublicClient,
   owner: HDAccount,
   hdIndex: number,
+  address?: Hex,
 ): Promise<CreateKernelAccountReturnType> {
   const ecdsaValidator = await ecdsaValidatorForOwner(publicClient, owner);
   return createKernelAccount(publicClient, {
@@ -32,5 +33,6 @@ export async function createEcdsaKernel(
     entryPoint: ENTRY_POINT,
     kernelVersion: KERNEL_VERSION,
     index: BigInt(hdIndex),
+    ...(address === undefined ? {} : { address }),
   });
 }

@@ -78,7 +78,8 @@
     "./zerodev/validatorPlan": "./src/zerodev/validatorPlan.ts",
     "./zerodev/passkeyLink": "./src/zerodev/passkeyLink.ts",
     "./zerodev/recoveryKeyAccess": "./src/zerodev/recoveryKeyAccess.ts",
-    "./zerodev/devicePasskey": "./src/zerodev/devicePasskey.ts"
+    "./zerodev/devicePasskey": "./src/zerodev/devicePasskey.ts",
+    "./zerodev/rootKey": "./src/zerodev/rootKey.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

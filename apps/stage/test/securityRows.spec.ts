@@ -1,39 +1,41 @@
 import { describe, expect, test } from 'bun:test';
 import {
   BACKUP_PHRASE_COPY, SHOW_PHRASE_COPY, SHOWN_PHRASE_TIMEOUT_MS,
-  passkeyActionLabel, phrasePanelActions, phraseRowCopy, securityRows, type SecurityRowsInput,
+  phrasePanelActions, phraseRowCopy, securityRows, type SecurityRowsInput,
 } from '../components/settings/SecuritySettings.model';
 
 const SMART: SecurityRowsInput = {
-  isSmart: true, backedUp: true, enablePasskey: false, removePasskey: false,
+  isSmart: true, backedUp: true, custody: 'ecdsa-root', devicePasskeyStored: false,
   canExportKey: false, keyRevealed: false, canLinkDevice: true,
 };
 
 describe('securityRows', () => {
-  test('smart account with a passkey and a backup', () => {
-    expect(securityRows({ ...SMART, removePasskey: true })).toEqual([
-      'passkeyLink', 'recoveryKey', 'showPhrase', 'removePasskey', 'linkDevice', 'removeAccount',
+  test('a fresh recovery-phrase account offers a passkey for this device and nothing about migration', () => {
+    expect(securityRows(SMART)).toEqual(['devicePasskey', 'showPhrase', 'linkDevice', 'removeAccount']);
+    expect(securityRows({ ...SMART, custody: 'undeployed' })).toEqual(['devicePasskey', 'showPhrase', 'linkDevice', 'removeAccount']);
+  });
+
+  test('a recovery-phrase account with a device passkey keeps the same single passkey row', () => {
+    expect(securityRows({ ...SMART, devicePasskeyStored: true })).toEqual(['devicePasskey', 'showPhrase', 'linkDevice', 'removeAccount']);
+  });
+
+  test('a legacy passkey-rooted account leads with the migration and keeps the legacy rows', () => {
+    expect(securityRows({ ...SMART, custody: 'passkey-root' })).toEqual([
+      'rootKey', 'passkeyLink', 'recoveryKey', 'showPhrase', 'linkDevice', 'removeAccount',
+    ]);
+    expect(securityRows({ ...SMART, custody: 'passkey-root', devicePasskeyStored: true })).toEqual([
+      'rootKey', 'passkeyLink', 'devicePasskey', 'recoveryKey', 'showPhrase', 'linkDevice', 'removeAccount',
     ]);
   });
 
-  test('smart account that still needs a backup and a passkey leads with those actions', () => {
-    expect(securityRows({ ...SMART, backedUp: false, enablePasskey: true })).toEqual([
-      'backupPhrase', 'enablePasskey', 'passkeyLink', 'recoveryKey', 'linkDevice', 'removeAccount',
-    ]);
-  });
-
-  test('a device without the account passkey gets its own passkey row, the passkey device gets the approve row', () => {
-    expect(securityRows({ ...SMART, place: 'elsewhere' })).toEqual([
-      'passkeyLink', 'devicePasskey', 'recoveryKey', 'showPhrase', 'linkDevice', 'removeAccount',
-    ]);
-    expect(securityRows({ ...SMART, place: 'this-device' })).toEqual([
-      'passkeyLink', 'approveDevice', 'recoveryKey', 'showPhrase', 'linkDevice', 'removeAccount',
-    ]);
-    for (const place of ['none', 'unknown', null] as const) {
-      expect(securityRows({ ...SMART, place })).not.toContain('devicePasskey');
-      expect(securityRows({ ...SMART, place })).not.toContain('approveDevice');
+  test('no key rows while custody is loading or when another signer controls the account', () => {
+    for (const custody of [null, 'other-root'] as const) {
+      expect(securityRows({ ...SMART, custody })).toEqual(['showPhrase', 'linkDevice', 'removeAccount']);
     }
-    expect(securityRows({ ...SMART, isSmart: false, place: 'elsewhere' })).not.toContain('devicePasskey');
+  });
+
+  test('a device that still needs a backup leads with it', () => {
+    expect(securityRows({ ...SMART, backedUp: false })).toEqual(['backupPhrase', 'devicePasskey', 'linkDevice', 'removeAccount']);
   });
 
   test('backup row waits for the stored flag', () => {
@@ -41,14 +43,8 @@ describe('securityRows', () => {
     expect(securityRows({ ...SMART, backedUp: null })).not.toContain('showPhrase');
   });
 
-  test('show row replaces the backup row once the phrase is backed up', () => {
-    expect(securityRows({ ...SMART, backedUp: false })).not.toContain('showPhrase');
-    expect(securityRows(SMART)).toContain('showPhrase');
-    expect(securityRows(SMART)).not.toContain('backupPhrase');
-  });
-
-  test('legacy account offers key export until revealed, no passkey rows', () => {
-    const legacy: SecurityRowsInput = { ...SMART, isSmart: false, backedUp: false, canExportKey: true, canLinkDevice: false };
+  test('legacy key account offers key export until revealed, no passkey rows', () => {
+    const legacy: SecurityRowsInput = { ...SMART, isSmart: false, custody: null, backedUp: false, canExportKey: true, canLinkDevice: false };
     expect(securityRows(legacy)).toEqual(['exportKey', 'removeAccount']);
     expect(securityRows({ ...legacy, backedUp: true })).toEqual(['exportKey', 'removeAccount']);
     expect(securityRows({ ...legacy, keyRevealed: true })).toEqual(['removeAccount']);
@@ -70,14 +66,5 @@ describe('recovery phrase panel', () => {
 
   test('shown phrase hides after about a minute', () => {
     expect(SHOWN_PHRASE_TIMEOUT_MS).toBe(60_000);
-  });
-});
-
-describe('passkeyActionLabel', () => {
-  test('keeps the enable and remove copy with busy states', () => {
-    expect(passkeyActionLabel('enable', false)).toBe('Enable passkey for signing');
-    expect(passkeyActionLabel('enable', true)).toBe('Enabling passkey…');
-    expect(passkeyActionLabel('remove', false)).toBe('Remove passkey');
-    expect(passkeyActionLabel('remove', true)).toBe('Removing passkey…');
   });
 });

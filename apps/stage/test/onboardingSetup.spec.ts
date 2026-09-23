@@ -2,7 +2,8 @@ import { describe, expect, test } from 'bun:test';
 import {
   setupHint, setupLinks, setupStages, setupTitle, stageLabel, stageState,
 } from '../components/onboarding/Onboarding.setup.model';
-import { passkeyStepCopy, passkeyStepSkippable } from '../components/onboarding/Onboarding.steps.model';
+import { PASSKEY_STEP_COPY } from '../components/onboarding/Onboarding.steps.model';
+import { RESTORE_OFFER_COPY, restoreOffer, type RestoreOfferInput } from '../components/onboarding/restoreOffer.model';
 
 describe('setupStages', () => {
   test('adds the history stage only for imports and restores', () => {
@@ -10,7 +11,10 @@ describe('setupStages', () => {
     expect(setupStages({ history: true })).toEqual(['wallet', 'messaging', 'history', 'finishing']);
     expect(setupStages({ profile: true })).toEqual(['wallet', 'messaging', 'profile', 'finishing']);
     expect(setupStages({ passkey: 'add', profile: true })).toEqual(['wallet', 'passkey', 'messaging', 'profile', 'finishing']);
-    expect(setupStages({ restore: true, passkey: 'verify' })).toEqual(['wallet', 'passkey', 'messaging', 'finishing']);
+  });
+
+  test('a restore never has a passkey stage', () => {
+    expect(setupStages({ restore: true, history: true })).toEqual(['wallet', 'messaging', 'history', 'finishing']);
   });
 });
 
@@ -29,38 +33,18 @@ describe('setup copy', () => {
     expect(setupTitle(null, { restore: true })).toBe('Restoring your account');
     expect(stageLabel('wallet', {})).toBe('Creating your wallet');
     expect(stageLabel('wallet', { restore: true })).toBe('Restoring your wallet');
+    expect(stageLabel('passkey', { passkey: 'add' })).toBe('Adding your passkey');
     expect(setupTitle({ message: 'x', retry: 'restart' })).toBe('Setup needs another try');
     expect(setupTitle({ message: 'x', accountId: '0xabc', retry: 'passkey' })).toBe('Passkey not added');
-    expect(setupTitle({ message: 'x', accountId: '0xabc', retry: 'passkey' }, { passkey: 'verify' })).toBe('Passkey not confirmed');
-    expect(setupTitle(null, { passkey: 'verify' })).toBe('Creating your account');
-    expect(stageLabel('passkey', { passkey: 'verify' })).toBe('Confirming your passkey');
     expect(setupHint({ message: 'boom', retry: 'restart' })).toContain('boom');
     expect(setupHint({ message: 'boom', accountId: '0xabc', retry: 'messaging' })).toContain('wallet is ready');
     expect(setupHint({ message: 'Dismissed.', accountId: '0xabc', retry: 'passkey' })).toContain('start over');
   });
-});
 
-describe('passkeyStepCopy', () => {
-  test('a wallet that already has a passkey is asked to confirm it', () => {
-    expect(passkeyStepCopy('verify').title).toBe('Confirm your passkey');
-    expect(passkeyStepCopy('add').title).toBe('Add a passkey');
-  });
-});
-
-describe('restore never blocks on a passkey', () => {
-  test('confirming a passkey always offers a way past it', () => {
-    expect(passkeyStepCopy('verify').skip).toBe('Continue without passkey');
-    expect(passkeyStepCopy('verify', 'No passkey found.').skip).toBe('Continue without passkey');
-    expect(passkeyStepCopy('verify', 'No passkey found.').body).toContain('add a passkey for this device later');
-    expect(passkeyStepCopy('verify', 'No passkey found.').action).toBe('Try again');
-    expect(passkeyStepSkippable('verify', null)).toBe(true);
-    expect(passkeyStepSkippable('verify', 'No passkey found.')).toBe(true);
-  });
-
-  test('adding a new passkey keeps its skip until an error, with no extra link', () => {
-    expect(passkeyStepCopy('add').skip).toBeNull();
-    expect(passkeyStepSkippable('add', null)).toBe(true);
-    expect(passkeyStepSkippable('add', 'x')).toBe(false);
+  test('the passkey step is optional and keeps the recovery phrase as the main key', () => {
+    expect(PASSKEY_STEP_COPY.title).toBe('Add a passkey');
+    expect(PASSKEY_STEP_COPY.skip).toBe('Skip for now');
+    expect(PASSKEY_STEP_COPY.body).toContain('recovery phrase stays the main key');
   });
 
   test('a passkey failure during setup can continue without it', () => {
@@ -71,8 +55,32 @@ describe('restore never blocks on a passkey', () => {
     expect(setupLinks(null)).toEqual([]);
     expect(setupHint({ message: 'Dismissed.', accountId: '0xabc', retry: 'passkey' })).toContain('continue without a passkey');
   });
+});
 
-  test('the stage list for a restore without a passkey skips the passkey stage', () => {
-    expect(setupStages({ restore: true, history: true })).toEqual(['wallet', 'messaging', 'history', 'finishing']);
+const FRESH: RestoreOfferInput = { custody: 'ecdsa-root', migration: null, passkeysAvailable: true, devicePasskeyStored: false };
+
+describe('restoreOffer', () => {
+  test('a recovery-phrase account is offered a passkey for this device, never required', () => {
+    expect(restoreOffer(FRESH)).toBe('add-passkey');
+    expect(restoreOffer({ ...FRESH, custody: 'undeployed' })).toBe('add-passkey');
+    expect(RESTORE_OFFER_COPY['add-passkey'].message).toContain('later in Settings, Security');
+  });
+
+  test('no offer when passkeys are unavailable or this device already has one', () => {
+    expect(restoreOffer({ ...FRESH, passkeysAvailable: false })).toBeNull();
+    expect(restoreOffer({ ...FRESH, devicePasskeyStored: true })).toBeNull();
+    expect(restoreOffer({ ...FRESH, custody: 'other-root' })).toBeNull();
+    expect(restoreOffer({ ...FRESH, custody: null })).toBeNull();
+  });
+
+  test('a legacy passkey-rooted account is asked to migrate where it can, and told where to otherwise', () => {
+    const legacy: RestoreOfferInput = { ...FRESH, custody: 'passkey-root' };
+    expect(restoreOffer({ ...legacy, migration: 'recovery-key' })).toBe('make-root-here');
+    expect(restoreOffer({ ...legacy, migration: 'device-passkey' })).toBe('make-root-here');
+    expect(restoreOffer({ ...legacy, migration: 'passkey' })).toBe('make-root-here');
+    expect(restoreOffer({ ...legacy, migration: 'elsewhere' })).toBe('make-root-elsewhere');
+    expect(restoreOffer({ ...legacy, migration: null })).toBeNull();
+    expect(restoreOffer({ ...legacy, migration: 'not-needed' })).toBeNull();
+    expect(RESTORE_OFFER_COPY['make-root-elsewhere'].message).toContain('Messaging works on this device');
   });
 });

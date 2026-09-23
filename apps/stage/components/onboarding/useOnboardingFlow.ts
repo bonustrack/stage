@@ -2,12 +2,11 @@ import { useState } from 'react';
 import { usePathname } from 'expo-router';
 import type { AccountTransfer } from '@stage-labs/client/accounts/transfer';
 import { passkeysAvailable } from '../../lib/zerodev';
-import { abandonAccount, confirmRestoredPasskey, inspectPhrase, PasskeySetupError, type PasskeyChoice, type PasskeyMode, type Stage } from './flow';
+import type { PasskeyChoice, Stage } from './flow';
 import type { SetupErr, SetupPlan } from './Onboarding.setup.model';
 import { useSetupRunner, type Choice, type HistoryControls } from './useSetupRunner';
 import { IMPORT_ROUTE } from './nextRoute.model';
 import { EMPTY_DETAILS, profileSetupFrom, type ProfileDetails } from './Onboarding.profile.model';
-import { reported } from '../../lib/errorPolicy';
 
 export type Step = 'username' | 'profile' | 'import' | 'passkey' | 'setup';
 
@@ -17,8 +16,6 @@ export interface OnboardingFlow {
   stage: Stage;
   setupErr: SetupErr | null;
   plan: SetupPlan;
-  passkeyMode: PasskeyMode;
-  passkeyErr: string | null;
   onUsernameContinue: (label: string) => void;
   onProfileContinue: (details: ProfileDetails) => void;
   onProfileSkip: () => void;
@@ -38,84 +35,33 @@ function createChoice(label: string, details: ProfileDetails): Choice {
   return profile === null ? { kind: 'create' } : { kind: 'create', profile };
 }
 
+function importChoice(transfer: AccountTransfer): Choice {
+  return transfer.kind === 'phrase' ? { kind: 'restore', phrase: transfer.phrase } : { kind: 'importKey', pk: transfer.pk };
+}
+
 export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
   const [flowStep, setStep] = useState<Step>('username');
   const [label, setLabel] = useState('');
   const [pending, setPending] = useState<Choice | null>(null);
-  const [passkeyMode, setPasskeyMode] = useState<PasskeyMode>('add');
-  const [inspecting, setInspecting] = useState(false);
-  const [passkeyErr, setPasskeyErr] = useState<string | null>(null);
-  const [restoredId, setRestoredId] = useState<string | null>(null);
   const runner = useSetupRunner(onDone);
   const atImportRoute = usePathname() === IMPORT_ROUTE;
   const step: Step = flowStep === 'username' && atImportRoute ? 'import' : flowStep;
 
   const start = (choice: Choice, passkey: PasskeyChoice): void => {
+    setPending(choice);
     setStep('setup');
     runner.run(choice, passkey);
   };
 
-  const toPasskey = (choice: Choice, mode: PasskeyMode): void => {
+  const toPasskey = (choice: Choice): void => {
     setPending(choice);
     if (!passkeysAvailable()) { start(choice, 'none'); return; }
-    setPasskeyMode(mode);
     setStep('passkey');
   };
 
-  const importPhrase = async (phrase: string): Promise<void> => {
-    const choice: Choice = { kind: 'restore', phrase };
-    setInspecting(true);
-    try {
-      const found = await inspectPhrase(phrase);
-      if (found.alreadyImported) { start(choice, 'none'); return; }
-      toPasskey(choice, found.passkeySecured ? 'verify' : 'add');
-    } catch {
-      toPasskey(choice, 'add');
-    } finally {
-      setInspecting(false);
-    }
-  };
-
-  const onImportTransfer = (transfer: AccountTransfer): void => {
-    if (transfer.kind === 'phrase') void importPhrase(transfer.phrase);
-    else start({ kind: 'importKey', pk: transfer.pk }, 'none');
-  };
-
-  const confirmPasskey = async (phrase: string): Promise<void> => {
-    setInspecting(true);
-    setPasskeyErr(null);
-    try {
-      const accountId = await confirmRestoredPasskey(phrase);
-      setRestoredId(null);
-      start({ kind: 'restored', accountId }, 'verify');
-    } catch (e) {
-      if (e instanceof PasskeySetupError) setRestoredId(e.accountId);
-      setPasskeyErr((e as Error).message);
-    } finally {
-      setInspecting(false);
-    }
-  };
-
-  const onAddPasskey = (): void => {
-    if (!pending) return;
-    if (passkeyMode === 'verify' && pending.kind === 'restore') { void confirmPasskey(pending.phrase); return; }
-    start(pending, passkeyMode);
-  };
-
-  const skipPasskey = (): void => {
-    if (restoredId !== null) {
-      const accountId = restoredId;
-      setRestoredId(null); setPasskeyErr(null);
-      start({ kind: 'restored', accountId }, 'none');
-      return;
-    }
-    if (pending) { setPasskeyErr(null); start(pending, 'none'); }
-  };
-
   const startOver = (): void => {
-    if (restoredId !== null) void abandonAccount(restoredId).catch(reported('onboarding.abandon'));
     runner.startOver();
-    setRestoredId(null); setPasskeyErr(null); setPending(null); setLabel('');
+    setPending(null); setLabel('');
     setStep('username');
   };
 
@@ -128,16 +74,15 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
 
   return {
     step,
-    busy: runner.busy || inspecting, stage: runner.stage, setupErr: runner.setupErr, plan: runner.plan,
-    passkeyMode, passkeyErr,
-    onUsernameContinue: (next) => { setLabel(next); if (next === '') toPasskey({ kind: 'create' }, 'add'); else setStep('profile'); },
-    onProfileContinue: (details) => { toPasskey(createChoice(label, details), 'add'); },
-    onProfileSkip: () => { toPasskey(createChoice(label, EMPTY_DETAILS), 'add'); },
+    busy: runner.busy, stage: runner.stage, setupErr: runner.setupErr, plan: runner.plan,
+    onUsernameContinue: (next) => { setLabel(next); if (next === '') toPasskey({ kind: 'create' }); else setStep('profile'); },
+    onProfileContinue: (details) => { toPasskey(createChoice(label, details)); },
+    onProfileSkip: () => { toPasskey(createChoice(label, EMPTY_DETAILS)); },
     onProfileBack: () => { setStep('username'); },
-    onImportTransfer,
-    onAddPasskey,
-    onSkipPasskey: skipPasskey,
-    onPasskeyBack: () => { setPasskeyErr(null); setStep(label === '' ? 'username' : 'profile'); },
+    onImportTransfer: (transfer) => { start(importChoice(transfer), 'none'); },
+    onAddPasskey: () => { if (pending) start(pending, 'add'); },
+    onSkipPasskey: () => { if (pending) start(pending, 'none'); },
+    onPasskeyBack: () => { setStep(label === '' ? 'username' : 'profile'); },
     history: runner.history,
     onSetupRetry,
     onSetupBack: startOver,

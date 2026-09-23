@@ -45,7 +45,7 @@ src/
   identity/    # Basenames + stage names (read/write), onchain profiles, peer profile lookups, formatting
   profile/     # avatar URL helper (stamp + IPFS gateway) and picture upload parsing
   accounts/    # account records, key storage constants, HD index, device transfer
-  zerodev/     # Kernel smart accounts: derive, validator plan, passkey link, recovery
+  zerodev/     # Kernel smart accounts: derive, validator plan, device passkeys, root-key migration, passkey link, recovery key access
   wallet/      # formatting, assets, balances, prices, send, tx decode/simulate/error
   api/         # read-only clients: ens, etherscan, opensea, coingecko, github link detection
   routing/     # deep links and handle parsing
@@ -56,6 +56,15 @@ src/
   validate.ts  # parseOrThrow / parseOrNull zod boundary helpers
   types.ts     # shared domain types
 ```
+
+## Kernel key model
+
+Smart accounts are ZeroDev Kernel v3.1 on Base (EntryPoint 0.7).
+
+- The recovery-phrase ECDSA validator is always the root (sudo) validator. New accounts never swap the root to a passkey.
+- A passkey is per device: a Kernel permission validation (WebAuthnSigner 0.0.4 `0x65DEeC8fEe717dc044D0CFD63cCf55F02cCaC2b3` + sudo policy `0x67b436caD8a6D025DF6C82C5BB43fbF11fC5B9B7`, execute selector) installed in enable mode. The root ECDSA key on the same device signs the enable data and the new passkey signs the user operation (`zerodev/devicePasskey`), so any device holding the phrase adds its own passkey in one step.
+- `planKernelSigning` (`zerodev/validatorPlan`): message signing always uses ECDSA; transactions use this device's passkey when it is installed, otherwise the ECDSA root; an undeployed account always signs as the ECDSA root.
+- Legacy accounts whose root is still a passkey validator migrate with `rootKeyMigrationCalls` (`zerodev/rootKey`): one `execute` batch of two self-calls, `changeRootValidator(ECDSA)` then `uninstallValidation(old passkey validator)`. The batch can be signed by the root passkey, a device passkey, or the ECDSA secondary validator when it may call `execute` ("Recovery key can transact"). Self-calls pass Kernel's `onlyEntryPointOrSelfOrRoot`; a single self-call would be sent as raw calldata instead of through `execute`, which a secondary validator may not do. `planRootKeyMigration` picks the path.
 
 ## Scripts
 

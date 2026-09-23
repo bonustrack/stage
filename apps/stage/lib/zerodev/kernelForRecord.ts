@@ -5,7 +5,7 @@ import { createKernelAccount, type CreateKernelAccountReturnType, type KernelAcc
 import { getValidatorAddress } from '@zerodev/ecdsa-validator';
 import {
   KERNEL_EXECUTE_SELECTOR, describeUnavailableSigning, planKernelSigning, validationIdOf,
-  type KernelSigningPurpose, type KernelValidationState, type PasskeyProblem,
+  type KernelSigningInput, type KernelSigningPurpose, type KernelValidationState, type PasskeyProblem,
 } from '@stage-labs/client/zerodev/validatorPlan';
 import type { AccountRecord } from '../accounts';
 import { smartOwnerSigner } from './keyring';
@@ -84,32 +84,49 @@ async function deviceUsable(publicClient: PublicClient, rec: AccountRecord, purp
   return devicePasskeyUsable(publicClient, rec).catch(recover('passkey.device', false));
 }
 
-async function ecdsaClient(publicClient: PublicClient, rec: AccountRecord & { hdIndex: number }, plan: 'ecdsa-root' | 'ecdsa-secondary'): Promise<KernelAccountClient> {
+export async function ecdsaRootClient(rec: AccountRecord & { hdIndex: number }): Promise<KernelAccountClient> {
+  const publicClient = makePublicClient();
   const owner = await smartOwnerSigner({ hdIndex: rec.hdIndex, phraseId: rec.phraseId });
-  if (plan === 'ecdsa-root') {
-    return makeKernelClient(await createEcdsaKernel(publicClient, owner, rec.hdIndex), publicClient);
-  }
+  return makeKernelClient(await createEcdsaKernel(publicClient, owner, rec.hdIndex, rec.address as Hex), publicClient);
+}
+
+async function ecdsaClient(publicClient: PublicClient, rec: AccountRecord & { hdIndex: number }, plan: 'ecdsa-root' | 'ecdsa-secondary'): Promise<KernelAccountClient> {
+  if (plan === 'ecdsa-root') return ecdsaRootClient(rec);
+  const owner = await smartOwnerSigner({ hdIndex: rec.hdIndex, phraseId: rec.phraseId });
   return secondaryEcdsaClient(publicClient, owner, rec.address as Hex);
 }
 
-export async function kernelClientForRecord(rec: AccountRecord, purpose: KernelSigningPurpose = 'transact'): Promise<KernelAccountClient> {
-  if (rec.type !== 'smart' || rec.hdIndex == null) {
-    throw new Error('Not a smart account.');
-  }
+export interface SigningContext {
+  publicClient: PublicClient;
+  input: KernelSigningInput;
+  problem: PasskeyProblem;
+}
+
+export async function signingContext(rec: AccountRecord, purpose: KernelSigningPurpose = 'transact'): Promise<SigningContext> {
   const publicClient = makePublicClient();
-  const smart = { ...rec, hdIndex: rec.hdIndex };
   const ecdsaValidator = getValidatorAddress(ENTRY_POINT, KERNEL_VERSION);
-  const [state, problem, devicePasskey] = await Promise.all([
+  const [state, problem, devicePasskeyUsable] = await Promise.all([
     readValidationState(publicClient, rec.address as Hex, ecdsaValidator), passkeyProblem(rec), deviceUsable(publicClient, rec, purpose),
   ]);
+  return { publicClient, problem, input: { ...state, ecdsaValidator, passkeyUsable: problem === 'none', devicePasskeyUsable, purpose } };
+}
+
+function smartRecord(rec: AccountRecord): AccountRecord & { hdIndex: number } {
+  if (rec.type !== 'smart' || rec.hdIndex == null) throw new Error('Not a smart account.');
+  return { ...rec, hdIndex: rec.hdIndex };
+}
+
+export async function kernelClientForRecord(rec: AccountRecord, purpose: KernelSigningPurpose = 'transact'): Promise<KernelAccountClient> {
+  const smart = smartRecord(rec);
+  const { publicClient, input, problem } = await signingContext(rec, purpose);
   const planFor = (passkeyUsable: boolean, devicePasskeyUsable: boolean): ReturnType<typeof planKernelSigning> =>
-    planKernelSigning({ ...state, ecdsaValidator, passkeyUsable, devicePasskeyUsable, purpose });
+    planKernelSigning({ ...input, passkeyUsable, devicePasskeyUsable });
   let passkey: PasskeyAttempt = { account: null, problem };
-  let plan = planFor(problem === 'none', devicePasskey);
+  let plan = planKernelSigning(input);
   if (plan === 'passkey') {
     passkey = await tryPasskey(publicClient, rec, smart.hdIndex);
     if (passkey.account) return makeKernelClient(passkey.account, publicClient);
-    plan = planFor(false, devicePasskey);
+    plan = planFor(false, input.devicePasskeyUsable === true);
   }
   if (plan === 'device-passkey') {
     const client = await deviceKernelClient(publicClient, rec);

@@ -48,7 +48,7 @@ async function requireRevealAuth(id?: string): Promise<boolean> {
     const rec = id
       ? (await loadAccounts()).find((a) => a.id === id.toLowerCase())
       : await getActiveAccount();
-    stored = rec?.passkey;
+    stored = rec?.devicePasskey ?? rec?.passkey;
   } catch {
     stored = undefined;
   }

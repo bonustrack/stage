@@ -71,7 +71,7 @@ export function SetupStep({ dark, busy, stage, setupErr, plan, onRetry, onBack, 
   const actions = SetupActions({ dark, busy, setupErr, onRetry, history });
   const link = SetupLink({ busy, setupErr, onBack, onSkipPasskey, history });
   return (
-    <OnboardingCard title={setupTitle(setupErr, plan)} about={historyHint ?? setupHint(setupErr, plan)} footer={actions} after={link}>
+    <OnboardingCard title={setupTitle(setupErr, plan)} about={historyHint ?? setupHint(setupErr)} footer={actions} after={link}>
       <Col width="100%">
         {stages.map((s) => (
           <StageRow key={s} label={stageLabel(s, plan)} state={stageState(s, stage, stages)} failed={setupErr !== null || (history.stalled && s === 'history')} />

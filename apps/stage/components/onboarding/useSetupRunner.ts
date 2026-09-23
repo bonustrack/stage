@@ -12,11 +12,11 @@ import type { SetupErr, SetupPlan } from './Onboarding.setup.model';
 import { passkeysAvailable } from '../../lib/zerodev';
 import type { ProfileSetup } from './Onboarding.profile.model';
 import { reported } from '../../lib/errorPolicy';
+import { offerAfterRestore } from './restoreOffer';
 
 export type Choice =
   | { kind: 'create'; profile?: ProfileSetup }
   | { kind: 'restore'; phrase: string }
-  | { kind: 'restored'; accountId: string }
   | { kind: 'importKey'; pk: Hex };
 
 export interface SetupRunner {
@@ -47,8 +47,7 @@ function errorFrom(e: unknown): SetupErr {
 
 async function runChoice(choice: Choice, passkey: PasskeyChoice, onStage: (s: Stage) => void): Promise<SetupWarning> {
   if (choice.kind === 'create') return createWallet(passkey, onStage, choice.profile);
-  if (choice.kind === 'restore') return restoreWallet(choice.phrase, passkey, onStage);
-  if (choice.kind === 'restored') { await bringMessagingOnline(choice.accountId, onStage); return null; }
+  if (choice.kind === 'restore') return restoreWallet(choice.phrase, onStage);
   return importKeyAccount(choice.pk, onStage);
 }
 
@@ -86,11 +85,12 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
     setStage(first);
   };
 
-  const finish = (warning: SetupWarning): void => {
+  const finish = (warning: SetupWarning, restored: boolean): void => {
     holdOnboarding(false);
     setBusy(false);
     onDone();
     if (warning !== null) Alert.alert(warning.title, warning.message);
+    else if (restored) void offerAfterRestore().catch(reported('onboarding.offer'));
   };
 
   const tail = async (syncHistory: boolean, warning: SetupWarning): Promise<void> => {
@@ -104,7 +104,7 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
       }
     }
     setStage('finishing');
-    finish(warning);
+    finish(warning, syncHistory);
   };
 
   const run = (choice: Choice, passkey: PasskeyChoice): void => {
@@ -112,11 +112,11 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
     const restore = choice.kind !== 'create';
     setPlan({
       restore,
-      passkey: passkey !== 'none' && passkeysAvailable() ? passkey : undefined,
+      passkey: !restore && passkey !== 'none' && passkeysAvailable() ? passkey : undefined,
       profile: choice.kind === 'create' && choice.profile !== undefined,
       history: restore,
     });
-    begin(choice.kind === 'restored' ? 'messaging' : 'wallet');
+    begin('wallet');
     void (async (): Promise<void> => {
       try {
         const warning = await runChoice(choice, passkey, onStage);
@@ -160,7 +160,7 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
     if (!historyStalled) return;
     setHistoryStalled(false);
     setStage('finishing');
-    finish(heldWarning.current);
+    finish(heldWarning.current, true);
   };
 
   const history: HistoryControls = {

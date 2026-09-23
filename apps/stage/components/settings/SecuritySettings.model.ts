@@ -1,28 +1,25 @@
 export type SecurityRowKey =
   | 'backupPhrase'
   | 'showPhrase'
-  | 'enablePasskey'
+  | 'rootKey'
   | 'passkeyLink'
   | 'devicePasskey'
-  | 'approveDevice'
   | 'recoveryKey'
-  | 'removePasskey'
   | 'exportKey'
   | 'linkDevice'
   | 'removeAccount';
 
+export type SecurityCustody = 'undeployed' | 'ecdsa-root' | 'passkey-root' | 'other-root';
+
 export interface SecurityRowsInput {
   isSmart: boolean;
   backedUp: boolean | null;
-  enablePasskey: boolean;
-  removePasskey: boolean;
+  custody: SecurityCustody | null;
+  devicePasskeyStored: boolean;
   canExportKey: boolean;
   keyRevealed: boolean;
   canLinkDevice: boolean;
-  place?: 'this-device' | 'elsewhere' | 'none' | 'unknown' | null;
 }
-
-export type PasskeyActionKind = 'enable' | 'remove';
 
 export const BACKUP_PHRASE_COPY = {
   label: 'Back up recovery phrase',
@@ -56,30 +53,25 @@ export function phrasePanelActions(mode: PhraseRowMode): PhrasePanelAction[] {
   return mode === 'backup' ? ['hide', 'saved'] : ['hide'];
 }
 
-function devicePasskeyRows(input: SecurityRowsInput): SecurityRowKey[] {
-  if (input.place === 'elsewhere') return ['devicePasskey'];
-  return input.place === 'this-device' ? ['approveDevice'] : [];
+function keyRows(input: SecurityRowsInput): SecurityRowKey[] {
+  if (input.custody === 'passkey-root') {
+    return ['rootKey', 'passkeyLink', ...(input.devicePasskeyStored ? ['devicePasskey' as const] : []), 'recoveryKey'];
+  }
+  return input.custody === 'ecdsa-root' || input.custody === 'undeployed' ? ['devicePasskey'] : [];
 }
 
-function smartRecoveryRows(input: SecurityRowsInput): SecurityRowKey[] {
+function smartRows(input: SecurityRowsInput): SecurityRowKey[] {
   if (!input.isSmart) return [];
-  const rows: SecurityRowKey[] = ['passkeyLink', ...devicePasskeyRows(input), 'recoveryKey'];
+  const rows = keyRows(input);
   return input.backedUp === true ? [...rows, 'showPhrase'] : rows;
 }
 
 export function securityRows(input: SecurityRowsInput): SecurityRowKey[] {
   const rows: SecurityRowKey[] = [];
   if (input.isSmart && input.backedUp === false) rows.push('backupPhrase');
-  if (input.enablePasskey) rows.push('enablePasskey');
-  rows.push(...smartRecoveryRows(input));
-  if (input.removePasskey) rows.push('removePasskey');
+  rows.push(...smartRows(input));
   if (input.canExportKey && !input.keyRevealed) rows.push('exportKey');
   if (input.canLinkDevice) rows.push('linkDevice');
   rows.push('removeAccount');
   return rows;
-}
-
-export function passkeyActionLabel(kind: PasskeyActionKind, busy: boolean): string {
-  if (kind === 'enable') return busy ? 'Enabling passkey…' : 'Enable passkey for signing';
-  return busy ? 'Removing passkey…' : 'Remove passkey';
 }
