@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import { XMTP_APP_GROUP } from './xmtp.appGroup';
 import { getCachedXmtpClient } from './xmtp.state';
+import { reported } from './errorPolicy';
 
 const RELEASES_ON_BACKGROUND = Platform.OS === 'ios' && XMTP_APP_GROUP !== null;
 
@@ -21,5 +22,5 @@ export async function releaseSharedDb(): Promise<void> {
 export async function reclaimSharedDb(): Promise<void> {
   if (!released) return;
   released = false;
-  await getCachedXmtpClient()?.reconnectLocalDatabase().catch(() => undefined);
+  await getCachedXmtpClient()?.reconnectLocalDatabase().catch(reported('xmtp.reconnectDb'));
 }

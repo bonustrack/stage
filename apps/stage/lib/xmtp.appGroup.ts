@@ -1,5 +1,6 @@
 import { Directory, File, Paths } from 'expo-file-system';
 import type { XmtpEnv } from './xmtp.types';
+import { report } from './errorPolicy';
 
 export interface PushAccount {
   id: string;
@@ -50,7 +51,7 @@ function readManifest(file: File): PushAccount[] {
 }
 
 function writeManifest(file: File, accounts: PushAccount[]): void {
-  try { file.write(JSON.stringify(accounts)); } catch { }
+  try { file.write(JSON.stringify(accounts)); } catch (err) { report('xmtp.pushManifest', err); }
 }
 
 export function recordPushAccount(account: PushAccount): void {
