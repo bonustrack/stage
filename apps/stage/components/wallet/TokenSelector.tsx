@@ -14,7 +14,7 @@ import { TokenRowBody } from '../wallet/TokenRowView';
 import { usePalette } from '../../lib/theme';
 import { useActiveAccountRecord } from '../../modules/messaging';
 import { useAssetRows } from './screen/data';
-import { sendableOnAccount } from './TokenSelector.model';
+import { fallbackSendToken, sendableOnAccount } from './TokenSelector.model';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, type AssetRow } from '@stage-labs/client/wallet/assets';
 
 export interface TokenChoice { symbol: string; chainId: number }
@@ -38,17 +38,19 @@ function byValueDesc(rows: AssetRow[]): AssetRow[] {
   return [...rows].sort((a, b) => usdValue(b) - usdValue(a));
 }
 
-function useSelectorRows(): { rows: AssetRow[]; loading: boolean } {
+function useSelectorRows(): { rows: AssetRow[]; loading: boolean; smart: boolean } {
   const record = useActiveAccountRecord();
+  const smart = record?.type === 'smart';
   const publicRows = useAssetRows(record?.address ?? '').data ?? null;
-  const sendable = sendableOnAccount((publicRows ?? []).filter(hasBalance), record?.type === 'smart');
-  return { rows: byValueDesc(sendable), loading: publicRows === null };
+  const sendable = sendableOnAccount((publicRows ?? []).filter(hasBalance), smart);
+  return { rows: byValueDesc(sendable), loading: record === null || publicRows === null, smart };
 }
 
 export function useTopToken(): TokenChoice | null {
-  const { rows } = useSelectorRows();
+  const { rows, loading, smart } = useSelectorRows();
   const top = rows[0];
-  return top ? { symbol: top.symbol, chainId: top.chainId } : null;
+  if (top) return { symbol: top.symbol, chainId: top.chainId };
+  return loading ? null : fallbackSendToken(smart);
 }
 
 function rowKey(r: AssetRow): string {
