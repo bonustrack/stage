@@ -12,14 +12,13 @@ import { usePalette } from '../../lib/theme';
 import { GroupImagePicker } from '../GroupImagePicker';
 import { EMPTY_DETAILS, profileDetailsProblem, type ProfileDetails } from './Onboarding.profile.model';
 
-type Pal = ReturnType<typeof usePalette>;
-
 const PROFILE_TITLE = 'Set up your profile';
 const PROFILE_ABOUT = 'Add a picture, your name and a few words about you.';
 
-function PicturePicker({ pal, image, busy, onPick }: {
-  pal: Pal; image: PickedFile | null; busy: boolean; onPick: (file: PickedFile) => void;
+function PicturePicker({ image, busy, onPick }: {
+  image: PickedFile | null; busy: boolean; onPick: (file: PickedFile) => void;
 }): React.ReactElement {
+  const pal = usePalette();
   const [pickNonce, setPickNonce] = useState(0);
   return (
     <Pressable onPress={() => { if (!busy) setPickNonce((n) => n + 1); }} hitSlop={8} accessibilityLabel="Choose a profile picture" style={{ alignSelf: 'center' }}>
@@ -35,10 +34,11 @@ function PicturePicker({ pal, image, busy, onPick }: {
   );
 }
 
-export function ProfileStep({ pal, dark, busy, onContinue }: {
-  pal: Pal; dark: boolean; busy: boolean;
+export function ProfileStep({ dark, busy, onContinue }: {
+  dark: boolean; busy: boolean;
   onContinue: (details: ProfileDetails) => void;
 }): React.ReactElement {
+  const pal = usePalette();
   const [details, setDetails] = useState<ProfileDetails>(EMPTY_DETAILS);
   const problem = profileDetailsProblem(details);
   const footer = (
@@ -48,7 +48,7 @@ export function ProfileStep({ pal, dark, busy, onContinue }: {
   );
   return (
     <OnboardingCard title={PROFILE_TITLE} about={PROFILE_ABOUT} footer={footer}>
-      <PicturePicker pal={pal} image={details.image} busy={busy} onPick={(image) => { setDetails({ ...details, image }); }} />
+      <PicturePicker image={details.image} busy={busy} onPick={(image) => { setDetails({ ...details, image }); }} />
       <FormField label="Name" placeholder="e.g. Alice" value={details.displayName} onChangeText={(displayName) => { setDetails({ ...details, displayName }); }} disabled={busy} />
       <FormField label="About" placeholder="A few words about you" multiline value={details.description} onChangeText={(description) => { setDetails({ ...details, description }); }} disabled={busy} />
       {problem === null ? null : <Text size="xs" color={pal.sub}>{problem}</Text>}

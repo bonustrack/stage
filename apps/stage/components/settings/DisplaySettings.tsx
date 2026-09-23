@@ -4,7 +4,7 @@ import { Box } from '../layout';
 import { Text } from '@stage-labs/kit/react-native/text';
 import {
   setThemePreference, setCustomTheme, useCustomTheme,
-  useEffectiveColorScheme, usePalette, useThemePreference,
+  useThemePreference,
 } from '../../lib/theme';
 import { THEME_OPTIONS } from './themeOptions.model';
 import { ColorTokens } from '../system/ColorTokens';
@@ -12,12 +12,8 @@ import { SettingsPage } from './SettingsPage';
 import { SettingsList, SettingsThemeRow } from './rows';
 
 export function DisplaySettings(): React.ReactElement {
-  const dark = useEffectiveColorScheme() === 'dark';
   const pref = useThemePreference();
   const custom = useCustomTheme();
-  const { text: fg, link: head, border } = usePalette();
-  const sub = fg;
-  const rowBg = border;
 
   return (
     <SettingsPage title="Display" keyboardShouldPersistTaps="handled">
@@ -50,7 +46,7 @@ export function DisplaySettings(): React.ReactElement {
           <Text size="xs" role="secondary" style={{ paddingBottom: 4 }}>
             CUSTOM COLORS
           </Text>
-          <ColorTokens p={{ dark, head, sub, border, rowBg }}/>
+          <ColorTokens/>
         </Box>
       ) : null}
     </SettingsPage>

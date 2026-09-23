@@ -2,7 +2,7 @@
 import { Text } from '@stage-labs/kit/react-native/text';
 import { FilePicker } from '@stage-labs/kit/react-native/file-picker';
 import { Col } from '../layout';
-import { type Attachment } from './types';
+import { type Attachment, type OptimisticEntry } from './types';
 import { useComposerActions } from './actions';
 import {
   useComposerDrafts, useComposerFocus, useCaretToEnd,
@@ -23,29 +23,12 @@ interface Props {
   autoFocusNonce?: number;
   onClearReply?: () => void;
   onJumpToReply?: (messageId: string) => void;
-  onOptimistic?: (entry: { localId: string; text: string; attachments: Attachment[]; replyTo?: string; payload?: unknown }) => void;
+  onOptimistic?: (entry: OptimisticEntry) => void;
   onSent?: (localId: string, error?: string, sentId?: string) => void;
 }
 
-function actionsArgs(props: Props, s: ReturnType<typeof useComposerState>) {
-  return {
-    xmtpLine: props.xmtpLine, text: s.text, pending: s.pending,
-    replyingTo: props.replyingTo, mentionCandidates: props.mentionCandidates,
-    setPending: s.setPending, setText: s.setText, setSending: s.setSending,
-    setUploading: s.setUploading, setErr: s.setErr,
-    setRecording: s.setRecording, setRecordSecs: s.setRecordSecs, setLevels: s.setLevels,
-    setPollOpen: s.setPollOpen, pollQuestion: s.pollQuestion, pollHeader: s.pollHeader,
-    pollOptions: s.pollOptions, pollMulti: s.pollMulti,
-    setPollQuestion: s.setPollQuestion, setPollHeader: s.setPollHeader,
-    setPollOptions: s.setPollOptions, setPollMulti: s.setPollMulti,
-    setSigOpen: s.setSigOpen, sigKind: s.sigKind, sigDesc: s.sigDesc,
-    sigMessage: s.sigMessage, sigJson: s.sigJson,
-    setSigKind: s.setSigKind, setSigDesc: s.setSigDesc,
-    setSigMessage: s.setSigMessage, setSigJson: s.setSigJson,
-    setTxOpen: s.setTxOpen, txTo: s.txTo, txAmount: s.txAmount, txNote: s.txNote,
-    setTxTo: s.setTxTo, setTxAmount: s.setTxAmount, setTxNote: s.setTxNote,
-    onOptimistic: props.onOptimistic, onSent: props.onSent, onClearReply: props.onClearReply,
-  };
+function loneCandidate(candidates: Props['mentionCandidates']): string | undefined {
+  return candidates?.length === 1 ? candidates[0]?.address : undefined;
 }
 
 function ComposerHeader(p: {
@@ -86,10 +69,9 @@ export function MessengerComposer(props: Props): React.ReactElement {
   const pal = usePalette();
   const fg = pal.text, head = pal.link, inputBg = pal.inputBg, chipBg = pal.border, bg = pal.bg;
   const sub = pal.text;
-  const palette = { fg, sub, inputBg, chipBg };
 
   const s = useComposerState();
-  const actions = useComposerActions(actionsArgs(props, s));
+  const actions = useComposerActions({ ...props, ...s });
   const { SLIDE_CANCEL_THRESHOLD_PX } = actions;
 
   const convId = convIdOfLine(xmtpLine) ?? xmtpLine;
@@ -110,7 +92,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
   const attachActions = buildAttachActions({
     pickImage: actions.pickImage, takePhoto: actions.takePhoto,
     pickFile: actions.pickFile, pickLocation: actions.pickLocation,
-    openPoll: () => { s.setPollOpen(true); }, openSig: () => { s.setSigOpen(true); }, openTx: () => { actions.openTx(); },
+    openPoll: () => { s.setPollOpen(true); }, openSig: () => { s.setSigOpen(true); }, openTx: () => { s.setTxOpen(true); },
   });
   const lastLabel = useLastAttachment();
   const quick = attachActions.find(([, label]) => label === lastLabel);
@@ -147,7 +129,10 @@ export function MessengerComposer(props: Props): React.ReactElement {
           actions={attachActions}
         />
       ) : null}
-      <ComposerSheets s={s} palette={palette} dark={dark} actions={actions} />
+      <ComposerSheets
+        s={s} dark={dark} hooks={{ xmtpLine, setErr: s.setErr, onOptimistic: props.onOptimistic, onSent: props.onSent }}
+        initialTo={loneCandidate(mentionCandidates)}
+      />
       <FilePicker
         openNonce={actions.imageNonce}
         source="library"

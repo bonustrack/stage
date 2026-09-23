@@ -118,7 +118,7 @@ function SeedChoice<T extends string | number>({ name, options, value, onSelect,
   );
 }
 
-export interface GalleryPalette {
+interface GalleryPalette {
   dark: boolean;
   head: string;
   sub: string;
@@ -126,9 +126,10 @@ export interface GalleryPalette {
   rowBg: string;
 }
 
-export function ColorTokens({ p }: { p: GalleryPalette }): React.ReactElement {
+export function ColorTokens(): React.ReactElement {
   const palette = usePalette();
   const scheme = useEffectiveColorScheme();
+  const p: GalleryPalette = { dark: scheme === 'dark', head: palette.link, sub: palette.text, border: palette.border, rowBg: palette.border };
   const seeds = useThemeSeeds();
   const seed = seeds[scheme];
   return (

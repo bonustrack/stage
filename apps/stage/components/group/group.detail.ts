@@ -1,44 +1,33 @@
-
 import { useEffect, useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useConvMeta, fetchGroupRoles } from '../../modules/messaging';
+import { Alert } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useConvMeta, fetchGroupRoles, messagingKeys, lineOfConv, leaveGroupConv, shortAddress,
+} from '../../modules/messaging';
 import { ensurePeerProfiles, getPeerName, subscribePeerProfiles } from '@stage-labs/client/identity/peerProfiles';
+import { capabilities } from '../../lib/capabilities';
+import { uploadAvatar } from '../../lib/profile';
+import {
+  addGroupMember, removeGroupMember, updateGroupImage, updateGroupDescription, updateGroupName,
+} from './group.helpers';
 
 type Roles = Record<string, 'owner' | 'admin' | 'member'>;
+type Names = Record<string, string | null>;
+type Meta = ReturnType<typeof useConvMeta>;
+type BusyKey = 'name' | 'description' | 'image' | 'add' | 'leave';
+type Task = () => Promise<Partial<Meta> | undefined>;
 
 const NO_ROLES: Roles = {};
-type Names = Record<string, string | null>;
 
-interface ActionSeeders {
-  setName: (n: string | null) => void;
-  setDraft: (n: string) => void;
-  setImageUrl: (u: string) => void;
-  setDescription: (d: string) => void;
-  setDescriptionDraft: (d: string) => void;
-  setMembers: (m: string[]) => void;
-}
+interface GroupPickedFile { uri: string; mime: string; name?: string }
 
-export function useGroupDetail(
-  convId: string | undefined,
-  a: ActionSeeders,
-): { memberNames: Names; memberRoles: Roles } {
-  const meta = useConvMeta(convId);
+function useMemberDirectory(convId: string | undefined, meta: Meta): {
+  members: string[]; memberNames: Names; memberRoles: Roles;
+} {
   const [memberNames, setMemberNames] = useState<Names>({});
-
   const metaMembers = meta.memberAddrs;
-  const sortedMembers = useMemo(
-    () => [...metaMembers].sort((x, y) => x.localeCompare(y)),
-    [metaMembers],
-  );
-
-  useEffect(() => {
-    a.setName(meta.groupName ?? '');
-    a.setDraft(meta.groupName ?? '');
-    a.setImageUrl(meta.groupImage);
-    a.setDescription(meta.groupDescription);
-    a.setDescriptionDraft(meta.groupDescription);
-    a.setMembers(sortedMembers);
-  }, [meta.groupName, meta.groupImage, meta.groupDescription, sortedMembers]);
+  const members = useMemo(() => [...metaMembers].sort((x, y) => x.localeCompare(y)), [metaMembers]);
 
   const inboxToAddr = meta.inboxToAddr;
   const inboxIds = Object.keys(inboxToAddr);
@@ -49,16 +38,137 @@ export function useGroupDetail(
   });
 
   useEffect(() => {
-    if (sortedMembers.length === 0) return;
+    if (members.length === 0) return;
     const recompute = (): void => {
       const next: Names = {};
-      for (const m of sortedMembers) next[m] = getPeerName(m) ?? null;
+      for (const m of members) next[m] = getPeerName(m) ?? null;
       setMemberNames(next);
     };
-    ensurePeerProfiles(sortedMembers);
+    ensurePeerProfiles(members);
     recompute();
     return subscribePeerProfiles(recompute);
-  }, [sortedMembers]);
+  }, [members]);
 
-  return { memberNames, memberRoles };
+  return { members, memberNames, memberRoles };
+}
+
+function useTaskRunner(convId: string | undefined): {
+  busy: Partial<Record<BusyKey, boolean>>;
+  run: (track: BusyKey | ((on: boolean) => void), failTitle: string, task: Task) => Promise<boolean>;
+} {
+  const queryClient = useQueryClient();
+  const [busy, setBusy] = useState<Partial<Record<BusyKey, boolean>>>({});
+  const run = async (track: BusyKey | ((on: boolean) => void), failTitle: string, task: Task): Promise<boolean> => {
+    const mark = typeof track === 'function' ? track : (on: boolean): void => { setBusy(b => ({ ...b, [track]: on })); };
+    mark(true);
+    try {
+      const patch = await task();
+      if (patch && convId) {
+        const key = messagingKeys.convMeta(convId);
+        queryClient.setQueryData<Meta>(key, m => (m ? { ...m, ...patch } : m));
+        void queryClient.invalidateQueries({ queryKey: key });
+      }
+      return true;
+    } catch (e) {
+      Alert.alert(failTitle, (e as Error).message ?? 'Unknown error');
+      return false;
+    } finally { mark(false); }
+  };
+  return { busy, run };
+}
+
+export function useGroupDetail(convId: string | undefined) {
+  const router = useRouter();
+  const line = lineOfConv(convId ?? '');
+  const meta = useConvMeta(convId);
+  const directory = useMemberDirectory(convId, meta);
+  const { busy, run } = useTaskRunner(convId);
+  const [nameDraft, setNameDraft] = useState<string | null>(null);
+  const [descriptionDraft, setDescriptionDraft] = useState<string | null>(null);
+  const [addDraft, setAddDraft] = useState('');
+  const [removing, setRemoving] = useState<string | null>(null);
+  const [pickNonce, setPickNonce] = useState(0);
+
+  const saveName = async (): Promise<void> => {
+    const next = nameDraft?.trim() ?? '';
+    if (!next || busy.name) return;
+    const ok = await run('name', 'Rename failed', async () => {
+      await updateGroupName(line, next);
+      return { groupName: next };
+    });
+    if (ok) setNameDraft(null);
+  };
+
+  const saveDescription = async (): Promise<void> => {
+    const next = descriptionDraft?.trim() ?? '';
+    if (busy.description) return;
+    const ok = await run('description', 'Description update failed', async () => {
+      await updateGroupDescription(line, next);
+      return { groupDescription: next };
+    });
+    if (ok) setDescriptionDraft(null);
+  };
+
+  const addMember = async (onSuccess?: () => void): Promise<void> => {
+    const addr = addDraft.trim();
+    if (!/^0x[0-9a-fA-F]{40}$/.test(addr) || busy.add) {
+      Alert.alert('Add member', 'Enter a valid 0x… Ethereum address.');
+      return;
+    }
+    await run('add', 'Add member failed', async () => {
+      const memberAddrs = await addGroupMember(line, addr);
+      setAddDraft('');
+      onSuccess?.();
+      return { memberAddrs };
+    });
+  };
+
+  const removeMember = async (addr: string): Promise<void> => {
+    const ok = await capabilities.confirm({
+      title: 'Remove member',
+      message: `Remove ${shortAddress(addr)} from this group? They'll lose access to past + future messages.`,
+      confirmLabel: 'Remove',
+      destructive: true,
+    });
+    if (!ok) return;
+    await run((on) => { setRemoving(on ? addr.toLowerCase() : null); }, 'Remove member failed', async () => (
+      { memberAddrs: await removeGroupMember(line, addr) }
+    ));
+  };
+
+  const onPickedImage = async (file: GroupPickedFile): Promise<void> => {
+    if (busy.image) return;
+    await run('image', 'Image upload failed', async () => {
+      const url = await uploadAvatar(file.uri, file.mime, file.name ?? 'group-avatar');
+      await updateGroupImage(line, url);
+      return { groupImage: url };
+    });
+  };
+
+  const leaveGroup = async (onClose: () => void): Promise<void> => {
+    onClose();
+    const ok = await capabilities.confirm({
+      title: 'Leave group',
+      message: 'You’ll stop receiving messages from this group. You can be re-added by a member later.',
+      confirmLabel: 'Leave',
+      destructive: true,
+    });
+    if (!ok) return;
+    await run('leave', 'Couldn’t leave', async () => {
+      const result = await leaveGroupConv(line);
+      capabilities.toast(result === 'left' ? 'Left group' : 'Group hidden');
+      router.replace('/');
+      return undefined;
+    });
+  };
+
+  return {
+    line, ...directory, busy, removing,
+    name: meta.groupName, description: meta.groupDescription, imageUrl: meta.groupImage,
+    nameDraft, setNameDraft, saveName,
+    descriptionDraft, setDescriptionDraft, saveDescription,
+    addDraft, setAddDraft, addMember, removeMember,
+    pickNonce, pickImage: () => { if (!busy.image) setPickNonce(n => n + 1); }, onPickedImage,
+    leaveGroup,
+  };
 }

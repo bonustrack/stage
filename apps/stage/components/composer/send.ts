@@ -6,7 +6,7 @@ import { mimeOf } from '../../lib/attachmentFiles';
 import { type Attachment, INLINE_ATTACHMENT_MAX_BYTES } from './types';
 
 let seq = 0;
-const mintLocalId = (): string =>
+export const mintLocalId = (): string =>
   `tmp_${Date.now()}_${(seq++).toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
 
 export interface SendStep {

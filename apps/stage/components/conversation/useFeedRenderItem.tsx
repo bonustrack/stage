@@ -5,7 +5,8 @@ import type { SignatureRequestContent } from '@stage-labs/client/xmtp/sign';
 import type { WalletSendCallsContent } from '@stage-labs/client/xmtp/tx';
 import { MessengerBubble } from '../bubble/MessengerBubble';
 import { BubbleErrorBoundary } from '../bubble/boundary';
-import { usePalette } from '../../lib/theme';
+import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { useRouter } from 'expo-router';
 import { previewOf } from './feed-helpers';
 import type { useConversationState } from './useConversationState';
 import { profileLinkOf } from '../../lib/links';
@@ -25,12 +26,7 @@ function payHandlerOf(item: HistoryEntry, myUri: string, onPay: ConvState['onPay
   return () => { onPay(item.id, wsc); };
 }
 
-export function useFeedRenderItem(
-  c: ConvState,
-  dark: boolean,
-  router: { push: (h: { pathname: '/profile/[address]'; params: { address: string } }) => void },
-  highlight?: string,
-): {
+export function useFeedRenderItem(c: ConvState, highlight?: string): {
   renderItem: ({ item }: { item: Bubble }) => React.ReactElement;
   extraData: readonly unknown[];
 } {
@@ -44,6 +40,8 @@ export function useFeedRenderItem(
   } = c;
 
   const sub = usePalette().text;
+  const dark = useEffectiveColorScheme() === 'dark';
+  const router = useRouter();
   const replyingToId = replyingTo?.id;
 
   const extraData = useMemo(

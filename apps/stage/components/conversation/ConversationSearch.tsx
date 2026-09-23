@@ -7,28 +7,21 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import { useFeedRenderItem } from './useFeedRenderItem';
 import { searchLocalHistory, type SearchScanResult } from '../../modules/messaging/searchLocal';
 import type { useConversationState } from './useConversationState';
+import { usePalette } from '../../lib/theme';
 
 type ConvState = ReturnType<typeof useConversationState>;
 
-export interface ConversationSearchProps {
-  line: string;
-  query: string;
-  sub: string; bg: string;
-  c: ConvState;
-  dark: boolean;
-  router: { push: (h: { pathname: '/profile/[address]'; params: { address: string } }) => void };
-}
-
-export function ConversationSearch({
-  line, query, sub, bg, c, dark, router,
-}: ConversationSearchProps): React.ReactElement {
+export function ConversationSearch({ line, query, c }: {
+  line: string; query: string; c: ConvState;
+}): React.ReactElement {
+  const { text: sub, bg } = usePalette();
   const [result, setResult] = useState<SearchScanResult>({ hits: [], truncated: false });
   const [scanning, setScanning] = useState(false);
   const scanEpoch = useRef(0);
 
   const q = query.trim();
 
-  const { renderItem, extraData } = useFeedRenderItem(c, dark, router, q);
+  const { renderItem, extraData } = useFeedRenderItem(c, q);
 
   useEffect(() => {
     const epoch = ++scanEpoch.current;

@@ -8,16 +8,14 @@ import { Row, Col } from '../layout';
 import { shortAddress } from '../../modules/messaging';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { useContacts } from '../../lib/useContacts';
+import { usePalette } from '../../lib/theme';
 
-interface RowPalette { head: string; sub: string; border: string }
-
-export function RecipientRow({ address, label, pal, onPress }: {
+export function RecipientRow({ address, label, onPress }: {
   address: string;
   label?: string | null;
-  pal: RowPalette;
   onPress?: () => void;
 }): React.ReactElement {
-  const { head, border } = pal;
+  const { link: head, border } = usePalette();
   usePeerProfiles([address]);
   const name = label ?? getPeerName(address) ?? shortAddress(address);
   const showAddrLine = name !== shortAddress(address);
@@ -63,13 +61,12 @@ export function RecipientRow({ address, label, pal, onPress }: {
   );
 }
 
-export function ContactsModal({ visible, onClose, onPick, pal }: {
+export function ContactsModal({ visible, onClose, onPick }: {
   visible: boolean;
   onClose: () => void;
   onPick: (address: string) => void;
-  pal: RowPalette & { head: string };
 }): React.ReactElement {
-  const { head } = pal;
+  const { link: head } = usePalette();
   const contacts = useContacts([], '');
 
   return (
@@ -86,7 +83,6 @@ export function ContactsModal({ visible, onClose, onPick, pal }: {
           <RecipientRow
             key={c.address}
             address={c.address}
-            pal={pal}
             onPress={() => { onPick(c.address); onClose(); }}
 />
         ))

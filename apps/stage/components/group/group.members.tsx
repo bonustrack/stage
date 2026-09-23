@@ -4,12 +4,10 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Row, VirtualList } from '../layout';
 import { MemberRow } from './group.parts';
+import { usePalette } from '../../lib/theme';
 
-interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }
-
-function MembersHeader({ count, fg, border, onAdd }: {
-  count: number; fg: string; border: string; onAdd: () => void;
-}): React.ReactElement {
+function MembersHeader({ count, onAdd }: { count: number; onAdd: () => void }): React.ReactElement {
+  const { text: fg, border } = usePalette();
   return (
     <Row padding={{ x: 16, bottom: 8 }} align="center" justify="between">
       <Text size="xs" role="secondary">
@@ -33,18 +31,18 @@ function MembersHeader({ count, fg, border, onAdd }: {
 }
 
 export function GroupMembersList({
-  members, memberNames, memberRoles, selfAddress, removing, dark, p,
+  members, memberNames, memberRoles, selfAddress, removing, dark,
   onAdd, onOpenMember, onRemoveMember,
 }: {
   members: string[];
   memberNames: Record<string, string | null | undefined>;
   memberRoles: Record<string, 'owner' | 'admin' | 'member' | undefined>;
-  selfAddress: string; removing: string | null; dark: boolean; p: Pal;
+  selfAddress: string; removing: string | null; dark: boolean;
   onAdd: () => void; onOpenMember: (addr: string) => void; onRemoveMember: (addr: string) => void;
 }): React.ReactElement {
   return (
     <>
-      <MembersHeader count={members.length} fg={p.fg} border={p.border} onAdd={onAdd}/>
+      <MembersHeader count={members.length} onAdd={onAdd}/>
       <VirtualList
         data={members}
         extraData={memberNames}
@@ -57,7 +55,6 @@ export function GroupMembersList({
             role={memberRoles[item]}
             name={memberNames[item]}
             dark={dark}
-            p={p}
             onPress={() => { onOpenMember(item); }}
             onRemove={() => { onRemoveMember(item); }}
 />

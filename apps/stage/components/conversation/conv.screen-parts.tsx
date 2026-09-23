@@ -4,7 +4,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Box, pinnedTop } from '../layout';
 import type { Input } from '@stage-labs/kit/react-native/input';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
-import type { useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { convTitle } from './convTitle';
 import { MessengerComposer } from '../composer/MessengerComposer';
@@ -19,16 +19,17 @@ import { previewOf } from './feed-helpers';
 import { SearchTopnavBar } from '../SearchTopnavBar';
 import { RequestActionBar } from '../RequestActionBar';
 import type { useConversationState } from './useConversationState';
-import type { EdgeInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from '../../lib/safeArea';
+import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { conversationSharePath, profileLinkOf } from '../../lib/links';
 import { shareUrlFor } from '@stage-labs/client/routing/handles';
 
 type Conv = ReturnType<typeof useConversationState>;
-type Router = ReturnType<typeof useRouter>;
 
-export function ConversationTopnav({ c, convId, fg, head, border, insets, router }: {
-  c: Conv; convId: string; fg: string; head: string; border: string; insets: EdgeInsets; router: Router;
-}): React.ReactElement {
+export function ConversationTopnav({ c, convId }: { c: Conv; convId: string }): React.ReactElement {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { text: fg, link: head, border } = usePalette();
   const { isGroup, peerAddr, groupImage, setOverflowOpen, setOverflowAnchor } = c;
   return (
     <ConvTopnavShell fg={fg} border={border} safeTop={insets.top} onBack={() => { router.replace('/'); }}>
@@ -51,9 +52,10 @@ export function ConversationTopnav({ c, convId, fg, head, border, insets, router
   );
 }
 
-export function ConversationFooter({ c, convId, dark, rowBg, insets }: {
-  c: Conv; convId: string; dark: boolean; rowBg: string; insets: EdgeInsets;
-}): React.ReactElement {
+export function ConversationFooter({ c, convId }: { c: Conv; convId: string }): React.ReactElement {
+  const insets = useSafeAreaInsets();
+  const dark = useEffectiveColorScheme() === 'dark';
+  const { border: rowBg } = usePalette();
   const {
     showJump, setShowJump, scrollToNewest, markAtBottom, activeLine, mentionCandidates,
     replyingTo, setReplyingTo, autoFocusNonce, jumpToMessage, onOptimistic, onSent, consent, markConsentAllowed,
@@ -95,11 +97,12 @@ export function ConversationFooter({ c, convId, dark, rowBg, insets }: {
   );
 }
 
-export function ConversationSearchTopnav({ searchInputRef, border, head, sub, query, setQuery, onClose, topInset }: {
+export function ConversationSearchTopnav({ searchInputRef, query, setQuery, onClose }: {
   searchInputRef: React.RefObject<React.ComponentRef<typeof Input> | null>;
-  border: string; head: string; sub: string;
-  query: string; setQuery: (s: string) => void; onClose: () => void; topInset: number;
+  query: string; setQuery: (s: string) => void; onClose: () => void;
 }): React.ReactElement {
+  const { text: sub, link: head, border } = usePalette();
+  const topInset = useSafeAreaInsets().top;
   return (
     <Box style={pinnedTop(2)}>
       <SearchTopnavBar
@@ -117,9 +120,10 @@ export function ConversationSearchTopnav({ searchInputRef, border, head, sub, qu
   );
 }
 
-export function ConversationOverlays({ c, convId, dark, onOpenSearch }: {
-  c: Conv; convId: string; dark: boolean; onOpenSearch: () => void;
+export function ConversationOverlays({ c, convId, onOpenSearch }: {
+  c: Conv; convId: string; onOpenSearch: () => void;
 }): React.ReactElement {
+  const dark = useEffectiveColorScheme() === 'dark';
   const {
     overflowOpen, setOverflowOpen, overflowAnchor, isGroup, peerAddr,
     menuFor, setMenuFor, menuAnchor, onReact, setReplyTarget, senderEthOf, setSelectedForCopy,

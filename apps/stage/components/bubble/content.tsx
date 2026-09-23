@@ -77,7 +77,7 @@ function BubbleCards({ d, p }: { d: ReturnType<typeof descriptorsOf>; p: BubbleC
       ) : null}
       {d.sigRef ? <SigReferenceCard ref={d.sigRef} dark={p.dark} /> : null}
       {d.txReq ? (
-        <TxRequestCard req={d.txReq} dark={p.dark} sub={p.sub} paying={p.paying} onPay={p.onPay} consentAllowed={p.consentAllowed} />
+        <TxRequestCard req={d.txReq} dark={p.dark} paying={p.paying} onPay={p.onPay} consentAllowed={p.consentAllowed} />
       ) : null}
       {d.txReceipt ? <TxReceiptCard receipt={d.txReceipt} dark={p.dark} /> : null}
     </>

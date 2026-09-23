@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useVoiceRecorder, SLIDE_CANCEL_THRESHOLD_PX } from './voice';
-import { sendPoll, sendSignatureRequest, sendTxRequest } from './builders';
-import type { ComposerActionsArgs } from './types';
+import type { ComposerState } from './state';
+import type { PostHooks } from './types';
 import { Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
@@ -10,6 +10,13 @@ import { setLastAttachment } from '../../lib/lastAttachment';
 import { mimeOf } from '../../lib/attachmentFiles';
 import { rememberLocalAttachments, stashLocalAttachment } from '../../lib/localAttachmentCache';
 import { planSendSteps, type SendStep } from './send';
+
+type ComposerActionsArgs = PostHooks & Pick<ComposerState,
+  'text' | 'pending' | 'setPending' | 'setText' | 'setUploading' | 'setRecording' | 'setRecordSecs' | 'setLevels'
+> & {
+  replyingTo?: { id: string };
+  onClearReply?: () => void;
+};
 
 function kindOf(mime: string): 'image' | 'audio' | 'video' | 'file' {
   if (mime.startsWith('image/')) return 'image';
@@ -94,13 +101,9 @@ async function runStep(a: ComposerActionsArgs, s: SendStep): Promise<string | un
 
 async function runSendSteps(a: ComposerActionsArgs, steps: SendStep[]): Promise<string | undefined> {
   let sendErr: string | undefined;
-  try {
-    for (const s of steps) {
-      if (sendErr) { a.onSent?.(s.localId, sendErr); continue; }
-      sendErr = await runStep(a, s);
-    }
-  } finally {
-    a.setSending(false);
+  for (const s of steps) {
+    if (sendErr) { a.onSent?.(s.localId, sendErr); continue; }
+    sendErr = await runStep(a, s);
   }
   return sendErr;
 }
@@ -115,7 +118,7 @@ function beginSend(a: ComposerActionsArgs, body: string): SendStep[] {
     replyTo: i === 0 ? sendingReplyTo : undefined,
   }));
   a.setText(''); a.setPending([]); a.onClearReply?.();
-  a.setSending(true); a.setErr(null);
+  a.setErr(null);
   return steps;
 }
 
@@ -132,8 +135,6 @@ async function performSend(a: ComposerActionsArgs): Promise<void> {
   }
 }
 
-export type { ComposerActionsArgs } from './types';
-
 export function useComposerActions(a: ComposerActionsArgs) {
   const upload = (uri: string, mime: string, name?: string): Promise<void> => uploadAttachment(a, uri, mime, name);
   const [imageNonce, setImageNonce] = useState(0);
@@ -149,12 +150,6 @@ export function useComposerActions(a: ComposerActionsArgs) {
     setRecordSecs: a.setRecordSecs, setLevels: a.setLevels,
   });
 
-  const openTx = (): void => {
-    const lone = a.mentionCandidates?.length === 1 ? a.mentionCandidates[0] : undefined;
-    if (!a.txTo && lone !== undefined) a.setTxTo(lone.address);
-    a.setTxOpen(true);
-  };
-
   return {
     SLIDE_CANCEL_THRESHOLD_PX,
     startRec: voice.startRec, cancelRec: voice.cancelRec, stopRec: voice.stopRec,
@@ -166,9 +161,6 @@ export function useComposerActions(a: ComposerActionsArgs) {
     onPickedImages: (files: ComposerPickedFile[]) => onPickedImages(upload, files),
     onPickedCamera: (files: ComposerPickedFile[]) => onPickedCamera(upload, files),
     onPickedFile: (files: ComposerPickedFile[]) => onPickedFile(upload, files),
-    sendPoll: () => sendPoll(a),
-    sendSignatureRequest: () => sendSignatureRequest(a),
-    sendTxRequest: () => sendTxRequest(a),
-    openTx, send: () => performSend(a),
+    send: () => performSend(a),
   };
 }

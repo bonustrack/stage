@@ -8,6 +8,7 @@ import { Box, Row } from '../layout';
 import { FormField } from '../FormField';
 import { Spinner } from '../Spinner';
 import { capabilities } from '../../lib/capabilities';
+import { usePalette } from '../../lib/theme';
 import {
   getGroupLabels, addGroupLabel, removeGroupLabel,
   LabelPermissionError, MAX_LABEL_LEN, MAX_LABELS,
@@ -16,9 +17,10 @@ import { suggestLabels } from '../../modules/messaging';
 
 const MAX_SUGGESTIONS = 8;
 
-function SuggestionChip({ label, busy, onAdd, p }: {
-  label: string; busy: boolean; onAdd: () => void; p: Pal;
+function SuggestionChip({ label, busy, onAdd }: {
+  label: string; busy: boolean; onAdd: () => void;
 }): React.ReactElement {
+  const { text: fg, border } = usePalette();
   return (
     <Pressable
       onPress={onAdd}
@@ -27,22 +29,21 @@ function SuggestionChip({ label, busy, onAdd, p }: {
       style={({ pressed }) => ({
         flexDirection: 'row', alignItems: 'center', gap: 4,
         paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999,
-        backgroundColor: p.rowBg,
+        backgroundColor: border,
         opacity: busy ? 0.5 : pressed ? 0.7 : 1,
       })}
 >
-      <Icon name="plus" size={12} color={p.sub}/>
-      <Text size="xs" color={p.fg}>{label}</Text>
+      <Icon name="plus" size={12} color={fg}/>
+      <Text size="xs" color={fg}>{label}</Text>
     </Pressable>
   );
 }
 
-interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }
-
-function LabelChips({ labels, onRemove, p }: {
-  labels: string[]; onRemove: (label: string) => void; p: Pal;
+function LabelChips({ labels, onRemove }: {
+  labels: string[]; onRemove: (label: string) => void;
 }): React.ReactElement {
   const dark = useKitScheme() === 'dark';
+  const { text: fg, border } = usePalette();
   return (
     <Row gap={8} wrap align="center">
       {labels.map((label) => (
@@ -51,16 +52,16 @@ function LabelChips({ labels, onRemove, p }: {
           align="center"
           gap={6}
           radius="full"
-          background={p.rowBg}
+          background={border}
           padding={{ y: 6, left: 12, right: 10 }}
         >
-          <Text value={label} size="xs" color={p.fg} />
+          <Text value={label} size="xs" color={fg} />
           <Pressable
             hitSlop={8}
             onPress={() => { onRemove(label); }}
             style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
           >
-            <Icon name="x" size={14} color={p.sub} dark={dark} />
+            <Icon name="x" size={14} color={fg} dark={dark} />
           </Pressable>
         </Row>
       ))}
@@ -68,10 +69,10 @@ function LabelChips({ labels, onRemove, p }: {
   );
 }
 
-function LabelAddRow({ draft, setDraft, busy, onAdd, p }: {
-  draft: string; setDraft: (s: string) => void; busy: boolean; onAdd: () => void; p: Pal;
+function LabelAddRow({ draft, setDraft, busy, onAdd }: {
+  draft: string; setDraft: (s: string) => void; busy: boolean; onAdd: () => void;
 }): React.ReactElement {
-  const { fg, border } = p;
+  const { text: fg, border } = usePalette();
   const disabled = busy || !draft.trim();
   return (
     <Row margin={{ top: 10 }} align="center" gap={8}>
@@ -98,8 +99,8 @@ function LabelAddRow({ draft, setDraft, busy, onAdd, p }: {
   );
 }
 
-export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React.ReactElement {
-  const { sub } = p;
+export function GroupLabelsSection({ line }: { line: string }): React.ReactElement {
+  const { text: sub } = usePalette();
   const [labels, setLabels] = useState<string[]>([]);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
@@ -152,12 +153,12 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
 
       {labels.length> 0 ? (
         <Box margin={{ top: 10 }}>
-          <LabelChips labels={labels} onRemove={(label) => { void remove(label); }} p={p} />
+          <LabelChips labels={labels} onRemove={(label) => { void remove(label); }} />
         </Box>
       ) : null}
 
       {!atCap ? (
-        <LabelAddRow draft={draft} setDraft={setDraft} busy={busy} onAdd={() => { void add(draft); }} p={p}/>
+        <LabelAddRow draft={draft} setDraft={setDraft} busy={busy} onAdd={() => { void add(draft); }}/>
       ) : (
         <Text size="xs" role="secondary" style={{ marginTop: 8 }}>
           Label limit reached ({MAX_LABELS}).
@@ -172,7 +173,6 @@ export function GroupLabelsSection({ line, p }: { line: string; p: Pal }): React
               label={label}
               busy={busy}
               onAdd={() => { void add(label); }}
-              p={p}
 />
           ))}
         </Row>

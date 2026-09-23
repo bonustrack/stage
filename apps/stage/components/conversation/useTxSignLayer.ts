@@ -1,6 +1,5 @@
 
 import { useCallback, useState } from 'react';
-import { Alert } from 'react-native';
 import { xmtpSendTxReference, xmtpSendSignatureReference } from '../../modules/messaging';
 import {
   type WalletSendCallsContent, type TransactionReferenceContent, chainIdToNumber,
@@ -16,7 +15,7 @@ import { capabilities } from '../../lib/capabilities';
 import { txErrorMessage } from '@stage-labs/client/wallet/txError';
 import type { TypedDataDefinition } from 'viem';
 import { base } from 'viem/chains';
-import { getActiveAccount, getActiveViemAccount, type AccountRecord } from '../../lib/accounts';
+import { getActiveAccount, getActiveViemAccount } from '../../lib/accounts';
 import { kernelClientForRecord } from '../../lib/zerodev';
 import { paymentBlocker } from './pay.model';
 
@@ -24,35 +23,33 @@ function typedDataOf(req: SignatureRequestContent): TypedDataDefinition {
   return typedDataForRequest(req) as unknown as TypedDataDefinition;
 }
 
-async function signWithKernel(req: SignatureRequestContent, active: AccountRecord): Promise<{ signature: string; signer: string }> {
-  const kernel = await kernelClientForRecord(active, 'sign');
-  if (req.kind === 'eip712') {
-    const typedData = typedDataOf(req);
-    const signature = await kernel.signTypedData(typedData as Parameters<typeof kernel.signTypedData>[0]);
-    return { signature, signer: active.address };
-  }
-  const message = personalMessageForRequest(req);
-  const signature = await kernel.signMessage({ message } as Parameters<typeof kernel.signMessage>[0]);
-  return { signature, signer: active.address };
+interface RequestSigner {
+  address: string;
+  signTypedData: (typedData: TypedDataDefinition) => Promise<string>;
+  signMessage: (args: { message: string }) => Promise<string>;
 }
 
-async function signWithLocalEoa(req: SignatureRequestContent): Promise<{ signature: string; signer: string }> {
+async function requestSigner(): Promise<RequestSigner> {
+  const active = await getActiveAccount();
+  if (active?.type === 'smart') {
+    const kernel = await kernelClientForRecord(active, 'sign');
+    return {
+      address: active.address,
+      signTypedData: (typedData) => kernel.signTypedData(typedData as Parameters<typeof kernel.signTypedData>[0]),
+      signMessage: (args) => kernel.signMessage(args as Parameters<typeof kernel.signMessage>[0]),
+    };
+  }
   const local = await getActiveViemAccount();
   if (!local) throw new Error('No active wallet to sign with');
-  if (req.kind === 'eip712') {
-    const signature = await local.signTypedData(typedDataOf(req));
-    return { signature, signer: local.address };
-  }
-  const signature = await local.signMessage({ message: personalMessageForRequest(req) });
-  return { signature, signer: local.address };
+  return local;
 }
 
 async function produceAndPostSignature(activeLine: string, requestId: string, req: SignatureRequestContent): Promise<void> {
-  const active = await getActiveAccount();
-  const { signature, signer } = active?.type === 'smart'
-    ? await signWithKernel(req, active)
-    : await signWithLocalEoa(req);
-  await xmtpSendSignatureReference(activeLine, buildSignatureReference(requestId, signature, signer));
+  const signer = await requestSigner();
+  const signature = req.kind === 'eip712'
+    ? await signer.signTypedData(typedDataOf(req))
+    : await signer.signMessage({ message: personalMessageForRequest(req) });
+  await xmtpSendSignatureReference(activeLine, buildSignatureReference(requestId, signature, signer.address));
 }
 
 type TxCall = NonNullable<WalletSendCallsContent['calls']>[number];
@@ -96,38 +93,33 @@ function paymentReceipt(
   };
 }
 
+function useBusyIds(): { ids: Set<string>; run: (id: string, failMsg: string, task: () => Promise<void>) => void } {
+  const [ids, setIds] = useState<Set<string>>(new Set());
+  const run = useCallback((id: string, failMsg: string, task: () => Promise<void>): void => {
+    setIds(prev => new Set(prev).add(id));
+    void task()
+      .catch((e: unknown) => { capabilities.toast(txErrorMessage(e, failMsg)); })
+      .finally(() => { setIds(prev => { const n = new Set(prev); n.delete(id); return n; }); });
+  }, []);
+  return { ids, run };
+}
+
 export function useTxSignLayer(activeLine: string) {
-  const [signingIds, setSigningIds] = useState<Set<string>>(new Set());
+  const signing = useBusyIds();
+  const paying = useBusyIds();
+  const runSign = signing.run, runPay = paying.run;
 
   const onSign = useCallback((requestId: string, req: SignatureRequestContent) => {
     const summary = deriveSignSummary(req);
-    const doSign = (): void => {
-      setSigningIds(prev => new Set(prev).add(requestId));
-      void (async () => {
-        try {
-          await produceAndPostSignature(activeLine, requestId, req);
-        } catch (e) {
-          capabilities.toast(txErrorMessage(e, 'Signing failed'));
-        } finally {
-          setSigningIds(prev => { const n = new Set(prev); n.delete(requestId); return n; });
-        }
-      })();
-    };
-    Alert.alert(
-      summary.highRisk ? 'High-risk signature' : 'Confirm signature',
-      signConfirmMessage(summary, req.description),
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: summary.highRisk ? 'Sign anyway' : 'Sign',
-          style: summary.highRisk ? 'destructive' : 'default',
-          onPress: doSign,
-        },
-      ],
-    );
-  }, [activeLine]);
-
-  const [payingIds, setPayingIds] = useState<Set<string>>(new Set());
+    void capabilities.confirm({
+      title: summary.highRisk ? 'High-risk signature' : 'Confirm signature',
+      message: signConfirmMessage(summary, req.description),
+      confirmLabel: summary.highRisk ? 'Sign anyway' : 'Sign',
+      destructive: summary.highRisk,
+    }).then((ok) => {
+      if (ok) runSign(requestId, 'Signing failed', () => produceAndPostSignature(activeLine, requestId, req));
+    });
+  }, [activeLine, runSign]);
 
   const onPay = useCallback((requestId: string, wsc: WalletSendCallsContent) => {
     const call = wsc.calls?.[0];
@@ -138,42 +130,24 @@ export function useTxSignLayer(activeLine: string) {
     const summary = deriveConfirmSummary(
       { to: call.to, data: call.data, value: call.value }, nativeSymbol,
     );
-    const broadcast = (): void => {
-      setPayingIds(prev => new Set(prev).add(requestId));
-      void (async () => {
-        try {
-          const { txHash, settledChainId } = await broadcastCall(callTo, call, chainId);
-          const ref = paymentReceipt(txHash, settledChainId, summary, nativeSymbol);
-          await xmtpSendTxReference(activeLine, ref);
-        } catch (e) {
-          capabilities.toast(txErrorMessage(e, 'Payment failed'));
-        } finally {
-          setPayingIds(prev => { const n = new Set(prev); n.delete(requestId); return n; });
-        }
-      })();
+    const broadcast = async (): Promise<void> => {
+      const { txHash, settledChainId } = await broadcastCall(callTo, call, chainId);
+      await xmtpSendTxReference(activeLine, paymentReceipt(txHash, settledChainId, summary, nativeSymbol));
     };
-    const confirm = (): void => {
-      Alert.alert(
-        summary.verified ? 'Confirm payment' : 'Unverified transaction',
-        confirmMessage(summary, chainName),
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: summary.verified ? 'Pay' : 'Continue anyway',
-            style: summary.verified ? 'default' : 'destructive',
-            onPress: broadcast,
-          },
-        ],
-      );
-    };
-    void getActiveAccount().then((active) => {
+    void getActiveAccount().then(async (active) => {
       const blocker = paymentBlocker({
         callCount: wsc.calls?.length ?? 0, chainId, chainName, smartAccount: active?.type === 'smart',
       });
-      if (blocker === null) confirm();
-      else capabilities.toast(blocker);
+      if (blocker !== null) { capabilities.toast(blocker); return; }
+      const ok = await capabilities.confirm({
+        title: summary.verified ? 'Confirm payment' : 'Unverified transaction',
+        message: confirmMessage(summary, chainName),
+        confirmLabel: summary.verified ? 'Pay' : 'Continue anyway',
+        destructive: !summary.verified,
+      });
+      if (ok) runPay(requestId, 'Payment failed', broadcast);
     });
-  }, [activeLine]);
+  }, [activeLine, runPay]);
 
-  return { signingIds, onSign, payingIds, onPay };
+  return { signingIds: signing.ids, onSign, payingIds: paying.ids, onPay };
 }

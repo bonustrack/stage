@@ -11,7 +11,9 @@ import {
 } from './feed-helpers';
 import { useFeedRenderItem } from './useFeedRenderItem';
 import type { useConversationState } from './useConversationState';
-import { profileLinkOf } from '../../lib/links';
+import { usePalette } from '../../lib/theme';
+import { useSafeAreaInsets } from '../../lib/safeArea';
+import { TOPNAV_HEIGHT } from '../Topnav';
 import type { HistoryEntry } from '@stage-labs/client/types';
 
 const UPRIGHT = Platform.OS === 'web';
@@ -191,35 +193,17 @@ function useSlowOpen(waiting: boolean): boolean {
   return slow;
 }
 
-function FeedIntro({ c, convId, head, fg, border, router }: {
-  c: ConvState; convId: string; head: string; fg: string; border: string;
-  router: { push: (h: { pathname: '/profile/[address]'; params: { address: string } }) => void };
-}): React.ReactElement {
-  return (
-    <ConversationIntro
-      isGroup={c.isGroup} peerAddr={c.peerAddr} groupName={c.groupName} groupImage={c.groupImage}
-      groupDescription={c.groupDescription} groupLabels={c.groupLabels} convId={convId}
-      head={head} fg={fg} border={border}
-      onPressPeer={(address) => { router.push(profileLinkOf(address)); }}
-    />
-  );
-}
-
-export function ConversationFeed({
-  c, convId, dark, head, sub, fg, border, insets, bottomInset = 0, router, searchSlot,
-}: {
+export function ConversationFeed({ c, convId, bottomInset = 0, searchSlot }: {
   c: ConvState;
   convId: string;
-  dark: boolean;
-  head: string; sub: string; fg: string; border: string;
-  insets: { top: number };
   bottomInset?: number;
-  router: { push: (h: { pathname: '/profile/[address]'; params: { address: string } }) => void };
   searchSlot?: React.ReactNode;
 }): React.ReactElement {
   const { loadOlder, hasMore, loadingOlder, status, listRef, allBubbles } = c;
-  const { renderItem, extraData } = useFeedRenderItem(c, dark, router);
-  const intro = <FeedIntro c={c} convId={convId} head={head} fg={fg} border={border} router={router} />;
+  const { text: sub, link: head } = usePalette();
+  const topPad = useSafeAreaInsets().top + TOPNAV_HEIGHT;
+  const { renderItem, extraData } = useFeedRenderItem(c);
+  const intro = <ConversationIntro c={c} convId={convId} />;
   const spinner = <Box padding={32} align="center"><Spinner size={28} color={head} /></Box>;
   const refs = useFeedScrollRefs(convId);
   const { metrics, positioned } = refs;
@@ -228,11 +212,11 @@ export function ConversationFeed({
   const slowOpen = useSlowOpen(empty);
 
   if (searchSlot !== undefined) {
-    return <Box flex={1} padding={{ top: insets.top + 52 }}>{searchSlot}</Box>;
+    return <Box flex={1} padding={{ top: topPad }}>{searchSlot}</Box>;
   }
 
   if (empty) {
-    return <Box flex={1} padding={{ top: insets.top + 52 }}>{slowOpen ? spinner : null}</Box>;
+    return <Box flex={1} padding={{ top: topPad }}>{slowOpen ? spinner : null}</Box>;
   }
 
   const olderEdge = (
@@ -241,7 +225,7 @@ export function ConversationFeed({
   const firstBatch = UPRIGHT ? uprightFirstBatch(rows.length) : FEED_MIN_BATCH;
   const o = orientFeed(
     feedPager(loadOlder, metrics, positioned),
-    insets.top + 52 + 24, 24 + bottomInset, olderEdge,
+    topPad + 24, 24 + bottomInset, olderEdge,
   );
 
   return (

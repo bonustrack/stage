@@ -45,8 +45,8 @@ interface TxCardModel {
   showBalance: boolean;
 }
 export { SigRequestCard, SigReferenceCard } from './cards.sig';
-export function TxRequestCard({ req, dark, sub, paying, onPay, consentAllowed }: {
-  req: WalletSendCallsContent; dark: boolean; sub: string; paying?: boolean;
+export function TxRequestCard({ req, dark, paying, onPay, consentAllowed }: {
+  req: WalletSendCallsContent; dark: boolean; paying?: boolean;
   onPay?: () => void;
   consentAllowed?: boolean;
 }): React.ReactElement {
@@ -64,7 +64,7 @@ export function TxRequestCard({ req, dark, sub, paying, onPay, consentAllowed }:
       chainNum={m.chainNum}
       description={m.desc}
       amountLabel={m.showDecodedBlock ? undefined : m.amountLabel}
-      detail={<TxRequestDetail m={m} sub={sub} />}
+      detail={<TxRequestDetail m={m} sub={pal.text} />}
       balance={{
         show: m.showBalance, chainId: req.chainId, token: m.tokenAddr,
         symbol: m.currency ?? (m.eth ? 'ETH' : undefined), needed: m.amount,

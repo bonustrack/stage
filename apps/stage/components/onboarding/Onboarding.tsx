@@ -76,10 +76,10 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
   return (
     <Col surface="surface" flex={1} align="center" justify="start" padding={{ top: pageTopPadding(height) + insets.top, bottom: 24 + insets.bottom }}>
       <StepChrome f={f} top={STEP_ICON_INSET + insets.top} color={pal.link} />
-      <KeptStep f={f} own="username"><UsernameStep pal={pal} dark={dark} busy={f.busy} onContinue={f.onUsernameContinue} /></KeptStep>
-      <KeptStep f={f} own="profile"><ProfileStep pal={pal} dark={dark} busy={f.busy} onContinue={f.onProfileContinue} /></KeptStep>
+      <KeptStep f={f} own="username"><UsernameStep dark={dark} busy={f.busy} onContinue={f.onUsernameContinue} /></KeptStep>
+      <KeptStep f={f} own="profile"><ProfileStep dark={dark} busy={f.busy} onContinue={f.onProfileContinue} /></KeptStep>
       {f.step === 'import' ? (
-        <ImportStep pal={pal} dark={dark} busy={f.busy} onTransfer={f.onImportTransfer} />
+        <ImportStep dark={dark} busy={f.busy} onTransfer={f.onImportTransfer} />
       ) : null}
       {f.step === 'passkey' ? (
         <PasskeyStep dark={dark} busy={f.busy} mode={f.passkeyMode} error={f.passkeyErr}
@@ -87,7 +87,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
       ) : null}
       {f.step === 'setup' ? (
         <SetupStep
-          pal={pal} dark={dark} busy={f.busy} stage={f.stage} setupErr={f.setupErr} plan={f.plan}
+          dark={dark} busy={f.busy} stage={f.stage} setupErr={f.setupErr} plan={f.plan}
           onRetry={f.onSetupRetry} onBack={f.onSetupBack} onSkipHistory={f.onSkipHistory}
         />
       ) : null}

@@ -7,6 +7,10 @@ import { Avatar } from '../Avatar';
 import { convTitle } from './convTitle';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
 import { shortAddress } from '../../modules/messaging';
+import { useRouter } from 'expo-router';
+import { usePalette } from '../../lib/theme';
+import { profileLinkOf } from '../../lib/links';
+import type { useConversationState } from './useConversationState';
 
 function IntroLabelChips({ labels, fg }: {
   labels: string[]; fg: string;
@@ -23,20 +27,12 @@ function IntroLabelChips({ labels, fg }: {
   );
 }
 
-export function ConversationIntro({
-  isGroup, peerAddr, groupName, groupImage, groupDescription, groupLabels,
-  convId, head, fg, border, onPressPeer,
-}: {
-  isGroup: boolean;
-  peerAddr: string | null;
-  groupName: string | null;
-  groupImage: string;
-  groupDescription: string;
-  groupLabels: string[];
-  convId: string;
-  head: string; fg: string; border: string;
-  onPressPeer: (address: string) => void;
+export function ConversationIntro({ c, convId }: {
+  c: ReturnType<typeof useConversationState>; convId: string;
 }): React.ReactElement | null {
+  const { isGroup, peerAddr, groupName, groupImage, groupDescription, groupLabels } = c;
+  const { text: fg, link: head, border } = usePalette();
+  const router = useRouter();
   if (isGroup) {
     const name = convTitle({ isGroup, groupName, peerAddr });
     const desc = groupDescription.trim();
@@ -65,7 +61,7 @@ export function ConversationIntro({
   if (!peerAddr) return null;
   return (
     <Pressable
-      onPress={() => { onPressPeer(peerAddr); }}
+      onPress={() => { router.push(profileLinkOf(peerAddr)); }}
       style={{ alignItems: 'flex-start', paddingVertical: 24, paddingHorizontal: 12 }}
     >
       <Avatar address={peerAddr} size="lg" style={{ backgroundColor: border }} />

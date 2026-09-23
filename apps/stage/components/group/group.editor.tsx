@@ -11,13 +11,11 @@ import { avatarRenderUrl } from '@stage-labs/client/profile/avatar';
 import { channelStampSeed, stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { usePalette } from '../../lib/theme';
 
-interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }
-
-export function GroupProfileHeader({ imageUrl, channelId, uploadingImage, insetTop, fg, bg, rowBg, onTap, onPick }: {
+export function GroupProfileHeader({ imageUrl, channelId, uploadingImage, insetTop, onTap, onPick }: {
   imageUrl: string; channelId: string; uploadingImage: boolean; insetTop: number;
-  fg: string; bg: string; rowBg: string;
   onTap: () => void; onPick: () => void;
 }): React.ReactElement {
+  const { text: fg, bg, border: rowBg } = usePalette();
   const fallbackUri = channelId ? stampAvatarUrl(channelStampSeed(channelId), 88) : '';
   return (
     <>
@@ -76,15 +74,14 @@ function GroupFieldEditor({ label, value, placeholder, saveLabel, disabled, mult
   );
 }
 
-export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, saving, onSave, dark, p }: {
-  name: string | null; draft: string; setDraft: (s: string) => void;
-  editing: boolean; setEditing: (b: boolean) => void; saving: boolean; onSave: () => void;
-  dark: boolean; p: Pal;
+export function GroupNameEditor({ name, draft, setDraft, saving, onSave, dark }: {
+  name: string | null; draft: string | null; setDraft: (s: string | null) => void;
+  saving: boolean; onSave: () => void; dark: boolean;
 }): React.ReactElement {
-  const { head } = p;
+  const { link: head } = usePalette();
   return (
     <Box padding={{ x: 16, bottom: 16 }}>
-      {editing ? (
+      {draft !== null ? (
         <GroupFieldEditor
           label="Name"
           value={draft}
@@ -96,7 +93,7 @@ export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, sa
           onSave={onSave}
         />
       ) : (
-        <Pressable onPress={() => { setEditing(true); }} hitSlop={6} style={{ marginTop: 6, alignItems: 'flex-start' }}>
+        <Pressable onPress={() => { setDraft(name ?? ''); }} hitSlop={6} style={{ marginTop: 6, alignItems: 'flex-start' }}>
           <Text weight="semibold" size="5xl" color={head} style={{ textAlign: 'left' }}>
             {name?.trim() ? name : 'Untitled group'}
           </Text>
@@ -107,30 +104,29 @@ export function GroupNameEditor({ name, draft, setDraft, editing, setEditing, sa
   );
 }
 
-export function GroupDescriptionEditor({ description, descriptionDraft, setDescriptionDraft, editing, setEditing, saving, onSave, dark, p }: {
-  description: string; descriptionDraft: string; setDescriptionDraft: (s: string) => void;
-  editing: boolean; setEditing: (b: boolean) => void; saving: boolean; onSave: () => void;
-  dark: boolean; p: Pal;
+export function GroupDescriptionEditor({ description, draft, setDraft, saving, onSave, dark }: {
+  description: string; draft: string | null; setDraft: (s: string | null) => void;
+  saving: boolean; onSave: () => void; dark: boolean;
 }): React.ReactElement {
-  const { fg, sub } = p;
+  const { text: fg } = usePalette();
   return (
     <Box padding={{ x: 16, bottom: 16 }}>
       <Text size="xs" role="secondary">DESCRIPTION</Text>
-      {editing ? (
+      {draft !== null ? (
         <GroupFieldEditor
           label="Description"
-          value={descriptionDraft}
+          value={draft}
           placeholder="What is this group about?"
           saveLabel={saving ? 'Saving…' : 'Save'}
           disabled={saving}
           multiline
           dark={dark}
-          onChangeText={setDescriptionDraft}
+          onChangeText={setDraft}
           onSave={onSave}
         />
       ) : (
-        <Pressable onPress={() => { setEditing(true); }} hitSlop={6} style={{ marginTop: 6 }}>
-          <Text size="md" color={description.trim() ? fg : sub}>
+        <Pressable onPress={() => { setDraft(description); }} hitSlop={6} style={{ marginTop: 6 }}>
+          <Text size="md" color={fg}>
             {description.trim() || 'Tap to add a description'}
           </Text>
         </Pressable>

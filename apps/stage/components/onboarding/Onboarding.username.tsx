@@ -4,12 +4,11 @@ import { usePalette } from '../../lib/theme';
 import { UsernameField, useUsernameInput } from '../UsernameField';
 import { USERNAME_COPY, usernameReady } from '../UsernameField.model';
 
-type Pal = ReturnType<typeof usePalette>;
-
-export function UsernameStep({ pal, dark, busy, onContinue }: {
-  pal: Pal; dark: boolean; busy: boolean;
+export function UsernameStep({ dark, busy, onContinue }: {
+  dark: boolean; busy: boolean;
   onContinue: (label: string) => void;
 }): React.ReactElement {
+  const pal = usePalette();
   const input = useUsernameInput();
   const footer = (
     <Button dark={dark} size="lg" fullWidth pill tintBg={pal.primary} tintFg={pal.bg}

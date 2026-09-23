@@ -11,25 +11,25 @@ import {
   type SetupErr, type SetupPlan, type StageState,
 } from './Onboarding.setup.model';
 
-type Pal = ReturnType<typeof usePalette>;
-
 const ROW_HEIGHT = 40;
 const ROW_ICON = 16;
 
-function StageIndicator({ state, failed, pal }: { state: StageState; failed: boolean; pal: Pal }): React.ReactElement {
+function StageIndicator({ state, failed }: { state: StageState; failed: boolean }): React.ReactElement {
+  const pal = usePalette();
   if (state === 'done') return <Icon name="check" size={ROW_ICON} color={pal.success} />;
   if (state === 'active' && failed) return <Icon name="xCircle" size={ROW_ICON} color={DANGER} />;
   if (state === 'active') return <Spinner size={ROW_ICON} color={pal.link} />;
   return <Box width={6} height={6} radius="full" background={pal.sub} margin={{ x: 5 }} />;
 }
 
-function StageRow({ label, state, failed, pal }: {
-  label: string; state: StageState; failed: boolean; pal: Pal;
+function StageRow({ label, state, failed }: {
+  label: string; state: StageState; failed: boolean;
 }): React.ReactElement {
+  const pal = usePalette();
   return (
     <Row align="center" gap={8} height={ROW_HEIGHT} padding={{ x: 16 }}>
       <Box width={ROW_ICON} align="center">
-        <StageIndicator state={state} failed={failed} pal={pal} />
+        <StageIndicator state={state} failed={failed} />
       </Box>
       <Text size="3xl" color={state === 'pending' ? pal.sub : pal.link}>{label}</Text>
     </Row>
@@ -52,8 +52,8 @@ function SetupLink({ busy, stage, setupErr, onBack, onSkipHistory }: {
   return stage === 'history' ? <SkipLink onPress={onSkipHistory} /> : null;
 }
 
-export function SetupStep({ pal, dark, busy, stage, setupErr, plan, onRetry, onBack, onSkipHistory }: {
-  pal: Pal; dark: boolean; busy: boolean; stage: Stage; setupErr: SetupErr | null; plan: SetupPlan;
+export function SetupStep({ dark, busy, stage, setupErr, plan, onRetry, onBack, onSkipHistory }: {
+  dark: boolean; busy: boolean; stage: Stage; setupErr: SetupErr | null; plan: SetupPlan;
   onRetry: () => void; onBack: () => void; onSkipHistory: () => void;
 }): React.ReactElement {
   const stages = setupStages(plan);
@@ -63,7 +63,7 @@ export function SetupStep({ pal, dark, busy, stage, setupErr, plan, onRetry, onB
     <OnboardingCard title={setupTitle(setupErr, plan)} about={setupHint(setupErr, plan)} footer={actions} after={link}>
       <Col width="100%">
         {stages.map((s) => (
-          <StageRow key={s} label={stageLabel(s, plan)} state={stageState(s, stage, stages)} failed={setupErr !== null} pal={pal} />
+          <StageRow key={s} label={stageLabel(s, plan)} state={stageState(s, stage, stages)} failed={setupErr !== null} />
         ))}
       </Col>
     </OnboardingCard>

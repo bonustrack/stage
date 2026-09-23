@@ -73,7 +73,7 @@ function submitLabelFor(txState: string, reviewing: boolean): string {
 function SendForm({ token, initialTo, selector, onCancel }: {
   token: TokenChoice; initialTo: string; selector: React.ReactNode; onCancel: () => void;
 }): React.ReactElement {
-  const { text: fg, link: head, border } = usePalette();
+  const { text: fg, border } = usePalette();
   const dark = useEffectiveColorScheme() === 'dark';
   const [picking, setPicking] = useState(false);
   const [reviewing, setReviewing] = useState(false);
@@ -82,7 +82,6 @@ function SendForm({ token, initialTo, selector, onCancel }: {
   const balanceLabel = p.ethBalance
     ? `Balance: ${Number(p.ethBalance).toLocaleString(undefined, { maximumFractionDigits: 6 })} ${token.symbol}`
     : undefined;
-  const pal = { head, sub: fg, border };
 
   const reviewable = reviewing && p.resolved !== null;
   const onSubmit = (): void => { if (reviewable) p.onSubmit(); else if (p.canSubmit) setReviewing(true); };
@@ -93,13 +92,13 @@ function SendForm({ token, initialTo, selector, onCancel }: {
       <ScreenScroll keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 16, gap: 16 }}>
         {reviewable ? (
           <SendReview recipient={p.recipient} amount={p.tokenAmountText} symbol={token.symbol}
-            secondaryLabel={p.secondaryLabel || undefined} chainId={token.chainId} pal={pal} />
+            secondaryLabel={p.secondaryLabel || undefined} chainId={token.chainId} />
         ) : (
-          <SendFields p={p} token={token} selector={selector} balanceLabel={balanceLabel} pal={pal}
+          <SendFields p={p} token={token} selector={selector} balanceLabel={balanceLabel}
             onPickContact={() => { setPicking(true); }} />
         )}
         <TxStatus txState={p.txState} txHash={p.txHash} txChainId={p.txChainId} txErr={p.txErr} />
-        <ContactsModal visible={picking} onClose={() => { setPicking(false); }} onPick={(addr) => { p.setTo(addr); }} pal={pal} />
+        <ContactsModal visible={picking} onClose={() => { setPicking(false); }} onPick={(addr) => { p.setTo(addr); }} />
       </ScreenScroll>
       <WalletFooter border={border} dark={dark} onCancel={onBack} cancelLabel={reviewable ? 'Back' : 'Cancel'}
         submitLabel={submitLabelFor(p.txState, reviewable)} onSubmit={onSubmit}
@@ -108,17 +107,18 @@ function SendForm({ token, initialTo, selector, onCancel }: {
   );
 }
 
-function SendFields({ p, token, selector, balanceLabel, pal, onPickContact }: {
+function SendFields({ p, token, selector, balanceLabel, onPickContact }: {
   p: ReturnType<typeof usePublicSend>; token: TokenChoice; selector: React.ReactNode; balanceLabel?: string;
-  pal: { head: string; sub: string; border: string }; onPickContact: () => void;
+  onPickContact: () => void;
 }): React.ReactElement {
+  const { text: fg, border } = usePalette();
   return (
     <>
       {selector}
       <Col gap={16}>
         <Col gap={8}>
           <RecipientField value={p.to} recipient={p.recipient} onChange={p.setTo} />
-          {p.recipient.kind === 'resolved' ? <RecipientRow address={p.recipient.address} label={p.recipient.label} pal={pal} /> : null}
+          {p.recipient.kind === 'resolved' ? <RecipientRow address={p.recipient.address} label={p.recipient.label} /> : null}
         </Col>
         <AmountField
           value={p.amount}
@@ -131,7 +131,7 @@ function SendFields({ p, token, selector, balanceLabel, pal, onPickContact }: {
           onToggleUnit={() => { toggleAmount(p.amount, p.mode, p.ethPriceUsd, p.setAmount, p.setMode); }}
         />
       </Col>
-      <ContactsButton color={pal.sub} border={pal.border} onPress={onPickContact} />
+      <ContactsButton color={fg} border={border} onPress={onPickContact} />
     </>
   );
 }

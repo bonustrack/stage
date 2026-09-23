@@ -14,11 +14,10 @@ import {
   acceptTypedChar, applyCompletion, currentToken, invalidWords, looksLikePhrase, suggestWords,
 } from './RecoveryPhrase.model';
 
-type Pal = ReturnType<typeof usePalette>;
-
-function SuggestionChips({ words, pal, onPick }: {
-  words: string[]; pal: Pal; onPick: (word: string) => void;
+function SuggestionChips({ words, onPick }: {
+  words: string[]; onPick: (word: string) => void;
 }): React.ReactElement | null {
+  const pal = usePalette();
   if (words.length === 0) return null;
   return (
     <Row gap={8} wrap padding={{ top: 10 }}>
@@ -51,10 +50,11 @@ function inputHint(text: string, err: string | null): { text: string; danger: bo
 
 const IMPORT_ABOUT = 'Enter your 12-24 word recovery phrase, or scan the code shown by Link a device on your other device.';
 
-export function ImportStep({ pal, dark, busy, onTransfer }: {
-  pal: Pal; dark: boolean; busy: boolean;
+export function ImportStep({ dark, busy, onTransfer }: {
+  dark: boolean; busy: boolean;
   onTransfer: (transfer: AccountTransfer) => void;
 }): React.ReactElement {
+  const pal = usePalette();
   const [text, setText] = useState('');
   const [err, setErr] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
@@ -78,7 +78,7 @@ export function ImportStep({ pal, dark, busy, onTransfer }: {
       <FormField label="Recovery phrase" placeholder="word1 word2 word3 ..." multiline rows={4} value={text}
         onChangeText={(t) => { setText((prev) => acceptTypedChar(prev, t)); setErr(null); }}
         inputProps={{ autoCapitalize: 'none', autoCorrect: false }} />
-      <SuggestionChips words={suggestions} pal={pal} onPick={(word) => { setText(applyCompletion(text, word)); }} />
+      <SuggestionChips words={suggestions} onPick={(word) => { setText(applyCompletion(text, word)); }} />
       {hint === null ? null : (
         <Text size="xs" color={hint.danger ? DANGER : pal.sub} style={{ marginTop: 8 }}>{hint.text}</Text>
       )}

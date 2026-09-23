@@ -17,8 +17,6 @@ import type { MenuPoint } from '../AnchoredMenu.model';
 import { FormField } from '../FormField';
 import { DANGER, useEffectiveColorScheme, usePalette } from '../../lib/theme';
 
-interface Pal { fg: string; head: string; sub: string; border: string; rowBg: string; inputBg: string; }
-
 function MemberBadge({ badge, border, sub, dark }: {
   badge: MemberRowBadge; border: string; sub: string; dark: boolean;
 }): React.ReactElement {
@@ -43,13 +41,13 @@ function MemberBadge({ badge, border, sub, dark }: {
 }
 
 export function MemberRow({
-  item, isSelf, isRemovingThis, role, name, dark, p, onPress, onRemove,
+  item, isSelf, isRemovingThis, role, name, dark, onPress, onRemove,
 }: {
   item: string; isSelf: boolean; isRemovingThis: boolean;
   role: GroupMemberRole; name: string | null | undefined;
-  dark: boolean; p: Pal; onPress: () => void; onRemove: () => void;
+  dark: boolean; onPress: () => void; onRemove: () => void;
 }): React.ReactElement {
-  const { sub, border } = p;
+  const { text: sub, border } = usePalette();
   const model = memberRowModel({ shortAddress: shortAddress(item), name, isSelf, role });
   return (
     <Box style={{ opacity: isRemovingThis ? 0.5 : 1 }}>

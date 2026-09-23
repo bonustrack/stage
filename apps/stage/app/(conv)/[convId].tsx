@@ -9,7 +9,7 @@ import { Box, Col, PANE_LEFT_PAD, pinnedBottom, viewportFill } from '../../compo
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
-import { useLocalSearchParams, usePathname, useRouter } from 'expo-router';
+import { useLocalSearchParams, usePathname } from 'expo-router';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { PendingConversation } from '../../components/PendingConversation';
 import { ConversationFeed } from '../../components/conversation/ConversationFeed';
@@ -29,10 +29,10 @@ function resolveErrorMessage(error: ResolveConvError, detail?: string): string {
   return 'Missing conversation id.';
 }
 
-function UnresolvedConversation({ resolved, dark }: {
+function UnresolvedConversation({ resolved }: {
   resolved: ReturnType<typeof useResolvedConvId>;
-  dark: boolean;
 }): React.ReactElement {
+  const dark = useEffectiveColorScheme() === 'dark';
   if (resolved.resolving) {
     return (
       <Col surface="surface" flex={1} align="center" justify="center" style={[viewportFill(), PANE_LEFT_PAD]}>
@@ -90,10 +90,7 @@ function ConversationShell({ bg, children }: {
 }
 
 export default function XmtpConversation(): React.ReactElement {
-  const router = useRouter();
-  const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, bg, border } = usePalette();
-  const sub = fg, rowBg = border;
+  const { bg } = usePalette();
   const { convId: routeParam, focus } = useLocalSearchParams<{ convId: string; focus?: string }>();
   const pathname = usePathname();
   const resolved = useResolvedConvId(routeParam, !pathname.startsWith('/channel/'));
@@ -115,16 +112,10 @@ export default function XmtpConversation(): React.ReactElement {
   if (resolved.resolving || !convId) {
     return (
       <ConversationShell bg={bg}>
-        <UnresolvedConversation resolved={resolved} dark={dark}/>
+        <UnresolvedConversation resolved={resolved}/>
       </ConversationShell>
     );
   }
-
-  const footer = (
-    <ConversationFooter
-      c={c} convId={convId} dark={dark} rowBg={rowBg} insets={insets}
-/>
-  );
 
   return (
     <ConversationShell bg={bg}>
@@ -134,39 +125,23 @@ export default function XmtpConversation(): React.ReactElement {
       <ConversationFeed
         c={c}
         convId={convId}
-        dark={dark}
-        head={head}
-        sub={sub}
-        fg={fg}
-        border={border}
-        insets={insets}
         bottomInset={composerH}
-        router={router}
         searchSlot={searchOpen && searchQuery.trim().length >= 2 ? (
-          <ConversationSearch
-            line={activeLine}
-            query={searchQuery}
-            sub={sub}
-            bg={bg}
-            c={c}
-            dark={dark}
-            router={router}
-/>
+          <ConversationSearch line={activeLine} query={searchQuery} c={c}/>
         ) : undefined}
 />
       </Reanimated.View>
       {searchOpen ? (
         <ConversationSearchTopnav
           searchInputRef={searchInputRef}
-          border={border} head={head} sub={sub}
-          query={searchQuery} setQuery={setSearchQuery} onClose={closeSearch} topInset={insets.top}
+          query={searchQuery} setQuery={setSearchQuery} onClose={closeSearch}
 />
       ) : (
-        <ConversationTopnav c={c} convId={convId} fg={fg} head={head} border={border} insets={insets} router={router}/>
+        <ConversationTopnav c={c} convId={convId}/>
       )}
-      <FooterDock onHeight={setComposerH}>{footer}</FooterDock>
+      <FooterDock onHeight={setComposerH}><ConversationFooter c={c} convId={convId}/></FooterDock>
       <ConversationOverlays
-        c={c} convId={convId} dark={dark}
+        c={c} convId={convId}
         onOpenSearch={() => { setSearchQuery(''); setSearchOpen(true); }}
 />
     </ConversationShell>
