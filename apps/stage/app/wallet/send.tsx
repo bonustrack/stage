@@ -4,7 +4,6 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { toggleAmountUnit } from '@stage-labs/client/wallet/sendAmount';
-import { DANGER_COLOR } from '../../lib/uiColors';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { Col, Row, ScreenScroll } from '../../components/layout';
 import { WalletHeader } from '../../components/wallet/WalletHeader';
@@ -13,6 +12,11 @@ import { FormField } from '../../components/FormField';
 import { TxStatus } from '../../components/wallet/send.fields';
 import { RecipientRow, ContactsModal, ContactsButton } from '../../components/wallet/send.recipient';
 import { usePublicSend } from '../../components/wallet/send.public';
+import { SendReview } from '../../components/wallet/send.review';
+import { Spinner } from '../../components/Spinner';
+import { RECIPIENT_PLACEHOLDER, recipientHint, type RecipientState } from '../../components/wallet/recipient.model';
+
+const RESOLVING_SPINNER = 24;
 import { TokenSelector, useSelectedBalance, useTopToken, type TokenChoice } from '../../components/wallet/TokenSelector';
 
 function toggleAmount(
@@ -25,16 +29,16 @@ function toggleAmount(
   setMode(() => nextMode);
 }
 
-function RecipientField({ value, resolving, error, onChange }: {
-  value: string; resolving: boolean; error?: string;
-  onChange: (v: string) => void;
+function RecipientField({ value, recipient, onChange }: {
+  value: string; recipient: RecipientState; onChange: (v: string) => void;
 }): React.ReactElement {
-  const scheme = useKitScheme();
-  const hint = error ?? (resolving ? 'Resolving…' : undefined);
+  const { sub } = usePalette();
+  const hint = recipientHint(recipient);
   return (
-    <FormField label="Recipient" placeholder="0x… or name.eth" value={value} onChangeText={onChange}
+    <FormField label="Recipient" placeholder={RECIPIENT_PLACEHOLDER} value={value} onChangeText={onChange}
       inputProps={{ autoCapitalize: 'none', autoCorrect: false }}
-      hint={hint} hintColor={error === undefined ? undefined : DANGER_COLOR[scheme]} />
+      trailing={recipient.kind === 'resolving' ? <Spinner size={RESOLVING_SPINNER} color={sub} /> : undefined}
+      hint={hint?.text} hintTone={hint?.tone} />
   );
 }
 
@@ -59,11 +63,11 @@ function AmountField({ value, unitLabel, secondaryLabel, balanceLabel, maxDisabl
   );
 }
 
-function submitLabelFor(txState: string): string {
+function submitLabelFor(txState: string, reviewing: boolean): string {
   if (txState === 'submitting') return 'Confirm in wallet…';
   if (txState === 'pending') return 'Sending…';
   if (txState === 'confirmed') return 'Sent ✓';
-  return 'Send';
+  return reviewing ? 'Send' : 'Review';
 }
 
 function SendForm({ token, initialTo, selector, onCancel }: {
@@ -72,6 +76,7 @@ function SendForm({ token, initialTo, selector, onCancel }: {
   const { text: fg, link: head, border } = usePalette();
   const dark = useEffectiveColorScheme() === 'dark';
   const [picking, setPicking] = useState(false);
+  const [reviewing, setReviewing] = useState(false);
   const balance = useSelectedBalance(token);
   const p = usePublicSend(initialTo, token, balance);
   const balanceLabel = p.ethBalance
@@ -79,31 +84,54 @@ function SendForm({ token, initialTo, selector, onCancel }: {
     : undefined;
   const pal = { head, sub: fg, border };
 
+  const reviewable = reviewing && p.resolved !== null;
+  const onSubmit = (): void => { if (reviewable) p.onSubmit(); else if (p.canSubmit) setReviewing(true); };
+  const onBack = (): void => { if (reviewable && !p.busy && p.txState !== 'confirmed') setReviewing(false); else onCancel(); };
+
   return (
     <>
       <ScreenScroll keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 16, gap: 16 }}>
-        {selector}
-        <Col gap={16}>
-          <RecipientField value={p.to} resolving={p.resolving} error={p.resolveErr ?? undefined} onChange={p.setTo} />
-          <AmountField
-            value={p.amount}
-            unitLabel={p.mode === 'eth' ? token.symbol : 'USD'}
-            secondaryLabel={p.secondaryLabel || undefined}
-            balanceLabel={balanceLabel}
-            maxDisabled={!p.ethBalance}
-            onChange={p.setAmount}
-            onMax={p.onMax}
-            onToggleUnit={() => { toggleAmount(p.amount, p.mode, p.ethPriceUsd, p.setAmount, p.setMode); }}
-          />
-        </Col>
-        {p.resolved ? <RecipientRow address={p.resolved} pal={pal} /> : null}
-        <ContactsButton color={fg} border={border} onPress={() => { setPicking(true); }} />
+        {reviewable ? (
+          <SendReview recipient={p.recipient} amount={p.tokenAmountText} symbol={token.symbol}
+            secondaryLabel={p.secondaryLabel || undefined} chainId={token.chainId} pal={pal} />
+        ) : (
+          <SendFields p={p} token={token} selector={selector} balanceLabel={balanceLabel} pal={pal}
+            onPickContact={() => { setPicking(true); }} />
+        )}
         <TxStatus txState={p.txState} txHash={p.txHash} txChainId={p.txChainId} txErr={p.txErr} />
         <ContactsModal visible={picking} onClose={() => { setPicking(false); }} onPick={(addr) => { p.setTo(addr); }} pal={pal} />
       </ScreenScroll>
-      <WalletFooter border={border} dark={dark} onCancel={onCancel}
-        submitLabel={submitLabelFor(p.txState)} onSubmit={p.onSubmit}
+      <WalletFooter border={border} dark={dark} onCancel={onBack} cancelLabel={reviewable ? 'Back' : 'Cancel'}
+        submitLabel={submitLabelFor(p.txState, reviewable)} onSubmit={onSubmit}
         submitDisabled={!p.canSubmit || p.txState === 'confirmed'} submitLoading={p.busy} />
+    </>
+  );
+}
+
+function SendFields({ p, token, selector, balanceLabel, pal, onPickContact }: {
+  p: ReturnType<typeof usePublicSend>; token: TokenChoice; selector: React.ReactNode; balanceLabel?: string;
+  pal: { head: string; sub: string; border: string }; onPickContact: () => void;
+}): React.ReactElement {
+  return (
+    <>
+      {selector}
+      <Col gap={16}>
+        <Col gap={8}>
+          <RecipientField value={p.to} recipient={p.recipient} onChange={p.setTo} />
+          {p.recipient.kind === 'resolved' ? <RecipientRow address={p.recipient.address} label={p.recipient.label} pal={pal} /> : null}
+        </Col>
+        <AmountField
+          value={p.amount}
+          unitLabel={p.mode === 'eth' ? token.symbol : 'USD'}
+          secondaryLabel={p.secondaryLabel || undefined}
+          balanceLabel={balanceLabel}
+          maxDisabled={!p.ethBalance}
+          onChange={p.setAmount}
+          onMax={p.onMax}
+          onToggleUnit={() => { toggleAmount(p.amount, p.mode, p.ethPriceUsd, p.setAmount, p.setMode); }}
+        />
+      </Col>
+      <ContactsButton color={pal.sub} border={pal.border} onPress={onPickContact} />
     </>
   );
 }

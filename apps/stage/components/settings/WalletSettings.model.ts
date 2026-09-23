@@ -4,11 +4,6 @@ export type WalletModuleRole = 'sudo' | 'backup' | 'session';
 
 export type WalletDeployState = 'loading' | 'deployed' | 'counterfactual' | 'unknown';
 
-export interface WalletPasskeyAction {
-  available: boolean;
-  busy: boolean;
-}
-
 export interface WalletAccountModel {
   label: string;
   hdIndex: number | null;
@@ -44,32 +39,8 @@ export function walletAccountRows(model: WalletAccountModel): WalletValueRow[] {
   return rows;
 }
 
-export type WalletManageAction = 'passkey' | 'removePasskey';
-
-export interface WalletManageItem {
-  icon: string;
-  label: string;
-  action: WalletManageAction;
-}
-
-export function walletManageItems(
-  passkey: WalletPasskeyAction,
-  removePasskey: WalletPasskeyAction,
-): WalletManageItem[] {
-  const items: WalletManageItem[] = [];
-  if (passkey.available) {
-    items.push({
-      icon: 'fingerPrint',
-      label: passkey.busy ? 'Enabling passkey…' : 'Enable passkey for signing',
-      action: 'passkey',
-    });
-  }
-  if (removePasskey.available) {
-    items.push({
-      icon: 'fingerPrint',
-      label: removePasskey.busy ? 'Removing passkey…' : 'Remove passkey',
-      action: 'removePasskey',
-    });
-  }
-  return items;
-}
+export const WALLET_SECURITY_LINK = {
+  label: 'Passkey, backup and devices',
+  icon: 'key',
+  href: '/settings/security',
+} as const;

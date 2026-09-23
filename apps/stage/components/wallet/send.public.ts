@@ -3,16 +3,20 @@ import {
   erc20Abi, encodeFunctionData, parseUnits, createPublicClient, type Hex,
 } from 'viem';
 import { base } from 'viem/chains';
-import { resolveEnsName } from '@stage-labs/client/api/ens';
 import { getSimplePrices, type CgPrice } from '@stage-labs/client/api/coingecko';
 import { sendNativeOrToken } from '../../lib/tx';
 import { getActiveAccount } from '../../lib/accounts';
 import { kernelClientForRecord } from '../../lib/zerodev';
 import { broviderTransport } from '@stage-labs/client/wallet/client';
-import { classifyRecipientInput, noAddressSetError } from '@stage-labs/client/wallet/send';
 import { tokenAmountFromInput } from '@stage-labs/client/wallet/sendAmount';
 import { ASSETS } from '@stage-labs/client/wallet/assets';
 import type { TokenChoice } from './TokenSelector';
+import { resolveHandleToAddress } from '../../lib/resolveHandle';
+import {
+  recipientAddress, recipientFor, settleRecipient, startRecipient, type RecipientState,
+} from './recipient.model';
+
+const RESOLVE_DEBOUNCE_MS = 300;
 
 async function fetchEthPrice(): Promise<number | null> {
   const prices = await getSimplePrices(['ethereum']).catch((): Record<string, CgPrice> => ({}));
@@ -60,7 +64,7 @@ interface PublicSend {
   to: string; setTo: (v: string) => void;
   amount: string; setAmount: (v: string) => void;
   mode: 'eth' | 'usd'; setMode: (fn: (m: 'eth' | 'usd') => 'eth' | 'usd') => void;
-  resolved: string | null; resolving: boolean; resolveErr: string | null;
+  recipient: RecipientState; resolved: string | null; tokenAmountText: string;
   ethBalance: string | null; ethPriceUsd: number | null;
   secondaryLabel: string; canSubmit: boolean; busy: boolean;
   txState: SendTxState; txHash: Hex | null; txChainId: number; txErr: string | null;
@@ -71,9 +75,9 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
   const [to, setTo] = useState<string>(initialTo);
   const [amount, setAmount] = useState('');
   const [mode, setMode] = useState<'eth' | 'usd'>('eth');
-  const [resolved, setResolved] = useState<string | null>(null);
-  const [resolving, setResolving] = useState(false);
-  const [resolveErr, setResolveErr] = useState<string | null>(null);
+  const [stored, setStored] = useState<RecipientState>(() => startRecipient(initialTo));
+  const recipient = recipientFor(stored, to);
+  const resolved = recipientAddress(recipient);
   const [ethPriceUsd, setEthPriceUsd] = useState<number | null>(null);
   const [txState, setTxState] = useState<SendTxState>('idle');
   const [txHash, setTxHash] = useState<Hex | null>(null);
@@ -102,25 +106,15 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
     : token.symbol === 'USDC' ? 1 : null;
 
   useEffect(() => {
-    const c = classifyRecipientInput(to);
-    setResolveErr(null);
-    if (c.kind === 'empty' || c.kind === 'invalid') { setResolved(null); setResolving(false); return; }
-    if (c.kind === 'address') { setResolved(c.resolved); setResolving(false); return; }
-    const q = to.trim();
-    setResolving(true);
+    const start = startRecipient(to);
+    setStored(start);
+    if (start.kind !== 'resolving') return;
     let cancelled = false;
     const t = setTimeout(() => {
-      void (async (): Promise<void> => {
-        try {
-          const addr = await resolveEnsName(c.query);
-          if (cancelled) return;
-          if (addr) setResolved(addr.toLowerCase());
-          else { setResolved(null); setResolveErr(noAddressSetError(q)); }
-        } catch (e) {
-          if (!cancelled) { setResolved(null); setResolveErr((e as Error).message); }
-        } finally { if (!cancelled) setResolving(false); }
-      })();
-    }, 300);
+      void resolveHandleToAddress(start.query.handle).then((address) => {
+        if (!cancelled) setStored(settleRecipient(start, address));
+      });
+    }, RESOLVE_DEBOUNCE_MS);
     return () => { cancelled = true; clearTimeout(t); };
   }, [to]);
 
@@ -134,6 +128,7 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
     [amount, mode, tokenPriceUsd, token.symbol],
   );
 
+  const tokenAmountText = mode === 'eth' ? amount.trim() : String(tokenAmount);
   const busy = txState === 'submitting' || txState === 'pending';
   const canSubmit = !!resolved && tokenAmount > 0 && !!asset;
 
@@ -148,7 +143,7 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
     void (async (): Promise<void> => {
       setTxErr(null); setTxHash(null); setTxState('submitting');
       try {
-        const tokStr = mode === 'eth' ? amount.trim() : String(tokenAmount);
+        const tokStr = tokenAmountText;
         const active = await getActiveAccount();
         if (!active) { setTxState('idle'); setTxErr('No active wallet'); return; }
 
@@ -168,7 +163,7 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
   };
 
   return {
-    to, setTo, amount, setAmount, mode, setMode, resolved, resolving, resolveErr,
+    to, setTo, amount, setAmount, mode, setMode, recipient, resolved, tokenAmountText,
     ethBalance, ethPriceUsd: tokenPriceUsd, secondaryLabel, canSubmit, busy, txState, txHash, txChainId, txErr,
     onMax, onSubmit,
   };

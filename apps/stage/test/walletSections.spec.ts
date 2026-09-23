@@ -3,7 +3,7 @@ import {
   WALLET_ROLE_BADGE,
   walletAccountRows,
   walletDeployLabel,
-  walletManageItems,
+  WALLET_SECURITY_LINK,
 } from '../components/settings/WalletSettings.model';
 
 describe('walletDeployLabel', () => {
@@ -57,20 +57,8 @@ describe('walletAccountRows', () => {
   });
 });
 
-describe('walletManageItems', () => {
-  test('no passkey actions leaves nothing to manage', () => {
-    expect(walletManageItems({ available: false, busy: false }, { available: false, busy: false })).toEqual([]);
-  });
-
-  test('busy passkey and removable passkey', () => {
-    expect(
-      walletManageItems(
-        { available: true, busy: true },
-        { available: true, busy: false },
-      ),
-    ).toEqual([
-      { icon: 'fingerPrint', label: 'Enabling passkey…', action: 'passkey' },
-      { icon: 'fingerPrint', label: 'Remove passkey', action: 'removePasskey' },
-    ]);
+describe('WALLET_SECURITY_LINK', () => {
+  test('points wallet settings at the Security page', () => {
+    expect(WALLET_SECURITY_LINK).toEqual({ label: 'Passkey, backup and devices', icon: 'key', href: '/settings/security' });
   });
 });

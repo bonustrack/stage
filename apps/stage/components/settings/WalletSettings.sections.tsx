@@ -5,16 +5,12 @@ import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import {
   WALLET_ROLE_BADGE,
   walletDeployLabel,
-  walletManageItems,
   type WalletDeployState,
-  type WalletManageAction,
-  type WalletManageItem,
   type WalletModuleRole,
 } from './WalletSettings.model';
 import { Col, Row } from '../layout';
 import { SettingsCard, SettingsSectionLabel } from './SettingsPage';
 import type { useWalletModel } from './WalletSettings.parts';
-import { type PasskeyAction } from '../../lib/passkey';
 import { SettingsList } from './rows';
 import { AppIcon } from '../widgets';
 import { Badge } from '@stage-labs/kit/react-native/badge';
@@ -88,44 +84,11 @@ function WalletDeployRow({ deploy }: { deploy: WalletDeployState }): React.React
   );
 }
 
-function WalletManageList({ items, onAction }: {
-  items: WalletManageItem[];
-  onAction: (action: WalletManageAction) => void;
-}): React.ReactElement {
-  const dark = useKitScheme() === 'dark';
-  return (
-    <SettingsList>
-      {items.map((item) => (
-        <ListViewItem
-          key={item.action}
-          align="center"
-          gap={12}
-          dark={dark}
-          onPress={() => { onAction(item.action); }}
-        >
-          <AppIcon name={item.icon} color="link" size={24} />
-          <Col flex={1}>
-            <Text value={item.label} size="md" color="text" />
-          </Col>
-          <AppIcon name="chevronRight" color="link" size={24} />
-        </ListViewItem>
-      ))}
-    </SettingsList>
-  );
-}
-
-export function SmartAccountSections({ model, deploy, passkey, removePasskey, onCopy }: {
+export function SmartAccountSections({ model, deploy, onCopy }: {
   model: WalletModel;
   deploy: WalletDeployState;
-  passkey: PasskeyAction;
-  removePasskey: PasskeyAction;
   onCopy: (label: string, value: string) => void;
 }): React.ReactElement {
-  const manageItems = walletManageItems(passkey, removePasskey);
-  const onManage = (action: WalletManageAction): void => {
-    if (action === 'passkey') { if (!passkey.busy) passkey.run(); }
-    else if (!removePasskey.busy) removePasskey.run();
-  };
   return (
     <>
       <SettingsSectionLabel>DEPLOY STATUS</SettingsSectionLabel>
@@ -172,15 +135,6 @@ export function SmartAccountSections({ model, deploy, passkey, removePasskey, on
           <WalletInfoRow label="EntryPoint" value={`v${model.entryPointVersion}`} />
         </SettingsList>
       </SettingsCard>
-
-      {manageItems.length > 0 ? (
-        <>
-          <SettingsSectionLabel>MANAGE</SettingsSectionLabel>
-          <SettingsCard>
-            <WalletManageList items={manageItems} onAction={onManage} />
-          </SettingsCard>
-        </>
-      ) : null}
     </>
   );
 }

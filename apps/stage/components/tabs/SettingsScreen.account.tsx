@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 
 import { Alert } from 'react-native';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -17,6 +16,9 @@ import { SettingsButtonRow, SettingsList, SettingsNavRow } from '../settings/row
 import { RecoveryKeyRow } from '../settings/RecoveryKeyRow';
 import { SettingsSectionLabel } from '../settings/SettingsPage';
 import { PasskeyLinkRow, usePasskeyPlace } from '../settings/PasskeyLinkRow';
+import { RecoveryPhraseRow, useWalletBackedUp } from '../settings/RecoveryPhraseRow';
+import { passkeyActionLabel, securityRows, type SecurityRowKey } from '../settings/SecuritySettings.model';
+import { useEnablePasskey, useRemovePasskey } from '../../lib/passkey';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 
 interface RevealedKey { id: string; pk: string }
@@ -84,17 +86,27 @@ function AccountRows({ rec, revealed, onExport, onMove }: {
   rec: AccountRecord; revealed: string | null; onExport: () => void; onMove: () => void;
 }): React.ReactElement {
   const [place, setPlace] = usePasskeyPlace(rec);
+  const enablePasskey = useEnablePasskey();
+  const removePasskey = useRemovePasskey();
+  const backedUp = useWalletBackedUp();
+  const keys = securityRows({
+    isSmart: rec.type === 'smart', backedUp,
+    enablePasskey: enablePasskey.available, removePasskey: removePasskey.available,
+    canExportKey: canExportPrivateKey(rec), keyRevealed: revealed !== null, canLinkDevice: transferKindFor(rec) !== null,
+  });
+  const rows: Record<SecurityRowKey, () => React.ReactElement | null> = {
+    backupPhrase: () => <RecoveryPhraseRow rec={rec} />,
+    enablePasskey: () => <SettingsButtonRow label={passkeyActionLabel('enable', enablePasskey.busy)} iconStart="fingerPrint" onPress={enablePasskey.run} />,
+    passkeyLink: () => <PasskeyLinkRow rec={rec} place={place} onLinked={() => { setPlace('this-device'); }} />,
+    recoveryKey: () => <RecoveryKeyRow rec={rec} place={place} />,
+    removePasskey: () => <SettingsButtonRow label={passkeyActionLabel('remove', removePasskey.busy)} iconStart="fingerPrint" onPress={removePasskey.run} />,
+    exportKey: () => <SettingsNavRow label="Export private key" iconStart="wallet" iconEnd="chevronDown" onPress={onExport} />,
+    linkDevice: () => <SettingsNavRow label="Link a device" iconStart="qrcode" onPress={onMove} />,
+    removeAccount: () => <SettingsButtonRow label="Remove account" iconStart="trash" danger onPress={() => { confirmRemove(rec); }} />,
+  };
   return (
     <SettingsList>
-      <PasskeyLinkRow rec={rec} place={place} onLinked={() => { setPlace('this-device'); }} />
-      <RecoveryKeyRow rec={rec} place={place} />
-      {canExportPrivateKey(rec) && !revealed ? (
-        <SettingsNavRow label="Export private key" iconStart="wallet" iconEnd="chevronDown" onPress={onExport} />
-      ) : null}
-      {transferKindFor(rec) !== null ? (
-        <SettingsNavRow label="Link a device" iconStart="qrcode" onPress={onMove} />
-      ) : null}
-      <SettingsButtonRow label="Remove account" iconStart="trash" danger onPress={() => { confirmRemove(rec); }} />
+      {keys.map((key) => <Fragment key={key}>{rows[key]()}</Fragment>)}
     </SettingsList>
   );
 }

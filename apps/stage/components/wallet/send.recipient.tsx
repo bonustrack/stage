@@ -11,14 +11,15 @@ import { useContacts } from '../../lib/useContacts';
 
 interface RowPalette { head: string; sub: string; border: string }
 
-export function RecipientRow({ address, pal, onPress }: {
+export function RecipientRow({ address, label, pal, onPress }: {
   address: string;
+  label?: string | null;
   pal: RowPalette;
   onPress?: () => void;
 }): React.ReactElement {
   const { head, border } = pal;
   usePeerProfiles([address]);
-  const name = getPeerName(address) ?? shortAddress(address);
+  const name = label ?? getPeerName(address) ?? shortAddress(address);
   const showAddrLine = name !== shortAddress(address);
 
   const inner = (

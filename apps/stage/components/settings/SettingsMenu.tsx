@@ -5,7 +5,6 @@ import { capabilities } from '../../lib/capabilities';
 import { SettingsPage } from './SettingsPage';
 import { SettingsList, SettingsNavRow } from './rows';
 import { SettingsAccountHeader } from './SettingsAccountHeader';
-import { MoveAccountRow } from './MoveAccountRow';
 
 export function SettingsMenu(): React.ReactElement {
   return (
@@ -20,7 +19,6 @@ export function SettingsMenu(): React.ReactElement {
             onPress={() => { capabilities.navigate(item.href); }}
           />
         ))}
-        <MoveAccountRow />
       </SettingsList>
     </SettingsPage>
   );

@@ -21,7 +21,7 @@ function resolveParsed(parsed: ParsedHandle): Promise<string | null> {
   switch (parsed.kind) {
     case 'address': return Promise.resolve(parsed.value);
     case 'stage': return resolveStageName(parsed.value);
-    case 'basename': return basenameAddress(parsed.value);
+    case 'basename': return stageLabelOf(parsed.value) === null ? basenameAddress(parsed.value) : resolveStageName(parsed.value);
     case 'ens': return resolveEnsName(parsed.value).then((a) => a?.toLowerCase() ?? null);
     default: return Promise.resolve(null);
   }

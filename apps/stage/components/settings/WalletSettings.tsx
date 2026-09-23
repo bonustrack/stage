@@ -1,21 +1,18 @@
 
 
 import { Text } from '@stage-labs/kit/react-native/text';
-import { walletAccountRows } from './WalletSettings.model';
+import { WALLET_SECURITY_LINK, walletAccountRows } from './WalletSettings.model';
 import { usePalette } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
 import { useWalletModel } from './WalletSettings.parts';
-import { useEnablePasskey, useRemovePasskey } from '../../lib/passkey';
 import { SmartAccountSections, WalletCopyRow, WalletInfoRow } from './WalletSettings.sections';
 import { SettingsCard, SettingsPage, SettingsSectionLabel } from './SettingsPage';
-import { SettingsList } from './rows';
+import { SettingsList, SettingsNavRow } from './rows';
 
 export function WalletSettings(): React.ReactElement {
   const { text: fg } = usePalette();
 
   const { model, deploy } = useWalletModel();
-  const passkey = useEnablePasskey();
-  const removePasskey = useRemovePasskey();
 
   return (
     <SettingsPage title="Wallet">
@@ -46,10 +43,17 @@ export function WalletSettings(): React.ReactElement {
           {model.isSmart ? (
             <SmartAccountSections
               model={model} deploy={deploy}
-              passkey={passkey} removePasskey={removePasskey}
               onCopy={(label, value) => { capabilities.copy(label, value); }}
             />
           ) : null}
+
+          <SettingsSectionLabel>SECURITY</SettingsSectionLabel>
+          <SettingsCard>
+            <SettingsList>
+              <SettingsNavRow label={WALLET_SECURITY_LINK.label} iconStart={WALLET_SECURITY_LINK.icon}
+                onPress={() => { capabilities.navigate(WALLET_SECURITY_LINK.href); }} />
+            </SettingsList>
+          </SettingsCard>
         </>
       )}
     </SettingsPage>
