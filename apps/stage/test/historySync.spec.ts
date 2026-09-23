@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
   fingerprintOf, formatHistoryPin, historyGrewOlder, historyPinFromRandom, historySyncIsActive, historySyncPhaseLabel,
-  holdsHistoryBefore, isValidHistoryPin, normalizeHistoryPin, snapshotOf,
+  holdsHistoryBefore, isValidHistoryPin, normalizeHistoryPin, snapshotOf, settleBy,
 } from '../lib/historySync.model';
 
 describe('history pin', () => {
@@ -88,5 +88,21 @@ describe('historyGrewOlder', () => {
     expect(historyGrewOlder(baseline, baseline, startedAtMs)).toBe(false);
     const current = snapshotOf([{ id: 'a', firstNs: ns(startedAtMs - 60_000) }, { id: 'b', firstNs: ns(startedAtMs + 1) }]);
     expect(historyGrewOlder(baseline, current, startedAtMs)).toBe(false);
+  });
+});
+
+describe('settleBy', () => {
+  test('a step that never answers settles with the fallback at the deadline', async () => {
+    const hung = new Promise<string>(() => undefined);
+    expect(await settleBy(hung, Date.now() + 20, 'timeout')).toBe('timeout');
+  });
+
+  test('a step that answers in time keeps its result', async () => {
+    expect(await settleBy(Promise.resolve('done'), Date.now() + 1_000, 'timeout')).toBe('done');
+  });
+
+  test('a past deadline settles right away', async () => {
+    const hung = new Promise<string>(() => undefined);
+    expect(await settleBy(hung, Date.now() - 1, 'timeout')).toBe('timeout');
   });
 });

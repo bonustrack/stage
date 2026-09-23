@@ -79,3 +79,11 @@ export function holdsHistoryBefore(snapshot: HistorySnapshot, installedAtMs: num
   if (snapshot.oldestNs === null) return false;
   return snapshot.oldestNs < (installedAtMs - HISTORY_CLOCK_SKEW_MS) * 1_000_000;
 }
+
+export function settleBy<T>(work: Promise<T>, deadline: number, fallback: T): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const expired = new Promise<T>((resolve) => {
+    timer = setTimeout(() => { resolve(fallback); }, Math.max(0, deadline - Date.now()));
+  });
+  return Promise.race([work, expired]).finally(() => { if (timer !== undefined) clearTimeout(timer); });
+}

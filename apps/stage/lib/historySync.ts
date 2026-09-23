@@ -8,7 +8,7 @@ import {
 } from './xmtp.history';
 import { getActiveAccount } from './accounts';
 import {
-  historyGrewOlder, historyPinFromRandom, historySyncIsActive, holdsHistoryBefore, HISTORY_PIN_LENGTH,
+  historyGrewOlder, historyPinFromRandom, historySyncIsActive, holdsHistoryBefore, settleBy, HISTORY_PIN_LENGTH,
   type HistorySnapshot, type HistorySyncPhase,
 } from './historySync.model';
 import { report, recover } from './errorPolicy';
@@ -94,23 +94,32 @@ async function startWatch(): Promise<Watch> {
   }
 }
 
-export async function runHistorySync(): Promise<HistorySyncPhase> {
-  if (historySyncIsActive(phase)) return phase;
-  setPhase('requesting');
+let currentRun = 0;
+
+async function syncOnce(run: number, deadline: number): Promise<HistorySyncPhase> {
   try {
-    if (!(await waitForXmtpReady())) { setPhase('error'); return 'error'; }
+    if (!(await waitForXmtpReady())) return 'error';
     const watch = await startWatch();
     await requestHistorySync();
-    setPhase('waiting');
-    if (!(await waitForHistory(Date.now() + TIMEOUT_MS, watch))) { setPhase('timeout'); return 'timeout'; }
+    if (run === currentRun) setPhase('waiting');
+    if (!(await waitForHistory(deadline, watch))) return 'timeout';
     applyReceivedHistory();
-    setPhase('done');
     return 'done';
   } catch (err) {
     report('historySync.request', err);
-    setPhase('error');
     return 'error';
   }
+}
+
+export async function runHistorySync(): Promise<HistorySyncPhase> {
+  if (historySyncIsActive(phase)) return phase;
+  currentRun += 1;
+  const run = currentRun;
+  const deadline = Date.now() + TIMEOUT_MS;
+  setPhase('requesting');
+  const outcome = await settleBy(syncOnce(run, deadline), deadline, 'timeout');
+  if (run === currentRun) setPhase(outcome);
+  return outcome;
 }
 
 function whenHistorySettled(): Promise<void> {
