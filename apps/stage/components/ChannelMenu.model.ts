@@ -22,6 +22,7 @@ interface ChannelMenuFeatures {
   pin?: boolean;
   info?: boolean;
   leaveGroup?: boolean;
+  deleteChat?: boolean;
 }
 
 function infoItem(state: ChannelMenuState): MenuSheetItem | null {
@@ -56,6 +57,12 @@ function leaveItem(state: ChannelMenuState, features: ChannelMenuFeatures): Menu
     : null;
 }
 
+function deleteChatItem(state: ChannelMenuState, features: ChannelMenuFeatures): MenuSheetItem | null {
+  return features.deleteChat === true && !state.isGroup && state.hasPeer === true
+    ? { id: 'delete', label: 'Delete chat', icon: 'trash', danger: true }
+    : null;
+}
+
 export function channelMenuItems(
   state: ChannelMenuState,
   features: ChannelMenuFeatures = {},
@@ -67,5 +74,6 @@ export function channelMenuItems(
     pinItem(state, features),
     features.info === true ? infoItem(state) : null,
     leaveItem(state, features),
+    deleteChatItem(state, features),
   ]);
 }

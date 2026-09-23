@@ -31,3 +31,8 @@ const pinListeners = makeListeners<PinChange>();
 
 export const onPinChanged = pinListeners.subscribe;
 export const notifyPinChanged = pinListeners.notify;
+
+const clearedListeners = makeListeners();
+
+export const onClearedChatsChanged = clearedListeners.subscribe;
+export const notifyClearedChatsChanged = clearedListeners.notify;

@@ -26,7 +26,7 @@ export {
   openDmWithAddress, findExistingDmWithAddress, repairDmMembership, dmUnreachableReason,
   listVisibleConversations,
   syncConversationsFromNetwork, acceptRequestConv,
-  blockRequestConv, getConvConsentState, streamNewConversations, streamConvConsent, syncConsent,
+  blockRequestConv, unacceptConv, getConvConsentState, streamNewConversations, streamConvConsent, syncConsent,
 } from '../../lib/xmtp.conv';
 
 export {

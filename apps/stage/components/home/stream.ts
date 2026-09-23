@@ -7,6 +7,7 @@ import { isControlBody, shortAddress, getConvConsentState } from '../../modules/
 import type { Row as RowT } from './helpers';
 import { applyInbound } from '@stage-labs/client/xmtp/channelsCache';
 import { ROW_PREVIEW_MAX_CHARS, type StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
+import { revivesClearedChat } from '@stage-labs/client/xmtp/readState';
 
 const notifiedMsgIds = new Set<string>();
 function alreadyNotified(id: string): boolean {
@@ -98,6 +99,7 @@ function applyToRows(
         avatarAddress: cur.peerAddress ?? cur.avatarAddress,
         lastSenderAddress: cur.inboxToAddr[msg.senderInboxId] ?? null,
         lastFromSelf: msg.senderInboxId === cur.selfInboxId,
+        lastBubbleTs: revivesClearedChat(msg.contentTypeId) ? lastTs : cur.lastBubbleTs,
       }),
     );
     if (result === null) { needsRefresh = true; return prev; }

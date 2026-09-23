@@ -94,17 +94,17 @@ export async function getConvConsentState(convId: string): Promise<XmtpConsent |
   }
 }
 
-export async function acceptRequestConv(convId: string): Promise<void> {
+async function setConvConsent(convId: string, state: ConsentState): Promise<void> {
   const conv = await convOfLine(lineOfConv(convId));
   if (!conv) throw new Error('Conversation not found');
-  await conv.updateConsentState(ConsentState.Allowed);
+  await conv.updateConsentState(state);
 }
 
-export async function blockRequestConv(convId: string): Promise<void> {
-  const conv = await convOfLine(lineOfConv(convId));
-  if (!conv) throw new Error('Conversation not found');
-  await conv.updateConsentState(ConsentState.Denied);
-}
+export function acceptRequestConv(convId: string): Promise<void> { return setConvConsent(convId, ConsentState.Allowed); }
+
+export function blockRequestConv(convId: string): Promise<void> { return setConvConsent(convId, ConsentState.Denied); }
+
+export function unacceptConv(convId: string): Promise<void> { return setConvConsent(convId, ConsentState.Unknown); }
 
 interface StreamHandle { end: () => Promise<unknown> }
 

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  isPinStateType, isReadStateType, isSyncGroupName, parsePinState, parseReadState, pickSyncGroup,
-  shouldApplyReadState, syncGroupName,
+  isChatCleared, isClearStateType, isRowCleared, revivesClearedChat, isPinStateType, isReadStateType, isSyncGroupName, mergeClearedChats,
+  parseClearState, parsePinState, parseReadState, pickSyncGroup, shouldApplyReadState, syncGroupName,
 } from '../src/xmtp/readState';
 
 describe('read state payload', () => {
@@ -61,3 +61,50 @@ describe('pin state payload', () => {
     expect(isPinStateType('stage.box/readState:1.0')).toBe(false);
   });
 });
+
+describe('deleted chats', () => {
+  test('the payload is a map of peer to deletion time', () => {
+    expect(parseClearState({ cleared: { '0xabc': 5 } })).toEqual({ cleared: { '0xabc': 5 } });
+    expect(parseClearState({ cleared: { '0xabc': -1 } })).toBeNull();
+    expect(parseClearState({ cleared: 'nope' })).toBeNull();
+    expect(isClearStateType('stage.box/clearState:1.0')).toBe(true);
+    expect(isClearStateType('stage.box/pinState:1.0')).toBe(false);
+  });
+
+  test('merging keeps the latest deletion per peer, so two devices never lose one', () => {
+    const phone = { '0xaaa': 10, '0xbbb': 30 };
+    const laptop = { '0xAAA': 20, '0xccc': 5 };
+    expect(mergeClearedChats(phone, laptop)).toEqual({ '0xaaa': 20, '0xbbb': 30, '0xccc': 5 });
+    expect(mergeClearedChats(laptop, phone)).toEqual(mergeClearedChats(phone, laptop));
+  });
+
+  test('a deleted chat stays hidden until a newer message arrives', () => {
+    const cleared = { '0xaaa': 1000 };
+    expect(isChatCleared(cleared, '0xAAA', 900)).toBe(true);
+    expect(isChatCleared(cleared, '0xaaa', 1000)).toBe(true);
+    expect(isChatCleared(cleared, '0xaaa', 1001)).toBe(false);
+    expect(isChatCleared(cleared, '0xaaa', null)).toBe(true);
+  });
+
+  test('reactions and read receipts never bring a deleted chat back', () => {
+    expect(revivesClearedChat('reaction')).toBe(false);
+    expect(revivesClearedChat('readReceipt')).toBe(false);
+    expect(revivesClearedChat('text')).toBe(true);
+    expect(revivesClearedChat('remoteStaticAttachment')).toBe(true);
+    expect(revivesClearedChat(undefined)).toBe(true);
+  });
+
+  test('a row is judged by its last real message, not a later reaction', () => {
+    const cleared = { '0xaaa': 1000 };
+    expect(isRowCleared(cleared, { peerAddress: '0xaaa', lastTs: 1500, lastBubbleTs: 800 })).toBe(true);
+    expect(isRowCleared(cleared, { peerAddress: '0xaaa', lastTs: 1500, lastBubbleTs: 1200 })).toBe(false);
+    expect(isRowCleared(cleared, { peerAddress: '0xaaa', lastTs: 1500 })).toBe(false);
+    expect(isRowCleared(cleared, { peerAddress: null, lastTs: 1, lastBubbleTs: 1 })).toBe(false);
+  });
+
+  test('groups and chats that were never deleted are never hidden', () => {
+    expect(isChatCleared({ '0xaaa': 1000 }, null, 1)).toBe(false);
+    expect(isChatCleared({ '0xaaa': 1000 }, '0xbbb', 1)).toBe(false);
+  });
+});
+

@@ -7,6 +7,7 @@ import { rowMessagesOf } from '../../lib/xmtp.messages';
 import { labelsOfSyncedGroup } from '../../lib/xmtp.labels';
 import { isControlBody } from '../../lib/xmtp.types';
 import { isGroupUpdateTypeId, previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
+import { revivesClearedChat } from '@stage-labs/client/xmtp/readState';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
 import {
   channelRowTitle, countUnreadEntries, initialMarkedUnread,
@@ -16,6 +17,7 @@ export interface ConversationView {
   convId: string;
   title: string;
   lastTs: number | null;
+  lastBubbleTs: number | null;
   lastPreview: string;
   avatarAddress: string | null;
   avatarUri: string | null;
@@ -38,6 +40,14 @@ function pickLastMessage(msgs: RowMessage[], dm: boolean): RowMessage | undefine
   return msgs.find(m =>
     !(typeof m.content === 'string' && isControlBody(m.content)) && !isMembershipNoise(m, dm),
   ) ?? msgs[0];
+}
+
+function lastBubbleTsOf(msgs: RowMessage[], dm: boolean): number | null {
+  const bubble = msgs.find(m =>
+    !(typeof m.content === 'string' && isControlBody(m.content)) && !isMembershipNoise(m, dm)
+    && revivesClearedChat(m.contentTypeId),
+  );
+  return bubble?.sentNs ? Math.floor(bubble.sentNs / 1_000_000) : null;
 }
 
 function previewOfMessage(last: RowMessage | undefined, dm: boolean): string {
@@ -112,6 +122,7 @@ export async function summarizeConversation(
     convId: conv.id,
     title,
     lastTs: last?.sentNs ? Math.floor(last.sentNs / 1_000_000) : null,
+    lastBubbleTs: lastBubbleTsOf(msgs, dm),
     lastPreview: preview.slice(0, ROW_PREVIEW_MAX_CHARS),
     avatarAddress,
     avatarUri,

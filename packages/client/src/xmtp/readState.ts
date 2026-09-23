@@ -63,6 +63,65 @@ export function parsePinState(content: unknown): PinStateContent | null {
   return parsed.success ? parsed.data : null;
 }
 
+export const CLEAR_STATE_CONTENT_TYPE: XmtpContentTypeId = {
+  authorityId: 'stage.box', typeId: 'clearState', versionMajor: 1, versionMinor: 0,
+};
+
+export type ClearedChats = Record<string, number>;
+
+export interface ClearStateContent {
+  cleared: ClearedChats;
+}
+
+export const clearStateSchema: ZodType<ClearStateContent> = z.object({
+  cleared: z.record(z.string().min(1), z.number().nonnegative()),
+});
+
+export function clearStateFallbackText(): string {
+  return 'Stage deleted chats';
+}
+
+export function isClearStateType(contentTypeId: string | undefined): boolean {
+  return typeof contentTypeId === 'string' && contentTypeId.includes(CLEAR_STATE_CONTENT_TYPE.typeId);
+}
+
+export function parseClearState(content: unknown): ClearStateContent | null {
+  const parsed = clearStateSchema.safeParse(content);
+  return parsed.success ? parsed.data : null;
+}
+
+export function mergeClearedChats(local: ClearedChats, incoming: ClearedChats): ClearedChats {
+  const merged: ClearedChats = {};
+  for (const [peer, at] of [...Object.entries(local), ...Object.entries(incoming)]) {
+    const key = peer.toLowerCase();
+    merged[key] = Math.max(merged[key] ?? 0, at);
+  }
+  return merged;
+}
+
+const SILENT_TYPE_IDS: readonly string[] = ['reaction', 'readReceipt'];
+
+export function revivesClearedChat(typeId: string | undefined): boolean {
+  return typeId === undefined || !SILENT_TYPE_IDS.includes(typeId);
+}
+
+export function isChatCleared(cleared: ClearedChats, peerAddress: string | null | undefined, lastTsMs: number | null): boolean {
+  if (!peerAddress) return false;
+  const clearedAt = cleared[peerAddress.toLowerCase()];
+  return clearedAt !== undefined && (lastTsMs ?? 0) <= clearedAt;
+}
+
+export interface ClearableRow {
+  peerAddress: string | null;
+  lastTs: number | null;
+  lastBubbleTs?: number | null;
+}
+
+export function isRowCleared(cleared: ClearedChats, row: ClearableRow): boolean {
+  const revivalTs = row.lastBubbleTs === undefined ? row.lastTs : row.lastBubbleTs;
+  return isChatCleared(cleared, row.peerAddress, revivalTs);
+}
+
 export const SYNC_GROUP_PREFIX = 'stage.sync:';
 
 export function syncGroupName(address: string): string {

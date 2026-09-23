@@ -1,20 +1,23 @@
 import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { applyRead, applyUnread } from '@stage-labs/client/xmtp/channelsCache';
 import {
-  isPinStateType, isReadStateType, parsePinState, parseReadState, pickSyncGroup, shouldApplyReadState,
-  syncGroupName, type PinStateContent, type ReadStateContent,
+  isClearStateType, isPinStateType, isReadStateType, parseClearState, parsePinState, parseReadState,
+  pickSyncGroup, shouldApplyReadState, syncGroupName, type PinStateContent, type ReadStateContent,
 } from '@stage-labs/client/xmtp/readState';
 import { appStorage } from '../platform/storage';
 import { getActiveAccount } from './accounts';
 import { subscribeAccountEpoch } from './accountEpoch';
 import { getCachedRows, setCachedRows } from './channelsCache';
 import { applyRemotePinState } from './pins';
+import { applyRemoteClearedChats, ensureClearedChatsLoaded, getClearedChats } from './clearedChats';
 import {
-  isHiddenConv, onPinChanged, onReadStateChanged, registerHiddenConv, type PinChange, type ReadStateChange,
+  isHiddenConv, onClearedChatsChanged, onPinChanged, onReadStateChanged, registerHiddenConv,
+  type PinChange, type ReadStateChange,
 } from './readSyncRegistry';
 import { setLastReadNs, setMarkedUnreadFlag } from './xmtp.client';
 import {
-  createSyncGroup, listSyncGroups, recentSyncMessages, sendPinState, sendReadState, syncConversation,
+  createSyncGroup, listSyncGroups, recentSyncMessages, sendClearState, sendPinState, sendReadState,
+  syncConversation,
 } from './xmtp.readSync';
 import { waitForXmtpReady } from './xmtp.state';
 import { subscribeAllMessages } from './xmtp.stream';
@@ -22,6 +25,8 @@ import type { StreamMsg } from './xmtp.types';
 
 const CURSOR_PREFIX = 'readSync.cursor.';
 const REPLAY_LIMIT = 500;
+const FIRST_REPLAY_LIMIT = 5000;
+const CLEARED_KEY = 'cleared';
 const PUBLISH_DEBOUNCE_MS = 800;
 
 let started = false;
@@ -63,9 +68,15 @@ async function applyPinMessage(m: RowMessage): Promise<void> {
   await applyRemotePinState(state);
 }
 
+async function applyClearMessage(m: RowMessage): Promise<void> {
+  const state = parseClearState(m.content);
+  if (state !== null) await applyRemoteClearedChats(state.cleared);
+}
+
 async function applyMessage(m: RowMessage): Promise<void> {
   if (isReadStateType(m.contentTypeId)) await applyReadMessage(m);
   else if (isPinStateType(m.contentTypeId)) await applyPinMessage(m);
+  else if (isClearStateType(m.contentTypeId)) await applyClearMessage(m);
 }
 
 async function ensureGroup(address: string): Promise<string> {
@@ -83,7 +94,7 @@ async function replay(accountId: string, id: string): Promise<void> {
   await syncConversation(id).catch((err: unknown) => { warn('sync', err); });
   const cursorKey = CURSOR_PREFIX + accountId;
   const cursor = Number(await appStorage.get(cursorKey).catch(() => null)) || 0;
-  const messages = (await recentSyncMessages(id, REPLAY_LIMIT))
+  const messages = (await recentSyncMessages(id, cursor === 0 ? FIRST_REPLAY_LIMIT : REPLAY_LIMIT))
     .filter((m) => m.sentNs > cursor)
     .sort((a, b) => a.sentNs - b.sentNs);
   let latest = cursor;
@@ -101,6 +112,7 @@ async function boot(): Promise<void> {
   if (!(await waitForXmtpReady())) return;
   const rec = await getActiveAccount().catch(() => null);
   if (rec === null || token !== bootToken) return;
+  await ensureClearedChatsLoaded();
   try {
     const id = await ensureGroup(rec.address);
     if (token === bootToken) await replay(rec.id, id);
@@ -143,6 +155,10 @@ function queuePinPublish(change: PinChange): void {
   debounce(PIN_ORDER_KEY, () => { void withGroup((id) => sendPinState(id, content)); });
 }
 
+function queueClearedPublish(): void {
+  debounce(CLEARED_KEY, () => { void withGroup((id) => sendClearState(id, { cleared: getClearedChats() })); });
+}
+
 function onStreamMessage(m: StreamMsg): void {
   if (!isHiddenConv(m.convId)) return;
   void applyMessage(m.msg);
@@ -153,6 +169,7 @@ export function startReadSync(): void {
   started = true;
   onReadStateChanged(queueReadPublish);
   onPinChanged(queuePinPublish);
+  onClearedChatsChanged(queueClearedPublish);
   subscribeAllMessages(onStreamMessage, { includeHidden: true });
   subscribeAccountEpoch(() => { void boot(); });
   void boot();

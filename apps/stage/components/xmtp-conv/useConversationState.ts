@@ -17,6 +17,8 @@ import { useReactionsLayer } from './useReactionsLayer';
 import { useVotesLayer } from './useVotesLayer';
 import { useTxSignLayer } from './useTxSignLayer';
 import { useOutboundLayer } from './useOutboundLayer';
+import { useClearedChats } from '../../lib/clearedChats';
+import { entriesAfterClear, feedReachedClear } from './clearedFeed.model';
 import {
   useActiveConvSuppression, useConsentGate, useGroupLabels,
   useConvScrollPersistence, useFeedDerivations,
@@ -64,11 +66,13 @@ export function useConversationState(convId: string | undefined, focus: string |
 
   const xmtpFeed = useXmtpFeed(activeLine, !!convId);
   const { peerAddr, memberAddrs, inboxToAddr, groupName, groupImage, groupDescription, isGroup } = useConvMeta(convId);
+  const clearedAt = useClearedChats()[peerAddr?.toLowerCase() ?? ''];
   const events = useMemo(
-    () => (peerAddr === null ? xmtpFeed.events : xmtpFeed.events.filter(e => !isSystemEntry(e))),
-    [xmtpFeed.events, peerAddr],
+    () => (peerAddr === null ? xmtpFeed.events : entriesAfterClear(xmtpFeed.events.filter(e => !isSystemEntry(e)), clearedAt)),
+    [xmtpFeed.events, peerAddr, clearedAt],
   );
-  const { loadOlder, hasMore, loadingOlder } = xmtpFeed;
+  const { loadOlder, loadingOlder } = xmtpFeed;
+  const hasMore = xmtpFeed.hasMore && !feedReachedClear(xmtpFeed.events, clearedAt);
   useEffect(() => {
     if (!convId) return;
     void markConvRead(convId);

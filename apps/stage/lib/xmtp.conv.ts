@@ -96,17 +96,17 @@ export async function getConvConsentState(convId: string): Promise<XmtpConsent |
   }
 }
 
-export async function acceptRequestConv(convId: string): Promise<void> {
+async function setConvConsent(convId: string, state: XmtpConsent): Promise<void> {
   const conv = await convOfLine(lineOfConv(convId));
   if (!conv) throw new Error('Conversation not found');
-  await conv.updateConsent('allowed');
+  await conv.updateConsent(state);
 }
 
-export async function blockRequestConv(convId: string): Promise<void> {
-  const conv = await convOfLine(lineOfConv(convId));
-  if (!conv) throw new Error('Conversation not found');
-  await conv.updateConsent('denied');
-}
+export function acceptRequestConv(convId: string): Promise<void> { return setConvConsent(convId, 'allowed'); }
+
+export function blockRequestConv(convId: string): Promise<void> { return setConvConsent(convId, 'denied'); }
+
+export function unacceptConv(convId: string): Promise<void> { return setConvConsent(convId, 'unknown'); }
 
 export function streamNewConversations(cb: (conv: Conversation) => void): () => void {
   const client = getCachedXmtpClient();

@@ -15,6 +15,8 @@ import { ChannelsList } from './list';
 import { useChannelsSync } from './sync';
 import { deriveLabels, useHomeFilters } from './labelbar';
 import { filterChannelRows } from '@stage-labs/client/xmtp/channelsFilter';
+import { isRowCleared } from '@stage-labs/client/xmtp/readState';
+import { useClearedChats } from '../../lib/clearedChats';
 import { channelsFilterBarVisible } from './model';
 import { useHomeState, type HomeState } from './state';
 import { deriveSortedRows } from './helpers';
@@ -70,7 +72,11 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
     unreadOnly,
     enabledLabelsCount: enabledLabels.size,
   });
-  const visibleRows = useMemo(() => filterChannelRows(sortedRows, { query }), [sortedRows, query]);
+  const cleared = useClearedChats();
+  const visibleRows = useMemo(
+    () => filterChannelRows(sortedRows, { query }).filter(r => !isRowCleared(cleared, r)),
+    [sortedRows, query, cleared],
+  );
 
   const channelProfilesVersion = usePeerProfiles(
     (rows ?? []).flatMap(r => [r.avatarAddress, r.peerAddress, r.lastSenderAddress]),

@@ -9,7 +9,8 @@ import { AnchoredMenu } from './AnchoredMenu';
 import type { MenuPoint } from './AnchoredMenu.model';
 import { markConvRead, markConvUnread } from '../modules/messaging';
 import { togglePin } from '../lib/pins';
-import { leaveGroupConv, lineOfConv } from '../modules/messaging';
+import { blockRequestConv, leaveGroupConv, lineOfConv, unacceptConv } from '../modules/messaging';
+import { markChatCleared } from '../lib/clearedChats';
 import { profileLinkOf } from '../lib/links';
 
 interface ChannelMenuProps {
@@ -54,6 +55,31 @@ function confirmLeaveGroup(
   );
 }
 
+const DELETE_CHAT_MESSAGE = 'The chat is removed from all your devices. If they write again, it comes back with only the new messages. Delete and block also stops their messages for good.';
+
+function confirmDeleteChat(
+  convId: string, peerAddress: string, context: 'list' | 'view',
+  router: ReturnType<typeof useRouter>, onClose: () => void,
+): void {
+  onClose();
+  const remove = (block: boolean): void => {
+    void (async (): Promise<void> => {
+      try {
+        await markChatCleared(peerAddress, Date.now());
+        void markConvRead(convId);
+        if (context === 'view') router.replace('/');
+        await (block ? blockRequestConv(convId) : unacceptConv(convId));
+      } catch (e) {
+        Alert.alert('Couldn’t delete', (e as Error).message ?? 'Unknown error');
+      }
+    })();
+  };
+  Alert.alert('Delete chat', DELETE_CHAT_MESSAGE, [
+    { text: 'Cancel', style: 'cancel' },
+    { text: 'Delete', style: 'destructive', onPress: () => { remove(false); } },
+    { text: 'Delete and block', style: 'destructive', onPress: () => { remove(true); } },
+  ]);
+}
 
 export function ChannelMenu({
   convId, isGroup, peerAddress, isUnread, isPinned,
@@ -74,11 +100,12 @@ export function ChannelMenu({
       else if (peerAddress) router.push(profileLinkOf(peerAddress));
     }); },
     leave: () => { confirmLeaveGroup(convId, context, router, onClose, onAfterLeave); },
+    delete: () => { if (peerAddress) confirmDeleteChat(convId, peerAddress, context, router, onClose); },
   };
 
   const items = channelMenuItems(
     { isGroup, hasPeer: !!peerAddress, isUnread, isPinned },
-    { search: !!onSearch, addMembers: true, pin: true, info: true, leaveGroup: true },
+    { search: !!onSearch, addMembers: true, pin: true, info: true, leaveGroup: true, deleteChat: true },
   );
 
   return (
