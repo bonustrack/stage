@@ -16,7 +16,7 @@ import { txErrorMessage } from '@stage-labs/client/wallet/txError';
 import { recover } from '../errorPolicy';
 
 const SWAP_FALLBACK = 'Could not install the passkey on-chain.';
-const SECURED_ELSEWHERE = 'This account is secured by a passkey on another device. Use that passkey to continue.';
+const SECURED_ELSEWHERE = 'This account is secured by a passkey from another device, and it could not be used here.';
 
 function swapFailureMessage(e: unknown): string {
   const message = txErrorMessage(e, SWAP_FALLBACK);

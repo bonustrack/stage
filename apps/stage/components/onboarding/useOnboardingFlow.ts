@@ -30,6 +30,7 @@ export interface OnboardingFlow {
   history: HistoryControls;
   onSetupRetry: () => void;
   onSetupBack: () => void;
+  onSetupSkipPasskey: () => void;
 }
 
 function createChoice(label: string, details: ProfileDetails): Choice {
@@ -67,7 +68,7 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
     try {
       const found = await inspectPhrase(phrase);
       if (found.alreadyImported) { start(choice, 'none'); return; }
-      toPasskey(choice, found.passkeyRequired ? 'verify' : 'add');
+      toPasskey(choice, found.passkeySecured ? 'verify' : 'add');
     } catch {
       toPasskey(choice, 'add');
     } finally {
@@ -101,6 +102,16 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
     start(pending, passkeyMode);
   };
 
+  const skipPasskey = (): void => {
+    if (restoredId !== null) {
+      const accountId = restoredId;
+      setRestoredId(null); setPasskeyErr(null);
+      start({ kind: 'restored', accountId }, 'none');
+      return;
+    }
+    if (pending) { setPasskeyErr(null); start(pending, 'none'); }
+  };
+
   const startOver = (): void => {
     if (restoredId !== null) void abandonAccount(restoredId).catch(reported('onboarding.abandon'));
     runner.startOver();
@@ -125,10 +136,11 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
     onProfileBack: () => { setStep('username'); },
     onImportTransfer,
     onAddPasskey,
-    onSkipPasskey: () => { if (pending && passkeyMode === 'add') start(pending, 'none'); },
+    onSkipPasskey: skipPasskey,
     onPasskeyBack: () => { setPasskeyErr(null); setStep(label === '' ? 'username' : 'profile'); },
     history: runner.history,
     onSetupRetry,
     onSetupBack: startOver,
+    onSetupSkipPasskey: runner.skipPasskey,
   };
 }

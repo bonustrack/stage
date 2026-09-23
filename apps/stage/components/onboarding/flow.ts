@@ -58,33 +58,28 @@ async function securePasskey(rec: AccountRecord, onStage?: (s: Stage) => void): 
   throw new PasskeySetupError(rec.id, res.reason === 'cancelled' ? PASSKEY_CANCELLED : res.message ?? PASSKEY_FALLBACK);
 }
 
-const PASSKEY_REQUIRED = 'This wallet is secured by a passkey. Confirm that passkey on this device to continue.';
-
-async function passkeyRequired(rec: AccountRecord): Promise<boolean> {
-  return (await kernelCustody(rec.address as `0x${string}`)) === 'passkey-root';
-}
-
-export interface PhraseInspection { passkeyRequired: boolean; alreadyImported: boolean }
+export interface PhraseInspection { passkeySecured: boolean; alreadyImported: boolean }
 
 export async function inspectPhrase(phrase: string): Promise<PhraseInspection> {
   const { address, alreadyImported } = await peekRestorableAccount(await adoptPhrase(phrase));
-  if (alreadyImported) return { passkeyRequired: false, alreadyImported };
-  return { passkeyRequired: (await kernelCustody(address)) === 'passkey-root', alreadyImported };
+  if (alreadyImported) return { passkeySecured: false, alreadyImported };
+  return { passkeySecured: (await kernelCustody(address)) === 'passkey-root', alreadyImported };
 }
 
 async function finishAccount(
   rec: AccountRecord, passkey: PasskeyChoice, onStage?: (s: Stage) => void,
 ): Promise<void> {
-  const withPasskey = passkey !== 'none';
-  const required = !withPasskey && await passkeyRequired(rec);
-  if (required && !passkeysAvailable()) throw new PasskeySetupError(rec.id, PASSKEY_REQUIRED);
-  if ((withPasskey || required) && passkeysAvailable()) await securePasskey(rec, onStage);
+  if (passkey !== 'none' && passkeysAvailable()) await securePasskey(rec, onStage);
   await bringMessagingOnline(rec.id, onStage);
 }
 
 export async function confirmRestoredPasskey(phrase: string): Promise<string> {
   const { record } = await restoreSmartAccount(await adoptPhrase(phrase));
-  await securePasskey(record);
+  try {
+    await securePasskey(record);
+  } catch (e) {
+    throw e instanceof PasskeySetupError ? e : new PasskeySetupError(record.id, errorMessage(e));
+  }
   return record.id;
 }
 

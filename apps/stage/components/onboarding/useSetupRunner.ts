@@ -26,6 +26,7 @@ export interface SetupRunner {
   plan: SetupPlan;
   run: (choice: Choice, passkey: PasskeyChoice) => void;
   resume: (accountId: string, retry: 'messaging' | 'passkey') => void;
+  skipPasskey: () => void;
   startOver: () => void;
   history: HistoryControls;
   reset: () => void;
@@ -142,6 +143,13 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
     })();
   };
 
+  const skipPasskey = (): void => {
+    const accountId = setupErr?.accountId;
+    if (setupErr?.retry !== 'passkey' || accountId === undefined) return;
+    setPlan((p) => ({ ...p, passkey: undefined }));
+    resume(accountId, 'messaging');
+  };
+
   const startOver = (): void => {
     const accountId = setupErr?.accountId;
     if (accountId !== undefined) void abandonAccount(accountId).catch(reported('onboarding.abandon'));
@@ -167,5 +175,5 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
     holdOnboarding(false);
   };
 
-  return { busy, stage, setupErr, plan, run, resume, startOver, history, reset };
+  return { busy, stage, setupErr, plan, run, resume, skipPasskey, startOver, history, reset };
 }

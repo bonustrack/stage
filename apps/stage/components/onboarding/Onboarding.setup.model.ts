@@ -6,6 +6,8 @@ export interface SetupErr { message: string; accountId?: string; retry: SetupRet
 
 export type StageState = 'done' | 'active' | 'pending';
 
+export type SetupLinkKind = 'skipPasskey' | 'startOver';
+
 const STAGE_LABELS: Record<Stage, string> = {
   wallet: 'Creating your wallet',
   passkey: 'Adding your passkey',
@@ -44,6 +46,12 @@ export function setupStages(plan: SetupPlan): Stage[] {
   ];
 }
 
+export function setupLinks(err: SetupErr | null): SetupLinkKind[] {
+  if (err === null || err.retry === 'messaging') return [];
+  if (err.retry === 'passkey' && err.accountId !== undefined) return ['skipPasskey', 'startOver'];
+  return ['startOver'];
+}
+
 export function stageState(stage: Stage, current: Stage, stages: Stage[]): StageState {
   const position = stages.indexOf(stage);
   const currentPosition = stages.indexOf(current);
@@ -62,7 +70,7 @@ export function setupHint(err: SetupErr | null, plan: SetupPlan = {}): string {
   if (err.retry === 'messaging') return MESSAGING_RETRY_HINT;
   if (err.retry === 'passkey') {
     const next = plan.passkey === 'verify' ? 'confirm the passkey' : 'secure this wallet with a passkey';
-    return `${err.message} Try again to ${next}, or start over.`;
+    return `${err.message} Try again to ${next}, continue without a passkey, or start over.`;
   }
   return `We could not finish setting up. ${err.message}`;
 }

@@ -35,8 +35,8 @@ const ENABLE: PasskeySpec = {
   name: 'enable',
   offer: async (acct) => {
     if (!passkeysAvailable() || acct.type !== 'smart') return false;
-    if (!acct.passkey) return true;
     const custody = await kernelCustody(acct.address as `0x${string}`).catch(recover('passkey.custody', null));
+    if (!acct.passkey) return custody !== 'passkey-root';
     return custody === 'undeployed' || custody === 'ecdsa-root';
   },
   confirm: {
