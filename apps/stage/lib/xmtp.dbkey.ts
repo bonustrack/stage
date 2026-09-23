@@ -2,10 +2,11 @@ import { base64ToBytes, bytesToBase64 } from '@stage-labs/client/text/base64';
 import { deleteDbFiles } from './xmtp.dbkeyFs';
 import { secureStorage } from '../platform/storage';
 import type { DeviceBoundAccessOptions } from '../platform/types';
+import { XMTP_APP_GROUP } from './xmtp.appGroup';
 
-const STORE_OPTS: DeviceBoundAccessOptions = {
-  thisDeviceOnly: true,
-};
+const STORE_OPTS: DeviceBoundAccessOptions = XMTP_APP_GROUP
+  ? { thisDeviceOnly: true, afterFirstUnlock: true, accessGroup: XMTP_APP_GROUP }
+  : { thisDeviceOnly: true };
 
 const LEGACY_DB_ENCRYPTION_KEY = 'xmtp.dbEncryptionKey';
 

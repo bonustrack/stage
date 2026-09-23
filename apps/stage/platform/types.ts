@@ -1,5 +1,7 @@
 export interface SecureAccessOptions {
   thisDeviceOnly?: boolean;
+  afterFirstUnlock?: boolean;
+  accessGroup?: string;
   requireAuthentication?: boolean;
   authenticationPrompt?: string;
 }

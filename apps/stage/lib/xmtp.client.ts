@@ -10,12 +10,13 @@ import type { XmtpEnv } from './xmtp.types';
 import { loadOrCreateDbKey, deleteDbKey, deleteDbFiles, ensureDbDir, wipeXmtpStore } from './xmtp.dbkey';
 import { createClientForAccount, finalizeClient, isStoreCorruption } from './xmtp.recover';
 import { makeClientLifecycle } from './xmtp.client.core';
+import { forgetPushAccount, recordPushAccount } from './xmtp.appGroup';
 
 type InstallationId = Parameters<Client['revokeInstallations']>[1][number];
 
 const REGISTERED_BUILD_TIMEOUT_MS = 20_000;
 
-async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<Client> {
+async function openClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<Client> {
   const dbDirectory = await ensureDbDir(rec.dbDir);
   const dbEncryptionKey = await loadOrCreateDbKey(rec.id);
   let opts = { env, dbDirectory, dbEncryptionKey, codecs: XMTP_CODECS };
@@ -38,12 +39,23 @@ async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<
   return whileRegistering(() => createClientForAccount(rec, env, opts));
 }
 
+async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<Client> {
+  const client = await openClientForAccount(rec, env);
+  recordPushAccount({ id: rec.id, address: rec.address, inboxId: client.inboxId, dbDir: rec.dbDir, env });
+  return client;
+}
+
+function forgetAccountStore(accountId: string): Promise<void> {
+  forgetPushAccount(accountId);
+  return deleteDbKey(accountId);
+}
+
 export const {
   getOrCreateXmtpClient, xmtpClient, switchToAccount, deleteAccount, resetActiveXmtpStore,
   cachedSelfEthAddress, selfEthAddress, syncPreferences, listXmtpInstallations, revokeXmtpInstallation,
 } = makeClientLifecycle<Client>({
   accounts: { active: getActiveAccount, list: loadAccounts, setActive: setActiveAccountId, remove: removeAccount },
-  store: { deleteFiles: deleteDbFiles, deleteKey: deleteDbKey, wipe: wipeXmtpStore, forgetSaved: () => Promise.resolve() },
+  store: { deleteFiles: deleteDbFiles, deleteKey: forgetAccountStore, wipe: wipeXmtpStore, forgetSaved: () => Promise.resolve() },
   client: {
     get: getCachedXmtpClient,
     getOrCreate: getOrCreateCachedClient,

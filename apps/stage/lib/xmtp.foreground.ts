@@ -1,6 +1,7 @@
 import { AppState } from 'react-native';
 import { setAppForeground, subscribeXmtpPush } from '../modules/stage-pill';
 import { markBackgroundDelivered } from './pushNotify';
+import { reclaimSharedDb, releaseSharedDb } from './xmtp.dbConnection';
 import { resyncActiveFeeds, syncInboxOnce } from './xmtp.resync';
 import type { StreamStatus } from './xmtp.types';
 
@@ -51,9 +52,12 @@ export const foregroundWatch = {
     setAppForeground(AppState.currentState === 'active');
     appStateSub ??= AppState.addEventListener('change', (state) => {
       setAppForeground(state === 'active');
+      if (state === 'background') void releaseSharedDb();
       if (state !== 'active') return;
-      void resyncActiveFeeds();
-      if (!status.live()) status.ensure();
+      void reclaimSharedDb().then(() => {
+        void resyncActiveFeeds();
+        if (!status.live()) status.ensure();
+      });
     });
   },
   detach(): void {

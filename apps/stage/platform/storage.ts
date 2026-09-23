@@ -4,7 +4,12 @@ import type { AppStorage, SecureAccessOptions, SecureStorage } from './types';
 
 function toStoreOptions(options?: SecureAccessOptions): SecureStore.SecureStoreOptions {
   const opts: SecureStore.SecureStoreOptions = {};
-  if (options?.thisDeviceOnly) opts.keychainAccessible = SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY;
+  if (options?.thisDeviceOnly) {
+    opts.keychainAccessible = options.afterFirstUnlock
+      ? SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY
+      : SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY;
+  }
+  if (options?.accessGroup !== undefined) opts.accessGroup = options.accessGroup;
   if (options?.requireAuthentication) opts.requireAuthentication = true;
   if (options?.authenticationPrompt !== undefined) opts.authenticationPrompt = options.authenticationPrompt;
   return opts;

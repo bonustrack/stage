@@ -1,5 +1,6 @@
 
 import { Directory, File, Paths } from 'expo-file-system';
+import { sharedStoreRoot } from './xmtp.appGroup';
 
 export function deleteDbFiles(dbDirName: string): Promise<void> {
   const dir = dbDirObj(dbDirName);
@@ -21,7 +22,7 @@ export function deleteDbFiles(dbDirName: string): Promise<void> {
   return Promise.resolve();
 }
 
-function dbDirObj(name: string): Directory { return new Directory(Paths.document, name); }
+function dbDirObj(name: string): Directory { return new Directory(sharedStoreRoot() ?? Paths.document, name); }
 
 export function ensureDbDir(name: string): Promise<string> {
   const dir = dbDirObj(name);

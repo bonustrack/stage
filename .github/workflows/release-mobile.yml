@@ -157,7 +157,7 @@ jobs:
       ASC_API_KEY_ISSUER_ID: ${{ secrets.ASC_API_KEY_ISSUER_ID }}
       ASC_APP_ID: ${{ secrets.ASC_APP_ID }}
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-      APPLE_TEAM_TYPE: ${{ vars.APPLE_TEAM_TYPE || 'INDIVIDUAL' }}
+      APPLE_TEAM_TYPE: ${{ vars.APPLE_TEAM_TYPE || 'COMPANY_OR_ORGANIZATION' }}
     steps:
       - name: Check Apple secrets
         id: apple
@@ -204,7 +204,7 @@ jobs:
           EXPO_ASC_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
           EXPO_ASC_ISSUER_ID: ${{ secrets.ASC_API_KEY_ISSUER_ID }}
           EXPO_APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          EXPO_APPLE_TEAM_TYPE: ${{ vars.APPLE_TEAM_TYPE || 'INDIVIDUAL' }}
+          EXPO_APPLE_TEAM_TYPE: ${{ vars.APPLE_TEAM_TYPE || 'COMPANY_OR_ORGANIZATION' }}
         run: |
           OUT=$(eas build -p ios --profile production-prod --non-interactive --json --wait)
           echo "$OUT"

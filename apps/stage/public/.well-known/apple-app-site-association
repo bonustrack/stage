@@ -3,8 +3,7 @@
     "apps": [],
     "details": [
       {
-        "appIDs": ["TEAMID.box.metro.monitor"],
-        "appID": "TEAMID.box.metro.monitor",
+        "appIDs": ["TEAMID.box.stage", "TEAMID.box.metro.monitor"],
         "paths": ["*"],
         "components": [
           { "/": "/*" }
@@ -13,6 +12,6 @@
     ]
   },
   "webcredentials": {
-    "apps": ["TEAMID.box.metro.monitor"]
+    "apps": ["TEAMID.box.stage", "TEAMID.box.metro.monitor"]
   }
 }

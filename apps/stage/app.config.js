@@ -84,6 +84,17 @@ const config = {
     supportsTablet: true,
     bundleIdentifier: variant.bundleId,
     associatedDomains: [`applinks:${variant.host}`, `webcredentials:${variant.host}`],
+    entitlements: {
+      'aps-environment': IS_PROD ? 'production' : 'development',
+    },
+    config: {
+      usesNonExemptEncryption: false,
+    },
+    infoPlist: {
+      NSFaceIDUsageDescription: `Allow ${variant.name} to use Face ID to verify it is you before revealing a recovery phrase or key.`,
+      NSLocationWhenInUseUsageDescription: `Allow ${variant.name} to share your current location in chat.`,
+      NSLocationAlwaysUsageDescription: `Allow ${variant.name} to share your current location in chat.`,
+    },
   },
   android: {
     package: variant.androidPackage,
@@ -195,6 +206,7 @@ const config = {
     './plugins/withStagePill',
     './plugins/withGradleMemory',
     './plugins/withBouncyCastleDedup',
+    './plugins/withXmtpNotificationService',
     [
       'react-native-audio-api',
       {
