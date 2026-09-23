@@ -1,4 +1,4 @@
-import { Client, ConsentState, type Conversation } from '@xmtp/browser-sdk';
+import { Client, type Conversation } from '@xmtp/browser-sdk';
 import { secureStorage } from '../platform/storage';
 import {
   getActiveAccount,
@@ -11,11 +11,10 @@ import { bumpAccountEpoch } from './accountEpoch';
 import { XMTP_CODECS, signerForRecord } from './xmtp.codecs.web';
 import {
   getCachedXmtpClient, resetClientScopedState, getOrCreateCachedClient } from './xmtp.state.web';
-import { type XmtpEnv, convIdOfLine, lineOfConv } from './xmtp.types';
+import { type XmtpEnv, convIdOfLine } from './xmtp.types';
 import { deleteDbKey, deleteDbFiles } from './xmtp.dbkey';
 import { historyServerUrl } from './historyServer';
 import { openClientForAccount, type CreateOpts } from './xmtp.recover.web';
-import { markConvReadSynced as markConvReadLocally } from './xmtp.unread';
 import { webXmtpDbPath, canReuseSavedClient, installationCreatedAtMs } from '@stage-labs/client/xmtp/clientConfig';
 
 export { getCachedXmtpClient, waitForXmtpReady } from './xmtp.state.web';
@@ -114,7 +113,7 @@ export async function switchToAccount(id: string, env: XmtpEnv = 'production'): 
   disposeCachedClient();
   await setActiveAccountId(id);
   try {
-    const client = await buildClientForAccount(rec, env);
+    const client = await getOrCreateCachedClient(() => buildClientForAccount(rec, env));
     bumpAccountEpoch();
     return client;
   } catch (e) {
@@ -180,17 +179,7 @@ export async function revokeXmtpInstallation(installationId: string): Promise<vo
   await Client.revokeInstallations(signer, inboxId, [target.bytes], client.env);
 }
 
-export { getLastReadNs, setLastReadNs, getMarkedUnread, setMarkedUnreadFlag, markConvUnreadSynced } from './xmtp.unread';
-
-export async function markConvReadSynced(convId: string): Promise<void> {
-  await markConvReadLocally(convId);
-  try {
-    const conv = await convOfLine(lineOfConv(convId));
-    if (conv && (await conv.consentState()) !== ConsentState.Allowed) {
-      await conv.updateConsentState(ConsentState.Allowed);
-    }
-  } catch { }
-}
+export { getLastReadNs, setLastReadNs, getMarkedUnread, setMarkedUnreadFlag, markConvUnreadSynced, markConvReadSynced } from './xmtp.unread';
 
 export async function syncPreferences(): Promise<void> {
   try {

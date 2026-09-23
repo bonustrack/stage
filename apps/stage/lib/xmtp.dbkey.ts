@@ -31,10 +31,10 @@ function randomKey(): Uint8Array {
 
 export async function loadOrCreateDbKey(accountId: string): Promise<Uint8Array> {
   const id = dbKeyId(accountId);
-  const existing = await secureStorage.get(id, STORE_OPTS).catch(() => null);
+  const existing = await secureStorage.get(id, STORE_OPTS);
   if (existing) return decodeKey(existing);
 
-  const legacy = await secureStorage.get(LEGACY_DB_ENCRYPTION_KEY, STORE_OPTS).catch(() => null);
+  const legacy = await secureStorage.get(LEGACY_DB_ENCRYPTION_KEY, STORE_OPTS);
   if (legacy) {
     await secureStorage.set(id, legacy, STORE_OPTS).catch(() => undefined);
     return decodeKey(legacy);

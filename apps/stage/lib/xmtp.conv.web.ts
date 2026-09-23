@@ -70,9 +70,7 @@ async function withoutSyncGroups(convs: Conversation[]): Promise<Conversation[]>
 
 export async function listVisibleConversations(): Promise<Conversation[]> {
   const client = await xmtpClient();
-  const convs = await client.conversations
-    .list({ consentStates: [ConsentState.Allowed, ConsentState.Unknown] })
-    .catch(() => []);
+  const convs = await client.conversations.list({ consentStates: [ConsentState.Allowed, ConsentState.Unknown] });
   return withoutSyncGroups(convs);
 }
 

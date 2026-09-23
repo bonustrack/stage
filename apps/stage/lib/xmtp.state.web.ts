@@ -1,7 +1,8 @@
 import type { Client } from '@xmtp/browser-sdk';
-import { createClientSlot } from './xmtp.state.core';
+import { createClientSlot } from './storeCore';
+import { resetSharedXmtpState } from './xmtp.state.core';
 
-const slot = createClientSlot<Client<unknown>>();
+const slot = createClientSlot<Client<unknown>>(resetSharedXmtpState);
 
 export const getCachedXmtpClient = slot.get;
 export const setCachedXmtpClient = slot.set;

@@ -16,6 +16,7 @@ export function useStoreValue<T>(
 export function makeListeners<T = void>(): {
   notify: (v: T) => void;
   subscribe: (cb: (v: T) => void) => () => void;
+  size: () => number;
 } {
   const listeners = new Set<(v: T) => void>();
   const notify = (v: T): void => {
@@ -27,7 +28,27 @@ export function makeListeners<T = void>(): {
     listeners.add(cb);
     return () => { listeners.delete(cb); };
   };
-  return { notify, subscribe };
+  return { notify, subscribe, size: () => listeners.size };
+}
+
+export function makeSharedSource<S>(
+  open: (source: S, emit: () => void) => () => void,
+): (source: S, cb: () => void) => () => void {
+  const listeners = makeListeners();
+  let running: { source: S; close: () => void } | null = null;
+  const close = (): void => { running?.close(); running = null; };
+  return (source, cb) => {
+    if (running !== null && running.source !== source) close();
+    running ??= { source, close: open(source, () => { listeners.notify(); }) };
+    const unsubscribe = listeners.subscribe(cb);
+    let active = true;
+    return () => {
+      if (!active) return;
+      active = false;
+      unsubscribe();
+      if (listeners.size() === 0) close();
+    };
+  };
 }
 
 export function hydrateOnce<T>(reader: () => Promise<T>): {
@@ -50,5 +71,39 @@ export function hydrateOnce<T>(reader: () => Promise<T>): {
     done: (): boolean => loaded,
     markDone(): void { loaded = true; inFlight = null; },
     reset(): void { loaded = false; inFlight = null; },
+  };
+}
+
+export interface ClientSlot<C> {
+  get: () => C | null;
+  set: (client: C | null) => void;
+  getOrCreate: (create: () => Promise<C>) => Promise<C>;
+  waitForReady: (capMs?: number) => Promise<boolean>;
+  reset: () => void;
+}
+
+export function createClientSlot<C>(onReset: () => void): ClientSlot<C> {
+  let cached: C | null = null;
+  let inFlight: Promise<C> | null = null;
+  return {
+    get: () => cached,
+    set: (client) => { cached = client; },
+    getOrCreate: async (create) => {
+      if (cached) return cached;
+      if (inFlight) return inFlight;
+      const pending = create();
+      inFlight = pending;
+      try { return await pending; } finally { if (inFlight === pending) inFlight = null; }
+    },
+    waitForReady: async (capMs = 60_000) => {
+      const start = Date.now();
+      while (cached === null && Date.now() - start < capMs) await new Promise((r) => setTimeout(r, 250));
+      return cached !== null;
+    },
+    reset: () => {
+      cached = null;
+      inFlight = null;
+      onReset();
+    },
   };
 }

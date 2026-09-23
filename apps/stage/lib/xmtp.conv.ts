@@ -7,6 +7,7 @@ import { getCachedXmtpClient, getOrCreateXmtpClient, convOfLine, xmtpClient, asC
 import { lineOfConv, type DmUnreachableReason, type XmtpConsent } from './xmtp.types';
 import { conversationIsSyncGroup } from './xmtp.readSync';
 import { registerHiddenConv } from './readSyncRegistry';
+import { makeSharedSource } from './storeCore';
 
 export async function openDmWithAddress(address: string): Promise<string> {
   const client = await getOrCreateXmtpClient('production');
@@ -74,7 +75,7 @@ async function withoutSyncGroups(convs: Conversation[]): Promise<Conversation[]>
 
 export async function listVisibleConversations(): Promise<Conversation[]> {
   const client = await xmtpClient();
-  const convs = await client.conversations.list(undefined, undefined, ['allowed', 'unknown']).catch(() => []);
+  const convs = await client.conversations.list(undefined, undefined, ['allowed', 'unknown']);
   return withoutSyncGroups(convs);
 }
 
@@ -119,15 +120,23 @@ export function streamNewConversations(cb: (conv: Conversation) => void): () => 
   };
 }
 
-export function streamConvConsent(cb: () => void): () => void {
-  const client = getCachedXmtpClient();
-  if (!client) return () => undefined;
-  let cancelled = false;
-  void client.preferences.streamConsent(() => { if (!cancelled) cb(); return Promise.resolve(); }).catch(() => undefined);
+type ConsentClient = NonNullable<ReturnType<typeof getCachedXmtpClient>>;
+
+const sharedConsent = makeSharedSource<ConsentClient>((client, emit) => {
+  let live = true;
+  void client.preferences.streamConsent(() => {
+    if (live) emit();
+    return Promise.resolve();
+  }).catch(() => undefined);
   return () => {
-    cancelled = true;
+    live = false;
     try { client.preferences.cancelStreamConsent(); } catch { }
   };
+});
+
+export function streamConvConsent(cb: () => void): () => void {
+  const client = getCachedXmtpClient();
+  return client ? sharedConsent(client, cb) : () => undefined;
 }
 
 export async function syncConsent(): Promise<void> {

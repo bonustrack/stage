@@ -14,7 +14,7 @@ import {
   INSTALLATION_LIMIT_MESSAGE, isInstallationLimit,
   isStoreCorruption as isStoreCorruptionCore,
 } from '@stage-labs/client/xmtp/clientErrors';
-import { withCreateTimeout } from './xmtp.recover.core';
+import { assertStillActiveAccount, withCreateTimeout } from './xmtp.recover.core';
 
 
 export interface CreateOpts {
@@ -68,6 +68,7 @@ async function tryFreeInstallationSlot(rec: AccountRecord, env: XmtpEnv): Promis
 }
 
 async function finalizeClient(created: Client, rec: AccountRecord, env: XmtpEnv): Promise<Client> {
+  await assertStillActiveAccount(rec.id, () => undefined);
   setCachedXmtpClient(created);
   await markRegistered(rec.id);
   await setActiveAccountId(rec.id);

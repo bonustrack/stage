@@ -17,6 +17,7 @@ import {
   ensureDbDir, wipeXmtpStore,
 } from './xmtp.dbkey';
 import { createClientForAccount, isStoreCorruption } from './xmtp.recover';
+import { assertStillActiveAccount } from './xmtp.recover.core';
 import { signerForRecord } from './xmtp.codecs';
 
 export { getCachedXmtpClient, waitForXmtpReady } from './xmtp.state';
@@ -55,6 +56,7 @@ async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<
         new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 20_000)),
       ]);
       if (built) {
+        await assertStillActiveAccount(rec.id, () => undefined);
         setCachedXmtpClient(built);
         await setActiveAccountId(rec.id);
         await secureStorage.set(XMTP_ENV_KEY, env);
@@ -80,7 +82,7 @@ export async function switchToAccount(id: string, env: XmtpEnv = 'production'): 
   resetClientScopedState();
   await setActiveAccountId(id);
   try {
-    const client = await buildClientForAccount(rec, env);
+    const client = await getOrCreateCachedClient(() => buildClientForAccount(rec, env));
     bumpAccountEpoch();
     return client;
   } catch (e) {

@@ -11,7 +11,7 @@ import { registerPushWithServer } from './pushRegister.web';
 import { perfLog } from './perf';
 import { errorMessage } from '@stage-labs/client/errors';
 import { openPersistedClient, type OpenedClient } from '@stage-labs/client/xmtp/clientConfig';
-import { withCreateTimeout } from './xmtp.recover.core';
+import { assertStillActiveAccount, withCreateTimeout } from './xmtp.recover.core';
 import { type XmtpEnv, XMTP_ENV_KEY } from './xmtp.types.web';
 import { deleteDbKey, deleteDbFiles } from './xmtp.dbkey';
 import {
@@ -55,6 +55,7 @@ type WebXmtpClient = Client<unknown>;
 async function finalizeClient(
   created: WebXmtpClient, rec: AccountRecord, env: XmtpEnv,
 ): Promise<WebXmtpClient> {
+  await assertStillActiveAccount(rec.id, () => { created.close(); });
   setCachedXmtpClient(created);
   await markRegistered(rec.id);
   await setActiveAccountId(rec.id);

@@ -8,7 +8,7 @@ import {
   listVisibleConversations, syncConversationsFromNetwork,
   streamNewConversations, streamConvConsent, syncConsent, conversationIsSyncGroup,
 } from '../../modules/messaging';
-import { hydrateCachedRows } from '../../modules/messaging';
+import { getCachedRows, hydrateCachedRows } from '../../modules/messaging';
 import { hydratePeerProfiles } from '../../lib/peerProfiles';
 import { perfLog, perfTime } from '../../lib/perf';
 import type { Conversation } from '@xmtp/react-native-sdk';
@@ -51,8 +51,9 @@ function makeRefreshers(
   const THROTTLE_MS = 30_000;
   const paintFrom = async (convs: Conversation[]): Promise<boolean> => {
     await primeConversationMembers(client, convs);
+    const previous = new Map(((getCachedRows() ?? []) as RowT[]).map(r => [r.convId, r]));
     const summarized = (await Promise.all(
-      convs.map(c => summarize(c, selfInboxId, true).catch(() => null)),
+      convs.map(c => summarize(c, selfInboxId, true).catch(() => previous.get(c.id) ?? null)),
     )).filter((r): r is RowT => r !== null);
     if (run.cancelled) return false;
     summarized.sort((a, b) => (b.lastTs ?? 0) - (a.lastTs ?? 0));
