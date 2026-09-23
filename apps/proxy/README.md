@@ -15,7 +15,10 @@ runtime - no Express, no origin, no laptop dependency.
   Base. The Worker holds the operator key (`NAMES_OPERATOR_KEY`) and a KV of
   issued labels (`NAMES_KV`); claims are signed by the wallet in the app and
   labels are validated server-side (`a-z0-9`, single hyphens, none at the
-  ends, 6+ chars).
+  ends, 6+ chars). Every claim runs inside one `NamesClaims` Durable Object,
+  one at a time, whose storage is the source of truth for reservations (KV
+  mirrors it for `status`, `check` and `resolve`), so a label or an address
+  can never be claimed twice.
 - **XMTP relays:** `/xmtp-history/*` forwards to the XMTP message-history
   server and `/xmtp-push/*` to the Stage push server (`apps/push`), so the web
   app talks to one origin with the right CORS headers.
@@ -75,7 +78,8 @@ bunx wrangler deploy
 ```
 
 `wrangler.toml` binds the Worker to the routes `proxy.stage.box/*` and
-`bundler.stage.box/*` on the `stage.box` zone and the `NAMES_KV` namespace;
+`bundler.stage.box/*` on the `stage.box` zone, the `NAMES_KV` namespace and
+the `NAMES_CLAIMS` Durable Object (SQLite-backed, created by the `v1` migration);
 `NAMES_OPERATOR_KEY` (and the optional `NAMES_RPC_URL`) are Worker secrets set
 with `wrangler secret put`, never committed. Both hostnames are proxied
 (orange-cloud) DNS records, so the routes intercept at the edge before any

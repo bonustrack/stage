@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { claimMessage } from '@stage-labs/client/identity/stageNames';
 import { handleNames } from '../src/names.ts';
+import { claimsStore, serialized } from '../src/namesClaims.ts';
 import type { NamesChain, NamesDeps, NamesStore } from '../src/namesTypes.ts';
 
 const ALICE = '0x00000000000000000000000000000000000000A1';
@@ -146,5 +147,38 @@ describe('failures', () => {
     expect(res.status).toBe(502);
     expect(res.headers.get('access-control-allow-origin')).toBe('*');
     expect(await res.json()).toEqual({ error: 'name service error: over rate limit' });
+  });
+});
+
+describe('claims durable object', () => {
+  const BOB = '0x00000000000000000000000000000000000000B0';
+
+  test('concurrent claims for one label are serialized, so only the first wins', async () => {
+    const chain = fakeChain(); const store = memoryStore();
+    const run = serialized((request) => handleNames(request, deps(chain, store)));
+    const [first, second] = await Promise.all([
+      run(claimRequest(goodClaim)),
+      run(claimRequest({ ...goodClaim, address: BOB })),
+    ]);
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(409);
+    expect(chain.issued).toEqual(['fabien']);
+  });
+
+  test('the object storage is read first and every write is mirrored to KV', async () => {
+    const own = new Map<string, unknown>();
+    const storage = {
+      get: async (key: string): Promise<unknown> => own.get(key),
+      put: async (key: string, value: string): Promise<void> => { own.set(key, value); },
+    };
+    const kv = memoryStore();
+    kv.data.set('label:legacy', ALICE.toLowerCase());
+    const store = claimsStore(storage, kv);
+    expect(await store.get('label:legacy')).toBe(ALICE.toLowerCase());
+    await store.put('label:fabien', BOB.toLowerCase());
+    expect(own.get('label:fabien')).toBe(BOB.toLowerCase());
+    expect(kv.data.get('label:fabien')).toBe(BOB.toLowerCase());
+    await store.put('label:legacy', '');
+    expect(await store.get('label:legacy')).toBeNull();
   });
 });

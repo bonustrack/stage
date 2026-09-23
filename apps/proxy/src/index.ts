@@ -150,6 +150,8 @@ async function handleSettle(request: Request): Promise<Response> {
   }
 }
 
+export { NamesClaims } from './names.ts';
+
 export default {
   async fetch(request: Request, env: NamesEnv, ctx: ExecutionContext): Promise<Response> {
     const { hostname, pathname } = new URL(request.url);

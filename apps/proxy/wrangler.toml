@@ -23,3 +23,15 @@ routes = [
 [[kv_namespaces]]
 binding = "NAMES_KV"
 id = "c02f6c676fb6486b9da51188fa61c7fa"
+
+# Every claim runs inside this one Durable Object, one at a time, so two
+# people can never reserve the same label or give one address two names.
+# Its storage is the source of truth for reservations; KV mirrors it for
+# the read endpoints (status, check, resolve).
+[[durable_objects.bindings]]
+name = "NAMES_CLAIMS"
+class_name = "NamesClaims"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["NamesClaims"]

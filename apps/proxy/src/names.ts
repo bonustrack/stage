@@ -5,6 +5,7 @@ import {
 import { broviderRpc } from '@stage-labs/client/wallet/client';
 import { makeNamesChain } from './namesChain.ts';
 import type { NamesChain, NamesDeps, NamesStore } from './namesTypes.ts';
+import { CLAIMS_OBJECT_NAME, claimsStore, serialized } from './namesClaims.ts';
 
 export const NAMES_PREFIX = '/names/';
 
@@ -12,6 +13,7 @@ export interface NamesEnv {
   NAMES_OPERATOR_KEY?: string;
   NAMES_RPC_URL?: string;
   NAMES_KV?: KVNamespace;
+  NAMES_CLAIMS?: DurableObjectNamespace;
 }
 
 
@@ -144,10 +146,34 @@ function kvStore(kv: KVNamespace): NamesStore {
 
 let chain: NamesChain | null = null;
 
-export function handleNamesRequest(request: Request, env: NamesEnv): Promise<Response> {
-  if (!env.NAMES_OPERATOR_KEY || !env.NAMES_KV) {
-    return Promise.resolve(reply({ error: 'name registration is not configured' }, 503));
-  }
+function configuredChain(env: NamesEnv): NamesChain | null {
+  if (!env.NAMES_OPERATOR_KEY) return null;
   chain ??= makeNamesChain(env.NAMES_OPERATOR_KEY as Hex, env.NAMES_RPC_URL ?? broviderRpc(8453));
-  return handleNames(request, { chain, store: kvStore(env.NAMES_KV) });
+  return chain;
+}
+
+const NOT_CONFIGURED = (): Response => reply({ error: 'name registration is not configured' }, 503);
+
+export function handleNamesRequest(request: Request, env: NamesEnv): Promise<Response> {
+  const namesChain = configuredChain(env);
+  if (!namesChain || !env.NAMES_KV || !env.NAMES_CLAIMS) return Promise.resolve(NOT_CONFIGURED());
+  const isClaim = new URL(request.url).pathname === `${NAMES_PREFIX}claim` && request.method === 'POST';
+  if (isClaim) return env.NAMES_CLAIMS.get(env.NAMES_CLAIMS.idFromName(CLAIMS_OBJECT_NAME)).fetch(request);
+  return handleNames(request, { chain: namesChain, store: kvStore(env.NAMES_KV) });
+}
+
+export class NamesClaims {
+  private readonly handle: (request: Request) => Promise<Response>;
+
+  constructor(state: DurableObjectState, env: NamesEnv) {
+    this.handle = serialized((request) => {
+      const namesChain = configuredChain(env);
+      if (!namesChain || !env.NAMES_KV) return Promise.resolve(NOT_CONFIGURED());
+      return handleNames(request, { chain: namesChain, store: claimsStore(state.storage, kvStore(env.NAMES_KV)) });
+    });
+  }
+
+  fetch(request: Request): Promise<Response> {
+    return this.handle(request);
+  }
 }
