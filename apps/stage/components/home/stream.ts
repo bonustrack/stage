@@ -3,8 +3,8 @@ import { presentInboundNotification } from '../../lib/pushNotify';
 import { isGroupUpdateTypeId, previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 import { getPeerName } from '../../lib/peerProfiles';
 import { isActiveConv } from '../../lib/readSyncRegistry';
-import { isControlBody, shortAddress, getConvConsentState } from '../../modules/messaging';
-import type { Row as RowT } from './helpers';
+import { isControlBody, shortAddress, getConvConsentState, setCachedRows } from '../../modules/messaging';
+import { homeRows } from './state';
 import { applyInbound } from '@stage-labs/client/xmtp/channelsCache';
 import { ROW_PREVIEW_MAX_CHARS, type StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { revivesClearedChat } from '@stage-labs/client/xmtp/readState';
@@ -29,7 +29,6 @@ interface NotifyCtx {
 
 interface MsgHandlerDeps {
   isCancelled: () => boolean;
-  setRows: (next: (p: RowT[] | null) => RowT[] | null) => void;
   refresh: () => Promise<void>;
 }
 
@@ -58,7 +57,7 @@ function makeMissRefresher(isCancelled: () => boolean, refresh: () => Promise<vo
   };
 }
 
-export function makeMsgStreamHandler({ isCancelled, setRows, refresh }: MsgHandlerDeps) {
+export function makeMsgStreamHandler({ isCancelled, refresh }: MsgHandlerDeps) {
   const onMiss = makeMissRefresher(isCancelled, refresh);
   return ({ convId: streamConvId, msg }: { convId: string | null; msg: StreamedMessage | null }): void => {
     if (isCancelled() || !msg) return;
@@ -70,7 +69,7 @@ export function makeMsgStreamHandler({ isCancelled, setRows, refresh }: MsgHandl
     const lastTs = msg.sentNs ? Math.floor(msg.sentNs / 1_000_000) : Date.now();
     const lastPreview = preview.slice(0, ROW_PREVIEW_MAX_CHARS);
 
-    const result = applyToRows(streamConvId, msg, lastTs, lastPreview, setRows);
+    const result = applyToRows(streamConvId, msg, lastTs, lastPreview);
     if (result.needsRefresh) onMiss(streamConvId);
     maybeNotify(result.notify, streamConvId, msg.id, lastPreview);
   };
@@ -78,39 +77,32 @@ export function makeMsgStreamHandler({ isCancelled, setRows, refresh }: MsgHandl
 
 function applyToRows(
   msgConvId: string | null, msg: StreamedMessage, lastTs: number, lastPreview: string,
-  setRows: MsgHandlerDeps['setRows'],
 ): { needsRefresh: boolean; notify: NotifyCtx | null } {
-  let needsRefresh = false;
-  let notify: NotifyCtx | null = null;
-  setRows(prev => {
-    if (!prev) return prev;
-    const target = prev.find(r => r.convId === msgConvId);
-    if (target?.peerAddress != null && isGroupUpdateTypeId(msg.contentTypeId)) return prev;
-    const result = applyInbound(
-      prev,
-      {
-        convId: msgConvId,
-        senderInboxId: msg.senderInboxId,
-        sentNs: msg.sentNs,
-        lastTs,
-        lastPreview,
-      },
-      cur => ({
-        avatarAddress: cur.peerAddress ?? cur.avatarAddress,
-        lastSenderAddress: cur.inboxToAddr[msg.senderInboxId] ?? null,
-        lastFromSelf: msg.senderInboxId === cur.selfInboxId,
-        lastBubbleTs: revivesClearedChat(msg.contentTypeId) ? lastTs : cur.lastBubbleTs,
-      }),
-    );
-    if (result === null) { needsRefresh = true; return prev; }
-    const senderAddr = result.current.inboxToAddr[msg.senderInboxId] ?? null;
-    notify = {
-      title: result.current.title, senderAddr,
-      isGroup: result.current.peerAddress == null, fromSelf: msg.senderInboxId === result.current.selfInboxId,
-    };
-    return result.next;
-  });
-  return { needsRefresh, notify };
+  const unchanged = { needsRefresh: false, notify: null };
+  const prev = homeRows();
+  if (!prev) return unchanged;
+  const target = prev.find(r => r.convId === msgConvId);
+  if (target?.peerAddress != null && isGroupUpdateTypeId(msg.contentTypeId)) return unchanged;
+  const result = applyInbound(
+    prev,
+    { convId: msgConvId, senderInboxId: msg.senderInboxId, sentNs: msg.sentNs, lastTs, lastPreview },
+    cur => ({
+      avatarAddress: cur.peerAddress ?? cur.avatarAddress,
+      lastSenderAddress: cur.inboxToAddr[msg.senderInboxId] ?? null,
+      lastFromSelf: msg.senderInboxId === cur.selfInboxId,
+      lastBubbleTs: revivesClearedChat(msg.contentTypeId) ? lastTs : cur.lastBubbleTs,
+    }),
+  );
+  if (result === null) return { needsRefresh: true, notify: null };
+  setCachedRows(result.next);
+  const { current } = result;
+  return {
+    needsRefresh: false,
+    notify: {
+      title: current.title, senderAddr: current.inboxToAddr[msg.senderInboxId] ?? null,
+      isGroup: current.peerAddress == null, fromSelf: msg.senderInboxId === current.selfInboxId,
+    },
+  };
 }
 
 function notifyTitleBody(n: NotifyCtx, preview: string): { title: string; body: string } {

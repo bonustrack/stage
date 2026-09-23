@@ -1,7 +1,12 @@
-export const NO_MESSAGES_PREVIEW = '(no messages yet)';
-export const SELF_PREVIEW_PREFIX = 'You: ';
+import { filterChannelRows, sortChannelRows } from '@stage-labs/client/xmtp/channelsFilter';
+import type { ConversationView } from '../../modules/messaging';
 
-export interface RowPreviewModel {
+export const NO_MESSAGES_PREVIEW = '(no messages yet)';
+export type Row = ConversationView & Record<string, unknown>;
+
+const SELF_PREVIEW_PREFIX = 'You: ';
+
+interface RowPreviewModel {
   preview: string | null | undefined;
   dm: boolean;
   fromSelf: boolean;
@@ -15,15 +20,15 @@ export function rowPreviewText(m: RowPreviewModel): string {
   return `${m.senderLabel}: ${m.preview}`;
 }
 
-export interface LabelBarChip {
+interface LabelBarChip {
   value: string;
   label: string;
   selected?: boolean;
 }
 
-export const UNREAD_FILTER_VALUE = '__unread__';
+const UNREAD_FILTER_VALUE = '__unread__';
 
-export interface ChannelsFilterModel {
+interface ChannelsFilterModel {
   barLabels: string[];
   enabledLabels: ReadonlySet<string>;
   unreadOnly: boolean;
@@ -42,7 +47,7 @@ export function channelsLabelChips(m: ChannelsFilterModel): LabelBarChip[] {
   ];
 }
 
-export interface ChannelsFilterBarModel {
+interface ChannelsFilterBarModel {
   labelCount: number;
   unreadOnly: boolean;
   enabledLabelsCount: number;
@@ -52,7 +57,7 @@ export function channelsFilterBarVisible(m: ChannelsFilterBarModel): boolean {
   return m.labelCount > 0 || m.unreadOnly || m.enabledLabelsCount > 0;
 }
 
-export interface ChannelsFilterHandlers {
+interface ChannelsFilterHandlers {
   onClearAll: () => void;
   onToggleUnread: () => void;
   onToggleLabel: (label: string) => void;
@@ -64,22 +69,30 @@ export function selectChannelsFilter(h: ChannelsFilterHandlers, value: string): 
   h.onToggleLabel(value);
 }
 
-export interface ChannelsOverflowItem {
+interface ChannelsOverflowItem {
   id: string;
   label: string;
   icon: string;
 }
 
-export function channelsOverflowItems(features: { copyAddress?: boolean } = {}): ChannelsOverflowItem[] {
-  const items: ChannelsOverflowItem[] = [
-    { id: 'new', label: 'New group', icon: 'plus' },
-  ];
-  if (features.copyAddress === true) {
-    items.push({ id: 'copy-address', label: 'Copy address', icon: 'copy' });
-  }
-  items.push(
-    { id: 'profile', label: 'Profile', icon: 'user' },
-    { id: 'settings', label: 'Settings', icon: 'cog' },
-  );
-  return items;
+export const CHANNELS_OVERFLOW_ITEMS: ChannelsOverflowItem[] = [
+  { id: 'new', label: 'New group', icon: 'plus' },
+  { id: 'copy-address', label: 'Copy address', icon: 'copy' },
+  { id: 'profile', label: 'Profile', icon: 'user' },
+  { id: 'settings', label: 'Settings', icon: 'cog' },
+];
+
+interface SortInputs {
+  rows: Row[] | null;
+  enabledLabels: Set<string>;
+  unreadOnly: boolean;
+  pinned: readonly string[];
+}
+
+export function deriveSortedRows(i: SortInputs): Row[] {
+  const filtered = filterChannelRows(i.rows ?? [], {
+    enabledLabels: i.enabledLabels,
+    unreadOnly: i.unreadOnly,
+  });
+  return sortChannelRows(filtered, i.pinned);
 }

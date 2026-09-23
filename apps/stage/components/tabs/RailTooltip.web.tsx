@@ -11,7 +11,7 @@ function hoverRect(event: { currentTarget: unknown }): DomRectLike | undefined {
   return target?.getBoundingClientRect?.();
 }
 
-export type TooltipPlacement = 'beside' | 'above' | 'below';
+type TooltipPlacement = 'beside' | 'above' | 'below';
 
 function tooltipState(placement: TooltipPlacement, label: string, rect: DomRectLike): RailTooltipState {
   const centerX = rect.left + rect.width / 2;

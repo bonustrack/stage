@@ -12,17 +12,14 @@ import { EmptyState } from '../chrome/EmptyState';
 import { shortAddress } from '../../modules/messaging';
 import { resolveHandleToAddress } from '../../lib/resolveHandle';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
-import { getCachedRows } from '../../modules/messaging';
 import { peerAvatarUrl } from '../../lib/peerProfiles';
 import { peopleLookup } from './contacts.model';
+import { homeRows } from './state';
 
 function getExistingPeers(): { address: string; convId: string }[] {
-  const rows = getCachedRows() ?? [];
   const seen = new Set<string>();
   const peers: { address: string; convId: string }[] = [];
-  for (const r of rows) {
-    const a = (r as { peerAddress?: string | null; convId?: string }).peerAddress;
-    const cid = (r as { peerAddress?: string | null; convId?: string }).convId;
+  for (const { peerAddress: a, convId: cid } of homeRows() ?? []) {
     if (!a || !cid) continue;
     const k = a.toLowerCase();
     if (seen.has(k)) continue;

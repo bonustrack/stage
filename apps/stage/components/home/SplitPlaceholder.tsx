@@ -5,7 +5,6 @@ import { PageIntro } from '../chrome/PageIntro';
 import { PAGE_INTRO_MAX_WIDTH, PAGE_INTRO_TYPE } from '../chrome/PageIntro.model';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { SUGGESTED_CONTACTS } from '../SuggestedContacts.model';
-import { SPLIT_PLACEHOLDER_COPY } from './SplitPlaceholder.model';
 
 const SELF_CENTER = { alignSelf: 'center' } as const;
 
@@ -16,10 +15,10 @@ export function SplitPlaceholder(): React.ReactElement {
   return (
     <Col flex={1} align="center" justify="center" surface="surface" style={[viewportFill(), PANE_LEFT_PAD]}>
       <Col gap={PAGE_INTRO_TYPE.sectionGap} width="100%" maxWidth={PAGE_INTRO_MAX_WIDTH} padding={{ x: PAGE_INTRO_TYPE.padX }}>
-        <PageIntro title={SPLIT_PLACEHOLDER_COPY.title} about={SPLIT_PLACEHOLDER_COPY.about} />
+        <PageIntro title="Get started" about="Select a chat to start messaging" />
         {alice === undefined ? null : (
           <Button
-            dark={dark} size="lg" pill color="primary" variant="solid" label={SPLIT_PLACEHOLDER_COPY.action} style={SELF_CENTER}
+            dark={dark} size="lg" pill color="primary" variant="solid" label="Talk to Alice" style={SELF_CENTER}
             onPress={() => { router.push({ pathname: '/[convId]', params: { convId: alice } }); }}
           />
         )}

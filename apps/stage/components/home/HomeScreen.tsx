@@ -17,33 +17,9 @@ import { deriveLabels, useHomeFilters } from './labelbar';
 import { filterChannelRows } from '@stage-labs/client/xmtp/channelsFilter';
 import { isRowCleared } from '@stage-labs/client/xmtp/readState';
 import { useClearedChats } from '../../lib/clearedChats';
-import { channelsFilterBarVisible } from './model';
-import { useHomeState, type HomeState } from './state';
-import { deriveSortedRows } from './helpers';
+import { channelsFilterBarVisible, deriveSortedRows } from './model';
+import { useHomeState } from './state';
 import { usePinDrag } from './pinDrag';
-
-function rowMenuProps(rowMenu: HomeState['rowMenu'], pinned: readonly string[]) {
-  if (!rowMenu) {
-    return {
-      visible: false, convId: '', isGroup: false,
-      peerAddress: null, isUnread: false, isPinned: false, anchor: null,
-    };
-  }
-  return {
-    visible: true,
-    convId: rowMenu.convId,
-    isGroup: rowMenu.isGroup,
-    peerAddress: rowMenu.peerAddress,
-    isUnread: rowMenu.isUnread,
-    isPinned: pinned.includes(rowMenu.convId),
-    anchor: rowMenu.anchor ?? null,
-  };
-}
-
-function HomeRowMenu({ st }: { st: HomeState }): React.ReactElement {
-  const { rowMenu, pinned, setRowMenu } = st;
-  return <ChannelMenu {...rowMenuProps(rowMenu, pinned)} onClose={() => { setRowMenu(null); }} />;
-}
 
 export function HomeScreen({ panRef, pane }: { panRef?: SimultaneousRefs; pane?: boolean } = {}): React.ReactElement {
   const splitHome = useWebTabRail() && pane !== true;
@@ -57,7 +33,7 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head } = usePalette();
   const st = useHomeState();
-  const { rows, pinned } = st;
+  const { rows, pinned, rowMenu } = st;
   const { enabledLabels, toggleLabel, unreadOnly, toggleUnread, clearAllFilters } = useHomeFilters();
   const [query, setQuery] = useState<string>('');
 
@@ -83,10 +59,7 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
   const draftsVersion = useDraftsVersion();
   const accountEpoch = useActiveAccount();
 
-  useChannelsSync({
-    accountEpoch, rows, setRowsState: st.setRowsState, setRows: st.setRows,
-    setError: st.setError,
-  });
+  useChannelsSync({ accountEpoch, setError: st.setError });
 
   const activePath = pane ? pathname : '';
   const listExtraData = useMemo(
@@ -108,24 +81,26 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
   if (st.error) return <HomeError error={st.error} dark={dark} fg={fg} />;
   if (!rows) return <HomeSpinner head={head} />;
 
-  const list = (
-    <ChannelsList
-      panRef={panRef} router={router} sortedRows={visibleRows}
-      barLabels={barLabels} showFilterBar={showFilterBar}
-      enabledLabels={enabledLabels} onToggleLabel={toggleLabel}
-      unreadOnly={unreadOnly} onToggleUnread={toggleUnread} onClearAll={clearAllFilters}
-      query={query} setQuery={setQuery}
-      listExtraData={listExtraData}
-      scroll={st.scroll}
-      renderRow={renderRow}
-      pane={pane}
-    />
-  );
-
   return (
     <Col flex={1} surface="surface">
-      {list}
-      <HomeRowMenu st={st} />
+      <ChannelsList
+        panRef={panRef} router={router} sortedRows={visibleRows}
+        barLabels={barLabels} showFilterBar={showFilterBar}
+        enabledLabels={enabledLabels} onToggleLabel={toggleLabel}
+        unreadOnly={unreadOnly} onToggleUnread={toggleUnread} onClearAll={clearAllFilters}
+        query={query} setQuery={setQuery}
+        listExtraData={listExtraData}
+        scroll={st.scroll}
+        renderRow={renderRow}
+        pane={pane}
+      />
+      {rowMenu ? (
+        <ChannelMenu
+          visible convId={rowMenu.convId} isGroup={rowMenu.isGroup} peerAddress={rowMenu.peerAddress}
+          isUnread={rowMenu.isUnread} isPinned={pinned.includes(rowMenu.convId)} anchor={rowMenu.anchor ?? null}
+          onClose={() => { st.setRowMenu(null); }}
+        />
+      ) : null}
     </Col>
   );
 }

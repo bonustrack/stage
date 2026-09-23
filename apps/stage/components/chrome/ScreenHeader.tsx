@@ -8,7 +8,7 @@ import { Title, type TitleSizeToken } from '@stage-labs/kit/react-native/title';
 import { resolveColorToken } from '@stage-labs/kit/tokens';
 import { Box, Row, STICKY_TOP } from '../layout';
 
-export type ScreenHeaderTitleStyle =
+type ScreenHeaderTitleStyle =
   | {
       kind: 'text';
       size?: TextSizeToken;
@@ -23,7 +23,7 @@ export type ScreenHeaderTitleStyle =
       color?: string;
     };
 
-export interface ScreenHeaderProps {
+interface ScreenHeaderProps {
   title?: string;
   titleStyle?: ScreenHeaderTitleStyle;
   onBack: () => void;

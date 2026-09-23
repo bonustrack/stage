@@ -3,11 +3,53 @@ import { appStorage } from '../platform/storage';
 
 export const CHANNELS_SCROLL_KEY = 'scroll:channels';
 export function convScrollKey(convId: string): string { return `scroll:conv:${convId}`; }
-export function convAnchorKey(convId: string): string { return `scroll:anchor:${convId}`; }
+function convAnchorKey(convId: string): string { return `scroll:anchor:${convId}`; }
 
 export interface FeedAnchor { key: string; offset: number }
 
-const anchors = new Map<string, FeedAnchor | null>();
+const WRITE_DEBOUNCE_MS = 300;
+
+export const AT_BOTTOM_THRESHOLD_PX = 24;
+
+function debouncedKv<T>(parse: (raw: string | null) => T | undefined, write: (key: string, value: T) => Promise<void>) {
+  const values = new Map<string, T>();
+  const timers = new Map<string, ReturnType<typeof setTimeout>>();
+  const persist = (key: string): void => {
+    const v = values.get(key);
+    if (v !== undefined) void write(key, v).catch(() => undefined);
+  };
+  return {
+    peek: (key: string): T | undefined => values.get(key),
+    async get(key: string): Promise<T | undefined> {
+      if (values.has(key)) return values.get(key);
+      const v = parse(await appStorage.get(key).catch(() => null));
+      if (v !== undefined) values.set(key, v);
+      return v;
+    },
+    save(key: string, value: T): void {
+      values.set(key, value);
+      const existing = timers.get(key);
+      if (existing) clearTimeout(existing);
+      timers.set(key, setTimeout(() => { timers.delete(key); persist(key); }, WRITE_DEBOUNCE_MS));
+    },
+    flush(key: string, override?: T): void {
+      const t = timers.get(key);
+      if (t) { clearTimeout(t); timers.delete(key); }
+      if (override !== undefined) values.set(key, override);
+      if (override !== undefined || t) persist(key);
+    },
+  };
+}
+
+function isOffset(n: number | undefined): n is number {
+  return n != null && Number.isFinite(n) && n >= 0;
+}
+
+function parseOffset(raw: string | null): number | undefined {
+  if (raw == null) return undefined;
+  const n = Number(raw);
+  return isOffset(n) ? n : undefined;
+}
 
 function parseAnchor(raw: string | null): FeedAnchor | null {
   if (raw === null) return null;
@@ -20,63 +62,34 @@ function parseAnchor(raw: string | null): FeedAnchor | null {
   return null;
 }
 
+const offsets = debouncedKv<number>(parseOffset, (key, v) => appStorage.set(key, String(v)));
+const anchors = debouncedKv<FeedAnchor | null>(
+  parseAnchor,
+  (key, v) => (v === null ? appStorage.delete(key) : appStorage.set(key, JSON.stringify(v))),
+);
+
 export function peekFeedAnchor(convId: string): FeedAnchor | null | undefined {
-  return anchors.get(convAnchorKey(convId));
+  return anchors.peek(convAnchorKey(convId));
 }
 
 export async function getFeedAnchor(convId: string): Promise<FeedAnchor | null> {
-  const key = convAnchorKey(convId);
-  const cached = anchors.get(key);
-  if (cached !== undefined) return cached;
-  const anchor = parseAnchor(await appStorage.get(key).catch(() => null));
-  anchors.set(key, anchor);
-  return anchor;
+  return (await anchors.get(convAnchorKey(convId))) ?? null;
 }
 
 export function saveFeedAnchor(convId: string, anchor: FeedAnchor | null): void {
-  const key = convAnchorKey(convId);
-  anchors.set(key, anchor);
-  const existing = timers.get(key);
-  if (existing) clearTimeout(existing);
-  timers.set(key, setTimeout(() => {
-    timers.delete(key);
-    const write = anchor === null ? appStorage.delete(key) : appStorage.set(key, JSON.stringify(anchor));
-    void write.catch(() => undefined);
-  }, WRITE_DEBOUNCE_MS));
+  anchors.save(convAnchorKey(convId), anchor);
 }
-
-const cache = new Map<string, number>();
-const timers = new Map<string, ReturnType<typeof setTimeout>>();
-
-const WRITE_DEBOUNCE_MS = 300;
-
-export const AT_BOTTOM_THRESHOLD_PX = 24;
 
 export function peekScrollOffset(key: string): number | undefined {
-  return cache.get(key);
+  return offsets.peek(key);
 }
 
-export async function getScrollOffset(key: string): Promise<number | undefined> {
-  if (cache.has(key)) return cache.get(key);
-  try {
-    const raw = await appStorage.get(key);
-    if (raw == null) return undefined;
-    const n = Number(raw);
-    if (!Number.isFinite(n) || n < 0) return undefined;
-    cache.set(key, n);
-    return n;
-  } catch { return undefined; }
+export function getScrollOffset(key: string): Promise<number | undefined> {
+  return offsets.get(key);
 }
 
 export function saveScrollOffset(key: string, offset: number): void {
-  if (!Number.isFinite(offset) || offset < 0) return;
-  cache.set(key, offset);
-  const existing = timers.get(key);
-  if (existing) clearTimeout(existing);
-  timers.set(key, setTimeout(() => {
-    timers.delete(key);
-    void appStorage.set(key, String(cache.get(key) ?? offset)).catch(() => undefined);
-  }, WRITE_DEBOUNCE_MS));
+  if (isOffset(offset)) offsets.save(key, offset);
 }
 
 export function planFeedRestore(args: {
@@ -101,14 +114,5 @@ export function markConvAtBottom(convId: string): void {
 }
 
 export function flushScrollOffset(key: string, override?: number): void {
-  const t = timers.get(key);
-  if (t) { clearTimeout(t); timers.delete(key); }
-  if (override != null && Number.isFinite(override) && override >= 0) {
-    cache.set(key, override);
-    void appStorage.set(key, String(override)).catch(() => undefined);
-    return;
-  }
-  if (!t) return;
-  const v = cache.get(key);
-  if (v != null) void appStorage.set(key, String(v)).catch(() => undefined);
+  offsets.flush(key, isOffset(override) ? override : undefined);
 }

@@ -4,7 +4,6 @@ import { Icon } from '@stage-labs/kit/react-native/icon';
 import { VirtualList } from '../layout';
 import { CHANNELS_SCROLL_KEY, saveScrollOffset } from '../../lib/scrollPos';
 import { HistorySyncBanner, MessagingSetupBanner } from '../system/HistorySync';
-import type { Row as RowT } from './helpers';
 import { LabelFilterBar } from './labelbar';
 import { SearchTopnavBar } from '../SearchTopnavBar';
 import { HomeContactResults } from './contacts';
@@ -14,14 +13,14 @@ import { usePublishTopnavSlot, type TopnavSlot } from '../tabs/topnavSlots';
 import { getActiveAccount } from '../../lib/accounts';
 import { profileLinkOf } from '../../lib/links';
 import { SuggestedContacts } from '../SuggestedContacts';
-import { getCachedRows } from '../../modules/messaging';
 import { usePalette } from '../../lib/theme';
-import type { ScrollRefs } from './state';
+import { homeRows, type ScrollRefs } from './state';
+import type { Row } from './model';
 
 interface ChannelsListProps {
   panRef?: import('../SwipeTabs.types').SimultaneousRefs;
   router: { push: (to: string | { pathname: string; params: Record<string, string> }) => void };
-  sortedRows: RowT[];
+  sortedRows: Row[];
   barLabels: string[];
   showFilterBar: boolean;
   enabledLabels: Set<string>;
@@ -33,14 +32,12 @@ interface ChannelsListProps {
   setQuery: (v: string) => void;
   listExtraData: readonly unknown[];
   scroll: ScrollRefs;
-  renderRow: ({ item }: { item: RowT }) => React.ReactElement;
+  renderRow: ({ item }: { item: Row }) => React.ReactElement;
   pane: boolean;
 }
 
-function knownPeerAddresses(rows: readonly Record<string, unknown>[] | null): string[] {
-  const out: string[] = [];
-  for (const row of rows ?? []) { const peer = row.peerAddress; if (typeof peer === 'string') out.push(peer); }
-  return out;
+function knownPeerAddresses(rows: readonly Row[] | null): string[] {
+  return (rows ?? []).flatMap(r => (r.peerAddress === null ? [] : [r.peerAddress]));
 }
 
 function HomeTopnavRight({ head, router, onOpenSearch }: {
@@ -111,7 +108,7 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
   const closeSearch = (): void => { setSearchOpen(false); setQuery(''); };
   const slot = useHomeTopnav(props, searchOpen, openSearch, closeSearch);
   const contentStyle = { paddingTop: 12, paddingBottom: 24 };
-  const knownPeers = useMemo(() => knownPeerAddresses(getCachedRows()), [sortedRows]);
+  const knownPeers = useMemo(() => knownPeerAddresses(homeRows()), [sortedRows]);
 
   return (
     <>

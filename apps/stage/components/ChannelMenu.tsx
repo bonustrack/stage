@@ -103,10 +103,7 @@ export function ChannelMenu({
     delete: () => { if (peerAddress) confirmDeleteChat(convId, peerAddress, context, router, onClose); },
   };
 
-  const items = channelMenuItems(
-    { isGroup, hasPeer: !!peerAddress, isUnread, isPinned },
-    { search: !!onSearch, addMembers: true, pin: true, info: true, leaveGroup: true, deleteChat: true },
-  );
+  const items = channelMenuItems({ isGroup, hasPeer: !!peerAddress, isUnread, isPinned }, { search: !!onSearch });
 
   return (
     <AnchoredMenu visible={visible} onClose={onClose} anchor={anchor}>

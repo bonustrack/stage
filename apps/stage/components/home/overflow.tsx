@@ -1,4 +1,4 @@
-import { channelsOverflowItems } from './model';
+import { CHANNELS_OVERFLOW_ITEMS } from './model';
 import { OverflowMenu } from '../MenuRows';
 import { getActiveAccount } from '../../lib/accounts';
 import { capabilities } from '../../lib/capabilities';
@@ -22,7 +22,7 @@ export function HomeOverflowMenu({ color, onNewGroup, onProfile, onSettings }: H
     new: onNewGroup, 'copy-address': copyActiveAddress, profile: onProfile, settings: onSettings,
   };
   return (
-    <OverflowMenu color={color} items={channelsOverflowItems({ copyAddress: true })}
+    <OverflowMenu color={color} items={CHANNELS_OVERFLOW_ITEMS}
       onSelect={(id) => { handlers[id]?.(); }} />
   );
 }

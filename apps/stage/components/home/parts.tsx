@@ -14,7 +14,7 @@ import { reloadApp } from '../../lib/reloadApp';
 import { getPeerName, isPeerResolved } from '../../lib/peerProfiles';
 import { getDraft } from '../../lib/drafts';
 import { conversationLinkOf, isActiveConversationPathFor } from '../../lib/links';
-import type { Row as RowT } from './helpers';
+import type { Row as RowT } from './model';
 import type { RowMenu } from './state';
 import { channelTimestamp } from '../../lib/format';
 import { DANGER } from '../../lib/theme';

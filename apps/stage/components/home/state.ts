@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import type { VirtualListHandle } from '../layout';
 import { getCachedRows, setCachedRows, subscribeCachedRows } from '../../modules/messaging';
 import { usePinnedOrder } from '../../lib/pins';
+import { useStoreValue } from '../../lib/storeCore';
 import {
   CHANNELS_SCROLL_KEY, getScrollOffset, peekScrollOffset, flushScrollOffset,
 } from '../../lib/scrollPos';
-import type { Row as RowT } from './helpers';
 import type { MenuPoint } from '../AnchoredMenu.model';
+import type { Row } from './model';
 
 export interface RowMenu {
   convId: string;
@@ -22,27 +23,24 @@ export interface ScrollRefs {
   didRestoreRef: React.MutableRefObject<boolean>;
 }
 
-export interface HomeState {
-  rows: RowT[] | null;
-  setRowsState: React.Dispatch<React.SetStateAction<RowT[] | null>>;
-  setRows: (next: RowT[] | null | ((p: RowT[] | null) => RowT[] | null)) => void;
+interface HomeState {
+  rows: Row[] | null;
   error: string; setError: React.Dispatch<React.SetStateAction<string>>;
   rowMenu: RowMenu | null; setRowMenu: React.Dispatch<React.SetStateAction<RowMenu | null>>;
   pinned: readonly string[];
   scroll: ScrollRefs;
 }
 
-export function useHomeState(): HomeState {
-  const [rows, setRowsState] = useState<RowT[] | null>(getCachedRows() as RowT[] | null);
-  const setRows = (next: RowT[] | null | ((p: RowT[] | null) => RowT[] | null)): void => {
-    if (typeof next === 'function') {
-      setRowsState(prev => { const v = next(prev); setCachedRows(v); return v; });
-    } else {
-      setRowsState(next); setCachedRows(next);
-    }
-  };
-  useEffect(() => subscribeCachedRows(r => { setRowsState(r as RowT[] | null); }), []);
+export function homeRows(): Row[] | null {
+  return getCachedRows() as Row[] | null;
+}
 
+export function updateHomeRows(fn: (prev: Row[] | null) => Row[] | null): void {
+  setCachedRows(fn(homeRows()));
+}
+
+export function useHomeState(): HomeState {
+  const rows = useStoreValue(subscribeCachedRows, homeRows);
   const [error, setError] = useState<string>('');
   const [rowMenu, setRowMenu] = useState<RowMenu | null>(null);
   const pinned = usePinnedOrder();
@@ -57,7 +55,7 @@ export function useHomeState(): HomeState {
   }, []);
 
   return {
-    rows, setRowsState, setRows, error, setError, rowMenu, setRowMenu,
+    rows, error, setError, rowMenu, setRowMenu,
     pinned,
     scroll: { listRef, savedOffsetRef, didRestoreRef },
   };
