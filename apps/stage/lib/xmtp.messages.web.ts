@@ -73,7 +73,7 @@ function base64ToBytes(b64: string): Uint8Array {
 }
 
 export const {
-  xmtpSendText, xmtpReact, xmtpSendPoll, xmtpSendSignatureRequest, xmtpSendSignatureReference,
+  xmtpSendText, xmtpReact, xmtpSendJson, xmtpSendPoll, xmtpSendSignatureRequest, xmtpSendSignatureReference,
   xmtpSendTxRequest, xmtpSendTxReference, xmtpVote, xmtpOpenAnswer, xmtpReply, xmtpSendAttachment,
 } = makeSenders({
   text: async (line, text) => (await requireConv(line)).sendText(text),

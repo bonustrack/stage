@@ -9,12 +9,9 @@ import {
 import {
   semanticColors, kitPalette, type KitPalette,
 } from '@stage-labs/kit/tokens';
-import {
-  getSeeds, loadOverrides, isCustomTheme,
-  subscribe as subscribeOverrides,
-} from './colorOverrides';
 import { derivePalette } from '@stage-labs/kit/theme-derive';
-import { makeListeners, useStoreValue } from './storeCore';
+import { createValueStore } from './persistedStore';
+import { useCustomTheme, useThemeSeeds } from './colorOverrides';
 
 export {
   setCustomTheme, resetOverrides, seedColorHex,
@@ -23,50 +20,26 @@ export {
   type SeedColorKey,
 } from './colorOverrides';
 
-export function useThemeSeeds(): import('./colorOverrides').ThemeSeeds {
-  return useStoreValue(subscribeOverrides, getSeeds, loadOverrides);
-}
-
-export function useCustomTheme(): boolean {
-  return useStoreValue(subscribeOverrides, isCustomTheme, loadOverrides);
-}
+export { useCustomTheme, useThemeSeeds };
 
 export type { ThemePreference };
 
 export const DANGER = semanticColors.dangerColor.dark;
 export const SUCCESS = semanticColors.successColor.dark;
 
-let cached: ThemePreference = 'system';
-let loaded = false;
-const listeners = makeListeners<ThemePreference>();
-
-function emit(p: ThemePreference): void {
-  cached = p;
-  listeners.notify(p);
-}
-
-async function ensureLoaded(): Promise<void> {
-  if (loaded) return;
-  loaded = true;
-  try {
-    const v = await secureStorage.get(STORAGE_KEY);
-    if (isThemePreference(v)) emit(v);
-  } catch { }
-}
+const preference = createValueStore<ThemePreference>({
+  key: STORAGE_KEY,
+  default: 'system',
+  storage: secureStorage,
+  deserialize: (raw) => (isThemePreference(raw) ? raw : undefined),
+});
 
 export async function setThemePreference(p: ThemePreference): Promise<void> {
   if (!isThemePreference(p)) return;
-  emit(p);
-  try { await secureStorage.set(STORAGE_KEY, p); } catch { }
+  await preference.setAsync(p);
 }
 
-function getThemePreference(): ThemePreference { return cached; }
-
-function primeThemePreference(): void { void ensureLoaded(); }
-
-export function useThemePreference(): ThemePreference {
-  return useStoreValue(listeners.subscribe, getThemePreference, primeThemePreference);
-}
+export const useThemePreference = (): ThemePreference => preference.use();
 
 export function useEffectiveColorScheme(): 'light' | 'dark' {
   const pref = useThemePreference();

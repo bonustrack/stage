@@ -1,9 +1,8 @@
 import { AppState } from 'react-native';
 import { File } from 'expo-file-system';
 import { appDocumentsDir } from './appDocuments';
-import { PersistentStore as SharedStore, type PersistenceBackend } from './cache.shared';
 
-const fileBackend: PersistenceBackend = {
+export const persistenceBackend = {
   async read<T>(name: string): Promise<T | null> {
     try {
       const f = new File(appDocumentsDir(), name);
@@ -21,9 +20,3 @@ const fileBackend: PersistenceBackend = {
     AppState.addEventListener('change', (state) => { if (state !== 'active') flushAll(); });
   },
 };
-
-export class PersistentStore<T> extends SharedStore<T> {
-  constructor(fileName: string, debounced = false) { super(fileBackend, fileName, debounced); }
-}
-
-export { MemoryStore, getSecure, setSecure } from './cache.shared';

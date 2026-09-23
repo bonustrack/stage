@@ -1,20 +1,10 @@
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { AppState, Keyboard } from 'react-native';
 import { loadDrafts, getDraft, setDraft } from '../../lib/drafts';
-import { loadLastAttachment, getLastAttachment, subscribeLastAttachment } from '../../lib/lastAttachment';
 import { computeMentionQuery, matchMembers } from '@stage-labs/client/xmtp/mentions';
 
-export function useLastAttachment(): string | undefined {
-  const [label, setLabel] = useState<string | undefined>(getLastAttachment);
-  useEffect(() => {
-    loadLastAttachment();
-    const sync = (): void => { setLabel(getLastAttachment()); };
-    sync();
-    return subscribeLastAttachment(sync);
-  }, []);
-  return label;
-}
+export { useLastAttachment } from '../../lib/lastAttachment';
 
 export function useCaretToEnd(
   text: string,

@@ -19,12 +19,36 @@ const stateKey = (installationId: string): string => `push.server.${installation
 
 export interface PushTopics { topics: string[]; hmacKeys: HmacKeysByTopic }
 
-export interface PushRegistrationInput {
+interface PushRegistrationInput {
   installationId: string;
   platform: PushPlatform;
   rpcUrl: (method: string) => string;
   getToken: () => Promise<string | null>;
   collectTopics: () => Promise<PushTopics>;
+}
+
+export type PushPermission = 'granted' | 'denied' | 'undetermined';
+
+const TOPIC_REFRESH_DEBOUNCE_MS = 1_500;
+
+export function toPermission(status: string): PushPermission {
+  if (status === 'granted') return 'granted';
+  if (status === 'denied') return 'denied';
+  return 'undetermined';
+}
+
+export function makeTopicRefresh<C>(
+  getClient: () => C | null | undefined, register: (client: C) => Promise<void>,
+): () => void {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  return () => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => {
+      timer = null;
+      const client = getClient();
+      if (client) void register(client);
+    }, TOPIC_REFRESH_DEBOUNCE_MS);
+  };
 }
 
 interface RegisterState { token: string; at: number; topics: string }

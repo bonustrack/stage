@@ -1,13 +1,16 @@
 import { secureStorage } from '../platform/storage';
+import { persistenceBackend } from './cache';
 import { hydrateOnce, makeListeners } from './storeCore';
 
 const FLUSH_DEBOUNCE_MS = 1_500;
 
-export interface PersistenceBackend {
+interface PersistenceBackend {
   read<T>(name: string): Promise<T | null>;
   write(name: string, value: unknown): void;
   onFlushSignal(flushAll: () => void): void;
 }
+
+const backend: PersistenceBackend = persistenceBackend;
 
 const dirtyStores = new Set<{ flushNow: () => void }>();
 let flushSignalWired = false;
@@ -25,9 +28,9 @@ export class PersistentStore<T> {
   private dirty = false;
 
   constructor(
-    private readonly backend: PersistenceBackend,
     private readonly fileName: string,
     private readonly debounced = false,
+    private readonly flushDelayMs = FLUSH_DEBOUNCE_MS,
   ) {
     if (debounced && !flushSignalWired) {
       flushSignalWired = true;
@@ -36,7 +39,7 @@ export class PersistentStore<T> {
   }
 
   private writeBacking(): void {
-    this.backend.write(this.fileName, this.value);
+    backend.write(this.fileName, this.value);
     this.dirty = false;
     dirtyStores.delete(this);
   }
@@ -47,7 +50,7 @@ export class PersistentStore<T> {
   }
 
   private async readBacking(): Promise<T | null> {
-    const stored = await this.backend.read<T>(this.fileName);
+    const stored = await backend.read<T>(this.fileName);
     if (stored !== null) {
       this.value = stored;
       this.notify(this.value);
@@ -73,7 +76,7 @@ export class PersistentStore<T> {
     this.flushTimer = setTimeout(() => {
       this.flushTimer = null;
       this.writeBacking();
-    }, FLUSH_DEBOUNCE_MS) as unknown as number;
+    }, this.flushDelayMs) as unknown as number;
   }
 
   clear(): void {
@@ -82,7 +85,7 @@ export class PersistentStore<T> {
     dirtyStores.delete(this);
     this.value = null;
     this.hydration.reset();
-    this.backend.write(this.fileName, null);
+    backend.write(this.fileName, null);
     this.notify(null);
   }
 

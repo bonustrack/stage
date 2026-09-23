@@ -5,15 +5,14 @@ import { getAllPushTopics, getHmacKeys } from '@xmtp/react-native-sdk';
 import { groupIdOfTopic, type HmacKeysByTopic, type PushPlatform } from '@stage-labs/client/xmtp/pushServer';
 import { isSyncGroupName } from '@stage-labs/client/xmtp/readState';
 import { getDeviceFcmToken } from './push.device';
-import { directRpcUrl, runPushRegistration, runPushUnregistration, type PushTopics } from './pushRegister.core';
+import {
+  directRpcUrl, makeTopicRefresh, runPushRegistration, runPushUnregistration, toPermission,
+  type PushPermission, type PushTopics,
+} from './pushRegister.core';
 import { setPushStatus } from './pushStatus';
 import { getCachedXmtpClient } from './xmtp.state';
 
 export { usePushDeepLinks } from './pushRegister.deeplink';
-
-export type PushPermission = 'granted' | 'denied' | 'undetermined';
-
-const TOPIC_REFRESH_DEBOUNCE_MS = 1_500;
 
 type PushClient = Pick<Client, 'installationId' | 'conversations'>;
 
@@ -65,22 +64,11 @@ export async function unregisterPushFromServer(client: PushClient): Promise<void
   await runPushUnregistration(client.installationId, directRpcUrl);
 }
 
-let topicRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+const refreshTopics = makeTopicRefresh(() => getCachedXmtpClient(), registerPushWithServer);
 
 export function schedulePushTopicRefresh(): void {
   if (platformTag() === null) return;
-  if (topicRefreshTimer) clearTimeout(topicRefreshTimer);
-  topicRefreshTimer = setTimeout(() => {
-    topicRefreshTimer = null;
-    const client = getCachedXmtpClient();
-    if (client) void registerPushWithServer(client);
-  }, TOPIC_REFRESH_DEBOUNCE_MS);
-}
-
-function toPermission(status: string): PushPermission {
-  if (status === 'granted') return 'granted';
-  if (status === 'denied') return 'denied';
-  return 'undetermined';
+  refreshTopics();
 }
 
 export async function getPushPermission(): Promise<PushPermission> {

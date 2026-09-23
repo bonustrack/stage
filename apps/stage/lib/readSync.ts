@@ -15,13 +15,12 @@ import {
   type PinChange, type ReadStateChange,
 } from './readSyncRegistry';
 import { setLastReadNs, setMarkedUnreadFlag } from './xmtp.client';
-import {
-  createSyncGroup, listSyncGroups, recentSyncMessages, sendClearState, sendPinState, sendReadState,
-  syncConversation,
-} from './xmtp.readSync';
+import { xmtpSendJson } from './xmtp.messages';
+import { createSyncGroup, listSyncGroups, recentSyncMessages, syncConversation } from './xmtp.readSync';
 import { waitForXmtpReady } from './xmtp.state';
 import { subscribeAllMessages } from './xmtp.stream';
-import type { StreamMsg } from './xmtp.types';
+import { lineOfConv, type StreamMsg } from './xmtp.types';
+import { CLEAR_STATE_CODEC, PIN_STATE_CODEC, READ_STATE_CODEC, type JsonCodec } from './xmtpJsonCodecs';
 
 const CURSOR_PREFIX = 'readSync.cursor.';
 const REPLAY_LIMIT = 500;
@@ -121,7 +120,7 @@ async function boot(): Promise<void> {
   }
 }
 
-async function withGroup(send: (groupId: string) => Promise<void>): Promise<void> {
+async function withGroup(send: (groupId: string) => Promise<unknown>): Promise<void> {
   try {
     const rec = await getActiveAccount().catch(() => null);
     if (rec === null) return;
@@ -129,6 +128,10 @@ async function withGroup(send: (groupId: string) => Promise<void>): Promise<void
   } catch (err) {
     warn('publish', err);
   }
+}
+
+function publish<T>(codec: JsonCodec<T>, content: T): void {
+  void withGroup((id) => xmtpSendJson(lineOfConv(id), codec, content));
 }
 
 function debounce(key: string, fn: () => void): void {
@@ -144,7 +147,7 @@ function queueReadPublish(change: ReadStateChange): void {
   const at = Date.now();
   localAt.set(readKey(change.convId), at);
   const content: ReadStateContent = { ...change, at };
-  debounce(readKey(change.convId), () => { void withGroup((id) => sendReadState(id, content)); });
+  debounce(readKey(change.convId), () => { publish(READ_STATE_CODEC, content); });
 }
 
 function queuePinPublish(change: PinChange): void {
@@ -152,11 +155,11 @@ function queuePinPublish(change: PinChange): void {
   localAt.set(pinKey(change.convId), at);
   localAt.set(PIN_ORDER_KEY, at);
   const content: PinStateContent = { convId: change.convId, pinned: change.pinned, order: [...change.order], at };
-  debounce(PIN_ORDER_KEY, () => { void withGroup((id) => sendPinState(id, content)); });
+  debounce(PIN_ORDER_KEY, () => { publish(PIN_STATE_CODEC, content); });
 }
 
 function queueClearedPublish(): void {
-  debounce(CLEARED_KEY, () => { void withGroup((id) => sendClearState(id, { cleared: getClearedChats() })); });
+  debounce(CLEARED_KEY, () => { publish(CLEAR_STATE_CODEC, { cleared: getClearedChats() }); });
 }
 
 function onStreamMessage(m: StreamMsg): void {

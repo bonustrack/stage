@@ -10,6 +10,17 @@ export function pushToFeedSlice(line: string, env: HistoryEntry): void {
   feedCache.set(line, [env, ...prev]);
 }
 
+export function prependToFeed(line: string, entries: HistoryEntry[]): void {
+  const prev = feedCache.get(line) ?? [];
+  const seen = new Set(prev.map(e => e.id));
+  const fresh = entries.filter((e) => {
+    if (isControlBody(e.text) || seen.has(e.id)) return false;
+    seen.add(e.id);
+    return true;
+  });
+  if (fresh.length > 0) feedCache.set(line, [...fresh, ...prev]);
+}
+
 export function throttledInboxSync(syncAll: () => Promise<boolean>): (maxAgeMs?: number) => Promise<void> {
   let inFlight: Promise<void> | null = null;
   let lastAt = 0;
@@ -35,10 +46,7 @@ export function feedResync(
     for (const line of activeFeedLines) {
       try {
         const page = await latestPage(line);
-        if (page === null) continue;
-        for (const env of page.reverse()) {
-          if (!isControlBody(env.text)) pushToFeedSlice(line, env);
-        }
+        if (page !== null) prependToFeed(line, page);
       } catch { }
     }
   };

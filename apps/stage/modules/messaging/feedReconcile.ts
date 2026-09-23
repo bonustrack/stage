@@ -4,7 +4,7 @@ import { isControlBody } from '../../lib/xmtp.types';
 import { convOfLine } from '../../lib/xmtp.client';
 import { latestConvMessages } from '../../lib/xmtp.messages';
 import { feedCache, activeFeedLines } from '../../lib/xmtp.state';
-import { PAGE_SIZE } from '../../lib/xmtp.resync';
+import { PAGE_SIZE, prependToFeed, refreshLatestPage } from '../../lib/xmtp.resync';
 
 function feedLatest(line: string): HistoryEntry | undefined {
   const slice = feedCache.get(line);
@@ -15,15 +15,6 @@ function feedLatest(line: string): HistoryEntry | undefined {
 function entryNs(e: HistoryEntry): number {
   const ms = new Date(e.ts).getTime();
   return Number.isFinite(ms) ? ms * 1_000_000 : 0;
-}
-
-function reloadSlice(line: string, msgs: HistoryEntry[]): void {
-  const page = msgs.filter(e => !isControlBody(e.text));
-  const prev = feedCache.get(line) ?? [];
-  const seen = new Set(prev.map(e => e.id));
-  const fresh = page.filter(e => !seen.has(e.id));
-  if (fresh.length === 0) return;
-  feedCache.set(line, [...fresh, ...prev]);
 }
 
 function logReconcileHeal(
@@ -52,7 +43,7 @@ export async function reconcileOnOpen(line: string): Promise<void> {
     if (isControlBody(storeLatest.text)) return;
     const feed = feedLatest(line);
     if (feed?.id === storeLatest.id) return;
-    reloadSlice(line, await latestConvMessages(conv, line, PAGE_SIZE));
+    prependToFeed(line, await latestConvMessages(conv, line, PAGE_SIZE));
     logReconcileHeal('[feed-reconcile] open-time heal', line, 'reconcileOnOpen', feed, storeLatest);
   } catch { }
 }
@@ -68,13 +59,10 @@ export async function reconcileOnArrival(
 
 async function healArrivalGap(line: string): Promise<void> {
   try {
-    const conv = await convOfLine(line);
-    if (!conv) return;
-    await conv.sync().catch(() => undefined);
-    const page = await latestConvMessages(conv, line, PAGE_SIZE);
-    const mapped = page.filter(e => !isControlBody(e.text));
+    const page = await refreshLatestPage(line);
+    if (!page) return;
     const before = feedLatest(line);
-    reloadSlice(line, mapped);
+    prependToFeed(line, page);
     const after = feedLatest(line);
     if (before?.id !== after?.id) {
       logReconcileHeal(

@@ -4,20 +4,19 @@ import { getMessaging, getToken, isSupported } from 'firebase/messaging';
 import type { HmacKeysByTopic } from '@stage-labs/client/xmtp/pushServer';
 import { isSyncGroupName } from '@stage-labs/client/xmtp/readState';
 import { FIREBASE_WEB_CONFIG, firebaseWebConfigured } from './firebaseWeb';
-import { runPushRegistration, runPushUnregistration, type PushTopics } from './pushRegister.core';
+import {
+  makeTopicRefresh, runPushRegistration, runPushUnregistration, toPermission,
+  type PushPermission, type PushTopics,
+} from './pushRegister.core';
 import { linkProxyBase } from './historyServer';
 import { setPushStatus } from './pushStatus';
 import { getCachedXmtpClient } from './xmtp.state.web';
-
-
-export type PushPermission = 'granted' | 'denied' | 'undetermined';
 
 const PUSH_SERVICE_WORKER_PATH = '/push-sw.js';
 
 function proxiedRpcUrl(method: string): string {
   return `${linkProxyBase()}/xmtp-push/${method}`;
 }
-const TOPIC_REFRESH_DEBOUNCE_MS = 1_500;
 
 type PushClient = Pick<Client<unknown>, 'installationId' | 'conversations'>;
 
@@ -27,12 +26,6 @@ export function usePushDeepLinks(): void {
 
 function notificationsAvailable(): boolean {
   return typeof Notification !== 'undefined' && typeof navigator !== 'undefined' && 'serviceWorker' in navigator;
-}
-
-function toPermission(value: string): PushPermission {
-  if (value === 'granted') return 'granted';
-  if (value === 'denied') return 'denied';
-  return 'undetermined';
 }
 
 export function getPushPermission(): Promise<PushPermission> {
@@ -103,13 +96,4 @@ export async function unregisterPushFromServer(client: PushClient): Promise<void
   if (installationId) await runPushUnregistration(installationId, proxiedRpcUrl);
 }
 
-let topicRefreshTimer: ReturnType<typeof setTimeout> | null = null;
-
-export function schedulePushTopicRefresh(): void {
-  if (topicRefreshTimer) clearTimeout(topicRefreshTimer);
-  topicRefreshTimer = setTimeout(() => {
-    topicRefreshTimer = null;
-    const client = getCachedXmtpClient();
-    if (client) void registerPushWithServer(client);
-  }, TOPIC_REFRESH_DEBOUNCE_MS);
-}
+export const schedulePushTopicRefresh = makeTopicRefresh(() => getCachedXmtpClient(), registerPushWithServer);

@@ -1,13 +1,14 @@
 
 import { appStorage } from '../platform/storage';
-import { hydrateOnce, makeListeners } from './storeCore';
+import type { AppStorage } from '../platform/types';
+import { hydrateOnce, makeListeners, useStoreValue } from './storeCore';
 
 export interface ValueStoreOptions<T> {
   key: string;
   default: T;
   serialize?: (value: T) => string;
   deserialize: (raw: string) => T | undefined;
-  alwaysNotify?: boolean;
+  storage?: Pick<AppStorage, 'get' | 'set'>;
 }
 
 export interface ValueStore<T> {
@@ -17,10 +18,12 @@ export interface ValueStore<T> {
   set: (value: T) => void;
   setAsync: (value: T) => Promise<void>;
   subscribe: (cb: () => void) => () => void;
+  use: () => T;
 }
 
 export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
   const serialize = opts.serialize ?? ((v: T): string => String(v));
+  const storage = opts.storage ?? appStorage;
   let cache: T = opts.default;
   const { notify, subscribe } = makeListeners();
 
@@ -33,12 +36,12 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
   }
 
   const hydration = hydrateOnce(async (): Promise<boolean> => {
-    try { return apply(await appStorage.get(opts.key)); }
+    try { return apply(await storage.get(opts.key)); }
     catch { return false; }
   });
 
   function persist(): void {
-    void appStorage.set(opts.key, serialize(cache)).catch(() => undefined);
+    void storage.set(opts.key, serialize(cache)).catch(() => undefined);
   }
 
   async function load(): Promise<T> {
@@ -53,21 +56,25 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
 
   function get(): T { return cache; }
 
-  function set(value: T): void {
-    if (!opts.alwaysNotify && value === cache) return;
+  function commit(value: T): void {
     cache = value;
     hydration.markDone();
     notify();
+  }
+
+  function set(value: T): void {
+    if (value === cache) return;
+    commit(value);
     persist();
   }
 
   async function setAsync(value: T): Promise<void> {
-    cache = value;
-    hydration.markDone();
-    notify();
-    try { await appStorage.set(opts.key, serialize(cache)); }
+    commit(value);
+    try { await storage.set(opts.key, serialize(cache)); }
     catch { }
   }
 
-  return { load, loadAsync, get, set, setAsync, subscribe };
+  const use = (): T => useStoreValue(subscribe, get, loadAsync);
+
+  return { load, loadAsync, get, set, setAsync, subscribe, use };
 }

@@ -1,5 +1,5 @@
 
-import { PersistentStore } from './cache';
+import { PersistentStore } from './cache.shared';
 import { markConvReadSynced, markConvUnreadSynced } from './xmtp.client';
 import { notifyReadStateChanged } from './readSyncRegistry';
 import {

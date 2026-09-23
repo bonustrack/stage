@@ -14,8 +14,6 @@ const store = createValueStore<PinOrder>({
   key: 'channels.pinned', default: [], serialize: (v) => JSON.stringify(v), deserialize: parseOrder,
 });
 
-export const loadPinnedOrder = (): Promise<PinOrder> => store.load();
-
 export const isPinned = (convId: string): boolean => store.get().includes(convId);
 
 function commit(convId: string, next: PinOrder): PinOrder {
@@ -23,8 +21,6 @@ function commit(convId: string, next: PinOrder): PinOrder {
   notifyPinChanged({ convId, pinned: next.includes(convId), order: next });
   return next;
 }
-
-export const getPinnedOrder = (): PinOrder => store.get();
 
 export async function togglePin(convId: string): Promise<PinOrder> {
   return commit(convId, toggledPinOrder(await store.load(), convId));
@@ -42,4 +38,4 @@ export async function applyRemotePinState(state: PinStateContent): Promise<void>
   if (next !== current) await store.setAsync(next);
 }
 
-export const subscribePins = (cb: () => void): () => void => store.subscribe(cb);
+export const usePinnedOrder = (): PinOrder => store.use();

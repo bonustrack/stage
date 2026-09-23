@@ -1,10 +1,9 @@
 import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import {
-  isSyncGroupName, type ClearStateContent, type PinStateContent, type ReadStateContent, type SyncGroupCandidate,
+  isSyncGroupName, type SyncGroupCandidate,
 } from '@stage-labs/client/xmtp/readState';
 import { convOfLine, xmtpClient } from './xmtp.client';
 import { lineOfConv } from './xmtp.types';
-import { CLEAR_STATE_CODEC, PIN_STATE_CODEC, READ_STATE_CODEC } from './xmtpJsonCodecs';
 
 export async function conversationIsSyncGroup(conv: unknown): Promise<boolean> {
   const group = conv as { name?: () => Promise<string> };
@@ -32,21 +31,6 @@ async function requireConv(convId: string): Promise<NonNullable<Awaited<ReturnTy
   const conv = await convOfLine(lineOfConv(convId));
   if (!conv) throw new Error('Sync conversation not found');
   return conv;
-}
-
-export async function sendReadState(convId: string, content: ReadStateContent): Promise<void> {
-  const conv = await requireConv(convId);
-  await conv.send(content, { contentType: READ_STATE_CODEC.contentType });
-}
-
-export async function sendPinState(convId: string, content: PinStateContent): Promise<void> {
-  const conv = await requireConv(convId);
-  await conv.send(content, { contentType: PIN_STATE_CODEC.contentType });
-}
-
-export async function sendClearState(convId: string, content: ClearStateContent): Promise<void> {
-  const conv = await requireConv(convId);
-  await conv.send(content, { contentType: CLEAR_STATE_CODEC.contentType });
 }
 
 export async function syncConversation(convId: string): Promise<void> {

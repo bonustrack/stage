@@ -1,89 +1,36 @@
 
 import { useEffect, useReducer } from 'react';
-import { AppState } from 'react-native';
-import { File } from 'expo-file-system';
-import { appDocumentsDir } from './appDocuments';
-import { makeListeners } from './storeCore';
+import { PersistentStore } from './cache.shared';
 
 const PERSIST_DEBOUNCE_MS = 800;
 
-function draftsFile(): File {
-  return new File(appDocumentsDir(), 'composer-drafts.json');
-}
-
-function parseDrafts(raw: string): Record<string, string> {
-  const parsed: unknown = JSON.parse(raw);
-  if (parsed === null || typeof parsed !== 'object') return {};
-  const out: Record<string, string> = {};
-  for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
-    if (typeof v === 'string') out[k] = v;
-  }
-  return out;
-}
-
-let drafts: Record<string, string> = {};
-let loaded = false;
-let loading: Promise<void> | null = null;
-const listeners = makeListeners();
-const notify = listeners.notify;
+const store = new PersistentStore<Record<string, unknown>>('composer-drafts.json', true, PERSIST_DEBOUNCE_MS);
 
 export async function loadDrafts(): Promise<void> {
-  if (loaded) return;
-  if (loading) return loading;
-  loading = (async (): Promise<void> => {
-    try {
-      const f = draftsFile();
-      if (f.exists) { const raw = await f.text(); drafts = raw ? parseDrafts(raw) : {}; }
-    } catch { drafts = {}; }
-    loaded = true;
-    loading = null;
-    notify();
-  })();
-  return loading;
+  await store.hydrate();
 }
 
-function writeToDisk(): void {
-  persistTimer = null;
-  dirty = false;
-  try {
-    const f = draftsFile();
-    if (Object.keys(drafts).length) f.write(JSON.stringify(drafts));
-    else if (f.exists) f.delete();
-  } catch { }
+export function getDraft(convId: string): string {
+  const draft = store.get()?.[convId];
+  return typeof draft === 'string' ? draft : '';
 }
 
-let persistTimer: number | null = null;
-let dirty = false;
-
-function persist(): void {
-  dirty = true;
-  if (persistTimer) clearTimeout(persistTimer);
-  persistTimer = setTimeout(writeToDisk, PERSIST_DEBOUNCE_MS) as unknown as number;
-}
-
-AppState.addEventListener('change', (state) => {
-  if (state === 'active') return;
-  if (persistTimer) { clearTimeout(persistTimer); persistTimer = null; }
-  if (dirty) writeToDisk();
-});
-
-export function getDraft(convId: string): string { return drafts[convId] ?? ''; }
 export function hasDraft(convId?: string | null): boolean {
-  return !!convId && !!(drafts[convId] ?? '').trim();
+  return !!convId && !!getDraft(convId).trim();
 }
+
 export function setDraft(convId: string, text: string): void {
   const t = text.trim() ? text : '';
-  if (t) drafts[convId] = t; else Reflect.deleteProperty(drafts, convId);
-  persist();
-  notify();
+  const next = { ...store.get() };
+  if (t) next[convId] = t; else Reflect.deleteProperty(next, convId);
+  store.set(Object.keys(next).length ? next : null);
 }
 
 export function useDraftsVersion(): number {
   const [version, bump] = useReducer((x: number) => x + 1, 0);
   useEffect(() => {
     void loadDrafts();
-    const fn = (): void => { bump(); };
-    return listeners.subscribe(fn);
+    return store.subscribe(() => { bump(); });
   }, []);
   return version;
 }

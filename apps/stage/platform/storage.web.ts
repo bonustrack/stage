@@ -66,7 +66,6 @@ export const appStorage: AppStorage = {
     deleteKey(key);
     return Promise.resolve();
   },
-  multiGet: (keys) => Promise.resolve(keys.map((key) => [key, readKey(key)] as const)),
   clear: () => {
     clearNamespaced();
     return Promise.resolve();

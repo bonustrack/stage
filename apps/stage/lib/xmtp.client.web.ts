@@ -5,7 +5,7 @@ import {
   loadAccounts, setActiveAccountId, removeAccount,
   type AccountRecord,
 } from './accounts';
-import { getSecure, setSecure } from './cache';
+import { getSecure, setSecure } from './cache.shared';
 import { perfLog, perfTime } from './perf';
 import { bumpAccountEpoch } from './accountEpoch';
 import { XMTP_CODECS, signerForRecord } from './xmtp.codecs.web';

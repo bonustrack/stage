@@ -5,6 +5,7 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import { isControlBody } from '../../lib/xmtp.types';
 import { convOfLine } from '../../lib/xmtp.client';
 import { latestConvMessages, olderConvMessages } from '../../lib/xmtp.messages';
+import { prependToFeed, refreshLatestPage } from '../../lib/xmtp.resync';
 import { feedCache } from '../../lib/xmtp.state';
 import { perfLog, perfTime } from '../../lib/perf';
 import { syncInboxOnce, PAGE_SIZE } from '../../lib/xmtp.stream';
@@ -23,18 +24,6 @@ export function ensureFeedQueryBridge(): void {
   feedCache.subscribeAll((line, slice) => { mirrorSlice(line, slice); });
 }
 
-function mergeNewestFirst(prev: HistoryEntry[], additions: HistoryEntry[]): HistoryEntry[] {
-  const seen = new Set(prev.map(e => e.id));
-  const fresh = additions.filter(e => !isControlBody(e.text) && !seen.has(e.id));
-  return fresh.length === 0 ? prev : [...fresh, ...prev];
-}
-
-function applyPage(line: string, page: HistoryEntry[]): void {
-  const prev = feedCache.get(line) ?? [];
-  const next = mergeNewestFirst(prev, page);
-  if (next !== prev) feedCache.set(line, next);
-}
-
 const bgSyncInFlight = new Map<string, Promise<void>>();
 
 function revalidateFeed(line: string): Promise<void> {
@@ -43,10 +32,9 @@ function revalidateFeed(line: string): Promise<void> {
   const run = (async (): Promise<void> => {
     try {
       await syncInboxOnce(0);
-      const fresh = await convOfLine(line);
-      if (!fresh) return;
-      await fresh.sync().catch(() => undefined);
-      applyPage(line, await latestConvMessages(fresh, line, PAGE_SIZE));
+      const page = await refreshLatestPage(line);
+      if (!page) return;
+      prependToFeed(line, page);
       await reconcileOnOpen(line);
     } catch { }
     finally { bgSyncInFlight.delete(line); }
@@ -62,7 +50,7 @@ export async function loadFeedFirstPage(line: string): Promise<HistoryEntry[]> {
     await perfTime('feed.revalidate', () => revalidateFeed(line));
     return feedCache.get(line) ?? [];
   }
-  applyPage(line, await perfTime('feed.latestMessages', () => latestConvMessages(conv, line, PAGE_SIZE)));
+  prependToFeed(line, await perfTime('feed.latestMessages', () => latestConvMessages(conv, line, PAGE_SIZE)));
   void revalidateFeed(line);
   return feedCache.get(line) ?? [];
 }

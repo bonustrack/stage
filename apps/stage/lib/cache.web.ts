@@ -1,5 +1,3 @@
-import { PersistentStore as SharedStore, type PersistenceBackend } from './cache.shared';
-
 const DB_NAME = 'stage-cache';
 const DB_VERSION = 1;
 const STORE = 'kv';
@@ -45,16 +43,10 @@ async function idbWrite(key: string, value: unknown): Promise<void> {
   } catch { }
 }
 
-const idbBackend: PersistenceBackend = {
+export const persistenceBackend = {
   read: idbRead,
   write(name: string, value: unknown): void { void idbWrite(name, value); },
   onFlushSignal(flushAll: () => void): void {
     if (typeof window !== 'undefined') window.addEventListener('pagehide', flushAll);
   },
 };
-
-export class PersistentStore<T> extends SharedStore<T> {
-  constructor(fileName: string, debounced = false) { super(idbBackend, fileName, debounced); }
-}
-
-export { MemoryStore, getSecure, setSecure } from './cache.shared';

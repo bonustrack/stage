@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { VirtualListHandle } from '../layout';
 import { getCachedRows, setCachedRows, subscribeCachedRows } from '../../modules/messaging';
-import { getPinnedOrder, loadPinnedOrder, subscribePins } from '../../lib/pins';
+import { usePinnedOrder } from '../../lib/pins';
 import {
   CHANNELS_SCROLL_KEY, getScrollOffset, peekScrollOffset, flushScrollOffset,
 } from '../../lib/scrollPos';
@@ -45,7 +45,7 @@ export function useHomeState(): HomeState {
 
   const [error, setError] = useState<string>('');
   const [rowMenu, setRowMenu] = useState<RowMenu | null>(null);
-  const [pinned, setPinned] = useState<readonly string[]>([]);
+  const pinned = usePinnedOrder();
 
   const listRef = useRef<VirtualListHandle>(null);
   const savedOffsetRef = useRef<number | undefined>(peekScrollOffset(CHANNELS_SCROLL_KEY));
@@ -54,10 +54,6 @@ export function useHomeState(): HomeState {
   useEffect(() => {
     void getScrollOffset(CHANNELS_SCROLL_KEY).then(o => { savedOffsetRef.current ??= o; });
     return () => { flushScrollOffset(CHANNELS_SCROLL_KEY); };
-  }, []);
-  useEffect(() => {
-    void loadPinnedOrder().then(setPinned);
-    return subscribePins(() => { setPinned(getPinnedOrder()); });
   }, []);
 
   return {

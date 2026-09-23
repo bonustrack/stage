@@ -11,7 +11,7 @@ import {
 import { avatarCacheKey, makeProfileClients, resolveOnchainProfile } from '@stage-labs/client/identity/onchainProfile';
 import { broviderRpc } from '@stage-labs/client/wallet/client';
 import { stampAvatarUrl } from '@stage-labs/kit/avatar';
-import { PersistentStore } from './cache';
+import { PersistentStore } from './cache.shared';
 import { linkProxyBase } from './historyServer';
 
 export {

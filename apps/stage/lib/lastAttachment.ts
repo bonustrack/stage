@@ -10,10 +10,6 @@ const store = createValueStore<string | undefined>({
   deserialize: (raw) => raw,
 });
 
-export const loadLastAttachment = (): void => { store.loadAsync(); };
-
-export const getLastAttachment = (): string | undefined => store.get();
-
 export const setLastAttachment = (label: string): void => { store.set(label); };
 
-export const subscribeLastAttachment = (fn: () => void): () => void => store.subscribe(fn);
+export const useLastAttachment = (): string | undefined => store.use();

@@ -1,5 +1,5 @@
 import { secureStorage } from '../platform/storage';
-import { getSecure, setSecure } from './cache';
+import { getSecure, setSecure } from './cache.shared';
 
 const LAST_READ_PREFIX = 'unread.lastRead.';
 export async function getLastReadNs(convId: string): Promise<number> {

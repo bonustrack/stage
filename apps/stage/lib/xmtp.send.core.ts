@@ -24,6 +24,7 @@ export function makeSenders(p: SendPrimitives) {
     xmtpSendText: (line: string, text: string): Promise<string> => p.text(line, text),
     xmtpReact: (line: string, messageId: string, emoji: string, action: ReactionAction = 'added'): Promise<string> =>
       p.reaction(line, buildReaction(messageId, emoji, action)),
+    xmtpSendJson: <T>(line: string, codec: JsonCodec<T>, content: T): Promise<string> => p.json(line, codec, content),
     xmtpSendPoll: (line: string, poll: PollContent): Promise<string> => p.json(line, POLL_CODEC, poll),
     xmtpSendSignatureRequest: (line: string, content: SignatureRequestContent): Promise<string> =>
       p.json(line, SIGNATURE_REQUEST_CODEC, content),

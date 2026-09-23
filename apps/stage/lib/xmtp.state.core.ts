@@ -1,5 +1,5 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { MemoryStore } from './cache';
+import { MemoryStore } from './cache.shared';
 import { makeListeners, useStoreValue } from './storeCore';
 
 export const inboxEthCache = new MemoryStore<string, string>();
