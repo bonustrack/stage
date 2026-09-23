@@ -95,7 +95,8 @@ function AccountRows({ rec, revealed, onExport, onMove }: {
     canExportKey: canExportPrivateKey(rec), keyRevealed: revealed !== null, canLinkDevice: transferKindFor(rec) !== null,
   });
   const rows: Record<SecurityRowKey, () => React.ReactElement | null> = {
-    backupPhrase: () => <RecoveryPhraseRow rec={rec} />,
+    backupPhrase: () => <RecoveryPhraseRow rec={rec} mode="backup" />,
+    showPhrase: () => <RecoveryPhraseRow rec={rec} mode="show" />,
     enablePasskey: () => <SettingsButtonRow label={passkeyActionLabel('enable', enablePasskey.busy)} iconStart="fingerPrint" onPress={enablePasskey.run} />,
     passkeyLink: () => <PasskeyLinkRow rec={rec} place={place} onLinked={() => { setPlace('this-device'); }} />,
     recoveryKey: () => <RecoveryKeyRow rec={rec} place={place} />,
