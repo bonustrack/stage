@@ -29,10 +29,13 @@ interface SyncArgs {
   setError: Dispatch<SetStateAction<string>>;
 }
 
+function hasHomeRows(): boolean {
+  return (homeRows()?.length ?? 0) > 0;
+}
+
 interface SyncRun {
   cancelled: boolean;
-  hadRowsAtStart: boolean;
-  initTimer: ReturnType<typeof setTimeout>;
+  initTimer?: ReturnType<typeof setTimeout>;
   cancelConvStream: (() => void) | null;
   cancelMsgStream: (() => void) | null;
   cancelConsentStream: (() => void) | null;
@@ -133,7 +136,7 @@ async function initSync(run: SyncRun, args: SyncArgs): Promise<void> {
     await syncConsent();
   } catch (e) {
     if (run.cancelled || e instanceof NoAccountError) { clearTimeout(run.initTimer); return; }
-    if (!run.hadRowsAtStart) args.setError((e as Error).message);
+    if (!hasHomeRows()) args.setError((e as Error).message);
   }
 }
 
@@ -142,12 +145,12 @@ export function useChannelsSync(args: SyncArgs): void {
   useEffect(() => {
     setError('');
     const run: SyncRun = {
-      cancelled: false, hadRowsAtStart: (homeRows()?.length ?? 0) > 0, initTimer: undefined as unknown as ReturnType<typeof setTimeout>,
+      cancelled: false,
       cancelConvStream: null, cancelMsgStream: null, cancelConsentStream: null, appStateSub: null,
     };
     const armInitTimer = (): void => {
       run.initTimer = setTimeout(() => {
-        if (run.cancelled || run.hadRowsAtStart) return;
+        if (run.cancelled || hasHomeRows()) return;
         if (getXmtpBootstrapPhase() === 'registering') { armInitTimer(); return; }
         setError('XMTP failed to initialise (timed out). Tap Reset below to wipe the local identity and start fresh.');
       }, INIT_TIMEOUT_MS);
