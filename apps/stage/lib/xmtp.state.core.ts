@@ -13,7 +13,7 @@ export type XmtpBootstrapPhase = 'idle' | 'registering';
 let bootstrapPhase: XmtpBootstrapPhase = 'idle';
 const bootstrap = makeListeners();
 
-export function setXmtpBootstrapPhase(next: XmtpBootstrapPhase): void {
+function setXmtpBootstrapPhase(next: XmtpBootstrapPhase): void {
   bootstrapPhase = next;
   bootstrap.notify();
 }

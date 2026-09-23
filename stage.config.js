@@ -1,11 +1,6 @@
-import { fileURLToPath } from 'node:url';
 import { defineConfig } from '@stage-labs/config';
 import { reactNative } from './apps/stage/eslint.js';
 import { kitEslint } from './packages/kit/eslint.js';
-
-const ROOT_DIR = fileURLToPath(new URL('.', import.meta.url));
-
-
 
 export default defineConfig({
   workspaces: {
@@ -27,6 +22,7 @@ export default defineConfig({
           'app/**/*.{ts,tsx}',
           'babel.config.js',
           'lib/**/*.web.{ts,tsx}',
+          'lib/xmtp.stripGuard.ts',
           'components/**/*.web.tsx',
           'modules/**/*.{ts,tsx}',
           'platform/**/*.ts',
@@ -36,12 +32,6 @@ export default defineConfig({
         project: ['app/**', 'components/**', 'lib/**', 'modules/**', 'platform/**'],
         ignoreDependencies: [
           'buffer',
-          'crypto-browserify',
-          'path-browserify',
-          'querystring-es3',
-          'react-native-url-polyfill',
-          'readable-stream',
-          'stream-browserify',
           'babel-preset-expo',
           'expo-system-ui',
           '@types/markdown-it',

@@ -1,5 +1,4 @@
-
-const STAMP_URL = 'https://stamp.fyi';
+import { STAMP_URL } from '../profile/avatar';
 
 export async function resolveEnsName(name: string): Promise<string | null> {
   const res = await fetch(STAMP_URL, {

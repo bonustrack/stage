@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test';
-import { isAddress, parseUnits, formatUnits } from 'viem';
+import { isAddress, parseUnits } from 'viem';
 import {
   buildPublicTransfer, parseSendAmount, looksLikeEns,
-  classifyRecipientInput, noAddressSetError, publicSendFee,
+  classifyRecipientInput, noAddressSetError,
 } from '../src/wallet/send';
 
 const ETH = { address: null, decimals: 18 } as const;
@@ -106,24 +106,4 @@ describe('noAddressSetError', () => {
   it('preserves original-case query', () => {
     expect(noAddressSetError('Vitalik.eth')).toBe('No address set for Vitalik.eth');
   });
-});
-
-describe('publicSendFee equivalence with old fee math', () => {
-  function oldFee(gas: bigint, maxFeePerGas?: bigint, gasPrice?: bigint): { feeWei: bigint; feeEth: string } {
-    const perGas = maxFeePerGas ?? gasPrice ?? 0n;
-    const feeWei = gas * perGas;
-    return { feeWei, feeEth: formatUnits(feeWei, 18) };
-  }
-  const cases: [bigint, bigint?, bigint?][] = [
-    [21000n, 30_000_000_000n, undefined],
-    [50000n, undefined, 12_000_000_000n],
-    [21000n, undefined, undefined],
-    [0n, 5n, 9n],
-  ];
-  for (const [gas, mfpg, gp] of cases) {
-    it(`matches gas=${gas} mfpg=${mfpg} gp=${gp}`, () => {
-      expect(publicSendFee({ gas, maxFeePerGas: mfpg ?? null, gasPrice: gp ?? null }))
-        .toEqual(oldFee(gas, mfpg, gp));
-    });
-  }
 });

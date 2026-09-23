@@ -9,9 +9,9 @@ const CONVERSATION_ID_RE = /^(0x)?(?:[0-9a-fA-F]{32}|[0-9a-fA-F]{64})$/;
 const LABEL_RE = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
 const NAME_RE = /^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/;
 
-export const STAGE_ORIGIN = 'https://stage.box';
+const STAGE_ORIGIN = 'https://stage.box';
 
-export const RESERVED_ROOT_SEGMENTS = new Set([
+const RESERVED_ROOT_SEGMENTS = new Set([
   'channels', 'channel', 'group', 'profile', 'user', 'settings', 'contacts', 'wallet', 'accounts',
   'requests', 'new-group', 'add-members', 'embed', 'xmtp',
 ]);
@@ -44,10 +44,6 @@ export function stageLabelOf(handle: string | null | undefined): string | null {
 
 export function profileSlugFor(address: string, handle?: string | null): string {
   return stageLabelOf(handle) ?? address.toLowerCase();
-}
-
-export function profilePathFor(address: string, handle?: string | null): string {
-  return `/profile/${profileSlugFor(address, handle)}`;
 }
 
 export function conversationPathFor(peerAddress: string, handle?: string | null): string {

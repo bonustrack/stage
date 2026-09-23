@@ -5,7 +5,7 @@ export function dbDirFor(id: string): string {
   return `xmtp-${id}`;
 }
 
-export function buildLocalAccount(
+function buildLocalAccount(
   id: string,
   address: string,
   type: 'generated' | 'privateKey',

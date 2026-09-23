@@ -12,7 +12,7 @@ import { getCachedXmtpClient } from './xmtp.state.web';
 
 export type PushPermission = 'granted' | 'denied' | 'undetermined';
 
-export const PUSH_SERVICE_WORKER_PATH = '/push-sw.js';
+const PUSH_SERVICE_WORKER_PATH = '/push-sw.js';
 
 function proxiedRpcUrl(method: string): string {
   return `${linkProxyBase()}/xmtp-push/${method}`;

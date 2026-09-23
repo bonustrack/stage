@@ -14,7 +14,6 @@ interface BubbleGestureInput {
   onReply?: () => void;
   onReact?: (emoji: string) => void;
   onOpenMenu?: (anchor: MenuAnchor) => void;
-  onLongPress?: () => void;
 }
 
 interface BubbleGestures {
@@ -35,7 +34,7 @@ function keepsFeedScrollable<T extends GestureType>(gesture: T): T {
 const THRESHOLD = -64;
 
 export function useBubbleGestures(input: BubbleGestureInput): BubbleGestures {
-  const { pending, onReply, onReact, onOpenMenu, onLongPress } = input;
+  const { pending, onReply, onReact, onOpenMenu } = input;
   const swipeX = useSharedValue(0);
   const crossed = useSharedValue(false);
   const rowRef = useRef<View>(null);
@@ -44,7 +43,7 @@ export function useBubbleGestures(input: BubbleGestureInput): BubbleGestures {
 
   const fireReply = (): void => { if (!pending) onReply?.(); };
   const openMenu = (point?: MenuPoint): void => {
-    if (pending || !onOpenMenu) { if (!onOpenMenu) onLongPress?.(); return; }
+    if (pending || !onOpenMenu) return;
     lightHaptic();
     const node = rowRef.current;
     const initial = initialMenuAnchor(lastAnchor.current, !!node);

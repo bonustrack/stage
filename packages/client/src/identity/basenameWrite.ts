@@ -27,15 +27,6 @@ const REVERSE_REGISTRAR_ABI = [
 
 export interface ContractCall { to: Hex; data: Hex }
 
-export function encodeSetBasenameAvatar(name: string, avatarUri: string, resolver: Hex = BASENAME_L2_RESOLVER): ContractCall {
-  return {
-    to: resolver,
-    data: encodeFunctionData({
-      abi: L2_RESOLVER_WRITE_ABI, functionName: 'setText', args: [namehash(normalize(name)), 'avatar', avatarUri],
-    }),
-  };
-}
-
 export function encodeSetTextRecords(name: string, records: Record<string, string>, resolver: Hex = BASENAME_L2_RESOLVER): ContractCall {
   const node = namehash(normalize(name));
   const calls = Object.entries(records).map(([key, value]) =>

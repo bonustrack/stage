@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { validateStageLabel } from '@stage-labs/client/identity/stageNames';
-import { usernameFromWords } from '../lib/randomUsername.model';
+import { randomUsername, usernameFromWords } from '../lib/randomUsername';
 
 describe('usernameFromWords', () => {
   test('joins the words in lowercase without separators', () => {
@@ -16,6 +16,14 @@ describe('usernameFromWords', () => {
   test('always yields a valid stage label', () => {
     for (const words of [{ adjective: 'x', noun: 'y', digits: '1' }, { adjective: 'extraordinarily', noun: 'unbelievableness', digits: '99' }]) {
       expect(validateStageLabel(usernameFromWords(words))).toBeNull();
+    }
+  });
+});
+
+describe('randomUsername', () => {
+  test('always yields a valid stage label', () => {
+    for (let i = 0; i < 200; i++) {
+      expect(validateStageLabel(randomUsername())).toBeNull();
     }
   });
 });

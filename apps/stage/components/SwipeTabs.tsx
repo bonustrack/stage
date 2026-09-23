@@ -1,6 +1,5 @@
-
-import { useEffect, useRef, useState } from 'react';
-import { Platform, useWindowDimensions } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { useWindowDimensions } from 'react-native';
 import { Box } from './layout';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import type { GestureType } from 'react-native-gesture-handler';
@@ -14,14 +13,10 @@ import {
   indexOfPathname,
 } from './SwipeTabs.config';
 
-const IS_WEB = Platform.OS === 'web';
-
 export function TabsPager(): React.ReactElement {
   const router = useRouter();
   const pathname = usePathname();
-  const { width: windowWidth } = useWindowDimensions();
-  const [pagerWidth, setPagerWidth] = useState<number | null>(null);
-  const width = IS_WEB ? (pagerWidth ?? windowWidth) : windowWidth;
+  const { width } = useWindowDimensions();
 
   const routeIndex = indexOfPathname(pathname);
 
@@ -50,7 +45,7 @@ export function TabsPager(): React.ReactElement {
 
     if (index.value !== routeIndex) {
       index.value = routeIndex;
-      tx.value = IS_WEB ? -routeIndex * width : withTiming(-routeIndex * width, { duration: 220 });
+      tx.value = withTiming(-routeIndex * width, { duration: 220 });
     } else if (widthChanged) {
       tx.value = -routeIndex * width;
     }
@@ -58,7 +53,6 @@ export function TabsPager(): React.ReactElement {
 
   const pan = Gesture.Pan()
     .withRef(panRef)
-    .enabled(!IS_WEB)
     .activeOffsetX([-10, 10])
     .failOffsetY([-14, 14])
     .onUpdate((e) => {
@@ -96,7 +90,7 @@ export function TabsPager(): React.ReactElement {
   }));
 
   return (
-    <Box flex={1} style={{ overflow: 'hidden' }} onLayout={(e) => { if (IS_WEB) setPagerWidth(e.nativeEvent.layout.width); }}>
+    <Box flex={1} style={{ overflow: 'hidden' }}>
       <GestureDetector gesture={pan}>
         <Animated.View style={stripStyle}>
           {TAB_ORDER.map((name) => {

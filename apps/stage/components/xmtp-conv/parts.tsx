@@ -11,7 +11,7 @@ import { TOPNAV_HEIGHT } from '../Topnav';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Avatar } from '../Avatar';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
-import { REACT_PRESETS } from '../bubble/MessengerBubble';
+import { REACT_PRESETS } from '../bubble/helpers';
 import { usePalette } from '../../lib/theme';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { menuPlacement, MENU_GAP, MENU_STRIP_HEIGHT } from './menuPlacement';

@@ -4,7 +4,7 @@ import {
   isSyncGroupName, type ClearStateContent, type PinStateContent, type ReadStateContent, type SyncGroupCandidate,
 } from '@stage-labs/client/xmtp/readState';
 import { convOfLine, xmtpClient } from './xmtp.client.web';
-import { lineOfConv } from './xmtp.types.web';
+import { lineOfConv } from './xmtp.types';
 import { CLEAR_STATE_CODEC, PIN_STATE_CODEC, READ_STATE_CODEC } from './xmtpJsonCodecs';
 
 export function conversationIsSyncGroup(conv: unknown): Promise<boolean> {

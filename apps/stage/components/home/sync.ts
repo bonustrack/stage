@@ -1,5 +1,5 @@
 
-import { useEffect, type Dispatch, type MutableRefObject, type SetStateAction } from 'react';
+import { useEffect, type Dispatch, type SetStateAction } from 'react';
 import { AppState } from 'react-native';
 import {
   getOrCreateXmtpClient, NoAccountError,
@@ -26,7 +26,6 @@ interface SyncArgs {
   setRowsState: Dispatch<SetStateAction<RowT[] | null>>;
   setRows: (next: RowT[] | null | ((p: RowT[] | null) => RowT[] | null)) => void;
   setError: Dispatch<SetStateAction<string>>;
-  refreshFromNetworkRef: MutableRefObject<(() => Promise<void>) | null>;
 }
 
 interface SyncRun {
@@ -125,7 +124,6 @@ async function initSync(run: SyncRun, args: SyncArgs): Promise<void> {
     clearTimeout(run.initTimer);
     const selfInboxId = client.inboxId;
     const r = makeRefreshers(client, selfInboxId, run, args);
-    args.refreshFromNetworkRef.current = r.refresh;
     await hydratePeerProfiles();
     await r.refresh();
     subscribeConvStream(selfInboxId, run, args);
@@ -139,7 +137,7 @@ async function initSync(run: SyncRun, args: SyncArgs): Promise<void> {
 }
 
 export function useChannelsSync(args: SyncArgs): void {
-  const { accountEpoch, rows, setRowsState, setError, refreshFromNetworkRef } = args;
+  const { accountEpoch, rows, setRowsState, setError } = args;
   useEffect(() => {
     setError('');
     const run: SyncRun = {
@@ -162,7 +160,6 @@ export function useChannelsSync(args: SyncArgs): void {
     return (): void => {
       run.cancelled = true;
       clearTimeout(run.initTimer);
-      refreshFromNetworkRef.current = null;
       if (run.cancelConvStream) try { run.cancelConvStream(); } catch { }
       if (run.cancelMsgStream) try { run.cancelMsgStream(); } catch { }
       if (run.cancelConsentStream) try { run.cancelConsentStream(); } catch { }

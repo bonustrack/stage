@@ -1,4 +1,3 @@
-
 import { Fragment, memo } from 'react';
 
 import type { Scheme } from '@stage-labs/kit/tokens';
@@ -8,7 +7,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { resolveColorToken } from '@stage-labs/kit/tokens';
-import { Platform, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
+import { Platform, type TextStyle } from 'react-native';
 import { Avatar } from './Avatar';
 import { Row, Col, Box } from './layout';
 import { channelRowModel, type ChannelRowParams } from './ChannelRow.model';
@@ -33,13 +32,10 @@ interface ChannelRowProps {
   hasDraft?: boolean;
   draftText?: string | null;
   labels?: string[];
-  showChevron?: boolean;
   active?: boolean;
-  avatarSize?: number;
   onPress?: () => void;
   onPressIn?: () => void;
   onLongPress?: (point?: MenuPoint) => void;
-  containerStyle?: StyleProp<ViewStyle>;
   highlightQuery?: string;
 }
 
@@ -50,20 +46,16 @@ const PREVIEW_LINE_HEIGHT = 20;
 const LINE_GAP = 2;
 const PIN_ICON_SIZE = 16;
 
-function TrailingBadge({ unreadCount, markedUnread, showChevron, head, bg }: {
-  unreadCount: number; markedUnread?: boolean; showChevron?: boolean;
-  head: string; bg: string;
+function TrailingBadge({ unreadCount, markedUnread, head, bg }: {
+  unreadCount: number; markedUnread?: boolean; head: string; bg: string;
 }): React.ReactElement | null {
   const shown = unreadCount > 0 ? unreadCount : markedUnread === true ? 1 : 0;
-  if (shown > 0) {
-    return (
-      <Row minWidth={BADGE_SIZE} height={BADGE_SIZE} padding={{ x: 4 }} align="center" justify="center" radius="full" background={head}>
-        <Text weight="semibold" size="3xs" color={bg}>{unreadBadgeLabel(shown)}</Text>
-      </Row>
-    );
-  }
-  if (showChevron) return <Text size="2xl" role="secondary">›</Text>;
-  return null;
+  if (shown <= 0) return null;
+  return (
+    <Row minWidth={BADGE_SIZE} height={BADGE_SIZE} padding={{ x: 4 }} align="center" justify="center" radius="full" background={head}>
+      <Text weight="semibold" size="3xs" color={bg}>{unreadBadgeLabel(shown)}</Text>
+    </Row>
+  );
 }
 
 function TitleLine({ params, scheme }: {
@@ -197,13 +189,11 @@ function ChannelRowBody({ params, trailing }: {
 function ChannelRowBase({
   title, avatarAddress, avatarUri, square,
   lastPreview, timestamp, subtitle, unreadCount = 0, markedUnread,
-  pinned, hasDraft, draftText, showChevron, active, avatarSize = 44,
-  onPress, onPressIn, onLongPress, containerStyle, labels, highlightQuery,
+  pinned, hasDraft, draftText, active,
+  onPress, onPressIn, onLongPress, labels, highlightQuery,
 }: ChannelRowProps): React.ReactElement {
   const { link: head, bg, border } = usePalette();
   const params = channelRowModel({
-    convId: '',
-    avatarUri: '',
     title,
     highlightQuery,
     lastPreview,
@@ -221,17 +211,17 @@ function ChannelRowBase({
       onPressIn={onPressIn}
       onLongPress={onLongPress === undefined ? undefined : (e) => { onLongPress(menuPointOf(e)); }}
       delayLongPress={onLongPress ? 300 : undefined}
-      style={containerStyle ?? (({ pressed }) => ({
+      style={({ pressed }) => ({
         backgroundColor: pressed || active === true ? border : 'transparent',
         paddingHorizontal: 14,
-      }))}
+      })}
       {...contextMenuProps(onLongPress)}
 >
       <Row minHeight={CHANNEL_ROW_HEIGHT} padding={{ y: 9 }} align="center" gap={12}>
         <Avatar
           imageUri={avatarUri}
           address={avatarUri ? null : avatarAddress ?? null}
-          size={avatarSize}
+          size={44}
           square={square}
           style={{ backgroundColor: border }}
 />
@@ -239,8 +229,7 @@ function ChannelRowBase({
           <ChannelRowBody
             params={params}
             trailing={(
-              <TrailingBadge unreadCount={unreadCount} markedUnread={markedUnread}
-                showChevron={showChevron} head={head} bg={bg} />
+              <TrailingBadge unreadCount={unreadCount} markedUnread={markedUnread} head={head} bg={bg} />
             )}
           />
         </Col>

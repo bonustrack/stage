@@ -4,6 +4,7 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { UsernameField, useUsernameInput } from '../UsernameField';
 import { USERNAME_COPY, usernameReady } from '../UsernameField.model';
+import { normalizeLabel } from './ProfileSettings.claim.model';
 import { OnboardingCard } from '../onboarding/OnboardingCard';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { claimStageName, ownedStageName, setPrimaryStageName } from '../../lib/claimName';
@@ -13,7 +14,7 @@ function useOwnedLabel(address: string): string | null {
   useEffect(() => {
     let cancelled = false;
     void ownedStageName(address).then((name) => {
-      if (!cancelled) setOwned(name ? name.replace(/\.stage\.base\.eth$/, '') : null);
+      if (!cancelled) setOwned(name ? normalizeLabel(name) : null);
     });
     return () => { cancelled = true; };
   }, [address]);

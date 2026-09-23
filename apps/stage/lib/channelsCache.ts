@@ -67,7 +67,6 @@ export async function hydrateCachedRows(): Promise<CachedRow[] | null> {
   return Array.isArray(v) ? v : null;
 }
 
-export function clearCachedRows(): void { activeStore().clear(); }
 
 export function getCachedRows(): CachedRow[] | null { return activeStore().get(); }
 export function setCachedRows(next: CachedRow[] | null): void { activeStore().set(next); }

@@ -7,7 +7,7 @@ import { perfTime } from './perf';
 
 export type DmResolveError = 'unregistered' | 'stale-installations' | 'failed';
 
-export type DmResolution = { convId: string } | { error: DmResolveError; detail?: string };
+type DmResolution = { convId: string } | { error: DmResolveError; detail?: string };
 
 async function classifyUnreachable(address: string): Promise<{ error: DmResolveError }> {
   const reason = await dmUnreachableReason(address).catch(() => null);

@@ -54,7 +54,7 @@ const ALL_HANDLERS = new Set([
   'multiRemoteStaticAttachment', 'multiRemoteAttachment',
 ]);
 
-export const defaultEnvelopeOptions: EnvelopeOptions = {
+const defaultEnvelopeOptions: EnvelopeOptions = {
   reactionRemoved: (action) => action === 'removed',
   reactionCustom: (schema) => schema === 'custom',
   reactionCustomPayloadExtras: true,

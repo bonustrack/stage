@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  conversationPathFor, isPeerHandleSegment, parseHandle, profilePathFor, profileSlugFor, shareUrlFor, stageLabelOf,
+  conversationPathFor, isPeerHandleSegment, parseHandle, profileSlugFor, shareUrlFor, stageLabelOf,
 } from '../src/routing/handles';
 
 const ADDR = '0xEAe6aa1802e2938F510ecDc6Ae18f538be6ED9e1';
@@ -43,7 +43,6 @@ describe('paths', () => {
     expect(stageLabelOf('shrek.base.eth')).toBeNull();
     expect(profileSlugFor(ADDR, 'boorger.stage.base.eth')).toBe('boorger');
     expect(profileSlugFor(ADDR, 'shrek.base.eth')).toBe(ADDR.toLowerCase());
-    expect(profilePathFor(ADDR, 'boorger.stage.base.eth')).toBe('/profile/boorger');
     expect(conversationPathFor(ADDR, null)).toBe(`/${ADDR.toLowerCase()}`);
     expect(shareUrlFor('/profile/boorger')).toBe('https://stage.box/#/profile/boorger');
   });

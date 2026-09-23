@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  avatarCacheKey, baseCoinType, baseReverseNode, isBasename, resolveBasenameProfile, resolveOnchainProfile, usableAvatarUri,
+  avatarCacheKey, baseCoinType, baseReverseNode, resolveBasenameProfile, resolveOnchainProfile, usableAvatarUri,
 } from '../src/identity/onchainProfile';
 import type { PublicClient } from 'viem';
 
@@ -24,11 +24,6 @@ describe('basename reverse nodes', () => {
 });
 
 describe('avatar and name helpers', () => {
-  test('recognises basenames', () => {
-    expect(isBasename('tony.base.eth')).toBe(true);
-    expect(isBasename('tony.eth')).toBe(false);
-  });
-
   test('keeps only fetchable avatar URIs', () => {
     expect(usableAvatarUri(' https://x/y.png ')).toBe('https://x/y.png');
     expect(usableAvatarUri('ipfs://bafy')).toBe('ipfs://bafy');

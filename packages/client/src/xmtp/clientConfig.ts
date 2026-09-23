@@ -36,7 +36,7 @@ export interface PersistedClientDeps<C> {
 export interface OpenedClient<C> { client: C; registered: boolean }
 
 export const OPEN_ATTEMPTS = 5;
-export const OPEN_RETRY_MS = 800;
+const OPEN_RETRY_MS = 800;
 
 function defaultSleep(ms: number): Promise<void> {
   return new Promise((resolve) => { setTimeout(resolve, ms); });

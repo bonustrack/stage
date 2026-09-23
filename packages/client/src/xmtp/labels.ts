@@ -38,7 +38,7 @@ export async function readAppData(group: Group): Promise<string> {
   return group.appData ?? '';
 }
 
-export function cleanLabel(raw: string): string {
+function cleanLabel(raw: string): string {
   return raw.trim().replace(/\s+/g, ' ').slice(0, MAX_LABEL_LEN);
 }
 
@@ -83,7 +83,7 @@ export function labelsOfSyncedGroup(conv: unknown): Promise<string[]> {
   })();
 }
 
-export function isLabelPermissionDenied(e: unknown): boolean {
+function isLabelPermissionDenied(e: unknown): boolean {
   const msg = e instanceof Error ? e.message.toLowerCase() : '';
   return msg.includes('permission') || msg.includes('not authorized') || msg.includes('unauthorized');
 }

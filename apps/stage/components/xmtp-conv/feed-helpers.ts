@@ -107,11 +107,6 @@ export function uprightFirstBatch(rowCount: number): number {
   return Math.min(Math.max(rowCount, FEED_MIN_BATCH), FEED_MAX_FIRST_PAINT);
 }
 
-export function initialUprightIndex(rowCount: number, batchSize: number): number {
-  if (rowCount <= batchSize) return 0;
-  return rowCount - batchSize;
-}
-
 export function planUprightRestore(args: {
   loaded: boolean; restoredSaved: boolean; savedDistance: number | undefined;
   userDragged: boolean; atNewest: boolean;

@@ -34,7 +34,6 @@ export async function bringMessagingOnline(
   } catch (e) {
     throw new XmtpSetupError(accountId, e);
   }
-  AccountManager.bumpEpoch();
 }
 
 export class PasskeySetupError extends Error {
@@ -75,13 +74,12 @@ export async function inspectPhrase(phrase: string): Promise<PhraseInspection> {
 
 async function finishAccount(
   rec: AccountRecord, passkey: PasskeyChoice, onStage?: (s: Stage) => void,
-): Promise<{ id: string; address: string; warning: SetupWarning }> {
+): Promise<void> {
   const withPasskey = passkey !== 'none';
   const required = !withPasskey && await passkeyRequired(rec);
   if (required && !passkeysAvailable()) throw new PasskeySetupError(rec.id, PASSKEY_REQUIRED);
   if ((withPasskey || required) && passkeysAvailable()) await securePasskey(rec, onStage);
   await bringMessagingOnline(rec.id, onStage);
-  return { id: rec.id, address: rec.address, warning: null };
 }
 
 export async function confirmRestoredPasskey(phrase: string): Promise<string> {
@@ -114,9 +112,10 @@ export async function createWallet(
   passkey: PasskeyChoice, onStage?: (s: Stage) => void, profile?: ProfileSetup,
 ): Promise<SetupWarning> {
   onStage?.('wallet');
-  const account = await finishAccount(await createSmartAccount(), passkey, onStage);
-  if (profile === undefined) return account.warning;
-  return account.warning ?? await setUpProfile(account.address, profile, onStage);
+  const rec = await createSmartAccount();
+  await finishAccount(rec, passkey, onStage);
+  if (profile === undefined) return null;
+  return setUpProfile(rec.address, profile, onStage);
 }
 
 export async function restoreWallet(
@@ -128,7 +127,8 @@ export async function restoreWallet(
     await bringMessagingOnline(record.id, onStage);
     return { title: 'Already on this device', message: 'This account was already imported here, so we switched to it instead of adding it again.' };
   }
-  return (await finishAccount(record, passkey, onStage)).warning;
+  await finishAccount(record, passkey, onStage);
+  return null;
 }
 
 export async function importKeyAccount(pk: Hex, onStage?: (s: Stage) => void): Promise<SetupWarning> {

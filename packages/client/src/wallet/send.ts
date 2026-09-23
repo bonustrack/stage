@@ -1,4 +1,4 @@
-import { isAddress, erc20Abi, encodeFunctionData, parseUnits, formatUnits, type Hex } from 'viem';
+import { isAddress, erc20Abi, encodeFunctionData, parseUnits, type Hex } from 'viem';
 import type { Asset } from './assets';
 
 export interface PublicSendCall {
@@ -42,24 +42,6 @@ export function classifyRecipientInput(raw: string): RecipientClassification {
 
 export function noAddressSetError(query: string): string {
   return `No address set for ${query}`;
-}
-
-export interface SendFeePreview {
-  feeWei: bigint;
-  feeEth: string;
-  sponsored?: boolean;
-}
-
-export interface FeeEstimateInputs {
-  gas: bigint;
-  maxFeePerGas?: bigint | null;
-  gasPrice?: bigint | null;
-}
-
-export function publicSendFee({ gas, maxFeePerGas, gasPrice }: FeeEstimateInputs): SendFeePreview {
-  const perGas = maxFeePerGas ?? gasPrice ?? 0n;
-  const feeWei = gas * perGas;
-  return { feeWei, feeEth: formatUnits(feeWei, 18) };
 }
 
 export interface BuildTransferArgs {

@@ -1,20 +1,20 @@
 
 import type { DecodedMessage } from '@xmtp/browser-sdk';
-import { isControlBody } from './xmtp.types.web';
+import { isControlBody } from './xmtp.types';
 import { xmtpClient } from './xmtp.client.web';
 import { envelopeOfXmtpMessage } from './xmtp.envelope.web';
 import { activeFeedLines, registerGlobalStreamTeardown } from './xmtp.state.web';
 import {
   STREAM_CONSENT_STATES, pushToFeedSlice, resyncActiveFeeds,
 } from './xmtp.resync.web';
-import { lineOfConv, type StreamMsg } from './xmtp.types.web';
+import { lineOfConv, type StreamMsg } from './xmtp.types';
 import type { StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { reconcileOnArrival, feedLatestNs } from '../modules/messaging/feedReconcile';
 import { isHiddenConv } from './readSyncRegistry';
 
 export { PAGE_SIZE, syncInboxOnce } from './xmtp.resync.web';
 
-export interface SubscribeOptions { includeHidden?: boolean }
+interface SubscribeOptions { includeHidden?: boolean }
 
 const streamSubscribers = new Map<(m: StreamMsg) => void, boolean>();
 export function subscribeAllMessages(cb: (m: StreamMsg) => void, options: SubscribeOptions = {}): () => void {

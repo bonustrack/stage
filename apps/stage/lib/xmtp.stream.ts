@@ -17,7 +17,7 @@ import { reconcileOnArrival, feedLatestNs } from '../modules/messaging/feedRecon
 
 export { PAGE_SIZE, syncInboxOnce } from './xmtp.resync';
 
-export interface SubscribeOptions { includeHidden?: boolean }
+interface SubscribeOptions { includeHidden?: boolean }
 
 const streamSubscribers = new Map<(m: StreamMsg) => void, boolean>();
 export function subscribeAllMessages(cb: (m: StreamMsg) => void, options: SubscribeOptions = {}): () => void {

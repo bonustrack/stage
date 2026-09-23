@@ -5,7 +5,7 @@ import { identityResolvers } from './xmtp.identity.core';
 type WebXmtpClient = Awaited<ReturnType<typeof xmtpClient>>;
 
 export const {
-  primeInboxEthCache, primeConversationMembers, isGroupConv,
+  primeConversationMembers, isGroupConv,
   peerEthAddressOfDm, memberInboxToAddressMap, groupMemberEthAddresses,
 } = identityResolvers<WebXmtpClient, Conversation>({
   client: xmtpClient,

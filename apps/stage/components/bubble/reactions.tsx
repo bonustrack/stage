@@ -1,10 +1,7 @@
-
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-
 import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Box, Row } from '../layout';
-import { REACT_PRESETS } from './helpers';
 import { usePalette } from '../../lib/theme';
 
 function ReactionPill({ emoji, count, own, pillBg, ownBorderColor }: {
@@ -90,26 +87,6 @@ export function ReactionsRow({
           <Text size="3xs" role="secondary">1</Text>
         </Row>
       ))}
-    </Row>
-  );
-}
-
-export function ReactionPicker({ dark, onPick, onClose }: {
-  dark: boolean; onPick: (emoji: string) => void; onClose: () => void;
-}): React.ReactElement {
-  return (
-    <Row padding={{ x: 10, y: 6 }} margin={{ top: 6 }} gap={8} radius="full" background={dark ? '#282a2d' : '#ffffff'} style={{
-      shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 8, elevation: 4,
-      alignSelf: 'flex-start',
-    }}>
-      {REACT_PRESETS.map(e => (
-        <Pressable key={e} onPress={() => { onPick(e); }}>
-          <Text size="5xl">{e}</Text>
-        </Pressable>
-      ))}
-      <Pressable onPress={onClose}>
-        <Text size="lg" role="secondary" style={{ paddingHorizontal: 4 }}>✕</Text>
-      </Pressable>
     </Row>
   );
 }

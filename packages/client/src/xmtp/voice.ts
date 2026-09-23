@@ -1,30 +1,5 @@
 export const VOICE_BAR_COUNT = 34;
 
-export function voiceFilename(now: number = Date.now(), ext = 'm4a'): string {
-  return `voice-${now}.${ext}`;
-}
-
-export function voiceMimeAndExt(recorderMime: string): { mime: string; ext: string } {
-  const bare = recorderMime.split(';')[0]?.trim() ?? '';
-  const mime = bare.length > 0 ? bare : 'audio/webm';
-  if (mime === 'audio/mp4' || mime === 'audio/aac' || mime === 'audio/m4a') {
-    return { mime, ext: 'm4a' };
-  }
-  if (mime === 'audio/ogg') return { mime, ext: 'ogg' };
-  if (mime === 'audio/mpeg' || mime === 'audio/mp3') return { mime, ext: 'mp3' };
-  return { mime, ext: 'webm' };
-}
-
-export function isVoiceAttachment(mime: string | undefined | null): boolean {
-  return typeof mime === 'string' && mime.startsWith('audio/');
-}
-
-export function formatVoiceDuration(ms: number | undefined): string {
-  if (!ms || ms <= 0) return '0:00';
-  const s = Math.round(ms / 1000);
-  return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
-}
-
 function hash(s: string): number {
   let h = 0x811c9dc5;
   for (let i = 0; i < s.length; i++) {

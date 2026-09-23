@@ -10,8 +10,8 @@ export function initialMenuAnchor(cached: MenuAnchor, hasNode: boolean): MenuAnc
 }
 
 export interface MessengerBubbleProps {
-  entry: HistoryEntry; dark: boolean; unread: boolean; pending?: boolean; replyTarget?: boolean;
-  onReact?: (emoji: string) => void; onReply?: () => void; onLongPress?: () => void;
+  entry: HistoryEntry; dark: boolean; pending?: boolean; replyTarget?: boolean;
+  onReact?: (emoji: string) => void; onReply?: () => void;
   onOpenMenu?: (anchor: MenuAnchor) => void;
   onReplyPreviewPress?: () => void;
   onAnswer?: (label: string) => void;
@@ -19,7 +19,6 @@ export interface MessengerBubbleProps {
   pendingReactions?: string[];
   pendingRemovals?: string[];
   ownEmojis?: Set<string>;
-  transcript?: string;
   myUri: string;
   senderEthAddress?: string | null;
   onAvatarPress?: (address: string) => void;

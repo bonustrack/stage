@@ -119,7 +119,6 @@ export function PendingConversation({ address, reason, onDelivered, dark }: {
             key={item.id}
             entry={entryOf(item, myAddress, myName)}
             dark={dark}
-            unread={false}
             pending
             myUri={PENDING_MY_URI}
             senderEthAddress={myAddress}

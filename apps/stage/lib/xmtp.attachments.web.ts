@@ -14,7 +14,7 @@ export { swarmToHttp } from './swarmy';
 export { fileUriToBase64 } from './attachmentFiles';
 
 declare const sanitizedBrand: unique symbol;
-export type SanitizedAttachmentBytes = Uint8Array & { readonly [sanitizedBrand]: true };
+type SanitizedAttachmentBytes = Uint8Array & { readonly [sanitizedBrand]: true };
 
 async function fetchBytes(uri: string): Promise<Uint8Array> {
   const blob = await (await fetch(uri)).blob();

@@ -39,8 +39,8 @@ export function attachmentsOf(entry: HistoryEntry): Attachment[] {
   return Array.isArray(p?.attachments) ? p.attachments : [];
 }
 
-export function markdownStyles(fg: string, dark: boolean, mine: boolean): Record<string, object> {
-  return kitMarkdownStyles({ fg, dark, link: fg, fontSize: fontSize('3xl'), lineHeight: mine ? 21 : 23, paragraphGap: 0 });
+export function markdownStyles(fg: string, dark: boolean): Record<string, object> {
+  return kitMarkdownStyles({ fg, dark, link: fg, fontSize: fontSize('3xl'), lineHeight: 23, paragraphGap: 0 });
 }
 
 interface QuestionOption { label: string; description?: string }

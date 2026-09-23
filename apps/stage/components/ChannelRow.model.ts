@@ -1,5 +1,4 @@
 import type { BadgeColor } from '@stage-labs/kit/badge';
-import { channelTimestamp, unreadBadgeLabel } from '../lib/format';
 import { highlightSegments } from './HighlightText.model';
 
 interface ChannelLabelChip {
@@ -13,41 +12,27 @@ interface ChannelTitleSegment {
 }
 
 export interface ChannelRowParams {
-  convId: string;
-  avatarUri: string;
   title: string;
   preview: string;
   timestamp: string;
-  unreadBadge?: string;
   titleSegments?: ChannelTitleSegment[];
   previewPrefix?: string;
   chips?: ChannelLabelChip[];
   pinned?: boolean;
-  unreadDot?: boolean;
-  omitAvatar?: boolean;
-  interactive?: boolean;
 }
 
 const MAX_VISIBLE_LABELS = 2;
 
 interface ChannelRowDomain {
-  convId: string;
   title: string;
-  avatarUri: string;
   lastPreview?: string | null;
   subtitle?: string | null;
-  lastTs?: number | null;
-  timestampLabel?: string;
+  timestampLabel: string;
   hasDraft?: boolean;
   draftText?: string | null;
   labels?: string[];
   highlightQuery?: string;
   pinned?: boolean;
-  unreadCount?: number;
-  markedUnread?: boolean;
-  emptyPreview?: string;
-  omitAvatar?: boolean;
-  interactive?: boolean;
 }
 
 function resolveDraft(hasDraft?: boolean, draftText?: string | null): string | null {
@@ -61,7 +46,7 @@ function resolvePreview(
   if (draft) return draft;
   if (d.lastPreview && d.lastPreview.length > 0) return d.lastPreview;
   if (d.subtitle && d.subtitle.length > 0) return d.subtitle;
-  return d.emptyPreview ?? '';
+  return '';
 }
 
 function resolveChips(
@@ -89,17 +74,12 @@ function resolveTitleSegments(
 export function channelRowModel(d: ChannelRowDomain): ChannelRowParams {
   const draft = resolveDraft(d.hasDraft, d.draftText);
   return {
-    convId: d.convId,
-    avatarUri: d.avatarUri,
     title: d.title,
     titleSegments: resolveTitleSegments(d.title, d.highlightQuery),
     preview: resolvePreview(draft, d),
     previewPrefix: draft ? 'You:' : undefined,
-    timestamp: d.timestampLabel ?? channelTimestamp(d.lastTs ?? null),
-    unreadBadge: unreadBadgeLabel(d.unreadCount ?? 0, d.markedUnread ?? false),
+    timestamp: d.timestampLabel,
     chips: resolveChips(draft, d.labels),
     pinned: d.pinned,
-    omitAvatar: d.omitAvatar,
-    interactive: d.interactive,
   };
 }

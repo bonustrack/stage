@@ -1,9 +1,7 @@
-
-import type { MutableRefObject, RefObject } from 'react';
 import { useMemo, useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Icon } from '@stage-labs/kit/react-native/icon';
-import { VirtualList, type VirtualListHandle } from '../layout';
+import { VirtualList } from '../layout';
 import { CHANNELS_SCROLL_KEY, saveScrollOffset } from '../../lib/scrollPos';
 import { HistorySyncBanner, MessagingSetupBanner } from '../system/HistorySync';
 import type { Row as RowT } from './helpers';
@@ -17,6 +15,8 @@ import { getActiveAccount } from '../../lib/accounts';
 import { profileLinkOf } from '../../lib/links';
 import { SuggestedContacts } from '../SuggestedContacts';
 import { getCachedRows } from '../../modules/messaging';
+import { usePalette } from '../../lib/theme';
+import type { ScrollRefs } from './state';
 
 interface ChannelsListProps {
   panRef?: import('../SwipeTabs.types').SimultaneousRefs;
@@ -31,15 +31,8 @@ interface ChannelsListProps {
   onClearAll: () => void;
   query: string;
   setQuery: (v: string) => void;
-  fg: string;
-  head: string;
-  sub: string;
-  border: string;
   listExtraData: readonly unknown[];
-  listRef: RefObject<VirtualListHandle | null>;
-  savedOffsetRef: MutableRefObject<number | undefined>;
-  didRestoreRef: MutableRefObject<boolean>;
-  contentHeightRef: MutableRefObject<number>;
+  scroll: ScrollRefs;
   renderRow: ({ item }: { item: RowT }) => React.ReactElement;
   pane: boolean;
 }
@@ -89,7 +82,8 @@ function ChannelsListHeader({ p }: { p: ChannelsListProps }): React.ReactElement
 }
 
 function useHomeTopnav(p: ChannelsListProps, searchOpen: boolean, onOpenSearch: () => void, onCloseSearch: () => void): TopnavSlot {
-  const { head, router, query, setQuery, sub, border, pane } = p;
+  const { router, query, setQuery, pane } = p;
+  const { text: sub, link: head, border } = usePalette();
   const right = useMemo(
     () => <HomeTopnavRight head={head} router={router} onOpenSearch={onOpenSearch} />,
     [head, router, onOpenSearch],
@@ -109,10 +103,9 @@ function useHomeTopnav(p: ChannelsListProps, searchOpen: boolean, onOpenSearch: 
 
 export function ChannelsList(props: ChannelsListProps): React.ReactElement {
   const {
-    panRef, sortedRows, query, fg, head, sub, border, setQuery, pane,
-    listExtraData, listRef, savedOffsetRef, didRestoreRef, contentHeightRef,
-    renderRow,
+    panRef, sortedRows, query, setQuery, pane, listExtraData, renderRow,
   } = props;
+  const { listRef, savedOffsetRef, didRestoreRef } = props.scroll;
   const [searchOpen, setSearchOpen] = useState(false);
   const openSearch = (): void => { setSearchOpen(true); };
   const closeSearch = (): void => { setSearchOpen(false); setQuery(''); };
@@ -131,7 +124,6 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
         onScroll={(ev) => { saveScrollOffset(CHANNELS_SCROLL_KEY, ev.nativeEvent.contentOffset.y); }}
         scrollEventThrottle={16}
         onContentSizeChange={(_w, h) => {
-          contentHeightRef.current = h;
           if (didRestoreRef.current) return;
           const want = savedOffsetRef.current;
           if (want == null || want <= 0) { didRestoreRef.current = true; return; }
@@ -152,7 +144,7 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
         ListHeaderComponent={<ChannelsListHeader p={props} />}
         ListFooterComponent={
           query.trim()
-            ? <HomeContactResults query={query} c={{ fg, head, sub, border }} noChannels={sortedRows.length === 0}/>
+            ? <HomeContactResults query={query} noChannels={sortedRows.length === 0}/>
             : <SuggestedContacts known={knownPeers} />
         }
         renderItem={renderRow}

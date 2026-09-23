@@ -54,7 +54,7 @@ function PagerOverlay({ insetTop, tabBarHeight, topnavHidden, rail, pathname }: 
   );
 }
 
-function nativeTabBarStyle(pal: ReturnType<typeof usePalette>, bottomInset: number, web: boolean) {
+function nativeTabBarStyle(pal: ReturnType<typeof usePalette>, bottomInset: number) {
   return {
     backgroundColor: pal.toolbarBg,
     borderTopWidth: 1,
@@ -64,7 +64,6 @@ function nativeTabBarStyle(pal: ReturnType<typeof usePalette>, bottomInset: numb
     height: 60 + bottomInset,
     paddingTop: 9,
     paddingBottom: bottomInset,
-    ...(web ? { display: 'none' as const } : {}),
   };
 }
 
@@ -82,7 +81,7 @@ export default function TabsLayout(): React.ReactElement {
   const rail = useWebTabRail();
   const gate = useAccountGate();
 
-  const tabBarStyle = nativeTabBarStyle(pal, insets.bottom, web);
+  const tabBarStyle = nativeTabBarStyle(pal, insets.bottom);
   const tabBarHeight = web && rail ? 0 : 60 + insets.bottom;
 
   if (gate.ready && !gate.hasAccount) return <Landing />;

@@ -49,7 +49,7 @@ export async function deleteDbKey(accountId: string): Promise<void> {
   await secureStorage.delete(dbKeyId(accountId)).catch(() => undefined);
 }
 
-export async function deleteLegacyDbKey(): Promise<void> {
+async function deleteLegacyDbKey(): Promise<void> {
   await secureStorage.delete(LEGACY_DB_ENCRYPTION_KEY).catch(() => undefined);
 }
 

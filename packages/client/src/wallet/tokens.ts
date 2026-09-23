@@ -1,6 +1,6 @@
 import { ASSETS, NATIVE_TOKEN_SENTINEL, type Asset, type AssetRow } from './assets';
 
-export function assetFor(chainId: number, token: string | null | undefined): Asset | undefined {
+function assetFor(chainId: number, token: string | null | undefined): Asset | undefined {
   const isNative = !token || token.toLowerCase() === NATIVE_TOKEN_SENTINEL.toLowerCase();
   if (isNative) return ASSETS.find(a => a.chainId === chainId && a.address === null);
   const lc = token.toLowerCase();

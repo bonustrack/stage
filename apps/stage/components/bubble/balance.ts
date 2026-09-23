@@ -68,15 +68,13 @@ async function readOnchain(
 }
 
 function buildBalance(
-  onchain: OnchainMeta, native: boolean,
+  onchain: OnchainMeta,
   symbol: string | undefined, needed: number | undefined,
   known: { decimals: number; symbol: string } | undefined,
 ): PayerBalance {
   const decimals = known?.decimals ?? onchain.decimals;
   const human = formatUnits(onchain.raw, decimals);
-  const sym = known?.symbol
-    ?? symbol
-    ?? (native ? onchain.symbol : (onchain.symbol === 'tokens' ? 'tokens' : onchain.symbol));
+  const sym = known?.symbol ?? symbol ?? onchain.symbol;
   return {
     text: `Balance: ${trim(human)} ${sym}`,
     insufficient: needed != null && Number(human) < needed,
@@ -95,7 +93,7 @@ async function resolveBalance(
     && a.symbol.toLowerCase() === (symbol ?? '').toLowerCase());
   const onchain = await readOnchain(cid, token, addr).catch(() => null);
   if (!onchain) return null;
-  return buildBalance(onchain, isNativeToken(token), symbol, needed, known);
+  return buildBalance(onchain, symbol, needed, known);
 }
 
 export function usePayerBalance(

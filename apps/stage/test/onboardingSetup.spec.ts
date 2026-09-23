@@ -41,10 +41,8 @@ describe('setup copy', () => {
 });
 
 describe('passkeyStepCopy', () => {
-  test('a wallet that already has a passkey must confirm it and cannot skip', () => {
-    const verify = passkeyStepCopy('verify');
-    expect(verify.skippable).toBe(false);
-    expect(verify.title).toBe('Confirm your passkey');
-    expect(passkeyStepCopy('add')).toMatchObject({ skippable: true, title: 'Add a passkey' });
+  test('a wallet that already has a passkey is asked to confirm it', () => {
+    expect(passkeyStepCopy('verify').title).toBe('Confirm your passkey');
+    expect(passkeyStepCopy('add').title).toBe('Add a passkey');
   });
 });

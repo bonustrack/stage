@@ -168,20 +168,3 @@ export function ReplyPreview({ preview, fg, sub, onPress }: {
     </Pressable>
   );
 }
-
-export function TranscriptLine({ transcript, atts, entryTs }: {
-  transcript?: string; atts: Attachment[]; entryTs: string;
-}): React.ReactElement | null {
-  if (transcript) {
-    return (
-      <Text size="xs" role="secondary" style={{ opacity: 0.85, fontStyle: 'italic', marginTop: atts.length ? 4 : 0 }}>“{transcript}”</Text>
-    );
-  }
-  const transcribing = atts.some(a => a.kind === 'audio') && Date.now() - new Date(entryTs).getTime() < 30_000;
-  if (!transcribing) return null;
-  return (
-    <Text size="xs" role="secondary" style={{ opacity: 0.6, fontStyle: 'italic', marginTop: 4 }}>
-      transcribing…
-    </Text>
-  );
-}

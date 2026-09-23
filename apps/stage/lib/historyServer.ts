@@ -1,5 +1,5 @@
 import { secureStorage } from '../platform/storage';
-import { XMTP_ENV_KEY } from './xmtp.types.core';
+import { XMTP_ENV_KEY } from './xmtp.types';
 
 const PROXY_BASE_ENV: unknown = process.env.EXPO_PUBLIC_LINKPROXY_URL;
 

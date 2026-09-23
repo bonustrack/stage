@@ -29,7 +29,7 @@ export const ASSETS: Asset[] = [
 ];
 
 export const MAINNET_NETWORK_LOGO = 'https://ipfs.snapshot.box/ipfs/bafkreid7ndxh6y2ljw2jhbisodiyrhcy2udvnwqgon5wgells3kh4si5z4';
-export const SEPOLIA_NETWORK_LOGO = 'https://ipfs.snapshot.box/ipfs/bafkreif5b7trz7plh4mpfbnom2wqc6yogux6sgzwau6znwu7pbq6qeu63e';
+const SEPOLIA_NETWORK_LOGO = 'https://ipfs.snapshot.box/ipfs/bafkreif5b7trz7plh4mpfbnom2wqc6yogux6sgzwau6znwu7pbq6qeu63e';
 export const BASE_NETWORK_LOGO = 'https://ipfs.snapshot.box/ipfs/bafkreid4ek4gnj6ccxl3yubwj2wr3d5t6dqelvvh4hv5wo5eldkqs725ri';
 export const NETWORK_LOGO: Record<number, string> = {
   1: MAINNET_NETWORK_LOGO,

@@ -20,7 +20,6 @@ export interface ScrollRefs {
   listRef: React.RefObject<VirtualListHandle | null>;
   savedOffsetRef: React.MutableRefObject<number | undefined>;
   didRestoreRef: React.MutableRefObject<boolean>;
-  contentHeightRef: React.MutableRefObject<number>;
 }
 
 export interface HomeState {
@@ -30,7 +29,6 @@ export interface HomeState {
   error: string; setError: React.Dispatch<React.SetStateAction<string>>;
   rowMenu: RowMenu | null; setRowMenu: React.Dispatch<React.SetStateAction<RowMenu | null>>;
   pinned: readonly string[];
-  refreshFromNetworkRef: React.MutableRefObject<(() => Promise<void>) | null>;
   scroll: ScrollRefs;
 }
 
@@ -49,11 +47,9 @@ export function useHomeState(): HomeState {
   const [rowMenu, setRowMenu] = useState<RowMenu | null>(null);
   const [pinned, setPinned] = useState<readonly string[]>([]);
 
-  const refreshFromNetworkRef = useRef<(() => Promise<void>) | null>(null);
   const listRef = useRef<VirtualListHandle>(null);
   const savedOffsetRef = useRef<number | undefined>(peekScrollOffset(CHANNELS_SCROLL_KEY));
   const didRestoreRef = useRef(false);
-  const contentHeightRef = useRef(0);
 
   useEffect(() => {
     void getScrollOffset(CHANNELS_SCROLL_KEY).then(o => { savedOffsetRef.current ??= o; });
@@ -66,7 +62,7 @@ export function useHomeState(): HomeState {
 
   return {
     rows, setRowsState, setRows, error, setError, rowMenu, setRowMenu,
-    pinned, refreshFromNetworkRef,
-    scroll: { listRef, savedOffsetRef, didRestoreRef, contentHeightRef },
+    pinned,
+    scroll: { listRef, savedOffsetRef, didRestoreRef },
   };
 }

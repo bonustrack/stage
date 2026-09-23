@@ -12,7 +12,7 @@ import { perfLog } from './perf';
 import { errorMessage } from '@stage-labs/client/errors';
 import { openPersistedClient, type OpenedClient } from '@stage-labs/client/xmtp/clientConfig';
 import { assertStillActiveAccount, withCreateTimeout } from './xmtp.recover.core';
-import { type XmtpEnv, XMTP_ENV_KEY } from './xmtp.types.web';
+import { type XmtpEnv, XMTP_ENV_KEY } from './xmtp.types';
 import { deleteDbKey, deleteDbFiles } from './xmtp.dbkey';
 import {
   INSTALLATION_LIMIT_MESSAGE, isInstallationLimit, isStoreLocked,

@@ -1,14 +1,12 @@
 
 import { useQuery } from '@tanstack/react-query';
-import type { Client } from '@xmtp/react-native-sdk';
 import type { XmtpEnv } from '../../lib/xmtp.types';
 import { switchToAccount } from '../../lib/xmtp.client';
 import { getActiveAccount, type AccountRecord } from '../../lib/accounts';
-import { bumpAccountEpoch, useAccountEpoch } from '../../lib/accountEpoch';
+import { useAccountEpoch } from '../../lib/accountEpoch';
 
 export const AccountManager = {
-  switch: (id: string, env?: XmtpEnv): Promise<Client> => switchToAccount(id, env),
-  bumpEpoch: (): void => { bumpAccountEpoch(); },
+  switch: async (id: string, env?: XmtpEnv): Promise<void> => { await switchToAccount(id, env); },
 } as const;
 
 export function useActiveAccount(): number {

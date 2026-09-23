@@ -46,7 +46,7 @@ export function humanizeMentions(text: string): string {
   return text.replace(MENTION_RE, (_m, addr: string) => `@${shortAddress(addr)}`);
 }
 
-export function shortContentType(raw: string | undefined | null): string {
+function shortContentType(raw: string | undefined | null): string {
   if (!raw) return 'unknown';
   return raw.split('/').pop()?.split(':')[0] ?? raw;
 }

@@ -1,8 +1,3 @@
-
-if (!Array.prototype.toReversed) {
-  Object.defineProperty(Array.prototype, 'toReversed', { value: function () { return [...this].reverse(); }, writable: true, configurable: true });
-}
-
 const path = require('path');
 const { getDefaultConfig } = require('expo/metro-config');
 
@@ -23,33 +18,13 @@ config.resolver.blockList = config.resolver.blockList
 
 const appNodeModules = path.resolve(projectRoot, 'node_modules');
 
-const emptyShim = path.resolve(projectRoot, 'metro.shims', 'empty.js');
 const nodeCorePolyfills = {
-  url: 'react-native-url-polyfill',
-  stream: 'stream-browserify',
-  crypto: 'crypto-browserify',
   buffer: 'buffer',
   events: 'events',
-  process: 'process',
   util: 'util',
   assert: 'assert',
-  path: 'path-browserify',
   punycode: 'punycode',
-  querystring: 'querystring-es3',
-  string_decoder: 'string_decoder',
 };
-const emptyShimNames = [
-  'http',
-  'https',
-  'zlib',
-  'net',
-  'tls',
-  'fs',
-  'dns',
-  'child_process',
-  'os',
-  'vm',
-];
 
 config.resolver.extraNodeModules = {
   ...(config.resolver.extraNodeModules ?? {}),
@@ -62,42 +37,6 @@ config.resolver.extraNodeModules = {
       require.resolve(target),
     ]),
   ),
-  ...Object.fromEntries(emptyShimNames.map((name) => [name, emptyShim])),
 };
-
-const WEB_NATIVE_STUBS = new Set([
-  '@xmtp/react-native-sdk',
-]);
-const webNativeStub = path.resolve(projectRoot, 'metro.shims', 'web', 'native-stub.js');
-
-const upstreamResolveRequest = config.resolver.resolveRequest;
-config.resolver.resolveRequest = (context, moduleName, platform) => {
-  if (platform === 'web') {
-    const bare = moduleName.split('/').slice(0, moduleName.startsWith('@') ? 2 : 1).join('/');
-    if (WEB_NATIVE_STUBS.has(bare)) {
-      return { type: 'sourceFile', filePath: webNativeStub };
-    }
-  }
-  const resolved = upstreamResolveRequest
-    ? upstreamResolveRequest(context, moduleName, platform)
-    : context.resolveRequest(context, moduleName, platform);
-  if (
-    moduleName === 'axios' &&
-    resolved &&
-    resolved.type === 'sourceFile' &&
-    resolved.filePath.includes(`${path.sep}axios${path.sep}`)
-  ) {
-    const pkgDir = resolved.filePath.split(
-      `${path.sep}dist${path.sep}`,
-    )[0];
-    const browser = path.join(pkgDir, 'dist', 'browser', 'axios.cjs');
-    return { ...resolved, filePath: browser };
-  }
-  return resolved;
-};
-
-if (process.env.RG_BLOCK_WORKTREES) {
-  config.resolver.blockList = [/\.claude\/worktrees\/(?!agent-a3a263f507bde95a6)/];
-}
 
 module.exports = config;

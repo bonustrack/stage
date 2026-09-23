@@ -17,7 +17,6 @@ function warn(where: string, err: unknown): void {
 export function identityResolvers<C extends { inboxId: string | undefined }, V extends { members(): Promise<{ inboxId: string }[]> }>(
   deps: IdentityDeps<C, V>,
 ): {
-  primeInboxEthCache: (client: C, ids: string[]) => Promise<void>;
   primeConversationMembers: (client: C, convs: V[]) => Promise<void>;
   isGroupConv: (conv: V) => boolean;
   peerEthAddressOfDm: (conv: V) => Promise<string | null>;
@@ -28,8 +27,6 @@ export function identityResolvers<C extends { inboxId: string | undefined }, V e
     resolveInboxEthCached(inboxEthCache, deps.fetchInboxEth(client), ids);
 
   return {
-    primeInboxEthCache: (client, ids) => primeInboxEthCache(inboxEthCache, deps.fetchInboxEth(client), ids),
-
     async primeConversationMembers(client, convs) {
       try {
         const memberLists = await Promise.all(convs.map(c =>

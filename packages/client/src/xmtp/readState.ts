@@ -122,7 +122,7 @@ export function isRowCleared(cleared: ClearedChats, row: ClearableRow): boolean 
   return isChatCleared(cleared, row.peerAddress, revivalTs);
 }
 
-export const SYNC_GROUP_PREFIX = 'stage.sync:';
+const SYNC_GROUP_PREFIX = 'stage.sync:';
 
 export function syncGroupName(address: string): string {
   return `${SYNC_GROUP_PREFIX}${address.toLowerCase()}`;

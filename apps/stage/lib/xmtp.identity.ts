@@ -5,7 +5,7 @@ import { identityResolvers } from './xmtp.identity.core';
 type NativeXmtpClient = Awaited<ReturnType<typeof xmtpClient>>;
 
 export const {
-  primeInboxEthCache, primeConversationMembers, isGroupConv,
+  primeConversationMembers, isGroupConv,
   peerEthAddressOfDm, memberInboxToAddressMap, groupMemberEthAddresses,
 } = identityResolvers<NativeXmtpClient, Conversation>({
   client: xmtpClient,

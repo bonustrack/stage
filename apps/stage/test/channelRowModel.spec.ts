@@ -3,26 +3,21 @@ import { channelRowModel } from '../components/ChannelRow.model';
 
 describe('channelRowModel', () => {
   test('minimal domain maps to empty-preview params', () => {
-    const p = channelRowModel({ convId: 'c1', title: 'Alice', avatarUri: 'u' });
+    const p = channelRowModel({ title: 'Alice', timestampLabel: '' });
     expect(p).toEqual({
-      convId: 'c1',
-      avatarUri: 'u',
       title: 'Alice',
       titleSegments: undefined,
       preview: '',
       previewPrefix: undefined,
       timestamp: '',
-      unreadBadge: undefined,
       chips: undefined,
       pinned: undefined,
-      omitAvatar: undefined,
-      interactive: undefined,
     });
   });
 
   test('draft wins over preview and adds You: prefix, suppressing chips', () => {
     const p = channelRowModel({
-      convId: 'c1', title: 'Alice', avatarUri: 'u',
+      title: 'Alice',
       lastPreview: 'hello', hasDraft: true, draftText: '  wip  ',
       labels: ['a', 'b', 'c'], timestampLabel: '9:15 AM',
     });
@@ -33,25 +28,19 @@ describe('channelRowModel', () => {
   });
 
   test('labels truncate to two with overflow chip', () => {
-    const p = channelRowModel({
-      convId: 'c1', title: 'Alice', avatarUri: 'u', labels: ['a', 'b', 'c', 'd'],
-    });
+    const p = channelRowModel({ title: 'Alice', timestampLabel: '', labels: ['a', 'b', 'c', 'd'] });
     expect(p.chips).toEqual([{ label: 'a' }, { label: 'b' }, { label: '+2' }]);
   });
 
-  test('preview falls back lastPreview -> subtitle -> emptyPreview', () => {
-    const base = { convId: 'c', title: 't', avatarUri: 'u' };
+  test('preview falls back lastPreview -> subtitle -> empty', () => {
+    const base = { title: 't', timestampLabel: '' };
     expect(channelRowModel({ ...base, lastPreview: 'p', subtitle: 's' }).preview).toBe('p');
     expect(channelRowModel({ ...base, lastPreview: '', subtitle: 's' }).preview).toBe('s');
-    expect(channelRowModel({ ...base, emptyPreview: '(no messages yet)' }).preview).toBe('(no messages yet)');
+    expect(channelRowModel(base).preview).toBe('');
   });
 
-  test('unread badge and highlight segments', () => {
-    const p = channelRowModel({
-      convId: 'c', title: 'Alice Smith', avatarUri: 'u',
-      unreadCount: 120, highlightQuery: 'ali',
-    });
-    expect(p.unreadBadge).toBe('99+');
+  test('highlight segments', () => {
+    const p = channelRowModel({ title: 'Alice Smith', timestampLabel: '', highlightQuery: 'ali' });
     expect(p.titleSegments).toEqual([
       { text: 'Ali', emphasized: true },
       { text: 'ce Smith', emphasized: false },

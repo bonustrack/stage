@@ -81,7 +81,6 @@ describe('pollQuestionBlocks', () => {
     };
     const blocks = pollQuestionBlocks([question], undefined, undefined);
     expect(blocks[0]?.header).toBe('Feedback · open');
-    expect(blocks[0]?.open).toBe(true);
   });
 
   test('missing or empty header is hidden', () => {

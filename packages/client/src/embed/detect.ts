@@ -42,7 +42,7 @@ export function mapCoordsOf(text: string | undefined | null): MapCoords | null {
   return null;
 }
 
-export function osmTileXY(lat: number, lng: number, zoom: number): { x: number; y: number } {
+function osmTileXY(lat: number, lng: number, zoom: number): { x: number; y: number } {
   const n = 2 ** zoom;
   const x = Math.floor(((lng + 180) / 360) * n);
   const latRad = (lat * Math.PI) / 180;

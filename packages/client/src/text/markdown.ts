@@ -6,9 +6,9 @@ export interface LinkifyLike {
   add(schema: string, rule: LinkifyRule): unknown;
 }
 
-export const DEEP_LINK_SCHEMAS = ['metro:', 'stage:'] as const;
+const DEEP_LINK_SCHEMAS = ['metro:', 'stage:'] as const;
 
-export const deepLinkRule: LinkifyRule = {
+const deepLinkRule: LinkifyRule = {
   validate(text: string, pos: number): number {
     const m = /^\/\/[^\s]+/.exec(text.slice(pos));
     return m ? m[0].length : 0;

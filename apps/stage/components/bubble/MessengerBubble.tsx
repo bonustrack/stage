@@ -1,20 +1,16 @@
-
-import { memo, useState } from 'react';
+import { memo } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Icon } from '@stage-labs/kit/react-native/icon';
 import { GestureDetector } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
 import { Avatar } from '../Avatar';
 import { Col } from '../layout';
-import { REACT_PRESETS } from './helpers';
 import type { MessengerBubbleProps } from './props';
 import { BubbleContent } from './content';
-import { ReactionsRow, ReactionPicker } from './reactions';
+import { ReactionsRow } from './reactions';
 import { contextMenuProps } from '../../lib/contextMenu';
 import { usePalette } from '../../lib/theme';
 import { useBubbleGestures } from './gestures';
-
-export { REACT_PRESETS };
 
 function BubbleAvatar({ address, bg, onPress }: {
   address?: string | null; bg: string; onPress?: (address: string) => void;
@@ -27,29 +23,22 @@ function BubbleAvatar({ address, bg, onPress }: {
   );
 }
 
-function rowBackground(replyTarget: boolean | undefined, unread: boolean | undefined, dark: boolean): string {
+function rowBackground(replyTarget: boolean | undefined, dark: boolean): string {
   if (replyTarget) return dark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.05)';
-  if (unread) return dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
   return 'transparent';
 }
 
 function BubbleColumn({ p, fg, sub, pillBg }: {
   p: MessengerBubbleProps; fg: string; sub: string; pillBg: string;
 }): React.ReactElement {
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const { dark, unread, pending } = p;
+  const { dark, pending } = p;
   return (
     <Col minWidth={0} flex={1} style={{ opacity: pending ? 0.5 : 1 }}>
-      <Col
-        style={{
-          borderWidth: unread ? 1.5 : 0,
-          borderColor: unread ? (dark ? '#ffffff' : '#000000') : 'transparent',
-        }}
-      >
+      <Col>
         <BubbleContent
           entry={p.entry} dark={dark} pending={pending} fg={fg} sub={sub}
           replyPreview={p.replyPreview} onReplyPreviewPress={p.onReplyPreviewPress}
-          transcript={p.transcript} onAnswer={p.onAnswer} votes={p.votes} ownVotes={p.ownVotes}
+          onAnswer={p.onAnswer} votes={p.votes} ownVotes={p.ownVotes}
           onVote={p.onVote} openAnswers={p.openAnswers} onOpenAnswer={p.onOpenAnswer} myUri={p.myUri}
           onPay={p.onPay} paying={p.paying} onSign={p.onSign} signing={p.signing}
           consentAllowed={p.consentAllowed} selectable={p.selectable} highlight={p.highlight}
@@ -61,19 +50,12 @@ function BubbleColumn({ p, fg, sub, pillBg }: {
           ownEmojis={p.ownEmojis} pillBg={pillBg} onReact={p.onReact}
         />
       )}
-      {pickerOpen && !pending ? (
-        <ReactionPicker
-          dark={dark}
-          onPick={e => { p.onReact?.(e); setPickerOpen(false); }}
-          onClose={() => { setPickerOpen(false); }}
-        />
-      ) : null}
     </Col>
   );
 }
 
 function MessengerBubbleBase(props: MessengerBubbleProps): React.ReactElement {
-  const { entry, dark, unread, replyTarget, senderEthAddress, onAvatarPress } = props;
+  const { entry, dark, replyTarget, senderEthAddress, onAvatarPress } = props;
   const isSystem = (entry.payload as { system?: boolean } | undefined)?.system === true;
   const pal = usePalette();
   const fg = isSystem ? pal.text : pal.link;
@@ -87,7 +69,7 @@ function MessengerBubbleBase(props: MessengerBubbleProps): React.ReactElement {
         style={[g.swipeStyle, {
           flexDirection: 'row', alignItems: 'flex-start',
           paddingHorizontal: 12, paddingVertical: 6, gap: 10,
-          backgroundColor: rowBackground(replyTarget, unread, dark),
+          backgroundColor: rowBackground(replyTarget, dark),
         }]}
       >
         <Animated.View
@@ -104,10 +86,10 @@ function MessengerBubbleBase(props: MessengerBubbleProps): React.ReactElement {
 }
 
 const DATA_KEYS = [
-  'entry', 'dark', 'unread', 'pending', 'replyTarget', 'replyPreview',
+  'entry', 'dark', 'pending', 'replyTarget', 'replyPreview',
   'reactions', 'pendingReactions', 'pendingRemovals', 'ownEmojis',
   'votes', 'ownVotes', 'openAnswers', 'signing', 'paying', 'selectable',
-  'highlight', 'senderEthAddress', 'myUri', 'transcript', 'consentAllowed',
+  'highlight', 'senderEthAddress', 'myUri', 'consentAllowed',
 ] as const satisfies readonly (keyof MessengerBubbleProps)[];
 
 function bubblePropsEqual(prev: MessengerBubbleProps, next: MessengerBubbleProps): boolean {

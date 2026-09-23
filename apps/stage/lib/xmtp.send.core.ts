@@ -9,7 +9,7 @@ import {
   WALLET_SEND_CALLS_CODEC, TRANSACTION_REFERENCE_CODEC, type JsonCodec,
 } from './xmtpJsonCodecs';
 
-export interface SendPrimitives {
+interface SendPrimitives {
   text: (line: string, text: string) => Promise<string>;
   reaction: (line: string, reaction: ReactionPayload) => Promise<string>;
   reply: (line: string, replyTo: string, text: string) => Promise<string>;

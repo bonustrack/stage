@@ -2,15 +2,10 @@
 import {
   MAX_LABELS, MAX_LABEL_LEN, LabelPermissionError, asGroup, readAppData,
   parseBlob, readLabels, labelsOfSyncedGroup, addLabel, removeLabel, writeLabels,
-  type Group,
 } from '@stage-labs/client/xmtp/labels';
 import { convOfLine } from './xmtp.client';
 
-export {
-  MAX_LABELS, MAX_LABEL_LEN, LabelPermissionError, asGroup,
-  parseBlob, readLabels, labelsOfSyncedGroup,
-};
-export type { Group };
+export { MAX_LABELS, MAX_LABEL_LEN, LabelPermissionError, labelsOfSyncedGroup };
 
 export async function getGroupLabels(line: string): Promise<string[]> {
   const conv = await convOfLine(line);

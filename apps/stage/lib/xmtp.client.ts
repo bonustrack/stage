@@ -140,7 +140,7 @@ export async function syncPreferences(): Promise<void> {
 
 export const asConversationId = (id: string): ConversationId => id as ConversationId;
 type InstallationId = Parameters<Client['revokeInstallations']>[1][number];
-export const asInstallationId = (id: string): InstallationId => id as InstallationId;
+const asInstallationId = (id: string): InstallationId => id as InstallationId;
 
 export async function convOfLine(line: string): Promise<Conversation | null> {
   const convId = convIdOfLine(line);

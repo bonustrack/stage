@@ -7,8 +7,8 @@ import { PAGE_SIZE } from '../../lib/xmtp.stream';
 
 export type SearchHit = HistoryEntry;
 
-export const SEARCH_MAX_PAGES = 25;
-export const SEARCH_MAX_RESULTS = 50;
+const SEARCH_MAX_PAGES = 25;
+const SEARCH_MAX_RESULTS = 50;
 
 export interface SearchScanResult {
   hits: SearchHit[];

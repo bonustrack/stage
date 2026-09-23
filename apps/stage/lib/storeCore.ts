@@ -74,7 +74,7 @@ export function hydrateOnce<T>(reader: () => Promise<T>): {
   };
 }
 
-export interface ClientSlot<C> {
+interface ClientSlot<C> {
   get: () => C | null;
   set: (client: C | null) => void;
   getOrCreate: (create: () => Promise<C>) => Promise<C>;

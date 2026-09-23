@@ -1,4 +1,3 @@
-
 import { useMemo } from 'react';
 import { openInBubbleLink } from '../../lib/safeOpenLink';
 
@@ -16,7 +15,7 @@ import { PollView } from './poll';
 import { SigRequestCard, SigReferenceCard, TxRequestCard, TxReceiptCard } from './cards';
 import { bubbleTimestamp } from '../../lib/format';
 import {
-  BubbleAttachments, BubbleBody, BubbleEmbeds, ReplyPreview, TranscriptLine, type MarkdownProps,
+  BubbleAttachments, BubbleBody, BubbleEmbeds, ReplyPreview, type MarkdownProps,
 } from './content.parts';
 
 function descriptorsOf(entry: HistoryEntry): {
@@ -34,7 +33,7 @@ function descriptorsOf(entry: HistoryEntry): {
 
 interface BubbleContentProps {
   entry: HistoryEntry; dark: boolean; pending?: boolean; fg: string; sub: string;
-  replyPreview?: string; onReplyPreviewPress?: () => void; transcript?: string;
+  replyPreview?: string; onReplyPreviewPress?: () => void;
   onAnswer?: (label: string) => void;
   votes?: Map<number, Map<number, Set<string>>>; ownVotes?: Map<number, Set<number>>;
   onVote?: (questionIndex: number, optionIndex: number, action: 'added' | 'removed') => void;
@@ -86,10 +85,10 @@ function BubbleCards({ d, p }: { d: ReturnType<typeof descriptorsOf>; p: BubbleC
 }
 
 export function BubbleContent(props: BubbleContentProps): React.ReactElement {
-  const { entry, dark, pending, fg, sub, replyPreview, onReplyPreviewPress, transcript, selectable, highlight } = props;
+  const { entry, dark, pending, fg, sub, replyPreview, onReplyPreviewPress, selectable, highlight } = props;
   const d = useMemo(() => descriptorsOf(entry), [entry]);
   const cardLinks = useMemo(() => cardLinksOf(entry.text), [entry.text]);
-  const mdStyle = useMemo(() => markdownStyles(fg, dark, false), [fg, dark]);
+  const mdStyle = useMemo(() => markdownStyles(fg, dark), [fg, dark]);
   const markdownProps: MarkdownProps = {
     markdownit: mdParser,
     onLinkPress: (url: string): boolean => openInBubbleLink(url),
@@ -105,7 +104,6 @@ export function BubbleContent(props: BubbleContentProps): React.ReactElement {
       <BubbleMain d={d} entry={entry} fg={fg} dark={dark} selectable={selectable} highlight={highlight} markdownProps={markdownProps} />
       <BubbleEmbeds cardLinks={cardLinks} dark={dark} />
       <BubbleCards d={d} p={props} />
-      <TranscriptLine transcript={transcript} atts={d.atts} entryTs={entry.ts} />
     </>
   );
 }

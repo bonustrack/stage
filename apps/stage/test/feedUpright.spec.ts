@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  FEED_MAX_FIRST_PAINT, FEED_MIN_BATCH, feedDistanceFromNewest, initialUprightIndex,
+  FEED_MAX_FIRST_PAINT, FEED_MIN_BATCH, feedDistanceFromNewest,
   planUprightRestore, shouldPageOlder, uprightFirstBatch, uprightScrollOffset,
 } from '../components/xmtp-conv/feed-helpers';
 
@@ -79,29 +79,9 @@ describe('an upright feed lands on the newest message and stays put once the rea
   });
 });
 
-describe('an upright feed renders its first batch at the newest end', () => {
-  test('a conversation longer than one batch starts that batch at the last rows', () => {
-    expect(initialUprightIndex(20, 12)).toBe(8);
-    expect(initialUprightIndex(200, 12)).toBe(188);
-  });
-
-  test('a conversation that fits in one batch starts at the top', () => {
-    expect(initialUprightIndex(12, 12)).toBe(0);
-    expect(initialUprightIndex(3, 12)).toBe(0);
-    expect(initialUprightIndex(0, 12)).toBe(0);
-  });
-
-  test('the index always leaves a full batch of rows to render', () => {
-    for (const count of [13, 40, 999]) {
-      expect(count - initialUprightIndex(count, 12)).toBe(12);
-    }
-  });
-});
-
 describe('an upright feed paints its loaded rows in one pass', () => {
   test('a page-sized conversation renders every row in the first batch', () => {
     expect(uprightFirstBatch(20)).toBe(20);
-    expect(initialUprightIndex(20, uprightFirstBatch(20))).toBe(0);
   });
 
   test('a nearly empty conversation still asks for the minimum batch', () => {
@@ -111,7 +91,6 @@ describe('an upright feed paints its loaded rows in one pass', () => {
 
   test('a long history is capped so the first paint stays affordable', () => {
     expect(uprightFirstBatch(500)).toBe(FEED_MAX_FIRST_PAINT);
-    expect(initialUprightIndex(500, uprightFirstBatch(500))).toBe(500 - FEED_MAX_FIRST_PAINT);
   });
 });
 

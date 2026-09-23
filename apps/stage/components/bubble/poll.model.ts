@@ -20,7 +20,6 @@ export interface PollOptionRow {
 export interface PollQuestionBlock {
   question?: string;
   header?: string;
-  open: boolean;
   totalLabel: string;
   options: PollOptionRow[];
 }
@@ -65,7 +64,6 @@ function questionBlock(
   return {
     question: showQuestion ? q.question : undefined,
     header: headerLabel(q),
-    open: q.open === true,
     totalLabel: `${total} vote${total === 1 ? '' : 's'}`,
     options: options.map((option, i) =>
       optionRow(

@@ -8,11 +8,11 @@ import { isPushEnabledSync, loadPushEnabled } from './pushPref';
 import { setPushStatus } from './pushStatus';
 
 const SERVER_URL_ENV: unknown = process.env.EXPO_PUBLIC_PUSH_SERVER_URL;
-export const PUSH_SERVER_URL =
+const PUSH_SERVER_URL =
   typeof SERVER_URL_ENV === 'string' && SERVER_URL_ENV !== ''
     ? SERVER_URL_ENV.replace(/\/$/, '')
     : 'https://push.stage.box';
-export const PUSH_RPC_PATH = '/notifications.v1.Notifications/';
+const PUSH_RPC_PATH = '/notifications.v1.Notifications/';
 
 const REGISTER_TTL_MS = 6 * 60 * 60 * 1000;
 const stateKey = (installationId: string): string => `push.server.${installationId}`;
@@ -29,7 +29,7 @@ export interface PushRegistrationInput {
 
 interface RegisterState { token: string; at: number; topics: string }
 
-export function reportPushFailure(label: string, err: unknown): void {
+function reportPushFailure(label: string, err: unknown): void {
   const message = errorMessage(err);
   setPushStatus('failed', message);
   if (process.env.NODE_ENV !== 'production') console.warn(label, message);

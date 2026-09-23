@@ -1,5 +1,3 @@
-
-import { Platform } from 'react-native';
 import { makeListeners, useStoreValue } from '../../lib/storeCore';
 import { WEB_TAB_RAIL_WIDTH } from '../../lib/webLayout';
 import { namespacedKey, readNamespaced } from '../../platform/storageNamespace';
@@ -17,7 +15,7 @@ function clampPaneWidth(w: number): number {
 }
 
 function readInitial(): number {
-  if (Platform.OS !== 'web' || typeof localStorage === 'undefined') return DEFAULT_PANE_WIDTH;
+  if (typeof localStorage === 'undefined') return DEFAULT_PANE_WIDTH;
   const raw = Number(readNamespaced(localStorage, STORAGE_KEY));
   return Number.isFinite(raw) && raw > 0 ? clampPaneWidth(raw) : DEFAULT_PANE_WIDTH;
 }
@@ -45,7 +43,7 @@ export function setPaneWidth(next: number): void {
   if (w === width) return;
   width = w;
   syncCssVar();
-  if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
+  if (typeof localStorage !== 'undefined') {
     localStorage.setItem(namespacedKey(STORAGE_KEY), String(w));
   }
   listeners.notify();

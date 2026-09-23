@@ -32,8 +32,6 @@ function getExistingPeers(): { address: string; convId: string }[] {
   return peers;
 }
 
-interface Colors { fg: string; head: string; sub: string; border: string }
-
 const LOOKUP_DEBOUNCE_MS = 300;
 const NO_MATCH_HINT = 'No matches. Try a username, a full address or a name.eth to start a chat.';
 
@@ -76,7 +74,7 @@ function useResolvedPeer(q: string, enabled: boolean): ResolvedPeer | null {
 }
 
 export function HomeContactResults(
-  { query, noChannels }: { query: string; c: Colors; noChannels: boolean },
+  { query, noChannels }: { query: string; noChannels: boolean },
 ): React.ReactElement | null {
   const q = query.trim();
   const dark = useKitScheme() === 'dark';

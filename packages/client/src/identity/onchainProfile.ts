@@ -71,10 +71,6 @@ export function baseReverseNode(address: string): Hex {
   return keccak256(encodePacked(['bytes32', 'bytes32'], [chainReverseNode, addressNode]));
 }
 
-export function isBasename(name: string): boolean {
-  return name.toLowerCase().endsWith('.base.eth');
-}
-
 export function usableAvatarUri(value: string | null | undefined): string | undefined {
   const trimmed = value?.trim() ?? '';
   if (/^(https?:\/\/|ipfs:\/\/|data:image\/)/i.test(trimmed)) return trimmed;

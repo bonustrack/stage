@@ -36,7 +36,7 @@ export function useUsernameInput(): UsernameInput {
 
 function ShuffleButton({ pal, disabled, onPick }: { pal: Pal; disabled: boolean; onPick: (label: string) => void }): React.ReactElement {
   return (
-    <RailTooltip label="Random username" onPress={() => { if (!disabled) void randomUsername().then(onPick); }} style={undefined}>
+    <RailTooltip label="Random username" onPress={() => { if (!disabled) onPick(randomUsername()); }} style={undefined}>
       <Icon name="switchHorizontal" size={SHUFFLE_ICON} color={pal.sub} />
     </RailTooltip>
   );

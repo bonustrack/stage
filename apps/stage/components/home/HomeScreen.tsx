@@ -55,8 +55,7 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
   const router = useRouter();
   const pathname = usePathname();
   const dark = useEffectiveColorScheme() === 'dark';
-  const { text: fg, link: head, border } = usePalette();
-  const sub = fg;
+  const { text: fg, link: head } = usePalette();
   const st = useHomeState();
   const { rows, pinned } = st;
   const { enabledLabels, toggleLabel, unreadOnly, toggleUnread, clearAllFilters } = useHomeFilters();
@@ -87,7 +86,6 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
   useChannelsSync({
     accountEpoch, rows, setRowsState: st.setRowsState, setRows: st.setRows,
     setError: st.setError,
-    refreshFromNetworkRef: st.refreshFromNetworkRef,
   });
 
   const activePath = pane ? pathname : '';
@@ -116,10 +114,9 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
       barLabels={barLabels} showFilterBar={showFilterBar}
       enabledLabels={enabledLabels} onToggleLabel={toggleLabel}
       unreadOnly={unreadOnly} onToggleUnread={toggleUnread} onClearAll={clearAllFilters}
-      query={query} setQuery={setQuery} fg={fg} head={head} sub={sub} border={border}
+      query={query} setQuery={setQuery}
       listExtraData={listExtraData}
-      listRef={st.scroll.listRef} savedOffsetRef={st.scroll.savedOffsetRef}
-      didRestoreRef={st.scroll.didRestoreRef} contentHeightRef={st.scroll.contentHeightRef}
+      scroll={st.scroll}
       renderRow={renderRow}
       pane={pane}
     />

@@ -1,7 +1,7 @@
 import type { Hex } from 'viem';
 import { getViemAccount, type AccountRecord } from './accounts';
 
-export interface SigningKey {
+interface SigningKey {
   kind: 'EOA' | 'SCW';
   address: string;
   chainId: number;
@@ -34,9 +34,9 @@ export async function signingKeyForRecord(rec: AccountRecord): Promise<SigningKe
   return { kind: 'EOA', address: acct.address, chainId: 1, signMessage: (message) => acct.signMessage({ message }) };
 }
 
-export type SigningIdentity = Omit<SigningKey, 'signMessage'>;
+type SigningIdentity = Omit<SigningKey, 'signMessage'>;
 
-export async function signingIdentityForRecord(rec: AccountRecord): Promise<SigningIdentity> {
+async function signingIdentityForRecord(rec: AccountRecord): Promise<SigningIdentity> {
   if (rec.type !== 'smart') {
     const acct = await getViemAccount(rec.id);
     if (!acct) throw new Error('No signing key for this account.');

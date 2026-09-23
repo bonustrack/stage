@@ -6,7 +6,7 @@
 
 `@stage-labs/client` holds the framework-independent logic behind the universal Stage app ([`apps/stage`](../../apps/stage)). It is pure TypeScript with no React or react-native imports, so the same code runs in a browser, in Hermes, and in Node.
 
-It covers the XMTP orchestration cores (content codecs, humanisation, message builders, channel filtering/caching, consent, groups, envelopes), onchain identity (Basenames and `*.stage.base.eth` names, peer profiles, avatar URLs), the smart-account layer (accounts, keys, ZeroDev validator plans, passkey linking, recovery), wallet formatting/balances/tx decoding, read-only API clients (ENS, Etherscan, OpenSea, CoinGecko, GitHub releases), x402 challenges, and the shared types that tie it all together. Boundary data is validated with zod (`validate.ts`); XMTP content is always decoded through a schema.
+It covers the XMTP orchestration cores (content codecs, humanisation, message builders, channel filtering/caching, consent, groups, envelopes), onchain identity (Basenames and `*.stage.base.eth` names, peer profiles, avatar URLs), the smart-account layer (accounts, keys, ZeroDev validator plans, passkey linking, recovery), wallet formatting/balances/tx decoding, read-only API clients (ENS, Etherscan, OpenSea, CoinGecko, GitHub link detection), x402 challenges, and the shared types that tie it all together. Boundary data is validated with zod (`validate.ts`); XMTP content is always decoded through a schema.
 
 ## Install
 
@@ -34,7 +34,7 @@ import { detectEmbed } from '@stage-labs/client/embed/detect';
 import type { HistoryEntry } from '@stage-labs/client/types';
 ```
 
-The package root (`@stage-labs/client`) re-exports everything except `zerodev/*`, which is deliberately subpath-only.
+There is no root barrel: every module is imported through its own subpath export.
 
 ## Project structure
 
@@ -45,18 +45,16 @@ src/
   identity/    # Basenames + stage names (read/write), onchain profiles, peer profile lookups, formatting
   profile/     # avatar URL helper (stamp + IPFS gateway) and picture upload parsing
   accounts/    # account records, key storage constants, HD index, device transfer
-  zerodev/     # Kernel smart accounts: derive, validator plan, passkey link, recovery (subpath-only)
+  zerodev/     # Kernel smart accounts: derive, validator plan, passkey link, recovery
   wallet/      # formatting, assets, balances, prices, send, tx decode/simulate/error
-  api/         # read-only clients: ens, etherscan, opensea, coingecko, github releases
+  api/         # read-only clients: ens, etherscan, opensea, coingecko, github link detection
   routing/     # deep links and handle parsing
   embed/       # link/embed detection
-  stamp/       # stamp.fyi avatar resolution
   image/       # EXIF/metadata stripping before upload
   text/        # markdown helpers
   x402/        # x402 payment challenge parsing
   validate.ts  # parseOrThrow / parseOrNull zod boundary helpers
   types.ts     # shared domain types
-  index.ts     # root barrel
 ```
 
 ## Scripts

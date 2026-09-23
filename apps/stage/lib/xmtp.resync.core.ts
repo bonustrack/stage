@@ -1,5 +1,5 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { isControlBody } from './xmtp.types.core';
+import { isControlBody } from './xmtp.types';
 import { feedCache, activeFeedLines } from './xmtp.state.core';
 
 export const PAGE_SIZE = 20;

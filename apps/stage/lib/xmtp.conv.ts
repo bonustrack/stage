@@ -17,7 +17,7 @@ export async function openDmWithAddress(address: string): Promise<string> {
   return dm.id;
 }
 
-export interface ExistingDm { convId: string; peerJoined: boolean }
+interface ExistingDm { convId: string; peerJoined: boolean }
 
 export async function findExistingDmWithAddress(address: string): Promise<ExistingDm | null> {
   const client = await xmtpClient();

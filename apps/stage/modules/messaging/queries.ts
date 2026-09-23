@@ -11,8 +11,7 @@ export const messagingKeys = {
     ['xmtp', 'messages', account, line] as const,
 } as const;
 
-export type { ConvMeta };
-export { EMPTY_CONV_META, fetchConvMeta, fetchGroupRoles };
+export { fetchGroupRoles };
 
 export function useConvMeta(convId?: string | null): ConvMeta {
   const { data } = useQuery({
