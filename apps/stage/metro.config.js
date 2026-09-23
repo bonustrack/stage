@@ -21,9 +21,6 @@ const appNodeModules = path.resolve(projectRoot, 'node_modules');
 const nodeCorePolyfills = {
   buffer: 'buffer',
   events: 'events',
-  util: 'util',
-  assert: 'assert',
-  punycode: 'punycode',
 };
 
 config.resolver.extraNodeModules = {

@@ -29,6 +29,7 @@
     "@zerodev/webauthn-key": "5.4.2",
     "@zerodev/weighted-ecdsa-validator": "5.4.4",
     "buffer": "^6.0.3",
+    "events": "3.3.0",
     "expo": "~54.0.33",
     "expo-application": "~7.0.8",
     "expo-av": "~16.0.8",

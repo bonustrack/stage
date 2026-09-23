@@ -32,6 +32,7 @@ export default defineConfig({
         project: ['app/**', 'components/**', 'lib/**', 'modules/**', 'platform/**'],
         ignoreDependencies: [
           'buffer',
+          'events',
           'babel-preset-expo',
           'expo-system-ui',
           '@types/markdown-it',
