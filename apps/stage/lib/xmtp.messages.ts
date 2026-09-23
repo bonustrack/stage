@@ -1,47 +1,26 @@
-
-import { buildReply, buildStaticAttachment } from '@stage-labs/client/xmtp/builders';
+import type { HistoryEntry } from '@stage-labs/client/types';
 import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
-import { convOfLine } from './xmtp.client';
+import { convOfLine, sdk } from './xmtp.sdk';
 import { makeSenders } from './xmtp.send.core';
 
-import type { HistoryEntry } from '@stage-labs/client/types';
-import { mapDecodedToEnvelope as envelopeOfXmtpMessage } from '@stage-labs/client/xmtp/envelope';
-
-export { envelopeOfXmtpMessage };
-
-export async function rowMessagesOf(conv: unknown, limit: number): Promise<RowMessage[]> {
-  const c = conv as {
-    messages: (opts: { limit: number }) => Promise<{
-      content: () => unknown; contentTypeId?: string; senderInboxId: string; sentNs: number;
-    }[]>;
-  };
-  const msgs = await c.messages({ limit });
-  return msgs.map(m => {
-    let content: unknown;
-    try { content = m.content(); } catch { content = undefined; }
-    return {
-      content,
-      contentTypeId: m.contentTypeId,
-      senderInboxId: m.senderInboxId,
-      sentNs: m.sentNs,
-    };
-  });
-}
-
 export type ConvHandle = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
+
+export async function rowMessagesOf(conv: ConvHandle, limit: number): Promise<RowMessage[]> {
+  return (await sdk.messages(conv, { limit })).map(sdk.rowOf);
+}
 
 export async function latestConvMessages(
   conv: ConvHandle, line: string, limit: number,
 ): Promise<HistoryEntry[]> {
-  const msgs = await conv.messages({ limit, direction: 'DESCENDING' });
-  return msgs.map(m => envelopeOfXmtpMessage(m, line));
+  const msgs = await sdk.messages(conv, { limit, order: 'desc' });
+  return msgs.map(m => sdk.envelopeOf(m, line));
 }
 
 export async function olderConvMessages(line: string, beforeTsMs: number, limit: number): Promise<HistoryEntry[]> {
   const conv = await convOfLine(line);
   if (!conv) return [];
-  const older = await conv.messages({ limit, beforeNs: beforeTsMs * 1_000_000, direction: 'DESCENDING' });
-  return older.map(m => envelopeOfXmtpMessage(m, line));
+  const older = await sdk.messages(conv, { limit, beforeMs: beforeTsMs, order: 'desc' });
+  return older.map(m => sdk.envelopeOf(m, line));
 }
 
 async function requireConv(line: string): Promise<ConvHandle> {
@@ -54,12 +33,10 @@ export const {
   xmtpSendText, xmtpReact, xmtpSendJson, xmtpSendPoll, xmtpSendSignatureRequest, xmtpSendSignatureReference,
   xmtpSendTxRequest, xmtpSendTxReference, xmtpVote, xmtpOpenAnswer, xmtpReply, xmtpSendAttachment,
 } = makeSenders({
-  text: async (line, text) => (await requireConv(line)).send(text),
-  reaction: async (line, reaction) => (await requireConv(line)).send({ reaction }),
-  reply: async (line, replyTo, text) => (await requireConv(line)).send({ reply: buildReply(replyTo, text) }),
-  json: async (line, codec, content) => (await requireConv(line)).send(content, { contentType: codec.contentType }),
-  attachment: async (line, filename, mimeType, dataB64) => {
-    const conv = await requireConv(line);
-    return conv.send({ attachment: buildStaticAttachment(filename, mimeType, dataB64) });
-  },
+  text: async (line, text) => sdk.send.text(await requireConv(line), text),
+  reaction: async (line, reaction) => sdk.send.reaction(await requireConv(line), reaction),
+  reply: async (line, replyTo, text) => sdk.send.reply(await requireConv(line), replyTo, text),
+  json: async (line, codec, content) => sdk.send.json(await requireConv(line), codec, content),
+  attachment: async (line, filename, mimeType, dataB64) =>
+    sdk.send.attachment(await requireConv(line), filename, mimeType, dataB64),
 });

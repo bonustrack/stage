@@ -31,15 +31,15 @@ export function makeListeners<T = void>(): {
   return { notify, subscribe, size: () => listeners.size };
 }
 
-export function makeSharedSource<S>(
-  open: (source: S, emit: () => void) => () => void,
-): (source: S, cb: () => void) => () => void {
-  const listeners = makeListeners();
+export function makeSharedSource<S, T = void>(
+  open: (source: S, emit: (value: T) => void) => () => void,
+): (source: S, cb: (value: T) => void) => () => void {
+  const listeners = makeListeners<T>();
   let running: { source: S; close: () => void } | null = null;
   const close = (): void => { running?.close(); running = null; };
   return (source, cb) => {
     if (running !== null && running.source !== source) close();
-    running ??= { source, close: open(source, () => { listeners.notify(); }) };
+    running ??= { source, close: open(source, (value) => { listeners.notify(value); }) };
     const unsubscribe = listeners.subscribe(cb);
     let active = true;
     return () => {

@@ -1,6 +1,6 @@
 
 import { lineOfConv } from '../../lib/xmtp.types';
-import { convOfLine } from '../../lib/xmtp.client';
+import { convOfLine } from '../../lib/xmtp.sdk';
 import {
   peerEthAddressOfDm, groupMemberEthAddresses, memberInboxToAddressMap,
 } from '../../lib/xmtp.identity';

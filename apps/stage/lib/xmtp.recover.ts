@@ -1,35 +1,18 @@
-
-import { secureStorage } from '../platform/storage';
 import { Client, PublicIdentity } from '@xmtp/react-native-sdk';
-import {
-  getActiveAccount, markRegistered, setActiveAccountId,
-  type AccountRecord,
-} from './accounts';
+import type { AccountRecord } from './accounts';
 import { registerPushWithServer } from './pushRegister';
 import { XMTP_CODECS, signerForRecord } from './xmtp.codecs';
 import { setCachedXmtpClient } from './xmtp.state';
-import { type XmtpEnv, XMTP_ENV_KEY } from './xmtp.types';
+import type { XmtpEnv } from './xmtp.types';
 import { loadOrCreateDbKey, ensureDbDir, wipeXmtpStore } from './xmtp.dbkey';
-import {
-  INSTALLATION_LIMIT_MESSAGE, isInstallationLimit,
-  isStoreCorruption as isStoreCorruptionCore,
-} from '@stage-labs/client/xmtp/clientErrors';
-import { assertStillActiveAccount, withCreateTimeout } from './xmtp.recover.core';
-
+import { isInstallationLimit, isStoreCorruption as isStoreCorruptionCore } from '@stage-labs/client/xmtp/clientErrors';
+import { XmtpInstallationLimitError, clientFinalizer, withCreateTimeout } from './xmtp.recover.core';
 
 export interface CreateOpts {
   env: XmtpEnv;
   dbDirectory: string;
   dbEncryptionKey: Uint8Array;
   codecs: typeof XMTP_CODECS;
-}
-
-class XmtpInstallationLimitError extends Error {
-  constructor() { super(INSTALLATION_LIMIT_MESSAGE); this.name = 'XmtpInstallationLimitError'; }
-}
-
-export async function ensureActiveAccount(): Promise<void> {
-  await getActiveAccount();
 }
 
 const CREATE_TIMEOUT_MESSAGE = 'XMTP.create timed out (native handshake hang)';
@@ -67,15 +50,11 @@ async function tryFreeInstallationSlot(rec: AccountRecord, env: XmtpEnv): Promis
   }
 }
 
-async function finalizeClient(created: Client, rec: AccountRecord, env: XmtpEnv): Promise<Client> {
-  await assertStillActiveAccount(rec.id, () => undefined);
-  setCachedXmtpClient(created);
-  await markRegistered(rec.id);
-  await setActiveAccountId(rec.id);
-  await secureStorage.set(XMTP_ENV_KEY, env);
-  void registerPushWithServer(created);
-  return created;
-}
+export const finalizeClient = clientFinalizer<Client>({
+  discard: () => undefined,
+  setCached: setCachedXmtpClient,
+  registerPush: registerPushWithServer,
+});
 
 export async function createClientForAccount(
   rec: AccountRecord, env: XmtpEnv, opts: CreateOpts,
@@ -84,7 +63,7 @@ export async function createClientForAccount(
   const signer = await signerForRecord(rec);
   try {
     const created = await createWithTimeout(signer, opts);
-    return await finalizeClient(created, rec, env);
+    return await finalizeClient(created, rec, env, { markRegistered: true });
   } catch (e) {
     if (!recovered && isStoreCorruption(e)) {
       await wipeXmtpStore(rec.id, rec.dbDir);

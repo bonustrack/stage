@@ -1,89 +1,88 @@
-
-import {
-  addGroupMembers, PublicIdentity, staticKeyPackageStatuses, type Conversation,
-} from '@xmtp/react-native-sdk';
 import { classifyKeyPackageStatuses } from '@stage-labs/client/xmtp/clientErrors';
-import { getCachedXmtpClient, getOrCreateXmtpClient, convOfLine, xmtpClient, asConversationId } from './xmtp.client';
+import { convOfLine, sdk } from './xmtp.sdk';
+import { VISIBLE_CONSENT } from './xmtp.sdk.core';
 import { lineOfConv, type DmUnreachableReason, type XmtpConsent } from './xmtp.types';
 import { conversationIsSyncGroup } from './xmtp.readSync';
-import { withoutSyncGroups } from './xmtp.conv.core';
+import { registerHiddenConv } from './readSyncRegistry';
 import { makeSharedSource } from './storeCore';
 
+type Conv = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
+type ConvClient = Awaited<ReturnType<typeof sdk.client>>;
+
 export async function openDmWithAddress(address: string): Promise<string> {
-  const client = await getOrCreateXmtpClient('production');
-  const dm = await client.conversations.findOrCreateDmWithIdentity(
-    new PublicIdentity(address, 'ETHEREUM'),
-  );
+  const dm = await sdk.openDm(await sdk.client(), address);
   return dm.id;
 }
 
 interface ExistingDm { convId: string; peerJoined: boolean }
 
 export async function findExistingDmWithAddress(address: string): Promise<ExistingDm | null> {
-  const client = await xmtpClient();
-  const identity = new PublicIdentity(address, 'ETHEREUM');
-  let dm = await client.conversations.findDmByIdentity(identity);
+  const client = await sdk.client();
+  const lookup = await sdk.dmLookup(client, address);
+  if (!lookup) return null;
+  let dm = await lookup.find();
   if (!dm) {
-    await client.conversations.sync().catch(() => undefined);
-    dm = await client.conversations.findDmByIdentity(identity);
+    await sdk.syncConvList(client).catch(() => undefined);
+    dm = await lookup.find();
   }
   if (!dm) return null;
   const members = await dm.members().catch(() => []);
-  const peerInboxId = await client.findInboxIdFromIdentity(identity).catch(() => undefined);
+  const peerInboxId = await lookup.peerInboxId().catch(() => undefined);
   const peerJoined = members.length >= 2 || peerInboxId === client.inboxId;
   return { convId: dm.id, peerJoined };
 }
 
 export async function repairDmMembership(convId: string, address: string): Promise<boolean> {
-  const client = await xmtpClient();
-  const identity = new PublicIdentity(address, 'ETHEREUM');
-  const peerInboxId = await client.findInboxIdFromIdentity(identity);
+  const forceAddMember = sdk.forceAddMember;
+  if (!forceAddMember) return false;
+  const client = await sdk.client();
+  const peerInboxId = await sdk.inboxIdOfAddress(client, address);
   if (peerInboxId === undefined || peerInboxId === '') return false;
   try {
-    await addGroupMembers(
-      client.installationId,
-      asConversationId(convId),
-      [peerInboxId],
-    );
+    await forceAddMember(client, convId, peerInboxId);
   } catch {
     return false;
   }
-  const dm = await client.conversations.findDmByIdentity(identity);
+  const dm = await (await sdk.dmLookup(client, address))?.find();
   const members = await dm?.members().catch(() => []) ?? [];
   return members.length >= 2;
 }
 
 export async function dmUnreachableReason(address: string): Promise<DmUnreachableReason> {
-  const client = await xmtpClient();
-  const inboxId = await client.findInboxIdFromIdentity(new PublicIdentity(address, 'ETHEREUM'));
+  const client = await sdk.client();
+  const inboxId = await sdk.inboxIdOfAddress(client, address);
   if (inboxId === undefined || inboxId === '') return 'unregistered';
-  const states = await client.inboxStates(true, [inboxId]);
-  const installationIds = (states[0]?.installations ?? []).map(i => i.id) as Parameters<typeof staticKeyPackageStatuses>[1];
+  const installationIds = await sdk.installationIdsOf(client, inboxId);
   if (installationIds.length === 0) return 'stale-installations';
-  const { statuses } = await staticKeyPackageStatuses('production', installationIds);
-  const verdict = classifyKeyPackageStatuses([...statuses.values()].map(s => s.validationError));
+  const verdict = classifyKeyPackageStatuses(await sdk.keyPackageErrors(client, installationIds));
   return verdict === 'stale-installations' ? 'stale-installations' : null;
 }
 
-export async function listVisibleConversations(): Promise<Conversation[]> {
-  const client = await xmtpClient();
-  const convs = await client.conversations.list(undefined, undefined, ['allowed', 'unknown']);
-  return withoutSyncGroups(convs, conversationIsSyncGroup);
+async function withoutSyncGroups(convs: Conv[]): Promise<Conv[]> {
+  const flags = await Promise.all(convs.map((c) => conversationIsSyncGroup(c).catch(() => false)));
+  return convs.filter((c, i) => {
+    if (flags[i] === true) registerHiddenConv(c.id);
+    return flags[i] !== true;
+  });
+}
+
+export async function listVisibleConversations(): Promise<Conv[]> {
+  const client = await sdk.client();
+  return withoutSyncGroups(await sdk.listConvs(client, VISIBLE_CONSENT));
 }
 
 export async function syncConversationsFromNetwork(): Promise<void> {
-  const client = await xmtpClient();
+  const client = await sdk.client();
   try {
-    await client.conversations.syncAllConversations(['allowed', 'unknown']);
+    await sdk.syncVisible(client);
   } catch { }
 }
-
 
 export async function getConvConsentState(convId: string): Promise<XmtpConsent | null> {
   const conv = await convOfLine(lineOfConv(convId));
   if (!conv) return null;
   try {
-    return await conv.consentState();
+    return await sdk.consentOf(conv);
   } catch {
     return null;
   }
@@ -92,7 +91,7 @@ export async function getConvConsentState(convId: string): Promise<XmtpConsent |
 async function setConvConsent(convId: string, state: XmtpConsent): Promise<void> {
   const conv = await convOfLine(lineOfConv(convId));
   if (!conv) throw new Error('Conversation not found');
-  await conv.updateConsent(state);
+  await sdk.setConsent(conv, state);
 }
 
 export function acceptRequestConv(convId: string): Promise<void> { return setConvConsent(convId, 'allowed'); }
@@ -101,38 +100,23 @@ export function blockRequestConv(convId: string): Promise<void> { return setConv
 
 export function unacceptConv(convId: string): Promise<void> { return setConvConsent(convId, 'unknown'); }
 
-export function streamNewConversations(cb: (conv: Conversation) => void): () => void {
-  const client = getCachedXmtpClient();
-  if (!client) return () => undefined;
-  let cancelled = false;
-  void client.conversations.stream((conv) => { if (!cancelled) cb(conv); return Promise.resolve(); }).catch(() => undefined);
-  return () => {
-    cancelled = true;
-    try { client.conversations.cancelStream(); } catch { }
-  };
+const sharedConversations = makeSharedSource<ConvClient, Conv>(sdk.streamConversations);
+
+export function streamNewConversations(cb: (conv: Conv) => void): () => void {
+  const client = sdk.cachedClient();
+  return client ? sharedConversations(client, cb) : () => undefined;
 }
 
-type ConsentClient = NonNullable<ReturnType<typeof getCachedXmtpClient>>;
-
-const sharedConsent = makeSharedSource<ConsentClient>((client, emit) => {
-  let live = true;
-  void client.preferences.streamConsent(() => {
-    if (live) emit();
-    return Promise.resolve();
-  }).catch(() => undefined);
-  return () => {
-    live = false;
-    try { client.preferences.cancelStreamConsent(); } catch { }
-  };
-});
+const sharedConsent = makeSharedSource<ConvClient>((client, emit) => sdk.streamConsent(client, () => { emit(); }));
 
 export function streamConvConsent(cb: () => void): () => void {
-  const client = getCachedXmtpClient();
+  const client = sdk.cachedClient();
   return client ? sharedConsent(client, cb) : () => undefined;
 }
 
 export async function syncConsent(): Promise<void> {
   try {
-    await getCachedXmtpClient()?.preferences.syncConsent();
+    const client = sdk.cachedClient();
+    if (client) await sdk.syncConsent(client);
   } catch { }
 }

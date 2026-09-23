@@ -1,48 +1,19 @@
-import { secureStorage } from '../platform/storage';
-import { Client, PublicIdentity, type Conversation, type ConversationId } from '@xmtp/react-native-sdk';
+import { Client, PublicIdentity } from '@xmtp/react-native-sdk';
 import {
-  getActiveAccount,
-  loadAccounts, setActiveAccountId, removeAccount,
-  type AccountRecord,
+  getActiveAccount, loadAccounts, setActiveAccountId, removeAccount, type AccountRecord,
 } from './accounts';
-import { registerPushWithServer } from './pushRegister';
 import { bumpAccountEpoch } from './accountEpoch';
-import { XMTP_CODECS } from './xmtp.codecs';
-import { getCachedXmtpClient, setCachedXmtpClient, resetClientScopedState, getOrCreateCachedClient } from './xmtp.state';
+import { XMTP_CODECS, signerForRecord } from './xmtp.codecs';
+import { getCachedXmtpClient, resetClientScopedState, getOrCreateCachedClient } from './xmtp.state';
 import { whileRegistering } from './xmtp.state.core';
-import { type XmtpEnv, convIdOfLine, XMTP_ENV_KEY } from './xmtp.types';
-import {
-  loadOrCreateDbKey, deleteDbKey, deleteDbFiles,
-  ensureDbDir, wipeXmtpStore,
-} from './xmtp.dbkey';
-import { createClientForAccount, isStoreCorruption } from './xmtp.recover';
-import { assertStillActiveAccount } from './xmtp.recover.core';
-import { signerForRecord } from './xmtp.codecs';
+import type { XmtpEnv } from './xmtp.types';
+import { loadOrCreateDbKey, deleteDbKey, deleteDbFiles, ensureDbDir, wipeXmtpStore } from './xmtp.dbkey';
+import { createClientForAccount, finalizeClient, isStoreCorruption } from './xmtp.recover';
+import { makeClientLifecycle } from './xmtp.client.core';
 
-export { getCachedXmtpClient, waitForXmtpReady } from './xmtp.state';
-export { ensureActiveAccount } from './xmtp.recover';
+type InstallationId = Parameters<Client['revokeInstallations']>[1][number];
 
-export class NoAccountError extends Error {
-  constructor() { super('No account: onboarding not completed yet.'); this.name = 'NoAccountError'; }
-}
-
-
-export function cachedSelfEthAddress(): string | null {
-  return getCachedXmtpClient()?.publicIdentity.identifier ?? null;
-}
-
-export async function selfEthAddress(): Promise<string | null> {
-  const client = await xmtpClient();
-  return client.publicIdentity.identifier;
-}
-
-export function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promise<Client> {
-  return getOrCreateCachedClient(async () => {
-    const account = await getActiveAccount();
-    if (!account) throw new NoAccountError();
-    return buildClientForAccount(account, env);
-  });
-}
+const REGISTERED_BUILD_TIMEOUT_MS = 20_000;
 
 async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<Client> {
   const dbDirectory = await ensureDbDir(rec.dbDir);
@@ -52,16 +23,9 @@ async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<
     try {
       const built = await Promise.race<Client | null>([
         Client.build(new PublicIdentity(rec.address, 'ETHEREUM'), opts),
-        new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, 20_000)),
+        new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, REGISTERED_BUILD_TIMEOUT_MS)),
       ]);
-      if (built) {
-        await assertStillActiveAccount(rec.id, () => undefined);
-        setCachedXmtpClient(built);
-        await setActiveAccountId(rec.id);
-        await secureStorage.set(XMTP_ENV_KEY, env);
-        void registerPushWithServer(built);
-        return built;
-      }
+      if (built) return await finalizeClient(built, rec, env, { markRegistered: false });
     } catch (e) {
       if (isStoreCorruption(e)) {
         await wipeXmtpStore(rec.id, rec.dbDir);
@@ -74,81 +38,28 @@ async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<
   return whileRegistering(() => createClientForAccount(rec, env, opts));
 }
 
-export async function switchToAccount(id: string, env: XmtpEnv = 'production'): Promise<Client> {
-  const list = await loadAccounts();
-  const rec = list.find(a => a.id === id);
-  if (!rec) throw new Error('Account not found.');
-  resetClientScopedState();
-  await setActiveAccountId(id);
-  try {
-    const client = await getOrCreateCachedClient(() => buildClientForAccount(rec, env));
-    bumpAccountEpoch();
-    return client;
-  } catch (e) {
-    bumpAccountEpoch();
-    throw e;
-  }
-}
+export const {
+  getOrCreateXmtpClient, xmtpClient, switchToAccount, deleteAccount, resetActiveXmtpStore,
+  cachedSelfEthAddress, selfEthAddress, syncPreferences, listXmtpInstallations, revokeXmtpInstallation,
+} = makeClientLifecycle<Client>({
+  accounts: { active: getActiveAccount, list: loadAccounts, setActive: setActiveAccountId, remove: removeAccount },
+  store: { deleteFiles: deleteDbFiles, deleteKey: deleteDbKey, wipe: wipeXmtpStore, forgetSaved: () => Promise.resolve() },
+  client: {
+    get: getCachedXmtpClient,
+    getOrCreate: getOrCreateCachedClient,
+    build: buildClientForAccount,
+    dispose: resetClientScopedState,
+    selfAddressOf: (client) => client.publicIdentity.identifier,
+    syncPreferences: (client) => client.preferences.sync(),
+    installations: async (client) => (await client.inboxState(true)).installations,
+    installationIdOf: (client) => client.installationId,
+    revoke: async (client, account, installationId) => {
+      const signer = await signerForRecord(account);
+      await client.revokeInstallations(signer, [installationId as InstallationId]);
+    },
+  },
+  bumpEpoch: bumpAccountEpoch,
+});
 
-export async function deleteAccount(id: string): Promise<void> {
-  const list = await loadAccounts();
-  const rec = list.find(a => a.id === id);
-  await removeAccount(id);
-  if (rec) await deleteDbFiles(rec.dbDir);
-  await deleteDbKey(id);
-  resetClientScopedState();
-}
-
-export async function resetActiveXmtpStore(): Promise<void> {
-  const rec = await getActiveAccount();
-  if (!rec) return;
-  resetClientScopedState();
-  await wipeXmtpStore(rec.id, rec.dbDir);
-}
-
-export interface XmtpInstallation {
-  id: string;
-  createdAt: number | undefined;
-  current: boolean;
-}
-
-export async function listXmtpInstallations(): Promise<XmtpInstallation[]> {
-  const client = await xmtpClient();
-  const state = await client.inboxState(true);
-  const current = client.installationId;
-  return state.installations
-    .map(i => ({ id: i.id, createdAt: i.createdAt, current: i.id === current }))
-    .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
-}
-
-export async function revokeXmtpInstallation(installationId: string): Promise<void> {
-  const client = await xmtpClient();
-  const account = await getActiveAccount();
-  if (!account) throw new NoAccountError();
-  const signer = await signerForRecord(account);
-  await client.revokeInstallations(signer, [asInstallationId(installationId)]);
-}
-
+export { getCachedXmtpClient, waitForXmtpReady } from './xmtp.state';
 export { getLastReadNs, setLastReadNs, getMarkedUnread, setMarkedUnreadFlag, markConvUnreadSynced, markConvReadSynced } from './xmtp.unread';
-
-export async function syncPreferences(): Promise<void> {
-  try {
-    await getCachedXmtpClient()?.preferences.sync();
-  } catch { }
-}
-
-export const asConversationId = (id: string): ConversationId => id as ConversationId;
-type InstallationId = Parameters<Client['revokeInstallations']>[1][number];
-const asInstallationId = (id: string): InstallationId => id as InstallationId;
-
-export async function convOfLine(line: string): Promise<Conversation | null> {
-  const convId = convIdOfLine(line);
-  if (!convId) return null;
-  const client = await xmtpClient();
-  const conv = await client.conversations.findConversation(asConversationId(convId)).catch(() => null);
-  return conv ?? null;
-}
-
-export async function xmtpClient(): ReturnType<typeof getOrCreateXmtpClient> {
-  return getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
-}

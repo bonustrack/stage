@@ -5,7 +5,8 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import { useAccountEpoch } from './accountEpoch';
 import { getOrCreateXmtpClient } from './xmtp.client';
 import { feedCache, activeFeedLines } from './xmtp.state.core';
-import { ensureGlobalStream, PAGE_SIZE } from './xmtp.stream';
+import { ensureGlobalStream } from './xmtp.stream';
+import { PAGE_SIZE } from './xmtp.resync';
 import { getQueryClient } from './queryClient';
 import { messagingKeys } from '../modules/messaging/queries';
 import {

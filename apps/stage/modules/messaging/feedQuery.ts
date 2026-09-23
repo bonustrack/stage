@@ -3,12 +3,11 @@ import { getQueryClient } from '../../lib/queryClient';
 import { getAccountEpoch } from '../../lib/accountEpoch';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { isControlBody } from '../../lib/xmtp.types';
-import { convOfLine } from '../../lib/xmtp.client';
+import { convOfLine } from '../../lib/xmtp.sdk';
 import { latestConvMessages, olderConvMessages } from '../../lib/xmtp.messages';
-import { prependToFeed, refreshLatestPage } from '../../lib/xmtp.resync';
+import { PAGE_SIZE, prependToFeed, refreshLatestPage, syncInboxOnce } from '../../lib/xmtp.resync';
 import { feedCache } from '../../lib/xmtp.state.core';
 import { perfLog, perfTime } from '../../lib/perf';
-import { syncInboxOnce, PAGE_SIZE } from '../../lib/xmtp.stream';
 import { messagingKeys } from './queries';
 import { reconcileOnOpen } from './feedReconcile';
 

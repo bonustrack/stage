@@ -3,7 +3,7 @@ import {
   MAX_LABELS, MAX_LABEL_LEN, LabelPermissionError, asGroup,
   groupLabelsOf, addLabel, removeLabel, writeLabels,
 } from '@stage-labs/client/xmtp/labels';
-import { convOfLine } from './xmtp.client';
+import { convOfLine } from './xmtp.sdk';
 
 export { MAX_LABELS, MAX_LABEL_LEN, LabelPermissionError, groupLabelsOf };
 

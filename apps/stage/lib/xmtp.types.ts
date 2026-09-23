@@ -15,6 +15,13 @@ export interface StreamMsg {
   msg: StreamedMessage;
 }
 
+export interface StreamStatus {
+  live: () => boolean;
+  lastMessageAt: () => number;
+  lastCloseAt: () => number;
+  ensure: () => void;
+}
+
 export {
   XMTP_USER_PREFIX, lineOfConv, lineOfDmPeer, convIdOfLine,
 } from '@stage-labs/client/xmtp/line';

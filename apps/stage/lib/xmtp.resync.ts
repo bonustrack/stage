@@ -1,17 +1,14 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
-import type { ConsentState } from '@xmtp/react-native-sdk';
-import { getCachedXmtpClient, convOfLine } from './xmtp.client';
+import { convOfLine, sdk } from './xmtp.sdk';
 import { latestConvMessages } from './xmtp.messages';
 import { PAGE_SIZE, feedResync, throttledInboxSync } from './xmtp.resync.core';
 
 export { PAGE_SIZE, prependToFeed, pushToFeedSlice } from './xmtp.resync.core';
 
-export const STREAM_CONSENT_STATES: ConsentState[] = ['allowed', 'unknown'];
-
 export const syncInboxOnce = throttledInboxSync(async () => {
-  const client = getCachedXmtpClient();
+  const client = sdk.cachedClient();
   if (!client) return false;
-  await client.conversations.syncAllConversations(STREAM_CONSENT_STATES);
+  await sdk.syncVisible(client);
   return true;
 });
 

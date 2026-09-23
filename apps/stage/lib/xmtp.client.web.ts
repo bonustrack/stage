@@ -1,27 +1,19 @@
-import { Client, type Conversation } from '@xmtp/browser-sdk';
+import { Client } from '@xmtp/browser-sdk';
 import { secureStorage } from '../platform/storage';
 import {
-  getActiveAccount,
-  loadAccounts, setActiveAccountId, removeAccount,
-  type AccountRecord,
+  getActiveAccount, loadAccounts, setActiveAccountId, removeAccount, type AccountRecord,
 } from './accounts';
 import { getSecure, setSecure } from './cache.shared';
 import { perfLog, perfTime } from './perf';
 import { bumpAccountEpoch } from './accountEpoch';
 import { XMTP_CODECS, signerForRecord } from './xmtp.codecs.web';
 import { getCachedXmtpClient, resetClientScopedState, getOrCreateCachedClient } from './xmtp.state.web';
-import { type XmtpEnv, convIdOfLine } from './xmtp.types';
-import { deleteDbKey, deleteDbFiles } from './xmtp.dbkey';
+import type { XmtpEnv } from './xmtp.types';
+import { deleteDbKey, deleteDbFiles, wipeXmtpStore } from './xmtp.dbkey';
 import { historyServerUrl } from './historyServer';
 import { openClientForAccount, type CreateOpts } from './xmtp.recover.web';
+import { makeClientLifecycle } from './xmtp.client.core';
 import { webXmtpDbPath, canReuseSavedClient, installationCreatedAtMs } from '@stage-labs/client/xmtp/clientConfig';
-
-export { getCachedXmtpClient, waitForXmtpReady } from './xmtp.state.web';
-export { ensureActiveAccount } from './xmtp.recover.web';
-
-export class NoAccountError extends Error {
-  constructor() { super('No account: onboarding not completed yet.'); this.name = 'NoAccountError'; }
-}
 
 const ADDRESS_PREFIX = 'xmtp.address.';
 const ENV_PREFIX = 'xmtp.env.';
@@ -32,23 +24,6 @@ type WebXmtpClient = Client<unknown>;
 function addressKeyFor(id: string): string { return ADDRESS_PREFIX + id; }
 function envKeyFor(id: string): string { return ENV_PREFIX + id; }
 function installationKeyFor(id: string): string { return INSTALLATION_PREFIX + id; }
-
-export function cachedSelfEthAddress(): string | null {
-  return getCachedXmtpClient()?.accountIdentifier?.identifier ?? null;
-}
-
-export async function selfEthAddress(): Promise<string | null> {
-  const client = await xmtpClient();
-  return client.accountIdentifier?.identifier ?? null;
-}
-
-export function getOrCreateXmtpClient(env: XmtpEnv = 'production'): Promise<WebXmtpClient> {
-  return getOrCreateCachedClient(async () => {
-    const account = await getActiveAccount();
-    if (!account) throw new NoAccountError();
-    return buildClientForAccount(account, env);
-  });
-}
 
 const OPFS_POOL_DIR = '.opfs-libxmtp-metadata';
 const OPFS_EMPTY_SLOT_BYTES = 4096;
@@ -105,70 +80,13 @@ function disposeCachedClient(): void {
   resetClientScopedState();
 }
 
-export async function switchToAccount(id: string, env: XmtpEnv = 'production'): Promise<WebXmtpClient> {
-  const list = await loadAccounts();
-  const rec = list.find(a => a.id === id);
-  if (!rec) throw new Error('Account not found.');
-  disposeCachedClient();
-  await setActiveAccountId(id);
-  try {
-    const client = await getOrCreateCachedClient(() => buildClientForAccount(rec, env));
-    bumpAccountEpoch();
-    return client;
-  } catch (e) {
-    bumpAccountEpoch();
-    throw e;
-  }
-}
-
 async function forgetSavedClient(id: string): Promise<void> {
   await secureStorage.delete(addressKeyFor(id)).catch(() => undefined);
   await secureStorage.delete(envKeyFor(id)).catch(() => undefined);
   await secureStorage.delete(installationKeyFor(id)).catch(() => undefined);
 }
 
-export async function deleteAccount(id: string): Promise<void> {
-  const list = await loadAccounts();
-  const rec = list.find(a => a.id === id);
-  await removeAccount(id);
-  if (rec) await deleteDbFiles(rec.dbDir);
-  await deleteDbKey(id);
-  await forgetSavedClient(id);
-  disposeCachedClient();
-}
-
-export async function resetActiveXmtpStore(): Promise<void> {
-  const rec = await getActiveAccount();
-  if (!rec) return;
-  disposeCachedClient();
-  await deleteDbFiles(rec.dbDir);
-  await deleteDbKey(rec.id);
-  await forgetSavedClient(rec.id);
-}
-
-export interface XmtpInstallation {
-  id: string;
-  createdAt: number | undefined;
-  current: boolean;
-}
-
-export async function listXmtpInstallations(): Promise<XmtpInstallation[]> {
-  const client = await xmtpClient();
-  const state = await client.preferences.inboxState();
-  const current = client.installationId;
-  return state.installations
-    .map(i => ({
-      id: i.id,
-      createdAt: installationCreatedAtMs(i.clientTimestampNs) ?? undefined,
-      current: i.id === current,
-    }))
-    .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
-}
-
-export async function revokeXmtpInstallation(installationId: string): Promise<void> {
-  const client = await xmtpClient();
-  const account = await getActiveAccount();
-  if (!account) throw new NoAccountError();
+async function revokeInstallation(client: WebXmtpClient, account: AccountRecord, installationId: string): Promise<void> {
   const inboxId = client.inboxId;
   if (!inboxId) throw new Error('XMTP inbox unavailable.');
   const state = await client.preferences.inboxState();
@@ -178,22 +96,26 @@ export async function revokeXmtpInstallation(installationId: string): Promise<vo
   await Client.revokeInstallations(signer, inboxId, [target.bytes], client.env);
 }
 
+export const {
+  getOrCreateXmtpClient, xmtpClient, switchToAccount, deleteAccount, resetActiveXmtpStore,
+  cachedSelfEthAddress, selfEthAddress, syncPreferences, listXmtpInstallations, revokeXmtpInstallation,
+} = makeClientLifecycle<WebXmtpClient>({
+  accounts: { active: getActiveAccount, list: loadAccounts, setActive: setActiveAccountId, remove: removeAccount },
+  store: { deleteFiles: deleteDbFiles, deleteKey: deleteDbKey, wipe: wipeXmtpStore, forgetSaved: forgetSavedClient },
+  client: {
+    get: getCachedXmtpClient,
+    getOrCreate: getOrCreateCachedClient,
+    build: buildClientForAccount,
+    dispose: disposeCachedClient,
+    selfAddressOf: (client) => client.accountIdentifier?.identifier ?? null,
+    syncPreferences: (client) => client.preferences.sync(),
+    installations: async (client) => (await client.preferences.inboxState()).installations
+      .map(i => ({ id: i.id, createdAt: installationCreatedAtMs(i.clientTimestampNs) ?? undefined })),
+    installationIdOf: (client) => client.installationId,
+    revoke: revokeInstallation,
+  },
+  bumpEpoch: bumpAccountEpoch,
+});
+
+export { getCachedXmtpClient, waitForXmtpReady } from './xmtp.state.web';
 export { getLastReadNs, setLastReadNs, getMarkedUnread, setMarkedUnreadFlag, markConvUnreadSynced, markConvReadSynced } from './xmtp.unread';
-
-export async function syncPreferences(): Promise<void> {
-  try {
-    await getCachedXmtpClient()?.preferences.sync();
-  } catch { }
-}
-
-export async function convOfLine(line: string): Promise<Conversation | null> {
-  const convId = convIdOfLine(line);
-  if (!convId) return null;
-  const client = await xmtpClient();
-  const conv = await client.conversations.getConversationById(convId).catch(() => undefined);
-  return conv ?? null;
-}
-
-export async function xmtpClient(): ReturnType<typeof getOrCreateXmtpClient> {
-  return getCachedXmtpClient() ?? await getOrCreateXmtpClient('production');
-}

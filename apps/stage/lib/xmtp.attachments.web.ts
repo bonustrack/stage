@@ -4,7 +4,7 @@ import {
   type EncryptedAttachment, type RemoteAttachment,
 } from '@xmtp/browser-sdk';
 import { stripMetadataBytes, isStrippableImage } from '@stage-labs/client/image/stripMetadata';
-import { convOfLine } from './xmtp.client.web';
+import { convOfLine } from './xmtp.sdk.web';
 import { type LocalAttachmentInput } from './xmtp.types';
 import { SWARM_UPLOAD_MAX_BYTES, swarmToHttp, tooLargeError, uploadFormToSwarmy } from './swarmy';
 import { attachmentMimeType } from './attachmentFiles';

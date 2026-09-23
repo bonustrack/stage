@@ -1,4 +1,15 @@
-import { getActiveAccount } from './accounts';
+import { INSTALLATION_LIMIT_MESSAGE } from '@stage-labs/client/xmtp/clientErrors';
+import { secureStorage } from '../platform/storage';
+import { getActiveAccount, markRegistered, setActiveAccountId, type AccountRecord } from './accounts';
+import { XMTP_ENV_KEY, type XmtpEnv } from './xmtp.types';
+
+export class XmtpInstallationLimitError extends Error {
+  constructor() { super(INSTALLATION_LIMIT_MESSAGE); this.name = 'XmtpInstallationLimitError'; }
+}
+
+export async function ensureActiveAccount(): Promise<void> {
+  await getActiveAccount();
+}
 
 export async function withCreateTimeout<C>(
   run: () => Promise<C>, ms: number, message: string, disposeLate?: (value: C) => void,
@@ -33,3 +44,22 @@ export async function assertStillActiveAccount(accountId: string, discard: () =>
   throw new Error(STALE_ACCOUNT_MESSAGE);
 }
 
+interface FinalizeDeps<C> {
+  discard: (client: C) => void;
+  setCached: (client: C) => void;
+  registerPush: (client: C) => Promise<void>;
+}
+
+export function clientFinalizer<C>(deps: FinalizeDeps<C>): (
+  client: C, rec: AccountRecord, env: XmtpEnv, opts: { markRegistered: boolean },
+) => Promise<C> {
+  return async (client, rec, env, opts) => {
+    await assertStillActiveAccount(rec.id, () => { deps.discard(client); });
+    deps.setCached(client);
+    if (opts.markRegistered) await markRegistered(rec.id);
+    await setActiveAccountId(rec.id);
+    await secureStorage.set(XMTP_ENV_KEY, env);
+    void deps.registerPush(client);
+    return client;
+  };
+}

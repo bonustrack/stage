@@ -1,100 +1,50 @@
-
-import { AppState } from 'react-native';
-import { setAppForeground, subscribeXmtpPush } from '../modules/stage-pill';
-import { isControlBody } from './xmtp.types';
-import { markBackgroundDelivered } from './pushNotify';
-import { xmtpClient } from './xmtp.client';
-import { envelopeOfXmtpMessage } from './xmtp.messages';
+import { isControlBody, lineOfConv, type StreamMsg, type StreamStatus } from './xmtp.types';
+import { sdk } from './xmtp.sdk';
 import { activeFeedLines, registerGlobalStreamTeardown } from './xmtp.state.core';
-import {
-  STREAM_CONSENT_STATES, pushToFeedSlice, resyncActiveFeeds, syncInboxOnce,
-} from './xmtp.resync';
-import { lineOfConv, type StreamMsg } from './xmtp.types';
-import type { StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
-import { convIdFromTopic } from '@stage-labs/client/xmtp/clientErrors';
+import { pushToFeedSlice, resyncActiveFeeds } from './xmtp.resync';
+import { foregroundWatch } from './xmtp.foreground';
 import { isHiddenConv } from './readSyncRegistry';
 import { reconcileOnArrival, feedLatestNs } from '../modules/messaging/feedReconcile';
 
-export { PAGE_SIZE, syncInboxOnce } from './xmtp.resync';
+type StreamMessage = Parameters<Parameters<typeof sdk.streamAllMessages>[1]>[0];
 
 interface SubscribeOptions { includeHidden?: boolean }
 
+const REARM_DELAY_MS = 500;
+
 const streamSubscribers = new Map<(m: StreamMsg) => void, boolean>();
+
+let cancelStream: (() => void) | null = null;
+let starting = false;
+let generation = 0;
+let rearmTimer: ReturnType<typeof setTimeout> | null = null;
+let lastMessageAt = 0;
+let lastCloseAt = 0;
+
+const status: StreamStatus = {
+  live: () => cancelStream !== null,
+  lastMessageAt: () => lastMessageAt,
+  lastCloseAt: () => lastCloseAt,
+  ensure: () => { void ensureGlobalStream(); },
+};
+
 export function subscribeAllMessages(cb: (m: StreamMsg) => void, options: SubscribeOptions = {}): () => void {
   streamSubscribers.set(cb, options.includeHidden === true);
   void ensureGlobalStream();
   return () => { streamSubscribers.delete(cb); };
 }
 
-let globalStreamCancel: (() => void) | null = null;
-let globalStreamStarting = false;
-let globalStreamRearmTimer: ReturnType<typeof setTimeout> | null = null;
-let globalAppStateSub: { remove: () => void } | null = null;
-let globalPushSub: (() => void) | null = null;
-let pushResyncTimer: ReturnType<typeof setTimeout> | null = null;
-let lastForcedPushSyncAt = 0;
-let lastStreamMsgAt = 0;
-let lastStreamCloseAt = 0;
-const MIN_FORCED_SYNC_SPACING_MS = 4_000;
-const STREAM_FRESH_MS = 3_000;
-const STREAM_DEAD_GRACE_MS = 5_000;
-
-function onXmtpPush(): void {
-  if (pushResyncTimer) clearTimeout(pushResyncTimer);
-  pushResyncTimer = setTimeout(() => {
-    pushResyncTimer = null;
-    const now = Date.now();
-    const streamDead = !globalStreamCancel
-      || (now - lastStreamCloseAt) < STREAM_DEAD_GRACE_MS;
-    const streamFresh = (now - lastStreamMsgAt) < STREAM_FRESH_MS;
-    void (async () => {
-      if (streamDead) {
-        lastForcedPushSyncAt = now;
-        await syncInboxOnce(0);
-        await resyncActiveFeeds();
-        return;
-      }
-      if (streamFresh) {
-        await resyncActiveFeeds();
-        return;
-      }
-      if (now - lastForcedPushSyncAt >= MIN_FORCED_SYNC_SPACING_MS) {
-        lastForcedPushSyncAt = now;
-        await syncInboxOnce(0);
-      }
-      await resyncActiveFeeds();
-    })();
-  }, 300);
-}
-
 function rearmGlobalStream(): void {
-  if (globalStreamRearmTimer) return;
-  globalStreamRearmTimer = setTimeout(() => {
-    globalStreamRearmTimer = null;
+  if (rearmTimer) return;
+  rearmTimer = setTimeout(() => {
+    rearmTimer = null;
     void ensureGlobalStream();
-  }, 500);
+  }, REARM_DELAY_MS);
 }
 
-type StreamCb = Parameters<
-  Awaited<ReturnType<typeof xmtpClient>>['conversations']['streamAllMessages']
->[0];
-type StreamCbMsg = Parameters<StreamCb>[0];
-
-function streamedMessageOf(msg: StreamCbMsg): StreamedMessage {
-  let content: unknown;
-  try { content = msg.content(); } catch { content = undefined; }
-  return {
-    id: msg.id,
-    content,
-    contentTypeId: msg.contentTypeId,
-    senderInboxId: msg.senderInboxId,
-    sentNs: msg.sentNs,
-  };
-}
-
-function fanOutToSubscribers(convId: string | undefined, msg: StreamCbMsg): void {
+function fanOutToSubscribers(convId: string | null | undefined, msg: NonNullable<StreamMessage>): void {
   if (streamSubscribers.size === 0) return;
-  const normalized = streamedMessageOf(msg);
+  const normalized = sdk.rowOf(msg);
   const hidden = isHiddenConv(convId);
   for (const [cb, includeHidden] of streamSubscribers) {
     if (hidden && !includeHidden) continue;
@@ -102,79 +52,56 @@ function fanOutToSubscribers(convId: string | undefined, msg: StreamCbMsg): void
   }
 }
 
-function routeMessageToFeed(convId: string, msg: StreamCbMsg): void {
+function routeMessageToFeed(convId: string, msg: NonNullable<StreamMessage>): void {
   const line = lineOfConv(convId);
-  const env = envelopeOfXmtpMessage(msg, line);
+  const env = sdk.envelopeOf(msg, line);
   if (isControlBody(env.text)) return;
   const prevLatestNs = activeFeedLines.has(line) ? feedLatestNs(line) : 0;
   pushToFeedSlice(line, env);
   if (activeFeedLines.has(line)) {
-    const arrivingNs = msg.sentNs;
-    void reconcileOnArrival(line, prevLatestNs, arrivingNs, env.id);
+    void reconcileOnArrival(line, prevLatestNs, sdk.sentNsOf(msg), env.id);
   }
   if (activeFeedLines.size > 0 && !activeFeedLines.has(line)) void resyncActiveFeeds();
 }
 
-function handleStreamMessage(msg: StreamCbMsg): Promise<void> {
-  if (!msg) return Promise.resolve();
-  lastStreamMsgAt = Date.now();
-  const convId = convIdFromTopic(msg.topic) ?? undefined;
+function handleStreamMessage(msg: StreamMessage): void {
+  if (!msg) return;
+  lastMessageAt = Date.now();
+  const convId = sdk.convIdOf(msg);
   fanOutToSubscribers(convId, msg);
   if (!convId) {
     if (activeFeedLines.size > 0) void resyncActiveFeeds();
-    return Promise.resolve();
+    return;
   }
   if (!isHiddenConv(convId)) routeMessageToFeed(convId, msg);
-  return Promise.resolve();
 }
 
 function onGlobalStreamClose(): void {
-  globalStreamCancel = null;
-  lastStreamCloseAt = Date.now();
+  cancelStream = null;
+  lastCloseAt = Date.now();
   void resyncActiveFeeds();
   rearmGlobalStream();
 }
 
-async function startStream(client: Awaited<ReturnType<typeof xmtpClient>>): Promise<void> {
-  await client.conversations.streamAllMessages(
-    handleStreamMessage,
-    'all',
-    STREAM_CONSENT_STATES,
-    onGlobalStreamClose,
-  );
-}
-
 export async function ensureGlobalStream(): Promise<void> {
-  if (globalStreamCancel || globalStreamStarting) return;
-  globalStreamStarting = true;
+  if (cancelStream || starting) return;
+  starting = true;
+  const startedIn = generation;
   try {
-    const client = await xmtpClient();
-    await startStream(client);
-    globalStreamCancel = () => {
-      try { client.conversations.cancelStreamAllMessages(); } catch { }
-    };
-    globalPushSub ??= subscribeXmtpPush((e) => {
-      if (AppState.currentState !== 'active') markBackgroundDelivered(e?.messageId);
-      onXmtpPush();
-    });
-    setAppForeground(AppState.currentState === 'active');
-    globalAppStateSub ??= AppState.addEventListener('change', (state) => {
-      setAppForeground(state === 'active');
-      if (state !== 'active') return;
-      void resyncActiveFeeds();
-      if (!globalStreamCancel) void ensureGlobalStream();
-    });
+    const client = await sdk.client();
+    const cancel = await sdk.streamAllMessages(client, handleStreamMessage, onGlobalStreamClose);
+    if (startedIn !== generation) { cancel(); return; }
+    cancelStream = cancel;
+    foregroundWatch.attach(status);
   } catch { }
-  finally { globalStreamStarting = false; }
+  finally { starting = false; }
 }
 
 function teardownGlobalStream(): void {
-  if (globalStreamCancel) { globalStreamCancel(); globalStreamCancel = null; }
-  if (globalStreamRearmTimer) { clearTimeout(globalStreamRearmTimer); globalStreamRearmTimer = null; }
-  if (pushResyncTimer) { clearTimeout(pushResyncTimer); pushResyncTimer = null; }
-  lastForcedPushSyncAt = 0; lastStreamMsgAt = 0; lastStreamCloseAt = 0;
-  if (globalPushSub) { try { globalPushSub(); } catch { } globalPushSub = null; }
-  if (globalAppStateSub) { try { globalAppStateSub.remove(); } catch { } globalAppStateSub = null; }
-  setAppForeground(false);
+  generation += 1;
+  if (cancelStream) { cancelStream(); cancelStream = null; }
+  if (rearmTimer) { clearTimeout(rearmTimer); rearmTimer = null; }
+  lastMessageAt = 0; lastCloseAt = 0;
+  foregroundWatch.detach();
 }
 registerGlobalStreamTeardown(teardownGlobalStream);

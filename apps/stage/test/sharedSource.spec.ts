@@ -29,6 +29,30 @@ describe('makeSharedSource', () => {
     expect(log).toEqual(['open:client-a', 'close:client-a']);
   });
 
+  test('payloads reach every listener and a throwing listener does not starve the others', () => {
+    const emitters = new Map<string, (value: number) => void>();
+    let opens = 0;
+    const subscribe = makeSharedSource<string, number>((source, emit) => {
+      opens += 1;
+      emitters.set(source, emit);
+      return () => { emitters.delete(source); };
+    });
+    const seen: string[] = [];
+    const offThrowing = subscribe('client-a', () => { throw new Error('listener failed'); });
+    const offA = subscribe('client-a', (n) => { seen.push(`a:${n}`); });
+    const offB = subscribe('client-a', (n) => { seen.push(`b:${n}`); });
+    emitters.get('client-a')?.(7);
+    expect(seen).toEqual(['a:7', 'b:7']);
+    expect(opens).toBe(1);
+    offThrowing();
+    offA();
+    expect(emitters.has('client-a')).toBe(true);
+    offB();
+    expect(emitters.has('client-a')).toBe(false);
+    subscribe('client-a', () => undefined);
+    expect(opens).toBe(2);
+  });
+
   test('a new client replaces the old stream and unsubscribing twice is harmless', () => {
     const { log, subscribe } = harness();
     const off = subscribe('client-a', () => undefined);

@@ -3,11 +3,13 @@ export {
 } from '../../lib/xmtp.types';
 
 export {
-  getOrCreateXmtpClient, xmtpClient, ensureActiveAccount, deleteAccount,
-  resetActiveXmtpStore, syncPreferences, convOfLine, NoAccountError,
+  getOrCreateXmtpClient, xmtpClient, deleteAccount,
+  resetActiveXmtpStore, syncPreferences,
   listXmtpInstallations, revokeXmtpInstallation, selfEthAddress, cachedSelfEthAddress,
 } from '../../lib/xmtp.client';
-export type { XmtpInstallation } from '../../lib/xmtp.client';
+export { NoAccountError, type XmtpInstallation } from '../../lib/xmtp.client.core';
+export { ensureActiveAccount } from '../../lib/xmtp.recover.core';
+export { convOfLine } from '../../lib/xmtp.sdk';
 
 export {
   primeConversationMembers, isGroupConv,

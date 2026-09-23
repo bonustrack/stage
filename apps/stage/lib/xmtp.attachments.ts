@@ -5,7 +5,8 @@ import {
   type MultiRemoteAttachmentContent, type RemoteAttachmentInfo,
   type RemoteAttachmentMetadata, type EncryptedLocalAttachment,
 } from '@xmtp/react-native-sdk';
-import { convOfLine, xmtpClient } from './xmtp.client';
+import { xmtpClient } from './xmtp.client';
+import { convOfLine } from './xmtp.sdk';
 import { type LocalAttachmentInput } from './xmtp.types';
 import {
   materializeFileUri, sanitizeFileUri, uploadEncryptedToIpfs, swarmToHttp,
