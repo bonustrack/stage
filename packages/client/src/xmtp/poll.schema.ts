@@ -3,10 +3,10 @@ import { z } from 'zod';
 import type { ZodType } from 'zod';
 import type { PollContent } from './poll';
 
-const optionSchema = z.object({
-  label: z.string(),
-  description: z.string().optional(),
-});
+const optionSchema = z.union([
+  z.string().transform(label => ({ label })),
+  z.object({ label: z.string(), description: z.string().optional() }),
+]);
 
 const questionSchema = z.object({
   question: z.string().min(1),

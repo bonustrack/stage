@@ -17,6 +17,7 @@
     "./profile/upload": "./src/profile/upload.ts",
     "./xmtp/humanize": "./src/xmtp/humanize.ts",
     "./xmtp/poll": "./src/xmtp/poll.ts",
+    "./xmtp/poll.schema": "./src/xmtp/poll.schema.ts",
     "./xmtp/poll-feed": "./src/xmtp/poll-feed.ts",
     "./xmtp/sign": "./src/xmtp/sign.ts",
     "./xmtp/sign.schema": "./src/xmtp/sign.schema.ts",

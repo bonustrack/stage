@@ -42,5 +42,4 @@ export * from './wallet/txSimulate';
 export * from './wallet/txDecode';
 export * from './wallet/prices';
 export * from './accounts/types';
-export * from './accounts/keys';
 export * from './accounts/registry';

@@ -43,6 +43,8 @@ function activeStore(): PersistentStore<CachedRow[]> { return storeFor(activeId)
 
 export function getActiveAccountIdSync(): string { return activeId; }
 
+export function knownActiveAccountId(): string | null { return activeId === DEFAULT_KEY ? null : activeId; }
+
 function bindActiveStore(): void {
   if (activeStoreUnsub) { try { activeStoreUnsub(); } catch { } activeStoreUnsub = null; }
   activeStoreUnsub = activeStore().subscribe(() => { notifyActive(); });

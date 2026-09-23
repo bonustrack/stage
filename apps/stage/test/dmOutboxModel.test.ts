@@ -36,10 +36,10 @@ describe('queue operations', () => {
     item({ id: 'x', address: '0xdef', createdAt: 2 }),
   ];
   test('itemsForAddress filters by address and orders by createdAt', () => {
-    expect(itemsForAddress(items, '0xABC').map(i => i.id)).toEqual(['a', 'c']);
+    expect(itemsForAddress(items, '0xABC', null).map(i => i.id)).toEqual(['a', 'c']);
   });
   test('addressesWithQueued lists unique addresses', () => {
-    expect(addressesWithQueued(items).slice().sort()).toEqual(['0xabc', '0xdef']);
+    expect(addressesWithQueued(items, null).slice().sort()).toEqual(['0xabc', '0xdef']);
   });
   test('withoutItem removes exactly one item', () => {
     expect(withoutItem(items, 'a').map(i => i.id)).toEqual(['c', 'x']);
@@ -54,5 +54,15 @@ describe('pendingBanner: truthful copy per reason', () => {
   test('stale peers are told delivery happens when they open an XMTP app', () => {
     expect(pendingBanner('stale-installations', '0xef83…43e7')).toContain('keys have expired');
     expect(pendingBanner('stale-installations', '0xef83…43e7')).toContain('open an XMTP app');
+  });
+
+  test('queued messages stay with the account that wrote them', () => {
+    const mixed: OutboxItem[] = [
+      { id: 'mine', address: '0xabc', text: 'hi', createdAt: 1, accountId: 'acct-a' },
+      { id: 'theirs', address: '0xabc', text: 'yo', createdAt: 2, accountId: 'acct-b' },
+      { id: 'legacy', address: '0xabc', text: 'old', createdAt: 3 },
+    ];
+    expect(itemsForAddress(mixed, '0xabc', 'acct-a').map(i => i.id)).toEqual(['mine', 'legacy']);
+    expect(addressesWithQueued(mixed.filter(i => i.id === 'theirs'), 'acct-a')).toEqual([]);
   });
 });

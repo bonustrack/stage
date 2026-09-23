@@ -97,7 +97,7 @@ const migrated = (): Promise<void> => { migration ??= migrateLegacyPhrase(); ret
 
 export async function primaryPhraseId(): Promise<string | null> {
   await migrated();
-  return secureStorage.get(PRIMARY_PHRASE_KEY, STORE_OPTS).catch(() => null);
+  return secureStorage.get(PRIMARY_PHRASE_KEY, STORE_OPTS);
 }
 
 async function phraseIdFor(ref: { phraseId?: string }): Promise<string> {
@@ -110,7 +110,7 @@ async function readPhrase(phraseId: string): Promise<string | null> {
   await migrated();
   const cached = sessionPhrases.get(phraseId);
   if (cached) return cached;
-  const raw = await secureStorage.get(phraseKey(phraseId), STORE_OPTS).catch(() => null);
+  const raw = await secureStorage.get(phraseKey(phraseId), STORE_OPTS);
   if (!raw) return null;
   const phrase = normalizeMnemonic(raw);
   if (!isValidMnemonic(phrase)) return null;

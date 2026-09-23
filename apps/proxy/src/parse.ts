@@ -91,6 +91,17 @@ function hostOf(finalUrl: string): string {
   }
 }
 
+function sameHostUrl(claimed: string | undefined, finalUrl: string): string {
+  if (!claimed) return finalUrl;
+  try {
+    const url = new URL(claimed, finalUrl);
+    const sameHost = url.hostname === new URL(finalUrl).hostname;
+    return sameHost && (url.protocol === 'https:' || url.protocol === 'http:') ? url.toString() : finalUrl;
+  } catch {
+    return finalUrl;
+  }
+}
+
 export function parseMeta(html: string, finalUrl: string): PreviewMeta {
   const headEnd = html.search(/<\/head>/i);
   const head = headEnd > 0 ? html.slice(0, headEnd) : html.slice(0, 200_000);
@@ -105,7 +116,7 @@ export function parseMeta(html: string, finalUrl: string): PreviewMeta {
     'twitter:image:src',
   ]);
   const siteName = firstMeta(head, ['og:site_name', 'application-name', 'twitter:site']);
-  const canonical = firstMeta(head, ['og:url']) ?? finalUrl;
+  const canonical = sameHostUrl(firstMeta(head, ['og:url']), finalUrl);
   const host = hostOf(finalUrl);
 
   return {

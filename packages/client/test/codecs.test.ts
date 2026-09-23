@@ -55,6 +55,13 @@ describe('open (free-text) question type', () => {
     expect(decodeJsonContent(enc.content, pollContentSchema)).toEqual(mixed);
   });
 
+  test('legacy plain-string options decode as labelled options', () => {
+    const legacy = encodeJsonContent(POLL_CONTENT_TYPE, { pollId: 'p', question: 'Pick', options: ['a', 'b'] });
+    expect(decodeJsonContent(legacy.content, pollContentSchema)).toEqual({
+      pollId: 'p', question: 'Pick', options: [{ label: 'a' }, { label: 'b' }],
+    });
+  });
+
   test('a non-open question with <2 options still throws', () => {
     const bad = encodeJsonContent(POLL_CONTENT_TYPE, { pollId: 'p', questions: [{ question: 'q', options: [{ label: 'a' }] }] });
     expect(() => decodeJsonContent(bad.content, pollContentSchema)).toThrow();

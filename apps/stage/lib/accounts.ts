@@ -32,7 +32,7 @@ async function persist(list: AccountRecord[]): Promise<void> {
 
 async function withPhraseIds(list: AccountRecord[]): Promise<AccountRecord[]> {
   if (!list.some(a => a.type === 'smart' && a.phraseId === undefined)) return list;
-  const primary = await primaryPhraseId();
+  const primary = await primaryPhraseId().catch(() => null);
   if (!primary) return list;
   const next = list.map(a => (a.type === 'smart' && a.phraseId === undefined ? { ...a, phraseId: primary } : a));
   await persist(next);
@@ -48,13 +48,20 @@ function parseStoredList(raw: string): AccountRecord[] | null {
   }
 }
 
-export async function loadAccounts(): Promise<AccountRecord[]> {
+const UNREADABLE_LIST = 'The account list could not be read, so nothing was changed. Try again.';
+
+function unreadable(strict: boolean): AccountRecord[] {
+  if (strict) throw new Error(UNREADABLE_LIST);
+  return [];
+}
+
+async function loadList(strict: boolean): Promise<AccountRecord[]> {
   if (cache) return cache;
   const raw = await secureStorage.get(LIST_KEY).catch(() => undefined);
-  if (raw === undefined) return [];
+  if (raw === undefined) return unreadable(strict);
   if (raw !== null && raw !== '') {
     const stored = parseStoredList(raw);
-    if (stored === null) return [];
+    if (stored === null) return unreadable(strict);
     cache = await withPhraseIds(stored);
     return cache;
   }
@@ -67,6 +74,14 @@ export async function loadAccounts(): Promise<AccountRecord[]> {
   await secureStorage.set(ACTIVE_KEY, adopted.id);
   await persist(list);
   return list;
+}
+
+export function loadAccounts(): Promise<AccountRecord[]> {
+  return loadList(false);
+}
+
+function loadAccountsForWrite(): Promise<AccountRecord[]> {
+  return loadList(true);
 }
 
 export async function getActiveAccountId(): Promise<string | null> {
@@ -95,7 +110,7 @@ export async function getActiveViemAccount(): Promise<PrivateKeyAccount | null> 
 
 export async function addSmartAccount(rec: AccountRecord): Promise<AccountRecord> {
   const id = rec.id.toLowerCase();
-  const list = await loadAccounts();
+  const list = await loadAccountsForWrite();
   const existing = list.find(a => a.id === id);
   if (existing) {
     Object.assign(existing, rec, { id });
@@ -112,7 +127,7 @@ export async function addSmartAccount(rec: AccountRecord): Promise<AccountRecord
 
 export async function addPrivateKeyAccount(pk: Hex): Promise<AccountRecord> {
   const { id, address } = await importPrivateKey(pk);
-  const list = await loadAccounts();
+  const list = await loadAccountsForWrite();
   const { list: next, record } = addLocalAccountToList(list, id, address, 'privateKey');
   await persist(next);
   await setActiveAccountId(record.id);
@@ -122,7 +137,7 @@ export async function addPrivateKeyAccount(pk: Hex): Promise<AccountRecord> {
 export async function updateSmartAccount(
   id: string, patch: Partial<Pick<AccountRecord, 'deployed' | 'scwXmtp' | 'passkeyCredId' | 'passkey' | 'passkeySudo' | 'label' | 'guardians' | 'guardianThreshold' | 'guardianDelay'>>,
 ): Promise<void> {
-  const list = await loadAccounts();
+  const list = await loadAccountsForWrite();
   const rec = list.find(a => a.id === id.toLowerCase());
   if (!rec) return;
   Object.assign(rec, patch);
@@ -130,19 +145,19 @@ export async function updateSmartAccount(
 }
 
 export async function nextSmartHdIndex(phraseId: string): Promise<number> {
-  const list = await loadAccounts();
+  const list = await loadAccountsForWrite();
   const used = list.flatMap(a => (a.type === 'smart' && a.phraseId === phraseId && a.hdIndex !== undefined ? [a.hdIndex] : []));
   return nextHdIndex(used, await readSmartHdIndexHighWater(phraseId));
 }
 
 export async function markRegistered(id: string): Promise<void> {
-  const list = await loadAccounts();
+  const list = await loadAccountsForWrite();
   const rec = list.find(a => a.id === id);
   if (rec && !rec.registered) { rec.registered = true; await persist(list); }
 }
 
 export async function removeAccount(id: string): Promise<AccountRecord[]> {
-  const list = await loadAccounts();
+  const list = await loadAccountsForWrite();
   const rec = list.find(a => a.id === id);
   const next = list.filter(a => a.id !== id);
   await deleteKey(id);

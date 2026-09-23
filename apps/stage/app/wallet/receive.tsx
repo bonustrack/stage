@@ -10,11 +10,12 @@ import { capabilities } from '../../lib/capabilities';
 import { Box, Col, ScreenScroll } from '../../components/layout';
 import { WalletHeader } from '../../components/wallet/WalletHeader';
 import { AppIcon } from '../../components/widgets';
-import { getOrCreateXmtpClient } from '../../modules/messaging';
+import { getActiveAccount } from '../../lib/accounts';
 import { usePalette } from '../../lib/theme';
 
 const ADDRESS_LABEL = 'Wallet address (tap to copy)';
 const ADDRESS_HINT = 'Scan or share this address to receive ETH or tokens on Ethereum mainnet.';
+const SMART_ADDRESS_HINT = 'Scan or share this address to receive ETH or tokens on Base. Funds sent on another network will not show up in your Stage wallet.';
 
 const QR_FIXED_FOREGROUND = '#000000';
 const QR_FIXED_BACKGROUND = '#ffffff';
@@ -69,11 +70,12 @@ function QrPanel({ address, border }: {
 export default function WalletReceive(): React.ReactElement {
   const { border } = usePalette();
 
-  const { data: address = '' } = useQuery({
-    queryKey: ['receivePublicAddress'],
-    queryFn: async (): Promise<string> =>
-      (await getOrCreateXmtpClient('production')).publicIdentity.identifier,
+  const { data: active } = useQuery({
+    queryKey: ['receiveActiveAccount'],
+    queryFn: getActiveAccount,
   });
+  const address = active?.address ?? '';
+  const hint = active?.type === 'smart' ? SMART_ADDRESS_HINT : ADDRESS_HINT;
 
   const onCopy = (): void => {
     if (!address) return;
@@ -89,7 +91,7 @@ export default function WalletReceive(): React.ReactElement {
         <Col width="100%">
           <Col align="center" gap={16}>
             <QrPanel address={address} border={border} />
-            <AddressCard label={ADDRESS_LABEL} address={address || '-'} hint={ADDRESS_HINT} onCopy={onCopy} />
+            <AddressCard label={ADDRESS_LABEL} address={address || '-'} hint={hint} onCopy={onCopy} />
           </Col>
         </Col>
       </ScreenScroll>

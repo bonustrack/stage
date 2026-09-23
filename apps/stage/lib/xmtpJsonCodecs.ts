@@ -3,6 +3,7 @@ import type {
   JSContentCodec, ContentTypeId, EncodedContent,
 } from '@xmtp/react-native-sdk';
 import { type PollContent, pollFallbackText } from '@stage-labs/client/xmtp/poll';
+import { pollContentSchema } from '@stage-labs/client/xmtp/poll.schema';
 import {
   type SignatureRequestContent, type SignatureReferenceContent,
   signatureRequestFallbackText, signatureReferenceFallbackText,
@@ -50,7 +51,7 @@ function jsonCodec<T>(
   };
 }
 
-export const POLL_CODEC = jsonCodec<PollContent>(POLL_CONTENT_TYPE, pollFallbackText);
+export const POLL_CODEC = jsonCodec<PollContent>(POLL_CONTENT_TYPE, pollFallbackText, pollContentSchema, 'xmtp.poll');
 
 export const SIGNATURE_REQUEST_CODEC = jsonCodec<SignatureRequestContent>(
   SIGNATURE_REQUEST_CONTENT_TYPE, signatureRequestFallbackText,

@@ -6,7 +6,7 @@ import {
   syncPreferences, getXmtpBootstrapPhase,
   primeConversationMembers, subscribeAllMessages,
   listVisibleConversations, syncConversationsFromNetwork,
-  streamNewConversations, streamConvConsent, syncConsent, conversationIsSyncGroup,
+  streamNewConversations, streamConvConsent, syncConsent, conversationIsSyncGroup, getConvConsentState,
 } from '../../modules/messaging';
 import { getCachedRows, hydrateCachedRows } from '../../modules/messaging';
 import { hydratePeerProfiles } from '../../lib/peerProfiles';
@@ -84,7 +84,7 @@ function makeRefreshers(
 async function onNewConversation(conv: Conversation, selfInboxId: string, run: SyncRun, args: SyncArgs): Promise<void> {
   schedulePushTopicRefresh();
   if (await conversationIsSyncGroup(conv).catch(() => false)) { registerHiddenConv(conv.id); return; }
-  if ((await conv.consentState().catch(() => 'allowed')) === 'denied') return;
+  if ((await getConvConsentState(conv.id).catch(() => null)) === 'denied') return;
   const row = await summarize(conv, selfInboxId).catch(() => null);
   if (!row || run.cancelled) return;
   args.setRows(prev => (prev ? [row, ...prev.filter(x => x.convId !== row.convId)] : [row]));

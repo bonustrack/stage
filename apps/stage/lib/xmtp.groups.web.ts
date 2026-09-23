@@ -52,10 +52,9 @@ export function groupNameImage(conv: unknown): Promise<GroupInfo> {
 
 export async function leaveGroupConv(line: string): Promise<'left' | 'hidden'> {
   const conv = requireConv(await convOfLine(line));
-  const selfInboxId = (await xmtpClient()).inboxId;
-  if (conv instanceof Group && selfInboxId) {
+  if (conv instanceof Group) {
     try {
-      await conv.removeMembers([selfInboxId]);
+      await conv.requestRemoval();
       await conv.updateConsentState(ConsentState.Denied).catch(() => undefined);
       return 'left';
     } catch { }

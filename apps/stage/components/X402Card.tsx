@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Alert, Linking } from 'react-native';
+import { Alert } from 'react-native';
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -23,6 +23,7 @@ import { payX402Exact } from '../lib/x402.pay';
 import { capabilities } from '../lib/capabilities';
 import type { X402Challenge } from '../lib/useLinkPreview';
 import { usePalette, withAlpha } from '../lib/theme';
+import { openInBubbleLink } from '../lib/safeOpenLink';
 
 type PayPhase = 'idle' | 'paying' | 'paid' | 'failed';
 
@@ -89,7 +90,7 @@ export function X402Card({ challenge, dark }: {
 
   if (!accept) return null;
 
-  const openEndpoint = (): void => { if (endpoint) void Linking.openURL(endpoint); };
+  const openEndpoint = (): void => { if (endpoint) openInBubbleLink(endpoint); };
 
   const runPay = (): void => {
     setPhase('paying');

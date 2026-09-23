@@ -3,40 +3,44 @@ export interface OutboxItem {
   address: string;
   text: string;
   createdAt: number;
+  accountId?: string;
+}
+
+function parseItem(entry: unknown): OutboxItem | null {
+  if (typeof entry !== 'object' || entry === null) return null;
+  const r = entry as Record<string, unknown>;
+  if (typeof r.id !== 'string' || typeof r.address !== 'string' || typeof r.text !== 'string' || typeof r.createdAt !== 'number') {
+    return null;
+  }
+  const accountId = typeof r.accountId === 'string' ? { accountId: r.accountId } : {};
+  return { id: r.id, address: r.address, text: r.text, createdAt: r.createdAt, ...accountId };
 }
 
 export function deserializeOutbox(raw: string): OutboxItem[] | undefined {
   try {
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return undefined;
-    const items: OutboxItem[] = [];
-    for (const entry of parsed) {
-      if (typeof entry !== 'object' || entry === null) return undefined;
-      const r = entry as Record<string, unknown>;
-      if (
-        typeof r.id !== 'string' ||
-        typeof r.address !== 'string' ||
-        typeof r.text !== 'string' ||
-        typeof r.createdAt !== 'number'
-      ) return undefined;
-      items.push({ id: r.id, address: r.address, text: r.text, createdAt: r.createdAt });
-    }
-    return items;
+    const items = parsed.map(parseItem);
+    return items.every((i): i is OutboxItem => i !== null) ? items : undefined;
   } catch {
     return undefined;
   }
 }
 
-export function itemsForAddress(items: OutboxItem[], address: string): OutboxItem[] {
+function belongsTo(item: OutboxItem, accountId: string | null): boolean {
+  return accountId === null || item.accountId === undefined || item.accountId === accountId;
+}
+
+export function itemsForAddress(items: OutboxItem[], address: string, accountId: string | null): OutboxItem[] {
   const target = address.toLowerCase();
   return items
-    .filter(i => i.address === target)
+    .filter(i => i.address === target && belongsTo(i, accountId))
     .slice()
     .sort((a, b) => a.createdAt - b.createdAt);
 }
 
-export function addressesWithQueued(items: OutboxItem[]): string[] {
-  return [...new Set(items.map(i => i.address))];
+export function addressesWithQueued(items: OutboxItem[], accountId: string | null): string[] {
+  return [...new Set(items.filter(i => belongsTo(i, accountId)).map(i => i.address))];
 }
 
 export function withoutItem(items: OutboxItem[], id: string): OutboxItem[] {

@@ -33,12 +33,16 @@ describe('parseX402Challenge', () => {
     expect(assertPresent(assertPresent(c).accepts[0]).amount).toBe('5');
   });
 
-  test('prefers an embedded endpoint over the fallback', () => {
-    const c = parseX402Challenge(
-      { endpoint: 'https://real/paid', accepts: [{ scheme: 'exact', network: 'base' }] },
-      'https://fallback',
-    );
-    expect(assertPresent(c).endpoint).toBe('https://real/paid');
+  test('an embedded endpoint is used only when it is https on the same origin as the fetched URL', () => {
+    const accepts = [{ scheme: 'exact', network: 'base' }];
+    const sameOrigin = parseX402Challenge({ endpoint: 'https://api.example/paid', accepts }, 'https://api.example/start');
+    expect(assertPresent(sameOrigin).endpoint).toBe('https://api.example/paid');
+    const elsewhere = parseX402Challenge({ endpoint: 'https://evil.example/paid', accepts }, 'https://api.example/start');
+    expect(assertPresent(elsewhere).endpoint).toBe('https://api.example/start');
+    const plainHttp = parseX402Challenge({ endpoint: 'http://api.example/paid', accepts }, 'https://api.example/start');
+    expect(assertPresent(plainHttp).endpoint).toBe('https://api.example/start');
+    const script = parseX402Challenge({ endpoint: 'javascript:alert(1)', accepts }, 'https://api.example/start');
+    expect(assertPresent(script).endpoint).toBe('https://api.example/start');
   });
 
   test('drops options missing scheme/network; null when none remain', () => {

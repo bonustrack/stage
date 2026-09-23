@@ -62,6 +62,16 @@ export function normaliseAccept(a: RawAccept): X402Accept | null {
   };
 }
 
+function trustedEndpoint(claimed: string | undefined, fetched: string): string {
+  if (!claimed) return fetched;
+  try {
+    const url = new URL(claimed);
+    return url.protocol === 'https:' && url.origin === new URL(fetched).origin ? claimed : fetched;
+  } catch {
+    return fetched;
+  }
+}
+
 export function parseX402Challenge(
   obj: unknown,
   endpoint: string,
@@ -78,7 +88,7 @@ export function parseX402Challenge(
 
   return {
     kind: 'x402',
-    endpoint: str(o.endpoint) ?? endpoint,
+    endpoint: trustedEndpoint(str(o.endpoint), endpoint),
     x402Version: typeof o.x402Version === 'number' ? o.x402Version : undefined,
     error: str(o.error),
     accepts,
