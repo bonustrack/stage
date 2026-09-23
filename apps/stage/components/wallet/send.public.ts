@@ -25,7 +25,8 @@ type SendTxState = 'idle' | 'submitting' | 'pending' | 'confirmed';
 interface SendAsset { address: Hex | null; decimals: number; }
 type ActiveAccount = NonNullable<Awaited<ReturnType<typeof getActiveAccount>>>;
 
-async function sendSmart(active: ActiveAccount, asset: SendAsset, resolved: string, tokStr: string): Promise<Hex> {
+async function sendSmart(active: ActiveAccount, asset: SendAsset, resolved: string, tokStr: string, chainId: number): Promise<Hex> {
+  if (chainId !== base.id) throw new Error('Your Stage wallet sends on Base only. Pick a token on Base.');
   const kernel = await kernelClientForRecord(active);
   const value = parseUnits(tokStr, asset.address ? asset.decimals : 18);
   return asset.address
@@ -62,7 +63,7 @@ interface PublicSend {
   resolved: string | null; resolving: boolean; resolveErr: string | null;
   ethBalance: string | null; ethPriceUsd: number | null;
   secondaryLabel: string; canSubmit: boolean; busy: boolean;
-  txState: SendTxState; txHash: Hex | null; txErr: string | null;
+  txState: SendTxState; txHash: Hex | null; txChainId: number; txErr: string | null;
   onMax: () => void; onSubmit: () => void;
 }
 
@@ -76,6 +77,7 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
   const [ethPriceUsd, setEthPriceUsd] = useState<number | null>(null);
   const [txState, setTxState] = useState<SendTxState>('idle');
   const [txHash, setTxHash] = useState<Hex | null>(null);
+  const [txChainId, setTxChainId] = useState<number>(token.chainId);
   const [txErr, setTxErr] = useState<string | null>(null);
 
   const asset = useMemo(
@@ -153,9 +155,9 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
         const isSmart = active.type === 'smart';
         const receiptChainId = isSmart ? base.id : token.chainId;
         const hash = isSmart
-          ? await sendSmart(active, asset, resolved, tokStr)
+          ? await sendSmart(active, asset, resolved, tokStr, token.chainId)
           : await sendLegacy(asset, resolved, tokStr, token.chainId);
-        setTxHash(hash); setTxState('pending');
+        setTxHash(hash); setTxChainId(receiptChainId); setTxState('pending');
         const pub = createPublicClient({ transport: broviderTransport(receiptChainId) });
         await pub.waitForTransactionReceipt({ hash });
         setTxState('confirmed');
@@ -167,7 +169,7 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
 
   return {
     to, setTo, amount, setAmount, mode, setMode, resolved, resolving, resolveErr,
-    ethBalance, ethPriceUsd: tokenPriceUsd, secondaryLabel, canSubmit, busy, txState, txHash, txErr,
+    ethBalance, ethPriceUsd: tokenPriceUsd, secondaryLabel, canSubmit, busy, txState, txHash, txChainId, txErr,
     onMax, onSubmit,
   };
 }

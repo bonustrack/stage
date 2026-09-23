@@ -14,6 +14,7 @@ import { TokenRowBody } from '../wallet/TokenRowView';
 import { usePalette } from '../../lib/theme';
 import { useActiveAccountRecord } from '../../modules/messaging';
 import { useAssetRows } from './screen/data';
+import { sendableOnAccount } from './TokenSelector.model';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, type AssetRow } from '@stage-labs/client/wallet/assets';
 
 export interface TokenChoice { symbol: string; chainId: number }
@@ -38,9 +39,10 @@ function byValueDesc(rows: AssetRow[]): AssetRow[] {
 }
 
 function useSelectorRows(): { rows: AssetRow[]; loading: boolean } {
-  const address = useActiveAccountRecord()?.address ?? '';
-  const publicRows = useAssetRows(address).data ?? null;
-  return { rows: byValueDesc((publicRows ?? []).filter(hasBalance)), loading: publicRows === null };
+  const record = useActiveAccountRecord();
+  const publicRows = useAssetRows(record?.address ?? '').data ?? null;
+  const sendable = sendableOnAccount((publicRows ?? []).filter(hasBalance), record?.type === 'smart');
+  return { rows: byValueDesc(sendable), loading: publicRows === null };
 }
 
 export function useTopToken(): TokenChoice | null {

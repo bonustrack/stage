@@ -98,7 +98,7 @@ function SendForm({ token, initialTo, selector, onCancel }: {
         </Col>
         {p.resolved ? <RecipientRow address={p.resolved} pal={pal} /> : null}
         <ContactsButton color={fg} border={border} onPress={() => { setPicking(true); }} />
-        <TxStatus txState={p.txState} txHash={p.txHash} txErr={p.txErr} />
+        <TxStatus txState={p.txState} txHash={p.txHash} txChainId={p.txChainId} txErr={p.txErr} />
         <ContactsModal visible={picking} onClose={() => { setPicking(false); }} onPick={(addr) => { p.setTo(addr); }} pal={pal} />
       </ScreenScroll>
       <WalletFooter border={border} dark={dark} onCancel={onCancel}

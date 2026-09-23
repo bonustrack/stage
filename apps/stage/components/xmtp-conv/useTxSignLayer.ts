@@ -18,6 +18,7 @@ import type { TypedDataDefinition } from 'viem';
 import { base } from 'viem/chains';
 import { getActiveAccount, getActiveViemAccount, type AccountRecord } from '../../lib/accounts';
 import { kernelClientForRecord } from '../../lib/zerodev';
+import { paymentBlocker } from './pay.model';
 
 function typedDataOf(req: SignatureRequestContent): TypedDataDefinition {
   const td = req.eip712;
@@ -69,6 +70,7 @@ type TxCall = NonNullable<WalletSendCallsContent['calls']>[number];
 async function broadcastCall(to: string, call: TxCall, chainId: number): Promise<{ txHash: `0x${string}`; settledChainId: number }> {
   const active = await getActiveAccount();
   if (active?.type === 'smart') {
+    if (chainId !== base.id) throw new Error('Your Stage wallet pays on Base only.');
     const kernel = await kernelClientForRecord(active);
     const txHash = await kernel.sendTransaction({
       to: to as `0x${string}`,
@@ -160,18 +162,27 @@ export function useTxSignLayer(activeLine: string) {
         }
       })();
     };
-    Alert.alert(
-      summary.verified ? 'Confirm payment' : 'Unverified transaction',
-      confirmMessage(summary, chainName),
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: summary.verified ? 'Pay' : 'Continue anyway',
-          style: summary.verified ? 'default' : 'destructive',
-          onPress: broadcast,
-        },
-      ],
-    );
+    const confirm = (): void => {
+      Alert.alert(
+        summary.verified ? 'Confirm payment' : 'Unverified transaction',
+        confirmMessage(summary, chainName),
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: summary.verified ? 'Pay' : 'Continue anyway',
+            style: summary.verified ? 'default' : 'destructive',
+            onPress: broadcast,
+          },
+        ],
+      );
+    };
+    void getActiveAccount().then((active) => {
+      const blocker = paymentBlocker({
+        callCount: wsc.calls?.length ?? 0, chainId, chainName, smartAccount: active?.type === 'smart',
+      });
+      if (blocker === null) confirm();
+      else capabilities.toast(blocker);
+    });
   }, [activeLine]);
 
   return { signingIds, onSign, payingIds, onPay };

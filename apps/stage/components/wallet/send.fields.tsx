@@ -6,14 +6,12 @@ import { Box } from '../layout';
 import { DANGER } from '../../lib/theme';
 import { explorerTxUrl } from '@stage-labs/client/xmtp/tx';
 
-const PUBLIC_SEND_CHAIN = 1;
-
 type TxState = 'idle' | 'submitting' | 'pending' | 'confirmed';
 
 export function TxStatus(props: {
-  txState: TxState; txHash: Hex | null; txErr: string | null;
+  txState: TxState; txHash: Hex | null; txChainId: number; txErr: string | null;
 }): React.ReactElement {
-  const { txState, txHash, txErr } = props;
+  const { txState, txHash, txChainId, txErr } = props;
   return (
     <>
       {txHash ? (
@@ -21,7 +19,7 @@ export function TxStatus(props: {
           <Text size="xs" role="secondary">
             {txState === 'confirmed' ? 'Confirmed' : 'Pending'}
           </Text>
-          <Pressable onPress={() => { void Linking.openURL(explorerTxUrl(PUBLIC_SEND_CHAIN, txHash)); }} hitSlop={6}>
+          <Pressable onPress={() => { void Linking.openURL(explorerTxUrl(txChainId, txHash)); }} hitSlop={6}>
             <Text size="xs" role="link">
               {txHash.slice(0, 10)}…{txHash.slice(-8)}
             </Text>

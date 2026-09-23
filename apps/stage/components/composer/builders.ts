@@ -12,6 +12,7 @@ import {
 import { getActiveAccount } from '../../lib/accounts';
 import { setLastAttachment } from '../../lib/lastAttachment';
 import type { ComposerActionsArgs } from './types';
+import { base } from 'viem/chains';
 
 const mintLocalId = (): string => `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
@@ -79,7 +80,7 @@ export async function sendTxRequest(a: ComposerActionsArgs): Promise<void> {
   const valueHex = toHex(parseUnits(amount, 18));
   const wsc: WalletSendCallsContent = {
     version: '1.0',
-    chainId: '0x1',
+    chainId: toHex(base.id),
     from: acct.address,
     calls: [{
       to,
