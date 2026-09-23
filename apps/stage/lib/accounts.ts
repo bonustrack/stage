@@ -18,7 +18,7 @@ export { canExportPrivateKey } from '@stage-labs/client/accounts/keys';
 export { getViemAccount, revealPrivateKey as getPrivateKey } from './zerodev/keyring';
 
 export type { AccountRecord } from '@stage-labs/client/accounts/types';
-import type { AccountRecord } from '@stage-labs/client/accounts/types';
+import { ACCOUNT_TYPES, type AccountRecord } from '@stage-labs/client/accounts/types';
 
 const LIST_KEY = 'accounts.list';
 const ACTIVE_KEY = 'accounts.active';
@@ -42,7 +42,7 @@ async function withPhraseIds(list: AccountRecord[]): Promise<AccountRecord[]> {
 function parseStoredList(raw: string): AccountRecord[] | null {
   try {
     const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as AccountRecord[]) : null;
+    return Array.isArray(parsed) ? (parsed as AccountRecord[]).filter(a => ACCOUNT_TYPES.includes(a.type)) : null;
   } catch {
     return null;
   }
@@ -104,7 +104,7 @@ export async function getActiveAccount(): Promise<AccountRecord | null> {
 
 export async function getActiveViemAccount(): Promise<PrivateKeyAccount | null> {
   const rec = await getActiveAccount();
-  if (!rec || rec.type === 'smart' || rec.type === 'walletconnect') return null;
+  if (!rec || rec.type === 'smart') return null;
   return getViemAccount(rec.id);
 }
 

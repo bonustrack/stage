@@ -4,7 +4,7 @@ import { isOnboardingRoute } from '../onboarding/nextRoute.model';
 const TAB_ROUTES = new Set(['/', '/contacts', '/wallet', '/settings']);
 
 const SPLIT_PREFIXES = [
-  '/channel/', '/group/', '/profile/', '/settings', '/wallet', '/contacts', '/accounts',
+  '/channel/', '/group/', '/profile/', '/settings', '/wallet', '/contacts',
 ];
 
 function isDmRoute(pathname: string): boolean {

@@ -2,29 +2,16 @@ import { errorMessage } from '@stage-labs/client/errors';
 import { useCallback } from 'react';
 import { Alert } from 'react-native';
 import { resolveEnsName } from '@stage-labs/client/api/ens';
-import { getActiveAccount, type AccountRecord } from '../../lib/accounts';
-import {
-  installGuardians, updateGuardians, cancelRecovery,
-  signRecoveryApproval, sendRecoveryApproval, smartOwnerSigner,
-} from '../../lib/zerodev';
-import type { Address } from 'viem';
+import type { AccountRecord } from '../../lib/accounts';
+import { installGuardians, updateGuardians } from '../../lib/zerodev';
 
 interface RecoveryActionsArgs {
   rec: AccountRecord | null;
   guardians: string[];
   threshold: number;
   delay: number;
-  params: { line?: string; wallet?: string; newOwner?: string };
   setBusy: (b: boolean) => void;
-  setApproving: (b: boolean) => void;
-  setApproved: (b: boolean) => void;
   router: { back: () => void };
-}
-
-export interface RecoveryActions {
-  onSave: () => Promise<void>;
-  onCancel: () => Promise<void>;
-  onApprove: () => Promise<void>;
 }
 
 async function resolveGuardians(guardians: string[]): Promise<string[]> {
@@ -38,10 +25,9 @@ async function resolveGuardians(guardians: string[]): Promise<string[]> {
   return resolved;
 }
 
-export function useRecoveryActions(a: RecoveryActionsArgs): RecoveryActions {
-  const { rec, guardians, threshold, delay, params, setBusy, setApproving, setApproved, router } = a;
-
-  const onSave = useCallback(async (): Promise<void> => {
+export function useSaveGuardians(a: RecoveryActionsArgs): () => Promise<void> {
+  const { rec, guardians, threshold, delay, setBusy, router } = a;
+  return useCallback(async (): Promise<void> => {
     if (!rec) return;
     setBusy(true);
     try {
@@ -57,46 +43,4 @@ export function useRecoveryActions(a: RecoveryActionsArgs): RecoveryActions {
       setBusy(false);
     }
   }, [rec, guardians, threshold, delay, router, setBusy]);
-
-  const onCancel = useCallback(async (): Promise<void> => {
-    if (!rec || !params.newOwner) return;
-    setBusy(true);
-    try {
-      await cancelRecovery(rec, params.newOwner as Address, 0n);
-      Alert.alert('Recovery cancelled', 'The pending recovery was cancelled.');
-      router.back();
-    } catch (e) {
-      Alert.alert('Could not cancel', errorMessage(e));
-    } finally {
-      setBusy(false);
-    }
-  }, [rec, params.newOwner, router, setBusy]);
-
-  const onApprove = useCallback(async (): Promise<void> => {
-    if (!params.line || !params.wallet || !params.newOwner) return;
-    const active = await getActiveAccount();
-    if (active?.type !== 'smart' || active.hdIndex == null) {
-      Alert.alert('No smart wallet', 'You need a smart wallet to approve a recovery.');
-      return;
-    }
-    setApproving(true);
-    try {
-      const signer = await smartOwnerSigner({ hdIndex: active.hdIndex, phraseId: active.phraseId });
-      const signature = await signRecoveryApproval(
-        signer, params.wallet as Address, params.newOwner as Address, 0n,
-      );
-      await sendRecoveryApproval(params.line, {
-        wallet: params.wallet, newOwner: params.newOwner,
-        guardian: signer.address.toLowerCase(), signature,
-      });
-      setApproved(true);
-      Alert.alert('Approved', 'Your approval was sent to the recovery conversation.');
-    } catch (e) {
-      Alert.alert('Could not approve', errorMessage(e));
-    } finally {
-      setApproving(false);
-    }
-  }, [params.line, params.wallet, params.newOwner, setApproving, setApproved]);
-
-  return { onSave, onCancel, onApprove };
 }

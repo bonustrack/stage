@@ -9,6 +9,5 @@ export { enablePasskeyForRecord } from './enablePasskey';
 export { removePasskeyFromRecord } from './disablePasskey';
 export { linkPasskeyForRecord, describeLinkResult, passkeyPlace, kernelCustody, type PasskeyPlace } from './linkPasskey';
 export {
-  installGuardians, updateGuardians, signRecoveryApproval, cancelRecovery,
+  installGuardians, updateGuardians,
 } from './recovery';
-export { sendRecoveryApproval } from './recovery.comms';

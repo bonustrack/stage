@@ -1,5 +1,7 @@
 
-export type AccountType = 'smart' | 'generated' | 'privateKey' | 'walletconnect';
+export type AccountType = 'smart' | 'generated' | 'privateKey';
+
+export const ACCOUNT_TYPES: readonly AccountType[] = ['smart', 'generated', 'privateKey'];
 
 export interface AccountRecord {
   id: string;

@@ -11,7 +11,7 @@ import { capabilities } from '../../lib/capabilities';
 import { Box, Col } from '../layout';
 import { getPrivateKey, canExportPrivateKey, loadAccounts, type AccountRecord } from '../../lib/accounts';
 import { deleteAccount, shortAddress, useActiveAccountRecord } from '../../modules/messaging';
-import { reloadApp } from '../AccountsManager.helpers';
+import { reloadApp } from '../../lib/reloadApp';
 import { transferKindFor } from '../../lib/accountTransfer';
 import { TransferAccountSheet } from '../accounts/TransferAccountSheet';
 import { SettingsButtonRow, SettingsList, SettingsNavRow } from '../settings/rows';

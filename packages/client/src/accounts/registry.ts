@@ -17,7 +17,6 @@ export function buildLocalAccount(
 export interface AddLocalResult {
   list: AccountRecord[];
   record: AccountRecord;
-  upgraded: boolean;
 }
 
 export function addLocalAccountToList(
@@ -28,15 +27,9 @@ export function addLocalAccountToList(
   now: number = Date.now(),
 ): AddLocalResult {
   const existing = list.find(a => a.id === id);
-  if (existing) {
-    if (existing.type === 'walletconnect') {
-      const upgraded: AccountRecord = { ...existing, type };
-      return { list: list.map(a => (a.id === id ? upgraded : a)), record: upgraded, upgraded: true };
-    }
-    return { list, record: existing, upgraded: false };
-  }
+  if (existing) return { list, record: existing };
   const rec = buildLocalAccount(id, address, type, now);
-  return { list: [...list, rec], record: rec, upgraded: false };
+  return { list: [...list, rec], record: rec };
 }
 
 export function resolveActiveAccount(

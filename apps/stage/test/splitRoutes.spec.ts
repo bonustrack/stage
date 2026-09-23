@@ -16,7 +16,7 @@ describe('isSplitRoute', () => {
     expect(isSplitRoute('/import')).toBe(false);
   });
 
-  test('profiles, groups, settings, wallet, contacts, and accounts split', () => {
+  test('profiles, groups, settings, wallet and contacts split', () => {
     expect(isSplitRoute('/group/abc')).toBe(true);
     expect(isSplitRoute('/profile/0xabc')).toBe(true);
     expect(isSplitRoute('/settings')).toBe(true);
@@ -24,7 +24,6 @@ describe('isSplitRoute', () => {
     expect(isSplitRoute('/wallet')).toBe(true);
     expect(isSplitRoute('/wallet/send')).toBe(true);
     expect(isSplitRoute('/contacts')).toBe(true);
-    expect(isSplitRoute('/accounts')).toBe(true);
   });
 
   test('other stack routes stay single-column', () => {

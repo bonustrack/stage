@@ -9,7 +9,7 @@ import { Caption } from '@stage-labs/kit/react-native/caption';
 import {
   getOrCreateXmtpClient, resetActiveXmtpStore, selfEthAddress, shortAddress, useActiveAccount,
 } from '../../modules/messaging';
-import { reloadApp } from '../AccountsManager.helpers';
+import { reloadApp } from '../../lib/reloadApp';
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import { MessengerSessions } from './MessengerSessions';

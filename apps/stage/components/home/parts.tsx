@@ -10,7 +10,7 @@ import { MessagingSetupBanner } from '../system/HistorySync';
 import { ChannelRow } from '../ChannelRow';
 import { PinnedDraggable, type PinDrag } from './pinDrag';
 import { resetActiveXmtpStore, shortAddress, prefetchFeed, lineOfConv } from '../../modules/messaging';
-import { reloadApp } from '../AccountsManager.helpers';
+import { reloadApp } from '../../lib/reloadApp';
 import { getPeerName, isPeerResolved } from '../../lib/peerProfiles';
 import { getDraft } from '../../lib/drafts';
 import { conversationLinkOf, isActiveConversationPathFor } from '../../lib/links';

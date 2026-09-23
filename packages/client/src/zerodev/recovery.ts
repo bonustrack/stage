@@ -40,26 +40,3 @@ export function dedupeGuardians(guardians: GuardianAddress[]): GuardianAddress[]
   }
   return out;
 }
-
-export interface RecoveryRequest {
-  kind: 'recovery.request';
-  wallet: string;
-  newOwner: string;
-  label?: string;
-}
-
-export interface RecoveryApproval {
-  kind: 'recovery.approval';
-  wallet: string;
-  newOwner: string;
-  guardian: string;
-  signature: string;
-}
-
-export type RecoveryMessage = RecoveryRequest | RecoveryApproval;
-
-const REQUEST_PREFIX = '​[stage:recovery]';
-
-export function encodeRecoveryMessage(msg: RecoveryMessage): string {
-  return `${REQUEST_PREFIX}${JSON.stringify(msg)}`;
-}
