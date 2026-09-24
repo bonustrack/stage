@@ -1,15 +1,15 @@
-import { errorMessage } from '@stage-labs/client/errors';
 import { useEffect, useState } from 'react';
-import { Alert } from 'react-native';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Col } from '../layout';
 import { SkipLink } from './OnboardingCard';
-import { PinSheet } from '../settings/HistorySyncSection';
+import { ReceiveCodeSheet } from '../settings/HistoryTransferSheets';
 import { historySyncDeadline, historySyncProblem, useHistorySyncPhase } from '../../lib/historySync';
 import { historySyncIsActive, historySyncPhaseLabel, timeLeftLabel } from '../../lib/historySync.model';
 import type { HistoryControls } from './useSetupRunner';
 
 const CONTINUE_HINT = 'You can also continue without it and sync later from Settings > Messenger.';
+const ENTER_CODE = 'Enter a code from my other device';
+const ENTER_CODE_WHILE_WAITING = 'Or enter a code from your other device';
 
 function useNow(running: boolean): number {
   const [now, setNow] = useState(() => Date.now());
@@ -36,23 +36,24 @@ export function useHistoryStepHint(active: boolean, stalled: boolean): string | 
 export function HistoryStalledActions({ dark, history }: {
   dark: boolean; history: HistoryControls;
 }): React.ReactElement {
-  const [pinOpen, setPinOpen] = useState(false);
-  const [pinBusy, setPinBusy] = useState(false);
-  const onPin = (pin: string): void => {
-    if (pinBusy) return;
-    setPinBusy(true);
-    history.receivePin(pin)
-      .then(() => { setPinOpen(false); })
-      .catch((e: unknown) => { Alert.alert('Could not import history', errorMessage(e)); })
-      .finally(() => { setPinBusy(false); });
-  };
+  const [codeOpen, setCodeOpen] = useState(false);
   return (
     <Col gap={10} width="100%">
       <Button dark={dark} size="lg" fullWidth pill color="primary" variant="solid" label="Try again" onPress={history.retry} />
       <Button dark={dark} size="lg" fullWidth pill color="secondary" variant="solid"
-        label="Enter a PIN from my other device" onPress={() => { setPinOpen(true); }} />
-      <PinSheet visible={pinOpen} busy={pinBusy} onClose={() => { setPinOpen(false); }} onSubmit={onPin} />
+        label={ENTER_CODE} onPress={() => { setCodeOpen(true); }} />
+      <ReceiveCodeSheet visible={codeOpen} onClose={() => { setCodeOpen(false); }} onReceive={history.receiveCode} />
     </Col>
+  );
+}
+
+export function EnterCodeWhileWaitingLink({ history }: { history: HistoryControls }): React.ReactElement {
+  const [codeOpen, setCodeOpen] = useState(false);
+  return (
+    <>
+      <SkipLink label={ENTER_CODE_WHILE_WAITING} onPress={() => { setCodeOpen(true); }} />
+      <ReceiveCodeSheet visible={codeOpen} onClose={() => { setCodeOpen(false); }} onReceive={history.receiveCode} />
+    </>
   );
 }
 

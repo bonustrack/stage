@@ -10,6 +10,7 @@ import type { XmtpEnv } from './xmtp.types';
 import { loadOrCreateDbKey, deleteDbKey, deleteDbFiles, ensureDbDir, wipeXmtpStore } from './xmtp.dbkey';
 import { createClientForAccount, finalizeClient, isStoreCorruption } from './xmtp.recover';
 import { makeClientLifecycle } from './xmtp.client.core';
+import { nativeInstallationCreatedAtMs } from '@stage-labs/client/xmtp/clientConfig';
 import { forgetPushAccount, recordPushAccount } from './xmtp.appGroup';
 
 type InstallationId = Parameters<Client['revokeInstallations']>[1][number];
@@ -63,7 +64,8 @@ export const {
     dispose: resetClientScopedState,
     selfAddressOf: (client) => client.publicIdentity.identifier,
     syncPreferences: (client) => client.preferences.sync(),
-    installations: async (client) => (await client.inboxState(true)).installations,
+    installations: async (client) => (await client.inboxState(true)).installations
+      .map(i => ({ id: i.id, createdAt: nativeInstallationCreatedAtMs(i.createdAt) })),
     installationIdOf: (client) => client.installationId,
     revoke: async (client, account, installationId) => {
       const signer = await signerForRecord(account);

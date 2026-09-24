@@ -1,30 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  formatHistoryPin, historyPinFromRandom, historyProblemMessage, historySyncIsActive, historySyncPhaseLabel,
-  isMissingArchive, isValidHistoryPin, normalizeHistoryPin, settleBy, timeLeftLabel, within,
+  historyProblemMessage, historySyncIsActive, historySyncPhaseLabel, isMissingArchive, settleBy, timeLeftLabel, within,
   HISTORY_COPY, HistoryProblem,
 } from '../lib/historySync.model';
-
-describe('history pin', () => {
-  test('derives six digits from random bytes', () => {
-    expect(historyPinFromRandom(new Uint8Array([10, 21, 32, 43, 54, 65, 76]))).toBe('012345');
-  });
-
-  test('pads a short byte source', () => {
-    expect(historyPinFromRandom(new Uint8Array([9, 9]))).toBe('990000');
-  });
-
-  test('normalizes and validates typed pins', () => {
-    expect(normalizeHistoryPin(' 483 920 ')).toBe('483920');
-    expect(isValidHistoryPin('483920')).toBe(true);
-    expect(isValidHistoryPin('48392')).toBe(false);
-    expect(isValidHistoryPin('48392a')).toBe(false);
-  });
-
-  test('formats a pin in two groups', () => {
-    expect(formatHistoryPin('483920')).toBe('483 920');
-  });
-});
 
 describe('history sync phases', () => {
   test('idle has no label and only the two pending phases are active', () => {
@@ -36,13 +14,17 @@ describe('history sync phases', () => {
     expect(historySyncIsActive('waiting')).toBe(true);
     expect(historySyncIsActive('done')).toBe(false);
   });
+
+  test('the timeout label points at the code transfer', () => {
+    expect(historySyncPhaseLabel('timeout')).toContain('enter a code');
+  });
 });
 
 describe('historyProblemMessage', () => {
-  test('explains a PIN with no archive yet', () => {
+  test('explains that no archive has arrived yet', () => {
     const err = new Error('Could not find payload with pin Some("123456")');
     expect(isMissingArchive(err)).toBe(true);
-    expect(historyProblemMessage(err, 'fallback')).toBe(HISTORY_COPY.pinMissing);
+    expect(historyProblemMessage(err, 'fallback')).toBe(HISTORY_COPY.missing);
   });
 
   test('blames an older version when the archive sits on the retired XMTP server', () => {
@@ -57,7 +39,7 @@ describe('historyProblemMessage', () => {
   });
 
   test('keeps our own problems and falls back for anything else', () => {
-    expect(historyProblemMessage(new HistoryProblem(HISTORY_COPY.sendSlow), 'fallback')).toBe(HISTORY_COPY.sendSlow);
+    expect(historyProblemMessage(new HistoryProblem(HISTORY_COPY.syncSlow), 'fallback')).toBe(HISTORY_COPY.syncSlow);
     expect(historyProblemMessage(new Error('boom'), 'fallback')).toBe('fallback');
   });
 });

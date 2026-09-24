@@ -150,9 +150,10 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
   streamConsent,
   history: {
     sendSyncRequest: (client, serverUrl) => client.sendSyncRequest(ARCHIVE_OPTIONS, serverUrl),
-    sendSyncArchive: (client, pin, serverUrl) => client.sendSyncArchive(pin, ARCHIVE_OPTIONS, serverUrl),
     syncDeviceGroups: (client) => client.syncAllDeviceSyncGroups(),
-    processSyncArchive: (client, pin) => client.processSyncArchive(pin ?? null),
+    processSyncArchive: (client) => client.processSyncArchive(null),
+    createArchive: (client, key) => client.createArchive(key, ARCHIVE_OPTIONS),
+    importArchive: (client, archive, key) => client.importArchive(archive, key),
   },
   isGroup: (conv) => conv instanceof Group,
   dmPeerInboxId: (conv) => (conv instanceof Dm ? () => conv.peerInboxId() : null),

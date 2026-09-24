@@ -18,6 +18,19 @@ export function installationCreatedAtMs(clientTimestampNs: bigint | null | undef
   return clientTimestampNs != null ? Number(clientTimestampNs / 1_000_000n) : null;
 }
 
+const NATIVE_TIMESTAMP_SCALES: readonly { above: number; toMs: number }[] = [
+  { above: 1e17, toMs: 1e-6 },
+  { above: 1e14, toMs: 1e-3 },
+  { above: 1e11, toMs: 1 },
+  { above: 0, toMs: 1e3 },
+];
+
+export function nativeInstallationCreatedAtMs(createdAt: unknown): number | undefined {
+  if (typeof createdAt !== 'number' || !Number.isFinite(createdAt) || createdAt <= 0) return undefined;
+  const scale = NATIVE_TIMESTAMP_SCALES.find(({ above }) => createdAt > above);
+  return scale === undefined ? undefined : Math.round(createdAt * scale.toMs);
+}
+
 export type PersistedClientEvent = 'open-failed' | 'installation-mismatch' | 'installation-adopted' | 'registered';
 
 export interface PersistedClientDeps<C> {

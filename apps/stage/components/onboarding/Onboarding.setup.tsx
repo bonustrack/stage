@@ -4,7 +4,9 @@ import { Icon } from '@stage-labs/kit/react-native/icon';
 import { Box, Col, Row } from '../layout';
 import { Spinner } from '../Spinner';
 import { OnboardingCard, SkipLink } from './OnboardingCard';
-import { ContinueWithoutHistoryLink, HistoryStalledActions, useHistoryStepHint } from './Onboarding.history';
+import {
+  ContinueWithoutHistoryLink, EnterCodeWhileWaitingLink, HistoryStalledActions, useHistoryStepHint,
+} from './Onboarding.history';
 import type { HistoryControls } from './useSetupRunner';
 import { DANGER, usePalette } from '../../lib/theme';
 import type { Stage } from './flow';
@@ -47,10 +49,11 @@ function SetupActions({ dark, busy, setupErr, onRetry, history }: {
 
 const SETUP_LINK_LABELS: Record<SetupLinkKind, string> = { skipPasskey: 'Continue without passkey', startOver: 'Start over' };
 
-function SetupLink({ busy, setupErr, onBack, onSkipPasskey, history }: {
-  busy: boolean; setupErr: SetupErr | null; onBack: () => void; onSkipPasskey: () => void; history: HistoryControls;
+function SetupLink({ busy, setupErr, onBack, onSkipPasskey, history, waiting }: {
+  busy: boolean; setupErr: SetupErr | null; onBack: () => void; onSkipPasskey: () => void; history: HistoryControls; waiting: boolean;
 }): React.ReactElement | null {
-  if (setupErr === null) return history.stalled ? <ContinueWithoutHistoryLink history={history} /> : null;
+  if (setupErr === null && history.stalled) return <ContinueWithoutHistoryLink history={history} />;
+  if (setupErr === null) return waiting ? <EnterCodeWhileWaitingLink history={history} /> : null;
   const links = setupLinks(setupErr);
   if (links.length === 0) return null;
   return (
@@ -69,7 +72,7 @@ export function SetupStep({ dark, busy, stage, setupErr, plan, onRetry, onBack, 
   const stages = setupStages(plan);
   const historyHint = useHistoryStepHint(stage === 'history' && setupErr === null, history.stalled);
   const actions = SetupActions({ dark, busy, setupErr, onRetry, history });
-  const link = SetupLink({ busy, setupErr, onBack, onSkipPasskey, history });
+  const link = SetupLink({ busy, setupErr, onBack, onSkipPasskey, history, waiting: stage === 'history' });
   return (
     <OnboardingCard title={setupTitle(setupErr, plan)} about={historyHint ?? setupHint(setupErr)} footer={actions} after={link}>
       <Col width="100%">

@@ -7,14 +7,11 @@ export const HISTORY_COPY = {
   requestSlow: 'Could not reach your other device in time. Check your connection and try again.',
   syncSlow: 'Checking for history took too long. Check your connection and try again.',
   importSlow: 'Importing history took too long. Keep Stage open on both devices and try again.',
-  sendSlow: 'Sending history took too long. Check your connection and try again.',
-  pinMissing: 'No history from your other device was found for this PIN yet. On the other device choose Send history again and use the new PIN.',
+  missing: 'No history from your other device has arrived yet. Try again, or enter a code from your other device.',
   olderVersion: 'Your other device is on an older version of Stage. Update Stage there, then try again.',
-  expired: 'That history is no longer available. On the other device choose Send history again and use the new PIN.',
+  expired: 'That history is no longer available. Try again, or enter a code from your other device.',
   network: 'Could not reach the history server. Check your connection and try again.',
   failed: 'History sync failed. Try again.',
-  importFailed: 'Something went wrong while importing. Try again.',
-  sendFailed: 'Something went wrong while sending. Try again.',
 } as const;
 
 export class HistoryProblem extends Error {}
@@ -31,36 +28,13 @@ export function isMissingArchive(err: unknown): boolean {
 export function historyProblemMessage(err: unknown, fallback: string): string {
   if (err instanceof HistoryProblem) return err.message;
   const message = errorMessage(err);
-  if (MISSING_ARCHIVE.test(message)) return HISTORY_COPY.pinMissing;
+  if (MISSING_ARCHIVE.test(message)) return HISTORY_COPY.missing;
   if (RETIRED_SERVER.test(message)) return HISTORY_COPY.olderVersion;
   if (message.includes(EXPIRED_ARCHIVE)) return HISTORY_COPY.expired;
   if (UNREACHABLE.test(message)) return HISTORY_COPY.network;
   return fallback;
 }
 
-
-export const HISTORY_PIN_LENGTH = 6;
-
-export function historyPinFromRandom(bytes: Uint8Array): string {
-  let pin = '';
-  for (const byte of bytes) {
-    if (pin.length >= HISTORY_PIN_LENGTH) break;
-    pin += String(byte % 10);
-  }
-  return pin.padEnd(HISTORY_PIN_LENGTH, '0');
-}
-
-export function normalizeHistoryPin(input: string): string {
-  return input.replace(/\D/g, '');
-}
-
-export function isValidHistoryPin(pin: string): boolean {
-  return new RegExp(`^\\d{${HISTORY_PIN_LENGTH}}$`).test(pin);
-}
-
-export function formatHistoryPin(pin: string): string {
-  return `${pin.slice(0, 3)} ${pin.slice(3)}`.trim();
-}
 
 const WAITING_LABEL = 'Waiting for your other device. Open Stage there on this account and keep it in the foreground.';
 
@@ -69,7 +43,7 @@ export function historySyncPhaseLabel(phase: HistorySyncPhase, problem?: string 
     case 'requesting': return 'Asking your other device for history…';
     case 'waiting': return WAITING_LABEL;
     case 'done': return 'History synced from your other device.';
-    case 'timeout': return 'No answer from your other device yet. Open Stage there and retry, or use Send history with a PIN in its Messenger settings.';
+    case 'timeout': return 'No answer from your other device yet. Open Stage there and try again, or enter a code from Send history in its Messenger settings.';
     case 'error': return problem ?? HISTORY_COPY.failed;
     default: return null;
   }

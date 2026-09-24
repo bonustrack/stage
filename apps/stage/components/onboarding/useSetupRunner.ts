@@ -3,7 +3,8 @@ import { Alert } from 'react-native';
 import type { Hex } from 'viem';
 import { txErrorMessage } from '@stage-labs/client/wallet/txError';
 import { holdOnboarding } from '../../lib/accountGate';
-import { receiveHistoryWithPin, syncHistoryToEnd } from '../../lib/historySync';
+import { syncHistoryToEnd } from '../../lib/historySync';
+import { receiveHistoryWithCode } from '../../lib/historyTransfer';
 import {
   createWallet, restoreWallet, importKeyAccount, bringMessagingOnline, resumeWithPasskey, abandonAccount, XmtpSetupError, PasskeySetupError,
   type PasskeyChoice, type SetupWarning, type Stage,
@@ -35,7 +36,7 @@ export interface SetupRunner {
 export interface HistoryControls {
   stalled: boolean;
   retry: () => void;
-  receivePin: (pin: string) => Promise<void>;
+  receiveCode: (code: string) => Promise<void>;
   continueWithout: () => void;
 }
 
@@ -55,22 +56,22 @@ function describe(e: unknown): string {
   return txErrorMessage(e, 'Something went wrong.');
 }
 
-function useBusyLatch(): [boolean, (next: boolean) => void, () => boolean] {
-  const [busy, setBusyState] = useState(false);
+function useLatch(): [boolean, (next: boolean) => void, () => boolean] {
+  const [value, setValueState] = useState(false);
   const latched = useRef(false);
-  const setBusy = (next: boolean): void => {
+  const setValue = (next: boolean): void => {
     latched.current = next;
-    setBusyState(next);
+    setValueState(next);
   };
-  return [busy, setBusy, () => latched.current];
+  return [value, setValue, () => latched.current];
 }
 
 export function useSetupRunner(onDone: () => void): SetupRunner {
-  const [busy, setBusy, isBusy] = useBusyLatch();
+  const [busy, setBusy, isBusy] = useLatch();
   const [stage, setStage] = useState<Stage>('wallet');
   const [setupErr, setSetupErr] = useState<SetupErr | null>(null);
   const [plan, setPlan] = useState<SetupPlan>({});
-  const [historyStalled, setHistoryStalled] = useState(false);
+  const [historyStalled, setHistoryStalled, isStalled] = useLatch();
   const heldWarning = useRef<SetupWarning>(null);
 
   const onStage = (s: Stage): void => {
@@ -157,7 +158,7 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
   };
 
   const continueWithout = (): void => {
-    if (!historyStalled) return;
+    if (!isStalled()) return;
     setHistoryStalled(false);
     setStage('finishing');
     finish(heldWarning.current, true);
@@ -165,8 +166,8 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
 
   const history: HistoryControls = {
     stalled: historyStalled,
-    retry: () => { if (historyStalled) void tail(true, heldWarning.current); },
-    receivePin: async (pin) => { await receiveHistoryWithPin(pin); continueWithout(); },
+    retry: () => { if (isStalled()) void tail(true, heldWarning.current); },
+    receiveCode: async (code) => { await receiveHistoryWithCode(code); continueWithout(); },
     continueWithout,
   };
 

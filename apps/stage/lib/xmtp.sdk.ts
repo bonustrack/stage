@@ -12,11 +12,15 @@ import {
   type MessageQuery, type XmtpSdk,
 } from './xmtp.sdk.core';
 import { reported, recover, attempt } from './errorPolicy';
+import { archiveFromBytes, archiveToBytes } from './archiveFile';
 
 type NativeClient = Awaited<ReturnType<typeof xmtpClient>>;
 type NativeMessage = Awaited<ReturnType<Conversation['messages']>>[number];
 type NativeMessagesOptions = NonNullable<Parameters<Conversation['messages']>[0]>;
 type InstallationIds = Parameters<typeof staticKeyPackageStatuses>[1];
+type NativeArchiveOptions = NonNullable<Parameters<NativeClient['createArchive']>[2]>;
+
+const ARCHIVE_OPTIONS: NativeArchiveOptions = { archiveElements: ['messages', 'consent'], excludeDisappearingMessages: false };
 
 const asConversationId = (id: string): ConversationId => id as ConversationId;
 
@@ -141,9 +145,10 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
   streamConsent,
   history: {
     sendSyncRequest: (client, serverUrl) => client.sendSyncRequest(serverUrl),
-    sendSyncArchive: (client, pin, serverUrl) => client.sendSyncArchive(pin, serverUrl),
     syncDeviceGroups: (client) => client.syncAllDeviceSyncGroups(),
-    processSyncArchive: (client, pin) => client.processSyncArchive(pin),
+    processSyncArchive: (client) => client.processSyncArchive(),
+    createArchive: (client, key) => archiveToBytes((path) => client.createArchive(path, key, ARCHIVE_OPTIONS)),
+    importArchive: (client, archive, key) => archiveFromBytes(archive, (path) => client.importArchive(path, key)),
   },
   isGroup: (conv) => conv instanceof Group,
   dmPeerInboxId: (conv) => (conv instanceof Dm ? () => conv.peerInboxId() : null),

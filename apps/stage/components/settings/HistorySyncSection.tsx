@@ -1,82 +1,28 @@
-import { errorMessage } from '@stage-labs/client/errors';
 import { useState } from 'react';
-import { Alert } from 'react-native';
 import { Caption } from '@stage-labs/kit/react-native/caption';
-import { Button } from '@stage-labs/kit/react-native/button';
-import { Text } from '@stage-labs/kit/react-native/text';
-import { Title } from '@stage-labs/kit/react-native/title';
-import { Box, Col } from '../layout';
-import { AppModal } from '../AppModal';
-import { FormField } from '../FormField';
+import { Box } from '../layout';
 import { capabilities } from '../../lib/capabilities';
-import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import {
-  generateHistoryPin, historySyncProblem, receiveHistoryWithPin, runHistorySync, shareHistory, useHistorySyncPhase,
-} from '../../lib/historySync';
-import {
-  formatHistoryPin, historySyncIsActive, historySyncPhaseLabel, isValidHistoryPin, normalizeHistoryPin,
-} from '../../lib/historySync.model';
+import { usePalette } from '../../lib/theme';
+import { historySyncProblem, runHistorySync, useHistorySyncPhase } from '../../lib/historySync';
+import { receiveHistoryWithCode } from '../../lib/historyTransfer';
+import { historySyncIsActive, historySyncPhaseLabel } from '../../lib/historySync.model';
+import { ReceiveCodeSheet, SendHistorySheet } from './HistoryTransferSheets';
 import { SettingsButtonRow, SettingsList } from './rows';
 
 const SYNC_DESC = 'Ask your other devices for the messages this device is missing. Keep Stage open on the other device while it answers.';
-const SEND_DESC = 'Package this device\'s history for another device. You will get a PIN to enter there.';
-const RECEIVE_DESC = 'Enter the PIN shown on the device that sent its history.';
+const SEND_DESC = 'Package this device\'s history for another device. You will get a code to enter there.';
+const RECEIVE_DESC = 'Enter the code shown on the device that sent its history.';
 
-export function PinSheet({ visible, busy, onClose, onSubmit }: {
-  visible: boolean; busy: boolean; onClose: () => void; onSubmit: (pin: string) => void;
-}): React.ReactElement {
-  const dark = useEffectiveColorScheme() === 'dark';
-  const [pin, setPin] = useState('');
-  const clean = normalizeHistoryPin(pin);
-  return (
-    <AppModal visible={visible} onClose={onClose}>
-      <Col gap={12}>
-        <Title level={3}>Receive history</Title>
-        <Text size="sm" role="secondary">{RECEIVE_DESC}</Text>
-        <FormField label="Code" placeholder="000 000" value={pin} onChangeText={setPin}
-          inputProps={{ keyboardType: 'number-pad', maxLength: 7, autoFocus: true }} />
-        <Button
-          dark={dark} variant="solid" color="primary" size="lg" fullWidth label="Import history"
-          loading={busy} disabled={busy || !isValidHistoryPin(clean)}
-          onPress={() => { onSubmit(clean); }}
-        />
-      </Col>
-    </AppModal>
-  );
-}
-
-function useHistoryActions(): {
-  busy: boolean; pinOpen: boolean; setPinOpen: (v: boolean) => void;
-  onSend: () => void; onReceive: (pin: string) => void;
-} {
-  const [busy, setBusy] = useState(false);
-  const [pinOpen, setPinOpen] = useState(false);
-  const onSend = (): void => {
-    if (busy) return;
-    setBusy(true);
-    const pin = generateHistoryPin();
-    shareHistory(pin)
-      .then(() => {
-        Alert.alert('History sent', `On the other device choose Receive history with a PIN and enter ${formatHistoryPin(pin)}.`);
-      })
-      .catch((e: unknown) => { Alert.alert('Could not send history', errorMessage(e)); })
-      .finally(() => { setBusy(false); });
-  };
-  const onReceive = (pin: string): void => {
-    if (busy) return;
-    setBusy(true);
-    receiveHistoryWithPin(pin)
-      .then(() => { setPinOpen(false); capabilities.toast('History imported'); })
-      .catch((e: unknown) => { Alert.alert('Could not import history', errorMessage(e)); })
-      .finally(() => { setBusy(false); });
-  };
-  return { busy, pinOpen, setPinOpen, onSend, onReceive };
+async function receiveFromSettings(code: string): Promise<void> {
+  await receiveHistoryWithCode(code);
+  capabilities.toast('History imported');
 }
 
 export function HistorySyncSection(): React.ReactElement {
   const { text: fg } = usePalette();
   const phase = useHistorySyncPhase();
-  const a = useHistoryActions();
+  const [sendOpen, setSendOpen] = useState(false);
+  const [receiveOpen, setReceiveOpen] = useState(false);
   const syncing = historySyncIsActive(phase);
   const status = historySyncPhaseLabel(phase, historySyncProblem());
   return (
@@ -93,20 +39,21 @@ export function HistorySyncSection(): React.ReactElement {
             onPress={() => { if (!syncing) void runHistorySync(); }}
           />
           <SettingsButtonRow
-            label={a.busy ? 'Working…' : 'Send history to another device'}
+            label="Send history to another device"
             description={SEND_DESC}
             iconStart="upload"
-            onPress={a.onSend}
+            onPress={() => { setSendOpen(true); }}
           />
           <SettingsButtonRow
-            label="Receive history with a PIN"
+            label="Receive history with a code"
             description={RECEIVE_DESC}
             iconStart="download"
-            onPress={() => { a.setPinOpen(true); }}
+            onPress={() => { setReceiveOpen(true); }}
           />
         </SettingsList>
       </Box>
-      <PinSheet visible={a.pinOpen} busy={a.busy} onClose={() => { a.setPinOpen(false); }} onSubmit={a.onReceive} />
+      <SendHistorySheet visible={sendOpen} onClose={() => { setSendOpen(false); }} />
+      <ReceiveCodeSheet visible={receiveOpen} onClose={() => { setReceiveOpen(false); }} onReceive={receiveFromSettings} />
     </>
   );
 }

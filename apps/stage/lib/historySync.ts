@@ -2,12 +2,10 @@ import './cryptoShim';
 import { makeListeners, useStoreValue } from './storeCore';
 import { bumpAccountEpoch } from './accountEpoch';
 import { waitForXmtpReady } from './xmtp.state';
+import { processHistoryArchive, requestHistorySync, syncHistoryGroups } from './xmtp.history';
 import {
-  processHistoryArchive, requestHistorySync, sendHistoryArchive, syncHistoryGroups,
-} from './xmtp.history';
-import {
-  historyPinFromRandom, historyProblemMessage, historySyncIsActive, isMissingArchive, settleBy, within,
-  HISTORY_COPY, HISTORY_PIN_LENGTH, HistoryProblem, type HistorySyncPhase,
+  historyProblemMessage, historySyncIsActive, isMissingArchive, settleBy, within,
+  HISTORY_COPY, HistoryProblem, type HistorySyncPhase,
 } from './historySync.model';
 import { report } from './errorPolicy';
 
@@ -17,10 +15,6 @@ const READY_MS = 30_000;
 const REQUEST_MS = 30_000;
 const SYNC_GROUPS_MS = 20_000;
 const IMPORT_MS = 60_000;
-const SEND_MS = 90_000;
-const PIN_WAIT_MS = 45_000;
-const PIN_TOTAL_MS = 120_000;
-const PIN_POLL_MS = 3_000;
 
 let phase: HistorySyncPhase = 'idle';
 let problem: string | null = null;
@@ -50,14 +44,14 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => { setTimeout(resolve, ms); });
 }
 
-async function messagingReady(): Promise<void> {
+export async function messagingReady(): Promise<void> {
   if (!(await within(waitForXmtpReady(), READY_MS, HISTORY_COPY.notReady))) throw new HistoryProblem(HISTORY_COPY.notReady);
 }
 
-async function importArchive(pin?: string): Promise<boolean> {
+async function importArchive(): Promise<boolean> {
   await within(syncHistoryGroups(), SYNC_GROUPS_MS, HISTORY_COPY.syncSlow);
   try {
-    await within(processHistoryArchive(pin), IMPORT_MS, HISTORY_COPY.importSlow);
+    await within(processHistoryArchive(), IMPORT_MS, HISTORY_COPY.importSlow);
     return true;
   } catch (err) {
     if (isMissingArchive(err)) return false;
@@ -65,8 +59,11 @@ async function importArchive(pin?: string): Promise<boolean> {
   }
 }
 
-async function waitForArchive(deadline: number): Promise<HistorySyncPhase> {
-  while (Date.now() < deadline) {
+let currentRun = 0;
+let finishEarly: ((outcome: HistorySyncPhase) => void) | null = null;
+
+async function waitForArchive(run: number, deadline: number): Promise<HistorySyncPhase> {
+  while (Date.now() < deadline && run === currentRun) {
     try {
       if (await importArchive()) return 'done';
     } catch (err) {
@@ -78,8 +75,6 @@ async function waitForArchive(deadline: number): Promise<HistorySyncPhase> {
   return problem === null ? 'timeout' : 'error';
 }
 
-let currentRun = 0;
-
 async function syncOnce(run: number, deadline: number): Promise<HistorySyncPhase> {
   try {
     await messagingReady();
@@ -90,7 +85,7 @@ async function syncOnce(run: number, deadline: number): Promise<HistorySyncPhase
     return 'error';
   }
   if (run === currentRun) setPhase('waiting');
-  const outcome = await waitForArchive(deadline);
+  const outcome = await waitForArchive(run, deadline);
   if (outcome === 'done') bumpAccountEpoch();
   return outcome;
 }
@@ -103,10 +98,19 @@ export async function runHistorySync(): Promise<HistorySyncPhase> {
   deadlineAt = deadline;
   problem = null;
   setPhase('requesting');
-  const outcome = await settleBy(syncOnce(run, deadline), deadline, 'timeout');
+  const early = new Promise<HistorySyncPhase>((resolve) => { finishEarly = resolve; });
+  const outcome = await Promise.race([settleBy(syncOnce(run, deadline), deadline, 'timeout'), early]);
   const settled = outcome === 'timeout' && problem !== null ? 'error' : outcome;
   if (run === currentRun) setPhase(settled);
   return settled;
+}
+
+export function completeHistorySync(): void {
+  const resolve = finishEarly;
+  finishEarly = null;
+  currentRun += 1;
+  setPhase('done');
+  resolve?.('done');
 }
 
 function whenHistorySettled(): Promise<void> {
@@ -126,40 +130,4 @@ export async function syncHistoryToEnd(): Promise<HistorySyncPhase> {
   if (!historySyncIsActive(started)) return started;
   await whenHistorySettled();
   return phase;
-}
-
-async function importPinnedArchive(pin: string): Promise<void> {
-  await messagingReady();
-  const deadline = Date.now() + PIN_WAIT_MS;
-  while (!(await importArchive(pin))) {
-    if (Date.now() + PIN_POLL_MS >= deadline) throw new HistoryProblem(HISTORY_COPY.pinMissing);
-    await sleep(PIN_POLL_MS);
-  }
-}
-
-export async function receiveHistoryWithPin(pin: string): Promise<void> {
-  try {
-    await within(importPinnedArchive(pin), PIN_TOTAL_MS, HISTORY_COPY.importSlow);
-  } catch (err) {
-    report('historySync.pin', err);
-    throw new Error(historyProblemMessage(err, HISTORY_COPY.importFailed));
-  }
-  bumpAccountEpoch();
-}
-
-export async function shareHistory(pin: string): Promise<void> {
-  try {
-    await messagingReady();
-    await within(syncHistoryGroups(), SYNC_GROUPS_MS, HISTORY_COPY.syncSlow);
-    await within(sendHistoryArchive(pin), SEND_MS, HISTORY_COPY.sendSlow);
-  } catch (err) {
-    report('historySync.share', err);
-    throw new Error(historyProblemMessage(err, HISTORY_COPY.sendFailed));
-  }
-}
-
-export function generateHistoryPin(): string {
-  const bytes = new Uint8Array(HISTORY_PIN_LENGTH);
-  globalThis.crypto.getRandomValues(bytes);
-  return historyPinFromRandom(bytes);
 }

@@ -52,9 +52,10 @@ export interface SendOps<C> {
 
 export interface HistoryOps<Cl> {
   sendSyncRequest: (client: Cl, serverUrl: string) => Promise<unknown>;
-  sendSyncArchive: (client: Cl, pin: string, serverUrl: string) => Promise<unknown>;
   syncDeviceGroups: (client: Cl) => Promise<unknown>;
-  processSyncArchive: (client: Cl, pin: string | undefined) => Promise<unknown>;
+  processSyncArchive: (client: Cl) => Promise<unknown>;
+  createArchive: (client: Cl, key: Uint8Array) => Promise<Uint8Array>;
+  importArchive: (client: Cl, archive: Uint8Array, key: Uint8Array) => Promise<unknown>;
 }
 
 interface ClientPrimitives<Cl, C, M> {
