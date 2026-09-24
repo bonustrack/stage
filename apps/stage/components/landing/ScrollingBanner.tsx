@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useWindowDimensions } from 'react-native';
 import Animated, {
-  Easing, cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming, type SharedValue,
+  Easing, ReduceMotion, cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming, type SharedValue,
 } from 'react-native-reanimated';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -28,10 +28,12 @@ function BannerCopy({ onWidth }: { onWidth?: (width: number) => void }): React.R
 function runMarquee(x: SharedValue<number>, copyWidth: number, from: number): void {
   if (copyWidth <= 0) return;
   const remaining = (copyWidth + from) / copyWidth;
+  const always = ReduceMotion.Never;
   x.value = withSequence(
-    withTiming(-copyWidth, { duration: BANNER.durationMs * remaining, easing: Easing.linear }),
-    withTiming(0, { duration: 0 }),
-    withRepeat(withTiming(-copyWidth, { duration: BANNER.durationMs, easing: Easing.linear }), -1, false),
+    always,
+    withTiming(-copyWidth, { duration: BANNER.durationMs * remaining, easing: Easing.linear, reduceMotion: always }),
+    withTiming(0, { duration: 0, reduceMotion: always }),
+    withRepeat(withTiming(-copyWidth, { duration: BANNER.durationMs, easing: Easing.linear, reduceMotion: always }), -1, false, undefined, always),
   );
 }
 
