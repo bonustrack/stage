@@ -1,3 +1,4 @@
+import { hmac } from '@noble/hashes/hmac';
 import { pbkdf2Async } from '@noble/hashes/pbkdf2';
 import { sha256 } from '@noble/hashes/sha2';
 import { bytesToHex, concatBytes, utf8ToBytes } from '@noble/hashes/utils';
@@ -57,6 +58,26 @@ export function formatTransferCode(code: string): string {
 
 export const noblePbkdf2: Pbkdf2 = (password, salt, iterations) =>
   pbkdf2Async(sha256, password, salt, { c: iterations, dkLen: 32 });
+
+export function chunkedPbkdf2(
+  pause: () => Promise<void>, onProgress: (share: number) => void = () => undefined, chunk = 2_000,
+): Pbkdf2 {
+  return async (password, salt, iterations) => {
+    const prf = hmac.create(sha256, password);
+    let block = prf.clone().update(concatBytes(salt, Uint8Array.of(0, 0, 0, 1))).digest();
+    const out = block.slice();
+    for (let i = 1; i < iterations; i += 1) {
+      block = prf.clone().update(block).digest();
+      for (let j = 0; j < out.length; j += 1) out[j] = (out[j] ?? 0) ^ (block[j] ?? 0);
+      if (i % chunk === 0) {
+        onProgress(i / iterations);
+        await pause();
+      }
+    }
+    onProgress(1);
+    return out;
+  };
+}
 
 export function webCryptoPbkdf2(subtle: SubtleCrypto): Pbkdf2 {
   return async (password, salt, iterations) => {

@@ -54,3 +54,28 @@ export function transferExpiry(body: unknown, now: number): number {
   const value = typeof body === 'object' && body !== null && 'expiresAt' in body ? body.expiresAt : undefined;
   return typeof value === 'number' && Number.isFinite(value) && value > now ? value : now + TRANSFER_TTL_MS;
 }
+
+export type TransferStep =
+  | { kind: 'idle' }
+  | { kind: 'packing' }
+  | { kind: 'locking'; share: number }
+  | { kind: 'uploading' }
+  | { kind: 'unlocking'; share: number }
+  | { kind: 'downloading' }
+  | { kind: 'importing' };
+
+function percent(share: number): string {
+  return `${Math.min(100, Math.max(0, Math.round(share * 100)))}%`;
+}
+
+export function transferStepLabel(step: TransferStep): string | null {
+  switch (step.kind) {
+    case 'packing': return 'Packing your messages...';
+    case 'locking': return `Locking with the code... ${percent(step.share)}`;
+    case 'uploading': return 'Uploading...';
+    case 'unlocking': return `Unlocking your history... ${percent(step.share)}`;
+    case 'downloading': return 'Downloading...';
+    case 'importing': return 'Importing your messages...';
+    default: return null;
+  }
+}

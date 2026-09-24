@@ -1,6 +1,7 @@
 import './cryptoShim';
 import {
-  TRANSFER_CODE_RANDOM_BYTES, deriveTransferSecrets, normalizeTransferCode, transferCodeFromRandom,
+  TRANSFER_CODE_RANDOM_BYTES, chunkedPbkdf2, deriveTransferSecrets, normalizeTransferCode, transferCodeFromRandom,
+  webCryptoPbkdf2, type Pbkdf2,
   unwrapTransferArchive, wrapTransferArchive,
 } from '@stage-labs/client/xmtp/historyTransfer';
 import { bumpAccountEpoch } from './accountEpoch';
@@ -9,8 +10,9 @@ import { completeHistorySync, messagingReady } from './historySync';
 import { HistoryProblem, within } from './historySync.model';
 import {
   MAX_TRANSFER_BYTES, TRANSFER_COPY, downloadProblem, importProblem, transferExpiry, transferProblemMessage,
-  uploadProblem,
+  uploadProblem, type TransferStep,
 } from './historyTransfer.model';
+import { makeListeners, useStoreValue } from './storeCore';
 import { createHistoryArchive, importHistoryArchive } from './xmtp.history';
 import { report, reported } from './errorPolicy';
 
@@ -18,6 +20,29 @@ const ARCHIVE_MS = 120_000;
 const UPLOAD_MS = 120_000;
 const DOWNLOAD_MS = 120_000;
 const IMPORT_MS = 120_000;
+
+let step: TransferStep = { kind: 'idle' };
+const stepListeners = makeListeners();
+
+function setStep(next: TransferStep): void {
+  step = next;
+  stepListeners.notify();
+}
+
+function currentStep(): TransferStep { return step; }
+
+export function useTransferStep(): TransferStep {
+  return useStoreValue(stepListeners.subscribe, currentStep);
+}
+
+function nextFrame(): Promise<void> {
+  return new Promise((resolve) => { setTimeout(resolve, 0); });
+}
+
+function transferKdf(onShare: (share: number) => void): Pbkdf2 {
+  const subtle = (globalThis as { crypto?: { subtle?: SubtleCrypto } }).crypto?.subtle;
+  return subtle === undefined ? chunkedPbkdf2(nextFrame, onShare) : webCryptoPbkdf2(subtle);
+}
 
 export interface SentTransfer {
   code: string;
@@ -44,15 +69,21 @@ async function uploadTransfer(url: string, body: Uint8Array): Promise<number> {
 
 export async function sendHistoryWithCode(): Promise<SentTransfer> {
   try {
+    await nextFrame();
     await messagingReady();
     const code = randomCode();
-    const { id, key } = await deriveTransferSecrets(code);
+    setStep({ kind: 'locking', share: 0 });
+    const { id, key } = await deriveTransferSecrets(code, transferKdf((share) => { setStep({ kind: 'locking', share }); }));
+    setStep({ kind: 'packing' });
     const archive = await within(createHistoryArchive(key), ARCHIVE_MS, TRANSFER_COPY.prepareSlow);
+    setStep({ kind: 'uploading' });
     const expiresAt = await uploadTransfer(await transferUrl(id), wrapTransferArchive(archive));
     return { code, expiresAt };
   } catch (err) {
     report('historyTransfer.send', err);
     throw new Error(transferProblemMessage(err, TRANSFER_COPY.sendFailed, TRANSFER_COPY.uploadFailed));
+  } finally {
+    setStep({ kind: 'idle' });
   }
 }
 
@@ -81,14 +112,21 @@ export async function receiveHistoryWithCode(input: string): Promise<void> {
   const code = normalizeTransferCode(input);
   if (code === null) throw new Error(TRANSFER_COPY.invalidCode);
   try {
+    await nextFrame();
     await messagingReady();
-    const { id, key } = await deriveTransferSecrets(code);
+    setStep({ kind: 'unlocking', share: 0 });
+    const { id, key } = await deriveTransferSecrets(code, transferKdf((share) => { setStep({ kind: 'unlocking', share }); }));
     const url = await transferUrl(id);
-    await importTransfer(await downloadTransfer(url), key);
+    setStep({ kind: 'downloading' });
+    const archive = await downloadTransfer(url);
+    setStep({ kind: 'importing' });
+    await importTransfer(archive, key);
     forgetTransfer(url);
   } catch (err) {
     report('historyTransfer.receive', err);
     throw new Error(transferProblemMessage(err, TRANSFER_COPY.importFailed, TRANSFER_COPY.downloadFailed));
+  } finally {
+    setStep({ kind: 'idle' });
   }
   completeHistorySync();
   bumpAccountEpoch();

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  TRANSFER_CODE_LENGTH, deriveTransferSecrets, formatTransferCode, noblePbkdf2, normalizeTransferCode,
+  TRANSFER_CODE_LENGTH, chunkedPbkdf2, deriveTransferSecrets, formatTransferCode, noblePbkdf2, normalizeTransferCode,
   transferCodeFromRandom, unwrapTransferArchive, webCryptoPbkdf2, wrapTransferArchive,
 } from '../src/xmtp/historyTransfer';
 
@@ -73,6 +73,17 @@ describe('deriveTransferSecrets', () => {
     const pure = await deriveTransferSecrets('ZZZZZZZZZZ', noblePbkdf2, FAST_ITERATIONS);
     const web = await deriveTransferSecrets('ZZZZZZZZZZ', webCryptoPbkdf2(crypto.subtle), FAST_ITERATIONS);
     expect(web).toEqual(pure);
+  });
+
+  test('the chunked implementation matches the vector, pauses between chunks and reports progress', async () => {
+    let pauses = 0;
+    const shares: number[] = [];
+    const chunked = chunkedPbkdf2(async () => { pauses += 1; }, (share) => { shares.push(share); }, 100);
+    const secrets = await deriveTransferSecrets('K7M29QX4TR', chunked, FAST_ITERATIONS);
+    expect(secrets.id).toBe('5dc74fa918b0441ec0f45439c1771340cb094853b758bbca504922ba45f95f59');
+    expect(pauses).toBeGreaterThan(0);
+    expect(shares.at(-1)).toBe(1);
+    expect(shares.every((share, i) => i === 0 || share >= (shares[i - 1] ?? 0))).toBe(true);
   });
 
   test('a different code gives an unrelated id and key', async () => {

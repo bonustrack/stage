@@ -13,7 +13,8 @@ import { Spinner } from '../Spinner';
 import { QrScanner } from '../accounts/QrScanner';
 import { capabilities } from '../../lib/capabilities';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { sendHistoryWithCode } from '../../lib/historyTransfer';
+import { sendHistoryWithCode, useTransferStep } from '../../lib/historyTransfer';
+import { transferStepLabel } from '../../lib/historyTransfer.model';
 import {
   RECEIVE_COPY, SEND_COPY, canSubmitCode, codeFromScan, displayCode, expiryLabel, type SendSheetState,
 } from './HistoryTransferSheets.model';
@@ -37,10 +38,11 @@ function useSendTransfer(visible: boolean, attempt: number): SendSheetState {
 
 function Preparing(): React.ReactElement {
   const { link } = usePalette();
+  const step = useTransferStep();
   return (
     <Col gap={10} align="center" padding={{ y: 24 }}>
       <Spinner size={28} color={link} />
-      <Text size="lg" textAlign="center">{SEND_COPY.preparing}</Text>
+      <Text size="lg" textAlign="center">{transferStepLabel(step) ?? SEND_COPY.preparing}</Text>
       <Text size="sm" role="secondary" textAlign="center">{SEND_COPY.preparingHint}</Text>
     </Col>
   );
@@ -128,6 +130,7 @@ export function ReceiveCodeSheet({ visible, onClose, onReceive }: {
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const form = useReceiveForm(visible, onReceive, onClose);
+  const step = useTransferStep();
   const [scanning, setScanning] = useState(false);
   const canScan = Platform.OS !== 'web';
   const onScan = (text: string): void => {
@@ -150,7 +153,7 @@ export function ReceiveCodeSheet({ visible, onClose, onReceive }: {
         )}
         <Button
           dark={dark} variant="solid" color="primary" size="lg" fullWidth
-          label={form.busy ? RECEIVE_COPY.importing : RECEIVE_COPY.submit}
+          label={form.busy ? transferStepLabel(step) ?? RECEIVE_COPY.importing : RECEIVE_COPY.submit}
           loading={form.busy} disabled={form.busy || !canSubmitCode(form.code)}
           onPress={() => { form.submit(form.code); }}
         />
