@@ -107,7 +107,7 @@ rate-limit and rotate it.
 - **Desktop:** the same version bump runs `release-desktop.yml`, which builds the
   macOS / Windows / Linux installers and publishes them to the GitHub Release
   that the landing page links to. See `docs/desktop-release.md`.
-- **Proxy / push:** `deploy-proxy.yml` and `deploy-push-server.yml` deploy on push to `main`.
+- **Proxy / push:** the proxy Worker deploys through Cloudflare Workers Builds on push to `main` (typecheck and tests run first); `deploy-push-server.yml` deploys the push server.
 
 ## CI / quality gates
 

@@ -109,7 +109,7 @@ the `NAMES_CLAIMS` Durable Object (SQLite-backed, created by the `v1` migration)
 `NAMES_OPERATOR_KEY` (and the optional `NAMES_RPC_URL`) are Worker secrets set
 with `wrangler secret put`, never committed. Both hostnames are proxied
 (orange-cloud) DNS records, so the routes intercept at the edge before any
-origin. CI deploys on every push to `main` (`deploy-proxy.yml`).
+origin. Cloudflare Workers Builds deploys it on every push to `main` that touches `apps/proxy/`, `packages/client/`, `bun.lock` or the root `package.json`: it installs with `bun install --frozen-lockfile` (Bun 1.4.0 via the `BUN_VERSION` build variable), runs `bun run typecheck` and `bun run test` in `apps/proxy`, then `bunx wrangler deploy`. Builds and logs are in the Cloudflare dashboard under the `proxy` Worker.
 
 ```sh
 curl https://proxy.stage.box/health            # -> ok, header x-served-by: worker
