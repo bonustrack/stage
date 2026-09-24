@@ -37,14 +37,22 @@ describe('tokenRowModel', () => {
     expect(p.change24h).toBe('-2.35%');
   });
 
-  test('unpriced token falls back to symbol and em dash value', () => {
+  test('an unpriced token falls back to its symbol and shows no value or change', () => {
     const p = tokenRowModel({
       chainId: 11155111, symbol: 'TEST', name: 'Test', balance: '5',
       priceUsd: null, change24h: null, logoUrl: 'l',
     }, fmt);
     expect(p.name).toBe('TEST');
-    expect(p.balance).toBe('-');
+    expect(p.balance).toBe('');
     expect(p.change24h).toBe('');
     expect(p.tokenId).toBe('11155111:TEST');
+  });
+
+  test('an unpriced zero balance shows a zero value', () => {
+    const p = tokenRowModel({
+      chainId: 8453, symbol: 'ETH', name: 'Ethereum', balance: '0',
+      priceUsd: null, change24h: null, logoUrl: 'l',
+    }, fmt);
+    expect(p.balance).toBe(fmt.fmtUsd(0));
   });
 });

@@ -121,9 +121,9 @@ function ComposerRightAction({ p, primary }: { p: EditorProps; primary: string }
 }
 
 export function ComposerEditor(p: EditorProps): React.ReactElement {
-  const { primary } = usePalette();
+  const { primary, border } = usePalette();
   return (
-    <Col padding={10} surface="raised" radius="none">
+    <Col padding={10} background={border} radius="none">
       <VoiceRecorder
         recording={p.recording}
         levels={p.levels}
@@ -161,9 +161,9 @@ export function buildAttachActions(a: {
 }
 
 export function AttachMenu({
-  head, inputBg, chipBg, actions, onClose,
+  head, dark, actions, onClose,
 }: {
-  head: string; inputBg: string; chipBg: string;
+  head: string; dark: boolean;
   actions: [HeroIconName, string, () => void | Promise<void>][];
   onClose: () => void;
 }): React.ReactElement {
@@ -176,17 +176,12 @@ export function AttachMenu({
 >
       {actions.map(([icon, label, action]) => (
         <Col key={label} align="center" gap={6}>
-          <Pressable
+          <Button
+            uniform pill size="xl" color="secondary" variant="solid" dark={dark}
+            accessibilityLabel={label}
+            iconStart={<Icon name={icon} size={24} color={head}/>}
             onPress={() => { onClose(); void action(); }}
-            style={({ pressed }) => ({
-              width: 56, height: 56, borderRadius: 28,
-              alignItems: 'center', justifyContent: 'center',
-              backgroundColor: pressed ? chipBg : inputBg,
-              borderWidth: 1, borderColor: chipBg,
-            })}
->
-            <Icon name={icon} size={24} color={head}/>
-          </Pressable>
+          />
           <Text weight="semibold" size="sm" color={head} numberOfLines={1}>{label}</Text>
         </Col>
       ))}

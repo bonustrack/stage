@@ -67,7 +67,7 @@ function ComposerHeader(p: {
 export function MessengerComposer(props: Props): React.ReactElement {
   const { dark, xmtpLine, mentionCandidates, replyingTo, autoFocusNonce, onClearReply, onJumpToReply } = props;
   const pal = usePalette();
-  const fg = pal.text, head = pal.link, inputBg = pal.inputBg, chipBg = pal.border, bg = pal.bg;
+  const fg = pal.text, head = pal.link, chipBg = pal.border, bg = pal.bg;
   const sub = pal.text;
 
   const s = useComposerState();
@@ -124,7 +124,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
       />
       {s.attachMenuOpen ? (
         <AttachMenu
-          head={head} inputBg={inputBg} chipBg={chipBg}
+          head={head} dark={dark}
           onClose={() => { s.setAttachMenuOpen(() => false); }}
           actions={attachActions}
         />

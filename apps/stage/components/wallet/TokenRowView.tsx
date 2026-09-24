@@ -51,10 +51,10 @@ export function TokenRowBody(params: TokenRowViewParams): React.ReactElement {
       </Col>
       <Spacer />
       <Col gap={2} align="end">
-        <Text value={params.balance} weight="semibold" textAlign="end" />
+        {params.balance === '' ? null : <Text value={params.balance} weight="semibold" textAlign="end" />}
         <Row gap={4} justify="end" align="center">
           <Caption value={params.priceUsd} color="secondary" />
-          <Badge label={params.change24h} color={badgeColor} />
+          {params.change24h === '' ? null : <Badge label={params.change24h} color={badgeColor} />}
         </Row>
       </Col>
       {params.trailingChevron !== false ? (
