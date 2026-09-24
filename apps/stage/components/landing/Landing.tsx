@@ -90,7 +90,7 @@ export function Landing(): React.ReactElement {
         <Col flex={1}>
           <Col
             flex={1} width="100%" maxWidth={HERO_LAYOUT.containerMaxWidth}
-            padding={{ x: HERO_LAYOUT.containerPadX, y: HERO_LAYOUT.contentPadY }} gap={HERO_LAYOUT.contentGap}
+            padding={{ x: HERO_LAYOUT.containerPadX, top: HERO_LAYOUT.contentPadY, bottom: HERO_LAYOUT.contentPadBottom }} gap={HERO_LAYOUT.contentGap}
             style={{ alignSelf: 'center' }}
           >
             <HeroCopy />

@@ -28,6 +28,7 @@ export const HERO_LAYOUT = {
   containerMaxWidth: 1400,
   containerPadX: 32,
   contentPadY: 12,
+  contentPadBottom: 120,
   contentGap: 40,
   blockMaxWidth: 760,
   blockPadY: 16,
