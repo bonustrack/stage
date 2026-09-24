@@ -82,7 +82,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
         <ImportStep dark={dark} busy={f.busy} onTransfer={f.onImportTransfer} />
       ) : null}
       {f.step === 'passkey' ? (
-        <PasskeyStep dark={dark} busy={f.busy} onAdd={f.onAddPasskey} onSkip={f.onSkipPasskey} />
+        <PasskeyStep dark={dark} busy={f.busy} onAdd={f.onAddPasskey} />
       ) : null}
       {f.step === 'setup' ? (
         <SetupStep

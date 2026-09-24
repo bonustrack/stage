@@ -43,7 +43,6 @@ describe('setup copy', () => {
 
   test('the passkey step is optional and keeps the recovery phrase as the main key', () => {
     expect(PASSKEY_STEP_COPY.title).toBe('Add a passkey');
-    expect(PASSKEY_STEP_COPY.skip).toBe('Skip for now');
     expect(PASSKEY_STEP_COPY.body).toContain('recovery phrase stays the main key');
   });
 
