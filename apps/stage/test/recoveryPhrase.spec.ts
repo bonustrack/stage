@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { english } from 'viem/accounts';
 import {
-  acceptTypedChar, applyCompletion, currentToken, normalizePastedPhrase, suggestWords, typePhrase, visibleSuggestions,
+  acceptTypedChar, applyCompletion, currentToken, normalizePastedPhrase, replaceWordAt, suggestWords, typePhrase, visibleSuggestions, wordAt,
 } from '../components/onboarding/RecoveryPhrase.model';
 
 describe('BIP-39 wordlist shape', () => {
@@ -116,8 +116,34 @@ describe('pasting a phrase', () => {
     expect(typePhrase({ text: '', pending: '' }, ' weekend_palace-soda ')).toEqual({ text: 'weekend palace soda', pending: '' });
   });
 
+  test('anything that is not a letter becomes a space, numbered lists included', () => {
+    expect(normalizePastedPhrase('1. abandon 2. ability, able/about.soda')).toBe('abandon ability able about soda');
+    expect(normalizePastedPhrase('Abandon\tability\n\nable')).toBe('abandon ability able');
+  });
+
   test('a pasted private key or code is only trimmed', () => {
     expect(normalizePastedPhrase(' 0xabc123 ')).toBe('0xabc123');
+    expect(normalizePastedPhrase(` ${'a1'.repeat(32)} `)).toBe('a1'.repeat(32));
     expect(normalizePastedPhrase('stage-transfer:v1:abc')).toBe('stage-transfer:v1:abc');
+  });
+});
+
+describe('editing a word in the middle', () => {
+  const text = 'weekend pal soda';
+
+  test('the word under the cursor is the current word', () => {
+    expect(wordAt(text, 10)).toEqual({ word: 'pal', start: 8, end: 11 });
+    expect(wordAt(text, 11)).toEqual({ word: 'pal', start: 8, end: 11 });
+    expect(wordAt(text, text.length)).toEqual({ word: 'soda', start: 12, end: 16 });
+    expect(wordAt('weekend ', 8)).toEqual({ word: '', start: 8, end: 8 });
+  });
+
+  test('picking a suggestion replaces only that word and puts the cursor after it', () => {
+    expect(replaceWordAt(text, wordAt(text, 11), 'palace')).toEqual({ text: 'weekend palace soda', cursor: 15 });
+    expect(replaceWordAt('weekend pal', wordAt('weekend pal', 11), 'palace')).toEqual({ text: 'weekend palace ', cursor: 15 });
+  });
+
+  test('a letter typed in the middle is kept exactly, with no fill or cleanup', () => {
+    expect(typePhrase({ text: 'weekend pal soda ', pending: '' }, 'weekend palm soda ')).toEqual({ text: 'weekend palm soda ', pending: '' });
   });
 });

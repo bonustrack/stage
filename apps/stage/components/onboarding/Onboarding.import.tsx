@@ -11,7 +11,7 @@ import { usePalette, DANGER } from '../../lib/theme';
 import { QrScanner } from '../accounts/QrScanner';
 import { parseImportInput } from '../accounts/ImportAccountPanel.model';
 import {
-  applyCompletion, typePhrase, type PhraseTyping, currentToken, invalidWords, looksLikePhrase, visibleSuggestions,
+  replaceWordAt, typePhrase, wordAt, type PhraseTyping, invalidWords, looksLikePhrase, visibleSuggestions,
 } from './RecoveryPhrase.model';
 
 function SuggestionChips({ words, onPick }: {
@@ -60,8 +60,16 @@ export function ImportStep({ dark, busy, onTransfer }: {
   const setText = (value: string): void => { setTyping({ text: value, pending: '' }); };
   const [err, setErr] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
-  const token = currentToken(text);
-  const suggestions = looksLikePhrase(text) ? visibleSuggestions(token.word) : [];
+  const [cursor, setCursor] = useState(0);
+  const [placeCursor, setPlaceCursor] = useState<number | null>(null);
+  const span = wordAt(text, cursor);
+  const suggestions = looksLikePhrase(text) ? visibleSuggestions(span.word) : [];
+  const pickSuggestion = (word: string): void => {
+    const next = replaceWordAt(text, span, word);
+    setText(next.text);
+    setCursor(next.cursor);
+    setPlaceCursor(next.cursor);
+  };
   const hint = inputHint(text, err);
   const submit = (raw: string): void => {
     const parsed = parseImportInput(raw);
@@ -78,9 +86,13 @@ export function ImportStep({ dark, busy, onTransfer }: {
   const phraseField = (
     <>
       <FormField label="Recovery phrase" placeholder="word1 word2 word3 ..." multiline rows={4} value={text}
-        onChangeText={(t) => { setTyping((prev) => typePhrase(prev, t)); setErr(null); }}
-        inputProps={{ autoCapitalize: 'none', autoCorrect: false }} />
-      <SuggestionChips words={suggestions} onPick={(word) => { setText(applyCompletion(text, word)); }} />
+        onChangeText={(t) => { const next = typePhrase(typing, t); setTyping(next); if (t.startsWith(typing.text)) setCursor(next.text.length); setErr(null); }}
+        inputProps={{
+          autoCapitalize: 'none', autoCorrect: false,
+          onSelectionChange: (e) => { setCursor(e.nativeEvent.selection.end); setPlaceCursor(null); },
+          ...(placeCursor === null ? {} : { selection: { start: placeCursor, end: placeCursor } }),
+        }} />
+      <SuggestionChips words={suggestions} onPick={pickSuggestion} />
       {hint === null ? null : (
         <Text size="xs" color={hint.danger ? DANGER : pal.sub} style={{ marginTop: 8 }}>{hint.text}</Text>
       )}
