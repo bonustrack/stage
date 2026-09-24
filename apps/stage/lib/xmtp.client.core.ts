@@ -81,6 +81,7 @@ function accountSwitching<C>(deps: LifecycleDeps<C>): {
       await store.deleteKey(id);
       await store.forgetSaved(id);
       client.dispose();
+      deps.bumpEpoch();
     },
     async resetActiveXmtpStore() {
       const rec = await accounts.active();

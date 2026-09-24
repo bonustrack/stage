@@ -72,10 +72,10 @@ describe('makeClientLifecycle', () => {
     await expect(lifecycle.switchToAccount('missing')).rejects.toThrow('Account not found.');
   });
 
-  test('deleting removes the record, its store and saved client, then disposes', async () => {
+  test('deleting removes the record, its store and saved client, disposes, then bumps the epoch', async () => {
     const { lifecycle, log } = harness([account('a'), account('b')], 'a');
     await lifecycle.deleteAccount('b');
-    expect(log).toEqual(['remove:b', 'deleteFiles:db-b', 'deleteKey:b', 'forget:b', 'dispose']);
+    expect(log).toEqual(['remove:b', 'deleteFiles:db-b', 'deleteKey:b', 'forget:b', 'dispose', 'epoch']);
   });
 
   test('resetting the active store wipes it and is a no-op without an account', async () => {

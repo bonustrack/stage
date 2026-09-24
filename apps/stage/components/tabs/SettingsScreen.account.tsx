@@ -7,8 +7,8 @@ import { Card } from '@stage-labs/kit/react-native/card';
 import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { capabilities } from '../../lib/capabilities';
 import { Box, Col } from '../layout';
-import { getPrivateKey, canExportPrivateKey, loadAccounts, type AccountRecord } from '../../lib/accounts';
-import { deleteAccount, shortAddress, useActiveAccountRecord } from '../../modules/messaging';
+import { getPrivateKey, canExportPrivateKey, getActiveAccount, type AccountRecord } from '../../lib/accounts';
+import { AccountManager, deleteAccount, shortAddress, useActiveAccountRecord } from '../../modules/messaging';
 import { reloadApp } from '../../lib/reloadApp';
 import { transferKindFor } from '../../lib/accountTransfer';
 import { TransferAccountSheet } from '../accounts/TransferAccountSheet';
@@ -21,7 +21,8 @@ import { PasskeyLinkRow, usePasskeyPlace } from '../settings/PasskeyLinkRow';
 import { RecoveryPhraseRow, useWalletBackedUp } from '../settings/RecoveryPhraseRow';
 import { securityRows, type SecurityCustody, type SecurityRowKey } from '../settings/SecuritySettings.model';
 import { kernelCustody } from '../../lib/zerodev';
-import { recover } from '../../lib/errorPolicy';
+import { recover, report } from '../../lib/errorPolicy';
+import { errorMessage } from '@stage-labs/client/errors';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 
 interface RevealedKey { id: string; pk: string }
@@ -43,6 +44,19 @@ function confirmExport(rec: AccountRecord, setRevealed: (key: RevealedKey) => vo
   );
 }
 
+async function removeAndMoveOn(id: string): Promise<void> {
+  try {
+    await deleteAccount(id);
+    const next = (await getActiveAccount())?.id;
+    if (next === undefined) { reloadApp(true); return; }
+    await AccountManager.switch(next);
+    capabilities.navigate('/');
+  } catch (err) {
+    report('settings.removeAccount', err);
+    Alert.alert('Could not remove account', errorMessage(err));
+  }
+}
+
 function confirmRemove(rec: AccountRecord): void {
   const name = rec.label ?? shortAddress(rec.address ?? '');
   Alert.alert(
@@ -51,11 +65,7 @@ function confirmRemove(rec: AccountRecord): void {
     [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Remove', style: 'destructive', onPress: () => {
-          void (async (): Promise<void> => {
-            await deleteAccount(rec.id);
-            const remaining = await loadAccounts();
-            reloadApp(remaining.length === 0);
-          })();
+          void removeAndMoveOn(rec.id);
         } },
     ],
   );
