@@ -8,6 +8,7 @@ import { Box, Row, Col } from '../layout';
 import { usePalette } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
 import { buildMeta, commitUrl, STAGE_GITHUB_URL } from '../../lib/githubRepo';
+import { timeAgo } from '../../lib/buildInfo.model';
 import { SettingsPage } from '../settings/SettingsPage';
 import { SettingsList, SettingsValueRow } from '../settings/rows';
 import { GithubLogo } from '../GithubLogo';
@@ -49,7 +50,8 @@ function GitHubLinkRow(): React.ReactElement {
 
 export function AboutPage(): React.ReactElement {
   const { link: head } = usePalette();
-  const { gitHash, buildProfile } = buildMeta();
+  const { gitHash, commitTime, buildProfile } = buildMeta();
+  const committed = timeAgo(commitTime, Date.now());
   const shortHash = gitHash === 'dev' ? 'dev' : gitHash.slice(0, 12);
   const commitHref = commitUrl(gitHash);
 
@@ -70,6 +72,7 @@ export function AboutPage(): React.ReactElement {
             value={shortHash}
             onPress={commitHref ? () => { capabilities.openUrl(commitHref); } : undefined}
           />
+          <SettingsValueRow label="Committed" value={committed.length > 0 ? committed : '-'} />
           <SettingsValueRow label="Build profile" value={buildProfile} />
         </SettingsList>
         <Box padding={{ x: 16 }}>
