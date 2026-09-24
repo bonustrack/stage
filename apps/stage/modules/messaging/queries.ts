@@ -2,6 +2,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { getQueryClient } from '../../lib/queryClient';
 import { fetchConvMeta, fetchGroupRoles, type ConvMeta, EMPTY_CONV_META } from './convMeta.fetch';
+import { convMetaFromCachedRow } from './convMeta.model';
+import { getCachedRows } from './cache';
 
 export const messagingKeys = {
   all: ['xmtp'] as const,
@@ -17,6 +19,7 @@ export function useConvMeta(convId?: string | null): ConvMeta {
   const { data } = useQuery({
     queryKey: messagingKeys.convMeta(convId),
     queryFn: () => fetchConvMeta(convId ?? ''),
+    placeholderData: () => convMetaFromCachedRow(getCachedRows(), convId ?? '', EMPTY_CONV_META),
     enabled: !!convId,
     staleTime: 5 * 60_000,
   });
