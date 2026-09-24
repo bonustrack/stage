@@ -14,3 +14,5 @@ telegram-attachments.json
 .typing-stop/
 .tail-lock
 packages/kit/build
+
+.DS_Store
