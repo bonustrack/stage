@@ -14,7 +14,6 @@ import { Title } from '@stage-labs/kit/react-native/title';
 import { walletHeroDisplay, walletTotalUsd } from './model';
 import { WalletActionButton } from '../../widgets';
 import { useRouter } from 'expo-router';
-import { capabilities } from '../../../lib/capabilities';
 import { usePeerProfiles } from '../../../lib/peerProfiles';
 import { DANGER, usePalette } from '../../../lib/theme';
 import { Col, Row, ScreenScroll } from '../../layout';
@@ -76,8 +75,6 @@ function WalletTabBody({ tab, nftState, address, rows, err, c }: {
 const HERO_ACTIONS: readonly (readonly [string, string, string])[] = [
   ['Send', 'send', 'send'],
   ['Receive', 'arrowDown', 'receive'],
-  ['Swap', 'switchHorizontal', 'swap'],
-  ['Buy', 'creditCard', 'buy'],
 ];
 
 function HeroTitle({ value, color }: { value: string; color?: string }): React.ReactElement {
@@ -138,8 +135,6 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
   const onWalletAction = useCallback((action: string): void => {
     if (action === 'send') router.push('/wallet/send');
     else if (action === 'receive') router.push('/wallet/receive');
-    else if (action === 'swap') capabilities.toast('Swap: coming soon');
-    else if (action === 'buy') capabilities.toast('Buy: coming soon');
   }, [router]);
 
   return (
