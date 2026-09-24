@@ -1,5 +1,5 @@
 
-import { useMemo, useRef, type ReactNode } from 'react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { Animated, PanResponder } from 'react-native';
 import { Box, Row } from './box';
 import { Button } from './button';
@@ -25,6 +25,7 @@ export interface VoiceRecorderProps {
   inputSlot: ReactNode;
   leftControls: ReactNode;
   rightAction: ReactNode;
+  wrapMic?: (mic: React.ReactElement) => React.ReactElement;
   onStart?: () => void;
   onCancel?: () => void;
   onComplete?: () => void;
@@ -140,20 +141,23 @@ export function VoiceRecorder(props: VoiceRecorderProps): React.ReactElement {
   );
 }
 
-function MicView({ recording, fg, slideX, panHandlers }: {
-  recording: boolean; fg: string; slideX: Animated.Value;
+function MicView({ recording, fg, hoverFg, slideX, panHandlers }: {
+  recording: boolean; fg: string; hoverFg: string; slideX: Animated.Value;
   panHandlers: ReturnType<typeof PanResponder.create>['panHandlers'];
 }): React.ReactElement {
+  const [hovered, setHovered] = useState(false);
   return (
     <Animated.View
       {...panHandlers}
+      onPointerEnter={() => { setHovered(true); }}
+      onPointerLeave={() => { setHovered(false); }}
       style={{
         width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
         backgroundColor: recording ? '#e2622f' : 'transparent',
         transform: [{ translateX: slideX }],
       }}
     >
-      <Icon name="microphone" size={22} color={recording ? '#ffffff' : fg}/>
+      <Icon name="microphone" size={22} color={recording ? '#ffffff' : hovered ? hoverFg : fg}/>
     </Animated.View>
   );
 }
@@ -167,9 +171,10 @@ function RecorderView({ props, slideX, panHandlers, onCancelPress, onCompletePre
 }): React.ReactElement {
   const {
     recording, levels = [], recordSecs = 0, fg, head, sub, bg, chipBg, primary, dark = false,
-    inputSlot, leftControls, rightAction, slideThresholdPx = SLIDE_CANCEL_THRESHOLD_PX,
+    inputSlot, leftControls, rightAction, slideThresholdPx = SLIDE_CANCEL_THRESHOLD_PX, wrapMic,
   } = props;
-  const mic = <MicView recording={recording} fg={fg} slideX={slideX} panHandlers={panHandlers} />;
+  const micView = <MicView recording={recording} fg={fg} hoverFg={head} slideX={slideX} panHandlers={panHandlers} />;
+  const mic = wrapMic ? wrapMic(micView) : micView;
   return (
     <Box>
       {recording ? (

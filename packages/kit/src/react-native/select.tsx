@@ -1,10 +1,11 @@
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
+  Modal,
   Pressable,
-  ScrollView,
   Text as RNText,
   View,
+  useWindowDimensions,
   type ViewStyle,
 } from 'react-native';
 import {
@@ -14,8 +15,8 @@ import {
   type ControlVariant,
 } from '../control.styles';
 import { CONTROL_RADIUS_DEFAULT, FONT_SIZE, fontName, schemePalette } from '../tokens';
-import { Icon } from './icon';
-import { ControlSheet, ControlTrigger } from './control-trigger';
+import { ControlTrigger } from './control-trigger';
+import { DROPDOWN_MENU, DropdownMenu, DropdownMenuItem } from './dropdown-menu';
 
 export interface SelectOption {
   label: string;
@@ -40,67 +41,45 @@ export interface SelectProps {
   style?: ViewStyle | ViewStyle[];
 }
 
-function SelectRow(props: {
-  opt: SelectOption;
-  selected: string | undefined;
-  head: string;
-  rowBorder: string;
-  onPick: (v: string) => void;
-}): React.ReactElement {
-  const { opt, selected, head, rowBorder, onPick } = props;
-  const isSel = opt.value === selected;
-  return (
-    <Pressable
-      accessibilityRole="menuitem"
-      accessibilityState={{ selected: isSel }}
-      onPress={() => { onPick(opt.value); }}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-        paddingHorizontal: 16,
-        paddingVertical: 13,
-        borderBottomWidth: 1,
-        borderBottomColor: rowBorder,
-      }}
-    >
-      <RNText style={{ flex: 1, color: head, fontSize: FONT_SIZE.lg, fontFamily: fontName.sans }}>
-        {opt.label}
-      </RNText>
-      {isSel ? <Icon name="check" size={18} color={head} /> : null}
-    </Pressable>
-  );
-}
+const MENU_GAP = 4;
+const EDGE_MARGIN = 8;
 
-function SelectSheet(props: {
-  open: boolean;
+interface TriggerRect { x: number; y: number; width: number; height: number }
+
+function SelectMenu(props: {
+  anchor: TriggerRect | null;
   options: SelectOption[];
   selected: string | undefined;
-  sheetBg: string;
-  head: string;
-  rowBorder: string;
+  dark: boolean;
   placeholderColor: string;
   onPick: (v: string) => void;
   onClose: () => void;
 }): React.ReactElement {
-  const { open, options, selected, sheetBg, head, rowBorder, placeholderColor, onPick, onClose } = props;
+  const { anchor, options, selected, dark, placeholderColor, onPick, onClose } = props;
+  const window = useWindowDimensions();
+  const top = anchor === null ? 0 : anchor.y + anchor.height + MENU_GAP;
   return (
-    <ControlSheet
-      open={open}
-      onClose={onClose}
-      panelStyle={{ backgroundColor: sheetBg, borderRadius: 14, overflow: 'hidden', maxHeight: '70%' }}
-    >
-      <ScrollView>
-        {options.map((opt) => (
-          <SelectRow key={opt.value} opt={opt} selected={selected} head={head} rowBorder={rowBorder} onPick={onPick} />
-        ))}
-        {options.length === 0 ? (
-          <View style={{ padding: 16 }}>
-            <RNText style={{ color: placeholderColor, fontFamily: fontName.sans }}>No options</RNText>
-          </View>
-        ) : null}
-      </ScrollView>
-    </ControlSheet>
+    <Modal visible={anchor !== null} transparent animationType="none" onRequestClose={onClose}>
+      <Pressable style={{ flex: 1 }} onPress={onClose}>
+        {anchor === null ? null : (
+          <Pressable
+            onPress={() => undefined}
+            style={{ position: 'absolute', top, left: anchor.x, minWidth: anchor.width }}
+          >
+            <DropdownMenu dark={dark} maxHeight={Math.max(window.height - top - EDGE_MARGIN, 120)} style={{ alignSelf: 'stretch' }}>
+              {options.map((opt) => (
+                <DropdownMenuItem key={opt.value} dark={dark} label={opt.label} selected={opt.value === selected} onPress={() => { onPick(opt.value); }} />
+              ))}
+              {options.length === 0 ? (
+                <View style={{ paddingHorizontal: DROPDOWN_MENU.itemPadX, paddingVertical: DROPDOWN_MENU.itemPadY }}>
+                  <RNText style={{ color: placeholderColor, fontFamily: fontName.sans, fontSize: FONT_SIZE.md }}>No options</RNText>
+                </View>
+              ) : null}
+            </DropdownMenu>
+          </Pressable>
+        )}
+      </Pressable>
+    </Modal>
   );
 }
 
@@ -132,20 +111,25 @@ export function Select(props: SelectProps): React.ReactElement {
   } = props;
 
   const [internal, setInternal] = useState<string | undefined>(defaultValue);
-  const [open, setOpen] = useState(false);
+  const [anchor, setAnchor] = useState<TriggerRect | null>(null);
+  const triggerRef = useRef<View>(null);
+  const open = anchor !== null;
   const selected = controlled ?? internal;
 
   const colors = controlColors(variant, dark);
   const box = controlBoxStyle(size, variant, colors, cornerOf(radius, pill));
-  const { head, border: rowBorder } = schemePalette(dark);
-  const sheetBg = dark ? '#1b1c1e' : '#ffffff';
+  const { head } = schemePalette(dark);
 
   const current = options.find((o) => o.value === selected);
 
   function select(v: string | undefined): void {
     if (controlled === undefined) setInternal(v);
     onChange?.(v ?? '');
-    setOpen(false);
+    setAnchor(null);
+  }
+
+  function openMenu(): void {
+    triggerRef.current?.measureInWindow((x, y, width, height) => { setAnchor({ x, y, width, height }); });
   }
 
   return (
@@ -163,20 +147,19 @@ export function Select(props: SelectProps): React.ReactElement {
         headColor={head}
         placeholderColor={colors.placeholder}
         style={style}
-        onOpen={() => { setOpen(true); }}
+        triggerRef={triggerRef}
+        onOpen={openMenu}
         onClear={() => { select(undefined); }}
       />
 
-      <SelectSheet
-        open={open}
+      <SelectMenu
+        anchor={anchor}
         options={options}
         selected={selected}
-        sheetBg={sheetBg}
-        head={head}
-        rowBorder={rowBorder}
+        dark={dark}
         placeholderColor={colors.placeholder}
         onPick={select}
-        onClose={() => { setOpen(false); }}
+        onClose={() => { setAnchor(null); }}
       />
     </>
   );

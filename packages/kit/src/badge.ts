@@ -58,7 +58,7 @@ export interface ResolvedBadgeStyle {
   borderColor?: string;
 }
 
-function withAlpha(hex: string, alpha: number): string {
+export function withAlpha(hex: string, alpha: number): string {
   const m = /^#([0-9a-fA-F]{6})$/.exec(hex.trim());
   const h = m?.[1];
   if (h === undefined) return hex;

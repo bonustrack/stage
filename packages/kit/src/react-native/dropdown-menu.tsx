@@ -1,0 +1,99 @@
+import type { ReactNode } from 'react';
+import { Pressable, ScrollView, View, type ViewStyle } from 'react-native';
+import { kitPalette, schemePalette, type KitPalette } from '../tokens';
+import { withAlpha } from '../badge';
+import { OVERLAY_SHADOW } from '../overlay.styles';
+import { Icon, type HeroIconName } from './icon';
+import { Text } from './text';
+import { useKitPalette, useKitScheme } from './theme-context';
+
+export const DROPDOWN_MENU = {
+  radius: 6,
+  padY: 4,
+  itemPadX: 16,
+  itemPadY: 6,
+  itemGap: 8,
+  icon: 20,
+  lineHeight: 24,
+  separator: 1,
+  separatorAlpha: 0.2,
+} as const;
+
+function usePalette(dark: boolean | undefined): KitPalette {
+  const context = useKitPalette();
+  if (dark === undefined) return context;
+  return kitPalette(dark ? 'dark' : 'light');
+}
+
+export interface DropdownMenuProps {
+  children: ReactNode;
+  dark?: boolean;
+  background?: string;
+  maxHeight?: number;
+  style?: ViewStyle;
+}
+
+export function DropdownMenu({ children, dark, background, maxHeight, style }: DropdownMenuProps): React.ReactElement {
+  const pal = usePalette(dark);
+  const list = <View style={{ paddingVertical: DROPDOWN_MENU.padY }}>{children}</View>;
+  return (
+    <View
+      style={[{
+        alignSelf: 'flex-start',
+        backgroundColor: background ?? pal.border,
+        borderRadius: DROPDOWN_MENU.radius,
+        overflow: 'hidden',
+        ...OVERLAY_SHADOW,
+      }, style]}
+    >
+      {maxHeight === undefined ? list : (
+        <ScrollView style={{ maxHeight }} showsVerticalScrollIndicator={false}>{list}</ScrollView>
+      )}
+    </View>
+  );
+}
+
+export interface DropdownMenuItemProps {
+  label: string;
+  onPress: () => void;
+  iconName?: HeroIconName;
+  icon?: ReactNode;
+  danger?: boolean;
+  dark?: boolean;
+  color?: string;
+  pressedBackground?: string;
+  selected?: boolean;
+}
+
+export function DropdownMenuItem(props: DropdownMenuItemProps): React.ReactElement {
+  const pal = usePalette(props.dark);
+  const scheme = useKitScheme();
+  const pressedBg = props.pressedBackground ?? schemePalette(props.dark ?? scheme === 'dark').pressed;
+  const color = props.color ?? (props.danger === true ? pal.danger : pal.link);
+  const icon = props.icon ?? (props.iconName === undefined ? null : <Icon name={props.iconName} size={DROPDOWN_MENU.icon} color={color} />);
+  return (
+    <Pressable
+      onPress={props.onPress}
+      accessibilityRole="menuitem"
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: DROPDOWN_MENU.itemGap,
+        paddingHorizontal: DROPDOWN_MENU.itemPadX,
+        paddingVertical: DROPDOWN_MENU.itemPadY,
+        backgroundColor: pressed ? pressedBg : 'transparent',
+      })}
+    >
+      {icon}
+      <View style={{ flexGrow: 1, flexShrink: 1 }}>
+        <Text value={props.label} size="xl" color={color} truncate style={{ lineHeight: DROPDOWN_MENU.lineHeight }} />
+      </View>
+      {props.selected === true ? <Icon name="check" size={DROPDOWN_MENU.icon} color={color} /> : null}
+    </Pressable>
+  );
+}
+
+export function DropdownMenuSeparator({ dark }: { dark?: boolean }): React.ReactElement {
+  const pal = usePalette(dark);
+  return <View style={{ height: DROPDOWN_MENU.separator, backgroundColor: withAlpha(pal.text, DROPDOWN_MENU.separatorAlpha) }} />;
+}

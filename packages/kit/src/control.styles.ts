@@ -88,6 +88,7 @@ export function controlBoxStyle(
     borderWidth: variant === 'outline' ? 1 : 0,
     borderColor: colors.border,
     outlineWidth: 0,
+    outlineStyle: 'solid',
   };
 }
 
@@ -152,6 +153,7 @@ export function textFieldStyle(
     borderWidth: border.width,
     borderColor: border.color,
     outlineWidth: 0,
+    outlineStyle: 'solid',
   };
   const text: TextStyle = {
     color: input.color ?? c.text,

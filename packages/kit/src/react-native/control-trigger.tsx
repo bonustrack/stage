@@ -1,4 +1,5 @@
-import { Modal, Pressable, Text as RNText, type ViewStyle } from 'react-native';
+import type { Ref } from 'react';
+import { Modal, Pressable, Text as RNText, type View, type ViewStyle } from 'react-native';
 import { styleList, triggerLabelStyle, triggerRowStyle } from '../control.styles';
 import { FONT_SIZE } from '../tokens';
 import { Icon, type HeroIconName } from './icon';
@@ -18,6 +19,7 @@ export interface ControlTriggerProps {
   style?: ViewStyle | ViewStyle[];
   onOpen: () => void;
   onClear: () => void;
+  triggerRef?: Ref<View>;
 }
 
 export function ControlSheet({ open, onClose, panelStyle, children }: {
@@ -41,9 +43,10 @@ export function ControlSheet({ open, onClose, panelStyle, children }: {
 }
 
 export function ControlTrigger(props: ControlTriggerProps): React.ReactElement {
-  const { name, disabled, block, clearable, open, hasValue, label, icon, box, headColor, placeholderColor, style, onOpen, onClear } = props;
+  const { name, disabled, block, clearable, open, hasValue, label, icon, box, headColor, placeholderColor, style, onOpen, onClear, triggerRef } = props;
   return (
     <Pressable
+      ref={triggerRef}
       accessibilityRole="button"
       accessibilityLabel={name}
       accessibilityState={{ disabled, expanded: open }}
