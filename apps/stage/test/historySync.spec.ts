@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import {
   fingerprintOf, formatHistoryPin, historyGrewOlder, historyPinFromRandom, historySyncIsActive, historySyncPhaseLabel,
-  holdsHistoryBefore, isValidHistoryPin, normalizeHistoryPin, snapshotOf, settleBy,
+  holdsHistoryBefore, isValidHistoryPin, normalizeHistoryPin, snapshotOf, settleBy, timeLeftLabel,
 } from '../lib/historySync.model';
 
 describe('history pin', () => {
@@ -104,5 +104,14 @@ describe('settleBy', () => {
   test('a past deadline settles right away', async () => {
     const hung = new Promise<string>(() => undefined);
     expect(await settleBy(hung, Date.now() - 1, 'timeout')).toBe('timeout');
+  });
+});
+
+describe('timeLeftLabel', () => {
+  test('shows minutes and seconds, rounding up and never going negative', () => {
+    expect(timeLeftLabel(120_000)).toBe('2:00 left');
+    expect(timeLeftLabel(83_200)).toBe('1:24 left');
+    expect(timeLeftLabel(900)).toBe('0:01 left');
+    expect(timeLeftLabel(-5_000)).toBe('0:00 left');
   });
 });

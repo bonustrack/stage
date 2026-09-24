@@ -17,6 +17,7 @@ const TIMEOUT_MS = 120_000;
 const POLL_MS = 5_000;
 
 let phase: HistorySyncPhase = 'idle';
+let deadlineAt: number | null = null;
 const { notify, subscribe } = makeListeners();
 
 function setPhase(next: HistorySyncPhase): void {
@@ -25,6 +26,10 @@ function setPhase(next: HistorySyncPhase): void {
 }
 
 function getPhase(): HistorySyncPhase { return phase; }
+
+export function historySyncDeadline(): number | null {
+  return historySyncIsActive(phase) ? deadlineAt : null;
+}
 
 export function useHistorySyncPhase(): HistorySyncPhase {
   return useStoreValue(subscribe, getPhase);
@@ -116,6 +121,7 @@ export async function runHistorySync(): Promise<HistorySyncPhase> {
   currentRun += 1;
   const run = currentRun;
   const deadline = Date.now() + TIMEOUT_MS;
+  deadlineAt = deadline;
   setPhase('requesting');
   const outcome = await settleBy(syncOnce(run, deadline), deadline, 'timeout');
   if (run === currentRun) setPhase(outcome);

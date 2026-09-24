@@ -80,10 +80,21 @@ export function holdsHistoryBefore(snapshot: HistorySnapshot, installedAtMs: num
   return snapshot.oldestNs < (installedAtMs - HISTORY_CLOCK_SKEW_MS) * 1_000_000;
 }
 
-export function settleBy<T>(work: Promise<T>, deadline: number, fallback: T): Promise<T> {
+export function settleBy<T>(work: Promise<T>, deadline: number, fallback: T, tickMs = 1_000): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const expired = new Promise<T>((resolve) => {
-    timer = setTimeout(() => { resolve(fallback); }, Math.max(0, deadline - Date.now()));
+    const check = (): void => {
+      const left = deadline - Date.now();
+      if (left <= 0) { resolve(fallback); return; }
+      timer = setTimeout(check, Math.min(tickMs, left));
+    };
+    check();
   });
   return Promise.race([work, expired]).finally(() => { if (timer !== undefined) clearTimeout(timer); });
+}
+
+export function timeLeftLabel(msLeft: number): string {
+  const seconds = Math.max(0, Math.ceil(msLeft / 1_000));
+  const minutes = Math.floor(seconds / 60);
+  return `${minutes}:${String(seconds % 60).padStart(2, '0')} left`;
 }
