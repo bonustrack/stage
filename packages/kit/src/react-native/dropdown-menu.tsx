@@ -1,11 +1,11 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, View, type ViewStyle } from 'react-native';
-import { kitPalette, schemePalette, type KitPalette } from '../tokens';
+import { kitPalette, type KitPalette } from '../tokens';
 import { withAlpha } from '../badge';
 import { OVERLAY_SHADOW } from '../overlay.styles';
 import { Icon, type HeroIconName } from './icon';
 import { Text } from './text';
-import { useKitPalette, useKitScheme } from './theme-context';
+import { useKitPalette } from './theme-context';
 
 export const DROPDOWN_MENU = {
   radius: 6,
@@ -17,6 +17,8 @@ export const DROPDOWN_MENU = {
   lineHeight: 24,
   separator: 1,
   separatorAlpha: 0.2,
+  hoverAlpha: 0.08,
+  pressedAlpha: 0.14,
 } as const;
 
 function usePalette(dark: boolean | undefined): KitPalette {
@@ -67,21 +69,24 @@ export interface DropdownMenuItemProps {
 
 export function DropdownMenuItem(props: DropdownMenuItemProps): React.ReactElement {
   const pal = usePalette(props.dark);
-  const scheme = useKitScheme();
-  const pressedBg = props.pressedBackground ?? schemePalette(props.dark ?? scheme === 'dark').pressed;
+  const [hovered, setHovered] = useState(false);
+  const pressedBg = props.pressedBackground ?? withAlpha(pal.link, DROPDOWN_MENU.pressedAlpha);
+  const hoverBg = withAlpha(pal.link, DROPDOWN_MENU.hoverAlpha);
   const color = props.color ?? (props.danger === true ? pal.danger : pal.link);
   const icon = props.icon ?? (props.iconName === undefined ? null : <Icon name={props.iconName} size={DROPDOWN_MENU.icon} color={color} />);
   return (
     <Pressable
       onPress={props.onPress}
       accessibilityRole="menuitem"
+      onHoverIn={() => { setHovered(true); }}
+      onHoverOut={() => { setHovered(false); }}
       style={({ pressed }) => ({
         flexDirection: 'row',
         alignItems: 'center',
         gap: DROPDOWN_MENU.itemGap,
         paddingHorizontal: DROPDOWN_MENU.itemPadX,
         paddingVertical: DROPDOWN_MENU.itemPadY,
-        backgroundColor: pressed ? pressedBg : 'transparent',
+        backgroundColor: pressed ? pressedBg : hovered ? hoverBg : 'transparent',
       })}
     >
       {icon}

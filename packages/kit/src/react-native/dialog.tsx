@@ -26,6 +26,7 @@ export interface DialogProps {
   panelMaxWidth?: number | string;
   panelPadding?: SpacingValue;
   panelBorderColor?: Color;
+  panelBorderSides?: 'top' | 'all';
   handle?: boolean;
   handleColor?: Color;
   scroll?: boolean;
@@ -60,7 +61,8 @@ function panelRadiusStyle(props: DialogProps): ViewStyle {
 
 function panelBorderStyle(props: DialogProps, scheme: Scheme): ViewStyle {
   const border = resolveOptionalColor(props.panelBorderColor, scheme);
-  return border === undefined ? {} : { borderTopWidth: 1, borderColor: border };
+  if (border === undefined) return {};
+  return props.panelBorderSides === 'all' ? { borderWidth: 1, borderColor: border } : { borderTopWidth: 1, borderColor: border };
 }
 
 function panelStyle(props: DialogProps, scheme: Scheme, insetBottom: number): ViewStyle {
