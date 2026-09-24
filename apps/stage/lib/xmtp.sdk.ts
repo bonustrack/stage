@@ -140,10 +140,9 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
   streamConversations,
   streamConsent,
   history: {
-    sendSyncRequest: (client) => client.sendSyncRequest(),
+    sendSyncRequest: (client, serverUrl) => client.sendSyncRequest(serverUrl),
     sendSyncArchive: (client, pin, serverUrl) => client.sendSyncArchive(pin, serverUrl),
     syncDeviceGroups: (client) => client.syncAllDeviceSyncGroups(),
-    countArchives: async (client, lookbackDays) => (await client.listAvailableArchives(lookbackDays)).length,
     processSyncArchive: (client, pin) => client.processSyncArchive(pin),
   },
   isGroup: (conv) => conv instanceof Group,

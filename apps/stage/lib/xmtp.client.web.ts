@@ -10,7 +10,6 @@ import { XMTP_CODECS, signerForRecord } from './xmtp.codecs.web';
 import { getCachedXmtpClient, resetClientScopedState, getOrCreateCachedClient } from './xmtp.state.web';
 import type { XmtpEnv } from './xmtp.types';
 import { deleteDbKey, deleteDbFiles, wipeXmtpStore } from './xmtp.dbkey';
-import { historyServerUrl } from './historyServer';
 import { openClientForAccount, type CreateOpts } from './xmtp.recover.web';
 import { makeClientLifecycle } from './xmtp.client.core';
 import { withMainThreadWasm } from './xmtp.wasm.web';
@@ -61,7 +60,7 @@ async function opfsHasDatabase(): Promise<boolean> {
 
 async function buildClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<WebXmtpClient> {
   const address = rec.address.toLowerCase();
-  const opts: CreateOpts = { env, dbPath: webXmtpDbPath(rec.id, env), codecs: XMTP_CODECS, historySyncUrl: historyServerUrl(env) };
+  const opts: CreateOpts = { env, dbPath: webXmtpDbPath(rec.id, env), codecs: XMTP_CODECS };
   const [savedAddress, savedEnv, savedInstallation] = await Promise.all([
     getSecure(addressKeyFor(rec.id)), getSecure(envKeyFor(rec.id)), getSecure(installationKeyFor(rec.id)),
   ]);

@@ -17,7 +17,6 @@ export interface CreateOpts {
   env: XmtpEnv;
   dbPath: string;
   codecs: typeof XMTP_CODECS;
-  historySyncUrl?: string;
 }
 
 const NOISY_OPEN_EVENTS = new Set(['installation-mismatch', 'open-failed']);

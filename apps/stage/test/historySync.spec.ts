@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  fingerprintOf, formatHistoryPin, historyGrewOlder, historyPinFromRandom, historySyncIsActive, historySyncPhaseLabel,
-  holdsHistoryBefore, isValidHistoryPin, normalizeHistoryPin, snapshotOf, settleBy, timeLeftLabel,
+  formatHistoryPin, historyPinFromRandom, historyProblemMessage, historySyncIsActive, historySyncPhaseLabel,
+  isMissingArchive, isValidHistoryPin, normalizeHistoryPin, settleBy, timeLeftLabel, within,
+  HISTORY_COPY, HistoryProblem,
 } from '../lib/historySync.model';
 
 describe('history pin', () => {
@@ -29,65 +30,51 @@ describe('history sync phases', () => {
   test('idle has no label and only the two pending phases are active', () => {
     expect(historySyncPhaseLabel('idle')).toBeNull();
     expect(historySyncPhaseLabel('waiting')).toContain('other device');
-    expect(historySyncPhaseLabel('waiting', '0x12…34')).toContain('0x12…34');
+    expect(historySyncPhaseLabel('error')).toBe(HISTORY_COPY.failed);
+    expect(historySyncPhaseLabel('error', HISTORY_COPY.olderVersion)).toBe(HISTORY_COPY.olderVersion);
     expect(historySyncIsActive('requesting')).toBe(true);
     expect(historySyncIsActive('waiting')).toBe(true);
     expect(historySyncIsActive('done')).toBe(false);
   });
 });
 
-describe('fingerprintOf', () => {
-  test('is order independent and changes when an older message appears', () => {
-    const before = fingerprintOf([{ id: 'b', firstNs: '200' }, { id: 'a', firstNs: '100' }]);
-    expect(before).toBe(fingerprintOf([{ id: 'a', firstNs: '100' }, { id: 'b', firstNs: '200' }]));
-    expect(fingerprintOf([{ id: 'a', firstNs: '50' }, { id: 'b', firstNs: '200' }])).not.toBe(before);
-    expect(fingerprintOf([{ id: 'a', firstNs: '100' }, { id: 'b', firstNs: '200' }, { id: 'c', firstNs: '' }])).not.toBe(before);
+describe('historyProblemMessage', () => {
+  test('explains a PIN with no archive yet', () => {
+    const err = new Error('Could not find payload with pin Some("123456")');
+    expect(isMissingArchive(err)).toBe(true);
+    expect(historyProblemMessage(err, 'fallback')).toBe(HISTORY_COPY.pinMissing);
+  });
+
+  test('blames an older version when the archive sits on the retired XMTP server', () => {
+    const err = new Error('reqwest error: HTTP status client error (400 Bad Request) for url (https://message-history.production.ephemera.network/files/abc)');
+    expect(isMissingArchive(err)).toBe(false);
+    expect(historyProblemMessage(err, 'fallback')).toBe(HISTORY_COPY.olderVersion);
+  });
+
+  test('reports an expired archive and an unreachable server', () => {
+    expect(historyProblemMessage(new Error('HTTP status client error (404 Not Found) for url (x)'), 'fallback')).toBe(HISTORY_COPY.expired);
+    expect(historyProblemMessage(new Error('reqwest error: error sending request'), 'fallback')).toBe(HISTORY_COPY.network);
+  });
+
+  test('keeps our own problems and falls back for anything else', () => {
+    expect(historyProblemMessage(new HistoryProblem(HISTORY_COPY.sendSlow), 'fallback')).toBe(HISTORY_COPY.sendSlow);
+    expect(historyProblemMessage(new Error('boom'), 'fallback')).toBe('fallback');
   });
 });
 
-describe('history snapshot', () => {
-  const dayMs = 24 * 60 * 60 * 1000;
-  const installedAtMs = 1_700_000_000_000;
-  const ns = (ms: number): string => String(ms * 1_000_000);
-
-  test('finds the oldest message and ignores empty conversations', () => {
-    const snap = snapshotOf([{ id: 'a', firstNs: ns(installedAtMs) }, { id: 'b', firstNs: '' }, { id: 'c', firstNs: ns(installedAtMs - dayMs) }]);
-    expect(snap.oldestNs).toBe((installedAtMs - dayMs) * 1_000_000);
-    expect(snapshotOf([{ id: 'b', firstNs: '' }]).oldestNs).toBeNull();
+describe('within', () => {
+  test('rejects with the given message when a step never answers', async () => {
+    const hung = new Promise<string>(() => undefined);
+    const outcome = await within(hung, 20, HISTORY_COPY.importSlow).catch((e: unknown) => e);
+    expect(outcome).toBeInstanceOf(HistoryProblem);
+    expect(historyProblemMessage(outcome, 'fallback')).toBe(HISTORY_COPY.importSlow);
   });
 
-  test('history older than the install, beyond clock skew, counts as arrived', () => {
-    expect(holdsHistoryBefore(snapshotOf([{ id: 'a', firstNs: ns(installedAtMs - dayMs) }]), installedAtMs)).toBe(true);
-    expect(holdsHistoryBefore(snapshotOf([{ id: 'a', firstNs: ns(installedAtMs - 60_000) }]), installedAtMs)).toBe(false);
-    expect(holdsHistoryBefore(snapshotOf([{ id: 'a', firstNs: ns(installedAtMs + 1) }]), installedAtMs)).toBe(false);
-    expect(holdsHistoryBefore(snapshotOf([]), installedAtMs)).toBe(false);
-  });
-});
-
-describe('historyGrewOlder', () => {
-  const dayMs = 24 * 60 * 60 * 1000;
-  const startedAtMs = 1_700_000_000_000;
-  const ns = (ms: number): string => String(ms * 1_000_000);
-  const baseline = snapshotOf([{ id: 'a', firstNs: ns(startedAtMs - 60_000) }, { id: 'b', firstNs: '' }]);
-
-  test('a known conversation whose first message moved earlier counts as history', () => {
-    expect(historyGrewOlder(baseline, snapshotOf([{ id: 'a', firstNs: ns(startedAtMs - dayMs) }]), startedAtMs)).toBe(true);
-  });
-
-  test('a welcome for a new conversation with only fresh messages does not', () => {
-    const current = snapshotOf([{ id: 'a', firstNs: ns(startedAtMs - 60_000) }, { id: 'c', firstNs: ns(startedAtMs + 2_000) }]);
-    expect(historyGrewOlder(baseline, current, startedAtMs)).toBe(false);
-  });
-
-  test('a new conversation carrying messages from before the watch does', () => {
-    const current = snapshotOf([{ id: 'c', firstNs: ns(startedAtMs - dayMs) }]);
-    expect(historyGrewOlder(baseline, current, startedAtMs)).toBe(true);
-  });
-
-  test('an unchanged snapshot or a first message for an empty conversation is not history', () => {
-    expect(historyGrewOlder(baseline, baseline, startedAtMs)).toBe(false);
-    const current = snapshotOf([{ id: 'a', firstNs: ns(startedAtMs - 60_000) }, { id: 'b', firstNs: ns(startedAtMs + 1) }]);
-    expect(historyGrewOlder(baseline, current, startedAtMs)).toBe(false);
+  test('passes a result or a failure through untouched', async () => {
+    expect(await within(Promise.resolve(7), 1_000, 'slow')).toBe(7);
+    const failure = await within(Promise.reject(new Error('nope')), 1_000, 'slow').catch((e: unknown) => e);
+    expect(failure).toBeInstanceOf(Error);
+    expect(failure).not.toBeInstanceOf(HistoryProblem);
   });
 });
 

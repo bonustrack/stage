@@ -9,7 +9,6 @@ import { base64ToBytes } from '@stage-labs/client/text/base64';
 import { xmtpClient } from './xmtp.client.web';
 import { getCachedXmtpClient } from './xmtp.state.web';
 import { envelopeOfXmtpMessage } from './xmtp.envelope.web';
-import { historyServer } from './historyServer';
 import { withMainThreadWasm } from './xmtp.wasm.web';
 import type { XmtpConsent } from './xmtp.types';
 import {
@@ -150,10 +149,9 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
     endWhenCancelled(client.conversations.stream({ onValue: onConv, onError: reported('xmtp.convStream') })),
   streamConsent,
   history: {
-    sendSyncRequest: async (client) => client.sendSyncRequest(ARCHIVE_OPTIONS, await historyServer()),
+    sendSyncRequest: (client, serverUrl) => client.sendSyncRequest(ARCHIVE_OPTIONS, serverUrl),
     sendSyncArchive: (client, pin, serverUrl) => client.sendSyncArchive(pin, ARCHIVE_OPTIONS, serverUrl),
     syncDeviceGroups: (client) => client.syncAllDeviceSyncGroups(),
-    countArchives: async (client, lookbackDays) => (await client.listAvailableArchives(lookbackDays)).length,
     processSyncArchive: (client, pin) => client.processSyncArchive(pin ?? null),
   },
   isGroup: (conv) => conv instanceof Group,

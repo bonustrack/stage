@@ -46,7 +46,8 @@
     "@xmtp/wasm-bindings@1.10.0": "patches/@xmtp%2Fwasm-bindings@1.10.0.patch",
     "expo@54.0.35": "patches/expo@54.0.35.patch",
     "@expo/metro-config@54.0.16": "patches/@expo%2Fmetro-config@54.0.16.patch",
-    "expo-router@6.0.24": "patches/expo-router@6.0.24.patch"
+    "expo-router@6.0.24": "patches/expo-router@6.0.24.patch",
+    "@xmtp/react-native-sdk@5.7.0": "patches/@xmtp%2Freact-native-sdk@5.7.0.patch"
   },
   "dependencies": {
     "jsqr": "^1.4.0"

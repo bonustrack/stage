@@ -11,7 +11,7 @@ import { FormField } from '../FormField';
 import { capabilities } from '../../lib/capabilities';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import {
-  generateHistoryPin, receiveHistoryWithPin, runHistorySync, shareHistory, useHistorySyncPhase,
+  generateHistoryPin, historySyncProblem, receiveHistoryWithPin, runHistorySync, shareHistory, useHistorySyncPhase,
 } from '../../lib/historySync';
 import {
   formatHistoryPin, historySyncIsActive, historySyncPhaseLabel, isValidHistoryPin, normalizeHistoryPin,
@@ -78,7 +78,7 @@ export function HistorySyncSection(): React.ReactElement {
   const phase = useHistorySyncPhase();
   const a = useHistoryActions();
   const syncing = historySyncIsActive(phase);
-  const status = historySyncPhaseLabel(phase);
+  const status = historySyncPhaseLabel(phase, historySyncProblem());
   return (
     <>
       <Caption color={fg} style={{ paddingHorizontal: 16, paddingTop: 28, paddingBottom: 8 }}>

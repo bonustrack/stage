@@ -5,7 +5,7 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { Col } from '../layout';
 import { SkipLink } from './OnboardingCard';
 import { PinSheet } from '../settings/HistorySyncSection';
-import { historySyncDeadline, useHistorySyncPhase } from '../../lib/historySync';
+import { historySyncDeadline, historySyncProblem, useHistorySyncPhase } from '../../lib/historySync';
 import { historySyncIsActive, historySyncPhaseLabel, timeLeftLabel } from '../../lib/historySync.model';
 import type { HistoryControls } from './useSetupRunner';
 
@@ -26,7 +26,7 @@ export function useHistoryStepHint(active: boolean, stalled: boolean): string | 
   const counting = active && !stalled && historySyncIsActive(phase);
   const now = useNow(counting);
   if (!active) return null;
-  const label = historySyncPhaseLabel(phase);
+  const label = historySyncPhaseLabel(phase, historySyncProblem());
   const deadline = historySyncDeadline();
   if (counting && label !== null && deadline !== null) return `${label} ${timeLeftLabel(deadline - now)}`;
   if (!stalled) return label;

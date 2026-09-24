@@ -51,10 +51,9 @@ export interface SendOps<C> {
 }
 
 export interface HistoryOps<Cl> {
-  sendSyncRequest: (client: Cl) => Promise<unknown>;
+  sendSyncRequest: (client: Cl, serverUrl: string) => Promise<unknown>;
   sendSyncArchive: (client: Cl, pin: string, serverUrl: string) => Promise<unknown>;
   syncDeviceGroups: (client: Cl) => Promise<unknown>;
-  countArchives: (client: Cl, lookbackDays: number) => Promise<number>;
   processSyncArchive: (client: Cl, pin: string | undefined) => Promise<unknown>;
 }
 

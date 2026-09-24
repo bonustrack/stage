@@ -1,0 +1,127 @@
+diff --git a/android/src/main/java/expo/modules/xmtpreactnativesdk/XMTPModule.kt b/android/src/main/java/expo/modules/xmtpreactnativesdk/XMTPModule.kt
+index 53a935341dc4753a1f4a46046ed13b07cf0914f1..4089cef8555353060a86062ea57c09cea2191fbf 100644
+--- a/android/src/main/java/expo/modules/xmtpreactnativesdk/XMTPModule.kt
++++ b/android/src/main/java/expo/modules/xmtpreactnativesdk/XMTPModule.kt
+@@ -1430,11 +1430,12 @@ class XMTPModule : Module() {
+             }
+         }
+ 
+-        AsyncFunction("sendSyncRequest") Coroutine { installationId: String ->
++        AsyncFunction("sendSyncRequest") Coroutine { installationId: String, serverUrl: String? ->
+             withContext(Dispatchers.IO) {
+                 logV("sendSyncRequest")
+                 val client = clients[installationId] ?: throw XMTPException("No client")
+-                client.sendSyncRequest()
++                val url = serverUrl?.takeIf { it.isNotBlank() } ?: client.environment.getHistorySyncUrl()
++                client.sendSyncRequest(serverUrl = url)
+             }
+         }
+ 
+diff --git a/build/index.d.ts b/build/index.d.ts
+index 241efe8976af428ae1e89be15f34921438c7ec63..cdd84217d830f75a9f0f7ae4a91d6cbf887bc607 100644
+--- a/build/index.d.ts
++++ b/build/index.d.ts
+@@ -117,7 +117,7 @@ export declare function listMemberInboxIds(clientInstallationId: InstallationId,
+ export declare function dmPeerInboxId(clientInstallationId: InstallationId, dmId: ConversationId): Promise<InboxId>;
+ export declare function listConversationMembers(installationId: InstallationId, id: ConversationId): Promise<Member[]>;
+ export declare function syncConversations(installationId: InstallationId): Promise<void>;
+-export declare function sendSyncRequest(installationId: InstallationId): Promise<void>;
++export declare function sendSyncRequest(installationId: InstallationId, serverUrl?: string): Promise<void>;
+ export declare function sendSyncArchive(installationId: InstallationId, pin: string, serverUrl?: string | undefined, startNs?: number | undefined, endNs?: number | undefined, archiveElements?: string[] | undefined, excludeDisappearingMessages?: boolean | undefined): Promise<void>;
+ export declare function processSyncArchive(installationId: InstallationId, archivePin?: string | undefined): Promise<void>;
+ export declare function listAvailableArchives(installationId: InstallationId, daysCutoff: number): Promise<AvailableArchive[]>;
+diff --git a/build/index.js b/build/index.js
+index 93543fd735464f6738ef30265a8341375ff0607f..cbc54984efc38e1610c95ce952672cb1922f5630 100644
+--- a/build/index.js
++++ b/build/index.js
+@@ -558,8 +558,8 @@ export async function listConversationMembers(installationId, id) {
+ export async function syncConversations(installationId) {
+     await XMTPModule.syncConversations(installationId);
+ }
+-export async function sendSyncRequest(installationId) {
+-    return await XMTPModule.sendSyncRequest(installationId);
++export async function sendSyncRequest(installationId, serverUrl) {
++    return await XMTPModule.sendSyncRequest(installationId, serverUrl);
+ }
+ export async function sendSyncArchive(installationId, pin, serverUrl, startNs, endNs, archiveElements, excludeDisappearingMessages) {
+     return await XMTPModule.sendSyncArchive(installationId, pin, serverUrl, startNs, endNs, archiveElements, excludeDisappearingMessages);
+diff --git a/build/lib/Client.d.ts b/build/lib/Client.d.ts
+index cd4d81e9fa0a1389a9f481625c6e0d8903b52d99..b95dcf429fead4f0159835a742754d41cdbc3200 100644
+--- a/build/lib/Client.d.ts
++++ b/build/lib/Client.d.ts
+@@ -262,7 +262,7 @@ export declare class Client<ContentTypes extends DefaultContentTypes = DefaultCo
+     /**
+      * Manually trigger a device sync request to sync records from another active device using this inbox.
+      */
+-    sendSyncRequest(): Promise<void>;
++    sendSyncRequest(serverUrl?: string): Promise<void>;
+     /**
+      * Send a sync archive to the history sync server (e.g. for another device to process).
+      */
+diff --git a/build/lib/Client.js b/build/lib/Client.js
+index 34e653bb6cd87e1f2660b1fc9acfb9c6edb81d99..83c787a7ddbeb12fbbd5b757c91724d214e4ba92 100644
+--- a/build/lib/Client.js
++++ b/build/lib/Client.js
+@@ -546,8 +546,8 @@ export class Client {
+     /**
+      * Manually trigger a device sync request to sync records from another active device using this inbox.
+      */
+-    async sendSyncRequest() {
+-        return await XMTPModule.sendSyncRequest(this.installationId);
++    async sendSyncRequest(serverUrl) {
++        return await XMTPModule.sendSyncRequest(this.installationId, serverUrl);
+     }
+     /**
+      * Send a sync archive to the history sync server (e.g. for another device to process).
+diff --git a/ios/XMTPModule.swift b/ios/XMTPModule.swift
+index bd7013bd3b35eca42f73b128f7da03c5592b5215..b32cecfadfbe46f3a3401a91d33f528a0e79c117 100644
+--- a/ios/XMTPModule.swift
++++ b/ios/XMTPModule.swift
+@@ -1767,13 +1767,13 @@ public class XMTPModule: Module {
+ 			try await client.conversations.sync()
+ 		}
+ 
+-		AsyncFunction("sendSyncRequest") { (installationId: String) in
++		AsyncFunction("sendSyncRequest") { (installationId: String, serverUrl: String?) in
+ 			guard
+ 				let client = await clientsManager.getClient(key: installationId)
+ 			else {
+ 				throw Error.noClient
+ 			}
+-			try await client.sendSyncRequest()
++			try await client.sendSyncRequest(serverUrl: serverUrl)
+ 		}
+ 
+ 		AsyncFunction("syncAllConversations") {
+diff --git a/src/index.ts b/src/index.ts
+index dec732a06d2fa166f17c91ec660cfd09b2c8410f..40c592f0ed6e6689f8f7482b55b0be26e84bee48 100644
+--- a/src/index.ts
++++ b/src/index.ts
+@@ -1329,9 +1329,10 @@ export async function syncConversations(installationId: InstallationId) {
+ }
+ 
+ export async function sendSyncRequest(
+-  installationId: InstallationId
++  installationId: InstallationId,
++  serverUrl?: string
+ ): Promise<void> {
+-  return await XMTPModule.sendSyncRequest(installationId)
++  return await XMTPModule.sendSyncRequest(installationId, serverUrl)
+ }
+ 
+ export async function sendSyncArchive(
+diff --git a/src/lib/Client.ts b/src/lib/Client.ts
+index e2bd794b7337cf0c82dd990d7bb12a665b6f7ef5..b0248969eb9270b08d2b4b6237d6bfe307b28567 100644
+--- a/src/lib/Client.ts
++++ b/src/lib/Client.ts
+@@ -900,8 +900,8 @@ export class Client<
+   /**
+    * Manually trigger a device sync request to sync records from another active device using this inbox.
+    */
+-  async sendSyncRequest(): Promise<void> {
+-    return await XMTPModule.sendSyncRequest(this.installationId)
++  async sendSyncRequest(serverUrl?: string): Promise<void> {
++    return await XMTPModule.sendSyncRequest(this.installationId, serverUrl)
+   }
+ 
+   /**

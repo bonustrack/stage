@@ -13,7 +13,7 @@ export function linkProxyBase(): string {
   return PROXY_BASE;
 }
 
-export function historyServerUrl(env: string): string {
+function historyServerUrl(env: string): string {
   return `${PROXY_BASE}/xmtp-history/${env === 'dev' ? 'dev' : 'production'}`;
 }
 
