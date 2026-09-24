@@ -181,7 +181,7 @@ export function AttachMenu({
       horizontal
       showsHorizontalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
-      contentContainerStyle={{ gap: 16, paddingHorizontal: 6, paddingTop: 12, paddingBottom: 2 }}
+      contentContainerStyle={{ gap: 16, paddingHorizontal: PAGE_GUTTER, paddingTop: 12, paddingBottom: PAGE_GUTTER }}
 >
       {actions.map(([icon, label, action]) => (
         <Col key={label} align="center" gap={6}>
