@@ -1,4 +1,5 @@
 
+import { useState } from 'react';
 import { StyleSheet } from 'react-native';
 
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
@@ -6,6 +7,7 @@ import { Image } from '@stage-labs/kit/react-native/image';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Icon, type HeroIconName } from '@stage-labs/kit/react-native/icon';
 import { Avatar } from '../Avatar';
+import { ImageViewer } from '../ImageViewer';
 import { Box, Row, Col } from '../layout';
 import { shortAddress } from '../../modules/messaging';
 import { getPeerName } from '../../lib/peerProfiles';
@@ -82,6 +84,44 @@ export function MentionPopup({
   );
 }
 
+function PendingImage({
+  image, fg, onRemove,
+}: {
+  image: Attachment; fg: string; onRemove: () => void;
+}): React.ReactElement {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Col width={72} align="center" gap={4}>
+        <Box>
+          <Pressable
+            onPress={() => { setOpen(true); }}
+            pressedOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="View image"
+          >
+            <Image src={image.url} size={72} radius={8} fit="cover"/>
+          </Pressable>
+          <Pressable
+            onPress={onRemove}
+            hitSlop={6}
+            style={{
+              position: 'absolute', top: -4, right: -4,
+              backgroundColor: '#000', borderRadius: 999, padding: 2,
+            }}
+>
+            <Icon name="x" size={12} color="#ffffff"/>
+          </Pressable>
+        </Box>
+        <Text size="3xs" color={fg} style={{ width: 72, textAlign: 'center' }} numberOfLines={1}>
+          {image.name ?? image.id}
+        </Text>
+      </Col>
+      <ImageViewer uri={image.url} visible={open} onClose={() => { setOpen(false); }}/>
+    </>
+  );
+}
+
 export function PendingRow({
   fg, sub, chipBg, pending, onRemove,
 }: {
@@ -92,24 +132,7 @@ export function PendingRow({
     <Row padding={{ x: 6, bottom: 6 }} wrap gap={8}>
       {pending.map((a, i) => (
         a.kind === 'image' ? (
-          <Col width={72} key={a.id} align="center" gap={4}>
-            <Box>
-              <Image src={a.url} size={72} radius={8} fit="cover"/>
-              <Pressable
-                onPress={() => { onRemove(i); }}
-                hitSlop={6}
-                style={{
-                  position: 'absolute', top: -4, right: -4,
-                  backgroundColor: '#000', borderRadius: 999, padding: 2,
-                }}
->
-                <Icon name="x" size={12} color="#ffffff"/>
-              </Pressable>
-            </Box>
-            <Text size="3xs" color={fg} style={{ width: 72, textAlign: 'center' }} numberOfLines={1}>
-              {a.name ?? a.id}
-            </Text>
-          </Col>
+          <PendingImage key={a.id} image={a} fg={fg} onRemove={() => { onRemove(i); }}/>
         ) : (
           <Row padding={{ x: 8, y: 4 }} key={a.id} align="center" gap={6} radius="lg" background={chipBg}>
             <Icon name={kindIcon(a.kind)} size={14} color={fg}/>
