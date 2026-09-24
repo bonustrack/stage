@@ -27,6 +27,10 @@ export function suggestWords(prefix: string, wordlist: readonly string[] = engli
   return matches;
 }
 
+export function visibleSuggestions(word: string, wordlist: readonly string[] = english, limit = SUGGESTION_LIMIT): string[] {
+  return suggestWords(word, wordlist, limit + 1).filter((candidate) => candidate !== word).slice(0, limit);
+}
+
 export function applyCompletion(text: string, word: string): string {
   const trimmed = text.replace(/\S+$/, '');
   return `${trimmed}${word} `;
@@ -57,6 +61,45 @@ export function acceptTypedChar(previous: string, next: string, wordlist: readon
   if (/\s$/.test(next)) return acceptTypedSpace(previous, wordlist) ? next : previous;
   if (!looksLikePhrase(next)) return next;
   return acceptTypedLetter(previous, next, wordlist);
+}
+
+export interface PhraseTyping {
+  text: string;
+  pending: string;
+}
+
+function uniqueWord(prefix: string, wordlist: readonly string[]): string | null {
+  const matches = suggestWords(prefix, wordlist, 2);
+  return matches.length === 1 ? matches[0] ?? null : null;
+}
+
+function absorbsPending(state: PhraseTyping, next: string): boolean {
+  if (state.pending === '' || next.length !== state.text.length + 1 || !next.startsWith(state.text)) return false;
+  return next.slice(-1).toLowerCase() === state.pending[0];
+}
+
+export function normalizePastedPhrase(pasted: string): string {
+  const trimmed = pasted.trim();
+  if (!/^[A-Za-z\s_-]+$/.test(trimmed)) return trimmed;
+  return trimmed.replace(/[\s_-]+/g, ' ').toLowerCase();
+}
+
+function isSingleTypedChar(previous: string, next: string): boolean {
+  return next.length === previous.length + 1 && next.startsWith(previous);
+}
+
+export function typePhrase(state: PhraseTyping, next: string, wordlist: readonly string[] = english): PhraseTyping {
+  if (absorbsPending(state, next)) return { text: state.text, pending: state.pending.slice(1) };
+  if (!isSingleTypedChar(state.text, next) && next.length > state.text.length) {
+    return { text: normalizePastedPhrase(next), pending: '' };
+  }
+  const text = acceptTypedChar(state.text, next, wordlist);
+  const typedLetter = next.length === state.text.length + 1 && text !== state.text && !/\s$/.test(text);
+  if (!typedLetter || !looksLikePhrase(text)) return { text, pending: '' };
+  const token = currentToken(text);
+  const word = uniqueWord(token.word, wordlist);
+  if (word === null) return { text, pending: '' };
+  return { text: applyCompletion(text, word), pending: word.slice(token.word.length) };
 }
 
 export function invalidWords(text: string, wordlist: readonly string[] = english): string[] {

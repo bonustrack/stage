@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { english } from 'viem/accounts';
 import {
-  acceptTypedChar, applyCompletion, currentToken, suggestWords,
+  acceptTypedChar, applyCompletion, currentToken, normalizePastedPhrase, suggestWords, typePhrase, visibleSuggestions,
 } from '../components/onboarding/RecoveryPhrase.model';
 
 describe('BIP-39 wordlist shape', () => {
@@ -69,5 +69,55 @@ describe('acceptTypedChar', () => {
     expect(acceptTypedChar('0', '0x')).toBe('0x');
     expect(acceptTypedChar('stage-account:', 'stage-account:1')).toBe('stage-account:1');
     expect(acceptTypedChar('0xabc', '0xabc ')).toBe('0xabc ');
+  });
+});
+
+describe('typePhrase', () => {
+  const typeAll = (input: string): string => {
+    let state = { text: '', pending: '' };
+    for (const ch of input) state = typePhrase(state, state.text + ch);
+    return state.text;
+  };
+
+  test('fills a word as soon as only one word matches', () => {
+    expect(typePhrase({ text: 'we', pending: '' }, 'wee')).toEqual({ text: 'weekend ', pending: 'kend' });
+  });
+
+  test('keeps suggesting while several words still match', () => {
+    expect(typePhrase({ text: 'a', pending: '' }, 'ac')).toEqual({ text: 'ac', pending: '' });
+  });
+
+  test('typing the rest of a filled word, and the space after it, changes nothing', () => {
+    expect(typeAll('weekend palace')).toBe('weekend palace ');
+    expect(typeAll('weekend ')).toBe('weekend ');
+  });
+
+  test('typing another letter after a fill starts the next word', () => {
+    expect(typePhrase({ text: 'weekend ', pending: 'kend' }, 'weekend p')).toEqual({ text: 'weekend p', pending: '' });
+  });
+
+  test('deleting or pasting never fills a word', () => {
+    expect(typePhrase({ text: 'weekend ', pending: 'kend' }, 'weekend')).toEqual({ text: 'weekend', pending: '' });
+    expect(typePhrase({ text: '', pending: '' }, 'wee')).toEqual({ text: 'wee', pending: '' });
+  });
+});
+
+describe('visibleSuggestions', () => {
+  test('never suggests the word that is already typed', () => {
+    expect(visibleSuggestions('soda')).toEqual([]);
+    expect(visibleSuggestions('act')).not.toContain('act');
+    expect(visibleSuggestions('act').length).toBeGreaterThan(0);
+  });
+});
+
+describe('pasting a phrase', () => {
+  test('dashes and underscores become spaces, extra spaces collapse and the ends are trimmed', () => {
+    expect(normalizePastedPhrase('  Abandon-ability_able   about \n')).toBe('abandon ability able about');
+    expect(typePhrase({ text: '', pending: '' }, ' weekend_palace-soda ')).toEqual({ text: 'weekend palace soda', pending: '' });
+  });
+
+  test('a pasted private key or code is only trimmed', () => {
+    expect(normalizePastedPhrase(' 0xabc123 ')).toBe('0xabc123');
+    expect(normalizePastedPhrase('stage-transfer:v1:abc')).toBe('stage-transfer:v1:abc');
   });
 });

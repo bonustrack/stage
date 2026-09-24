@@ -11,7 +11,7 @@ import { usePalette, DANGER } from '../../lib/theme';
 import { QrScanner } from '../accounts/QrScanner';
 import { parseImportInput } from '../accounts/ImportAccountPanel.model';
 import {
-  acceptTypedChar, applyCompletion, currentToken, invalidWords, looksLikePhrase, suggestWords,
+  applyCompletion, typePhrase, type PhraseTyping, currentToken, invalidWords, looksLikePhrase, visibleSuggestions,
 } from './RecoveryPhrase.model';
 
 function SuggestionChips({ words, onPick }: {
@@ -55,11 +55,13 @@ export function ImportStep({ dark, busy, onTransfer }: {
   onTransfer: (transfer: AccountTransfer) => void;
 }): React.ReactElement {
   const pal = usePalette();
-  const [text, setText] = useState('');
+  const [typing, setTyping] = useState<PhraseTyping>({ text: '', pending: '' });
+  const text = typing.text;
+  const setText = (value: string): void => { setTyping({ text: value, pending: '' }); };
   const [err, setErr] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
   const token = currentToken(text);
-  const suggestions = looksLikePhrase(text) ? suggestWords(token.word) : [];
+  const suggestions = looksLikePhrase(text) ? visibleSuggestions(token.word) : [];
   const hint = inputHint(text, err);
   const submit = (raw: string): void => {
     const parsed = parseImportInput(raw);
@@ -76,7 +78,7 @@ export function ImportStep({ dark, busy, onTransfer }: {
   const phraseField = (
     <>
       <FormField label="Recovery phrase" placeholder="word1 word2 word3 ..." multiline rows={4} value={text}
-        onChangeText={(t) => { setText((prev) => acceptTypedChar(prev, t)); setErr(null); }}
+        onChangeText={(t) => { setTyping((prev) => typePhrase(prev, t)); setErr(null); }}
         inputProps={{ autoCapitalize: 'none', autoCorrect: false }} />
       <SuggestionChips words={suggestions} onPick={(word) => { setText(applyCompletion(text, word)); }} />
       {hint === null ? null : (
