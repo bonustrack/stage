@@ -10,6 +10,9 @@ import { useRouter } from 'expo-router';
 import { previewOf } from './feed-helpers';
 import type { useConversationState } from './useConversationState';
 import { profileLinkOf } from '../../lib/links';
+import { getPeerName } from '../../lib/peerProfiles';
+import { XMTP_USER_PREFIX, shortAddress } from '../../modules/messaging';
+import { memberNamer, withMemberNames } from './systemNames.model';
 
 type ConvState = ReturnType<typeof useConversationState>;
 type Bubble = ConvState['allBubbles'][number];
@@ -55,6 +58,24 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): {
     return m;
   }, [events]);
 
+  const namedEntry = useMemo(() => {
+    const selfInboxId = myUri.startsWith(XMTP_USER_PREFIX) ? myUri.slice(XMTP_USER_PREFIX.length) || null : null;
+    const nameOf = memberNamer(
+      selfInboxId,
+      inboxId => senderEthOf(`${XMTP_USER_PREFIX}${inboxId}`),
+      address => getPeerName(address) ?? shortAddress(address),
+    );
+    const cache = new WeakMap<Bubble, Bubble>();
+    void profilesVersion;
+    return (item: Bubble): Bubble => {
+      const hit = cache.get(item);
+      if (hit) return hit;
+      const named = withMemberNames(item, nameOf);
+      cache.set(item, named);
+      return named;
+    };
+  }, [myUri, senderEthOf, profilesVersion]);
+
   const onAvatarPress = useCallback((address: string) => {
     router.push(profileLinkOf(address));
   }, [router]);
@@ -65,7 +86,7 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): {
     return (
       <BubbleErrorBoundary sub={sub} entry={item}>
         <MessengerBubble
-          entry={item}
+          entry={namedEntry(item)}
           dark={dark}
           myUri={myUri}
           senderEthAddress={senderEthAddress}
@@ -98,7 +119,7 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): {
       </BubbleErrorBoundary>
     );
   }, [
-    dark, myUri, sub, senderEthOf, confirmedIds, replyingToId, jumpHighlightId,
+    dark, myUri, sub, senderEthOf, namedEntry, confirmedIds, replyingToId, jumpHighlightId,
     reactions, optimisticReactions, optimisticRemovals, ownReactions, eventsById,
     displayVotes, displayOwnVotes, displayOpenAnswers, signingIds, payingIds,
     consentAllowed, selectedForCopy, highlight,

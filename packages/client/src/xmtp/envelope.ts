@@ -108,7 +108,7 @@ function kindFromMime(mime?: string): AttachmentKind {
 
 function kindFromExt(name: string): AttachmentKind {
   const ext = name.split('.').pop()?.toLowerCase() ?? '';
-  if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic'].includes(ext)) return 'image';
+  if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'avif'].includes(ext)) return 'image';
   if (['m4a', 'mp3', 'wav', 'aac', 'ogg'].includes(ext)) return 'audio';
   if (['mp4', 'mov', 'webm'].includes(ext)) return 'video';
   return 'file';
@@ -192,7 +192,7 @@ function handledEnvelope(
   if (isGroupUpdateTypeId(typeId)) {
     return safe(() => ({
       ...base, text: humanizeGroupUpdated(decoded as GroupUpdatedContent),
-      payload: { contentType: typeId, system: true } as const,
+      payload: { contentType: typeId, system: true, groupUpdate: decoded as GroupUpdatedContent } as const,
     }));
   }
   return undefined;

@@ -122,7 +122,7 @@ export async function summarizeConversation(
   const lastReadNs = await getLastReadNs(convId);
   const unreadCount = countUnreadEntries(msgs, lastReadNs, selfInboxId);
   const markedUnread = await resolveMarkedUnread(convId, {
-    lastReadNs, unreadCount, hasLast: !!last, lastFromSelf,
+    lastReadNs, unreadCount, hasLast: !!last && !isGroupUpdateTypeId(last.contentTypeId), lastFromSelf,
   });
   return {
     convId,

@@ -14,6 +14,14 @@ describe('countUnreadEntries', () => {
     expect(countUnreadEntries(entries, 150, 'me')).toBe(2);
   });
 
+  test('group events such as membership or app data changes are never unread', () => {
+    const entries = [
+      { sentNs: 300, senderInboxId: 'other', contentTypeId: 'group_updated' },
+      { sentNs: 200, senderInboxId: 'other', contentTypeId: 'text' },
+    ];
+    expect(countUnreadEntries(entries, 0, 'me')).toBe(1);
+  });
+
   test('stops at first read or missing timestamp', () => {
     expect(countUnreadEntries([e(undefined, 'other'), e(300, 'other')], 0, 'me')).toBe(0);
     expect(countUnreadEntries([e(100, 'other')], 100, 'me')).toBe(0);

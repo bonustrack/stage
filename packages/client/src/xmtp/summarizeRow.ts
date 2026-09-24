@@ -1,10 +1,12 @@
 import { shortAddress } from '../identity/format';
+import { isGroupUpdateTypeId } from './humanize';
 
 export const ROW_PREVIEW_MAX_CHARS = 200;
 
 export interface UnreadCountEntry {
   sentNs?: number;
   senderInboxId?: string;
+  contentTypeId?: string;
 }
 
 export interface RowMessage {
@@ -26,7 +28,7 @@ export function countUnreadEntries(
   let unreadCount = 0;
   for (const m of entries) {
     if (!m.sentNs || m.sentNs <= lastReadNs) break;
-    if (m.senderInboxId === selfInboxId) continue;
+    if (m.senderInboxId === selfInboxId || isGroupUpdateTypeId(m.contentTypeId)) continue;
     unreadCount += 1;
   }
   return unreadCount;

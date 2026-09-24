@@ -85,8 +85,9 @@ describe('envelopeFromContent ui-parity options', () => {
   });
 
   test('unhandled type with group-update typeId still systemizes', () => {
-    const e = envelopeFromContent(base, 'group_updated', { initiatedByInboxId: 'x', addedInboxes: [], removedInboxes: [], metadataFieldChanges: [] }, undefined, uiOptions);
-    expect(e.payload).toEqual({ contentType: 'group_updated', system: true });
+    const update = { initiatedByInboxId: 'x', addedInboxes: [], removedInboxes: [], metadataFieldChanges: [] };
+    const e = envelopeFromContent(base, 'group_updated', update, undefined, uiOptions);
+    expect(e.payload).toEqual({ contentType: 'group_updated', system: true, groupUpdate: update });
   });
 
   test('reply whose inner content fails to decode falls back instead of throwing', () => {

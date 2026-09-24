@@ -1,4 +1,5 @@
 import { shortAddress } from '../identity/format';
+import { describeAppDataChange } from './appDataChange';
 interface FieldChange { fieldName: string; oldValue?: string; newValue?: string }
 export interface GroupUpdatedContent {
   initiatedByInboxId?: string;
@@ -14,6 +15,7 @@ function describeFieldChange(f: FieldChange): string {
   if (f.fieldName === 'group_name') return `renamed the group to "${f.newValue}"`;
   if (f.fieldName === 'group_image_url_square') return 'updated the group image';
   if (f.fieldName === 'description') return 'updated the group description';
+  if (f.fieldName === 'app_data') return describeAppDataChange(f.oldValue, f.newValue);
   return `changed ${f.fieldName.replace(/_/g, ' ')}`;
 }
 
@@ -23,18 +25,31 @@ export function isGroupUpdateTypeId(typeId: string | undefined): boolean {
   return typeId !== undefined && GROUP_UPDATE_TYPE_IDS.includes(typeId);
 }
 
-function memberClause(verb: string, count: number): string {
-  return count ? `${verb} ${count} member${count === 1 ? '' : 's'}` : '';
+export type InboxNamer = (inboxId: string) => string | null;
+
+const MAX_NAMED_MEMBERS = 3;
+
+function namedList(names: string[]): string {
+  if (names.length <= MAX_NAMED_MEMBERS) {
+    return names.length === 1 ? names[0] ?? '' : `${names.slice(0, -1).join(', ')} and ${names.at(-1) ?? ''}`;
+  }
+  const others = names.length - (MAX_NAMED_MEMBERS - 1);
+  return `${names.slice(0, MAX_NAMED_MEMBERS - 1).join(', ')} and ${others} others`;
 }
 
-export function humanizeGroupUpdated(g: GroupUpdatedContent): string {
+function memberClause(verb: string, members: { inboxId: string }[], nameOf?: InboxNamer): string {
+  if (members.length === 0) return '';
+  const names = nameOf ? members.map(m => nameOf(m.inboxId)) : [];
+  if (names.length > 0 && names.every((n): n is string => !!n)) return `${verb} ${namedList(names)}`;
+  return `${verb} ${members.length} member${members.length === 1 ? '' : 's'}`;
+}
+
+export function humanizeGroupUpdated(g: GroupUpdatedContent, nameOf?: InboxNamer): string {
   const fields = g.metadataFieldsChanged ?? g.metadataFieldChanges ?? [];
-  const added = (g.membersAdded ?? g.addedInboxes)?.length ?? 0;
-  const removed = (g.membersRemoved ?? g.removedInboxes)?.length ?? 0;
   const parts = [
     ...fields.map(describeFieldChange),
-    memberClause('added', added),
-    memberClause('removed', removed),
+    memberClause('added', g.membersAdded ?? g.addedInboxes ?? [], nameOf),
+    memberClause('removed', g.membersRemoved ?? g.removedInboxes ?? [], nameOf),
   ].filter(Boolean);
   return parts.length ? parts.join(' • ') : 'updated the group';
 }
@@ -95,6 +110,6 @@ function matchesKind(mime: string, ext: string, mimePrefix: string, exts: string
   return mime.startsWith(mimePrefix) || exts.includes(ext);
 }
 
-const IMAGE_EXTS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic'];
+const IMAGE_EXTS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'avif'];
 const AUDIO_EXTS = ['m4a', 'mp3', 'wav', 'aac', 'ogg'];
 const VIDEO_EXTS = ['mp4', 'mov', 'webm'];

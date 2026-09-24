@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  applyRead, applyUnread, applySentPatch,
+  applyInbound, applyRead, applyUnread, applySentPatch,
   type CachedChannelRow,
 } from '../src/xmtp/channelsCache';
 import { ROW_PREVIEW_MAX_CHARS } from '../src/xmtp/summarizeRow';
@@ -50,5 +50,21 @@ describe('applySentPatch', () => {
   });
   test('missing returns null', () => {
     expect(applySentPatch(base, 'zzz', 'p', 1)).toBeNull();
+  });
+});
+
+describe('applyInbound', () => {
+  const rows = [{ ...base[1], convId: 'b', unreadCount: 0, lastReadNs: 0, lastTs: 2, lastPreview: '', selfInboxId: 'me' }];
+  const update = { convId: 'b', senderInboxId: 'other', sentNs: 50, lastTs: 3, lastPreview: 'hi' };
+
+  test('counts a new message from someone else', () => {
+    expect(applyInbound(rows, update)?.next[0]?.unreadCount).toBe(1);
+  });
+
+  test('moves the row without counting a message that does not count as unread', () => {
+    const out = applyInbound(rows, { ...update, lastPreview: 'added label "Blocked"', countsAsUnread: false });
+    expect(out?.next[0]?.unreadCount).toBe(0);
+    expect(out?.next[0]?.lastPreview).toBe('added label "Blocked"');
+    expect(out?.wasUnread).toBe(false);
   });
 });

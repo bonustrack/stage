@@ -69,6 +69,7 @@ export interface InboundRowUpdate {
   sentNs: number;
   lastTs: number;
   lastPreview: string;
+  countsAsUnread?: boolean;
 }
 
 export interface InboundApplyResult<R> {
@@ -85,8 +86,8 @@ export function applyInbound<R extends CachedChannelRow & { selfInboxId: string 
   const idx = update.convId === null ? -1 : findRowIndex(rows, update.convId);
   const cur = idx === -1 ? undefined : rows[idx];
   if (cur === undefined) return null;
-  const wasUnread =
-    update.sentNs > cur.lastReadNs && update.senderInboxId !== cur.selfInboxId;
+  const wasUnread = update.countsAsUnread !== false
+    && update.sentNs > cur.lastReadNs && update.senderInboxId !== cur.selfInboxId;
   const unreadCount = wasUnread ? cur.unreadCount + 1 : cur.unreadCount;
   const updated: R = {
     ...cur,

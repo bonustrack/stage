@@ -10,16 +10,21 @@ import { ROW_PREVIEW_MAX_CHARS, type StreamedMessage } from '@stage-labs/client/
 import { revivesClearedChat } from '@stage-labs/client/xmtp/readState';
 import { recover } from '../../lib/errorPolicy';
 
-const notifiedMsgIds = new Set<string>();
-function alreadyNotified(id: string): boolean {
-  if (notifiedMsgIds.has(id)) return true;
-  notifiedMsgIds.add(id);
-  if (notifiedMsgIds.size > 200) {
-    const oldest = notifiedMsgIds.values().next().value;
-    if (oldest !== undefined) notifiedMsgIds.delete(oldest);
-  }
-  return false;
+function makeSeenOnce(limit: number): (id: string) => boolean {
+  const seen = new Set<string>();
+  return (id) => {
+    if (seen.has(id)) return true;
+    seen.add(id);
+    if (seen.size > limit) {
+      const oldest = seen.values().next().value;
+      if (oldest !== undefined) seen.delete(oldest);
+    }
+    return false;
+  };
 }
+
+const alreadyNotified = makeSeenOnce(200);
+const alreadyCounted = makeSeenOnce(2000);
 
 interface NotifyCtx {
   title: string;
@@ -86,7 +91,10 @@ function applyToRows(
   if (target?.peerAddress != null && isGroupUpdateTypeId(msg.contentTypeId)) return unchanged;
   const result = applyInbound(
     prev,
-    { convId: msgConvId, senderInboxId: msg.senderInboxId, sentNs: msg.sentNs, lastTs, lastPreview },
+    {
+      convId: msgConvId, senderInboxId: msg.senderInboxId, sentNs: msg.sentNs, lastTs, lastPreview,
+      countsAsUnread: !isGroupUpdateTypeId(msg.contentTypeId) && !alreadyCounted(msg.id),
+    },
     cur => ({
       avatarAddress: cur.peerAddress ?? cur.avatarAddress,
       lastSenderAddress: cur.inboxToAddr[msg.senderInboxId] ?? null,
