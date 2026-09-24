@@ -50,6 +50,8 @@ function inputHint(text: string, err: string | null): { text: string; danger: bo
 
 const IMPORT_ABOUT = 'Enter your 12-24 word recovery phrase, or scan the code shown by Link a device on your other device.';
 
+const SCANNED_COPY = 'QR code scanned. Importing your account...';
+
 export function ImportStep({ dark, busy, onTransfer }: {
   dark: boolean; busy: boolean;
   onTransfer: (transfer: AccountTransfer) => void;
@@ -60,6 +62,7 @@ export function ImportStep({ dark, busy, onTransfer }: {
   const setText = (value: string): void => { setTyping({ text: value, pending: '' }); };
   const [err, setErr] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
+  const [scanned, setScanned] = useState(false);
   const [cursor, setCursor] = useState(0);
   const [placeCursor, setPlaceCursor] = useState<number | null>(null);
   const span = wordAt(text, cursor);
@@ -80,7 +83,7 @@ export function ImportStep({ dark, busy, onTransfer }: {
   const onScan = (code: string): void => {
     setScanning(false);
     const parsed = parseImportInput(code);
-    setText(parsed.ok && parsed.transfer.kind === 'phrase' ? parsed.transfer.phrase : '');
+    setScanned(parsed.ok);
     submit(code);
   };
   const phraseField = (
@@ -109,14 +112,16 @@ export function ImportStep({ dark, busy, onTransfer }: {
             label="Continue" disabled={busy || text.trim().length === 0} onPress={() => { submit(text); }} />
           <Button dark={dark} variant="soft" color="primary" size="lg" fullWidth pill label="Scan QR code"
             iconStart={<Icon name="qrcode" size={20} color={pal.primary} />}
-            disabled={busy} onPress={() => { setScanning(true); }} />
+            disabled={busy} onPress={() => { setScanned(false); setScanning(true); }} />
         </>
       )}
     </>
   );
   return (
     <OnboardingCard title="Import wallet" about={IMPORT_ABOUT} footer={footer}>
-      {scanning ? <QrScanner dark={dark} onScan={onScan} /> : phraseField}
+      {scanning ? <QrScanner dark={dark} onScan={onScan} /> : scanned ? (
+        <Text size="md" color={pal.sub} textAlign="center">{SCANNED_COPY}</Text>
+      ) : phraseField}
     </OnboardingCard>
   );
 }
