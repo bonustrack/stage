@@ -113,6 +113,40 @@ export function glyphRect(ch: string, x: number, baseline: number): GlyphRect | 
   return { x: x + box.left, y: baseline - box.top, width: box.right - box.left, height: box.top - box.bottom };
 }
 
+function coord(value: number): string {
+  return String(Math.round(value * 10) / 10);
+}
+
+function caretPath(x: number, baseline: number): string {
+  const { left, right, top, bottom, leg, apex } = ASCII_GLYPH.caret;
+  const mid = coord(x + (left + right) / 2);
+  const foot = coord(baseline - bottom);
+  const peak = baseline - top;
+  return `M${coord(x + left)} ${foot}L${mid} ${coord(peak)}L${coord(x + right)} ${foot}`
+    + `L${coord(x + right - leg)} ${foot}L${mid} ${coord(peak + apex)}L${coord(x + left + leg)} ${foot}Z`;
+}
+
+function glyphPath(ch: string, x: number, baseline: number): string {
+  if (ch === '^') return caretPath(x, baseline);
+  const rect = glyphRect(ch, x, baseline);
+  if (rect === null) return '';
+  return `M${coord(rect.x)} ${coord(rect.y)}h${coord(rect.width)}v${coord(rect.height)}h${coord(-rect.width)}Z`;
+}
+
+export function asciiPath(art: string, width: number, height: number): string {
+  const lines = art.split('\n');
+  const origin = asciiOrigin(width, height, lines[0]?.length ?? 0, lines.length);
+  const parts: string[] = [];
+  lines.forEach((line, row) => {
+    const baseline = origin.y + row * ASCII.lineHeight + ASCII_GLYPH.baseline;
+    for (let col = 0; col < line.length; col += 1) {
+      const d = glyphPath(line[col] ?? ' ', origin.x + col * ASCII_GLYPH.pitch, baseline);
+      if (d.length > 0) parts.push(d);
+    }
+  });
+  return parts.join('');
+}
+
 export function asciiGrid(width: number, height: number): { cols: number; rows: number } {
   const effectiveWidth = Math.min(width, ASCII.maxWidth);
   return {

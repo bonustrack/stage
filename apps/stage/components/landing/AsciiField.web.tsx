@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View } from '../layout/native';
-import { ASCII, ASCII_GLYPH, HERO_BLACK, asciiOrigin, glyphRect } from './Landing.model';
+import { HERO_BLACK, asciiPath } from './Landing.model';
 import { useAsciiArt } from './useAsciiArt';
 
 function sizeCanvas(canvas: HTMLCanvasElement, width: number, height: number): CanvasRenderingContext2D | null {
@@ -14,40 +14,10 @@ function sizeCanvas(canvas: HTMLCanvasElement, width: number, height: number): C
   return ctx;
 }
 
-function addCaret(ctx: CanvasRenderingContext2D, x: number, baseline: number): void {
-  const { left, right, top, bottom, leg, apex } = ASCII_GLYPH.caret;
-  const mid = x + (left + right) / 2;
-  const foot = baseline - bottom;
-  const peak = baseline - top;
-  ctx.moveTo(x + left, foot);
-  ctx.lineTo(mid, peak);
-  ctx.lineTo(x + right, foot);
-  ctx.lineTo(x + right - leg, foot);
-  ctx.lineTo(mid, peak + apex);
-  ctx.lineTo(x + left + leg, foot);
-  ctx.closePath();
-}
-
-function drawLine(ctx: CanvasRenderingContext2D, line: string, originX: number, baseline: number): void {
-  for (let col = 0; col < line.length; col += 1) {
-    const ch = line[col] ?? ' ';
-    const x = originX + col * ASCII_GLYPH.pitch;
-    if (ch === '^') { addCaret(ctx, x, baseline); continue; }
-    const rect = glyphRect(ch, x, baseline);
-    if (rect !== null) ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
-  }
-}
-
 function drawArt(ctx: CanvasRenderingContext2D, art: string, width: number, height: number): void {
-  const lines = art.split('\n');
-  const origin = asciiOrigin(width, height, lines[0]?.length ?? 0, lines.length);
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = HERO_BLACK;
-  ctx.beginPath();
-  lines.forEach((line, row) => {
-    drawLine(ctx, line, origin.x, origin.y + row * ASCII.lineHeight + ASCII_GLYPH.baseline);
-  });
-  ctx.fill();
+  ctx.fill(new Path2D(asciiPath(art, width, height)));
 }
 
 function useCanvas(host: HTMLElement | null): HTMLCanvasElement | null {

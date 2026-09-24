@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  ASCII, ASCII_GLYPH, asciiFrame, asciiGrid, asciiOrigin, glyphRect, heroBoxes, tornadoField,
+  ASCII, ASCII_GLYPH, asciiFrame, asciiGrid, asciiOrigin, asciiPath, glyphRect, heroBoxes, tornadoField,
 } from '../components/landing/Landing.model';
 
 const HALF = (): number => 0.5;
@@ -61,5 +61,21 @@ describe('ascii glyph layout', () => {
     expect(dot?.height).toBeCloseTo(2.09);
     expect(glyphRect('^', 0, 20)).toBeNull();
     expect(glyphRect(' ', 0, 20)).toBeNull();
+  });
+});
+
+describe('asciiPath', () => {
+  test('draws one closed shape per visible glyph and nothing for spaces', () => {
+    const d = asciiPath('^ .\n⋅  ', 100, 40);
+    expect(d.match(/Z/g)?.length).toBe(3);
+    expect(asciiPath('   \n   ', 100, 40)).toBe('');
+  });
+
+  test('caret, period and dot land on their Menlo boxes', () => {
+    const origin = asciiOrigin(100, 40, 1, 1);
+    const baseline = origin.y + ASCII_GLYPH.baseline;
+    const period = glyphRect('.', origin.x, baseline);
+    const d = asciiPath('.', 100, 40);
+    expect(d.startsWith(`M${Math.round((period?.x ?? 0) * 10) / 10} `)).toBe(true);
   });
 });
