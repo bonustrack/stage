@@ -8,17 +8,18 @@ import { buildSortedTokenRows } from '@stage-labs/client/wallet/tokens';
 
 
 export function TokensList({
-  rows, head, sub, border, bg,
+  rows, head, sub, border, bg, nativeChainIds,
 }: {
   rows: AssetRow[];
   head: string;
   sub: string;
   border: string;
   bg: string;
+  nativeChainIds?: readonly number[];
 }): React.ReactElement {
   const router = useRouter();
   const sortedRows = useMemo(
-    () => buildSortedTokenRows(rows).map(({ r, id }) => ({
+    () => buildSortedTokenRows(rows, nativeChainIds).map(({ r, id }) => ({
       r,
       id,
       onPress: (): void => {
@@ -28,7 +29,7 @@ export function TokensList({
         });
       },
     })),
-    [rows, router],
+    [rows, nativeChainIds, router],
   );
   return (
     <Col margin={{ x: 16 }}>

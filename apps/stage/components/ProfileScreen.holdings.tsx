@@ -1,82 +1,46 @@
-
-import { useState } from 'react';
-
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from './Spinner';
-import { Col, Row } from './layout';
+import { Col } from './layout';
 import { DANGER, usePalette } from '../lib/theme';
 import { useAssetRows } from './wallet/screen/data';
 import { TokensList } from './wallet/screen/tokens';
-import { NftsView } from './wallet/screen/parts';
-import { useNfts } from '../lib/useNfts';
 
-type HoldingsTab = 'tokens' | 'nfts';
-const TAB_LABEL: Record<HoldingsTab, string> = { tokens: 'Tokens', nfts: 'NFTs' };
+function HoldingsBody({ address }: { address: string }): React.ReactElement {
+  const { link: head, text: sub, bg, border } = usePalette();
+  const { data: rows = null, isError: err } = useAssetRows(address);
 
-function HoldingsTabs({ tab, setTab, head, sub, border }: {
-  tab: HoldingsTab; setTab: (t: HoldingsTab) => void; head: string; sub: string; border: string;
-}): React.ReactElement {
-  return (
-    <Row margin={{ x: 16, top: 22, bottom: 6 }} justify="start" gap={24}
-      style={{ borderBottomWidth: 1, borderBottomColor: border }}>
-      {(['tokens', 'nfts'] as const).map(t => {
-        const active = tab === t;
-        return (
-          <Pressable
-            key={t}
-            onPress={() => { setTab(t); }}
-            style={{
-              paddingVertical: 10,
-              marginBottom: -1,
-              borderBottomWidth: 2,
-              borderBottomColor: active ? head : 'transparent',
-            }}
->
-            <Text weight="semibold" size="3xl" color={active ? head : sub}>
-              {TAB_LABEL[t]}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </Row>
-  );
+  if (err) {
+    return (
+      <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center">
+        <Text size="md" color={DANGER}>
+          Couldn’t load tokens
+        </Text>
+      </Col>
+    );
+  }
+  if (rows === null) {
+    return (
+      <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center">
+        <Spinner size={28} color={head}/>
+      </Col>
+    );
+  }
+  if (rows.filter(r => Number(r.balance) > 0).length === 0) {
+    return (
+      <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center">
+        <Text size="md" role="secondary">
+          There are no tokens in this wallet.
+        </Text>
+      </Col>
+    );
+  }
+  return <TokensList rows={rows} head={head} sub={sub} border={border} bg={bg} />;
 }
 
 export function ProfileHoldings({ address }: { address: string }): React.ReactElement {
-  const { link: head, text: sub, bg, border } = usePalette();
-
-  const [tab, setTab] = useState<HoldingsTab>('tokens');
-
-  const { data: rows = null, isError: err } = useAssetRows(address);
-
-  const { nfts, nftStatus } = useNfts(tab === 'nfts', address);
-
   return (
-    <Col>
-      <HoldingsTabs tab={tab} setTab={setTab} head={head} sub={sub} border={border}/>
-
-      {tab === 'nfts' ? (
-        <NftsView status={nftStatus} nfts={nfts} head={head} sub={sub} border={border}/>
-      ) : err ? (
-        <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center">
-          <Text size="md" color={DANGER}>
-            Couldn’t load tokens
-          </Text>
-        </Col>
-      ) : rows === null ? (
-        <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center">
-          <Spinner size={28} color={head}/>
-        </Col>
-      ) : rows.filter(r => Number(r.balance) > 0).length === 0 ? (
-        <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center">
-          <Text size="md" role="secondary">
-            There are no tokens in this wallet.
-          </Text>
-        </Col>
-      ) : (
-        <TokensList rows={rows} head={head} sub={sub} border={border} bg={bg} />
-      )}
+    <Col margin={{ top: 16 }}>
+      <HoldingsBody address={address} />
     </Col>
   );
 }

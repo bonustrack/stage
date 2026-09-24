@@ -1,19 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 import {
   walletHeroDisplay,
-  walletTabOptions,
   walletTotalUsd,
 } from '../components/wallet/screen/model';
-
-describe('walletTabOptions', () => {
-  test('lists tokens, NFTs and activity on every platform', () => {
-    expect(walletTabOptions()).toEqual([
-      { value: 'tokens', label: 'Tokens' },
-      { value: 'nfts', label: 'NFTs' },
-      { value: 'activity', label: 'Activity' },
-    ]);
-  });
-});
 
 describe('walletTotalUsd', () => {
   test('null rows stay null', () => {

@@ -6,7 +6,7 @@
 
 `@stage-labs/client` holds the framework-independent logic behind the universal Stage app ([`apps/stage`](../../apps/stage)). It is pure TypeScript with no React or react-native imports, so the same code runs in a browser, in Hermes, and in Node.
 
-It covers the XMTP orchestration cores (content codecs, humanisation, message builders, channel filtering/caching, consent, groups, envelopes), onchain identity (Basenames and `*.stage.base.eth` names, peer profiles, avatar URLs), the smart-account layer (accounts, keys, ZeroDev validator plans, passkey linking, recovery), wallet formatting/balances/tx decoding, read-only API clients (ENS, Etherscan, OpenSea, CoinGecko, GitHub link detection), x402 challenges, and the shared types that tie it all together. Boundary data is validated with zod (`validate.ts`); XMTP content is always decoded through a schema.
+It covers the XMTP orchestration cores (content codecs, humanisation, message builders, channel filtering/caching, consent, groups, envelopes), onchain identity (Basenames and `*.stage.base.eth` names, peer profiles, avatar URLs), the smart-account layer (accounts, keys, ZeroDev validator plans, passkey linking, recovery), wallet formatting/balances/tx decoding, read-only API clients (ENS, CoinGecko, GitHub link detection), x402 challenges, and the shared types that tie it all together. Boundary data is validated with zod (`validate.ts`); XMTP content is always decoded through a schema.
 
 ## Install
 
@@ -47,7 +47,7 @@ src/
   accounts/    # account records, key storage constants, HD index, device transfer
   zerodev/     # Kernel smart accounts: derive, validator plan, device passkeys, root-key migration, passkey link, recovery key access
   wallet/      # formatting, assets, balances, prices, send, tx decode/simulate/error
-  api/         # read-only clients: ens, etherscan, opensea, coingecko, github link detection
+  api/         # read-only clients: ens, coingecko, github link detection
   routing/     # deep links and handle parsing
   embed/       # link/embed detection
   image/       # EXIF/metadata stripping before upload

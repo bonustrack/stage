@@ -90,7 +90,6 @@ value is public). Set them in the Netlify site (web) and the EAS build profiles
 | `EXPO_PUBLIC_SWARMY_KEY` | Swarmy (`api.swarmy.cloud`) bearer key for encrypted attachment upload |
 | `EXPO_PUBLIC_LINKPROXY_URL` | Base URL of the proxy Worker (default `https://proxy.stage.box`) |
 | `EXPO_PUBLIC_PUSH_SERVER_URL` | Push server base URL |
-| `EXPO_PUBLIC_ETHERSCAN_API_KEY` / `EXPO_PUBLIC_OPENSEA_API_KEY` | Read-only API keys for wallet activity and NFTs |
 
 Attachments (already client-side encrypted) upload directly to Swarmy's
 `POST /api/files`; the encrypted blob is read back from the keyless gateway

@@ -1,13 +1,3 @@
-import type { TabsOptionView } from '@stage-labs/kit/react-native/tabs';
-
-export function walletTabOptions(): TabsOptionView[] {
-  return [
-    { value: 'tokens', label: 'Tokens' },
-    { value: 'nfts', label: 'NFTs' },
-    { value: 'activity', label: 'Activity' },
-  ];
-}
-
 export interface WalletTotalRow {
   priceUsd: number | null;
   balance: string;

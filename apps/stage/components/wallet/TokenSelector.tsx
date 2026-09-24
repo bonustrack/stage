@@ -14,18 +14,13 @@ import { TokenRowBody } from '../wallet/TokenRowView';
 import { usePalette } from '../../lib/theme';
 import { useActiveAccountRecord } from '../../modules/messaging';
 import { useAssetRows } from './screen/data';
-import { fallbackSendToken, sendableOnAccount } from './TokenSelector.model';
+import { fallbackSendToken, listedSendableRows } from './TokenSelector.model';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, type AssetRow } from '@stage-labs/client/wallet/assets';
 
 export interface TokenChoice { symbol: string; chainId: number }
 
 function findRow(rows: AssetRow[], sel: TokenChoice): AssetRow | undefined {
   return rows.find(r => r.symbol === sel.symbol && r.chainId === sel.chainId);
-}
-
-function hasBalance(r: AssetRow): boolean {
-  const n = Number.parseFloat(r.balance);
-  return Number.isFinite(n) && n> 0;
 }
 
 function usdValue(r: AssetRow): number {
@@ -42,7 +37,7 @@ function useSelectorRows(): { rows: AssetRow[]; loading: boolean; smart: boolean
   const record = useActiveAccountRecord();
   const smart = record?.type === 'smart';
   const publicRows = useAssetRows(record?.address ?? '').data ?? null;
-  const sendable = sendableOnAccount((publicRows ?? []).filter(hasBalance), smart);
+  const sendable = listedSendableRows(publicRows ?? [], smart);
   return { rows: byValueDesc(sendable), loading: record === null || publicRows === null, smart };
 }
 

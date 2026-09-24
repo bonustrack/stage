@@ -2,6 +2,9 @@ import { describe, expect, test } from 'bun:test';
 import type { AssetRow } from '../src/wallet/assets';
 import {
   buildSortedTokenRows,
+  isListedTokenRow,
+  isNativeTokenRow,
+  nativeTokenChainIds,
   tokenRowId,
 } from '../src/wallet/tokens';
 
@@ -59,6 +62,39 @@ describe('buildSortedTokenRows', () => {
     const inputs = new Set<AssetRow>(rows);
     for (const { r } of out) expect(inputs.has(r)).toBe(true);
     expect(buildSortedTokenRows(rows).map(x => x.r)).toEqual(out.map(x => x.r));
+  });
+});
+
+describe('native token listing', () => {
+  test('recognises the native row of each supported chain', () => {
+    expect(isNativeTokenRow({ chainId: 8453, symbol: 'ETH' })).toBe(true);
+    expect(isNativeTokenRow({ chainId: 1, symbol: 'ETH' })).toBe(true);
+    expect(isNativeTokenRow({ chainId: 8453, symbol: 'USDC' })).toBe(false);
+    expect(isNativeTokenRow({ chainId: 137, symbol: 'ETH' })).toBe(false);
+  });
+
+  test('lists one native chain per supported chain', () => {
+    expect(nativeTokenChainIds()).toEqual([1, 11155111, 8453]);
+  });
+
+  test('a zero native row is listed only on the given chains', () => {
+    const eth = row({ symbol: 'ETH', chainId: 8453, balance: '0' });
+    expect(isListedTokenRow(eth)).toBe(false);
+    expect(isListedTokenRow(eth, [8453])).toBe(true);
+    expect(isListedTokenRow(row({ symbol: 'ETH', chainId: 1, balance: '0' }), [8453])).toBe(false);
+  });
+
+  test('zero non-native rows stay hidden even on a native chain', () => {
+    expect(isListedTokenRow(row({ symbol: 'USDC', chainId: 8453, balance: '0' }), [8453])).toBe(false);
+  });
+
+  test('sorted rows keep the zero native row after funded tokens', () => {
+    const rows = [
+      row({ symbol: 'ETH', chainId: 8453, balance: '0', priceUsd: 3000 }),
+      row({ symbol: 'USDC', chainId: 8453, balance: '0' }),
+      row({ symbol: 'USDC', chainId: 1, balance: '2', priceUsd: 1 }),
+    ];
+    expect(buildSortedTokenRows(rows, [8453]).map(x => x.id)).toEqual(['1:USDC', '8453:ETH']);
   });
 });
 

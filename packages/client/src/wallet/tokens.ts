@@ -50,9 +50,28 @@ export function tokenRowId(r: AssetRow): string {
   return `${r.chainId}:${r.symbol}`;
 }
 
-export function buildSortedTokenRows(rows: AssetRow[]): { r: AssetRow; id: string }[] {
+export function isNativeTokenRow(r: { chainId: number; symbol: string }): boolean {
+  return ASSETS.some(a => a.address === null && a.chainId === r.chainId && a.symbol === r.symbol);
+}
+
+export function nativeTokenChainIds(): number[] {
+  return [...new Set(ASSETS.filter(a => a.address === null).map(a => a.chainId))];
+}
+
+export function isListedTokenRow(
+  r: { chainId: number; symbol: string; balance: string },
+  nativeChainIds: readonly number[] = [],
+): boolean {
+  if (Number(r.balance) > 0) return true;
+  return nativeChainIds.includes(r.chainId) && isNativeTokenRow(r);
+}
+
+export function buildSortedTokenRows(
+  rows: AssetRow[],
+  nativeChainIds: readonly number[] = [],
+): { r: AssetRow; id: string }[] {
   return [...rows]
-    .filter(r => Number(r.balance) > 0)
+    .filter(r => isListedTokenRow(r, nativeChainIds))
     .map(r => ({ r, usdValue: (r.priceUsd ?? 0) * Number(r.balance) }))
     .sort((a, b) => b.usdValue - a.usdValue)
     .map(({ r }) => ({ r, id: tokenRowId(r) }));

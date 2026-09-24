@@ -1,5 +1,5 @@
 
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useActiveAccountRecord } from '../../../modules/messaging';
 import { useAssetRows } from './data';
 import { type AssetRow } from '@stage-labs/client/wallet/assets';
@@ -16,11 +16,10 @@ import { WalletActionButton } from '../../widgets';
 import { useRouter } from 'expo-router';
 import { usePeerProfiles } from '../../../lib/peerProfiles';
 import { DANGER, usePalette } from '../../../lib/theme';
-import { Col, Row, ScreenScroll } from '../../layout';
-import { useNfts, type NftState } from '../../../lib/useNfts';
-import { WalletTabs, NftsView, fmtUsd, splitUsd, type WalletTab } from './parts';
+import { Box, Col, Row, ScreenScroll } from '../../layout';
+import { fmtUsd, splitUsd } from './parts';
 import { TokensList } from './tokens';
-import { ActivityView } from './activity';
+import { listedNativeChains } from '../TokenSelector.model';
 import { useWalletFocused } from '../../tabs/useWalletFocused';
 
 interface WalletBalances {
@@ -50,13 +49,10 @@ export function useWalletBalances(focused: boolean): WalletBalances {
   };
 }
 
-function WalletTabBody({ tab, nftState, address, rows, err, c }: {
-  tab: WalletTab; nftState: NftState; address?: string;
-  rows: ReturnType<typeof useWalletBalances>['rows'];
-  err: boolean; c: { head: string; sub: string; border: string; bg: string };
+function WalletTokens({ rows, err, nativeChainIds, c }: {
+  rows: WalletBalances['rows']; err: boolean; nativeChainIds: readonly number[];
+  c: { head: string; sub: string; border: string; bg: string };
 }): React.ReactElement {
-  if (tab === 'nfts') return <NftsView status={nftState.nftStatus} nfts={nftState.nfts} head={c.head} sub={c.sub} border={c.border}/>;
-  if (tab === 'activity') return <ActivityView address={address} head={c.head} border={c.border}/>;
   if (err) {
     return (
       <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center">
@@ -69,7 +65,11 @@ function WalletTabBody({ tab, nftState, address, rows, err, c }: {
       <Col padding={{ y: 40 }} margin={{ x: 16 }} align="center"><Spinner size={28} color={c.head}/></Col>
     );
   }
-  return <TokensList rows={rows} head={c.head} sub={c.sub} border={c.border} bg={c.bg}/>;
+  return (
+    <Box margin={{ top: 16 }}>
+      <TokensList rows={rows} head={c.head} sub={c.sub} border={c.border} bg={c.bg} nativeChainIds={nativeChainIds}/>
+    </Box>
+  );
 }
 
 const HERO_ACTIONS: readonly (readonly [string, string, string])[] = [
@@ -126,8 +126,8 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
   usePeerProfiles([address]);
   const pull = usePullToRefresh(refreshing, onRefresh, head);
 
-  const [tab, setTab] = useState<WalletTab>('tokens');
-  const nftState = useNfts(tab === 'nfts', address);
+  const smart = useActiveAccountRecord()?.type === 'smart';
+  const nativeChainIds = useMemo(() => listedNativeChains(smart), [smart]);
 
   const totalUsd = walletTotalUsd(rows);
   const c = { head, sub, border, bg };
@@ -158,9 +158,7 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
       </Row>
       <WalletBalanceCard err={!!err} totalUsd={totalUsd} border={border} onAction={onWalletAction} />
 
-      <WalletTabs tab={tab} setTab={setTab} border={border}/>
-
-      <WalletTabBody tab={tab} nftState={nftState} address={address} rows={rows} err={!!err} c={c} />
+      <WalletTokens rows={rows} err={!!err} nativeChainIds={nativeChainIds} c={c} />
     </ScreenScroll>
     </Col>
   );
