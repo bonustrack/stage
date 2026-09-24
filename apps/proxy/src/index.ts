@@ -6,7 +6,7 @@ import { parseMeta } from './parse.ts';
 import { proxyPreviewImages } from './imgProxy.ts';
 import { parseSettleBody, settleX402 } from './settle.ts';
 import { SsrfError } from './ssrf.ts';
-import { HISTORY_PREFIX, handleHistory } from './historyProxy.ts';
+import { HISTORY_PREFIX, handleHistory } from './historyStore.ts';
 import { PUSH_PREFIX, handlePush } from './pushProxy.ts';
 import { NAMES_PREFIX, handleNamesRequest, type NamesEnv } from './names.ts';
 import { jsonResponse, type HeaderMap } from './respond.ts';
@@ -149,9 +149,17 @@ async function handleSettle(request: Request): Promise<Response> {
 }
 
 export { NamesClaims } from './names.ts';
+export { HistoryArchives } from './historyStore.ts';
+
+type ProxyEnv = NamesEnv & { HISTORY_ARCHIVES?: DurableObjectNamespace };
+
+function routeHistory(request: Request, env: ProxyEnv): Promise<Response> | Response {
+  if (request.method === 'POST' && rateLimited(clientIp(request))) return json({ error: 'rate limited' }, 429);
+  return handleHistory(request, env.HISTORY_ARCHIVES);
+}
 
 export default {
-  async fetch(request: Request, env: NamesEnv, ctx: ExecutionContext): Promise<Response> {
+  async fetch(request: Request, env: ProxyEnv, ctx: ExecutionContext): Promise<Response> {
     const { hostname, pathname } = new URL(request.url);
     if (hostname === BUNDLER_HOST) return handleBundler(request);
     if (pathname === '/health') {
@@ -160,7 +168,7 @@ export default {
     if (pathname === '/preview') return handlePreview(request, ctx);
     if (pathname === '/img') return handleImg(request, ctx);
     if (pathname === '/x402-settle') return handleSettle(request);
-    if (pathname.startsWith(HISTORY_PREFIX)) return handleHistory(request);
+    if (pathname.startsWith(HISTORY_PREFIX)) return routeHistory(request, env);
     if (pathname.startsWith(PUSH_PREFIX)) return handlePush(request);
     if (pathname.startsWith(NAMES_PREFIX)) {
       if (rateLimited(clientIp(request))) return json({ error: 'rate limited' }, 429);

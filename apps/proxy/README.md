@@ -19,9 +19,20 @@ runtime - no Express, no origin, no laptop dependency.
   one at a time, whose storage is the source of truth for reservations (KV
   mirrors it for `status`, `check` and `resolve`), so a label or an address
   can never be claimed twice.
-- **XMTP relays:** `/xmtp-history/*` forwards to the XMTP message-history
-  server and `/xmtp-push/*` to the Stage push server (`apps/push`), so the web
-  app talks to one origin with the right CORS headers.
+- **XMTP history-sync archives:** `/xmtp-history/{production|dev}/upload` and
+  `/files/<id>` are the history server every Stage device hands to libxmtp
+  (`sendSyncRequest` / `sendSyncArchive` carry this URL, and the answering
+  device uploads to whatever URL the request names). XMTP's own
+  message-history server no longer serves downloads (they answer
+  `400 Missing X-HMAC header`) and upstream libxmtp removed the transfer
+  path, so the Worker stores the archives itself: one `HistoryArchives`
+  Durable Object per upload, chunked into its SQLite storage and deleted by an
+  alarm three days later. Archives are AES-GCM ciphertext whose key only
+  travels inside the MLS device-sync group. Uploads are capped at 50 MB and
+  rate limited per IP.
+- **XMTP push relay:** `/xmtp-push/*` forwards to the Stage push server
+  (`apps/push`), so the web app talks to one origin with the right CORS
+  headers.
 
 ## API
 
@@ -36,7 +47,9 @@ GET  /names/check?label=<label>  -> { valid, available, reason? }
 GET  /names/status?address=<0x>  -> { name | null }
 GET  /names/resolve?label=<l>    -> { address | null }   (registry owner, then the KV record)
 POST /names/claim                -> { label, address, issuedAt, signature } -> the issued name
-*    /xmtp-history/* /xmtp-push/* -> relayed upstream
+POST /xmtp-history/<env>/upload  -> archive id (text)       413 too large   429 rate limited
+GET  /xmtp-history/<env>/files/<id> -> archive bytes       404 unknown or expired
+*    /xmtp-push/*                -> relayed upstream
 ```
 
 Every response carries `x-served-by: worker`.

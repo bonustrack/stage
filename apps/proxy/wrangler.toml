@@ -35,3 +35,15 @@ class_name = "NamesClaims"
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["NamesClaims"]
+
+# Encrypted XMTP history-sync archives, one object per upload, deleted by an
+# alarm three days later. The app's devices upload to /xmtp-history/*/upload
+# and download from /xmtp-history/*/files/<id>; the AES key only travels
+# inside the MLS device-sync group, so the Worker stores opaque ciphertext.
+[[durable_objects.bindings]]
+name = "HISTORY_ARCHIVES"
+class_name = "HistoryArchives"
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["HistoryArchives"]
