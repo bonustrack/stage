@@ -30,6 +30,16 @@ runtime - no Express, no origin, no laptop dependency.
   alarm three days later. Archives are AES-GCM ciphertext whose key only
   travels inside the MLS device-sync group. Uploads are capped at 50 MB and
   rate limited per IP.
+- **History transfer codes:** `/xmtp-history/{production|dev}/transfer/<id>`
+  carries a whole-history archive from one device to another when XMTP
+  device sync cannot (web and native installations do not share a device-sync
+  group). The sending app derives a 64-hex lookup id and the archive key from
+  a 10-character transfer code with PBKDF2, so the Worker only ever sees the
+  id and ciphertext, never the code or the key. One `HistoryTransfers`
+  Durable Object per transfer: `PUT` once (409 if the id exists, 50 MB cap),
+  `GET` at most three times, `DELETE` after a successful import, and an alarm
+  deletes it 24 hours after upload. Lookups (`GET`/`DELETE`) are rate limited
+  per IP by the `TRANSFER_LOOKUPS` rate-limit binding (10 a minute).
 - **XMTP push relay:** `/xmtp-push/*` forwards to the Stage push server
   (`apps/push`), so the web app talks to one origin with the right CORS
   headers.
@@ -49,6 +59,9 @@ GET  /names/resolve?label=<l>    -> { address | null }   (registry owner, then t
 POST /names/claim                -> { label, address, issuedAt, signature } -> the issued name
 POST /xmtp-history/<env>/upload  -> archive id (text)       413 too large   429 rate limited
 GET  /xmtp-history/<env>/files/<id> -> archive bytes       404 unknown or expired
+PUT  /xmtp-history/<env>/transfer/<id> -> { expiresAt }     409 exists   413 too large   429 rate limited
+GET  /xmtp-history/<env>/transfer/<id> -> transfer bytes    404 unknown, used or expired   429 rate limited
+DELETE /xmtp-history/<env>/transfer/<id> -> 204             429 rate limited
 *    /xmtp-push/*                -> relayed upstream
 ```
 

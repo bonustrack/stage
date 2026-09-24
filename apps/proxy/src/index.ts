@@ -7,6 +7,7 @@ import { proxyPreviewImages } from './imgProxy.ts';
 import { parseSettleBody, settleX402 } from './settle.ts';
 import { SsrfError } from './ssrf.ts';
 import { HISTORY_PREFIX, handleHistory } from './historyStore.ts';
+import { handleTransfer, isTransferPath } from './historyTransfer.ts';
 import { PUSH_PREFIX, handlePush } from './pushProxy.ts';
 import { NAMES_PREFIX, handleNamesRequest, type NamesEnv } from './names.ts';
 import { jsonResponse, type HeaderMap } from './respond.ts';
@@ -150,11 +151,22 @@ async function handleSettle(request: Request): Promise<Response> {
 
 export { NamesClaims } from './names.ts';
 export { HistoryArchives } from './historyStore.ts';
+export { HistoryTransfers } from './historyTransfer.ts';
 
-type ProxyEnv = NamesEnv & { HISTORY_ARCHIVES?: DurableObjectNamespace };
+type ProxyEnv = NamesEnv & {
+  HISTORY_ARCHIVES?: DurableObjectNamespace;
+  HISTORY_TRANSFERS?: DurableObjectNamespace;
+  TRANSFER_LOOKUPS?: RateLimit;
+};
+
+const UPLOAD_METHODS: ReadonlySet<string> = new Set(['POST', 'PUT']);
 
 function routeHistory(request: Request, env: ProxyEnv): Promise<Response> | Response {
-  if (request.method === 'POST' && rateLimited(clientIp(request))) return json({ error: 'rate limited' }, 429);
+  const ip = clientIp(request);
+  if (UPLOAD_METHODS.has(request.method) && rateLimited(ip)) return json({ error: 'rate limited' }, 429);
+  if (isTransferPath(new URL(request.url).pathname)) {
+    return handleTransfer(request, { ns: env.HISTORY_TRANSFERS, limiter: env.TRANSFER_LOOKUPS, clientIp: ip });
+  }
   return handleHistory(request, env.HISTORY_ARCHIVES);
 }
 

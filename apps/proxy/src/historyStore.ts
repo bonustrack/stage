@@ -3,8 +3,8 @@ import { corsHeaders, corsResponse } from './respond.ts';
 
 export const HISTORY_PREFIX = '/xmtp-history/';
 
-const ENVS: ReadonlySet<string> = new Set(['production', 'dev']);
-const MAX_ARCHIVE_BYTES = 50_000_000;
+export const HISTORY_ENVS: ReadonlySet<string> = new Set(['production', 'dev']);
+export const MAX_ARCHIVE_BYTES = 50_000_000;
 const CHUNK_BYTES = 1_000_000;
 export const ARCHIVE_TTL_MS = 3 * 24 * 60 * 60 * 1000;
 const FILE_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -44,7 +44,7 @@ function routeIn(env: string, segments: string[], method: string): HistoryRoute 
 export function parseHistoryRoute(pathname: string, method: string): HistoryRoute | null {
   if (!pathname.startsWith(HISTORY_PREFIX)) return null;
   const [env, ...segments] = pathname.slice(HISTORY_PREFIX.length).split('/');
-  if (env === undefined || !ENVS.has(env)) return null;
+  if (env === undefined || !HISTORY_ENVS.has(env)) return null;
   return routeIn(env, segments, method);
 }
 
@@ -88,8 +88,7 @@ function chunkKeys(count: number): string[] {
   return Array.from({ length: count }, (_, index) => chunkKey(index));
 }
 
-async function storeArchive(request: Request, storage: ArchiveStorage, now: number): Promise<Response> {
-  const bytes = new Uint8Array(await request.arrayBuffer());
+export async function putChunks(storage: ArchiveStorage, bytes: Uint8Array): Promise<void> {
   const entries: Record<string, ArrayBuffer | number> = {};
   let count = 0;
   for (let offset = 0; offset < bytes.byteLength; offset += CHUNK_BYTES) {
@@ -98,6 +97,10 @@ async function storeArchive(request: Request, storage: ArchiveStorage, now: numb
   }
   entries[COUNT_KEY] = count;
   await storage.put(entries);
+}
+
+async function storeArchive(request: Request, storage: ArchiveStorage, now: number): Promise<Response> {
+  await putChunks(storage, new Uint8Array(await request.arrayBuffer()));
   await storage.setAlarm(now + ARCHIVE_TTL_MS);
   return new Response(null, { status: 204 });
 }
@@ -118,11 +121,20 @@ function joined(chunks: Map<string, unknown>, keys: string[]): Uint8Array | null
   return out;
 }
 
-async function readArchive(storage: ArchiveStorage): Promise<Response> {
+export async function hasChunks(storage: ArchiveStorage): Promise<boolean> {
   const count = (await storage.get([COUNT_KEY])).get(COUNT_KEY);
-  if (typeof count !== 'number' || count < 1) return new Response(null, { status: 404 });
+  return typeof count === 'number' && count > 0;
+}
+
+export async function readChunks(storage: ArchiveStorage): Promise<Uint8Array | null> {
+  const count = (await storage.get([COUNT_KEY])).get(COUNT_KEY);
+  if (typeof count !== 'number' || count < 1) return null;
   const keys = chunkKeys(count);
-  const bytes = joined(await storage.get(keys), keys);
+  return joined(await storage.get(keys), keys);
+}
+
+async function readArchive(storage: ArchiveStorage): Promise<Response> {
+  const bytes = await readChunks(storage);
   if (bytes === null) return new Response(null, { status: 404 });
   return new Response(bytes, { status: 200, headers: { 'content-type': 'application/octet-stream' } });
 }

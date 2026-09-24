@@ -47,3 +47,23 @@ class_name = "HistoryArchives"
 [[migrations]]
 tag = "v2"
 new_sqlite_classes = ["HistoryArchives"]
+
+# History handed to another device with a transfer code (Settings > Messenger >
+# Send history). The app derives the lookup id and the archive key from the
+# code with PBKDF2, so the Worker only sees an opaque id and ciphertext. One
+# object per transfer at /xmtp-history/*/transfer/<id>: PUT once, GET at most
+# three times, DELETE after a successful import, alarm-deleted after 24 hours.
+[[durable_objects.bindings]]
+name = "HISTORY_TRANSFERS"
+class_name = "HistoryTransfers"
+
+[[migrations]]
+tag = "v3"
+new_sqlite_classes = ["HistoryTransfers"]
+
+# Transfer lookups (GET/DELETE) per client IP, to make guessing codes online
+# pointless on top of their 50 bits of entropy.
+[[ratelimits]]
+name = "TRANSFER_LOOKUPS"
+namespace_id = "2419"
+simple = { limit = 10, period = 60 }
