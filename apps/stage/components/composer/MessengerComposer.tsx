@@ -5,6 +5,8 @@ import { Col, PAGE_GUTTER } from '../layout';
 import { type Attachment, type OptimisticEntry } from './types';
 import { useComposerActions } from './actions';
 import { usePastedImages } from './pastedImages';
+import { useDroppedFiles } from './droppedFiles';
+import { DropOverlay } from './dropOverlay';
 import {
   useComposerDrafts, useComposerFocus, useCaretToEnd,
   computeMentions, applyMention, useLastAttachment,
@@ -74,6 +76,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
   const s = useComposerState();
   const actions = useComposerActions({ ...props, ...s });
   usePastedImages((files) => { void actions.onPickedImages(files); });
+  const drop = useDroppedFiles((files) => { void actions.onDroppedFiles(files); });
   const { SLIDE_CANCEL_THRESHOLD_PX } = actions;
 
   const convId = convIdOfLine(xmtpLine) ?? xmtpLine;
@@ -100,7 +103,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
   const quick = attachActions.find(([, label]) => label === lastLabel);
 
   return (
-    <Col padding={{ x: 0, top: 0, bottom: 0 }} surface="surface">
+    <Col nativeID={drop.zoneId} padding={{ x: 0, top: 0, bottom: 0 }} surface="surface">
       <ComposerHeader
         dark={dark} fg={fg} head={head} sub={sub} chipBg={chipBg}
         replyingTo={replyingTo} onClearReply={onClearReply} onJumpToReply={onJumpToReply}
@@ -157,6 +160,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
         source="document"
         onPick={(files) => { void actions.onPickedFile(files); }}
       />
+      {drop.active ? <DropOverlay head={head}/> : null}
     </Col>
   );
 }

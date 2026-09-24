@@ -42,12 +42,16 @@ type Upload = (uri: string, mime: string, name?: string) => Promise<void>;
 
 interface ComposerPickedFile { uri: string; mime: string; name?: string; type?: 'image' | 'video' }
 
-async function onPickedImages(upload: Upload, files: ComposerPickedFile[]): Promise<void> {
-  if (files.length === 0) return;
-  setLastAttachment('Image');
+async function uploadEach(upload: Upload, files: ComposerPickedFile[]): Promise<void> {
   for (const file of files) {
     await upload(file.uri, file.mime, file.name);
   }
+}
+
+async function onPickedImages(upload: Upload, files: ComposerPickedFile[]): Promise<void> {
+  if (files.length === 0) return;
+  setLastAttachment('Image');
+  await uploadEach(upload, files);
 }
 
 async function requestCameraPermission(a: ComposerActionsArgs): Promise<boolean> {
@@ -161,6 +165,7 @@ export function useComposerActions(a: ComposerActionsArgs) {
     onPickedImages: (files: ComposerPickedFile[]) => onPickedImages(upload, files),
     onPickedCamera: (files: ComposerPickedFile[]) => onPickedCamera(upload, files),
     onPickedFile: (files: ComposerPickedFile[]) => onPickedFile(upload, files),
+    onDroppedFiles: (files: ComposerPickedFile[]) => uploadEach(upload, files),
     send: () => performSend(a),
   };
 }
