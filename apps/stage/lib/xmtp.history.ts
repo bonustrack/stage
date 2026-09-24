@@ -1,5 +1,6 @@
 import { sdk } from './xmtp.sdk';
 import { historyServer } from './historyServer';
+import { markHistoryImported } from './dmRoutes';
 
 export async function requestHistorySync(): Promise<void> {
   const client = await sdk.client();
@@ -13,7 +14,9 @@ export async function syncHistoryGroups(): Promise<void> {
 
 export async function processHistoryArchive(): Promise<void> {
   const client = await sdk.client();
+  const startedAt = Date.now();
   await sdk.history.processSyncArchive(client);
+  await markHistoryImported(startedAt);
 }
 
 export async function createHistoryArchive(key: Uint8Array): Promise<Uint8Array> {
@@ -23,5 +26,6 @@ export async function createHistoryArchive(key: Uint8Array): Promise<Uint8Array>
 
 export async function importHistoryArchive(archive: Uint8Array, key: Uint8Array): Promise<void> {
   const client = await sdk.client();
+  await markHistoryImported(Date.now());
   await sdk.history.importArchive(client, archive, key);
 }

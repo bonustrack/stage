@@ -1,7 +1,8 @@
 import {
   BackupElementSelectionOption, ConsentEntityType, ConsentState, Dm, Group, IdentifierKind,
   ReactionAction, ReactionSchema, SortDirection, encodeText,
-  type ArchiveOptions, type Consent, type Conversation, type DecodedMessage, type Identifier, type Reaction,
+  type ArchiveOptions, type Consent, type Conversation, type DecodedMessage, type Identifier, type InboxState,
+  type Reaction,
 } from '@xmtp/browser-sdk';
 import type { ReactionPayload } from '@stage-labs/client/xmtp/builders';
 import { consentStateToString } from '@stage-labs/client/xmtp/consent';
@@ -12,10 +13,10 @@ import { envelopeOfXmtpMessage } from './xmtp.envelope.web';
 import { withMainThreadWasm } from './xmtp.wasm.web';
 import type { XmtpConsent } from './xmtp.types';
 import {
-  NO_GROUP_ADMINS, NO_GROUP_INFO, convFinder, notAGroup,
+  NO_GROUP_ADMINS, NO_GROUP_INFO, convFinder, notAGroup, sendableFinder,
   type GroupMeta, type MessageQuery, type XmtpSdk,
 } from './xmtp.sdk.core';
-import { reported, ignore } from './errorPolicy';
+import { reported, ignore, ignored } from './errorPolicy';
 
 type WebClient = Awaited<ReturnType<typeof xmtpClient>>;
 type WebMessagesOptions = NonNullable<Parameters<Conversation['messages']>[0]>;
@@ -119,6 +120,19 @@ async function dmLookup(client: WebClient, address: string): Promise<{
   };
 }
 
+function ethAddressOf(state: InboxState | undefined): string | undefined {
+  return state?.accountIdentifiers.find(it => it.identifierKind === IdentifierKind.Ethereum)?.identifier;
+}
+
+async function ethAddressesOf(client: WebClient, inboxIds: string[]): Promise<(string | undefined)[]> {
+  const states = await client.preferences.getInboxStates(inboxIds).catch(ignored<InboxState[]>([], 'cache'));
+  const local = inboxIds.map((_, i) => ethAddressOf(states[i]));
+  const missing = inboxIds.filter((_, i) => local[i] === undefined);
+  if (missing.length === 0) return local;
+  const fetched = new Map((await client.preferences.fetchInboxStates(missing)).map(s => [s.inboxId, ethAddressOf(s)]));
+  return inboxIds.map((id, i) => local[i] ?? fetched.get(id));
+}
+
 export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
   client: xmtpClient,
   cachedClient: getCachedXmtpClient,
@@ -130,6 +144,7 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
   syncVisible: (client) => client.conversations.syncAll(VISIBLE_STATES),
   syncConsent: (client) => client.preferences.sync(),
   openDm: (client, address) => client.conversations.createDmWithIdentifier(identifierOf(address)),
+  activeDm: (client, peerInboxId) => client.conversations.createDm(peerInboxId),
   dmLookup,
   forceAddMember: null,
   inboxIdOfAddress: (client, address) => client.fetchInboxIdByIdentifier(identifierOf(address)),
@@ -137,11 +152,7 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
     ((await client.preferences.fetchInboxStates([inboxId]))[0]?.installations ?? []).map(i => i.id),
   keyPackageErrors: async (client, installationIds) =>
     [...(await client.fetchKeyPackageStatuses(installationIds)).values()].map(s => s.validationError),
-  ethAddressesOf: async (client, inboxIds) => {
-    const states = await client.preferences.getInboxStates(inboxIds);
-    return inboxIds.map((_, i) =>
-      states[i]?.accountIdentifiers.find(it => it.identifierKind === IdentifierKind.Ethereum)?.identifier);
-  },
+  ethAddressesOf,
   newGroup: (client, addresses, meta) =>
     client.conversations.createGroupWithIdentifiers(identifiersOf(addresses), groupOptions(meta)),
   streamAllMessages,
@@ -156,6 +167,7 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
     importArchive: (client, archive, key) => client.importArchive(archive, key),
   },
   isGroup: (conv) => conv instanceof Group,
+  isActive: (conv) => conv.isActive(),
   dmPeerInboxId: (conv) => (conv instanceof Dm ? () => conv.peerInboxId() : null),
   groupName: (conv) => Promise.resolve(conv instanceof Group ? conv.name : undefined),
   groupInfo: (conv) => Promise.resolve(conv instanceof Group
@@ -194,3 +206,5 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
 };
 
 export const convOfLine = convFinder(sdk);
+
+export const sendableConvOfLine = sendableFinder(sdk);

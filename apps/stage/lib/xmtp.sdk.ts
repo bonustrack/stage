@@ -8,7 +8,7 @@ import { convIdFromTopic } from '@stage-labs/client/xmtp/clientErrors';
 import { xmtpClient } from './xmtp.client';
 import { getCachedXmtpClient } from './xmtp.state';
 import {
-  NO_GROUP_ADMINS, NO_GROUP_INFO, VISIBLE_CONSENT, convFinder, notAGroup,
+  NO_GROUP_ADMINS, NO_GROUP_INFO, VISIBLE_CONSENT, convFinder, notAGroup, sendableFinder,
   type MessageQuery, type XmtpSdk,
 } from './xmtp.sdk.core';
 import { reported, recover, attempt } from './errorPolicy';
@@ -122,6 +122,7 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
   syncVisible: (client) => client.conversations.syncAllConversations(VISIBLE_CONSENT),
   syncConsent: (client) => client.preferences.syncConsent(),
   openDm: (client, address) => client.conversations.findOrCreateDmWithIdentity(identityOf(address)),
+  activeDm: (client, peerInboxId) => client.conversations.findOrCreateDm(peerInboxId),
   dmLookup: (client, address) => {
     const identity = identityOf(address);
     return Promise.resolve({
@@ -151,6 +152,7 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
     importArchive: (client, archive, key) => archiveFromBytes(archive, (path) => client.importArchive(path, key)),
   },
   isGroup: (conv) => conv instanceof Group,
+  isActive: (conv) => conv.isActive(),
   dmPeerInboxId: (conv) => (conv instanceof Dm ? () => conv.peerInboxId() : null),
   groupName: (conv) => (conv instanceof Group ? conv.name().catch(recover('xmtp.groupName', '')) : Promise.resolve('')),
   groupInfo: groupInfoOf,
@@ -184,3 +186,5 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
 };
 
 export const convOfLine = convFinder(sdk);
+
+export const sendableConvOfLine = sendableFinder(sdk);

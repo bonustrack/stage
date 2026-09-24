@@ -6,7 +6,8 @@ import {
   type RemoteAttachmentMetadata, type EncryptedLocalAttachment,
 } from '@xmtp/react-native-sdk';
 import { xmtpClient } from './xmtp.client';
-import { convOfLine } from './xmtp.sdk';
+import { sendableConvOfLine } from './xmtp.sdk';
+import { withReadableSendError } from './xmtp.sdk.core';
 import { type LocalAttachmentInput } from './xmtp.types';
 import {
   materializeFileUri, sanitizeFileUri, uploadEncryptedToIpfs, swarmToHttp,
@@ -34,8 +35,7 @@ export async function xmtpSendMultiRemoteAttachment(
   line: string, files: LocalAttachmentInput[],
 ): Promise<string> {
   if (files.length === 0) throw new Error('No attachments to send.');
-  const conv = await convOfLine(line);
-  if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
+  const conv = await withReadableSendError(() => sendableConvOfLine(line));
   const client = await xmtpClient();
 
   const infos: RemoteAttachmentInfo[] = [];
@@ -51,7 +51,7 @@ export async function xmtpSendMultiRemoteAttachment(
   }
 
   const payload: MultiRemoteAttachmentContent = { attachments: infos };
-  return await conv.send({ multiRemoteAttachment: payload });
+  return await withReadableSendError(() => conv.send({ multiRemoteAttachment: payload }));
 }
 
 export async function resolveRemoteAttachment(info: RemoteAttachmentInfo): Promise<{

@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import {
   isChatCleared, isClearStateType, isRowCleared, revivesClearedChat, isPinStateType, isReadStateType, isSyncGroupName, mergeClearedChats,
   parseClearState, parsePinState, parseReadState, pickSyncGroup, shouldApplyReadState, syncGroupName,
+  collectSyncReplay, pickPublishGroup,
 } from '../src/xmtp/readState';
 
 describe('read state payload', () => {
@@ -108,3 +109,62 @@ describe('deleted chats', () => {
   });
 });
 
+
+describe('restored sync groups', () => {
+  test('publishes only to a group this device is active in', () => {
+    const groups = [
+      { id: 'a-restored', createdAtNs: 1, active: false },
+      { id: 'own', createdAtNs: 5, active: true },
+    ];
+    expect(pickPublishGroup(groups)?.id).toBe('own');
+    expect(pickPublishGroup([{ id: 'a-restored', createdAtNs: 1, active: false }])).toBeNull();
+  });
+
+  test('devices converge on the lowest id once they are active in the same groups', () => {
+    const laptop = [{ id: 'g2', createdAtNs: 1, active: true }, { id: 'g1', createdAtNs: 9, active: true }];
+    const phone = [{ id: 'g1', createdAtNs: 2, active: true }, { id: 'g2', createdAtNs: 3, active: true }];
+    expect(pickPublishGroup(laptop)?.id).toBe('g1');
+    expect(pickPublishGroup(phone)?.id).toBe('g1');
+  });
+
+  const READ = 'stage.box/readState:1.0';
+  const PIN = 'stage.box/pinState:1.0';
+  const CLEAR = 'stage.box/clearState:1.0';
+
+  test('collapses a long replay into the latest state per conversation', () => {
+    const replay = collectSyncReplay([
+      { contentTypeId: READ, content: { convId: 'a', lastReadNs: 5, markedUnread: false, at: 2 }, sentNs: 10 },
+      { contentTypeId: READ, content: { convId: 'a', lastReadNs: 9, markedUnread: false, at: 4 }, sentNs: 11 },
+      { contentTypeId: READ, content: { convId: 'a', lastReadNs: 1, markedUnread: true, at: 3 }, sentNs: 12 },
+      { contentTypeId: READ, content: { convId: 'b', lastReadNs: 7, markedUnread: false, at: 1 }, sentNs: 13 },
+      { contentTypeId: CLEAR, content: { cleared: { '0xAA': 5 } }, sentNs: 14 },
+      { contentTypeId: CLEAR, content: { cleared: { '0xaa': 3, '0xbb': 8 } }, sentNs: 15 },
+      { contentTypeId: 'xmtp.org/text:1.0', content: 'hi', sentNs: 16 },
+    ], 0);
+    expect(replay.reads).toEqual([
+      { convId: 'a', lastReadNs: 9, markedUnread: false, at: 4 },
+      { convId: 'b', lastReadNs: 7, markedUnread: false, at: 1 },
+    ]);
+    expect(replay.cleared).toEqual({ '0xaa': 5, '0xbb': 8 });
+    expect(replay.latestNs).toBe(16);
+  });
+
+  test('keeps pins from the last full order onwards, in time order', () => {
+    const replay = collectSyncReplay([
+      { contentTypeId: PIN, content: { convId: 'x', pinned: true, at: 1 }, sentNs: 1 },
+      { contentTypeId: PIN, content: { convId: 'y', pinned: true, at: 3, order: ['y'] }, sentNs: 2 },
+      { contentTypeId: PIN, content: { convId: 'z', pinned: true, at: 4 }, sentNs: 3 },
+      { contentTypeId: PIN, content: { convId: 'w', pinned: true, at: 2, order: ['w'] }, sentNs: 4 },
+    ], 0);
+    expect(replay.pins.map((p) => p.convId)).toEqual(['y', 'z']);
+  });
+
+  test('skips messages at or before the cursor', () => {
+    const replay = collectSyncReplay([
+      { contentTypeId: READ, content: { convId: 'a', lastReadNs: 5, markedUnread: false, at: 2 }, sentNs: 10 },
+    ], 10);
+    expect(replay.reads).toEqual([]);
+    expect(replay.cleared).toBeNull();
+    expect(replay.latestNs).toBe(10);
+  });
+});

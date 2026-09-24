@@ -12,7 +12,8 @@ import { Icon } from '@stage-labs/kit/react-native/icon';
 import { ChannelMenu } from '../ChannelMenu';
 import { menuPointOf } from '../AnchoredMenu';
 import { isPinned } from '../../lib/pins';
-import { getCachedRows } from '../../modules/messaging';
+import { getCachedRows, useGroupWaiting } from '../../modules/messaging';
+import { GroupWaitingNotice } from './GroupWaitingNotice';
 import { capabilities } from '../../lib/capabilities';
 import { BubbleActionMenu, ConvTopnavIdentity, ConvTopnavShell } from './parts';
 import { previewOf } from './feed-helpers';
@@ -61,6 +62,8 @@ export function ConversationFooter({ c, convId }: { c: Conv; convId: string }): 
     replyingTo, setReplyingTo, autoFocusNonce, jumpToMessage, onOptimistic, onSent, consent, markConsentAllowed,
   } = c;
   const requestPending = consent === 'unknown';
+  const waiting = useGroupWaiting(convId, c.isGroup);
+  const composerShown = !requestPending && !waiting;
   return (
     <KeyboardStickyView offset={{ opened: insets.bottom }}>
       <Box>
@@ -78,7 +81,8 @@ export function ConversationFooter({ c, convId }: { c: Conv; convId: string }): 
           </Pressable>
         ) : null}
         {requestPending ? <RequestActionBar convId={convId} dark={dark} onAccepted={markConsentAllowed}/> : null}
-        {!requestPending ? (
+        {waiting && !requestPending ? <GroupWaitingNotice/> : null}
+        {composerShown ? (
           <MessengerComposer
             dark={dark}
             xmtpLine={activeLine}

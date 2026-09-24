@@ -4,8 +4,9 @@ import { activeFeedLines, registerGlobalStreamTeardown } from './xmtp.state.core
 import { pushToFeedSlice, resyncActiveFeeds } from './xmtp.resync';
 import { foregroundWatch } from './xmtp.foreground';
 import { isHiddenConv } from './readSyncRegistry';
+import { dmRoutesReady, isImportedReplay, routeConvId } from './dmRoutes';
 import { reconcileOnArrival, feedLatestNs } from '../modules/messaging/feedReconcile';
-import { report } from './errorPolicy';
+import { report, reported } from './errorPolicy';
 
 type StreamMessage = Parameters<Parameters<typeof sdk.streamAllMessages>[1]>[0];
 
@@ -79,10 +80,16 @@ function routeMessageToFeed(convId: string, msg: NonNullable<StreamMessage>): vo
   if (activeFeedLines.size > 0 && !activeFeedLines.has(line)) void resyncActiveFeeds();
 }
 
+function routedConvId(msg: NonNullable<StreamMessage>): string | null | undefined {
+  const convId = sdk.convIdOf(msg);
+  return convId ? routeConvId(convId) : convId;
+}
+
 function handleStreamMessage(msg: StreamMessage): void {
   if (!msg) return;
   lastMessageAt = Date.now();
-  const convId = sdk.convIdOf(msg);
+  if (isImportedReplay(sdk.sentNsOf(msg))) return;
+  const convId = routedConvId(msg);
   fanOutToSubscribers(convId, msg);
   if (!convId) {
     if (activeFeedLines.size > 0) void resyncActiveFeeds();
@@ -104,6 +111,7 @@ export async function ensureGlobalStream(): Promise<void> {
   const startedIn = generation;
   try {
     const client = await sdk.client();
+    await dmRoutesReady().catch(reported('xmtp.dmRoutes'));
     const cancel = await sdk.streamAllMessages(client, handleStreamMessage, onGlobalStreamClose);
     if (startedIn !== generation) { cancel(); return; }
     cancelStream = cancel;

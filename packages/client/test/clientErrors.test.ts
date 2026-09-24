@@ -1,5 +1,31 @@
 import { describe, expect, test } from 'bun:test';
-import { classifyKeyPackageStatuses } from '../src/xmtp/clientErrors';
+import {
+  GROUP_WAITING_NOTICE, INACTIVE_SEND_MESSAGE, classifyKeyPackageStatuses, isGroupInactive, readableSendError,
+} from '../src/xmtp/clientErrors';
+
+const NATIVE_INACTIVE = 'Call to function \'XMTP.sendMessage\' has been rejected. Caused by: '
+  + 'uniffi.xmtpv3.FfiException$Exception: [GroupError::GroupInactive] Group error: Group is inactive';
+
+describe('inactive conversations', () => {
+  test('recognises the native and web inactive group errors', () => {
+    expect(isGroupInactive(new Error(NATIVE_INACTIVE))).toBe(true);
+    expect(isGroupInactive(new Error('Group is inactive'))).toBe(true);
+    expect(isGroupInactive(new Error('network error'))).toBe(false);
+  });
+
+  test('maps an inactive send error to readable copy and leaves others alone', () => {
+    const mapped = readableSendError(new Error(NATIVE_INACTIVE));
+    expect(mapped.message).toBe(INACTIVE_SEND_MESSAGE);
+    expect(INACTIVE_SEND_MESSAGE).not.toContain('Ffi');
+    const other = new Error('boom');
+    expect(readableSendError(other)).toBe(other);
+    expect(readableSendError('plain').message).toBe('plain');
+  });
+
+  test('the waiting notice says how the device gets added', () => {
+    expect(GROUP_WAITING_NOTICE).toContain('sends a message');
+  });
+});
 
 const LIFETIME = 'mls validation: The lifetime of the leaf node is not valid';
 

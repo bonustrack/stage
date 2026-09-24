@@ -4,15 +4,28 @@ import { VISIBLE_CONSENT } from './xmtp.sdk.core';
 import { lineOfConv, type DmUnreachableReason, type XmtpConsent } from './xmtp.types';
 import { conversationIsSyncGroup } from './xmtp.readSync';
 import { registerHiddenConv } from './readSyncRegistry';
+import { registerDmRoute, routeConvId } from './dmRoutes';
 import { makeSharedSource } from './storeCore';
 import { report, reported, recover } from './errorPolicy';
 
 type Conv = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
 type ConvClient = Awaited<ReturnType<typeof sdk.client>>;
 
+async function shownDmId(client: ConvClient, dmId: string): Promise<string> {
+  const shown = await sdk.findConv(client, dmId).catch(recover('xmtp.shownDm', null));
+  if (shown && shown.id !== dmId) registerDmRoute(dmId, shown.id);
+  return routeConvId(shown?.id ?? dmId);
+}
+
+export async function rowIdOfConv(convId: string): Promise<string> {
+  const shown = await sdk.findConv(await sdk.client(), convId).catch(recover('xmtp.rowIdOfConv', null));
+  return routeConvId(shown?.id ?? convId);
+}
+
 export async function openDmWithAddress(address: string): Promise<string> {
-  const dm = await sdk.openDm(await sdk.client(), address);
-  return dm.id;
+  const client = await sdk.client();
+  const dm = await sdk.openDm(client, address);
+  return shownDmId(client, dm.id);
 }
 
 interface ExistingDm { convId: string; peerJoined: boolean }
@@ -30,7 +43,7 @@ export async function findExistingDmWithAddress(address: string): Promise<Existi
   const members = await dm.members().catch(recover('xmtp.dmMembers', []));
   const peerInboxId = await lookup.peerInboxId().catch(recover('xmtp.dmPeer', undefined));
   const peerJoined = members.length >= 2 || peerInboxId === client.inboxId;
-  return { convId: dm.id, peerJoined };
+  return { convId: routeConvId(dm.id), peerJoined };
 }
 
 export async function repairDmMembership(convId: string, address: string): Promise<boolean> {
@@ -80,6 +93,12 @@ export async function syncConversationsFromNetwork(): Promise<void> {
   } catch (err) {
     report('xmtp.syncVisible', err);
   }
+}
+
+export async function isGroupWaitingToJoin(convId: string): Promise<boolean> {
+  const conv = await convOfLine(lineOfConv(convId));
+  if (!conv || !sdk.isGroup(conv)) return false;
+  return !(await sdk.isActive(conv));
 }
 
 export async function getConvConsentState(convId: string): Promise<XmtpConsent | null> {

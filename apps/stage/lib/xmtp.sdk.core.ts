@@ -2,7 +2,9 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import type { StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import type { ReactionPayload } from '@stage-labs/client/xmtp/builders';
 import type { JsonCodec } from './xmtpJsonCodecs';
+import { INACTIVE_SEND_MESSAGE, readableSendError } from '@stage-labs/client/xmtp/clientErrors';
 import { convIdOfLine, type XmtpConsent } from './xmtp.types';
+import { registerDmRoute } from './dmRoutes';
 import { recover } from './errorPolicy';
 
 export interface GroupMeta { name?: string; imageUrl?: string }
@@ -67,6 +69,7 @@ interface ClientPrimitives<Cl, C, M> {
   syncVisible: (client: Cl) => Promise<unknown>;
   syncConsent: (client: Cl) => Promise<unknown>;
   openDm: (client: Cl, address: string) => Promise<C>;
+  activeDm: (client: Cl, peerInboxId: string) => Promise<C>;
   dmLookup: (client: Cl, address: string) => Promise<DmLookup<C> | null>;
   forceAddMember: ((client: Cl, convId: string, inboxId: string) => Promise<unknown>) | null;
   inboxIdOfAddress: (client: Cl, address: string) => Promise<string | undefined>;
@@ -82,6 +85,7 @@ interface ClientPrimitives<Cl, C, M> {
 
 interface ConvPrimitives<C, M> {
   isGroup: (conv: C) => boolean;
+  isActive: (conv: C) => Promise<boolean>;
   dmPeerInboxId: (conv: C) => (() => Promise<string>) | null;
   groupName: (conv: C) => Promise<string | undefined>;
   groupInfo: (conv: C) => Promise<GroupInfo>;
@@ -114,4 +118,28 @@ export function convFinder<Cl extends ClientLike, C extends ConvLike, M>(
     const conv = await sdk.findConv(client, convId).catch(recover('xmtp.findConv', null));
     return conv ?? null;
   };
+}
+
+export function sendableFinder<Cl extends ClientLike, C extends ConvLike, M>(
+  sdk: XmtpSdk<Cl, C, M>,
+): (line: string) => Promise<C> {
+  const find = convFinder(sdk);
+  return async (line) => {
+    const conv = await find(line);
+    if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
+    if (await sdk.isActive(conv).catch(recover('xmtp.isActive', true))) return conv;
+    const peerInboxId = sdk.dmPeerInboxId(conv);
+    if (!peerInboxId) throw new Error(INACTIVE_SEND_MESSAGE);
+    const active = await sdk.activeDm(await sdk.client(), await peerInboxId());
+    registerDmRoute(active.id, convIdOfLine(line) ?? conv.id);
+    return active;
+  };
+}
+
+export async function withReadableSendError<T>(send: () => Promise<T>): Promise<T> {
+  try {
+    return await send();
+  } catch (err) {
+    throw readableSendError(err);
+  }
 }

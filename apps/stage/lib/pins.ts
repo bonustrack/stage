@@ -16,6 +16,8 @@ const store = createValueStore<PinOrder>({
 
 export const isPinned = (convId: string): boolean => store.get().includes(convId);
 
+export const loadPinnedOrder = (): Promise<PinOrder> => store.load();
+
 function commit(convId: string, next: PinOrder): PinOrder {
   store.set(next);
   notifyPinChanged({ convId, pinned: next.includes(convId), order: next });

@@ -54,3 +54,23 @@ export function convIdFromTopic(topic: string | undefined): string | null {
   const m = /\/g-([0-9a-fA-F]+)\//.exec(topic);
   return m?.[1] ?? null;
 }
+
+export const GROUP_WAITING_NOTICE =
+  'This device is waiting to be added to this group. That happens automatically when someone in the group sends a ' +
+  'message, or when a member opens Stage (it checks for new devices every 30 minutes).';
+
+export const INACTIVE_SEND_MESSAGE =
+  'This device is not in this conversation yet, so the message was not sent. It is added automatically when ' +
+  'someone in the conversation sends a message.';
+
+const GROUP_INACTIVE = ['GroupInactive', 'Group is inactive', 'inactive group'];
+
+export function isGroupInactive(err: unknown): boolean {
+  const msg = errorMessage(err);
+  return GROUP_INACTIVE.some(sig => msg.includes(sig));
+}
+
+export function readableSendError(err: unknown): Error {
+  if (isGroupInactive(err)) return new Error(INACTIVE_SEND_MESSAGE);
+  return err instanceof Error ? err : new Error(errorMessage(err));
+}

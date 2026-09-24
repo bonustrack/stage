@@ -133,3 +133,63 @@ export function pickSyncGroup<T extends SyncGroupCandidate>(groups: readonly T[]
 export function shouldApplyReadState(localAt: number | undefined, incomingAt: number): boolean {
   return localAt === undefined || incomingAt > localAt;
 }
+
+export interface SyncGroupState extends SyncGroupCandidate {
+  active: boolean;
+}
+
+export function pickPublishGroup<T extends SyncGroupState>(groups: readonly T[]): T | null {
+  const active = groups.filter((g) => g.active).sort((a, b) => a.id.localeCompare(b.id));
+  return active[0] ?? null;
+}
+
+export interface SyncMessage {
+  contentTypeId: string | undefined;
+  content: unknown;
+  sentNs: number;
+}
+
+export interface SyncReplay {
+  reads: ReadStateContent[];
+  pins: PinStateContent[];
+  cleared: ClearedChats | null;
+  latestNs: number;
+}
+
+function latestReads(messages: readonly SyncMessage[]): ReadStateContent[] {
+  const byConv = new Map<string, ReadStateContent>();
+  for (const m of messages) {
+    const state = isReadStateType(m.contentTypeId) ? parseReadState(m.content) : null;
+    const current = state === null ? undefined : byConv.get(state.convId);
+    if (state !== null && (current === undefined || state.at > current.at)) byConv.set(state.convId, state);
+  }
+  return [...byConv.values()];
+}
+
+function pinsSinceLastOrder(messages: readonly SyncMessage[]): PinStateContent[] {
+  const pins = messages
+    .map((m) => (isPinStateType(m.contentTypeId) ? parsePinState(m.content) : null))
+    .filter((p): p is PinStateContent => p !== null)
+    .sort((a, b) => a.at - b.at);
+  const lastOrder = pins.map((p) => p.order !== undefined).lastIndexOf(true);
+  return lastOrder === -1 ? pins : pins.slice(lastOrder);
+}
+
+function mergedCleared(messages: readonly SyncMessage[]): ClearedChats | null {
+  let merged: ClearedChats | null = null;
+  for (const m of messages) {
+    const state = isClearStateType(m.contentTypeId) ? parseClearState(m.content) : null;
+    if (state !== null) merged = mergeClearedChats(merged ?? {}, state.cleared);
+  }
+  return merged;
+}
+
+export function collectSyncReplay(messages: readonly SyncMessage[], afterNs: number): SyncReplay {
+  const fresh = messages.filter((m) => m.sentNs > afterNs);
+  return {
+    reads: latestReads(fresh),
+    pins: pinsSinceLastOrder(fresh),
+    cleared: mergedCleared(fresh),
+    latestNs: fresh.reduce((max, m) => Math.max(max, m.sentNs), afterNs),
+  };
+}

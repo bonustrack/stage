@@ -1,7 +1,8 @@
 import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
-import { isSyncGroupName, type SyncGroupCandidate } from '@stage-labs/client/xmtp/readState';
+import { isSyncGroupName, syncGroupName, type SyncGroupState } from '@stage-labs/client/xmtp/readState';
 import { convOfLine, sdk } from './xmtp.sdk';
 import { lineOfConv } from './xmtp.types';
+import { recover } from './errorPolicy';
 
 type SyncConv = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
 
@@ -9,14 +10,22 @@ export async function conversationIsSyncGroup(conv: SyncConv): Promise<boolean> 
   return isSyncGroupName(await sdk.groupName(conv));
 }
 
-export async function listSyncGroups(): Promise<SyncGroupCandidate[]> {
+export async function listSyncGroups(): Promise<SyncGroupState[]> {
   const all = await sdk.listConvs(await sdk.client());
-  const out: SyncGroupCandidate[] = [];
+  const out: SyncGroupState[] = [];
   for (const conv of all) {
     if (!(await conversationIsSyncGroup(conv))) continue;
-    out.push({ id: conv.id, createdAtNs: sdk.createdAtNs(conv) });
+    const active = await sdk.isActive(conv).catch(recover('readSync.isActive', false));
+    out.push({ id: conv.id, createdAtNs: sdk.createdAtNs(conv), active });
   }
   return out;
+}
+
+export async function isOwnSyncGroup(convId: string, address: string): Promise<boolean> {
+  const conv = await convOfLine(lineOfConv(convId));
+  if (conv?.id !== convId || (await sdk.groupName(conv)) !== syncGroupName(address)) return false;
+  const selfInboxId = (await sdk.client()).inboxId;
+  return (await conv.members()).every((m) => m.inboxId === selfInboxId);
 }
 
 export async function createSyncGroup(name: string): Promise<string> {

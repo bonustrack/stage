@@ -2,7 +2,7 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import { convOfLine, sdk } from './xmtp.sdk';
 import { latestConvMessages } from './xmtp.messages';
 import { PAGE_SIZE, feedResync, throttledInboxSync } from './xmtp.resync.core';
-import { reported } from './errorPolicy';
+import { recover, reported } from './errorPolicy';
 
 export { PAGE_SIZE, prependToFeed, pushToFeedSlice } from './xmtp.resync.core';
 
@@ -16,7 +16,7 @@ export const syncInboxOnce = throttledInboxSync(async () => {
 export async function refreshLatestPage(line: string): Promise<HistoryEntry[] | null> {
   const conv = await convOfLine(line);
   if (!conv) return null;
-  await conv.sync().catch(reported('xmtp.convSync'));
+  if (await sdk.isActive(conv).catch(recover('xmtp.isActive', true))) await conv.sync().catch(reported('xmtp.convSync'));
   return latestConvMessages(conv, line, PAGE_SIZE);
 }
 

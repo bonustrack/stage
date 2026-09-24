@@ -1,22 +1,25 @@
 import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
-import { applyRead, applyUnread } from '@stage-labs/client/xmtp/channelsCache';
+import { applyRead, applyUnread, type CachedChannelRow } from '@stage-labs/client/xmtp/channelsCache';
 import {
-  isClearStateType, isPinStateType, isReadStateType, parseClearState, parsePinState, parseReadState,
-  pickSyncGroup, shouldApplyReadState, syncGroupName, type PinStateContent, type ReadStateContent,
+  collectSyncReplay, isClearStateType, isPinStateType, isReadStateType, pickPublishGroup, shouldApplyReadState,
+  syncGroupName, type PinStateContent, type ReadStateContent, type SyncGroupState, type SyncReplay,
 } from '@stage-labs/client/xmtp/readState';
 import { appStorage } from '../platform/storage';
 import { getActiveAccount } from './accounts';
 import { subscribeAccountEpoch } from './accountEpoch';
 import { getCachedRows, setCachedRows } from './channelsCache';
-import { applyRemotePinState } from './pins';
+import { applyRemotePinState, loadPinnedOrder } from './pins';
 import { applyRemoteClearedChats, ensureClearedChatsLoaded, getClearedChats } from './clearedChats';
 import {
   isHiddenConv, onClearedChatsChanged, onPinChanged, onReadStateChanged, registerHiddenConv,
   type PinChange, type ReadStateChange,
 } from './readSyncRegistry';
 import { setLastReadNs, setMarkedUnreadFlag } from './xmtp.client';
+import { rowIdOfConv } from './xmtp.conv';
 import { xmtpSendJson } from './xmtp.messages';
-import { createSyncGroup, listSyncGroups, recentSyncMessages, syncConversation } from './xmtp.readSync';
+import {
+  createSyncGroup, isOwnSyncGroup, listSyncGroups, recentSyncMessages, syncConversation,
+} from './xmtp.readSync';
 import { waitForXmtpReady } from './xmtp.state';
 import { subscribeAllMessages } from './xmtp.stream';
 import { lineOfConv, type StreamMsg } from './xmtp.types';
@@ -34,71 +37,99 @@ let bootToken = 0;
 let groupId: string | null = null;
 const localAt = new Map<string, number>();
 const pendingPublish = new Map<string, ReturnType<typeof setTimeout>>();
-
-function patchRows(state: ReadStateContent): void {
-  const rows = getCachedRows();
-  if (!rows) return;
-  const next = state.markedUnread ? applyUnread(rows, state.convId) : applyRead(rows, state.convId, state.lastReadNs);
-  if (next !== null) setCachedRows(next);
-}
+const nudgedFrom = new Set<string>();
 
 function readKey(convId: string): string { return `read:${convId}`; }
 function pinKey(convId: string): string { return `pin:${convId}`; }
 const PIN_ORDER_KEY = 'pinOrder';
 
-async function applyReadMessage(m: RowMessage): Promise<void> {
-  const state = parseReadState(m.content);
-  if (state === null || !shouldApplyReadState(localAt.get(readKey(state.convId)), state.at)) return;
-  localAt.set(readKey(state.convId), state.at);
-  await setLastReadNs(state.convId, state.lastReadNs);
-  await setMarkedUnreadFlag(state.convId, state.markedUnread);
-  patchRows(state);
+function patchedRows<R extends CachedChannelRow>(rows: R[], state: ReadStateContent): R[] {
+  const next = state.markedUnread ? applyUnread(rows, state.convId) : applyRead(rows, state.convId, state.lastReadNs);
+  return next ?? rows;
 }
 
-async function applyPinMessage(m: RowMessage): Promise<void> {
-  const state = parsePinState(m.content);
-  if (state === null) return;
-  const key = state.order === undefined ? pinKey(state.convId) : PIN_ORDER_KEY;
-  if (!shouldApplyReadState(localAt.get(key), state.at)) return;
-  localAt.set(key, state.at);
-  await applyRemotePinState(state);
+async function readStateForRows(state: ReadStateContent): Promise<ReadStateContent> {
+  return { ...state, convId: await rowIdOfConv(state.convId) };
 }
 
-async function applyClearMessage(m: RowMessage): Promise<void> {
-  const state = parseClearState(m.content);
-  if (state !== null) await applyRemoteClearedChats(state.cleared);
+async function pinStateForRows(state: PinStateContent): Promise<PinStateContent> {
+  const convId = await rowIdOfConv(state.convId);
+  if (state.order === undefined) return { ...state, convId };
+  const order = [...new Set(await Promise.all(state.order.map(rowIdOfConv)))];
+  return { ...state, convId, order };
 }
 
-async function applyMessage(m: RowMessage): Promise<void> {
-  if (isReadStateType(m.contentTypeId)) await applyReadMessage(m);
-  else if (isPinStateType(m.contentTypeId)) await applyPinMessage(m);
-  else if (isClearStateType(m.contentTypeId)) await applyClearMessage(m);
+async function applyReadStates(remote: readonly ReadStateContent[]): Promise<void> {
+  const reads = await Promise.all(remote.map(readStateForRows));
+  const before = getCachedRows();
+  let rows = before;
+  for (const state of reads) {
+    if (!shouldApplyReadState(localAt.get(readKey(state.convId)), state.at)) continue;
+    localAt.set(readKey(state.convId), state.at);
+    await setLastReadNs(state.convId, state.lastReadNs);
+    await setMarkedUnreadFlag(state.convId, state.markedUnread);
+    if (rows) rows = patchedRows(rows, state);
+  }
+  if (rows && rows !== before) setCachedRows(rows);
 }
 
-async function ensureGroup(address: string): Promise<string> {
-  if (groupId !== null) return groupId;
+async function applyPinStates(remote: readonly PinStateContent[]): Promise<void> {
+  for (const state of await Promise.all(remote.map(pinStateForRows))) {
+    const key = state.order === undefined ? pinKey(state.convId) : PIN_ORDER_KEY;
+    if (!shouldApplyReadState(localAt.get(key), state.at)) continue;
+    localAt.set(key, state.at);
+    await applyRemotePinState(state);
+  }
+}
+
+async function applyReplay(replay: SyncReplay): Promise<void> {
+  await applyReadStates(replay.reads);
+  await applyPinStates(replay.pins);
+  if (replay.cleared !== null) await applyRemoteClearedChats(replay.cleared);
+}
+
+function isStateMessage(m: RowMessage): boolean {
+  return isReadStateType(m.contentTypeId) || isPinStateType(m.contentTypeId) || isClearStateType(m.contentTypeId);
+}
+
+async function knownSyncGroups(): Promise<SyncGroupState[]> {
   const groups = await listSyncGroups();
   for (const g of groups) registerHiddenConv(g.id);
-  const chosen = pickSyncGroup(groups);
+  return groups;
+}
+
+async function chooseGroup(address: string, groups: readonly SyncGroupState[]): Promise<string> {
+  const chosen = pickPublishGroup(groups);
   const id = chosen === null ? await createSyncGroup(syncGroupName(address)) : chosen.id;
   registerHiddenConv(id);
   groupId = id;
   return id;
 }
 
-async function replay(accountId: string, id: string): Promise<void> {
-  await syncConversation(id).catch(reported('readSync.sync'));
-  const cursorKey = CURSOR_PREFIX + accountId;
+async function ensureGroup(address: string): Promise<string> {
+  return groupId ?? chooseGroup(address, await knownSyncGroups());
+}
+
+interface GroupReplay { id: string; cursorKey: string; cursor: number; messages: RowMessage[] }
+
+async function readGroup(accountId: string, group: SyncGroupState): Promise<GroupReplay> {
+  if (group.active) await syncConversation(group.id).catch(reported('readSync.sync'));
+  const cursorKey = `${CURSOR_PREFIX}${accountId}.${group.id}`;
   const cursor = Number(await appStorage.get(cursorKey).catch(recover('readSync.cursor', null))) || 0;
-  const messages = (await recentSyncMessages(id, cursor === 0 ? FIRST_REPLAY_LIMIT : REPLAY_LIMIT))
-    .filter((m) => m.sentNs > cursor)
-    .sort((a, b) => a.sentNs - b.sentNs);
-  let latest = cursor;
-  for (const m of messages) {
-    await applyMessage(m);
-    latest = Math.max(latest, m.sentNs);
+  const messages = await recentSyncMessages(group.id, cursor === 0 ? FIRST_REPLAY_LIMIT : REPLAY_LIMIT)
+    .catch(recover<RowMessage[]>('readSync.messages', []));
+  return { id: group.id, cursorKey, cursor, messages: messages.filter((m) => m.sentNs > cursor) };
+}
+
+async function replay(accountId: string, target: string, groups: readonly SyncGroupState[]): Promise<void> {
+  const batches: GroupReplay[] = [];
+  for (const group of groups) batches.push(await readGroup(accountId, group));
+  await applyReplay(collectSyncReplay(batches.flatMap((b) => b.messages), 0));
+  for (const b of batches) {
+    const latest = b.messages.reduce((max, m) => Math.max(max, m.sentNs), b.cursor);
+    if (latest > b.cursor) await appStorage.set(b.cursorKey, String(latest)).catch(ignored(undefined, 'cache'));
+    if (b.id !== target && b.messages.some(isStateMessage)) nudgeFrom(b.id);
   }
-  if (latest > cursor) await appStorage.set(cursorKey, String(latest)).catch(ignored(undefined, 'cache'));
 }
 
 async function boot(): Promise<void> {
@@ -110,8 +141,9 @@ async function boot(): Promise<void> {
   if (rec === null || token !== bootToken) return;
   await ensureClearedChatsLoaded();
   try {
-    const id = await ensureGroup(rec.address);
-    if (token === bootToken) await replay(rec.id, id);
+    const groups = await knownSyncGroups();
+    const target = await chooseGroup(rec.address, groups);
+    if (token === bootToken) await replay(rec.id, target, groups);
   } catch (err) {
     report('readSync.boot', err);
   }
@@ -129,6 +161,24 @@ async function withGroup(send: (groupId: string) => Promise<unknown>): Promise<v
 
 function publish<T>(codec: JsonCodec<T>, content: T): void {
   void withGroup((id) => xmtpSendJson(lineOfConv(id), codec, content));
+}
+
+async function publishSnapshot(target: string): Promise<void> {
+  const line = lineOfConv(target);
+  await xmtpSendJson(line, CLEAR_STATE_CODEC, { cleared: getClearedChats() });
+  const order = await loadPinnedOrder();
+  const first = order[0];
+  if (first === undefined) return;
+  const at = Date.now();
+  localAt.set(PIN_ORDER_KEY, at);
+  await xmtpSendJson(line, PIN_STATE_CODEC, { convId: first, pinned: true, order: [...order], at });
+}
+
+function nudgeFrom(sourceId: string): void {
+  if (nudgedFrom.has(sourceId)) return;
+  nudgedFrom.add(sourceId);
+  groupId = null;
+  void withGroup((target) => (target === sourceId ? Promise.resolve() : publishSnapshot(target)));
 }
 
 function debounce(key: string, fn: () => void): void {
@@ -159,9 +209,23 @@ function queueClearedPublish(): void {
   debounce(CLEARED_KEY, () => { publish(CLEAR_STATE_CODEC, { cleared: getClearedChats() }); });
 }
 
+async function adoptSyncGroup(convId: string): Promise<boolean> {
+  if (isHiddenConv(convId)) return true;
+  const rec = await getActiveAccount().catch(recover('readSync.adopt', null));
+  if (rec === null || !(await isOwnSyncGroup(convId, rec.address).catch(recover('readSync.adopt', false)))) return false;
+  registerHiddenConv(convId);
+  return true;
+}
+
+async function onStateMessage(convId: string, m: RowMessage): Promise<void> {
+  if (!(await adoptSyncGroup(convId))) return;
+  await applyReplay(collectSyncReplay([m], 0));
+  if (groupId !== null && convId !== groupId) nudgeFrom(convId);
+}
+
 function onStreamMessage(m: StreamMsg): void {
-  if (!isHiddenConv(m.convId)) return;
-  void applyMessage(m.msg);
+  if (m.convId === null || !isStateMessage(m.msg)) return;
+  void onStateMessage(m.convId, m.msg).catch(reported('readSync.stream'));
 }
 
 export function startReadSync(): void {
@@ -171,6 +235,6 @@ export function startReadSync(): void {
   onPinChanged(queuePinPublish);
   onClearedChatsChanged(queueClearedPublish);
   subscribeAllMessages(onStreamMessage, { includeHidden: true });
-  subscribeAccountEpoch(() => { void boot(); });
+  subscribeAccountEpoch(() => { nudgedFrom.clear(); void boot(); });
   void boot();
 }

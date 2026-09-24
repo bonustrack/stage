@@ -12,6 +12,7 @@ import { hydrateCachedRows, setCachedRows, summarizeConversation } from '../../m
 import { hydratePeerProfiles } from '../../lib/peerProfiles';
 import { perfLog, perfTime } from '../../lib/perf';
 import type { Conversation } from '@xmtp/react-native-sdk';
+import { dmIdsByPeer, uniqueByConvId } from '@stage-labs/client/xmtp/dmRoutes';
 import { makeMsgStreamHandler } from './stream';
 import { homeRows, updateHomeRows } from './state';
 import type { Row } from './model';
@@ -22,7 +23,7 @@ import { report, recover, attempt } from '../../lib/errorPolicy';
 const INIT_TIMEOUT_MS = 30_000;
 
 async function summarize(conv: Conversation, selfInboxId: string, alreadySynced = false): Promise<Row> {
-  return { ...await summarizeConversation(conv, selfInboxId, alreadySynced) };
+  return { ...await summarizeConversation(conv, selfInboxId, alreadySynced, dmIdsByPeer(homeRows() ?? [])) };
 }
 
 interface SyncArgs {
@@ -62,7 +63,7 @@ function makeRefreshers(
     )).filter((r): r is Row => r !== null);
     if (run.cancelled) return false;
     summarized.sort((a, b) => (b.lastTs ?? 0) - (a.lastTs ?? 0));
-    setCachedRows(summarized);
+    setCachedRows(uniqueByConvId(summarized));
     lastRefreshAt = Date.now();
     clearTimeout(run.initTimer);
     return true;

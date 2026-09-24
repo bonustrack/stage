@@ -4,7 +4,8 @@ import {
   type EncryptedAttachment, type RemoteAttachment,
 } from '@xmtp/browser-sdk';
 import { stripMetadataBytes, isStrippableImage } from '@stage-labs/client/image/stripMetadata';
-import { convOfLine } from './xmtp.sdk.web';
+import { sendableConvOfLine } from './xmtp.sdk.web';
+import { withReadableSendError } from './xmtp.sdk.core';
 import { withMainThreadWasm } from './xmtp.wasm.web';
 import { type LocalAttachmentInput } from './xmtp.types';
 import { SWARM_UPLOAD_MAX_BYTES, swarmToHttp, tooLargeError, uploadFormToSwarmy } from './swarmy';
@@ -77,12 +78,11 @@ export async function xmtpSendMultiRemoteAttachment(
   line: string, files: LocalAttachmentInput[],
 ): Promise<string> {
   if (files.length === 0) throw new Error('No attachments to send.');
-  const conv = await convOfLine(line);
-  if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
+  const conv = await withReadableSendError(() => sendableConvOfLine(line));
 
   const infos: RemoteAttachment[] = [];
   for (const f of files) infos.push(await remoteAttachmentOf(f));
-  return await conv.sendMultiRemoteAttachment({ attachments: infos });
+  return await withReadableSendError(() => conv.sendMultiRemoteAttachment({ attachments: infos }));
 }
 
 export async function resolveRemoteAttachment(info: RemoteAttachment): Promise<{

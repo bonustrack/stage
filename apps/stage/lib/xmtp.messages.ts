@@ -1,6 +1,7 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
 import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
-import { convOfLine, sdk } from './xmtp.sdk';
+import { convOfLine, sdk, sendableConvOfLine } from './xmtp.sdk';
+import { withReadableSendError } from './xmtp.sdk.core';
 import { makeSenders } from './xmtp.send.core';
 
 export type ConvHandle = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
@@ -23,20 +24,19 @@ export async function olderConvMessages(line: string, beforeTsMs: number, limit:
   return older.map(m => sdk.envelopeOf(m, line));
 }
 
-async function requireConv(line: string): Promise<ConvHandle> {
-  const conv = await convOfLine(line);
-  if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
-  return conv;
+function sendTo<A extends unknown[]>(
+  send: (conv: ConvHandle, ...args: A) => Promise<string>,
+): (line: string, ...args: A) => Promise<string> {
+  return (line, ...args) => withReadableSendError(async () => send(await sendableConvOfLine(line), ...args));
 }
 
 export const {
   xmtpSendText, xmtpReact, xmtpSendJson, xmtpSendPoll, xmtpSendSignatureRequest, xmtpSendSignatureReference,
   xmtpSendTxRequest, xmtpSendTxReference, xmtpVote, xmtpOpenAnswer, xmtpReply, xmtpSendAttachment,
 } = makeSenders({
-  text: async (line, text) => sdk.send.text(await requireConv(line), text),
-  reaction: async (line, reaction) => sdk.send.reaction(await requireConv(line), reaction),
-  reply: async (line, replyTo, text) => sdk.send.reply(await requireConv(line), replyTo, text),
-  json: async (line, codec, content) => sdk.send.json(await requireConv(line), codec, content),
-  attachment: async (line, filename, mimeType, dataB64) =>
-    sdk.send.attachment(await requireConv(line), filename, mimeType, dataB64),
+  text: sendTo(sdk.send.text),
+  reaction: sendTo(sdk.send.reaction),
+  reply: sendTo(sdk.send.reply),
+  json: (line, codec, content) => withReadableSendError(async () => sdk.send.json(await sendableConvOfLine(line), codec, content)),
+  attachment: sendTo(sdk.send.attachment),
 });

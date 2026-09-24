@@ -13,6 +13,7 @@ import {
   channelRowTitle, countUnreadEntries, initialMarkedUnread,
   ROW_PREVIEW_MAX_CHARS, type RowMessage,
 } from '@stage-labs/client/xmtp/summarizeRow';
+import { dmRoutesReady, dmRowIdOf } from '../../lib/dmRoutes';
 import { reported, recover } from '../../lib/errorPolicy';
 export interface ConversationView {
   convId: string;
@@ -94,11 +95,15 @@ async function resolveMarkedUnread(
   return initialMarkedUnread(inputs);
 }
 
+const NO_KNOWN_DMS: ReadonlyMap<string, string> = new Map();
+
 export async function summarizeConversation(
-  conv: Conversation, selfInboxId: string, alreadySynced = false,
+  conv: Conversation, selfInboxId: string, alreadySynced = false, knownDmIds = NO_KNOWN_DMS,
 ): Promise<ConversationView> {
   if (!alreadySynced) await conv.sync().catch(reported('conversation.sync'));
   const peerAddress = await peerEthAddressOfDm(conv);
+  await dmRoutesReady().catch(reported('conversation.dmRoutes'));
+  const convId = dmRowIdOf(conv.id, peerAddress, knownDmIds);
   const dm = peerAddress !== null;
   const msgs = await rowMessagesOf(conv, dm ? 6 : 2).catch(recover('conversation.rowMessages', []));
   const last = pickLastMessage(msgs, dm);
@@ -114,13 +119,13 @@ export async function summarizeConversation(
   const lastSenderAddress = lastSenderAddressOf(last, inboxToAddr);
   const lastFromSelf = !!last && last.senderInboxId === selfInboxId;
   const { avatarUri, avatarAddress } = rowAvatar(conv, peerAddress, groupMeta.imageUrl);
-  const lastReadNs = await getLastReadNs(conv.id);
+  const lastReadNs = await getLastReadNs(convId);
   const unreadCount = countUnreadEntries(msgs, lastReadNs, selfInboxId);
-  const markedUnread = await resolveMarkedUnread(conv.id, {
+  const markedUnread = await resolveMarkedUnread(convId, {
     lastReadNs, unreadCount, hasLast: !!last, lastFromSelf,
   });
   return {
-    convId: conv.id,
+    convId,
     title,
     lastTs: last?.sentNs ? Math.floor(last.sentNs / 1_000_000) : null,
     lastBubbleTs: lastBubbleTsOf(msgs, dm),
