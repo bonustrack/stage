@@ -37,6 +37,7 @@ interface ChannelRowProps {
   onPressIn?: () => void;
   onLongPress?: (point?: MenuPoint) => void;
   highlightQuery?: string;
+  accessory?: React.ReactNode;
 }
 
 export const CHANNEL_ROW_HEIGHT = 67;
@@ -101,7 +102,7 @@ function MetaColumn({ params, trailing }: {
 }
 
 const CHIP_TEXT_SIZE = 'sm';
-const CHIP_PADDING = { x: 7, y: 2 } as const;
+const CHIP_PADDING = { x: 7, y: 3 } as const;
 const NATIVE_CHIP_BASELINE_DROP = 4;
 
 function WebChip({ label, fg, chipBg }: {
@@ -190,7 +191,7 @@ function ChannelRowBase({
   title, avatarAddress, avatarUri, square,
   lastPreview, timestamp, subtitle, unreadCount = 0, markedUnread,
   pinned, hasDraft, draftText, active,
-  onPress, onPressIn, onLongPress, labels, highlightQuery,
+  onPress, onPressIn, onLongPress, labels, highlightQuery, accessory,
 }: ChannelRowProps): React.ReactElement {
   const { link: head, bg, border } = usePalette();
   const params = channelRowModel({
@@ -233,6 +234,7 @@ function ChannelRowBase({
             )}
           />
         </Col>
+        {accessory}
       </Row>
     </Pressable>
   );

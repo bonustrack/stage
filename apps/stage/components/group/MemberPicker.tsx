@@ -1,9 +1,6 @@
 
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { Icon } from '@stage-labs/kit/react-native/icon';
 import { shortAddress } from '../../modules/messaging';
 import { resolveHandleToAddress } from '../../lib/resolveHandle';
 import {
@@ -12,11 +9,11 @@ import {
 import { capabilities } from '../../lib/capabilities';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { useSafeAreaInsets } from '../../lib/safeArea';
-import { Avatar } from '../Avatar';
-import { Box, Col, Row } from '../layout';
+import { Box, Col } from '../layout';
 import { FormField } from '../FormField';
 import { useContacts, type Contact } from '../../lib/useContacts';
 import { ContactSuggestions } from './ContactSuggestions';
+import { pickerRows } from './MemberPicker.model';
 
 export interface Member {
   address: string;
@@ -99,73 +96,22 @@ export function MemberPicker({ state, dark, exclude = [] }: {
   dark: boolean;
   exclude?: string[];
 }): React.ReactElement {
-  const { link: head, text: sub, border } = usePalette();
-  const {
-    members, entry, setEntry, adding, addMember, removeMember,
-    toggleContact, selectedAddresses,
-  } = state;
+  const { members, entry, setEntry, adding, addMember, toggleContact, selectedAddresses } = state;
   const contacts = useContacts(exclude, entry);
-
+  const rows = useMemo(
+    () => pickerRows(members, contacts, (m) => ({ address: m.address, name: m.label })),
+    [members, contacts],
+  );
+  const addButton = entry.trim() === '' ? undefined : (
+    <Button color="secondary" variant="solid" size="sm" dark={dark} loading={adding} onPress={() => { void addMember(); }} label="Add" />
+  );
   return (
-    <>
-      <Col gap={6}>
-        <Row gap={8} align="center">
-          <Box flex={1}>
-            <FormField label="Add members" placeholder={RECIPIENT_PLACEHOLDER} value={entry} onChangeText={setEntry}
-              onSubmit={() => { void addMember(); }}
-              inputProps={{ autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'done' }} />
-          </Box>
-          <Button
-            color="secondary"
-            variant="solid"
-            size="md"
-            dark={dark}
-            loading={adding}
-            disabled={!entry.trim()}
-            onPress={() => { void addMember(); }}
-            label="Add"
-/>
-        </Row>
-      </Col>
-
-      <ContactSuggestions
-        contacts={contacts}
-        selected={selectedAddresses}
-        onToggle={toggleContact}
-/>
-
-      {members.length> 0 && (
-        <Col gap={8}>
-          {members.map(m => (
-            <Row surface="raised" radius="lg" padding={8}
-              key={m.address}
-              align="center"
-              gap={10}
-              style={{ borderWidth: 1, borderColor: border }}
->
-              <Avatar address={m.address} size={32} style={{ backgroundColor: border }}/>
-              <Col flex={1} gap={1}>
-                <Text size="md" numberOfLines={1} color={head}>
-                  {m.label}
-                </Text>
-                {m.label !== shortAddress(m.address) && (
-                  <Text size="xs" numberOfLines={1} role="secondary">
-                    {shortAddress(m.address)}
-                  </Text>
-                )}
-              </Col>
-              <Pressable
-                onPress={() => { removeMember(m.address); }}
-                hitSlop={6}
-                style={{ width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: border }}
->
-                <Icon name="x" size={16} color={sub}/>
-              </Pressable>
-            </Row>
-          ))}
-        </Col>
-      )}
-    </>
+    <Col gap={12}>
+      <FormField label="Search" placeholder={RECIPIENT_PLACEHOLDER} value={entry} onChangeText={setEntry}
+        onSubmit={() => { void addMember(); }} trailing={addButton}
+        inputProps={{ autoFocus: true, autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'done' }} />
+      <ContactSuggestions contacts={rows} selected={selectedAddresses} onToggle={toggleContact} />
+    </Col>
   );
 }
 

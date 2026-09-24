@@ -76,7 +76,6 @@ interface ChannelsOverflowItem {
 }
 
 export const CHANNELS_OVERFLOW_ITEMS: ChannelsOverflowItem[] = [
-  { id: 'new', label: 'New group', icon: 'plus' },
   { id: 'copy-address', label: 'Copy address', icon: 'copy' },
   { id: 'profile', label: 'Profile', icon: 'user' },
   { id: 'settings', label: 'Settings', icon: 'cog' },
@@ -95,4 +94,10 @@ export function deriveSortedRows(i: SortInputs): Row[] {
     unreadOnly: i.unreadOnly,
   });
   return sortChannelRows(filtered, i.pinned);
+}
+
+export function searchBarLabels(matching: string[], enabled: ReadonlySet<string>): string[] {
+  const keys = new Set(matching.map(l => l.toLowerCase()));
+  const kept = [...enabled].filter(l => !keys.has(l.toLowerCase()));
+  return [...matching, ...kept].sort((a, b) => a.localeCompare(b));
 }

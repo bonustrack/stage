@@ -14,6 +14,7 @@ import { HomeError, HomeSpinner, useChannelRowRenderer } from './parts';
 import { ChannelsList } from './list';
 import { useChannelsSync } from './sync';
 import { deriveLabels, useHomeFilters } from './labelbar';
+import { searchBarLabels } from './model';
 import { filterChannelRows } from '@stage-labs/client/xmtp/channelsFilter';
 import { isRowCleared } from '@stage-labs/client/xmtp/readState';
 import { useClearedChats } from '../../lib/clearedChats';
@@ -41,7 +42,10 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
     () => deriveSortedRows({ rows, enabledLabels, unreadOnly, pinned }),
     [rows, pinned, enabledLabels, unreadOnly],
   );
-  const barLabels = useMemo(() => deriveLabels(rows ?? []), [rows]);
+  const barLabels = useMemo(
+    () => searchBarLabels(deriveLabels(filterChannelRows(rows ?? [], { query })), enabledLabels),
+    [rows, query, enabledLabels],
+  );
   const showFilterBar = channelsFilterBarVisible({
     labelCount: barLabels.length,
     unreadOnly,

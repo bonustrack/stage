@@ -26,8 +26,12 @@ describe('isSplitRoute', () => {
     expect(isSplitRoute('/contacts')).toBe(true);
   });
 
+  test('add members keeps the sidebar', () => {
+    expect(isSplitRoute('/add-members')).toBe(true);
+  });
+
   test('other stack routes stay single-column', () => {
-    expect(isSplitRoute('/new-group')).toBe(false);
+    expect(isSplitRoute('/user/abc')).toBe(false);
   });
 });
 

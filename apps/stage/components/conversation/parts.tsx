@@ -70,13 +70,11 @@ export function ConvTopnavIdentity({ peerAddr, groupImage, channelId, isGroup, b
   );
 }
 
-function ReactionStrip({ stripBg, border, onReact }: {
-  stripBg: string; border: string; onReact: (e: string) => void;
+function ReactionStrip({ stripBg, onReact }: {
+  stripBg: string; onReact: (e: string) => void;
 }): React.ReactElement {
-  const edge = { width: 1, color: border };
   return (
-    <Row background={stripBg} radius="full" maxWidth={'100%'} padding={{ x: 10, y: 6 }} align="center" gap={4}
-      border={{ top: edge, right: edge, bottom: edge, left: edge }} style={MENU_SHADOW}>
+    <Row background={stripBg} radius="full" padding={{ x: 10, y: 6 }} align="center" gap={4} style={{ alignSelf: 'flex-start', ...MENU_SHADOW }}>
       {REACT_PRESETS.map(e => (
         <Pressable key={e} onPress={() => { onReact(e); }} hitSlop={4} style={{ paddingHorizontal: 2 }}>
           <Text size="5xl">{e}</Text>
@@ -154,7 +152,7 @@ export function BubbleActionMenu({
     <ActionDropdown hasText={!!target?.text} dark={dark} on={{ reply: onReply, copy: onCopy, select: onSelect, shareLink: onShareLink }} />
   );
   const strip = (
-    <ReactionStrip stripBg={pal.inputBg} border={pal.border} onReact={reactAndClose} />
+    <ReactionStrip stripBg={pal.border} onReact={reactAndClose} />
   );
 
   if (anchored && anchor.point) {

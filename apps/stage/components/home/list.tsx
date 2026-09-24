@@ -18,6 +18,8 @@ import { homeRows, type ScrollRefs } from './state';
 import type { Row } from './model';
 import { attempt } from '../../lib/errorPolicy';
 import { useHover } from '../hover';
+import { HoverTooltip } from '../HoverTooltip';
+import { NewChatModal } from './NewChatModal';
 
 interface ChannelsListProps {
   panRef?: import('../SwipeTabs.types').SimultaneousRefs;
@@ -47,14 +49,21 @@ function HomeTopnavRight({ head, router, onOpenSearch }: {
 }): React.ReactElement {
   const { link } = usePalette();
   const search = useHover();
+  const compose = useHover();
+  const [composeOpen, setComposeOpen] = useState(false);
   return (
     <>
-      <Pressable onPress={onOpenSearch} hitSlop={8} {...search.hoverProps}>
+      <Pressable onPress={onOpenSearch} hitSlop={8} accessibilityLabel="Search" {...search.hoverProps}>
         <Icon name="search" size={24} color={search.hovered ? link : head}/>
       </Pressable>
+      <HoverTooltip label="New chat" placement="below">
+        <Pressable onPress={() => { setComposeOpen(true); }} hitSlop={8} accessibilityLabel="New chat" {...compose.hoverProps}>
+          <Icon name="pencilAlt" size={24} color={compose.hovered ? link : head}/>
+        </Pressable>
+      </HoverTooltip>
+      <NewChatModal visible={composeOpen} onClose={() => { setComposeOpen(false); }} />
       <HomeOverflowMenu
         color={head}
-        onNewGroup={() => { router.push('/new-group'); }}
         onProfile={() => {
           void getActiveAccount().then(acct => {
             if (acct?.address) router.push(profileLinkOf(acct.address));

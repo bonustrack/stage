@@ -5,7 +5,6 @@ import { capabilities } from '../../lib/capabilities';
 
 interface HomeOverflowMenuProps {
   color: string;
-  onNewGroup: () => void;
   onProfile: () => void;
   onSettings: () => void;
 }
@@ -17,9 +16,9 @@ function copyActiveAddress(): void {
   });
 }
 
-export function HomeOverflowMenu({ color, onNewGroup, onProfile, onSettings }: HomeOverflowMenuProps): React.ReactElement {
+export function HomeOverflowMenu({ color, onProfile, onSettings }: HomeOverflowMenuProps): React.ReactElement {
   const handlers: Record<string, () => void> = {
-    new: onNewGroup, 'copy-address': copyActiveAddress, profile: onProfile, settings: onSettings,
+    'copy-address': copyActiveAddress, profile: onProfile, settings: onSettings,
   };
   return (
     <OverflowMenu color={color} items={CHANNELS_OVERFLOW_ITEMS}

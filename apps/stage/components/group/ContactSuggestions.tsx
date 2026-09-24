@@ -1,16 +1,13 @@
 
-import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Icon } from '@stage-labs/kit/react-native/icon';
-import { Image } from '@stage-labs/kit/react-native/image';
-import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
-import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
-import { stampAvatarUrl } from '@stage-labs/kit/avatar';
+import { MODAL } from '@stage-labs/kit/react-native/modal';
 import { ON_PRIMARY_COLOR } from '../../lib/uiColors';
 import { usePalette } from '../../lib/theme';
 import { shortAddress } from '../../modules/messaging';
 import type { Contact } from '../../lib/useContacts';
-import { Col, Row } from '../layout';
+import { Box, Row } from '../layout';
+import { ChannelRow } from '../ChannelRow';
 
 function SuggestionCheck({ selected, checkBackground, dark }: {
   selected: boolean; checkBackground: string; dark: boolean;
@@ -40,28 +37,6 @@ function SuggestionCheck({ selected, checkBackground, dark }: {
   );
 }
 
-function SuggestionRow({ contact, selected, checkBackground, dark, onToggle }: {
-  contact: Contact; selected: boolean; checkBackground: string; dark: boolean;
-  onToggle: (contact: Contact) => void;
-}): React.ReactElement {
-  const short = shortAddress(contact.address);
-  const handle = contact.name !== short ? short : undefined;
-  return (
-    <ListViewItem align="center" gap={10} dark={dark} onPress={() => { onToggle(contact); }}>
-      <Row align="center" gap={10} flex={1}>
-        <Image src={stampAvatarUrl(contact.address, 80)} size={36} radius="full" />
-        <Col gap={1} flex={1}>
-          <Text value={contact.name} weight="semibold" truncate />
-          {handle === undefined ? null : (
-            <Caption value={handle} color="secondary" truncate />
-          )}
-        </Col>
-        <SuggestionCheck selected={selected} checkBackground={checkBackground} dark={dark} />
-      </Row>
-    </ListViewItem>
-  );
-}
-
 export function ContactSuggestions({
   contacts, selected, onToggle,
 }: {
@@ -72,24 +47,22 @@ export function ContactSuggestions({
   const { link: head } = usePalette();
   const dark = useKitScheme() === 'dark';
   if (contacts.length === 0) return null;
-
   return (
-    <Col gap={6}>
-      <Text size="xs" role="secondary">
-        Suggested contacts
-      </Text>
-      <ListView dark={dark}>
-        {contacts.map((c) => (
-          <SuggestionRow
+    <Box margin={{ x: -MODAL.padding }}>
+      {contacts.map((c) => {
+        const short = shortAddress(c.address);
+        return (
+          <ChannelRow
             key={c.address}
-            contact={c}
-            selected={selected.has(c.address)}
-            checkBackground={head}
-            dark={dark}
-            onToggle={onToggle}
+            title={c.name}
+            avatarAddress={c.address}
+            square={false}
+            subtitle={c.name !== short ? short : null}
+            onPress={() => { onToggle(c); }}
+            accessory={<SuggestionCheck selected={selected.has(c.address.toLowerCase())} checkBackground={head} dark={dark} />}
           />
-        ))}
-      </ListView>
-    </Col>
+        );
+      })}
+    </Box>
   );
 }

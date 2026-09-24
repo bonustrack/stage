@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Caption } from '@stage-labs/kit/react-native/caption';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import type { PickedFile } from '@stage-labs/kit/react-native/file-picker';
-import { Box, Col, PAGE_GUTTER } from '../layout';
+import { Box, Col } from '../layout';
 import { FormField } from '../FormField';
-import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { useEffectiveColorScheme } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
 import { getPeerDescription, getPeerDisplayName } from '../../lib/peerProfiles';
 import { saveBasenameProfile, type ProfileChanges } from '../../lib/profileWrite';
@@ -22,7 +21,6 @@ function pictureChanges(picture: ProfilePicture): Pick<ProfileChanges, 'image' |
 export function EditProfileSection({ address, name, picture, onSaved }: {
   address: string; name: string; picture: ProfilePicture; onSaved: () => void;
 }): React.ReactElement {
-  const { text: fg } = usePalette();
   const dark = useEffectiveColorScheme() === 'dark';
   const current = { displayName: getPeerDisplayName(address), description: getPeerDescription(address) };
   const [draft, setDraft] = useState<ProfileDraft>(() => draftFrom(current));
@@ -51,13 +49,12 @@ export function EditProfileSection({ address, name, picture, onSaved }: {
 
   return (
     <Col gap={8}>
-      <Caption color={fg} style={{ paddingHorizontal: PAGE_GUTTER }}>EDIT PROFILE</Caption>
-      <Col padding={{ x: PAGE_GUTTER }} gap={8}>
+      <Col gap={8}>
         <FormField label="Display name" placeholder="How people see you" value={draft.displayName} onChangeText={(v) => { setDraft({ ...draft, displayName: v }); }} disabled={busy} />
         <FormField label="About" placeholder="A few words about you" multiline value={draft.description} onChangeText={(v) => { setDraft({ ...draft, description: v }); }} disabled={busy} />
       </Col>
-      {problem ?? status ? <Box padding={{ x: PAGE_GUTTER }}><Text value={problem ?? status ?? ''} size="md" color="secondary" /></Box> : null}
-      <Box padding={{ x: PAGE_GUTTER, top: 8 }}>
+      {problem ?? status ? <Text value={problem ?? status ?? ''} size="md" color="secondary" /> : null}
+      <Box padding={{ top: 8 }}>
         <Button label={busy ? 'Saving…' : 'Save'} block size="lg" color="primary" variant="solid" dark={dark}
           disabled={busy || problem !== null} onPress={save} />
       </Box>

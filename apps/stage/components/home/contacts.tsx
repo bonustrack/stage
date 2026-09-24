@@ -3,16 +3,12 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { isAddress } from 'viem';
 import { Caption } from '@stage-labs/kit/react-native/caption';
-import { Image } from '@stage-labs/kit/react-native/image';
-import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
-import { Text } from '@stage-labs/kit/react-native/text';
-import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
-import { Box, Row, Col, PAGE_GUTTER } from '../layout';
+import { Box, PAGE_GUTTER } from '../layout';
 import { EmptyState } from '../chrome/EmptyState';
+import { ChannelRow } from '../ChannelRow';
 import { shortAddress } from '../../modules/messaging';
 import { resolveHandleToAddress } from '../../lib/resolveHandle';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
-import { peerAvatarUrl } from '../../lib/peerProfiles';
 import { peopleLookup } from './contacts.model';
 import { homeRows } from './state';
 
@@ -31,24 +27,6 @@ function getExistingPeers(): { address: string; convId: string }[] {
 
 const LOOKUP_DEBOUNCE_MS = 300;
 const NO_MATCH_HINT = 'No matches. Try a username, a full address or a name.eth to start a chat.';
-
-function ContactResultRow({ title, subtitle, address, dark, onPress }: {
-  title: string; subtitle?: string; address: string; dark: boolean; onPress: () => void;
-}): React.ReactElement {
-  return (
-    <ListViewItem dark={dark} align="center" gap={12} onPress={onPress}>
-      <Row align="center" gap={12} flex={1}>
-        <Image src={peerAvatarUrl(address, 40)} size={40} radius="full" />
-        <Col gap={2} flex={1}>
-          <Text value={title} weight="semibold" truncate />
-          {subtitle === undefined || subtitle === '' ? null : (
-            <Caption value={subtitle} color="secondary" truncate />
-          )}
-        </Col>
-      </Row>
-    </ListViewItem>
-  );
-}
 
 interface ResolvedPeer { address: string; title: string }
 
@@ -70,74 +48,71 @@ function useResolvedPeer(q: string, enabled: boolean): ResolvedPeer | null {
   return resolved;
 }
 
-export function HomeContactResults(
-  { query, noChannels }: { query: string; noChannels: boolean },
-): React.ReactElement | null {
-  const q = query.trim();
-  const dark = useKitScheme() === 'dark';
-  const existing = useMemo(() => getExistingPeers(), []);
+interface Peer { address: string; convId: string }
 
-  const filtered = useMemo(() => {
-    const needle = q.toLowerCase();
-    if (!needle) return [];
-    return existing.filter(p => {
-      if (p.address.toLowerCase().includes(needle)) return true;
-      const n = getPeerName(p.address);
-      return !!n && n.toLowerCase().includes(needle);
-    });
-  }, [existing, q]);
+interface ResultRow { address: string; convId: string | undefined; title: string; subtitle: string | undefined }
 
-  const resolved = useResolvedPeer(q, filtered.length === 0);
-  usePeerProfiles([resolved?.address, ...existing.map(p => p.address)]);
+function filterPeers(existing: Peer[], q: string, showAllWhenEmpty: boolean): Peer[] {
+  const needle = q.toLowerCase();
+  if (!needle) return showAllWhenEmpty ? existing : [];
+  return existing.filter(p => {
+    if (p.address.toLowerCase().includes(needle)) return true;
+    const n = getPeerName(p.address);
+    return !!n && n.toLowerCase().includes(needle);
+  });
+}
 
-  const open = (address: string, convId?: string): void => {
-    const target = isAddress(address) ? address : (convId ?? address);
-    void import('expo-router').then(({ router }) => {
-      router.push({ pathname: '/[convId]', params: { convId: target } });
-    });
-  };
+function resolvedRow(resolved: ResolvedPeer): ResultRow {
+  const fallback = resolved.title === '' ? shortAddress(resolved.address) : resolved.title;
+  return { address: resolved.address, convId: undefined, title: getPeerName(resolved.address) ?? fallback, subtitle: 'Start chat' };
+}
 
-  const showResolved = resolved && !filtered.some(p => p.address.toLowerCase() === resolved.address);
-  if (!q) return null;
-  if (!showResolved && filtered.length === 0) {
-    if (!noChannels) return null;
-    return <EmptyState title={NO_MATCH_HINT} />;
-  }
+function peerRow(p: Peer): ResultRow {
+  const name = getPeerName(p.address);
+  return { address: p.address, convId: p.convId, title: name ?? shortAddress(p.address), subtitle: name ? shortAddress(p.address) : undefined };
+}
 
-  const rows = [
-    ...(showResolved
-      ? [{
-          address: resolved.address,
-          convId: undefined,
-          title: getPeerName(resolved.address) ?? (resolved.title === '' ? shortAddress(resolved.address) : resolved.title),
-          subtitle: 'Start chat',
-        }]
-      : []),
-    ...filtered.map(p => ({
-      address: p.address,
-      convId: p.convId,
-      title: getPeerName(p.address) ?? shortAddress(p.address),
-      subtitle: getPeerName(p.address) ? shortAddress(p.address) : undefined,
-    })),
-  ];
+function openPeer(address: string, convId?: string): void {
+  const target = isAddress(address) ? address : (convId ?? address);
+  void import('expo-router').then(({ router }) => {
+    router.push({ pathname: '/[convId]', params: { convId: target } });
+  });
+}
 
+function ContactRows({ rows, label, onOpen }: { rows: ResultRow[]; label: string; onOpen?: () => void }): React.ReactElement {
   return (
     <Box>
       <Box padding={{ x: PAGE_GUTTER, top: 16, bottom: 6 }}>
-        <Caption value="PEOPLE" color="secondary" weight="semibold" />
+        <Caption value={label} color="secondary" weight="semibold" />
       </Box>
-      <ListView dark={dark}>
-        {rows.map((r) => (
-          <ContactResultRow
-            key={`${r.address}-${r.convId ?? ''}`}
-            title={r.title}
-            subtitle={r.subtitle}
-            address={r.address}
-            dark={dark}
-            onPress={() => { open(r.address, r.convId); }}
-          />
-        ))}
-      </ListView>
+      {rows.map((r) => (
+        <ChannelRow
+          key={`${r.address}-${r.convId ?? ''}`}
+          title={r.title}
+          avatarAddress={r.address}
+          square={false}
+          subtitle={r.subtitle ?? null}
+          onPress={() => { onOpen?.(); openPeer(r.address, r.convId); }}
+        />
+      ))}
     </Box>
   );
+}
+
+export function HomeContactResults(
+  { query, noChannels, showAllWhenEmpty = false, onOpen }: {
+    query: string; noChannels: boolean; showAllWhenEmpty?: boolean; onOpen?: () => void;
+  },
+): React.ReactElement | null {
+  const q = query.trim();
+  const existing = useMemo(() => getExistingPeers(), []);
+  const filtered = useMemo(() => filterPeers(existing, q, showAllWhenEmpty), [existing, q, showAllWhenEmpty]);
+  const resolved = useResolvedPeer(q, filtered.length === 0);
+  usePeerProfiles([resolved?.address, ...existing.map(p => p.address)]);
+
+  const extra = resolved && !filtered.some(p => p.address.toLowerCase() === resolved.address) ? [resolvedRow(resolved)] : [];
+  const rows = [...extra, ...filtered.map(peerRow)];
+  if (!q && !showAllWhenEmpty) return null;
+  if (rows.length === 0) return noChannels ? <EmptyState title={NO_MATCH_HINT} /> : null;
+  return <ContactRows rows={rows} label={q ? 'PEOPLE' : 'CONTACTS'} onOpen={onOpen} />;
 }
