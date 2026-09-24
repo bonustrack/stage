@@ -42,7 +42,7 @@ interface ChannelRowProps {
 export const CHANNEL_ROW_HEIGHT = 67;
 const BADGE_SIZE = 18;
 const TITLE_LINE_HEIGHT = 24;
-const PREVIEW_LINE_HEIGHT = 19;
+const PREVIEW_LINE_HEIGHT = 18;
 const LINE_GAP = 2;
 const PIN_ICON_SIZE = 16;
 
@@ -101,7 +101,7 @@ function MetaColumn({ params, trailing }: {
 }
 
 const CHIP_TEXT_SIZE = 'sm';
-const CHIP_PADDING = { x: 7, y: 1 } as const;
+const CHIP_PADDING = { x: 7, y: 2 } as const;
 const NATIVE_CHIP_BASELINE_DROP = 4;
 
 function WebChip({ label, fg, chipBg }: {
